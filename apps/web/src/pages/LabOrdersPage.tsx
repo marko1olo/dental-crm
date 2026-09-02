@@ -159,9 +159,25 @@ export function LabOrdersPage() {
 		setIsTrackingDrawerOpen(true);
 	};
 
-	const handleDrawerStageUpdate = async (orderId: string, newStage: string) => {
-		await handleStatusChange(orderId, newStage);
-		fetchOrders();
+	const handleDrawerStageUpdate = async (orderId: string, newStage: string, note?: string) => {
+		try {
+			const res = await fetch(`/api/lab/orders/${orderId}`, {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({ stage: newStage, notes: note }),
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка обновления этапа ЗТЛ");
+			}
+			showToast("Этап наряда ЗТЛ успешно обновлен", "success");
+			fetchOrders();
+		} catch (err: any) {
+			showToast(err.message || "Ошибка смены этапа ЗТЛ", "error");
+		}
 	};
 
 	const getStatusBadge = (status?: string) => {

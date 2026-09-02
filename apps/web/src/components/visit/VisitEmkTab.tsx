@@ -52,7 +52,7 @@ import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { AppointmentModal } from "../schedule/AppointmentModal";
-import type { Appointment } from "@dental/shared";
+import { type Appointment, calculateAge } from "@dental/shared";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
 import { InformedConsentModal } from "../consents/InformedConsentModal";
@@ -268,9 +268,22 @@ export function VisitEmkTab() {
 	const [isEmergencyProtocolModalOpen, setIsEmergencyProtocolModalOpen] = React.useState<boolean>(false);
 	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>("ultracain_ds_forte");
 	const [selectedCarpulesCount, setSelectedCarpulesCount] = React.useState<number>(1.0);
-	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(
-		Number((activePatient as any)?.weightKg) > 0 ? Number((activePatient as any).weightKg) : 70,
-	);
+
+	const patientAge = React.useMemo(() => {
+		return calculateAge(activePatient?.birthDate);
+	}, [activePatient?.birthDate]);
+
+	const patientWeightKgInit = React.useMemo(() => {
+		const rawW = Number((activePatient as any)?.weightKg);
+		if (Number.isFinite(rawW) && rawW > 0) return rawW;
+		return patientAge < 18 ? 0 : 70;
+	}, [activePatient, patientAge]);
+
+	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(patientWeightKgInit);
+
+	React.useEffect(() => {
+		setPatientWeightKg(patientWeightKgInit);
+	}, [patientWeightKgInit]);
 
 	// Эндодонтический протокол (Таблица каналов, апекслокатор, MAF, силеры)
 	const [isEndoModalOpen, setIsEndoModalOpen] = React.useState<boolean>(false);
@@ -575,6 +588,8 @@ export function VisitEmkTab() {
 			drugKey: selectedAnesDrugKey,
 			carpulesCount: selectedCarpulesCount,
 			patientWeightKg,
+			patientAgeYears: patientAge,
+			isPediatric: patientAge < 18,
 			somaticProfile: {
 				hasCardiovascularRisk: anesthesiaRisk.hasHypertensionRisk,
 				hasSulfiteAllergy: Array.isArray((activePatient as any)?.allergies)
@@ -592,6 +607,7 @@ export function VisitEmkTab() {
 		selectedAnesDrugKey,
 		selectedCarpulesCount,
 		patientWeightKg,
+		patientAge,
 		anesthesiaRisk.hasHypertensionRisk,
 		activePatient,
 	]);
@@ -1866,25 +1882,28 @@ export function VisitEmkTab() {
 												<div className="space-y-1.5">
 													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
 														<span>3. Масса тела пациента:</span>
-														<strong className="text-[var(--teal,var(--brand-primary))]">{patientWeightKg} кг</strong>
+														<strong className={patientWeightKg > 0 ? "text-[var(--teal,var(--brand-primary))]" : "text-rose-500"}>
+															{patientWeightKg > 0 ? `${patientWeightKg} кг` : "Не указан"}
+														</strong>
 													</label>
 													<div className="flex items-center gap-2">
 														<input
 															type="range"
-															min={15}
+															min={0}
 															max={140}
 															step={1}
 															value={patientWeightKg}
-															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 70)}
+															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 0)}
 															className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
 															data-testid="input-patient-weight-slider"
 														/>
 														<input
 															type="number"
-															min={10}
+															min={0}
 															max={250}
-															value={patientWeightKg}
-															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 70)}
+															value={patientWeightKg || ""}
+															placeholder="0"
+															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 0)}
 															className="w-16 min-h-[32px] h-8 px-2 py-1 text-xs font-bold text-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 															data-testid="input-patient-weight-num"
 														/>
@@ -1892,35 +1911,72 @@ export function VisitEmkTab() {
 												</div>
 											</div>
 
+											{/* Красный алерт при отсутствии фактического веса у ребенка */}
+											{Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0)) ? (
+												<div
+													className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 flex items-center gap-2.5 text-xs text-rose-700 dark:text-rose-300 font-bold"
+													role="alert"
+													data-testid="alert-pediatric-weight-required"
+												>
+													<AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+													<span>Укажите фактический вес ребенка для расчета анестезии!</span>
+												</div>
+											) : null}
+
 											{/* Индикатор безопасности дозировки и кнопка внесения */}
 											<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 flex-wrap">
 												<div className="space-y-0.5 min-w-0 flex-1">
 													<div className="flex items-center gap-2">
 														<span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-															liveAnesCalc.safetyLevel === "safe"
-																? "bg-[var(--ok-fg)]"
-																: liveAnesCalc.safetyLevel === "caution"
-																	? "bg-lime-500"
-																	: liveAnesCalc.safetyLevel === "warning"
-																		? "bg-amber-500"
-																		: "bg-rose-500"
+															liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT"
+																? "bg-rose-500 animate-pulse"
+																: liveAnesCalc.safetyLevel === "safe"
+																	? "bg-[var(--ok-fg)]"
+																	: liveAnesCalc.safetyLevel === "caution"
+																		? "bg-lime-500"
+																		: liveAnesCalc.safetyLevel === "warning"
+																			? "bg-amber-500"
+																			: "bg-rose-500"
 														}`} />
 														<span className="text-xs font-bold text-[var(--ink)] truncate">
-															МДД для {patientWeightKg} кг: макс. <strong>{liveAnesCalc.maxSafeCarpules} карп.</strong> ({liveAnesCalc.maxSafeDoseMg} мг)
+															{liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" ? (
+																<span className="text-rose-600 dark:text-rose-400 font-extrabold">
+																	Расчет предельной дозы заблокирован (требуется вес)
+																</span>
+															) : (
+																<>
+																	МДД для {patientWeightKg} кг: макс. <strong>{liveAnesCalc.maxSafeCarpules} карп.</strong> ({liveAnesCalc.maxSafeDoseMg} мг)
+																</>
+															)}
 														</span>
-														<span className="text-[11px] font-semibold text-[var(--muted)]">
-															• {liveAnesCalc.safetyPercentage}% от лимита
-														</span>
+														{liveAnesCalc.safetyLevel !== "REQUIRES_WEIGHT_INPUT" && (
+															<span className="text-[11px] font-semibold text-[var(--muted)]">
+																• {liveAnesCalc.safetyPercentage}% от лимита
+															</span>
+														)}
 													</div>
 													<div className="text-[11px] text-[var(--muted)] truncate">
-														Препарат: {liveAnesCalc.drugName} • Введено: {liveAnesCalc.volumeMl} мл ({liveAnesCalc.activeDoseMg} мг)
-														{liveAnesCalc.epinephrineMg > 0 ? ` • Адреналин: ${liveAnesCalc.epinephrineMg.toFixed(3)} мг` : " • Без адреналина"}
+														{liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" ? (
+															<span className="text-rose-600 dark:text-rose-400">
+																{liveAnesCalc.warningMessage || "Укажите фактический вес для расчета"}
+															</span>
+														) : (
+															<>
+																Препарат: {liveAnesCalc.drugName} • Введено: {liveAnesCalc.volumeMl} мл ({liveAnesCalc.activeDoseMg} мг)
+																{liveAnesCalc.epinephrineMg > 0 ? ` • Адреналин: ${liveAnesCalc.epinephrineMg.toFixed(3)} мг` : " • Без адреналина"}
+															</>
+														)}
 													</div>
 												</div>
 
 												<button
 													type="button"
+													disabled={liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" || Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0))}
 													onClick={() => {
+														if (liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" || Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0))) {
+															showToast("Укажите фактический вес ребенка для расчета анестезии!", "error", 4000);
+															return;
+														}
 														if (!updateVisitNoteField) return;
 														const curr = visitNoteForm.treatmentPlan || "";
 														updateVisitNoteField(
@@ -1929,7 +1985,11 @@ export function VisitEmkTab() {
 														);
 														showToast(`Анестезия (${liveAnesCalc.drugName}, ${selectedCarpulesCount} карп.) внесена в лечение`, "success", 3000);
 													}}
-													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 transition-all cursor-pointer inline-flex items-center gap-2 shrink-0 touch-manipulation"
+													className={`min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl ${
+														liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" || Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0))
+															? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-300 dark:border-gray-700"
+															: "bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 cursor-pointer"
+													} transition-all inline-flex items-center gap-2 shrink-0 touch-manipulation`}
 													data-testid="btn-apply-anesthesia-to-plan"
 												>
 													<Syringe className="w-4 h-4" />
@@ -2694,7 +2754,7 @@ export function VisitEmkTab() {
 					onClose={() => setIsAnesthesiaAspirationModalOpen(false)}
 					initialPatientFullName={activePatient?.fullName || "Пациент"}
 					initialMedCardNumber={`043/у-${activePatient?.id?.slice(0, 8) || "2026"}`}
-					initialPatientAgeYears={35}
+					initialPatientAgeYears={patientAge}
 					initialPatientWeightKg={patientWeightKg}
 					initialToothNumber={typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46 : 46}
 					onApplyToDiary={(diaryText) => {
@@ -2711,7 +2771,7 @@ export function VisitEmkTab() {
 					onClose={() => setIsEmergencyProtocolModalOpen(false)}
 					initialScenario="last_toxicity"
 					patientName={activePatient?.fullName || "Пациент"}
-					patientAge={35}
+					patientAge={patientAge}
 					patientWeightKg={patientWeightKg}
 					clinicName="Стоматологическая клиника DENTE"
 					clinicAddress="ул. Клиническая, д. 1"

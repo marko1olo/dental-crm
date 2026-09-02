@@ -35,6 +35,9 @@ import {
 	X,
 	ZoomIn,
 	ZoomOut,
+	UploadCloud,
+	FolderOpen,
+	FileArchive,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -55,7 +58,6 @@ import {
 	calculateMprSliceIndex,
 	clampCoordinateToVolume,
 	createEmptyCbctVolume,
-	createSyntheticDentalCbctVolume,
 	disposeCbctVolume,
 	drawCalibratedMillimeterRulers,
 	drawRomexisSlabCorridor,
@@ -122,6 +124,10 @@ import {
 	formatMischProtocolToDiaryText,
 } from "./boneDensityMischMath";
 import type { RadiologyStudy } from "./types";
+import {
+	buildVolumeFromDicomFiles,
+	buildVolumeFromDicomZip,
+} from "./realDicomVolumeLoader";
 
 export interface CbctMprViewerProps {
 	readonly study?: RadiologyStudy | null | undefined;
@@ -365,27 +371,48 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 	const crossSectionCanvasRef = useRef<HTMLCanvasElement>(null);
 	const mprContainerRef = useRef<HTMLDivElement>(null);
 
-	// Initialize synthetic volume if none provided
+	const [dicomLoading, setDicomLoading] = useState<{ percent: number; message: string } | null>(null);
+	const [dicomError, setDicomError] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const zipInputRef = useRef<HTMLInputElement>(null);
+
+	// Initialize volume from prop
 	useEffect(() => {
-		let currentSynVol: CbctVoxelVolume | null = null;
 		if (propVolume) {
 			setVolume(propVolume);
 			if (propVolume.defaultWindowWidth) setWindowWidth(propVolume.defaultWindowWidth);
 			if (propVolume.defaultWindowLevel) setWindowLevel(propVolume.defaultWindowLevel);
 		} else {
-			const synVol = createSyntheticDentalCbctVolume(160, 160, 100, 0.4);
-			currentSynVol = synVol;
-			setVolume(synVol);
-			if (synVol.defaultWindowWidth) setWindowWidth(synVol.defaultWindowWidth);
-			if (synVol.defaultWindowLevel) setWindowLevel(synVol.defaultWindowLevel);
+			setVolume(null);
 		}
-
-		return () => {
-			if (currentSynVol) {
-				disposeCbctVolume(currentSynVol);
-			}
-		};
 	}, [propVolume]);
+
+	const handleUploadDicomFiles = async (files: FileList | File[]) => {
+		try {
+			setDicomError(null);
+			const fileArray = Array.from(files);
+			if (fileArray.length === 0) return;
+			const isZip = fileArray.length === 1 && fileArray[0]!.name.toLowerCase().endsWith(".zip");
+			let loadedVolume: CbctVoxelVolume;
+			if (isZip) {
+				const buf = await fileArray[0]!.arrayBuffer();
+				loadedVolume = await buildVolumeFromDicomZip(buf, (percent, message) => {
+					setDicomLoading({ percent, message });
+				});
+			} else {
+				loadedVolume = await buildVolumeFromDicomFiles(fileArray, (percent, message) => {
+					setDicomLoading({ percent, message });
+				});
+			}
+			setVolume(loadedVolume);
+			if (loadedVolume.defaultWindowWidth) setWindowWidth(loadedVolume.defaultWindowWidth);
+			if (loadedVolume.defaultWindowLevel) setWindowLevel(loadedVolume.defaultWindowLevel);
+			setDicomLoading(null);
+		} catch (err: unknown) {
+			setDicomError(err instanceof Error ? err.message : "Не удалось загрузить файлы DICOM");
+			setDicomLoading(null);
+		}
+	};
 
 	// Comprehensive unmount cleanup for offscreens, image data, and animation frames
 	useEffect(() => {
@@ -2443,7 +2470,106 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 				/>
 
 				<main className="flex-1 min-h-0 relative bg-black flex flex-col overflow-hidden">
-					{/* 1. 3-PLANE MPR VIEW */}
+					{!volume ? (
+						<div
+							className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-950 text-slate-200"
+							data-testid="cbct-empty-dropzone"
+							onDragOver={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+							}}
+							onDrop={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+									void handleUploadDicomFiles(e.dataTransfer.files);
+								}
+							}}
+						>
+							<div className="max-w-md w-full flex flex-col items-center text-center p-8 rounded-3xl bg-slate-900 border-2 border-dashed border-slate-700 shadow-2xl space-y-4">
+								<div className="p-4 rounded-2xl bg-[var(--teal-surface)] border border-[var(--teal-soft)] text-[var(--teal)]">
+									<UploadCloud className="w-10 h-10" />
+								</div>
+
+								<div>
+									<h2 className="text-base font-bold text-white">3D КЛКТ: нет загруженного исследования</h2>
+									<p className="text-xs text-slate-400 mt-1 leading-relaxed">
+										Перетащите файлы серии DICOM (.dcm) или ZIP-архив исследования, либо выберите файлы с диска.
+									</p>
+								</div>
+
+								{dicomLoading && (
+									<div className="w-full space-y-2 py-2">
+										<div className="flex justify-between text-xs text-slate-300">
+											<span className="font-mono">{dicomLoading.message}</span>
+											<span className="font-bold text-[var(--teal)]">{dicomLoading.percent}%</span>
+										</div>
+										<div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+											<div
+												className="h-full bg-[var(--teal)] transition-all duration-200"
+												style={{ width: `${dicomLoading.percent}%` }}
+											/>
+										</div>
+									</div>
+								)}
+
+								{dicomError && (
+									<div className="w-full p-3 rounded-xl bg-red-950/60 border border-red-500/50 text-red-300 text-xs text-left">
+										{dicomError}
+									</div>
+								)}
+
+								<input
+									ref={fileInputRef}
+									type="file"
+									multiple
+									accept=".dcm,.dicom,application/dicom"
+									className="hidden"
+									onChange={(e) => {
+										if (e.target.files && e.target.files.length > 0) {
+											void handleUploadDicomFiles(e.target.files);
+										}
+									}}
+								/>
+								<input
+									ref={zipInputRef}
+									type="file"
+									accept=".zip,application/zip"
+									className="hidden"
+									onChange={(e) => {
+										if (e.target.files && e.target.files.length > 0) {
+											void handleUploadDicomFiles(e.target.files);
+										}
+									}}
+								/>
+
+								<div className="flex flex-col sm:flex-row gap-2.5 w-full pt-2">
+									<button
+										type="button"
+										onClick={() => fileInputRef.current?.click()}
+										disabled={dicomLoading !== null}
+										className="flex-1 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--teal)] hover:opacity-90 transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+										data-testid="cbct-upload-dcm-btn"
+									>
+										<FolderOpen className="w-4 h-4" />
+										<span>Файлы DICOM (.dcm)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => zipInputRef.current?.click()}
+										disabled={dicomLoading !== null}
+										className="flex-1 min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+										data-testid="cbct-upload-zip-btn"
+									>
+										<FileArchive className="w-4 h-4" />
+										<span>ZIP-архив КЛКТ</span>
+									</button>
+								</div>
+							</div>
+						</div>
+					) : (
+						<>
+							{/* 1. 3-PLANE MPR VIEW */}
 					{activeTab === "mpr" && (
 						<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 							{/* Mobile Slice Switcher Tabs (<768px) */}
@@ -2820,48 +2946,66 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 							</div>
 
 							{/* Diagnostic Bone Metrics Card */}
-							{activeCrossSection && crossSectionMetrics && (
-								<div className="w-full md:w-80 flex flex-col gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800 shrink-0">
-									<div className="flex items-center justify-between">
-										<span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-											Зона: {activeCrossSection.toothLabelRu}
-										</span>
-										<span className="px-2 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal)] font-bold text-xs">
-											FDI #{activeCrossSection.nearestToothFdi}
-										</span>
-									</div>
+							{activeCrossSection && (
+								crossSectionMetrics ? (
+									<div className="w-full md:w-80 flex flex-col gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800 shrink-0">
+										<div className="flex items-center justify-between">
+											<span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+												Зона: {activeCrossSection.toothLabelRu}
+											</span>
+											<span className="px-2 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal)] font-bold text-xs">
+												FDI #{activeCrossSection.nearestToothFdi}
+											</span>
+										</div>
 
-									<div className="grid grid-cols-2 gap-2 text-xs font-mono">
-										<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-											<div className="text-[10px] text-slate-400">Высота гребня:</div>
-											<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.heightMm} мм</div>
+										<div className="grid grid-cols-2 gap-2 text-xs font-mono">
+											<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+												<div className="text-[10px] text-slate-400">Высота гребня:</div>
+												<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.heightMm} мм</div>
+											</div>
+											<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+												<div className="text-[10px] text-slate-400">Ширина вершины:</div>
+												<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.crestWidthMm} мм</div>
+											</div>
+											<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+												<div className="text-[10px] text-slate-400">Середина тела:</div>
+												<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.midWidthMm} мм</div>
+											</div>
+											<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+												<div className="text-[10px] text-slate-400">База гребня:</div>
+												<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.baseWidthMm} мм</div>
+											</div>
 										</div>
-										<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-											<div className="text-[10px] text-slate-400">Ширина вершины:</div>
-											<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.crestWidthMm} мм</div>
-										</div>
-										<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-											<div className="text-[10px] text-slate-400">Середина тела:</div>
-											<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.midWidthMm} мм</div>
-										</div>
-										<div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-											<div className="text-[10px] text-slate-400">База гребня:</div>
-											<div className="text-sm font-bold text-white mt-0.5">{crossSectionMetrics.baseWidthMm} мм</div>
-										</div>
-									</div>
 
-									<div className={`p-3 rounded-xl border text-xs leading-relaxed ${
-										crossSectionMetrics.isAdequateForImplant
-											? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
-											: "bg-amber-950/40 border-amber-500/40 text-amber-300"
-									}`}>
-										{crossSectionMetrics.clinicalAdviceRu}
+										<div className={`p-3 rounded-xl border text-xs leading-relaxed ${
+											crossSectionMetrics.isAdequateForImplant
+												? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
+												: "bg-amber-950/40 border-amber-500/40 text-amber-300"
+										}`}>
+											{crossSectionMetrics.clinicalAdviceRu}
+										</div>
 									</div>
-								</div>
+								) : (
+									<div className="w-full md:w-80 flex flex-col gap-2.5 p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-slate-400 shrink-0">
+										<div className="flex items-center justify-between">
+											<span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+												Зона: {activeCrossSection.toothLabelRu}
+											</span>
+											<span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-xs">
+												FDI #{activeCrossSection.nearestToothFdi}
+											</span>
+										</div>
+										<div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 leading-relaxed">
+											Нет данных среза: костная ткань в выбранной позиции не обнаружена или выходит за границы диапазона.
+										</div>
+									</div>
+								)
 							)}
 						</div>
 					</div>
 				)}
+						</>
+					)}
 			</main>
 
 				{/* 4. IMPLANT PLANNING PANEL (RIGHT SIDEBAR) */}

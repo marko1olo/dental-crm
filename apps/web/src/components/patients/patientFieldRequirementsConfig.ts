@@ -180,6 +180,8 @@ export interface PatientDraftValidationInput {
 	snils?: string | null | undefined;
 	birthDate?: string | null | undefined;
 	identityDocument?: string | null | undefined;
+	/** Decree 659: Anonymous patient mode waives passport and SNILS requirements */
+	isAnonymous?: boolean | null | undefined;
 }
 
 export interface PatientDraftValidationResult {
@@ -230,9 +232,9 @@ export function validatePatientDraftWithRequirements(
 		}
 	}
 
-	// 4. СНИЛС (по настройке с проверкой контрольной суммы 192-П)
+	// 4. СНИЛС (по настройке с проверкой контрольной суммы 192-П, кроме анонимного режима по ПП РФ №659)
 	const snilsRaw = (draft.snils || "").trim();
-	if (requirements.requireSnils) {
+	if (requirements.requireSnils && !draft.isAnonymous) {
 		if (!snilsRaw) {
 			errors.snils = "СНИЛС обязателен для передачи данных в ЕГИСЗ (РЭМД)";
 			missingRequiredLabels.push("СНИЛС");
@@ -259,9 +261,9 @@ export function validatePatientDraftWithRequirements(
 		}
 	}
 
-	// 6. Паспорт РФ (по настройке)
+	// 6. Паспорт РФ (по настройке, кроме анонимного режима по ПП РФ №659)
 	const docTrimmed = (draft.identityDocument || "").trim();
-	if (requirements.requireIdentityDocument) {
+	if (requirements.requireIdentityDocument && !draft.isAnonymous) {
 		if (!docTrimmed) {
 			errors.identityDocument = "Паспортные данные обязательны для договора";
 			missingRequiredLabels.push("Паспорт");

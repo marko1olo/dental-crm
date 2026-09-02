@@ -27,6 +27,7 @@ import {
 	Percent,
 	Phone,
 	Plus,
+	Loader2,
 	Printer,
 	Search,
 	Shield,
@@ -34,8 +35,9 @@ import {
 	User,
 	X,
 } from "lucide-react";
-import React, { useId, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers.js";
 import { showToast } from "../GlobalToast";
 import "./dmsInsurance.css";
 import {
@@ -133,66 +135,42 @@ export const FDI_ADULT_TEETH_LOWER = [
 	"3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8",
 ];
 
-/** Демо-набор гарантийных писем пациента */
-export const DEFAULT_PATIENT_GUARANTEE_LETTERS: readonly PatientGuaranteeLetter[] = [
-	{
-		id: "gl-sogaz-001",
-		letterNumber: "ГП-СОГАЗ-2026-8812",
-		insurerKey: "sogaz",
-		insurerName: "АО «СОГАЗ»",
-		patientId: "pat-101",
-		patientFullName: "Иванов Сергей Алексеевич",
-		policyNumber: "СГЗ-77-991283",
-		issueDate: "2026-08-01",
-		validFrom: "2026-08-01",
-		validUntil: "2026-09-01",
-		maxCoverageKopecks: 5000000, // 50 000 руб
-		usedAmountKopecks: 1250000, // 12 500 руб (25% - Зеленый)
-		franchisePct: 0,
-		franchiseType: "percent",
-		franchiseFixedKopecks: 0,
-		approvedTeethFdi: ["1.6", "1.5", "2.6"],
-		approvedServiceCodes804n: [
-			"A16.07.002.001",
-			"A16.07.002.002",
-			"A16.07.030.001",
-			"A16.07.008.002",
-			"A11.07.010",
-			"A06.07.003",
-		],
-		approvedDiagnosisMkb10: ["K04.0", "K02.1"],
-		curatorFullName: "Смирнова Елена Викторовна",
-		curatorPhone: "8 (800) 333-08-88 доб. 114",
-		curatorEmail: "dms-expert@sogaz.ru",
-		notes: "Согласовано лечение зуба 1.6 по пульпиту и зуба 2.6 по кариесу дентина.",
-		status: "active",
-	},
-	{
-		id: "gl-ingos-002",
-		letterNumber: "ИНГОС-МЕД-26-44091",
-		insurerKey: "ingosstrakh",
-		insurerName: "СПАО «Ингосстрах»",
-		patientId: "pat-101",
-		patientFullName: "Иванов Сергей Алексеевич",
-		policyNumber: "ИНГ-902-11487",
-		issueDate: "2026-07-10",
-		validFrom: "2026-07-10",
-		validUntil: "2026-08-10",
-		maxCoverageKopecks: 3500000, // 35 000 руб
-		usedAmountKopecks: 2975000, // 29 750 руб (85% - Желтый)
-		franchisePct: 15,
-		franchiseType: "percent",
-		franchiseFixedKopecks: 0,
-		approvedTeethFdi: ["3.8", "4.8"],
-		approvedServiceCodes804n: ["A16.07.001.002", "A11.07.010", "A06.07.004"],
-		approvedDiagnosisMkb10: ["K01.1"],
-		curatorFullName: "Воронов Михаил Петрович",
-		curatorPhone: "8 (495) 956-55-55 доб. 881",
-		curatorEmail: "med@ingos.ru",
-		notes: "Удаление ретинированных зубов мудрости с сооплатой франшизы 15%.",
-		status: "expired",
-	},
-];
+/** Преобразование ответа бэкенда в модель интерфейса гарантийного письма */
+export function mapBackendLetterToPatientGuaranteeLetter(item: any): PatientGuaranteeLetter {
+	return {
+		id: String(item.id),
+		letterNumber: String(item.letterNumber || ""),
+		insurerKey: String(item.insurerKey || "custom"),
+		insurerName: String(item.insurerName || "Страховая компания ДМС"),
+		patientId: String(item.patientId || ""),
+		patientFullName: String(item.patientFullName || ""),
+		policyNumber: String(item.policyNumber || ""),
+		issueDate: String(item.issueDate || "").slice(0, 10),
+		validFrom: String(item.validFrom || "").slice(0, 10),
+		validUntil: String(item.validUntil || "").slice(0, 10),
+		maxCoverageKopecks: Math.round(Number(item.maxCoverageRub || 0) * 100),
+		usedAmountKopecks: Math.round(Number(item.usedAmountRub || 0) * 100),
+		franchisePct: Number(item.franchisePct) || 0,
+		franchiseType: item.franchiseType === "fixed_rub" ? "fixed_kopecks" : "percent",
+		franchiseFixedKopecks: Math.round(Number(item.franchiseFixedRub || 0) * 100),
+		approvedTeethFdi: Array.isArray(item.approvedTeethFdi) ? item.approvedTeethFdi : [],
+		approvedServiceCodes804n: Array.isArray(item.approvedServiceCodes)
+			? item.approvedServiceCodes
+			: Array.isArray(item.approvedServiceCodes804n)
+			? item.approvedServiceCodes804n
+			: [],
+		approvedDiagnosisMkb10: Array.isArray(item.approvedDiagnosisCodes)
+			? item.approvedDiagnosisCodes
+			: Array.isArray(item.approvedDiagnosisMkb10)
+			? item.approvedDiagnosisMkb10
+			: [],
+		curatorFullName: String(item.curatorFullName || ""),
+		curatorPhone: String(item.curatorPhone || ""),
+		curatorEmail: item.curatorEmail ? String(item.curatorEmail) : undefined,
+		notes: String(item.notes || ""),
+		status: (item.status as PatientGuaranteeLetter["status"]) || "active",
+	};
+}
 
 /** Демо-позиции визита для сплит-калькулятора */
 export const DEFAULT_BILL_ITEMS_TO_SPLIT: readonly BillItemToSplit[] = [
@@ -233,7 +211,7 @@ export function DmsGuaranteeLettersModal({
 		insuranceCompany: "АО «СОГАЗ»",
 		phone: "+7 (926) 880-12-34",
 	},
-	initialLetters = DEFAULT_PATIENT_GUARANTEE_LETTERS,
+	initialLetters = [],
 	initialBillItems = DEFAULT_BILL_ITEMS_TO_SPLIT,
 	onSaveLetter,
 	onSelectLetterForVisit,
@@ -256,9 +234,48 @@ export function DmsGuaranteeLettersModal({
 	// Вкладки: "list" (список ГП), "new_letter" (форма привязки), "split_calc" (сплит-калькулятор)
 	const [activeTab, setActiveTab] = useState<"list" | "new_letter" | "split_calc">("list");
 
-	// Состояние гарантийных писем
+	// Состояние гарантийных писем и загрузки
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [isSaving, setIsSaving] = useState<boolean>(false);
 	const [letters, setLetters] = useState<readonly PatientGuaranteeLetter[]>(initialLetters);
 	const [selectedLetterId, setSelectedLetterId] = useState<string>(initialLetters[0]?.id || "");
+
+	// Загрузка гарантийных писем с бэкенда по patientId
+	const fetchPatientLetters = useCallback(async () => {
+		if (!patient?.id) return;
+		setIsLoading(true);
+		try {
+			const res = await fetch(
+				`/api/insurance/guarantee-letters?patientId=${encodeURIComponent(patient.id)}`,
+				{
+					headers: denteAdminSecretRequestHeaders(),
+				},
+			);
+			if (!res.ok) {
+				throw new Error(`Ошибка загрузки гарантийных писем: ${res.status}`);
+			}
+			const data = await res.json();
+			if (Array.isArray(data)) {
+				const mapped = data.map(mapBackendLetterToPatientGuaranteeLetter);
+				setLetters(mapped);
+				if (mapped.length > 0) {
+					setSelectedLetterId((prev) =>
+						mapped.some((l) => l.id === prev) ? prev : mapped[0]!.id,
+					);
+				}
+			}
+		} catch (err: any) {
+			console.warn("[DmsGuaranteeLettersModal] Failed to fetch letters:", err);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [patient?.id]);
+
+	useEffect(() => {
+		if (isOpen && patient?.id) {
+			fetchPatientLetters();
+		}
+	}, [isOpen, patient?.id, fetchPatientLetters]);
 
 	// Состояние формы нового гарантийного письма
 	const [newInsurerKey, setNewInsurerKey] = useState<string>(
@@ -320,8 +337,8 @@ export function DmsGuaranteeLettersModal({
 	// Фильтрация каталога 804н
 	const filteredCatalog804n = search804nServices(serviceSearchTerm).slice(0, 8);
 
-	// Сохранение нового гарантийного письма
-	const handleSaveNewLetter = () => {
+	// Сохранение нового гарантийного письма в PostgreSQL через API
+	const handleSaveNewLetter = async () => {
 		if (!newLetterNumber.trim()) {
 			showToast("Укажите номер гарантийного письма", "warning");
 			return;
@@ -336,40 +353,69 @@ export function DmsGuaranteeLettersModal({
 		}
 
 		const insurer = RUSSIAN_DMS_INSURERS.find((i) => i.key === newInsurerKey);
-		const letter: PatientGuaranteeLetter = {
-			id: `gl-${Date.now()}`,
-			letterNumber: newLetterNumber.trim(),
-			insurerKey: newInsurerKey,
-			insurerName: insurer?.shortName || "Страховая компания ДМС",
+		const insurerDisplayName = insurer?.shortName || "Страховая компания ДМС";
+
+		const payload = {
 			patientId: patient.id,
 			patientFullName: patient.fullName,
+			patientBirthDate: patient.birthDate || null,
 			policyNumber: newPolicyNumber.trim(),
+			insurerKey: newInsurerKey,
+			insurerName: insurerDisplayName,
+			letterNumber: newLetterNumber.trim(),
 			issueDate: newIssueDate,
 			validFrom: newValidFrom,
 			validUntil: newValidUntil,
-			maxCoverageKopecks: Math.round(newMaxCoverageRub * 100),
-			usedAmountKopecks: 0,
+			maxCoverageRub: newMaxCoverageRub,
+			usedAmountRub: 0,
 			franchisePct: newFranchisePct,
-			franchiseType: "percent",
-			franchiseFixedKopecks: 0,
+			franchiseType: "percent" as const,
+			franchiseFixedRub: 0,
+			programExclusions: [],
+			approvedServiceCodes: newApprovedServices,
 			approvedTeethFdi: newApprovedTeeth,
-			approvedServiceCodes804n: newApprovedServices,
-			approvedDiagnosisMkb10: newApprovedDiagnoses,
-			curatorFullName: newCuratorName.trim(),
-			curatorPhone: newCuratorPhone.trim(),
+			approvedDiagnosisCodes: newApprovedDiagnoses,
+			curatorFullName: newCuratorName.trim() || null,
+			curatorPhone: newCuratorPhone.trim() || null,
 			notes: newNotes.trim(),
-			status: "active",
+			status: "active" as const,
 		};
 
-		const updatedList = [letter, ...letters];
-		setLetters(updatedList);
-		setSelectedLetterId(letter.id);
-		if (onSaveLetter) {
-			onSaveLetter(letter);
-		}
+		setIsSaving(true);
+		try {
+			const res = await fetch("/api/insurance/guarantee-letters", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify(payload),
+			});
 
-		showToast(`Гарантийное письмо № ${letter.letterNumber} (${letter.insurerName}) успешно привязано`, "success");
-		setActiveTab("list");
+			if (!res.ok) {
+				const errData = await res.json().catch(() => null);
+				throw new Error(errData?.message || `Ошибка сервера (${res.status})`);
+			}
+
+			const created = await res.json();
+			const mappedLetter = mapBackendLetterToPatientGuaranteeLetter(created);
+
+			setLetters((prev) => [mappedLetter, ...prev.filter((l) => l.id !== mappedLetter.id)]);
+			setSelectedLetterId(mappedLetter.id);
+			if (onSaveLetter) {
+				onSaveLetter(mappedLetter);
+			}
+
+			showToast(
+				`Гарантийное письмо № ${mappedLetter.letterNumber} (${mappedLetter.insurerName}) успешно сохранено в БД`,
+				"success",
+			);
+			setActiveTab("list");
+		} catch (err: any) {
+			showToast(err.message || "Не удалось сохранить гарантийное письмо в БД", "error");
+		} finally {
+			setIsSaving(false);
+		}
 	};
 
 	// ------------------------------------------------------------------------
@@ -625,8 +671,31 @@ export function DmsGuaranteeLettersModal({
 								</button>
 							</div>
 
-							<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "16px" }}>
-								{letters.map((letter) => {
+							{isLoading ? (
+								<div style={{ padding: "48px 24px", textAlign: "center", color: "var(--muted, #64748b)" }}>
+									<Loader2 size={32} className="animate-spin" style={{ margin: "0 auto 12px", display: "block" }} />
+									<div style={{ fontSize: "0.875rem", fontWeight: 600 }}>Загрузка гарантийных писем из базы данных...</div>
+								</div>
+							) : letters.length === 0 ? (
+								<div style={{ padding: "48px 24px", textAlign: "center", background: "var(--surface, #f8fafc)", border: "1px dashed var(--line, #e2e8f0)", borderRadius: "14px" }}>
+									<Shield size={36} style={{ margin: "0 auto 12px", color: "var(--muted, #94a3b8)", display: "block" }} />
+									<div style={{ fontSize: "0.9375rem", fontWeight: 700, marginBottom: "4px" }}>
+										Гарантийных писем пока нет
+									</div>
+									<p style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", margin: "0 0 16px" }}>
+										У пациента не привязано ни одного гарантийного письма ДМС в клинике.
+									</p>
+									<button
+										type="button"
+										className="dms-action-btn dms-action-btn-primary dms-btn-dense"
+										onClick={() => setActiveTab("new_letter")}
+									>
+										<Plus size={16} /> Привязать первое ГП
+									</button>
+								</div>
+							) : (
+								<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "16px" }}>
+									{letters.map((letter) => {
 									const usedPct = letter.maxCoverageKopecks > 0
 										? Math.min(100, Math.round((letter.usedAmountKopecks / letter.maxCoverageKopecks) * 100))
 										: 0;
@@ -751,6 +820,7 @@ export function DmsGuaranteeLettersModal({
 									);
 								})}
 							</div>
+						)}
 						</div>
 					)}
 
@@ -1050,9 +1120,19 @@ export function DmsGuaranteeLettersModal({
 									type="button"
 									className="dms-action-btn dms-action-btn-primary"
 									onClick={handleSaveNewLetter}
+									disabled={isSaving}
 								>
-									<FileCheck size={18} />
-									Привязать гарантийное письмо к пациенту
+									{isSaving ? (
+										<>
+											<Loader2 size={18} className="animate-spin" />
+											Сохранение в базу данных...
+										</>
+									) : (
+										<>
+											<FileCheck size={18} />
+											Привязать гарантийное письмо к пациенту
+										</>
+									)}
 								</button>
 							</div>
 						</div>

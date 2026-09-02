@@ -35,7 +35,6 @@ import {
 	BANK_INSTALLMENT_PROVIDERS,
 	calculateBankInstallment,
 	generateBankInstallmentDeepLink,
-	simulateBankApproval,
 } from "./bankInstallmentEngine";
 import "./bankInstallment.css";
 
@@ -143,25 +142,6 @@ export const BankInstallmentQrModal: React.FC<BankInstallmentQrModalProps> = ({
 			4000,
 		);
 		setTimeout(() => setIsSmsSent(false), 4000);
-	};
-
-	const handleSimulateApproval = () => {
-		const approval = simulateBankApproval(
-			stageAmountKopecks,
-			selectedProvider,
-			patientName,
-			selectedTerm,
-		);
-		setIsApprovedState(true);
-		showToast(approval.confirmationMessageRu, "success", 5000);
-		if (onInstallmentApproved) {
-			onInstallmentApproved({
-				providerId: selectedProvider,
-				approvalId: approval.approvalId,
-				approvedAmountKopecks: approval.approvedAmountKopecks,
-				monthlyPaymentRub: approval.monthlyPaymentRub,
-			});
-		}
 	};
 
 	return (
@@ -415,18 +395,15 @@ export const BankInstallmentQrModal: React.FC<BankInstallmentQrModalProps> = ({
 						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[var(--border,#cbd5e1)]">
 							<div className="text-[11px] text-[var(--muted,#64748b)] flex items-center gap-1.5">
 								<ShieldCheck size={14} className="text-emerald-500 shrink-0" />
-								<span>Деньги поступают на счет клиники сразу в полном объеме</span>
+								<span>Деньги поступают на счет клиники сразу после подтверждения банком</span>
 							</div>
 
 							<button
 								type="button"
-								onClick={handleSimulateApproval}
-								className="min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] shadow-sm transition cursor-pointer"
-								data-testid="simulate-bank-approval-btn"
-								title="Имитировать онлайн-одобрение банком и моментально зачесть аванс за этап"
+								onClick={onClose}
+								className="min-h-[44px] flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-[var(--border,#cbd5e1)] transition cursor-pointer"
 							>
-								<Sparkles size={14} />
-								<span>Имитировать одобрение банком</span>
+								Закрыть
 							</button>
 						</div>
 					)}

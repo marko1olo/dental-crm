@@ -24,7 +24,7 @@ import {
 } from "./DmsInsurersHubModal.js";
 
 import {
-	DEFAULT_PATIENT_GUARANTEE_LETTERS,
+	type PatientGuaranteeLetter,
 	DEFAULT_BILL_ITEMS_TO_SPLIT,
 	COMMON_DENTAL_ICD10_DIAGNOSES,
 	FDI_ADULT_TEETH_UPPER,
@@ -150,11 +150,71 @@ describe("DmsInsurersHubModal — 1-Click Export Engines (XML, CSV, A4 HTML)", (
 	});
 });
 
+const TEST_PATIENT_GUARANTEE_LETTERS: readonly PatientGuaranteeLetter[] = [
+	{
+		id: "gl-sogaz-001",
+		letterNumber: "ГП-СОГАЗ-2026-8812",
+		insurerKey: "sogaz",
+		insurerName: "АО «СОГАЗ»",
+		patientId: "pat-101",
+		patientFullName: "Иванов Сергей Алексеевич",
+		policyNumber: "СГЗ-77-991283",
+		issueDate: "2026-08-01",
+		validFrom: "2026-08-01",
+		validUntil: "2026-09-01",
+		maxCoverageKopecks: 5000000, // 50 000 руб
+		usedAmountKopecks: 1250000, // 12 500 руб (25% - Зеленый)
+		franchisePct: 0,
+		franchiseType: "percent",
+		franchiseFixedKopecks: 0,
+		approvedTeethFdi: ["1.6", "1.5", "2.6"],
+		approvedServiceCodes804n: [
+			"A16.07.002.001",
+			"A16.07.002.002",
+			"A16.07.030.001",
+			"A16.07.008.002",
+			"A11.07.010",
+			"A06.07.003",
+		],
+		approvedDiagnosisMkb10: ["K04.0", "K02.1"],
+		curatorFullName: "Смирнова Елена Викторовна",
+		curatorPhone: "8 (800) 333-08-88 доб. 114",
+		curatorEmail: "dms-expert@sogaz.ru",
+		notes: "Согласовано лечение зуба 1.6 по пульпиту и зуба 2.6 по кариесу дентина.",
+		status: "active",
+	},
+	{
+		id: "gl-ingos-002",
+		letterNumber: "ИНГОС-МЕД-26-44091",
+		insurerKey: "ingosstrakh",
+		insurerName: "СПАО «Ингосстрах»",
+		patientId: "pat-101",
+		patientFullName: "Иванов Сергей Алексеевич",
+		policyNumber: "ИНГ-902-11487",
+		issueDate: "2026-07-10",
+		validFrom: "2026-07-10",
+		validUntil: "2026-08-10",
+		maxCoverageKopecks: 3500000, // 35 000 руб
+		usedAmountKopecks: 2975000, // 29 750 руб (85% - Желтый)
+		franchisePct: 15,
+		franchiseType: "percent",
+		franchiseFixedKopecks: 0,
+		approvedTeethFdi: ["3.8", "4.8"],
+		approvedServiceCodes804n: ["A16.07.001.002", "A11.07.010", "A06.07.004"],
+		approvedDiagnosisMkb10: ["K01.1"],
+		curatorFullName: "Воронов Михаил Петрович",
+		curatorPhone: "8 (495) 956-55-55 доб. 881",
+		curatorEmail: "med@ingos.ru",
+		notes: "Удаление ретинированных зубов мудрости с сооплатой франшизы 15%.",
+		status: "expired",
+	},
+];
+
 describe("DmsGuaranteeLettersModal — Guarantee Letters, FDI Formula & Diagnoses", () => {
 	it("3.1 Validates default patient guarantee letters and limit thresholds", () => {
-		assert.ok(DEFAULT_PATIENT_GUARANTEE_LETTERS.length >= 2);
+		assert.ok(TEST_PATIENT_GUARANTEE_LETTERS.length >= 2);
 
-		const activeLetter = DEFAULT_PATIENT_GUARANTEE_LETTERS[0]!;
+		const activeLetter = TEST_PATIENT_GUARANTEE_LETTERS[0]!;
 		assert.equal(activeLetter.status, "active");
 		assert.equal(activeLetter.maxCoverageKopecks, 5000000); // 50,000.00 RUB
 		assert.equal(activeLetter.usedAmountKopecks, 1250000); // 12,500.00 RUB (25%)
@@ -163,7 +223,7 @@ describe("DmsGuaranteeLettersModal — Guarantee Letters, FDI Formula & Diagnose
 		assert.equal(usedPct, 25);
 		assert.ok(usedPct < 80, "25% usage should be in green range (<80%)");
 
-		const expiredLetter = DEFAULT_PATIENT_GUARANTEE_LETTERS[1]!;
+		const expiredLetter = TEST_PATIENT_GUARANTEE_LETTERS[1]!;
 		const usedPctExpired = Math.round((expiredLetter.usedAmountKopecks / expiredLetter.maxCoverageKopecks) * 100);
 		assert.equal(usedPctExpired, 85);
 		assert.ok(usedPctExpired >= 80 && usedPctExpired < 100, "85% usage should be in yellow warning range (80-99%)");

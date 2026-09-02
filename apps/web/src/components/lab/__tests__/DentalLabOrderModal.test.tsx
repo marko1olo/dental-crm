@@ -216,11 +216,17 @@ describe("DentalLabOrderModal — Printable Blank Vector Barcode & QR Code Engin
 		assert.ok(specialSvg.includes("<svg"));
 	});
 
-	test("generateQrCodeSvg возвращает 21x21 SVG матрицу с угловыми маркерами", () => {
+	test("generateQrCodeSvg возвращает валидную ISO/IEC 18004 SVG матрицу QR-кода", () => {
+		const shortCode = "ZTL-ORDER-123";
+		const shortQrSvg = generateQrCodeSvg(shortCode);
+		assert.ok(shortQrSvg.startsWith("<svg"), "Должен начинаться с <svg");
+		assert.ok(shortQrSvg.includes("viewBox=\"0 0 84 84\""), "Размер матрицы версии 1: 21 * 4 = 84px");
+		assert.ok(shortQrSvg.includes("<rect"), "Должен содержать матричные пиксели");
+
 		const portalUrl = "http://localhost:5173/#/portal/lab-order/test-token-123";
 		const qrSvg = generateQrCodeSvg(portalUrl);
 		assert.ok(qrSvg.startsWith("<svg"), "Должен начинаться с <svg");
-		assert.ok(qrSvg.includes("viewBox=\"0 0 84 84\""), "Размер матрицы 21 * 4 = 84px");
+		assert.ok(qrSvg.includes("viewBox="), "Должен содержать адаптивный viewBox матрицы");
 		assert.ok(qrSvg.includes("<rect"), "Должен содержать матричные пиксели");
 		assert.ok(qrSvg.includes("</svg>"), "Должен быть валидным закрытым SVG");
 	});

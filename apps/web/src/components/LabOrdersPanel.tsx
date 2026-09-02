@@ -1008,8 +1008,28 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 				isOpen={isTrackingDrawerOpen}
 				onClose={() => setIsTrackingDrawerOpen(false)}
 				order={selectedOrderForTracking}
-				onStageUpdate={async (orderId, newStage) => {
-					await fetchOrders();
+				onStageUpdate={async (orderId, newStage, note) => {
+					try {
+						const res = await fetch(`/api/lab/orders/${orderId}`, {
+							method: "PATCH",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({
+								stage: newStage,
+								notes: note,
+							}),
+						});
+						if (!res.ok) {
+							const errData = await res.json().catch(() => null);
+							throw new Error(errData?.message || `Ошибка смены этапа (${res.status})`);
+						}
+						showToast("Этап наряда ЗТЛ успешно сохранен в базе данных", "success");
+						await fetchOrders();
+					} catch (err: any) {
+						showToast(err.message || "Не удалось обновить этап наряда в БД", "error");
+					}
 				}}
 			/>
 		</div>

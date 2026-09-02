@@ -15,6 +15,7 @@ import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
 	Building2,
+	EyeOff,
 	FileText,
 	Megaphone,
 	Plus,
@@ -22,6 +23,7 @@ import {
 	UserPlus,
 	X,
 } from "lucide-react";
+import { generateAnonymousPatientCode } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { parsePatientDictationLocal } from "../../lib/smartPatientParser";
@@ -148,6 +150,7 @@ export function PatientCreationModal({
 			snils: patientAdministrativeProfileDraft.snils,
 			birthDate: newPatientBirthDate,
 			identityDocument: patientAdministrativeProfileDraft.identityDocument,
+			isAnonymous: patientAdministrativeProfileDraft.isAnonymous,
 		},
 		fieldRequirements,
 	);
@@ -226,6 +229,88 @@ export function PatientCreationModal({
 
 				{/* Modal Body */}
 				<div className="create-patient-modal-body">
+					{/* Decree 659: Anonymous Stealth Mode Toggle */}
+					<div
+						style={{
+							marginBottom: "12px",
+							padding: "10px 12px",
+							borderRadius: "8px",
+							border: patientAdministrativeProfileDraft.isAnonymous
+								? "1px solid rgba(245, 158, 11, 0.4)"
+								: "1px solid var(--glass-border)",
+							backgroundColor: patientAdministrativeProfileDraft.isAnonymous
+								? "rgba(245, 158, 11, 0.08)"
+								: "var(--glass-panel)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: "12px",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+							<EyeOff size={18} style={{ flexShrink: 0, color: patientAdministrativeProfileDraft.isAnonymous ? "#f59e0b" : "var(--muted)" }} />
+							<div style={{ fontSize: "12px" }}>
+								<div style={{ fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
+									Анонимный приём (ПП РФ №659)
+									{patientAdministrativeProfileDraft.isAnonymous && (
+										<span style={{ fontSize: "10px", fontWeight: "bold", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#f59e0b", color: "#ffffff" }}>
+											АКТИВЕН
+										</span>
+									)}
+								</div>
+								<div style={{ fontSize: "11px", color: "var(--muted)" }}>
+									{patientAdministrativeProfileDraft.isAnonymous
+										? "Паспорт и СНИЛС не требуются. Оплата только коммерческая (ОМС запрещён законом)."
+										: "Режим создания карты без паспорта с фиксацией со слов пациента"}
+								</div>
+							</div>
+						</div>
+						<button
+							type="button"
+							style={{
+								padding: "6px 12px",
+								fontSize: "12px",
+								fontWeight: 600,
+								borderRadius: "6px",
+								cursor: "pointer",
+								flexShrink: 0,
+								backgroundColor: patientAdministrativeProfileDraft.isAnonymous
+									? "#f59e0b"
+									: "var(--paper-strong)",
+								color: patientAdministrativeProfileDraft.isAnonymous
+									? "#ffffff"
+									: "var(--ink)",
+								border: "1px solid var(--glass-border)",
+								minHeight: "36px",
+							}}
+							onClick={() => {
+								const nextIsAnon = !patientAdministrativeProfileDraft.isAnonymous;
+								if (nextIsAnon) {
+									const anonCode = generateAnonymousPatientCode();
+									setPatientAdministrativeProfileDraft((prev) => ({
+										...prev,
+										isAnonymous: true,
+										anonymousCode: anonCode,
+									}));
+									if (!newPatientName.trim() || newPatientName.startsWith("UUID_ANON")) {
+										setNewPatientName(anonCode);
+									}
+								} else {
+									setPatientAdministrativeProfileDraft((prev) => ({
+										...prev,
+										isAnonymous: false,
+										anonymousCode: null,
+									}));
+									if (newPatientName.startsWith("UUID_ANON")) {
+										setNewPatientName("");
+									}
+								}
+							}}
+						>
+							{patientAdministrativeProfileDraft.isAnonymous ? "Отключить" : "Включить"}
+						</button>
+					</div>
+
 					{/* Full Name field with voice & smart parse preview */}
 					<div className="create-patient-form-field">
 						<div className="create-patient-label-row">

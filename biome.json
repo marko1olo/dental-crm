@@ -37,7 +37,8 @@
 			"!**/package-lock.json",
 			"!**/knip_report*.txt",
 			"!**/madge_report*.txt",
-			"!**/biome_out*.txt"
+			"!**/biome_out*.txt",
+			"!**/.claude"
 		]
 	},
 	"css": {

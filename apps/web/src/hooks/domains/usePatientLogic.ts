@@ -613,10 +613,13 @@ export function usePatientLogic({
 			setError("Укажите ФИО пациента перед созданием карточки.");
 			return;
 		}
+		const isAnon = patientAdministrativeProfileDraft.isAnonymous === true;
 		const payload = {
 			fullName,
 			phone: nullablePatientDraftValue(newPatientPhone),
 			birthDate: nullablePatientDraftValue(newPatientBirthDate),
+			isAnonymous: isAnon,
+			anonymousCode: isAnon ? (patientAdministrativeProfileDraft.anonymousCode || null) : null,
 		};
 		setIsPatientCreating(true);
 		try {

@@ -1,4 +1,5 @@
 import {
+	type AnesthesiaSafetyLevel,
 	isValidFdiToothNumber,
 	synthesizeProtocolFromOrder804nService,
 	enrichDiaryFrom804nServices,
@@ -1490,7 +1491,7 @@ export interface AnesthesiaCarpuleCalculation {
 	readonly safetyPercentage: number;
 	readonly isOverdose: boolean;
 	readonly isCardioRestricted: boolean;
-	readonly safetyLevel: "safe" | "caution" | "warning" | "danger";
+	readonly safetyLevel: AnesthesiaSafetyLevel;
 	readonly warningMessage?: string | undefined;
 	readonly formattedSafetyNote: string;
 	readonly formattedTreatmentSnippet: string;
@@ -1522,15 +1523,17 @@ export function calculateAnesthesiaCarpulesSafety(params: {
 						: "ultracain_ds"
 	) as AnesthesiaDrugKey;
 
-	const weight = Math.max(
-		10,
-		Math.min(
-			250,
-			Number.isFinite(params.patientWeightKg) && (params.patientWeightKg ?? 0) > 0
-				? (params.patientWeightKg ?? 70)
-				: 70,
-		),
+	const hasValidWeight =
+		typeof params.patientWeightKg === "number" &&
+		Number.isFinite(params.patientWeightKg) &&
+		params.patientWeightKg > 0;
+	const isPediatric = Boolean(
+		params.isPediatric ||
+			(params.patientAgeYears !== null &&
+				params.patientAgeYears !== undefined &&
+				params.patientAgeYears < 18),
 	);
+	const weight = hasValidWeight ? params.patientWeightKg! : 0;
 	const carpules = Math.max(
 		0.25,
 		Number.isFinite(params.carpulesCount) && (params.carpulesCount ?? 0) > 0
@@ -1543,7 +1546,7 @@ export function calculateAnesthesiaCarpulesSafety(params: {
 		patientWeightKg: weight,
 		carpulesCount: carpules,
 		patientAgeYears: params.patientAgeYears,
-		isPediatric: params.isPediatric,
+		isPediatric,
 		somaticProfile: params.somaticProfile,
 	});
 
@@ -1551,7 +1554,10 @@ export function calculateAnesthesiaCarpulesSafety(params: {
 	const method = params.methodNameRu || "Инфильтрационная/проводниковая";
 	const formattedTreatmentSnippet = `Анестезия: ${method}${toothSuffix} — ${safety.drug.commercialName} (${safety.drug.activeSubstance}) ${carpules} карп. (${safety.totalVolumeMl} мл, ${safety.totalDoseMg} мг). Обезболивание глубокое, наступило через 2–3 мин.`;
 
-	const formattedSafetyNote = `Расчет дозировки: ${safety.drug.commercialName} • Введено: ${carpules} карп. (${safety.totalVolumeMl} мл / ${safety.totalDoseMg} мг) • Предел по весу ${weight} кг: макс. ${safety.maxSafeCarpules} карп. (${safety.maxSafeDoseMg} мг) • ${safety.safetyPercentage}% от предела безопасности.`;
+	const formattedSafetyNote =
+		safety.safetyLevel === "REQUIRES_WEIGHT_INPUT"
+			? (safety.warningMessage || "Укажите фактический вес пациента для расчета анестезии!")
+			: `Расчет дозировки: ${safety.drug.commercialName} • Введено: ${carpules} карп. (${safety.totalVolumeMl} мл / ${safety.totalDoseMg} мг) • Предел по весу ${weight} кг: макс. ${safety.maxSafeCarpules} карп. (${safety.maxSafeDoseMg} мг) • ${safety.safetyPercentage}% от предела безопасности.`;
 
 	return {
 		drugKey: safety.drug.key,

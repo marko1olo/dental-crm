@@ -12,7 +12,6 @@ import {
 } from "@dental/shared";
 import {
 	type CbctVoxelVolume,
-	createSyntheticDentalCbctVolume,
 	createEmptyCbctVolume,
 	disposeCbctVolume,
 } from "../components/radiology/cbctMprMath";
@@ -111,7 +110,7 @@ describe("Echelon 2: Memory Disposal & Render Profiling Invariants", () => {
 		const volumes: CbctVoxelVolume[] = [];
 
 		for (let i = 0; i < 20; i++) {
-			const vol = createSyntheticDentalCbctVolume(160, 160, 100, 0.4);
+			const vol = createEmptyCbctVolume(160, 160, 100, 0.4);
 			assert.ok(vol.data instanceof Int16Array, "Volume allocated with Int16Array data buffer");
 			assert.equal(vol.data.length, 160 * 160 * 100, "2,560,000 voxels allocated");
 			assert.equal(vol.isDisposed, false, "Active volume is not disposed");

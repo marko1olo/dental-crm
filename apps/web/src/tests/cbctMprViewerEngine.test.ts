@@ -297,6 +297,8 @@ describe("CBCT 3D MPR & Panoramic Dental Arch Spline Engine", () => {
 
 			// Measure bone metrics
 			const metrics = measureAlveolarRidgeCrossSection(firstSlice);
+			assert.ok(metrics);
+			if (!metrics) throw new Error("metrics must not be null");
 			assert.ok(metrics.heightMm > 0);
 			assert.ok(metrics.crestWidthMm > 0);
 			assert.ok(typeof metrics.isAdequateForImplant === "boolean");

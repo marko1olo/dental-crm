@@ -2,9 +2,12 @@ import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
 import { Calendar, CheckCircle2, Clock, FileSpreadsheet, FileText, Gift, Shield, Stethoscope } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
+import { showToast } from "../GlobalToast";
 import { money } from "../../utils/financeUtils";
 import { PatientJourneyTimeline } from "../PatientJourneyTimeline";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal";
+import type { DmsGuaranteeLetter } from "../insurance/insuranceMath";
 import { DmsInsuranceManagerModal } from "../insurance/dmsManager/DmsInsuranceManagerModal";
 import { DmsRegistryExportModal } from "../insurance/DmsRegistryExportModal";
 import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
@@ -249,6 +252,41 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 			const [isDmsManagerOpen, setIsDmsManagerOpen] = useState(false);
 			const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 
+			const handleSaveDmsLetter = useCallback(
+				async (letter: DmsGuaranteeLetter) => {
+					try {
+						const isExisting =
+							letter.id &&
+							!letter.id.startsWith("letter-") &&
+							!letter.id.startsWith("gl-");
+						const endpoint = isExisting
+							? `/api/insurance/guarantee-letters/${letter.id}`
+							: "/api/insurance/guarantee-letters";
+						const method = isExisting ? "PUT" : "POST";
+						const res = await fetch(endpoint, {
+							method,
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify(letter),
+						});
+						if (!res.ok) {
+							const errBody = await res.json().catch(() => null);
+							throw new Error(errBody?.message || `Ошибка сохранения (${res.status})`);
+						}
+						showToast(
+							`Гарантийное письмо № ${letter.letterNumber} (${letter.insurerName}) сохранено в базе данных`,
+							"success",
+						);
+						setIsDmsLetterOpen(false);
+					} catch (err: any) {
+						showToast(err.message || "Не удалось сохранить гарантийное письмо", "error");
+					}
+				},
+				[],
+			);
+
 			return (
 				<div
 					data-testid="patient-workspace-view"
@@ -417,6 +455,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 							id: patientId,
 							fullName: patientName || "",
 						}}
+						onSave={handleSaveDmsLetter}
 					/>
 
 					{/* DMS Registry Export Modal */}

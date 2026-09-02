@@ -8,7 +8,16 @@
  * 4. Touch-first & desktop medical density interface on DENTE tokens.
  */
 
-import React, { useMemo, useState, useEffect } from "react";
+import {
+	type CatalogServiceLookup,
+	formatKopecksRu,
+	type PlanItemForValidation,
+	type PlanToInvoiceValidationReport,
+	type PriceLockResolutionPolicy,
+	sumKopecks,
+	type ValidatedPlanItemResult,
+	validatePlanToInvoice,
+} from "@dental/shared";
 import {
 	AlertCircle,
 	AlertTriangle,
@@ -34,18 +43,11 @@ import {
 	UserCheck,
 	X,
 } from "lucide-react";
-import {
-	type CatalogServiceLookup,
-	type PlanItemForValidation,
-	type PlanToInvoiceValidationReport,
-	type PriceLockResolutionPolicy,
-	type ValidatedPlanItemResult,
-	validatePlanToInvoice,
-	formatKopecksRu,
-	sumKopecks,
-import { showToast } from "../GlobalToast";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { showToast } from "../GlobalToast";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 
 export interface InvoiceGenerationModalProps {
@@ -90,12 +92,19 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 	const { dashboard, auth } = useAppLogicContext();
 
 	// Resolution overrides and analogue choices
-	const [itemResolutions, setItemResolutions] = useState<Record<string, PriceLockResolutionPolicy>>({});
-	const [itemAnalogueSelections, setItemAnalogueSelections] = useState<Record<string, string>>({});
-	const [documentType, setDocumentType] = useState<"invoice" | "work_order" | "completed_act">("invoice");
+	const [itemResolutions, setItemResolutions] = useState<
+		Record<string, PriceLockResolutionPolicy>
+	>({});
+	const [itemAnalogueSelections, setItemAnalogueSelections] = useState<
+		Record<string, string>
+	>({});
+	const [documentType, setDocumentType] = useState<
+		"invoice" | "work_order" | "completed_act"
+	>("invoice");
 	const [adminPinInput, setAdminPinInput] = useState<string>("");
 	const [adminReasonInput, setAdminReasonInput] = useState<string>("");
-	const [adminOverrideAuthorized, setAdminOverrideAuthorized] = useState<boolean>(false);
+	const [adminOverrideAuthorized, setAdminOverrideAuthorized] =
+		useState<boolean>(false);
 	const [adminStaffName, setAdminStaffName] = useState<string>("");
 	const [isVerifyingPin, setIsVerifyingPin] = useState<boolean>(false);
 	const [showAdminPinDrawer, setShowAdminPinDrawer] = useState<boolean>(false);
@@ -109,7 +118,9 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			code804n: c.code || c.code804n || "",
 			title: c.title || c.name || "",
 			category: c.category || "other",
-			basePriceKopecks: Math.round(Number(c.priceRub || c.basePriceRub || 0) * 100),
+			basePriceKopecks: Math.round(
+				Number(c.priceRub || c.basePriceRub || 0) * 100,
+			),
 			active: c.isActive !== false,
 			isArchived: c.isActive === false,
 			decree458Expensive: Boolean(c.isDecree458Expensive),
@@ -185,7 +196,11 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			newMap[it.id] = "LOCK_ORIGINAL_PRICE";
 		}
 		setItemResolutions(newMap);
-		showToast("Применена фиксация оригинальных цен плана ко всем позициям", "info", 3000);
+		showToast(
+			"Применена фиксация оригинальных цен плана ко всем позициям",
+			"info",
+			3000,
+		);
 	};
 
 	// Batch update all items to current catalog
@@ -195,7 +210,11 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			newMap[it.id] = "UPDATE_TO_CURRENT_PRICE";
 		}
 		setItemResolutions(newMap);
-		showToast("Все позиции пересчитаны по актуальному прейскуранту", "info", 3000);
+		showToast(
+			"Все позиции пересчитаны по актуальному прейскуранту",
+			"info",
+			3000,
+		);
 	};
 
 	// 1-Click Replace single archived item with suggested 804n analogue
@@ -208,14 +227,22 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			...prev,
 			[itemId]: "REPLACE_WITH_804N_ANALOGUE",
 		}));
-		showToast("Позиция заменена на актуальный аналог номенклатуры 804н", "success", 3000);
+		showToast(
+			"Позиция заменена на актуальный аналог номенклатуры 804н",
+			"success",
+			3000,
+		);
 	};
 
 	// Verify Admin PIN (DEFECT-PRICE-01)
 	const handleVerifyAdminPin = async () => {
 		const rawPin = adminPinInput.trim();
 		if (!rawPin || rawPin.length < 4) {
-			showToast("PIN-код администратора должен быть не менее 4 символов", "warning", 3000);
+			showToast(
+				"PIN-код администратора должен быть не менее 4 символов",
+				"warning",
+				3000,
+			);
 			return;
 		}
 
@@ -228,7 +255,11 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			}).catch(() => null);
 
 			if (res && !res.ok && res.status === 401) {
-				showToast("Неверный PIN-код администратора. Отказано в согласовании.", "warning", 4000);
+				showToast(
+					"Неверный PIN-код администратора. Отказано в согласовании.",
+					"warning",
+					4000,
+				);
 				setIsVerifyingPin(false);
 				return;
 			}
@@ -236,7 +267,11 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			setAdminOverrideAuthorized(true);
 			setAdminStaffName(auth?.currentUser?.name || "Управляющий клиники");
 			setShowAdminPinDrawer(false);
-			showToast("Согласование фиксации/пересчета цен успешно авторизовано!", "success", 4000);
+			showToast(
+				"Согласование фиксации/пересчета цен успешно авторизовано!",
+				"success",
+				4000,
+			);
 		} catch {
 			setAdminOverrideAuthorized(true);
 			setAdminStaffName(auth?.currentUser?.name || "Управляющий клиники");
@@ -250,7 +285,11 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 	// Submit and generate invoice
 	const handleCreateInvoice = async () => {
 		if (!report.canGenerateInvoice) {
-			showToast("Формирование заблокировано: устраните архивные или нулевые позиции", "warning", 4000);
+			showToast(
+				"Формирование заблокировано: устраните архивные или нулевые позиции",
+				"warning",
+				4000,
+			);
 			return;
 		}
 
@@ -275,12 +314,16 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 					categoryRu: it.categoryRu,
 					quantity: it.quantity,
 					planUnitPriceRub: Number((it.planUnitPriceKopecks / 100).toFixed(2)),
-					effectiveUnitPriceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
+					effectiveUnitPriceRub: Number(
+						(it.effectiveUnitPriceKopecks / 100).toFixed(2),
+					),
 					discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
 					resolutionPolicy: it.selectedResolution,
 					serviceId: it.suggested804nAnalogue?.serviceId,
 				})),
-				adminOverridePin: adminOverrideAuthorized ? adminPinInput.trim() : undefined,
+				adminOverridePin: adminOverrideAuthorized
+					? adminPinInput.trim()
+					: undefined,
 				adminOverrideReason: adminReasonInput.trim() || undefined,
 				notes: `Выписан ${documentType === "work_order" ? "наряд-заказ" : "счет"} по плану ${planNumber}. ${
 					report.totalClinicAbsorptionKopecks > 0
@@ -291,13 +334,17 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 
 			const res = await fetch("/api/invoices/generate-from-plan", {
 				method: "POST",
-				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
 				body: JSON.stringify(payload),
 			});
 
 			if (!res.ok) {
 				const errJson = await res.json().catch(() => ({}));
-				throw new Error(errJson.message || `Ошибка сервера (HTTP ${res.status})`);
+				throw new Error(
+					errJson.message || `Ошибка сервера (HTTP ${res.status})`,
+				);
 			}
 
 			const createdData = await res.json();
@@ -344,7 +391,8 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 									</span>
 								) : report.isPlanExpired ? (
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-										<Clock size={12} /> Срок действия сметы истек ({report.planAgeDays} дн.)
+										<Clock size={12} /> Срок действия сметы истек (
+										{report.planAgeDays} дн.)
 									</span>
 								) : (
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30">
@@ -411,7 +459,10 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 				<div className="flex items-center justify-between px-6 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] text-xs">
 					<div className="flex items-center gap-4">
 						<span className="text-[var(--ink-muted)]">
-							Всего позиций: <strong className="text-[var(--ink)]">{report.totalItemsCount}</strong>
+							Всего позиций:{" "}
+							<strong className="text-[var(--ink)]">
+								{report.totalItemsCount}
+							</strong>
 						</span>
 						{report.increasedItemsCount > 0 && (
 							<span className="text-amber-600 dark:text-amber-400 font-medium">
@@ -425,7 +476,8 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 						)}
 						{report.totalClinicAbsorptionKopecks > 0 && (
 							<span className="text-emerald-600 dark:text-emerald-400 font-medium">
-								Гарантия клиники: +{formatKopecksRu(report.totalClinicAbsorptionKopecks)}
+								Гарантия клиники: +
+								{formatKopecksRu(report.totalClinicAbsorptionKopecks)}
 							</span>
 						)}
 					</div>
@@ -453,8 +505,13 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 					{report.blockingReasons.length > 0 && !adminOverrideAuthorized && (
 						<div className="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs">
 							<div className="flex items-center gap-2 font-bold mb-1">
-								<ShieldAlert size={16} className="text-rose-600 dark:text-rose-400" />
-								<span>Оформление заблокировано системой финансового контроля:</span>
+								<ShieldAlert
+									size={16}
+									className="text-rose-600 dark:text-rose-400"
+								/>
+								<span>
+									Оформление заблокировано системой финансового контроля:
+								</span>
 							</div>
 							<ul className="list-disc pl-5 space-y-0.5">
 								{report.blockingReasons.map((reason, idx) => (
@@ -502,12 +559,18 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 												<div className="mt-1.5 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px]">
 													<div className="font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-1">
 														<AlertTriangle size={12} />
-														<span>Услуга архивирована. Рекомендуемый аналог 804н:</span>
+														<span>
+															Услуга архивирована. Рекомендуемый аналог 804н:
+														</span>
 													</div>
 													{hasAnalogue ? (
 														<div className="mt-1 flex items-center justify-between gap-2">
 															<span className="text-[var(--ink)] font-medium truncate">
-																<strong>{it.suggested804nAnalogue?.code804n}</strong> {it.suggested804nAnalogue?.title} ({it.suggested804nAnalogue?.basePriceRub} ₽)
+																<strong>
+																	{it.suggested804nAnalogue?.code804n}
+																</strong>{" "}
+																{it.suggested804nAnalogue?.title} (
+																{it.suggested804nAnalogue?.basePriceRub} ₽)
 															</span>
 															<button
 																type="button"
@@ -565,14 +628,21 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 												onChange={(e) =>
 													setItemResolutions((prev) => ({
 														...prev,
-														[it.itemId]: e.target.value as PriceLockResolutionPolicy,
+														[it.itemId]: e.target
+															.value as PriceLockResolutionPolicy,
 													}))
 												}
 												className="px-2 py-1 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-lg text-xs font-medium focus:ring-2 focus:ring-teal-500"
 											>
-												<option value="LOCK_ORIGINAL_PRICE">Зафиксировать план</option>
-												<option value="UPDATE_TO_CURRENT_PRICE">Текущий прайс</option>
-												<option value="REPLACE_WITH_804N_ANALOGUE">Аналог 804н</option>
+												<option value="LOCK_ORIGINAL_PRICE">
+													Зафиксировать план
+												</option>
+												<option value="UPDATE_TO_CURRENT_PRICE">
+													Текущий прайс
+												</option>
+												<option value="REPLACE_WITH_804N_ANALOGUE">
+													Аналог 804н
+												</option>
 												<option value="ADMIN_OVERRIDE">Согласование</option>
 											</select>
 										</td>
@@ -581,7 +651,8 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 											{formatKopecksRu(it.effectiveLineNetKopecks)}
 											{it.clinicAbsorptionKopecks > 0 && (
 												<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">
-													Скидка клиники: {formatKopecksRu(it.clinicAbsorptionKopecks)}
+													Скидка клиники:{" "}
+													{formatKopecksRu(it.clinicAbsorptionKopecks)}
 												</div>
 											)}
 										</td>
@@ -596,7 +667,10 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 				{showAdminPinDrawer && (
 					<div className="px-6 py-4 bg-amber-500/10 border-t border-amber-500/30 flex items-center justify-between gap-4">
 						<div className="flex items-center gap-3 flex-1">
-							<Key size={20} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<Key
+								size={20}
+								className="text-amber-600 dark:text-amber-400 shrink-0"
+							/>
 							<div>
 								<div className="font-bold text-xs text-amber-900 dark:text-amber-100">
 									Авторизация управляющего клиники (Admin Override)
@@ -645,14 +719,18 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 				<footer className="flex items-center justify-between px-6 py-4 bg-[var(--paper)] border-t border-[var(--line)]">
 					<div className="flex items-center gap-6">
 						<div>
-							<div className="text-[11px] text-[var(--ink-muted)]">Стоимость по смете:</div>
+							<div className="text-[11px] text-[var(--ink-muted)]">
+								Стоимость по смете:
+							</div>
 							<div className="text-sm font-medium text-[var(--ink)]">
 								{formatKopecksRu(report.originalPlanNetKopecks)}
 							</div>
 						</div>
 						{report.totalClinicAbsorptionKopecks > 0 && (
 							<div>
-								<div className="text-[11px] text-emerald-600 dark:text-emerald-400">Гарантия клиники:</div>
+								<div className="text-[11px] text-emerald-600 dark:text-emerald-400">
+									Гарантия клиники:
+								</div>
 								<div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
 									-{formatKopecksRu(report.totalClinicAbsorptionKopecks)}
 								</div>
