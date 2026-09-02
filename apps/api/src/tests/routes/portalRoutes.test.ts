@@ -11,6 +11,7 @@ import {
 	patientInvoices,
 	patients,
 	payments,
+	sberbankTransactions,
 	treatmentPlans,
 } from "../../db/schema.js";
 import { portalRoutes } from "../../routes/portal.js";
@@ -356,6 +357,31 @@ describe("Patient Personal Portal API Routes", () => {
 		assert.match(qrBody.sbpPayload.sbpNspkPayloadString, /https:\/\/qr\.nspk\.ru\/SBPA/);
 		assert.ok(qrBody.sbpPayload.qrSvg.startsWith("<svg"));
 		assert.ok(qrBody.sbpPayload.availableBanks.length >= 4);
+
+		// Security: Unconfirmed or fake transaction MUST be rejected with 402
+		const unconfirmedRes = await app.inject({
+			method: "POST",
+			url: "/api/portal/payments/confirm-sbp",
+			headers: { authorization: `Bearer ${validToken}` },
+			payload: {
+				invoiceId: INVOICE_ID,
+				amountRub: 35000,
+				sbpTransactionId: "FAKE-UNCONFIRMED-TX",
+			},
+		});
+		assert.equal(unconfirmedRes.statusCode, 402);
+
+		// Seed real confirmed bank transaction in sberbankTransactions
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(sberbankTransactions).values({
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				invoiceId: INVOICE_ID,
+				orderId: "SBP-TX-984210",
+				amount: 3500000,
+				status: "success",
+			});
+		});
 
 		const payRes = await app.inject({
 			method: "POST",

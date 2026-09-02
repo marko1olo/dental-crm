@@ -543,7 +543,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 		}
 	});
 
-	app.post("/api/billing/payments", async (request, reply) => {
+	const handleCreatePayment = async (request: FastifyRequest, reply: FastifyReply) => {
 		if (
 			!(await requireClinicalMutationAccess(
 				request,
@@ -782,7 +782,22 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			}
 			throw error;
 		}
-	});
+	};
+
+	app.post("/api/billing/payments", handleCreatePayment);
+	app.post("/api/finance/payments", handleCreatePayment);
+	app.post<{ Params: { id: string } }>(
+		"/api/billing/invoices/:id/payments",
+		async (request, reply) => {
+			const invoiceId = request.params?.id;
+			const body = (request.body as Record<string, unknown>) || {};
+			(request as any).body = {
+				...body,
+				documentId: body.documentId || invoiceId,
+			};
+			return handleCreatePayment(request, reply);
+		},
+	);
 
 	/**
 	 * POST /api/billing/refunds/partial

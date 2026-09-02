@@ -283,23 +283,6 @@ export class FiscalReceiptFactory {
 		};
 	}
 
-	/**
-	 * Computes deterministic FPD fiscal attribute signature.
-	 */
-	public static computeFiscalSign(
-		fnSerial: string,
-		receiptDocNumber: string,
-		date: Date,
-		amountKopecks: number,
-	): string {
-		const raw = `${fnSerial}:${receiptDocNumber}:${date.toISOString().slice(0, 10)}:${amountKopecks}`;
-		let hash = 0;
-		for (let i = 0; i < raw.length; i++) {
-			hash = (hash << 5) - hash + raw.charCodeAt(i);
-			hash |= 0;
-		}
-		return Math.abs(hash).toString().padStart(10, "0").slice(0, 10);
-	}
 
 	/**
 	 * Builds OFD verification URL for patient check lookup.

@@ -335,48 +335,23 @@ export class LanKktDriverService {
 	/**
 	 * Direct execution of fiscal receipt print command over LAN.
 	 * If hardware is offline or out of paper, returns status "hardware_offline".
+	 * Fiscal document number and fiscal document signature (FPD) MUST be obtained
+	 * strictly from the physical KKT / FN response.
 	 */
 	public static async printFiscalReceipt(
 		receipt: Ffd12ReceiptPayload,
 		config?: Partial<KktLanConfig>,
 	): Promise<KktPrintResult> {
-		const status = await this.checkDeviceStatus(config);
+		const cfg = { ...this.getDefaultConfig(), ...config };
+		const status = await this.checkDeviceStatus(cfg);
 		const now = new Date();
-		const fnSerial = status.fnSerial || process.env.KKT_FN_SERIAL || "9960440302145896";
-		const fiscalDocNumber = String(Math.floor(10000 + Math.random() * 90000));
-		const fiscalSign = FiscalReceiptFactory.computeFiscalSign(
-			fnSerial,
-			fiscalDocNumber,
-			now,
-			receipt.totalKopecks,
-		);
-
-		const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
-			fn: fnSerial,
-			fd: fiscalDocNumber,
-			fpd: fiscalSign,
-			amountKopecks: receipt.totalKopecks,
-			operationType: receipt.tag1054_operationType === 2 ? "income_return" : "income",
-		});
-
-		const qrString = Fiscal54FzService.generate54FzQrString({
-			issuedAt: now,
-			totalRub: receipt.totalKopecks / 100,
-			fnSerial,
-			fiscalDocNumber,
-			fiscalSign,
-			operationType: receipt.tag1054_operationType,
-		});
+		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
 
 		if (!status.online || !status.paperOk) {
 			return {
 				success: false,
 				status: "hardware_offline",
-				fnSerial,
-				fiscalDocumentNumber: fiscalDocNumber,
-				fiscalSign,
-				ofdVerificationUrl: ofdUrl,
-				qrString,
+				fnSerial: fallbackFn,
 				receiptIssuedAt: now.toISOString(),
 				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
 				errorMessage:
@@ -385,15 +360,151 @@ export class LanKktDriverService {
 			};
 		}
 
-		return {
-			success: true,
-			status: "printed",
-			fnSerial,
-			fiscalDocumentNumber: fiscalDocNumber,
-			fiscalSign,
-			ofdVerificationUrl: ofdUrl,
-			qrString,
-			receiptIssuedAt: now.toISOString(),
-		};
+		// Dispatch print job to physical fiscal register
+		try {
+			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
+				const atolTask = this.formatAtolJsonTask(receipt);
+				const controller = new AbortController();
+				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
+
+				let atolResponse: Response;
+				try {
+					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(atolTask),
+						signal: controller.signal,
+					});
+				} finally {
+					clearTimeout(timeoutTimer);
+				}
+
+				if (!atolResponse.ok) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						receiptIssuedAt: now.toISOString(),
+						errorCode: `ATOL_HTTP_${atolResponse.status}`,
+						errorMessage: `Ошибка связи с Web-сервером АТОЛ: HTTP ${atolResponse.status}`,
+					};
+				}
+
+				const atolData = (await atolResponse.json()) as Record<string, unknown>;
+				const results = Array.isArray(atolData.results)
+					? (atolData.results as Record<string, unknown>[])
+					: [atolData];
+				const firstResult = results[0] ?? {};
+
+				const errorCode =
+					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
+				if (errorCode !== 0) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						receiptIssuedAt: now.toISOString(),
+						errorCode: `ATOL_ERR_${errorCode}`,
+						errorMessage: this.mapAtolErrorCode(errorCode),
+					};
+				}
+
+				const fiscalParams =
+					(firstResult.fiscalParams as Record<string, unknown> | undefined) || {};
+				const fiscalDocNumber =
+					fiscalParams.fiscalDocumentNumber !== undefined
+						? String(fiscalParams.fiscalDocumentNumber)
+						: undefined;
+				const fiscalSign =
+					fiscalParams.fiscalDocumentSign !== undefined
+						? String(fiscalParams.fiscalDocumentSign)
+						: undefined;
+				const fnSerial = (fiscalParams.fnNumber as string | undefined) || fallbackFn;
+
+				if (!fiscalDocNumber || !fiscalSign || !fnSerial) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial,
+						receiptIssuedAt: now.toISOString(),
+						errorCode: "KKT_NO_FISCAL_PARAMS",
+						errorMessage:
+							"ККТ не вернула фискальный номер или фискальный признак (ФД / ФПД) из ФН.",
+					};
+				}
+
+				const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
+					fn: fnSerial,
+					fd: fiscalDocNumber,
+					fpd: fiscalSign,
+					amountKopecks: receipt.totalKopecks,
+					operationType:
+						receipt.tag1054_operationType === 2 ? "income_return" : "income",
+				});
+
+				const qrString = Fiscal54FzService.generate54FzQrString({
+					issuedAt: now,
+					totalRub: receipt.totalKopecks / 100,
+					fnSerial,
+					fiscalDocNumber,
+					fiscalSign,
+					operationType: receipt.tag1054_operationType,
+				});
+
+				return {
+					success: true,
+					status: "printed",
+					fnSerial,
+					fiscalDocumentNumber: fiscalDocNumber,
+					fiscalSign,
+					ofdVerificationUrl: ofdUrl,
+					qrString,
+					receiptIssuedAt: now.toISOString(),
+				};
+			}
+
+			// Shtrikh-M protocol handling over TCP
+			if (cfg.model === "shtrikh_m_tcp") {
+				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
+				if (!ping.reachable) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						receiptIssuedAt: now.toISOString(),
+						errorCode: "SHTRIKH_UNREACHABLE",
+						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
+					};
+				}
+
+				return {
+					success: false,
+					status: "hardware_offline",
+					fnSerial: fallbackFn,
+					receiptIssuedAt: now.toISOString(),
+					errorCode: "SHTRIKH_PENDING_SPOOL",
+					errorMessage: "Фискализация через сокет ШТРИХ-М передана в спулер очередей",
+				};
+			}
+
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				receiptIssuedAt: now.toISOString(),
+				errorCode: "UNSUPPORTED_KKT_MODEL",
+				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает синхронную печать без драйвера.`,
+			};
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				receiptIssuedAt: now.toISOString(),
+				errorCode: "KKT_COMMUNICATION_ERROR",
+				errorMessage: `Сбой взаимодействия с ККТ: ${errMsg}`,
+			};
+		}
 	}
 }

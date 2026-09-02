@@ -21,6 +21,9 @@ import {
 	registerSbpQrRoutes,
 	verifySbpWebhookSignature,
 } from "../../routes/sbpQr.js";
+import { registerSberPosWebhookRoutes } from "../../routes/payments/sberPosWebhookRoute.js";
+import { signToken } from "../../utils/cryptoHelper.js";
+import { authTokenSecret } from "../../security/authSecret.js";
 import {
 	fixtureUuid,
 	purgeFixtureOrganizations,
@@ -196,6 +199,7 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 		app = createTenantTestApp();
 		await registerSberbankRoutes(app);
 		await registerSbpQrRoutes(app);
+		await registerSberPosWebhookRoutes(app);
 
 		try {
 			await db.execute(
@@ -583,5 +587,83 @@ describe("Sberbank Webhook Idempotency & Concurrency Tests", () => {
 		);
 		assert.equal(pRows.length, 1);
 		assert.equal(pRows[0]?.amountRub, 4800);
+	});
+
+	test("5. POS Initiate: Cashier double-click with identical idempotencyKey returns 200 isDuplicate=true and does not duplicate transaction", async () => {
+		if (!databaseAvailable) return;
+
+		const staffToken = signToken(
+			{
+				organizationId: ORG_ID,
+				userId: fixtureUuid(TEST_NS, 99),
+				role: "administrator",
+			},
+			authTokenSecret(),
+			3600,
+		);
+		const clinicToken = signToken(
+			{
+				organizationId: ORG_ID,
+			},
+			authTokenSecret(),
+			3600,
+		);
+
+		const idempotencyKey = `pos-idem-${crypto.randomUUID()}`;
+		const payload = {
+			patientId: PATIENT_ID,
+			invoiceId: INVOICE_ID,
+			amountKopecks: 150000,
+			paymentMethodType: "pos_card" as const,
+		};
+
+		const headers = {
+			"x-dente-clinic-token": clinicToken,
+			"x-dente-staff-token": staffToken,
+			"idempotency-key": idempotencyKey,
+		};
+
+		// First click by cashier
+		const firstRes = await app.inject({
+			method: "POST",
+			url: "/api/payments/sberbank/pos/initiate",
+			headers,
+			payload,
+		});
+
+		assert.equal(firstRes.statusCode, 201);
+		const firstBody = firstRes.json();
+		assert.equal(firstBody.success, true);
+		assert.equal(firstBody.isDuplicate, false);
+		assert.equal(firstBody.orderId, idempotencyKey);
+
+		// Second click (duplicate by cashier)
+		const secondRes = await app.inject({
+			method: "POST",
+			url: "/api/payments/sberbank/pos/initiate",
+			headers,
+			payload,
+		});
+
+		assert.equal(secondRes.statusCode, 200);
+		const secondBody = secondRes.json();
+		assert.equal(secondBody.success, true);
+		assert.equal(secondBody.isDuplicate, true);
+		assert.equal(secondBody.orderId, idempotencyKey);
+
+		// Assert sberbank_transactions table has EXACTLY 1 row for this orderId
+		const txRows = await withFixtureTenant(ORG_ID, async () =>
+			db
+				.select()
+				.from(sberbankTransactions)
+				.where(
+					and(
+						eq(sberbankTransactions.organizationId, ORG_ID),
+						eq(sberbankTransactions.orderId, idempotencyKey),
+					),
+				),
+		);
+		assert.equal(txRows.length, 1);
+		assert.equal(txRows[0]?.amount, 150000);
 	});
 });

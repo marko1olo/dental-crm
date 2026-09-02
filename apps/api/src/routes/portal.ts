@@ -1,5 +1,5 @@
 import { createHash, randomInt } from "node:crypto";
-import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
 import {
 	namedDevelopmentModeActive,
@@ -19,11 +19,13 @@ import {
 	patients,
 	payments,
 	portalOtpCodes,
+	sberbankTransactions,
 	treatmentPlanItemsNew,
 	treatmentPlans,
 	treatmentPlanStages,
 	visitDiaries,
 } from "../db/schema.js";
+import { SberbankClient } from "../services/sberbankClient.js";
 import {
 	resolveChannelCredentials,
 	sendThroughChannel,
@@ -2089,6 +2091,16 @@ export const portalRoutes: FastifyPluginAsync = async (
 			const qrSvg = generateDeterministicQrSvg(sbpNspkPayloadString, 180);
 			const expiresAt = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
 
+			// Register pending transaction in sberbankTransactions for SBP audit trail
+			await db.insert(sberbankTransactions).values({
+				organizationId: auth.organizationId,
+				patientId: auth.patientId,
+				invoiceId: invoiceId || null,
+				orderId: qrId,
+				amount: amountKopecks,
+				status: "WAITING_FOR_CARD",
+			});
+
 			const sbpPayload = {
 				qrId,
 				invoiceId: invoiceId || undefined,
@@ -2169,48 +2181,152 @@ export const portalRoutes: FastifyPluginAsync = async (
 			typeof request.body?.invoiceId === "string" ? request.body.invoiceId.trim() : "";
 		const stageId =
 			typeof request.body?.stageId === "string" ? request.body.stageId.trim() : "";
-		const explicitAmount =
-			typeof request.body?.amountRub === "number" && request.body.amountRub > 0
-				? request.body.amountRub
-				: 35000;
 		const sbpTxId =
 			typeof request.body?.sbpTransactionId === "string"
 				? request.body.sbpTransactionId.trim()
-				: `TX-${Date.now()}`;
+				: "";
+
+		if (!invoiceId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Параметр invoiceId обязателен для подтверждения оплаты.",
+			});
+		}
+
+		if (!sbpTxId) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Идентификатор транзакции СБП (sbpTransactionId) обязателен.",
+			});
+		}
+
+		const explicitAmount =
+			typeof request.body?.amountRub === "number" && request.body.amountRub > 0
+				? request.body.amountRub
+				: undefined;
 
 		const now = new Date();
-		const nowIso = now.toISOString();
 
 		return withTenantCtx(auth.organizationId, async () => {
-			let totalAmount = explicitAmount;
+			// 1. Verify invoice in DB
+			const [inv] = await db
+				.select()
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.id, invoiceId),
+						eq(patientInvoices.organizationId, auth.organizationId),
+						eq(patientInvoices.patientId, auth.patientId),
+					),
+				)
+				.limit(1);
 
-			// If linked to real invoice in DB, update it
-			if (invoiceId) {
-				const [inv] = await db
-					.select()
-					.from(patientInvoices)
-					.where(
-						and(
-							eq(patientInvoices.id, invoiceId),
-							eq(patientInvoices.organizationId, auth.organizationId),
-							eq(patientInvoices.patientId, auth.patientId),
+			if (!inv) {
+				return reply.code(404).send({
+					error: "InvoiceNotFound",
+					message: "Счёт на оплату не найден в клинике или не принадлежит пациенту.",
+				});
+			}
+
+			const invoiceTotal =
+				Number(inv.totalRub) || Number(inv.totalAmountRub) || 0;
+
+			if (invoiceTotal <= 0) {
+				return reply.code(400).send({
+					error: "InvalidInvoiceAmount",
+					message: "Сумма счёта должна быть больше нуля.",
+				});
+			}
+
+			if (explicitAmount !== undefined && Math.abs(explicitAmount - invoiceTotal) > 0.01) {
+				return reply.code(400).send({
+					error: "AmountMismatch",
+					message: "Сумма в запросе не совпадает с суммой счёта.",
+				});
+			}
+
+			const totalAmount = invoiceTotal;
+
+			// If already paid, return idempotent success
+			if (inv.status === "paid") {
+				return reply.code(200).send({
+					success: true,
+					status: "paid",
+					invoiceId: inv.id,
+					stageId: stageId || undefined,
+					amountRub: totalAmount,
+					fiscalReceipt: null,
+					message: "Счёт уже был оплачен ранее.",
+				});
+			}
+
+			// 2. Validate transaction status via real banking service / gateway / sberbankTransactions
+			const [sberTx] = await db
+				.select()
+				.from(sberbankTransactions)
+				.where(
+					and(
+						eq(sberbankTransactions.organizationId, auth.organizationId),
+						or(
+							eq(sberbankTransactions.orderId, sbpTxId),
+							sql`${sberbankTransactions.id}::text = ${sbpTxId}`,
 						),
-					)
-					.limit(1);
+					),
+				)
+				.limit(1);
 
-				if (inv) {
-					totalAmount = Number(inv.totalRub) || Number(inv.totalAmountRub) || totalAmount;
-					await db
-						.update(patientInvoices)
-						.set({
-							status: "paid",
-							paidAt: now,
-						})
-						.where(eq(patientInvoices.id, inv.id));
+			let isBankConfirmed = false;
+			if (
+				sberTx &&
+				(sberTx.status === "success" ||
+					sberTx.status === "deposited" ||
+					sberTx.status === "paid")
+			) {
+				isBankConfirmed = true;
+			} else {
+				// Query external bank gateway if credentials are configured
+				const user = process.env.SBERBANK_TERMINAL_USER?.trim();
+				const token = process.env.SBERBANK_TERMINAL_TOKEN?.trim();
+				if (user || token) {
+					try {
+						const client = new SberbankClient();
+						const bankStatus = await client.getOrderStatusExtended(sbpTxId);
+						if (bankStatus.orderStatus === 2) {
+							isBankConfirmed = true;
+							if (sberTx) {
+								await db
+									.update(sberbankTransactions)
+									.set({ status: "success", updatedAt: new Date() })
+									.where(eq(sberbankTransactions.id, sberTx.id));
+							}
+						}
+					} catch (bankErr) {
+						request.log.warn(
+							{ err: bankErr, sbpTxId },
+							"Failed to query bank gateway for SBP transaction status",
+						);
+					}
 				}
 			}
 
-			// Insert payment record (fiscal receipt will be issued via KKT queue, not fake numbers)
+			if (!isBankConfirmed) {
+				return reply.code(402).send({
+					error: "PaymentNotConfirmed",
+					message:
+						"Транзакция СБП не подтверждена банком-эквайером или ожидает оплаты.",
+				});
+			}
+
+			// 3. Close invoice
+			await db
+				.update(patientInvoices)
+				.set({
+					status: "paid",
+					paidAt: now,
+				})
+				.where(eq(patientInvoices.id, inv.id));
+
+			// 4. Insert payment record into payments table
 			const [insertedPayment] = await db
 				.insert(payments)
 				.values({
@@ -2220,18 +2336,22 @@ export const portalRoutes: FastifyPluginAsync = async (
 					method: "online",
 					status: "paid",
 					paidAt: now,
+					clientMutationId: `sbp:${sbpTxId}`,
 					fiscalReceiptNumber: null,
 					fiscalReceiptIssuedAt: null,
 					fiscalReceiptUrl: null,
 					fiscalReceipt: null,
 					note: `Онлайн-оплата через СБП (${sbpTxId}) ${stageId ? `по этапу ${stageId}` : ""}`,
 				})
+				.onConflictDoNothing({
+					target: [payments.organizationId, payments.clientMutationId],
+				})
 				.returning({ id: payments.id });
 
 			return {
 				success: true,
 				paymentId: insertedPayment?.id ?? sbpTxId,
-				invoiceId: invoiceId || undefined,
+				invoiceId: inv.id,
 				stageId: stageId || undefined,
 				status: "paid",
 				amountRub: totalAmount,

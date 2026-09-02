@@ -21,6 +21,7 @@ import type { SberPosTransactionResponse } from "@dental/shared";
 import { SberPayIntegration } from "./SberPayIntegration.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 
 export type PaymentMethodTab = "card_terminal" | "sberpay_qr" | "biometry" | "cash" | "family_deposit";
 
@@ -64,29 +65,50 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const handleCashSubmit = async () => {
 		setIsSubmittingCash(true);
 		try {
-			// Record Cash transaction in backend
-			const res = await fetch("/api/payments/cash", {
+			const clientMutationId = `cash:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
+
+			const amountRubNumber = Number((amountKopecks / 100).toFixed(2));
+			// Record Cash transaction in backend via canonical billing payments endpoint
+			const res = await fetch("/api/billing/payments", {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers,
 				body: JSON.stringify({
 					patientId,
-					amountKopecks,
-					invoiceId,
-					visitId,
-					documentId,
+					amountRub: amountRubNumber,
+					method: "cash",
+					visitId: visitId || null,
+					documentId: documentId || (invoiceId ? invoiceId : null),
+					clientMutationId,
+					note: `Оплата наличными через кассу (${amountRub} ₽)`,
 				}),
 			});
 
 			if (!res.ok) {
-				// Fallback client notification
+				const errorData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+				const errorMsg =
+					(errorData && typeof errorData.message === "string" && errorData.message) ||
+					(errorData && typeof errorData.error === "string" && errorData.error) ||
+					`Ошибка приёма наличных: HTTP ${res.status}`;
+				showToast(errorMsg, "error");
+				return;
 			}
 
+			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
 			showToast(`Оплата ${amountRub} ₽ наличными принята в кассу`, "success");
 			onSuccess({
 				method: "cash",
 				amountKopecks,
+				...paymentData,
 			});
 			onClose();
+		} catch (err: unknown) {
+			const errorMsg =
+				err instanceof Error ? err.message : "Сбой соединения при приёме оплаты наличными";
+			showToast(errorMsg, "error");
 		} finally {
 			setIsSubmittingCash(false);
 		}

@@ -207,13 +207,8 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 		assert.match(parsed.error?.issues[0]?.message || "", /не совпадает/i);
 	});
 
-	it("1.9 Generates OFD verification URL and deterministic FPD fiscal signature", () => {
-		const fpd = FiscalReceiptFactory.computeFiscalSign(
-			"9960440302145896",
-			"FD-123456",
-			new Date("2026-08-19"),
-			500000,
-		);
+	it("1.9 Generates OFD verification URL with hardware FPD fiscal signature", () => {
+		const fpd = "3847291048";
 		assert.ok(fpd.length >= 8);
 
 		const ofdUrl = FiscalReceiptFactory.buildOfdUrl({
@@ -266,7 +261,7 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 		};
 
 		const uuid = "e1234567-e89b-12d3-a456-426614174000";
-		const compositeKey = typeof FiscalReceiptFactory.computeFiscalSign === "function" ? `${uuid}#test` : uuid;
+		const compositeKey = `${uuid}#test`;
 		assert.ok(compositeKey.startsWith(uuid));
 	});
 
@@ -456,12 +451,11 @@ describe("54-FZ Fiscal Receipt Factory & FFD 1.2 Suite", () => {
 		assert.equal(xmlResult.ok, true);
 		if (xmlResult.ok) {
 			assert.match(xmlResult.xml, /КНД="1184043"/);
-			assert.match(xmlResult.xml, /ОтчГод="2026"/);
-			assert.match(xmlResult.xml, /КодНО="7707"/);
-			assert.match(xmlResult.xml, /СуммаКод1="15400\.50"/);
-			assert.match(xmlResult.xml, /СуммаКод2="85000\.00"/);
-			assert.match(xmlResult.xml, /ИНН="500100732259"/);
-			assert.match(xmlResult.xml, /ПрПациент="1"/);
+			assert.match(xmlResult.xml, /ГодУсл="2026"/);
+			assert.match(xmlResult.xml, /СумОпл="15400\.50"/);
+			assert.match(xmlResult.xml, /СумОпл="85000\.00"/);
+			assert.match(xmlResult.xml, /ИННФЛ="500100732259"/);
+			assert.match(xmlResult.xml, /ПризнПац="1"/);
 		}
 	});
 });

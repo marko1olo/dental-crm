@@ -274,13 +274,15 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 
 			const input = parsed.data;
 
-			const idempotencyKey =
-				(request.headers["idempotency-key"] as string) ||
-				(request.headers["x-idempotency-key"] as string) ||
-				input.clientMutationId ||
-				crypto.randomUUID();
+			const rawIdempotencyKey =
+				(request.headers["idempotency-key"] as string | undefined) ||
+				(request.headers["x-idempotency-key"] as string | undefined) ||
+				input.clientMutationId;
 
-			const orderId = `POS-${crypto.randomUUID().slice(0, 18).toUpperCase()}`;
+			const orderId =
+				rawIdempotencyKey?.trim() ||
+				`POS-${crypto.randomUUID().slice(0, 18).toUpperCase()}`;
+			const idempotencyKey = orderId;
 
 			return await withTenantCtx(orgId, async (tx) => {
 				// Check if patient exists
@@ -297,14 +299,14 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 					});
 				}
 
-				// Check idempotency: if transaction already exists for this client mutation
+				// Check idempotency: if transaction already exists for this client mutation / orderId
 				const [existingTx] = await tx
 					.select()
 					.from(sberbankTransactions)
 					.where(
 						and(
 							eq(sberbankTransactions.organizationId, orgId),
-							eq(sberbankTransactions.orderId, idempotencyKey),
+							eq(sberbankTransactions.orderId, orderId),
 						),
 					)
 					.limit(1);
@@ -316,6 +318,9 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 						orderId: existingTx.orderId,
 						status: existingTx.status,
 						amountKopecks: existingTx.amount,
+						amountRub: Fiscal54FzService.kopecksToRub(existingTx.amount),
+						idempotencyKey: orderId,
+						message: "Повторный запрос: терминальная транзакция уже зарегистрирована.",
 					});
 				}
 
@@ -332,6 +337,7 @@ export async function registerSberPosWebhookRoutes(app: FastifyInstance) {
 
 				return reply.code(201).send({
 					success: true,
+					isDuplicate: false,
 					orderId,
 					terminalId: input.terminalId,
 					paymentMethodType: input.paymentMethodType,
