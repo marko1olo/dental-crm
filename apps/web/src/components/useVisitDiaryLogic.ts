@@ -322,6 +322,9 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	const autosaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const doSaveRef = useRef<
+		(silent?: boolean) => Promise<{ id: string; hash: string | null } | null>
+	>(async () => null);
 	const icdRef = useRef<HTMLDivElement>(null);
 	/**
 	 * Об отказе тихого автосохранения говорим один раз до следующей удачи.
@@ -524,14 +527,23 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 		return () => {
 			alive = false;
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+				debounceTimerRef.current = null;
+			}
+			if (autosaveRef.current) {
+				clearInterval(autosaveRef.current);
+				autosaveRef.current = null;
+			}
+			if (doSaveRef.current) {
+				void doSaveRef.current(true);
+			}
 			setDiary(EMPTY_DIARY);
 			setIcdSearch("");
 			setShowPreview(false);
-			if (autosaveRef.current) clearInterval(autosaveRef.current);
-			if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 			useVisitStore.getState().setDraft(null);
 		};
-	}, [visitId]);
+	}, [visitId, _reloadToken]);
 
 	/** Повторное чтение с сервера (кнопка в PanelLoadFailure). */
 	const reloadDiary = useCallback(() => {
@@ -979,7 +991,6 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		],
 	);
 
-	const doSaveRef = useRef(doSave);
 	doSaveRef.current = doSave;
 
 	// ── Debounced Auto-Save (300ms) on diary modifications
@@ -987,7 +998,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		if (isLocked || isRevising) return;
 		if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 		debounceTimerRef.current = setTimeout(() => {
-			void doSaveRef.current(true);
+			void doSaveRef.current?.(true);
 		}, 300);
 	}, [isLocked, isRevising]);
 
@@ -1171,7 +1182,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		// для подписанного дневника не подходит — только POST …/revise.
 		if (isLocked || isRevising) return;
 		autosaveRef.current = setInterval(() => {
-			void doSaveRef.current(true);
+			void doSaveRef.current?.(true);
 		}, 30000);
 		return () => {
 			if (autosaveRef.current) clearInterval(autosaveRef.current);
