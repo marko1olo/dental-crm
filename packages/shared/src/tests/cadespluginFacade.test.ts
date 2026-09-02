@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
 import {
 	buildGenuineGostCmsPkcs7Der,
@@ -223,5 +224,31 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 			referenceDate: now,
 		});
 		assert.strictEqual(validRes.valid, true);
+	});
+
+	it("strictly detects document modification (Tamper Resistance) via validateGostCmsPkcs7Signature", () => {
+		const originalText = "Акт выполненных стоматологических работ № 789. Установка имплантата Straumann. Стоимость: 85000 руб.";
+		const originalHash = createHash("sha256").update(originalText, "utf8").digest("hex");
+
+		const sigContainer = createDemonstrationGostCmsSignature({
+			documentId: "doc-act-789",
+			documentKind: "completion_act",
+			documentHashHex: originalHash,
+			doctorFullName: "Ковалев Дмитрий Игоревич",
+		});
+
+		// 1. С оригинальным хэшем подпись валидна
+		const validCheck = validateGostCmsPkcs7Signature(sigContainer.signatureBase64, originalHash);
+		assert.strictEqual(validCheck.valid, true);
+
+		// 2. Модификация 1 символа (85000 -> 35000 руб)
+		const modifiedText = "Акт выполненных стоматологических работ № 789. Установка имплантата Straumann. Стоимость: 35000 руб.";
+		const modifiedHash = createHash("sha256").update(modifiedText, "utf8").digest("hex");
+
+		const tamperedCheck = validateGostCmsPkcs7Signature(sigContainer.signatureBase64, modifiedHash);
+		assert.strictEqual(tamperedCheck.valid, false);
+		assert.strictEqual(tamperedCheck.errorCode, "TamperDetected");
+		assert.strictEqual(tamperedCheck.tamperDetected, true);
+		assert.ok(tamperedCheck.error?.includes("Хэш документа не совпадает с хэшем в электронной подписи"));
 	});
 });

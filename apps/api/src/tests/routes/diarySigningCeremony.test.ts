@@ -772,6 +772,32 @@ describe("церемония подписания дневника одинак�
 		assert.equal(lockAgain.statusCode, 409, lockAgain.body);
 		assert.equal(JSON.parse(lockAgain.body).error, "AlreadyLocked");
 
+		// Попытка подделать диагноз или анамнез черновиком после блокировки
+		const tamperDraft = await app.inject({
+			method: "POST",
+			url: "/api/diaries",
+			headers: { "x-dente-staff-token": staffToken },
+			payload: {
+				visitId: scenario.visitId,
+				patientId,
+				anamnesis: "Фальсифицированный анамнез задним числом",
+				diagnosisIcd10: "K05.0", // Попытка подменить диагноз
+				status: "draft",
+			},
+		});
+		assert.equal(tamperDraft.statusCode, 403, tamperDraft.body);
+		assert.equal(JSON.parse(tamperDraft.body).error, "DiaryLocked");
+
+		// Проверяем, что в БД данные остались неизменными (K02.1 и оригинальный ANAMNESIS)
+		const [unalteredDiary] = await withFixtureTenant(organizationId, async () =>
+			db
+				.select()
+				.from(visitDiaries)
+				.where(eq(visitDiaries.id, diary.id)),
+		);
+		assert.equal(unalteredDiary.diagnosisIcd10, "K02.1");
+		assert.equal(unalteredDiary.anamnesis, ANAMNESIS);
+
 		// Материал списан один раз, а не по разу на каждую попытку подписи.
 		const stockAfterRetries = await observe(scenario);
 		assert.deepEqual(stockAfterRetries, stockAfterFirst);

@@ -131,6 +131,17 @@ export async function register(app: FastifyInstance) {
 				});
 			}
 
+			// Проверка целостности документа: сверка хэша архивного снимка со значением в подписи
+			if (doc.issuedSnapshotSha256) {
+				const tamperCheck = validateGostCmsPkcs7Signature(pkcs7Signature, doc.issuedSnapshotSha256);
+				if (!tamperCheck.valid && tamperCheck.tamperDetected) {
+					return reply.code(400).send({
+						error: "TamperDetected",
+						message: "Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+					});
+				}
+			}
+
 			// Prevent replay of the exact same PKCS#7 signature.
 			// Поиск ограничен своей организацией: раньше он шёл по всей базе и
 			// сообщал о существовании подписи в ЧУЖОЙ клинике.

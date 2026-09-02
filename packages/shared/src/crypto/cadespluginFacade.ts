@@ -464,10 +464,18 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 		derInteger(BigInt(`0x${safeSerialBuf.toString("hex")}`)),
 	);
 
+	// SignedAttributes: messageDigest (OID 1.2.840.113549.1.9.4)
+	const messageDigestAttr = derSequence(
+		derOid("1.2.840.113549.1.9.4"),
+		derSet(derOctetString(digestOctets)),
+	);
+	const signedAttributes = derExplicitTag(0, derSet(messageDigestAttr));
+
 	const signerInfo = derSequence(
 		derInteger(1), // version
 		signerIdentifier,
 		derSequence(derOid(digestAlgOid)),
+		signedAttributes,
 		derSequence(derOid(signAlgOid)),
 		derOctetString(gostSignature64Bytes),
 	);
@@ -493,10 +501,16 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 /**
  * Проверяет, является ли строка корректным отсоединенным контейнером CMS (PKCS#7)
  * по стандарту ГОСТ Р 34.10-2012 / 34.11-2012. Запрещает произвольные строки.
+ * При передаче expectedDocumentHashHex сверяет хэш документа с хэшем в подписи (Tamper Resistance).
  */
-export function validateGostCmsPkcs7Signature(signatureBase64: string): {
+export function validateGostCmsPkcs7Signature(
+	signatureBase64: string,
+	expectedDocumentHashHex?: string,
+): {
 	valid: boolean;
 	error?: string;
+	errorCode?: string;
+	tamperDetected?: boolean;
 	details?: {
 		format: "CMS_PKCS7_DETACHED_CADES_BES";
 		byteLength: number;
@@ -575,6 +589,22 @@ export function validateGostCmsPkcs7Signature(signatureBase64: string): {
 			valid: false,
 			error: "Контейнер подписи не содержит криптографических OID ГОСТ Р 34.10-2012 / 34.11-2012. Использование зарубежных или неподдерживаемых алгоритмов запрещено 63-ФЗ.",
 		};
+	}
+
+	// 5. Проверка целостности документа по хэшу (Tamper Resistance / Защита от модификации документа)
+	if (expectedDocumentHashHex) {
+		const cleanExpected = expectedDocumentHashHex.replace(/[^a-fA-F0-9]/g, "");
+		if (cleanExpected.length >= 32) {
+			const expectedBytes = Buffer.from(cleanExpected, "hex");
+			if (!buf.includes(expectedBytes)) {
+				return {
+					valid: false,
+					errorCode: "TamperDetected",
+					tamperDetected: true,
+					error: "Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+				};
+			}
+		}
 	}
 
 	return {

@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
 import {
 	buildGenuineGostCmsPkcs7Der,
@@ -154,5 +155,68 @@ describe("Document UKEP / UNEP & GOST Digital Signature Rigor", () => {
 		});
 		assert.strictEqual(future.valid, false);
 		assert.strictEqual(future.errorCode, "InvalidSigningTime");
+	});
+
+	it("detects 1-byte modification in signed document (Tamper Resistance / TamperDetected)", () => {
+		// 1. Создаем исходный документ с суммой 10 000 руб
+		const originalDocumentPayload = "Счет № 4092. Пациент: Иванов И.И. Сумма к оплате: 10000 руб. Услуга: Лечение пульпита";
+		const originalHashHex = createHash("sha256").update(originalDocumentPayload, "utf8").digest("hex");
+
+		// 2. Формируем отсоединенную подпись CMS (PKCS#7) по ГОСТ Р 34.10-2012
+		const genuineSig = createDemonstrationGostCmsSignature({
+			documentId: "doc-invoice-10000",
+			documentKind: "invoice",
+			documentHashHex: originalHashHex,
+			doctorFullName: "Смирнова Елена Сергеевна",
+		});
+
+		// 3. Проверяем подлинность подписи с оригинальным хэшем — валидация успешна
+		const originalValidation = validateGostCmsPkcs7Signature(
+			genuineSig.signatureBase64,
+			originalHashHex,
+		);
+		assert.strictEqual(originalValidation.valid, true);
+		assert.strictEqual(originalValidation.tamperDetected, undefined);
+
+		// 4. АТАКА МОДИФИКАЦИИ: злоумышленник меняет 1 байт в документе (10000 -> 01000 руб)
+		const tamperedDocumentPayload = "Счет № 4092. Пациент: Иванов И.И. Сумма к оплате: 01000 руб. Услуга: Лечение пульпита";
+		const tamperedHashHex = createHash("sha256").update(tamperedDocumentPayload, "utf8").digest("hex");
+
+		// 5. Попытка верификации модифицированного документа с той же подписью
+		const tamperedValidation = validateGostCmsPkcs7Signature(
+			genuineSig.signatureBase64,
+			tamperedHashHex,
+		);
+
+		// 6. Валидатор обязан категорически отказать с кодом TamperDetected
+		assert.strictEqual(tamperedValidation.valid, false);
+		assert.strictEqual(tamperedValidation.errorCode, "TamperDetected");
+		assert.strictEqual(tamperedValidation.tamperDetected, true);
+		assert.ok(
+			tamperedValidation.error?.includes(
+				"Хэш документа не совпадает с хэшем в электронной подписи",
+			),
+		);
+	});
+
+	it("detects modification of patient name in signed PDF snapshot", () => {
+		const originalPdfBuffer = Buffer.from("%PDF-1.4 ... /Title (Информированное согласие) /Patient (Петров Алексей) ... %%EOF");
+		const originalPdfHashHex = createHash("sha256").update(originalPdfBuffer).digest("hex");
+
+		const sig = createDemonstrationGostCmsSignature({
+			documentId: "doc-consent-petrov",
+			documentKind: "informed_consent",
+			documentHashHex: originalPdfHashHex,
+			doctorFullName: "Иванов Иван Иванович",
+		});
+
+		// Подделываем 1 байт в теле PDF (Петров -> Сидоров)
+		const modifiedPdfBuffer = Buffer.from("%PDF-1.4 ... /Title (Информированное согласие) /Patient (Сидоров Алексей) ... %%EOF");
+		const modifiedPdfHashHex = createHash("sha256").update(modifiedPdfBuffer).digest("hex");
+
+		const check = validateGostCmsPkcs7Signature(sig.signatureBase64, modifiedPdfHashHex);
+		assert.strictEqual(check.valid, false);
+		assert.strictEqual(check.errorCode, "TamperDetected");
+		assert.strictEqual(check.tamperDetected, true);
 	});
 });
