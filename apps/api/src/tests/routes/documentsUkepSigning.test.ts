@@ -219,4 +219,50 @@ describe("Document UKEP / UNEP & GOST Digital Signature Rigor", () => {
 		assert.strictEqual(check.errorCode, "TamperDetected");
 		assert.strictEqual(check.tamperDetected, true);
 	});
+
+	it("strictly prevents Signature Replay Attack between different documents of the same patient", () => {
+		const patientId = "patient-uuid-1111";
+
+		// Документ 1: Информированное добровольное согласие
+		const doc1Text = `ИДС на анестезию. Пациент: ${patientId}. Дата: 2026-09-02`;
+		const doc1Hash = createHash("sha256").update(doc1Text).digest("hex");
+		const sigDoc1 = createDemonstrationGostCmsSignature({
+			documentId: "doc-consent-1",
+			documentKind: "informed_consent",
+			documentHashHex: doc1Hash,
+			doctorFullName: "Смирнова Елена Сергеевна",
+		});
+
+		// Документ 2: План лечения того же пациента
+		const doc2Text = `План лечения ортодонтии на 250000 руб. Пациент: ${patientId}. Дата: 2026-09-02`;
+		const doc2Hash = createHash("sha256").update(doc2Text).digest("hex");
+
+		// Попытка применить подпись sigDoc1 к doc2 (Replay Attack)
+		const replayCheck = validateGostCmsPkcs7Signature(sigDoc1.signatureBase64, doc2Hash);
+		assert.strictEqual(replayCheck.valid, false);
+		assert.strictEqual(replayCheck.errorCode, "TamperDetected");
+		assert.strictEqual(replayCheck.tamperDetected, true);
+	});
+
+	it("strictly prevents Signature Replay Attack between different patients", () => {
+		// Документ пациента 1 (Смирнов А.А.)
+		const patient1Doc = "Акт осмотра. Пациент: Смирнов А.А., СНИЛС 111-222-333 44. Диагноз: K02.1";
+		const patient1Hash = createHash("sha256").update(patient1Doc).digest("hex");
+		const sigPatient1 = createDemonstrationGostCmsSignature({
+			documentId: "doc-smirnov",
+			documentKind: "act",
+			documentHashHex: patient1Hash,
+			doctorFullName: "Иванов И.И.",
+		});
+
+		// Документ пациента 2 (Кузнецова М.В.)
+		const patient2Doc = "Акт осмотра. Пациент: Кузнецова М.В., СНИЛС 555-666-777 88. Диагноз: K05.1";
+		const patient2Hash = createHash("sha256").update(patient2Doc).digest("hex");
+
+		// Попытка применить подпись пациента 1 к документу пациента 2 (Cross-Patient Replay Attack)
+		const crossPatientReplay = validateGostCmsPkcs7Signature(sigPatient1.signatureBase64, patient2Hash);
+		assert.strictEqual(crossPatientReplay.valid, false);
+		assert.strictEqual(crossPatientReplay.errorCode, "TamperDetected");
+		assert.strictEqual(crossPatientReplay.tamperDetected, true);
+	});
 });

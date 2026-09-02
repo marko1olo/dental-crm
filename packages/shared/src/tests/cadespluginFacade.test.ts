@@ -251,4 +251,60 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		assert.strictEqual(tamperedCheck.tamperDetected, true);
 		assert.ok(tamperedCheck.error?.includes("Хэш документа не совпадает с хэшем в электронной подписи"));
 	});
+
+	it("strictly rejects malformed ASN.1 DER containers: corrupted tags, truncated lengths, indefinite lengths, and foreign OIDs", () => {
+		const validSig = createDemonstrationGostCmsSignature({
+			documentId: "doc-1",
+			documentKind: "test",
+			documentHashHex: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+			doctorFullName: "Тестов Тест Тестович",
+		});
+		const rawDerBuf = Buffer.from(validSig.signatureBase64, "base64");
+
+		// 1. Поврежден начальный тег (0x02 INTEGER вместо 0x30 SEQUENCE)
+		const badTagBuf = Buffer.from(rawDerBuf);
+		badTagBuf[0] = 0x02;
+		const resBadTag = validateGostCmsPkcs7Signature(badTagBuf.toString("base64"));
+		assert.strictEqual(resBadTag.valid, false);
+		assert.strictEqual(resBadTag.errorCode, "InvalidAsn1Tag");
+		assert.ok(resBadTag.error?.includes("не является SEQUENCE"));
+
+		// 2. Обрезанная длина (буфер обрезан посредине ASN.1 структуры)
+		const truncatedBuf = rawDerBuf.subarray(0, rawDerBuf.length - 50);
+		const resTrunc = validateGostCmsPkcs7Signature(truncatedBuf.toString("base64"));
+		assert.strictEqual(resTrunc.valid, false);
+		assert.strictEqual(resTrunc.errorCode, "TruncatedAsn1Der");
+		assert.ok(resTrunc.error?.includes("обрезан"));
+
+		// 3. Запрещенная неопределенная форма длины (indefinite length 0x80)
+		const indefiniteBuf = Buffer.from(rawDerBuf);
+		indefiniteBuf[1] = 0x80;
+		const resIndefinite = validateGostCmsPkcs7Signature(indefiniteBuf.toString("base64"));
+		assert.strictEqual(resIndefinite.valid, false);
+		assert.strictEqual(resIndefinite.errorCode, "InvalidAsn1Der");
+		assert.ok(resIndefinite.error?.includes("indefinite length 0x80"));
+
+		// 4. Отсутствие обязательного OID CMS SignedData (1.2.840.113549.1.7.2)
+		const missingSignedDataBuf = Buffer.alloc(128, 0x30);
+		missingSignedDataBuf[0] = 0x30;
+		missingSignedDataBuf[1] = 126;
+		const resMissingOid = validateGostCmsPkcs7Signature(missingSignedDataBuf.toString("base64"));
+		assert.strictEqual(resMissingOid.valid, false);
+		assert.strictEqual(resMissingOid.errorCode, "MissingSignedDataOid");
+
+		// 5. Зарубежные OID (RSA OID 1.2.840.113549.1.1.1 вместо ГОСТ 1.2.643.*)
+		const foreignBuf = Buffer.from(rawDerBuf);
+		// Затираем префикс ГОСТ 1.2.643 (2a 85 03) нулями
+		let gostIdx = foreignBuf.indexOf(Buffer.from([0x2a, 0x85, 0x03]));
+		assert.ok(gostIdx > 0);
+		while (gostIdx !== -1) {
+			foreignBuf[gostIdx] = 0x00;
+			foreignBuf[gostIdx + 1] = 0x00;
+			foreignBuf[gostIdx + 2] = 0x00;
+			gostIdx = foreignBuf.indexOf(Buffer.from([0x2a, 0x85, 0x03]));
+		}
+		const resForeign = validateGostCmsPkcs7Signature(foreignBuf.toString("base64"));
+		assert.strictEqual(resForeign.valid, false);
+		assert.strictEqual(resForeign.errorCode, "NonGostAlgorithmForbidden");
+	});
 });
