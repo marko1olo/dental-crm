@@ -383,20 +383,26 @@ export const ORDER_804N_THERAPY_CATALOG = {
 } as const;
 
 export const ORDER_804N_SURGERY_CATALOG = {
-	simpleExtraction: {
+	temporaryExtraction: {
 		code: "A16.07.001.001",
-		title: "Удаление постоянного зуба (простое)",
+		title: "Удаление временного зуба",
+		category: "Хирургическая стоматология",
+		price: 2000,
+	},
+	simpleExtraction: {
+		code: "A16.07.001.002",
+		title: "Удаление постоянного зуба",
 		category: "Хирургическая стоматология",
 		price: 3500,
 	},
 	complexExtraction: {
-		code: "A16.07.001.002",
+		code: "A16.07.001.003",
 		title: "Удаление зуба сложное с разъединением корней",
 		category: "Хирургическая стоматология",
 		price: 6000,
 	},
 	retractedExtraction: {
-		code: "A16.07.001.003",
+		code: "A16.07.024",
 		title: "Удаление ретинированного, дистопированного или сверхкомплектного зуба",
 		category: "Хирургическая стоматология",
 		price: 8500,
@@ -486,7 +492,7 @@ export const ORDER_804N_ORTHO_CATALOG = {
 		price: 1500,
 	},
 	ceramicZirconiaCrown: {
-		code: "A16.07.005",
+		code: "A16.07.004",
 		title: "Восстановление зуба коронкой постоянной безметалловой (диоксид циркония / E-max)",
 		category: "Ортопедическая стоматология",
 		price: 24000,
@@ -547,6 +553,8 @@ export interface ClinicalCase804nOptions {
 	readonly endoVisitStage?: "access_instrumentation_temporary_calcium" | "final_obturation_restoration" | "single_visit_complete" | undefined;
 	readonly isRetreatment?: boolean | undefined;
 	readonly isDifficultExtraction?: boolean | undefined;
+	readonly isRetracted?: boolean | undefined;
+	readonly isDeciduous?: boolean | undefined;
 	readonly includeAnesthesia?: boolean | undefined;
 	readonly includeRvg?: boolean | undefined;
 	readonly includeSutures?: boolean | undefined;
@@ -699,15 +707,32 @@ export function getOrder804nServicesForClinicalCase(
 		items.push(createItem(ORDER_804N_PERIO_CATALOG.ultrasonicScaling, true));
 		items.push(createItem(ORDER_804N_PERIO_CATALOG.closedCurettage, true));
 		items.push(createItem(ORDER_804N_PERIO_CATALOG.perioPocketMedication, true));
-	} else if (icd === "K08.1" || options.specialty === "surgery") {
+	} else if (
+		icd === "K08.1" ||
+		icd === "K01.1" ||
+		icd === "K00.6" ||
+		options.specialty === "surgery" ||
+		options.isRetracted
+	) {
 		// Хирургическое удаление зуба
 		if (options.includeRvg !== false) {
 			items.push(createItem(ORDER_804N_DIAGNOSTICS_CATALOG.rvgIntraoral, true));
 		}
+		const isDeciduous =
+			options.isDeciduous ||
+			icd === "K00.6" ||
+			(validFdi !== null && validFdi >= 51 && validFdi <= 85);
+		const isRetracted = options.isRetracted || icd === "K01.1";
 		const isMulti = validFdi ? isMultiRootedTooth(validFdi) : (canalCount > 1);
-		const extraction = isMulti || options.isDifficultExtraction
-			? ORDER_804N_SURGERY_CATALOG.complexExtraction
-			: ORDER_804N_SURGERY_CATALOG.simpleExtraction;
+
+		const extraction = isDeciduous
+			? ORDER_804N_SURGERY_CATALOG.temporaryExtraction
+			: isRetracted
+				? ORDER_804N_SURGERY_CATALOG.retractedExtraction
+				: isMulti || options.isDifficultExtraction
+					? ORDER_804N_SURGERY_CATALOG.complexExtraction
+					: ORDER_804N_SURGERY_CATALOG.simpleExtraction;
+
 		items.push(createItem(extraction, true));
 		if (options.includeSutures) {
 			items.push(createItem(ORDER_804N_SURGERY_CATALOG.sutureApplication, true));

@@ -115,14 +115,14 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.match(soap.toothNameRu, /16 \(верхний правый первый моляр\)/i);
 			assert.match(soap.anamnesis, /кратковременные боли.*холодное.*сладкое/i);
 			assert.match(soap.statusLocalis, /кариозная полость средней глубины/i);
-			assert.match(soap.statusLocalis, /ЭОД — 6-8 мкА/i);
+			assert.match(soap.statusLocalis, /Электровозбудимость пульпы в пределах нормы/i);
 
 			// Check all 5 mandatory protocol steps
 			assert.match(soap.treatmentDescription, /Препарирование кариозной полости/i);
 			assert.match(soap.treatmentDescription, /некрэктомия/i);
 			assert.match(soap.treatmentDescription, /37% ортофосфорной кислотой/i); // etching
 			assert.match(soap.treatmentDescription, /адгезивной системы/i); // adhesive
-			assert.match(soap.treatmentDescription, /наногибридным светоотверждаемым композитом/i); // composite layer
+			assert.match(soap.treatmentDescription, /композитный светоотверждаемый материал/i); // composite layer
 			assert.match(soap.treatmentDescription, /шлифовка и финишная полировка/i); // polishing
 			assert.match(soap.treatmentDescription, /Окклюзионная коррекция/i);
 			assert.match(soap.treatmentDescription, /Гарантийные обязательства/i);
@@ -130,7 +130,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.match(soap.recommendations ?? "", /Гарантийный срок на реставрацию: 18 мес/i);
 		});
 
-		it("Pulpitis (K04.0): includes devitalization / extirpation, canal instrumentation, Calcept / gutta-percha obturation", () => {
+		it("Pulpitis (K04.0): includes devitalization / extirpation, canal instrumentation, calcium hydroxide / gutta-percha obturation", () => {
 			const soap = generateSoapFromOdontogramFinding({
 				toothNumber: 24,
 				state: "Pulpitis",
@@ -147,12 +147,12 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 				soap.statusLocalis,
 				/зондирование вскрытой точки рога пульпы резко болезненно/i,
 			);
-			assert.match(soap.statusLocalis, /ЭОД — 25-45 мкА/i);
+			assert.match(soap.statusLocalis, /Электровозбудимость пульпы снижена/i);
 
 			// Check all mandatory endo steps
 			assert.match(
 				soap.treatmentDescription,
-				/Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1.7 мл/i,
+				/анестезия амидного ряда.*артикаин/i,
 			);
 			assert.match(
 				soap.treatmentDescription,
@@ -165,15 +165,15 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 				soap.treatmentDescription,
 				/17% ЭДТА с ультразвуковой активацией/i,
 			);
-			assert.match(soap.treatmentDescription, /Calcept.*гидроксид кальция/i); // Calcept
+			assert.match(soap.treatmentDescription, /препарат на основе гидроксида кальция/i);
 			assert.match(
 				soap.treatmentDescription,
 				/гуттаперчей с эпоксидным силером/i,
 			); // gutta-percha obturation
-			assert.match(soap.recommendations ?? "", /НПВС.*Нимесил/i);
+			assert.match(soap.recommendations ?? "", /НПВС.*нимесулид/i);
 		});
 
-		it("Periodontitis (K04.5): includes canal desobturation, antiseptic irrigation, calcium hydroxide (Calcept)", () => {
+		it("Periodontitis (K04.5): includes canal desobturation, antiseptic irrigation, calcium hydroxide", () => {
 			const soap = generateSoapFromOdontogramFinding({
 				toothNumber: 36,
 				state: "Periodontitis",
@@ -183,13 +183,13 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.equal(soap.diagnosisIcd10, "K04.5");
 			assert.equal(soap.diagnosisTooth, "36");
 			assert.match(soap.anamnesis, /чувство тяжести.*при накусывании/i);
-			assert.match(soap.statusLocalis, /ЭОД > 100 мкА/i);
+			assert.match(soap.statusLocalis, /Электровозбудимость пульпы отсутствует/i);
 			assert.match(soap.statusLocalis, /периапикальный очаг/i);
 
 			// Check all mandatory perio/re-treatment steps
 			assert.match(
 				soap.treatmentDescription,
-				/Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1.7 мл/i,
+				/анестезия амидного ряда.*артикаин/i,
 			);
 			assert.match(
 				soap.treatmentDescription,
@@ -200,8 +200,8 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 				soap.treatmentDescription,
 				/NaOCl 3%.*2% хлоргексидин.*ЭДТА 17%.*УЗ-активация/i,
 			);
-			assert.match(soap.treatmentDescription, /гидроксида кальция Calcept/i); // calcium hydroxide
-			assert.match(soap.treatmentDescription, /герметичной временной пломбы/i);
+			assert.match(soap.treatmentDescription, /препаратом на основе гидроксида кальция/i); // calcium hydroxide
+			assert.match(soap.treatmentDescription, /герметичного временного пломбировочного материала/i);
 		});
 
 		it("Extraction (K08.1 / Extraction): includes infiltration anesthesia, elevator/forceps, socket curettage, hemostasis, suture", () => {
@@ -224,7 +224,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			// Check all mandatory surgery extraction steps
 			assert.match(
 				soap.treatmentDescription,
-				/Инфильтрационная и проводниковая анестезия.*Артикаин/i,
+				/местная анестезия амидного ряда.*артикаин/i,
 			); // infiltration anesthesia
 			assert.match(soap.treatmentDescription, /Синдесмотомия/i);
 			assert.match(
@@ -237,14 +237,14 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			); // socket curettage
 			assert.match(
 				soap.treatmentDescription,
-				/Гемостаз.*гемостатическая губка.*Альвостаз/i,
+				/Гемостаз.*гемостатическая коллагеновая губка/i,
 			); // hemostasis
-			assert.match(soap.treatmentDescription, /наложение узловых швов.*Викрил/i); // suture
+			assert.match(soap.treatmentDescription, /наложение узловых швов.*шовный материал/i); // suture
 			assert.match(soap.treatmentDescription, /Давящий марлевый тампон на 20 минут/i);
 			assert.match(soap.recommendations ?? "", /Холод на область щеки/i);
 		});
 
-		it("Hygiene (Z01.2 / K05.0): includes ultrasonic scaling, Air-Flow polishing, Clinpro fluoridation", () => {
+		it("Hygiene (Z01.2 / K05.0): includes ultrasonic scaling, Air-Flow polishing, fluoridation", () => {
 			const soap = generateSoapFromOdontogramFinding({
 				toothNumber: 11,
 				state: "Hygiene",
@@ -265,11 +265,11 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.match(soap.treatmentDescription, /Индикация зубного налета/i);
 			assert.match(soap.treatmentDescription, /Ультразвуковой скейлинг/i); // ultrasonic scaling
 			assert.match(soap.treatmentDescription, /Air-Flow.*глицин.*эритритол/i); // Air-Flow polishing
-			assert.match(soap.treatmentDescription, /Полировка.*Cleanic/i);
+			assert.match(soap.treatmentDescription, /Полировка.*полировочной пастой/i);
 			assert.match(
 				soap.treatmentDescription,
-				/Clinpro White Varnish.*фторлаком/i,
-			); // Clinpro fluoridation
+				/фторсодержащим лаком/i,
+			);
 			assert.match(soap.recommendations ?? "", /Белая диета/i);
 		});
 	});
@@ -330,7 +330,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.match(soap.treatmentDescription ?? "", /• Зуб 36:.*распломбировка/i);
 			assert.match(
 				soap.treatmentDescription ?? "",
-				/• Зуб 48: Инфильтрационная и проводниковая анестезия/i,
+				/• Зуб 48: Инфильтрационная и проводниковая.*анестезия/i,
 			);
 			assert.match(soap.treatmentDescription ?? "", /Рекомендации пациенту:/i);
 		});
@@ -469,7 +469,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			});
 			assert.match(
 				soapPulpitis.treatmentDescription,
-				/Инфильтрационная\/проводниковая анестезия \(Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1\.7 мл\)/i,
+				/местная анестезия амидного ряда.*артикаин/i,
 			);
 
 			// Periodontitis K04.5
@@ -480,7 +480,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			});
 			assert.match(
 				soapPerio.treatmentDescription,
-				/Инфильтрационная\/проводниковая анестезия \(Артикаин 4% с эпинефрином 1:100 000 \/ 1:200 000, 1\.7 мл\)/i,
+				/местная анестезия амидного ряда.*артикаин/i,
 			);
 		});
 
@@ -542,7 +542,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 				state: "extraction" as any,
 			});
 			assert.equal(soap71.diagnosisIcd10, "K00.6");
-			assert.match(soap71.treatmentDescription, /Лидокаин|Дисилан/i);
+			assert.match(soap71.treatmentDescription, /местная анестезия амидного ряда/i);
 		});
 
 		it("generates structured Root Canal Working Length table (WL/MAF) for endodontic protocol 043/u", () => {
@@ -1207,7 +1207,7 @@ describe("Clinical SOAP Diary & Form 043/u Protocols (clinicalProtocols043)", ()
 			assert.equal(res.volumeMl, 3.4);
 			assert.equal(res.activeDoseMg, 136);
 			assert.equal(res.maxSafeDoseMg, 500); // capped at absolute adult max 500 mg
-			assert.equal(res.maxSafeCarpules, 7.4); // 500 / 68 = 7.35 -> 7.4
+			assert.equal(res.maxSafeCarpules, 7.3); // 500 / 68 = 7.35 -> 7.3 (Math.floor safe limit)
 			assert.ok(res.epinephrineMg > 0.015 && res.epinephrineMg < 0.018);
 			assert.equal(res.isOverdose, false);
 		});

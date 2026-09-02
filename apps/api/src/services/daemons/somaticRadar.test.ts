@@ -485,4 +485,42 @@ describe("Somatic Risk & DDI Clinical Radar Engine", () => {
 		assert.ok(somaticJob?.description.includes("07:30 AM"));
 		assert.strictEqual(typeof scheduler.runSomaticRadarScanNow, "function");
 	});
+
+	test("18. Lidocaine Latin spellings, typos, and anamnesis triggers detection", () => {
+		const variations = [
+			"В анамнезе непереносимость: lidocaine.",
+			"Отек Квинке на lidocain в прошлом.",
+			"Анафилактический шок на lidocainum.",
+			"Тяжелая токсическая реакция на ледокаин.",
+			"Коллапс после инъекции лидакаин.",
+		];
+
+		for (const text of variations) {
+			const risks = extractSomaticRisksDeterministic(text);
+			assert.strictEqual(
+				risks.hasArticaineAmideAllergy,
+				true,
+				`Expected amide allergy detected for: ${text}`,
+			);
+		}
+	});
+
+	test("19. Free-text NSAID, Aspirin, and Samter triad detection", () => {
+		const variations = [
+			"Анамнез: аспириновая астма средней степени.",
+			"Сопутствующие: аспириновая триада, полипоз носа.",
+			"Непереносимость: ацетилсалициловая кислота.",
+			"Выраженная аллергическая реакция на aspirin.",
+			"Аллергия на ибупрофен.",
+		];
+
+		for (const text of variations) {
+			const risks = extractSomaticRisksDeterministic(text);
+			assert.strictEqual(
+				risks.hasNsaidAllergyOrSamterTriad,
+				true,
+				`Expected NSAID allergy detected for: ${text}`,
+			);
+		}
+	});
 });

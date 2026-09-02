@@ -137,8 +137,17 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 			assert.ok(codesII.includes("A16.07.031"), "Expected caries preparation code");
 		});
 
-		it("should map surgical tooth extraction with single vs multi-rooted and sutures", () => {
-			// Single-rooted tooth 11
+		it("should map surgical tooth extraction with single vs multi-rooted, deciduous, retracted and sutures", () => {
+			// Deciduous tooth 54
+			const deciduousSurg = getOrder804nServicesForClinicalCase({
+				toothNumber: "54",
+				icd10Code: "K00.6",
+				specialty: "surgery",
+			});
+			const deciduousCodes = deciduousSurg.map((s) => s.code);
+			assert.ok(deciduousCodes.includes("A16.07.001.001"), "Expected deciduous extraction code A16.07.001.001");
+
+			// Single-rooted permanent tooth 11
 			const singleSurg = getOrder804nServicesForClinicalCase({
 				toothNumber: "11",
 				icd10Code: "K08.1",
@@ -146,10 +155,10 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 				includeSutures: true,
 			});
 			const singleCodes = singleSurg.map((s) => s.code);
-			assert.ok(singleCodes.includes("A16.07.001.001"), "Expected simple extraction code");
+			assert.ok(singleCodes.includes("A16.07.001.002"), "Expected simple permanent extraction code A16.07.001.002");
 			assert.ok(singleCodes.includes("A16.07.097"), "Expected suturing code");
 
-			// Multi-rooted tooth 16
+			// Multi-rooted permanent tooth 16
 			const multiSurg = getOrder804nServicesForClinicalCase({
 				toothNumber: "16",
 				icd10Code: "K08.1",
@@ -157,8 +166,17 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 				includeSutures: true,
 			});
 			const multiCodes = multiSurg.map((s) => s.code);
-			assert.ok(multiCodes.includes("A16.07.001.002"), "Expected complex extraction code");
+			assert.ok(multiCodes.includes("A16.07.001.003"), "Expected complex extraction code A16.07.001.003");
 			assert.ok(multiCodes.includes("A16.07.097"), "Expected suturing code");
+
+			// Retracted/impacted tooth (K01.1 or isRetracted)
+			const retractedSurg = getOrder804nServicesForClinicalCase({
+				toothNumber: "38",
+				icd10Code: "K01.1",
+				specialty: "surgery",
+			});
+			const retractedCodes = retractedSurg.map((s) => s.code);
+			assert.ok(retractedCodes.includes("A16.07.024"), "Expected retracted tooth extraction code A16.07.024");
 		});
 
 		it("should map periodontics (K05.0 gingivitis vs K05.3 periodontitis)", () => {
@@ -272,7 +290,7 @@ describe("1-Click EMR Autopilot & Nomenclature 804n Engine", () => {
 			assert.match(result.diaryEntry.procedureProtocol, /гемостаз/i);
 
 			const codes = result.order804nServices.map((s) => s.code);
-			assert.ok(codes.includes("A16.07.001.002"));
+			assert.ok(codes.includes("A16.07.001.003"));
 			assert.ok(codes.includes("A16.07.097"));
 
 			assert.strictEqual(result.complianceAudit.isCompliant, true);

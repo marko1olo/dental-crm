@@ -351,6 +351,11 @@ export function extractSomaticRisksDeterministic(
 		"септанест",
 		"убистезин",
 		"лидокаин",
+		"lidocaine",
+		"lidocain",
+		"lidocainum",
+		"ледокаин",
+		"лидакаин",
 		"амидные анестетики",
 	];
 	let hasArticaineAmideAllergy = false;
@@ -364,11 +369,19 @@ export function extractSomaticRisksDeterministic(
 			hasArticaineAmideAllergy = true;
 		}
 	}
+	const anamnesisTriggers = [
+		"аллерг",
+		"непереносим",
+		"отек квинке",
+		"шок",
+		"коллапс",
+		"реакци",
+	];
 	if (!hasArticaineAmideAllergy) {
 		for (const kw of articaineKws) {
 			if (
 				combinedText.includes(kw) &&
-				combinedText.includes("аллерг") &&
+				anamnesisTriggers.some((t) => combinedText.includes(t)) &&
 				!isNegatedInClause(kw)
 			) {
 				hasArticaineAmideAllergy = true;
@@ -475,6 +488,11 @@ export function extractSomaticRisksDeterministic(
 		"кетанов",
 		"нимесулид",
 		"триада самтера",
+		"аспирин",
+		"aspirin",
+		"ацетилсалициловая кислота",
+		"аспириновая астма",
+		"аспириновая триада",
 	];
 	let hasNsaidAllergyOrSamterTriad = false;
 	for (const a of allergies) {
@@ -482,6 +500,31 @@ export function extractSomaticRisksDeterministic(
 		const str = `${a.allergenGroup} ${a.drugInnLatin || ""}`.toLowerCase();
 		if (nsaidKws.some((k) => str.includes(k)) && a.reactionSeverity !== "none") {
 			hasNsaidAllergyOrSamterTriad = true;
+		}
+	}
+	if (!hasNsaidAllergyOrSamterTriad) {
+		const directTriadKws = [
+			"триада самтера",
+			"аспириновая астма",
+			"аспириновая триада",
+		];
+		for (const kw of directTriadKws) {
+			if (combinedText.includes(kw) && !isNegatedInClause(kw)) {
+				hasNsaidAllergyOrSamterTriad = true;
+				break;
+			}
+		}
+	}
+	if (!hasNsaidAllergyOrSamterTriad) {
+		for (const kw of nsaidKws) {
+			if (
+				combinedText.includes(kw) &&
+				anamnesisTriggers.some((t) => combinedText.includes(t)) &&
+				!isNegatedInClause(kw)
+			) {
+				hasNsaidAllergyOrSamterTriad = true;
+				break;
+			}
 		}
 	}
 
