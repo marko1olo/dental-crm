@@ -31,6 +31,11 @@ import { getRequestIdentity } from "../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import {
+	createAlternativePlanGroup,
+	getAlternativePlanGroupsForPatient,
+	selectAndApprovePlanVariant,
+} from "../db/alternativeTreatmentPlansQuery.js";
 
 
 
@@ -143,6 +148,15 @@ const treatmentPlanUpsertSchema = z.object({
 	name: z.string().trim().min(1).max(300).default("Комплексный план лечения"),
 	patientSignature: z.string().max(2_000_000).optional().nullable(),
 	items: z.array(treatmentPlanItemSchema).max(500).default([]),
+	planGroupId: z.string().uuid().optional().nullable(),
+	groupName: z.string().trim().max(300).optional().nullable(),
+	isAlternative: z.boolean().optional().default(false),
+	alternativeTier: z.string().trim().max(100).optional().nullable(),
+	alternativeStatus: z
+		.enum(["proposed", "approved", "declined"])
+		.optional()
+		.default("proposed"),
+	declinedReason: z.string().trim().max(1000).optional().nullable(),
 });
 
 type TreatmentPlanRow = typeof treatmentPlans.$inferSelect;
@@ -204,6 +218,13 @@ function serializeTreatmentPlan(
 		status: plan.status,
 		totalPrice: numeric(plan.totalPrice),
 		patientSignature: plan.patientSignature ?? null,
+		planGroupId: plan.planGroupId ?? null,
+		groupName: plan.groupName ?? null,
+		isAlternative: plan.isAlternative ?? false,
+		alternativeTier: plan.alternativeTier ?? null,
+		alternativeStatus: plan.alternativeStatus ?? "proposed",
+		declinedReason: plan.declinedReason ?? null,
+		approvedAt: plan.approvedAt ? plan.approvedAt.toISOString() : null,
 		createdAt: plan.createdAt.toISOString(),
 		updatedAt: (plan.updatedAt ?? plan.createdAt).toISOString(),
 		items: items.map((item) => {
@@ -920,8 +941,27 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							.set({
 								name: input.name,
 								totalPrice: totalPriceText,
+								totalPriceRub: debtNumericText(totalPriceKopecks),
 								...(input.patientSignature !== undefined
 									? { patientSignature: input.patientSignature }
+									: {}),
+								...(input.planGroupId !== undefined
+									? { planGroupId: input.planGroupId }
+									: {}),
+								...(input.groupName !== undefined
+									? { groupName: input.groupName }
+									: {}),
+								...(input.isAlternative !== undefined
+									? { isAlternative: input.isAlternative }
+									: {}),
+								...(input.alternativeTier !== undefined
+									? { alternativeTier: input.alternativeTier }
+									: {}),
+								...(input.alternativeStatus !== undefined
+									? { alternativeStatus: input.alternativeStatus }
+									: {}),
+								...(input.declinedReason !== undefined
+									? { declinedReason: input.declinedReason }
 									: {}),
 								updatedAt: now,
 								isSynced: false,
@@ -953,7 +993,14 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 								patientId,
 								name: input.name,
 								totalPrice: totalPriceText,
+								totalPriceRub: debtNumericText(totalPriceKopecks),
 								patientSignature: input.patientSignature ?? null,
+								planGroupId: input.planGroupId ?? null,
+								groupName: input.groupName ?? null,
+								isAlternative: input.isAlternative ?? false,
+								alternativeTier: input.alternativeTier ?? null,
+								alternativeStatus: input.alternativeStatus ?? "proposed",
+								declinedReason: input.declinedReason ?? null,
 								isSynced: false,
 								version: 1,
 								updatedAt: now,
@@ -1177,6 +1224,222 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				totalPrice: numeric(rublesFromKopecks(totalPriceKopecks)),
 				plan: savedPlan ?? null,
 			});
+		},
+	);
+
+	/**
+	 * Выбор и утверждение конкретного плана из группы альтернатив (ст. 20 323-ФЗ и ПП РФ №659)
+	 * При утверждении одного плана остальные в группе автоматически отклоняются (Declined / Rejected)
+	 */
+	app.post(
+		"/api/patients/:patientId/treatment-plans/:planId/approve-variant",
+		async (request, reply) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"approve treatment plan variant",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.write",
+					role: staffRole,
+					message: `Отказ в утверждении плана лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
+			const { patientId, planId } = request.params as {
+				patientId: string;
+				planId: string;
+			};
+			if (!UUID_SHAPE.test(patientId) || !UUID_SHAPE.test(planId)) {
+				return reply.code(400).send({ error: "InvalidParameters" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const body = (request.body as { reason?: string | null } | undefined) ?? {};
+
+			try {
+				const result = await withTenantCtx(organizationId, async (tx) => {
+					return selectAndApprovePlanVariant(tx, {
+						organizationId,
+						patientId,
+						planId,
+						actorUserId: identity.userId ?? null,
+						reason: body.reason ?? null,
+					});
+				});
+
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "TREATMENT_PLAN_VARIANT_APPROVED",
+					payload: { patientId, planId, result },
+				});
+
+				return reply.send(result);
+			} catch (err: any) {
+				if (err.statusCode) {
+					return reply.code(err.statusCode).send({
+						error: "TreatmentPlanVariantSelectionError",
+						message: err.message,
+					});
+				}
+				throw err;
+			}
+		},
+	);
+
+	/**
+	 * Создание группы альтернативных планов лечения (ст. 20 323-ФЗ и ПП РФ №659)
+	 */
+	app.post(
+		"/api/patients/:patientId/treatment-plans/alternative-group",
+		async (request, reply) => {
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				request,
+				reply,
+				"create alternative treatment plan group",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.write",
+					role: staffRole,
+					message: `Отказ в создании группы планов лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) {
+				return reply.code(400).send({ error: "InvalidPatientId" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const body = request.body as {
+				groupName: string;
+				doctorId?: string | null;
+				variants: Array<{
+					name: string;
+					alternativeTier?: string;
+					isInitiallyApproved?: boolean;
+					items: Array<{
+						toothNumber?: number | null;
+						priceId: string;
+						name?: string | null;
+						quantity: number;
+						price: number;
+						discount?: number;
+						phase?: number;
+						isAuto?: boolean;
+					}>;
+				}>;
+			};
+
+			if (
+				!body ||
+				!body.groupName ||
+				!Array.isArray(body.variants) ||
+				body.variants.length < 2
+			) {
+				return reply.code(400).send({
+					error: "AlternativePlanGroupValidationError",
+					message:
+						"Необходимо указать название группы и минимум 2 альтернативных варианта плана лечения (ст. 20 323-ФЗ).",
+				});
+			}
+
+			try {
+				const result = await withTenantCtx(organizationId, async (tx) => {
+					return createAlternativePlanGroup(tx, {
+						organizationId,
+						patientId,
+						doctorId: body.doctorId ?? null,
+						groupName: body.groupName,
+						variants: body.variants,
+						actorUserId: identity.userId ?? null,
+					});
+				});
+
+				wsBroker.broadcastToOrganization(organizationId, {
+					type: "ALTERNATIVE_PLAN_GROUP_CREATED",
+					payload: { patientId, result },
+				});
+
+				return reply.send({ success: true, ...result });
+			} catch (err: any) {
+				if (err.statusCode) {
+					return reply.code(err.statusCode).send({
+						error: "AlternativePlanGroupError",
+						message: err.message,
+					});
+				}
+				throw err;
+			}
+		},
+	);
+
+	/**
+	 * Получение групп альтернативных планов для пациента
+	 */
+	app.get(
+		"/api/patients/:patientId/treatment-plans/alternative-groups",
+		async (request, reply) => {
+			const organizationId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"get alternative plan groups",
+			);
+			if (!organizationId) return;
+
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.treatment_plan.read",
+					role: staffRole,
+					message: `Отказ в чтении альтернативных планов (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				});
+			}
+
+			const { patientId } = request.params as { patientId: string };
+			if (!UUID_SHAPE.test(patientId)) {
+				return reply.code(400).send({ error: "InvalidPatientId" });
+			}
+			if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+				return reply.code(404).send({ error: "PatientNotFound" });
+			}
+
+			const groups = await getAlternativePlanGroupsForPatient(
+				db,
+				organizationId,
+				patientId,
+			);
+
+			return reply.send({ success: true, groups });
 		},
 	);
 }

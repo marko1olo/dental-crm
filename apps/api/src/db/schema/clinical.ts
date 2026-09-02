@@ -760,6 +760,13 @@ export const treatmentPlans = pgTable(
 		isSynced: boolean("is_synced").notNull().default(false),
 		version: integer("version").notNull().default(1),
 		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		// Альтернативные планы лечения (ПП РФ №659 и ст. 20 323-ФЗ)
+		planGroupId: uuid("plan_group_id"),
+		groupName: text("group_name"),
+		isAlternative: boolean("is_alternative").notNull().default(false),
+		alternativeTier: text("alternative_tier"),
+		alternativeStatus: text("alternative_status").notNull().default("proposed"),
+		declinedReason: text("declined_reason"),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -772,6 +779,9 @@ export const treatmentPlans = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("treatment_plans_patientId_idx").on(t.patientId),
+		planGroupIdIdx: index("treatment_plans_plan_group_id_idx").on(
+			t.planGroupId,
+		),
 	}),
 );
 

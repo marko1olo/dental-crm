@@ -88,15 +88,16 @@ const generateInvoiceFromPlanSchema = z.object({
 	documentType: z.enum(["invoice", "work_order", "completed_act"]).default("invoice"),
 	items: z.array(
 		z.object({
-			itemId: z.string(),
+			itemId: z.string().optional(),
 			toothNumber: z.number().int().nullable().optional(),
 			surfaces: z.array(z.string()).optional().default([]),
-			code804n: z.string().min(1),
+			code804n: z.string().optional(),
 			nameRu: z.string().min(1),
 			categoryRu: z.string().optional(),
 			quantity: z.number().int().positive().default(1),
-			planUnitPriceRub: z.number().nonnegative(),
-			effectiveUnitPriceRub: z.number().nonnegative(),
+			planUnitPriceRub: z.number().nonnegative().optional(),
+			effectiveUnitPriceRub: z.number().nonnegative().optional(),
+			unitPriceRub: z.number().nonnegative().optional(),
 			discountRub: z.number().nonnegative().default(0),
 			resolutionPolicy: z.string().default("LOCK_ORIGINAL_PRICE"),
 			serviceId: z.string().optional(),
@@ -257,69 +258,58 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 				),
 			);
 
-		if (approvedPlans.length > 0) {
-			const approvedPlanIds = approvedPlans.map((p) => p.id);
+		const approvedPlanIds = approvedPlans.map((p) => p.id);
 
-			const planItems = await db
-				.select({ priceId: treatmentPlanItemsNew.priceId })
-				.from(treatmentPlanItemsNew)
-				.where(
-					and(
-						eq(treatmentPlanItemsNew.organizationId, orgId),
-						inArray(treatmentPlanItemsNew.planId, approvedPlanIds),
-					),
-				);
-
-			const approvedTreatmentItems = await db
-				.select({ serviceId: treatmentItems.serviceId, title: treatmentItems.title })
-				.from(treatmentItems)
-				.where(
-					and(
-						eq(treatmentItems.organizationId, orgId),
-						eq(treatmentItems.patientId, data.patientId),
-						eq(treatmentItems.status, "approved"),
-					),
-				);
-
-			for (const item of data.items) {
-				const itemServiceId = item.serviceId || item.analogueServiceId;
-				const isApproved =
-					planItems.some((pi) => {
-						if (!pi.priceId) return false;
-						if (itemServiceId && (pi.priceId === itemServiceId || pi.priceId.startsWith(`${itemServiceId}::`))) return true;
-						if (item.nameRu && pi.priceId.includes(item.nameRu)) return true;
-						return false;
-					}) ||
-					approvedTreatmentItems.some((ti) => {
-						if (itemServiceId && ti.serviceId === itemServiceId) return true;
-						if (item.nameRu && ti.title === item.nameRu) return true;
-						return false;
-					});
-
-				if (!isApproved) {
-					// Проверяем наличие оформленного и выданного Дополнительного соглашения
-					const [addendumDoc] = await db
-						.select({
-							id: generatedDocuments.id,
-							totalAmountRub: generatedDocuments.totalAmountRub,
-						})
-						.from(generatedDocuments)
+		const planItems =
+			approvedPlanIds.length > 0
+				? await db
+						.select({ priceId: treatmentPlanItemsNew.priceId })
+						.from(treatmentPlanItemsNew)
 						.where(
 							and(
-								eq(generatedDocuments.organizationId, orgId),
-								eq(generatedDocuments.patientId, data.patientId),
-								eq(generatedDocuments.kind, "treatment_plan_acceptance"),
-								eq(generatedDocuments.status, "issued"),
+								eq(treatmentPlanItemsNew.organizationId, orgId),
+								inArray(treatmentPlanItemsNew.planId, approvedPlanIds),
 							),
 						)
-						.limit(1);
+				: [];
 
-					if (!addendumDoc) {
-						return reply.code(422).send({
-							error: "UpsellConsentShieldViolationError",
-							message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
-						});
-					}
+		for (const item of data.items) {
+			const itemServiceId = item.serviceId || item.analogueServiceId;
+			const isApproved = planItems.some((pi) => {
+				if (!pi.priceId) return false;
+				if (
+					itemServiceId &&
+					(pi.priceId === itemServiceId ||
+						pi.priceId.startsWith(`${itemServiceId}::`))
+				)
+					return true;
+				if (item.nameRu && pi.priceId.includes(item.nameRu)) return true;
+				return false;
+			});
+
+			if (!isApproved) {
+				// Проверяем наличие оформленного и выданного Дополнительного соглашения
+				const [addendumDoc] = await db
+					.select({
+						id: generatedDocuments.id,
+						totalAmountRub: generatedDocuments.totalAmountRub,
+					})
+					.from(generatedDocuments)
+					.where(
+						and(
+							eq(generatedDocuments.organizationId, orgId),
+							eq(generatedDocuments.patientId, data.patientId),
+							eq(generatedDocuments.kind, "treatment_plan_acceptance"),
+							eq(generatedDocuments.status, "issued"),
+						),
+					)
+					.limit(1);
+
+				if (!addendumDoc) {
+					return reply.code(422).send({
+						error: "UpsellConsentShieldViolationError",
+						message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
+					});
 				}
 			}
 		}
@@ -368,18 +358,40 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 		}
 
 		// Валидация плана
-		const planItemsForVal: PlanItemForValidation[] = data.items.map((it) => ({
-			itemId: it.itemId,
-			toothNumber: it.toothNumber !== undefined ? it.toothNumber : null,
-			surfaces: it.surfaces || [],
-			code804n: it.code804n,
-			nameRu: it.nameRu,
-			categoryRu: it.categoryRu || "Терапия",
-			quantity: it.quantity,
-			planUnitPriceKopecks: Math.round(it.planUnitPriceRub * 100),
-			planDiscountKopecks: Math.round(it.discountRub * 100),
-			...(it.analogueServiceId || it.serviceId ? { serviceId: it.analogueServiceId || it.serviceId } : {}),
-		}));
+		const planItemsForVal: PlanItemForValidation[] = data.items.map(
+			(it, idx) => {
+				const matchingCatalog = catalogRows.find(
+					(c) =>
+						(it.serviceId && c.id === it.serviceId) ||
+						(it.code804n && c.code === it.code804n),
+				);
+				const effectivePriceRub =
+					it.effectiveUnitPriceRub ??
+					it.planUnitPriceRub ??
+					it.unitPriceRub ??
+					Number(matchingCatalog?.priceRub ?? matchingCatalog?.basePriceRub ?? 0);
+				const planPriceRub =
+					it.planUnitPriceRub ??
+					it.unitPriceRub ??
+					effectivePriceRub;
+
+				return {
+					itemId: it.itemId || it.serviceId || `item-${idx + 1}`,
+					toothNumber: it.toothNumber !== undefined ? it.toothNumber : null,
+					surfaces: it.surfaces || [],
+					code804n: it.code804n || matchingCatalog?.code || "A16.07.001",
+					nameRu: it.nameRu,
+					categoryRu:
+						it.categoryRu || matchingCatalog?.category || "Терапия",
+					quantity: it.quantity,
+					planUnitPriceKopecks: Math.round(planPriceRub * 100),
+					planDiscountKopecks: Math.round(it.discountRub * 100),
+					...(it.analogueServiceId || it.serviceId
+						? { serviceId: it.analogueServiceId || it.serviceId }
+						: {}),
+				};
+			},
+		);
 
 		const validationReport = validatePlanToInvoice({
 			planId: data.planId || "PLAN-CUSTOM",
@@ -409,13 +421,26 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 		// 3. Формируем уникальный номер наряда/счета
 		const timestamp = Date.now().toString().slice(-6);
-		const prefix = data.documentType === "work_order" ? "НРД" : data.documentType === "completed_act" ? "АКТ" : "СЧТ";
+		const prefix =
+			data.documentType === "work_order"
+				? "НРД"
+				: data.documentType === "completed_act"
+					? "АКТ"
+					: "СЧТ";
 		const invoiceNumber = `${prefix}-${patient.id.slice(0, 4).toUpperCase()}-${timestamp}`;
 
-		const totalGrossRub = Math.round(validationReport.effectiveInvoiceGrossKopecks / 100);
-		const totalDiscountRub = Math.round(validationReport.effectiveInvoiceDiscountKopecks / 100);
-		const totalNetRub = Math.round(validationReport.effectiveInvoiceNetKopecks / 100);
-		const clinicAbsorptionRub = Math.round(validationReport.totalClinicAbsorptionKopecks / 100);
+		const totalGrossRub = Number(
+			(validationReport.effectiveInvoiceGrossKopecks / 100).toFixed(2),
+		);
+		const totalDiscountRub = Number(
+			(validationReport.effectiveInvoiceDiscountKopecks / 100).toFixed(2),
+		);
+		const totalNetRub = Number(
+			(validationReport.effectiveInvoiceNetKopecks / 100).toFixed(2),
+		);
+		const clinicAbsorptionRub = Number(
+			(validationReport.totalClinicAbsorptionKopecks / 100).toFixed(2),
+		);
 
 		// Запись в базу (treatment_items)
 		const createdItemIds: string[] = [];
