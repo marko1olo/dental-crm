@@ -152,16 +152,6 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 			}
 
 			if (!foundPatient) {
-				// Fallback to first active patient in demo or return 404
-				const [firstP] = await db
-					.select()
-					.from(patients)
-					.where(eq(patients.organizationId, orgId))
-					.limit(1);
-				foundPatient = firstP;
-			}
-
-			if (!foundPatient) {
 				reply.status(404);
 				return {
 					error: "PatientNotFound",

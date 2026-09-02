@@ -18,6 +18,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { patientAdministrativeProfileSchema } from "@dental/shared";
 import { db } from "../../db/client.js";
 import {
 	fiscalReceiptQueue,
@@ -99,13 +100,13 @@ describe("Prosecutor 3: Wave 3 54-FZ Over-Refunds & Double-Spend Defenses Audit"
 				birthDate: "1988-11-12",
 				phone: "+79069998877",
 				status: "active",
-				administrativeProfile: {
+				administrativeProfile: patientAdministrativeProfileSchema.parse({
 					identityDocument: "Паспорт РФ 4515 987654",
 					taxpayerInn: "770598765432",
 					registrationAddress: "г. Москва, ул. Ленина, д. 10",
 					insurancePolicyNumber: "9988776655443322",
 					snils: "222-333-444 55",
-				},
+				}),
 			});
 
 			// Счет на оплату 15 000 ₽ для проверки возвратов
@@ -113,7 +114,7 @@ describe("Prosecutor 3: Wave 3 54-FZ Over-Refunds & Double-Spend Defenses Audit"
 				id: INVOICE_15K_ID,
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
-				totalRub: 15000,
+				totalRub: "15000.00",
 				totalAmountRub: 15000,
 				status: "issued",
 			});
@@ -216,7 +217,7 @@ describe("Prosecutor 3: Wave 3 54-FZ Over-Refunds & Double-Spend Defenses Audit"
 				id: testInvoiceId,
 				organizationId: ORG_ID,
 				patientId: PATIENT_ID,
-				totalRub: 15000,
+				totalRub: "15000.00",
 				totalAmountRub: 15000,
 				status: "issued",
 			});

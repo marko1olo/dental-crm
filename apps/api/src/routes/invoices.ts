@@ -475,7 +475,18 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply, "invoices list");
 		if (!orgId) return;
 
-		const { patientId } = (request.query as { patientId?: string }) ?? {};
+		const querySchema = z.object({
+			patientId: z.string().uuid().optional(),
+		});
+		const parsedQuery = querySchema.safeParse(request.query);
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Параметр patientId должен быть валидным UUID.",
+				details: parsedQuery.error.issues,
+			});
+		}
+		const patientId = parsedQuery.data.patientId;
 
 		const items = await db
 			.select()

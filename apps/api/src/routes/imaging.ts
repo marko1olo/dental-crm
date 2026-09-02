@@ -111,6 +111,7 @@ import {
 	splitLine,
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	denteAdminSecretHeader,
 	requireClinicalMutationAccess,
@@ -124,6 +125,7 @@ import {
 	parseImagingManifest as parseImagingManifestService,
 } from "../services/imaging/DicomProcessorService.js";
 import { analyzeVisiographImage } from "../ai/visiograph.js";
+import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
 import { analyzeImagingStudy } from "../ai/visionAnalyzer.js";
 import {
 	createImagingStudyInDb,
@@ -143,8 +145,8 @@ import {
 } from "../db/patientsQuery.js";
 import { withTenantCtx } from "../db/rls.js";
 import { getVisitByIdInDb } from "../db/visitsQuery.js";
-import { browserRenderableImageMimeType } from "../imaging/previewFormats.js";
-import { requireOrganizationId } from "../security/identity.js";
+import { getRequestIdentity, requireOrganizationId } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { LocalPacsStorageService } from "../services/imaging/localPacsStorageService.js";
 
 const kindLabels = {
@@ -9185,7 +9187,35 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 	app.get("/api/imaging/studies", async (request, reply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "imaging studies")))
 			return;
-		const { patientId } = request.query as { patientId?: string };
+
+		// 152-ФЗ / 323-ФЗ: КТ / DICOM исследования — врачебная тайна
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.imaging.read",
+				role: staffRole,
+				message: `Отказ в доступе к КТ / DICOM исследованиям (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
+		const querySchema = z.object({
+			patientId: z.string().uuid().optional(),
+		});
+		const parsedQuery = querySchema.safeParse(request.query);
+		if (!parsedQuery.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Параметр patientId должен быть валидным UUID.",
+				details: parsedQuery.error.issues,
+			});
+		}
+		const patientId = parsedQuery.data.patientId;
 		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
 		// а не клиника, приславшая запрос. В установке на несколько клиник врач
 		// клиники Б получал 404 на собственное исследование, а в худшем случае —
@@ -9207,6 +9237,23 @@ export async function registerImagingRoutes(app: FastifyInstance) {
 			))
 		)
 			return;
+
+		// 152-ФЗ / 323-ФЗ: КТ / DICOM сессия просмотра — врачебная тайна
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.imaging.read",
+				role: staffRole,
+				message: `Отказ в доступе к КТ / DICOM исследованиям (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		const { id } = request.params as { id: string };
 		// БЫЛО: getDefaultOrganizationId() — «первая строка таблицы organizations»,
 		// а не клиника, приславшая запрос. В установке на несколько клиник врач

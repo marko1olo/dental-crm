@@ -860,7 +860,8 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 			return reply.code(200).send(result);
 		} catch (err) {
 			if (err instanceof PartialRefundValidationError) {
-				return reply.code(400).send({
+				const statusCode = err.code === "OverRefundExceeded" ? 422 : 400;
+				return reply.code(statusCode).send({
 					error: err.code,
 					message: err.message,
 					details: err.details,

@@ -1837,6 +1837,22 @@ export default async function registerDiaryRoutes(app: FastifyInstance) {
 		)
 			return;
 
+		// 152-ФЗ / 323-ФЗ: Экспертиза качества медицинской помощи — врачебная тайна
+		const identity = getRequestIdentity(req);
+		const staffRole =
+			identity.role ??
+			(req as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.chief_review.read",
+				role: staffRole,
+				message: `Отказ в доступе к экспертизе качества медпомощи (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		const parsedIdParams = diaryIdParamsSchema.safeParse(req.params);
 		if (!parsedIdParams.success) {
 			return reply.code(400).send({

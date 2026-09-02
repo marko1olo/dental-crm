@@ -16,7 +16,7 @@ import {
 	type RefundableInvoiceItem,
 	type RefundReasonCategory,
 } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	fiscalReceiptQueue,
@@ -155,6 +155,51 @@ export class PartialRefundService {
 		const invoiceTotalRub = Number(invoice.totalAmountRub || invoice.totalRub || 0);
 		const invoiceTotalKop = Math.round(invoiceTotalRub * 100);
 
+		// 1. Проверяем уже произведенные возвраты по данному счёту (защита от переплаты / Over-Refund Defense)
+		let alreadyRefundedKop = 0;
+		const existingRefunds = await db
+			.select({ amountRub: payments.amountRub })
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, input.organizationId),
+					or(
+						eq(payments.documentId, invoice.id),
+						ilike(payments.note, `%${invoice.id}%`),
+						invoice.visitId ? and(eq(payments.visitId, invoice.visitId), sql`${payments.amountRub} < 0`) : undefined
+					),
+					sql`${payments.amountRub} < 0`
+				)
+			);
+
+		for (const ref of existingRefunds) {
+			alreadyRefundedKop += Math.round(Math.abs(Number(ref.amountRub || 0)) * 100);
+		}
+
+		const remainingRefundableKop = Math.max(0, invoiceTotalKop - alreadyRefundedKop);
+
+		// 2. Рассчитываем запрошенную сумму возврата
+		const requestedTotalKop = input.refundRequests.reduce((sum, req) => {
+			return sum + (req.customAmountKopToRefund ?? invoiceTotalKop);
+		}, 0);
+
+		if (requestedTotalKop <= 0) {
+			throw new PartialRefundValidationError(
+				"ZeroRefundAmount",
+				"Сумма возврата должна быть строго больше нуля."
+			);
+		}
+
+		if (requestedTotalKop > remainingRefundableKop) {
+			const remainingRub = (remainingRefundableKop / 100).toLocaleString("ru-RU");
+			const requestedRub = (requestedTotalKop / 100).toLocaleString("ru-RU");
+			throw new PartialRefundValidationError(
+				"OverRefundExceeded",
+				`Запрошенная сумма возврата (${requestedRub} ₽) превышает доступный лимит по счёту (${remainingRub} ₽). Возврат сверх суммы счёта запрещен 54-ФЗ.`,
+				{ remainingRefundableKop, requestedTotalKop, invoiceTotalKop, alreadyRefundedKop }
+			);
+		}
+
 		// If specific items were passed or inferred:
 		const refundableItems: RefundableInvoiceItem[] = input.refundRequests.map((req, idx) => {
 			const itemAmountKop = req.customAmountKopToRefund ?? invoiceTotalKop;
@@ -208,6 +253,7 @@ export class PartialRefundService {
 					organizationId: input.organizationId,
 					patientId: input.patientId,
 					visitId: invoice.visitId ?? undefined,
+					documentId: invoice.id,
 					clientMutationId: input.clientMutationId ?? undefined,
 					amountRub: -calcResult.totalRefundRub,
 					method: input.paymentMethod === "cash" ? "cash" : "card",
@@ -215,7 +261,7 @@ export class PartialRefundService {
 					paidAt: new Date(),
 					fiscalReceiptNumber: calcResult.refundOperationNumber,
 					fiscalReceiptIssuedAt: calcResult.dateIso,
-					note: `Частичный возврат: ${calcResult.reasonLabelRu}. Сумма: -${calcResult.totalRefundRub} ₽. Вычет врача: -${calcResult.totalDoctorClawbackRub} ₽`,
+					note: `Частичный возврат [Счёт: ${invoice.id}]: ${calcResult.reasonLabelRu}. Сумма: -${calcResult.totalRefundRub} ₽. Вычет врача: -${calcResult.totalDoctorClawbackRub} ₽`,
 				})
 				.returning({ id: payments.id });
 

@@ -5,6 +5,7 @@ import { requireClinicalMutationAccess, requireClinicalReadAccess } from "../acc
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import {
 	canonicalizeCdaXml,
 	egiszRemdPackageSchema,
@@ -293,6 +294,23 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				return;
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			// 152-ФЗ / 323-ФЗ: СЭМД CDA XML содержит полный клинический диагноз
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					ok: false,
+					error: "PermissionDenied",
+					permission: "clinical.cda.export",
+					role: staffRole,
+					message: `Отказ в выгрузке СЭМД CDA (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
 
 			const parsedParams = visitCdaParamsSchema.safeParse(request.params);
 			if (!parsedParams.success) {

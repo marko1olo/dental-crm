@@ -404,11 +404,12 @@ export async function createPaymentInDb(
 						);
 
 					const totalAddendumLimitRub = addendumDocs.reduce((sum, d) => sum + (Number(d.totalAmountRub) || 0), 0);
-					const maxAllowedAmountRub = remainingAgreedBalanceRub + totalAddendumLimitRub;
+					const totalAuthorizedRub = approvedTotalRub + totalAddendumLimitRub;
+					const maxAllowedAmountRub = Math.max(0, totalAuthorizedRub - paidTotalRub);
 
 					if (input.amountRub > maxAllowedAmountRub || (hasServiceKeyword && addendumDocs.length === 0)) {
 						const error = new Error(
-							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Upsell Consent Shield): сумма аванса/предоплаты (${input.amountRub} ₽) превышает согласованный остаток по утвержденному плану лечения (${remainingAgreedBalanceRub} ₽). Прием платежа без подписанного Дополнительного соглашения запрещен.`,
+							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Upsell Consent Shield): сумма аванса/предоплаты (${input.amountRub} ₽) превышает доступный лимит согласованного лечения с учетом допсоглашений (${maxAllowedAmountRub} ₽, оплачено ранее: ${paidTotalRub} ₽, лимит сметы и аддендумов: ${totalAuthorizedRub} ₽). Прием платежа без подписанного Дополнительного соглашения запрещен.`,
 						);
 						// biome-ignore lint/suspicious/noExplicitAny: error mapping
 						(error as any).statusCode = 422;

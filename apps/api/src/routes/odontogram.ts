@@ -567,12 +567,29 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 	app.get(
 		"/api/patients/:patientId/tooth-states/:toothNumber/endo",
 		async (request, reply) => {
-			const organizationId = await requireResolvedOrganizationId(
+			const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 				request,
 				reply,
 				"tooth endo read",
 			);
 			if (!organizationId) return;
+
+			// 152-ФЗ / 323-ФЗ: Эндодонтические данные — врачебная тайна
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.endo.read",
+					role: staffRole,
+					message: `Отказ в доступе к эндодонтической карте (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
 			const { patientId, toothNumber: toothParam } = request.params as {
 				patientId: string;
 				toothNumber: string;
@@ -631,6 +648,23 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 				"tooth endo save",
 			);
 			if (!organizationId) return;
+
+			// 152-ФЗ / 323-ФЗ: Запись эндодонтических данных разрешена только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.endo.write",
+					role: staffRole,
+					message: `Отказ в изменении эндодонтических данных (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
 			const { patientId, toothNumber: toothParam } = request.params as {
 				patientId: string;
 				toothNumber: string;
