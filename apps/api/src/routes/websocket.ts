@@ -29,6 +29,7 @@ import fastifyWebsocket from "@fastify/websocket";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { WebSocket } from "ws";
 import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 /**
@@ -95,7 +96,10 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 	// (reading Symbol(fastify.acceptedHTTPMethods))».
 	const wsApp = app as unknown as { get: WebsocketRouteRegistrar };
 
-	wsApp.get("/api/ws/schedule", { websocket: true }, (socket, request) => {
+	wsApp.get(
+		"/api/ws/schedule",
+		{ websocket: true },
+		(socket: WebSocket, request: FastifyRequest) => {
 		let authorized = false;
 
 		const authTimer = setTimeout(() => {
@@ -145,11 +149,8 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 					? payload.patientId.trim()
 					: undefined;
 
-			const isClinical =
-				identity.role === "doctor" ||
-				identity.role === "admin" ||
-				identity.role === "assistant" ||
-				identity.role === "chief_doctor";
+			const evalResult = evaluateClinicalAccess(identity.role);
+			const isClinical = evalResult.hasClinicalAccess;
 
 			wsBroker.addClient(socket, identity.organizationId, patientId, isClinical);
 			authorized = true;
