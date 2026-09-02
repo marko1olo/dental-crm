@@ -432,8 +432,9 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 						targetPlan?.planDiscountPercent ?? 0,
 					);
 					if (patientDiscountPercent > 0) {
+						const lineGross = effectivePriceRub * it.quantity;
 						discountRub = Number(
-							((effectivePriceRub * patientDiscountPercent) / 100).toFixed(2),
+							((lineGross * patientDiscountPercent) / 100).toFixed(2),
 						);
 					}
 				}
@@ -456,11 +457,21 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			},
 		);
 
-		const isPriceLockedFinal =
-			(freezeToken ? freezeToken.isPriceLocked : false) ||
-			data.isSignedWithPatient === true ||
-			!!data.approvedAtIso ||
-			targetPlan?.status === "Approved";
+		// При наличии токена фиксации цен — его статус является первичным источником истины о блокировке цен.
+		// Если токен истек (freezeToken.isExpired === true), цена НЕ зафиксирована, даже если план Approved.
+		const isPriceLockedFinal = freezeToken
+			? freezeToken.isPriceLocked
+			: Boolean(data.isSignedWithPatient === true || data.approvedAtIso || targetPlan?.status === "Approved");
+
+		// При истечении токена смета считается просроченной (срок фиксации истек)
+		const isPlanExpiredExplicit = freezeToken?.isExpired === true ? true : undefined;
+
+		// Лимит дней и порог инфляции берутся из токена фиксации (по умолчанию 10% по ПП РФ №659)
+		const effectiveValidityDaysLimit = freezeToken
+			? (freezeToken.daysRemaining || 30)
+			: (data.planCreatedAtIso ? 30 : undefined);
+
+		const effectiveInflationThreshold = freezeToken?.inflationThresholdPercent ?? 10;
 
 		const validationReport = validatePlanToInvoice({
 			planId: data.planId || targetPlan?.id || "PLAN-CUSTOM",
@@ -474,6 +485,9 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			approvedAtIso:
 				data.approvedAtIso || targetPlan?.approvedAt?.toISOString(),
 			isSignedWithPatient: isPriceLockedFinal,
+			isPlanExpired: isPlanExpiredExplicit,
+			validityDaysLimit: effectiveValidityDaysLimit,
+			inflationThresholdPercent: effectiveInflationThreshold,
 			items: planItemsForVal,
 			catalog: catalogLookup,
 			adminOverrideAuthorized: isAdminOverrideVerified,
@@ -517,37 +531,53 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 		// Запись в базу (treatment_items)
 		const createdItemIds: string[] = [];
-		for (const it of validationReport.items) {
-			const matchingCatalog = catalogRows.find(
-				(c) => c.code === it.code804n || c.id === it.suggested804nAnalogue?.serviceId,
-			);
-
-			const [inserted] = await db
-				.insert(treatmentItems)
-				.values({
-					organizationId: orgId,
-					patientId: data.patientId,
-					serviceId: matchingCatalog?.id ?? null,
-					toothCode: it.toothNumber ? String(it.toothNumber) : null,
-					title: it.nameRu,
-					quantity: String(it.quantity),
-					unitPriceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
-					priceRub: Number((it.effectiveLineNetKopecks / 100).toFixed(2)),
-					discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
-					status: "proposed",
-					plannedDoctorUserId: data.doctorUserId ?? null,
-					notes: `Наряд ${invoiceNumber}. Политика: ${it.selectedResolution}${
-						it.clinicAbsorptionKopecks > 0
-							? ` (Абсорбция клиники: ${(it.clinicAbsorptionKopecks / 100).toFixed(2)} ₽)`
-							: ""
-					}`,
-				})
-				.returning({ id: treatmentItems.id });
-
-			if (inserted) {
-				createdItemIds.push(inserted.id);
+		await db.transaction(async (tx) => {
+			if (data.planId) {
+				await tx
+					.select()
+					.from(treatmentPlans)
+					.where(
+						and(
+							eq(treatmentPlans.id, data.planId),
+							eq(treatmentPlans.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
 			}
-		}
+
+			for (const it of validationReport.items) {
+				const matchingCatalog = catalogRows.find(
+					(c) => c.code === it.code804n || c.id === it.suggested804nAnalogue?.serviceId,
+				);
+
+				const [inserted] = await tx
+					.insert(treatmentItems)
+					.values({
+						organizationId: orgId,
+						patientId: data.patientId,
+						serviceId: matchingCatalog?.id ?? null,
+						toothCode: it.toothNumber ? String(it.toothNumber) : null,
+						title: it.nameRu,
+						quantity: String(it.quantity),
+						unitPriceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
+						priceRub: Number((it.effectiveLineNetKopecks / 100).toFixed(2)),
+						discountRub: Number((it.effectiveDiscountKopecks / 100).toFixed(2)),
+						status: "proposed",
+						plannedDoctorUserId: data.doctorUserId ?? null,
+						notes: `Наряд ${invoiceNumber}. Политика: ${it.selectedResolution}${
+							it.clinicAbsorptionKopecks > 0
+								? ` (Абсорбция клиники: ${(it.clinicAbsorptionKopecks / 100).toFixed(2)} ₽)`
+								: ""
+						}`,
+					})
+					.returning({ id: treatmentItems.id });
+
+				if (inserted) {
+					createdItemIds.push(inserted.id);
+				}
+			}
+		});
 
 		return reply.code(201).send({
 			success: true,

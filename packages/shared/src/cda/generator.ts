@@ -18,6 +18,7 @@ import {
 } from "./schemas.js";
 
 export const generateSemd043uXml = generateSemd101Xml;
+export const generateSemd103Xml = generateSemd101Xml;
 export const generateSemd108Xml = generateSemd101Xml;
 export const generateSemd109Xml = generateSemd043_1uXml;
 export { generateSemd043_1uXml };

@@ -138,6 +138,7 @@ export interface PlanToInvoiceValidationPayload {
 	readonly planCreatedAtIso: string;
 	readonly approvedAtIso?: string | null | undefined;
 	readonly isSignedWithPatient?: boolean | undefined;
+	readonly isPlanExpired?: boolean | undefined;
 	readonly validityDaysLimit?: number | undefined; // По умолчанию 30 дней для терапии, 90 для имплантации
 	readonly inflationThresholdPercent?: number | undefined; // Порог подорожания (напр. 15%)
 	readonly items: readonly PlanItemForValidation[];
@@ -290,7 +291,10 @@ export function validatePlanToInvoice(
 	const validityDays = payload.validityDaysLimit ?? 30;
 	const inflationThreshold = payload.inflationThresholdPercent ?? 15;
 	const planAgeDays = calculateDaysDifference(payload.planCreatedAtIso, nowIso);
-	const isPlanExpired = planAgeDays > validityDays;
+	const isPlanExpired =
+		payload.isPlanExpired !== undefined
+			? payload.isPlanExpired
+			: planAgeDays > validityDays;
 	const expiryDaysRemaining = Math.max(0, validityDays - planAgeDays);
 
 	// Если план подписан пациентом (или утвержден) и не истек срок гарантии — цена зафиксирована

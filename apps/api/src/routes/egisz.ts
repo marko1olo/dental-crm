@@ -1466,6 +1466,92 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			});
 		},
 	);
+
+	/**
+	 * GET /api/clinical/egisz/outbox/:outboxId/receipt — официальная регистрационная квитанция РЭМД по ID пакета.
+	 */
+	app.get(
+		"/api/clinical/egisz/outbox/:outboxId/receipt",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"egisz outbox receipt read",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const { outboxId } = request.params as { outboxId: string };
+			if (!outboxId) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Параметр outboxId обязателен.",
+				});
+			}
+
+			const dispatcher = new EgiszOutboxDispatcher();
+			const receipt = await dispatcher.getReceiptByOutboxId(orgId, outboxId);
+
+			if (!receipt) {
+				return reply.status(404).send({
+					error: "ReceiptNotFound",
+					message:
+						"Регистрационная квитанция РЭМД не найдена или документ ещё не зарегистрирован в Минздраве.",
+				});
+			}
+
+			return reply.status(200).send({
+				ok: true,
+				receipt,
+			});
+		},
+	);
+
+	/**
+	 * GET /api/clinical/egisz/visits/:visitId/receipt — официальная регистрационная квитанция РЭМД по ID приёма.
+	 */
+	app.get(
+		"/api/clinical/egisz/visits/:visitId/receipt",
+		async (request: FastifyRequest, reply: FastifyReply) => {
+			if (
+				!(await requireClinicalReadAccess(
+					request,
+					reply,
+					"egisz visit receipt read",
+				))
+			)
+				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			const { visitId } = request.params as { visitId: string };
+			if (!visitId) {
+				return reply.status(400).send({
+					error: "ValidationError",
+					message: "Параметр visitId обязателен.",
+				});
+			}
+
+			const dispatcher = new EgiszOutboxDispatcher();
+			const receipt = await dispatcher.getReceiptByVisitId(orgId, visitId);
+
+			if (!receipt) {
+				return reply.status(404).send({
+					error: "ReceiptNotFound",
+					message:
+						"Регистрационная квитанция РЭМД для указанного приёма не найдена или документ ещё не зарегистрирован в Минздраве.",
+				});
+			}
+
+			return reply.status(200).send({
+				ok: true,
+				receipt,
+			});
+		},
+	);
 }
 
 /**

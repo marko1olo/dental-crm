@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-export type SemdDocKind = "101" | "104" | "105" | "106" | "130" | "302" | "303" | "043u" | "108" | "043-1u" | "0431u" | "109";
+export type SemdDocKind = "101" | "103" | "104" | "105" | "106" | "130" | "302" | "303" | "043u" | "108" | "043-1u" | "0431u" | "109";
 
 export interface PersonName {
 	first: string;
@@ -148,7 +148,7 @@ export interface TaxpayerInfo {
 // ─── Параметры для генерации СЭМД 101 / 043/у: Протокол консультации стоматолога ───
 
 export interface CdaSemd101Params {
-	docKind: "101" | "043u" | "108";
+	docKind: "101" | "103" | "043u" | "108";
 	documentId: string;
 	documentVersion?: number | undefined;
 	documentTime?: Date | undefined;
@@ -266,6 +266,7 @@ export interface CdaSemd130Params {
 }
 
 export type CdaSemd043uParams = CdaSemd101Params;
+export type CdaSemd103Params = CdaSemd101Params;
 export type CdaSemd108Params = CdaSemd101Params;
 
 // ─── Параметры для генерации СЭМД 109 / 043-1/у: Карта ортодонтического пациента ───
@@ -451,4 +452,31 @@ export interface EgiszExportPackageFiles {
 	moSigBase64?: string | undefined;
 	manifestFileName: string;
 	manifestJson: string;
+}
+
+export interface EgiszRemdRegistrationReceipt {
+	receiptId: string;
+	remdDocumentId: string;
+	remdTransactionId: string;
+	docTypeNsiCode: string;
+	docTypeTitle: string;
+	clinicOid: string;
+	organizationId: string;
+	patientId: string;
+	patientSnils?: string | null | undefined;
+	visitId: string;
+	documentId?: string | null | undefined;
+	registeredAt: string;
+	payloadHashSha256: string;
+	doctorCertSerial: string;
+	doctorCertSubject: string;
+	moCertSerial?: string | null | undefined;
+	operatorSignature: {
+		operatorName: string;
+		serviceEndpoint: string;
+		tspTimestamp: string;
+		verificationStatus: "VERIFIED_VALID";
+	};
+	receiptVersion: "1.0";
+	issuedAt: string;
 }

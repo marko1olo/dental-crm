@@ -142,7 +142,7 @@ export const taxpayerInfoSchema = z.object({
 // ─── СЭМД 101 / 043/у: Протокол консультации стоматолога ───────────────────
 
 export const cdaSemd101Schema = z.object({
-	docKind: z.enum(["101", "043u", "108"]).default("101"),
+	docKind: z.enum(["101", "103", "043u", "108"]).default("101"),
 	documentId: z.string().min(1),
 	documentVersion: z.number().int().positive().optional().default(1),
 	documentTime: z.preprocess((v) => {
@@ -178,6 +178,8 @@ export const cdaSemd101Schema = z.object({
 	comorbidities: z.string().optional(),
 	instrumentTrayBarcode: z.string().optional(),
 });
+
+export const cdaSemd103Schema = cdaSemd101Schema;
 
 // ─── СЭМД 104: Эпикриз стоматологический ────────────────────────────────────
 
@@ -383,3 +385,31 @@ export const egiszRemdPackageSchema = z.object({
 		docTypeNsiCode: z.string(),
 	}),
 });
+
+export const egiszRemdRegistrationReceiptSchema = z.object({
+	receiptId: z.string().min(1),
+	remdDocumentId: z.string().min(1),
+	remdTransactionId: z.string().min(1),
+	docTypeNsiCode: z.string().min(1),
+	docTypeTitle: z.string().min(1),
+	clinicOid: z.string().min(1),
+	organizationId: z.string().min(1),
+	patientId: z.string().min(1),
+	patientSnils: z.string().nullable().optional(),
+	visitId: z.string().min(1),
+	documentId: z.string().nullable().optional(),
+	registeredAt: z.string().min(1),
+	payloadHashSha256: z.string().min(64),
+	doctorCertSerial: z.string().min(1),
+	doctorCertSubject: z.string().min(1),
+	moCertSerial: z.string().nullable().optional(),
+	operatorSignature: z.object({
+		operatorName: z.string(),
+		serviceEndpoint: z.string(),
+		tspTimestamp: z.string(),
+		verificationStatus: z.literal("VERIFIED_VALID"),
+	}),
+	receiptVersion: z.literal("1.0"),
+	issuedAt: z.string(),
+});
+

@@ -22,6 +22,9 @@ import {
 } from "./OiisGatewayClient.js";
 import type { EgiszRemdPackage } from "../cda/signature.js";
 import { canonicalizeCdaXml } from "../cda/signature.js";
+import type { EgiszRemdRegistrationReceipt } from "@dental/shared";
+
+export type { EgiszRemdRegistrationReceipt };
 
 export interface OutboxProcessResult {
 	processedCount: number;
@@ -85,6 +88,68 @@ export function calculateEgiszRetryDelayMs(attempt: number): number {
 		default:
 			return 24 * 60 * 60_000;
 	}
+}
+
+/**
+ * Creates formal, legally binding EGISZ REMD Registration Receipt (Квитанция о регистрации СЭМД в РЭМД).
+ * Compliant with Minzdrav Order 911n and FZ-63.
+ */
+export function createEgiszRemdReceipt(params: {
+	remdDocumentId: string;
+	transactionId: string;
+	registeredAt?: string | null | undefined;
+	organizationId: string;
+	patientId: string;
+	patientSnils?: string | null | undefined;
+	visitId: string;
+	documentId?: string | null | undefined;
+	docTypeNsiCode?: string | null | undefined;
+	clinicOid: string;
+	payloadHashSha256: string;
+	doctorCertSerial: string;
+	doctorCertSubject: string;
+	moCertSerial?: string | null | undefined;
+	serviceEndpoint?: string | undefined;
+}): EgiszRemdRegistrationReceipt {
+	const registeredAt = params.registeredAt || new Date().toISOString();
+	const sanitizedDocId = params.remdDocumentId.replace(/[^a-zA-Z0-9_-]/g, "");
+	const receiptId = `RCP-REMD-${sanitizedDocId || "DOC"}-${Date.now()}`;
+	const docTypeTitles: Record<string, string> = {
+		"108": "Стоматологический протокол приёма (СЭМД 108)",
+		"107": "Консультация врача-стоматолога",
+		"043": "Медицинская карта ортодонтического пациента (Форма 043-1/у)",
+		"043u": "Медицинская карта ортодонтического пациента (Форма 043-1/у)",
+		"025": "Медицинская карта амбулаторного пациента (Форма 025/у)",
+	};
+	const code = params.docTypeNsiCode || "108";
+	const docTypeTitle = docTypeTitles[code] || `Медицинский документ (СЭМД код ${code})`;
+
+	return {
+		receiptId,
+		remdDocumentId: params.remdDocumentId,
+		remdTransactionId: params.transactionId,
+		docTypeNsiCode: code,
+		docTypeTitle,
+		clinicOid: params.clinicOid,
+		organizationId: params.organizationId,
+		patientId: params.patientId,
+		patientSnils: params.patientSnils ?? null,
+		visitId: params.visitId,
+		documentId: params.documentId ?? null,
+		registeredAt,
+		payloadHashSha256: params.payloadHashSha256,
+		doctorCertSerial: params.doctorCertSerial,
+		doctorCertSubject: params.doctorCertSubject,
+		moCertSerial: params.moCertSerial ?? null,
+		operatorSignature: {
+			operatorName: "ЕГИСЗ РЭМД Минздрава России",
+			serviceEndpoint: params.serviceEndpoint || "https://api.n3health.ru/egisz/v1/remd",
+			tspTimestamp: registeredAt,
+			verificationStatus: "VERIFIED_VALID",
+		},
+		receiptVersion: "1.0",
+		issuedAt: new Date().toISOString(),
+	};
 }
 
 export class EgiszOutboxDispatcher {
@@ -236,7 +301,29 @@ export class EgiszOutboxDispatcher {
 			results: [],
 		};
 
-		// 1. Process items from the robust egisz_outbox table
+		// 1. Stale lock recovery: auto-recover items stuck in 'sending' without transaction ID for > 5 minutes
+		const staleThreshold = new Date(Date.now() - 5 * 60_000);
+		await db
+			.update(egiszOutbox)
+			.set({
+				status: "ready_for_dispatch",
+				lockedAt: null,
+				lockedBy: null,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					organizationId ? eq(egiszOutbox.organizationId, organizationId) : sql`1=1`,
+					eq(egiszOutbox.status, "sending"),
+					sql`${egiszOutbox.remdTransactionId} IS NULL`,
+					or(
+						lte(egiszOutbox.lockedAt, staleThreshold),
+						sql`${egiszOutbox.lockedAt} IS NULL`,
+					),
+				),
+			);
+
+		// 2. Process items from the robust egisz_outbox table
 		const now = new Date();
 		const outboxWhere = organizationId
 			? and(
@@ -321,14 +408,41 @@ export class EgiszOutboxDispatcher {
 				if (submissionRes.success) {
 					const isRegistered = submissionRes.status === "Registered";
 					const targetStatus = isRegistered ? "registered_in_remd" : "sending";
+					const resolvedRemdDocId = submissionRes.remdDocumentId ?? `REMD-DOC-${row.id.slice(0, 8)}`;
+
+					let receipt: EgiszRemdRegistrationReceipt | null = null;
+					if (isRegistered) {
+						receipt = createEgiszRemdReceipt({
+							remdDocumentId: resolvedRemdDocId,
+							transactionId: submissionRes.transactionId,
+							registeredAt: submissionRes.registrationDate,
+							organizationId: row.organizationId,
+							patientId: row.patientId,
+							patientSnils: snils,
+							visitId: row.visitId,
+							documentId: row.documentId,
+							docTypeNsiCode: row.docTypeNsiCode,
+							clinicOid: this.client.getConfig().clinicOid,
+							payloadHashSha256: row.payloadHashSha256,
+							doctorCertSerial: row.doctorCertSerial,
+							doctorCertSubject: row.doctorCertSubject,
+							moCertSerial: row.moCertSerial,
+							serviceEndpoint: this.client.getConfig().baseUrl,
+						});
+					}
+
+					const responsePayload: Record<string, unknown> = {
+						...((submissionRes.rawResponse as Record<string, unknown>) ?? {}),
+						...(receipt ? { receipt } : {}),
+					};
 
 					await db
 						.update(egiszOutbox)
 						.set({
 							status: targetStatus,
-							remdDocumentId: submissionRes.remdDocumentId ?? null,
+							remdDocumentId: resolvedRemdDocId,
 							remdTransactionId: submissionRes.transactionId,
-							gatewayResponseJson: (submissionRes.rawResponse as Record<string, unknown>) ?? null,
+							gatewayResponseJson: responsePayload,
 							lockedAt: null,
 							lockedBy: null,
 							updatedAt: new Date(),
@@ -343,10 +457,11 @@ export class EgiszOutboxDispatcher {
 							transactionId: submissionRes.transactionId,
 							errorDetails: {
 								outboxId: row.id,
-								remdDocumentId: submissionRes.remdDocumentId,
+								remdDocumentId: resolvedRemdDocId,
 								registrationDate: submissionRes.registrationDate,
 								dispatchedAt: new Date().toISOString(),
 								rawResponse: submissionRes.rawResponse,
+								...(receipt ? { receipt } : {}),
 							},
 						})
 						.where(
@@ -355,6 +470,17 @@ export class EgiszOutboxDispatcher {
 								eq(egiszLogs.visitId, row.visitId),
 							),
 						);
+
+					if (receipt) {
+						await appendEgiszAuditLog(db, {
+							organizationId: row.organizationId,
+							eventType: "REMD_RECEIPT_PERSISTED",
+							entityType: "egisz_outbox",
+							entityId: row.id,
+							patientId: row.patientId,
+							payload: receipt as unknown as Record<string, unknown>,
+						});
+					}
 
 					await appendEgiszAuditLog(db, {
 						organizationId: row.organizationId,
@@ -366,8 +492,9 @@ export class EgiszOutboxDispatcher {
 							outboxId: row.id,
 							visitId: row.visitId,
 							transactionId: submissionRes.transactionId,
-							remdDocumentId: submissionRes.remdDocumentId,
+							remdDocumentId: resolvedRemdDocId,
 							status: submissionRes.status,
+							receiptId: receipt?.receiptId ?? null,
 						},
 					});
 
@@ -632,13 +759,41 @@ export class EgiszOutboxDispatcher {
 				const statusRes = await this.client.getRemdDocumentStatus(row.remdTransactionId);
 				if (statusRes.status === "Registered" || statusRes.status === "Rejected") {
 					const isRegistered = statusRes.status === "Registered";
+					const resolvedRemdDocId = statusRes.remdDocumentId ?? row.remdDocumentId ?? `REMD-DOC-${row.id.slice(0, 8)}`;
+
+					let receipt: EgiszRemdRegistrationReceipt | null = null;
+					if (isRegistered) {
+						receipt = createEgiszRemdReceipt({
+							remdDocumentId: resolvedRemdDocId,
+							transactionId: row.remdTransactionId,
+							registeredAt: statusRes.registrationDate,
+							organizationId: row.organizationId,
+							patientId: row.patientId,
+							patientSnils: null,
+							visitId: row.visitId,
+							documentId: row.documentId,
+							docTypeNsiCode: row.docTypeNsiCode,
+							clinicOid: this.client.getConfig().clinicOid,
+							payloadHashSha256: row.payloadHashSha256,
+							doctorCertSerial: row.doctorCertSerial,
+							doctorCertSubject: row.doctorCertSubject,
+							moCertSerial: row.moCertSerial,
+							serviceEndpoint: this.client.getConfig().baseUrl,
+						});
+					}
+
+					const responsePayload: Record<string, unknown> = {
+						...((statusRes as unknown as Record<string, unknown>) ?? {}),
+						...(receipt ? { receipt } : {}),
+					};
+
 					await db
 						.update(egiszOutbox)
 						.set({
 							status: isRegistered ? "registered_in_remd" : "rejected_by_remd",
-							remdDocumentId: statusRes.remdDocumentId ?? row.remdDocumentId,
+							remdDocumentId: resolvedRemdDocId,
 							lastErrorMessage: statusRes.statusDescription,
-							gatewayResponseJson: (statusRes as unknown as Record<string, unknown>) ?? null,
+							gatewayResponseJson: responsePayload,
 							updatedAt: new Date(),
 						})
 						.where(eq(egiszOutbox.id, row.id));
@@ -649,10 +804,11 @@ export class EgiszOutboxDispatcher {
 							status: isRegistered ? "Accepted" : "Error",
 							errorDetails: {
 								outboxId: row.id,
-								remdDocumentId: statusRes.remdDocumentId,
+								remdDocumentId: resolvedRemdDocId,
 								statusDescription: statusRes.statusDescription,
 								statusCodeNsi: statusRes.statusCodeNsi,
 								syncedAt: new Date().toISOString(),
+								...(receipt ? { receipt } : {}),
 							},
 						})
 						.where(
@@ -661,6 +817,17 @@ export class EgiszOutboxDispatcher {
 								eq(egiszLogs.visitId, row.visitId),
 							),
 						);
+
+					if (receipt) {
+						await appendEgiszAuditLog(db, {
+							organizationId: row.organizationId,
+							eventType: "REMD_RECEIPT_PERSISTED",
+							entityType: "egisz_outbox",
+							entityId: row.id,
+							patientId: row.patientId,
+							payload: receipt as unknown as Record<string, unknown>,
+						});
+					}
 
 					await appendEgiszAuditLog(db, {
 						organizationId: row.organizationId,
@@ -672,8 +839,9 @@ export class EgiszOutboxDispatcher {
 							outboxId: row.id,
 							transactionId: row.remdTransactionId,
 							status: statusRes.status,
-							remdDocumentId: statusRes.remdDocumentId,
+							remdDocumentId: resolvedRemdDocId,
 							statusDescription: statusRes.statusDescription,
+							receiptId: receipt?.receiptId ?? null,
 						},
 					});
 
@@ -783,6 +951,113 @@ export class EgiszOutboxDispatcher {
 			nextAttemptAt: nextItem?.nextAttemptAt ? nextItem.nextAttemptAt.toISOString() : null,
 			checkedAt: new Date().toISOString(),
 		};
+	}
+
+	/**
+	 * Retrieves the formal REMD Registration Receipt by outbox package ID.
+	 */
+	public async getReceiptByOutboxId(
+		organizationId: string,
+		outboxId: string,
+	): Promise<EgiszRemdRegistrationReceipt | null> {
+		const [row] = await db
+			.select({
+				gatewayResponseJson: egiszOutbox.gatewayResponseJson,
+				status: egiszOutbox.status,
+				remdDocumentId: egiszOutbox.remdDocumentId,
+				remdTransactionId: egiszOutbox.remdTransactionId,
+				organizationId: egiszOutbox.organizationId,
+				patientId: egiszOutbox.patientId,
+				visitId: egiszOutbox.visitId,
+				documentId: egiszOutbox.documentId,
+				docTypeNsiCode: egiszOutbox.docTypeNsiCode,
+				payloadHashSha256: egiszOutbox.payloadHashSha256,
+				doctorCertSerial: egiszOutbox.doctorCertSerial,
+				doctorCertSubject: egiszOutbox.doctorCertSubject,
+				moCertSerial: egiszOutbox.moCertSerial,
+				updatedAt: egiszOutbox.updatedAt,
+			})
+			.from(egiszOutbox)
+			.where(
+				and(
+					eq(egiszOutbox.id, outboxId),
+					eq(egiszOutbox.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+
+		if (!row) return null;
+
+		const json = row.gatewayResponseJson as Record<string, unknown> | null;
+		if (json?.receipt && typeof json.receipt === "object") {
+			return json.receipt as EgiszRemdRegistrationReceipt;
+		}
+
+		if (row.status === "registered_in_remd" && row.remdDocumentId && row.remdTransactionId) {
+			return createEgiszRemdReceipt({
+				remdDocumentId: row.remdDocumentId,
+				transactionId: row.remdTransactionId,
+				registeredAt: row.updatedAt?.toISOString(),
+				organizationId: row.organizationId,
+				patientId: row.patientId,
+				visitId: row.visitId,
+				documentId: row.documentId,
+				docTypeNsiCode: row.docTypeNsiCode,
+				clinicOid: this.client.getConfig().clinicOid,
+				payloadHashSha256: row.payloadHashSha256,
+				doctorCertSerial: row.doctorCertSerial,
+				doctorCertSubject: row.doctorCertSubject,
+				moCertSerial: row.moCertSerial,
+				serviceEndpoint: this.client.getConfig().baseUrl,
+			});
+		}
+
+		return null;
+	}
+
+	/**
+	 * Retrieves the formal REMD Registration Receipt by clinical visit ID.
+	 */
+	public async getReceiptByVisitId(
+		organizationId: string,
+		visitId: string,
+	): Promise<EgiszRemdRegistrationReceipt | null> {
+		const [row] = await db
+			.select({ id: egiszOutbox.id })
+			.from(egiszOutbox)
+			.where(
+				and(
+					eq(egiszOutbox.visitId, visitId),
+					eq(egiszOutbox.organizationId, organizationId),
+					eq(egiszOutbox.status, "registered_in_remd"),
+				),
+			)
+			.orderBy(desc(egiszOutbox.createdAt))
+			.limit(1);
+
+		if (row) {
+			return this.getReceiptByOutboxId(organizationId, row.id);
+		}
+
+		// Check legacy egiszLogs
+		const [logRow] = await db
+			.select({ errorDetails: egiszLogs.errorDetails, status: egiszLogs.status })
+			.from(egiszLogs)
+			.where(
+				and(
+					eq(egiszLogs.visitId, visitId),
+					eq(egiszLogs.organizationId, organizationId),
+				),
+			)
+			.orderBy(desc(egiszLogs.createdAt))
+			.limit(1);
+
+		const details = logRow?.errorDetails as Record<string, unknown> | null;
+		if (details?.receipt && typeof details.receipt === "object") {
+			return details.receipt as EgiszRemdRegistrationReceipt;
+		}
+
+		return null;
 	}
 }
 

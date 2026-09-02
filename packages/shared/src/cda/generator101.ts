@@ -40,15 +40,31 @@ export function normalizeSurfaces(surfaces?: string[] | string | null): string[]
 }
 
 export function generateSemd101Xml(params: CdaSemd101Params): string {
+	const is103 = params.docKind === "103";
+	const is108 = params.docKind === "108";
+	const docTitle = is103
+		? "Протокол стоматологического приёма (лечебно-диагностический)"
+		: is108
+			? "Протокол осмотра врача-стоматолога"
+			: "Протокол консультации врача-стоматолога";
+	const docTypeNsiCode = is103 ? "103" : is108 ? "108" : "101";
+	const templateOids = is103
+		? [
+				EGISZ_OIDS.SEMD_TEMPLATE_103,
+				EGISZ_OIDS.SEMD_TEMPLATE_DENTAL_108,
+				EGISZ_OIDS.SEMD_TEMPLATE_BASE_CONSULTATION,
+			]
+		: [
+				EGISZ_OIDS.SEMD_TEMPLATE_101,
+				EGISZ_OIDS.SEMD_TEMPLATE_DENTAL_108,
+				EGISZ_OIDS.SEMD_TEMPLATE_BASE_CONSULTATION,
+			];
+
 	const headerXml = generateClinicalDocumentHeader({
-		docKind: "101",
-		docTypeNsiCode: "101",
-		docTitle: "Протокол консультации врача-стоматолога",
-		templateOids: [
-			EGISZ_OIDS.SEMD_TEMPLATE_101,
-			EGISZ_OIDS.SEMD_TEMPLATE_DENTAL_108,
-			EGISZ_OIDS.SEMD_TEMPLATE_BASE_CONSULTATION,
-		],
+		docKind: params.docKind || "101",
+		docTypeNsiCode,
+		docTitle,
+		templateOids,
 		documentId: params.documentId,
 		documentVersion: params.documentVersion ?? 1,
 		documentTime: params.documentTime,

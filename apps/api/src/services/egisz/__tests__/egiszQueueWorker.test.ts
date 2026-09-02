@@ -84,10 +84,10 @@ describe("EGISZ REMD Background Queue & CDA R3 Determinism", () => {
 		assert.equal(res1.xml, res2.xml, "Generated CDA XML must be 100% deterministic");
 		assert.equal(res1.canonicalXml, res2.canonicalXml, "Canonical XML must be 100% deterministic");
 
-		// Verify tooth order sorting (11 appears before 24, and 24 before 36)
-		const pos11 = res1.xml.indexOf("11");
-		const pos24 = res1.xml.indexOf("24");
-		const pos36 = res1.xml.indexOf("36");
+		// Verify tooth order sorting (11 appears before 24, and 24 before 36) in odontogram table
+		const pos11 = res1.xml.indexOf("<td>11</td>");
+		const pos24 = res1.xml.indexOf("<td>24</td>");
+		const pos36 = res1.xml.indexOf("<td>36</td>");
 		assert.ok(pos11 !== -1 && pos24 !== -1 && pos36 !== -1, "All teeth must be present");
 		assert.ok(pos11 < pos24, "Tooth 11 must appear before tooth 24 in odontogram");
 		assert.ok(pos24 < pos36, "Tooth 24 must appear before tooth 36 in odontogram");

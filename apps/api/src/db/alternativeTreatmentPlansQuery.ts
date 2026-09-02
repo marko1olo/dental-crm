@@ -268,9 +268,13 @@ export async function selectAndApprovePlanVariant(
 ) {
 	const now = new Date();
 
-	// 1. Блокируем целевой план
-	const [targetPlan] = await tx
-		.select()
+	// 1. Сначала считываем метаданные целевого плана, чтобы узнать planGroupId
+	const [planRow] = await tx
+		.select({
+			id: treatmentPlans.id,
+			planGroupId: treatmentPlans.planGroupId,
+			name: treatmentPlans.name,
+		})
 		.from(treatmentPlans)
 		.where(
 			and(
@@ -279,23 +283,24 @@ export async function selectAndApprovePlanVariant(
 				eq(treatmentPlans.organizationId, input.organizationId),
 			),
 		)
-		.for("update")
 		.limit(1);
 
-	if (!targetPlan) {
+	if (!planRow) {
 		const err = new Error("План лечения не найден.");
 		// biome-ignore lint/suspicious/noExplicitAny: error mapping
 		(err as any).statusCode = 404;
 		throw err;
 	}
 
-	const planGroupId = targetPlan.planGroupId;
+	const planGroupId = planRow.planGroupId;
 	const declinedPlanIds: string[] = [];
+	let targetPlan: typeof treatmentPlans.$inferSelect;
+	let siblingPlans: (typeof treatmentPlans.$inferSelect)[] = [];
 
-	// 2. Если план входит в группу альтернатив, обрабатываем всю группу
+	// 2. Блокируем строки строго в детерминированном порядке (ORDER BY id ASC),
+	// чтобы исключить взаимную блокировку PostgreSQL (Deadlock 40P01) при конкурентном утверждении альтернатив
 	if (planGroupId) {
-		// Блокируем все планы группы
-		const siblingPlans = await tx
+		siblingPlans = await tx
 			.select()
 			.from(treatmentPlans)
 			.where(
@@ -304,7 +309,17 @@ export async function selectAndApprovePlanVariant(
 					eq(treatmentPlans.organizationId, input.organizationId),
 				),
 			)
+			.orderBy(asc(treatmentPlans.id))
 			.for("update");
+
+		const found = siblingPlans.find((p) => p.id === input.planId);
+		if (!found) {
+			const err = new Error("План лечения не найден в группе альтернатив.");
+			// biome-ignore lint/suspicious/noExplicitAny: error mapping
+			(err as any).statusCode = 404;
+			throw err;
+		}
+		targetPlan = found;
 
 		const reasonForDeclined =
 			input.reason ||
@@ -341,6 +356,27 @@ export async function selectAndApprovePlanVariant(
 					),
 				);
 		}
+	} else {
+		const [single] = await tx
+			.select()
+			.from(treatmentPlans)
+			.where(
+				and(
+					eq(treatmentPlans.id, input.planId),
+					eq(treatmentPlans.patientId, input.patientId),
+					eq(treatmentPlans.organizationId, input.organizationId),
+				),
+			)
+			.for("update")
+			.limit(1);
+
+		if (!single) {
+			const err = new Error("План лечения не найден.");
+			// biome-ignore lint/suspicious/noExplicitAny: error mapping
+			(err as any).statusCode = 404;
+			throw err;
+		}
+		targetPlan = single;
 	}
 
 	// 3. Утверждаем целевой план

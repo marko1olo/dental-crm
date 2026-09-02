@@ -335,7 +335,12 @@ export function validateCdaParams(params: unknown): CdaValidationResult {
 	}
 
 	// ─── 4. Специфические проверки по видам СЭМД ─────────────────────────────
-	if (data.docKind === "101") {
+	if (
+		data.docKind === "101" ||
+		data.docKind === "103" ||
+		data.docKind === "043u" ||
+		data.docKind === "108"
+	) {
 		const d101 = data as CdaSemd101Params;
 		for (const diag of d101.diagnoses) {
 			if (!validateIcd10Code(diag.icd10Code)) {
@@ -535,5 +540,136 @@ export function validateUkepCertificate(params: {
 		ogrnMatched,
 		errors,
 		warnings,
+	};
+}
+
+/**
+ * Rigorous XML structural validator against HL7 CDA R2 & Minzdrav REMD statutory XSD constraints.
+ * Validates XML well-formedness, root namespaces, header metadata, author/custodian OIDs,
+ * and presence of required clinical sections for specific SEMD kinds (101, 103, 104, 108, 109, 130).
+ */
+export function validateCdaXmlStructure(
+	xml: string,
+	expectedDocKind?: "101" | "103" | "104" | "108" | "109" | "130" | string,
+): CdaValidationResult {
+	const errors: string[] = [];
+	const warnings: string[] = [];
+	const issues: CdaValidationIssue[] = [];
+
+	if (!xml || typeof xml !== "string" || xml.trim().length === 0) {
+		errors.push("XML документ пуст или не является строкой.");
+		return { valid: false, errors, warnings, issues };
+	}
+
+	const trimmed = xml.trim();
+
+	// 1. Root XML declaration & ClinicalDocument root element
+	if (!trimmed.startsWith("<?xml")) {
+		warnings.push("XML документ не содержит стандартной декларации <?xml version=\"1.0\"...?>");
+	}
+
+	if (!/<ClinicalDocument\b[^>]*\bxmlns="urn:hl7-org:v3"/i.test(trimmed)) {
+		errors.push("XML документ не содержит корневого элемента <ClinicalDocument xmlns=\"urn:hl7-org:v3\"> (HL7 CDA R2)");
+		issues.push({ path: "ClinicalDocument", field: "root", message: "Некорректный корневой элемент CDA", severity: "error" });
+	}
+
+	// 2. Statutory Header Elements per HL7 CDA R2 XSD
+	if (!/<realmCode\s+code="RU"\s*\/>/i.test(trimmed)) {
+		errors.push("Отсутствует обязательный элемент <realmCode code=\"RU\"/> (Минздрав РФ)");
+		issues.push({ path: "ClinicalDocument.realmCode", field: "realmCode", message: "Отсутствует realmCode RU", severity: "error" });
+	}
+
+	if (!/<typeId\s+root="2\.16\.840\.1\.113883\.1\.3"\s+extension="POCD_HD000040"\s*\/>/i.test(trimmed)) {
+		errors.push("Отсутствует или некорректен элемент <typeId> (ожидается POCD_HD000040)");
+		issues.push({ path: "ClinicalDocument.typeId", field: "typeId", message: "Некорректный typeId CDA R2", severity: "error" });
+	}
+
+	// Template ID check
+	if (!/<templateId\s+root="[0-2](\.(0|[1-9][0-9]*))+"/i.test(trimmed)) {
+		errors.push("Отсутствует элемент <templateId> с OID шаблона документа Минздрава");
+		issues.push({ path: "ClinicalDocument.templateId", field: "templateId", message: "Отсутствует templateId", severity: "error" });
+	}
+
+	// Document ID check
+	if (!/<id\s+root="[0-2](\.(0|[1-9][0-9]*))+"\s+extension="[^"]+"/i.test(trimmed)) {
+		errors.push("Отсутствует уникальный идентификатор документа <id root=\"...\" extension=\"...\"/>");
+		issues.push({ path: "ClinicalDocument.id", field: "id", message: "Отсутствует id документа", severity: "error" });
+	}
+
+	// Document code (NSI 1.2.643.5.1.13.13.11.1522)
+	if (!/<code\s+code="[^"]+"\s+codeSystem="1\.2\.643\.5\.1\.13\.13\.11\.1522"/i.test(trimmed)) {
+		errors.push("Отсутствует или некорректен элемент <code> с классификатором видов меддокументов Минздрава (OID 1.2.643.5.1.13.13.11.1522)");
+		issues.push({ path: "ClinicalDocument.code", field: "code", message: "Некорректный код вида документа", severity: "error" });
+	}
+
+	// Effective time
+	if (!/<effectiveTime\s+value="\d{8}(\d{4,6})?/i.test(trimmed)) {
+		errors.push("Отсутствует или некорректен элемент даты документа <effectiveTime value=\"YYYYMMDD...\"/>");
+		issues.push({ path: "ClinicalDocument.effectiveTime", field: "effectiveTime", message: "Некорректная дата effectiveTime", severity: "error" });
+	}
+
+	// Confidentiality code
+	if (!/<confidentialityCode\s+code="N"\s+codeSystem="2\.16\.840\.1\.113883\.5\.25"/i.test(trimmed)) {
+		warnings.push("Рекомендуется стандартный код конфиденциальности <confidentialityCode code=\"N\"/>");
+	}
+
+	// Language code
+	if (!/<languageCode\s+code="ru-RU"/i.test(trimmed)) {
+		errors.push("Отсутствует элемент локали <languageCode code=\"ru-RU\"/>");
+		issues.push({ path: "ClinicalDocument.languageCode", field: "languageCode", message: "Отсутствует languageCode ru-RU", severity: "error" });
+	}
+
+	// 3. Clinical Participants (recordTarget, author, custodian)
+	if (!/<recordTarget>/i.test(trimmed) || !/<patientRole>/i.test(trimmed)) {
+		errors.push("Отсутствует секция пациента <recordTarget><patientRole>...");
+		issues.push({ path: "ClinicalDocument.recordTarget", field: "recordTarget", message: "Отсутствует recordTarget", severity: "error" });
+	}
+
+	if (!/<author>/i.test(trimmed) || !/<assignedAuthor>/i.test(trimmed)) {
+		errors.push("Отсутствует секция автора документа <author><assignedAuthor>...");
+		issues.push({ path: "ClinicalDocument.author", field: "author", message: "Отсутствует author", severity: "error" });
+	}
+
+	if (!/<custodian>/i.test(trimmed) || !/<assignedCustodian>/i.test(trimmed)) {
+		errors.push("Отсутствует секция медицинской организации <custodian><assignedCustodian>...");
+		issues.push({ path: "ClinicalDocument.custodian", field: "custodian", message: "Отсутствует custodian", severity: "error" });
+	}
+
+	// 4. Structured Body
+	if (!/<component>\s*<structuredBody>/i.test(trimmed)) {
+		errors.push("Отсутствует секция структурированного клинического тела документа <component><structuredBody>");
+		issues.push({ path: "ClinicalDocument.component.structuredBody", field: "structuredBody", message: "Отсутствует structuredBody", severity: "error" });
+	}
+
+	// 5. Document-type specific sections
+	if (expectedDocKind === "101" || expectedDocKind === "103" || expectedDocKind === "108") {
+		if (!trimmed.includes(EGISZ_OIDS.LOINC_DIAGNOSIS_SECTION)) {
+			errors.push(`СЭМД ${expectedDocKind}: Отсутствует обязательная секция диагнозов (LOINC ${EGISZ_OIDS.LOINC_DIAGNOSIS_SECTION})`);
+			issues.push({ path: "structuredBody.diagnoses", field: "section", message: "Отсутствует секция диагнозов", severity: "error" });
+		}
+		if (!trimmed.includes(EGISZ_OIDS.ICD10)) {
+			errors.push(`СЭМД ${expectedDocKind}: Отсутствует кодирование диагноза по МКБ-10 (OID ${EGISZ_OIDS.ICD10})`);
+			issues.push({ path: "structuredBody.diagnoses.icd10", field: "value", message: "Отсутствует код МКБ-10", severity: "error" });
+		}
+	} else if (expectedDocKind === "104") {
+		if (!trimmed.includes(EGISZ_OIDS.LOINC_DIAGNOSIS_SECTION)) {
+			errors.push("СЭМД 104 (Эпикриз): Отсутствует обязательная секция диагнозов");
+			issues.push({ path: "structuredBody.diagnoses", field: "section", message: "Отсутствует секция диагнозов", severity: "error" });
+		}
+		if (!trimmed.includes(EGISZ_OIDS.LOINC_EPICRISIS)) {
+			warnings.push("СЭМД 104 (Эпикриз): Рекомендуется секция выписного заключения (LOINC 42344-2)");
+		}
+	} else if (expectedDocKind === "130") {
+		if (!trimmed.includes(EGISZ_OIDS.LOINC_PAYMENTS_AND_CONTRACT)) {
+			errors.push("СЭМД 130: Отсутствует секция договора на медуслуги (LOINC 48768-6)");
+			issues.push({ path: "structuredBody.contract", field: "section", message: "Отсутствует секция договора", severity: "error" });
+		}
+	}
+
+	return {
+		valid: errors.length === 0,
+		errors,
+		warnings,
+		issues,
 	};
 }
