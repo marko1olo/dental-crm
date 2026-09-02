@@ -1,25 +1,27 @@
-import React, { useState, useMemo } from "react";
 import {
-	FileText,
-	Printer,
-	Download,
-	X,
-	UserCheck,
 	AlertCircle,
+	Building,
+	Calendar,
+	Check,
 	CheckCircle2,
 	Coins,
-	Calendar,
-	Building,
-	QrCode,
-	FileCode,
-	ListOrdered,
 	Copy,
-	Check,
-	ShieldCheck,
-	Percent,
+	Download,
+	FileCode,
 	FileSpreadsheet,
+	FileText,
 	HelpCircle,
+	ListOrdered,
+	Percent,
+	Printer,
+	QrCode,
+	ShieldCheck,
+	UserCheck,
+	X,
 } from "lucide-react";
+import type React from "react";
+import { useMemo, useState } from "react";
+import { showToast } from "../../GlobalToast";
 import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_2024,
@@ -40,15 +42,15 @@ import {
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
 	type TaxDeductionRelationship,
+	validateFnsTaxXmlStructure,
 	validateInnIndividual,
 	validateInnLegalEntity,
 	validateRussianInn,
 	validateRussianKpp,
 	validateRussianPassport,
+	validateRussianSnils,
 	validateTaxCertificateParams,
-	validateFnsTaxXmlStructure,
 } from "./fnsTaxDeductionEngine";
-import { showToast } from "../../GlobalToast";
 
 export interface FnsTaxDeductionModalProps {
 	readonly isOpen: boolean;
@@ -56,6 +58,8 @@ export interface FnsTaxDeductionModalProps {
 	readonly patientName?: string | undefined;
 	readonly patientBirthDate?: string | undefined;
 	readonly patientInn?: string | undefined;
+	readonly patientSnils?: string | undefined;
+	readonly payerSnils?: string | undefined;
 	readonly payments?: readonly TaxDeductionPaymentItem[] | undefined;
 	readonly clinicName?: string | undefined;
 	readonly clinicInn?: string | undefined;
@@ -73,6 +77,8 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 	patientName = "Смирнов Алексей Викторович",
 	patientBirthDate = "1985-05-12",
 	patientInn = "",
+	patientSnils = "",
+	payerSnils: initialPayerSnils = "",
 	payments = [
 		{
 			id: "pay-1",
@@ -128,12 +134,20 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 	clinicAddress = "г. Москва, ул. Большая Стоматологическая, д. 12",
 	chiefDoctorName = "Барабаш Сергей Владимирович",
 }) => {
-	const [activeTab, setActiveTab] = useState<"form" | "calc" | "checks" | "xml">("form");
+	const [activeTab, setActiveTab] = useState<
+		"form" | "calc" | "checks" | "xml"
+	>("form");
 	const [selectedYear, setSelectedYear] = useState<number>(2024);
-	const [payerRelationship, setPayerRelationship] = useState<TaxDeductionRelationship>("patient");
+	const [payerRelationship, setPayerRelationship] =
+		useState<TaxDeductionRelationship>("patient");
 	const [payerFullName, setPayerFullName] = useState<string>(patientName);
-	const [payerInn, setPayerInn] = useState<string>(patientInn || "500100732259");
-	const [payerBirthDate, setPayerBirthDate] = useState<string>(patientBirthDate);
+	const [payerInn, setPayerInn] = useState<string>(
+		patientInn || "500100732259",
+	);
+	const [payerBirthDate, setPayerBirthDate] =
+		useState<string>(patientBirthDate);
+	const [payerSnils, setPayerSnils] = useState<string>(initialPayerSnils);
+	const [patientSnilsVal, setPatientSnilsVal] = useState<string>(patientSnils);
 	const [passportSeries, setPassportSeries] = useState<string>("4510");
 	const [passportNumber, setPassportNumber] = useState<string>("123456");
 	const [certificateNumber, setCertificateNumber] = useState<string>("915");
@@ -145,6 +159,20 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 	const passportValidation = useMemo(
 		() => validateRussianPassport(`${passportSeries}${passportNumber}`),
 		[passportSeries, passportNumber],
+	);
+	const payerSnilsValidation = useMemo(
+		() =>
+			payerSnils.trim()
+				? validateRussianSnils(payerSnils)
+				: { isValid: true, errorMessageRu: undefined },
+		[payerSnils],
+	);
+	const patientSnilsValidation = useMemo(
+		() =>
+			patientSnilsVal.trim()
+				? validateRussianSnils(patientSnilsVal)
+				: { isValid: true, errorMessageRu: undefined },
+		[patientSnilsVal],
 	);
 
 	// Multi-year summary calculation using exact BigInt engine
@@ -174,7 +202,9 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 
 	const yearPayments = useMemo(() => {
 		if (!isOpen) return [];
-		return payments.filter((p) => new Date(p.dateIso).getFullYear() === selectedYear);
+		return payments.filter(
+			(p) => new Date(p.dateIso).getFullYear() === selectedYear,
+		);
 	}, [isOpen, payments, selectedYear]);
 
 	const getCertificateParams = (): TaxDeductionCertificateParams => ({
@@ -199,11 +229,13 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 			identityDocumentSeries: passportSeries,
 			identityDocumentNumber: passportNumber,
 			relationship: payerRelationship,
+			snils: payerSnils.trim() || undefined,
 		},
 		patient: {
 			fullName: patientName,
 			birthDate: patientBirthDate,
 			inn: patientInn,
+			snils: patientSnilsVal.trim() || undefined,
 		},
 		payments,
 	});
@@ -227,12 +259,14 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 		payerFullName,
 		payerInn,
 		payerBirthDate,
+		payerSnils,
 		passportSeries,
 		passportNumber,
 		payerRelationship,
 		patientName,
 		patientBirthDate,
 		patientInn,
+		patientSnilsVal,
 		payments,
 	]);
 
@@ -272,6 +306,8 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 		setPayerFullName(patientName);
 		setPayerBirthDate(patientBirthDate);
 		if (patientInn) setPayerInn(patientInn);
+		if (patientSnilsVal || patientSnils)
+			setPayerSnils(patientSnilsVal || patientSnils);
 		setPayerRelationship("patient");
 		showToast("Реквизиты плательщика подставлены из карточки пациента", "info");
 	};
@@ -284,7 +320,10 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 	const handleDownloadXml = () => {
 		if (!certParams) return;
 		downloadFnsTaxXmlFile(certParams);
-		showToast(`XML файл ${xmlRepresentation.fileName} выгружен для ФНС / ТКС`, "success");
+		showToast(
+			`XML файл ${xmlRepresentation.fileName} выгружен для ФНС / ТКС`,
+			"success",
+		);
 	};
 
 	const handleDownloadNoMedopl = () => {
@@ -301,7 +340,12 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 	};
 
 	// Calculate percentage of 150 000 statutory limit for Code 01
-	const limitPct = Math.min(100, Math.round((exactSplit.code01Rub / exactSplit.code01StatutoryLimitRub) * 100));
+	const limitPct = Math.min(
+		100,
+		Math.round(
+			(exactSplit.code01Rub / exactSplit.code01StatutoryLimitRub) * 100,
+		),
+	);
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
@@ -317,12 +361,14 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 								<h2 className="text-base sm:text-lg font-bold m-0 flex items-center gap-1.5">
 									Справка для налогового вычета ФНС РФ (Приказ № ЕА-7-11/824@)
 								</h2>
-								<span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 font-mono text-[11px] font-bold border border-teal-500/20">
+								<span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 font-mono text-xs font-bold border border-teal-500/20">
 									КНД 1151156
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Код 01 (лимит 150{"\u00A0"}000{"\u00A0"}₽) • Код 02 (дорогостоящее без лимита по ПП РФ № 458) • QR-код • Выгрузка XML
+								Код 01 (лимит 150{"\u00A0"}000{"\u00A0"}₽) • Код 02
+								(дорогостоящее без лимита по ПП РФ № 458) • QR-код • Выгрузка
+								XML
 							</p>
 						</div>
 					</div>
@@ -402,7 +448,10 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 											Отчетный год:
 										</span>
 										<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300 whitespace-nowrap">
-											Лимит Кода 01: {selectedYear >= 2024 ? "150\u00A0000\u00A0₽" : "120\u00A0000\u00A0₽"}
+											Лимит Кода 01:{" "}
+											{selectedYear >= 2024
+												? "150\u00A0000\u00A0₽"
+												: "120\u00A0000\u00A0₽"}
 										</span>
 									</div>
 									<div className="flex gap-2">
@@ -433,36 +482,41 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 										<button
 											type="button"
 											onClick={handleFillFromPatient}
-											className="text-[11px] text-teal-600 hover:underline font-bold cursor-pointer"
+											className="text-xs text-teal-600 hover:underline font-bold cursor-pointer"
 										>
 											Заполнить из карточки
 										</button>
 									</div>
 									<div className="grid grid-cols-2 gap-1.5">
-										{(["patient", "spouse", "parent", "child"] as const).map((r) => {
-											const meta = TAX_DEDUCTION_RELATIONSHIP_MAP[r];
-											return (
-												<button
-													key={r}
-													type="button"
-													onClick={() => {
-														setPayerRelationship(r);
-														if (r === "patient") {
-															setPayerFullName(patientName);
-															setPayerBirthDate(patientBirthDate);
-														}
-													}}
-													className={`min-h-[44px] px-2 rounded-xl text-xs font-bold transition-all truncate cursor-pointer flex items-center justify-center gap-1.5 ${
-														payerRelationship === r
-															? "bg-teal-600 text-white shadow-sm"
-															: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
-													}`}
-												>
-													<span>Код {meta.code}:</span>
-													<span>{meta.shortLabelRu}</span>
-												</button>
-											);
-										})}
+										{(["patient", "spouse", "parent", "child"] as const).map(
+											(r) => {
+												const meta = TAX_DEDUCTION_RELATIONSHIP_MAP[r];
+												return (
+													<button
+														key={r}
+														type="button"
+														onClick={() => {
+															setPayerRelationship(r);
+															if (r === "patient") {
+																setPayerFullName(patientName);
+																setPayerBirthDate(patientBirthDate);
+																setPayerSnils(
+																	patientSnilsVal || patientSnils || "",
+																);
+															}
+														}}
+														className={`min-h-[44px] px-2 rounded-xl text-xs font-bold transition-all truncate cursor-pointer flex items-center justify-center gap-1.5 ${
+															payerRelationship === r
+																? "bg-teal-600 text-white shadow-sm"
+																: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+														}`}
+													>
+														<span>Код {meta.code}:</span>
+														<span>{meta.shortLabelRu}</span>
+													</button>
+												);
+											},
+										)}
 									</div>
 								</div>
 							</div>
@@ -472,9 +526,12 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 								<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
 									Реквизиты налогоплательщика:
 								</span>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								<div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
 									<div className="space-y-1">
-										<label htmlFor="modal-payer-fullname" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+										<label
+											htmlFor="modal-payer-fullname"
+											className="text-xs font-bold text-[var(--ink,#0f172a)]"
+										>
 											ФИО плательщика:
 										</label>
 										<input
@@ -488,15 +545,18 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 
 									<div className="space-y-1">
 										<div className="flex items-center justify-between">
-											<label htmlFor="modal-payer-inn" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+											<label
+												htmlFor="modal-payer-inn"
+												className="text-xs font-bold text-[var(--ink,#0f172a)]"
+											>
 												ИНН плательщика:
 											</label>
 											{innValidation.isValid ? (
-												<span className="text-[11px] text-emerald-600 font-bold flex items-center gap-0.5">
+												<span className="text-xs text-emerald-600 font-bold flex items-center gap-0.5">
 													<CheckCircle2 size={12} /> Корректен
 												</span>
 											) : (
-												<span className="text-[11px] text-rose-600 font-bold flex items-center gap-0.5">
+												<span className="text-xs text-rose-600 font-bold flex items-center gap-0.5">
 													<AlertCircle size={12} /> Ошибка
 												</span>
 											)}
@@ -517,7 +577,54 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									</div>
 
 									<div className="space-y-1">
-										<label htmlFor="modal-payer-bday" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+										<div className="flex items-center justify-between">
+											<label
+												htmlFor="modal-payer-snils"
+												className="text-xs font-bold text-[var(--ink,#0f172a)]"
+											>
+												СНИЛС плательщика:
+											</label>
+											{payerSnils.trim() ? (
+												payerSnilsValidation.isValid ? (
+													<span className="text-xs text-emerald-600 font-bold flex items-center gap-0.5">
+														<CheckCircle2 size={12} /> Корректен
+													</span>
+												) : (
+													<span className="text-xs text-rose-600 font-bold flex items-center gap-0.5">
+														<AlertCircle size={12} /> Ошибка
+													</span>
+												)
+											) : (
+												<span className="text-xs text-[var(--muted)]">
+													11 цифр
+												</span>
+											)}
+										</div>
+										<input
+											id="modal-payer-snils"
+											type="text"
+											maxLength={14}
+											value={payerSnils}
+											onChange={(e) => {
+												setPayerSnils(e.target.value);
+												if (payerRelationship === "patient") {
+													setPatientSnilsVal(e.target.value);
+												}
+											}}
+											placeholder="123-456-789 00"
+											className={`w-full min-h-[44px] px-3 rounded-xl border text-xs font-mono font-bold ${
+												!payerSnils.trim() || payerSnilsValidation.isValid
+													? "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)]"
+													: "border-rose-500 bg-rose-500/5"
+											}`}
+										/>
+									</div>
+
+									<div className="space-y-1">
+										<label
+											htmlFor="modal-payer-bday"
+											className="text-xs font-bold text-[var(--ink,#0f172a)]"
+										>
 											Дата рождения плательщика:
 										</label>
 										<input
@@ -533,35 +640,74 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 								{/* Passport details & Document number */}
 								<div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1">
 									<div className="space-y-1">
-										<label htmlFor="modal-passport-series" className="text-xs font-bold text-[var(--ink,#0f172a)]">
-											Серия паспорта:
-										</label>
+										<div className="flex items-center justify-between">
+											<label
+												htmlFor="modal-passport-series"
+												className="text-xs font-bold text-[var(--ink,#0f172a)]"
+											>
+												Серия паспорта:
+											</label>
+											{passportSeries.length === 4 && (
+												<span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+													4 цифры
+												</span>
+											)}
+										</div>
 										<input
 											id="modal-passport-series"
 											type="text"
 											maxLength={4}
 											value={passportSeries}
-											onChange={(e) => setPassportSeries(e.target.value.replace(/\D/g, ""))}
+											onChange={(e) =>
+												setPassportSeries(e.target.value.replace(/\D/g, ""))
+											}
 											placeholder="4510"
-											className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono"
+											className={`w-full min-h-[44px] px-3 rounded-xl border bg-[var(--paper,#ffffff)] text-xs font-mono font-bold ${
+												passportSeries.length === 4
+													? "border-emerald-500 ring-1 ring-emerald-500/20"
+													: passportSeries.length > 0
+														? "border-amber-500"
+														: "border-[var(--line,#cbd5e1)]"
+											}`}
 										/>
 									</div>
 									<div className="space-y-1">
-										<label htmlFor="modal-passport-num" className="text-xs font-bold text-[var(--ink,#0f172a)]">
-											Номер паспорта:
-										</label>
+										<div className="flex items-center justify-between">
+											<label
+												htmlFor="modal-passport-num"
+												className="text-xs font-bold text-[var(--ink,#0f172a)]"
+											>
+												Номер паспорта:
+											</label>
+											{passportNumber.length === 6 && (
+												<span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+													6 цифр
+												</span>
+											)}
+										</div>
 										<input
 											id="modal-passport-num"
 											type="text"
 											maxLength={6}
 											value={passportNumber}
-											onChange={(e) => setPassportNumber(e.target.value.replace(/\D/g, ""))}
+											onChange={(e) =>
+												setPassportNumber(e.target.value.replace(/\D/g, ""))
+											}
 											placeholder="123456"
-											className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono"
+											className={`w-full min-h-[44px] px-3 rounded-xl border bg-[var(--paper,#ffffff)] text-xs font-mono font-bold ${
+												passportNumber.length === 6
+													? "border-emerald-500 ring-1 ring-emerald-500/20"
+													: passportNumber.length > 0
+														? "border-amber-500"
+														: "border-[var(--line,#cbd5e1)]"
+											}`}
 										/>
 									</div>
 									<div className="space-y-1">
-										<label htmlFor="modal-cert-num" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+										<label
+											htmlFor="modal-cert-num"
+											className="text-xs font-bold text-[var(--ink,#0f172a)]"
+										>
 											Номер справки:
 										</label>
 										<input
@@ -573,7 +719,10 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 										/>
 									</div>
 									<div className="space-y-1">
-										<label htmlFor="modal-tax-office" className="text-xs font-bold text-[var(--ink,#0f172a)]">
+										<label
+											htmlFor="modal-tax-office"
+											className="text-xs font-bold text-[var(--ink,#0f172a)]"
+										>
 											Код ИФНС:
 										</label>
 										<input
@@ -587,7 +736,100 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 										/>
 									</div>
 								</div>
+
+								{/* Visual validation indicator for passport */}
+								<div className="pt-0.5">
+									{passportValidation.isValid ? (
+										<div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+											<CheckCircle2 size={14} className="text-emerald-600" />
+											<span>
+												Паспорт РФ валиден: серия {passportSeries}, номер{" "}
+												{passportNumber} (соответствует требованиям ФНС)
+											</span>
+										</div>
+									) : (
+										<div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs font-bold">
+											<AlertCircle size={14} className="text-amber-600" />
+											<span>
+												{passportValidation.errorMessageRu ||
+													"Неверный формат паспорта: требуется 4 цифры серии и 6 цифр номера"}
+											</span>
+										</div>
+									)}
+								</div>
 							</div>
+
+							{/* Patient Requisites (if payer is different or on demand) */}
+							{payerRelationship !== "patient" && (
+								<div className="p-4 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-3">
+									<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider block">
+										Реквизиты пациента (получателя медицинских услуг):
+									</span>
+									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+										<div className="space-y-1">
+											<label className="text-xs font-bold text-[var(--ink,#0f172a)]">
+												ФИО пациента:
+											</label>
+											<input
+												type="text"
+												value={patientName}
+												readOnly
+												className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-medium opacity-80 cursor-not-allowed"
+											/>
+										</div>
+										<div className="space-y-1">
+											<label className="text-xs font-bold text-[var(--ink,#0f172a)]">
+												ИНН пациента:
+											</label>
+											<input
+												type="text"
+												value={patientInn || "—"}
+												readOnly
+												className="w-full min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-mono font-bold opacity-80 cursor-not-allowed"
+											/>
+										</div>
+										<div className="space-y-1">
+											<div className="flex items-center justify-between">
+												<label
+													htmlFor="modal-patient-snils"
+													className="text-xs font-bold text-[var(--ink,#0f172a)]"
+												>
+													СНИЛС пациента:
+												</label>
+												{patientSnilsVal.trim() ? (
+													patientSnilsValidation.isValid ? (
+														<span className="text-xs text-emerald-600 font-bold flex items-center gap-0.5">
+															<CheckCircle2 size={12} /> Корректен
+														</span>
+													) : (
+														<span className="text-xs text-rose-600 font-bold flex items-center gap-0.5">
+															<AlertCircle size={12} /> Ошибка
+														</span>
+													)
+												) : (
+													<span className="text-xs text-[var(--muted)]">
+														11 цифр
+													</span>
+												)}
+											</div>
+											<input
+												id="modal-patient-snils"
+												type="text"
+												maxLength={14}
+												value={patientSnilsVal}
+												onChange={(e) => setPatientSnilsVal(e.target.value)}
+												placeholder="123-456-789 00"
+												className={`w-full min-h-[44px] px-3 rounded-xl border text-xs font-mono font-bold ${
+													!patientSnilsVal.trim() ||
+													patientSnilsValidation.isValid
+														? "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)]"
+														: "border-rose-500 bg-rose-500/5"
+												}`}
+											/>
+										</div>
+									</div>
+								</div>
+							)}
 
 							{/* Summary Snapshot Box */}
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -596,10 +838,15 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 										Код 01 (Обычное лечение)
 									</div>
 									<div className="text-xl font-bold font-mono text-teal-700 dark:text-teal-300 whitespace-nowrap">
-										{exactSplit.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+										{exactSplit.code01Rub.toLocaleString("ru-RU", {
+											minimumFractionDigits: 2,
+										})}{" "}
+										₽
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
-										Лимит: {exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽
+									<div className="text-xs font-medium text-[var(--muted,#64748b)] whitespace-nowrap">
+										Лимит:{" "}
+										{exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")}{" "}
+										₽
 									</div>
 								</div>
 
@@ -608,9 +855,12 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 										Код 02 (Дорогостоящее)
 									</div>
 									<div className="text-xl font-bold font-mono text-rose-700 dark:text-rose-300 whitespace-nowrap">
-										{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+										{exactSplit.code02Rub.toLocaleString("ru-RU", {
+											minimumFractionDigits: 2,
+										})}{" "}
+										₽
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
+									<div className="text-xs font-medium text-[var(--muted,#64748b)] whitespace-nowrap">
 										Без лимита (ПП РФ № 458)
 									</div>
 								</div>
@@ -620,10 +870,17 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 										Возврат 13% НДФЛ
 									</div>
 									<div className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
-										{exactSplit.refund13Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+										{exactSplit.refund13Rub.toLocaleString("ru-RU", {
+											minimumFractionDigits: 2,
+										})}{" "}
+										₽
 									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
-										ИТОГО расходов: {exactSplit.totalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+									<div className="text-xs font-medium text-[var(--muted,#64748b)] whitespace-nowrap">
+										ИТОГО расходов:{" "}
+										{exactSplit.totalRub.toLocaleString("ru-RU", {
+											minimumFractionDigits: 2,
+										})}{" "}
+										₽
 									</div>
 								</div>
 							</div>
@@ -636,10 +893,13 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 							<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-3">
 								<div className="flex items-center justify-between">
 									<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
-										Использование годового лимита по Коду 01 ({selectedYear} год):
+										Использование годового лимита по Коду 01 ({selectedYear}{" "}
+										год):
 									</span>
 									<span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300">
-										{exactSplit.code01Rub.toLocaleString("ru-RU")} / {exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽ ({limitPct}%)
+										{exactSplit.code01Rub.toLocaleString("ru-RU")} /{" "}
+										{exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")}{" "}
+										₽ ({limitPct}%)
 									</span>
 								</div>
 								<div className="w-full bg-[var(--line,#e2e8f0)] h-3 rounded-full overflow-hidden">
@@ -654,7 +914,15 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									<div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
 										<AlertCircle size={14} className="shrink-0" />
 										<span>
-											Расходы по Коду 01 превышают {exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽. Вычет будет рассчитан исходя из предельной суммы {exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽ (ст. 219 НК РФ).
+											Расходы по Коду 01 превышают{" "}
+											{exactSplit.code01StatutoryLimitRub.toLocaleString(
+												"ru-RU",
+											)}{" "}
+											₽. Вычет будет рассчитан исходя из предельной суммы{" "}
+											{exactSplit.code01StatutoryLimitRub.toLocaleString(
+												"ru-RU",
+											)}{" "}
+											₽ (ст. 219 НК РФ).
 										</span>
 									</div>
 								)}
@@ -675,42 +943,121 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									</thead>
 									<tbody className="divide-y divide-[var(--line,#e2e8f0)] font-medium">
 										<tr>
-											<td className="p-3 font-bold text-teal-700 dark:text-teal-300 whitespace-nowrap">Код 01</td>
-											<td className="p-3">Терапевтическое, ортодонтическое, эндодонтическое лечение, гигиена</td>
-											<td className="p-3 text-right font-mono font-bold whitespace-nowrap">{exactSplit.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
-											<td className="p-3 text-right font-mono whitespace-nowrap">{exactSplit.code01EligibleRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+											<td className="p-3 font-bold text-teal-700 dark:text-teal-300 whitespace-nowrap">
+												Код 01
+											</td>
+											<td className="p-3">
+												Терапевтическое, ортодонтическое, эндодонтическое
+												лечение, гигиена
+											</td>
+											<td className="p-3 text-right font-mono font-bold whitespace-nowrap">
+												{exactSplit.code01Rub.toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
+											</td>
+											<td className="p-3 text-right font-mono whitespace-nowrap">
+												{exactSplit.code01EligibleRub.toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
+											</td>
 											<td className="p-3 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
-												{(Number((exactSplit.code01EligibleKopecks * 13n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{(
+													Number(
+														(exactSplit.code01EligibleKopecks * 13n + 50n) /
+															100n,
+													) / 100
+												).toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-												{(Number((exactSplit.code01EligibleKopecks * 15n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{(
+													Number(
+														(exactSplit.code01EligibleKopecks * 15n + 50n) /
+															100n,
+													) / 100
+												).toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 										</tr>
 										<tr>
-											<td className="p-3 font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap">Код 02</td>
-											<td className="p-3">Дорогостоящие услуги (дентальная имплантация, костная пластика, синус-лифтинг)</td>
-											<td className="p-3 text-right font-mono font-bold whitespace-nowrap">{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
-											<td className="p-3 text-right font-mono whitespace-nowrap">{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</td>
+											<td className="p-3 font-bold text-rose-700 dark:text-rose-300 whitespace-nowrap">
+												Код 02
+											</td>
+											<td className="p-3">
+												Дорогостоящие услуги (дентальная имплантация, костная
+												пластика, синус-лифтинг)
+											</td>
+											<td className="p-3 text-right font-mono font-bold whitespace-nowrap">
+												{exactSplit.code02Rub.toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
+											</td>
+											<td className="p-3 text-right font-mono whitespace-nowrap">
+												{exactSplit.code02Rub.toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
+											</td>
 											<td className="p-3 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">
-												{(Number((exactSplit.code02Kopecks * 13n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{(
+													Number(
+														(exactSplit.code02Kopecks * 13n + 50n) / 100n,
+													) / 100
+												).toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 											<td className="p-3 text-right font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-												{(Number((exactSplit.code02Kopecks * 15n + 50n) / 100n) / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{(
+													Number(
+														(exactSplit.code02Kopecks * 15n + 50n) / 100n,
+													) / 100
+												).toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 										</tr>
 										<tr className="bg-[var(--paper-soft,#f8fafc)] font-bold">
-											<td colSpan={2} className="p-3 text-right whitespace-nowrap">ИТОГО ЗА {selectedYear} ГОД:</td>
+											<td
+												colSpan={2}
+												className="p-3 text-right whitespace-nowrap"
+											>
+												ИТОГО ЗА {selectedYear} ГОД:
+											</td>
 											<td className="p-3 text-right font-mono text-base text-teal-800 dark:text-teal-200 whitespace-nowrap">
-												{exactSplit.totalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{exactSplit.totalRub.toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 											<td className="p-3 text-right font-mono whitespace-nowrap">
-												{(exactSplit.code01EligibleRub + exactSplit.code02Rub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{(
+													exactSplit.code01EligibleRub + exactSplit.code02Rub
+												).toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 											<td className="p-3 text-right font-mono text-base text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
-												{exactSplit.refund13Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{exactSplit.refund13Rub.toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 											<td className="p-3 text-right font-mono text-slate-600 whitespace-nowrap">
-												{exactSplit.refund15Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+												{exactSplit.refund15Rub.toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
 											</td>
 										</tr>
 									</tbody>
@@ -737,20 +1084,33 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									</thead>
 									<tbody className="divide-y divide-[var(--line,#e2e8f0)] font-medium">
 										{yearPayments.map((pay, idx) => {
-											const cat = pay.taxCode || resolveTaxDeductionCategoryShared(pay.code804n, pay.serviceName);
+											const cat =
+												pay.taxCode ||
+												resolveTaxDeductionCategoryShared(
+													pay.code804n,
+													pay.serviceName,
+												);
 											return (
-												<tr key={pay.id || idx} className="hover:bg-[var(--paper-soft,#f8fafc)]">
+												<tr
+													key={pay.id || idx}
+													className="hover:bg-[var(--paper-soft,#f8fafc)]"
+												>
 													<td className="p-3">{idx + 1}</td>
-													<td className="p-3 font-mono">{pay.dateIso.slice(0, 10)}</td>
+													<td className="p-3 font-mono">
+														{pay.dateIso.slice(0, 10)}
+													</td>
 													<td className="p-3 font-mono">{pay.receiptNumber}</td>
-													<td className="p-3 font-mono text-[11px] text-[var(--muted,#64748b)]">
-														ФД: {pay.fiscalDocumentNumber || "—"} / ФПД: {pay.fiscalSign || "—"}
+													<td className="p-3 font-mono text-xs text-[var(--muted,#64748b)]">
+														ФД: {pay.fiscalDocumentNumber || "—"} / ФПД:{" "}
+														{pay.fiscalSign || "—"}
 													</td>
 													<td className="p-3">{pay.serviceName}</td>
-													<td className="p-3 font-mono text-[11px]">{pay.code804n || "—"}</td>
+													<td className="p-3 font-mono text-xs">
+														{pay.code804n || "—"}
+													</td>
 													<td className="p-3 text-center">
 														<span
-															className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+															className={`px-2 py-0.5 rounded-md font-bold text-xs ${
 																cat === "2"
 																	? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20"
 																	: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
@@ -760,7 +1120,10 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 														</span>
 													</td>
 													<td className="p-3 text-right font-mono font-bold whitespace-nowrap">
-														{pay.amountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+														{pay.amountRub.toLocaleString("ru-RU", {
+															minimumFractionDigits: 2,
+														})}{" "}
+														₽
 													</td>
 												</tr>
 											);
@@ -779,11 +1142,11 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 										Файл: {xmlRepresentation.fileName}
 									</span>
 									{xmlValidation.isValid ? (
-										<span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
+										<span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
 											XML валиден (Формат 5.01)
 										</span>
 									) : (
-										<span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[11px] font-bold">
+										<span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 text-xs font-bold">
 											Ошибки в структуре XML
 										</span>
 									)}
@@ -793,12 +1156,16 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 									onClick={handleCopyXml}
 									className="min-h-[44px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center gap-1.5 hover:border-teal-400 cursor-pointer"
 								>
-									{isCopiedXml ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+									{isCopiedXml ? (
+										<Check size={14} className="text-emerald-600" />
+									) : (
+										<Copy size={14} />
+									)}
 									<span>{isCopiedXml ? "Скопировано" : "Скопировать XML"}</span>
 								</button>
 							</div>
 
-							<pre className="p-4 rounded-2xl bg-slate-900 text-emerald-400 font-mono text-[11px] max-h-80 overflow-auto border border-slate-800 leading-relaxed">
+							<pre className="p-4 rounded-2xl bg-slate-900 text-emerald-400 font-mono text-xs max-h-80 overflow-auto border border-slate-800 leading-relaxed">
 								{xmlRepresentation.xmlContent}
 							</pre>
 						</div>
@@ -847,4 +1214,3 @@ export const FnsTaxDeductionModal: React.FC<FnsTaxDeductionModalProps> = ({
 };
 
 export default FnsTaxDeductionModal;
-

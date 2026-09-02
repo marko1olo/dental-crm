@@ -647,18 +647,36 @@ export function SettingsMessageTemplatesTab() {
 														onClick={() => handleOpenEdit(template)}
 														title="Редактировать шаблон"
 													>
-														<Edit3 size={15} />
+														<Edit3 size={16} />
 													</button>
-													<button
-														type="button"
-														className="btn-icon-sm danger"
-														onClick={() =>
-															handleDelete(template.id, template.title)
-														}
-														title="Удалить шаблон"
-													>
-														<Trash2 size={15} />
-													</button>
+													{deletingTemplateId === template.id ? (
+														<div className="inline-flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/40 p-1 rounded-lg border border-rose-200 dark:border-rose-900/60">
+															<span className="text-xs font-semibold text-rose-600 dark:text-rose-400 pl-1">Удалить?</span>
+															<button
+																type="button"
+																className="min-h-[44px] px-3 py-1 rounded-md bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 cursor-pointer transition-colors"
+																onClick={() => handleDelete(template.id)}
+															>
+																Да
+															</button>
+															<button
+																type="button"
+																className="min-h-[44px] px-3 py-1 rounded-md bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold border border-[var(--line)] hover:bg-[var(--paper-soft)] cursor-pointer transition-colors"
+																onClick={() => setDeletingTemplateId(null)}
+															>
+																Отмена
+															</button>
+														</div>
+													) : (
+														<button
+															type="button"
+															className="btn-icon-sm danger"
+															onClick={() => setDeletingTemplateId(template.id)}
+															title="Удалить шаблон"
+														>
+															<Trash2 size={16} />
+														</button>
+													)}
 												</div>
 											</div>
 
