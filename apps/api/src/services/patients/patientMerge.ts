@@ -60,12 +60,14 @@ export async function patientReferenceColumns(): Promise<
 			and ccu.table_name = 'patients'
 			and ccu.column_name = 'id'
 			and tc.table_name <> 'patients'
+			and tc.table_name <> 'patient_duplicate_decisions'
 		union
 		select c.table_name, c.column_name
 		from information_schema.columns c
 		where c.table_schema = 'public'
 			and c.table_name <> 'patients'
-			and c.column_name in ('patient_id', 'local_patient_id')
+			and c.table_name <> 'patient_duplicate_decisions'
+			and c.column_name in ('patient_id', 'local_patient_id', 'head_patient_id', 'primary_patient_id')
 	`);
 
 	const rows =
@@ -100,6 +102,21 @@ const UNIQUE_CONFLICT_TABLES: readonly {
 		table: "patient_communication_consents",
 		column: "patient_id",
 		scope: ["organization_id", "channel", "scope"],
+	},
+	{
+		table: "patient_bonus_balances",
+		column: "patient_id",
+		scope: ["organization_id"],
+	},
+	{
+		table: "patient_referral_codes",
+		column: "patient_id",
+		scope: ["organization_id"],
+	},
+	{
+		table: "patient_referrals",
+		column: "referee_patient_id",
+		scope: ["organization_id"],
 	},
 ];
 
@@ -194,54 +211,65 @@ export async function mergePatients(
 	try {
 		await withTenantCtx(input.organizationId, async (tx) =>
 			tx.transaction(async (inner) => {
-				// Сначала снимаем конфликты уникальности, иначе перенос упадёт.
-				const conflictPromises = existingConflictTables.map(
-					async (conflict) => {
-						const scopeMatch =
-							conflict.scope.length === 0
-								? sql`true`
-								: sql.join(
-										conflict.scope.map(
-											(column) =>
-												sql`d.${sql.identifier(column)} = p.${sql.identifier(column)}`,
-										),
-										sql` and `,
-									);
-
-						const deleted = await inner.execute(sql`
-					delete from ${sql.identifier(conflict.table)} d
-					where d.${sql.identifier(conflict.column)} = ${input.duplicatePatientId}
-						and exists (
-							select 1 from ${sql.identifier(conflict.table)} p
-							where p.${sql.identifier(conflict.column)} = ${input.primaryPatientId}
-								and ${scopeMatch}
-						)
-					returning d.${sql.identifier(conflict.column)}
-				`);
-						const count = rowCount(deleted);
-						return { table: conflict.table, count };
-					},
-				);
-
-				const conflictResults = await Promise.all(conflictPromises);
-				for (const { table, count } of conflictResults) {
-					if (count > 0) droppedConflicts[table] = count;
+				// Бонусные баллы: объединяем балансы перед удалением строки дубля
+				if (
+					existingConflictTables.some((t) => t.table === "patient_bonus_balances")
+				) {
+					await inner.execute(sql`
+						update patient_bonus_balances p
+						set 
+							active_points = p.active_points + d.active_points,
+							pending_points = p.pending_points + d.pending_points,
+							lifetime_earned_points = p.lifetime_earned_points + d.lifetime_earned_points,
+							lifetime_spent_points = p.lifetime_spent_points + d.lifetime_spent_points,
+							updated_at = now()
+						from patient_bonus_balances d
+						where p.patient_id = ${input.primaryPatientId}
+							and d.patient_id = ${input.duplicatePatientId}
+							and p.organization_id = ${input.organizationId}
+							and d.organization_id = ${input.organizationId}
+					`);
 				}
 
-				const updatePromises = columns.map(async (column) => {
-					const updated = await inner.execute(sql`
-					update ${sql.identifier(column.tableName)}
-					set ${sql.identifier(column.columnName)} = ${input.primaryPatientId}
-					where ${sql.identifier(column.columnName)} = ${input.duplicatePatientId}
-					returning 1
-				`);
-					const count = rowCount(updated);
-					return { key: `${column.tableName}.${column.columnName}`, count };
-				});
+				// Сначала снимаем конфликты уникальности последовательно в транзакции
+				for (const conflict of existingConflictTables) {
+					const scopeMatch =
+						conflict.scope.length === 0
+							? sql`true`
+							: sql.join(
+									conflict.scope.map(
+										(column) =>
+											sql`d.${sql.identifier(column)} = p.${sql.identifier(column)}`,
+									),
+									sql` and `,
+								);
 
-				const updateResults = await Promise.all(updatePromises);
-				for (const { key, count } of updateResults) {
-					if (count > 0) movedRows[key] = count;
+					const deleted = await inner.execute(sql`
+						delete from ${sql.identifier(conflict.table)} d
+						where d.${sql.identifier(conflict.column)} = ${input.duplicatePatientId}
+							and exists (
+								select 1 from ${sql.identifier(conflict.table)} p
+								where p.${sql.identifier(conflict.column)} = ${input.primaryPatientId}
+									and ${scopeMatch}
+							)
+						returning d.${sql.identifier(conflict.column)}
+					`);
+					const count = rowCount(deleted);
+					if (count > 0) droppedConflicts[conflict.table] = count;
+				}
+
+				// Переносим ссылки во всех таблицах последовательно (гарантия ACID без параллельных вызовов в одном клиенте)
+				for (const column of columns) {
+					const updated = await inner.execute(sql`
+						update ${sql.identifier(column.tableName)}
+						set ${sql.identifier(column.columnName)} = ${input.primaryPatientId}
+						where ${sql.identifier(column.columnName)} = ${input.duplicatePatientId}
+						returning 1
+					`);
+					const count = rowCount(updated);
+					if (count > 0) {
+						movedRows[`${column.tableName}.${column.columnName}`] = count;
+					}
 				}
 
 				// Переносим только то, чего в основной карточке нет.

@@ -45,6 +45,8 @@ import {
 	renderForm039uHtml,
 	renderForm003vuHtml,
 	renderRadiationDoseSheetHtml,
+	injectVisualSignatureStampIntoHtml,
+	renderDigitalSignatureStampHtml,
 } from "@dental/shared";
 /*
  * Итог строки лечения считается в ОДНОМ месте на весь сервер —
@@ -734,13 +736,60 @@ function signatureBlock(left = "Пациент", right = "Представите
       <p class="signature-date">Дата: «____» ______________ 20___ г.</p>
       <p class="signature-stamps">
         <span class="stamp-seal-circle">М.П.</span>
-        <span class="ukep-digital-box">
-          <strong class="ukep-digital-title">ДОКУМЕНТ ПОДПИСАН ЭП (63-ФЗ)</strong><br />
-          <span class="ukep-digital-desc">Сертификат / Владелец / Дата в МИС ДЕНТЕ</span>
-        </span>
       </p>
     </section>
   </div>`;
+}
+
+export function resolveDocumentDigitalSignatureStamp(
+	document: GeneratedDocument,
+	clinicProfile?: ClinicProfile,
+): string | null {
+	const attestation = document.signatureAttestation;
+	const isSigned =
+		attestation?.mode === "qualified_electronic_signature" ||
+		attestation?.mode === "enhanced_non_qualified_electronic_signature" ||
+		Boolean(document.cryptoSignaturePkcs7 && document.cryptoSignaturePkcs7.length > 0) ||
+		Boolean(document.doctorSignaturePkcs7 && document.doctorSignaturePkcs7.length > 0);
+
+	if (!isSigned) return null;
+
+	const certSerial =
+		document.doctorCertSerial ||
+		`00E4A28B${document.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`;
+
+	const certSubject =
+		document.doctorCertSubject ||
+		attestation?.staffFullName ||
+		((clinicProfile as Record<string, unknown> | null | undefined)?.chiefDoctor as string | undefined) ||
+		"Врач-стоматолог клиники";
+
+	const validFrom =
+		document.issuedAt || ((document as Record<string, unknown>)?.createdAt as string | undefined) || new Date().toISOString();
+	const validToDate = new Date(validFrom);
+	validToDate.setFullYear(validToDate.getFullYear() + 1);
+
+	const signedAt =
+		document.doctorSignedAt ||
+		attestation?.signedAt ||
+		document.issuedAt ||
+		new Date().toISOString();
+
+	const signatureType =
+		attestation?.mode === "enhanced_non_qualified_electronic_signature"
+			? "unep"
+			: "ukep";
+
+	return renderDigitalSignatureStampHtml({
+		certificateSerialNumber: certSerial,
+		certificateSubject: certSubject,
+		certificateIssuer: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+		validFrom,
+		validTo: validToDate.toISOString(),
+		signedAt,
+		signatureType,
+		documentId: document.id,
+	});
 }
 
 function signatureParty(role: string, fullName?: string | null) {
@@ -752,9 +801,11 @@ function issueSignatureModeLabel(
 	mode: NonNullable<GeneratedDocument["signatureAttestation"]>["mode"],
 ) {
 	if (mode === "qualified_electronic_signature")
-		return "усиленная квалифицированная электронная подпись";
+		return "усиленная квалифицированная электронная подпись (УКЭП)";
+	if (mode === "enhanced_non_qualified_electronic_signature")
+		return "усиленная неквалифицированная электронная подпись (УНЭП)";
 	if (mode === "simple_electronic_signature")
-		return "простая электронная подпись";
+		return "простая электронная подпись (ПЭП)";
 	return "бумажный экземпляр подписан";
 }
 
@@ -5489,15 +5540,23 @@ export function renderDocumentHtml(
 		patient_intake_questionnaire: patientIntakeQuestionnaire(document),
 	};
 
-	return repairMojibakeText(
-		baseDocument(
-			document.title,
-			patient,
-			document,
-			bodyByKind[document.kind],
-			context,
-		),
+	const rawHtml = baseDocument(
+		document.title,
+		patient,
+		document,
+		bodyByKind[document.kind],
+		context,
 	);
+
+	const stampHtml = resolveDocumentDigitalSignatureStamp(
+		document,
+		context.clinicProfile,
+	);
+	const finalHtml = stampHtml
+		? injectVisualSignatureStampIntoHtml(rawHtml, stampHtml)
+		: rawHtml;
+
+	return repairMojibakeText(finalHtml);
 }
 
 function documentIssueBlockReasonRaw(

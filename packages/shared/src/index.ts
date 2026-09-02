@@ -18,6 +18,7 @@ export * from "./finance/index.js";
 export * from "./imaging/index.js";
 export * from "./radiology/index.js";
 export * from "./cda/index.js";
+export { GOST_CRYPTO_OIDS } from "./egisz/index.js";
 export * from "./egisz/index.js";
 export * from "./logging/index.js";
 export * from "./hardware/index.js";
@@ -38,6 +39,7 @@ export * from "./insurance/index.js";
 export * from "./messaging/index.js";
 export * from "./portal/index.js";
 export * from "./doctor-portal/index.js";
+export * from "./crypto/index.js";
 export * from "./doctor/index.js";
 export * from "./treatment-plans/index.js";
 export * from "./diagnostics/index.js";
@@ -45,6 +47,7 @@ export * from "./branches/index.js";
 export * from "./warehouse/index.js";
 export * from "./mobile/index.js";
 export * from "./curator/index.js";
+export * from "./compliance/decree659Engine.js";
 export * as dispensaryRecall from "./recall/index.js";
 export {
 	clinicalRecallCategorySchema,
@@ -3381,6 +3384,12 @@ const patientAdministrativeProfileBaseSchema = z.object({
 	curatorCommissionPercent: z.number().min(0).max(100).nullable().optional().default(null),
 	curatorNotes: z.string().trim().max(2000).nullable().optional().default(null),
 	curatorNextContactDate: z.string().nullable().optional().default(null),
+	/*
+	 * Режим «Анонимный пациент» (ПП РФ №659 от 30.05.2026, Rules of 2026).
+	 */
+	isAnonymous: z.boolean().nullable().optional(),
+	anonymousCode: z.string().trim().max(80).nullable().optional(),
+	decree659Compliance: z.record(z.unknown()).nullable().optional(),
 });
 
 export const patientAdministrativeProfileSchema =
@@ -3411,6 +3420,8 @@ export const patientSchema = z.object({
 	phone: z.string().nullable(),
 	email: z.string().email().nullable(),
 	notes: z.string().nullable(),
+	isAnonymous: z.boolean().nullable().optional(),
+	anonymousCode: z.string().nullable().optional(),
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.default(null),
@@ -3436,6 +3447,17 @@ export const patientSchema = z.object({
 	 */
 	familyGroupId: z.string().uuid().nullable().optional(),
 	mergedIntoPatientId: z.string().uuid().nullable().optional(),
+	/*
+	 * 152-ФЗ / 323-ФЗ ст. 13: Врачебная тайна и клинические диагнозы.
+	 * Доступны ТОЛЬКО врачам и клиническому персоналу.
+	 * Для неклинических ролей (маркетологи, администраторы/ресепшн, сисадмины)
+	 * эти поля аппаратно вырезаются (Payload Stripping) на уровне API до отправки на клиент.
+	 */
+	diagnosis: z.string().nullable().optional(),
+	emr_records: z.array(z.unknown()).nullable().optional(),
+	odontogram: z.record(z.unknown()).nullable().optional(),
+	clinicalNotes: z.string().nullable().optional(),
+	mkb10: z.string().nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -5596,6 +5618,7 @@ export function documentPayloadDisallowedKeys(
 export const documentIssueSignatureModeSchema = z.enum([
 	"paper_signed",
 	"simple_electronic_signature",
+	"enhanced_non_qualified_electronic_signature",
 	"qualified_electronic_signature",
 ]);
 export type DocumentIssueSignatureMode = z.infer<
@@ -5787,6 +5810,11 @@ export const generatedDocumentSchema = z.object({
 	issuedByUserId: z.string().uuid().nullable().optional(),
 	voidedAt: z.string().nullable().optional(),
 	voidedByUserId: z.string().uuid().nullable().optional(),
+	cryptoSignaturePkcs7: z.string().nullable().optional(),
+	doctorSignaturePkcs7: z.string().nullable().optional(),
+	doctorCertSerial: z.string().nullable().optional(),
+	doctorCertSubject: z.string().nullable().optional(),
+	doctorSignedAt: z.string().nullable().optional(),
 });
 export type GeneratedDocument = z.infer<typeof generatedDocumentSchema>;
 export const documentChainSummarySchema = z
@@ -6602,6 +6630,8 @@ export const createPatientSchema = z.object({
 	phone: patientPhoneInputSchema,
 	email: z.string().trim().email().nullable().optional(),
 	notes: z.string().trim().max(1000).nullable().optional(),
+	isAnonymous: z.boolean().optional().default(false),
+	anonymousCode: z.string().trim().max(80).optional().nullable(),
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.optional(),
@@ -6614,6 +6644,8 @@ export const updatePatientSchema = z.object({
 	phone: patientPhoneInputSchema,
 	email: z.string().trim().email().nullable().optional(),
 	notes: z.string().trim().max(1000).nullable().optional(),
+	isAnonymous: z.boolean().optional(),
+	anonymousCode: z.string().trim().max(80).optional().nullable(),
 	/*
 	 * Привязка к семейной группе (общий кошелёк). null — отвязать.
 	 *

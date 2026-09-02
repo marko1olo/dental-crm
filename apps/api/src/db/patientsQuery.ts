@@ -5,7 +5,7 @@ import {
 	type UpdatePatientAdministrativeProfileInput,
 	type UpdatePatientInput,
 } from "@dental/shared";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
 	buildPatientLedgers,
 	MoneyPrecisionError,
@@ -303,15 +303,23 @@ export async function getPatientByIdFromDb(
 
 export async function getPatientsFromDb(
 	organizationId: string,
+	options: { includeMerged?: boolean } = {},
 ): Promise<Patient[]> {
 	if (useInMemory()) {
-		return inMemoryPatients as unknown as Patient[];
+		const list = inMemoryPatients as unknown as Patient[];
+		return options.includeMerged
+			? list
+			: list.filter((p) => !p.mergedIntoPatientId);
 	}
 	try {
+		const baseFilter = eq(schema.patients.organizationId, organizationId);
+		const whereClause = options.includeMerged
+			? baseFilter
+			: and(baseFilter, isNull(schema.patients.mergedIntoPatientId));
 		const pts = await db
 			.select()
 			.from(schema.patients)
-			.where(eq(schema.patients.organizationId, organizationId));
+			.where(whereClause);
 		const balances = await patientAccountBalancesRub(
 			organizationId,
 			pts.map((p) => p.id),
@@ -351,6 +359,7 @@ export async function createPatientInDb(
 				phone: input.phone ?? null,
 				email: input.email ?? null,
 				notes: input.notes ?? null,
+				administrativeProfile: (input.administrativeProfile as any) ?? null,
 			})
 			.returning();
 
@@ -655,6 +664,7 @@ export async function createPatientSafeInDb(
 				phone: input.phone ?? null,
 				email: input.email ?? null,
 				notes: input.notes ?? null,
+				administrativeProfile: (input.administrativeProfile as any) ?? null,
 			})
 			.returning();
 

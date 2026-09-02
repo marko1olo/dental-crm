@@ -37,6 +37,11 @@ import {
 } from "@dental/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import {
+	evaluatePatientMatch,
+	type PatientCandidateData,
+	type PatientMatchEvaluation,
+} from "../services/patients/duplicateDetection.js";
 
 type PatientPayloadSchema<T> = {
 	safeParse: (
@@ -118,6 +123,8 @@ type PatientDuplicateInput = {
 	birthDate?: string | null | undefined;
 	fullName?: string | null | undefined;
 	phone?: string | null | undefined;
+	snils?: string | null | undefined;
+	administrativeProfile?: Record<string, unknown> | null | undefined;
 };
 
 type PatientRepresentativeInput = {
@@ -158,7 +165,12 @@ function normalizePatientNameForDuplicate(
 		.trim()
 		.replace(/\s+/g, " ")
 		.toLocaleLowerCase("ru-RU")
-		.replaceAll("ё", "е");
+		.replaceAll("ё", "е")
+		.replace(/[^\p{L}\s-]/gu, "")
+		.split(" ")
+		.filter(Boolean)
+		.sort()
+		.join(" ");
 }
 
 function normalizePatientPhoneForDuplicate(
@@ -211,10 +223,24 @@ type PatientDuplicateOptions = {
 
 export type PatientDuplicateCandidate = {
 	readonly id: string;
-	readonly status?: string | null;
+	readonly status?: string | null | undefined;
 	readonly fullName: string;
-	readonly birthDate?: string | null;
-	readonly phone?: string | null;
+	readonly birthDate?: string | null | undefined;
+	readonly phone?: string | null | undefined;
+	readonly snils?: string | null | undefined;
+	readonly mergedIntoPatientId?: string | null | undefined;
+	readonly administrativeProfile?: Record<string, unknown> | null | undefined;
+};
+
+export type PatientDuplicateResult = {
+	readonly isDuplicate: boolean;
+	readonly isNameOnlyDuplicate: boolean;
+	readonly candidate: PatientDuplicateCandidate;
+	readonly matchScore: number;
+	readonly matchConfidencePercent: number;
+	readonly reasons: string[];
+	readonly explanation: string;
+	readonly caution: string | null;
 };
 
 function findPatientDuplicate(
@@ -222,39 +248,61 @@ function findPatientDuplicate(
 	input: PatientDuplicateInput,
 	ignoredPatientId?: string,
 	options: PatientDuplicateOptions = {},
-) {
-	const inputName = normalizePatientNameForDuplicate(input.fullName);
-	const inputBirthDate = (input.birthDate ?? "").trim();
-	const inputPhone = normalizePatientPhoneForDuplicate(input.phone);
-	if (!inputName && !inputBirthDate && !inputPhone) return null;
+): PatientDuplicateResult | null {
+	if (!input.fullName && !input.birthDate && !input.phone && !input.snils) {
+		return null;
+	}
 
-	// Отличить нового человека от уже заведённого нечем: в запросе только имя.
-	const nothingToDistinguishBy = !inputBirthDate && !inputPhone;
-	const nameAloneIsDuplicate =
-		options.requireDistinguishingData === true && nothingToDistinguishBy;
+	let bestMatch: PatientDuplicateResult | null = null;
 
-	return (
-		patientsList.find((patient) => {
-			if (patient.id === ignoredPatientId || patient.status !== "active")
-				return false;
-			const sameName =
-				Boolean(inputName) &&
-				inputName === normalizePatientNameForDuplicate(patient.fullName);
-			const sameBirthDate =
-				Boolean(inputBirthDate) && inputBirthDate === (patient.birthDate ?? "");
-			const samePhone =
-				Boolean(inputPhone) &&
-				inputPhone === normalizePatientPhoneForDuplicate(patient.phone);
-			// БЫЛО: пара «дата рождения + телефон» БЕЗ сравнения имени считалась
-			// дублем. Близнецы с телефоном матери и супруги с одной датой рождения
-			// на общем номере получали жёсткий отказ при регистрации без возможности
-			// подтвердить, что это разные люди. Совпадение имени теперь обязательно:
-			// это оставляет защиту от настоящих дублей (один человек заведён дважды),
-			// но перестаёт блокировать разных людей одной семьи.
-			if (nameAloneIsDuplicate && sameName) return true;
-			return (sameName && sameBirthDate) || (sameName && samePhone);
-		}) ?? null
-	);
+	for (const patient of patientsList) {
+		if (patient.id === ignoredPatientId) continue;
+		if (patient.status !== "active" || patient.mergedIntoPatientId) continue;
+
+		const evaluation = evaluatePatientMatch(
+			{
+				id: patient.id,
+				fullName: patient.fullName,
+				birthDate: patient.birthDate,
+				phone: patient.phone,
+				snils:
+					patient.snils ??
+					(patient.administrativeProfile?.snils as string | undefined) ??
+					null,
+				status: patient.status,
+				mergedIntoPatientId: patient.mergedIntoPatientId,
+				administrativeProfile: patient.administrativeProfile,
+			},
+			{
+				fullName: input.fullName ?? "",
+				birthDate: input.birthDate,
+				phone: input.phone,
+				snils:
+					input.snils ??
+					(input.administrativeProfile?.snils as string | undefined) ??
+					null,
+				administrativeProfile: input.administrativeProfile,
+			},
+			options,
+		);
+
+		if (evaluation && evaluation.isDuplicate) {
+			if (!bestMatch || evaluation.matchScore > bestMatch.matchScore) {
+				bestMatch = {
+					isDuplicate: true,
+					isNameOnlyDuplicate: evaluation.isNameOnlyDuplicate,
+					candidate: patient,
+					matchScore: evaluation.matchScore,
+					matchConfidencePercent: evaluation.matchConfidencePercent,
+					reasons: evaluation.reasons,
+					explanation: evaluation.explanation,
+					caution: evaluation.caution,
+				};
+			}
+		}
+	}
+
+	return bestMatch;
 }
 
 /**
@@ -263,17 +311,61 @@ function findPatientDuplicate(
  * сами, чем — не скажем», а регистратору нужно знать, что делать с настоящим
  * тёзкой.
  */
-function sendPatientNameOnlyDuplicate(reply: FastifyReply) {
+function sendPatientNameOnlyDuplicate(
+	reply: FastifyReply,
+	existing?: PatientDuplicateCandidate,
+) {
 	return reply.code(409).send({
 		error: "PatientNameDuplicateError",
 		message: patientNameOnlyDuplicateMessage,
+		...(existing
+			? {
+					existingPatientId: existing.id,
+					patientUrl: `/patients/${existing.id}`,
+				}
+			: {}),
 	});
 }
 
-function sendPatientDuplicate(reply: FastifyReply) {
+function sendPatientDuplicate(
+	reply: FastifyReply,
+	result?: PatientDuplicateResult,
+) {
+	const existing = result?.candidate;
+	const matchPercent = result?.matchConfidencePercent ?? 90;
+	const reasonsText = result?.reasons?.length
+		? ` Причины: ${result.reasons.join("; ")}.`
+		: "";
+	const linkText = existing
+		? ` Ссылка на существующую карту: /patients/${existing.id}`
+		: "";
+
+	const detailedMessage = existing
+		? `Обнаружен дубликат карты пациента (вероятность совпадения ${matchPercent}%): ${existing.fullName}${existing.birthDate ? `, дата рождения ${existing.birthDate}` : ""}${existing.phone ? `, тел. ${existing.phone}` : ""}.${reasonsText}${linkText}`
+		: patientDuplicateMessage;
+
 	return reply.code(409).send({
 		error: "PatientDuplicateError",
-		message: patientDuplicateMessage,
+		message: detailedMessage,
+		...(existing
+			? {
+					existingPatientId: existing.id,
+					patientUrl: `/patients/${existing.id}`,
+					matchScore: result?.matchScore ?? 0.9,
+					matchConfidencePercent: matchPercent,
+					reasons: result?.reasons ?? [],
+					existingPatient: {
+						id: existing.id,
+						fullName: existing.fullName,
+						birthDate: existing.birthDate ?? null,
+						phone: existing.phone ?? null,
+						snils:
+							existing.snils ??
+							(existing.administrativeProfile?.snils as string | undefined) ??
+							null,
+					},
+				}
+			: {}),
 	});
 }
 
@@ -374,6 +466,14 @@ import {
 	clinicSessionRejectedMessage,
 } from "../utils/clinicSessionRefusal.js";
 import { verifyToken } from "../utils/cryptoHelper.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import {
+	evaluateClinicalAccess,
+	registerMedicalSecrecyPayloadStripping,
+	shouldStripMedicalData,
+	stripDiagnosisPayload,
+} from "../security/medicalSecrecyWarden.js";
 import { TOKEN_SECRET } from "./auth.js";
 
 /**
@@ -467,12 +567,19 @@ function requireClinicOrganizationId(
 }
 
 export async function registerPatientRoutes(app: FastifyInstance) {
+	// 152-ФЗ / 323-ФЗ ст. 13: Аппаратное усечение полезной нагрузки врачебной тайны для неклинических ролей
+	registerMedicalSecrecyPayloadStripping(app);
+
 	app.get("/api/patients", async (request, reply) => {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
 		try {
 			const dbPatients = await getPatientsFromDb(orgId);
+			if (shouldStripMedicalData(request)) {
+				const stripped = stripDiagnosisPayload(dbPatients);
+				return stripped.map((patient) => patientSchema.parse(patient));
+			}
 			return dbPatients.map((patient) => patientSchema.parse(patient));
 		} catch (e) {
 			console.error("[Patients] Error fetching from DB:", e);
@@ -483,6 +590,95 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				error: "DatabaseError",
 				message:
 					"Сервер клиники не смог прочитать список пациентов. Не считайте, что картотека пуста — повторите через минуту, а если повторится, сообщите администратору.",
+			});
+		}
+	});
+
+	app.get("/api/patients/:patientId", async (request, reply) => {
+		const orgId = requireClinicOrganizationId(request, reply);
+		if (!orgId) return reply;
+
+		const params = request.params as { patientId?: string };
+		if (
+			!params.patientId ||
+			!PATIENT_ID_UUID_PATTERN.test(params.patientId.trim())
+		) {
+			return sendPatientRouteValidationError(reply);
+		}
+		const patientId = params.patientId.trim();
+
+		try {
+			const patient = await getPatientByIdFromDb(orgId, patientId);
+			if (!patient) {
+				return sendPatientNotFound(reply);
+			}
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Аудит доступа к медицинской карте
+			const identity = getRequestIdentity(request);
+			const reqAny = request as unknown as {
+				user?: {
+					role?: string | null;
+					canSignMedicalRecords?: boolean;
+					clinicalRole?: string | null;
+				};
+				headers: Record<string, string | string[] | undefined>;
+			};
+			const staffRole =
+				identity.role ??
+				reqAny.user?.role ??
+				(typeof reqAny.headers["x-user-role"] === "string"
+					? reqAny.headers["x-user-role"]
+					: null) ??
+				(typeof reqAny.headers["x-staff-role"] === "string"
+					? reqAny.headers["x-staff-role"]
+					: null) ??
+				null;
+
+			if (staffRole) {
+				const evalAccess = evaluateClinicalAccess(staffRole, {
+					clinicalRole:
+						(identity as unknown as { clinicalRole?: string | null })
+							.clinicalRole ??
+						reqAny.user?.clinicalRole ??
+						(typeof reqAny.headers["x-clinical-role"] === "string"
+							? reqAny.headers["x-clinical-role"]
+							: null),
+					canSignMedicalRecords:
+						(identity as unknown as { canSignMedicalRecords?: boolean })
+							.canSignMedicalRecords ??
+						reqAny.user?.canSignMedicalRecords ??
+						reqAny.headers["x-can-sign-medical-records"] === "true",
+				});
+
+				if (evalAccess.hasClinicalAccess) {
+					// Врач/клинический персонал: фиксируем факт доступа к медицинской карте
+					await auditMedicalAccessFromRequest(request, {
+						organizationId: orgId,
+						patientId,
+						action: "VIEW_PATIENT_MEDICAL_RECORD",
+					});
+				} else {
+					// Неклинический сотрудник: фиксируем усечение доступа в аудите
+					await auditMedicalAccessFromRequest(request, {
+						organizationId: orgId,
+						patientId,
+						action: "DIAGNOSIS_ACCESS_STRIPPED",
+						diagnosis: "Врачебная тайна скрыта согласно 152-ФЗ",
+					});
+				}
+			}
+
+			if (shouldStripMedicalData(request)) {
+				const stripped = stripDiagnosisPayload(patient);
+				return reply.send(patientSchema.parse(stripped));
+			}
+
+			return reply.send(patientSchema.parse(patient));
+		} catch (e) {
+			console.error("[Patients] Error fetching patient by ID:", e);
+			return reply.code(500).send({
+				error: "DatabaseError",
+				message: "Не удалось загрузить данные карточки пациента.",
 			});
 		}
 	});
@@ -498,10 +694,21 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 				message: patientCreateValidationMessage,
 			});
 		}
+		const rawBody =
+			request.body && typeof request.body === "object"
+				? (request.body as Record<string, unknown>)
+				: {};
+		const inputWithSnils = {
+			...input,
+			snils:
+				(rawBody.snils as string | undefined) ??
+				(input.administrativeProfile?.snils as string | undefined) ??
+				null,
+		};
 		try {
 			const safeResult = await createPatientSafeInDb(
 				orgId,
-				input,
+				inputWithSnils,
 				(patients, inp) => {
 					return findPatientDuplicate(patients, inp, undefined, {
 						requireDistinguishingData: true,
@@ -510,12 +717,11 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 			);
 
 			if (safeResult.type === "duplicate") {
-				const nothingButName =
-					!(input.birthDate ?? "").trim() &&
-					!normalizePatientPhoneForDuplicate(input.phone);
-				return nothingButName
-					? sendPatientNameOnlyDuplicate(reply)
-					: sendPatientDuplicate(reply);
+				const dup = safeResult.duplicate as PatientDuplicateResult | null;
+				if (dup?.isNameOnlyDuplicate) {
+					return sendPatientNameOnlyDuplicate(reply, dup.candidate);
+				}
+				return sendPatientDuplicate(reply, dup ?? undefined);
 			}
 
 			return reply.code(201).send(patientSchema.parse(safeResult.patient));
@@ -553,12 +759,23 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 
 		try {
 			const dbPatients = await getPatientsFromDb(orgId);
+			const rawBody =
+				request.body && typeof request.body === "object"
+					? (request.body as Record<string, unknown>)
+					: {};
+			const inputWithSnils: PatientDuplicateInput = {
+				fullName: input.fullName,
+				birthDate: input.birthDate,
+				phone: input.phone,
+				snils: (rawBody.snils as string | undefined) ?? null,
+				administrativeProfile: (rawBody.administrativeProfile as Record<string, unknown> | undefined) ?? null,
+			};
 			const duplicate = findPatientDuplicate(
 				dbPatients,
-				input,
+				inputWithSnils,
 				params.patientId,
 			);
-			if (duplicate) return sendPatientDuplicate(reply);
+			if (duplicate) return sendPatientDuplicate(reply, duplicate);
 
 			const patient = await updatePatientInDb(orgId, params.patientId, input);
 			if (!patient) return sendPatientNotFound(reply);
