@@ -1603,4 +1603,217 @@ export class TreatmentConsumablesService {
 			message: `Списано пустых карпул анестетика: ${count} шт. (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек).`,
 		};
 	}
+
+	/**
+	 * 1-клик пакетное списание стандартного расхода смены медсестрой/ассистентом:
+	 * Комплект Терапия, Комплект Ортопедия, Комплект Хирургия.
+	 * Ликвидирует ручное прокликивание 40 позиций (перчатки, маски, салфетки, слюноотсосы, стаканчики).
+	 * Реализует мягкий овердрафт склада без блокировки работы.
+	 */
+	static async quickWriteoffShiftBundle(
+		tx: DbExecutor,
+		params: {
+			organizationId: string;
+			bundleType?: "therapy" | "orthopedics" | "surgery";
+			userId?: string | null;
+			visitId?: string | null;
+			notes?: string | null;
+		},
+	): Promise<{
+		success: boolean;
+		deductedItems: Array<{
+			itemId: string;
+			itemName: string;
+			quantity: number;
+			unit: string;
+			remainingStock: number;
+			isOverdraft: boolean;
+		}>;
+		warnings: string[];
+		message: string;
+	}> {
+		const { organizationId, bundleType = "therapy", userId, visitId, notes } = params;
+
+		const bundleDefinitions: Record<
+			"therapy" | "orthopedics" | "surgery",
+			Array<{
+				patterns: string[];
+				defaultName: string;
+				category: string;
+				unit: string;
+				qty: number;
+				defaultCost: string;
+			}>
+		> = {
+			therapy: [
+				{ patterns: ["перчатк"], defaultName: "Перчатки смотровые нитриловые (пара)", category: "Расходные материалы", unit: "пар", qty: 10, defaultCost: "35.00" },
+				{ patterns: ["маск"], defaultName: "Маски трехслойные медицинские", category: "Расходные материалы", unit: "шт.", qty: 10, defaultCost: "8.00" },
+				{ patterns: ["салфетк", "нагрудн"], defaultName: "Салфетки стоматологические нагрудные", category: "Расходные материалы", unit: "шт.", qty: 10, defaultCost: "6.00" },
+				{ patterns: ["слюноотсос"], defaultName: "Слюноотсосы одноразовые", category: "Расходные материалы", unit: "шт.", qty: 10, defaultCost: "7.00" },
+				{ patterns: ["стаканчик"], defaultName: "Стаканчики пластиковые одноразовые", category: "Расходные материалы", unit: "шт.", qty: 10, defaultCost: "4.00" },
+				{ patterns: ["валик"], defaultName: "Валики ватные стоматологические", category: "Расходные материалы", unit: "шт.", qty: 50, defaultCost: "1.20" },
+				{ patterns: ["микроаппликатор", "браш"], defaultName: "Микроаппликаторы (браши)", category: "Расходные материалы", unit: "шт.", qty: 20, defaultCost: "3.50" },
+				{ patterns: ["игла карпульн", "иглы карпульн"], defaultName: "Иглы карпульные 0.3x21 мм", category: "Расходные материалы", unit: "шт.", qty: 5, defaultCost: "18.00" },
+				{ patterns: ["артикаин", "ультракаин", "убистезин"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 5, defaultCost: "120.00" },
+			],
+			orthopedics: [
+				{ patterns: ["перчатк"], defaultName: "Перчатки смотровые нитриловые (пара)", category: "Расходные материалы", unit: "пар", qty: 8, defaultCost: "35.00" },
+				{ patterns: ["маск"], defaultName: "Маски трехслойные медицинские", category: "Расходные материалы", unit: "шт.", qty: 8, defaultCost: "8.00" },
+				{ patterns: ["салфетк", "нагрудн"], defaultName: "Салфетки стоматологические нагрудные", category: "Расходные материалы", unit: "шт.", qty: 8, defaultCost: "6.00" },
+				{ patterns: ["слюноотсос"], defaultName: "Слюноотсосы одноразовые", category: "Расходные материалы", unit: "шт.", qty: 8, defaultCost: "7.00" },
+				{ patterns: ["стаканчик"], defaultName: "Стаканчики пластиковые одноразовые", category: "Расходные материалы", unit: "шт.", qty: 8, defaultCost: "4.00" },
+				{ patterns: ["канюл", "смесительн"], defaultName: "Канюли смесительные для А-силикона", category: "Расходные материалы", unit: "шт.", qty: 8, defaultCost: "45.00" },
+				{ patterns: ["ложк", "слепочн"], defaultName: "Ложки слепочные перфорированные (комплект)", category: "Расходные материалы", unit: "шт.", qty: 4, defaultCost: "60.00" },
+				{ patterns: ["ретракцион", "нить"], defaultName: "Нить ретракционная Ultrapak #00", category: "Расходные материалы", unit: "уп.", qty: 1, defaultCost: "850.00" },
+			],
+			surgery: [
+				{ patterns: ["стерильн", "хирургическ", "перчатк"], defaultName: "Перчатки стерильные хирургические (пара)", category: "Расходные материалы", unit: "пар", qty: 6, defaultCost: "75.00" },
+				{ patterns: ["маск"], defaultName: "Маски трехслойные медицинские", category: "Расходные материалы", unit: "шт.", qty: 6, defaultCost: "8.00" },
+				{ patterns: ["марлев", "салфетк"], defaultName: "Салфетки марлевые стерильные 16x14 см", category: "Перевязочные средства", unit: "шт.", qty: 20, defaultCost: "5.00" },
+				{ patterns: ["простын", "покрыти"], defaultName: "Простыни хирургические стерильные", category: "Расходные материалы", unit: "шт.", qty: 6, defaultCost: "95.00" },
+				{ patterns: ["скальпел"], defaultName: "Скальпель хирургический одноразовый №15", category: "Хирургический инструментарий", unit: "шт.", qty: 3, defaultCost: "65.00" },
+				{ patterns: ["шовн", "нить"], defaultName: "Шовный материал полигликолид 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 3, defaultCost: "220.00" },
+				{ patterns: ["артикаин", "ультракаин", "убистезин"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 6, defaultCost: "120.00" },
+				{ patterns: ["игла карпульн", "иглы карпульн"], defaultName: "Иглы карпульные 0.4x35 мм", category: "Расходные материалы", unit: "шт.", qty: 6, defaultCost: "20.00" },
+			],
+		};
+
+		const activeDefinitions = bundleDefinitions[bundleType] || bundleDefinitions.therapy;
+		const bundleNameRu =
+			bundleType === "orthopedics"
+				? "Ортопедия"
+				: bundleType === "surgery"
+					? "Хирургия"
+					: "Терапия";
+
+		const allOrgItems = await tx
+			.select()
+			.from(inventoryItems)
+			.where(eq(inventoryItems.organizationId, organizationId));
+
+		const resolvedItems: Array<{
+			item: typeof inventoryItems.$inferSelect;
+			qty: number;
+		}> = [];
+
+		for (const def of activeDefinitions) {
+			let matched = allOrgItems.find((inv) =>
+				def.patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())),
+			);
+
+			if (!matched) {
+				const [created] = await tx
+					.insert(inventoryItems)
+					.values({
+						organizationId,
+						name: def.defaultName,
+						category: def.category,
+						unit: def.unit,
+						stockQuantity: "0",
+						currentQty: "0",
+						criticalThreshold: "10",
+						unitCostRub: def.defaultCost,
+					})
+					.returning();
+				if (created) {
+					matched = created;
+					allOrgItems.push(created);
+				}
+			}
+
+			if (matched) {
+				resolvedItems.push({ item: matched, qty: def.qty });
+			}
+		}
+
+		const sortedIds = resolvedItems.map((r) => r.item.id).sort();
+		const lockedRows = await tx
+			.select()
+			.from(inventoryItems)
+			.where(
+				and(
+					inArray(inventoryItems.id, sortedIds),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.for("update");
+
+		const lockedMap = new Map(lockedRows.map((r) => [r.id, r]));
+		const deductedItems: Array<{
+			itemId: string;
+			itemName: string;
+			quantity: number;
+			unit: string;
+			remainingStock: number;
+			isOverdraft: boolean;
+		}> = [];
+		const warnings: string[] = [];
+		const txRows: Array<typeof inventoryTransactions.$inferInsert> = [];
+
+		for (const target of resolvedItems) {
+			const inv = lockedMap.get(target.item.id);
+			if (!inv) continue;
+
+			const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+			const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+			const newStock = Number((baseStock - target.qty).toFixed(4));
+			const isOverdraft = newStock < 0;
+
+			await tx
+				.update(inventoryItems)
+				.set({
+					stockQuantity: String(newStock),
+					currentQty: String(newStock),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(inventoryItems.id, inv.id),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				);
+
+			txRows.push({
+				organizationId,
+				visitId: visitId ?? null,
+				itemId: inv.id,
+				inventoryItemId: inv.id,
+				quantityChanged: String(-target.qty),
+				qty: String(-target.qty),
+				unitCostRub: inv.unitCostRub ?? "0",
+				transactionType: isOverdraft ? "emergency_overdraft" : "nurse_shift_bundle",
+				isOverdraft,
+				userId,
+				notes: isOverdraft
+					? `Списано под операцию, требуется оприходование (пакет смены «${bundleNameRu}»: дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."})`
+					: (notes || `Списание стандартного расхода смены «${bundleNameRu}» медсестрой (1 клик)`),
+			});
+
+			if (isOverdraft) {
+				warnings.push(
+					`Позиция «${inv.name}»: списано под операцию, требуется оприходование (остаток: ${newStock} ${inv.unit ?? "ед."}).`,
+				);
+			}
+
+			deductedItems.push({
+				itemId: inv.id,
+				itemName: inv.name,
+				quantity: target.qty,
+				unit: inv.unit ?? "шт.",
+				remainingStock: newStock,
+				isOverdraft,
+			});
+		}
+
+		if (txRows.length > 0) {
+			await tx.insert(inventoryTransactions).values(txRows);
+		}
+
+		return {
+			success: true,
+			deductedItems,
+			warnings,
+			message: `Стандартный расход смены «${bundleNameRu}» успешно списан (${deductedItems.length} позиций без комиссии).`,
+		};
+	}
 }

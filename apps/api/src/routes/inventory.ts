@@ -996,4 +996,39 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		return result;
 	});
+
+	// POST /:organizationId/quick-writeoff-shift-bundle — 1-клик пакетное списание смены
+	// (комплект терапия / ортопедия / хирургия) без прокликивания 40 позиций.
+	server.post<{
+		Params: { organizationId: string };
+		Body?: { bundleType?: "therapy" | "orthopedics" | "surgery"; visitId?: string; notes?: string };
+	}>("/:organizationId/quick-writeoff-shift-bundle", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff shift bundle",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const userContext = request.user;
+
+		const result = await db.transaction(async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffShiftBundle(tx, {
+				organizationId,
+				bundleType: body.bundleType || "therapy",
+				userId: userContext?.id ?? null,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
+	});
 };
+
