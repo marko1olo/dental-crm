@@ -979,7 +979,7 @@ function createPlanItem(
 	},
 ): TreatmentPlanItem {
 	const quantity = overrides?.quantity ?? 1;
-	const validDiscountPct = Math.max(0, Math.min(50, discountPercent));
+	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 
 	let matched: MatchCatalogServiceResult;
 	if (typeof overrides?.customPriceRub === "number") {
@@ -1067,7 +1067,7 @@ export function generateTreatmentPlanStages(
 	discountPercent: number = 0,
 	options?: { isDemoMode?: boolean },
 ): [TreatmentPlanStage, TreatmentPlanStage, TreatmentPlanStage] {
-	const validDiscountPct = Math.max(0, Math.min(50, discountPercent));
+	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
 
 	// Проверка наличия каких-либо патологий: если все зубы Healthy или Filled -> возвращаем пустые этапы!
@@ -1814,7 +1814,7 @@ export function generateTierPlanStages(
 	options?: { isDemoMode?: boolean },
 ): [TreatmentPlanStage, TreatmentPlanStage, TreatmentPlanStage] {
 	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
-	const validDiscountPct = Math.max(0, Math.min(50, discountPercent));
+	const validDiscountPct = Math.max(0, Math.min(100, discountPercent));
 
 	// Для тарифа Стандарт используем базовый генератор
 	if (tierId === "standard") {
@@ -2547,7 +2547,7 @@ export function generate3TierPlanComparison(
 	options?: { isDemoMode?: boolean },
 ): [TreatmentPlanTier, TreatmentPlanTier, TreatmentPlanTier] {
 	const isDemo = options?.isDemoMode !== undefined ? options.isDemoMode : (isDemoShowcaseMode() || !catalog || catalog.length === 0);
-	const validLoyaltyPct = Math.max(0, Math.min(50, patientLoyaltyDiscountPercent));
+	const validLoyaltyPct = Math.max(0, Math.min(100, patientLoyaltyDiscountPercent));
 
 	const economyStages = generateTierPlanStages("economy", teeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });
 	const standardStages = generateTierPlanStages("standard", teeth, catalog, validLoyaltyPct, { isDemoMode: isDemo });

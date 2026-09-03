@@ -59,6 +59,10 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 		return calculateStageMaterialRequirements(stage, inventoryItems);
 	}, [stage, inventoryItems]);
 
+	const presentationMaterials = useMemo(() => {
+		return materialSummary.items.filter((mat) => !mat.hideInPatientPresentation);
+	}, [materialSummary.items]);
+
 	const stageColorMap = {
 		1: {
 			badge: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20",
@@ -273,7 +277,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 							<div className="flex items-center gap-2">
 								<Package size={15} className="text-[var(--teal,var(--brand-primary))]" />
 								<span>
-									Нормы расхода ТМЦ и себестоимость этапа ({materialSummary.items.length} поз.)
+									Нормы расхода ТМЦ и себестоимость этапа ({presentationMaterials.length} поз.)
 								</span>
 							</div>
 
@@ -305,7 +309,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											</tr>
 										</thead>
 										<tbody className="divide-y divide-[var(--border,#cbd5e1)]">
-											{materialSummary.items.map((mat) => (
+											{presentationMaterials.map((mat) => (
 												<tr key={mat.id} className="text-[var(--ink,#0f172a)]">
 													<td className="py-1.5 pr-2">
 														<span className="font-medium">{mat.materialName}</span>

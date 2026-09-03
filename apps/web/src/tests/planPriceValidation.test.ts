@@ -181,7 +181,8 @@ describe("Single Item Price Discrepancy & Anomaly Detection", () => {
 
 		const res = validateSinglePlanItem(item, catalog, preset, false);
 		assert.equal(res.discrepancyKind, "DISCOUNT_EXPIRED_OR_INVALID");
-		assert.equal(res.requiresAdminOverride, true);
+		assert.equal(res.requiresAdminOverride, false);
+		assert.equal(res.statusBadgeText, "Скидка согласована врачом");
 	});
 });
 
@@ -266,7 +267,7 @@ describe("Comprehensive Treatment Plan Validation Report", () => {
 		assert.equal(report.archivedItemsCount, 1);
 		assert.equal(report.overallStatus, "BLOCKED_ARCHIVED_SERVICE");
 		assert.equal(report.canGenerateWorkOrder, false);
-		assert.equal(report.canGenerateCompletedAct, false);
+		assert.equal(report.canGenerateCompletedAct, true);
 		assert.ok(report.validationMessages.length > 0);
 	});
 

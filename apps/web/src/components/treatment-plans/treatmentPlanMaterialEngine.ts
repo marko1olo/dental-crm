@@ -51,6 +51,7 @@ export const ORDER_804N_MATERIAL_NORMS_MAP: Record<string, readonly ProcedureMat
 			unitOfMeasure: "шт.",
 			defaultUnitCostRub: 35,
 			mandatory: true,
+			hideInPatientPresentation: true,
 		},
 		{
 			id: "norm-ct-antiseptic-wipe",
@@ -60,6 +61,7 @@ export const ORDER_804N_MATERIAL_NORMS_MAP: Record<string, readonly ProcedureMat
 			unitOfMeasure: "шт.",
 			defaultUnitCostRub: 15,
 			mandatory: true,
+			hideInPatientPresentation: true,
 		},
 	],
 
@@ -1069,6 +1071,10 @@ export function calculateStageMaterialRequirements(
 				totalCostKopecks,
 				isDeficit,
 				deficitQuantity,
+				hideInPatientPresentation: Boolean(
+					norm.hideInPatientPresentation ||
+					/салфетк|ватн.*валик|чехол для позиционер/i.test(norm.materialName),
+				),
 				...(typeof proc.toothNumber === "number" ? { toothNumber: proc.toothNumber } : {}),
 				...(matchedInv?.id ? { inventoryItemId: matchedInv.id } : {}),
 				...(typeof inStockQuantity === "number" ? { inStockQuantity } : {}),

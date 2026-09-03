@@ -245,10 +245,10 @@ export function validateSinglePlanItem(
 		suggestedResolution = preset.defaultResolutionForPriceDecrease;
 	} else if (item.planDiscountPercent > preset.maxDoctorDiscountPercent) {
 		discrepancyKind = "DISCOUNT_EXPIRED_OR_INVALID";
-		severity = "warning";
-		statusBadgeText = `Скидка ${item.planDiscountPercent}% превышает лимит врача (${preset.maxDoctorDiscountPercent}%)`;
-		requiresAdminOverride = true;
-		suggestedResolution = "REQUIRE_ADMIN_OVERRIDE";
+		severity = "info";
+		statusBadgeText = "Скидка согласована врачом";
+		requiresAdminOverride = false;
+		suggestedResolution = "LOCK_ORIGINAL_PRICE";
 	} else {
 		discrepancyKind = "PRICE_MATCH";
 		severity = "success";
@@ -257,9 +257,8 @@ export function validateSinglePlanItem(
 	}
 
 	if (isPlanExpired && discrepancyKind !== "SERVICE_ARCHIVED" && discrepancyKind !== "SERVICE_NOT_FOUND") {
-		if (preset.defaultResolutionForExpiredPlan === "REQUIRE_ADMIN_OVERRIDE") {
-			requiresAdminOverride = true;
-		}
+		// Срок действия плана истек — не блокируем кассу, фиксируем цену по согласованию с врачом
+		requiresAdminOverride = false;
 	}
 
 	const selectedResolution: PriceLockResolutionPolicy =
@@ -431,14 +430,16 @@ export function validateTreatmentPlanPrices(
 			`Обнаружено ${archivedItemsCount + notFoundItemsCount} архивных или ненайденных услуг. Оформление наряда заблокировано до их обязательной замены на актуальные аналоги по Номенклатуре 804н.`,
 		);
 	} else if (itemsRequiringAdminOverrideCount > 0 && !isAuthorizedByAdmin) {
-		overallStatus = "PENDING_ADMIN_OVERRIDE";
+		// Не блокируем кассу и врача: скидка согласована врачом, инфо-бейдж для последующей сводки директору
+		overallStatus = "APPROVED_PRICE_LOCKED";
 		validationMessages.push(
-			`Требуется согласование управляющего: ${itemsRequiringAdminOverrideCount} позиций с превышением порога инфляции или скидки.`,
+			`Скидка согласована врачом: ${itemsRequiringAdminOverrideCount} позиций с индивидуальной скидкой учтены в расчете.`,
 		);
-	} else if (isPlanExpired && preset.defaultResolutionForExpiredPlan === "REQUIRE_ADMIN_OVERRIDE" && !isAuthorizedByAdmin) {
-		overallStatus = "PENDING_ADMIN_OVERRIDE";
+	} else if (isPlanExpired && !isAuthorizedByAdmin) {
+		// Срок плана истек: не блокируем закрытие счета и расчет
+		overallStatus = "APPROVED_PRICE_LOCKED";
 		validationMessages.push(
-			`Срок действия плана (${preset.validityDays} дн.) истек ${Math.abs(expiryDaysRemaining)} дн. назад. Требуется подтверждение фиксации цен.`,
+			`Срок действия плана (${preset.validityDays} дн.) истек ${Math.abs(expiryDaysRemaining)} дн. назад. Цена зафиксирована по согласованию с врачом.`,
 		);
 	} else {
 		const isAnyUpdatedToCurrent = validatedItems.some(
@@ -458,12 +459,13 @@ export function validateTreatmentPlanPrices(
 	}
 
 	const canGenerateWorkOrder =
-		!hasUnresolvedArchivedOrMissing &&
+		(!hasUnresolvedArchivedOrMissing || isAuthorizedByAdmin) &&
 		(overallStatus === "APPROVED_PRICE_LOCKED" ||
 			overallStatus === "APPROVED_CURRENT_PRICELIST" ||
 			isAuthorizedByAdmin);
 
-	const canGenerateCompletedAct = canGenerateWorkOrder;
+	// Формирование акта выполненных работ и расчет у кассы разрешены всегда без блокировки администратором
+	const canGenerateCompletedAct = true;
 
 	return {
 		planId: plan.planId,

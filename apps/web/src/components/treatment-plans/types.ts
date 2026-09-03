@@ -163,6 +163,7 @@ export interface ProcedureMaterialNorm {
 	readonly defaultUnitCostRub: number;
 	readonly mandatory: boolean;
 	readonly lotTrackingRequired?: boolean;
+	readonly hideInPatientPresentation?: boolean;
 }
 
 export interface PlanStageMaterialRequirement {
@@ -181,6 +182,7 @@ export interface PlanStageMaterialRequirement {
 	readonly inStockQuantity?: number;
 	readonly isDeficit: boolean;
 	readonly deficitQuantity: number;
+	readonly hideInPatientPresentation?: boolean;
 }
 
 export interface StageMaterialCostSummary {
