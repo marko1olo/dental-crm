@@ -24,9 +24,28 @@ export const CLINICAL_WS_EVENT_TYPES: ReadonlySet<string> = new Set([
 	"CLINICAL_NOTE_UPDATED",
 	"DIAGNOSIS_RECORDED",
 	"DIAGNOSIS_UPDATED",
+	"DIAGNOSIS_SET",
+	"DIAGNOSIS_DELETED",
 	"ANAMNESIS_UPDATED",
 	"TOOTH_EXTRACTION_RECORDED",
 	"PERIODONTAL_CHART_UPDATED",
+	"ANESTHESIA_LOG_CREATED",
+	"ANESTHESIA_LOG_DELETED",
+	"PRESCRIPTION_ISSUED",
+	"PRESCRIPTION_SIGNED",
+	"TREATMENT_PLAN_CREATED",
+	"TREATMENT_PLAN_UPDATED",
+	"LAB_ORDER_CREATED",
+	"LAB_ORDER_UPDATED",
+	"LAB_ORDER_STAGE_CHANGED",
+	"SPEECH_TRANSCRIPT_INTERIM",
+	"SPEECH_TRANSCRIPT_FINAL",
+	"SPEECH_ENTITIES_EXTRACTED",
+	"HISTOLOGY_ORDER_CREATED",
+	"BIOPSY_ORDER_CREATED",
+	"PATHOLOGY_REPORT_UPDATED",
+	"IMPLANT_PASSPORT_CREATED",
+	"IMPLANT_PASSPORT_UPDATED",
 ]);
 
 export function isClinicalWsEvent(message: unknown): boolean {
@@ -43,7 +62,17 @@ export function isClinicalWsEvent(message: unknown): boolean {
 			upperType.includes("IMPLANT") ||
 			upperType.includes("ANAMNESIS") ||
 			upperType.includes("PROTOCOL_043") ||
-			upperType.includes("PERIO")
+			upperType.includes("PERIO") ||
+			upperType.includes("ANESTHESIA") ||
+			upperType.includes("PRESCRIPTION") ||
+			upperType.includes("TREATMENT_PLAN") ||
+			upperType.includes("LAB_ORDER") ||
+			upperType.includes("SPEECH") ||
+			upperType.includes("TRANSCRIPT") ||
+			upperType.includes("BIOPSY") ||
+			upperType.includes("PATHOLOGY") ||
+			upperType.includes("HISTOLOGY") ||
+			upperType.includes("EXTRACTION")
 		) {
 			return true;
 		}
@@ -60,7 +89,24 @@ export function isClinicalWsEvent(message: unknown): boolean {
 			"diagnosis" in p ||
 			"mkb10" in p ||
 			"emrRecords" in p ||
-			"protocols" in p
+			"protocols" in p ||
+			"toothFormula" in p ||
+			"tooth_formula" in p ||
+			"toothNumber" in p ||
+			"tooth_number" in p ||
+			"teeth" in p ||
+			"anamnesis" in p ||
+			"complaint" in p ||
+			"complaints" in p ||
+			"treatmentPlan" in p ||
+			"treatment_plan" in p ||
+			"treatmentDescription" in p ||
+			"anesthesia" in p ||
+			"prescription" in p ||
+			"labOrder" in p ||
+			"medicalEntities" in p ||
+			"speechTranscript" in p ||
+			"transcript" in p
 		) {
 			return true;
 		}
@@ -97,12 +143,14 @@ export const wsBroker = {
 		};
 		if (patientId !== undefined) conn.patientId = patientId;
 		clients.add(conn);
-		ws.on("close", () => {
-			clients.delete(conn);
-		});
-		ws.on("error", () => {
-			clients.delete(conn);
-		});
+		if (typeof ws?.on === "function") {
+			ws.on("close", () => {
+				clients.delete(conn);
+			});
+			ws.on("error", () => {
+				clients.delete(conn);
+			});
+		}
 	},
 	broadcastToOrganization(organizationId: string, message: object) {
 		const rawData = JSON.stringify(message);

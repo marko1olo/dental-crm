@@ -96,10 +96,7 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 	// (reading Symbol(fastify.acceptedHTTPMethods))».
 	const wsApp = app as unknown as { get: WebsocketRouteRegistrar };
 
-	wsApp.get(
-		"/api/ws/schedule",
-		{ websocket: true },
-		(socket: WebSocket, request: FastifyRequest) => {
+	const handleSecureWsConnection = (socket: WebSocket, request: FastifyRequest) => {
 		let authorized = false;
 
 		const authTimer = setTimeout(() => {
@@ -169,5 +166,8 @@ export async function registerWebsocketRoutes(app: FastifyInstance) {
 				"websocket client subscribed",
 			);
 		});
-	});
+	};
+
+	wsApp.get("/api/ws/schedule", { websocket: true }, handleSecureWsConnection);
+	wsApp.get("/api/ws/telephony", { websocket: true }, handleSecureWsConnection);
 }
