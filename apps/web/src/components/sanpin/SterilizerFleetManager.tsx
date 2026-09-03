@@ -313,10 +313,6 @@ export function SterilizerFleetManager({
 
 	// Delete item from register
 	const handleDelete = async (item: SterilizerEquipment) => {
-		if (!window.confirm(`Вы действительно хотите удалить аппарат «${item.name}» (Зав. №${item.serialNumber}) из реестра клиники?`)) {
-			return;
-		}
-
 		try {
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();

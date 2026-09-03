@@ -17,6 +17,7 @@ export type AutoclavePackagingType =
 	| 'kraft_paper_crepe'
 	| 'crepe_paper_double'
 	| 'sterilization_cassette_bipack'
+	| 'bix_filter'
 	| 'unwrapped_tray';
 
 export type IndicatorQualityClass =
@@ -86,10 +87,10 @@ export const SANPIN_PACKAGING_RULES: Record<AutoclavePackagingType, PackagingShe
 	kraft_paper_crepe: {
 		packagingType: 'kraft_paper_crepe',
 		nameRu: 'Крафт-пакет бумажный самозаклеивающийся',
-		shelfLifeDays: 50,
+		shelfLifeDays: 30,
 		sealMethodRu: 'Клеевой клапан с защитной лентой',
 		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3632',
-		descriptionRu: 'Бумажные крафт-пакеты с липким слоем — до 50 суток в закрытых сухих шкафах.'
+		descriptionRu: 'Бумажные крафт-пакеты с липким слоем — до 30 суток в закрытых сухих шкафах.'
 	},
 	crepe_paper_double: {
 		packagingType: 'crepe_paper_double',
@@ -106,6 +107,14 @@ export const SANPIN_PACKAGING_RULES: Record<AutoclavePackagingType, PackagingShe
 		sealMethodRu: 'Двойная термосварная оболочка или кассета в пакете',
 		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3634',
 		descriptionRu: 'Хирургические и имплантологические наборы в жестких кассетах с двойной барьерной упаковкой.'
+	},
+	bix_filter: {
+		packagingType: 'bix_filter',
+		nameRu: 'Стерилизационная коробка (Бикс с антибактериальным фильтром)',
+		shelfLifeDays: 20,
+		sealMethodRu: 'Замковый механизм бикса + сменные фильтры',
+		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3635',
+		descriptionRu: 'Многоразовые металлические коробки (биксы) с фильтрами — 20 суток без вскрытия (после вскрытия — 24 ч).'
 	},
 	unwrapped_tray: {
 		packagingType: 'unwrapped_tray',

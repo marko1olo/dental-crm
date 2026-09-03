@@ -217,6 +217,68 @@ export function PsoRegisterTab() {
 		}
 	};
 
+	const handleQuickMarkBatchNorm = async () => {
+		try {
+			setSubmitting(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+
+			const payload = {
+				instrumentName: "Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)",
+				batchItemCount: 100,
+				testedSampleCount: 3,
+				detergentBrand: "Биолот 0.5% + Аламинол 1%",
+				notes: `⚡ Отметка партии в 1 клик по СанПиН 3.3686-21: проба отрицательная, норма. Партия допущена к стерилизации. [ЭЦП: ${formNurseName}]`,
+			};
+
+			const res = await fetch("/api/registers/pso/quick-norm", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (res.ok) {
+				showToast("⚡ Вся партия инструментов успешно отмечена: «Проба отрицательная, норма»!", "success");
+				fetchLogs();
+			} else {
+				// Fallback to standard /api/registers/pso
+				const fallbackRes = await fetch("/api/registers/pso", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+					body: JSON.stringify({
+						instrumentName: payload.instrumentName,
+						testType: "both",
+						batchItemCount: 100,
+						testedSampleCount: 3,
+						isAzopyramNegative: true,
+						isPhenolphthaleinNegative: true,
+						detergentBrand: payload.detergentBrand,
+						notes: payload.notes,
+					}),
+				});
+				if (fallbackRes.ok) {
+					showToast("⚡ Вся партия инструментов успешно отмечена: «Проба отрицательная, норма»!", "success");
+					fetchLogs();
+				} else {
+					const err = await fallbackRes.json();
+					showToast(err.message || "Ошибка при отметке партии ПСО", "error");
+				}
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при отметке партии", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
 	const handleStampVerification = (logId: string) => {
 		setStampedRows((prev) => ({
 			...prev,
@@ -395,6 +457,35 @@ export function PsoRegisterTab() {
 
 						<button
 							type="button"
+							onClick={handleQuickMarkBatchNorm}
+							disabled={submitting}
+							className="sanpin-btn touch-manipulation"
+							style={{
+								minHeight: "44px",
+								height: "44px",
+								padding: "0.4rem 0.95rem",
+								fontSize: "0.85rem",
+								fontWeight: 700,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.4rem",
+								borderRadius: "8px",
+								background: "var(--brand-primary, #0284c7)",
+								color: "#ffffff",
+								border: "none",
+								boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+							}}
+							title="1-клик отметка всей партии инструментов по физиологической норме СанПиН 3.3686-21 (Проба отрицательная, норма)"
+							data-testid="quick-pso-norm-btn"
+						>
+							<CheckCircle2 size={16} />
+							<span>Отметка партии в 1 клик («Проба отрицательная, норма»)</span>
+						</button>
+
+						<button
+							type="button"
 							onClick={() => setIsModalOpen(true)}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{
@@ -447,14 +538,27 @@ export function PsoRegisterTab() {
 										<div style={{ fontSize: "0.825rem", color: "var(--muted, #64748b)", lineHeight: 1.45 }}>
 											Внесите результаты азопирамовой и фенолфталеиновой проб партии инструментов (Форма № 366/у по СанПиН 3.3686-21).
 										</div>
-										<button
-											type="button"
-											onClick={() => setIsModalOpen(true)}
-											className="sanpin-btn sanpin-btn-primary"
-											style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-										>
-											<Plus size={15} /> + Внести пробу ПСО (Форма № 366/у)
-										</button>
+										<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center" }}>
+											<button
+												type="button"
+												onClick={handleQuickMarkBatchNorm}
+												disabled={submitting}
+												className="sanpin-btn sanpin-btn-primary touch-manipulation"
+												style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+												title="1-клик отметка всей партии инструментов по норме СанПиН 3.3686-21"
+												data-testid="empty-quick-pso-norm-btn"
+											>
+												<CheckCircle2 size={16} /> ⚡ Отметка партии в 1 клик («Проба отрицательная, норма»)
+											</button>
+											<button
+												type="button"
+												onClick={() => setIsModalOpen(true)}
+												className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+												style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+											>
+												<Plus size={15} /> Внести вручную (Форма № 366/у)
+											</button>
+										</div>
 									</div>
 								</td>
 							</tr>
@@ -588,9 +692,28 @@ export function PsoRegisterTab() {
 						<form onSubmit={handleSubmit}>
 							<div className="sanpin-modal-body" style={{ padding: "1.5rem", gap: "1.25rem" }}>
 								<div className="sanpin-form-group">
-									<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
-										Наименование обрабатываемого инструментария
-									</label>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+										<label className="sanpin-form-label" style={{ fontSize: "0.875rem", fontWeight: 600, margin: 0 }}>
+											Наименование обрабатываемого инструментария
+										</label>
+										<button
+											type="button"
+											onClick={() => {
+												setFormInstrument("Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)");
+												setFormBatchCount(100);
+												setFormSampleCount(3);
+												setFormTestType("both");
+												setFormAzopyramNeg(true);
+												setFormPhenolNeg(true);
+												setFormDetergent("Биолот 0.5% + Аламинол 1%");
+												setFormNotes("⚡ Проба отрицательная, норма (СанПиН 3.3686-21)");
+											}}
+											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+											style={{ fontSize: "0.8rem", padding: "0.25rem 0.6rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
+										>
+											<CheckCircle2 size={13} color="#16a34a" /> <span>Норма в 1 клик</span>
+										</button>
+									</div>
 									<input
 										type="text"
 										required

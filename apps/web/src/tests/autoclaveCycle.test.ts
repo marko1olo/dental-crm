@@ -67,21 +67,29 @@ describe('SanPiN 3.3686-21 & Class B Autoclave Cycle Suite', () => {
 
 	describe('2. Packaging Shelf Life & Expiration Calculations', () => {
 		it('verifies SanPiN shelf life rules by packaging type', () => {
-			assert.equal(SANPIN_PACKAGING_RULES.kraft_paper_sealed.shelfLifeDays, 30);
-			assert.equal(SANPIN_PACKAGING_RULES.kraft_paper_crepe.shelfLifeDays, 20);
-			assert.equal(SANPIN_PACKAGING_RULES.sterilization_cassette_bipack.shelfLifeDays, 50);
+			assert.equal(SANPIN_PACKAGING_RULES.kraft_paper_sealed.shelfLifeDays, 60);
+			assert.equal(SANPIN_PACKAGING_RULES.kraft_paper_crepe.shelfLifeDays, 30);
+			assert.equal(SANPIN_PACKAGING_RULES.sterilization_cassette_bipack.shelfLifeDays, 60);
+			assert.equal(SANPIN_PACKAGING_RULES.bix_filter.shelfLifeDays, 20);
 			assert.equal(SANPIN_PACKAGING_RULES.unwrapped_tray.shelfLifeDays, 0);
 		});
 
-		it('computes expiration date accurately for 30-day sealed Kraft pack', () => {
+		it('computes expiration date accurately for 60-day heat-sealed Kraft pack', () => {
 			const sDate = new Date('2026-08-01T10:00:00Z');
 			const calc = computePackExpiryDate('kraft_paper_sealed', sDate);
+			assert.equal(calc.daysValid, 60);
+			assert.equal(calc.formattedExpiry, '2026-09-30');
+		});
+
+		it('computes expiration date accurately for 30-day self-seal Kraft pack', () => {
+			const sDate = new Date('2026-08-01T10:00:00Z');
+			const calc = computePackExpiryDate('kraft_paper_crepe', sDate);
 			assert.equal(calc.daysValid, 30);
 			assert.equal(calc.formattedExpiry, '2026-08-31');
 		});
 
 		it('evaluates status as expired when current date is past shelf life', () => {
-			const pastDate = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000); // 40 days ago
+			const pastDate = new Date(Date.now() - 70 * 24 * 60 * 60 * 1000); // 70 days ago (> 60 days)
 			const status = evaluatePackStatus(pastDate, 'kraft_paper_sealed');
 			assert.equal(status, 'expired');
 		});

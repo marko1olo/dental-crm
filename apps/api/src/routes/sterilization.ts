@@ -458,6 +458,61 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 	});
 
 	/**
+	 * POST /api/sterilization/pso/quick-norm
+	 * 1-клик регистрация нормативной пробы ПСО (Азопирам и Фенолфталеин отрицательные, норма).
+	 */
+	app.post("/api/sterilization/pso/quick-norm", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilization pso quick norm",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const batchItemCount = typeof body.batchItemCount === "number" ? body.batchItemCount : 100;
+		const testedSampleCount =
+			typeof body.testedSampleCount === "number"
+				? body.testedSampleCount
+				: Math.max(3, Math.ceil(batchItemCount * 0.01));
+		const detergentBrand = body.detergentBrand || "Биолот 0.5% + Аламинол 1%";
+		const notes =
+			body.notes ||
+			"⚡ Отметка партии в 1 клик по СанПиН 3.3686-21: проба отрицательная, норма. Партия допущена к стерилизации.";
+
+		const evaluation = SanPiNSterilizationEngine.evaluatePsoCleaningBatch(
+			batchItemCount,
+			testedSampleCount,
+			true,
+			true,
+		);
+
+		const [log] = await db
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: "both",
+				batchItemCount,
+				testedSampleCount,
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isBatchApproved: true,
+				detergentBrand,
+				rejectionReason: null,
+				operatorId: body.operatorId ?? null,
+				notes,
+				timestamp: new Date(),
+			})
+			.returning();
+
+		return reply.code(201).send({
+			success: true,
+			log,
+			evaluation,
+		});
+	});
+
+	/**
 	 * GET /api/sterilization/pso-tests
 	 * Журнал учета предстерилизационной очистки (ПСО).
 	 */

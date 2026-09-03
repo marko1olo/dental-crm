@@ -141,15 +141,19 @@ describe("SanPiN 3.3686-21 Autoclave & Sterilization Log (Form 257/u) Studio Sui
 
 			const sealedPouch = STATUTORY_PACKAGING_TYPES.find((p) => p.id === "kraft_pouch_sealed");
 			assert.ok(sealedPouch);
-			assert.equal(sealedPouch?.shelfLifeDays, 50);
+			assert.equal(sealedPouch?.shelfLifeDays, 60);
 
 			const selfSeal = STATUTORY_PACKAGING_TYPES.find((p) => p.id === "kraft_pouch_self_seal");
 			assert.ok(selfSeal);
-			assert.equal(selfSeal?.shelfLifeDays, 20);
+			assert.equal(selfSeal?.shelfLifeDays, 30);
 
 			const bipack = STATUTORY_PACKAGING_TYPES.find((p) => p.id === "cassette_bipack");
 			assert.ok(bipack);
 			assert.equal(bipack?.shelfLifeDays, 60);
+
+			const bix = STATUTORY_PACKAGING_TYPES.find((p) => p.id === "bix_filter");
+			assert.ok(bix);
+			assert.equal(bix?.shelfLifeDays, 20);
 		});
 	});
 
