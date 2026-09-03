@@ -863,7 +863,6 @@ const KNOWN_DEAD_ROUTES = new Set([
 	"POST /api/billing/fiscalize-receipt",
 	"POST /api/billing/sbp/generate-qr",
 	"POST /api/billing/sbp/verify-payload",
-	"POST /api/clinical/cadcam/analyze-mesh",
 	"POST /api/clinical/egisz/outbox/dispatch",
 	"POST /api/clinical/egisz/outbox/sync-status",
 	"POST /api/clinical/implants/:param/isq",

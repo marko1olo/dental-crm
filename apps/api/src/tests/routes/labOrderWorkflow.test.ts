@@ -99,6 +99,14 @@ describe("Dental Lab Order State Machine Transitions", () => {
 		}
 	});
 
+	it("allows clinic warranty rework transition from completed to refitting", () => {
+		const allowed = LAB_ORDER_CLINIC_TRANSITIONS.completed;
+		assert.ok(
+			allowed.includes("refitting"),
+			"Expected completed orders to be transitional to refitting for warranty reworks",
+		);
+	});
+
 	it("technician portal cannot directly cancel or reopen draft orders", () => {
 		assert.equal(
 			LAB_ORDER_TECHNICIAN_TRANSITIONS.draft.length,

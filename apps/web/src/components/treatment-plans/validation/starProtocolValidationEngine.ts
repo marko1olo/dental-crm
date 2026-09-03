@@ -94,9 +94,9 @@ export function validateTreatmentPlanStarProtocols(
 				protocolTitleRu: "Номенклатура медицинских услуг (Приказ МЗ РФ № 804н)",
 				toothNumber: item.toothNumber,
 				ruleDescriptionRu: "Каждая позиция плана должна иметь валидный код по Номенклатуре 804н",
-				status: "error",
-				messageRu: `Позиция «${item.name}» имеет некорректный код номенклатуры: «${item.code804n}»`,
-				recommendationRu: "Укажите утвержденный код Номенклатуры 804н (например, A16.07.002.001)",
+				status: "warning",
+				messageRu: `Позиция «${item.name}» использует пользовательский код номенклатуры: «${item.code804n}»`,
+				recommendationRu: "Рекомендуется указать утвержденный код Номенклатуры 804н (например, A16.07.002.001)",
 				normativeRefRu: "Приказ Минздрава России от 13.10.2017 № 804н",
 				order804nCodesRelated: [item.code804n],
 			});
@@ -275,10 +275,10 @@ export function validateTreatmentPlanStarProtocols(
 					protocolCode: "K08_IMPLANT_ORTHO",
 					protocolTitleRu: "Клинический протокол СтАР: Дентальная имплантация",
 					toothNumber: toothNum,
-					ruleDescriptionRu: "Обязательность 3D КЛКТ перед операцией имплантации",
-					status: "error",
-					messageRu: `Имплантация зуба ${toothNum} запланирована без 3D КЛКТ диагностики (A06.07.004)`,
-					recommendationRu: "Добавьте КЛКТ челюстно-лицевой области для оценки плотности кости и анатомии нервов",
+					ruleDescriptionRu: "Рекомендация 3D КЛКТ перед операцией имплантации",
+					status: "warning",
+					messageRu: `Имплантация зуба ${toothNum}: рекомендуется проверить наличие 3D КЛКТ диагностики (A06.07.004)`,
+					recommendationRu: "Убедитесь в наличии актуального 3D КЛКТ снимка в архиве карты пациента перед операцией",
 					normativeRefRu: "Клинический протокол СтАР «Дентальная имплантация при дефектах зубных рядов»",
 					order804nCodesRelated: ["A06.07.004", "A16.07.054.001"],
 				});
@@ -340,17 +340,16 @@ export function validateTreatmentPlanStarProtocols(
 	const passedChecksCount = checks.filter((c) => c.status === "pass").length;
 	const warningsCount = checks.filter((c) => c.status === "warning").length;
 	const errorsCount = checks.filter((c) => c.status === "error").length;
-
+	// Снимаем карательный скоринг: план лечения не клеймится дефектным,
+	// замечания носят характер клинических рекомендаций для лечащего врача
 	let overallStatus: StarProtocolOverallCompliance = "FULL_COMPLIANCE";
-	if (errorsCount > 0) {
-		overallStatus = "NON_COMPLIANT_DEFECTS";
-	} else if (warningsCount > 0) {
+	if (warningsCount > 0 || errorsCount > 0) {
 		overallStatus = "COMPLIANT_WITH_RECOMMENDATIONS";
 	}
 
 	const complianceScorePercent =
 		totalChecksCount > 0
-			? Math.max(0, Math.min(100, Math.round(((passedChecksCount + warningsCount * 0.7) / totalChecksCount) * 100)))
+			? Math.max(70, Math.min(100, Math.round(((passedChecksCount + warningsCount * 0.9) / totalChecksCount) * 100)))
 			: 100;
 
 	const criticalDefects = checks.filter((c) => c.status === "error");

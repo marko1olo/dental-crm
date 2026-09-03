@@ -7,12 +7,10 @@ import {
 	VALID_FDI_TOOTH_NUMBERS,
 	isValidVitaShade,
 	VITA_SHADE_VALIDATION_MESSAGE,
-	calculateMeshGeometryMetrics,
 	restorationTypeSchema,
 	restorationMaterialSchema,
 	stumpPreparationShadeSchema,
 	labOrderMilestoneSchema,
-	type Triangle3D,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -984,27 +982,6 @@ export async function registerLabRoutes(app: FastifyInstance) {
 					"Портал лаборатории временно недоступен. Повторите попытку позже.",
 			});
 		}
-	});
-
-	// ─── CAD/CAM 3D Mesh Geometry Analysis ───────────────────────────────────
-
-	app.post("/api/clinical/cadcam/analyze-mesh", async (request, reply) => {
-		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
-		if (!orgId) return;
-
-		const body = request.body as { triangles: Triangle3D[] };
-		if (!Array.isArray(body?.triangles)) {
-			return reply.status(400).send({
-				error: "InvalidMeshPayload",
-				message: "Ожидается массив полигонов triangles: Array<{ v1, v2, v3 }>",
-			});
-		}
-
-		const metrics = calculateMeshGeometryMetrics(body.triangles);
-		return reply.send({
-			success: true,
-			metrics,
-		});
 	});
 
 	// ─── Multi-Unit Restoration Items CRUD ───────────────────────────────────

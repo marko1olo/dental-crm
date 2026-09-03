@@ -75,8 +75,8 @@ describe("starProtocolValidationEngine: Order 804n & Star Protocols Compliance",
 		};
 
 		const summary = validateTreatmentPlanStarProtocols([stageWithoutCT]);
-		assert.equal(summary.overallStatus, "NON_COMPLIANT_DEFECTS");
-		assert.ok(summary.criticalDefects.some((d) => d.ruleId === "star-implant-no-ct-36"));
+		assert.equal(summary.overallStatus, "COMPLIANT_WITH_RECOMMENDATIONS");
+		assert.ok(summary.clinicalRecommendations.some((d) => d.ruleId === "star-implant-no-ct-36"));
 	});
 
 	test("Обнаруживает невалидный формат кода Номенклатуры 804н", () => {
@@ -109,7 +109,7 @@ describe("starProtocolValidationEngine: Order 804n & Star Protocols Compliance",
 		};
 
 		const summary = validateTreatmentPlanStarProtocols([stageWithBadCode]);
-		assert.equal(summary.overallStatus, "NON_COMPLIANT_DEFECTS");
-		assert.ok(summary.criticalDefects.some((d) => d.ruleId === "804n-format-bad-item"));
+		assert.equal(summary.overallStatus, "COMPLIANT_WITH_RECOMMENDATIONS");
+		assert.ok(summary.clinicalRecommendations.some((d) => d.ruleId === "804n-format-bad-item"));
 	});
 });

@@ -50,7 +50,7 @@ export const LAB_ORDER_CLINIC_TRANSITIONS: Readonly<
 	shipped: ["received", "cancelled"],
 	received: ["completed", "refitting", "cancelled"],
 	refitting: ["in_progress", "shipped", "cancelled"],
-	completed: [],
+	completed: ["refitting"],
 	cancelled: [],
 } as const;
 
