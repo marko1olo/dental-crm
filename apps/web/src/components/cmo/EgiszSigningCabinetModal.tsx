@@ -48,6 +48,7 @@ import {
 	signBase64WithCertificate,
 } from "../../utils/cryptoPro";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	ALL_FDI_TEETH,
 	DEFAULT_EGISZ_CLINIC_PRESET,
@@ -67,6 +68,7 @@ import {
 	generateForm043uPrintHtml,
 	generateGostSignatureStampHtml,
 	runEgisz043uPreflight,
+	type EgiszPreflightReport,
 } from "../egisz/egiszRemdEngine";
 import "../egisz/egiszRemd.css";
 
@@ -238,8 +240,19 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 	}, [documents, filterStatus, searchQuery]);
 
 	// Pre-flight Validation Result
-	const preflight = useMemo(() => {
-		if (!currentDoc) return { isValid: false, errors: [], warnings: [] };
+	const preflight = useMemo((): EgiszPreflightReport => {
+		if (!currentDoc) {
+			return {
+				isValid: false,
+				canSendToRemd: false,
+				totalChecks: 0,
+				passedCount: 0,
+				failedCount: 0,
+				warningCount: 0,
+				scorePercent: 0,
+				checks: [],
+			};
+		}
 		return runEgisz043uPreflight(currentDoc.payload);
 	}, [currentDoc]);
 
@@ -359,18 +372,101 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 	};
 
 	// ── 6. Send to EGISZ REMD ──
-	const handleSendToRemd = () => {
+	const handleSendToRemd = async () => {
 		if (!currentDoc) return;
+
+		if (!currentDoc.doctorSignature) {
+			showToast("Для отправки в РЭМД требуется наложение УКЭП врача!", "error");
+			return;
+		}
+
+		if (preflight && !preflight.isValid) {
+			showToast(
+				`Документ не прошел валидацию ЕГИСЗ (${preflight.failedCount} ошибок). Проверьте раздел валидации.`,
+				"error",
+			);
+			return;
+		}
+
 		setIsSendingLoading(true);
 
-		// Step 1: Set to queued
+		// Step 1: Set to sending state
 		setDocuments((prev) =>
 			prev.map((d) => (d.id === currentDoc.id ? { ...d, status: "sent_to_remd" } : d)),
 		);
 
-		// Step 2: Simulate REMD response after 1.5s
-		setTimeout(() => {
-			const regNum = `РЭМД-2026-${String(Math.floor(100000 + Math.random() * 900000))}`;
+		try {
+			const cleanPatientSnils = (currentDoc.patientSnils || "").replace(/\D/g, "");
+			const docType = String(currentDoc.docType || "108");
+			const effectiveVisitId = currentDoc.id;
+
+			const packageBody = {
+				cdaXml: generatedXml,
+				doctorSignature: {
+					signatureBase64: currentDoc.doctorSignature.signatureBase64,
+					certificateSerialNumber: currentDoc.doctorSignature.certificateSerialNumber,
+					certificateSubject: currentDoc.doctorSignature.certificateSubject,
+					signedAt: currentDoc.doctorSignature.signedAt || new Date().toISOString(),
+					algorithmOid: currentDoc.doctorSignature.algorithmOid || "1.2.643.7.1.1.1.1",
+				},
+				...(currentDoc.clinicSignature
+					? {
+							clinicSignature: {
+								signatureBase64: currentDoc.clinicSignature.signatureBase64,
+								certificateSerialNumber: currentDoc.clinicSignature.certificateSerialNumber,
+								certificateSubject: currentDoc.clinicSignature.certificateSubject,
+								signedAt: currentDoc.clinicSignature.signedAt || new Date().toISOString(),
+								algorithmOid: currentDoc.clinicSignature.algorithmOid || "1.2.643.7.1.1.1.1",
+							},
+							moSignature: {
+								signatureBase64: currentDoc.clinicSignature.signatureBase64,
+								certificateSerialNumber: currentDoc.clinicSignature.certificateSerialNumber,
+								certificateSubject: currentDoc.clinicSignature.certificateSubject,
+								signedAt: currentDoc.clinicSignature.signedAt || new Date().toISOString(),
+								algorithmOid: currentDoc.clinicSignature.algorithmOid || "1.2.643.7.1.1.1.1",
+							},
+						}
+					: {}),
+				docType,
+				patientId: currentDoc.patientId,
+				visitId: effectiveVisitId,
+				documentId: effectiveVisitId,
+				documentVersion: currentDoc.payload.documentVersion || 1,
+				xmlCanonicalPayload: generatedXml,
+				metadata: {
+					patientSnils: cleanPatientSnils,
+					clinicOid: currentDoc.payload.clinic.clinicOid || "1.2.643.5.1.13.13.12.2.77.8432",
+					...(currentDoc.payload.clinic.clinicOgrn ? { clinicOgrn: currentDoc.payload.clinic.clinicOgrn } : {}),
+					docTypeNsiCode: docType,
+				},
+			};
+
+			const res = await fetch("/api/egisz/packages", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify(packageBody),
+			});
+
+			if (!res.ok) {
+				const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+				const errMsg =
+					errJson?.message ||
+					errJson?.error ||
+					`Шлюз РЭМД ЕГИСЗ вернул ошибку (${res.status} ${res.statusText})`;
+				throw new Error(errMsg);
+			}
+
+			const data = (await res.json()) as {
+				success?: boolean;
+				regNumber?: string;
+				transactionId?: string;
+				outboxId?: string;
+				logId?: string;
+				status?: string;
+				message?: string;
+			};
+
+			const regNum = data.regNumber || data.transactionId || data.outboxId || data.logId || "РЕГ-РЭМД-ПРИНЯТО";
 			const regTime = new Date().toISOString().replace("T", " ").slice(0, 19);
 
 			setDocuments((prev) =>
@@ -381,12 +477,32 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 								status: "registered_remd",
 								remdRegistrationNumber: regNum,
 								remdRegisteredAt: regTime,
+								validationErrors: undefined,
 							}
 						: d,
 				),
 			);
+
+			showToast(`СЭМД успешно передан в РЭМД ЕГИСЗ! Номер: ${regNum}`, "success");
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			showToast(`Ошибка отправки в РЭМД: ${errMsg}`, "error");
+
+			// Reflect failure honestly in UI state instead of fake success
+			setDocuments((prev) =>
+				prev.map((d) =>
+					d.id === currentDoc.id
+						? {
+								...d,
+								status: "validation_error",
+								validationErrors: [errMsg],
+							}
+						: d,
+				),
+			);
+		} finally {
 			setIsSendingLoading(false);
-		}, 1200);
+		}
 	};
 
 	// Copy XML to clipboard
@@ -497,6 +613,7 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 								<option value="signed_doctor">Подписано врачом</option>
 								<option value="signed_clinic">Подписано клиникой</option>
 								<option value="registered_remd">Зарегистрировано в РЭМД</option>
+								<option value="validation_error">Ошибки отправки</option>
 							</select>
 						</div>
 
@@ -520,7 +637,9 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 														? "Подписан МО"
 														: doc.status === "registered_remd"
 															? "В РЭМД"
-															: "Отправка"}
+															: doc.status === "validation_error"
+																? "Ошибка"
+																: "Отправка"}
 										</span>
 									</div>
 									<div className="egisz-doc-patient-name">{doc.patientFullName}</div>
@@ -687,10 +806,12 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 									<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 										<div>
 											<div style={{ fontWeight: 600 }}>Регистрация в ЕГИСЗ РЭМД:</div>
-											<div style={{ fontSize: "0.8rem", color: "#64748b" }}>
+											<div style={{ fontSize: "0.8rem", color: currentDoc.status === "validation_error" ? "#ef4444" : "#64748b" }}>
 												{currentDoc.status === "registered_remd"
 													? `Успешно зарегистрирован: ${currentDoc.remdRegistrationNumber} (${currentDoc.remdRegisteredAt})`
-													: "Готов к отправке в федеральный реестр"}
+													: currentDoc.status === "validation_error"
+														? `Ошибка: ${currentDoc.validationErrors?.[0] || "Сбой отправки в РЭМД"}`
+														: "Готов к отправке в федеральный реестр"}
 											</div>
 										</div>
 
@@ -699,6 +820,17 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 												<Check size={16} />
 												<span>Зарегистрирован в РЭМД</span>
 											</div>
+										) : currentDoc.status === "validation_error" ? (
+											<button
+												type="button"
+												className="egisz-primary-btn"
+												onClick={handleSendToRemd}
+												disabled={!currentDoc.doctorSignature || isSendingLoading}
+												style={{ minWidth: "220px", backgroundColor: "#dc2626" }}
+											>
+												<Send size={18} />
+												<span>{isSendingLoading ? "Повтор отправки..." : "Повторить отправку"}</span>
+											</button>
 										) : (
 											<button
 												type="button"
@@ -768,7 +900,17 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 												<td>{doc.patientSnils}</td>
 												<td>
 													<span className={`egisz-status-pill ${doc.status}`}>
-														{doc.status}
+														{doc.status === "draft"
+															? "Черновик"
+															: doc.status === "signed_doctor"
+																? "Подписан врачом"
+																: doc.status === "signed_clinic"
+																	? "Подписан МО"
+																	: doc.status === "registered_remd"
+																		? "В РЭМД"
+																		: doc.status === "validation_error"
+																			? "Ошибка"
+																			: "Отправка"}
 													</span>
 												</td>
 												<td>

@@ -38,6 +38,7 @@ import {
 	X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	type CertificateInfo,
 	signatureService,
@@ -485,23 +486,120 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 
 		setIsSending(true);
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 800));
-			const txId = `TX-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-			const timeStr = new Date().toLocaleTimeString("ru-RU");
-			setSendSuccessLog({ id: txId, time: timeStr });
+			if (activeDocType === "cda_semd") {
+				const cleanPatientSnils = (semdPayload.patient.patientSnils || "").replace(/\D/g, "");
+				const effectiveVisitId = semdPayload.documentUuid?.replace(/^urn:uuid:/, "") || `VISIT-${Date.now()}`;
+				const packageBody = {
+					cdaXml: generatedXml,
+					doctorSignature: {
+						signatureBase64: doctorSig.signatureBase64,
+						certificateSerialNumber: doctorSig.certificateSerialNumber,
+						certificateSubject: doctorSig.certificateSubject,
+						signedAt: doctorSig.signedAt || new Date().toISOString(),
+						algorithmOid: doctorSig.algorithmOid || "1.2.643.7.1.1.1.1",
+					},
+					...(moSig
+						? {
+								clinicSignature: {
+									signatureBase64: moSig.signatureBase64,
+									certificateSerialNumber: moSig.certificateSerialNumber,
+									certificateSubject: moSig.certificateSubject,
+									signedAt: moSig.signedAt || new Date().toISOString(),
+									algorithmOid: moSig.algorithmOid || "1.2.643.7.1.1.1.1",
+								},
+								moSignature: {
+									signatureBase64: moSig.signatureBase64,
+									certificateSerialNumber: moSig.certificateSerialNumber,
+									certificateSubject: moSig.certificateSubject,
+									signedAt: moSig.signedAt || new Date().toISOString(),
+									algorithmOid: moSig.algorithmOid || "1.2.643.7.1.1.1.1",
+								},
+							}
+						: {}),
+					docType: String(semdPayload.docTypeCode || "108"),
+					patientId: cleanPatientSnils || "patient",
+					visitId: effectiveVisitId,
+					documentId: effectiveVisitId,
+					documentVersion: semdPayload.documentVersion || 1,
+					xmlCanonicalPayload: generatedXml,
+					metadata: {
+						patientSnils: cleanPatientSnils,
+						clinicOid: semdPayload.clinic.clinicOid || "1.2.643.5.1.13.13.12.2.77.8432",
+						...(semdPayload.clinic.clinicOgrn ? { clinicOgrn: semdPayload.clinic.clinicOgrn } : {}),
+						docTypeNsiCode: String(semdPayload.docTypeCode || "108"),
+					},
+				};
 
-			const docLabel = activeDocType === "cda_semd" ? "СЭМД ф. 043/у" : "Справка ФНС КНД 1151156";
-			showToast(`${docLabel} успешно зарегистрирован в РЭМД ЕГИСЗ (ID: ${txId})`, "success");
-
-			if (onSentSuccess) {
-				onSentSuccess({
-					type: activeDocType,
-					documentId: txId,
-					timestamp: new Date().toISOString(),
+				const res = await fetch("/api/egisz/packages", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify(packageBody),
 				});
+
+				if (!res.ok) {
+					const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+					const errMsg =
+						errJson?.message ||
+						errJson?.error ||
+						`Шлюз РЭМД ЕГИСЗ вернул ошибку (${res.status} ${res.statusText})`;
+					throw new Error(errMsg);
+				}
+
+				const data = (await res.json()) as {
+					regNumber?: string;
+					transactionId?: string;
+					outboxId?: string;
+				};
+
+				const txId = data.regNumber || data.transactionId || data.outboxId || "РЕГ-РЭМД-ПРИНЯТО";
+				const timeStr = new Date().toLocaleTimeString("ru-RU");
+				setSendSuccessLog({ id: txId, time: timeStr });
+				showToast(`СЭМД ф. 043/у успешно передан в РЭМД ЕГИСЗ (Рег. №: ${txId})`, "success");
+
+				if (onSentSuccess) {
+					onSentSuccess({
+						type: activeDocType,
+						documentId: txId,
+						timestamp: new Date().toISOString(),
+					});
+				}
+			} else {
+				// FNS Tax Deduction submission
+				const res = await fetch("/api/egisz/send", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						patientId: fnsPayload.taxpayer?.inn || "taxpayer",
+						visitId: fnsPayload.documentNumber || `FNS-${Date.now()}`,
+					}),
+				});
+
+				if (!res.ok) {
+					const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+					const errMsg =
+						errJson?.message ||
+						errJson?.error ||
+						`Шлюз ФНС вернул ошибку (${res.status} ${res.statusText})`;
+					throw new Error(errMsg);
+				}
+
+				const data = (await res.json()) as { logId?: string };
+				const txId = data.logId || `FNS-${Date.now()}`;
+				const timeStr = new Date().toLocaleTimeString("ru-RU");
+				setSendSuccessLog({ id: txId, time: timeStr });
+				showToast(`Справка ФНС КНД 1151156 успешно передана в шлюз (ID: ${txId})`, "success");
+
+				if (onSentSuccess) {
+					onSentSuccess({
+						type: activeDocType,
+						documentId: txId,
+						timestamp: new Date().toISOString(),
+					});
+				}
 			}
-		} catch (_err) {
-			showToast("Сбой при передаче пакета в шлюз ЕГИСЗ", "error");
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			showToast(`Сбой при передаче пакета в шлюз: ${msg}`, "error");
 		} finally {
 			setIsSending(false);
 		}

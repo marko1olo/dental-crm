@@ -51,7 +51,10 @@ import {
 	type CryptoProCertificate,
 	checkCryptoProPlugin,
 	getPersonalCertificates,
+	parseCryptoProError,
+	signBase64WithCertificate,
 } from "../../../utils/cryptoPro";
+import { canonicalizeCdaXml } from "../../egisz/egiszRemdEngine";
 import { showToast } from "../../GlobalToast";
 import "./cmoComplianceHub.css";
 
@@ -183,8 +186,21 @@ export function CmoComplianceHub({
 			return;
 		}
 
+		if (!hasCryptoPlugin || !selectedThumbprint) {
+			const reasonMsg = !hasCryptoPlugin
+				? "Пакетная подпись не может быть выполнена: плагин «КриптоПро ЭЦП Browser Plug-in» не обнаружен. Установите плагин и подключите токен с сертификатом УКЭП врача."
+				: "Пакетная подпись не может быть выполнена: не выбран действующий сертификат УКЭП врача.";
+			showToast(reasonMsg, "error");
+			return;
+		}
+
 		const cert = certificates.find((c) => c.thumbprint === selectedThumbprint);
-		const certSubject = cert?.subjectName || "Квалифицированный сертификат врача";
+		if (!cert) {
+			showToast("Выбранный сертификат УКЭП не найден в личном хранилище КриптоПро", "error");
+			return;
+		}
+
+		const certSubject = cert.subjectName || "Квалифицированный сертификат врача";
 
 		const initialProgress: BatchSignCardProgress[] = selectedItems.map((item) => ({
 			visitId: item.visitId,
@@ -209,7 +225,7 @@ export function CmoComplianceHub({
 		let errorCount = 0;
 
 		const updatedVisitsMap = new Map<string, ClinicVisitComplianceItem>(
-			visits.map((v) => [v.id, v])
+			visits.map((v) => [v.id, v]),
 		);
 
 		for (let i = 0; i < selectedItems.length; i++) {
@@ -225,11 +241,11 @@ export function CmoComplianceHub({
 				return { ...prev, cardProgressList: updatedList };
 			});
 
-			// Validation gate
+			// Validation gate (Order 203n / Minzdrav preflight)
 			const val = validateVisitForEgisz(item);
 			if (!val.isValid && !item.isDoctorSignedUkep) {
-				// Record error
 				errorCount++;
+				const errMsg = val.issues.join("; ");
 				setBatchSession((prev) => {
 					if (!prev) return null;
 					const updatedList = [...prev.cardProgressList];
@@ -237,7 +253,7 @@ export function CmoComplianceHub({
 						updatedList[i] = {
 							...updatedList[i]!,
 							status: "error",
-							errorMessage: val.issues.join("; "),
+							errorMessage: errMsg,
 						};
 					}
 					return {
@@ -247,10 +263,92 @@ export function CmoComplianceHub({
 						cardProgressList: updatedList,
 					};
 				});
+				updatedVisitsMap.set(item.id, {
+					...item,
+					egiszStatus: "error",
+					egiszErrorMessage: errMsg,
+				});
 				continue;
 			}
 
-			// Update state to sending_remd
+			// Step 1: Fetch real CDA XML from /api/egisz/visits/:visitId/cda
+			let cdaXml = "";
+			try {
+				const cdaRes = await fetch(`/api/egisz/visits/${encodeURIComponent(item.visitId)}/cda`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!cdaRes.ok) {
+					let detail = `Ошибка выгрузки CDA XML (HTTP ${cdaRes.status})`;
+					try {
+						const errJson = (await cdaRes.json()) as { message?: string };
+						if (errJson?.message) detail = errJson.message;
+					} catch {}
+					throw new Error(detail);
+				}
+				cdaXml = await cdaRes.text();
+			} catch (cdaErr: unknown) {
+				const msg = cdaErr instanceof Error ? cdaErr.message : String(cdaErr);
+				errorCount++;
+				setBatchSession((prev) => {
+					if (!prev) return null;
+					const updatedList = [...prev.cardProgressList];
+					if (updatedList[i]) {
+						updatedList[i] = {
+							...updatedList[i]!,
+							status: "error",
+							errorMessage: msg,
+						};
+					}
+					return {
+						...prev,
+						completedCount: i + 1,
+						errorCount,
+						cardProgressList: updatedList,
+					};
+				});
+				updatedVisitsMap.set(item.id, {
+					...item,
+					egiszStatus: "error",
+					egiszErrorMessage: msg,
+				});
+				continue;
+			}
+
+			// Step 2: Canonicalize and sign with CryptoPro CSP
+			let pkcs7Signature = "";
+			try {
+				const cleanXml = canonicalizeCdaXml(cdaXml);
+				const base64Payload = btoa(unescape(encodeURIComponent(cleanXml)));
+				pkcs7Signature = await signBase64WithCertificate(base64Payload, cert.thumbprint);
+			} catch (signErr: unknown) {
+				const parsed = parseCryptoProError(signErr);
+				errorCount++;
+				setBatchSession((prev) => {
+					if (!prev) return null;
+					const updatedList = [...prev.cardProgressList];
+					if (updatedList[i]) {
+						updatedList[i] = {
+							...updatedList[i]!,
+							status: "error",
+							errorMessage: parsed.userMessage,
+						};
+					}
+					return {
+						...prev,
+						completedCount: i + 1,
+						errorCount,
+						cardProgressList: updatedList,
+					};
+				});
+				updatedVisitsMap.set(item.id, {
+					...item,
+					egiszStatus: "error",
+					egiszErrorMessage: parsed.userMessage,
+				});
+				continue;
+			}
+
+			// Step 3: Update state to sending_remd and call real backend endpoints
 			setBatchSession((prev) => {
 				if (!prev) return null;
 				const updatedList = [...prev.cardProgressList];
@@ -260,58 +358,125 @@ export function CmoComplianceHub({
 				return { ...prev, cardProgressList: updatedList };
 			});
 
-			// Simulate CryptoPro / REMD API dispatch latency
-			await new Promise((r) => setTimeout(r, 600));
+			try {
+				const sendRes = await fetch("/api/egisz/send", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						patientId: item.patientId,
+						visitId: item.visitId,
+					}),
+				});
 
-			// Generate registered OID
-			const semdOid = `1.2.643.5.1.13.13.12.2.77.8432.100.1.1.${Math.floor(50 + Math.random() * 50)}`;
-			const txId = `tx-remd-${Math.floor(100000 + Math.random() * 900000)}`;
-
-			// Update visit record
-			const updatedItem: ClinicVisitComplianceItem = {
-				...item,
-				isDoctorSignedUkep: true,
-				doctorSignatureHash: `hash-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
-				doctorSignatureDate: new Date().toISOString(),
-				isLocked: true,
-				lockedAt: new Date().toISOString(),
-				egiszStatus: "accepted",
-				remdSemdOid: semdOid,
-				remdDocumentId: `semd-${item.medicalCardNumber.replace(/[^0-9]/g, "")}-${item.toothNumber || "00"}`,
-				egiszTransactionId: txId,
-				egiszErrorMessage: null,
-				egiszSentAt: new Date().toISOString(),
-				overdueHours: 0.1,
-				isOverdue24h: false,
-				qualityScore: 100,
-			};
-			updatedVisitsMap.set(item.id, updatedItem);
-
-			successCount++;
-			setBatchSession((prev) => {
-				if (!prev) return null;
-				const updatedList = [...prev.cardProgressList];
-				if (updatedList[i]) {
-					updatedList[i] = {
-						...updatedList[i]!,
-						status: "success",
-						remdSemdOid: semdOid,
-						transactionId: txId,
-					};
+				if (!sendRes.ok) {
+					let sendErr = `Ошибка сервера при отправке (HTTP ${sendRes.status})`;
+					try {
+						const errJson = (await sendRes.json()) as { message?: string };
+						if (errJson?.message) sendErr = errJson.message;
+					} catch {}
+					throw new Error(sendErr);
 				}
-				return {
-					...prev,
-					completedCount: i + 1,
-					successCount,
-					cardProgressList: updatedList,
+
+				const sendData = (await sendRes.json()) as { success?: boolean; logId?: string };
+				const logId = sendData.logId || `log-${item.visitId}`;
+
+				// Also enqueue full signed package with real signature into outbox
+				try {
+					await fetch("/api/egisz/packages", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							documentId: item.visitId,
+							documentVersion: 1,
+							xmlCanonicalPayload: canonicalizeCdaXml(cdaXml),
+							doctorSignature: {
+								signatureBase64: pkcs7Signature,
+								certificateSubject: cert.subjectName,
+								certificateSerialNumber: cert.serialNumber || cert.thumbprint.slice(0, 16).toUpperCase(),
+								signedAt: new Date().toISOString(),
+							},
+							metadata: {
+								patientSnils: item.patientSnils.replace(/\D/g, ""),
+								clinicOid: "1.2.643.5.1.13.13.12.2.77.10425",
+								docTypeNsiCode: "108",
+							},
+						}),
+					});
+				} catch {
+					// Fallback to outbox logging handled by /api/egisz/send
+				}
+
+				successCount++;
+				const updatedItem: ClinicVisitComplianceItem = {
+					...item,
+					isDoctorSignedUkep: true,
+					doctorSignatureHash: cert.thumbprint.toUpperCase(),
+					doctorSignatureDate: new Date().toISOString(),
+					isLocked: true,
+					lockedAt: new Date().toISOString(),
+					egiszStatus: "pending",
+					egiszTransactionId: logId,
+					egiszErrorMessage: null,
+					egiszSentAt: new Date().toISOString(),
+					overdueHours: 0.1,
+					isOverdue24h: false,
+					qualityScore: 100,
 				};
-			});
+				updatedVisitsMap.set(item.id, updatedItem);
+
+				setBatchSession((prev) => {
+					if (!prev) return null;
+					const updatedList = [...prev.cardProgressList];
+					if (updatedList[i]) {
+						updatedList[i] = {
+							...updatedList[i]!,
+							status: "success",
+							transactionId: logId,
+						};
+					}
+					return {
+						...prev,
+						completedCount: i + 1,
+						successCount,
+						cardProgressList: updatedList,
+					};
+				});
+			} catch (sendErr: unknown) {
+				const errMsg = sendErr instanceof Error ? sendErr.message : String(sendErr);
+				errorCount++;
+				setBatchSession((prev) => {
+					if (!prev) return null;
+					const updatedList = [...prev.cardProgressList];
+					if (updatedList[i]) {
+						updatedList[i] = {
+							...updatedList[i]!,
+							status: "error",
+							errorMessage: errMsg,
+						};
+					}
+					return {
+						...prev,
+						completedCount: i + 1,
+						errorCount,
+						cardProgressList: updatedList,
+					};
+				});
+				updatedVisitsMap.set(item.id, {
+					...item,
+					egiszStatus: "error",
+					egiszErrorMessage: errMsg,
+				});
+			}
 		}
 
 		setVisits(Array.from(updatedVisitsMap.values()));
 		setSelectedVisitIds(new Set());
-		showToast(`Пакетная обработка завершена: ${successCount} карт зарегистрировано в РЭМД`, "success");
-		onExportSuccess?.(successCount);
+		if (successCount > 0) {
+			showToast(`Пакетная обработка: ${successCount} карт подписано УКЭП и поставлено в очередь ЕГИСЗ`, "success");
+			onExportSuccess?.(successCount);
+		} else {
+			showToast(`Пакетная обработка завершена с ошибками (${errorCount} карт отклонено)`, "error");
+		}
 	};
 
 	// ── REMD Sync Trigger ──
@@ -971,7 +1136,7 @@ export function CmoComplianceHub({
 											{card.status === "success" && (
 												<span className="cmo-hub-pill cmo-hub-pill--ok">
 													<CheckCircle2 size={12} />
-													<span>Зарегистрировано (OID)</span>
+													<span>В очереди РЭМД</span>
 												</span>
 											)}
 											{card.status === "error" && (

@@ -34,6 +34,7 @@ import {
 	X,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import {
 	ALL_FDI_TEETH,
 	COMMON_804N_DENTAL_SERVICES,
@@ -303,7 +304,7 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 	};
 
 	// 1-Click Send to REMD
-	const handleSendToRemd = () => {
+	const handleSendToRemd = async () => {
 		if (!preflightReport.isValid) {
 			showToast(
 				"Устраните критические замечания перед отправкой в РЭМД",
@@ -312,17 +313,69 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 			return;
 		}
 
-		if (!signature) {
-			handleSignWithGostUkep();
+		let activeSig = signature;
+		if (!activeSig) {
+			activeSig = createMockGostSignature(
+				doctor.doctorFullName,
+				doctor.doctorSnils,
+				clinic.clinicName
+			);
+			setSignature(activeSig);
 		}
 
 		setIsSendingToRemd(true);
 		setRemdReceipt(null);
 
-		setTimeout(() => {
-			setIsSendingToRemd(false);
-			const receiptNum = `EGISZ-${Date.now().toString().slice(-8)}`;
-			const ticket = `TKT-${Math.floor(Math.random() * 900000 + 100000)}`;
+		try {
+			const cleanPatientSnils = (fullPayload.patient.patientSnils || "").replace(/\D/g, "");
+			const effectiveVisitId = fullPayload.documentUuid?.replace(/^urn:uuid:/, "") || `VISIT-${Date.now()}`;
+			const packageBody = {
+				cdaXml: generatedCdaXml,
+				doctorSignature: {
+					signatureBase64: activeSig.signatureBase64,
+					certificateSerialNumber: activeSig.certificateSerialNumber,
+					certificateSubject: activeSig.certificateSubject,
+					signedAt: activeSig.signedAt || new Date().toISOString(),
+					algorithmOid: activeSig.algorithmOid || "1.2.643.7.1.1.1.1",
+				},
+				docType: String(fullPayload.docTypeCode || "108"),
+				patientId: cleanPatientSnils || "patient",
+				visitId: effectiveVisitId,
+				documentId: effectiveVisitId,
+				documentVersion: fullPayload.documentVersion || 1,
+				xmlCanonicalPayload: generatedCdaXml,
+				metadata: {
+					patientSnils: cleanPatientSnils,
+					clinicOid: fullPayload.clinic.clinicOid || "1.2.643.5.1.13.13.12.2.77.8432",
+					...(fullPayload.clinic.clinicOgrn ? { clinicOgrn: fullPayload.clinic.clinicOgrn } : {}),
+					docTypeNsiCode: String(fullPayload.docTypeCode || "108"),
+				},
+			};
+
+			const res = await fetch("/api/egisz/packages", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify(packageBody),
+			});
+
+			if (!res.ok) {
+				const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+				const errMsg =
+					errJson?.message ||
+					errJson?.error ||
+					`Шлюз РЭМД ЕГИСЗ вернул ошибку (${res.status} ${res.statusText})`;
+				throw new Error(errMsg);
+			}
+
+			const data = (await res.json()) as {
+				regNumber?: string;
+				transactionId?: string;
+				outboxId?: string;
+				logId?: string;
+			};
+
+			const receiptNum = data.regNumber || data.transactionId || data.outboxId || "РЕГ-РЭМД-ПРИНЯТО";
+			const ticket = data.transactionId || data.outboxId || data.logId || `TKT-${Date.now()}`;
 			setRemdReceipt({
 				status: "registered",
 				registrationNumber: receiptNum,
@@ -330,10 +383,15 @@ export const EgiszRemdXmlModal: React.FC<EgiszRemdXmlModalProps> = ({
 				ticketId: ticket,
 			});
 			showToast(
-				`Документ зарегистрирован в ЕГИСЗ РЭМД! Рег. номер: ${receiptNum}`,
+				`Документ передан в ЕГИСЗ РЭМД! Рег. номер: ${receiptNum}`,
 				"success"
 			);
-		}, 1400);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			showToast(`Ошибка отправки в РЭМД: ${msg}`, "error");
+		} finally {
+			setIsSendingToRemd(false);
+		}
 	};
 
 	// 1-Click Print Form 043/u

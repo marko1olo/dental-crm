@@ -35,6 +35,7 @@ import {
 	X,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	type CertificateInfo,
 	signatureService,
@@ -75,6 +76,8 @@ export interface EgiszRemdSigningModalProps {
 	onClose: () => void;
 	payload?: EgiszDentalCdaPayload | undefined;
 	documentId?: string | undefined;
+	patientId?: string | undefined;
+	visitId?: string | undefined;
 	onSigned?: (
 		updatedPayload: EgiszDentalCdaPayload,
 		signatures: {
@@ -95,6 +98,8 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 	onClose,
 	payload = SAMPLE_DENTAL_SEMD_105_PRESET,
 	documentId,
+	patientId,
+	visitId,
 	onSigned,
 	onSentToRemd,
 }) => {
@@ -336,11 +341,79 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 
 		setIsSendingRemd(true);
 		try {
-			// Simulate integration transaction with Federal EGISZ REMD Gateway
-			await new Promise((resolve) => setTimeout(resolve, 800));
+			const cleanPatientSnils = (activePayload.patient.patientSnils || "").replace(/\D/g, "");
+			const effectiveVisitId = visitId || documentId || activePayload.documentUuid?.replace(/^urn:uuid:/, "") || "";
+			const effectivePatientId = patientId || activePayload.patient.patientSnils || "patient";
+			const docType = String(activePayload.docTypeCode || "108");
 
-			const regNumber = `РЭМД-77-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-			const remdDocId = `REMD-${Date.now()}`;
+			const packageBody = {
+				cdaXml: generatedXml,
+				doctorSignature: {
+					signatureBase64: doctorSig.signatureBase64,
+					certificateSerialNumber: doctorSig.certificateSerialNumber,
+					certificateSubject: doctorSig.certificateSubject,
+					signedAt: doctorSig.signedAt || new Date().toISOString(),
+					algorithmOid: doctorSig.algorithmOid || "1.2.643.7.1.1.1.1",
+				},
+				...(moSig
+					? {
+							clinicSignature: {
+								signatureBase64: moSig.signatureBase64,
+								certificateSerialNumber: moSig.certificateSerialNumber,
+								certificateSubject: moSig.certificateSubject,
+								signedAt: moSig.signedAt || new Date().toISOString(),
+								algorithmOid: moSig.algorithmOid || "1.2.643.7.1.1.1.1",
+							},
+							moSignature: {
+								signatureBase64: moSig.signatureBase64,
+								certificateSerialNumber: moSig.certificateSerialNumber,
+								certificateSubject: moSig.certificateSubject,
+								signedAt: moSig.signedAt || new Date().toISOString(),
+								algorithmOid: moSig.algorithmOid || "1.2.643.7.1.1.1.1",
+							},
+						}
+					: {}),
+				docType,
+				patientId: effectivePatientId,
+				visitId: effectiveVisitId,
+				documentId: effectiveVisitId,
+				documentVersion: activePayload.documentVersion || 1,
+				xmlCanonicalPayload: generatedXml,
+				metadata: {
+					patientSnils: cleanPatientSnils,
+					clinicOid: activePayload.clinic.clinicOid || "1.2.643.5.1.13.13.12.2.77.8432",
+					...(activePayload.clinic.clinicOgrn ? { clinicOgrn: activePayload.clinic.clinicOgrn } : {}),
+					docTypeNsiCode: docType,
+				},
+			};
+
+			const res = await fetch("/api/egisz/packages", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify(packageBody),
+			});
+
+			if (!res.ok) {
+				const errJson = (await res.json().catch(() => null)) as { message?: string; error?: string } | null;
+				const errMsg =
+					errJson?.message ||
+					errJson?.error ||
+					`Шлюз РЭМД ЕГИСЗ вернул ошибку (${res.status} ${res.statusText})`;
+				throw new Error(errMsg);
+			}
+
+			const data = (await res.json()) as {
+				success?: boolean;
+				regNumber?: string;
+				transactionId?: string;
+				outboxId?: string;
+				logId?: string;
+				status?: string;
+				message?: string;
+			};
+
+			const regNumber = data.regNumber || data.transactionId || data.outboxId || data.logId || "РЕГ-РЭМД-ПРИНЯТО";
+			const remdDocId = data.transactionId || data.outboxId || data.logId || `DOC-${effectiveVisitId}`;
 			const regInfo = {
 				regNumber,
 				remdDocId,
@@ -349,7 +422,7 @@ export const EgiszRemdSigningModal: React.FC<EgiszRemdSigningModalProps> = ({
 
 			setRemdRegistration(regInfo);
 			showToast(
-				`СЭМД успешно зарегистрирован в РЭМД ЕГИСЗ! Номер: ${regNumber}`,
+				`СЭМД успешно передан в РЭМД ЕГИСЗ! Номер: ${regNumber}`,
 				"success",
 			);
 

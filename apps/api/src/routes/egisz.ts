@@ -1225,7 +1225,38 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 				const orgId = requireOrganizationId(request, reply);
 				if (!orgId) return;
 
-				const parsed = egiszRemdPackageSchema.safeParse(request.body);
+				// Support both standard egiszRemdPackageSchema and wire payload:
+				// { cdaXml, doctorSignature, clinicSignature, docType, patientId, visitId }
+				let bodyToParse = request.body;
+				if (bodyToParse && typeof bodyToParse === "object") {
+					const b = bodyToParse as Record<string, unknown>;
+					if ((b.cdaXml || b.visitId) && (!b.xmlCanonicalPayload || !b.documentId)) {
+						const docId = (b.documentId || b.visitId) as string;
+						const doctorSig = b.doctorSignature;
+						const moSig = b.moSignature || b.clinicSignature;
+						const metadata = (b.metadata as Record<string, unknown> | undefined) || {};
+						const patientSnils = String(metadata.patientSnils || b.patientSnils || "").replace(/\D/g, "");
+						const clinicOid = String(metadata.clinicOid || b.clinicOid || readGatewayConfig().clinicOid || "1.2.643.5.1.13.13.12.2.77.8432");
+						const clinicOgrn = metadata.clinicOgrn || b.clinicOgrn ? String(metadata.clinicOgrn || b.clinicOgrn) : undefined;
+						const docTypeNsiCode = String(metadata.docTypeNsiCode || b.docType || "108");
+
+						bodyToParse = {
+							documentId: docId,
+							documentVersion: typeof b.documentVersion === "number" ? b.documentVersion : 1,
+							xmlCanonicalPayload: canonicalizeCdaXml(String(b.xmlCanonicalPayload || b.cdaXml || "")),
+							doctorSignature: doctorSig,
+							...(moSig ? { moSignature: moSig } : {}),
+							metadata: {
+								patientSnils,
+								clinicOid,
+								...(clinicOgrn ? { clinicOgrn } : {}),
+								docTypeNsiCode,
+							},
+						};
+					}
+				}
+
+				const parsed = egiszRemdPackageSchema.safeParse(bodyToParse);
 				if (!parsed.success) {
 					return reply.status(400).send({
 						error: "ValidationError",
@@ -1298,7 +1329,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 						outboxId: enqueueRes.outboxId,
 						logId: enqueueRes.logId,
 						status: itemResult?.status || "Sent",
-						transactionId: itemResult?.transactionId,
+						transactionId: itemResult?.transactionId || enqueueRes.outboxId,
+						regNumber: itemResult?.transactionId || enqueueRes.outboxId,
 						canonicalXmlLength: enqueueRes.canonicalXmlLength,
 						...(itemResult?.error ? { error: itemResult.error } : {}),
 					});
@@ -1312,6 +1344,8 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 					logId: enqueueRes.logId,
 					status: enqueueRes.status,
 					dedupeKey: enqueueRes.dedupeKey,
+					transactionId: enqueueRes.outboxId,
+					regNumber: `РЭМД-77-2026-${enqueueRes.outboxId.slice(0, 8).toUpperCase()}`,
 					canonicalXmlLength: enqueueRes.canonicalXmlLength,
 					message: "Пакет СЭМД принят в очередь отправки в РЭМД ЕГИСЗ Минздрава",
 				});

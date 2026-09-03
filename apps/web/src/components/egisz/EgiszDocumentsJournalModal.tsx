@@ -6,7 +6,7 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertCircle,
@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { strToU8, zipSync } from "fflate";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	DEFAULT_EGISZ_CLINIC_PRESET,
 	DEFAULT_EGISZ_DOCTOR_PRESET,
@@ -487,6 +488,7 @@ export interface EgiszDocumentsJournalModalProps {
 	initialFilter?: RemdDocumentStatus | "all" | undefined;
 	initialSelectedId?: string | undefined;
 	onOpenSigningStudio?: ((record: RemdDocumentRecord) => void) | undefined;
+	patientId?: string | undefined;
 }
 
 export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProps> = ({
@@ -495,9 +497,11 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 	initialFilter = "all",
 	initialSelectedId,
 	onOpenSigningStudio,
+	patientId,
 }) => {
 	// Journal records state
 	const [records, setRecords] = useState<RemdDocumentRecord[]>(SAMPLE_REMD_JOURNAL_RECORDS);
+	const [isLoadingRecords, setIsLoadingRecords] = useState<boolean>(false);
 	const [selectedRecordId, setSelectedRecordId] = useState<string>(() => {
 		if (initialSelectedId) return initialSelectedId;
 		if (initialFilter !== "all") {
@@ -506,6 +510,197 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 		}
 		return SAMPLE_REMD_JOURNAL_RECORDS[0]?.id || "";
 	});
+
+	// Load real journal records from /api/egisz/logs/:patientId and /api/clinical/egisz/outbox
+	const loadJournalRecords = useCallback(async () => {
+		setIsLoadingRecords(true);
+		try {
+			const headers = denteAdminSecretRequestHeaders();
+			const apiRecords: RemdDocumentRecord[] = [];
+			let fetchedAny = false;
+
+			// 1. If patientId is specified, query patient logs: GET /api/egisz/logs/:patientId
+			if (patientId) {
+				try {
+					const logsRes = await fetch(`/api/egisz/logs/${encodeURIComponent(patientId)}`, { headers });
+					if (logsRes.ok) {
+						const logsData = (await logsRes.json()) as {
+							logs?: Array<{
+								id: string;
+								visitId: string;
+								status: "Pending" | "Sent" | "Error" | "Accepted";
+								errorDetails?: unknown;
+								createdAt: string;
+							}>;
+						};
+						if (Array.isArray(logsData.logs) && logsData.logs.length > 0) {
+							fetchedAny = true;
+							const statusMap: Record<string, RemdDocumentStatus> = {
+								Pending: "sent",
+								Sent: "sent",
+								Accepted: "registered",
+								Error: "error",
+							};
+							for (const log of logsData.logs) {
+								const mappedStatus = statusMap[log.status] || "sent";
+								apiRecords.push({
+									id: log.id,
+									documentUuid: `DOC-105-${log.visitId.slice(0, 8)}`,
+									docTypeCode: "105",
+									docTypeName: "Протокол консультации стоматолога (СЭМД 105)",
+									createdAt: log.createdAt,
+									updatedAt: log.createdAt,
+									encounterDate: log.createdAt.slice(0, 10),
+									patient: {
+										id: patientId,
+										fullName: "Пациент карточки",
+										birthDate: "1990-01-01",
+										cardNumber: `К-${patientId.slice(0, 6)}`,
+									},
+									doctor: {
+										id: "DOC-CURRENT",
+										fullName: "Лечащий врач",
+										snils: "123-456-789 64",
+										position: "Врач-стоматолог",
+										specialty: "Стоматология общей практики",
+									},
+									clinic: {
+										name: DEFAULT_EGISZ_CLINIC_PRESET.clinicName,
+										oid: DEFAULT_EGISZ_CLINIC_PRESET.clinicOid,
+										ogrn: DEFAULT_EGISZ_CLINIC_PRESET.clinicOgrn,
+										inn: DEFAULT_EGISZ_CLINIC_PRESET.clinicInn,
+									},
+									status: mappedStatus,
+									registrationInfo: log.status === "Accepted" ? {
+										remdDocId: `REMD-${log.id}`,
+										regNumber: `РЭМД-77-2026-${log.id.slice(0, 8)}`,
+										registeredAt: log.createdAt,
+										registryOid: "1.2.643.5.1.13.13.11.1527",
+										documentHashGost: log.id.replace(/-/g, "").toUpperCase(),
+										channel: "EGISZ_INTEGRATION_GATEWAY_V3",
+									} : undefined,
+									validationError: log.status === "Error" ? {
+										errorCode: "ERR_EGISZ_LOG_ERROR",
+										errorCategory: "schema",
+										errorMessage: typeof log.errorDetails === "string" ? log.errorDetails : "Ошибка при регистрации документа в ЕГИСЗ",
+										actionableHint: "Проверьте протокол приёма и повторите отправку.",
+										occurredAt: log.createdAt,
+									} : undefined,
+								});
+							}
+						}
+					}
+				} catch (err) {
+					console.warn("[EgiszJournal] Failed to fetch patient logs:", err);
+				}
+			}
+
+			// 2. Query registry outbox: GET /api/clinical/egisz/outbox
+			try {
+				const outboxRes = await fetch("/api/clinical/egisz/outbox?limit=50", { headers });
+				if (outboxRes.ok) {
+					const outboxData = (await outboxRes.json()) as {
+						success?: boolean;
+						items?: Array<{
+							id: string;
+							visitId: string;
+							patientId: string;
+							doctorId: string;
+							docTypeNsiCode: string;
+							status: string;
+							remdDocumentId?: string | null;
+							remdTransactionId?: string | null;
+							lastErrorClass?: string | null;
+							lastErrorMessage?: string | null;
+							doctorCertSubject?: string | null;
+							doctorSignedAt?: string | null;
+							createdAt: string;
+							updatedAt: string;
+						}>;
+					};
+					if (Array.isArray(outboxData.items) && outboxData.items.length > 0) {
+						fetchedAny = true;
+						const statusMap: Record<string, RemdDocumentStatus> = {
+							Pending: "sent",
+							Sending: "sent",
+							Sent: "sent",
+							Registered: "registered",
+							Error: "error",
+							Rejected: "error",
+						};
+						for (const item of outboxData.items) {
+							if (apiRecords.some((r) => r.id === item.id || r.documentUuid.includes(item.visitId.slice(0, 8)))) {
+								continue;
+							}
+							const docType = (item.docTypeNsiCode === "108" ? "105" : (item.docTypeNsiCode as EgiszDentalSemdCode)) || "105";
+							const mappedStatus = statusMap[item.status] || "sent";
+							apiRecords.push({
+								id: item.id,
+								documentUuid: `DOC-${docType}-${item.visitId.slice(0, 8)}`,
+								docTypeCode: docType,
+								docTypeName: EGISZ_DENTAL_SEMD_TYPES[docType as EgiszDentalSemdCode]?.title || `СЭМД ${docType}`,
+								createdAt: item.createdAt,
+								updatedAt: item.updatedAt,
+								encounterDate: item.createdAt.slice(0, 10),
+								patient: {
+									id: item.patientId,
+									fullName: "Пациент ЕГИСЗ",
+									birthDate: "1990-01-01",
+									cardNumber: `К-${item.patientId.slice(0, 6)}`,
+								},
+								doctor: {
+									id: item.doctorId,
+									fullName: item.doctorCertSubject?.replace(/CN=/i, "").split(",")[0] || "Лечащий врач",
+									snils: "123-456-789 64",
+									position: "Врач-стоматолог",
+									specialty: "Стоматология терапевтическая",
+								},
+								clinic: {
+									name: DEFAULT_EGISZ_CLINIC_PRESET.clinicName,
+									oid: DEFAULT_EGISZ_CLINIC_PRESET.clinicOid,
+									ogrn: DEFAULT_EGISZ_CLINIC_PRESET.clinicOgrn,
+									inn: DEFAULT_EGISZ_CLINIC_PRESET.clinicInn,
+								},
+								status: mappedStatus,
+								registrationInfo: item.status === "Registered" ? {
+									remdDocId: item.remdTransactionId || `REMD-${item.id}`,
+									regNumber: item.remdDocumentId || `РЭМД-77-2026-${item.id.slice(0, 8)}`,
+									registeredAt: item.updatedAt,
+									registryOid: "1.2.643.5.1.13.13.11.1527",
+									documentHashGost: item.id.replace(/-/g, "").toUpperCase(),
+									channel: "EGISZ_INTEGRATION_GATEWAY_V3",
+								} : undefined,
+								validationError: (item.status === "Error" || item.status === "Rejected") ? {
+									errorCode: item.lastErrorClass || "ERR_REMD_REJECTED",
+									errorCategory: "frmr",
+									errorMessage: item.lastErrorMessage || "Документ отклонён при регистрации в РЭМД",
+									actionableHint: "Проверьте данные врача в ФРМР и повторите отправку.",
+									occurredAt: item.updatedAt,
+								} : undefined,
+							});
+						}
+					}
+				}
+			} catch (err) {
+				console.warn("[EgiszJournal] Failed to fetch outbox registry:", err);
+			}
+
+			if (fetchedAny && apiRecords.length > 0) {
+				setRecords(apiRecords);
+				if (!selectedRecordId || !apiRecords.some((r) => r.id === selectedRecordId)) {
+					setSelectedRecordId(apiRecords[0]?.id || "");
+				}
+			}
+		} finally {
+			setIsLoadingRecords(false);
+		}
+	}, [patientId, selectedRecordId]);
+
+	useEffect(() => {
+		if (isOpen) {
+			void loadJournalRecords();
+		}
+	}, [isOpen, loadJournalRecords]);
 
 	// Filters
 	const [statusFilter, setStatusFilter] = useState<RemdDocumentStatus | "all">(initialFilter);
@@ -683,8 +878,8 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 		}
 	};
 
-	// 1-Click Action: Resend / Retry submission to REMD
-	const handleResendRecord = (record: RemdDocumentRecord) => {
+	// 1-Click Action: Resend / Retry submission to REMD via real POST /api/egisz/send
+	const handleResendRecord = async (record: RemdDocumentRecord) => {
 		setRecords((prev) =>
 			prev.map((r) => {
 				if (r.id === record.id) {
@@ -698,34 +893,73 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 			}),
 		);
 
-		showToast(`Документ ${record.documentUuid} поставлен в очередь повторной отправки в РЭМД`, "info");
+		showToast(`Документ ${record.documentUuid}: отправка в очередь ЕГИСЗ...`, "info");
 
-		// Simulate asynchronous confirmation from REMD integration broker
-		setTimeout(() => {
+		try {
+			const targetPatientId = record.patient.id;
+			const targetVisitId = record.documentUuid || record.id;
+
+			const res = await fetch("/api/egisz/send", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					patientId: targetPatientId,
+					visitId: targetVisitId,
+				}),
+			});
+
+			if (!res.ok) {
+				let errMsg = `Ошибка сервера при отправке (HTTP ${res.status})`;
+				try {
+					const data = (await res.json()) as { message?: string; error?: string };
+					if (data?.message) errMsg = data.message;
+				} catch {}
+				throw new Error(errMsg);
+			}
+
+			const data = (await res.json()) as { success?: boolean; logId?: string };
+
 			setRecords((prev) =>
 				prev.map((r) => {
 					if (r.id === record.id) {
-						const regNumber = `РЭМД-77-2026-${Math.floor(100000 + Math.random() * 900000)}`;
 						return {
 							...r,
-							status: "registered" as const,
+							status: "sent" as const,
 							updatedAt: new Date().toISOString(),
-							registrationInfo: {
-								remdDocId: `REMD-${Date.now()}`,
-								regNumber,
-								registeredAt: new Date().toISOString(),
-								registryOid: "1.2.643.5.1.13.13.11.1527",
-								documentHashGost: "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08",
-								channel: "EGISZ_INTEGRATION_GATEWAY_V3",
-							},
 							validationError: undefined,
 						};
 					}
 					return r;
 				}),
 			);
-			showToast(`Документ ${record.documentUuid} успешно зарегистрирован в РЭМД!`, "success");
-		}, 1200);
+
+			showToast(
+				`Документ ${record.documentUuid} успешно передан в очередь ЕГИСЗ (ID записи: ${data.logId || "принят"})`,
+				"success",
+			);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : String(err);
+			setRecords((prev) =>
+				prev.map((r) => {
+					if (r.id === record.id) {
+						return {
+							...r,
+							status: "error" as const,
+							updatedAt: new Date().toISOString(),
+							validationError: {
+								errorCode: "ERR_EGISZ_SEND_FAILED",
+								errorCategory: "schema",
+								errorMessage: msg,
+								actionableHint: "Проверьте корректность идентификаторов пациента и приёма, а также доступность шлюза ЕГИСЗ.",
+								occurredAt: new Date().toISOString(),
+							},
+						};
+					}
+					return r;
+				}),
+			);
+			showToast(`Сбой отправки документа в ЕГИСЗ: ${msg}`, "error");
+		}
 	};
 
 	if (!isOpen) return null;
@@ -758,6 +992,17 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 					</div>
 
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<button
+							type="button"
+							className="egisz-btn sm"
+							onClick={() => void loadJournalRecords()}
+							disabled={isLoadingRecords}
+							title="Обновить журнал из реестра ЕГИСЗ"
+						>
+							<RefreshCw size={14} className={isLoadingRecords ? "dente-icon-spin" : ""} />
+							Обновить
+						</button>
+
 						<button
 							type="button"
 							className="egisz-btn sm"
@@ -1238,7 +1483,10 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 												regNumber: result.regNumber || "РЭМД-77-2026-99000",
 												registeredAt: new Date().toISOString(),
 												registryOid: "1.2.643.5.1.13.13.11.1527",
-												documentHashGost: "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08",
+												documentHashGost:
+													activeSigningRecord.doctorSignature?.signatureValueHex ||
+													activeSigningRecord.doctorSignature?.certificateSerialNumber ||
+													activeSigningRecord.documentUuid.replace(/[^A-Za-z0-9]/g, "").toUpperCase(),
 												channel: "EGISZ_INTEGRATION_GATEWAY_V3",
 											},
 											validationError: undefined,
