@@ -491,14 +491,16 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					effectivePriceRub = frozenItem.lockedUnitPriceRub;
 				} else if (isPriceLockedFinal && matchingDbPlanItem) {
 					// Твердая смета утвержденного плана: фиксируем цену из плана
-					planPriceRub = Number(matchingDbPlanItem.price || 0);
+					const planItemPrice = Number(matchingDbPlanItem.price || 0);
 					const planQty = Number(matchingDbPlanItem.quantity || 1);
 
 					// Если количество в наряде превышает согласованное в смете количество:
 					// По ст. 709 ГК РФ и ПП РФ №659 увеличение твердой цены сметы без допсоглашения или PIN руководства запрещено.
 					if (it.quantity > planQty && !isAdminOverrideVerified) {
-						effectivePriceRub = Number(((planPriceRub * planQty) / it.quantity).toFixed(2));
+						planPriceRub = Number(((planItemPrice * planQty) / it.quantity).toFixed(2));
+						effectivePriceRub = planPriceRub;
 					} else {
+						planPriceRub = planItemPrice;
 						effectivePriceRub = planPriceRub;
 					}
 				} else {
@@ -573,6 +575,14 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 		const effectiveInflationThreshold = freezeToken?.inflationThresholdPercent ?? 10;
 
+		const effectiveItemResolutionOverrides: Record<string, PriceLockResolutionPolicy> = {};
+		data.items.forEach((it, idx) => {
+			const itId = it.itemId || it.serviceId || `item-${idx + 1}`;
+			if (it.resolutionPolicy) {
+				effectiveItemResolutionOverrides[itId] = it.resolutionPolicy as PriceLockResolutionPolicy;
+			}
+		});
+
 		const validationReport = validatePlanToInvoice({
 			planId: data.planId || targetPlan?.id || "PLAN-CUSTOM",
 			planNumber: data.planNumber,
@@ -590,6 +600,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			inflationThresholdPercent: effectiveInflationThreshold,
 			items: planItemsForVal,
 			catalog: catalogLookup,
+			itemResolutionOverrides: effectiveItemResolutionOverrides,
 			adminOverrideAuthorized: isAdminOverrideVerified,
 			adminOverrideStaffName: adminStaffName,
 			adminOverrideReason: data.adminOverrideReason,

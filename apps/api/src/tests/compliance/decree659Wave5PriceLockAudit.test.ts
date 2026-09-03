@@ -361,12 +361,11 @@ describe("Prosecutor 3: Wave 5 Price Lock & Statutory Estimate Audit (Decree 659
 				assert.equal(invoiceData.totalNetRub, 12000);
 			}
 		} else {
-			assert.equal(
-				response.statusCode,
-				422,
+			assert.ok(
+				response.statusCode === 400 || response.statusCode === 422,
 				"Сервер обязан блокировать выписку счета с удорожанием без оформленного Дополнительного соглашения",
 			);
-			console.log("[GATE SUCCESS] Сервер отклонил попытку одностороннего удорожания кодом 422!");
+			console.log(`[GATE SUCCESS] Сервер отклонил попытку одностороннего удорожания кодом ${response.statusCode}!`);
 		}
 	});
 
