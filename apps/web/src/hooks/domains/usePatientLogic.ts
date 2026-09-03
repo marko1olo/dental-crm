@@ -603,15 +603,15 @@ export function usePatientLogic({
 		}
 	}
 
-	async function createPatient() {
+	async function createPatient(): Promise<Patient | null> {
 		if (isPatientCreating) {
 			setError("Дождитесь завершения создания карточки пациента.");
-			return;
+			return null;
 		}
 		const fullName = newPatientName.trim();
 		if (!fullName) {
 			setError("Укажите ФИО пациента перед созданием карточки.");
-			return;
+			return null;
 		}
 		const isAnon = patientAdministrativeProfileDraft.isAnonymous === true;
 		const payload = {
@@ -632,7 +632,7 @@ export function usePatientLogic({
 			});
 			if (!response.ok) {
 				setError(await responseErrorMessage(response, "Пациент не создан"));
-				return;
+				return null;
 			}
 			const patient = (await response.json()) as Patient;
 			setNewPatientName("");
@@ -652,6 +652,7 @@ export function usePatientLogic({
 					: current,
 			);
 			setError(null);
+			return patient;
 		} catch (patientError) {
 			showToast(
 				actionFailureToast(
@@ -663,6 +664,7 @@ export function usePatientLogic({
 			setError(
 				operatorWorkflowFailureMessage("Пациент не создан", patientError),
 			);
+			return null;
 		} finally {
 			setIsPatientCreating(false);
 		}

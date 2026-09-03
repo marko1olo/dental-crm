@@ -19,6 +19,7 @@ import {
 	Phone,
 	ShieldAlert,
 	Sparkles,
+	Stethoscope,
 	User,
 	UserCheck,
 } from "lucide-react";
@@ -26,6 +27,9 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { evaluatePatientSafetyFlags } from "./safetyMath";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
+import { useScheduleStore } from "../../store/scheduleStore";
 import { PatientLoyaltyHeader } from "../patients/PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "./PatientSentimentBadge";
 
@@ -252,8 +256,64 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 					)}
 				</div>
 
-				{/* Quick Actions (Edit, Anamnesis) */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				{/* Quick Actions (Book, Start Visit, Edit, Anamnesis) */}
+				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+					<button
+						type="button"
+						onClick={() => {
+							if (!resolvedPatient) return;
+							const now = new Date();
+							const pad = (n: number) => String(n).padStart(2, "0");
+							const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+							const currentHour = now.getHours();
+							const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
+							const endHour = Math.min(startHour + 1, 21);
+							const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
+							const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
+
+							useScheduleStore.getState().setNewAppointmentDraft({
+								patientId: resolvedPatient.id,
+								doctorUserId: "",
+								assistantUserId: "",
+								chairId: "",
+								status: "planned",
+								startsAt,
+								endsAt,
+								reason: "Консультация и осмотр",
+								comment: "",
+							});
+							useAppStore.getState().setCurrentView("schedule");
+							showToast(
+								`Пациент ${fullName} выбран для записи в расписание`,
+								"success",
+							);
+						}}
+						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
+						title="Записать пациента в расписание приёма"
+						data-testid="header-book-appointment-btn"
+					>
+						<Calendar size={13} className="text-[var(--teal,#0d9488)]" />
+						<span>Записать</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							if (!resolvedPatient) return;
+							usePatientStore
+								.getState()
+								.setSelectedPatientId(resolvedPatient.id);
+							useAppStore.getState().setCurrentView("visit");
+							showToast(`Открыт приём 043/у: ${fullName}`, "success");
+						}}
+						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
+						title="Открыть амбулаторный приём 043/у без лишних подтверждений"
+						data-testid="header-open-visit-btn"
+					>
+						<Stethoscope size={13} className="text-cyan-600" />
+						<span>Начать приём</span>
+					</button>
+
 					{onOpenAnamnesis && (
 						<button
 							type="button"

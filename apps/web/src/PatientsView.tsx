@@ -7,10 +7,12 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	ArrowRightLeft,
+	Calendar,
 	Gift,
 	Plus,
 	Search,
 	ShieldCheck,
+	Stethoscope,
 	Upload,
 	UserCheck,
 	Users,
@@ -39,7 +41,9 @@ import {
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
+import { useAppStore } from "./store/appStore";
 import { usePatientStore } from "./store/patientStore";
+import { useScheduleStore } from "./store/scheduleStore";
 import { formatPhoneNumber } from "./utils/inputSanitation";
 
 type PatientInsight = Dashboard["patientInsights"][number];
@@ -816,6 +820,77 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							style={{ minHeight: "36px" }}
 						>
 							<UserCheck size={16} aria-hidden="true" /> Сохранить данные
+						</button>
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={() => {
+								if (!selectedPatient) return;
+								const now = new Date();
+								const pad = (n: number) => String(n).padStart(2, "0");
+								const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+								const currentHour = now.getHours();
+								const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
+								const endHour = Math.min(startHour + 1, 21);
+								const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
+								const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
+
+								useScheduleStore.getState().setNewAppointmentDraft({
+									patientId: selectedPatient.id,
+									doctorUserId: "",
+									assistantUserId: "",
+									chairId: "",
+									status: "planned",
+									startsAt,
+									endsAt,
+									reason: "Первичный приём и консультация",
+									comment: "",
+								});
+								useAppStore.getState().setCurrentView("schedule");
+								showToast(
+									`Пациент ${selectedPatient.fullName} выбран для записи в расписание`,
+									"success",
+								);
+							}}
+							disabled={!selectedPatient}
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
+							title="Записать выбранного пациента в расписание"
+							data-testid="patient-card-book-appointment-btn"
+						>
+							<Calendar size={16} aria-hidden="true" />
+							<span>Записать в расписание</span>
+						</button>
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={() => {
+								if (!selectedPatient) return;
+								usePatientStore
+									.getState()
+									.setSelectedPatientId(selectedPatient.id);
+								useAppStore.getState().setCurrentView("visit");
+								showToast(
+									`Открыт приём 043/у: ${selectedPatient.fullName}`,
+									"success",
+								);
+							}}
+							disabled={!selectedPatient}
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
+							title="Открыть амбулаторный приём 043/у без лишних подтверждений"
+							data-testid="patient-card-open-visit-btn"
+						>
+							<Stethoscope size={16} aria-hidden="true" />
+							<span>Открыть приём</span>
 						</button>
 						<button
 							type="button"

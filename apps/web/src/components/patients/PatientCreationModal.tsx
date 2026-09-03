@@ -15,16 +15,18 @@ import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
 	Building2,
+	Calendar,
 	EyeOff,
 	FileText,
 	Megaphone,
 	Plus,
 	ShieldCheck,
+	Stethoscope,
 	UserPlus,
 	X,
 	Zap,
 } from "lucide-react";
-import { generateAnonymousPatientCode } from "@dental/shared";
+import { generateAnonymousPatientCode, type Patient } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { parsePatientDictationLocal } from "../../lib/smartPatientParser";
@@ -32,7 +34,10 @@ import {
 	type SmartParsedPayload,
 	SmartParsePreview,
 } from "../../SmartParsePreview";
+import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
+import { useScheduleStore } from "../../store/scheduleStore";
+import { showToast } from "../GlobalToast";
 import {
 	formatOmsPolicy,
 	formatPhoneNumber,
@@ -52,7 +57,7 @@ import {
 export interface PatientCreationModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly createPatient: () => void | Promise<void>;
+	readonly createPatient: () => void | Promise<void | Patient | null>;
 	readonly updatePatientCoreDraft?: (
 		field: keyof PatientCoreDraft,
 		value: string,
@@ -161,6 +166,27 @@ export function PatientCreationModal({
 	const patientCreateReady = validationResult.isValid && !isPatientCreating;
 	const patientCreateGuidance = validationResult.guidanceMessage;
 
+	// Quick intake validation (CITO / booking / duty doctor): requires ONLY full name and phone
+	const quickIntakeValidationResult = useMemo(() => {
+		return validatePatientDraftWithRequirements(
+			{
+				fullName: newPatientName,
+				phone: newPatientPhone,
+				isEmergencyOrPrimary: true,
+			},
+			{
+				...fieldRequirements,
+				requireAdvertisingSource: false,
+				requireSnils: false,
+				requireBirthDate: false,
+				requireIdentityDocument: false,
+			},
+		);
+	}, [newPatientName, newPatientPhone, fieldRequirements]);
+
+	const quickActionReady =
+		quickIntakeValidationResult.isValid && !isPatientCreating;
+
 	const handleCreate = async () => {
 		if (!patientCreateReady) return;
 		try {
@@ -173,6 +199,79 @@ export function PatientCreationModal({
 			}
 			await createPatient();
 			onClose();
+		} catch {
+			// Managed by store/appLogic
+		}
+	};
+
+	const handleCreateAndBook = async () => {
+		if (!quickActionReady) return;
+		try {
+			if (advertisingSource) {
+				setPatientAdministrativeProfileDraft((prev) => ({
+					...prev,
+					preferredAppointmentNote: `src:${advertisingSource}`,
+				}));
+			}
+			const created = await createPatient();
+			onClose();
+
+			const targetId =
+				(created as Patient | null | undefined)?.id ||
+				usePatientStore.getState().selectedPatientId;
+			const now = new Date();
+			const pad = (n: number) => String(n).padStart(2, "0");
+			const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+			const currentHour = now.getHours();
+			const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
+			const endHour = Math.min(startHour + 1, 21);
+			const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
+			const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
+
+			useScheduleStore.getState().setNewAppointmentDraft({
+				patientId: targetId || "",
+				doctorUserId: "",
+				assistantUserId: "",
+				chairId: "",
+				status: "planned",
+				startsAt,
+				endsAt,
+				reason: "Первичный приём и консультация",
+				comment: "",
+			});
+			useAppStore.getState().setCurrentView("schedule");
+			showToast(
+				"Пациент создан. Открыто расписание для выбора времени приёма",
+				"success",
+			);
+		} catch {
+			// Managed by store/appLogic
+		}
+	};
+
+	const handleCreateAndOpenVisit = async () => {
+		if (!quickActionReady) return;
+		try {
+			if (advertisingSource) {
+				setPatientAdministrativeProfileDraft((prev) => ({
+					...prev,
+					preferredAppointmentNote: `src:${advertisingSource}`,
+				}));
+			}
+			const created = await createPatient();
+			onClose();
+
+			const targetId =
+				(created as Patient | null | undefined)?.id ||
+				usePatientStore.getState().selectedPatientId;
+			if (targetId) {
+				usePatientStore.getState().setSelectedPatientId(targetId);
+			}
+			useAppStore.getState().setCurrentView("visit");
+			showToast(
+				"Пациент создан. Открыт амбулаторный приём 043/у (дежурный врач)",
+				"success",
+			);
 		} catch {
 			// Managed by store/appLogic
 		}
@@ -758,12 +857,52 @@ export function PatientCreationModal({
 						</button>
 						<button
 							type="button"
+							className="secondary-button quick-create-book-action"
+							onClick={handleCreateAndBook}
+							disabled={!quickActionReady}
+							title="Создать карту и сразу открыть расписание с выбранным пациентом"
+							data-testid="patient-creation-submit-and-book-btn"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
+						>
+							<Calendar size={15} aria-hidden="true" />
+							<span>Создать и записать</span>
+						</button>
+						<button
+							type="button"
+							className="secondary-button quick-create-visit-action"
+							onClick={handleCreateAndOpenVisit}
+							disabled={!quickActionReady}
+							title="Создать карту и сразу открыть приём 043/у (для дежурного врача)"
+							data-testid="patient-creation-submit-and-visit-btn"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
+						>
+							<Stethoscope size={15} aria-hidden="true" />
+							<span>Создать и начать приём</span>
+						</button>
+						<button
+							type="button"
 							className="primary-button quick-create-action"
 							onClick={handleCreate}
 							disabled={!patientCreateReady}
 							aria-busy={isPatientCreating || undefined}
 							aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}
 							data-testid="patient-creation-submit-btn"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
 						>
 							<Plus size={18} aria-hidden="true" />
 							<span>{isPatientCreating ? "Создание..." : "Создать пациента"}</span>

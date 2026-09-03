@@ -218,8 +218,12 @@ export function validatePatientDraftWithRequirements(
 			errors.phone = "Телефон обязателен для регистрации карты";
 			missingRequiredLabels.push("Телефон");
 		} else if (phoneDigits.length < 10) {
-			errors.phone = "Номер телефона слишком короткий (минимум 10 цифр)";
-			missingRequiredLabels.push("Корректный телефон");
+			if (draft.isEmergencyOrPrimary && phoneDigits.length >= 5) {
+				// Первичный приём / острая боль (CITO): допустим городской/короткий номер от 5 цифр
+			} else {
+				errors.phone = "Номер телефона слишком короткий (минимум 10 цифр)";
+				missingRequiredLabels.push("Корректный телефон");
+			}
 		}
 	} else if (phoneRaw && phoneDigits.length > 0 && phoneDigits.length < 5) {
 		errors.phone = "Номер телефона слишком короткий. Исправьте или очистите поле.";
