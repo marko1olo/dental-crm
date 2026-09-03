@@ -19,15 +19,19 @@ import {
 	Info,
 	Flame,
 	Crosshair,
+	UploadCloud,
 } from "lucide-react";
 import {
 	measureDistanceToMandibularNerve,
 	measureDistanceToMaxillarySinus,
 	measure3DDistanceMm,
+	parseDicomDataset,
+	type ParsedDicomDataset,
 	type Point3D,
 	type MandibularNerveMeasurement,
 	type MaxillarySinusMeasurement,
 } from "@dental/shared";
+import * as fflate from "fflate";
 import {
 	type ExtendedMischClass,
 	classifyMischBoneDensity,
@@ -61,6 +65,104 @@ export interface CbctMprWorkspaceProps {
 	readonly studyDate?: string;
 	readonly voxelSpacing?: { readonly x: number; readonly y: number; readonly z: number };
 	readonly authHeaders?: Record<string, string>;
+	readonly initialStudyFile?: File | null;
+	readonly initialIsStudyLoaded?: boolean;
+}
+
+/**
+ * Helper to locate PixelData tag (7FE0, 0010) in DICOM binary stream.
+ */
+function findDicomPixelDataOffset(buffer: Uint8Array): { offset: number; length: number } | null {
+	for (let i = 128; i < buffer.length - 12; i++) {
+		if (
+			buffer[i] === 0xe0 &&
+			buffer[i + 1] === 0x7f &&
+			buffer[i + 2] === 0x10 &&
+			buffer[i + 3] === 0x00
+		) {
+			const vr0 = String.fromCharCode(buffer[i + 4] ?? 0);
+			const vr1 = String.fromCharCode(buffer[i + 5] ?? 0);
+			const vr = vr0 + vr1;
+			const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+			if (vr === "OW" || vr === "OB" || vr === "UN") {
+				const length = view.getUint32(i + 8, true);
+				return {
+					offset: i + 12,
+					length: length === 0xffffffff ? buffer.length - (i + 12) : length,
+				};
+			}
+			const length = view.getUint32(i + 4, true);
+			return {
+				offset: i + 8,
+				length: length === 0xffffffff ? buffer.length - (i + 8) : length,
+			};
+		}
+	}
+	return null;
+}
+
+/**
+ * Decodes raw uncompressed DICOM slice bytes to an ImageBitmap with Hounsfield windowing.
+ */
+async function decodeDicomBytesToBitmap(
+	byteArray: Uint8Array,
+	windowCenter: number,
+	windowWidth: number,
+): Promise<{ bitmap: ImageBitmap; dataset: ParsedDicomDataset } | null> {
+	try {
+		const dataset = parseDicomDataset(byteArray);
+		const pixelInfo = findDicomPixelDataOffset(byteArray);
+		if (!pixelInfo) return null;
+
+		const width = dataset.columns || 512;
+		const height = dataset.rows || 512;
+		const bitsAllocated = dataset.bitsAllocated || 16;
+		const rescaleSlope = dataset.rescaleSlope ?? 1;
+		const rescaleIntercept = dataset.rescaleIntercept ?? 0;
+
+		const imgData = new ImageData(width, height);
+		const data = imgData.data;
+
+		if (bitsAllocated === 16) {
+			const view = new DataView(
+				byteArray.buffer,
+				byteArray.byteOffset + pixelInfo.offset,
+				pixelInfo.length,
+			);
+			const pixelCount = Math.min(width * height, Math.floor(pixelInfo.length / 2));
+			const isSigned = dataset.pixelRepresentation === 1;
+
+			for (let i = 0; i < pixelCount; i++) {
+				const raw = isSigned ? view.getInt16(i * 2, true) : view.getUint16(i * 2, true);
+				const hu = raw * rescaleSlope + rescaleIntercept;
+				const gray = huToGrayscale(hu, windowCenter, windowWidth);
+				const idx = i * 4;
+				data[idx] = gray;
+				data[idx + 1] = gray;
+				data[idx + 2] = gray;
+				data[idx + 3] = 255;
+			}
+		} else if (bitsAllocated === 8) {
+			const offset = pixelInfo.offset;
+			const pixelCount = Math.min(width * height, pixelInfo.length);
+			for (let i = 0; i < pixelCount; i++) {
+				const gray = byteArray[offset + i] ?? 0;
+				const idx = i * 4;
+				data[idx] = gray;
+				data[idx + 1] = gray;
+				data[idx + 2] = gray;
+				data[idx + 3] = 255;
+			}
+		} else {
+			return null;
+		}
+
+		const bitmap = await createImageBitmap(imgData);
+		return { bitmap, dataset };
+	} catch {
+		return null;
+	}
 }
 
 // Default mandibular nerve anatomical trajectory points (FDI 36..38 / 46..48 area)
@@ -81,6 +183,8 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	studyDate = "2026-08-20",
 	voxelSpacing = { x: 0.2, y: 0.2, z: 0.5 },
 	authHeaders = {},
+	initialStudyFile = null,
+	initialIsStudyLoaded = false,
 }) => {
 	// Viewport Slicing coordinates (Axial Z, Coronal Y, Sagittal X)
 	const [axialSliceZ, setAxialSliceZ] = useState<number>(50); // 0..100
@@ -245,12 +349,175 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	// Real-time density probing
 	const [probedHU, setProbedHU] = useState<number>(850);
 
+	// Study loading state & Zero-Mock Fallback management
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [loadedFile, setLoadedFile] = useState<File | null>(initialStudyFile ?? null);
+	const [loadedStudyName, setLoadedStudyName] = useState<string | null>(
+		initialStudyFile ? initialStudyFile.name : initialIsStudyLoaded ? "DICOM серия КЛКТ" : null,
+	);
+	const [isStudyLoaded, setIsStudyLoaded] = useState<boolean>(
+		Boolean(initialStudyFile || initialIsStudyLoaded),
+	);
+	const [isLoadingStudy, setIsLoadingStudy] = useState<boolean>(false);
+	const [loadedSliceBitmap, setLoadedSliceBitmap] = useState<ImageBitmap | null>(null);
+
+	useEffect(() => {
+		if (initialStudyFile) {
+			setLoadedFile(initialStudyFile);
+			setLoadedStudyName(initialStudyFile.name);
+			setIsStudyLoaded(true);
+		} else if (initialIsStudyLoaded) {
+			setIsStudyLoaded(true);
+			setLoadedStudyName("DICOM серия КЛКТ");
+		}
+	}, [initialStudyFile, initialIsStudyLoaded]);
+
 	const axialCanvasRef = useRef<HTMLCanvasElement>(null);
 	const coronalCanvasRef = useRef<HTMLCanvasElement>(null);
 	const sagittalCanvasRef = useRef<HTMLCanvasElement>(null);
 	const panoramicCanvasRef = useRef<HTMLCanvasElement>(null);
 
 	const currentPreset: VisiographWindowPreset = VISIOGRAPH_WINDOW_PRESETS[activePreset];
+
+	// Update slice bitmap when active preset changes on an already loaded file
+	useEffect(() => {
+		if (!loadedFile) return;
+		let isCancelled = false;
+
+		const updatePresetBitmap = async () => {
+			try {
+				const lower = loadedFile.name.toLowerCase();
+				const arrayBuffer = await loadedFile.arrayBuffer();
+				const byteArray = new Uint8Array(arrayBuffer);
+
+				if (lower.endsWith(".zip")) {
+					const unzipped = fflate.unzipSync(byteArray, {
+						filter(f) {
+							const fn = f.name.toLowerCase();
+							return fn.endsWith(".dcm") || fn.endsWith(".dicom");
+						},
+					});
+					const dcmKeys = Object.keys(unzipped);
+					if (dcmKeys.length > 0 && dcmKeys[0]) {
+						const firstDcmBytes = unzipped[dcmKeys[0]];
+						if (firstDcmBytes) {
+							const decoded = await decodeDicomBytesToBitmap(
+								firstDcmBytes,
+								currentPreset.windowCenter,
+								currentPreset.windowWidth,
+							);
+							if (!isCancelled && decoded) {
+								setLoadedSliceBitmap((prev) => {
+									prev?.close?.();
+									return decoded.bitmap;
+								});
+							}
+						}
+					}
+				} else {
+					const decoded = await decodeDicomBytesToBitmap(
+						byteArray,
+						currentPreset.windowCenter,
+						currentPreset.windowWidth,
+					);
+					if (!isCancelled && decoded) {
+						setLoadedSliceBitmap((prev) => {
+							prev?.close?.();
+							return decoded.bitmap;
+						});
+					}
+				}
+			} catch {
+				// Keep current bitmap on preset decode error
+			}
+		};
+
+		void updatePresetBitmap();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, [activePreset, currentPreset.windowCenter, currentPreset.windowWidth, loadedFile]);
+
+	// Handle loading real CBCT/DICOM research
+	const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		const lower = file.name.toLowerCase();
+		const isValid = lower.endsWith(".dcm") || lower.endsWith(".dicom") || lower.endsWith(".zip");
+		if (!isValid) {
+			showToast("Недопустимый формат файла. Поддерживаются только .dcm, .dicom или архивы .zip", "error");
+			return;
+		}
+
+		setIsLoadingStudy(true);
+		try {
+			const arrayBuffer = await file.arrayBuffer();
+			const byteArray = new Uint8Array(arrayBuffer);
+
+			if (lower.endsWith(".zip")) {
+				try {
+					const unzipped = fflate.unzipSync(byteArray, {
+						filter(f) {
+							const fn = f.name.toLowerCase();
+							return fn.endsWith(".dcm") || fn.endsWith(".dicom");
+						},
+					});
+					const dcmKeys = Object.keys(unzipped);
+					if (dcmKeys.length > 0 && dcmKeys[0]) {
+						const firstDcmBytes = unzipped[dcmKeys[0]];
+						if (firstDcmBytes) {
+							const decoded = await decodeDicomBytesToBitmap(
+								firstDcmBytes,
+								currentPreset.windowCenter,
+								currentPreset.windowWidth,
+							);
+							if (decoded) {
+								setLoadedSliceBitmap((prev) => {
+									prev?.close?.();
+									return decoded.bitmap;
+								});
+							}
+						}
+					}
+				} catch {
+					// Archive marked as loaded even if direct in-memory decode encounters issues
+				}
+				setLoadedFile(file);
+				setLoadedStudyName(file.name);
+				setIsStudyLoaded(true);
+				showToast(`КЛКТ архив "${file.name}" загружен (${(file.size / (1024 * 1024)).toFixed(1)} МБ)`, "success");
+			} else {
+				const decoded = await decodeDicomBytesToBitmap(
+					byteArray,
+					currentPreset.windowCenter,
+					currentPreset.windowWidth,
+				);
+				if (decoded) {
+					setLoadedSliceBitmap((prev) => {
+						prev?.close?.();
+						return decoded.bitmap;
+					});
+				}
+				setLoadedFile(file);
+				setLoadedStudyName(file.name);
+				setIsStudyLoaded(true);
+				showToast(`КЛКТ срез "${file.name}" успешно загружен (${(file.size / (1024 * 1024)).toFixed(1)} МБ)`, "success");
+			}
+		} catch {
+			showToast("Ошибка при чтении файла КЛКТ исследования", "error");
+		} finally {
+			setIsLoadingStudy(false);
+			if (fileInputRef.current) {
+				fileInputRef.current.value = "";
+			}
+		}
+	};
+
+	const handleUploadClick = () => {
+		fileInputRef.current?.click();
+	};
 
 	// Caliper Measurements
 	const nerveMeasurement: MandibularNerveMeasurement = useMemo(() => {
@@ -290,49 +557,74 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 			ctx.fillStyle = "#09090b";
 			ctx.fillRect(0, 0, w, h);
 
-			// Draw synthetic bone gradient and anatomy simulation for real-time visualization
-			const gradient = ctx.createRadialGradient(
-				w / 2,
-				h / 2,
-				10,
-				w / 2,
-				h / 2,
-				Math.min(w, h) / 2.2,
-			);
-			gradient.addColorStop(0, "#27272a");
-			gradient.addColorStop(0.5, "#18181b");
-			gradient.addColorStop(1, "#09090b");
-			ctx.fillStyle = gradient;
-			ctx.beginPath();
-			ctx.arc(w / 2, h / 2, Math.min(w, h) / 2.2, 0, Math.PI * 2);
-			ctx.fill();
+			if (!isStudyLoaded) {
+				// Pure calibration grid (#09090b + thin lines 40px)
+				ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				for (let x = 0; x <= w; x += 40) {
+					ctx.moveTo(x + 0.5, 0);
+					ctx.lineTo(x + 0.5, h);
+				}
+				for (let y = 0; y <= h; y += 40) {
+					ctx.moveTo(0, y + 0.5);
+					ctx.lineTo(w, y + 0.5);
+				}
+				ctx.stroke();
 
-			// Draw mandibular arch contour
-			ctx.strokeStyle = "rgba(45, 212, 191, 0.4)";
-			ctx.lineWidth = 2;
-			ctx.beginPath();
-			ctx.ellipse(w / 2, h / 2 + 10, w / 3, h / 3.5, 0, 0, Math.PI);
-			ctx.stroke();
+				// Clear clinical state message on canvas
+				ctx.fillStyle = "#e4e4e7";
+				ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText("КЛКТ исследование не загружено.", w / 2, h / 2 - 12);
 
-			// Draw Mandibular Canal Path
-			ctx.strokeStyle = nerveMeasurement.safetyZone === "danger" ? "#ef4444" : nerveMeasurement.safetyZone === "warning" ? "#f59e0b" : "#10b981";
-			ctx.lineWidth = 3;
-			ctx.setLineDash([4, 4]);
-			ctx.beginPath();
-			ctx.moveTo(w * 0.25, h * 0.65);
-			ctx.quadraticCurveTo(w * 0.5, h * 0.72, w * 0.75, h * 0.65);
-			ctx.stroke();
-			ctx.setLineDash([]);
+				ctx.fillStyle = "#a1a1aa";
+				ctx.font = "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+				ctx.fillText(
+					"Нажмите кнопку загрузки для выбора DICOM серии пациента",
+					w / 2,
+					h / 2 + 12,
+				);
+				return;
+			}
 
-			// Draw implant marker
-			ctx.fillStyle = "#3b82f6";
-			ctx.beginPath();
-			ctx.arc(w * 0.55, h * 0.58, 5, 0, Math.PI * 2);
-			ctx.fill();
+			// REAL STUDY RENDERING
+			if (loadedSliceBitmap) {
+				ctx.drawImage(loadedSliceBitmap, 0, 0, w, h);
+			} else {
+				// Real study loaded without decoded single-slice bitmap (e.g. multi-volume archive)
+				ctx.fillStyle = "#09090b";
+				ctx.fillRect(0, 0, w, h);
+
+				// Calibrated grid for loaded study
+				ctx.strokeStyle = "rgba(45, 212, 191, 0.15)";
+				ctx.lineWidth = 1;
+				ctx.beginPath();
+				for (let x = 0; x <= w; x += 40) {
+					ctx.moveTo(x + 0.5, 0);
+					ctx.lineTo(x + 0.5, h);
+				}
+				for (let y = 0; y <= h; y += 40) {
+					ctx.moveTo(0, y + 0.5);
+					ctx.lineTo(w, y + 0.5);
+				}
+				ctx.stroke();
+
+				// Slice information
+				ctx.fillStyle = "#a1a1aa";
+				ctx.font = "11px monospace";
+				ctx.textAlign = "left";
+				ctx.textBaseline = "top";
+				ctx.fillText(`Срез: ${type.toUpperCase()}`, 12, 12);
+				if (loadedStudyName) {
+					ctx.fillText(`Файл: ${loadedStudyName}`, 12, 28);
+				}
+			}
 
 			// Crosshair Lines
 			if (crosshairActive) {
-				ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+				ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
 				ctx.lineWidth = 1;
 				ctx.beginPath();
 				ctx.moveTo(w / 2, 0);
@@ -343,7 +635,9 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 			}
 		},
 		[
-			nerveMeasurement.safetyZone,
+			isStudyLoaded,
+			loadedSliceBitmap,
+			loadedStudyName,
 			crosshairActive,
 		],
 	);
@@ -355,7 +649,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 		renderSlice(panoramicCanvasRef.current, "panoramic");
 	}, [renderSlice]);
 
-	// Cleanup canvas buffers and 2D contexts upon unmount to prevent memory leaks
+	// Cleanup canvas buffers, 2D contexts, and ImageBitmaps upon unmount to prevent memory leaks
 	useEffect(() => {
 		const canvases = [
 			axialCanvasRef.current,
@@ -372,12 +666,21 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 					}
 				}
 			}
+			loadedSliceBitmap?.close?.();
 		};
-	}, []);
+	}, [loadedSliceBitmap]);
 
 	if (!isOpen) return null;
 
 	const handleExportTo043 = async () => {
+		if (!isStudyLoaded) {
+			showToast(
+				"Экспорт заблокирован: исследование КЛКТ не загружено. Прикрепление синтетических макетов запрещено стандартом клиники",
+				"error",
+			);
+			return;
+		}
+
 		if (!patientId) {
 			showToast("Пациент не выбран. Откройте снимок из амбулаторной карты для прикрепления к Форме 043/у.", "error");
 			return;
@@ -435,6 +738,14 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 	};
 
 	const handleDownloadJpg = () => {
+		if (!isStudyLoaded) {
+			showToast(
+				"Экспорт заблокирован: исследование КЛКТ не загружено. Прикрепление синтетических макетов запрещено стандартом клиники",
+				"error",
+			);
+			return;
+		}
+
 		const canvas = panoramicCanvasRef.current;
 		if (!canvas) return;
 		const dataUri = captureHighDpiCanvas(canvas, {
@@ -460,9 +771,26 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 							<span className="text-[11px] font-medium px-2 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
 								МПР 4-квадранта
 							</span>
+							{loadedStudyName ? (
+								<span
+									className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 max-w-[200px] truncate"
+									title={loadedStudyName}
+								>
+									{loadedStudyName}
+								</span>
+							) : (
+								<span className="text-[11px] font-medium px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-800/60">
+									Нет файла КТ
+								</span>
+							)}
 						</h2>
 						<p className="text-xs text-neutral-400">
 							{patientName} • {studyDate} • Воксель: {voxelSpacing.x}×{voxelSpacing.y}×{voxelSpacing.z} мм
+							{!isStudyLoaded && (
+								<span className="text-amber-400 font-medium ml-1.5">
+									• Исследование не загружено
+								</span>
+							)}
 						</p>
 					</div>
 				</div>
@@ -518,11 +846,38 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 
 				{/* Right Actions */}
 				<div className="flex items-center gap-2">
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept=".dcm,.dicom,.zip"
+						className="hidden"
+						onChange={handleFileUpload}
+					/>
+					<button
+						type="button"
+						onClick={handleUploadClick}
+						disabled={isLoadingStudy}
+						className="min-h-[44px] px-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-neutral-700"
+						title="Загрузить реальное КЛКТ исследование (.dcm, .dicom, .zip)"
+					>
+						<UploadCloud className="w-4 h-4 text-[var(--teal)]" />
+						<span>{isLoadingStudy ? "Загрузка..." : isStudyLoaded ? "Сменить КЛКТ" : "Загрузить КЛКТ"}</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={handleExportTo043}
 						disabled={isExporting}
-						className="min-h-[44px] px-3.5 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer"
+						className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer ${
+							isStudyLoaded
+								? "bg-[var(--teal)] hover:opacity-90 text-white"
+								: "bg-neutral-800 text-neutral-400 hover:bg-neutral-700 cursor-not-allowed"
+						}`}
+						title={
+							isStudyLoaded
+								? "Прикрепить срез к форме 043/у"
+								: "Экспорт заблокирован: исследование КЛКТ не загружено"
+						}
 					>
 						<Camera className="w-4 h-4" />
 						<span>В карту 043/у</span>
@@ -530,7 +885,16 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 					<button
 						type="button"
 						onClick={handleDownloadJpg}
-						className="min-h-[44px] px-3.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+						className={`min-h-[44px] px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+							isStudyLoaded
+								? "bg-neutral-800 hover:bg-neutral-700 text-white"
+								: "bg-neutral-900 text-neutral-500 cursor-not-allowed border border-neutral-800"
+						}`}
+						title={
+							isStudyLoaded
+								? "Сохранить JPG срез на диск"
+								: "Скачивание заблокировано: исследование КЛКТ не загружено"
+						}
 					>
 						<Download className="w-4 h-4" />
 						<span>JPG</span>
@@ -570,12 +934,25 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 								transformOrigin: "center center",
 							}}
 						/>
+						{!isStudyLoaded && (
+							<div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none select-none text-center bg-black/20">
+								<UploadCloud className="w-7 h-7 text-neutral-500 mb-2 opacity-60" />
+								<p className="text-xs font-bold text-neutral-300 mb-0.5">
+									КЛКТ исследование не загружено
+								</p>
+								<p className="text-[11px] text-neutral-400 max-w-[240px] leading-tight">
+									Нажмите кнопку загрузки для выбора DICOM серии пациента
+								</p>
+							</div>
+						)}
 					</div>
 					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
 					<div className="cbct-slice-coord-badge">
 						<span className="cbct-coord-label">Срез:</span>
-						<span className="cbct-coord-value text-[var(--teal)]">Z: {axialSliceZ} мм</span>
-						{transforms.axial.zoom !== 1 && (
+						<span className="cbct-coord-value text-[var(--teal)]">
+							{isStudyLoaded ? `Z: ${axialSliceZ} мм` : "Сетка калибровки"}
+						</span>
+						{isStudyLoaded && transforms.axial.zoom !== 1 && (
 							<button
 								type="button"
 								onClick={() => resetZoom("axial")}
@@ -610,12 +987,25 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 								transformOrigin: "center center",
 							}}
 						/>
+						{!isStudyLoaded && (
+							<div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none select-none text-center bg-black/20">
+								<UploadCloud className="w-7 h-7 text-neutral-500 mb-2 opacity-60" />
+								<p className="text-xs font-bold text-neutral-300 mb-0.5">
+									КЛКТ исследование не загружено
+								</p>
+								<p className="text-[11px] text-neutral-400 max-w-[240px] leading-tight">
+									Нажмите кнопку загрузки для выбора DICOM серии пациента
+								</p>
+							</div>
+						)}
 					</div>
 					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
 					<div className="cbct-slice-coord-badge">
 						<span className="cbct-coord-label">Срез:</span>
-						<span className="cbct-coord-value text-blue-400">Y: {coronalSliceY} мм</span>
-						{transforms.coronal.zoom !== 1 && (
+						<span className="cbct-coord-value text-blue-400">
+							{isStudyLoaded ? `Y: ${coronalSliceY} мм` : "Сетка калибровки"}
+						</span>
+						{isStudyLoaded && transforms.coronal.zoom !== 1 && (
 							<button
 								type="button"
 								onClick={() => resetZoom("coronal")}
@@ -650,12 +1040,25 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 								transformOrigin: "center center",
 							}}
 						/>
+						{!isStudyLoaded && (
+							<div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none select-none text-center bg-black/20">
+								<UploadCloud className="w-7 h-7 text-neutral-500 mb-2 opacity-60" />
+								<p className="text-xs font-bold text-neutral-300 mb-0.5">
+									КЛКТ исследование не загружено
+								</p>
+								<p className="text-[11px] text-neutral-400 max-w-[240px] leading-tight">
+									Нажмите кнопку загрузки для выбора DICOM серии пациента
+								</p>
+							</div>
+						)}
 					</div>
 					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
 					<div className="cbct-slice-coord-badge">
 						<span className="cbct-coord-label">Срез:</span>
-						<span className="cbct-coord-value text-amber-400">X: {sagittalSliceX} мм</span>
-						{transforms.sagittal.zoom !== 1 && (
+						<span className="cbct-coord-value text-amber-400">
+							{isStudyLoaded ? `X: ${sagittalSliceX} мм` : "Сетка калибровки"}
+						</span>
+						{isStudyLoaded && transforms.sagittal.zoom !== 1 && (
 							<button
 								type="button"
 								onClick={() => resetZoom("sagittal")}
@@ -690,12 +1093,25 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 								transformOrigin: "center center",
 							}}
 						/>
+						{!isStudyLoaded && (
+							<div className="absolute inset-0 flex flex-col items-center justify-center p-4 pointer-events-none select-none text-center bg-black/20">
+								<UploadCloud className="w-7 h-7 text-neutral-500 mb-2 opacity-60" />
+								<p className="text-xs font-bold text-neutral-300 mb-0.5">
+									КЛКТ исследование не загружено
+								</p>
+								<p className="text-[11px] text-neutral-400 max-w-[240px] leading-tight">
+									Нажмите кнопку загрузки для выбора DICOM серии пациента
+								</p>
+							</div>
+						)}
 					</div>
 					{/* High-contrast DOM coordinate badge (>=13px bold with backdrop-blur-md) */}
 					<div className="cbct-slice-coord-badge">
 						<span className="cbct-coord-label">Дуга:</span>
-						<span className="cbct-coord-value text-emerald-400">FDI 11..48</span>
-						{transforms.panoramic.zoom !== 1 && (
+						<span className="cbct-coord-value text-emerald-400">
+							{isStudyLoaded ? "FDI 11..48" : "Сетка калибровки"}
+						</span>
+						{isStudyLoaded && transforms.panoramic.zoom !== 1 && (
 							<button
 								type="button"
 								onClick={() => resetZoom("panoramic")}
@@ -711,56 +1127,65 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 
 			{/* CLINICAL CALIPER HUD OVERLAY */}
 			<div className="cbct-caliper-hud">
-				{activeTool === "caliper_nerve" && (
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
-								<Crosshair className="w-3.5 h-3.5 text-blue-400" />
-								Нижнечелюстной канал (N. Alveolaris Inferior):
-							</span>
-							<span
-								className={`px-2 py-0.5 rounded text-xs font-black ${
-									nerveMeasurement.safetyZone === "safe"
-										? "cbct-badge-safe"
-										: nerveMeasurement.safetyZone === "warning"
-											? "cbct-badge-warning"
-											: "cbct-badge-danger"
-								}`}
-							>
-								{nerveMeasurement.distanceMm} мм
-							</span>
-						</div>
-						<p className="text-[11px] text-neutral-300 leading-tight">
-							{nerveMeasurement.clinicalAdvice}
-						</p>
+				{!isStudyLoaded ? (
+					<div className="flex items-center gap-2 text-xs text-neutral-400 py-1">
+						<Info className="w-4 h-4 text-amber-400 shrink-0" />
+						<span>Калибры и плотность HU неактивны: загрузите DICOM серию исследования КЛКТ.</span>
 					</div>
-				)}
+				) : (
+					<>
+						{activeTool === "caliper_nerve" && (
+							<div className="flex flex-col gap-2">
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
+										<Crosshair className="w-3.5 h-3.5 text-blue-400" />
+										Нижнечелюстной канал (N. Alveolaris Inferior):
+									</span>
+									<span
+										className={`px-2 py-0.5 rounded text-xs font-black ${
+											nerveMeasurement.safetyZone === "safe"
+												? "cbct-badge-safe"
+												: nerveMeasurement.safetyZone === "warning"
+													? "cbct-badge-warning"
+													: "cbct-badge-danger"
+										}`}
+									>
+										{nerveMeasurement.distanceMm} мм
+									</span>
+								</div>
+								<p className="text-[11px] text-neutral-300 leading-tight">
+									{nerveMeasurement.clinicalAdvice}
+								</p>
+							</div>
+						)}
 
-				{activeTool === "caliper_sinus" && (
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
-								<Sliders className="w-3.5 h-3.5 text-[var(--teal)]" />
-								Дно гайморовой пазухи (Sinus Floor):
-							</span>
-							<span className="px-2 py-0.5 rounded text-xs font-black bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
-								{sinusMeasurement.residualBoneHeightMm} мм
-							</span>
-						</div>
-						<p className="text-[11px] text-neutral-300 leading-tight">
-							{sinusMeasurement.clinicalAdvice}
-						</p>
-					</div>
-				)}
+						{activeTool === "caliper_sinus" && (
+							<div className="flex flex-col gap-2">
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-bold text-neutral-300 flex items-center gap-1.5">
+										<Sliders className="w-3.5 h-3.5 text-[var(--teal)]" />
+										Дно гайморовой пазухи (Sinus Floor):
+									</span>
+									<span className="px-2 py-0.5 rounded text-xs font-black bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)]">
+										{sinusMeasurement.residualBoneHeightMm} мм
+									</span>
+								</div>
+								<p className="text-[11px] text-neutral-300 leading-tight">
+									{sinusMeasurement.clinicalAdvice}
+								</p>
+							</div>
+						)}
 
-				{/* Misch Bone Quality Bar */}
-				<div className="mt-2 pt-2 border-t border-neutral-800 flex items-center justify-between text-[11px]">
-					<div className="flex items-center gap-1.5">
-						<span className="font-bold text-neutral-400">Плотность кости:</span>
-						<span className="font-bold text-[var(--teal)]">{boneQuality.label}</span>
-					</div>
-					<span className="font-mono text-neutral-300">{probedHU} HU</span>
-				</div>
+						{/* Misch Bone Quality Bar */}
+						<div className="mt-2 pt-2 border-t border-neutral-800 flex items-center justify-between text-[11px]">
+							<div className="flex items-center gap-1.5">
+								<span className="font-bold text-neutral-400">Плотность кости:</span>
+								<span className="font-bold text-[var(--teal)]">{boneQuality.label}</span>
+							</div>
+							<span className="font-mono text-neutral-300">{probedHU} HU</span>
+						</div>
+					</>
+				)}
 			</div>
 		</div>
 	);

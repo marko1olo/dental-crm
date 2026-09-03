@@ -39,97 +39,10 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 	onBindPackage,
 	onInsertToProtocol,
 }) => {
-	const defaultSamplePackages: KraftPackageRecord[] = useMemo(() => {
-		const now = new Date();
-		const packDate = now.toISOString().slice(0, 10);
-		const expDateObj = new Date(now.getTime() + 50 * 24 * 60 * 60 * 1000);
-		const expDate = expDateObj.toISOString().slice(0, 10);
-
-		return [
-			{
-				id: "sample-kp-1",
-				batchId: "KB-20260825-01",
-				serialNumber: 1,
-				packageType: "paper_self_seal_single",
-				packageSize: "size_100x200",
-				toolSetId: "set_therapeutic_tray",
-				toolSetNameRu: "Набор терапевтический (лоток)",
-				itemsListRu: ["Зеркало", "Зонд угловой", "Пинцет", "Штопфер-гладилка", "Экскаватор"],
-				packDate,
-				expDate,
-				daysLifespan: 50,
-				daysRemaining: 50,
-				status: "sterile_valid",
-				autoclaveId: "AUTO-01",
-				cycleNumber: 1,
-				operatorId: "NURSE-01",
-				operatorName: "Смирнова А.В.",
-				indicatorId: "vinar_steritest_4",
-				indicatorVerified: true,
-				barcode128: "KB2608250001",
-				barcodeDataMatrixPayload: `KB-20260825-01#1|AUTO-01|CYC1|${packDate}|${expDate}|NURSE-01|SET-THER`,
-				isBreached: false,
-				notes: "Контроль автоклава пройден",
-				createdAt: now.toISOString(),
-			},
-			{
-				id: "sample-kp-2",
-				batchId: "KB-20260825-02",
-				serialNumber: 4,
-				packageType: "paper_self_seal_single",
-				packageSize: "size_75x150",
-				toolSetId: "set_endodontic_files",
-				toolSetNameRu: "Эндодонтический набор файлов",
-				itemsListRu: ["Эндобокс", "K-файлы #15-40", "Спредер", "Плаггер", "Линейка"],
-				packDate,
-				expDate,
-				daysLifespan: 50,
-				daysRemaining: 50,
-				status: "sterile_valid",
-				autoclaveId: "AUTO-01",
-				cycleNumber: 2,
-				operatorId: "NURSE-01",
-				operatorName: "Смирнова А.В.",
-				indicatorId: "vinar_steritest_4",
-				indicatorVerified: true,
-				barcode128: "KB2608250004",
-				barcodeDataMatrixPayload: `KB-20260825-02#4|AUTO-01|CYC2|${packDate}|${expDate}|NURSE-01|SET-ENDO`,
-				isBreached: false,
-				notes: "Стерилизация эндодонтических инструментов",
-				createdAt: now.toISOString(),
-			},
-			{
-				id: "sample-kp-3",
-				batchId: "KB-20260825-03",
-				serialNumber: 2,
-				packageType: "paper_plastic_pouch",
-				packageSize: "size_150x250",
-				toolSetId: "set_surgical_standard",
-				toolSetNameRu: "Хирургический набор (щипцы/элеваторы)",
-				itemsListRu: ["Щипцы байонетные", "Элеватор прямой", "Кюрета", "Иглодержатель", "Скальпель"],
-				packDate,
-				expDate,
-				daysLifespan: 180,
-				daysRemaining: 180,
-				status: "sterile_valid",
-				autoclaveId: "AUTO-02",
-				cycleNumber: 1,
-				operatorId: "NURSE-02",
-				operatorName: "Ковалева Е.И.",
-				indicatorId: "integrator_class_5",
-				indicatorVerified: true,
-				barcode128: "KB2608250002",
-				barcodeDataMatrixPayload: `KB-20260825-03#2|AUTO-02|CYC1|${packDate}|${expDate}|NURSE-02|SET-SURG`,
-				isBreached: false,
-				notes: "Хирургический комплект (СанПиН 180 сут.)",
-				createdAt: now.toISOString(),
-			},
-		];
-	}, []);
 
 	const availablePackages = activeBatchRecords && activeBatchRecords.length > 0
 		? activeBatchRecords
-		: defaultSamplePackages;
+		: [];
 
 	const [selectedPackageId, setSelectedPackageId] = useState<string>(
 		availablePackages[0]?.id || "",
@@ -218,8 +131,13 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 			</div>
 
 			{/* Active Package Selector Carousel/Grid */}
-			<div className="dente-packages-selector-grid">
-				{availablePackages.map((pkg) => {
+			{availablePackages.length === 0 ? (
+				<div className="p-4 text-center text-sm text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line,#e2e8f0)]">
+					Нет доступных стерильных крафт-пакетов из текущего журнала ЦСО. Отсканируйте или введите штрихкод пакета вручную для привязки.
+				</div>
+			) : (
+				<div className="dente-packages-selector-grid">
+					{availablePackages.map((pkg) => {
 					const isSelected = selectedPackageId === pkg.id;
 					const isBound = boundPackages.some((p) => p.id === pkg.id);
 					return (
@@ -248,7 +166,8 @@ export const ToothSanpinKraftBinding: React.FC<ToothSanpinKraftBindingProps> = (
 						</div>
 					);
 				})}
-			</div>
+				</div>
+			)}
 
 			{/* Selected Package Detailed Inspector & 2D DataMatrix */}
 			{currentPackage && (

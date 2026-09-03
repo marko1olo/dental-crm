@@ -3,13 +3,19 @@
  */
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	measureDistanceToMandibularNerve,
 	measureDistanceToMaxillarySinus,
 	measure3DDistanceMm,
 	type Point3D,
 } from "@dental/shared";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("3D CBCT Multi-Planar Reconstruction (MPR) & Caliper Calculations", () => {
 	it("3.1 Accurately calculates 3D Euclidean distance between calibrated voxels", () => {
@@ -71,5 +77,49 @@ describe("3D CBCT Multi-Planar Reconstruction (MPR) & Caliper Calculations", () 
 		const resLow = measureDistanceToMaxillarySinus(alveolarCrest, lowSinusFloor, spacing);
 		assert.equal(resLow.sinusLiftRecommended, true);
 		assert.equal(resLow.sinusLiftType, "lateral_open");
+	});
+
+	it("3.4 Zero-Mock Fallback: source code contains no procedural fake bone gradients or synthetic jaw dioramas", () => {
+		const source = fs.readFileSync(
+			path.resolve(__dirname, "../CbctMprWorkspace.tsx"),
+			"utf-8",
+		);
+
+		// Must NOT contain synthetic canvas diorama generators
+		assert.equal(
+			source.includes("ctx.createRadialGradient"),
+			false,
+			"Source code must not contain fake radial gradients simulating bone tissue",
+		);
+		assert.equal(
+			source.includes("Math.min(w, h) / 2.2"),
+			false,
+			"Source code must not contain fake arc jaw simulations",
+		);
+
+		// Must contain clean 40px calibration grid and honest clinical state
+		assert.ok(
+			source.includes("КЛКТ исследование не загружено"),
+			"Source code must display clear clinical state when CBCT is not loaded",
+		);
+		assert.ok(
+			source.includes("x += 40") && source.includes("y += 40"),
+			"Source code must draw clean 40px calibration grid",
+		);
+	});
+
+	it("3.5 Export security gate: blocks export to 043/у without loaded CBCT study", () => {
+		const source = fs.readFileSync(
+			path.resolve(__dirname, "../CbctMprWorkspace.tsx"),
+			"utf-8",
+		);
+
+		// Must block export when isStudyLoaded is false with exact clinical error message
+		const expectedBlockMessage =
+			"Экспорт заблокирован: исследование КЛКТ не загружено. Прикрепление синтетических макетов запрещено стандартом клиники";
+		assert.ok(
+			source.includes(expectedBlockMessage),
+			`Source code must contain exact clinical block message: "${expectedBlockMessage}"`,
+		);
 	});
 });
