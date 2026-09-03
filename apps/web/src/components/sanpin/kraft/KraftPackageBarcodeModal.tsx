@@ -712,17 +712,21 @@ export function KraftPackageBarcodeModal({
 												key={p.id}
 												type="button"
 												onClick={() => handleApplyPopularPreset(p)}
-												className="sanpin-tag"
+												className="sanpin-tag touch-manipulation"
 												style={{
 													cursor: "pointer",
-													fontSize: "0.75rem",
-													padding: "0.3rem 0.6rem",
-													borderRadius: "6px",
+													minHeight: "44px",
+													fontSize: "0.82rem",
+													padding: "0.5rem 0.85rem",
+													borderRadius: "8px",
+													display: "inline-flex",
+													alignItems: "center",
+													justifyContent: "center",
 													border: selectedMaterialId === p.materialId && selectedSizeId === p.sizeId
-														? "1px solid var(--teal, #0d9488)"
+														? "2px solid var(--teal, #0d9488)"
 														: "1px solid var(--line, #cbd5e1)",
 													background: selectedMaterialId === p.materialId && selectedSizeId === p.sizeId
-														? "rgba(13, 148, 136, 0.12)"
+														? "rgba(13, 148, 136, 0.15)"
 														: "var(--paper, #fff)",
 													color: "var(--ink, #0f172a)",
 													fontWeight: 600,
@@ -748,9 +752,10 @@ export function KraftPackageBarcodeModal({
 												key={set.id}
 												onClick={() => handleToolSetChange(set.id)}
 												className={`kraft-preset-item ${selectedToolSetId === set.id ? "selected" : ""}`}
+												style={{ minHeight: "68px" }}
 											>
-												<div className="kraft-preset-title">{set.nameRu}</div>
-												<div className="kraft-preset-desc">{set.typicalItemsRu.slice(0, 3).join(", ")}...</div>
+												<div className="kraft-preset-title" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>{set.nameRu}</div>
+												<div className="kraft-preset-desc" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>{set.typicalItemsRu.slice(0, 3).join(", ")}...</div>
 												<span className="kraft-preset-badge">{set.shortCode}</span>
 											</div>
 										))}

@@ -15,6 +15,7 @@ export type AutoclaveDeviceClass = 'class_b' | 'class_s' | 'class_n';
 export type AutoclavePackagingType =
 	| 'kraft_paper_sealed'
 	| 'kraft_paper_crepe'
+	| 'crepe_paper_double'
 	| 'sterilization_cassette_bipack'
 	| 'unwrapped_tray';
 
@@ -84,11 +85,19 @@ export const SANPIN_PACKAGING_RULES: Record<AutoclavePackagingType, PackagingShe
 	},
 	kraft_paper_crepe: {
 		packagingType: 'kraft_paper_crepe',
-		nameRu: 'Крафт-пакет самозаклеивающийся / Креп-бумага',
+		nameRu: 'Крафт-пакет бумажный самозаклеивающийся',
 		shelfLifeDays: 50,
 		sealMethodRu: 'Клеевой клапан с защитной лентой',
 		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3632',
-		descriptionRu: 'Бумажные крафт-пакеты с липким слоем (до 50 суток) или стерилизационная крепированная бумага (до 60 суток).'
+		descriptionRu: 'Бумажные крафт-пакеты с липким слоем — до 50 суток в закрытых сухих шкафах.'
+	},
+	crepe_paper_double: {
+		packagingType: 'crepe_paper_double',
+		nameRu: 'Крепированная бумага (двойная обертка)',
+		shelfLifeDays: 60,
+		sealMethodRu: 'Метод конверта с фиксацией индикаторной лентой',
+		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3633',
+		descriptionRu: 'Стерилизационная крепированная бумага в 2 слоя — до 60 суток.'
 	},
 	sterilization_cassette_bipack: {
 		packagingType: 'sterilization_cassette_bipack',

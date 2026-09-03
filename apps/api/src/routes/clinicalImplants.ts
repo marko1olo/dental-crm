@@ -198,52 +198,55 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 							eq(inventoryItems.organizationId, orgId),
 						),
 					)
+					.for("update")
 					.limit(1);
 
-				if (invItem) {
-					const currentStock = Number(invItem.currentQty ?? invItem.stockQuantity ?? 0);
-					const newStock = Math.max(0, currentStock - 1);
-					const unitCostRub = invItem.unitCostRub ?? invItem.pricePerUnit ?? null;
-
-					await tx
-						.update(inventoryItems)
-						.set({
-							currentQty: String(newStock),
-							stockQuantity: String(newStock),
-							updatedAt: new Date(),
-						})
-						.where(
-							and(
-								eq(inventoryItems.id, invItem.id),
-								eq(inventoryItems.organizationId, orgId),
-							),
-						);
-
-					const [txRecord] = await tx
-						.insert(inventoryTransactions)
-						.values({
-							organizationId: orgId,
-							itemId: invItem.id,
-							inventoryItemId: invItem.id,
-							visitId: input.visitId ?? null,
-							transactionType: "auto_deduct",
-							qty: "-1.000",
-							quantityChanged: "-1.000",
-							unitCostRub,
-							userId: identity.userId ?? null,
-							notes: `Списание имплантата ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм для зуба FDI ${input.toothNumberFdi} (установка ${installation.id})`,
-						})
-						.returning({ id: inventoryTransactions.id });
-
-					inventoryDeduction = {
-						transactionId: txRecord?.id ?? "",
-						itemId: invItem.id,
-						itemName: invItem.name,
-						previousStock: currentStock,
-						newStock,
-						unitCostRub,
-					};
+				if (!invItem) {
+					throw new Error(`Товар с артикулом ${input.catalogItemId} не найден на складе организации.`);
 				}
+
+				const currentStock = Number(invItem.currentQty ?? invItem.stockQuantity ?? 0);
+				const newStock = currentStock - 1; // Честный математический учет остатка (без сокрытия дефицита через Math.max)
+				const unitCostRub = invItem.unitCostRub ?? invItem.pricePerUnit ?? null;
+
+				await tx
+					.update(inventoryItems)
+					.set({
+						currentQty: String(newStock),
+						stockQuantity: String(newStock),
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(inventoryItems.id, invItem.id),
+							eq(inventoryItems.organizationId, orgId),
+						),
+					);
+
+				const [txRecord] = await tx
+					.insert(inventoryTransactions)
+					.values({
+						organizationId: orgId,
+						itemId: invItem.id,
+						inventoryItemId: invItem.id,
+						visitId: input.visitId ?? null,
+						transactionType: "auto_deduct",
+						qty: "-1.000",
+						quantityChanged: "-1.000",
+						unitCostRub,
+						userId: identity.userId ?? null,
+						notes: `Списание имплантата ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм для зуба FDI ${input.toothNumberFdi} (установка ${installation.id})`,
+					})
+					.returning({ id: inventoryTransactions.id });
+
+				inventoryDeduction = {
+					transactionId: txRecord?.id ?? "",
+					itemId: invItem.id,
+					itemName: invItem.name,
+					previousStock: currentStock,
+					newStock,
+					unitCostRub,
+				};
 			}
 
 			return {

@@ -573,7 +573,7 @@ export const DEFAULT_804N_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 				criticalThreshold: 30,
 			},
 			{
-				name: "Дентальный имплантат титановый конический (базовый хирургический артикул)",
+				name: "Дентальный имплантат Osstem TS III SA Ø4.0 L10 (хирургический артикул)",
 				category: "surgery",
 				unit: "шт.",
 				quantityToDeduct: 1,

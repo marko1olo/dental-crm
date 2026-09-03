@@ -156,7 +156,12 @@ export class MdlpDisposalService {
 				itemRecord = inserted as Record<string, unknown>;
 			}
 		} catch (_dbErr) {
-			// Fallback in-memory ledger
+			if (process.env.NODE_ENV === "production") {
+				throw new Error(
+					`[MDLP 10560 CRITICAL] Сбой регистрации маркировки в PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
+				);
+			}
+			// Fallback in-memory ledger (только для автономных unit-тестов)
 			let existing = fallbackLedger.get(parsed.sgtin);
 			if (!existing && autoRegister) {
 				const drug: Partial<DentalAnestheticInfo> = parsed.recognizedDrug ?? {};
@@ -384,6 +389,11 @@ export class MdlpDisposalService {
 					if (res) updatedItems.push(res as Record<string, unknown>);
 				}
 			} catch (_dbErr) {
+				if (process.env.NODE_ENV === "production") {
+					throw new Error(
+						`[MDLP 10560 CRITICAL] Сбой записи списания медикамента в PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
+					);
+				}
 				let item = fallbackLedger.get(it.sgtin);
 				if (!item) {
 					item = {
@@ -540,6 +550,11 @@ export class MdlpDisposalService {
 				items: itemsList as Record<string, unknown>[],
 			};
 		} catch (_dbErr) {
+			if (process.env.NODE_ENV === "production") {
+				throw new Error(
+					`[MDLP 10560 CRITICAL] Сбой чтения реестра МДЛП из PostgreSQL: ${_dbErr instanceof Error ? _dbErr.message : String(_dbErr)}. В продакшене запрещен in-memory fallback.`,
+				);
+			}
 			const fallbackLedger = getFallbackOrgLedger(orgId);
 			let list = Array.from(fallbackLedger.values());
 

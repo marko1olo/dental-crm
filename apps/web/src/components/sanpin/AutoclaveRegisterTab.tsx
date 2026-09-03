@@ -491,23 +491,23 @@ export function AutoclaveRegisterTab() {
 					}}
 				>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flex: "1 1 200px", minWidth: "160px", maxWidth: "340px", position: "relative" }}>
-						<Search size={14} style={{ position: "absolute", left: "0.6rem", color: "var(--muted, #94a3b8)" }} />
+						<Search size={16} style={{ position: "absolute", left: "0.75rem", color: "var(--muted, #94a3b8)" }} />
 						<input
 							type="text"
 							placeholder="Поиск по аппарату, лотку, штрихкоду, оператору..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "1.9rem", minHeight: "32px", height: "32px", fontSize: "0.78rem", width: "100%", borderRadius: "6px" }}
+							style={{ paddingLeft: "2.2rem", minHeight: "44px", height: "44px", fontSize: "0.85rem", width: "100%", borderRadius: "8px" }}
 						/>
 					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
 						<select
 							value={deviceFilter}
 							onChange={(e) => setDeviceFilter(e.target.value)}
 							className="sanpin-select"
-							style={{ minHeight: "32px", height: "32px", fontSize: "0.78rem", padding: "0.2rem 0.5rem", borderRadius: "6px" }}
+							style={{ minHeight: "44px", height: "44px", fontSize: "0.85rem", padding: "0.4rem 0.75rem", borderRadius: "8px" }}
 						>
 							<option value="all">Все циклы</option>
 							<option value="passed">Стерильно (Норма)</option>
@@ -520,22 +520,22 @@ export function AutoclaveRegisterTab() {
 							onClick={() => setIsEquipmentModalOpen(true)}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{
-								minHeight: "32px",
-								height: "32px",
-								padding: "0.2rem 0.65rem",
-								fontSize: "0.78rem",
+								minHeight: "44px",
+								height: "44px",
+								padding: "0.4rem 0.85rem",
+								fontSize: "0.85rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "0.25rem",
-								borderRadius: "6px",
+								gap: "0.35rem",
+								borderRadius: "8px",
 							}}
 							data-testid="autoclave-equipment-btn"
 							title="Управление парком автоклавов и стерилизаторов клиники"
 						>
-							<ShieldCheck size={13} color="#2563eb" /> <span>Оборудование ({clinicDevices.length})</span>
+							<ShieldCheck size={16} color="#2563eb" /> <span>Оборудование ({clinicDevices.length})</span>
 						</button>
 
 						{/* Action: + Зафиксировать цикл */}
@@ -544,22 +544,22 @@ export function AutoclaveRegisterTab() {
 							onClick={() => setIsModalOpen(true)}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{
-								minHeight: "32px",
-								height: "32px",
-								padding: "0.2rem 0.65rem",
-								fontSize: "0.78rem",
+								minHeight: "44px",
+								height: "44px",
+								padding: "0.4rem 0.85rem",
+								fontSize: "0.85rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "0.25rem",
-								borderRadius: "6px",
+								gap: "0.35rem",
+								borderRadius: "8px",
 							}}
 							data-testid="sanpin-autoclave-new-cycle-btn"
 							title="Зафиксировать новый цикл стерилизации"
 						>
-							<Plus size={13} /> <span>Зафиксировать цикл</span>
+							<Plus size={16} /> <span>Зафиксировать цикл</span>
 						</button>
 
 						{/* Dropdown: [⋮ Дополнительно] */}
@@ -569,16 +569,18 @@ export function AutoclaveRegisterTab() {
 								onClick={() => setIsMoreMenuOpen((prev) => !prev)}
 								className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 								style={{
-									minHeight: "32px",
-									height: "32px",
-									padding: "0.2rem 0.5rem",
-									fontSize: "0.78rem",
+									minHeight: "44px",
+									minWidth: "44px",
+									height: "44px",
+									padding: "0.4rem 0.75rem",
+									fontSize: "0.85rem",
 									fontWeight: 600,
 									cursor: "pointer",
 									display: "inline-flex",
 									alignItems: "center",
-									gap: "0.2rem",
-									borderRadius: "6px",
+									justifyContent: "center",
+									gap: "0.25rem",
+									borderRadius: "8px",
 								}}
 								aria-expanded={isMoreMenuOpen}
 								title="Дополнительные операции: Форма 257/у, вскрытие крафт-пакетов"
