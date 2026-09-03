@@ -9,6 +9,7 @@ import {
 	computeGostSigningDigestSha256,
 	createDemonstrationGostCmsSignature,
 	DOCTOR_PEP_FORBIDDEN_MESSAGE,
+	extractGostCmsMetadata,
 	GOST_CRYPTO_OIDS,
 	injectVisualSignatureStampIntoHtml,
 	renderDigitalSignatureStampHtml,
@@ -306,5 +307,116 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		const resForeign = validateGostCmsPkcs7Signature(foreignBuf.toString("base64"));
 		assert.strictEqual(resForeign.valid, false);
 		assert.strictEqual(resForeign.errorCode, "NonGostAlgorithmForbidden");
+	});
+
+	it("extracts GOST OIDs, serial number and validity period from CMS PKCS#7 container", () => {
+		const docHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+		const sig = createDemonstrationGostCmsSignature({
+			documentId: "doc-meta-test-1",
+			documentKind: "dental_medical_card_043u",
+			documentHashHex: docHash,
+			doctorFullName: "Семенов Сергей Сергеевич",
+			signedAtIso: "2026-09-02T10:00:00.000Z",
+		});
+
+		const rawDerBuf = Buffer.from(sig.signatureBase64, "base64");
+		const meta = extractGostCmsMetadata(rawDerBuf);
+
+		// 1. Извлечение OID алгоритмов ГОСТ Р 34.10-2012 (256 бит) и 34.11-2012 (256 бит)
+		assert.strictEqual(meta.signatureAlgorithmOid, GOST_CRYPTO_OIDS.GOST_3410_2012_256);
+		assert.strictEqual(meta.digestAlgorithmOid, GOST_CRYPTO_OIDS.GOST_3411_2012_256);
+
+		// 2. Извлечение серийного номера сертификата
+		assert.ok(meta.certificateSerialNumber, "Серийный номер должен быть извлечен");
+		assert.strictEqual(meta.certificateSerialNumber, sig.certificateSerialNumber);
+
+		// 3. Извлечение периодов действия
+		assert.ok(meta.validFromIso, "validFromIso должен быть извлечен");
+		assert.ok(meta.validToIso, "validToIso должен быть извлечен");
+		assert.ok(
+			meta.validFromIso?.startsWith("2024-") ||
+			meta.validFromIso?.startsWith("2025-") ||
+			meta.validFromIso?.startsWith("2026-"),
+		);
+		assert.ok(meta.validToIso?.startsWith("2027-") || meta.validToIso?.startsWith("2028-"));
+
+		// 4. Проверка интеграции в validateGostCmsPkcs7Signature details
+		const validation = validateGostCmsPkcs7Signature(sig.signatureBase64, docHash);
+		assert.strictEqual(validation.valid, true);
+		assert.strictEqual(validation.details?.signatureAlgorithmOid, GOST_CRYPTO_OIDS.GOST_3410_2012_256);
+		assert.strictEqual(validation.details?.certificateSerialNumber, sig.certificateSerialNumber);
+		assert.strictEqual(validation.details?.validFromIso, meta.validFromIso);
+	});
+
+	it("applies blue signature stamp to Act of Completed Works (Акт выполненных услуг) strictly in Executor cell", () => {
+		const stampHtml = renderDigitalSignatureStampHtml({
+			certificateSerialNumber: "00E4A28B104429A9",
+			certificateSubject: "Врач-стоматолог Иванов И.И.",
+			validFrom: "2026-01-01T00:00:00Z",
+			validTo: "2027-01-01T00:00:00Z",
+		});
+
+		const actHtml = `
+      <table class="data-table" style="margin-top:10px; font-size:8pt;">
+        <tr>
+          <td style="width:50%; vertical-align:top;">
+            <strong>УСЛУГИ СДАЛ (ИСПОЛНИТЕЛЬ):</strong><br><br>
+            Врач-стоматолог:<br><br>
+            ___________________ / Иванов И.И. / <span class="stamp-seal">М.П.</span>
+          </td>
+          <td style="width:50%; vertical-align:top;">
+            <strong>УСЛУГИ ПРИНЯЛ (ЗАКАЗЧИК):</strong><br><br>
+            Пациент / Заказчик:<br><br>
+            ___________________ / Сидоров С.С. /
+          </td>
+        </tr>
+      </table>
+    `;
+
+		const stamped = injectVisualSignatureStampIntoHtml(actHtml, stampHtml);
+
+		// Штамп появился в блоке Исполнителя
+		assert.ok(stamped.includes("gost-digital-stamp"));
+		assert.ok(stamped.includes("00E4A28B104429A9"));
+		// Блок Заказчика (пациента) остался нетронутым со своей строкой для подписи
+		assert.ok(stamped.includes("УСЛУГИ ПРИНЯЛ (ЗАКАЗЧИК):"));
+		assert.ok(stamped.includes("___________________ / Сидоров С.С. /"));
+	});
+
+	it("applies blue signature stamp to Lab Work Order (Наряд ЗТЛ) on Doctor column, preserving Laboratory receipt column", () => {
+		const stampHtml = renderDigitalSignatureStampHtml({
+			certificateSerialNumber: "00E4A28B104429A9",
+			certificateSubject: "Врач-ортопед Смирнов А.В.",
+			validFrom: "2026-01-01T00:00:00Z",
+			validTo: "2027-01-01T00:00:00Z",
+		});
+
+		const labOrderSignatures = `
+      <div class="signatures">
+        <section class="signature-column signature-left">
+          <p class="signature-role"><strong>Врач</strong></p>
+          <p class="signature-line">Подпись: ____________________ / ____________________ /</p>
+          <p class="signature-subtext">(личная подпись)                    (расшифровка подписи)</p>
+          <p class="signature-date">Дата: «____» ______________ 20___ г.</p>
+        </section>
+        <section class="signature-column signature-right">
+          <p class="signature-role"><strong>Лаборатория</strong></p>
+          <p class="signature-line">Подпись: ____________________ / ____________________ /</p>
+          <p class="signature-subtext">(личная подпись)                    (расшифровка подписи)</p>
+          <p class="signature-date">Дата: «____» ______________ 20___ г.</p>
+          <p class="signature-stamps">
+            <span class="stamp-seal-circle">М.П.</span>
+          </p>
+        </section>
+      </div>
+    `;
+
+		const stamped = injectVisualSignatureStampIntoHtml(labOrderSignatures, stampHtml);
+
+		// Штамп наложен на колонку Врача
+		assert.ok(stamped.includes("gost-digital-stamp"));
+		// Колонка Лаборатории сохранена с линией подписи и М.П.
+		assert.ok(stamped.includes("<strong>Лаборатория</strong>"));
+		assert.ok(stamped.includes("stamp-seal-circle"));
 	});
 });

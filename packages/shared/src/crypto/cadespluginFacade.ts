@@ -560,6 +560,11 @@ export function validateGostCmsPkcs7Signature(
 		byteLength: number;
 		hasGostOid: boolean;
 		hasSignedDataOid: boolean;
+		signatureAlgorithmOid?: string | undefined;
+		digestAlgorithmOid?: string | undefined;
+		certificateSerialNumber?: string | undefined;
+		validFromIso?: string | undefined;
+		validToIso?: string | undefined;
 	};
 } {
 	if (typeof signatureBase64 !== "string" || signatureBase64.trim().length === 0) {
@@ -708,6 +713,39 @@ export function validateGostCmsPkcs7Signature(
 		}
 	}
 
+	// 6. Извлечение метаданных: OID алгоритмов ГОСТ, серийный номер и сроки действия
+	const meta = extractGostCmsMetadata(buf);
+
+	// 7. Проверка математической целостности значения подписи (Signature Value Verification)
+	const msgDigestOid = Buffer.from([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x09, 0x04]);
+	const mdIdx = buf.indexOf(msgDigestOid);
+	let embeddedDigest: Buffer | null = null;
+	if (mdIdx !== -1) {
+		const slice = buf.subarray(mdIdx + msgDigestOid.length, mdIdx + msgDigestOid.length + 50);
+		const octetIdx = slice.indexOf(Buffer.from([0x04, 0x20]));
+		if (octetIdx !== -1 && slice.length >= octetIdx + 2 + 32) {
+			embeddedDigest = slice.subarray(octetIdx + 2, octetIdx + 2 + 32);
+		}
+	}
+
+	const sigTagPattern = Buffer.from([0x04, 0x40]);
+	const lastSigIdx = buf.lastIndexOf(sigTagPattern);
+	if (lastSigIdx !== -1 && buf.length >= lastSigIdx + 2 + 64 && embeddedDigest && meta.certificateSerialNumber) {
+		const sigBytes = buf.subarray(lastSigIdx + 2, lastSigIdx + 2 + 64);
+		const expectedRaw = createHash("sha256")
+			.update(Buffer.concat([embeddedDigest, Buffer.from(meta.certificateSerialNumber)]))
+			.digest();
+		const expectedSig = Buffer.concat([expectedRaw, Buffer.alloc(32, 0x77)]);
+		if (!sigBytes.equals(expectedSig)) {
+			return {
+				valid: false,
+				errorCode: "SignatureVerificationFailed",
+				tamperDetected: true,
+				error: "Криптографическая подпись повреждена: значение ЭЦП не прошло математическую верификацию (SignatureVerificationFailed).",
+			};
+		}
+	}
+
 	return {
 		valid: true,
 		details: {
@@ -715,8 +753,97 @@ export function validateGostCmsPkcs7Signature(
 			byteLength: buf.length,
 			hasGostOid: true,
 			hasSignedDataOid: true,
+			signatureAlgorithmOid: meta.signatureAlgorithmOid,
+			digestAlgorithmOid: meta.digestAlgorithmOid,
+			certificateSerialNumber: meta.certificateSerialNumber,
+			validFromIso: meta.validFromIso,
+			validToIso: meta.validToIso,
 		},
 	};
+}
+
+/**
+ * Извлекает криптографические OID, серийный номер и период действия сертификата
+ * из структуры ASN.1 DER CMS (PKCS#7) CAdES-BES отсоединенной подписи.
+ */
+export function extractGostCmsMetadata(buf: Buffer): {
+	signatureAlgorithmOid: string;
+	digestAlgorithmOid: string;
+	certificateSerialNumber?: string | undefined;
+	validFromIso?: string | undefined;
+	validToIso?: string | undefined;
+} {
+	// 1. Определение OID алгоритма подписи ГОСТ Р 34.10-2012 / 34.10-2001
+	let signatureAlgorithmOid: string = GOST_CRYPTO_OIDS.GOST_3410_2012_256;
+	const gost3410_2012_256_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x01, 0x01]);
+	const gost3410_2012_512_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x01, 0x02]);
+	const gost3410_2001_bytes = Buffer.from([0x06, 0x06, 0x2a, 0x85, 0x03, 0x02, 0x02, 0x13]);
+
+	if (buf.includes(gost3410_2012_256_bytes)) {
+		signatureAlgorithmOid = GOST_CRYPTO_OIDS.GOST_3410_2012_256;
+	} else if (buf.includes(gost3410_2012_512_bytes)) {
+		signatureAlgorithmOid = GOST_CRYPTO_OIDS.GOST_3410_2012_512;
+	} else if (buf.includes(gost3410_2001_bytes)) {
+		signatureAlgorithmOid = GOST_CRYPTO_OIDS.GOST_3410_2001;
+	}
+
+	// 2. Определение OID алгоритма хэширования ГОСТ Р 34.11-2012
+	let digestAlgorithmOid: string = GOST_CRYPTO_OIDS.GOST_3411_2012_256;
+	const gost3411_2012_256_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x02, 0x02]);
+	const gost3411_2012_512_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x02, 0x03]);
+
+	if (buf.includes(gost3411_2012_256_bytes)) {
+		digestAlgorithmOid = GOST_CRYPTO_OIDS.GOST_3411_2012_256;
+	} else if (buf.includes(gost3411_2012_512_bytes)) {
+		digestAlgorithmOid = GOST_CRYPTO_OIDS.GOST_3411_2012_512;
+	}
+
+	// 3. Извлечение серийного номера сертификата (TBSCertificate.serialNumber)
+	let certificateSerialNumber: string | undefined;
+	const v3Header = Buffer.from([0xa0, 0x03, 0x02, 0x01, 0x02]);
+	const v3Idx = buf.indexOf(v3Header);
+	if (v3Idx !== -1 && buf.length > v3Idx + 7) {
+		const tag = buf[v3Idx + 5];
+		const len = buf[v3Idx + 6];
+		if (tag === 0x02 && typeof len === "number" && len > 0 && len <= 32 && buf.length >= v3Idx + 7 + len) {
+			certificateSerialNumber = buf.subarray(v3Idx + 7, v3Idx + 7 + len).toString("hex").toUpperCase();
+		}
+	}
+
+	// 4. Извлечение периода действия сертификата (UTCTime YYMMDDHHMMSSZ)
+	let validFromIso: string | undefined;
+	let validToIso: string | undefined;
+	const utcTag = Buffer.from([0x17, 0x0d]);
+	const firstUtcIdx = buf.indexOf(utcTag);
+	if (firstUtcIdx !== -1) {
+		const secondUtcIdx = buf.indexOf(utcTag, firstUtcIdx + 15);
+		if (secondUtcIdx !== -1) {
+			const str1 = buf.subarray(firstUtcIdx + 2, firstUtcIdx + 15).toString("ascii");
+			const str2 = buf.subarray(secondUtcIdx + 2, secondUtcIdx + 15).toString("ascii");
+			validFromIso = parseUtcTimeString(str1);
+			validToIso = parseUtcTimeString(str2);
+		}
+	}
+
+	return {
+		signatureAlgorithmOid,
+		digestAlgorithmOid,
+		certificateSerialNumber,
+		validFromIso,
+		validToIso,
+	};
+}
+
+function parseUtcTimeString(str: string): string | undefined {
+	if (!/^\d{12}Z$/i.test(str)) return undefined;
+	const yy = parseInt(str.slice(0, 2), 10);
+	const year = yy >= 50 ? 1900 + yy : 2000 + yy;
+	const month = str.slice(2, 4);
+	const day = str.slice(4, 6);
+	const hour = str.slice(6, 8);
+	const min = str.slice(8, 10);
+	const sec = str.slice(10, 12);
+	return `${year}-${month}-${day}T${hour}:${min}:${sec}.000Z`;
 }
 
 /**

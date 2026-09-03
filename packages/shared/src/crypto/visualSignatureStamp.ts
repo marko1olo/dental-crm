@@ -34,7 +34,8 @@ export const visualSignatureStampParamsSchema = z.object({
 	organizationName: z.string().trim().optional(),
 	documentId: z.string().trim().optional(),
 });
-export type VisualSignatureStampParams = z.infer<typeof visualSignatureStampParamsSchema>;
+export type VisualSignatureStampParams = z.input<typeof visualSignatureStampParamsSchema>;
+export type VisualSignatureStampOutput = z.infer<typeof visualSignatureStampParamsSchema>;
 
 function escapeXml(value: string): string {
 	return value
@@ -177,7 +178,19 @@ export function injectVisualSignatureStampIntoHtml(
 		return html;
 	}
 
-	// 1. Поиск блока signature-right (подпись врача / представителя клиники)
+	// 1a. Специальный случай: если в левой колонке Врач / Клиника, а в правой Лаборатория или Пациент (наряд ЗТЛ / расписки)
+	const signatureLeftDoctorRegex = /(<section class="signature-column signature-left">[\s\S]*?(?:Врач|Администратор|Исполнитель)[\s\S]*?)(<\/section>[\s\S]*?<section class="signature-column signature-right">[\s\S]*?(?:Лаборатория|Пациент|Заказчик)[\s\S]*?<\/section>)/i;
+	if (signatureLeftDoctorRegex.test(html)) {
+		return html.replace(signatureLeftDoctorRegex, (_match, leftContent, rest) => {
+			const cleanedLeft = leftContent
+				.replace(/<p class="signature-line">[\s\S]*?<\/p>/gi, "")
+				.replace(/<p class="signature-subtext">[\s\S]*?<\/p>/gi, "")
+				.replace(/<p class="signature-stamps">[\s\S]*?<\/p>/gi, "");
+			return `${cleanedLeft}\n${stampHtml}\n${rest}`;
+		});
+	}
+
+	// 1b. Стандартный случай: подпись врача / представителя клиники находится в signature-right (планы лечения, ИДС, выписки)
 	const signatureRightRegex = /(<section class="signature-column signature-right">[\s\S]*?)(<\/section>)/i;
 	if (signatureRightRegex.test(html)) {
 		return html.replace(signatureRightRegex, (_match, before, closing) => {
@@ -201,8 +214,8 @@ export function injectVisualSignatureStampIntoHtml(
 		});
 	}
 
-	// 3. Поиск блока подписи Исполнителя в таблице реквизитов договора (formsContractAndConsents / ПП РФ № 736)
-	const contractExecutorRegex = /(<td[^>]*>[\s\S]*?<strong>\s*ИСПОЛНИТЕЛЬ:?\s*<\/strong>[\s\S]*?)(_{5,}[^\n<]*(?:<span class="stamp-seal">М\.П\.<\/span>)?|___________________[^\n<]*)/i;
+	// 3. Поиск блока подписи Исполнителя в таблице реквизитов договора и акта выполненных работ (ПП РФ № 736 / Номенклатура № 804н)
+	const contractExecutorRegex = /(<td[^>]*>[\s\S]*?<strong>\s*(?:УСЛУГИ СДАЛ \()?ИСПОЛНИТЕЛЬ:?\)?\s*<\/strong>[\s\S]*?)(_{5,}[^\n<]*(?:<span class="stamp-seal">М\.П\.<\/span>)?|___________________[^\n<]*)/i;
 	if (contractExecutorRegex.test(html)) {
 		return html.replace(contractExecutorRegex, (_match, before) => {
 			return `${before}\n<div style="margin-top: 8px;">${stampHtml}</div>`;
