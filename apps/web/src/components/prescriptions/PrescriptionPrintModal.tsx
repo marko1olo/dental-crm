@@ -49,6 +49,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import type { DiaryState } from "../useVisitDiaryLogic";
+import {
+	getPersonalCertificates,
+	signBase64WithCertificate,
+	parseCryptoProError,
+} from "../../utils/cryptoPro";
 
 export type PrescriptionFormType = "107-1u" | "148-1u-88" | "148-1u-04l";
 
@@ -357,30 +362,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		});
 	}, [activeForm, prescriptionDate, validityDays, isChronicSpecialCare, chronicPeriodicity, activeItems, patientAddress, patientSnils, patientOmsPolicy]);
 
-	// UKEP signing handler
-	const handleSignUkep = () => {
-		setIsSigningUkep(true);
-		setTimeout(() => {
-			const fakeUkep: PrescriptionDoctorUkep = {
-				doctorFullName: docName,
-				doctorSpecialty: docSpecialty,
-				doctorSnils: docSnils,
-				certificateSerialNumber: "7700B891A40098F2104",
-				certificateThumbprint: "A1B2C3D4E5F67890ABCDEF1234567890ABCDEF12",
-				certificateIssuer: "ФКУ 'Налог-Сервис' ФНС России (УЦ Минцифры)",
-				certificateValidFrom: "2026-01-10",
-				certificateValidTo: "2027-01-10",
-				signedAt: new Date().toISOString(),
-				cryptoSignaturePkcs7: "MIIEVwYJKoZIhvcNAQcCoIIESDCCBEQCAQExDzANBglghkgBZQMEAgEFAD...",
-				signatureAlgorithm: "ГОСТ Р 34.10-2012 (256 бит)",
-				egiszDocumentId: `EGISZ-RX-${Date.now().toString().slice(-6)}`,
-				qrVerificationUrl: `https://egisz.rosminzdrav.ru/verify?rx=${customSeriesNumber}`,
-			};
-			setUkepSignature(fakeUkep);
-			setIsUkepSigned(true);
-			setIsSigningUkep(false);
-		}, 600);
-	};
+
 
 	const generatePrintHtml = useCallback((): string => {
 		if (activeForm === "107-1u") {
@@ -535,6 +517,50 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		isUkepSigned,
 		ukepSignature,
 	]);
+
+	// UKEP signing handler using CryptoPro CSP
+	const handleSignUkep = async () => {
+		setIsSigningUkep(true);
+		try {
+			const certs = await getPersonalCertificates();
+			if (!certs || certs.length === 0) {
+				throw new Error("В хранилище КриптоПро не найдено личных сертификатов ЭЦП врача.");
+			}
+			const targetCert = certs.find((c) => c.isGost && c.hasPrivateKey) || certs[0];
+			if (!targetCert) {
+				throw new Error("Не удалось выбрать сертификат для подписания.");
+			}
+			const contentToSign = btoa(unescape(encodeURIComponent(generatePrintHtml())));
+			const signature = await signBase64WithCertificate(contentToSign, targetCert.thumbprint);
+
+			const genuineUkep: PrescriptionDoctorUkep = {
+				doctorFullName: targetCert.subjectName || docName,
+				doctorSpecialty: docSpecialty,
+				doctorSnils: docSnils,
+				certificateSerialNumber:
+					targetCert.serialNumber || targetCert.thumbprint.slice(0, 16).toUpperCase(),
+				certificateThumbprint: targetCert.thumbprint,
+				certificateIssuer:
+					targetCert.issuerName || "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+				certificateValidFrom: targetCert.validFrom || new Date().toISOString(),
+				certificateValidTo:
+					targetCert.validTo || new Date(Date.now() + 365 * 86400000).toISOString(),
+				signedAt: new Date().toISOString(),
+				cryptoSignaturePkcs7: signature,
+				signatureAlgorithm: targetCert.algorithmName || "ГОСТ Р 34.10-2012 (256 бит)",
+				egiszDocumentId: `EGISZ-RX-${Date.now().toString().slice(-6)}`,
+				qrVerificationUrl: `https://egisz.rosminzdrav.ru/verify?rx=${customSeriesNumber}`,
+			};
+			setUkepSignature(genuineUkep);
+			setIsUkepSigned(true);
+			showToast("Рецептурный бланк успешно подписан УКЭП врача (КриптоПро)", "success");
+		} catch (err) {
+			const parsed = parseCryptoProError(err);
+			showToast(parsed.userMessage, parsed.isCancellation ? "warning" : "error", 8000);
+		} finally {
+			setIsSigningUkep(false);
+		}
+	};
 
 	const handlePrint = () => {
 		const printHtml = generatePrintHtml();

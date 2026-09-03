@@ -1971,15 +1971,15 @@ function renderUkepDigitalSignatureBlock(ukep: any): string {
 	if (!ukep || (!ukep.cryptoSignaturePkcs7 && !ukep.certificateSerialNumber && !ukep.certificateThumbprint)) {
 		return "";
 	}
-	const doctor = escapeHtml(ukep.doctorFullName || "Врач-стоматолог");
-	const serial = escapeHtml(ukep.certificateSerialNumber || "7700B891A40098F2104");
-	const issuer = escapeHtml(ukep.certificateIssuer || "ФКУ 'Налог-Сервис' ФНС России (УЦ Минцифры)");
-	const validFrom = escapeHtml(ukep.certificateValidFrom || "2026-01-10");
-	const validTo = escapeHtml(ukep.certificateValidTo || "2027-01-10");
+	const doctor = escapeHtml(ukep.doctorFullName || "Врач-специалист");
+	const serial = escapeHtml(ukep.certificateSerialNumber || (ukep.certificateThumbprint ? String(ukep.certificateThumbprint).slice(0, 16).toUpperCase() : ""));
+	const issuer = escapeHtml(ukep.certificateIssuer || "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)");
+	const validFrom = escapeHtml(ukep.certificateValidFrom || "");
+	const validTo = escapeHtml(ukep.certificateValidTo || "");
 	const signedAt = escapeHtml(ukep.signedAt || new Date().toISOString());
 	const algorithm = escapeHtml(ukep.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)");
-	const docId = escapeHtml(ukep.egiszDocumentId || "EGISZ-RX-2026-98124");
-	const qrUrl = escapeHtml(ukep.qrVerificationUrl || `https://egisz.rosminzdrav.ru/verify?rx=${docId}`);
+	const docId = escapeHtml(ukep.egiszDocumentId || "");
+	const qrUrl = escapeHtml(ukep.qrVerificationUrl || (docId ? `https://egisz.rosminzdrav.ru/verify?rx=${docId}` : ""));
 
 	return `
     <div style="margin-top:10px; border:1.5px solid #0284c7; background:#f0f9ff; border-radius:4px; padding:6px 8px; font-family:'PT Astra Sans', Arial, sans-serif; font-size:7pt; color:#0f172a; line-height:1.25; display:flex; justify-content:space-between; align-items:center; gap:8px;">

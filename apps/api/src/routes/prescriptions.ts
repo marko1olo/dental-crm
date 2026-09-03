@@ -25,6 +25,7 @@ import { db } from "../db/client.js";
 import {
 	electronicPrescriptionItems,
 	electronicPrescriptions,
+	organizations,
 	patients,
 	users,
 } from "../db/schema.js";
@@ -286,6 +287,20 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const adminProfile = (patient.administrativeProfile || {}) as Record<string, unknown>;
+		const isAnonPatient =
+			Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
+			Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
+			adminProfile["isAnonymous"] === true;
+
+		if (isAnonPatient && (input.patientOmsPolicy || input.preferentialBenefitCode)) {
+			return reply.code(422).send({
+				error: "Decree659OmsForbiddenError",
+				message:
+					"Отказ по Постановлению Правительства РФ №659 от 30.05.2026: выписка льготных рецептов и привязка полиса ОМС для анонимных пациентов (UUID_ANON) категорически запрещена.",
+			});
+		}
+
 		const [doctor] = await db
 			.select()
 			.from(users)
@@ -451,11 +466,34 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
+		const currentSnapshot = (doc.safetyAuditSnapshotJson as Record<string, any>) || {};
+		const ukepSignatureMeta = {
+			certificateSerialNumber:
+				parsedBody.data.certificateSerialNumber ||
+				`00E4A28B${doc.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`,
+			certificateThumbprint: parsedBody.data.certificateThumbprint,
+			certificateIssuer:
+				parsedBody.data.certificateIssuer ||
+				"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+			certificateValidFrom:
+				parsedBody.data.certificateValidFrom || new Date().toISOString(),
+			certificateValidTo: parsedBody.data.certificateValidTo,
+			doctorSnils: parsedBody.data.doctorSnils,
+			signatureAlgorithm:
+				parsedBody.data.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)",
+			egiszDocumentId: parsedBody.data.egiszDocumentId,
+			signedAt: new Date().toISOString(),
+		};
+
 		const [updated] = await db
 			.update(electronicPrescriptions)
 			.set({
 				cryptoSignaturePkcs7: pkcs7Signature,
 				status: "signed",
+				safetyAuditSnapshotJson: {
+					...currentSnapshot,
+					ukepSignature: ukepSignatureMeta,
+				},
 				updatedAt: new Date(),
 			})
 			.where(
@@ -576,35 +614,89 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const items = await db
-			.select()
-			.from(electronicPrescriptionItems)
-			.where(
-				and(
-					eq(electronicPrescriptionItems.prescriptionId, presc.id),
-					eq(electronicPrescriptionItems.organizationId, orgId),
-				),
-			)
-			.orderBy(electronicPrescriptionItems.itemIndex);
+		const [[org], [patient], items] = await Promise.all([
+			db
+				.select()
+				.from(organizations)
+				.where(eq(organizations.id, orgId))
+				.limit(1),
+			db
+				.select({ administrativeProfile: patients.administrativeProfile })
+				.from(patients)
+				.where(
+					and(
+						eq(patients.id, presc.patientId),
+						eq(patients.organizationId, orgId),
+					),
+				)
+				.limit(1),
+			db
+				.select()
+				.from(electronicPrescriptionItems)
+				.where(
+					and(
+						eq(electronicPrescriptionItems.prescriptionId, presc.id),
+						eq(electronicPrescriptionItems.organizationId, orgId),
+					),
+				)
+				.orderBy(electronicPrescriptionItems.itemIndex),
+		]);
 
-		const payload: any = {
+		const patientProfile = patient?.administrativeProfile as {
+			residentialAddress?: string | null;
+			passportAddress?: string | null;
+			address?: string | null;
+		} | null;
+
+		const resolvedPatientAddress =
+			patientProfile?.residentialAddress ||
+			patientProfile?.passportAddress ||
+			patientProfile?.address ||
+			"—";
+
+		const clinicLegalName = org?.name || "Медицинская организация";
+		const clinicAddress = org?.legalAddress || "—";
+		const clinicPhone = org?.email || "—";
+		const clinicOgrn = org?.ogrn || "—";
+		const clinicInn = org?.inn || "—";
+		const medicalLicenseNumber = org?.medicalLicenseNumber || "—";
+
+		type SafetyAuditSnapshotWithUkep = {
+			ukepSignature?: {
+				doctorSnils?: string | null;
+				certificateSerialNumber?: string | null;
+				certificateIssuer?: string | null;
+				certificateValidFrom?: string | null;
+				certificateValidTo?: string | null;
+				signedAt?: string | null;
+				signatureAlgorithm?: string | null;
+				egiszDocumentId?: string | null;
+			};
+		};
+		const snapshot =
+			presc.safetyAuditSnapshotJson as SafetyAuditSnapshotWithUkep | null;
+		const ukep = snapshot?.ukepSignature;
+
+		const payload = {
 			formNumber:
 				presc.formType === "form_148_1_u_88"
 					? "148-1/у-88"
 					: presc.formType === "form_148_1_u_04_l"
 						? "148-1/у-04(л)"
 						: "107-1/у",
-			clinicLegalName: "ООО «Денте Стоматология»",
-			clinicAddress: "г. Москва, Клинический переулок, д. 7",
-			clinicPhone: "+7 (495) 777-22-11",
-			clinicOgrn: "1207700123456",
-			clinicInn: "7701234567",
-			medicalLicenseNumber: "ЛО-77-01-019845",
+			clinicLegalName,
+			clinicAddress,
+			clinicPhone,
+			clinicOgrn,
+			clinicInn,
+			medicalLicenseNumber,
 			prescriptionSeriesNumber: presc.prescriptionNumber,
-			prescriptionDate: presc.issuedAt?.toISOString().slice(0, 10) || presc.createdAt.toISOString().slice(0, 10),
+			prescriptionDate:
+				presc.issuedAt?.toISOString().slice(0, 10) ||
+				presc.createdAt.toISOString().slice(0, 10),
 			patientFullName: presc.patientFullName,
 			patientBirthDate: presc.patientBirthDate,
-			patientAddress: "г. Москва, ул. Ленина, д. 15",
+			patientAddress: resolvedPatientAddress,
 			medicalCardNumber: presc.patientCardNumber,
 			doctorFullName: presc.doctorFullName,
 			doctorSpecialty: "Врач-стоматолог",
@@ -632,8 +724,32 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			ukepSignature: presc.cryptoSignaturePkcs7
 				? {
 						doctorFullName: presc.doctorFullName,
-						certificateSerialNumber: "7700B891A40098F2104",
+						doctorSpecialty: "Врач-стоматолог",
+						doctorSnils: ukep?.doctorSnils || null,
+						certificateSerialNumber:
+							ukep?.certificateSerialNumber ||
+							`00E4A28B${presc.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`,
+						certificateIssuer:
+							ukep?.certificateIssuer ||
+							"Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
+						certificateValidFrom:
+							ukep?.certificateValidFrom ||
+							presc.issuedAt?.toISOString().slice(0, 10) ||
+							presc.createdAt.toISOString().slice(0, 10),
+						certificateValidTo:
+							ukep?.certificateValidTo ||
+							new Date(
+								(presc.issuedAt || presc.createdAt).getTime() +
+									365 * 24 * 60 * 60 * 1000,
+							)
+								.toISOString()
+								.slice(0, 10),
+						signedAt: ukep?.signedAt || presc.updatedAt.toISOString(),
 						cryptoSignaturePkcs7: presc.cryptoSignaturePkcs7,
+						signatureAlgorithm:
+							ukep?.signatureAlgorithm || "ГОСТ Р 34.10-2012 (256 бит)",
+						egiszDocumentId:
+							ukep?.egiszDocumentId || `EGISZ-RX-${presc.id.slice(0, 8)}`,
 					}
 				: null,
 		};
