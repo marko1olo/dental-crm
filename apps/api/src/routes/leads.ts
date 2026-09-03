@@ -85,6 +85,7 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 					"new",
 					"contacted",
 					"consult_booked",
+					"showed_up",
 					"no_answer",
 					"trash",
 				]),
@@ -303,4 +304,94 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 
 		return result;
 	});
+
+	app.post("/api/leads/:id/create-patient", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"lead create patient",
+		);
+		if (!organizationId) return;
+
+		const { id } = req.params as { id: string };
+
+		// 1. Find lead
+		const [lead] = await db
+			.select()
+			.from(crmLeads)
+			.where(
+				and(eq(crmLeads.id, id), eq(crmLeads.organizationId, organizationId)),
+			)
+			.limit(1);
+
+		if (!lead) {
+			return reply.code(404).send({
+				error: "LeadNotFound",
+				message: "Обращение не найдено в клинике.",
+			});
+		}
+
+		// 2. Check if patient already exists by phone (if provided)
+		const cleanPhone = lead.phone ? lead.phone.trim() : null;
+		if (cleanPhone) {
+			const [existingPatient] = await db
+				.select()
+				.from(patients)
+				.where(
+					and(
+						eq(patients.organizationId, organizationId),
+						eq(patients.phone, cleanPhone),
+					),
+				)
+				.limit(1);
+
+			if (existingPatient) {
+				return reply.code(200).send({
+					success: true,
+					alreadyExisted: true,
+					patient: existingPatient,
+					message: `Пациент с номером ${cleanPhone} уже существует в базе: ${existingPatient.fullName}`,
+				});
+			}
+		}
+
+		// 3. Create Patient from Lead preserving name, phone, source in 1 click
+		const leadSource = lead.source ? String(lead.source).trim() : null;
+		const [patient] = await db
+			.insert(patients)
+			.values({
+				organizationId,
+				fullName: lead.name || lead.patientName || "Пациент из воронки",
+				phone: cleanPhone,
+				status: "active",
+				notes: leadSource ? `Источник: ${leadSource}` : null,
+				administrativeProfile: leadSource
+					? normalizePatientAdministrativeProfile({
+							preferredAppointmentNote: `src:${leadSource}`,
+						})
+					: null,
+			})
+			.returning();
+
+		if (!patient) {
+			return reply.code(500).send({
+				error: "PatientCreationFailed",
+				message: "Не удалось создать карту пациента из лида.",
+			});
+		}
+
+		// Broadcast real-time websocket notification
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "PATIENT_CREATED",
+			payload: patient,
+		});
+
+		return reply.code(201).send({
+			success: true,
+			alreadyExisted: false,
+			patient,
+			message: `Создана амбулаторная карта: ${patient.fullName}`,
+		});
+	});
 }
+

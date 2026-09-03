@@ -10,7 +10,13 @@ export interface Lead {
 	name: string;
 	phone?: string;
 	source?: string;
-	status: "new" | "contacted" | "consult_booked" | "no_answer" | "trash";
+	status:
+		| "new"
+		| "contacted"
+		| "consult_booked"
+		| "showed_up"
+		| "no_answer"
+		| "trash";
 	expectedRevenue?: string;
 }
 
@@ -27,6 +33,15 @@ interface LeadsState {
 	addLead: (lead: Omit<Lead, "id" | "status">) => Promise<void>;
 	/** Permanent remove via DELETE /api/leads/:id — not the trash column. */
 	deleteLead: (id: string) => Promise<void>;
+	/** 1-click action: create patient from lead without appointment or bureaucratic barriers */
+	createPatientFromLead: (
+		id: string,
+	) => Promise<{
+		success: boolean;
+		patient: unknown;
+		alreadyExisted?: boolean;
+		message?: string;
+	}>;
 	wsUpdate: (lead: Lead) => void;
 }
 
@@ -218,6 +233,29 @@ export const useLeadsStore = create<LeadsState>((set, get) => ({
 			logger.error("deleteLead Error:", e);
 			if (e instanceof Error) throw e;
 			throw new Error("Обращение не удалено: нет связи с сервером.");
+		}
+	},
+	createPatientFromLead: async (id) => {
+		try {
+			const res = await fetch(`${API_URL}/leads/${id}/create-patient`, {
+				method: "POST",
+				headers: authHeaders({ "Content-Type": "application/json" }),
+			});
+			if (!res.ok) {
+				throw new Error(
+					await leadsFailureMessage(
+						res,
+						"Не удалось создать карту пациента из лида.",
+					),
+				);
+			}
+			return await res.json();
+		} catch (e: unknown) {
+			logger.error("createPatientFromLead Error:", e);
+			if (e instanceof Error) throw e;
+			throw new Error(
+				"Не удалось создать пациента из лида: нет связи с сервером.",
+			);
 		}
 	},
 	wsUpdate: (updatedLead) => {

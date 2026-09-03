@@ -3,6 +3,7 @@ import {
 	BarChart3,
 	Calendar,
 	CalendarClock,
+	ChevronRight,
 	DollarSign,
 	Edit2,
 	Filter,
@@ -13,6 +14,8 @@ import {
 	RotateCcw,
 	Search,
 	Trash2,
+	UserCheck,
+	UserPlus,
 	X,
 } from "lucide-react";
 import type React from "react";
@@ -104,6 +107,12 @@ const COLUMNS: {
 		icon: <CalendarClock size={16} />,
 	},
 	{
+		id: "showed_up",
+		label: "Дошел",
+		color: "rgba(139, 92, 246, 0.2)",
+		icon: <UserCheck size={16} />,
+	},
+	{
 		id: "no_answer",
 		label: "Недозвон",
 		color: "rgba(107, 114, 128, 0.2)",
@@ -125,12 +134,68 @@ export function LeadsKanbanView() {
 		updateLeadDetails,
 		addLead,
 		deleteLead,
+		createPatientFromLead,
 		isLoading,
 		error: loadError,
 	} = useLeadsStore();
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [creatingPatientLeadId, setCreatingPatientLeadId] = useState<string | null>(null);
 	const { auth, dashboard } = useAppLogicContext();
 	const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+
+	const handleCreatePatientFromLead = async (lead: Lead) => {
+		if (creatingPatientLeadId) return;
+		setCreatingPatientLeadId(lead.id);
+		try {
+			const res = await createPatientFromLead(lead.id);
+			if (res.alreadyExisted) {
+				showToast(
+					res.message || "Пациент с таким номером уже есть в базе клиники",
+					"info",
+				);
+			} else {
+				showToast(
+					res.message || `Создана амбулаторная карта: ${lead.name}`,
+					"success",
+				);
+			}
+			fetchLeads();
+		} catch (err: unknown) {
+			const text =
+				err instanceof Error && err.message.trim()
+					? err.message
+					: "Не удалось создать карту пациента из лида.";
+			showToast(text, "error");
+		} finally {
+			setCreatingPatientLeadId(null);
+		}
+	};
+
+	const handleQuickStatusChange = async (
+		e: React.MouseEvent | React.ChangeEvent<HTMLSelectElement>,
+		leadId: string,
+		nextStatus: Lead["status"],
+	) => {
+		e.stopPropagation();
+		try {
+			await updateLeadStatus(leadId, nextStatus);
+			const stageLabels: Record<Lead["status"], string> = {
+				new: "«Новые»",
+				contacted: "«В работе»",
+				consult_booked: "«Записаны»",
+				showed_up: "«Дошел»",
+				no_answer: "«Недозвон»",
+				trash: "«Отказ»",
+			};
+			showToast(`Статус изменен на ${stageLabels[nextStatus]}`, "success");
+		} catch (err: unknown) {
+			const text =
+				err instanceof Error && err.message.trim()
+					? err.message
+					: "Статус обращения не изменён.";
+			showToast(text, "error");
+		}
+	};
 
 	// Filters
 	const [searchQuery, setSearchQuery] = useState("");
@@ -290,6 +355,16 @@ export function LeadsKanbanView() {
 							"Обращение переведено в статус «Записан на консультацию».",
 							"success",
 						);
+					} else if (status === "showed_up") {
+						showToast(
+							"Обращение переведено в статус «Дошел до клиники».",
+							"success",
+						);
+					} else if (status === "contacted") {
+						showToast(
+							"Обращение переведено в статус «В работе».",
+							"success",
+						);
 					}
 				})
 				.catch((err: unknown) => {
@@ -377,10 +452,17 @@ export function LeadsKanbanView() {
 				phone: lead.phone || "",
 				source: lead.source || "",
 				expectedRevenue: lead.expectedRevenue || "",
+				status: lead.status || "new",
 			});
 		} else {
 			setEditingLeadId("new");
-			setEditForm({ name: "", phone: "", source: "", expectedRevenue: "" });
+			setEditForm({
+				name: "",
+				phone: "",
+				source: "",
+				expectedRevenue: "",
+				status: "new",
+			});
 		}
 		setIsEditOpen(true);
 	};
@@ -402,6 +484,12 @@ export function LeadsKanbanView() {
 				showToast("Новый лид добавлен", "success");
 			} else if (editingLeadId) {
 				await updateLeadDetails(editingLeadId, payload);
+				if (editForm.status) {
+					const currentLead = leads.find((l) => l.id === editingLeadId);
+					if (currentLead && currentLead.status !== editForm.status) {
+						await updateLeadStatus(editingLeadId, editForm.status);
+					}
+				}
 				showToast("Лид обновлен", "success");
 			}
 			setIsEditOpen(false);
@@ -425,11 +513,6 @@ export function LeadsKanbanView() {
 	 */
 	const handleDeleteLead = async () => {
 		if (!editingLeadId || editingLeadId === "new" || isDeleting) return;
-		const label = (editForm.name || "").trim() || "это обращение";
-		const ok = window.confirm(
-			`Удалить «${label}» навсегда? Карточка исчезнет с доски и из базы. Столбец «Отказ» обращение не удаляет — только помечает отказ.`,
-		);
-		if (!ok) return;
 		setIsDeleting(true);
 		try {
 			await deleteLead(editingLeadId);
@@ -822,7 +905,18 @@ export function LeadsKanbanView() {
 														marginBottom: 4,
 													}}
 												>
-													<Phone size={12} /> {lead.phone}
+													<Phone size={12} />
+													<a
+														href={`tel:${lead.phone}`}
+														onClick={(e) => e.stopPropagation()}
+														style={{
+															color: "inherit",
+															textDecoration: "none",
+														}}
+														title="Позвонить контакту"
+													>
+														{lead.phone}
+													</a>
 												</div>
 											)}
 
@@ -831,7 +925,7 @@ export function LeadsKanbanView() {
 													display: "flex",
 													alignItems: "center",
 													justifyContent: "space-between",
-													marginTop: "12px",
+													marginTop: "8px",
 												}}
 											>
 												{lead.source ? (
@@ -868,6 +962,218 @@ export function LeadsKanbanView() {
 												) : null}
 											</div>
 
+											{/* Быстрый перевод статуса в 1 клик без drag-and-drop */}
+											<div
+												style={{
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "space-between",
+													gap: 6,
+													marginTop: "10px",
+													paddingTop: "8px",
+													borderTop: `1px solid ${borderColor}`,
+												}}
+												onClick={(e) => e.stopPropagation()}
+											>
+												{lead.status === "new" && (
+													<button
+														type="button"
+														onClick={(e) =>
+															handleQuickStatusChange(e, lead.id, "contacted")
+														}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: 4,
+															fontSize: 11,
+															fontWeight: 600,
+															padding: "3px 8px",
+															borderRadius: 6,
+															background: "rgba(245, 158, 11, 0.12)",
+															color: "#d97706",
+															border: "1px solid rgba(245, 158, 11, 0.3)",
+															cursor: "pointer",
+														}}
+														title="Перевести в статус «В работе» в 1 клик"
+													>
+														<Phone size={11} /> В работу{" "}
+														<ChevronRight size={11} />
+													</button>
+												)}
+												{lead.status === "contacted" && (
+													<button
+														type="button"
+														onClick={(e) =>
+															handleQuickStatusChange(
+																e,
+																lead.id,
+																"consult_booked",
+															)
+														}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: 4,
+															fontSize: 11,
+															fontWeight: 600,
+															padding: "3px 8px",
+															borderRadius: 6,
+															background: "rgba(16, 185, 129, 0.12)",
+															color: "#059669",
+															border: "1px solid rgba(16, 185, 129, 0.3)",
+															cursor: "pointer",
+														}}
+														title="Перевести в статус «Записаны» в 1 клик"
+													>
+														<CalendarClock size={11} /> Записан{" "}
+														<ChevronRight size={11} />
+													</button>
+												)}
+												{lead.status === "consult_booked" && (
+													<button
+														type="button"
+														onClick={(e) =>
+															handleQuickStatusChange(
+																e,
+																lead.id,
+																"showed_up",
+															)
+														}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: 4,
+															fontSize: 11,
+															fontWeight: 600,
+															padding: "3px 8px",
+															borderRadius: 6,
+															background: "rgba(139, 92, 246, 0.12)",
+															color: "#7c3aed",
+															border: "1px solid rgba(139, 92, 246, 0.3)",
+															cursor: "pointer",
+														}}
+														title="Перевести в статус «Дошел» в 1 клик"
+													>
+														<UserCheck size={11} /> Дошел{" "}
+														<ChevronRight size={11} />
+													</button>
+												)}
+												{lead.status === "showed_up" && (
+													<span
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: 4,
+															fontSize: 11,
+															fontWeight: 600,
+															color: "#7c3aed",
+														}}
+													>
+														<UserCheck size={12} /> Дошел до клиники
+													</span>
+												)}
+												{(lead.status === "no_answer" ||
+													lead.status === "trash") && (
+													<button
+														type="button"
+														onClick={(e) =>
+															handleQuickStatusChange(
+																e,
+																lead.id,
+																"contacted",
+															)
+														}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: 4,
+															fontSize: 11,
+															fontWeight: 600,
+															padding: "3px 8px",
+															borderRadius: 6,
+															background: "rgba(59, 130, 246, 0.1)",
+															color: "var(--teal)",
+															border: "1px solid rgba(59, 130, 246, 0.25)",
+															cursor: "pointer",
+														}}
+														title="Вернуть в работу в 1 клик"
+													>
+														<RotateCcw size={11} /> Вернуть
+													</button>
+												)}
+
+												<select
+													value={lead.status}
+													onClick={(e) => e.stopPropagation()}
+													onChange={(e) =>
+														handleQuickStatusChange(
+															e,
+															lead.id,
+															e.target.value as Lead["status"],
+														)
+													}
+													style={{
+														fontSize: 11,
+														padding: "2px 6px",
+														borderRadius: 6,
+														border: `1px solid ${borderColor}`,
+														background: "var(--paper-soft)",
+														color: "var(--ink)",
+														cursor: "pointer",
+														outline: "none",
+														marginLeft: "auto",
+													}}
+													title="Сменить статус в 1 клик"
+													aria-label="Выбрать статус обращения"
+												>
+													<option value="new">Новые</option>
+													<option value="contacted">В работе</option>
+													<option value="consult_booked">Записаны</option>
+													<option value="showed_up">Дошел</option>
+													<option value="no_answer">Недозвон</option>
+													<option value="trash">Отказ</option>
+												</select>
+											</div>
+
+											{/* 1-клик действие «Создать пациента из лида» */}
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													void handleCreatePatientFromLead(lead);
+												}}
+												disabled={creatingPatientLeadId === lead.id}
+												style={{
+													marginTop: "8px",
+													width: "100%",
+													padding: "6px 10px",
+													borderRadius: 8,
+													fontSize: 12,
+													fontWeight: 600,
+													background: "rgba(16, 185, 129, 0.12)",
+													color: "#059669",
+													border: "1px solid rgba(16, 185, 129, 0.3)",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													gap: 6,
+													cursor:
+														creatingPatientLeadId === lead.id
+															? "wait"
+															: "pointer",
+													transition: "background 0.2s",
+												}}
+												data-testid={`create-patient-btn-${lead.id}`}
+												title="Создать карту пациента из обращения в 1 клик"
+											>
+												<UserPlus size={13} />
+												<span>
+													{creatingPatientLeadId === lead.id
+														? "Создаём карту…"
+														: "Создать пациента в 1 клик"}
+												</span>
+											</button>
+
 											{lead.status === "consult_booked" && (
 												<button
 													type="button"
@@ -876,7 +1182,7 @@ export function LeadsKanbanView() {
 														setConvertingLeadId(lead.id);
 														setIsConvertOpen(true);
 													}}
-													className="mt-3 w-full py-1.5 px-2.5 rounded-lg text-xs font-bold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors"
+													className="mt-2 w-full py-1.5 px-2.5 rounded-lg text-xs font-bold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors"
 													data-testid={`schedule-lead-btn-${lead.id}`}
 												>
 													<Calendar size={13} />
@@ -1313,6 +1619,40 @@ export function LeadsKanbanView() {
 								/>
 							</div>
 
+							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+								<label
+									htmlFor="edit-lead-status"
+									style={{ fontSize: 13, color: "var(--muted)" }}
+								>
+									Статус в воронке
+								</label>
+								<select
+									id="edit-lead-status"
+									value={editForm.status || "new"}
+									onChange={(e) =>
+										setEditForm({
+											...editForm,
+											status: e.target.value as Lead["status"],
+										})
+									}
+									style={{
+										padding: 10,
+										borderRadius: 8,
+										border: `1px solid ${borderColor}`,
+										background: colBg,
+										color: "var(--ink)",
+										cursor: "pointer",
+									}}
+								>
+									<option value="new">Новые</option>
+									<option value="contacted">В работе</option>
+									<option value="consult_booked">Записаны</option>
+									<option value="showed_up">Дошел</option>
+									<option value="no_answer">Недозвон</option>
+									<option value="trash">Отказ</option>
+								</select>
+							</div>
+
 							<div
 								style={{
 									display: "flex",
@@ -1332,6 +1672,36 @@ export function LeadsKanbanView() {
 								>
 									Сохранить
 								</button>
+								{/*
+								 * 1-клик действие «Создать пациента из лида» в модалке
+								 */}
+								{editingLeadId && editingLeadId !== "new" ? (
+									<button
+										type="button"
+										className="secondary-button"
+										data-testid="lead-create-patient-modal-btn"
+										disabled={isDeleting || creatingPatientLeadId === editingLeadId}
+										onClick={() => {
+											const lead = leads.find((l) => l.id === editingLeadId);
+											if (lead) void handleCreatePatientFromLead(lead);
+										}}
+										title="Создать карту пациента из обращения в 1 клик"
+										style={{
+											justifyContent: "center",
+											color: "#059669",
+											borderColor: "rgba(16, 185, 129, 0.4)",
+											minHeight: 44,
+											display: "flex",
+											alignItems: "center",
+											gap: 6,
+										}}
+									>
+										<UserPlus size={16} />
+										{creatingPatientLeadId === editingLeadId
+											? "Создаём…"
+											: "Создать пациента"}
+									</button>
+								) : null}
 								{/*
 								 * Permanent DELETE — not drag-to-«Отказ».
 								 * Shown only when editing an existing lead (not «new»).

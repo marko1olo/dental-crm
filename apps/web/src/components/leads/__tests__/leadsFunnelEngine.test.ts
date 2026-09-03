@@ -113,6 +113,13 @@ describe("CRM Leads Funnel & Marketing Intelligence Engine Tests", () => {
 				showedUp: true,
 			};
 			assert.equal(detectLeadStage(lead), "showed_up");
+
+			const leadDirectStatus: FunnelLead = {
+				id: "5b",
+				name: "Пациент 5b",
+				status: "showed_up",
+			};
+			assert.equal(detectLeadStage(leadDirectStatus), "showed_up");
 		});
 
 		it("2.4. Detects consult_booked and contacted stages from status", () => {

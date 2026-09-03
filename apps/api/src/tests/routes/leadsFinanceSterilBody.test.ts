@@ -182,6 +182,38 @@ describe("leads + finance_family + sterilization — body guards (AUTH-first; in
 		assert.match(String(r.json.message), /конверт|дат|кресл|врач/i);
 	});
 
+	test("POST /api/leads/:id/create-patient without auth → 401 (not 500)", async () => {
+		const r = await inject("POST", `/api/leads/${LEAD_ID}/create-patient`, {
+			body: {},
+			withClinic: false,
+			withStaff: false,
+		});
+		assert.equal(r.statusCode, 401, r.body);
+		assert.notEqual(r.statusCode, 500);
+	});
+
+	test("POST /api/leads/:id/create-patient clinic only → 401 StaffAuthRequired", async () => {
+		const r = await inject("POST", `/api/leads/${LEAD_ID}/create-patient`, {
+			body: {},
+			withClinic: true,
+			withStaff: false,
+		});
+		assert.equal(r.statusCode, 401, r.body);
+		assert.ok(
+			r.json.error === "StaffAuthRequired" || r.json.error === "AuthRequired",
+			r.body,
+		);
+		assert.notEqual(r.statusCode, 500);
+	});
+
+	test("PATCH /api/leads/:id/status invalid status → 400 ValidationError", async () => {
+		const r = await inject("PATCH", `/api/leads/${LEAD_ID}/status`, {
+			body: { status: "unknown_stage" },
+		});
+		assert.equal(r.statusCode, 400, r.body);
+		assert.equal(r.json.error, "ValidationError");
+	});
+
 	// ── finance_family ─────────────────────────────────────────────────
 
 	test("POST /api/finance/family without auth → 401 (not 400 body)", async () => {
