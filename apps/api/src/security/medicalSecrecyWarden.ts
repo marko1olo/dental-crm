@@ -62,7 +62,7 @@ export const FORBIDDEN_CLINICAL_FIELD_NAMES: ReadonlySet<string> = new Set([
 	"emkrecords",
 	"emk_records",
 
-	// Зубная формула и одонтограмма
+	// Зубная формула, номера зубов и одонтограмма
 	"odontogram",
 	"odontogramdata",
 	"tooth_states",
@@ -71,6 +71,17 @@ export const FORBIDDEN_CLINICAL_FIELD_NAMES: ReadonlySet<string> = new Set([
 	"teethstate",
 	"toothformula",
 	"tooth_formula",
+	"tooth_number",
+	"toothnumber",
+	"toothnumbers",
+	"teeth",
+	"surfaces",
+	"toothsurfaces",
+	"tooth_surfaces",
+	"clinicalformula",
+	"clinical_formula",
+	"dentalformula",
+	"dental_formula",
 
 	// Клинические заметки, дневники и данные
 	"clinicalnotes",
@@ -79,6 +90,15 @@ export const FORBIDDEN_CLINICAL_FIELD_NAMES: ReadonlySet<string> = new Set([
 	"clinical_note",
 	"clinicaldata",
 	"clinical_data",
+	"clinicalsummary",
+	"clinical_summary",
+	"medicalnotes",
+	"medical_notes",
+	"doctorsummary",
+	"doctor_summary",
+	"transcript",
+	"draftautosave",
+	"draft_autosave",
 
 	// Клинический анамнез, жалобы, объективный статус, статус локалис и план лечения (323-ФЗ ст. 13)
 	"anamnesis",
@@ -277,15 +297,41 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
  * подлежащие аппаратной санитизации в строковых значениях для неклинических ролей.
  */
 export const CLINICAL_DIAGNOSTIC_PATTERNS: readonly RegExp[] = [
-	/K0[0-9]\.\d+/gi,
-	/K0[0-9]/gi,
+	/K0[0-9](?:\.\d+)?/gi,
+	/(?:зуб[а-я]*|tooth)\s*#?\s*([1-4][1-8]|[5-8][1-5]|\d{1,2})/gi,
 	/пульпит\S*/gi,
 	/кариес\S*/gi,
 	/экстирпаци\S*/gi,
 	/препарировани\S*/gi,
+	/депульпаци\S*/gi,
 	/периодонтит\S*/gi,
 	/пародонтит\S*/gi,
 	/гингивит\S*/gi,
+	/периостит\S*/gi,
+	/альвеолит\S*/gi,
+	/стоматит\S*/gi,
+	/кист[аеыу]\S*/gi,
+	/гранул[её]м\S*/gi,
+	/резекци\S*/gi,
+	/анестези\S*/gi,
+	/ультракаин\S*/gi,
+	/артикаин\S*/gi,
+	/лидокаин\S*/gi,
+	/имплантат\S*/gi,
+	/имплантаци\S*/gi,
+	/синус[_\-]?лифтинг\S*/gi,
+	/остеомиелит\S*/gi,
+	/флегмон\S*/gi,
+	/абсцесс\S*/gi,
+	/\b(?:ВИЧ|СПИД|HIV|AIDS)\b/gi,
+	/гепатит\S*/gi,
+	/сифилис\S*/gi,
+	/туберкулез\S*/gi,
+	/онкологи\S*/gi,
+	/новообразовани\S*/gi,
+	/карцином\S*/gi,
+	/острая\s+боль\S*/gi,
+	/ночные\s+боли\S*/gi,
 ];
 
 export function sanitizeClinicalString(str: string): string {
@@ -343,7 +389,7 @@ export function stripDiagnosisPayload<T>(payload: T): T {
  * Проверяет, содержит ли сериализованная JSON-строка хотя бы один запрещенный ключ.
  */
 export function hasForbiddenClinicalKeyInJson(jsonStr: string): boolean {
-	return /"(?:diagnosis|diagnoses|diagnosisicd10|diagnosistooth|mkb10|mkb_10|emr_records|emrrecords|emk|odontogram|clinicalnotes|clinical_notes|clinicaldata|clinical_data|tooth_states|toothstates|toothformula|tooth_formula|anamnesis|complaint|complaints|objectivestatus|objective_status|treatmentplan|treatment_plan|treatmentdescription|treatment_description|statuslocalis|status_localis)"\s*:/i.test(
+	return /"(?:diagnosis|diagnoses|diagnosisicd10|diagnosistooth|mkb10|mkb_10|emr_records|emrrecords|emk|odontogram|clinicalnotes|clinical_notes|clinicaldata|clinical_data|tooth_states|toothstates|toothformula|tooth_formula|tooth_number|toothnumber|toothnumbers|teeth|surfaces|toothsurfaces|clinicalsummary|clinical_summary|medicalnotes|medical_notes|doctorsummary|doctor_summary|transcript|draftautosave|draft_autosave|anamnesis|complaint|complaints|objectivestatus|objective_status|treatmentplan|treatment_plan|treatmentdescription|treatment_description|statuslocalis|status_localis)"\s*:/i.test(
 		jsonStr,
 	);
 }

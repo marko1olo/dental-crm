@@ -12,6 +12,7 @@ import {
 import { db } from "../db/client.js";
 import { communicationEvents, communicationTasks, patients } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { ChatLockService } from "../services/communications/ChatLockService.js";
 import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
 
@@ -293,6 +294,18 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ ст. 13: Запрет маркетологам на просмотр переписки пациентов
+		const identity = getRequestIdentity(request);
+		if (identity.role === "marketer" || identity.role === "marketing") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "communications.inbox.read",
+				role: identity.role,
+				message:
+					"Доступ к личным сообщениям пациентов для маркетологов ограничен 152-ФЗ и 323-ФЗ ст. 13.",
+			});
+		}
+
 		const latestEvents = await db.execute(sql`
 			SELECT DISTINCT ON (e.patient_id)
 				e.id,
@@ -332,6 +345,50 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ ст. 13: Маркетолог не имеет права читать диалог пациента
+		const identity = getRequestIdentity(request);
+		if (identity.role === "marketer" || identity.role === "marketing") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "communications.inbox.read",
+				role: identity.role,
+				message:
+					"Доступ к диалогу пациента для маркетологов ограничен 152-ФЗ и 323-ФЗ ст. 13.",
+			});
+		}
+
+		// Проверяем существование пациента в данной клинике (Tenant Isolation)
+		const [patient] = await db
+			.select({ id: patients.id, status: patients.status })
+			.from(patients)
+			.where(
+				and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
+			)
+			.limit(1);
+
+		if (!patient) {
+			return reply.code(404).send({
+				error: "PatientNotFound",
+				message: "Пациент не найден в этой клинике.",
+			});
+		}
+
+		// Защита архивированного пациента: неклинический персонал не может читать переписку списанного в архив пациента
+		if (patient.status === "archived") {
+			const reqAny = request as unknown as { user?: { role?: string | null } };
+			const staffRole = identity.role ?? reqAny.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "patients.archived.communications",
+					role: staffRole,
+					message:
+						"Отказ в доступе к сообщениям архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): переписка списанного в архив пациента защищена.",
+				});
+			}
+		}
+
 		const events = await db.select({
 			id: communicationEvents.id,
 			patientId: communicationEvents.patientId,
@@ -368,15 +425,83 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 		const { patientId } = request.params as { patientId: string };
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
-		const { message, channel } = request.body as { message: string, channel: string };
+
+		const identity = getRequestIdentity(request);
+		if (identity.role === "marketer" || identity.role === "marketing") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "communications.inbox.send",
+				role: identity.role,
+				message:
+					"Отправка сообщений в личный диалог пациента маркетологам запрещена (152-ФЗ / 323-ФЗ ст. 13).",
+			});
+		}
+
+		const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		if (!UUID_REGEX.test(patientId)) {
+			return reply.code(400).send({ error: "InvalidPatientId", message: "Некорректный идентификатор пациента." });
+		}
+
+		const [patient] = await db
+			.select({ id: patients.id, status: patients.status })
+			.from(patients)
+			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
+			.limit(1);
+		if (!patient) {
+			return reply.code(404).send({ error: "PatientNotFound", message: "Пациент не найден в клинике." });
+		}
+
+		if (patient.status === "archived") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "patients.archived.communications",
+				message:
+					"Отказ в отправке сообщения архивированному пациенту (152-ФЗ / 323-ФЗ ст. 13).",
+			});
+		}
+
+		const { message, channel } = request.body as { message?: string; channel?: string };
+		if (!message || typeof message !== "string" || !message.trim()) {
+			return reply.code(400).send({ error: "ValidationError", message: "Текст сообщения не может быть пустым." });
+		}
+
+		const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(message);
+		if (secrecy.hasLeak) {
+			return reply.code(422).send({
+				error: "MedicalSecrecyViolation",
+				message: `Отправка сведений о здоровье, диагнозов или формулы зубов по открытым каналам связи запрещена (152-ФЗ / 323-ФЗ ст. 13): ${secrecy.reasons.join("; ")}`,
+				detectedTerms: secrecy.detectedTerms,
+			});
+		}
+
+		const VALID_CHANNELS = [
+			"phone",
+			"sms",
+			"whatsapp",
+			"telegram",
+			"email",
+			"in_person",
+			"vk",
+			"max",
+		] as const;
+		type CommunicationChannelType = (typeof VALID_CHANNELS)[number];
+
+		if (channel && !VALID_CHANNELS.includes(channel as CommunicationChannelType)) {
+			return reply.code(400).send({
+				error: "InvalidCommunicationChannel",
+				message: `Недопустимый канал связи «${channel}». Допустимые каналы: ${VALID_CHANNELS.join(", ")}.`,
+			});
+		}
+
+		const resolvedChannel: CommunicationChannelType = (channel as CommunicationChannelType) || "telegram";
 
 		const inserted = await db.insert(communicationEvents).values({
 			organizationId: orgId,
 			patientId: patientId,
-			channel: channel as any,
+			channel: resolvedChannel,
 			direction: "outbound",
 			status: "sent",
-			message: message,
+			message: message.trim(),
 		}).returning();
 
 		return reply.send({ success: true, event: inserted[0] });
@@ -638,10 +763,10 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 	// ────────────────────────────────────────────────────────────
 
 	/**
-	 * GET /api/communications/templates
+	 * GET /api/communications/catalogs/templates
 	 * Получение каталога шаблонов сообщений клиники
 	 */
-	app.get("/api/communications/templates", async (request, reply) => {
+	app.get("/api/communications/catalogs/templates", async (request, reply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "list communication templates")))
 			return;
 
@@ -669,10 +794,10 @@ export async function registerCommunicationRoutes(app: FastifyInstance) {
 	});
 
 	/**
-	 * POST /api/communications/templates
+	 * POST /api/communications/catalogs/templates
 	 * Создание нового шаблона сообщения с валидацией 152-ФЗ / 323-ФЗ ст. 13
 	 */
-	app.post("/api/communications/templates", async (request, reply) => {
+	app.post("/api/communications/catalogs/templates", async (request, reply) => {
 		if (!(await requireClinicalMutationAccess(request, reply, "create communication template")))
 			return;
 
