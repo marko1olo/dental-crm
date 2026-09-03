@@ -55,6 +55,7 @@ export interface ToothContextDrawerProps {
 	readonly onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;
 	readonly onOpenParentMemo?: (() => void) | undefined;
+	readonly onOpenImplantProtocol?: ((toothNumber: number) => void) | undefined;
 }
 
 export type WarmAccordionSection =
@@ -63,7 +64,8 @@ export type WarmAccordionSection =
 	| "kraft_sanpin"
 	| "rvg_xray"
 	| "family_loyalty"
-	| "pediatric";
+	| "pediatric"
+	| "implant_isq";
 
 export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	isOpen,
@@ -79,6 +81,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 	onOpenFullRadiology,
 	onOpenFamilyBilling,
 	onOpenParentMemo,
+	onOpenImplantProtocol,
 }) => {
 	const isPediatricTooth = (toothNumber >= 51 && toothNumber <= 85) || (patient?.ageYears !== undefined && patient.ageYears < 14);
 
@@ -204,6 +207,15 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 						<span>5. Депозит & Бонусы</span>
 					</button>
 
+					<button
+						type="button"
+						onClick={() => setActiveSection("implant_isq")}
+						className={`dente-quick-tab-btn ${activeSection === "implant_isq" ? "active" : ""}`}
+					>
+						<Activity size={14} />
+						<span>6. Имплантация ISQ</span>
+					</button>
+
 					{isPediatricTooth && (
 						<button
 							type="button"
@@ -211,7 +223,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							className={`dente-quick-tab-btn pediatric ${activeSection === "pediatric" ? "active" : ""}`}
 						>
 							<Heart size={14} />
-							<span>6. Детский (Франкл)</span>
+							<span>7. Детский (Франкл)</span>
 						</button>
 					)}
 				</nav>
@@ -405,6 +417,103 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 							)}
 						</section>
 					)}
+
+					{/* ACCORDION: IMPLANT ISQ & TORQUE PROTOCOL */}
+					<section className="dente-accordion-item">
+						<button
+							type="button"
+							onClick={() => toggleSection("implant_isq")}
+							className={`dente-accordion-trigger ${activeSection === "implant_isq" ? "expanded" : ""}`}
+						>
+							<div className="trigger-left">
+								<Activity size={16} color="var(--brand-500, #3b82f6)" />
+								<span className="trigger-title">Имплантация: Торк & Остеоинтеграция RFA ISQ</span>
+							</div>
+							<div className="trigger-right">
+								<span className="trigger-badge info">Osstell / Penguin</span>
+								{activeSection === "implant_isq" ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+							</div>
+						</button>
+
+						{activeSection === "implant_isq" && (
+							<div className="dente-accordion-body p-4 bg-slate-50 dark:bg-zinc-900/60 rounded-b-xl border-t border-slate-200 dark:border-zinc-800 space-y-3">
+								<div className="grid grid-cols-2 gap-3 text-xs">
+									<div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
+										<span className="text-slate-500 dark:text-slate-400 block mb-1">Клиническая норма торка:</span>
+										<span className="font-bold text-sm text-sky-600 dark:text-sky-400">35 – 40 Н·см</span>
+										<span className="text-[11px] text-slate-400 block mt-0.5">Оптимальная первичная стабильность</span>
+									</div>
+									<div className="p-2.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
+										<span className="text-slate-500 dark:text-slate-400 block mb-1">RFA ISQ стабильность:</span>
+										<span className="font-bold text-sm text-emerald-600 dark:text-emerald-400">70 – 74 ISQ</span>
+										<span className="text-[11px] text-emerald-600 dark:text-emerald-400 block mt-0.5">Немедленная нагрузка разрешена</span>
+									</div>
+								</div>
+
+								<div className="flex flex-wrap gap-2 pt-2">
+									<button
+										type="button"
+										onClick={() => {
+											const normSoap =
+												`Протокол операции дентальной имплантации (зуб #${toothNumber}): ` +
+												`Под местной инфильтрационной анестезией сформировано костное ложе в области зуба ${toothNumber} (кость D2 по Misch). ` +
+												`Установлен дентальный имплантат. Первичный торк введения: 38 Н·см. ` +
+												`RFA-стабилометрия (Osstell/Penguin): V:72, L:74, M:70, D:71, средний ISQ: 72 (Высокая первичная стабильность). ` +
+												`Показатели удовлетворяют критериям немедленной нагрузки (>70 ISQ, торк >= 35 Н·см). Швы мононить 5-0.`;
+											if (onInsertToProtocol) {
+												onInsertToProtocol(normSoap);
+											}
+											try {
+												window.dispatchEvent(
+													new CustomEvent("dente-apply-soap-protocol", {
+														detail: {
+															soap: { treatmentDescription: normSoap },
+															mode: "smart_append",
+														},
+													}),
+												);
+											} catch {
+												// safe
+											}
+											showToast("Клиническая норма имплантации (Торк 38 Н·см, ISQ 72) внесена в карту 043/у", "success");
+										}}
+										className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+										title="Вставить протокол клинической нормы имплантации в дневник 043/у"
+										data-testid="drawer-implant-norm-043u-btn"
+									>
+										<Sparkles size={15} />
+										<span>Вставить норму в 043/у (1 клик)</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											if (onOpenImplantProtocol) {
+												onOpenImplantProtocol(toothNumber);
+											} else {
+												try {
+													window.dispatchEvent(
+														new CustomEvent("dente-open-implant-isq-modal", {
+															detail: { toothNumber },
+														}),
+													);
+												} catch {
+													// safe
+												}
+											}
+											onClose();
+										}}
+										className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+										title="Открыть расширенный протокол ISQ & Торк остеоинтеграции"
+										data-testid="drawer-implant-full-protocol-btn"
+									>
+										<Activity size={15} />
+										<span>Полный протокол ISQ & Торк</span>
+									</button>
+								</div>
+							</div>
+						)}
+					</section>
 				</div>
 
 				{/* Bottom Drawer Action Footer */}

@@ -46,6 +46,8 @@ import { ToothContextDrawer } from "../diagnostic/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
 import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
 import { OrthodonticCephTrackerModal } from "../orthodontics/OrthodonticCephTrackerModal";
+import { OrthodonticVisitProtocolWidget } from "../orthodontics/OrthodonticVisitProtocolWidget";
+import { ImplantIsqProtocolModal } from "../implant/isq/ImplantIsqProtocolModal";
 import { showToast } from "../GlobalToast";
 
 export interface OdontogramViewOption {
@@ -116,6 +118,7 @@ export interface OdontogramViewContainerProps {
 	isMultiSelectMode?: boolean | undefined;
 	onToggleMultiSelect?: ((enabled: boolean) => void) | undefined;
 	onSelectTeethGroup?: ((teeth: number[]) => void) | undefined;
+	onUpdateToothProperties?: ((toothNumber: number, properties: Partial<ToothData>) => void) | undefined;
 	patientId?: string | undefined;
 }
 
@@ -130,6 +133,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	selectedTeeth = [],
 	onToothClick,
 	onQuickStateChange,
+	onUpdateToothProperties,
 	useSurfaces: initialUseSurfaces = false,
 	hideHeader = false,
 	hideLegend = false,
@@ -180,6 +184,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [isLocalPerioOpen, setIsLocalPerioOpen] = useState<boolean>(false);
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
+	const [isOrthoProtocolOpen, setIsOrthoProtocolOpen] = useState<boolean>(false);
+	const [isImplantIsqOpen, setIsImplantIsqOpen] = useState<boolean>(false);
+	const [implantTargetTooth, setImplantTargetTooth] = useState<number | null>(null);
 
 	// 3. Radial Menu Active Anchor
 	const [radialMenuData, setRadialMenuData] = useState<{
@@ -188,6 +195,89 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		currentState?: ToothState | undefined;
 		surfaces?: string[] | undefined;
 	} | null>(null);
+
+	const [localToothOverrides, setLocalToothOverrides] = useState<Record<number, Partial<ToothData>>>({});
+
+	const effectiveTeethData = useMemo(() => {
+		if (Object.keys(localToothOverrides).length === 0) return teethData;
+		return teethData.map((t) => {
+			const override = localToothOverrides[t.toothNumber];
+			return override ? { ...t, ...override } : t;
+		});
+	}, [teethData, localToothOverrides]);
+
+	useEffect(() => {
+		const handleToothPropUpdate = (e: Event) => {
+			const detail = (e as CustomEvent<{
+				toothNumber: number;
+				mobility?: 0 | 1 | 2 | 3;
+				boneLossLevel?: number;
+				pocketDepth?: number;
+			}>).detail;
+			if (detail?.toothNumber) {
+				const { toothNumber, ...props } = detail;
+				setLocalToothOverrides((prev) => ({
+					...prev,
+					[toothNumber]: {
+						...(prev[toothNumber] ?? {}),
+						...props,
+					},
+				}));
+			}
+		};
+		window.addEventListener("dente-update-tooth-properties", handleToothPropUpdate);
+		return () => window.removeEventListener("dente-update-tooth-properties", handleToothPropUpdate);
+	}, []);
+
+	useEffect(() => {
+		const handleOpenIsq = (e: Event) => {
+			const detail = (e as CustomEvent<{ toothNumber?: number }>).detail;
+			if (detail?.toothNumber) {
+				setImplantTargetTooth(detail.toothNumber);
+			}
+			setIsImplantIsqOpen(true);
+		};
+		window.addEventListener("dente-open-implant-isq-modal", handleOpenIsq);
+		return () => window.removeEventListener("dente-open-implant-isq-modal", handleOpenIsq);
+	}, []);
+
+	const handleUpdateToothProperties = useCallback(
+		(toothNumber: number, properties: Partial<ToothData>) => {
+			setLocalToothOverrides((prev) => ({
+				...prev,
+				[toothNumber]: {
+					...(prev[toothNumber] ?? {}),
+					...properties,
+				},
+			}));
+			if (radialMenuData && radialMenuData.toothNumber === toothNumber) {
+				setRadialMenuData((prev) =>
+					prev
+						? {
+								...prev,
+								...(properties.mobility !== undefined ? { mobility: properties.mobility } : {}),
+								...(properties.boneLossLevel !== undefined ? { boneLossLevel: properties.boneLossLevel } : {}),
+								...(properties.pocketDepth !== undefined ? { pocketDepth: properties.pocketDepth } : {}),
+							}
+						: null,
+				);
+			}
+			onUpdateToothProperties?.(toothNumber, properties);
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-update-tooth-properties", {
+						detail: {
+							toothNumber,
+							...properties,
+						},
+					}),
+				);
+			} catch {
+				// Safe event fallback
+			}
+		},
+		[radialMenuData, onUpdateToothProperties],
+	);
 
 	const handleModeSwitch = useCallback(
 		(newMode: OdontogramViewMode) => {
@@ -244,7 +334,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 				return;
 			}
 
-			const currentTooth = teethData.find((t) => t.toothNumber === num);
+			const currentTooth = effectiveTeethData.find((t) => t.toothNumber === num);
 			setRadialMenuData({
 				toothNumber: num,
 				rect: {
@@ -257,7 +347,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 				surfaces: currentTooth?.surfaces ? [...currentTooth.surfaces] : undefined,
 			});
 		},
-		[activeStampTool, isFastExtractMode, onQuickStateChange, teethData, onToothClick],
+		[activeStampTool, isFastExtractMode, onQuickStateChange, effectiveTeethData, onToothClick],
 	);
 
 	// Global Escape hotkey to exit Stamp tool
@@ -335,7 +425,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	);
 
 	const sharedViewProps = {
-		teethData,
+		teethData: effectiveTeethData,
 		pediatricMode,
 		mixedDentition,
 		dentitionMode,
@@ -596,6 +686,42 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<span>Цефалометрия ТРГ</span>
 						</button>
 
+						{/* Orthodontic Visit Protocol Module (1-click Brackets/Wires/Elastics/043-u) */}
+						<button
+							type="button"
+							onClick={() => setIsOrthoProtocolOpen((prev) => !prev)}
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
+								isOrthoProtocolOpen
+									? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/50 shadow-xs font-black"
+									: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+							}`}
+							title="Орто-протокол: выбор брекетов (0.018/0.022), дуг (NiTi/CuNiTi/SS/TMA), сечений, эластиков и вставка в карту 043/у в 1 клик"
+							data-testid="btn-open-ortho-protocol"
+						>
+							<Sparkles size={14} className="text-amber-500 shrink-0" />
+							<span>Орто-протокол</span>
+						</button>
+
+						{/* Implant ISQ Stability & Insertion Torque Protocol (1-click) */}
+						<button
+							type="button"
+							onClick={() => {
+								const target = selectedTeeth[0] ?? effectiveTeethData.find((t) => t.state === "Implant" || t.state === "Missing")?.toothNumber ?? 36;
+								setImplantTargetTooth(target);
+								setIsImplantIsqOpen((prev) => !prev);
+							}}
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg border transition-all shrink-0 whitespace-nowrap cursor-pointer select-none ${
+								isImplantIsqOpen
+									? "bg-blue-600 text-white border-blue-700 shadow-xs font-black"
+									: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/20"
+							}`}
+							title="Протокол имплантации (ISQ / Торк): первичный торк, RFA датчики Osstell/Penguin, стабильность кости и протокол нагрузки"
+							data-testid="btn-open-implant-isq-protocol"
+						>
+							<Activity size={14} className="text-blue-500 shrink-0" />
+							<span>Имплантация (ISQ / Торк)</span>
+						</button>
+
 						{/* Diagnocat AI Report */}
 						{onLoadDiagnocat && (
 							<button
@@ -739,7 +865,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 				{/* Live Invoice Panel */}
 				{isLiveInvoiceOpen && (
 					<OdontogramLiveInvoice
-						teethData={teethData}
+						teethData={effectiveTeethData}
 						isOpen={isLiveInvoiceOpen}
 						onClose={() => setIsLiveInvoiceOpen(false)}
 						className="rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden"
@@ -755,6 +881,12 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					currentState={radialMenuData.currentState}
 					surfaces={radialMenuData.surfaces}
 					onSelectState={handleRadialSelectState}
+					onOpenEndo={() => setEndoDrawerTooth(radialMenuData.toothNumber)}
+					onOpenInspector={() => setContextDrawerTooth(radialMenuData.toothNumber)}
+					onOpenImplantProtocol={() => {
+						setImplantTargetTooth(radialMenuData.toothNumber);
+						setIsImplantIsqOpen(true);
+					}}
 					onAddToInvoice={() => setIsLiveInvoiceOpen(true)}
 					onClose={() => setRadialMenuData(null)}
 				/>
@@ -824,11 +956,16 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					isOpen={contextDrawerTooth !== null}
 					onClose={() => setContextDrawerTooth(null)}
 					toothNumber={contextDrawerTooth}
-					toothData={teethData?.find((t) => t.toothNumber === contextDrawerTooth)}
+					toothData={effectiveTeethData?.find((t) => t.toothNumber === contextDrawerTooth)}
 					onUpdateTooth={(num, updates) => {
+						handleUpdateToothProperties(num, updates);
 						if (updates.state) {
 							onQuickStateChange?.([num], updates.state, updates.surfaces);
 						}
+					}}
+					onOpenImplantProtocol={(num) => {
+						setImplantTargetTooth(num);
+						setIsImplantIsqOpen(true);
 					}}
 				/>
 			)}
@@ -839,7 +976,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					isOpen={endoDrawerTooth !== null}
 					onClose={() => setEndoDrawerTooth(null)}
 					toothNumber={endoDrawerTooth}
-					toothState={teethData?.find((t) => t.toothNumber === endoDrawerTooth)?.state}
+					toothState={effectiveTeethData?.find((t) => t.toothNumber === endoDrawerTooth)?.state}
 					patientId={patientId}
 				/>
 			)}
@@ -861,6 +998,71 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 				onClose={() => setIsOrthoCephOpen(false)}
 				patientId={patientId}
 				patientName={patientId ? `Пациент #${patientId}` : undefined}
+			/>
+
+			{/* Orthodontic Visit Protocol Modal / Drawer (1-Click Formula Integration) */}
+			<OrthodonticVisitProtocolWidget
+				isOpen={isOrthoProtocolOpen}
+				onClose={() => setIsOrthoProtocolOpen(false)}
+				patientId={patientId}
+				patientName={patientId ? `Пациент #${patientId}` : undefined}
+				selectedTooth={selectedTeeth[0] ?? null}
+				onSelectTooth={(num) => onSelectTeethGroup?.([num])}
+			/>
+
+			{/* Tier 2/3 Implant ISQ Stability & Insertion Torque Protocol Modal */}
+			<ImplantIsqProtocolModal
+				isOpen={isImplantIsqOpen}
+				onClose={() => setIsImplantIsqOpen(false)}
+				initialToothNumber={implantTargetTooth ?? selectedTeeth[0] ?? 36}
+				patientId={patientId}
+				patientName={patientId ? `Пациент #${patientId}` : undefined}
+				onSaveProtocol={(res) => {
+					const num = typeof res.toothNumberFdi === "number" ? res.toothNumberFdi : parseInt(String(res.toothNumberFdi), 10);
+					if (!isNaN(num)) {
+						onQuickStateChange?.([num], "Implant");
+						handleUpdateToothProperties(num, {
+							state: "Implant",
+							clinicalData: {
+								isq: res.meanIsq,
+								torque: res.insertionTorqueNcm,
+								boneDensity: res.boneDensity,
+								implantSystem: res.implantSystemName,
+							},
+						});
+					}
+					try {
+						window.dispatchEvent(
+							new CustomEvent("dente-apply-soap-protocol", {
+								detail: {
+									soap: {
+										treatmentDescription: res.diaryEntryRu,
+									},
+									mode: "smart_append",
+								},
+							}),
+						);
+					} catch {
+						// safe fallback
+					}
+					setIsImplantIsqOpen(false);
+				}}
+				onInsertIntoDiary={(protocolText) => {
+					try {
+						window.dispatchEvent(
+							new CustomEvent("dente-apply-soap-protocol", {
+								detail: {
+									soap: {
+										treatmentDescription: protocolText,
+									},
+									mode: "smart_append",
+								},
+							}),
+						);
+					} catch {
+						// safe fallback
+					}
+				}}
 			/>
 		</div>
 	);

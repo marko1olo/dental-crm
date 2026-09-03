@@ -12,7 +12,10 @@ import {
 	Clock,
 	Layers,
 	FileText,
-	Award
+	Award,
+	Download,
+	Printer,
+	Sparkles
 } from 'lucide-react';
 import {
 	MischBoneDensity,
@@ -25,17 +28,22 @@ import {
 	evaluateImplantIsqStability,
 	ImplantIsqAssessmentResult
 } from './implantIsqEngine';
+import { showToast } from '../../GlobalToast';
 import './implantIsq.css';
 
 export interface ImplantIsqProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSaveProtocol?: (result: ImplantIsqAssessmentResult) => void;
-	initialToothNumber?: number | string;
-	initialImplantSystem?: string;
-	initialDiameterMm?: number;
-	initialLengthMm?: number;
-	surgeonName?: string;
+	onSaveProtocol?: ((result: ImplantIsqAssessmentResult) => void) | undefined;
+	initialToothNumber?: number | string | undefined;
+	initialImplantSystem?: string | undefined;
+	initialDiameterMm?: number | undefined;
+	initialLengthMm?: number | undefined;
+	surgeonName?: string | undefined;
+	patientName?: string | undefined;
+	patientId?: string | undefined;
+	onInsertIntoDiary?: ((protocolText: string) => void) | undefined;
+	onInsertToProtocol?: ((protocolText: string) => void) | undefined;
 }
 
 const COMMON_IMPLANT_SYSTEMS = [
@@ -56,7 +64,11 @@ export function ImplantIsqProtocolModal({
 	initialImplantSystem = 'Straumann BLX Roxolid SLActive',
 	initialDiameterMm = 4.0,
 	initialLengthMm = 10.0,
-	surgeonName = 'Хирург-имплантолог'
+	surgeonName = 'Хирург-имплантолог',
+	patientName = 'Пациент',
+	patientId = '',
+	onInsertIntoDiary,
+	onInsertToProtocol
 }: ImplantIsqProtocolModalProps) {
 	const [implantSystem, setImplantSystem] = useState<string>(initialImplantSystem);
 	const [toothNumber, setToothNumber] = useState<string | number>(initialToothNumber);
@@ -110,6 +122,88 @@ export function ImplantIsqProtocolModal({
 		setIsqReadings(prev => ({ ...prev, [key]: clamped }));
 	};
 
+	const handleApplyClinicalNorm = () => {
+		setInsertionTorqueNcm(38);
+		setIsqReadings({
+			vestibularBuccal: 72,
+			lingualPalatal: 74,
+			mesial: 70,
+			distal: 71
+		});
+		setBoneDensity('D2');
+		setIsGbr(false);
+		setIsImmediateExtraction(false);
+		showToast('Клиническая норма установлена: Торк 38 Н·см, ISQ 70–74, кость D2, немедленная нагрузка', 'info');
+	};
+
+	const handleInsertInto043u = () => {
+		const text = assessment.diaryEntryRu;
+		if (onInsertIntoDiary) {
+			onInsertIntoDiary(text);
+		} else if (onInsertToProtocol) {
+			onInsertToProtocol(text);
+		}
+		try {
+			window.dispatchEvent(
+				new CustomEvent('dente-apply-soap-protocol', {
+					detail: {
+						soap: {
+							treatmentDescription: text
+						},
+						mode: 'smart_append'
+					}
+				})
+			);
+		} catch {
+			// safe event fallback
+		}
+		showToast('Протокол имплантации (ISQ / Торк) успешно внесен в карту 043/у', 'success');
+	};
+
+	const handleExportPassport = () => {
+		const now = new Date().toLocaleDateString('ru-RU');
+		const passportText =
+			`═══════════════════════════════════════════════════════════════════════════════\n` +
+			`ПАСПОРТ ИМПЛАНТАЦИИ & СТАБИЛОМЕТРИИ RFA ISQ (DENTE DENTAL CRM)\n` +
+			`Дата вмешательства: ${now}\n` +
+			`Пациент: ${patientName || 'Пациент'} (ID: ${patientId || 'N/A'})\n` +
+			`Хирург-имплантолог: ${surgeonName}\n` +
+			`Область: Зуб ${toothNumber} (FDI)\n` +
+			`═══════════════════════════════════════════════════════════════════════════════\n\n` +
+			`1. СПЕЦИФИКАЦИЯ ИМПЛАНТАТА:\n` +
+			`- Система: ${implantSystem}\n` +
+			`- Размеры: Ø ${diameterMm} мм × ${lengthMm} мм\n` +
+			`- Тип кости (Misch): ${boneDensity} (${MISCH_BONE_DENSITIES[boneDensity]?.nameRu || boneDensity})\n` +
+			`- Сопутствующие манипуляции: ${isGbr ? 'НКР / Синус-лифтинг' : 'Без костной пластики'}${isImmediateExtraction ? ', Одномоментная установка в лунку' : ''}\n\n` +
+			`2. ПЕРВИЧНАЯ СТАБИЛЬНОСТЬ & ТОРК:\n` +
+			`- Торк введения: ${insertionTorqueNcm} Н·см (${assessment.torqueStatusRu})\n` +
+			`- Клиническое значение торка: ${TORQUE_STANDARDS[assessment.torqueCategory]?.clinicalImplicationRu || ''}\n\n` +
+			`3. РЕЗОНАНСНО-ЧАСТОТНЫЙ АНАЛИЗ RFA ISQ (Osstell / Penguin):\n` +
+			`- Вестибулярно: ${isqReadings.vestibularBuccal} ISQ\n` +
+			`- Язычно / Небно: ${isqReadings.lingualPalatal} ISQ\n` +
+			`- Медиально: ${isqReadings.mesial} ISQ\n` +
+			`- Дистально: ${isqReadings.distal} ISQ\n` +
+			`- Средний показатель (Mean ISQ): ${assessment.meanIsq} ISQ (${assessment.isqStatusRu})\n` +
+			`- Анизотропия фиксации (ΔISQ): ${assessment.anisotropyDeltaIsq} ISQ\n\n` +
+			`4. КЛИНИЧЕСКИЙ ПРОТОКОЛ НАГРУЗКИ:\n` +
+			`- Рекомендация: ${assessment.loadingRecommendationTitleRu}\n` +
+			`- Обоснование: ${assessment.clinicalRationaleRu}\n\n` +
+			`5. ЗАПИСЬ ДЛЯ КАРТЫ СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (ФОРМА № 043/у):\n` +
+			`${assessment.diaryEntryRu}\n` +
+			`═══════════════════════════════════════════════════════════════════════════════\n`;
+
+		const blob = new Blob([passportText], { type: 'text/plain;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `Протокол_ISQ_зуб_${toothNumber}_${(patientName || 'Пациент').replace(/\s+/g, '_')}.txt`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		showToast('Хирургический протокол ISQ успешно выгружен в файл', 'success');
+	};
+
 	const handleCopyDiary = () => {
 		navigator.clipboard.writeText(assessment.diaryEntryRu);
 		setIsCopiedDiary(true);
@@ -126,6 +220,16 @@ export function ImplantIsqProtocolModal({
 		if (onSaveProtocol) {
 			onSaveProtocol(assessment);
 		}
+		try {
+			window.dispatchEvent(
+				new CustomEvent('dente-implant-protocol-saved', {
+					detail: assessment
+				})
+			);
+		} catch {
+			// safe event fallback
+		}
+		showToast(`Протокол имплантации ISQ (зуб #${toothNumber}) сохранен`, 'success');
 		onClose();
 	};
 
@@ -140,16 +244,30 @@ export function ImplantIsqProtocolModal({
 						<Activity size={22} color="var(--brand-500, #3b82f6)" />
 						<span>Дентальная имплантация: Торк & RFA ISQ Остеоинтеграция</span>
 						<span className="isq-header-badge">Osstell / Penguin RFA</span>
+						<span className="isq-header-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--ok, #10b981)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>Зуб {toothNumber}</span>
 					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="isq-btn"
-						style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem', border: 'none' }}
-						aria-label="Закрыть модальное окно"
-					>
-						<X size={20} />
-					</button>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+						<button
+							type="button"
+							onClick={handleApplyClinicalNorm}
+							className="isq-btn"
+							style={{ minHeight: '36px', padding: '0.375rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-500, #3b82f6)', background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.3)' }}
+							title="Заполнить клинической нормой (Торк 38 Н·см, ISQ 70-74, D2, немедленная нагрузка)"
+							data-testid="header-fill-clinical-norm-btn"
+						>
+							<Sparkles size={14} />
+							Клиническая норма (1 клик)
+						</button>
+						<button
+							type="button"
+							onClick={onClose}
+							className="isq-btn"
+							style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem', border: 'none' }}
+							aria-label="Закрыть модальное окно"
+						>
+							<X size={20} />
+						</button>
+					</div>
 				</div>
 
 				{/* Modal Body */}
@@ -403,20 +521,33 @@ export function ImplantIsqProtocolModal({
 					</div>
 
 					{/* Clinical Diary & Passport Boxes */}
-					<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
 						<div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem', gap: '0.5rem', flexWrap: 'wrap' }}>
 								<span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--muted, #64748b)' }}>Протокол операции (Форма № 043/у):</span>
-								<button
-									type="button"
-									onClick={handleCopyDiary}
-									className="isq-btn"
-									style={{ minHeight: '44px', minWidth: '44px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}
-									aria-label="Скопировать протокол операции"
-								>
-									{isCopiedDiary ? <Check size={16} color="var(--ok, #10b981)" /> : <Copy size={16} />}
-									Копировать
-								</button>
+								<div style={{ display: 'flex', gap: '0.375rem' }}>
+									<button
+										type="button"
+										onClick={handleInsertInto043u}
+										className="isq-btn isq-btn-primary"
+										style={{ minHeight: '36px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+										title="Внести готовый протокол операции в дневник 043/у в 1 клик"
+										data-testid="isq-insert-043u-btn"
+									>
+										<CheckCircle2 size={14} />
+										Внести в 043/у (1 клик)
+									</button>
+									<button
+										type="button"
+										onClick={handleCopyDiary}
+										className="isq-btn"
+										style={{ minHeight: '36px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+										aria-label="Скопировать протокол операции"
+									>
+										{isCopiedDiary ? <Check size={14} color="var(--ok, #10b981)" /> : <Copy size={14} />}
+										Копировать
+									</button>
+								</div>
 							</div>
 							<div className="isq-diary-box" style={{ minHeight: '80px' }}>
 								{assessment.diaryEntryRu}
@@ -424,18 +555,31 @@ export function ImplantIsqProtocolModal({
 						</div>
 
 						<div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem', gap: '0.5rem', flexWrap: 'wrap' }}>
 								<span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--muted, #64748b)' }}>Паспорт имплантата:</span>
-								<button
-									type="button"
-									onClick={handleCopyPassport}
-									className="isq-btn"
-									style={{ minHeight: '44px', minWidth: '44px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}
-									aria-label="Скопировать паспорт имплантата"
-								>
-									{isCopiedPassport ? <Check size={16} color="var(--ok, #10b981)" /> : <Copy size={16} />}
-									Копировать
-								</button>
+								<div style={{ display: 'flex', gap: '0.375rem' }}>
+									<button
+										type="button"
+										onClick={handleExportPassport}
+										className="isq-btn"
+										style={{ minHeight: '36px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+										title="Выгрузить хирургический паспорт в текстовый файл"
+										data-testid="isq-export-passport-btn"
+									>
+										<Download size={14} />
+										Выгрузить
+									</button>
+									<button
+										type="button"
+										onClick={handleCopyPassport}
+										className="isq-btn"
+										style={{ minHeight: '36px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
+										aria-label="Скопировать паспорт имплантата"
+									>
+										{isCopiedPassport ? <Check size={14} color="var(--ok, #10b981)" /> : <Copy size={14} />}
+										Копировать
+									</button>
+								</div>
 							</div>
 							<div className="isq-diary-box" style={{ minHeight: '80px' }}>
 								{assessment.implantPassportSnippetRu}
@@ -444,22 +588,58 @@ export function ImplantIsqProtocolModal({
 					</div>
 
 					{/* Action Buttons */}
-					<div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+					<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--line, #e2e8f0)' }}>
 						<button
 							type="button"
-							onClick={onClose}
+							onClick={handleApplyClinicalNorm}
 							className="isq-btn"
+							style={{ fontSize: '0.8125rem', fontWeight: 700, background: 'rgba(59, 130, 246, 0.1)', color: 'var(--brand-500, #3b82f6)', borderColor: 'rgba(59, 130, 246, 0.3)' }}
+							title="Заполнить клинической нормой по умолчанию: Торк 38 Н·см, ISQ 70-74, кость D2, немедленная нагрузка"
+							data-testid="isq-fill-norm-btn"
 						>
-							Закрыть
+							<Sparkles size={16} />
+							Клиническая норма (1 клик)
 						</button>
-						<button
-							type="button"
-							onClick={handleSave}
-							className="isq-btn isq-btn-primary"
-						>
-							<CheckCircle2 size={16} />
-							Сохранить протокол ISQ
-						</button>
+
+						<div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+							<button
+								type="button"
+								onClick={handleExportPassport}
+								className="isq-btn"
+								title="Выгрузить хирургический протокол и паспорт в текстовый файл"
+								data-testid="isq-footer-export-btn"
+							>
+								<Download size={16} />
+								Выгрузить файл
+							</button>
+							<button
+								type="button"
+								onClick={handleInsertInto043u}
+								className="isq-btn isq-btn-primary"
+								title="Внести протокол имплантации в карту 043/у в 1 клик"
+								data-testid="isq-footer-insert-diary-btn"
+							>
+								<FileText size={16} />
+								Внести в карту 043/у
+							</button>
+							<button
+								type="button"
+								onClick={onClose}
+								className="isq-btn"
+							>
+								Закрыть
+							</button>
+							<button
+								type="button"
+								onClick={handleSave}
+								className="isq-btn isq-btn-primary"
+								style={{ background: 'var(--ok, #10b981)', borderColor: 'var(--ok, #10b981)', color: '#fff' }}
+								data-testid="isq-save-protocol-btn"
+							>
+								<CheckCircle2 size={16} />
+								Сохранить протокол ISQ
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>

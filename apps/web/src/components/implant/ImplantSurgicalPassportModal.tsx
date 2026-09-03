@@ -24,6 +24,8 @@ import {
 	Calendar,
 	QrCode,
 	Zap,
+	Download,
+	Printer,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import "./implantSurgicalPassport.css";
@@ -352,6 +354,20 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 		if (onInsertIntoDiary) {
 			onInsertIntoDiary(generatedSurgeryProtocol);
 		}
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							treatmentDescription: generatedSurgeryProtocol,
+						},
+						mode: "smart_append",
+					},
+				}),
+			);
+		} catch {
+			// safe fallback
+		}
 		showToast("Протокол имплантации успешно внесен в карту 043/у", "success");
 	}, [generatedSurgeryProtocol, onInsertIntoDiary]);
 
@@ -359,8 +375,85 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 		if (onSavePassport) {
 			onSavePassport(assembledPassportData);
 		}
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-implant-passport-saved", {
+					detail: assembledPassportData,
+				}),
+			);
+		} catch {
+			// safe fallback
+		}
 		showToast(`Паспорт имплантата #${toothNumber} сохранен в историю пациента`, "success");
-	}, [assembledPassportData, toothNumber, onSavePassport]);
+		onClose();
+	}, [assembledPassportData, toothNumber, onSavePassport, onClose]);
+
+	const handleExportPassport = useCallback(() => {
+		const passportText =
+			`═══════════════════════════════════════════════════════════════════════════════\n` +
+			`ГАРАНТИЙНЫЙ ХИРУРГИЧЕСКИЙ ПАСПОРТ ИМПЛАНТАЦИИ DENTE\n` +
+			`Идентификатор: ${assembledPassportData.passportId}\n` +
+			`Дата операции: ${new Date().toLocaleDateString("ru-RU")}\n` +
+			`Пациент: ${patientName} (ID: ${patientId || "N/A"})\n` +
+			`Хирург: ${doctorName} (ID: ${doctorId || "N/A"})\n` +
+			`Позиция (FDI): Зуб ${toothNumber}\n` +
+			`═══════════════════════════════════════════════════════════════════════════════\n\n` +
+			`1. ХАРАКТЕРИСТИКИ ИМПЛАНТАТА:\n` +
+			`- Бренд / Модель: ${selectedImplantPreset.brand} ${selectedImplantPreset.model}\n` +
+			`- Размеры: Ø ${diameterMm} мм × ${lengthMm} мм\n` +
+			`- Номер партии (LOT): ${lotNumber}\n` +
+			`- Серийный номер (SN): ${serialNumber}\n\n` +
+			`2. КОСТНОЕ ЛОЖЕ И ПЕРВИЧНАЯ СТАБИЛИЗАЦИЯ:\n` +
+			`- Тип кости (Misch): ${boneDensity} (${BONE_DENSITY_DEFINITIONS[boneDensity].title})\n` +
+			`- Протокол сверления: ${BONE_DENSITY_DEFINITIONS[boneDensity].drillNote}\n` +
+			`- Первичный торк введения: ${torqueNcm} Ncm\n` +
+			`- Костная пластика (НКР): ${isGbrPerformed ? `Да (${boneGraft}, ${membrane}, ${fixationPins})` : "Нет"}\n\n` +
+			`3. СТАБИЛОМЕТРИЯ RFA ISQ:\n` +
+			`- Первичный ISQ (День 0): ${isqDay0.meanIsq} ISQ (V:${isqDay0.vestibular} L:${isqDay0.lingual} M:${isqDay0.mesial} D:${isqDay0.distal})\n` +
+			`- Текущий показатель: ${latestIsq} ISQ (${secondaryStabilityDelta >= 0 ? `+${secondaryStabilityDelta}` : secondaryStabilityDelta} Δ)\n` +
+			`- Рекомендация нагрузки: ${loadingRecommendation.statusRu} — ${loadingRecommendation.desc}\n\n` +
+			`4. ПРОТОКОЛ ОПЕРАЦИИ (ФОРМА № 043/у):\n` +
+			`${generatedSurgeryProtocol}\n` +
+			`═══════════════════════════════════════════════════════════════════════════════\n`;
+
+		const blob = new Blob([passportText], { type: "text/plain;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `Паспорт_имплантата_зуб_${toothNumber}_${patientName.replace(/\s+/g, "_")}.txt`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		showToast("Хирургический паспорт успешно выгружен в файл", "success");
+	}, [
+		assembledPassportData,
+		patientName,
+		patientId,
+		doctorName,
+		doctorId,
+		toothNumber,
+		selectedImplantPreset,
+		diameterMm,
+		lengthMm,
+		lotNumber,
+		serialNumber,
+		boneDensity,
+		torqueNcm,
+		isGbrPerformed,
+		boneGraft,
+		membrane,
+		fixationPins,
+		isqDay0,
+		latestIsq,
+		secondaryStabilityDelta,
+		loadingRecommendation,
+		generatedSurgeryProtocol,
+	]);
+
+	const handlePrintPassport = useCallback(() => {
+		window.print?.();
+	}, []);
 
 	if (!isOpen) return null;
 
@@ -808,6 +901,28 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 										<span className="font-mono font-bold text-emerald-400">{latestIsq} ISQ</span>
 									</div>
 								</div>
+
+								{/* Passport Action Buttons inside Tab 4 */}
+								<div className="flex flex-wrap gap-2 pt-3 border-t border-slate-700/80">
+									<button
+										type="button"
+										onClick={handleExportPassport}
+										className="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white inline-flex items-center gap-2 cursor-pointer transition-all shadow-sm"
+										data-testid="tab-passport-export-btn"
+									>
+										<Download size={16} />
+										<span>Выгрузить паспорт (.txt)</span>
+									</button>
+									<button
+										type="button"
+										onClick={handlePrintPassport}
+										className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 text-white inline-flex items-center gap-2 cursor-pointer transition-all"
+										data-testid="tab-passport-print-btn"
+									>
+										<Printer size={16} />
+										<span>Распечатать</span>
+									</button>
+								</div>
 							</div>
 						</div>
 					)}
@@ -823,6 +938,17 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 					</div>
 
 					<div className="implant-footer-btn-group">
+						<button
+							type="button"
+							onClick={handleExportPassport}
+							className="implant-action-btn implant-action-btn-secondary"
+							data-testid="implant-export-passport-btn"
+							title="Выгрузить хирургический паспорт в текстовый файл"
+						>
+							<Download size={18} />
+							<span>Выгрузить паспорт</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleInsertDiary}

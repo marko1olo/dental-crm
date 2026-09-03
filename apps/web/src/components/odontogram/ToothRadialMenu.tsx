@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+	Activity,
 	AlertTriangle,
 	Coins,
 	Crown,
 	Flame,
 	Hammer,
+	Sliders,
 	Sparkles,
 	Trash2,
 	Wrench,
@@ -38,6 +40,8 @@ export interface ToothRadialMenuProps {
 	onSelectState: (state: ToothState, surfaces?: readonly string[], subType?: string) => void;
 	onSelectSurfaces?: (surfaces: readonly string[]) => void;
 	onOpenEndo?: () => void;
+	onOpenInspector?: () => void;
+	onOpenImplantProtocol?: () => void;
 	onAddToInvoice?: () => void;
 	onClose: () => void;
 }
@@ -51,6 +55,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	onSelectState,
 	onSelectSurfaces,
 	onOpenEndo,
+	onOpenInspector,
+	onOpenImplantProtocol,
 	onAddToInvoice,
 	onClose,
 }) => {
@@ -651,9 +657,39 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						</div>
 					)}
 
-					{/* Quick Actions (Endo / Invoice) */}
-					{Boolean(onOpenEndo || onAddToInvoice) && (
-						<div className="flex items-center gap-2 pt-1 border-t border-[var(--odontogram-border-subtle)]">
+					{/* Quick Actions (Implant ISQ / Endo / Inspector / Invoice) */}
+					{Boolean(onOpenImplantProtocol || onOpenInspector || onOpenEndo || onAddToInvoice) && (
+						<div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--odontogram-border-subtle)]">
+							{onOpenImplantProtocol && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenImplantProtocol();
+										onClose();
+									}}
+									className="min-h-[48px] py-2 px-2.5 rounded-xl text-xs font-black text-sky-700 dark:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+									title="Протокол имплантации (ISQ / Торк)"
+									data-testid="mobile-radial-implant-isq-btn"
+								>
+									<Activity size={16} />
+									<span>Протокол ISQ</span>
+								</button>
+							)}
+							{onOpenInspector && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenInspector();
+										onClose();
+									}}
+									className="min-h-[48px] py-2 px-2.5 rounded-xl text-xs font-black text-indigo-700 dark:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+									title="Инспектор зуба"
+									data-testid="mobile-radial-inspector-btn"
+								>
+									<Sliders size={16} />
+									<span>Инспектор</span>
+								</button>
+							)}
 							{onOpenEndo && (
 								<button
 									type="button"
@@ -661,10 +697,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onOpenEndo();
 										onClose();
 									}}
-									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+									className="min-h-[48px] py-2 px-2.5 rounded-xl text-xs font-black text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								>
-									<Wrench size={18} />
-									<span>Журнал каналов</span>
+									<Wrench size={16} />
+									<span>Каналы</span>
 								</button>
 							)}
 							{onAddToInvoice && (
@@ -674,9 +710,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										onAddToInvoice();
 										onClose();
 									}}
-									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-[var(--teal)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] border border-[var(--teal)]/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+									className="min-h-[48px] py-2 px-2.5 rounded-xl text-xs font-black text-[var(--teal)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] border border-[var(--teal)]/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 								>
-									<Coins size={18} />
+									<Coins size={16} />
 									<span>В смету</span>
 								</button>
 							)}
@@ -977,7 +1013,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					)}
 
 					{/* Quick Action Footer Controls */}
-					{Boolean(onOpenEndo || onAddToInvoice) && (
+					{Boolean(onOpenImplantProtocol || onOpenInspector || onOpenEndo || onAddToInvoice) && (
 						<div
 							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
 							style={{
@@ -986,6 +1022,48 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								transform: "translate(-50%, 0)",
 							}}
 						>
+							{onOpenImplantProtocol && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenImplantProtocol();
+										onClose();
+									}}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+										background: "transparent",
+									}}
+									className="min-h-[32px] text-xs font-black text-sky-600 dark:text-sky-300 hover:bg-sky-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+									title="Протокол имплантации (ISQ / Торк) для этого зуба"
+									data-testid="radial-implant-isq-btn"
+								>
+									<Activity size={14} />
+									<span>Протокол ISQ</span>
+								</button>
+							)}
+							{onOpenInspector && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenInspector();
+										onClose();
+									}}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+										background: "transparent",
+									}}
+									className="min-h-[32px] text-xs font-black text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+									title="Детальный инспектор зуба"
+									data-testid="radial-inspector-btn"
+								>
+									<Sliders size={14} />
+									<span>Инспектор</span>
+								</button>
+							)}
 							{onOpenEndo && (
 								<button
 									type="button"
