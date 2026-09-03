@@ -13,12 +13,54 @@ import {
 	Repeat,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
+
+export const QUICK_APPOINTMENT_REASONS = [
+	{
+		label: "⚡ Острая боль (30 мин)",
+		reason: "Острая боль (Неотложная помощь / ст. 124 УК РФ)",
+		durationMinutes: 30,
+		comment: "⚡ Экстренно: обращение с острой болью (ст. 124 УК РФ)",
+		status: "confirmed" as const,
+		tone: "emergency" as const,
+	},
+	{
+		label: "⚡ Консультация (30 мин)",
+		reason: "Первичный осмотр и составление плана лечения",
+		durationMinutes: 30,
+		tone: "standard" as const,
+	},
+	{
+		label: "⚡ Терапия / Кариес (60 мин)",
+		reason: "Лечение кариеса / эстетическая реставрация",
+		durationMinutes: 60,
+		tone: "standard" as const,
+	},
+	{
+		label: "⚡ Профгигиена / AirFlow (60 мин)",
+		reason: "Комплексная гигиена полости рта (AirFlow + УЗ)",
+		durationMinutes: 60,
+		tone: "standard" as const,
+	},
+	{
+		label: "⚡ Удаление зуба (45 мин)",
+		reason: "Хирургический прием: удаление зуба / анестезия",
+		durationMinutes: 45,
+		tone: "standard" as const,
+	},
+	{
+		label: "⚡ Примерка / ЗТЛ (30 мин)",
+		reason: "Ортопедический прием: примерка / фиксация конструкции ЗТЛ",
+		durationMinutes: 30,
+		tone: "standard" as const,
+	},
+] as const;
 
 export interface AppointmentModalProps {
 	isOpen: boolean;
@@ -207,6 +249,54 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		(appointment && appointmentReadinessById instanceof Map
 			? appointmentReadinessById.get(appointment.id)
 			: undefined) ?? null;
+
+	const currentDurationMinutes = useMemo(() => {
+		if (!startsAtLocal || !endsAtLocal) return 0;
+		try {
+			const startMs = Date.parse(fromDateTimeLocalValue(startsAtLocal, timezone));
+			const endMs = Date.parse(fromDateTimeLocalValue(endsAtLocal, timezone));
+			if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) return 0;
+			return Math.round((endMs - startMs) / (60 * 1000));
+		} catch {
+			return 0;
+		}
+	}, [startsAtLocal, endsAtLocal, fromDateTimeLocalValue, timezone]);
+
+	const applyDuration = useCallback(
+		(minutes: number) => {
+			let startVal = startsAtLocal;
+			if (!startVal) {
+				const now = new Date();
+				now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+				startVal = toDateTimeLocalValue(now.toISOString(), timezone);
+				setStartsAtLocal(startVal);
+			}
+			try {
+				const startDate = new Date(fromDateTimeLocalValue(startVal, timezone));
+				if (!isNaN(startDate.getTime())) {
+					const endDate = new Date(startDate.getTime() + minutes * 60 * 1000);
+					setEndsAtLocal(toDateTimeLocalValue(endDate.toISOString(), timezone));
+				}
+			} catch {
+				// ignore parse error
+			}
+		},
+		[startsAtLocal, fromDateTimeLocalValue, toDateTimeLocalValue, timezone],
+	);
+
+	const handleApplyReasonPreset = useCallback(
+		(preset: (typeof QUICK_APPOINTMENT_REASONS)[number]) => {
+			setReason(preset.reason);
+			applyDuration(preset.durationMinutes);
+			if ("comment" in preset && preset.comment && !comment) {
+				setComment(preset.comment);
+			}
+			if ("status" in preset && preset.status) {
+				setStatus(preset.status);
+			}
+		},
+		[applyDuration, comment],
+	);
 
 	const handleSave = async (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
@@ -511,6 +601,40 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							/>
 						</div>
 
+						{/* Quick Duration Buttons (Anti-Clickfest) */}
+						<div className="sm:col-span-2">
+							<div className="flex items-center justify-between gap-2 mb-1.5">
+								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+									<Zap size={14} className="text-[var(--teal)]" />
+									<span>Быстрый выбор длительности:</span>
+								</label>
+								{currentDurationMinutes > 0 && (
+									<span className="text-xs font-mono font-bold text-[var(--teal)]">
+										{currentDurationMinutes} мин
+										{currentDurationMinutes >= 60
+											? ` (${Math.floor(currentDurationMinutes / 60)} ч ${currentDurationMinutes % 60 ? `${currentDurationMinutes % 60} мин` : ""})`
+											: ""}
+									</span>
+								)}
+							</div>
+							<div className="flex items-center gap-1.5 flex-wrap" data-testid="appointment-quick-durations">
+								{[15, 30, 45, 60, 90, 120].map((mins) => (
+									<button
+										key={mins}
+										type="button"
+										onClick={() => applyDuration(mins)}
+										className={`min-h-[38px] px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+											currentDurationMinutes === mins
+												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
+												: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
+										}`}
+									>
+										{mins < 60 ? `${mins} мин` : mins === 60 ? "1 час" : mins === 90 ? "1.5 ч" : "2 часа"}
+									</button>
+								))}
+							</div>
+						</div>
+
 						{/* Doctor & Chair */}
 						<div>
 							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
@@ -602,7 +726,26 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								value={reason}
 								onChange={(e) => setReason(e.target.value)}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								placeholder="Например: Лечение кариеса, консультация, острая боль..."
 							/>
+							{/* Quick Clinical Purpose Presets */}
+							<div className="flex items-center gap-1.5 flex-wrap mt-2" data-testid="appointment-quick-reasons">
+								{QUICK_APPOINTMENT_REASONS.map((preset) => (
+									<button
+										key={preset.label}
+										type="button"
+										onClick={() => handleApplyReasonPreset(preset)}
+										className={`min-h-[36px] px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+											preset.tone === "emergency"
+												? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+										}`}
+										title={preset.reason}
+									>
+										{preset.label}
+									</button>
+								))}
+							</div>
 						</div>
 
 						{/* Comment */}
