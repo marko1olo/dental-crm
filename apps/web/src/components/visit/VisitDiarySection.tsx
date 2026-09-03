@@ -1,6 +1,7 @@
 import {
 	Activity,
 	AlertTriangle,
+	BarChart2,
 	Check,
 	Clock,
 	FileText,
@@ -59,6 +60,7 @@ import {
 } from "./VisitSummaryModal";
 import { ClinicalDiaryTemplatesModal } from "../emr/templates";
 import { PatientAllergySafetyBanner } from "../patient/PatientAllergySafetyBanner";
+import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import "../../styles/visit-diary-043.css";
 
 export interface VisitDiarySectionProps {
@@ -162,6 +164,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [showEgiszModal, setShowEgiszModal] = useState(false);
 	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
 	const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+	const [isTier3PerioModalOpen, setIsTier3PerioModalOpen] = useState(false);
 	const [activeTeeth, setActiveTeeth] = useState<
 		readonly {
 			toothNumber: number;
@@ -445,13 +448,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	};
 
 	const handleInsertPerioStatus = () => {
-		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (PSR / Интактный пародонт)]
-Десна бледно-розовая, плотная, фестончатая, плотно прилежит к шейкам зубов.
-Глубина зондирования зубодесневых карманов (ЗДК): 1–2 мм во всех секстантах.
+		const perioText = `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС (НОРМА В 1 КЛИК)]
+Десна бледно-розовая, плотная, зубодесневое прикрепление сохранено, патологических карманов нет (норма).
+Глубина зондирования зубодесневых борозд: 1–2 мм во всех секстантах.
 Кровоточивость при зондировании (BOP): отсутствует (0%).
 Патологическая подвижность зубов и фуркационные дефекты: не выявлены.
-Наддесневые и поддесневые зубные отложения: незначительные / сняты.
-Диагноз: Клинически здоровый пародонт на интактном пародонте (К05.0 / Здоровый пародонт).
+Клинический диагноз: Клинически здоровый пародонт (К05.0 / Здоровый пародонт).
 Врач: ${doctorName || "Лечащий врач"}.`;
 
 		const icd10Code = "K05.0";
@@ -463,8 +465,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				? `${prev.statusLocalis}\n\n${perioText}`
 				: perioText,
 			treatmentDescription: prev.treatmentDescription
-				? `${prev.treatmentDescription}\n\n• Профессиональная гигиена полости рта (УЗ + AirFlow).\n• Пародонтальный скрининг PSR и контрольный осмотр через 6 месяцев.`
-				: "• Профессиональная гигиена полости рта (УЗ + AirFlow).\n• Пародонтальный скрининг PSR.\n• Контролируемая индивидуальная гигиена полости рта.",
+				? `${prev.treatmentDescription}\n\n• Профилактический осмотр через 6 месяцев.`
+				: "• Контролируемая индивидуальная гигиена полости рта.\n• Профилактический осмотр через 6 месяцев.",
 		}));
 
 		if (!diary.diagnosisIcd10 && icd10Code) {
@@ -816,14 +818,22 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								type="button"
 								onClick={handleInsertPerioStatus}
 								className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-								title="Вставить протокол пародонтологического обследования PSR и индексы 043/у (AAP/EFP 2018)"
+								title="Вставить физиологическую норму пародонта в 1 клик (десна бледно-розовая, плотная, карманов нет)"
 								data-testid="insert-perio-043-btn"
 							>
-								<span className="font-mono text-xs px-1.5 py-0.5 rounded-md bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 font-black shrink-0">
-									PSR
-								</span>
-								<Activity className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
-								<span className="min-w-0 break-words">Пародонтологический статус (PSR + 043/у)</span>
+								<Sparkles className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
+								<span className="min-w-0 break-words">Пародонт в норме (1 клик)</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setIsTier3PerioModalOpen(true)}
+								className="inline-flex items-center gap-1.5 px-3.5 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 text-teal-400 border border-[var(--line,#334155)] hover:border-teal-500/40 text-xs sm:text-sm font-semibold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+								title="Открыть глубокий Tier 3 кабинет врача-пародонтолога (Florida Probe 6-Point зондирование)"
+								data-testid="open-tier3-perio-btn"
+							>
+								<BarChart2 className="w-4 h-4 text-teal-400 shrink-0" />
+								<span className="min-w-0 break-words">Расширенная пародонтология (Tier 3)</span>
 							</button>
 							<button
 								type="button"
@@ -1823,6 +1833,57 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					scheduleDebouncedSave();
 				}}
 			/>
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    TIER 3 / DEEP WORKSPACE: SPECIALIZED PERIODONTOLOGY STUDIO (FLORIDA PROBE)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			{isTier3PerioModalOpen &&
+				typeof window !== "undefined" &&
+				createPortal(
+					<div
+						className="fixed inset-0 z-[9995] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+						role="dialog"
+						aria-modal="true"
+						aria-label="Кабинет врача-пародонтолога"
+					>
+						<div className="w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] p-4 sm:p-6 shadow-2xl flex flex-col gap-4">
+							<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#334155)]">
+								<div className="flex items-center gap-2">
+									<BarChart2 className="w-5 h-5 text-teal-400" />
+									<h3 className="text-base font-bold text-[var(--ink,#f8fafc)]">
+										Специализированная пародонтограмма (Tier 3 / Florida Probe 6-Point)
+									</h3>
+								</div>
+								<button
+									type="button"
+									onClick={() => setIsTier3PerioModalOpen(false)}
+									className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer font-bold"
+									title="Закрыть кабинет пародонтологии"
+								>
+									✕
+								</button>
+							</div>
+							<PeriodontogramChart
+								patientId={patientId}
+								patientName={patientFullName || "Пациент"}
+								organizationId={undefined}
+								doctorName={diaryDoctorFullName || sessionDoctorName || undefined}
+								onInsertToProtocol={(protocolText) => {
+									setDiary((prev) => ({
+										...prev,
+										statusLocalis: prev.statusLocalis
+											? `${prev.statusLocalis}\n\n${protocolText}`
+											: protocolText,
+									}));
+									scheduleDebouncedSave();
+									setIsTier3PerioModalOpen(false);
+									ctx.showToast?.("Пародонтограмма перенесена в дневник 043/у", "success");
+								}}
+							/>
+						</div>
+					</div>,
+					document.body,
+				)}
 
 			{/* ── Print Preview Modal ── */}
 			{showPreview &&
