@@ -64,6 +64,7 @@ import { inventoryRoutes } from "./routes/inventory.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
 import { registerLoyaltyRoutes } from "./routes/loyalty.js";
+import { registerExportRoutes } from "./routes/export.js";
 import { registerMarketingRoutes } from "./routes/marketing.js";
 import { registerMaxRoutes } from "./routes/max.js";
 import { registerMdlpRoutes } from "./routes/mdlp.js";
@@ -712,6 +713,7 @@ export async function createDenteApiApp(
 	await registerWhatsappWebhookRoutes(app);
 	await app.register(registerRecallRoutes);
 	await registerPatientRoutes(app);
+	await registerExportRoutes(app);
 	await registerMarketingRoutes(app);
 	await registerPricelistRoutes(app);
 	await registerScheduleRoutes(app);

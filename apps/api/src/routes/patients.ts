@@ -482,6 +482,7 @@ import { getRequestIdentity } from "../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
 import {
 	evaluateClinicalAccess,
+	isClinicalSearchQuery,
 	registerMedicalSecrecyPayloadStripping,
 	shouldStripMedicalData,
 	stripDiagnosisPayload,
@@ -586,12 +587,60 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 
+		const query = (request.query || {}) as {
+			search?: string;
+			q?: string;
+			includeMerged?: string | boolean;
+		};
+		const searchRaw = (query.search ?? query.q ?? "").trim();
+
+		// 152-ФЗ / 323-ФЗ ст. 13: Защита от inference-атак (выявления больных через поиск по МКБ-10 и диагнозам)
+		if (searchRaw) {
+			const isMedicalSearch = isClinicalSearchQuery(searchRaw);
+			if (isMedicalSearch) {
+				const identity = getRequestIdentity(request);
+				const reqAny = request as unknown as { user?: { role?: string | null } };
+				const staffRole = identity.role ?? reqAny.user?.role ?? null;
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "MedicalSearchForbidden",
+						permission: "patients.search.clinical",
+						role: staffRole,
+						message:
+							"Поиск пациентов по клиническим диагнозам и кодам МКБ-10 для неклинического персонала запрещен (152-ФЗ / 323-ФЗ ст. 13).",
+					});
+				}
+			}
+		}
+
 		try {
-			const dbPatients = await getPatientsFromDb(orgId);
+			let dbPatients = await getPatientsFromDb(orgId, {
+				includeMerged: query.includeMerged === true || query.includeMerged === "true",
+			});
+
+			if (searchRaw) {
+				const qLower = searchRaw.toLowerCase();
+				dbPatients = dbPatients.filter((p) => {
+					const nameMatch = p.fullName?.toLowerCase().includes(qLower);
+					const phoneMatch = p.phone?.toLowerCase().includes(qLower);
+					const emailMatch = p.email?.toLowerCase().includes(qLower);
+					return nameMatch || phoneMatch || emailMatch;
+				});
+			}
+
 			if (shouldStripMedicalData(request)) {
 				const stripped = stripDiagnosisPayload(dbPatients);
 				return stripped.map((patient) => patientSchema.parse(patient));
 			}
+
+			await auditMedicalAccessFromRequest(request, {
+				organizationId: orgId,
+				action: "VIEW_PATIENT_LIST",
+				diagnosis: "Реестр пациентов клиники (152-ФЗ)",
+				metadata: { count: dbPatients.length },
+			});
+
 			return dbPatients.map((patient) => patientSchema.parse(patient));
 		} catch (e) {
 			console.error("[Patients] Error fetching from DB:", e);

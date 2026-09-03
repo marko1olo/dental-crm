@@ -343,6 +343,28 @@ export function sanitizeClinicalString(str: string): string {
 }
 
 /**
+ * Проверяет, является ли поисковый запрос клиническим термином или кодом диагноза МКБ-10.
+ * Используется для предотвращения inference-атак (выявления больных неклиническим персоналом через поиск).
+ */
+export function isClinicalSearchQuery(query: string): boolean {
+	const normalized = query.trim();
+	if (!normalized) return false;
+	// Проверка на коды МКБ-10 (например K02, K04.0, B20, C00-D48)
+	if (/^[A-Z][0-9]{2}(?:\.[0-9]{1,2})?$/i.test(normalized)) {
+		return true;
+	}
+	for (const pattern of CLINICAL_DIAGNOSTIC_PATTERNS) {
+		pattern.lastIndex = 0;
+		if (pattern.test(normalized)) {
+			pattern.lastIndex = 0;
+			return true;
+		}
+		pattern.lastIndex = 0;
+	}
+	return false;
+}
+
+/**
  * Рекурсивно вырезает все поля медицинской тайны из объекта, массива или полезной нагрузки.
  */
 export function stripDiagnosisPayload<T>(payload: T): T {
@@ -419,19 +441,57 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 		return payload;
 	});
 
-	// Хук 2: onSend — аппаратная защита на случай прямого вызова reply.send(rawJsonString)
+	// Хук 2: onSend — аппаратная защита на случай прямого вызова reply.send(rawJsonString/csv/xml/buffer)
 	app.addHook("onSend", async (request, reply, payload) => {
-		if (shouldStripMedicalData(request) && typeof payload === "string") {
-			const contentType = reply.getHeader("content-type");
-			if (
-				typeof contentType === "string" &&
-				contentType.includes("application/json")
-			) {
+		if (!shouldStripMedicalData(request)) {
+			return payload;
+		}
+
+		// 1. Обработка строковых полезных нагрузок (JSON, CSV, XML, plain text)
+		if (typeof payload === "string") {
+			const rawContentType = reply.getHeader("content-type");
+			const contentType = typeof rawContentType === "string" ? rawContentType.toLowerCase() : "";
+
+			if (contentType.includes("application/json")) {
 				if (hasForbiddenClinicalKeyInJson(payload)) {
-					return stripDiagnosisJsonString(payload);
+					const stripped = stripDiagnosisJsonString(payload);
+					return sanitizeClinicalString(stripped);
 				}
+				return sanitizeClinicalString(payload);
+			}
+
+			// Экспорты CSV, XML, текстовые выгрузки
+			const isTextOrExport =
+				!contentType ||
+				contentType.includes("text/") ||
+				contentType.includes("csv") ||
+				contentType.includes("xml") ||
+				contentType.includes("plain");
+
+			if (isTextOrExport) {
+				return sanitizeClinicalString(payload);
 			}
 		}
+
+		// 2. Обработка Buffer полезных нагрузок (бинарные буферы выгрузок CSV/XML)
+		if (Buffer.isBuffer(payload)) {
+			const rawContentType = reply.getHeader("content-type");
+			const contentType = typeof rawContentType === "string" ? rawContentType.toLowerCase() : "";
+
+			const isTextOrExport =
+				contentType.includes("text/") ||
+				contentType.includes("csv") ||
+				contentType.includes("xml") ||
+				contentType.includes("json") ||
+				contentType.includes("plain");
+
+			if (isTextOrExport) {
+				const decoded = payload.toString("utf-8");
+				const sanitized = sanitizeClinicalString(decoded);
+				return Buffer.from(sanitized, "utf-8");
+			}
+		}
+
 		return payload;
 	});
 }

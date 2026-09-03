@@ -40,7 +40,14 @@ import {
 import { Decimal } from "decimal.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import { getClinicSettingsFromDb } from "../../db/settingsQuery.js";
+export class Decree659TaxDeductionForbiddenError extends Error {
+	readonly statusCode = 422;
+	readonly code = "Decree659TaxDeductionForbiddenError";
+	constructor(message: string) {
+		super(message);
+		this.name = "Decree659TaxDeductionForbiddenError";
+	}
+}
 
 export interface NdflTaxPreviewOptions {
 	taxYear?: number | undefined;
@@ -101,6 +108,18 @@ export class NdflTaxService {
 			throw new Error("Пациент не найден в базе данных клиники.");
 		}
 
+		const isPatientAnonymous =
+			Boolean((patient as unknown as { isAnonymous?: boolean }).isAnonymous) ||
+			Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
+			Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
+			Boolean((patient.administrativeProfile as Record<string, unknown> | undefined)?.["isAnonymous"]);
+
+		if (isPatientAnonymous) {
+			throw new Decree659TaxDeductionForbiddenError(
+				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справки для налогового вычета (КНД 1151156 / 3-НДФЛ) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
+			);
+		}
+
 		const currentYear = new Date().getFullYear();
 		const targetYear = options.taxYear || currentYear;
 
@@ -122,12 +141,18 @@ export class NdflTaxService {
 			end = new Date(Date.UTC(targetYear, 11, 31, 23, 59, 59, 999));
 		}
 
-		// 1. Проверка блокировки по долгу (Фича №5)
+		// 1. Проверка блокировки по долгу (Фича №5) (ст. 219 НК РФ)
 		const debtRub = patient.balanceRub < 0 ? Math.abs(patient.balanceRub) : 0;
-		const isBlocked = debtRub > 0;
-		const blockReason = isBlocked
+		let isBlocked = debtRub > 0;
+		let blockReason = isBlocked
 			? `Имеется непогашенная задолженность пациента в размере ${debtRub.toFixed(2)} ₽. Выдача справки для налогового вычета блокируется до полной оплаты оказанных услуг.`
 			: null;
+
+		if (isPatientAnonymous) {
+			isBlocked = true;
+			blockReason =
+				"Формирование справки для налогового вычета по форме КНД 1151156 для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено по ст. 219 НК РФ, Приказу ФНС от 08.11.2023 № ЕА-7-11/824@ и ПП РФ №659 (отсутствуют обязательные паспортные данные и ИНН налогоплательщика).";
+		}
 
 		// 2. Получение оплат пациента
 		const allPayments = await getPaymentsByPatientIdInDb(organizationId, patientId);
@@ -290,6 +315,22 @@ export class NdflTaxService {
 	 * Генерация XML-справки КНД 1184043 / 1151156 для ЭДО (Фича №33).
 	 */
 	static generateXml(payload: FnsTaxPayload, customUuid?: string): FnsNdflXmlResult {
+		const payerName = payload.payer?.fullName?.family || "";
+		const patientName = payload.patient?.fullName?.family || "";
+		const isAnonymous =
+			payerName.startsWith("UUID_ANON") ||
+			payerName.toLowerCase().includes("аноним") ||
+			patientName.startsWith("UUID_ANON") ||
+			patientName.toLowerCase().includes("аноним") ||
+			Boolean((payload.patient as unknown as { isAnonymous?: boolean })?.isAnonymous) ||
+			Boolean((payload.payer as unknown as { isAnonymous?: boolean })?.isAnonymous);
+
+		if (isAnonymous) {
+			throw new Decree659TaxDeductionForbiddenError(
+				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справок для налогового вычета по форме КНД 1151156 (и XML КНД 1184043) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
+			);
+		}
+
 		const result = buildFnsKnd1151156Xml(payload, customUuid);
 		const validation = validateFnsNdflXmlStructure(result.xmlContent);
 

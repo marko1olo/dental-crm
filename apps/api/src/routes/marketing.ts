@@ -407,4 +407,71 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 			});
 		}
 	});
+
+	/**
+	 * GET /api/marketing/reports
+	 * Маркетинговые сводные отчеты (ROMI, CAC, воронка и распределение по каналам).
+	 *
+	 * 152-ФЗ / 323-ФЗ ст. 13:
+	 * Отчет содержит исключительно агрегированные показатели маркетинга.
+	 * Категорически исключены диагнозы, МКБ-10, формулы зубов и анамнез пациентов.
+	 */
+	app.get("/api/marketing/reports", async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "marketing reports");
+		if (!orgId) return;
+
+		try {
+			const [allLeads, allPayments] = await Promise.all([
+				db.select().from(crmLeads).where(eq(crmLeads.organizationId, orgId)),
+				db.select().from(payments).where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid"))),
+			]);
+
+			const totalRevenueKopecks = allPayments.reduce(
+				(acc, p) => acc + Math.round(Number(p.amountRub || 0) * 100),
+				0,
+			);
+
+			const channelCounts: Record<string, { leads: number; revenueKopecks: number }> = {};
+			for (const lead of allLeads) {
+				const ch = detectChannelFromSource(lead.source);
+				if (!channelCounts[ch]) {
+					channelCounts[ch] = { leads: 0, revenueKopecks: 0 };
+				}
+				channelCounts[ch].leads += 1;
+			}
+
+			const format = ((request.query as { format?: string })?.format || "json").toLowerCase();
+			if (format === "csv") {
+				const headers = "channel,leadsCount,category\n";
+				const rows = Object.entries(channelCounts)
+					.map(([channel, stats]) => `${channel},${stats.leads},marketing_funnel`)
+					.join("\n");
+				reply.header("Content-Type", "text/csv; charset=utf-8");
+				reply.header(
+					"Content-Disposition",
+					`attachment; filename="marketing-report-${orgId}.csv"`,
+				);
+				return reply.send(headers + rows);
+			}
+
+			return reply.code(200).send({
+				organizationId: orgId,
+				reportKind: "marketing_attribution_summary",
+				totalLeads: allLeads.length,
+				totalPaidTransactions: allPayments.length,
+				totalRevenueKopecks,
+				channels: Object.entries(channelCounts).map(([key, data]) => ({
+					channel: key,
+					leadsCount: data.leads,
+				})),
+			});
+		} catch (err) {
+			request.log.error({ err }, "[Marketing] Error generating marketing reports");
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось сформировать маркетинговый отчет",
+			});
+		}
+	});
 }
+

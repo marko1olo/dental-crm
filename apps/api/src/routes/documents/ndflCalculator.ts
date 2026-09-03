@@ -75,6 +75,29 @@ export async function register(app: FastifyInstance) {
 		const organizationId = requireOrganizationId(request, reply);
 		if (!organizationId) return;
 
+		const rawBody = request.body as Record<string, unknown> | null | undefined;
+		const payerObj = rawBody?.payer as Record<string, unknown> | undefined;
+		const patientObj = rawBody?.patient as Record<string, unknown> | undefined;
+		const payerFamily = typeof payerObj?.fullName === "object" ? (payerObj.fullName as Record<string, unknown>)?.family : payerObj?.fullName;
+		const patientFamily = typeof patientObj?.fullName === "object" ? (patientObj.fullName as Record<string, unknown>)?.family : patientObj?.fullName;
+
+		const isAnon =
+			Boolean(rawBody?.isAnonymous) ||
+			Boolean(payerObj?.isAnonymous) ||
+			Boolean(patientObj?.isAnonymous) ||
+			String(payerFamily || "").includes("UUID_ANON") ||
+			String(patientFamily || "").includes("UUID_ANON") ||
+			String(payerFamily || "").toLowerCase().includes("аноним") ||
+			String(patientFamily || "").toLowerCase().includes("аноним");
+
+		if (isAnon) {
+			return reply.code(422).send({
+				error: "Decree659TaxDeductionForbiddenError",
+				message:
+					"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справок для налогового вычета по форме КНД 1151156 для анонимных пациентов (UUID_ANON) категорически запрещено.",
+			});
+		}
+
 		const parsed = fnsTaxPayloadSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({

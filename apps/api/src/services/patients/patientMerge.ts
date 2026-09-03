@@ -28,13 +28,15 @@
  */
 
 import type { PatientAdministrativeProfile } from "@dental/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { inMemoryBlacklist } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	familyGroups,
 	patientArchiveReasonsAndBlacklists,
+	patientReferrals,
 	patients,
 } from "../../db/schema.js";
 
@@ -72,7 +74,16 @@ export async function patientReferenceColumns(): Promise<
 		where c.table_schema = 'public'
 			and c.table_name <> 'patients'
 			and c.table_name <> 'patient_duplicate_decisions'
-			and c.column_name in ('patient_id', 'local_patient_id', 'head_patient_id', 'primary_patient_id')
+			and c.column_name in (
+				'patient_id',
+				'local_patient_id',
+				'head_patient_id',
+				'primary_patient_id',
+				'referrer_patient_id',
+				'referee_patient_id',
+				'parent_referrer_patient_id',
+				'referred_by_patient_id'
+			)
 	`);
 
 	const rows =
@@ -318,6 +329,25 @@ export async function mergePatients(
 					if (count > 0) droppedConflicts[conflict.table] = count;
 				}
 
+				// Снимаем кольцевые / самореферальные связи между объединяемыми картами
+				await inner
+					.delete(patientReferrals)
+					.where(
+						and(
+							eq(patientReferrals.organizationId, input.organizationId),
+							or(
+								and(
+									eq(patientReferrals.referrerPatientId, input.primaryPatientId),
+									eq(patientReferrals.refereePatientId, input.duplicatePatientId),
+								),
+								and(
+									eq(patientReferrals.referrerPatientId, input.duplicatePatientId),
+									eq(patientReferrals.refereePatientId, input.primaryPatientId),
+								),
+							),
+						),
+					);
+
 				// Переносим ссылки во всех таблицах последовательно (гарантия ACID без параллельных вызовов в одном клиенте)
 				for (const column of columns) {
 					const updated = await inner.execute(sql`
@@ -334,6 +364,7 @@ export async function mergePatients(
 
 				// Переносим только то, чего в основной карточке нет.
 				const fill: {
+					fullName?: string;
 					phone?: string;
 					email?: string;
 					birthDate?: string;
@@ -341,6 +372,18 @@ export async function mergePatients(
 					familyGroupId?: string;
 					administrativeProfile?: PatientAdministrativeProfile | null;
 				} = {};
+
+				// Деанонимизация: если основная карта была временным анонимом (UUID_ANON),
+				// а дубликат несет подтвержденное ФИО — восстанавливаем паспортное ФИО
+				if (
+					primary.fullName.startsWith("UUID_ANON") &&
+					duplicate.fullName &&
+					!duplicate.fullName.startsWith("UUID_ANON")
+				) {
+					fill.fullName = duplicate.fullName;
+					filledFields.push("ФИО (деанонимизация)");
+				}
+
 				if (!primary.phone?.trim() && duplicate.phone?.trim()) {
 					fill.phone = duplicate.phone.trim();
 					filledFields.push("телефон");
@@ -357,9 +400,83 @@ export async function mergePatients(
 					fill.weightKg = duplicate.weightKg;
 					filledFields.push("вес (кг)");
 				}
+
+				// Семейные группы (family_groups) и семейные кошельки:
+				// Сценарий 1: У дубля есть семейная группа, а у основной карты нет -> привязываем основную к группе дубля.
+				// Сценарий 2: У обеих карт есть РАЗНЫЕ семейные группы -> объединяем балансы кошельков и переносим членов семьи!
 				if (!primary.familyGroupId && duplicate.familyGroupId) {
 					fill.familyGroupId = duplicate.familyGroupId;
 					filledFields.push("семейная группа");
+				} else if (
+					primary.familyGroupId &&
+					duplicate.familyGroupId &&
+					primary.familyGroupId !== duplicate.familyGroupId
+				) {
+					// Загружаем балансы семейных кошельков с блокировкой FOR UPDATE
+					const [dupFamily] = await inner
+						.select()
+						.from(familyGroups)
+						.where(
+							and(
+								eq(familyGroups.id, duplicate.familyGroupId),
+								eq(familyGroups.organizationId, input.organizationId),
+							),
+						)
+						.for("update")
+						.limit(1);
+
+					const [primFamily] = await inner
+						.select()
+						.from(familyGroups)
+						.where(
+							and(
+								eq(familyGroups.id, primary.familyGroupId),
+								eq(familyGroups.organizationId, input.organizationId),
+							),
+						)
+						.for("update")
+						.limit(1);
+
+					if (dupFamily && primFamily) {
+						const dupFamilyBal = Number(dupFamily.balance ?? 0);
+						if (dupFamilyBal > 0) {
+							const primFamilyBal = Number(primFamily.balance ?? 0);
+							const combinedFamilyBal = (primFamilyBal + dupFamilyBal).toFixed(2);
+							await inner
+								.update(familyGroups)
+								.set({ balance: combinedFamilyBal, updatedAt: new Date() })
+								.where(
+									and(
+										eq(familyGroups.id, primary.familyGroupId),
+										eq(familyGroups.organizationId, input.organizationId),
+									),
+								);
+							// Обнуляем баланс поглощенной семейной группы
+							await inner
+								.update(familyGroups)
+								.set({ balance: "0.00", updatedAt: new Date() })
+								.where(
+									and(
+										eq(familyGroups.id, duplicate.familyGroupId),
+										eq(familyGroups.organizationId, input.organizationId),
+									),
+								);
+							filledFields.push(
+								`семейный кошелек (${dupFamilyBal.toFixed(2)} ₽ перенесено в основную группу)`,
+							);
+						}
+
+						// Переносим всех оставшихся членов семьи из поглощенной группы в основную
+						await inner
+							.update(patients)
+							.set({ familyGroupId: primary.familyGroupId, updatedAt: new Date() })
+							.where(
+								and(
+									eq(patients.familyGroupId, duplicate.familyGroupId),
+									eq(patients.organizationId, input.organizationId),
+								),
+							);
+					}
 				}
 
 				let nextAdminProfile: PatientAdministrativeProfile | null = primary.administrativeProfile
@@ -395,6 +512,10 @@ export async function mergePatients(
 								else if (key === "curatorId") filledFields.push("куратор лечения");
 								else if (key === "loyaltyTier") filledFields.push("уровень лояльности");
 							}
+						}
+						// Если основная карта была анонимной, а дубликат неанонимный - снимаем флаг анонимности
+						if (primary.administrativeProfile?.isAnonymous && !dupAdmin.isAnonymous) {
+							nextAdminProfile.isAnonymous = false;
 						}
 					}
 				}

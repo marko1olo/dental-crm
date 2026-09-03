@@ -146,7 +146,7 @@ export type DocumentCreationFacts = {
 
 export type DocumentCreationGuardResult =
 	| { ok: true; input: CreateDocumentInput }
-	| { ok: false; statusCode: 404 | 409; error: string };
+	| { ok: false; statusCode: 404 | 409 | 422; error: string; code?: string };
 
 function taxPaidDocumentsNeedYear(kind: DocumentKind): boolean {
 	const metadata = documentKindMetadata[kind];
@@ -1447,6 +1447,37 @@ export function validateDocumentCreation(
 			ok: false,
 			statusCode: 409,
 			error: "Платежному документу нужен явный визит или платежный контекст.",
+		};
+	}
+
+	const patientAny = facts.patient as unknown as {
+		fullName?: string;
+		name?: string;
+		isAnonymous?: boolean;
+		administrativeProfile?: Record<string, unknown>;
+	};
+	const inputAny = input as unknown as { requestedForm?: string };
+
+	const isAnonPatient =
+		Boolean(patientAny?.isAnonymous) ||
+		Boolean((patientAny?.fullName ?? patientAny?.name)?.startsWith("UUID_ANON")) ||
+		Boolean((patientAny?.fullName ?? patientAny?.name)?.toLowerCase().includes("аноним")) ||
+		Boolean(patientAny?.administrativeProfile?.["isAnonymous"]);
+
+	if (
+		isAnonPatient &&
+		(metadata.group === "tax" ||
+			input.kind === "tax_deduction_certificate" ||
+			input.kind === "tax_deduction_application" ||
+			input.kind === "tax_deduction_registry" ||
+			inputAny.requestedForm === "knd_1151156")
+	) {
+		return {
+			ok: false,
+			statusCode: 422,
+			code: "Decree659TaxDeductionForbiddenError",
+			error:
+				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: формирование справки для налогового вычета (КНД 1151156 / 3-НДФЛ) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
 		};
 	}
 	if (taxPaidDocumentsNeedYear(input.kind) && !input.taxYear) {
