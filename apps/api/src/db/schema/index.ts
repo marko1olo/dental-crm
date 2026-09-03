@@ -14,3 +14,6 @@ export * from "./sync.js";
 export * from "./copilot.js";
 export * from "./rag.js";
 export * from "./aiTelemetry.js";
+export * from "./documents_v2.js";
+export * from "./outpatientCore.js";
+export * from "./finance_v2.js";

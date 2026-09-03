@@ -34,6 +34,7 @@ export * from "./storage/index.js";
 export * from "./telephony/index.js";
 export * from "./marketing/index.js";
 export * from "./analytics/index.js";
+export { calculateAge } from "./anesthesia/index.js";
 export * from "./anesthesia/index.js";
 export * from "./insurance/index.js";
 export * from "./messaging/index.js";
@@ -47,6 +48,7 @@ export * from "./branches/index.js";
 export * from "./warehouse/index.js";
 export * from "./mobile/index.js";
 export * from "./curator/index.js";
+export * from "./outpatient/index.js";
 export * from "./compliance/decree659Engine.js";
 export * as dispensaryRecall from "./recall/index.js";
 export {

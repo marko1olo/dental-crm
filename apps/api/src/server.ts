@@ -43,6 +43,7 @@ import { registerDayConfirmationRoutes } from "./routes/dayConfirmations.js";
 import registerDiaryRoutes from "./routes/diary.js";
 import { registerDicomwebRoutes } from "./routes/dicomweb.js";
 import { registerDocumentRoutes } from "./routes/documents.js";
+import { registerDocumentTemplateRoutes } from "./routes/documentTemplates.js";
 import registerEgiszRoutes from "./routes/egisz.js";
 // Модули ниже были написаны, но ни разу не зарегистрированы: их маршруты
 // отвечали 404, то есть функциональность существовала только в исходниках.
@@ -75,6 +76,7 @@ import { registerMigrationRoutes } from "./routes/migration.js";
 import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
+import { registerOutpatientV2Routes } from "./routes/outpatient_v2.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
 import { registerPatientRecallRoutes } from "./routes/patientRecall.js";
 import { registerPatientRoutes } from "./routes/patients.js";
@@ -653,6 +655,7 @@ export async function createDenteApiApp(
 	await registerMessageTemplateRoutes(app);
 	await registerDashboardRoutes(app);
 	await registerDocumentRoutes(app);
+	await registerDocumentTemplateRoutes(app);
 	await registerImagingRoutes(app);
 	await registerImagingPlanningRoutes(app);
 	await registerIngestionRoutes(app);
@@ -667,6 +670,7 @@ export async function createDenteApiApp(
 	// сохраниться, а вкладка «История зуба» не имела источника данных.
 	await registerOdontogramRoutes(app);
 	await registerToothHistoryRoutes(app);
+	await registerOutpatientV2Routes(app);
 	await registerLoyaltyRoutes(app);
 	await registerReferralRoutes(app);
 	await registerAnesthesiaRoutes(app);
