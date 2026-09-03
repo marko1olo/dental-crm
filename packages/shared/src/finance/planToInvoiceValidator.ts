@@ -344,7 +344,11 @@ export function validatePlanToInvoice(
 
 		const isFoundInCatalog = !!catalogItem;
 		const isArchived = catalogItem ? (!catalogItem.active || !!catalogItem.isArchived) : false;
-		const isZeroOrInvalidPrice = planUnitPrice <= 0 || (catalogItem ? catalogItem.basePriceKopecks <= 0 : false);
+		const isExcessiveDiscount = planDiscount > planGross;
+		const isZeroOrInvalidPrice =
+			planUnitPrice <= 0 ||
+			(catalogItem ? catalogItem.basePriceKopecks <= 0 : false) ||
+			isExcessiveDiscount;
 
 		const currentCatalogPrice: Kopecks = catalogItem ? catalogItem.basePriceKopecks : 0;
 		const deltaKopecks = (currentCatalogPrice - planUnitPrice) as Kopecks;
@@ -379,7 +383,9 @@ export function validatePlanToInvoice(
 		} else if (isZeroOrInvalidPrice) {
 			discrepancyType = "INVALID_PRICE";
 			severity = "BLOCKED";
-			statusDesc = "Нулевая или недействительная цена услуги в смете или прейскуранте";
+			statusDesc = isExcessiveDiscount
+				? `Скидка (${formatKopecksRu(planDiscount)}) превышает 100% стоимости услуги (${formatKopecksRu(planGross)}). Предоставление скидки сверх стоимости запрещено (54-ФЗ / ПП РФ №659)`
+				: "Нулевая или недействительная цена услуги в смете или прейскуранте";
 			suggestedResolution = "UPDATE_TO_CURRENT_PRICE";
 			requiresAdminOverride = true;
 			zeroPriceItemsCount++;
@@ -536,7 +542,12 @@ export function validatePlanToInvoice(
 	const hasUnresolvedArchivedOrMissing = validatedItems.some(
 		(i) => (i.isArchived || !i.isFoundInCatalog) && i.selectedResolution !== "REPLACE_WITH_804N_ANALOGUE",
 	);
-	const hasZeroPrices = validatedItems.some((i) => i.effectiveUnitPriceKopecks <= 0);
+	const hasZeroPrices = validatedItems.some(
+		(i) => i.effectiveUnitPriceKopecks <= 0 && payload.adminOverrideAuthorized !== true,
+	);
+	const hasExcessiveDiscounts = validatedItems.some(
+		(i) => (i.planDiscountKopecks ?? 0) > i.planGrossKopecks,
+	);
 	const hasUnresolvedAdminOverrides =
 		validatedItems.some((i) => i.requiresAdminOverride) && payload.adminOverrideAuthorized !== true;
 	const isExpiredUnapproved =
@@ -549,6 +560,7 @@ export function validatePlanToInvoice(
 		validatedItems.length > 0 &&
 		!hasUnresolvedArchivedOrMissing &&
 		!hasZeroPrices &&
+		!hasExcessiveDiscounts &&
 		!hasUnresolvedAdminOverrides &&
 		!isExpiredUnapproved;
 

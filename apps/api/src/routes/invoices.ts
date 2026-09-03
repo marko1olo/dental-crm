@@ -454,6 +454,34 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			? freezeToken.isPriceLocked
 			: Boolean(data.isSignedWithPatient === true || data.approvedAtIso || targetPlan?.status === "Approved");
 
+		// Защита от манипуляций со скидками (ст. 16 ЗоЗПП, 54-ФЗ, ПП РФ №659):
+		// Скидка не может превышать 100% стоимости услуги (скидка > стоимости позиции).
+		for (const it of data.items) {
+			const matchingCatalog = catalogRows.find(
+				(c) =>
+					(it.serviceId && c.id === it.serviceId) ||
+					(it.code804n && c.code === it.code804n) ||
+					c.title.toLowerCase() === it.nameRu.toLowerCase(),
+			);
+			const matchingDbPlanItem = targetPlanDbItems.find(
+				(pi) => pi.id === it.itemId || pi.priceId === it.serviceId,
+			);
+			const effectivePriceRub =
+				it.effectiveUnitPriceRub ??
+				it.planUnitPriceRub ??
+				(matchingDbPlanItem ? Number(matchingDbPlanItem.price || 0) : undefined) ??
+				it.unitPriceRub ??
+				Number(matchingCatalog?.basePriceRub ?? 0);
+			const lineGrossRub = Number((effectivePriceRub * it.quantity).toFixed(2));
+			if (it.discountRub !== undefined && it.discountRub > lineGrossRub) {
+				return reply.code(422).send({
+					error: "InvalidDiscountError",
+					code: "Decree659DiscountLimitExceededError",
+					message: `Сумма скидки (${it.discountRub} ₽) по позиции «${it.nameRu}» превышает 100% стоимости услуги (${lineGrossRub} ₽). Предоставление скидки сверх стоимости услуги категорически запрещено (54-ФЗ / ПП РФ №659).`,
+				});
+			}
+		}
+
 		// При истечении токена смета считается просроченной (срок фиксации истек)
 		const isPlanExpiredExplicit = freezeToken?.isExpired === true ? true : undefined;
 
@@ -494,9 +522,14 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					const planItemPrice = Number(matchingDbPlanItem.price || 0);
 					const planQty = Number(matchingDbPlanItem.quantity || 1);
 
-					// Если количество в наряде превышает согласованное в смете количество:
-					// По ст. 709 ГК РФ и ПП РФ №659 увеличение твердой цены сметы без допсоглашения или PIN руководства запрещено.
-					if (it.quantity > planQty && !isAdminOverrideVerified) {
+					// Если передан явный оверрайд цены (например, обнуление цены 0.00 ₽)
+					if (
+						(it.effectiveUnitPriceRub !== undefined && it.effectiveUnitPriceRub === 0) ||
+						(it.planUnitPriceRub !== undefined && it.planUnitPriceRub === 0)
+					) {
+						planPriceRub = 0;
+						effectivePriceRub = 0;
+					} else if (it.quantity > planQty && !isAdminOverrideVerified) {
 						planPriceRub = Number(((planItemPrice * planQty) / it.quantity).toFixed(2));
 						effectivePriceRub = planPriceRub;
 					} else {
