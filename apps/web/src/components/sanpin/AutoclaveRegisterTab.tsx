@@ -28,7 +28,6 @@ import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
-import { KraftPackageModal } from "./KraftPackageModal";
 import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { MedicalWasteJournalModal } from "./waste/MedicalWasteJournalModal";

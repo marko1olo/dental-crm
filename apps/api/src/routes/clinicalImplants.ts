@@ -12,6 +12,8 @@ import {
 import { db } from "../db/client.js";
 import {
 	implantIsqMeasurements,
+	inventoryItems,
+	inventoryTransactions,
 	patientImplantInstallations,
 	patients,
 	toothStateHistory,
@@ -176,7 +178,78 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 				reason: `Хирургическая установка имплантата. Протокол: ${protocol}`,
 			});
 
-			return installation;
+			// Складской контур (BOM & Warehouse deduction): Списание физического имплантата со склада
+			let inventoryDeduction: {
+				readonly transactionId: string;
+				readonly itemId: string;
+				readonly itemName: string;
+				readonly previousStock: number;
+				readonly newStock: number;
+				readonly unitCostRub: string | null;
+			} | null = null;
+
+			if (input.catalogItemId) {
+				const [invItem] = await tx
+					.select()
+					.from(inventoryItems)
+					.where(
+						and(
+							eq(inventoryItems.id, input.catalogItemId),
+							eq(inventoryItems.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (invItem) {
+					const currentStock = Number(invItem.currentQty ?? invItem.stockQuantity ?? 0);
+					const newStock = Math.max(0, currentStock - 1);
+					const unitCostRub = invItem.unitCostRub ?? invItem.pricePerUnit ?? null;
+
+					await tx
+						.update(inventoryItems)
+						.set({
+							currentQty: String(newStock),
+							stockQuantity: String(newStock),
+							updatedAt: new Date(),
+						})
+						.where(
+							and(
+								eq(inventoryItems.id, invItem.id),
+								eq(inventoryItems.organizationId, orgId),
+							),
+						);
+
+					const [txRecord] = await tx
+						.insert(inventoryTransactions)
+						.values({
+							organizationId: orgId,
+							itemId: invItem.id,
+							inventoryItemId: invItem.id,
+							visitId: input.visitId ?? null,
+							transactionType: "auto_deduct",
+							qty: "-1.000",
+							quantityChanged: "-1.000",
+							unitCostRub,
+							userId: identity.userId ?? null,
+							notes: `Списание имплантата ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм для зуба FDI ${input.toothNumberFdi} (установка ${installation.id})`,
+						})
+						.returning({ id: inventoryTransactions.id });
+
+					inventoryDeduction = {
+						transactionId: txRecord?.id ?? "",
+						itemId: invItem.id,
+						itemName: invItem.name,
+						previousStock: currentStock,
+						newStock,
+						unitCostRub,
+					};
+				}
+			}
+
+			return {
+				...installation,
+				inventoryDeduction,
+			};
 		});
 
 		wsBroker.broadcastToOrganization(orgId, {
@@ -185,12 +258,14 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 				patientId: input.patientId,
 				toothNumberFdi: input.toothNumberFdi,
 				installationId: result.id,
+				inventoryDeduction: result.inventoryDeduction,
 			},
 		});
 
 		return reply.code(201).send({
 			success: true,
 			installation: result,
+			inventoryDeduction: result.inventoryDeduction,
 			evaluatedProtocol: protocol,
 			decisionRationale,
 		});

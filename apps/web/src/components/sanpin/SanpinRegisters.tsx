@@ -52,7 +52,6 @@ import { TemperatureHumidityRegisterTab } from "./TemperatureHumidityRegisterTab
 import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { SanpinCycleModal } from "./SanpinCycleModal";
-import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { KraftPackageModal } from "./KraftPackageModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { SterilizerFleetManager } from "./SterilizerFleetManager";

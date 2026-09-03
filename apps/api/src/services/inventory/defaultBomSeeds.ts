@@ -572,6 +572,15 @@ export const DEFAULT_804N_BOM_SEEDS: readonly DefaultBomProcedureSeed[] = [
 				defaultStockQty: 200,
 				criticalThreshold: 30,
 			},
+			{
+				name: "Дентальный имплантат титановый конический (базовый хирургический артикул)",
+				category: "surgery",
+				unit: "шт.",
+				quantityToDeduct: 1,
+				defaultUnitCostRub: 18500,
+				defaultStockQty: 25,
+				criticalThreshold: 5,
+			},
 		],
 	},
 ];

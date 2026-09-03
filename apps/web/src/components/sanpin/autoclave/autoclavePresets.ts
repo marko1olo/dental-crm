@@ -77,23 +77,23 @@ export const SANPIN_PACKAGING_RULES: Record<AutoclavePackagingType, PackagingShe
 	kraft_paper_sealed: {
 		packagingType: 'kraft_paper_sealed',
 		nameRu: 'Пакет бумажный/комбинированный термосварной',
-		shelfLifeDays: 30,
+		shelfLifeDays: 60,
 		sealMethodRu: 'Термосварочный импульсный шов (ширина >= 8 мм)',
-		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3632',
-		descriptionRu: 'Комбинированные пакеты (бумага + многослойная пленка), запаянные термосваривающим аппаратом при 180-200°C.'
+		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3632 (Таблица 3.14)',
+		descriptionRu: 'Комбинированные пакеты (бумага + многослойная пленка), запаянные термосваривающим аппаратом при 180-200°C. Базово 60 суток (до 180 суток в закрытых чистых боксах).'
 	},
 	kraft_paper_crepe: {
 		packagingType: 'kraft_paper_crepe',
 		nameRu: 'Крафт-пакет самозаклеивающийся / Креп-бумага',
-		shelfLifeDays: 20,
+		shelfLifeDays: 50,
 		sealMethodRu: 'Клеевой клапан с защитной лентой',
 		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3632',
-		descriptionRu: 'Бумажные крафт-пакеты с липким слоем или стерилизационная крепированная бумага.'
+		descriptionRu: 'Бумажные крафт-пакеты с липким слоем (до 50 суток) или стерилизационная крепированная бумага (до 60 суток).'
 	},
 	sterilization_cassette_bipack: {
 		packagingType: 'sterilization_cassette_bipack',
 		nameRu: 'Двойная упаковка (кассета + пакет) / Бипак',
-		shelfLifeDays: 50,
+		shelfLifeDays: 60,
 		sealMethodRu: 'Двойная термосварная оболочка или кассета в пакете',
 		sanpinClauseRu: 'СанПиН 3.3686-21 п. 3634',
 		descriptionRu: 'Хирургические и имплантологические наборы в жестких кассетах с двойной барьерной упаковкой.'

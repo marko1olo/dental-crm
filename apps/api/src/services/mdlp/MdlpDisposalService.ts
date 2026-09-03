@@ -54,6 +54,9 @@ export interface MdlpSingleDisposeInput {
 	docDate?: string | null | undefined;
 	costRub?: number | null | undefined;
 	reason?: string | null | undefined;
+	tradeName?: string | null | undefined;
+	inn?: string | null | undefined;
+	crptReceiptNumber?: string | null | undefined;
 }
 
 export interface MdlpBatchDisposeInput {
@@ -67,6 +70,7 @@ export interface MdlpBatchDisposeInput {
 	reason?: string | null | undefined;
 	items?: MdlpSingleDisposeInput[] | undefined;
 	useQueue?: boolean | undefined;
+	crptReceiptNumber?: string | null | undefined;
 }
 
 export interface MdlpDisposeResult {
@@ -75,7 +79,7 @@ export interface MdlpDisposeResult {
 	disposedCount: number;
 	schema10560Document: MdlpSchema10560Document;
 	items: Record<string, unknown>[];
-	crptReceiptNumber: string;
+	crptReceiptNumber?: string | null | undefined;
 }
 
 export interface MdlpActGenerateInput {
@@ -287,6 +291,8 @@ export class MdlpDisposalService {
 				lot: series ?? null,
 				expirationDate: expirationDate ?? null,
 				costRub: it.costRub ?? null,
+				tradeName: it.tradeName ?? parsedBarcode?.recognizedDrug?.tradeName ?? null,
+				inn: it.inn ?? parsedBarcode?.recognizedDrug?.inn ?? null,
 			});
 		}
 
@@ -295,9 +301,9 @@ export class MdlpDisposalService {
 			input.docNum ??
 			(input.visitId
 				? `VI-${input.visitId.slice(0, 8).toUpperCase()}`
-				: `MED-${now.getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`);
+				: `MED-${now.getFullYear()}-${now.getTime().toString(36).toUpperCase()}`);
 		const docDate = input.docDate ?? now.toISOString().slice(0, 10);
-		const crptReceiptNumber = `CRPT-${now.getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+		const crptReceiptNumber = input.crptReceiptNumber ?? null;
 
 		// Generate official Schema 10560 XML & JSON payload
 		const schemaDoc: MdlpSchema10560Document = generateMdlpSchema10560Payload({
@@ -358,8 +364,8 @@ export class MdlpDisposalService {
 							gtin: it.gtin,
 							serialNumber: it.serialNumber,
 							rawBarcode: it.sgtin,
-							tradeName: it.tradeName ?? "Анестетик / Медикамент (МДЛП)",
-							inn: it.inn ?? "Артикаин / Мепивакаин",
+							tradeName: it.tradeName ?? "Медицинский препарат (МДЛП)",
+							inn: it.inn ?? null,
 							series: it.series ?? null,
 							expirationDate: it.expirationDate ?? null,
 							status: "disposed",
