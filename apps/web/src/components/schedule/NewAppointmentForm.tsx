@@ -1,5 +1,5 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import { Bot, Calendar, FlaskConical, Plus } from "lucide-react";
+import { AlertTriangle, Bot, Calendar, FlaskConical, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppConstants";
@@ -217,12 +217,46 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	const clinicMode = dashboard.clinicSettings?.profile?.mode;
 	const clinicTimezone = dashboard.clinicSettings?.profile?.timezone;
 
+	// Запрет на палки в колёса регистратуре (Мандат 8e): авто-подстановка кресла и врача при их отсутствии
+	useEffect(() => {
+		if (!newAppointmentDraft?.chairId && dashboard.clinicSettings?.chairs) {
+			const firstActiveChair = dashboard.clinicSettings.chairs.find((c) => c.active);
+			if (firstActiveChair) {
+				updateNewAppointmentDraft("chairId", firstActiveChair.id);
+			}
+		}
+	}, [newAppointmentDraft?.chairId, dashboard.clinicSettings?.chairs, updateNewAppointmentDraft]);
+
+	useEffect(() => {
+		if (!newAppointmentDraft?.doctorUserId && dashboard.clinicSettings?.staff) {
+			const activeDocs = dashboard.clinicSettings.staff.filter(
+				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+			);
+			if (activeDocs.length === 1 && activeDocs[0]) {
+				updateNewAppointmentDraft("doctorUserId", activeDocs[0].id);
+			}
+		}
+	}, [newAppointmentDraft?.doctorUserId, dashboard.clinicSettings?.staff, updateNewAppointmentDraft]);
+
 	const newAppointmentMissingSteps = appointmentScheduleMissingFields(
 		newAppointmentDraft as AppointmentScheduleDraft,
 		clinicMode,
 		dashboard.clinicSettings?.staff,
 		{ chairs: dashboard.clinicSettings?.chairs, patients: dashboard.patients },
 	);
+
+	// Критичные поля: Пациент и время приёма. Кресло и врач авто-назначаются по умолчанию при 1-2 кликах.
+	const criticalMissingSteps = useMemo(() => {
+		const activeChairs = (dashboard.clinicSettings?.chairs ?? []).filter((c) => c.active);
+		const activeDocs = (dashboard.clinicSettings?.staff ?? []).filter(
+			(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+		);
+		return newAppointmentMissingSteps.filter((step) => {
+			if (step.includes("кресло") && activeChairs.length > 0) return false;
+			if (step.includes("врач") && activeDocs.length === 1) return false;
+			return true;
+		});
+	}, [newAppointmentMissingSteps, dashboard.clinicSettings?.chairs, dashboard.clinicSettings?.staff]);
 
 	const collision = useMemo(() => {
 		return checkAppointmentResourceCollision(
@@ -247,7 +281,26 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	]);
 
 	const newAppointmentReadyToCreate =
-		newAppointmentMissingSteps.length === 0 && !collision.hasCollision;
+		criticalMissingSteps.length === 0;
+
+	const handleCreateAppointment = async () => {
+		// Авто-подстановка первого активного кресла/врача перед отправкой, чтобы не блокировать регистратора
+		if (!newAppointmentDraft?.chairId && dashboard.clinicSettings?.chairs) {
+			const firstChair = dashboard.clinicSettings.chairs.find((c) => c.active);
+			if (firstChair) {
+				updateNewAppointmentDraft("chairId", firstChair.id);
+			}
+		}
+		if (!newAppointmentDraft?.doctorUserId && dashboard.clinicSettings?.staff) {
+			const activeDocs = dashboard.clinicSettings.staff.filter(
+				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+			);
+			if (activeDocs.length > 0 && activeDocs[0]) {
+				updateNewAppointmentDraft("doctorUserId", activeDocs[0].id);
+			}
+		}
+		await createAppointmentFromDraft();
+	};
 
 	/**
 	 * Что сказать человеку, если запись не создалась. Сервер не всегда присылает
@@ -557,11 +610,11 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						{collision.hasCollision ? (
 							<span
 								id="new-appointment-create-collision"
-								className="save-state font-medium text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1"
+								className="save-state font-medium text-amber-700 dark:text-amber-300 text-xs flex items-center gap-1"
 								role="alert"
-								title={collision.message ?? "Конфликт времени"}
+								title={`${collision.message}. Разрешена экстренная запись (острая боль / овербукинг)`}
 							>
-								⛔ {collision.message}
+								⚠️ {collision.message} (овербукинг разрешен)
 							</span>
 						) : newAppointmentReadyToCreate ? (
 							<span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400 text-xs">
@@ -578,13 +631,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							<span
 								id="new-appointment-create-missing-short"
 								className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400 text-xs"
-								title={`Осталось: ${newAppointmentMissingSteps.join("; ")}`}
+								title={`Осталось: ${criticalMissingSteps.join("; ")}`}
 							>
 								{(() => {
-									const shown = newAppointmentMissingSteps
+									const shown = criticalMissingSteps
 										.slice(0, 2)
 										.join(", ");
-									const rest = newAppointmentMissingSteps.length - 2;
+									const rest = criticalMissingSteps.length - 2;
 									return rest > 0
 										? `Осталось: ${shown} и ещё ${rest}`
 										: `Осталось: ${shown}`;
@@ -598,7 +651,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                 форме, когда объяснение нужнее всего. */}
 						<button
 							type="button"
-							onClick={() => void createAppointmentFromDraft()}
+							onClick={() => void handleCreateAppointment()}
 							disabled={
 								newAppointmentSaveState === "saving" ||
 								!newAppointmentReadyToCreate
@@ -611,10 +664,18 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										? "new-appointment-create-missing-short"
 										: undefined
 							}
-							className="primary-button px-4 py-2 min-h-[44px] bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white rounded-xl flex items-center justify-center text-sm font-semibold whitespace-nowrap disabled:opacity-50 cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none transition-colors shrink-0"
+							className={`primary-button px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center text-sm font-semibold whitespace-nowrap disabled:opacity-50 cursor-pointer focus:ring-2 focus:outline-none transition-colors shrink-0 ${
+								collision.hasCollision
+									? "bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500"
+									: "bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white focus:ring-[var(--teal)]"
+							}`}
 						>
 							<Plus size={16} aria-hidden="true" className="mr-1.5 shrink-0" />
-							<span>Создать запись</span>
+							<span>
+								{collision.hasCollision
+									? "Записать с овербукингом (острая боль)"
+									: "Создать запись"}
+							</span>
 						</button>
 					</div>
 				</div>
@@ -1062,12 +1123,21 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						>
 							<strong>Чтобы создать запись, осталось:</strong>
 							<ul>
-								{newAppointmentMissingSteps.map((step) => (
+								{criticalMissingSteps.map((step) => (
 									<li key={step}>{step}</li>
 								))}
 							</ul>
 						</div>
 					) : null}
+					{collision.hasCollision && (
+						<div
+							className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-2"
+							role="alert"
+						>
+							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							<span>⚠️ {collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
+						</div>
+					)}
 					<div className="appointment-editor-actions">
 						{/* Сообщение об отказе показывается у самой кнопки «Создать запись»,
                 выше и вне этой формы: она свёрнута по умолчанию, и здесь отказ

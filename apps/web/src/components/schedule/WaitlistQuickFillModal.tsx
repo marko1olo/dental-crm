@@ -22,8 +22,7 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -31,6 +30,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
+import { findDoctorFreeSlots } from "./doctorFreeSlotsEngine";
 
 export type WaitlistPriority =
 	| "urgent"
@@ -428,6 +428,7 @@ export function WaitlistQuickFillModal({
 	updateNewAppointmentDraft,
 	focusNewAppointmentEditor,
 	onBookSlot,
+	onAppointmentCreated,
 	dashboard: propDashboard,
 	auth: propAuth,
 }: WaitlistQuickFillModalProps) {
@@ -489,14 +490,51 @@ export function WaitlistQuickFillModal({
 		}
 	}, [auth]);
 
+	// Динамический поиск свободных / горящих окон в расписании (если targetSlot не был передан явно)
+	const discoveredFreeSlots: TargetSlotInfo[] = useMemo(() => {
+		if (targetSlot) return [targetSlot];
+		const today = new Date().toISOString().slice(0, 10);
+		const days = findDoctorFreeSlots({
+			startDate: today,
+			horizonDays: 3,
+			durationMinutes: 30,
+			appointments: dashboard?.appointments ?? [],
+			chairs: dashboard?.clinicSettings?.chairs ?? [],
+		});
+		const list: TargetSlotInfo[] = [];
+		for (const day of days) {
+			for (const s of day.slots) {
+				const doc = (dashboard?.clinicSettings?.staff ?? []).find(
+					// biome-ignore lint/suspicious/noExplicitAny: staff lookup
+					(m: any) => m.id === s.doctorId,
+				);
+				list.push({
+					startsAt: s.startsAtIso,
+					endsAt: s.endsAtIso,
+					doctorUserId: s.doctorId,
+					doctorName: doc?.fullName || doc?.name || "Дежурный врач",
+					chairId: s.chairId,
+					chairName: s.chairName,
+					freedBecause: "Свободное окно в расписании",
+				});
+				if (list.length >= 6) break;
+			}
+			if (list.length >= 6) break;
+		}
+		return list;
+	}, [targetSlot, dashboard?.appointments, dashboard?.clinicSettings?.chairs, dashboard?.clinicSettings?.staff]);
+
+	const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0);
+	const activeTargetSlot = targetSlot || discoveredFreeSlots[selectedSlotIndex] || null;
+
 	useEffect(() => {
 		if (isOpen) {
 			fetchWaitlist();
-			if (targetSlot) {
+			if (targetSlot || discoveredFreeSlots.length > 0) {
 				setActiveTab("match");
 			}
 		}
-	}, [isOpen, targetSlot, fetchWaitlist]);
+	}, [isOpen, targetSlot, discoveredFreeSlots.length, fetchWaitlist]);
 
 	// Handle ESC key
 	useEffect(() => {
@@ -514,14 +552,14 @@ export function WaitlistQuickFillModal({
 		return items
 			.filter((item) => item.status === "active" || item.status === "waiting")
 			.map((item) => {
-				const scoring = calculateMatchScore(item, targetSlot);
+				const scoring = calculateMatchScore(item, activeTargetSlot);
 				return {
 					patient: item,
 					scoring,
 				};
 			})
 			.sort((a, b) => b.scoring.priorityRank - a.scoring.priorityRank);
-	}, [items, targetSlot]);
+	}, [items, activeTargetSlot]);
 
 	// Filtered for "list" tab
 	const filteredList = useMemo(() => {
@@ -577,31 +615,68 @@ export function WaitlistQuickFillModal({
 		});
 	};
 
-	// 1-Click Direct Booking onto Slot
+	// 1-Click Direct Booking onto Slot (Мандат 8e: реальная посадка в базу в 1 клик)
 	const handleBookPatient = async (patient: WaitlistPatientEntry) => {
 		setBookingPatientId(patient.id);
 		try {
-			if (onBookSlot && targetSlot) {
-				await onBookSlot(targetSlot, patient);
-			} else if (updateNewAppointmentDraft) {
-				updateNewAppointmentDraft("patientId", patient.patientId);
-				if (targetSlot?.doctorUserId || patient.preferredDoctorId) {
-					updateNewAppointmentDraft(
-						"doctorUserId",
-						targetSlot?.doctorUserId || patient.preferredDoctorId,
-					);
-				}
-				if (targetSlot?.startsAt) {
-					updateNewAppointmentDraft("startsAt", targetSlot.startsAt);
-				}
-				if (targetSlot?.endsAt) {
-					updateNewAppointmentDraft("endsAt", targetSlot.endsAt);
-				}
-				if (targetSlot?.chairId) {
-					updateNewAppointmentDraft("chairId", targetSlot.chairId);
-				}
-				if (focusNewAppointmentEditor) {
-					focusNewAppointmentEditor();
+			const currentSlot = activeTargetSlot || targetSlot;
+			if (onBookSlot && currentSlot) {
+				await onBookSlot(currentSlot, patient);
+			} else if (currentSlot) {
+				const activeDocs = (dashboard?.clinicSettings?.staff ?? []).filter(
+					// biome-ignore lint/suspicious/noExplicitAny: staff lookup
+					(m: any) => m.active && (m.role === "doctor" || m.role === "owner"),
+				);
+				const doctorUserId =
+					currentSlot.doctorUserId ||
+					patient.preferredDoctorId ||
+					(activeDocs.length > 0 ? activeDocs[0]?.id : null);
+
+				const activeChairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
+					// biome-ignore lint/suspicious/noExplicitAny: chair lookup
+					(c: any) => c.active,
+				);
+				const chairId =
+					currentSlot.chairId ||
+					(activeChairs.length > 0 ? activeChairs[0]?.id : null);
+
+				const startsAt = currentSlot.startsAt;
+				const endsAt =
+					currentSlot.endsAt ||
+					new Date(Date.parse(startsAt) + 30 * 60_000).toISOString();
+
+				if (doctorUserId && chairId) {
+					const res = await fetch("/api/appointments", {
+						method: "POST",
+						headers: waitlistWriteHeaders(),
+						body: JSON.stringify({
+							patientId: patient.patientId,
+							doctorUserId,
+							chairId,
+							startsAt,
+							endsAt,
+							status: "planned",
+							reason: patient.treatmentCategory || "Запись из листа ожидания",
+							comment: `Посадка из листа ожидания в 1 клик${patient.notes ? `: ${patient.notes}` : ""}`,
+							clientMutationId: `waitlist-quickfill-${Date.now()}`,
+						}),
+					});
+
+					if (!res.ok) {
+						const err = await res.json().catch(() => null);
+						showToast(
+							err?.message || "Не удалось создать запись на приём",
+							"error",
+						);
+						return;
+					}
+				} else if (updateNewAppointmentDraft) {
+					updateNewAppointmentDraft("patientId", patient.patientId);
+					if (doctorUserId) updateNewAppointmentDraft("doctorUserId", doctorUserId);
+					if (chairId) updateNewAppointmentDraft("chairId", chairId);
+					updateNewAppointmentDraft("startsAt", startsAt);
+					updateNewAppointmentDraft("endsAt", endsAt);
+					focusNewAppointmentEditor?.();
 				}
 			}
 
@@ -613,9 +688,11 @@ export function WaitlistQuickFillModal({
 			}).catch((err) => logger.warn("Failed to mark waitlist fulfilled", err));
 
 			showToast(
-				`Пациент ${patient.patientName || ""} записан на освободившееся окно!`,
+				`Пациент «${patient.patientName || "Пациент"}» записан на освободившееся окно!`,
 				"success",
+				5000,
 			);
+			onAppointmentCreated?.();
 			onClose();
 			fetchWaitlist();
 		} catch (err) {
@@ -712,7 +789,6 @@ export function WaitlistQuickFillModal({
 
 	// Delete waitlist item
 	const handleDelete = async (id: string) => {
-		if (!window.confirm("Удалить пациента из листа ожидания?")) return;
 		try {
 			const res = await fetch(`/api/waitlist/${id}`, {
 				method: "DELETE",
@@ -771,53 +847,93 @@ export function WaitlistQuickFillModal({
 				</div>
 
 				{/* Target Slot Banner if present */}
-				{targetSlot && targetSlot.startsAt && (
+				{activeTargetSlot && activeTargetSlot.startsAt && (
 					<div
-						className="p-4 mx-5 mt-4 rounded-xl bg-gradient-to-r from-[var(--teal)]/10 to-teal-500/5 border border-[var(--teal)]/20 flex flex-wrap items-center justify-between gap-3 shrink-0"
+						className="p-4 mx-5 mt-4 rounded-xl bg-gradient-to-r from-[var(--teal)]/10 to-teal-500/5 border border-[var(--teal)]/20 flex flex-col gap-3 shrink-0"
 						data-testid="target-slot-banner"
 					>
-						<div className="flex items-center gap-3">
-							<div className="p-2 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] shrink-0">
-								<Clock className="w-5 h-5" />
-							</div>
-							<div>
-								<div className="text-xs font-bold uppercase tracking-wider text-[var(--teal-dark)]">
-									Освободившееся окно для записи
+						<div className="flex flex-wrap items-center justify-between gap-3">
+							<div className="flex items-center gap-3">
+								<div className="p-2 rounded-lg bg-[var(--teal)] text-[var(--on-teal)] shrink-0">
+									<Clock className="w-5 h-5" />
 								</div>
-								<div className="text-sm font-semibold text-[var(--ink)]">
-									{new Date(targetSlot.startsAt).toLocaleDateString("ru-RU", {
+								<div>
+									<div className="text-xs font-bold uppercase tracking-wider text-[var(--teal-dark)]">
+										Освободившееся окно для записи
+									</div>
+									<div className="text-sm font-semibold text-[var(--ink)]">
+										{new Date(activeTargetSlot.startsAt).toLocaleDateString("ru-RU", {
+											day: "numeric",
+											month: "long",
+											weekday: "long",
+										})}{" "}
+										·{" "}
+										{new Date(activeTargetSlot.startsAt).toLocaleTimeString("ru-RU", {
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
+										–
+										{new Date(activeTargetSlot.endsAt).toLocaleTimeString("ru-RU", {
+											hour: "2-digit",
+											minute: "2-digit",
+										})}
+									</div>
+									<div className="text-xs text-[var(--muted)] mt-0.5 flex items-center gap-2">
+										<span>Врач: {activeTargetSlot.doctorName || "Любой специалист"}</span>
+										{activeTargetSlot.freedBecause && (
+											<span>· Причина: {activeTargetSlot.freedBecause}</span>
+										)}
+									</div>
+								</div>
+							</div>
+							<div className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--teal)]/15 text-[var(--teal-dark)]">
+								{scoredPatients.length} кандидатов в очереди
+							</div>
+						</div>
+
+						{/* Quick selector across multiple discovered free slots */}
+						{discoveredFreeSlots.length > 1 && (
+							<div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-[var(--teal)]/15">
+								<span className="text-[11px] font-bold text-[var(--muted)] shrink-0 mr-1">
+									Окна:
+								</span>
+								{discoveredFreeSlots.map((slot, idx) => {
+									const sDate = new Date(slot.startsAt);
+									const dateLabel = sDate.toLocaleDateString("ru-RU", {
 										day: "numeric",
-										month: "long",
-										weekday: "long",
-									})}{" "}
-									·{" "}
-									{new Date(targetSlot.startsAt).toLocaleTimeString("ru-RU", {
+										month: "short",
+									});
+									const timeLabel = sDate.toLocaleTimeString("ru-RU", {
 										hour: "2-digit",
 										minute: "2-digit",
-									})}
-									–
-									{new Date(targetSlot.endsAt).toLocaleTimeString("ru-RU", {
-										hour: "2-digit",
-										minute: "2-digit",
-									})}
-								</div>
-								<div className="text-xs text-[var(--muted)] mt-0.5 flex items-center gap-2">
-									<span>Врач: {targetSlot.doctorName || "Любой специалист"}</span>
-									{targetSlot.freedBecause && (
-										<span>· Причина: {targetSlot.freedBecause}</span>
-									)}
-								</div>
+									});
+									const isSel = idx === selectedSlotIndex;
+									return (
+										<button
+											key={slot.startsAt + slot.doctorUserId}
+											type="button"
+											onClick={() => setSelectedSlotIndex(idx)}
+											className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+												isSel
+													? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
+													: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+											}`}
+										>
+											<span>{dateLabel} {timeLabel}</span>
+											<span className="opacity-75 font-normal ml-1">
+												({slot.doctorName?.split(" ")[0]})
+											</span>
+										</button>
+									);
+								})}
 							</div>
-						</div>
-						<div className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--teal)]/15 text-[var(--teal-dark)]">
-							{scoredPatients.length} кандидатов в очереди
-						</div>
+						)}
 					</div>
 				)}
 
 				{/* Navigation Sub-Tabs */}
 				<div className="px-5 pt-3 border-b border-[var(--line)] flex items-center gap-2 shrink-0 overflow-x-auto whitespace-nowrap">
-					{targetSlot && (
+					{activeTargetSlot && (
 						<button
 							type="button"
 							onClick={() => setActiveTab("match")}
@@ -1135,6 +1251,18 @@ export function WaitlistQuickFillModal({
 												</div>
 
 												<div className="flex items-center gap-2 shrink-0">
+													{activeTargetSlot && item.status !== "fulfilled" && (
+														<button
+															type="button"
+															onClick={() => handleBookPatient(item)}
+															disabled={bookingPatientId === item.id}
+															className="px-3 py-2 min-h-[44px] bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+															title="Записать в окно в 1 клик"
+														>
+															<UserCheck className="w-3.5 h-3.5" />
+															В окно
+														</button>
+													)}
 													<button
 														type="button"
 														onClick={() => handleSendWhatsApp(item)}

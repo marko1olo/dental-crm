@@ -1,6 +1,6 @@
-import { Calendar, CheckCircle2, Sparkles, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, CheckCircle2, Sparkles, Trash2, UserPlus, X, Zap } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -11,6 +11,7 @@ import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
 import { WaitlistQuickFillModal } from "./WaitlistQuickFillModal";
+import { findDoctorFreeSlots, type DoctorFreeSlot } from "./doctorFreeSlotsEngine";
 
 /**
  * Как называется содержимое очереди для сообщений о загрузке и отказе. Общий
@@ -245,7 +246,6 @@ export function WaitlistDrawer(props: Props) {
 
 	const handleDelete = async (id: string) => {
 		if (loadingId === id) return;
-		if (!window.confirm("Удалить запись из листа ожидания?")) return;
 		setLoadingId(id);
 		try {
 			const res = await fetch(`/api/waitlist/${id}`, {
@@ -332,6 +332,89 @@ export function WaitlistDrawer(props: Props) {
 				`Пациент ${item.patientName || ""} выбран. Укажите время записи.`,
 				"success",
 			);
+		} finally {
+			setLoadingId(null);
+		}
+	};
+
+	// Находим ближайшие свободные окна для быстрой посадки пациента в 1 клик
+	const availableFreeSlots = useMemo(() => {
+		const today = new Date().toISOString().slice(0, 10);
+		const days = findDoctorFreeSlots({
+			startDate: today,
+			horizonDays: 3,
+			durationMinutes: 30,
+			appointments: dashboard?.appointments ?? [],
+			chairs: dashboard?.clinicSettings?.chairs ?? [],
+		});
+		const flatSlots: (DoctorFreeSlot & { dateFormatted: string; doctorName?: string })[] = [];
+		for (const day of days) {
+			for (const slot of day.slots) {
+				const doc = (dashboard?.clinicSettings?.staff ?? []).find(
+					// biome-ignore lint/suspicious/noExplicitAny: staff lookup
+					(s: any) => s.id === slot.doctorId,
+				);
+				flatSlots.push({
+					...slot,
+					dateFormatted: day.dateFormatted,
+					doctorName: doc?.fullName || doc?.name || "Дежурный врач",
+				});
+				if (flatSlots.length >= 10) break;
+			}
+			if (flatSlots.length >= 10) break;
+		}
+		return flatSlots;
+	}, [dashboard?.appointments, dashboard?.clinicSettings?.chairs, dashboard?.clinicSettings?.staff]);
+
+	// Посадка пациента в освободившееся окно в 1 клик (Мандат 8e)
+	const handleOneClickBook = async (
+		item: WaitlistItem,
+		slot: DoctorFreeSlot & { doctorName?: string; dateFormatted?: string },
+	) => {
+		if (loadingId === item.id) return;
+		setLoadingId(item.id);
+		try {
+			const res = await fetch("/api/appointments", {
+				method: "POST",
+				headers: waitlistWriteHeaders(),
+				body: JSON.stringify({
+					patientId: item.patientId,
+					doctorUserId: slot.doctorId,
+					chairId: slot.chairId,
+					startsAt: slot.startsAtIso,
+					endsAt: slot.endsAtIso,
+					status: "planned",
+					reason: "Запись из листа ожидания (в свободное окно)",
+					comment: "Посадка из листа ожидания в 1 клик",
+					clientMutationId: `waitlist-direct-${Date.now()}`,
+				}),
+			});
+
+			if (!res.ok) {
+				const err = await res.json().catch(() => null);
+				showToast(
+					err?.message || "Не удалось записать пациента в свободное окно",
+					"error",
+				);
+				return;
+			}
+
+			// Закрываем заявку в листе ожидания как исполненную
+			await fetch(`/api/waitlist/${item.id}`, {
+				method: "PUT",
+				headers: waitlistWriteHeaders(),
+				body: JSON.stringify({ status: "fulfilled" }),
+			}).catch(() => {});
+
+			showToast(
+				`Пациент «${item.patientName || "Пациент"}» записан на ${slot.dateFormatted} в ${slot.startTime} к ${slot.doctorName || "врачу"}!`,
+				"success",
+				5000,
+			);
+			fetchWaitlist();
+		} catch (err) {
+			logger.error("Failed to 1-click book waitlist item", err);
+			showToast("Ошибка соединения с сервером клиники", "error");
 		} finally {
 			setLoadingId(null);
 		}
@@ -619,39 +702,78 @@ export function WaitlistDrawer(props: Props) {
 											</div>
 										)}
 
-										<div className="flex gap-2 mt-1">
-											<button
-												type="button"
-												disabled={loadingId === item.id}
-												aria-busy={loadingId === item.id}
-												onClick={() => handleBook(item)}
-												className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-xl text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
-											>
-												Записать на прием
-											</button>
-											<button
-												type="button"
-												disabled={loadingId === item.id}
-												aria-busy={loadingId === item.id}
-												onClick={() => handleFulfill(item)}
-												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--ok-bg,rgba(16,185,129,0.1))] hover:brightness-105 text-[var(--ok-fg,#0d9488)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-												title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
-												aria-label="Дождался приёма: убрать из очереди, запись о заявке сохранить"
-											>
-												<CheckCircle2 className="w-4 h-4" />
-											</button>
-											<button
-												type="button"
-												disabled={loadingId === item.id}
-												aria-busy={loadingId === item.id}
-												onClick={() => handleDelete(item.id)}
-												className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--bad-bg,rgba(239,68,68,0.1))] hover:brightness-105 text-[var(--bad-fg,#ef4444)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-												title="Убрать совсем: заявка ошибочная или человек больше не хочет"
-												aria-label="Убрать совсем: заявка ошибочная или человек больше не хочет"
-											>
-												<Trash2 className="w-4 h-4" />
-											</button>
-										</div>
+										{(() => {
+											// Ищем окно по предпочтению врача, либо ближайшее доступное
+											const matchedSlot =
+												(item.preferredDoctorId
+													? availableFreeSlots.find(
+															(s) => s.doctorId === item.preferredDoctorId,
+														)
+													: null) || availableFreeSlots[0];
+
+											return (
+												<div className="flex flex-col sm:flex-row gap-2 mt-1">
+													{matchedSlot ? (
+														<button
+															type="button"
+															disabled={loadingId === item.id}
+															aria-busy={loadingId === item.id}
+															onClick={() => handleOneClickBook(item, matchedSlot)}
+															className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-xs transition-all shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+															title={`Посадить в 1 клик на ${matchedSlot.dateFormatted} в ${matchedSlot.startTime} к ${matchedSlot.doctorName}`}
+														>
+															<Zap size={14} className="shrink-0 text-amber-300" />
+															<span>В окно ({matchedSlot.dateFormatted}, {matchedSlot.startTime})</span>
+														</button>
+													) : (
+														<button
+															type="button"
+															disabled={loadingId === item.id}
+															aria-busy={loadingId === item.id}
+															onClick={() => handleBook(item)}
+															className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-xl text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+														>
+															Записать на прием
+														</button>
+													)}
+													<div className="flex gap-2">
+														{matchedSlot && (
+															<button
+																type="button"
+																disabled={loadingId === item.id}
+																onClick={() => handleBook(item)}
+																className="min-h-[44px] px-2.5 bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs rounded-xl transition-colors"
+																title="Выбрать другое время вручную"
+															>
+																Вручную
+															</button>
+														)}
+														<button
+															type="button"
+															disabled={loadingId === item.id}
+															aria-busy={loadingId === item.id}
+															onClick={() => handleFulfill(item)}
+															className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--ok-bg,rgba(16,185,129,0.1))] hover:brightness-105 text-[var(--ok-fg,#0d9488)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+															title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
+															aria-label="Дождался приёма: убрать из очереди, запись о заявке сохранить"
+														>
+															<CheckCircle2 className="w-4 h-4" />
+														</button>
+														<button
+															type="button"
+															disabled={loadingId === item.id}
+															aria-busy={loadingId === item.id}
+															onClick={() => handleDelete(item.id)}
+															className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--bad-bg,rgba(239,68,68,0.1))] hover:brightness-105 text-[var(--bad-fg,#ef4444)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+															title="Убрать совсем: заявка ошибочная или человек больше не хочет"
+															aria-label="Убрать совсем: заявка ошибочная или человек больше не хочет"
+														>
+															<Trash2 className="w-4 h-4" />
+														</button>
+													</div>
+												</div>
+											);
+										})()}
 									</li>
 								))}
 							</ul>
@@ -666,6 +788,8 @@ export function WaitlistDrawer(props: Props) {
 					fetchWaitlist();
 					setIsQuickFillOpen(false);
 				}}
+				dashboard={dashboard}
+				auth={auth}
 			/>
 		</div>
 	);

@@ -278,8 +278,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			"";
 		setChairId(defaultChairId);
 
-		// Assistant prefill
-		setAssistantUserId(isSoloDoctor ? "" : (assistants[0]?.id ?? ""));
+		// Assistant: опционально, без принудительного назначения
+		setAssistantUserId("");
 
 		// Pre-selected patient if provided in slot
 		if (initialSlot?.patientId) {
@@ -577,15 +577,33 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			return;
 		}
 
-		if (!doctorUserId) {
+		const effectiveDoctorId =
+			doctorUserId ||
+			(doctors.length === 1 ? doctors[0]?.id : "") ||
+			doctors[0]?.id ||
+			"";
+		const effectiveChairId =
+			chairId ||
+			(chairs.length === 1 ? chairs[0]?.id : "") ||
+			chairs[0]?.id ||
+			"";
+
+		if (!patientId) {
+			setSubmitError("Выберите или создайте пациента");
+			showToast("Выберите пациента перед сохранением записи", "error");
+			searchInputRef.current?.focus();
+			return;
+		}
+
+		if (!effectiveDoctorId) {
 			setSubmitError("Выберите врача для приема");
 			showToast("Выберите врача", "error");
 			return;
 		}
 
-		if (!chairId) {
-			setSubmitError("Выберите кресло / кабинет");
-			showToast("Выберите кресло", "error");
+		if (!effectiveChairId) {
+			setSubmitError("В клинике нет активных кресел");
+			showToast("В клинике нет доступных кресел", "error");
 			return;
 		}
 
@@ -615,9 +633,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 			const payload = {
 				patientId,
-				doctorUserId,
+				doctorUserId: effectiveDoctorId,
 				assistantUserId: assistantUserId || null,
-				chairId,
+				chairId: effectiveChairId,
 				startsAt: startsAtIso,
 				endsAt: endsAtIso,
 				status,
@@ -928,11 +946,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					{/* Collision alert if any */}
 					{collision.hasCollision && (
 						<div
-							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2"
+							className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-2"
 							role="alert"
 						>
-							<AlertTriangle size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
-							<span>⛔ {collision.message}</span>
+							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							<span>⚠️ {collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
 						</div>
 					)}
 
@@ -1596,11 +1614,21 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					<button
 						type="button"
 						onClick={() => void handleSubmitBooking()}
-						disabled={isSubmitting || !patientId || !doctorUserId || !chairId}
-						className="flex-1 min-h-[44px] px-5 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+						disabled={isSubmitting || !patientId || (!doctorUserId && doctors.length > 1 && !doctors[0]) || (!chairId && chairs.length === 0)}
+						className={`flex-1 min-h-[44px] px-5 font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+							collision.hasCollision
+								? "bg-amber-600 hover:bg-amber-700 text-white"
+								: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)]"
+						}`}
 					>
 						<Plus size={16} />
-						<span>{isSubmitting ? "Сохраняю запись…" : "Создать запись (Ctrl+Enter)"}</span>
+						<span>
+							{isSubmitting
+								? "Сохраняю запись…"
+								: collision.hasCollision
+									? "Записать с овербукингом (острая боль)"
+									: "Создать запись (Ctrl+Enter)"}
+						</span>
 					</button>
 				</div>
 
