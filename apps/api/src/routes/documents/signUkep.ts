@@ -112,7 +112,8 @@ export async function register(app: FastifyInstance) {
 			const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
 			if (!signatureValidation.valid) {
 				return reply.code(400).send({
-					error: "InvalidSignatureFormat",
+					error: "SignatureVerificationFailed",
+					errorCode: signatureValidation.errorCode ?? "SignatureVerificationFailed",
 					message: `Предоставленная подпись не является корректной отсоединенной подписью CMS (PKCS#7) по ГОСТ Р 34.10-2012. ${signatureValidation.error}`,
 				});
 			}
@@ -155,9 +156,11 @@ export async function register(app: FastifyInstance) {
 			// Проверка целостности документа: сверка хэша архивного снимка со значением в подписи
 			if (doc.issuedSnapshotSha256) {
 				const tamperCheck = validateGostCmsPkcs7Signature(pkcs7Signature, doc.issuedSnapshotSha256);
-				if (!tamperCheck.valid && tamperCheck.tamperDetected) {
+				if (!tamperCheck.valid) {
 					return reply.code(400).send({
-						error: "TamperDetected",
+						error: "SignatureVerificationFailed",
+						errorCode: tamperCheck.errorCode ?? "TamperDetected",
+						tamperDetected: tamperCheck.tamperDetected ?? true,
 						message: "Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
 					});
 				}

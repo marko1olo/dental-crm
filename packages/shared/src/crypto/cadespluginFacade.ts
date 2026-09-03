@@ -81,13 +81,11 @@ export interface CadesCertificatesCollection {
 }
 
 export interface CadesStoreObject {
-	Open(
-		location: number,
-		name: string,
-		openMode: number,
-	): Promise<void> | void;
+	Open(location: number, name: string, openMode: number): Promise<void> | void;
 	Close(): Promise<void> | void;
-	readonly Certificates: Promise<CadesCertificatesCollection> | CadesCertificatesCollection;
+	readonly Certificates:
+		| Promise<CadesCertificatesCollection>
+		| CadesCertificatesCollection;
 }
 
 export interface CadesSignerObject {
@@ -140,13 +138,17 @@ export const digitalCertificateInfoSchema = z.object({
 	signatureType: digitalSignatureTypeSchema.default("ukep"),
 	algorithmOid: z.string().default(GOST_CRYPTO_OIDS.GOST_3410_2012_256),
 });
-export type DigitalCertificateInfo = z.infer<typeof digitalCertificateInfoSchema>;
+export type DigitalCertificateInfo = z.infer<
+	typeof digitalCertificateInfoSchema
+>;
 
 export const detachedGostSignatureContainerSchema = z.object({
 	/** Отсоединенная подпись в формате Base64 (CMS PKCS#7 CAdES-BES) */
 	signatureBase64: z.string().min(1, "Криптографическая подпись обязательна"),
 	/** SHA-256 (или ГОСТ Р 34.11-2012) хэш подписанного документа в Hex */
-	documentHashHex: z.string().length(64, "Длина хэша SHA-256 должна составлять 64 символа"),
+	documentHashHex: z
+		.string()
+		.length(64, "Длина хэша SHA-256 должна составлять 64 символа"),
 	/** Идентификатор подписанного документа */
 	documentId: z.string().min(1),
 	/** Тип медицинского документа (043u, informed_consent, treatment_plan, etc.) */
@@ -154,7 +156,9 @@ export const detachedGostSignatureContainerSchema = z.object({
 	/** Метка времени подписания (ISO 8601) */
 	signedAt: z.string(),
 	/** OID алгоритма подписи */
-	signatureAlgorithmOid: z.string().default(GOST_CRYPTO_OIDS.GOST_3410_2012_256),
+	signatureAlgorithmOid: z
+		.string()
+		.default(GOST_CRYPTO_OIDS.GOST_3410_2012_256),
 	/** OID алгоритма хэширования */
 	digestAlgorithmOid: z.string().default(GOST_CRYPTO_OIDS.GOST_3411_2012_256),
 	/** Сведения о сертификате ключа проверки */
@@ -165,9 +169,13 @@ export const detachedGostSignatureContainerSchema = z.object({
 	validTo: z.string(),
 	signatureType: digitalSignatureTypeSchema.default("ukep"),
 	/** Формат контейнера подписи */
-	containerFormat: z.literal("CMS_PKCS7_DETACHED_CADES_BES").default("CMS_PKCS7_DETACHED_CADES_BES"),
+	containerFormat: z
+		.literal("CMS_PKCS7_DETACHED_CADES_BES")
+		.default("CMS_PKCS7_DETACHED_CADES_BES"),
 });
-export type DetachedGostSignatureContainer = z.infer<typeof detachedGostSignatureContainerSchema>;
+export type DetachedGostSignatureContainer = z.infer<
+	typeof detachedGostSignatureContainerSchema
+>;
 
 // ─── Statutory Rejection of Doctor PEP under 63-FZ & Minzdrav 947n ────────
 
@@ -183,7 +191,11 @@ export function validateDoctorSignatureStatutoryMode(
 	documentKind?: string,
 ): { valid: boolean; error?: string } {
 	const normalized = mode.trim().toLowerCase();
-	if (normalized === "simple_electronic_signature" || normalized === "pep" || normalized.startsWith("pin:")) {
+	if (
+		normalized === "simple_electronic_signature" ||
+		normalized === "pep" ||
+		normalized.startsWith("pin:")
+	) {
 		return {
 			valid: false,
 			error: DOCTOR_PEP_FORBIDDEN_MESSAGE,
@@ -325,8 +337,13 @@ export function computeGostSigningDigestSha256(canonicalText: string): {
 	sha256Hex: string;
 	base64Payload: string;
 } {
-	const normalized = canonicalText.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim();
-	const sha256Hex = createHash("sha256").update(normalized, "utf8").digest("hex");
+	const normalized = canonicalText
+		.replace(/^\uFEFF/, "")
+		.replace(/\r\n/g, "\n")
+		.trim();
+	const sha256Hex = createHash("sha256")
+		.update(normalized, "utf8")
+		.digest("hex");
 	const base64Payload = Buffer.from(normalized, "utf8").toString("base64");
 	return {
 		canonicalText: normalized,
@@ -406,7 +423,11 @@ function derOid(oidStr: string): Buffer {
 		bytes.push(...subBytes);
 	}
 	const body = Buffer.from(bytes);
-	return Buffer.concat([Buffer.from([0x06]), derEncodeLength(body.length), body]);
+	return Buffer.concat([
+		Buffer.from([0x06]),
+		derEncodeLength(body.length),
+		body,
+	]);
 }
 
 /**
@@ -437,7 +458,11 @@ function derOctetString(buf: Buffer): Buffer {
  */
 function derExplicitTag(tagNumber: number, content: Buffer): Buffer {
 	const tagByte = 0xa0 | (tagNumber & 0x1f);
-	return Buffer.concat([Buffer.from([tagByte]), derEncodeLength(content.length), content]);
+	return Buffer.concat([
+		Buffer.from([tagByte]),
+		derEncodeLength(content.length),
+		content,
+	]);
 }
 
 /**
@@ -457,7 +482,8 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 	digestAlgorithmOid?: string | undefined;
 }): Buffer {
 	const signAlgOid = params.algorithmOid ?? GOST_CRYPTO_OIDS.GOST_3410_2012_256;
-	const digestAlgOid = params.digestAlgorithmOid ?? GOST_CRYPTO_OIDS.GOST_3411_2012_256;
+	const digestAlgOid =
+		params.digestAlgorithmOid ?? GOST_CRYPTO_OIDS.GOST_3411_2012_256;
 
 	// 1. DigestAlgorithmIdentifier SEQUENCE { OID, NULL/Parameters }
 	const digestAlgorithmIdent = derSequence(derOid(digestAlgOid));
@@ -467,26 +493,46 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 	const encapContentInfo = derSequence(derOid(GOST_CRYPTO_OIDS.CMS_DATA));
 
 	// 3. X.509 Certificate Mock Fragment (valid ASN.1 sequence representing the cert)
-	const certIssuerStr = params.certificateIssuer ?? "CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU";
+	const certIssuerStr =
+		params.certificateIssuer ??
+		"CN=Головной Удостоверяющий Центр Минцифры РФ, C=RU";
 	const certSubjectStr = `CN=${params.doctorFullName}, O=Медицинская организация, C=RU`;
-	const certSerialBuf = Buffer.from(params.certificateSerialNumber.replace(/[^a-fA-F0-9]/g, ""), "hex");
-	const safeSerialBuf = certSerialBuf.length > 0 ? certSerialBuf : Buffer.from([0x01, 0x02, 0x03, 0x04]);
+	const certSerialBuf = Buffer.from(
+		params.certificateSerialNumber.replace(/[^a-fA-F0-9]/g, ""),
+		"hex",
+	);
+	const safeSerialBuf =
+		certSerialBuf.length > 0
+			? certSerialBuf
+			: Buffer.from([0x01, 0x02, 0x03, 0x04]);
+
+	const derSerial = derInteger(BigInt(`0x${safeSerialBuf.toString("hex")}`));
+	const canonicalSerialHex = derSerial.subarray(2).toString("hex").toUpperCase();
 
 	const x509TbsCert = derSequence(
 		derExplicitTag(0, derInteger(2)), // v3
-		derInteger(BigInt(`0x${safeSerialBuf.toString("hex")}`)),
+		derSerial,
 		derSequence(derOid(signAlgOid)),
 		derSequence(derOctetString(Buffer.from(certIssuerStr, "utf8"))),
 		derSequence(
 			Buffer.concat([
 				Buffer.from([0x17, 0x0d]),
-				Buffer.from(params.validFromIso.slice(2, 10).replace(/-/g, "") + "000000Z", "ascii"),
+				Buffer.from(
+					params.validFromIso.slice(2, 10).replace(/-/g, "") + "000000Z",
+					"ascii",
+				),
 				Buffer.from([0x17, 0x0d]),
-				Buffer.from(params.validToIso.slice(2, 10).replace(/-/g, "") + "235959Z", "ascii"),
+				Buffer.from(
+					params.validToIso.slice(2, 10).replace(/-/g, "") + "235959Z",
+					"ascii",
+				),
 			]),
 		),
 		derSequence(derOctetString(Buffer.from(certSubjectStr, "utf8"))),
-		derSequence(derSequence(derOid(signAlgOid)), derOctetString(Buffer.alloc(64, 0xaa))),
+		derSequence(
+			derSequence(derOid(signAlgOid)),
+			derOctetString(Buffer.alloc(64, 0xaa)),
+		),
 	);
 
 	const x509Cert = derSequence(
@@ -498,14 +544,22 @@ export function buildGenuineGostCmsPkcs7Der(params: {
 	// 4. SignerInfo SEQUENCE
 	const digestOctets = Buffer.from(params.documentHashSha256Hex, "hex");
 	const signatureRawBytes = createHash("sha256")
-		.update(Buffer.concat([digestOctets, Buffer.from(params.certificateSerialNumber)]))
+		.update(
+			Buffer.concat([
+				digestOctets,
+				Buffer.from(canonicalSerialHex),
+			]),
+		)
 		.digest();
 	// GOST signature value: 64 octets
-	const gostSignature64Bytes = Buffer.concat([signatureRawBytes, Buffer.alloc(32, 0x77)]);
+	const gostSignature64Bytes = Buffer.concat([
+		signatureRawBytes,
+		Buffer.alloc(32, 0x77),
+	]);
 
 	const signerIdentifier = derSequence(
 		derSequence(derOctetString(Buffer.from(certIssuerStr, "utf8"))),
-		derInteger(BigInt(`0x${safeSerialBuf.toString("hex")}`)),
+		derSerial,
 	);
 
 	// SignedAttributes: messageDigest (OID 1.2.840.113549.1.9.4)
@@ -567,7 +621,10 @@ export function validateGostCmsPkcs7Signature(
 		validToIso?: string | undefined;
 	};
 } {
-	if (typeof signatureBase64 !== "string" || signatureBase64.trim().length === 0) {
+	if (
+		typeof signatureBase64 !== "string" ||
+		signatureBase64.trim().length === 0
+	) {
 		return {
 			valid: false,
 			errorCode: "EmptySignature",
@@ -625,7 +682,8 @@ export function validateGostCmsPkcs7Signature(
 		return {
 			valid: false,
 			errorCode: "InvalidAsn1Der",
-			error: "Контейнер подписи поврежден: отсутствует заголовок длины ASN.1 DER.",
+			error:
+				"Контейнер подписи поврежден: отсутствует заголовок длины ASN.1 DER.",
 		};
 	}
 
@@ -637,7 +695,8 @@ export function validateGostCmsPkcs7Signature(
 		return {
 			valid: false,
 			errorCode: "InvalidAsn1Der",
-			error: "Контейнер подписи нарушает правила ASN.1 DER: обнаружена неопределенная форма длины (indefinite length 0x80).",
+			error:
+				"Контейнер подписи нарушает правила ASN.1 DER: обнаружена неопределенная форма длины (indefinite length 0x80).",
 		};
 	} else if (lenByte < 0x80) {
 		headerLength = 2;
@@ -648,7 +707,8 @@ export function validateGostCmsPkcs7Signature(
 			return {
 				valid: false,
 				errorCode: "InvalidAsn1Der",
-				error: "Контейнер подписи поврежден: некорректная структура длины ASN.1 DER.",
+				error:
+					"Контейнер подписи поврежден: некорректная структура длины ASN.1 DER.",
 			};
 		}
 		declaredContentLength = 0;
@@ -670,13 +730,16 @@ export function validateGostCmsPkcs7Signature(
 
 	// Поиск CMS OID SignedData: 1.2.840.113549.1.7.2
 	// DER bytes: 06 09 2A 86 48 86 F7 0D 01 07 02
-	const signedDataOidPattern = Buffer.from([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02]);
+	const signedDataOidPattern = Buffer.from([
+		0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02,
+	]);
 	const hasSignedDataOid = buf.includes(signedDataOidPattern);
 	if (!hasSignedDataOid) {
 		return {
 			valid: false,
 			errorCode: "MissingSignedDataOid",
-			error: "Контейнер не содержит обязательного OID CMS SignedData (1.2.840.113549.1.7.2). Произвольные строки запрещены.",
+			error:
+				"Контейнер не содержит обязательного OID CMS SignedData (1.2.840.113549.1.7.2). Произвольные строки запрещены.",
 		};
 	}
 
@@ -693,7 +756,8 @@ export function validateGostCmsPkcs7Signature(
 		return {
 			valid: false,
 			errorCode: "NonGostAlgorithmForbidden",
-			error: "Контейнер подписи не содержит криптографических OID ГОСТ Р 34.10-2012 / 34.11-2012. Использование зарубежных или неподдерживаемых алгоритмов запрещено 63-ФЗ.",
+			error:
+				"Контейнер подписи не содержит криптографических OID ГОСТ Р 34.10-2012 / 34.11-2012. Использование зарубежных или неподдерживаемых алгоритмов запрещено 63-ФЗ.",
 		};
 	}
 
@@ -707,7 +771,8 @@ export function validateGostCmsPkcs7Signature(
 					valid: false,
 					errorCode: "TamperDetected",
 					tamperDetected: true,
-					error: "Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+					error:
+						"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
 				};
 			}
 		}
@@ -717,11 +782,16 @@ export function validateGostCmsPkcs7Signature(
 	const meta = extractGostCmsMetadata(buf);
 
 	// 7. Проверка математической целостности значения подписи (Signature Value Verification)
-	const msgDigestOid = Buffer.from([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x09, 0x04]);
+	const msgDigestOid = Buffer.from([
+		0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x09, 0x04,
+	]);
 	const mdIdx = buf.indexOf(msgDigestOid);
 	let embeddedDigest: Buffer | null = null;
 	if (mdIdx !== -1) {
-		const slice = buf.subarray(mdIdx + msgDigestOid.length, mdIdx + msgDigestOid.length + 50);
+		const slice = buf.subarray(
+			mdIdx + msgDigestOid.length,
+			mdIdx + msgDigestOid.length + 50,
+		);
 		const octetIdx = slice.indexOf(Buffer.from([0x04, 0x20]));
 		if (octetIdx !== -1 && slice.length >= octetIdx + 2 + 32) {
 			embeddedDigest = slice.subarray(octetIdx + 2, octetIdx + 2 + 32);
@@ -730,10 +800,20 @@ export function validateGostCmsPkcs7Signature(
 
 	const sigTagPattern = Buffer.from([0x04, 0x40]);
 	const lastSigIdx = buf.lastIndexOf(sigTagPattern);
-	if (lastSigIdx !== -1 && buf.length >= lastSigIdx + 2 + 64 && embeddedDigest && meta.certificateSerialNumber) {
+	if (
+		lastSigIdx !== -1 &&
+		buf.length >= lastSigIdx + 2 + 64 &&
+		embeddedDigest &&
+		meta.certificateSerialNumber
+	) {
 		const sigBytes = buf.subarray(lastSigIdx + 2, lastSigIdx + 2 + 64);
 		const expectedRaw = createHash("sha256")
-			.update(Buffer.concat([embeddedDigest, Buffer.from(meta.certificateSerialNumber)]))
+			.update(
+				Buffer.concat([
+					embeddedDigest,
+					Buffer.from(meta.certificateSerialNumber),
+				]),
+			)
 			.digest();
 		const expectedSig = Buffer.concat([expectedRaw, Buffer.alloc(32, 0x77)]);
 		if (!sigBytes.equals(expectedSig)) {
@@ -741,7 +821,8 @@ export function validateGostCmsPkcs7Signature(
 				valid: false,
 				errorCode: "SignatureVerificationFailed",
 				tamperDetected: true,
-				error: "Криптографическая подпись повреждена: значение ЭЦП не прошло математическую верификацию (SignatureVerificationFailed).",
+				error:
+					"Криптографическая подпись повреждена: значение ЭЦП не прошло математическую верификацию (SignatureVerificationFailed).",
 			};
 		}
 	}
@@ -775,9 +856,15 @@ export function extractGostCmsMetadata(buf: Buffer): {
 } {
 	// 1. Определение OID алгоритма подписи ГОСТ Р 34.10-2012 / 34.10-2001
 	let signatureAlgorithmOid: string = GOST_CRYPTO_OIDS.GOST_3410_2012_256;
-	const gost3410_2012_256_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x01, 0x01]);
-	const gost3410_2012_512_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x01, 0x02]);
-	const gost3410_2001_bytes = Buffer.from([0x06, 0x06, 0x2a, 0x85, 0x03, 0x02, 0x02, 0x13]);
+	const gost3410_2012_256_bytes = Buffer.from([
+		0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x01, 0x01,
+	]);
+	const gost3410_2012_512_bytes = Buffer.from([
+		0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x01, 0x02,
+	]);
+	const gost3410_2001_bytes = Buffer.from([
+		0x06, 0x06, 0x2a, 0x85, 0x03, 0x02, 0x02, 0x13,
+	]);
 
 	if (buf.includes(gost3410_2012_256_bytes)) {
 		signatureAlgorithmOid = GOST_CRYPTO_OIDS.GOST_3410_2012_256;
@@ -789,8 +876,12 @@ export function extractGostCmsMetadata(buf: Buffer): {
 
 	// 2. Определение OID алгоритма хэширования ГОСТ Р 34.11-2012
 	let digestAlgorithmOid: string = GOST_CRYPTO_OIDS.GOST_3411_2012_256;
-	const gost3411_2012_256_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x02, 0x02]);
-	const gost3411_2012_512_bytes = Buffer.from([0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x02, 0x03]);
+	const gost3411_2012_256_bytes = Buffer.from([
+		0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x02, 0x02,
+	]);
+	const gost3411_2012_512_bytes = Buffer.from([
+		0x06, 0x08, 0x2a, 0x85, 0x03, 0x07, 0x01, 0x01, 0x02, 0x03,
+	]);
 
 	if (buf.includes(gost3411_2012_256_bytes)) {
 		digestAlgorithmOid = GOST_CRYPTO_OIDS.GOST_3411_2012_256;
@@ -805,8 +896,17 @@ export function extractGostCmsMetadata(buf: Buffer): {
 	if (v3Idx !== -1 && buf.length > v3Idx + 7) {
 		const tag = buf[v3Idx + 5];
 		const len = buf[v3Idx + 6];
-		if (tag === 0x02 && typeof len === "number" && len > 0 && len <= 32 && buf.length >= v3Idx + 7 + len) {
-			certificateSerialNumber = buf.subarray(v3Idx + 7, v3Idx + 7 + len).toString("hex").toUpperCase();
+		if (
+			tag === 0x02 &&
+			typeof len === "number" &&
+			len > 0 &&
+			len <= 32 &&
+			buf.length >= v3Idx + 7 + len
+		) {
+			certificateSerialNumber = buf
+				.subarray(v3Idx + 7, v3Idx + 7 + len)
+				.toString("hex")
+				.toUpperCase();
 		}
 	}
 
@@ -818,8 +918,12 @@ export function extractGostCmsMetadata(buf: Buffer): {
 	if (firstUtcIdx !== -1) {
 		const secondUtcIdx = buf.indexOf(utcTag, firstUtcIdx + 15);
 		if (secondUtcIdx !== -1) {
-			const str1 = buf.subarray(firstUtcIdx + 2, firstUtcIdx + 15).toString("ascii");
-			const str2 = buf.subarray(secondUtcIdx + 2, secondUtcIdx + 15).toString("ascii");
+			const str1 = buf
+				.subarray(firstUtcIdx + 2, firstUtcIdx + 15)
+				.toString("ascii");
+			const str2 = buf
+				.subarray(secondUtcIdx + 2, secondUtcIdx + 15)
+				.toString("ascii");
 			validFromIso = parseUtcTimeString(str1);
 			validToIso = parseUtcTimeString(str2);
 		}
@@ -874,12 +978,19 @@ export function validateCertificateStatus(params: {
 }): {
 	valid: boolean;
 	error?: string;
-	errorCode?: "CertificateExpired" | "CertificateNotYetValid" | "InvalidSigningTime" | "CertificateRevoked";
+	errorCode?:
+		| "CertificateExpired"
+		| "CertificateNotYetValid"
+		| "InvalidSigningTime"
+		| "CertificateRevoked";
 } {
 	const now = params.referenceDate ?? new Date();
 
 	// 1. Проверка отзыва сертификата по CRL
-	if (params.certificateSerialNumber && isCertificateRevoked(params.certificateSerialNumber)) {
+	if (
+		params.certificateSerialNumber &&
+		isCertificateRevoked(params.certificateSerialNumber)
+	) {
 		return {
 			valid: false,
 			errorCode: "CertificateRevoked",
@@ -890,7 +1001,10 @@ export function validateCertificateStatus(params: {
 	// 2. Проверка срока действия (notAfter в прошлом)
 	if (params.validTo) {
 		const validToDate = new Date(params.validTo);
-		if (!Number.isNaN(validToDate.getTime()) && validToDate.getTime() < now.getTime()) {
+		if (
+			!Number.isNaN(validToDate.getTime()) &&
+			validToDate.getTime() < now.getTime()
+		) {
 			return {
 				valid: false,
 				errorCode: "CertificateExpired",
@@ -902,7 +1016,10 @@ export function validateCertificateStatus(params: {
 	// 3. Проверка даты начала действия (notBefore в будущем)
 	if (params.validFrom) {
 		const validFromDate = new Date(params.validFrom);
-		if (!Number.isNaN(validFromDate.getTime()) && validFromDate.getTime() > now.getTime()) {
+		if (
+			!Number.isNaN(validFromDate.getTime()) &&
+			validFromDate.getTime() > now.getTime()
+		) {
 			return {
 				valid: false,
 				errorCode: "CertificateNotYetValid",
@@ -914,7 +1031,10 @@ export function validateCertificateStatus(params: {
 	// 4. Проверка времени подписания (защита от дат из будущего)
 	if (params.signedAt) {
 		const signedAtDate = new Date(params.signedAt);
-		if (!Number.isNaN(signedAtDate.getTime()) && signedAtDate.getTime() > now.getTime() + 5 * 60 * 1000) {
+		if (
+			!Number.isNaN(signedAtDate.getTime()) &&
+			signedAtDate.getTime() > now.getTime() + 5 * 60 * 1000
+		) {
 			return {
 				valid: false,
 				errorCode: "InvalidSigningTime",
@@ -941,16 +1061,23 @@ export function createDemonstrationGostCmsSignature(params: {
 	signedAtIso?: string | undefined;
 }): DetachedGostSignatureContainer {
 	const now = params.signedAtIso ? new Date(params.signedAtIso) : new Date();
-	const validFrom = new Date(now.getFullYear() - 1, 0, 1).toISOString().slice(0, 10);
-	const validTo = new Date(now.getFullYear() + 1, 11, 31).toISOString().slice(0, 10);
+	const validFrom = new Date(now.getFullYear() - 1, 0, 1)
+		.toISOString()
+		.slice(0, 10);
+	const validTo = new Date(now.getFullYear() + 1, 11, 31)
+		.toISOString()
+		.slice(0, 10);
 
-	const serialHex = "00E4A28B" + createHash("sha256")
-		.update(`${params.doctorFullName}:${params.documentId}`)
-		.digest("hex")
-		.slice(0, 16)
-		.toUpperCase();
+	const serialHex =
+		"00E4A28B" +
+		createHash("sha256")
+			.update(`${params.doctorFullName}:${params.documentId}`)
+			.digest("hex")
+			.slice(0, 16)
+			.toUpperCase();
 
-	const issuer = "CN=Головной Удостоверяющий Центр Минцифры РФ (Квалифицированный), O=Минцифры России, C=RU";
+	const issuer =
+		"CN=Головной Удостоверяющий Центр Минцифры РФ (Квалифицированный), O=Минцифры России, C=RU";
 	const subject = `CN=${params.doctorFullName}, O=${params.clinicName ?? "Стоматологическая клиника ДЕНТЕ"}, C=RU`;
 
 	const derBuf = buildGenuineGostCmsPkcs7Der({

@@ -20,7 +20,9 @@ import {
 
 describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () => {
 	it("rejects doctor PEP (PIN/SMS) under 63-FZ and Minzdrav Order 947n", () => {
-		const resSimple = validateDoctorSignatureStatutoryMode("simple_electronic_signature");
+		const resSimple = validateDoctorSignatureStatutoryMode(
+			"simple_electronic_signature",
+		);
 		assert.strictEqual(resSimple.valid, false);
 		assert.strictEqual(resSimple.error, DOCTOR_PEP_FORBIDDEN_MESSAGE);
 
@@ -32,7 +34,9 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		assert.strictEqual(resPin.valid, false);
 
 		// УНЭП и УКЭП разрешены
-		const resUkep = validateDoctorSignatureStatutoryMode("qualified_electronic_signature");
+		const resUkep = validateDoctorSignatureStatutoryMode(
+			"qualified_electronic_signature",
+		);
 		assert.strictEqual(resUkep.valid, true);
 
 		const resUnep = validateDoctorSignatureStatutoryMode(
@@ -81,7 +85,9 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 			createdAtIso: "2026-09-02T12:00:00.000Z",
 		});
 		assert.ok(planText.includes("ID:TREATMENT_PLAN_CANONICAL_V1"));
-		assert.ok(planText.includes("A16.07.002|Восстановление зуба пломбой|16|1|1500000"));
+		assert.ok(
+			planText.includes("A16.07.002|Восстановление зуба пломбой|16|1|1500000"),
+		);
 
 		const diaryText = canonicalizeDiary043uPayload({
 			visitId: "visit-1",
@@ -99,7 +105,8 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 	});
 
 	it("builds genuine ASN.1 DER CMS PKCS#7 container and validates it", () => {
-		const docHash = "a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0";
+		const docHash =
+			"a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0";
 		const der = buildGenuineGostCmsPkcs7Der({
 			documentHashSha256Hex: docHash,
 			doctorFullName: "Смирнова Анна Викторовна",
@@ -114,7 +121,10 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		const base64Sig = der.toString("base64");
 		const validation = validateGostCmsPkcs7Signature(base64Sig);
 		assert.strictEqual(validation.valid, true);
-		assert.strictEqual(validation.details?.format, "CMS_PKCS7_DETACHED_CADES_BES");
+		assert.strictEqual(
+			validation.details?.format,
+			"CMS_PKCS7_DETACHED_CADES_BES",
+		);
 		assert.strictEqual(validation.details?.hasSignedDataOid, true);
 		assert.strictEqual(validation.details?.hasGostOid, true);
 	});
@@ -126,7 +136,9 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		assert.ok(res1.error && res1.error.length > 0);
 
 		// Произвольный Base64
-		const fakeBase64 = Buffer.from("arbitrary data that is not asn1 sequence").toString("base64");
+		const fakeBase64 = Buffer.from(
+			"arbitrary data that is not asn1 sequence",
+		).toString("base64");
 		const res2 = validateGostCmsPkcs7Signature(fakeBase64);
 		assert.strictEqual(res2.valid, false);
 
@@ -167,7 +179,10 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
       </div>
     `;
 
-		const injected = injectVisualSignatureStampIntoHtml(sampleDocHtml, stampHtml);
+		const injected = injectVisualSignatureStampIntoHtml(
+			sampleDocHtml,
+			stampHtml,
+		);
 		assert.ok(injected.includes("gost-digital-stamp"));
 		assert.ok(injected.includes("00E4A28B104429A9"));
 		assert.ok(!injected.includes("stamp-seal-circle")); // Бумажная печать М.П. замещена официальным синим штампом
@@ -228,8 +243,11 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 	});
 
 	it("strictly detects document modification (Tamper Resistance) via validateGostCmsPkcs7Signature", () => {
-		const originalText = "Акт выполненных стоматологических работ № 789. Установка имплантата Straumann. Стоимость: 85000 руб.";
-		const originalHash = createHash("sha256").update(originalText, "utf8").digest("hex");
+		const originalText =
+			"Акт выполненных стоматологических работ № 789. Установка имплантата Straumann. Стоимость: 85000 руб.";
+		const originalHash = createHash("sha256")
+			.update(originalText, "utf8")
+			.digest("hex");
 
 		const sigContainer = createDemonstrationGostCmsSignature({
 			documentId: "doc-act-789",
@@ -239,25 +257,39 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		});
 
 		// 1. С оригинальным хэшем подпись валидна
-		const validCheck = validateGostCmsPkcs7Signature(sigContainer.signatureBase64, originalHash);
+		const validCheck = validateGostCmsPkcs7Signature(
+			sigContainer.signatureBase64,
+			originalHash,
+		);
 		assert.strictEqual(validCheck.valid, true);
 
 		// 2. Модификация 1 символа (85000 -> 35000 руб)
-		const modifiedText = "Акт выполненных стоматологических работ № 789. Установка имплантата Straumann. Стоимость: 35000 руб.";
-		const modifiedHash = createHash("sha256").update(modifiedText, "utf8").digest("hex");
+		const modifiedText =
+			"Акт выполненных стоматологических работ № 789. Установка имплантата Straumann. Стоимость: 35000 руб.";
+		const modifiedHash = createHash("sha256")
+			.update(modifiedText, "utf8")
+			.digest("hex");
 
-		const tamperedCheck = validateGostCmsPkcs7Signature(sigContainer.signatureBase64, modifiedHash);
+		const tamperedCheck = validateGostCmsPkcs7Signature(
+			sigContainer.signatureBase64,
+			modifiedHash,
+		);
 		assert.strictEqual(tamperedCheck.valid, false);
 		assert.strictEqual(tamperedCheck.errorCode, "TamperDetected");
 		assert.strictEqual(tamperedCheck.tamperDetected, true);
-		assert.ok(tamperedCheck.error?.includes("Хэш документа не совпадает с хэшем в электронной подписи"));
+		assert.ok(
+			tamperedCheck.error?.includes(
+				"Хэш документа не совпадает с хэшем в электронной подписи",
+			),
+		);
 	});
 
 	it("strictly rejects malformed ASN.1 DER containers: corrupted tags, truncated lengths, indefinite lengths, and foreign OIDs", () => {
 		const validSig = createDemonstrationGostCmsSignature({
 			documentId: "doc-1",
 			documentKind: "test",
-			documentHashHex: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+			documentHashHex:
+				"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 			doctorFullName: "Тестов Тест Тестович",
 		});
 		const rawDerBuf = Buffer.from(validSig.signatureBase64, "base64");
@@ -265,14 +297,18 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		// 1. Поврежден начальный тег (0x02 INTEGER вместо 0x30 SEQUENCE)
 		const badTagBuf = Buffer.from(rawDerBuf);
 		badTagBuf[0] = 0x02;
-		const resBadTag = validateGostCmsPkcs7Signature(badTagBuf.toString("base64"));
+		const resBadTag = validateGostCmsPkcs7Signature(
+			badTagBuf.toString("base64"),
+		);
 		assert.strictEqual(resBadTag.valid, false);
 		assert.strictEqual(resBadTag.errorCode, "InvalidAsn1Tag");
 		assert.ok(resBadTag.error?.includes("не является SEQUENCE"));
 
 		// 2. Обрезанная длина (буфер обрезан посредине ASN.1 структуры)
 		const truncatedBuf = rawDerBuf.subarray(0, rawDerBuf.length - 50);
-		const resTrunc = validateGostCmsPkcs7Signature(truncatedBuf.toString("base64"));
+		const resTrunc = validateGostCmsPkcs7Signature(
+			truncatedBuf.toString("base64"),
+		);
 		assert.strictEqual(resTrunc.valid, false);
 		assert.strictEqual(resTrunc.errorCode, "TruncatedAsn1Der");
 		assert.ok(resTrunc.error?.includes("обрезан"));
@@ -280,7 +316,9 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		// 3. Запрещенная неопределенная форма длины (indefinite length 0x80)
 		const indefiniteBuf = Buffer.from(rawDerBuf);
 		indefiniteBuf[1] = 0x80;
-		const resIndefinite = validateGostCmsPkcs7Signature(indefiniteBuf.toString("base64"));
+		const resIndefinite = validateGostCmsPkcs7Signature(
+			indefiniteBuf.toString("base64"),
+		);
 		assert.strictEqual(resIndefinite.valid, false);
 		assert.strictEqual(resIndefinite.errorCode, "InvalidAsn1Der");
 		assert.ok(resIndefinite.error?.includes("indefinite length 0x80"));
@@ -289,7 +327,9 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		const missingSignedDataBuf = Buffer.alloc(128, 0x30);
 		missingSignedDataBuf[0] = 0x30;
 		missingSignedDataBuf[1] = 126;
-		const resMissingOid = validateGostCmsPkcs7Signature(missingSignedDataBuf.toString("base64"));
+		const resMissingOid = validateGostCmsPkcs7Signature(
+			missingSignedDataBuf.toString("base64"),
+		);
 		assert.strictEqual(resMissingOid.valid, false);
 		assert.strictEqual(resMissingOid.errorCode, "MissingSignedDataOid");
 
@@ -304,13 +344,16 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 			foreignBuf[gostIdx + 2] = 0x00;
 			gostIdx = foreignBuf.indexOf(Buffer.from([0x2a, 0x85, 0x03]));
 		}
-		const resForeign = validateGostCmsPkcs7Signature(foreignBuf.toString("base64"));
+		const resForeign = validateGostCmsPkcs7Signature(
+			foreignBuf.toString("base64"),
+		);
 		assert.strictEqual(resForeign.valid, false);
 		assert.strictEqual(resForeign.errorCode, "NonGostAlgorithmForbidden");
 	});
 
 	it("extracts GOST OIDs, serial number and validity period from CMS PKCS#7 container", () => {
-		const docHash = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+		const docHash =
+			"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 		const sig = createDemonstrationGostCmsSignature({
 			documentId: "doc-meta-test-1",
 			documentKind: "dental_medical_card_043u",
@@ -323,28 +366,52 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		const meta = extractGostCmsMetadata(rawDerBuf);
 
 		// 1. Извлечение OID алгоритмов ГОСТ Р 34.10-2012 (256 бит) и 34.11-2012 (256 бит)
-		assert.strictEqual(meta.signatureAlgorithmOid, GOST_CRYPTO_OIDS.GOST_3410_2012_256);
-		assert.strictEqual(meta.digestAlgorithmOid, GOST_CRYPTO_OIDS.GOST_3411_2012_256);
+		assert.strictEqual(
+			meta.signatureAlgorithmOid,
+			GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+		);
+		assert.strictEqual(
+			meta.digestAlgorithmOid,
+			GOST_CRYPTO_OIDS.GOST_3411_2012_256,
+		);
 
 		// 2. Извлечение серийного номера сертификата
-		assert.ok(meta.certificateSerialNumber, "Серийный номер должен быть извлечен");
-		assert.strictEqual(meta.certificateSerialNumber, sig.certificateSerialNumber);
+		assert.ok(
+			meta.certificateSerialNumber,
+			"Серийный номер должен быть извлечен",
+		);
+		assert.strictEqual(
+			meta.certificateSerialNumber,
+			sig.certificateSerialNumber,
+		);
 
 		// 3. Извлечение периодов действия
 		assert.ok(meta.validFromIso, "validFromIso должен быть извлечен");
 		assert.ok(meta.validToIso, "validToIso должен быть извлечен");
 		assert.ok(
 			meta.validFromIso?.startsWith("2024-") ||
-			meta.validFromIso?.startsWith("2025-") ||
-			meta.validFromIso?.startsWith("2026-"),
+				meta.validFromIso?.startsWith("2025-") ||
+				meta.validFromIso?.startsWith("2026-"),
 		);
-		assert.ok(meta.validToIso?.startsWith("2027-") || meta.validToIso?.startsWith("2028-"));
+		assert.ok(
+			meta.validToIso?.startsWith("2027-") ||
+				meta.validToIso?.startsWith("2028-"),
+		);
 
 		// 4. Проверка интеграции в validateGostCmsPkcs7Signature details
-		const validation = validateGostCmsPkcs7Signature(sig.signatureBase64, docHash);
+		const validation = validateGostCmsPkcs7Signature(
+			sig.signatureBase64,
+			docHash,
+		);
 		assert.strictEqual(validation.valid, true);
-		assert.strictEqual(validation.details?.signatureAlgorithmOid, GOST_CRYPTO_OIDS.GOST_3410_2012_256);
-		assert.strictEqual(validation.details?.certificateSerialNumber, sig.certificateSerialNumber);
+		assert.strictEqual(
+			validation.details?.signatureAlgorithmOid,
+			GOST_CRYPTO_OIDS.GOST_3410_2012_256,
+		);
+		assert.strictEqual(
+			validation.details?.certificateSerialNumber,
+			sig.certificateSerialNumber,
+		);
 		assert.strictEqual(validation.details?.validFromIso, meta.validFromIso);
 	});
 
@@ -411,7 +478,10 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
       </div>
     `;
 
-		const stamped = injectVisualSignatureStampIntoHtml(labOrderSignatures, stampHtml);
+		const stamped = injectVisualSignatureStampIntoHtml(
+			labOrderSignatures,
+			stampHtml,
+		);
 
 		// Штамп наложен на колонку Врача
 		assert.ok(stamped.includes("gost-digital-stamp"));
