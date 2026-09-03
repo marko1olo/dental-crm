@@ -109,7 +109,7 @@ export const PLAN_PRICE_POLICY_PRESETS: Readonly<
 		maxDoctorDiscountPercent: 10,
 		defaultResolutionForPriceIncrease: "LOCK_ORIGINAL_PRICE",
 		defaultResolutionForPriceDecrease: "UPDATE_TO_CURRENT_PRICE",
-		defaultResolutionForExpiredPlan: "REQUIRE_ADMIN_OVERRIDE",
+		defaultResolutionForExpiredPlan: "LOCK_ORIGINAL_PRICE",
 	},
 	ortho_implant_90: {
 		id: "ortho_implant_90",
@@ -123,7 +123,7 @@ export const PLAN_PRICE_POLICY_PRESETS: Readonly<
 		maxDoctorDiscountPercent: 15,
 		defaultResolutionForPriceIncrease: "LOCK_ORIGINAL_PRICE",
 		defaultResolutionForPriceDecrease: "UPDATE_TO_CURRENT_PRICE",
-		defaultResolutionForExpiredPlan: "REQUIRE_ADMIN_OVERRIDE",
+		defaultResolutionForExpiredPlan: "LOCK_ORIGINAL_PRICE",
 	},
 	long_term_vip_180: {
 		id: "long_term_vip_180",

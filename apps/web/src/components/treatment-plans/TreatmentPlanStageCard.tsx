@@ -17,6 +17,7 @@ import {
 	Stethoscope,
 	TrendingUp,
 	UserCheck,
+	Zap,
 } from "lucide-react";
 import {
 	type InventoryItemLookup,
@@ -24,6 +25,7 @@ import {
 } from "./treatmentPlanMaterialEngine";
 import type { TreatmentPlanItem, TreatmentPlanStage } from "./types";
 import { MissingPriceAlert } from "./MissingPriceAlert";
+import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 
 interface TreatmentPlanStageCardProps {
 	readonly stage: TreatmentPlanStage;
@@ -35,6 +37,7 @@ interface TreatmentPlanStageCardProps {
 	readonly onRemoveItem?: ((itemId: string) => void) | undefined;
 	readonly onExecuteWriteOffStage?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onOpenLabOrder?: ((teeth?: number[]) => void) | undefined;
+	readonly onOneClickLabOrder?: ((teeth?: number[]) => void) | undefined;
 	readonly onOpenInstallment?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly className?: string | undefined;
 }
@@ -49,11 +52,13 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 	onRemoveItem,
 	onExecuteWriteOffStage,
 	onOpenLabOrder,
+	onOneClickLabOrder,
 	onOpenInstallment,
 	className = "",
 }) => {
 	const [isExpanded, setIsExpanded] = useState<boolean>(defaultExpanded);
 	const [showMaterials, setShowMaterials] = useState<boolean>(false);
+	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
 
 	const materialSummary = useMemo(() => {
 		return calculateStageMaterialRequirements(stage, inventoryItems);
@@ -175,95 +180,137 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								В данном этапе нет запланированных процедур.
 							</div>
 						) : (
-							stage.items.map((item, idx) => (
-								<div
-									key={item.id || idx}
-									className="flex flex-col gap-2 px-4 py-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
-								>
-									<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-										<div className="flex flex-col gap-0.5 min-w-0 flex-1">
-											<div className="flex items-center gap-1.5 flex-wrap">
-												{item.toothNumber && (
-													<span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 whitespace-nowrap">
-														#{item.toothNumber}
-													</span>
-												)}
-												<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-[var(--line,#e2e8f0)] whitespace-nowrap">
-													{item.code804n}
-												</span>
-												<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
-													{item.category}
-												</span>
-											</div>
+							(() => {
+								const microConsumables = stage.items.filter(isMicroConsumable);
+								const displayItems = showMicroConsumables
+									? stage.items
+									: stage.items.filter((it) => !isMicroConsumable(it));
+								return (
+									<>
+										{displayItems.map((item, idx) => (
+											<div
+												key={item.id || idx}
+												className="flex flex-col gap-2 px-4 py-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors"
+											>
+												<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+													<div className="flex flex-col gap-0.5 min-w-0 flex-1">
+														<div className="flex items-center gap-1.5 flex-wrap">
+															{item.toothNumber && (
+																<span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 whitespace-nowrap">
+																	#{item.toothNumber}
+																</span>
+															)}
+															<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-[var(--line,#e2e8f0)] whitespace-nowrap">
+																{item.code804n}
+															</span>
+															<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
+																{item.category}
+															</span>
+														</div>
 
-											<span className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-snug">
-												{item.name}
-											</span>
+														<span className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-snug">
+															{item.name}
+														</span>
 
-											{item.materials && (
-												<p className="text-[11px] text-[var(--muted,#64748b)] italic m-0">
-													Материал: {item.materials}
-												</p>
-											)}
-										</div>
-
-										<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0">
-											{onOpenLabOrder &&
-												(item.category === "Ортопедия" ||
-													item.category === "Детская ортопедия" ||
-													item.stageKind === "stage_3_orthopedics" ||
-													/коронк|мост|протез|винир|вкладк|абатмент|бюгел|all-on|onlay|inlay/i.test(
-														item.name,
-													) ||
-													item.code804n.startsWith("A16.07.003") ||
-													item.code804n.startsWith("A16.07.004") ||
-													item.code804n.startsWith("A16.07.005") ||
-													item.code804n.startsWith("A16.07.006")) && (
-													<button
-														type="button"
-														onClick={() =>
-															onOpenLabOrder(
-																item.toothNumber ? [item.toothNumber] : undefined,
-															)
-														}
-														className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation"
-														title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
-														data-testid={`item-lab-order-btn-${item.id}`}
-													>
-														<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-														<span>Наряд в ЗТЛ</span>
-													</button>
-												)}
-
-											<div className="text-right">
-												<span className={`text-xs font-bold font-mono ${
-													item.requiresManualPricing || item.priceRub === 0
-														? "text-amber-600 dark:text-amber-400"
-														: "text-[var(--ink,#0f172a)]"
-												}`}>
-													{item.priceRub.toLocaleString("ru-RU")} ₽
-												</span>
-												{item.discountRub > 0 && (
-													<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
-														Скидка: −{item.discountRub.toLocaleString("ru-RU")} ₽
+														{item.materials && (
+															<p className="text-[11px] text-[var(--muted,#64748b)] italic m-0">
+																Материал: {item.materials}
+															</p>
+														)}
 													</div>
+
+													<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0">
+														{onOpenLabOrder &&
+															(item.category === "Ортопедия" ||
+																item.category === "Детская ортопедия" ||
+																item.stageKind === "stage_3_orthopedics" ||
+																/коронк|мост|протез|винир|вкладк|абатмент|бюгел|all-on|onlay|inlay/i.test(
+																	item.name,
+																) ||
+																item.code804n.startsWith("A16.07.003") ||
+																item.code804n.startsWith("A16.07.004") ||
+																item.code804n.startsWith("A16.07.005") ||
+																item.code804n.startsWith("A16.07.006")) && (
+																<>
+																	<button
+																		type="button"
+																		onClick={() =>
+																			onOpenLabOrder(
+																				item.toothNumber ? [item.toothNumber] : undefined,
+																			)
+																		}
+																		className="min-h-[44px] min-w-[44px] flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors shrink-0 touch-manipulation"
+																		title={`Оформить наряд-заказ в зуботехническую лабораторию для ${item.name}`}
+																		data-testid={`item-lab-order-btn-${item.id}`}
+																	>
+																		<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+																		<span>Наряд в ЗТЛ</span>
+																	</button>
+																	{onOneClickLabOrder && (
+																		<button
+																			type="button"
+																			onClick={() =>
+																				onOneClickLabOrder(
+																					item.toothNumber ? [item.toothNumber] : undefined,
+																				)
+																			}
+																			className="min-h-[44px] min-w-[44px] flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 cursor-pointer transition-colors shrink-0 touch-manipulation shadow-2xs"
+																			title={`1-клик наряд ЗТЛ: Коронка цирконий VITA A2 (+7 раб. дн.) для ${item.name}`}
+																			data-testid={`item-lab-order-one-click-btn-${item.id}`}
+																		>
+																			<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+																			<span>⚡ 1-клик</span>
+																		</button>
+																	)}
+																</>
+															)}
+
+														<div className="text-right">
+															<span className={`text-xs font-bold font-mono ${
+																item.requiresManualPricing || item.priceRub === 0
+																	? "text-amber-600 dark:text-amber-400"
+																	: "text-[var(--ink,#0f172a)]"
+															}`}>
+																{item.priceRub.toLocaleString("ru-RU")} ₽
+															</span>
+															{item.discountRub > 0 && (
+																<div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">
+																	Скидка: −{item.discountRub.toLocaleString("ru-RU")} ₽
+																</div>
+															)}
+														</div>
+													</div>
+												</div>
+
+												{/* Missing Price Alert Banner */}
+												{(item.requiresManualPricing || item.priceRub === 0) && (
+													<MissingPriceAlert
+														item={item}
+														onUpdatePrice={onUpdateItemPrice}
+														onUpdateItem={onUpdateItem}
+														variant="full"
+														className="mt-1"
+													/>
 												)}
 											</div>
-										</div>
-									</div>
-
-									{/* Missing Price Alert Banner */}
-									{(item.requiresManualPricing || item.priceRub === 0) && (
-										<MissingPriceAlert
-											item={item}
-											onUpdatePrice={onUpdateItemPrice}
-											onUpdateItem={onUpdateItem}
-											variant="full"
-											className="mt-1"
-										/>
-									)}
-								</div>
-							))
+										))}
+										{microConsumables.length > 0 && (
+											<div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between text-xs text-[var(--muted,#64748b)] border-t border-[var(--line,#e2e8f0)]">
+												<span>
+													✨ Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в процедуры
+												</span>
+												<button
+													type="button"
+													onClick={() => setShowMicroConsumables((prev) => !prev)}
+													className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+												>
+													{showMicroConsumables ? "Скрыть" : "Показать"}
+												</button>
+											</div>
+										)}
+									</>
+								);
+							})()
 						)}
 					</div>
 
@@ -404,21 +451,40 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 											it.category === "Детская ортопедия" ||
 											/коронк|мост|протез|винир|вкладк|абатмент|бюгел/i.test(it.name),
 									)) && (
-									<button
-										type="button"
-										onClick={() => {
-											const stageTeeth = stage.items
-												.map((it) => it.toothNumber)
-												.filter((t): t is number => typeof t === "number" && t > 0);
-											onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
-										}}
-										className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
-										title="Оформить наряд-заказ в зуботехническую лабораторию"
-										data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
-									>
-										<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))]" />
-										<span>Наряд-заказ в зуботехническую лабораторию</span>
-									</button>
+									<>
+										<button
+											type="button"
+											onClick={() => {
+												const stageTeeth = stage.items
+													.map((it) => it.toothNumber)
+													.filter((t): t is number => typeof t === "number" && t > 0);
+												onOpenLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
+											}}
+											className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
+											title="Оформить наряд-заказ в зуботехническую лабораторию"
+											data-testid={`stage-${stage.stageNumber}-lab-order-btn`}
+										>
+											<FlaskConical size={13} className="text-[var(--teal,var(--brand-primary))]" />
+											<span>Наряд-заказ в зуботехническую лабораторию</span>
+										</button>
+										{onOneClickLabOrder && (
+											<button
+												type="button"
+												onClick={() => {
+													const stageTeeth = stage.items
+														.map((it) => it.toothNumber)
+														.filter((t): t is number => typeof t === "number" && t > 0);
+													onOneClickLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
+												}}
+												className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer transition-colors shadow-2xs"
+												title="Оформить наряд в ЗТЛ в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
+												data-testid={`stage-${stage.stageNumber}-lab-order-one-click-btn`}
+											>
+												<Zap size={13} className="text-amber-600 dark:text-amber-400" />
+												<span>⚡ 1-клик ЗТЛ (Цирконий A2, +7 дн.)</span>
+											</button>
+										)}
+									</>
 								)}
 
 							{onExecuteWriteOffStage && stage.items.length > 0 && (

@@ -542,6 +542,40 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 		showToast("Все 32 зуба установлены как интактные (глубина 2 мм, BOP 0%)", "success", 4000);
 	}, [readOnly]);
 
+	const handleMarkSelectedToothPathology = useCallback((depth = 5, hasBop = true) => {
+		if (readOnly) return;
+		setTeeth((prevTeeth) =>
+			prevTeeth.map((tooth) => {
+				if (tooth.toothNumber !== selectedToothNumber || tooth.isMissing) return tooth;
+				const updatedTooth = { ...tooth };
+				for (const key of PERIO_SITE_KEYS) {
+					const site = tooth[key] ?? {
+						probingDepthMm: 2,
+						gingivalMarginMm: 0,
+						bleedingOnProbing: false,
+						suppuration: false,
+						plaque: false,
+						calculus: false,
+					};
+					const gm = site.gingivalMarginMm || 0;
+					const calMm = calculateClinicalAttachmentLevel(depth, gm);
+					updatedTooth[key] = {
+						...site,
+						probingDepthMm: depth,
+						bleedingOnProbing: hasBop,
+						calMm,
+					};
+				}
+				return updatedTooth;
+			}),
+		);
+		showToast(
+			`Зуб #${selectedToothNumber}: карман ${depth} мм с кровоточивостью (BOP) зафиксирован в 1 клик`,
+			"info",
+			3500,
+		);
+	}, [readOnly, selectedToothNumber]);
+
 	const handleMarkBopOnDeepPockets = useCallback(() => {
 		if (readOnly) return;
 		let marked = 0;
@@ -676,6 +710,17 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						>
 							<Sparkles size={14} className="text-emerald-400" />
 							<span>Все интактны</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => handleMarkSelectedToothPathology(5, true)}
+							className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
+							title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для выбранного зуба #${selectedToothNumber}`}
+							data-testid="perio-preset-tooth-pathology"
+						>
+							<Droplets size={14} className="text-rose-400" />
+							<span>Патология #{selectedToothNumber} (5мм+BOP)</span>
 						</button>
 
 						<button

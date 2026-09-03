@@ -4,9 +4,11 @@ import {
 	AlertTriangle,
 	Banknote,
 	Calculator,
+	Check,
 	CircleDot,
 	Coins,
 	CreditCard,
+	FlaskConical,
 	History,
 	Info,
 	Mic,
@@ -15,7 +17,13 @@ import {
 	ShieldAlert,
 	Sparkles,
 	Stethoscope,
+	X,
 } from "lucide-react";
+import {
+	ONE_CLICK_LAB_DEFAULTS,
+	addWorkingDays,
+	calculateMaterialTotalCostKopecks,
+} from "../lab/labMath";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -234,6 +242,10 @@ export const OdontogramModule = ({
 	const [activeSurfaces, setActiveSurfaces] = useState<string[]>([]);
 	const [isVoiceOpen, setIsVoiceOpen] = useState(false);
 	const [diagnocatLoading, setDiagnocatLoading] = useState(false);
+	const [diagnocatPendingReport, setDiagnocatPendingReport] = useState<{
+		reportDate: string;
+		findings: ToothData[];
+	} | null>(null);
 	const [lastSavedAt, setLastSavedAt] = useState<string>(() =>
 		new Date().toLocaleTimeString("ru-RU"),
 	);
@@ -251,28 +263,25 @@ export const OdontogramModule = ({
 				const data = await res.json();
 				if (data.reports && data.reports.length > 0) {
 					const latest = data.reports[data.reports.length - 1];
-					showToast(
-						`Найден отчёт Diagnocat от ${new Date(latest.createdAt).toLocaleDateString()}. Применяем автоформулу...`,
-						"success",
-						5000,
-					);
+					const reportDateStr = new Date(latest.createdAt).toLocaleDateString("ru-RU");
 					if (
 						latest.odontogramData &&
-						Array.isArray(latest.odontogramData.states)
+						Array.isArray(latest.odontogramData.states) &&
+						latest.odontogramData.states.length > 0
 					) {
-						// Merge states
-						const incoming = latest.odontogramData.states;
-						setTeethData((prev) => {
-							const merged = [...prev];
-							for (const tooth of incoming) {
-								const idx = merged.findIndex(
-									(x) => x.toothNumber === tooth.toothNumber,
-								);
-								if (idx > -1) merged[idx] = tooth;
-								else merged.push(tooth);
-							}
-							return merged;
+						// МАНДАТ 8e / РАЗДЕЛ VII: Запрет автоматической перезаписи зубной формулы роботом!
+						// ИИ может лишь предложить чек-лист находок; подтверждает их только врач.
+						setDiagnocatPendingReport({
+							reportDate: reportDateStr,
+							findings: latest.odontogramData.states,
 						});
+						showToast(
+							`Найден отчёт Diagnocat AI от ${reportDateStr} (${latest.odontogramData.states.length} находок). Подтвердите внесение в формулу.`,
+							"info",
+							6000,
+						);
+					} else {
+						showToast("Отчёт Diagnocat не содержит размеченных патологий.", "info", 5000);
 					}
 				} else {
 					showToast("Отчёты Diagnocat не найдены.", "info", 5000);
@@ -283,6 +292,115 @@ export const OdontogramModule = ({
 			showToast("Ошибка загрузки отчётов Diagnocat.", "error", 5000);
 		} finally {
 			setDiagnocatLoading(false);
+		}
+	};
+
+	const handleApplyDiagnocatFindings = useCallback(() => {
+		if (!diagnocatPendingReport) return;
+		const incoming = diagnocatPendingReport.findings;
+		setTeethData((prev) => {
+			const merged = [...prev];
+			for (const tooth of incoming) {
+				const idx = merged.findIndex(
+					(x) => x.toothNumber === tooth.toothNumber,
+				);
+				if (idx > -1) merged[idx] = tooth;
+				else merged.push(tooth);
+			}
+			return merged;
+		});
+		showToast(
+			`Находки Diagnocat AI (${incoming.length} зубов) успешно подтверждены и внесены врачом в зубную формулу.`,
+			"success",
+			5000,
+		);
+		setDiagnocatPendingReport(null);
+	}, [diagnocatPendingReport]);
+
+	const handleRejectDiagnocatFindings = useCallback(() => {
+		setDiagnocatPendingReport(null);
+		showToast("Находки Diagnocat AI отклонены врачом. Зубная формула сохранена без изменений.", "info", 4000);
+	}, []);
+
+	const handleOneClickLabOrder = async (targetTeeth: number[]) => {
+		if (targetTeeth.length === 0) {
+			showToast("Выберите зубы для наряда ЗТЛ", "warning");
+			return;
+		}
+		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
+		const dueDateIso = due.toISOString();
+		const dueDateFormatted = due.toLocaleDateString("ru-RU");
+		const isBridge = targetTeeth.length > 1;
+		const construction = isBridge
+			? ONE_CLICK_LAB_DEFAULTS.restorationTypeBridge
+			: ONE_CLICK_LAB_DEFAULTS.restorationTypeSingle;
+		const priceRub =
+			(calculateMaterialTotalCostKopecks(ONE_CLICK_LAB_DEFAULTS.materialId, targetTeeth.length) ||
+				650000 * targetTeeth.length) / 100;
+		const toothFdiStr = targetTeeth.join(", ");
+
+		try {
+			showToast(`Создаём 1-клик наряд ЗТЛ для зубов ${toothFdiStr}...`, "info", 2000);
+			const res = await fetch("/api/clinical/lab-orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					doctorId: activeDoctor?.id || null,
+					toothFdi: toothFdiStr,
+					material: ONE_CLICK_LAB_DEFAULTS.materialName,
+					colorVita: ONE_CLICK_LAB_DEFAULTS.colorVita,
+					dueDate: dueDateIso,
+					clinicalNotes: `• Экспресс 1-клик наряд ЗТЛ из одонтограммы\n• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}\n• Материал: ${ONE_CLICK_LAB_DEFAULTS.materialName}\n• Цвет: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}\n• Срок: 7 рабочих дней (до ${dueDateFormatted})\n• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
+					priceRub,
+				}),
+			});
+
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка создания наряда ЗТЛ");
+			}
+
+			const savedOrder = await res.json();
+
+			if (savedOrder?.id) {
+				for (const tooth of targetTeeth) {
+					try {
+						await fetch(`/api/clinical/lab-orders/${savedOrder.id}/items`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({
+								toothFdi: tooth,
+								restorationType: construction,
+								material: ONE_CLICK_LAB_DEFAULTS.materialId,
+								shadeFinal: ONE_CLICK_LAB_DEFAULTS.colorVita,
+								translucencyLevel: ONE_CLICK_LAB_DEFAULTS.translucency,
+								cementGapMicrons: ONE_CLICK_LAB_DEFAULTS.cementGapMicrons,
+								priceRub: priceRub / targetTeeth.length,
+							}),
+						});
+					} catch {
+						// Non-blocking item fallback
+					}
+				}
+			}
+
+			showToast(
+				`Наряд ЗТЛ успешно оформлен в 1 клик для зубов ${toothFdiStr} (Цирконий A2, сдача: ${dueDateFormatted})!`,
+				"success",
+				6000,
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", { detail: { order: savedOrder } }),
+			);
+		} catch (err: any) {
+			showToast(err.message || "Не удалось оформить наряд в ЗТЛ", "error");
 		}
 	};
 
@@ -1008,17 +1126,77 @@ export const OdontogramModule = ({
 				</div>
 
 				{/* Народная и анатомическая расшифровка выбранного зуба простым русским языком */}
-				<div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all">
-					<Info className="w-4 h-4 text-indigo-500 shrink-0" />
-					<span className="font-black text-indigo-600 dark:text-indigo-400 shrink-0">Зуб:</span>
-					<span className="leading-snug">
-						{selectedTeeth.length === 1
-							? getToothFolkAndAnatomicalNameRu(selectedTeeth[0]!)
-							: selectedTeeth.length > 1
-								? `Выбрана группа из ${selectedTeeth.length} зубов: ${selectedTeeth.join(", ")}`
-								: "Нажмите на зуб или наведите курсор для отображения полного анатомического и народного названия (например: «16: Верхняя правая шестерка»)"}
-					</span>
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 text-indigo-950 dark:text-indigo-200 text-xs sm:text-sm font-bold transition-all">
+					<div className="flex items-center gap-2 min-w-0">
+						<Info className="w-4 h-4 text-indigo-500 shrink-0" />
+						<span className="font-black text-indigo-600 dark:text-indigo-400 shrink-0">Зуб:</span>
+						<span className="leading-snug truncate">
+							{selectedTeeth.length === 1
+								? getToothFolkAndAnatomicalNameRu(selectedTeeth[0]!)
+								: selectedTeeth.length > 1
+									? `Выбрана группа из ${selectedTeeth.length} зубов: ${selectedTeeth.join(", ")}`
+									: "Нажмите на зуб или наведите курсор для отображения полного анатомического и народного названия (например: «16: Верхняя правая шестерка»)"}
+						</span>
+					</div>
+					{selectedTeeth.length > 0 && (
+						<button
+							type="button"
+							onClick={() => void handleOneClickLabOrder(selectedTeeth)}
+							className="min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-black text-amber-900 dark:text-amber-100 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 flex items-center gap-1.5 cursor-pointer shrink-0 transition-all active:scale-95 shadow-2xs whitespace-nowrap"
+							title="Оформить наряд в зуботехническую лабораторию для выбранных зубов в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 рабочих дней)"
+							data-testid="selected-teeth-lab-order-btn"
+						>
+							<FlaskConical size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>⚡ Наряд ЗТЛ ({selectedTeeth.length} {countLabel(selectedTeeth.length, "зуб", "зуба", "зубов")})</span>
+						</button>
+					)}
 				</div>
+
+				{diagnocatPendingReport && (
+					<div
+						className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-950 dark:text-indigo-100 text-xs shadow-xs animate-in fade-in"
+						role="alert"
+						data-testid="diagnocat-confirmation-banner"
+					>
+						<div className="flex items-start sm:items-center gap-2.5">
+							<div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 shrink-0 mt-0.5 sm:mt-0">
+								<Sparkles size={16} />
+							</div>
+							<div>
+								<div className="font-bold text-sm">
+									Предложение ИИ Diagnocat от {diagnocatPendingReport.reportDate} ({diagnocatPendingReport.findings.length} находок)
+								</div>
+								<div className="text-[11px] text-indigo-800/80 dark:text-indigo-300/80 mt-0.5">
+									Находки по зубам:{" "}
+									<strong>
+										{diagnocatPendingReport.findings.map((f) => `${f.toothNumber} (${TOOTH_STATE_LABELS[f.state] || f.state})`).join(", ")}
+									</strong>
+									. Автоматическая перезапись запрещена — подтвердите внесение.
+								</div>
+							</div>
+						</div>
+						<div className="flex items-center gap-2 shrink-0">
+							<button
+								type="button"
+								onClick={handleApplyDiagnocatFindings}
+								className="min-h-[36px] px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+								data-testid="apply-diagnocat-btn"
+							>
+								<Check size={14} />
+								<span>Применить к формуле</span>
+							</button>
+							<button
+								type="button"
+								onClick={handleRejectDiagnocatFindings}
+								className="min-h-[36px] px-3 py-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+								data-testid="reject-diagnocat-btn"
+							>
+								<X size={14} />
+								<span>Отклонить</span>
+							</button>
+						</div>
+					</div>
+				)}
 
 				<OdontogramViewContainer
 					teethData={teethData}
@@ -1244,6 +1422,22 @@ export const OdontogramModule = ({
 								>
 									<Activity className="w-4 h-4 inline mr-2 shrink-0" />
 									<span className="min-w-0 break-words">Журнал каналов (Эндо)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="radial-menu-lab-order-btn"
+									onClick={() => {
+										const targets =
+											selectedTeeth.length > 0 && selectedTeeth.includes(menuConfig.toothNumber)
+												? selectedTeeth
+												: [menuConfig.toothNumber];
+										void handleOneClickLabOrder(targets);
+										setMenuConfig(null);
+									}}
+									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-black text-sm bg-amber-500/15 text-amber-900 dark:text-amber-100 border-amber-500/30 hover:bg-amber-500/25 cursor-pointer min-w-0 text-center leading-tight shadow-2xs active:scale-95"
+								>
+									<FlaskConical className="w-4 h-4 inline mr-2 text-amber-600 shrink-0" />
+									<span className="min-w-0 break-words">⚡ Наряд ЗТЛ в 1 клик (Цирконий A2, +7 дн.)</span>
 								</button>
 								<button
 									type="button"

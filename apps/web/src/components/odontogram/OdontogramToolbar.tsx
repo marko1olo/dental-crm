@@ -266,25 +266,25 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 
 			<div className="h-5 w-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 mx-0.5" />
 
-			{/* 2. Rapid Stamp: 3 Quick Stamps (Кариес / Пульпит / Пломба) */}
+			{/* 2. Rapid Stamp: Quick 1-Click Stamps (Кариес / Пульпит / Периодонтит / Пломба / Коронка / Имплант / Здоров / Удален) */}
 			<div
-				className="flex items-center gap-1 shrink-0 p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)]"
+				className="flex items-center gap-1 shrink-0 p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] overflow-x-auto max-w-full"
 				role="group"
-				aria-label="Режим штампа патологий"
+				aria-label="Режим 1-клик штампа патологий"
 			>
 				<div className="flex items-center gap-1 px-1.5 text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)] shrink-0">
 					<Paintbrush size={14} className={activeStampTool ? "text-indigo-600 dark:text-indigo-400 animate-pulse" : ""} />
-					<span className="hidden lg:inline font-black">Штамп:</span>
+					<span className="hidden xl:inline font-black">Штамп:</span>
 				</div>
 				<button
 					type="button"
 					onClick={() => onStampToolChange(activeStampTool === "Caries" ? null : "Caries")}
-					className={`min-h-[32px] h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 						activeStampTool === "Caries"
 							? "bg-amber-600 text-white font-black shadow-xs ring-2 ring-amber-400"
 							: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
 					}`}
-					title="Штамп: Кариес (К)"
+					title="Штамп 1-клик: Кариес (К)"
 					data-testid="stamp-caries-btn"
 				>
 					Кариес
@@ -292,28 +292,93 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 				<button
 					type="button"
 					onClick={() => onStampToolChange(activeStampTool === "Pulpitis" ? null : "Pulpitis")}
-					className={`min-h-[32px] h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 						activeStampTool === "Pulpitis"
 							? "bg-rose-600 text-white font-black shadow-xs ring-2 ring-rose-400"
 							: "bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/20"
 					}`}
-					title="Штамп: Пульпит (Ф)"
+					title="Штамп 1-клик: Пульпит (Ф)"
 					data-testid="stamp-pulpitis-btn"
 				>
 					Пульпит
 				</button>
 				<button
 					type="button"
+					onClick={() => onStampToolChange(activeStampTool === "Periodontitis" ? null : "Periodontitis")}
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+						activeStampTool === "Periodontitis"
+							? "bg-orange-600 text-white font-black shadow-xs ring-2 ring-orange-400"
+							: "bg-orange-500/10 text-orange-800 dark:text-orange-200 hover:bg-orange-500/20 border border-orange-500/20"
+					}`}
+					title="Штамп 1-клик: Периодонтит (Пт)"
+					data-testid="stamp-periodontitis-btn"
+				>
+					Периодонтит
+				</button>
+				<button
+					type="button"
 					onClick={() => onStampToolChange(activeStampTool === "Filled" ? null : "Filled")}
-					className={`min-h-[32px] h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 						activeStampTool === "Filled"
 							? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black shadow-xs ring-2 ring-[var(--teal)]/60"
 							: "bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] hover:opacity-90 border border-[var(--teal,#0d9488)]/30"
 					}`}
-					title="Штамп: Пломба (П)"
+					title="Штамп 1-клик: Пломба (П)"
 					data-testid="stamp-filled-btn"
 				>
 					Пломба
+				</button>
+				<button
+					type="button"
+					onClick={() => onStampToolChange(activeStampTool === "Crown" ? null : "Crown")}
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+						activeStampTool === "Crown"
+							? "bg-blue-600 text-white font-black shadow-xs ring-2 ring-blue-400"
+							: "bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/20"
+					}`}
+					title="Штамп 1-клик: Коронка (Кр)"
+					data-testid="stamp-crown-btn"
+				>
+					Коронка
+				</button>
+				<button
+					type="button"
+					onClick={() => onStampToolChange(activeStampTool === "Implant" ? null : "Implant")}
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+						activeStampTool === "Implant"
+							? "bg-amber-600 text-white font-black shadow-xs ring-2 ring-amber-400"
+							: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 border border-amber-500/20"
+					}`}
+					title="Штамп 1-клик: Имплантат (И)"
+					data-testid="stamp-implant-btn"
+				>
+					Имплант
+				</button>
+				<button
+					type="button"
+					onClick={() => onStampToolChange(activeStampTool === "Healthy" ? null : "Healthy")}
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+						activeStampTool === "Healthy"
+							? "bg-emerald-600 text-white font-black shadow-xs ring-2 ring-emerald-400"
+							: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/20"
+					}`}
+					title="Штамп 1-клик: Здоров (З)"
+					data-testid="stamp-healthy-btn"
+				>
+					Здоров
+				</button>
+				<button
+					type="button"
+					onClick={() => onStampToolChange(activeStampTool === "Missing" ? null : "Missing")}
+					className={`min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+						activeStampTool === "Missing"
+							? "bg-zinc-800 text-white font-black shadow-xs ring-2 ring-zinc-500"
+							: "bg-zinc-500/10 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-500/20 border border-zinc-500/20"
+					}`}
+					title="Штамп 1-клик: Отсутствует (X)"
+					data-testid="stamp-missing-btn"
+				>
+					Удален
 				</button>
 				{activeStampTool && (
 					<button

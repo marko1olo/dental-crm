@@ -379,6 +379,51 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		showToast("Протокол перио-карты успешно вставлен в дневник 043/у!", "success");
 	}, [teeth, summary, doctorName, onInsertToProtocol]);
 
+	// 1-Click Physiological Norm across all 32 teeth (Mandate 8e: Doctor Autonomy)
+	const handleApplyPhysiologicalNorm = useCallback(() => {
+		setTeeth(createDefaultPerioTeeth());
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Все 32 зуба установлены в физиологическую норму (глубина 1–2 мм, 0% кровоточивости, 0% налёта)!", "success", 4000);
+	}, []);
+
+	// 1-Click Fast Pathology Markup for active tooth
+	const handleMarkActiveToothPocket = useCallback((depth = 5, hasBop = true) => {
+		setTeeth((prev) =>
+			prev.map((t) => {
+				if (t.toothNumber !== activeToothNum || t.isMissing) return t;
+				const nextTooth = { ...t };
+				for (const siteKey of PERIO_SITE_KEYS) {
+					const site = t[siteKey] ?? { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, suppuration: false, plaque: false, calculus: false };
+					nextTooth[siteKey] = {
+						...site,
+						probingDepthMm: depth,
+						bleedingOnProbing: hasBop,
+					};
+				}
+				return nextTooth;
+			}),
+		);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(`Зуб #${activeToothNum}: карман ${depth} мм с кровоточивостью (BOP) зафиксирован в 1 клик`, "info", 3000);
+	}, [activeToothNum]);
+
+	// 1-Click Clear Plaque
+	const handleClearPlaque = useCallback(() => {
+		setTeeth((prev) =>
+			prev.map((t) => {
+				const nextTooth = { ...t };
+				for (const siteKey of PERIO_SITE_KEYS) {
+					const site = t[siteKey];
+					if (site) {
+						nextTooth[siteKey] = { ...site, plaque: false, calculus: false };
+					}
+				}
+				return nextTooth;
+			}),
+		);
+		showToast("Зубной налет и камень очищены по всем зубам (100% гигиена)", "success", 3000);
+	}, []);
+
 	// Save Action
 	const handleSave = useCallback(async () => {
 		if (onSave) {
@@ -495,6 +540,48 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 							Макс. глубина: {summary.maxPocketDepthMm} мм | CAL: {summary.maxCalMm} мм
 						</span>
 					</div>
+				</div>
+
+				{/* 1-Click Fast Actions Bar (Zero-Friction Doctor Autonomy) */}
+				<div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-950 dark:text-emerald-100 flex-wrap">
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={handleApplyPhysiologicalNorm}
+							className="min-h-[40px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							title="Установить все 32 зуба в физиологическую норму: карманы 1-2 мм, без кровоточивости и налета (1 клик)"
+							data-testid="perio-modal-norm-btn"
+						>
+							<Sparkles size={15} />
+							<span>⚡ Вся физиологическая норма (1 клик)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => handleMarkActiveToothPocket(5, true)}
+							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-800 dark:text-rose-200 border border-rose-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для активного зуба #${activeToothNum}`}
+							data-testid="perio-modal-pathology-btn"
+						>
+							<Droplets size={14} className="text-rose-500" />
+							<span>Патология на зуб #{activeToothNum} (5 мм + BOP)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleClearPlaque}
+							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 active:scale-95 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							title="Очистить зубной налёт и камень по всем зубам"
+							data-testid="perio-modal-clear-plaque-btn"
+						>
+							<RotateCcw size={14} className="text-teal-500" />
+							<span>Очистить налет</span>
+						</button>
+					</div>
+
+					<span className="text-xs text-[var(--muted,#64748b)] font-semibold">
+						💡 Режим терапевта: норма в 1 клик, ручные промеры только для проблемных участков.
+					</span>
 				</div>
 
 				{/* 3. Dental Arch Selector & Tooth Matrix */}

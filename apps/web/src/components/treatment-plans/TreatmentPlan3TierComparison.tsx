@@ -40,6 +40,7 @@ import {
 	Star,
 } from "lucide-react";
 import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./types";
+import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 
 export interface TreatmentPlan3TierComparisonProps {
 	readonly tiers: readonly TreatmentPlanTier[];
@@ -690,8 +691,8 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 
 								{stg.items && stg.items.length > 0 && (
 									<ul className="max-h-28 overflow-y-auto min-h-0 text-[10px] text-[var(--muted,#64748b)] space-y-1 pl-1.5 border-l-2 border-[var(--teal,var(--brand-primary))]/30 m-0 list-none">
-										{stg.items.map((it) => (
-											<li key={it.id} className="truncate">
+										{stg.items.filter((it) => !isMicroConsumable(it)).map((it) => (
+											<li key={it.id} className="truncate" title={it.name}>
 												• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
 											</li>
 										))}

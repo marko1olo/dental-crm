@@ -74,6 +74,51 @@ import {
 } from "../../services/ai/treatmentPlanCopilot";
 import "./treatmentPlans.css";
 
+export interface PlanItemLike {
+	readonly name?: string | undefined;
+	readonly category?: string | undefined;
+	readonly code804n?: string | undefined;
+	readonly priceRub?: number | undefined;
+	readonly unitPriceRub?: number | undefined;
+}
+
+const CONSUMABLE_PATTERNS = [
+	/валик/i,
+	/салфетк/i,
+	/перчатк/i,
+	/слюноотсос/i,
+	/бахил/i,
+	/маск[а-я]* одноразов/i,
+	/микробраш/i,
+	/аппликатор.*браш/i,
+	/нагрудник/i,
+	/стаканчик/i,
+	/канюл.*одноразов/i,
+	/ватн.*шарик/i,
+	/лоток.*одноразов/i,
+	/шприц.*одноразов/i,
+	/индивидуальный гигиенический набор/i,
+];
+
+/**
+ * Returns true if the plan item is a minor consumable that should be hidden by default in patient presentations.
+ * Mandate 8e / Section VII: Чистый показ пациенту (скрывать микро-расходники).
+ */
+export function isMicroConsumable(item: PlanItemLike): boolean {
+	const name = item.name ?? "";
+	if (!name) return false;
+
+	const nameMatches = CONSUMABLE_PATTERNS.some((pattern) => pattern.test(name));
+	if (nameMatches) return true;
+
+	const category = (item.category ?? "").toLowerCase();
+	const isConsumableCategory =
+		category.includes("расходн") || category.includes("сиз") || category.includes("материал");
+	const price = item.priceRub ?? item.unitPriceRub ?? 0;
+
+	return isConsumableCategory && price > 0 && price <= 250;
+}
+
 export interface TreatmentPlanPresenterModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -168,6 +213,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const [selectionConfirmed, setSelectionConfirmed] = useState<boolean>(false);
 	const [confirmedNotice, setConfirmedNotice] = useState<string | null>(null);
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
+	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
 
 	// AI Copilot & AI Audit state
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
@@ -877,53 +923,81 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																</tr>
 															</thead>
 															<tbody>
-																{stage.items.map((item, idx) => (
-																	<tr key={item.id || idx}>
-																		<td className="text-center font-mono text-[var(--tp-text-muted)]">
-																			{idx + 1}
-																		</td>
-																		<td>
-																			<span className="code-804n-badge">{item.code804n}</span>
-																		</td>
-																		<td className="text-center">
-																			{item.toothNumber ? (
-																				<span className="tooth-fdi-badge">{item.toothNumber}</span>
-																			) : (
-																				<span className="text-[var(--tp-text-muted)]">—</span>
+																{(() => {
+																	const microConsumables = stage.items.filter(isMicroConsumable);
+																	const displayList = showMicroConsumables
+																		? stage.items
+																		: stage.items.filter((it) => !isMicroConsumable(it));
+																	return (
+																		<>
+																			{displayList.map((item, idx) => (
+																				<tr key={item.id || idx}>
+																					<td className="text-center font-mono text-[var(--tp-text-muted)]">
+																						{idx + 1}
+																					</td>
+																					<td>
+																						<span className="code-804n-badge">{item.code804n}</span>
+																					</td>
+																					<td className="text-center">
+																						{item.toothNumber ? (
+																							<span className="tooth-fdi-badge">{item.toothNumber}</span>
+																						) : (
+																							<span className="text-[var(--tp-text-muted)]">—</span>
+																						)}
+																					</td>
+																					<td>
+																						<div className="font-semibold text-[var(--tp-text-main)]">
+																							{item.name}
+																						</div>
+																						{item.clinicalRationale && (
+																							<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5">
+																								{item.clinicalRationale}
+																							</div>
+																						)}
+																						{(item.requiresManualPricing || item.priceRub === 0) && (
+																							<div className="mt-1">
+																								<MissingPriceAlert
+																									item={item}
+																									onUpdatePrice={handleUpdateItemPrice}
+																									variant="inline"
+																								/>
+																							</div>
+																						)}
+																					</td>
+																					<td className="text-center font-semibold">{item.quantity}</td>
+																					<td className="text-right text-[var(--tp-text-muted)]">
+																						{item.unitPriceRub.toLocaleString("ru-RU")} ₽
+																					</td>
+																					<td className={`text-right font-bold ${
+																						item.requiresManualPricing || item.priceRub === 0
+																							? "text-amber-600 dark:text-amber-400"
+																							: "text-[var(--tp-text-main)]"
+																					}`}>
+																						{item.priceRub.toLocaleString("ru-RU")} ₽
+																					</td>
+																				</tr>
+																			))}
+																			{microConsumables.length > 0 && (
+																				<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
+																					<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
+																						<div className="flex items-center justify-between flex-wrap gap-2">
+																							<span className="flex items-center gap-1.5 font-medium">
+																								<span>✨ Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
+																							</span>
+																							<button
+																								type="button"
+																								onClick={() => setShowMicroConsumables((prev) => !prev)}
+																								className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+																							>
+																								{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
+																							</button>
+																						</div>
+																					</td>
+																				</tr>
 																			)}
-																		</td>
-																		<td>
-																			<div className="font-semibold text-[var(--tp-text-main)]">
-																				{item.name}
-																			</div>
-																			{item.clinicalRationale && (
-																				<div className="text-[11px] text-[var(--tp-text-muted)] mt-0.5">
-																					{item.clinicalRationale}
-																				</div>
-																			)}
-																			{(item.requiresManualPricing || item.priceRub === 0) && (
-																				<div className="mt-1">
-																					<MissingPriceAlert
-																						item={item}
-																						onUpdatePrice={handleUpdateItemPrice}
-																						variant="inline"
-																					/>
-																				</div>
-																			)}
-																		</td>
-																		<td className="text-center font-semibold">{item.quantity}</td>
-																		<td className="text-right text-[var(--tp-text-muted)]">
-																			{item.unitPriceRub.toLocaleString("ru-RU")} ₽
-																		</td>
-																		<td className={`text-right font-bold ${
-																			item.requiresManualPricing || item.priceRub === 0
-																				? "text-amber-600 dark:text-amber-400"
-																				: "text-[var(--tp-text-main)]"
-																		}`}>
-																			{item.priceRub.toLocaleString("ru-RU")} ₽
-																		</td>
-																	</tr>
-																))}
+																		</>
+																	);
+																})()}
 															</tbody>
 														</table>
 													</div>
@@ -998,48 +1072,76 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 													</tr>
 												</thead>
 												<tbody>
-													{st.items.map((it, idx) => (
-														<tr key={it.id || idx}>
-															<td className="text-center font-mono text-[var(--tp-text-muted)]">{idx + 1}</td>
-															<td>
-																<span className="code-804n-badge">{it.code804n}</span>
-															</td>
-															<td className="text-center">
-																{it.toothNumber ? (
-																	<span className="tooth-fdi-badge">{it.toothNumber}</span>
-																) : (
-																	<span className="text-[var(--tp-text-muted)]">—</span>
-																)}</td>
-															<td>
-																<div className="font-semibold text-[var(--tp-text-main)]">{it.name}</div>
-																{it.materials && (
-																	<div className="text-[11px] text-teal-700 dark:text-teal-400 mt-0.5">
-																		Материал: {it.materials}
-																	</div>
+													{(() => {
+														const microConsumables = st.items.filter(isMicroConsumable);
+														const displayList = showMicroConsumables
+															? st.items
+															: st.items.filter((it) => !isMicroConsumable(it));
+														return (
+															<>
+																{displayList.map((it, idx) => (
+																	<tr key={it.id || idx}>
+																		<td className="text-center font-mono text-[var(--tp-text-muted)]">{idx + 1}</td>
+																		<td>
+																			<span className="code-804n-badge">{it.code804n}</span>
+																		</td>
+																		<td className="text-center">
+																			{it.toothNumber ? (
+																				<span className="tooth-fdi-badge">{it.toothNumber}</span>
+																			) : (
+																				<span className="text-[var(--tp-text-muted)]">—</span>
+																			)}</td>
+																		<td>
+																			<div className="font-semibold text-[var(--tp-text-main)]">{it.name}</div>
+																			{it.materials && (
+																				<div className="text-[11px] text-teal-700 dark:text-teal-400 mt-0.5">
+																					Материал: {it.materials}
+																				</div>
+																			)}
+																			{(it.requiresManualPricing || it.priceRub === 0) && (
+																				<div className="mt-1">
+																					<MissingPriceAlert
+																						item={it}
+																						onUpdatePrice={handleUpdateItemPrice}
+																						variant="inline"
+																					/>
+																				</div>
+																			)}
+																		</td>
+																		<td className="text-center font-semibold">{it.quantity}</td>
+																		<td className="text-right text-[var(--tp-text-muted)]">
+																			{it.unitPriceRub.toLocaleString("ru-RU")} ₽
+																		</td>
+																		<td className={`text-right font-bold ${
+																			it.requiresManualPricing || it.priceRub === 0
+																				? "text-amber-600 dark:text-amber-400"
+																				: "text-[var(--tp-text-main)]"
+																		}`}>
+																			{it.priceRub.toLocaleString("ru-RU")} ₽
+																		</td>
+																	</tr>
+																))}
+																{microConsumables.length > 0 && (
+																	<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-900/40 border-t border-[var(--border,#cbd5e1)]">
+																		<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
+																			<div className="flex items-center justify-between flex-wrap gap-2">
+																				<span className="flex items-center gap-1.5 font-medium">
+																					<span>✨ Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
+																				</span>
+																				<button
+																					type="button"
+																					onClick={() => setShowMicroConsumables((prev) => !prev)}
+																					className="text-[var(--teal,#0d9488)] hover:underline font-bold text-xs cursor-pointer ml-auto"
+																				>
+																					{showMicroConsumables ? "Скрыть микро-расходники" : "Показать список"}
+																				</button>
+																			</div>
+																		</td>
+																	</tr>
 																)}
-																{(it.requiresManualPricing || it.priceRub === 0) && (
-																	<div className="mt-1">
-																		<MissingPriceAlert
-																			item={it}
-																			onUpdatePrice={handleUpdateItemPrice}
-																			variant="inline"
-																		/>
-																	</div>
-																)}
-															</td>
-															<td className="text-center font-semibold">{it.quantity}</td>
-															<td className="text-right text-[var(--tp-text-muted)]">
-																{it.unitPriceRub.toLocaleString("ru-RU")} ₽
-															</td>
-															<td className={`text-right font-bold ${
-																it.requiresManualPricing || it.priceRub === 0
-																	? "text-amber-600 dark:text-amber-400"
-																	: "text-[var(--tp-text-main)]"
-															}`}>
-																{it.priceRub.toLocaleString("ru-RU")} ₽
-															</td>
-														</tr>
-													))}
+															</>
+														);
+													})()}
 												</tbody>
 											</table>
 										</div>
