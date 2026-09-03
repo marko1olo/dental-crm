@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, ChevronDown, Layers, Palette, Crown, Sparkles, ShieldCheck, Shield, Compass, Scissors, FileText } from "lucide-react";
+import { CheckCircle2, ChevronDown, Layers, Palette, Crown, Sparkles, ShieldCheck, Shield, Compass, Scissors, FileText, Zap } from "lucide-react";
 import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
@@ -10,6 +10,7 @@ import {
 	OCCLUSAL_SCHEMES,
 	CONTACT_TIGHTNESS_OPTIONS,
 	SURFACE_TEXTURE_OPTIONS,
+	addWorkingDays,
 } from "./labMath";
 
 export interface DentalLabRestorationTabProps {
@@ -419,6 +420,179 @@ export function DentalLabRestorationTab({
 				</div>
 			</div>
 
+			{/* 2-CLICK EXPRESS ORTHOPEDIC CONFIGURATOR (Mandate 8e: Fast 0-Click Core Loop) */}
+			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-teal-500/10 to-amber-500/5 border-2 border-amber-500/30 space-y-4 shadow-sm">
+				<div className="flex items-center justify-between gap-2 flex-wrap">
+					<div className="flex items-center gap-2">
+						<span className="p-1.5 rounded-lg bg-amber-500 text-white shadow-xs">
+							<Zap size={18} className="fill-current" />
+						</span>
+						<div>
+							<h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 m-0 leading-tight">
+								Экспресс-оформление наряда ЗТЛ в 2 клика
+							</h3>
+							<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
+								Клик 1: Конструкция и материал · Клик 2: Цвет VITA · Авто-расчет срока сдачи
+							</p>
+						</div>
+					</div>
+					<span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30">
+						⚡ Hot Path ортопеда
+					</span>
+				</div>
+
+				{/* Step 1: Rapid Construction + Material Selection */}
+				<div className="space-y-2">
+					<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+						1. Выбор конструкции (1 клик):
+					</span>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+						{[
+							{
+								id: "zirconia",
+								title: "Диоксид циркония (ZrO₂)",
+								subtitle: "Katana Multilayer (1100 МПа)",
+								constructionId: "single_crown",
+								materialId: "zirconia_multilayer",
+								days: 7,
+								costRub: 6500,
+								badge: "Премиум",
+							},
+							{
+								id: "emax",
+								title: "Стеклокерамика E-max",
+								subtitle: "IPS e.max Press / CAD (500 МПа)",
+								constructionId: "single_crown",
+								materialId: "emax_lithium_disilicate",
+								days: 5,
+								costRub: 7500,
+								badge: "Эстетика",
+							},
+							{
+								id: "pmma",
+								title: "Временная коронка PMMA",
+								subtitle: "Фрезерованный полимер CAD/CAM",
+								constructionId: "single_crown",
+								materialId: "pmma_temporary",
+								days: 2,
+								costRub: 1500,
+								badge: "Временная",
+							},
+							{
+								id: "pfm",
+								title: "Металлокерамика CoCr",
+								subtitle: "Литой / фрезерованный КХС каркас",
+								constructionId: "single_crown",
+								materialId: "pfm_cocr",
+								days: 7,
+								costRub: 4000,
+								badge: "Стандарт",
+							},
+						].map((opt) => {
+							const isMatch = constructionType === opt.constructionId && material === opt.materialId;
+							return (
+								<button
+									key={opt.id}
+									type="button"
+									onClick={() => {
+										setConstructionType(opt.constructionId);
+										setMaterial(opt.materialId);
+										const due = addWorkingDays(new Date(), opt.days);
+										setDueDate(due.toISOString().slice(0, 10));
+									}}
+									className={`min-h-[52px] p-3 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+										isMatch
+											? "bg-[var(--teal-surface)] border-[var(--teal)] ring-2 ring-[var(--teal-soft)] shadow-xs"
+											: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-amber-400 hover:bg-amber-500/5"
+									}`}
+									data-testid={`fast-ortho-${opt.id}`}
+								>
+									<div className="flex items-center justify-between gap-1">
+										<span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+											{opt.title}
+										</span>
+										{isMatch && <CheckCircle2 size={15} className="text-[var(--teal)] shrink-0" />}
+									</div>
+									<div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-1">
+										{opt.subtitle}
+									</div>
+									<div className="flex items-center justify-between gap-1 pt-2 mt-1 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+										<span className="font-mono font-bold text-[var(--teal)]">{opt.costRub.toLocaleString("ru-RU")} ₽</span>
+										<span className="text-slate-500 dark:text-slate-400">+{opt.days} дн.</span>
+									</div>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
+				{/* Step 2: 1-Click Popular VITA Shades */}
+				<div className="space-y-2 pt-1 border-t border-amber-500/20">
+					<div className="flex items-center justify-between">
+						<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+							2. Популярные оттенки VITA (1 клик):
+						</span>
+						<span className="text-xs font-bold text-[var(--teal)]">
+							Текущий: {shadeSystem === "bleach" ? (shadeBleach || "BL2") : (shadeClassical || "A2")}
+						</span>
+					</div>
+					<div className="grid grid-cols-5 gap-2">
+						{[
+							{ shade: "A1", desc: "Светлый", isBleach: false },
+							{ shade: "A2", desc: "Универсальный", isBleach: false },
+							{ shade: "A3", desc: "Естественный", isBleach: false },
+							{ shade: "B1", desc: "Светло-желтый", isBleach: false },
+							{ shade: "BL2", desc: "Bleach отбеленный", isBleach: true },
+						].map((item) => {
+							const swatch = SHADE_SWATCH_MAP[item.shade];
+							const isSelected = item.isBleach
+								? shadeSystem === "bleach" && shadeBleach === item.shade
+								: shadeSystem === "classical" && shadeClassical === item.shade;
+
+							return (
+								<button
+									key={item.shade}
+									type="button"
+									onClick={() => {
+										if (item.isBleach) {
+											setShadeSystem?.("bleach");
+											setShadeBleach?.(item.shade);
+											setShadeBody?.(item.shade);
+										} else {
+											setShadeSystem?.("classical");
+											setShadeClassical?.(item.shade);
+											setShadeBody?.(item.shade);
+										}
+									}}
+									className={`min-h-[44px] p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
+										isSelected
+											? "bg-[var(--teal-surface)] border-[var(--teal)] ring-2 ring-[var(--teal-soft)] shadow-xs"
+											: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+									}`}
+									data-testid={`fast-shade-${item.shade}`}
+								>
+									<div className="flex items-center gap-1.5">
+										<span
+											className="w-3.5 h-3.5 rounded-full border shadow-2xs shrink-0"
+											style={{
+												backgroundColor: swatch?.bg || "#f0eae0",
+												borderColor: swatch?.border || "#ccc",
+											}}
+										/>
+										<span className="text-xs font-black text-slate-900 dark:text-slate-100">
+											{item.shade}
+										</span>
+									</div>
+									<span className="text-[10px] text-slate-500 dark:text-slate-400 leading-none truncate max-w-full">
+										{item.desc}
+									</span>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+			</div>
+
 			{/* Construction Type Grid with >= 44px touch targets */}
 			<div className="space-y-3">
 				<label className="block text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -680,6 +854,28 @@ export function DentalLabRestorationTab({
 						onChange={(e) => setDueDate(e.target.value)}
 						className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 					/>
+					<div className="flex items-center gap-1.5 flex-wrap pt-1">
+						{[
+							{ label: "+2 дн. (PMMA)", days: 2 },
+							{ label: "+3 дн. (Вкладка)", days: 3 },
+							{ label: "+5 дн. (E.max)", days: 5 },
+							{ label: "+7 дн. (ZrO₂)", days: 7 },
+							{ label: "+10 дн. (Мосты)", days: 10 },
+						].map((item) => (
+							<button
+								key={item.days}
+								type="button"
+								onClick={() => {
+									const due = addWorkingDays(new Date(), item.days);
+									setDueDate(due.toISOString().slice(0, 10));
+								}}
+								className="px-2 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-[var(--teal)] hover:text-[var(--teal)] transition-colors cursor-pointer"
+								data-testid={`fast-date-${item.days}`}
+							>
+								{item.label}
+							</button>
+						))}
+					</div>
 				</div>
 				<div className="space-y-1.5">
 					<label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -692,6 +888,28 @@ export function DentalLabRestorationTab({
 						onChange={(e) => setClinicalNotes(e.target.value)}
 						className="w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-[var(--teal)] focus:outline-none"
 					/>
+					<div className="flex items-center gap-1.5 flex-wrap pt-1">
+						{[
+							"Примерка каркаса",
+							"Примерка на воске",
+							"Срочно! Пациент уезжает",
+							"Окклюзия под контролем",
+							"Подбор по фото",
+							"Индивидуальный абатмент",
+						].map((chip) => (
+							<button
+								key={chip}
+								type="button"
+								onClick={() => {
+									setClinicalNotes(clinicalNotes ? `${clinicalNotes}, ${chip}` : chip);
+								}}
+								className="px-2 py-0.5 text-[10px] font-medium rounded-md border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors cursor-pointer"
+								data-testid={`fast-chip-${chip.slice(0, 8)}`}
+							>
+								+ {chip}
+							</button>
+						))}
+					</div>
 				</div>
 			</div>
 

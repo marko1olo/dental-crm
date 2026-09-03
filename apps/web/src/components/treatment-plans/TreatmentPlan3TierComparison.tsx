@@ -351,20 +351,23 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 										<p className="text-[10px] text-[var(--muted,#64748b)] m-0">
 											{stg.clinicalGoal} · ~{stg.estimatedWeeks} нед. ({stg.estimatedVisits} виз.)
 										</p>
-										{stg.items.length > 0 && (
-											<ul className="max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1">
-												{stg.items.slice(0, 4).map((it) => (
-													<li key={it.id} className="truncate">
-														• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
-													</li>
-												))}
-												{stg.items.length > 4 && (
-													<li className="italic text-[var(--teal,var(--brand-primary))]">
-														+ еще {stg.items.length - 4} процедур
-													</li>
-												)}
-											</ul>
-										)}
+										{(() => {
+											const displayItems = stg.items.filter((it) => !isMicroConsumable(it));
+											return displayItems.length > 0 ? (
+												<ul className="max-h-24 overflow-y-auto min-h-0 text-[9px] text-[var(--muted,#64748b)] space-y-0.5 pl-1.5 border-l border-[var(--teal,var(--brand-primary))]/30 m-0 list-none mt-1">
+													{displayItems.slice(0, 4).map((it) => (
+														<li key={it.id} className="truncate">
+															• {it.toothNumber ? `Зуб ${it.toothNumber}: ` : ""}{it.name}
+														</li>
+													))}
+													{displayItems.length > 4 && (
+														<li className="italic text-[var(--teal,var(--brand-primary))]">
+															+ еще {displayItems.length - 4} процедур
+														</li>
+													)}
+												</ul>
+											) : null;
+										})()}
 									</div>
 								))}
 							</div>

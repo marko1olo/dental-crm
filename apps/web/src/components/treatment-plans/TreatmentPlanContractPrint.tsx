@@ -9,7 +9,7 @@
  * - График платежей, рассрочку 0% и расчет 13% вычета НДФЛ
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
 	Calendar,
 	Check,
@@ -33,6 +33,7 @@ import type {
 } from "./types";
 import { TreatmentPlanQrCode } from "./qr/TreatmentPlanQrCode";
 import { generatePlanVerificationQrPayload } from "./qr/treatmentPlanQrEngine";
+import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 
 export interface TreatmentPlanContractPrintProps {
 	readonly isOpen: boolean;
@@ -79,6 +80,7 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 	installmentMonths = 12,
 	onClose,
 }) => {
+	const [showMicroConsumables, setShowMicroConsumables] = useState(false);
 	if (!isOpen) return null;
 
 	const allItems = stages.flatMap((s) => s.items);
@@ -125,37 +127,44 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 		signedAgreement,
 	]);
 
-	const handlePrint = () => {
-		window.print();
-	};
-
 	return (
 		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center p-2 sm:p-6 py-6 sm:py-8 print:p-0 print:static print:bg-white print:inset-auto"
-			data-testid="treatment-contract-print-modal"
+			className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Печатная форма Договора и сметы"
 		>
-			<div className="relative w-full max-w-4xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-3xl shadow-2xl overflow-hidden border border-[var(--line,#cbd5e1)] print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none">
-				{/* Top Action Bar (hidden on print) */}
-				<div className="flex items-center justify-between px-6 py-4 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] print:hidden">
+			<div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden my-auto">
+				{/* Modal Actions Header (Hidden on print) */}
+				<div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 print:hidden shrink-0">
 					<div className="flex items-center gap-2">
-						<FileText className="text-[var(--teal,var(--brand-primary))] w-5 h-5" />
-						<span className="font-bold text-sm text-[var(--ink,#0f172a)]">
-							Печатная форма: Договор, Комплексный план лечения и Смета с QR-кодом
-						</span>
+						<div className="p-1.5 rounded-lg bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal-dark,#0f766e)]">
+							<FileText size={18} />
+						</div>
+						<div>
+							<h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+								Договор на оказание медицинских услуг и утвержденная смета
+							</h3>
+							<p className="text-[11px] text-slate-500 dark:text-slate-400">
+								Официальный бланк РФ (Постановление Правительства РФ № 736 / СтАР)
+							</p>
+						</div>
 					</div>
+
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							onClick={handlePrint}
-							className="flex items-center gap-1.5 px-4 py-2 min-h-[44px] rounded-xl text-xs font-bold text-white bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] shadow-md cursor-pointer transition-colors"
+							onClick={() => window.print()}
+							className="px-3.5 py-1.5 rounded-xl bg-[var(--teal-dark,#0f766e)] hover:bg-[var(--teal,#0d9488)] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+							data-testid="contract-print-btn"
 						>
-							<Printer size={14} />
-							<span>Печать документа (Ctrl+P)</span>
+							<Printer size={15} />
+							<span>Печать договора (Ctrl+P)</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line)] cursor-pointer transition-colors"
+							className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
 							aria-label="Закрыть"
 						>
 							<X size={18} />
@@ -163,29 +172,21 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 					</div>
 				</div>
 
-				{/* Printable Document Body & Desk Preview */}
-				<div className="p-3 sm:p-6 lg:p-8 bg-slate-200/60 dark:bg-slate-950 flex justify-center overflow-x-auto print:p-0 print:bg-transparent print:overflow-visible">
-					<div
-						className="print-paper-sheet p-8 sm:p-12 space-y-6 text-xs leading-relaxed bg-white text-slate-900 rounded-2xl border border-slate-300 shadow-xl max-w-3xl w-full print:p-0 print:space-y-4 print:text-[10pt] print:border-none print:shadow-none print:rounded-none print:max-w-none"
-						data-paper-sheet="true"
-					>
-						{/* Header with Clinic Info & Verification QR Code */}
-						<div className="flex justify-between items-start border-b border-slate-200 pb-4 gap-4">
-							<div className="space-y-1 flex-1">
-								<div className="flex items-center gap-2">
-								<h1 className="text-base sm:lg font-black tracking-tight text-slate-900 uppercase">
-									{clinicName}
-								</h1>
-								<span className="text-[9px] px-2 py-0.5 rounded bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] font-bold border border-[var(--teal,var(--brand-primary))]/30">
-									СтАР & Приказ МЗ РФ № 804н
-								</span>
-							</div>
-							<p className="text-[11px] text-slate-500 max-w-md">
-								{clinicLegalName} · ИНН: {clinicInn} · ОГРН: {clinicOgrn}
-								<br />
-								Лицензия: {clinicLicense}
-								<br />
-								Адрес: {clinicAddress}
+				{/* Printable Page Container */}
+				<div className="p-6 sm:p-10 overflow-y-auto print:p-0 print:overflow-visible print:text-black bg-white text-slate-900 text-xs leading-relaxed space-y-6">
+					{/* Top Header: Clinic & Patient Info */}
+					<div className="flex items-start justify-between border-b pb-4 border-slate-300 gap-4">
+						{/* Top Left: Clinic Credentials */}
+						<div className="space-y-1 max-w-sm">
+							<h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
+								{clinicName}
+							</h1>
+							<p className="text-[10px] text-slate-600 leading-tight">
+								{clinicLegalName && <span>{clinicLegalName}<br /></span>}
+								{clinicInn && <span>ИНН: {clinicInn} · </span>}
+								{clinicOgrn && <span>ОГРН: {clinicOgrn}<br /></span>}
+								{clinicAddress && <span>Адрес: {clinicAddress}<br /></span>}
+								{clinicLicense && <span>Лицензия: {clinicLicense}</span>}
 							</p>
 						</div>
 
@@ -196,9 +197,6 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 									ДОГОВОР № {displayContractNumber}
 								</div>
 								<p className="text-[10px] text-slate-500">г. Москва · {todayRu} г.</p>
-								<div className="text-[9px] text-[var(--teal-dark,var(--teal))] font-semibold">
-									Онлайн-верификация сметы →
-								</div>
 							</div>
 							<div className="p-1.5 rounded-xl bg-white border border-slate-300 shadow-xs shrink-0 text-center">
 								<TreatmentPlanQrCode value={qrPayload} size={64} />
@@ -251,11 +249,20 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 
 					{/* Section 2: Stages & Specification (Order 804n) */}
 					<div className="space-y-2">
-						<h3 className="font-bold text-slate-900 uppercase tracking-wide text-[11px] flex items-center justify-between">
+						<h3 className="font-bold text-slate-900 uppercase tracking-wide text-[11px] flex items-center justify-between flex-wrap gap-2">
 							<span>2. Приложение № 1: Спецификация и этапы лечения (Приказ МЗ РФ № 804н)</span>
-							<span className="text-[10px] text-slate-500 font-normal">
-								Всего позиций: {allItems.length}
-							</span>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => setShowMicroConsumables(!showMicroConsumables)}
+									className="print:hidden text-[10px] font-semibold text-teal-700 dark:text-teal-400 hover:underline cursor-pointer"
+								>
+									{showMicroConsumables ? "Скрыть микро-расходники" : "Детализировать микро-расходники"}
+								</button>
+								<span className="text-[10px] text-slate-500 font-normal">
+									Всего позиций: {allItems.length}
+								</span>
+							</div>
 						</h3>
 
 						<div className="overflow-x-auto">
@@ -273,47 +280,65 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 									</tr>
 								</thead>
 								<tbody>
-									{stages.map((stage) => (
-										<React.Fragment key={stage.stageNumber}>
-											<tr className="bg-slate-50/80 font-bold text-slate-800">
-												<td colSpan={7} className="border border-slate-300 p-1.5">
-													{stage.title} — {stage.clinicalGoal}
-												</td>
-												<td className="border border-slate-300 p-1.5 text-right font-mono">
-													{stage.totalRub.toLocaleString("ru-RU")} ₽
-												</td>
-											</tr>
-											{stage.items.map((it, idx) => (
-												<tr key={it.id} className="hover:bg-slate-50">
-													<td className="border border-slate-300 p-1 text-center">{idx + 1}</td>
-													<td className="border border-slate-300 p-1 text-center font-mono text-[9px] text-slate-600">
-														{it.code804n}
+									{stages.map((stage) => {
+										const displayItems = showMicroConsumables
+											? stage.items
+											: stage.items.filter((it) => !isMicroConsumable(it));
+										const microCount = stage.items.length - displayItems.length;
+
+										return (
+											<React.Fragment key={stage.stageNumber}>
+												<tr className="bg-slate-50/80 font-bold text-slate-800">
+													<td colSpan={7} className="border border-slate-300 p-1.5">
+														{stage.title} — {stage.clinicalGoal}
 													</td>
-													<td className="border border-slate-300 p-1 text-center font-bold">
-														{it.toothNumber ? `№${it.toothNumber}` : "—"}
-													</td>
-													<td className="border border-slate-300 p-1 text-slate-800">
-														{it.name}
-														{it.materials && (
-															<span className="block text-[9px] text-slate-500">
-																Материал: {it.materials}
-															</span>
-														)}
-													</td>
-													<td className="border border-slate-300 p-1 text-center">{it.quantity}</td>
-													<td className="border border-slate-300 p-1 text-right font-mono">
-														{it.unitPriceRub.toLocaleString("ru-RU")}
-													</td>
-													<td className="border border-slate-300 p-1 text-right font-mono text-slate-500">
-														{it.discountRub > 0 ? `-${it.discountRub.toLocaleString("ru-RU")}` : "0"}
-													</td>
-													<td className="border border-slate-300 p-1 text-right font-mono font-semibold text-slate-900">
-														{it.priceRub.toLocaleString("ru-RU")}
+													<td className="border border-slate-300 p-1.5 text-right font-mono">
+														{stage.totalRub.toLocaleString("ru-RU")} ₽
 													</td>
 												</tr>
-											))}
-										</React.Fragment>
-									))}
+												{displayItems.map((it, idx) => (
+													<tr key={it.id} className="hover:bg-slate-50">
+														<td className="border border-slate-300 p-1 text-center">{idx + 1}</td>
+														<td className="border border-slate-300 p-1 text-center font-mono text-[9px] text-slate-600">
+															{it.code804n}
+														</td>
+														<td className="border border-slate-300 p-1 text-center font-bold">
+															{it.toothNumber ? `№${it.toothNumber}` : "—"}
+														</td>
+														<td className="border border-slate-300 p-1 text-slate-800">
+															{it.name}
+															{it.materials && (
+																<span className="block text-[9px] text-slate-500">
+																	Материал: {it.materials}
+																</span>
+															)}
+														</td>
+														<td className="border border-slate-300 p-1 text-center">{it.quantity}</td>
+														<td className="border border-slate-300 p-1 text-right font-mono">
+															{it.unitPriceRub.toLocaleString("ru-RU")}
+														</td>
+														<td className="border border-slate-300 p-1 text-right font-mono text-slate-500">
+															{it.discountRub > 0 ? `-${it.discountRub.toLocaleString("ru-RU")}` : "0"}
+														</td>
+														<td className="border border-slate-300 p-1 text-right font-mono font-semibold text-slate-900">
+															{it.priceRub.toLocaleString("ru-RU")}
+														</td>
+													</tr>
+												))}
+												{!showMicroConsumables && microCount > 0 && (
+													<tr className="bg-slate-50/40 text-[9px] text-slate-500 italic">
+														<td className="border border-slate-300 p-1 text-center">•</td>
+														<td colSpan={6} className="border border-slate-300 p-1">
+															Индивидуальный гигиенический и асептический комплект (салфетки, валики, слюноотсос, перчатки — {microCount} наим., включено в смету этапа)
+														</td>
+														<td className="border border-slate-300 p-1 text-right font-mono">
+															Включено
+														</td>
+													</tr>
+												)}
+											</React.Fragment>
+										);
+									})}
 								</tbody>
 							</table>
 						</div>

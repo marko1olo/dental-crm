@@ -1254,30 +1254,46 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					{activeTab === "print_appendix" && (
 						<div className="treatment-appendix-print-doc" data-testid="appendix-print-document">
 							{/* Top Print Actions (hidden on print) */}
-							<div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-300 no-print">
+							<div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-300 no-print flex-wrap gap-2">
 								<div className="flex items-center gap-2 text-slate-700">
 									<FileText size={18} />
 									<span className="font-bold text-sm">
 										Официальное Приложение №1 к Договору (Постановление Правительства РФ № 736)
 									</span>
 								</div>
-								<button
-									type="button"
-									onClick={() => window.print()}
-									className="btn-treatment-action btn-patient-choice cursor-pointer"
-									data-testid="trigger-print-btn"
-								>
-									<Printer size={16} />
-									<span>Распечатать Приложение №1 (A4)</span>
-								</button>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => setShowMicroConsumables(!showMicroConsumables)}
+										className="px-3 py-1.5 rounded-lg border text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 cursor-pointer transition-colors"
+										title="Скрывать мелкие расходные материалы (салфетки, валики, слюноотсосы) для чистоты сметы"
+									>
+										{showMicroConsumables ? "Скрыть микро-расходники" : "Детализировать микро-расходники"}
+									</button>
+									<button
+										type="button"
+										onClick={() => window.print()}
+										className="btn-treatment-action btn-patient-choice cursor-pointer"
+										data-testid="trigger-print-btn"
+									>
+										<Printer size={16} />
+										<span>Печать сметы (Ctrl+P)</span>
+									</button>
+								</div>
 							</div>
 
 							{/* Document Header */}
 							<div className="treatment-appendix-header">
-								<div>Приложение № 1 к Договору № {displayContractNumber}</div>
-								<div>на оказание платных медицинских услуг от {todayRu}</div>
-								<div className="text-[9pt] text-slate-600 mt-1">
-									(В соответствии с Постановлением Правительства РФ от 11.05.2023 № 736)
+								<div>
+									<div className="font-bold text-sm uppercase">{clinicName}</div>
+									<div className="text-xs text-slate-600">
+										Лицензия: {clinicLicense}
+									</div>
+								</div>
+								<div className="text-right">
+									<div className="font-bold text-xs">ПРИЛОЖЕНИЕ № 1</div>
+									<div className="text-[10px] text-slate-600">к Договору на оказание платных медицинских услуг</div>
+									<div className="text-[10px] text-slate-600">Дата: {todayRu} г.</div>
 								</div>
 							</div>
 
@@ -1323,39 +1339,55 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									</tr>
 								</thead>
 								<tbody>
-									{selectedTier.stages.map((stage) => (
-										<React.Fragment key={stage.stageNumber}>
-											<tr style={{ background: "var(--line, #e2e8f0)", fontWeight: "bold" }}>
-												<td colSpan={7}>
-													{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
-												</td>
-												<td style={{ textAlign: "right" }}>
-													{stage.totalRub.toLocaleString("ru-RU")}
-												</td>
-											</tr>
-											{stage.items.map((it, idx) => (
-												<tr key={it.id || idx}>
-													<td style={{ textAlign: "center" }}>{idx + 1}</td>
-													<td style={{ fontFamily: "monospace", fontSize: "8.5pt" }}>{it.code804n}</td>
-													<td style={{ textAlign: "center", fontWeight: "bold" }}>{it.toothNumber || "—"}</td>
-													<td>
-														<div>{it.name}</div>
-														{it.materials && (
-															<div style={{ fontSize: "8pt", color: "var(--muted, #475569)" }}>
-																Материал: {it.materials}
-															</div>
-														)}
+									{selectedTier.stages.map((stage) => {
+										const displayItems = showMicroConsumables
+											? stage.items
+											: stage.items.filter((it) => !isMicroConsumable(it));
+										const microConsumablesCount = stage.items.length - displayItems.length;
+
+										return (
+											<React.Fragment key={stage.stageNumber}>
+												<tr style={{ background: "var(--line, #e2e8f0)", fontWeight: "bold" }}>
+													<td colSpan={7}>
+														{stage.title} (Срок: {stage.estimatedWeeks} нед., {stage.estimatedVisits} визитов)
 													</td>
-													<td style={{ textAlign: "center" }}>{it.quantity}</td>
-													<td style={{ textAlign: "right" }}>{it.unitPriceRub.toLocaleString("ru-RU")}</td>
-													<td style={{ textAlign: "right" }}>{it.discountRub.toLocaleString("ru-RU")}</td>
-													<td style={{ textAlign: "right", fontWeight: "bold" }}>
-														{it.priceRub.toLocaleString("ru-RU")}
+													<td style={{ textAlign: "right" }}>
+														{stage.totalRub.toLocaleString("ru-RU")}
 													</td>
 												</tr>
-											))}
-										</React.Fragment>
-									))}
+												{displayItems.map((it, idx) => (
+													<tr key={it.id || idx}>
+														<td style={{ textAlign: "center" }}>{idx + 1}</td>
+														<td style={{ fontFamily: "monospace", fontSize: "8.5pt" }}>{it.code804n}</td>
+														<td style={{ textAlign: "center", fontWeight: "bold" }}>{it.toothNumber || "—"}</td>
+														<td>
+															<div>{it.name}</div>
+															{it.materials && (
+																<div style={{ fontSize: "8pt", color: "var(--muted, #475569)" }}>
+																	Материал: {it.materials}
+																</div>
+															)}
+														</td>
+														<td style={{ textAlign: "center" }}>{it.quantity}</td>
+														<td style={{ textAlign: "right" }}>{it.unitPriceRub.toLocaleString("ru-RU")}</td>
+														<td style={{ textAlign: "right" }}>{it.discountRub.toLocaleString("ru-RU")}</td>
+														<td style={{ textAlign: "right", fontWeight: "bold" }}>
+															{it.priceRub.toLocaleString("ru-RU")}
+														</td>
+													</tr>
+												))}
+												{!showMicroConsumables && microConsumablesCount > 0 && (
+													<tr style={{ background: "var(--paper-soft, #f8fafc)", fontStyle: "italic", fontSize: "8pt", color: "var(--muted, #64748b)" }}>
+														<td style={{ textAlign: "center" }}>•</td>
+														<td colSpan={6}>
+															Индивидуальный гигиенический и асептический комплект (салфетки, валики, слюноотсос, перчатки — {microConsumablesCount} поз., включено в стоимость этапа)
+														</td>
+														<td style={{ textAlign: "right" }}>Включено</td>
+													</tr>
+												)}
+											</React.Fragment>
+										);
+									})}
 								</tbody>
 								<tfoot>
 									<tr style={{ fontWeight: "bold", fontSize: "10pt", background: "var(--paper-soft, #f8fafc)" }}>

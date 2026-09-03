@@ -19,6 +19,7 @@ import {
   type StageCategoryMetadata,
 } from '@dental/shared';
 import type { TreatmentPlanStage } from './types';
+import { isMicroConsumable } from './TreatmentPlanPresenterModal';
 
 export interface PhasedStageItem {
   id: string;
@@ -70,6 +71,7 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
   onPrintContract,
   className = '',
 }) => {
+  const [showMicroConsumables, setShowMicroConsumables] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<TreatmentPlanStageCategory, boolean>>({
     hygiene_sanitation: true,
     endo_therapy: true,
@@ -312,48 +314,74 @@ export const TreatmentPlanPhased4StageView: React.FC<TreatmentPlanPhased4StageVi
                         Типичные услуги этапа: {meta.typicalServicesRu.join(', ')}.
                       </div>
                     </div>
-                  ) : (
-                    <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                      {items.map((it, itemIdx) => (
-                        <div
-                          key={it.id || itemIdx}
-                          className="py-2.5 px-1 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
-                        >
-                          <div className="flex items-start gap-2 min-w-0">
-                            <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5 shrink-0">
-                              {itemIdx + 1}.
-                            </span>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)] whitespace-nowrap">
-                                  {it.code804n}
-                                </span>
-                                {it.toothNumber && (
-                                  <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 whitespace-nowrap">
-                                    Зуб №{it.toothNumber}
-                                  </span>
-                                )}
-                                <span className="font-semibold text-[var(--ink,#0f172a)] text-xs leading-snug break-words">
-                                  {it.name}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+                  ) : (() => {
+                    const displayItems = showMicroConsumables
+                      ? items
+                      : items.filter((it) => !isMicroConsumable(it));
+                    const microCount = items.length - displayItems.length;
 
-                          <div className="text-right shrink-0 font-mono">
-                            <div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] whitespace-nowrap">
-                              {it.totalPriceRub.toLocaleString('ru-RU')} ₽
-                            </div>
-                            {it.quantity > 1 && (
-                              <div className="text-[10px] text-[var(--muted,#64748b)] whitespace-nowrap">
-                                {it.quantity} шт. &times; {it.unitPriceRub.toLocaleString('ru-RU')} ₽
+                    return (
+                      <div className="space-y-2">
+                        <div className="max-h-64 sm:max-h-72 overflow-y-auto min-h-0 divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                          {displayItems.map((it, itemIdx) => (
+                            <div
+                              key={it.id || itemIdx}
+                              className="py-2.5 px-1 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft,#f8fafc)] transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+                            >
+                              <div className="flex items-start gap-2 min-w-0">
+                                <span className="font-mono text-[10px] text-[var(--muted,#64748b)] mt-0.5 shrink-0">
+                                  {itemIdx + 1}.
+                                </span>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                    <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#e2e8f0)] whitespace-nowrap">
+                                      {it.code804n}
+                                    </span>
+                                    {it.toothNumber && (
+                                      <span className="font-bold text-[11px] px-1.5 py-0.5 rounded bg-[var(--teal-soft,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30 whitespace-nowrap">
+                                        Зуб №{it.toothNumber}
+                                      </span>
+                                    )}
+                                    <span className="font-semibold text-[var(--ink,#0f172a)] text-xs leading-snug break-words">
+                                      {it.name}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                            )}
-                          </div>
+
+                              <div className="text-right shrink-0 font-mono">
+                                <div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] whitespace-nowrap">
+                                  {it.totalPriceRub.toLocaleString('ru-RU')} ₽
+                                </div>
+                                {it.quantity > 1 && (
+                                  <div className="text-[10px] text-[var(--muted,#64748b)] whitespace-nowrap">
+                                    {it.quantity} шт. &times; {it.unitPriceRub.toLocaleString('ru-RU')} ₽
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  )}
+
+                        {microCount > 0 && (
+                          <div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)] bg-[var(--paper-soft,#f8fafc)] p-2 rounded-xl border border-[var(--border,#cbd5e1)]/40">
+                            <span>
+                              {showMicroConsumables
+                                ? `Показаны микро-расходники (${microCount} поз.)`
+                                : `Скрыты микро-расходники (${microCount} поз.: салфетки, валики, слюноотсосы)`}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setShowMicroConsumables(!showMicroConsumables)}
+                              className="font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
+                            >
+                              {showMicroConsumables ? "Скрыть" : "Показать"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Stage Action Controls with Touch-Friendly Buttons */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--border,#cbd5e1)]/50 text-xs">
