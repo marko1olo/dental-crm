@@ -27,6 +27,7 @@ import { formatKopecksRu } from "@dental/shared";
 import {
 	type DentalLabFinancialGateResult,
 	createChiefDoctorOverride,
+	createDoctorClinicalOverride,
 } from "./dentalLabFinancialGateEngine";
 
 export interface DentalLabFinancialGateProps {
@@ -63,17 +64,21 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 }) => {
 	const [chiefDoctorInput, setChiefDoctorInput] = useState<string>(defaultChiefDoctorName);
 	const [overrideReason, setOverrideReason] = useState<string>(
-		"Согласовано с главным врачом клиники ввиду срочности клинического этапа",
+		"Срочно / Разрешено лечащим врачом (клиническая необходимость)",
 	);
 	const [showOverrideForm, setShowOverrideForm] = useState<boolean>(false);
 
 	if (!isOpen) return null;
 
 	const handleOverrideSubmit = () => {
-		const override = createChiefDoctorOverride(chiefDoctorInput, overrideReason);
+		const override = createDoctorClinicalOverride(
+			chiefDoctorInput || defaultChiefDoctorName || "Лечащий врач",
+			overrideReason || "Срочно / Разрешено лечащим врачом (клиническая необходимость)",
+		);
 		if (onConfirmOverride) {
 			onConfirmOverride(override);
 		}
+		if (onClose) onClose();
 	};
 
 	// ─── 1. BANNER VARIANT ───────────────────────────────────────────────────────
@@ -93,7 +98,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 			);
 		}
 
-		if (gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE") {
+		if (gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" || gateResult.gateStatus === "DOCTOR_OVERRIDE") {
 			return (
 				<div
 					className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs"
@@ -101,7 +106,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 				>
 					<ShieldCheck size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
 					<div className="flex-1 min-w-0">
-						<span className="font-bold">Одобрено Главным врачом: </span>
+						<span className="font-bold">Разрешено лечащим врачом: </span>
 						<span>{gateResult.overrideMeta?.doctorName} · {gateResult.overrideMeta?.reason}</span>
 					</div>
 				</div>
@@ -304,67 +309,29 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						</div>
 					</div>
 
-					{/* Chief Doctor Override Section */}
-					<div className="space-y-3 pt-1 border-t border-[var(--border,#cbd5e1)]">
+					{/* Doctor Clinical Override (1-Click Autonomy) */}
+					<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
 						<div className="flex items-center justify-between">
-							<span className="font-bold text-[var(--ink,#0f172a)]">
-								Отправить наряд под ответственность главврача?
-							</span>
-							<button
-								type="button"
-								onClick={() => setShowOverrideForm((prev) => !prev)}
-								className="text-xs text-[var(--teal,var(--brand-primary))] hover:underline font-semibold cursor-pointer"
-							>
-								{showOverrideForm ? "Скрыть форму" : "Разрешить отправку (Да)"}
-							</button>
-						</div>
-
-						{showOverrideForm && (
-							<div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
-								<div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold">
-									<UserCheck size={15} className="text-amber-600" />
-									<span>Авторизация Главного врача</span>
-								</div>
-
-								<div className="space-y-2">
-									<div>
-										<label className="text-[11px] text-[var(--muted,#64748b)] block mb-1">
-											ФИО Главного врача:
-										</label>
-										<input
-											type="text"
-											value={chiefDoctorInput}
-											onChange={(e) => setChiefDoctorInput(e.target.value)}
-											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] px-3 py-2 text-xs font-semibold text-[var(--ink,#0f172a)] focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
-											placeholder="ФИО Главврача..."
-										/>
-									</div>
-
-									<div>
-										<label className="text-[11px] text-[var(--muted,#64748b)] block mb-1">
-											Клиническое обоснование оверрайда:
-										</label>
-										<input
-											type="text"
-											value={overrideReason}
-											onChange={(e) => setOverrideReason(e.target.value)}
-											className="w-full rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] px-3 py-2 text-xs text-[var(--ink,#0f172a)] focus:outline-none focus:border-[var(--teal,var(--brand-primary))]"
-											placeholder="Причина отправки без аванса..."
-										/>
-									</div>
-								</div>
-
-								<button
-									type="button"
-									onClick={handleOverrideSubmit}
-									className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition cursor-pointer"
-									data-testid="lab-gate-confirm-override-btn"
-								>
-									<ShieldCheck size={15} />
-									<span>Подтвердить отправку под мою ответственность (Да)</span>
-								</button>
+							<div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-xs">
+								<Sparkles size={16} className="text-amber-600" />
+								<span>Клиническая автономия: отправка наряда без задержки</span>
 							</div>
-						)}
+							<span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
+								1 клик
+							</span>
+						</div>
+						<p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 leading-relaxed m-0">
+							Врач вправе направить наряд в ЗТЛ под личную ответственность (срочность этапа, постоянный пациент) без бюрократических задержек и согласований начмеда.
+						</p>
+						<button
+							type="button"
+							onClick={handleOverrideSubmit}
+							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 active:scale-95 text-white shadow-sm transition cursor-pointer"
+							data-testid="lab-gate-confirm-override-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>⚡ Отправить наряд в ЗТЛ («Срочно / Разрешено врачом»)</span>
+						</button>
 					</div>
 				</div>
 
@@ -386,9 +353,9 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 					<button
 						type="button"
 						onClick={() => {
-							const override = createChiefDoctorOverride(
-								chiefDoctorInput || "Лечащий врач",
-								overrideReason || "Клиническая необходимость (срочная отправка наряда врачом)",
+							const override = createDoctorClinicalOverride(
+								chiefDoctorInput || defaultChiefDoctorName || "Лечащий врач",
+								overrideReason || "Срочно / Разрешено лечащим врачом (клиническая необходимость)",
 							);
 							if (onConfirmOverride) onConfirmOverride(override);
 							if (onClose) onClose();

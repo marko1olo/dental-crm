@@ -159,6 +159,13 @@ export const CONSTRUCTION_TYPES = [
 		icon: "endocrown",
 		category: "Микропротезирование",
 	},
+	{
+		id: "core_buildup_post",
+		name: "Культевая вкладка (Штифтовая)",
+		desc: "Разборная или неразборная культевая штифтовая вкладка (КХС / оксид циркония)",
+		icon: "post",
+		category: "Несъемное",
+	},
 ] as const;
 
 export const MATERIALS = [
@@ -231,6 +238,16 @@ export const MATERIALS = [
 		costTier: "Стандарт",
 		baseCostKopecks: 300000,
 		unitCostRub: 3000,
+	},
+	{
+		id: "cobalt_chrome_cocr",
+		name: "Кобальт-хромовый сплав CoCr (КХС литой / фрезерованный)",
+		desc: "Высокопрочный литейный сплав CoCr для штифтовых культевых вкладок и каркасов",
+		category: "Металл",
+		tag: "Стандарт",
+		costTier: "Стандарт",
+		baseCostKopecks: 250000,
+		unitCostRub: 2500,
 	},
 ] as const;
 
@@ -556,6 +573,103 @@ export function calculateMaterialTotalCostKopecks(materialId: string, teethCount
 	const unitKopecks = (mat as any)?.baseCostKopecks ?? 650000;
 	return unitKopecks * count;
 }
+
+/**
+ * Adds specified number of working business days (skipping Saturday and Sunday)
+ * for dental lab orders per standard clinical protocol (+7 working days).
+ */
+export function addWorkingDays(startDate: Date, workingDays = 7): Date {
+	const result = new Date(startDate);
+	let added = 0;
+	while (added < workingDays) {
+		result.setDate(result.getDate() + 1);
+		const day = result.getDay();
+		if (day !== 0 && day !== 6) {
+			added++;
+		}
+	}
+	return result;
+}
+
+/**
+ * Default standard parameters for 1-click lab order creation per Mandate 8e / Section VII:
+ * Zirconia crown / E.max, VITA shade A2, +7 business days deadline.
+ */
+export const ONE_CLICK_LAB_DEFAULTS = {
+	materialId: "zirconia_multilayer",
+	materialName: "Диоксид циркония Katana ML / E.max",
+	colorVita: "A2",
+	workingDays: 7,
+	translucency: "HT",
+	cementGapMicrons: 30,
+	shadeSystem: "classical" as const,
+	restorationTypeSingle: "single_crown",
+	restorationTypeBridge: "bridge",
+};
+
+export interface ExpressLabPreset {
+	id: string;
+	title: string;
+	shortDesc: string;
+	constructionType: string;
+	materialId: string;
+	colorVita: string;
+	workingDays: number;
+	priceRub: number;
+	occlusalScheme: string;
+	contactTightness: string;
+	surfaceTexture: string;
+	cementGapMicrons: number;
+	badge: string;
+}
+
+export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
+	{
+		id: "zirconia_a2",
+		title: "Циркониевая коронка A2 (7 дней)",
+		shortDesc: "Диоксид циркония Multi-layer, цвет VITA A2, срок 7 рабочих дней",
+		constructionType: "single_crown",
+		materialId: "zirconia_multilayer",
+		colorVita: "A2",
+		workingDays: 7,
+		priceRub: 6500,
+		occlusalScheme: "mutually_protected",
+		contactTightness: "normal",
+		surfaceTexture: "natural_anatomy",
+		cementGapMicrons: 30,
+		badge: "Топ выбор",
+	},
+	{
+		id: "pmma_temp",
+		title: "Временная PMMA (2 дня)",
+		shortDesc: "Фрезерованная провизорная пластмасса CAD/CAM, цвет VITA A2, срок 2 дня",
+		constructionType: "single_crown",
+		materialId: "pmma_temporary",
+		colorVita: "A2",
+		workingDays: 2,
+		priceRub: 1500,
+		occlusalScheme: "group_function",
+		contactTightness: "normal",
+		surfaceTexture: "smooth",
+		cementGapMicrons: 40,
+		badge: "Срочно",
+	},
+	{
+		id: "core_post_cocr",
+		title: "Культевая вкладка КХС (3 дня)",
+		shortDesc: "Штифтовая культевая вкладка CoCr (КХС) под коронку, срок 3 дня",
+		constructionType: "core_buildup_post",
+		materialId: "cobalt_chrome_cocr",
+		colorVita: "A2",
+		workingDays: 3,
+		priceRub: 2500,
+		occlusalScheme: "group_function",
+		contactTightness: "normal",
+		surfaceTexture: "smooth",
+		cementGapMicrons: 50,
+		badge: "База",
+	},
+];
 
 // ─── LAB ORDER TO SCHEDULE SLOT PLANNING HELPER ───────────────────────────────
 

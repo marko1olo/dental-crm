@@ -19,6 +19,7 @@ import {
 	Sparkles,
 	Trash2,
 	X,
+	Zap,
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders, money } from "../AppHelpers";
 import { showToast } from "./GlobalToast";
@@ -39,6 +40,10 @@ import {
 	SHADE_SWATCH_MAP,
 	STUMP_NATURAL_DIE_SHADES,
 	calculateMaterialTotalCostKopecks,
+	addWorkingDays,
+	ONE_CLICK_LAB_DEFAULTS,
+	EXPRESS_LAB_PRESETS,
+	type ExpressLabPreset,
 } from "./lab/labMath";
 import { useOptionalAppLogicContext } from "../contexts/AppLogicContext";
 import "./LabOrdersPanel.css";
@@ -178,6 +183,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 
 	useEffect(() => {
 		fetchOrders();
+		const handleRefresh = () => {
+			void fetchOrders();
+		};
+		window.addEventListener("dente-lab-order-created", handleRefresh);
+		return () => {
+			window.removeEventListener("dente-lab-order-created", handleRefresh);
+		};
 	}, [fetchOrders]);
 
 	const toggleTooth = (tooth: number) => {
@@ -279,7 +291,6 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 	};
 
 	const handleDeleteOrder = async (id: string) => {
-		if (!window.confirm("Удалить заказ зуботехнической лаборатории?")) return;
 		try {
 			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
 				method: "DELETE",
@@ -311,12 +322,14 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		setSubmitting(true);
 		try {
 			const isBridge = restorationType === "bridge" && selectedTeeth.length > 1;
-			const toothFdiStr = isBridge
-				? `${selectedTeeth[0]}–${selectedTeeth[selectedTeeth.length - 1]} (мост, ${selectedTeeth.length} ед.: ${selectedTeeth.join(", ")})`
-				: selectedTeeth.join(", ");
+			const toothFdiStr = selectedTeeth.join(", ");
+			const bridgeNote = isBridge
+				? `Мостовидный протез (${selectedTeeth.length} ед.: ${selectedTeeth.join("-")})`
+				: null;
 
 			const fullNotes = [
 				clinicalNotes,
+				bridgeNote,
 				`Шкала: ${shadeSystem === "3d_master" ? "VITA 3D-Master" : shadeSystem === "bleach" ? "Bleach" : "VITA Classical"}`,
 				stumpShade ? `Культя: ${stumpShade}` : null,
 				`Зазор: ${cementGap} мкм`,
@@ -402,6 +415,204 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 		}
 	};
 
+	const handleOneClickCreate = async (teethOverride?: number[]) => {
+		if (!patientId) {
+			showToast("ID пациента обязателен", "error");
+			return;
+		}
+
+		const targetTeeth =
+			teethOverride && teethOverride.length > 0
+				? teethOverride
+				: selectedTeeth.length > 0
+					? selectedTeeth
+					: [21];
+
+		setSubmitting(true);
+		try {
+			const isBridge = targetTeeth.length > 1;
+			const toothFdiStr = targetTeeth.join(", ");
+			const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
+			const dueDateIso = due.toISOString();
+			const dueDateFormatted = due.toLocaleDateString("ru-RU");
+			const finalPriceRub =
+				calculateMaterialTotalCostKopecks(ONE_CLICK_LAB_DEFAULTS.materialId, targetTeeth.length) / 100;
+
+			const fullNotes = [
+				"• 1-клик наряд ЗТЛ: Коронка (диоксид циркония Katana ML / E.max)",
+				`• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}`,
+				`• Расцветка: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}`,
+				`• Срок изготовления: 7 рабочих дней (до ${dueDateFormatted})`,
+				`• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
+			].join("\n");
+
+			const res = await fetch("/api/clinical/lab-orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					doctorId: appLogic?.activeDoctor?.id || null,
+					toothFdi: toothFdiStr,
+					material: ONE_CLICK_LAB_DEFAULTS.materialName,
+					colorVita: ONE_CLICK_LAB_DEFAULTS.colorVita,
+					dueDate: dueDateIso,
+					clinicalNotes: fullNotes,
+					priceRub: finalPriceRub,
+				}),
+			});
+
+			if (!res.ok) {
+				const errorData = await res.json().catch(() => ({}));
+				throw new Error(errorData.message || "Не удалось создать наряд в ЗТЛ");
+			}
+
+			const createdOrder = await res.json();
+
+			if (targetTeeth.length > 0 && createdOrder?.id) {
+				for (const tooth of targetTeeth) {
+					try {
+						await fetch(`/api/clinical/lab-orders/${createdOrder.id}/items`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({
+								toothFdi: tooth,
+								restorationType: isBridge ? "bridge" : "single_crown",
+								material: ONE_CLICK_LAB_DEFAULTS.materialId,
+								shadeFinal: ONE_CLICK_LAB_DEFAULTS.colorVita,
+								translucencyLevel: ONE_CLICK_LAB_DEFAULTS.translucency,
+								cementGapMicrons: ONE_CLICK_LAB_DEFAULTS.cementGapMicrons,
+								priceRub: finalPriceRub / targetTeeth.length,
+							}),
+						});
+					} catch {
+						// Non-blocking item fallback
+					}
+				}
+			}
+
+			showToast(
+				`Наряд ЗТЛ успешно оформлен в 1 клик для зубов ${toothFdiStr} (Цирконий A2, срок до ${dueDateFormatted})!`,
+				"success",
+				6000,
+			);
+			setShowQuickForm(false);
+			setSelectedTeeth([]);
+			await fetchOrders();
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", { detail: { order: createdOrder } }),
+			);
+		} catch (err: any) {
+			showToast(err.message || "Ошибка создания наряда в ЗТЛ", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleExpressPresetCreate = async (preset: ExpressLabPreset, teethOverride?: number[]) => {
+		if (!patientId) {
+			showToast("ID пациента обязателен", "error");
+			return;
+		}
+
+		const targetTeeth =
+			teethOverride && teethOverride.length > 0
+				? teethOverride
+				: selectedTeeth.length > 0
+					? selectedTeeth
+					: [21];
+
+		setSubmitting(true);
+		try {
+			const isBridge = targetTeeth.length > 1;
+			const toothFdiStr = targetTeeth.join(", ");
+			const due = addWorkingDays(new Date(), preset.workingDays);
+			const dueDateIso = due.toISOString();
+			const dueDateFormatted = due.toLocaleDateString("ru-RU");
+			const finalPriceRub = preset.priceRub * targetTeeth.length;
+
+			const fullNotes = [
+				`• 1-клик экспресс-наряд ЗТЛ: ${preset.title}`,
+				`• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : preset.shortDesc}`,
+				`• Расцветка: VITA Classical ${preset.colorVita}`,
+				`• Срок изготовления: ${preset.workingDays} рабочих дней (до ${dueDateFormatted})`,
+				`• Цементный зазор: ${preset.cementGapMicrons} мкм`,
+			].join("\n");
+
+			const matObj = MATERIALS.find((m) => m.id === preset.materialId);
+
+			const res = await fetch("/api/clinical/lab-orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					doctorId: appLogic?.activeDoctor?.id || null,
+					toothFdi: toothFdiStr,
+					material: matObj?.name || preset.materialId,
+					colorVita: preset.colorVita,
+					dueDate: dueDateIso,
+					clinicalNotes: fullNotes,
+					priceRub: finalPriceRub,
+				}),
+			});
+
+			if (!res.ok) {
+				const errorData = await res.json().catch(() => ({}));
+				throw new Error(errorData.message || "Не удалось создать наряд в ЗТЛ");
+			}
+
+			const createdOrder = await res.json();
+
+			if (targetTeeth.length > 0 && createdOrder?.id) {
+				for (const tooth of targetTeeth) {
+					try {
+						await fetch(`/api/clinical/lab-orders/${createdOrder.id}/items`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({
+								toothFdi: tooth,
+								restorationType: isBridge ? "bridge" : preset.constructionType,
+								material: preset.materialId,
+								shadeFinal: preset.colorVita,
+								cementGapMicrons: preset.cementGapMicrons,
+								priceRub: finalPriceRub / targetTeeth.length,
+							}),
+						});
+					} catch {
+						// Item attachment non-blocking
+					}
+				}
+			}
+
+			showToast(
+				`⚡ Наряд «${preset.title}» оформлен в 1 клик для зубов ${toothFdiStr} (срок до ${dueDateFormatted})!`,
+				"success",
+				6000,
+			);
+			setShowQuickForm(false);
+			setSelectedTeeth([]);
+			await fetchOrders();
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", { detail: { order: createdOrder } }),
+			);
+		} catch (err: any) {
+			showToast(err.message || "Ошибка создания наряда в ЗТЛ", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
 	return (
 		<div className="lab-orders-panel">
 			{/* Dense Header & 32px Toolbar */}
@@ -424,6 +635,48 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						title="Обновить список"
 					>
 						<RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[var(--teal)]" : ""}`} />
+					</button>
+
+					<button
+						type="button"
+						onClick={() => void handleOneClickCreate()}
+						disabled={submitting}
+						className="lab-btn-32 bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20 font-bold"
+						title="Создать наряд ЗТЛ в 1 клик: Коронка цирконий/E.max, цвет VITA A2, срок 7 рабочих дней"
+						data-testid="lab-order-one-click-btn"
+					>
+						<Zap className="w-3.5 h-3.5 text-amber-500" />
+						<span>⚡ Цирконий A2 (7 дн.)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							const pmma = EXPRESS_LAB_PRESETS.find((p) => p.id === "pmma_temp");
+							if (pmma) void handleExpressPresetCreate(pmma);
+						}}
+						disabled={submitting}
+						className="lab-btn-32 bg-teal-500/10 text-teal-800 dark:text-teal-200 border-teal-500/30 hover:bg-teal-500/20 font-bold"
+						title="Создать наряд в 1 клик: Временная PMMA CAD/CAM, срок 2 рабочих дня"
+						data-testid="lab-order-preset-pmma-btn"
+					>
+						<Zap className="w-3.5 h-3.5 text-teal-500" />
+						<span>⚡ Временная PMMA (2 дн.)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							const corePost = EXPRESS_LAB_PRESETS.find((p) => p.id === "core_post_cocr");
+							if (corePost) void handleExpressPresetCreate(corePost);
+						}}
+						disabled={submitting}
+						className="lab-btn-32 bg-slate-500/10 text-slate-800 dark:text-slate-200 border-slate-500/30 hover:bg-slate-500/20 font-bold"
+						title="Создать наряд в 1 клик: Культевая вкладка КХС (CoCr), срок 3 рабочих дня"
+						data-testid="lab-order-preset-core-post-btn"
+					>
+						<Zap className="w-3.5 h-3.5 text-slate-500" />
+						<span>⚡ Вкладка КХС (3 дн.)</span>
 					</button>
 
 					<button
@@ -763,22 +1016,35 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						</div>
 					</div>
 
-					<div className="flex justify-end gap-2 pt-1">
+					<div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
 						<button
 							type="button"
-							onClick={() => setShowQuickForm(false)}
-							className="lab-btn-32"
-						>
-							Отмена
-						</button>
-						<button
-							type="submit"
+							onClick={() => void handleOneClickCreate()}
 							disabled={submitting}
-							className="lab-btn-32 is-primary"
+							className="lab-btn-32 bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20 font-bold"
+							title="1-клик быстрое оформление с дефолтными параметрами: Диоксид циркония, цвет VITA A2, срок 7 раб. дней"
 						>
-							<Send className="w-3.5 h-3.5" />
-							{submitting ? "Оформление..." : "Отправить наряд в ЗТЛ"}
+							<Zap className="w-3.5 h-3.5 text-amber-500" />
+							<span>⚡ 1-клик: Цирконий VITA A2 (+7 раб. дн.)</span>
 						</button>
+
+						<div className="flex gap-2 ml-auto">
+							<button
+								type="button"
+								onClick={() => setShowQuickForm(false)}
+								className="lab-btn-32"
+							>
+								Отмена
+							</button>
+							<button
+								type="submit"
+								disabled={submitting}
+								className="lab-btn-32 is-primary"
+							>
+								<Send className="w-3.5 h-3.5" />
+								{submitting ? "Оформление..." : "Отправить наряд в ЗТЛ"}
+							</button>
+						</div>
 					</div>
 				</form>
 			)}

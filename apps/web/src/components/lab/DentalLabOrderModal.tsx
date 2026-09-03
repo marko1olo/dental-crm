@@ -13,7 +13,9 @@ import {
 	Printer,
 	QrCode,
 	Send,
+	Sparkles,
 	X,
+	Zap,
 } from "lucide-react";
 import { denteAdminSecretRequestHeaders, money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
@@ -46,6 +48,10 @@ import {
 	generateBarcodeSvg,
 	generateQrCodeSvg,
 	formatGostOrderNumber,
+	addWorkingDays,
+	ONE_CLICK_LAB_DEFAULTS,
+	EXPRESS_LAB_PRESETS,
+	type ExpressLabPreset,
 } from "./labMath";
 import { rublesToKopecks } from "@dental/shared";
 import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
@@ -251,6 +257,42 @@ export function DentalLabOrderModal({
 		setDoctorSharePct(doctor);
 	};
 
+	const handleApplyOneClickDefaults = () => {
+		setMaterial(ONE_CLICK_LAB_DEFAULTS.materialId);
+		setShadeSystem(ONE_CLICK_LAB_DEFAULTS.shadeSystem);
+		setShadeClassical(ONE_CLICK_LAB_DEFAULTS.colorVita);
+		setShadeBody(ONE_CLICK_LAB_DEFAULTS.colorVita);
+		setCementGapMicrons(ONE_CLICK_LAB_DEFAULTS.cementGapMicrons);
+		setTranslucency(ONE_CLICK_LAB_DEFAULTS.translucency);
+		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
+		setDueDate(due.toISOString().slice(0, 10));
+		showToast(
+			`Применены дефолты ЗТЛ: ${ONE_CLICK_LAB_DEFAULTS.materialName}, цвет VITA ${ONE_CLICK_LAB_DEFAULTS.colorVita}, срок 7 раб. дн. (до ${due.toLocaleDateString("ru-RU")})`,
+			"info",
+			4000,
+		);
+	};
+
+	const handleApplyExpressPreset = (preset: ExpressLabPreset) => {
+		setConstructionType(preset.constructionType);
+		setMaterial(preset.materialId);
+		setShadeSystem("classical");
+		setShadeClassical(preset.colorVita);
+		setShadeBody(preset.colorVita);
+		setOcclusalScheme(preset.occlusalScheme);
+		setContactTightness(preset.contactTightness);
+		setSurfaceTexture(preset.surfaceTexture);
+		setCementGapMicrons(preset.cementGapMicrons);
+		const due = addWorkingDays(new Date(), preset.workingDays);
+		setDueDate(due.toISOString().slice(0, 10));
+		setCustomLabPriceRub(preset.priceRub);
+		showToast(
+			`⚡ Пресет применен: ${preset.title} (${preset.shortDesc})`,
+			"success",
+			4000,
+		);
+	};
+
 	// ─── DENTAL LAB FINANCIAL GATE ──────────────────────────────────────────────
 	const financialGateResult = useMemo(() => {
 		const stageTotalKopecks = rublesToKopecks(stageTotalRub ?? totalLabPriceRub);
@@ -265,6 +307,7 @@ export function DentalLabOrderModal({
 			labOrderPriceKopecks: orderPriceKopecks,
 			minAdvancePercent: 50,
 			chiefDoctorOverride: gateOverride ?? undefined,
+			doctorOverride: gateOverride ?? undefined,
 		});
 	}, [stageTotalRub, totalLabPriceRub, stagePaidRub, patientDepositRub, gateOverride]);
 
@@ -481,6 +524,16 @@ export function DentalLabOrderModal({
 					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 						<button
 							type="button"
+							onClick={handleApplyOneClickDefaults}
+							className="min-h-[44px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
+							title="1-клик дефолты ЗТЛ: Диоксид циркония / E.max, цвет VITA A2, срок 7 рабочих дней"
+							data-testid="lab-order-apply-defaults-btn"
+						>
+							<Sparkles className="w-4 h-4 text-amber-500" />
+							<span className="hidden sm:inline">⚡ Дефолты (Цирконий A2, +7 дн.)</span>
+						</button>
+						<button
+							type="button"
 							onClick={handlePrint}
 							className="min-h-[44px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shadow-sm shrink-0"
 							title="Печать наряда (ГОСТ)"
@@ -498,6 +551,32 @@ export function DentalLabOrderModal({
 							<X className="w-5 h-5 sm:w-6 sm:h-6" />
 						</button>
 					</div>
+				</div>
+
+				{/* ─── 1-CLICK EXPRESS PRESETS BAR (Mandate 8e: Fast Orthopedic Workflow) ─── */}
+				<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex-wrap">
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="text-xs font-black text-amber-900 dark:text-amber-200 flex items-center gap-1 mr-1">
+							<Sparkles size={14} className="text-amber-500" />
+							<span>Экспресс 1-клик:</span>
+						</span>
+						{EXPRESS_LAB_PRESETS.map((preset) => (
+							<button
+								key={preset.id}
+								type="button"
+								onClick={() => handleApplyExpressPreset(preset)}
+								className="min-h-[36px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation"
+								title={preset.shortDesc}
+								data-testid={`lab-preset-btn-${preset.id}`}
+							>
+								<Zap size={13} className="text-amber-500 shrink-0" />
+								<span>{preset.title}</span>
+							</button>
+						))}
+					</div>
+					<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium hidden md:inline">
+						💡 1 клик заполняет конструкцию, материал, цвет A2, сроки и нормальную анатомию
+					</span>
 				</div>
 
 				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}

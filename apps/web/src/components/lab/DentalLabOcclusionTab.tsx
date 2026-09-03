@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Sparkles } from "lucide-react";
 import {
 	OCCLUSAL_SCHEMES,
 	CONTACT_TIGHTNESS_OPTIONS,
@@ -35,10 +35,38 @@ export function DentalLabOcclusionTab({
 }: DentalLabOcclusionTabProps) {
 	return (
 		<div className="space-y-6">
+			{/* Quick Clinical Norm Preset (Doctor Ergonomics) */}
+			<div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-950 dark:text-emerald-100 flex-wrap">
+				<div className="flex items-center gap-2">
+					<Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<div>
+						<span className="text-xs font-bold block">
+							Анатомическая норма (Стандарт ортопедии)
+						</span>
+						<span className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80">
+							Взаимно-защищенная окклюзия, нормальный контакт (50 мкм), естественная текстура, зазор 30 мкм
+						</span>
+					</div>
+				</div>
+				<button
+					type="button"
+					onClick={() => {
+						setOcclusalScheme("mutually_protected");
+						setContactTightness("normal");
+						setSurfaceTexture("natural_anatomy");
+						setCementGapMicrons(30);
+					}}
+					className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+					title="Применить стандартные физиологические параметры в 1 клик"
+				>
+					⚡ Вся анатомическая норма (1 клик)
+				</button>
+			</div>
+
 			{/* Occlusal Scheme */}
 			<div className="space-y-3">
 				<label className="block text-sm font-bold text-[var(--ink)]">
-					Окклюзионная концепция & Биомеханика
+					Окклюзионная концепция & Контакты
 				</label>
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 					{OCCLUSAL_SCHEMES.map((scheme) => {
