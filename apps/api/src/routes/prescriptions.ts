@@ -1,15 +1,15 @@
 import {
 	CONTROLLED_DRUG_PRESETS,
+	calculatePrescriptionExpiration,
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
+	form107_1uPayloadSchema,
+	form148_1u04lPayloadSchema,
+	form148_1u88PayloadSchema,
 	PREFERENTIAL_BENEFIT_CATEGORIES,
 	PREFERENTIAL_DRUG_PRESETS,
 	PRESCRIPTION_ADMINISTRATION_ROUTES_CATALOG,
 	PRESCRIPTION_DOSAGE_FORMS_CATALOG,
 	PRESCRIPTION_VALIDITY_RULES,
-	calculatePrescriptionExpiration,
-	form107_1uPayloadSchema,
-	form148_1u04lPayloadSchema,
-	form148_1u88PayloadSchema,
 	prescriptionDoctorUkepSchema,
 	renderPrescriptionUniversalHtml,
 	verifyPrescriptionStatutoryValidity,
@@ -29,23 +29,38 @@ import {
 	patients,
 	users,
 } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 /** Schema for creating a prescription through the statutory API */
 const createPrescriptionBodySchema = z.object({
 	patientId: z.string().uuid(),
 	visitId: z.string().uuid().optional().nullable(),
 	prescribingDoctorId: z.string().uuid(),
-	formType: z.enum(["form_107_1_u", "form_148_1_u_88", "form_148_1_u_04_l"]).default("form_107_1_u"),
-	validityPeriod: z.enum(["days_15", "days_30", "days_60", "year_1"]).default("days_60"),
+	formType: z
+		.enum(["form_107_1_u", "form_148_1_u_88", "form_148_1_u_04_l"])
+		.default("form_107_1_u"),
+	validityPeriod: z
+		.enum(["days_15", "days_30", "days_60", "year_1"])
+		.default("days_60"),
 	isSpecialChronicIndication: z.boolean().default(false),
 	chronicDispenseFrequencyNotes: z.string().max(120).optional().nullable(),
 	patientAddress: z.string().max(240).optional().nullable(),
 	preferentialBenefitCode: z.string().max(16).optional().nullable(),
 	preferentialBenefitNameRu: z.string().max(160).optional().nullable(),
-	preferentialDiscountPercent: z.number().int().min(0).max(100).optional().nullable(),
+	preferentialDiscountPercent: z
+		.number()
+		.int()
+		.min(0)
+		.max(100)
+		.optional()
+		.nullable(),
 	patientSnils: z.string().max(32).optional().nullable(),
 	patientOmsPolicy: z.string().max(32).optional().nullable(),
-	fundingSource: z.enum(["federal", "regional", "municipal"]).default("federal"),
+	fundingSource: z
+		.enum(["federal", "regional", "municipal"])
+		.default("federal"),
 	clinicalDiagnosisMkb10: z.string().max(32).optional().nullable(),
 	clinicalDiagnosisDescription: z.string().max(500).optional().nullable(),
 	notes: z.string().max(500).optional().nullable(),
@@ -62,7 +77,9 @@ const createPrescriptionBodySchema = z.object({
 				quantityPackages: z.number().int().min(1).default(1),
 				durationDays: z.number().int().min(1).default(7),
 				frequencyTimesPerDay: z.number().int().min(1).default(2),
-				mealRelation: z.enum(["before_meal", "with_meal", "after_meal", "independent"]).default("after_meal"),
+				mealRelation: z
+					.enum(["before_meal", "with_meal", "after_meal", "independent"])
+					.default("after_meal"),
 			}),
 		)
 		.min(1)
@@ -156,6 +173,29 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ: Реестр рецептов содержит врачебную тайну и ПДн специальной категории
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.prescription.read",
+				role: staffRole,
+				message:
+					"Доступ к реестру электронных рецептов ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+			});
+		}
+
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			action: "VIEW_PRESCRIPTIONS",
+			diagnosis: "Реестр электронных рецептов",
+		});
+
 		const query = request.query as {
 			patientId?: string;
 			visitId?: string;
@@ -198,6 +238,23 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ: Электронный рецепт содержит врачебную тайну (диагноз, схема препаратов)
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.prescription.read",
+				role: staffRole,
+				message:
+					"Доступ к электронному рецепту ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+			});
+		}
+
 		const { id } = request.params as { id: string };
 
 		const [prescription] = await db
@@ -218,6 +275,14 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId: prescription.patientId,
+			action: "VIEW_PRESCRIPTION_DETAILS",
+			diagnosis: prescription.clinicalDiagnosisMkb10 ?? "Электронный рецепт",
+			metadata: { prescriptionId: prescription.id },
+		});
+
 		const items = await db
 			.select()
 			.from(electronicPrescriptionItems)
@@ -231,8 +296,17 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 
 		const validityCheck = verifyPrescriptionStatutoryValidity({
 			formType: prescription.formType,
-			prescriptionDate: prescription.issuedAt?.toISOString().slice(0, 10) || prescription.createdAt.toISOString().slice(0, 10),
-			validityDays: prescription.validityPeriod === "days_15" ? 15 : prescription.validityPeriod === "days_30" ? 30 : prescription.validityPeriod === "year_1" ? 365 : 60,
+			prescriptionDate:
+				prescription.issuedAt?.toISOString().slice(0, 10) ||
+				prescription.createdAt.toISOString().slice(0, 10),
+			validityDays:
+				prescription.validityPeriod === "days_15"
+					? 15
+					: prescription.validityPeriod === "days_30"
+						? 30
+						: prescription.validityPeriod === "year_1"
+							? 365
+							: 60,
 			isChronicSpecialCare: prescription.isSpecialChronicIndication,
 			chronicPeriodicity: prescription.chronicDispenseFrequencyNotes,
 			items: items.map((i) => ({ latinName: i.innLatin })),
@@ -257,6 +331,23 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			"create prescription",
 		);
 		if (!orgId) return;
+
+		// 152-ФЗ, 323-ФЗ и Приказ Минздрава 1094н: Назначение лекарственных препаратов и оформление рецептов разрешено только лечащему врачу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.prescription.write",
+				role: staffRole,
+				message:
+					"Оформление электронных рецептов ограничено Приказом Минздрава 1094н и 323-ФЗ: требуются права врача.",
+			});
+		}
 
 		const parsed = createPrescriptionBodySchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -287,13 +378,19 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const adminProfile = (patient.administrativeProfile || {}) as Record<string, unknown>;
+		const adminProfile = (patient.administrativeProfile || {}) as Record<
+			string,
+			unknown
+		>;
 		const isAnonPatient =
 			Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
 			Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
 			adminProfile["isAnonymous"] === true;
 
-		if (isAnonPatient && (input.patientOmsPolicy || input.preferentialBenefitCode)) {
+		if (
+			isAnonPatient &&
+			(input.patientOmsPolicy || input.preferentialBenefitCode)
+		) {
 			return reply.code(422).send({
 				error: "Decree659OmsForbiddenError",
 				message:
@@ -330,7 +427,10 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 						: 60;
 
 		const now = new Date();
-		const expiresAtIso = calculatePrescriptionExpiration(now.toISOString().slice(0, 10), validityDaysNum);
+		const expiresAtIso = calculatePrescriptionExpiration(
+			now.toISOString().slice(0, 10),
+			validityDaysNum,
+		);
 		const expiresAt = new Date(expiresAtIso);
 
 		// Generate series & statutory prescription number
@@ -357,25 +457,32 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 					prescriptionSeries: prefix,
 					prescriptionNumber,
 					formType: input.formType,
-					status: input.ukepSignature?.cryptoSignaturePkcs7 ? "signed" : "issued",
+					status: input.ukepSignature?.cryptoSignaturePkcs7
+						? "signed"
+						: "issued",
 					validityPeriod: input.validityPeriod,
 					isSpecialChronicIndication: input.isSpecialChronicIndication,
-					chronicDispenseFrequencyNotes: input.chronicDispenseFrequencyNotes || null,
+					chronicDispenseFrequencyNotes:
+						input.chronicDispenseFrequencyNotes || null,
 					patientFullName: patient.fullName,
 					patientBirthDate: patient.birthDate || "1990-01-01",
 					patientCardNumber: `043/у-${patient.id.slice(-6).toUpperCase()}`,
 					doctorFullName: doctor.fullName,
 					clinicalDiagnosisMkb10: input.clinicalDiagnosisMkb10 || null,
-					clinicalDiagnosisDescription: input.clinicalDiagnosisDescription || null,
+					clinicalDiagnosisDescription:
+						input.clinicalDiagnosisDescription || null,
 					safetyAuditPassed: true,
-					cryptoSignaturePkcs7: input.ukepSignature?.cryptoSignaturePkcs7 || null,
+					cryptoSignaturePkcs7:
+						input.ukepSignature?.cryptoSignaturePkcs7 || null,
 					issuedAt: now,
 					expiresAt,
 				})
 				.returning();
 
 			if (!presc) {
-				throw new Error("Не удалось сохранить электронный рецепт в базе данных.");
+				throw new Error(
+					"Не удалось сохранить электронный рецепт в базе данных.",
+				);
 			}
 
 			// Insert items
@@ -402,6 +509,19 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			return presc;
 		});
 
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId: created.patientId,
+			action: "CREATE_PRESCRIPTION",
+			diagnosis:
+				created.clinicalDiagnosisMkb10 ?? "Назначение лекарственных препаратов",
+			metadata: {
+				prescriptionId: created.id,
+				prescriptionNumber: created.prescriptionNumber,
+				formType: created.formType,
+			},
+		});
+
 		return reply.code(201).send({
 			success: true,
 			prescription: created,
@@ -421,6 +541,23 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			"sign prescription ukep",
 		);
 		if (!orgId) return;
+
+		// 63-ФЗ, 323-ФЗ и Приказ Минздрава 1094н: Подписание рецепта УКЭП разрешено только врачу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.prescription.sign_ukep",
+				role: staffRole,
+				message:
+					"Подписание электронных рецептов УКЭП ограничено 63-ФЗ, 323-ФЗ и Приказом Минздрава 1094н: требуются права врача.",
+			});
+		}
 
 		const { id } = request.params as { id: string };
 		const parsedBody = signUkepBodySchema.safeParse(request.body);
@@ -466,7 +603,8 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const currentSnapshot = (doc.safetyAuditSnapshotJson as Record<string, any>) || {};
+		const currentSnapshot =
+			(doc.safetyAuditSnapshotJson as Record<string, any>) || {};
 		const ukepSignatureMeta = {
 			certificateSerialNumber:
 				parsedBody.data.certificateSerialNumber ||
@@ -569,7 +707,9 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 
 		const validation = verifyPrescriptionStatutoryValidity({
 			formType: presc.formType,
-			prescriptionDate: presc.issuedAt?.toISOString().slice(0, 10) || presc.createdAt.toISOString().slice(0, 10),
+			prescriptionDate:
+				presc.issuedAt?.toISOString().slice(0, 10) ||
+				presc.createdAt.toISOString().slice(0, 10),
 			validityDays: validityDaysNum,
 			isChronicSpecialCare: presc.isSpecialChronicIndication,
 			chronicPeriodicity: presc.chronicDispenseFrequencyNotes,
@@ -594,6 +734,23 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ ст. 13: Печать официального рецептурного бланка разрешена только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.prescription.print_html",
+				role: staffRole,
+				message:
+					"Печать официального рецептурного бланка ограничена 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+			});
+		}
+
 		const { id } = request.params as { id: string };
 
 		const [presc] = await db
@@ -613,6 +770,14 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 				message: "Рецепт не найден.",
 			});
 		}
+
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			patientId: presc.patientId,
+			action: "PRINT_PRESCRIPTION",
+			diagnosis: presc.clinicalDiagnosisMkb10 ?? "Печать рецептурного бланка",
+			metadata: { prescriptionId: presc.id },
+		});
 
 		const [[org], [patient], items] = await Promise.all([
 			db

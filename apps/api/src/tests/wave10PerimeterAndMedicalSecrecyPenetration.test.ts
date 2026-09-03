@@ -27,8 +27,11 @@ import {
 	visits,
 } from "../db/schema.js";
 import { registerChatRoutes } from "../routes/chat.js";
+import { registerClinicalRoutes } from "../routes/clinical.js";
+import { registerDicomwebRoutes } from "../routes/dicomweb.js";
 import { registerDocumentRoutes } from "../routes/documents.js";
 import { registerFilesRoutes } from "../routes/files.js";
+import { registerPrescriptionRoutes } from "../routes/prescriptions.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { registerMedicalSecrecyPayloadStripping } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
@@ -75,6 +78,9 @@ test("RED-TEAM HAMMER: WAVE 10 — Perimeter & Medical Secrecy 152-FZ / 323-FZ P
 		await registerChatRoutes(app);
 		await registerFilesRoutes(app);
 		await registerDocumentRoutes(app);
+		await registerPrescriptionRoutes(app);
+		await registerDicomwebRoutes(app);
+		await registerClinicalRoutes(app);
 		await app.ready();
 
 		const secret = authTokenSecret();
@@ -447,5 +453,157 @@ test("RED-TEAM HAMMER: WAVE 10 — Perimeter & Medical Secrecy 152-FZ / 323-FZ P
 			// cleanup
 			fakePatientWs.readyState = 3;
 		}
+	});
+
+	await suite.test("10. GET /api/prescriptions — маркетолог блокируется с 403 при попытке чтения реестра рецептов", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/prescriptions",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет доступа к рецептам и клиническим диагнозам (152-ФЗ / 323-ФЗ)",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.prescription.read");
+	});
+
+	await suite.test("11. POST /api/prescriptions — маркетолог блокируется с 403 при попытке выписки рецепта 1094н", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/prescriptions",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				patientId: ACTIVE_PATIENT_ID,
+				prescribingDoctorId: DOCTOR_USER_ID,
+				formType: "form_107_1_u",
+				clinicalDiagnosisMkb10: "K04.0",
+				clinicalDiagnosisDescription: "Начальный пульпит",
+				validityPeriod: "days_60",
+				items: [
+					{
+						innLatin: "Amoxicillinum",
+						dosageFormLatin: "Tabulettis",
+						dosageDoseConcentration: "500 mg",
+						dispenseInstructionLatin: "D.t.d. N. 20",
+						signatureDirectionRussian: "По 1 таблетке 3 раза в день",
+						quantityPackages: 1,
+						durationDays: 7,
+						frequencyTimesPerDay: 3,
+					},
+				],
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет права выписывать рецепты Минздрава 1094н",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.prescription.write");
+	});
+
+	await suite.test("12. GET /api/dicomweb/studies — маркетолог блокируется с 403 при попытке поиска КТ / DICOM исследований", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/dicomweb/studies",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет доступа к реестру КТ / DICOM исследований",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.dicom.read");
+	});
+
+	await suite.test("13. GET /api/clinical/tasks — маркетолог блокируется с 403 при попытке чтения клинических задач", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/clinical/tasks",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет доступа к клиническим задачам между этапами",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.tasks.read");
+	});
+
+	await suite.test("14. POST /api/clinical/phase-completions — маркетолог блокируется с 403 при попытке закрытия клинического этапа", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/clinical/phase-completions",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				patientId: ACTIVE_PATIENT_ID,
+				completedPhaseCode: "surgery",
+				notes: "Удаление завершено",
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет права закрывать клинические этапы",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.phase.write");
+	});
+
+	await suite.test("15. POST /api/clinical/rules — маркетолог блокируется с 403 при попытке создания клинических правил", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/clinical/rules",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				code: "RULE_CUSTOM_CONTRAINDICATION",
+				name: "Правило противопоказания",
+				phaseCode: "surgery",
+				action: "block",
+				severity: "critical",
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет права управлять клиническими правилами",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.rules.write");
 	});
 });

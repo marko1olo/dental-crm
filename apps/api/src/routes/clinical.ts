@@ -19,9 +19,11 @@ import {
 } from "../db/clinicalQuery.js";
 import { ClinicalTaskOwnershipError } from "../db/clinicalTasksQuery.js";
 import {
+	getRequestIdentity,
 	requireOrganizationId,
 	requireStaffIdentity,
 } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import {
 	CLINICAL_PHASE_CODES,
 	ClinicalRouter,
@@ -154,6 +156,25 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				))
 			)
 				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			// 152-ФЗ / 323-ФЗ: Редактирование клинических противопоказаний разрешено только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.rules.write",
+					role: staffRole,
+					message:
+						"Управление клиническими правилами ограничено 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
+				});
+			}
 			const input = parseClinicalPayload(
 				createClinicalRuleSchema,
 				request.body,
@@ -164,9 +185,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 					message: clinicalRuleMutationValidationMessage,
 				});
 			}
-			// См. выше: правило создавалось в чужой организации.
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
 			return clinicalRuleSchema.parse(
 				await createClinicalRuleInDb(orgId, input),
 			);
@@ -190,6 +208,26 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				))
 			)
 				return;
+			const orgId = requireOrganizationId(request, reply);
+			if (!orgId) return;
+
+			// 152-ФЗ / 323-ФЗ: Редактирование клинических противопоказаний разрешено только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.rules.write",
+					role: staffRole,
+					message:
+						"Управление клиническими правилами ограничено 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
+				});
+			}
+
 			const params = request.params as { ruleId: string };
 			const body =
 				request.body && typeof request.body === "object" ? request.body : {};
@@ -203,9 +241,6 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 					message: clinicalRuleMutationValidationMessage,
 				});
 			}
-			// См. выше: правило редактировалось в чужой организации.
-			const orgId = requireOrganizationId(request, reply);
-			if (!orgId) return;
 			return clinicalRuleSchema.parse(
 				await updateClinicalRuleInDb(orgId, input),
 			);
@@ -256,6 +291,24 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			}
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			// 152-ФЗ / 323-ФЗ: Удаление клинических противопоказаний разрешено только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.rules.write",
+					role: staffRole,
+					message:
+						"Управление клиническими правилами ограничено 152-ФЗ и 323-ФЗ: требуются права клинического персонала.",
+				});
+			}
+
 			const deleted = await deleteClinicalRuleInDb(orgId, ruleId);
 			if (!deleted) {
 				// Чужое правило и несуществующее правило отвечают одинаково: разный ответ
@@ -295,6 +348,23 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 			return;
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ: Передача между клиническими этапами разрешена только клиническому персоналу (врач/ассистент)
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.phase.write",
+				role: staffRole,
+				message:
+					"Передача между клиническими этапами ограничена 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+			});
+		}
 
 		const body = (
 			request.body && typeof request.body === "object" ? request.body : {}
@@ -370,6 +440,23 @@ export async function registerClinicalRoutes(app: FastifyInstance) {
 				return;
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
+
+			// 152-ФЗ / 323-ФЗ: Задачи передачи между клиническими этапами содержат врачебную тайну
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.tasks.read",
+					role: staffRole,
+					message:
+						"Доступ к клиническим задачам ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+				});
+			}
 			const { patientId } = request.query as { patientId?: string };
 			if (patientId !== undefined && !UUID_PATTERN.test(patientId)) {
 				return reply.code(400).send({
