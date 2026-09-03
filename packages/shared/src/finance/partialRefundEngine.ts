@@ -230,6 +230,9 @@ export function calculatePartialRefund(
 		let itemRefundKop = 0;
 		if (req.customAmountKopToRefund !== undefined && req.customAmountKopToRefund > 0) {
 			itemRefundKop = Math.min(req.customAmountKopToRefund, maxAvailableKop);
+		} else if (req.quantityToRefund === originalItem.quantity) {
+			// Полный возврат всей позиции — забираем точный остаток без потери копеек от целочисленного деления
+			itemRefundKop = maxAvailableKop;
 		} else {
 			// Pro-rate based on quantity
 			const unitNetKop = Math.round(originalItem.netAmountKop / originalItem.quantity);

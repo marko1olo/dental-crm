@@ -174,16 +174,19 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		};
 	}, []);
 
-	// Fallback draft items if none provided
+	const [customAmountRub, setCustomAmountRub] = useState<number>(totalAmountRub || 0);
+	const [customServiceName, setCustomServiceName] = useState<string>("Стоматологические услуги");
+
+	// Honest items: if no items provided, use manual custom input without fabricating tooth 16 caries
 	const effectiveItems: readonly FiscalItemDraft[] = useMemo(() => {
 		if (items.length > 0) return items;
-		const sum = totalAmountRub || 15000;
+		const sum = customAmountRub > 0 ? customAmountRub : (totalAmountRub || 0);
+		if (sum <= 0) return [];
 		return [
 			{
-				id: "draft-1",
-				name: "Комплексное терапевтическое лечение кариеса и реставрация",
-				code804n: "A16.07.002.001",
-				toothFdiNumber: 16,
+				id: "manual-entry-1",
+				name: customServiceName.trim() || "Стоматологические услуги",
+				code804n: "A16.07.002",
 				quantity: 1,
 				priceRub: sum,
 				subject: "service",
@@ -193,14 +196,17 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				taxDeductionCategory: "1",
 			},
 		];
-	}, [items, totalAmountRub]);
+	}, [items, customAmountRub, customServiceName, totalAmountRub]);
 
 	const totalInvoiceRub = useMemo(() => {
+		if (items.length === 0 && customAmountRub > 0) {
+			return customAmountRub;
+		}
 		if (typeof totalAmountRub === "number" && totalAmountRub > 0) {
 			return totalAmountRub;
 		}
 		return effectiveItems.reduce((acc, it) => acc + (it.priceRub * it.quantity - (it.discountRub || 0)), 0);
-	}, [effectiveItems, totalAmountRub]);
+	}, [items, customAmountRub, totalAmountRub, effectiveItems]);
 
 	// Prepare compiled summary based on current tender
 	const compiledSummary: CompiledReceiptSummary = useMemo(() => {
@@ -922,6 +928,42 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 									<span className="font-mono text-[var(--muted)]">Код налогового вычета: Код 01 / 02</span>
 								</div>
+
+								{items.length === 0 && (
+									<div className="p-3 bg-[var(--paper-soft)]/50 border-b border-[var(--line)]/60 space-y-2">
+										<div className="text-[11px] text-[var(--muted)]">
+											Услуги не переданы из плана лечения. Задайте назначение платежа и сумму чека:
+										</div>
+										<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+											<div className="sm:col-span-2">
+												<label className="text-[10px] font-bold text-[var(--muted)] block mb-1">
+													Назначение платежа
+												</label>
+												<input
+													type="text"
+													value={customServiceName}
+													onChange={(e) => setCustomServiceName(e.target.value)}
+													placeholder="Стоматологические услуги"
+													className="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-teal-500"
+												/>
+											</div>
+											<div>
+												<label className="text-[10px] font-bold text-[var(--muted)] block mb-1">
+													Сумма (₽)
+												</label>
+												<input
+													type="number"
+													min={0}
+													value={customAmountRub || ""}
+													onChange={(e) => setCustomAmountRub(Math.max(0, Number(e.target.value) || 0))}
+													placeholder="0"
+													className="w-full px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-hidden focus:ring-1 focus:ring-teal-500"
+												/>
+											</div>
+										</div>
+									</div>
+								)}
+
 								<div className="divide-y divide-[var(--line)]/60 text-xs">
 									{effectiveItems.map((it, idx) => (
 										<div key={it.id || idx} className="p-3 flex items-center justify-between gap-3 hover:bg-[var(--paper-soft)]/40 transition-colors">

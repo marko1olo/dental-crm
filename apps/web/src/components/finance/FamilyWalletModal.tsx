@@ -50,6 +50,8 @@ import {
 import {
 	type FamilyRelationshipType,
 	FAMILY_RELATIONSHIP_RU,
+	SbpQrEngine,
+	rublesToKopecks,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine";
@@ -745,13 +747,18 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 											className="p-2 bg-white rounded-xl border border-slate-300"
 											dangerouslySetInnerHTML={{
 												__html: generateQrCodeSvg(
-													`https://qr.nspk.ru/AD1000${topupAmountRub}DENTE?sum=${topupAmountRub}`,
+													SbpQrEngine.buildNspkDynamicPayload({
+														operationId: `FWALLET${familyGroupId.replace(/[^A-Za-z0-9]/g, "").slice(0, 10) || "MAIN"}${topupAmountRub}`,
+														bankMemberId: "100000000111",
+														amountKopecks: rublesToKopecks(topupAmountRub),
+														currency: "RUB",
+													}).payloadUrl,
 													{ size: 140 },
 												),
 											}}
 										/>
 										<span className="text-[11px] text-[var(--muted)] text-center">
-											Сканируйте QR в мобильном банке для моментального пополнения
+											Сканируйте QR в мобильном банке для моментального пополнения через СБП
 										</span>
 									</div>
 								)}

@@ -62,71 +62,22 @@ export interface FamilyCombinedBillingModalProps {
 	readonly onCheckoutComplete?: (result: CombinedFamilyBillingResult) => void;
 }
 
-const DEFAULT_MOCK_FAMILY_ITEMS: readonly FamilyMemberBillingItem[] = [
-	{
-		id: "fam-item-1",
-		patientId: "pat-dad-101",
-		patientFullName: "Иванов Иван Иванович",
-		relationship: "self",
-		serviceName: "Установка дентального имплантата Straumann BLX",
-		code804n: "A16.07.054.001",
-		toothNumber: 36,
-		priceRub: 45000,
-		quantity: 1,
-		taxDeductionCategory: "2",
-	},
-	{
-		id: "fam-item-2",
-		patientId: "pat-mom-102",
-		patientFullName: "Иванова Ольга Сергеевна",
-		relationship: "spouse",
-		serviceName: "Установка циркониевой коронки с нанесением керамики",
-		code804n: "A16.07.004.002",
-		toothNumber: 21,
-		priceRub: 24000,
-		quantity: 1,
-		taxDeductionCategory: "1",
-	},
-	{
-		id: "fam-item-3",
-		patientId: "pat-child-103",
-		patientFullName: "Иванова Мария Ивановна",
-		relationship: "child",
-		serviceName: "Лечение кариеса молочного моляра с пломбой Vitremer",
-		code804n: "A16.07.002.001",
-		toothNumber: 54,
-		priceRub: 4500,
-		quantity: 1,
-		taxDeductionCategory: "1",
-	},
-	{
-		id: "fam-item-4",
-		patientId: "pat-child-104",
-		patientFullName: "Иванов Артем Иванович",
-		relationship: "child",
-		serviceName: "Профессиональная детская гигиена и глубокое фторирование",
-		code804n: "A16.07.051.001",
-		priceRub: 3500,
-		quantity: 1,
-		taxDeductionCategory: "1",
-	},
-];
-
 export function FamilyCombinedBillingModal({
 	isOpen,
 	onClose,
-	familyGroupName = "Семья Ивановых",
-	availableFamilyWalletRub = 15000,
+	familyGroupId,
+	familyGroupName = "Семейная группа",
+	availableFamilyWalletRub = 0,
 	initialPayer = {
-		payerId: "pat-dad-101",
-		payerFullName: "Иванов Иван Иванович",
-		payerInn: "770123456789",
-		payerPhone: "+7 (999) 111-22-33",
-		payerPassport: "4510 123456",
+		payerId: "",
+		payerFullName: "Ответственный плательщик",
+		payerInn: "",
+		payerPhone: "",
+		payerPassport: "",
 	},
-	initialItems = DEFAULT_MOCK_FAMILY_ITEMS,
+	initialItems = [],
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-	clinicInn = "7701234567",
+	clinicInn = "",
 	onCheckoutComplete,
 }: FamilyCombinedBillingModalProps) {
 	const [activeTab, setActiveTab] = useState<"items" | "payment" | "tax">("items");
@@ -486,9 +437,14 @@ ${certs
 
 							{/* Список позиций по членам семьи — Монолитный плоский список */}
 							<div className="rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] overflow-hidden shadow-xs divide-y divide-[var(--line,#e2e8f0)]">
-								{initialItems.map((item) => {
-									const isSelected = selectedItemIds.has(item.id);
-									return (
+								{initialItems.length === 0 ? (
+									<div className="p-8 text-center text-xs text-[var(--muted,#64748b)]">
+										В семейной группе пока нет неоплаченных счетов или услуг для включения в объединенный чек.
+									</div>
+								) : (
+									initialItems.map((item) => {
+										const isSelected = selectedItemIds.has(item.id);
+										return (
 										<div
 											key={item.id}
 											onClick={() => handleToggleItem(item.id)}
@@ -546,7 +502,8 @@ ${certs
 											</div>
 										</div>
 									);
-								})}
+								})
+							)}
 							</div>
 
 							{/* Сводка по категориям вычета */}

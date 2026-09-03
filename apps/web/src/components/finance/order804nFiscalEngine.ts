@@ -19,6 +19,7 @@ import {
 	splitKopecks,
 	sumKopecks,
 	calculateProportionalMultiTenderRefund,
+	kopecksToRubles,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 
@@ -304,10 +305,10 @@ export function calculateTaxDeductionBreakdown(
 		}
 	}
 
-	const code01Rub = Math.round(code01Kopecks / 100);
-	const code02Rub = Math.round(code02Kopecks / 100);
+	const code01Rub = kopecksToRubles(code01Kopecks);
+	const code02Rub = kopecksToRubles(code02Kopecks);
 	const totalKopecks = (code01Kopecks + code02Kopecks) as Kopecks;
-	const totalRub = Math.round(totalKopecks / 100);
+	const totalRub = kopecksToRubles(totalKopecks);
 
 	// Лимит 150 000 ₽ применяется строго к обычному лечению (Код 01)
 	const remainingLimit = Math.max(
@@ -318,10 +319,10 @@ export function calculateTaxDeductionBreakdown(
 	const code01UsedFromLimitRub = code01EligibleRub;
 	const code01RemainingLimitRub = Math.max(0, remainingLimit - code01EligibleRub);
 
-	const code01Refund13Rub = Math.round(code01EligibleRub * 0.13);
-	const code02Refund13Rub = Math.round(code02Rub * 0.13);
-	const code01Refund15Rub = Math.round(code01EligibleRub * 0.15);
-	const code02Refund15Rub = Math.round(code02Rub * 0.15);
+	const code01Refund13Rub = kopecksToRubles(Math.round(parseKopecks(code01EligibleRub) * 0.13));
+	const code02Refund13Rub = kopecksToRubles(Math.round(parseKopecks(code02Rub) * 0.13));
+	const code01Refund15Rub = kopecksToRubles(Math.round(parseKopecks(code01EligibleRub) * 0.15));
+	const code02Refund15Rub = kopecksToRubles(Math.round(parseKopecks(code02Rub) * 0.15));
 
 	// Код 02 (дорогостоящее) не ограничен лимитом 150к
 	const refund13EstimateRub = code01Refund13Rub + code02Refund13Rub;
@@ -497,12 +498,12 @@ export function mapTreatmentItemsToFiscalReceipt(
 		const discountKopecks = parseKopecks(discountRub);
 
 		const grossAmountKopecks = multiplyKopecks(unitPriceKopecks, qty);
-		const grossRub = Math.round(grossAmountKopecks / 100);
+		const grossRub = kopecksToRubles(grossAmountKopecks);
 		const netAmountKopecks = Math.max(
 			0,
 			grossAmountKopecks - discountKopecks,
 		) as Kopecks;
-		const amountRub = Math.round(netAmountKopecks / 100);
+		const amountRub = kopecksToRubles(netAmountKopecks);
 
 		const taxCat = resolveTaxDeductionCategory(it.code804n, it.name);
 		const fiscalName = formatFiscalItemName(it.name, it.code804n, it.toothNumber);
@@ -553,9 +554,9 @@ export function mapTreatmentItemsToFiscalReceipt(
 	}
 
 	const totalKopecks = sumKopecks(resultItems.map((i) => i.amountKopecks));
-	const totalRub = Math.round(totalKopecks / 100);
+	const totalRub = kopecksToRubles(totalKopecks);
 	const grossKopecks = sumKopecks(resultItems.map((i) => i.grossKopecks));
-	const grossRub = Math.round(grossKopecks / 100);
+	const grossRub = kopecksToRubles(grossKopecks);
 	const taxRateKopecks = sumKopecks(resultItems.map((i) => i.taxRateKopecks));
 
 	const hasExpensiveTreatment = resultItems.some(
@@ -589,7 +590,7 @@ export function calculateSplitPaymentAllocation(
 	const certificateKopecks = parseKopecks(Math.max(0, input.certificateRub || 0));
 	const insuranceKopecks = parseKopecks(Math.max(0, input.insuranceRub || 0));
 
-	const receivedCashRub = input.receivedCashRub !== undefined ? Math.max(0, input.receivedCashRub) : Math.round(cashKopecks / 100);
+	const receivedCashRub = input.receivedCashRub !== undefined ? Math.max(0, input.receivedCashRub) : kopecksToRubles(cashKopecks);
 	const receivedCashKopecks = parseKopecks(receivedCashRub);
 
 	let changeKopecks = 0 as Kopecks;
@@ -619,34 +620,34 @@ export function calculateSplitPaymentAllocation(
 
 	// В 54-ФЗ (ФФД 1.2): Списание с депозита/аванса фискализируется в Тег 1215 (Зачет аванса)
 	const advanceOffsetKopecks = depositKopecks;
-	const advanceOffsetRub = Math.round(depositKopecks / 100);
+	const advanceOffsetRub = kopecksToRubles(depositKopecks);
 
 	return {
-		cashRub: Math.round(cashKopecks / 100),
+		cashRub: kopecksToRubles(cashKopecks),
 		cashKopecks,
 		receivedCashRub,
 		receivedCashKopecks,
-		changeRub: Math.round(changeKopecks / 100),
+		changeRub: kopecksToRubles(changeKopecks),
 		changeKopecks,
 		isCashShortage,
-		cashShortageRub: Math.round(cashShortageKopecks / 100),
-		cardRub: Math.round(cardKopecks / 100),
+		cashShortageRub: kopecksToRubles(cashShortageKopecks),
+		cardRub: kopecksToRubles(cardKopecks),
 		cardKopecks,
-		sbpRub: Math.round(sbpKopecks / 100),
+		sbpRub: kopecksToRubles(sbpKopecks),
 		sbpKopecks,
-		depositRub: Math.round(depositKopecks / 100),
+		depositRub: kopecksToRubles(depositKopecks),
 		depositKopecks,
 		advanceOffsetRub,
 		advanceOffsetKopecks,
-		familyWalletRub: Math.round(familyWalletKopecks / 100),
+		familyWalletRub: kopecksToRubles(familyWalletKopecks),
 		familyWalletKopecks,
-		certificateRub: Math.round(certificateKopecks / 100),
+		certificateRub: kopecksToRubles(certificateKopecks),
 		certificateKopecks,
-		insuranceRub: Math.round(insuranceKopecks / 100),
+		insuranceRub: kopecksToRubles(insuranceKopecks),
 		insuranceKopecks,
-		patientCoPayRub: Math.round(patientCoPayKopecks / 100),
+		patientCoPayRub: kopecksToRubles(patientCoPayKopecks),
 		patientCoPayKopecks,
-		totalRub: Math.round(totalKopecks / 100),
+		totalRub: kopecksToRubles(totalKopecks),
 		totalKopecks,
 		allocatedKopecks,
 		remainingKopecks,
@@ -1190,19 +1191,19 @@ export function generateShiftCloseZReport54Fz(params: {
 	const incomeSbpKopecks = parseKopecks(sbpRub);
 	const incomeAdvanceOffsetKopecks = parseKopecks(summary.familyWalletRub);
 	const incomeTotalKopecks = parseKopecks(summary.receivedRub + summary.familyWalletRub);
-	const incomeTotalRub = Math.round(incomeTotalKopecks / 100);
+	const incomeTotalRub = kopecksToRubles(incomeTotalKopecks);
 
 	const incomeReturnCashKopecks = parseKopecks(0);
 	const incomeReturnCardKopecks = parseKopecks(summary.refundedRub);
 	const incomeReturnTotalKopecks = parseKopecks(summary.refundedRub);
-	const incomeReturnTotalRub = Math.round(incomeReturnTotalKopecks / 100);
+	const incomeReturnTotalRub = kopecksToRubles(incomeReturnTotalKopecks);
 
 	const totalRevenueKopecks = Math.max(0, incomeTotalKopecks - incomeReturnTotalKopecks) as Kopecks;
-	const totalRevenueRub = Math.round(totalRevenueKopecks / 100);
+	const totalRevenueRub = kopecksToRubles(totalRevenueKopecks);
 
 	const fiscalDocumentNumber = String(Math.floor(2000 + Math.random() * 8000));
 	const fiscalSign = String(Math.floor(1000000000 + Math.random() * 9000000000));
-	const ofdUrl = `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocumentNumber}&fpd=${fiscalSign}&s=${totalRevenueRub}.00&n=1`;
+	const ofdUrl = `https://ofd.ru/check?fn=${fnSerial}&fd=${fiscalDocumentNumber}&fpd=${fiscalSign}&s=${totalRevenueRub.toFixed(2)}&n=1`;
 
 	return {
 		reportNumber: `З-ОТЧЕТ-${shiftNumber}`,
