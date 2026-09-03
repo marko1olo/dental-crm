@@ -426,7 +426,7 @@ export function renderPaidServiceContract736Html(payload: PaidServiceContract736
 	const customerPhone = payload.customerPhone || patientPhone;
 
 	const scope = payload.serviceScope || "Оказание специализированной стоматологической помощи в соответствии с согласованным Планом лечения";
-	const totalRub = Number(payload.estimatedTotalRub) || 0;
+	const totalRub = Number(payload.estimatedTotalRub ?? payload.estimatedTotalAmountRub) || 0;
 	const totalRubFormatted = formatRublesWithKopecks(totalRub);
 	const totalInWords = convertAmountToRussianWords(totalRub);
 

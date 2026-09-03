@@ -48,15 +48,19 @@ function formatDateTimeRu(isoString: string): string {
 	try {
 		const d = new Date(isoString);
 		if (Number.isNaN(d.getTime())) return isoString;
-		return d.toLocaleString("ru-RU", {
-			day: "2-digit",
-			month: "2-digit",
+		const formatter = new Intl.DateTimeFormat("ru-RU", {
+			timeZone: "Europe/Moscow",
 			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
 			hour: "2-digit",
 			minute: "2-digit",
 			second: "2-digit",
-			timeZone: "Europe/Moscow",
-		}) + " (МСК)";
+			hour12: false,
+		});
+		const parts = formatter.formatToParts(d);
+		const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+		return `${map.day}.${map.month}.${map.year} ${map.hour}:${map.minute}:${map.second} (МСК)`;
 	} catch {
 		return isoString;
 	}

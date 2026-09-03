@@ -288,6 +288,35 @@ export function canonicalizeDiary043uPayload(params: {
 }
 
 /**
+ * Детерминированный канонический вид Договора на оказание платных медицинских услуг
+ * по Постановлению Правительства РФ № 736 перед наложением ЭП.
+ */
+export function canonicalizePaidServiceContract736Payload(params: {
+	documentId: string;
+	clinicLegalName: string;
+	clinicInn: string;
+	clinicOgrn: string;
+	patientFullName: string;
+	patientPassport?: string | null;
+	totalAmountKopecks: number;
+	contractDateIso: string;
+	serviceScope?: string | null;
+}): string {
+	return [
+		"ID:PP_RF_736_PAID_MEDICAL_SERVICES_CONTRACT",
+		`DOC_ID:${params.documentId.trim()}`,
+		`CLINIC:${params.clinicLegalName.trim()}`,
+		`INN:${params.clinicInn.trim()}`,
+		`OGRN:${params.clinicOgrn.trim()}`,
+		`PATIENT:${params.patientFullName.trim()}`,
+		`PASSPORT:${(params.patientPassport ?? "").trim()}`,
+		`TOTAL_KOPECKS:${params.totalAmountKopecks}`,
+		`SCOPE:${(params.serviceScope ?? "Оказание специализированной стоматологической помощи").trim()}`,
+		`DATE:${params.contractDateIso.trim()}`,
+	].join("\n");
+}
+
+/**
  * Вычисляет криптографический хэш SHA-256 канонического текста.
  */
 export function computeGostSigningDigestSha256(canonicalText: string): {
