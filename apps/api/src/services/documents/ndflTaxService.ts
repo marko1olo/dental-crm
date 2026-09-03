@@ -18,6 +18,11 @@
 import {
 	buildFnsKnd1151156Xml,
 	classifyNdflServiceCode,
+	type FnsFiscalReceiptItem,
+	type FnsNdflPrintSigningOptions,
+	type FnsNdflXmlResult,
+	type FnsPreflightIssue,
+	type FnsTaxPayload,
 	generateFnsNdflPrintHtml,
 	isDmsInsurancePayment,
 	isNonMedicalGood,
@@ -31,11 +36,6 @@ import {
 	validateRussianKpp,
 	validateRussianOgrn,
 	validateRussianSnils,
-	type FnsFiscalReceiptItem,
-	type FnsNdflPrintSigningOptions,
-	type FnsNdflXmlResult,
-	type FnsPreflightIssue,
-	type FnsTaxPayload,
 } from "@dental/shared";
 import { Decimal } from "decimal.js";
 import { getPaymentsByPatientIdInDb } from "../../db/billingQuery.js";
@@ -112,7 +112,11 @@ export class NdflTaxService {
 			Boolean((patient as unknown as { isAnonymous?: boolean }).isAnonymous) ||
 			Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
 			Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
-			Boolean((patient.administrativeProfile as Record<string, unknown> | undefined)?.["isAnonymous"]);
+			Boolean(
+				(
+					patient.administrativeProfile as Record<string, unknown> | undefined
+				)?.["isAnonymous"],
+			);
 
 		if (isPatientAnonymous) {
 			throw new Decree659TaxDeductionForbiddenError(
@@ -155,7 +159,10 @@ export class NdflTaxService {
 		}
 
 		// 2. Получение оплат пациента
-		const allPayments = await getPaymentsByPatientIdInDb(organizationId, patientId);
+		const allPayments = await getPaymentsByPatientIdInDb(
+			organizationId,
+			patientId,
+		);
 
 		const periodPayments = allPayments.filter((p) => {
 			if (p.status !== "paid" || !p.paidAt) return false;
@@ -180,12 +187,17 @@ export class NdflTaxService {
 			};
 
 			const amountKop = parseKopecks(pay.amountRub);
-			const serviceName = payAny.serviceName || "Стоматологические медицинские услуги";
+			const serviceName =
+				payAny.serviceName || "Стоматологические медицинские услуги";
 			const note = pay.note || "";
 			const method = pay.method || "";
-			const receiptDate = pay.paidAt ? new Date(pay.paidAt).toISOString().split("T")[0] || "" : "";
-			const fiscalDocNum = (pay as Record<string, any>).fiscalReceipt?.fd || (pay as Record<string, any>).fiscalReceiptNumber || null;
-
+			const receiptDate = pay.paidAt
+				? new Date(pay.paidAt).toISOString().split("T")[0] || ""
+				: "";
+			const fiscalDocNum =
+				(pay as Record<string, any>).fiscalReceipt?.fd ||
+				(pay as Record<string, any>).fiscalReceiptNumber ||
+				null;
 
 			// Проверка на ДМС
 			if (isDmsInsurancePayment(method, note)) {
@@ -200,7 +212,8 @@ export class NdflTaxService {
 					deductionCode: "1",
 					amountRub: pay.amountRub,
 					isExcluded: true,
-					exclusionReason: "Оплата по договору ДМС со стороны страховой компании",
+					exclusionReason:
+						"Оплата по договору ДМС со стороны страховой компании",
 				});
 				continue;
 			}
@@ -218,7 +231,8 @@ export class NdflTaxService {
 					deductionCode: "1",
 					amountRub: pay.amountRub,
 					isExcluded: true,
-					exclusionReason: "Сопутствующий товар (не является медицинской услугой по ст. 219 НК РФ)",
+					exclusionReason:
+						"Сопутствующий товар (не является медицинской услугой по ст. 219 НК РФ)",
 				});
 				continue;
 			}
@@ -248,10 +262,11 @@ export class NdflTaxService {
 			});
 		}
 
-
 		const code1TotalRub = rublesFromKopecks(code1Kopecks);
 		const code2TotalRub = rublesFromKopecks(code2Kopecks);
-		const totalEligibleRub = new Decimal(code1TotalRub).plus(code2TotalRub).toNumber();
+		const totalEligibleRub = new Decimal(code1TotalRub)
+			.plus(code2TotalRub)
+			.toNumber();
 
 		const code1LimitRub = targetYear >= 2024 ? 150000 : 120000;
 		const code1EligibleRub = Math.min(code1TotalRub, code1LimitRub);
@@ -281,7 +296,8 @@ export class NdflTaxService {
 		if (receipts.filter((r) => !r.isExcluded).length === 0) {
 			validationIssues.push({
 				field: "receipts",
-				message: "За указанный период нет оплаченных медицинских услуг для вычета",
+				message:
+					"За указанный период нет оплаченных медицинских услуг для вычета",
 				severity: "warning",
 			});
 		}
@@ -314,7 +330,10 @@ export class NdflTaxService {
 	/**
 	 * Генерация XML-справки КНД 1184043 / 1151156 для ЭДО (Фича №33).
 	 */
-	static generateXml(payload: FnsTaxPayload, customUuid?: string): FnsNdflXmlResult {
+	static generateXml(
+		payload: FnsTaxPayload,
+		customUuid?: string,
+	): FnsNdflXmlResult {
 		const payerName = payload.payer?.fullName?.family || "";
 		const patientName = payload.patient?.fullName?.family || "";
 		const isAnonymous =
@@ -322,8 +341,12 @@ export class NdflTaxService {
 			payerName.toLowerCase().includes("аноним") ||
 			patientName.startsWith("UUID_ANON") ||
 			patientName.toLowerCase().includes("аноним") ||
-			Boolean((payload.patient as unknown as { isAnonymous?: boolean })?.isAnonymous) ||
-			Boolean((payload.payer as unknown as { isAnonymous?: boolean })?.isAnonymous);
+			Boolean(
+				(payload.patient as unknown as { isAnonymous?: boolean })?.isAnonymous,
+			) ||
+			Boolean(
+				(payload.payer as unknown as { isAnonymous?: boolean })?.isAnonymous,
+			);
 
 		if (isAnonymous) {
 			throw new Decree659TaxDeductionForbiddenError(
