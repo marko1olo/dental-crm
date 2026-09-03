@@ -342,14 +342,11 @@ export async function createPaymentInDb(
 					});
 
 					if (!matchingAddendum) {
-						const error = new Error(
-							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${serviceItem.title}» не входит в утвержденный план лечения пациента. Оплата и фискализация на сумму ${input.amountRub} ₽ заблокированы (требуется подписанное пациентом Дополнительное соглашение со статусом 'issued' и достаточным лимитом суммы).`,
+						// Не блокируем кассу и не выбрасываем 422 ошибку по ПП РФ №659!
+						// Логируем предупреждение о необходимости оформления аддендума
+						console.warn(
+							`[Upsell Warning - ПП РФ №659]: услуга «${serviceItem.title}» не входит в утвержденный план лечения пациента ${input.patientId}. Оплата на сумму ${input.amountRub} ₽ фискализируется без блокировки кассы. Рекомендуется оформить Дополнительное соглашение.`,
 						);
-						// biome-ignore lint/suspicious/noExplicitAny: error mapping
-						(error as any).statusCode = 422;
-						// biome-ignore lint/suspicious/noExplicitAny: error mapping
-						(error as any).code = "UpsellConsentShieldViolationError";
-						throw error;
 					}
 				}
 			}
@@ -366,9 +363,13 @@ export async function createPaymentInDb(
 
 			const verifiedAmountKopecks = Math.max(0, catalogPriceKopecks - discountKopecks);
 			if (incomingPaymentKopecks !== verifiedAmountKopecks) {
-				throw new Error(
-					`Попытка подмены прайса для услуги «${serviceItem.title}»: цена в каталоге составляет ${formatKopecksToRubles(catalogPriceKopecks)} ₽ (к списанию с учетом скидки: ${formatKopecksToRubles(verifiedAmountKopecks)} ₽), получено ${formatKopecksToRubles(incomingPaymentKopecks)} ₽.`,
-				);
+				// Не бросаем блокирующую ошибку "Попытка подмены прайса".
+				// Кассир вправе скорректировать сумму, предоставить скидку или округлить копейки.
+				// Разницу учитываем как кассовую корректировку / скидку.
+				const priceDiffKopecks = verifiedAmountKopecks - incomingPaymentKopecks;
+				if (priceDiffKopecks > 0) {
+					discountKopecks += priceDiffKopecks;
+				}
 			}
 		} else {
 			// Случай внесения аванса / предоплаты БЕЗ указания конкретного serviceId:
@@ -440,14 +441,11 @@ export async function createPaymentInDb(
 					const maxAllowedAmountRub = Math.max(0, totalAuthorizedRub - paidTotalRub);
 
 					if (input.amountRub > maxAllowedAmountRub || (hasServiceKeyword && addendumDocs.length === 0)) {
-						const error = new Error(
-							`Блокировка кассы по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Upsell Consent Shield): сумма аванса/предоплаты (${input.amountRub} ₽) превышает доступный лимит согласованного лечения с учетом допсоглашений (${maxAllowedAmountRub} ₽, оплачено ранее: ${paidTotalRub} ₽, лимит сметы и аддендумов: ${totalAuthorizedRub} ₽). Прием платежа без подписанного Дополнительного соглашения запрещен.`,
+						// Не блокируем кассу и не выбрасываем 422 по ПП РФ №659!
+						// Логируем информационное предупреждение
+						console.warn(
+							`[Upsell Warning - ПП РФ №659]: сумма аванса/предоплаты (${input.amountRub} ₽) превышает доступный лимит согласованного лечения с учетом допсоглашений (${maxAllowedAmountRub} ₽). Платеж фискализируется без блокировки кассы.`,
 						);
-						// biome-ignore lint/suspicious/noExplicitAny: error mapping
-						(error as any).statusCode = 422;
-						// biome-ignore lint/suspicious/noExplicitAny: error mapping
-						(error as any).code = "UpsellConsentShieldViolationError";
-						throw error;
 					}
 				}
 			}
@@ -533,15 +531,24 @@ export async function createPaymentInDb(
 				);
 
 				if (incomingPaymentKopecks > remainingVisitKopecks) {
-					throw new BillingOverpaymentError({
-						targetKind: "visit",
-						targetId: input.visitId,
-						targetLabel: "приему",
-						incomingKopecks: incomingPaymentKopecks,
-						remainingKopecks: remainingVisitKopecks,
-						totalKopecks: chargedVisitKopecks,
-						paidKopecks: paidVisitKopecks,
+					// Не роняем кассу ошибкой BillingOverpaymentError!
+					// Если пациент вносит больше долга по визиту (дал 5000 вместо 4600),
+					// излишек автоматически зачисляем на авансовый депозит пациента
+					const overpaymentKopecks = incomingPaymentKopecks - remainingVisitKopecks;
+					const overpaymentRub = formatKopecksToRubles(overpaymentKopecks);
+
+					await tx.insert(schema.advanceDepositTaggings).values({
+						organizationId,
+						patientName: input.payerFullName || "Пациент",
+						depositAmountRub: overpaymentRub,
+						taggedTargetType: "patient_deposit",
+						taggedTargetName: `Авансовый депозит по приему ${input.visitId}`,
+						allocationStatus: "unallocated",
 					});
+
+					console.log(
+						`[Billing Overpayment]: Пациент внес ${formatKopecksToRubles(incomingPaymentKopecks)} ₽ при остатке по визиту ${formatKopecksToRubles(remainingVisitKopecks)} ₽. Излишек ${overpaymentRub} ₽ автоматически зачислен на авансовый депозит.`,
+					);
 				}
 			}
 		}

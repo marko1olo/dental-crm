@@ -147,39 +147,26 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
 	const [customDiscountRub, setCustomDiscountRub] = useState<number>(0);
 
+	const [customAmountRub, setCustomAmountRub] = useState<number>(0);
+	const [customServiceName, setCustomServiceName] = useState<string>("Аванс за стоматологические услуги");
+
 	// Raw services before discount
 	const rawServices: InvoiceServiceItem[] = useMemo(() => {
 		if (initialServices.length > 0) return [...initialServices];
-		return [
-			{
-				id: "srv-1",
-				name: "Восстановление зуба пломбой (светоотверждаемый нанокомпозит Filtek Ultimate)",
-				code804n: "A16.07.002.001",
-				toothNumber: "16",
-				quantity: 1,
-				priceRub: 6500,
-				category: "therapy",
-			},
-			{
-				id: "srv-2",
-				name: "Инфильтрационная анестезия (Артикаин 4% с эпинефрином)",
-				code804n: "B01.003.004.001",
-				toothNumber: "16",
-				quantity: 1,
-				priceRub: 1200,
-				category: "therapy",
-			},
-			{
-				id: "srv-3",
-				name: "Установка дентального имплантата Straumann BLX (Швейцария)",
-				code804n: "A16.07.054",
-				toothNumber: "26",
-				quantity: 1,
-				priceRub: 55000,
-				category: "implantology",
-			},
-		];
-	}, [initialServices]);
+		if (customAmountRub > 0) {
+			return [
+				{
+					id: "srv-custom",
+					name: customServiceName.trim() || "Аванс за стоматологические услуги",
+					code804n: "A16.07.002",
+					quantity: 1,
+					priceRub: customAmountRub,
+					category: "therapy",
+				},
+			];
+		}
+		return [];
+	}, [initialServices, customAmountRub, customServiceName]);
 
 	const discountResult = useMemo(() => {
 		return distributeLoyaltyDiscountAcrossItems(rawServices, {
@@ -786,8 +773,55 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								)}
 							</div>
 
+							{/* Direct Custom Payment if no initialServices */}
+							{initialServices.length === 0 && (
+								<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] space-y-3 shadow-xs">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-bold text-[var(--ink)]">
+											Прямой прием оплаты (без привязки к акту)
+										</span>
+										<span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300">
+											54-ФЗ
+										</span>
+									</div>
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+										<div>
+											<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">
+												Назначение платежа
+											</label>
+											<input
+												type="text"
+												value={customServiceName}
+												onChange={(e) => setCustomServiceName(e.target.value)}
+												placeholder="Аванс за стоматологические услуги / Консультация"
+												className="w-full h-10 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink)] font-medium outline-none focus:border-teal-500"
+											/>
+										</div>
+										<div>
+											<label className="block text-[11px] font-semibold text-[var(--muted)] mb-1">
+												Сумма к оплате (₽)
+											</label>
+											<input
+												type="number"
+												min={0}
+												step={1}
+												value={customAmountRub === 0 ? "" : customAmountRub}
+												onChange={(e) => setCustomAmountRub(Math.max(0, Number(e.target.value) || 0))}
+												placeholder="0"
+												className="w-full h-10 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] text-sm text-[var(--ink)] font-mono font-bold outline-none focus:border-teal-500"
+											/>
+										</div>
+									</div>
+								</div>
+							)}
+
 							{/* Grouped Friendly Blocks */}
 							<div className="space-y-3">
+								{friendlyBreakdown.groups.length === 0 && initialServices.length === 0 && customAmountRub === 0 && (
+									<div className="p-8 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-2xl border border-[var(--line)]">
+										Укажите сумму и назначение платежа выше для оформления чека.
+									</div>
+								)}
 								{friendlyBreakdown.groups.map((grp) => {
 									const isSingle = grp.items.length === 1;
 									const singleItem = grp.items[0];
