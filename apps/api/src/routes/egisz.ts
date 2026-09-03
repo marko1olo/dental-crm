@@ -1484,13 +1484,14 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { outboxId } = request.params as { outboxId: string };
-			if (!outboxId) {
+			const parsedParams = z.object({ outboxId: z.string().uuid() }).safeParse(request.params);
+			if (!parsedParams.success) {
 				return reply.status(400).send({
 					error: "ValidationError",
-					message: "Параметр outboxId обязателен.",
+					message: "Параметр outboxId должен быть валидным UUID.",
 				});
 			}
+			const { outboxId } = parsedParams.data;
 
 			const dispatcher = new EgiszOutboxDispatcher();
 			const receipt = await dispatcher.getReceiptByOutboxId(orgId, outboxId);
@@ -1527,13 +1528,14 @@ export default async function registerEgiszRoutes(app: FastifyInstance) {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
-			const { visitId } = request.params as { visitId: string };
-			if (!visitId) {
+			const parsedParams = z.object({ visitId: z.string().uuid() }).safeParse(request.params);
+			if (!parsedParams.success) {
 				return reply.status(400).send({
 					error: "ValidationError",
-					message: "Параметр visitId обязателен.",
+					message: "Параметр visitId должен быть валидным UUID.",
 				});
 			}
+			const { visitId } = parsedParams.data;
 
 			const dispatcher = new EgiszOutboxDispatcher();
 			const receipt = await dispatcher.getReceiptByVisitId(orgId, visitId);

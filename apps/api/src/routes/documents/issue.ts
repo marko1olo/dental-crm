@@ -23,6 +23,8 @@ import {
 	getRequestIdentity,
 	requireOrganizationId,
 } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { clinicalDocKinds } from "./query.js";
 import {
 	repairMojibakeDeep,
 	repairMojibakeText,
@@ -54,6 +56,23 @@ export async function register(app: FastifyInstance) {
 		const existing = await getDocumentById(orgId, id);
 		if (!existing) {
 			return reply.code(404).send(apiError("Документ не найден"));
+		}
+
+		// 152-ФЗ / 323-ФЗ: Выдача клинических медицинских документов разрешена только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (clinicalDocKinds.has(existing.kind) && !evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.document.issue",
+				role: staffRole,
+				message:
+					"Выдача медицинских документов ограничена 323-ФЗ и 152-ФЗ: требуются права клинического персонала (врач / ассистент).",
+			});
 		}
 		if (existing.status === "voided") {
 			return reply

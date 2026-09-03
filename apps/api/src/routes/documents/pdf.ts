@@ -14,6 +14,7 @@ import { renderDocumentHtml } from "../../documents/renderDocument.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { clinicalDocKinds } from "./query.js";
 import {
 	apiError,
 	documentAttachmentFileName,
@@ -119,20 +120,6 @@ export async function register(app: FastifyInstance) {
 			}
 
 			// Защита 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
-			const clinicalDocKinds = new Set([
-				"dental_medical_card_043u",
-				"orthodontic_medical_card_043_1u",
-				"outpatient_medical_card_025u",
-				"medical_record_extract",
-				"patient_intake_questionnaire",
-				"informed_consent",
-				"prescription_medication_order",
-				"treatment_plan",
-				"treatment_plan_acceptance",
-				"radiation_dose_sheet",
-				"daily_dentist_diary_037u",
-				"summary_dentist_statement_039u",
-			]);
 			if (clinicalDocKinds.has(document.kind)) {
 				const identity = getRequestIdentity(request);
 				const access = evaluateClinicalAccess(identity.role);

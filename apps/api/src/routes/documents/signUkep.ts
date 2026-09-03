@@ -14,6 +14,9 @@ import {
 	writeIssuedDocumentSnapshot,
 } from "../../db/documentQuery.js";
 import { generatedDocuments } from "../../db/schema.js";
+import { getRequestIdentity } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { clinicalDocKinds } from "./query.js";
 
 /**
  * УКЭП-подпись документа. Валидирует отсоединенную подпись CMS (PKCS#7)
@@ -62,34 +65,12 @@ export async function register(app: FastifyInstance) {
 		const { id } = parsedParams.data;
 		const { pkcs7Signature } = parsedBody.data;
 
-		// Валидация криптографического формата отсоединенной подписи CMS PKCS#7
-		const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
-		if (!signatureValidation.valid) {
-			return reply.code(400).send({
-				error: "InvalidSignatureFormat",
-				message: `Предоставленная подпись не является корректной отсоединенной подписью CMS (PKCS#7) по ГОСТ Р 34.10-2012. ${signatureValidation.error}`,
-			});
-		}
-
-		// Валидация срока действия сертификата, времени подписания и проверка по списку отзыва (CRL)
-		const certStatus = validateCertificateStatus({
-			validFrom: parsedBody.data.validFrom,
-			validTo: parsedBody.data.validTo,
-			signedAt: parsedBody.data.signedAt,
-			certificateSerialNumber: parsedBody.data.certificateSerialNumber,
-		});
-		if (!certStatus.valid) {
-			return reply.code(400).send({
-				error: certStatus.errorCode ?? "InvalidCertificateStatus",
-				message: certStatus.error,
-			});
-		}
-
 		try {
 			// First verify the document exists and is in a state that allows signing
 			const [doc] = await db
 				.select({
 					id: generatedDocuments.id,
+					kind: generatedDocuments.kind,
 					status: generatedDocuments.status,
 					cryptoSignaturePkcs7: generatedDocuments.cryptoSignaturePkcs7,
 					issuedSnapshotSha256: generatedDocuments.issuedSnapshotSha256,
@@ -108,6 +89,46 @@ export async function register(app: FastifyInstance) {
 
 			if (!doc) {
 				return reply.code(404).send({ error: "DocumentNotFound" });
+			}
+
+			// 63-ФЗ, 323-ФЗ и Приказ Минздрава 947н: Медицинские документы могут подписываться УКЭП только медицинским персоналом (врачом/главным врачом)
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (clinicalDocKinds.has(doc.kind) && !evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.document.sign_ukep",
+					role: staffRole,
+					message:
+						"Подписание медицинских документов УКЭП ограничено 63-ФЗ, 323-ФЗ и Приказом Минздрава 947н: требуются права врача или главного врача.",
+				});
+			}
+
+			// Валидация криптографического формата отсоединенной подписи CMS PKCS#7
+			const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
+			if (!signatureValidation.valid) {
+				return reply.code(400).send({
+					error: "InvalidSignatureFormat",
+					message: `Предоставленная подпись не является корректной отсоединенной подписью CMS (PKCS#7) по ГОСТ Р 34.10-2012. ${signatureValidation.error}`,
+				});
+			}
+
+			// Валидация срока действия сертификата, времени подписания и проверка по списку отзыва (CRL)
+			const certStatus = validateCertificateStatus({
+				validFrom: parsedBody.data.validFrom,
+				validTo: parsedBody.data.validTo,
+				signedAt: parsedBody.data.signedAt,
+				certificateSerialNumber: parsedBody.data.certificateSerialNumber,
+			});
+			if (!certStatus.valid) {
+				return reply.code(400).send({
+					error: certStatus.errorCode ?? "InvalidCertificateStatus",
+					message: certStatus.error,
+				});
 			}
 
 			// In our workflow, UKEP signs an already issued document (to hash the final PDF)

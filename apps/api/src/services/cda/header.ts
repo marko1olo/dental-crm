@@ -21,7 +21,7 @@ export function generateCdaHeader(ctx: CdaContext): string {
 	<relatedDocument typeCode="RPLC">
 		<parentDocument>
 			<id root="${docIdRoot}" extension="${escapeXml(replacesId)}"/>
-			<code code="108" codeSystem="${EGISZ_OIDS.DOC_TYPE_NSI}" codeSystemName="Виды медицинской документации" displayName="Протокол консультации (стоматология)"/>
+			<code code="108" codeSystem="${EGISZ_OIDS.DOC_TYPE_NSI}" codeSystemName="Виды медицинской документации" displayName="Протокол стоматологического осмотра"/>
 			<setId root="${docIdRoot}" extension="${escapeXml(setIdExtension)}"/>
 			<versionNumber value="${Math.max(1, documentVersion - 1)}"/>
 		</parentDocument>
@@ -35,7 +35,7 @@ export function generateCdaHeader(ctx: CdaContext): string {
 	<templateId root="${EGISZ_OIDS.SEMD_TEMPLATE_DENTAL_108}"/>
 	<templateId root="${EGISZ_OIDS.SEMD_TEMPLATE_CONSULTATION}"/>
 	<id root="${docIdRoot}" extension="${escapeXml(params.documentId)}"/>
-	<code code="108" codeSystem="${EGISZ_OIDS.DOC_TYPE_NSI}" codeSystemName="Виды медицинской документации" displayName="Протокол консультации (стоматология)"/>
+	<code code="108" codeSystem="${EGISZ_OIDS.DOC_TYPE_NSI}" codeSystemName="Виды медицинской документации" displayName="Протокол стоматологического осмотра"/>
 	<title>Протокол стоматологического осмотра (консультации)</title>
 	<effectiveTime value="${effectiveTime}"/>
 	<confidentialityCode code="N" codeSystem="${EGISZ_OIDS.CONFIDENTIALITY}" codeSystemName="HL7 Confidentiality" displayName="обычный"/>

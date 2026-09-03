@@ -4,7 +4,7 @@
  * Zero mocks: strictly dispatches genuine signed packages with doctor UKEP (FZ-63 / Order 911n).
  */
 
-import { and, desc, eq, inArray, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import {
 	egiszAuditLogs,
@@ -329,12 +329,12 @@ export class EgiszOutboxDispatcher {
 			? and(
 					eq(egiszOutbox.organizationId, organizationId),
 					inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
-					lte(egiszOutbox.nextAttemptAt, now),
+					or(isNull(egiszOutbox.nextAttemptAt), lte(egiszOutbox.nextAttemptAt, now)),
 					sql`${egiszOutbox.attempts} < ${egiszOutbox.maxAttempts}`,
 				)
 			: and(
 					inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
-					lte(egiszOutbox.nextAttemptAt, now),
+					or(isNull(egiszOutbox.nextAttemptAt), lte(egiszOutbox.nextAttemptAt, now)),
 					sql`${egiszOutbox.attempts} < ${egiszOutbox.maxAttempts}`,
 				);
 
@@ -349,8 +349,8 @@ export class EgiszOutboxDispatcher {
 			result.processedCount++;
 			const workerLock = `worker-${Date.now()}`;
 
-			// Lock row for processing
-			await db
+			// Lock row for processing (concurrency check: skip if already claimed by another worker)
+			const [lockedRow] = await db
 				.update(egiszOutbox)
 				.set({
 					status: "sending",
@@ -363,7 +363,13 @@ export class EgiszOutboxDispatcher {
 						eq(egiszOutbox.id, row.id),
 						inArray(egiszOutbox.status, ["queued", "ready_for_dispatch", "failed"]),
 					),
-				);
+				)
+				.returning({ id: egiszOutbox.id });
+
+			if (!lockedRow) {
+				// Another worker claimed this row concurrently — skip immediately
+				continue;
+			}
 
 			try {
 				const [patientRow] = await db
@@ -960,6 +966,11 @@ export class EgiszOutboxDispatcher {
 		organizationId: string,
 		outboxId: string,
 	): Promise<EgiszRemdRegistrationReceipt | null> {
+		const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		if (!UUID_REGEX.test(organizationId) || !UUID_REGEX.test(outboxId)) {
+			return null;
+		}
+
 		const [row] = await db
 			.select({
 				gatewayResponseJson: egiszOutbox.gatewayResponseJson,
@@ -1022,6 +1033,11 @@ export class EgiszOutboxDispatcher {
 		organizationId: string,
 		visitId: string,
 	): Promise<EgiszRemdRegistrationReceipt | null> {
+		const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		if (!UUID_REGEX.test(organizationId) || !UUID_REGEX.test(visitId)) {
+			return null;
+		}
+
 		const [row] = await db
 			.select({ id: egiszOutbox.id })
 			.from(egiszOutbox)

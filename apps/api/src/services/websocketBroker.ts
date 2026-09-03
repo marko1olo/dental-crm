@@ -135,14 +135,28 @@ export const wsBroker = {
 		patientId: string,
 		message: object,
 	) {
-		const data = JSON.stringify(stripDiagnosisPayload(message));
+		const isClinical = isClinicalWsEvent(message);
+		const rawData = JSON.stringify(message);
+		let sanitizedData: string | null = null;
+
 		for (const client of clients) {
 			if (
 				client.organizationId === organizationId &&
 				client.patientId === patientId &&
 				client.ws.readyState === 1
 			) {
-				client.ws.send(data);
+				if (client.isClinical) {
+					client.ws.send(rawData);
+				} else {
+					// 152-ФЗ / 323-ФЗ: Сырые клинические события персонала не передаются на сокеты пациентов
+					if (isClinical) {
+						continue;
+					}
+					if (!sanitizedData) {
+						sanitizedData = JSON.stringify(stripDiagnosisPayload(message));
+					}
+					client.ws.send(sanitizedData);
+				}
 			}
 		}
 	},

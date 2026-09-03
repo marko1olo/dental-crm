@@ -4,13 +4,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
 import { and, eq } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { attachments, patients, visitDiaries, visits } from "../db/schema.js";
 import { decodeServerHeicImage } from "../services/imaging/serverHeicDecoder.js";
 import { isHeicFileNameOrMime } from "@dental/shared";
+import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
@@ -33,14 +36,14 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 	 * visit_id не трогаем: фото дневника живут на приёме; здесь — паспорт,
 	 * направление, скан договора и прочие файлы именно карточки.
 	 */
-	app.get("/api/patients/:patientId/attachments", async (request, reply) => {
+	const getPatientAttachmentsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const orgId = await requireResolvedOrganizationId(request, reply);
 			if (!orgId) return;
 			const { patientId } = request.params as { patientId: string };
 
 			const [patient] = await db
-				.select({ id: patients.id })
+				.select({ id: patients.id, status: patients.status })
 				.from(patients)
 				.where(
 					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
@@ -52,6 +55,23 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 					error: "PatientNotFound",
 					message: "Пациент не найден в этой клинике.",
 				});
+			}
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Защита вложений архивированного пациента
+			if (patient.status === "archived") {
+				const identity = getRequestIdentity(request);
+				const reqAny = request as unknown as { user?: { role?: string | null } };
+				const staffRole = identity.role ?? reqAny.user?.role ?? null;
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "patients.archived.attachments",
+						role: staffRole,
+						message:
+							"Отказ в доступе к вложениям архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): извлечение файлов списанного в архив пациента неклиническим персоналом запрещено.",
+					});
+				}
 			}
 
 			const rows = await db
@@ -80,16 +100,19 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 				message: "Ошибка при получении списка вложений пациента.",
 			});
 		}
-	});
+	};
 
-	app.post("/api/patients/:patientId/attachments", async (request, reply) => {
+	app.get("/api/patients/:patientId/attachments", getPatientAttachmentsHandler);
+	app.get("/api/files/patients/:patientId/attachments", getPatientAttachmentsHandler);
+
+	const postPatientAttachmentsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		try {
 			const orgId = await requireResolvedOrganizationId(request, reply);
 			if (!orgId) return;
 			const { patientId } = request.params as { patientId: string };
 
 			const [patient] = await db
-				.select({ id: patients.id })
+				.select({ id: patients.id, status: patients.status })
 				.from(patients)
 				.where(
 					and(eq(patients.id, patientId), eq(patients.organizationId, orgId)),
@@ -102,6 +125,23 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 					message:
 						"Пациент не найден в этой клинике или относится к другой организации.",
 				});
+			}
+
+			// 152-ФЗ / 323-ФЗ: Защита от модификации вложений архивированного пациента
+			if (patient.status === "archived") {
+				const identity = getRequestIdentity(request);
+				const reqAny = request as unknown as { user?: { role?: string | null } };
+				const staffRole = identity.role ?? reqAny.user?.role ?? null;
+				const evalAccess = evaluateClinicalAccess(staffRole);
+				if (!evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "patients.archived.attachments",
+						role: staffRole,
+						message:
+							"Отказ в загрузке вложений архивированному пациенту (152-ФЗ / 323-ФЗ ст. 13): модификация файлов списанного в архив пациента неклиническим персоналом запрещена.",
+					});
+				}
 			}
 
 			const data = await (
@@ -175,7 +215,10 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 				message: "Ошибка при сохранении вложения карточки пациента.",
 			});
 		}
-	});
+	};
+
+	app.post("/api/patients/:patientId/attachments", postPatientAttachmentsHandler);
+	app.post("/api/files/patients/:patientId/attachments", postPatientAttachmentsHandler);
 
 	/*
 	 * Выдача файла вложения.
@@ -218,6 +261,60 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 				});
 			}
 
+			// 152-ФЗ / 323-ФЗ ст. 13: Защита при скачивании вложений
+			const identity = getRequestIdentity(request);
+			const reqAny = request as unknown as { user?: { role?: string | null } };
+			const staffRole = identity.role ?? reqAny.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+
+			// Если вложение привязано к приёму — это медицинские фото/снимки лечебного процесса
+			if (attachment.visitId && !evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.attachment.download",
+					role: staffRole,
+					message:
+						"Отказ в доступе к клиническому снимку приёма (152-ФЗ / 323-ФЗ ст. 13): скачивание файлов лечебного процесса неклиническим персоналом запрещено.",
+				});
+			}
+
+			// Если вложение привязано к пациенту, проверяем архивный статус пациента
+			if (attachment.patientId) {
+				const [patient] = await db
+					.select({ id: patients.id, status: patients.status })
+					.from(patients)
+					.where(
+						and(
+							eq(patients.id, attachment.patientId),
+							eq(patients.organizationId, orgId),
+						),
+					)
+					.limit(1);
+
+				if (patient?.status === "archived" && !evalAccess.hasClinicalAccess) {
+					return reply.code(403).send({
+						error: "PermissionDenied",
+						permission: "patients.archived.attachment.download",
+						role: staffRole,
+						message:
+							"Отказ в доступе к вложению архивированного пациента (152-ФЗ / 323-ФЗ ст. 13): скачивание файлов списанного в архив пациента неклиническим персоналом запрещено.",
+					});
+				}
+
+				if (attachment.visitId || patient?.status === "archived") {
+					await auditMedicalAccessFromRequest(request, {
+						organizationId: orgId,
+						patientId: attachment.patientId,
+						action: "DOWNLOAD_MEDICAL_ATTACHMENT",
+						metadata: {
+							attachmentId: attachment.id,
+							fileName: attachment.fileName,
+							visitId: attachment.visitId,
+						},
+					});
+				}
+			}
+
 			const filePath = path.join(UPLOADS_DIR, attachment.storagePath);
 			try {
 				await fs.access(filePath);
@@ -249,7 +346,7 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 			 * приём от чужого UUID / опечатки. Пациентский GET уже 404.
 			 */
 			const [visitRow] = await db
-				.select({ id: visits.id })
+				.select({ id: visits.id, patientId: visits.patientId })
 				.from(visits)
 				.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
 				.limit(1);
@@ -257,6 +354,30 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 				return reply.code(404).send({
 					error: "VisitNotFound",
 					message: "Приём не найден в этой клинике.",
+				});
+			}
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Вложения приёма (снимки, фото зубов) доступны только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const reqAny = request as unknown as { user?: { role?: string | null } };
+			const staffRole = identity.role ?? reqAny.user?.role ?? null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.visit.attachments.read",
+					role: staffRole,
+					message:
+						"Доступ к клиническим фото и снимкам приёма ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права клинического персонала.",
+				});
+			}
+
+			if (visitRow.patientId) {
+				await auditMedicalAccessFromRequest(request, {
+					organizationId: orgId,
+					patientId: visitRow.patientId,
+					action: "VIEW_VISIT_ATTACHMENTS",
+					metadata: { visitId },
 				});
 			}
 

@@ -5,6 +5,7 @@ import { db } from "../../db/client.js";
 import { diagnocatReports, patients } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 
 export async function registerDiagnocatRoutes(app: FastifyInstance) {
 	app.post("/api/integrations/diagnocat/webhook", async (request, reply) => {
@@ -86,6 +87,16 @@ export async function registerDiagnocatRoutes(app: FastifyInstance) {
 					),
 				)
 				.orderBy(diagnocatReports.createdAt);
+
+			await auditMedicalAccessFromRequest(request, {
+				organizationId,
+				patientId,
+				action: "VIEW_DIAGNOSIS",
+				metadata: {
+					resourceType: "diagnocat_ai_report",
+					justification: "Просмотр радиологического AI-отчета Diagnocat",
+				},
+			});
 
 			return reply.send({ success: true, reports });
 		},

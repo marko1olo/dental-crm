@@ -167,10 +167,19 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 		});
 	};
 
+	app.post("/api/audit/logs", rejectMutation);
+	app.post("/api/audit/logs/:id", rejectMutation);
 	app.delete("/api/audit/logs", rejectMutation);
 	app.delete("/api/audit/logs/:id", rejectMutation);
 	app.put("/api/audit/logs/:id", rejectMutation);
 	app.patch("/api/audit/logs/:id", rejectMutation);
+
+	app.post("/api/audit/medical-access", rejectMutation);
+	app.post("/api/audit/medical-access/:id", rejectMutation);
+	app.delete("/api/audit/medical-access", rejectMutation);
+	app.delete("/api/audit/medical-access/:id", rejectMutation);
+	app.put("/api/audit/medical-access/:id", rejectMutation);
+	app.patch("/api/audit/medical-access/:id", rejectMutation);
 }
 
 /**

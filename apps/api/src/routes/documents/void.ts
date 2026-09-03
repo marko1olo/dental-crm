@@ -13,6 +13,8 @@ import {
 	getRequestIdentity,
 	requireOrganizationId,
 } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { clinicalDocKinds } from "./query.js";
 import {
 	repairMojibakeDeep,
 	repairMojibakeText,
@@ -33,6 +35,23 @@ export async function register(app: FastifyInstance) {
 		const existing = await getDocumentById(orgId, id);
 		if (!existing) {
 			return reply.code(404).send(apiError("Документ не найден"));
+		}
+
+		// 152-ФЗ / 323-ФЗ: Аннулирование медицинских документов разрешено только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (clinicalDocKinds.has(existing.kind) && !evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.document.void",
+				role: staffRole,
+				message:
+					"Аннулирование медицинских документов ограничено 323-ФЗ и 152-ФЗ: требуются права клинического персонала (врач / главный врач).",
+			});
 		}
 
 		const parsedVoidInput = voidDocumentSchema.safeParse(request.body);

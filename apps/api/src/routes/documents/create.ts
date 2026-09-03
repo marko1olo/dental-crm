@@ -24,6 +24,7 @@ import {
 	getRequestIdentity,
 	requireOrganizationId,
 } from "../../security/identity.js";
+import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import {
 	repairMojibakeDeep,
 	repairMojibakeText,
@@ -32,6 +33,7 @@ import {
 	apiError,
 	documentCreateValidationMessageForRequest,
 } from "./shared.js";
+import { clinicalDocKinds } from "./query.js";
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents", async (request, reply) => {
@@ -66,6 +68,18 @@ export async function register(app: FastifyInstance) {
 			});
 		}
 		const input = repairMojibakeDeep(parsedInput.data);
+
+		// 152-ФЗ / 323-ФЗ: Создание клинических медицинских документов разрешено только клиническому персоналу
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (clinicalDocKinds.has(input.kind) && !evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.document.write",
+				role: staffRole,
+				message:
+					"Создание медицинских документов ограничено 323-ФЗ и 152-ФЗ: требуются права клинического персонала (врач / ассистент).",
+			});
+		}
 		// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
 		// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
 		// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.

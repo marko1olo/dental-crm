@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MessageTemplateEngine } from "../communications/MessageTemplateEngine.js";
 
 const uisMessageResponseSchema = z.object({
 	id: z.string().optional(),
@@ -12,6 +13,14 @@ export interface SendSmsParams {
 }
 
 export async function sendSmsViaUis(params: SendSmsParams): Promise<boolean> {
+	// 152-ФЗ / 323-ФЗ ст. 13: Аппаратная защита — отказ при наличии врачебной тайны
+	const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(params.message);
+	if (leakCheck.hasLeak) {
+		throw new Error(
+			`UIS SMS dispatch blocked under 323-FZ Art. 13: message contains medical secrecy leaks (${leakCheck.reasons.join("; ")})`,
+		);
+	}
+
 	const token = process.env.UIS_API_TOKEN;
 	const accountId = process.env.UIS_ACCOUNT_ID;
 	const channelId = process.env.UIS_SMS_CHANNEL_ID;

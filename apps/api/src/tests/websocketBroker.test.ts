@@ -58,8 +58,9 @@ function addClient(
 	socket: FakeSocket,
 	organizationId: string,
 	patientId?: string,
+	isClinical = true,
 ) {
-	wsBroker.addClient(socket as never, organizationId, patientId);
+	wsBroker.addClient(socket as never, organizationId, patientId, isClinical);
 }
 
 function types(socket: FakeSocket): string[] {

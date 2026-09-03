@@ -6,6 +6,7 @@ import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { communicationEvents } from "../db/schema.js";
 import { getDailySmsQuota, incrementDailySmsQuota } from "../db/uisSmsChatQuotasQuery.js";
+import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
 import { sendSmsViaUis } from "../services/uis/smsClient.js";
 
 const chatSendSchema = z.object({
@@ -70,6 +71,16 @@ export async function registerChatRoutes(app: FastifyInstance) {
 				return reply.code(400).send({
 					error: "MissingPhone",
 					message: "У пациента не указан номер телефона",
+				});
+			}
+
+			// 152-ФЗ / 323-ФЗ ст. 13: Запрет передачи сведений, составляющих врачебную тайну, в открытых SMS
+			const leakCheck = MessageTemplateEngine.detectMedicalSecrecyLeaks(parsed.data.message);
+			if (leakCheck.hasLeak) {
+				return reply.code(422).send({
+					error: "MedicalSecrecyViolationError",
+					message: `Запрет передачи врачебной тайны по открытым SMS-каналам (323-ФЗ ст. 13, 152-ФЗ): обнаружены клинические данные (${leakCheck.reasons.join("; ")})`,
+					detectedTerms: leakCheck.detectedTerms,
 				});
 			}
 
