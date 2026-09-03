@@ -367,8 +367,8 @@ test("RED-TEAM HAMMER: WAVE 11 — Telemetry, Exports & Medical Secrecy 152-FZ /
 		assert.ok(output.includes("[Сведения защищены 152-ФЗ]"), "Плашка защиты должна быть в Buffer CSV");
 	});
 
-	await suite.test("8. GET /api/v1/integrations/1c/commerceml/export — экспорт 1C JSON для маркетолога усекает клинические диагнозы", async () => {
-		const res = await app.inject({
+	await suite.test("8. GET /api/v1/integrations/1c/commerceml/export — экспорт 1C для маркетолога блокируется 403 PermissionDenied", async () => {
+		const resMarketer = await app.inject({
 			method: "GET",
 			url: "/api/v1/integrations/1c/commerceml/export?format=json",
 			headers: {
@@ -377,18 +377,26 @@ test("RED-TEAM HAMMER: WAVE 11 — Telemetry, Exports & Medical Secrecy 152-FZ /
 			},
 		});
 
-		assert.strictEqual(res.statusCode, 200);
-		const body = JSON.parse(res.payload);
-		assert.ok(body.success, "CommerceML экспорт должен сформироваться успешно");
-		const rawString = JSON.stringify(body);
-		assert.ok(
-			!rawString.includes("odontogram"),
-			"Поле одонтограммы не должно присутствовать для неклинического сотрудника",
+		assert.strictEqual(
+			resMarketer.statusCode,
+			403,
+			"Выгрузка 1С CommerceML для маркетолога обязана пресекаться кодом 403",
 		);
-		assert.ok(
-			!rawString.includes("clinicalNotes"),
-			"Поле clinicalNotes не должно присутствовать для неклинического сотрудника",
-		);
+		const errBody = JSON.parse(resMarketer.payload);
+		assert.strictEqual(errBody.error, "PermissionDenied");
+
+		const resDoctor = await app.inject({
+			method: "GET",
+			url: "/api/v1/integrations/1c/commerceml/export?format=json",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": doctorToken,
+			},
+		});
+
+		assert.strictEqual(resDoctor.statusCode, 200);
+		const docBody = JSON.parse(resDoctor.payload);
+		assert.ok(docBody.success, "Врач/руководитель получает выгрузку успешно");
 	});
 
 	await suite.test("9. WebSocket /api/ws/telephony и /api/ws/schedule зарегистрированы и доступны", async () => {
