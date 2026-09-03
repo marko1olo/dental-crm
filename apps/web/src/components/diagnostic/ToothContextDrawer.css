@@ -539,6 +539,136 @@
 	border-top: 1px solid var(--line, #e2e8f0);
 }
 
+/* 1-Click Endodontic Express Preset Bar */
+.dente-endo-presets-bar {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	background: var(--paper-strong, #ffffff);
+	padding: 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.dente-endo-presets-label-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.dente-endo-presets-title {
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--brand-primary, var(--teal));
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.dente-endo-presets-actions {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.dente-endo-preset-btn {
+	flex: 1 1 auto;
+	min-height: 44px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	border: 1.5px solid transparent;
+	text-align: left;
+}
+
+.dente-endo-preset-btn.protaper {
+	background: rgba(13, 148, 136, 0.1);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal-strong, #0f766e);
+}
+
+.dente-endo-preset-btn.protaper:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.dente-endo-preset-btn.calasept {
+	background: rgba(2, 132, 199, 0.1);
+	border-color: var(--brand, #0284c7);
+	color: var(--brand, #0284c7);
+}
+
+.dente-endo-preset-btn.calasept:hover {
+	background: var(--brand, #0284c7);
+	color: #ffffff;
+}
+
+.dente-endo-preset-btn.revision {
+	background: rgba(234, 88, 12, 0.1);
+	border-color: #ea580c;
+	color: #c2410c;
+}
+
+.dente-endo-preset-btn.revision:hover {
+	background: #ea580c;
+	color: #ffffff;
+}
+
+.dente-quick-endo-trigger-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 28px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid var(--teal, #0d9488);
+	color: var(--teal-strong, #0f766e);
+	font-size: 11px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.dente-quick-endo-trigger-btn:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+.dente-surface-quick-combo-btn {
+	min-height: 28px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper-strong);
+	color: var(--ink);
+	font-size: 11px;
+	font-weight: 800;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.dente-surface-quick-combo-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.dente-surface-quick-combo-btn.active {
+	background: var(--bad-fg);
+	color: #ffffff;
+	border-color: var(--bad-fg);
+	box-shadow: 0 1px 4px rgba(239, 68, 68, 0.3);
+}
+
 .dente-endo-controls-row {
 	display: flex;
 	align-items: center;

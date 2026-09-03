@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	Activity,
 	Check,
@@ -12,11 +12,13 @@ import {
 	Syringe,
 	Trash2,
 	Wrench,
+	Zap,
 } from "lucide-react";
 import { AnesthesiaDosageCalculatorModal } from "../anesthesia/AnesthesiaDosageCalculatorModal";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import {
 	type EndoCanalData,
+	type EndoToothClinicalData,
 	CANAL_NAME_OPTIONS,
 	REFERENCE_POINT_OPTIONS,
 	MAF_ISO_OPTIONS,
@@ -110,8 +112,41 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 	}, [toothData?.surfaces]);
 
 	const [canals, setCanals] = useState<EndoCanalData[]>(() => {
+		const existing = (toothData?.clinicalData as EndoToothClinicalData | undefined)?.canals;
+		if (existing && existing.length > 0) return existing;
 		return getDefaultCanalsForTooth(toothNumber);
 	});
+
+	const [endoRotarySystem, setEndoRotarySystem] = useState<string>(
+		(toothData?.clinicalData as EndoToothClinicalData | undefined)?.rotarySystem ||
+			"Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF 25.06",
+	);
+	const [endoIrrigation, setEndoIrrigation] = useState<string>(
+		(toothData?.clinicalData as EndoToothClinicalData | undefined)?.irrigation ||
+			"3% NaOCl + 17% EDTA с ультразвуковой активацией",
+	);
+	const [endoRadiologyControl, setEndoRadiologyControl] = useState<string>(
+		(toothData?.clinicalData as EndoToothClinicalData | undefined)?.radiologyControl ||
+			"Контрольная визиография: корневые каналы обтурированы плотно, гомогенно до верхушки.",
+	);
+
+	useEffect(() => {
+		const existing = (toothData?.clinicalData as EndoToothClinicalData | undefined)?.canals;
+		if (existing && existing.length > 0) {
+			setCanals(existing);
+		} else {
+			setCanals(getDefaultCanalsForTooth(toothNumber));
+		}
+		if ((toothData?.clinicalData as EndoToothClinicalData | undefined)?.rotarySystem) {
+			setEndoRotarySystem((toothData.clinicalData as EndoToothClinicalData).rotarySystem!);
+		}
+		if ((toothData?.clinicalData as EndoToothClinicalData | undefined)?.irrigation) {
+			setEndoIrrigation((toothData.clinicalData as EndoToothClinicalData).irrigation!);
+		}
+		if ((toothData?.clinicalData as EndoToothClinicalData | undefined)?.radiologyControl) {
+			setEndoRadiologyControl((toothData.clinicalData as EndoToothClinicalData).radiologyControl!);
+		}
+	}, [toothNumber, toothData?.clinicalData]);
 
 	const [showEndoTable, setShowEndoTable] = useState<boolean>(
 		toothData?.state === "Pulpitis" || toothData?.state === "Periodontitis",
@@ -151,7 +186,21 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 	};
 
 	const handleCanalChange = (id: string, field: keyof EndoCanalData, value: string | number) => {
-		setCanals((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)));
+		setCanals((prev) => {
+			const next = prev.map((c) => (c.id === id ? { ...c, [field]: value } : c));
+			onUpdateTooth?.({
+				canalCount: next.length,
+				clinicalData: {
+					...(toothData?.clinicalData as EndoToothClinicalData | undefined),
+					canals: next,
+					rotarySystem: endoRotarySystem,
+					irrigation: endoIrrigation,
+					radiologyControl: endoRadiologyControl,
+					updatedAt: new Date().toISOString(),
+				},
+			});
+			return next;
+		});
 	};
 
 	const handleAddCanal = () => {
@@ -164,7 +213,21 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 			taper: TAPER_OPTIONS[2],
 			obturationTechnique: OBTURATION_TECHNIQUE_OPTIONS[0],
 		};
-		setCanals((prev) => [...prev, newCanal]);
+		setCanals((prev) => {
+			const next = [...prev, newCanal];
+			onUpdateTooth?.({
+				canalCount: next.length,
+				clinicalData: {
+					...(toothData?.clinicalData as EndoToothClinicalData | undefined),
+					canals: next,
+					rotarySystem: endoRotarySystem,
+					irrigation: endoIrrigation,
+					radiologyControl: endoRadiologyControl,
+					updatedAt: new Date().toISOString(),
+				},
+			});
+			return next;
+		});
 	};
 
 	const handleRemoveCanal = (id: string) => {
@@ -172,18 +235,170 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 			showToast("Должен оставаться хотя бы 1 корневой канал", "warning");
 			return;
 		}
-		setCanals((prev) => prev.filter((c) => c.id !== id));
+		setCanals((prev) => {
+			const next = prev.filter((c) => c.id !== id);
+			onUpdateTooth?.({
+				canalCount: next.length,
+				clinicalData: {
+					...(toothData?.clinicalData as EndoToothClinicalData | undefined),
+					canals: next,
+					rotarySystem: endoRotarySystem,
+					irrigation: endoIrrigation,
+					radiologyControl: endoRadiologyControl,
+					updatedAt: new Date().toISOString(),
+				},
+			});
+			return next;
+		});
 	};
 
 	const handleResetCanals = () => {
-		setCanals(getDefaultCanalsForTooth(toothNumber));
+		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+		setCanals(defaultCanals);
+		onUpdateTooth?.({
+			canalCount: defaultCanals.length,
+			clinicalData: {
+				...(toothData?.clinicalData as EndoToothClinicalData | undefined),
+				canals: defaultCanals,
+				rotarySystem: endoRotarySystem,
+				irrigation: endoIrrigation,
+				radiologyControl: endoRadiologyControl,
+				updatedAt: new Date().toISOString(),
+			},
+		});
 		showToast(`Каналы сброшены к стандарту зуба #${toothNumber}`, "info");
+	};
+
+	// 1. [⚡ Экспресс ProTaper: 25.06 + NaOCl + AH Plus]
+	const handleApplyExpressProTaper = () => {
+		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
+		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+		const updated: EndoCanalData[] = baseCanals.map((c, idx) => {
+			const def = defaultCanals[idx] || defaultCanals[0];
+			return {
+				...c,
+				workingLengthMm: c.workingLengthMm ? Number(c.workingLengthMm) : (def?.workingLengthMm || 21.0),
+				masterApicalFile: "ISO 25 (#25 красный)",
+				taper: ".06 (Конусность 6%)",
+				obturationTechnique: "Гуттаперча + Силер (AH Plus)",
+				sealer: "AH Plus",
+				notes: "ProTaper Gold 25.06, NaOCl 3% + EDTA, AH Plus + гуттаперча",
+			};
+		});
+		const rotary = "Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF 25.06";
+		const irri = "3% NaOCl + 17% EDTA с УЗ-активацией";
+		const rad = "Контрольная визиография: корневые каналы обтурированы плотно, гомогенно до верхушки.";
+
+		setCanals(updated);
+		setEndoRotarySystem(rotary);
+		setEndoIrrigation(irri);
+		setEndoRadiologyControl(rad);
+		setShowEndoTable(true);
+
+		onUpdateTooth?.({
+			state: toothData?.state === "Healthy" || toothData?.state === "Caries" ? "Pulpitis" : (toothData?.state ?? "Pulpitis"),
+			canalCount: updated.length,
+			canalObturation: "gutta_percha",
+			clinicalData: {
+				canals: updated,
+				rotarySystem: rotary,
+				irrigation: irri,
+				radiologyControl: rad,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+		showToast(`Зуб #${toothNumber}: применён протокол ProTaper 25.06 + AH Plus (1 клик)`, "success", 3000);
+	};
+
+	// 2. [⚡ Временная лечебная обтурация: Каласепт (Ca(OH)2)]
+	const handleApplyCalaseptCaOh2 = () => {
+		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
+		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+		const updated: EndoCanalData[] = baseCanals.map((c, idx) => {
+			const def = defaultCanals[idx] || defaultCanals[0];
+			return {
+				...c,
+				workingLengthMm: c.workingLengthMm ? Number(c.workingLengthMm) : (def?.workingLengthMm || 21.0),
+				masterApicalFile: "ISO 25 (#25 красный)",
+				taper: ".06 (Конусность 6%)",
+				obturationTechnique: "Временная обтурация Ca(OH)2 (Каласепт / Metapex)",
+				sealer: "Каласепт (гидроксид кальция)",
+				notes: "Временная лечебная повязка пастой Ca(OH)2 на 14 дней, герметичная пломба",
+			};
+		});
+		const rotary = "Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF";
+		const irri = "3% NaOCl + 17% EDTA с УЗ-активацией, обильное промывание 0.9% NaCl";
+		const rad = "Контрольная радиовизиография: лечебная паста Ca(OH)2 выведена до апекса, герметичная повязка.";
+
+		setCanals(updated);
+		setEndoRotarySystem(rotary);
+		setEndoIrrigation(irri);
+		setEndoRadiologyControl(rad);
+		setShowEndoTable(true);
+
+		onUpdateTooth?.({
+			state: "Periodontitis",
+			canalCount: updated.length,
+			canalObturation: "calcium_hydroxide",
+			clinicalData: {
+				canals: updated,
+				rotarySystem: rotary,
+				irrigation: irri,
+				radiologyControl: rad,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+		showToast(`Зуб #${toothNumber}: применён протокол Каласепт Ca(OH)2 (1 клик)`, "info", 3000);
+	};
+
+	// 3. [⚡ Распломбировка / Ревизия (D1-D3, Сольвент)]
+	const handleApplyRetreatmentRevision = () => {
+		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
+		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+		const updated: EndoCanalData[] = baseCanals.map((c, idx) => {
+			const def = defaultCanals[idx] || defaultCanals[0];
+			return {
+				...c,
+				workingLengthMm: c.workingLengthMm ? Number(c.workingLengthMm) : (def?.workingLengthMm || 21.0),
+				masterApicalFile: "ISO 30 (#30 синий)",
+				taper: ".07 (Конусность 7%)",
+				obturationTechnique: "Латеральная компакция холодной гуттаперчи",
+				sealer: "Эвакуация старого силера / Сольвент",
+				notes: "Распломбировка ProTaper Retreatment D1-D3 с сольвентом, старая паста удалена, канал чист",
+			};
+		});
+		const rotary = "Инструменты ProTaper Retreatment D1, D2, D3 + сольвент (Endosolv / Фенопласт)";
+		const irri = "Сольвент + 3% NaOCl + 17% EDTA с УЗ-активацией";
+		const rad = "Контрольная радиовизиография: чистота каналов подтверждена, апекс проходим.";
+
+		setCanals(updated);
+		setEndoRotarySystem(rotary);
+		setEndoIrrigation(irri);
+		setEndoRadiologyControl(rad);
+		setShowEndoTable(true);
+
+		onUpdateTooth?.({
+			state: "Periodontitis",
+			canalCount: updated.length,
+			canalObturation: "gutta_percha",
+			clinicalData: {
+				canals: updated,
+				rotarySystem: rotary,
+				irrigation: irri,
+				radiologyControl: rad,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+		showToast(`Зуб #${toothNumber}: применён протокол ревизии D1-D3 + Сольвент (1 клик)`, "warning", 3000);
 	};
 
 	const handleInsertEndoProtocol = () => {
 		const protocolText = generateEndoProtocol043({
 			toothNumber,
 			canals,
+			irrigation: endoIrrigation,
+			rotarySystem: endoRotarySystem,
+			radiologyControl: endoRadiologyControl,
 		});
 		if (onInsertToProtocol) {
 			onInsertToProtocol(protocolText);
@@ -275,14 +490,55 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 					<span className="dente-surface-label">
 						Выбор поверхностей поражения: <strong>{currentSurfaces.length > 0 ? currentSurfaces.join("") : "Интактно"}</strong>
 					</span>
-					<button
-						type="button"
-						onClick={() => onUpdateTooth?.({ surfaces: [] })}
-						className="dente-text-action-btn"
-						title="Очистить поверхности"
-					>
-						Сбросить
-					</button>
+					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+						<button
+							type="button"
+							onClick={() =>
+								onUpdateTooth?.({
+									surfaces: ["M", "O", "D"],
+									state: toothData?.state === "Healthy" ? "Caries" : toothData?.state ?? "Caries",
+								})
+							}
+							className={`dente-surface-quick-combo-btn ${currentSurfaces.includes("M") && currentSurfaces.includes("O") && currentSurfaces.includes("D") ? "active" : ""}`}
+							title="Медиально-окклюзионно-дистальная (MOD)"
+						>
+							MOD
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								onUpdateTooth?.({
+									surfaces: ["M", "O"],
+									state: toothData?.state === "Healthy" ? "Caries" : toothData?.state ?? "Caries",
+								})
+							}
+							className={`dente-surface-quick-combo-btn ${currentSurfaces.includes("M") && currentSurfaces.includes("O") && !currentSurfaces.includes("D") ? "active" : ""}`}
+							title="Медиально-окклюзионная (MO)"
+						>
+							MO
+						</button>
+						<button
+							type="button"
+							onClick={() =>
+								onUpdateTooth?.({
+									surfaces: ["O", "D"],
+									state: toothData?.state === "Healthy" ? "Caries" : toothData?.state ?? "Caries",
+								})
+							}
+							className={`dente-surface-quick-combo-btn ${currentSurfaces.includes("O") && currentSurfaces.includes("D") && !currentSurfaces.includes("M") ? "active" : ""}`}
+							title="Окклюзионно-дистальная (OD)"
+						>
+							OD
+						</button>
+						<button
+							type="button"
+							onClick={() => onUpdateTooth?.({ surfaces: [] })}
+							className="dente-text-action-btn"
+							title="Очистить поверхности (интактно)"
+						>
+							Сбросить
+						</button>
+					</div>
 				</div>
 
 				<div className="dente-surface-diagram-container">
@@ -397,20 +653,78 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 						<Wrench size={16} color="var(--bad-fg)" />
 						<span>Эндодонтия & Апекслокация каналов ({canals.length})</span>
 					</div>
-					<button
-						type="button"
-						className="dente-text-action-btn"
-						onClick={(e) => {
-							e.stopPropagation();
-							setShowEndoTable(!showEndoTable);
-						}}
-					>
-						{showEndoTable ? "Свернуть" : "Развернуть..."}
-					</button>
+					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+						{!showEndoTable && (
+							<button
+								type="button"
+								className="dente-quick-endo-trigger-btn"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleApplyExpressProTaper();
+								}}
+								title="Быстрый протокол ProTaper 25.06 (1 клик)"
+							>
+								<Zap size={12} />
+								<span>⚡ Экспресс ProTaper</span>
+							</button>
+						)}
+						<button
+							type="button"
+							className="dente-text-action-btn"
+							onClick={(e) => {
+								e.stopPropagation();
+								setShowEndoTable(!showEndoTable);
+							}}
+						>
+							{showEndoTable ? "Свернуть" : "Развернуть..."}
+						</button>
+					</div>
 				</div>
 
 				{showEndoTable && (
 					<div className="dente-endo-body">
+						{/* 1-Click Express Endodontic Presets Bar */}
+						<div className="dente-endo-presets-bar" data-testid="endo-presets-bar">
+							<div className="dente-endo-presets-label-row">
+								<span className="dente-endo-presets-title">
+									<Sparkles size={14} />
+									<span>Экспресс-протоколы эндодонтии (1 клик):</span>
+								</span>
+							</div>
+							<div className="dente-endo-presets-actions">
+								<button
+									type="button"
+									onClick={handleApplyExpressProTaper}
+									className="dente-endo-preset-btn protaper"
+									title="Заполнить все каналы: ProTaper Gold 25.06, NaOCl 3% + EDTA, обтурация AH Plus + гуттаперча"
+									data-testid="endo-preset-protaper"
+								>
+									<Zap size={14} />
+									<span>⚡ Экспресс ProTaper: 25.06 + NaOCl + AH Plus</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleApplyCalaseptCaOh2}
+									className="dente-endo-preset-btn calasept"
+									title="Временная лечебная повязка гидроксидом кальция Ca(OH)2 при деструктивных периодонтитах"
+									data-testid="endo-preset-calasept"
+								>
+									<ShieldAlert size={14} />
+									<span>⚡ Временная лечебная обтурация: Каласепт (Ca(OH)2)</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleApplyRetreatmentRevision}
+									className="dente-endo-preset-btn revision"
+									title="Распломбировка каналов ProTaper Retreatment D1-D3 с сольвентом"
+									data-testid="endo-preset-revision"
+								>
+									<RotateCcw size={14} />
+									<span>⚡ Распломбировка / Ревизия (D1-D3, Сольвент)</span>
+								</button>
+							</div>
+						</div>
+
 						<div className="dente-endo-controls-row">
 							<button
 								type="button"

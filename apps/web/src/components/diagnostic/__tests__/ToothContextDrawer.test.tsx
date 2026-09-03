@@ -75,6 +75,26 @@ describe("Tier 2 Warm Context & Tooth Drawer Tools", () => {
 		assert.ok(html.includes("ИРОПЗ"), "IROPZ destruction index should be computed");
 	});
 
+	it("ToothSurfacesAndEndoMatrix renders express endo presets (ProTaper, Calasept, Revision) and MOD quick combo buttons", () => {
+		const html = renderToString(
+			<ToothSurfacesAndEndoMatrix
+				toothNumber={16}
+				toothData={{
+					toothNumber: 16,
+					state: "Pulpitis",
+					surfaces: ["M", "O", "D"],
+				}}
+			/>,
+		);
+
+		assert.ok(html.includes("endo-presets-bar"), "Endo presets bar should render when endo table is open");
+		assert.ok(html.includes("endo-preset-protaper"), "Express ProTaper preset button should be present");
+		assert.ok(html.includes("endo-preset-calasept"), "Calasept Ca(OH)2 preset button should be present");
+		assert.ok(html.includes("endo-preset-revision"), "Retreatment/Revision preset button should be present");
+		assert.ok(html.includes("dente-surface-quick-combo-btn"), "Quick combo buttons (MOD/MO/OD) should be present");
+		assert.ok(html.includes("Вставить протокол эндодонтии в карту 043/у"), "043/u protocol export action should be present");
+	});
+
 	it("ToothAnesthesiaCalculator calculates safe carpule limits by patient weight", () => {
 		const html = renderToString(
 			<ToothAnesthesiaCalculator
