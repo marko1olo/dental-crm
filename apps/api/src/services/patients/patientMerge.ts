@@ -27,11 +27,16 @@
  *    ОСНОВНОЙ карточки: она та, которую администратор оставляет жить.
  */
 
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
+import { inMemoryBlacklist } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
 import { patientDuplicateDecisions } from "../../db/patientsSchema.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { patients } from "../../db/schema.js";
+import {
+	patientArchiveReasonsAndBlacklists,
+	patients,
+} from "../../db/schema.js";
 
 /** Имя таблицы или колонки из каталога. Защита от подстановки в динамический SQL. */
 const SAFE_IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
@@ -118,6 +123,11 @@ const UNIQUE_CONFLICT_TABLES: readonly {
 		column: "referee_patient_id",
 		scope: ["organization_id"],
 	},
+	{
+		table: "tooth_states",
+		column: "patient_id",
+		scope: ["organization_id", "tooth_number"],
+	},
 ];
 
 export type MergeResult =
@@ -188,7 +198,10 @@ export async function mergePatients(
 						birth_date as "birthDate",
 						notes,
 						status,
-						merged_into_patient_id as "mergedInto"
+						merged_into_patient_id as "mergedInto",
+						weight_kg as "weightKg",
+						family_group_id as "familyGroupId",
+						administrative_profile as "administrativeProfile"
 					from patients
 					where organization_id = ${input.organizationId}
 						and id in (${firstId}, ${secondId})
@@ -205,6 +218,9 @@ export async function mergePatients(
 					notes: string | null;
 					status: string;
 					mergedInto: string | null;
+					weightKg: string | null;
+					familyGroupId: string | null;
+					administrativeProfile: PatientAdministrativeProfile | null;
 				}>;
 
 				const primary = lockedRows.find((row) => row.id === input.primaryPatientId);
@@ -317,7 +333,14 @@ export async function mergePatients(
 				}
 
 				// Переносим только то, чего в основной карточке нет.
-				const fill: Record<string, string> = {};
+				const fill: {
+					phone?: string;
+					email?: string;
+					birthDate?: string;
+					weightKg?: string;
+					familyGroupId?: string;
+					administrativeProfile?: PatientAdministrativeProfile | null;
+				} = {};
 				if (!primary.phone?.trim() && duplicate.phone?.trim()) {
 					fill.phone = duplicate.phone.trim();
 					filledFields.push("телефон");
@@ -329,6 +352,54 @@ export async function mergePatients(
 				if (!primary.birthDate?.trim() && duplicate.birthDate?.trim()) {
 					fill.birthDate = duplicate.birthDate.trim();
 					filledFields.push("дата рождения");
+				}
+				if (!primary.weightKg && duplicate.weightKg) {
+					fill.weightKg = duplicate.weightKg;
+					filledFields.push("вес (кг)");
+				}
+				if (!primary.familyGroupId && duplicate.familyGroupId) {
+					fill.familyGroupId = duplicate.familyGroupId;
+					filledFields.push("семейная группа");
+				}
+
+				let nextAdminProfile: PatientAdministrativeProfile | null = primary.administrativeProfile
+					? { ...primary.administrativeProfile }
+					: null;
+				const dupAdmin = duplicate.administrativeProfile;
+				if (dupAdmin && typeof dupAdmin === "object") {
+					if (!nextAdminProfile) {
+						nextAdminProfile = { ...dupAdmin };
+						if (dupAdmin.snils) filledFields.push("СНИЛС");
+						if (dupAdmin.identityDocument) filledFields.push("документ / паспорт");
+						if (dupAdmin.insurancePolicyNumber) filledFields.push("полис ОМС/ДМС");
+						if (dupAdmin.taxpayerInn) filledFields.push("ИНН");
+						if (dupAdmin.registrationAddress || dupAdmin.residentialAddress) filledFields.push("адрес");
+					} else {
+						for (const [key, value] of Object.entries(dupAdmin)) {
+							const curVal = (nextAdminProfile as Record<string, unknown>)[key];
+							const isCurEmpty =
+								curVal === null ||
+								curVal === undefined ||
+								(typeof curVal === "string" && curVal.trim() === "");
+							const isValNonEmpty =
+								value !== null &&
+								value !== undefined &&
+								(typeof value !== "string" || value.trim() !== "");
+							if (isCurEmpty && isValNonEmpty) {
+								(nextAdminProfile as Record<string, unknown>)[key] = value;
+								if (key === "snils") filledFields.push("СНИЛС");
+								else if (key === "identityDocument") filledFields.push("документ / паспорт");
+								else if (key === "insurancePolicyNumber") filledFields.push("полис ОМС/ДМС");
+								else if (key === "taxpayerInn") filledFields.push("ИНН");
+								else if (key === "registrationAddress" || key === "residentialAddress") filledFields.push("адрес");
+								else if (key === "curatorId") filledFields.push("куратор лечения");
+								else if (key === "loyaltyTier") filledFields.push("уровень лояльности");
+							}
+						}
+					}
+				}
+				if (nextAdminProfile) {
+					fill.administrativeProfile = nextAdminProfile;
 				}
 
 				// Заметки не заменяются, а дописываются: в них бывает важное.
@@ -366,6 +437,27 @@ export async function mergePatients(
 							eq(patients.organizationId, input.organizationId),
 						),
 					);
+
+				// Фиксация причины архивации дублирующей карты по 323-ФЗ и приказу 834н
+				await inner
+					.insert(patientArchiveReasonsAndBlacklists)
+					.values({
+						organizationId: input.organizationId,
+						patientId: input.duplicatePatientId,
+						patientName: duplicate.fullName,
+						archiveReason: `Карточка объединена с «${primary.fullName}». Все записи перенесены.`,
+						reasonCode: "DUPLICATE_CARD_MERGED",
+						legalBasis:
+							"Приказ Минздрава России от 15.12.2014 № 834н (архивный статус формы 043/у при объединении)",
+						isBookingBlocked: true,
+						isBlacklisted: false,
+						warningBadge: "Объединена (архив)",
+						archivedBy: input.performedByUserId ?? null,
+					});
+
+				inMemoryBlacklist.add(
+					`${input.organizationId}:${input.duplicatePatientId}`,
+				);
 
 				const [left, right] =
 					input.primaryPatientId < input.duplicatePatientId

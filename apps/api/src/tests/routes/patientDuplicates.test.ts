@@ -8,6 +8,7 @@ import {
 	appointments,
 	clinics,
 	organizations,
+	patientArchiveReasonsAndBlacklists,
 	patientCommunicationConsents,
 	patients,
 	payments,
@@ -130,6 +131,9 @@ describe("поиск и слияние дублей", () => {
 			await db
 				.delete(patientDuplicateDecisions)
 				.where(eq(patientDuplicateDecisions.organizationId, ORG_ID));
+			await db
+				.delete(patientArchiveReasonsAndBlacklists)
+				.where(eq(patientArchiveReasonsAndBlacklists.organizationId, ORG_ID));
 			await db
 				.delete(patientCommunicationConsents)
 				.where(eq(patientCommunicationConsents.organizationId, ORG_ID));

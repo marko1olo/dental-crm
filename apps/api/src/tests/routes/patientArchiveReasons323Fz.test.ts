@@ -9,6 +9,7 @@ import {
 } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
 import { getPatientsFromDb } from "../../db/patientsQuery.js";
 import {
+	familyGroups,
 	organizations,
 	patientArchiveReasons,
 	patientArchiveReasonsAndBlacklists,
@@ -19,6 +20,7 @@ import {
 	DEFAULT_323_FZ_ARCHIVE_REASONS,
 	PatientArchiveReasonService,
 } from "../../services/patients/PatientArchiveReasonService.js";
+import { findDuplicateCandidates } from "../../services/patients/duplicateDetection.js";
 import { mergePatients } from "../../services/patients/patientMerge.js";
 import {
 	fixtureUuid,
@@ -32,6 +34,9 @@ const DOCTOR_ID = fixtureUuid(NAMESPACE, 2);
 const PATIENT_A_ID = fixtureUuid(NAMESPACE, 10);
 const PATIENT_B_ID = fixtureUuid(NAMESPACE, 11);
 const DUPLICATE_PATIENT_ID = fixtureUuid(NAMESPACE, 12);
+const FAMILY_GROUP_ID = fixtureUuid(NAMESPACE, 13);
+const PATIENT_SNILS_1_ID = fixtureUuid(NAMESPACE, 20);
+const PATIENT_SNILS_2_ID = fixtureUuid(NAMESPACE, 21);
 
 describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 	before(async () => {
@@ -51,6 +56,13 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 				fullName: "Доктор Стоматологов-Хирург",
 			});
 
+			await tx.insert(familyGroups).values({
+				id: FAMILY_GROUP_ID,
+				organizationId: ORG_ID,
+				name: "Семья Ивановых",
+				balance: "5000.00",
+			});
+
 			await tx.insert(patients).values([
 				{
 					id: PATIENT_A_ID,
@@ -65,6 +77,10 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 					fullName: "Петров Петр Петрович",
 					phone: "+79992223344",
 					status: "active",
+					// Основная карточка имеет заполненный ИНН, но нет СНИЛС, паспорта и веса
+					administrativeProfile: {
+						taxpayerInn: "770123456789",
+					},
 				},
 				{
 					id: DUPLICATE_PATIENT_ID,
@@ -72,6 +88,37 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 					fullName: "Иванов Иван Дубль",
 					phone: "+79991112233",
 					status: "active",
+					weightKg: "78.50",
+					familyGroupId: FAMILY_GROUP_ID,
+					// Дубль имеет СНИЛС, паспорт, полис ОМС и другой ИНН (который не должен перетереть основной)
+					administrativeProfile: {
+						snils: "123-456-789 00",
+						identityDocument: "Паспорт РФ 4510 123456",
+						insurancePolicyNumber: "1234567890123456",
+						taxpayerInn: "999999999999",
+						residentialAddress: "г. Москва, ул. Ленина, д. 10",
+					},
+				},
+				// Пациенты для теста обнаружения дублей по СНИЛС
+				{
+					id: PATIENT_SNILS_1_ID,
+					organizationId: ORG_ID,
+					fullName: "Сидорова Анна Павловна",
+					phone: "+79995556677",
+					status: "active",
+					administrativeProfile: {
+						snils: "987-654-321 00",
+					},
+				},
+				{
+					id: PATIENT_SNILS_2_ID,
+					organizationId: ORG_ID,
+					fullName: "Кузнецова Анна Павловна", // Сменила фамилию, телефон другой, но СНИЛС тот же!
+					phone: "+79998889900",
+					status: "active",
+					administrativeProfile: {
+						snils: "987-654-321 00",
+					},
 				},
 			]);
 		});
@@ -277,5 +324,82 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 				return true;
 			},
 		);
+	});
+
+	it("5. При слиянии карт переносятся СНИЛС, паспорт, полис ОМС, вес и семейная группа, не затирая существующие данные", async () => {
+		const [primaryInDb] = await db
+			.select()
+			.from(patients)
+			.where(
+				and(eq(patients.id, PATIENT_B_ID), eq(patients.organizationId, ORG_ID)),
+			);
+		assert.ok(primaryInDb, "Основной пациент должен существовать");
+
+		// Проверяем перенос веса и семейной группы
+		assert.equal(Number(primaryInDb.weightKg), 78.5, "Вес должен перенестись из дубля");
+		assert.equal(
+			primaryInDb.familyGroupId,
+			FAMILY_GROUP_ID,
+			"Семейная группа должна перенестись из дубля",
+		);
+
+		// Проверяем слияние административного профиля
+		const admin = primaryInDb.administrativeProfile as Record<string, unknown>;
+		assert.ok(admin, "Профиль должен существовать");
+		assert.equal(admin.snils, "123-456-789 00", "СНИЛС должен перенестись из дубля");
+		assert.equal(
+			admin.identityDocument,
+			"Паспорт РФ 4510 123456",
+			"Паспорт должен перенестись",
+		);
+		assert.equal(
+			admin.insurancePolicyNumber,
+			"1234567890123456",
+			"Полис ОМС/ДМС должен перенестись",
+		);
+		assert.equal(
+			admin.residentialAddress,
+			"г. Москва, ул. Ленина, д. 10",
+			"Адрес должен перенестись",
+		);
+		// ИНН был в основной карточке изначально ("770123456789") и НЕ должен быть затерт ИНН дубля ("999999999999")
+		assert.equal(
+			admin.taxpayerInn,
+			"770123456789",
+			"Существующий ИНН основной карточки не должен перезаписываться",
+		);
+
+		// Проверяем запись причины архивации дубля по 323-ФЗ
+		const [duplicateArchive] = await db
+			.select()
+			.from(patientArchiveReasonsAndBlacklists)
+			.where(
+				and(
+					eq(patientArchiveReasonsAndBlacklists.patientId, DUPLICATE_PATIENT_ID),
+					eq(patientArchiveReasonsAndBlacklists.organizationId, ORG_ID),
+				),
+			);
+		assert.ok(duplicateArchive, "В журнале архивации должна быть запись о дубле");
+		assert.equal(duplicateArchive.reasonCode, "DUPLICATE_CARD_MERGED");
+		assert.match(duplicateArchive.legalBasis ?? "", /834н/);
+	});
+
+	it("6. Поиск дублей через findDuplicateCandidates обнаруживает пациентов с одинаковым СНИЛС (same_snils, confidence 0.98)", async () => {
+		const report = await findDuplicateCandidates(ORG_ID);
+		const snilsCandidate = report.candidates.find(
+			(c) =>
+				(c.leftPatientId === PATIENT_SNILS_1_ID &&
+					c.rightPatientId === PATIENT_SNILS_2_ID) ||
+				(c.leftPatientId === PATIENT_SNILS_2_ID &&
+					c.rightPatientId === PATIENT_SNILS_1_ID),
+		);
+
+		assert.ok(
+			snilsCandidate,
+			"Кандидат с одинаковым СНИЛС должен быть найден в очереди дублей",
+		);
+		assert.equal(snilsCandidate.reason, "same_snils");
+		assert.equal(snilsCandidate.confidence, 0.98);
+		assert.match(snilsCandidate.explanation, /СНИЛС/);
 	});
 });

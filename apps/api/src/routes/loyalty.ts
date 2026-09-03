@@ -10,6 +10,7 @@ import {
 	bonusTransactions,
 	loyaltyPrograms,
 	patientBonusBalances,
+	patientInvoices,
 	patients,
 } from "../db/schema.js";
 
@@ -289,8 +290,45 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 						.limit(1)
 						.for("update");
 
+					// Validate invoice if provided to prevent fraud
+					let effectiveInvoiceAmountRub = invoiceAmountRub;
+					if (invoiceId) {
+						const [invoice] = await tx
+							.select()
+							.from(patientInvoices)
+							.where(
+								and(
+									eq(patientInvoices.id, invoiceId),
+									eq(patientInvoices.organizationId, orgId),
+								),
+							)
+							.for("update")
+							.limit(1);
+
+						if (!invoice || invoice.patientId !== patientId) {
+							return {
+								invalidInvoice: true as const,
+								message:
+									"Счёт на оплату не найден или принадлежит другому пациенту",
+								code: 404,
+							};
+						}
+						if (invoice.status === "paid" || invoice.status === "refunded") {
+							return {
+								invalidInvoice: true as const,
+								message:
+									"Нельзя списать баллы в счет уже оплаченного или отмененного счета",
+								code: 409,
+							};
+						}
+						effectiveInvoiceAmountRub = Number(invoice.totalRub);
+					}
+
 					const activePoints = Number(balance?.activePoints ?? 0);
-					const coverage = calculateMaxRedeemablePoints(invoiceAmountRub, activePoints);
+					const coverage = calculateMaxRedeemablePoints(
+						effectiveInvoiceAmountRub,
+						activePoints,
+					);
 
 					if (pointsToRedeem > coverage.maxAllowedPoints) {
 						return {
@@ -345,7 +383,7 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 						redeemedPoints: pointsToRedeem,
 						discountRub: pointsToRedeem, // 1 point = 1 RUB
 						remainingInvoicePaymentRub: Number(
-							(invoiceAmountRub - pointsToRedeem).toFixed(2),
+							(effectiveInvoiceAmountRub - pointsToRedeem).toFixed(2),
 						),
 						newActivePoints,
 						transactionId: txRecord?.id || "redemption",
@@ -354,6 +392,11 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 
 				if ("notFound" in result) {
 					return reply.status(404).send({ message: "Пациент не найден" });
+				}
+
+				if ("invalidInvoice" in result) {
+					const statusCode = typeof result.code === "number" ? result.code : 400;
+					return reply.status(statusCode).send({ message: result.message });
 				}
 
 				if ("limitExceeded" in result) {

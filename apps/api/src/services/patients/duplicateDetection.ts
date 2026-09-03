@@ -41,7 +41,9 @@ type DuplicateReason =
 	/** Совпал только телефон — чаще всего это родственники. */
 	| "same_phone_only"
 	/** Совпала электронная почта. */
-	| "same_email";
+	| "same_email"
+	/** Совпал государственный СНИЛС (11 цифр). */
+	| "same_snils";
 
 /**
  * Карточка в паре. Телефон и дата рождения обязательны в ответе: администратор
@@ -54,6 +56,7 @@ type DuplicateSide = {
 	readonly phone: string | null;
 	readonly birthDate: string | null;
 	readonly email: string | null;
+	readonly snils?: string | null;
 };
 
 export type DuplicateCandidate = {
@@ -105,6 +108,11 @@ const REASON_META: Readonly<
 		confidence: 0.55,
 		explanation: "Совпал адрес электронной почты.",
 		caution: "Семья нередко указывает один адрес почты.",
+	},
+	same_snils: {
+		confidence: 0.98,
+		explanation: "Полностью совпал государственный СНИЛС (11 цифр).",
+		caution: null,
 	},
 };
 
@@ -587,6 +595,7 @@ type PatientRow = {
 	phone: string | null;
 	email: string | null;
 	birthDate: string | null;
+	snils?: string | null;
 };
 
 /** Пара идентификаторов в устойчивом порядке — чтобы не считать дважды. */
@@ -616,22 +625,34 @@ export async function findDuplicateCandidates(
 	const minConfidence = Math.max(0, Math.min(1, options.minConfidence ?? 0.3));
 	const limit = Math.max(1, Math.min(500, options.limit ?? 100));
 
-	const rows: PatientRow[] = await db
-		.select({
-			id: patients.id,
-			fullName: patients.fullName,
-			phone: patients.phone,
-			email: patients.email,
-			birthDate: patients.birthDate,
-		})
-		.from(patients)
-		.where(
-			and(
-				eq(patients.organizationId, organizationId),
-				eq(patients.status, "active"),
-				isNull(patients.mergedIntoPatientId),
-			),
-		);
+	const rows: PatientRow[] = (
+		await db
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				phone: patients.phone,
+				email: patients.email,
+				birthDate: patients.birthDate,
+				administrativeProfile: patients.administrativeProfile,
+			})
+			.from(patients)
+			.where(
+				and(
+					eq(patients.organizationId, organizationId),
+					eq(patients.status, "active"),
+					isNull(patients.mergedIntoPatientId),
+				),
+			)
+	).map((r) => ({
+		id: r.id,
+		fullName: r.fullName,
+		phone: r.phone,
+		email: r.email,
+		birthDate: r.birthDate,
+		snils:
+			(r.administrativeProfile as { snils?: string | null } | null)?.snils ??
+			null,
+	}));
 
 	// Пары, про которые человек уже сказал «это не дубли» или которые объединены.
 	const decisions = await db
@@ -648,6 +669,7 @@ export async function findDuplicateCandidates(
 	const byName = new Map<string, PatientRow[]>();
 	const byPhone = new Map<string, PatientRow[]>();
 	const byEmail = new Map<string, PatientRow[]>();
+	const bySnils = new Map<string, PatientRow[]>();
 
 	for (const row of rows) {
 		const name = nameKey(row.fullName);
@@ -667,6 +689,12 @@ export async function findDuplicateCandidates(
 			const bucket = byEmail.get(email) ?? [];
 			bucket.push(row);
 			byEmail.set(email, bucket);
+		}
+		const snils = snilsKey(row.snils);
+		if (snils) {
+			const bucket = bySnils.get(snils) ?? [];
+			bucket.push(row);
+			bySnils.set(snils, bucket);
 		}
 	}
 
@@ -695,6 +723,7 @@ export async function findDuplicateCandidates(
 			phone: row.phone,
 			birthDate: row.birthDate,
 			email: row.email,
+			snils: row.snils ?? null,
 		});
 		strongest.set(key, {
 			leftPatientId: first.id,
@@ -768,6 +797,18 @@ export async function findDuplicateCandidates(
 				)
 					continue;
 				consider(left, right, "same_email");
+			}
+		}
+	}
+
+	for (const bucket of bySnils.values()) {
+		if (bucket.length < 2) continue;
+		for (let i = 0; i < bucket.length; i += 1) {
+			for (let j = i + 1; j < bucket.length; j += 1) {
+				const left = bucket[i];
+				const right = bucket[j];
+				if (!left || !right) continue;
+				consider(left, right, "same_snils");
 			}
 		}
 	}
