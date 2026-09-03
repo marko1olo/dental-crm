@@ -13,13 +13,14 @@
  *    - Назначения & Рекомендации (Recommendations)
  *    - Зубная формула FDI (Tooth numbers)
  * 3. 1-Click Fast Actions:
- *    - 👨‍⚕️ «Принять версию врача (Офлайн)»
- *    - ☁️ «Принять версию облака (Сервер)»
- *    - ⚡ «Объединить неразрушающе (Smart Merge)»
+ *    - Stethoscope: «Принять версию врача (Офлайн)»
+ *    - Cloud: «Принять версию облака (Сервер)»
+ *    - GitMerge: «Объединить неразрушающе (Smart Merge)»
  * 4. Section-level granular override toggles with real-time merged preview.
  */
 
 import React, { useMemo, useState } from "react";
+import { Check, ClipboardList, Cloud, GitMerge, Stethoscope, X } from "lucide-react";
 import {
 	type Clinical043DiaryRecord,
 	type Clinical043SectionDiff,
@@ -168,7 +169,7 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 						onClick={onClose}
 						aria-label="Закрыть модальное окно"
 					>
-						✕
+						<X size={18} />
 					</button>
 				</div>
 
@@ -184,7 +185,8 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 							onClick={handleApplyAllDoctor}
 							data-testid="btn-apply-all-doctor"
 						>
-							👨‍⚕️ Принять версию врача
+							<Stethoscope size={15} />
+							<span>Принять версию врача</span>
 						</button>
 						<button
 							type="button"
@@ -192,7 +194,8 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 							onClick={handleApplyAllCloud}
 							data-testid="btn-apply-all-cloud"
 						>
-							☁️ Принять версию облака
+							<Cloud size={15} />
+							<span>Принять версию облака</span>
 						</button>
 						<button
 							type="button"
@@ -200,7 +203,8 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 							onClick={handleApplyAllMerge}
 							data-testid="btn-apply-all-merge"
 						>
-							⚡ Объединить неразрушающе
+							<GitMerge size={15} />
+							<span>Объединить неразрушающе</span>
 						</button>
 					</div>
 				</div>
@@ -235,7 +239,8 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 												onClick={() => handleSectionChoiceChange(section.field, "doctor")}
 												aria-label={`Выбрать версию врача для ${section.labelRu}`}
 											>
-												👨‍⚕️ Врач
+												<Stethoscope size={13} />
+												<span>Врач</span>
 											</button>
 											<button
 												type="button"
@@ -243,7 +248,8 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 												onClick={() => handleSectionChoiceChange(section.field, "merge")}
 												aria-label={`Объединить обе версии для ${section.labelRu}`}
 											>
-												⚡ Слить
+												<GitMerge size={13} />
+												<span>Слить</span>
 											</button>
 											<button
 												type="button"
@@ -251,7 +257,8 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 												onClick={() => handleSectionChoiceChange(section.field, "cloud")}
 												aria-label={`Выбрать версию облака для ${section.labelRu}`}
 											>
-												☁️ Облако
+												<Cloud size={13} />
+												<span>Облако</span>
 											</button>
 										</div>
 									)}
@@ -264,7 +271,10 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 										className={`clinical-conflict-col ${currentChoice === "doctor" || currentChoice === "merge" ? "clinical-conflict-col--selected" : ""}`}
 									>
 										<div className="clinical-conflict-col__meta">
-											<span>👨‍⚕️ {doctorAuthor}</span>
+											<span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+												<Stethoscope size={13} />
+												<span>{doctorAuthor}</span>
+											</span>
 											<span>Локально</span>
 										</div>
 										<div className="clinical-conflict-col__content">
@@ -277,7 +287,10 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 										className={`clinical-conflict-col ${currentChoice === "cloud" || currentChoice === "merge" ? "clinical-conflict-col--selected" : ""}`}
 									>
 										<div className="clinical-conflict-col__meta">
-											<span>☁️ {cloudAuthor}</span>
+											<span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+												<Cloud size={13} />
+												<span>{cloudAuthor}</span>
+											</span>
 											<span>Сервер</span>
 										</div>
 										<div className="clinical-conflict-col__content">
@@ -291,8 +304,9 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 
 					{/* 4. Live Merged Preview */}
 					<div className="clinical-conflict-preview">
-						<h4 className="clinical-conflict-preview__title">
-							📋 Итоговый результат объединения (Предпросмотр карты 043/у):
+						<h4 className="clinical-conflict-preview__title" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+							<ClipboardList size={16} />
+							<span>Итоговый результат объединения (Предпросмотр карты 043/у):</span>
 						</h4>
 						<div className="clinical-conflict-col__content" data-testid="merged-preview-diagnosis">
 							<strong>Диагноз:</strong> {mergedRecord.diagnosis || "—"} ({mergedRecord.icd10Code || "МКБ-10 не указан"})
@@ -334,7 +348,8 @@ export const ClinicalConflictModal: React.FC<ClinicalConflictModalProps> = ({
 							onClick={handleSave}
 							data-testid="btn-confirm-resolve"
 						>
-							💾 Сохранить и синхронизировать
+							<Check size={15} />
+							<span>Сохранить и синхронизировать</span>
 						</button>
 					</div>
 				</div>

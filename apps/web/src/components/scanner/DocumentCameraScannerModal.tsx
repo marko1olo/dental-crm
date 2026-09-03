@@ -7,13 +7,28 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, Check, FileText, Folder, Info, RotateCw, Save, X } from "lucide-react";
+import {
+	Camera,
+	Check,
+	ClipboardList,
+	CreditCard,
+	FileSpreadsheet,
+	FileText,
+	Folder,
+	Info,
+	Paperclip,
+	RotateCw,
+	Save,
+	Shield,
+	X,
+} from "lucide-react";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
 	DOCUMENT_PRESETS,
 	DOCUMENT_PRESETS_LIST,
 	type DocumentFilterMode,
+	type DocumentPresetIcon,
 	type DocumentType,
 	applyDocumentEnhancementToCanvas,
 	calculateDocumentGuideFrame,
@@ -29,6 +44,24 @@ export interface DocumentCameraScannerModalProps {
 	readonly onClose: () => void;
 	readonly onAttachmentUploaded?: () => void;
 }
+
+const renderPresetIcon = (iconName: DocumentPresetIcon, size = 16, className?: string) => {
+	switch (iconName) {
+		case "CreditCard":
+			return <CreditCard size={size} className={className} />;
+		case "Shield":
+			return <Shield size={size} className={className} />;
+		case "FileSpreadsheet":
+			return <FileSpreadsheet size={size} className={className} />;
+		case "FileText":
+			return <FileText size={size} className={className} />;
+		case "ClipboardList":
+			return <ClipboardList size={size} className={className} />;
+		case "Paperclip":
+		default:
+			return <Paperclip size={size} className={className} />;
+	}
+};
 
 export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProps> = ({
 	isOpen,
@@ -280,8 +313,8 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 				{/* Modal Header */}
 				<div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-3.5 bg-[var(--paper-soft)]">
 					<div className="flex items-center gap-2.5">
-						<span className="text-xl" aria-hidden="true">
-							{preset.icon}
+						<span className="flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0" aria-hidden="true">
+							{renderPresetIcon(preset.icon, 20)}
 						</span>
 						<div>
 							<h3 className="text-sm font-bold text-[var(--ink)]">
@@ -295,10 +328,10 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors text-lg"
+						className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] transition-colors"
 						aria-label="Закрыть сканер"
 					>
-						✕
+						<X size={20} />
 					</button>
 				</div>
 
@@ -315,7 +348,7 @@ export const DocumentCameraScannerModal: React.FC<DocumentCameraScannerModalProp
 									: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]"
 							}`}
 						>
-							<span>{p.icon}</span>
+							{renderPresetIcon(p.icon, 14, "shrink-0")}
 							<span>{p.shortTitle}</span>
 						</button>
 					))}

@@ -13,11 +13,19 @@ export type DocumentType =
 	| "referral_057u"
 	| "other";
 
+export type DocumentPresetIcon =
+	| "CreditCard"
+	| "Shield"
+	| "FileSpreadsheet"
+	| "FileText"
+	| "ClipboardList"
+	| "Paperclip";
+
 export interface DocumentPreset {
 	readonly id: DocumentType;
 	readonly title: string;
 	readonly shortTitle: string;
-	readonly icon: string;
+	readonly icon: DocumentPresetIcon;
 	readonly aspectRatio: number; // width / height
 	readonly placeholderText: string;
 	readonly expectedFormatHint: string;
@@ -28,7 +36,7 @@ export const DOCUMENT_PRESETS: Record<DocumentType, DocumentPreset> = {
 		id: "passport_rf",
 		title: "Паспорт гражданина РФ",
 		shortTitle: "Паспорт РФ",
-		icon: "🪪",
+		icon: "CreditCard",
 		aspectRatio: 1.42, // ~125mm x 88mm
 		placeholderText: "Поместите главный разворот паспорта (с фото и кем выдан) в рамку",
 		expectedFormatHint: "Серия: 4 цифры, Номер: 6 цифр, Код: 6 цифр",
@@ -37,7 +45,7 @@ export const DOCUMENT_PRESETS: Record<DocumentType, DocumentPreset> = {
 		id: "oms_policy",
 		title: "Полис ОМС (единый образец / пластик)",
 		shortTitle: "Полис ОМС",
-		icon: "🛡️",
+		icon: "Shield",
 		aspectRatio: 1.58, // ID-1 format 85.6mm x 53.98mm
 		placeholderText: "Поместите лицевую сторону полиса ОМС с 16-значным номером в рамку",
 		expectedFormatHint: "16-значный номер полиса ОМС",
@@ -46,7 +54,7 @@ export const DOCUMENT_PRESETS: Record<DocumentType, DocumentPreset> = {
 		id: "dms_policy",
 		title: "Полис ДМС / Гарантийное письмо",
 		shortTitle: "Полис ДМС",
-		icon: "📑",
+		icon: "FileSpreadsheet",
 		aspectRatio: 1.414, // A4 ratio
 		placeholderText: "Поместите карточку ДМС или гарантийное письмо страховой в рамку",
 		expectedFormatHint: "Номер договора / полиса ДМС и название СК",
@@ -55,7 +63,7 @@ export const DOCUMENT_PRESETS: Record<DocumentType, DocumentPreset> = {
 		id: "snils",
 		title: "СНИЛС (зелёное свидетельство / выписка АДИ-РЕГ)",
 		shortTitle: "СНИЛС",
-		icon: "📄",
+		icon: "FileText",
 		aspectRatio: 1.45,
 		placeholderText: "Поместите свидетельство СНИЛС в рамку",
 		expectedFormatHint: "Формат: XXX-XXX-XXX YY (11 цифр)",
@@ -64,7 +72,7 @@ export const DOCUMENT_PRESETS: Record<DocumentType, DocumentPreset> = {
 		id: "referral_057u",
 		title: "Направление формы 057/у-04",
 		shortTitle: "Форма 057/у",
-		icon: "📋",
+		icon: "ClipboardList",
 		aspectRatio: 1.414,
 		placeholderText: "Поместите бланк направления 057/у-04 в рамку",
 		expectedFormatHint: "Штамп направляющей МО, номер и дата",
@@ -73,7 +81,7 @@ export const DOCUMENT_PRESETS: Record<DocumentType, DocumentPreset> = {
 		id: "other",
 		title: "Прочий медицинский документ / выписка",
 		shortTitle: "Документ",
-		icon: "📎",
+		icon: "Paperclip",
 		aspectRatio: 1.414,
 		placeholderText: "Поместите документ в рамку кадрирования",
 		expectedFormatHint: "Любой формат медицинского документа",

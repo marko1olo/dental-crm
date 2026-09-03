@@ -27,6 +27,7 @@ import {
 	FileCode2,
 	FileText,
 	Filter,
+	Info,
 	KeyRound,
 	Play,
 	Plus,
@@ -1004,6 +1005,9 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 														<span
 															title={rec.doctorSignature ? "УКЭП врача наложена" : "УКЭП врача отсутствует"}
 															style={{
+																display: "inline-flex",
+																alignItems: "center",
+																gap: "4px",
 																padding: "2px 6px",
 																borderRadius: "4px",
 																fontSize: "11px",
@@ -1012,13 +1016,17 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 																fontWeight: "bold",
 															}}
 														>
-															👤 Врач
+															<User size={12} />
+															<span>Врач</span>
 														</span>
 
 														{rec.moSignature && (
 															<span
 																title="УКЭП организации наложена"
 																style={{
+																	display: "inline-flex",
+																	alignItems: "center",
+																	gap: "4px",
 																	padding: "2px 6px",
 																	borderRadius: "4px",
 																	fontSize: "11px",
@@ -1027,7 +1035,8 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 																	fontWeight: "bold",
 																}}
 															>
-																🏢 МО
+																<Building2 size={12} />
+																<span>МО</span>
 															</span>
 														)}
 													</div>
@@ -1134,7 +1143,10 @@ export const EgiszDocumentsJournalModal: React.FC<EgiszDocumentsJournalModalProp
 										{selectedRecord.validationError.errorMessage}
 									</div>
 									<div className="egisz-hint-box">
-										<strong>💡 Инструкция по устранению ошибки:</strong>
+										<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: "bold" }}>
+											<Info size={14} />
+											<span>Инструкция по устранению ошибки:</span>
+										</div>
 										<div style={{ marginTop: "3px" }}>
 											{selectedRecord.validationError.actionableHint}
 										</div>
