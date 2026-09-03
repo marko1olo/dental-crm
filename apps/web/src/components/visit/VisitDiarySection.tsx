@@ -3,6 +3,7 @@ import {
 	AlertTriangle,
 	BarChart2,
 	Check,
+	ChevronDown,
 	Clock,
 	FileText,
 	Lock,
@@ -19,7 +20,7 @@ import {
 	X,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -31,6 +32,8 @@ import {
 	extractSomaticRiskProfileFromText,
 	mergeSoapDiaryState,
 	PATIENT_RECOMMENDATIONS,
+	PERIO_PATHOLOGY_PRESETS,
+	type PerioPathologyPreset,
 } from "../../lib/clinicalProtocols043";
 import { getIcdColor, ICD_GROUP_COLORS, ICD10_DICTIONARY } from "../../lib/icd10";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -165,6 +168,19 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const [showBrandingCustomizer, setShowBrandingCustomizer] = useState(false);
 	const [showTemplatesModal, setShowTemplatesModal] = useState(false);
 	const [isTier3PerioModalOpen, setIsTier3PerioModalOpen] = useState(false);
+	const [showPerioPathologyMenu, setShowPerioPathologyMenu] = useState(false);
+	const perioMenuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!showPerioPathologyMenu) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (perioMenuRef.current && !perioMenuRef.current.contains(e.target as Node)) {
+				setShowPerioPathologyMenu(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [showPerioPathologyMenu]);
 	const [activeTeeth, setActiveTeeth] = useState<
 		readonly {
 			toothNumber: number;
@@ -473,6 +489,26 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			setIcdSearch(icd10Code);
 		}
 		scheduleDebouncedSave();
+	};
+
+	const handleApplyPerioPathology = (preset: PerioPathologyPreset) => {
+		setDiary((prev) => ({
+			...prev,
+			diagnosisIcd10: prev.diagnosisIcd10 || preset.defaultIcd10,
+			statusLocalis: prev.statusLocalis
+				? `${prev.statusLocalis}\n\n[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС: ${preset.badge}]\n${preset.statusLocalis}`
+				: `[ПАРОДОНТОЛОГИЧЕСКИЙ СТАТУС: ${preset.badge}]\n${preset.statusLocalis}`,
+			treatmentDescription: prev.treatmentDescription
+				? `${prev.treatmentDescription}\n\n${preset.treatmentDescription}`
+				: preset.treatmentDescription,
+		}));
+
+		if (!diary.diagnosisIcd10 && preset.defaultIcd10) {
+			setIcdSearch(preset.defaultIcd10);
+		}
+		setShowPerioPathologyMenu(false);
+		scheduleDebouncedSave();
+		ctx.showToast?.(`Применён протокол: ${preset.label}`, "info");
 	};
 
 	const handleInsertPediatricStatus = () => {
@@ -814,26 +850,79 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							)}
 						</div>
 						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
-							<button
-								type="button"
-								onClick={handleInsertPerioStatus}
-								className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 text-xs sm:text-sm font-bold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-								title="Вставить физиологическую норму пародонта в 1 клик (десна бледно-розовая, плотная, карманов нет)"
-								data-testid="insert-perio-043-btn"
-							>
-								<Sparkles className="w-4 h-4 text-[var(--ok-fg)] shrink-0" />
-								<span className="min-w-0 break-words">Пародонт в норме (1 клик)</span>
-							</button>
+							{/* Unified Perio Assessment Pill (Norm + Pathology Dropdown) */}
+							<div className="relative inline-flex items-center rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] shadow-xs shrink-0" ref={perioMenuRef}>
+								<button
+									type="button"
+									onClick={handleInsertPerioStatus}
+									className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-l-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
+									title="Вставить физиологическую норму пародонта в 1 клик (десна бледно-розовая, плотная, карманов нет)"
+									data-testid="insert-perio-043-btn"
+								>
+									<Sparkles className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
+									<span className="whitespace-nowrap">Пародонт в норме</span>
+								</button>
+								<div className="h-5 w-px bg-[var(--line,#334155)]" />
+								<button
+									type="button"
+									onClick={() => setShowPerioPathologyMenu((v) => !v)}
+									className="inline-flex items-center gap-1 px-2.5 py-1.5 h-9 rounded-r-xl bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 font-semibold text-xs transition-all touch-manipulation cursor-pointer min-w-0"
+									title="Выбрать протокол патологии пародонта (гингивит, пародонтит K05.3, абсцесс, рецессия)"
+									data-testid="perio-pathology-menu-btn"
+									aria-expanded={showPerioPathologyMenu}
+								>
+									<span className="whitespace-nowrap">Патология</span>
+									<ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPerioPathologyMenu ? "rotate-180" : ""}`} />
+								</button>
+
+								{/* Dropdown Menu for Perio Pathologies */}
+								{showPerioPathologyMenu && (
+									<div
+										className="absolute top-full left-0 mt-1.5 w-80 sm:w-96 rounded-xl bg-[var(--paper-strong,#0f172a)] border border-[var(--line-strong,#334155)] shadow-2xl z-[100] py-1.5 overflow-hidden backdrop-blur-xl"
+										role="menu"
+										aria-label="Пресеты патологий пародонта"
+									>
+										<div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-[var(--line,#334155)] flex items-center justify-between">
+											<span>Патологии пародонта (МКБ-10)</span>
+											<span className="text-[10px] text-teal-400">1 клик в 043/у</span>
+										</div>
+										<div className="max-h-80 overflow-y-auto py-1 divide-y divide-[var(--line-subtle,#1e293b)]">
+											{PERIO_PATHOLOGY_PRESETS.map((preset) => (
+												<button
+													key={preset.id}
+													type="button"
+													onClick={() => handleApplyPerioPathology(preset)}
+													className="w-full text-left px-3 py-2 hover:bg-rose-500/10 text-[var(--ink,#f8fafc)] hover:text-rose-200 transition-colors flex flex-col gap-0.5 group cursor-pointer"
+													role="menuitem"
+													data-testid={`perio-preset-${preset.id}`}
+												>
+													<div className="flex items-center justify-between gap-2">
+														<span className="text-xs font-bold text-slate-100 group-hover:text-rose-300">
+															{preset.label}
+														</span>
+														<span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30 shrink-0">
+															{preset.badge}
+														</span>
+													</div>
+													<p className="text-[11px] text-slate-400 line-clamp-2 leading-tight">
+														{preset.statusLocalis}
+													</p>
+												</button>
+											))}
+										</div>
+									</div>
+								)}
+							</div>
 
 							<button
 								type="button"
 								onClick={() => setIsTier3PerioModalOpen(true)}
-								className="inline-flex items-center gap-1.5 px-3.5 py-2.5 min-h-[48px] rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 text-teal-400 border border-[var(--line,#334155)] hover:border-teal-500/40 text-xs sm:text-sm font-semibold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 text-teal-400 border border-[var(--line,#334155)] hover:border-teal-500/40 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 cursor-pointer"
 								title="Открыть глубокий Tier 3 кабинет врача-пародонтолога (Florida Probe 6-Point зондирование)"
 								data-testid="open-tier3-perio-btn"
 							>
-								<BarChart2 className="w-4 h-4 text-teal-400 shrink-0" />
-								<span className="min-w-0 break-words">Расширенная пародонтология (Tier 3)</span>
+								<BarChart2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+								<span className="whitespace-nowrap">Tier 3 (Florida Probe)</span>
 							</button>
 							<button
 								type="button"
