@@ -7,6 +7,7 @@ import type {
 } from "@dental/shared";
 import React, { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	AlertOctagon,
 	AlertTriangle,
 	CalendarCheck,
 	Check,
@@ -14,6 +15,7 @@ import {
 	Clock,
 	Copy,
 	CreditCard,
+	FileText,
 	MessageSquare,
 	MoreVertical,
 	Phone,
@@ -25,6 +27,8 @@ import {
 	UserX,
 	X,
 	Zap,
+	Globe,
+	Sparkles,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
@@ -33,6 +37,8 @@ import { specialtyLabels } from "../../workspaceUiLabels";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
+import { FranklBehaviorBadge, PediatricParentMemoModal } from "../pediatric";
+import { type FranklRating, FRANKL_SCALE_DEFINITIONS } from "../odontogram/pediatricDentitionEngine";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -305,6 +311,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 	const [isHoverPreviewOpen, setIsHoverPreviewOpen] = useState(false);
 	const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
 	const [isCardMenuOpen, setIsCardMenuOpen] = useState(false);
+	const [isParentMemoOpen, setIsParentMemoOpen] = useState(false);
 	const cardMenuRef = useRef<HTMLDivElement>(null);
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -362,6 +369,19 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			(appointmentPatient as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
 		if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
 			return `Внимание: ${rawAllergies.trim()}`;
+		}
+		// biome-ignore lint/suspicious/noExplicitAny: clinical safety profile compatibility
+		const safetyProfile = (appointmentPatient as any)?.clinicalSafetyProfile;
+		if (safetyProfile) {
+			const flags: string[] = [];
+			if (safetyProfile.hasArticaineAllergy) flags.push("Артикаин");
+			if (safetyProfile.hasLidocaineAllergy) flags.push("Лидокаин");
+			if (safetyProfile.hasMepivacaineAllergy) flags.push("Мепивакаин");
+			if (safetyProfile.hasLatexAllergy) flags.push("Латекс");
+			if (safetyProfile.customAllergyNotes?.trim()) flags.push(safetyProfile.customAllergyNotes.trim());
+			if (flags.length > 0) {
+				return `Внимание: Аллергия на ${flags.join(", ")}`;
+			}
 		}
 		const notes = appointmentPatient?.notes || "";
 		const match = notes.match(/аллерги[яеи][^.;\n]*/i);
@@ -436,8 +456,85 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			updateAppointmentScheduleDraft,
 			saveAppointmentSchedule,
 			appointmentPatientName,
-			appointmentLabels,
 		],
+	);
+
+	// 1-Click Pediatric Frankl Rating Determination & Fast Handler
+	const appointmentFrankl: FranklRating | undefined = useMemo(() => {
+		const fromDraft = appointmentDraft?.franklRating;
+		if (fromDraft && [1, 2, 3, 4].includes(Number(fromDraft))) {
+			return Number(fromDraft) as FranklRating;
+		}
+		// biome-ignore lint/suspicious/noExplicitAny: compatibility
+		const direct = (appointment as any)?.franklRating;
+		if (direct && [1, 2, 3, 4].includes(Number(direct))) {
+			return Number(direct) as FranklRating;
+		}
+		const text = `${appointment?.comment || ""} ${appointment?.reason || ""}`;
+		const match = text.match(/\[Франкл:\s*([1-4]|--|-|\+|\+\+)\]/i);
+		if (match?.[1]) {
+			const sym = match[1];
+			if (sym === "1" || sym === "--") return 1;
+			if (sym === "2" || sym === "-") return 2;
+			if (sym === "3" || sym === "+") return 3;
+			if (sym === "4" || sym === "++") return 4;
+		}
+		return undefined;
+	}, [appointmentDraft?.franklRating, (appointment as any)?.franklRating, appointment?.comment, appointment?.reason]);
+
+	const isPediatricAppointment = useMemo(() => {
+		if (appointmentFrankl !== undefined) return true;
+		const teeth = extractTeethList(appointment);
+		if (teeth.some((t) => Number(t) >= 51 && Number(t) <= 85)) return true;
+		const spec = (appointmentDoctor?.specialties || []).join(" ").toLowerCase();
+		if (spec.includes("детск") || spec.includes("педиатри")) return true;
+		const txt = `${appointment?.reason || ""} ${appointment?.comment || ""}`.toLowerCase();
+		if (
+			txt.includes("детск") ||
+			txt.includes("молочн") ||
+			txt.includes("франкл") ||
+			txt.includes("twinky") ||
+			txt.includes("ребенок") ||
+			txt.includes("ребёнок") ||
+			txt.includes("кариес молоч") ||
+			txt.includes("пульпит молоч")
+		) {
+			return true;
+		}
+		const patientObj = (dashboard?.patients ?? []).find((p) => p.id === appointment.patientId);
+		if (patientObj?.birthDate) {
+			const ageYears = (Date.now() - new Date(patientObj.birthDate).getTime()) / (365.25 * 24 * 3600 * 1000);
+			if (ageYears < 18) return true;
+		}
+		return false;
+	}, [appointment, appointmentDoctor?.specialties, dashboard?.patients, appointmentFrankl]);
+
+	const handle1ClickFranklChange = useCallback(
+		async (newRating: FranklRating) => {
+			const def = FRANKL_SCALE_DEFINITIONS[newRating];
+			updateAppointmentScheduleDraft(appointment.id, "franklRating", newRating);
+			const currentComment = String(appointmentDraft?.comment ?? appointment?.comment ?? "");
+			const franklTag = `[Франкл: ${def.symbol}]`;
+			let updatedComment = currentComment;
+			if (/\[Франкл:\s*[^\]]+\]/i.test(currentComment)) {
+				updatedComment = currentComment.replace(/\[Франкл:\s*[^\]]+\]/i, franklTag);
+			} else {
+				updatedComment = currentComment ? `${currentComment} ${franklTag}` : franklTag;
+			}
+			updateAppointmentScheduleDraft(appointment.id, "comment", updatedComment);
+
+			try {
+				const success = await saveAppointmentSchedule(appointment.id);
+				if (success) {
+					showToast(`Поведение ребенка (Франкл ${def.symbol} ${def.emoji}) сохранено в 1 клик`, "success", 2500);
+				} else {
+					showToast(`Франкл ${def.symbol} выбран в черновике`, "info");
+				}
+			} catch {
+				showToast(`Франкл ${def.symbol} сохранен локально`, "info");
+			}
+		},
+		[appointment.id, appointment.comment, appointmentDraft?.comment, updateAppointmentScheduleDraft, saveAppointmentSchedule],
 	);
 
 	const handleShiftAppointmentTime = useCallback(
@@ -608,6 +705,16 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		(appointment?.reason ?? "").toLowerCase().includes("острая боль") ||
 		(appointment?.reason ?? "").toLowerCase().includes("срочн")
 	);
+	const isOnlineBooking = Boolean(
+		(appointment?.comment ?? "").toLowerCase().includes("онлайн") ||
+		(appointment?.comment ?? "").toLowerCase().includes("виджет") ||
+		(appointment?.comment ?? "").toLowerCase().includes("online") ||
+		(appointment?.comment ?? "").toLowerCase().includes("сайт") ||
+		(appointment?.reason ?? "").toLowerCase().includes("онлайн") ||
+		(appointment?.reason ?? "").toLowerCase().includes("виджет") ||
+		(appointment?.reason ?? "").toLowerCase().includes("online") ||
+		(appointment?.reason ?? "").toLowerCase().includes("сайт")
+	);
 
 	return (
 		<div className="timeline-node min-w-0 max-w-full" key={appointment.id}>
@@ -752,11 +859,37 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								)}
 							</div>
 
-							{/* 3. Яркий янтарный алерт аллергий / противопоказаний */}
+							{/* 3. Яркий красный тревожный алерт аллергий / противопоказаний */}
 							{allergyAlert && (
-								<div className="p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2 shadow-xs">
-									<AlertTriangle size={15} className="text-amber-600 shrink-0 animate-bounce" />
+								<div className="p-2.5 rounded-xl bg-rose-500/15 border-2 border-rose-600 text-rose-950 dark:text-rose-100 text-xs font-black flex items-center gap-2 shadow-xs" role="alert">
+									<AlertOctagon size={15} className="text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
 									<span>{allergyAlert}</span>
+								</div>
+							)}
+
+							{/* Онлайн-запись баннер в HUD с 1-клик подтверждением */}
+							{isOnlineBooking && (
+								<div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-950 dark:text-cyan-100 text-xs flex items-center justify-between gap-2 shadow-xs">
+									<div className="flex items-center gap-1.5 font-bold">
+										<Sparkles size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+										<span>Онлайн-запись с сайта</span>
+									</div>
+									{displayStatus === "planned" && (
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												void handleQuickStatusChange("confirmed");
+											}}
+											disabled={isQuickStatusUpdating}
+											className="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 border border-emerald-500 flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+											title="Подтвердить слот онлайн-записи в 1 клик"
+											data-testid={`hud-confirm-online-booking-${appointment.id}`}
+										>
+											<CheckCircle2 size={12} />
+											<span>Подтвердить</span>
+										</button>
+									)}
 								</div>
 							)}
 
@@ -1005,6 +1138,34 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</span>
 							) : null}
 
+							{/* 🌐 Online Booking Badge and 1-Click Receptionist Confirmation */}
+							{isOnlineBooking && (
+								<span
+									className="px-2.5 py-1 min-h-[44px] sm:min-h-[28px] sm:h-7 rounded-lg text-xs font-bold bg-cyan-500/15 text-cyan-800 dark:text-cyan-200 border border-cyan-500/40 shadow-xs flex items-center gap-1.5 shrink-0"
+									title="Запись оформлена пациентом онлайн через сайт или мобильный виджет"
+									data-testid={`appointment-online-booking-badge-${appointment.id}`}
+								>
+									<Sparkles size={13} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+									<span>Онлайн-запись</span>
+								</span>
+							)}
+							{isOnlineBooking && displayStatus === "planned" && (
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										void handleQuickStatusChange("confirmed");
+									}}
+									disabled={isQuickStatusUpdating}
+									className="appointment-quick-confirm-online-btn px-3 py-1 min-h-[44px] sm:min-h-[28px] sm:h-7 rounded-lg text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 border border-emerald-500 shadow-sm flex items-center gap-1.5 cursor-pointer shrink-0 transition-all animate-pulse"
+									title="Подтвердить онлайн-запись в 1 клик без перенабора данных"
+									data-testid={`confirm-online-booking-btn-${appointment.id}`}
+								>
+									<CheckCircle2 size={13} className="shrink-0 text-white" />
+									<span>Подтвердить слот</span>
+								</button>
+							)}
+
 							{/* Single Context Actions Menu Button [...] */}
 							<div className="relative inline-flex items-center shrink-0" ref={cardMenuRef}>
 								<button
@@ -1153,6 +1314,27 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											</div>
 											<span className="text-[10px] font-mono opacity-70">X</span>
 										</button>
+
+										{/* 5. Детский прием */}
+										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
+											Детский прием
+										</div>
+										<button
+											type="button"
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
+											role="menuitem"
+											data-testid="appointment-open-pediatric-memo-btn"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												setIsParentMemoOpen(true);
+											}}
+											title="Сформировать памятку для родителей"
+										>
+											<div className="flex items-center gap-2">
+												<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+												<span>Памятка родителям (1 клик)</span>
+											</div>
+										</button>
 									</div>
 								)}
 							</div>
@@ -1260,6 +1442,19 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</span>
 							)}
 						</div>
+						{isPediatricAppointment && (
+							<div
+								className="appt-pediatric-frankl-row mt-1.5 flex items-center gap-2 flex-wrap"
+								data-testid="appointment-frankl-quick-bar"
+								onClick={(e) => e.stopPropagation()}
+							>
+								<FranklBehaviorBadge
+									rating={appointmentFrankl ?? 3}
+									onChange={handle1ClickFranklChange}
+									compact={true}
+								/>
+							</div>
+						)}
 						{readiness && (
 							<div className="appt-readiness-row flex items-center gap-2 min-w-0 flex-wrap mt-1">
 								<span
@@ -1728,8 +1923,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											id={`appointment-collision-${appointment?.id ?? ""}`}
 											role="alert"
 										>
-											<strong style={{ color: "var(--bad-fg)" }}>
-												⛔ {collision.message}
+											<strong className="text-amber-700 dark:text-amber-300">
+												⚠️ {collision.message}. Разрешено сохранение с овербукингом (острая боль).
 											</strong>
 										</div>
 									) : null}
@@ -1769,21 +1964,17 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										disabled={appointmentSaveState === "saving"}
 										aria-busy={appointmentSaveState === "saving" || undefined}
 										onClick={() => {
-											if (
-												appointmentDirty &&
-												!window.confirm(
-													"Изменения этой записи не сохранены. Закрыть и потерять их?",
-												)
-											) {
-												return;
-											}
 											closeAppointmentEditor(appointment.id);
 										}}
 									>
 										Закрыть
 									</button>
 									<button
-										className="primary-button min-h-[44px] min-w-[44px] px-4.5 py-2 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent inline-flex items-center justify-center"
+										className={`primary-button min-h-[44px] min-w-[44px] px-4.5 py-2 text-xs font-bold cursor-pointer shrink-0 rounded-lg text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent inline-flex items-center justify-center ${
+											collision.hasCollision
+												? "bg-amber-600 hover:bg-amber-700"
+												: "bg-[var(--teal-dark)]"
+										}`}
 										type="button"
 										onClick={() => void saveAppointmentSchedule(appointment.id)}
 										disabled={
@@ -1799,7 +1990,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													: undefined
 										}
 									>
-										Сохранить запись
+										{collision.hasCollision
+											? "Сохранить с овербукингом"
+											: "Сохранить запись"}
 									</button>
 								</div>
 							</div>
@@ -1925,8 +2118,8 @@ export function AppointmentCard(props: AppointmentCardProps) {
 
 							{/* Allergy alert */}
 							{allergyAlert && (
-								<div className="p-3 rounded-xl bg-amber-500/15 border-2 border-amber-500/60 text-amber-900 dark:text-amber-200 text-xs font-black flex items-center gap-2">
-									<AlertTriangle size={16} className="text-amber-600 shrink-0 animate-bounce" />
+								<div className="p-3 rounded-xl bg-rose-500/15 border-2 border-rose-600 text-rose-950 dark:text-rose-100 text-xs font-black flex items-center gap-2 shadow-xs" role="alert">
+									<AlertOctagon size={16} className="text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
 									<span>{allergyAlert}</span>
 								</div>
 							)}
@@ -2039,6 +2232,15 @@ export function AppointmentCard(props: AppointmentCardProps) {
 					</div>
 				)}
 			</div>
+
+			{isParentMemoOpen && (
+				<PediatricParentMemoModal
+					isOpen={isParentMemoOpen}
+					onClose={() => setIsParentMemoOpen(false)}
+					patientName={appointmentPatientName}
+					initialFrankl={appointmentFrankl ?? 3}
+				/>
+			)}
 		</div>
 	);
 }

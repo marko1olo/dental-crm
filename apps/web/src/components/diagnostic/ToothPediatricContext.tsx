@@ -16,8 +16,13 @@ import {
 	type FranklRatingDefinition,
 	FRANKL_SCALE_DEFINITIONS,
 	getFranklDefinition,
+	calculatePediatricSilveringProtocol,
+	calculatePediatricFissureSealingProtocol,
+	calculatePediatricPulpotomyProtocol,
+	generatePediatricParentRecommendations,
 } from "../odontogram/pediatricDentitionEngine";
 import { FranklBehaviorBadge } from "../pediatric/FranklBehaviorBadge";
+import { TwinkyStarColorSelector } from "../pediatric/TwinkyStarColorSelector";
 import type { ToothData } from "../odontogram/ToothChart";
 import { showToast } from "../GlobalToast";
 
@@ -143,6 +148,104 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 							</button>
 						);
 					})}
+				</div>
+			</div>
+
+			{/* Twinky Star Colored Fillings Selector (1-Click Color & 043/u) */}
+			<div className="dente-twinky-star-section pt-2 border-t border-[var(--line,#e2e8f0)]">
+				<TwinkyStarColorSelector
+					toothNumber={toothNumber}
+					patientName={patientName}
+					patientAgeYears={patientAgeYears}
+					onInsertToProtocol={onInsertToProtocol}
+					onOpenParentMemo={() => {
+						if (onOpenParentMemo) {
+							onOpenParentMemo();
+						} else {
+							try {
+								window.dispatchEvent(
+									new CustomEvent("dente-open-pediatric-memo", {
+										detail: {
+											patientName,
+											patientAgeYears,
+											doctorName,
+											franklRating,
+											toothNumber,
+											twinkyStar: { toothNumber, color: "blue" },
+										},
+									}),
+								);
+							} catch {
+								// ignore
+							}
+						}
+					}}
+				/>
+			</div>
+
+			{/* 1-Click Pediatric Clinical Protocols (Silvering / Sealing / Pulpotomy) */}
+			<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2">
+				<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)]">
+					<Sparkles size={14} className="text-teal-600" />
+					<span>1-Клик протоколы процедур в дневник 043/у (FDI #{toothNumber}):</span>
+				</div>
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+					<button
+						type="button"
+						onClick={() => {
+							const silv = calculatePediatricSilveringProtocol({ teethNumbers: [toothNumber] });
+							if (onInsertToProtocol) {
+								onInsertToProtocol(silv.formattedDiaryEntryRu);
+								showToast(`Протокол серебрения зуба #${toothNumber} внесен в 043/у!`, "success");
+							} else {
+								navigator.clipboard.writeText(silv.formattedDiaryEntryRu);
+								showToast(`Протокол серебрения скопирован`, "success");
+							}
+						}}
+						className="min-h-[40px] px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+						data-testid="tooth-pediatric-silvering-btn"
+					>
+						<FileText size={13} className="text-amber-600" />
+						<span>Серебрение (SDF)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							const fiss = calculatePediatricFissureSealingProtocol({ teethNumbers: [toothNumber] });
+							if (onInsertToProtocol) {
+								onInsertToProtocol(fiss.formattedDiaryEntryRu);
+								showToast(`Протокол герметизации зуба #${toothNumber} внесен в 043/у!`, "success");
+							} else {
+								navigator.clipboard.writeText(fiss.formattedDiaryEntryRu);
+								showToast(`Протокол герметизации скопирован`, "success");
+							}
+						}}
+						className="min-h-[40px] px-3 py-1.5 rounded-xl border border-teal-500/30 bg-teal-50 dark:bg-teal-950/30 hover:bg-teal-100 text-teal-900 dark:text-teal-200 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+						data-testid="tooth-pediatric-fissure-btn"
+					>
+						<FileText size={13} className="text-teal-600" />
+						<span>Герметизация фиссур</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							const pulp = calculatePediatricPulpotomyProtocol({ toothNumber });
+							if (onInsertToProtocol) {
+								onInsertToProtocol(pulp.formattedDiaryEntryRu);
+								showToast(`Протокол пульпотомии зуба #${toothNumber} внесен в 043/у!`, "success");
+							} else {
+								navigator.clipboard.writeText(pulp.formattedDiaryEntryRu);
+								showToast(`Протокол пульпотомии скопирован`, "success");
+							}
+						}}
+						className="min-h-[40px] px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-900 dark:text-rose-200 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+						data-testid="tooth-pediatric-pulpotomy-btn"
+					>
+						<FileText size={13} className="text-rose-600" />
+						<span>Пульпотомия (ампутация)</span>
+					</button>
 				</div>
 			</div>
 

@@ -38,18 +38,61 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 	const activeDef: FranklRatingDefinition = getFranklDefinition(rating);
 
 	if (compact) {
+		if (readOnly || !onChange) {
+			return (
+				<div
+					className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black select-none border transition-all ${className}`.trim()}
+					style={{
+						backgroundColor: activeDef.badgeBg,
+						color: activeDef.badgeColor,
+						borderColor: activeDef.badgeBorder,
+					}}
+					title={`${activeDef.nameRu}: ${activeDef.descriptionRu}`}
+					data-testid="frankl-compact-badge"
+				>
+					<span className="text-base leading-none">{activeDef.emoji}</span>
+					<span>Франкл {activeDef.symbol}</span>
+				</div>
+			);
+		}
+
 		return (
 			<div
-				className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black select-none border transition-all ${className}`.trim()}
-				style={{
-					backgroundColor: activeDef.badgeBg,
-					color: activeDef.badgeColor,
-					borderColor: activeDef.badgeBorder,
-				}}
-				title={`${activeDef.nameRu}: ${activeDef.descriptionRu}`}
+				className={`frankl-quick-selector inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] ${className}`.trim()}
+				data-testid="frankl-quick-selector"
+				role="group"
+				aria-label="Шкала Франкла (1-клик выбор)"
 			>
-				<span className="text-base leading-none">{activeDef.emoji}</span>
-				<span>Франкл {activeDef.symbol}</span>
+				<span className="text-[11px] font-black uppercase text-[var(--odontogram-ink-muted,var(--muted,#64748b))] px-1.5 select-none">
+					Франкл:
+				</span>
+				{FRANKL_RATINGS.map((r) => {
+					const def = FRANKL_SCALE_DEFINITIONS[r];
+					const isSelected = rating === r;
+					return (
+						<button
+							key={r}
+							type="button"
+							onClick={() => onChange(r)}
+							className={`min-h-[32px] min-w-[32px] px-2 py-1 rounded-lg text-xs font-mono font-black flex items-center justify-center gap-1 border transition-all cursor-pointer select-none active:scale-95 ${
+								isSelected
+									? "ring-2 ring-offset-1 shadow-xs scale-105"
+									: "opacity-70 hover:opacity-100 bg-[var(--odontogram-paper,var(--paper,#ffffff))]"
+							}`}
+							style={{
+								backgroundColor: isSelected ? def.badgeBg : undefined,
+								borderColor: isSelected ? def.badgeColor : "var(--odontogram-border-subtle,var(--line,#e2e8f0))",
+								color: isSelected ? def.badgeColor : "var(--odontogram-ink,var(--ink,#0f172a))",
+							}}
+							title={`${def.symbol} — ${def.nameRu}: ${def.descriptionRu}`}
+							data-testid={`frankl-quick-btn-${r}`}
+							aria-pressed={isSelected}
+						>
+							<span className="text-xs">{def.emoji}</span>
+							<span>{def.symbol}</span>
+						</button>
+					);
+				})}
 			</div>
 		);
 	}

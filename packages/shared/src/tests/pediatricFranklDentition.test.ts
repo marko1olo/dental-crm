@@ -5,6 +5,9 @@ import {
 	calculatePediatricFissureSealingProtocol,
 	calculatePediatricPulpotomyProtocol,
 	calculatePediatricSilveringProtocol,
+	calculatePediatricTwinkyStarProtocol,
+	twinkyStarColorSchema,
+	TWINKY_STAR_COLORS,
 	fissureSealantMaterialSchema,
 	fissureSealingMethodSchema,
 	franklRatingSchema,
@@ -189,5 +192,82 @@ describe("Pediatric Frankl Behavior Scale & Adaptive Clinical Protocols (package
 		assert.ok(diary.includes("Пульпотомия зуба 74"));
 		assert.ok(diary.includes("Герметизация фиссур (16, 26)"));
 		assert.ok(diary.includes("Психологическая адаптация проведена"));
+	});
+
+	it("8. Twinky Star / Compomer 1-Click Protocol & 5-Color Child Engagement Palette", () => {
+		const colors = ["blue", "pink", "gold", "silver", "green"] as const;
+
+		for (const color of colors) {
+			assert.equal(twinkyStarColorSchema.safeParse(color).success, true);
+			const def = TWINKY_STAR_COLORS[color];
+			assert.ok(def, `Definition for ${color} must exist`);
+			assert.equal(def.color, color);
+			assert.ok(def.nameRu.length > 0);
+			assert.ok(def.labelRu.length > 0);
+			assert.ok(def.hexColor.startsWith("#"));
+			assert.ok(def.emoji.length > 0);
+			assert.ok(def.roleRu.length > 0);
+			assert.ok(def.childMotivationRu.length > 0);
+		}
+
+		// Invalid color rejection
+		assert.equal(twinkyStarColorSchema.safeParse("neon_purple").success, false);
+		assert.equal(twinkyStarColorSchema.safeParse("black").success, false);
+
+		// Clinical protocol calculation for 1-click execution
+		const twinkyResult = calculatePediatricTwinkyStarProtocol({
+			toothNumber: 54,
+			color: "pink",
+			cavityClass: "Class I",
+			surface: "O",
+			patientAgeYears: 5,
+		});
+
+		assert.equal(twinkyResult.toothNumber, 54);
+		assert.equal(twinkyResult.color, "pink");
+		assert.equal(twinkyResult.colorNameRu, "Розовый (Princess Pink)");
+		assert.equal(twinkyResult.colorEmoji, "🌸");
+		assert.ok(twinkyResult.isPediatricTooth);
+		assert.equal(twinkyResult.material, "Twinky Star (VOCO, Германия)");
+		assert.ok(twinkyResult.fluorideReleaseRu.includes("фторид"));
+		assert.ok(twinkyResult.formattedDiaryEntryRu.includes("043/у"));
+		assert.ok(twinkyResult.formattedDiaryEntryRu.includes("зуба #54"));
+		assert.ok(twinkyResult.formattedDiaryEntryRu.includes("Twinky Star (VOCO)"));
+		assert.ok(twinkyResult.formattedDiaryEntryRu.includes("Цвет пломбы: Розовый"));
+		assert.ok(twinkyResult.parentRecommendationsRu.length >= 3);
+	});
+
+	it("9. Twinky Star Integration in 043/u Diary and Parent Memo Recommendations", () => {
+		// Diary with Twinky Star
+		const diary = generatePediatricCariogramDiaryText({
+			patientAgeYears: 6,
+			franklRating: 4,
+			twinkyStar: {
+				toothNumber: 64,
+				color: "gold",
+				surface: "MOD",
+			},
+		});
+
+		assert.ok(diary.includes("Цветная компомерная пломба Twinky Star"));
+		assert.ok(diary.includes("зуб 64"));
+		assert.ok(diary.includes("Золотой"));
+		assert.ok(diary.includes("Ребенок лично выбрал цвет"));
+
+		// Parent Memo with Twinky Star
+		const memo = generatePediatricParentRecommendations({
+			patientName: "София Морозова",
+			patientAgeYears: 5,
+			franklRating: 4,
+			twinkyStar: {
+				toothNumber: 75,
+				color: "blue",
+			},
+		});
+
+		assert.ok(memo.includes("ЦВЕТНАЯ ПЛОМБА TWINKY STAR (ЗУБ #75, ЦВЕТ: СИНИЙ (MAGIC BLUE) 🔷)"));
+		assert.ok(memo.includes("Ребенок лично выбрал оттенок «Синий (Magic Blue)»"));
+		assert.ok(memo.includes("выделяет фтор"));
+		assert.ok(memo.includes("Не принимать твердую, грубую"));
 	});
 });

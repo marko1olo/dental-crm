@@ -27,6 +27,7 @@ import { ToothSanpinKraftBinding } from "./ToothSanpinKraftBinding";
 import { ToothRvgThumbnail } from "./ToothRvgThumbnail";
 import { ToothFamilyLoyaltyAccordion } from "./ToothFamilyLoyaltyAccordion";
 import { ToothPediatricContext } from "./ToothPediatricContext";
+import { PediatricParentMemoModal } from "../pediatric/PediatricParentMemoModal";
 import type { AnesthesiaCalculationResult } from "../anesthesia/anesthesiaEngine";
 import type { KraftPackageRecord } from "../sanpin/kraft/kraftPackageEngine";
 import { showToast } from "../GlobalToast";
@@ -87,6 +88,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 
 	// Default open section
 	const [activeSection, setActiveSection] = useState<WarmAccordionSection>("surfaces_endo");
+	const [isInternalParentMemoOpen, setIsInternalParentMemoOpen] = useState(false);
 
 	// Auto-expand pediatric tab for primary teeth
 	useEffect(() => {
@@ -411,7 +413,13 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 										doctorName={doctorName}
 										onUpdateTooth={(updates) => onUpdateTooth?.(toothNumber, updates)}
 										onInsertToProtocol={onInsertToProtocol}
-										onOpenParentMemo={onOpenParentMemo}
+										onOpenParentMemo={() => {
+											if (onOpenParentMemo) {
+												onOpenParentMemo();
+											} else {
+												setIsInternalParentMemoOpen(true);
+											}
+										}}
 									/>
 								</div>
 							)}
@@ -534,6 +542,18 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 					</div>
 				</footer>
 			</aside>
+
+			{isInternalParentMemoOpen && (
+				<PediatricParentMemoModal
+					isOpen={isInternalParentMemoOpen}
+					onClose={() => setIsInternalParentMemoOpen(false)}
+					patientName={patient?.fullName}
+					patientAgeYears={patient?.ageYears ?? 6}
+					doctorName={doctorName}
+					initialPulpotomy={toothData?.state === "Pulpitis" ? { toothNumber } : undefined}
+					initialTwinkyStar={{ toothNumber, color: "blue" }}
+				/>
+			)}
 		</div>
 	);
 };
