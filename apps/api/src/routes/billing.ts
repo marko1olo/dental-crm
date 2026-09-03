@@ -722,6 +722,7 @@ export async function registerBillingRoutes(app: FastifyInstance) {
 				typeof error === "object" &&
 				("statusCode" in error || "code" in error) &&
 				((error as any).code === "Decree659OmsForbiddenError" ||
+					(error as any).code === "Decree659TaxDeductionForbiddenError" ||
 					(error as any).code === "UpsellConsentShieldViolationError")
 			) {
 				return reply.code((error as any).statusCode || 422).send({

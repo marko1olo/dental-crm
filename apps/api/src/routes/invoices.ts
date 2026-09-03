@@ -225,14 +225,15 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 		const isOmsInvoice =
 			data.items.some(
 				(it) =>
-					(it.categoryRu && it.categoryRu.toLowerCase().includes("омс")) ||
-					(it.nameRu && it.nameRu.toLowerCase().includes("омс")) ||
-					(it.code804n && it.code804n.toLowerCase().includes("омс")),
+					(it.categoryRu && (it.categoryRu.toLowerCase().includes("омс") || it.categoryRu.toLowerCase().includes("oms"))) ||
+					(it.nameRu && (it.nameRu.toLowerCase().includes("омс") || it.nameRu.toLowerCase().includes("oms"))) ||
+					(it.code804n && (it.code804n.toLowerCase().includes("омс") || it.code804n.toLowerCase().includes("oms"))),
 			) ||
-			Boolean(data.notes && data.notes.toLowerCase().includes("омс"));
+			Boolean(data.notes && (data.notes.toLowerCase().includes("омс") || data.notes.toLowerCase().includes("oms")));
 
 		const adminProfile = (patient.administrativeProfile || {}) as Record<string, unknown>;
 		const isAnonPatient =
+			Boolean((patient as unknown as { isAnonymous?: boolean }).isAnonymous) ||
 			Boolean(patient.fullName?.startsWith("UUID_ANON")) ||
 			Boolean(patient.fullName?.toLowerCase().includes("аноним")) ||
 			adminProfile["isAnonymous"] === true;
@@ -400,6 +401,53 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			}
 		}
 
+		// Защита от навязывания услуг, дополнительных анестетиков и расходных материалов
+		// (Upsell Consent Shield, ПП РФ №659, ПП РФ №736 п. 23, ст. 16 ЗоЗПП, ст. 709 ГК РФ):
+		// Любая услуга, анестетик или расходный материал, включаемый в наряд из плана лечения,
+		// обязан входить в утвержденный план лечения либо быть согласованным в Дополнительном соглашении.
+		if (targetPlan && targetPlanDbItems.length > 0) {
+			for (const item of data.items) {
+				const itemServiceId = item.serviceId || item.analogueServiceId;
+				const isApprovedInPlan = targetPlanDbItems.some((pi) => {
+					if (!pi.priceId) return false;
+					if (
+						itemServiceId &&
+						(pi.priceId === itemServiceId ||
+							pi.priceId.startsWith(`${itemServiceId}::`))
+					)
+						return true;
+					if (item.nameRu && pi.priceId.includes(item.nameRu)) return true;
+					return false;
+				});
+
+				if (!isApprovedInPlan) {
+					// Проверяем наличие оформленного и выданного Дополнительного соглашения
+					const [addendumDoc] = await db
+						.select({
+							id: generatedDocuments.id,
+							totalAmountRub: generatedDocuments.totalAmountRub,
+						})
+						.from(generatedDocuments)
+						.where(
+							and(
+								eq(generatedDocuments.organizationId, orgId),
+								eq(generatedDocuments.patientId, data.patientId),
+								eq(generatedDocuments.kind, "treatment_plan_acceptance"),
+								eq(generatedDocuments.status, "issued"),
+							),
+						)
+						.limit(1);
+
+					if (!addendumDoc) {
+						return reply.code(422).send({
+							error: "UpsellConsentShieldViolationError",
+							message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга/материал «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
+						});
+					}
+				}
+			}
+		}
+
 		// При наличии токена фиксации цен — его статус является первичным источником истины о блокировке цен.
 		// Если токен истек (freezeToken.isExpired === true), цена НЕ зафиксирована, даже если план Approved.
 		const isPriceLockedFinal = freezeToken
@@ -444,7 +492,15 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 				} else if (isPriceLockedFinal && matchingDbPlanItem) {
 					// Твердая смета утвержденного плана: фиксируем цену из плана
 					planPriceRub = Number(matchingDbPlanItem.price || 0);
-					effectivePriceRub = planPriceRub;
+					const planQty = Number(matchingDbPlanItem.quantity || 1);
+
+					// Если количество в наряде превышает согласованное в смете количество:
+					// По ст. 709 ГК РФ и ПП РФ №659 увеличение твердой цены сметы без допсоглашения или PIN руководства запрещено.
+					if (it.quantity > planQty && !isAdminOverrideVerified) {
+						effectivePriceRub = Number(((planPriceRub * planQty) / it.quantity).toFixed(2));
+					} else {
+						effectivePriceRub = planPriceRub;
+					}
 				} else {
 					planPriceRub =
 						it.planUnitPriceRub ??

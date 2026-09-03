@@ -200,6 +200,7 @@ export async function createPaymentInDb(
 		// Запрет приема оплаты по ОМС для анонимных карт или при отсутствии 16-значного полиса ОМС, паспорта и СНИЛС
 		const adminProfile = (lockedPatient.administrativeProfile || {}) as Record<string, unknown>;
 		const isAnonPatient =
+			Boolean((lockedPatient as unknown as { isAnonymous?: boolean }).isAnonymous) ||
 			Boolean(lockedPatient.fullName?.startsWith("UUID_ANON")) ||
 			Boolean(lockedPatient.fullName?.toLowerCase().includes("аноним")) ||
 			adminProfile["isAnonymous"] === true;
@@ -215,7 +216,7 @@ export async function createPaymentInDb(
 		);
 
 		const isInsuranceMethod = input.method === "insurance";
-		const isOmsNote = typeof input.note === "string" && input.note.toLowerCase().includes("омс");
+		const isOmsNote = typeof input.note === "string" && (input.note.toLowerCase().includes("омс") || input.note.toLowerCase().includes("oms"));
 
 		if (isInsuranceMethod || isOmsNote) {
 			if (isAnonPatient || !hasValidOmsIdentity) {
@@ -228,6 +229,17 @@ export async function createPaymentInDb(
 				(error as any).code = "Decree659OmsForbiddenError";
 				throw error;
 			}
+		}
+
+		if (isAnonPatient && input.taxDeductionCode) {
+			const error = new Error(
+				"Отказ по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 219 НК РФ: оформление социального налогового вычета по НДФЛ (код вычета 01/02) для анонимных карт (UUID_ANON / isAnonymous) категорически запрещено.",
+			);
+			// biome-ignore lint/suspicious/noExplicitAny: error mapping
+			(error as any).statusCode = 422;
+			// biome-ignore lint/suspicious/noExplicitAny: error mapping
+			(error as any).code = "Decree659TaxDeductionForbiddenError";
+			throw error;
 		}
 
 		// 1b. Price Spoofing & Upsell Consent Shield Defense
@@ -309,6 +321,23 @@ export async function createPaymentInDb(
 						const serviceTitleLower = (serviceItem.title || "").toLowerCase();
 						if (docTitleLower.includes("отбеливан") && !serviceTitleLower.includes("отбеливан")) return false;
 						if (docTitleLower.includes("имплант") && !serviceTitleLower.includes("имплант")) return false;
+						if (
+							docTitleLower.includes("анестези") &&
+							!serviceTitleLower.includes("анестези") &&
+							!serviceTitleLower.includes("ультракаин") &&
+							!serviceTitleLower.includes("артикаин") &&
+							!serviceTitleLower.includes("септанест") &&
+							!serviceTitleLower.includes("убистезин")
+						)
+							return false;
+						if (
+							(docTitleLower.includes("коффердам") || docTitleLower.includes("расходн")) &&
+							!serviceTitleLower.includes("коффердам") &&
+							!serviceTitleLower.includes("раббердам") &&
+							!serviceTitleLower.includes("оптрагейт") &&
+							!serviceTitleLower.includes("расходн")
+						)
+							return false;
 						return true;
 					});
 
@@ -383,7 +412,10 @@ export async function createPaymentInDb(
 				const remainingAgreedBalanceRub = Math.max(0, approvedTotalRub - paidTotalRub);
 
 				const noteLower = (input.note || "").toLowerCase();
-				const hasServiceKeyword = /имплант|отбеливан|коронк|протез|брекет|удален|навязан|лечен/i.test(noteLower);
+				const hasServiceKeyword =
+					/имплант|отбеливан|коронк|протез|брекет|удален|навязан|лечен|анестези|ультракаин|артикаин|септанест|скандонест|убистезин|карпул|обезбол|коффердам|раббердам|оптрагейт|шовн|мембран|расходн|материал/i.test(
+						noteLower,
+					);
 
 				if (input.amountRub > remainingAgreedBalanceRub || hasServiceKeyword) {
 					// Проверяем наличие выданных Дополнительных соглашений
