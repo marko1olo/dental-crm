@@ -310,6 +310,7 @@ export const form107_1uPayloadSchema = z.object({
 	diagnosisIcd10Code: z.string().trim().max(32).nullable().optional(),
 	notes: z.string().trim().max(500).nullable().optional(),
 	ukepSignature: prescriptionDoctorUkepSchema.nullable().optional(),
+	withStampAndSignature: z.boolean().default(true).optional(),
 });
 export type Form107_1uPayload = z.infer<typeof form107_1uPayloadSchema>;
 
@@ -700,8 +701,38 @@ export const DENTAL_PRESCRIPTION_DRUG_CATALOG: readonly DentalPrescriptionDrugPr
 		recommendedForIcd10: ["K05.1", "K12.0", "K08.1"],
 		defaultValidityDays: "60",
 	},
+	{
+		id: "stomatophyt_100",
+		tradeNameRu: "Стоматофит",
+		activeSubstanceRu: "Экстракт растительный (ромашка, кора дуба, шалфей, арника, аир, мята, тимьян)",
+		category: "antiseptic",
+		categoryLabel: "Фитопрепарат противовоспалительный / антисептик",
+		latinRp: "Rp.: Extracti 'Stomatophyt' 100 ml",
+		formRu: "экстракт для приготовления раствора для местного применения",
+		dosageRu: "100 мл",
+		quantityLabel: "1 флакон (100 мл)",
+		dispenseLatin: "D.t.d. N 1 in flac.",
+		signaRu: "S. Для полоскания полости рта: развести 7.5 мл (1/2 мерного стаканчика) в 1/4 стакана теплой воды, полоскать 3-4 раза в день после еды, 7-10 дней.",
+		recommendedForIcd10: ["K05.1", "K05.3", "K12.0", "K08.1"],
+		defaultValidityDays: "60",
+	},
 
 	// ── Антигистаминные / Противоотечные средства ──
+	{
+		id: "suprastin_25",
+		tradeNameRu: "Супрастин (Хлоропирамин)",
+		activeSubstanceRu: "Хлоропирамин",
+		category: "antihistamine",
+		categoryLabel: "Антигистаминное / Противоотечное",
+		latinRp: "Rp.: Tab. Chloropyramini 25 mg",
+		formRu: "таблетки",
+		dosageRu: "25 мг",
+		quantityLabel: "N. 20 (таблетки)",
+		dispenseLatin: "D.t.d. N 20 in tab.",
+		signaRu: "S. Внутрь по 1 таблетке (25 мг) 2-3 раза в день во время еды, курс 3-5 дней для снижения послеоперационного отека.",
+		recommendedForIcd10: ["K08.1", "K04.4", "K10.2"],
+		defaultValidityDays: "60",
+	},
 	{
 		id: "loratadine_10",
 		tradeNameRu: "Лоратадин (Кларитин)",
@@ -990,6 +1021,16 @@ export const DENTAL_DRUG_DOSAGE_LIMITS: Readonly<Record<string, DrugDosageLimit>
 		unit: "мг",
 		pediatricMinAgeYears: 3,
 		maxCourseDays: 5,
+	},
+	suprastin_25: {
+		drugId: "suprastin_25",
+		activeSubstance: "Хлоропирамин",
+		maxSingleDoseMg: 25,
+		maxDailyDoseMg: 100,
+		unit: "мг",
+		pediatricMinAgeYears: 3,
+		maxCourseDays: 7,
+		notesRu: "Антигистаминное 1 поколения: вызывает сонливость, не садиться за руль.",
 	},
 };
 
@@ -1353,6 +1394,7 @@ export function generatePrescriptionPayloadFromSoap(options: {
 	readonly isChronicSpecialCare?: boolean;
 	readonly chronicPeriodicity?: string | null;
 	readonly ukepSignature?: PrescriptionDoctorUkep | null;
+	readonly withStampAndSignature?: boolean;
 }): Form107_1uPayload {
 	const icd = (options.diagnosisIcd10 || "K02.1").toUpperCase().trim();
 	const seriesNum =
@@ -1363,9 +1405,9 @@ export function generatePrescriptionPayloadFromSoap(options: {
 	const requestedDrugIds = options.drugIds || options.explicitDrugIds;
 
 	if (requestedDrugIds && requestedDrugIds.length > 0) {
-		selectedDrugs = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
-			requestedDrugIds.includes(d.id),
-		);
+		selectedDrugs = requestedDrugIds
+			.map((id) => DENTAL_PRESCRIPTION_DRUG_CATALOG.find((d) => d.id === id))
+			.filter((d): d is DentalPrescriptionDrugPreset => Boolean(d));
 	} else {
 		selectedDrugs = DENTAL_PRESCRIPTION_DRUG_CATALOG.filter((d) =>
 			d.recommendedForIcd10.some((code) => icd.startsWith(code)),
@@ -1410,6 +1452,7 @@ export function generatePrescriptionPayloadFromSoap(options: {
 		items: drugItems,
 		diagnosisIcd10Code: icd,
 		ukepSignature: options.ukepSignature || null,
+		withStampAndSignature: options.withStampAndSignature ?? true,
 	};
 }
 

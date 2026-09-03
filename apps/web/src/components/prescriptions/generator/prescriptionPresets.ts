@@ -135,4 +135,102 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 		signaRu: "S. Внутрь по 1 таблетке 3 раза в день при кровоточивости лунки, 2-3 дня.",
 		validityDays: 60,
 	},
+	{
+		id: "suprastin_25",
+		tradeNameRu: "Супрастин (Хлоропирамин)",
+		activeSubstanceRu: "Хлоропирамин",
+		category: "antihistamine",
+		categoryLabelRu: "Антигистаминное / Противоотечное",
+		latinRp: "Rp.: Tab. Chloropyramini 25 mg",
+		formRu: "таблетки",
+		dosageRu: "25 мг",
+		quantityLabel: "N. 20",
+		dispenseLatin: "D.t.d. N 20 in tab.",
+		signaRu: "S. Внутрь по 1 таблетке (25 мг) 2-3 раза в день во время еды, 3-5 дней для снятия постоперационного отека.",
+		validityDays: 60,
+	},
+	{
+		id: "ibuprofen_400",
+		tradeNameRu: "Ибупрофен (Нурофен Форте)",
+		activeSubstanceRu: "Ибупрофен",
+		category: "nsaid",
+		categoryLabelRu: "НПВП / Анальгетик",
+		latinRp: "Rp.: Ibuprofeni 400 mg",
+		formRu: "таблетки, покрытые оболочкой",
+		dosageRu: "400 мг",
+		quantityLabel: "N. 20",
+		dispenseLatin: "D.t.d. N 20 in tab.",
+		signaRu: "S. Внутрь по 1 таблетке (400 мг) 2-3 раза в день после еды, запивая водой. Не более 1200 мг в сутки, курс 3-5 дней.",
+		validityDays: 60,
+	},
+	{
+		id: "miramistin_001",
+		tradeNameRu: "Мирамистин 0.01%",
+		activeSubstanceRu: "Бензилдиметил-миристоиламино-пропиламмоний",
+		category: "antiseptic",
+		categoryLabelRu: "Антисептик широкого спектра",
+		latinRp: "Rp.: Sol. 'Miramistin' 0.01% - 150 ml",
+		formRu: "раствор для местного применения",
+		dosageRu: "0.01%",
+		quantityLabel: "N. 1 (флакон)",
+		dispenseLatin: "D.t.d. N 1 in flac.",
+		signaRu: "S. Орошать полость рта 3-4 раза в сутки путем 3-4 нажатий на насадку-распылитель после еды, 7 дней.",
+		validityDays: 60,
+	},
+	{
+		id: "stomatophyt_100",
+		tradeNameRu: "Стоматофит",
+		activeSubstanceRu: "Экстракт растительный",
+		category: "antiseptic",
+		categoryLabelRu: "Фитопрепарат / антисептик",
+		latinRp: "Rp.: Extracti 'Stomatophyt' 100 ml",
+		formRu: "экстракт для приготовления раствора для местного применения",
+		dosageRu: "100 мл",
+		quantityLabel: "N. 1 (флакон)",
+		dispenseLatin: "D.t.d. N 1 in flac.",
+		signaRu: "S. Развести 7.5 мл в 1/4 стакана теплой воды, полоскать полость рта 3-4 раза в день после еды, 7-10 дней.",
+		validityDays: 60,
+	},
+	{
+		id: "amoxiclav_875_125",
+		tradeNameRu: "Амоксиклав (Аугментин 875/125 мг)",
+		activeSubstanceRu: "Амоксициллин + Клавулановая кислота",
+		category: "antibiotic",
+		categoryLabelRu: "Антибиотик (Пенициллины)",
+		latinRp: "Rp.: Tab. Amoxicillini et Acidi clavulanici 875/125 mg",
+		formRu: "таблетки, покрытые оболочкой",
+		dosageRu: "875/125 мг",
+		quantityLabel: "N. 14",
+		dispenseLatin: "D.t.d. N 14 in tab.",
+		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки во время еды через каждые 12 часов, курс 7 дней.",
+		validityDays: 60,
+	},
+];
+
+export interface DentalFastPrescriptionPackage {
+	readonly id: string;
+	readonly label: string;
+	readonly desc: string;
+	readonly drugIds: readonly string[];
+}
+
+export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionPackage[] = [
+	{
+		id: "post_extraction_surgery",
+		label: "«После удаления / хирургии»",
+		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №10 + Супрастин 25 мг",
+		drugIds: ["amoxiclav_875_125", "nimesil_100", "suprastin_25"],
+	},
+	{
+		id: "anti_inflammatory",
+		label: "«Противовоспалительный»",
+		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% водный раствор 100 мл",
+		drugIds: ["ibuprofen_400", "chlorhexidine_005"],
+	},
+	{
+		id: "antiseptic_rinsing",
+		label: "«Антисептический / полоскания»",
+		desc: "Мирамистин 0.01% + Стоматофит",
+		drugIds: ["miramistin_001", "stomatophyt_100"],
+	},
 ];

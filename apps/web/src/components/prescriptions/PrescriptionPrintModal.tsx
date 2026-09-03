@@ -66,6 +66,24 @@ export interface DentalFastPrescriptionSet {
 
 export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
 	{
+		id: "post_extraction_surgery",
+		label: "«После удаления / хирургии»",
+		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №10 + Супрастин 25 мг",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "suprastin_25"],
+	},
+	{
+		id: "anti_inflammatory",
+		label: "«Противовоспалительный»",
+		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% водный раствор 100 мл",
+		drugIds: ["ibuprofen_400", "chlorhexidine_005"],
+	},
+	{
+		id: "antiseptic_rinsing",
+		label: "«Антисептический / полоскания»",
+		desc: "Мирамистин 0.01% + Стоматофит",
+		drugIds: ["miramistin_001", "stomatophyt_100"],
+	},
+	{
 		id: "amoxi_1000_nimesil",
 		label: "Амоксиклав 1000\u00A0мг + Нимесил 100\u00A0мг",
 		desc: "Антибиотик 875/125\u00A0мг + НПВС 100\u00A0мг (Периодонтит / Хирургия)",
@@ -82,30 +100,6 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		label: "Хлоргексидин 0.05\u00A0% (Антисептик)",
 		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% / Ротовые ванночки 3 раза в день",
 		drugIds: ["chlorhexidine_005"],
-	},
-	{
-		id: "ibuprofen_400",
-		label: "Ибупрофен 400\u00A0мг (Нурофен)",
-		desc: "НПВС при боли / пульпите / после лечения",
-		drugIds: ["ibuprofen_400"],
-	},
-	{
-		id: "chlorhex_metrogyl",
-		label: "Хлоргексидин 0.05\u00A0% + Метрогил",
-		desc: "Антисептические ванночки + гель (Пародонтология)",
-		drugIds: ["chlorhexidine_005", "metrogyl_denta"],
-	},
-	{
-		id: "amoxi_500",
-		label: "Амоксиклав 500/125\u00A0мг",
-		desc: "Базовый антибиотик (защищенный пенициллин)",
-		drugIds: ["amoxiclav_500_125"],
-	},
-	{
-		id: "amoxicillin_500_set",
-		label: "Амоксициллин 500\u00A0мг (Флемоксин)",
-		desc: "Rp: Amoxicillini 500mg, D.t.d. N 20 in caps., S. по 1 капс 3 раза в день",
-		drugIds: ["amoxicillin_500"],
 	},
 	{
 		id: "cholisal",
@@ -178,6 +172,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [categoryFilter, setCategoryFilter] = useState<string>("all");
 	const [isAddingCustom, setIsAddingCustom] = useState<boolean>(false);
+	const [withStampAndSignature, setWithStampAndSignature] = useState<boolean>(true);
 
 	// Preferential details state (Form 148-1/u-04(l))
 	const [preferentialBenefitCode, setPreferentialBenefitCode] = useState<string>("081");
@@ -324,8 +319,9 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	};
 
 	const activeItems = useMemo<PrescriptionDrugItem[]>(() => {
-		const fromCatalog: PrescriptionDrugItem[] = fullCatalog
-			.filter((d) => selectedDrugIds.includes(d.id))
+		const fromCatalog: PrescriptionDrugItem[] = selectedDrugIds
+			.map((id) => fullCatalog.find((d) => d.id === id))
+			.filter((d): d is DentalPrescriptionDrugPreset => Boolean(d))
 			.map((d, index) => ({
 				id: `item-${index + 1}-${d.id}`,
 				latinName: d.latinRp,
@@ -399,6 +395,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				],
 				diagnosisIcd10Code: diary?.diagnosisIcd10 || "K02.1",
 				ukepSignature: isUkepSigned ? ukepSignature : null,
+				withStampAndSignature,
 			};
 			return renderForm107_1uHtml(payload);
 		}
@@ -516,6 +513,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		diary?.diagnosisIcd10,
 		isUkepSigned,
 		ukepSignature,
+		withStampAndSignature,
 	]);
 
 	// UKEP signing handler using CryptoPro CSP
@@ -562,8 +560,8 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		}
 	};
 
-	const handlePrint = () => {
-		const printHtml = generatePrintHtml();
+	const handlePrint = (customHtml?: string | unknown) => {
+		const printHtml = typeof customHtml === "string" ? customHtml : generatePrintHtml();
 		const printFrame = document.createElement("iframe");
 		printFrame.style.position = "fixed";
 		printFrame.style.right = "0";
@@ -587,6 +585,52 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 				}, 1000);
 			}, 250);
 		}
+	};
+
+	const handleApplyAndPrint = (preset: DentalFastPrescriptionSet) => {
+		setSelectedDrugIds([...preset.drugIds]);
+		setValidityDays("60");
+		showToast(`Печать пакета ${preset.label}`, "info", 2000);
+
+		const presetItems: PrescriptionDrugItem[] = preset.drugIds
+			.map((id) => fullCatalog.find((d) => d.id === id))
+			.filter((d): d is DentalPrescriptionDrugPreset => Boolean(d))
+			.map((d, index) => ({
+				id: `item-${index + 1}-${d.id}`,
+				latinName: d.latinRp,
+				tradeName: d.tradeNameRu,
+				form: d.formRu,
+				dosage: d.dosageRu,
+				quantity: d.quantityLabel,
+				dispenseLatin: d.dispenseLatin,
+				signaRussian: d.signaRu,
+				category: d.category,
+			}));
+
+		const instantPayload: Form107_1uPayload = {
+			formNumber: "107-1/у",
+			clinicLegalName: clinic,
+			clinicAddress: address,
+			clinicPhone: phone,
+			clinicOgrn: ogrn,
+			clinicInn: inn,
+			medicalLicenseNumber: licNum,
+			prescriptionSeriesNumber: customSeriesNumber,
+			prescriptionDate: prescriptionDate || new Date().toISOString().slice(0, 10),
+			patientFullName: patientName,
+			patientBirthDate: patientBirth,
+			medicalCardNumber: patientCard,
+			doctorFullName: docName,
+			doctorSpecialty: docSpecialty,
+			validityDays: "60",
+			isChronicSpecialCare: false,
+			chronicPeriodicity: null,
+			items: presetItems,
+			diagnosisIcd10Code: diary?.diagnosisIcd10 || "K02.1",
+			withStampAndSignature,
+		};
+		const html = renderForm107_1uHtml(instantPayload);
+		handlePrint(html);
 	};
 
 	if (!isOpen || typeof document === "undefined") return null;
@@ -769,30 +813,59 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											preset.drugIds.length === selectedDrugIds.length &&
 											preset.drugIds.every((id) => selectedDrugIds.includes(id));
 										return (
-											<button
+											<div
 												key={preset.id}
-												type="button"
-												onClick={() => {
-													setSelectedDrugIds([...preset.drugIds]);
-													setValidityDays("60");
-													showToast(`Выписан набор «${preset.label}» (Форма 107-1/у)`, "success", 3000);
-												}}
-												className={`flex flex-col text-left p-2.5 rounded-xl border transition-all duration-150 cursor-pointer select-none min-h-[48px] justify-center ${
+												data-testid={`btn-fast-preset-${preset.id}`}
+												className={`flex items-stretch justify-between p-2.5 rounded-xl border transition-all duration-150 select-none min-h-[48px] gap-2 ${
 													isSelected
 														? "bg-teal-500/20 border-teal-500 shadow-xs ring-1 ring-teal-500"
 														: "bg-[var(--paper)] border-teal-500/30 hover:bg-teal-500/10 hover:border-teal-500"
 												}`}
 											>
-												<span className="text-xs font-black text-[var(--ink)] leading-snug">
-													{preset.label}
-												</span>
-												<span className="text-[10px] text-[var(--muted)] leading-tight mt-0.5">
-													{preset.desc}
-												</span>
-											</button>
+												<button
+													type="button"
+													onClick={() => {
+														setSelectedDrugIds([...preset.drugIds]);
+														setValidityDays("60");
+														showToast(`Выписан набор ${preset.label} (Форма 107-1/у)`, "success", 3000);
+													}}
+													className="flex flex-col text-left cursor-pointer flex-1 justify-center min-w-0"
+												>
+													<span className="text-xs font-black text-[var(--ink)] leading-snug truncate">
+														{preset.label}
+													</span>
+													<span className="text-[10px] text-[var(--muted)] leading-tight mt-0.5 line-clamp-2">
+														{preset.desc}
+													</span>
+												</button>
+
+												<button
+													type="button"
+													title={`Печать набора ${preset.label} в 1 клик`}
+													onClick={(e) => {
+														e.stopPropagation();
+														handleApplyAndPrint(preset);
+													}}
+													className="flex items-center justify-center self-center px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shrink-0 transition-colors shadow-xs gap-1 cursor-pointer min-h-[36px]"
+													data-testid={`btn-fast-print-${preset.id}`}
+												>
+													<Printer className="w-3.5 h-3.5" />
+													<span className="hidden xl:inline">Печать</span>
+												</button>
+											</div>
 										);
 									})}
 								</div>
+								<label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--ink)] mt-1 select-none">
+									<input
+										type="checkbox"
+										checked={withStampAndSignature}
+										onChange={(e) => setWithStampAndSignature(e.target.checked)}
+										className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+										data-testid="toggle-stamp-signature"
+									/>
+									<span>Печать со штампом клиники и факсимиле подписи врача (1 клик)</span>
+								</label>
 							</div>
 						)}
 
@@ -1212,16 +1285,23 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						>
 							{/* Form Official Header */}
 							<div className="border-b-2 border-slate-900 pb-2 text-[10px] flex justify-between gap-2" style={{ color: "#0f172a" }}>
-								<div className="w-7/12 border border-dashed border-slate-400 p-1.5 rounded leading-tight" style={{ color: "#0f172a" }}>
-									<div className="font-bold uppercase text-[10px]" style={{ color: "#000000" }}>
+								<div
+									className={`w-7/12 p-1.5 rounded leading-tight transition-all ${
+										withStampAndSignature
+											? "border-2 border-blue-900 bg-blue-50/40 text-blue-950 shadow-xs"
+											: "border border-dashed border-slate-400"
+									}`}
+									style={{ color: withStampAndSignature ? "#1e3a8a" : "#0f172a" }}
+								>
+									<div className="font-bold uppercase text-[10px]" style={{ color: withStampAndSignature ? "#1e3a8a" : "#000000" }}>
 										{clinic}
 									</div>
-									<div className="text-[9px]" style={{ color: "#1e293b" }}>Адрес: {address}</div>
-									<div className="text-[9px]" style={{ color: "#1e293b" }}>Тел: {phone}</div>
-									<div className="text-[9px]" style={{ color: "#1e293b" }}>ОГРН: {ogrn} · ИНН: {inn}</div>
-									<div className="text-[8.5px] font-sans" style={{ color: "#475569" }}>Лицензия: № {licNum}</div>
-									<div className="text-[8px] italic mt-0.5" style={{ color: "#64748b" }}>
-										(Штамп медицинской организации)
+									<div className="text-[9px]">Адрес: {address}</div>
+									<div className="text-[9px]">Тел: {phone}</div>
+									<div className="text-[9px]">ОГРН: {ogrn} · ИНН: {inn}</div>
+									<div className="text-[8.5px] font-sans">Лицензия: № {licNum}</div>
+									<div className="text-[8px] font-bold italic mt-0.5" style={{ color: withStampAndSignature ? "#2563eb" : "#64748b" }}>
+										{withStampAndSignature ? "★ ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ ★" : "(Штамп медицинской организации)"}
 									</div>
 								</div>
 								<div className="w-5/12 text-right leading-tight text-[9px]" style={{ color: "#1e293b" }}>
@@ -1291,22 +1371,28 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 
 							{/* Prescribed Items (Rp.) */}
 							<div className="flex flex-col gap-3 min-h-[110px] py-1.5" style={{ color: "#0f172a" }}>
-								{activeItems.map((item, idx) => (
-									<div key={item.id} className="font-serif" style={{ color: "#0f172a" }}>
-										<div className="font-bold text-[11.5px] italic" style={{ color: "#000000" }}>
-											{idx + 1}. {item.latinName}
+								{activeItems.length > 0 ? (
+									activeItems.map((item, idx) => (
+										<div key={item.id} className="font-serif" style={{ color: "#0f172a" }}>
+											<div className="font-bold text-[11.5px] italic" style={{ color: "#000000" }}>
+												{idx + 1}. {item.latinName}
+											</div>
+											<div className="ml-5 italic text-[11px]" style={{ color: "#1e293b" }}>
+												{item.dispenseLatin}
+											</div>
+											<div className="ml-5 text-[11px] font-sans font-medium" style={{ color: "#0f172a" }}>
+												{item.signaRussian}
+											</div>
+											<div className="ml-5 text-[9.5px] font-sans" style={{ color: "#475569" }}>
+												[Торговое наименование: <strong style={{ color: "#0f172a" }}>{item.tradeName}</strong>]
+											</div>
 										</div>
-										<div className="ml-5 italic text-[11px]" style={{ color: "#1e293b" }}>
-											{item.dispenseLatin}
-										</div>
-										<div className="ml-5 text-[11px] font-sans font-medium" style={{ color: "#0f172a" }}>
-											{item.signaRussian}
-										</div>
-										<div className="ml-5 text-[9.5px] font-sans" style={{ color: "#475569" }}>
-											[Торговое наименование: <strong style={{ color: "#0f172a" }}>{item.tradeName}</strong>]
-										</div>
+									))
+								) : (
+									<div className="p-4 rounded-lg border border-dashed border-slate-300 text-center text-xs text-slate-500 font-sans flex flex-col items-center justify-center min-h-[90px]">
+										Выберите готовый пакет назначений слева или добавьте препарат
 									</div>
-								))}
+								)}
 							</div>
 
 							{/* Footer Signatures and Stamp Circles */}
@@ -1329,7 +1415,15 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 											По специальному назначению ({chronicPeriodicity})
 										</div>
 									)}
-									<div className="mt-1" style={{ color: "#0f172a" }}>
+									<div className="mt-1 relative" style={{ color: "#0f172a" }}>
+										{withStampAndSignature && (
+											<div
+												className="absolute -top-3 left-24 text-blue-700 font-serif italic text-base select-none pointer-events-none"
+												style={{ fontFamily: "'Brush Script MT', 'Segoe Script', cursive, serif", transform: "rotate(-3deg)" }}
+											>
+												{docName.replace(/^(Д-р|Врач)\s+/i, "")}
+											</div>
+										)}
 										Подпись врача: ____________________ / {docName}
 									</div>
 									{activeForm === "148-1u-88" && (
@@ -1338,11 +1432,25 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								</div>
 
 								<div className="flex items-center gap-2">
-									<div className="w-10 h-10 rounded-full border border-dashed border-slate-500 flex items-center justify-center font-bold text-[8.5px] text-slate-600">
-										М.П.
+									<div
+										className={`w-11 h-11 rounded-full flex flex-col items-center justify-center font-bold text-[7px] text-center leading-tight transition-all ${
+											withStampAndSignature
+												? "border-2 border-blue-700 bg-blue-50 text-blue-900 shadow-xs"
+												: "border border-dashed border-slate-500 text-slate-600"
+										}`}
+									>
+										<span>ВРАЧ</span>
+										<span className="text-[8px]">М.П.</span>
 									</div>
-									<div className="w-11 h-11 rounded-full border border-dashed border-teal-700 flex items-center justify-center font-bold text-[8px] text-teal-900 text-center leading-tight">
-										Для<br />рецептов
+									<div
+										className={`w-12 h-12 rounded-full flex flex-col items-center justify-center font-bold text-[7px] text-center leading-tight transition-all ${
+											withStampAndSignature
+												? "border-2 border-double border-blue-700 bg-blue-50 text-blue-900 shadow-xs"
+												: "border border-dashed border-teal-700 text-teal-900"
+										}`}
+									>
+										<span className="text-[6px] uppercase">КЛИНИКА</span>
+										<span>Для<br />рецептов</span>
 									</div>
 									{activeForm === "148-1u-88" && (
 										<div className="w-10 h-10 border border-dashed border-rose-700 clip-path-tri flex items-center justify-center font-bold text-[7.5px] text-rose-800 text-center">
@@ -1383,7 +1491,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						</button>
 						<button
 							type="button"
-							onClick={handlePrint}
+							onClick={() => handlePrint()}
 							className="min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-black rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
 							data-testid="print-prescription-btn"
 						>

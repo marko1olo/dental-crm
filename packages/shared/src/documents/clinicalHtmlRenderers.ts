@@ -2028,6 +2028,7 @@ export function renderForm107_1uHtml(payload: Form107_1uPayload | any): string {
 	const doctorSpecialty = payload.doctorSpecialty || "Врач-стоматолог";
 	const validity = String(payload.validityDays || "60");
 	const items: any[] = payload.items || [];
+	const withStamp = payload.withStampAndSignature !== false;
 
 	const itemsHtml = items.map((item, idx) => `
     <div style="margin-bottom:10px; font-family:'Times New Roman', serif; font-size:10pt; line-height:1.35;">
@@ -2080,12 +2081,12 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 <body>
 <div class="recipe-container">
   <div class="recipe-header">
-    <div class="stamp-box">
-      <div style="font-weight:bold; font-size:8pt; text-transform:uppercase;">${escapeHtml(clinicName)}</div>
+    <div class="stamp-box" style="${withStamp ? "border:1.5pt solid #1e3a8a; background:#f8fafc; color:#1e3a8a;" : ""}">
+      <div style="font-weight:bold; font-size:8pt; text-transform:uppercase; ${withStamp ? "color:#1e3a8a;" : ""}">${escapeHtml(clinicName)}</div>
       <div>Адрес: ${escapeHtml(clinicAddress)}</div>
       <div>Тел: ${escapeHtml(clinicPhone)}</div>
       <div>ОГРН: ${escapeHtml(clinicOgrn)} | ИНН: ${escapeHtml(clinicInn)} ${medLic ? `| ${medLic}` : ""}</div>
-      <div style="font-size:6.5pt; color:#64748b; margin-top:2px;">(Штамп медицинской организации)</div>
+      <div style="font-size:6.5pt; color:${withStamp ? "#2563eb" : "#64748b"}; margin-top:2px; font-weight:${withStamp ? "bold" : "normal"};">(${withStamp ? "★ ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ ★" : "Штамп медицинской организации"})</div>
     </div>
     <div class="form-title-box">
       <div>Министерство здравоохранения РФ</div>
@@ -2134,9 +2135,12 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
     ` : ""}
 
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
-      <div style="width:40%;">
-        <div style="font-size:7pt; color:#64748b; margin-bottom:12px;">Подпись и личная печать врача:</div>
-        <div style="border-bottom:1px solid #0f172a; width:90%; height:1px;"></div>
+      <div style="width:40%; position:relative;">
+        <div style="font-size:7pt; color:#64748b; margin-bottom:6px;">Подпись и личная печать врача:</div>
+        <div style="position:relative; height:20px;">
+          ${withStamp ? `<div style="position:absolute; bottom:2px; left:18px; font-family:'Brush Script MT', 'Segoe Script', cursive, serif; font-size:15pt; color:#1d4ed8; transform:rotate(-3deg); font-weight:bold; user-select:none; z-index:2;">${escapeHtml(doctorName.replace(/^(Д-р|Врач)\s+/i, ""))}</div>` : ""}
+          <div style="border-bottom:1px solid #0f172a; width:90%; position:absolute; bottom:0;"></div>
+        </div>
         <div style="font-size:7.5pt; margin-top:2px;">/ ${escapeHtml(doctorName)} /</div>
       </div>
       <div style="width:28%; display:flex; flex-direction:column; align-items:center;">
@@ -2147,14 +2151,16 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       </div>
       <div style="width:30%; display:flex; flex-direction:column; align-items:center;">
         <div style="display:flex; gap:6px; align-items:center;">
-          <div style="width:42px; height:42px; border:1px dashed #94a3b8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7pt; color:#64748b; font-weight:bold;">
-            М.П.
+          <div style="width:44px; height:44px; border:${withStamp ? "1.5px solid #1d4ed8; background:#eff6ff; color:#1e40af;" : "1px dashed #94a3b8; color:#64748b;"} border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:6pt; font-weight:bold; text-align:center; line-height:1.05;">
+            <span style="font-size:5.5pt;">ВРАЧ</span>
+            <span style="font-size:7pt;">М.П.</span>
           </div>
-          <div style="width:46px; height:46px; border:1.5px dashed #0284c7; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:6.5pt; color:#0369a1; font-weight:bold; text-align:center; line-height:1.1;">
-            Для<br>рецептов
+          <div style="width:48px; height:48px; border:${withStamp ? "2px double #1d4ed8; background:#eff6ff; color:#1e40af;" : "1.5px dashed #0284c7; color:#0369a1;"} border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:6pt; font-weight:bold; text-align:center; line-height:1.1;">
+            <span style="font-size:5pt; text-transform:uppercase;">КЛИНИКА</span>
+            <span>Для<br>рецептов</span>
           </div>
         </div>
-        <div style="font-size:5.5pt; color:#64748b; margin-top:2px; text-align:center;">Печать медицинской организации «Для рецептов»</div>
+        <div style="font-size:5.5pt; color:${withStamp ? "#1d4ed8" : "#64748b"}; margin-top:2px; text-align:center; font-weight:${withStamp ? "bold" : "normal"};">Печать медицинской организации «Для рецептов»</div>
       </div>
     </div>
 
