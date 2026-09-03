@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { money } from "../AppHelpers";
+import { showToast } from "./GlobalToast";
 import { InventoryConfirmDialog } from "./inventory/InventoryConfirmDialog";
 import { ProcedureMaterialDeductionModal } from "./inventory/ProcedureMaterialDeductionModal";
 import { MaterialBomsSettingsPanel } from "./inventory/MaterialBomsSettingsPanel";
@@ -2070,7 +2071,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							"success",
 						);
 					} catch (e) {
-						logger.error(e);
+						console.error(e);
 						showToast("Ошибка при списании материалов", "error");
 					} finally {
 						setIsDeductionModalOpen(false);
@@ -2088,7 +2089,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 						for (const line of doc.lines) {
 							if (line.actualQuantity <= 0) continue;
 							const matchingItem = items.find(
-								(it) => it.name.toLowerCase() === line.materialNameRu.toLowerCase(),
+								(it) => it.name.toLowerCase() === line.nameRu.toLowerCase(),
 							);
 							if (matchingItem) {
 								const res = await fetch(
@@ -2099,7 +2100,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										body: JSON.stringify({
 											adjustment: -line.actualQuantity,
 											allowOverdraft: true,
-											reason: `Акт 804н ${doc.actNumber}: ${line.materialNameRu}`,
+											reason: `Акт 804н ${doc.actNumber}: ${line.nameRu}`,
 										}),
 									},
 								);
@@ -2111,7 +2112,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 							"success",
 						);
 					} catch (e) {
-						logger.error(e);
+						console.error(e);
 						showToast("Ошибка при фиксации акта списания", "error");
 					} finally {
 						setIsClinicalWriteoffOpen(false);

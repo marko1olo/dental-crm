@@ -22,6 +22,7 @@ import {
 	ShieldCheck,
 	UserPlus,
 	X,
+	Zap,
 } from "lucide-react";
 import { generateAnonymousPatientCode } from "@dental/shared";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -113,6 +114,7 @@ export function PatientCreationModal({
 	> | null>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [showDocFields, setShowDocFields] = useState(false);
+	const [isEmergencyOrPrimary, setIsEmergencyOrPrimary] = useState(false);
 
 	const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,6 +153,7 @@ export function PatientCreationModal({
 			birthDate: newPatientBirthDate,
 			identityDocument: patientAdministrativeProfileDraft.identityDocument,
 			isAnonymous: patientAdministrativeProfileDraft.isAnonymous,
+			isEmergencyOrPrimary,
 		},
 		fieldRequirements,
 	);
@@ -229,6 +232,67 @@ export function PatientCreationModal({
 
 				{/* Modal Body */}
 				<div className="create-patient-modal-body">
+					{/* Quick Mode: Emergency / Primary Intake without documents */}
+					<div
+						style={{
+							marginBottom: "10px",
+							padding: "10px 12px",
+							borderRadius: "8px",
+							border: isEmergencyOrPrimary
+								? "1px solid rgba(244, 63, 94, 0.4)"
+								: "1px solid var(--glass-border)",
+							backgroundColor: isEmergencyOrPrimary
+								? "rgba(244, 63, 94, 0.08)"
+								: "var(--glass-panel)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: "12px",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+							<Zap size={18} style={{ flexShrink: 0, color: isEmergencyOrPrimary ? "#f43f5e" : "var(--muted)" }} />
+							<div style={{ fontSize: "12px" }}>
+								<div style={{ fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
+									Острая боль / Первичный осмотр (без документов)
+									{isEmergencyOrPrimary && (
+										<span style={{ fontSize: "10px", fontWeight: "bold", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#f43f5e", color: "#ffffff" }}>
+											АКТИВЕН
+										</span>
+									)}
+								</div>
+								<div style={{ fontSize: "11px", color: "var(--muted)" }}>
+									{isEmergencyOrPrimary
+										? "СНИЛС, паспорт и источник обращения не блокируют запись. Документы можно внести позже."
+										: "Быстрое создание карты для экстренного пациента без паспорта и СНИЛС"}
+								</div>
+							</div>
+						</div>
+						<button
+							type="button"
+							style={{
+								padding: "6px 12px",
+								fontSize: "12px",
+								fontWeight: 600,
+								borderRadius: "6px",
+								cursor: "pointer",
+								flexShrink: 0,
+								backgroundColor: isEmergencyOrPrimary
+									? "#f43f5e"
+									: "var(--paper-strong)",
+								color: isEmergencyOrPrimary
+									? "#ffffff"
+									: "var(--ink)",
+								border: "1px solid var(--glass-border)",
+								minHeight: "36px",
+							}}
+							onClick={() => setIsEmergencyOrPrimary((prev) => !prev)}
+							data-testid="patient-create-emergency-toggle"
+						>
+							{isEmergencyOrPrimary ? "Отключить" : "Включить"}
+						</button>
+					</div>
+
 					{/* Decree 659: Anonymous Stealth Mode Toggle */}
 					<div
 						style={{

@@ -514,7 +514,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 
 		const startCycle = (existingToday[0]?.cycleNumber ?? 0) + 1;
 		const expiresAt = computePackagingExpirationDate(packagingType, now);
-		const logsToInsert = [];
+		const logsToInsert: any[] = [];
 
 		for (let i = 0; i < cyclesCount; i++) {
 			const cycleNumber = startCycle + i;

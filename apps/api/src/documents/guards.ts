@@ -1028,6 +1028,10 @@ function paidContractMismatchReason(
 	if (!payload.customerFullName.trim()) {
 		return "Договор платных медицинских услуг: укажите заказчика. Для взрослого пациента это сам пациент, для ребенка или оплаты третьим лицом - законный представитель или плательщик.";
 	}
+	// Регистратор имеет право распечатать пустой договор со строками "_______" (0 руб.) до осмотра врача.
+	if (payload.estimatedTotalRub === 0) {
+		return null;
+	}
 	return plannedFactsTotalMismatchReason(
 		payload.estimatedTotalRub,
 		facts,
@@ -1533,7 +1537,11 @@ export function validateDocumentCreation(
 				"Для налогового заявления, справки или реестра нужно явно выбрать фискальные чеки. Автоматический захват всех оплат за год отключен.",
 		};
 	}
-	if (metadata.amountSource === "planned" && !input.visitId) {
+	if (
+		metadata.amountSource === "planned" &&
+		!input.visitId &&
+		input.kind !== "paid_medical_services_contract"
+	) {
 		return {
 			ok: false,
 			statusCode: 409,

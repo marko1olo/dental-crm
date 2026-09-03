@@ -182,6 +182,8 @@ export interface PatientDraftValidationInput {
 	identityDocument?: string | null | undefined;
 	/** Decree 659: Anonymous patient mode waives passport and SNILS requirements */
 	isAnonymous?: boolean | null | undefined;
+	/** Первичный приём или острая боль (CITO): не блокирует регистрацию без СНИЛС, паспорта и источника */
+	isEmergencyOrPrimary?: boolean | null | undefined;
 }
 
 export interface PatientDraftValidationResult {
@@ -223,18 +225,18 @@ export function validatePatientDraftWithRequirements(
 		errors.phone = "Номер телефона слишком короткий. Исправьте или очистите поле.";
 	}
 
-	// 3. Рекламный источник (по настройке)
+	// 3. Рекламный источник (по настройке, кроме экстренного/первичного приёма)
 	const sourceTrimmed = (draft.advertisingSource || "").trim();
-	if (requirements.requireAdvertisingSource) {
+	if (requirements.requireAdvertisingSource && !draft.isEmergencyOrPrimary) {
 		if (!sourceTrimmed) {
 			errors.advertisingSource = "Укажите рекламный источник для сквозной аналитики";
 			missingRequiredLabels.push("Рекламный источник");
 		}
 	}
 
-	// 4. СНИЛС (по настройке с проверкой контрольной суммы 192-П, кроме анонимного режима по ПП РФ №659)
+	// 4. СНИЛС (по настройке с проверкой контрольной суммы 192-П, кроме анонимного режима по ПП РФ №659 и экстренного приёма)
 	const snilsRaw = (draft.snils || "").trim();
-	if (requirements.requireSnils && !draft.isAnonymous) {
+	if (requirements.requireSnils && !draft.isAnonymous && !draft.isEmergencyOrPrimary) {
 		if (!snilsRaw) {
 			errors.snils = "СНИЛС обязателен для передачи данных в ЕГИСЗ (РЭМД)";
 			missingRequiredLabels.push("СНИЛС");
@@ -252,18 +254,18 @@ export function validatePatientDraftWithRequirements(
 		}
 	}
 
-	// 5. Дата рождения (по настройке)
+	// 5. Дата рождения (по настройке, кроме экстренного/первичного приёма)
 	const birthDateTrimmed = (draft.birthDate || "").trim();
-	if (requirements.requireBirthDate) {
+	if (requirements.requireBirthDate && !draft.isEmergencyOrPrimary) {
 		if (!birthDateTrimmed) {
 			errors.birthDate = "Дата рождения обязательна для амбулаторной карты 043/у";
 			missingRequiredLabels.push("Дата рождения");
 		}
 	}
 
-	// 6. Паспорт РФ (по настройке, кроме анонимного режима по ПП РФ №659)
+	// 6. Паспорт РФ (по настройке, кроме анонимного режима по ПП РФ №659 и экстренного приёма)
 	const docTrimmed = (draft.identityDocument || "").trim();
-	if (requirements.requireIdentityDocument && !draft.isAnonymous) {
+	if (requirements.requireIdentityDocument && !draft.isAnonymous && !draft.isEmergencyOrPrimary) {
 		if (!docTrimmed) {
 			errors.identityDocument = "Паспортные данные обязательны для договора";
 			missingRequiredLabels.push("Паспорт");

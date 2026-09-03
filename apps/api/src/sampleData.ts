@@ -11213,9 +11213,6 @@ function assertAppointmentWithinOperationalHours(candidate: Appointment): void {
 	if (!candidate.chairId) {
 		throw new Error("Для активной будущей записи нужно выбрать кресло");
 	}
-	if (clinicProfile.mode !== "solo_doctor" && !candidate.assistantUserId) {
-		throw new Error("Для активной будущей записи нужно выбрать ассистента");
-	}
 	const patient = candidate.patientId
 		? patients.find(
 				(item) => item.id === candidate.patientId && item.status === "active",

@@ -48,18 +48,15 @@ export function isReceptionistAllowedPrimaryDoc(
 	kind: string | null | undefined,
 	role: string | null | undefined,
 ): boolean {
-	if (!kind || !role) return false;
+	if (!kind) return false;
 	const isPrimary =
 		kind === "informed_consent" ||
-		kind === "patient_intake_questionnaire";
+		kind === "patient_intake_questionnaire" ||
+		kind === "paid_medical_services_contract";
+	if (!isPrimary) return false;
+	if (!role) return true;
 	const normalizedRole = role.trim().toLowerCase();
-	const isReceptionistOrAdmin =
-		normalizedRole === "receptionist" ||
-		normalizedRole === "administrator" ||
-		normalizedRole === "registrar" ||
-		normalizedRole === "admin" ||
-		normalizedRole === "manager";
-	return isPrimary && isReceptionistOrAdmin;
+	return normalizedRole !== "marketer" && normalizedRole !== "marketing";
 }
 
 export async function registerQuery(app: FastifyInstance) {
