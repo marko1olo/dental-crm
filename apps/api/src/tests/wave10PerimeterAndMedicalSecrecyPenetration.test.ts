@@ -26,11 +26,13 @@ import {
 	users,
 	visits,
 } from "../db/schema.js";
+import { registerAnesthesiaRoutes } from "../routes/anesthesia.js";
 import { registerChatRoutes } from "../routes/chat.js";
 import { registerClinicalRoutes } from "../routes/clinical.js";
 import { registerDicomwebRoutes } from "../routes/dicomweb.js";
 import { registerDocumentRoutes } from "../routes/documents.js";
 import { registerFilesRoutes } from "../routes/files.js";
+import { registerLabOrderRoutes } from "../routes/labOrders.js";
 import { registerPrescriptionRoutes } from "../routes/prescriptions.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { registerMedicalSecrecyPayloadStripping } from "../security/medicalSecrecyWarden.js";
@@ -81,6 +83,8 @@ test("RED-TEAM HAMMER: WAVE 10 — Perimeter & Medical Secrecy 152-FZ / 323-FZ P
 		await registerPrescriptionRoutes(app);
 		await registerDicomwebRoutes(app);
 		await registerClinicalRoutes(app);
+		await registerAnesthesiaRoutes(app);
+		await registerLabOrderRoutes(app);
 		await app.ready();
 
 		const secret = authTokenSecret();
@@ -605,5 +609,182 @@ test("RED-TEAM HAMMER: WAVE 10 — Perimeter & Medical Secrecy 152-FZ / 323-FZ P
 		const body = JSON.parse(res.payload);
 		assert.strictEqual(body.error, "PermissionDenied");
 		assert.strictEqual(body.permission, "clinical.rules.write");
+	});
+
+	await suite.test("16. GET /api/anesthesia/patients/:id/logs — маркетолог блокируется с 403 при чтении протоколов анестезии", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/anesthesia/patients/${ACTIVE_PATIENT_ID}/logs`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет доступа к журналу анестезии (152-ФЗ / 323-ФЗ ст. 13)",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.anesthesia.read");
+	});
+
+	await suite.test("17. POST /api/anesthesia/patients/:id/logs — маркетолог блокируется с 403 при создании протокола анестезии", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/anesthesia/patients/${ACTIVE_PATIENT_ID}/logs`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				technique: "infiltration",
+				drug: "articaine",
+				carpulesAdministered: 1.0,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет права создавать протоколы анестезиологического пособия",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.anesthesia.write");
+	});
+
+	await suite.test("18. POST /api/anesthesia/calculate-safety — маркетолог блокируется с 403 при вызове клинического калькулятора доз", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/anesthesia/calculate-safety",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				drug: "articaine",
+				patientWeightKg: 75,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет доступа к клиническому расчету безопасности дозировок",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.anesthesia.calculate");
+	});
+
+	await suite.test("19. DELETE /api/anesthesia/logs/:id — маркетолог блокируется с 403 при попытке удаления протокола анестезии", async () => {
+		const res = await app.inject({
+			method: "DELETE",
+			url: `/api/anesthesia/logs/${fixtureUuid(NAMESPACE, 99)}`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет права удалять протоколы анестезиологического пособия",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.anesthesia.delete");
+	});
+
+	await suite.test("20. GET /api/clinical/lab-orders — маркетолог блокируется с 403 при чтении нарядов ЗТЛ", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет доступа к нарядам ЗТЛ и формулам зубов (152-ФЗ / 323-ФЗ ст. 13)",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.lab_order.read");
+	});
+
+	await suite.test("21. POST /api/clinical/lab-orders — маркетолог блокируется с 403 при создании наряда ЗТЛ", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/clinical/lab-orders",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				patientId: ACTIVE_PATIENT_ID,
+				toothFdi: "16",
+				material: "zirconia",
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет права создавать наряд-заказы в зуботехническую лабораторию",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.lab_order.write");
+	});
+
+	await suite.test("22. GET /api/clinical/lab-orders/:id/warranty-passport — маркетолог блокируется с 403 при запросе гарантийного паспорта", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/clinical/lab-orders/${fixtureUuid(NAMESPACE, 98)}/warranty-passport`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет доступа к гарантийному паспорту ортопедической конструкции",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.lab_order.passport.read");
+	});
+
+	await suite.test("23. POST /api/clinical/lab-orders/:id/pipeline-stage — маркетолог блокируется с 403 при смене клинического этапа ЗТЛ", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: `/api/clinical/lab-orders/${fixtureUuid(NAMESPACE, 98)}/pipeline-stage`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				stage: "cad_modeling",
+			},
+		});
+
+		assert.strictEqual(
+			res.statusCode,
+			403,
+			"Маркетолог не имеет права переводить этапы наряда ЗТЛ",
+		);
+		const body = JSON.parse(res.payload);
+		assert.strictEqual(body.error, "PermissionDenied");
+		assert.strictEqual(body.permission, "clinical.lab_order.write");
 	});
 });

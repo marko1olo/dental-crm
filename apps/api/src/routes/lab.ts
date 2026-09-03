@@ -32,6 +32,9 @@ import {
 	updateLabOrderStatusByToken,
 } from "../db/labQuery.js";
 import { labItems, labOrderEvents, labOrders, patients, users } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 /*
@@ -106,6 +109,28 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ ст. 13: Наряды ЗТЛ содержат формулу зубов и клинические заметки (врачебная тайна)
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.read",
+				role: staffRole,
+				message: `Отказ в доступе к наряд-заказам ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			action: "VIEW_LAB_ORDERS",
+			diagnosis: "Реестр наряд-заказов зуботехнической лаборатории",
+		});
+
 		const querySchema = z.object({
 			patientId: z.string().uuid().optional(),
 		});
@@ -169,6 +194,22 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			"lab orders write",
 		);
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ: Создание наряд-заказа ЗТЛ с формулой зубов разрешено только клиническому персоналу (врач/ортопед)
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.write",
+				role: staffRole,
+				message: `Отказ в создании наряд-заказа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const parsed = createLabOrderSchema.safeParse(request.body);
 		if (!parsed.success) {
@@ -285,6 +326,22 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			"lab orders write",
 		);
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ: Редактирование наряда ЗТЛ разрешено только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.write",
+				role: staffRole,
+				message: `Отказ в изменении наряд-заказа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const { id } = request.params as { id: string };
 
@@ -506,6 +563,22 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ: Частичное обновление наряда ЗТЛ разрешено только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.write",
+				role: staffRole,
+				message: `Отказ в обновлении наряда ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		const { id } = request.params as { id: string };
 
 		const patchSchema = z.object({
@@ -692,6 +765,22 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			"lab orders delete",
 		);
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ: Удаление наряда ЗТЛ разрешено только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.write",
+				role: staffRole,
+				message: `Отказ в удалении наряд-заказа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const { id } = request.params as { id: string };
 
@@ -913,6 +1002,22 @@ export async function registerLabRoutes(app: FastifyInstance) {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ: Единицы протезирования ЗТЛ содержат формулу зубов и параметры препарирования (врачебная тайна)
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.read",
+				role: staffRole,
+				message: `Отказ в доступе к единицам протезирования ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		const { id: labOrderId } = request.params as { id: string };
 
 		const items = await db
@@ -975,7 +1080,42 @@ const createLabItemSchema = z.object({
 		);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ: Добавление единиц протезирования ЗТЛ разрешено только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.write",
+				role: staffRole,
+				message: `Отказ в добавлении единицы протезирования ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		const { id: labOrderId } = request.params as { id: string };
+
+		const [order] = await db
+			.select({ id: labOrders.id })
+			.from(labOrders)
+			.where(
+				and(
+					eq(labOrders.id, labOrderId),
+					eq(labOrders.organizationId, orgId),
+				),
+			)
+			.limit(1);
+
+		if (!order) {
+			return reply.code(404).send({
+				error: "LabOrderNotFound",
+				message: "Наряд зуботехнической лаборатории не найден в текущей клинике.",
+			});
+		}
+
 		const parsed = createLabItemSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -1023,6 +1163,22 @@ const createLabItemSchema = z.object({
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
+		// 152-ФЗ / 323-ФЗ: Журнал этапов наряда ЗТЛ содержит клиническую историю (врачебная тайна)
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.read",
+				role: staffRole,
+				message: `Отказ в доступе к журналу этапов ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
+
 		const { id: labOrderId } = request.params as { id: string };
 
 		const events = await db
@@ -1057,6 +1213,22 @@ const createLabOrderEventSchema = z.object({
 	app.post("/api/clinical/lab-orders/:id/events", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ: Добавление этапов ЗТЛ разрешено только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.write",
+				role: staffRole,
+				message: `Отказ в фиксации этапа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const { id: labOrderId } = request.params as { id: string };
 		const parsed = createLabOrderEventSchema.safeParse(request.body);

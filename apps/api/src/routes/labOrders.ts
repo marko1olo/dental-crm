@@ -22,6 +22,9 @@ import {
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { labItems, labOrderEvents, labOrders, organizations, patients, users } from "../db/schema.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { registerLabRoutes as baseRegisterLabRoutes } from "./lab.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -36,6 +39,22 @@ export async function registerLabOrderRoutes(app: FastifyInstance) {
 	app.get("/api/clinical/lab-orders/:id/warranty-passport", async (request, reply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply, "lab orders passport read");
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ ст. 13: Паспорт ортопедической конструкции содержит врачебную тайну (формулу зубов, реставрацию)
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.passport.read",
+				role: staffRole,
+				message: `Отказ в доступе к гарантийному паспорту ортопедической конструкции (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const { id } = request.params as { id: string };
 
@@ -91,6 +110,13 @@ export async function registerLabOrderRoutes(app: FastifyInstance) {
 				: new Date().toISOString().slice(0, 10),
 		});
 
+		await auditMedicalAccessFromRequest(request, {
+			organizationId: orgId,
+			action: "VIEW_WARRANTY_PASSPORT",
+			diagnosis: "Гарантийный паспорт ортопедической конструкции (СтАР / Минздрав РФ)",
+			metadata: { labOrderId: orderWithDetails.id, toothFdi: orderWithDetails.toothFdi },
+		});
+
 		return reply.send({ success: true, passport });
 	});
 
@@ -106,6 +132,22 @@ export async function registerLabOrderRoutes(app: FastifyInstance) {
 			"lab orders pipeline stage update",
 		);
 		if (!orgId) return;
+
+		// 152-ФЗ / 323-ФЗ: Перевод этапа ЗТЛ разрешен только клиническому персоналу
+		const identity = getRequestIdentity(request);
+		const staffRole =
+			identity.role ??
+			(request as unknown as { user?: { role?: string | null } }).user?.role ??
+			null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "clinical.lab_order.write",
+				role: staffRole,
+				message: `Отказ в обновлении клинического этапа ЗТЛ (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+			});
+		}
 
 		const { id } = request.params as { id: string };
 

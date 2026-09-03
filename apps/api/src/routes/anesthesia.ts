@@ -67,6 +67,22 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
+			// 152-ФЗ / 323-ФЗ: Расчет безопасности анестетика и дозировок разрешен только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.anesthesia.calculate",
+					role: staffRole,
+					message: `Отказ в доступе к клиническому калькулятору анестезии (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
 			const parsed = calculateSafetyBodySchema.safeParse(request.body);
 			if (!parsed.success) {
 				return reply.status(400).send({
@@ -321,6 +337,22 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 
+			// 152-ФЗ / 323-ФЗ: Удаление записей протоколов анестезии разрешено только клиническому персоналу
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.anesthesia.delete",
+					role: staffRole,
+					message: `Отказ в удалении протокола анестезии (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+
 			const { logId } = request.params as { logId: string };
 
 			return withTenantCtx(orgId, async () => {
@@ -332,6 +364,13 @@ export async function registerAnesthesiaRoutes(app: FastifyInstance) {
 				if (deleted.length === 0) {
 					return reply.status(404).send({ message: "Запись анестезии не найдена" });
 				}
+
+				await auditMedicalAccessFromRequest(request, {
+					organizationId: orgId,
+					action: "DELETE_ANESTHESIA_LOG",
+					diagnosis: "Аннулирование записи анестезиологического протокола",
+					metadata: { logId },
+				});
 
 				return reply.send({ success: true, deletedId: logId });
 			});
