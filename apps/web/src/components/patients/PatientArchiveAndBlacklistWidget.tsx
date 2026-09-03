@@ -292,6 +292,33 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 										: "Добавить в черный список"}
 							</button>
 						</div>
+
+						{isBlacklisted && (
+							<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs leading-relaxed flex flex-col gap-2 mt-2">
+								<div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+									<AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+									<span>Неотложная помощь и ст. 124 УК РФ:</span>
+								</div>
+								<span>
+									Отказ в медицинской помощи при острой боли или неотложном состоянии преследуется по закону (ст. 124 УК РФ). Блокировка записи в ЧС не отменяет права пациента на неотложный приём.
+								</span>
+								<div className="flex items-center gap-2 pt-1">
+									<button
+										type="button"
+										onClick={() => {
+											showToast(
+												"Режим экстренной записи активирован (ст. 124 УК РФ: острая боль). Блокировка ЧС обойдена для неотложного слота.",
+												"info",
+											);
+										}}
+										className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all inline-flex items-center gap-1 shadow-xs"
+										title="Разрешить запись пациента с острой болью в соответствии со ст. 124 УК РФ"
+									>
+										<span>⚡ Экстренная запись (Острая боль / ст. 124 УК РФ)</span>
+									</button>
+								</div>
+							</div>
+						)}
 					</>
 				)}
 			</div>

@@ -7,6 +7,7 @@ import {
 	ShieldAlert,
 	Stethoscope,
 	Trash2,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useState } from "react";
@@ -38,6 +39,40 @@ const RECLAMATIONS_SUBJECT: PanelSubject = {
 	failureConsequence:
 		"Не считайте, что осложнений нет: журнал не прочитан. Перед разговором с пациентом обновите список.",
 };
+
+export interface ReclamationPreset {
+	id: string;
+	title: string;
+	details: string;
+	action: string;
+}
+
+export const RECLAMATION_PRESETS: readonly ReclamationPreset[] = [
+	{
+		id: "filling_chip",
+		title: "Скол пломбы / реставрации",
+		details: "Скол композитной пломбы на контактном пункте. Застревание пищи.",
+		action: "Гарантийная переделка / пришлифовка по гарантии без оплаты.",
+	},
+	{
+		id: "crown_decement",
+		title: "Расцементировка коронки",
+		details: "Расцементировка постоянной коронки, целостность сохранена.",
+		action: "Повторная фиксация на стеклоиономерный цемент (Fuji I) по гарантии.",
+	},
+	{
+		id: "post_filling_pain",
+		title: "Постпломбировочная боль",
+		details: "Кратковременные боли при накусывании после лечения глубокого кариеса.",
+		action: "Контрольный осмотр, пришлифовка суперконтактов окклюзии.",
+	},
+	{
+		id: "alveolitis",
+		title: "Альвеолит после удаления",
+		details: "Ноющие боли в лунке удаленного зуба на 3-и сутки, распад кровяного сгустка.",
+		action: "Кюретаж лунки, антисептическая обработка, повязка Альвожиль.",
+	},
+] as const;
 
 export function PatientReclamationsWidget({
 	patientId,
@@ -435,6 +470,35 @@ export function PatientReclamationsWidget({
 							className="bg-rose-50 dark:bg-rose-950/30 p-5 rounded-xl border border-dashed border-rose-300 dark:border-rose-800 overflow-hidden"
 						>
 							<div className="grid grid-cols-1 gap-4">
+								{/* 1-Click Clinical Reclamation Presets */}
+								<div className="flex flex-col gap-2 p-3 rounded-xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 shadow-2xs">
+									<div className="flex items-center gap-1.5 text-xs font-bold text-rose-900 dark:text-rose-300">
+										<Zap size={14} className="text-amber-500 shrink-0" />
+										<span>Быстрые клинические шаблоны (1 клик):</span>
+									</div>
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+										{RECLAMATION_PRESETS.map((preset) => (
+											<button
+												key={preset.id}
+												type="button"
+												onClick={() => {
+													setNewComplicationDetails(preset.details);
+													setNewProposedAction(preset.action);
+													if (!doctorId && doctors.length > 0) {
+														setDoctorId(doctors[0].id);
+													}
+													showToast(`Шаблон «${preset.title}» применён`, "info");
+												}}
+												className="min-h-[44px] px-3 py-2 rounded-lg bg-rose-50/80 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-left text-xs font-semibold text-rose-950 dark:text-rose-100 flex items-center gap-1.5 cursor-pointer active:scale-98 transition-all shadow-2xs"
+												title={`Заполнить: ${preset.details}`}
+											>
+												<span className="text-amber-500 font-bold shrink-0">⚡</span>
+												<span className="truncate">{preset.title}</span>
+											</button>
+										))}
+									</div>
+								</div>
+
 								<div className="smart-field">
 									<select
 										id="reclamation-doctor-select"

@@ -295,7 +295,10 @@ async function assertAppointmentResourcesBelongToOrganization(
 
 export async function createAppointmentInDb(
 	organizationId: string,
-	input: CreateAppointmentInput,
+	input: CreateAppointmentInput & {
+		allowEmergencyOverride?: boolean;
+		urgency?: "routine" | "urgent" | "emergency";
+	},
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	tx?: any,
 ): Promise<Appointment> {
@@ -313,33 +316,46 @@ export async function createAppointmentInDb(
 				),
 			)
 			.limit(1);
-		if (patient?.status === "archived") {
-			const details = await checkPatientBookingBlockDetails(
+
+		// Ст. 124 УК РФ (Неоказание помощи больному): если пациент обращается с острой болью
+		// или включен флаг allowEmergencyOverride, блокировка ЧС/архива НЕ должна блокировать оказание помощи!
+		const isEmergencyOverride = Boolean(
+			input.allowEmergencyOverride ||
+			input.urgency === "urgent" ||
+			input.urgency === "emergency" ||
+			/острая\s*боль|неотложн|экстрен/i.test(input.reason || "") ||
+			/острая\s*боль|неотложн|экстрен/i.test(input.comment || "")
+		);
+
+		if (!isEmergencyOverride) {
+			if (patient?.status === "archived") {
+				const details = await checkPatientBookingBlockDetails(
+					organizationId,
+					input.patientId,
+				);
+				const reasonText = details.reason ? ` Причина: ${details.reason}.` : "";
+				const legalText = details.legalBasis
+					? ` Правовое основание: ${details.legalBasis}.`
+					: "";
+				throw new Error(
+					`Пациент находится в архиве. Запись заблокирована.${reasonText}${legalText}`,
+				);
+			}
+			const blockDetails = await checkPatientBookingBlockDetails(
 				organizationId,
 				input.patientId,
 			);
-			const reasonText = details.reason ? ` Причина: ${details.reason}.` : "";
-			const legalText = details.legalBasis
-				? ` Правовое основание: ${details.legalBasis}.`
-				: "";
-			throw new Error(
-				`Пациент находится в архиве. Запись заблокирована.${reasonText}${legalText}`,
-			);
-		}
-		const blockDetails = await checkPatientBookingBlockDetails(
-			organizationId,
-			input.patientId,
-		);
-		if (blockDetails.isBlocked) {
-			const reasonText = blockDetails.reason
-				? ` Причина: ${blockDetails.reason}.`
-				: "";
-			const legalText = blockDetails.legalBasis
-				? ` Правовое основание: ${blockDetails.legalBasis}.`
-				: "";
-			throw new Error(
-				`Пациент внесен в черный список / архив. Запись заблокирована.${reasonText}${legalText}`,
-			);
+			if (blockDetails.isBlocked) {
+				const reasonText = blockDetails.reason
+					? ` Причина: ${blockDetails.reason}.`
+					: "";
+				const legalText = blockDetails.legalBasis
+					? ` Правовое основание: ${blockDetails.legalBasis}.`
+					: "";
+				throw new Error(
+					`Пациент внесен в черный список / архив. Запись заблокирована.${reasonText}${legalText}`,
+				);
+			}
 		}
 	}
 
@@ -426,7 +442,10 @@ export async function createAppointmentInDb(
 export async function updateAppointmentInDb(
 	organizationId: string,
 	appointmentId: string,
-	input: UpdateAppointmentInput,
+	input: UpdateAppointmentInput & {
+		allowEmergencyOverride?: boolean;
+		urgency?: "routine" | "urgent" | "emergency";
+	},
 ): Promise<Appointment> {
 	if (useInMemory()) {
 		return updateAppointmentInMemory(appointmentId, input);
@@ -492,11 +511,23 @@ export async function updateAppointmentInDb(
 					),
 				)
 				.limit(1);
-			if (patient?.status === "archived") {
-				throw new Error("Пациент находится в архиве. Запись заблокирована.");
-			}
-			if (await isPatientBookingBlocked(organizationId, newPatientId)) {
-				throw new Error("Пациент внесен в черный список. Запись заблокирована.");
+
+			// Ст. 124 УК РФ (Неоказание помощи больному): при острой боли перенос/запись не блокируются!
+			const isEmergencyOverride = Boolean(
+				input.allowEmergencyOverride ||
+				input.urgency === "urgent" ||
+				input.urgency === "emergency" ||
+				/острая\s*боль|неотложн|экстрен/i.test(input.reason ?? existing.reason ?? "") ||
+				/острая\s*боль|неотложн|экстрен/i.test(input.comment ?? existing.comment ?? "")
+			);
+
+			if (!isEmergencyOverride) {
+				if (patient?.status === "archived") {
+					throw new Error("Пациент находится в архиве. Запись заблокирована.");
+				}
+				if (await isPatientBookingBlocked(organizationId, newPatientId)) {
+					throw new Error("Пациент внесен в черный список. Запись заблокирована.");
+				}
 			}
 		}
 
