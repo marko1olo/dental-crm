@@ -1106,8 +1106,19 @@ export function applyCopilotCommandToPlan(
 		return recalculateAnesthesiaAndIsolation(stages, options);
 	}
 
-	// Default fallback: Run budget optimization
-	return optimizePlanForBudget(stages, options.targetBudgetRub || 150000, options);
+	// Default fallback: Do NOT silently mutate the plan with arbitrary 150,000 budget!
+	const currentTotal = stages.reduce((acc, s) => acc + s.totalRub, 0);
+	return {
+		success: false,
+		commandType: "custom_ai",
+		commandTitle: "Команда не распознана",
+		explanation: `Команда «${commandText}» не распознана. Используйте клинические пресеты (Мостовидный протез, All-on-4, Костная пластика, Анестезия).`,
+		stages,
+		auditTrail: [],
+		oldTotalRub: currentTotal,
+		newTotalRub: currentTotal,
+		deltaRub: 0,
+	};
 }
 
 export interface TreatmentPlanAiAuditOptions {

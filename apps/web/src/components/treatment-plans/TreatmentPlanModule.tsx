@@ -50,7 +50,7 @@ import {
 	type CopilotCommandType,
 } from "../../services/ai/treatmentPlanCopilot";
 import { parseKopecks } from "@dental/shared";
-import { Bot, Send, Wand2 } from "lucide-react";
+import { Bot } from "lucide-react";
 import { TreatmentPlan3TierComparison } from "./TreatmentPlan3TierComparison";
 import { TreatmentPlanContractPrint } from "./TreatmentPlanContractPrint";
 import { TreatmentPlanCompletedActPrint } from "./TreatmentPlanCompletedActPrint";
@@ -64,6 +64,11 @@ import { TreatmentPlanPresenterModal } from "./TreatmentPlanPresenterModal";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { InvoiceGenerationModal } from "../finance/InvoiceGenerationModal";
 import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
+import {
+	ONE_CLICK_LAB_DEFAULTS,
+	addWorkingDays,
+	calculateMaterialTotalCostKopecks,
+} from "../lab/labMath";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { CuratorPlanAssignmentModal } from "./CuratorPlanAssignmentModal";
 import type {
@@ -119,7 +124,6 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	// AI Copilot & Custom Stages State
 	const [customStages, setCustomStages] = useState<TreatmentPlanStage[] | null>(null);
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
-	const [customCopilotPrompt, setCustomCopilotPrompt] = useState<string>("");
 	const [isCopilotExecuting, setIsCopilotExecuting] = useState<boolean>(false);
 
 	useEffect(() => {
@@ -265,6 +269,90 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const handleOpenLabOrder = (teeth?: number[]) => {
 		setSelectedLabTeeth(teeth && teeth.length > 0 ? teeth : orthopedicTeeth);
 		setIsLabOrderModalOpen(true);
+	};
+
+	const handleOneClickLabOrder = async (teeth?: number[]) => {
+		const targetTeeth = teeth && teeth.length > 0 ? teeth : orthopedicTeeth;
+		if (!targetTeeth || targetTeeth.length === 0) {
+			showToast("Нет выбранных ортопедических зубов для наряда ЗТЛ", "warning");
+			return;
+		}
+
+		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
+		const dueDateIso = due.toISOString();
+		const dueDateFormatted = due.toLocaleDateString("ru-RU");
+		const isBridge = targetTeeth.length > 1;
+		const construction = isBridge
+			? ONE_CLICK_LAB_DEFAULTS.restorationTypeBridge
+			: ONE_CLICK_LAB_DEFAULTS.restorationTypeSingle;
+		const priceRub =
+			(calculateMaterialTotalCostKopecks(ONE_CLICK_LAB_DEFAULTS.materialId, targetTeeth.length) ||
+				650000 * targetTeeth.length) / 100;
+		const toothFdiStr = targetTeeth.join(", ");
+
+		try {
+			showToast(`Создаём наряд ЗТЛ в 1 клик для зубов ${toothFdiStr}...`, "info", 2000);
+			const res = await fetch("/api/clinical/lab-orders", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId,
+					doctorId: auth?.currentUser?.id || null,
+					toothFdi: toothFdiStr,
+					material: ONE_CLICK_LAB_DEFAULTS.materialName,
+					colorVita: ONE_CLICK_LAB_DEFAULTS.colorVita,
+					dueDate: dueDateIso,
+					clinicalNotes: `• Экспресс 1-клик наряд ЗТЛ из плана лечения (${currentTier.title})\n• Конструкция: ${isBridge ? `Мостовидный протез (${targetTeeth.length} ед.: ${targetTeeth.join("-")})` : "Одиночная коронка"}\n• Материал: ${ONE_CLICK_LAB_DEFAULTS.materialName}\n• Цвет: VITA Classical ${ONE_CLICK_LAB_DEFAULTS.colorVita}\n• Срок: 7 рабочих дней (до ${dueDateFormatted})\n• Цементный зазор: ${ONE_CLICK_LAB_DEFAULTS.cementGapMicrons} мкм`,
+					priceRub,
+				}),
+			});
+
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.message || "Ошибка создания наряда ЗТЛ");
+			}
+
+			const savedOrder = await res.json();
+
+			if (savedOrder?.id) {
+				for (const tooth of targetTeeth) {
+					try {
+						await fetch(`/api/clinical/lab-orders/${savedOrder.id}/items`, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...denteAdminSecretRequestHeaders(),
+							},
+							body: JSON.stringify({
+								toothFdi: tooth,
+								restorationType: construction,
+								material: ONE_CLICK_LAB_DEFAULTS.materialId,
+								shadeFinal: ONE_CLICK_LAB_DEFAULTS.colorVita,
+								translucencyLevel: ONE_CLICK_LAB_DEFAULTS.translucency,
+								cementGapMicrons: ONE_CLICK_LAB_DEFAULTS.cementGapMicrons,
+								priceRub: priceRub / targetTeeth.length,
+							}),
+						});
+					} catch {
+						// Non-blocking item fallback
+					}
+				}
+			}
+
+			showToast(
+				`Наряд ЗТЛ успешно оформлен в 1 клик для зубов ${toothFdiStr} (Цирконий A2, срок до ${dueDateFormatted})!`,
+				"success",
+				6000,
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", { detail: { order: savedOrder } }),
+			);
+		} catch (err: any) {
+			showToast(err.message || "Не удалось оформить наряд в ЗТЛ", "error");
+		}
 	};
 
 	// Validation payload
@@ -651,6 +739,19 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									<FlaskConical size={14} className="text-[var(--teal,var(--brand-primary))]" />
 									<span>Наряд-заказ в ЗТЛ</span>
 								</button>
+								<button
+									type="button"
+									onClick={() => {
+										void handleOneClickLabOrder();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									data-testid="lab-work-order-one-click-btn"
+								>
+									<Zap size={14} className="text-amber-600 dark:text-amber-400" />
+									<span>⚡ Наряд ЗТЛ в 1 клик (Цирконий A2)</span>
+								</button>
 							</div>
 						)}
 					</div>
@@ -785,43 +886,6 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2 pt-1 border-t border-[var(--border,#cbd5e1)]/60">
-					<div className="relative flex-1">
-						<input
-							type="text"
-							value={customCopilotPrompt}
-							onChange={(e) => setCustomCopilotPrompt(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" && customCopilotPrompt.trim()) {
-									e.preventDefault();
-									handleExecuteCopilot(customCopilotPrompt.trim());
-									setCustomCopilotPrompt("");
-								}
-							}}
-							placeholder="Введите команду врачебного ассистента (например: 'Оптимизировать под бюджет 180000', 'Заменить имплантацию на мост')..."
-							className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] outline-none focus:border-[var(--teal,var(--brand-primary))]"
-							data-testid="module-copilot-input"
-						/>
-						<Wand2 size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)]" />
-					</div>
-
-					<button
-						type="button"
-						disabled={!customCopilotPrompt.trim() || isCopilotExecuting}
-						onClick={() => {
-							if (customCopilotPrompt.trim()) {
-								handleExecuteCopilot(customCopilotPrompt.trim());
-								setCustomCopilotPrompt("");
-							}
-						}}
-						className="flex items-center gap-1 px-3 py-1.5 rounded-xl font-bold bg-[var(--teal-dark,var(--brand-primary))] hover:bg-[var(--teal,var(--brand-primary))] text-white cursor-pointer transition-colors disabled:opacity-40 shadow-xs text-xs shrink-0"
-						data-testid="module-copilot-send-btn"
-					>
-						<Send size={13} />
-						<span>Применить</span>
-					</button>
-				</div>
-
 				{copilotFeedback && (
 					<div
 						className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-950 dark:text-indigo-100 text-xs mt-1"
@@ -898,6 +962,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							onUpdateItemPrice={handleUpdateItemPrice}
 							onExecuteWriteOffStage={handleExecuteWriteOffStage}
 							onOpenLabOrder={handleOpenLabOrder}
+							onOneClickLabOrder={handleOneClickLabOrder}
 							onOpenInstallment={(stageToFinance) => {
 								setSelectedInstallmentStage(stageToFinance);
 								setIsInstallmentModalOpen(true);
