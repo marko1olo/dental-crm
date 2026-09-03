@@ -302,6 +302,31 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		);
 	});
 
+	it("renders Step 3 with 15-Second Direct Booking Box allowing 1-click booking without mandatory SMS wait", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				initialStep: 3,
+			}),
+		);
+
+		assert.ok(
+			html.includes("Быстрая запись в 1 клик за 15 секунд"),
+			"Contains 15-second express booking banner",
+		);
+		assert.ok(
+			html.includes("express-patient-name-input"),
+			"Contains express name input",
+		);
+		assert.ok(
+			html.includes("express-patient-phone-input"),
+			"Contains express phone input",
+		);
+		assert.ok(
+			html.includes("Записаться на прием без СМС"),
+			"Contains instant booking button without mandatory SMS",
+		);
+	});
+
 	it("renders Step 5: Instant Booking Confirmation Card with Ticket reference & Calendar Export", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {

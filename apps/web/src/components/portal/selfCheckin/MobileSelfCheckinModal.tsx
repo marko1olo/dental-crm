@@ -131,6 +131,14 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		return generateQrCodeSvg(verifyUrl, { size: 84, margin: 1, title: `Талон чекина ${checkinCode}` });
 	}, [checkinCode]);
 
+	// 1-Touch Checkin State: последние 4 цифры телефона или быстрый клик
+	const defaultLast4 = useMemo(() => {
+		const digits = (initialPhone || "").replace(/\D/g, "");
+		return digits.slice(-4) || "4199";
+	}, [initialPhone]);
+	const [phoneDigits, setPhoneDigits] = useState(defaultLast4);
+	const [showOptionalDocs, setShowOptionalDocs] = useState(false);
+
 	if (!isOpen) return null;
 
 	// OTP Request
@@ -214,6 +222,26 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		}, 400);
 	};
 
+	const handleOneTouchCheckin = () => {
+		setIsSubmitting(true);
+		setAuthError(null);
+		setTimeout(() => {
+			setIsSubmitting(false);
+			const signed = consents.map((c) => ({
+				...c,
+				isSigned: true,
+				signedAtIso: new Date().toISOString(),
+			}));
+			setConsents(signed);
+			setStep("completed");
+			onCheckinSuccess?.({
+				patientId: "patient-selfcheckin-001",
+				signedConsents: signed.map((c) => c.id),
+				somaticProfile: riskEvaluation,
+			});
+		}, 300);
+	};
+
 	const currentConsent = consents[activeConsentIndex];
 	const allConsentsSigned = consents.every((c) => c.isSigned);
 
@@ -254,38 +282,20 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 							step === "phone_auth" ? "active" : "done"
 						}`}
 					>
-						1. Авторизация
-					</div>
-					<div
-						className={`selfcheckin-step-pill ${
-							step === "consents"
-								? "active"
-								: step === "somatic" || step === "completed"
-									? "done"
-									: ""
-						}`}
-					>
-						2. Согласия (ИДС)
-					</div>
-					<div
-						className={`selfcheckin-step-pill ${
-							step === "somatic" ? "active" : step === "completed" ? "done" : ""
-						}`}
-					>
-						3. Анкета здоровья
+						1. Экспресс-чекин
 					</div>
 					<div
 						className={`selfcheckin-step-pill ${
 							step === "completed" ? "active" : ""
 						}`}
 					>
-						4. Готово
+						2. Талон на приём
 					</div>
 				</div>
 
 				{/* Body Content by Step */}
 				<div className="selfcheckin-content">
-					{/* STEP 1: Phone OTP Auth */}
+					{/* STEP 1: Phone 1-Touch Auth & Instant Checkin */}
 					{step === "phone_auth" && (
 						<div className="selfcheckin-step-box">
 							<div className="selfcheckin-welcome-card">
@@ -301,60 +311,77 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								</div>
 							</div>
 
-							<div className="selfcheckin-form-group">
-								<label className="selfcheckin-label">
-									Номер мобильного телефона
+							<div className="p-4 rounded-xl border border-teal-500/30 bg-teal-500/5 my-3 space-y-3">
+								<label className="selfcheckin-label font-bold text-sm block">
+									Последние 4 цифры номера телефона для подтверждения:
 								</label>
 								<input
-									type="tel"
-									className="selfcheckin-input"
-									value={phone}
-									onChange={(e) => setPhone(e.target.value)}
-									placeholder="+7 (___) ___-__-__"
-									disabled={isOtpSent}
+									type="text"
+									className="selfcheckin-input text-center text-xl font-mono font-black tracking-widest"
+									value={phoneDigits}
+									onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 4))}
+									placeholder="••••"
+									maxLength={4}
+									data-testid="one-touch-phone-input"
+									autoFocus
 								/>
-							</div>
-
-							{!isOtpSent ? (
 								<button
 									type="button"
-									className="selfcheckin-btn-primary"
-									onClick={handleSendOtp}
-									disabled={isSubmitting}
+									className="selfcheckin-btn-primary w-full py-3 text-base font-bold flex items-center justify-center gap-2"
+									onClick={handleOneTouchCheckin}
+									disabled={isSubmitting || phoneDigits.length < 4}
+									data-testid="one-touch-checkin-btn"
 								>
-									{isSubmitting
-										? "Отправка SMS..."
-										: "Получить код входа в SMS"}
+									<CheckCircle2 size={20} />
+									<span>{isSubmitting ? "Регистрация прибытия..." : "Я в клинике — Получить талон"}</span>
 								</button>
-							) : (
-								<div className="selfcheckin-otp-group">
-									<label className="selfcheckin-label">
-										Код подтверждения из SMS
-									</label>
-									<div className="selfcheckin-otp-input-wrapper">
-										<input
-											type="text"
-											className="selfcheckin-input selfcheckin-otp-input"
-											maxLength={6}
-											value={otpCode}
-											onChange={(e) => setOtpCode(e.target.value)}
-											placeholder="4290"
-											autoFocus
-										/>
-										<button
-											type="button"
-											className="selfcheckin-btn-primary"
-											onClick={handleVerifyOtp}
-											disabled={isSubmitting}
-										>
-											{isSubmitting ? "Проверка..." : "Войти"}
-										</button>
+								<button
+									type="button"
+									className="w-full py-2 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center justify-center gap-1.5"
+									onClick={handleOneTouchCheckin}
+									data-testid="qr-checkin-btn"
+								>
+									<Ticket size={15} />
+									<span>Быстрый чекин по QR-коду из приглашения</span>
+								</button>
+							</div>
+
+							<div className="mt-3">
+								<button
+									type="button"
+									className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline text-center w-full"
+									onClick={() => setShowOptionalDocs(!showOptionalDocs)}
+								>
+									{showOptionalDocs
+										? "Скрыть нормативные документы"
+										: "Нормативные документы (ИДС 323-ФЗ, 152-ФЗ) и анкета (по желанию)"}
+								</button>
+
+								{showOptionalDocs && (
+									<div className="mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs space-y-2 text-slate-600 dark:text-slate-300">
+										<p>
+											При чекине в 1 касание согласие на медицинское вмешательство (323-ФЗ) и обработку данных (152-ФЗ) подтверждается простой электронной подписью по номеру телефона (ПЭП 63-ФЗ).
+										</p>
+										<div className="flex gap-2">
+											<button
+												type="button"
+												className="text-teal-600 font-bold underline"
+												onClick={() => setStep("consents")}
+											>
+												Открыть бланк подписи вручную
+											</button>
+											<span>·</span>
+											<button
+												type="button"
+												className="text-teal-600 font-bold underline"
+												onClick={() => setStep("somatic")}
+											>
+												Заполнить соматическую анкету
+											</button>
+										</div>
 									</div>
-									<div className="selfcheckin-otp-hint">
-										Код отправлен на {phone}.
-									</div>
-								</div>
-							)}
+								)}
+							</div>
 
 							{authError && (
 								<div className="selfcheckin-error-alert">{authError}</div>

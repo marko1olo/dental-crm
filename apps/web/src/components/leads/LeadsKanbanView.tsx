@@ -274,23 +274,28 @@ export function LeadsKanbanView() {
 		e.preventDefault();
 		const id = e.dataTransfer.getData("leadId");
 		if (id && draggedLeadId === id) {
-			if (status === "consult_booked") {
-				setConvertingLeadId(id);
-				setIsConvertOpen(true);
-			} else {
-				/*
-				 * Store rethrows RU ValidationError message (leadsFailureMessage).
-				 * Without await+toast the card snaps back silently — API text never
-				 * reaches the operator (feature without gameplay = declined).
-				 */
-				void updateLeadStatus(id, status).catch((err: unknown) => {
+			/*
+			 * Свободное перемещение карточки обращения: смена статуса не блокируется
+			 * принудительной модалкой и карточка не отскакивает назад.
+			 * При переносе в consult_booked статус сохраняется немедленно; если оператор
+			 * захочет закрепить прием в сетке расписания, на карточке есть кнопка «В расписание».
+			 */
+			void updateLeadStatus(id, status)
+				.then(() => {
+					if (status === "consult_booked") {
+						showToast(
+							"Обращение переведено в статус «Записан на консультацию».",
+							"success",
+						);
+					}
+				})
+				.catch((err: unknown) => {
 					const text =
 						err instanceof Error && err.message.trim()
 							? err.message
 							: "Статус обращения не изменён.";
 					showToast(text, "error");
 				});
-			}
 		}
 		setDraggedLeadId(null);
 	};
@@ -845,6 +850,22 @@ export function LeadsKanbanView() {
 													</div>
 												) : null}
 											</div>
+
+											{lead.status === "consult_booked" && (
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														setConvertingLeadId(lead.id);
+														setIsConvertOpen(true);
+													}}
+													className="mt-3 w-full py-1.5 px-2.5 rounded-lg text-xs font-bold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors"
+													data-testid={`schedule-lead-btn-${lead.id}`}
+												>
+													<Calendar size={13} />
+													<span>Записать в сетку расписания</span>
+												</button>
+											)}
 										</motion.div>
 									))}
 								</AnimatePresence>

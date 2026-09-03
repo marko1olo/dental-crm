@@ -1490,6 +1490,63 @@ export const PublicOnlineBookingWidget: React.FC<
 							slotsLoading={slotsLoading}
 						/>
 
+						{/* 15-Second Direct Booking Box (Слот + Имя и Телефон + «Записаться») */}
+						<div className="mt-4 p-4 rounded-xl border border-teal-500/30 bg-teal-500/5 space-y-3">
+							<div className="flex items-center justify-between flex-wrap gap-2">
+								<span className="text-xs font-bold text-teal-800 dark:text-teal-200 flex items-center gap-1.5">
+									<Sparkles size={16} className="text-teal-600 dark:text-teal-400" />
+									<span>Быстрая запись в 1 клик за 15 секунд:</span>
+								</span>
+								{selectedSlot ? (
+									<span className="text-xs font-bold px-2 py-0.5 rounded bg-teal-600/20 text-teal-800 dark:text-teal-200">
+										Выбран слот: {formatRussianDate(selectedDate)} в {selectedSlot.time}
+									</span>
+								) : (
+									<span className="text-xs text-slate-500">
+										Выберите удобное время в сетке выше
+									</span>
+								)}
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<input
+									type="text"
+									placeholder="Ваше имя *"
+									value={patientName}
+									onChange={(e) => setPatientName(e.target.value)}
+									className="dbw-input text-xs"
+									data-testid="express-patient-name-input"
+								/>
+								<input
+									type="tel"
+									placeholder="+7 (___) ___-__-__ *"
+									value={patientPhone}
+									onChange={handlePhoneChange}
+									className="dbw-input text-xs"
+									data-testid="express-patient-phone-input"
+								/>
+							</div>
+
+							<button
+								type="button"
+								onClick={handleFinalSubmit}
+								disabled={
+									isSubmitting ||
+									!selectedSlot ||
+									!patientName.trim() ||
+									!isValidRussianPhone(patientPhone)
+								}
+								className="dbw-btn-confirm w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2"
+								data-testid="express-confirm-booking-btn"
+							>
+								<CheckCircle2 size={16} />
+								<span>{isSubmitting ? "Оформление записи..." : "Записаться на прием без СМС"}</span>
+							</button>
+							<div className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
+								Верификация по созвону: администратор регистратуры перезвонит вам для подтверждения.
+							</div>
+						</div>
+
 						<footer className="dbw-actions-footer">
 							<button
 								type="button"
@@ -1594,6 +1651,10 @@ export const PublicOnlineBookingWidget: React.FC<
 											<CheckCircle2 size={16} /> Подтвержден
 										</span>
 									)}
+								</div>
+
+								<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300 mb-2">
+									Подтверждение звонком: Администратор клиники перезвонит вам по номеру <strong>{patientPhone || "телефона"}</strong> для согласования деталей визита. Ожидать СМС-код не обязательно.
 								</div>
 
 								{!smsCodeSent && !isSmsVerified ? (
@@ -1729,7 +1790,6 @@ export const PublicOnlineBookingWidget: React.FC<
 									isSubmitting ||
 									!patientName.trim() ||
 									!isValidRussianPhone(patientPhone) ||
-									(showSmsVerification && !isSmsVerified) ||
 									!hasAgreedToPrivacy
 								}
 							>
