@@ -214,8 +214,10 @@ export function paidContractRequiredFieldsReview(
 		{
 			field: "paidContractDoctorFullName",
 			label: "Ответственный врач",
-			hint: "врач приёма не определён, подставить некого — впишите ФИО лечащего врача",
-			ok: doctor !== "",
+			hint: options?.allowBlankForPrint
+				? "врач не назначен — в печатной форме бланка выведена строка с подчеркиванием для подписи"
+				: "врач приёма не определён, подставить некого — впишите ФИО лечащего врача",
+			ok: options?.allowBlankForPrint ? true : doctor !== "",
 		},
 		{
 			field: "paidContractClinicInfoConfirmed",

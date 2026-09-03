@@ -4,6 +4,7 @@ import {
 	type PaidContractRequiredFieldsInput,
 	paidContractRequiredFieldsReview,
 } from "../components/documents/paidContractRequiredFields";
+import { informedConsentBlockersReview } from "../components/documents/informedConsentBlockers";
 import {
 	validateDocumentPayloadForKind,
 	withDocumentCreationTimestamps,
@@ -231,6 +232,53 @@ describe("paidContractRequiredFieldsReview", () => {
 		});
 		assert.equal(
 			reviewPrint.missing.some((m) => m.field === "paidContractTotalRub"),
+			false,
+		);
+	});
+
+	it("разрешает печать бланка договора без назначенного врача при allowBlankForPrint", () => {
+		const input = { ...readyContract(), doctorFullName: "", activeDoctorFullName: "" };
+		const reviewStrict = paidContractRequiredFieldsReview(input);
+		assert.equal(
+			reviewStrict.missing.some((m) => m.field === "paidContractDoctorFullName"),
+			true,
+		);
+
+		const reviewPrint = paidContractRequiredFieldsReview(input, {
+			allowBlankForPrint: true,
+		});
+		assert.equal(
+			reviewPrint.missing.some((m) => m.field === "paidContractDoctorFullName"),
+			false,
+		);
+	});
+
+	it("разрешает печать бланка ИДС без назначенного врача при allowBlankForPrint", () => {
+		const input = {
+			intervention: "Стоматологический осмотр",
+			toothOrArea: "зуб 36",
+			diagnosisOrIndication: "кариес",
+			expectedBenefit: "санация",
+			risks: "отек, боль",
+			alternatives: "отказ",
+			aftercare: "гигиена",
+			doctorFullName: "",
+			activeDoctorFullName: "",
+			inferredTreatmentArea: "16",
+			activeVisitComplaint: "боль",
+		};
+
+		const reviewStrict = informedConsentBlockersReview(input);
+		assert.equal(
+			reviewStrict.blockers.some((m) => m.field === "informedConsentDoctorFullName"),
+			true,
+		);
+
+		const reviewPrint = informedConsentBlockersReview(input, {
+			allowBlankForPrint: true,
+		});
+		assert.equal(
+			reviewPrint.blockers.some((m) => m.field === "informedConsentDoctorFullName"),
 			false,
 		);
 	});

@@ -24,7 +24,7 @@ import {
 	requireOrganizationId,
 } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { clinicalDocKinds } from "./query.js";
+import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./query.js";
 import {
 	repairMojibakeDeep,
 	repairMojibakeText,
@@ -65,7 +65,11 @@ export async function register(app: FastifyInstance) {
 			(request as unknown as { user?: { role?: string | null } }).user?.role ??
 			null;
 		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (clinicalDocKinds.has(existing.kind) && !evalAccess.hasClinicalAccess) {
+		if (
+			clinicalDocKinds.has(existing.kind) &&
+			!evalAccess.hasClinicalAccess &&
+			!isReceptionistAllowedPrimaryDoc(existing.kind, staffRole)
+		) {
 			return reply.code(403).send({
 				error: "PermissionDenied",
 				permission: "clinical.document.issue",

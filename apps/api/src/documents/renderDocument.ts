@@ -67,8 +67,9 @@ export type DocumentRenderContext = {
 	treatmentPlanItems?: TreatmentPlanItem[];
 };
 
-function escapeHtml(value: string) {
-	return value
+function escapeHtml(value: string | null | undefined) {
+	if (value === null || value === undefined) return "";
+	return String(value)
 		.replaceAll("&", "&amp;")
 		.replaceAll("<", "&lt;")
 		.replaceAll(">", "&gt;")
@@ -1461,6 +1462,41 @@ function financialServiceRows(
 	const services = serviceCatalogMap(context);
 	const items = financialDocumentTreatmentItems(document, context);
 	if (!items.length) {
+		if (document.kind === "paid_medical_services_contract") {
+			return `<tr>
+        <td class="text-center tabular-nums">1</td>
+        <td class="text-center">___________</td>
+        <td>________________________________________________</td>
+        <td class="text-center">____</td>
+        <td class="text-center tabular-nums">___</td>
+        <td class="text-right">___________</td>
+        <td class="text-right">___________</td>
+        <td class="text-right"><strong>___________</strong></td>
+        ${includeStatus ? '<td class="text-center">согласовано</td>' : ""}
+      </tr>
+      <tr>
+        <td class="text-center tabular-nums">2</td>
+        <td class="text-center">___________</td>
+        <td>________________________________________________</td>
+        <td class="text-center">____</td>
+        <td class="text-center tabular-nums">___</td>
+        <td class="text-right">___________</td>
+        <td class="text-right">___________</td>
+        <td class="text-right"><strong>___________</strong></td>
+        ${includeStatus ? '<td class="text-center">согласовано</td>' : ""}
+      </tr>
+      <tr>
+        <td class="text-center tabular-nums">3</td>
+        <td class="text-center">___________</td>
+        <td>________________________________________________</td>
+        <td class="text-center">____</td>
+        <td class="text-center tabular-nums">___</td>
+        <td class="text-right">___________</td>
+        <td class="text-right">___________</td>
+        <td class="text-right"><strong>___________</strong></td>
+        ${includeStatus ? '<td class="text-center">согласовано</td>' : ""}
+      </tr>`;
+		}
 		return `<tr><td colspan="${includeStatus ? 9 : 8}" class="text-center">Состав услуг не загружен из плана лечения.</td></tr>`;
 	}
 
@@ -1521,12 +1557,12 @@ function financialServiceTable(
       <tfoot>
         <tr>
           <th colspan="7" style="text-align: right;">ИТОГО ПО РАСЧЕТУ:</th>
-          <th class="text-right tabular-nums">${escapeHtml(totalFormatted)}</th>
+          <th class="text-right tabular-nums">${document.kind === "paid_medical_services_contract" && (!totalKopecks || totalKopecks <= 0) ? "___________ руб." : escapeHtml(totalFormatted)}</th>
           ${includeStatus ? "<th></th>" : ""}
         </tr>
       </tfoot>
     </table>
-    ${totalWords ? `<div class="total-words-box"><strong>Сумма прописью:</strong> ${escapeHtml(totalWords)}</div>` : ""}`;
+    ${totalWords ? `<div class="total-words-box"><strong>Сумма прописью:</strong> ${escapeHtml(totalWords)}</div>` : document.kind === "paid_medical_services_contract" ? `<div class="total-words-box"><strong>Сумма прописью:</strong> ________________________________________________</div>` : ""}`;
 }
 
 /** Фактически оплачено по документу, в целых копейках. Точное сложение. */
@@ -1653,12 +1689,12 @@ function paidMedicalServicesContract(
       <p class="legal-clause">2.1. Медицинские услуги оказываются при условии оформления информированного добровольного согласия Пациента (его законного представителя) в соответствии со ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ и Приказом Минздрава России от 12.11.2021 № 1051н.</p>
       <p class="legal-clause">2.2. Срок начала оказания медицинских услуг: <strong>${escapeHtml(payload.serviceStart)}</strong>. Срок окончания оказания услуг / условие завершения: <strong>${escapeHtml(payload.serviceEndOrCondition)}</strong>.</p>
       <p class="legal-clause">2.3. Услуги оказываются в соответствии с порядками оказания медицинской помощи, клиническими рекомендациями и с учетом стандартов медицинской помощи, утвержденных Минздравом РФ.</p>
-      <p class="legal-clause">2.4. Ответственный лечащий врач: <strong>${escapeHtml(payload.doctorFullName)}</strong>.</p>
+      <p class="legal-clause">2.4. Ответственный лечащий врач: <strong>${payload.doctorFullName?.trim() ? escapeHtml(payload.doctorFullName) : "________________________ (подпись / расшифровка)"}</strong>.</p>
     </div>
 
     <h2>3. Стоимость услуг, сроки и порядок расчетов</h2>
     <div class="legal-body">
-      <p class="legal-clause">3.1. Предварительная (ориентировочная) стоимость медицинских услуг по настоящему Договору составляет: <strong>${escapeHtml(rub(payload.estimatedTotalRub))}</strong>. Сумма прописью: <strong>${escapeHtml(totalWords)}</strong>. НДС не облагается (пп. 2 п. 2 ст. 149 НК РФ).</p>
+      <p class="legal-clause">3.1. Предварительная (ориентировочная) стоимость медицинских услуг по настоящему Договору составляет: <strong>${payload.estimatedTotalRub > 0 ? escapeHtml(rub(payload.estimatedTotalRub)) : "_______ руб. ___ коп."}</strong>. Сумма прописью: <strong>${payload.estimatedTotalRub > 0 && totalWords ? escapeHtml(totalWords) : "________________________________________________"}</strong>. НДС не облагается (пп. 2 п. 2 ст. 149 НК РФ).</p>
       <p class="legal-clause">3.2. Согласованный перечень медицинских услуг с кодами по Номенклатуре медицинских услуг (Приказ Минздрава России № 804н):</p>
       ${financialServiceTable(document, context, true)}
       <p class="legal-clause">3.3. Порядок оплаты: <strong>${escapeHtml(payload.paymentTerms)}</strong>. Оплата производится безналичным расчетом либо наличными денежными средствами в кассу Исполнителя с обязательной выдачей фискального кассового чека.</p>
@@ -2869,7 +2905,7 @@ function informedConsent(document: GeneratedDocument) {
       ${row("Цели вмешательства и ожидаемая польза", payload.expectedBenefit)}
       ${row("Планируемое обезболивание / анестезия", present(payload.plannedAnesthesia) ?? "не применяется / по клиническим показаниям")}
       ${present(payload.materialOrMedicationNotes) ? row("Материалы, лекарственные препараты", payload.materialOrMedicationNotes ?? "") : ""}
-      ${row("Лечащий врач, проводивший разъяснение", payload.doctorFullName)}
+      ${row("Лечащий врач, проводивший разъяснение", payload.doctorFullName?.trim() ? payload.doctorFullName : "________________________ (подпись / расшифровка)")}
       ${row("Дата и время оформления согласия", payload.consentConfirmedAt)}
     </table>
 
@@ -2904,7 +2940,7 @@ function informedConsent(document: GeneratedDocument) {
 			"пациент подтвердил предоставление полных сведений об аллергических реакциях, перенесенных и сопутствующих заболеваниях и принимаемых препаратах",
 			"пациент знает о своем законном праве отказаться от медицинского вмешательства или потребовать его прекращения в любой момент до начала вмешательства (ч. 3 ст. 20 323-ФЗ)",
 		])}
-    ${signatureBlock("Пациент / Законный представитель", signatureParty("Врач, проводивший разъяснение", payload.doctorFullName))}`;
+    ${signatureBlock("Пациент / Законный представитель", signatureParty("Врач, проводивший разъяснение", payload.doctorFullName?.trim() ? payload.doctorFullName : "________________________"))}`;
 	}
 
 	return `<h2>Информированное добровольное согласие на медицинское вмешательство</h2>
@@ -2914,9 +2950,9 @@ function informedConsent(document: GeneratedDocument) {
     <h2>1. Медицинское вмешательство</h2>
     <table>
       ${row("Планируемое вмешательство", document.title)}
-      ${row("Область/зубы", "заполнить врачом перед подписанием")}
-      ${row("Анестезия", "указать препарат/метод при применении")}
-      ${row("Доверенные лица (ст. 13 323-ФЗ)", 'ФИО/телефон доверенного лица или "не разрешаю передавать сведения третьим лицам"')}
+      ${row("Область/зубы", "________________________ (по клиническим показаниям)")}
+      ${row("Анестезия", "________________________ (препарат и метод при наличии)")}
+      ${row("Доверенные лица (ст. 13 323-ФЗ)", '________________________ (или "не разрешаю передавать третьим лицам")')}
     </table>
     <h2>2. Разъяснения пациенту</h2>
     ${bulletList([
@@ -2928,7 +2964,7 @@ function informedConsent(document: GeneratedDocument) {
 		])}
     <h2>3. Подтверждения и подписи</h2>
     <p class="legal-clause">Пациент подтверждает, что получил исчерпывающие разъяснения от лечащего врача и дает добровольное согласие на проведение вмешательства.</p>
-    ${signatureBlock("Пациент / Законный представитель", "Лечащий врач")}`;
+    ${signatureBlock("Пациент / Законный представитель", signatureParty("Лечащий врач", "________________________"))}`;
 }
 
 function procedureSpecificConsentPacket(document: GeneratedDocument) {
@@ -5593,6 +5629,7 @@ function documentIssueBlockReasonRaw(
 
 	if (
 		treatmentPlanBackedFinancialKinds.has(document.kind) &&
+		document.kind !== "paid_medical_services_contract" &&
 		!financialDocumentTreatmentItems(document, context).length
 	) {
 		return "Для выдачи финансового документа нужен состав услуг из плана лечения: услуга, количество, цена, скидка и итоговая сумма.";
@@ -5711,8 +5748,21 @@ function documentIssueBlockReasonRaw(
 	const taxBlockReason = taxDocumentBlockReason(document, patient, context);
 	if (taxBlockReason) return taxBlockReason;
 
+	const isBlankPaidContract =
+		document.kind === "paid_medical_services_contract" &&
+		(Number(document.payload?.paidMedicalServicesContract?.estimatedTotalRub || 0) === 0 ||
+			!document.payload?.paidMedicalServicesContract?.doctorFullName?.trim() ||
+			!financialDocumentTreatmentItems(document, context).length);
+	const isBlankInformedConsent =
+		document.kind === "informed_consent" &&
+		!document.payload?.informedConsent?.doctorFullName?.trim();
+
 	const html = renderDocumentHtml(document, patient, context);
-	if (documentHasUnresolvedPlaceholders(html)) {
+	if (
+		documentHasUnresolvedPlaceholders(html) &&
+		!isBlankPaidContract &&
+		!isBlankInformedConsent
+	) {
 		return "В документе остались незаполненные поля; перед выдачей их нужно заполнить.";
 	}
 

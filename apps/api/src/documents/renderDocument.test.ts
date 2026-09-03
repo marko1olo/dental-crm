@@ -14,7 +14,9 @@ import {
 import {
 	documentHasUnresolvedPlaceholders,
 	documentIssueBlockReason,
+	renderDocumentHtml,
 } from "./renderDocument.js";
+import { isReceptionistAllowedPrimaryDoc } from "../routes/documents/query.js";
 
 describe("documentHasUnresolvedPlaceholders", () => {
 	test("returns false for HTML without placeholders", () => {
@@ -437,5 +439,149 @@ describe("денежные гейты выдачи: квитанция и воз
 				reason.includes(expectedMoney(1111, 0)),
 			`в отказе должны быть обе суммы в формате «1 112,00 ₽» и «1 111,00 ₽», получено: ${reason}`,
 		);
+	});
+});
+
+describe("Бланки договора и ИДС с 0 ₽ и без врача для регистратуры", () => {
+	const sampleClinic: ClinicProfile = {
+		organizationId: "org-1",
+		clinicName: "Клиника ДЕНТЕ",
+		legalName: "ООО Стоматология ДЕНТЕ",
+		inn: "7701234567",
+		kpp: "770101001",
+		ogrn: "1157746000000",
+		address: "г. Москва, ул. Ленина, д. 1",
+		medicalLicenseNumber: "ЛО-77-01-000000",
+		medicalLicenseIssuedAt: "2020-01-01",
+		medicalLicenseIssuer: "Департамент здравоохранения г. Москвы",
+		phone: "+7 (495) 000-00-00",
+		email: "info@dente.ru",
+	};
+
+	const samplePatient: Patient = {
+		id: randomUUID(),
+		organizationId: "org-1",
+		fullName: "Иванов Иван Иванович",
+		phone: "+79991112233",
+		birthDate: "1990-01-01",
+		status: "active",
+		balance: "0",
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+	};
+
+	test("isReceptionistAllowedPrimaryDoc разрешает договор и ИДС для регистратора", () => {
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("paid_medical_services_contract", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("informed_consent", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("patient_intake_questionnaire", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("treatment_plan", "receptionist"),
+			false,
+		);
+	});
+
+	test("Типовой бланк договора с 0 ₽ без назначенного врача генерирует подчеркивания и не блокирует выдачу", () => {
+		const blankContractDoc: GeneratedDocument = {
+			id: randomUUID(),
+			organizationId: "org-1",
+			patientId: samplePatient.id,
+			kind: "paid_medical_services_contract",
+			title: "Договор на оказание платных медицинских услуг",
+			status: "draft",
+			payload: {
+				paidMedicalServicesContract: {
+					contractNumber: "ДОГ-БЛАНК-01",
+					signedAt: "2026-09-03",
+					serviceStart: "2026-09-03",
+					serviceEndOrCondition: "до завершения курса лечения",
+					customerFullName: samplePatient.fullName,
+					customerPassport: "4500 123456",
+					customerAddress: "г. Москва, ул. Ленина, д. 1",
+					customerPhone: samplePatient.phone,
+					doctorFullName: "", // Врач ещё не назначен
+					estimatedTotalRub: 0, // 0 ₽ до осмотра
+					plannedCareReason: "по медицинским показаниям",
+					serviceScopeSummary: "согласно плану лечения",
+					paymentTerms: "По факту оказания услуг в кассу",
+					priceChangeRules: "По согласованию сторон",
+					freeCareAvailabilityNotice: "Пациент проинформирован о возможности получения бесплатной медицинской помощи",
+					medicalRecommendationWarning: "Пациент предупрежден о необходимости соблюдения рекомендаций",
+					refusalAndRefundTerms: "Согласно действующему законодательству",
+					warrantyAndClaimsTerms: "12 месяцев",
+					patientReceivedClinicInfo: true,
+					patientReceivedPriceAndServiceList: true,
+					patientUnderstandsPaidBasis: true,
+					changesRequireWrittenAgreement: true,
+				},
+			},
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		};
+
+		const html = renderDocumentHtml(blankContractDoc, samplePatient, {
+			clinicProfile: sampleClinic,
+			items: [],
+		});
+
+		// Проверяем наличие строк подчеркиваний для ручного заполнения
+		assert.match(html, /________________________ \(подпись \/ расшифровка\)/);
+		assert.match(html, /_______ руб\. ___ коп\./);
+		assert.match(html, /Сумма прописью:.*________________________________________________/);
+		assert.match(html, /___________ руб\./);
+
+		// Проверяем, что выдача документа не блокируется
+		const blockReason = documentIssueBlockReason(blankContractDoc, samplePatient, {
+			clinicProfile: sampleClinic,
+			items: [],
+		});
+		assert.strictEqual(blockReason, null);
+	});
+
+	test("Типовой бланк ИДС без назначенного врача генерирует подчеркивания и не блокирует выдачу", () => {
+		const blankConsentDoc: GeneratedDocument = {
+			id: randomUUID(),
+			organizationId: "org-1",
+			patientId: samplePatient.id,
+			kind: "informed_consent",
+			title: "Информированное добровольное согласие",
+			status: "draft",
+			payload: {
+				informedConsent: {
+					intervention: "Стоматологическое вмешательство",
+					toothOrArea: "по клиническим показаниям",
+					diagnosisOrIndication: "по клиническим показаниям",
+					expectedBenefit: "санация полости рта",
+					doctorFullName: "", // Врач ещё не назначен
+					consentConfirmedAt: "2026-09-03 10:00",
+					explainedRisks: ["болевой синдром", "отек"],
+					alternatives: ["отказ от медицинского вмешательства"],
+					aftercareRequirements: ["соблюдать рекомендации врача"],
+				},
+			},
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		};
+
+		const html = renderDocumentHtml(blankConsentDoc, samplePatient, {
+			clinicProfile: sampleClinic,
+		});
+
+		// Проверяем наличие строк подчеркиваний для врача
+		assert.match(html, /________________________ \(подпись \/ расшифровка\)/);
+
+		// Проверяем, что выдача документа не блокируется
+		const blockReason = documentIssueBlockReason(blankConsentDoc, samplePatient, {
+			clinicProfile: sampleClinic,
+		});
+		assert.strictEqual(blockReason, null);
 	});
 });
