@@ -18,6 +18,9 @@ Before starting any task, read these documents to understand the architecture, d
 10. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Config schemas, API routes, hooks, UI panels, and setup rules for WhatsApp Cloud API & VK MAX bots.
 11. **[COMPETITIVE_AUDIT](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — 63-feature competitive parity matrix, IDENT/DentalPRO/iStom feature specs, and implementation architecture backlog.
 12. **[STOMX_REVERSE_ENGINEERING_BIBLE](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md)** — Полная библия реверс-инжиниринга StomX (133 API, 68 RBAC, 89 дефектов зубов, 448 протоколов 043/у, 49 официальных бланков, УКЭП КриптоПро, многокассовость, рассрочка, техкарты склада, зарплатные формулы).
+13. **[CLINICAL_RAILS](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/01_CLINICAL_EHR_AND_ODONTOGRAM_RAILS.md)** — Рельсы миграции клинического контура (55 зубов/челюстей, 91 дефект, 1841 статья МКБ-10, 448 шаблонов 043/у, 24ч блокировка ЭМК).
+14. **[FINANCIAL_RAILS](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/02_FINANCIAL_CASHBOXES_INSTALLMENTS_AND_PAYROLL_RAILS.md)** — Рельсы миграции финансового контура (6 кассовых счетов, 12 статей расхода, внутренняя рассрочка, справка ФНС код 1/2, наряды ЗТЛ с блокировкой installed, зарплата Т-51 Net Revenue).
+15. **[LEGAL_AND_WAREHOUSE_RAILS](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/03_LEGAL_DOCUMENTS_UKEP_AND_WAREHOUSE_RAILS.md)** — Рельсы миграции документов и склада (49 бланков ИДС, 74 переменных, виртуальный COM-мост КриптоПро без плагина, техкарты BOM, МДЛП Честный Знак, CRM детектор утечек 210 дней).
 
 ---
 
