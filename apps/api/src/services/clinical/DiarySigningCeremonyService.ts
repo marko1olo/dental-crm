@@ -24,6 +24,7 @@ import {
 	treatmentItems,
 	users,
 	visitDiaries,
+	visitDiaryRevisions,
 	visits,
 } from "../../db/schema.js";
 import { DOCTOR_PEP_FORBIDDEN_MESSAGE } from "@dental/shared";
@@ -457,10 +458,11 @@ export async function runDiarySigningCeremony(
 						const newStock = baseStock - qtyNeeded;
 						const quantityChanged = String(-qtyNeeded);
 
-						if (newStock < 0) {
-							throw new DiarySigningError(
-								"InsufficientStock",
-								`Недостаточно материалов на складе: «${inv.name}». Требуется: ${qtyNeeded}, в наличии: ${baseStock}.`,
+						const isOverdraft = newStock < 0;
+						if (isOverdraft) {
+							console.warn(
+								`[DiarySigningCeremonyService] Мягкий овердрафт склада по материалу «${inv.name}» (ID: ${inv.id}) ` +
+									`при подписании дневника визита ${diary.visitId}: в наличии ${baseStock}, требовалось ${qtyNeeded}, остаток: ${newStock}.`,
 							);
 						}
 
@@ -484,7 +486,13 @@ export async function runDiarySigningCeremony(
 							quantityChanged,
 							unitCostRub:
 								inv.unitCostRub != null ? String(inv.unitCostRub) : null,
-							transactionType: "auto_deduct" as const,
+							transactionType: isOverdraft
+								? "emergency_overdraft"
+								: ("auto_deduct" as const),
+							isOverdraft,
+							notes: isOverdraft
+								? `Мягкий овердрафт склада (списание до оприходования накладной): дефицит ${Math.abs(newStock)} ед.`
+								: null,
 							userId,
 						});
 
@@ -581,6 +589,172 @@ export async function runDiarySigningCeremony(
 	};
 }
 
+export interface DiaryRevisionResult {
+	diaryId: string;
+	hash: string;
+	version: number;
+	revisedAt: Date;
+	auditLogId: string | null;
+}
+
+/**
+ * Церемония внесения исправления в подписанный дневник («Исправленному верить»).
+ * В частной стоматологии врач имеет безусловное право внести исправление в свой дневник
+ * с сохранением версионной истории ревизий без бюрократических согласований начмедов (Мандат 8e).
+ */
+export async function runDiaryRevisionCeremony(
+	tx: DiaryDbTransaction,
+	params: {
+		diaryId: string;
+		organizationId: string;
+		userId: string | null;
+		anamnesis?: string | null;
+		statusLocalis?: string | null;
+		diagnosisIcd10?: string | null;
+		diagnosisTooth?: string | null;
+		treatmentDescription?: string | null;
+		complications?: string | null;
+		comorbidities?: string | null;
+		instrumentTrayBarcode?: string | null;
+		revisionReason?: string | null;
+	},
+): Promise<DiaryRevisionResult> {
+	const { diaryId, organizationId, userId } = params;
+
+	const [existing] = await tx
+		.select()
+		.from(visitDiaries)
+		.where(
+			and(
+				eq(visitDiaries.id, diaryId),
+				eq(visitDiaries.organizationId, organizationId),
+			),
+		)
+		.limit(1)
+		.for("update");
+
+	if (!existing) {
+		throw new DiarySigningError(
+			"NotFound",
+			"Дневник этого приёма не найден в этой клинике, исправлять нечего. Откройте приём заново.",
+		);
+	}
+	if (!existing.isLocked) {
+		throw new DiarySigningError(
+			"NotSaved",
+			"Дневник ещё не подписан — правки сохраняются через обычный черновик приёма.",
+		);
+	}
+
+	const nextTrayBarcode =
+		params.instrumentTrayBarcode !== undefined
+			? (params.instrumentTrayBarcode?.trim() ?? null)
+			: existing.instrumentTrayBarcode;
+
+	const newHash = computeDiaryHash(
+		existing.visitId,
+		existing.patientId ?? "",
+		params.anamnesis !== undefined ? params.anamnesis : existing.anamnesis,
+		params.statusLocalis !== undefined ? params.statusLocalis : existing.statusLocalis,
+		params.treatmentDescription !== undefined ? params.treatmentDescription : existing.treatmentDescription,
+		params.diagnosisIcd10 !== undefined ? params.diagnosisIcd10 : existing.diagnosisIcd10,
+		params.diagnosisTooth !== undefined ? params.diagnosisTooth : existing.diagnosisTooth,
+		params.complications !== undefined ? params.complications : existing.complications,
+		params.comorbidities !== undefined ? params.comorbidities : existing.comorbidities,
+		nextTrayBarcode,
+	);
+
+	const priorVersion = existing.version ?? 1;
+	const nextVersion = priorVersion + 1;
+	const revisedAt = new Date();
+	const reason = (params.revisionReason ?? "").trim() || "Исправленному верить";
+
+	// 1. Атомарно обновляем дневник с оптимистичной версионной защитой
+	const updatedRows = await tx
+		.update(visitDiaries)
+		.set({
+			anamnesis: params.anamnesis !== undefined ? params.anamnesis : existing.anamnesis,
+			statusLocalis: params.statusLocalis !== undefined ? params.statusLocalis : existing.statusLocalis,
+			diagnosisIcd10: params.diagnosisIcd10 !== undefined ? params.diagnosisIcd10 : existing.diagnosisIcd10,
+			diagnosisTooth: params.diagnosisTooth !== undefined ? params.diagnosisTooth : existing.diagnosisTooth,
+			treatmentDescription: params.treatmentDescription !== undefined ? params.treatmentDescription : existing.treatmentDescription,
+			complications: params.complications !== undefined ? params.complications : existing.complications,
+			comorbidities: params.comorbidities !== undefined ? params.comorbidities : existing.comorbidities,
+			instrumentTrayBarcode: nextTrayBarcode,
+			diaryHash: newHash,
+			cryptoSignaturePkcs7: null, // Старая подпись не покрывает измененный текст
+			version: nextVersion,
+			updatedAt: revisedAt,
+		})
+		.where(
+			and(
+				eq(visitDiaries.id, diaryId),
+				eq(visitDiaries.organizationId, organizationId),
+				eq(visitDiaries.isLocked, true),
+				eq(visitDiaries.version, priorVersion),
+			),
+		)
+		.returning({ id: visitDiaries.id });
+
+	if (updatedRows.length === 0) {
+		throw new DiarySigningError(
+			"AlreadyLocked",
+			"Конфликт версий: дневник был изменен в параллельной сессии. Обновите страницу приёма.",
+		);
+	}
+
+	// 2. Запись юридического снимка в историю ревизий visit_diary_revisions
+	await tx.insert(visitDiaryRevisions).values({
+		organizationId,
+		diaryId,
+		previousAnamnesis: existing.anamnesis,
+		previousStatusLocalis: existing.statusLocalis,
+		previousDiagnosisIcd10: existing.diagnosisIcd10,
+		previousDiagnosisTooth: existing.diagnosisTooth,
+		previousTreatmentDescription: existing.treatmentDescription,
+		previousComplications: existing.complications,
+		previousComorbidities: existing.comorbidities,
+		previousInstrumentTrayBarcode: existing.instrumentTrayBarcode,
+		revisionReason: reason,
+		revisedByUserId: userId ?? existing.authorId ?? null,
+		revisedAt,
+	});
+
+	// 3. Синхронизация полей SOAP в visits
+	if (existing.visitId) {
+		await syncVisitEmkFromDiarySoap(tx, {
+			visitId: existing.visitId,
+			organizationId,
+			anamnesis: params.anamnesis !== undefined ? params.anamnesis : existing.anamnesis,
+			statusLocalis: params.statusLocalis !== undefined ? params.statusLocalis : existing.statusLocalis,
+			diagnosisIcd10: params.diagnosisIcd10 !== undefined ? params.diagnosisIcd10 : existing.diagnosisIcd10,
+			diagnosisTooth: params.diagnosisTooth !== undefined ? params.diagnosisTooth : existing.diagnosisTooth,
+			treatmentDescription: params.treatmentDescription !== undefined ? params.treatmentDescription : existing.treatmentDescription,
+		});
+	}
+
+	// 4. Юридический след в журнале аудита
+	const [auditLog] = await tx
+		.insert(clinicalAuditLogs)
+		.values({
+			organizationId,
+			patientId: existing.patientId,
+			action: "VISIT_DIARY_REVISED",
+			userId,
+			entityType: "visit_diary",
+			entityId: diaryId,
+		})
+		.returning({ id: clinicalAuditLogs.id });
+
+	return {
+		diaryId,
+		hash: newHash,
+		version: nextVersion,
+		revisedAt,
+		auditLogId: auditLog?.id ?? null,
+	};
+}
+
 /**
  * Объектный интерфейс доменного сервиса DiarySigningCeremonyService.
  */
@@ -592,6 +766,7 @@ export class DiarySigningCeremonyService {
 	static buildEmkDiagnosis = buildEmkDiagnosisText;
 	static syncVisitEmk = syncVisitEmkFromDiarySoap;
 	static runCeremony = runDiarySigningCeremony;
+	static runRevision = runDiaryRevisionCeremony;
 	static validateClinicalProtocol = Icd10ClinicalValidator.validate;
 	static isDentalIcd10 = Icd10ClinicalValidator.isDentalIcd10;
 	static isToothSpecificDiagnosis = Icd10ClinicalValidator.isToothSpecificDiagnosis;
@@ -606,6 +781,25 @@ export class DiarySigningCeremonyService {
 	}): Promise<DiarySigningResult> {
 		return await db.transaction((tx) =>
 			runDiarySigningCeremony(tx, params),
+		);
+	}
+
+	static async reviseDiary(params: {
+		diaryId: string;
+		organizationId: string;
+		userId: string | null;
+		anamnesis?: string | null;
+		statusLocalis?: string | null;
+		diagnosisIcd10?: string | null;
+		diagnosisTooth?: string | null;
+		treatmentDescription?: string | null;
+		complications?: string | null;
+		comorbidities?: string | null;
+		instrumentTrayBarcode?: string | null;
+		revisionReason?: string | null;
+	}): Promise<DiaryRevisionResult> {
+		return await db.transaction((tx) =>
+			runDiaryRevisionCeremony(tx, params),
 		);
 	}
 }

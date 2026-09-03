@@ -1,11 +1,11 @@
-import { Clipboard, Download, Loader2, Plus, Trash2, X } from "lucide-react";
+import { Clipboard, Download, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { actionFailureToast } from "../lib/panelStateText";
 import { logger } from "../utils/logger";
 import { showToast } from "./GlobalToast";
 
-interface Template {
+export interface Template {
 	id: string;
 	title: string;
 	category?: string;
@@ -16,6 +16,64 @@ interface Template {
 	/** Встроенный протокол — DELETE /api/templates/:id отвечает 403 CannotDeleteBuiltIn. */
 	isBuiltIn?: boolean;
 }
+
+export const CANONICAL_SOAP_TEMPLATES: Record<
+	"caries" | "pulpitis" | "periodontitis" | "hygiene",
+	Template
+> = {
+	caries: {
+		id: "canonical_caries_k021",
+		title: "Кариес дентина K02.1",
+		category: "Терапия",
+		defaultIcd10: "K02.1",
+		prefilledAnamnesis:
+			"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Зуб ранее не лечен / пломбирован более 2 лет назад. Жалобы на кратковременные боли от холодного/сладкого, быстро проходящие после устранения раздражителя.",
+		prefilledObjective:
+			"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Регионарные лимфоузлы не увеличены, безболезненны. Кариозная полость средней глубины в пределах дентина. Зондирование эмалево-дентинной границы слабо чувствительно, дно и стенки плотные. Перкуссия безболезненна. Термопроба положительна, быстропроходящая. ЭОД 6–8 мкА.",
+		prefilledTreatment:
+			"Инфильтрационная анестезия (Артикаин 4% с эпинефрином 1:100 000 — 1.7 мл). Препарирование кариозной полости, полная некрэктомия. Изоляция коффердамом. Медикаментозная обработка 2% хлоргексидином. Тотальное травление 37% ортофосфорной кислотой (эмаль 20 сек, дентин 10 сек). Нанесение адгезивной системы (OptiBond FL), полимеризация 20 сек. Послойная реставрация нанокомпозитом светового отверждения (Estelite Sigma Quick) с моделированием анатомической формы бугров и фиссур. Шлифовка, полировка пастами до сухого блеска. Контроль окклюзии.",
+		isBuiltIn: true,
+	},
+	pulpitis: {
+		id: "canonical_pulpitis_k040",
+		title: "Острый пульпит K04.0",
+		category: "Терапия",
+		defaultIcd10: "K04.0",
+		prefilledAnamnesis:
+			"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Самопроизвольные приступообразные ночные боли с иррадиацией по ходу ветвей тройничного нерва в течение последних 1–2 дней. Прием анальгетиков с неполным кратковременным эффектом.",
+		prefilledObjective:
+			"Слизистая оболочка полости рта бледно-розовая, влажная. Регионарные лимфоузлы не увеличены. Глубокая кариозная полость, сообщающаяся с полостью зуба в одной точке. Зондирование вскрытой точки рога пульпы резко болезненно, пульпа кровоточит. Перкуссия слабочувствительна. Термопроба резко положительна, длительная (более 1–2 мин). ЭОД 35–45 мкА.",
+		prefilledTreatment:
+			"Проводниковая/инфильтрационная анестезия (Артикаин 4% с эпинефрином 1:100 000 — 1.7 мл). Раскрытие полости зуба, создание прямого эндодонтического доступа. Коффердам. Витальная экстирпация пульпы. Определение рабочей длины корневых каналов апекслокатором. Механическая обработка каналов машинными Ni-Ti инструментами (ProTaper) под контролем эндомотора. Обильная ирригация NaOCl 3% с УЗ-активацией и 17% гелем ЭДТА. Высушивание стерильными бумажными штифтами. Трехмерная обтурация каналов эпоксидным силером (AH Plus) и гуттаперчевыми штифтами. Рентген-контроль обтурации. Временная повязка.",
+		isBuiltIn: true,
+	},
+	periodontitis: {
+		id: "canonical_periodontitis_k045",
+		title: "Периодонтит K04.5",
+		category: "Терапия",
+		defaultIcd10: "K04.5",
+		prefilledAnamnesis:
+			"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Постоянные ноющие боли, усиливающиеся при накусывании на зуб, чувство «выросшего» зуба. Зуб ранее лечен эндодонтически более 2 лет назад.",
+		prefilledObjective:
+			"Слизистая оболочка полости рта бледно-розовая. Пальпация по переходной складке в проекции верхушки корня слабочувствительна. Коронковая часть зуба изменена в цвете, дефект пломбы. Перкуссия вертикальная резко болезненна. Зондирование устьев безболезненно. ЭОД > 100 мкА. Рентгенограмма: деструкция костной ткани в периапикальной области у верхушки корня.",
+		prefilledTreatment:
+			"Инфильтрационная анестезия (Артикаин 4% 1.7 мл). Трепанация / удаление старой пломбы. Коффердам. Распломбирование корневых каналов, механическая и медикаментозная обработка (NaOCl 3%, ЭДТА 17%, УЗ-активация). Прохождение до физиологического апекса под контролем апекслокатора. Временное пломбирование каналов лечебной пастой гидроксида кальция (Calcept) для купирования периапикального воспаления. Герметичная временная пломба (СИЦ).",
+		isBuiltIn: true,
+	},
+	hygiene: {
+		id: "canonical_hygiene_k050",
+		title: "Профгигиена K05.0",
+		category: "Гигиена",
+		defaultIcd10: "K05.0",
+		prefilledAnamnesis:
+			"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Жалоб активно не предъявляет. Обратился для планового профилактического осмотра и профессиональной гигиены полости рта. Последняя профгигиена более 6 месяцев назад.",
+		prefilledObjective:
+			"Слизистая оболочка полости рта бледно-розовая, влажная. Регионарные лимфоузлы не пальпируются. Десневой край в области фронтальных зубов умеренно гиперемирован, отечен. Обильные наддесневые и поддесневые минерализованные зубные отложения, плотный пигментированный налет. Патологических зубодесневых карманов нет (глубина бороздки 1–2 мм).",
+		prefilledTreatment:
+			"Индикация зубного налета. Аппликационная анестезия десны. Ультразвуковой скейлинг (удаление над- и поддесневого зубного камня с водяным охлаждением). Снятие пигментированного налета порошкоструйным аппаратом Air-Flow (мелкодисперсный порошок глицина). Полировка поверхностей зубов абразивной пастой Cleanic и циркулярными щеточками, межзубные контакты обработаны флоссом. Глубокое фторирование эмали лаком Clinpro White Varnish. Индивидуальный подбор средств гигиены.",
+		isBuiltIn: true,
+	},
+};
 
 interface VisitDiaryTemplateSelectorProps {
 	isLocked: boolean;
@@ -221,10 +279,6 @@ export function VisitDiaryTemplateSelector({
 			return;
 		}
 		const titleLabel = tmpl.title?.trim() || "протокол";
-		const ok = window.confirm(
-			`Удалить свой протокол «${titleLabel}» из списка клиники? На уже заполненные дневники это не влияет — только на выбор при следующих приёмах.`,
-		);
-		if (!ok) return;
 		setIsDeleting(true);
 		try {
 			const headerSource = authRef.current;
@@ -381,6 +435,17 @@ export function VisitDiaryTemplateSelector({
 		resetCreateForm,
 	]);
 
+	const applyCanonicalTemplate = useCallback(
+		(key: "caries" | "pulpitis" | "periodontitis" | "hygiene") => {
+			if (isLocked) return;
+			const canonical = CANONICAL_SOAP_TEMPLATES[key];
+			setSelectedTemplate(canonical.id);
+			onSelectTemplate(canonical);
+			showToast(`Применён протокол: ${canonical.title}`, "success", 2500);
+		},
+		[isLocked, onSelectTemplate],
+	);
+
 	const selectedMeta = selectedTemplate
 		? templates.find((t) => t.id === selectedTemplate)
 		: undefined;
@@ -391,6 +456,57 @@ export function VisitDiaryTemplateSelector({
 		!isLoading;
 	const canCreate =
 		!isLocked && !isLoading && !isSeeding && !isDeleting && !isCreating;
+
+	const quickSoapButtonsEl = (
+		<div
+			className="flex items-center gap-1.5 flex-wrap"
+			data-testid="diary-quick-canonical-templates"
+		>
+			<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1">
+				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" /> 1-Клик SOAP:
+			</span>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-caries"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("caries")}
+				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				title="Кариес дентина K02.1: автозаполнение нормы, жалоб и объективного статуса"
+			>
+				<span>🦷 Кариес K02.1</span>
+			</button>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-pulpitis"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("pulpitis")}
+				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				title="Острый пульпит K04.0: автозаполнение нормы, жалоб и объективного статуса"
+			>
+				<span>⚡ Пульпит K04.0</span>
+			</button>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-periodontitis"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("periodontitis")}
+				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				title="Хронический периодонтит K04.5: автозаполнение нормы, жалоб и объективного статуса"
+			>
+				<span>🩸 Периодонтит K04.5</span>
+			</button>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-hygiene"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("hygiene")}
+				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				title="Профгигиена K05.0: автозаполнение нормы, жалоб и объективного статуса"
+			>
+				<span>✨ Профгигиена K05.0</span>
+			</button>
+		</div>
+	);
 
 	const templatesByCategory = React.useMemo(() => {
 		const groups: Record<string, Template[]> = {};
@@ -536,6 +652,7 @@ export function VisitDiaryTemplateSelector({
 				className="flex flex-col gap-2 w-full sm:w-auto max-w-md flex-shrink-0"
 				data-testid="diary-template-empty"
 			>
+				{quickSoapButtonsEl}
 				<div className="text-xs text-[var(--muted)] leading-snug">
 					{isSeedFailed
 						? seedError ||
@@ -591,6 +708,7 @@ export function VisitDiaryTemplateSelector({
 
 	return (
 		<div className="flex flex-col gap-2 w-full sm:w-auto flex-shrink-0">
+			{quickSoapButtonsEl}
 			<div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
 				<div className="relative w-full sm:w-60">
 					<Clipboard className="absolute left-3 top-3 w-4 h-4 text-[var(--muted)] pointer-events-none" />

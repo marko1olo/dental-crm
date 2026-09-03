@@ -1,4 +1,5 @@
 import {
+	Activity,
 	AlertTriangle,
 	Bold,
 	Calendar,
@@ -66,8 +67,9 @@ import {
 import {
 	VisitSoapTemplatesModal,
 } from "./VisitSoapTemplatesModal";
-import type {
-	ClinicalSoapPreset,
+import {
+	CLINICAL_SOAP_PRESETS,
+	type ClinicalSoapPreset,
 } from "./clinicalSoapPresets";
 import {
 	CARPULE_ANESTHESIA_PRESETS,
@@ -253,8 +255,51 @@ export function VisitEmkTab() {
 	 * выносить незачем: держим его здесь.
 	 */
 	const [activeEmkTab, setActiveEmkTab] = React.useState<string>("all");
+	const [isRevisingVisitNote, setIsRevisingVisitNote] = React.useState<boolean>(false);
 	const [isSoapTemplatesModalOpen, setIsSoapTemplatesModalOpen] = React.useState<boolean>(false);
 	const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = React.useState<boolean>(false);
+
+	const isSignedVisit = Boolean(dashboard?.activeVisit?.status === "signed");
+	const isLocked = isSignedVisit && !isRevisingVisitNote;
+
+	const cariesPreset = React.useMemo(
+		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "caries_medium"),
+		[],
+	);
+	const pulpitisPreset = React.useMemo(
+		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "pulpitis_acute"),
+		[],
+	);
+	const periodontitisPreset = React.useMemo(
+		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "periodontitis_chronic"),
+		[],
+	);
+	const hygienePreset = React.useMemo(
+		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "hygiene_complex"),
+		[],
+	);
+
+	const handleApplyPhysiologicalNorm = React.useCallback(() => {
+		if (!updateVisitNoteField) return;
+		updateVisitNoteField(
+			"complaint",
+			"Жалоб на момент осмотра активно не предъявляет (профилактический осмотр).",
+		);
+		updateVisitNoteField(
+			"anamnesis",
+			"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Полоскания и гигиенический уход регулярные.",
+		);
+		updateVisitNoteField(
+			"objectiveStatus",
+			"Слизистая оболочка полости рта физиологической окраски, бледно-розовая, умеренно влажная. Десневой край плотный, бледно-розовый, кровоточивость при зондировании отсутствует. Патологических зубодесневых карманов нет (глубина бороздки 1–2 мм). Регионарные лимфоузлы не увеличены, подвижные, безболезненные при пальпации. Зубные ряды интактны / санированы.",
+		);
+		updateVisitNoteField("diagnosis", "Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)");
+		updateVisitNoteField(
+			"treatmentPlan",
+			"Проведен комплексный профилактический осмотр полости рта, пальпация лимфоузлов, зондирование зубодесневых бороздок. Патологий твердых тканей зубов и пародонта не выявлено. Проведена индивидуальная беседа по гигиене полости рта. Рекомендован плановый контрольный профосмотр через 6 месяцев.",
+		);
+		showToast("Заполнена физиологическая норма: соматически здоров, норма по умолчанию", "success", 3000);
+	}, [updateVisitNoteField]);
 	const [selectedPrescriptionDrugIds, setSelectedPrescriptionDrugIds] = React.useState<string[]>([
 		"amoxiclav_875_125",
 		"nimesulide_100",
@@ -880,24 +925,24 @@ export function VisitEmkTab() {
 
 	const DEFAULT_PRICE_SERVICES = React.useMemo(
 		() => [
-			{ id: "srv-caries-comp", title: "Лечение кариеса с нанокомпозитной реставрацией", shortLabel: "Пломба / Кариес", basePriceRub: 4500, category: "therapy" },
-			{ id: "srv-pulp-endo", title: "Эндодонтическое лечение пульпита (обработка + обтурация)", shortLabel: "Эндодонтия / Пульпит", basePriceRub: 8500, category: "therapy" },
-			{ id: "srv-anes-art", title: "Анестезия инфильтрационная / проводниковая (Артикаин 4%)", shortLabel: "Анестезия Артикаин", basePriceRub: 800, category: "anesthesia" },
-			{ id: "srv-anes-mep", title: "Анестезия безадреналиновая (Мепивакаин 3%)", shortLabel: "Анестезия без адреналина", basePriceRub: 900, category: "anesthesia" },
-			{ id: "srv-xray-visi", title: "Прицельная внутриротовая радиовизиография", shortLabel: "Прицельный снимок", basePriceRub: 600, category: "diagnostics" },
-			{ id: "srv-xray-optg", title: "Ортопантомография (ОПТГ цифровой снимок)", shortLabel: "Панорамный снимок (ОПТГ)", basePriceRub: 1500, category: "diagnostics" },
-			{ id: "srv-crown-zirc", title: "Коронка из диоксида циркония (Prettau)", shortLabel: "Коронка цирконий", basePriceRub: 22000, category: "orthopedics" },
-			{ id: "srv-crown-emax", title: "Керамическая коронка E.max CAD", shortLabel: "Коронка E.max", basePriceRub: 24000, category: "orthopedics" },
-			{ id: "srv-surg-extr", title: "Удаление зуба простое с анестезией", shortLabel: "Удаление зуба", basePriceRub: 2500, category: "surgery" },
-			{ id: "srv-surg-extr-c", title: "Удаление ретенированного зуба мудрости (сложное)", shortLabel: "Сложное удаление (8-ка)", basePriceRub: 7500, category: "surgery" },
-			{ id: "srv-hygiene-prof", title: "Комплексная гигиена (УЗ + Air-Flow + Фторирование)", shortLabel: "Комплексная чистка", basePriceRub: 5000, category: "hygiene" },
+			{ id: "srv-caries-comp", title: "Лечение кариеса с нанокомпозитной реставрацией", shortLabel: "Пломба / Кариес", basePriceRub: 4500, category: "therapy", code804n: "A16.07.002" },
+			{ id: "srv-pulp-endo", title: "Эндодонтическое лечение пульпита (обработка + обтурация)", shortLabel: "Эндодонтия / Пульпит", basePriceRub: 8500, category: "therapy", code804n: "A16.07.008" },
+			{ id: "srv-anes-art", title: "Анестезия инфильтрационная / проводниковая (Артикаин 4%)", shortLabel: "Анестезия Артикаин", basePriceRub: 800, category: "anesthesia", code804n: "A11.07.012" },
+			{ id: "srv-anes-mep", title: "Анестезия безадреналиновая (Мепивакаин 3%)", shortLabel: "Анестезия без адреналина", basePriceRub: 900, category: "anesthesia", code804n: "A11.07.012.001" },
+			{ id: "srv-xray-visi", title: "Прицельная внутриротовая радиовизиография", shortLabel: "Прицельный снимок", basePriceRub: 600, category: "diagnostics", code804n: "A06.07.003" },
+			{ id: "srv-xray-optg", title: "Ортопантомография (ОПТГ цифровой снимок)", shortLabel: "Панорамный снимок (ОПТГ)", basePriceRub: 1500, category: "diagnostics", code804n: "A06.07.004" },
+			{ id: "srv-crown-zirc", title: "Коронка из диоксида циркония (Prettau)", shortLabel: "Коронка цирконий", basePriceRub: 22000, category: "orthopedics", code804n: "A16.07.004" },
+			{ id: "srv-crown-emax", title: "Керамическая коронка E.max CAD", shortLabel: "Коронка E.max", basePriceRub: 24000, category: "orthopedics", code804n: "A16.07.004.001" },
+			{ id: "srv-surg-extr", title: "Удаление зуба простое с анестезией", shortLabel: "Удаление зуба", basePriceRub: 2500, category: "surgery", code804n: "A16.07.001" },
+			{ id: "srv-surg-extr-c", title: "Удаление ретенированного зуба мудрости (сложное)", shortLabel: "Сложное удаление (8-ка)", basePriceRub: 7500, category: "surgery", code804n: "A16.07.001.001" },
+			{ id: "srv-hygiene-prof", title: "Комплексная гигиена (УЗ + Air-Flow + Фторирование)", shortLabel: "Комплексная чистка", basePriceRub: 5000, category: "hygiene", code804n: "A16.07.051" },
 		],
 		[],
 	);
 
 	const allPriceServices = React.useMemo(() => {
 		const catalog = Array.isArray(dashboard?.serviceCatalog)
-			? (dashboard?.serviceCatalog as Array<{ id?: string; title?: string; active?: boolean; basePriceRub?: number; category?: string }>)
+			? (dashboard?.serviceCatalog as Array<{ id?: string; title?: string; active?: boolean; basePriceRub?: number; category?: string; code?: string; code804n?: string }>)
 			: [];
 		const activeCatalog = catalog
 			.filter((s) => s.active !== false && Boolean(s.title) && typeof s.basePriceRub === "number")
@@ -907,30 +952,38 @@ export function VisitEmkTab() {
 				shortLabel: s.title!,
 				basePriceRub: s.basePriceRub!,
 				category: s.category || "therapy",
+				code804n: s.code804n || s.code || "",
 			}));
 		if (activeCatalog.length > 0) return activeCatalog;
 		return DEFAULT_PRICE_SERVICES;
 	}, [dashboard?.serviceCatalog, DEFAULT_PRICE_SERVICES]);
 
 	const filteredPriceServices = React.useMemo(() => {
-		const q = priceSearchQuery.trim().toLowerCase();
+		const rawQ = priceSearchQuery.trim().toLowerCase();
+		const cleanQ = rawQ.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "");
 		return allPriceServices.filter((srv) => {
-			const matchesCat = selectedPriceCategory === "all" || srv.category === selectedPriceCategory;
+			// When user types a search query (by 804n code or name), search globally across all categories
+			// to avoid forcing the doctor into multi-level category navigation.
+			const matchesCat = rawQ ? true : (selectedPriceCategory === "all" || srv.category === selectedPriceCategory);
 			if (!matchesCat) return false;
-			if (!q) return true;
+			if (!rawQ) return true;
+			const srvCodeClean = (srv.code804n || "").replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "").toLowerCase();
 			return (
-				srv.title.toLowerCase().includes(q) ||
-				srv.shortLabel.toLowerCase().includes(q) ||
-				srv.basePriceRub.toString().includes(q)
+				srv.title.toLowerCase().includes(rawQ) ||
+				srv.shortLabel.toLowerCase().includes(rawQ) ||
+				(srv.code804n && srv.code804n.toLowerCase().includes(rawQ)) ||
+				(cleanQ.length >= 2 && srvCodeClean.includes(cleanQ)) ||
+				srv.basePriceRub.toString().includes(rawQ)
 			);
 		});
 	}, [allPriceServices, priceSearchQuery, selectedPriceCategory]);
 
 	const handleAddServiceToPlan = React.useCallback(
-		(service: { title: string; basePriceRub: number }) => {
+		(service: { title: string; basePriceRub: number; code804n?: string }) => {
 			if (!updateVisitNoteField) return;
 			const currPlan = visitNoteForm.treatmentPlan || "";
-			const serviceLine = `Выполнено: ${service.title} — ${service.basePriceRub.toLocaleString("ru-RU")} ₽`;
+			const codePrefix = service.code804n ? `[${service.code804n}] ` : "";
+			const serviceLine = `Выполнено: ${codePrefix}${service.title} — ${service.basePriceRub.toLocaleString("ru-RU")} ₽`;
 			const newPlan = currPlan ? `${currPlan}\n\n${serviceLine}` : serviceLine;
 			updateVisitNoteField("treatmentPlan", newPlan);
 			showToast(
@@ -1446,6 +1499,88 @@ export function VisitEmkTab() {
 				className="my-2"
 			/>
 
+			{/* 1-Клик Экспресс-Бар SOAP по Приказам Минздрава РФ (Tier 1 Hot Path — 0 кликов до применения) */}
+			<div
+				className="flex items-center gap-1.5 overflow-x-auto pb-1 my-1 flex-nowrap scrollbar-thin"
+				data-testid="emk-tier1-quick-soap-bar"
+			>
+				<span className="text-[11px] font-bold text-[var(--muted)] shrink-0 uppercase tracking-wider flex items-center gap-1">
+					<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" /> 1-Клик SOAP:
+				</span>
+				<button
+					type="button"
+					data-testid="btn-quick-soap-caries"
+					disabled={isLocked}
+					onClick={() => {
+						if (cariesPreset) handleApplyClinicalSoapPreset(cariesPreset, activeSelectedTooth, "clean_replace");
+					}}
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
+				>
+					<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+					<span>Кариес K02.1</span>
+				</button>
+				<button
+					type="button"
+					data-testid="btn-quick-soap-pulpitis"
+					disabled={isLocked}
+					onClick={() => {
+						if (pulpitisPreset) handleApplyClinicalSoapPreset(pulpitisPreset, activeSelectedTooth, "clean_replace");
+					}}
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
+				>
+					<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+					<span>Пульпит K04.0</span>
+				</button>
+				<button
+					type="button"
+					data-testid="btn-quick-soap-periodontitis"
+					disabled={isLocked}
+					onClick={() => {
+						if (periodontitisPreset) handleApplyClinicalSoapPreset(periodontitisPreset, activeSelectedTooth, "clean_replace");
+					}}
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
+				>
+					<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+					<span>Периодонтит K04.5</span>
+				</button>
+				<button
+					type="button"
+					data-testid="btn-quick-soap-hygiene"
+					disabled={isLocked}
+					onClick={() => {
+						if (hygienePreset) handleApplyClinicalSoapPreset(hygienePreset, activeSelectedTooth, "clean_replace");
+					}}
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
+				>
+					<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
+					<span>Профгигиена K05.0</span>
+				</button>
+				<button
+					type="button"
+					data-testid="btn-quick-soap-norm"
+					disabled={isLocked}
+					onClick={handleApplyPhysiologicalNorm}
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
+				>
+					<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+					<span>Норма по умолчанию</span>
+				</button>
+			</div>
+
+			{isRevisingVisitNote && (
+				<div className="flex items-center gap-2 p-3 my-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-900 dark:text-amber-200 text-xs font-bold animate-in fade-in">
+					<AlertTriangle size={16} className="text-amber-600 shrink-0" />
+					<span>
+						Режим исправления закрытого дневника («Исправленному верить»). История изменений сохраняется в юридическом журнале ревизий ЭМК без согласований начмедов.
+					</span>
+				</div>
+			)}
+
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (Tier 2 Warm Context Accordion) */}
 			<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2.5 text-xs my-2">
 				<summary className="flex items-center justify-between cursor-pointer font-bold text-xs select-none list-none text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
@@ -1460,7 +1595,7 @@ export function VisitEmkTab() {
 						activeTooth={activeSelectedTooth}
 						onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}
 						onSelectPreset={(preset, chosenTooth) => handleApplyClinicalSoapPreset(preset, chosenTooth, "clean_replace")}
-						isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
+						isLocked={isLocked}
 						onOpenPriceSearch={() => setIsPriceSearchModalOpen(true)}
 						onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 					/>
@@ -2473,14 +2608,71 @@ export function VisitEmkTab() {
 						</button>
 					) : null}
 
-					{draft || isVisitNoteDirty ? (
+					{isSignedVisit && !isRevisingVisitNote ? (
+						<div className="flex items-center gap-3 flex-wrap">
+							<div className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+								<Check size={16} className="stroke-[3]" />
+								<span>ПОДПИСАНО ВРАЧОМ</span>
+							</div>
+							<button
+								className="secondary-button min-h-[48px] px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 cursor-pointer flex items-center gap-2 transition-all shadow-2xs"
+								type="button"
+								data-testid="btn-revise-signed-visit"
+								onClick={() => {
+									setIsRevisingVisitNote(true);
+									showToast("Режим внесения правок («Исправленному верить»). История сохраняется в журнале ревизий.", "info", 3500);
+								}}
+								title="Внести исправление в закрытый дневник с сохранением истории ревизий («Исправленному верить»)"
+							>
+								<FileText size={16} />
+								<span>Внести исправление («Исправленному верить»)</span>
+							</button>
+						</div>
+					) : null}
+
+					{isSignedVisit && isRevisingVisitNote ? (
+						<div className="flex items-center gap-2 flex-wrap">
+							<button
+								className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-amber-600 hover:bg-amber-500 text-white shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								type="button"
+								data-testid="btn-save-revision-signed-visit"
+								onClick={async () => {
+									try {
+										await acceptDraftToVisit();
+										setIsRevisingVisitNote(false);
+										showToast("Исправление сохранено («Исправленному верить»). Ревизия ЭМК зафиксирована.", "success", 4000);
+									} catch {
+										showToast("Ошибка при сохранении исправления", "error", 3000);
+									}
+								}}
+								disabled={isDraftAccepting}
+							>
+								<Check size={18} className="stroke-[3]" />
+								<span>Сохранить («Исправленному верить»)</span>
+							</button>
+							<button
+								className="secondary-button min-h-[50px] px-4 py-3 text-xs sm:text-sm font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5"
+								type="button"
+								data-testid="btn-cancel-revision-signed-visit"
+								onClick={() => {
+									setIsRevisingVisitNote(false);
+									showToast("Режим исправления закрыт", "info", 2000);
+								}}
+							>
+								<X size={16} />
+								<span>Отмена</span>
+							</button>
+						</div>
+					) : null}
+
+					{!isSignedVisit ? (
 						<button
 							className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
 							type="button"
 							onClick={() => {
 								if (!visitNoteReadyToAccept) {
 									if (!visitNoteForm?.diagnosis || visitNoteForm.diagnosis.length < 4) {
-										updateVisitNoteField?.("diagnosis", "Z01.2 Осмотр полости рта, патологий не выявлено");
+										updateVisitNoteField?.("diagnosis", "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)");
 									}
 									if (!visitNoteForm?.treatmentPlan) {
 										updateVisitNoteField?.(
@@ -2490,6 +2682,10 @@ export function VisitEmkTab() {
 									}
 									if (!visitNoteForm?.complaint && !visitNoteForm?.anamnesis) {
 										updateVisitNoteField?.("complaint", "Жалоб на момент осмотра не предъявляет.");
+										updateVisitNoteField?.("anamnesis", "Соматически здоров. Аллергоанамнез не отягощен.");
+									}
+									if (!visitNoteForm?.objectiveStatus) {
+										updateVisitNoteField?.("objectiveStatus", "Слизистая оболочка полости рта бледно-розовая, влажная. Патологических изменений не выявлено.");
 									}
 								}
 								acceptDraftToVisit();
@@ -2505,7 +2701,7 @@ export function VisitEmkTab() {
 							}
 						>
 							<Check aria-hidden="true" size={20} className="stroke-[3]" />
-							<span>{visitNoteActionLabel}</span>
+							<span>{visitNoteActionLabel || "Сохранить запись приёма"}</span>
 						</button>
 					) : null}
 				</div>
@@ -2517,11 +2713,22 @@ export function VisitEmkTab() {
 						role="status"
 						aria-live="polite"
 					>
-						<div className="flex items-center gap-2 mb-2">
-							<span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white font-bold text-xs">!</span>
-							<strong className="text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-bold">
-								Чтобы сохранить запись приема, осталось заполнить:
-							</strong>
+						<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+							<div className="flex items-center gap-2">
+								<span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white font-bold text-xs">!</span>
+								<strong className="text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-bold">
+									Чтобы сохранить запись приема, осталось заполнить:
+								</strong>
+							</div>
+							<button
+								type="button"
+								onClick={handleApplyPhysiologicalNorm}
+								className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+								data-testid="btn-fill-norm-quick"
+							>
+								<ShieldCheck size={14} />
+								<span>Заполнить нормой в 1 клик</span>
+							</button>
 						</div>
 						<ul className="m-0 pl-5 text-xs sm:text-sm text-amber-900 dark:text-amber-300 space-y-1.5 font-medium">
 							{(visitNoteAcceptMissingSteps ?? []).map((step) => (
@@ -2623,14 +2830,14 @@ export function VisitEmkTab() {
 							Шаблоны 043/у (МКБ-10 + 804н + Склад)
 						</button>
 						<button
-							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer"
+							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer border-[var(--line)] hover:border-indigo-400"
 							type="button"
 							onClick={() => window.print()}
 							data-testid="btn-print-visit-note-043"
 							title="Печать медицинской карты стоматологического пациента (Форма 043/у) на чистом листе А4"
 						>
 							<Printer className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-							Печать 043/у
+							<span>Печать 043/у {isSignedVisit ? "(Подписано)" : "(Черновик)"}</span>
 						</button>
 						<button
 							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer text-[var(--ok-fg)] border-[var(--ok-fg)]/30 hover:bg-[var(--ok-bg)]"
@@ -2749,38 +2956,38 @@ export function VisitEmkTab() {
 					<button
 						type="button"
 						onClick={() => {
-							setSelectedPrescriptionDrugIds(["amoxiclav_875_125", "nimesulide_100"]);
+							setSelectedPrescriptionDrugIds(["amoxiclav_875_125", "nimesulide_100", "suprastin_25"]);
 							setIsPrescriptionModalOpen(true);
 						}}
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
-						data-testid="btn-quick-rx-amoxi-nimesil"
+						data-testid="btn-quick-rx-post-surgery"
 					>
 						<Pill className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-						<span>Амоксиклав 1000 мг + Нимесил</span>
+						<span>«После удаления / хирургии»</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => {
-							setSelectedPrescriptionDrugIds(["nimesulide_100"]);
+							setSelectedPrescriptionDrugIds(["ibuprofen_400", "chlorhexidine_005"]);
 							setIsPrescriptionModalOpen(true);
 						}}
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
-						data-testid="btn-quick-rx-nimesil"
+						data-testid="btn-quick-rx-anti-inflammatory"
 					>
-						<Pill className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-						<span>Нимесил 100 мг (НПВП)</span>
+						<Pill className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+						<span>«Противовоспалительный»</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => {
-							setSelectedPrescriptionDrugIds(["chlorhexidine_005"]);
+							setSelectedPrescriptionDrugIds(["miramistin_001", "stomatophyt_100"]);
 							setIsPrescriptionModalOpen(true);
 						}}
 						className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-rose-500 hover:bg-[var(--paper-strong)] text-[var(--ink)] cursor-pointer inline-flex items-center gap-1.5 touch-manipulation shadow-2xs"
-						data-testid="btn-quick-rx-chlorhexidine"
+						data-testid="btn-quick-rx-antiseptic"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-						<span>Хлоргексидин 0.05%</span>
+						<span>«Антисептический / полоскания»</span>
 					</button>
 				</div>
 
@@ -3113,6 +3320,36 @@ export function VisitEmkTab() {
 							)}
 						</div>
 
+						{/* 1-Click Statutory Order 804n Code Chips (0-1 Click Fast Select without multi-level tree wandering) */}
+						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap scrollbar-thin">
+							<span className="text-[11px] font-bold text-[var(--muted)] shrink-0">
+								Номенклатура 804н (1-клик):
+							</span>
+							{[
+								{ code: "A16.07.002", label: "A16.07.002 Кариес" },
+								{ code: "A16.07.008", label: "A16.07.008 Пульпит" },
+								{ code: "A11.07.012", label: "A11.07.012 Анестезия" },
+								{ code: "A06.07.003", label: "A06.07.003 Снимок" },
+								{ code: "A16.07.001", label: "A16.07.001 Удаление" },
+								{ code: "A16.07.004", label: "A16.07.004 Коронка" },
+								{ code: "A16.07.051", label: "A16.07.051 Гигиена" },
+							].map((chip) => (
+								<button
+									key={chip.code}
+									type="button"
+									onClick={() => setPriceSearchQuery(chip.code)}
+									className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border ${
+										priceSearchQuery === chip.code
+											? "bg-indigo-600 text-white border-indigo-700 shadow-2xs"
+											: "bg-[var(--paper)] border-[var(--line)] text-indigo-700 dark:text-indigo-300 hover:border-indigo-400"
+									}`}
+									title={`Искать по коду Минздрава 804н ${chip.code}`}
+								>
+									{chip.label}
+								</button>
+							))}
+						</div>
+
 						{/* Category Filter Chips */}
 						<div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap scrollbar-thin">
 							{[
@@ -3155,7 +3392,12 @@ export function VisitEmkTab() {
 											<div className="text-sm sm:text-base font-bold text-[var(--ink)] leading-snug">
 												{srv.title}
 											</div>
-											<div className="flex items-center gap-2 text-xs text-[var(--muted)]">
+											<div className="flex items-center gap-2 text-xs text-[var(--muted)] flex-wrap">
+												{srv.code804n && (
+													<span className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-mono font-bold">
+														804н: {srv.code804n}
+													</span>
+												)}
 												<span className="px-2 py-0.5 rounded-md bg-[var(--paper)] border border-[var(--line)] font-semibold">
 													{srv.category}
 												</span>
@@ -3328,8 +3570,24 @@ export function VisitEmkTab() {
 						<div className="text-slate-600">
 							Время: {dashboard?.activeVisit?.time || new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
 						</div>
+						{isSignedVisit ? (
+							<div className="mt-2 inline-flex items-center px-2.5 py-1 border-2 border-emerald-700 rounded text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50">
+								✓ ПОДПИСАНО ВРАЧОМ
+							</div>
+						) : (
+							<div className="mt-2 inline-flex items-center px-2.5 py-1 border-2 border-amber-600 rounded text-[11px] font-black uppercase tracking-wider text-amber-800 bg-amber-50">
+								⚠ ЧЕРНОВИК • НЕ ПОДПИСАНО
+							</div>
+						)}
 					</div>
 				</div>
+
+				{!isSignedVisit && (
+					<div className="mb-3 py-1.5 px-3 bg-amber-50 border border-amber-300 rounded text-[11px] text-amber-900 font-semibold flex items-center justify-between">
+						<span>⚠ СТАТУС ДОКУМЕНТА: ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ).</span>
+						<span className="text-[10px] text-amber-700">Юридической силы без подписи врача не имеет</span>
+					</div>
+				)}
 
 				{/* Таблица паспортных данных */}
 				<table className="w-full border-collapse text-left text-xs border border-slate-300 mb-4" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
@@ -3434,6 +3692,16 @@ export function VisitEmkTab() {
 						<div className="text-[10px] text-slate-500">(с диагнозом и объемом оказанной помощи ознакомлен)</div>
 					</div>
 				</div>
+
+				{!isSignedVisit ? (
+					<div className="mt-4 text-[10px] text-amber-800 italic border-t border-amber-300 pt-2 text-center">
+						Документ распечатан в статусе «ЧЕРНОВИК». Окончательный юридический статус наступает после завершения приёма и подписания карты врачом.
+					</div>
+				) : (
+					<div className="mt-4 text-[10px] text-emerald-800 font-medium border-t border-emerald-300 pt-2 text-center">
+						Документ подписан лечащим врачом в медицинской информационной системе клиники.
+					</div>
+				)}
 			</div>
 		</section>
 	);
