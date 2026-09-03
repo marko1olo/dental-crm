@@ -9,6 +9,7 @@ import {
 	AlertTriangle,
 	ArrowRight,
 	Banknote,
+	Building2,
 	Calendar,
 	Check,
 	CheckCircle2,
@@ -49,8 +50,10 @@ import {
 } from "./fiscal/fiscal54fzEngine";
 import {
 	createCompositeIdempotencyKey,
+	generate0PercentInstallmentSchedule,
 	kopecksToRub,
 	parseChestnyZnakDataMatrix,
+	rublesToKopecks,
 	rubToKopecks,
 } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
@@ -128,6 +131,49 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	} | null>(null);
 	const [toastMsg, setToastMsg] = useState<string | null>(null);
 
+	// 6 Кассовых счетов клиники
+	const [cashBoxesList, setCashBoxesList] = useState<Array<{
+		id: string;
+		name: string;
+		type: string;
+		balanceRub: number;
+		isMain: boolean;
+		isCashless: boolean;
+	}>>([]);
+	const [selectedCashBoxId, setSelectedCashBoxId] = useState<string>("");
+
+	// Реальная честная рассрочка клиники (0% переплат)
+	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(6);
+	const [downPaymentPercent, setDownPaymentPercent] = useState<number>(30);
+
+	React.useEffect(() => {
+		let isMounted = true;
+		fetch("/api/cash/cash-box", {
+			headers: {
+				...denteAdminSecretRequestHeaders(),
+			},
+		})
+			.then((res) => {
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				return res.json();
+			})
+			.then((data) => {
+				if (isMounted && data?.data && Array.isArray(data.data)) {
+					setCashBoxesList(data.data);
+					const mainBox = data.data.find((b: { isMain: boolean }) => b.isMain) || data.data[0];
+					if (mainBox) {
+						setSelectedCashBoxId(mainBox.id);
+					}
+				}
+			})
+			.catch((err) => {
+				console.warn("[CashRegisterModal] Failed to load cash boxes", err);
+			});
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
 	// Fallback draft items if none provided
 	const effectiveItems: readonly FiscalItemDraft[] = useMemo(() => {
 		if (items.length > 0) return items;
@@ -189,6 +235,23 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		const received = receivedCashRub > 0 ? receivedCashRub : requiredCash;
 		return calculateCashChange(requiredCash, received);
 	}, [selectedTender, totalInvoiceRub, splitCashRub, receivedCashRub]);
+
+	// Честный расчет графика рассрочки клиники (0% переплат) без потери копеек
+	const calculatedInstallmentSchedule = useMemo(() => {
+		const downPaymentRub = Math.round((totalInvoiceRub * downPaymentPercent) / 100);
+		const remainingRub = Math.max(0, Math.round((totalInvoiceRub - downPaymentRub) * 100) / 100);
+		const remainingKop = rublesToKopecks(remainingRub);
+		const schedule = generate0PercentInstallmentSchedule(
+			remainingKop,
+			installmentMonths,
+			new Date().toISOString(),
+		);
+		return {
+			downPaymentRub,
+			remainingRub,
+			schedule,
+		};
+	}, [totalInvoiceRub, downPaymentPercent, installmentMonths]);
 
 	// Fast 1-Click fiscalize action with rage click debounce + atomic ref lock
 	const handleFiscalize = async () => {
@@ -663,6 +726,35 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</button>
 								</div>
 
+								{/* 6 Кассовых счетов клиники (StomX Bible раздел 6) */}
+								{cashBoxesList.length > 0 && (
+									<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-xs">
+										<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
+											<Building2 className="w-4 h-4 text-teal-600 shrink-0" />
+											<span>Счет кассы:</span>
+										</div>
+										<div className="flex flex-wrap items-center gap-1.5">
+											{cashBoxesList.map((box) => (
+												<button
+													key={box.id}
+													type="button"
+													onClick={() => setSelectedCashBoxId(box.id)}
+													className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+														selectedCashBoxId === box.id
+															? "bg-teal-600 text-white shadow-2xs"
+															: "bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)]"
+													}`}
+												>
+													<span>{box.name}</span>{" "}
+													<span className="opacity-80 font-mono text-[11px]">
+														({box.balanceRub.toLocaleString("ru-RU")} ₽)
+													</span>
+												</button>
+											))}
+										</div>
+									</div>
+								)}
+
 								{/* Conditional Drawer for Cash Tender (Anti-Matryoshka) */}
 								{selectedTender === "cash" && (
 									<div className="pt-3 border-t border-[var(--line)] space-y-3">
@@ -743,42 +835,79 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 								)}
 
+								{/* Честная рассрочка 0% переплат (выбор срока 3, 6, 12, 24 мес. и первого взноса) */}
 								{selectedTender === "installment" && (
-									<div className="pt-2 border-t border-[var(--line)]/60 space-y-2">
-										<div className="flex items-center justify-between text-xs font-bold text-amber-900 dark:text-amber-200">
-											<span className="flex items-center gap-1.5">
-												<Calendar className="w-3.5 h-3.5 text-amber-600" />
-												График рассрочки клиники (0% переплат):
-											</span>
-											<span className="font-mono text-emerald-700 dark:text-emerald-300">
-												1-й взнос сегодня: {Math.round(totalInvoiceRub * 0.3).toLocaleString("ru-RU")} ₽ (30%)
+									<div className="pt-2 border-t border-[var(--line)]/60 space-y-3">
+										<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+											<div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
+												<Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+												<span>Договор рассрочки клиники (0% переплат):</span>
+											</div>
+											<div className="flex items-center gap-2">
+												<span className="text-[11px] text-[var(--muted)]">Период:</span>
+												<div className="flex items-center gap-1">
+													{([3, 6, 12, 24] as const).map((m) => (
+														<button
+															key={m}
+															type="button"
+															onClick={() => setInstallmentMonths(m)}
+															className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+																installmentMonths === m
+																	? "bg-amber-600 text-white shadow-2xs"
+																	: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)]"
+															}`}
+														>
+															{m} мес.
+														</button>
+													))}
+												</div>
+											</div>
+										</div>
+
+										<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+											<div className="flex items-center gap-2">
+												<span className="text-[11px] text-[var(--muted)]">Первый взнос:</span>
+												<div className="flex items-center gap-1">
+													{([0, 20, 30, 50] as const).map((p) => (
+														<button
+															key={p}
+															type="button"
+															onClick={() => setDownPaymentPercent(p)}
+															className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+																downPaymentPercent === p
+																	? "bg-emerald-600 text-white shadow-2xs"
+																	: "bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--line)]"
+															}`}
+														>
+															{p}%
+														</button>
+													))}
+												</div>
+											</div>
+											<span className="font-mono text-emerald-700 dark:text-emerald-300 font-bold">
+												Первый взнос: {calculatedInstallmentSchedule.downPaymentRub.toLocaleString("ru-RU")} ₽ ({downPaymentPercent}%)
 											</span>
 										</div>
-										<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-											<div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 space-y-0.5">
-												<div className="font-bold text-[var(--ink)]">1-й взнос (Сегодня)</div>
-												<div className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-													{Math.round(totalInvoiceRub * 0.3).toLocaleString("ru-RU")} ₽
+
+										<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs max-h-48 overflow-y-auto">
+											{calculatedInstallmentSchedule.downPaymentRub > 0 && (
+												<div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 space-y-0.5">
+													<div className="font-bold text-[var(--ink)]">1-й взнос (Сегодня)</div>
+													<div className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+														{calculatedInstallmentSchedule.downPaymentRub.toLocaleString("ru-RU")} ₽
+													</div>
 												</div>
-											</div>
-											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
-												<div className="font-bold text-[var(--muted)]">2-й этап (30 дн.)</div>
-												<div className="font-mono text-[var(--ink)] font-bold">
-													{Math.round(totalInvoiceRub * 0.2333).toLocaleString("ru-RU")} ₽
+											)}
+											{calculatedInstallmentSchedule.schedule.map((item) => (
+												<div key={item.monthIndex} className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
+													<div className="font-bold text-[var(--muted)]">
+														{item.monthIndex}-й транш ({new Date(item.paymentDateIso).toLocaleDateString("ru-RU")})
+													</div>
+													<div className="font-mono text-[var(--ink)] font-bold">
+														{(Math.round(item.amountKopecks) / 100).toLocaleString("ru-RU")} ₽
+													</div>
 												</div>
-											</div>
-											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
-												<div className="font-bold text-[var(--muted)]">3-й этап (60 дн.)</div>
-												<div className="font-mono text-[var(--ink)] font-bold">
-													{Math.round(totalInvoiceRub * 0.2333).toLocaleString("ru-RU")} ₽
-												</div>
-											</div>
-											<div className="p-2 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
-												<div className="font-bold text-[var(--muted)]">4-й этап (90 дн.)</div>
-												<div className="font-mono text-[var(--ink)] font-bold">
-													{Math.round(totalInvoiceRub * 0.2334).toLocaleString("ru-RU")} ₽
-												</div>
-											</div>
+											))}
 										</div>
 									</div>
 								)}

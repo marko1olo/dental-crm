@@ -422,6 +422,22 @@ export const ndflTaxCalculators = pgTable(
 			scale: 2,
 		}),
 		ndflReturnRub: numeric("ndfl_return_rub", { precision: 12, scale: 2 }),
+		/** Сумма по коду 1 (Обычное лечение, лимит социального вычета 150 000 ₽) */
+		code1AmountRub: numeric("code1_amount_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		/** Сумма по коду 2 (Дорогостоящее лечение: имплантация, костная пластика — вычет со всей суммы без ограничений!) */
+		code2AmountRub: numeric("code2_amount_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
 		calculatedAt: timestamp("calculated_at", {
 			withTimezone: true,
 		}).defaultNow(),

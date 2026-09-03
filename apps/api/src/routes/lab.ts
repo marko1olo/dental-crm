@@ -621,6 +621,10 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				return { kind: "not_found" as const };
 			}
 
+			if (currentOrder.isLockedInstalled) {
+				return { kind: "locked_installed" as const };
+			}
+
 			// Проверка автомата состояний при смене статуса
 			if (targetStatus && targetStatus !== currentOrder.status) {
 				const currentStatus = currentOrder.status as LabOrderStatus;
@@ -720,6 +724,13 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			return reply.code(404).send({
 				error: "LabOrderNotFound",
 				message: "Заказ ЗТЛ не найден.",
+			});
+		}
+
+		if (result.kind === "locked_installed") {
+			return reply.code(409).send({
+				error: "LabOrderLockedInstalled",
+				message: "Заказ-наряд ЗТЛ находится в статусе installed (припасован и сдан) и намертво заблокирован от редактирования.",
 			});
 		}
 

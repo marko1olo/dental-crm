@@ -682,6 +682,10 @@ export const labOrders = pgTable(
 		labComments: text("lab_comments"),
 		attachedImageUrl: text("attached_image_url"),
 		priceRub: numeric("price_rub", { precision: 12, scale: 2, mode: "number" }),
+		/** Статус сдачи и намертво блокировки installed (StomX Bible раздел 8) */
+		isLockedInstalled: boolean("is_locked_installed").notNull().default(false),
+		installedAt: timestamp("installed_at", { withTimezone: true }),
+		paidFromCashOperationId: uuid("paid_from_cash_operation_id"),
 		/** Временны́е метки жизненного цикла заказа для аудита. */
 		sentAt: timestamp("sent_at", { withTimezone: true }),
 		completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -1604,6 +1608,38 @@ export const services = pgTable(
 			.default(0),
 		durationMinutes: integer("duration_minutes").notNull().default(30),
 		taxDeductible: boolean("tax_deductible").notNull().default(true),
+		/**
+		 * Признак дорогостоящего лечения (Код 2 vs Код 1 для справки ФНС 1151156)
+		 * false (0) = Код 1 (обычное лечение, лимит 150 000 ₽)
+		 * true (1) = Код 2 (дорогостоящее лечение: имплантация, костная пластика — без лимита)
+		 */
+		isExpensive: boolean("is_expensive").notNull().default(false),
+		/** Фиксированная оплата врачу за данную процедуру (salary_price в StomX procedures.json) */
+		salaryPriceRub: numeric("salary_price_rub", {
+			precision: 10,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		/** Себестоимость списания материалов по умолчанию */
+		materialsCostRub: numeric("materials_cost_rub", {
+			precision: 10,
+			scale: 2,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
+		/** Идентификатор внешнего контрагента / лаборатории */
+		contractorId: text("contractor_id"),
+		/** Доза облучения в миллизивертах (мЗв) для рентген-процедур */
+		doseMsv: numeric("dose_msv", {
+			precision: 8,
+			scale: 4,
+			mode: "number",
+		})
+			.notNull()
+			.default(0),
 		active: boolean("active").notNull().default(true),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
