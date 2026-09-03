@@ -330,7 +330,7 @@ export interface MinimalImplantDataForProtocol {
 	fdiCode?: string | number;
 	diameter?: number;
 	length?: number;
-	distanceToNerve: number;
+	distanceToNerve?: number | null;
 	boneDensity?: {
 		averageHU?: number;
 		classification?: string;
@@ -342,10 +342,12 @@ export interface MinimalImplantDataForProtocol {
  * Русский протокол по последнему импланту для ЭМК (Форма 043/у).
  */
 export function implantProtocolLog(implant: MinimalImplantDataForProtocol): string {
-	const isDanger = implant.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
-	const nerveStatusText = isDanger
-		? `ВНИМАНИЕ: дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (< 2.0 мм) — опасная зона риска травматизации сосудисто-нервного пучка!`
-		: `Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (безопасный коридор ≥ 2.0 мм).`;
+	const nerveStatusText =
+		implant.distanceToNerve != null
+			? implant.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM
+				? `ВНИМАНИЕ: дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (< 2.0 мм) — опасная зона риска травматизации сосудисто-нервного пучка!`
+				: `Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (безопасный коридор ≥ 2.0 мм).`
+			: "Нижнечелюстной нерв не размечен. Контроль дистанции безопасности невозможен.";
 
 	const lines = [
 		`--- ПРОТОКОЛ 3D-ИМПЛАНТАЦИИ (КЛКТ/DICOM) ---`,

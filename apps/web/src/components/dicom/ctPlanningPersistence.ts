@@ -87,7 +87,7 @@ export interface StoredImplant {
 	startWorld: [number, number, number];
 	endWorld: [number, number, number];
 	boneDensity: { averageHU: number; classification: string };
-	distanceToNerve: number;
+	distanceToNerve?: number | null;
 }
 
 /**
@@ -288,7 +288,7 @@ function storedImplantOf(value: unknown): StoredImplant | null {
 					? density.classification
 					: "",
 		},
-		distanceToNerve: finiteNumber(raw.distanceToNerve) ?? 0,
+		distanceToNerve: finiteNumber(raw.distanceToNerve) ?? null,
 	};
 }
 

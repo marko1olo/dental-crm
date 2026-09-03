@@ -152,4 +152,38 @@ describe("Mandibular Nerve Collision & Safety Guard (< 2.0 mm)", () => {
 		assert.ok(protocol.includes("безопасный коридор ≥ 2.0 мм"));
 		assert.ok(protocol.includes("3.8 мм"));
 	});
+
+	test("implantProtocolLog emits clinical warning when mandibular nerve is unmapped (null)", () => {
+		const unmappedImplant = {
+			id: "imp_36_unmapped",
+			fdiCode: "36",
+			diameter: 4.0,
+			length: 10.0,
+			distanceToNerve: null,
+		};
+
+		const protocol = implantProtocolLog(unmappedImplant);
+		assert.ok(
+			protocol.includes(
+				"Нижнечелюстной нерв не размечен. Контроль дистанции безопасности невозможен.",
+			),
+		);
+		assert.ok(!protocol.includes("4.5 мм"));
+	});
+
+	test("implantProtocolLog emits clinical warning when mandibular nerve is omitted (undefined)", () => {
+		const unmappedImplant = {
+			id: "imp_36_unmapped_undef",
+			fdiCode: "36",
+			diameter: 4.0,
+			length: 10.0,
+		};
+
+		const protocol = implantProtocolLog(unmappedImplant);
+		assert.ok(
+			protocol.includes(
+				"Нижнечелюстной нерв не размечен. Контроль дистанции безопасности невозможен.",
+			),
+		);
+	});
 });

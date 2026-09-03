@@ -98,7 +98,7 @@ export interface ImplantData {
 		cancellousHU?: number;
 		apicalHU?: number;
 	};
-	distanceToNerve: number;
+	distanceToNerve?: number | null;
 }
 
 export interface Cornerstone3DViewerProps {
@@ -187,7 +187,9 @@ function storedImplantsOf(implants: readonly ImplantData[]): StoredImplant[] {
 				averageHU: implant.boneDensity.averageHU,
 				classification: implant.boneDensity.classification,
 			},
-			distanceToNerve: implant.distanceToNerve,
+			...(typeof implant.distanceToNerve === "number"
+				? { distanceToNerve: implant.distanceToNerve }
+				: {}),
 		});
 	}
 	return out;
@@ -217,7 +219,7 @@ function implantDataOf(stored: readonly StoredImplant[]): ImplantData[] {
 				classification: densityInfo.mischClass,
 				drillingAdvice: densityInfo.drillingRecommendation,
 			},
-			distanceToNerve: implant.distanceToNerve,
+			distanceToNerve: implant.distanceToNerve ?? null,
 		};
 	});
 }
@@ -226,10 +228,15 @@ function implantDataOf(stored: readonly StoredImplant[]): ImplantData[] {
  * Русский протокол по последнему импланту для ЭМК (Форма 043/у).
  */
 export function implantProtocolLog(implant: ImplantData): string {
-	const isDanger = implant.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
-	const nerveStatusText = isDanger
-		? `ВНИМАНИЕ: дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (< 2.0 мм) — опасная зона риска травматизации сосудисто-нервного пучка!`
-		: `Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (безопасный коридор ≥ 2.0 мм).`;
+	const isDanger =
+		implant.distanceToNerve != null &&
+		implant.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
+	const nerveStatusText =
+		implant.distanceToNerve != null
+			? isDanger
+				? `ВНИМАНИЕ: дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (< 2.0 мм) — опасная зона риска травматизации сосудисто-нервного пучка!`
+				: `Дистанция до нижнечелюстного канала ${implant.distanceToNerve.toFixed(1)} мм (безопасный коридор ≥ 2.0 мм).`
+			: "Нижнечелюстной нерв не размечен. Контроль дистанции безопасности невозможен.";
 
 	const densityInfo = classifyExtendedBoneDensity(implant.boneDensity.averageHU);
 
@@ -846,27 +853,8 @@ export function Cornerstone3DViewer({
 	};
 
 	const simulateImplantPlacement = () => {
-		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
-		const axialVp = renderingEngine?.getViewport(VIEWPORT_IDS.axial);
-		const camera = axialVp?.getCamera();
-		const focal = camera?.focalPoint;
-
-		const startX = focal ? focal[0] : 10;
-		const startY = focal ? focal[1] : 20;
-		const startZ = focal ? focal[2] : -50;
-		const implantStart = vec3.fromValues(startX, startY, startZ);
-		const implantEnd = vec3.fromValues(startX, startY, startZ - 10.0); // 10 мм длина
-
-		let distToNerve = 4.5;
-		const nervePoints = restoredMarkupRef.current?.nervePoints;
-		if (nervePoints && nervePoints.length > 0) {
-			const nerveSpline = nervePoints.map((p) => vec3.fromValues(p.x, p.y, p.z));
-			distToNerve = distancePointToSpline(implantEnd, nerveSpline);
-		}
-
-		let avgHUVal = 650;
 		const activeVolumeId = volumeId ?? "my-volume";
-		let volume = cornerstone.cache.getVolume(activeVolumeId);
+		let volume = activeVolumeId ? cornerstone.cache.getVolume(activeVolumeId) : undefined;
 		if (!volume) {
 			const allVolumes = cornerstone.cache.getVolumes();
 			if (allVolumes && allVolumes.length > 0) {
@@ -874,29 +862,79 @@ export function Cornerstone3DViewer({
 			}
 		}
 
-		if (volume) {
-			const voxels = readVolumeScalarData(
-				{
-					dimensions: volume.dimensions,
-					imageIds: volume.imageIds,
-					voxelManager: volume.voxelManager,
-				},
-				(imageId) => cornerstone.cache.getImage(imageId) !== undefined,
+		if (!volume || isVolumeLoading) {
+			showToast(
+				"Установка имплантата заблокирована: исследование КЛКТ не загружено. Планирование на пустом холсте запрещено стандартом клиники",
+				"error",
 			);
-			if (voxels.status === "ready") {
-				const computed = calculateImplantBoneDensity(
-					toTransferableScalarData(voxels.scalarData),
-					volume.dimensions,
-					vec3.fromValues(volume.origin[0], volume.origin[1], volume.origin[2]),
-					mat3ToMat4Direction(volume.direction),
-					vec3.fromValues(volume.spacing[0], volume.spacing[1], volume.spacing[2]),
-					implantStart,
-					implantEnd,
-					4.0,
-				);
-				avgHUVal = computed.averageHU;
-			}
+			return;
 		}
+
+		const voxels = readVolumeScalarData(
+			{
+				dimensions: volume.dimensions,
+				imageIds: volume.imageIds,
+				voxelManager: volume.voxelManager,
+			},
+			(imageId) => cornerstone.cache.getImage(imageId) !== undefined,
+		);
+
+		if (voxels.status !== "ready") {
+			showToast(
+				"Установка имплантата заблокирована: исследование КЛКТ не загружено. Планирование на пустом холсте запрещено стандартом клиники",
+				"error",
+			);
+			return;
+		}
+
+		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		const axialVp = renderingEngine?.getViewport(VIEWPORT_IDS.axial);
+		const camera = axialVp?.getCamera();
+		const focal = camera?.focalPoint;
+
+		if (
+			!focal ||
+			focal.length < 3 ||
+			!Number.isFinite(focal[0]) ||
+			!Number.isFinite(focal[1]) ||
+			!Number.isFinite(focal[2])
+		) {
+			showToast(
+				"Точка фокуса не определена. Выберите целевую анатомическую область кликом по срезу челюсти",
+				"warning",
+			);
+			return;
+		}
+
+		const startX = focal[0];
+		const startY = focal[1];
+		const startZ = focal[2];
+		const implantStart = vec3.fromValues(startX, startY, startZ);
+		const implantEnd = vec3.fromValues(startX, startY, startZ - 10.0); // 10 мм длина
+
+		let distToNerve: number | null = null;
+		const nervePoints = restoredMarkupRef.current?.nervePoints;
+		if (nervePoints && nervePoints.length > 0) {
+			const nerveSpline = nervePoints.map((p) => vec3.fromValues(p.x, p.y, p.z));
+			distToNerve = distancePointToSpline(implantEnd, nerveSpline);
+		} else {
+			showToast(
+				"Нижнечелюстной нерв не размечен. Контроль дистанции безопасности невозможен",
+				"warning",
+			);
+		}
+
+		const computed = calculateImplantBoneDensity(
+			toTransferableScalarData(voxels.scalarData),
+			volume.dimensions,
+			vec3.fromValues(volume.origin[0], volume.origin[1], volume.origin[2]),
+			mat3ToMat4Direction(volume.direction),
+			vec3.fromValues(volume.spacing[0], volume.spacing[1], volume.spacing[2]),
+			implantStart,
+			implantEnd,
+			4.0,
+		);
+		const avgHUVal = computed.averageHU;
 
 		const densityClassification = classifyExtendedBoneDensity(avgHUVal);
 
@@ -912,8 +950,13 @@ export function Cornerstone3DViewer({
 			}
 		}
 
+		const implantId =
+			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `implant-${Date.now()}-${Math.round(startX)}-${Math.round(startY)}`;
+
 		const newImplant: ImplantData = {
-			id: Math.random().toString(36).substring(7),
+			id: implantId,
 			fdiCode,
 			diameter: 4.0,
 			length: 10.0,
@@ -930,6 +973,7 @@ export function Cornerstone3DViewer({
 		const nextImplants = [...implants, newImplant];
 		setImplants(nextImplants);
 		implantsRef.current = nextImplants;
+		setActiveTool("Implant");
 
 		setAiProtocolLog(implantProtocolLog(newImplant));
 		void saveMarkupNow();
@@ -996,7 +1040,7 @@ export function Cornerstone3DViewer({
 								toothCode: String(lastImplant.fdiCode),
 							}
 						: {}),
-					...(lastImplant?.distanceToNerve !== undefined
+					...(typeof lastImplant?.distanceToNerve === "number"
 						? { nerveDistanceMm: lastImplant.distanceToNerve }
 						: {}),
 					...(lastImplant?.boneDensity
@@ -1016,7 +1060,7 @@ export function Cornerstone3DViewer({
 							}
 						: {}),
 					radiologicalFinding: lastImplant
-						? `3D КЛКТ срез: планирование имплантации в области зуба № ${lastImplant.fdiCode}. Плотность костной ткани: ${lastImplant.boneDensity.classification} (${Math.round(lastImplant.boneDensity.averageHU)} HU). Дистанция до нижнечелюстного канала: ${lastImplant.distanceToNerve.toFixed(1)} мм.`
+						? `3D КЛКТ срез: планирование имплантации в области зуба № ${lastImplant.fdiCode}. Плотность костной ткани: ${lastImplant.boneDensity.classification} (${Math.round(lastImplant.boneDensity.averageHU)} HU). ${lastImplant.distanceToNerve != null ? `Дистанция до нижнечелюстного канала: ${lastImplant.distanceToNerve.toFixed(1)} мм.` : "Нижнечелюстной нерв не размечен. Контроль дистанции безопасности невозможен."}`
 						: "3D КЛКТ MPR аксиальный срез челюстно-лицевой области.",
 					...(aiProtocolLog ? { aiProtocolLog } : {}),
 					clinicalNote: `3D MPR аксиальный срез КЛКТ. Режим HU: ${VISIOGRAPH_WINDOW_PRESETS[activePresetId].label}.`,
@@ -1064,8 +1108,10 @@ export function Cornerstone3DViewer({
 
 	const latestImplant = implants[implants.length - 1];
 	const isNerveCollisionDanger =
-		(latestImplant?.distanceToNerve ?? Infinity) <
-		MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
+		latestImplant?.distanceToNerve != null &&
+		latestImplant.distanceToNerve < MANDIBULAR_NERVE_DANGER_THRESHOLD_MM;
+	const isNerveUnmapped =
+		latestImplant != null && latestImplant.distanceToNerve == null;
 
 	return (
 		<div
@@ -1523,10 +1569,12 @@ export function Cornerstone3DViewer({
 						WebkitBackdropFilter: "blur(12px)",
 						borderRadius: "14px",
 						padding: "10px 14px",
-						border: `1.5px solid ${isNerveCollisionDanger ? "#ef4444" : "#10b981"}`,
+						border: `1.5px solid ${isNerveCollisionDanger ? "#ef4444" : isNerveUnmapped ? "#f59e0b" : "#10b981"}`,
 						boxShadow: isNerveCollisionDanger
 							? "0 0 20px rgba(239,68,68,0.4)"
-							: "0 0 15px rgba(16,185,129,0.2)",
+							: isNerveUnmapped
+								? "0 0 15px rgba(245,158,11,0.25)"
+								: "0 0 15px rgba(16,185,129,0.2)",
 					}}
 				>
 					{/* Nerve Clearance Badge */}
@@ -1535,20 +1583,28 @@ export function Cornerstone3DViewer({
 							display: "flex",
 							alignItems: "center",
 							gap: "8px",
-							color: isNerveCollisionDanger ? "#fca5a5" : "#6ee7b7",
+							color: isNerveCollisionDanger
+								? "#fca5a5"
+								: isNerveUnmapped
+									? "#fcd34d"
+									: "#6ee7b7",
 							fontSize: "12px",
 							fontWeight: "bold",
 						}}
 					>
 						{isNerveCollisionDanger ? (
 							<ShieldAlert className="w-5 h-5 text-red-500 shrink-0 animate-pulse" />
+						) : isNerveUnmapped ? (
+							<ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
 						) : (
 							<ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
 						)}
 						<span>
-							{isNerveCollisionDanger
+							{isNerveCollisionDanger && typeof latestImplant.distanceToNerve === "number"
 								? `⚠️ ОПАСНО: Нижнечелюстной канал ${latestImplant.distanceToNerve.toFixed(1)} мм (< 2.0 мм)!`
-								: `✓ Нижнечелюстной канал: ${latestImplant.distanceToNerve.toFixed(1)} мм (норма)`}
+								: isNerveUnmapped || typeof latestImplant.distanceToNerve !== "number"
+									? "⚠️ Нижнечелюстной нерв не размечен"
+									: `✓ Нижнечелюстной канал: ${latestImplant.distanceToNerve.toFixed(1)} мм (норма)`}
 						</span>
 					</div>
 
