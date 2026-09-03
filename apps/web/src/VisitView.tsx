@@ -2644,7 +2644,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 				<details className="clinical-rules-toggle">
 					<summary>
-						📋 Клинические рекомендации
+						Клинические рекомендации
 						{activeVisitClinicalRuleEvaluations?.length
 							? ` (${activeVisitClinicalRuleEvaluations.length})`
 							: ""}

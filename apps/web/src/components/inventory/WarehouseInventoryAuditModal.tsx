@@ -81,7 +81,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 }) => {
 	// 1. Шапка документа инвентаризации
 	const [docNumber, setDocNumber] = useState<string>(
-		initialDocument?.documentNumber || `ИНВ-2026/08-${Math.floor(100 + Math.random() * 900)}`,
+		() => initialDocument?.documentNumber || `ИНВ-${new Date().toISOString().slice(0, 7).replace("-", "/")}-001`,
 	);
 	const [orderNumber, setOrderNumber] = useState<string>(
 		initialDocument?.orderNumber || "ПР-44/ИНВ",

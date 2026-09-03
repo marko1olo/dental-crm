@@ -47,6 +47,53 @@ export interface VisitSoapTemplatesModalProps {
 
 const COMMON_FDI_TEETH = [16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44, 18, 48];
 
+interface DbOutpatientTemplate {
+	id: number;
+	categoryId: number;
+	categoryName: string;
+	categorySpecialty: string;
+	name: string;
+	contentJson: { text?: string } | null;
+	mkbCode: string | null;
+	order: number;
+}
+
+function mapDbTemplateToPreset(tpl: DbOutpatientTemplate): ClinicalSoapPreset {
+	const rawText = tpl.contentJson?.text || "";
+	let category: ClinicalPresetCategory = "therapy";
+	if (tpl.categorySpecialty === "surgery") category = "surgery";
+	else if (tpl.categorySpecialty === "orthopedics") category = "orthopedics";
+	else if (tpl.categorySpecialty === "periodontics") category = "periodontology";
+	else if (tpl.categorySpecialty === "preventive") category = "hygiene";
+
+	const icd10 = tpl.mkbCode || "K02.1";
+
+	return {
+		id: `db_tpl_${tpl.id}`,
+		title: tpl.name,
+		shortBadge: icd10,
+		category,
+		icd10,
+		icd10Label: `${icd10} ${tpl.name}`,
+		complaint: `Жалобы по клиническому протоколу: ${tpl.name}`,
+		anamnesis: "Заболевание развивалось постепенно. Ранее за стоматологической помощью по данному поводу не обращался.",
+		statusLocalis: rawText || `Локальный стоматологический статус: ${tpl.name}`,
+		treatmentDescription: rawText || `Выполнено лечение в соответствии с клиническим протоколом ${tpl.name}.`,
+		toothState: "Caries",
+		defaultTooth: 16,
+		service804n: {
+			code804n: "A16.07.002.001",
+			title: tpl.name,
+			basePriceRub: 4500,
+			category,
+		},
+		materialsToDeduct: [],
+		recommendations: "Соблюдение гигиены полости рта, щадящий режим на стороне вмешательства 24 часа.",
+		warrantyMonths: 12,
+		serviceLifeMonths: 24,
+	};
+}
+
 export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = ({
 	isOpen,
 	onClose,
@@ -60,6 +107,8 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 	const [selectedPresetId, setSelectedPresetId] = React.useState<string>("caries_medium");
 	const [applyMode, setApplyMode] = React.useState<"clean_replace" | "smart_append">("clean_replace");
 	const [activePreviewTab, setActivePreviewTab] = React.useState<"soap" | "materials" | "receipt">("soap");
+	const [dbTemplates, setDbTemplates] = React.useState<DbOutpatientTemplate[]>([]);
+	const [isLoadingTemplates, setIsLoadingTemplates] = React.useState<boolean>(false);
 
 	React.useEffect(() => {
 		if (activeTooth) {
@@ -67,16 +116,60 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 		}
 	}, [activeTooth]);
 
+	// Загрузка боевой базы 448 протоколов 043/у
+	React.useEffect(() => {
+		if (!isOpen) return;
+		let isCancelled = false;
+		setIsLoadingTemplates(true);
+		fetch("/api/outpatient/templates?limit=500")
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data) => {
+				if (!isCancelled && data?.templates && Array.isArray(data.templates)) {
+					setDbTemplates(data.templates);
+				}
+			})
+			.catch(() => {
+				// При ошибке остаемся на статических пресетах
+			})
+			.finally(() => {
+				if (!isCancelled) setIsLoadingTemplates(false);
+			});
+		return () => {
+			isCancelled = true;
+		};
+	}, [isOpen]);
+
+	// Объединенный каталог протоколов (база данных + быстрые пресеты)
+	const allPresets = React.useMemo(() => {
+		if (dbTemplates.length === 0) return CLINICAL_SOAP_PRESETS;
+		const mapped = dbTemplates.map(mapDbTemplateToPreset);
+		return [...CLINICAL_SOAP_PRESETS, ...mapped];
+	}, [dbTemplates]);
+
 	// Filtered presets list based on search and category
 	const filteredPresets = React.useMemo(() => {
-		return searchPresets(searchQuery, selectedCategory);
-	}, [searchQuery, selectedCategory]);
+		const query = searchQuery.trim().toLowerCase();
+		return allPresets.filter((preset) => {
+			if (selectedCategory !== "all" && preset.category !== selectedCategory) {
+				return false;
+			}
+			if (!query) return true;
+			return (
+				preset.title.toLowerCase().includes(query) ||
+				preset.icd10.toLowerCase().includes(query) ||
+				preset.icd10Label.toLowerCase().includes(query) ||
+				(preset.service804n?.title?.toLowerCase().includes(query) ?? false) ||
+				(preset.service804n?.code804n?.toLowerCase().includes(query) ?? false) ||
+				preset.treatmentDescription.toLowerCase().includes(query)
+			);
+		});
+	}, [allPresets, searchQuery, selectedCategory]);
 
 	// Active selected preset object
 	const activePreset = React.useMemo(() => {
-		const found = CLINICAL_SOAP_PRESETS.find((p) => p.id === selectedPresetId);
-		return found ?? filteredPresets[0] ?? CLINICAL_SOAP_PRESETS[0]!;
-	}, [selectedPresetId, filteredPresets]);
+		const found = allPresets.find((p) => p.id === selectedPresetId);
+		return found ?? filteredPresets[0] ?? allPresets[0]!;
+	}, [selectedPresetId, filteredPresets, allPresets]);
 
 	// Formatted SOAP preview
 	const formattedSoap = React.useMemo(() => {

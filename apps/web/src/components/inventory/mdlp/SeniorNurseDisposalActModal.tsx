@@ -59,7 +59,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 	const now = new Date();
 	const [actNumber, setActNumber] = useState<string>(
 		() =>
-			`СПИС-${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}-${Math.floor(100 + Math.random() * 900)}`,
+			`СПИС-${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}-001`,
 	);
 	const [actDate, setActDate] = useState<string>(
 		() => now.toISOString().slice(0, 10),

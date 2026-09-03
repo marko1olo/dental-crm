@@ -1279,7 +1279,7 @@ export function createSupplierPurchaseOrderFromLines(
 	const totalCost = items.reduce((acc, i) => acc + i.totalCostKopecks, 0);
 	const hasDeficit = items.some((i) => i.shortfall > 0);
 	const dateStr = new Date().toISOString().slice(0, 10);
-	const orderNumber = `ПО-${dateStr.replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+	const orderNumber = `ПО-${dateStr.replace(/-/g, "")}-001`;
 
 	return {
 		id: `po-view-${Date.now()}`,

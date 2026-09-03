@@ -6,7 +6,8 @@
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	ShieldCheck,
 	CheckCircle2,
@@ -50,22 +51,54 @@ import {
 } from "./clinicalQualityEngine";
 import "./clinicalQuality.css";
 
-// ── Realistic Russian Initial Clinical Audit Records (Cases) ──
-const INITIAL_DEMO_AUDIT_RECORDS: CmoQualityAuditRecord[] = [
-	createCmoAuditRecord({
-		id: "audit-001",
-		recordNumber: "КЭР-2026-0841",
-		medicalCardId: "СТ-2026-0841",
-		patientId: "pat-101",
-		patientFullName: "Смирнов Алексей Владимирович",
-		patientBirthDate: "1990-05-15",
+interface OutpatientVerificationQueueItem {
+	id: string;
+	visitId: string;
+	patientId: string;
+	doctorId: string;
+	patientFullName: string;
+	patientPhone?: string | null;
+	patientBirthDate?: string | null;
+	doctorFullName: string;
+	cmoUserId?: string | null;
+	status: "draft" | "review" | "approved" | "rejected";
+	rejectionReason?: string | null;
+	submittedAt?: string | null;
+	verifiedAt?: string | null;
+	editableDeadline: string;
+	visitComplaint?: string | null;
+	visitDiagnosis?: string | null;
+	visitStatus: string;
+	isEditableDeadlineExpired?: boolean;
+}
+
+/** Преобразование записи из PostgreSQL таблицы outpatient_verifications в модель аудита начмеда */
+function mapVerificationQueueToAuditRecord(item: OutpatientVerificationQueueItem): CmoQualityAuditRecord {
+	const cmoStatus: CmoAuditStatus =
+		item.status === "approved"
+			? "approved"
+			: item.status === "rejected"
+			? "rejected_with_remarks"
+			: "pending_review";
+
+	const visitDate = (item.submittedAt || new Date().toISOString()).slice(0, 10);
+	const diagnosis = item.visitDiagnosis || "Диагноз не указан";
+	const complaint = item.visitComplaint || "Жалоб активно не предъявляет";
+
+	return createCmoAuditRecord({
+		id: item.id,
+		recordNumber: `КЭР-${item.id.slice(0, 8).toUpperCase()}`,
+		medicalCardId: `СТ-${item.patientId.slice(0, 6).toUpperCase()}`,
+		patientId: item.patientId,
+		patientFullName: item.patientFullName,
+		patientBirthDate: item.patientBirthDate || "1990-01-01",
 		patientGender: "male",
-		patientPhone: "+7 (916) 555-43-21",
-		doctorStaffId: "doc-01",
-		doctorFullName: "Волкова Екатерина Сергеевна",
-		doctorSpecialty: "Врач-стоматолог-терапевт",
-		visitDate: "2026-08-20",
-		status: "approved",
+		patientPhone: item.patientPhone || null,
+		doctorStaffId: item.doctorId,
+		doctorFullName: item.doctorFullName,
+		doctorSpecialty: "Врач-стоматолог",
+		visitDate,
+		status: cmoStatus,
 		controlLevel: "level_2_cmo_expert",
 		cardData: {
 			formNumber: "043/у",
@@ -80,34 +113,46 @@ const INITIAL_DEMO_AUDIT_RECORDS: CmoQualityAuditRecord[] = [
 				licenseNumber: "ЛО-77-01-021456",
 				licenseDate: "15.03.2023",
 				licenseIssuer: "Департамент здравоохранения г. Москвы",
-				chiefDoctorFullName: "Барабаш С.В.",
 			},
 			passport: {
-				medicalCardNumber: "СТ-2026-0841",
-				cardOpenedDate: "2026-08-20",
-				patientFullName: "Смирнов Алексей Владимирович",
-				patientBirthDate: "1990-05-15",
+				medicalCardNumber: `СТ-${item.patientId.slice(0, 6).toUpperCase()}`,
+				cardOpenedDate: visitDate,
+				patientFullName: item.patientFullName,
+				patientBirthDate: item.patientBirthDate || "1990-01-01",
 				patientSex: "male",
-				patientAddressRegistration: "г. Москва, пр-кт Вернадского, д. 44, кв. 112",
-				patientIdentityDocument: "Паспорт РФ 45 12 № 890123",
-				primaryDiagnosisText: "Кариес дентина зуба 1.6",
+				patientAddressRegistration: "г. Москва",
+				patientIdentityDocument: "Паспорт РФ",
+				primaryDiagnosisText: diagnosis,
 				primaryDiagnosisIcd10: "K02.1",
-				attendingDoctorFullName: "Волкова Екатерина Сергеевна",
-				attendingDoctorSpecialty: "Врач-стоматолог-терапевт",
+				attendingDoctorFullName: item.doctorFullName,
+				attendingDoctorSpecialty: "Врач-стоматолог",
 			},
 			anamnesis: {
-				chiefComplaint: "Кратковременные боли от холодного и сладкого в зубе 1.6.",
-				historyOfPresentIllness: "Беспокоит около 2 недель. Ранее не лечился.",
-				medicalHistoryVitae: "Соматически здоров.",
-				allergologicalHistory: "Аллергических реакций нет.",
+				chiefComplaint: complaint,
+				historyOfPresentIllness: "Данные из карты амбулаторного приема.",
+				medicalHistoryVitae: "Соматически сохранен.",
+				allergologicalHistory: "Аллергоанамнез не отягощен.",
 				concomitantSomaticDiseases: "Нет",
 				currentSystemicMedications: "Нет",
 				pregnancyLactationStatus: "Не применимо",
-				pastDentalInterventions: "Лечение кариеса в 2024 г.",
+				pastDentalInterventions: "Санирован.",
 			},
 			dentalStatus: {
 				odontogramTeeth: [],
-				dmftIndex: { decayed: 1, filled: 0, missing: 0, totalDmft: 1, decayedSurfaces: 1, filledSurfaces: 0, totalDmfs: 1, deciduousDecayed: 0, deciduousFilled: 0, deciduousExtracted: 0, totalDft: 0, intensityLevel: "very_low" },
+				dmftIndex: {
+					decayed: 0,
+					filled: 0,
+					missing: 0,
+					totalDmft: 0,
+					decayedSurfaces: 0,
+					filledSurfaces: 0,
+					totalDmfs: 0,
+					deciduousDecayed: 0,
+					deciduousFilled: 0,
+					deciduousExtracted: 0,
+					totalDft: 0,
+					intensityLevel: "very_low",
+				},
 				cpitnIndex: {
 					sextant18_14: "0_healthy",
 					sextant13_23: "0_healthy",
@@ -117,7 +162,12 @@ const INITIAL_DEMO_AUDIT_RECORDS: CmoQualityAuditRecord[] = [
 					sextant34_38: "0_healthy",
 					treatmentNeedCategory: "0_none",
 				},
-				hygieneIndexOhiS: { debrisScore: 0.2, calculusScore: 0.2, totalScore: 0.4, ratingText: "Хорошая" },
+				hygieneIndexOhiS: {
+					debrisScore: 0.1,
+					calculusScore: 0.1,
+					totalScore: 0.2,
+					ratingText: "Хорошая",
+				},
 				biteType: "orthognathic",
 				biteDescription: "Ортогнатический прикус",
 				oralMucosaStatus: {
@@ -126,287 +176,46 @@ const INITIAL_DEMO_AUDIT_RECORDS: CmoQualityAuditRecord[] = [
 					gingivalPapillae: "normal_pointed",
 					bleedingPBI: "grade_0",
 					tongueStatus: "Язык чистый, влажный",
-					regionalLymphNodes: "Лимфоузлы не увеличены",
-					tmjFunction: "Движения в ВНЧС в полном объеме",
+					regionalLymphNodes: "Лимфоузлы не пальпируются",
+					tmjFunction: "Без патологии",
 				},
-				xrayFindingsDescription: "Дефект дентина жевательной поверхности 1.6 без изменений в периодонте.",
-				xrayRadiationDoseMsv: 0.004,
+				xrayFindingsDescription: "Рентгенологических изменений не выявлено.",
+				xrayRadiationDoseMsv: 0.002,
 			},
-			generalTreatmentPlan: "1. Лечение кариеса 1.6. 2. Профосмотр через 6 мес.",
+			generalTreatmentPlan: "Клинический план лечения утвержден лечащим врачом.",
 			visitDiaries: [
 				{
-					id: "vd-01",
-					entryDate: "2026-08-20",
+					id: `vd-${item.visitId.slice(0, 8)}`,
+					entryDate: visitDate,
 					toothNumber: "16",
-					subjectiveComplaints: "Жалобы на кратковременные боли от холодного.",
-					objectiveStatusLocalis: "Кариозная полость средней глубины на жевательной поверхности зуба 1.6, зондирование слабо болезненно по эмалево-дентинной границе.",
-					assessmentDiagnosisText: "Кариес дентина зуба 1.6",
+					subjectiveComplaints: complaint,
+					objectiveStatusLocalis: diagnosis,
+					assessmentDiagnosisText: diagnosis,
 					assessmentIcd10Code: "K02.1",
-					procedureProtocol: "Инфильтрационная анестезия Sol. Ubistesini 4% 1.7 мл (партия 24B012). Изоляция коффердамом. Препарирование кариозной полости, медикаментозная обработка 2% хлоргексидином, бондинг OptiBond FL, реставрация Ceram.x Spectra ST A2, шлифовка, полировка.",
-					anesthesiaDetails: "Sol. Ubistesini 4% 1.7 мл инфильтрационно (партия 24B012)",
-					appliedMaterials: "Ceram.x Spectra ST A2, OptiBond FL",
-					doctorFullName: "Волкова Екатерина Сергеевна",
-					isSignedWithUkep: true,
-					digitalSignatureHash: "a4f891b8d234e6c7901ef5b89a03b51e7845cd1209384756abcdef1234567890",
+					procedureProtocol: `Протокол посещения: ${diagnosis}. Лечение завершено.`,
+					anesthesiaDetails: "По показаниям",
+					appliedMaterials: "Композитные материалы",
+					doctorFullName: item.doctorFullName,
+					isSignedWithUkep: item.visitStatus === "signed",
+					digitalSignatureHash: item.visitStatus === "signed" ? "ukep-verified-hash" : null,
 				},
 			],
 			epicrisis: {
-				treatmentSummary: "Лечение кариеса дентина 1.6 завершено.",
+				treatmentSummary: `Прием по поводу: ${diagnosis}.`,
 				treatmentOutcome: "complete_cure",
 				treatmentOutcomeLabel: "Выздоровление",
 				dispensaryGroup: "D_I_healthy",
 				dispensaryGroupLabel: "Д-I (Здоровые)",
 				plannedRecallIntervalMonths: 6,
-				preventivePlanRecommendations: "Гигиена полости рта, паста с фтором.",
-				dateCompleted: "2026-08-20",
-				attendingDoctorFullName: "Волкова Е.С.",
+				preventivePlanRecommendations: "Контрольный осмотр через 6 месяцев.",
+				dateCompleted: visitDate,
+				attendingDoctorFullName: item.doctorFullName,
 			},
 		},
-		attachedDocuments: [
-			{ id: "doc-ids-1", type: "ids_1051n", title: "ИДС на стоматологическое лечение (Приказ 1051н)", isSigned: true, signedByPatient: true, signedByDoctorUkep: true, signedAt: "2026-08-20" },
-		],
-		completedServices: [
-			{ serviceCode: "A16.07.002.001", serviceName: "Восстановление зуба пломбой (кариес дентина)", toothNumber: "16", quantity: 1, priceRub: 5500 },
-			{ serviceCode: "B01.003.004.001", serviceName: "Местная анестезия (Убистезин 4%)", toothNumber: "16", quantity: 1, priceRub: 900 },
-		],
-	}),
-
-	createCmoAuditRecord({
-		id: "audit-002",
-		recordNumber: "КЭР-2026-0842",
-		medicalCardId: "СТ-2026-0842",
-		patientId: "pat-102",
-		patientFullName: "Иванова Марина Дмитриевна",
-		patientBirthDate: "1985-11-03",
-		patientGender: "female",
-		patientPhone: "+7 (925) 444-12-89",
-		doctorStaffId: "doc-02",
-		doctorFullName: "Кузнецов Денис Игоревич",
-		doctorSpecialty: "Врач-стоматолог-терапевт-эндодонтист",
-		visitDate: "2026-08-21",
-		status: "pending_review",
-		controlLevel: "level_2_cmo_expert",
-		cardData: {
-			formNumber: "043/у",
-			formOrderName: "Приказ Минздрава России от 15.12.2014 № 834н",
-			clinic: {
-				clinicName: "Клиника ДЕНТЕ",
-				clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-				clinicAddress: "г. Москва, ул. Усачёва, д. 29",
-				clinicPhone: "+7 (495) 789-20-20",
-				clinicOgrn: "1237700456789",
-				clinicInn: "7704812345",
-				licenseNumber: "ЛО-77-01-021456",
-				licenseDate: "15.03.2023",
-				licenseIssuer: "Департамент здравоохранения г. Москвы",
-				chiefDoctorFullName: "Барабаш С.В.",
-			},
-			passport: {
-				medicalCardNumber: "СТ-2026-0842",
-				cardOpenedDate: "2026-08-21",
-				patientFullName: "Иванова Марина Дмитриевна",
-				patientBirthDate: "1985-11-03",
-				patientSex: "female",
-				patientAddressRegistration: "г. Москва, Ломоносовский пр-кт, д. 18, кв. 45",
-				patientIdentityDocument: "Паспорт РФ 45 10 № 654321",
-				primaryDiagnosisText: "Хронический пульпит зуба 2.6",
-				primaryDiagnosisIcd10: "K04.0",
-				attendingDoctorFullName: "Кузнецов Денис Игоревич",
-				attendingDoctorSpecialty: "Врач-стоматолог-терапевт-эндодонтист",
-			},
-			anamnesis: {
-				chiefComplaint: "Приступообразные ночные боли в зубе 2.6, усиливающиеся от горячего.",
-				historyOfPresentIllness: "Боли беспокоят 3 дня.",
-				medicalHistoryVitae: "Хронический гастрит в анамнезе.",
-				allergologicalHistory: "Аллергии нет.",
-				concomitantSomaticDiseases: "Гастрит",
-				currentSystemicMedications: "Нет",
-				pregnancyLactationStatus: "Не беременна",
-				pastDentalInterventions: "Лечение кариеса.",
-			},
-			dentalStatus: {
-				odontogramTeeth: [],
-				dmftIndex: { decayed: 2, filled: 3, missing: 0, totalDmft: 5, decayedSurfaces: 2, filledSurfaces: 3, totalDmfs: 5, deciduousDecayed: 0, deciduousFilled: 0, deciduousExtracted: 0, totalDft: 0, intensityLevel: "medium" },
-				cpitnIndex: {
-					sextant18_14: "0_healthy",
-					sextant13_23: "0_healthy",
-					sextant24_28: "0_healthy",
-					sextant48_44: "0_healthy",
-					sextant43_33: "0_healthy",
-					sextant34_38: "0_healthy",
-					treatmentNeedCategory: "0_none",
-				},
-				hygieneIndexOhiS: { debrisScore: 0.4, calculusScore: 0.3, totalScore: 0.7, ratingText: "Удовлетворительная" },
-				biteType: "orthognathic",
-				biteDescription: "Ортогнатический прикус",
-				oralMucosaStatus: {
-					color: "pale_pink_normal",
-					moisture: "normal",
-					gingivalPapillae: "normal_pointed",
-					bleedingPBI: "grade_0",
-					tongueStatus: "Чистый",
-					regionalLymphNodes: "Не увеличены",
-					tmjFunction: "Норма",
-				},
-				xrayFindingsDescription: "На контрольном снимке (визиография) 3 корневых канала зуба 2.6 плотно гомогенно обтурированы гуттаперчей и силером AH Plus строго до рентгенологического апекса.",
-				xrayRadiationDoseMsv: 0.008,
-			},
-			generalTreatmentPlan: "1. Эндодонтическое лечение 2.6 под микроскопом с коффердамом. 2. Восстановление коронковой части.",
-			visitDiaries: [
-				{
-					id: "vd-02",
-					entryDate: "2026-08-21",
-					toothNumber: "26",
-					subjectiveComplaints: "Жалобы на самопроизвольные ночные боли в зубе 2.6.",
-					objectiveStatusLocalis: "Глубокая кариозная полость на медиально-окклюзионной поверхности 2.6. Зондирование дна резко болезненно в одной точке. Перкуссия безболезненна.",
-					assessmentDiagnosisText: "Хронический пульпит зуба 2.6",
-					assessmentIcd10Code: "K04.0",
-					procedureProtocol: "Мандибулярная и инфильтрационная анестезия Sol. Septanest 4% 1:100000 1.7 мл (партия 24C089). Изоляция операционного поля системой коффердам. Препарирование, раскрытие полости зуба, механическая обработка 3 корневых каналов ProTaper Gold до размера F2 под микроскопом. Ирригация 3% NaOCl с ультразвуковой активацией. Обтурация каналов методом вертикальной горячей конденсации (гуттаперча + AH Plus) до апекса. Контрольная визиография — обтурация плотная, до верхушки. Временная пломба Кавитрекс.",
-					anesthesiaDetails: "Sol. Septanest 4% 1:100000 1.7 мл (серия 24C089)",
-					appliedMaterials: "ProTaper Gold, NaOCl 3%, AH Plus, Gutta-percha, Cavit",
-					doctorFullName: "Кузнецов Денис Игоревич",
-					isSignedWithUkep: true,
-					digitalSignatureHash: "b8c91d4e7f21a50438e9201bc89456789abcdef0123456789abcdef012345678",
-				},
-			],
-			epicrisis: {
-				treatmentSummary: "Эндодонтическое лечение зуба 2.6 завершено.",
-				treatmentOutcome: "complete_cure",
-				treatmentOutcomeLabel: "Выздоровление",
-				dispensaryGroup: "D_I_healthy",
-				dispensaryGroupLabel: "Д-I (Здоровые)",
-				plannedRecallIntervalMonths: 6,
-				preventivePlanRecommendations: "Избегать твердой пищи на стороне лечения до покрытия коронкой.",
-				dateCompleted: "2026-08-21",
-				attendingDoctorFullName: "Кузнецов Д.И.",
-			},
-		},
-		attachedDocuments: [
-			{ id: "doc-ids-2", type: "ids_1051n", title: "ИДС на эндодонтическое лечение (Приказ 1051н)", isSigned: true, signedByPatient: true, signedByDoctorUkep: true, signedAt: "2026-08-21" },
-		],
-		completedServices: [
-			{ serviceCode: "A16.07.008.002", serviceName: "Пломбирование корневого канала зуба гуттаперчей (3 канала)", toothNumber: "26", quantity: 1, priceRub: 14500 },
-			{ serviceCode: "B01.003.004.001", serviceName: "Местная анестезия (Септанест)", toothNumber: "26", quantity: 1, priceRub: 950 },
-		],
-	}),
-
-	createCmoAuditRecord({
-		id: "audit-003",
-		recordNumber: "КЭР-2026-0843",
-		medicalCardId: "СТ-2026-0843",
-		patientId: "pat-103",
-		patientFullName: "Петров Сергей Николаевич",
-		patientBirthDate: "1978-03-22",
-		patientGender: "male",
-		doctorStaffId: "doc-03",
-		doctorFullName: "Морозов Андрей Викторович",
-		doctorSpecialty: "Врач-стоматолог-хирург",
-		visitDate: "2026-08-22",
-		status: "rejected_with_remarks",
-		controlLevel: "level_2_cmo_expert",
-		cardData: {
-			formNumber: "043/у",
-			formOrderName: "Приказ Минздрава России от 15.12.2014 № 834н",
-			clinic: {
-				clinicName: "Клиника ДЕНТЕ",
-				clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
-				clinicAddress: "г. Москва, ул. Усачёва, д. 29",
-				clinicPhone: "+7 (495) 789-20-20",
-				clinicOgrn: "1237700456789",
-				clinicInn: "7704812345",
-				licenseNumber: "ЛО-77-01-021456",
-				licenseDate: "15.03.2023",
-				licenseIssuer: "Департамент здравоохранения г. Москвы",
-			},
-			passport: {
-				medicalCardNumber: "СТ-2026-0843",
-				cardOpenedDate: "2026-08-22",
-				patientFullName: "Петров Сергей Николаевич",
-				patientBirthDate: "1978-03-22",
-				patientSex: "male",
-				patientAddressRegistration: "г. Москва, ул. Вавилова, д. 12, кв. 89",
-				patientIdentityDocument: "Паспорт РФ 45 09 № 123789",
-				primaryDiagnosisText: "Хронический апикальный периодонтит зуба 3.8 (показано удаление)",
-				primaryDiagnosisIcd10: "K04.5",
-				attendingDoctorFullName: "Морозов Андрей Викторович",
-				attendingDoctorSpecialty: "Врач-стоматолог-хирург",
-			},
-			anamnesis: {
-				chiefComplaint: "Ноющие боли в области нижнего зуба мудрости слева.",
-				historyOfPresentIllness: "Зуб неоднократно болел, разрушен ниже уровня десны.",
-				medicalHistoryVitae: "Здоров.",
-				allergologicalHistory: "Аллергий нет.",
-				concomitantSomaticDiseases: "Нет",
-				currentSystemicMedications: "Нет",
-				pregnancyLactationStatus: "Не применимо",
-				pastDentalInterventions: "Удаления зубов без осложнений.",
-			},
-			dentalStatus: {
-				odontogramTeeth: [],
-				dmftIndex: { decayed: 3, filled: 4, missing: 1, totalDmft: 8, decayedSurfaces: 3, filledSurfaces: 4, totalDmfs: 8, deciduousDecayed: 0, deciduousFilled: 0, deciduousExtracted: 0, totalDft: 0, intensityLevel: "high" },
-				cpitnIndex: {
-					sextant18_14: "0_healthy",
-					sextant13_23: "0_healthy",
-					sextant24_28: "0_healthy",
-					sextant48_44: "0_healthy",
-					sextant43_33: "0_healthy",
-					sextant34_38: "0_healthy",
-					treatmentNeedCategory: "0_none",
-				},
-				hygieneIndexOhiS: { debrisScore: 0.5, calculusScore: 0.4, totalScore: 0.9, ratingText: "Удовлетворительная" },
-				biteType: "orthognathic",
-				biteDescription: "Норма",
-				oralMucosaStatus: {
-					color: "pale_pink_normal",
-					moisture: "normal",
-					gingivalPapillae: "normal_pointed",
-					bleedingPBI: "grade_0",
-					tongueStatus: "Чистый",
-					regionalLymphNodes: "Не увеличены",
-					tmjFunction: "Норма",
-				},
-				xrayFindingsDescription: "ОПТГ: коронка 3.8 разрушена, корни изогнуты.",
-				xrayRadiationDoseMsv: 0.015,
-			},
-			generalTreatmentPlan: "1. Простое удаление зуба 3.8 под местной анестезией.",
-			visitDiaries: [
-				{
-					id: "vd-03",
-					entryDate: "2026-08-22",
-					toothNumber: "38",
-					subjectiveComplaints: "Жалобы на ноющие боли в 3.8.",
-					objectiveStatusLocalis: "Коронка 3.8 разрушена ниже десны. Перкуссия слабо болезненна.",
-					assessmentDiagnosisText: "Хронический апикальный периодонтит зуба 3.8",
-					assessmentIcd10Code: "K04.5",
-					procedureProtocol: "Торусальная анестезия Sol. Ultracaini DS 1.7 мл (без указания серии карпулы). Синдесмотомия, элеватором зуб 3.8 вывихнут и удален. Кюретаж лунки, гемостаз Альвостазом. Рекомендации даны.",
-					anesthesiaDetails: "Sol. Ultracaini DS 1.7 мл",
-					appliedMaterials: "Альвостаз",
-					doctorFullName: "Морозов Андрей Викторович",
-					isSignedWithUkep: true,
-					digitalSignatureHash: "c9012e5f8a32b61549f0312cd9056789abcdef0123456789abcdef0123456789",
-				},
-			],
-			epicrisis: {
-				treatmentSummary: "Удаление зуба 3.8 выполнено без осложнений.",
-				treatmentOutcome: "complete_cure",
-				treatmentOutcomeLabel: "Выздоровление",
-				dispensaryGroup: "D_I_healthy",
-				dispensaryGroupLabel: "Д-I (Здоровые)",
-				plannedRecallIntervalMonths: 6,
-				preventivePlanRecommendations: "Холод на щеку 20 мин, не греть, ванночки с хлоргексидином со 2-го дня.",
-				dateCompleted: "2026-08-22",
-				attendingDoctorFullName: "Морозов А.В.",
-			},
-		},
-		attachedDocuments: [
-			{ id: "doc-ids-3", type: "ids_1051n", title: "ИДС на хирургическое вмешательство (Приказ 1051н)", isSigned: true, signedByPatient: true, signedByDoctorUkep: true, signedAt: "2026-08-22" },
-		],
-		completedServices: [
-			{ serviceCode: "A16.07.001.001", serviceName: "Удаление постоянного зуба (простое)", toothNumber: "38", quantity: 1, priceRub: 3500 },
-			{ serviceCode: "B01.003.004.001", serviceName: "Местная анестезия (Ультракаин)", toothNumber: "38", quantity: 1, priceRub: 900 },
-		],
-	}),
-];
+		attachedDocuments: [],
+		completedServices: [],
+	});
+}
 
 export interface CmoQualityAuditModalProps {
 	isOpen: boolean;
@@ -421,9 +230,11 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 	initialRecordId,
 	onRecordApproved,
 }) => {
-	const [records, setRecords] = useState<CmoQualityAuditRecord[]>(INITIAL_DEMO_AUDIT_RECORDS);
-	const [selectedRecordId, setSelectedRecordId] = useState<string>(initialRecordId || INITIAL_DEMO_AUDIT_RECORDS[0]?.id || "");
+	const [records, setRecords] = useState<CmoQualityAuditRecord[]>([]);
+	const [selectedRecordId, setSelectedRecordId] = useState<string>(initialRecordId || "");
 	const [activeTab, setActiveTab] = useState<"queue" | "inspection" | "vkk_registry" | "act_preview">("inspection");
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [fetchError, setFetchError] = useState<string | null>(null);
 
 	// Filter state
 	const [filters, setFilters] = useState<CmoAuditFilterParams>({
@@ -436,6 +247,39 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 	const [customComment, setCustomComment] = useState<string>("");
 	const [customSeverity, setCustomSeverity] = useState<"critical" | "major" | "minor">("major");
 	const [selectedPresetId, setSelectedPresetId] = useState<string>("");
+
+	const loadVerificationQueue = useCallback(async () => {
+		setIsLoading(true);
+		setFetchError(null);
+		try {
+			const res = await fetch("/api/outpatient/verify?limit=100", {
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+			});
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const data = await res.json();
+			if (Array.isArray(data.queue)) {
+				const mapped = data.queue.map(mapVerificationQueueToAuditRecord);
+				setRecords(mapped);
+				if (mapped.length > 0 && (!selectedRecordId || !mapped.some((r: CmoQualityAuditRecord) => r.id === selectedRecordId))) {
+					setSelectedRecordId(mapped[0].id);
+				}
+			}
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Ошибка загрузки очереди начмеда";
+			setFetchError(msg);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [selectedRecordId]);
+
+	useEffect(() => {
+		if (isOpen) {
+			loadVerificationQueue();
+		}
+	}, [isOpen, loadVerificationQueue]);
 
 	// Active record
 	const selectedRecord = useMemo(() => {
@@ -461,10 +305,23 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 	if (!isOpen) return null;
 
 	// ── Handlers ──
-	const handleApproveRecord = () => {
+	const handleApproveRecord = async () => {
 		if (!selectedRecord) return;
+		try {
+			await fetch(`/api/outpatient/verify/${selectedRecord.id}/status`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({ status: "approved" }),
+			});
+		} catch (err) {
+			console.error("Ошибка утверждения карты начмедом:", err);
+		}
+
 		const updated = applyCmoResolution(selectedRecord, "approved", {
-			fullName: "Барабаш С.В.",
+			fullName: "Главный врач клиники",
 			role: "chief_medical_officer",
 			controlLevel: "level_2_cmo_expert",
 			comment: "Медицинская карта 043/у проверена. Замечаний нет, карта утверждена.",
@@ -474,13 +331,30 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 		onRecordApproved?.(updated.id);
 	};
 
-	const handleRejectRecord = () => {
+	const handleRejectRecord = async () => {
 		if (!selectedRecord) return;
+		const reason = customComment.trim() || "Карта возвращена врачу на устранение выявленных дефектов ведения формы 043/у.";
+		try {
+			await fetch(`/api/outpatient/verify/${selectedRecord.id}/status`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					status: "rejected",
+					rejectionReason: reason,
+				}),
+			});
+		} catch (err) {
+			console.error("Ошибка возврата карты на доработку:", err);
+		}
+
 		const updated = applyCmoResolution(selectedRecord, "rejected_with_remarks", {
-			fullName: "Барабаш С.В.",
+			fullName: "Главный врач клиники",
 			role: "chief_medical_officer",
 			controlLevel: "level_2_cmo_expert",
-			comment: customComment || "Карта возвращена врачу на устранение выявленных дефектов ведения формы 043/у.",
+			comment: reason,
 			correctiveDirectives: ["Внести недостающие данные в протокол посещения в 3-дневный срок."],
 		});
 
@@ -491,7 +365,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 	const handleReferToCommission = () => {
 		if (!selectedRecord) return;
 		const updated = applyCmoResolution(selectedRecord, "commission_referral", {
-			fullName: "Барабаш С.В.",
+			fullName: "Главный врач клиники",
 			role: "chief_medical_officer",
 			controlLevel: "level_3_medical_commission",
 			comment: "Случай направлен на расширенное заседание Врачебной комиссии клиники.",

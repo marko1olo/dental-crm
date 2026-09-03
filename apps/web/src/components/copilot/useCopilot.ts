@@ -498,7 +498,7 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 				created_at: new Date().toISOString(),
 				payload: {
 					tooth: activeTooth,
-					title: `🦷 Клинический протокол: Зуб #${activeTooth} (Пульпит K04.0)`,
+					title: `Клинический протокол: Зуб #${activeTooth} (Пульпит K04.0)`,
 					icd10: "K04.0",
 					anesthesia: "Артикаин 1:100 000 (1.7 мл)",
 					description:
@@ -533,7 +533,7 @@ export function useCopilot(options: UseCopilotOptions = {}) {
 				created_at: new Date().toISOString(),
 				payload: {
 					tooth: activeTooth,
-					title: `🦷 Клинический протокол: Зуб #${activeTooth} (Кариес K02.1)`,
+					title: `Клинический протокол: Зуб #${activeTooth} (Кариес K02.1)`,
 					icd10: "K02.1",
 					anesthesia: "Артикаин 1:200 000 (1.7 мл)",
 					description:

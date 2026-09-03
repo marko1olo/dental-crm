@@ -1313,7 +1313,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 						⏱ Черновиков: {patientDraftDocsCount}
 					</span>
 					<span className="document-stat-pill" title="Всего документов">
-						📋 Всего: {typedActiveDocuments?.length ?? 0}
+						Всего: {typedActiveDocuments?.length ?? 0}
 					</span>
 				</div>
 			</div>
