@@ -99,7 +99,7 @@ export function IncomingCallPopupModal({
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
-	const currentView = useAppStore((s) => s.currentView);
+	const crmCurrentView = useAppStore((s) => s.currentView);
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -214,7 +214,7 @@ export function IncomingCallPopupModal({
 	}, [rejectCall, handleClose]);
 
 	const handleOpenPatientCard = useCallback(() => {
-		if (currentView === "visit") {
+		if (crmCurrentView === "visit") {
 			const confirmLeave = window.confirm(
 				"Внимание: Вы находитесь на приёме (визит 043/у). Переход в общий список пациентов сменит текущий экран. Вы уверены, что хотите переключить экран?",
 			);
@@ -234,7 +234,7 @@ export function IncomingCallPopupModal({
 			showToast(`Создание нового пациента для ${effectivePhone}`, "info");
 		}
 	}, [
-		currentView,
+		crmCurrentView,
 		resolvedPatient,
 		effectivePhone,
 		setSelectedPatientId,
@@ -246,7 +246,7 @@ export function IncomingCallPopupModal({
 
 	const handleQuickBooking = useCallback(
 		(type: "urgent" | "consultation" | "tomorrow") => {
-			if (currentView === "visit") {
+			if (crmCurrentView === "visit") {
 				const confirmLeave = window.confirm(
 					"Внимание: Вы находитесь на приёме (визит 043/у). Переход в расписание сменит текущий экран. Вы уверены, что хотите переключить экран?",
 				);
@@ -279,7 +279,7 @@ export function IncomingCallPopupModal({
 			showToast(`Черновик записи на ${targetDate} ${targetTime} создан`, "success");
 		},
 		[
-			currentView,
+			crmCurrentView,
 			resolvedPatient?.id,
 			setNewAppointmentDraft,
 			setCurrentView,
@@ -303,7 +303,10 @@ export function IncomingCallPopupModal({
 					? "Zadarma"
 					: "SIP АТС";
 
-	if (!isOpen) return null;
+	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
+	const isDoctorMode = selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
+
+	if (!isOpen || isDoctorMode) return null;
 
 	return (
 		<div

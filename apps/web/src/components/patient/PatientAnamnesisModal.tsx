@@ -10,6 +10,7 @@ import {
 	Pill,
 	Printer,
 	ShieldAlert,
+	ShieldCheck,
 	Sparkles,
 	Stethoscope,
 	X,
@@ -275,44 +276,50 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("clean")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 hover:bg-emerald-100 cursor-pointer shrink-0 transition-colors"
+							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 hover:bg-emerald-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
-							✅ Здоров
+							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+							<span>Здоров</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => applyPreset("cardio")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors"
+							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
-							⛔ ЭКС + Кардио
+							<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+							<span>ЭКС + Кардио</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => applyPreset("anticoag")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-100 cursor-pointer shrink-0 transition-colors"
+							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
-							⚠️ Антикоагулянты
+							<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+							<span>Антикоагулянты</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => applyPreset("bisphosphonate")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-700/50 hover:bg-purple-100 cursor-pointer shrink-0 transition-colors"
+							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-700/50 hover:bg-purple-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
-							⛔ Бисфосфонаты
+							<AlertOctagon className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+							<span>Бисфосфонаты</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => applyPreset("pregnant_2")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-pink-50 text-pink-800 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-300 dark:border-pink-700/50 hover:bg-pink-100 cursor-pointer shrink-0 transition-colors"
+							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-pink-50 text-pink-800 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-300 dark:border-pink-700/50 hover:bg-pink-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
-							🤰 Беременность 2 трим.
+							<Baby className="w-3.5 h-3.5 text-pink-600 shrink-0" />
+							<span>Беременность 2 трим.</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => applyPreset("allergy_articaine")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors"
+							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
 						>
-							⛔ Аллергия на Артикаин
+							<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+							<span>Аллергия на Артикаин</span>
 						</button>
 					</div>
 

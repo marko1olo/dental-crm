@@ -116,7 +116,7 @@ export function TelephonyFloatingWidget({
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
-	const currentView = useAppStore((s) => s.currentView);
+	const crmCurrentView = useAppStore((s) => s.currentView);
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
 	const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -459,7 +459,7 @@ export function TelephonyFloatingWidget({
 			});
 		}
 
-		if (currentView === "visit") {
+		if (crmCurrentView === "visit") {
 			const confirmLeave = window.confirm(
 				"Внимание: Вы находитесь на приёме (визит 043/у). Переход в расписание сменит текущий экран. Вы уверены, что хотите переключить экран?",
 			);
@@ -474,6 +474,13 @@ export function TelephonyFloatingWidget({
 	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 
 	if (typeof document === "undefined") return null;
+
+	// Doctor sterile zone immunity: on visit view or for doctor role, telephony never invades chairside
+	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
+	const isDoctorChairsideMode = selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
+	if (isDoctorChairsideMode) {
+		return null;
+	}
 
 	// In resting state when there is no active call and widget was not explicitly opened,
 	// we keep it clean (zero floating blobs).
@@ -1264,7 +1271,7 @@ export function TelephonyFloatingWidget({
 											<button
 												type="button"
 												onClick={() => {
-													if (currentView === "visit") {
+													if (crmCurrentView === "visit") {
 														const confirmLeave = window.confirm(
 															"Внимание: Вы находитесь на приёме (визит 043/у). Переход в общий список пациентов сменит текущий экран. Вы уверены, что хотите переключить экран?",
 														);

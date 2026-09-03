@@ -23,6 +23,7 @@ import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { PremiumDocumentPrintSheet } from "../documents/PremiumDocumentPrintSheet";
+import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
@@ -371,10 +372,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				? (printPatient as any).address.trim()
 				: "";
 
-	const printBlockedReason = diaryUnread
-		? "Печать подготавливается..."
-		: undefined;
-	const printBlocked = Boolean(printBlockedReason);
+	// Печать доступна в любой момент: если визит не закрыт — с водяным знаком «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»
+	const printBlockedReason = undefined;
+	const printBlocked = false;
 
 	const clinicName =
 		typeof clinicSettings?.name === "string"
@@ -541,6 +541,25 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		scheduleDebouncedSave();
 	};
 
+	const handleApplyFullPhysiologicalNorm = () => {
+		setDiary((prev) => ({
+			...prev,
+			anamnesis:
+				"Жалоб на момент приёма не предъявляет (профилактический осмотр). Соматически здоров. Хронические заболевания, сердечно-сосудистые патологии и аллергологический статус со слов отрицает. Опыт анестезии положительный, без осложнений.",
+			statusLocalis:
+				"Конфигурация лица не изменена. Регионарные лимфоузлы не увеличены, безболезненны при пальпации. Открывание рта в полном объеме, свободное, без щелчков. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны, прикус физиологический. Пародонт: десна бледно-розовая, плотная, патологических зубодесневых карманов нет.",
+			diagnosisIcd10: "Z01.2",
+			diagnosisTooth: "",
+			treatmentDescription:
+				"Проведён плановый осмотр полости рта и онкоскрининг слизистой оболочки. Проведена контролируемая гигиена полости рта, даны индивидуальные рекомендации. Рекомендован плановый осмотр через 6 месяцев.",
+			complications: "Осложнений нет.",
+			comorbidities: "Соматически здоров, противопоказаний нет.",
+		}));
+		setIcdSearch("Z01.2");
+		scheduleDebouncedSave();
+		showToast("Применена норма: соматически здоров / осмотр в норме", "success", 4000);
+	};
+
 	const icdEntry = (ICD10_DICTIONARY ?? []).find(
 		(i) => i?.code === diary?.diagnosisIcd10,
 	);
@@ -574,8 +593,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						<button
 							type="button"
 							onClick={() => window.print()}
-							disabled={printBlocked}
-							title={printBlockedReason}
 							className="vde-043__btn vde-043__btn--primary text-xs font-bold"
 							data-testid="form-043-print"
 						>
@@ -743,9 +760,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						id="diary-print-btn"
 						data-testid="diary-print-043"
 						onClick={() => setShowPreview(true)}
-						disabled={printBlocked}
 						className="vde-043__btn vde-043__btn--print"
-						title={printBlockedReason}
+						title="Печать формы 043/у (в черновике со штампом ЧЕРНОВИК или в закрытом визите)"
 					>
 						<Printer className="w-4 h-4" /> Печать 043/у
 					</button>
@@ -858,6 +874,18 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							)}
 						</div>
 						<div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-none overscroll-x-contain min-w-0">
+							{/* 1-Click Physiological Norm Button (Zero Bloat, Instant Standard 043/u Fill) */}
+							<button
+								type="button"
+								onClick={handleApplyFullPhysiologicalNorm}
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl bg-[var(--ok-bg)] hover:opacity-90 text-[var(--ok-fg)] font-bold text-xs transition-all touch-manipulation cursor-pointer min-w-0 shrink-0 border border-[var(--ok-border,transparent)]"
+								title="Заполнить дневник физиологической нормой в 1 клик (соматически здоров, патологий не выявлено)"
+								data-testid="diary-norm-043-btn"
+							>
+								<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg)] shrink-0" />
+								<span className="whitespace-nowrap">Норма (1-клик)</span>
+							</button>
+
 							{/* Unified Perio Assessment Pill (Norm + Pathology Dropdown) */}
 							<div className="relative inline-flex items-center rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] shadow-xs shrink-0" ref={perioMenuRef}>
 								<button
@@ -1704,14 +1732,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowPreview(true)}
-						disabled={diaryUnread}
 						className="vde-043__btn vde-043__btn--ghost"
 						data-testid="diary-form-043-open"
-						title={
-							diaryUnread
-								? "Печать недоступна, пока записи приёма не прочитаны"
-								: undefined
-						}
+						title="Печать формы 043/у (в черновике или закрытом визите)"
 					>
 						<Printer className="w-3.5 h-3.5" /> Форма 043/у
 					</button>

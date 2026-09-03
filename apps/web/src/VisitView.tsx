@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ChevronUp, Mic as LucideMic } from "lucide-react";
 import { countLabel } from "./AppHelpers";
@@ -14,7 +14,6 @@ import { VisitMainTabs, type VisitSubViewTab } from "./components/visit/VisitMai
 import { VisitOdontogramTab } from "./components/visit/VisitOdontogramTab";
 import { VisitSpecialtyFocus } from "./components/visit/VisitSpecialtyFocus";
 import { VisitTimer } from "./components/visit/VisitTimer";
-import { PeriodontogramChart } from "./components/perio/PeriodontogramChart";
 import { DictationHints } from "./DictationHints";
 import { AiOrchestrator } from "./lib/aiOrchestrator";
 import { SmartParsePreview } from "./SmartParsePreview";
@@ -253,9 +252,11 @@ import { VisitNoteDraftPanel } from "./VisitNoteDraftPanel";
 import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
+import { PatientAllergySafetyBanner } from "./components/patient/PatientAllergySafetyBanner";
 import {
 	Activity,
 	AlertCircle,
+	AlertOctagon,
 	AlertTriangle,
 	Anchor,
 	Ban,
@@ -795,6 +796,30 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		if (visitSubViewTab === "diagnostics") setDiagnosticsTabWasOpened(true);
 	}, [visitSubViewTab]);
 
+	const activePatientAllergyText = useMemo(() => {
+		if (!activePatient) return "";
+		// biome-ignore lint/suspicious/noExplicitAny: patient allergy types
+		const raw =
+			(activePatient as any).allergies ||
+			(activePatient as any).anamnesis?.allergies ||
+			"";
+		if (raw && typeof raw === "string" && raw.trim()) {
+			return raw.trim();
+		}
+		// biome-ignore lint/suspicious/noExplicitAny: clinical safety profile compatibility
+		const safetyProfile = (activePatient as any).clinicalSafetyProfile;
+		if (safetyProfile) {
+			const flags: string[] = [];
+			if (safetyProfile.hasArticaineAllergy) flags.push("Артикаин");
+			if (safetyProfile.hasLidocaineAllergy) flags.push("Лидокаин");
+			if (safetyProfile.hasMepivacaineAllergy) flags.push("Мепивакаин");
+			if (safetyProfile.hasLatexAllergy) flags.push("Латекс");
+			if (safetyProfile.customAllergyNotes?.trim()) flags.push(safetyProfile.customAllergyNotes.trim());
+			if (flags.length > 0) return flags.join(", ");
+		}
+		return "";
+	}, [activePatient]);
+
 	/*
     ЗАГРУЗКА И «ПАЦИЕНТ НЕ ВЫБРАН» — РАЗНЫЕ СОСТОЯНИЯ.
 
@@ -898,6 +923,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									{activePatient.phone ?? "телефон не указан"}
 								</p>
 								<VisitTimer createdAt={dashboard?.activeVisit?.createdAt} />
+								{activePatientAllergyText && (
+									<span
+										className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-rose-600/15 border-2 border-rose-600 text-rose-950 dark:text-rose-100 font-black text-xs shadow-xs animate-pulse"
+										data-testid="visit-focus-allergy-alert"
+										role="alert"
+										title="Критический стоп-фактор / аллергия пациента!"
+									>
+										<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+										<span>⛔ АЛЛЕРГИЯ: {activePatientAllergyText}</span>
+									</span>
+								)}
 							</div>
 						</div>
 					</div>
@@ -957,6 +993,29 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						</button>
 					</div>
 				</section>
+
+				{/* Prominent Red Emergency Allergy / Clinical Safety Alert Banner (Tier 1, 0-Click) */}
+				{activePatient && (
+					<PatientAllergySafetyBanner
+						patientId={activePatient.id}
+						patientName={activePatient.fullName}
+						profile={
+							// biome-ignore lint/suspicious/noExplicitAny: patient profile compatibility
+							(activePatient as any).clinicalSafetyProfile ||
+							(activePatient as any).allergies ||
+							(activePatient as any).anamnesis?.allergies ||
+							activePatient.notes
+						}
+						notes={activePatient.notes || (activePatient as any).allergies}
+						onSyncToEmkDiary={(text) => {
+							if (updateVisitNoteField) {
+								const curr = visitNoteForm?.anamnesis || "";
+								updateVisitNoteField("anamnesis", curr ? `${curr}\n${text}` : text);
+								showToast("Аллергостатус перенесён в дневник 043/у", "success");
+							}
+						}}
+					/>
+				)}
 
 				{/* Doctor Shift Cockpit Desktop Header: Telemetry, live % piece-rate, SMS PEP 043/u batch signing */}
 				{selectedWorkspaceRole === "doctor" && (
@@ -1050,22 +1109,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 				)}
 
-				{visitSubViewTab === "perio" && activePatient?.id && (
-					<div style={{ margin: "16px 0" }}>
-						<PeriodontogramChart
-							patientId={activePatient.id}
-							patientName={activePatient.name ?? activePatient.fullName}
-							organizationId={activeDoctor?.organizationId ?? undefined}
-							doctorId={activeDoctor?.id}
-							doctorName={activeDoctor?.name}
-							onInsertToProtocol={(protocolText) => {
-								if (typeof appendToTranscript === "function") {
-									appendToTranscript(`\n\n${protocolText}`);
-								}
-							}}
-						/>
-					</div>
-				)}
 
 				{diagnosticsTabWasOpened && (
 					<div
@@ -1129,7 +1172,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									className="primary-button visit-primary-action min-h-[44px] px-3 py-2"
 									type="button"
 									onClick={safeVisitPrimaryAction.onClick}
-									disabled={safeVisitPrimaryAction.disabled}
+									disabled={
+										safeVisitPrimaryAction.kind === "save" ||
+										safeVisitPrimaryAction.kind === "close"
+											? false
+											: safeVisitPrimaryAction.disabled
+									}
 									aria-describedby="visit-primary-action-detail"
 									data-testid="visit-primary-action"
 								>

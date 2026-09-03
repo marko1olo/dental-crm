@@ -1320,22 +1320,24 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 				message: "Тело запроса ревизии дневника должно быть JSON-объектом.",
 			});
 		}
+		const identity = getRequestIdentity(req);
 		const userContext = req.user;
-		const userId: string | null = userContext?.id ?? null;
-		const role: string = userContext?.role ?? "assistant";
+		const userId: string | null = identity.userId ?? userContext?.id ?? null;
+		const role: string = identity.role ?? userContext?.role ?? "doctor";
 
 		const isPrivilegedRole =
 			role === "admin" ||
 			role === "doctor" ||
 			role === "owner" ||
 			role === "head_doctor" ||
-			role === "cmo";
+			role === "cmo" ||
+			role === "chief_doctor";
 
 		if (!isPrivilegedRole) {
 			return reply.code(403).send({
 				error: "OnlyAdminsCanRevise",
 				message:
-					"Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники, и повторный вход этого права не добавит. Позовите лечащего врача или администратора клиники — он внесёт правку так, что прежний текст останется в истории дневника.",
+					"Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники. Внесите правку с пометкой «Исправленному верить» — прежний текст надёжно сохранится в истории версий.",
 			});
 		}
 
@@ -1429,6 +1431,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 				role === "admin" ||
 				role === "owner" ||
 				role === "head_doctor" ||
+				role === "chief_doctor" ||
 				role === "cmo" ||
 				role === "doctor" ||
 				(Boolean(userId) &&

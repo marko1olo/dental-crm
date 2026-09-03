@@ -689,20 +689,21 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	// ── 5-Second Local Draft Protection Autosave Loop (IndexedDB + LocalStorage)
 	useEffect(() => {
-		if (!visitId || isLocked || loadState.phase === "loading") return;
+		if (!visitId || (isLocked && !isRevising) || loadState.phase === "loading") return;
 
 		const flushLocalDraft = () => {
 			const hasContent = Object.values(diary).some(
 				(v) => typeof v === "string" && v.trim().length > 0,
 			);
 			if (hasContent) {
+				const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
 				try {
-					localStorage.setItem(localDiaryStorageKey, JSON.stringify(diary));
+					localStorage.setItem(storageKey, JSON.stringify(diary));
 				} catch {
 					// ignore localStorage quota errors
 				}
 				void saveOfflineDraft(
-					localDiaryStorageKey,
+					storageKey,
 					"DIARY_043_DRAFT",
 					visitId,
 					diary,
@@ -718,11 +719,11 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		const intervalTimer = setInterval(flushLocalDraft, 5000);
 
 		return () => clearInterval(intervalTimer);
-	}, [diary, visitId, isLocked, loadState.phase, localDiaryStorageKey]);
+	}, [diary, visitId, isLocked, isRevising, loadState.phase, localDiaryStorageKey]);
 
 	// ── Window beforeunload Tab Closure Protection
 	useEffect(() => {
-		if (!visitId || isLocked || loadState.phase === "loading") return;
+		if (!visitId || (isLocked && !isRevising) || loadState.phase === "loading") return;
 
 		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 			const hasUnsavedContent = Object.values(diary).some(
@@ -995,12 +996,28 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	// ── Debounced Auto-Save (300ms) on diary modifications
 	const scheduleDebouncedSave = useCallback(() => {
-		if (isLocked || isRevising) return;
+		if (isLocked && !isRevising) return;
 		if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 		debounceTimerRef.current = setTimeout(() => {
-			void doSaveRef.current?.(true);
+			if (!isLocked) {
+				void doSaveRef.current?.(true);
+			} else if (isRevising) {
+				const storageKey = `${localDiaryStorageKey}_revision`;
+				try {
+					localStorage.setItem(storageKey, JSON.stringify(diary));
+				} catch {
+					// ignore
+				}
+				void saveOfflineDraft(
+					storageKey,
+					"DIARY_043_DRAFT",
+					visitId,
+					diary,
+				);
+				setLocalDraftSavedAt(new Date());
+			}
 		}, 300);
-	}, [isLocked, isRevising]);
+	}, [isLocked, isRevising, diary, localDiaryStorageKey, visitId]);
 
 	// ── Populate from Odontogram
 	const populateFromOdontogram = useCallback(
@@ -1370,7 +1387,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			showToast(
 				detail ??
 					(res.status === 403
-						? "Исправить подписанный дневник может только администратор клиники. Позовите администратора."
+						? "Исправить подписанный дневник может лечащий врач или администратор клиники. Набранный текст сохранён в черновике."
 						: `Правка не сохранена: ${requestFailureCause(res.status)}. Набранный текст остался на экране.`),
 				"error",
 				14000,
