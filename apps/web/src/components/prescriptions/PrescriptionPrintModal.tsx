@@ -107,6 +107,18 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		desc: "Стоматологический противовоспалительный гель",
 		drugIds: ["cholisal_gel"],
 	},
+	{
+		id: "periostitis_osteotropic",
+		label: "«Периостит / Остеотропный комплекс»",
+		desc: "Линкомицин 500 мг + Метронидазол 500 мг (Костная инфекция / Флюс)",
+		drugIds: ["lincomycin_500", "metronidazole_500"],
+	},
+	{
+		id: "pediatric_analgesic",
+		label: "«Детский / Стоматит & Боль»",
+		desc: "Ибупрофен 400 мг + Холисал гель стоматологический (Обезболивание слизистой)",
+		drugIds: ["ibuprofen_400", "cholisal_gel"],
+	},
 ];
 
 export interface PrescriptionPrintModalProps {

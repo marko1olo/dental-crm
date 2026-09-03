@@ -50,6 +50,14 @@ test("PrescriptionPrintModal component contract and drug catalog integrity", () 
 	assert.ok(antisepticSet, "Package 'Антисептический / полоскания' must exist");
 	assert.deepEqual(antisepticSet?.drugIds, ["miramistin_001", "stomatophyt_100"]);
 
+	const periostitisSet = DENTAL_FAST_PRESCRIPTION_SETS.find((s) => s.id === "periostitis_osteotropic");
+	assert.ok(periostitisSet, "Package 'Периостит / Остеотропный комплекс' must exist");
+	assert.deepEqual(periostitisSet?.drugIds, ["lincomycin_500", "metronidazole_500"]);
+
+	const pediatricSet = DENTAL_FAST_PRESCRIPTION_SETS.find((s) => s.id === "pediatric_analgesic");
+	assert.ok(pediatricSet, "Package 'Детский / Стоматит & Боль' must exist");
+	assert.deepEqual(pediatricSet?.drugIds, ["ibuprofen_400", "cholisal_gel"]);
+
 	// Payload generator for Form 107-1/u preserves drug order and sets withStampAndSignature
 	const payload = generatePrescriptionPayloadFromSoap({
 		clinic: { fullName: 'ООО "Денте Клиник"', address: "г. Москва, ул. Арбат, 10" },
