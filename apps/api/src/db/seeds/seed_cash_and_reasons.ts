@@ -20,6 +20,9 @@ import {
 	cashBoxes,
 	cashExpenseReasons,
 } from "../schema/finance_v2.js";
+import type { TenantDb } from "../rls.js";
+
+export type DbExecutor = TenantDb | Parameters<Parameters<TenantDb["transaction"]>[0]>[0];
 
 loadAdditionalServerEnv();
 
@@ -99,8 +102,7 @@ export const CANONICAL_CASH_BOXES = [
  * Обеспечивает наличие 6 счетов кассы для организации.
  */
 export async function ensureOrganizationCashBoxes(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
-	client: any,
+	client: DbExecutor,
 	organizationId: string,
 ) {
 	const existingBoxes = await client
@@ -109,7 +111,7 @@ export async function ensureOrganizationCashBoxes(
 		.where(eq(cashBoxes.organizationId, organizationId));
 
 	const existingTypes = new Set(existingBoxes.map((b: { type: string }) => b.type));
-	const created: any[] = [];
+	const created: (typeof cashBoxes.$inferSelect)[] = [];
 
 	for (const boxDef of CANONICAL_CASH_BOXES) {
 		if (!existingTypes.has(boxDef.type)) {
@@ -127,7 +129,7 @@ export async function ensureOrganizationCashBoxes(
 					displayOrder: boxDef.displayOrder,
 				})
 				.returning();
-			created.push(newBox);
+			if (newBox) created.push(newBox);
 		}
 	}
 
@@ -142,8 +144,7 @@ export async function ensureOrganizationCashBoxes(
  * Обеспечивает наличие 12 регламентированных статей расхода для организации.
  */
 export async function ensureOrganizationExpenseReasons(
-	// biome-ignore lint/suspicious/noExplicitAny: Drizzle transaction or db instance
-	client: any,
+	client: DbExecutor,
 	organizationId: string,
 ) {
 	const existingReasons = await client
@@ -152,7 +153,7 @@ export async function ensureOrganizationExpenseReasons(
 		.where(eq(cashExpenseReasons.organizationId, organizationId));
 
 	const existingCodes = new Set(existingReasons.map((r: { code: number }) => r.code));
-	const created: any[] = [];
+	const created: (typeof cashExpenseReasons.$inferSelect)[] = [];
 
 	for (const r of CANONICAL_EXPENSE_REASONS) {
 		if (!existingCodes.has(r.code)) {
@@ -166,7 +167,7 @@ export async function ensureOrganizationExpenseReasons(
 					type: r.type,
 				})
 				.returning();
-			created.push(newReason);
+			if (newReason) created.push(newReason);
 		}
 	}
 

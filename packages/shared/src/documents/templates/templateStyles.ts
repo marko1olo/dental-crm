@@ -9,13 +9,15 @@ export const SHARED_DOCUMENT_CSS = `
     margin: 15mm 12mm 15mm 12mm;
   }
   body {
-    font-family: 'Times New Roman', Times, serif;
+    font-family: "PT Astra Serif", "Liberation Serif", "Times New Roman", Times, serif;
     font-size: 11pt;
     line-height: 1.35;
     color: #111;
     margin: 0;
     padding: 0;
     background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .doc-wrapper {
     max-width: 100%;
@@ -30,6 +32,8 @@ export const SHARED_DOCUMENT_CSS = `
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .doc-header-clinic {
     font-size: 10pt;
@@ -52,6 +56,8 @@ export const SHARED_DOCUMENT_CSS = `
     text-transform: uppercase;
     margin: 14px 0 10px 0;
     letter-spacing: 0.5px;
+    page-break-after: avoid;
+    break-after: avoid;
   }
   .doc-subtitle {
     text-align: center;
@@ -59,6 +65,8 @@ export const SHARED_DOCUMENT_CSS = `
     font-style: italic;
     color: #444;
     margin-bottom: 14px;
+    page-break-after: avoid;
+    break-after: avoid;
   }
   .doc-section-title {
     font-size: 11pt;
@@ -67,6 +75,12 @@ export const SHARED_DOCUMENT_CSS = `
     margin-bottom: 6px;
     border-bottom: 1px solid #ddd;
     padding-bottom: 3px;
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  h1, h2, h3 {
+    page-break-after: avoid;
+    break-after: avoid;
   }
   .doc-paragraph {
     margin: 6px 0;
@@ -85,6 +99,12 @@ export const SHARED_DOCUMENT_CSS = `
     border-collapse: collapse;
     margin: 10px 0;
     font-size: 10pt;
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+  .doc-table tr {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .doc-table th, .doc-table td {
     border: 1px solid #444;
@@ -95,17 +115,22 @@ export const SHARED_DOCUMENT_CSS = `
   .doc-table th {
     background-color: #f2f2f2;
     font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .doc-signatures {
     margin-top: 24px;
     display: flex;
     justify-content: space-between;
     page-break-inside: avoid;
+    break-inside: avoid;
   }
   .doc-sig-block {
     width: 46%;
     font-size: 10pt;
     line-height: 1.3;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .doc-sig-line {
     border-bottom: 1px solid #111;
@@ -123,10 +148,24 @@ export const SHARED_DOCUMENT_CSS = `
     padding: 6px 10px;
     margin: 8px 0;
     font-size: 10pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   @media print {
     body {
       font-size: 10.5pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .doc-signatures, .doc-sig-block, .doc-table tr, .doc-warning {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+    .doc-title, .doc-section-title, h1, h2, h3 {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
     .no-print {
       display: none !important;

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
 	ALL_DOCUMENT_TEMPLATE_VARIABLES,
 	buildTemplateVariablesMap,
+	formatInitials,
 	getDefaultTemplateContentHtml,
 	renderDocumentTemplate,
 	type TemplateExecutionContext,
@@ -213,4 +214,15 @@ test("getDefaultTemplateContentHtml provides publication-grade templates for all
 			`Template ${id} must not leak [object Object]`,
 		);
 	}
+});
+
+test("formatInitials correctly handles single name, two parts (no patronymic), and extra spaces with zero undefined leaks", () => {
+	assert.equal(formatInitials(""), "");
+	assert.equal(formatInitials(null), "");
+	assert.equal(formatInitials(undefined), "");
+	assert.equal(formatInitials("Иванов"), "Иванов");
+	assert.equal(formatInitials("Иванов   Иван"), "Иванов И.");
+	assert.equal(formatInitials("Иванов Иван Иванович"), "Иванов И. И.");
+	assert.equal(formatInitials("  Смирнов   Петр   "), "Смирнов П.");
+	assert.ok(!formatInitials("Иванов Иван").includes("undefined"));
 });

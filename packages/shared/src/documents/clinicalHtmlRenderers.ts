@@ -1986,7 +1986,7 @@ function renderUkepDigitalSignatureBlock(ukep: any): string {
       <div style="flex:1;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #bae6fd; padding-bottom:3px; margin-bottom:3px;">
           <span style="font-weight:bold; color:#0369a1; text-transform:uppercase; font-size:7.5pt;">
-            ✔ ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (УКЭП)
+            ДОКУМЕНТ ПОДПИСАН УСИЛЕННОЙ КВАЛИФИЦИРОВАННОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (УКЭП)
           </span>
           <span style="color:#0369a1; font-weight:bold;">РЭМД ЕГИСЗ / МДЛП</span>
         </div>
@@ -2129,7 +2129,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
 
     ${payload.isChronicSpecialCare ? `
       <div style="border:1px solid #cbd5e1; background:#f8fafc; padding:3px 5px; margin-bottom:4px; font-size:7pt;">
-        ✔ <strong>По специальному назначению</strong> (периодичность отпуска: ${escapeHtml(payload.chronicPeriodicity || "ежемесячно")})
+        [X] <strong>По специальному назначению</strong> (периодичность отпуска: ${escapeHtml(payload.chronicPeriodicity || "ежемесячно")})
       </div>
     ` : ""}
 
@@ -2428,7 +2428,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
         <span style="${validity === "30" ? "text-decoration:underline; font-weight:bold; color:#047857;" : "font-weight:bold;"}">30 дней</span> /
         <span style="${validity === "365" ? "text-decoration:underline; font-weight:bold;" : ""}">1 год</span>
       </div>
-      <div>${payload.isChronicSpecialCare ? `✔ По спец. назначению (${escapeHtml(payload.chronicPeriodicity || "ежемесячно")})` : ""}</div>
+      <div>${payload.isChronicSpecialCare ? `[X] По спец. назначению (${escapeHtml(payload.chronicPeriodicity || "ежемесячно")})` : ""}</div>
     </div>
 
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:6px;">
@@ -2554,10 +2554,10 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       1. Требуемый вид исследования:
     </div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:8pt;">
-      <div><span style="font-weight:bold; color:${studyType.startsWith("cbct") ? "#0284c7" : "#64748b"};">[${studyType.startsWith("cbct") ? "✔" : " "}]</span> <strong>Компьютерная томография (КЛКТ 3D)</strong></div>
-      <div><span style="font-weight:bold; color:${studyType === "optg_digital_panoramic" ? "#0284c7" : "#64748b"};">[${studyType === "optg_digital_panoramic" ? "✔" : " "}]</span> <strong>Ортопантомограмма (ОПТГ цифровая)</strong></div>
-      <div><span style="font-weight:bold; color:${studyType.startsWith("trg") ? "#0284c7" : "#64748b"};">[${studyType.startsWith("trg") ? "✔" : " "}]</span> <strong>Телерентгенограмма (ТРГ боковая/прямая)</strong></div>
-      <div><span style="font-weight:bold; color:${studyType === "intraoral_radiovisiography" ? "#0284c7" : "#64748b"};">[${studyType === "intraoral_radiovisiography" ? "✔" : " "}]</span> <strong>Прицельная радиовизиография</strong></div>
+      <div><span style="font-weight:bold; color:${studyType.startsWith("cbct") ? "#0284c7" : "#64748b"};">[${studyType.startsWith("cbct") ? "X" : " "}]</span> <strong>Компьютерная томография (КЛКТ 3D)</strong></div>
+      <div><span style="font-weight:bold; color:${studyType === "optg_digital_panoramic" ? "#0284c7" : "#64748b"};">[${studyType === "optg_digital_panoramic" ? "X" : " "}]</span> <strong>Ортопантомограмма (ОПТГ цифровая)</strong></div>
+      <div><span style="font-weight:bold; color:${studyType.startsWith("trg") ? "#0284c7" : "#64748b"};">[${studyType.startsWith("trg") ? "X" : " "}]</span> <strong>Телерентгенограмма (ТРГ боковая/прямая)</strong></div>
+      <div><span style="font-weight:bold; color:${studyType === "intraoral_radiovisiography" ? "#0284c7" : "#64748b"};">[${studyType === "intraoral_radiovisiography" ? "X" : " "}]</span> <strong>Прицельная радиовизиография</strong></div>
     </div>
     <div style="margin-top:4px; font-size:8pt; border-top:1px dashed #bae6fd; padding-top:3px;">
       Параметры области: <strong>${escapeHtml(area)}</strong>
@@ -2589,8 +2589,8 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
   </div>
 
   <div style="border:1px solid #cbd5e1; border-radius:4px; padding:4px 6px; margin:6px 0; font-size:7.5pt; color:#475569; display:flex; justify-content:space-between;">
-    <span>[${payload.isPregnancyExcluded ? "✔" : " "}] Беременность исключена</span>
-    <span>[${payload.hasMetallicArtifacts ? "✔" : " "}] Металлоконструкции / коронки</span>
+    <span>[${payload.isPregnancyExcluded ? "X" : " "}] Беременность исключена</span>
+    <span>[${payload.hasMetallicArtifacts ? "X" : " "}] Металлоконструкции / коронки</span>
     <span>Принцип ALARA / СанПиН 2.6.1.1192-03 соблюдён</span>
   </div>
 

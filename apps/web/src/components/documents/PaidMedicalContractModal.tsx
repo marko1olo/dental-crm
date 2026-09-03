@@ -1327,7 +1327,7 @@ export function PaidMedicalContractModal({
 										{contractData.patient.fullName}<br />
 										{contractData.signMethod === "sms_otp" && contractData.smsSignDetails?.isVerified ? (
 											<div style={{ border: "1pt solid #0f766e", background: "#f0fdfa", color: "#0f766e", padding: "3px 5px", borderRadius: "3px", fontSize: "7px", marginTop: "2px", lineHeight: 1.25 }}>
-												<div><strong>✓ ПОДПИСАНО ПЭП (63-ФЗ)</strong></div>
+												<div><strong>ПОДПИСАНО ПЭП (63-ФЗ)</strong></div>
 												<div>СМС: <strong>{contractData.smsSignDetails.phone}</strong></div>
 												<div style={{ wordBreak: "break-all", fontFamily: "monospace", fontSize: "6.5px" }}>
 													SHA-256: {contractData.smsSignDetails.smsSignHash}

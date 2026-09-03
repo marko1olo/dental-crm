@@ -4223,59 +4223,59 @@ function postVisitRecommendations(document: GeneratedDocument) {
 
     <div class="recs-info-grid">
       <div class="recs-info-card">
-        <div class="recs-info-label">👤 Пациент</div>
+        <div class="recs-info-label">Пациент</div>
         <strong>Пациент (по карте)</strong>
       </div>
       <div class="recs-info-card">
-        <div class="recs-info-label">🩺 Врач</div>
+        <div class="recs-info-label">Врач</div>
         <strong>${escapeHtml(payload.doctorFullName)}</strong>
       </div>
       <div class="recs-info-card">
-        <div class="recs-info-label">📅 Дата приема</div>
+        <div class="recs-info-label">Дата приема</div>
         <strong>${escapeHtml(payload.performedAt)}</strong>
       </div>
       <div class="recs-info-card">
-        <div class="recs-info-label">📋 Блок рекомендаций</div>
+        <div class="recs-info-label">Блок рекомендаций</div>
         <strong>${escapeHtml(postVisitCareTopicLabel(payload.careTopic))}</strong>
       </div>
       <div class="recs-info-card">
-        <div class="recs-info-label">🛠 Процедура</div>
+        <div class="recs-info-label">Процедура</div>
         <strong>${escapeHtml(payload.procedureName)}</strong>
       </div>
       <div class="recs-info-card">
-        <div class="recs-info-label">🦷 Зубы / область</div>
+        <div class="recs-info-label">Зубы / область</div>
         <strong>${escapeHtml(payload.toothOrArea)}</strong>
       </div>
       
       <div class="recs-info-card" style="grid-column: span 3;">
-        📞 <strong>Связь с клиникой:</strong> ${escapeHtml(payload.clinicContactInstruction)}
-        ${payload.plannedFollowUpAt ? `<br>🗓 <strong>Контрольный прием:</strong> ${escapeHtml(payload.plannedFollowUpAt)}` : ""}
+        <strong>Связь с клиникой:</strong> ${escapeHtml(payload.clinicContactInstruction)}
+        ${payload.plannedFollowUpAt ? `<br><strong>Контрольный прием:</strong> ${escapeHtml(payload.plannedFollowUpAt)}` : ""}
       </div>
     </div>
 
     <div class="recs-cards-grid">
       <div class="doc-section-card doc-alert-success">
-        <h3>🟢 Когда можно (разрешено)</h3>
+        <h3>Разрешенные действия</h3>
         ${bulletList(payload.allowedAfter)}
       </div>
       
       <div class="doc-section-card doc-alert-warning">
-        <h3>🟡 Временные ограничения</h3>
+        <h3>Временные ограничения</h3>
         ${bulletList(payload.temporaryRestrictions)}
       </div>
       
       <div class="doc-section-card">
-        <h3>💊 Назначения и препараты</h3>
+        <h3>Назначения и медикаменты</h3>
         ${bulletList(payload.medicationAndRinsePlan)}
       </div>
       
       <div class="doc-section-card">
-        <h3>🪥 Рекомендации по гигиене</h3>
+        <h3>Рекомендации по гигиене</h3>
         ${bulletList(payload.hygieneInstructions)}
       </div>
       
       <div class="doc-section-card">
-        <h3>🍎 Питание</h3>
+        <h3>Режим питания</h3>
         ${bulletList(payload.nutritionInstructions)}
       </div>
       
@@ -4283,25 +4283,25 @@ function postVisitRecommendations(document: GeneratedDocument) {
 				payload.plannedFollowUpAt
 					? `
       <div class="doc-section-card doc-alert-info">
-        <h3>📅 Контрольный прием</h3>
+        <h3>Контрольный осмотр</h3>
         <p style="margin: 4px 0; font-size: 12px; font-weight: 600; color: #0369a1;">${escapeHtml(payload.plannedFollowUpAt)}</p>
       </div>`
 					: `
       <div class="doc-section-card doc-alert-info">
-        <h3>📅 Контрольный прием</h3>
+        <h3>Контрольный осмотр</h3>
         <p style="margin: 4px 0; font-size: 12px; color: #475569;">Прием по плану врача или при дискомфорте</p>
       </div>`
 			}
       
       <div class="doc-section-card doc-alert-danger recs-full-width-card">
-        <h3>🔴 Срочно связаться с клиникой при признаках</h3>
+        <h3>Срочно связаться с клиникой при признаках</h3>
         <div class="premium-bullet-list risks-list">
           ${bulletList(payload.urgentWarningSigns)}
         </div>
       </div>
 
       <div class="doc-section-card recs-full-width-card">
-        <h3>📱 Краткий текст для Telegram</h3>
+        <h3>Краткая памятка для пациента</h3>
         <p style="margin: 4px 0; font-size: 11.5px; color: #334155;">${escapeHtml(payload.telegramSummary)}</p>
       </div>
     </div>
@@ -4315,14 +4315,14 @@ function postVisitRecommendations(document: GeneratedDocument) {
 
     <!-- ВТОРАЯ СТРАНИЦА: Инфографика гигиены зубов -->
     <div class="full-hygiene-guide">
-      <h2>✨ Ежедневный ритуал гигиены зубов</h2>
+      <h2>Индивидуальный протокол гигиены полости рта</h2>
       <p style="font-size: 11px; color: #64748b; margin: -2px 0 6px 0; font-style: italic;">
         Здоровые зубы — это 90% вашей работы дома и 10% работы врача. Следуйте этому алгоритму, чтобы не переплачивать за лечение.
       </p>
       
       <div class="hygiene-grid">
         <div class="hygiene-card morning">
-          <span class="hygiene-badge-green">☀️ УТРО (Гигиена + Защита)</span>
+          <span class="hygiene-badge-green">УТРЕННИЙ ПРОТОКОЛ (Очищение и защита)</span>
           <ol>
             <li><strong>Сначала ЗАВТРАК:</strong> Никогда не чистите зубы до еды, если планируете пить кофе или сок. После чистки эмаль уязвима к пигментам. Сначала едим — потом чистим. До еды можно прополоскать рот водой.</li>
             <li><strong>Чистка щеткой (3-4 минуты):</strong> Используйте выметающие движения «от красного к белому» (от десны к краю зуба). Не давите сильно! Количество пасты — строго с горошину, чтобы не снижать механическую чистку пеной.</li>
@@ -4333,7 +4333,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
         </div>
         
         <div class="hygiene-card evening">
-          <span class="hygiene-badge-blue">🌙 ВЕЧЕР (после еды, перед сном, очень важно!)</span>
+          <span class="hygiene-badge-blue">ВЕЧЕРНИЙ ПРОТОКОЛ (Глубокое межзубное очищение)</span>
           <ol>
             <li><strong>Межзубная гигиена (САМОЕ ВАЖНОЕ!):</strong> Сначала нить (флосс) и ершики. Контактные пункты щетка не чистит, а кариес начинается там незаметно в 90% случаев. Кровь в первые 3-5 дней — норма, это выходит застойное воспаление, чистку не бросать!</li>
             <li><strong>Ирригатор:</strong> Вымываем остатки пищи мощной струей воды. Обязателен при коронках и имплантах — стык коронки и десны быстро собирает налет, вызывая воспаление. Использовать ПОСЛЕ нити.</li>
@@ -4345,7 +4345,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
       
       <div class="hygiene-columns-grid" style="grid-template-columns: repeat(3, 1fr); gap: 8px;">
         <div class="hygiene-column-box">
-          <h3>🛠️ Выбор и гигиена средств</h3>
+          <h3>Рекомендованные средства гигиены</h3>
           <ul>
             <li><strong>Щетка:</strong> Электрическая звуковая (Sonic) или мануальная. Жесткость: СРЕДНЯЯ (Medium) или МЯГКАЯ (Soft). Меняйте каждые 3-4 месяца. Жесткие щетки сотрет эмаль!</li>
             <li><strong>Паста от кариеса:</strong> Базовая со фтором (Fluoride) 1450 ppm (Lacalut, President, Colgate, Splat). При чувствительности — пасты с Кальцием и Гидроксиапатитом. Не берите «отбеливающие» на каждый день.</li>
@@ -4355,7 +4355,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
         </div>
         
         <div class="hygiene-column-box warning-box">
-          <h3>❌ Ошибки и запреты</h3>
+          <h3>Противопоказанные действия</h3>
           <ul>
             <li><strong>Движения «Пила»:</strong> Горизонтальное трение стирает шейки зубов (образуется клиновидный дефект).</li>
             <li><strong>Сильный нажим:</strong> Если щетка лохматится за 2 недели — вы давите слишком сильно. Щетина должна лишь касаться зубов.</li>
@@ -4367,7 +4367,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
         </div>
         
         <div class="hygiene-column-box info-box">
-          <h3>🍎 Питание и лайфхаки</h3>
+          <h3>Диетические рекомендации</h3>
           <ul>
             <li><strong>Стратегия чистки:</strong> Начинайте со сложных зон (внутри нижних резцов, дальние зубы), пока на щетке много свежей пасты и вы сосредоточены. Передние зубы — на десерт.</li>
             <li><strong>Чистые перерывы:</strong> Между приемами пищи должно проходить 3-4 часа для восстановления эмали слюной.</li>
@@ -4380,7 +4380,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
 
       <div class="hygiene-columns-grid" style="grid-template-columns: 1.2fr 1.8fr; gap: 8px; margin-top: 4px;">
         <div class="hygiene-column-box" style="background: #fafaf9; border-color: #e7e5e4;">
-          <h3 style="color: #44403c;">🩺 Связь с телом и бруксизм</h3>
+          <h3 style="color: #44403c;">Соматические факторы и парафункции</h3>
           <p style="font-size: 9px; margin: 0 0 4px 0; color: #44403c; line-height: 1.25;">
             • <strong>Очаг инфекции:</strong> Бактерии из десны попадают в кровоток и могут приводить к рискам заболеваний сердца (эндокардит), осложнениям диабета и проблемам при беременности. Чистый рот — это крепкий общий иммунитет!
           </p>
@@ -4390,7 +4390,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
         </div>
         
         <div class="hygiene-column-box error-box" style="background: #fff5f5; border-color: #fee2e2;">
-          <h3 style="color: #9b2c2c;">🚨 Тревожные сигналы — срочно к врачу!</h3>
+          <h3 style="color: #9b2c2c;">Симптомы, требующие срочного обращения к врачу</h3>
           <ul style="margin: 0; padding-left: 14px; font-size: 9px; color: #742a2a; line-height: 1.25;">
             <li><strong>Застревание еды:</strong> Если еда всегда застревает в одном месте — там скрытый кариес или десневой кармашек.</li>
             <li><strong>Реакция на сладкое/холодное:</strong> Ноющие зубы от сладкого — это почти 100% кариес. Резкая боль от холодного — кариес или клиновидный дефект.</li>
@@ -4401,7 +4401,7 @@ function postVisitRecommendations(document: GeneratedDocument) {
       </div>
 
       <div class="hygiene-math-box" style="margin-top: 4px !important;">
-        <div class="hygiene-math-title">📊 Математика здоровья: чистить зубы в 10–20 раз дешевле, чем лечить!</div>
+        <div class="hygiene-math-title">Экономическая эффективность профилактики: регулярная гигиена предотвращает дорогостоящее протезирование</div>
         <div class="hygiene-math-grid">
           <div class="hygiene-math-col">
             <strong>Гигиена в год (~10 000 руб):</strong><br>

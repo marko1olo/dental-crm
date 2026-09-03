@@ -6,7 +6,7 @@ import {
 	renderDocumentTemplate,
 	type TemplateExecutionContext,
 } from "@dental/shared";
-import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
+import { type SQL, and, asc, eq, ilike, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
@@ -188,15 +188,14 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				.orderBy(asc(documentTemplateCategories.order));
 
 			// Построение условий фильтрации
-			const conditions: any[] = [];
+			const conditions: SQL[] = [];
 			if (organizationId) {
 				// Системные шаблоны (organizationId IS NULL) либо шаблоны данной клиники
-				conditions.push(
-					or(
-						eq(documentTemplates.organizationId, organizationId),
-						sql`${documentTemplates.organizationId} IS NULL`,
-					),
+				const orgCondition = or(
+					eq(documentTemplates.organizationId, organizationId),
+					sql`${documentTemplates.organizationId} IS NULL`,
 				);
+				if (orgCondition) conditions.push(orgCondition);
 			}
 
 			if (query.categoryId) {
@@ -223,12 +222,11 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 
 			if (query.search && query.search.trim()) {
 				const searchTerm = `%${query.search.trim()}%`;
-				conditions.push(
-					or(
-						ilike(documentTemplates.name, searchTerm),
-						ilike(documentTemplates.systemAlias, searchTerm),
-					),
+				const searchCondition = or(
+					ilike(documentTemplates.name, searchTerm),
+					ilike(documentTemplates.systemAlias, searchTerm),
 				);
+				if (searchCondition) conditions.push(searchCondition);
 			}
 
 			const whereClause =
@@ -281,7 +279,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const conditions: any[] = [];
+			const conditions: SQL[] = [];
 			if (UUID_REGEX.test(identifier)) {
 				conditions.push(eq(documentTemplates.id, identifier));
 			} else if (/^\d+$/.test(identifier)) {
@@ -380,7 +378,7 @@ export async function registerDocumentTemplateRoutes(app: FastifyInstance) {
 			const body = parseResult.data;
 
 			// 1. Поиск шаблона
-			const templateConditions: any[] = [];
+			const templateConditions: SQL[] = [];
 			if (UUID_REGEX.test(identifier)) {
 				templateConditions.push(eq(documentTemplates.id, identifier));
 			} else if (/^\d+$/.test(identifier)) {

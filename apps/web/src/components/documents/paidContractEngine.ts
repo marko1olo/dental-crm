@@ -979,7 +979,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
 			? `<div class="pep-stamp">
           <strong>ДОКУМЕНТ ПОДПИСАН ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</strong><br>
           Федеральный закон от 06.04.2011 № 63-ФЗ «Об электронной подписи»<br>
-          Телефон: <strong>${contract.smsSignDetails.phone}</strong> · Код подтверждения: <strong>✓ ВЕРИФИЦИРОВАН</strong><br>
+          Телефон: <strong>${contract.smsSignDetails.phone}</strong> · Код подтверждения: <strong>ВЕРИФИЦИРОВАН</strong><br>
           Дата и время: ${new Date(contract.smsSignDetails.verifiedAt || Date.now()).toLocaleString("ru-RU")}<br>
           Хеш документа (SHA-256): ${contract.smsSignDetails.smsSignHash || "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"}
         </div>`
