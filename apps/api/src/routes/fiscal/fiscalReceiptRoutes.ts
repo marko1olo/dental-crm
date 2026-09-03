@@ -106,10 +106,16 @@ export async function registerFiscalReceiptRoutes(
 				const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);
 				const expectedTotalItemKop = Math.round(expectedUnitPriceKop * item.quantity);
 
-				if (item.priceKopecks !== expectedUnitPriceKop || item.amountKopecks !== expectedTotalItemKop) {
+				if (item.amountKopecks <= (catalogUnitPriceKop * item.quantity)) {
+					// Автономия врача на скидки до 100% (гарантийные переделки, скидки персоналу, округление копеек)
+					const actualDiscountKop = (catalogUnitPriceKop * item.quantity) - item.amountKopecks;
+					if (actualDiscountKop > 0) {
+						(item as any).discountKopecks = actualDiscountKop;
+					}
+				} else {
 					return reply.status(400).send({
 						error: "FiscalPriceSpoofingError",
-						message: `Обнаружена попытка подмены цены услуги «${catalogItem.title}»: в каталоге ${kopecksToRub(catalogUnitPriceKop)} ₽/ед. (к списанию с учетом скидки: ${expectedTotalItemKop} коп.), передано ${item.amountKopecks} коп.`,
+						message: `Обнаружена попытка необоснованного завышения цены услуги «${catalogItem.title}»: в каталоге ${kopecksToRub(catalogUnitPriceKop)} ₽/ед., передано ${item.amountKopecks} коп.`,
 						details: {
 							serviceId: sId,
 							serviceTitle: catalogItem.title,
@@ -264,10 +270,16 @@ export async function registerFiscalReceiptRoutes(
 				const expectedUnitPriceKop = Math.max(0, catalogUnitPriceKop - discountKop);
 				const expectedTotalItemKop = Math.round(expectedUnitPriceKop * item.quantity);
 
-				if (item.priceKopecks !== expectedUnitPriceKop || item.amountKopecks !== expectedTotalItemKop) {
+				if (item.amountKopecks <= (catalogUnitPriceKop * item.quantity)) {
+					// Автономия врача на скидки до 100% (гарантийные переделки, скидки персоналу, округление копеек)
+					const actualDiscountKop = (catalogUnitPriceKop * item.quantity) - item.amountKopecks;
+					if (actualDiscountKop > 0) {
+						(item as any).discountKopecks = actualDiscountKop;
+					}
+				} else {
 					return reply.status(400).send({
 						error: "FiscalPriceSpoofingError",
-						message: `Обнаружена попытка подмены цены услуги «${catalogItem.title}»: в каталоге ${kopecksToRub(catalogUnitPriceKop)} ₽/ед. (к списанию с учетом скидки: ${expectedTotalItemKop} коп.), передано ${item.amountKopecks} коп.`,
+						message: `Обнаружена попытка необоснованного завышения цены услуги «${catalogItem.title}»: в каталоге ${kopecksToRub(catalogUnitPriceKop)} ₽/ед., передано ${item.amountKopecks} коп.`,
 						details: {
 							serviceId: sId,
 							serviceTitle: catalogItem.title,

@@ -301,15 +301,55 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			});
 
 			const totalKopecks = rubToKopecks(totalInvoiceRub);
-			const cashKop = selectedTender === "cash" ? totalKopecks : rubToKopecks(splitCashRub);
-			const cardKop = selectedTender === "card" ? totalKopecks : rubToKopecks(splitCardRub);
-			const sbpKop = selectedTender === "sbp" ? totalKopecks : rubToKopecks(splitSbpRub);
-			const prepaidKop =
-				selectedTender === "deposit" || selectedTender === "family"
-					? totalKopecks
-					: rubToKopecks(splitDepositRub + splitFamilyRub);
+			const isSplit = activeTab === "split" || selectedTender === "split";
+			let cashKop = isSplit
+				? rubToKopecks(splitCashRub)
+				: selectedTender === "cash"
+				? totalKopecks
+				: 0;
+			let cardKop = isSplit
+				? rubToKopecks(splitCardRub)
+				: selectedTender === "card"
+				? totalKopecks
+				: 0;
+			let sbpKop = isSplit
+				? rubToKopecks(splitSbpRub)
+				: selectedTender === "sbp"
+				? totalKopecks
+				: 0;
+			let prepaidKop = isSplit
+				? rubToKopecks(splitDepositRub + splitFamilyRub)
+				: selectedTender === "deposit"
+				? Math.min(totalKopecks, rubToKopecks(patientDepositRub || 0))
+				: selectedTender === "family"
+				? Math.min(totalKopecks, rubToKopecks(patientFamilyBalanceRub || 0))
+				: 0;
+
+			// Если выбран депозит/семейный счет на основном экране, но средств не хватает на 100% чека,
+			// остаток автоматически списывается картой в 1 клик (без блокировки)
+			if (!isSplit && (selectedTender === "deposit" || selectedTender === "family")) {
+				if (prepaidKop < totalKopecks) {
+					cardKop = totalKopecks - prepaidKop;
+				}
+			}
+
+			// Автоматическая балансировка сплит-платежа до копейки без ошибок валидации
+			if (isSplit) {
+				const currentAllocatedKop = cashKop + cardKop + sbpKop + prepaidKop;
+				const deltaKop = totalKopecks - currentAllocatedKop;
+				if (deltaKop !== 0) {
+					if (cardKop > 0 || (cashKop === 0 && sbpKop === 0 && prepaidKop === 0)) {
+						cardKop = Math.max(0, cardKop + deltaKop);
+					} else if (cashKop > 0) {
+						cashKop = Math.max(0, cashKop + deltaKop);
+					} else if (sbpKop > 0) {
+						sbpKop = Math.max(0, sbpKop + deltaKop);
+					}
+				}
+			}
 
 			// Real statutory 54-FZ FFD 1.2 request to backend
+			// Note: Buyer INN is strictly NOT required for physical persons (FFD 1.2 tag 1228 only applies to B2B legal entities).
 			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
 			const effectivePatientId = isUuid ? patientId : "00000000-0000-0000-0000-000000000001";
 
@@ -643,7 +683,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								</div>
 
 								{/* 1-Click Tender Buttons (32-36px height) */}
-								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-2">
+								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5 sm:gap-2">
 									<button
 										type="button"
 										onClick={() => setSelectedTender("card")}
@@ -729,6 +769,26 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									>
 										<Calendar className="w-3.5 h-3.5 shrink-0" />
 										<span>Рассрочка 0%</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => {
+											setSelectedTender("split");
+											setActiveTab("split");
+											if (splitCardRub === 0 && splitCashRub === 0 && splitDepositRub === 0) {
+												setSplitCardRub(totalInvoiceRub);
+											}
+										}}
+										className={`h-9 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
+											selectedTender === "split"
+												? "bg-purple-600 text-white shadow-xs ring-2 ring-purple-400"
+												: "bg-[var(--paper)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] text-[var(--ink)]"
+										}`}
+										data-testid="btn-tender-split"
+									>
+										<Layers className="w-3.5 h-3.5 shrink-0" />
+										<span>Сплит (Комбо)</span>
 									</button>
 								</div>
 
@@ -895,25 +955,20 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											</span>
 										</div>
 
-										<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs max-h-48 overflow-y-auto">
-											{calculatedInstallmentSchedule.downPaymentRub > 0 && (
-												<div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 space-y-0.5">
-													<div className="font-bold text-[var(--ink)]">1-й взнос (Сегодня)</div>
-													<div className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-														{calculatedInstallmentSchedule.downPaymentRub.toLocaleString("ru-RU")} ₽
-													</div>
-												</div>
-											)}
-											{calculatedInstallmentSchedule.schedule.map((item) => (
-												<div key={item.monthIndex} className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-0.5">
-													<div className="font-bold text-[var(--muted)]">
-														{item.monthIndex}-й транш ({new Date(item.paymentDateIso).toLocaleDateString("ru-RU")})
-													</div>
-													<div className="font-mono text-[var(--ink)] font-bold">
-														{(Math.round(item.amountKopecks) / 100).toLocaleString("ru-RU")} ₽
-													</div>
-												</div>
-											))}
+										{/* Clean concise installment summary (anti-bloat) */}
+										<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-xs">
+											<div className="flex items-center gap-2">
+												<span className="font-bold text-[var(--ink)]">Сегодня к оплате в кассу:</span>
+												<strong className="font-mono text-emerald-700 dark:text-emerald-300 font-black text-sm">
+													{calculatedInstallmentSchedule.downPaymentRub.toLocaleString("ru-RU")} ₽
+												</strong>
+											</div>
+											<div className="flex items-center gap-2 text-[var(--muted)]">
+												<span>График:</span>
+												<span className="font-mono font-bold text-[var(--ink)]">
+													{installmentMonths} мес. × {(Math.round(calculatedInstallmentSchedule.schedule[0]?.amountKopecks || 0) / 100).toLocaleString("ru-RU")} ₽/мес.
+												</span>
+											</div>
 										</div>
 									</div>
 								)}
@@ -1076,6 +1131,77 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--border,#cbd5e1)] rounded-xl text-[var(--ink)] outline-none"
 										/>
 									</div>
+								</div>
+
+								{/* 1-Click Combo Distribution Presets */}
+								<div className="flex flex-wrap items-center gap-1.5 pt-1">
+									<span className="text-[11px] font-bold text-[var(--muted)]">1-Клик комбо:</span>
+									{patientDepositRub > 0 && (
+										<button
+											type="button"
+											onClick={() => {
+												const dep = Math.min(totalInvoiceRub, patientDepositRub);
+												setSplitDepositRub(dep);
+												setSplitCardRub(Number((totalInvoiceRub - dep).toFixed(2)));
+												setSplitCashRub(0);
+												setSplitSbpRub(0);
+												setSplitFamilyRub(0);
+											}}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer"
+										>
+											Весь аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + остаток Картой
+										</button>
+									)}
+									{patientDepositRub > 0 && (
+										<button
+											type="button"
+											onClick={() => {
+												const dep = Math.min(totalInvoiceRub, patientDepositRub);
+												setSplitDepositRub(dep);
+												setSplitCashRub(Number((totalInvoiceRub - dep).toFixed(2)));
+												setSplitCardRub(0);
+												setSplitSbpRub(0);
+												setSplitFamilyRub(0);
+											}}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer"
+										>
+											Весь аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + остаток Наличными
+										</button>
+									)}
+									<button
+										type="button"
+										onClick={() => {
+											const half = Number((totalInvoiceRub / 2).toFixed(2));
+											setSplitCardRub(half);
+											setSplitCashRub(Number((totalInvoiceRub - half).toFixed(2)));
+											setSplitDepositRub(0);
+											setSplitSbpRub(0);
+											setSplitFamilyRub(0);
+										}}
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)] cursor-pointer"
+									>
+										50% Карта / 50% Нал
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											const currentOther = splitCashRub + splitSbpRub + splitDepositRub + splitFamilyRub;
+											setSplitCardRub(Math.max(0, Number((totalInvoiceRub - currentOther).toFixed(2))));
+										}}
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 cursor-pointer"
+									>
+										Остаток на Карту
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											const currentOther = splitCardRub + splitSbpRub + splitDepositRub + splitFamilyRub;
+											setSplitCashRub(Math.max(0, Number((totalInvoiceRub - currentOther).toFixed(2))));
+										}}
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer"
+									>
+										Остаток Наличными
+									</button>
 								</div>
 
 								{/* Split summary indicator */}

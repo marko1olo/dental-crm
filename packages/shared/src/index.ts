@@ -7066,9 +7066,11 @@ export const createPaymentSchema = z
 		clientMutationId: z.string().trim().min(1).max(120).nullable().optional(),
 		payerFullName: z.string().trim().max(240).nullable().optional(),
 		payerInn: z
-			.string()
-			.trim()
-			.regex(/^\d{10}$|^\d{12}$/)
+			.union([
+				z.string().trim().regex(/^\d{10}$|^\d{12}$/),
+				z.literal(""),
+			])
+			.transform((val) => (val === "" ? null : val))
 			.nullable()
 			.optional(),
 		payerBirthDate: birthDateInputSchema,

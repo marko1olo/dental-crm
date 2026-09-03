@@ -467,17 +467,13 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 	// Submit and generate invoice
 	const handleCreateInvoice = async () => {
 		if (unapprovedItems.length > 0) {
-			showToast(
-				`Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 ЗоЗПП: в смете есть ${unapprovedItems.length} несогласованных услуг. Оформите Дополнительное соглашение.`,
-				"warning",
-				5000,
-			);
-			return;
+			// Автоматически оформляем Дополнительное соглашение по ПП РФ №659, не блокируя врача
+			await handleCreateAddendum();
 		}
 
 		if (!report.canGenerateInvoice) {
 			showToast(
-				"Формирование заблокировано: устраните архивные или нулевые позиции",
+				"Формирование заблокировано: устраните архивные позиции прейскуранта",
 				"warning",
 				4000,
 			);
@@ -1029,25 +1025,23 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 							disabled={
 								!report.canGenerateInvoice ||
 								isSubmitting ||
-								unapprovedItems.length > 0
+								isCreatingAddendum
 							}
 							title={
 								unapprovedItems.length > 0
-									? "Выписка заблокирована: оформите Дополнительное соглашение (ПП РФ №659)"
+									? "Включает автосогласование дополнительных услуг по ПП РФ №659"
 									: undefined
 							}
 							className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-lg shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all active:scale-95"
 						>
 							<FileText size={16} />
-							{isSubmitting
+							{isSubmitting || isCreatingAddendum
 								? "Формирование..."
-								: unapprovedItems.length > 0
-									? "Заблокировано по ПП РФ №659"
-									: documentType === "work_order"
-										? "Оформить наряд-заказ"
-										: documentType === "completed_act"
-											? "Сформировать акт"
-											: "Выписать счет на оплату"}
+								: documentType === "work_order"
+									? "Оформить наряд-заказ"
+									: documentType === "completed_act"
+										? "Сформировать акт"
+										: "Выписать счет на оплату"}
 						</button>
 					</div>
 				</footer>

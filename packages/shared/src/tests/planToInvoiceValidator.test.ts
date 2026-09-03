@@ -317,6 +317,35 @@ describe("planToInvoiceValidator (Feature #41)", () => {
 		assert.equal(report.items[0]?.patientSurchargeKopecks, 300000); // 2 шт. * 1 500 ₽ = 3 000 ₽ доплата
 		assert.equal(report.supplementaryAgreementNeeded, true, "Требуется Дополнительное соглашение (ст. 709 ГК РФ)");
 	});
+
+	it("should allow work order and invoice generation for expired plans (>30 days) per Mandate 8e / Section VII", () => {
+		const items: PlanItemForValidation[] = [
+			{
+				itemId: "item-expired-regular",
+				toothNumber: 21,
+				code804n: "A16.07.004",
+				nameRu: "Удаление постоянного зуба сложное с разъединением корней",
+				quantity: 1,
+				planUnitPriceKopecks: 450000, // Цена совпадает с каталогом (4 500 ₽)
+			},
+		];
+
+		const payload: PlanToInvoiceValidationPayload = {
+			planId: "PLAN-105-EXPIRED",
+			patientId: "PAT-005",
+			planCreatedAtIso: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 дней назад (>30 дней)
+			isSignedWithPatient: false,
+			items,
+			catalog: mockCatalog,
+		};
+
+		const report = validatePlanToInvoice(payload);
+
+		assert.equal(report.isPlanExpired, true);
+		assert.equal(report.canGenerateWorkOrder, true, "Истечение 30 дней плана НЕ БЛОКИРУЕТ создание нарядов ЗТЛ или оказание услуг (Мандат 8e / Раздел VII)");
+		assert.equal(report.canGenerateInvoice, true, "Истечение 30 дней плана НЕ БЛОКИРУЕТ выписку счетов или оплату (Мандат 8e / Раздел VII)");
+		assert.equal(report.blockingReasons.length, 0);
+	});
 });
 
 describe("priceLockEngine (Feature #41)", () => {

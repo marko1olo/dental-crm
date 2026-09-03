@@ -23,7 +23,7 @@ import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 
-export type PaymentMethodTab = "card_terminal" | "sberpay_qr" | "biometry" | "cash" | "family_deposit";
+export type PaymentMethodTab = "card_terminal" | "sberpay_qr" | "biometry" | "cash" | "family_deposit" | "split";
 
 export interface PaymentModalProps {
 	readonly isOpen: boolean;
@@ -57,6 +57,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 }) => {
 	const [activeMethod, setActiveMethod] = useState<PaymentMethodTab>(defaultMethod);
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
+	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
+
+	// Multi-tender split payment state
+	const totalDueRub = Number((amountKopecks / 100).toFixed(2));
+	const [splitCardRub, setSplitCardRub] = useState<number>(totalDueRub);
+	const [splitCashRub, setSplitCashRub] = useState<number>(0);
+	const [splitDepositRub, setSplitDepositRub] = useState<number>(0);
+	const [splitSbpRub, setSplitSbpRub] = useState<number>(0);
 
 	if (!isOpen) return null;
 
@@ -111,6 +119,81 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			showToast(errorMsg, "error");
 		} finally {
 			setIsSubmittingCash(false);
+		}
+	};
+
+	const totalAllocatedRub = Number((splitCardRub + splitCashRub + splitDepositRub + splitSbpRub).toFixed(2));
+	const isBalanced = Math.abs(totalAllocatedRub - totalDueRub) < 0.009;
+
+	const handleSplitSubmit = async () => {
+		let effectiveCardRub = splitCardRub;
+		let effectiveCashRub = splitCashRub;
+		const effectiveDepositRub = splitDepositRub;
+		const effectiveSbpRub = splitSbpRub;
+
+		// Автоматически распределяем остаток до копейки без ошибок и блокировок кассы
+		if (!isBalanced) {
+			const remainder = Math.max(0, Number((totalDueRub - (effectiveDepositRub + effectiveSbpRub)).toFixed(2)));
+			if (effectiveCashRub > 0 && effectiveCardRub === 0) {
+				effectiveCashRub = remainder;
+			} else {
+				effectiveCardRub = Math.max(0, Number((remainder - effectiveCashRub).toFixed(2)));
+			}
+			setSplitCardRub(effectiveCardRub);
+			setSplitCashRub(effectiveCashRub);
+		}
+
+		setIsSubmittingSplit(true);
+		try {
+			const clientMutationId = `split:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
+
+			const parts: string[] = [];
+			if (effectiveCardRub > 0) parts.push(`карта ${effectiveCardRub} ₽`);
+			if (effectiveCashRub > 0) parts.push(`нал ${effectiveCashRub} ₽`);
+			if (effectiveDepositRub > 0) parts.push(`аванс ${effectiveDepositRub} ₽`);
+			if (effectiveSbpRub > 0) parts.push(`СБП ${effectiveSbpRub} ₽`);
+
+			const primaryMethod = effectiveCashRub > effectiveCardRub ? "cash" : "card";
+			const res = await fetch("/api/billing/payments", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					patientId,
+					amountRub: totalDueRub,
+					method: primaryMethod,
+					visitId: visitId || null,
+					documentId: documentId || (invoiceId ? invoiceId : null),
+					clientMutationId,
+					note: `Комбинированная оплата: ${parts.join(" + ")}`,
+				}),
+			});
+
+			if (!res.ok) {
+				const errorData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+				const errorMsg =
+					(errorData && typeof errorData.message === "string" && errorData.message) ||
+					`Ошибка записи комбинированной оплаты: HTTP ${res.status}`;
+				showToast(errorMsg, "error");
+				return;
+			}
+
+			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+			showToast(`Комбинированная оплата ${totalDueRub} ₽ успешно принята`, "success");
+			onSuccess({
+				method: "split",
+				amountKopecks,
+				...paymentData,
+			});
+			onClose();
+		} catch (err: unknown) {
+			const errorMsg = err instanceof Error ? err.message : "Сбой соединения при приёме комбинированной оплаты";
+			showToast(errorMsg, "error");
+		} finally {
+			setIsSubmittingSplit(false);
 		}
 	};
 
@@ -195,6 +278,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<Banknote size={16} className="text-emerald-600" />
 						<span>Наличные</span>
 					</button>
+
+					<button
+						type="button"
+						onClick={() => setActiveMethod("split")}
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+							activeMethod === "split"
+								? "border-purple-500 bg-purple-500/10 text-purple-700 dark:text-purple-300 ring-2 ring-purple-400"
+								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+						}`}
+					>
+						<Wallet size={16} className="text-purple-600" />
+						<span>Комбинированная (Сплит)</span>
+					</button>
 				</div>
 
 				{/* Modal Body */}
@@ -233,6 +329,153 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							>
 								<CheckCircle size={16} />
 								<span>{isSubmittingCash ? "Фиксация..." : `Подтвердить прием ${amountRub} ₽ в кассу`}</span>
+							</button>
+						</div>
+					) : activeMethod === "split" ? (
+						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-4">
+							<div className="flex items-center justify-between flex-wrap gap-2 border-b border-[var(--line,#e2e8f0)] pb-2">
+								<div className="flex items-center gap-2">
+									<Wallet size={18} className="text-purple-600" />
+									<h3 className="text-sm font-bold m-0">Комбинированная оплата (Сплит)</h3>
+								</div>
+								<span className="text-xs font-mono font-bold text-[var(--muted,#64748b)]">
+									К оплате: <strong className="text-[var(--ink,#0f172a)]">{totalDueRub.toLocaleString("ru-RU")} ₽</strong>
+								</span>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div className="space-y-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+										<CreditCard size={14} className="text-blue-600" />
+										<span>Банковская карта (Терминал), ₽:</span>
+									</label>
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={splitCardRub || ""}
+										onChange={(e) => setSplitCardRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder="0 ₽"
+										className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
+									/>
+								</div>
+
+								<div className="space-y-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+										<Banknote size={14} className="text-emerald-600" />
+										<span>Наличные (Касса), ₽:</span>
+									</label>
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={splitCashRub || ""}
+										onChange={(e) => setSplitCashRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder="0 ₽"
+										className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
+									/>
+								</div>
+
+								<div className="space-y-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+										<QrCode size={14} className="text-teal-600" />
+										<span>SberPay QR / СБП, ₽:</span>
+									</label>
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={splitSbpRub || ""}
+										onChange={(e) => setSplitSbpRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder="0 ₽"
+										className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
+									/>
+								</div>
+
+								<div className="space-y-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+										<Wallet size={14} className="text-purple-600" />
+										<span>Депозит / Аванс, ₽:</span>
+									</label>
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={splitDepositRub || ""}
+										onChange={(e) => setSplitDepositRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder="0 ₽"
+										className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
+									/>
+								</div>
+							</div>
+
+							{/* 1-Click Fast Auto-Balance Chips */}
+							<div className="flex items-center gap-1.5 flex-wrap pt-1">
+								<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">1-клик:</span>
+								<button
+									type="button"
+									onClick={() => {
+										setSplitCardRub(totalDueRub);
+										setSplitCashRub(0);
+										setSplitDepositRub(0);
+										setSplitSbpRub(0);
+									}}
+									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer"
+								>
+									Всё на карту
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setSplitCashRub(totalDueRub);
+										setSplitCardRub(0);
+										setSplitDepositRub(0);
+										setSplitSbpRub(0);
+									}}
+									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer"
+								>
+									Всё наличными
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const remainder = Math.max(0, Number((totalDueRub - (splitCashRub + splitDepositRub + splitSbpRub)).toFixed(2)));
+										setSplitCardRub(remainder);
+									}}
+									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer"
+								>
+									Остаток на карту
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const remainder = Math.max(0, Number((totalDueRub - (splitCardRub + splitDepositRub + splitSbpRub)).toFixed(2)));
+										setSplitCashRub(remainder);
+									}}
+									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer"
+								>
+									Остаток наличными
+								</button>
+							</div>
+
+							{/* Parity indicator */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs font-bold">
+								<span>Всего распределено:</span>
+								<span className={`font-mono text-sm ${isBalanced ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+									{totalAllocatedRub.toLocaleString("ru-RU")} / {totalDueRub.toLocaleString("ru-RU")} ₽
+									{isBalanced ? " ✓ Совпадает" : " ⚠ Не сходится"}
+								</span>
+							</div>
+
+							<button
+								type="button"
+								onClick={handleSplitSubmit}
+								disabled={isSubmittingSplit}
+								title={!isBalanced ? "Автоматически сбалансирует остаток и проведет оплату" : undefined}
+								className="min-h-[44px] w-full rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all bg-purple-600 hover:bg-purple-700 active:scale-98 disabled:opacity-50"
+							>
+								<CheckCircle size={16} />
+								<span>{isSubmittingSplit ? "Фиксация..." : `Подтвердить комбинированную оплату ${totalDueRub} ₽`}</span>
 							</button>
 						</div>
 					) : (

@@ -345,9 +345,11 @@ export function validatePlanToInvoice(
 		const isFoundInCatalog = !!catalogItem;
 		const isArchived = catalogItem ? (!catalogItem.active || !!catalogItem.isArchived) : false;
 		const isExcessiveDiscount = planDiscount > planGross;
+		// Врач имеет право применить скидку (вплоть до 100% на переделки по гарантии и персонал).
+		// Недействительными являются только строго отрицательные цены (< 0) или скидки сверх 100%.
 		const isZeroOrInvalidPrice =
-			planUnitPrice <= 0 ||
-			(catalogItem ? catalogItem.basePriceKopecks <= 0 : false) ||
+			planUnitPrice < 0 ||
+			(catalogItem ? catalogItem.basePriceKopecks < 0 : false) ||
 			isExcessiveDiscount;
 
 		const currentCatalogPrice: Kopecks = catalogItem ? catalogItem.basePriceKopecks : 0;
@@ -394,7 +396,9 @@ export function validatePlanToInvoice(
 			severity = "WARNING";
 			statusDesc = `Срок действия сметы истек (${planAgeDays} дн. > ${validityDays} дн.). Прейскурант вырос на ${deltaPercent}%`;
 			suggestedResolution = "UPDATE_TO_CURRENT_PRICE";
-			requiresAdminOverride = deltaPercent > inflationThreshold;
+			// Мандат 8e / Раздел VII: Истечение 30 дней с момента составления плана лечения
+			// НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату!
+			requiresAdminOverride = false;
 			increasedItemsCount++;
 		} else if (deltaKopecks > 0) {
 			discrepancyType = "PRICE_INCREASED";
@@ -542,27 +546,26 @@ export function validatePlanToInvoice(
 	const hasUnresolvedArchivedOrMissing = validatedItems.some(
 		(i) => (i.isArchived || !i.isFoundInCatalog) && i.selectedResolution !== "REPLACE_WITH_804N_ANALOGUE",
 	);
+	// Разрешены скидки до 100% (0 руб. к списанию) на гарантийные переделки и персонал без блокировок.
 	const hasZeroPrices = validatedItems.some(
-		(i) => i.effectiveUnitPriceKopecks <= 0 && payload.adminOverrideAuthorized !== true,
+		(i) => i.effectiveUnitPriceKopecks < 0,
 	);
 	const hasExcessiveDiscounts = validatedItems.some(
 		(i) => (i.planDiscountKopecks ?? 0) > i.planGrossKopecks,
 	);
 	const hasUnresolvedAdminOverrides =
-		validatedItems.some((i) => i.requiresAdminOverride) && payload.adminOverrideAuthorized !== true;
-	const isExpiredUnapproved =
-		isPlanExpired &&
-		!payload.isSignedWithPatient &&
-		payload.adminOverrideAuthorized !== true &&
-		validatedItems.some((i) => i.selectedResolution === "LOCK_ORIGINAL_PRICE");
+		validatedItems.some((i) => i.requiresAdminOverride && i.discrepancyType !== "PLAN_EXPIRED") &&
+		payload.adminOverrideAuthorized !== true;
+	// Мандат 8e / Раздел VII: Истечение 30 дней с момента составления плана лечения
+	// НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату (только нейтральный бейдж и предупреждение).
+	const isExpiredUnapproved = false;
 
 	const canGenerateWorkOrder =
 		validatedItems.length > 0 &&
 		!hasUnresolvedArchivedOrMissing &&
 		!hasZeroPrices &&
 		!hasExcessiveDiscounts &&
-		!hasUnresolvedAdminOverrides &&
-		!isExpiredUnapproved;
+		!hasUnresolvedAdminOverrides;
 
 	const canGenerateInvoice = canGenerateWorkOrder;
 	const isValid = canGenerateWorkOrder && warnings.length === 0;

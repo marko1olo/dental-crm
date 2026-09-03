@@ -89,7 +89,8 @@ export type OneCExportParams = z.input<typeof oneCExportParamsSchema>;
  */
 export function validateOneCParty(party: OneCPartyInfo): { valid: boolean; errors: string[] } {
 	const errors: string[] = [];
-	if (party.inn) {
+	// Физическим лицам ИНН не требуется (54-ФЗ / 1С БП). Проверяем только если передан непустой ИНН юрлица/ИП.
+	if (party.inn && party.inn.trim() !== "" && party.inn !== "Физическое лицо" && party.isLegalEntity !== false) {
 		const innRes = validateRussianInn(party.inn);
 		if (!innRes.isValid) {
 			errors.push(innRes.errorMessageRu || `Некорректный ИНН: ${party.inn}`);
