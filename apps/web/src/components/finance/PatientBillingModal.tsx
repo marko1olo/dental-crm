@@ -17,6 +17,7 @@ import {
 	Download,
 	Eye,
 	FileCheck,
+	FileSpreadsheet,
 	FileText,
 	Layers,
 	MessageSquare,
@@ -57,6 +58,7 @@ import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine
 import { OneCExportButton } from "./OneCExportButton";
 import { Fiscal54FzReceiptModal } from "./fiscal/Fiscal54FzReceiptModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
+import { TaxDeductionModal } from "../tax/TaxDeductionModal";
 import { useModalA11y } from "../../hooks/useModalA11y";
 
 export interface PatientBillingModalProps {
@@ -141,6 +143,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	const [isQrOpen, setIsQrOpen] = useState(false);
 	const [isFiscalOpen, setIsFiscalOpen] = useState(false);
 	const [isRefundOpen, setIsRefundOpen] = useState(false);
+	const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
 	const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false);
 	const [toastMsg, setToastMsg] = useState<string | null>(null);
 	const [discountPreset, setDiscountPreset] = useState<LoyaltyDiscountPreset>("none");
@@ -415,6 +418,15 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						>
 							<Copy className="w-3 h-3 shrink-0" />
 							<span className="shrink-0 whitespace-nowrap">{copied ? "Скопировано!" : "Копировать"}</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setIsTaxModalOpen(true)}
+							className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-teal-50 dark:bg-teal-950/50 border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/60 flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 whitespace-nowrap shadow-2xs"
+							title="Сформировать справку для налогового вычета 13% НДФЛ (КНД 1151156) в 1 клик"
+						>
+							<FileSpreadsheet className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span className="shrink-0 whitespace-nowrap">Справка 13% НДФЛ</span>
 						</button>
 					</div>
 				</div>
@@ -1289,6 +1301,17 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										type="button"
 										onClick={() => {
 											setIsMobileActionsOpen(false);
+											setIsTaxModalOpen(true);
+										}}
+										className="w-full py-2.5 px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-teal-700 dark:text-teal-400"
+									>
+										<FileSpreadsheet className="w-4 h-4 text-teal-600" />
+										<span>Справка 13% НДФЛ (КНД 1151156)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setIsMobileActionsOpen(false);
 											setIsRefundOpen(true);
 										}}
 										className="w-full py-2.5 px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] flex items-center gap-2 text-left text-amber-700 dark:text-amber-400"
@@ -1456,6 +1479,30 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						onRefundSuccess={(res) => {
 							setToastMsg(`Чек возврата ${res.refundOperationNumber} на сумму ${res.totalRefundRub} ₽ сформирован.`);
 						}}
+					/>
+				)}
+
+				{/* 13% Personal Income Tax Deduction Modal (Form КНД 1151156) */}
+				{isTaxModalOpen && (
+					<TaxDeductionModal
+						isOpen={isTaxModalOpen}
+						onClose={() => setIsTaxModalOpen(false)}
+						patientName={patient?.fullName || "Пациент"}
+						patientBirthDate={patient?.birthDate || undefined}
+						patientInn=""
+						clinicName={clinicLegalName}
+						clinicLicenseNumber={clinicLicenseNumber}
+						payments={services.map((s, idx) => ({
+							id: s.id || `srv-${idx + 1}`,
+							dateIso: new Date().toISOString(),
+							receiptNumber: String(idx + 1),
+							fiscalDocumentNumber: String(idx + 101),
+							fiscalSign: "987654321",
+							serviceName: s.name,
+							code804n: s.code804n || "A16.07.002",
+							amountRub: (s.priceRub || 0) * (s.quantity || 1) - (s.discountRub || 0),
+							taxCode: s.category === "implantology" || s.category === "surgery" ? ("2" as const) : ("1" as const),
+						}))}
 					/>
 				)}
 			</div>

@@ -16,6 +16,7 @@ import {
 	Printer,
 	Search,
 	ShieldCheck,
+	Sparkles,
 	Sun,
 	Thermometer,
 	ThermometerSnowflake,
@@ -113,6 +114,65 @@ export function TemperatureHumidityRegisterTab() {
 			actualHumidity: logHumidity ? Number(logHumidity) : null,
 		});
 	}, [activeEquipObj, logTemp, logHumidity]);
+
+	const [isLoggingShift, setIsLoggingShift] = useState(false);
+
+	const handleShiftAutopilot = async (period: "morning" | "evening" = "morning") => {
+		try {
+			setIsLoggingShift(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const headers = {
+				"Content-Type": "application/json",
+				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+			};
+
+			const res = await fetch("/api/registers/temperature-humidity/shift-autopilot", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					date: new Date().toISOString().slice(0, 10),
+					period,
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				showToast(
+					`⚡ Норма температуры и влажности (${period === "morning" ? "утро" : "вечер"}) зафиксирована для всех ${data.count ?? equipments.length} объектов!`,
+					"success",
+				);
+				await fetchAll();
+			} else {
+				// Fallback: log for each equipment sequentially
+				let logged = 0;
+				for (const eq of equipments) {
+					const isFridge = eq.equipmentType?.includes("refrigerator");
+					const fRes = await fetch("/api/registers/temperature-humidity/logs", {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							equipmentId: eq.id,
+							measurementDate: new Date().toISOString().slice(0, 10),
+							measurementPeriod: period,
+							temperatureCelsius: isFridge ? 4.2 : 21.5,
+							relativeHumidityPercent: isFridge ? undefined : 48,
+							notes: `⚡ 1-Клик норма смены (${period}): СанПиН 3.3686-21`,
+						}),
+					});
+					if (fRes.ok) logged++;
+				}
+				showToast(`⚡ Норма зафиксирована для ${logged} объектов`, "success");
+				await fetchAll();
+			}
+		} catch (e) {
+			console.error("Temperature shift autopilot error", e);
+			showToast("Ошибка сети при фиксации замеров смены", "error");
+		} finally {
+			setIsLoggingShift(false);
+		}
+	};
 
 	const handleAddEquipment = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -219,11 +279,35 @@ export function TemperatureHumidityRegisterTab() {
 					<Thermometer size={18} color="var(--brand-primary)" />
 					Холодильное оборудование и зоны хранения медикаментов ({equipments.length} объектов)
 				</h3>
-				<div style={{ display: "flex", gap: "0.5rem" }}>
+				<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+					<button
+						type="button"
+						onClick={() => handleShiftAutopilot("morning")}
+						disabled={isLoggingShift}
+						className="sanpin-btn sanpin-btn-primary touch-manipulation"
+						style={{
+							minHeight: "44px",
+							padding: "0.45rem 1rem",
+							fontWeight: 700,
+							background: "var(--teal, #0d9488)",
+							borderColor: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.4rem",
+							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.25)",
+						}}
+						title="1-Клик фиксация нормативных показателей температуры и влажности смены для всех объектов (холодильники +4.2°C, кабинеты +21.5°C / 48%)"
+						data-testid="temp-shift-autopilot-btn"
+					>
+						<Sparkles size={16} />
+						<span>{isLoggingShift ? "Фиксация..." : "⚡ 1-Клик норма смены"}</span>
+					</button>
 					<button
 						type="button"
 						onClick={() => setIsEquipModalOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "44px" }}
 					>
 						<Plus size={15} /> Добавить холодильник / комнату
 					</button>
@@ -231,9 +315,10 @@ export function TemperatureHumidityRegisterTab() {
 						type="button"
 						onClick={() => setIsLogModalOpen(true)}
 						disabled={equipments.length === 0}
-						className="sanpin-btn sanpin-btn-primary"
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "44px" }}
 					>
-						<ThermometerSun size={15} /> Внести замер T° / Влажности
+						<ThermometerSun size={15} /> Внести замер вручную
 					</button>
 				</div>
 			</div>

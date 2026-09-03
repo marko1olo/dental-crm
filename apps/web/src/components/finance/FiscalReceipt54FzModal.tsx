@@ -314,6 +314,54 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		}
 	};
 
+	// 1-Click Fast Combined Payment (Нал + Карта + Аванс / Депозит)
+	const applyCombinedPaymentPreset = (
+		mode: "advance_card" | "advance_cash" | "split_cash_card" | "advance_cash_card",
+	) => {
+		const targetTotal = Math.max(0, totalSumRub - insuranceAmount);
+		if (targetTotal === 0) return;
+
+		if (mode === "advance_card") {
+			const depUsed = Math.min(patientDepositRub, targetTotal);
+			const remainder = targetTotal - depUsed;
+			setDepositAmount(depUsed);
+			setCardAmount(remainder);
+			setCashAmount(0);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Комбинированная оплата: аванс ${formatMoneyRu(depUsed)} + карта ${formatMoneyRu(remainder)}`, "success", 2000);
+		} else if (mode === "advance_cash") {
+			const depUsed = Math.min(patientDepositRub, targetTotal);
+			const remainder = targetTotal - depUsed;
+			setDepositAmount(depUsed);
+			setCashAmount(remainder);
+			setCardAmount(0);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Комбинированная оплата: аванс ${formatMoneyRu(depUsed)} + наличные ${formatMoneyRu(remainder)}`, "success", 2000);
+		} else if (mode === "split_cash_card") {
+			const half = Math.floor(targetTotal / 2);
+			const otherHalf = targetTotal - half;
+			setCashAmount(half);
+			setCardAmount(otherHalf);
+			setDepositAmount(0);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Комбинированная оплата 50/50: наличные ${formatMoneyRu(half)} + карта ${formatMoneyRu(otherHalf)}`, "success", 2000);
+		} else if (mode === "advance_cash_card") {
+			const depUsed = Math.min(patientDepositRub, targetTotal);
+			const remainder = targetTotal - depUsed;
+			const cashPart = Math.floor(remainder / 2);
+			const cardPart = remainder - cashPart;
+			setDepositAmount(depUsed);
+			setCashAmount(cashPart);
+			setCardAmount(cardPart);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Комбинированная оплата (3 способа): аванс ${formatMoneyRu(depUsed)} + нал ${formatMoneyRu(cashPart)} + карта ${formatMoneyRu(cardPart)}`, "success", 2000);
+		}
+	};
+
 	const handleFillRemaining = (type: "cash" | "card" | "sbp" | "deposit" | "certificate") => {
 		const unallocated = Math.max(0, remainingRub);
 		if (type === "cash") setCashAmount((prev) => prev + unallocated);
@@ -938,6 +986,52 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									<span className="font-mono text-[var(--ink,#0f172a)] font-bold text-xs">
 										Сумма: {formatMoneyRu(totalSumRub)}
 									</span>
+								</div>
+
+								{/* 1-Click Fast Combined Payment Presets */}
+								<div className="flex items-center gap-1.5 flex-wrap p-2.5 rounded-2xl bg-teal-500/5 border border-teal-500/20">
+									<span className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1 shrink-0">
+										<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
+										<span>1-клик комбо:</span>
+									</span>
+									{patientDepositRub > 0 && (
+										<button
+											type="button"
+											onClick={() => applyCombinedPaymentPreset("advance_card")}
+											className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/30 text-teal-700 dark:text-teal-300 hover:bg-teal-50 hover:border-teal-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											title="Зачесть доступный депозит, а остаток списать с карты"
+										>
+											Аванс + Карта
+										</button>
+									)}
+									{patientDepositRub > 0 && (
+										<button
+											type="button"
+											onClick={() => applyCombinedPaymentPreset("advance_cash")}
+											className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											title="Зачесть доступный депозит, а остаток принять наличными"
+										>
+											Аванс + Наличные
+										</button>
+									)}
+									{patientDepositRub > 0 && (
+										<button
+											type="button"
+											onClick={() => applyCombinedPaymentPreset("advance_cash_card")}
+											className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/30 text-purple-700 dark:text-purple-300 hover:bg-purple-50 hover:border-purple-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+											title="Зачесть доступный депозит, а остаток разделить 50% наличными и 50% картой"
+										>
+											Аванс + Нал + Карта
+										</button>
+									)}
+									<button
+										type="button"
+										onClick={() => applyCombinedPaymentPreset("split_cash_card")}
+										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all shadow-2xs active:scale-95"
+										title="Разделить оплату ровно пополам: 50% наличные + 50% карта"
+									>
+										50% Нал + 50% Карта
+									</button>
 								</div>
 
 								{/* 6 Tactile Payment Method Tiles with DMS & Guarantee Letter support */}

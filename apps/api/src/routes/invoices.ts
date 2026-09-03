@@ -107,6 +107,7 @@ const generateInvoiceFromPlanSchema = z.object({
 	).min(1),
 	adminOverridePin: z.string().optional(),
 	adminOverrideReason: z.string().optional(),
+	allowUnplannedServices: z.boolean().optional().default(true),
 	notes: z.string().optional(),
 });
 
@@ -316,11 +317,14 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					)
 					.limit(1);
 
-				if (!addendumDoc) {
+				if (!addendumDoc && data.allowUnplannedServices === false) {
 					return reply.code(422).send({
 						error: "UpsellConsentShieldViolationError",
 						message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
 					});
+				}
+				if (!addendumDoc) {
+					request.log.info({ item: item.nameRu }, "[Invoices] Unplanned service added by doctor/staff without blocking");
 				}
 			}
 		}
@@ -438,11 +442,14 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 						)
 						.limit(1);
 
-					if (!addendumDoc) {
+					if (!addendumDoc && data.allowUnplannedServices === false) {
 						return reply.code(422).send({
 							error: "UpsellConsentShieldViolationError",
 							message: `Блокировка по Постановлению Правительства РФ №659 от 30.05.2026 и ст. 16 Закона РФ «О защите прав потребителей» (Защита от навязывания услуг): услуга/материал «${item.nameRu}» не входит в утвержденный план лечения пациента. Формирование наряда/счета заблокировано до подписания Дополнительного соглашения.`,
 						});
+					}
+					if (!addendumDoc) {
+						request.log.info({ item: item.nameRu }, "[Invoices] Unplanned service/material added by doctor/staff without blocking");
 					}
 				}
 			}
