@@ -5,6 +5,7 @@
 
 import React, { useMemo } from "react";
 import {
+	AlertOctagon,
 	AlertTriangle,
 	Calendar,
 	CheckCircle2,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
+import { evaluatePatientSafetyFlags } from "./safetyMath";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { PatientLoyaltyHeader } from "../patients/PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "./PatientSentimentBadge";
@@ -106,10 +108,30 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 		resolvedPatient.birthDate || resolvedPatient.birthDateIso,
 	);
 
-	const allergyText =
-		resolvedPatient.allergies ||
-		resolvedPatient.anamnesis?.allergies ||
-		"";
+	const allergyText = useMemo(() => {
+		const raw =
+			resolvedPatient.allergies ||
+			resolvedPatient.anamnesis?.allergies ||
+			"";
+		if (raw && typeof raw === "string" && raw.trim()) {
+			return raw.trim();
+		}
+		if (resolvedPatient.clinicalSafetyProfile) {
+			const evalResult = evaluatePatientSafetyFlags(resolvedPatient.clinicalSafetyProfile);
+			const allergyFlags = evalResult.activeFlags.filter(
+				(f) =>
+					f.category === "anesthesia_allergy" ||
+					f.id.startsWith("allergy_") ||
+					f.id.includes("allergy") ||
+					f.id === "anaphylaxis_history" ||
+					f.id === "custom_allergy_notes",
+			);
+			if (allergyFlags.length > 0) {
+				return allergyFlags.map((f) => f.shortBadge).join(" ");
+			}
+		}
+		return "";
+	}, [resolvedPatient]);
 
 	return (
 		<div
@@ -258,15 +280,16 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 			{/* Prominent Allergy / Medical Safety Alert Banner if present */}
 			{allergyText && (
 				<div
-					className="p-2.5 rounded-xl bg-amber-500/15 border-2 border-amber-500/50 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center gap-2 shadow-xs"
+					className="p-3 rounded-xl bg-rose-500/15 border-2 border-rose-600 text-rose-950 dark:text-rose-100 text-xs font-black flex items-center gap-2.5 shadow-sm"
 					data-testid="header-allergy-alert"
+					role="alert"
 				>
-					<AlertTriangle size={15} className="text-amber-600 shrink-0 animate-bounce" />
+					<AlertOctagon size={18} className="text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
 					<div className="flex-1 min-w-0">
-						<span className="uppercase tracking-wider font-black mr-1 text-[11px] text-amber-700 dark:text-amber-300">
-							Клиническая безопасность:
+						<span className="uppercase tracking-wider font-black mr-1 text-[11px] text-rose-700 dark:text-rose-300">
+							⛔ АЛЛЕРГИЯ / СТОП-ФАКТОР:
 						</span>
-						<span>{allergyText}</span>
+						<span className="break-words">{allergyText}</span>
 					</div>
 				</div>
 			)}

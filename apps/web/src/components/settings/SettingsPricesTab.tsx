@@ -186,12 +186,19 @@ export function SettingsPricesTab() {
 	const filteredCatalog = useMemo(() => {
 		let items = [...typedServiceCatalog];
 		if (searchQuery.trim()) {
-			const q = searchQuery.toLowerCase();
-			items = items.filter(
-				(s) =>
-					s.title.toLowerCase().includes(q) ||
-					s.code?.toLowerCase().includes(q),
-			);
+			const q = searchQuery.toLowerCase().trim();
+			const cleanQ = q.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "");
+			items = items.filter((s) => {
+				const titleMatch = s.title.toLowerCase().includes(q);
+				const codeMatch = s.code?.toLowerCase().includes(q);
+				const cleanCodeMatch =
+					cleanQ.length >= 2 &&
+					(s.code || "")
+						.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, "")
+						.toLowerCase()
+						.includes(cleanQ);
+				return titleMatch || codeMatch || cleanCodeMatch;
+			});
 		}
 		return items.sort((a, b) => a.title.localeCompare(b.title));
 	}, [typedServiceCatalog, searchQuery]);
@@ -353,12 +360,6 @@ export function SettingsPricesTab() {
 
 	const handleDeleteService = async (id: string) => {
 		if (deletingServiceId === id) return;
-		if (
-			!window.confirm(
-				"Удалить услугу из каталога? (Связанные счета сохранятся, но услуга уйдет в архив)",
-			)
-		)
-			return;
 		if (!deleteServiceCatalogItem) return;
 		setDeletingServiceId(id);
 		try {
@@ -447,6 +448,37 @@ export function SettingsPricesTab() {
 							>
 								<Plus size={18} /> Добавить услугу
 							</button>
+						</div>
+
+						{/* 1-Click Fast Statutory 804n Code Chips */}
+						<div className="flex items-center gap-1.5 overflow-x-auto py-2 flex-nowrap scrollbar-thin">
+							<span className="text-xs font-bold text-[var(--muted)] shrink-0">
+								Номенклатура 804н (1-клик):
+							</span>
+							{[
+								{ code: "A16.07.002", label: "A16.07.002 Кариес" },
+								{ code: "A16.07.008", label: "A16.07.008 Пульпит" },
+								{ code: "A11.07.012", label: "A11.07.012 Анестезия" },
+								{ code: "A06.07.003", label: "A06.07.003 Снимок" },
+								{ code: "A16.07.054", label: "A16.07.054 Имплантация" },
+								{ code: "A16.07.004", label: "A16.07.004 Коронка" },
+								{ code: "A16.07.001", label: "A16.07.001 Удаление" },
+								{ code: "A16.07.051", label: "A16.07.051 Гигиена" },
+							].map((chip) => (
+								<button
+									key={chip.code}
+									type="button"
+									onClick={() => setSearchQuery(chip.code)}
+									className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer whitespace-nowrap border ${
+										searchQuery === chip.code
+											? "bg-indigo-600 text-white border-indigo-700 shadow-2xs"
+											: "bg-[var(--paper)] border-[var(--line)] text-indigo-700 dark:text-indigo-300 hover:border-indigo-400"
+									}`}
+									title={`Искать в прайс-листе по коду 804н ${chip.code}`}
+								>
+									{chip.label}
+								</button>
+							))}
 						</div>
 					</div>
 

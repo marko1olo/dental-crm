@@ -220,13 +220,26 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 
 							{/* Emergency Allergy Alert Badge */}
 							{dynamicAllergyText && (
-								<div
-									className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-900 border border-rose-300 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800 text-[10px] font-extrabold shrink-0 whitespace-nowrap"
-									data-testid="header-allergy-alert"
-								>
-									<ShieldAlert size={11} className="text-rose-600 dark:text-rose-400 shrink-0" />
-									<span>{dynamicAllergyText}</span>
-								</div>
+								dynamicAllergyText.includes("норма") ? (
+									<div
+										className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-bold shrink-0 whitespace-nowrap"
+										data-testid="header-allergy-alert"
+										title="Аллергологический анамнез в норме"
+									>
+										<ShieldCheck size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+										<span>{dynamicAllergyText}</span>
+									</div>
+								) : (
+									<div
+										className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-600/15 text-rose-950 dark:text-rose-100 border-2 border-rose-600 text-[10px] font-black shrink-0 whitespace-nowrap shadow-xs animate-pulse"
+										data-testid="header-allergy-alert"
+										role="alert"
+										title="Внимание: клинический стоп-фактор пациента!"
+									>
+										<ShieldAlert size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
+										<span>{dynamicAllergyText}</span>
+									</div>
+								)
 							)}
 
 							<span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 shrink-0 whitespace-nowrap">

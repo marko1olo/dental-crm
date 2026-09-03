@@ -930,12 +930,6 @@ export function VisiographAnalyzer() {
 	 */
 	const deleteScan = async (scan: XrayScan) => {
 		if (deletingScanId) return;
-		const label = scan.originalFilename?.trim() || "этот снимок";
-		const ok = window.confirm(
-			`Удалить «${label}» из архива пациента?\n\nЗаключение и привязка к карте будут сняты. Это нельзя отменить.`,
-		);
-		if (!ok) return;
-
 		setDeletingScanId(scan.id);
 		setDeleteFailure(null);
 		try {

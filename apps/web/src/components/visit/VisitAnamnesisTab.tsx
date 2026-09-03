@@ -4,6 +4,7 @@ import {
 	Check,
 	HeartPulse,
 	Plus,
+	ShieldCheck,
 	Stethoscope,
 } from "lucide-react";
 import type React from "react";
@@ -82,18 +83,36 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 		);
 	};
 
+	const handleApplyPhysiologicalNorm = () => {
+		setSelectedComplaints(["Плановый осмотр (жалоб нет)"]);
+		setSelectedRisks([]);
+		setSelectedHistory(["Опыт анестезии положительный (без осложнений)"]);
+		setCustomNotes(
+			"Соматически здоров. Хронические соматические патологии, сердечно-сосудистые риски и аллергологический статус со слов пациента не отягощены.",
+		);
+		showToast("Применена норма: соматически здоров", "success", 3000);
+	};
+
 	const applyToDiary = () => {
+		const effComplaints =
+			selectedComplaints.length > 0
+				? selectedComplaints
+				: ["Плановый осмотр (жалоб на момент приёма не предъявляет)"];
+		const effHistory =
+			selectedHistory.length > 0
+				? selectedHistory
+				: ["Опыт анестезии положительный (без осложнений)"];
+		const effCustom =
+			customNotes.trim() ||
+			"Соматически здоров. Хронические заболевания и аллергии со слов отрицает.";
+
 		const parts: string[] = [];
-		if (selectedComplaints.length > 0) {
-			parts.push(`Жалобы: ${selectedComplaints.join(", ")}.`);
-		}
-		if (selectedHistory.length > 0) {
-			parts.push(
-				`Анамнез жизни и стоматологический анамнез: ${selectedHistory.join(", ")}._`,
-			);
-		}
-		if (customNotes.trim()) {
-			parts.push(customNotes.trim());
+		parts.push(`Жалобы: ${effComplaints.join(", ")}.`);
+		parts.push(
+			`Анамнез жизни и стоматологический анамнез: ${effHistory.join(", ")}.`,
+		);
+		if (effCustom) {
+			parts.push(effCustom);
 		}
 
 		const fullAnamnesis = parts.join(" ");
@@ -106,6 +125,8 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 			onAppendComorbidities(
 				`Сопутствующие и аллергологический статус: ${selectedRisks.join(", ")}.`,
 			);
+		} else if (onAppendComorbidities) {
+			onAppendComorbidities("Сопутствующие патологии: отсутствуют (норма).");
 		}
 
 		// Also update Emk visitNoteForm if available
@@ -147,20 +168,28 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 						</p>
 					</div>
 				</div>
-				<button
-					type="button"
-					onClick={applyToDiary}
-					disabled={
-						selectedComplaints.length === 0 &&
-						selectedRisks.length === 0 &&
-						selectedHistory.length === 0 &&
-						!customNotes.trim()
-					}
-					className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm font-semibold hover:bg-[var(--teal-dark)] disabled:opacity-50 transition-colors shadow-sm"
-				>
-					<Plus className="w-4 h-4" />
-					Перенести в дневник 043/у
-				</button>
+				<div className="flex items-center gap-2.5 flex-wrap">
+					<button
+						type="button"
+						onClick={handleApplyPhysiologicalNorm}
+						className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer active:scale-98"
+						data-testid="btn-somatic-norm-one-click"
+						title="1 клик: заполнить осмотр физиологической нормой (соматически здоров)"
+					>
+						<ShieldCheck className="w-4 h-4" />
+						<span>Соматически здоров / норма (1-клик)</span>
+					</button>
+					<button
+						type="button"
+						onClick={applyToDiary}
+						className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm font-semibold hover:bg-[var(--teal-dark)] transition-colors shadow-sm cursor-pointer active:scale-98"
+						data-testid="btn-apply-anamnesis-to-diary"
+						title="Перенести текущие данные анамнеза в дневник Формы 043/у"
+					>
+						<Plus className="w-4 h-4" />
+						<span>Перенести в дневник 043/у</span>
+					</button>
+				</div>
 			</div>
 
 			{/* Section 1: Top Dental Complaints */}

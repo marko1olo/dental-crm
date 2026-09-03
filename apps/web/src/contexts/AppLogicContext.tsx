@@ -1,5 +1,4 @@
-import type React from "react";
-import { createContext, useContext } from "react";
+import React, { createContext, useContext } from "react";
 import type { useAppLogic } from "../useAppLogic";
 
 // Define the shape of our global AppLogic context

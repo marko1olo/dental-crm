@@ -187,7 +187,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		],
 		mandatoryPrecautions: [
 			"Яркая маркировка титульного листа амбулаторной карты 043/у",
-			"Проведение кожного аллергологического тестирования на альтернативные группы анестетиков перед вмешательством",
+			"Выбор альтернативной группы анестетика (Скандонест 3% / Мепивакаин без вазоконстриктора)",
 		],
 		recommendedAnesthesiaNotes: "Препарат выбора: Скандонест 3% (Мепивакаин) или Лидокаин 2% (при отсутствии перекрестной аллергии).",
 		icd10Codes: ["Z88.4", "T88.6"],
@@ -224,7 +224,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 			"Инъекции Мепивакаина (Скандонест 3%, Мепивастезин 3%, Мепивакаин)",
 		],
 		mandatoryPrecautions: [
-			"При необходимости анестетика без адреналина согласовать Лидокаин 2% без вазоконстриктора или консультацию аллерголога",
+			"При необходимости анестетика без адреналина применить Лидокаин 2% без вазоконстриктора",
 		],
 		recommendedAnesthesiaNotes: "Ультракаин Д-С (Артикаин 1:200 000) при отсутствии аллергии на артикаин.",
 		icd10Codes: ["Z88.4"],
@@ -698,6 +698,45 @@ export function evaluatePatientSafetyFlags(
 	if (profile.hasPenicillinAllergy) addFlagFromCatalog("allergy_penicillin");
 	if (profile.hasLatexAllergy) addFlagFromCatalog("allergy_latex");
 	if (profile.hasIodineAllergy) addFlagFromCatalog("allergy_iodine");
+
+	if (profile.hasAnaphylaxisHistory) {
+		activeFlags.push({
+			id: "anaphylaxis_history",
+			category: "anesthesia_allergy",
+			severity: "critical",
+			shortBadge: "⛔ АНАФИЛАКСИЯ В АНАМНЕЗЕ",
+			titleRu: "Отягощенный аллергоанамнез: анафилактический шок / ангионевротический отек",
+			description: "У пациента в анамнезе системные аллергические реакции немедленного типа (анафилаксия / отек Квинке). Повышенная готовность противошоковой укладки.",
+			forbiddenProcedures: ["Применение аллергенов и полипрагмазия"],
+			mandatoryPrecautions: [
+				"Яркая маркировка титульного листа амбулаторной карты 043/у",
+				"Проверка готовности посиндромной аптечки «Антишок» в кабинете перед началом приёма",
+			],
+			source: "structured_profile",
+		});
+		forbiddenSet.add("Применение аллергенов и полипрагмазия");
+		precautionsSet.add("Проверка готовности посиндромной аптечки «Антишок» в кабинете перед началом приёма");
+	}
+
+	if (profile.customAllergyNotes && profile.customAllergyNotes.trim()) {
+		const rawNotes = profile.customAllergyNotes.trim();
+		activeFlags.push({
+			id: "custom_allergy_notes",
+			category: "anesthesia_allergy",
+			severity: "critical",
+			shortBadge: `⛔ АЛЛЕРГИЯ: ${rawNotes.toUpperCase()}`,
+			titleRu: `Индивидуальная лекарственная/вещественная аллергия: ${rawNotes}`,
+			description: `У пациента зарегистрирована индивидуальная аллергия или гиперчувствительность: ${rawNotes}`,
+			forbiddenProcedures: [`Применение препаратов, содержащих ${rawNotes}`],
+			mandatoryPrecautions: [
+				"Яркая маркировка титульного листа амбулаторной карты 043/у",
+				"Уточнение анамнеза и выбор безопасных альтернативных препаратов",
+			],
+			source: "structured_profile",
+		});
+		forbiddenSet.add(`Применение препаратов, содержащих ${rawNotes}`);
+		precautionsSet.add("Уточнение анамнеза и выбор безопасных альтернативных препаратов");
+	}
 
 	// Расчет сводных метрик
 	const hasCriticalStopFlags = activeFlags.some((f) => f.severity === "critical");

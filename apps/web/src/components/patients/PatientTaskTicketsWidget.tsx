@@ -199,7 +199,6 @@ export function PatientTaskTicketsWidget({ patientId }: { patientId: string }) {
 
 	const handleDelete = async (ticketId: string) => {
 		if (deletingId === ticketId) return;
-		if (!confirm("Вы действительно хотите удалить эту задачу?")) return;
 		setDeletingId(ticketId);
 		try {
 			const res = await fetch(

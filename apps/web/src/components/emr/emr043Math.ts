@@ -263,8 +263,8 @@ export function validateForm043uCompleteness(data: MedicalCardForm043uData): For
 
 	// Стоматологический статус и зубная формула (Раздел 3)
 	check(Boolean(data.dentalStatus?.odontogramTeeth && data.dentalStatus.odontogramTeeth.length > 0), "odontogramTeeth", "Зубная формула FDI (не менее 1 зуба)", "dental_status", "critical");
-	check(Boolean(data.dentalStatus?.biteType), "biteType", "Прикус по Энглю", "dental_status", "critical");
-	check(Boolean(data.dentalStatus?.oralMucosaStatus?.color), "oralMucosaStatus", "Состояние СОПР (слизистой)", "dental_status", "critical");
+	check(Boolean(data.dentalStatus?.biteType), "biteType", "Прикус по Энглю (ортогнатический по умолчанию)", "dental_status", "warning");
+	check(Boolean(data.dentalStatus?.oralMucosaStatus?.color), "oralMucosaStatus", "Состояние СОПР (слизистой)", "dental_status", "warning");
 
 	// Дневники визитов SOAP (Раздел 4)
 	check(Boolean(data.visitDiaries && data.visitDiaries.length > 0), "visitDiaries", "Хотя бы 1 запись в дневнике приёма (SOAP)", "diaries", "critical");

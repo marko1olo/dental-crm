@@ -11,7 +11,6 @@ export type VisitSubViewTab =
 	| "emk"
 	| "odontogram"
 	| "anamnesis"
-	| "perio"
 	| "diagnostics";
 
 export interface VisitMainTabsProps {
@@ -85,22 +84,7 @@ export function VisitMainTabs({
 				<Stethoscope size={15} className="shrink-0" />
 				<span className="whitespace-nowrap flex-shrink-0">Анамнез и Жалобы</span>
 			</button>
-			<button
-				type="button"
-				role="tab"
-				aria-selected={visitSubViewTab === "perio"}
-				className={`secondary-button shrink-0 flex-shrink-0 min-w-0 whitespace-nowrap text-xs sm:text-sm px-3 sm:px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center gap-1.5 touch-manipulation focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none transition-colors ${visitSubViewTab === "perio" ? "active" : ""}`}
-				style={{
-					background:
-						visitSubViewTab === "perio" ? "var(--teal-dark)" : undefined,
-					color:
-						visitSubViewTab === "perio" ? "var(--on-teal)" : undefined,
-				}}
-				onClick={() => setVisitSubViewTab("perio")}
-			>
-				<BarChart2 size={15} className="shrink-0" />
-				<span className="whitespace-nowrap flex-shrink-0">Пародонтология и Зондирование</span>
-			</button>
+
 			<button
 				type="button"
 				role="tab"

@@ -219,12 +219,6 @@ export function PatientReclamationsWidget({
 
 	const handleDelete = async (recId: string) => {
 		if (deletingId === recId) return;
-		if (
-			!confirm(
-				"Вы действительно хотите полностью удалить запись об этом инциденте? Это действие нельзя отменить.",
-			)
-		)
-			return;
 		setDeletingId(recId);
 		try {
 			const res = await fetch(

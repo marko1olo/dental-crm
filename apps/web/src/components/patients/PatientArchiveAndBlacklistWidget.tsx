@@ -261,8 +261,12 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 							<button
 								type="button"
 								onClick={() => {
-									setModalIsBlacklisted(true);
-									setConfirmModalOpen(true);
+									if (isBlacklisted) {
+										void handleApplyStatus();
+									} else {
+										setModalIsBlacklisted(true);
+										setConfirmModalOpen(true);
+									}
 								}}
 								// Пока статус не загружен, isBlacklisted равен false по
 								// умолчанию: нажатие в этот момент предлагало бы «добавить

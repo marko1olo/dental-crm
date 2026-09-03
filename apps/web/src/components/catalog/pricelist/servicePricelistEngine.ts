@@ -300,7 +300,9 @@ export function searchPricelistItems(
 		if (!includeArchived && item.isArchived) {
 			return false;
 		}
-		if (categoryFilter && item.category !== categoryFilter) {
+		// When user types a search query (by 804n code or procedure name), search globally across all categories
+		// to eliminate wandering across multi-level category trees.
+		if (categoryFilter && item.category !== categoryFilter && searchTokens.length === 0 && searchCleanCode.length === 0) {
 			return false;
 		}
 		if (specialtyFilter && item.specialty !== specialtyFilter) {

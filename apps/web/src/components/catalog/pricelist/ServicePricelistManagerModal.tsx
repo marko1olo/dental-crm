@@ -432,6 +432,48 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 					</div>
 				</div>
 
+				{/* 1-Click Fast Statutory 804n Code Chips (0-1 Click Fast Select without multi-level tree wandering) */}
+				<div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', overflowX: 'auto', padding: '0.25rem 0' }}>
+					<span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+						Номенклатура 804н (1-клик):
+					</span>
+					{[
+						{ code: 'A16.07.002', label: 'A16.07.002 Кариес' },
+						{ code: 'A16.07.008', label: 'A16.07.008 Пульпит' },
+						{ code: 'A11.07.012', label: 'A11.07.012 Анестезия' },
+						{ code: 'A06.07.003', label: 'A06.07.003 Снимок' },
+						{ code: 'A16.07.054', label: 'A16.07.054 Имплантация' },
+						{ code: 'A16.07.004', label: 'A16.07.004 Коронка' },
+						{ code: 'A16.07.001', label: 'A16.07.001 Удаление' },
+						{ code: 'A16.07.051', label: 'A16.07.051 Гигиена' },
+					].map((chip) => (
+						<button
+							key={chip.code}
+							type="button"
+							onClick={() => {
+								setSearchTerm(chip.code);
+								setSelectedCategory('all');
+							}}
+							className="batch-quick-btn"
+							style={{
+								fontSize: '0.75rem',
+								fontFamily: 'monospace',
+								fontWeight: 700,
+								whiteSpace: 'nowrap',
+								padding: '0.25rem 0.5rem',
+								borderRadius: '6px',
+								border: '1px solid var(--line)',
+								background: searchTerm === chip.code ? 'var(--accent, #0284c7)' : 'var(--paper)',
+								color: searchTerm === chip.code ? '#ffffff' : 'var(--ink)',
+								cursor: 'pointer',
+							}}
+							title={`Мгновенно найти услугу по коду 804н ${chip.code}`}
+						>
+							{chip.label}
+						</button>
+					))}
+				</div>
+
 				{/* Batch Markup Bar */}
 				<div className="pricelist-batch-bar">
 					<div className="batch-bar-left">
@@ -467,6 +509,22 @@ export const ServicePricelistManagerModal: React.FC<ServicePricelistManagerModal
 							onClick={() => handleApplyBatchMarkup(-10, batchRounding)}
 						>
 							-10% (Скидка)
+						</button>
+						<button
+							type="button"
+							className="batch-quick-btn"
+							onClick={() => handleApplyBatchMarkup(-50, batchRounding)}
+							title="Скидка 50% на клинический этап"
+						>
+							-50%
+						</button>
+						<button
+							type="button"
+							className="batch-quick-btn"
+							onClick={() => handleApplyBatchMarkup(-100, batchRounding)}
+							title="100% скидка на гарантийные переделки"
+						>
+							-100% (Гарантия)
 						</button>
 
 						<span style={{ color: 'var(--line)', margin: '0 0.25rem' }}>|</span>
