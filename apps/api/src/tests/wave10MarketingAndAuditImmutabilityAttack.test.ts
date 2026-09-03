@@ -29,6 +29,7 @@ import {
 	users,
 } from "../db/schema.js";
 import { registerAuditRoutes } from "../routes/audit.js";
+import { registerChatRoutes } from "../routes/chat.js";
 import { registerFilesRoutes } from "../routes/files.js";
 import { registerDiagnocatRoutes } from "../routes/integrations/diagnocat.js";
 import { registerMarketingRoutes } from "../routes/marketing.js";
@@ -121,6 +122,7 @@ test("RED-TEAM HAMMER: WAVE 10 — Marketing Attribution, Files & Audit Immutabi
 		await registerMarketingRoutes(app);
 		await registerAuditRoutes(app);
 		await registerDiagnocatRoutes(app);
+		await registerChatRoutes(app);
 		await app.ready();
 
 		const secret = authTokenSecret();
@@ -581,5 +583,100 @@ test("RED-TEAM HAMMER: WAVE 10 — Marketing Attribution, Files & Audit Immutabi
 		assert.ok(!sanitizedUrl.includes("hackerToken123"), "Секретный токен в URL обязан быть скрыт!");
 
 		console.log("✔ АТАКА 6 ОТБИТА: Полное маскирование диагнозов, номеров зубов и МКБ-10 в объектах, строках и URL.");
+	});
+
+	// =========================================================================
+	// АТАКА 7: POST /api/chat/sms/send — ПЕНТЕСТ ВРАЧЕБНОЙ ТАЙНЫ В ЧАТЕ И ИЗОЛЯЦИИ ТЕНАНТОВ
+	// =========================================================================
+	await suite.test("ATTACK 7: Chat SMS send route rejects medical leaks, enforces tenant isolation and protects archived patients", async (t) => {
+		if (!databaseReady) return t.skip("БД недоступна");
+
+		// 1. Попытка отправить SMS с клиническим диагнозом и номером зуба
+		const leakRes = await app.inject({
+			method: "POST",
+			url: "/api/chat/sms/send",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				patientId: ACTIVE_PATIENT_ID,
+				message: "Напоминаем: у вас острый пульпит K04.0 на зубе 46, операция завтра в 10:00",
+			},
+		});
+
+		console.log(
+			"\n[RED-TEAM AUDIT 7.1: Chat SMS Leak Attempt]\nStatus:",
+			leakRes.statusCode,
+			"\nPayload:",
+			leakRes.body,
+		);
+
+		assert.equal(
+			leakRes.statusCode,
+			422,
+			"Попытка отправки SMS с медицинским диагнозом обязана возвращать 422 MedicalSecrecyViolationError!",
+		);
+		const leakBody = JSON.parse(leakRes.body);
+		assert.equal(leakBody.error, "MedicalSecrecyViolationError");
+
+		// 2. Попытка отправить SMS архивированному пациенту
+		const archivedRes = await app.inject({
+			method: "POST",
+			url: "/api/chat/sms/send",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				patientId: ARCHIVED_PATIENT_ID,
+				message: "Здравствуйте! Ждем вас на профилактический осмотр.",
+			},
+		});
+
+		console.log(
+			"\n[RED-TEAM AUDIT 7.2: Chat SMS to Archived Patient]\nStatus:",
+			archivedRes.statusCode,
+			"\nPayload:",
+			archivedRes.body,
+		);
+
+		assert.equal(
+			archivedRes.statusCode,
+			403,
+			"Отправка сообщений списанному в архив пациенту должна блокироваться с кодом 403!",
+		);
+		const archivedBody = JSON.parse(archivedRes.body);
+		assert.equal(archivedBody.permission, "patients.archived.sms");
+
+		// 3. Попытка отправить SMS чужому пациенту из другой организации (IDOR / Cross-Tenant)
+		const otherOrgPatientId = fixtureUuid("other-org-namespace", 999);
+		const crossTenantRes = await app.inject({
+			method: "POST",
+			url: "/api/chat/sms/send",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": marketerToken,
+			},
+			payload: {
+				patientId: otherOrgPatientId,
+				message: "Здравствуйте! Ждем вас на прием.",
+			},
+		});
+
+		console.log(
+			"\n[RED-TEAM AUDIT 7.3: Cross-Tenant Chat SMS]\nStatus:",
+			crossTenantRes.statusCode,
+			"\nPayload:",
+			crossTenantRes.body,
+		);
+
+		assert.equal(
+			crossTenantRes.statusCode,
+			404,
+			"Попытка межорганизационного доступа к пациенту обязана возвращать 404 PatientNotFound!",
+		);
+
+		console.log("✔ АТАКА 7 ОТБИТА: Чат SMS аппаратно блокирует врачебную тайну, защищает архивных пациентов и гарантирует изоляцию тенантов.");
 	});
 });

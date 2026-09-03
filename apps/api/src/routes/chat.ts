@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireResolvedOrganizationId } from "../accessGuard.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { communicationEvents } from "../db/schema.js";
@@ -62,12 +62,33 @@ export async function registerChatRoutes(app: FastifyInstance) {
 			}
 
 			const [patient] = await db
-				.select({ phone: schema.patients.phone })
+				.select({ phone: schema.patients.phone, status: schema.patients.status })
 				.from(schema.patients)
-				.where(eq(schema.patients.id, parsed.data.patientId))
+				.where(
+					and(
+						eq(schema.patients.id, parsed.data.patientId),
+						eq(schema.patients.organizationId, organizationId),
+					),
+				)
 				.limit(1);
 
-			if (!patient?.phone) {
+			if (!patient) {
+				return reply.code(404).send({
+					error: "PatientNotFound",
+					message: "Пациент не найден в этой клинике.",
+				});
+			}
+
+			if (patient.status === "archived") {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "patients.archived.sms",
+					message:
+						"Отказ в отправке SMS архивированному пациенту (152-ФЗ / 323-ФЗ ст. 13): коммуникации с пациентом в архиве запрещены.",
+				});
+			}
+
+			if (!patient.phone) {
 				return reply.code(400).send({
 					error: "MissingPhone",
 					message: "У пациента не указан номер телефона",
