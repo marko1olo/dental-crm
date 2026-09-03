@@ -1040,7 +1040,7 @@ ${cl.directorTitle}: _____________________ / ${cl.directorFullName} /
 ${cust.fullName}
 Д.Р.: ${pt.birthDate}
 Паспорт: ${passportText}
-СНИЛС: ${pt.snils || "не указан"}
+СНИЛС: ${pt.snils || "____________________"}
 Адрес регистрации: ${addressText}
 Тел: ${phoneText}
 Медкарта №: ${pt.cardNumber || "043/у"}
@@ -1314,7 +1314,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
       Дата рождения: ${pt.birthDate ? `${pt.birthDate} г.` : "«___» _______ ______ г."}<br>
       Паспорт: серия ${cust.passportSeries || "_____"} № ${cust.passportNumber || "__________"}<br>
       Выдан: ${cust.passportIssuedBy || "____________________________________"}, ${cust.passportIssuedDate || "«___» _______ 20___ г."}, код ${cust.passportDepartmentCode || "_______"}<br>
-      СНИЛС: ${pt.snils || "не указан"}<br>
+      СНИЛС: ${pt.snils || "____________________"}<br>
       Адрес регистрации: ${cust.registrationAddress || "________________________________________________________"}<br>
       Телефон: ${cust.phone || "____________________"}<br><br>
       Подпись Заказчика (Пациента):<br>

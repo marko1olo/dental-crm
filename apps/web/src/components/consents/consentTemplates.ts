@@ -592,21 +592,21 @@ export function substitutePlaceholders(
 	});
 
 	const map: Record<string, string> = {
-		"{{PATIENT_NAME}}": context.patientName?.trim() || "[Ф.И.О. пациента не указано]",
-		"{{BIRTH_DATE}}": context.birthDate?.trim() || "[Дата рождения не указана]",
-		"{{PASSPORT}}": context.passport?.trim() || "[Паспортные данные не указаны]",
-		"{{DOCTOR_NAME}}": context.doctorName?.trim() || "[Ф.И.О. врача не указано]",
+		"{{PATIENT_NAME}}": context.patientName?.trim() || "________________________________________",
+		"{{BIRTH_DATE}}": context.birthDate?.trim() || "«___» _________ _____ г.",
+		"{{PASSPORT}}": context.passport?.trim() || "серия ______ № ________ выдан ____________________",
+		"{{DOCTOR_NAME}}": context.doctorName?.trim() || "________________________",
 		"{{CLINIC_NAME}}": context.clinicName?.trim() || context.clinicLegalName?.trim() || "ООО «Стоматологическая клиника ДЕНТЕ»",
 		"{{CLINIC_LEGAL_NAME}}": context.clinicLegalName?.trim() || context.clinicName?.trim() || "ООО «Стоматологическая клиника ДЕНТЕ»",
-		"{{CLINIC_ADDRESS}}": context.clinicAddress?.trim() || "[Адрес клиники]",
-		"{{CLINIC_OGRN}}": context.clinicOgrn?.trim() || "1234567890123",
-		"{{LICENSE_NUMBER}}": context.licenseNumber?.trim() || "ЛО41-01137-77/00123456",
-		"{{DIAGNOSIS_ICD}}": context.diagnosisIcd?.trim() || "[Диагноз по МКБ-10]",
-		"{{TOOTH_NUMBERS}}": context.toothNumbers?.trim() || "[Зубы / область не указаны]",
+		"{{CLINIC_ADDRESS}}": context.clinicAddress?.trim() || "г. Москва, ул. Большая Стоматологическая, д. 12",
+		"{{CLINIC_OGRN}}": context.clinicOgrn?.trim() || "1217700123456",
+		"{{LICENSE_NUMBER}}": context.licenseNumber?.trim() || "ЛО41-01137-77/00368421",
+		"{{DIAGNOSIS_ICD}}": context.diagnosisIcd?.trim() || "Первичный осмотр и консультация",
+		"{{TOOTH_NUMBERS}}": context.toothNumbers?.trim() || "Полость рта (зубной ряд)",
 		"{{DATE}}": context.date?.trim() || defaultDate,
-		"{{SNILS}}": context.snils?.trim() || "[СНИЛС не указан]",
-		"{{PATIENT_PHONE}}": context.phone?.trim() || "[Телефон не указан]",
-		"{{GUARDIAN_NAME}}": context.guardianName?.trim() || "[Законный представитель]",
+		"{{SNILS}}": context.snils?.trim() || "____________________",
+		"{{PATIENT_PHONE}}": context.phone?.trim() || "+7 (____) ____-____",
+		"{{GUARDIAN_NAME}}": context.guardianName?.trim() || "________________________",
 	};
 
 	let result = rawText;

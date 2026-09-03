@@ -6432,6 +6432,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 				isOpen={isPrimaryIntakeOpen}
 				onClose={() => setIsPrimaryIntakeOpen(false)}
 				patient={activePatient ?? null}
+				doctorFullName={activeDoctor?.fullName}
+				clinicProfileDraft={clinicProfileDraft}
 				existingDocuments={typedActiveDocuments ?? []}
 				onCreateDocument={(kind) => void createDocument(kind)}
 				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}

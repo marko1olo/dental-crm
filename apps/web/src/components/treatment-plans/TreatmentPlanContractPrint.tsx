@@ -466,7 +466,6 @@ export const TreatmentPlanContractPrint: React.FC<TreatmentPlanContractPrintProp
 				</div>
 			</div>
 		</div>
-	</div>
 	);
 };
 
