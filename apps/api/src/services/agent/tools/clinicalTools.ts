@@ -4,6 +4,7 @@
  * drug-drug interaction (DDI) & allergy safety auditing, scheduling, staff tasks, and preventive recalls.
  */
 
+import crypto from "node:crypto";
 import {
 	calculateNextRecallDueMonth,
 	checkDentalMedicationInteractions,
@@ -49,6 +50,7 @@ import {
 	treatmentPlans,
 	users,
 	visits,
+	organizations,
 } from "../../../db/schema.js";
 import {
 	Icd10ClinicalValidator,
@@ -1140,17 +1142,23 @@ export const createPrescription107Tool: ToolDefinition<
 			};
 		});
 
-		const seriesNumber = `107-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+		const [org] = await db
+			.select()
+			.from(organizations)
+			.where(eq(organizations.id, ctx.organizationId))
+			.limit(1);
+
+		const seriesNumber = `107-${new Date().getFullYear()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 		const prescriptionDate = new Date().toLocaleDateString("ru-RU");
 
 		const payload: Form107_1uPayload = {
 			formNumber: "107-1/у",
-			clinicLegalName: args.clinicLegalName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-			clinicAddress: "г. Москва, ул. Медицинская, д. 10",
-			clinicPhone: "+7 (495) 123-45-67",
-			clinicOgrn: "1237700000000",
-			clinicInn: "7700000000",
-			medicalLicenseNumber: "ЛО41-01137-77/00123456",
+			clinicLegalName: org?.name || args.clinicLegalName || "Медицинская организация",
+			clinicAddress: org?.legalAddress || "Адрес",
+			clinicPhone: "+7 (000) 000-00-00",
+			clinicOgrn: org?.ogrn || "0000000000000",
+			clinicInn: org?.inn || "0000000000",
+			medicalLicenseNumber: org?.medicalLicenseNumber || "Лицензия",
 			prescriptionSeriesNumber: seriesNumber,
 			prescriptionDate,
 			patientFullName: patientName,

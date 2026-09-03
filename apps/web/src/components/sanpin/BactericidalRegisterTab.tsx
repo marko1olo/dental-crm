@@ -307,10 +307,10 @@ export function BactericidalRegisterTab() {
 								<button
 									type="button"
 									onClick={() => handleReplaceLamps(eq.id, eq.deviceBrand)}
-									style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }}
-									className="sanpin-btn sanpin-btn-secondary"
+									style={{ minHeight: "44px", fontSize: "0.85rem", padding: "0.45rem 0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+									className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 								>
-									<RefreshCw size={12} /> Замена ламп (сброс)
+									<RefreshCw size={15} /> Замена ламп (сброс)
 								</button>
 							</div>
 						</div>
@@ -333,13 +333,13 @@ export function BactericidalRegisterTab() {
 						flexWrap: "wrap",
 					}}
 				>
-					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
-						<span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--muted, #64748b)" }}>Фильтр:</span>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+						<span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--muted, #64748b)" }}>Фильтр:</span>
 						<select
 							value={selectedEquipId}
 							onChange={(e) => setSelectedEquipId(e.target.value)}
 							className="sanpin-select"
-							style={{ minHeight: "32px", height: "32px", fontSize: "0.78rem", padding: "0.2rem 0.5rem", borderRadius: "6px" }}
+							style={{ minHeight: "44px", height: "44px", fontSize: "0.85rem", padding: "0.4rem 0.75rem", borderRadius: "8px" }}
 						>
 							<option value="all">Все облучатели клиники</option>
 							{equipments.map((e) => (
@@ -354,20 +354,20 @@ export function BactericidalRegisterTab() {
 						onClick={() => window.print()}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{
-							minHeight: "32px",
-							height: "32px",
-							padding: "0.2rem 0.65rem",
-							fontSize: "0.78rem",
+							minHeight: "44px",
+							height: "44px",
+							padding: "0.4rem 0.85rem",
+							fontSize: "0.85rem",
 							fontWeight: 600,
 							cursor: "pointer",
 							whiteSpace: "nowrap",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "0.25rem",
-							borderRadius: "6px",
+							gap: "0.35rem",
+							borderRadius: "8px",
 						}}
 					>
-						<Printer size={13} /> <span>Печать журнала наработки</span>
+						<Printer size={15} /> <span>Печать журнала наработки</span>
 					</button>
 				</div>
 				<table className="sanpin-table">

@@ -64,6 +64,37 @@ export class HardwareScanner {
 
 	constructor() {
 		this.initDetectorIfAvailable();
+		if (typeof window !== "undefined") {
+			window.addEventListener("NATIVE_BARCODE_SCANNED", (event: Event) => {
+				const customEv = event as CustomEvent<{ barcode: string; format?: string }>;
+				if (customEv.detail?.barcode) {
+					this.handleScannedCode(customEv.detail.barcode, customEv.detail.format as BarcodeFormat);
+				}
+			});
+		}
+	}
+
+	public handleScannedCode(rawCode: string, format?: BarcodeFormat): void {
+		const clean = rawCode.trim();
+		if (!clean) return;
+		const now = Date.now();
+		if (clean === this.lastScannedCode && now - this.lastScanTimestamp < this.debounceMs) {
+			return;
+		}
+		this.lastScannedCode = clean;
+		this.lastScanTimestamp = now;
+
+		triggerHaptic("success");
+		playClinicalAudioFeedback("scan_success");
+
+		this.emitScan({
+			success: true,
+			rawCode: clean,
+			format: format ?? "unknown",
+			timestamp: now,
+			source: "camera_mlkit_native",
+			durationMs: 0,
+		});
 	}
 
 	private async initDetectorIfAvailable(): Promise<void> {
@@ -156,6 +187,13 @@ export class HardwareScanner {
 		videoElement: HTMLVideoElement,
 		options: CameraScanOptions = {},
 	): Promise<MediaStream> {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("START_NATIVE_SCAN", {
+					detail: options,
+				}),
+			);
+		}
 		this.stopCameraStream();
 		this.state = "starting_camera";
 		this.activeVideoElement = videoElement;
@@ -276,6 +314,9 @@ export class HardwareScanner {
 	 * Stops the active camera stream and cancels detection loops.
 	 */
 	public stopCameraStream(): void {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("STOP_NATIVE_SCAN"));
+		}
 		if (this.animationFrameId !== null) {
 			cancelAnimationFrame(this.animationFrameId);
 			this.animationFrameId = null;

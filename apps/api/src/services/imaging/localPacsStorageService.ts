@@ -11,6 +11,7 @@
  */
 
 import { createHash } from "node:crypto";
+import crypto from "node:crypto";
 import { existsSync, statSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -110,7 +111,7 @@ export class LocalPacsStorageService {
 		const fileSizeMb = Number((fileSizeBytes / (1024 * 1024)).toFixed(2));
 		const isMultiGigabyteScan = fileSizeBytes >= 1024 * 1024 * 500; // >= 500 MB
 
-		const studyUid = input.dicomStudyUid || `1.2.643.5.1.13.1.${Date.now()}.${Math.floor(Math.random() * 100000)}`;
+		const studyUid = input.dicomStudyUid || `1.2.643.5.1.13.1.${Date.now()}.${crypto.randomInt(100000, 99999999)}`;
 
 		// Insert or update imaging study in database with local storage_path
 		const study = await createImagingStudyInDb(input.organizationId, {

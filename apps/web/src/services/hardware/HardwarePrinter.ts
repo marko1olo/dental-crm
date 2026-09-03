@@ -93,6 +93,13 @@ export class HardwarePrinter {
 	): Promise<HardwarePrintResult> {
 		const nowIso = new Date().toISOString();
 		const buffer = this.buildEscPosAppointmentTicket(ticket);
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("PRINT_TICKET", {
+					detail: ticket,
+				}),
+			);
+		}
 
 		if (this.isCapacitorNative()) {
 			try {
@@ -226,7 +233,10 @@ export class HardwarePrinter {
 
 		// 7. Fiscal details & 2D QR Code
 		const fnSerial = "9960440302145896";
-		const fiscalDocNum = String(Math.floor(10000 + Math.random() * 90000));
+		const fiscalDocNum =
+			typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function"
+				? String(10000 + (crypto.getRandomValues(new Uint32Array(1))[0]! % 90000))
+				: String(Date.now() % 100000);
 		const fiscalSign = KktLanPrinterService.computeFiscalSign(fnSerial, fiscalDocNum, now, payload.totalRub);
 
 		const qrPayload = KktLanPrinterService.generate54FzQrString({
@@ -296,6 +306,15 @@ export class HardwarePrinter {
 		payload: FiscalReceiptPrintPayload,
 	): Promise<HardwarePrintResult> {
 		const nowIso = new Date().toISOString();
+
+		// Dispatch decoupled window event for native hosts (Android Studio / Xcode / WebView bridge)
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("PRINT_RECEIPT", {
+					detail: payload,
+				}),
+			);
+		}
 
 		// 1. Capacitor / Android Mobile Environment -> Bluetooth Thermal ESC/POS
 		if (this.isCapacitorNative()) {
@@ -407,7 +426,10 @@ export class HardwarePrinter {
 		const dateFormatted = `${now.toLocaleDateString("ru-RU")} ${now.toLocaleTimeString("ru-RU")}`;
 		const isReturn = payload.operationType === "income_return";
 		const fnSerial = "9960440302145896";
-		const fiscalDocNum = String(Math.floor(10000 + Math.random() * 90000));
+		const fiscalDocNum =
+			typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function"
+				? String(10000 + (crypto.getRandomValues(new Uint32Array(1))[0]! % 90000))
+				: String(Date.now() % 100000);
 		const fiscalSign = KktLanPrinterService.computeFiscalSign(fnSerial, fiscalDocNum, now, payload.totalRub);
 		const qrString = KktLanPrinterService.generate54FzQrString({
 			issuedAt: now,

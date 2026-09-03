@@ -321,6 +321,15 @@ export const patientInvoices = pgTable(
 			t.organizationId,
 		),
 		patientIdIdx: index("patient_invoices_patientId_idx").on(t.patientId),
+		orgPatientCreatedIdx: index("patient_invoices_org_patient_created_idx").on(
+			t.organizationId,
+			t.patientId,
+			t.createdAt,
+		),
+		orgStatusIdx: index("patient_invoices_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
 	}),
 );
 

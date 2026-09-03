@@ -933,28 +933,28 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 											<Calendar className="w-4 h-4 text-sky-600" />
 											4. Дневники клинических приёмов (Формат SOAP)
 										</h3>
-										<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+										<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
 											<button
 												type="button"
-												className="emr043-btn emr043-btn-primary"
-												style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px", background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "white" }}
+												className="emr043-btn emr043-btn-primary touch-manipulation"
+												style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "white", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 												onClick={() => setIsProtocolGeneratorOpen(true)}
 												data-testid="form043-synthesize-diary-btn"
 												title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
 											>
-												<Sparkles className="w-3.5 h-3.5" />
+												<Sparkles className="w-4 h-4" />
 												<span>Сформировать дневник 043/у по МКБ-10 и формуле</span>
 											</button>
 											<button
 												type="button"
-												className="emr043-btn emr043-btn-secondary"
-												style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px" }}
+												className="emr043-btn emr043-btn-secondary touch-manipulation"
+												style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 												onClick={() => {
 													setIsCmoAuditOpen(true);
 													onOpenCmoAudit?.();
 												}}
 											>
-												<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
+												<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
 												<span>Экспертиза ЭМК (Начмед / ВК)</span>
 											</button>
 										</div>
@@ -1020,14 +1020,14 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 										</h3>
 										<button
 											type="button"
-											className="emr043-btn emr043-btn-secondary"
-											style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px" }}
+											className="emr043-btn emr043-btn-secondary touch-manipulation"
+											style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 											onClick={() => {
 												setIsCmoAuditOpen(true);
 												onOpenCmoAudit?.();
 											}}
 										>
-											<ShieldCheck className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)]" />
+											<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
 											<span>Экспертиза ЭМК (Начмед / ВК)</span>
 										</button>
 									</div>
@@ -1080,8 +1080,8 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 
 										<button
 											type="button"
-											className="emr043-btn emr043-btn-primary"
-											style={{ minHeight: "36px", padding: "6px 14px", fontSize: "12px" }}
+											className="emr043-btn emr043-btn-primary touch-manipulation"
+											style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.88rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
 											onClick={() => {
 												setIsCmoAuditOpen(true);
 												onOpenCmoAudit?.();

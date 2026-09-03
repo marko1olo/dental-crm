@@ -374,12 +374,12 @@ export function MedicalWasteRegisterTab() {
 										<button
 											type="button"
 											onClick={() => handlePrintStickerForLog(log)}
-											className="sanpin-btn sanpin-btn-secondary"
-											style={{ minHeight: "36px", padding: "0.3rem 0.6rem", fontSize: "0.78rem", fontWeight: 700 }}
+											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+											style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 											title="Печать термоэтикетки 58x40 мм со штрихкодом"
 											data-testid={`print-waste-sticker-${log.id}`}
 										>
-											<Printer size={13} /> 58x40 мм
+											<Printer size={15} /> 58x40 мм
 										</button>
 									</td>
 								</tr>

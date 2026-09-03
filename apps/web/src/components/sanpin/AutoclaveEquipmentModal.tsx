@@ -415,8 +415,8 @@ export function AutoclaveEquipmentModal({
 								<button
 									type="button"
 									onClick={handleStartAdd}
-									className="sanpin-btn sanpin-btn-primary"
-									style={{ minHeight: "38px", padding: "0.4rem 1rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+									className="sanpin-btn sanpin-btn-primary touch-manipulation"
+									style={{ minHeight: "44px", padding: "0.5rem 1.1rem", fontSize: "0.88rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
 									data-testid="add-autoclave-btn"
 								>
 									<Plus size={16} /> Добавить аппарат
@@ -504,24 +504,24 @@ export function AutoclaveEquipmentModal({
 												</div>
 											</div>
 
-											<div style={{ display: "flex", alignItems: "center", gap: "0.35rem", flexShrink: 0 }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
 												<button
 													type="button"
 													onClick={() => handleStartEdit(dev)}
-													className="sanpin-btn sanpin-btn-secondary"
-													style={{ minHeight: "32px", height: "32px", width: "32px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+													className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+													style={{ minHeight: "44px", height: "44px", minWidth: "44px", width: "44px", padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: "8px" }}
 													title="Редактировать параметры автоклава"
 												>
-													<Edit2 size={14} />
+													<Edit2 size={16} />
 												</button>
 												<button
 													type="button"
 													onClick={() => handleDeleteDevice(dev.id)}
-													className="sanpin-btn sanpin-btn-secondary"
-													style={{ minHeight: "32px", height: "32px", width: "32px", padding: 0, color: "#ef4444", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+													className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+													style={{ minHeight: "44px", height: "44px", minWidth: "44px", width: "44px", padding: 0, color: "#ef4444", display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: "8px" }}
 													title="Удалить аппарат"
 												>
-													<Trash2 size={14} />
+													<Trash2 size={16} />
 												</button>
 											</div>
 										</div>

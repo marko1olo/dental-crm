@@ -165,6 +165,10 @@ const FREE_TEXT_PATTERNS = [
 		kind: "OMS",
 		regex: /\b\d{16}\b/g,
 	},
+	{
+		kind: "NAME",
+		regex: /[А-ЯЁ][а-яё]+(?:-[А-ЯЁ][а-яё]+)?\s+[А-ЯЁ][а-яё]+\s+[А-ЯЁ][а-яё]+(?:вич|вна|ич|на|лы|кызы)/g,
+	},
 ];
 
 function tokenFor(real: string, kind: string): string {
@@ -232,7 +236,15 @@ export class SymbolTable {
 			}
 		}
 
-		// 2. Heuristic regex scrub for newly detected unseeded patterns
+		// 2. Clinical Russian patient FIO regex scrub (152-FZ)
+		const fioPattern =
+			/(?:^|[\s,.:;])(?:\u043F\u0430\u0446\u0438\u0435\u043D\u0442(?:\u043A\u0430)?|\u0424\u0418\u041E|\u0431\u043E\u043B\u044C\u043D\u043E\u0439|\u0433\u0440-(?:\u043D|\u043A\u0430)?)\s*:?\s+([\u0410-\u042F\u0401][\u0430-\u044F\u0451]+(?:\s+[\u0410-\u042F\u0401][\u0430-\u044F\u0451]+){1,2})/gui;
+		result = result.replace(fioPattern, (fullMatch, nameGroup: string) => {
+			const token = this.tokenize(nameGroup, "NAME");
+			return fullMatch.replace(nameGroup, token);
+		});
+
+		// 3. Heuristic regex scrub for newly detected unseeded patterns
 		for (const { kind, regex } of FREE_TEXT_PATTERNS) {
 			result = result.replace(regex, (match) => {
 				return this.tokenize(match, kind);

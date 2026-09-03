@@ -11,6 +11,7 @@
  */
 
 import { existsSync, statSync } from "node:fs";
+import crypto from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { imagingInstances, imagingSeries, imagingStudies } from "../../db/schema.js";
@@ -60,7 +61,7 @@ export class LocalPacsStorageService {
 
 		const studyUid =
 			input.dicomStudyUid ||
-			`1.2.643.5.1.13.1.${Date.now()}.${Math.floor(Math.random() * 100000)}`;
+			`1.2.643.5.1.13.1.${Date.now()}.${crypto.randomInt(100000, 99999999)}`;
 
 		// Insert or update imaging study in database with local storage_path
 		const [studyRow] = await db

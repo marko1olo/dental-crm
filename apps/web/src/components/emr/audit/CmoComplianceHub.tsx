@@ -785,11 +785,11 @@ export function CmoComplianceHub({
 												<button
 													type="button"
 													onClick={() => setCdaExportVisit(item)}
-													className="cmo-hub-btn cmo-hub-btn--secondary"
-													style={{ minHeight: "36px", padding: "4px 8px", fontSize: "12px" }}
+													className="cmo-hub-btn cmo-hub-btn--secondary touch-manipulation"
+													style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 													title="Экспорт и валидация СЭМД CDA R2 XML для ЕГИСЗ (Приказ 911н)"
 												>
-													<FileText size={14} />
+													<FileText size={16} />
 													<span>СЭМД CDA</span>
 												</button>
 												<button
@@ -798,11 +798,11 @@ export function CmoComplianceHub({
 														setAuditingVisitId(item.id);
 														onOpenAuditModal?.(item.id);
 													}}
-													className="cmo-hub-btn cmo-hub-btn--secondary"
-													style={{ minHeight: "36px", padding: "4px 10px", fontSize: "12px" }}
+													className="cmo-hub-btn cmo-hub-btn--secondary touch-manipulation"
+													style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 													title="Открыть клиническую экспертизу качества карты (Приказ 203н)"
 												>
-													<Eye size={14} />
+													<Eye size={16} />
 													<span>Экспертиза</span>
 												</button>
 											</div>
@@ -842,7 +842,7 @@ export function CmoComplianceHub({
 									value={selectedThumbprint}
 									onChange={(e) => setSelectedThumbprint(e.target.value)}
 									className="cmo-hub-select"
-									style={{ minWidth: "240px", maxWidth: "340px", height: "40px", minHeight: "40px", fontSize: "12px" }}
+									style={{ minWidth: "240px", maxWidth: "340px", height: "44px", minHeight: "44px", fontSize: "13px" }}
 									aria-label="Сертификат УКЭП для пакетной подписи"
 								>
 									{certificates.map((cert) => {
@@ -871,7 +871,7 @@ export function CmoComplianceHub({
 								onClick={handleStartBatchSign}
 								disabled={Boolean(batchSession?.isActive)}
 								className="cmo-hub-btn cmo-hub-btn--primary"
-								style={{ minHeight: "40px", height: "40px", padding: "0 16px", fontSize: "13px", fontWeight: 700 }}
+								style={{ minHeight: "44px", height: "44px", padding: "0 16px", fontSize: "13px", fontWeight: 700 }}
 								data-testid="cmo-hub-batch-sign-btn"
 							>
 								<Key size={15} />
@@ -882,7 +882,7 @@ export function CmoComplianceHub({
 								type="button"
 								onClick={() => setSelectedVisitIds(new Set())}
 								className="cmo-hub-btn cmo-hub-btn--secondary"
-								style={{ minHeight: "40px", height: "40px", padding: "0 12px", fontSize: "13px" }}
+								style={{ minHeight: "44px", height: "44px", padding: "0 12px", fontSize: "13px" }}
 							>
 								Снять выделение
 							</button>
@@ -912,8 +912,8 @@ export function CmoComplianceHub({
 								<button
 									type="button"
 									onClick={() => setBatchSession(null)}
-									className="cmo-hub-btn cmo-hub-btn--secondary"
-									style={{ minHeight: "36px", padding: "4px 10px" }}
+									className="cmo-hub-btn cmo-hub-btn--secondary touch-manipulation"
+									style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 								>
 									<X size={16} />
 									<span>Закрыть</span>

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
 	SanPiNRegulatoryEngine,
 	computePackagingExpirationDate,
@@ -379,10 +380,10 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 				: null;
 
 		const cleanCycle = String(data.cycleNumber).padStart(3, "0");
-		const yyyy = now.getFullYear();
+		const yyyy = now.getFullYear().toString();
 		const mm = String(now.getMonth() + 1).padStart(2, "0");
 		const dd = String(now.getDate()).padStart(2, "0");
-		const generatedBarcode = `DNT-STER-C${cleanCycle}-${yyyy}${mm}${dd}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+		const generatedBarcode = `DNT-STER-C${cleanCycle}-${yyyy}${mm}${dd}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
 
 		const [log] = await db
 			.insert(sterilizationLogs)
@@ -1237,7 +1238,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		const year = new Date().getFullYear();
 		const actNumber =
 			data.actSanPiNNumber ||
-			`АКТ-ВБИ-${year}-${Math.floor(100 + Math.random() * 900)}`;
+			`АКТ-ВБИ-${year}-${crypto.randomInt(100, 999)}`;
 
 		const [log] = await db
 			.insert(emergencyBiohazardLogs)

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import {
 	CONTROLLED_DRUG_PRESETS,
 	calculatePrescriptionExpiration,
@@ -14,6 +15,8 @@ import {
 	renderPrescriptionUniversalHtml,
 	verifyPrescriptionStatutoryValidity,
 	isValidSnils,
+	validateCertificateStatus,
+	validateGostCmsPkcs7Signature,
 } from "@dental/shared";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -456,7 +459,7 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 			prefix = "148-1У-04Л";
 			numPrefix = "ЛЬГ-04";
 		}
-		const prescriptionNumber = `${numPrefix}-${year}-${Math.floor(100000 + Math.random() * 900000)}`;
+		const prescriptionNumber = `${numPrefix}-${year}-${crypto.randomInt(100000, 999999)}`;
 
 		const created = await db.transaction(async (tx) => {
 			const [presc] = await tx
@@ -582,6 +585,30 @@ export async function registerPrescriptionRoutes(app: FastifyInstance) {
 		}
 
 		const { pkcs7Signature } = parsedBody.data;
+
+		// 63-ФЗ: Валидация криптографического формата отсоединенной подписи CMS PKCS#7
+		const signatureValidation = validateGostCmsPkcs7Signature(pkcs7Signature);
+		if (!signatureValidation.valid) {
+			return reply.code(400).send({
+				error: "SignatureVerificationFailed",
+				errorCode: signatureValidation.errorCode ?? "SignatureVerificationFailed",
+				message: `Предоставленная подпись не является корректной отсоединенной подписью CMS (PKCS#7) по ГОСТ Р 34.10-2012. ${signatureValidation.error}`,
+			});
+		}
+
+		// Валидация срока действия сертификата и проверка по списку отзыва (CRL)
+		const certStatus = validateCertificateStatus({
+			validFrom: parsedBody.data.certificateValidFrom,
+			validTo: parsedBody.data.certificateValidTo,
+			signedAt: new Date().toISOString(),
+			certificateSerialNumber: parsedBody.data.certificateSerialNumber,
+		});
+		if (!certStatus.valid) {
+			return reply.code(400).send({
+				error: certStatus.errorCode ?? "InvalidCertificateStatus",
+				message: certStatus.error,
+			});
+		}
 
 		const [doc] = await db
 			.select()

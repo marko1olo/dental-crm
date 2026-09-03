@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -32,7 +33,7 @@ function generateReferralCode(fullName: string): string {
 		.toUpperCase()
 		.replace(/[^A-ZА-Я0-9]/gi, "")
 		.slice(0, 8);
-	const randomNum = Math.floor(1000 + Math.random() * 9000);
+	const randomNum = crypto.randomInt(1000, 9999);
 	return `DENTE-${sanitized || "FRIEND"}-${randomNum}`;
 }
 

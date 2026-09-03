@@ -963,16 +963,16 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 																			/>
 																			<button
 																				type="button"
-																				className="cmo-btn cmo-btn-approve"
-																				style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px" }}
+																				className="cmo-btn cmo-btn-approve touch-manipulation"
+																				style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem" }}
 																				onClick={() => handleResolveRemarkSubmit(rem.id)}
 																			>
 																				Подтвердить
 																			</button>
 																			<button
 																				type="button"
-																				className="cmo-btn cmo-btn-secondary"
-																				style={{ minHeight: "36px", padding: "4px 12px", fontSize: "12px" }}
+																				className="cmo-btn cmo-btn-secondary touch-manipulation"
+																				style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem" }}
 																				onClick={() => setResolvingRemarkId(null)}
 																			>
 																				Отмена
@@ -981,8 +981,8 @@ export const CmoEmrAuditModal: React.FC<CmoEmrAuditModalProps> = ({
 																	) : (
 																		<button
 																			type="button"
-																			className="cmo-preset-chip"
-																			style={{ minHeight: "32px", fontSize: "11px" }}
+																			className="cmo-preset-chip touch-manipulation"
+																			style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", fontWeight: 600, display: "inline-flex", alignItems: "center" }}
 																			onClick={() => {
 																				setResolvingRemarkId(rem.id);
 																				setDoctorResolutionText("");

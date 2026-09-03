@@ -353,16 +353,16 @@ export function PsoRegisterTab() {
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="sanpin-input"
-							style={{ paddingLeft: "1.9rem", minHeight: "32px", height: "32px", fontSize: "0.78rem", width: "100%", borderRadius: "6px" }}
+							style={{ paddingLeft: "1.9rem", minHeight: "44px", height: "44px", fontSize: "0.85rem", width: "100%", borderRadius: "8px" }}
 						/>
 					</div>
 
-					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexShrink: 0 }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
 						<select
 							value={testFilter}
 							onChange={(e) => setTestFilter(e.target.value)}
 							className="sanpin-select"
-							style={{ minHeight: "32px", height: "32px", fontSize: "0.78rem", padding: "0.2rem 0.5rem", borderRadius: "6px" }}
+							style={{ minHeight: "44px", height: "44px", fontSize: "0.85rem", padding: "0.4rem 0.75rem", borderRadius: "8px" }}
 						>
 							<option value="all">Все пробы ПСО</option>
 							<option value="approved">Партия допущена (Проба отрицательная)</option>
@@ -374,22 +374,22 @@ export function PsoRegisterTab() {
 							onClick={handleGenerateMonthlyForm366}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{
-								minHeight: "32px",
-								height: "32px",
-								padding: "0.2rem 0.65rem",
-								fontSize: "0.78rem",
+								minHeight: "44px",
+								height: "44px",
+								padding: "0.4rem 0.85rem",
+								fontSize: "0.85rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "0.25rem",
-								borderRadius: "6px",
+								gap: "0.35rem",
+								borderRadius: "8px",
 							}}
 							title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) за текущий месяц"
 							data-testid="generate-monthly-form366-btn"
 						>
-							<Sparkles size={13} color="#0d9488" />
+							<Sparkles size={15} color="#0d9488" />
 							<span>Форма 366/у за месяц</span>
 						</button>
 
@@ -398,20 +398,20 @@ export function PsoRegisterTab() {
 							onClick={() => setIsModalOpen(true)}
 							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 							style={{
-								minHeight: "32px",
-								height: "32px",
-								padding: "0.2rem 0.65rem",
-								fontSize: "0.78rem",
+								minHeight: "44px",
+								height: "44px",
+								padding: "0.4rem 0.85rem",
+								fontSize: "0.85rem",
 								fontWeight: 600,
 								cursor: "pointer",
 								whiteSpace: "nowrap",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "0.25rem",
-								borderRadius: "6px",
+								gap: "0.35rem",
+								borderRadius: "8px",
 							}}
 						>
-							<Plus size={13} /> <span>Внести пробу ПСО</span>
+							<Plus size={15} /> <span>Внести пробу ПСО</span>
 						</button>
 					</div>
 				</div>
@@ -451,7 +451,7 @@ export function PsoRegisterTab() {
 											type="button"
 											onClick={() => setIsModalOpen(true)}
 											className="sanpin-btn sanpin-btn-primary"
-											style={{ minHeight: "40px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+											style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.85rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 										>
 											<Plus size={15} /> + Внести пробу ПСО (Форма № 366/у)
 										</button>
@@ -540,11 +540,11 @@ export function PsoRegisterTab() {
 													<button
 														type="button"
 														onClick={() => handleStampVerification(log.id)}
-														className="sanpin-btn sanpin-btn-secondary"
-														style={{ minHeight: "36px", minWidth: "44px", padding: "0.2rem 0.5rem", fontSize: "0.775rem" }}
+														className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+														style={{ minHeight: "44px", minWidth: "80px", padding: "0.4rem 0.85rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 														title="Поставить штамп заверки медсестры"
 													>
-														<Award size={13} color="var(--brand-primary)" /> Заверить
+														<Award size={15} color="var(--brand-primary)" /> Заверить
 													</button>
 												)}
 											</div>

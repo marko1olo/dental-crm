@@ -312,6 +312,6 @@ export class PartialRefundService {
 					clawbackRub: d.clawbackRub,
 				})),
 			};
-		});
+		}, { isolationLevel: "serializable" });
 	}
 }
