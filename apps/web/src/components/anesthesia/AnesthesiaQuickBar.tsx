@@ -9,6 +9,7 @@ import {
 	CheckCircle2,
 	ShieldAlert,
 	Activity,
+	Trash2,
 } from "lucide-react";
 import {
 	type AnestheticDrugId,
@@ -18,6 +19,7 @@ import {
 } from "./anesthesiaCatalog";
 import {
 	calculateAnesthesiaSafety,
+	resolveClinicalDefaultWeightKg,
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
 } from "./anesthesiaEngine";
@@ -31,6 +33,7 @@ export interface AnesthesiaQuickBarProps {
 	isPregnantOrLactating?: boolean | undefined;
 	targetToothNumberFdi?: number | string | undefined;
 	onApplyAnesthesia: (diaryText: string, result: AnesthesiaCalculationResult) => void;
+	onDisposalCarpules?: ((carpulesCount: number, drugId: AnestheticDrugId) => void) | undefined;
 	disabled?: boolean | undefined;
 }
 
@@ -75,7 +78,7 @@ export const PRIMARY_ANESTHETIC_DRUGS: readonly {
 ];
 
 export function AnesthesiaQuickBar({
-	patientWeightKg: initialWeightKg = 70,
+	patientWeightKg: initialWeightKg,
 	patientAgeYears = 35,
 	hasCardiovascularRisk = false,
 	hasSulfiteAllergy = false,
@@ -83,11 +86,15 @@ export function AnesthesiaQuickBar({
 	isPregnantOrLactating = false,
 	targetToothNumberFdi,
 	onApplyAnesthesia,
+	onDisposalCarpules,
 	disabled = false,
 }: AnesthesiaQuickBarProps) {
-	const [patientWeightKg, setPatientWeightKg] = useState<number>(
-		initialWeightKg > 0 ? initialWeightKg : 70,
+	const defaultWeight = resolveClinicalDefaultWeightKg(
+		initialWeightKg,
+		patientAgeYears,
+		patientAgeYears < 18,
 	);
+	const [patientWeightKg, setPatientWeightKg] = useState<number>(defaultWeight);
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(() => {
 		if (hasSulfiteAllergy || hasBronchialAsthma) return "mepivacaine_plain";
 		if (hasCardiovascularRisk) return "mepivacaine_plain";
@@ -101,10 +108,15 @@ export function AnesthesiaQuickBar({
 
 	// Live calculation for 1 carpule (1.7 ml)
 	const singleCarpuleResult = useMemo(() => {
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
 		return calculateAnesthesiaSafety({
 			drugId: selectedDrugId,
 			carpulesCount: 1.0,
-			patientWeightKg,
+			patientWeightKg: effectiveWeight,
 			patientAgeYears,
 			asaStatus,
 			hasCardiovascularRisk,
@@ -135,10 +147,16 @@ export function AnesthesiaQuickBar({
 	const handleApplyCarpules = (carpulesCount: number) => {
 		if (disabled) return;
 
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
+
 		const result = calculateAnesthesiaSafety({
 			drugId: selectedDrugId,
 			carpulesCount,
-			patientWeightKg,
+			patientWeightKg: effectiveWeight,
 			patientAgeYears,
 			asaStatus,
 			hasCardiovascularRisk,
@@ -152,7 +170,7 @@ export function AnesthesiaQuickBar({
 		});
 
 		// Check critical contraindications
-		if (result.contraindicationsTriggered.length > 0 || result.isOverdose || result.isEpinephrineOverdose) {
+		if (result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0)) {
 			setSafetyWarning({
 				title: "Соматический риск / Превышение МДД",
 				text: result.contraindicationsTriggered[0] || result.warnings[0] || "Обнаружен риск при введении препарата",
@@ -165,6 +183,17 @@ export function AnesthesiaQuickBar({
 			`Зафиксировано: ${selectedDrugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
 		);
 		setTimeout(() => setActiveToastMessage(null), 3500);
+	};
+
+	const handleNurseQuickDisposal = (carpulesCount = 1.0) => {
+		if (disabled) return;
+		setActiveToastMessage(
+			`Списана пустая карпула ${selectedDrugInfo.tradeNamesRu[0]} (${carpulesCount} шт.): отходы Класса Б / ПКУ зафиксированы медсестрой в 1 клик (без комиссии)`,
+		);
+		setTimeout(() => setActiveToastMessage(null), 4000);
+		if (onDisposalCarpules) {
+			onDisposalCarpules(carpulesCount, selectedDrugId);
+		}
 	};
 
 	return (
@@ -261,7 +290,7 @@ export function AnesthesiaQuickBar({
 
 					<button
 						type="button"
-						disabled={disabled || maxSafeCarpules < 2.0}
+						disabled={disabled}
 						onClick={() => handleApplyCarpules(2.0)}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-[var(--teal-surface)] border border-[var(--line)] hover:border-[var(--teal)] text-xs sm:text-sm font-bold text-[var(--ink)] transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="Ввести 2 карпулы (3.4 мл) — для проводниковых анестезий"
@@ -281,6 +310,18 @@ export function AnesthesiaQuickBar({
 					>
 						<Plus size={14} className="text-[var(--teal)] shrink-0" />
 						<span>½ карп. (0.85 мл)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={() => handleNurseQuickDisposal(1.0)}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="Списать пустые карпулы анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
+						data-testid="nurse-quick-carpule-disposal"
+					>
+						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span>Списать карпулу (1 клик)</span>
 					</button>
 				</div>
 

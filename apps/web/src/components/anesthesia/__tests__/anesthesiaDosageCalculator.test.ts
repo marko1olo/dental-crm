@@ -215,4 +215,81 @@ describe("AnesthesiaDosageCalculator — Clinical Safety & Maximum Recommended D
 		assert.ok(result.diaryEntryRu.includes("68 мг"));
 		assert.ok(result.diaryEntryRu.includes("Аспирационная проба"));
 	});
+
+	// ── 7. Mandate 8e / Section VII: Zero Weight-Input Paralysis ───────────────
+	it("8. Resolves clinical default 70 kg when adult weight is missing/0, max 7.2 carpules, unblocked for 1-2 carpules", () => {
+		const result = calculateAnesthesiaSafety({
+			drugId: "articaine_1_100k",
+			carpulesCount: 2.0, // 2 carpules standard dose
+			patientWeightKg: undefined, // Weight not entered!
+			patientAgeYears: 35,
+			asaStatus: "asa_1",
+			hasCardiovascularRisk: false,
+			hasSulfiteAllergy: false,
+			hasBronchialAsthma: false,
+			isPregnantOrLactating: false,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			aspirationNegativeConfirmed: true,
+		});
+
+		// Uses clinical default 70 kg
+		assert.equal(result.maxSafeActiveMg, 490);
+		assert.equal(result.maxSafeCarpulesCount, 7.2);
+		// 2 carpules = 136 mg active (< 490 mg)
+		assert.equal(result.injectedActiveMg, 136);
+		assert.equal(result.isOverdose, false);
+		assert.equal(result.safetyZone, "safe");
+		assert.equal(result.contraindicationsTriggered.length, 0);
+	});
+
+	it("9. Resolves clinical default 70 kg for Scandonest 3% when weight is missing/0 (max 5.8 carpules, capped at 300 mg)", () => {
+		const result = calculateAnesthesiaSafety({
+			drugId: "mepivacaine_plain",
+			carpulesCount: 2.0, // 2 carpules
+			patientWeightKg: 0, // Empty weight in card
+			patientAgeYears: 40,
+			asaStatus: "asa_1",
+			hasCardiovascularRisk: false,
+			hasSulfiteAllergy: false,
+			hasBronchialAsthma: false,
+			isPregnantOrLactating: false,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			aspirationNegativeConfirmed: true,
+		});
+
+		// 70 * 4.4 = 308 mg, capped at absolute maximum 300 mg
+		assert.equal(result.maxSafeActiveMg, 300);
+		// 300 / 51 = 5.8 carpules
+		assert.equal(result.maxSafeCarpulesCount, 5.8);
+		assert.equal(result.isOverdose, false);
+		assert.equal(result.safetyZone, "safe");
+	});
+
+	it("10. Resolves pediatric age-based weight when child weight is missing, calculating safe dose without blocking", () => {
+		// 7-year-old child without entered weight: standard formula 3 * age + 4 = 25 kg
+		const result = calculateAnesthesiaSafety({
+			drugId: "articaine_1_200k",
+			carpulesCount: 1.0,
+			patientWeightKg: undefined,
+			patientAgeYears: 7,
+			asaStatus: "asa_1",
+			hasCardiovascularRisk: false,
+			hasSulfiteAllergy: false,
+			hasBronchialAsthma: false,
+			isPregnantOrLactating: false,
+			techniqueId: "infiltration",
+			needleType: "g30_ultrashort_12mm",
+			aspirationNegativeConfirmed: true,
+		});
+
+		assert.equal(result.ageCategory, "pediatric");
+		// 25 kg * 5.0 mg/kg = 125 mg
+		assert.equal(result.maxSafeActiveMg, 125);
+		// 125 / 68 = 1.8 carpules
+		assert.equal(result.maxSafeCarpulesCount, 1.8);
+		assert.equal(result.isOverdose, false);
+		assert.equal(result.safetyZone, "safe");
+	});
 });

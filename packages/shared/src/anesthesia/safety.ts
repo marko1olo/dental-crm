@@ -4,6 +4,7 @@
  */
 
 import { ANESTHESIA_DRUG_CATALOG, EPINEPHRINE_CEILINGS_MG } from "./catalog.js";
+import { resolveClinicalDefaultWeightKg } from "./calculator.js";
 import type {
 	AnesthesiaCalculationInput,
 	AnesthesiaDrugSpec,
@@ -208,61 +209,11 @@ export function calculateComprehensiveAnesthesiaSafety(
 
 	const carpules = Math.max(0, Number.isFinite(input.carpulesCount) ? input.carpulesCount : 1);
 
-	// Ликвидация смертельного хардкода 70 кг для детей или при отсутствии веса
-	if (!hasValidWeight || (isPediatric && (!input.patientWeightKg || input.patientWeightKg <= 0))) {
-		const screening = screenPatientContraindications(input, activeDrugId);
-		const warningText = isPediatric
-			? "Укажите фактический вес ребенка для расчета анестезии! Тихий дефолт на 70 кг запрещен."
-			: "Укажите фактический вес пациента для расчета анестезии! Тихий дефолт запрещен.";
-		return {
-			drug,
-			carpulesCount: carpules,
-			carpuleVolumeMl: carpuleVolume,
-			injectedVolumeMl: Number((carpules * carpuleVolume).toFixed(2)),
-			injectedActiveMg: Number((carpules * (carpuleVolume * drug.mgPerMlActive)).toFixed(1)),
-			injectedEpinephrineMg: Number((carpules * (carpuleVolume * drug.epinephrineMgPerMl)).toFixed(4)),
-			maxSafeActiveMg: 0,
-			maxSafeEpinephrineMg: 0,
-			maxSafeCarpulesCount: 0,
-			maxSafeVolumeMl: 0,
-			remainingSafeActiveMg: 0,
-			remainingSafeEpinephrineMg: 0,
-			remainingSafeCarpulesCount: 0,
-			percentOfMaxDose: 0,
-			percentOfEpiMaxDose: 0,
-			peakUtilizationPercent: 0,
-			effectiveMaxMgPerKg: 0,
-			isPediatric,
-			isGeriatric,
-			ageReductionFactor: 1.0,
-			safetyZone: "REQUIRES_WEIGHT_INPUT",
-			isOverdose: false,
-			isEpinephrineOverdose: false,
-			isBlocked: true,
-			status: "REQUIRES_WEIGHT_INPUT",
-			requiresWeightInput: true,
-			limitingFactor: "Требуется ввод фактического веса пациента",
-			blockingContraindications: [
-				...screening.blockingContraindications,
-				"Отсутствует фактический вес пациента. Расчет предельной дозы токсичности заблокирован.",
-			],
-			warnings: [warningText, ...screening.warnings],
-			recommendedAlternativeId: screening.recommendedAlternativeId,
-			recommendedAlternativeKey: screening.recommendedAlternativeId,
-			clinicalAdviceRu: "Расчет предельной дозы токсичности заблокирован: требуется указать фактический вес пациента!",
-			soapDiaryText: "Расчет местной анестезии заблокирован: не указан фактический вес пациента.",
-			carpuleBatch: input.carpuleBatch,
-			vitalsSafety: {
-				bpSystolic: input.bpSystolic,
-				bpDiastolic: input.bpDiastolic,
-				heartRateBpm: input.heartRateBpm,
-				spo2Percent: input.spo2Percent,
-				isHemodynamicallyStable: true,
-			},
-		};
-	}
-
-	const weight = Math.max(5, Math.min(250, input.patientWeightKg));
+	const weight = resolveClinicalDefaultWeightKg(
+		input.patientWeightKg,
+		input.patientAgeYears,
+		isPediatric,
+	);
 
 	const { effectiveMgPerKg: effectiveMaxMgPerKg, ageFactor } = calculateEffectiveMgPerKg(
 		drug,

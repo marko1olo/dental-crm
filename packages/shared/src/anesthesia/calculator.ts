@@ -25,6 +25,51 @@ import type {
 } from "./types.js";
 
 /**
+ * Клинический расчет массы тела по возрасту пациента (Минздрав РФ / педиатрия).
+ * Используется как безопасный дефолт, когда точный вес не указан в соматической анкете:
+ * - Взрослый (>= 18 лет или возраст не указан): клинический дефолт 70 кг.
+ * - Ребенок (< 18 лет): расчет по годам жизни.
+ */
+export function resolveClinicalDefaultWeightKg(
+	patientWeightKg?: number | null | undefined,
+	patientAgeYears?: number | null | undefined,
+	isPediatric?: boolean | undefined,
+): number {
+	if (
+		typeof patientWeightKg === "number" &&
+		Number.isFinite(patientWeightKg) &&
+		patientWeightKg > 0
+	) {
+		return Math.max(5, Math.min(250, patientWeightKg));
+	}
+
+	const isChild = Boolean(
+		isPediatric ||
+			(typeof patientAgeYears === "number" &&
+				Number.isFinite(patientAgeYears) &&
+				patientAgeYears > 0 &&
+				patientAgeYears < 18),
+	);
+
+	if (!isChild) {
+		return 70; // Клинический дефолт для взрослого пациента
+	}
+
+	// Педиатрический расчет веса по возрасту (стандарт клинической педиатрии РФ):
+	const age =
+		typeof patientAgeYears === "number" &&
+		Number.isFinite(patientAgeYears) &&
+		patientAgeYears > 0
+			? patientAgeYears
+			: 7; // Дефолтный возраст ребенка при неизвестном = 7 лет
+
+	if (age < 1) return 10;
+	if (age <= 5) return Math.round(2 * age + 8); // 1г: 10кг, 2г: 12кг, 3г: 14кг, 4г: 16кг, 5г: 18кг
+	if (age <= 12) return Math.round(3 * age + 4); // 6л: 22кг, 7л: 25кг, 8л: 28кг, 9л: 31кг, 10л: 34кг, 11л: 37кг, 12л: 40кг
+	return Math.min(65, Math.round(40 + (age - 12) * 4)); // 13-17 лет: 44-60 кг
+}
+
+/**
  * Парсит соматический анамнез пациента (из текста сопутствующих патологий или МКБ-10) в структурированный профиль риска.
  */
 export function extractSomaticRiskProfileFromText(text?: string | null | undefined): SomaticRiskProfile {
@@ -504,49 +549,11 @@ export function calculateVisitAnesthesiaSafety(
 				params.patientAgeYears !== undefined &&
 				params.patientAgeYears < 18),
 	);
-	const hasValidWeight =
-		typeof params.patientWeightKg === "number" &&
-		Number.isFinite(params.patientWeightKg) &&
-		params.patientWeightKg > 0;
-
-	// Ликвидация смертельного хардкода 70 кг для детей или при отсутствии веса
-	if (!hasValidWeight || (isPediatric && (!params.patientWeightKg || params.patientWeightKg <= 0))) {
-		const warningMessage = isPediatric
-			? "Укажите фактический вес ребенка для расчета анестезии!"
-			: "Укажите фактический вес пациента для расчета анестезии!";
-		return {
-			drug,
-			patientWeightKg: 0,
-			isPediatric,
-			effectiveMaxMgPerKg: 0,
-			carpulesCount: params.carpulesCount || 0,
-			totalVolumeMl: 0,
-			totalDoseMg: 0,
-			maxSafeDoseMg: 0,
-			maxSafeVolumeMl: 0,
-			maxSafeCarpules: 0,
-			mrdDoseMg: 0,
-			mrdVolumeMl: 0,
-			mrdCarpules: 0,
-			totalEpinephrineMg: 0,
-			maxSafeEpinephrineMg: 0,
-			safetyRatio: 1,
-			safetyLevel: "REQUIRES_WEIGHT_INPUT",
-			safetyPercentage: 100,
-			warningMessage,
-			status: "REQUIRES_WEIGHT_INPUT",
-			requiresWeightInput: true,
-			somaticProfile: params.somaticProfile,
-			somaticAlerts: [],
-			recommendedDrugKey: null,
-			isCardioRestricted: false,
-			cardioLimitBadgeText: null,
-			cardioLimitDetails: null,
-			carpuleBatch: params.carpuleBatch,
-		};
-	}
-
-	const weight = Math.max(5, Math.min(250, params.patientWeightKg));
+	const weight = resolveClinicalDefaultWeightKg(
+		params.patientWeightKg,
+		params.patientAgeYears,
+		isPediatric,
+	);
 	const carpules = Math.max(
 		0,
 		Number.isFinite(params.carpulesCount) ? params.carpulesCount : 1,
@@ -680,7 +687,7 @@ export function calculateVisitAnesthesiaSafety(
  */
 export function calculatePatientMrd(params: {
 	drugKey: AnesthesiaDrugKey;
-	patientWeightKg: number;
+	patientWeightKg?: number | null | undefined;
 	patientAgeYears?: number | null | undefined;
 	isPediatric?: boolean | undefined;
 	isCardioRestricted?: boolean | undefined;
@@ -693,36 +700,11 @@ export function calculatePatientMrd(params: {
 				params.patientAgeYears !== undefined &&
 				params.patientAgeYears < 18),
 	);
-	const hasValidWeight =
-		typeof params.patientWeightKg === "number" &&
-		Number.isFinite(params.patientWeightKg) &&
-		params.patientWeightKg > 0;
-
-	// Ликвидация смертельного хардкода 70 кг для детей или при отсутствии веса
-	if (!hasValidWeight || (isPediatric && (!params.patientWeightKg || params.patientWeightKg <= 0))) {
-		return {
-			drugKey: drug.key,
-			commercialName: drug.commercialName,
-			activeSubstance: drug.activeSubstance,
-			patientWeightKg: 0,
-			isPediatric,
-			maxDoseMgPerKg: 0,
-			mrdDoseMg: 0,
-			mrdVolumeMl: 0,
-			mrdCarpules: 0,
-			isCappedByAbsoluteMax: false,
-			isCappedByCardio: false,
-			maxSafeEpinephrineMg: 0,
-			cardioLimitBadgeText: null,
-			formattedNoteRu: isPediatric
-				? "Укажите фактический вес ребенка для расчета анестезии! Тихий дефолт на 70 кг запрещен."
-				: "Укажите фактический вес пациента для расчета анестезии! Тихий дефолт запрещен.",
-			status: "REQUIRES_WEIGHT_INPUT",
-			requiresWeightInput: true,
-		};
-	}
-
-	const weight = Math.max(5, Math.min(250, params.patientWeightKg));
+	const weight = resolveClinicalDefaultWeightKg(
+		params.patientWeightKg,
+		params.patientAgeYears,
+		isPediatric,
+	);
 	const maxDoseMgPerKg =
 		isPediatric && drug.maxDoseMgPerKgPediatric
 			? drug.maxDoseMgPerKgPediatric
@@ -789,6 +771,8 @@ export function calculatePatientMrd(params: {
 					? CARDIO_LIMIT_BADGE_TEXT
 					: null,
 		formattedNoteRu,
+		status: "OK",
+		requiresWeightInput: false,
 	};
 }
 
@@ -874,11 +858,11 @@ export function resolveAutopilotAnesthesia(params: {
 				params.patientAgeYears !== undefined &&
 				params.patientAgeYears < 18),
 	);
-	const hasValidWeight =
-		typeof params.patientWeightKg === "number" &&
-		Number.isFinite(params.patientWeightKg) &&
-		params.patientWeightKg > 0;
-	const weight = hasValidWeight ? params.patientWeightKg! : 0;
+	const weight = resolveClinicalDefaultWeightKg(
+		params.patientWeightKg,
+		params.patientAgeYears,
+		isPediatric,
+	);
 	const isCardioRestricted = hasCardio && !ANESTHESIA_DRUGS[selectedDrugKey].isAdrenalineFree;
 	const mrd = calculatePatientMrd({
 		drugKey: selectedDrugKey,

@@ -116,6 +116,7 @@ export function TelephonyFloatingWidget({
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 	const setNewPatientPhone = usePatientStore((s) => s.setNewPatientPhone);
 	const setCurrentView = useAppStore((s) => s.setCurrentView);
+	const currentView = useAppStore((s) => s.currentView);
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
 	const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -456,6 +457,13 @@ export function TelephonyFloatingWidget({
 				reason,
 				comment: `Новый пациент с телефона ${formattedPhone}`,
 			});
+		}
+
+		if (currentView === "visit") {
+			const confirmLeave = window.confirm(
+				"Внимание: Вы находитесь на приёме (визит 043/у). Переход в расписание сменит текущий экран. Вы уверены, что хотите переключить экран?",
+			);
+			if (!confirmLeave) return;
 		}
 
 		setCurrentView("schedule");
@@ -1256,6 +1264,12 @@ export function TelephonyFloatingWidget({
 											<button
 												type="button"
 												onClick={() => {
+													if (currentView === "visit") {
+														const confirmLeave = window.confirm(
+															"Внимание: Вы находитесь на приёме (визит 043/у). Переход в общий список пациентов сменит текущий экран. Вы уверены, что хотите переключить экран?",
+														);
+														if (!confirmLeave) return;
+													}
 													if (resolvedPatient) {
 														setSelectedPatientId(resolvedPatient.id);
 														setCurrentView("patients");

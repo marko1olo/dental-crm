@@ -16,6 +16,7 @@ import {
 	extractSomaticRiskProfileFromText,
 	formatAnesthesiaSoapText,
 	resolveAutopilotAnesthesia,
+	resolveClinicalDefaultWeightKg,
 	type AnesthesiaDrugDefinition,
 	type AnesthesiaDrugKey,
 	type AnesthesiaMethodKey,
@@ -60,10 +61,20 @@ export {
 	calculatePatientMrd,
 	resolveAutopilotAnesthesia,
 	formatAnesthesiaSoapText,
+	resolveClinicalDefaultWeightKg,
 };
 
 export function calculateAnesthesiaSafety(
 	params: AnesthesiaSafetyParams,
 ): VisitAnesthesiaCalculationResult {
-	return calculateVisitAnesthesiaSafety(params);
+	const effectiveWeight = resolveClinicalDefaultWeightKg(
+		params.patientWeightKg,
+		params.patientAgeYears,
+		params.isPediatric,
+	);
+	return calculateVisitAnesthesiaSafety({
+		...params,
+		patientWeightKg: effectiveWeight,
+	});
 }
+

@@ -18,6 +18,7 @@ import {
 } from "../anesthesia/anesthesiaCatalog";
 import {
 	calculateAnesthesiaSafety,
+	resolveClinicalDefaultWeightKg,
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
 } from "../anesthesia/anesthesiaEngine";
@@ -39,7 +40,7 @@ export const WEIGHT_PRESETS: readonly number[] = [15, 25, 45, 60, 70, 85, 100];
 
 export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps> = ({
 	toothNumber,
-	initialWeightKg = 70,
+	initialWeightKg,
 	initialAgeYears = 35,
 	hasCardioRisk = false,
 	hasSulfiteAllergy = false,
@@ -48,8 +49,13 @@ export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps>
 	onApplyAnesthesia,
 	onInsertToProtocol,
 }) => {
-	const [patientWeightKg, setPatientWeightKg] = useState<number>(initialWeightKg);
-	const [patientAgeYears, setPatientAgeYears] = useState<number>(initialAgeYears);
+	const defaultWeight = resolveClinicalDefaultWeightKg(
+		initialWeightKg,
+		initialAgeYears,
+		(initialAgeYears || 35) < 18,
+	);
+	const [patientWeightKg, setPatientWeightKg] = useState<number>(defaultWeight);
+	const [patientAgeYears, setPatientAgeYears] = useState<number>(initialAgeYears || 35);
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(
 		hasCardioRisk || hasSulfiteAllergy ? "mepivacaine_plain" : "articaine_1_200k",
 	);
@@ -62,10 +68,15 @@ export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps>
 	);
 
 	const calculationResult: AnesthesiaCalculationResult = useMemo(() => {
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
 		return calculateAnesthesiaSafety({
 			drugId: selectedDrugId,
 			carpulesCount,
-			patientWeightKg,
+			patientWeightKg: effectiveWeight,
 			patientAgeYears,
 			asaStatus,
 			hasCardiovascularRisk: hasCardioRisk,
@@ -96,9 +107,17 @@ export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps>
 	const isPediatric = patientAgeYears < 14;
 
 	const handleApply = () => {
-		if (calculationResult.contraindicationsTriggered.length > 0 || calculationResult.isOverdose) {
+		if (calculationResult.contraindicationsTriggered.length > 0) {
 			showToast(
-				calculationResult.contraindicationsTriggered[0] || "Превышена безопасная доза анестетика!",
+				calculationResult.contraindicationsTriggered[0] || "Противопоказано при данном соматическом статусе!",
+				"error",
+			);
+			return;
+		}
+
+		if (calculationResult.isOverdose && carpulesCount > 2.0) {
+			showToast(
+				`Превышена безопасная доза анестетика (${calculationResult.injectedActiveMg} мг > ${calculationResult.maxSafeActiveMg} мг)!`,
 				"error",
 			);
 			return;
@@ -283,8 +302,8 @@ export const ToothAnesthesiaCalculator: React.FC<ToothAnesthesiaCalculatorProps>
 				<button
 					type="button"
 					onClick={handleApply}
-					disabled={calculationResult.isOverdose}
-					className="dente-primary-action-btn"
+					disabled={false}
+					className="dente-primary-action-btn cursor-pointer"
 				>
 					<Syringe size={16} />
 					<span>Зафиксировать анестезию в протоколе приема 043/у</span>
