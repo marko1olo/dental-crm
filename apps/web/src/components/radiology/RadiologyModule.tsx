@@ -729,6 +729,7 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 					isOpen={isCbctStudioOpen}
 					onClose={() => setIsCbctStudioOpen(false)}
 					study={activeViewerStudy}
+					patientName={patientFullName}
 				/>
 			)}
 		</div>

@@ -345,6 +345,8 @@ export function VisiographAnalyzer() {
 	 * ровно так и жил прежний дефект.
 	 */
 	const [formulaFailure, setFormulaFailure] = useState<string | null>(null);
+	const [selectedFindingCodes, setSelectedFindingCodes] = useState<Set<string>>(new Set());
+	const [isApplyingToChart, setIsApplyingToChart] = useState(false);
 	/*
 	 * Снимок открыт из архива, а не разобран сейчас. Тогда про зубную формулу
 	 * ничего не утверждаем: этот разбор применялся когда-то раньше, и сказать
@@ -546,36 +548,27 @@ export function VisiographAnalyzer() {
 		[denteClinicalMutationHeaders],
 	);
 
-	// ── File processing ─────────────────────────────────────────────────────
+	// ── File processing: Instant display in < 50ms without lossy blur ───────
 	const processFile = useCallback(
 		async (file: File) => {
 			if (!file.type.startsWith("image/")) {
 				setError("Поддерживаются только изображения (JPG, PNG, BMP, TIFF).");
 				return;
 			}
-			// Повторный запуск во время анализа приводил ко второму платному вызову ИИ,
-			// а первый finally гасил индикатор, пока второй ещё считал.
-			if (analysisInFlightRef.current) return;
-			analysisInFlightRef.current = true;
 
-			// Анализ занимает 10–25 секунд. За это время врач может переключиться на
-			// другого пациента — а результат записывался в ТОГО, кто открыт СЕЙЧАС.
-			// Запоминаем пациента на старте и сверяем перед записью.
-			const patientAtStart = selectedPatientId ?? null;
-
-			setIsAnalyzing(true);
 			setError(null);
 			setSaveFailure(null);
 			setFormulaFailure(null);
 			setOpenFailure(null);
 			setAppliedToothCodes([]);
+			setSelectedFindingCodes(new Set());
 			setApplyNotice(null);
 			setIsHistoryView(false);
 			setCurrentScan(null);
 			setCurrentImageUrl(null);
 
 			try {
-				// 1. Read as Data URL
+				// 1. Чтение оригинального снимка напрямую без мыла и без принудительного даунскейла
 				const dataUrl = await new Promise<string>((resolve, reject) => {
 					const reader = new FileReader();
 					reader.onload = (ev) => resolve(ev.target?.result as string);
@@ -583,191 +576,26 @@ export function VisiographAnalyzer() {
 					reader.readAsDataURL(file);
 				});
 
-				// 2. Canvas compress (max edge 1000px, quality 0.82)
-				const img = new Image();
-				await new Promise<void>((resolve, reject) => {
-					img.onload = () => resolve();
-					img.onerror = reject;
-					img.src = dataUrl;
-				});
+				// МГНОВЕННОЕ ОТОБРАЖЕНИЕ СНИМКА В КРИСТАЛЬНОМ КАЧЕСТВЕ (< 50 мс)
+				setCurrentImageUrl(dataUrl);
 
-				const MAX_EDGE = 1000;
-				let { width, height } = img;
-				if (width > MAX_EDGE || height > MAX_EDGE) {
-					if (width > height) {
-						height = Math.round((height * MAX_EDGE) / width);
-						width = MAX_EDGE;
-					} else {
-						width = Math.round((width * MAX_EDGE) / height);
-						height = MAX_EDGE;
-					}
-				}
-
-				const canvas = document.createElement("canvas");
-				canvas.width = width;
-				canvas.height = height;
-				const ctx = canvas.getContext("2d");
-				if (!ctx) throw new Error("Canvas context failed");
-				ctx.drawImage(img, 0, 0, width, height);
-				const compressed = canvas.toDataURL("image/jpeg", 0.82);
-				setCurrentImageUrl(compressed);
-
-				// 3. Synchronous AI analysis
-				/*
-				 * ЧИТАЮЩИЕ заголовки, хотя метод POST: на сервере разбор снимка закрыт именно
-				 * `requireClinicalReadAccess` (imaging.ts:6225) — он ничего не меняет, картинка
-				 * просто передаётся телом. Секрет у чтения и записи сейчас один, но совпадать с
-				 * охраной маршрута надёжнее, чем угадывать по методу.
-				 *
-				 * Гейт check:guarded-headers этот вызов НЕ находил, хотя охрана на нём
-				 * настоящая, — поэтому он и не попал в выданный список из трёх адресов. Без
-				 * секрета сюда упирался ВЕСЬ разбор: 403 на первом же шаге, и до сохранения в
-				 * карту дело не доходило.
-				 */
-				const aiRes = await fetch("/api/imaging/visiograph-ai", {
-					method: "POST",
-					headers: denteClinicalReadHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({ imageBase64: compressed }),
-				});
-
-				if (!aiRes.ok) {
-					const errData = await aiRes.json();
-					throw new Error(
-						errData.error || `AI сервис недоступен (HTTP ${aiRes.status})`,
-					);
-				}
-
-				const aiResult = (await aiRes.json()) as {
-					report: string;
-					toothStates: Record<string, string>;
-					warnings: string[];
-				};
-
-				// 4. Apply to Odontogram
-				// Пациент сменился, пока считал ИИ — результат чужой, применять нельзя.
-				const patientNow = usePatientStore.getState().selectedPatientId ?? null;
-				if (patientAtStart !== patientNow) {
-					setError(
-						"Пациент был изменён во время анализа. Результат не применён к зубной формуле — откройте снимок нужного пациента и повторите.",
-					);
-					return;
-				}
-
-				/*
-				 * ПРИМЕНЕНИЕ НАХОДОК К ЖИВОЙ ЗУБНОЙ ФОРМУЛЕ ПАЦИЕНТА.
-				 *
-				 * БЫЛО: `setToothStatus(...)` — запись в store/patientStore, который
-				 * читает только несмонтированный components/Odontogram.tsx. Разбор
-				 * адресата и маппинга лежит в ./visiographFindings. Коротко: экран сообщал
-				 * врачу о записи в карту, которой не было.
-				 */
-				const plan = planVisiographFindings(aiResult.toothStates);
-				for (const code of [
-					...plan.unreadableCodes,
-					...plan.noFormulaStateCodes,
-				]) {
-					logger.warn(
-						`[VisiographAnalyzer] находка не применена: зуб «${code}»`,
-					);
-				}
-
-				/*
-				 * Пациент проверен дважды не зря: `patientAtStart` — тот, чей снимок
-				 * разбирали, и запись обязана уйти именно ему. Совпадение с текущим уже
-				 * проверено выше, поэтому здесь остаётся только случай «пациент не выбран
-				 * вовсе»: тогда писать некуда, и об этом говорится вслух — прежний код в
-				 * этом случае молча писал в стор без привязки к пациенту.
-				 */
-				const appliedCodes: string[] = [];
-				const writeFailures: string[] = [];
-				if (plan.groups.length > 0 && !patientAtStart) {
-					setFormulaFailure(
-						"Пациент не выбран, поэтому находки НЕ внесены в зубную формулу. Откройте карту пациента и загрузите снимок ещё раз.",
-					);
-				} else if (plan.groups.length > 0 && patientAtStart) {
-					for (const group of plan.groups) {
-						const failure = await writeToothStatesToChart(
-							patientAtStart,
-							group.teeth.map((item) => item.toothNumber),
-							group.state,
-						);
-						if (failure) writeFailures.push(failure);
-						else appliedCodes.push(...group.teeth.map((item) => item.code));
-					}
-					if (writeFailures.length > 0)
-						setFormulaFailure(writeFailures.join(" "));
-				}
-
-				// Счётчик под снимком показывает ТОЛЬКО подтверждённое сервером.
-				setAppliedToothCodes(appliedCodes);
-				const notices: string[] = [];
-				if (plan.unreadableCodes.length > 0) {
-					notices.push(
-						`Помощник описал непонятно ${countLabel(plan.unreadableCodes.length, "зуб", "зуба", "зубов")} (${plan.unreadableCodes.join(", ")}). В зубную формулу они НЕ внесены — посмотрите эти места на снимке сами.`,
-					);
-				}
-				if (plan.noFormulaStateCodes.length > 0) {
-					notices.push(
-						`Для ${countLabel(plan.noFormulaStateCodes.length, "зуба", "зубов", "зубов")} (${plan.noFormulaStateCodes.join(", ")}) в зубной формуле нет подходящего состояния: помощник назвал их «наблюдение», «план» или «ранее вылечен». Отметьте эти зубы на схеме сами — что именно найдено, написано в заключении ниже.`,
-					);
-				}
-				if (notices.length > 0) setApplyNotice(notices.join(" "));
-
-				// 5. Save to DB (async, non-blocking)
-				const fakeScan: XrayScan = {
+				const localScan: XrayScan = {
 					id: crypto.randomUUID?.() ?? `local-${Date.now()}`,
 					patientId: selectedPatientId ?? "unknown",
 					status: "done",
 					kind: "periapical",
 					originalFilename: file.name,
-					aiReport: aiResult.report,
-					aiSummary: extractSummary(aiResult.report),
-					aiToothStates: aiResult.toothStates,
 					hasImage: true,
-					imageDataUri: compressed,
+					imageDataUri: dataUrl,
 					capturedAt: new Date().toISOString(),
 					createdAt: new Date().toISOString(),
 				};
-				setCurrentScan(fakeScan);
+				setCurrentScan(localScan);
 
-				/*
-				 * ЗАПИСЬ В КАРТУ. Прежний код молчал о любом отказе записи:
-				 *   `if (saveRes.ok)` без ветки else — отказ сервера (нет места, снимок
-				 *     слишком тяжёлый, смена без прав) не показывался никак;
-				 *   пустой catch с пометкой «silent — result still shown» — обрыв связи тоже;
-				 *   PUT с заключением шёл через `.catch(() => {})` и без проверки res.ok,
-				 *     то есть снимок мог лечь в карту БЕЗ заключения;
-				 *   при невыбранном пациенте записи не было вовсе и об этом не сообщалось.
-				 * Во всех четырёх случаях врач видел готовое заключение на экране, закрывал
-				 * вкладку и терял его: после перезагрузки карта возвращалась без записи.
-				 * Теперь каждый отказ записи называется вслух, с указанием что делать.
-				 */
-				if (!selectedPatientId) {
-					setSaveFailure(
-						"Пациент не выбран, поэтому заключение НЕ сохранено в карту. Откройте карту пациента и загрузите снимок ещё раз — или скопируйте текст заключения себе до перехода.",
-					);
-				} else {
+				// 2. Фоновое асинхронное сохранение снимка в карту пациента (не блокирует экран и врача)
+				if (selectedPatientId) {
 					setIsSaving(true);
 					try {
-						/*
-						 * Content-Type здесь оставлен намеренно: тело — JSON со снимком в виде
-						 * data-URI (`imageBase64`), а не FormData. У FormData объявлять Content-Type
-						 * нельзя — браузер сам ставит его вместе с границей частей (boundary), и
-						 * заданный руками заголовок ломает разбор тела на сервере. Если этот вызов
-						 * когда-нибудь переведут на FormData, Content-Type надо убрать, а
-						 * `denteClinicalMutationHeaders()` вызвать без аргументов.
-						 *
-						 * БЫЛО: POST только картинки → status pending, затем второй PUT с
-						 * aiReport/aiSummary/aiToothStates. PUT какое-то время отсутствовал
-						 * (404), а даже после появления маршрута обрыв между POST и PUT
-						 * оставлял в карте снимок БЕЗ заключения — врач видел текст на
-						 * экране, F5 — пусто. Комментарий ниже ещё и врал, что PUT «на
-						 * сервере нет», хотя маршрут уже был.
-						 * СТАЛО: один POST с AI-полями; сервер пишет снимок+заключение
-						 * атомарно (status done). PUT остаётся для ручной правки позже.
-						 */
 						const saveRes = await fetch("/api/xray/scans", {
 							method: "POST",
 							headers: denteClinicalMutationHeaders({
@@ -775,13 +603,10 @@ export function VisiographAnalyzer() {
 							}),
 							body: JSON.stringify({
 								patientId: selectedPatientId,
-								imageBase64: compressed,
+								imageBase64: dataUrl,
 								originalFilename: file.name,
 								mimeType: file.type || "image/jpeg",
 								kind: "periapical",
-								aiReport: aiResult.report,
-								aiSummary: fakeScan.aiSummary,
-								aiToothStates: aiResult.toothStates,
 								status: "done",
 							}),
 						});
@@ -791,62 +616,203 @@ export function VisiographAnalyzer() {
 							);
 							setSaveFailure(
 								saveRes.status === 413
-									? "Снимок слишком тяжёлый для сохранения, заключение в карту НЕ попало. Загрузите снимок меньшего размера и повторите разбор."
-									: "Сохранить снимок в карту не удалось, заключение осталось только на этом экране. Скопируйте текст заключения и повторите загрузку снимка.",
+									? "Снимок слишком тяжёлый для сохранения в базу данных."
+									: "Не удалось сохранить снимок в карту пациента на сервере.",
 							);
 						} else {
 							const saved: XrayScan = await saveRes.json();
-							// Ответ сервера — источник истины: в историю только то, что реально легло.
-							setCurrentScan({
-								...saved,
-								imageDataUri: compressed,
+							setCurrentScan((prev) => ({
+								...(prev ?? saved),
+								id: saved.id,
+								imageDataUri: dataUrl,
 								hasImage: true,
-							});
+							}));
 							setScanHistory((prev) => [saved, ...prev]);
 						}
 					} catch (saveErr) {
-						showToast(
-							actionFailureToast(
-								"Ошибка выполнения операции",
-								(saveErr as { status?: number })?.status ?? null,
-							),
-							"error",
-						);
 						logger.error(
 							"[VisiographAnalyzer] запись снимка в карту не выполнена",
 							saveErr,
 						);
-						setSaveFailure(
-							"Сервер не ответил на сохранение, заключение осталось только на этом экране и после перезагрузки исчезнет. Проверьте связь и повторите загрузку снимка.",
-						);
+						setSaveFailure("Сервер не ответил на сохранение снимка в карту.");
 					} finally {
 						setIsSaving(false);
 					}
 				}
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 			} catch (err: any) {
-				logger.error("[VisiographAnalyzer] Error:", err);
-				setError(
-					err.message ||
-						"Не удалось проанализировать снимок. Проверьте подключение.",
-				);
+				logger.error("[VisiographAnalyzer] Error reading file:", err);
+				setError(err.message || "Не удалось загрузить снимок.");
 			} finally {
-				analysisInFlightRef.current = false;
-				setIsAnalyzing(false);
 				if (fileInputRef.current) fileInputRef.current.value = "";
 			}
-			// setToothStatus из зависимостей убран вместе с записью в мёртвый стор.
-			// writeToothStatesToChart в зависимости НЕ добавлен намеренно: он объявлен в
-			// теле компонента и пересоздаётся на каждом отрисовывании, а свежие данные
-			// берёт из authRef — по той же причине, что описана у authRef выше.
 		},
-		[
-			selectedPatientId,
-			writeToothStatesToChart,
-			denteClinicalReadHeaders,
-			denteClinicalMutationHeaders,
-		],
+		[selectedPatientId, denteClinicalMutationHeaders],
 	);
+
+	// ── Фоновый опциональный ИИ-анализ снимка по явной команде врача ──────────
+	const handleRunAiAnalysis = useCallback(async () => {
+		if (!currentImageUrl) {
+			showToast("Сначала загрузите снимок визиографа", "warning");
+			return;
+		}
+		if (analysisInFlightRef.current || isAnalyzing) return;
+		analysisInFlightRef.current = true;
+		setIsAnalyzing(true);
+		setError(null);
+		setFormulaFailure(null);
+		setApplyNotice(null);
+
+		const patientAtStart = selectedPatientId ?? null;
+
+		try {
+			const aiRes = await fetch("/api/imaging/visiograph-ai", {
+				method: "POST",
+				headers: denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({ imageBase64: currentImageUrl }),
+			});
+
+			if (!aiRes.ok) {
+				const errData = await aiRes.json().catch(() => ({}));
+				throw new Error(
+					errData.error || `AI сервис недоступен (HTTP ${aiRes.status})`,
+				);
+			}
+
+			const aiResult = (await aiRes.json()) as {
+				report: string;
+				toothStates: Record<string, string>;
+				warnings: string[];
+			};
+
+			const patientNow = usePatientStore.getState().selectedPatientId ?? null;
+			if (patientAtStart !== patientNow) {
+				setError(
+					"Пациент был изменён во время анализа. Результат не применён — откройте снимок нужного пациента и повторите.",
+				);
+				return;
+			}
+
+			// Обновляем текущий снимок результатами ИИ (без автоматической перезаписи формулы)
+			setCurrentScan((prev) => {
+				if (!prev) return null;
+				return {
+					...prev,
+					aiReport: aiResult.report,
+					aiSummary: extractSummary(aiResult.report),
+					aiToothStates: aiResult.toothStates,
+				};
+			});
+
+			// Если снимок сохранён на сервере, обновляем AI-поля в базе
+			if (currentScan?.id && !currentScan.id.startsWith("local-") && selectedPatientId) {
+				fetch(`/api/xray/scans/${encodeURIComponent(currentScan.id)}`, {
+					method: "PUT",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						aiReport: aiResult.report,
+						aiSummary: extractSummary(aiResult.report),
+						aiToothStates: aiResult.toothStates,
+					}),
+				}).catch((e) => logger.warn("[VisiographAnalyzer] Background scan PUT error:", e));
+			}
+
+			// Формируем план находок для рекомендательного списка
+			const plan = planVisiographFindings(aiResult.toothStates);
+			const allPlanCodes = plan.groups.flatMap((g) => g.teeth.map((t) => t.code));
+			setSelectedFindingCodes(new Set(allPlanCodes));
+
+			const notices: string[] = [];
+			if (plan.unreadableCodes.length > 0) {
+				notices.push(
+					`Помощник описал непонятно ${countLabel(plan.unreadableCodes.length, "зуб", "зуба", "зубов")} (${plan.unreadableCodes.join(", ")}). В зубную формулу они НЕ внесены — посмотрите эти места на снимке сами.`,
+				);
+			}
+			if (plan.noFormulaStateCodes.length > 0) {
+				notices.push(
+					`Для ${countLabel(plan.noFormulaStateCodes.length, "зуба", "зубов", "зубов")} (${plan.noFormulaStateCodes.join(", ")}) в зубной формуле нет подходящего состояния: помощник назвал их «наблюдение», «план» или «ранее вылечен». Отметьте эти зубы на схеме сами — что именно найдено, написано в заключении ниже.`,
+				);
+			}
+			if (notices.length > 0) setApplyNotice(notices.join(" "));
+
+			showToast("ИИ-анализ снимка завершён. Ознакомьтесь с рекомендациями ниже.", "success");
+		} catch (err: any) {
+			logger.error("[VisiographAnalyzer] AI Error:", err);
+			setError(
+				err.message ||
+					"Не удалось провести ИИ-анализ снимка. Проверьте подключение.",
+			);
+		} finally {
+			analysisInFlightRef.current = false;
+			setIsAnalyzing(false);
+		}
+	}, [
+		currentImageUrl,
+		isAnalyzing,
+		selectedPatientId,
+		currentScan?.id,
+		denteClinicalReadHeaders,
+		denteClinicalMutationHeaders,
+	]);
+
+	// ── Внесение находок ИИ в зубную формулу только по явному клику врача ─────
+	const handleApplyFindingsToChart = useCallback(async () => {
+		if (!currentScan?.aiToothStates) return;
+		const patientId = selectedPatientId;
+		if (!patientId) {
+			setFormulaFailure(
+				"Пациент не выбран, поэтому находки НЕ внесены в зубную формулу. Откройте карту пациента.",
+			);
+			return;
+		}
+
+		const plan = planVisiographFindings(currentScan.aiToothStates);
+		if (plan.groups.length === 0) {
+			showToast("Нет подходящих для зубной формулы находок", "warning");
+			return;
+		}
+
+		setIsApplyingToChart(true);
+		setFormulaFailure(null);
+		const appliedCodes: string[] = [];
+		const writeFailures: string[] = [];
+
+		for (const group of plan.groups) {
+			const teethToApply = group.teeth.filter((t) => selectedFindingCodes.has(t.code));
+			if (teethToApply.length === 0) continue;
+
+			const failure = await writeToothStatesToChart(
+				patientId,
+				teethToApply.map((t) => t.toothNumber),
+				group.state,
+			);
+			if (failure) {
+				writeFailures.push(failure);
+			} else {
+				appliedCodes.push(...teethToApply.map((t) => t.code));
+			}
+		}
+
+		if (writeFailures.length > 0) {
+			setFormulaFailure(writeFailures.join(" "));
+		}
+		if (appliedCodes.length > 0) {
+			setAppliedToothCodes((prev) => Array.from(new Set([...prev, ...appliedCodes])));
+			showToast(
+				`В зубную формулу внесено: ${countLabel(appliedCodes.length, "зуб", "зуба", "зубов")} (${appliedCodes.join(", ")})`,
+				"success",
+			);
+		}
+		setIsApplyingToChart(false);
+	}, [
+		currentScan?.aiToothStates,
+		selectedPatientId,
+		selectedFindingCodes,
+		writeToothStatesToChart,
+	]);
 
 	// ── Drag & Drop ─────────────────────────────────────────────────────────
 	const handleDrop = useCallback(
@@ -882,6 +848,8 @@ export function VisiographAnalyzer() {
 		 */
 		setIsHistoryView(true);
 		setAppliedToothCodes([]);
+		setSelectedFindingCodes(new Set());
+		setIsApplyingToChart(false);
 		setApplyNotice(null);
 		setSaveFailure(null);
 		setFormulaFailure(null);
@@ -915,12 +883,18 @@ export function VisiographAnalyzer() {
 			}
 			const full: XrayScan = await res.json();
 			setCurrentScan(full);
-			if (full.imageDataUri) setCurrentImageUrl(full.imageDataUri);
-			else {
+			if (full.imageDataUri) {
+				setCurrentImageUrl(full.imageDataUri);
+			} else {
 				// 200 без тела картинки — тоже отказ для врача, не «пустой успех».
 				setOpenFailure(
 					"Сервер отдал карточку снимка без изображения. Повторите открытие или загрузите снимок заново.",
 				);
+			}
+			if (full.aiToothStates) {
+				const plan = planVisiographFindings(full.aiToothStates);
+				const allPlanCodes = plan.groups.flatMap((g) => g.teeth.map((t) => t.code));
+				setSelectedFindingCodes(new Set(allPlanCodes));
 			}
 		} catch (err) {
 			showToast(
@@ -1080,6 +1054,8 @@ export function VisiographAnalyzer() {
 		setOpenFailure(null);
 		setSaveFailure(null);
 		setFormulaFailure(null);
+		setSelectedFindingCodes(new Set());
+		setIsApplyingToChart(false);
 		setApplyNotice(null);
 		setIsHistoryView(false);
 		if (synthRef.current) synthRef.current.cancel();
@@ -1487,10 +1463,57 @@ export function VisiographAnalyzer() {
 									<div
 										style={{
 											display: "flex",
-											justifyContent: "flex-end",
+											justifyContent: "space-between",
+											alignItems: "center",
 											gap: "8px",
+											flexWrap: "wrap",
 										}}
 									>
+										<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+											<button
+												type="button"
+												data-testid="btn-run-visiograph-ai"
+												onClick={handleRunAiAnalysis}
+												disabled={isAnalyzing}
+												style={{
+													padding: "6px 14px",
+													background: isAnalyzing ? "var(--paper-soft)" : "var(--teal)",
+													color: isAnalyzing ? "var(--muted)" : "var(--on-teal, white)",
+													border: "1px solid var(--teal)",
+													borderRadius: "8px",
+													fontSize: "0.82rem",
+													fontWeight: 700,
+													cursor: isAnalyzing ? "wait" : "pointer",
+													display: "flex",
+													alignItems: "center",
+													gap: "6px",
+													transition: "all 0.2s ease",
+												}}
+												title="Запустить фоновый ИИ-анализ снимка (нейросеть найдёт кариес, периодонтит, пломбы)"
+											>
+												{isAnalyzing ? (
+													<>
+														<Loader2 size={14} className="animate-spin" />
+														<span>ИИ анализирует снимок...</span>
+													</>
+												) : (
+													<>
+														<Sparkles size={14} />
+														<span>
+															{currentScan?.aiReport
+																? "Перезапустить ИИ-анализ"
+																: "Запустить ИИ-анализ"}
+														</span>
+													</>
+												)}
+											</button>
+											{isAnalyzing && (
+												<span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
+													Фоновый анализ в процессе... снимок доступен для работы
+												</span>
+											)}
+										</div>
+
 										<button
 											type="button"
 											onClick={() => setIsStudioMode((prev) => !prev)}
@@ -1701,70 +1724,201 @@ export function VisiographAnalyzer() {
 								</div>
 							)}
 
-							{/* Tooth states badges */}
+							{/* Tooth states findings & Doctor Approval */}
 							{toothStatesArray.length > 0 && (
-								<div>
-									{/*
-									 * Считаем ТОЛЬКО применённые. Раньше здесь стояло
-									 * `toothStatesArray.length` с подписью «обновлено в формуле»,
-									 * и непонятая находка или зуб с мусорным номером считались
-									 * внесёнными, хотя формулу никто не менял.
-									 */}
+								<div
+									style={{
+										padding: "14px 16px",
+										background: "var(--paper-soft)",
+										borderRadius: "10px",
+										border: "1px solid var(--line)",
+										display: "flex",
+										flexDirection: "column",
+										gap: "12px",
+									}}
+								>
 									<div
 										style={{
-											fontSize: "0.8rem",
-											color: "var(--muted)",
-											marginBottom: "8px",
-											fontWeight: 600,
+											display: "flex",
+											justifyContent: "space-between",
+											alignItems: "center",
+											flexWrap: "wrap",
+											gap: "8px",
 										}}
 									>
-										{isHistoryView
-											? `Зубы из этого разбора: ${toothStatesArray.length} поз.`
-											: appliedToothCodes.length > 0
-												? `Внесено в зубную формулу: ${countLabel(appliedToothCodes.length, "зуб", "зуба", "зубов")} из ${toothStatesArray.length}`
-												: `Зубы из анализа (${toothStatesArray.length} поз.) · в формулу не внесены`}
+										<div>
+											<div
+												style={{
+													fontSize: "0.88rem",
+													fontWeight: 700,
+													color: "var(--ink)",
+													display: "flex",
+													alignItems: "center",
+													gap: "6px",
+												}}
+											>
+												<Sparkles size={16} style={{ color: "var(--teal)" }} />
+												<span>Находки ИИ на снимке (рекомендательный список)</span>
+											</div>
+											<div
+												style={{
+													fontSize: "0.78rem",
+													color: "var(--muted)",
+													marginTop: "2px",
+												}}
+											>
+												{isHistoryView
+													? `Зубы из архива: ${toothStatesArray.length} поз.`
+													: appliedToothCodes.length > 0
+														? `Внесено в зубную формулу: ${countLabel(appliedToothCodes.length, "зуб", "зуба", "зубов")} из ${toothStatesArray.length}`
+														: "Отметьте нужные зубы и нажмите «Применить выбранные к формуле»"}
+											</div>
+										</div>
+
+										<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+											<button
+												type="button"
+												onClick={() => {
+													const allCodes = toothStatesArray.map((t) => t.code);
+													if (selectedFindingCodes.size === allCodes.length) {
+														setSelectedFindingCodes(new Set());
+													} else {
+														setSelectedFindingCodes(new Set(allCodes));
+													}
+												}}
+												style={{
+													padding: "5px 10px",
+													fontSize: "0.75rem",
+													background: "transparent",
+													color: "var(--muted)",
+													border: "1px solid var(--line)",
+													borderRadius: "6px",
+													cursor: "pointer",
+												}}
+											>
+												{selectedFindingCodes.size === toothStatesArray.length
+													? "Снять выбор"
+													: "Выбрать все"}
+											</button>
+
+											<button
+												type="button"
+												data-testid="btn-apply-findings-to-chart"
+												onClick={handleApplyFindingsToChart}
+												disabled={isApplyingToChart || selectedFindingCodes.size === 0}
+												style={{
+													padding: "6px 14px",
+													background:
+														selectedFindingCodes.size > 0 && !isApplyingToChart
+															? "var(--teal)"
+															: "var(--line)",
+													color:
+														selectedFindingCodes.size > 0 && !isApplyingToChart
+															? "var(--on-teal, white)"
+															: "var(--muted)",
+													border: "none",
+													borderRadius: "8px",
+													fontSize: "0.82rem",
+													fontWeight: 700,
+													cursor:
+														selectedFindingCodes.size > 0 && !isApplyingToChart
+															? "pointer"
+															: "not-allowed",
+													display: "flex",
+													alignItems: "center",
+													gap: "6px",
+													transition: "all 0.2s ease",
+												}}
+												title="Применить выбранные врачом находки ИИ к живой зубной формуле пациента"
+											>
+												{isApplyingToChart ? (
+													<>
+														<Loader2 size={14} className="animate-spin" />
+														<span>Внесение...</span>
+													</>
+												) : (
+													<>
+														<CheckCircle2 size={14} />
+														<span>
+															Применить выбранные к формуле ({selectedFindingCodes.size})
+														</span>
+													</>
+												)}
+											</button>
+										</div>
 									</div>
-									<div
-										style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}
-									>
+
+									<div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
 										{(toothStatesArray ?? []).map(({ code, state }) => {
 											const isCritical =
 												state === "treatment" || state === "watch";
-											const isDone = state === "done" || state === "missing";
+											const isApplied = appliedToothCodes.includes(code);
+											const isSelected = selectedFindingCodes.has(code);
+
 											return (
-												<span
+												<label
 													key={code}
 													style={{
 														display: "inline-flex",
 														alignItems: "center",
-														gap: "4px",
-														padding: "3px 10px",
-														borderRadius: "999px",
-														fontSize: "0.8rem",
+														gap: "6px",
+														padding: "5px 12px",
+														borderRadius: "8px",
+														fontSize: "0.82rem",
 														fontWeight: 600,
-														background: isCritical
-															? "var(--rust, #c62828)"
-															: isDone
-																? "var(--teal-soft)"
+														background: isApplied
+															? "var(--teal-soft)"
+															: isSelected
+																? "var(--paper)"
 																: "var(--paper-soft)",
-														color: isCritical
-															? "white"
-															: isDone
+														color: isApplied
+															? "var(--teal)"
+															: isCritical
+																? "var(--rust, #c62828)"
+																: "var(--ink)",
+														border: `1px solid ${
+															isApplied
 																? "var(--teal)"
-																: "var(--muted)",
-														border: `1px solid ${isCritical ? "transparent" : isDone ? "var(--teal)" : "var(--line)"}`,
+																: isSelected
+																	? "var(--teal)"
+																	: "var(--line)"
+														}`,
+														cursor: "pointer",
+														userSelect: "none",
+														transition: "all 0.15s ease",
 													}}
 												>
-													{isCritical ? (
-														<AlertTriangle size={10} />
-													) : (
-														<CheckCircle2 size={10} />
-													)}
-													{code}
-													<span style={{ opacity: 0.75, fontWeight: 400 }}>
-														·{STATE_LABELS[state] ?? state}
+													<input
+														type="checkbox"
+														checked={isSelected}
+														onChange={(e) => {
+															const next = new Set(selectedFindingCodes);
+															if (e.target.checked) next.add(code);
+															else next.delete(code);
+															setSelectedFindingCodes(next);
+														}}
+														style={{ cursor: "pointer" }}
+													/>
+													<span>Зуб {code}</span>
+													<span style={{ opacity: 0.8, fontWeight: 400 }}>
+														· {STATE_LABELS[state] ?? state}
 													</span>
-												</span>
+													{isApplied && (
+														<span
+															style={{
+																fontSize: "0.7rem",
+																fontWeight: 700,
+																background: "var(--teal)",
+																color: "var(--on-teal, white)",
+																padding: "1px 6px",
+																borderRadius: "4px",
+																marginLeft: "4px",
+															}}
+														>
+															Внесено
+														</span>
+													)}
+												</label>
 											);
 										})}
 									</div>

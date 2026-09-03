@@ -577,6 +577,7 @@ export function VisitDiagnosticsTab(props?: {
 				<CbctMprImplantStudioModal
 					isOpen={isCbctModalOpen}
 					onClose={() => setIsCbctModalOpen(false)}
+					patientName={activePatient?.fullName || undefined}
 					onApplyToDiary043={(diaryText) => {
 						if (!diaryText) return;
 						try {

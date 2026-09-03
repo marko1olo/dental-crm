@@ -2341,6 +2341,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					isOpen={isCbctStudioOpen}
 					onClose={() => setIsCbctStudioOpen(false)}
 					study={study}
+					patientName={patientName ?? study?.patientName ?? undefined}
 				/>
 			)}
 

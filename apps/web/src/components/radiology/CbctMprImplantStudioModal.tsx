@@ -232,6 +232,7 @@ export interface CbctMprImplantStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly study?: RadiologyStudy | null | undefined;
+	readonly patientName?: string | undefined;
 	readonly onApplyToDiary043?: ((diaryText: string) => void) | undefined;
 	readonly initialStudioMode?: StudioMode | undefined;
 	readonly initialSidebarOpen?: boolean | undefined;
@@ -241,6 +242,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	isOpen,
 	onClose,
 	study,
+	patientName,
 	onApplyToDiary043,
 	initialStudioMode,
 	initialSidebarOpen,
@@ -382,7 +384,14 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	// ─── REAL DICOM INGESTION STATE ──────────────────────────────────────────
 	const [dicomLoadingStatus, setDicomLoadingStatus] = useState<string | null>(null);
 	const [dicomProgress, setDicomProgress] = useState<number>(0);
-	const [patientDisplayName, setPatientDisplayName] = useState<string>(study?.patientName || "Пациент КЛКТ");
+	const resolvedPatientName = patientName || study?.patientName || "Пациент КЛКТ";
+	const [patientDisplayName, setPatientDisplayName] = useState<string>(resolvedPatientName);
+
+	useEffect(() => {
+		if (patientName || study?.patientName) {
+			setPatientDisplayName(patientName || study?.patientName || "Пациент КЛКТ");
+		}
+	}, [patientName, study?.patientName]);
 	const [loadedSliceCount, setLoadedSliceCount] = useState<number>(0);
 	const [isDragOverWindow, setIsDragOverWindow] = useState<boolean>(false);
 
@@ -938,7 +947,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 
 				setVolume(vol);
 				setLoadedSliceCount(vol.dimensions.depth);
-				setPatientDisplayName("Барабаш С.В.");
+				setPatientDisplayName(resolvedPatientName);
 				if (vol.defaultWindowWidth) setWindowWidth(vol.defaultWindowWidth);
 				if (vol.defaultWindowLevel) setWindowLevel(vol.defaultWindowLevel);
 				const arch = autoDetectDentalArch(vol, jawType);
@@ -958,7 +967,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				}
 				setCrosshairMm({ x: archCenterX, y: archCenterY, z: occlusalZMm });
 				setDicomLoadingStatus(null);
-				showToast(`Загружена серия DICOM (Барабаш): авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
+				showToast(`Загружена серия DICOM (${resolvedPatientName}): авто-детектор дуги сформировал дугу ОПТГ (${arch.totalArcLengthMm.toFixed(1)} мм)`, "success");
 			} catch (err: unknown) {
 				setDicomLoadingStatus(null);
 				const msg = err instanceof Error ? err.message : "Ошибка чтения DICOM";
@@ -4230,7 +4239,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 				`Снимок КЛКТ (FDI #${targetTooth})`,
 				pixelSpacing,
 				{
-					patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+					patientName: patientDisplayName || study?.patientName || resolvedPatientName,
 					clinicName: "Стоматологический центр DENTE",
 					studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 					targetToothFdi: targetTooth,
@@ -4360,7 +4369,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					`Аксиальный срез (Z = ${crosshairMm.z.toFixed(1)} мм)`,
 					pixelSpacing,
 					{
-						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						patientName: patientDisplayName || study?.patientName || resolvedPatientName,
 						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
@@ -4376,7 +4385,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					"Панорамная реконструкция (ОПТГ)",
 					pixelSpacing,
 					{
-						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						patientName: patientDisplayName || study?.patientName || resolvedPatientName,
 						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
@@ -4392,7 +4401,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					`Кросс-секция ложа FDI #${targetTooth}`,
 					pixelSpacing,
 					{
-						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						patientName: patientDisplayName || study?.patientName || resolvedPatientName,
 						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
@@ -4408,7 +4417,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 					`Сагиттальный срез (X = ${crosshairMm.x.toFixed(1)} мм)`,
 					pixelSpacing,
 					{
-						patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+						patientName: patientDisplayName || study?.patientName || resolvedPatientName,
 						clinicName: "Стоматологический центр DENTE",
 						studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 						targetToothFdi: targetTooth,
@@ -4422,7 +4431,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 						`Фронтальный срез (Y = ${crosshairMm.y.toFixed(1)} мм)`,
 						pixelSpacing,
 						{
-							patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+							patientName: patientDisplayName || study?.patientName || resolvedPatientName,
 							clinicName: "Стоматологический центр DENTE",
 							studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 							targetToothFdi: targetTooth,
@@ -4443,9 +4452,9 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 		});
 
 		const reportData = buildCbctReportData({
-			patientName: patientDisplayName || study?.patientName || "Барабаш С.В.",
+			patientName: patientDisplayName || study?.patientName || resolvedPatientName,
 			clinicName: "Стоматологический центр DENTE",
-			doctorName: "Врач-стоматолог-хирург-имплантолог: Барабаш С.В.",
+			doctorName: study?.doctorName ? `Врач: ${study.doctorName}` : "Лечащий врач-стоматолог",
 			studyDate: study?.studyDate || new Date().toLocaleDateString("ru-RU"),
 			targetToothFdi: targetTooth,
 			implantPose: currentImplantPose,
@@ -4968,7 +4977,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 							id="cbct-patient-metadata-badge"
 							style={{ color: "#a1a1aa" }}
 						>
-							{patientDisplayName || "Барабаш С.В."} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм изотропный воксель
+							{patientDisplayName || resolvedPatientName} • {loadedSliceCount > 0 ? loadedSliceCount : 400} срезов • {volume ? volume.spacingMm.x.toFixed(1) : "0.2"} мм изотропный воксель
 						</p>
 					</div>
 				</div>
