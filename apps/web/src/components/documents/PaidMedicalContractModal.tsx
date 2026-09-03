@@ -228,7 +228,7 @@ export function PaidMedicalContractModal({
 
 	// Validation
 	const validationResult: PaidContractValidationResult = useMemo(
-		() => validatePaidContract736(contractData),
+		() => validatePaidContract736(contractData, { allowBlankForPrint: true }),
 		[contractData],
 	);
 

@@ -33,7 +33,7 @@ import {
 	apiError,
 	documentCreateValidationMessageForRequest,
 } from "./shared.js";
-import { clinicalDocKinds } from "./query.js";
+import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./query.js";
 
 export async function register(app: FastifyInstance) {
 	app.post("/api/documents", async (request, reply) => {
@@ -69,9 +69,14 @@ export async function register(app: FastifyInstance) {
 		}
 		const input = repairMojibakeDeep(parsedInput.data);
 
-		// 152-ФЗ / 323-ФЗ: Создание клинических медицинских документов разрешено только клиническому персоналу
+		// 152-ФЗ / 323-ФЗ: Создание клинических медицинских документов разрешено клиническому персоналу.
+		// Первичные бланки (ИДС и анкета здоровья) также разрешены администраторам и регистраторам для выдачи пациенту в холле.
 		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (clinicalDocKinds.has(input.kind) && !evalAccess.hasClinicalAccess) {
+		if (
+			clinicalDocKinds.has(input.kind) &&
+			!evalAccess.hasClinicalAccess &&
+			!isReceptionistAllowedPrimaryDoc(input.kind, staffRole)
+		) {
 			return reply.code(403).send({
 				error: "PermissionDenied",
 				permission: "clinical.document.write",

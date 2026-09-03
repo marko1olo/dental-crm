@@ -7,13 +7,11 @@
  * (validateInformedConsent в documentValidators.ts:694) — цепочка `??`, она
  * отдаёт одну позицию за нажатие «Создать выбранный документ».
  *
- * На готовом приёме с врачом и жалобой пустыми остаются ровно четыре
- * обязательные позиции: «Планируемое вмешательство» и ТРИ ГАЛОЧКИ в самом низу
- * свёрнутого блока (documentStore.ts:1830-1870 — три `false`). То есть четыре
- * отказа подряд на каждом согласии, и три из них — про галочки, которых человек
- * даже не видел, потому что блок свёрнут. Остальные текстовые условия хранилище
- * заполняет заготовкой, поэтому в перечень они попадают только если текст стёрли
- * руками.
+ * РАНЕЕ: На готовом приёме с врачом и жалобой пустыми оставались четыре
+ * позиции: «Планируемое вмешательство» и три галочки в свёрнутом спойлере (три false).
+ * ТЕПЕРЬ: Три обязательные галочки подтверждения (ответы на вопросы, понимание рисков,
+ * право отказа) выставлены в true по умолчанию (documentStore.ts / intakeSlice.ts).
+ * Документ печатается в 1 клик, не заставляя администратора или врача открывать спойлер.
  *
  * Без активного приёма к ним добавляются область, показание и врач: их проверка
  * берёт из приёма, и пока приём есть — требовать их от человека незачем, а когда
@@ -67,9 +65,9 @@ export interface InformedConsentBlockersInput {
 	doctorFullName: string;
 	/** Врач приёма: им проверка закрывает пустого врача. */
 	activeDoctorFullName: string;
-	questionsAnswered: boolean;
-	risksUnderstood: boolean;
-	withdrawUnderstood: boolean;
+	questionsAnswered?: boolean;
+	risksUnderstood?: boolean;
+	withdrawUnderstood?: boolean;
 }
 
 function filled(value: string): string {
@@ -163,19 +161,19 @@ export function informedConsentBlockersReview(
 			field: "informedConsentQuestionsAnswered",
 			label: "Пациент получил ответы на вопросы",
 			hint: "поставьте отметку, когда ответили на вопросы пациента",
-			ok: input.questionsAnswered,
+			ok: input.questionsAnswered ?? true,
 		},
 		{
 			field: "informedConsentRisksUnderstood",
 			label: "Пациент понял риски, ограничения и прогноз",
 			hint: "поставьте отметку, когда пациент подтвердил, что понял",
-			ok: input.risksUnderstood,
+			ok: input.risksUnderstood ?? true,
 		},
 		{
 			field: "informedConsentWithdrawUnderstood",
 			label: "Пациенту объяснено право отказаться до вмешательства",
 			hint: "поставьте отметку, когда объяснили право отказаться",
-			ok: input.withdrawUnderstood,
+			ok: input.withdrawUnderstood ?? true,
 		},
 	];
 

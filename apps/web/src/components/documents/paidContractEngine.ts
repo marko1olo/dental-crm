@@ -316,10 +316,18 @@ export function formatKopecksToRubAndKop(kopecks: number): {
 	};
 }
 
+export interface ValidatePaidContractOptions {
+	/** Разрешить печать бланка договора при нулевой сумме или незаполненном паспорте */
+	allowBlankForPrint?: boolean;
+}
+
 /**
  * Валидация договора на оказание платных медицинских услуг по Постановлению Правительства РФ № 736 от 11.05.2023.
  */
-export function validatePaidContract736(contract: PaidContractData): PaidContractValidationResult {
+export function validatePaidContract736(
+	contract: PaidContractData,
+	options?: ValidatePaidContractOptions,
+): PaidContractValidationResult {
 	const missing: PaidContractMissingField[] = [];
 	const warnings: string[] = [];
 
@@ -425,12 +433,18 @@ export function validatePaidContract736(contract: PaidContractData): PaidContrac
 		});
 	}
 	if (!checkFilled(pt.passportSeries) || !checkFilled(pt.passportNumber)) {
-		missing.push({
-			section: "Сведения о Пациенте (Потребителе)",
-			field: "patient.passport",
-			label: "Паспортные данные Пациента (серия и номер)",
-			hint: "Укажите серию и номер паспорта гражданина РФ или иного документа, удостоверяющего личность.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Паспортные данные Пациента не заполнены — для печати бланка выведены подчеркивания для заполнения от руки в холле.",
+			);
+		} else {
+			missing.push({
+				section: "Сведения о Пациенте (Потребителе)",
+				field: "patient.passport",
+				label: "Паспортные данные Пациента (серия и номер)",
+				hint: "Укажите серию и номер паспорта гражданина РФ или иного документа, удостоверяющего личность.",
+			});
+		}
 	}
 	if (!checkFilled(pt.registrationAddress)) {
 		missing.push({
@@ -461,12 +475,18 @@ export function validatePaidContract736(contract: PaidContractData): PaidContrac
 			});
 		}
 		if (!checkFilled(cust.passportSeries) || !checkFilled(cust.passportNumber)) {
-			missing.push({
-				section: "Сведения о Заказчике (Плательщике)",
-				field: "customer.passport",
-				label: "Паспорт Заказчика",
-				hint: "Укажите паспортные данные заказчика.",
-			});
+			if (options?.allowBlankForPrint) {
+				warnings.push(
+					"Паспортные данные Заказчика не заполнены — для печати бланка выведены подчеркивания для заполнения от руки.",
+				);
+			} else {
+				missing.push({
+					section: "Сведения о Заказчике (Плательщике)",
+					field: "customer.passport",
+					label: "Паспорт Заказчика",
+					hint: "Укажите паспортные данные заказчика.",
+				});
+			}
 		}
 		if (!checkFilled(cust.phone)) {
 			missing.push({
@@ -536,13 +556,26 @@ export function validatePaidContract736(contract: PaidContractData): PaidContrac
 	}
 
 	// 8. Стоимость и порядок оплаты — п. 17, 21 ПП РФ № 736
-	if (!contract.totalAmountKopecks || contract.totalAmountKopecks <= 0) {
+	if (contract.totalAmountKopecks !== undefined && contract.totalAmountKopecks < 0) {
 		missing.push({
 			section: "Стоимость и оплата",
 			field: "totalAmountKopecks",
 			label: "Ориентировочная сумма договора",
-			hint: "Укажите сумму договора в копейках / рублях (сумма должна быть больше 0).",
+			hint: "Сумма договора не может быть отрицательной.",
 		});
+	} else if (!contract.totalAmountKopecks || contract.totalAmountKopecks <= 0) {
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Сумма договора не указана (0 руб.) — на печать выведены подчеркивания для заполнения от руки пациентом в холле перед приемом.",
+			);
+		} else {
+			missing.push({
+				section: "Стоимость и оплата",
+				field: "totalAmountKopecks",
+				label: "Ориентировочная сумма договора",
+				hint: "Укажите сумму договора в копейках / рублях (сумма должна быть больше 0).",
+			});
+		}
 	}
 	if (!checkFilled(contract.paymentTerms)) {
 		missing.push({
@@ -846,7 +879,8 @@ export function createDefaultPaidContract(params: {
  * Генерирует читаемый текст Договора на оказание платных медуслуг (для архива / ЭМК).
  */
 export function generatePaidContractText(contract: PaidContractData): string {
-	const moneyInfo = formatKopecksToRubAndKop(contract.totalAmountKopecks);
+	const hasCost = typeof contract.totalAmountKopecks === "number" && contract.totalAmountKopecks > 0;
+	const moneyInfo = formatKopecksToRubAndKop(contract.totalAmountKopecks || 0);
 	const cl = contract.clinic;
 	const pt = contract.patient;
 	const cust = contract.customer.isDifferentFromPatient ? contract.customer : contract.patient;
@@ -863,7 +897,16 @@ export function generatePaidContractText(contract: PaidContractData): string {
 							}`,
 					)
 					.join("\n")
-			: `  ${contract.serviceScopeSummary}`;
+			: `  ${contract.serviceScopeSummary || "Стоматологические медицинские услуги в соответствии со сметой / планом лечения"}`;
+
+	const passportText = (cust.passportSeries && cust.passportNumber)
+		? `серия ${cust.passportSeries} № ${cust.passportNumber}, выдан ${cust.passportIssuedBy || "___________________________"}, дата: ${cust.passportIssuedDate || "«___» _______ 20___ г."}, код: ${cust.passportDepartmentCode || "_______"}`
+		: `серия _____ № __________, выдан ____________________________________, дата: «___» _______ 20___ г., код: _______`;
+	const addressText = cust.registrationAddress || "________________________________________________________";
+	const phoneText = cust.phone || "____________________";
+	const costText = hasCost
+		? `${moneyInfo.formattedWithKopecks} (${moneyInfo.inWords})`
+		: "____________________ руб. (________________________________________)";
 
 	return `ДОГОВОР № ${contract.contractNumber}
 НА ОКАЗАНИЕ ПЛАТНЫХ МЕДИЦИНСКИХ УСЛУГ
@@ -904,7 +947,7 @@ ${servicesList}
 2.3. ПРЕДУПРЕЖДЕНИЕ: ${contract.medicalRecommendationWarning}
 
 3. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ
-3.1. Ориентировочная стоимость услуг по настоящему Договору составляет ${moneyInfo.formattedWithKopecks} (${moneyInfo.inWords}).
+3.1. Ориентировочная стоимость услуг по настоящему Договору составляет ${costText}.
 3.2. ${contract.paymentTerms}
 3.3. ${contract.priceChangeRules}
 3.4. Оплата подтверждается выдачей Заказчику (Пациенту) кассового фискального чека в соответствии с Федеральным законом № 54-ФЗ.
@@ -940,10 +983,10 @@ ${cl.directorTitle}: _____________________ / ${cl.directorFullName} /
 ПАЦИЕНТ / ЗАКАЗЧИК:
 ${cust.fullName}
 Д.Р.: ${pt.birthDate}
-Паспорт: серия ${cust.passportSeries} № ${cust.passportNumber}, выдан ${cust.passportIssuedBy}, дата: ${cust.passportIssuedDate}, код: ${cust.passportDepartmentCode}
+Паспорт: ${passportText}
 СНИЛС: ${pt.snils || "не указан"}
-Адрес регистрации: ${cust.registrationAddress}
-Тел: ${cust.phone}
+Адрес регистрации: ${addressText}
+Тел: ${phoneText}
 Медкарта №: ${pt.cardNumber || "043/у"}
 
 Подпись: _____________________ / ${cust.fullName} /
@@ -956,14 +999,16 @@ ${contract.signMethod === "sms_otp" ? `[Подписано ПЭП через С�
  * копейками прописью, блоком лицензии, реквизитами и зонами подписи.
  */
 export function generatePaidContractHtml(contract: PaidContractData): string {
-	const moneyInfo = formatKopecksToRubAndKop(contract.totalAmountKopecks);
+	const hasCost = typeof contract.totalAmountKopecks === "number" && contract.totalAmountKopecks > 0;
+	const moneyInfo = formatKopecksToRubAndKop(contract.totalAmountKopecks || 0);
 	const cl = contract.clinic;
 	const pt = contract.patient;
 	const cust = contract.customer.isDifferentFromPatient ? contract.customer : contract.patient;
 
-	const serviceRows = (contract.services || [])
-		.map(
-			(s, idx) => `<tr>
+	const serviceRows = (contract.services && contract.services.length > 0)
+		? (contract.services || [])
+				.map(
+					(s, idx) => `<tr>
         <td style="text-align:center;">${idx + 1}</td>
         <td>${s.code ? `<code>${s.code}</code> ` : ""}${s.name}</td>
         <td style="text-align:center;">${s.toothOrArea || "—"}</td>
@@ -971,8 +1016,16 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
         <td style="text-align:right;">${formatKopecksToRubAndKop(s.unitPriceKopecks).formatted}</td>
         <td style="text-align:right;"><strong>${formatKopecksToRubAndKop(s.totalKopecks).formatted}</strong></td>
       </tr>`,
-		)
-		.join("");
+				)
+				.join("")
+		: `<tr>
+        <td style="text-align:center;">1</td>
+        <td>Стоматологические медицинские услуги по плану лечения / смете</td>
+        <td style="text-align:center;">—</td>
+        <td style="text-align:center;">1</td>
+        <td style="text-align:right;">${hasCost ? moneyInfo.formatted : "___________"}</td>
+        <td style="text-align:right;"><strong>${hasCost ? moneyInfo.formatted : "___________"}</strong></td>
+      </tr>`;
 
 	const signatureStamp =
 		contract.signMethod === "sms_otp" && contract.smsSignDetails?.isVerified
@@ -1160,7 +1213,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     <tfoot>
       <tr>
         <td colspan="5" style="text-align:right; font-weight:bold;">ИТОГО ПО СМЕТЕ ДОГОВОРА:</td>
-        <td style="text-align:right; font-weight:bold; background:#f8fafc;">${moneyInfo.formatted}</td>
+        <td style="text-align:right; font-weight:bold; background:#f8fafc;">${hasCost ? moneyInfo.formatted : "_______________ руб."}</td>
       </tr>
     </tfoot>
   </table>
@@ -1171,7 +1224,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
   </div>
 
   <div class="section-title">2. Стоимость услуг, порядок расчетов и изменения сметы</div>
-  <p>2.1. Стоимость услуг составляет <strong>${moneyInfo.formattedWithKopecks}</strong> (${moneyInfo.inWords}).</p>
+  <p>2.1. Стоимость услуг составляет <strong>${hasCost ? moneyInfo.formattedWithKopecks : "____________________ руб."}</strong> ${hasCost ? `(${moneyInfo.inWords})` : "(________________________________________)"}.</p>
   <p>2.2. ${contract.paymentTerms}</p>
   <p>2.3. ${contract.priceChangeRules}</p>
 
@@ -1203,11 +1256,11 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
       <strong>ПАЦИЕНТ / ЗАКАЗЧИК:</strong><br>
       <strong>${cust.fullName}</strong><br>
       Дата рождения: ${pt.birthDate} г.<br>
-      Паспорт: серия ${cust.passportSeries} № ${cust.passportNumber}<br>
-      Выдан: ${cust.passportIssuedBy}, ${cust.passportIssuedDate}, код ${cust.passportDepartmentCode}<br>
+      Паспорт: серия ${cust.passportSeries || "_____"} № ${cust.passportNumber || "__________"}<br>
+      Выдан: ${cust.passportIssuedBy || "____________________________________"}, ${cust.passportIssuedDate || "«___» _______ 20___ г."}, код ${cust.passportDepartmentCode || "_______"}<br>
       СНИЛС: ${pt.snils || "не указан"}<br>
-      Адрес регистрации: ${cust.registrationAddress}<br>
-      Телефон: ${cust.phone}<br><br>
+      Адрес регистрации: ${cust.registrationAddress || "________________________________________________________"}<br>
+      Телефон: ${cust.phone || "____________________"}<br><br>
       Подпись Заказчика (Пациента):<br>
       ${signatureStamp}
       <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${cust.fullName} /</div>

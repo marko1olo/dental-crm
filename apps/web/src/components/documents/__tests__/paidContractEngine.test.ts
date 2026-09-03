@@ -149,9 +149,39 @@ describe("Paid Contract Engine (Постановление Правительс�
 				),
 			);
 		});
+
+		test("Allows printing blank contract when total amount is 0 or passport is missing", () => {
+			const contract = createDefaultPaidContract({});
+			contract.totalAmountKopecks = 0;
+			contract.patient.passportSeries = "";
+			contract.patient.passportNumber = "";
+
+			const validation = validatePaidContract736(contract, { allowBlankForPrint: true });
+			assert.strictEqual(validation.isValid, true);
+			assert.strictEqual(validation.missingFields.length, 0);
+			assert.ok(validation.warnings.some((w) => w.includes("Паспортные данные")));
+			assert.ok(validation.warnings.some((w) => w.includes("Сумма договора не указана")));
+		});
 	});
 
 	describe("3. Document Generation (Text and A4 HTML)", () => {
+		test("generatePaidContractHtml and Text output underlines for blank contract with 0 amount or missing passport", () => {
+			const contract = createDefaultPaidContract({
+				patientFullName: "Сидоров Алексей Петрович",
+				totalAmountKopecks: 0,
+			});
+			contract.patient.passportSeries = "";
+			contract.patient.passportNumber = "";
+
+			const text = generatePaidContractText(contract);
+			assert.ok(text.includes("____________________ руб."));
+			assert.ok(text.includes("серия _____ № __________"));
+
+			const html = generatePaidContractHtml(contract);
+			assert.ok(html.includes("____________________ руб."));
+			assert.ok(html.includes("серия _____ № __________"));
+			assert.ok(html.includes("_______________ руб."));
+		});
 		test("generatePaidContractText includes all statutory sections and exact kopecks", () => {
 			const contract = createDefaultPaidContract({
 				patientFullName: "Ковалев Сергей Михайлович",

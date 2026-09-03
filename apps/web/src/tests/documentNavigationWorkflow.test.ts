@@ -346,8 +346,8 @@ describe("Быстрые пакетные генераторы документ�
 		);
 		assert.equal(
 			afterReset.informedConsentQuestionsAnswered,
-			false,
-			"Чекбокс ИДС должен вернуться в false",
+			true,
+			"Чекбокс ИДС должен вернуться в true по умолчанию для печати в 1 клик",
 		);
 	});
 

@@ -40,6 +40,28 @@ export const clinicalDocKinds = new Set<string>([
 	"post_visit_recommendations",
 ]);
 
+/**
+ * Проверяет, разрешен ли документ для администраторов / регистраторов на ресепшене.
+ * Первичные документы (ИДС и анкета здоровья) выдаются пациенту в холле для заполнения до приема.
+ */
+export function isReceptionistAllowedPrimaryDoc(
+	kind: string | null | undefined,
+	role: string | null | undefined,
+): boolean {
+	if (!kind || !role) return false;
+	const isPrimary =
+		kind === "informed_consent" ||
+		kind === "patient_intake_questionnaire";
+	const normalizedRole = role.trim().toLowerCase();
+	const isReceptionistOrAdmin =
+		normalizedRole === "receptionist" ||
+		normalizedRole === "administrator" ||
+		normalizedRole === "registrar" ||
+		normalizedRole === "admin" ||
+		normalizedRole === "manager";
+	return isPrimary && isReceptionistOrAdmin;
+}
+
 export async function registerQuery(app: FastifyInstance) {
 	// 1. GET /api/documents — список документов с защитой врачебной тайны (152-ФЗ / 323-ФЗ)
 	app.get("/api/documents", async (request, reply) => {
@@ -57,7 +79,12 @@ export async function registerQuery(app: FastifyInstance) {
 		const access = evaluateClinicalAccess(identity.role);
 
 		// Если запрашивается конкретный вид медицинского документа неклиническим персоналом — отказ 403
-		if (query.kind && clinicalDocKinds.has(query.kind) && !access.hasClinicalAccess) {
+		if (
+			query.kind &&
+			clinicalDocKinds.has(query.kind) &&
+			!access.hasClinicalAccess &&
+			!isReceptionistAllowedPrimaryDoc(query.kind, identity.role)
+		) {
 			return reply.code(403).send({
 				error: "PermissionDenied",
 				permission: "clinical.document.read",
@@ -102,7 +129,11 @@ export async function registerQuery(app: FastifyInstance) {
 
 		// 152-ФЗ / 323-ФЗ: фильтрация клинических документов от неклинических глаз
 		const filteredRecords = records.filter((doc) => {
-			if (clinicalDocKinds.has(doc.kind) && !access.hasClinicalAccess) {
+			if (
+				clinicalDocKinds.has(doc.kind) &&
+				!access.hasClinicalAccess &&
+				!isReceptionistAllowedPrimaryDoc(doc.kind, identity.role)
+			) {
 				return false; // Неклинические сотрудники не видят клинические документы в общем списке
 			}
 			return true;
@@ -169,7 +200,11 @@ export async function registerQuery(app: FastifyInstance) {
 		const access = evaluateClinicalAccess(identity.role);
 
 		// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в медицинских документах
-		if (clinicalDocKinds.has(document.kind) && !access.hasClinicalAccess) {
+		if (
+			clinicalDocKinds.has(document.kind) &&
+			!access.hasClinicalAccess &&
+			!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+		) {
 			return reply.code(403).send({
 				error: "PermissionDenied",
 				permission: "clinical.document.read",
@@ -219,7 +254,11 @@ export async function registerQuery(app: FastifyInstance) {
 		const templates = allKinds
 			.filter((kind) => {
 				// Если неклинический сотрудник, исключаем клинические шаблоны с мед. протоколами
-				if (clinicalDocKinds.has(kind) && !access.hasClinicalAccess) {
+				if (
+					clinicalDocKinds.has(kind) &&
+					!access.hasClinicalAccess &&
+					!isReceptionistAllowedPrimaryDoc(kind, identity.role)
+				) {
 					return false;
 				}
 				return true;
@@ -254,7 +293,11 @@ export async function registerQuery(app: FastifyInstance) {
 			const identity = getRequestIdentity(request);
 			const access = evaluateClinicalAccess(identity.role);
 
-			if (clinicalDocKinds.has(kind) && !access.hasClinicalAccess) {
+			if (
+				clinicalDocKinds.has(kind) &&
+				!access.hasClinicalAccess &&
+				!isReceptionistAllowedPrimaryDoc(kind, identity.role)
+			) {
 				return reply.code(403).send({
 					error: "PermissionDenied",
 					permission: "clinical.document.template.read",

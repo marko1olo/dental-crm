@@ -99,8 +99,14 @@ function erasedClauseHint(what: string): string {
 	return `текст стёрт — впишите условие своими словами: ${what}`;
 }
 
+export interface PaidContractRequiredFieldsOptions {
+	/** Разрешить печать бланка договора, если сумма еще неизвестна (totalAmountKopecks === 0) */
+	allowBlankForPrint?: boolean;
+}
+
 export function paidContractRequiredFieldsReview(
 	input: PaidContractRequiredFieldsInput,
+	options?: PaidContractRequiredFieldsOptions,
 ): PaidContractRequiredFieldsReview {
 	const customer =
 		filled(input.customerFullName) || filled(input.patientFullName);
@@ -160,8 +166,10 @@ export function paidContractRequiredFieldsReview(
 		{
 			field: "paidContractTotalRub",
 			label: "Сумма договора",
-			hint: "из принятого плана лечения сумма не посчиталась — впишите ориентировочную стоимость цифрами",
-			ok: input.totalRub > 0,
+			hint: options?.allowBlankForPrint
+				? "сумма не указана — в печатной форме бланка выведено поле с подчеркиванием для заполнения от руки"
+				: "из принятого плана лечения сумма не посчиталась — впишите ориентировочную стоимость цифрами",
+			ok: options?.allowBlankForPrint ? input.totalRub >= 0 : input.totalRub > 0,
 		},
 		{
 			field: "paidContractPaymentTerms",

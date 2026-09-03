@@ -2071,17 +2071,17 @@ const createIntakeAndConsentSlice = (set: any) => ({
 		set,
 		"informedConsentConfirmedAt",
 	),
-	informedConsentQuestionsAnswered: false,
+	informedConsentQuestionsAnswered: true,
 	setInformedConsentQuestionsAnswered: createSetter(
 		set,
 		"informedConsentQuestionsAnswered",
 	),
-	informedConsentRisksUnderstood: false,
+	informedConsentRisksUnderstood: true,
 	setInformedConsentRisksUnderstood: createSetter(
 		set,
 		"informedConsentRisksUnderstood",
 	),
-	informedConsentWithdrawUnderstood: false,
+	informedConsentWithdrawUnderstood: true,
 	setInformedConsentWithdrawUnderstood: createSetter(
 		set,
 		"informedConsentWithdrawUnderstood",

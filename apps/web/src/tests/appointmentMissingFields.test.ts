@@ -148,14 +148,14 @@ describe("appointmentScheduleMissingFields", () => {
 		assert.deepEqual(missing, []);
 	});
 
-	it("клиника с ассистентом в штате требует его выбрать", () => {
+	it("клиника с ассистентом в штате не блокирует запись без ассистента (ассистент опционален)", () => {
 		const missing = appointmentScheduleMissingFields(
 			draft({ assistantUserId: "" }),
 			"small_clinic",
 			staff,
 			{ chairs, patients },
 		);
-		assert.deepEqual(missing, ["выберите ассистента"]);
+		assert.deepEqual(missing, []);
 	});
 
 	it("окончание раньше начала попадает в перечень", () => {

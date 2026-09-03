@@ -217,4 +217,21 @@ describe("paidContractRequiredFieldsReview", () => {
 			assert.ok(entry.hint.trim() !== "", `нет подсказки у ${entry.field}`);
 		}
 	});
+
+	it("разрешает печать бланка договора с нулевой суммой при allowBlankForPrint", () => {
+		const input = { ...readyContract(), totalRub: 0 };
+		const reviewStrict = paidContractRequiredFieldsReview(input);
+		assert.equal(
+			reviewStrict.missing.some((m) => m.field === "paidContractTotalRub"),
+			true,
+		);
+
+		const reviewPrint = paidContractRequiredFieldsReview(input, {
+			allowBlankForPrint: true,
+		});
+		assert.equal(
+			reviewPrint.missing.some((m) => m.field === "paidContractTotalRub"),
+			false,
+		);
+	});
 });

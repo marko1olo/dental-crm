@@ -421,9 +421,6 @@ export function appointmentScheduleMissingFields(
 	const hasDoctor = activeStaff.some(
 		(member) => member.role === "doctor" || member.role === "owner",
 	);
-	const hasAssistant = activeStaff.some(
-		(member) => member.role === "assistant",
-	);
 	const activeChairs = resources?.chairs
 		? resources.chairs.filter((chair) => chair.active)
 		: null;
@@ -442,9 +439,6 @@ export function appointmentScheduleMissingFields(
 				? "в клинике нет врача — добавьте сотрудника в настройках"
 				: "выберите врача",
 		);
-	}
-	if (clinicMode !== "solo_doctor" && hasAssistant && !draft.assistantUserId) {
-		missing.push("выберите ассистента");
 	}
 	if (!draft.chairId) {
 		missing.push(
