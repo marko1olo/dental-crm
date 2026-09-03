@@ -33,6 +33,7 @@ import { ClinicControlPill } from "./components/Header";
 import { IncomingCallPopup } from "./components/telephony/IncomingCallPopup";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
 import { useTelephonyStore } from "./store/telephonyStore";
+import { useAppStore } from "./store/appStore";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
 import { WorkspaceActionsMount } from "./components/workspaceActions/WorkspaceActions";
 import { useWorkspaceProfile } from "./hooks/useWorkspaceProfile";
@@ -612,7 +613,17 @@ export function WorkspaceTopbar({
 		selectedWorkspaceRole,
 	);
 	const activeCall = useTelephonyStore((s) => s.activeCall);
-	const isIncomingCall = Boolean(activeCall && activeCall.status !== "connected");
+	const agentState = useTelephonyStore((s) => s.agentState);
+	const currentView = useAppStore((s) => s.currentView);
+	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background
+	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
+	const isDndActive = agentState === "dnd";
+	const isIncomingCall = Boolean(
+		activeCall &&
+		activeCall.status !== "connected" &&
+		!isDoctorMode &&
+		!isDndActive,
+	);
 
 	return (
 		<header className="topbar">
@@ -907,11 +918,13 @@ export function WorkspaceTopbar({
 					</button>
 				) : null}
 			</div>
-			{isIncomingCall ? (
-				<IncomingCallPopup />
-			) : (
-				<TelephonyFloatingWidget defaultExpanded={false} />
-			)}
+			{!isDoctorMode ? (
+				isIncomingCall ? (
+					<IncomingCallPopup />
+				) : (
+					<TelephonyFloatingWidget defaultExpanded={false} />
+				)
+			) : null}
 		</header>
 	);
 }
