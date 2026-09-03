@@ -10,6 +10,7 @@ import {
 	Plus,
 	Search,
 	Settings,
+	Syringe,
 	Trash2,
 	TrendingUp,
 	Truck,
@@ -152,6 +153,10 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		isSavingItem,
 		isSavingRule,
 		fetchItems,
+		handleQuickWriteoffStandardKit,
+		isWritingOffStandardKit,
+		handleQuickWriteoffCarpules,
+		isWritingOffCarpules,
 		openAddModal,
 		openEditModal,
 		handleSaveItem,
@@ -161,6 +166,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		totalValue,
 		lowStockCount,
 		totalItems,
+		getHeaders,
 	} = inventory;
 
 	const [isDeductionModalOpen, setIsDeductionModalOpen] = useState(false);
@@ -712,9 +718,120 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 											<Package size={16} className="shrink-0" />
 											<span>Клинические техкарты</span>
 										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-standard-kit-btn"
+											onClick={() => {
+												handleQuickWriteoffStandardKit();
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="1-клик списание базового набора приёма (перчатки, маска, слюноотсос, нагрудник, валики)"
+											role="menuitem"
+										>
+											<PackageCheck size={16} className="text-teal-600 shrink-0" />
+											<span>Списать базовый набор (1 клик)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-carpules-btn"
+											onClick={() => {
+												handleQuickWriteoffCarpules();
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+											}}
+											title="1-клик списание пустых карпул анестетиков медсестрой (без комиссии из 3 человек)"
+											role="menuitem"
+										>
+											<Syringe size={16} className="text-teal-600 shrink-0" />
+											<span>Списать карпулу (без комиссии)</span>
+										</button>
 									</div>
 								)}
 							</div>
+
+							<button
+								type="button"
+								className="secondary-button"
+								data-testid="nurse-quick-standard-kit-btn"
+								disabled={isWritingOffStandardKit}
+								onClick={() => handleQuickWriteoffStandardKit()}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 6,
+									padding: "8px 14px",
+									minHeight: "40px",
+									borderRadius: 8,
+									fontWeight: 700,
+									fontSize: 13,
+									whiteSpace: "nowrap",
+									background: "var(--teal-surface, rgba(13, 148, 136, 0.12))",
+									borderColor: "var(--teal, #0d9488)",
+									color: "var(--teal, #0d9488)",
+									cursor: "pointer",
+								}}
+								title="Списать базовый набор приёма в 1 клик (перчатки 2 пары, маска 2 шт., слюноотсос 1 шт., нагрудник 1 шт., валики 6 шт.)"
+							>
+								<PackageCheck size={16} />
+								<span>{isWritingOffStandardKit ? "Списание..." : "Списать базовый набор"}</span>
+							</button>
+
+							<button
+								type="button"
+								className="secondary-button"
+								data-testid="nurse-quick-carpules-btn"
+								disabled={isWritingOffCarpules}
+								onClick={() => handleQuickWriteoffCarpules()}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 6,
+									padding: "8px 14px",
+									minHeight: "40px",
+									borderRadius: 8,
+									fontWeight: 700,
+									fontSize: 13,
+									whiteSpace: "nowrap",
+									cursor: "pointer",
+								}}
+								title="Списать пустую карпулу анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
+							>
+								<Syringe size={16} />
+								<span>{isWritingOffCarpules ? "Списание..." : "Списать карпулу"}</span>
+							</button>
 
 							<button
 								type="button"

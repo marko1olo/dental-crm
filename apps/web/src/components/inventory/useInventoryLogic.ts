@@ -367,6 +367,10 @@ export function useInventoryLogic(organizationId: string) {
 	 */
 	const isSavingItemRef = useRef(false);
 	const [isSavingItem, setIsSavingItem] = useState(false);
+	const isWritingOffStandardKitRef = useRef(false);
+	const [isWritingOffStandardKit, setIsWritingOffStandardKit] = useState(false);
+	const isWritingOffCarpulesRef = useRef(false);
+	const [isWritingOffCarpules, setIsWritingOffCarpules] = useState(false);
 
 	/*
 	 * --- Слушатель сканера штрихкодов (эмуляция «клавиатурного» сканера) ---
@@ -717,7 +721,7 @@ export function useInventoryLogic(organizationId: string) {
 					headers: getHeaders({
 						"Content-Type": "application/json",
 					}),
-					body: JSON.stringify({ adjustment }),
+					body: JSON.stringify({ adjustment, allowOverdraft: true }),
 				},
 			);
 			if (res.ok) {
@@ -725,8 +729,10 @@ export function useInventoryLogic(organizationId: string) {
 				setAdjustingItem(null);
 				setAdjustAmount("");
 				showToast(
-					isDeficit ? "Списано (зафиксирован дефицит)" : "Остаток изменён",
-					"success",
+					isDeficit
+						? "Списано под операцию, требуется оприходование (зафиксирован мягкий овердрафт: остаток в дефиците)"
+						: "Остаток изменён",
+					isDeficit ? "warning" : "success",
 				);
 				fetchItems();
 			} else {
@@ -742,6 +748,110 @@ export function useInventoryLogic(organizationId: string) {
 			 */
 			isAdjustingStockRef.current = false;
 			setIsAdjustingStock(false);
+		}
+	};
+
+	/**
+	 * 1-клик списание базового набора приёма медсестрой/ассистентом:
+	 * (перчатки, маска, слюноотсос, нагрудник, валики) без поиска по 1000 позициям склада.
+	 * Реализует мягкий овердрафт склада без блокировки приёма.
+	 */
+	const handleQuickWriteoffStandardKit = async (options?: {
+		visitId?: string;
+		notes?: string;
+	}) => {
+		if (isWritingOffStandardKitRef.current) return;
+		isWritingOffStandardKitRef.current = true;
+		setIsWritingOffStandardKit(true);
+
+		try {
+			const res = await fetch(
+				`/api/inventory/${organizationId}/quick-writeoff-standard-kit`,
+				{
+					method: "POST",
+					headers: getHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify(options ?? {}),
+				},
+			);
+
+			if (res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+					showToast(
+						"Базовый набор приёма списан. Зафиксирован мягкий овердрафт: «Списано под операцию, требуется оприходование»",
+						"warning",
+					);
+				} else {
+					showToast(
+						"Базовый набор приёма списан: перчатки (2 пары), маска (2 шт.), слюноотсос, нагрудник, валики (6 шт.)",
+						"success",
+					);
+				}
+				fetchItems();
+			} else {
+				showToast("Ошибка списания базового набора", "error");
+			}
+		} catch (e) {
+			logger.error(e);
+			showToast("Системная ошибка при списании базового набора", "error");
+		} finally {
+			isWritingOffStandardKitRef.current = false;
+			setIsWritingOffStandardKit(false);
+		}
+	};
+
+	/**
+	 * 1-клик списание пустых карпул анестетика медсестрой (СанПиН 3.3686-21, ПКУ).
+	 * Ликвидирует требование комиссии из 3 человек.
+	 * Реализует мягкий овердрафт склада без комиссии.
+	 */
+	const handleQuickWriteoffCarpules = async (options?: {
+		carpulesCount?: number;
+		drugName?: string;
+		visitId?: string;
+		notes?: string;
+	}) => {
+		if (isWritingOffCarpulesRef.current) return;
+		isWritingOffCarpulesRef.current = true;
+		setIsWritingOffCarpules(true);
+
+		try {
+			const res = await fetch(
+				`/api/inventory/${organizationId}/quick-writeoff-carpules`,
+				{
+					method: "POST",
+					headers: getHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify(options ?? {}),
+				},
+			);
+
+			if (res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+					showToast(
+						"Пустая карпула списана медсестрой в 1 клик (без комиссии). «Списано под операцию, требуется оприходование»",
+						"warning",
+					);
+				} else {
+					showToast(
+						`Пустые карпулы списаны медсестрой в 1 клик (${options?.carpulesCount ?? 1} шт., СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)`,
+						"success",
+					);
+				}
+				fetchItems();
+			} else {
+				showToast("Ошибка списания карпул", "error");
+			}
+		} catch (e) {
+			logger.error(e);
+			showToast("Системная ошибка при списании карпул", "error");
+		} finally {
+			isWritingOffCarpulesRef.current = false;
+			setIsWritingOffCarpules(false);
 		}
 	};
 
@@ -828,6 +938,11 @@ export function useInventoryLogic(organizationId: string) {
 		setQuantityToDeduct,
 		handleAddRule,
 		handleDeleteRule,
+		handleQuickWriteoffStandardKit,
+		isWritingOffStandardKit,
+		handleQuickWriteoffCarpules,
+		isWritingOffCarpules,
+		getHeaders,
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		servicesList: (dashboard as any)?.prices || dashboard?.serviceCatalog || [],
 	};

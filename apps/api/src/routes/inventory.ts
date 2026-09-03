@@ -20,6 +20,7 @@ import {
 	serviceCatalogItems,
 } from "../db/schema.js";
 import { seedDefaultProcedureMaterialRules } from "../services/inventory/defaultBomSeeds.js";
+import { TreatmentConsumablesService } from "../services/treatmentConsumablesService.js";
 
 /**
  * Тела склада раньше читались через bare destructure `const { … } = request.body`.
@@ -60,7 +61,7 @@ const inventoryStockBodySchema = z.object({
 			message:
 				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
 		}),
-	allowOverdraft: z.boolean().optional(),
+	allowOverdraft: z.boolean().default(true),
 	reason: z.string().optional(),
 });
 
@@ -374,7 +375,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const actualAdjustment = adjustment;
 			const newStock = currentStock + actualAdjustment;
 			const isOverdraft = newStock < 0;
-			if (isOverdraft && !parsedStock.data.allowOverdraft) {
+			if (isOverdraft && parsedStock.data.allowOverdraft === false) {
 				return { insufficientStock: true as const, currentStock };
 			}
 
@@ -402,13 +403,13 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					transactionType: isOverdraft ? "emergency_overdraft" : "manual_adjust",
 					isOverdraft,
 					notes: isOverdraft
-						? `Технический перерасход при экстренной помощи: ${parsedStock.data.reason || "дефицит"}`
+						? (parsedStock.data.reason || `Списано под операцию, требуется оприходование (мягкий овердрафт: дефицит ${Math.abs(newStock)} ед.)`)
 						: (parsedStock.data.reason || null),
 					userId: userContext?.id ?? null,
 				});
 			}
 
-			return { updated };
+			return { updated, isOverdraft };
 		});
 
 		if ("notFound" in result)
@@ -925,5 +926,74 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			.returning({ id: procedureMaterialRules.id });
 
 		return { success: true, count: deleted.length };
+	});
+
+	// POST /:organizationId/quick-writeoff-standard-kit — 1-клик списание базового набора приёма
+	// (перчатки 2 пары, маска 2 шт., слюноотсос 1 шт., нагрудник 1 шт., валики 6 шт.)
+	// без поиска по 1000 позициям и без комиссии из 3 человек.
+	server.post<{
+		Params: { organizationId: string };
+		Body?: { cabinetId?: string; visitId?: string; notes?: string };
+	}>("/:organizationId/quick-writeoff-standard-kit", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff standard kit",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const userContext = request.user;
+
+		const result = await db.transaction(async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffStandardKit(tx, {
+				organizationId,
+				userId: userContext?.id ?? null,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
+	});
+
+	// POST /:organizationId/quick-writeoff-carpules — 1-клик списание пустых карпул анестетиков
+	// медсестрой (СанПиН 3.3686-21, ПКУ) без требования комиссии из 3 человек.
+	server.post<{
+		Params: { organizationId: string };
+		Body?: { carpulesCount?: number; drugName?: string; visitId?: string; notes?: string };
+	}>("/:organizationId/quick-writeoff-carpules", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff carpules",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const userContext = request.user;
+
+		const result = await db.transaction(async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+				organizationId,
+				carpulesCount: body.carpulesCount,
+				drugName: body.drugName,
+				userId: userContext?.id ?? null,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
 	});
 };

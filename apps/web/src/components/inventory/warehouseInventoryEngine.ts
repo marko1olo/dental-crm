@@ -490,7 +490,9 @@ export function validateInventoryAuditDraft(
 	}
 
 	if (!doc.commission || doc.commission.length === 0) {
-		errors.push("Комиссия должна состоять минимум из двух уполномоченных членов.");
+		warnings.push(
+			"Опись оформляется ответственным сотрудником (единоличное списание/опись без обязательного требования комиссии из 3 человек).",
+		);
 	} else if (!doc.commission.some((c) => c.role === "chairman")) {
 		warnings.push("В составе инвентаризационной комиссии не указан председатель.");
 	}
@@ -499,8 +501,12 @@ export function validateInventoryAuditDraft(
 		errors.push("Инвентаризационная опись должна содержать хотя бы одну позицию ТМЦ.");
 	} else {
 		for (const it of doc.items) {
-			if (it.bookQuantity < 0 || it.actualQuantity < 0) {
-				errors.push(`Товар «${it.nameRu}» содержит отрицательное количество.`);
+			if (it.actualQuantity < 0) {
+				errors.push(`Товар «${it.nameRu}» содержит отрицательное фактическое количество.`);
+			} else if (it.bookQuantity < 0) {
+				warnings.push(
+					`Товар «${it.nameRu}» имеет отрицательный учетный остаток (${it.bookQuantity}) — зафиксирован мягкий овердрафт («Списано под операцию, требуется оприходование»).`,
+				);
 			}
 			if (!it.batchNumber || it.batchNumber.trim().length === 0) {
 				warnings.push(`Товар «${it.nameRu}» не имеет номера серии (LOT).`);
