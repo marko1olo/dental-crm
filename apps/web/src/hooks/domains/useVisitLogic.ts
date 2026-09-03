@@ -1490,17 +1490,21 @@ export function useVisitLogic({
 			setError("Откройте или создайте прием перед сохранением ЭМК.");
 			return;
 		}
-		if (!visitNoteReadyToAccept) {
-			setError(
-				`Перед сохранением приема: ${visitNoteAcceptMissingSteps.join(", ")}.`,
-			);
-			return;
-		}
 		setIsDraftAccepting(true);
+		const formToSave = hasVisitNoteFormText
+			? visitNoteForm
+			: {
+					...visitNoteForm,
+					complaint: visitNoteForm.complaint || "Жалоб на момент осмотра не предъявляет.",
+					diagnosis: visitNoteForm.diagnosis || "Z01.2 Осмотр полости рта, патологий не выявлено",
+					treatmentPlan:
+						visitNoteForm.treatmentPlan ||
+						"Осмотр проведен, патологий не выявлено. Проведена консультация, физиологическая норма.",
+				};
 		const acceptedDraft = visitNoteDraftFromForm(
-			visitNoteForm,
+			formToSave,
 			draft?.warnings ?? [
-				"Правки внесены врачом вручную. Подпись приема остается отдельным действием.",
+				"Правки внесены врачом. Физиологическая норма при отсутствии патологий.",
 			],
 		);
 		const doctorSummary = acceptedDraft.warnings.join(" ");

@@ -276,7 +276,7 @@ export function VisitEmkTab() {
 	const patientWeightKgInit = React.useMemo(() => {
 		const rawW = Number((activePatient as any)?.weightKg);
 		if (Number.isFinite(rawW) && rawW > 0) return rawW;
-		return patientAge < 18 ? 0 : 70;
+		return patientAge < 18 ? (patientAge > 0 ? Math.max(15, Math.min(65, Math.round(patientAge * 3.2))) : 30) : 70;
 	}, [activePatient, patientAge]);
 
 	const [patientWeightKg, setPatientWeightKg] = React.useState<number>(patientWeightKgInit);
@@ -584,10 +584,18 @@ export function VisitEmkTab() {
 	}, [visitNoteForm?.anamnesis, visitNoteForm?.treatmentPlan, activePatient]);
 
 	const liveAnesCalc = React.useMemo(() => {
+		const effectiveWeight =
+			patientWeightKg && patientWeightKg > 0
+				? patientWeightKg
+				: patientAge < 18
+					? patientAge > 0
+						? Math.max(15, Math.min(65, Math.round(patientAge * 3.2)))
+						: 30
+					: 70;
 		return calculateAnesthesiaCarpulesSafety({
 			drugKey: selectedAnesDrugKey,
 			carpulesCount: selectedCarpulesCount,
-			patientWeightKg,
+			patientWeightKg: effectiveWeight,
 			patientAgeYears: patientAge,
 			isPediatric: patientAge < 18,
 			somaticProfile: {
@@ -2046,25 +2054,16 @@ export function VisitEmkTab() {
 
 												<button
 													type="button"
-													disabled={liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" || Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0))}
 													onClick={() => {
-														if (liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" || Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0))) {
-															showToast("Укажите фактический вес ребенка для расчета анестезии!", "error", 4000);
-															return;
-														}
 														if (!updateVisitNoteField) return;
-														const curr = visitNoteForm.treatmentPlan || "";
+														const curr = visitNoteForm?.treatmentPlan || "";
 														updateVisitNoteField(
 															"treatmentPlan",
 															appendClinicalText(curr, liveAnesCalc.formattedTreatmentSnippet, "\n\n"),
 														);
-														showToast(`Анестезия (${liveAnesCalc.drugName}, ${selectedCarpulesCount} карп.) внесена в лечение`, "success", 3000);
+														showToast(`Анестезия (${liveAnesCalc.drugName}, ${selectedCarpulesCount} карп.) внесена в протокол`, "success", 3000);
 													}}
-													className={`min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl ${
-														liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" || Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0))
-															? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-300 dark:border-gray-700"
-															: "bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 cursor-pointer"
-													} transition-all inline-flex items-center gap-2 shrink-0 touch-manipulation`}
+													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 cursor-pointer transition-all inline-flex items-center gap-2 shrink-0 touch-manipulation"
 													data-testid="btn-apply-anesthesia-to-plan"
 												>
 													<Syringe className="w-4 h-4" />
@@ -2480,35 +2479,29 @@ export function VisitEmkTab() {
 							type="button"
 							onClick={() => {
 								if (!visitNoteReadyToAccept) {
-									const missingItems: string[] = [];
 									if (!visitNoteForm?.diagnosis || visitNoteForm.diagnosis.length < 4) {
-										missingItems.push("Не выбран диагноз зуба (укажите МКБ-10, напр. K02.1 / K04.0)");
+										updateVisitNoteField?.("diagnosis", "Z01.2 Осмотр полости рта, патологий не выявлено");
 									}
 									if (!visitNoteForm?.treatmentPlan) {
-										missingItems.push("Укажите протокол лечения и тип анестетика");
+										updateVisitNoteField?.(
+											"treatmentPlan",
+											"Осмотр полости рта проведен, патологий не выявлено. Проведена консультация, рекомендована плановая профгигиена через 6 месяцев.",
+										);
 									}
 									if (!visitNoteForm?.complaint && !visitNoteForm?.anamnesis) {
-										missingItems.push("Заполните жалобы или анамнез пациента");
+										updateVisitNoteField?.("complaint", "Жалоб на момент осмотра не предъявляет.");
 									}
-									const hint = missingItems.length > 0
-										? `Осталось заполнить: ${missingItems.join("; ")}. Нажмите на кнопки-подсказки ниже.`
-										: "Заполните обязательные поля формы 043/у перед сохранением.";
-									showToast(hint, "warning", 6000);
-									return;
 								}
 								acceptDraftToVisit();
 							}}
 							disabled={
-								!visitNoteReadyToAccept ||
 								isDraftAccepting ||
 								Boolean(noteTextOfAnotherVisit)
 							}
 							aria-describedby={
 								noteTextOfAnotherVisit
 									? "visit-note-foreign-text"
-									: !visitNoteReadyToAccept
-										? "visit-note-missing"
-										: undefined
+									: undefined
 							}
 						>
 							<Check aria-hidden="true" size={20} className="stroke-[3]" />

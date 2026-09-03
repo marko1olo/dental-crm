@@ -35,7 +35,9 @@ export type DiscrepancyReasonCode =
 	| "broken_instrument"
 	| "sterile_packaging_breach"
 	| "spillage_loss"
-	| "sample_testing";
+	| "sample_testing"
+	| "expired_quarantine"
+	| "defect_broken";
 
 export interface DiscrepancyReasonDefinition {
 	readonly code: DiscrepancyReasonCode;
@@ -164,6 +166,18 @@ export const DISCREPANCY_REASONS: readonly DiscrepancyReasonDefinition[] = [
 		labelRu: "Входной контроль / калибровка дозатора",
 		descriptionRu: "Технологическое списание капли материала для проверки отверждения",
 		isDefect: false,
+	},
+	{
+		code: "expired_quarantine",
+		labelRu: "Истекший срок годности (карантин/ТОРГ-16)",
+		descriptionRu: "Партия с истекшим сроком годности направлена на утилизацию",
+		isDefect: true,
+	},
+	{
+		code: "defect_broken",
+		labelRu: "Заводской брак / повреждение при вскрытии",
+		descriptionRu: "Брак или механическое повреждение упаковки/изделия",
+		isDefect: true,
 	},
 ];
 

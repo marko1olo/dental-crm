@@ -15,6 +15,7 @@ import {
 	DollarSign,
 	Lock,
 	QrCode,
+	Send,
 	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
@@ -53,7 +54,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 	onClose,
 	patientName = "Пациент",
 	stageTitle = "Ортопедический этап",
-	defaultChiefDoctorName = "Д-р Смирнов А. В. (Главный врач)",
+	defaultChiefDoctorName = "Лечащий врач",
 	variant = "modal",
 	onConfirmOverride,
 	onBlock,
@@ -109,17 +110,17 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 
 		return (
 			<div
-				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-xs"
+				className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs"
 				data-testid="lab-gate-banner-blocked"
 			>
 				<div className="flex items-start gap-2.5 min-w-0">
-					<ShieldAlert size={18} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+					<ShieldAlert size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
 					<div>
-						<div className="font-bold text-sm text-rose-700 dark:text-rose-300">
-							Внимание: этап не оплачен. Требуется аванс {formatKopecksRu(gateResult.missingAdvanceKopecks)}
+						<div className="font-bold text-sm text-amber-800 dark:text-amber-300">
+							Предупреждение: Аванс &lt; 50% ({formatKopecksRu(gateResult.totalPaidAndCoveredKopecks)} из {formatKopecksRu(gateResult.requiredAdvanceKopecks)})
 						</div>
-						<p className="text-[11px] text-rose-800/80 dark:text-rose-300/80 mt-0.5">
-							Внесено только {gateResult.paidPercent}% из требуемых {gateResult.minAdvancePercent}%. Отправка наряда без аванса заблокирована.
+						<p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 mt-0.5">
+							Внесено {gateResult.paidPercent}% от стоимости этапа. Врач может отправить наряд в ЗТЛ под клиническую ответственность.
 						</p>
 					</div>
 				</div>
@@ -155,7 +156,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							className={
 								gateResult.isGatePassed
 									? "text-emerald-600 dark:text-emerald-400"
-									: "text-rose-600 dark:text-rose-400"
+									: "text-amber-600 dark:text-amber-400"
 							}
 						/>
 						<h4 className="text-sm font-bold text-[var(--ink,#0f172a)]">
@@ -167,12 +168,12 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
 							gateResult.isGatePassed
 								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30"
+								: "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/30"
 						}`}
 					>
 						{gateResult.gateStatus === "CLEARED" && "ОДОБРЕНО (>= 50%)"}
-						{gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" && "ОВЕРРАЙД ГЛАВВРАЧА"}
-						{gateResult.gateStatus === "BLOCKED_REQUIRES_ADVANCE" && "ТРЕБУЕТСЯ АВАНС"}
+						{gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" && "ОВЕРРАЙД ВРАЧА"}
+						{gateResult.gateStatus === "BLOCKED_REQUIRES_ADVANCE" && "АВАНС < 50%"}
 					</span>
 				</div>
 
@@ -214,9 +215,9 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 		>
 			<div className="relative w-full max-w-lg bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
 				{/* Modal Header */}
-				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border,#cbd5e1)] bg-rose-500/10">
+				<div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border,#cbd5e1)] bg-amber-500/10">
 					<div className="flex items-center gap-3">
-						<div className="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-500/30">
+						<div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
 							<ShieldAlert className="w-5 h-5" />
 						</div>
 						<div>
@@ -248,19 +249,18 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 				{/* Modal Body */}
 				<div className="p-6 space-y-5 text-xs text-[var(--ink,#0f172a)]">
 					{/* Warning Card */}
-					<div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-2">
-						<div className="flex items-center gap-2 font-bold text-rose-700 dark:text-rose-300 text-sm">
-							<AlertTriangle size={17} className="text-rose-600" />
-							<span>Внимание: этап не оплачен!</span>
+					<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+						<div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-200 text-sm">
+							<AlertTriangle size={17} className="text-amber-600" />
+							<span>Предупреждение: Аванс &lt; 50%</span>
 						</div>
-						<p className="text-rose-900/90 dark:text-rose-200 text-xs leading-relaxed">
-							По регламенту клиники для отправки заказа в зуботехническую лабораторию требуется
-							внесение аванса не менее <strong>{gateResult.minAdvancePercent}%</strong> (
-							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}).
+						<p className="text-amber-900/90 dark:text-amber-200 text-xs leading-relaxed">
+							Рекомендуемый аванс для запуска работ в ЗТЛ: <strong>{gateResult.minAdvancePercent}%</strong> (
+							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}). Врач вправе отправить заказ в лабораторию прямо сейчас в 1 клик.
 						</p>
-						<div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-500/20 flex items-center justify-between font-mono">
+						<div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-500/20 flex items-center justify-between font-mono">
 							<span className="text-[var(--muted,#64748b)]">Недостающий аванс:</span>
-							<strong className="text-rose-600 dark:text-rose-400 text-sm">
+							<strong className="text-amber-700 dark:text-amber-300 text-sm">
 								{formatKopecksRu(gateResult.missingAdvanceKopecks)}
 							</strong>
 						</div>
@@ -369,18 +369,35 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 				</div>
 
 				{/* Modal Footer */}
-				<div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]">
+				<div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]">
 					<button
 						type="button"
 						onClick={() => {
 							if (onBlock) onBlock();
 							if (onClose) onClose();
 						}}
-						className="min-h-[44px] flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition cursor-pointer"
+						className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 border border-transparent transition cursor-pointer"
 						data-testid="lab-gate-block-btn"
 					>
 						<XCircle size={15} />
-						<span>Блокировать отправку</span>
+						<span>Отложить</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							const override = createChiefDoctorOverride(
+								chiefDoctorInput || "Лечащий врач",
+								overrideReason || "Клиническая необходимость (срочная отправка наряда врачом)",
+							);
+							if (onConfirmOverride) onConfirmOverride(override);
+							if (onClose) onClose();
+						}}
+						className="min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-[var(--teal-fill,var(--teal,#0d9488))] hover:bg-[var(--teal-dark,#0f766e)] shadow-md transition cursor-pointer active:scale-95"
+						data-testid="lab-gate-direct-send-btn"
+					>
+						<Send size={15} />
+						<span>Отправить наряд в ЗТЛ (1 клик)</span>
 					</button>
 				</div>
 			</div>

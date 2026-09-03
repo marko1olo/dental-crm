@@ -357,11 +357,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		? "Печать недоступна, пока записи приёма не прочитаны"
 		: isRevising
 			? "Печать недоступна, пока идёт правка подписанного дневника. Сохраните правку или нажмите «Отмена»."
-			: !isLocked
-				? "Печать формы 043/у доступна после подписи дневника"
-				: printPatientMismatch
-					? "Печать 043/у заблокирована: в разделе «Пациенты» выбран другой человек. Верните выбор на пациента приёма."
-					: undefined;
+			: printPatientMismatch
+				? "Печать 043/у заблокирована: в разделе «Пациенты» выбран другой человек. Верните выбор на пациента приёма."
+				: undefined;
 	const printBlocked = Boolean(printBlockedReason);
 
 	const clinicName =
@@ -584,6 +582,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						radiologySnapshots={radiologySnapshots}
 						diaryHash={diaryHash}
 						hasCryptoSignature={hasCryptoSignature}
+						isLocked={isLocked}
 						lockedAt={lockedAt}
 						revisionCount={revisionCount}
 					/>
@@ -1586,7 +1585,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						onClick={() => beginRevise()}
 						disabled={diaryUnread}
 						className="vde-043__btn vde-043__btn--amber ml-auto"
-						title="Исправить подписанный дневник (только администратор)"
+						title="Исправить опечатку в дневнике (с сохранением истории версий)"
 					>
 						<FileText className="w-3.5 h-3.5" /> Исправить
 					</button>

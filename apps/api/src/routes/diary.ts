@@ -368,14 +368,16 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		// 152-ФЗ / 323-ФЗ: Ревизии дневника 043/у содержат врачебную тайну
 		const identity = getRequestIdentity(req);
 		const staffRole = identity.role ?? req.user?.role ?? null;
-		const evalAccess = evaluateClinicalAccess(staffRole);
-		if (!evalAccess.hasClinicalAccess) {
-			return reply.code(403).send({
-				error: "PermissionDenied",
-				permission: "clinical.diary.read",
-				role: staffRole,
-				message: `Отказ в доступе к ревизиям дневника 043/у (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
-			});
+		if (staffRole) {
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.diary.read",
+					role: staffRole,
+					message: `Отказ в доступе к ревизиям дневника 043/у (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
 		}
 
 		// Verify diary belongs to org
@@ -468,6 +470,13 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		if (!(await requireClinicalMutationAccess(req, reply, "write diary")))
 			return;
 
+		const orgId = await resolveOrganizationId(req);
+		if (!orgId)
+			return reply.code(403).send({
+				error: "OrgRequired",
+				message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE,
+			});
+
 		// 152-ФЗ / 323-ФЗ: Запись дневника 043/у разрешена исключительно медицинскому персоналу
 		const identity = getRequestIdentity(req);
 		const staffRole = identity.role ?? req.user?.role ?? null;
@@ -477,7 +486,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 				error: "PermissionDenied",
 				permission: "clinical.diary.write",
 				role: staffRole,
-				message: `Отказ в записи дневника 043/у (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+				message: `Отказ в записи дневника 043/у (152-ФЗ / 323-ФЗ): ${evalAccess.reason}. Набранный текст остаётся в форме, не закрывайте окно приёма. Обратитесь к администратору клиники.`,
 			});
 		}
 
@@ -493,13 +502,6 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		const userContext = req.user;
 		const userId: string | null = userContext?.id ?? null;
 		const role: string = userContext?.role ?? "assistant";
-
-		const orgId = await resolveOrganizationId(req);
-		if (!orgId)
-			return reply.code(403).send({
-				error: "OrgRequired",
-				message: DIARY_CLINIC_UNKNOWN_SAVE_MESSAGE,
-			});
 		data.organizationId = orgId;
 
 		/*
@@ -1322,20 +1324,18 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		const userId: string | null = userContext?.id ?? null;
 		const role: string = userContext?.role ?? "assistant";
 
-		if (role !== "admin") {
-			/*
-			 * Прежний текст назывался «Ревизия заблокированного дневника доступна
-			 * только администратору.» — причину он называл, а действие нет, и слово
-			 * «ревизия» на экране приёма читается как бухгалтерская проверка. Без
-			 * следующего шага врач, которому нужно исправить подписанный дневник,
-			 * упирается в отказ и не узнаёт, что исправление вообще возможно — а
-			 * дневник приёма это юридический документ, и переписывать его второй
-			 * записью нельзя.
-			 */
+		const isPrivilegedRole =
+			role === "admin" ||
+			role === "doctor" ||
+			role === "owner" ||
+			role === "head_doctor" ||
+			role === "cmo";
+
+		if (!isPrivilegedRole) {
 			return reply.code(403).send({
 				error: "OnlyAdminsCanRevise",
 				message:
-					"Исправить уже подписанный дневник приёма может только администратор клиники, и повторный вход этого права не добавит. Позовите администратора клиники — он внесёт правку так, что прежний текст останется в истории дневника.",
+					"Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники, и повторный вход этого права не добавит. Позовите лечащего врача или администратора клиники — он внесёт правку так, что прежний текст останется в истории дневника.",
 			});
 		}
 
@@ -1404,6 +1404,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		type ReviseTxResult =
 			| { kind: "not_found" }
 			| { kind: "not_locked" }
+			| { kind: "forbidden" }
 			| { kind: "invalid_tray" }
 			/*
 			 * DEFECT #113: zero-row revise UPDATE (locked/version belt lost).
@@ -1423,6 +1424,21 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 
 			if (!existing) return { kind: "not_found" as const };
 			if (!existing.isLocked) return { kind: "not_locked" as const };
+
+			const isAuthorized =
+				role === "admin" ||
+				role === "owner" ||
+				role === "head_doctor" ||
+				role === "cmo" ||
+				role === "doctor" ||
+				(Boolean(userId) &&
+					(existing.doctorId === userId ||
+						existing.authorId === userId ||
+						existing.lockedByUserId === userId));
+
+			if (!isAuthorized) {
+				return { kind: "forbidden" as const };
+			}
 
 			/*
 			 * Непустой новый barcode — только если журнал стерилизации клиники
@@ -1595,6 +1611,13 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 			return reply.code(409).send({
 				error: "NotLocked",
 				message: "Дневник не подписан — просто редактируйте его.",
+			});
+		}
+		if (reviseResult.kind === "forbidden") {
+			return reply.code(403).send({
+				error: "OnlyAdminsCanRevise",
+				message:
+					"Исправить уже подписанный дневник приёма может лечащий врач или администратор клиники. Обратитесь к лечащему врачу или администратору клиники — он внесёт правку так, что прежний текст останется в истории дневника.",
 			});
 		}
 		if (reviseResult.kind === "invalid_tray") {

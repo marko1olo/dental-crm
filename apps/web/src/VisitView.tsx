@@ -787,8 +787,12 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
     дневник приёма. Подробнее — в комментарии у самой вкладки.
   */
 	const [odontogramTabWasOpened, setOdontogramTabWasOpened] = useState(false);
+	const [anamnesisTabWasOpened, setAnamnesisTabWasOpened] = useState(false);
+	const [diagnosticsTabWasOpened, setDiagnosticsTabWasOpened] = useState(false);
 	React.useEffect(() => {
 		if (visitSubViewTab === "odontogram") setOdontogramTabWasOpened(true);
+		if (visitSubViewTab === "anamnesis") setAnamnesisTabWasOpened(true);
+		if (visitSubViewTab === "diagnostics") setDiagnosticsTabWasOpened(true);
 	}, [visitSubViewTab]);
 
 	/*
@@ -983,44 +987,18 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					setVisitSubViewTab={setVisitSubViewTab}
 				/>
 
-				{visitSubViewTab === "emk" && (
-					<div
-						style={{
-							margin: "16px 0",
-							display: "flex",
-							flexDirection: "column",
-							gap: "16px",
-						}}
-					>
-						<VisitSpecialtyFocus />
-						{/*
-                  Здесь стоял <VisitDictation /> — вторая диктовка на том же
-                  экране, рядом с работающей. Отличить их на глаз нельзя.
-
-                  ПОПРАВКА К ЭТОМУ КОММЕНТАРИЮ (файл компонента удалён вместе с
-                  ней). Здесь утверждалось, что сломана была именно копия:
-                  подпись действия пустыми кавычками, пустой список «Чтобы
-                  собрать черновик, осталось:», отсутствие быстрых фраз —
-                  «потому что тех двух имён в контексте нет». На день удаления
-                  это уже неверно: и dictationQuickPhrases, и
-                  visitDraftBuildMissingSteps стоят в возвращаемом объекте
-                  useAppLogic.tsx (:13962 и :14712), а три коммита от 2026-07-29
-                  починили в копии настоящие дефекты. Ни один из них не дошёл до
-                  человека — экран, который их содержал, не открывался ни одной
-                  кнопкой. Это цена недостижимого файла, а не оправдание для него.
-
-                  Причина снятия, которая ПРОВЕРЕНА и остаётся в силе: у копии
-                  ноль собственных строк для человека — все её 28 русских строк
-                  есть в этом файле, — а класс «dictation-box» у обеих один.
-                  Переход «к диктовке» из шапки берёт первое совпадение
-                  (useAppLogic.tsx:13764, querySelector), поэтому два таких блока
-                  на экране означают, что кнопка врача уводит курсор в чужое поле.
-
-                  Рабочая диктовка — ниже. Выносить её в компонент надо от неё же.
-                */}
-						<VisitEmkTab />
-					</div>
-				)}
+				<div
+					style={{
+						margin: "16px 0",
+						display: visitSubViewTab === "emk" ? "flex" : "none",
+						flexDirection: "column",
+						gap: "16px",
+					}}
+					aria-hidden={visitSubViewTab !== "emk"}
+				>
+					<VisitSpecialtyFocus />
+					<VisitEmkTab />
+				</div>
 
 				{/*
               ВКЛАДКА «ЗУБНАЯ ФОРМУЛА» НЕ РАЗМОНТИРУЕТСЯ, А ПРЯЧЕТСЯ — ИНАЧЕ
@@ -1060,8 +1038,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 				)}
 
-				{visitSubViewTab === "anamnesis" && (
-					<div style={{ margin: "16px 0" }}>
+				{anamnesisTabWasOpened && (
+					<div
+						style={{
+							margin: "16px 0",
+							display: visitSubViewTab === "anamnesis" ? undefined : "none",
+						}}
+						aria-hidden={visitSubViewTab !== "anamnesis"}
+					>
 						<VisitAnamnesisTab />
 					</div>
 				)}
@@ -1083,8 +1067,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					</div>
 				)}
 
-				{visitSubViewTab === "diagnostics" && (
-					<div style={{ margin: "16px 0" }}>
+				{diagnosticsTabWasOpened && (
+					<div
+						style={{
+							margin: "16px 0",
+							display: visitSubViewTab === "diagnostics" ? undefined : "none",
+						}}
+						aria-hidden={visitSubViewTab !== "diagnostics"}
+					>
 						<VisitDiagnosticsTab
 							activePatient={activePatient}
 							onInsertToProtocol={(protocolText) => {

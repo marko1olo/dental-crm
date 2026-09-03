@@ -51,6 +51,7 @@ export interface PremiumDocumentPrintSheetProps {
 	radiologySnapshots?: readonly RadiologySnapshotItem[] | null | undefined;
 	diaryHash?: string | null | undefined;
 	hasCryptoSignature?: boolean | null | undefined;
+	isLocked?: boolean | undefined;
 	lockedAt?: string | Date | null | undefined;
 	revisionCount?: number | null | undefined;
 	customDisclaimer?: string | null | undefined;
@@ -72,6 +73,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 	radiologySnapshots,
 	diaryHash,
 	hasCryptoSignature,
+	isLocked = false,
 	lockedAt,
 	revisionCount = 0,
 	customDisclaimer,
@@ -174,6 +176,19 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 			<div className="doc-official-title-box">
 				<h1>{documentTitle}</h1>
 				<div className="doc-form-sub">{documentSubtitle}</div>
+				<div className="mt-1 flex justify-center">
+					{isLocked ? (
+						<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded border border-emerald-600/40 bg-emerald-500/10 text-emerald-800 text-[10px] font-bold tracking-wider uppercase">
+							<CheckCircle2 className="w-3 h-3 text-emerald-600" />
+							ПОДПИСАНО ВРАЧОМ
+						</span>
+					) : (
+						<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded border border-amber-600/40 bg-amber-500/10 text-amber-800 text-[10px] font-bold tracking-wider uppercase">
+							<FileText className="w-3 h-3 text-amber-600" />
+							ЧЕРНОВИК (ПРЕДВАРИТЕЛЬНЫЙ ОСМОТР)
+						</span>
+					)}
+				</div>
 			</div>
 
 			{/* ── Patient Requisites Grid Table ── */}
