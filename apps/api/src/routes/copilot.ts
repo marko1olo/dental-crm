@@ -40,7 +40,9 @@ export function extractDoctorScreenContext(
 		};
 	}
 
-	const headerMatch = text.match(/^\[UI Context:\s*([\s\S]*?)\](?:\r?\n)?/i);
+	const headerMatch = text.match(
+		/^\[UI Context:\s*([\s\S]*?)\](?=\s*(?:\r?\n|$))(?:\r?\n)?/i,
+	);
 	if (!headerMatch) {
 		return { doctorContext: null, cleanText: text };
 	}
@@ -78,30 +80,54 @@ export function extractDoctorScreenContext(
 
 	let toothFormula: Record<string, string> | undefined = undefined;
 	if (toothFormulaMatch?.[1]) {
+		const raw = toothFormulaMatch[1].replace(/\\'/g, "'");
 		try {
-			toothFormula = JSON.parse(toothFormulaMatch[1].replace(/\\'/g, "'"));
-		} catch {}
+			toothFormula = JSON.parse(raw);
+		} catch (err) {
+			console.warn("[Copilot extractDoctorScreenContext] Failed to parse toothFormula JSON:", raw, err);
+		}
 	}
 
 	let diagnosesByTooth: Record<string, string> | undefined = undefined;
 	if (diagnosesMatch?.[1]) {
+		const raw = diagnosesMatch[1].replace(/\\'/g, "'");
 		try {
-			diagnosesByTooth = JSON.parse(diagnosesMatch[1].replace(/\\'/g, "'"));
-		} catch {}
+			diagnosesByTooth = JSON.parse(raw);
+		} catch (err) {
+			console.warn("[Copilot extractDoctorScreenContext] Failed to parse diagnosesByTooth JSON:", raw, err);
+		}
 	}
 
 	let clinical043Context: Record<string, string> | undefined = undefined;
 	if (form043Match?.[1]) {
+		const raw = form043Match[1].replace(/\\'/g, "'");
 		try {
-			clinical043Context = JSON.parse(form043Match[1].replace(/\\'/g, "'"));
-		} catch {}
+			clinical043Context = JSON.parse(raw);
+		} catch (err) {
+			console.warn("[Copilot extractDoctorScreenContext] Failed to parse clinical043Context JSON:", raw, err);
+		}
 	}
 
 	let allergies: string[] | undefined = undefined;
 	if (allergiesMatch?.[1]) {
+		const raw = allergiesMatch[1].replace(/\\'/g, "'");
 		try {
-			allergies = JSON.parse(allergiesMatch[1].replace(/\\'/g, "'"));
-		} catch {}
+			const parsed = JSON.parse(raw);
+			if (Array.isArray(parsed)) {
+				allergies = parsed.map(String);
+			}
+		} catch (err) {
+			console.warn("[Copilot extractDoctorScreenContext] Failed to parse allergies JSON:", raw, err);
+			// Resilient fallback: parse comma-separated or bracketed tokens so critical life-saving allergies are not lost
+			const salvaged = raw
+				.replace(/^[\["']+|[\]"']+$/g, "")
+				.split(/[,\n;]+/)
+				.map((item) => item.trim().replace(/^['"]|['"]$/g, ""))
+				.filter(Boolean);
+			if (salvaged.length > 0) {
+				allergies = salvaged;
+			}
+		}
 	}
 
 	const doctorContext: DoctorScreenContext = {
@@ -1467,7 +1493,9 @@ export const copilotRoutes: FastifyPluginAsync = async (
 			close: () => {
 				try {
 					if (!reply.raw.writableEnded) reply.raw.end();
-				} catch {}
+				} catch (closeErr) {
+					console.warn("[Copilot SSE] Error ending raw response stream:", closeErr);
+				}
 			},
 		});
 

@@ -153,7 +153,7 @@ export function parseCopilotUiContextHeader(
 	}
 
 	const headerMatch = fullText.match(
-		/^\[UI Context:\s*([\s\S]*?)\](?:\r?\n)?/i,
+		/^\[UI Context:\s*([\s\S]*?)\](?=\s*(?:\r?\n|$))(?:\r?\n)?/i,
 	);
 
 	if (!headerMatch) {

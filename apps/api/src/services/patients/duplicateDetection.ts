@@ -166,10 +166,74 @@ export function canonicalizeHomoglyphs(raw: string): string {
 	});
 }
 
-/** «+7 (916) 123-45-67» и «89161234567» — один номер. Сравниваем последние 10 цифр. */
+/**
+ * Извлекает канонический 10-значный национальный ключ телефона с устойчивостью к:
+ * 1. Форматам РФ/Казахстана: +7, 8, без префикса (9161234567), европейский префикс 007.
+ * 2. Разделителям: дефисы, скобки, точки, слэши, обычные пробелы, неразрывные пробелы (\u00A0), узкие пробелы (\u2009, \u202F).
+ * 3. Добавочным номерам: «доб. 12», «ext 5», «#101» — добавочный отрезается и не искажает хвост номера.
+ * 4. Нескольким номерам в одной строке: «8(916)123-45-67, 8(495)999-88-77» — берётся первый номер.
+ * 5. Международным кодам (Беларусь +375 / 80).
+ */
 export function phoneKey(raw: string | null): string | null {
-	const digits = (raw ?? "").replace(/\D/g, "");
-	return digits.length >= 10 ? digits.slice(-10) : null;
+	if (!raw) return null;
+	// 1. Отрезаем добавочный номер (доб., добавочный, ext, x, #)
+	let text = raw.replace(/(?:доб\.?|добавочный|ext\.?|extension|x|#)\s*\d+.*$/i, "");
+	// 2. Если в строке несколько номеров через запятую/точку с запятой/слэш — берем первый
+	// Но если всего 10 или 11 цифр, это один номер (например, 123-45/67)
+	const totalDigits = text.replace(/\D/g, "");
+	let firstSegment = text;
+	if (totalDigits.length > 11) {
+		firstSegment = text.split(/[,;]|\s\/\s|\sили\s|\sи\s/i)[0] ?? text;
+		if (firstSegment.replace(/\D/g, "").length > 11) {
+			firstSegment = firstSegment.split("/")[0] ?? firstSegment;
+		}
+	}
+	// 3. Извлекаем только цифры
+	let digits = firstSegment.replace(/\D/g, "");
+	if (!digits) return null;
+
+	// Европейский выход 007 -> 7
+	if (digits.startsWith("007") && digits.length === 13) {
+		digits = digits.slice(2);
+	}
+	// Беларусь +375 -> 9 цифр номера; 80 -> 9 цифр
+	if (digits.startsWith("375") && digits.length === 12) {
+		return digits.slice(3);
+	}
+	if (digits.startsWith("80") && digits.length === 11) {
+		return digits.slice(2);
+	}
+
+	// РФ / Казахстан: 11 цифр, начинающихся с 7 или 8 -> последние 10 цифр
+	if (digits.length === 11 && (digits.startsWith("7") || digits.startsWith("8"))) {
+		return digits.slice(-10);
+	}
+	// Если передано ровно 10 цифр без кода страны
+	if (digits.length === 10) {
+		return digits;
+	}
+	// В остальных случаях, если 10+ цифр, берем последние 10 цифр
+	return digits.length >= 10 ? digits.slice(-10) : (digits.length >= 7 ? digits : null);
+}
+
+/**
+ * Извлекает все возможные ключи номеров телефонов из строки (если указано несколько).
+ */
+export function phoneKeys(raw: string | null): string[] {
+	if (!raw) return [];
+	const text = raw.replace(/(?:доб\.?|добавочный|ext\.?|extension|x|#)\s*\d+.*$/i, "");
+	const totalDigits = text.replace(/\D/g, "");
+	let delimiter = /[,;]|\s\/\s|\sили\s|\sи\s/i;
+	if (totalDigits.length > 11 && text.includes("/")) {
+		delimiter = /[,;/]|\sили\s|\sи\s/i;
+	}
+	const segments = text.split(delimiter).map((s) => s.trim()).filter(Boolean);
+	const keys = new Set<string>();
+	for (const seg of segments) {
+		const key = phoneKey(seg);
+		if (key) keys.add(key);
+	}
+	return [...keys];
 }
 
 /**
@@ -344,16 +408,27 @@ export function snilsFuzzySimilarity(
 	return 0.0;
 }
 
-/** Сходство телефона (1.0 при совпадении последних 10 цифр, 0.85 при опечатке в 1 цифру). */
+/** Сходство телефона (1.0 при совпадении канонических ключей, 0.85 при опечатке в 1 цифру). */
 export function phoneFuzzySimilarity(
 	phoneA: string | null | undefined,
 	phoneB: string | null | undefined,
 ): number | null {
-	const a = phoneKey(phoneA ?? null);
-	const b = phoneKey(phoneB ?? null);
-	if (!a || !b) return null;
-	if (a === b) return 1.0;
-	if (damerauLevenshteinDistance(a, b) === 1) return 0.85;
+	const keysA = phoneKeys(phoneA ?? null);
+	const keysB = phoneKeys(phoneB ?? null);
+	if (keysA.length === 0 || keysB.length === 0) return null;
+
+	// Проверяем точное пересечение среди любых указанных номеров
+	for (const a of keysA) {
+		for (const b of keysB) {
+			if (a === b) return 1.0;
+		}
+	}
+
+	// Проверяем Левенштейн для опечатки в 1 цифру между первыми номерами
+	const primaryA = keysA[0]!;
+	const primaryB = keysB[0]!;
+	if (damerauLevenshteinDistance(primaryA, primaryB) === 1) return 0.85;
+
 	return 0.0;
 }
 
@@ -678,8 +753,8 @@ export async function findDuplicateCandidates(
 			bucket.push(row);
 			byName.set(name, bucket);
 		}
-		const phone = phoneKey(row.phone);
-		if (phone) {
+		const pKeys = phoneKeys(row.phone);
+		for (const phone of pKeys) {
 			const bucket = byPhone.get(phone) ?? [];
 			bucket.push(row);
 			byPhone.set(phone, bucket);

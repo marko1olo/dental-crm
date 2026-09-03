@@ -682,9 +682,46 @@
 .pr-kanban-card-actions {
 	display: flex;
 	align-items: center;
-	gap: 4px;
-	margin-top: 4px;
-	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+	position: relative;
+}
+
+.pr-card-dropdown-menu {
+	position: absolute;
+	right: 0;
+	bottom: calc(100% + 4px);
+	z-index: 50;
+	background: var(--pr-surface);
+	border: 1px solid var(--pr-border);
+	border-radius: var(--pr-radius-sm);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+	min-width: 190px;
+	padding: 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.pr-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	border: none;
+	background: transparent;
+	color: var(--pr-ink);
+	font-size: 0.75rem;
+	font-weight: 600;
+	border-radius: 4px;
+	cursor: pointer;
+	text-align: left;
+	width: 100%;
+	transition: background 0.15s ease;
+}
+
+.pr-dropdown-item:hover {
+	background: var(--pr-surface-hover);
 }
 
 /* Side Drawer (Message Preview / Calling Script) */

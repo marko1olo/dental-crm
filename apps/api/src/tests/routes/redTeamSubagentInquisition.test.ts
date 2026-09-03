@@ -16,6 +16,7 @@ import {
 import { registerAnesthesiaRoutes } from "../../routes/anesthesia.js";
 import { registerLabOrderRoutes } from "../../routes/labOrders.js";
 import { registerPrescriptionRoutes } from "../../routes/prescriptions.js";
+import { createDemonstrationGostCmsSignature } from "@dental/shared";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -637,13 +638,20 @@ describe("RED TEAM PENTEST: ANESTHESIA, LAB ORDERS (ЗТЛ), PRESCRIPTIONS & TEN
 		it("3.2. Блокирует подписание рецепта чужой клиники (HTTP 404)", async (t) => {
 			if (!dbAvailable) return t.skip();
 
+			const genuineSig = createDemonstrationGostCmsSignature({
+				documentId: PRESCRIPTION_A_ID,
+				documentKind: "prescription",
+				documentHashHex: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+				doctorFullName: "Доктор Пациентов А.С.",
+			});
+
 			// Доктор Б из Клиники Б пытается подписать рецепт PRESCRIPTION_A_ID Клиники А
 			const res = await app.inject({
 				method: "POST",
 				url: `/api/prescriptions/${PRESCRIPTION_A_ID}/sign-ukep`,
 				headers: { "x-dente-clinic-token": tokenDoctorB, "x-dente-staff-token": tokenDoctorB },
 				payload: {
-					pkcs7Signature: "MIIBogYJKoZIhvcNAQcCoIIBkzCCAZMCAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGg...",
+					pkcs7Signature: genuineSig.signatureBase64,
 				},
 			});
 
@@ -656,12 +664,19 @@ describe("RED TEAM PENTEST: ANESTHESIA, LAB ORDERS (ЗТЛ), PRESCRIPTIONS & TEN
 		it("3.3. Легитимное подписание рецепта УКЭП лечащим врачом клиники завершается успехом (HTTP 200)", async (t) => {
 			if (!dbAvailable) return t.skip();
 
+			const genuineSig = createDemonstrationGostCmsSignature({
+				documentId: PRESCRIPTION_A_ID,
+				documentKind: "prescription",
+				documentHashHex: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+				doctorFullName: "Доктор Пациентов А.С.",
+			});
+
 			const res = await app.inject({
 				method: "POST",
 				url: `/api/prescriptions/${PRESCRIPTION_A_ID}/sign-ukep`,
 				headers: { "x-dente-clinic-token": tokenDoctorA, "x-dente-staff-token": tokenDoctorA },
 				payload: {
-					pkcs7Signature: "MIIBogYJKoZIhvcNAQcCoIIBkzCCAZMCAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGg...",
+					pkcs7Signature: genuineSig.signatureBase64,
 					certificateIssuer: "Минцифры РФ / УЦ Такском",
 					signatureAlgorithm: "ГОСТ Р 34.10-2012 (256 бит)",
 				},
@@ -678,12 +693,19 @@ describe("RED TEAM PENTEST: ANESTHESIA, LAB ORDERS (ЗТЛ), PRESCRIPTIONS & TEN
 		it("3.4. Повторная попытка подписать уже подписанный рецепт отклоняется с конфликтом (HTTP 409)", async (t) => {
 			if (!dbAvailable) return t.skip();
 
+			const genuineSig = createDemonstrationGostCmsSignature({
+				documentId: PRESCRIPTION_A_ID,
+				documentKind: "prescription",
+				documentHashHex: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+				doctorFullName: "Доктор Пациентов А.С.",
+			});
+
 			const res = await app.inject({
 				method: "POST",
 				url: `/api/prescriptions/${PRESCRIPTION_A_ID}/sign-ukep`,
 				headers: { "x-dente-clinic-token": tokenDoctorA, "x-dente-staff-token": tokenDoctorA },
 				payload: {
-					pkcs7Signature: "ANOTHER_SIGNATURE_ATTEMPT...",
+					pkcs7Signature: genuineSig.signatureBase64,
 				},
 			});
 

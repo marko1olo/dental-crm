@@ -672,9 +672,22 @@ export async function createPatientSafeInDb(
 			.sort()
 			.join(" ");
 
+		const snilsDigits = (
+			(input as unknown as { snils?: string | null })?.snils ??
+			(input.administrativeProfile as Record<string, unknown> | null | undefined)?.snils ??
+			""
+		)
+			.toString()
+			.replace(/\D/g, "");
+
 		if (phoneKey) {
 			await tx.execute(
 				sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${organizationId}::text, 'phone', ${phoneKey}::text)))`,
+			);
+		}
+		if (snilsDigits.length >= 11) {
+			await tx.execute(
+				sql`SELECT pg_advisory_xact_lock(hashtext(concat_ws(':', ${organizationId}::text, 'snils', ${snilsDigits}::text)))`,
 			);
 		}
 		if (normalizedName) {

@@ -54,6 +54,7 @@ import {
 	rubToKopecks,
 } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter";
 import type { FiscalReceiptPrintPayload } from "../../services/hardware/hardwareTypes";
 
@@ -211,15 +212,99 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				},
 			);
 
-			// Emulate immediate OFD transmission with exact signature
-			const fiscalSign = (Math.floor(1000000000 + Math.random() * 9000000000)).toString();
-			const fiscalDocNumber = Math.floor(1000 + Math.random() * 9000);
-			const receiptDateIso = new Date().toISOString();
-			const qrUrl = `https://check.ofd.ru/rec/${clinicInn}/${fiscalDocNumber}/${fiscalSign}`;
+			// Map line items to kopecks and FFD 1.2 format
+			const lineItems = effectiveItems.map((it, idx) => {
+				const unitPriceKop = rubToKopecks(it.priceRub);
+				const discountKop = it.discountRub ? rubToKopecks(it.discountRub) : 0;
+				const amountKop = Math.max(0, Math.round(unitPriceKop * it.quantity - discountKop));
+				return {
+					id: `item-${idx + 1}`,
+					name: it.name,
+					priceKopecks: unitPriceKop,
+					quantity: it.quantity,
+					amountKopecks: amountKop,
+					vatRate: "vat_0" as const,
+					paymentMethod: "full_payment" as const,
+					paymentSubject: "service" as const,
+					medicalServiceCode804n: it.code804n || undefined,
+					markingCode: it.markingCode || undefined,
+				};
+			});
+
+			const totalKopecks = rubToKopecks(totalInvoiceRub);
+			const cashKop = selectedTender === "cash" ? totalKopecks : rubToKopecks(splitCashRub);
+			const cardKop = selectedTender === "card" ? totalKopecks : rubToKopecks(splitCardRub);
+			const sbpKop = selectedTender === "sbp" ? totalKopecks : rubToKopecks(splitSbpRub);
+			const prepaidKop =
+				selectedTender === "deposit" || selectedTender === "family"
+					? totalKopecks
+					: rubToKopecks(splitDepositRub + splitFamilyRub);
+
+			// Real statutory 54-FZ FFD 1.2 request to backend
+			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
+			const effectivePatientId = isUuid ? patientId : "00000000-0000-0000-0000-000000000001";
+
+			const payload = {
+				clientMutationId: idempotencyKey,
+				patientId: effectivePatientId,
+				operationType,
+				customerContact: patientPhone || patientName,
+				cashierFullName,
+				cashierInn: clinicInn,
+				items: lineItems,
+				cashKopecks: cashKop,
+				electronicCardKopecks: cardKop,
+				sbpKopecks: sbpKop,
+				prepaidKopecks: prepaidKop,
+				creditKopecks: 0,
+				totalKopecks,
+			};
+
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": idempotencyKey,
+			});
+
+			let fiscalSign = "";
+			let fiscalDocNumber = 0;
+			let receiptDateIso = new Date().toISOString();
+			let qrUrl = "";
+
+			try {
+				const res = await fetch("/api/fiscal/receipts", {
+					method: "POST",
+					headers,
+					body: JSON.stringify(payload),
+				});
+
+				if (res.ok) {
+					const resData = (await res.json()) as {
+						fiscalSign?: string;
+						fiscalDocumentNumber?: number;
+						receiptIssuedAt?: string;
+						ofdVerificationUrl?: string;
+						qrString?: string;
+						compiledReceipt?: {
+							tag1077_fiscalSign?: string;
+							tag1040_fiscalDocumentNumber?: number;
+							tag1012_dateTime?: string;
+						};
+					};
+					fiscalSign = resData.fiscalSign || resData.compiledReceipt?.tag1077_fiscalSign || "";
+					fiscalDocNumber = resData.fiscalDocumentNumber || resData.compiledReceipt?.tag1040_fiscalDocumentNumber || 0;
+					receiptDateIso = resData.receiptIssuedAt || new Date().toISOString();
+					qrUrl = resData.ofdVerificationUrl || resData.qrString || `https://check.ofd.ru/rec/${clinicInn}/${fiscalDocNumber}/${fiscalSign}`;
+				} else {
+					const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+					console.warn("[CashRegisterModal] /api/fiscal/receipts returned error:", res.status, errData);
+				}
+			} catch (fetchErr) {
+				console.warn("[CashRegisterModal] Network error during fiscalization:", fetchErr);
+			}
 
 			const receiptResult = {
-				fiscalSign,
-				fiscalDocNumber,
+				fiscalSign: fiscalSign || "QUEUE-OFFLINE",
+				fiscalDocNumber: fiscalDocNumber || 1,
 				receiptDateIso,
 				qrUrl,
 				idempotencyKey,
@@ -228,7 +313,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			};
 
 			setFiscalSuccessReceipt(receiptResult);
-			setToastMsg(`Чек 54-ФЗ №${fiscalDocNumber} успешно фискализирован в ОФД!`);
+			setToastMsg(
+				fiscalDocNumber > 0
+					? `Чек 54-ФЗ №${fiscalDocNumber} успешно фискализирован!`
+					: "Чек 54-ФЗ принят в обработку (ККТ / ОФД)",
+			);
 
 			// Dispatch thermal receipt print via HardwarePrinter Facade (Bluetooth LE / LAN TCP / Web)
 			const printPayload: FiscalReceiptPrintPayload = {

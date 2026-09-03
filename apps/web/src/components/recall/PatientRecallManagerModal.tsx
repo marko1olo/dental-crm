@@ -25,6 +25,7 @@ import {
 	List,
 	MessageCircle,
 	MessageSquare,
+	MoreHorizontal,
 	Phone,
 	PhoneCall,
 	RotateCcw,
@@ -432,6 +433,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 	const [activeObjectionId, setActiveObjectionId] = useState<string>("no_pain");
 	const [copiedNotice, setCopiedNotice] = useState(false);
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
+	const [openMenuCardId, setOpenMenuCardId] = useState<string | null>(null);
 
 	// Метрики пула
 	const metrics = useMemo(() => {
@@ -1116,46 +1118,74 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 														<div className="pr-kanban-card-actions">
 															<button
 																type="button"
-																className="pr-btn pr-btn--whatsapp"
-																title="WhatsApp"
-																style={{ height: "28px", padding: "0 8px" }}
-																onClick={() => void handleSendWhatsApp(item)}
-															>
-																<MessageCircle size={13} />
-																<span>WA</span>
-															</button>
-
-															<button
-																type="button"
-																className="pr-btn pr-btn--telegram"
-																title="Telegram"
-																style={{ height: "28px", padding: "0 8px" }}
-																onClick={() => void handleSendTelegram(item)}
-															>
-																<Send size={13} />
-																<span>TG</span>
-															</button>
-
-															<button
-																type="button"
-																className="pr-btn pr-btn--call"
-																title="Позвонить"
-																style={{ height: "28px", padding: "0 8px" }}
-																onClick={() => void handleCallPhone(item)}
-															>
-																<PhoneCall size={13} />
-															</button>
-
-															<button
-																type="button"
 																className="pr-btn pr-btn--book"
 																title="Записать в расписание"
-																style={{ height: "28px", padding: "0 8px", marginLeft: "auto" }}
+																style={{ minHeight: "36px", padding: "0 12px", flex: 1 }}
 																onClick={() => handleBookAppointment(item)}
 															>
-																<Calendar size={13} />
+																<Calendar size={14} />
 																<span>Запись</span>
 															</button>
+
+															<div style={{ position: "relative" }}>
+																<button
+																	type="button"
+																	className="pr-btn pr-btn--secondary"
+																	title="Связаться с пациентом"
+																	aria-label="Каналы связи и действия"
+																	aria-haspopup="menu"
+																	aria-expanded={openMenuCardId === item.id}
+																	style={{ minHeight: "36px", minWidth: "36px", padding: "0 8px" }}
+																	onClick={() =>
+																		setOpenMenuCardId((prev) => (prev === item.id ? null : item.id))
+																	}
+																>
+																	<MoreHorizontal size={15} />
+																</button>
+
+																{openMenuCardId === item.id && (
+																	<div className="pr-card-dropdown-menu" role="menu">
+																		<button
+																			type="button"
+																			role="menuitem"
+																			className="pr-dropdown-item"
+																			onClick={() => {
+																				setOpenMenuCardId(null);
+																				void handleSendWhatsApp(item);
+																			}}
+																		>
+																			<MessageCircle size={14} style={{ color: "#25D366" }} />
+																			<span>WhatsApp</span>
+																		</button>
+
+																		<button
+																			type="button"
+																			role="menuitem"
+																			className="pr-dropdown-item"
+																			onClick={() => {
+																				setOpenMenuCardId(null);
+																				void handleSendTelegram(item);
+																			}}
+																		>
+																			<Send size={14} style={{ color: "#0088cc" }} />
+																			<span>Telegram</span>
+																		</button>
+
+																		<button
+																			type="button"
+																			role="menuitem"
+																			className="pr-dropdown-item"
+																			onClick={() => {
+																				setOpenMenuCardId(null);
+																				void handleCallPhone(item);
+																			}}
+																		>
+																			<PhoneCall size={14} style={{ color: "var(--pr-teal)" }} />
+																			<span>Позвонить</span>
+																		</button>
+																	</div>
+																)}
+															</div>
 														</div>
 													</div>
 												))}
