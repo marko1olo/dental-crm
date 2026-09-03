@@ -1,5 +1,5 @@
 import type { ProtocolTemplate } from "@dental/shared";
-import { ClipboardCheck, Edit2, Plus, Trash2 } from "lucide-react";
+import { ClipboardCheck, Edit2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
@@ -57,6 +57,7 @@ export function SettingsProtocolsTab() {
 	const mergedProps = Object.assign({}, appLogic, derivations) as any;
 	const {
 		dashboard,
+		loadDashboard,
 		specialtyLabels,
 		documentLabels,
 		imagingKindLabels,
@@ -146,8 +147,13 @@ export function SettingsProtocolsTab() {
 				return;
 			}
 
-			// Reload page to refresh dashboard state
-			window.location.reload();
+			if (typeof loadDashboard === "function") {
+				await loadDashboard();
+			}
+			setIsEditing(false);
+			setEditingId(null);
+			setEditForm({});
+			showToast("Шаблон сохранён", "success");
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			/*
@@ -170,7 +176,6 @@ export function SettingsProtocolsTab() {
 	};
 
 	const handleDelete = async (id: string) => {
-		if (!confirm("Вы уверены, что хотите удалить этот шаблон?")) return;
 		setLoading(true);
 		try {
 			// Тот же помощник, что при сохранении: удаление шло тем же путём и тем
@@ -187,7 +192,10 @@ export function SettingsProtocolsTab() {
 				setLoading(false);
 				return;
 			}
-			window.location.reload();
+			if (typeof loadDashboard === "function") {
+				await loadDashboard();
+			}
+			showToast("Шаблон удалён", "success");
 			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		} catch (err: any) {
 			// БЫЛО: `err.message` — английский текст исключения браузера.
@@ -199,6 +207,101 @@ export function SettingsProtocolsTab() {
 				),
 				"error",
 			);
+			setLoading(false);
+		}
+	};
+
+	const handleSeedStandardProtocols = async () => {
+		const standardProtocols: Partial<ProtocolTemplate>[] = [
+			{
+				specialty: "therapist",
+				title: "Первичный осмотр и консультация",
+				visitReason: "Консультация и составление плана лечения",
+				defaultDurationMinutes: 30,
+				complaintPrompt: "Жалобы отсутствуют / профилактический осмотр",
+				objectiveTemplate:
+					"Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена. Прикус физиологический. Зубные ряды интактны либо с дефектами.",
+				treatmentPlanTemplate:
+					"1. КЛКТ / ОПТГ\n2. Профгигиена\n3. Санация кариозных полостей",
+				requiredDocuments: ["informed_consent"],
+				suggestedImaging: ["opg"],
+				safetyWarnings: [],
+			},
+			{
+				specialty: "therapist",
+				title: "Лечение кариеса (световая пломба)",
+				visitReason: "Лечение кариеса",
+				defaultDurationMinutes: 60,
+				complaintPrompt:
+					"Кратковременные боли от температурных и химических раздражителей",
+				objectiveTemplate:
+					"На жевательной/контактной поверхности кариозная полость в пределах дентина. Зондирование безболезненно. Перкуссия отрицательна.",
+				treatmentPlanTemplate:
+					"Анестезия, препарирование, медикаментозная обработка, адгезивный протокол, послойная реставрация композитом, шлифовка, полировка.",
+				requiredDocuments: ["informed_consent"],
+				suggestedImaging: ["periapical"],
+				safetyWarnings: ["Аллергоанамнез на анестетики"],
+			},
+			{
+				specialty: "surgeon",
+				title: "Удаление зуба простое",
+				visitReason:
+					"Удаление зуба по ортодонтическим или терапевтическим показаниям",
+				defaultDurationMinutes: 45,
+				complaintPrompt: "Разрушение коронковой части зуба, подвижность",
+				objectiveTemplate:
+					"Коронка зуба разрушена более чем на 2/3. Перкуссия слабо чувствительна. Слизистая десны без выраженного воспаления.",
+				treatmentPlanTemplate:
+					"Инфильтрационная/проводниковая анестезия, синдесмотомия, удаление щипцами/элеватором, кюретаж лунки, гемостаз.",
+				requiredDocuments: [
+					"informed_consent",
+					"procedure_specific_consent_packet",
+				],
+				suggestedImaging: ["periapical", "cbct"],
+				safetyWarnings: ["Контроль АД", "Аллергоанамнез"],
+			},
+			{
+				specialty: "hygienist",
+				title: "Комплексная профессиональная гигиена",
+				visitReason: "Профгигиена полости рта",
+				defaultDurationMinutes: 45,
+				complaintPrompt: "Наличие пигментированного налета и зубного камня",
+				objectiveTemplate:
+					"Обильный над- и поддесневой зубной камень во фронтальном отделе нижней челюсти, пигментированный мягкий налет. Десневые сосочки гиперемированы.",
+				treatmentPlanTemplate:
+					"Ультразвуковой скейлинг, обработка аппаратом AirFlow, полировка пастами, аппликация реминерализующего геля.",
+				requiredDocuments: ["informed_consent"],
+				suggestedImaging: [],
+				safetyWarnings: [],
+			},
+		];
+
+		setLoading(true);
+		try {
+			let createdCount = 0;
+			for (const proto of standardProtocols) {
+				const res = await fetch("/api/settings/protocols", {
+					method: "POST",
+					headers: auth.settingsAccessHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify(proto),
+				});
+				if (res.ok) createdCount++;
+			}
+			if (typeof loadDashboard === "function") {
+				await loadDashboard();
+			}
+			showToast(
+				createdCount > 0
+					? `⚡ Добавлено ${createdCount} стандартных клинических протоколов!`
+					: "Протоколы уже загружены",
+				"success",
+			);
+		} catch (err) {
+			logger.error("[protocols] сбой загрузки шаблонов", err);
+			showToast("Сбой загрузки стандартных протоколов", "error");
+		} finally {
 			setLoading(false);
 		}
 	};
@@ -375,13 +478,26 @@ export function SettingsProtocolsTab() {
 						</p>
 					</div>
 				</div>
-				<button
-					type="button"
-					className="primary-button"
-					onClick={handleCreateNew}
-				>
-					<Plus size={16} /> Добавить шаблон
-				</button>
+				<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						className="secondary-button"
+						style={{ display: "flex", alignItems: "center", gap: "6px" }}
+						onClick={handleSeedStandardProtocols}
+						disabled={loading}
+						title="Подключить 4 стандартных протокола клиники в 1 клик"
+					>
+						<Sparkles size={15} style={{ color: "var(--teal)" }} />
+						<span>⚡ Базовые протоколы (1 клик)</span>
+					</button>
+					<button
+						type="button"
+						className="primary-button"
+						onClick={handleCreateNew}
+					>
+						<Plus size={16} /> Добавить шаблон
+					</button>
+				</div>
 			</div>
 
 			{/*
@@ -406,15 +522,37 @@ export function SettingsProtocolsTab() {
 				<EmptyState
 					icon={<ClipboardCheck aria-hidden="true" />}
 					title="Шаблонов приёма пока нет"
-					description="Шаблон подставляет врачу причину визита, длительность, нужные документы и снимки. Создайте первый — по одному на частый приём, например «Лечение кариеса» и «Осмотр»."
+					description="Шаблон подставляет врачу причину визита, длительность, нужные документы и снимки. Подключите стандартный пакет в 1 клик или добавьте вручную."
 					action={
-						<button
-							className="primary-button"
-							type="button"
-							onClick={handleCreateNew}
+						<div
+							style={{
+								display: "flex",
+								gap: "8px",
+								flexWrap: "wrap",
+								justifyContent: "center",
+							}}
 						>
-							<Plus size={16} /> Добавить шаблон
-						</button>
+							<button
+								className="primary-button"
+								type="button"
+								onClick={handleSeedStandardProtocols}
+								disabled={loading}
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+								}}
+							>
+								<Sparkles size={16} /> ⚡ Подключить 4 базовых протокола клиники
+							</button>
+							<button
+								className="secondary-button"
+								type="button"
+								onClick={handleCreateNew}
+							>
+								<Plus size={16} /> Добавить вручную
+							</button>
+						</div>
 					}
 				/>
 			) : (

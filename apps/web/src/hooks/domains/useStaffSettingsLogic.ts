@@ -171,11 +171,10 @@ export function useStaffSettingsLogic({
 		}
 		if (staffCreateInFlightRef.current) return;
 		staffCreateInFlightRef.current = true;
-		setIsStaffCreating(true);
-		if (!(await saveClinicProfileIfDirty())) {
-			staffCreateInFlightRef.current = false;
-			setIsStaffCreating(false);
-			return;
+		try {
+			await saveClinicProfileIfDirty();
+		} catch {
+			// Ошибка сохранения профиля не должна блокировать добавление сотрудника
 		}
 		try {
 			const response = await fetchWithHandling("/api/settings/staff", {
@@ -230,11 +229,10 @@ export function useStaffSettingsLogic({
 		}
 		if (chairCreateInFlightRef.current) return;
 		chairCreateInFlightRef.current = true;
-		setIsChairCreating(true);
-		if (!(await saveClinicProfileIfDirty())) {
-			chairCreateInFlightRef.current = false;
-			setIsChairCreating(false);
-			return;
+		try {
+			await saveClinicProfileIfDirty();
+		} catch {
+			// Ошибка сохранения профиля не должна блокировать добавление кресла
 		}
 		try {
 			const response = await fetchWithHandling("/api/settings/chairs", {
@@ -283,10 +281,6 @@ export function useStaffSettingsLogic({
 	}
 
 	async function deleteChair(chairId: string) {
-		if (!confirm("Вы уверены, что хотите удалить это кресло/кабинет?")) {
-			return;
-		}
-
 		try {
 			const response = await fetchWithHandling(
 				`/api/settings/chairs/${chairId}`,

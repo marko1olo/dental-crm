@@ -528,6 +528,68 @@ export function SettingsClinicTab({
 		"manager",
 	];
 
+	const setStaffPresetDays = (staffId: string, days: number[]) => {
+		updateStaffScheduleDraft(staffId, { workingDays: days });
+		showToast(
+			days.length === 5
+				? "Установлен стандартный график: Пн–Пт"
+				: days.length === 6
+					? "Установлен график: Пн–Сб"
+					: "Установлен полный график: Пн–Вс",
+			"info",
+		);
+	};
+
+	const applyStaffHoursToAll = (staffId: string) => {
+		const draft =
+			staffScheduleDrafts[staffId] ?? staffScheduleDraftFromWorkingHours(null);
+		const start = draft.start || "09:00";
+		const end = draft.end || "18:00";
+		const days: number[] = draft.workingDays?.length
+			? draft.workingDays
+			: [1, 2, 3, 4, 5];
+		const perDay: Record<number, { start: string; end: string }> = {};
+		for (const d of days) {
+			perDay[d] = { start, end };
+		}
+		updateStaffScheduleDraft(staffId, { perDay });
+		showToast(
+			`Часы ${start}–${end} скопированы на все рабочие дни сотрудника`,
+			"success",
+		);
+	};
+
+	const setChairPresetDays = (chairId: string, days: number[]) => {
+		updateChairScheduleDraft(chairId, { workingDays: days });
+		showToast(
+			days.length === 5
+				? "Установлен график кресла: Пн–Пт"
+				: days.length === 6
+					? "Установлен график кресла: Пн–Сб"
+					: "Установлен график кресла: Пн–Вс",
+			"info",
+		);
+	};
+
+	const applyChairHoursToAll = (chairId: string) => {
+		const draft =
+			chairScheduleDrafts[chairId] ?? staffScheduleDraftFromWorkingHours(null);
+		const start = draft.start || "09:00";
+		const end = draft.end || "20:00";
+		const days: number[] = draft.workingDays?.length
+			? draft.workingDays
+			: [1, 2, 3, 4, 5];
+		const perDay: Record<number, { start: string; end: string }> = {};
+		for (const d of days) {
+			perDay[d] = { start, end };
+		}
+		updateChairScheduleDraft(chairId, { perDay });
+		showToast(
+			`Часы ${start}–${end} скопированы на все рабочие дни кресла`,
+			"success",
+		);
+	};
+
 	return (
 		<section className="clinic-config" aria-label="Аккаунт клиники и команда">
 			<div className="clinic-config-head flex flex-col sm:flex-row items-start justify-between gap-4 w-full">
@@ -1161,6 +1223,63 @@ export function SettingsClinicTab({
 							<Plus aria-hidden="true" />
 						</button>
 					</div>
+					<div
+						style={{
+							display: "flex",
+							gap: "6px",
+							alignItems: "center",
+							flexWrap: "wrap",
+							margin: "6px 0 8px",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "11px",
+								color: "var(--muted)",
+								fontWeight: 600,
+							}}
+						>
+							Шаблоны:
+						</span>
+						<button
+							type="button"
+							className="compact-button secondary-button"
+							style={{ fontSize: "11px", padding: "2px 8px" }}
+							onClick={() => {
+								setNewStaffName("Дежурный врач (терапевт)");
+								setNewStaffRole("doctor");
+								setNewStaffSpecialty("therapist");
+							}}
+							title="Быстро подставить дежурного терапевта"
+						>
+							+ Дежурный терапевт
+						</button>
+						<button
+							type="button"
+							className="compact-button secondary-button"
+							style={{ fontSize: "11px", padding: "2px 8px" }}
+							onClick={() => {
+								setNewStaffName("Сменный ассистент");
+								setNewStaffRole("assistant");
+								setNewStaffSpecialty("universal");
+							}}
+							title="Быстро подставить сменного ассистента"
+						>
+							+ Сменный ассистент
+						</button>
+						<button
+							type="button"
+							className="compact-button secondary-button"
+							style={{ fontSize: "11px", padding: "2px 8px" }}
+							onClick={() => {
+								setNewStaffName("Администратор смены");
+								setNewStaffRole("administrator");
+							}}
+							title="Быстро подставить администратора смены"
+						>
+							+ Регистратор смены
+						</button>
+					</div>
 					{!newStaffReadyToCreate ? (
 						<p
 							className="quick-create-guidance"
@@ -1271,6 +1390,70 @@ export function SettingsClinicTab({
 												}
 											/>
 										</label>
+										<div
+											style={{
+												display: "flex",
+												gap: "6px",
+												alignItems: "center",
+												flexWrap: "wrap",
+												margin: "4px 0",
+											}}
+										>
+											<span
+												style={{
+													fontSize: "11px",
+													color: "var(--muted)",
+													fontWeight: 600,
+												}}
+											>
+												График:
+											</span>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{ fontSize: "11px", padding: "2px 8px" }}
+												onClick={() => setStaffPresetDays(member.id, [1, 2, 3, 4, 5])}
+												title="Установить стандартный график: с Понедельника по Пятницу"
+											>
+												Пн–Пт
+											</button>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{ fontSize: "11px", padding: "2px 8px" }}
+												onClick={() =>
+													setStaffPresetDays(member.id, [1, 2, 3, 4, 5, 6])
+												}
+												title="Установить шестидневку: с Понедельника по Субботу"
+											>
+												Пн–Сб
+											</button>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{ fontSize: "11px", padding: "2px 8px" }}
+												onClick={() =>
+													setStaffPresetDays(member.id, [1, 2, 3, 4, 5, 6, 7])
+												}
+												title="Установить все 7 дней недели"
+											>
+												Все дни
+											</button>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{
+													fontSize: "11px",
+													padding: "2px 8px",
+													color: "var(--teal)",
+													fontWeight: 600,
+												}}
+												onClick={() => applyStaffHoursToAll(member.id)}
+												title="Скопировать часы С и ДО ко всем выбранным дням"
+											>
+												⚡ Часы ко всем дням
+											</button>
+										</div>
 										<fieldset
 											className="weekday-toggle-row staff-weekday-row"
 											style={{ border: "none", padding: 0, margin: 0 }}
@@ -1404,6 +1587,69 @@ export function SettingsClinicTab({
 							<Plus aria-hidden="true" />
 						</button>
 					</div>
+					<div
+						style={{
+							display: "flex",
+							gap: "6px",
+							alignItems: "center",
+							flexWrap: "wrap",
+							margin: "6px 0 8px",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "11px",
+								color: "var(--muted)",
+								fontWeight: 600,
+							}}
+						>
+							Шаблоны:
+						</span>
+						<button
+							type="button"
+							className="compact-button secondary-button"
+							style={{ fontSize: "11px", padding: "2px 8px" }}
+							onClick={() => {
+								setNewChairName(`Кабинет №${typedChairs.length + 1} (Терапия)`);
+								setNewChairHasXraySensor(true);
+								setNewChairHasMicroscope(false);
+								setNewChairHasSurgeryKit(false);
+							}}
+							title="Кабинет общей терапии с RVG визиографом"
+						>
+							+ Кабинет Терапии
+						</button>
+						<button
+							type="button"
+							className="compact-button secondary-button"
+							style={{ fontSize: "11px", padding: "2px 8px" }}
+							onClick={() => {
+								setNewChairName(
+									`Кабинет №${typedChairs.length + 1} (Хирургия/Имплантация)`,
+								);
+								setNewChairHasXraySensor(true);
+								setNewChairHasMicroscope(true);
+								setNewChairHasSurgeryKit(true);
+							}}
+							title="Хирургический кабинет с микроскопом и хирургическим набором"
+						>
+							+ Кабинет Хирургии
+						</button>
+						<button
+							type="button"
+							className="compact-button secondary-button"
+							style={{ fontSize: "11px", padding: "2px 8px" }}
+							onClick={() => {
+								setNewChairName("Кабинет гигиены и профосмотра");
+								setNewChairHasXraySensor(false);
+								setNewChairHasMicroscope(false);
+								setNewChairHasSurgeryKit(false);
+							}}
+							title="Кабинет гигиены"
+						>
+							+ Кабинет Гигиены
+						</button>
+					</div>
 					{!newChairReadyToCreate ? (
 						<p
 							className="quick-create-guidance"
@@ -1515,6 +1761,70 @@ export function SettingsClinicTab({
 												className="focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all"
 											/>
 										</label>
+										<div
+											style={{
+												display: "flex",
+												gap: "6px",
+												alignItems: "center",
+												flexWrap: "wrap",
+												margin: "4px 0",
+											}}
+										>
+											<span
+												style={{
+													fontSize: "11px",
+													color: "var(--muted)",
+													fontWeight: 600,
+												}}
+											>
+												График:
+											</span>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{ fontSize: "11px", padding: "2px 8px" }}
+												onClick={() => setChairPresetDays(chair.id, [1, 2, 3, 4, 5])}
+												title="Установить стандартный график кресла: Пн–Пт"
+											>
+												Пн–Пт
+											</button>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{ fontSize: "11px", padding: "2px 8px" }}
+												onClick={() =>
+													setChairPresetDays(chair.id, [1, 2, 3, 4, 5, 6])
+												}
+												title="Установить график кресла: Пн–Сб"
+											>
+												Пн–Сб
+											</button>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{ fontSize: "11px", padding: "2px 8px" }}
+												onClick={() =>
+													setChairPresetDays(chair.id, [1, 2, 3, 4, 5, 6, 7])
+												}
+												title="Установить график кресла: Все 7 дней"
+											>
+												Все дни
+											</button>
+											<button
+												type="button"
+												className="compact-button secondary-button"
+												style={{
+													fontSize: "11px",
+													padding: "2px 8px",
+													color: "var(--teal)",
+													fontWeight: 600,
+												}}
+												onClick={() => applyChairHoursToAll(chair.id)}
+												title="Скопировать часы кресла ко всем выбранным дням"
+											>
+												⚡ Часы ко всем дням
+											</button>
+										</div>
 										<fieldset
 											className="weekday-toggle-row staff-weekday-row"
 											style={{ border: "none", padding: 0, margin: 0 }}
@@ -1638,13 +1948,6 @@ export function SettingsClinicTab({
 												className="secondary-button compact-button"
 												type="button"
 												onClick={() => {
-													if (
-														!window.confirm(
-															`Отключить кресло «${chair.name}»? Новые приёмы на него записать будет нельзя, и в уже записанных приёмах оно пропадёт из списка выбора. Сами приёмы и расписание не изменятся.`,
-														)
-													) {
-														return;
-													}
 													void deleteChair(chair.id);
 												}}
 											>

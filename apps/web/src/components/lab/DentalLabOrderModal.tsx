@@ -285,7 +285,7 @@ export function DentalLabOrderModal({
 		setCementGapMicrons(preset.cementGapMicrons);
 		const due = addWorkingDays(new Date(), preset.workingDays);
 		setDueDate(due.toISOString().slice(0, 10));
-		setCustomLabPriceRub(preset.priceRub);
+		setPriceRubInput(String(preset.priceRub));
 		showToast(
 			`⚡ Пресет применен: ${preset.title} (${preset.shortDesc})`,
 			"success",

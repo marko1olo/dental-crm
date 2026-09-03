@@ -1,4 +1,4 @@
-import { GitMerge, Pause, Play, Plus, Trash2 } from "lucide-react";
+import { GitMerge, Pause, Play, Plus, Sparkles, Trash2 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -121,7 +121,6 @@ export function SettingsBpmnTab() {
 
 	const handleDelete = useCallback(
 		async (wf: ClinicWorkflow) => {
-			if (!window.confirm(`Удалить сценарий «${wf.name}»?`)) return;
 			try {
 				const res = await fetch(`/api/clinic/workflows/${wf.id}`, {
 					method: "DELETE",
@@ -220,6 +219,69 @@ export function SettingsBpmnTab() {
 		[denteClinicalReadHeaders, fetchWorkflows, newName, newTrigger],
 	);
 
+	const handleSeedStandardWorkflows = useCallback(async () => {
+		const standardTemplates = [
+			{
+				name: "Напоминание о визите за 24 часа",
+				trigger: "appointment_booked",
+				active: true,
+			},
+			{
+				name: "Контроль качества и NPS после приёма",
+				trigger: "appointment_completed",
+				active: true,
+			},
+			{
+				name: "Приглашение на профосмотр через 6 месяцев",
+				trigger: "recall_due",
+				active: true,
+			},
+			{
+				name: "Авто-формирование акта выполненных работ",
+				trigger: "invoice_issued",
+				active: true,
+			},
+		];
+
+		setAdding(true);
+		try {
+			let addedCount = 0;
+			for (const tpl of standardTemplates) {
+				if (
+					workflows.some(
+						(w) => w.name.toLowerCase() === tpl.name.toLowerCase(),
+					)
+				) {
+					continue;
+				}
+				const res = await fetch("/api/clinic/workflows", {
+					method: "POST",
+					headers: {
+						...denteClinicalReadHeaders(),
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(tpl),
+				});
+				if (res.ok) addedCount++;
+			}
+			showToast(
+				addedCount > 0
+					? `⚡ Подключено ${addedCount} стандартных сценариев клиники!`
+					: "Все стандартные сценарии уже подключены",
+				"success",
+			);
+			await fetchWorkflows();
+		} catch (err) {
+			logger.error(
+				"[сценарии] ошибка при добавлении стандартных сценариев",
+				err,
+			);
+			showToast("Ошибка при подключении стандартных сценариев", "error");
+		} finally {
+			setAdding(false);
+		}
+	}, [denteClinicalReadHeaders, fetchWorkflows, workflows]);
+
 	return (
 		<div className="profile-studio-container animate-fade-in">
 			<div className="import-copy" style={{ marginBottom: "0" }}>
@@ -275,14 +337,27 @@ export function SettingsBpmnTab() {
 							строкой «Загружаем сценарии…».
 						*/}
 						{loadState.phase === "ready" ? (
-							<button
-								type="button"
-								className="primary-button"
-								style={{ display: "flex", alignItems: "center", gap: "8px" }}
-								onClick={() => setShowForm((v) => !v)}
-							>
-								<Plus size={16} /> Создать сценарий
-							</button>
+							<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+								<button
+									type="button"
+									className="secondary-button"
+									style={{ display: "flex", alignItems: "center", gap: "6px" }}
+									onClick={handleSeedStandardWorkflows}
+									disabled={adding}
+									title="Подключить 4 стандартных сценария стоматологии в 1 клик"
+								>
+									<Sparkles size={15} style={{ color: "var(--teal)" }} />
+									<span>⚡ Стандартные сценарии (1 клик)</span>
+								</button>
+								<button
+									type="button"
+									className="primary-button"
+									style={{ display: "flex", alignItems: "center", gap: "8px" }}
+									onClick={() => setShowForm((v) => !v)}
+								>
+									<Plus size={16} /> Создать сценарий
+								</button>
+							</div>
 						) : null}
 					</div>
 
@@ -401,9 +476,24 @@ export function SettingsBpmnTab() {
 								<p style={{ margin: 0, fontWeight: 600, color: "var(--ink)" }}>
 									{WORKFLOWS_PANEL_SUBJECT.emptyTitle}
 								</p>
-								<p style={{ margin: "6px 0 0" }}>
+								<p style={{ margin: "6px 0 16px" }}>
 									{WORKFLOWS_PANEL_SUBJECT.emptyHint}
 								</p>
+								<button
+									type="button"
+									className="primary-button"
+									style={{
+										margin: "0 auto",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+									}}
+									onClick={handleSeedStandardWorkflows}
+									disabled={adding}
+								>
+									<Sparkles size={16} />
+									<span>Подключить 4 готовых сценария клиники</span>
+								</button>
 							</div>
 						)}
 						{workflows.map((wf) => (

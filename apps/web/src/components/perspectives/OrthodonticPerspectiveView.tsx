@@ -814,7 +814,7 @@ export function OrthodonticPerspectiveView() {
 				onClose={() => setIsPhotoProtocolOpen(false)}
 				patientId={activePatient?.id}
 				patientName={activePatient?.fullName}
-				treatmentStageTitle={stages.find((s) => s.number === currentStageNumber)?.title}
+				treatmentStageTitle={stages.find((s) => s.number === currentStageNumber)?.title ?? ""}
 			/>
 		</div>
 	);
