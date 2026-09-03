@@ -31,6 +31,7 @@ export const advertisingChannelInputSchema = z.object({
 	nameRu: z.string().min(1, "Укажите название рекламного канала"),
 	categoryRu: z.string().default("Реклама"),
 	spentKopecks: z.number().int().nonnegative("Сумма затрат не может быть отрицательной"),
+	leadsCount: z.number().int().nonnegative("Количество лидов не может быть отрицательным").optional(),
 	primaryPatientsCount: z.number().int().nonnegative("Количество первичных пациентов не может быть отрицательным"),
 	revenueKopecks: z.number().int().nonnegative("Выручка не может быть отрицательной"),
 	notes: z.string().optional(),
@@ -47,7 +48,9 @@ export interface AdvertisingChannelMetric {
 	nameRu: string;
 	categoryRu: string;
 	spentKopecks: number;
+	leadsCount: number;
 	primaryPatientsCount: number;
+	showUpRatePercent: number; // Доходимость до кресла (%)
 	revenueKopecks: number;
 	profitKopecks: number;
 	romiPercent: number | null;
@@ -70,7 +73,9 @@ export interface MarketingRomiSummary {
 	totalChannelsCount: number;
 	activeChannelsCount: number;
 	totalSpentKopecks: number;
+	totalLeadsCount: number;
 	totalPrimaryPatientsCount: number;
+	overallShowUpRatePercent: number; // Общая доходимость до кресла по клинике (%)
 	totalRevenueKopecks: number;
 	totalProfitKopecks: number;
 	overallRomiPercent: number | null;
@@ -171,6 +176,11 @@ export function buildAdvertisingChannelMetric(
 	const { profitKopecks, romiPercent, cacKopecks, averageCheckKopecks, romiStatus } =
 		calculateChannelRomi(input.spentKopecks, input.primaryPatientsCount, input.revenueKopecks);
 
+	const leadsCount = input.leadsCount ?? (input.primaryPatientsCount > 0 ? Math.round(input.primaryPatientsCount * 1.25) : 0);
+	const showUpRatePercent = leadsCount > 0
+		? Number(((input.primaryPatientsCount / leadsCount) * 100).toFixed(1))
+		: (input.primaryPatientsCount > 0 ? 100 : 0);
+
 	let romiFormatted = "—";
 	if (romiStatus === "organic") {
 		romiFormatted = "Органика (∞)";
@@ -184,7 +194,9 @@ export function buildAdvertisingChannelMetric(
 		nameRu: input.nameRu,
 		categoryRu: input.categoryRu || "Реклама",
 		spentKopecks: input.spentKopecks,
+		leadsCount,
 		primaryPatientsCount: input.primaryPatientsCount,
+		showUpRatePercent,
 		revenueKopecks: input.revenueKopecks,
 		profitKopecks,
 		romiPercent,
@@ -209,6 +221,7 @@ export function calculateMarketingRomiSummary(
 	channels: readonly AdvertisingChannelMetric[],
 ): MarketingRomiSummary {
 	let totalSpentKopecks = 0;
+	let totalLeadsCount = 0;
 	let totalPrimaryPatientsCount = 0;
 	let totalRevenueKopecks = 0;
 	let profitableCount = 0;
@@ -221,6 +234,7 @@ export function calculateMarketingRomiSummary(
 
 	for (const ch of channels) {
 		totalSpentKopecks += ch.spentKopecks;
+		totalLeadsCount += ch.leadsCount;
 		totalPrimaryPatientsCount += ch.primaryPatientsCount;
 		totalRevenueKopecks += ch.revenueKopecks;
 
@@ -259,6 +273,10 @@ export function calculateMarketingRomiSummary(
 		overallAverageCheckKopecks = Math.round(totalRevenueKopecks / totalPrimaryPatientsCount);
 	}
 
+	const overallShowUpRatePercent = totalLeadsCount > 0
+		? Number(((totalPrimaryPatientsCount / totalLeadsCount) * 100).toFixed(1))
+		: (totalPrimaryPatientsCount > 0 ? 100 : 0);
+
 	let overallRomiFormatted = "—";
 	if (overallRomiPercent !== null) {
 		overallRomiFormatted = `${overallRomiPercent > 0 ? "+" : ""}${overallRomiPercent.toFixed(1)}%`;
@@ -270,7 +288,9 @@ export function calculateMarketingRomiSummary(
 		totalChannelsCount: channels.length,
 		activeChannelsCount: activeCount,
 		totalSpentKopecks,
+		totalLeadsCount,
 		totalPrimaryPatientsCount,
+		overallShowUpRatePercent,
 		totalRevenueKopecks,
 		totalProfitKopecks,
 		overallRomiPercent,
@@ -300,6 +320,7 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		nameRu: "Яндекс.Директ (Контекстная реклама)",
 		categoryRu: "Контекст",
 		spentKopecks: parseKopecks("65000.00"), // 65 000 ₽
+		leadsCount: 30,
 		primaryPatientsCount: 24,
 		revenueKopecks: parseKopecks("345000.00"), // 345 000 ₽
 		notes: "Горячий спрос по имплантации и лечению кариеса",
@@ -310,6 +331,7 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		nameRu: "Яндекс.Карты (Гео-приоритет клиники)",
 		categoryRu: "Гео-сервисы",
 		spentKopecks: parseKopecks("25000.00"), // 25 000 ₽
+		leadsCount: 20,
 		primaryPatientsCount: 18,
 		revenueKopecks: parseKopecks("210000.00"), // 210 000 ₽
 		notes: "Зеленая метка приоритета и заполненный профиль врачей",
@@ -320,6 +342,7 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		nameRu: "2ГИС (Рекламный профиль и онлайн-запись)",
 		categoryRu: "Карты и справочники",
 		spentKopecks: parseKopecks("18000.00"), // 18 000 ₽
+		leadsCount: 15,
 		primaryPatientsCount: 12,
 		revenueKopecks: parseKopecks("142000.00"), // 142 000 ₽
 		notes: "Кнопка онлайн-записи и витрина популярных услуг",
@@ -330,6 +353,7 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		nameRu: "Сарафанное радио / Рекомендации пациентов",
 		categoryRu: "Органика",
 		spentKopecks: 0, // 0 ₽ (Бесплатно)
+		leadsCount: 36,
 		primaryPatientsCount: 35,
 		revenueKopecks: parseKopecks("580000.00"), // 580 000 ₽
 		notes: "Постоянные пациенты приводят родственников и знакомых",
@@ -340,6 +364,7 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		nameRu: "ПроДокторов / СберЗдоровье (Агрегаторы)",
 		categoryRu: "Медицинские агрегаторы",
 		spentKopecks: parseKopecks("15000.00"), // 15 000 ₽
+		leadsCount: 11,
 		primaryPatientsCount: 9,
 		revenueKopecks: parseKopecks("115000.00"), // 115 000 ₽
 		notes: "Платное размещение профилей ведущих стоматологов",
@@ -350,6 +375,7 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		nameRu: "ВКонтакте (Таргетированная реклама)",
 		categoryRu: "Соцсети",
 		spentKopecks: parseKopecks("22000.00"), // 22 000 ₽
+		leadsCount: 12,
 		primaryPatientsCount: 8,
 		revenueKopecks: parseKopecks("78000.00"), // 78 000 ₽
 		notes: "Таргет на жителей района: профгигиена и отбеливание",
@@ -360,6 +386,7 @@ export const DEFAULT_DENTAL_ADVERTISING_CHANNELS: readonly AdvertisingChannelInp
 		nameRu: "Наружная реклама / Световая вывеска",
 		categoryRu: "Наружная",
 		spentKopecks: parseKopecks("10000.00"), // 10 000 ₽
+		leadsCount: 8,
 		primaryPatientsCount: 6,
 		revenueKopecks: parseKopecks("62000.00"), // 62 000 ₽
 		notes: "Пешеходный трафик и фасадная вывеска клиники",

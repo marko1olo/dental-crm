@@ -275,6 +275,17 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		setTimeout(() => setCopiedPromo(null), 2000);
 	};
 
+	const handleApplyPromoDirectly = (code: string) => {
+		setPromoInput(code);
+		const res = evaluatePromoCode(
+			code,
+			Math.round(invoiceAmountRub * 100),
+			["hygiene", "therapy"],
+			[]
+		);
+		setPromoResult(res);
+	};
+
 	const handleExportLedger = () => {
 		const csvContent = exportLoyaltyLedgerToCsv(ledgerEntries);
 		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -1190,29 +1201,24 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											<span className="loyalty-promo-code-chip">{promo.code}</span>
 											<button
 												type="button"
-												onClick={() => handleCopyPromo(promo.code)}
+												onClick={() => handleApplyPromoDirectly(promo.code)}
 												style={{
 													border: "none",
-													background: "transparent",
+													background: "rgba(13, 148, 136, 0.12)",
 													color: "var(--teal, #0d9488)",
 													cursor: "pointer",
 													fontSize: "0.75rem",
-													fontWeight: 600,
+													fontWeight: 700,
 													display: "inline-flex",
 													alignItems: "center",
 													gap: "0.25rem",
+													padding: "0.25rem 0.625rem",
+													borderRadius: "0.375rem",
 													minHeight: "44px",
 												}}
+												title="Рассчитать и применить промокод к чеку"
 											>
-												{copiedPromo === promo.code ? (
-													<>
-														<Check size={14} /> Скопировано
-													</>
-												) : (
-													<>
-														<Copy size={14} /> Применить
-													</>
-												)}
+												<Check size={14} /> Применить к чеку
 											</button>
 										</div>
 										<h5 style={{ fontSize: "0.9375rem", fontWeight: 700, margin: "0.25rem 0" }}>
@@ -1307,9 +1313,50 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 											{promoResult.messageRu}
 										</p>
 										{promoResult.isValid && (
-											<div style={{ fontSize: "0.875rem", fontWeight: 700, marginTop: "0.5rem" }}>
-												Скидка: {promoResult.discountRub.toLocaleString("ru-RU")} ₽ • К оплате:{" "}
-												{(promoResult.finalPayableKop / 100).toLocaleString("ru-RU")} ₽
+											<div style={{ marginTop: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+												<div style={{ fontSize: "0.875rem", fontWeight: 700 }}>
+													Скидка: {promoResult.discountRub.toLocaleString("ru-RU")} ₽ • К оплате:{" "}
+													{(promoResult.finalPayableKop / 100).toLocaleString("ru-RU")} ₽
+												</div>
+												<button
+													type="button"
+													onClick={() => {
+														const discountRub = promoResult.discountRub;
+														const remainingRub = promoResult.finalPayableKop / 100;
+														setInvoiceAmountRub(remainingRub);
+														if (onRedeemSuccess) {
+															onRedeemSuccess(discountRub, {
+																tag1031CashKop: 0,
+																tag1081ElectronicCardKop: promoResult.finalPayableKop,
+																tag1215AdvancePrepaymentBonusKop: discountRub * 100,
+																tag1043DiscountKop: discountRub * 100,
+																totalGrossKop: Math.round(invoiceAmountRub * 100),
+																totalNetPayableKop: promoResult.finalPayableKop,
+															});
+														}
+														setRedemptionSuccessMsg(
+															`✓ Промокод «${promoResult.code}» применен: скидка ${discountRub} ₽ добавлена к чеку. К оплате: ${remainingRub.toLocaleString("ru-RU")} ₽`
+														);
+														setActiveTab("balance");
+													}}
+													style={{
+														padding: "0.5rem 1rem",
+														minHeight: "44px",
+														borderRadius: "0.5rem",
+														border: "none",
+														background: "var(--teal, #0d9488)",
+														color: "#ffffff",
+														fontWeight: 700,
+														fontSize: "0.8125rem",
+														cursor: "pointer",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "0.375rem",
+													}}
+												>
+													<Check size={16} />
+													Применить скидку {promoResult.discountRub} ₽ к чеку
+												</button>
 											</div>
 										)}
 									</div>

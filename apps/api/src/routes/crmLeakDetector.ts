@@ -390,4 +390,59 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 			return reply.send({ data: metrics });
 		});
 	});
+
+	/**
+	 * 7. POST /api/crm/leak-detector/:id/create-task — Создать задачу перезвонить пациенту (реактивация в 1 клик)
+	 */
+	app.post("/api/crm/leak-detector/:id/create-task", async (req: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedOrganizationId(req, reply, "create leak task");
+		if (!orgId) return;
+		const { id } = req.params as { id: string };
+
+		return withTenantCtx(orgId, async (tx) => {
+			const [lead] = await tx
+				.select()
+				.from(crmLeakDetectorLeads)
+				.where(and(eq(crmLeakDetectorLeads.id, id), eq(crmLeakDetectorLeads.organizationId, orgId)))
+				.limit(1);
+
+			if (!lead) return reply.code(404).send({ error: "LeadNotFound", message: "Лид не найден" });
+
+			const identity = getRequestIdentity(req);
+			const assignedToId = lead.assignedAdminUserId || identity.userId || null;
+
+			const [updatedLead] = await tx
+				.update(crmLeakDetectorLeads)
+				.set({
+					leadStatus: "in_progress",
+					assignedAdminUserId: assignedToId,
+					assignedAdminName: (identity as { name?: string }).name || identity.userId || lead.assignedAdminName || "Администратор",
+					updatedAt: new Date(),
+				})
+				.where(eq(crmLeakDetectorLeads.id, id))
+				.returning();
+
+			let createdTicket: unknown = null;
+			if (assignedToId) {
+				try {
+					const { createPatientTaskTicketInDb } = await import("../db/patientTaskTicketsQuery.js");
+					createdTicket = await createPatientTaskTicketInDb(orgId, lead.patientId, {
+						title: `Перезвонить: реактивация (не был ${lead.daysSinceLastVisit} дн.)`,
+						description: `Клинический риск: ${lead.clinicalRiskReason || "Угасание регулярной гигиены"}.${lead.hasUncompletedPlan ? ` Брошенный план: ${lead.uncompletedPlanSumRub} ₽.` : ""}`,
+						assignedToId,
+						priority: lead.hasUncompletedPlan || lead.daysSinceLastVisit > 270 ? "high" : "normal",
+					});
+				} catch (ticketErr) {
+					req.log.warn({ ticketErr }, "[CrmLeakDetector] Could not create task ticket, lead updated anyway");
+				}
+			}
+
+			return reply.send({
+				success: true,
+				message: "Задача перезвонить создана, лид взят в работу",
+				lead: updatedLead,
+				ticket: createdTicket,
+			});
+		});
+	});
 }

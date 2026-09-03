@@ -39,6 +39,15 @@ import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safe
 
 const STORAGE_KEY = "dental_crm_mkt_romi_channels_v2";
 
+const QUICK_CHANNEL_PRESETS = [
+	{ nameRu: "Яндекс.Карты (Гео)", categoryRu: "Гео-сервисы", spentRub: 25000, leadsCount: 20, patients: 18, revenueRub: 210000 },
+	{ nameRu: "2ГИС (Справочник)", categoryRu: "Гео-сервисы", spentRub: 18000, leadsCount: 15, patients: 12, revenueRub: 142000 },
+	{ nameRu: "ПроДокторов / СберЗдоровье", categoryRu: "Мед-агрегаторы", spentRub: 15000, leadsCount: 11, patients: 9, revenueRub: 115000 },
+	{ nameRu: "Telegram-канал клиники", categoryRu: "Мессенджеры", spentRub: 12000, leadsCount: 16, patients: 10, revenueRub: 95000 },
+	{ nameRu: "ВКонтакте (Таргет района)", categoryRu: "Соцсети", spentRub: 22000, leadsCount: 14, patients: 8, revenueRub: 78000 },
+	{ nameRu: "Сарафанное радио (Органика)", categoryRu: "Органика", spentRub: 0, leadsCount: 36, patients: 35, revenueRub: 580000 },
+];
+
 export function MarketingRomiTable() {
 	// Channels state loaded from safe storage
 	const [channels, setChannels] = useState<AdvertisingChannelInput[]>(() => {
@@ -61,6 +70,7 @@ export function MarketingRomiTable() {
 	const [newChannelName, setNewChannelName] = useState("");
 	const [newChannelCategory, setNewChannelCategory] = useState("Таргет / Медиа");
 	const [newChannelSpentRub, setNewChannelSpentRub] = useState("");
+	const [newChannelLeads, setNewChannelLeads] = useState("");
 	const [newChannelPatients, setNewChannelPatients] = useState("");
 	const [newChannelRevenueRub, setNewChannelRevenueRub] = useState("");
 
@@ -82,7 +92,7 @@ export function MarketingRomiTable() {
 	// In-place channel field update
 	const handleUpdateField = (
 		channelId: string,
-		field: "spentRub" | "patients" | "revenueRub",
+		field: "spentRub" | "leads" | "patients" | "revenueRub",
 		rawValue: string,
 	) => {
 		const num = Math.max(0, parseFloat(rawValue) || 0);
@@ -90,6 +100,9 @@ export function MarketingRomiTable() {
 			if (ch.id !== channelId) return ch;
 			if (field === "spentRub") {
 				return { ...ch, spentKopecks: Math.round(num * 100) };
+			}
+			if (field === "leads") {
+				return { ...ch, leadsCount: Math.round(num) };
 			}
 			if (field === "patients") {
 				return { ...ch, primaryPatientsCount: Math.round(num) };
@@ -102,6 +115,30 @@ export function MarketingRomiTable() {
 		persistChannels(updated);
 	};
 
+	// 1-Click quick channel preset creation
+	const handleAddPreset = (preset: {
+		nameRu: string;
+		categoryRu: string;
+		spentRub: number;
+		leadsCount: number;
+		patients: number;
+		revenueRub: number;
+	}) => {
+		const newEntry: AdvertisingChannelInput = {
+			id: `ch_preset_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+			channelKey: `channel_${Date.now()}`,
+			nameRu: preset.nameRu,
+			categoryRu: preset.categoryRu,
+			spentKopecks: Math.round(preset.spentRub * 100),
+			leadsCount: preset.leadsCount,
+			primaryPatientsCount: preset.patients,
+			revenueKopecks: Math.round(preset.revenueRub * 100),
+		};
+		const updated = [...channels, newEntry];
+		persistChannels(updated);
+		setIsAddingChannel(false);
+	};
+
 	// Add custom channel
 	const handleAddChannel = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -109,6 +146,7 @@ export function MarketingRomiTable() {
 
 		const spentRub = Math.max(0, parseFloat(newChannelSpentRub) || 0);
 		const patients = Math.max(0, parseInt(newChannelPatients, 10) || 0);
+		const leads = Math.max(patients, parseInt(newChannelLeads, 10) || Math.round(patients * 1.25));
 		const revenueRub = Math.max(0, parseFloat(newChannelRevenueRub) || 0);
 
 		const newEntry: AdvertisingChannelInput = {
@@ -117,6 +155,7 @@ export function MarketingRomiTable() {
 			nameRu: newChannelName.trim(),
 			categoryRu: newChannelCategory.trim() || "Реклама",
 			spentKopecks: Math.round(spentRub * 100),
+			leadsCount: leads,
 			primaryPatientsCount: patients,
 			revenueKopecks: Math.round(revenueRub * 100),
 		};
@@ -127,6 +166,7 @@ export function MarketingRomiTable() {
 		// Reset form
 		setNewChannelName("");
 		setNewChannelSpentRub("");
+		setNewChannelLeads("");
 		setNewChannelPatients("");
 		setNewChannelRevenueRub("");
 		setIsAddingChannel(false);
@@ -140,9 +180,7 @@ export function MarketingRomiTable() {
 
 	// Reset to standard defaults
 	const handleResetDefaults = () => {
-		if (window.confirm("Сбросить таблицу каналов к стандартным отраслевым показателям стоматологии?")) {
-			persistChannels([...DEFAULT_DENTAL_ADVERTISING_CHANNELS]);
-		}
+		persistChannels([...DEFAULT_DENTAL_ADVERTISING_CHANNELS]);
 	};
 
 	return (
@@ -197,12 +235,12 @@ export function MarketingRomiTable() {
 				</div>
 
 				<div className="romi-kpi-item">
-					<span className="romi-kpi-label">Приведено первичных</span>
+					<span className="romi-kpi-label">Лиды и доходимость</span>
 					<strong className="romi-kpi-value text-[var(--teal-dark,#0f766e)]">
-						{summary.totalPrimaryPatientsCount} чел.
+						{summary.totalLeadsCount} лидов
 					</strong>
 					<span className="romi-kpi-hint">
-						{summary.overallCacFormatted !== "—" ? `CAC: ${summary.overallCacFormatted} / пациент` : "Без платных затрат"}
+						Доходимость: {summary.overallShowUpRatePercent}% ({summary.totalPrimaryPatientsCount} приемов)
 					</span>
 				</div>
 
@@ -234,8 +272,29 @@ export function MarketingRomiTable() {
 			{/* ADD CHANNEL INLINE FORM */}
 			{isAddingChannel && (
 				<form onSubmit={handleAddChannel} className="romi-add-form" data-testid="romi-add-form">
-					<h4 className="romi-add-title">Добавление нового рекламного канала</h4>
-					<div className="romi-add-grid">
+					<h4 className="romi-add-title">Добавление рекламного канала</h4>
+
+					<div style={{ marginBottom: "12px" }}>
+						<span style={{ fontSize: "11px", fontWeight: 700, color: "var(--muted, #64748b)", display: "block", marginBottom: "6px" }}>
+							Быстрое добавление типового канала (в 1 клик):
+						</span>
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+							{QUICK_CHANNEL_PRESETS.map((p) => (
+								<button
+									key={p.nameRu}
+									type="button"
+									onClick={() => handleAddPreset(p)}
+									className="romi-action-btn secondary"
+									style={{ fontSize: "11px", padding: "4px 10px", minHeight: "32px" }}
+									title={`Добавить ${p.nameRu} (${p.categoryRu})`}
+								>
+									+ {p.nameRu}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<div className="romi-add-grid" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}>
 						<div>
 							<label className="romi-form-label">Название канала</label>
 							<input
@@ -266,6 +325,18 @@ export function MarketingRomiTable() {
 								placeholder="0"
 								value={newChannelSpentRub}
 								onChange={(e) => setNewChannelSpentRub(e.target.value)}
+								className="romi-input"
+							/>
+						</div>
+						<div>
+							<label className="romi-form-label">Лидов (чел)</label>
+							<input
+								type="number"
+								min="0"
+								step="1"
+								placeholder="0"
+								value={newChannelLeads}
+								onChange={(e) => setNewChannelLeads(e.target.value)}
 								className="romi-input"
 							/>
 						</div>
@@ -316,8 +387,11 @@ export function MarketingRomiTable() {
 						<tr>
 							<th className="text-left">Канал рекламы</th>
 							<th className="text-right">Потрачено (₽)</th>
-							<th className="text-center">Приведено первичных</th>
+							<th className="text-center">Лиды (чел)</th>
+							<th className="text-center">Доходимость</th>
+							<th className="text-center">Первичных</th>
 							<th className="text-right">Выручка (₽)</th>
+							<th className="text-right">Ср. чек (₽)</th>
 							<th className="text-center">ROMI (%)</th>
 							<th className="text-right">CAC (₽ / чел)</th>
 							<th className="text-center w-12"></th>
@@ -355,6 +429,28 @@ export function MarketingRomiTable() {
 										</div>
 									</td>
 
+									{/* Leads (editable) */}
+									<td className="romi-cell-num">
+										<div className="romi-cell-input-wrapper">
+											<input
+												type="number"
+												min="0"
+												step="1"
+												value={metric.leadsCount.toString()}
+												onChange={(e) =>
+													handleUpdateField(metric.id, "leads", e.target.value)
+												}
+												aria-label={`Лиды ${metric.nameRu}`}
+												className="romi-table-input text-center"
+											/>
+										</div>
+									</td>
+
+									{/* Show-up rate (calculated) */}
+									<td className="romi-cell-center font-bold text-[var(--teal-dark,#0f766e)]">
+										{metric.showUpRatePercent}%
+									</td>
+
 									{/* Patients (editable) */}
 									<td className="romi-cell-num">
 										<div className="romi-cell-input-wrapper">
@@ -387,6 +483,11 @@ export function MarketingRomiTable() {
 												className="romi-table-input text-right"
 											/>
 										</div>
+									</td>
+
+									{/* Average check */}
+									<td className="romi-cell-num text-right font-medium text-[var(--ink)]">
+										{metric.averageCheckFormatted}
 									</td>
 
 									{/* ROMI badge */}
@@ -438,11 +539,20 @@ export function MarketingRomiTable() {
 							<td className="romi-total-num text-right">
 								{summary.totalSpentFormatted}
 							</td>
-							<td className="romi-total-num text-center">
+							<td className="romi-total-num text-center font-bold">
+								{summary.totalLeadsCount} чел.
+							</td>
+							<td className="romi-total-center font-bold text-[var(--teal-dark,#0f766e)]">
+								{summary.overallShowUpRatePercent}%
+							</td>
+							<td className="romi-total-num text-center font-bold">
 								{summary.totalPrimaryPatientsCount} чел.
 							</td>
 							<td className="romi-total-num text-right font-bold text-[var(--teal-dark,#0f766e)]">
 								{summary.totalRevenueFormatted}
+							</td>
+							<td className="romi-total-num text-right font-medium">
+								{summary.overallAverageCheckFormatted}
 							</td>
 							<td className="romi-total-center">
 								<span

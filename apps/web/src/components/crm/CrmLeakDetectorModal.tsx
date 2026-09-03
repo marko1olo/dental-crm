@@ -11,6 +11,7 @@ import {
 	FileText,
 	MessageCircle,
 	Phone,
+	PhoneCall,
 	RefreshCw,
 	UserCheck,
 	X,
@@ -25,6 +26,7 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import {
 	cancelLeakLead,
+	createLeakTask,
 	fetchLeakDetectorLeads,
 	fetchLeakFunnelMetrics,
 	processLeakLead,
@@ -111,6 +113,17 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 			const headers = auth.denteClinicalMutationHeaders();
 			await startLeakLead(leadId, headers);
 			showToast("Лид взят в работу: Пациент назначен на вас", "success");
+			await loadData();
+		} catch (err: any) {
+			showToast(`Ошибка: ${err.message}`, "error");
+		}
+	};
+
+	const handleCreateTask = async (lead: CrmLeakLeadItem) => {
+		try {
+			const headers = auth.denteClinicalMutationHeaders();
+			await createLeakTask(lead.id, headers);
+			showToast(`✓ Задача перезвонить создана: ${lead.patientFullName}`, "success");
 			await loadData();
 		} catch (err: any) {
 			showToast(`Ошибка: ${err.message}`, "error");
@@ -419,11 +432,22 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
 											<td>
 												<div className="cld-actions-col">
+													<button
+														type="button"
+														className="cld-action-btn primary"
+														onClick={() => handleCreateTask(lead)}
+														title="Создать задачу администратору перезвонить пациенту (реактивация в 1 клик)"
+													>
+														<PhoneCall size={12} />
+														Перезвонить (задача)
+													</button>
+
 													{lead.leadStatus === "new" && (
 														<button
 															type="button"
-															className="cld-action-btn primary"
+															className="cld-action-btn"
 															onClick={() => handleStartLead(lead.id)}
+															title="Взять лид в работу"
 														>
 															<UserCheck size={12} />
 															В работу

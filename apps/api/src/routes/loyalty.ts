@@ -19,6 +19,7 @@ const redeemPointsBodySchema = z.object({
 	invoiceId: z.string().uuid().optional().nullable(),
 	invoiceAmountRub: z.number().positive(),
 	pointsToRedeem: z.number().positive(),
+	allowFullCoverage: z.boolean().optional().default(true),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Списание баллов в счет оплаты лечения"),
 });
@@ -325,9 +326,11 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 					}
 
 					const activePoints = Number(balance?.activePoints ?? 0);
+					const maxCoveragePercent = parsed.data.allowFullCoverage !== false ? 100 : 30;
 					const coverage = calculateMaxRedeemablePoints(
 						effectiveInvoiceAmountRub,
 						activePoints,
+						maxCoveragePercent,
 					);
 
 					if (pointsToRedeem > coverage.maxAllowedPoints) {
@@ -401,7 +404,7 @@ export async function registerLoyaltyRoutes(app: FastifyInstance) {
 
 				if ("limitExceeded" in result) {
 					return reply.status(400).send({
-						message: `Превышен лимит списания баллов. Максимально допустимо: ${result.maxAllowedPoints} баллов (30% чека).`,
+						message: `Превышена допустимая сумма списания баллов (максимально допустимо: ${result.maxAllowedPoints} баллов).`,
 						maxAllowedPoints: result.maxAllowedPoints,
 					});
 				}

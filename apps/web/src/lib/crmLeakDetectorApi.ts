@@ -119,3 +119,19 @@ export async function fetchLeakFunnelMetrics(
 	}
 	return res.json();
 }
+
+export async function createLeakTask(
+	leadId: string,
+	headers: Record<string, string>,
+): Promise<{ success: boolean; message: string; lead: CrmLeakLeadItem }> {
+	const res = await fetch(`/api/crm/leak-detector/${leadId}/create-task`, {
+		method: "POST",
+		headers: { ...headers, "Content-Type": "application/json" },
+	});
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({ message: "Ошибка создания задачи" }));
+		throw new Error(err.message || `Ошибка HTTP ${res.status}`);
+	}
+	return res.json();
+}
+
