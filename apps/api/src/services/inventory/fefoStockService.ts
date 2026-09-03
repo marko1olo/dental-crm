@@ -197,8 +197,9 @@ export class FefoStockService {
 		if (needed > 0) {
 			deficitQty = needed;
 			// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и спасение зуба пациента.
-			// При наличии visitId (лечение пациента) всегда применяется мягкий овердрафт с предупреждением.
-			if (!allowOverdraft && !visitId) {
+			// Мягкий овердрафт склада с предупреждением применяется при любых клинических списаниях,
+			// если не задан строгий административный запрет (allowOverdraft === false).
+			if (allowOverdraft === false) {
 				throw new InsufficientStockError({
 					inventoryItemId: inv.id,
 					inventoryItemName: inv.name,

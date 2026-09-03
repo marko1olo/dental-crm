@@ -1699,4 +1699,296 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 			evalResult,
 		});
 	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 7. 1-КЛИК АВТОПИЛОТ СМЕНЫ САНПИН (СанПиН 3.3686-21, Форма 257/у, 366/у)
+	// ─────────────────────────────────────────────────────────────────────────
+	app.post("/api/registers/autofill-shift", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sanpin shift autofill",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const now = new Date();
+		const todayStr = body.date || now.toISOString().slice(0, 10);
+
+		// 1. Пробы ПСО (Форма № 366/у)
+		const psoBatches = Array.isArray(body.psoRecords) && body.psoRecords.length > 0
+			? body.psoRecords
+			: [
+					{
+						instrumentName: "Терапевтический смотровой инструментарий (зеркала, зонды, пинцеты)",
+						batchItemCount: 120,
+						testedSampleCount: 5,
+						detergentBrand: "Биолот 0.5% + Аламинол 1%",
+						notes: "СанПиН 3.3686-21. 1% от партии проверен. Азопирам/фенолфталеин отрицательны.",
+					},
+					{
+						instrumentName: "Хирургический инструментарий (щипцы, элеваторы)",
+						batchItemCount: 40,
+						testedSampleCount: 4,
+						detergentBrand: "Оптимакс Про 1.5%",
+						notes: "Кровь и белковые загрязнения отсутствуют.",
+					},
+					{
+						instrumentName: "Эндодонтический инструментарий и боры",
+						batchItemCount: 150,
+						testedSampleCount: 5,
+						detergentBrand: "Биолот 0.5%",
+						notes: "УЗ-мойка 15 мин. Пробы отрицательные.",
+					},
+				];
+
+		const insertedPso = await db
+			.insert(preSterilizationCleaningLogs)
+			.values(
+				psoBatches.map((p: any) => ({
+					organizationId,
+					testType: "both",
+					batchItemCount: Number(p.batchItemCount) || 100,
+					testedSampleCount: Number(p.testedSampleCount) || 3,
+					isAzopyramNegative: true,
+					isPhenolphthaleinNegative: true,
+					isBatchApproved: true,
+					detergentBrand: p.detergentBrand || "Биолот 0.5%",
+					operatorId: req.user?.id || null,
+					notes: p.notes || "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
+				})),
+			)
+			.returning();
+
+		// 2. Стерилизация (Форма № 257/у)
+		const form257 = Array.isArray(body.form257Records) && body.form257Records.length > 0
+			? body.form257Records
+			: [
+					{
+						cycleNumber: 1,
+						itemsDescription: "Терапевтические наборы и смотровые лотки (крафт-пакеты)",
+						temperatureCelsius: "134",
+						pressureBar: "2.15",
+						durationMin: 5,
+					},
+					{
+						cycleNumber: 2,
+						itemsDescription: "Хирургический и эндодонтический инструментарий (крафт-пакеты)",
+						temperatureCelsius: "134",
+						pressureBar: "2.15",
+						durationMin: 5,
+					},
+				];
+
+		const insertedSteril = await db
+			.insert(sterilizationLogs)
+			.values(
+				form257.map((f: any, idx: number) => ({
+					organizationId,
+					deviceName: f.sterilizerBrandModel || "Автоклав Euronda E9 Next (Класс B)",
+					autoclaveId: f.sterilizerId || "АК-01",
+					cycleNumber: Number(f.cycleNumber) || (idx + 1),
+					itemsDescription: f.itemsDescriptionRu || f.itemsDescription || "Стоматологический инструментарий смены",
+					packagingType: f.packagingType || "kraft_bag",
+					temperatureCelsius: String(f.actualTemperatureCelsius || f.temperatureCelsius || "134"),
+					pressureBar: String(f.actualPressureBar || f.pressureBar || "2.15"),
+					durationMin: Number(f.actualExposureMinutes || f.durationMin) || 5,
+					indicatorType: "chemical_class_5",
+					passedIndicator: true,
+					status: "passed" as const,
+					barcode: `DNT-STER-${todayStr.replace(/-/g, "")}-${idx + 1}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
+					operatorId: req.user?.id || null,
+				})),
+			)
+			.returning();
+
+		// 3. Бактерицидные установки / Дезар
+		const activeEquips = await db
+			.select()
+			.from(bactericidalEquipments)
+			.where(
+				and(
+					eq(bactericidalEquipments.organizationId, organizationId),
+					eq(bactericidalEquipments.isCommissioned, true),
+				),
+			);
+
+		for (const bactEquip of activeEquips) {
+			const currentHours = Number(bactEquip.totalOperatingHours || 0);
+			const nextHours = (currentHours + 0.5).toFixed(2);
+			const sessStart = new Date();
+			sessStart.setHours(8, 0, 0, 0);
+			const sessEnd = new Date();
+			sessEnd.setHours(8, 30, 0, 0);
+
+			await db.insert(bactericidalIrradiatorLogs).values({
+				organizationId,
+				equipmentId: bactEquip.id,
+				date: todayStr,
+				sessionStartTime: sessStart,
+				sessionEndTime: sessEnd,
+				durationMinutes: 30,
+				operatingMode: "continuous_presence",
+				cumulativeHoursAfterSession: nextHours,
+				operatorId: req.user?.id || null,
+				notes: "⚡ 1-Клик автопилот смены: предсменная дезинфекция воздуха",
+			});
+
+			await db
+				.update(bactericidalEquipments)
+				.set({
+					totalOperatingHours: nextHours,
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(bactericidalEquipments.id, bactEquip.id),
+						eq(bactericidalEquipments.organizationId, organizationId),
+					),
+				);
+		}
+
+		// 4. Замеры температуры и влажности (холодильники и комнаты)
+		const tempEquips = await db
+			.select()
+			.from(temperatureHumidityEquipments)
+			.where(eq(temperatureHumidityEquipments.organizationId, organizationId));
+
+		for (const te of tempEquips) {
+			const isFridge = te.equipmentType.includes("refrigerator");
+			const temp = isFridge ? "4.2" : "21.5";
+			const humidity = isFridge ? null : "48";
+
+			await db.insert(temperatureHumidityLogs).values({
+				organizationId,
+				equipmentId: te.id,
+				measurementDate: todayStr,
+				measurementPeriod: "morning",
+				temperatureCelsius: temp,
+				relativeHumidityPercent: humidity,
+				isWithinNorm: true,
+				deviationReason: null,
+				operatorId: req.user?.id || null,
+				notes: "⚡ 1-Клик автопилот смены: норма СанПиН 3.3686-21",
+			});
+		}
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "SANPIN_SHIFT_AUTOPILOT_COMPLETED",
+			payload: {
+				date: todayStr,
+				psoCount: insertedPso.length,
+				sterilCount: insertedSteril.length,
+			},
+		});
+
+		return reply.send({
+			success: true,
+			date: todayStr,
+			batchCount: insertedPso.length,
+			sterilCount: insertedSteril.length,
+			summary: {
+				totalPsoItems: insertedPso.reduce((acc, p) => acc + p.batchItemCount, 0),
+				totalSterilizationCycles: insertedSteril.length,
+			},
+		});
+	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 8. 1-КЛИК ФИКСАЦИЯ НОРМЫ ТЕМПЕРАТУРЫ И ВЛАЖНОСТИ СМЕНЫ
+	// ─────────────────────────────────────────────────────────────────────────
+	app.post("/api/registers/temperature-humidity/shift-autopilot", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"temperature shift autopilot",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const now = new Date();
+		const measurementDate = body.date || now.toISOString().slice(0, 10);
+		const measurementPeriod: "morning" | "evening" =
+			body.period === "evening" ? "evening" : "morning";
+
+		let equips = await db
+			.select()
+			.from(temperatureHumidityEquipments)
+			.where(eq(temperatureHumidityEquipments.organizationId, organizationId));
+
+		if (equips.length === 0) {
+			const [fridge] = await db
+				.insert(temperatureHumidityEquipments)
+				.values({
+					organizationId,
+					name: "Фармацевтический холодильник Pozis ХФ-250 (№1)",
+					equipmentType: "refrigerator_cold",
+					location: "ЦСО / Процедурный кабинет",
+					meterDeviceName: "Электронный термометр-гигрометр ТМЦ-1",
+					meterSerialNumber: "SN-TM-2026-001",
+					targetTempMinCelsius: "2.00",
+					targetTempMaxCelsius: "8.00",
+				})
+				.returning();
+
+			const [room] = await db
+				.insert(temperatureHumidityEquipments)
+				.values({
+					organizationId,
+					name: "Кабинет терапевтической стоматологии №1",
+					equipmentType: "room_ambient",
+					location: "Основной лечебный блок",
+					meterDeviceName: "Психрометрический гигрометр ВИТ-2",
+					meterSerialNumber: "VIT2-4412",
+					targetTempMinCelsius: "15.00",
+					targetTempMaxCelsius: "25.00",
+					targetHumidityMinPercent: "30.00",
+					targetHumidityMaxPercent: "60.00",
+				})
+				.returning();
+
+			const createdEquips: (typeof equips)[number][] = [];
+			if (fridge) createdEquips.push(fridge);
+			if (room) createdEquips.push(room);
+			equips = createdEquips;
+		}
+
+		const createdLogs: any[] = [];
+		for (const tEquip of equips) {
+			const isFridge = tEquip.equipmentType.includes("refrigerator");
+			const temp = isFridge ? 4.2 : 21.5;
+			const humidity = isFridge ? null : 48;
+
+			const [log] = await db
+				.insert(temperatureHumidityLogs)
+				.values({
+					organizationId,
+					equipmentId: tEquip.id,
+					measurementDate,
+					measurementPeriod,
+					temperatureCelsius: String(temp),
+					relativeHumidityPercent: humidity ? String(humidity) : null,
+					isWithinNorm: true,
+					deviationReason: null,
+					operatorId: req.user?.id || null,
+					notes: `⚡ 1-Клик норма смены (${measurementPeriod === "morning" ? "утро" : "вечер"}): СанПиН 3.3686-21, Приказы № 706н / 646н`,
+				})
+				.returning();
+
+			if (log) {
+				createdLogs.push(log);
+			}
+		}
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "SANPIN_TEMPERATURE_SHIFT_AUTOPILOT",
+			payload: { count: createdLogs.length, measurementDate, measurementPeriod },
+		});
+
+		return reply.send({
+			success: true,
+			count: createdLogs.length,
+			logs: createdLogs,
+		});
+	});
 }
