@@ -1686,8 +1686,8 @@ export function KraftPackageBarcodeModal({
 											onChange={(e) => setSelectedTsplRecordId(e.target.value)}
 											style={{
 												width: "100%",
-												minHeight: "40px",
-												padding: "0.5rem",
+												minHeight: "44px",
+												padding: "0.5rem 0.75rem",
 												borderRadius: "8px",
 												border: "1px solid var(--line, #e2e8f0)",
 												background: "var(--paper, #fff)",
