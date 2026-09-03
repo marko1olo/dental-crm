@@ -282,6 +282,65 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		});
 	});
 
+	app.post("/api/registers/pso/quick-norm", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"pso quick norm",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const batchItemCount = typeof body.batchItemCount === "number" ? body.batchItemCount : 100;
+		const testedSampleCount =
+			typeof body.testedSampleCount === "number"
+				? body.testedSampleCount
+				: Math.max(3, Math.ceil(batchItemCount * 0.01));
+		const detergentBrand = body.detergentBrand || "Биолот 0.5% + Аламинол 1%";
+		const instrumentName =
+			body.instrumentName ||
+			"Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)";
+		const notesText =
+			body.notes ||
+			"⚡ Отметка партии в 1 клик по СанПиН 3.3686-21: проба отрицательная, норма. Партия допущена к стерилизации.";
+
+		const evaluation = SanPiNRegulatoryEngine.evaluatePsoSampling(
+			batchItemCount,
+			testedSampleCount,
+			true,
+			true,
+		);
+
+		const [log] = await db
+			.insert(preSterilizationCleaningLogs)
+			.values({
+				organizationId,
+				testType: "both",
+				batchItemCount,
+				testedSampleCount,
+				isAzopyramNegative: true,
+				isPhenolphthaleinNegative: true,
+				isBatchApproved: true,
+				detergentBrand,
+				rejectionReason: null,
+				operatorId: body.operatorId ?? null,
+				notes: `${instrumentName} | ${notesText}`,
+				timestamp: new Date(),
+			})
+			.returning();
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "SANPIN_PSO_ADDED",
+			payload: log,
+		});
+
+		return reply.code(201).send({
+			success: true,
+			log,
+			evaluation,
+		});
+	});
+
 	app.delete("/api/registers/pso/:id", async (req, reply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 			req,
@@ -413,6 +472,90 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		});
 
 		return reply.code(201).send(log);
+	});
+
+	// 1-КЛИК ПАКЕТНАЯ РЕГИСТРАЦИЯ ЦИКЛОВ СТЕРИЛИЗАЦИИ СМЕНЫ (СанПиН 3.3686-21, Форма 257/у)
+	app.post("/api/registers/sterilization/shift-batch", async (req: any, reply: any) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"sterilization shift batch create",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const cyclesCount = Math.min(Math.max(Number(body.cyclesCount) || 1, 1), 5);
+		const deviceName = body.deviceName || "Автоклав B-класса (ЦСО №1)";
+		const packagingType = (body.packagingType as SterilizationPackagingType) || "kraft_bag";
+		const itemsDescription =
+			body.itemsDescription ||
+			"Базовый стоматологический набор смены (лотки, зеркала, зонды, пинцеты, боры)";
+
+		const now = new Date();
+		const yyyy = now.getFullYear().toString();
+		const mm = String(now.getMonth() + 1).padStart(2, "0");
+		const dd = String(now.getDate()).padStart(2, "0");
+
+		// Определяем начальный номер цикла за сегодня
+		const existingToday = await db
+			.select({ cycleNumber: sterilizationLogs.cycleNumber })
+			.from(sterilizationLogs)
+			.where(
+				and(
+					eq(sterilizationLogs.organizationId, organizationId),
+					gte(
+						sterilizationLogs.timestamp,
+						new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+					),
+				),
+			)
+			.orderBy(desc(sterilizationLogs.cycleNumber))
+			.limit(1);
+
+		const startCycle = (existingToday[0]?.cycleNumber ?? 0) + 1;
+		const expiresAt = computePackagingExpirationDate(packagingType, now);
+		const logsToInsert = [];
+
+		for (let i = 0; i < cyclesCount; i++) {
+			const cycleNumber = startCycle + i;
+			const cleanCycle = String(cycleNumber).padStart(3, "0");
+			const generatedBarcode = `DNT-STER-C${cleanCycle}-${yyyy}${mm}${dd}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
+
+			logsToInsert.push({
+				organizationId,
+				deviceName,
+				autoclaveId: body.autoclaveId || deviceName,
+				cycleNumber,
+				itemsDescription,
+				packagingType,
+				temperatureCelsius: "134",
+				pressureBar: "2.15",
+				durationMin: 5,
+				indicatorType: "chemical_class_5",
+				passedIndicator: true,
+				status: "passed" as const,
+				barcode: generatedBarcode,
+				expiresAt,
+				operatorId: req.user?.id || null,
+				timestamp: new Date(now.getTime() + i * 60000),
+			});
+		}
+
+		const inserted = await db.insert(sterilizationLogs).values(logsToInsert).returning();
+
+		for (const insertedLog of inserted) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "SANPIN_STERILIZATION_ADDED",
+				payload: insertedLog,
+			});
+		}
+
+		return reply.code(201).send({
+			success: true,
+			count: inserted.length,
+			logs: inserted,
+			message: `Зарегистрировано циклов смены в 1 клик: ${inserted.length} (134°C, 2.15 бар, 5 мин, норма СанПиН 3.3686-21)`,
+		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -973,6 +1116,97 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 			success: true,
 			log,
 			lampLife,
+		});
+	});
+
+	/**
+	 * POST /api/registers/bactericidal/shift-autopilot
+	 * Автоматический учет наработки часов УФ-лампы для всех облучателей клиники за смену.
+	 */
+	app.post("/api/registers/bactericidal/shift-autopilot", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"bactericidal shift autopilot",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const durationMinutes = typeof body.durationMinutes === "number" ? body.durationMinutes : 360; // 6 hours default shift
+		const dateStr = body.date || new Date().toISOString().slice(0, 10);
+		const operatingMode = body.operatingMode || "continuous_presence";
+		const sessionHours = Number((durationMinutes / 60).toFixed(2));
+
+		const activeEquipments = await db
+			.select()
+			.from(bactericidalEquipments)
+			.where(
+				and(
+					eq(bactericidalEquipments.organizationId, organizationId),
+					eq(bactericidalEquipments.isCommissioned, true),
+				),
+			);
+
+		if (activeEquipments.length === 0) {
+			return reply.code(400).send({
+				error: "NoActiveEquipments",
+				message: "В клинике не зарегистрировано активных бактерицидных облучателей.",
+			});
+		}
+
+		const results: Array<{ equipmentId: string; deviceBrand: string; newTotalHours: number; status: string }> = [];
+
+		await db.transaction(async (tx) => {
+			for (const eqItem of activeEquipments) {
+				const prevHours = Number(eqItem.totalOperatingHours);
+				const newTotalHours = Number((prevHours + sessionHours).toFixed(2));
+				const lampLife = SanPiNRegulatoryEngine.calculateLampLife(
+					newTotalHours,
+					eqItem.maxLampHours,
+				);
+
+				await tx
+					.update(bactericidalEquipments)
+					.set({
+						totalOperatingHours: String(newTotalHours),
+						lampStatus: lampLife.status,
+						updatedAt: new Date(),
+					})
+					.where(eq(bactericidalEquipments.id, eqItem.id));
+
+				const startTime = new Date(`${dateStr}T08:00:00`);
+				const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+
+				await tx.insert(bactericidalIrradiatorLogs).values({
+					organizationId,
+					equipmentId: eqItem.id,
+					date: dateStr,
+					sessionStartTime: startTime,
+					sessionEndTime: endTime,
+					durationMinutes,
+					operatingMode,
+					cumulativeHoursAfterSession: String(newTotalHours),
+					notes: `⚡ Автоматический учет смены (${sessionHours} ч / ${durationMinutes} мин) по Р 3.5.1904-04 / СанПиН 3.3686-21.`,
+				});
+
+				results.push({
+					equipmentId: eqItem.id,
+					deviceBrand: eqItem.deviceBrand,
+					newTotalHours,
+					status: lampLife.status,
+				});
+			}
+		});
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "SANPIN_BACTERICIDAL_BATCH_UPDATED",
+			payload: { results },
+		});
+
+		return reply.code(201).send({
+			success: true,
+			message: `Успешно зафиксирована наработка для ${results.length} облучателей (+${sessionHours} ч)`,
+			results,
 		});
 	});
 

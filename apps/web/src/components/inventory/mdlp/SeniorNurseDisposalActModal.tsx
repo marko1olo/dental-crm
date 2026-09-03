@@ -90,6 +90,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 			seniorNurseName,
 			chiefDoctorName: isSingleSigner ? undefined : chiefDoctorName,
 			dentistName: isSingleSigner ? undefined : dentistName,
+			isSingleSigner,
 			notes: notes.trim() || undefined,
 			items,
 		});

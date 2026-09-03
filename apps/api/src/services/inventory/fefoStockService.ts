@@ -193,10 +193,12 @@ export class FefoStockService {
 		let deficitQty = 0;
 		let warning: string | undefined;
 
-		// 3. Обработка нехватки партий (дефицит / технический перерасход при экстренной помощи)
+		// 3. Обработка нехватки партий (дефицит / мягкий овердрафт при экстренной помощи и лечении)
 		if (needed > 0) {
 			deficitQty = needed;
-			if (!allowOverdraft) {
+			// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и спасение зуба пациента.
+			// При наличии visitId (лечение пациента) всегда применяется мягкий овердрафт с предупреждением.
+			if (!allowOverdraft && !visitId) {
 				throw new InsufficientStockError({
 					inventoryItemId: inv.id,
 					inventoryItemName: inv.name,

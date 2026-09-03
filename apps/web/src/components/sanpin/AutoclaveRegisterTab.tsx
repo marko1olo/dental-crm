@@ -270,6 +270,49 @@ export function AutoclaveRegisterTab() {
 		setClinicDevices(loadSavedClinicAutoclaves());
 	};
 
+	const [isLoggingBatch, setIsLoggingBatch] = useState(false);
+
+	const handleQuickShiftBatch = async () => {
+		setIsLoggingBatch(true);
+		try {
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const activeDevice = clinicDevices.find((d) => d.isOperational) || clinicDevices[0];
+			const res = await fetch("/api/registers/sterilization/shift-batch", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({
+					deviceName: activeDevice?.brandModelRu || "Автоклав B-класса (ЦСО №1)",
+					autoclaveId: activeDevice?.id || activeDevice?.brandModelRu || "АК-01",
+					cyclesCount: 1,
+					packagingType: "kraft_bag",
+					itemsDescription:
+						"Базовый стоматологический набор смены (лотки, зеркала, зонды, пинцеты, боры)",
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				showToast(
+					data.message || "⚡ Нормативный цикл стерилизации смены зафиксирован в 1 клик!",
+					"success",
+				);
+				await fetchLogs();
+			} else {
+				showToast("Не удалось зафиксировать цикл смены", "error");
+			}
+		} catch (e) {
+			console.error("Shift batch error", e);
+			showToast("Ошибка сети при сохранении цикла стерилизации", "error");
+		} finally {
+			setIsLoggingBatch(false);
+		}
+	};
+
 	useEffect(() => {
 		fetchLogs();
 		fetchDevices();
@@ -536,6 +579,34 @@ export function AutoclaveRegisterTab() {
 							title="Управление парком автоклавов и стерилизаторов клиники"
 						>
 							<ShieldCheck size={16} color="#2563eb" /> <span>Оборудование ({clinicDevices.length})</span>
+						</button>
+
+						{/* Action: ⚡ 1-Клик цикл смены */}
+						<button
+							type="button"
+							onClick={handleQuickShiftBatch}
+							disabled={isLoggingBatch}
+							className="sanpin-btn touch-manipulation"
+							style={{
+								minHeight: "44px",
+								height: "44px",
+								padding: "0.4rem 0.85rem",
+								fontSize: "0.85rem",
+								fontWeight: 600,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								borderRadius: "8px",
+								background: "var(--primary, #0284c7)",
+								color: "#ffffff",
+								border: "none",
+							}}
+							data-testid="sanpin-autoclave-quick-shift-btn"
+							title="1-Клик регистрация нормативного цикла стерилизации смены (134°C / 5 мин / 2.15 бар / норма СанПиН 3.3686-21)"
+						>
+							<Sparkles size={16} /> <span>⚡ 1-Клик цикл смены</span>
 						</button>
 
 						{/* Action: + Зафиксировать цикл */}

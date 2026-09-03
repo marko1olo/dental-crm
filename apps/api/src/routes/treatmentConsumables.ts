@@ -338,13 +338,27 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 			return result;
 		} catch (err) {
 			if (err instanceof InsufficientStockError) {
-				return reply.status(409).send({
-					error: err.error,
-					message: err.message,
+				// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
+				// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.
+				return reply.status(200).send({
+					success: true,
+					isOverdraft: true,
+					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}). Приём проведён без блокировки.`,
 					inventoryItemId: err.inventoryItemId,
 					inventoryItemName: err.inventoryItemName,
 					availableStock: err.availableStock,
 					requiredStock: err.requiredStock,
+					deductions: [],
+					warnings: [
+						{
+							type: "out_of_stock",
+							itemId: err.inventoryItemId,
+							itemName: err.inventoryItemName,
+							message: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}).`,
+							currentStock: err.availableStock - err.requiredStock,
+							criticalThreshold: 0,
+						},
+					],
 				});
 			}
 			throw err;
@@ -402,13 +416,27 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 			return result;
 		} catch (err) {
 			if (err instanceof InsufficientStockError) {
-				return reply.status(409).send({
-					error: err.error,
-					message: err.message,
+				// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
+				// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.
+				return reply.status(200).send({
+					success: true,
+					isOverdraft: true,
+					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}). Процедура проведена без блокировки.`,
 					inventoryItemId: err.inventoryItemId,
 					inventoryItemName: err.inventoryItemName,
 					availableStock: err.availableStock,
 					requiredStock: err.requiredStock,
+					deductions: [],
+					warnings: [
+						{
+							type: "out_of_stock",
+							itemId: err.inventoryItemId,
+							itemName: err.inventoryItemName,
+							message: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}).`,
+							currentStock: err.availableStock - err.requiredStock,
+							criticalThreshold: 0,
+						},
+					],
 				});
 			}
 			throw err;

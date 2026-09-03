@@ -174,14 +174,6 @@ export function BactericidalRegisterTab() {
 	};
 
 	const handleReplaceLamps = async (equipmentId: string, deviceBrand: string) => {
-		if (
-			!window.confirm(
-				`Подтверждаете установку новых бактерицидных ламп в аппарат «${deviceBrand}»? Наработка часов будет сброшена на 0, а статус переведен в «Норма».`,
-			)
-		) {
-			return;
-		}
-
 		try {
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
@@ -204,10 +196,124 @@ export function BactericidalRegisterTab() {
 		}
 	};
 
+	const calculateDurationFromTimes = (start: string, end: string): number => {
+		const [rawSH = "", rawSM = ""] = start.split(":");
+		const [rawEH = "", rawEM = ""] = end.split(":");
+		const sH = Number(rawSH);
+		const sM = Number(rawSM);
+		const eH = Number(rawEH);
+		const eM = Number(rawEM);
+		if (Number.isNaN(sH) || Number.isNaN(sM) || Number.isNaN(eH) || Number.isNaN(eM)) return 0;
+		let diff = eH * 60 + eM - (sH * 60 + sM);
+		if (diff < 0) diff += 24 * 60;
+		return diff;
+	};
+
+	const handleStartTimeChange = (val: string) => {
+		setLogStartTime(val);
+		const dur = calculateDurationFromTimes(val, logEndTime);
+		if (dur > 0) setLogDurationMin(dur);
+	};
+
+	const handleEndTimeChange = (val: string) => {
+		setLogEndTime(val);
+		const dur = calculateDurationFromTimes(logStartTime, val);
+		if (dur > 0) setLogDurationMin(dur);
+	};
+
+	const setPresetDuration = (minutes: number) => {
+		setLogDurationMin(minutes);
+		const [rawSH = "", rawSM = ""] = logStartTime.split(":");
+		const sH = Number(rawSH);
+		const sM = Number(rawSM);
+		if (!Number.isNaN(sH) && !Number.isNaN(sM)) {
+			const totalEndMin = (sH * 60 + sM + minutes) % (24 * 60);
+			const eH = Math.floor(totalEndMin / 60);
+			const eM = totalEndMin % 60;
+			setLogEndTime(`${String(eH).padStart(2, "0")}:${String(eM).padStart(2, "0")}`);
+		}
+	};
+
+	const handleShiftAutopilot = async (durationHours = 6) => {
+		try {
+			setSubmitting(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const durationMinutes = durationHours * 60;
+
+			const res = await fetch("/api/registers/bactericidal/shift-autopilot", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({
+					durationMinutes,
+					date: new Date().toISOString().slice(0, 10),
+					operatingMode: "continuous_presence",
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				showToast(
+					`⚡ Автоматический учет смены (${durationHours} ч) выполнен для всех ${data.results?.length ?? equipments.length} аппаратов!`,
+					"success",
+				);
+				fetchAll();
+			} else {
+				// Fallback: iterate over equipments sequentially
+				let updatedCount = 0;
+				for (const eq of equipments) {
+					const fRes = await fetch("/api/registers/bactericidal/logs", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+							...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+						},
+						body: JSON.stringify({
+							equipmentId: eq.id,
+							date: new Date().toISOString().slice(0, 10),
+							sessionStartTime: "08:00",
+							sessionEndTime: `${String(8 + durationHours).padStart(2, "0")}:00`,
+							durationMinutes,
+							operatingMode: "continuous_presence",
+							notes: `⚡ Авто-учет смены (${durationHours} ч) по Р 3.5.1904-04`,
+						}),
+					});
+					if (fRes.ok) updatedCount++;
+				}
+				showToast(`⚡ Наработка ламп обновлена (+${durationHours} ч) для ${updatedCount} аппаратов`, "success");
+				fetchAll();
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при авто-учете смены", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
 	const filteredLogs = useMemo(() => {
 		if (selectedEquipId === "all") return logs;
 		return logs.filter((l) => l.equipmentId === selectedEquipId);
 	}, [logs, selectedEquipId]);
+
+	const activeSelectedEquip = useMemo(() => {
+		return equipments.find((e) => e.id === logEquipId) || equipments[0];
+	}, [equipments, logEquipId]);
+
+	const hoursPreview = useMemo(() => {
+		if (!activeSelectedEquip) return null;
+		const cur = Number(activeSelectedEquip.totalOperatingHours || 0);
+		const addH = Number((logDurationMin / 60).toFixed(2));
+		const nextH = Number((cur + addH).toFixed(2));
+		const maxH = Number(activeSelectedEquip.maxLampHours || 8000);
+		const remH = Math.max(0, Number((maxH - nextH).toFixed(2)));
+		const pct = Math.min(100, Math.round((nextH / maxH) * 100));
+		return { cur, addH, nextH, maxH, remH, pct };
+	}, [activeSelectedEquip, logDurationMin]);
 
 	return (
 		<div className="sanpin-tab-content">
@@ -217,16 +323,44 @@ export function BactericidalRegisterTab() {
 			</div>
 
 			{/* Equipment Fleet Cards */}
-			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.5rem" }}>
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
 				<h3 style={{ margin: 0, fontSize: "1.05rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
 					<Wind size={18} color="var(--brand-primary)" />
 					Парк бактерицидных облучателей и рециркуляторов клиники ({equipments.length} шт.)
 				</h3>
-				<div style={{ display: "flex", gap: "0.5rem" }}>
+				<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						onClick={() => handleShiftAutopilot(6)}
+						disabled={submitting || equipments.length === 0}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "44px",
+							height: "44px",
+							padding: "0.4rem 0.95rem",
+							fontSize: "0.85rem",
+							fontWeight: 700,
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.4rem",
+							borderRadius: "8px",
+							background: "var(--brand-primary, #0284c7)",
+							color: "#ffffff",
+							border: "none",
+						}}
+						title="Автоматический расчет и фиксация 6-часовой рабочей смены для всех активных облучателей клиники"
+						data-testid="bactericidal-shift-autopilot-btn"
+					>
+						<Sparkles size={15} />
+						<span>⚡ Авто-учет смены всех ламп (6 ч)</span>
+					</button>
 					<button
 						type="button"
 						onClick={() => setIsEquipModalOpen(true)}
-						className="sanpin-btn sanpin-btn-secondary"
+						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+						style={{ minHeight: "44px" }}
 					>
 						<Plus size={15} /> Добавить аппарат в реестр
 					</button>
@@ -234,7 +368,8 @@ export function BactericidalRegisterTab() {
 						type="button"
 						onClick={() => setIsLogModalOpen(true)}
 						disabled={equipments.length === 0}
-						className="sanpin-btn sanpin-btn-primary"
+						className="sanpin-btn sanpin-btn-primary touch-manipulation"
+						style={{ minHeight: "44px" }}
 					>
 						<Clock size={15} /> Внести сеанс облучения
 					</button>
@@ -591,7 +726,7 @@ export function BactericidalRegisterTab() {
 											type="time"
 											required
 											value={logStartTime}
-											onChange={(e) => setLogStartTime(e.target.value)}
+											onChange={(e) => handleStartTimeChange(e.target.value)}
 											className="sanpin-input"
 										/>
 									</div>
@@ -602,26 +737,99 @@ export function BactericidalRegisterTab() {
 											type="time"
 											required
 											value={logEndTime}
-											onChange={(e) => setLogEndTime(e.target.value)}
+											onChange={(e) => handleEndTimeChange(e.target.value)}
 											className="sanpin-input"
 										/>
 									</div>
 								</div>
 
 								<div className="sanpin-form-group">
-									<label className="sanpin-form-label">Длительность работы (минут)</label>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+										<label className="sanpin-form-label" style={{ margin: 0 }}>
+											Длительность работы (минут)
+										</label>
+										<div style={{ display: "flex", gap: "0.25rem" }}>
+											<button
+												type="button"
+												onClick={() => setPresetDuration(30)}
+												className="sanpin-btn sanpin-btn-secondary"
+												style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}
+											>
+												30м
+											</button>
+											<button
+												type="button"
+												onClick={() => setPresetDuration(60)}
+												className="sanpin-btn sanpin-btn-secondary"
+												style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}
+											>
+												1ч
+											</button>
+											<button
+												type="button"
+												onClick={() => setPresetDuration(120)}
+												className="sanpin-btn sanpin-btn-secondary"
+												style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem" }}
+											>
+												2ч
+											</button>
+											<button
+												type="button"
+												onClick={() => setPresetDuration(360)}
+												className="sanpin-btn sanpin-btn-secondary"
+												style={{ fontSize: "0.75rem", padding: "0.15rem 0.45rem", fontWeight: 700 }}
+											>
+												Смена 6ч
+											</button>
+										</div>
+									</div>
 									<input
 										type="number"
 										min={1}
 										required
 										value={logDurationMin}
-										onChange={(e) => setLogDurationMin(parseInt(e.target.value) || 0)}
+										onChange={(e) => {
+											const val = parseInt(e.target.value, 10) || 0;
+											setLogDurationMin(val);
+											const [rawSH = "", rawSM = ""] = logStartTime.split(":");
+											const sH = Number(rawSH);
+											const sM = Number(rawSM);
+											if (!Number.isNaN(sH) && !Number.isNaN(sM)) {
+												const totalEndMin = (sH * 60 + sM + val) % (24 * 60);
+												const eH = Math.floor(totalEndMin / 60);
+												const eM = totalEndMin % 60;
+												setLogEndTime(`${String(eH).padStart(2, "0")}:${String(eM).padStart(2, "0")}`);
+											}
+										}}
 										className="sanpin-input"
 									/>
 									<span className="sanpin-form-hint">
 										Эквивалентно {(logDurationMin / 60).toFixed(2)} часам наработки ламп
 									</span>
 								</div>
+
+								{/* Компактный статус ресурса лампы */}
+								{hoursPreview && (
+									<div
+										style={{
+											padding: "0.5rem 0.75rem",
+											borderRadius: "6px",
+											background: "var(--paper-subtle, rgba(2,132,199,0.06))",
+											border: "1px solid var(--glass-border)",
+											display: "flex",
+											justifyContent: "space-between",
+											alignItems: "center",
+											fontSize: "0.825rem",
+										}}
+									>
+										<span style={{ color: "var(--ink)" }}>
+											Наработка: <strong>{hoursPreview.nextH} ч</strong> из {hoursPreview.maxH} ч (остаток {hoursPreview.remH} ч)
+										</span>
+										<span style={{ fontWeight: 600, color: hoursPreview.pct >= 90 ? "#dc2626" : "#10b981" }}>
+											{hoursPreview.pct >= 100 ? "⚠️ Замена ламп" : hoursPreview.pct >= 90 ? "⚠️ Скоро замена" : "✓ Ресурс в норме"}
+										</span>
+									</div>
+								)}
 							</div>
 							<div className="sanpin-modal-footer">
 								<button type="button" onClick={() => setIsLogModalOpen(false)} className="sanpin-btn sanpin-btn-secondary">Отмена</button>

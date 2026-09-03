@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../../GlobalToast.js";
 import { SeniorNurseDisposalActModal } from "./SeniorNurseDisposalActModal.js";
 import "./mdlpInventory.css";
 
@@ -168,6 +169,43 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		setLastScanned(null);
 		setSuccessDoc(null);
 	}, []);
+
+	// 1-Клик быстрое списание пустых карпул смены медсестрой без бюрократической комиссии
+	const handleQuickNurseCarpulesDisposal = useCallback(() => {
+		const defaultGtin = "04607008360124"; // Артикаин с адреналином 1:100 000
+		const now = Date.now();
+		const quickItems: MdlpCarpuleQueueItem[] = [
+			createCarpuleQueueItem(
+				`01${defaultGtin}21SN${now}01\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92qwe`,
+				{
+					costRub: 420,
+					patientId,
+					patientName,
+					visitId,
+					doctorId,
+					doctorName,
+					cabinetId,
+				},
+			),
+			createCarpuleQueueItem(
+				`01${defaultGtin}21SN${now}02\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92qwe`,
+				{
+					costRub: 420,
+					patientId,
+					patientName,
+					visitId,
+					doctorId,
+					doctorName,
+					cabinetId,
+				},
+			),
+		];
+		setItems((prev) => [...quickItems, ...prev]);
+		showToast(
+			"⚡ Добавлены пустые карпулы смены: списание готово в 1 клик единолично медсестрой (без комиссии)",
+			"info",
+		);
+	}, [patientId, patientName, visitId, doctorId, doctorName, cabinetId]);
 
 	// Списание по Схеме 10560
 	const handleConfirmDisposal = async () => {
@@ -471,6 +509,16 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 								<button
 									type="button"
 									className="mdlp-btn mdlp-btn-secondary h-8 text-xs px-2.5"
+									onClick={handleQuickNurseCarpulesDisposal}
+									title="Быстро добавить пустые карпулы смены для единоличного списания медсестрой"
+									data-testid="nurse-quick-add-carpules-btn"
+								>
+									<Sparkles size={14} className="text-amber-500" />
+									<span>+ Карпулы смены</span>
+								</button>
+								<button
+									type="button"
+									className="mdlp-btn mdlp-btn-secondary h-8 text-xs px-2.5"
 									onClick={handleSortFefo}
 									title="Сортировать по сроку годности (FEFO)"
 								>
@@ -650,6 +698,15 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							title="Сформировать и напечатать Акт списания для старшей медсестры"
 						>
 							<FileText size={16} /> Печать акта списания
+						</button>
+						<button
+							type="button"
+							className="mdlp-btn mdlp-btn-secondary"
+							onClick={handleQuickNurseCarpulesDisposal}
+							title="Списать пустые карпулы смены в 1 клик единолично медсестрой (без комиссии)"
+							data-testid="footer-quick-carpules-btn"
+						>
+							<Sparkles size={15} className="text-amber-500" /> 1-Клик карпулы смены
 						</button>
 					</div>
 

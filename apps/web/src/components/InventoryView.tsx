@@ -2044,18 +2044,79 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 				isOpen={isDeductionModalOpen}
 				onClose={() => setIsDeductionModalOpen(false)}
 				warehouseItems={items}
-				onConfirmDeduction={async () => {
-					setIsDeductionModalOpen(false);
-					fetchItems();
+				onConfirmDeduction={async (lines) => {
+					try {
+						let deductedCount = 0;
+						for (const line of lines) {
+							if (!line.inventoryItemId || line.quantity <= 0) continue;
+							const res = await fetch(
+								`/api/inventory/${organizationId}/${line.inventoryItemId}/stock`,
+								{
+									method: "PATCH",
+									headers: getHeaders({ "Content-Type": "application/json" }),
+									body: JSON.stringify({
+										adjustment: -line.quantity,
+										allowOverdraft: true,
+										reason: `Клиническое списание по процедуре: ${line.materialName}`,
+									}),
+								},
+							);
+							if (res.ok) deductedCount++;
+						}
+						showToast(
+							deductedCount > 0
+								? `Списано со склада ${deductedCount} поз. (мягкий овердрафт активен)`
+								: "Списание выполнено",
+							"success",
+						);
+					} catch (e) {
+						logger.error(e);
+						showToast("Ошибка при списании материалов", "error");
+					} finally {
+						setIsDeductionModalOpen(false);
+						fetchItems();
+					}
 				}}
 			/>
 
 			<ClinicalWriteoffModal
 				isOpen={isClinicalWriteoffOpen}
 				onClose={() => setIsClinicalWriteoffOpen(false)}
-				onConfirmWriteoff={async () => {
-					setIsClinicalWriteoffOpen(false);
-					fetchItems();
+				onConfirmWriteoff={async (doc) => {
+					try {
+						let deductedCount = 0;
+						for (const line of doc.lines) {
+							if (line.actualQuantity <= 0) continue;
+							const matchingItem = items.find(
+								(it) => it.name.toLowerCase() === line.materialNameRu.toLowerCase(),
+							);
+							if (matchingItem) {
+								const res = await fetch(
+									`/api/inventory/${organizationId}/${matchingItem.id}/stock`,
+									{
+										method: "PATCH",
+										headers: getHeaders({ "Content-Type": "application/json" }),
+										body: JSON.stringify({
+											adjustment: -line.actualQuantity,
+											allowOverdraft: true,
+											reason: `Акт 804н ${doc.actNumber}: ${line.materialNameRu}`,
+										}),
+									},
+								);
+								if (res.ok) deductedCount++;
+							}
+						}
+						showToast(
+							`Акт списания 804н зарегистрирован (проведено ${deductedCount} поз., мягкий овердрафт разрешен)`,
+							"success",
+						);
+					} catch (e) {
+						logger.error(e);
+						showToast("Ошибка при фиксации акта списания", "error");
+					} finally {
+						setIsClinicalWriteoffOpen(false);
+						fetchItems();
+					}
 				}}
 			/>
 
