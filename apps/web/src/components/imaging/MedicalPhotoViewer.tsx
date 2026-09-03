@@ -266,6 +266,13 @@ export const MedicalPhotoViewer: React.FC<MedicalPhotoViewerProps> = ({
 				onMouseDown={handleMouseDown}
 				onMouseMove={handleMouseMove}
 				onMouseUp={handleMouseUp}
+				onWheel={(e) => {
+					e.preventDefault();
+					const delta = e.deltaY < 0 ? 0.15 : -0.15;
+					setZoom((prev) =>
+						Math.max(0.4, Math.min(5.0, Number((prev + delta).toFixed(2)))),
+					);
+				}}
 			>
 				{/* Split Comparison Mode if comparison photo provided */}
 				{comparisonPhotoUrl ? (

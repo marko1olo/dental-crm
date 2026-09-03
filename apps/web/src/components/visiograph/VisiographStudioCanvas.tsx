@@ -22,6 +22,7 @@ import {
 	Move,
 	Plus,
 	RotateCcw,
+	RotateCw,
 	Ruler,
 	Save,
 	Scale,
@@ -30,6 +31,7 @@ import {
 	Trash2,
 	X,
 	ZoomIn,
+	ZoomOut,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -134,6 +136,10 @@ export function VisiographStudioCanvas({
 	const [rulers, setRulers] = useState<RulerMeasurement[]>([]);
 	const [angles, setAngles] = useState<AngleMeasurement[]>([]);
 	const [lesions, setLesions] = useState<PeriapicalLesion[]>([]);
+
+	// Viewport zoom & rotation state
+	const [canvasZoom, setCanvasZoom] = useState<number>(1.0);
+	const [canvasRotationDeg, setCanvasRotationDeg] = useState<number>(0);
 
 	// Interactive drawing state
 	const [drawingPoints, setDrawingPoints] = useState<Point2D[]>([]);
@@ -698,6 +704,101 @@ export function VisiographStudioCanvas({
 
 					<button
 						type="button"
+						onClick={() => setCanvasRotationDeg((r) => (r + 90) % 360)}
+						style={{
+							background: "#21262d",
+							color: "#c9d1d9",
+							border: "1px solid #30363d",
+							borderRadius: "6px",
+							padding: "5px 8px",
+							fontSize: "0.78rem",
+							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							gap: "3px",
+						}}
+						title="Повернуть снимок на 90°"
+					>
+						<RotateCw size={13} /> 90°
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setCanvasRotationDeg((r) => (r + 180) % 360)}
+						style={{
+							background: "#21262d",
+							color: "#c9d1d9",
+							border: "1px solid #30363d",
+							borderRadius: "6px",
+							padding: "5px 8px",
+							fontSize: "0.78rem",
+							cursor: "pointer",
+							fontWeight: 600,
+						}}
+						title="Повернуть снимок на 180° (верхняя / нижняя челюсть)"
+					>
+						180°
+					</button>
+
+					<div style={{ display: "flex", alignItems: "center", gap: "2px", marginLeft: "4px" }}>
+						<button
+							type="button"
+							onClick={() => setCanvasZoom((z) => Math.max(0.4, Number((z - 0.2).toFixed(2))))}
+							style={{
+								background: "#21262d",
+								color: "#c9d1d9",
+								border: "1px solid #30363d",
+								borderRadius: "6px 0 0 6px",
+								padding: "5px 6px",
+								fontSize: "0.78rem",
+								cursor: "pointer",
+							}}
+							title="Уменьшить масштаб"
+						>
+							<ZoomOut size={13} />
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setCanvasZoom(1.0);
+								setCanvasRotationDeg(0);
+							}}
+							style={{
+								background: "#21262d",
+								color: "#58a6ff",
+								borderTop: "1px solid #30363d",
+								borderBottom: "1px solid #30363d",
+								borderLeft: "none",
+								borderRight: "none",
+								padding: "5px 6px",
+								fontSize: "0.74rem",
+								cursor: "pointer",
+								fontFamily: "monospace",
+							}}
+							title="Сброс масштаба и поворота (колесо мыши также масштабирует снимок)"
+						>
+							{Math.round(canvasZoom * 100)}%
+						</button>
+						<button
+							type="button"
+							onClick={() => setCanvasZoom((z) => Math.min(3.5, Number((z + 0.2).toFixed(2))))}
+							style={{
+								background: "#21262d",
+								color: "#c9d1d9",
+								border: "1px solid #30363d",
+								borderRadius: "0 6px 6px 0",
+								padding: "5px 6px",
+								fontSize: "0.78rem",
+								cursor: "pointer",
+							}}
+							title="Увеличить масштаб"
+						>
+							<ZoomIn size={13} />
+						</button>
+					</div>
+
+					<button
+						type="button"
 						onClick={() => setShowExportModal(true)}
 						style={{
 							background: "#238636",
@@ -913,6 +1014,11 @@ export function VisiographStudioCanvas({
 						overflow: "auto",
 						padding: "16px",
 					}}
+					onWheel={(e) => {
+						e.preventDefault();
+						const delta = e.deltaY < 0 ? 0.1 : -0.1;
+						setCanvasZoom((z) => Math.min(3.5, Math.max(0.4, Number((z + delta).toFixed(2)))));
+					}}
 				>
 					<canvas
 						ref={canvasRef}
@@ -930,6 +1036,8 @@ export function VisiographStudioCanvas({
 										? "crosshair"
 										: "crosshair",
 							borderRadius: "4px",
+							transform: `scale(${canvasZoom}) rotate(${canvasRotationDeg}deg)`,
+							transition: "transform 0.1s ease-out",
 						}}
 					/>
 				</div>

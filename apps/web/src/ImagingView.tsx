@@ -1,5 +1,6 @@
 import {
 	Bot,
+	Check,
 	ClipboardList,
 	ExternalLink,
 	FileText,
@@ -10,7 +11,9 @@ import {
 	RefreshCw,
 	RotateCcw,
 	RotateCw,
+	Sparkles,
 	UploadCloud,
+	X,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
@@ -18,13 +21,14 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { logger } from "./utils/logger";
 
 const IMAGING_QUICK_CHIPS = [
-	"Без видимых патологий",
-	"Кариес",
-	"Киста / Периодонтит",
-	"Гранулема",
-	"Ретенция",
-	"Убыль костной ткани",
-	"Требуется имплантация",
+	"Норма (периапикальные ткани б/о, периодонтальная щель равномерная)",
+	"Кариес дентина",
+	"Хронический гранулирующий периодонтит",
+	"Атрофия костной ткани горизонтальная",
+	"Хронический пульпит",
+	"Неполная обтурация корневого канала",
+	"Имплантат стабилен, остеоинтеграция б/о",
+	"Ретенция / Дистопия",
 ];
 
 /**
@@ -109,7 +113,7 @@ function imagingDescriptionTemplate(
 	return body.join("\n");
 }
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 // Русское склонение счётного слова: «1 находка», «2 находки», «5 находок».
 import { countLabel } from "./AppHelpers";
 import { BoneQualityPanel } from "./components/dicom/BoneQualityPanel";
@@ -320,6 +324,45 @@ export function ImagingView(props: ImagingViewProps) {
 		Record<string, { summary: string; toothUpdates: unknown[] }>
 	>({});
 
+	// Врачебный контроль предложений ИИ (защита от несанкционированной перезаписи зубной карты)
+	const [pendingAiProposal, setPendingAiProposal] = useState<{
+		studyId: string;
+		detectedCodes: string[];
+		detectedToothStates: Record<string, ToothState>;
+		aiDiagnoses: Record<string, string>;
+	} | null>(null);
+
+	// Реальный CSS-трансформ и фильтры на основе текущего состояния просмотрщика
+	const computedViewerImageStyle = useMemo<React.CSSProperties>(() => {
+		if (props.imagingViewerImageStyle) return props.imagingViewerImageStyle;
+		const s = imagingViewerState || defaultImagingViewerState;
+		const filters: string[] = [];
+		if (typeof s.brightness === "number" && s.brightness !== 1) {
+			filters.push(`brightness(${s.brightness})`);
+		}
+		if (typeof s.contrast === "number" && s.contrast !== 1) {
+			filters.push(`contrast(${s.contrast})`);
+		}
+		if (s.inverted) {
+			filters.push("invert(1)");
+		}
+		const transforms: string[] = [];
+		if (typeof s.zoom === "number" && s.zoom !== 1) {
+			transforms.push(`scale(${s.zoom})`);
+		}
+		if (typeof s.rotationDeg === "number" && s.rotationDeg !== 0) {
+			transforms.push(`rotate(${s.rotationDeg}deg)`);
+		}
+		if (s.flipHorizontal) {
+			transforms.push("scaleX(-1)");
+		}
+		return {
+			filter: filters.length > 0 ? filters.join(" ") : "none",
+			transform: transforms.length > 0 ? transforms.join(" ") : "none",
+			transition: "transform 0.12s ease-out, filter 0.12s ease-out",
+		};
+	}, [props.imagingViewerImageStyle, imagingViewerState, defaultImagingViewerState]);
+
 	/*
 	 * Заключение для показа: сначала то, что разобрали в этом сеансе, иначе то,
 	 * что пришло с сервера. Сервер сохраняет заключение при разборе, поэтому после
@@ -467,23 +510,18 @@ export function ImagingView(props: ImagingViewProps) {
 					detectedToothStates[code] = toothStateFromAi(update.state);
 				}
 				if ((detectedCodes ?? []).length > 0) {
-					useVisitStore
-						.getState()
-						.applyAiToothCodes(
-							detectedCodes,
-							"planned",
-							detectedToothStates,
-							aiDiagnoses,
-						);
+					// ВРАЧЕБНЫЙ КОНТРОЛЬ: Запрет автоматической перезаписи зубной формулы роботом!
+					// Сохраняем предложение ИИ для явного подтверждения врачом.
+					setPendingAiProposal({
+						studyId,
+						detectedCodes,
+						detectedToothStates,
+						aiDiagnoses,
+					});
 				}
 			}
 
 			setEnhancementOn(true);
-			/*
-			 * Число в сообщении — сколько находок ДОШЛО до формулы, а не сколько
-			 * прислал сервер. Раньше печаталось присланное, и находка без номера зуба
-			 * считалась добавленной, хотя в формуле её не было.
-			 */
 			const applied = (toothUpdates ?? []).filter(
 				(raw) =>
 					typeof (raw as Record<string, unknown>)?.code === "string" &&
@@ -491,7 +529,7 @@ export function ImagingView(props: ImagingViewProps) {
 			).length;
 			showToast(
 				applied > 0
-					? `Разбор снимка готов: ${countLabel(applied, "находка", "находки", "находок")} в зубной формуле`
+					? `Разбор снимка готов: обнаружено ${countLabel(applied, "находка", "находки", "находок")}. Подтвердите внесение в формулу.`
 					: "Разбор снимка готов: находок по зубам нет",
 				"success",
 			);
@@ -825,6 +863,16 @@ export function ImagingView(props: ImagingViewProps) {
 							<div
 								className="imaging-viewer-stage"
 								style={{ position: "relative" }}
+								onWheel={(e) => {
+									if (localImageIds?.length > 0 || selectedImagingStudy?.kind === "cbct") return;
+									e.preventDefault();
+									const delta = e.deltaY < 0 ? 0.1 : -0.1;
+									// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+									setImagingViewerState((state: any) => ({
+										...state,
+										zoom: Math.min(3.0, Math.max(0.4, Number(((state.zoom || 1) + delta).toFixed(2)))),
+									}));
+								}}
 							>
 								{localImageIds?.length > 0 ? (
 									/*
@@ -873,7 +921,7 @@ export function ImagingView(props: ImagingViewProps) {
 									<ShadowAnalystImageSlider
 										imageUrl={imagingPreviewSource(selectedImagingStudy)}
 										enhanced={enhancementOn && !!selectedStudySummary}
-										viewerStyle={imagingViewerImageStyle}
+										viewerStyle={computedViewerImageStyle}
 									/>
 								)}
 
@@ -943,6 +991,105 @@ export function ImagingView(props: ImagingViewProps) {
 											: "Разобрать снимок помощником"}
 								</button>
 							</div>
+
+							{/* Врачебный контроль находок ИИ: без подтверждения врача формула не меняется! */}
+							{pendingAiProposal && pendingAiProposal.studyId === selectedImagingStudy?.id && (
+								<div
+									role="alert"
+									data-testid="ai-tooth-findings-confirmation"
+									style={{
+										margin: "0.75rem 0",
+										padding: "0.85rem 1rem",
+										background: "var(--paper-soft, #1e293b)",
+										border: "1.5px solid var(--teal, #06b6d4)",
+										borderRadius: "8px",
+										display: "flex",
+										flexDirection: "column",
+										gap: "0.6rem",
+									}}
+								>
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											gap: "0.5rem",
+											flexWrap: "wrap",
+										}}
+									>
+										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+											<Sparkles size={18} style={{ color: "var(--teal, #06b6d4)", flexShrink: 0 }} />
+											<strong style={{ fontSize: "0.9rem", color: "var(--ink, #f8fafc)" }}>
+												ИИ обнаружил патологии на снимке ({pendingAiProposal.detectedCodes.length}):
+											</strong>
+										</div>
+										<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+											<button
+												type="button"
+												className="primary-button"
+												data-testid="btn-confirm-ai-findings"
+												onClick={() => {
+													useVisitStore
+														.getState()
+														.applyAiToothCodes(
+															pendingAiProposal.detectedCodes,
+															"planned",
+															pendingAiProposal.detectedToothStates,
+															pendingAiProposal.aiDiagnoses,
+														);
+													showToast(
+														`Внесено в зубную формулу: ${countLabel(pendingAiProposal.detectedCodes.length, "зуб", "зуба", "зубов")}`,
+														"success",
+													);
+													setPendingAiProposal(null);
+												}}
+												style={{
+													fontSize: "0.82rem",
+													padding: "0.4rem 0.8rem",
+													background: "var(--teal, #06b6d4)",
+													color: "#fff",
+												}}
+											>
+												<Check size={14} style={{ marginRight: "4px" }} />
+												Подтвердить и внести в формулу
+											</button>
+											<button
+												type="button"
+												className="secondary-button"
+												data-testid="btn-reject-ai-findings"
+												onClick={() => {
+													setPendingAiProposal(null);
+													showToast("Предложение ИИ отклонено врачом", "info");
+												}}
+												style={{
+													fontSize: "0.82rem",
+													padding: "0.4rem 0.8rem",
+												}}
+											>
+												<X size={14} style={{ marginRight: "4px" }} />
+												Отклонить
+											</button>
+										</div>
+									</div>
+									<div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+										{pendingAiProposal.detectedCodes.map((code) => (
+											<span
+												key={code}
+												style={{
+													fontSize: "0.8rem",
+													padding: "0.2rem 0.5rem",
+													borderRadius: "4px",
+													background: "var(--surface, #0f172a)",
+													border: "1px solid var(--line, #334155)",
+													color: "var(--ink, #cbd5e1)",
+												}}
+											>
+												<strong>Зуб #{code}:</strong> {pendingAiProposal.aiDiagnoses[code] || "патология"}
+											</span>
+										))}
+									</div>
+								</div>
+							)}
 
 							{selectedImagingViewerPlan ? (
 								<div
@@ -1065,10 +1212,25 @@ export function ImagingView(props: ImagingViewProps) {
 												<FlipHorizontal aria-hidden="true" />
 											</button>
 											<button
+												className="viewer-tool-button font-bold text-xs"
+												type="button"
+												title="Повернуть на 180° (верхняя / нижняя челюсть)"
+												aria-label="Повернуть снимок на 180 градусов"
+												onClick={() =>
+													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+													setImagingViewerState((state: any) => ({
+														...state,
+														rotationDeg: (state.rotationDeg + 180) % 360,
+													}))
+												}
+											>
+												180°
+											</button>
+											<button
 												className={`viewer-tool-button ${imagingViewerState.inverted ? "active" : ""}`}
 												type="button"
-												title="Инверсия"
-												aria-label="Инвертировать снимок"
+												title="Инверсия (Негатив для верхушек корней и эндодонтии)"
+												aria-label="Инвертировать снимок в негатив"
 												aria-pressed={imagingViewerState.inverted}
 												onClick={() =>
 													// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -1078,7 +1240,7 @@ export function ImagingView(props: ImagingViewProps) {
 													}))
 												}
 											>
-												±
+												± Негатив
 											</button>
 											<button
 												className="viewer-tool-button"
@@ -1262,7 +1424,7 @@ export function ImagingView(props: ImagingViewProps) {
 															className="quick-chip quick-chip--sm"
 															onClick={() =>
 																setImagingViewerNote((prev) =>
-																	prev ? `${prev}, ${chip}` : chip,
+																	prev?.trim() ? `${prev.trim()}\n• ${chip}` : `• ${chip}`,
 																)
 															}
 														>
