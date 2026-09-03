@@ -5,6 +5,8 @@
  * ============================================================================
  */
 
+import { SoundFeedbackService } from "../../../services/audio/SoundFeedbackService";
+
 let sharedAudioContext: AudioContext | null = null;
 let idleSuspendTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -56,7 +58,16 @@ function getAudioContext(): AudioContext | null {
  * Чистый, приятный мажорный звуковой сигнал (Бип-Успех / Стерильно OK)
  * C5 (523 Hz) -> E5 (659 Hz) -> G5 (784 Hz)
  */
-export function playSterileSuccessTone(): void {
+export function playSterileSuccessTone(force = false): void {
+	if (typeof window === "undefined") return;
+	if (!force) {
+		try {
+			if (!SoundFeedbackService.getInstance().isEnabled()) return;
+		} catch {
+			return;
+		}
+	}
+
 	const ctx = getAudioContext();
 	if (!ctx) return;
 
@@ -75,9 +86,9 @@ export function playSterileSuccessTone(): void {
 			osc.type = "sine";
 			osc.frequency.setValueAtTime(freq, time);
 
-			// Smooth attack & decay
+			// Smooth attack & decay with comfortable clinic volume
 			gain.gain.setValueAtTime(0.001, time);
-			gain.gain.exponentialRampToValueAtTime(0.25, time + 0.02);
+			gain.gain.exponentialRampToValueAtTime(0.08, time + 0.02);
 			gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
 			osc.connect(gain);
@@ -93,30 +104,39 @@ export function playSterileSuccessTone(): void {
 }
 
 /**
- * Громкий низкочастотный предупреждающий гудок (Гудок-Ошибка / ПРОСРОЧЕНО!)
- * 160 Hz square wave buzz with 2 pulses
+ * Предупреждающий тональный сигнал (Гудок-Ошибка / ПРОСРОЧЕНО!)
+ * Мягкий синусоидальный тон с 2 пульсами (220 Hz -> 180 Hz) вместо резкой пилы
  */
-export function playExpiredErrorTone(): void {
+export function playExpiredErrorTone(force = false): void {
+	if (typeof window === "undefined") return;
+	if (!force) {
+		try {
+			if (!SoundFeedbackService.getInstance().isEnabled()) return;
+		} catch {
+			return;
+		}
+	}
+
 	const ctx = getAudioContext();
 	if (!ctx) return;
 
 	try {
 		const now = ctx.currentTime;
 		const pulses = [
-			{ time: now, dur: 0.18 },
-			{ time: now + 0.22, dur: 0.25 },
+			{ time: now, dur: 0.16 },
+			{ time: now + 0.2, dur: 0.22 },
 		];
 
 		pulses.forEach(({ time, dur }) => {
 			const osc = ctx.createOscillator();
 			const gain = ctx.createGain();
 
-			osc.type = "sawtooth";
-			osc.frequency.setValueAtTime(160, time);
-			osc.frequency.linearRampToValueAtTime(130, time + dur);
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(220, time);
+			osc.frequency.linearRampToValueAtTime(180, time + dur);
 
 			gain.gain.setValueAtTime(0.001, time);
-			gain.gain.exponentialRampToValueAtTime(0.35, time + 0.02);
+			gain.gain.exponentialRampToValueAtTime(0.06, time + 0.02);
 			gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
 
 			osc.connect(gain);

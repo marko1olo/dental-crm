@@ -131,20 +131,21 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 	);
 
 	useEffect(() => {
-		const existing = (toothData?.clinicalData as EndoToothClinicalData | undefined)?.canals;
+		const clinical = toothData?.clinicalData as EndoToothClinicalData | undefined;
+		const existing = clinical?.canals;
 		if (existing && existing.length > 0) {
 			setCanals(existing);
 		} else {
 			setCanals(getDefaultCanalsForTooth(toothNumber));
 		}
-		if ((toothData?.clinicalData as EndoToothClinicalData | undefined)?.rotarySystem) {
-			setEndoRotarySystem((toothData.clinicalData as EndoToothClinicalData).rotarySystem!);
+		if (clinical?.rotarySystem) {
+			setEndoRotarySystem(clinical.rotarySystem);
 		}
-		if ((toothData?.clinicalData as EndoToothClinicalData | undefined)?.irrigation) {
-			setEndoIrrigation((toothData.clinicalData as EndoToothClinicalData).irrigation!);
+		if (clinical?.irrigation) {
+			setEndoIrrigation(clinical.irrigation);
 		}
-		if ((toothData?.clinicalData as EndoToothClinicalData | undefined)?.radiologyControl) {
-			setEndoRadiologyControl((toothData.clinicalData as EndoToothClinicalData).radiologyControl!);
+		if (clinical?.radiologyControl) {
+			setEndoRadiologyControl(clinical.radiologyControl);
 		}
 	}, [toothNumber, toothData?.clinicalData]);
 

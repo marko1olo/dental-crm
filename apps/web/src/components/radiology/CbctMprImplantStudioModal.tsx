@@ -352,7 +352,7 @@ export const CbctMprImplantStudioModal: React.FC<CbctMprImplantStudioModalProps>
 	const [implantEntryXOffsetMm, setImplantEntryXOffsetMm] = useState<number>(0.0);
 	const [implantEntryDepthMm, setImplantEntryDepthMm] = useState<number>(2.0);
 	const [implantAngulationDeg, setImplantAngulationDeg] = useState<number>(0.0);
-	const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
+	const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(false);
 	const [nervePoints, setNervePoints] = useState<Point3D[]>([]);
 	const [selectedNerveNodeIdx, setSelectedNerveNodeIdx] = useState<number | null>(null);
 	const [isDraggingNerveNode, setIsDraggingNerveNode] = useState<number | null>(null);

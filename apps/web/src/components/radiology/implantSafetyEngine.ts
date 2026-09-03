@@ -28,6 +28,7 @@ import {
 	sampleVoxelTrilinearHU,
 	worldMmToVoxelContinuous,
 } from "./cbctMprMath";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 
 export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.0;
 
@@ -119,6 +120,7 @@ export const STANDARD_IMPLANT_CATALOG: readonly VirtualImplantSpec[] = [
 	// STRAUMANN (BLX & Bone Level)
 	{ id: "st-35-10", brand: "straumann", brandName: "Straumann", lineName: "BLX", diameterMm: 3.5, lengthMm: 10.0, platformDiameterMm: 3.5, apexDiameterMm: 2.2, priceKopecks: 3850000, articleNumber: "061.4110" },
 	{ id: "st-40-10", brand: "straumann", brandName: "Straumann", lineName: "BLX", diameterMm: 4.0, lengthMm: 10.0, platformDiameterMm: 4.0, apexDiameterMm: 2.5, priceKopecks: 3850000, articleNumber: "061.4310" },
+	{ id: "st-41-10", brand: "straumann", brandName: "Straumann", lineName: "BLT", diameterMm: 4.1, lengthMm: 10.0, platformDiameterMm: 4.1, apexDiameterMm: 2.5, priceKopecks: 3850000, articleNumber: "021.4110" },
 	{ id: "st-40-115", brand: "straumann", brandName: "Straumann", lineName: "BLX", diameterMm: 4.0, lengthMm: 11.5, platformDiameterMm: 4.0, apexDiameterMm: 2.5, priceKopecks: 3850000, articleNumber: "061.4312" },
 	{ id: "st-45-10", brand: "straumann", brandName: "Straumann", lineName: "BLX", diameterMm: 4.5, lengthMm: 10.0, platformDiameterMm: 4.5, apexDiameterMm: 2.8, priceKopecks: 3850000, articleNumber: "061.4510" },
 	{ id: "st-50-10", brand: "straumann", brandName: "Straumann", lineName: "BLX", diameterMm: 5.0, lengthMm: 10.0, platformDiameterMm: 5.0, apexDiameterMm: 3.2, priceKopecks: 3850000, articleNumber: "061.4710" },
@@ -132,6 +134,7 @@ export const STANDARD_IMPLANT_CATALOG: readonly VirtualImplantSpec[] = [
 	// OSSTEM (TS III SA)
 	{ id: "os-35-10", brand: "osstem", brandName: "Osstem", lineName: "TS III SA", diameterMm: 3.5, lengthMm: 10.0, platformDiameterMm: 3.5, apexDiameterMm: 2.5, priceKopecks: 1850000, articleNumber: "TS3S3510S" },
 	{ id: "os-40-10", brand: "osstem", brandName: "Osstem", lineName: "TS III SA", diameterMm: 4.0, lengthMm: 10.0, platformDiameterMm: 4.0, apexDiameterMm: 2.8, priceKopecks: 1850000, articleNumber: "TS3S4010S" },
+	{ id: "os-45-85", brand: "osstem", brandName: "Osstem", lineName: "TS III SA", diameterMm: 4.5, lengthMm: 8.5, platformDiameterMm: 4.5, apexDiameterMm: 3.0, priceKopecks: 1850000, articleNumber: "TS3S4585S" },
 	{ id: "os-40-115", brand: "osstem", brandName: "Osstem", lineName: "TS III SA", diameterMm: 4.0, lengthMm: 11.5, platformDiameterMm: 4.0, apexDiameterMm: 2.8, priceKopecks: 1850000, articleNumber: "TS3S4011S" },
 	{ id: "os-45-10", brand: "osstem", brandName: "Osstem", lineName: "TS III SA", diameterMm: 4.5, lengthMm: 10.0, platformDiameterMm: 4.5, apexDiameterMm: 3.0, priceKopecks: 1850000, articleNumber: "TS3S4510S" },
 	{ id: "os-50-10", brand: "osstem", brandName: "Osstem", lineName: "TS III SA", diameterMm: 5.0, lengthMm: 10.0, platformDiameterMm: 5.0, apexDiameterMm: 3.4, priceKopecks: 1850000, articleNumber: "TS3S5010S" },
@@ -143,6 +146,65 @@ export const STANDARD_IMPLANT_CATALOG: readonly VirtualImplantSpec[] = [
 	{ id: "dt-45-10", brand: "dentium", brandName: "Dentium", lineName: "SuperLine", diameterMm: 4.5, lengthMm: 10.0, platformDiameterMm: 4.5, apexDiameterMm: 3.1, priceKopecks: 1900000, articleNumber: "FXT4510" },
 	{ id: "dt-50-10", brand: "dentium", brandName: "Dentium", lineName: "SuperLine", diameterMm: 5.0, lengthMm: 10.0, platformDiameterMm: 5.0, apexDiameterMm: 3.5, priceKopecks: 1900000, articleNumber: "FXT5010" },
 ];
+
+export interface SurgeonImplantPreset {
+	readonly id: string;
+	readonly title: string;
+	readonly shortLabel: string;
+	readonly brand: ImplantBrandKey;
+	readonly brandName: string;
+	readonly lineName: string;
+	readonly diameterMm: number;
+	readonly lengthMm: number;
+	readonly clinicalIndicationRu: string;
+}
+
+export const SURGEON_IMPLANT_PRESETS: readonly SurgeonImplantPreset[] = [
+	{
+		id: "osstem_ts3_regular",
+		title: "Osstem TSIII Regular (4.0 x 10 мм)",
+		shortLabel: "Osstem TSIII 4.0x10",
+		brand: "osstem",
+		brandName: "Osstem",
+		lineName: "TS III SA",
+		diameterMm: 4.0,
+		lengthMm: 10.0,
+		clinicalIndicationRu: "Золотой стандарт для премоляров и фронтальных отделов",
+	},
+	{
+		id: "osstem_ts3_wide_molar",
+		title: "Osstem TSIII Wide / Моляр (4.5 x 8.5 мм)",
+		shortLabel: "Osstem Wide 4.5x8.5",
+		brand: "osstem",
+		brandName: "Osstem",
+		lineName: "TS III SA",
+		diameterMm: 4.5,
+		lengthMm: 8.5,
+		clinicalIndicationRu: "Широкая платформа для моляров при дефиците высоты до канала",
+	},
+	{
+		id: "straumann_blt_41",
+		title: "Straumann BLT (4.1 x 10 мм)",
+		shortLabel: "Straumann BLT 4.1x10",
+		brand: "straumann",
+		brandName: "Straumann",
+		lineName: "BLT",
+		diameterMm: 4.1,
+		lengthMm: 10.0,
+		clinicalIndicationRu: "Премиум конический дизайн Roxolid SLA для немедленной нагрузки",
+	},
+	{
+		id: "dentium_superline_40",
+		title: "Dentium SuperLine (4.0 x 10 мм)",
+		shortLabel: "Dentium SuperLine 4.0x10",
+		brand: "dentium",
+		brandName: "Dentium",
+		lineName: "SuperLine",
+		diameterMm: 4.0,
+		lengthMm: 10.0,
+		clinicalIndicationRu: "Агрессивная самонарезающая резьба для кости D2-D3",
+	},
+] as const;
 
 /**
  * Finds implant specification by brand, diameter, and length.
@@ -860,9 +922,17 @@ export function disposeNerveSafetyAudioAlarm(): void {
  */
 export function playNerveSafetyAudioAlarm(
 	safetyStatus: "safe" | "warning" | "danger",
-	isAudioEnabled = true,
+	isAudioEnabled = false,
 ): void {
 	if (!isAudioEnabled || safetyStatus === "safe" || typeof window === "undefined") return;
+
+	try {
+		if (!SoundFeedbackService.getInstance().isEnabled()) {
+			return;
+		}
+	} catch {
+		// Ignore if SoundFeedbackService is not available
+	}
 
 	try {
 		const AudioContextClass =
@@ -885,27 +955,27 @@ export function playNerveSafetyAudioAlarm(
 		const now = ctx.currentTime;
 
 		if (safetyStatus === "danger") {
-			// Urgent dual-pulse sawtooth alarm (880 Hz -> 440 Hz)
+			// Gentle discreet clinical chime (sine 660 Hz -> 440 Hz, quiet 0.04)
 			const osc = ctx.createOscillator();
 			const gain = ctx.createGain();
-			osc.type = "sawtooth";
-			osc.frequency.setValueAtTime(880, now);
-			osc.frequency.exponentialRampToValueAtTime(440, now + 0.16);
-			gain.gain.setValueAtTime(0.14, now);
-			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+			osc.type = "sine";
+			osc.frequency.setValueAtTime(660, now);
+			osc.frequency.exponentialRampToValueAtTime(440, now + 0.12);
+			gain.gain.setValueAtTime(0.04, now);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 			osc.connect(gain);
 			gain.connect(ctx.destination);
 			osc.start(now);
-			osc.stop(now + 0.17);
+			osc.stop(now + 0.13);
 		} else if (safetyStatus === "warning") {
-			// Gentle warning sine chime (520 Hz -> 390 Hz)
+			// Subtle warning sine chime (520 Hz -> 390 Hz, quiet 0.02)
 			const osc = ctx.createOscillator();
 			const gain = ctx.createGain();
 			osc.type = "sine";
 			osc.frequency.setValueAtTime(520, now);
 			osc.frequency.exponentialRampToValueAtTime(390, now + 0.12);
-			gain.gain.setValueAtTime(0.08, now);
-			gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+			gain.gain.setValueAtTime(0.02, now);
+			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 			osc.connect(gain);
 			gain.connect(ctx.destination);
 			osc.start(now);

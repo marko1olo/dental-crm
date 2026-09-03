@@ -48,13 +48,16 @@ import {
   performCbctPlanningAudit,
   playNerveSafetyAudioAlarm,
   STANDARD_IMPLANT_CATALOG,
+  SURGEON_IMPLANT_PRESETS,
   type AlveolarRidgeEnvelope,
   type ComprehensiveCbctPlanAudit,
   type CrossSectionImplantPose,
   type ImplantBrandKey,
   type MandibularCanalCrossSection,
+  type SurgeonImplantPreset,
   type VirtualImplantSpec,
 } from "./implantSafetyEngine";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import "./implantCrossSectionPlanner.css";
 
 export interface ImplantCrossSectionPlannerProps {
@@ -93,7 +96,14 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   const [trabecularHU, setTrabecularHU] = useState<number>(750);
   const [apicalHU, setApicalHU] = useState<number>(950);
 
-  const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(true);
+  const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return SoundFeedbackService.getInstance().isEnabled();
+    } catch {
+      return false;
+    }
+  });
   const [activeTab, setActiveTab] = useState<"viewport" | "misch" | "diary">("viewport");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -210,6 +220,16 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     setAngulationDeg(0);
   };
 
+  const handleApplySurgeonPreset = (preset: SurgeonImplantPreset) => {
+    setSelectedBrand(preset.brand);
+    setDiameterMm(preset.diameterMm);
+    setLengthMm(preset.lengthMm);
+    setEntryX(envelope.crestPoint.x);
+    setEntryY(envelope.crestPoint.y);
+    setAngulationDeg(0);
+    showToast(`⚡ Выбран имплантат: ${preset.title} (центрирован по гребню)`);
+  };
+
   const viewW = 280;
   const viewH = 360;
   const pxEntryX = entryX * SCALE_PX_PER_MM;
@@ -254,12 +274,18 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setIsAudioEnabled(!isAudioEnabled)}
+            onClick={() => {
+              const next = !isAudioEnabled;
+              setIsAudioEnabled(next);
+              try {
+                SoundFeedbackService.getInstance().setEnabled(next);
+              } catch {}
+            }}
             className={`chip-button ${isAudioEnabled ? "active" : ""}`}
-            title="Звуковой сигнал опасности при сближении с нервом < 1.0 мм"
+            title="Звуковой сигнал опасности при сближении с нервом < 1.0 мм (по умолчанию выключен)"
           >
             {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>Звук тревоги</span>
+            <span>{isAudioEnabled ? "Звук включен" : "Звук выключен"}</span>
           </button>
 
           {onClose && (
@@ -473,6 +499,50 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
         <div className="planner-controls-panel">
           {activeTab === "viewport" && (
             <>
+              {/* 1-CLICK CLINICAL SURGEON PRESETS (Mandate 8e: Fast Implantology Workflow) */}
+              <div className="planner-section-card border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10">
+                <div className="flex items-center justify-between gap-1 flex-wrap mb-1">
+                  <span className="section-title text-amber-800 dark:text-amber-200">
+                    <Zap size={16} className="text-amber-500 shrink-0" />
+                    <span>Экспресс 1-клик пресеты хирурга</span>
+                  </span>
+                  <span className="text-[11px] font-medium text-amber-700/80 dark:text-amber-300/80">
+                    Авто-центрирование по гребню
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {SURGEON_IMPLANT_PRESETS.map((preset) => {
+                    const isCurrent =
+                      selectedBrand === preset.brand &&
+                      Math.abs(diameterMm - preset.diameterMm) < 0.15 &&
+                      Math.abs(lengthMm - preset.lengthMm) < 0.15;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleApplySurgeonPreset(preset)}
+                        className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+                          isCurrent
+                            ? "bg-[var(--teal-surface,#f0fdfa)] border-[var(--teal,#0d9488)] ring-2 ring-[var(--teal-soft,#99f6e4)] shadow-xs"
+                            : "bg-[var(--paper)] border-[var(--line)] hover:border-amber-400 hover:bg-amber-500/10"
+                        }`}
+                        title={preset.clinicalIndicationRu}
+                        data-testid={`implant-preset-${preset.id}`}
+                      >
+                        <div className="flex items-center justify-between text-xs font-bold text-[var(--ink)]">
+                          <span>⚡ {preset.shortLabel}</span>
+                          {isCurrent && <CheckCircle2 size={14} className="text-[var(--teal,#0d9488)] shrink-0" />}
+                        </div>
+                        <span className="text-[10px] text-[var(--muted)] leading-tight mt-1 truncate">
+                          {preset.clinicalIndicationRu}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="planner-section-card">
                 <span className="section-title">
                   <Crown size={16} className="text-[var(--teal)]" /> Выбор системы и размеров
@@ -494,7 +564,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                 <div className="flex flex-col gap-1.5 pt-1">
                   <span className="text-xs font-semibold text-[var(--muted)]">Диаметр (Ø мм):</span>
                   <div className="chip-selector-group">
-                    {[3.5, 4.0, 4.3, 4.5, 5.0].map((d) => (
+                    {[3.5, 4.0, 4.1, 4.3, 4.5, 5.0].map((d) => (
                       <button
                         key={d}
                         type="button"
@@ -510,7 +580,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                 <div className="flex flex-col gap-1.5 pt-1">
                   <span className="text-xs font-semibold text-[var(--muted)]">Длина (L мм):</span>
                   <div className="chip-selector-group">
-                    {[8.0, 10.0, 11.5, 13.0].map((l) => (
+                    {[8.0, 8.5, 10.0, 11.5, 13.0].map((l) => (
                       <button
                         key={l}
                         type="button"
