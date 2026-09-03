@@ -226,8 +226,8 @@ export function CabinetReadinessTab() {
 			);
 		} else {
 			showToast(
-				`${selectedCabinet} сохранен со статусом НЕ ГОТОВ: обнаружены невыполненные пункты чек-листа!`,
-				"error",
+				`${selectedCabinet} принят в работу. Чек-лист сохранен в фоновом режиме без блокировки врача.`,
+				"info",
 			);
 		}
 	};
@@ -647,10 +647,10 @@ export function CabinetReadinessTab() {
 							fontWeight: 800,
 							letterSpacing: "0.02em",
 							marginTop: "1.25rem",
-							background: evaluation.isFullyReady ? "var(--teal)" : "var(--muted)",
+							background: "var(--teal)",
 							color: "var(--on-teal, #fff)",
 							cursor: "pointer",
-							boxShadow: evaluation.isFullyReady ? "0 4px 12px rgba(13, 148, 136, 0.4)" : "none",
+							boxShadow: "0 4px 12px rgba(13, 148, 136, 0.4)",
 						}}
 						data-testid="submit-cabinet-readiness-btn"
 					>

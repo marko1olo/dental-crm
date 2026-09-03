@@ -83,7 +83,7 @@ export function PrimaryIntakePackageModal({
 	onSelectDocumentKind,
 	doctorFullName,
 	clinicProfileDraft,
-}: PrimaryIntakePackageModalProps): React.ReactElement | null {
+}: PrimaryIntakePackageModalProps): ReactElement | null {
 	if (!isOpen) return null;
 
 	const [isNormApplied, setIsNormApplied] = useState(false);

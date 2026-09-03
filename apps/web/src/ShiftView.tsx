@@ -20,9 +20,10 @@ import { patientInsightRiskLabels } from "./AppConstants";
 import { formatShortDate, minutesLabel, money } from "./AppHelpers";
 import { EmptyState } from "./components/EmptyState";
 import { PatientAvatar } from "./components/PatientAvatar";
-import { ShiftCallout } from "./components/shift/ShiftCallout";
+import { DoctorShiftControlBar, ShiftCallout } from "./components/shift";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
+import { DoctorPayrollModal } from "./components/finance/payroll/DoctorPayrollModal";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -301,8 +302,84 @@ export function ShiftView({
 				: "shift";
 		window.location.hash = section;
 	}
+
+	// Doctor Daily Shift Performance & Piece-Rate Earnings
+	const shiftStats = useMemo(() => {
+		const completed = todayAppointments.filter((app: any) =>
+			["completed", "done"].includes(String(app.status || "").toLowerCase()),
+		);
+		const inProgress = todayAppointments.filter((app: any) =>
+			["in_chair", "in_treatment", "in_progress"].includes(
+				String(app.status || "").toLowerCase(),
+			),
+		);
+
+		// Revenue from today's payments or completed appointment items
+		const todayPayments = (dashboard?.payments ?? []).filter((p: any) => {
+			if (p.status !== "paid" && p.status !== "completed") return false;
+			const pDate = p.paidAt || p.createdAt;
+			return pDate ? String(pDate).startsWith(todayIso) : false;
+		});
+
+		const directPaymentsRub = todayPayments.reduce(
+			(sum: number, p: any) => sum + (Number(p.amountRub) || 0),
+			0,
+		);
+
+		// Fallback/combined from completed appointments if payments not yet recorded
+		const appointmentBilledRub = completed.reduce((sum: number, app: any) => {
+			const cost =
+				Number(app.priceRub || app.costRub || app.totalRub || app.amountRub) ||
+				0;
+			return sum + cost;
+		}, 0);
+
+		const totalRevenueRub = Math.max(directPaymentsRub, appointmentBilledRub);
+
+		// Default standard doctor commission rate (30% piece-rate)
+		const doctorCommissionPct = 30;
+		const estimatedDoctorPayoutRub = Math.round(
+			(totalRevenueRub * doctorCommissionPct) / 100,
+		);
+
+		return {
+			totalAppointments: todayAppointments.length,
+			completedCount: completed.length,
+			inProgressCount: inProgress.length,
+			totalRevenueRub,
+			doctorCommissionPct,
+			estimatedDoctorPayoutRub,
+			hasActiveOvertime: new Date().getHours() >= 21,
+		};
+	}, [todayAppointments, dashboard?.payments, todayIso]);
+
+	const [isShiftOpen, setIsShiftOpen] = useState<boolean>(() => {
+		try {
+			const saved = localStorage.getItem("dente_doctor_shift_active");
+			return saved !== null ? saved === "true" : true;
+		} catch {
+			return true;
+		}
+	});
+	const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
+
+	const handleToggleShift = () => {
+		const next = !isShiftOpen;
+		setIsShiftOpen(next);
+		try {
+			localStorage.setItem("dente_doctor_shift_active", String(next));
+		} catch {}
+	};
+
 	return (
 		<div className="shift-view-scroll-container min-w-0">
+			<DoctorShiftControlBar
+				isShiftOpen={isShiftOpen}
+				onToggleShift={handleToggleShift}
+				onOpenPayrollModal={() => setIsPayrollModalOpen(true)}
+				shiftStats={shiftStats}
+			/>
+
 			<section className="shift-hero" id="shift">
 				<div className="now-card">
 					<div className="row-between">
@@ -1176,6 +1253,18 @@ export function ShiftView({
 					) : null}
 				</section>
 			</div>
+
+			{/* Doctor Piece-Rate Payroll Calculation & Form T-51 Modal */}
+			{isPayrollModalOpen && (
+				<DoctorPayrollModal
+					isOpen={isPayrollModalOpen}
+					onClose={() => setIsPayrollModalOpen(false)}
+					clinicName={dashboard?.clinicName}
+					initialPeriodStart={todayIso}
+					initialPeriodEnd={todayIso}
+					initialBasePercentage={30}
+				/>
+			)}
 		</div>
 	);
 }

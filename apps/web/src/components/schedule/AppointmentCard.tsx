@@ -454,18 +454,17 @@ export function AppointmentCard(props: AppointmentCardProps) {
 			const newStartIso = new Date(newStartMs).toISOString();
 			const newEndIso = new Date(newEndMs).toISOString();
 
-			// 1. Проверка времени закрытия клиники (до 21:00)
+			// 1. Проверка времени закрытия клиники (до 21:00) — ночной овертайм разрешен без блокировки
 			const endDateObj = new Date(newEndMs);
 			const endHour = endDateObj.getHours();
 			const endMin = endDateObj.getMinutes();
 			const endTotalMinutes = endHour * 60 + endMin;
 			if (endTotalMinutes > 21 * 60) {
 				showToast(
-					`Нельзя сдвинуть запись: окончание приема (${formatTime(newEndIso)}) выходит за рамки работы клиники (до 21:00)`,
-					"warning",
-					4500,
+					`Приём продлен в ночной овертайм (${formatTime(newEndIso)}). Сохранение визита разрешено без ограничений.`,
+					"info",
+					3500,
 				);
-				return;
 			}
 
 			// 2. Проверка коллизий с последующими записями врача или кабинета
