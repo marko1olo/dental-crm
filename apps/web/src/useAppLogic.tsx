@@ -3512,7 +3512,21 @@ export function useAppLogic(): any {
 			setLastLocalSavedAt(savedAt);
 			setLocalDraftWasRestored(false);
 		}, 350);
-		return () => window.clearTimeout(timeout);
+		return () => {
+			window.clearTimeout(timeout);
+			// Flush draft immediately on unmount/tab switch so no keystrokes are lost
+			saveVisitLocalDraft(
+				{
+					version: 1,
+					visitId: openVisitId,
+					savedAt,
+					transcript,
+					selectedSpecialty,
+					visitNoteForm,
+				},
+				activeOrganizationId,
+			);
+		};
 	}, [
 		activeOrganizationId,
 		dashboard?.activeVisit?.id,
@@ -3523,6 +3537,53 @@ export function useAppLogic(): any {
 		setLocalDraftWasRestored,
 		setLastLocalSavedAt,
 		dashboard,
+	]);
+
+	// Flush draft immediately on visibility change (switching browser tabs) or page close
+	useEffect(() => {
+		const openVisitId = dashboard?.activeVisit?.id;
+		if (!dashboard || !localAutosaveReady || !openVisitId) return;
+
+		const flushImmediately = () => {
+			const savedAt = new Date().toISOString();
+			saveVisitLocalDraft(
+				{
+					version: 1,
+					visitId: openVisitId,
+					savedAt,
+					transcript,
+					selectedSpecialty,
+					visitNoteForm,
+				},
+				activeOrganizationId,
+			);
+			setLastLocalSavedAt(savedAt);
+		};
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "hidden") {
+				flushImmediately();
+			}
+		};
+
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("beforeunload", flushImmediately);
+		window.addEventListener("pagehide", flushImmediately);
+
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("beforeunload", flushImmediately);
+			window.removeEventListener("pagehide", flushImmediately);
+		};
+	}, [
+		activeOrganizationId,
+		dashboard,
+		dashboard?.activeVisit?.id,
+		localAutosaveReady,
+		selectedSpecialty,
+		setLastLocalSavedAt,
+		transcript,
+		visitNoteForm,
 	]);
 
 	useEffect(() => {

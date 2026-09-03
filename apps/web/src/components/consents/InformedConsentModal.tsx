@@ -518,7 +518,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const allTemplates = getAllConsentTemplates();
 
 	const modalContent = (
-		<div className="consent-modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="consent-modal-title">
+		<div className="consent-modal-overlay print-layer" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="consent-modal-title">
 			<div className="consent-modal-container" onClick={(e) => e.stopPropagation()}>
 				{/* Header */}
 				<header className="consent-header">

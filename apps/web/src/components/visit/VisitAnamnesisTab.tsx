@@ -8,7 +8,7 @@ import {
 	Stethoscope,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
@@ -60,10 +60,46 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 	onAppendComorbidities,
 }) => {
 	const appLogic = useAppLogicContext();
+	// biome-ignore lint/suspicious/noExplicitAny: patient identification
+	const patientId = (appLogic as any)?.activePatient?.id || "draft";
+	const storageKey = `dente_anamnesis_tab_draft_${patientId}`;
+
 	const [selectedComplaints, setSelectedComplaints] = useState<string[]>([]);
 	const [selectedRisks, setSelectedRisks] = useState<string[]>([]);
 	const [selectedHistory, setSelectedHistory] = useState<string[]>([]);
 	const [customNotes, setCustomNotes] = useState("");
+
+	// Restore draft on mount or patient switch
+	useEffect(() => {
+		try {
+			const saved = localStorage.getItem(storageKey);
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				if (Array.isArray(parsed.selectedComplaints)) setSelectedComplaints(parsed.selectedComplaints);
+				if (Array.isArray(parsed.selectedRisks)) setSelectedRisks(parsed.selectedRisks);
+				if (Array.isArray(parsed.selectedHistory)) setSelectedHistory(parsed.selectedHistory);
+				if (typeof parsed.customNotes === "string") setCustomNotes(parsed.customNotes);
+			}
+		} catch {
+			// ignore storage errors
+		}
+	}, [storageKey]);
+
+	// Autosave draft on modification
+	useEffect(() => {
+		try {
+			const payload = {
+				selectedComplaints,
+				selectedRisks,
+				selectedHistory,
+				customNotes,
+				updatedAt: new Date().toISOString(),
+			};
+			localStorage.setItem(storageKey, JSON.stringify(payload));
+		} catch {
+			// ignore storage errors
+		}
+	}, [storageKey, selectedComplaints, selectedRisks, selectedHistory, customNotes]);
 
 	const toggleComplaint = (item: string) => {
 		setSelectedComplaints((prev) =>

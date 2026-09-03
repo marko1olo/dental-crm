@@ -799,10 +799,25 @@ export function saveVisitLocalDraft(
 	organizationId: string | null | undefined = null,
 ): void {
 	if (typeof window === "undefined") return;
+	const key = visitLocalDraftKey(draft.visitId, organizationId);
 	safeLocalStorageSetItem(
-		visitLocalDraftKey(draft.visitId, organizationId),
+		key,
 		JSON.stringify(draft),
 	);
+	// Dual-storage resilience: asynchronous backup to IndexedDB
+	try {
+		void import("../offlineMutationQueue").then(({ saveOfflineDraft }) => {
+			void saveOfflineDraft(
+				key,
+				"DIARY_043_DRAFT",
+				draft.visitId,
+				draft,
+				organizationId || undefined,
+			);
+		}).catch(() => {});
+	} catch {
+		// Ignore dynamic import failure in non-browser environments
+	}
 }
 
 export function isVisitNoteDraft(value: unknown): value is VisitNoteDraft {

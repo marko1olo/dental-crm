@@ -57,6 +57,8 @@ import { type Appointment, calculateAge } from "@dental/shared";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
 import { InformedConsentModal, type SignedConsentPayload } from "../consents/InformedConsentModal";
+import { Form043PrintModal } from "../emr/Form043PrintModal";
+import type { MedicalCardForm043uData } from "../emr/emr043Types";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { EmkVoicePilot } from "./EmkVoicePilot";
 import { PatientAllergySafetyBanner } from "../patient/PatientAllergySafetyBanner";
@@ -303,6 +305,7 @@ export function VisitEmkTab() {
 		"nimesulide_100",
 	]);
 	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = React.useState<boolean>(false);
+	const [isForm043ModalOpen, setIsForm043ModalOpen] = React.useState<boolean>(false);
 	const [isConfirmSwitchModalOpen, setIsConfirmSwitchModalOpen] = React.useState<boolean>(false);
 	const [isPatientMemoModalOpen, setIsPatientMemoModalOpen] = React.useState<boolean>(false);
 	const [selectedMemoIdForPrint, setSelectedMemoIdForPrint] = React.useState<PostOpMemoId>("surgery_extraction");
@@ -343,6 +346,55 @@ export function VisitEmkTab() {
 	const [nextVisitAppointment, setNextVisitAppointment] = React.useState<Appointment | null>(null);
 	const [activeSelectedTooth, setActiveSelectedTooth] = React.useState<number | null>(null);
 	const textareaRefs = React.useRef<Record<string, HTMLTextAreaElement | null>>({});
+
+	const form043InitialData = React.useMemo<Partial<MedicalCardForm043uData>>(() => {
+		const docName = appLogic?.activeDoctor?.fullName || appLogic?.auth?.currentUser?.name || "Врач-стоматолог";
+		const docSpecialty = appLogic?.activeDoctor?.specialties?.[0] || "Стоматолог-терапевт";
+		const diagIcd = typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/[A-Z]\d{2}(?:\.\d+)?/i)?.[0] || "K02.1" : "K02.1";
+		return {
+			formNumber: "043/у",
+			passport: {
+				medicalCardNumber: activePatient?.cardNumber || activePatient?.medicalCardNumber || activePatient?.id?.slice(0, 8) || "СТ-2026-0843",
+				cardOpenedDate: dashboard?.activeVisit?.date || new Date().toISOString().slice(0, 10),
+				patientFullName: activePatient?.fullName || "Пациент клиники",
+				patientBirthDate: activePatient?.birthDate || "1990-01-01",
+				patientSex: activePatient?.gender === "female" ? "female" : "male",
+				patientPhone: activePatient?.phone || "",
+				patientAddressRegistration: activePatient?.administrativeProfile?.registrationAddress || activePatient?.address || "",
+				patientIdentityDocument: activePatient?.administrativeProfile?.passportSeriesNumber || "Паспорт гражданина РФ",
+				primaryDiagnosisText: typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis : "Кариес дентина",
+				primaryDiagnosisIcd10: diagIcd,
+				attendingDoctorFullName: docName,
+				attendingDoctorSpecialty: docSpecialty,
+			},
+			anamnesis: {
+				chiefComplaint: visitNoteForm?.complaint || "Жалоб на момент осмотра активно не предъявляет.",
+				historyOfPresentIllness: visitNoteForm?.anamnesis || "Ранее санирован.",
+				medicalHistoryVitae: "Соматически здоров. Туберкулез, гепатиты, ВИЧ отрицает.",
+				allergologicalHistory: "Аллергологический анамнез не отягощен.",
+				concomitantSomaticDiseases: "Хронические соматические заболевания отрицает.",
+				currentSystemicMedications: "Постоянный прием лекарственных препаратов отрицает.",
+				pregnancyLactationStatus: "Отрицает",
+				pastDentalInterventions: "Стоматологическое лечение переносит удовлетворительно.",
+			},
+			visitDiaries: [
+				{
+					id: dashboard?.activeVisit?.id || "vd-1",
+					entryDate: dashboard?.activeVisit?.date || new Date().toLocaleDateString("ru-RU"),
+					entryTime: dashboard?.activeVisit?.time || "10:00",
+					toothNumber: activeSelectedTooth ? String(activeSelectedTooth) : "",
+					doctorFullName: docName,
+					doctorSpecialty: docSpecialty,
+					subjectiveComplaints: visitNoteForm?.complaint || "Жалоб не предъявляет.",
+					objectiveStatusLocalis: visitNoteForm?.objectiveStatus || "Слизистая оболочка полости рта физиологической окраски, влажная.",
+					assessmentDiagnosisText: visitNoteForm?.diagnosis || "Кариес дентина",
+					assessmentIcd10Code: diagIcd,
+					procedureProtocol: visitNoteForm?.treatmentPlan || "Консультация, осмотр полости рта, лечение.",
+					isSignedWithUkep: Boolean(isSignedVisit),
+				},
+			],
+		};
+	}, [activePatient, dashboard?.activeVisit, visitNoteForm, appLogic?.activeDoctor, appLogic?.auth?.currentUser, isSignedVisit, activeSelectedTooth]);
 
 	const applyTextFormatting = React.useCallback(
 		(
@@ -2809,9 +2861,9 @@ export function VisitEmkTab() {
 						<button
 							className="secondary-button flex items-center gap-2 text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl touch-manipulation cursor-pointer border-[var(--line)] hover:border-indigo-400"
 							type="button"
-							onClick={() => window.print()}
+							onClick={() => setIsForm043ModalOpen(true)}
 							data-testid="btn-print-visit-note-043"
-							title="Печать медицинской карты стоматологического пациента (Форма 043/у) на чистом листе А4"
+							title="Печать официальной карты стоматологического пациента (Форма 043/у) на чистом листе А4 со штампом ЧЕРНОВИК или ПОДПИСАНО"
 						>
 							<Printer className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
 							<span>Печать 043/у {isSignedVisit ? "(Подписано)" : "(Черновик)"}</span>
@@ -3065,6 +3117,15 @@ export function VisitEmkTab() {
 					toothNumbers={activeSelectedTooth ? String(activeSelectedTooth) : ""}
 					onConsentSigned={handleConsentSigned}
 					onConsentConfirmed={handleConsentConfirmed}
+				/>
+
+				{/* Официальная медицинская карта стоматологического пациента (Форма № 043/у, Приказ Минздрава РФ № 834н) */}
+				<Form043PrintModal
+					isOpen={isForm043ModalOpen}
+					onClose={() => setIsForm043ModalOpen(false)}
+					initialData={form043InitialData}
+					isDraft={!isSignedVisit}
+					status={isSignedVisit ? "signed" : "draft"}
 				/>
 
 				{/* Модальное окно валидатора и экспорта СЭМД ЕГИСЗ */}
@@ -3474,7 +3535,7 @@ export function VisitEmkTab() {
 			/>
 
 			{/* ── ПЕЧАТНАЯ ВЕРСИЯ КАРТЫ 043/У И ДНЕВНИКА ПРИЁМА ДЛЯ А4 ── */}
-			<div id="visit-emk-print-a4" className="hidden print:block font-sans text-slate-900 bg-white p-6">
+			<div id="visit-emk-print-a4" className="print-layer hidden print:block font-sans text-slate-900 bg-white p-6">
 				{/* Шапка клиники */}
 				<div className="border-b-2 border-slate-900 pb-3 mb-4 flex items-start justify-between gap-4">
 					<div>
