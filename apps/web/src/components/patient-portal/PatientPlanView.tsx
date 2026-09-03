@@ -27,7 +27,9 @@ import {
 	CreditCard,
 	DollarSign,
 	Download,
+	Contrast,
 	ExternalLink,
+	Eye,
 	FileText,
 	Heart,
 	HelpCircle,
@@ -37,12 +39,16 @@ import {
 	Phone,
 	PhoneCall,
 	QrCode,
+	Scan,
 	Shield,
 	ShieldAlert,
 	ShieldCheck,
 	Smile,
 	Sparkles,
+	X,
 	Zap,
+	ZoomIn,
+	ZoomOut,
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
@@ -170,6 +176,46 @@ export const PATIENT_COMFORT_STANDARDS = [
 	},
 ] as const;
 
+export interface PatientDiagnosticScan {
+	readonly id: string;
+	readonly titleRu: string;
+	readonly modality: "rvg" | "optg" | "cbct";
+	readonly modalityRu: string;
+	readonly dateRu: string;
+	readonly toothFdi?: string | undefined;
+	readonly doseMicroSv: number;
+	readonly previewUrl: string;
+	readonly conclusionRu: string;
+}
+
+export const DEFAULT_PATIENT_SCANS: readonly PatientDiagnosticScan[] = [
+	{
+		id: "scan-1",
+		titleRu: "Контрольная визиография зуба 1.6",
+		modality: "rvg",
+		modalityRu: "Прицельный снимок RVG",
+		dateRu: "28.08.2026",
+		toothFdi: "16",
+		doseMicroSv: 2.0,
+		previewUrl:
+			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><rect width='200' height='200' fill='%230f172a'/><path d='M60 40 Q100 15 140 40 L130 150 Q100 180 70 150 Z' fill='%2394a3b8' opacity='0.7'/><circle cx='100' cy='85' r='18' fill='%2338bdf8' opacity='0.6'/><line x1='100' y1='85' x2='100' y2='155' stroke='%2338bdf8' stroke-width='4'/><text x='100' y='188' fill='%2338bdf8' font-size='11' font-family='sans-serif' text-anchor='middle'>RVG 1.6</text></svg>",
+		conclusionRu:
+			"Каналы запломбированы до физиологической верхушки, деструкции костной ткани не выявлено.",
+	},
+	{
+		id: "scan-2",
+		titleRu: "Панорамная ортопантомография (ОПТГ)",
+		modality: "optg",
+		modalityRu: "Панорамный снимок ОПТГ",
+		dateRu: "14.07.2026",
+		doseMicroSv: 14.0,
+		previewUrl:
+			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><rect width='200' height='200' fill='%230f172a'/><path d='M30 110 Q100 40 170 110 Q100 160 30 110 Z' fill='none' stroke='%2394a3b8' stroke-width='16' opacity='0.5'/><text x='100' y='105' fill='%23e2e8f0' font-size='12' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ОПТГ (ОБЗОР)</text><text x='100' y='125' fill='%2338bdf8' font-size='10' font-family='sans-serif' text-anchor='middle'>14.07.2026</text></svg>",
+		conclusionRu:
+			"Обзорный снимок челюстно-лицевой области: состояние периапикальных тканей стабильное.",
+	},
+];
+
 export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	plan,
 	threeTierModel,
@@ -186,6 +232,11 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	emergencyPhone = "+7 (800) 555-35-35",
 	emergencyWhatsappNumber = "79991234567",
 }) => {
+	// Diagnostic Scans State (Fast pure 2D viewer with zero lag)
+	const [selectedDiagnosticScan, setSelectedDiagnosticScan] = useState<PatientDiagnosticScan | null>(null);
+	const [scanZoom, setScanZoom] = useState<number>(1);
+	const [scanInvert, setScanInvert] = useState<boolean>(false);
+
 	// Selected Tier Tab (Basic / Standard / Premium)
 	const [selectedTierId, setSelectedTierId] = useState<"basic" | "standard" | "premium">(
 		threeTierModel?.selectedTier || "standard",
@@ -872,6 +923,151 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 				</div>
 			</div>
 
+			{/* 4.2. LIGHTWEIGHT 2D DIAGNOSTIC SCANS & X-RAY GALLERY (FAST ZERO-HANG ACCESS) */}
+			<div
+				className="pc-card diagnostic-scans-card"
+				data-testid="diagnostic-scans-card"
+				style={{
+					backgroundColor: "var(--pc-surface, #1e293b)",
+					borderRadius: "12px",
+					border: "1px solid var(--pc-border, #334155)",
+					padding: "16px",
+					display: "flex",
+					flexDirection: "column",
+					gap: "12px",
+				}}
+			>
+				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<Scan size={18} style={{ color: "var(--pc-primary, #0d9488)" }} />
+						<div>
+							<h4 style={{ margin: 0, fontSize: "15px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+								Диагностические снимки и рентген-контроль
+							</h4>
+							<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--pc-text-muted, #94a3b8)" }}>
+								Быстрый просмотр цифровых снимков плана лечения без задержек и подвисаний:
+							</p>
+						</div>
+					</div>
+					<span
+						style={{
+							fontSize: "11px",
+							fontWeight: 700,
+							color: "var(--pc-primary, #0d9488)",
+							backgroundColor: "rgba(13, 148, 136, 0.15)",
+							padding: "4px 8px",
+							borderRadius: "6px",
+							border: "1px solid rgba(13, 148, 136, 0.3)",
+						}}
+					>
+						Мгновенный 2D доступ
+					</span>
+				</div>
+
+				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px" }}>
+					{DEFAULT_PATIENT_SCANS.map((scan) => (
+						<div
+							key={scan.id}
+							style={{
+								backgroundColor: "var(--pc-bg, #0f172a)",
+								border: "1px solid var(--pc-border, #334155)",
+								borderRadius: "10px",
+								overflow: "hidden",
+								display: "flex",
+								flexDirection: "column",
+							}}
+							data-testid={`plan-scan-card-${scan.id}`}
+						>
+							<div
+								style={{
+									position: "relative",
+									height: "140px",
+									backgroundColor: "#020617",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									cursor: "pointer",
+								}}
+								onClick={() => {
+									setSelectedDiagnosticScan(scan);
+									setScanZoom(1);
+									setScanInvert(false);
+								}}
+								title="Нажмите для увеличения снимка"
+							>
+								<img
+									src={scan.previewUrl}
+									alt={scan.titleRu}
+									loading="lazy"
+									style={{
+										maxHeight: "100%",
+										maxWidth: "100%",
+										objectFit: "contain",
+									}}
+								/>
+								<span
+									style={{
+										position: "absolute",
+										top: "8px",
+										right: "8px",
+										backgroundColor: "rgba(15, 23, 42, 0.85)",
+										border: "1px solid rgba(255, 255, 255, 0.15)",
+										color: "#38bdf8",
+										fontSize: "10px",
+										fontWeight: 800,
+										padding: "2px 6px",
+										borderRadius: "4px",
+									}}
+								>
+									{scan.doseMicroSv} мкЗв
+								</span>
+							</div>
+
+							<div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+									<span style={{ fontWeight: 700, color: "var(--pc-primary, #0d9488)" }}>{scan.modalityRu}</span>
+									<span>{scan.dateRu}</span>
+								</div>
+								<strong style={{ fontSize: "13px", color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+									{scan.titleRu}
+								</strong>
+								<p style={{ margin: 0, fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", lineHeight: "1.4" }}>
+									{scan.conclusionRu}
+								</p>
+
+								<button
+									type="button"
+									onClick={() => {
+										setSelectedDiagnosticScan(scan);
+										setScanZoom(1);
+										setScanInvert(false);
+									}}
+									style={{
+										marginTop: "auto",
+										minHeight: "36px",
+										backgroundColor: "rgba(255, 255, 255, 0.05)",
+										border: "1px solid var(--pc-border, #334155)",
+										borderRadius: "6px",
+										color: "var(--pc-text-main, var(--ink, #0f172a))",
+										fontSize: "12px",
+										fontWeight: 700,
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: "6px",
+									}}
+									data-testid={`open-scan-btn-${scan.id}`}
+								>
+									<Eye size={14} style={{ color: "var(--pc-primary, #0d9488)" }} />
+									<span>Открыть снимок</span>
+								</button>
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+
 			{/* 5. STAGES LIST WITH TRANSPARENT CARDS */}
 			<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1052,6 +1248,219 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					})}
 				</div>
 			</div>
+
+			{/* 2D LIGHTWEIGHT DIAGNOSTIC SCAN VIEWER MODAL (ZERO-HANG, ZERO-3D FREEZE) */}
+			{selectedDiagnosticScan && (
+				<div
+					style={{
+						position: "fixed",
+						inset: 0,
+						zIndex: 9999,
+						backgroundColor: "rgba(0, 0, 0, 0.8)",
+						backdropFilter: "blur(4px)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						padding: "16px",
+					}}
+					role="dialog"
+					aria-modal="true"
+					data-testid="plan-scan-viewer-modal"
+				>
+					<div
+						style={{
+							backgroundColor: "var(--pc-surface, #1e293b)",
+							border: "1px solid var(--pc-border, #334155)",
+							borderRadius: "16px",
+							maxWidth: "540px",
+							width: "100%",
+							maxHeight: "90vh",
+							display: "flex",
+							flexDirection: "column",
+							overflow: "hidden",
+							boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+						}}
+					>
+						<div
+							style={{
+								padding: "12px 16px",
+								borderBottom: "1px solid var(--pc-border, #334155)",
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+							}}
+						>
+							<div>
+								<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 800, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+									{selectedDiagnosticScan.titleRu}
+								</h3>
+								<span style={{ fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)" }}>
+									{selectedDiagnosticScan.modalityRu} &bull; {selectedDiagnosticScan.dateRu} &bull; Доза: {selectedDiagnosticScan.doseMicroSv} мкЗв
+								</span>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => setSelectedDiagnosticScan(null)}
+								style={{
+									minHeight: "44px",
+									minWidth: "44px",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									background: "transparent",
+									border: "none",
+									color: "var(--pc-text-muted, #94a3b8)",
+									cursor: "pointer",
+								}}
+								aria-label="Закрыть снимок"
+								data-testid="close-scan-modal-btn"
+							>
+								<X size={20} />
+							</button>
+						</div>
+
+						{/* Quick Toolbar */}
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								padding: "8px 16px",
+								backgroundColor: "var(--pc-bg, #0f172a)",
+								borderBottom: "1px solid var(--pc-border, #334155)",
+							}}
+						>
+							<div style={{ display: "flex", gap: "6px" }}>
+								<button
+									type="button"
+									onClick={() => setScanZoom((z) => Math.min(2.5, z + 0.25))}
+									style={{
+										padding: "4px 8px",
+										minHeight: "36px",
+										borderRadius: "6px",
+										border: "1px solid var(--pc-border, #334155)",
+										backgroundColor: "var(--pc-surface, #1e293b)",
+										color: "var(--pc-text-main, var(--ink, #0f172a))",
+										fontSize: "12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "4px",
+									}}
+									title="Увеличить"
+								>
+									<ZoomIn size={14} />
+								</button>
+								<button
+									type="button"
+									onClick={() => setScanZoom((z) => Math.max(0.75, z - 0.25))}
+									style={{
+										padding: "4px 8px",
+										minHeight: "36px",
+										borderRadius: "6px",
+										border: "1px solid var(--pc-border, #334155)",
+										backgroundColor: "var(--pc-surface, #1e293b)",
+										color: "var(--pc-text-main, var(--ink, #0f172a))",
+										fontSize: "12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "4px",
+									}}
+									title="Уменьшить"
+								>
+									<ZoomOut size={14} />
+								</button>
+								<button
+									type="button"
+									onClick={() => setScanInvert((inv) => !inv)}
+									style={{
+										padding: "4px 8px",
+										minHeight: "36px",
+										borderRadius: "6px",
+										border: "1px solid var(--pc-border, #334155)",
+										backgroundColor: scanInvert ? "var(--pc-primary, #0d9488)" : "var(--pc-surface, #1e293b)",
+										color: scanInvert ? "#fff" : "var(--pc-text-main, var(--ink, #0f172a))",
+										fontSize: "12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "4px",
+									}}
+									title="Инвертировать негатив/позитив"
+								>
+									<Contrast size={14} />
+									<span>Инверсия</span>
+								</button>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => {
+									setScanZoom(1);
+									setScanInvert(false);
+								}}
+								style={{
+									padding: "4px 8px",
+									minHeight: "36px",
+									borderRadius: "6px",
+									border: "none",
+									backgroundColor: "transparent",
+									color: "var(--pc-text-muted, #94a3b8)",
+									fontSize: "11px",
+									cursor: "pointer",
+								}}
+							>
+								Сброс
+							</button>
+						</div>
+
+						{/* Image Canvas Container */}
+						<div
+							style={{
+								position: "relative",
+								backgroundColor: "#020617",
+								height: "300px",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								overflow: "hidden",
+							}}
+						>
+							<img
+								src={selectedDiagnosticScan.previewUrl}
+								alt={selectedDiagnosticScan.titleRu}
+								style={{
+									maxWidth: "100%",
+									maxHeight: "100%",
+									objectFit: "contain",
+									transform: `scale(${scanZoom})`,
+									filter: scanInvert ? "invert(1) contrast(1.3)" : "contrast(1.1)",
+									transition: "transform 0.15s ease",
+								}}
+							/>
+						</div>
+
+						{/* Conclusion */}
+						<div
+							style={{
+								padding: "12px 16px",
+								backgroundColor: "var(--pc-bg, #0f172a)",
+								borderTop: "1px solid var(--pc-border, #334155)",
+								fontSize: "12px",
+							}}
+						>
+							<strong style={{ color: "var(--pc-primary, #0d9488)", display: "block", marginBottom: "2px" }}>
+								Заключение врача-рентгенолога:
+							</strong>
+							<p style={{ margin: 0, color: "var(--pc-text-main, var(--ink, #0f172a))", lineHeight: "1.4" }}>
+								{selectedDiagnosticScan.conclusionRu}
+							</p>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

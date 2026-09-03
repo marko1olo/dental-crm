@@ -1079,7 +1079,8 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							status: "planned",
 							startsAt: startDate,
 							endsAt: endDate,
-							comment: comment || "Запись через виджет на сайте",
+							reason: "Онлайн-запись через сайт",
+							comment: comment ? `[Онлайн-запись] ${comment}` : "Онлайн-запись через виджет на сайте",
 						})
 						.returning();
 					if (!created) throw new Error("appointment_insert_failed");

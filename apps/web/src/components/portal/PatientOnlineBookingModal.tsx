@@ -657,7 +657,7 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 										/>
 									</div>
 									<div className="space-y-1">
-										<label className="text-xs font-bold text-[var(--muted,#94a3b8)]">Дата рождения:</label>
+										<label className="text-xs font-bold text-[var(--muted,#94a3b8)]">Дата рождения (необязательно):</label>
 										<input
 											type="date"
 											value={patientBirthDate}

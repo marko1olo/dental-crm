@@ -318,14 +318,44 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 				{/* Body Form */}
 				<div className="flex-1 overflow-y-auto p-6 space-y-5">
+					{/* Online Booking Notice Banner & 1-Click Confirmation */}
+					{Boolean(
+						(appointment?.comment && /онлайн|виджет|online|сайт/i.test(appointment.comment)) ||
+						(appointment?.reason && /онлайн|виджет|online|сайт/i.test(appointment.reason))
+					) && (
+						<div
+							className="p-3.5 rounded-xl bg-cyan-500/15 border border-cyan-500/40 text-cyan-950 dark:text-cyan-100 flex items-center justify-between gap-3 text-xs"
+							data-testid="modal-online-booking-banner"
+						>
+							<div className="flex items-center gap-2">
+								<span className="font-bold text-sm">🌐 Онлайн-запись через сайт</span>
+								<span className="text-[var(--muted)]">Слот забронирован пациентом самостоятельно</span>
+							</div>
+							{status === "planned" && (
+								<button
+									type="button"
+									onClick={() => {
+										setStatus("confirmed");
+									}}
+									className="px-3 py-1.5 rounded-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+									title="Перевести статус в «Подтвержден» в 1 клик"
+									data-testid="modal-confirm-online-booking-btn"
+								>
+									<Check size={14} />
+									<span>Подтвердить запись</span>
+								</button>
+							)}
+						</div>
+					)}
+
 					{/* Collision warning */}
 					{collision.hasCollision && (
 						<div
-							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2"
+							className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-2"
 							role="alert"
 						>
-							<AlertTriangle size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
-							<span>⛔ {collision.message}</span>
+							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							<span>⚠️ {collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
 						</div>
 					)}
 
@@ -612,11 +642,23 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					<button
 						type="button"
 						onClick={() => void handleSave()}
-						disabled={isSaving || collision.hasCollision}
-						className="flex-1 min-h-[48px] px-6 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+						disabled={isSaving}
+						className={`flex-1 min-h-[48px] px-6 text-[var(--on-teal)] font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
+							collision.hasCollision
+								? "bg-amber-600 hover:bg-amber-700 text-white"
+								: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95"
+						}`}
 					>
 						<Check size={18} />
-						<span>{isSaving ? "Сохраняю…" : isNewAppointment ? "Записать на приём" : "Сохранить изменения"}</span>
+						<span>
+							{isSaving
+								? "Сохраняю…"
+								: collision.hasCollision
+									? "Записать с овербукингом (острая боль)"
+									: isNewAppointment
+										? "Записать на приём"
+										: "Сохранить изменения"}
+						</span>
 					</button>
 				</div>
 			</div>

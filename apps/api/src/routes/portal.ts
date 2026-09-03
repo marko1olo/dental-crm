@@ -1,5 +1,5 @@
 import { createHash, randomInt } from "node:crypto";
-import { and, desc, eq, gte, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from "fastify";
 import {
 	namedDevelopmentModeActive,
@@ -24,6 +24,7 @@ import {
 	treatmentPlans,
 	treatmentPlanStages,
 	visitDiaries,
+	xrayScans,
 } from "../db/schema.js";
 import { SberbankClient } from "../services/sberbankClient.js";
 import {
@@ -1965,8 +1966,27 @@ export const portalRoutes: FastifyPluginAsync = async (
 				],
 			};
 
+			let planItems: Array<typeof treatmentPlanItemsNew.$inferSelect> = [];
+			if (dbPlans.length > 0) {
+				const planIds = dbPlans.map((p) => p.id);
+				planItems = await db
+					.select()
+					.from(treatmentPlanItemsNew)
+					.where(
+						and(
+							eq(treatmentPlanItemsNew.organizationId, auth.organizationId),
+							inArray(treatmentPlanItemsNew.planId, planIds),
+						),
+					);
+			}
+
+			const enrichedPlans = dbPlans.map((p) => ({
+				...p,
+				items: planItems.filter((it) => it.planId === p.id),
+			}));
+
 			return {
-				plans: dbPlans,
+				plans: enrichedPlans,
 				threeTierModel,
 			};
 		});
@@ -2356,6 +2376,65 @@ export const portalRoutes: FastifyPluginAsync = async (
 				status: "paid",
 				amountRub: totalAmount,
 				fiscalReceipt: null,
+			};
+		});
+	});
+
+	// 13. Get Patient X-Rays and Diagnostic Scans (Fast 2D Lightweight Access)
+	server.get("/imaging", async (request, reply) => {
+		const auth = extractPortalPatient(request);
+		if (!auth) {
+			reply.status(401);
+			return { error: "Unauthorized" };
+		}
+
+		return withTenantCtx(auth.organizationId, async () => {
+			const scans = await db
+				.select({
+					id: xrayScans.id,
+					kind: xrayScans.kind,
+					toothCode: xrayScans.toothCode,
+					imageDataUri: xrayScans.imageDataUri,
+					storagePath: xrayScans.storagePath,
+					mimeType: xrayScans.mimeType,
+					aiSummary: xrayScans.aiSummary,
+					notes: xrayScans.notes,
+					status: xrayScans.status,
+					capturedAt: xrayScans.capturedAt,
+				})
+				.from(xrayScans)
+				.where(
+					and(
+						eq(xrayScans.organizationId, auth.organizationId),
+						eq(xrayScans.patientId, auth.patientId),
+					),
+				)
+				.orderBy(desc(xrayScans.capturedAt));
+
+			return {
+				success: true,
+				scans: scans.map((s) => ({
+					id: s.id,
+					studyDateIso: s.capturedAt.toISOString().slice(0, 10),
+					modality: s.kind || "rvg",
+					modalityLabel:
+						s.kind === "optg"
+							? "Панорамный снимок ОПТГ"
+							: s.kind === "cbct"
+								? "3D КТ (2D срез)"
+								: "Прицельная визиография RVG",
+					toothFdi: s.toothCode ? [s.toothCode] : [],
+					effectiveDoseMicrosv:
+						s.kind === "optg" ? 15.0 : s.kind === "cbct" ? 45.0 : 3.0,
+					imageUrl:
+						s.imageDataUri ||
+						(s.storagePath
+							? `/api/files/download?path=${encodeURIComponent(s.storagePath)}`
+							: ""),
+					diagnosticConclusion:
+						s.aiSummary || s.notes || "Снимок без патологических изменений",
+					capturedAtIso: s.capturedAt.toISOString(),
+				})),
 			};
 		});
 	});
