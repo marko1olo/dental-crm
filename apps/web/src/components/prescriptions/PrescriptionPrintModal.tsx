@@ -858,10 +858,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 														e.stopPropagation();
 														handleApplyAndPrint(preset);
 													}}
-													className="flex items-center justify-center self-center px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shrink-0 transition-colors shadow-xs gap-1 cursor-pointer min-h-[36px]"
+													className="flex items-center justify-center self-center px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shrink-0 transition-colors shadow-xs gap-1.5 cursor-pointer min-h-[44px] min-w-[44px]"
 													data-testid={`btn-fast-print-${preset.id}`}
 												>
-													<Printer className="w-3.5 h-3.5" />
+													<Printer className="w-4 h-4" />
 													<span className="hidden xl:inline">Печать</span>
 												</button>
 											</div>
