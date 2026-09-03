@@ -48,6 +48,7 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 				name: `Финансовая Клиника Тест-${Date.now()}`,
 			})
 			.returning();
+		assert.ok(org);
 
 		const [user] = await db
 			.insert(users)
@@ -58,6 +59,7 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 				email: `cashier-${Date.now()}@dental.ru`,
 			})
 			.returning();
+		assert.ok(user);
 
 		const [patient] = await db
 			.insert(patients)
@@ -67,6 +69,7 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 				phone: "+79991234567",
 			})
 			.returning();
+		assert.ok(patient);
 
 		const headers = createStaffHeaders(org.id, user.id, "doctor");
 
@@ -208,6 +211,7 @@ describe("Cash Box V2, Installments & Lab Orders Financial Rails", () => {
 				status: "received",
 			})
 			.returning();
+		assert.ok(labOrder);
 
 		// Put some funds into account box to pay lab
 		await app.inject({

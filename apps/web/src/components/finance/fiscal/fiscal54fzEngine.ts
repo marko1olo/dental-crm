@@ -1047,6 +1047,8 @@ export type LoyaltyDiscountPreset =
 	| "pensioner_10"
 	| "family_5"
 	| "employee_20"
+	| "warranty_100"
+	| "colleague_100"
 	| "manual_percent"
 	| "manual_rub"
 	| "none";
@@ -1062,8 +1064,10 @@ export const LOYALTY_DISCOUNT_PRESETS: readonly LoyaltyDiscountRule[] = [
 	{ id: "pensioner_10", label: "Пенсионная 10%", percent: 10, description: "Скидка 10% для пенсионеров и ветеранов" },
 	{ id: "family_5", label: "Семейная 5%", percent: 5, description: "Скидка 5% по семейной программе" },
 	{ id: "employee_20", label: "Сотрудник 20%", percent: 20, description: "Скидка 20% для сотрудников клиники и их родственников" },
-	{ id: "manual_percent", label: "Ручная %", description: "Индивидуальная процентная скидка" },
-	{ id: "manual_rub", label: "Ручная ₽", description: "Индивидуальная фиксированная скидка в рублях" },
+	{ id: "warranty_100", label: "Гарантийная переделка 100%", percent: 100, description: "100% гарантийная переделка клинического этапа врачом без админ-паролей" },
+	{ id: "colleague_100", label: "Персонал / Коллеги 100%", percent: 100, description: "100% скидка для медицинского персонала клиники и коллег" },
+	{ id: "manual_percent", label: "Ручная %", description: "Индивидуальная процентная скидка врача (до 100%)" },
+	{ id: "manual_rub", label: "Ручная ₽", description: "Индивидуальная фиксированная скидка в рублях (до 100%)" },
 	{ id: "none", label: "Без скидки", percent: 0, description: "Полная стоимость без скидки" },
 ];
 
@@ -1156,6 +1160,8 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.05);
 	} else if (params.preset === "employee_20") {
 		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.20);
+	} else if (params.preset === "warranty_100" || params.preset === "colleague_100") {
+		targetDiscountKopecks = totalGrossKopecks;
 	} else if (params.preset === "manual_percent") {
 		const pct = Math.max(0, Math.min(100, params.customPercent ?? 0));
 		targetDiscountKopecks = Math.round((totalGrossKopecks * pct) / 100);

@@ -169,7 +169,6 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 
 	const handleVoidOrCancel = async () => {
 		if (!lastResponse?.rrn && !orderId) return;
-		if (!window.confirm("Отменить транзакцию (Reversal / Void) в процессинге Сбербанка?")) return;
 
 		try {
 			await fetch("/api/payments/sberbank/pos/void", {

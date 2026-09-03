@@ -431,11 +431,13 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							data-testid="select-loyalty-discount"
 						>
 							<option value="none">Без скидки</option>
+							<option value="warranty_100">Гарантийная переделка 100% (Врач)</option>
+							<option value="colleague_100">Персонал / Коллеги 100%</option>
 							<option value="pensioner_10">Пенсионная 10%</option>
 							<option value="family_5">Семейная 5%</option>
 							<option value="employee_20">Сотрудник 20%</option>
-							<option value="manual_percent">Своя скидка (%)</option>
-							<option value="manual_rub">Сумма скидки (₽)</option>
+							<option value="manual_percent">Своя скидка (%) до 100%</option>
+							<option value="manual_rub">Сумма скидки (₽) до 100%</option>
 						</select>
 					</div>
 

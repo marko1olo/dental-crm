@@ -195,7 +195,10 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	};
 
 	const handleCreateFamily = async () => {
-		if (!newFamilyName.trim()) {
+		const effectiveFamilyName =
+			newFamilyName.trim() ||
+			(patientName ? `Семья ${patientName}` : "");
+		if (!effectiveFamilyName) {
 			showToast("Введите название семьи", "error");
 			return;
 		}
@@ -213,7 +216,7 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 					...denteAdminSecretRequestHeaders(),
 				},
 				body: JSON.stringify({
-					name: newFamilyName.trim(),
+					name: effectiveFamilyName,
 					headPatientId: patientId,
 				}),
 			});
@@ -349,13 +352,6 @@ export const PatientFamilyCard: React.FC<PatientFamilyCardProps> = ({
 	 * СТАЛО: PUT familyGroupId: null + проверка familyIdOfPatient === null.
 	 */
 	const handleUnlinkFamily = async () => {
-		if (
-			!window.confirm(
-				"Отвязать пациента от семейной группы? Общий счёт семьи останется, но этот пациент больше не сможет оплачивать с него лечение.",
-			)
-		) {
-			return;
-		}
 		setLoading(true);
 		try {
 			const res = await fetch(`/api/patients/${patientId}`, {

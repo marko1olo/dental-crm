@@ -790,6 +790,18 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		const resEmp = distributeLoyaltyDiscountAcrossItems(items, { preset: "employee_20" });
 		assert.equal(resEmp.totalDiscountRub, 1800);
 		assert.equal(resEmp.totalNetRub, 7200);
+
+		// 4. Warranty Rework 100% (Discount = 9000 ₽, Net = 0 ₽)
+		const resWarranty = distributeLoyaltyDiscountAcrossItems(items, { preset: "warranty_100" });
+		assert.equal(resWarranty.totalDiscountRub, 9000);
+		assert.equal(resWarranty.totalNetRub, 0);
+		assert.equal(resWarranty.effectivePercent, 100);
+
+		// 5. Staff / Colleague 100% (Discount = 9000 ₽, Net = 0 ₽)
+		const resColleague = distributeLoyaltyDiscountAcrossItems(items, { preset: "colleague_100" });
+		assert.equal(resColleague.totalDiscountRub, 9000);
+		assert.equal(resColleague.totalNetRub, 0);
+		assert.equal(resColleague.effectivePercent, 100);
 	});
 
 	it("1.18 distributeLoyaltyDiscountAcrossItems — Bounded capping and negative value protection", () => {

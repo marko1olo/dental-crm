@@ -238,13 +238,6 @@ export function SberbankTerminalPaymentModal({
 
 	const handleClose = () => {
 		if (status === "polling" && orderId) {
-			if (
-				!window.confirm(
-					"Оплата еще не подтверждена. Отменить транзакцию на терминале Сбербанк и закрыть окно?",
-				)
-			) {
-				return;
-			}
 			void handleCancelOrReconcile(orderId);
 			return;
 		}
