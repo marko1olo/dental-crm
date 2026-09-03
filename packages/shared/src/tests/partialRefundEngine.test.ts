@@ -18,7 +18,7 @@ test("calculatePartialRefund: full position refund preserves exact remainder wit
 		patientName: "Пациент Тестовый",
 		cashierFullName: "Кассир Анна",
 		paymentMethod: "card",
-		reasonCategory: "patient_request",
+		reasonCategory: "patient_refusal",
 		items: [
 			{
 				id: "item-1",

@@ -50,6 +50,8 @@ import registerEgiszRoutes from "./routes/egisz.js";
 import { registerFilesRoutes } from "./routes/files.js";
 import { registerExpensesRoutes } from "./routes/expenses.js";
 import { registerCashboxV2Routes } from "./routes/cashbox_v2.js";
+import { registerCrmLeakDetectorRoutes } from "./routes/crmLeakDetector.js";
+import { registerFinancialPnlRoutes } from "./routes/financialPnl.js";
 import { registerPatientRelationshipsRoutes } from "./routes/patientRelationships.js";
 import { registerFamilyFinanceRoutes } from "./routes/finance_family.js";
 import { registerHealthRoutes } from "./routes/health.js";
@@ -774,6 +776,8 @@ export async function createDenteApiApp(
 	await app.register(patientPortalRoutes, { prefix: "/api/portal" });
 	await app.register(registerExpensesRoutes);
 	await registerCashboxV2Routes(app);
+	await registerCrmLeakDetectorRoutes(app);
+	await registerFinancialPnlRoutes(app);
 	await registerPatientRelationshipsRoutes(app);
 	await app.register(registerPublicEstimatesRoutes);
 	await app.register(registerPublicBookingRoutes, {

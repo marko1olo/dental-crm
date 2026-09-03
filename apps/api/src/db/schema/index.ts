@@ -17,3 +17,4 @@ export * from "./aiTelemetry.js";
 export * from "./documents_v2.js";
 export * from "./outpatientCore.js";
 export * from "./finance_v2.js";
+export * from "./crm_leak_detector.js";

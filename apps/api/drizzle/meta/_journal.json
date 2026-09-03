@@ -428,6 +428,20 @@
       "when": 1787400015000,
       "tag": "0193_patient_archive_reasons_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1787400020000,
+      "tag": "0198_stock_warehouses_fefo_batches_and_bom",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1787400021000,
+      "tag": "0199_crm_leak_detector_leads",
+      "breakpoints": true
     }
   ]
 }
