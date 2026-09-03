@@ -26,14 +26,16 @@ import {
 	Users,
 	Zap,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { usePatientStore } from "../../store/patientStore";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { showToast } from "../GlobalToast";
+import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
+import { OrthodonticVisitProtocolWidget } from "../orthodontics/OrthodonticVisitProtocolWidget";
 
 interface OrthoStage {
 	number: number;
@@ -54,7 +56,7 @@ interface SubscriptionPayment {
 }
 
 export function OrthodonticPerspectiveView() {
-	const { dashboard } = useAppLogicContext();
+	const { dashboard, auth, loadDashboard } = useAppLogicContext();
 	const setPerspective = usePerspectiveStore((s) => s.setPerspective);
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
@@ -68,21 +70,90 @@ export function OrthodonticPerspectiveView() {
 		return dashboard.patients[0] ?? null;
 	}, [dashboard?.patients, selectedPatientId]);
 
-	// Ortho aligner state
-	const [currentAligner, setCurrentAligner] = useState<number>(14);
-	const [totalAligners, setTotalAligners] = useState<number>(36);
+	// Parse ortho data from patient administrative profile
+	const patientOrtho = useMemo(() => {
+		const raw = activePatient?.administrativeProfile?.orthodonticProgress;
+		if (!raw) return null;
+		try {
+			if (typeof raw === "string") return JSON.parse(raw);
+			if (typeof raw === "object") return raw;
+		} catch {
+			return null;
+		}
+		return null;
+	}, [activePatient?.administrativeProfile?.orthodonticProgress]);
+
+	// Ortho aligner & treatment state
+	const [currentAligner, setCurrentAligner] = useState<number>(() => Number(patientOrtho?.currentAligner) || 14);
+	const [totalAligners, setTotalAligners] = useState<number>(() => Number(patientOrtho?.totalAligners) || 36);
+	const [currentStageNumber, setCurrentStageNumber] = useState<number>(() => Number(patientOrtho?.currentStage) || 3);
+	const [currentArchwire, setCurrentArchwire] = useState<string>(() => String(patientOrtho?.archwire || "CuNiTi .016\" (ВЧ+НЧ)"));
 	const [sliderPosition, setSliderPosition] = useState<number>(50);
 	const [activeAngle, setActiveAngle] = useState<"frontal" | "occlusal_up" | "occlusal_low" | "profile">("frontal");
 	const [isCephModalOpen, setIsCephModalOpen] = useState<boolean>(false);
+	const [isOrthoProtocolOpen, setIsOrthoProtocolOpen] = useState<boolean>(false);
+	const [isPhotoProtocolOpen, setIsPhotoProtocolOpen] = useState<boolean>(false);
+	const [photoUrlsByAngle, setPhotoUrlsByAngle] = useState<Record<string, { beforeUrl?: string; afterUrl?: string }>>({});
 
-	// Clinical Timeline Stages
+	// Synchronize state when active patient changes
+	useEffect(() => {
+		if (patientOrtho) {
+			if (typeof patientOrtho.currentAligner === "number") setCurrentAligner(patientOrtho.currentAligner);
+			if (typeof patientOrtho.totalAligners === "number") setTotalAligners(patientOrtho.totalAligners);
+			if (typeof patientOrtho.currentStage === "number") setCurrentStageNumber(patientOrtho.currentStage);
+			if (typeof patientOrtho.archwire === "string") setCurrentArchwire(patientOrtho.archwire);
+		}
+	}, [patientOrtho]);
+
+	const saveOrthoProgress = async (updates: {
+		currentAligner?: number;
+		totalAligners?: number;
+		currentStage?: number;
+		archwire?: string;
+		lastActionSummary?: string;
+	}) => {
+		if (!activePatient?.id) return;
+		try {
+			const nextAligner = updates.currentAligner ?? currentAligner;
+			const nextTotal = updates.totalAligners ?? totalAligners;
+			const nextStage = updates.currentStage ?? currentStageNumber;
+			const nextArchwire = updates.archwire ?? currentArchwire;
+			const payload = {
+				currentAligner: nextAligner,
+				totalAligners: nextTotal,
+				currentStage: nextStage,
+				startDate: patientOrtho?.startDate || "2026-01-12",
+				archwire: nextArchwire,
+				lastActionDate: new Date().toISOString(),
+				lastActionSummary: updates.lastActionSummary || "Обновление ортодонтического статуса",
+			};
+			const existingProfile = activePatient.administrativeProfile || {};
+			const res = await fetch(`/api/patients/${activePatient.id}/administrative-profile`, {
+				method: "PUT",
+				headers: auth?.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) ?? {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					...existingProfile,
+					orthodonticProgress: JSON.stringify(payload),
+				}),
+			});
+			if (res.ok) {
+				await loadDashboard?.();
+			}
+		} catch (e) {
+			console.error("[OrthodonticPerspectiveView save]", e);
+		}
+	};
+
+	// Clinical Timeline Stages (dynamically reflects currentStageNumber, free transition with zero 8-photo blockers)
 	const stages: OrthoStage[] = useMemo(
 		() => [
 			{
 				number: 1,
 				title: "Диагностика и 3D-сетап",
 				description: "КЛКТ, расчет ТРГ в боковой проекции, интраоральное 3D-сканирование челюстей",
-				status: "completed",
+				status: currentStageNumber > 1 ? "completed" : currentStageNumber === 1 ? "active" : "planned",
 				date: "12.01.2026",
 				alignerRange: "Диагностика",
 			},
@@ -90,7 +161,7 @@ export function OrthodonticPerspectiveView() {
 				number: 2,
 				title: "Фиксация аттачментов & Каппы 1–10",
 				description: "Установка композитных аттачментов, сепарация контактных пунктов, выдача первого сета",
-				status: "completed",
+				status: currentStageNumber > 2 ? "completed" : currentStageNumber === 2 ? "active" : "planned",
 				date: "26.01.2026",
 				alignerRange: "Каппы 1–10",
 			},
@@ -98,7 +169,7 @@ export function OrthodonticPerspectiveView() {
 				number: 3,
 				title: "Активация & Каппы 11–24",
 				description: "Контроль трекинга зубов, проверка окклюзионных контактов, выдача второго сета элайнеров",
-				status: "active",
+				status: currentStageNumber > 3 ? "completed" : currentStageNumber === 3 ? "active" : "planned",
 				date: "15.04.2026",
 				alignerRange: "Каппы 11–24",
 			},
@@ -106,7 +177,7 @@ export function OrthodonticPerspectiveView() {
 				number: 4,
 				title: "Финальная детализация & Каппы 25–36",
 				description: "Юстировка торка резцов, коррекция микро-ротаций",
-				status: "planned",
+				status: currentStageNumber > 4 ? "completed" : currentStageNumber === 4 ? "active" : "planned",
 				date: "20.08.2026",
 				alignerRange: "Каппы 25–36",
 			},
@@ -114,12 +185,12 @@ export function OrthodonticPerspectiveView() {
 				number: 5,
 				title: "Снятие & Ретенционный период",
 				description: "Снятие аттачментов, фиксация несъемных проволочных ретейнеров, ночные ретенционные каппы",
-				status: "planned",
+				status: currentStageNumber >= 5 ? "active" : "planned",
 				date: "10.12.2026",
 				alignerRange: "Ретенция",
 			},
 		],
-		[],
+		[currentStageNumber],
 	);
 
 	// Subscription & Installment Ledger
@@ -173,16 +244,74 @@ export function OrthodonticPerspectiveView() {
 
 	const handleNextAligner = () => {
 		if (currentAligner < totalAligners) {
-			setCurrentAligner((prev) => prev + 1);
-			showToast(`Переход на каппу №${currentAligner + 1}`, "success");
+			const next = currentAligner + 1;
+			setCurrentAligner(next);
+			showToast(`Переход на каппу №${next}`, "success");
+			void saveOrthoProgress({ currentAligner: next, lastActionSummary: `Переход на каппу №${next}` });
 		}
 	};
 
 	const handlePrevAligner = () => {
 		if (currentAligner > 1) {
-			setCurrentAligner((prev) => prev - 1);
-			showToast(`Возврат к каппе №${currentAligner - 1}`, "info");
+			const prev = currentAligner - 1;
+			setCurrentAligner(prev);
+			showToast(`Возврат к каппе №${prev}`, "info");
+			void saveOrthoProgress({ currentAligner: prev, lastActionSummary: `Возврат к каппе №${prev}` });
 		}
+	};
+
+	const handleIssueSet = (count: number, days: number) => {
+		const fromAligner = currentAligner;
+		const next = Math.min(totalAligners, currentAligner + count);
+		setCurrentAligner(next);
+		showToast(`Выдан сет элайнеров №${fromAligner}–${next} (+${days} дн.)`, "success");
+		void saveOrthoProgress({
+			currentAligner: next,
+			lastActionSummary: `Выдан сет элайнеров №${fromAligner}–${next} (+${days} дн.)`,
+		});
+	};
+
+	const handleQuickWireChange = (material: string, section: string, arch: string) => {
+		const wireStr = `${material} ${section}" (${arch})`;
+		setCurrentArchwire(wireStr);
+		showToast(`Дуга ${wireStr} зафиксирована в карте`, "success");
+		void saveOrthoProgress({
+			archwire: wireStr,
+			lastActionSummary: `Смена дуги: ${wireStr}`,
+		});
+	};
+
+	const handleQuickLigatureActivate = () => {
+		showToast("Активация лигатур и замков брекет-системы выполнена", "success");
+		void saveOrthoProgress({
+			lastActionSummary: "Активация лигатур и замков брекет-системы",
+		});
+	};
+
+	const handleAdvanceStage = (stageNum: number) => {
+		setCurrentStageNumber(stageNum);
+		showToast(`Переход на клинический этап ${stageNum} выполнен`, "success");
+		void saveOrthoProgress({
+			currentStage: stageNum,
+			lastActionSummary: `Переход на этап ${stageNum}`,
+		});
+	};
+
+	const handlePhotoUpload = (angle: string, type: "before" | "after", file?: File) => {
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const url = e.target?.result as string;
+			setPhotoUrlsByAngle((prev) => ({
+				...prev,
+				[angle]: {
+					...prev[angle],
+					[type === "before" ? "beforeUrl" : "afterUrl"]: url,
+				},
+			}));
+			showToast(`Снимок «${type === "before" ? "До" : "После"}» загружен`, "success");
+		};
+		reader.readAsDataURL(file);
 	};
 
 	return (
@@ -220,8 +349,19 @@ export function OrthodonticPerspectiveView() {
 					</div>
 				</div>
 
-				{/* Top Right Actions: TRG Analysis & Patient Selector */}
+				{/* Top Right Actions: TRG Analysis, Ortho Protocol & Patient Selector */}
 				<div className="flex items-center gap-3 flex-wrap">
+					<button
+						type="button"
+						onClick={() => setIsOrthoProtocolOpen(true)}
+						data-testid="open-ortho-protocol-btn"
+						className="min-h-[48px] px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center gap-2 shadow-md shadow-amber-500/20 active:scale-95 transition-all text-sm cursor-pointer border border-amber-600/30"
+						title="Орто-протокол: выбор брекетов (0.018/0.022), дуг (NiTi/CuNiTi/SS/TMA), сечений, эластиков и вставка в карту 043/у в 1 клик"
+					>
+						<Sparkles size={18} />
+						<span>Орто-протокол (Брекеты & Дуги)</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={() => setIsCephModalOpen(true)}
@@ -301,6 +441,51 @@ export function OrthodonticPerspectiveView() {
 							</div>
 						</div>
 
+						{/* 1-Click Clinical Quick Actions */}
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<button
+								type="button"
+								onClick={() => handleIssueSet(2, 14)}
+								disabled={currentAligner >= totalAligners}
+								className="min-h-[42px] px-3 py-2 rounded-xl bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-teal-200 dark:border-teal-800/60 cursor-pointer active:scale-95 transition-all shadow-2xs"
+								title="Выдать сет из 2 капп на 14 дней"
+							>
+								<Zap size={15} className="text-teal-600 dark:text-teal-400" />
+								<span>Сет 2 каппы (+14 дн.)</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => handleIssueSet(4, 28)}
+								disabled={currentAligner >= totalAligners}
+								className="min-h-[42px] px-3 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1.5 border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
+								title="Выдать сет из 4 капп на 28 дней"
+							>
+								<Zap size={15} className="text-blue-500" />
+								<span>Сет 4 каппы (+28 дн.)</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => handleQuickWireChange("CuNiTi", ".016", "ВЧ+НЧ")}
+								className="min-h-[42px] px-3 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1.5 border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
+								title="Зафиксировать смену дуги"
+							>
+								<RotateCw size={15} className="text-indigo-500" />
+								<span>Смена дуги</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={handleQuickLigatureActivate}
+								className="min-h-[42px] px-3 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1.5 border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
+								title="Зафиксировать активацию лигатур"
+							>
+								<Sparkles size={15} className="text-amber-500" />
+								<span>Активация</span>
+							</button>
+						</div>
+
 						{/* Progress Bar */}
 						<div className="h-3 bg-[var(--surface-muted,#e2e8f0)] dark:bg-slate-800 rounded-full overflow-hidden mb-2">
 							<motion.div
@@ -368,9 +553,32 @@ export function OrthodonticPerspectiveView() {
 													{stg.alignerRange}
 												</span>
 												{isActive && (
-													<span className="text-[10px] uppercase font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] px-2 py-0.5 rounded border border-[var(--teal,var(--brand-primary))]/30">
-														Текущий этап
-													</span>
+													<>
+														<span className="text-[10px] uppercase font-bold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] px-2 py-0.5 rounded border border-[var(--teal,var(--brand-primary))]/30">
+															Текущий этап
+														</span>
+														{stg.number < 5 && (
+															<button
+																type="button"
+																onClick={() => handleAdvanceStage(stg.number + 1)}
+																className="text-[11px] font-bold text-white bg-[var(--teal,var(--brand-primary))] hover:brightness-110 flex items-center gap-1 cursor-pointer px-2 py-0.5 rounded-lg shadow-2xs active:scale-95 transition-all"
+																title="Завершить текущий этап и перейти к следующему"
+															>
+																<CheckCircle2 size={12} />
+																<span>Завершить этап & перейти к #{stg.number + 1}</span>
+															</button>
+														)}
+													</>
+												)}
+												{!isActive && !isCompleted && (
+													<button
+														type="button"
+														onClick={() => handleAdvanceStage(stg.number)}
+														className="text-[11px] font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 px-2 py-0.5 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer active:scale-95 transition-all"
+														title="Переключиться на этот этап"
+													>
+														Перейти к этапу
+													</button>
 												)}
 												{stg.number === 1 && (
 													<button
@@ -428,100 +636,100 @@ export function OrthodonticPerspectiveView() {
 							))}
 						</div>
 
-						{/* Interactive Split View (Vector Dental Arch Graphic) */}
+						{/* Interactive Split View (Real Clinical Photos or Honest Upload Dropzone) */}
 						<div className="relative h-60 w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center">
-							{/* Dental Arch Graphic (Before vs After) */}
-							<div className="absolute inset-0 flex">
-								{/* Left Side: Before */}
-								<div
-									style={{ width: `${sliderPosition}%` }}
-									className="h-full bg-slate-900 border-r-2 border-[var(--teal,var(--brand-primary))] overflow-hidden relative"
-								>
-									<div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-										<span className="text-xs font-bold text-rose-300 bg-rose-950/90 px-2.5 py-0.5 rounded border border-rose-500/40 mb-2">
-											До лечения (Скученность)
+							{photoUrlsByAngle[activeAngle]?.beforeUrl && photoUrlsByAngle[activeAngle]?.afterUrl ? (
+								<>
+									{/* Left Side: Before */}
+									<div
+										style={{ width: `${sliderPosition}%` }}
+										className="h-full border-r-2 border-[var(--teal,var(--brand-primary))] overflow-hidden relative"
+									>
+										<img
+											src={photoUrlsByAngle[activeAngle].beforeUrl}
+											alt="Фото До лечения"
+											className="absolute inset-0 w-full h-full object-cover"
+										/>
+										<span className="absolute top-2 left-2 text-[10px] font-bold text-rose-300 bg-rose-950/90 px-2 py-0.5 rounded border border-rose-500/40 z-10">
+											До лечения
 										</span>
-										{/* Stylized Arch Curve */}
-										<svg width="140" height="100" viewBox="0 0 140 100" aria-label="Схема до лечения">
-											<path
-												d="M 20 90 Q 25 20, 70 20 Q 115 20, 120 90"
-												fill="none"
-												stroke="var(--bad-fg, #f43f5e)"
-												strokeWidth="5"
-												strokeDasharray="6 4"
+									</div>
+
+									{/* Right Side: After */}
+									<div className="flex-1 h-full overflow-hidden relative">
+										<img
+											src={photoUrlsByAngle[activeAngle].afterUrl}
+											alt="Фото Текущий статус"
+											className="absolute inset-0 w-full h-full object-cover"
+										/>
+										<span className="absolute top-2 right-2 text-[10px] font-bold text-emerald-300 bg-emerald-950/90 px-2 py-0.5 rounded border border-emerald-500/40 z-10">
+											Текущий статус
+										</span>
+									</div>
+
+									{/* Slider Thumb Control */}
+									<input
+										type="range"
+										min="0"
+										max="100"
+										value={sliderPosition}
+										onChange={(e) => setSliderPosition(Number(e.target.value))}
+										aria-label="Слайдер сравнения до и после"
+										className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+									/>
+									<div
+										style={{ left: `${sliderPosition}%` }}
+										className="absolute top-0 bottom-0 w-1 bg-[var(--teal,var(--brand-primary))] z-10 pointer-events-none flex items-center justify-center"
+									>
+										<div className="w-8 h-8 rounded-full bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shadow-lg border-2 border-white">
+											<Sliders size={14} />
+										</div>
+									</div>
+								</>
+							) : (
+								<div className="flex flex-col items-center justify-center p-4 text-center z-10">
+									<Camera size={32} className="text-slate-500 mb-2" />
+									<span className="text-xs font-bold text-slate-200">
+										Фотографии ракурса «{activeAngle === "frontal" ? "Фас" : activeAngle === "occlusal_up" ? "Верх" : activeAngle === "occlusal_low" ? "Низ" : "Профиль"}»
+									</span>
+									<span className="text-[11px] text-slate-400 mt-1 max-w-xs">
+										Загрузите снимки для сплит-сравнения динамики или откройте фотопротокол
+									</span>
+									<div className="flex items-center gap-2 mt-3 flex-wrap justify-center">
+										<label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all">
+											<Upload size={13} />
+											<span>Снимок «До»</span>
+											<input
+												type="file"
+												accept="image/*"
+												className="hidden"
+												onChange={(e) => handlePhotoUpload(activeAngle, "before", e.target.files?.[0])}
 											/>
-											{/* Individual crowded teeth points */}
-											{[
-												{ cx: 25, cy: 80 },
-												{ cx: 32, cy: 55 },
-												{ cx: 48, cy: 30 },
-												{ cx: 65, cy: 22 },
-												{ cx: 78, cy: 26 },
-												{ cx: 95, cy: 35 },
-												{ cx: 110, cy: 60 },
-												{ cx: 116, cy: 82 },
-											].map((pt, i) => (
-												<circle key={i} cx={pt.cx} cy={pt.cy} r="4" fill="var(--bad-fg, #fb7185)" />
-											))}
-										</svg>
+										</label>
+										<label className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all">
+											<Upload size={13} />
+											<span>Снимок «После»</span>
+											<input
+												type="file"
+												accept="image/*"
+												className="hidden"
+												onChange={(e) => handlePhotoUpload(activeAngle, "after", e.target.files?.[0])}
+											/>
+										</label>
 									</div>
 								</div>
-
-								{/* Right Side: After */}
-								<div className="flex-1 h-full bg-slate-950 overflow-hidden relative">
-									<div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-										<span className="text-xs font-bold text-emerald-300 bg-emerald-950/90 px-2.5 py-0.5 rounded border border-emerald-500/40 mb-2">
-											Прогноз / Результат
-										</span>
-										{/* Stylized Perfect Arch */}
-										<svg width="140" height="100" viewBox="0 0 140 100" aria-label="Схема результата">
-											<path
-												d="M 20 90 Q 30 15, 70 15 Q 110 15, 120 90"
-												fill="none"
-												stroke="var(--ok-fg, #10b981)"
-												strokeWidth="5"
-											/>
-											{/* Harmonious teeth points */}
-											{[
-												{ cx: 22, cy: 85 },
-												{ cx: 30, cy: 60 },
-												{ cx: 45, cy: 35 },
-												{ cx: 60, cy: 20 },
-												{ cx: 80, cy: 20 },
-												{ cx: 95, cy: 35 },
-												{ cx: 110, cy: 60 },
-												{ cx: 118, cy: 85 },
-											].map((pt, i) => (
-												<circle key={i} cx={pt.cx} cy={pt.cy} r="4" fill="var(--ok-fg, #34d399)" />
-											))}
-										</svg>
-									</div>
-								</div>
-							</div>
-
-							{/* Slider Thumb Control */}
-							<input
-								type="range"
-								min="0"
-								max="100"
-								value={sliderPosition}
-								onChange={(e) => setSliderPosition(Number(e.target.value))}
-								aria-label="Слайдер сравнения до и после"
-								className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
-							/>
-							<div
-								style={{ left: `${sliderPosition}%` }}
-								className="absolute top-0 bottom-0 w-1 bg-[var(--teal,var(--brand-primary))] z-10 pointer-events-none flex items-center justify-center"
-							>
-								<div className="w-8 h-8 rounded-full bg-[var(--teal,var(--brand-primary))] text-white flex items-center justify-center shadow-lg border-2 border-white">
-									<Sliders size={14} />
-								</div>
-							</div>
+							)}
 						</div>
 
-						<p className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 text-center m-0 mt-2">
-							Передвигайте ползунок для оценки динамики расширения зубного ряда и выравнивания
-						</p>
+						{/* Full Photo Protocol Action */}
+						<button
+							type="button"
+							onClick={() => setIsPhotoProtocolOpen(true)}
+							className="mt-3 w-full min-h-[42px] px-3 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-2 border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
+						>
+							<Camera size={15} className="text-[var(--teal,var(--brand-primary))]" />
+							<span>Открыть ортодонтический фотопротокол (8 ракурсов)</span>
+						</button>
 					</div>
 
 					{/* Subscription & Monthly Billing Tracker */}
@@ -590,6 +798,23 @@ export function OrthodonticPerspectiveView() {
 				onClose={() => setIsCephModalOpen(false)}
 				patientId={activePatient?.id}
 				patientName={activePatient?.fullName}
+			/>
+
+			{/* Orthodontic Visit Protocol Widget */}
+			<OrthodonticVisitProtocolWidget
+				isOpen={isOrthoProtocolOpen}
+				onClose={() => setIsOrthoProtocolOpen(false)}
+				patientId={activePatient?.id}
+				patientName={activePatient?.fullName}
+			/>
+
+			{/* Orthodontic 8-Angle Photo Protocol Modal */}
+			<OrthodonticPhotoProtocolModal
+				isOpen={isPhotoProtocolOpen}
+				onClose={() => setIsPhotoProtocolOpen(false)}
+				patientId={activePatient?.id}
+				patientName={activePatient?.fullName}
+				treatmentStageTitle={stages.find((s) => s.number === currentStageNumber)?.title}
 			/>
 		</div>
 	);

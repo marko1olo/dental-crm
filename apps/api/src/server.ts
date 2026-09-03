@@ -78,6 +78,7 @@ import { registerPrescriptionRoutes } from "./routes/prescriptions.js";
 import { registerMigrationRoutes } from "./routes/migration.js";
 import { registerMigrationRunRoutes } from "./routes/migrationRuns.js";
 import { registerOdontogramRoutes } from "./routes/odontogram.js";
+import { registerOrthodonticsRoutes } from "./routes/orthodontics.js";
 import registerToothHistoryRoutes from "./routes/toothHistory.js";
 import { registerOutpatientV2Routes } from "./routes/outpatient_v2.js";
 import { registerPatientDuplicateRoutes } from "./routes/patientDuplicates.js";
@@ -720,6 +721,7 @@ export async function createDenteApiApp(
 	await registerWhatsappWebhookRoutes(app);
 	await app.register(registerRecallRoutes);
 	await registerPatientRoutes(app);
+	await registerOrthodonticsRoutes(app);
 	await registerExportRoutes(app);
 	await registerMarketingRoutes(app);
 	await registerPricelistRoutes(app);

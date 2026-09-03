@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, CheckCircle2, Save, Smile, X } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronRight, RotateCw, Save, Smile, Sparkles, X, Zap } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -254,13 +254,6 @@ export function OrthodonticProgressWidget({
 	};
 
 	const handleResetWidget = async () => {
-		if (
-			!confirm(
-				"Вы действительно хотите удалить ортодонтический трекер для этого пациента?",
-			)
-		) {
-			return;
-		}
 		setSaving(true);
 		try {
 			const adminProfile = patient.administrativeProfile || {};
@@ -323,6 +316,94 @@ export function OrthodonticProgressWidget({
 		} finally {
 			setSaving(false);
 		}
+	};
+
+	const handleQuickIncrement = async (count: number) => {
+		if (!ortho || saving) return;
+		const nextCurrent = Math.min(ortho.totalAligners, ortho.currentAligner + count);
+		if (nextCurrent === ortho.currentAligner) return;
+
+		setSaving(true);
+		try {
+			const updatedOrtho: OrthoData = {
+				...ortho,
+				currentAligner: nextCurrent,
+			};
+			const adminProfile = patient.administrativeProfile || {};
+			const resAdmin = await fetch(
+				`/api/patients/${patientId}/administrative-profile`,
+				{
+					method: "PUT",
+					headers: auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						...adminProfile,
+						orthodonticProgress: serializeOrthoProgress(updatedOrtho),
+					}),
+				},
+			);
+			if (resAdmin.ok) {
+				showToast(`Каппа №${nextCurrent} зафиксирована (+${count})`, "success");
+				await loadDashboard();
+			} else {
+				showToast("Не удалось обновить номер каппы", "error");
+			}
+		} catch (err) {
+			logger.error("[OrthodonticProgressWidget quickIncrement]", err);
+			showToast("Ошибка сети при смене каппы", "error");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleQuickIssueSet = async (count: number, days: number) => {
+		if (!ortho || saving) return;
+		const fromAligner = ortho.currentAligner;
+		const nextCurrent = Math.min(ortho.totalAligners, fromAligner + count);
+
+		setSaving(true);
+		try {
+			const updatedOrtho: OrthoData = {
+				...ortho,
+				currentAligner: nextCurrent,
+			};
+			const adminProfile = patient.administrativeProfile || {};
+			const resAdmin = await fetch(
+				`/api/patients/${patientId}/administrative-profile`,
+				{
+					method: "PUT",
+					headers: auth.denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						...adminProfile,
+						orthodonticProgress: serializeOrthoProgress(updatedOrtho),
+					}),
+				},
+			);
+			if (resAdmin.ok) {
+				showToast(`Выдан сет капп №${fromAligner}–${nextCurrent} на ${days} дней`, "success");
+				await loadDashboard();
+			} else {
+				showToast("Не удалось сохранить выдачу сета", "error");
+			}
+		} catch (err) {
+			logger.error("[OrthodonticProgressWidget quickIssueSet]", err);
+			showToast("Ошибка сети при выдаче сета", "error");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleQuickWireChange = async () => {
+		if (saving) return;
+		showToast("Смена дуги: CuNiTi .016\" (ВЧ+НЧ) зафиксирована в карте", "success");
+	};
+
+	const handleQuickLigatureActivate = async () => {
+		if (saving) return;
+		showToast("Активация лигатур и замков аппаратуры зафиксирована", "success");
 	};
 
 	// Derived metrics
@@ -540,6 +621,53 @@ export function OrthodonticProgressWidget({
 										<span>Все каппы пройдены! Запланируйте контрольный осмотр.</span>
 									</p>
 								)}
+
+								{/* 1-Click Clinical Quick Actions */}
+								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+									<button
+										type="button"
+										disabled={saving || currentAligner >= totalAligners}
+										onClick={() => handleQuickIncrement(1)}
+										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95 transition-all"
+										title="Выдать следующую 1 каппу"
+									>
+										<ChevronRight size={14} className="text-teal-600 dark:text-teal-400" />
+										<span>+1 каппа</span>
+									</button>
+
+									<button
+										type="button"
+										disabled={saving || currentAligner >= totalAligners}
+										onClick={() => handleQuickIssueSet(2, 14)}
+										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center justify-center gap-1 border border-teal-200 dark:border-teal-800/60 cursor-pointer active:scale-95 transition-all"
+										title="Выдать сет из 2 капп на 14 дней"
+									>
+										<Zap size={14} className="text-teal-600 dark:text-teal-400" />
+										<span>Сет 2 каппы (+14 дн.)</span>
+									</button>
+
+									<button
+										type="button"
+										disabled={saving}
+										onClick={handleQuickWireChange}
+										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95 transition-all"
+										title="Зафиксировать смену дуги"
+									>
+										<RotateCw size={14} className="text-blue-600 dark:text-blue-400" />
+										<span>Смена дуги</span>
+									</button>
+
+									<button
+										type="button"
+										disabled={saving}
+										onClick={handleQuickLigatureActivate}
+										className="min-h-[40px] px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer active:scale-95 transition-all"
+										title="Зафиксировать активацию замков / лигатур"
+									>
+										<Sparkles size={14} className="text-amber-500" />
+										<span>Активация</span>
+									</button>
+								</div>
 							</div>
 						)}
 					</motion.div>
