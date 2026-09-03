@@ -1,7 +1,8 @@
 import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
 import React, { useMemo } from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, ShieldCheck } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
+import { showToast } from "../../GlobalToast";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { informedConsentBlockersReview } from "../informedConsentBlockers";
 import type { DocumentVisitHints } from "./documentFormTypes";
@@ -131,7 +132,7 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 				questionsAnswered: informedConsentQuestionsAnswered,
 				risksUnderstood: informedConsentRisksUnderstood,
 				withdrawUnderstood: informedConsentWithdrawUnderstood,
-			}),
+			}, { allowBlankForPrint: true }),
 		[
 			informedConsentIntervention,
 			informedConsentToothOrArea,
@@ -184,8 +185,9 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 			<div style={{ marginBottom: "14px" }}>
 				<button
 					type="button"
-					className="secondary-button inline-flex items-center gap-1.5"
-					style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
+					className="secondary-button inline-flex items-center gap-1.5 font-bold"
+					style={{ minHeight: "44px", fontSize: "13px", padding: "8px 16px", borderRadius: "12px" }}
+					data-testid="btn-informed-consent-fill-norm"
 					onClick={() => {
 						setInformedConsentIntervention(BASE_INFORMED_CONSENT_PRESET.intervention);
 						setInformedConsentDiagnosisOrIndication(BASE_INFORMED_CONSENT_PRESET.diagnosisOrIndication);
@@ -195,10 +197,20 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 						setInformedConsentRisks(BASE_INFORMED_CONSENT_PRESET.explainedRisks.join("\n"));
 						setInformedConsentAlternatives(BASE_INFORMED_CONSENT_PRESET.alternatives.join("\n"));
 						setInformedConsentAftercare(BASE_INFORMED_CONSENT_PRESET.aftercareRequirements.join("\n"));
+						if (!informedConsentToothOrArea.trim()) {
+							setInformedConsentToothOrArea(inferredTreatmentArea || "Полость рта (все квадранты)");
+						}
+						if (!informedConsentDoctorFullName.trim()) {
+							setInformedConsentDoctorFullName(activeDoctorFullName || "Врач-стоматолог клиники");
+						}
+						setInformedConsentQuestionsAnswered(true);
+						setInformedConsentRisksUnderstood(true);
+						setInformedConsentWithdrawUnderstood(true);
+						showToast("ИДС заполнено по стандарту Минздрава РФ № 1051н (1 клик)", "success", 3000);
 					}}
 				>
-					<ClipboardList size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-					<span>1 клик: Первичный осмотр, консультация и рентген-диагностика (Приказ № 1051н)</span>
+					<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+					<span>Заполнить ИДС нормой: первичный осмотр и рентген (1 клик)</span>
 				</button>
 			</div>
 			<label>

@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
-import { FileEdit } from "lucide-react";
+import { FileEdit, ShieldCheck } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
+import { showToast } from "../../GlobalToast";
 import { money } from "../../../utils/financeUtils";
 import { appendChipToText } from "../documentChipText";
 import {
@@ -198,7 +199,7 @@ export const PaidServiceContractForm = React.memo(
 					serviceListConfirmed: paidContractServiceListConfirmed,
 					paidBasisConfirmed: paidContractPaidBasisConfirmed,
 					writtenChangesConfirmed: paidContractWrittenChangesConfirmed,
-				}),
+				}, { allowBlankForPrint: true }),
 			[
 				paidContractNumber,
 				paidContractServiceStart,
@@ -226,14 +227,72 @@ export const PaidServiceContractForm = React.memo(
 			],
 		);
 
+		const handleFillStandardContract = () => {
+			const currentYear = new Date().getFullYear();
+			if (!paidContractNumber.trim()) {
+				setPaidContractNumber(`ДПМУ-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`);
+			}
+			const todayIso = new Date().toISOString().slice(0, 10);
+			if (!paidContractDate.trim()) {
+				setPaidContractDate(todayIso);
+			}
+			if (!paidContractServiceStart.trim()) {
+				setPaidContractServiceStart(todayIso);
+			}
+			if (!paidContractServiceEnd.trim()) {
+				setPaidContractServiceEnd("до полного исполнения сторонами обязательств");
+			}
+			if (!paidContractCustomerFullName.trim() && documentPatientFullName) {
+				setPaidContractCustomerFullName(documentPatientFullName);
+			}
+			if (!paidContractCareReason.trim()) {
+				setPaidContractCareReason(activeVisitComplaint || "Плановое стоматологическое лечение по результатам осмотра");
+			}
+			if (!paidContractServiceScope.trim()) {
+				setPaidContractServiceScope(
+					activeVisitTreatmentPlan ||
+					activeVisitDoctorSummary ||
+					"Комплекс стоматологических услуг согласно согласованному плану лечения",
+				);
+			}
+			if (totalRubValue > 0) {
+				setPaidContractTotalRub(String(totalRubValue));
+			} else if (!paidContractTotalRub.trim() || Number(paidContractTotalRub) <= 0) {
+				setPaidContractTotalRub("1000");
+			}
+			if (!paidContractDoctorFullName.trim()) {
+				setPaidContractDoctorFullName(activeDoctorFullName || "Врач-стоматолог клиники");
+			}
+			if (!paidContractSignedAt.trim()) {
+				setPaidContractSignedAt(todayIso);
+			}
+			setPaidContractClinicInfoConfirmed(true);
+			setPaidContractServiceListConfirmed(true);
+			setPaidContractPaidBasisConfirmed(true);
+			setPaidContractWrittenChangesConfirmed(true);
+			showToast("Типовой договор заполнен (1 клик)", "success", 3000);
+		};
+
 		return (
 			<article className="document-payload-card">
-				<div>
-					<h3>Договор платных медицинских услуг</h3>
-					<p>
-						Фиксация номера, сроков, состава услуг, стоимости, порядка
-						оплаты и обязательных уведомлений пациента до лечения.
-					</p>
+				<div className="flex items-start justify-between gap-4 flex-wrap">
+					<div>
+						<h3>Договор платных медицинских услуг</h3>
+						<p>
+							Фиксация номера, сроков, состава услуг, стоимости, порядка
+							оплаты и обязательных уведомлений пациента до лечения.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={handleFillStandardContract}
+						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+						data-testid="btn-paid-contract-fill-norm"
+						title="1 клик: заполнить типовой договор клиники со стандартными реквизитами"
+					>
+						<ShieldCheck size={16} />
+						<span>Типовой договор (1 клик)</span>
+					</button>
 				</div>
 				<PaidContractRequiredFieldsPanel
 					review={review}

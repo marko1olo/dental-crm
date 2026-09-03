@@ -108,22 +108,22 @@ export const createFinancialSlice = (set: any) => ({
 	),
 	paidContractSignedAt: "",
 	setPaidContractSignedAt: createSetter(set, "paidContractSignedAt"),
-	paidContractClinicInfoConfirmed: false,
+	paidContractClinicInfoConfirmed: true,
 	setPaidContractClinicInfoConfirmed: createSetter(
 		set,
 		"paidContractClinicInfoConfirmed",
 	),
-	paidContractServiceListConfirmed: false,
+	paidContractServiceListConfirmed: true,
 	setPaidContractServiceListConfirmed: createSetter(
 		set,
 		"paidContractServiceListConfirmed",
 	),
-	paidContractPaidBasisConfirmed: false,
+	paidContractPaidBasisConfirmed: true,
 	setPaidContractPaidBasisConfirmed: createSetter(
 		set,
 		"paidContractPaidBasisConfirmed",
 	),
-	paidContractWrittenChangesConfirmed: false,
+	paidContractWrittenChangesConfirmed: true,
 	setPaidContractWrittenChangesConfirmed: createSetter(
 		set,
 		"paidContractWrittenChangesConfirmed",

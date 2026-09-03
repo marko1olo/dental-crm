@@ -10,7 +10,7 @@ import { renderDocumentHtml } from "../../documents/renderDocument.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { clinicalDocKinds } from "./query.js";
+import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./query.js";
 import {
 	apiError,
 	applySignatureStampIfSigned,
@@ -61,7 +61,10 @@ export async function register(app: FastifyInstance) {
 			if (clinicalDocKinds.has(document.kind)) {
 				const identity = getRequestIdentity(request);
 				const access = evaluateClinicalAccess(identity.role);
-				if (!access.hasClinicalAccess) {
+				if (
+					!access.hasClinicalAccess &&
+					!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+				) {
 					return reply.code(403).send(apiError("Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала."));
 				}
 			}
@@ -73,42 +76,59 @@ export async function register(app: FastifyInstance) {
 				action: "EXPORT_MEDICAL_DOCUMENT_PDF",
 				diagnosis: document.title,
 			});
-			if (!documentRequiresIssuedArchive(document)) {
+			if (document.status === "voided") {
 				return reply
 					.code(409)
-					.send(
-						apiError(
-							"PDF недоступен: документ не требует архива выданного HTML.",
-						),
-					);
-			}
-			if (!document.signatureAttestation) {
-				return reply
-					.code(409)
-					.send(
-						apiError(
-							"PDF недоступен: требуется отметка о подписании при выдаче документа.",
-						),
-					);
+					.send(apiError("Документ аннулирован: печатная форма недоступна."));
 			}
 
-			if (!documentHasIssuedArchiveMetadata(document)) {
-				return reply.code(409).send(apiError(issuedArchiveIntegrityError));
-			}
-
-			const issuedSnapshot = readIssuedDocumentSnapshot(document);
-			if (!issuedSnapshot) {
-				return reply
-					.code(409)
-					.send(
-						apiError(
-							"Архив выданного документа не прошёл проверку целостности.",
-						),
+			// Если документ выдан и подписан — отдаём защищённую архивную копию с оттиском подписи
+			if (
+				document.status === "issued" &&
+				document.signatureAttestation &&
+				documentHasIssuedArchiveMetadata(document)
+			) {
+				const issuedSnapshot = readIssuedDocumentSnapshot(document);
+				if (issuedSnapshot) {
+					const result = await renderIssuedHtmlToPdf(
+						applySignatureStampIfSigned(document, issuedSnapshot),
 					);
+					if (!result.ok) {
+						return reply.code(503).send(apiError(result.error));
+					}
+					return reply
+						.header(
+							"Content-Disposition",
+							`attachment; filename="${documentAttachmentFileName(document, "pdf")}"`,
+						)
+						.type("application/pdf")
+						.send(result.pdf);
+				}
 			}
 
+			// Для черновика или документа до подписания — динамический рендеринг в PDF со статусом черновика
+			const draftSources = await withTenantCtx(orgId, async () => {
+				const draftPatient = await getPatientByIdFromDb(
+					orgId,
+					document.patientId,
+				);
+				if (!draftPatient) return { patient: null, context: null };
+				return {
+					patient: draftPatient,
+					context: await resolveDocumentRenderContext(
+						orgId,
+						document.patientId,
+					),
+				};
+			});
+			const patient = draftSources.patient;
+			if (!patient || !draftSources.context) {
+				return reply.code(404).send(apiError("Пациент не найден"));
+			}
+
+			const draftHtml = renderDocumentHtml(document, patient, draftSources.context);
 			const result = await renderIssuedHtmlToPdf(
-				applySignatureStampIfSigned(document, issuedSnapshot),
+				applySignatureStampIfSigned(document, draftHtml),
 			);
 			if (!result.ok) {
 				return reply.code(503).send(apiError(result.error));

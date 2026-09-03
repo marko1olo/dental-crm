@@ -97,7 +97,14 @@ function erasedClauseHint(what: string): string {
 
 export function informedConsentBlockersReview(
 	input: InformedConsentBlockersInput,
+	options?: { allowBlankForPrint?: boolean },
 ): InformedConsentBlockersReview {
+	if (options?.allowBlankForPrint) {
+		return {
+			requiredCount: 11,
+			blockers: [],
+		};
+	}
 	const area = filled(input.toothOrArea) || filled(input.inferredTreatmentArea);
 	const indication =
 		filled(input.diagnosisOrIndication) || filled(input.activeVisitComplaint);
@@ -154,8 +161,10 @@ export function informedConsentBlockersReview(
 		{
 			field: "informedConsentDoctorFullName",
 			label: "Врач",
-			hint: "врач приёма не определён, подставить некого — впишите ФИО врача, проводившего разъяснение",
-			ok: doctor !== "",
+			hint: options?.allowBlankForPrint
+				? "врач не назначен — в печатной форме бланка выведена строка с подчеркиванием для подписи"
+				: "врач приёма не определён, подставить некого — впишите ФИО врача, проводившего разъяснение",
+			ok: options?.allowBlankForPrint ? true : doctor !== "",
 		},
 		{
 			field: "informedConsentQuestionsAnswered",

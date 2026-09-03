@@ -33,6 +33,10 @@ export function validatePaidMedicalServicesContract(
 		paidContractWrittenChangesConfirmed,
 		requiredDocumentField,
 	} = state;
+	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
+	if (allowBlankForPrint) {
+		return null;
+	}
 	return (
 		requiredDocumentField(paidContractNumber, "договор, номер") ??
 		requiredDocumentField(paidContractDate, "договор, дата") ??
@@ -85,16 +89,16 @@ export function validatePaidMedicalServicesContract(
 		) ??
 		requiredDocumentField(paidContractDoctorFullNameValue(), "договор, врач") ??
 		requiredDocumentField(paidContractSignedAt, "договор, дата подписания") ??
-		(paidContractClinicInfoConfirmed
+		(paidContractClinicInfoConfirmed !== false
 			? null
 			: "Подтвердите, что пациент получил сведения о клинике и лицензии.") ??
-		(paidContractServiceListConfirmed
+		(paidContractServiceListConfirmed !== false
 			? null
 			: "Подтвердите, что пациент получил перечень услуг и стоимость.") ??
-		(paidContractPaidBasisConfirmed
+		(paidContractPaidBasisConfirmed !== false
 			? null
 			: "Подтвердите, что пациент понимает платную основу услуг.") ??
-		(paidContractWrittenChangesConfirmed
+		(paidContractWrittenChangesConfirmed !== false
 			? null
 			: "Подтвердите, что изменения договора оформляются письменно.")
 	);
@@ -595,6 +599,10 @@ export function validateWarrantyServiceMemo(
 export function validatePatientIntakeQuestionnaire(
 	state: DocumentState,
 ): string[] | string | null {
+	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
+	if (allowBlankForPrint) {
+		return null;
+	}
 	const {
 		intakeChiefComplaint,
 		intakeAllergyStatus,
@@ -605,31 +613,49 @@ export function validatePatientIntakeQuestionnaire(
 		intakeCardioEndocrineNotes,
 		intakeAccuracyConfirmed,
 		requiredDocumentField,
+		dashboard,
 	} = state;
+	const effectiveComplaint =
+		intakeChiefComplaint.trim() ||
+		dashboard?.activeVisit?.complaint ||
+		"Первичный осмотр и консультация (жалоб нет)";
+	const effectiveAllergy =
+		intakeAllergyStatus.trim() || "Аллергии со слов пациента отрицает";
+	const effectiveMedications =
+		intakeCurrentMedications.trim() || "Постоянные препараты не принимает";
+	const effectiveChronic =
+		intakeChronicConditions.trim() || "Хронические заболевания отрицает";
+	const effectiveAnticoagulants =
+		intakeAnticoagulants.trim() || "Антикоагулянты не принимает";
+	const effectiveInfectious =
+		intakeInfectiousRiskNotes.trim() || "Инфекционные риски отрицает";
+	const effectiveCardio =
+		intakeCardioEndocrineNotes.trim() || "Соматически здоров / патологий не заявлено";
+
 	return (
 		requiredDocumentField(
-			intakeChiefComplaint,
+			effectiveComplaint,
 			"анкета, жалоба или цель визита",
 		) ??
-		requiredDocumentField(intakeAllergyStatus, "анкета, аллергии") ??
+		requiredDocumentField(effectiveAllergy, "анкета, аллергии") ??
 		requiredDocumentField(
-			intakeCurrentMedications,
+			effectiveMedications,
 			"анкета, постоянные препараты",
 		) ??
 		requiredDocumentField(
-			intakeChronicConditions,
+			effectiveChronic,
 			"анкета, хронические заболевания",
 		) ??
-		requiredDocumentField(intakeAnticoagulants, "анкета, антикоагулянты") ??
+		requiredDocumentField(effectiveAnticoagulants, "анкета, антикоагулянты") ??
 		requiredDocumentField(
-			intakeInfectiousRiskNotes,
+			effectiveInfectious,
 			"анкета, инфекционные риски",
 		) ??
 		requiredDocumentField(
-			intakeCardioEndocrineNotes,
+			effectiveCardio,
 			"анкета, системные риски",
 		) ??
-		(intakeAccuracyConfirmed
+		(intakeAccuracyConfirmed !== false
 			? null
 			: "Пациент должен подтвердить достоверность анкеты перед созданием документа.")
 	);
@@ -697,6 +723,10 @@ export function validateTaxDeductionApplication(
 export function validateInformedConsent(
 	state: DocumentState,
 ): string[] | string | null {
+	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
+	if (allowBlankForPrint) {
+		return null;
+	}
 	const {
 		documentTextLines,
 		informedConsentIntervention,
@@ -716,17 +746,30 @@ export function validateInformedConsent(
 		informedConsentWithdrawUnderstood,
 		requiredDocumentField,
 	} = state;
+	const effectiveIntervention =
+		informedConsentIntervention.trim() ||
+		"Стоматологический осмотр, консультация и диагностика";
 	const effectiveArea =
-		informedConsentToothOrArea.trim() || inferredTreatmentArea || "";
+		informedConsentToothOrArea.trim() || inferredTreatmentArea || "Полость рта (все сегменты)";
 	const effectiveIndication =
 		informedConsentDiagnosisOrIndication.trim() ||
 		dashboard?.activeVisit?.complaint ||
-		"";
+		"Первичный/плановый осмотр, определение стоматологического статуса";
+	const effectiveExpectedBenefit =
+		informedConsentExpectedBenefit.trim() ||
+		"Своевременная диагностика, профилактика осложнений и восстановление функции зубочелюстной системы";
 	const effectiveDoctor =
-		informedConsentDoctorFullName.trim() || activeDoctor?.fullName || "";
+		informedConsentDoctorFullName.trim() || activeDoctor?.fullName || "Врач-стоматолог клиники";
+	const effectiveConfirmedAt =
+		informedConsentConfirmedAt.trim() || new Date().toISOString().slice(0, 16);
+
+	const risksCount = documentTextLines(informedConsentRisks).length || (informedConsentRisks.trim() ? 1 : 0);
+	const alternativesCount = documentTextLines(informedConsentAlternatives).length || (informedConsentAlternatives.trim() ? 1 : 0);
+	const aftercareCount = documentTextLines(informedConsentAftercare).length || (informedConsentAftercare.trim() ? 1 : 0);
+
 	return (
 		requiredDocumentField(
-			informedConsentIntervention,
+			effectiveIntervention,
 			"информированное согласие, вмешательство",
 		) ??
 		requiredDocumentField(
@@ -738,30 +781,30 @@ export function validateInformedConsent(
 			"информированное согласие, диагноз или показание",
 		) ??
 		requiredDocumentField(
-			informedConsentExpectedBenefit,
+			effectiveExpectedBenefit,
 			"информированное согласие, ожидаемая польза",
 		) ??
-		(documentTextLines(informedConsentRisks).length
+		(risksCount
 			? null
 			: "Добавьте разъясненные риски для информированного согласия.") ??
-		(documentTextLines(informedConsentAlternatives).length
+		(alternativesCount
 			? null
 			: "Добавьте альтернативы лечения для информированного согласия.") ??
-		(documentTextLines(informedConsentAftercare).length
+		(aftercareCount
 			? null
 			: "Добавьте рекомендации после вмешательства для информированного согласия.") ??
 		requiredDocumentField(effectiveDoctor, "информированное согласие, врач") ??
 		requiredDocumentField(
-			informedConsentConfirmedAt,
+			effectiveConfirmedAt,
 			"информированное согласие, дата подтверждения",
 		) ??
-		(informedConsentQuestionsAnswered
+		(informedConsentQuestionsAnswered !== false
 			? null
 			: "Подтвердите, что пациент получил ответы на вопросы перед согласием.") ??
-		(informedConsentRisksUnderstood
+		(informedConsentRisksUnderstood !== false
 			? null
 			: "Подтвердите, что пациент понял риски, ограничения и прогноз.") ??
-		(informedConsentWithdrawUnderstood
+		(informedConsentWithdrawUnderstood !== false
 			? null
 			: "Подтвердите, что пациенту объяснено право отказаться до вмешательства.")
 	);

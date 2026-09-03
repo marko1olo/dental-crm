@@ -1,7 +1,8 @@
 import React from "react";
-import { FileEdit } from "lucide-react";
+import { FileEdit, ShieldCheck, Zap } from "lucide-react";
 import { AnamnesisField } from "../AnamnesisField";
 import { useDocumentStore } from "../../../store/documentStore";
+import { showToast } from "../../GlobalToast";
 
 interface PatientIntakeQuestionnaireFormProps {
 	activeVisitComplaint?: string | null;
@@ -77,14 +78,41 @@ export const PatientIntakeQuestionnaireForm: React.FC<
 		(state) => state.setIntakeAccuracyConfirmed,
 	);
 
+	const handleFillNormInOneClick = () => {
+		if (!intakeChiefComplaint.trim()) {
+			setIntakeChiefComplaint(activeVisitComplaint || "Плановый осмотр (жалоб нет)");
+		}
+		setIntakeAllergyStatus("Аллергии и нежелательные реакции со слов пациента не отмечены.");
+		setIntakeCurrentMedications("Постоянные препараты со слов пациента не принимает.");
+		setIntakeChronicConditions("Хронические заболевания со слов пациента отрицает.");
+		setIntakeAnticoagulants("Антикоагулянты и дезагреганты со слов пациента не принимает.");
+		setIntakeInfectiousRiskNotes("Инфекционные риски (гепатиты B/C, ВИЧ, туберкулез) не заявлены.");
+		setIntakeCardioEndocrineNotes("Сердечно-сосудистые и эндокринные патологии со слов пациента отрицает.");
+		setIntakePregnancyStatus("not_applicable");
+		setIntakeAccuracyConfirmed(true);
+		showToast("Анкета заполнена нормой: соматически здоров, противопоказаний нет", "success", 3500);
+	};
+
 	return (
 		<article className="document-payload-card">
-			<div>
-				<h3>Анкета о состоянии здоровья</h3>
-				<p>
-					Жалобы, аллергии, соматический статус, хронические диагнозы, постоянная
-					фармакотерапия и специфические риски перед вмешательством.
-				</p>
+			<div className="flex items-start justify-between gap-4 flex-wrap">
+				<div>
+					<h3>Анкета о состоянии здоровья</h3>
+					<p>
+						Жалобы, аллергии, соматический статус, хронические диагнозы, постоянная
+						фармакотерапия и специфические риски перед вмешательством.
+					</p>
+				</div>
+				<button
+					type="button"
+					onClick={handleFillNormInOneClick}
+					className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+					data-testid="btn-intake-fill-norm"
+					title="1 клик: заполнить все поля анкеты физиологической нормой (соматически здоров)"
+				>
+					<Zap size={16} />
+					<span>Пациент соматически здоров / Противопоказаний нет (1 клик)</span>
+				</button>
 			</div>
 			<details
 				className="document-manual-override"

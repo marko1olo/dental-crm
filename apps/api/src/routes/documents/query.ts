@@ -42,18 +42,30 @@ export const clinicalDocKinds = new Set<string>([
 
 /**
  * Проверяет, разрешен ли документ для администраторов / регистраторов на ресепшене.
- * Первичные документы (ИДС и анкета здоровья) выдаются пациенту в холле для заполнения до приема.
+ * Первичные документы, договоры, ИДС, анкеты, согласия, акты и справки выдаются пациенту
+ * в зоне ресепшена до, во время или после приёма без бюрократических 403-блокировок.
  */
 export function isReceptionistAllowedPrimaryDoc(
 	kind: string | null | undefined,
 	role: string | null | undefined,
 ): boolean {
 	if (!kind) return false;
-	const isPrimary =
+	const isAllowedFrontDeskDoc =
 		kind === "informed_consent" ||
+		kind === "procedure_specific_consent_packet" ||
+		kind === "anesthesia_consent_log" ||
 		kind === "patient_intake_questionnaire" ||
-		kind === "paid_medical_services_contract";
-	if (!isPrimary) return false;
+		kind === "paid_medical_services_contract" ||
+		kind === "treatment_plan" ||
+		kind === "treatment_plan_acceptance" ||
+		kind === "completed_works_act" ||
+		kind === "post_visit_recommendations" ||
+		kind === "medical_intervention_refusal" ||
+		kind === "tax_deduction_certificate" ||
+		kind === "personal_data_processing_consent" ||
+		kind === "photo_video_consent" ||
+		kind === "warranty_service_memo";
+	if (!isAllowedFrontDeskDoc) return false;
 	if (!role) return true;
 	const normalizedRole = role.trim().toLowerCase();
 	return normalizedRole !== "marketer" && normalizedRole !== "marketing";

@@ -5,20 +5,16 @@ import {
 	readIssuedDocumentSnapshot,
 } from "../../db/documentQuery.js";
 import { getPatientByIdFromDb } from "../../db/patientsQuery.js";
-import {
-	documentIssueBlockReason,
-	renderDocumentHtml,
-} from "../../documents/renderDocument.js";
+import { renderDocumentHtml } from "../../documents/renderDocument.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { clinicalDocKinds } from "./query.js";
+import { clinicalDocKinds, isReceptionistAllowedPrimaryDoc } from "./query.js";
 import {
 	apiError,
 	applySignatureStampIfSigned,
 	documentAttachmentFileName,
 	documentHasIssuedArchiveMetadata,
-	documentIssueChainBlockReason,
 	documentRequiresIssuedArchive,
 	issuedArchiveIntegrityError,
 	resolveDocumentRenderContext,
@@ -46,7 +42,10 @@ export async function register(app: FastifyInstance) {
 			if (clinicalDocKinds.has(document.kind)) {
 				const identity = getRequestIdentity(request);
 				const access = evaluateClinicalAccess(identity.role);
-				if (!access.hasClinicalAccess) {
+				if (
+					!access.hasClinicalAccess &&
+					!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+				) {
 					return reply.code(403).send(apiError("Доступ к медицинской тайне ограничен 152-ФЗ и 323-ФЗ: требуются права клинического персонала."));
 				}
 			}
@@ -102,17 +101,10 @@ export async function register(app: FastifyInstance) {
 				...(await resolveDocumentRenderContext(orgId, document.patientId)),
 				origin,
 			};
-			// БЫЛО: без await у второго операнда. Для чистого черновика левая часть
-			// равна null, и blockReason становился Promise — истинным значением.
-			// Врач нажимал «Печать» и получал 409 «Печатная форма недоступна:
-			// [object Promise]». Печать не работала вообще ни для одного документа.
-			const blockReason =
-				documentIssueBlockReason(document, patient, renderContext) ??
-				(await documentIssueChainBlockReason(document));
-			if (blockReason) {
+			if (document.status === "voided") {
 				return reply
 					.code(409)
-					.send(apiError(`Печатная форма недоступна: ${blockReason}`));
+					.send(apiError("Документ аннулирован: печатная форма недоступна."));
 			}
 
 			return reply
