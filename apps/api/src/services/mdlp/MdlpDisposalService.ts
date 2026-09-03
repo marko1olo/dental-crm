@@ -15,6 +15,8 @@ import {
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
 import { mdlpItems } from "../../db/schema.js";
+import { inventoryItems } from "../../db/schema/inventory.js";
+import { fefoStockService } from "../inventory/fefoStockService.js";
 import { mdlpQueueService } from "./MdlpQueueService.js";
 
 // In-memory fallback ledger for test isolation and offline resilience
@@ -38,9 +40,9 @@ export interface MdlpScanResult {
 }
 
 export interface MdlpSingleDisposeInput {
-	sgtin?: string | null | undefined;
 	rawBarcode?: string | null | undefined;
 	barcode?: string | null | undefined;
+	sgtin?: string | null | undefined;
 	gtin?: string | null | undefined;
 	serialNumber?: string | null | undefined;
 	series?: string | null | undefined;
@@ -57,9 +59,11 @@ export interface MdlpSingleDisposeInput {
 	tradeName?: string | null | undefined;
 	inn?: string | null | undefined;
 	crptReceiptNumber?: string | null | undefined;
+	warehouseId?: string | null | undefined;
 }
 
 export interface MdlpBatchDisposeInput {
+	warehouseId?: string | null | undefined;
 	docNum?: string | null | undefined;
 	docDate?: string | null | undefined;
 	patientId?: string | null | undefined;
@@ -326,9 +330,57 @@ export class MdlpDisposalService {
 
 		const updatedItems: Record<string, unknown>[] = [];
 
-		// Persist each item in PostgreSQL / In-Memory
+		// Persist each item in PostgreSQL and deduct from FEFO warehouse stock
 		for (const it of disposalItems) {
 			try {
+				const warehouseId = input.warehouseId ?? null;
+				let inventoryItemId: string | null = null;
+				let batchId: string | null = null;
+				let inventoryTransactionId: string | null = null;
+
+				// Синхронное списание 1 единицы препарата со склада по FEFO при наличии в номенклатуре
+				try {
+					const [inv] = await db
+						.select()
+						.from(inventoryItems)
+						.where(
+							and(
+								eq(inventoryItems.organizationId, orgId),
+								or(
+									eq(inventoryItems.barcode, it.gtin),
+									eq(inventoryItems.barcode, it.sgtin),
+									...(it.tradeName ? [ilike(inventoryItems.name, `%${it.tradeName}%`)] : []),
+									...(it.inn ? [ilike(inventoryItems.name, `%${it.inn}%`)] : []),
+								),
+							),
+						)
+						.limit(1);
+
+					if (inv) {
+						inventoryItemId = inv.id;
+						const fefoRes = await fefoStockService.deductFefo(db, {
+							organizationId: orgId,
+							inventoryItemId: inv.id,
+							requiredQty: 1,
+							warehouseId: warehouseId ?? undefined,
+							visitId: input.visitId ?? undefined,
+							userId: input.doctorId ?? undefined,
+							allowOverdraft: true,
+							transactionType: "write_off_mdlp",
+							notes: `Выбытие МДЛП Схема 10560 (${it.sgtin})`,
+						});
+
+						if (fefoRes.batchesUsed.length > 0) {
+							batchId = fefoRes.batchesUsed[0]!.batchId;
+						}
+					}
+				} catch (stockErr) {
+					console.warn(
+						`[MdlpDisposalService] Предупреждение синхронизации склада для ${it.sgtin}:`,
+						stockErr,
+					);
+				}
+
 				const [existing] = await db
 					.select()
 					.from(mdlpItems)
@@ -351,6 +403,10 @@ export class MdlpDisposalService {
 							patientId: input.patientId ?? existing.patientId,
 							visitId: input.visitId ?? existing.visitId,
 							doctorId: input.doctorId ?? existing.doctorId,
+							warehouseId: warehouseId ?? existing.warehouseId,
+							inventoryItemId: inventoryItemId ?? existing.inventoryItemId,
+							batchId: batchId ?? existing.batchId,
+							inventoryTransactionId: inventoryTransactionId ?? existing.inventoryTransactionId,
 							costRub: it.costRub ? String(it.costRub) : existing.costRub,
 							crptReceiptNumber,
 							schema10560Xml: schemaDoc.xmlContent,
@@ -380,6 +436,10 @@ export class MdlpDisposalService {
 							patientId: input.patientId ?? null,
 							visitId: input.visitId ?? null,
 							doctorId: input.doctorId ?? null,
+							warehouseId,
+							inventoryItemId,
+							batchId,
+							inventoryTransactionId,
 							costRub: it.costRub ? String(it.costRub) : null,
 							crptReceiptNumber,
 							schema10560Xml: schemaDoc.xmlContent,

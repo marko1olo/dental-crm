@@ -89,4 +89,26 @@ describe("Senior Nurse Medication Write-Off Act Generator & Number Speller", () 
 		assert(html.includes("Члены комиссии:"));
 		assert(html.includes("@page {"));
 	});
+
+	test("formatSeniorNurseDisposalActData supports single-nurse write-off without 3-person commission", () => {
+		const item = createCarpuleQueueItem(
+			"010366479800001621SN00000000001\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1",
+			{ costRub: 450 },
+		);
+		const actData = formatSeniorNurseDisposalActData({
+			actNumber: "СПИС-2026/08-SINGLE",
+			actDate: "2026-08-25",
+			seniorNurseName: "Сидорова С.С.",
+			isSingleSigner: true,
+			items: [item],
+		});
+
+		assert.strictEqual(actData.commission.length, 1);
+		assert.strictEqual(actData.commission[0]?.fullName, "Сидорова С.С.");
+		assert.strictEqual(actData.commission[0]?.roleTitleRu, "МОЛ / Дежурная медсестра");
+
+		const html = generateSeniorNurseDisposalActHtml(actData);
+		assert(html.includes("Списание провел (МОЛ):"));
+		assert(!html.includes("Члены комиссии:"));
+	});
 });

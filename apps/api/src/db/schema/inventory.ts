@@ -79,6 +79,80 @@ export const inventoryItems = pgTable(
 	},
 );
 
+// warehouses (клинические склады с привязкой к МДЛП Честный Знак)
+export const warehouses = pgTable(
+	"warehouses",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		name: text("name").notNull(), // "Основной склад", "Кабинет №1 (Терапия)"
+		code: text("code"), // "1", "MAIN", "CAB-01"
+		mdlpId: text("mdlp_id"), // Идентификатор места деятельности МДЛП (14 цифр)
+		status: text("status").notNull().default("active"), // active | archived
+		address: text("address"),
+		isDefault: boolean("is_default").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index("warehouses_organization_idx").on(
+			t.organizationId,
+		),
+	}),
+);
+
+// stock batches (партионный учет FEFO - First Expired, First Out)
+export const stockBatches = pgTable(
+	"stock_batches",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		warehouseId: uuid("warehouse_id").references(() => warehouses.id, {
+			onDelete: "set null",
+		}),
+		inventoryItemId: uuid("inventory_item_id")
+			.notNull()
+			.references(() => inventoryItems.id, { onDelete: "cascade" }),
+		batchNumber: text("batch_number").notNull(), // Номер серии / партии / lot
+		expirationDate: date("expiration_date", { mode: "string" }).notNull(), // Срок годности YYYY-MM-DD
+		manufactureDate: date("manufacture_date", { mode: "string" }),
+		initialQty: numeric("initial_qty", { precision: 10, scale: 3 })
+			.notNull()
+			.default("0"),
+		remainingQty: numeric("remaining_qty", { precision: 10, scale: 3 })
+			.notNull()
+			.default("0"),
+		purchasePricePerUnit: numeric("purchase_price_per_unit", {
+			precision: 12,
+			scale: 2,
+		}).default("0"),
+		status: text("status").notNull().default("active"), // active | depleted | expired | quarantine
+		barcode: text("barcode"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgItemExpIdx: index("stock_batches_org_item_exp_idx").on(
+			t.organizationId,
+			t.inventoryItemId,
+			t.expirationDate,
+		),
+		warehouseIdx: index("stock_batches_warehouse_idx").on(t.warehouseId),
+	}),
+);
+
 // inventory transactions (stock movements)
 export const inventoryTransactions = pgTable(
 	"inventory_transactions",
@@ -90,12 +164,19 @@ export const inventoryTransactions = pgTable(
 		itemId: uuid("item_id"),
 		// alias — some routes call it inventoryItemId
 		inventoryItemId: uuid("inventory_item_id"),
+		batchId: uuid("batch_id").references(() => stockBatches.id, {
+			onDelete: "set null",
+		}),
+		warehouseId: uuid("warehouse_id").references(() => warehouses.id, {
+			onDelete: "set null",
+		}),
 		visitId: uuid("visit_id"),
 		transactionType: text("transaction_type").notNull().default("receipt"),
 		qty: numeric("qty", { precision: 10, scale: 3 }),
 		// alias — some routes call it quantityChanged
 		quantityChanged: numeric("quantity_changed", { precision: 10, scale: 3 }),
 		unitCostRub: numeric("unit_cost_rub", { precision: 12, scale: 2 }),
+		isOverdraft: boolean("is_overdraft").default(false),
 		userId: uuid("user_id"),
 		notes: text("notes"),
 		createdAt: timestamp("created_at", { withTimezone: true })
@@ -106,6 +187,7 @@ export const inventoryTransactions = pgTable(
 		organizationIdIdx: index("inventory_transactions_organizationId_idx").on(
 			t.organizationId,
 		),
+		batchIdIdx: index("inventory_transactions_batch_idx").on(t.batchId),
 	}),
 );
 
@@ -129,6 +211,8 @@ export const procedureMaterialRules = pgTable(
 		quantityToDeduct: numeric("quantity_to_deduct", { precision: 12, scale: 4 })
 			.notNull()
 			.default("1.0000"),
+		isMdlpRequired: boolean("is_mdlp_required").default(false), // Маркированный препарат (Честный Знак)
+		unit: text("unit").default("шт"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -137,6 +221,62 @@ export const procedureMaterialRules = pgTable(
 		organizationIdIdx: index("procedure_material_rules_organizationId_idx").on(
 			t.organizationId,
 		),
+	}),
+);
+
+// procedure tech cards (технологические карты процедур - спецификация расхода материалов BOM)
+export const procedureTechCards = pgTable(
+	"procedure_tech_cards",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		serviceId: uuid("service_id").references(() => serviceCatalogItems.id, {
+			onDelete: "cascade",
+		}),
+		serviceCode: text("service_code"), // Код по Номенклатуре Минздрава РФ (напр. A16.07.002.001)
+		title: text("title").notNull(), // "Техкарта: Лечение кариеса дентина световой композит"
+		version: integer("version").notNull().default(1),
+		status: text("status").notNull().default("active"), // active | draft | archived
+		description: text("description"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		orgServiceIdx: index("procedure_tech_cards_org_service_idx").on(
+			t.organizationId,
+			t.serviceId,
+		),
+	}),
+);
+
+export const procedureTechCardItems = pgTable(
+	"procedure_tech_card_items",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		techCardId: uuid("tech_card_id")
+			.notNull()
+			.references(() => procedureTechCards.id, { onDelete: "cascade" }),
+		inventoryItemId: uuid("inventory_item_id")
+			.notNull()
+			.references(() => inventoryItems.id, { onDelete: "cascade" }),
+		quantity: numeric("quantity", { precision: 12, scale: 4 })
+			.notNull()
+			.default("1.0000"),
+		unit: text("unit").notNull().default("шт"),
+		isMdlpRequired: boolean("is_mdlp_required").notNull().default(false), // Маркированный препарат (Честный Знак)
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		techCardIdx: index("procedure_tech_card_items_card_idx").on(t.techCardId),
 	}),
 );
 
@@ -329,6 +469,20 @@ export const mdlpItems = pgTable(
 			onDelete: "set null",
 		}),
 		costRub: numeric("cost_rub", { precision: 10, scale: 2 }),
+		warehouseId: uuid("warehouse_id").references(() => warehouses.id, {
+			onDelete: "set null",
+		}),
+		inventoryItemId: uuid("inventory_item_id").references(
+			() => inventoryItems.id,
+			{ onDelete: "set null" },
+		),
+		batchId: uuid("batch_id").references(() => stockBatches.id, {
+			onDelete: "set null",
+		}),
+		inventoryTransactionId: uuid("inventory_transaction_id").references(
+			() => inventoryTransactions.id,
+			{ onDelete: "set null" },
+		),
 		crptReceiptNumber: text("crpt_receipt_number"),
 		schema10560Xml: text("schema_10560_xml"),
 		schema10560Json: jsonb("schema_10560_json"),

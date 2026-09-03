@@ -550,6 +550,46 @@ describe("Document Validation Engine", () => {
 		assert.equal(result.isValid, false);
 		assert.ok(result.errors.some((e) => e.includes("истек")));
 	});
+
+	it("Разрешает списание просроченной партии по форме ТОРГ-16 (акт утилизации)", () => {
+		const result = validateWriteoffDocument({
+			patientName: "Складской учет / Утилизация",
+			doctorFullName: "Кузнецов М.С.",
+			statutoryFormType: "TORG16",
+			lines: [
+				{
+					id: "1",
+					serviceCode: "TORG16-DISPOSAL",
+					serviceTitle: "Утилизация ТМЦ",
+					materialId: "mat_articaine_ultracain",
+					sku: "ANES-ULTRA-DS",
+					nameRu: "Ультракаин",
+					category: "anesthesia",
+					unit: "карп",
+					okeiCode: "796",
+					standardQuantity: 5,
+					actualQuantity: 5,
+					discrepancyQuantity: 0,
+					discrepancyReasonCode: "expired_quarantine",
+					stockAvailable: 10,
+					criticalThreshold: 2,
+					stockStatus: "ok",
+					unitCostKopecks: 23000,
+					totalCostKopecks: 115000,
+					isExpiringSoon: false,
+					isExpired: true,
+					expirationDate: "2025-01-01",
+					isMandatory: true,
+					requiresLotTracking: true,
+					requiresSerialNumber: false,
+				},
+			],
+		});
+
+		assert.equal(result.isValid, true);
+		assert.equal(result.errors.length, 0);
+		assert.ok(result.warnings.some((w) => w.includes("ТОРГ-16") || w.includes("истекшим")));
+	});
 });
 
 describe("Statutory Write-off Act HTML Generators (0504230, M-11, TORG-16)", () => {

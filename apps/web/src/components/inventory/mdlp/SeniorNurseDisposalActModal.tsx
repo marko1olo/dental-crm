@@ -71,6 +71,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 		initialChiefDoctorName,
 	);
 	const [dentistName, setDentistName] = useState<string>(initialDentistName);
+	const [isSingleSigner, setIsSingleSigner] = useState<boolean>(true);
 	const [notes, setNotes] = useState<string>("");
 
 	// 1-Click заказ поставщику
@@ -87,8 +88,8 @@ export const SeniorNurseDisposalActModal: React.FC<
 			departmentName,
 			cabinetName,
 			seniorNurseName,
-			chiefDoctorName,
-			dentistName,
+			chiefDoctorName: isSingleSigner ? undefined : chiefDoctorName,
+			dentistName: isSingleSigner ? undefined : dentistName,
 			notes: notes.trim() || undefined,
 			items,
 		});
@@ -103,6 +104,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 		seniorNurseName,
 		chiefDoctorName,
 		dentistName,
+		isSingleSigner,
 		notes,
 		items,
 	]);
@@ -279,103 +281,124 @@ export const SeniorNurseDisposalActModal: React.FC<
 						)}
 					</div>
 
-					{/* Паспорт и комиссия */}
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-lg border border-line bg-paper-soft">
-						<div>
-							<label
-								htmlFor="act-number-input"
-								className="text-xs font-semibold text-muted block mb-1"
-							>
-								Номер акта
+					{/* Паспорт и состав подписантов */}
+					<div className="p-3 rounded-lg border border-line bg-paper-soft space-y-3">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<span className="text-xs font-bold text-ink">
+								Параметры списания карпул
+							</span>
+							<label className="flex items-center gap-2 text-xs font-semibold text-ink cursor-pointer select-none">
+								<input
+									type="checkbox"
+									checked={isSingleSigner}
+									onChange={(e) => setIsSingleSigner(e.target.checked)}
+									className="rounded border-line text-primary focus:ring-primary h-4 w-4"
+								/>
+								<span>Единоличное списание медсестрой (без комиссии)</span>
 							</label>
-							<input
-								id="act-number-input"
-								type="text"
-								value={actNumber}
-								onChange={(e) => setActNumber(e.target.value)}
-								className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs font-mono font-bold text-ink"
-							/>
 						</div>
 
-						<div>
-							<label
-								htmlFor="act-date-input"
-								className="text-xs font-semibold text-muted block mb-1"
-							>
-								Дата акта
-							</label>
-							<input
-								id="act-date-input"
-								type="date"
-								value={actDate}
-								onChange={(e) => setActDate(e.target.value)}
-								className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
-							/>
-						</div>
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+							<div>
+								<label
+									htmlFor="act-number-input"
+									className="text-xs font-semibold text-muted block mb-1"
+								>
+									Номер акта
+								</label>
+								<input
+									id="act-number-input"
+									type="text"
+									value={actNumber}
+									onChange={(e) => setActNumber(e.target.value)}
+									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs font-mono font-bold text-ink"
+								/>
+							</div>
 
-						<div>
-							<label
-								htmlFor="act-nurse-input"
-								className="text-xs font-semibold text-muted block mb-1"
-							>
-								Старшая медицинская сестра
-							</label>
-							<input
-								id="act-nurse-input"
-								type="text"
-								value={seniorNurseName}
-								onChange={(e) => setSeniorNurseName(e.target.value)}
-								className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink font-semibold"
-							/>
-						</div>
+							<div>
+								<label
+									htmlFor="act-date-input"
+									className="text-xs font-semibold text-muted block mb-1"
+								>
+									Дата акта
+								</label>
+								<input
+									id="act-date-input"
+									type="date"
+									value={actDate}
+									onChange={(e) => setActDate(e.target.value)}
+									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+								/>
+							</div>
 
-						<div>
-							<label
-								htmlFor="act-chief-input"
-								className="text-xs font-semibold text-muted block mb-1"
-							>
-								Главный врач (Утверждающий)
-							</label>
-							<input
-								id="act-chief-input"
-								type="text"
-								value={chiefDoctorName}
-								onChange={(e) => setChiefDoctorName(e.target.value)}
-								className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
-							/>
-						</div>
+							<div>
+								<label
+									htmlFor="act-nurse-input"
+									className="text-xs font-semibold text-muted block mb-1"
+								>
+									{isSingleSigner ? "Дежурная медицинская сестра (МОЛ)" : "Старшая медицинская сестра"}
+								</label>
+								<input
+									id="act-nurse-input"
+									type="text"
+									value={seniorNurseName}
+									onChange={(e) => setSeniorNurseName(e.target.value)}
+									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink font-semibold"
+								/>
+							</div>
 
-						<div>
-							<label
-								htmlFor="act-dentist-input"
-								className="text-xs font-semibold text-muted block mb-1"
-							>
-								Врач-стоматолог (МОЛ)
-							</label>
-							<input
-								id="act-dentist-input"
-								type="text"
-								value={dentistName}
-								onChange={(e) => setDentistName(e.target.value)}
-								className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
-							/>
-						</div>
+							{!isSingleSigner && (
+								<>
+									<div>
+										<label
+											htmlFor="act-chief-input"
+											className="text-xs font-semibold text-muted block mb-1"
+										>
+											Главный врач (Утверждающий)
+										</label>
+										<input
+											id="act-chief-input"
+											type="text"
+											value={chiefDoctorName}
+											onChange={(e) => setChiefDoctorName(e.target.value)}
+											className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+										/>
+									</div>
 
-						<div>
-							<label
-								htmlFor="act-notes-input"
-								className="text-xs font-semibold text-muted block mb-1"
-							>
-								Примечание
-							</label>
-							<input
-								id="act-notes-input"
-								type="text"
-								placeholder="Плановое списание карпул..."
-								value={notes}
-								onChange={(e) => setNotes(e.target.value)}
-								className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
-							/>
+									<div>
+										<label
+											htmlFor="act-dentist-input"
+											className="text-xs font-semibold text-muted block mb-1"
+										>
+											Врач-стоматолог (МОЛ)
+										</label>
+										<input
+											id="act-dentist-input"
+											type="text"
+											value={dentistName}
+											onChange={(e) => setDentistName(e.target.value)}
+											className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+										/>
+									</div>
+								</>
+							)}
+
+							<div className={isSingleSigner ? "col-span-1 md:col-span-3" : ""}>
+								<label
+									htmlFor="act-notes-input"
+									className="text-xs font-semibold text-muted block mb-1"
+								>
+									Примечание
+								</label>
+								<input
+									id="act-notes-input"
+									type="text"
+									placeholder="Плановое списание карпул..."
+									value={notes}
+									onChange={(e) => setNotes(e.target.value)}
+									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+								/>
+							</div>
 						</div>
 					</div>
 

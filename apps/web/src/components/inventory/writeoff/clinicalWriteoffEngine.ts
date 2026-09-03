@@ -455,7 +455,21 @@ export function validateWriteoffDocument(
 				errors.push(`Для имплантата/изделия «${line.nameRu}» обязателен ввод серийного номера (МДЛП).`);
 			}
 			if (line.isExpired) {
-				errors.push(`Срок годности партии «${line.lotNumber || line.nameRu}» истек (${line.expirationDate})! Списание в клинический наряд пациента запрещено.`);
+				const isDisposalOrScrap =
+					doc.statutoryFormType === "TORG16" ||
+					line.discrepancyReasonCode === "expired_quarantine" ||
+					line.discrepancyReasonCode === "defect_broken" ||
+					(doc as Record<string, unknown>).isDisposalAct === true;
+
+				if (!isDisposalOrScrap) {
+					errors.push(
+						`Срок годности партии «${line.lotNumber || line.nameRu}» истек (${line.expirationDate})! Списание в клинический наряд пациента запрещено. Для утилизации оформите акт ТОРГ-16.`,
+					);
+				} else {
+					warnings.push(
+						`Партия «${line.nameRu}» (${line.lotNumber || "б/н"}) с истекшим сроком годности направлена на списание по акту утилизации/брака (ТОРГ-16).`,
+					);
+				}
 			} else if (line.isExpiringSoon) {
 				warnings.push(`Партия «${line.nameRu}» (${line.lotNumber}) истекает в течение 30 дней (${line.expirationDate}).`);
 			}

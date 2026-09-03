@@ -7,6 +7,7 @@ import {
 	procedureMaterialRules,
 	treatmentItems,
 } from "../../db/schema.js";
+import { fefoStockService } from "./fefoStockService.js";
 
 export type DbTransaction =
 	| Parameters<Parameters<typeof db.transaction>[0]>[0]
@@ -179,8 +180,6 @@ export async function deductMaterialsForVisit(
 	);
 
 	const deductions: StockDeductionRecord[] = [];
-	const transactionsToInsert: Array<typeof inventoryTransactions.$inferInsert> =
-		[];
 
 	for (const itemId of sortedItemIds) {
 		const requiredQty = requiredByItem.get(itemId);
@@ -189,55 +188,22 @@ export async function deductMaterialsForVisit(
 		const inv = inventoryMap.get(itemId);
 		if (!inv) continue;
 
-		const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
-		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
-		const newStock = baseStock - requiredQty;
-		const quantityChanged = String(-requiredQty);
-
-		// Дефицит материалов: при нехватке остатка списываем в отрицательный остаток (дефицит),
-		// логируем предупреждение и создаем транзакцию списания, чтобы врач беспрепятственно завершил клинический прием.
-		if (newStock < 0) {
-			console.warn(
-				`[materialDeduction] Внимание: списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
-					`для визита ${visitId} (клиника ${organizationId}): ` +
-					`в наличии ${baseStock}, требовалось ${requiredQty}, итоговый остаток (дефицит): ${newStock}.`,
-			);
-		}
-
-		await tx
-			.update(inventoryItems)
-			.set({
-				stockQuantity: String(newStock),
-				currentQty: String(newStock),
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(inventoryItems.id, inv.id),
-					eq(inventoryItems.organizationId, organizationId),
-				),
-			);
-
-		transactionsToInsert.push({
+		const fefoRes = await fefoStockService.deductFefo(tx, {
 			organizationId,
-			visitId,
-			itemId: inv.id,
 			inventoryItemId: inv.id,
-			quantityChanged,
-			unitCostRub: inv.unitCostRub != null ? String(inv.unitCostRub) : null,
-			transactionType,
+			requiredQty,
+			visitId,
 			userId,
+			allowOverdraft: true,
+			transactionType,
+			notes: `Списание по визиту ${visitId}`,
 		});
 
 		deductions.push({
 			inventoryItemId: inv.id,
 			inventoryItemName: inv.name,
-			quantityChanged,
+			quantityChanged: String(-fefoRes.deductedQty),
 		});
-	}
-
-	if (transactionsToInsert.length > 0) {
-		await tx.insert(inventoryTransactions).values(transactionsToInsert);
 	}
 
 	return {

@@ -135,6 +135,8 @@ export function formatSeniorNurseDisposalActData(options: {
 	dentistName?: string | undefined;
 	crptReceiptNumber?: string | undefined;
 	notes?: string | undefined;
+	isSingleSigner?: boolean | undefined;
+	requireCommission?: boolean | undefined;
 	items: readonly MdlpCarpuleQueueItem[];
 }): SeniorNurseDisposalActData {
 	const now = new Date();
@@ -167,26 +169,39 @@ export function formatSeniorNurseDisposalActData(options: {
 		};
 	});
 
-	const commission = [
-		{
-			role: "senior_nurse" as const,
-			roleTitleRu: "Председатель комиссии",
-			fullName: options.seniorNurseName ?? "Иванова Е.В.",
-			positionRu: "Старшая медицинская сестра",
-		},
-		{
-			role: "chief_doctor" as const,
-			roleTitleRu: "Член комиссии",
-			fullName: options.chiefDoctorName ?? "Петров А.С.",
-			positionRu: "Главный врач клиники",
-		},
-		{
-			role: "dentist" as const,
-			roleTitleRu: "Член комиссии (МОЛ)",
-			fullName: options.dentistName ?? "Кузнецов М.С.",
-			positionRu: "Врач-стоматолог терапевт / хирург",
-		},
-	];
+	const useSingleNurse =
+		options.isSingleSigner === true ||
+		options.requireCommission === false;
+
+	const commission = useSingleNurse
+		? [
+				{
+					role: "senior_nurse" as const,
+					roleTitleRu: "МОЛ / Дежурная медсестра",
+					fullName: options.seniorNurseName ?? "Иванова Е.В.",
+					positionRu: "Медицинская сестра (списание проведено единолично)",
+				},
+			]
+		: [
+				{
+					role: "senior_nurse" as const,
+					roleTitleRu: "Председатель комиссии",
+					fullName: options.seniorNurseName ?? "Иванова Е.В.",
+					positionRu: "Старшая медицинская сестра",
+				},
+				{
+					role: "chief_doctor" as const,
+					roleTitleRu: "Член комиссии",
+					fullName: options.chiefDoctorName ?? "Петров А.С.",
+					positionRu: "Главный врач клиники",
+				},
+				{
+					role: "dentist" as const,
+					roleTitleRu: "Член комиссии (МОЛ)",
+					fullName: options.dentistName ?? "Кузнецов М.С.",
+					positionRu: "Врач-стоматолог терапевт / хирург",
+				},
+			];
 
 	return {
 		actNumber,
@@ -436,9 +451,9 @@ export function generateSeniorNurseDisposalActHtml(actData: SeniorNurseDisposalA
     </div>
   </div>
 
-  <!-- Подписи членов комиссии -->
+  <!-- Подписи членов комиссии или единоличного исполнителя -->
   <div class="signatures-block">
-    <div style="font-weight: bold; margin-bottom: 10px;">Члены комиссии:</div>
+    <div style="font-weight: bold; margin-bottom: 10px;">${actData.commission.length > 1 ? "Члены комиссии:" : "Списание провел (МОЛ):"}</div>
     ${commissionSignatures}
   </div>
 

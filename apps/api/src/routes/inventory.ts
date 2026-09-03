@@ -60,6 +60,8 @@ const inventoryStockBodySchema = z.object({
 			message:
 				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
 		}),
+	allowOverdraft: z.boolean().optional(),
+	reason: z.string().optional(),
 });
 
 const inventoryRuleBodySchema = z.object({
@@ -371,8 +373,8 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const currentStock = Number(item.stockQuantity ?? 0);
 			const actualAdjustment = adjustment;
 			const newStock = currentStock + actualAdjustment;
-
-			if (newStock < 0) {
+			const isOverdraft = newStock < 0;
+			if (isOverdraft && !parsedStock.data.allowOverdraft) {
 				return { insufficientStock: true as const, currentStock };
 			}
 
@@ -397,7 +399,11 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					inventoryItemId: itemId,
 					quantityChanged: String(actualAdjustment),
 					unitCostRub: updated.unitCostRub,
-					transactionType: "manual_adjust",
+					transactionType: isOverdraft ? "emergency_overdraft" : "manual_adjust",
+					isOverdraft,
+					notes: isOverdraft
+						? `Технический перерасход при экстренной помощи: ${parsedStock.data.reason || "дефицит"}`
+						: (parsedStock.data.reason || null),
 					userId: userContext?.id ?? null,
 				});
 			}
