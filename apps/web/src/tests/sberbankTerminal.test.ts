@@ -258,5 +258,23 @@ describe("Sberbank Terminal Service State Machine & Recovery", () => {
 			},
 		);
 	});
+
+	it("should return success: false and communication_error on reconcileByRrn when server fails (zero fake success)", async () => {
+		const service = new SberbankTerminalService(TEST_CONFIG);
+		const res = await service.reconcileByRrn("123456789012", "ORDER-TEST");
+
+		assert.equal(res.success, false);
+		assert.equal(res.status, "communication_error");
+		assert.equal(res.rrn, "123456789012");
+		assert.ok(res.responseMessageRu.length > 0);
+	});
+
+	it("should set status to user_cancelled when cancelCurrentOperation is called", () => {
+		const service = new SberbankTerminalService(TEST_CONFIG);
+		service.cancelCurrentOperation();
+		assert.equal(service.getStatus(), "user_cancelled");
+		assert.match(service.getStatusMessage(), /отменена пользователем/i);
+	});
 });
+
 

@@ -85,7 +85,7 @@ export class TerminalConnectionError extends Error {
 export class SberbankTerminalService {
 	private config: SberPosTerminalConfig;
 	private currentStatus: SberPosTerminalStatus = "ready";
-	private currentMessage = "Терминал готов к работе";
+	private currentMessage = "Ожидание карты на терминале Сбербанк...";
 	private listeners: Set<SberTerminalStatusListener> = new Set();
 	private activeTransactionId: string | null = null;
 	private abortController: AbortController | null = null;
@@ -206,7 +206,7 @@ export class SberbankTerminalService {
 		const orderId = `Z-REPORT-${Date.now()}`;
 
 		try {
-			// Simulate settlement roundtrip or dispatch to terminal driver
+			// Dispatch settlement to terminal driver
 			const res = await this.dispatchDriverCommand({
 				operation: "settlement",
 				amountKop: 0,
@@ -273,13 +273,14 @@ export class SberbankTerminalService {
 				};
 			}
 
-			// Local fallback simulation if endpoint returns 404/501
-			this.updateStatus("success", `Транзакция по RRN ${rrn} успешно сверена локально.`);
+			// Fail safely if endpoint is unreachable or returns error
+			const failMsg = `Служба сверки RRN вернула код ${res.status}. Автоматическая сверка отклонена. Проверьте бумажный чек терминала.`;
+			this.updateStatus("communication_error", failMsg);
 			return {
-				success: true,
-				status: "success",
+				success: false,
+				status: "communication_error",
 				rrn,
-				responseMessageRu: "Успешная сверка по RRN",
+				responseMessageRu: failMsg,
 			};
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : "Сбой сверки по RRN";
@@ -351,7 +352,7 @@ export class SberbankTerminalService {
 			} else if (operation === "biometry_facepay") {
 				this.updateStatus("biometry_scan", "Взгляните в камеру терминала для оплаты лицом (FacePay)...");
 			} else {
-				this.updateStatus("card_wait", "Приложите карту, смартфон или вставьте чип в терминал...");
+				this.updateStatus("card_wait", "Ожидание карты на терминале Сбербанк...");
 			}
 
 			// 4. Dispatch driver command & poll terminal lifecycle
@@ -520,6 +521,16 @@ export class SberbankTerminalService {
 			this.abortController.abort();
 		}
 		this.updateStatus("user_cancelled", "Операция отменена пользователем.");
+
+		try {
+			void fetch(`http://${this.config.hostIp}:${this.config.hostPort}/api/sberpos/cancel`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ terminalId: this.config.terminalId, activeTransactionId: this.activeTransactionId }),
+			}).catch(() => {});
+		} catch {
+			// Ignore network failure on cancel broadcast
+		}
 	}
 }
 

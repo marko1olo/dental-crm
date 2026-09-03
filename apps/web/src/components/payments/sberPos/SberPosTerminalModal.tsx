@@ -7,7 +7,6 @@ import {
 	Ban,
 	FileText,
 	Printer,
-	Check,
 	AlertCircle,
 	X,
 	RefreshCw,
@@ -23,10 +22,10 @@ import {
 	type SberPosTerminalConfig,
 	type SberPosTransactionResponse,
 	type SberPosHardwareModel,
-	createMockSberPosResponse,
 	getPilotNtCommandCode,
 	buildPilotNtCommandPacket,
-} from "./sberPosEngine";
+} from "@dental/shared";
+import { sberbankTerminal } from "../../../services/hardware/sberbankTerminal";
 import {
 	DEFAULT_SBER_TERMINAL_CONFIG,
 	SBER_HARDWARE_PROFILES,
@@ -59,7 +58,7 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	const [operation, setOperation] = useState<SberPosOperationType>(initialOperation);
 	const [config, setConfig] = useState<SberPosTerminalConfig>(DEFAULT_SBER_TERMINAL_CONFIG);
 	const [status, setStatus] = useState<SberPosTerminalStatus>("ready");
-	const [statusMessage, setStatusMessage] = useState<string>("Готов к работе. Вставьте или приложите карту.");
+	const [statusMessage, setStatusMessage] = useState<string>("Ожидание карты на терминале Сбербанк...");
 	const [pinBuffer, setPinBuffer] = useState<string>("");
 	const [timerSeconds, setTimerSeconds] = useState<number>(45);
 	const [lastResponse, setLastResponse] = useState<SberPosTransactionResponse | null>(null);
@@ -83,22 +82,25 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 		if (isOpen) {
 			setOperation(initialOperation);
 			setStatus("ready");
-			setStatusMessage("Готов к работе. Вставьте или приложите карту.");
+			setStatusMessage("Ожидание карты на терминале Сбербанк...");
 			setPinBuffer("");
-			setTimerSeconds(45);
+			setTimerSeconds(config.timeoutMs ? Math.round(config.timeoutMs / 1000) : 45);
 			setLastResponse(null);
 			setIsSettingsOpen(false);
+			void handleStartOperation(initialOperation);
 		}
 	}, [isOpen, initialOperation]);
 
 	// Auto-countdown when in active transaction state
 	useEffect(() => {
 		if (
+			status === "card_wait" ||
 			status === "processing_card" ||
 			status === "pin_entry" ||
 			status === "biometry_scan" ||
 			status === "qr_displayed" ||
-			status === "authorizing"
+			status === "authorizing" ||
+			status === "connecting"
 		) {
 			timerRef.current = setInterval(() => {
 				setTimerSeconds((prev) => {
@@ -120,100 +122,65 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 
 	if (!isOpen) return null;
 
-	const handleStartOperation = (targetOp: SberPosOperationType = operation) => {
+	const handleStartOperation = async (targetOp: SberPosOperationType = operation) => {
 		setOperation(targetOp);
 		setStatus("connecting");
-		setStatusMessage(`Подключение к ${config.hostIp}:${config.hostPort} (Pilot-NT)...`);
-		setTimerSeconds(45);
+		setStatusMessage(`Подключение к терминалу Сбербанк (${config.hostIp}:${config.hostPort}, ${config.protocol})...`);
+		setTimerSeconds(config.timeoutMs ? Math.round(config.timeoutMs / 1000) : 60);
 		setPinBuffer("");
 		setLastResponse(null);
 
-		setTimeout(() => {
-			if (targetOp === "sberpay_qr") {
-				setStatus("qr_displayed");
-				setStatusMessage("QR-код сформирован. Ожидание сканирования в приложении банка...");
-			} else if (targetOp === "biometry_facepay") {
-				setStatus("biometry_scan");
-				setStatusMessage("Взгляните в 3D-камеру FacePay терминала...");
-			} else if (targetOp === "settlement") {
-				setStatus("authorizing");
-				setStatusMessage("Выполняется сверка итогов с процессингом ПАО Сбербанк...");
-				setTimeout(() => {
-					const res = createMockSberPosResponse(config, {
-						operation: "settlement",
-						amountKop: 0,
-						orderId: `Z-REPORT-${Date.now()}`,
-					});
-					setLastResponse(res);
-					setStatus("success");
-					setStatusMessage("Смена успешно закрыта. Итоги совпали.");
-					if (onTransactionSuccess) onTransactionSuccess(res);
-				}, 2000);
-			} else if (targetOp === "refund" || targetOp === "void") {
-				setStatus("authorizing");
-				setStatusMessage("Запрос отмены/возврата в процессинг Сбербанка...");
-				setTimeout(() => {
-					const res = createMockSberPosResponse(config, {
-						operation: targetOp,
-						amountKop: totalBillKop,
-						orderId,
-						originalRrn: originalRrnInput,
-						originalAuthCode: originalAuthInput,
-					});
-					setLastResponse(res);
-					setStatus("success");
-					setStatusMessage("Операция возврата успешно одобрена.");
-					if (onTransactionSuccess) onTransactionSuccess(res);
-				}, 1800);
-			} else {
-				// Standard Card Sale
-				setStatus("processing_card");
-				setStatusMessage("Чтение карты: Приложите бесконтактно или вставьте чип...");
-			}
-		}, 800);
-	};
+		try {
+			// Update terminal config
+			sberbankTerminal.setConfig({
+				terminalId: config.terminalId,
+				merchantId: config.merchantId,
+				hostIp: config.hostIp,
+				hostPort: config.hostPort,
+				protocol: config.protocol,
+				hardwareModel: config.hardwareModel,
+				timeoutMs: config.timeoutMs,
+				clinicName: config.clinicName,
+				clinicAddress: config.clinicAddress,
+				clinicInn: config.clinicInn,
+			});
 
-	// Simulation helper: user enters PIN or completes FacePay/QR scan
-	const handleSimulateClientAction = () => {
-		if (status === "processing_card") {
-			setStatus("pin_entry");
-			setStatusMessage("Введите PIN-код на клавиатуре терминала:");
-			setPinBuffer("••••");
-		} else if (status === "pin_entry" || status === "biometry_scan" || status === "qr_displayed") {
-			setStatus("authorizing");
-			setStatusMessage("Авторизация транзакции в ПАО Сбербанк...");
-			setTimeout(() => {
-				const res = createMockSberPosResponse(config, {
-					operation,
-					amountKop: totalBillKop,
-					orderId,
-					patientName,
-					patientPhone,
-				});
-				setLastResponse(res);
+			const res = await sberbankTerminal.executeTransaction({
+				amountKopecks: targetOp === "settlement" ? 0 : totalBillKop,
+				patientId: orderId,
+				patientName,
+				patientPhone,
+				orderId,
+				operation: targetOp,
+				originalRrn: originalRrnInput || undefined,
+				originalAuthCode: originalAuthInput || undefined,
+				autoPrintSlip: false,
+				onStatusUpdate: (st, msg) => {
+					setStatus(st);
+					setStatusMessage(msg);
+				},
+			});
+			setLastResponse(res);
+			if (res.success) {
 				setStatus("success");
-				setStatusMessage("Одобрено! Оплата успешно проведена.");
+				setStatusMessage("Оплата через терминал Сбербанк успешно авторизована банком!");
 				if (onTransactionSuccess) onTransactionSuccess(res);
-			}, 1400);
+			} else {
+				const isTimeout = res.responseCode === "99";
+				setStatus(isTimeout ? "pin_timeout" : "card_declined");
+				setStatusMessage(res.responseMessageRu || "Транзакция отклонена банком");
+			}
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Сбой связи с терминалом Сбербанк";
+			setStatus("communication_error");
+			setStatusMessage(msg);
 		}
 	};
 
-	// Simulation helper: simulate error (e.g. Card Declined)
-	const handleSimulateDecline = () => {
-		setStatus("authorizing");
-		setStatusMessage("Авторизация транзакции в ПАО Сбербанк...");
-		setTimeout(() => {
-			const res = createMockSberPosResponse(config, {
-				operation,
-				amountKop: totalBillKop,
-				orderId,
-				patientName,
-				patientPhone,
-			}, "51");
-			setLastResponse(res);
-			setStatus("card_declined");
-			setStatusMessage("Отказ: Недостаточно средств на карте (Код 51).");
-		}, 1200);
+	const handleCancelOperation = () => {
+		sberbankTerminal.cancelCurrentOperation();
+		setStatus("user_cancelled");
+		setStatusMessage("Операция отменена оператором.");
 	};
 
 	const handleCopySlip = () => {
@@ -447,9 +414,9 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 						</div>
 					)}
 
-					{/* Main Grid: Interactive Terminal LCD Simulation & Bank Slip / Receipt */}
+					{/* Main Grid: Terminal LCD Display & Bank Slip / Receipt */}
 					<div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-						{/* POS Terminal Emulator (Left side: 7 cols) */}
+						{/* POS Terminal Interface (Left side: 7 cols) */}
 						<div className="lg:col-span-7 flex flex-col gap-4">
 							<div className="sber-pos-lcd-screen p-5 min-h-[220px] flex flex-col justify-between">
 								{/* Terminal Status Header */}
@@ -506,43 +473,27 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 								</div>
 							</div>
 
-							{/* Terminal Action Simulator Buttons */}
+							{/* Terminal Action Buttons */}
 							<div className="flex items-center gap-2 flex-wrap">
 								<button
 									type="button"
 									onClick={() => handleStartOperation(operation)}
-									className="min-h-[44px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+									disabled={status === "connecting" || status === "authorizing"}
+									className="min-h-[44px] px-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 transition-colors cursor-pointer"
 								>
 									<RefreshCw className="w-3.5 h-3.5" />
 									<span>Повторить запрос (Retry)</span>
 								</button>
 
-								{(status === "processing_card" || status === "pin_entry" || status === "biometry_scan" || status === "qr_displayed") && (
-									<>
-										<button
-											type="button"
-											onClick={handleSimulateClientAction}
-											className="min-h-[44px] px-5 rounded-xl bg-[var(--ok-fg,#059669)] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-										>
-											<Check className="w-4 h-4" />
-											<span>
-												{status === "processing_card"
-													? "Симуляция: Приложить карту"
-													: status === "pin_entry"
-													? "Симуляция: Ввести PIN и подтвердить"
-													: "Симуляция: Завершить оплату"}
-											</span>
-										</button>
-
-										<button
-											type="button"
-											onClick={handleSimulateDecline}
-											className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1 transition-colors cursor-pointer"
-										>
-											<AlertCircle className="w-3.5 h-3.5" />
-											<span>Симуляция: Отказ банка</span>
-										</button>
-									</>
+								{(status === "card_wait" || status === "processing_card" || status === "pin_entry" || status === "biometry_scan" || status === "qr_displayed" || status === "connecting" || status === "authorizing") && (
+									<button
+										type="button"
+										onClick={handleCancelOperation}
+										className="min-h-[44px] px-4 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+									>
+										<Ban className="w-3.5 h-3.5" />
+										<span>Отменить операцию</span>
+									</button>
 								)}
 							</div>
 
