@@ -138,6 +138,9 @@ export interface MedicalCardForm043uData {
 	generalTreatmentPlan: string;
 	visitDiaries: VisitDiaryEntry043[];
 	epicrisis: EpicrisisAndDispensary043;
+	isLocked?: boolean;
+	status?: "draft" | "signed" | "completed" | "voided" | string;
+	revisionCount?: number;
 }
 
 /** Настройки вывода на печать и экспорта карты */
@@ -155,6 +158,9 @@ export interface Form043PrintConfig {
 	fontSizePt: 8 | 8.5 | 9 | 9.5 | 10;
 	scaleRatio: number; // 0.75, 1.0, 1.25
 	themeMode: "light" | "dark" | "print";
+	isLocked?: boolean;
+	status?: "draft" | "signed" | "completed" | "voided" | string;
+	revisionCount?: number;
 }
 
 /** Результат валидации полноты карты перед печатью/экспортом */

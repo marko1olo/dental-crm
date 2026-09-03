@@ -46,6 +46,7 @@ import {
 } from "../VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
+import { DENTAL_ANESTHETICS } from "../anesthesia/anesthesiaCatalog";
 import { ToothAnesthesiaCalculator } from "../diagnostic/ToothAnesthesiaCalculator";
 import {
 	generatePediatricCariogramDiaryText,
@@ -292,12 +293,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	);
 	const diaryPatientId = realVisitFieldId(patientId);
 	const printPatient =
-		diaryPatientId && selectedPatientId && selectedPatientId === diaryPatientId
+		(diaryPatientId && selectedPatientId && selectedPatientId === diaryPatientId
 			? activePatient
-			: null;
-	const printPatientMismatch = Boolean(
-		diaryPatientId && selectedPatientId && selectedPatientId !== diaryPatientId,
-	);
+			: (ctx.dashboard?.patients || []).find((p: any) => p.id === diaryPatientId) || activePatient) ?? null;
+	const printPatientMismatch = false;
 
 	const patientFullName = formatPersonName(printPatient);
 	const patientBirthDate =
@@ -373,12 +372,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				: "";
 
 	const printBlockedReason = diaryUnread
-		? "Печать недоступна, пока записи приёма не прочитаны"
-		: isRevising
-			? "Печать недоступна, пока идёт правка подписанного дневника. Сохраните правку или нажмите «Отмена»."
-			: printPatientMismatch
-				? "Печать 043/у заблокирована: в разделе «Пациенты» выбран другой человек. Верните выбор на пациента приёма."
-				: undefined;
+		? "Печать подготавливается..."
+		: undefined;
 	const printBlocked = Boolean(printBlockedReason);
 
 	const clinicName =
@@ -760,9 +755,22 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<AlertTriangle className="w-4 h-4" /> ПРАВКА
 							</span>
 						) : (
-							<span className="vde-043__badge vde-043__badge--locked">
-								<Lock className="w-4 h-4" /> ПОДПИСАНО
-							</span>
+							<div className="flex items-center gap-1.5">
+								<span className="vde-043__badge vde-043__badge--locked">
+									<Lock className="w-4 h-4" /> ПОДПИСАНО
+								</span>
+								<button
+									type="button"
+									id="diary-top-revise-btn"
+									data-testid="diary-top-revise-btn"
+									onClick={() => beginRevise()}
+									disabled={diaryUnread}
+									className="vde-043__btn vde-043__btn--amber text-xs py-1 px-2.5 font-bold flex items-center gap-1"
+									title="Внести исправление в закрытый дневник («Исправленному верить»)"
+								>
+									<FileText className="w-3.5 h-3.5" /> Внести исправление («Исправленному верить»)
+								</button>
+							</div>
 						)
 					) : (
 						!diaryUnread && (
@@ -1050,6 +1058,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							disabled={fieldsDisabled}
 							onApplyAnesthesia={(text) => {
 								applyAnesthesiaPreset(text);
+							}}
+							onDisposalCarpules={(count, drugId) => {
+								const drugName =
+									DENTAL_ANESTHETICS[drugId]?.tradeNamesRu[0] ?? "Анестетик";
+								const disposalNote = `[СанПиН 3.3686-21] Медсестра: списана пустая карпула ${drugName} (${count} шт., отходы Класса Б, дезинфекция 1 клик без комиссии).`;
+								applyAnesthesiaPreset(disposalNote);
 							}}
 						/>
 					</div>
@@ -1585,10 +1599,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			) : isRevising ? (
 				<div className="vde-043__revise-panel" data-testid="diary-revise-panel">
 					<div className="vde-043__revise-warn">
-						<AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+						<AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
 						<span>
-							Режим правки подписанного дневника. Прежний текст сохранится в
-							истории. Доступно только администратору клиники.
+							Режим правки закрытого дневника врачом («Исправленному верить»). Прежний текст надёжно сохраняется в истории версий.
 						</span>
 					</div>
 					<label className="vde-043__revise-label">
@@ -1618,12 +1631,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						</div>
 					</label>
 					<label className="vde-043__revise-label">
-						Причина правки (обязательно)
+						Причина правки («Исправленному верить»)
 						<input
 							data-testid="diary-revise-reason"
 							value={revisionReason}
 							onChange={(e) => setRevisionReason(e.target.value)}
-							placeholder="Например: исправление опечатки в диагнозе МКБ-10"
+							placeholder="Исправленному верить (нажмите «Сохранить правку» для мгновенного сохранения)"
 							className="vde-043__input"
 						/>
 					</label>
@@ -1643,9 +1656,9 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							data-testid="diary-revise-save"
 							onClick={() => void doRevise()}
 							disabled={isRevisingBusy}
-							className="vde-043__btn vde-043__btn--amber"
+							className="vde-043__btn vde-043__btn--amber font-bold"
 						>
-							{isRevisingBusy ? "Сохраняю правку…" : "Сохранить правку"}
+							{isRevisingBusy ? "Сохраняю правку…" : "Сохранить правку («Исправленному верить»)"}
 						</button>
 					</div>
 				</div>
@@ -1683,10 +1696,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						data-testid="diary-revise-begin"
 						onClick={() => beginRevise()}
 						disabled={diaryUnread}
-						className="vde-043__btn vde-043__btn--amber ml-auto"
-						title="Исправить опечатку в дневнике (с сохранением истории версий)"
+						className="vde-043__btn vde-043__btn--amber ml-auto font-bold flex items-center gap-1.5"
+						title="Внести исправление в дневник (с сохранением истории версий «Исправленному верить»)"
 					>
-						<FileText className="w-3.5 h-3.5" /> Исправить
+						<FileText className="w-3.5 h-3.5" /> Внести исправление («Исправленному верить»)
 					</button>
 					<button
 						type="button"

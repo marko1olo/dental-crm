@@ -8,6 +8,8 @@ import {
 	calculateAnesthesiaDosage,
 	calculateDrugCourseDose,
 	generateForm107_1uPrescription,
+	getForm043DocumentStatus,
+	formatForm043RevisionAuditStamp,
 	CLINICAL_COMPLAINTS_PRESETS,
 	ANESTHESIA_DRUGS_CATALOG,
 	DENTAL_DRUGS_PRESETS,
@@ -323,5 +325,66 @@ describe("clinicalEmrEngine — 4. Prescription Form 107-1/u & Drug Course Calcu
 		assert.equal(prescription.items[0]?.drug.id, "amoxiclav_875_125");
 		assert.equal(prescription.items[1]?.drug.id, "nimesulide_100");
 		assert.equal(prescription.items[2]?.drug.id, "chlorhexidine_005");
+	});
+});
+
+describe("clinicalEmrEngine — 8. Form 043/u Lifecycle Status & Audit Stamps (Мандат 8e)", () => {
+	it("returns draft status and watermark when visit is not closed", () => {
+		const status = getForm043DocumentStatus({
+			isLocked: false,
+			status: "draft",
+		});
+		assert.equal(status.isDraft, true);
+		assert.equal(status.isLocked, false);
+		assert.equal(status.watermarkText, "ЧЕРНОВИК");
+		assert.match(status.stampText, /ЧЕРНОВИК/);
+		assert.equal(status.canDoctorEditDirectly, true);
+	});
+
+	it("returns signed status when visit is locked without revisions", () => {
+		const status = getForm043DocumentStatus({
+			isLocked: true,
+			status: "signed",
+			revisionCount: 0,
+		});
+		assert.equal(status.isDraft, false);
+		assert.equal(status.isLocked, true);
+		assert.equal(status.watermarkText, null);
+		assert.match(status.stampText, /ПОДПИСАНО ВРАЧОМ/);
+		assert.equal(status.canDoctorEditDirectly, true);
+		assert.equal(status.amendmentAuditReasonDefault, "Исправленному верить");
+	});
+
+	it("returns revision stamp with 'ИСПРАВЛЕННОМУ ВЕРИТЬ' when revisionCount > 0", () => {
+		const status = getForm043DocumentStatus({
+			isLocked: true,
+			status: "signed",
+			revisionCount: 2,
+		});
+		assert.equal(status.isDraft, false);
+		assert.equal(status.isLocked, true);
+		assert.match(status.stampText, /ИСПРАВЛЕННОМУ ВЕРИТЬ/);
+		assert.match(status.stampText, /РЕДАКЦИЯ 3/);
+		assert.equal(status.canDoctorEditDirectly, true);
+	});
+
+	it("formats forensic revision audit string accurately", () => {
+		const stamp = formatForm043RevisionAuditStamp({
+			revisionNumber: 2,
+			authorName: "Д-р Иванов А.С.",
+			revisedAt: "2026-09-03T12:00:00.000Z",
+			reason: "Исправление опечатки в МКБ-10",
+		});
+		assert.match(stamp, /Редакция №2/);
+		assert.match(stamp, /Д-р Иванов А\.С\./);
+		assert.match(stamp, /Исправление опечатки в МКБ-10/);
+	});
+
+	it("falls back to 'Исправленному верить' when reason is empty", () => {
+		const stamp = formatForm043RevisionAuditStamp({
+			revisionNumber: 1,
+			reason: "",
+		});
+		assert.match(stamp, /Причина: Исправленному верить/);
 	});
 });

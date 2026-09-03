@@ -59,6 +59,9 @@ export interface Form043PrintModalProps {
 	onOpenCmoAudit?: () => void;
 	cmoAuditorName?: string;
 	cmoAuditorRole?: "chief_medical_officer" | "deputy_cmo_qcr" | "medical_commission_chair";
+	isLocked?: boolean;
+	isDraft?: boolean;
+	status?: "draft" | "signed" | "completed" | "voided" | string;
 }
 
 const DEFAULT_043_DATA: MedicalCardForm043uData = {
@@ -214,10 +217,22 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		onOpenCmoAudit,
 		cmoAuditorName,
 		cmoAuditorRole,
+		isLocked,
+		isDraft,
+		status,
 	}) {
 		const dashboard = useAppStore((s) => s.dashboard);
 		const profile = dashboard?.clinicSettings?.profile;
 		const staff = dashboard?.clinicSettings?.staff;
+
+		const effectiveIsDraft = Boolean(
+			isDraft ||
+			isLocked === false ||
+			status === "draft" ||
+			initialData?.isLocked === false ||
+			(initialData as any)?.status === "draft" ||
+			!(isLocked || initialData?.isLocked || status === "signed" || (initialData as any)?.status === "signed"),
+		);
 
 		const resolvedChiefDoctor =
 			staff?.find(
@@ -382,7 +397,11 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 
 		// Обработчик печати
 		const handlePrint = useCallback(() => {
-			const html = generatePrintableHtml043(formData, { scaleRatio: 1.0 });
+			const html = generatePrintableHtml043(formData, {
+				scaleRatio: 1.0,
+				isLocked: !effectiveIsDraft,
+				status: effectiveIsDraft ? "draft" : "signed",
+			});
 			const printFrame = document.createElement("iframe");
 			printFrame.style.position = "fixed";
 			printFrame.style.right = "0";
@@ -462,6 +481,17 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								<FileText className="w-3.5 h-3.5" />
 								Минздрав РФ № 834н
 							</span>
+							{effectiveIsDraft ? (
+								<span className="px-2.5 py-0.5 rounded border border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
+									<FileText className="w-3 h-3 text-amber-600" />
+									ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)
+								</span>
+							) : (
+								<span className="px-2.5 py-0.5 rounded border border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
+									<Check className="w-3 h-3 text-emerald-600" />
+									ПОДПИСАНО ВРАЧОМ
+								</span>
+							)}
 							<div>
 								<h2 className="emr043-header-title">
 									Медицинская карта № {formData.passport.medicalCardNumber} (Форма 043/у)
@@ -705,7 +735,12 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								<div
 									className="emr043-a4-sheet"
 									style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}
-									dangerouslySetInnerHTML={{ __html: generatePrintableHtml043(formData) }}
+									dangerouslySetInnerHTML={{
+										__html: generatePrintableHtml043(formData, {
+											isLocked: !effectiveIsDraft,
+											status: effectiveIsDraft ? "draft" : "signed",
+										}),
+									}}
 								/>
 							</div>
 						)}

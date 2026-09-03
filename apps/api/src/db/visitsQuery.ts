@@ -7,7 +7,7 @@ import type {
 	VisitDraftAutosaveRequest,
 	VisitSaveReceipt,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { activeVisit as inMemoryActiveVisit, visitCloseChecklistFactsFor } from "../sampleData.js";
 import { deductMaterialsForVisit } from "../services/inventory/materialDeduction.js";
 import { buildVisitCloseChecklist } from "../visitCloseChecklist.js";
@@ -154,7 +154,7 @@ export async function upsertVisitDraftAutosaveInDb(
 		)
 		.limit(1);
 	if (!visit) throw new Error("Визит не найден");
-	if (visit.status !== "draft")
+	if (visit.status === "voided")
 		throw new Error("Прием уже закрыт или аннулирован");
 
 	const serverDraft: VisitDraftAutosave = {
@@ -296,18 +296,19 @@ export async function acceptVisitDraftInDb(
 			.for("update")
 			.limit(1);
 		if (!visit) throw new Error("Визит не найден");
-		if (visit.status !== "draft")
+		if (visit.status === "voided")
 			throw new Error("Прием уже закрыт или аннулирован");
 
 		const previousRevision = visit.revision;
 		const newRevision = previousRevision + 1;
 		const savedAt = new Date();
+		const isAmendingSigned = visit.status === "signed";
 
 		/*
 		 * БЫЛО: UPDATE только по visitId. SELECT уже с org, но запись подписи —
 		 * юридически значимое действие: условие области обязано быть на самом UPDATE
 		 * (тот же класс, что patientsQuery updatePatientInDb после live cross-tenant PUT).
-		 * СТАЛО: organizationId + id в WHERE.
+		 * СТАЛО: organizationId + id в WHERE, поддержка версионной правки подписанного визита.
 		 */
 		const [signedRow] = await tx
 			.update(schema.visits)
@@ -319,15 +320,19 @@ export async function acceptVisitDraftInDb(
 				objectiveStatus: input.draft.objectiveStatus,
 				diagnosis: input.draft.diagnosis,
 				treatmentPlan: input.draft.treatmentPlan,
-				doctorSummary: input.doctorSummary,
-				signedAt: savedAt,
+				doctorSummary: isAmendingSigned
+					? input.doctorSummary
+						? `${input.doctorSummary} (Исправленному верить: ред. ${newRevision})`
+						: `Исправленному верить: ред. ${newRevision} от ${savedAt.toLocaleString("ru-RU")}`
+					: input.doctorSummary,
+				signedAt: visit.signedAt ?? savedAt,
 				updatedAt: savedAt,
 			})
 			.where(
 				and(
 					eq(schema.visits.organizationId, organizationId),
 					eq(schema.visits.id, input.visitId),
-					eq(schema.visits.status, "draft"),
+					inArray(schema.visits.status, ["draft", "signed"]),
 				),
 			)
 			.returning();
@@ -335,37 +340,83 @@ export async function acceptVisitDraftInDb(
 		// случилось, и обычный доменный отказ здесь правдив.
 		if (!signedRow) throw new Error("Прием не подписан");
 
-		// Execute atomic material deduction (safe execution — never block doctor's visit signing)
-		try {
-			await deductMaterialsForVisit(tx, {
-				organizationId,
-				visitId: input.visitId,
-				userId: null,
-				transactionType: "auto_deduct",
-			});
-		} catch (deductionError) {
-			console.warn(
-				`[visitsQuery] Предупреждение: списание материалов для визита ${input.visitId} (клиника ${organizationId}) ` +
-					"завершилось с ошибкой, но подписание карты приёма продолжено:",
-				deductionError,
-			);
+		// В частной стоматологии врач свободно вносит исправления в закрытый прием («Исправленному верить»).
+		// Создаем версионную запись аудита в visit_diary_revisions, если есть привязанный дневник:
+		if (isAmendingSigned) {
+			const [existingDiary] = await tx
+				.select()
+				.from(schema.visitDiaries)
+				.where(
+					and(
+						eq(schema.visitDiaries.visitId, input.visitId),
+						eq(schema.visitDiaries.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (existingDiary) {
+				await tx.insert(schema.visitDiaryRevisions).values({
+					organizationId,
+					diaryId: existingDiary.id,
+					previousAnamnesis: existingDiary.anamnesis,
+					previousStatusLocalis: existingDiary.statusLocalis,
+					previousDiagnosisIcd10: existingDiary.diagnosisIcd10,
+					previousTreatmentDescription: existingDiary.treatmentDescription,
+					previousComplications: existingDiary.complications,
+					previousComorbidities: existingDiary.comorbidities,
+					previousInstrumentTrayBarcode: existingDiary.instrumentTrayBarcode,
+					revisionReason: "Исправленному верить",
+					revisedByUserId: existingDiary.authorId ?? null,
+					revisedAt: savedAt,
+				});
+
+				await tx
+					.update(schema.visitDiaries)
+					.set({
+						anamnesis: input.draft.anamnesis,
+						statusLocalis: input.draft.objectiveStatus,
+						treatmentDescription: input.draft.treatmentPlan,
+						diagnosisIcd10: input.draft.diagnosis,
+						version: (existingDiary.version ?? 1) + 1,
+						updatedAt: savedAt,
+					})
+					.where(eq(schema.visitDiaries.id, existingDiary.id));
+			}
 		}
 
-		// Atomically lock corresponding visit_diaries row if present
-		await tx
-			.update(schema.visitDiaries)
-			.set({
-				isLocked: true,
-				lockedAt: savedAt,
-				updatedAt: savedAt,
-			})
-			.where(
-				and(
-					eq(schema.visitDiaries.visitId, input.visitId),
-					eq(schema.visitDiaries.organizationId, organizationId),
-					eq(schema.visitDiaries.isLocked, false),
-				),
-			);
+		// Execute atomic material deduction only on initial signing (never double-deduct on amendment)
+		if (!isAmendingSigned) {
+			try {
+				await deductMaterialsForVisit(tx, {
+					organizationId,
+					visitId: input.visitId,
+					userId: null,
+					transactionType: "auto_deduct",
+				});
+			} catch (deductionError) {
+				console.warn(
+					`[visitsQuery] Предупреждение: списание материалов для визита ${input.visitId} (клиника ${organizationId}) ` +
+						"завершилось с ошибкой, но подписание карты приёма продолжено:",
+					deductionError,
+				);
+			}
+
+			// Atomically lock corresponding visit_diaries row if present
+			await tx
+				.update(schema.visitDiaries)
+				.set({
+					isLocked: true,
+					lockedAt: savedAt,
+					updatedAt: savedAt,
+				})
+				.where(
+					and(
+						eq(schema.visitDiaries.visitId, input.visitId),
+						eq(schema.visitDiaries.organizationId, organizationId),
+						eq(schema.visitDiaries.isLocked, false),
+					),
+				);
+		}
 
 		// Опциональный контур контроля качества: регистрируем карту в очереди верификации начмеда (дедлайн 24 часа)
 		try {
@@ -415,11 +466,16 @@ export async function acceptVisitDraftInDb(
 		}
 
 		const signedVisit = projectVisitRow(signedRow);
-		const saveReceipt = buildVisitSaveReceipt(
-			input,
-			signedVisit,
-			previousRevision,
-		);
+		const saveReceipt: VisitSaveReceipt = {
+			...buildVisitSaveReceipt(
+				input,
+				signedVisit,
+				previousRevision,
+			),
+			warning: isAmendingSigned
+				? "Исправленному верить: внесена версионная правка в закрытый приём"
+				: null,
+		};
 
 		/*
 		 * Журнал пишется ДО сборки ответа. Карточка закрытия ниже может не собраться

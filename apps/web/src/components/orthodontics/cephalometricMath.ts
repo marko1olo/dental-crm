@@ -223,6 +223,8 @@ export interface CephalometricDiagnosis {
 	lowerIncisorInclinationRu: string;
 	witsRelationshipRu: string;
 	downsConvexityRu: string;
+	u1NaRelationshipRu: string;
+	l1NbRelationshipRu: string;
 	summaryRu: string;
 	protocol043Text: string;
 }
@@ -337,10 +339,10 @@ export const DEFAULT_CEPH_LANDMARKS_PRESET: LandmarkMap = {
 	Gn: { x: 442, y: 520 }, // Gnathion
 	Me: { x: 420, y: 540 }, // Menton
 	Go: { x: 250, y: 435 }, // Gonion
-	U1t: { x: 468, y: 395 }, // Upper Incisor Tip
-	U1a: { x: 438, y: 325 }, // Upper Incisor Apex
-	L1t: { x: 458, y: 400 }, // Lower Incisor Tip
-	L1a: { x: 425, y: 495 }, // Lower Incisor Apex
+	U1t: { x: 494, y: 395 }, // Upper Incisor Tip (4.0mm to NA)
+	U1a: { x: 456, y: 325 }, // Upper Incisor Apex (22° to NA, 106° to SN)
+	L1t: { x: 471, y: 400 }, // Lower Incisor Tip (3.9mm to NB)
+	L1a: { x: 428, y: 495 }, // Lower Incisor Apex (25° to NB, 88° to MP)
 };
 
 // ─── Core Cephalometric Calculator ────────────────────────────────────────────
@@ -826,6 +828,76 @@ export function calculateCephalometrics(
 		method: "Steiner",
 	});
 
+	// 12a. 1-NA Angle (Steiner - Upper Incisor to N-A line) - Norm: 22° ± 2° (20° to 24°)
+	let u1NaAngleVal: number | null = null;
+	let u1NaAngleStatus: CephalometricMeasurement["status"] = "pending";
+	let u1NaAngleInterp = "Требуется установка точек N, A, U1t, U1a";
+	if (N && A && U1t && U1a) {
+		const rawAngle = angleBetweenLines(N, A, U1a, U1t);
+		u1NaAngleVal = Number((rawAngle > 90 ? 180 - rawAngle : rawAngle).toFixed(1));
+		if (u1NaAngleVal > 24) {
+			u1NaAngleStatus = "increased";
+			u1NaAngleInterp = "Протрузия (вестибулярный наклон) верхних резцов к линии N-A";
+		} else if (u1NaAngleVal < 20) {
+			u1NaAngleStatus = "decreased";
+			u1NaAngleInterp = "Ретрузия (нёбный наклон) верхних резцов к линии N-A";
+		} else {
+			u1NaAngleStatus = "normal";
+			u1NaAngleInterp = "Нормальная инклинация верхних резцов относительно N-A";
+		}
+	}
+	measurements.push({
+		id: "1-NA-Angle",
+		name: "Угол 1-NA (Инклинация к N-A / Steiner)",
+		symbol: "1-NA (°)",
+		category: "dental",
+		value: u1NaAngleVal,
+		unit: "°",
+		normMin: 20,
+		normMax: 24,
+		normMean: 22,
+		normText: "22° ± 2°",
+		status: u1NaAngleStatus,
+		clinicalInterpretation: u1NaAngleInterp,
+		method: "Steiner",
+	});
+
+	// 12b. 1-NA Distance (Steiner - Upper Incisor tip to N-A line) - Norm: 4 ± 1 mm (3 to 5 mm)
+	let u1NaDistVal: number | null = null;
+	let u1NaDistStatus: CephalometricMeasurement["status"] = "pending";
+	let u1NaDistInterp = "Требуется установка точек N, A, U1t";
+	if (N && A && U1t) {
+		const projU1 = projectPointOntoLine(U1t, N, A);
+		const distPx = distance(U1t, projU1);
+		const isAnterior = U1t.x >= projU1.x;
+		u1NaDistVal = Number(((isAnterior ? distPx : -distPx) * scaleMmPerPixel).toFixed(1));
+		if (u1NaDistVal > 5.0) {
+			u1NaDistStatus = "increased";
+			u1NaDistInterp = "Протрузия (переднее положение) коронки верхнего резца относительно N-A";
+		} else if (u1NaDistVal < 3.0) {
+			u1NaDistStatus = "decreased";
+			u1NaDistInterp = "Ретрузия (дистальное положение) коронки верхнего резца относительно N-A";
+		} else {
+			u1NaDistStatus = "normal";
+			u1NaDistInterp = "Нормальное сагиттальное положение коронки верхнего резца относительно N-A";
+		}
+	}
+	measurements.push({
+		id: "1-NA-Dist",
+		name: "Расстояние 1-NA (Положение резца к N-A / Steiner)",
+		symbol: "1-NA (мм)",
+		category: "linear",
+		value: u1NaDistVal,
+		unit: "mm",
+		normMin: 3,
+		normMax: 5,
+		normMean: 4,
+		normText: "4 ± 1 мм",
+		status: u1NaDistStatus,
+		clinicalInterpretation: u1NaDistInterp,
+		method: "Steiner",
+	});
+
 	// 13. L1-MP / IMPA (Tweed / Steiner - Lower Incisor to Mandibular Plane) - Norm: 90° ± 3°
 	let l1MpVal: number | null = null;
 	let l1MpStatus: CephalometricMeasurement["status"] = "pending";
@@ -862,6 +934,76 @@ export function calculateCephalometrics(
 		status: l1MpStatus,
 		clinicalInterpretation: l1MpInterp,
 		method: "Tweed",
+	});
+
+	// 13a. 1-NB Angle (Steiner - Lower Incisor to N-B line) - Norm: 25° ± 2° (23° to 27°)
+	let l1NbAngleVal: number | null = null;
+	let l1NbAngleStatus: CephalometricMeasurement["status"] = "pending";
+	let l1NbAngleInterp = "Требуется установка точек N, B, L1t, L1a";
+	if (N && B && L1t && L1a) {
+		const rawAngle = angleBetweenLines(N, B, L1a, L1t);
+		l1NbAngleVal = Number((rawAngle > 90 ? 180 - rawAngle : rawAngle).toFixed(1));
+		if (l1NbAngleVal > 27) {
+			l1NbAngleStatus = "increased";
+			l1NbAngleInterp = "Протрузия (вестибулярный наклон) нижних резцов к линии N-B";
+		} else if (l1NbAngleVal < 23) {
+			l1NbAngleStatus = "decreased";
+			l1NbAngleInterp = "Ретрузия (язычный наклон) нижних резцов к линии N-B";
+		} else {
+			l1NbAngleStatus = "normal";
+			l1NbAngleInterp = "Нормальная инклинация нижних резцов относительно N-B";
+		}
+	}
+	measurements.push({
+		id: "1-NB-Angle",
+		name: "Угол 1-NB (Инклинация к N-B / Steiner)",
+		symbol: "1-NB (°)",
+		category: "dental",
+		value: l1NbAngleVal,
+		unit: "°",
+		normMin: 23,
+		normMax: 27,
+		normMean: 25,
+		normText: "25° ± 2°",
+		status: l1NbAngleStatus,
+		clinicalInterpretation: l1NbAngleInterp,
+		method: "Steiner",
+	});
+
+	// 13b. 1-NB Distance (Steiner - Lower Incisor tip to N-B line) - Norm: 4 ± 1 mm (3 to 5 mm)
+	let l1NbDistVal: number | null = null;
+	let l1NbDistStatus: CephalometricMeasurement["status"] = "pending";
+	let l1NbDistInterp = "Требуется установка точек N, B, L1t";
+	if (N && B && L1t) {
+		const projL1 = projectPointOntoLine(L1t, N, B);
+		const distPx = distance(L1t, projL1);
+		const isAnterior = L1t.x >= projL1.x;
+		l1NbDistVal = Number(((isAnterior ? distPx : -distPx) * scaleMmPerPixel).toFixed(1));
+		if (l1NbDistVal > 5.0) {
+			l1NbDistStatus = "increased";
+			l1NbDistInterp = "Протрузия коронки нижнего резца относительно базиса N-B";
+		} else if (l1NbDistVal < 3.0) {
+			l1NbDistStatus = "decreased";
+			l1NbDistInterp = "Ретрузия коронки нижнего резца относительно базиса N-B";
+		} else {
+			l1NbDistStatus = "normal";
+			l1NbDistInterp = "Нормальное сагиттальное положение коронки нижнего резца";
+		}
+	}
+	measurements.push({
+		id: "1-NB-Dist",
+		name: "Расстояние 1-NB (Положение резца к N-B / Steiner)",
+		symbol: "1-NB (мм)",
+		category: "linear",
+		value: l1NbDistVal,
+		unit: "mm",
+		normMin: 3,
+		normMax: 5,
+		normMean: 4,
+		normText: "4 ± 1 мм",
+		status: l1NbDistStatus,
+		clinicalInterpretation: l1NbDistInterp,
+		method: "Steiner",
 	});
 
 	// 14. Interincisal Angle (U1-L1) - Norm: 131° ± 5° (126° - 136°)
@@ -1047,9 +1189,17 @@ export function calculateCephalometrics(
 				? `Вогнутый профиль (${convexityVal}° по Downs)`
 				: `Прямой профиль (${convexityVal >= 0 ? "+" : ""}${convexityVal}° по Downs)`;
 
+	const u1NaRelationshipRu = u1NaAngleVal === null
+		? "Соотношение 1-NA не оценено"
+		: `1-NA = ${u1NaAngleVal}° (${u1NaDistVal !== null ? `${u1NaDistVal} мм, ` : ""}${u1NaAngleInterp})`;
+
+	const l1NbRelationshipRu = l1NbAngleVal === null
+		? "Соотношение 1-NB не оценено"
+		: `1-NB = ${l1NbAngleVal}° (${l1NbDistVal !== null ? `${l1NbDistVal} мм, ` : ""}${l1NbAngleInterp})`;
+
 	const summaryRu = skeletalClass === "Undefined"
 		? "Для построения ортодонтического заключения расставьте все анатомические реперные точки на снимке ТРГ."
-		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}. ${witsRelationshipRu}. ${downsConvexityRu}.`;
+		: `${skeletalClassRu}. ${maxillaryPositionRu}, ${mandibularPositionRu}. ${growthPatternRu}. Положение резцов: верхние — ${upperIncisorInclinationRu.toLowerCase()}, нижние — ${lowerIncisorInclinationRu.toLowerCase()}. ${witsRelationshipRu}. ${downsConvexityRu}. ${u1NaRelationshipRu}. ${l1NbRelationshipRu}.`;
 
 	// ── Generation of Structured Form 043/y Text ──────────────────────────────
 
@@ -1076,7 +1226,11 @@ export function calculateCephalometrics(
 • Тип роста: ${growthPatternRu}
 
 3. Дентальные характеристики и наклон резцов (Steiner, Tweed):
-• Инклинация верхних резцов (U1-SN): ${u1SnVal !== null ? `${u1SnVal}° (Норма 104°±2°)` : "—"} — ${u1SnInterp}
+• Инклинация верхних резцов к N-A (1-NA угол): ${u1NaAngleVal !== null ? `${u1NaAngleVal}° (Норма 22°±2°)` : "—"} — ${u1NaAngleInterp}
+• Сагиттальное положение верхних резцов (1-NA мм): ${u1NaDistVal !== null ? `${u1NaDistVal >= 0 ? "+" : ""}${u1NaDistVal} мм (Норма 4±1 мм)` : "—"} — ${u1NaDistInterp}
+• Инклинация нижних резцов к N-B (1-NB угол): ${l1NbAngleVal !== null ? `${l1NbAngleVal}° (Норма 25°±2°)` : "—"} — ${l1NbAngleInterp}
+• Сагиттальное положение нижних резцов (1-NB мм): ${l1NbDistVal !== null ? `${l1NbDistVal >= 0 ? "+" : ""}${l1NbDistVal} мм (Норма 4±1 мм)` : "—"} — ${l1NbDistInterp}
+• Инклинация верхних резцов к SN (U1-SN): ${u1SnVal !== null ? `${u1SnVal}° (Норма 104°±2°)` : "—"} — ${u1SnInterp}
 • Наклон нижних резцов (L1-MP / IMPA): ${l1MpVal !== null ? `${l1MpVal}° (Норма 90°±3°)` : "—"} — ${l1MpInterp}
 • Межрезцовый угол (U1-L1): ${u1L1Val !== null ? `${u1L1Val}° (Норма 131°±5°)` : "—"} — ${u1L1Interp}
 
@@ -1108,6 +1262,8 @@ ${summaryRu}
 			lowerIncisorInclinationRu,
 			witsRelationshipRu,
 			downsConvexityRu,
+			u1NaRelationshipRu,
+			l1NbRelationshipRu,
 			summaryRu,
 			protocol043Text,
 		},
@@ -1143,6 +1299,10 @@ export function generateForm043OrthodonticProtocolText(
 	const impa = analysis.measurements.find((m) => m.id === "L1-MP");
 	const u1sn = analysis.measurements.find((m) => m.id === "U1-SN");
 	const u1l1 = analysis.measurements.find((m) => m.id === "U1-L1");
+	const u1naAngle = analysis.measurements.find((m) => m.id === "1-NA-Angle");
+	const u1naDist = analysis.measurements.find((m) => m.id === "1-NA-Dist");
+	const l1nbAngle = analysis.measurements.find((m) => m.id === "1-NB-Angle");
+	const l1nbDist = analysis.measurements.find((m) => m.id === "1-NB-Dist");
 
 	return `ПРОТОКОЛ ЦЕФАЛОМЕТРИЧЕСКОГО АНАЛИЗА ТРГ В БОКОВОЙ ПРОЕКЦИИ
 (Медицинская карта 043/у · Приказ МЗ РФ №834н · Штайнер, Твид, Даунс, Якобсон)
@@ -1162,6 +1322,10 @@ export function generateForm043OrthodonticProtocolText(
 • Тип роста лицевого скелета: ${analysis.diagnosis.growthPatternRu}
 
 3. ДЕНТАЛЬНЫЕ ПАРАМЕТРЫ И НАКЛОН РЕЗЦОВ (Steiner, Tweed):
+• Инклинация верхних резцов к N-A (1-NA угол): ${u1naAngle?.value !== null && u1naAngle?.value !== undefined ? `${u1naAngle.value.toFixed(1)}° (Норма 22°±2°)` : "—"} — ${u1naAngle?.clinicalInterpretation || "—"}
+• Положение верхних резцов к N-A (1-NA мм): ${u1naDist?.value !== null && u1naDist?.value !== undefined ? `${u1naDist.value >= 0 ? "+" : ""}${u1naDist.value.toFixed(1)} мм (Норма 4±1 мм)` : "—"} — ${u1naDist?.clinicalInterpretation || "—"}
+• Инклинация нижних резцов к N-B (1-NB угол): ${l1nbAngle?.value !== null && l1nbAngle?.value !== undefined ? `${l1nbAngle.value.toFixed(1)}° (Норма 25°±2°)` : "—"} — ${l1nbAngle?.clinicalInterpretation || "—"}
+• Положение нижних резцов к N-B (1-NB мм): ${l1nbDist?.value !== null && l1nbDist?.value !== undefined ? `${l1nbDist.value >= 0 ? "+" : ""}${l1nbDist.value.toFixed(1)} мм (Норма 4±1 мм)` : "—"} — ${l1nbDist?.clinicalInterpretation || "—"}
 • Инклинация верхних резцов (U1-SN): ${u1sn?.value !== null && u1sn?.value !== undefined ? `${u1sn.value.toFixed(1)}° (Норма 104°±2°)` : "—"} — ${u1sn?.clinicalInterpretation || "—"}
 • Наклон нижних резцов IMPA (L1-MP): ${impa?.value !== null && impa?.value !== undefined ? `${impa.value.toFixed(1)}° (Норма 90°±3°)` : "—"} — ${impa?.clinicalInterpretation || "—"}
 • Межрезцовый угол (U1-L1): ${u1l1?.value !== null && u1l1?.value !== undefined ? `${u1l1.value.toFixed(1)}° (Норма 131°±5°)` : "—"} — ${u1l1?.clinicalInterpretation || "—"}

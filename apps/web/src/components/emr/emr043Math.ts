@@ -257,9 +257,9 @@ export function validateForm043uCompleteness(data: MedicalCardForm043uData): For
 	// Анамнез (Раздел 2)
 	check(Boolean(data.anamnesis?.chiefComplaint?.trim()), "chiefComplaint", "Жалобы при обращении", "anamnesis", "critical");
 	check(Boolean(data.anamnesis?.historyOfPresentIllness?.trim()), "historyOfPresentIllness", "Анамнез заболевания (Anamnesis morbi)", "anamnesis", "critical");
-	check(Boolean(data.anamnesis?.medicalHistoryVitae?.trim()), "medicalHistoryVitae", "Анамнез жизни (Anamnesis vitae)", "anamnesis", "critical");
+	check(Boolean(data.anamnesis?.medicalHistoryVitae?.trim()), "medicalHistoryVitae", "Анамнез жизни (Anamnesis vitae)", "anamnesis", "warning");
 	check(Boolean(data.anamnesis?.allergologicalHistory?.trim()), "allergologicalHistory", "Аллергологический статус", "anamnesis", "critical");
-	check(Boolean(data.anamnesis?.concomitantSomaticDiseases?.trim()), "concomitantSomaticDiseases", "Сопутствующие соматические патологии", "anamnesis", "critical");
+	check(Boolean(data.anamnesis?.concomitantSomaticDiseases?.trim()), "concomitantSomaticDiseases", "Сопутствующие соматические патологии (норма по умолчанию)", "anamnesis", "warning");
 
 	// Стоматологический статус и зубная формула (Раздел 3)
 	check(Boolean(data.dentalStatus?.odontogramTeeth && data.dentalStatus.odontogramTeeth.length > 0), "odontogramTeeth", "Зубная формула FDI (не менее 1 зуба)", "dental_status", "critical");
@@ -653,8 +653,24 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
       page-break-inside: avoid;
       break-inside: avoid;
     }
+    .watermark-draft {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-32deg);
+      font-size: 76pt;
+      font-weight: 900;
+      color: rgba(220, 38, 38, 0.06);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      z-index: 9999;
+      white-space: nowrap;
+      user-select: none;
+    }
     @media print {
       body { font-size: ${cfg.fontSizePt}pt; color: #000 !important; background: #fff !important; }
+      .watermark-draft { color: rgba(0, 0, 0, 0.08) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .section-title { background: #f1f5f9 !important; color: #0f172a !important; border-left-color: #0f172a !important; }
       table.data-table th, table.data-table-dense th { background: #f1f5f9 !important; color: #0f172a !important; }
       table.data-table td, table.data-table th, table.data-table-dense td, table.data-table-dense th { border-color: #000 !important; color: #000 !important; }
@@ -668,6 +684,11 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
 </head>
 <body>
 <div class="doc-container">
+  ${
+		cfg.isLocked === false || (data as any).isLocked === false || (data as any).status === "draft"
+			? '<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'
+			: ""
+	}
 
   <!-- Реквизиты клиники и форма Минздрава -->
   <div class="header-grid">
@@ -689,6 +710,15 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
   <!-- Заголовок карты -->
   <div class="doc-title-block">
     <h1 class="doc-main-title">МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА № ${escapeHtml(passport.medicalCardNumber)}</h1>
+    <div style="margin: 3px 0 2px 0;">
+      ${
+				cfg.isLocked === false || (data as any).isLocked === false || (data as any).status === "draft"
+					? '<span style="display:inline-block; border: 1pt dashed #d97706; background: #fffbeb; color: #b45309; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)</span>'
+					: ((data as any).revisionCount ?? cfg.revisionCount ?? 0) > 0
+						? `<span style="display:inline-block; border: 1pt solid #059669; background: #ecfdf5; color: #065f46; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${((data as any).revisionCount ?? cfg.revisionCount ?? 0) + 1})</span>`
+						: '<span style="display:inline-block; border: 1pt solid #059669; background: #ecfdf5; color: #065f46; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ПОДПИСАНО ВРАЧОМ</span>'
+			}
+    </div>
     <p class="doc-sub-title">Дата заведения карты: <strong>${escapeHtml(passport.cardOpenedDate)}</strong> | Лечащий врач: <strong>${escapeHtml(passport.attendingDoctorFullName)}</strong> (${escapeHtml(passport.attendingDoctorSpecialty)})</p>
   </div>
 

@@ -1125,3 +1125,91 @@ export function generateForm107_1uPrescription(options: {
 		diagnosisIcd10: icd,
 	};
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. СТАТУСЫ И ШТАМПЫ ДНЕВНИКА 043/У (FORM 043/U LIFECYCLE & AUDIT STAMPS)
+// Приказ Минздрава России № 834н, Мандат 8e (Свобода дневника и печать черновиков)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface Form043DocumentStatus {
+	readonly isDraft: boolean;
+	readonly isLocked: boolean;
+	readonly stampText: string;
+	readonly watermarkText: string | null;
+	readonly stampBadgeClass: string;
+	readonly canDoctorEditDirectly: boolean;
+	readonly amendmentAuditReasonDefault: string;
+}
+
+/**
+ * Определяет клинический статус формы 043/у и соответствующие штампы/водяные знаки.
+ * Реализует Мандат 8e:
+ * - Если прием не закрыт — штамп и водяной знак «ЧЕРНОВИК».
+ * - Если прием закрыт — штамп «ПОДПИСАНО ВРАЧОМ».
+ * - Если внесены правки — штамп «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)».
+ */
+export function getForm043DocumentStatus(params: {
+	readonly isLocked?: boolean | null;
+	readonly status?: "draft" | "signed" | "completed" | "voided" | string | null;
+	readonly revisionCount?: number | null;
+	readonly doctorFullName?: string | null;
+	readonly lockedAt?: string | Date | null;
+}): Form043DocumentStatus {
+	const isClosed = Boolean(
+		params.isLocked ||
+		params.status === "signed" ||
+		params.status === "completed",
+	);
+	const revisions = params.revisionCount ?? 0;
+
+	if (!isClosed) {
+		return {
+			isDraft: true,
+			isLocked: false,
+			stampText: "ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)",
+			watermarkText: "ЧЕРНОВИК",
+			stampBadgeClass: "badge-draft",
+			canDoctorEditDirectly: true,
+			amendmentAuditReasonDefault: "Черновик приёма",
+		};
+	}
+
+	if (revisions > 0) {
+		return {
+			isDraft: false,
+			isLocked: true,
+			stampText: `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisions + 1})`,
+			watermarkText: null,
+			stampBadgeClass: "badge-revised",
+			canDoctorEditDirectly: true, // Врач свободно правит с версионным аудитом в 1 клик
+			amendmentAuditReasonDefault: "Исправленному верить",
+		};
+	}
+
+	return {
+		isDraft: false,
+		isLocked: true,
+		stampText: "ПОДПИСАНО ВРАЧОМ",
+		watermarkText: null,
+		stampBadgeClass: "badge-signed",
+		canDoctorEditDirectly: true, // Врач свободно правит с версионным аудитом в 1 клик
+		amendmentAuditReasonDefault: "Исправленному верить",
+	};
+}
+
+/**
+ * Формирует строку аудита для версионной правки дневника («Исправленному верить»).
+ */
+export function formatForm043RevisionAuditStamp(params: {
+	readonly revisionNumber: number;
+	readonly authorName?: string | null;
+	readonly revisedAt?: string | Date | null;
+	readonly reason?: string | null;
+}): string {
+	const dateStr = params.revisedAt
+		? new Date(params.revisedAt).toLocaleString("ru-RU")
+		: new Date().toLocaleString("ru-RU");
+	const reason = params.reason?.trim() || "Исправленному верить";
+	const author = params.authorName ? `Врач: ${params.authorName}. ` : "";
+	return `[Редакция №${params.revisionNumber} от ${dateStr}]. ${author}Причина: ${reason}.`;
+}

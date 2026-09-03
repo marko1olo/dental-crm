@@ -1217,7 +1217,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		setReviseSnapshot({ ...diary });
 		setReviseTraySnapshot(trayBarcode);
 		setIsRevising(true);
-		setRevisionReason("");
+		setRevisionReason("Исправленному верить");
 	}, [diary, diaryId, isLocked, trayBarcode]);
 
 	const cancelRevise = useCallback(() => {
@@ -1253,15 +1253,7 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			);
 			return;
 		}
-		const reason = revisionReason.trim();
-		if (reason.length < 3) {
-			showToast(
-				"Укажите причину правки (не короче трёх символов) — она нужна для истории дневника.",
-				"error",
-				10000,
-			);
-			return;
-		}
+		const reason = revisionReason.trim() || "Исправленному верить";
 		setIsRevisingBusy(true);
 		try {
 			const headerSource = authRef.current;

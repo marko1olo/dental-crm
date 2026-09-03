@@ -229,4 +229,51 @@ describe("Cephalometric Math & Vector Geometry Engine", () => {
 		assert.ok(keys.includes("L1t"));
 		assert.ok(keys.includes("L1a"));
 	});
+
+	it("calculates Steiner 1-NA and 1-NB angular and linear measurements correctly", () => {
+		const res = calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET);
+
+		const u1NaAngle = res.measurements.find((m) => m.id === "1-NA-Angle");
+		const u1NaDist = res.measurements.find((m) => m.id === "1-NA-Dist");
+		const l1NbAngle = res.measurements.find((m) => m.id === "1-NB-Angle");
+		const l1NbDist = res.measurements.find((m) => m.id === "1-NB-Dist");
+
+		assert.ok(u1NaAngle && u1NaAngle.value !== null);
+		assert.ok(u1NaDist && u1NaDist.value !== null);
+		assert.ok(l1NbAngle && l1NbAngle.value !== null);
+		assert.ok(l1NbDist && l1NbDist.value !== null);
+
+		// Verified within Steiner clinical ranges
+		assert.ok(u1NaAngle.value >= 18 && u1NaAngle.value <= 26, `1-NA angle was ${u1NaAngle.value}`);
+		assert.ok(u1NaDist.value >= 2.5 && u1NaDist.value <= 5.5, `1-NA distance was ${u1NaDist.value}`);
+		assert.ok(l1NbAngle.value >= 20 && l1NbAngle.value <= 30, `1-NB angle was ${l1NbAngle.value}`);
+		assert.ok(l1NbDist.value >= 2.5 && l1NbDist.value <= 5.5, `1-NB distance was ${l1NbDist.value}`);
+
+		// Form 043/u text includes Steiner metrics
+		assert.ok(res.diagnosis.protocol043Text.includes("1-NA угол"));
+		assert.ok(res.diagnosis.protocol043Text.includes("1-NA мм"));
+		assert.ok(res.diagnosis.protocol043Text.includes("1-NB угол"));
+		assert.ok(res.diagnosis.protocol043Text.includes("1-NB мм"));
+	});
+
+	it("executes 1000 full cephalometric analyses in < 100ms (O(1) closed-form geometry without academic bloat)", () => {
+		const startTime = performance.now();
+		const iterations = 1000;
+
+		for (let i = 0; i < iterations; i++) {
+			calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET);
+		}
+
+		const totalDuration = performance.now() - startTime;
+		const perIteration = totalDuration / iterations;
+
+		assert.ok(
+			totalDuration < 100,
+			`1000 cephalometric iterations took ${totalDuration.toFixed(2)}ms (expected < 100ms)`,
+		);
+		assert.ok(
+			perIteration < 0.1,
+			`Single cephalometric calculation took ${perIteration.toFixed(4)}ms (expected < 0.1ms)`,
+		);
+	});
 });

@@ -720,7 +720,11 @@ export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<
 			const now = Date.now();
 			const isDeadlineExpired = now > new Date(verif.editableDeadline).getTime();
 			const isApproved = verif.status === "approved";
-			const isLocked = (isDeadlineExpired || isApproved) && !isDirectorOrCmo;
+			// Мандат 8e: Запрещены 24-часовые замки намертво. Врач свободно правит дневники с версионным аудитом ("Исправленному верить").
+			const isAttendingDoctor =
+				Boolean(identity.userId && verif.doctorId && identity.userId === verif.doctorId) ||
+				identity.role === "doctor";
+			const isLocked = (isDeadlineExpired || isApproved) && !isDirectorOrCmo && !isAttendingDoctor;
 
 			return reply.send({
 				visitId: verif.visitId,
