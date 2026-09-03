@@ -10,6 +10,7 @@ import {
 	Plus,
 	Search,
 	Settings,
+	Sparkles,
 	Syringe,
 	Trash2,
 	TrendingUp,
@@ -158,6 +159,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		isWritingOffStandardKit,
 		handleQuickWriteoffCarpules,
 		isWritingOffCarpules,
+		handleQuickWriteoffShiftBundle,
+		isWritingOffShiftBundle,
 		openAddModal,
 		openEditModal,
 		handleSaveItem,
@@ -833,6 +836,72 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								<Syringe size={16} />
 								<span>{isWritingOffCarpules ? "Списание..." : "Списать карпулу"}</span>
 							</button>
+
+							<div style={{ display: "inline-flex", borderRadius: 8, overflow: "hidden", border: "1px solid var(--teal, #0d9488)" }}>
+								<button
+									type="button"
+									className="secondary-button"
+									data-testid="nurse-quick-shift-bundle-btn"
+									disabled={isWritingOffShiftBundle}
+									onClick={() => handleQuickWriteoffShiftBundle("therapy")}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 6,
+										padding: "8px 12px",
+										minHeight: "40px",
+										fontWeight: 700,
+										fontSize: 13,
+										whiteSpace: "nowrap",
+										cursor: "pointer",
+										border: "none",
+										background: "var(--teal-soft, #ccfbf1)",
+										color: "var(--teal-dark, #0f766e)",
+									}}
+									title="1-Клик списание расхода смены (Терапия): перчатки, маски, салфетки, слюноотсосы, стаканчики, валики, микробраши, артикаин"
+								>
+									<Sparkles size={16} />
+									<span>{isWritingOffShiftBundle ? "Списание..." : "⚡ Смена: Терапия"}</span>
+								</button>
+								<button
+									type="button"
+									disabled={isWritingOffShiftBundle}
+									onClick={() => handleQuickWriteoffShiftBundle("orthopedics")}
+									style={{
+										padding: "8px 10px",
+										minHeight: "40px",
+										fontWeight: 600,
+										fontSize: 12,
+										cursor: "pointer",
+										border: "none",
+										borderLeft: "1px solid var(--teal, #0d9488)",
+										background: "var(--teal-soft, #ccfbf1)",
+										color: "var(--teal-dark, #0f766e)",
+									}}
+									title="Списать расход смены (Ортопедия)"
+								>
+									Орто
+								</button>
+								<button
+									type="button"
+									disabled={isWritingOffShiftBundle}
+									onClick={() => handleQuickWriteoffShiftBundle("surgery")}
+									style={{
+										padding: "8px 10px",
+										minHeight: "40px",
+										fontWeight: 600,
+										fontSize: 12,
+										cursor: "pointer",
+										border: "none",
+										borderLeft: "1px solid var(--teal, #0d9488)",
+										background: "var(--teal-soft, #ccfbf1)",
+										color: "var(--teal-dark, #0f766e)",
+									}}
+									title="Списать расход смены (Хирургия)"
+								>
+									Хир
+								</button>
+							</div>
 
 							<button
 								type="button"

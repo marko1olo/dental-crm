@@ -99,6 +99,16 @@ export interface QuickKraftPreset {
 
 export const POPULAR_KRAFT_PRESETS: readonly QuickKraftPreset[] = [
 	{
+		id: "sanpin_sealed_30d",
+		brandNameRu: "Крафт-пакет запечатанный (СанПиН)",
+		dimensionsMm: "100×200 мм",
+		materialId: "paper_self_seal_single",
+		sizeId: "size_100x200",
+		shelfLifeDays: 30,
+		descriptionRu: "Запечатанный самоклеящийся крафт-пакет (срок сохранения стерильности 30 суток по СанПиН 3.3686-21)",
+		badgeTextRu: "30 суток (СанПиН)",
+	},
+	{
 		id: "azov_100x200_50d",
 		brandNameRu: "Azov (Азов) Самоклейка",
 		dimensionsMm: "100×200 мм",
@@ -478,6 +488,65 @@ export function KraftPackageBarcodeModal({
 		);
 
 		// Switch to register or print
+		setActiveTab("register");
+	};
+
+	const handleQuickBatchAndPrint = (count = 10) => {
+		const customItems = customItemsText
+			? customItemsText.split(",").map((s) => s.trim()).filter(Boolean)
+			: selectedToolSet.typicalItemsRu;
+
+		const newBatch = generateKraftBatchRecords({
+			autoclaveId: selectedAutoclaveId,
+			cycleNumber,
+			packageType: "paper_self_seal_single",
+			packageSize: selectedSizeId,
+			toolSetId: selectedToolSetId,
+			customItems,
+			quantity: count,
+			operatorName,
+			indicatorId: selectedIndicatorId,
+			indicatorVerified: true,
+		});
+
+		const updated = [...newBatch, ...packages];
+		setPackages(updated);
+		onBatchCreated?.(newBatch);
+
+		const stickersHtml = newBatch
+			.map((p) => generateThermalStickerHtml(p, { size: previewLabelSize }))
+			.join("\n<div style='page-break-after:always;'></div>\n");
+
+		const fullHtml = `
+			<!DOCTYPE html>
+			<html>
+			<head>
+				<meta charset="utf-8">
+				<title>Печать термоэтикеток стерилизации (${count} шт., 30 дн.)</title>
+				<style>
+					@page { size: ${previewLabelSize === "58x40" ? "58mm 40mm" : "43mm 25mm"}; margin: 0; }
+					body { margin: 0; padding: 0; background: #fff; }
+				</style>
+			</head>
+			<body>
+				${stickersHtml}
+				<script>
+					window.onload = function() { window.print(); };
+				</script>
+			</body>
+			</html>
+		`;
+
+		const printWindow = window.open("", "_blank");
+		if (printWindow) {
+			printWindow.document.write(fullHtml);
+			printWindow.document.close();
+		}
+
+		showToast(
+			`⚡ Сформирована и отправлена на печать пачка из ${count} крафт-пакетов (срок 30 суток по СанПиН 3.3686-21)`,
+			"success",
+		);
 		setActiveTab("register");
 	};
 
@@ -1029,16 +1098,43 @@ export function KraftPackageBarcodeModal({
 									</div>
 								</div>
 
-								{/* Action Submit Button */}
-								<button
-									type="button"
-									onClick={handleCreateBatch}
-									className="kraft-btn kraft-btn-primary"
-									style={{ minHeight: "52px", fontSize: "1rem", boxShadow: "0 4px 14px rgba(13, 148, 136, 0.3)" }}
-								>
-									<Plus size={20} />
-									Сформировать партию ({packQuantity} пакетов)
-								</button>
+								{/* Action Submit Buttons */}
+								<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+									<button
+										type="button"
+										onClick={() => handleQuickBatchAndPrint(10)}
+										className="kraft-btn touch-manipulation"
+										style={{
+											minHeight: "52px",
+											fontSize: "1rem",
+											fontWeight: 700,
+											background: "var(--teal, #0d9488)",
+											borderColor: "var(--teal, #0d9488)",
+											color: "#ffffff",
+											boxShadow: "0 4px 14px rgba(13, 148, 136, 0.35)",
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											gap: "0.5rem",
+											cursor: "pointer",
+										}}
+										title="1-Клик формирование и печать пачки из 10 наклеек (срок годности 30 дней для запечатанных пакетов по СанПиН 3.3686-21) без блокирующих окон"
+										data-testid="kraft-quick-batch-and-print-btn"
+									>
+										<Printer size={20} />
+										<span>⚡ 1-Клик печать пачки (10 шт. / 30 дн.)</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={handleCreateBatch}
+										className="kraft-btn kraft-btn-secondary"
+										style={{ minHeight: "44px", fontSize: "0.95rem" }}
+									>
+										<Plus size={18} />
+										Сформировать партию ({packQuantity} пакетов)
+									</button>
+								</div>
 							</div>
 						</div>
 					)}

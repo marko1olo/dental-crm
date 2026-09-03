@@ -855,6 +855,74 @@ export function useInventoryLogic(organizationId: string) {
 		}
 	};
 
+	const isWritingOffShiftBundleRef = useRef(false);
+	const [isWritingOffShiftBundle, setIsWritingOffShiftBundle] = useState(false);
+
+	/**
+	 * 1-клик пакетное списание стандартного расхода смены (комплект терапия / ортопедия / хирургия).
+	 * Избавляет медсестру от ручного прокликивания 40 позиций.
+	 * Реализует мягкий овердрафт склада без блокировки работы.
+	 */
+	const handleQuickWriteoffShiftBundle = async (
+		bundleType: "therapy" | "orthopedics" | "surgery" = "therapy",
+		options?: {
+			visitId?: string;
+			notes?: string;
+		},
+	) => {
+		if (isWritingOffShiftBundleRef.current) return;
+		isWritingOffShiftBundleRef.current = true;
+		setIsWritingOffShiftBundle(true);
+
+		const bundleNameRu =
+			bundleType === "orthopedics"
+				? "Ортопедия"
+				: bundleType === "surgery"
+					? "Хирургия"
+					: "Терапия";
+
+		try {
+			const res = await fetch(
+				`/api/inventory/${organizationId}/quick-writeoff-shift-bundle`,
+				{
+					method: "POST",
+					headers: getHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						bundleType,
+						visitId: options?.visitId,
+						notes: options?.notes,
+					}),
+				},
+			);
+
+			if (res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+					showToast(
+						`Расход смены «${bundleNameRu}» списан. Мягкий овердрафт: «Списано под операцию, требуется оприходование»`,
+						"warning",
+					);
+				} else {
+					showToast(
+						`Стандартный расход смены «${bundleNameRu}» успешно списан (${data.deductedItems?.length || 9} позиций: перчатки, маски, салфетки, слюноотсосы, стаканчики, валики)`,
+						"success",
+					);
+				}
+				fetchItems();
+			} else {
+				showToast(`Ошибка списания расхода смены «${bundleNameRu}»`, "error");
+			}
+		} catch (e) {
+			logger.error(e);
+			showToast("Системная ошибка при списании расхода смены", "error");
+		} finally {
+			isWritingOffShiftBundleRef.current = false;
+			setIsWritingOffShiftBundle(false);
+		}
+	};
+
 	const filteredItems = useMemo(() => {
 		if (!searchQuery.trim()) return items;
 		const q = searchQuery.toLowerCase();
@@ -942,6 +1010,8 @@ export function useInventoryLogic(organizationId: string) {
 		isWritingOffStandardKit,
 		handleQuickWriteoffCarpules,
 		isWritingOffCarpules,
+		handleQuickWriteoffShiftBundle,
+		isWritingOffShiftBundle,
 		getHeaders,
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		servicesList: (dashboard as any)?.prices || dashboard?.serviceCatalog || [],

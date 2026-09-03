@@ -684,11 +684,7 @@ export function SanpinRegisters() {
 				});
 				if (res.ok) {
 					isApiSuccess = true;
-					const data = await res.json();
-					showToast(
-						`1-Клик Автопилот смены: оформлены пробы ПСО (${data.batchCount || bundle.summary.totalPsoItems} лотков, азопирам отр.), циклы автоклавирования 134°C, Дезар и журнал T° (+4.2°C). Досье готово для Роспотребнадзора.`,
-						"success",
-					);
+					showToast("Смена СанПиН заполнена по нормам 3.3686-21", "success");
 					fetchSummary();
 					return;
 				}
@@ -707,10 +703,7 @@ export function SanpinRegisters() {
 					temperature: { totalChecksToday: bundle.summary.totalTempChecks, deviationsToday: 0 },
 				}));
 
-				showToast(
-					`1-Клик Автопилот смены: оформлены 3 партии ПСО (310 изд., выборка 14 шт. ОК), 3 цикла автоклавирования 134°C (38 пакетов), Дезар (60 мин) и журнал T° (+4.2°C). Досье готово для Роспотребнадзора.`,
-					"success",
-				);
+				showToast("Смена СанПиН заполнена по нормам 3.3686-21", "success");
 			}
 		} catch (err) {
 			showToast("Ошибка при авто-заполнении смены", "error");
@@ -1079,7 +1072,7 @@ export function SanpinRegisters() {
 				</div>
 
 				<div className="sanpin-header-actions" style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>
-					{/* SOLE DOMINANT PRIMARY ACTION: 1-Клик Автопилот смены СанПиН */}
+					{/* SOLE DOMINANT PRIMARY ACTION: ⚡ 1-Клик автопилот смены СанПиН (ПСО 366/у + Автоклавы 257/у + Дезар + Температура) */}
 					<button
 						type="button"
 						onClick={handleAutofillShift}
@@ -1087,24 +1080,28 @@ export function SanpinRegisters() {
 						className="sanpin-btn sanpin-btn-primary touch-manipulation"
 						style={{
 							minHeight: "44px",
-							padding: "0.5rem 1.1rem",
+							padding: "0.5rem 1.25rem",
 							fontSize: "0.85rem",
 							fontWeight: 700,
-							background: "var(--teal)",
-							borderColor: "var(--teal)",
+							background: "var(--teal, #0d9488)",
+							borderColor: "var(--teal, #0d9488)",
 							color: "var(--on-teal, #ffffff)",
-							boxShadow: "0 2px 6px rgba(13, 148, 136, 0.3)",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "0.4rem",
+							gap: "0.45rem",
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-1click-autopilot-primary-btn"
-						title="1-Клик Автопилот смены: мгновенно фиксирует пробы ПСО, азопирам, фенолфталеин, циклы 134°C, Дезар и журнал T°"
+						title="⚡ 1-Клик автопилот смены СанПиН: фиксирует пробы ПСО (Форма 366/у), циклы автоклавирования 134°C (Форма 257/у), облучатели Дезар и журнал T° (+4.2°C)"
 					>
 						<Sparkles size={16} />
-						<span>{autoFilling ? "Оформление смены..." : "1-Клик Автопилот смены СанПиН"}</span>
+						<span>
+							{autoFilling
+								? "Оформление смены СанПиН..."
+								: "⚡ 1-Клик автопилот смены СанПиН (ПСО 366/у + Автоклавы 257/у + Дезар + Температура)"}
+						</span>
 					</button>
 
 					{/* Сканировать крафт-пакет (Камера / 2D сканер) */}

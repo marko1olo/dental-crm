@@ -409,6 +409,82 @@ export function AutoclaveRegisterTab() {
 		printWin.document.close();
 	};
 
+	const handlePrintBatchPouches = (log: SterilizationLogRecord, count = 10) => {
+		const printWin = window.open("", "_blank", "width=600,height=500");
+		if (!printWin) {
+			showToast("Разрешите всплывающие окна для пакетной печати этикеток", "error");
+			return;
+		}
+
+		// Срок сохранения стерильности для запечатанных крафт-пакетов по СанПиН 3.3686-21 = 30 суток
+		const daysLifespan = 30;
+		const packDate = new Date(log.timestamp).toISOString().slice(0, 10);
+		const expDate = new Date(new Date(log.timestamp).getTime() + daysLifespan * 86400000)
+			.toISOString()
+			.slice(0, 10);
+		const baseBarcode = log.barcode || `STER-${log.id.slice(0, 6).toUpperCase()}`;
+
+		const stickersHtml: string[] = [];
+
+		for (let i = 1; i <= count; i++) {
+			const itemBarcode = `${baseBarcode}-${String(i).padStart(2, "0")}`;
+			const rec: KraftPackageRecord = {
+				id: `kp-${log.id}-${i}`,
+				batchId: `CYC-${log.cycleNumber}`,
+				serialNumber: i,
+				packageType: log.packagingType === "laminated_heat_sealed" ? "paper_plastic_pouch" : "paper_self_seal_single",
+				packageSize: "size_100x200",
+				toolSetId: "set_therapeutic_tray",
+				toolSetNameRu: (log.itemsDescription || "Стоматологический набор").slice(0, 32),
+				itemsListRu: [log.itemsDescription || "Инструментальный набор"],
+				packDate,
+				expDate,
+				daysLifespan,
+				daysRemaining: daysLifespan,
+				status: "sterile_valid",
+				autoclaveId: log.deviceName || "АК-01",
+				cycleNumber: log.cycleNumber || 1,
+				operatorId: log.operatorId || "NURSE-01",
+				operatorName: log.operatorName || "Медсестра ЦСО",
+				indicatorId: log.indicatorType === "class6_emulating" ? "vinar_inte_6" : log.indicatorType === "class5_integrating" ? "vinar_inte_5" : "vinar_steritest_4",
+				indicatorVerified: log.passedIndicator ?? true,
+				barcode128: itemBarcode,
+				barcodeDataMatrixPayload: `${itemBarcode}|${log.deviceName || "АК-01"}|CYC${log.cycleNumber}|${packDate}|${expDate}|${log.operatorName || "ЦСО"}`,
+				isBreached: false,
+				notes: log.notes || "",
+				createdAt: new Date(log.timestamp).toISOString(),
+			};
+
+			stickersHtml.push(
+				generateThermalStickerHtml(rec, {
+					size: "58x40",
+					clinicName: "Стоматологическая клиника «DENTE»",
+				}),
+			);
+		}
+
+		printWin.document.write(`
+			<!DOCTYPE html>
+			<html lang="ru">
+			<head>
+				<meta charset="UTF-8">
+				<title>Пакет этикеток стерилизации (${count} шт., СанПиН 3.3686-21 / 30 дн.)</title>
+				<style>
+					@page { size: 58mm 40mm; margin: 0; }
+					body { margin: 0; padding: 0; background: #fff; }
+					.page-break { page-break-after: always; display: block; }
+				</style>
+			</head>
+			<body>
+				${stickersHtml.map((s) => `<div>${s}</div>`).join("<div class='page-break'></div>")}
+				<script>window.print(); setTimeout(() => window.close(), 1000);</script>
+			</body>
+			</html>
+		`);
+		printWin.document.close();
+		showToast(`⚡ Сформирована пачка из ${count} термоэтикеток (срок: 30 суток по СанПиН 3.3686-21)`, "success");
+	};
+
 	const openKraftForLog = (log: SterilizationLogRecord) => {
 		setKraftPrefill({
 			autoclaveId: log.deviceName || undefined,
@@ -607,6 +683,39 @@ export function AutoclaveRegisterTab() {
 							title="1-Клик регистрация нормативного цикла стерилизации смены (134°C / 5 мин / 2.15 бар / норма СанПиН 3.3686-21)"
 						>
 							<Sparkles size={16} /> <span>⚡ 1-Клик цикл смены</span>
+						</button>
+
+						{/* Action: ⚡ 1-Клик печать наклеек (10 шт. / 30 дн.) без модалок */}
+						<button
+							type="button"
+							onClick={() => {
+								if (logs.length > 0 && logs[0]) {
+									handlePrintBatchPouches(logs[0], 10);
+								} else {
+									showToast("Сначала зафиксируйте цикл стерилизации смены", "warning");
+								}
+							}}
+							className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+							style={{
+								minHeight: "44px",
+								height: "44px",
+								padding: "0.4rem 0.85rem",
+								fontSize: "0.85rem",
+								fontWeight: 700,
+								cursor: "pointer",
+								whiteSpace: "nowrap",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.35rem",
+								borderRadius: "8px",
+								color: "var(--teal, #0d9488)",
+								borderColor: "var(--teal, #0d9488)",
+								background: "var(--paper-strong, #ffffff)",
+							}}
+							title="1-Клик печать пачки из 10 наклеек крафт-пакетов (срок 30 дней для запечатанных пакетов по СанПиН 3.3686-21) без блокирующих окон"
+							data-testid="autoclave-quick-batch-labels-btn"
+						>
+							<Printer size={16} /> <span>⚡ Печать наклеек (10 шт. / 30 дн.)</span>
 						</button>
 
 						{/* Action: + Зафиксировать цикл */}
@@ -1043,9 +1152,19 @@ export function AutoclaveRegisterTab() {
 													onClick={() => handlePrintSinglePouch(log)}
 													className="sanpin-btn sanpin-btn-secondary"
 													style={{ minHeight: "24px", height: "24px", width: "24px", padding: "0", fontSize: "0.725rem", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-													title="Быстрая печать термоэтикетки (58x40 мм / DataMatrix)"
+													title="Быстрая печать одной термоэтикетки (58x40 мм / DataMatrix)"
 												>
 													<Tag size={12} />
+												</button>
+
+												<button
+													type="button"
+													onClick={() => handlePrintBatchPouches(log, 10)}
+													className="sanpin-btn sanpin-btn-secondary"
+													style={{ minHeight: "24px", height: "24px", padding: "0 0.35rem", fontSize: "0.7rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "2px", flexShrink: 0, fontWeight: 700, color: "var(--teal, #0d9488)" }}
+													title="1-Клик печать пачки из 10 наклеек (срок 30 дней для запечатанных пакетов по СанПиН 3.3686-21)"
+												>
+													<Printer size={11} /> 10 шт
 												</button>
 											</div>
 										</td>
