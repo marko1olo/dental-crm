@@ -1,7 +1,3 @@
-import {
-	injectVisualSignatureStampIntoHtml,
-	renderDigitalSignatureStampHtml,
-} from "@dental/shared";
 import type { FastifyInstance } from "fastify";
 import { requireClinicalReadAccess } from "../../accessGuard.js";
 import {
@@ -17,6 +13,7 @@ import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { clinicalDocKinds } from "./query.js";
 import {
 	apiError,
+	applySignatureStampIfSigned,
 	documentAttachmentFileName,
 	documentHasIssuedArchiveMetadata,
 	documentRequiresIssuedArchive,
@@ -24,65 +21,6 @@ import {
 	renderIssuedHtmlToPdf,
 	resolveDocumentRenderContext,
 } from "./shared.js";
-
-function applySignatureStampIfSigned(
-	document: import("@dental/shared").GeneratedDocument,
-	html: string,
-): string {
-	const isElectronicallySigned =
-		document.signatureAttestation?.mode === "qualified_electronic_signature" ||
-		document.signatureAttestation?.mode === "enhanced_non_qualified_electronic_signature" ||
-		Boolean(document.cryptoSignaturePkcs7 && document.cryptoSignaturePkcs7.length > 0) ||
-		Boolean(document.doctorSignaturePkcs7 && document.doctorSignaturePkcs7.length > 0);
-
-	if (!isElectronicallySigned || html.includes("BEGIN_GOST_SIGNATURE_STAMP")) {
-		return html;
-	}
-
-	const certSerial =
-		document.doctorCertSerial ||
-		`00E4A28B${document.id.replace(/-/g, "").slice(0, 16).toUpperCase()}`;
-	const isTaxCert =
-		document.kind === "tax_deduction_certificate" ||
-		document.kind === "legacy_tax_deduction_certificate";
-	const isContract =
-		document.kind === "paid_medical_services_contract";
-	const defaultSubject = isTaxCert
-		? document.signatureAttestation?.staffFullName ||
-			"Главный врач / Уполномоченное лицо клиники"
-		: isContract
-			? document.signatureAttestation?.staffFullName ||
-				"Руководитель медицинской организации / Главный врач"
-			: "Врач-стоматолог клиники";
-	const certSubject =
-		document.doctorCertSubject ||
-		document.signatureAttestation?.staffFullName ||
-		defaultSubject;
-	const validFrom = document.issuedAt || new Date().toISOString();
-	const validToDate = new Date(validFrom);
-	validToDate.setFullYear(validToDate.getFullYear() + 1);
-
-	const stampHtml = renderDigitalSignatureStampHtml({
-		certificateSerialNumber: certSerial,
-		certificateSubject: certSubject,
-		certificateIssuer: "Головной УЦ Минцифры России (ГОСТ Р 34.10-2012)",
-		validFrom,
-		validTo: validToDate.toISOString(),
-		signedAt:
-			document.doctorSignedAt ||
-			document.signatureAttestation?.signedAt ||
-			document.issuedAt ||
-			undefined,
-		signatureType:
-			document.signatureAttestation?.mode ===
-			"enhanced_non_qualified_electronic_signature"
-				? "unep"
-				: "ukep",
-		documentId: document.id,
-	});
-
-	return injectVisualSignatureStampIntoHtml(html, stampHtml);
-}
 
 export async function register(app: FastifyInstance) {
 	// ────────────────────────────────────────────────────────────

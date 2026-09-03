@@ -17,6 +17,7 @@ import {
 	renderDocumentHtml,
 	resolveDocumentDigitalSignatureStamp,
 } from "../../documents/renderDocument.js";
+import { applySignatureStampIfSigned } from "../../routes/documents/shared.js";
 import { resolveSignatureForStorage } from "../../services/clinical/DiarySigningCeremonyService.js";
 
 describe("Document UKEP / UNEP & GOST Digital Signature Rigor", () => {
@@ -505,5 +506,56 @@ describe("Document UKEP / UNEP & GOST Digital Signature Rigor", () => {
 		assert.ok(stampedHtml.includes("Васильева Ольга Николаевна"));
 		// Проверяем, что в блоке подписи врача строка для ручной подписи замещена штампом
 		assert.ok(stampedHtml.includes("Пациент (Заказчик): Ковалев Игорь Николаевич"));
+	});
+
+	it("guarantees HTML and PDF signature stamp parity via applySignatureStampIfSigned", () => {
+		const baseDoc = {
+			id: "doc-unified-stamp-1234",
+			kind: "dental_medical_card_043u",
+			patientId: "pat-1",
+			title: "Медицинская карта 043/у",
+			totalAmountRub: 0,
+			status: "issued" as const,
+			issuedAt: "2026-09-02T12:00:00.000Z",
+			doctorCertSerial: "00E4A28BCAFE998877",
+			doctorCertSubject: "Смирнова Екатерина Павловна",
+			signatureAttestation: {
+				mode: "qualified_electronic_signature" as const,
+				staffFullName: "Смирнова Екатерина Павловна",
+				signedAt: "2026-09-02T12:00:00.000Z",
+			},
+		} as unknown as GeneratedDocument;
+
+		const plainHtml = renderForm043uHtml({
+			clinicLegalName: 'ООО "ДЕНТЕ"',
+			medicalCardNumber: "СТ-101",
+			patientFullName: "Петров Петр Петрович",
+			attendingDoctorFullName: "Смирнова Екатерина Павловна",
+			attendingDoctorSpecialty: "Врач-стоматолог",
+			chiefComplaint: "Осмотр",
+			visitEntries: [],
+		});
+
+		// 1. Для подписанного документа штамп инжектируется
+		const stampedHtml = applySignatureStampIfSigned(baseDoc, plainHtml);
+		assert.ok(stampedHtml.includes("BEGIN_GOST_SIGNATURE_STAMP"));
+		assert.ok(stampedHtml.includes("00E4A28BCAFE998877"));
+		assert.ok(stampedHtml.includes("Смирнова Екатерина Павловна"));
+
+		// 2. Идемпотентность: повторный вызов не дублирует штамп
+		const doubleStampedHtml = applySignatureStampIfSigned(baseDoc, stampedHtml);
+		const stampCount = (doubleStampedHtml.match(/BEGIN_GOST_SIGNATURE_STAMP/g) || []).length;
+		assert.strictEqual(stampCount, 1, "Штамп не должен дублироваться при повторном вызове");
+
+		// 3. Для неподписанного документа HTML возвращается без изменений
+		const unsignedDoc = {
+			...baseDoc,
+			signatureAttestation: null,
+			doctorSignaturePkcs7: null,
+			cryptoSignaturePkcs7: null,
+		} as unknown as GeneratedDocument;
+		const unstamped = applySignatureStampIfSigned(unsignedDoc, plainHtml);
+		assert.strictEqual(unstamped.includes("BEGIN_GOST_SIGNATURE_STAMP"), false);
+		assert.strictEqual(unstamped, plainHtml);
 	});
 });

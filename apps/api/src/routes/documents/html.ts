@@ -15,6 +15,7 @@ import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { clinicalDocKinds } from "./query.js";
 import {
 	apiError,
+	applySignatureStampIfSigned,
 	documentAttachmentFileName,
 	documentHasIssuedArchiveMetadata,
 	documentIssueChainBlockReason,
@@ -86,7 +87,9 @@ export async function register(app: FastifyInstance) {
 						`attachment; filename="${documentAttachmentFileName(document, "html")}"`,
 					);
 				}
-				return reply.type("text/html; charset=utf-8").send(issuedSnapshot);
+				return reply
+					.type("text/html; charset=utf-8")
+					.send(applySignatureStampIfSigned(document, issuedSnapshot));
 			}
 
 			const requestHost = request.headers.host ?? "127.0.0.1:4100";
@@ -114,7 +117,12 @@ export async function register(app: FastifyInstance) {
 
 			return reply
 				.type("text/html; charset=utf-8")
-				.send(renderDocumentHtml(document, patient, renderContext));
+				.send(
+					applySignatureStampIfSigned(
+						document,
+						renderDocumentHtml(document, patient, renderContext),
+					),
+				);
 		},
 	);
 }
