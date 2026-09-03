@@ -425,9 +425,16 @@ export function validateCdaParams(params: unknown): CdaValidationResult {
 				});
 			}
 			if (diag.tooth && !validateFdiToothNumber(diag.tooth)) {
-				warnings.push(
-					`Диагноз: Номер зуба "${diag.tooth}" не соответствует стандарту FDI ISO 3950`,
+				errors.push(
+					`Диагноз: Номер зуба "${diag.tooth}" не соответствует стандарту FDI ISO 3950 (разрешены 11..48, 51..85)`,
 				);
+				issues.push({
+					path: "diagnoses.tooth",
+					field: "tooth",
+					message: `Недопустимый зуб "${diag.tooth}"`,
+					severity: "error",
+					oid: EGISZ_OIDS.DENTAL_TOOTH,
+				});
 			}
 		}
 
@@ -435,7 +442,7 @@ export function validateCdaParams(params: unknown): CdaValidationResult {
 			for (const st of d101.dentalStatus) {
 				if (!validateFdiToothNumber(st.tooth)) {
 					errors.push(
-						`Зубная формула: Недопустимый номер зуба FDI "${st.tooth}"`,
+						`Зубная формула: Недопустимый номер зуба FDI "${st.tooth}" (разрешены 11..48, 51..85)`,
 					);
 					issues.push({
 						path: "dentalStatus.tooth",
@@ -451,9 +458,16 @@ export function validateCdaParams(params: unknown): CdaValidationResult {
 		if (d101.services) {
 			for (const s of d101.services) {
 				if (!validateOrder804nCode(s.code)) {
-					warnings.push(
-						`Услуги: Код услуги "${s.code}" не соответствует Номенклатуре 804н`,
+					errors.push(
+						`Услуги: Код услуги "${s.code}" не соответствует Номенклатуре медицинских услуг Приказа 804н (ожидается A16.07.xxx или B01.065.xxx)`,
 					);
+					issues.push({
+						path: "services.code",
+						field: "code",
+						message: `Недопустимый код услуги "${s.code}"`,
+						severity: "error",
+						oid: EGISZ_OIDS.ORDER_804N,
+					});
 				}
 			}
 		}
@@ -946,14 +960,15 @@ export function validateCdaXmlStructure(
 					/<id\b[^>]*\bextension="([^"]+)"[^>]*\broot="1\.2\.643\.100\.3"/i,
 				);
 			if (!snilsMatch || !isValidSnils(snilsMatch[1])) {
-				warnings.push(
+				errors.push(
 					"В секции автора <author> отсутствует валидный СНИЛС врача (OID 1.2.643.100.3)",
 				);
 				issues.push({
 					path: "ClinicalDocument.author.assignedAuthor.id",
 					field: "snils",
 					message: "Некорректный или отсутствующий СНИЛС врача",
-					severity: "warning",
+					severity: "error",
+					oid: EGISZ_OIDS.SNILS,
 				});
 			}
 		}
@@ -969,6 +984,76 @@ export function validateCdaXmlStructure(
 			message: "Отсутствует custodian",
 			severity: "error",
 		});
+	} else {
+		// Check MO identification (FRMO OID 1.2.643.5.1.13.13.12.2 / MO Passport OID 1.2.643.5.1.13.13.11.1008 / OGRN / INN)
+		const custodianBlock = trimmed.match(/<custodian>[\s\S]*?<\/custodian>/i);
+		if (custodianBlock) {
+			const hasMoId =
+				/root="1\.2\.643\.5\.1\.13\.13\.12\.2"/i.test(custodianBlock[0]) ||
+				/root="1\.2\.643\.5\.1\.13\.13\.11\.1008"/i.test(custodianBlock[0]) ||
+				/root="1\.2\.643\.100\.1"/i.test(custodianBlock[0]) ||
+				/root="1\.2\.643\.100\.4"/i.test(custodianBlock[0]);
+			if (!hasMoId) {
+				errors.push(
+					"В секции организации <custodian> отсутствует идентификатор МО (ФРМО OID 1.2.643.5.1.13.13.12.2 / Паспорт МО OID 1.2.643.5.1.13.13.11.1008 / ОГРН / ИНН)",
+				);
+				issues.push({
+					path: "ClinicalDocument.custodian.assignedCustodian.representedCustodianOrganization.id",
+					field: "id",
+					message: "Отсутствует идентификатор медицинской организации",
+					severity: "error",
+					oid: EGISZ_OIDS.FRMO_MO_ROOT,
+				});
+			}
+		}
+	}
+
+	// FDI Tooth numbering validation in clinical entries (<targetSiteCode code="..." codeSystem="1.2.643.5.1.13.13.11.1466" ...>)
+	const toothMatches = [...trimmed.matchAll(/<targetSiteCode\b([^>]+)\/?>/gi)];
+	for (const tm of toothMatches) {
+		const attrs = tm[1] ?? "";
+		if (/codeSystem="1\.2\.643\.5\.1\.13\.13\.11\.1466"/i.test(attrs)) {
+			const codeMatch = attrs.match(/\bcode="([^"]+)"/i);
+			if (codeMatch && codeMatch[1]) {
+				const toothNum = codeMatch[1].trim();
+				if (!validateFdiToothNumber(toothNum)) {
+					errors.push(
+						`СЭМД: Недопустимый номер зуба FDI "${toothNum}" в клиническом документе (разрешены 11..48, 51..85 по ISO 3950)`,
+					);
+					issues.push({
+						path: "structuredBody.targetSiteCode",
+						field: "code",
+						message: `Недопустимый номер зуба FDI "${toothNum}"`,
+						severity: "error",
+						oid: EGISZ_OIDS.DENTAL_TOOTH,
+					});
+				}
+			}
+		}
+	}
+
+	// Order 804n service code validation in clinical entries (<code code="..." codeSystem="1.2.643.5.1.13.13.11.1070" ...>)
+	const serviceMatches = [...trimmed.matchAll(/<code\b([^>]+)\/?>/gi)];
+	for (const sm of serviceMatches) {
+		const attrs = sm[1] ?? "";
+		if (/codeSystem="1\.2\.643\.5\.1\.13\.13\.11\.1070"/i.test(attrs)) {
+			const codeMatch = attrs.match(/\bcode="([^"]+)"/i);
+			if (codeMatch && codeMatch[1]) {
+				const serviceCode = codeMatch[1].trim();
+				if (!validateOrder804nCode(serviceCode)) {
+					errors.push(
+						`СЭМД: Код медицинской услуги "${serviceCode}" не соответствует Номенклатуре Приказа Минздрава РФ № 804н`,
+					);
+					issues.push({
+						path: "structuredBody.procedure.code",
+						field: "code",
+						message: `Недопустимый код услуги 804н "${serviceCode}"`,
+						severity: "error",
+						oid: EGISZ_OIDS.ORDER_804N,
+					});
+				}
+			}
+		}
 	}
 
 	// 4. Structured Body

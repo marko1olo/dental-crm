@@ -553,17 +553,27 @@ export class EgiszOutboxDispatcher {
 				} else {
 					const nextAttempt = row.attempts + 1;
 					const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
-					const isTerminal = nextAttempt >= row.maxAttempts || submissionRes.status === "Rejected";
-					const nextStatus = isTerminal ? "rejected_by_remd" : "failed";
+					const isRejected = submissionRes.status === "Rejected";
+					const isExhausted = nextAttempt >= row.maxAttempts;
+					const isTerminal = isRejected || isExhausted;
+					const nextStatus = isRejected ? "rejected_by_remd" : "failed";
+					const errorClass = isRejected
+						? "RemdRejection"
+						: isExhausted
+							? "DeadLetterQueueExhausted"
+							: submissionRes.status || "TransmissionError";
+					const errorText = isExhausted && !isRejected
+						? `[DLQ] Исчерпан лимит ${row.maxAttempts} попыток отправки: ${submissionRes.errorMessage || "Ошибка передачи"}`
+						: submissionRes.errorMessage || "Ошибка при передаче документа в РЭМД";
 
 					await db
 						.update(egiszOutbox)
 						.set({
 							status: nextStatus,
 							attempts: nextAttempt,
-							nextAttemptAt: new Date(Date.now() + delayMs),
-							lastErrorClass: submissionRes.status || "TransmissionError",
-							lastErrorMessage: submissionRes.errorMessage || "Ошибка при передаче документа в РЭМД",
+							nextAttemptAt: new Date(Date.now() + (isTerminal ? 0 : delayMs)),
+							lastErrorClass: errorClass,
+							lastErrorMessage: errorText,
 							lockedAt: null,
 							lockedBy: null,
 							updatedAt: new Date(),
@@ -577,10 +587,11 @@ export class EgiszOutboxDispatcher {
 							errorDetails: {
 								outboxId: row.id,
 								attempts: nextAttempt,
-								nextAttemptAt: new Date(Date.now() + delayMs).toISOString(),
-								errorMessage: submissionRes.errorMessage,
+								nextAttemptAt: isTerminal ? null : new Date(Date.now() + delayMs).toISOString(),
+								errorMessage: errorText,
 								validationIssues: submissionRes.validationIssues,
 								failedAt: new Date().toISOString(),
+								isDeadLetterQueue: isExhausted && !isRejected,
 							},
 						})
 						.where(
@@ -592,7 +603,11 @@ export class EgiszOutboxDispatcher {
 
 					await appendEgiszAuditLog(db, {
 						organizationId: row.organizationId,
-						eventType: isTerminal ? "REMD_SEMD_REJECTED" : "REMD_SEMD_RETRY_SCHEDULED",
+						eventType: isRejected
+							? "REMD_SEMD_REJECTED"
+							: isExhausted
+								? "REMD_DLQ_EXHAUSTED"
+								: "REMD_SEMD_RETRY_SCHEDULED",
 						entityType: "egisz_outbox",
 						entityId: row.id,
 						patientId: row.patientId,
@@ -600,7 +615,9 @@ export class EgiszOutboxDispatcher {
 							outboxId: row.id,
 							visitId: row.visitId,
 							attempts: nextAttempt,
-							errorMessage: submissionRes.errorMessage,
+							maxAttempts: row.maxAttempts,
+							errorMessage: errorText,
+							isDeadLetterQueue: isExhausted && !isRejected,
 							retryScheduledInMs: isTerminal ? null : delayMs,
 						},
 					});
@@ -610,24 +627,28 @@ export class EgiszOutboxDispatcher {
 						outboxId: row.id,
 						visitId: row.visitId,
 						status: nextStatus,
-						error: submissionRes.errorMessage,
+						error: errorText,
 					});
 				}
 			} catch (err: unknown) {
 				const errorMsg = err instanceof Error ? err.message : String(err);
 				const nextAttempt = row.attempts + 1;
 				const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
-				const isTerminal = nextAttempt >= row.maxAttempts;
-				const nextStatus = isTerminal ? "rejected_by_remd" : "failed";
+				const isExhausted = nextAttempt >= row.maxAttempts;
+				const nextStatus = "failed";
+				const errorClass = isExhausted ? "DeadLetterQueueExhausted" : "TransmissionException";
+				const errorText = isExhausted
+					? `[DLQ] Исчерпан лимит ${row.maxAttempts} попыток отправки (сетевой сбой): ${errorMsg}`
+					: errorMsg;
 
 				await db
 					.update(egiszOutbox)
 					.set({
 						status: nextStatus,
 						attempts: nextAttempt,
-						nextAttemptAt: new Date(Date.now() + delayMs),
-						lastErrorClass: "Exception",
-						lastErrorMessage: errorMsg,
+						nextAttemptAt: new Date(Date.now() + (isExhausted ? 0 : delayMs)),
+						lastErrorClass: errorClass,
+						lastErrorMessage: errorText,
 						lockedAt: null,
 						lockedBy: null,
 						updatedAt: new Date(),
@@ -636,7 +657,7 @@ export class EgiszOutboxDispatcher {
 
 				await appendEgiszAuditLog(db, {
 					organizationId: row.organizationId,
-					eventType: isTerminal ? "REMD_SEMD_REJECTED" : "REMD_SEMD_RETRY_SCHEDULED",
+					eventType: isExhausted ? "REMD_DLQ_EXHAUSTED" : "REMD_SEMD_RETRY_SCHEDULED",
 					entityType: "egisz_outbox",
 					entityId: row.id,
 					patientId: row.patientId,
@@ -644,8 +665,10 @@ export class EgiszOutboxDispatcher {
 						outboxId: row.id,
 						visitId: row.visitId,
 						attempts: nextAttempt,
-						errorMessage: errorMsg,
-						retryScheduledInMs: isTerminal ? null : delayMs,
+						maxAttempts: row.maxAttempts,
+						errorMessage: errorText,
+						isDeadLetterQueue: isExhausted,
+						retryScheduledInMs: isExhausted ? null : delayMs,
 					},
 				});
 
