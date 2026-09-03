@@ -18,4 +18,6 @@ export * from "./dentalFormulaRenderer.js";
 export * from "./formsContractAndConsents.js";
 export * from "./fnsSchema1151156.js";
 export * from "./ndflXmlGenerator.js";
+export * from "./templateEngine.js";
+export * from "./templates/index.js";
 
