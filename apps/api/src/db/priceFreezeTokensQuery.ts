@@ -236,7 +236,7 @@ export async function getActivePriceFreezeToken(
 			and(
 				eq(treatmentPlanPriceFreezeTokens.planId, planId),
 				eq(treatmentPlanPriceFreezeTokens.organizationId, organizationId),
-				eq(treatmentPlanPriceFreezeTokens.status, "active"),
+				inArray(treatmentPlanPriceFreezeTokens.status, ["active", "expired"]),
 			),
 		)
 		.orderBy(desc(treatmentPlanPriceFreezeTokens.createdAt))

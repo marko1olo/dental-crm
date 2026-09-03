@@ -83,169 +83,169 @@ export class PartialRefundService {
 			);
 		}
 
-		// Idempotency check
-		if (input.clientMutationId) {
-			const existingPayment = await db
-				.select({ id: payments.id, status: payments.status, amountRub: payments.amountRub })
+		return await db.transaction(async (tx) => {
+			// Idempotency check with transaction consistency
+			if (input.clientMutationId) {
+				const existingPayment = await tx
+					.select({ id: payments.id, status: payments.status, amountRub: payments.amountRub })
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, input.organizationId),
+							eq(payments.clientMutationId, input.clientMutationId)
+						)
+					)
+					.limit(1);
+
+				if (existingPayment.length > 0 && existingPayment[0]) {
+					const p = existingPayment[0];
+					throw new PartialRefundValidationError(
+						"DuplicateRefundMutation",
+						`Операция возврата с ключом ${input.clientMutationId} уже была проведена (Платёж ${p.id}).`,
+						{ paymentId: p.id, status: p.status }
+					);
+				}
+			}
+
+			// Fetch invoice with pessimistic FOR UPDATE lock to prevent concurrent double-refund race conditions
+			const [invoice] = await tx
+				.select()
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.organizationId, input.organizationId),
+						eq(patientInvoices.id, input.invoiceId)
+					)
+				)
+				.for("update")
+				.limit(1);
+
+			if (!invoice) {
+				throw new PartialRefundValidationError(
+					"InvoiceNotFound",
+					`Счет на оплату с ID «${input.invoiceId}» не найден.`
+				);
+			}
+
+			// Fetch doctor info if visitId is present
+			let doctorUserId: string | undefined;
+			let doctorFullName: string = "Лечащий врач";
+			if (invoice.visitId) {
+				const [visitRow] = await tx
+					.select({
+						doctorUserId: appointments.doctorUserId,
+						doctorName: users.fullName,
+					})
+					.from(visits)
+					.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
+					.leftJoin(users, eq(appointments.doctorUserId, users.id))
+					.where(
+						and(
+							eq(visits.organizationId, input.organizationId),
+							eq(visits.id, invoice.visitId)
+						)
+					)
+					.limit(1);
+
+				if (visitRow) {
+					doctorUserId = visitRow.doctorUserId ?? undefined;
+					doctorFullName = visitRow.doctorName ?? "Лечащий врач";
+				}
+			}
+
+			// Synthesize refundable items from invoice total and request
+			const invoiceTotalRub = Number(invoice.totalAmountRub || invoice.totalRub || 0);
+			const invoiceTotalKop = Math.round(invoiceTotalRub * 100);
+
+			// 1. Проверяем уже произведенные возвраты по данному счёту (защита от переплаты / Over-Refund Defense)
+			let alreadyRefundedKop = 0;
+			const existingRefunds = await tx
+				.select({ amountRub: payments.amountRub })
 				.from(payments)
 				.where(
 					and(
 						eq(payments.organizationId, input.organizationId),
-						eq(payments.clientMutationId, input.clientMutationId)
+						or(
+							eq(payments.documentId, invoice.id),
+							ilike(payments.note, `%${invoice.id}%`),
+							invoice.visitId ? and(eq(payments.visitId, invoice.visitId), sql`${payments.amountRub} < 0`) : undefined
+						),
+						sql`${payments.amountRub} < 0`
 					)
-				)
-				.limit(1);
+				);
 
-			if (existingPayment.length > 0 && existingPayment[0]) {
-				const p = existingPayment[0];
+			for (const ref of existingRefunds) {
+				alreadyRefundedKop += Math.round(Math.abs(Number(ref.amountRub || 0)) * 100);
+			}
+
+			const remainingRefundableKop = Math.max(0, invoiceTotalKop - alreadyRefundedKop);
+
+			// 2. Рассчитываем запрошенную сумму возврата
+			const requestedTotalKop = input.refundRequests.reduce((sum, req) => {
+				return sum + (req.customAmountKopToRefund ?? invoiceTotalKop);
+			}, 0);
+
+			if (requestedTotalKop <= 0) {
 				throw new PartialRefundValidationError(
-					"DuplicateRefundMutation",
-					`Операция возврата с ключом ${input.clientMutationId} уже была проведена (Платёж ${p.id}).`,
-					{ paymentId: p.id, status: p.status }
+					"ZeroRefundAmount",
+					"Сумма возврата должна быть строго больше нуля."
 				);
 			}
-		}
 
-		// Fetch invoice
-		const [invoice] = await db
-			.select()
-			.from(patientInvoices)
-			.where(
-				and(
-					eq(patientInvoices.organizationId, input.organizationId),
-					eq(patientInvoices.id, input.invoiceId)
-				)
-			)
-			.limit(1);
-
-		if (!invoice) {
-			throw new PartialRefundValidationError(
-				"InvoiceNotFound",
-				`Счет на оплату с ID «${input.invoiceId}» не найден.`
-			);
-		}
-
-		// Fetch doctor info if visitId is present
-		let doctorUserId: string | undefined;
-		let doctorFullName: string = "Лечащий врач";
-		if (invoice.visitId) {
-			const [visitRow] = await db
-				.select({
-					doctorUserId: appointments.doctorUserId,
-					doctorName: users.fullName,
-				})
-				.from(visits)
-				.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
-				.leftJoin(users, eq(appointments.doctorUserId, users.id))
-				.where(
-					and(
-						eq(visits.organizationId, input.organizationId),
-						eq(visits.id, invoice.visitId)
-					)
-				)
-				.limit(1);
-
-			if (visitRow) {
-				doctorUserId = visitRow.doctorUserId ?? undefined;
-				doctorFullName = visitRow.doctorName ?? "Лечащий врач";
+			if (requestedTotalKop > remainingRefundableKop) {
+				const remainingRub = (remainingRefundableKop / 100).toLocaleString("ru-RU");
+				const requestedRub = (requestedTotalKop / 100).toLocaleString("ru-RU");
+				throw new PartialRefundValidationError(
+					"OverRefundExceeded",
+					`Запрошенная сумма возврата (${requestedRub} ₽) превышает доступный лимит по счёту (${remainingRub} ₽). Возврат сверх суммы счёта запрещен 54-ФЗ.`,
+					{ remainingRefundableKop, requestedTotalKop, invoiceTotalKop, alreadyRefundedKop }
+				);
 			}
-		}
 
-		// Synthesize refundable items from invoice total and request
-		const invoiceTotalRub = Number(invoice.totalAmountRub || invoice.totalRub || 0);
-		const invoiceTotalKop = Math.round(invoiceTotalRub * 100);
+			// If specific items were passed or inferred:
+			const refundableItems: RefundableInvoiceItem[] = input.refundRequests.map((req, idx) => {
+				const itemAmountKop = req.customAmountKopToRefund ?? invoiceTotalKop;
+				return {
+					id: req.itemId || `inv-item-${idx + 1}`,
+					name: req.reasonRu || "Стоматологическая услуга (пломба/лечение)",
+					code804n: "A16.07.002.001",
+					toothNumber: 46,
+					unitPriceKop: itemAmountKop,
+					quantity: req.quantityToRefund || 1,
+					grossAmountKop: itemAmountKop,
+					netAmountKop: itemAmountKop,
+					doctorUserId,
+					doctorName: doctorFullName,
+					commissionPct: input.defaultDoctorCommissionPct ?? 25,
+					materialCostKop: 0,
+				};
+			});
 
-		// 1. Проверяем уже произведенные возвраты по данному счёту (защита от переплаты / Over-Refund Defense)
-		let alreadyRefundedKop = 0;
-		const existingRefunds = await db
-			.select({ amountRub: payments.amountRub })
-			.from(payments)
-			.where(
-				and(
-					eq(payments.organizationId, input.organizationId),
-					or(
-						eq(payments.documentId, invoice.id),
-						ilike(payments.note, `%${invoice.id}%`),
-						invoice.visitId ? and(eq(payments.visitId, invoice.visitId), sql`${payments.amountRub} < 0`) : undefined
-					),
-					sql`${payments.amountRub} < 0`
-				)
-			);
-
-		for (const ref of existingRefunds) {
-			alreadyRefundedKop += Math.round(Math.abs(Number(ref.amountRub || 0)) * 100);
-		}
-
-		const remainingRefundableKop = Math.max(0, invoiceTotalKop - alreadyRefundedKop);
-
-		// 2. Рассчитываем запрошенную сумму возврата
-		const requestedTotalKop = input.refundRequests.reduce((sum, req) => {
-			return sum + (req.customAmountKopToRefund ?? invoiceTotalKop);
-		}, 0);
-
-		if (requestedTotalKop <= 0) {
-			throw new PartialRefundValidationError(
-				"ZeroRefundAmount",
-				"Сумма возврата должна быть строго больше нуля."
-			);
-		}
-
-		if (requestedTotalKop > remainingRefundableKop) {
-			const remainingRub = (remainingRefundableKop / 100).toLocaleString("ru-RU");
-			const requestedRub = (requestedTotalKop / 100).toLocaleString("ru-RU");
-			throw new PartialRefundValidationError(
-				"OverRefundExceeded",
-				`Запрошенная сумма возврата (${requestedRub} ₽) превышает доступный лимит по счёту (${remainingRub} ₽). Возврат сверх суммы счёта запрещен 54-ФЗ.`,
-				{ remainingRefundableKop, requestedTotalKop, invoiceTotalKop, alreadyRefundedKop }
-			);
-		}
-
-		// If specific items were passed or inferred:
-		const refundableItems: RefundableInvoiceItem[] = input.refundRequests.map((req, idx) => {
-			const itemAmountKop = req.customAmountKopToRefund ?? invoiceTotalKop;
-			return {
-				id: req.itemId || `inv-item-${idx + 1}`,
-				name: req.reasonRu || "Стоматологическая услуга (пломба/лечение)",
-				code804n: "A16.07.002.001",
-				toothNumber: 46,
-				unitPriceKop: itemAmountKop,
-				quantity: req.quantityToRefund || 1,
-				grossAmountKop: itemAmountKop,
-				netAmountKop: itemAmountKop,
-				doctorUserId,
-				doctorName: doctorFullName,
-				commissionPct: input.defaultDoctorCommissionPct ?? 25,
-				materialCostKop: 0,
+			const calcInput: PartialRefundCalculationInput = {
+				invoiceId: invoice.id,
+				invoiceNumber: input.invoiceNumber || `СЧ-${invoice.id.slice(0, 8)}`,
+				patientId: input.patientId,
+				patientName: input.patientName || "Пациент клиники",
+				cashierFullName: input.cashierFullName,
+				cashierInn: input.cashierInn,
+				paymentMethod: input.paymentMethod || "card",
+				items: refundableItems,
+				refundRequests: input.refundRequests,
+				reasonCategory: input.reasonCategory,
+				customReasonDetailsRu: input.customReasonDetailsRu,
+				defaultDoctorCommissionPct: input.defaultDoctorCommissionPct,
 			};
-		});
 
-		const calcInput: PartialRefundCalculationInput = {
-			invoiceId: invoice.id,
-			invoiceNumber: input.invoiceNumber || `СЧ-${invoice.id.slice(0, 8)}`,
-			patientId: input.patientId,
-			patientName: input.patientName || "Пациент клиники",
-			cashierFullName: input.cashierFullName,
-			cashierInn: input.cashierInn,
-			paymentMethod: input.paymentMethod || "card",
-			items: refundableItems,
-			refundRequests: input.refundRequests,
-			reasonCategory: input.reasonCategory,
-			customReasonDetailsRu: input.customReasonDetailsRu,
-			defaultDoctorCommissionPct: input.defaultDoctorCommissionPct,
-		};
+			const calcResult = calculatePartialRefund(calcInput);
 
-		const calcResult = calculatePartialRefund(calcInput);
+			if (!calcResult.isValid) {
+				throw new PartialRefundValidationError(
+					"CalculationError",
+					calcResult.validationErrors.join("; ") || "Ошибка при расчете возврата.",
+					{ errors: calcResult.validationErrors }
+				);
+			}
 
-		if (!calcResult.isValid) {
-			throw new PartialRefundValidationError(
-				"CalculationError",
-				calcResult.validationErrors.join("; ") || "Ошибка при расчете возврата.",
-				{ errors: calcResult.validationErrors }
-			);
-		}
-
-		// Execute ACID Transaction
-		const createdPaymentId = await db.transaction(async (tx) => {
 			// 1. Insert negative payment record into payments table
 			const [insertedPayment] = await tx
 				.insert(payments)
@@ -282,8 +282,10 @@ export class PartialRefundService {
 				})
 				.returning({ id: fiscalReceiptQueue.id });
 
-			// 3. Update Invoice status
-			const nextInvoiceStatus = calcResult.isFullRefund ? "refunded" : "partially_refunded";
+			// 3. Update Invoice status based on actual cumulative refund amount
+			const totalRefundedKopAfterThis = alreadyRefundedKop + calcResult.totalRefundKop;
+			const isInvoiceFullyRefunded = totalRefundedKopAfterThis >= invoiceTotalKop;
+			const nextInvoiceStatus = isInvoiceFullyRefunded ? "refunded" : "partially_refunded";
 			await tx
 				.update(patientInvoices)
 				.set({
@@ -298,24 +300,18 @@ export class PartialRefundService {
 				);
 
 			return {
+				success: true,
+				calculation: calcResult,
 				paymentId: insertedPayment.id,
 				fiscalReceiptQueueId: queuedReceipt?.id,
 				updatedInvoiceStatus: nextInvoiceStatus,
+				doctorClawbacks: calcResult.doctorClawbacks.map((d) => ({
+					doctorUserId: d.doctorUserId,
+					doctorName: d.doctorName,
+					commissionPct: d.commissionPct,
+					clawbackRub: d.clawbackRub,
+				})),
 			};
 		});
-
-		return {
-			success: true,
-			calculation: calcResult,
-			paymentId: createdPaymentId.paymentId,
-			fiscalReceiptQueueId: createdPaymentId.fiscalReceiptQueueId,
-			updatedInvoiceStatus: createdPaymentId.updatedInvoiceStatus,
-			doctorClawbacks: calcResult.doctorClawbacks.map((d) => ({
-				doctorUserId: d.doctorUserId,
-				doctorName: d.doctorName,
-				commissionPct: d.commissionPct,
-				clawbackRub: d.clawbackRub,
-			})),
-		};
 	}
 }

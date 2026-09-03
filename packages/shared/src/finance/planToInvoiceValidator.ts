@@ -138,6 +138,7 @@ export interface PlanToInvoiceValidationPayload {
 	readonly planCreatedAtIso: string;
 	readonly approvedAtIso?: string | null | undefined;
 	readonly isSignedWithPatient?: boolean | undefined;
+	readonly isPriceLocked?: boolean | undefined;
 	readonly isPlanExpired?: boolean | undefined;
 	readonly validityDaysLimit?: number | undefined; // По умолчанию 30 дней для терапии, 90 для имплантации
 	readonly inflationThresholdPercent?: number | undefined; // Порог подорожания (напр. 15%)
@@ -289,7 +290,7 @@ export function validatePlanToInvoice(
 ): PlanToInvoiceValidationReport {
 	const nowIso = new Date().toISOString();
 	const validityDays = payload.validityDaysLimit ?? 30;
-	const inflationThreshold = payload.inflationThresholdPercent ?? 15;
+	const inflationThreshold = payload.inflationThresholdPercent ?? 10;
 	const planAgeDays = calculateDaysDifference(payload.planCreatedAtIso, nowIso);
 	const isPlanExpired =
 		payload.isPlanExpired !== undefined
@@ -297,10 +298,12 @@ export function validatePlanToInvoice(
 			: planAgeDays > validityDays;
 	const expiryDaysRemaining = Math.max(0, validityDays - planAgeDays);
 
-	// Если план подписан пациентом (или утвержден) и не истек срок гарантии — цена зафиксирована
+	// Если действует активный токен закрепления цен или план подписан/утвержден: цена зафиксирована
 	const isPriceLocked =
-		(payload.isSignedWithPatient === true || !!payload.approvedAtIso) &&
-		!isPlanExpired;
+		payload.isPriceLocked !== undefined
+			? payload.isPriceLocked
+			: (payload.isSignedWithPatient === true || !!payload.approvedAtIso) &&
+				!isPlanExpired;
 
 	const catalogMapByCode = new Map<string, CatalogServiceLookup>();
 	const catalogMapById = new Map<string, CatalogServiceLookup>();
@@ -428,6 +431,14 @@ export function validatePlanToInvoice(
 			effectiveUnitPrice = currentCatalogPrice > 0 ? currentCatalogPrice : planUnitPrice;
 			if (effectiveUnitPrice > planUnitPrice) {
 				patientSurcharge = multiplyKopecks((effectiveUnitPrice - planUnitPrice) as Kopecks, qty);
+				if (isPriceLocked) {
+					// Повышение твердой сметы договора (ст. 709 ГК РФ, ст. 33 ЗоЗПП, ПП РФ №659):
+					// Твердая смета не может изменяться клиникой в одностороннем порядке.
+					// Требуется обязательная авторизация руководства и оформление Дополнительного соглашения.
+					requiresAdminOverride = true;
+					severity = "WARNING";
+					statusDesc = `Увеличение цены по твердой смете (+${formatKopecksRu(deltaKopecks)}, +${deltaPercent}%). Требуется авторизация руководства и Дополнительное соглашение.`;
+				}
 			}
 		} else if (selectedResolution === "REPLACE_WITH_804N_ANALOGUE") {
 			const analogueId = payload.itemAnalogueSelections?.[item.itemId];
@@ -528,7 +539,11 @@ export function validatePlanToInvoice(
 	const hasZeroPrices = validatedItems.some((i) => i.effectiveUnitPriceKopecks <= 0);
 	const hasUnresolvedAdminOverrides =
 		validatedItems.some((i) => i.requiresAdminOverride) && payload.adminOverrideAuthorized !== true;
-	const isExpiredUnapproved = isPlanExpired && !payload.isSignedWithPatient && payload.adminOverrideAuthorized !== true;
+	const isExpiredUnapproved =
+		isPlanExpired &&
+		!payload.isSignedWithPatient &&
+		payload.adminOverrideAuthorized !== true &&
+		validatedItems.some((i) => i.selectedResolution === "LOCK_ORIGINAL_PRICE");
 
 	const canGenerateWorkOrder =
 		validatedItems.length > 0 &&

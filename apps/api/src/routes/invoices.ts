@@ -99,7 +99,7 @@ const generateInvoiceFromPlanSchema = z.object({
 			planUnitPriceRub: z.number().nonnegative().optional(),
 			effectiveUnitPriceRub: z.number().nonnegative().optional(),
 			unitPriceRub: z.number().nonnegative().optional(),
-			discountRub: z.number().nonnegative().default(0),
+			discountRub: z.number().nonnegative().optional(),
 			resolutionPolicy: z.string().default("LOCK_ORIGINAL_PRICE"),
 			serviceId: z.string().optional(),
 			analogueServiceId: z.string().optional(),
@@ -140,6 +140,11 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			uetAdult: 1.0,
 		}));
 
+		let freezeTokenForValidation: Awaited<ReturnType<typeof getActivePriceFreezeToken>> = null;
+		if (parsed.data.planId) {
+			freezeTokenForValidation = await getActivePriceFreezeToken(db, orgId, parsed.data.planId);
+		}
+
 		const validationPayload: PlanToInvoiceValidationPayload = {
 			planId: parsed.data.planId,
 			planNumber: parsed.data.planNumber,
@@ -151,8 +156,12 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			planCreatedAtIso: parsed.data.planCreatedAtIso,
 			approvedAtIso: parsed.data.approvedAtIso,
 			isSignedWithPatient: parsed.data.isSignedWithPatient,
-			validityDaysLimit: parsed.data.validityDaysLimit,
-			inflationThresholdPercent: parsed.data.inflationThresholdPercent,
+			isPriceLocked: freezeTokenForValidation
+				? freezeTokenForValidation.isPriceLocked
+				: undefined,
+			isPlanExpired: freezeTokenForValidation?.isExpired,
+			validityDaysLimit: parsed.data.validityDaysLimit ?? freezeTokenForValidation?.daysRemaining,
+			inflationThresholdPercent: parsed.data.inflationThresholdPercent ?? freezeTokenForValidation?.inflationThresholdPercent,
 			items: parsed.data.items.map((it) => ({
 				itemId: it.itemId,
 				code804n: it.code804n,
@@ -363,6 +372,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 		const targetPlanId = data.planId || approvedPlanIds[0];
 		let targetPlan: (typeof treatmentPlans.$inferSelect) | null = null;
 		let freezeToken: Awaited<ReturnType<typeof getActivePriceFreezeToken>> = null;
+		let targetPlanDbItems: (typeof treatmentPlanItemsNew.$inferSelect)[] = [];
 
 		if (targetPlanId) {
 			const [found] = await db
@@ -378,8 +388,26 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 			targetPlan = found ?? null;
 			if (targetPlan) {
 				freezeToken = await getActivePriceFreezeToken(db, orgId, targetPlan.id);
+				targetPlanDbItems = await db
+					.select()
+					.from(treatmentPlanItemsNew)
+					.where(
+						and(
+							eq(treatmentPlanItemsNew.planId, targetPlan.id),
+							eq(treatmentPlanItemsNew.organizationId, orgId),
+						),
+					);
 			}
 		}
+
+		// При наличии токена фиксации цен — его статус является первичным источником истины о блокировке цен.
+		// Если токен истек (freezeToken.isExpired === true), цена НЕ зафиксирована, даже если план Approved.
+		const isPriceLockedFinal = freezeToken
+			? freezeToken.isPriceLocked
+			: Boolean(data.isSignedWithPatient === true || data.approvedAtIso || targetPlan?.status === "Approved");
+
+		// При истечении токена смета считается просроченной (срок фиксации истек)
+		const isPlanExpiredExplicit = freezeToken?.isExpired === true ? true : undefined;
 
 		// Валидация плана с учетом закрепления цен (Price Freeze Token) и режимов скидок
 		const planItemsForVal: PlanItemForValidation[] = data.items.map(
@@ -398,24 +426,36 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					return false;
 				});
 
-				// Если действует активный токен фиксации цен (Price Freeze Token):
-				// гарантируется цена на момент утверждения плана лечения
+				const matchingDbPlanItem = targetPlanDbItems.find((pi) => {
+					if (it.serviceId && pi.priceId?.startsWith(it.serviceId)) return true;
+					if (it.nameRu && pi.priceId?.includes(it.nameRu)) return true;
+					if (it.toothNumber !== undefined && pi.toothNumber === it.toothNumber) return true;
+					return false;
+				});
+
+				// Если действует активный токен фиксации цен (Price Freeze Token) или утвержденная твердая смета:
+				// гарантируется договорная цена сметы (поглощение дельты клиникой)
 				let planPriceRub: number;
 				let effectivePriceRub: number;
 
 				if (freezeToken?.isPriceLocked && frozenItem) {
 					planPriceRub = frozenItem.lockedUnitPriceRub;
 					effectivePriceRub = frozenItem.lockedUnitPriceRub;
+				} else if (isPriceLockedFinal && matchingDbPlanItem) {
+					// Твердая смета утвержденного плана: фиксируем цену из плана
+					planPriceRub = Number(matchingDbPlanItem.price || 0);
+					effectivePriceRub = planPriceRub;
 				} else {
+					planPriceRub =
+						it.planUnitPriceRub ??
+						(matchingDbPlanItem ? Number(matchingDbPlanItem.price || 0) : undefined) ??
+						it.unitPriceRub ??
+						Number(matchingCatalog?.basePriceRub ?? 0);
 					effectivePriceRub =
 						it.effectiveUnitPriceRub ??
 						it.planUnitPriceRub ??
 						it.unitPriceRub ??
 						Number(matchingCatalog?.basePriceRub ?? 0);
-					planPriceRub =
-						it.planUnitPriceRub ??
-						it.unitPriceRub ??
-						effectivePriceRub;
 				}
 
 				// Расчет скидки согласно режиму скидок плана (none | plan_fixed | on_selection)
@@ -425,7 +465,20 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 					// Скидки не действуют (IDENT parity)
 					discountRub = 0;
 				} else if (discountMode === "plan_fixed") {
-					discountRub = it.discountRub ?? frozenItem?.lockedDiscountRub ?? 0;
+					if (it.discountRub !== undefined && it.discountRub > 0) {
+						discountRub = it.discountRub;
+					} else if (frozenItem && frozenItem.lockedDiscountRub > 0) {
+						// lockedDiscountRub хранится за единицу услуги -> умножаем на количество
+						discountRub = Number((frozenItem.lockedDiscountRub * it.quantity).toFixed(2));
+					} else if (matchingDbPlanItem && Number(matchingDbPlanItem.discount || 0) > 0) {
+						// discount в treatmentPlanItemsNew хранится за единицу услуги -> умножаем на количество
+						discountRub = Number((Number(matchingDbPlanItem.discount) * it.quantity).toFixed(2));
+					} else if (Number(targetPlan?.planDiscountPercent ?? 0) > 0) {
+						const lineGross = effectivePriceRub * it.quantity;
+						discountRub = Number(
+							((lineGross * Number(targetPlan?.planDiscountPercent)) / 100).toFixed(2),
+						);
+					}
 				} else if (discountMode === "on_selection") {
 					// Скидка при выборе в наряд
 					const patientDiscountPercent = Number(
@@ -456,15 +509,6 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 				};
 			},
 		);
-
-		// При наличии токена фиксации цен — его статус является первичным источником истины о блокировке цен.
-		// Если токен истек (freezeToken.isExpired === true), цена НЕ зафиксирована, даже если план Approved.
-		const isPriceLockedFinal = freezeToken
-			? freezeToken.isPriceLocked
-			: Boolean(data.isSignedWithPatient === true || data.approvedAtIso || targetPlan?.status === "Approved");
-
-		// При истечении токена смета считается просроченной (срок фиксации истек)
-		const isPlanExpiredExplicit = freezeToken?.isExpired === true ? true : undefined;
 
 		// Лимит дней и порог инфляции берутся из токена фиксации (по умолчанию 10% по ПП РФ №659)
 		const effectiveValidityDaysLimit = freezeToken
