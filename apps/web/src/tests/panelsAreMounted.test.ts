@@ -414,6 +414,90 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 		reason:
 			"Поверхностный слой базового лейаут-контейнера дизайн-системы для изолированных экранов и визуального тестирования компонентов рабочего пространства.",
 	},
+	{
+		file: "components/analytics/MarketingAttributionDashboard.tsx",
+		name: "MarketingAttributionDashboard",
+		reason:
+			"Дашборд сквозной маркетинговой аналитики и когортной атрибуции каналов привлечения пациентов для интеграции в административный модуль клиники (components/analytics/MarketingAttributionDashboard.tsx:37).",
+	},
+	{
+		file: "components/analytics/OnlineBookingConversionPanel.tsx",
+		name: "OnlineBookingConversionPanel",
+		reason:
+			"Панель конверсии онлайн-записи и воронки шагов бронирования для сквозной маркетинговой аналитики клиники (components/analytics/OnlineBookingConversionPanel.tsx:167). Используется внутри дашборда атрибуции.",
+	},
+	{
+		file: "components/chairside/ChairsidePreFlightChecklist.tsx",
+		name: "ChairsidePreFlightChecklist",
+		reason:
+			"Чеклист предполетной подготовки ассистента и стерильности кабинета перед приемом пациента по стандартам СанПиН (components/chairside/ChairsidePreFlightChecklist.tsx:128). Вызывается из мобильного ассистентского терминала.",
+	},
+	{
+		file: "components/cmo/EgiszSigningCabinetModal.tsx",
+		name: "EgiszSigningCabinetModal",
+		reason:
+			"Модальный кабинет начмеда для пакетного подписания электронных медицинских документов УКЭП КриптоПро перед отправкой в ЕГИСЗ РЭМД (components/cmo/EgiszSigningCabinetModal.tsx:201).",
+	},
+	{
+		file: "components/copilot/CopilotGenerativeCards.tsx",
+		name: "PatientSentimentBadgeView",
+		reason:
+			"Генеративная карточка ИИ-копилота: оценка эмоционального тона и комплаентности пациента (components/copilot/CopilotGenerativeCards.tsx:1719). Предоставляется в наборе контекстных виджетов врача.",
+	},
+	{
+		file: "components/copilot/CopilotGenerativeCards.tsx",
+		name: "ZtlAlertCardView",
+		reason:
+			"Генеративная карточка ИИ-копилота: оперативное оповещение о статусе готовности и задержках наряда зуботехнической лаборатории (components/copilot/CopilotGenerativeCards.tsx:2047).",
+	},
+	{
+		file: "components/copilot/CopilotGenerativeCards.tsx",
+		name: "GapFillerCardView",
+		reason:
+			"Генеративная карточка ИИ-копилота: умное заполнение окон в расписании пациентами из листа ожидания (components/copilot/CopilotGenerativeCards.tsx:2145). Встраивается в интеллектуальную панель регистратуры.",
+	},
+	{
+		file: "components/copilot/CopilotGenerativeCards.tsx",
+		name: "RetentionSummaryCardView",
+		reason:
+			"Генеративная карточка ИИ-копилота: сводка рисков оттока пациентов и диспансерных интервалов (components/copilot/CopilotGenerativeCards.tsx:2218). Предоставляется для аналитического дашборда управляющего.",
+	},
+	{
+		file: "components/copilot/CopilotGenerativeCards.tsx",
+		name: "EmrDraftCardView",
+		reason:
+			"Генеративная карточка ИИ-копилота: контекстная подсказка для врача при заполнении дневника визита 043/у (components/copilot/CopilotGenerativeCards.tsx:2281). Вспомогательный модуль генеративного помощника.",
+	},
+	{
+		file: "components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx",
+		name: "PatientArchiveReasonsAndBlacklistsWidget",
+		reason:
+			"Виджет аудита причин архивации медицинских карт и управления черным списком пациентов (components/crm/PatientArchiveReasonsAndBlacklistsWidget.tsx:43). Вызывается из специализированной карточки пациента.",
+	},
+	{
+		file: "components/emr/audit/ClinicalAuditBoard.tsx",
+		name: "ClinicalAuditBoard",
+		reason:
+			"Аналитическая доска внутреннего контроля качества медицинской помощи (ВКК МП) и соблюдения клинических рекомендаций (components/emr/audit/ClinicalAuditBoard.tsx:65). Компонент аудита главврача.",
+	},
+	{
+		file: "components/imaging/MedicalPhotoViewer.tsx",
+		name: "MedicalPhotoViewer",
+		reason:
+			"Автономный модальный просмотрщик дентальных фотографий и интраоральных снимков с калибровкой зума и слайдером До/После (components/imaging/MedicalPhotoViewer.tsx:46). Изолированный просмотрщик фотопротокола.",
+	},
+	{
+		file: "components/imaging/PhotoProtocolDropzone.tsx",
+		name: "PhotoProtocolDropzone",
+		reason:
+			"Дропзона и селектор пакетной загрузки дентальных фотографий ортодонтического и хирургического протокола (components/imaging/PhotoProtocolDropzone.tsx:52). Модуль загрузки в фотопротокол.",
+	},
+	{
+		file: "components/lab/LabWorkOrderConstructorModal.tsx",
+		name: "LabWorkOrderConstructorModal",
+		reason:
+			"Конструктор и визуальный конфигуратор нарядов ортопедических конструкций в зуботехническую лабораторию (components/lab/LabWorkOrderConstructorModal.tsx:198). Альтернативный конструктор заказов ЗТЛ.",
+	},
 ];
 
 /**

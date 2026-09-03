@@ -10,6 +10,7 @@ import {
 	Handshake,
 	Phone,
 	Plus,
+	RotateCcw,
 	Search,
 	Trash2,
 	X,
@@ -23,6 +24,7 @@ import { type Lead, useLeadsStore } from "../../store/leadsStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 import { LeadsFunnelAnalyticsModal } from "./LeadsFunnelAnalyticsModal";
+import { CrmLeakDetectorModal } from "../crm/CrmLeakDetectorModal";
 
 /*
  * Врач и кресло берутся из настроек клиники, а не из отдельного справочника:
@@ -136,6 +138,7 @@ export function LeadsKanbanView() {
 
 	// Analytics Funnel Modal State
 	const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+	const [isLeakDetectorOpen, setIsLeakDetectorOpen] = useState(false);
 
 	// Convert Modal State
 	const [isConvertOpen, setIsConvertOpen] = useState(false);
@@ -536,6 +539,20 @@ export function LeadsKanbanView() {
 						}}
 					>
 						<BarChart3 size={16} color="var(--brand-500, #0f766e)" /> Аналитика воронки
+					</button>
+					<button
+						className="secondary-button focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+						onClick={() => setIsLeakDetectorOpen(true)}
+						type="button"
+						aria-label="Открыть детектор оттока пациентов (210 дней)"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 6,
+							fontWeight: 600,
+						}}
+					>
+						<RotateCcw size={16} color="var(--brand-500, #0f766e)" /> Детектор оттока (210 дней)
 					</button>
 				</div>
 
@@ -1352,6 +1369,12 @@ export function LeadsKanbanView() {
 				isOpen={isAnalyticsOpen}
 				onClose={() => setIsAnalyticsOpen(false)}
 				leads={leads}
+			/>
+
+			{/* CRM LEAK DETECTOR MODAL (210 DAYS) */}
+			<CrmLeakDetectorModal
+				isOpen={isLeakDetectorOpen}
+				onClose={() => setIsLeakDetectorOpen(false)}
 			/>
 		</div>
 	);

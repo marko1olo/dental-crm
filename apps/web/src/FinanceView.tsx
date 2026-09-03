@@ -1,11 +1,13 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { TrendingUp } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
 import { CashDayTally } from "./components/finance/CashDayTally";
 import { CashShiftWidget } from "./components/finance/CashShiftWidget";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
+import { ManagerialPnlDashboardModal } from "./components/finance/pnl/ManagerialPnlDashboardModal";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
 import {
@@ -291,6 +293,8 @@ export function FinanceView({
 		amountInput?.focus({ preventScroll: true });
 	};
 
+	const [isPnlOpen, setIsPnlOpen] = useState(false);
+
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
 			<div className="panel-heading">
@@ -301,14 +305,25 @@ export function FinanceView({
 						{documentPatient?.fullName ?? "пациент не выбран"}
 					</p>
 				</div>
-				<button
-					className="text-button focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:opacity-80 rounded-md px-2 py-1"
-					type="button"
-					onClick={onGoToDocuments}
-					aria-label="Перейти к документам"
-				>
-					Документы
-				</button>
+				<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => setIsPnlOpen(true)}
+						aria-label="Управленческий P&L отчет"
+						style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
+					>
+						<TrendingUp size={15} /> Управленческий P&L
+					</button>
+					<button
+						className="text-button focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] focus:outline-none transition-all hover:opacity-80 rounded-md px-2 py-1"
+						type="button"
+						onClick={onGoToDocuments}
+						aria-label="Перейти к документам"
+					>
+						Документы
+					</button>
+				</div>
 			</div>
 
 			<CashShiftWidget
@@ -467,6 +482,11 @@ export function FinanceView({
 					onPaymentSuccess={reloadAfterFamilyPayment}
 				/>
 			</div>
+
+			<ManagerialPnlDashboardModal
+				isOpen={isPnlOpen}
+				onClose={() => setIsPnlOpen(false)}
+			/>
 		</div>
 	);
 }
