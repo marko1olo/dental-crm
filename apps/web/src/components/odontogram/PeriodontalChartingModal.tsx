@@ -427,7 +427,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 						<button
 							type="button"
 							onClick={onClose}
-							className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line,#e2e8f0)] transition-all cursor-pointer"
+							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line,#e2e8f0)] transition-all cursor-pointer touch-manipulation"
 							aria-label="Закрыть модальное окно"
 						>
 							<X size={20} />
@@ -505,7 +505,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 							<button
 								type="button"
 								onClick={() => setActiveArch("upper")}
-								className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 									activeArch === "upper"
 										? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -516,7 +516,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 							<button
 								type="button"
 								onClick={() => setActiveArch("lower")}
-								className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 									activeArch === "lower"
 										? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -530,7 +530,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 							<button
 								type="button"
 								onClick={() => setActiveAspect("buccal")}
-								className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 									activeAspect === "buccal"
 										? "bg-slate-800 text-white shadow-sm"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -541,7 +541,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 							<button
 								type="button"
 								onClick={() => setActiveAspect("lingual")}
-								className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+								className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 									activeAspect === "lingual"
 										? "bg-slate-800 text-white shadow-sm"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"

@@ -33,7 +33,6 @@ import { specialtyLabels } from "../../workspaceUiLabels";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
-import { PatientSentimentBadge } from "../patient/PatientSentimentBadge";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -703,17 +702,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								)}
 							</div>
 
-							{/* 1.1 Компактный бейдж скоринга пациента (LTV, Compliance, Sentiment) */}
-							{appointmentPatient && (
-								<div className="flex items-center justify-between gap-2">
-									<PatientSentimentBadge
-										patient={appointmentPatient}
-										variant="compact"
-										showLtv={true}
-										showCompliance={true}
-									/>
-								</div>
-							)}
+
 
 							{/* 2. Номер телефона с кнопкой WhatsApp и копированием SMS */}
 							<div className="flex items-center justify-between gap-2">

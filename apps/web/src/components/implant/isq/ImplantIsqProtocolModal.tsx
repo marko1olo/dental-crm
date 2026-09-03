@@ -56,7 +56,7 @@ export function ImplantIsqProtocolModal({
 	initialImplantSystem = 'Straumann BLX Roxolid SLActive',
 	initialDiameterMm = 4.0,
 	initialLengthMm = 10.0,
-	surgeonName = 'Д-р Ковалев С. П. (Хирург-имплантолог)'
+	surgeonName = 'Хирург-имплантолог'
 }: ImplantIsqProtocolModalProps) {
 	const [implantSystem, setImplantSystem] = useState<string>(initialImplantSystem);
 	const [toothNumber, setToothNumber] = useState<string | number>(initialToothNumber);
@@ -145,7 +145,8 @@ export function ImplantIsqProtocolModal({
 						type="button"
 						onClick={onClose}
 						className="isq-btn"
-						style={{ minHeight: '36px', minWidth: '36px', padding: '0.25rem', border: 'none' }}
+						style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem', border: 'none' }}
+						aria-label="Закрыть модальное окно"
 					>
 						<X size={20} />
 					</button>
@@ -162,7 +163,7 @@ export function ImplantIsqProtocolModal({
 							<select
 								value={implantSystem}
 								onChange={e => setImplantSystem(e.target.value)}
-								style={{ width: '100%', minHeight: '38px', padding: '0.375rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
+								style={{ width: '100%', minHeight: '44px', padding: '0.375rem 0.5rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
 							>
 								{COMMON_IMPLANT_SYSTEMS.map(sys => (
 									<option key={sys} value={sys}>
@@ -181,7 +182,7 @@ export function ImplantIsqProtocolModal({
 									type="text"
 									value={toothNumber}
 									onChange={e => setToothNumber(e.target.value)}
-									style={{ width: '60px', minHeight: '38px', padding: '0.375rem', textAlign: 'center', fontWeight: 700, borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
+									style={{ width: '60px', minHeight: '44px', padding: '0.375rem', textAlign: 'center', fontWeight: 700, borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
 								/>
 								<span style={{ display: 'flex', alignItems: 'center', fontSize: '0.8125rem' }}>Ø</span>
 								<input
@@ -189,7 +190,7 @@ export function ImplantIsqProtocolModal({
 									step={0.1}
 									value={diameterMm}
 									onChange={e => setDiameterMm(parseFloat(e.target.value))}
-									style={{ width: '60px', minHeight: '38px', padding: '0.375rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
+									style={{ width: '60px', minHeight: '44px', padding: '0.375rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
 								/>
 								<span style={{ display: 'flex', alignItems: 'center', fontSize: '0.8125rem' }}>x</span>
 								<input
@@ -197,7 +198,7 @@ export function ImplantIsqProtocolModal({
 									step={0.5}
 									value={lengthMm}
 									onChange={e => setLengthMm(parseFloat(e.target.value))}
-									style={{ width: '60px', minHeight: '38px', padding: '0.375rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
+									style={{ width: '60px', minHeight: '44px', padding: '0.375rem', textAlign: 'center', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)' }}
 								/>
 							</div>
 						</div>
@@ -209,7 +210,7 @@ export function ImplantIsqProtocolModal({
 							<select
 								value={boneDensity}
 								onChange={e => setBoneDensity(e.target.value as MischBoneDensity)}
-								style={{ width: '100%', minHeight: '38px', padding: '0.375rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
+								style={{ width: '100%', minHeight: '44px', padding: '0.375rem 0.5rem', borderRadius: '6px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
 							>
 								{Object.entries(MISCH_BONE_DENSITIES).map(([key, val]) => (
 									<option key={key} value={key}>
@@ -404,15 +405,16 @@ export function ImplantIsqProtocolModal({
 					{/* Clinical Diary & Passport Boxes */}
 					<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
 						<div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-								<span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted, #64748b)' }}>Протокол операции (Форма № 043/у):</span>
+							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+								<span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--muted, #64748b)' }}>Протокол операции (Форма № 043/у):</span>
 								<button
 									type="button"
 									onClick={handleCopyDiary}
 									className="isq-btn"
-									style={{ minHeight: '28px', padding: '0.125rem 0.375rem', fontSize: '0.6875rem' }}
+									style={{ minHeight: '44px', minWidth: '44px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}
+									aria-label="Скопировать протокол операции"
 								>
-									{isCopiedDiary ? <Check size={12} color="var(--ok, #10b981)" /> : <Copy size={12} />}
+									{isCopiedDiary ? <Check size={16} color="var(--ok, #10b981)" /> : <Copy size={16} />}
 									Копировать
 								</button>
 							</div>
@@ -422,15 +424,16 @@ export function ImplantIsqProtocolModal({
 						</div>
 
 						<div>
-							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-								<span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted, #64748b)' }}>Паспорт имплантата:</span>
+							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
+								<span style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--muted, #64748b)' }}>Паспорт имплантата:</span>
 								<button
 									type="button"
 									onClick={handleCopyPassport}
 									className="isq-btn"
-									style={{ minHeight: '28px', padding: '0.125rem 0.375rem', fontSize: '0.6875rem' }}
+									style={{ minHeight: '44px', minWidth: '44px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}
+									aria-label="Скопировать паспорт имплантата"
 								>
-									{isCopiedPassport ? <Check size={12} color="var(--ok, #10b981)" /> : <Copy size={12} />}
+									{isCopiedPassport ? <Check size={16} color="var(--ok, #10b981)" /> : <Copy size={16} />}
 									Копировать
 								</button>
 							</div>
