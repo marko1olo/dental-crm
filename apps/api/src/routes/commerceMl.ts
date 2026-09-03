@@ -71,6 +71,18 @@ export async function registerCommerceMlRoutes(app: FastifyInstance): Promise<vo
 		reply: FastifyReply,
 		inputData: Record<string, unknown>,
 	) => {
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role;
+		if (staffRole === "marketer" || staffRole === "receptionist") {
+			return reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "integrations.commerceml.export",
+				role: staffRole,
+				message:
+					"Выгрузка CommerceML (реестры 1С, медицинские акты и зарплаты) для нефинансового персонала запрещена (152-ФЗ / 323-ФЗ ст. 13).",
+			});
+		}
+
 		const verifiedOrgId = await requireResolvedOrganizationId(request, reply);
 		if (reply.sent) return;
 		const targetOrgId =

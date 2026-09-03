@@ -5,6 +5,8 @@ import { transcribeGeminiBatch } from "../speech/geminiBatchTranscribe.js";
 import { GeminiLiveSession } from "../speech/geminiLiveStt.js";
 import { GeminiLiveTranslateSession } from "../speech/geminiLiveTranslate.js";
 import { transcribeWhisperCascade } from "../speech/whisperCascade.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 /**
  * speechLaboratory.ts — Автономная тестовая лаборатория распознавания речи (STT Lab).
@@ -309,6 +311,20 @@ export async function registerSpeechLaboratoryRoutes(app: FastifyInstance): Prom
 
 	// 2. POST /api/v1/speech/lab-transcribe — REST API пакетной транскрибации и анализа
 	app.post("/api/v1/speech/lab-transcribe", async (request: FastifyRequest, reply: FastifyReply) => {
+		const identity = getRequestIdentity(request);
+		if (identity.organizationId) {
+			const evalResult = evaluateClinicalAccess(identity.role);
+			if (!evalResult.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "speech.lab.transcribe",
+					role: identity.role,
+					message:
+						"Доступ к расшифровке клинической речи и медицинских сущностей ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права врача.",
+				});
+			}
+		}
+
 		const parsed = transcribeRequestSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -389,7 +405,31 @@ export async function registerSpeechLaboratoryRoutes(app: FastifyInstance): Prom
 	});
 
 	// 3. WebSocket /api/v1/speech/lab-session & /api/speech/live — Живой интерактивный стрим
-	const handleLabSessionWs = (socket: WebSocket, _request: FastifyRequest) => {
+	const handleLabSessionWs = (socket: WebSocket, request: FastifyRequest) => {
+		const identity = getRequestIdentity(request);
+		if (identity.organizationId) {
+			const evalResult = evaluateClinicalAccess(identity.role);
+			if (!evalResult.hasClinicalAccess) {
+				request.log.warn(
+					{ role: identity.role, orgId: identity.organizationId },
+					"[speechLaboratory] Blocked non-clinical staff attempt to access live speech lab (152-FZ / 323-FZ)",
+				);
+				if (socket.readyState === socket.OPEN) {
+					socket.send(
+						JSON.stringify({
+							type: "error",
+							error: "MedicalSpeechLabForbidden",
+							permission: "speech.lab.clinical",
+							role: identity.role,
+							message:
+								"Доступ к STT-лаборатории клинического протокола ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права врача.",
+						}),
+					);
+				}
+				socket.close(4403, "Forbidden");
+				return;
+			}
+		}
 		let currentMode: SpeechLabMode = "gemini_live";
 		let currentLanguage = "ru";
 		let currentTargetLanguage = "en";

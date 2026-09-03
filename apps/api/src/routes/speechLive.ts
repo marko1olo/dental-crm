@@ -33,6 +33,7 @@ import {
 	getProviderKeyPoolSummary,
 } from "../speech/keyPool.js";
 import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 /** Type helper for Fastify WebSocket route registration */
 type WebsocketRouteRegistrar = (
@@ -116,6 +117,31 @@ export async function registerSpeechLiveRoutes(
 
 			// Extract tenant identity if headers are available
 			const identity = getRequestIdentity(request);
+			if (identity.organizationId) {
+				const evalAccess = evaluateClinicalAccess(identity.role);
+				if (!evalAccess.hasClinicalAccess) {
+					request.log.warn(
+						{ role: identity.role, orgId: identity.organizationId },
+						"[speechLive] Blocked non-clinical staff attempt to access live speech dictation (152-FZ / 323-FZ)",
+					);
+					if (clientSocket.readyState === clientSocket.OPEN) {
+						clientSocket.send(
+							JSON.stringify({
+								type: "error",
+								error: "MedicalSpeechDictationForbidden",
+								permission: "speech.dictation.clinical",
+								role: identity.role,
+								message:
+									"Доступ к живому речевому распознаванию клинического приема ограничен 152-ФЗ и 323-ФЗ ст. 13: требуются права врача.",
+								timestampMs: Date.now(),
+							}),
+						);
+					}
+					clientSocket.close(4403, "Forbidden");
+					return;
+				}
+			}
+
 			const orgId = identity.organizationId || "anonymous";
 
 			request.log.info(
