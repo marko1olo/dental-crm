@@ -8,13 +8,28 @@
 
 import { z } from "zod";
 
+const dateLikeSchema = z
+	.union([z.string(), z.date()])
+	.transform((val) => (val instanceof Date ? val.toISOString() : val.trim()));
+
+const optionalDateLikeSchema = z
+	.union([z.string(), z.date()])
+	.optional()
+	.transform((val) =>
+		val instanceof Date
+			? val.toISOString()
+			: typeof val === "string" && val.trim().length > 0
+				? val.trim()
+				: undefined,
+	);
+
 export const visualSignatureStampParamsSchema = z.object({
 	certificateSerialNumber: z.string().trim().min(1, "Серийный номер обязателен"),
 	certificateSubject: z.string().trim().min(1, "Владелец сертификата обязателен"),
 	certificateIssuer: z.string().trim().optional(),
-	validFrom: z.string().trim().min(1, "Дата начала действия обязательна"),
-	validTo: z.string().trim().min(1, "Дата окончания действия обязательна"),
-	signedAt: z.string().trim().optional(),
+	validFrom: dateLikeSchema,
+	validTo: dateLikeSchema,
+	signedAt: optionalDateLikeSchema,
 	signatureType: z.enum(["ukep", "unep"]).default("ukep"),
 	organizationName: z.string().trim().optional(),
 	documentId: z.string().trim().optional(),

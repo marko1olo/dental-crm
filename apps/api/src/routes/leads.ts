@@ -8,6 +8,7 @@ import {
 import { createAppointmentInDb } from "../db/appointmentsQuery.js";
 import { db } from "../db/client.js";
 import { clinicChairs, crmLeads, patients, users } from "../db/schema.js";
+import { normalizePatientAdministrativeProfile } from "../sampleData.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
 const leadSchema = z.object({
@@ -231,18 +232,23 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 				.limit(1);
 			if (!chair) return { chairNotFound: true as const };
 
-			// 1. Create Patient from Lead
-			const resultPatient = (await tx
+			// 1. Create Patient from Lead with advertising source preserved
+			const leadSource = lead.source ? String(lead.source).trim() : null;
+			const [patient] = await tx
 				.insert(patients)
 				.values({
 					organizationId,
 					fullName: lead.name || lead.patientName || "Пациент",
 					phone: lead.phone,
 					status: "active",
+					notes: leadSource ? `Источник: ${leadSource}` : null,
+					administrativeProfile: leadSource
+						? normalizePatientAdministrativeProfile({
+								preferredAppointmentNote: `src:${leadSource}`,
+							})
+						: null,
 				})
-				// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-				.returning()) as any;
-			const patient = resultPatient[0];
+				.returning();
 			if (!patient) throw new Error("Не удалось создать карту пациента из лида");
 
 			// 2. Create Appointment via protected business logic

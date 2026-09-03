@@ -46,6 +46,7 @@ import {
 	QUICK_REDEMPTION_PRESETS_RUB,
 	type LoyaltyTierId,
 } from "./loyaltyPresets";
+import { generateCode128Svg } from "@dental/shared";
 import "./loyaltyProgram.css";
 
 export interface LoyaltyProgramModalProps {
@@ -66,110 +67,19 @@ export interface LoyaltyProgramModalProps {
 
 type TabType = "balance" | "family" | "certificates" | "promos" | "ledger";
 
-const SAMPLE_FAMILY_MEMBERS: readonly FamilyMember[] = [
-	{
-		patientId: "pat-1",
-		fullName: "Воронов Михаил Александрович",
-		roleRu: "Глава семьи",
-		birthDateIso: "1982-04-14",
-		individualPointsBalance: 4250,
-		lifetimeSpentKop: 18500000, // 185,000 RUB
-		isBonusSpendingAllowed: true,
-	},
-	{
-		patientId: "pat-2",
-		fullName: "Воронова Елена Викторовна",
-		roleRu: "Супруг / Супруга",
-		birthDateIso: "1985-09-22",
-		individualPointsBalance: 3100,
-		lifetimeSpentKop: 12000000, // 120,000 RUB
-		isBonusSpendingAllowed: true,
-	},
-	{
-		patientId: "pat-3",
-		fullName: "Воронов Артем Михайлович",
-		roleRu: "Ребенок",
-		birthDateIso: "2015-06-10",
-		individualPointsBalance: 850,
-		lifetimeSpentKop: 4500000, // 45,000 RUB
-		isBonusSpendingAllowed: true,
-	},
-];
-
-const INITIAL_CERTIFICATE: GiftCertificate = {
-	id: "cert-live-01",
-	serialNumber: generateGiftCertificateSerial(42),
-	nominalKop: 1000000, // 10,000 RUB
-	initialBalanceKop: 1000000,
-	currentBalanceKop: 1000000,
-	status: "active",
-	issuedAtIso: "2026-08-22",
-	expiresAtIso: "2027-08-22",
-	recipientName: "Воронова Елена Викторовна",
-	buyerPatientName: "Воронов Михаил Александрович",
-	note: "Подарок на день рождения",
-};
-
-const SAMPLE_LEDGER: readonly LoyaltyLedgerEntry[] = [
-	{
-		id: "tx-101",
-		timestampIso: "2026-08-22 10:30",
-		patientId: "pat-1",
-		patientName: "Воронов Михаил Александрович",
-		medicalCardNumber: "043/у-2026/102",
-		operationType: "accrual",
-		operationTypeRu: "Начисление кэшбэка (5%)",
-		invoiceAmountKop: 1450000,
-		pointsDeltaRub: 725,
-		balanceAfterRub: 4250,
-		paymentMethodRu: "Банковская карта (МИР)",
-		fiscalReceiptNumber: "ФД-84920",
-		staffNameRu: "Администратор Смирнова О.",
-		noteRu: "Лечение кариеса 2-х зубов (пломбы Estelite)",
-	},
-	{
-		id: "tx-100",
-		timestampIso: "2026-08-15 14:15",
-		patientId: "pat-1",
-		patientName: "Воронов Михаил Александрович",
-		medicalCardNumber: "043/у-2026/102",
-		operationType: "redemption",
-		operationTypeRu: "Списание бонусов на кассе",
-		invoiceAmountKop: 650000,
-		pointsDeltaRub: -1500,
-		balanceAfterRub: 3525,
-		paymentMethodRu: "СБП + Бонусы",
-		fiscalReceiptNumber: "ФД-83901",
-		staffNameRu: "Администратор Смирнова О.",
-		noteRu: "Оплата 30% счета на профгигиену полости рта",
-	},
-	{
-		id: "tx-099",
-		timestampIso: "2026-08-01 09:00",
-		patientId: "pat-1",
-		patientName: "Воронов Михаил Александрович",
-		medicalCardNumber: "043/у-2026/102",
-		operationType: "welcome_bonus",
-		operationTypeRu: "Приветственный бонус",
-		invoiceAmountKop: 0,
-		pointsDeltaRub: 1000,
-		balanceAfterRub: 5025,
-		paymentMethodRu: "Маркетинг",
-		staffNameRu: "Система DENTE",
-		noteRu: "Бонус ко дню рождения пациента",
-	},
-];
+const EMPTY_FAMILY_MEMBERS: readonly FamilyMember[] = [];
+const EMPTY_LEDGER: readonly LoyaltyLedgerEntry[] = [];
 
 export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	isOpen,
 	onClose,
 	clinicName = "ООО «Денте Стоматология»",
-	patientId = "pat-1",
-	patientName = "Воронов Михаил Александрович",
-	medicalCardNumber = "043/у-2026/102",
-	initialPointsBalance = 4250,
-	initialLifetimeSpentKop = 18500000, // 185,000 RUB -> Gold Tier
-	currentInvoiceAmountKop = 1200000, // 12,000 RUB
+	patientId = "",
+	patientName = "Пациент",
+	medicalCardNumber = "",
+	initialPointsBalance = 0,
+	initialLifetimeSpentKop = 0,
+	currentInvoiceAmountKop = 0,
 	onRedeemSuccess,
 }) => {
 	const [activeTab, setActiveTab] = useState<TabType>("balance");
@@ -179,30 +89,30 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 		currentInvoiceAmountKop / 100
 	);
 	const [excludedAmountRub, setExcludedAmountRub] = useState<number>(0);
-	const [requestedPointsRub, setRequestedPointsRub] = useState<number>(1000);
+	const [requestedPointsRub, setRequestedPointsRub] = useState<number>(0);
 	const [activePointsBalance, setActivePointsBalance] = useState<number>(initialPointsBalance);
 	const [redemptionSuccessMsg, setRedemptionSuccessMsg] = useState<string | null>(null);
 
 	// Family Group State
-	const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>(SAMPLE_FAMILY_MEMBERS);
+	const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>(EMPTY_FAMILY_MEMBERS);
 	const [isFamilyModeActive, setIsFamilyModeActive] = useState<boolean>(false);
 	const [newMemberName, setNewMemberName] = useState<string>("");
 	const [newMemberRole, setNewMemberRole] = useState<FamilyMember["roleRu"]>("Супруг / Супруга");
 
 	// Certificate State
-	const [certificateNominalRub, setCertificateNominalRub] = useState<number>(10000);
-	const [recipientName, setRecipientName] = useState<string>("Воронова Елена Викторовна");
-	const [activeCertificate, setActiveCertificate] = useState<GiftCertificate>(INITIAL_CERTIFICATE);
+	const [certificateNominalRub, setCertificateNominalRub] = useState<number>(5000);
+	const [recipientName, setRecipientName] = useState<string>("");
+	const [activeCertificate, setActiveCertificate] = useState<GiftCertificate | null>(null);
 	const [certVerifyInput, setCertVerifyInput] = useState<string>("");
 	const [certRedeemFeedback, setCertRedeemFeedback] = useState<string | null>(null);
 
 	// Promo State
-	const [promoInput, setPromoInput] = useState<string>("HYGIENE15");
+	const [promoInput, setPromoInput] = useState<string>("");
 	const [promoResult, setPromoResult] = useState<ReturnType<typeof evaluatePromoCode> | null>(null);
 	const [copiedPromo, setCopiedPromo] = useState<string | null>(null);
 
 	// Ledger State
-	const [ledgerEntries, setLedgerEntries] = useState<readonly LoyaltyLedgerEntry[]>(SAMPLE_LEDGER);
+	const [ledgerEntries, setLedgerEntries] = useState<readonly LoyaltyLedgerEntry[]>(EMPTY_LEDGER);
 	const [ledgerSearch, setLedgerSearch] = useState<string>("");
 
 	// Tier Progression
@@ -214,8 +124,8 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 
 	// Family Pool Calculation
 	const familyPool = useMemo(() => {
-		return calculateFamilyPoolBalance("fam-grp-01", "Семья Вороновых", familyMembers);
-	}, [familyMembers]);
+		return calculateFamilyPoolBalance(`fam-${patientId || "group"}`, `Семья (${patientName})`, familyMembers);
+	}, [patientId, patientName, familyMembers]);
 
 	const effectiveBalanceRub = isFamilyModeActive
 		? familyPool.totalPooledPoints
@@ -260,7 +170,6 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			pointsDeltaRub: -redemptionCalc.actualRedeemedPointsRub,
 			balanceAfterRub: effectiveBalanceRub - redemptionCalc.actualRedeemedPointsRub,
 			paymentMethodRu: "Бонусы + Касса",
-			fiscalReceiptNumber: `ФД-${Math.floor(10000 + Math.random() * 90000)}`,
 			staffNameRu: "Администратор (Касса)",
 			noteRu: `Оплата бонусами ${redemptionCalc.actualRedeemedPointsRub} ₽ по счету`,
 		};
@@ -276,6 +185,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 	const handleGenerateNewCertificate = () => {
 		const newSerial = generateGiftCertificateSerial();
 		const nominalKop = Math.round(certificateNominalRub * 100);
+		const targetRecipient = recipientName.trim() || patientName;
 		const cert: GiftCertificate = {
 			id: `cert-${Date.now()}`,
 			serialNumber: newSerial,
@@ -285,7 +195,7 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			status: "active",
 			issuedAtIso: new Date().toISOString().slice(0, 10),
 			expiresAtIso: new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().slice(0, 10),
-			recipientName,
+			recipientName: targetRecipient,
 			buyerPatientName: patientName,
 			note: `Подарочный сертификат на сумму ${certificateNominalRub.toLocaleString("ru-RU")} ₽`,
 		};
@@ -301,16 +211,24 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 			setCertRedeemFeedback("❌ Неверный 16-значный номер сертификата (ошибка Luhn checksum)");
 			return;
 		}
+		if (!activeCertificate) {
+			setCertRedeemFeedback("❌ Нет активного сертификата для списания");
+			return;
+		}
 		const res = redeemGiftCertificate(
 			activeCertificate,
 			Math.round(invoiceAmountRub * 100)
 		);
 		if (res.success) {
-			setActiveCertificate((prev) => ({
-				...prev,
-				currentBalanceKop: res.newBalanceKop,
-				status: res.newStatus,
-			}));
+			setActiveCertificate((prev) =>
+				prev
+					? {
+							...prev,
+							currentBalanceKop: res.newBalanceKop,
+							status: res.newStatus,
+						}
+					: null,
+			);
 			setCertRedeemFeedback(
 				`✅ Успешно списано ${(res.redeemedAmountKop / 100).toLocaleString("ru-RU")} ₽ с сертификата. Остаток на карте: ${(res.newBalanceKop / 100).toLocaleString("ru-RU")} ₽`
 			);
@@ -798,73 +716,94 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 								Члены семьи и права списания баллов
 							</h4>
 
-							<div className="loyalty-family-grid">
-								{familyMembers.map((member) => (
-									<div key={member.patientId} className="loyalty-family-member-card">
-										<div
-											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "flex-start",
-											}}
-										>
-											<div>
-												<span className="loyalty-member-role-badge">{member.roleRu}</span>
-												<h5
-													style={{
-														fontSize: "0.9375rem",
-														fontWeight: 700,
-														marginTop: "0.25rem",
-														color: "var(--ink, #0f172a)",
-													}}
-												>
-													{member.fullName}
-												</h5>
-											</div>
-										</div>
-
-										<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
-											Личные траты: {(member.lifetimeSpentKop / 100).toLocaleString("ru-RU")} ₽
-											<br />
-											Накоплено баллов: {member.individualPointsBalance} ₽
-										</div>
-
-										<div
-											style={{
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "space-between",
-												borderTop: "1px solid var(--line, #e2e8f0)",
-												paddingTop: "0.5rem",
-												marginTop: "auto",
-											}}
-										>
-											<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-												Списание бонусов:
-											</span>
-											<button
-												type="button"
-												onClick={() => handleToggleMemberPermission(member.patientId)}
+							{familyMembers.length === 0 ? (
+								<div
+									style={{
+										border: "2px dashed var(--line, #cbd5e1)",
+										borderRadius: "0.875rem",
+										padding: "2rem",
+										textAlign: "center",
+										color: "var(--muted, #64748b)",
+										background: "var(--paper-muted, #f8fafc)",
+									}}
+								>
+									<Users size={36} style={{ margin: "0 auto 8px", opacity: 0.5 }} />
+									<div style={{ fontWeight: 600, color: "var(--ink, #0f172a)" }}>
+										Члены семьи не добавлены
+									</div>
+									<p style={{ fontSize: "0.8125rem", marginTop: "4px" }}>
+										Добавьте родственников через форму ниже для объединения бонусного счета семьи.
+									</p>
+								</div>
+							) : (
+								<div className="loyalty-family-grid">
+									{familyMembers.map((member) => (
+										<div key={member.patientId} className="loyalty-family-member-card">
+											<div
 												style={{
-													fontSize: "0.75rem",
-													fontWeight: 700,
-													minHeight: "44px",
-													padding: "0.25rem 0.625rem",
-													borderRadius: "0.375rem",
-													border: "none",
-													cursor: "pointer",
-													background: member.isBonusSpendingAllowed
-														? "rgba(16, 185, 129, 0.15)"
-														: "rgba(239, 68, 68, 0.15)",
-													color: member.isBonusSpendingAllowed ? "#047857" : "#b91c1c",
+													display: "flex",
+													justifyContent: "space-between",
+													alignItems: "flex-start",
 												}}
 											>
-												{member.isBonusSpendingAllowed ? "Разрешено" : "Заблокировано"}
-											</button>
+												<div>
+													<span className="loyalty-member-role-badge">{member.roleRu}</span>
+													<h5
+														style={{
+															fontSize: "0.9375rem",
+															fontWeight: 700,
+															marginTop: "0.25rem",
+															color: "var(--ink, #0f172a)",
+														}}
+													>
+														{member.fullName}
+													</h5>
+												</div>
+											</div>
+
+											<div style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)" }}>
+												Личные траты: {(member.lifetimeSpentKop / 100).toLocaleString("ru-RU")} ₽
+												<br />
+												Накоплено баллов: {member.individualPointsBalance} ₽
+											</div>
+
+											<div
+												style={{
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "space-between",
+													borderTop: "1px solid var(--line, #e2e8f0)",
+													paddingTop: "0.5rem",
+													marginTop: "auto",
+												}}
+											>
+												<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+													Списание бонусов:
+												</span>
+												<button
+													type="button"
+													onClick={() => handleToggleMemberPermission(member.patientId)}
+													style={{
+														fontSize: "0.75rem",
+														fontWeight: 700,
+														minHeight: "44px",
+														padding: "0.25rem 0.625rem",
+														borderRadius: "0.375rem",
+														border: "none",
+														cursor: "pointer",
+														background: member.isBonusSpendingAllowed
+															? "rgba(16, 185, 129, 0.15)"
+															: "rgba(239, 68, 68, 0.15)",
+														color: member.isBonusSpendingAllowed ? "#047857" : "#b91c1c",
+													}}
+												>
+													{member.isBonusSpendingAllowed ? "Разрешено" : "Заблокировано"}
+												</button>
+											</div>
 										</div>
-									</div>
-								))}
-							</div>
+									))}
+								</div>
+							)}
 
 							{/* Add Member Form */}
 							<div
@@ -1148,52 +1087,82 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 
 								{/* Right: Live Visual Certificate Card */}
 								<div className="loyalty-certificate-printable">
-									<div className="loyalty-certificate-card-preview">
-										<div className="loyalty-cert-gold-foil" />
+									{activeCertificate ? (
+										<div className="loyalty-certificate-card-preview">
+											<div className="loyalty-cert-gold-foil" />
+											<div
+												style={{
+													display: "flex",
+													justifyContent: "space-between",
+													alignItems: "flex-start",
+												}}
+											>
+												<div>
+													<div
+														style={{
+															fontSize: "0.75rem",
+															textTransform: "uppercase",
+															letterSpacing: "0.1em",
+															color: "#fef08a",
+														}}
+													>
+														{clinicName}
+													</div>
+													<div style={{ fontSize: "1.25rem", fontWeight: 800, marginTop: "0.25rem" }}>
+														ПОДАРОЧНЫЙ СЕРТИФИКАТ
+													</div>
+												</div>
+												<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fcd34d" }}>
+													{(activeCertificate.nominalKop / 100).toLocaleString("ru-RU")} ₽
+												</div>
+											</div>
+
+											<div className="loyalty-cert-serial-code">
+												{activeCertificate.serialNumber}
+											</div>
+
+											<div style={{ fontSize: "0.8125rem", lineHeight: 1.5, opacity: 0.9 }}>
+												Получатель: <strong>{activeCertificate.recipientName ?? recipientName}</strong>
+												<br />
+												Действителен до: <strong>{activeCertificate.expiresAtIso}</strong>
+												<br />
+												Остаток средств:{" "}
+												<strong style={{ color: "#86efac" }}>
+													{(activeCertificate.currentBalanceKop / 100).toLocaleString("ru-RU")} ₽
+												</strong>
+											</div>
+
+											<div
+												className="loyalty-barcode-svg-container"
+												dangerouslySetInnerHTML={{
+													__html: generateCode128Svg(activeCertificate.serialNumber, {
+														height: 38,
+														showText: false,
+														barColor: "#ffffff",
+													}),
+												}}
+											/>
+										</div>
+									) : (
 										<div
 											style={{
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "flex-start",
+												border: "2px dashed var(--line, #cbd5e1)",
+												borderRadius: "1rem",
+												padding: "3rem 1.5rem",
+												textAlign: "center",
+												color: "var(--muted, #64748b)",
+												background: "var(--paper-muted, #f8fafc)",
 											}}
 										>
-											<div>
-												<div
-													style={{
-														fontSize: "0.75rem",
-														textTransform: "uppercase",
-														letterSpacing: "0.1em",
-														color: "#fef08a",
-													}}
-												>
-													{clinicName}
-												</div>
-												<div style={{ fontSize: "1.25rem", fontWeight: 800, marginTop: "0.25rem" }}>
-													ПОДАРОЧНЫЙ СЕРТИФИКАТ
-												</div>
+											<Gift size={44} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
+											<div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--ink, #0f172a)" }}>
+												Сертификат не выбран
 											</div>
-											<div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fcd34d" }}>
-												{(activeCertificate.nominalKop / 100).toLocaleString("ru-RU")} ₽
-											</div>
+											<p style={{ fontSize: "0.8125rem", marginTop: "6px", maxWidth: "260px", marginInline: "auto" }}>
+												Укажите номинал и нажмите «Сгенерировать сертификат» слева
+											</p>
 										</div>
-
-										<div className="loyalty-cert-serial-code">
-											{activeCertificate.serialNumber}
-										</div>
-
-										<div style={{ fontSize: "0.8125rem", lineHeight: 1.5, opacity: 0.9 }}>
-											Получатель: <strong>{activeCertificate.recipientName ?? recipientName}</strong>
-											<br />
-											Действителен до: <strong>{activeCertificate.expiresAtIso}</strong>
-											<br />
-											Остаток средств:{" "}
-											<strong style={{ color: "#86efac" }}>
-												{(activeCertificate.currentBalanceKop / 100).toLocaleString("ru-RU")} ₽
-											</strong>
-										</div>
-
-										<div className="loyalty-barcode-strip" />
-									</div>
+									)}
 								</div>
 							</div>
 						</div>
@@ -1449,37 +1418,52 @@ export const LoyaltyProgramModal: React.FC<LoyaltyProgramModalProps> = ({
 										</tr>
 									</thead>
 									<tbody>
-										{filteredLedger.map((entry) => (
-											<tr key={entry.id}>
-												<td>{entry.timestampIso}</td>
-												<td>
-													<div style={{ fontWeight: 600 }}>{entry.operationTypeRu}</div>
-													<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
-														{entry.noteRu}
-													</div>
-												</td>
-												<td>{(entry.invoiceAmountKop / 100).toLocaleString("ru-RU")} ₽</td>
-												<td>
-													<span
-														className={`loyalty-delta-badge ${
-															entry.pointsDeltaRub > 0 ? "positive" : "negative"
-														}`}
-													>
-														{entry.pointsDeltaRub > 0
-															? `+${entry.pointsDeltaRub}`
-															: entry.pointsDeltaRub}{" "}
-														₽
-													</span>
-												</td>
-												<td style={{ fontWeight: 700 }}>
-													{entry.balanceAfterRub.toLocaleString("ru-RU")} ₽
-												</td>
-												<td>{entry.staffNameRu}</td>
-												<td style={{ fontFamily: "monospace" }}>
-													{entry.fiscalReceiptNumber ?? "—"}
+										{filteredLedger.length === 0 ? (
+											<tr>
+												<td
+													colSpan={7}
+													style={{
+														textAlign: "center",
+														padding: "2.5rem 1rem",
+														color: "var(--muted, #64748b)",
+													}}
+												>
+													История операций с баллами пуста
 												</td>
 											</tr>
-										))}
+										) : (
+											filteredLedger.map((entry) => (
+												<tr key={entry.id}>
+													<td>{entry.timestampIso}</td>
+													<td>
+														<div style={{ fontWeight: 600 }}>{entry.operationTypeRu}</div>
+														<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+															{entry.noteRu}
+														</div>
+													</td>
+													<td>{(entry.invoiceAmountKop / 100).toLocaleString("ru-RU")} ₽</td>
+													<td>
+														<span
+															className={`loyalty-delta-badge ${
+																entry.pointsDeltaRub > 0 ? "positive" : "negative"
+															}`}
+														>
+															{entry.pointsDeltaRub > 0
+																? `+${entry.pointsDeltaRub}`
+																: entry.pointsDeltaRub}{" "}
+															₽
+														</span>
+													</td>
+													<td style={{ fontWeight: 700 }}>
+														{entry.balanceAfterRub.toLocaleString("ru-RU")} ₽
+													</td>
+													<td>{entry.staffNameRu}</td>
+													<td style={{ fontFamily: "monospace" }}>
+														{entry.fiscalReceiptNumber ?? "—"}
+													</td>
+												</tr>
+											))
+										)}
 									</tbody>
 								</table>
 							</div>

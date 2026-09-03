@@ -1,6 +1,10 @@
 import { and, eq, or } from "drizzle-orm";
 import { db } from "./client.js";
 import { patientArchiveReasonsAndBlacklists, patients } from "./schema.js";
+import {
+	nameFuzzySimilarity,
+	nameKey,
+} from "../services/patients/duplicateDetection.js";
 
 export const inMemoryBlacklist = new Set<string>();
 
@@ -66,27 +70,37 @@ export async function isPatientBookingBlocked(
 			fullName = patientRow.fullName.trim();
 		}
 
-		const conditions = [
-			eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
-			eq(patientArchiveReasonsAndBlacklists.isBookingBlocked, true),
-		];
-
-		const matchRules = [
-			eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
-		];
-		if (fullName) {
-			matchRules.push(
-				eq(patientArchiveReasonsAndBlacklists.patientName, fullName),
+		const rows = await db
+			.select({
+				id: patientArchiveReasonsAndBlacklists.id,
+				patientId: patientArchiveReasonsAndBlacklists.patientId,
+				patientName: patientArchiveReasonsAndBlacklists.patientName,
+			})
+			.from(patientArchiveReasonsAndBlacklists)
+			.where(
+				and(
+					eq(patientArchiveReasonsAndBlacklists.organizationId, orgId),
+					eq(patientArchiveReasonsAndBlacklists.isBookingBlocked, true),
+				),
 			);
+
+		if (rows.some((r) => r.patientId === patientId)) {
+			return true;
 		}
 
-		const rows = await db
-			.select()
-			.from(patientArchiveReasonsAndBlacklists)
-			.where(and(...conditions, or(...matchRules)))
-			.limit(1);
+		if (fullName) {
+			const blockedByName = rows.some((b) => {
+				if (!b.patientName) return false;
+				if (b.patientName.trim().toLowerCase() === fullName.toLowerCase()) return true;
+				if (nameKey(b.patientName) === nameKey(fullName)) return true;
+				return nameFuzzySimilarity(b.patientName, fullName) >= 0.85;
+			});
+			if (blockedByName) {
+				return true;
+			}
+		}
 
-		return rows.length > 0;
+		return false;
 	} catch (_err) {
 		/*
 		 * Текст предназначен администратору у стойки, поэтому называет и причину, и
@@ -133,20 +147,21 @@ export async function checkPatientBookingBlockDetails(
 			eq(patientArchiveReasonsAndBlacklists.isBookingBlocked, true),
 		];
 
-		const matchRules = [
-			eq(patientArchiveReasonsAndBlacklists.patientId, patientId),
-		];
-		if (fullName) {
-			matchRules.push(
-				eq(patientArchiveReasonsAndBlacklists.patientName, fullName),
-			);
-		}
-
-		const [blockedRow] = await db
+		const rows = await db
 			.select()
 			.from(patientArchiveReasonsAndBlacklists)
-			.where(and(...conditions, or(...matchRules)))
-			.limit(1);
+			.where(and(...conditions));
+
+		let blockedRow = rows.find((r) => r.patientId === patientId);
+
+		if (!blockedRow && fullName) {
+			blockedRow = rows.find((b) => {
+				if (!b.patientName) return false;
+				if (b.patientName.trim().toLowerCase() === fullName.toLowerCase()) return true;
+				if (nameKey(b.patientName) === nameKey(fullName)) return true;
+				return nameFuzzySimilarity(b.patientName, fullName) >= 0.85;
+			});
+		}
 
 		if (blockedRow) {
 			inMemoryBlacklist.add(`${orgId}:${patientId}`);

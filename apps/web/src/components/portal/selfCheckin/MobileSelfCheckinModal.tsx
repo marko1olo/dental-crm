@@ -1,4 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import {
+	Activity,
+	AlertCircle,
+	CheckCircle2,
+	Droplets,
+	HeartPulse,
+	Ticket,
+} from "lucide-react";
+import { generateQrCodeSvg } from "@dental/shared";
 import { SignaturePadCanvas } from "./SignaturePadCanvas";
 import {
 	INITIAL_SOMATIC_QUESTIONNAIRE,
@@ -106,6 +115,21 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	const [allergyDetails, setAllergyDetails] = useState("");
 	const [cardioDetails, setCardioDetails] = useState("");
 	const [coagulationDetails, setCoagulationDetails] = useState("");
+
+	const checkinCode = useMemo(() => {
+		const raw = `${patientName || "PATIENT"}-${appointmentTime || "TIME"}`;
+		let hash = 0;
+		for (let i = 0; i < raw.length; i++) {
+			hash = (hash * 31 + raw.charCodeAt(i)) & 0x7fffffff;
+		}
+		const suffix = ((hash % 9000) + 1000).toString();
+		return `CK-${new Date().getFullYear()}-${suffix}`;
+	}, [patientName, appointmentTime]);
+
+	const checkinQrSvg = useMemo(() => {
+		const verifyUrl = `https://dente.clinic/checkin/verify?ticket=${encodeURIComponent(checkinCode)}`;
+		return generateQrCodeSvg(verifyUrl, { size: 84, margin: 1, title: `Талон чекина ${checkinCode}` });
+	}, [checkinCode]);
 
 	if (!isOpen) return null;
 
@@ -467,7 +491,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Allergies Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										🌿 1. Аллергологический анамнез
+										<AlertCircle size={16} color="#d97706" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										1. Аллергологический анамнез
 									</div>
 									<label className="selfcheckin-checkbox-label">
 										<input
@@ -536,7 +561,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Cardio Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										❤️ 2. Сердечно-сосудистая система
+										<HeartPulse size={16} color="#dc2626" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										2. Сердечно-сосудистая система
 									</div>
 									<label className="selfcheckin-checkbox-label">
 										<input
@@ -586,7 +612,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Coagulation Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										🩸 3. Свертываемость крови и антикоагулянты
+										<Droplets size={16} color="#991b1b" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										3. Свертываемость крови и антикоагулянты
 									</div>
 									<label className="selfcheckin-checkbox-label">
 										<input
@@ -619,7 +646,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Pregnancy / Diabetes Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										🩺 4. Диабет / Беременность
+										<Activity size={16} color="#2563eb" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										4. Диабет / Беременность
 									</div>
 									<div className="selfcheckin-suboptions-row">
 										<label className="selfcheckin-checkbox-label">
@@ -674,7 +702,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{/* STEP 4: Completed Pass */}
 					{step === "completed" && (
 						<div className="selfcheckin-step-box selfcheckin-completed-box">
-							<div className="selfcheckin-success-badge">🎉</div>
+							<div className="selfcheckin-success-badge" style={{ display: "flex", justifyContent: "center", marginBottom: "0.75rem" }}>
+								<CheckCircle2 size={48} color="#059669" />
+							</div>
 							<h3 className="selfcheckin-completed-title">
 								Самочекин успешно завершен!
 							</h3>
@@ -687,13 +717,35 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								<div className="selfcheckin-pass-patient">{patientName}</div>
 								<div className="selfcheckin-pass-time">Прием: {appointmentTime}</div>
 								<div className="selfcheckin-pass-qr">
-									<div className="selfcheckin-qr-mock">
-										<span className="selfcheckin-qr-icon">📱</span>
-										<span>Электронный талон чекина: #CK-2026-904</span>
+									<div
+										className="selfcheckin-qr-container"
+										style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}
+										dangerouslySetInnerHTML={{ __html: checkinQrSvg }}
+									/>
+									<div
+										className="selfcheckin-pass-code-badge"
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											gap: "6px",
+											fontSize: "0.85rem",
+											fontWeight: 700,
+											color: "var(--ink, #0f172a)",
+											background: "rgba(13, 148, 136, 0.08)",
+											padding: "0.35rem 0.75rem",
+											borderRadius: "6px",
+											margin: "4px auto 0",
+											maxWidth: "fit-content",
+										}}
+									>
+										<Ticket size={16} color="#0d9488" />
+										<span>Электронный талон чекина: #{checkinCode}</span>
 									</div>
 								</div>
-								<div className="selfcheckin-pass-status">
-									✓ Врач уведомлен о вашем прибытии в клинику
+								<div className="selfcheckin-pass-status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+									<CheckCircle2 size={16} color="#059669" />
+									<span>Врач уведомлен о вашем прибытии в клинику</span>
 								</div>
 							</div>
 

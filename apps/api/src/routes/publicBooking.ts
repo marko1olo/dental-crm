@@ -8,9 +8,15 @@ import {
 	chairs,
 	clinics,
 	organizations,
+	patientArchiveReasonsAndBlacklists,
 	patients,
 	users,
 } from "../db/schema.js";
+import { isPatientBookingBlocked } from "../db/patientArchiveReasonsAndBlacklistsQuery.js";
+import {
+	nameFuzzySimilarity,
+	nameKey,
+} from "../services/patients/duplicateDetection.js";
 import { wsBroker } from "../services/websocketBroker.js";
 import {
 	schemaIssuePhrase,
@@ -848,7 +854,7 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					// 3. Identify and lock/create patient
 					const phoneDigits = normalizePhoneDigits(patientPhone);
 					const [existingByPhone] = await tx
-						.select({ id: patients.id })
+						.select({ id: patients.id, status: patients.status })
 						.from(patients)
 						.where(
 							and(
@@ -862,12 +868,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 						.limit(1);
 
 					let patientId = existingByPhone?.id;
+					let patientStatus = existingByPhone?.status;
 
 					if (!patientId) {
 						const last10 = phoneDigits.slice(-10);
 						if (last10.length === 10) {
 							const candidates = await tx
-								.select({ id: patients.id, phone: patients.phone })
+								.select({ id: patients.id, phone: patients.phone, status: patients.status })
 								.from(patients)
 								.where(
 									and(
@@ -883,8 +890,95 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 							);
 							if (matched) {
 								patientId = matched.id;
+								patientStatus = matched.status;
 							}
 						}
+					}
+
+					// Охрана: если пациент найден и находится в архиве или в чёрном списке — онлайн-запись запрещена!
+					if (patientId) {
+						if (patientStatus === "archived") {
+							return {
+								conflict: false as const,
+								blocked: true as const,
+								status: 403,
+								error: "PatientArchived",
+								message: "Запись невозможна: карта пациента находится в архиве. Пожалуйста, обратитесь в клинику по телефону.",
+							};
+						}
+						const isBlocked = await isPatientBookingBlocked(organizationId, patientId);
+						if (isBlocked) {
+							return {
+								conflict: false as const,
+								blocked: true as const,
+								status: 403,
+								error: "BookingBlocked",
+								message: "Онлайн-запись для данного пациента заблокирована. Пожалуйста, свяжитесь с клиникой по телефону.",
+							};
+						}
+					}
+
+					// Также проверяем, не внесено ли ФИО в чёрный список по организации (с защитой от опечаток, гомоглифов и смены регистра)
+					const blockedEntries = await tx
+						.select({
+							id: patientArchiveReasonsAndBlacklists.id,
+							patientName: patientArchiveReasonsAndBlacklists.patientName,
+						})
+						.from(patientArchiveReasonsAndBlacklists)
+						.where(
+							and(
+								eq(
+									patientArchiveReasonsAndBlacklists.organizationId,
+									organizationId,
+								),
+								eq(patientArchiveReasonsAndBlacklists.isBookingBlocked, true),
+							),
+						);
+
+					const nameBlocked = blockedEntries.find((entry) => {
+						if (!entry.patientName) return false;
+						if (entry.patientName.trim().toLowerCase() === patientName.trim().toLowerCase()) return true;
+						if (nameKey(entry.patientName) === nameKey(patientName)) return true;
+						return nameFuzzySimilarity(entry.patientName, patientName) >= 0.85;
+					});
+
+					if (nameBlocked) {
+						return {
+							conflict: false as const,
+							blocked: true as const,
+							status: 403,
+							error: "BookingBlocked",
+							message: "Онлайн-запись для данного пациента заблокирована. Пожалуйста, свяжитесь с клиникой по телефону.",
+						};
+					}
+
+					// Также проверяем, нет ли среди архивных пациентов совпадения по ФИО (защита от обхода архива через смену номера телефона)
+					const archivedRows = await tx
+						.select({ id: patients.id, fullName: patients.fullName })
+						.from(patients)
+						.where(
+							and(
+								eq(patients.organizationId, organizationId),
+								eq(patients.status, "archived"),
+							),
+						)
+						.limit(100);
+
+					const archivedNameMatch = archivedRows.find((p) => {
+						if (!p.fullName) return false;
+						if (p.fullName.trim().toLowerCase() === patientName.trim().toLowerCase()) return true;
+						if (nameKey(p.fullName) === nameKey(patientName)) return true;
+						return nameFuzzySimilarity(p.fullName, patientName) >= 0.85;
+					});
+
+					if (archivedNameMatch) {
+						return {
+							conflict: false as const,
+							blocked: true as const,
+							status: 403,
+							error: "PatientArchived",
+							message: "Запись невозможна: карта пациента находится в архиве. Пожалуйста, обратитесь в клинику по телефону.",
+						};
 					}
 
 					if (!patientId) {
@@ -991,6 +1085,13 @@ export const registerPublicBookingRoutes = async (server: FastifyInstance) => {
 					if (!created) throw new Error("appointment_insert_failed");
 					return { conflict: false as const, appointment: created };
 				});
+
+				if ("blocked" in result && result.blocked) {
+					return reply.status(result.status).send({
+						error: result.error,
+						message: result.message,
+					});
+				}
 
 				if (result.conflict) {
 					return reply.status(409).send({

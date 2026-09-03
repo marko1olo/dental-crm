@@ -28,8 +28,11 @@ import {
 	patients,
 } from "../db/schema.js";
 import { readSmtpCredentialsFromEnv } from "../emailTransport.js";
+import { getRequestIdentity } from "../security/identity.js";
+import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { enforcePermissionWhenStaffKnown } from "../security/permissions.js";
 import { scheduleAppointmentReminders } from "../services/communications/appointmentReminders.js";
+import { MessageTemplateEngine } from "../services/communications/MessageTemplateEngine.js";
 import {
 	campaignProgress,
 	cancelCampaign,
@@ -314,6 +317,17 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 		});
 		if (!validation.ok) return validationError(reply, validation.problems);
 
+		if (!parsed.data.allowPhi) {
+			const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(parsed.data.body);
+			if (secrecy.hasLeak) {
+				return reply.code(422).send({
+					error: "MedicalSecrecyViolation",
+					message: `Шаблон не может содержать сведения о здоровье, диагнозах или зубах (152-ФЗ / 323-ФЗ ст. 13): ${secrecy.reasons.join("; ")}`,
+					detectedTerms: secrecy.detectedTerms,
+				});
+			}
+		}
+
 		const fit = checkChannelFit(parsed.data.channel, parsed.data.body);
 		if (!fit.ok) return validationError(reply, fit.problems);
 
@@ -379,6 +393,18 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 				allowPhi: parsed.data.allowPhi,
 			});
 			if (!validation.ok) return validationError(reply, validation.problems);
+
+			if (!parsed.data.allowPhi) {
+				const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(nextBody);
+				if (secrecy.hasLeak) {
+					return reply.code(422).send({
+						error: "MedicalSecrecyViolation",
+						message: `Шаблон не может содержать сведения о здоровье, диагнозах или зубах (152-ФЗ / 323-ФЗ ст. 13): ${secrecy.reasons.join("; ")}`,
+						detectedTerms: secrecy.detectedTerms,
+					});
+				}
+			}
+
 			const fit = checkChannelFit(nextChannel, nextBody);
 			if (!fit.ok) return validationError(reply, fit.problems);
 
@@ -433,6 +459,24 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 			return validationError(reply, [
 				"Проверьте текст шаблона и значения переменных.",
 			]);
+
+		if (parsed.data.allowPhi) {
+			const identity = getRequestIdentity(request);
+			const staffRole =
+				identity.role ??
+				(request as unknown as { user?: { role?: string | null } }).user
+					?.role ??
+				null;
+			const evalAccess = evaluateClinicalAccess(staffRole);
+			if (!evalAccess.hasClinicalAccess) {
+				return reply.code(403).send({
+					error: "PermissionDenied",
+					permission: "clinical.phi.preview",
+					role: staffRole,
+					message: `Отказ в предпросмотре медицинских сведений (152-ФЗ / 323-ФЗ ст. 13): ${evalAccess.reason}`,
+				});
+			}
+		}
 
 		// В предпросмотре пустые значения заменяются примерами из справочника:
 		// администратор должен увидеть готовый вид, а не «{patient}».
@@ -822,6 +866,15 @@ export async function registerCommunicationOutboxRoutes(app: FastifyInstance) {
 			return validationError(reply, [
 				"Нужен либо шаблон, либо готовый текст сообщения.",
 			]);
+
+		const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(body);
+		if (secrecy.hasLeak) {
+			return reply.code(422).send({
+				error: "MedicalSecrecyViolation",
+				message: `Отправка сведений о здоровье, диагнозов или формулы зубов по открытым каналам связи запрещена (152-ФЗ / 323-ФЗ ст. 13): ${secrecy.reasons.join("; ")}`,
+				detectedTerms: secrecy.detectedTerms,
+			});
+		}
 
 		const dedupeKey =
 			input.dedupeKey ??

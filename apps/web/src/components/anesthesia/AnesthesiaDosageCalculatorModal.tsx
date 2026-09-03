@@ -41,6 +41,7 @@ import {
 	ASA_CLASSIFICATIONS,
 	calculateAnesthesiaSafety,
 } from "./anesthesiaEngine";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import "./anesthesia.css";
 
 export interface AnesthesiaDosageCalculatorModalProps {
@@ -195,33 +196,58 @@ export function AnesthesiaDosageCalculatorModal({
 			};
 		});
 
-		// 2. Deduct from Warehouse Stock if enabled
-		if (deductFromWarehouse) {
+		// 2. Persist official protocol to Backend Anesthesia Journal & Audit Trail
+		if (initialPatientId) {
 			try {
-				await fetch("/api/inventory/consume-materials", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						patientId: initialPatientId,
-						visitId: initialVisitId,
-						materialType: "anesthetic_carpule",
-						drugId: selectedDrugId,
-						drugName: calcResult.drug.activeSubstanceRu,
-						tradeName: calcResult.drug.tradeNamesRu[0] || "Анестетик",
-						quantity: carpulesCount,
-						unit: "карпула",
-						reason: `Анестезия при лечении зуба ${targetTooth}`,
-					}),
-				}).catch(() => {
-					// Fallback if offline / mock mode
-				});
-			} catch {
-				// Offline resilience
+				const toothNum =
+					typeof targetTooth === "number"
+						? targetTooth
+						: Number.parseInt(String(targetTooth), 10);
+				const toothNumbers =
+					Number.isFinite(toothNum) && toothNum >= 11 && toothNum <= 85
+						? [toothNum]
+						: [];
+				const res = await fetch(
+					`/api/anesthesia/patients/${encodeURIComponent(String(initialPatientId))}/logs`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({
+							visitId: initialVisitId || null,
+							technique: techniqueId || "infiltration",
+							drug: selectedDrugId || "articaine_1_200k",
+							drugBrandName:
+								calcResult.drug.tradeNamesRu[0] || "Ультракаин Д-С",
+							concentrationPct: calcResult.drug.activeConcentrationPercent,
+							vasoconstrictor:
+								calcResult.drug.vasoconstrictorRatio || "1:200000",
+							carpuleVolumeMl: calcResult.drug.carpuleVolumeMl,
+							carpulesAdministered: carpulesCount,
+							patientWeightKg: patientWeightKg || 70,
+							patientAgeYears: patientAgeYears || 35,
+							asaClass: asaStatus || "asa_1",
+							hasCardiovascularDisease: hasCardioRisk || false,
+							toothNumbers,
+							notes: calcResult.diaryEntryRu,
+						}),
+					},
+				);
+				if (!res.ok) {
+					console.warn(
+						"Anesthesia protocol sync API returned status:",
+						res.status,
+					);
+				}
+			} catch (err) {
+				console.error("Failed to persist anesthesia protocol to server:", err);
 			}
 		}
 
 		showToast(
-			`Протокол анестезии внесен в карту 043/у. Списано: ${carpulesCount} карп.`,
+			`Протокол анестезии внесен в карту 043/у. Введено: ${carpulesCount} карп. (${calcResult.drug.activeSubstanceRu})`,
 			"success",
 		);
 
@@ -232,12 +258,16 @@ export function AnesthesiaDosageCalculatorModal({
 		onClose();
 	}, [
 		calcResult,
-		deductFromWarehouse,
 		initialPatientId,
 		initialVisitId,
 		selectedDrugId,
 		carpulesCount,
 		targetTooth,
+		techniqueId,
+		patientWeightKg,
+		patientAgeYears,
+		asaStatus,
+		hasCardioRisk,
 		setVisitNoteForm,
 		onApplied,
 		onClose,

@@ -39,7 +39,10 @@ test("RED-TEAM HAMMER: WAVE 8 — External Transport Socket Secrecy Attack", asy
 		let interceptedBody = "";
 
 		const originalFetch = globalThis.fetch;
-		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+		globalThis.fetch = (async (
+			input: Parameters<typeof fetch>[0],
+			init?: Parameters<typeof fetch>[1],
+		) => {
 			fetchCallCount++;
 			interceptedUrl = String(input);
 			interceptedBody = typeof init?.body === "string" ? init.body : "";
@@ -94,7 +97,10 @@ test("RED-TEAM HAMMER: WAVE 8 — External Transport Socket Secrecy Attack", asy
 		let interceptedBody = "";
 
 		const originalFetch = globalThis.fetch;
-		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+		globalThis.fetch = (async (
+			input: Parameters<typeof fetch>[0],
+			init?: Parameters<typeof fetch>[1],
+		) => {
 			fetchCallCount++;
 			interceptedUrl = String(input);
 			interceptedBody = typeof init?.body === "string" ? init.body : "";
@@ -150,7 +156,10 @@ test("RED-TEAM HAMMER: WAVE 8 — External Transport Socket Secrecy Attack", asy
 		let interceptedBody = "";
 
 		const originalFetch = globalThis.fetch;
-		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+		globalThis.fetch = (async (
+			input: Parameters<typeof fetch>[0],
+			init?: Parameters<typeof fetch>[1],
+		) => {
 			fetchCallCount++;
 			interceptedUrl = String(input);
 			interceptedBody = typeof init?.body === "string" ? init.body : "";
@@ -206,7 +215,10 @@ test("RED-TEAM HAMMER: WAVE 8 — External Transport Socket Secrecy Attack", asy
 		let interceptedBody = "";
 
 		const originalFetch = globalThis.fetch;
-		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+		globalThis.fetch = (async (
+			input: Parameters<typeof fetch>[0],
+			init?: Parameters<typeof fetch>[1],
+		) => {
 			fetchCallCount++;
 			interceptedUrl = String(input);
 			interceptedBody = typeof init?.body === "string" ? init.body : "";
@@ -224,6 +236,9 @@ test("RED-TEAM HAMMER: WAVE 8 — External Transport Socket Secrecy Attack", asy
 					provider: "smsru",
 					apiId: "test-api-id-12345678",
 					baseUrl: "https://sms.ru",
+					login: null,
+					password: null,
+					sender: null,
 				},
 				toMsisdn: "79991112233",
 				text: maliciousSmsText,

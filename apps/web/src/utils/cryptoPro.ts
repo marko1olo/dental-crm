@@ -68,7 +68,7 @@ export function parseCryptoProError(err: unknown): CryptoProParsedError {
 			? err.message
 			: typeof err === "object" && err !== null && "message" in err
 				? (err as { message: unknown }).message
-				: err ?? "",
+				: (err ?? ""),
 	);
 	const lower = raw.toLowerCase();
 
@@ -398,3 +398,8 @@ export async function signBase64WithCertificate(
 		throw new Error(parsed.userMessage);
 	}
 }
+
+/**
+ * Алиас для совместимости с модальными окнами рецептов и документов.
+ */
+export const getUserCertificates = getPersonalCertificates;

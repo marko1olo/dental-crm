@@ -10836,7 +10836,7 @@ export function buildDashboard(
 	};
 }
 
-function normalizePatientAdministrativeProfile(
+export function normalizePatientAdministrativeProfile(
 	input: PatientAdministrativeProfilePatch | null | undefined,
 ): PatientAdministrativeProfile | null {
 	const preferredAppointmentStart = isClockTime(

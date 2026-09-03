@@ -460,6 +460,7 @@ const telegramTransportFailureLabels: Record<
 	TelegramTransportFailure["errorClass"],
 	string
 > = {
+	medical_secrecy_violation: "передача сведений о здоровье запрещена (152-ФЗ / 323-ФЗ ст. 13)",
 	rate_limited: "Telegram временно ограничил частоту отправки",
 	auth: "токен бота не принят Telegram",
 	chat_blocked: "чат недоступен или пользователь заблокировал бота",

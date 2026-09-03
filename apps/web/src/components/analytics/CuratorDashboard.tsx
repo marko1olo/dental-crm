@@ -46,6 +46,7 @@ import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { CuratorConversionFunnel } from "./CuratorConversionFunnel";
 import { CuratorPlanAssignmentModal } from "../treatment-plans/CuratorPlanAssignmentModal";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import "./curatorDashboard.css";
 
 export interface CuratorDashboardProps {
@@ -184,129 +185,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 
 			setQueueItems(items);
 		} else {
-			// Fallback realistic demo data for empty database so UI is instantly rich and testable
-			setQueueItems([
-				{
-					patientId: "11111111-1111-4111-8111-111111111111",
-					patientFullName: "Иванова Марина Владимировна",
-					patientPhone: "+7 (927) 456-78-90",
-					treatmentPlanId: "22222222-2222-4222-8222-222222222221",
-					treatmentPlanTitle: "Тотальная реабилитация на имплантатах Straumann",
-					planTier: "premium",
-					planTotalPriceRub: 320_000,
-					planTotalPriceKopecks: 32_000_000,
-					paidAmountRub: 150_000,
-					paidAmountKopecks: 15_000_000,
-					remainingAmountRub: 170_000,
-					remainingAmountKopecks: 17_000_000,
-					funnelStage: "treatment_start",
-					curatorId: staffCurators[0]?.id || "33333333-3333-4333-8333-333333333331",
-					curatorFullName: staffCurators[0]?.fullName || "Смирнова Анна (Куратор)",
-					assignedAt: "2026-08-15T10:00:00.000Z",
-					stageUpdatedAt: "2026-08-20T12:00:00.000Z",
-					daysInStage: 4,
-					doctorId: "44444444-4444-4444-8444-444444444441",
-					doctorFullName: "Петров В.В. (Хирург-имплантолог)",
-					priorityScore: 85,
-					attentionFlags: ["high_value_plan"],
-				},
-				{
-					patientId: "11111111-1111-4111-8111-111111111112",
-					patientFullName: "Кузнецов Алексей Игоревич",
-					patientPhone: "+7 (917) 654-32-10",
-					treatmentPlanId: "22222222-2222-4222-8222-222222222222",
-					treatmentPlanTitle: "Керамические виниры E-max (8 зубов во фронтальном отделе)",
-					planTier: "premium",
-					planTotalPriceRub: 210_000,
-					planTotalPriceKopecks: 21_000_000,
-					paidAmountRub: 0,
-					paidAmountKopecks: 0,
-					remainingAmountRub: 210_000,
-					remainingAmountKopecks: 21_000_000,
-					funnelStage: "plan_negotiation",
-					curatorId: staffCurators[0]?.id || "33333333-3333-4333-8333-333333333331",
-					curatorFullName: staffCurators[0]?.fullName || "Смирнова Анна (Куратор)",
-					assignedAt: "2026-08-18T10:00:00.000Z",
-					stageUpdatedAt: "2026-08-18T10:00:00.000Z",
-					daysInStage: 6,
-					doctorId: "44444444-4444-4444-8444-444444444442",
-					doctorFullName: "Соколов С.С. (Ортопед)",
-					priorityScore: 90,
-					attentionFlags: ["stagnant_plan", "high_value_plan", "pending_prepayment", "requires_followup_call"],
-				},
-				{
-					patientId: "11111111-1111-4111-8111-111111111113",
-					patientFullName: "Михайлова Ольга Сергеевна",
-					patientPhone: "+7 (903) 111-22-33",
-					treatmentPlanId: "22222222-2222-4222-8222-222222222223",
-					treatmentPlanTitle: "Лечение периодонтита и 2 коронки диоксид циркония",
-					planTier: "optimum",
-					planTotalPriceRub: 78_000,
-					planTotalPriceKopecks: 7_800_000,
-					paidAmountRub: 40_000,
-					paidAmountKopecks: 4_000_000,
-					remainingAmountRub: 38_000,
-					remainingAmountKopecks: 3_800_000,
-					funnelStage: "prepayment",
-					curatorId: staffCurators[0]?.id || "33333333-3333-4333-8333-333333333331",
-					curatorFullName: staffCurators[0]?.fullName || "Смирнова Анна (Куратор)",
-					assignedAt: "2026-08-22T10:00:00.000Z",
-					stageUpdatedAt: "2026-08-23T10:00:00.000Z",
-					daysInStage: 2,
-					doctorId: "44444444-4444-4444-8444-444444444443",
-					doctorFullName: "Васильева Е.А. (Терапевт)",
-					priorityScore: 65,
-					attentionFlags: ["ready_for_first_visit"],
-				},
-				{
-					patientId: "11111111-1111-4111-8111-111111111114",
-					patientFullName: "Федоров Сергей Павлович",
-					patientPhone: "+7 (987) 222-33-44",
-					treatmentPlanId: "22222222-2222-4222-8222-222222222224",
-					treatmentPlanTitle: "Первичный осмотр, КТ и терапевтическая санация",
-					planTier: "basic",
-					planTotalPriceRub: 34_000,
-					planTotalPriceKopecks: 3_400_000,
-					paidAmountRub: 0,
-					paidAmountKopecks: 0,
-					remainingAmountRub: 34_000,
-					remainingAmountKopecks: 3_400_000,
-					funnelStage: "consultation",
-					curatorId: staffCurators[0]?.id || "33333333-3333-4333-8333-333333333331",
-					curatorFullName: staffCurators[0]?.fullName || "Смирнова Анна (Куратор)",
-					assignedAt: "2026-08-25T10:00:00.000Z",
-					stageUpdatedAt: "2026-08-25T10:00:00.000Z",
-					daysInStage: 1,
-					doctorId: "44444444-4444-4444-8444-444444444443",
-					doctorFullName: "Васильева Е.А. (Терапевт)",
-					priorityScore: 50,
-					attentionFlags: [],
-				},
-				{
-					patientId: "11111111-1111-4111-8111-111111111115",
-					patientFullName: "Семенов Роман Дмитриевич",
-					patientPhone: "+7 (927) 333-44-55",
-					treatmentPlanId: "22222222-2222-4222-8222-222222222225",
-					treatmentPlanTitle: "Исправление прикуса элайнерами Spark (Full)",
-					planTier: "premium",
-					planTotalPriceRub: 280_000,
-					planTotalPriceKopecks: 28_000_000,
-					paidAmountRub: 280_000,
-					paidAmountKopecks: 28_000_000,
-					remainingAmountRub: 0,
-					remainingAmountKopecks: 0,
-					funnelStage: "completed",
-					curatorId: staffCurators[0]?.id || "33333333-3333-4333-8333-333333333331",
-					curatorFullName: staffCurators[0]?.fullName || "Смирнова Анна (Куратор)",
-					assignedAt: "2026-07-01T10:00:00.000Z",
-					stageUpdatedAt: "2026-08-20T10:00:00.000Z",
-					daysInStage: 0,
-					doctorId: "44444444-4444-4444-8444-444444444444",
-					doctorFullName: "Николаева Н.В. (Ортодонт)",
-					priorityScore: 10,
-					attentionFlags: [],
-				},
-			]);
+			setQueueItems([]);
 		}
 	}, [dashboard?.treatmentPlans, dashboard?.patients, dashboard?.clinicSettings?.staff, staffCurators]);
 
@@ -333,7 +212,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 	}, [queueItems, selectedCuratorId, staffCurators]);
 
 	// Advance stage handler
-	const handleAdvanceStage = (item: CuratorPatientQueueItem) => {
+	const handleAdvanceStage = async (item: CuratorPatientQueueItem) => {
 		const currentDef = CURATOR_STAGE_DEFINITIONS.find((d) => d.stage === item.funnelStage);
 		const nextStage = currentDef?.nextStage;
 
@@ -348,6 +227,22 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 			additionalPaid = Math.round(item.planTotalPriceRub * 0.3);
 		} else if (nextStage === "completed") {
 			additionalPaid = item.remainingAmountRub;
+		}
+
+		try {
+			const res = await fetch(`/api/patients/${encodeURIComponent(item.patientId)}/administrative-profile`, {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({ curatorFunnelStage: nextStage }),
+			});
+			if (!res.ok) {
+				showToast("Не удалось сохранить этап воронки на сервере", "warning");
+			}
+		} catch (err) {
+			console.error("Failed to persist curator funnel stage:", err);
 		}
 
 		const updated = queueItems.map((q) => {

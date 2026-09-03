@@ -13,6 +13,7 @@ import {
 	prescriptionDoctorUkepSchema,
 	renderPrescriptionUniversalHtml,
 	verifyPrescriptionStatutoryValidity,
+	isValidSnils,
 } from "@dental/shared";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
@@ -85,6 +86,17 @@ const createPrescriptionBodySchema = z.object({
 		.min(1)
 		.max(3),
 	ukepSignature: prescriptionDoctorUkepSchema.optional().nullable(),
+}).superRefine((data, ctx) => {
+	if (data.formType === "form_148_1_u_04_l") {
+		if (!data.patientSnils || !isValidSnils(data.patientSnils)) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["patientSnils"],
+				message:
+					"Для льготного рецепта (форма № 148-1/у-04(л)) обязателен валидный СНИЛС пациента с контрольной суммой по алгоритму ПФР № 192п (Приказ Минздрава РФ № 1094н).",
+			});
+		}
+	}
 });
 
 /** Schema for UKEP signing */

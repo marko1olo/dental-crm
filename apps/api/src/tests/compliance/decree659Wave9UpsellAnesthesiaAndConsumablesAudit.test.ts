@@ -663,7 +663,7 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 			},
 		});
 
-		console.log(`[AUDIT 9.4 LOG] Атака кассового апселла анестезии: HTTP ${attackPayResponse.statusCode}, payload: ${attackPayResponse.payload}`);
+		console.log(`[AUDIT 9.4 LOG] Атака кассового апселла анестезии: HTTP ${attackPayResponse.statusCode}`);
 		const attackPayBody = attackPayResponse.json();
 		assert.equal(attackPayResponse.statusCode, 422, "Кассовый прием оплаты за неутвержденную анестезию обязан блокироваться 422");
 		assert.equal(attackPayBody.error, "UpsellConsentShieldViolationError");

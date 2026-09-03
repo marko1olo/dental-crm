@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, lte, ne, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireClinicalReadAccess,
@@ -1210,13 +1210,13 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 
 			const rawFunnelStages = [
 				{ stage: "lead" as ExecutiveFunnelStage, count: totalLeads },
-				{ stage: "consultation_booking" as ExecutiveFunnelStage, count: Math.min(totalLeads, bookingsCount || Math.round(totalLeads * 0.65)) },
-				{ stage: "attended" as ExecutiveFunnelStage, count: Math.min(bookingsCount || totalLeads, attendedCount || Math.round(totalLeads * 0.55)) },
-				{ stage: "ai_examination" as ExecutiveFunnelStage, count: Math.min(attendedCount || totalLeads, aiExaminedCount || Math.round((attendedCount || totalLeads) * 0.9)), isAiAssisted: true },
-				{ stage: "plan_presentation" as ExecutiveFunnelStage, count: Math.min(attendedCount || totalLeads, plansPresentedCount || Math.round((attendedCount || totalLeads) * 0.95)), totalVolumeKopecks: plansPresentedVolumeKopecks },
-				{ stage: "plan_approved" as ExecutiveFunnelStage, count: Math.min(plansPresentedCount || totalLeads, plansApprovedCount || Math.round((plansPresentedCount || totalLeads) * 0.7)), totalVolumeKopecks: plansApprovedVolumeKopecks },
-				{ stage: "treatment_started" as ExecutiveFunnelStage, count: Math.min(plansApprovedCount || totalLeads, treatmentStartedCount || Math.round((plansApprovedCount || totalLeads) * 0.85)), totalVolumeKopecks: totalRevenueKopecks },
-				{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: Math.min(treatmentStartedCount || totalLeads, sanitationCompletedCount || Math.max(1, Math.round((treatmentStartedCount || totalLeads) * 0.75))) },
+				{ stage: "consultation_booking" as ExecutiveFunnelStage, count: bookingsCount },
+				{ stage: "attended" as ExecutiveFunnelStage, count: attendedCount },
+				{ stage: "ai_examination" as ExecutiveFunnelStage, count: aiExaminedCount, isAiAssisted: true },
+				{ stage: "plan_presentation" as ExecutiveFunnelStage, count: plansPresentedCount, totalVolumeKopecks: plansPresentedVolumeKopecks },
+				{ stage: "plan_approved" as ExecutiveFunnelStage, count: plansApprovedCount, totalVolumeKopecks: plansApprovedVolumeKopecks },
+				{ stage: "treatment_started" as ExecutiveFunnelStage, count: payingPatients, totalVolumeKopecks: totalRevenueKopecks },
+				{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: sanitationCompletedCount },
 			];
 
 			const calculatedFunnelStages = calculateExecutiveFunnel(
@@ -1224,47 +1224,94 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 				totalMarketingSpendKopecks,
 			);
 
-			// 8. План/факт выручки по 5 отделениям
-			// Базовый целевой план выручки клиники в месяц: 2 500 000 ₽ (250 000 000 копеек)
+			// 8. План/факт выручки по 5 отделениям из реальных данных treatmentItems / serviceCatalogItems
 			const baselineMonthlyPlanKopecks = 250_000_000;
 			const targetPlanRevenueKopecks = Math.round(baselineMonthlyPlanKopecks * marketingMultiplier);
 
-			// Доли отделений: Терапия 30%, Ортопедия 28%, Хирургия 24%, Ортодонтия 12%, Детство 6%
+			const departmentRows = await db
+				.select({
+					category: serviceCatalogItems.category,
+					specialty: serviceCatalogItems.specialty,
+					revenueRub: sql<number>`coalesce(sum(${treatmentItems.priceRub}), 0)`,
+					visitsCount: sql<number>`count(distinct ${treatmentItems.visitId})::int`,
+					patientsCount: sql<number>`count(distinct ${treatmentItems.patientId})::int`,
+				})
+				.from(treatmentItems)
+				.leftJoin(serviceCatalogItems, eq(treatmentItems.serviceId, serviceCatalogItems.id))
+				.leftJoin(visits, eq(treatmentItems.visitId, visits.id))
+				.where(
+					and(
+						eq(treatmentItems.organizationId, orgId),
+						ne(treatmentItems.status, "cancelled"),
+						gte(visits.createdAt, startDate),
+					),
+				)
+				.groupBy(serviceCatalogItems.category, serviceCatalogItems.specialty);
+
+			const deptMap: Record<ExecutiveDepartmentKey, { factRevenueKop: number; visits: number; patients: number }> = {
+				therapy: { factRevenueKop: 0, visits: 0, patients: 0 },
+				orthopedics: { factRevenueKop: 0, visits: 0, patients: 0 },
+				surgery_implantation: { factRevenueKop: 0, visits: 0, patients: 0 },
+				orthodontics: { factRevenueKop: 0, visits: 0, patients: 0 },
+				pediatric: { factRevenueKop: 0, visits: 0, patients: 0 },
+			};
+
+			for (const row of departmentRows) {
+				const cat = row.category;
+				const spec = row.specialty;
+				let key: ExecutiveDepartmentKey = "therapy";
+				if (spec === "pediatric") {
+					key = "pediatric";
+				} else if (cat === "orthodontics" || spec === "orthodontist") {
+					key = "orthodontics";
+				} else if (cat === "surgery" || spec === "surgeon" || spec === "implantologist") {
+					key = "surgery_implantation";
+				} else if (cat === "prosthetics" || spec === "orthopedist") {
+					key = "orthopedics";
+				} else {
+					key = "therapy";
+				}
+
+				deptMap[key].factRevenueKop += Math.round(Number(row.revenueRub || 0) * 100);
+				deptMap[key].visits += Number(row.visitsCount || 0);
+				deptMap[key].patients += Number(row.patientsCount || 0);
+			}
+
 			const rawDepartments = [
 				{
 					departmentKey: "therapy" as ExecutiveDepartmentKey,
 					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.30),
-					factRevenueKopecks: Math.round(totalRevenueKopecks * 0.31),
-					completedVisitsCount: Math.round(Number(apptSummary?.completedCount || 0) * 0.40),
-					uniquePatientsCount: Math.round(payingPatients * 0.38),
+					factRevenueKopecks: deptMap.therapy.factRevenueKop,
+					completedVisitsCount: deptMap.therapy.visits,
+					uniquePatientsCount: deptMap.therapy.patients,
 				},
 				{
 					departmentKey: "orthopedics" as ExecutiveDepartmentKey,
 					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.28),
-					factRevenueKopecks: Math.round(totalRevenueKopecks * 0.29),
-					completedVisitsCount: Math.round(Number(apptSummary?.completedCount || 0) * 0.22),
-					uniquePatientsCount: Math.round(payingPatients * 0.25),
+					factRevenueKopecks: deptMap.orthopedics.factRevenueKop,
+					completedVisitsCount: deptMap.orthopedics.visits,
+					uniquePatientsCount: deptMap.orthopedics.patients,
 				},
 				{
 					departmentKey: "surgery_implantation" as ExecutiveDepartmentKey,
 					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.24),
-					factRevenueKopecks: Math.round(totalRevenueKopecks * 0.23),
-					completedVisitsCount: Math.round(Number(apptSummary?.completedCount || 0) * 0.18),
-					uniquePatientsCount: Math.round(payingPatients * 0.19),
+					factRevenueKopecks: deptMap.surgery_implantation.factRevenueKop,
+					completedVisitsCount: deptMap.surgery_implantation.visits,
+					uniquePatientsCount: deptMap.surgery_implantation.patients,
 				},
 				{
 					departmentKey: "orthodontics" as ExecutiveDepartmentKey,
 					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.12),
-					factRevenueKopecks: Math.round(totalRevenueKopecks * 0.11),
-					completedVisitsCount: Math.round(Number(apptSummary?.completedCount || 0) * 0.12),
-					uniquePatientsCount: Math.round(payingPatients * 0.11),
+					factRevenueKopecks: deptMap.orthodontics.factRevenueKop,
+					completedVisitsCount: deptMap.orthodontics.visits,
+					uniquePatientsCount: deptMap.orthodontics.patients,
 				},
 				{
 					departmentKey: "pediatric" as ExecutiveDepartmentKey,
 					planRevenueKopecks: Math.round(targetPlanRevenueKopecks * 0.06),
-					factRevenueKopecks: Math.round(totalRevenueKopecks * 0.06),
-					completedVisitsCount: Math.round(Number(apptSummary?.completedCount || 0) * 0.08),
-					uniquePatientsCount: Math.round(payingPatients * 0.07),
+					factRevenueKopecks: deptMap.pediatric.factRevenueKop,
+					completedVisitsCount: deptMap.pediatric.visits,
+					uniquePatientsCount: deptMap.pediatric.patients,
 				},
 			];
 
@@ -1281,17 +1328,71 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					),
 				);
 
-			// 10. Расчет сводных KPI
+			// 10. Исторический когортный LTV по всем оплатившим пациентам
+			const [historicalLtvRow] = await db
+				.select({
+					totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+					payingPatientsCount: sql<number>`count(distinct ${payments.patientId})::int`,
+				})
+				.from(payments)
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						eq(payments.status, "paid"),
+					),
+				);
+
+			const histPayingPatients = Number(historicalLtvRow?.payingPatientsCount || 0);
+			const histTotalRevenueKop = Math.round(Number(historicalLtvRow?.totalRevenueRub || 0) * 100);
+			const historicalCohortLtvKopecks =
+				histPayingPatients > 0 ? Math.round(histTotalRevenueKop / histPayingPatients) : 0;
+
+			// 11. Фактическое разделение первичной и повторной выручки
+			const patientRevenueRows = await db
+				.select({
+					isPrimary: sql<boolean>`case when ${patients.createdAt} >= ${startDate} then true else false end`,
+					totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
+					patientsCount: sql<number>`count(distinct ${payments.patientId})::int`,
+				})
+				.from(payments)
+				.innerJoin(patients, eq(payments.patientId, patients.id))
+				.where(
+					and(
+						eq(payments.organizationId, orgId),
+						gte(payments.createdAt, startDate),
+						eq(payments.status, "paid"),
+					),
+				)
+				.groupBy(sql`case when ${patients.createdAt} >= ${startDate} then true else false end`);
+
+			let primaryRevenueKopecks = 0;
+			let repeatRevenueKopecks = 0;
+			let primaryPatientsCount = 0;
+			let repeatPatientsCount = 0;
+
+			for (const row of patientRevenueRows) {
+				const revKop = Math.round(Number(row.totalRevenueRub || 0) * 100);
+				const count = Number(row.patientsCount || 0);
+				if (row.isPrimary) {
+					primaryRevenueKopecks += revKop;
+					primaryPatientsCount += count;
+				} else {
+					repeatRevenueKopecks += revKop;
+					repeatPatientsCount += count;
+				}
+			}
+
+			// 12. Расчет сводных KPI
 			const kpis = calculateExecutiveKpisSummary({
 				period: execPeriod,
 				totalRevenueKopecks,
 				totalRevenuePlanKopecks: targetPlanRevenueKopecks,
-				primaryRevenueKopecks: Math.round(totalRevenueKopecks * 0.45),
-				repeatRevenueKopecks: Math.round(totalRevenueKopecks * 0.55),
-				primaryPatientsCount: newPatients || Math.round(payingPatients * 0.4),
-				repeatPatientsCount: Math.max(0, payingPatients - (newPatients || Math.round(payingPatients * 0.4))),
+				primaryRevenueKopecks,
+				repeatRevenueKopecks,
+				primaryPatientsCount,
+				repeatPatientsCount,
 				totalMarketingSpendKopecks,
-				historicalCohortLtvKopecks: totalRevenueKopecks > 0 ? Math.round(totalRevenueKopecks / Math.max(1, payingPatients) * 3.8) : 4850000,
+				historicalCohortLtvKopecks,
 				totalOccupiedMinutes: Number(apptSummary?.occupiedMinutes || 0),
 				totalAvailableMinutes,
 				totalChairsCount: totalChairs,

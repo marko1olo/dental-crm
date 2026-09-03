@@ -318,19 +318,34 @@ export function canonicalizePaidServiceContract736Payload(params: {
 
 /**
  * Вычисляет криптографический хэш SHA-256 канонического текста.
+ * Автоматически нормализует CRLF -> LF и удаляет UTF-8 BOM.
  */
 export function computeGostSigningDigestSha256(canonicalText: string): {
 	canonicalText: string;
 	sha256Hex: string;
 	base64Payload: string;
 } {
-	const normalized = canonicalText.replace(/\r\n/g, "\n").trim();
+	const normalized = canonicalText.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").trim();
 	const sha256Hex = createHash("sha256").update(normalized, "utf8").digest("hex");
 	const base64Payload = Buffer.from(normalized, "utf8").toString("base64");
 	return {
 		canonicalText: normalized,
 		sha256Hex,
 		base64Payload,
+	};
+}
+
+/**
+ * Вычисляет SHA-256 хэш бинарного снимка документа (PDF, HTML, XML).
+ */
+export function computeBinaryDocumentSha256(buffer: Buffer | Uint8Array): {
+	sha256Hex: string;
+	sizeBytes: number;
+} {
+	const sha256Hex = createHash("sha256").update(buffer).digest("hex");
+	return {
+		sha256Hex,
+		sizeBytes: buffer.byteLength,
 	};
 }
 

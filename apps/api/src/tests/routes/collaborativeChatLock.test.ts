@@ -348,7 +348,9 @@ describe("Collaborative Chat Concurrency Locking (PostgreSQL 18)", { concurrency
 			`Ожидались 4 отказа с кодом 409 Conflict, получено: ${conflictResponses.length}`,
 		);
 
-		const winnerBody = JSON.parse(successResponses[0].body);
+		const firstSuccess = successResponses[0];
+		assert.ok(firstSuccess);
+		const winnerBody = JSON.parse(firstSuccess.body);
 		const winnerAgent = winnerBody.lockedByAgent;
 		assert.ok(agents.includes(winnerAgent));
 
@@ -372,7 +374,9 @@ describe("Collaborative Chat Concurrency Locking (PostgreSQL 18)", { concurrency
 		);
 
 		assert.equal(dbRows.length, 1, "В БД должна быть ровно 1 запись состояния чата");
-		assert.equal(dbRows[0].processingAgent, winnerAgent);
-		assert.ok(dbRows[0].lockExpiresAt);
+		const firstRow = dbRows[0];
+		assert.ok(firstRow);
+		assert.equal(firstRow.processingAgent, winnerAgent);
+		assert.ok(firstRow.lockExpiresAt);
 	});
 });

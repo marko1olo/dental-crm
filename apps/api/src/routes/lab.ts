@@ -1030,7 +1030,13 @@ export async function registerLabRoutes(app: FastifyInstance) {
 	});
 
 const createLabItemSchema = z.object({
-	toothFdi: z.number().int().min(11).max(85),
+	toothFdi: z
+		.number()
+		.int()
+		.refine((val) => VALID_FDI_TOOTH_NUMBERS.has(val), {
+			message:
+				"Недопустимый биологический номер зуба по стандарту FDI (разрешены только 11–18, 21–28, 31–38, 41–48, 51–55, 61–65, 71–75, 81–85).",
+		}),
 	restorationType: restorationTypeSchema.default("crown_monolithic"),
 	material: restorationMaterialSchema.default("zirconia_multilayer_gradient"),
 	shadeSystem: z
@@ -1118,9 +1124,12 @@ const createLabItemSchema = z.object({
 
 		const parsed = createLabItemSchema.safeParse(request.body);
 		if (!parsed.success) {
+			const firstIssueMessage = parsed.error.issues[0]?.message;
 			return reply.code(400).send({
 				error: "LabItemValidationError",
-				message: "Проверьте данные единицы протезирования (номер зуба, материал, цвет).",
+				message:
+					firstIssueMessage ??
+					"Проверьте данные единицы протезирования (номер зуба, материал, цвет).",
 				details: parsed.error.format(),
 			});
 		}

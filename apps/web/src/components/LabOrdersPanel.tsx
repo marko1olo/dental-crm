@@ -352,23 +352,40 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			const createdOrder = await res.json();
 
 			if (selectedTeeth.length > 0 && createdOrder?.id) {
+				const itemErrors: number[] = [];
 				for (const tooth of selectedTeeth) {
-					await fetch(`/api/clinical/lab-orders/${createdOrder.id}/items`, {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...denteAdminSecretRequestHeaders(),
-						},
-						body: JSON.stringify({
-							toothFdi: tooth,
-							restorationType,
-							material: matObj?.name || material,
-							shadeFinal: colorVita,
-							shadeStump: stumpShade || null,
-							cementGapMicrons: cementGap,
-							priceRub: finalPriceRub / selectedTeeth.length,
-						}),
-					}).catch(() => {});
+					try {
+						const itemRes = await fetch(
+							`/api/clinical/lab-orders/${createdOrder.id}/items`,
+							{
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+									...denteAdminSecretRequestHeaders(),
+								},
+								body: JSON.stringify({
+									toothFdi: tooth,
+									restorationType,
+									material: matObj?.name || material,
+									shadeFinal: colorVita,
+									shadeStump: stumpShade || null,
+									cementGapMicrons: cementGap,
+									priceRub: finalPriceRub / selectedTeeth.length,
+								}),
+							},
+						);
+						if (!itemRes.ok) {
+							itemErrors.push(tooth);
+						}
+					} catch {
+						itemErrors.push(tooth);
+					}
+				}
+				if (itemErrors.length > 0) {
+					showToast(
+						`Внимание: часть позиций не удалось привязать (зубы ${itemErrors.join(", ")})`,
+						"warning",
+					);
 				}
 			}
 

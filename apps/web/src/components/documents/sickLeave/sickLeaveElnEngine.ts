@@ -14,6 +14,7 @@ import {
 	SICK_LEAVE_CLOSING_CODES,
 	REGIME_VIOLATION_CODES
 } from './sickLeaveElnPresets';
+import { generateQrCodeSvg } from "@dental/shared";
 
 export const SINGLE_DOCTOR_MAX_DAYS = 15;
 export const FELDSHER_MAX_DAYS = 10;
@@ -534,6 +535,8 @@ export function generateSickLeavePatientMemoHtml(form: SickLeaveFormState, patie
 	const attendingDoctor = form.periods[0]?.doctorFio || 'Врач-стоматолог';
 	const reasonTitle = INCAPACITY_REASON_CODES[form.reasonCode]?.titleRu || '01 - Заболевание';
 	const closingTitle = SICK_LEAVE_CLOSING_CODES[form.closingCode]?.titleRu || '31 - Приступить к работе';
+	const elnQrUrl = `https://www.gosuslugi.ru/eln/${encodeURIComponent(form.elnNumber)}`;
+	const elnQrSvg = generateQrCodeSvg(elnQrUrl, { size: 54, margin: 1, title: `QR-код проверки ЭЛН № ${form.elnNumber}` });
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -652,18 +655,17 @@ export function generateSickLeavePatientMemoHtml(form: SickLeaveFormState, patie
       padding: 8px 12px;
       margin-bottom: 12px;
     }
-    .qr-mock {
+    .qr-box {
       width: 54px;
       height: 54px;
-      background: #0f172a;
-      color: #ffffff;
-      font-size: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      border-radius: 4px;
-      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .qr-box svg {
+      width: 54px;
+      height: 54px;
     }
     .qr-text {
       font-size: 10px;
@@ -748,7 +750,7 @@ export function generateSickLeavePatientMemoHtml(form: SickLeaveFormState, patie
     </table>
 
     <div class="qr-info-box">
-      <div class="qr-mock">ГОС<br/>УСЛУГИ<br/>QR</div>
+      <div class="qr-box">${elnQrSvg}</div>
       <div class="qr-text">
         <strong>Информация для пациента и работодателя:</strong><br/>
         Электронный больничный автоматически зарегистрирован в ЕИИС «Соцстрах» (СФР). Для назначения пособия сообщите номер ЭЛН <strong>${escapeXml(form.elnNumber)}</strong> в бухгалтерию/отдел кадров работодателя. Статус больничного и расчет выплат доступны в личном кабинете на портале <strong>Госуслуги</strong>.

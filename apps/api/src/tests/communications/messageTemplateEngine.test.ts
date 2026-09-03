@@ -299,14 +299,14 @@ describe("MessageTemplateEngine & 152-FZ Medical Secrecy Perimeter", () => {
 	});
 
 	// =========================================================================
-	// 4. E2E API МАРШРУТЫ: /api/communications/templates
+	// 4. E2E API МАРШРУТЫ: /api/communications/catalogs/templates
 	// =========================================================================
-	test("8. API POST /api/communications/templates: Creating template with medical leak is REJECTED (422)", async (t) => {
+	test("8. API POST /api/communications/catalogs/templates: Creating template with medical leak is REJECTED (422)", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const res = await app.inject({
 			method: "POST",
-			url: "/api/communications/templates",
+			url: "/api/communications/catalogs/templates",
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorStaffToken,
@@ -324,12 +324,12 @@ describe("MessageTemplateEngine & 152-FZ Medical Secrecy Perimeter", () => {
 		assert.ok(body.message.includes("врачебной тайной"));
 	});
 
-	test("9. API POST /api/communications/templates: Clean template is CREATED (201 Created)", async (t) => {
+	test("9. API POST /api/communications/catalogs/templates: Clean template is CREATED (201 Created)", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const res = await app.inject({
 			method: "POST",
-			url: "/api/communications/templates",
+			url: "/api/communications/catalogs/templates",
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorStaffToken,
@@ -348,12 +348,12 @@ describe("MessageTemplateEngine & 152-FZ Medical Secrecy Perimeter", () => {
 		assert.strictEqual(body.template.title, "Стандартное напоминание о визите");
 	});
 
-	test("10. API GET /api/communications/templates: Lists stored templates for organization", async (t) => {
+	test("10. API GET /api/communications/catalogs/templates: Lists stored templates for organization", async (t) => {
 		if (!databaseReady) return t.skip("База данных недоступна");
 
 		const res = await app.inject({
 			method: "GET",
-			url: "/api/communications/templates?channel=whatsapp",
+			url: "/api/communications/catalogs/templates?channel=whatsapp",
 			headers: {
 				"x-dente-clinic-token": clinicToken,
 				"x-dente-staff-token": doctorStaffToken,

@@ -10,6 +10,7 @@ import {
 	patientReferralCodes,
 	patientReferrals,
 	patients,
+	payments,
 	referralCampaigns,
 } from "../db/schema.js";
 
@@ -246,11 +247,41 @@ export async function registerReferralRoutes(app: FastifyInstance) {
 						});
 					}
 
+					let verifiedAmountRub = paidAmountRub;
+					if (paymentId) {
+						const [verifiedPayment] = await tx
+							.select()
+							.from(payments)
+							.where(
+								and(
+									eq(payments.id, paymentId),
+									eq(payments.organizationId, orgId),
+									eq(payments.patientId, refereePatientId),
+								),
+							)
+							.limit(1);
+
+						if (!verifiedPayment) {
+							return reply.status(404).send({
+								message:
+									"Платеж не найден или принадлежит другому пациенту",
+							});
+						}
+
+						if (verifiedPayment.status !== "paid") {
+							return reply.status(400).send({
+								message: `Начисление бонуса отклонено: платеж находится в статусе '${verifiedPayment.status}', а не 'paid'`,
+							});
+						}
+
+						verifiedAmountRub = Number(verifiedPayment.amountRub);
+					}
+
 					const minSpend = 1500;
-					if (paidAmountRub < minSpend) {
+					if (verifiedAmountRub < minSpend) {
 						return reply.status(200).send({
 							rewarded: false,
-							message: `Сумма первого чека (${paidAmountRub} ₽) меньше порога активации бонуса (${minSpend} ₽)`,
+							message: `Сумма первого чека (${verifiedAmountRub} ₽) меньше порога активации бонуса (${minSpend} ₽)`,
 						});
 					}
 

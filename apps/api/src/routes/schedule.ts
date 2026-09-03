@@ -53,7 +53,7 @@ type AppointmentRejectionReason =
 	| "mutation_rejected";
 
 type AppointmentRejectionResponse = {
-	statusCode: 404 | 409;
+	statusCode: 403 | 404 | 409;
 	code: AppointmentMutationCode;
 	reason: AppointmentRejectionReason;
 	message: string;
@@ -204,7 +204,8 @@ function classifyAppointmentRejection(
 	if (
 		message.includes("черный список") ||
 		message.includes("черном списке") ||
-		message.includes("Запись заблокирована")
+		message.includes("Запись заблокирована") ||
+		message.includes("в архиве")
 	)
 		return "patient_blacklisted";
 	if (message === "Запись не найдена") return "appointment_not_found";
@@ -411,6 +412,22 @@ async function appointmentRejectionResponse(
 			code: "AppointmentNotFound",
 			reason,
 			message: appointmentNotFoundMessage,
+		};
+	}
+	if (reason === "patient_blacklisted") {
+		return {
+			statusCode: 403,
+			code:
+				operation === "create"
+					? "AppointmentCreateRejected"
+					: "AppointmentUpdateRejected",
+			reason,
+			message:
+				error instanceof Error &&
+				(error.message.includes("черный список") ||
+					error.message.includes("в архиве"))
+					? error.message
+					: appointmentBlacklistedMessage,
 		};
 	}
 	const exclusionMessage = extractExclusionConstraintMessage(error);

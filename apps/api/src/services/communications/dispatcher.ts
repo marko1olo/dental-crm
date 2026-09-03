@@ -68,6 +68,7 @@ import {
 	type QuietHoursSettings,
 	type RetryPolicySettings,
 } from "./deliveryPolicy.js";
+import { MessageTemplateEngine } from "./MessageTemplateEngine.js";
 import { checkChannelFit } from "./templateRenderer.js";
 
 export type CommunicationIntentCode =
@@ -372,6 +373,14 @@ export async function enqueueMessage(
 	}
 	const body = input.body.trim();
 	if (!body) return { ok: false, reason: "Пустой текст сообщения." };
+
+	const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(body);
+	if (secrecy.hasLeak) {
+		return {
+			ok: false,
+			reason: `Отправка медицинских сведений, диагнозов или формулы зубов по открытым каналам связи запрещена (152-ФЗ / 323-ФЗ ст. 13): ${secrecy.reasons.join("; ")}`,
+		};
+	}
 
 	// Длина проверяется на входе, а не при отправке: узнать о том, что SMS
 	// разрослась на восемь сегментов, нужно до того, как за неё заплатят.
@@ -775,6 +784,16 @@ async function processRow(
 
 	if (!isMachineDeliverableChannel(channel)) {
 		await markSuppressed(row, "Канал не отправляется автоматически.", now);
+		return "suppressed";
+	}
+
+	const secrecy = MessageTemplateEngine.detectMedicalSecrecyLeaks(row.body);
+	if (secrecy.hasLeak) {
+		await markSuppressed(
+			row,
+			`152-ФЗ / 323-ФЗ ст. 13: Запрещена отправка врачебной тайны (${secrecy.reasons.join(", ")})`,
+			now,
+		);
 		return "suppressed";
 	}
 

@@ -22,7 +22,7 @@ import {
 	paymentStatus,
 	serviceCategory,
 } from "./_common.js";
-import { organizations } from "./auth.js";
+import { organizations, users } from "./auth.js";
 import { services, visits } from "./clinical.js";
 import { patients } from "./patients.js";
 
@@ -449,13 +449,29 @@ export const cashLedger = pgTable("cash_ledger", {
 
 export const cashShifts = pgTable("cash_shifts", {
 	id: uuid("id").primaryKey().default(sql`uuidv7()`),
-	organizationId: uuid("organization_id").notNull().references(() => organizations.id),
-	operatorId: uuid("operator_id").notNull(),
-	status: text("status").notNull().default("open"), // open, closing, closed, discrepancy_flagged
-	openedAt: timestamp("opened_at", { withTimezone: true }).notNull().defaultNow(),
+	organizationId: uuid("organization_id")
+		.notNull()
+		.references(() => organizations.id),
+	openedByUserId: uuid("opened_by_user_id")
+		.notNull()
+		.references(() => users.id),
+	openedAt: timestamp("opened_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
 	closedAt: timestamp("closed_at", { withTimezone: true }),
-	expectedCash: numeric("expected_cash", { precision: 12, scale: 2 }).notNull().default('0'),
-	actualCash: numeric("actual_cash", { precision: 12, scale: 2 }),
+	startingBalance: numeric("starting_balance", { precision: 12, scale: 2 })
+		.notNull()
+		.default("0"),
+	expectedClosingBalance: numeric("expected_closing_balance", {
+		precision: 12,
+		scale: 2,
+	}),
+	actualClosingBalance: numeric("actual_closing_balance", {
+		precision: 12,
+		scale: 2,
+	}),
+	status: text("status").notNull().default("open"), // open, closing, closed, discrepancy_flagged
+	discrepancyReason: text("discrepancy_reason"),
 });
 
 export const shiftDiscrepancyReports = pgTable("shift_discrepancy_reports", {
