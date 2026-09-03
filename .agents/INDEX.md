@@ -17,6 +17,7 @@ Before starting any task, read these documents to understand the architecture, d
 9. **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — HTML-to-PDF rendering, Edge/Chrome headless spawning, and SHA-256 integrity document signing.
 10. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Config schemas, API routes, hooks, UI panels, and setup rules for WhatsApp Cloud API & VK MAX bots.
 11. **[COMPETITIVE_AUDIT](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — 63-feature competitive parity matrix, IDENT/DentalPRO/iStom feature specs, and implementation architecture backlog.
+12. **[STOMX_REVERSE_ENGINEERING_BIBLE](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md)** — Полная библия реверс-инжиниринга StomX (133 API, 68 RBAC, 89 дефектов зубов, 448 протоколов 043/у, 49 официальных бланков, УКЭП КриптоПро, многокассовость, рассрочка, техкарты склада, зарплатные формулы).
 
 ---
 
