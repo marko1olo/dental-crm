@@ -33,7 +33,6 @@ import {
 	Send,
 	Shield,
 	ShieldAlert,
-	Sliders,
 	Sparkles,
 	Stethoscope,
 	User,
@@ -108,7 +107,6 @@ export function TelephonyFloatingWidget({
 	const switchLine = useTelephonyStore((s) => s.switchLine);
 	const isHeld = useTelephonyStore((s) => s.isHeld);
 	const toggleHold = useTelephonyStore((s) => s.toggleHold);
-	const openSimulator = useTelephonyStore((s) => s.openSimulator);
 
 	const ctx = useOptionalAppLogicContext();
 	const dashboard = ctx?.dashboard;
@@ -640,17 +638,6 @@ export function TelephonyFloatingWidget({
 						</div>
 
 						<div className="flex items-center gap-1">
-							{/* Simulator launcher >= 44x44px */}
-							<button
-								type="button"
-								onClick={openSimulator}
-								className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,rgba(0,0,0,0.05))] transition-colors inline-flex items-center justify-center cursor-pointer"
-								title="Симулятор SIP телефонии"
-								aria-label="Симулятор SIP телефонии"
-							>
-								<Sliders size={16} />
-							</button>
-
 							{/* Mute toggle >= 44x44px */}
 							<button
 								type="button"

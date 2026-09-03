@@ -1027,8 +1027,32 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										role="menu"
 										onClick={(e) => e.stopPropagation()}
 									>
+										{/* Рекомендации и действия по записи */}
+										{appointmentSuggestions.length > 0 && (
+											<>
+												<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+													Рекомендации
+												</div>
+												{appointmentSuggestions.map((suggestion) => (
+													<button
+														type="button"
+														key={suggestion.id}
+														className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer"
+														role="menuitem"
+														onClick={() => {
+															setIsCardMenuOpen(false);
+															openScheduleSuggestion(suggestion.section);
+														}}
+													>
+														<AlertTriangle size={14} className="text-amber-600 shrink-0" />
+														<span className="truncate">{suggestion.title}</span>
+													</button>
+												))}
+											</>
+										)}
+
 										{/* 1. Напоминания и связь */}
-										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
+										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
 											Связь и напоминания
 										</div>
 										<button
@@ -1163,7 +1187,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						<h3
 							className="text-base font-semibold break-words leading-snug whitespace-normal cursor-pointer hover:text-[var(--teal)] transition-colors"
 							style={{ color: "var(--ink)", minWidth: 0, maxWidth: "100%" }}
-							title={appointmentPatientName}
+							title={`Пациент: ${appointmentPatientName}${appointmentDoctor?.fullName ? ` · Врач: ${appointmentDoctor.fullName}` : ""}${appointmentChair?.name ? ` · Кресло: ${appointmentChair.name}` : ""}`}
 							onClick={(e) => {
 								if (typeof window !== "undefined" && window.innerWidth < 768) {
 									e.stopPropagation();
@@ -1173,102 +1197,14 @@ export function AppointmentCard(props: AppointmentCardProps) {
 						>
 							{formatPatientDisplayFio(appointmentPatientName)}
 						</h3>
-						<div
-							className="chip-group min-w-0 max-w-full"
-							style={{
-								display: "flex",
-								flexWrap: "wrap",
-								gap: "6px",
-								alignItems: "center",
-								minWidth: 0,
-								maxWidth: "100%",
-							}}
-						>
-							{appointmentSuggestions.map((suggestion) => (
-								<button
-									type="button"
-									key={suggestion.id}
-									className={`chip chip-suggestion priority-${suggestion.priority} max-w-full text-left`}
-									style={{ whiteSpace: "normal", wordBreak: "break-word", maxWidth: "100%" }}
-									onClick={(e) => {
-										e.stopPropagation();
-										openScheduleSuggestion(suggestion.section);
-									}}
-									onKeyDown={(e) => {
-										if (e.key === "Enter" || e.key === " ") {
-											e.stopPropagation();
-											e.preventDefault();
-											openScheduleSuggestion(suggestion.section);
-										}
-									}}
-									title={suggestion.detail || suggestion.title}
-								>
-									<AlertTriangle size={12} className="inline mr-1 text-amber-600 dark:text-amber-400 shrink-0" />
-									<span className="break-words">{suggestion.title}</span>
-								</button>
-							))}
+						<div className="flex items-center gap-1.5 min-w-0 max-w-full mt-0.5">
 							<span
-								className="chip chip-reason max-w-full"
-								title={appointment?.reason || "Причина не указана"}
-								style={{
-									whiteSpace: "normal",
-									wordBreak: "break-word",
-									maxWidth: "100%",
-									textAlign: "left",
-								}}
+								className="chip chip-reason text-xs font-medium text-[var(--muted)] truncate max-w-full"
+								title={appointment?.reason || "Консультация"}
 							>
-								{appointment?.reason || "Причина не указана"}
+								{appointment?.reason || "Консультация"}
 							</span>
-							<span
-								className="chip chip-doctor max-w-full truncate inline-flex items-center gap-1"
-								title={
-									appointmentDoctor?.fullName
-										? `Врач: ${appointmentDoctor.fullName}${
-												appointmentDoctor.specialties?.length
-													? ` (${appointmentDoctor.specialties.map((s) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
-													: ""
-											}`
-										: "Врач не назначен"
-								}
-								style={{ maxWidth: "100%" }}
-							>
-								<span>{appointmentDoctor?.fullName || "Врач не назначен"}</span>
-								{appointmentDoctor?.specialties &&
-									appointmentDoctor.specialties.length > 0 && (
-										<span className="text-xs font-semibold opacity-75">
-											•{" "}
-											{appointmentDoctor.specialties
-												.map((s) => specialtyLabels[s as DentalSpecialty] || s)
-												.join(", ")}
-										</span>
-									)}
-							</span>
-							<span
-								className="chip chip-assistant max-w-full truncate"
-								title={appointmentAssistant?.fullName ? `Ассистент: ${appointmentAssistant.fullName}` : "ассистент не назначен"}
-								style={{ maxWidth: "100%" }}
-							>
-								{appointmentAssistant?.fullName || "ассистент не назначен"}
-							</span>
-							{appointmentChair && (
-								<span
-									className="chip chip-chair max-w-full truncate"
-									title={`Кресло: ${appointmentChair.name}`}
-									style={{ maxWidth: "100%" }}
-								>
-									{appointmentChair.name}
-								</span>
-							)}
 						</div>
-						{readiness && (
-							<div className="appt-readiness-row flex items-center gap-2 min-w-0 flex-wrap mt-1">
-								<span
-									className={`readiness-dot readiness-dot-${readiness.state} shrink-0`}
-								/>
-								<span className="appt-next-action truncate max-w-full" title={readiness.nextAction}>{readiness.nextAction}</span>
-								<span className="appt-readiness-score shrink-0">{readiness.score}%</span>
-							</div>
-						)}
 					</div>
 
 					{appointmentHasOpenVisit ? (

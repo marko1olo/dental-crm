@@ -417,20 +417,32 @@ export function validatePaidContract736(
 	// 3. Реквизиты Пациента (Потребителя) — п. 17 ПП РФ № 736
 	const pt = contract.patient;
 	if (!checkFilled(pt.fullName)) {
-		missing.push({
-			section: "Сведения о Пациенте (Потребителе)",
-			field: "patient.fullName",
-			label: "Ф.И.О. Пациента",
-			hint: "Укажите фамилию, имя и отчество пациента полностью.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Ф.И.О. Пациента не заполнено — для печати бланка выведены подчеркивания для заполнения от руки.",
+			);
+		} else {
+			missing.push({
+				section: "Сведения о Пациенте (Потребителе)",
+				field: "patient.fullName",
+				label: "Ф.И.О. Пациента",
+				hint: "Укажите фамилию, имя и отчество пациента полностью.",
+			});
+		}
 	}
 	if (!checkFilled(pt.birthDate)) {
-		missing.push({
-			section: "Сведения о Пациенте (Потребителе)",
-			field: "patient.birthDate",
-			label: "Дата рождения Пациента",
-			hint: "Укажите дату рождения пациента.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Дата рождения Пациента не заполнена — для печати бланка выведены подчеркивания для заполнения от руки.",
+			);
+		} else {
+			missing.push({
+				section: "Сведения о Пациенте (Потребителе)",
+				field: "patient.birthDate",
+				label: "Дата рождения Пациента",
+				hint: "Укажите дату рождения пациента.",
+			});
+		}
 	}
 	if (!checkFilled(pt.passportSeries) || !checkFilled(pt.passportNumber)) {
 		if (options?.allowBlankForPrint) {
@@ -447,32 +459,50 @@ export function validatePaidContract736(
 		}
 	}
 	if (!checkFilled(pt.registrationAddress)) {
-		missing.push({
-			section: "Сведения о Пациенте (Потребителе)",
-			field: "patient.registrationAddress",
-			label: "Адрес регистрации Пациента",
-			hint: "Укажите адрес регистрации по месту жительства.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Адрес регистрации Пациента не заполнен — для печати бланка выведены подчеркивания для заполнения от руки.",
+			);
+		} else {
+			missing.push({
+				section: "Сведения о Пациенте (Потребителе)",
+				field: "patient.registrationAddress",
+				label: "Адрес регистрации Пациента",
+				hint: "Укажите адрес регистрации по месту жительства.",
+			});
+		}
 	}
 	if (!checkFilled(pt.phone)) {
-		missing.push({
-			section: "Сведения о Пациенте (Потребителе)",
-			field: "patient.phone",
-			label: "Телефон Пациента",
-			hint: "Укажите контактный номер телефона для связи и СМС-уведомлений.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Телефон Пациента не заполнен — для печати бланка выведены подчеркивания для заполнения от руки.",
+			);
+		} else {
+			missing.push({
+				section: "Сведения о Пациенте (Потребителе)",
+				field: "patient.phone",
+				label: "Телефон Пациента",
+				hint: "Укажите контактный номер телефона для связи и СМС-уведомлений.",
+			});
+		}
 	}
 
 	// 4. Заказчик (если отличается от Пациента)
 	if (contract.customer.isDifferentFromPatient) {
 		const cust = contract.customer;
 		if (!checkFilled(cust.fullName)) {
-			missing.push({
-				section: "Сведения о Заказчике (Плательщике)",
-				field: "customer.fullName",
-				label: "Ф.И.О. Заказчика",
-				hint: "Укажите Ф.И.О. лица, оплачивающего медицинские услуги.",
-			});
+			if (options?.allowBlankForPrint) {
+				warnings.push(
+					"Ф.И.О. Заказчика не заполнено — для печати выведены подчеркивания для заполнения от руки.",
+				);
+			} else {
+				missing.push({
+					section: "Сведения о Заказчике (Плательщике)",
+					field: "customer.fullName",
+					label: "Ф.И.О. Заказчика",
+					hint: "Укажите Ф.И.О. лица, оплачивающего медицинские услуги.",
+				});
+			}
 		}
 		if (!checkFilled(cust.passportSeries) || !checkFilled(cust.passportNumber)) {
 			if (options?.allowBlankForPrint) {
@@ -489,12 +519,18 @@ export function validatePaidContract736(
 			}
 		}
 		if (!checkFilled(cust.phone)) {
-			missing.push({
-				section: "Сведения о Заказчике (Плательщике)",
-				field: "customer.phone",
-				label: "Телефон Заказчика",
-				hint: "Укажите телефон заказчика.",
-			});
+			if (options?.allowBlankForPrint) {
+				warnings.push(
+					"Телефон Заказчика не заполнен — для печати бланка выведены подчеркивания для заполнения от руки.",
+				);
+			} else {
+				missing.push({
+					section: "Сведения о Заказчике (Плательщике)",
+					field: "customer.phone",
+					label: "Телефон Заказчика",
+					hint: "Укажите телефон заказчика.",
+				});
+			}
 		}
 	}
 
@@ -521,38 +557,58 @@ export function validatePaidContract736(
 
 	// 6. Предмет договора и состав услуг — п. 18 ПП РФ № 736
 	if (!checkFilled(contract.clinicalReason)) {
-		missing.push({
-			section: "Предмет договора",
-			field: "clinicalReason",
-			label: "Основание обращения / клинический диагноз",
-			hint: "Укажите диагноз МКБ-10 или повод для оказания стоматологической помощи.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Основание обращения не заполнено — для печати бланка выведена первичная консультация и осмотр.",
+			);
+		} else {
+			missing.push({
+				section: "Предмет договора",
+				field: "clinicalReason",
+				label: "Основание обращения / клинический диагноз",
+				hint: "Укажите диагноз МКБ-10 или повод для оказания стоматологической помощи.",
+			});
+		}
 	}
 	if (!checkFilled(contract.serviceScopeSummary) && (!contract.services || contract.services.length === 0)) {
-		missing.push({
-			section: "Предмет договора",
-			field: "serviceScopeSummary",
-			label: "Перечень и состав согласованных платных услуг",
-			hint: "Укажите перечень стоматологических услуг согласно смете / плану лечения.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push(
+				"Состав услуг не детализирован — для печати выведены услуги по плану лечения / смете.",
+			);
+		} else {
+			missing.push({
+				section: "Предмет договора",
+				field: "serviceScopeSummary",
+				label: "Перечень и состав согласованных платных услуг",
+				hint: "Укажите перечень стоматологических услуг согласно смете / плану лечения.",
+			});
+		}
 	}
 
 	// 7. Сроки оказания услуг — п. 17 ПП РФ № 736
 	if (!checkFilled(contract.serviceStart)) {
-		missing.push({
-			section: "Сроки оказания услуг",
-			field: "serviceStart",
-			label: "Дата начала оказания услуг",
-			hint: "Укажите дату или время начала первого клинического этапа.",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push("Дата начала оказания услуг будет заполнена в день обращения.");
+		} else {
+			missing.push({
+				section: "Сроки оказания услуг",
+				field: "serviceStart",
+				label: "Дата начала оказания услуг",
+				hint: "Укажите дату или время начала первого клинического этапа.",
+			});
+		}
 	}
 	if (!checkFilled(contract.serviceEndOrCondition)) {
-		missing.push({
-			section: "Сроки оказания услуг",
-			field: "serviceEndOrCondition",
-			label: "Срок или условие завершения услуг",
-			hint: "Укажите дату окончания или условие (например, «до подписания Акта оказанных услуг»).",
-		});
+		if (options?.allowBlankForPrint) {
+			warnings.push("Срок или условие завершения услуг будет определено по плану лечения.");
+		} else {
+			missing.push({
+				section: "Сроки оказания услуг",
+				field: "serviceEndOrCondition",
+				label: "Срок или условие завершения услуг",
+				hint: "Укажите дату окончания или условие (например, «до подписания Акта оказанных услуг»).",
+			});
+		}
 	}
 
 	// 8. Стоимость и порядок оплаты — п. 17, 21 ПП РФ № 736
@@ -920,15 +976,15 @@ ${cl.fullName} (сокращенное наименование: ${cl.shortName}
 		cl.licenseNumber
 	}, выданной ${cl.licenseIssuer}, с одной стороны, и
 
-Гражданин(ка) ${cust.fullName}, ${
+Гражданин(ка) ${cust.fullName || "________________________________________________"}, ${
 		contract.customer.isDifferentFromPatient
-			? `именуемый(ая) в дальнейшем «Заказчик», в интересах Пациента ${pt.fullName}`
+			? `именуемый(ая) в дальнейшем «Заказчик», в интересах Пациента ${pt.fullName || "________________________________________________"}`
 			: `именуемый(ая) в дальнейшем «Пациент» (Заказчик)`
 	}, с другой стороны, совместно именуемые «Стороны», заключили настоящий Договор о нижеследующем:
 
 1. ПРЕДМЕТ ДОГОВОРА
 1.1. Исполнитель обязуется оказать Пациенту платные стоматологические медицинские услуги надлежащего качества, а Заказчик (Пациент) обязуется принять и оплатить оказанные услуги в соответствии с условиями настоящего Договора и утвержденным Планом лечения (Сметой).
-1.2. Основание обращения Пациента: ${contract.clinicalReason}
+1.2. Основание обращения Пациента: ${contract.clinicalReason || "Первичная консультация и осмотр врача-стоматолога"}
 1.3. Перечень и объем оказываемых услуг:
 ${servicesList}
 1.4. Оказание медицинских услуг осуществляется в месте нахождения Исполнителя: ${cl.actualAddress}.
@@ -953,8 +1009,8 @@ ${servicesList}
 3.4. Оплата подтверждается выдачей Заказчику (Пациенту) кассового фискального чека в соответствии с Федеральным законом № 54-ФЗ.
 
 4. СРОКИ ОКАЗАНИЯ УСЛУГ
-4.1. Начало оказания услуг: ${contract.serviceStart}.
-4.2. Срок окончания оказания услуг: ${contract.serviceEndOrCondition}.
+4.1. Начало оказания услуг: ${contract.serviceStart || "в день обращения"}.
+4.2. Срок окончания оказания услуг: ${contract.serviceEndOrCondition || "до полного завершения согласованного плана лечения"}.
 
 5. ОТВЕТСТВЕННОСТЬ СТОРОН, ГАРАНТИИ И ОТКАЗ ОТ ДОГОВОРА
 5.1. Стороны несут ответственность в соответствии с законодательством РФ (Закон РФ «О защите прав потребителей», Гражданский кодекс РФ).
@@ -1189,11 +1245,11 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     <div>«${contract.contractDate}» г.</div>
   </div>
 
-  <p><strong>${cl.fullName}</strong> (сокращенное наименование: ${cl.shortName}), именуемое в дальнейшем <strong>«Исполнитель»</strong>, в лице ${cl.directorTitle} ${cl.directorFullName}, действующего на основании ${cl.actingOnBasis}, с одной стороны, и гражданин(ка) <strong>${cust.fullName}</strong>, ${contract.customer.isDifferentFromPatient ? `именуемый(ая) в дальнейшем «Заказчик», действующий в интересах Пациента <strong>${pt.fullName}</strong>` : `именуемый(ая) в дальнейшем «Пациент» (Заказчик)`}, заключили настоящий Договор о нижеследующем:</p>
+  <p><strong>${cl.fullName}</strong> (сокращенное наименование: ${cl.shortName}), именуемое в дальнейшем <strong>«Исполнитель»</strong>, в лице ${cl.directorTitle} ${cl.directorFullName}, действующего на основании ${cl.actingOnBasis}, с одной стороны, и гражданин(ка) <strong>${cust.fullName || "________________________________________________"}</strong>, ${contract.customer.isDifferentFromPatient ? `именуемый(ая) в дальнейшем «Заказчик», действующий в интересах Пациента <strong>${pt.fullName || "________________________________________________"}</strong>` : `именуемый(ая) в дальнейшем «Пациент» (Заказчик)`}, заключили настоящий Договор о нижеследующем:</p>
 
   <div class="section-title">1. Предмет договора и условия оказания услуг</div>
   <p>1.1. Исполнитель обязуется оказать Пациенту платные стоматологические медицинские услуги в соответствии с клиническими рекомендациями (протоколами лечения) и стандартами медицинской помощи РФ, а Заказчик (Пациент) обязуется принять и оплатить оказанные услуги в соответствии со сметой и условиями настоящего Договора.</p>
-  <p>1.2. Основание обращения: <u>${contract.clinicalReason}</u>. Медкарта № <strong>${pt.cardNumber || "043/у"}</strong>.</p>
+  <p>1.2. Основание обращения: <u>${contract.clinicalReason || "Первичная консультация и осмотр врача-стоматолога"}</u>. Медкарта № <strong>${pt.cardNumber || "043/у"}</strong>.</p>
   <p>1.3. Согласованный перечень и стоимость платных медицинских услуг:</p>
 
   <table class="services-table">
@@ -1229,7 +1285,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
   <p>2.3. ${contract.priceChangeRules}</p>
 
   <div class="section-title">3. Сроки оказания услуг и гарантийные обязательства</div>
-  <p>3.1. Начало оказания услуг: <strong>${contract.serviceStart}</strong>. Срок завершения: <strong>${contract.serviceEndOrCondition}</strong>.</p>
+  <p>3.1. Начало оказания услуг: <strong>${contract.serviceStart || "в день обращения"}</strong>. Срок завершения: <strong>${contract.serviceEndOrCondition || "до полного завершения согласованного плана лечения"}</strong>.</p>
   <p>3.2. ${contract.medicalRecommendationWarning}</p>
   <p>3.3. ${contract.warrantyTerms}</p>
   <p>3.4. ${contract.refusalAndRefundTerms}</p>
@@ -1254,8 +1310,8 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
 
     <div class="req-col">
       <strong>ПАЦИЕНТ / ЗАКАЗЧИК:</strong><br>
-      <strong>${cust.fullName}</strong><br>
-      Дата рождения: ${pt.birthDate} г.<br>
+      <strong>${cust.fullName || "________________________________________________"}</strong><br>
+      Дата рождения: ${pt.birthDate ? `${pt.birthDate} г.` : "«___» _______ ______ г."}<br>
       Паспорт: серия ${cust.passportSeries || "_____"} № ${cust.passportNumber || "__________"}<br>
       Выдан: ${cust.passportIssuedBy || "____________________________________"}, ${cust.passportIssuedDate || "«___» _______ 20___ г."}, код ${cust.passportDepartmentCode || "_______"}<br>
       СНИЛС: ${pt.snils || "не указан"}<br>
@@ -1263,7 +1319,7 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
       Телефон: ${cust.phone || "____________________"}<br><br>
       Подпись Заказчика (Пациента):<br>
       ${signatureStamp}
-      <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${cust.fullName} /</div>
+      <div style="font-size:6.5pt; color:#64748b;">(подпись) / ${cust.fullName || "________________________"} /</div>
       Дата подписания: «${contract.signedAt || contract.contractDate}» г.
     </div>
   </div>

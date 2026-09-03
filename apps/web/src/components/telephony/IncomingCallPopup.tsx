@@ -32,7 +32,6 @@ import {
 	Send,
 	Shield,
 	ShieldAlert,
-	Sliders,
 	Sparkles,
 	Stethoscope,
 	User,
@@ -505,7 +504,6 @@ export function IncomingCallPopup() {
 	const isMuted = useTelephonyStore((s) => s.isMuted);
 	const volumeLevel = useTelephonyStore((s) => s.volumeLevel);
 	const toggleMute = useTelephonyStore((s) => s.toggleMute);
-	const openSimulator = useTelephonyStore((s) => s.openSimulator);
 	const agentState = useTelephonyStore((s) => s.agentState);
 	const setAgentState = useTelephonyStore((s) => s.setAgentState);
 
@@ -996,17 +994,6 @@ export function IncomingCallPopup() {
 								aria-label={isDndActive ? "Отключить режим DND" : "Включить режим «Не беспокоить»"}
 							>
 								{isDndActive ? <BellOff size={16} /> : <Bell size={16} />}
-							</button>
-
-							{/* Open Simulator */}
-							<button
-								type="button"
-								onClick={openSimulator}
-								className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-all cursor-pointer"
-								title="Параметры симулятора телефонии"
-								aria-label="Симулятор"
-							>
-								<Sliders size={15} />
 							</button>
 
 							{/* Dismiss / Minimize Badge Button (>= 44x44px touch target) */}
