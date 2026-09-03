@@ -34,6 +34,8 @@ const splitInvoiceBodySchema = z.object({
 	contractId: z.string().optional(),
 	patientId: z.string().optional(),
 	visitDate: z.string().optional(),
+	isEmergency: z.boolean().optional(),
+	hasAcutePain: z.boolean().optional(),
 	items: z.array(dmsSplitCalculationItemSchema).min(1, "Передайте как минимум одну услугу для расчёта разделения счёта."),
 });
 
@@ -41,6 +43,9 @@ const recordUsageBodySchema = z.object({
 	amountRub: nonNegativeMoneyRubSchema.refine((v) => v > 0, "Сумма списания должна быть больше 0 ₽."),
 	invoiceId: z.string().optional(),
 	notes: z.string().optional(),
+	isEmergency: z.boolean().optional(),
+	hasAcutePain: z.boolean().optional(),
+	allowOverdraft: z.boolean().optional(),
 });
 
 
@@ -890,6 +895,21 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 			}
 
 			const { amountRub } = parsed.data;
+			const isUrgentCare = Boolean(parsed.data.isEmergency || parsed.data.hasAcutePain || parsed.data.allowOverdraft);
+
+			// Мандат 8e: если списание производится для экстренного визита без ГП
+			if (letterId === "emergency" || letterId === "emergency_pending_letter" || letterId === "none" || letterId === "acute-pain") {
+				return reply.code(200).send({
+					success: true,
+					letterId,
+					debitedAmountRub: amountRub,
+					usedAmountRub: amountRub,
+					remainingCoverageRub: 0,
+					status: "pending_letter",
+					warning: "Требуется досылка гарантийного письма ДМС",
+					isEmergency: true,
+				});
+			}
 
 			const result = await db.transaction(async (tx) => {
 				const [letter] = await tx
@@ -905,6 +925,21 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 					.limit(1);
 
 				if (!letter) {
+					if (isUrgentCare) {
+						return {
+							status: 200,
+							data: {
+								success: true,
+								letterId,
+								debitedAmountRub: amountRub,
+								usedAmountRub: amountRub,
+								remainingCoverageRub: 0,
+								status: "pending_letter",
+								warning: "Требуется досылка гарантийного письма ДМС",
+								isEmergency: true,
+							},
+						};
+					}
 					return {
 						status: 404,
 						error: {
@@ -915,6 +950,21 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				}
 
 				if (letter.status === "cancelled") {
+					if (isUrgentCare) {
+						return {
+							status: 200,
+							data: {
+								success: true,
+								letterId: letter.id,
+								debitedAmountRub: amountRub,
+								usedAmountRub: Number(letter.usedAmountRub),
+								remainingCoverageRub: 0,
+								status: letter.status,
+								warning: "Требуется досылка гарантийного письма ДМС",
+								isEmergency: true,
+							},
+						};
+					}
 					return {
 						status: 400,
 						error: {
@@ -926,6 +976,21 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 
 				const todayIso = new Date().toISOString().slice(0, 10);
 				if (letter.validUntil && letter.validUntil < todayIso) {
+					if (isUrgentCare) {
+						return {
+							status: 200,
+							data: {
+								success: true,
+								letterId: letter.id,
+								debitedAmountRub: amountRub,
+								usedAmountRub: Number(letter.usedAmountRub),
+								remainingCoverageRub: 0,
+								status: letter.status,
+								warning: "Требуется досылка гарантийного письма ДМС",
+								isEmergency: true,
+							},
+						};
+					}
 					return {
 						status: 400,
 						error: {
@@ -940,6 +1005,38 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 				const remainingBefore = Math.max(0, Math.round((maxCoverage - currentUsed) * 100) / 100);
 
 				if (amountRub > remainingBefore) {
+					if (isUrgentCare) {
+						// Мандат 8e: при острой боли превышение лимита не блокирует приём
+						const newUsedAmount = Math.round((currentUsed + amountRub) * 100) / 100;
+						const [updated] = await tx
+							.update(dmsGuaranteeLetters)
+							.set({
+								usedAmountRub: newUsedAmount,
+								status: "exhausted",
+								updatedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(dmsGuaranteeLetters.id, letterId),
+									eq(dmsGuaranteeLetters.organizationId, orgId),
+								),
+							)
+							.returning();
+
+						return {
+							status: 200,
+							data: {
+								success: true,
+								letterId: updated!.id,
+								debitedAmountRub: amountRub,
+								usedAmountRub: Number(updated!.usedAmountRub),
+								remainingCoverageRub: 0,
+								status: updated!.status,
+								warning: "Требуется досылка гарантийного письма ДМС",
+								isEmergency: true,
+							},
+						};
+					}
 					return {
 						status: 400,
 						error: {
@@ -1093,9 +1190,100 @@ export async function registerInsuranceRoutes(app: FastifyInstance) {
 		const splitResult = calculateDmsGuaranteeSplit(letter, items, {
 			visitDate: visitDate || new Date().toISOString().slice(0, 10),
 			contract,
+			isEmergency: parsed.data.isEmergency,
+			hasAcutePain: parsed.data.hasAcutePain,
 		});
 
 		return reply.code(200).send(splitResult);
+	});
+
+	/**
+	 * 1-клик прикрепление номера полиса ДМС и страховой компании (СОГАЗ, Ингосстрах, РЕСО, АльфаСтрахование)
+	 * без 20 полей бюрократии.
+	 */
+	app.post<{
+		Body: {
+			patientId: string;
+			insurerKey: string;
+			policyNumber: string;
+			patientFullName?: string;
+			patientBirthDate?: string;
+			isEmergency?: boolean;
+			maxCoverageRub?: number;
+		};
+	}>("/api/insurance/quick-attach", async (request, reply) => {
+		const orgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"insurance quick attach policy",
+		);
+		if (!orgId) return;
+
+		const body = request.body;
+		if (!body || !body.patientId || !body.insurerKey || !body.policyNumber?.trim()) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Укажите пациента, страховую компанию и номер полиса ДМС.",
+			});
+		}
+
+		const insurerNames: Record<string, string> = {
+			sogaz: "АО «СОГАЗ»",
+			ingosstrakh: "СПАО «Ингосстрах»",
+			reso: "СПАО «РЕСО-Гарантия»",
+			reso_garantiya: "СПАО «РЕСО-Гарантия»",
+			alfastrakh: "АО «АльфаСтрахование»",
+			alfastrakhovanie: "АО «АльфаСтрахование»",
+			vsk: "САО «ВСК»",
+			soglasie: "ООО «СК «Согласие»",
+			rosgosstrakh: "ПАО СК «Росгосстрах»",
+		};
+		const insurerName = insurerNames[body.insurerKey] || "Страховая компания ДМС";
+		const todayIso = new Date().toISOString().slice(0, 10);
+		const oneYearLaterIso = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
+
+		const maxCoverage = body.maxCoverageRub && body.maxCoverageRub > 0 ? body.maxCoverageRub : 50000;
+		const letterNumber = body.isEmergency
+			? `ЭКСТРЕННО-${Date.now().toString().slice(-6)}`
+			: `ДМС-${Date.now().toString().slice(-6)}`;
+
+		const [created] = await db
+			.insert(dmsGuaranteeLetters)
+			.values({
+				organizationId: orgId,
+				patientId: body.patientId,
+				patientFullName: body.patientFullName || "Пациент ДМС",
+				patientBirthDate: body.patientBirthDate || null,
+				policyNumber: body.policyNumber.trim(),
+				insurerKey: body.insurerKey,
+				insurerName,
+				letterNumber,
+				issueDate: todayIso,
+				validFrom: todayIso,
+				validUntil: oneYearLaterIso,
+				maxCoverageRub: maxCoverage,
+				usedAmountRub: 0,
+				franchisePct: 0,
+				franchiseType: "percent",
+				franchiseFixedRub: 0,
+				programExclusions: [],
+				approvedServiceCodes: [],
+				approvedTeethFdi: [],
+				approvedDiagnosisCodes: [],
+				curatorFullName: null,
+				curatorPhone: null,
+				notes: body.isEmergency
+					? "Экстренный приём (острая боль). Требуется досылка гарантийного письма ДМС."
+					: "Экспресс-прикрепление ДМС в 1 клик",
+				status: "active",
+			})
+			.returning();
+
+		return reply.code(201).send({
+			success: true,
+			letter: created,
+			warning: body.isEmergency ? "Требуется досылка гарантийного письма ДМС" : undefined,
+		});
 	});
 }
 

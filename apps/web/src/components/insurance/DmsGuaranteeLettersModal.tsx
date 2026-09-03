@@ -34,6 +34,7 @@ import {
 	Trash2,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -108,6 +109,7 @@ export interface DmsGuaranteeLettersModalProps {
 		totalBillKopecks: number;
 		dmsCoveredKopecks: number;
 		patientCoPayKopecks: number;
+		warning?: string | undefined;
 	}) => void) | undefined;
 }
 
@@ -306,8 +308,62 @@ export function DmsGuaranteeLettersModal({
 	const [newNotes, setNewNotes] = useState<string>("");
 	const [serviceSearchTerm, setServiceSearchTerm] = useState<string>("");
 
+	// Режим «Острая боль / Экстренное лечение» (Мандат 8e: отсутствие ГП не блокирует прием)
+	const [isEmergencyCare, setIsEmergencyCare] = useState<boolean>(false);
+	const [quickPolicyNumber, setQuickPolicyNumber] = useState<string>(patient.policyNumber || "");
+
 	// Состояние сплит-калькулятора визита
 	const [billItems, setBillItems] = useState<readonly BillItemToSplit[]>(initialBillItems);
+
+	// 1-клик прикрепление номера полиса ДМС и страховой компании без 20 полей бюрократии
+	const handleQuickAttachPolicy = async (insurerKey: string, customPolicyNumber?: string) => {
+		const polNum = (customPolicyNumber || quickPolicyNumber || newPolicyNumber || patient.policyNumber || "").trim();
+		if (!polNum) {
+			showToast("Введите номер полиса ДМС для быстрого прикрепления", "warning");
+			return;
+		}
+
+		setIsSaving(true);
+		try {
+			const res = await fetch("/api/insurance/quick-attach", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...denteAdminSecretRequestHeaders(),
+				},
+				body: JSON.stringify({
+					patientId: patient.id,
+					patientFullName: patient.fullName,
+					patientBirthDate: patient.birthDate,
+					insurerKey,
+					policyNumber: polNum,
+					isEmergency: isEmergencyCare,
+				}),
+			});
+
+			if (!res.ok) {
+				const errData = await res.json().catch(() => null);
+				throw new Error(errData?.message || `Ошибка прикрепления (${res.status})`);
+			}
+
+			const data = await res.json();
+			if (data.letter) {
+				const mapped = mapBackendLetterToPatientGuaranteeLetter(data.letter);
+				setLetters((prev) => [mapped, ...prev.filter((l) => l.id !== mapped.id)]);
+				setSelectedLetterId(mapped.id);
+				if (onSaveLetter) onSaveLetter(mapped);
+				showToast(
+					`Полис ${mapped.insurerName} успешно прикреплён в 1 клик! ${data.warning ? `(${data.warning})` : ""}`,
+					"success",
+				);
+				setActiveTab("list");
+			}
+		} catch (err: any) {
+			showToast(err.message || "Не удалось прикрепить полис ДМС", "error");
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
 	if (!isOpen) return null;
 
@@ -424,6 +480,25 @@ export function DmsGuaranteeLettersModal({
 	const splitCalculationResults = useMemo(() => {
 		if (!selectedLetter) {
 			const total = billItems.reduce((acc, item) => acc + item.unitPriceKopecks * item.quantity, 0);
+			if (isEmergencyCare) {
+				return {
+					lineResults: billItems.map((item) => ({
+						item,
+						lineTotalKopecks: item.unitPriceKopecks * item.quantity,
+						dmsCoveredKopecks: item.unitPriceKopecks * item.quantity,
+						patientCoPayKopecks: 0,
+						isApproved: true,
+						reason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+					})),
+					totalBillKopecks: total,
+					totalDmsCoveredKopecks: total,
+					totalPatientCoPayKopecks: 0,
+					remainingLetterKopecks: 0,
+					excessAmountKopecks: 0,
+					isBalanced: true,
+					warningMessage: "Требуется досылка гарантийного письма ДМС",
+				};
+			}
 			return {
 				lineResults: billItems.map((item) => ({
 					item,
@@ -431,7 +506,7 @@ export function DmsGuaranteeLettersModal({
 					dmsCoveredKopecks: 0,
 					patientCoPayKopecks: item.unitPriceKopecks * item.quantity,
 					isApproved: false,
-					reason: "Гарантийное письмо не выбрано. 100% оплата пациентом.",
+					reason: "Гарантийное письмо не прикреплено. Для экстренной помощи включите режим «Острая боль» или прикрепите полис в 1 клик.",
 				})),
 				totalBillKopecks: total,
 				totalDmsCoveredKopecks: 0,
@@ -475,6 +550,17 @@ export function DmsGuaranteeLettersModal({
 				selectedLetter.approvedServiceCodes804n.some((c) => item.serviceCode804n.startsWith(c));
 
 			if (isExcluded) {
+				if (isEmergencyCare) {
+					totalDmsCoveredKop += lineTotalKop;
+					return {
+						item,
+						lineTotalKopecks: lineTotalKop,
+						dmsCoveredKopecks: lineTotalKop,
+						patientCoPayKopecks: 0,
+						isApproved: true,
+						reason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+					};
+				}
 				totalPatientCoPayKop += lineTotalKop;
 				return {
 					item,
@@ -487,6 +573,17 @@ export function DmsGuaranteeLettersModal({
 			}
 
 			if (!toothApproved) {
+				if (isEmergencyCare) {
+					totalDmsCoveredKop += lineTotalKop;
+					return {
+						item,
+						lineTotalKopecks: lineTotalKop,
+						dmsCoveredKopecks: lineTotalKop,
+						patientCoPayKopecks: 0,
+						isApproved: true,
+						reason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+					};
+				}
 				totalPatientCoPayKop += lineTotalKop;
 				return {
 					item,
@@ -499,6 +596,17 @@ export function DmsGuaranteeLettersModal({
 			}
 
 			if (!serviceApproved) {
+				if (isEmergencyCare) {
+					totalDmsCoveredKop += lineTotalKop;
+					return {
+						item,
+						lineTotalKopecks: lineTotalKop,
+						dmsCoveredKopecks: lineTotalKop,
+						patientCoPayKopecks: 0,
+						isApproved: true,
+						reason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+					};
+				}
 				totalPatientCoPayKop += lineTotalKop;
 				return {
 					item,
@@ -523,10 +631,19 @@ export function DmsGuaranteeLettersModal({
 				actualDmsCovered = potentialDmsCovered;
 				availableLetterLimitKop -= potentialDmsCovered;
 			} else if (availableLetterLimitKop > 0) {
-				actualDmsCovered = availableLetterLimitKop;
-				availableLetterLimitKop = 0;
+				if (isEmergencyCare) {
+					actualDmsCovered = potentialDmsCovered;
+					availableLetterLimitKop = 0;
+				} else {
+					actualDmsCovered = availableLetterLimitKop;
+					availableLetterLimitKop = 0;
+				}
 			} else {
-				actualDmsCovered = 0;
+				if (isEmergencyCare) {
+					actualDmsCovered = potentialDmsCovered;
+				} else {
+					actualDmsCovered = 0;
+				}
 			}
 
 			const patientPaidKop = lineTotalKop - actualDmsCovered;
@@ -534,7 +651,9 @@ export function DmsGuaranteeLettersModal({
 			totalPatientCoPayKop += patientPaidKop;
 
 			let reason = "100% покрыто страховой по ГП";
-			if (franchiseDeductionKop > 0 && actualDmsCovered > 0) {
+			if (isEmergencyCare && (actualDmsCovered === lineTotalKop || franchiseDeductionKop > 0)) {
+				reason = "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС";
+			} else if (franchiseDeductionKop > 0 && actualDmsCovered > 0) {
 				reason = `Покрыто с учетом франшизы ${selectedLetter.franchisePct}% (${formatRubKopecks(franchiseDeductionKop / 100)})`;
 			} else if (actualDmsCovered < potentialDmsCovered && actualDmsCovered > 0) {
 				reason = `Частично покрыто: исчерпан лимит ГП. Остаток доплачивает пациент`;
@@ -563,21 +682,30 @@ export function DmsGuaranteeLettersModal({
 			remainingLetterKopecks: availableLetterLimitKop,
 			excessAmountKopecks: excessAmountKop,
 			isBalanced,
+			warningMessage: (isEmergencyCare || !selectedLetter || excessAmountKop > 0) ? "Требуется досылка гарантийного письма ДМС" : undefined,
 		};
-	}, [selectedLetter, billItems]);
+	}, [selectedLetter, billItems, isEmergencyCare]);
 
 	// Применить расчет сплита к приему
 	const handleApplySplit = () => {
-		if (onApplySplitCalculation && selectedLetter) {
+		const targetLetterId = selectedLetter?.id || "emergency_pending_letter";
+		if (onApplySplitCalculation) {
 			onApplySplitCalculation({
-				letterId: selectedLetter.id,
+				letterId: targetLetterId,
 				totalBillKopecks: splitCalculationResults.totalBillKopecks,
-				dmsCoveredKopecks: splitCalculationResults.totalDmsCoveredKopecks,
-				patientCoPayKopecks: splitCalculationResults.totalPatientCoPayKopecks,
+				dmsCoveredKopecks: isEmergencyCare && splitCalculationResults.totalDmsCoveredKopecks === 0
+					? splitCalculationResults.totalBillKopecks
+					: splitCalculationResults.totalDmsCoveredKopecks,
+				patientCoPayKopecks: isEmergencyCare && splitCalculationResults.totalDmsCoveredKopecks === 0
+					? 0
+					: splitCalculationResults.totalPatientCoPayKopecks,
+				warning: (isEmergencyCare || !selectedLetter) ? "Требуется досылка гарантийного письма ДМС" : undefined,
 			});
 		}
 		showToast(
-			`Сплит-расчет применен: ДМС ${formatRubKopecks(splitCalculationResults.totalDmsCoveredKopecks / 100)}, Пациент ${formatRubKopecks(splitCalculationResults.totalPatientCoPayKopecks / 100)}`,
+			isEmergencyCare || !selectedLetter
+				? "Экстренный приём применён: Требуется досылка гарантийного письма ДМС"
+				: `Сплит-расчет применен: ДМС ${formatRubKopecks(splitCalculationResults.totalDmsCoveredKopecks / 100)}, Пациент ${formatRubKopecks(splitCalculationResults.totalPatientCoPayKopecks / 100)}`,
 			"success",
 		);
 		onClose();
@@ -646,6 +774,137 @@ export function DmsGuaranteeLettersModal({
 
 				{/* 3. Body */}
 				<div className="dms-hub-body">
+					{/* ЭКСПРЕСС-ПАНЕЛЬ: 1-КЛИК ПРИКРЕПЛЕНИЕ ДМС И СВОБОДА ЭКСТРЕННОГО ПРИЁМА */}
+					<div
+						style={{
+							background: "var(--paper, #ffffff)",
+							border: isEmergencyCare
+								? "1px solid var(--warn-fg, #d97706)"
+								: "1px solid var(--teal, #0d9488)",
+							borderRadius: "12px",
+							padding: "12px 16px",
+							marginBottom: "16px",
+							display: "flex",
+							flexDirection: "column",
+							gap: "10px",
+						}}
+					>
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								flexWrap: "wrap",
+								gap: "8px",
+							}}
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+								<Zap size={18} style={{ color: "var(--teal, #0d9488)" }} />
+								<span style={{ fontWeight: 700, fontSize: "0.9375rem" }}>
+									1-Клик прикрепление ДМС (без бюрократии)
+								</span>
+							</div>
+
+							<label
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									cursor: "pointer",
+									padding: "4px 10px",
+									borderRadius: "8px",
+									background: isEmergencyCare ? "rgba(245, 158, 11, 0.15)" : "var(--surface, #f8fafc)",
+									border: isEmergencyCare ? "1px solid var(--warn-fg, #d97706)" : "1px solid var(--line, #e2e8f0)",
+									fontWeight: 600,
+									fontSize: "0.8125rem",
+								}}
+							>
+								<input
+									type="checkbox"
+									checked={isEmergencyCare}
+									onChange={(e) => setIsEmergencyCare(e.target.checked)}
+									style={{ width: "16px", height: "16px", cursor: "pointer" }}
+								/>
+								<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit" }}>
+									🚨 Острая боль / Экстренная помощь (без ожидания ГП)
+								</span>
+							</label>
+						</div>
+
+						{isEmergencyCare && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									padding: "8px 12px",
+									borderRadius: "8px",
+									background: "rgba(245, 158, 11, 0.1)",
+									color: "var(--warn-fg, #d97706)",
+									fontSize: "0.8125rem",
+									fontWeight: 600,
+								}}
+							>
+								<AlertTriangle size={16} />
+								<span>
+									Мандат 8e: Отсутствие ГП или исчерпание лимита не блокирует лечение. Требуется досылка гарантийного письма ДМС.
+								</span>
+							</div>
+						)}
+
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)" }}>
+								Топ-страховщики:
+							</span>
+							{[
+								{ key: "sogaz", name: "СОГАЗ" },
+								{ key: "ingosstrakh", name: "Ингосстрах" },
+								{ key: "reso", name: "РЕСО-Гарантия" },
+								{ key: "alfastrakh", name: "АльфаСтрахование" },
+							].map((ins) => (
+								<button
+									key={ins.key}
+									type="button"
+									onClick={() => setNewInsurerKey(ins.key)}
+									className={`dms-action-btn dms-btn-dense ${
+										newInsurerKey === ins.key
+											? "dms-action-btn-primary"
+											: "dms-action-btn-secondary"
+									}`}
+									style={{ fontSize: "0.8125rem", padding: "4px 10px" }}
+								>
+									{newInsurerKey === ins.key && <Check size={13} />}
+									{ins.name}
+								</button>
+							))}
+						</div>
+
+						<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+							<input
+								type="text"
+								value={quickPolicyNumber}
+								onChange={(e) => setQuickPolicyNumber(e.target.value)}
+								placeholder="Номер полиса ДМС (например, СГЗ-2026-77892)"
+								className="dms-control-input"
+								style={{ flex: 1, minWidth: "220px", height: "36px" }}
+							/>
+							<button
+								type="button"
+								onClick={() => handleQuickAttachPolicy(newInsurerKey, quickPolicyNumber)}
+								disabled={isSaving}
+								className="dms-action-btn dms-action-btn-primary dms-btn-dense"
+								style={{ height: "36px", whiteSpace: "nowrap" }}
+							>
+								{isSaving ? (
+									<Loader2 size={16} className="animate-spin" />
+								) : (
+									<Zap size={15} />
+								)}
+								⚡ Прикрепить полис в 1 клик
+							</button>
+						</div>
+					</div>
+
 					{/* ==============================================================
 					    ВКЛАДКА 1: СПИСОК ГАРАНТИЙНЫХ ПИСЕМ С ПРОГРЕСС-БАРОМ
 					   ============================================================== */}

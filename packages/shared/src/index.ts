@@ -302,7 +302,7 @@ const documentKindBaseMetadata = {
 		actionLabel: "Подготовить договор",
 		group: "payment",
 		amountSource: "planned",
-		requiresVisit: true,
+		requiresVisit: false,
 		requiresPaidRecord: false,
 	},
 	completed_works_act: {
@@ -329,7 +329,7 @@ const documentKindBaseMetadata = {
 		actionLabel: "Согласие",
 		group: "visit",
 		amountSource: "none",
-		requiresVisit: true,
+		requiresVisit: false,
 		requiresPaidRecord: false,
 	},
 	procedure_specific_consent_packet: {
@@ -3792,7 +3792,7 @@ export const paidMedicalServicesContractPayloadSchema = z.object({
 	medicalRecommendationWarning: z.string().trim().min(1).max(800),
 	refusalAndRefundTerms: z.string().trim().min(1).max(800),
 	warrantyAndClaimsTerms: z.string().trim().min(1).max(800),
-	doctorFullName: z.string().trim().min(1).max(240),
+	doctorFullName: z.string().trim().max(240).default(""),
 	signedAt: documentDateLikeStringSchema,
 	patientReceivedClinicInfo: z.literal(true),
 	patientReceivedPriceAndServiceList: z.literal(true),
@@ -5400,7 +5400,7 @@ export const informedConsentPayloadSchema = z.object({
 		.array(z.string().trim().min(1).max(240))
 		.min(1)
 		.max(12),
-	doctorFullName: z.string().trim().min(1).max(240),
+	doctorFullName: z.string().trim().max(240).default(""),
 	consentConfirmedAt: documentDateLikeStringSchema,
 	patientQuestionsAnswered: z.literal(true),
 	patientUnderstandsRisks: z.literal(true),
@@ -6317,6 +6317,8 @@ export const dmsSplitCalculationResultSchema = z.object({
 	hasUnapprovedServices: z.boolean(),
 	hasExcludedServices: z.boolean(),
 	integrityInvariantHolds: z.boolean(),
+	warningMessage: z.string().optional(),
+	isEmergency: z.boolean().optional(),
 	lineItems: z.array(dmsSplitLineResultSchema),
 });
 export type DmsSplitCalculationResult = z.infer<typeof dmsSplitCalculationResultSchema>;
@@ -6329,7 +6331,7 @@ export function calculateDmsGuaranteeSplit(
 	letter: DmsGuaranteeLetter | null | undefined,
 	items: readonly DmsSplitCalculationItem[],
 	options: {
-		visitDate?: string;
+		visitDate?: string | undefined;
 		contract?: Pick<
 			InsuranceContract,
 			| "coverageTherapyPct"
@@ -6337,7 +6339,9 @@ export function calculateDmsGuaranteeSplit(
 			| "coverageOrthoPct"
 			| "coverageHygienePct"
 			| "annualLimitRub"
-		> | null;
+		> | null | undefined;
+		isEmergency?: boolean | undefined;
+		hasAcutePain?: boolean | undefined;
 	} = {},
 ): DmsSplitCalculationResult {
 	const lineResults: DmsSplitLineResult[] = [];
@@ -6347,6 +6351,7 @@ export function calculateDmsGuaranteeSplit(
 
 	let hasUnapproved = false;
 	let hasExcluded = false;
+	const isUrgentCare = Boolean(options.isEmergency || options.hasAcutePain);
 
 	const maxCoverageRub = letter ? letter.maxCoverageRub : null;
 	const usedAmountRub = letter ? letter.usedAmountRub : 0;
@@ -6400,6 +6405,31 @@ export function calculateDmsGuaranteeSplit(
 			}
 		}
 		if (isExcluded && !it.isExplicitlyApproved) {
+			if (isUrgentCare) {
+				// Мандат 8e: при острой боли оказание помощи не блокируется
+				const candidateCoveredKop = lineTotalKop;
+				totalCoveredKop += candidateCoveredKop;
+				lineResults.push({
+					serviceId: it.serviceId,
+					serviceCode: it.serviceCode,
+					serviceName: it.serviceName,
+					category: it.category,
+					toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+					quantity: qty,
+					unitPriceRub: it.priceRub,
+					discountRub: it.discountRub ?? 0,
+					totalPriceRub: lineTotalKop / 100,
+					dmsCoveredRub: candidateCoveredKop / 100,
+					patientCoPayRub: 0,
+					effectiveCoveragePct: 100,
+					isApprovedByLetter: true,
+					isExcludedByProgram: true,
+					splitReason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+					status: "full_dms",
+				});
+				continue;
+			}
+
 			hasExcluded = true;
 			const coPayKop = lineTotalKop;
 			totalCoPayKop += coPayKop;
@@ -6427,6 +6457,31 @@ export function calculateDmsGuaranteeSplit(
 		// 2. Проверка активности и сроков гарантийного письма
 		if (letter) {
 			if (!isLetterActive || isExpired || isNotStarted) {
+				if (isUrgentCare) {
+					// Мандат 8e: просроченное или неактивное письмо не блокирует острую боль
+					const candidateCoveredKop = lineTotalKop;
+					totalCoveredKop += candidateCoveredKop;
+					lineResults.push({
+						serviceId: it.serviceId,
+						serviceCode: it.serviceCode,
+						serviceName: it.serviceName,
+						category: it.category,
+						toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+						quantity: qty,
+						unitPriceRub: it.priceRub,
+						discountRub: it.discountRub ?? 0,
+						totalPriceRub: lineTotalKop / 100,
+						dmsCoveredRub: candidateCoveredKop / 100,
+						patientCoPayRub: 0,
+						effectiveCoveragePct: 100,
+						isApprovedByLetter: true,
+						isExcludedByProgram: false,
+						splitReason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+						status: "full_dms",
+					});
+					continue;
+				}
+
 				hasUnapproved = true;
 				const reason = !isLetterActive
 					? `Гарантийное письмо № ${letter.letterNumber} неактивно (${letter.status})`
@@ -6477,6 +6532,31 @@ export function calculateDmsGuaranteeSplit(
 			}
 
 			if (!isServiceApproved || !isToothApproved) {
+				if (isUrgentCare) {
+					// Мандат 8e: несогласованный зуб/услуга при острой боли покрываются экстренно
+					const candidateCoveredKop = lineTotalKop;
+					totalCoveredKop += candidateCoveredKop;
+					lineResults.push({
+						serviceId: it.serviceId,
+						serviceCode: it.serviceCode,
+						serviceName: it.serviceName,
+						category: it.category,
+						toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+						quantity: qty,
+						unitPriceRub: it.priceRub,
+						discountRub: it.discountRub ?? 0,
+						totalPriceRub: lineTotalKop / 100,
+						dmsCoveredRub: candidateCoveredKop / 100,
+						patientCoPayRub: 0,
+						effectiveCoveragePct: 100,
+						isApprovedByLetter: true,
+						isExcludedByProgram: false,
+						splitReason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+						status: "full_dms",
+					});
+					continue;
+				}
+
 				hasUnapproved = true;
 				const reason = !isServiceApproved
 					? `Услуга ${it.serviceCode || it.serviceName || ""} не входит в согласованный перечень 804н гарантийного письма № ${letter.letterNumber}`
@@ -6503,6 +6583,29 @@ export function calculateDmsGuaranteeSplit(
 				});
 				continue;
 			}
+		} else if (isUrgentCare && !options.contract) {
+			// Случай: гарантийного письма нет, но приём экстренный (острая боль)
+			const candidateCoveredKop = lineTotalKop;
+			totalCoveredKop += candidateCoveredKop;
+			lineResults.push({
+				serviceId: it.serviceId,
+				serviceCode: it.serviceCode,
+				serviceName: it.serviceName,
+				category: it.category,
+				toothNumber: it.toothNumber !== undefined ? String(it.toothNumber) : undefined,
+				quantity: qty,
+				unitPriceRub: it.priceRub,
+				discountRub: it.discountRub ?? 0,
+				totalPriceRub: lineTotalKop / 100,
+				dmsCoveredRub: candidateCoveredKop / 100,
+				patientCoPayRub: 0,
+				effectiveCoveragePct: 100,
+				isApprovedByLetter: true,
+				isExcludedByProgram: false,
+				splitReason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+				status: "full_dms",
+			});
+			continue;
 		}
 
 		// 5. Расчет базового процента покрытия
@@ -6568,14 +6671,29 @@ export function calculateDmsGuaranteeSplit(
 				}
 			} else if (remainingLetterKop > 0) {
 				const excessKop = candidateCoveredKop - remainingLetterKop;
-				candidateCoveredKop = remainingLetterKop;
-				remainingLetterKop = 0;
-				status = "co_payment";
-				splitReason = `Превышен остаток лимита ГП на ${excessKop / 100} ₽ (доплата пациентом)`;
+				if (isUrgentCare) {
+					// При острой боли остаток ГП используется, а превышение покрывается экстренно
+					candidateCoveredKop = candidateCoveredKop;
+					remainingLetterKop = 0;
+					status = "full_dms";
+					splitReason = `Экстренная помощь (острая боль) сверх лимита на ${excessKop / 100} ₽. Требуется досылка гарантийного письма ДМС`;
+				} else {
+					candidateCoveredKop = remainingLetterKop;
+					remainingLetterKop = 0;
+					status = "co_payment";
+					splitReason = `Превышен остаток лимита ГП на ${excessKop / 100} ₽ (доплата пациентом)`;
+				}
 			} else {
-				candidateCoveredKop = 0;
-				status = "patient_full";
-				splitReason = "Лимит гарантийного письма полностью исчерпан";
+				if (isUrgentCare) {
+					// При острой боли исчерпание лимита не блокирует экстренную помощь
+					candidateCoveredKop = Math.round(lineTotalKop * (pct / 100));
+					status = "full_dms";
+					splitReason = "Экстренная помощь (острая боль) при исчерпанном лимите ГП. Требуется досылка гарантийного письма ДМС";
+				} else {
+					candidateCoveredKop = 0;
+					status = "patient_full";
+					splitReason = "Лимит гарантийного письма полностью исчерпан";
+				}
 			}
 		} else if (franchiseDeductionKop > 0 || pct < 100) {
 			status = "co_payment";
@@ -6612,6 +6730,11 @@ export function calculateDmsGuaranteeSplit(
 
 	const integrityInvariantHolds = totalCoveredKop + totalCoPayKop === totalBillKop;
 
+	let warningMessage: string | undefined = undefined;
+	if (isUrgentCare || !letter || hasUnapproved || isExpired || (remainingLetterKop !== null && remainingLetterKop === 0)) {
+		warningMessage = "Требуется досылка гарантийного письма ДМС";
+	}
+
 	return {
 		totalBillRub: totalBillKop / 100,
 		totalDmsCoveredRub: totalCoveredKop / 100,
@@ -6622,6 +6745,8 @@ export function calculateDmsGuaranteeSplit(
 		hasUnapprovedServices: hasUnapproved,
 		hasExcludedServices: hasExcluded,
 		integrityInvariantHolds,
+		warningMessage,
+		isEmergency: isUrgentCare,
 		lineItems: lineResults,
 	};
 }

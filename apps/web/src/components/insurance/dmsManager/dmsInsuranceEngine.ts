@@ -79,6 +79,8 @@ export interface DmsSplitOptions {
 	readonly franchisePercent?: number | undefined; // 0..100%
 	readonly franchiseFixedKopecks?: number | undefined; // Фиксированная сумма сооплаты за визит
 	readonly currentVisitDate?: string | undefined; // YYYY-MM-DD
+	readonly isEmergency?: boolean | undefined;
+	readonly hasAcutePain?: boolean | undefined;
 }
 
 /** Строка детализации сплит-расчета */
@@ -111,6 +113,8 @@ export interface DmsSplitInvoiceSummary {
 	readonly isFullyCoveredByDms: boolean;
 	readonly hasPatientCoPay: boolean;
 	readonly balanceInvariantHolds: boolean;
+	readonly warningMessage?: string | undefined;
+	readonly isEmergency?: boolean | undefined;
 }
 
 /** Данные клиники для официальных документов */
@@ -247,6 +251,8 @@ export function verifyServiceForDms(params: {
 	readonly guaranteeLetter?: DmsGuaranteeLetterRecord | null | undefined;
 	readonly requestedPriceKopecks: number;
 	readonly currentVisitDate?: string | undefined;
+	readonly isEmergency?: boolean | undefined;
+	readonly hasAcutePain?: boolean | undefined;
 }): DmsVerificationResult {
 	const {
 		serviceCode804n,
@@ -256,6 +262,8 @@ export function verifyServiceForDms(params: {
 		guaranteeLetter,
 		requestedPriceKopecks,
 		currentVisitDate,
+		isEmergency,
+		hasAcutePain,
 	} = params;
 
 	const program = getStatutoryProgramByKey(programKey);
@@ -271,6 +279,24 @@ export function verifyServiceForDms(params: {
 	const isExcludedByProgramRule =
 		matchedExclusion !== undefined &&
 		matchedExclusion.excludedInPrograms.includes(programKey);
+
+	// 0. Мандат 8e: оказание помощи при острой боли не блокируется
+	if (isEmergency || hasAcutePain) {
+		return {
+			serviceCode804n,
+			serviceName,
+			toothNumber,
+			status: "approved",
+			statusLabel: "Экстренно (острая боль)",
+			isCovered: true,
+			dmsPayableKopecks: requestedPriceKopecks,
+			patientPayableKopecks: 0,
+			reason: "Экстренная помощь (острая боль): лечение разрешено, требуется досылка гарантийного письма ДМС.",
+			exclusionRuleId: matchedExclusion?.ruleId,
+			isExcludedByRule: Boolean(isExcludedByProgramRule),
+			approvedByGuaranteeLetter: true,
+		};
+	}
 
 	// Проверка наличия прямого согласования в гарантийном письме
 	const isLetterActive =
@@ -459,6 +485,8 @@ export function calculateDmsSplitInvoice(
 				: null,
 			requestedPriceKopecks: lineTotalKopecks,
 			currentVisitDate,
+			isEmergency: options.isEmergency,
+			hasAcutePain: options.hasAcutePain,
 		});
 
 		let dmsLineCoveredKopecks = 0;
@@ -471,8 +499,14 @@ export function calculateDmsSplitInvoice(
 			// Если используется ГП, списываем из лимита
 			if (guaranteeLetter && verification.approvedByGuaranteeLetter) {
 				const applicableFromLimit = Math.min(rawDmsCovered, currentRemainingLetterKopecks);
-				rawDmsCovered = applicableFromLimit;
-				currentRemainingLetterKopecks -= applicableFromLimit;
+				if (options.isEmergency || options.hasAcutePain) {
+					// При острой боли покрытие не блокируется исчерпанием лимита
+					rawDmsCovered = rawDmsCovered;
+					currentRemainingLetterKopecks = Math.max(0, currentRemainingLetterKopecks - applicableFromLimit);
+				} else {
+					rawDmsCovered = applicableFromLimit;
+					currentRemainingLetterKopecks -= applicableFromLimit;
+				}
 			}
 
 			// 1. Процентная франшиза (софинансирование пациента)
@@ -525,6 +559,12 @@ export function calculateDmsSplitInvoice(
 	const balanceInvariantHolds =
 		totalBillKopecks === totalDmsCoveredKopecks + totalPatientCoPayKopecks;
 
+	const isUrgentCare = Boolean(options.isEmergency || options.hasAcutePain);
+	let warningMessage: string | undefined = undefined;
+	if (isUrgentCare || !guaranteeLetter || (guaranteeLetter && currentRemainingLetterKopecks <= 0) || letterExcessKopecks > 0) {
+		warningMessage = "Требуется досылка гарантийного письма ДМС";
+	}
+
 	return {
 		lineItems: breakdowns,
 		totalBillKopecks,
@@ -539,6 +579,8 @@ export function calculateDmsSplitInvoice(
 		isFullyCoveredByDms: totalPatientCoPayKopecks === 0,
 		hasPatientCoPay: totalPatientCoPayKopecks > 0,
 		balanceInvariantHolds,
+		warningMessage,
+		isEmergency: isUrgentCare,
 	};
 }
 

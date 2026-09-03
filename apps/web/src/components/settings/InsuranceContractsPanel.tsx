@@ -210,12 +210,6 @@ export const InsuranceContractsPanel: React.FC = () => {
 	};
 
 	const handleDeactivate = async (contract: InsuranceContract) => {
-		if (
-			!window.confirm(
-				`Убрать договор «${contract.companyName}» из работы? В новых сметах его покрытие применяться не будет. Уже посчитанные сметы не изменятся.`,
-			)
-		)
-			return;
 		/*
 		 * «Удалён» и «деактивирован» — разные обещания, а стояли оба сразу: вопрос
 		 * говорил «Удалить договор», а сообщение об успехе — «Договор
@@ -522,6 +516,49 @@ export const InsuranceContractsPanel: React.FC = () => {
 							onSubmit={handleSave}
 							style={{ display: "flex", flexDirection: "column", gap: 18 }}
 						>
+							{/* 1-клик шаблоны договоров топ-страховщиков */}
+							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+								<span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>
+									Быстрые шаблоны договоров ДМС:
+								</span>
+								<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+									{[
+										{ name: "АО «СОГАЗ»", mask: "СГЗ-####-######", limit: "100000", therapy: "100", surgery: "100", ortho: "50", hygiene: "100" },
+										{ name: "СПАО «Ингосстрах»", mask: "ИНГ-####-######", limit: "80000", therapy: "100", surgery: "80", ortho: "40", hygiene: "100" },
+										{ name: "СПАО «РЕСО-Гарантия»", mask: "РЕС-####-######", limit: "90000", therapy: "100", surgery: "90", ortho: "50", hygiene: "100" },
+										{ name: "АО «АльфаСтрахование»", mask: "АЛЬФА-####-######", limit: "120000", therapy: "100", surgery: "100", ortho: "60", hygiene: "100" },
+									].map((tmpl) => (
+										<button
+											key={tmpl.name}
+											type="button"
+											onClick={() => {
+												setFormData({
+													companyName: tmpl.name,
+													policyNumberMask: tmpl.mask,
+													annualLimitRub: tmpl.limit,
+													coverageTherapyPct: tmpl.therapy,
+													coverageSurgeryPct: tmpl.surgery,
+													coverageOrthoPct: tmpl.ortho,
+													coverageHygienePct: tmpl.hygiene,
+												});
+											}}
+											style={{
+												padding: "4px 8px",
+												borderRadius: 6,
+												border: "1px solid var(--line, #e2e8f0)",
+												background: "var(--paper-soft, #f8fafc)",
+												fontSize: 12,
+												fontWeight: 600,
+												color: "var(--ink)",
+												cursor: "pointer",
+											}}
+										>
+											+ {tmpl.name}
+										</button>
+									))}
+								</div>
+							</div>
+
 							{/* Company name */}
 							<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
 								<label

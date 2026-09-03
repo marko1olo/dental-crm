@@ -21,6 +21,7 @@ import {
 	Shield,
 	Trash2,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -106,6 +107,7 @@ export function DmsGuaranteeLetterModal({
 	const [letterNumber, setLetterNumber] = useState<string>(
 		initialLetter?.letterNumber || `ГП-${Math.floor(100000 + Math.random() * 900000)}`,
 	);
+	const [isEmergencyCare, setIsEmergencyCare] = useState<boolean>(false);
 	const [issueDate, setIssueDate] = useState<string>(
 		initialLetter?.issueDate ?? todayStr ?? "",
 	);
@@ -219,18 +221,22 @@ export function DmsGuaranteeLetterModal({
 	});
 
 	const handleSave = () => {
-		if (!policyNumber.trim()) {
+		if (!policyNumber.trim() && !isEmergencyCare) {
 			showToast("Укажите номер полиса ДМС", "warning");
 			return;
 		}
-		if (!letterNumber.trim()) {
+		if (!letterNumber.trim() && !isEmergencyCare) {
 			showToast("Укажите номер гарантийного письма", "warning");
 			return;
 		}
-		if (maxCoverageRub <= 0) {
+		if (maxCoverageRub <= 0 && !isEmergencyCare) {
 			showToast("Лимит покрытия должен быть больше 0 ₽", "warning");
 			return;
 		}
+
+		const resolvedPolicy = policyNumber.trim() || (patient?.policyNumber || "ЭКСТРЕННЫЙ-ДМС");
+		const resolvedLetterNum = letterNumber.trim() || `ГП-ЭКСТРЕННЫЙ-${Date.now()}`;
+		const resolvedCoverage = maxCoverageRub > 0 ? maxCoverageRub : 50000;
 
 		const letter: DmsGuaranteeLetter = {
 			id: initialLetter?.id || `letter-${Date.now()}`,
@@ -238,10 +244,10 @@ export function DmsGuaranteeLetterModal({
 			patientId: patient?.id || initialLetter?.patientId || "pat-1",
 			patientFullName: patient?.fullName || initialLetter?.patientFullName || "Пациент",
 			patientBirthDate: patient?.birthDate ?? initialLetter?.patientBirthDate,
-			policyNumber: policyNumber.trim(),
+			policyNumber: resolvedPolicy,
 			insurerKey,
 			insurerName: insurerDisplayName,
-			letterNumber: letterNumber.trim(),
+			letterNumber: resolvedLetterNum,
 			issueDate,
 			validFrom,
 			validUntil,
@@ -313,10 +319,94 @@ export function DmsGuaranteeLetterModal({
 
 					{/* 1. Блок страховщика и реквизитов письма */}
 					<div className="dms-card">
-						<h3 className="dms-card-title">
-							<Shield size={18} className="text-sky-600" />
-							1. Страховая компания и реквизиты гарантийного письма
-						</h3>
+						<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
+							<h3 className="dms-card-title" style={{ margin: 0 }}>
+								<Shield size={18} className="text-sky-600" />
+								1. Страховая компания и реквизиты гарантийного письма
+							</h3>
+
+							<label
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "6px",
+									cursor: "pointer",
+									padding: "4px 8px",
+									borderRadius: "6px",
+									background: isEmergencyCare ? "rgba(245, 158, 11, 0.15)" : "transparent",
+									border: isEmergencyCare ? "1px solid var(--warn-fg, #d97706)" : "1px solid var(--line, #e2e8f0)",
+									fontSize: "0.8125rem",
+									fontWeight: 600,
+								}}
+							>
+								<input
+									type="checkbox"
+									checked={isEmergencyCare}
+									onChange={(e) => setIsEmergencyCare(e.target.checked)}
+									style={{ width: "15px", height: "15px", cursor: "pointer" }}
+								/>
+								<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit" }}>
+									🚨 Острая боль / Экстренная помощь
+								</span>
+							</label>
+						</div>
+
+						{isEmergencyCare && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									padding: "8px 12px",
+									borderRadius: "8px",
+									background: "rgba(245, 158, 11, 0.1)",
+									color: "var(--warn-fg, #d97706)",
+									fontSize: "0.8125rem",
+									fontWeight: 600,
+									marginBottom: "12px",
+								}}
+							>
+								<AlertTriangle size={16} />
+								<span>
+									Мандат 8e: Задержка гарантийного письма ДМС или превышение франшизы НЕ блокирует приём врача. Требуется досылка гарантийного письма ДМС.
+								</span>
+							</div>
+						)}
+
+						{/* 1-клик быстрый выбор топ-4 страховщиков РФ */}
+						<div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center", marginBottom: "14px" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted, #64748b)" }}>
+								1-Клик выбор:
+							</span>
+							{[
+								{ key: "sogaz", name: "СОГАЗ" },
+								{ key: "ingosstrakh", name: "Ингосстрах" },
+								{ key: "reso", name: "РЕСО-Гарантия" },
+								{ key: "alfastrakh", name: "АльфаСтрахование" },
+							].map((ins) => (
+								<button
+									key={ins.key}
+									type="button"
+									onClick={() => setInsurerKey(ins.key)}
+									style={{
+										padding: "4px 10px",
+										borderRadius: "6px",
+										border: insurerKey === ins.key ? "1px solid var(--teal, #0d9488)" : "1px solid var(--line, #e2e8f0)",
+										background: insurerKey === ins.key ? "var(--teal, #0d9488)" : "var(--paper, #ffffff)",
+										color: insurerKey === ins.key ? "#ffffff" : "inherit",
+										fontWeight: 600,
+										fontSize: "0.75rem",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "4px",
+									}}
+								>
+									{insurerKey === ins.key && <Check size={12} />}
+									{ins.name}
+								</button>
+							))}
+						</div>
 
 						<div className="dms-grid-3">
 							<div className="dms-field-group">

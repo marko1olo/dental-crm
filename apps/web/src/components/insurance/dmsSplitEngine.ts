@@ -74,6 +74,8 @@ export interface DmsSplitCalculationResult {
 	readonly hasUnapprovedTeeth: boolean;
 	readonly hasExcludedServices: boolean;
 	readonly integrityInvariantHolds: boolean;
+	readonly warningMessage?: string | undefined;
+	readonly isEmergency?: boolean | undefined;
 }
 
 export interface DmsRegistryItem {
@@ -191,10 +193,13 @@ export function calculateDmsCoPaymentSplit(
 		previouslyUsedLetterAmountKopecks?: number | undefined;
 		visitDate?: string | undefined;
 		lastHygieneDate?: string | undefined;
+		isEmergency?: boolean | undefined;
+		hasAcutePain?: boolean | undefined;
 	} = {},
 ): DmsSplitCalculationResult {
 	const { policy, guaranteeLetter } = options;
 	const previouslyUsed = options.previouslyUsedLetterAmountKopecks ?? 0;
+	const isUrgentCare = Boolean(options.isEmergency || options.hasAcutePain);
 
 	let availableLetterLimitKopecks = guaranteeLetter
 		? Math.max(0, guaranteeLetter.maxApprovedAmountKopecks - previouslyUsed)
@@ -239,8 +244,31 @@ export function calculateDmsCoPaymentSplit(
 		// 3. Проверка согласования кода услуги по гарантийному письму
 		const codeApproved = isServiceCodeApprovedByLetter(item.serviceCode, guaranteeLetter);
 
-		// Если услуга исключена или не согласована — 100% сооплата пациентом
+		// Если услуга исключена или не согласована — 100% сооплата пациентом (кроме острой боли)
 		if (isExcluded || !toothApproved || !codeApproved) {
+			if (isUrgentCare) {
+				// Мандат 8e: оказание помощи при острой боли не блокируется
+				splitResults.push({
+					lineItemId: item.id,
+					serviceCode: item.serviceCode,
+					serviceName: item.serviceName,
+					toothNumber: item.toothNumber,
+					quantity: qty,
+					unitPriceKopecks: item.unitPriceKopecks,
+					totalKopecks: rawLineTotalKopecks,
+					insuranceCoveredKopecks: rawLineTotalKopecks,
+					patientOutOfPocketKopecks: 0,
+					insuranceCoveredRubles: kopecksToRubles(rawLineTotalKopecks),
+					patientOutOfPocketRubles: 0,
+					status: "full_dms",
+					splitReason: "Экстренная помощь (острая боль). Требуется досылка гарантийного письма ДМС",
+					isApprovedByLetter: true,
+					isExcludedByPolicy: isExcluded,
+					franchiseDeductionKopecks: 0,
+				});
+				continue;
+			}
+
 			let reason = exclusionReason;
 			if (!toothApproved) {
 				reason = `Зуб ${item.toothNumber} не входит в согласованный перечень гарантийного письма № ${guaranteeLetter?.letterNumber || ""}.`;
@@ -297,15 +325,28 @@ export function calculateDmsCoPaymentSplit(
 			}
 		} else if (availableLetterLimitKopecks > 0) {
 			// Частичное покрытие (исчерпание лимита ГП)
-			actualDmsCoveredKopecks = availableLetterLimitKopecks;
-			availableLetterLimitKopecks = 0;
-			status = "co_payment";
-			splitReason = `Превышен лимит гарантийного письма на ${formatCurrencyRub(potentialDmsCoveredKopecks - actualDmsCoveredKopecks, true)}. Остаток доплачивает пациент.`;
+			if (isUrgentCare) {
+				actualDmsCoveredKopecks = potentialDmsCoveredKopecks;
+				availableLetterLimitKopecks = 0;
+				status = "full_dms";
+				splitReason = `Экстренная помощь (острая боль) сверх лимита ГП. Требуется досылка гарантийного письма ДМС`;
+			} else {
+				actualDmsCoveredKopecks = availableLetterLimitKopecks;
+				availableLetterLimitKopecks = 0;
+				status = "co_payment";
+				splitReason = `Превышен лимит гарантийного письма на ${formatCurrencyRub(potentialDmsCoveredKopecks - actualDmsCoveredKopecks, true)}. Остаток доплачивает пациент.`;
+			}
 		} else {
 			// Лимит исчерпан полностью
-			actualDmsCoveredKopecks = 0;
-			status = "patient_full";
-			splitReason = "Лимит гарантийного письма полностью исчерпан. Оплата пациентом.";
+			if (isUrgentCare) {
+				actualDmsCoveredKopecks = potentialDmsCoveredKopecks;
+				status = "full_dms";
+				splitReason = "Экстренная помощь (острая боль) сверх лимита ГП. Требуется досылка гарантийного письма ДМС";
+			} else {
+				actualDmsCoveredKopecks = 0;
+				status = "patient_full";
+				splitReason = "Лимит гарантийного письма полностью исчерпан. Оплата пациентом.";
+			}
 		}
 
 		// Пациент доплачивает разницу: железный баланс
@@ -349,6 +390,11 @@ export function calculateDmsCoPaymentSplit(
 	const integrityInvariantHolds =
 		totalInsuranceCoveredKopecks + totalPatientOutOfPocketKopecks === totalBillKopecks;
 
+	let warningMessage: string | undefined = undefined;
+	if (isUrgentCare || hasUnapprovedTeeth || hasExcludedServices || !guaranteeLetter) {
+		warningMessage = "Требуется досылка гарантийного письма ДМС";
+	}
+
 	return {
 		lineItems: splitResults,
 		totalBillKopecks,
@@ -363,6 +409,8 @@ export function calculateDmsCoPaymentSplit(
 		hasUnapprovedTeeth,
 		hasExcludedServices,
 		integrityInvariantHolds,
+		warningMessage,
+		isEmergency: isUrgentCare,
 	};
 }
 

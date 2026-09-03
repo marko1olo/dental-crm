@@ -276,6 +276,8 @@ export interface DmsCoverageEvaluationOptions {
 	readonly serviceDate?: string | undefined; // YYYY-MM-DD (defaults to today)
 	readonly serviceCode804n?: string | undefined;
 	readonly serviceName?: string | undefined;
+	readonly isEmergency?: boolean | undefined;
+	readonly hasAcutePain?: boolean | undefined;
 }
 
 /**
@@ -287,6 +289,7 @@ export interface DmsCoverageEvaluationOptions {
  * 3. 804n service inclusion/exclusion checks.
  * 4. Soft Warning Threshold: Flags when usage >= 80%.
  * 5. Hard Limit Handling: Exact kopeck overflow shift to patient portion.
+ * 6. Clinical Mandate 8e: Acute pain and emergency care are never blocked by missing letters or limits.
  */
 export function evaluateGuaranteeLetterCoverage(
 	letter: DmsGuaranteeLetter,
@@ -301,6 +304,37 @@ export function evaluateGuaranteeLetterCoverage(
 
 	const serviceDate = options.serviceDate ?? new Date().toISOString().slice(0, 10);
 	const recommendations: string[] = [];
+	const isUrgentCare = Boolean(options.isEmergency || options.hasAcutePain);
+
+	// 0. Emergency / Acute Pain Override (Мандат 8e: острая боль не блокируется)
+	if (isUrgentCare) {
+		const isExhausted = letter.remainingLimitKopecks <= 0 || letter.status === "exhausted";
+		const isExpired = letter.status === "expired" || serviceDate > letter.validTo;
+		const isInactive = letter.status !== "active";
+		const hasDiscrepancy = isExhausted || isExpired || isInactive;
+
+		return {
+			letterId: letter.id,
+			status: "approved",
+			isApproved: true,
+			approvedInsurerKopecks: requestedInsurerAmountKopecks,
+			overflowToPatientKopecks: 0,
+			remainingLimitBeforeKopecks: letter.remainingLimitKopecks,
+			remainingLimitAfterKopecks: Math.max(0, letter.remainingLimitKopecks - requestedInsurerAmountKopecks),
+			limitUsageRatioPercent: letter.limitKopecks > 0
+				? Math.round((letter.usedKopecks / letter.limitKopecks) * 100)
+				: 100,
+			warning80PercentReached: true,
+			limitExceeded: requestedInsurerAmountKopecks > letter.remainingLimitKopecks,
+			warningMessageRu: hasDiscrepancy
+				? "Требуется досылка гарантийного письма ДМС (оказание помощи при острой боли разрешено)"
+				: undefined,
+			actionRecommendationsRu: [
+				"Экстренная помощь (острая боль) оказана без блокировок.",
+				"Требуется досылка гарантийного письма ДМС от страховой компании.",
+			],
+		};
+	}
 
 	// 1. Status Check
 	if (letter.status !== "active") {
