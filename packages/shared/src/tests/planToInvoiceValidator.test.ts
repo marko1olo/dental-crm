@@ -253,6 +253,70 @@ describe("planToInvoiceValidator (Feature #41)", () => {
 		assert.equal(report.adminOverrideInfo.isAuthorized, true);
 		assert.equal(report.adminOverrideInfo.staffName, "Главный врач Сидоров В. П.");
 	});
+
+	it("should enforce 10% default inflation threshold per Decree 659 and art. 709 GK RF", () => {
+		const items: PlanItemForValidation[] = [
+			{
+				itemId: "item-12-percent",
+				toothNumber: 36,
+				code804n: "A16.07.002.001",
+				nameRu: "Пломба Filtek Z250",
+				quantity: 1,
+				planUnitPriceKopecks: 500000, // 5 000 ₽ в плане
+			},
+		];
+
+		// В каталоге srv-001 цена 6 500 ₽ (+30% > 10% дефолтного порога)
+		const payload: PlanToInvoiceValidationPayload = {
+			planId: "PLAN-105",
+			patientId: "PAT-005",
+			planCreatedAtIso: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+			isSignedWithPatient: false,
+			// inflationThresholdPercent НЕ передан — обязан дефолтиться на 10%
+			items,
+			catalog: mockCatalog,
+		};
+
+		const report = validatePlanToInvoice(payload);
+
+		assert.equal(report.canGenerateWorkOrder, false);
+		assert.equal(report.items[0]?.requiresAdminOverride, true);
+		assert.equal(report.itemsRequiringOverrideCount, 1);
+	});
+
+	it("should strictly block unilateral UPDATE_TO_CURRENT_PRICE on locked solid estimate (твердая смета) without admin override", () => {
+		const items: PlanItemForValidation[] = [
+			{
+				itemId: "item-locked-override",
+				toothNumber: 16,
+				code804n: "A16.07.002.001",
+				nameRu: "Пломба Filtek Z250",
+				quantity: 2, // 2 шт.
+				planUnitPriceKopecks: 500000, // 5 000 ₽ за ед.
+				planDiscountKopecks: 0,
+			},
+		];
+
+		const payload: PlanToInvoiceValidationPayload = {
+			planId: "PLAN-106",
+			patientId: "PAT-006",
+			planCreatedAtIso: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+			isSignedWithPatient: true, // Твердая смета подписана с пациентом!
+			items,
+			catalog: mockCatalog, // В каталоге 6 500 ₽ за ед.
+			itemResolutionOverrides: {
+				"item-locked-override": "UPDATE_TO_CURRENT_PRICE", // Попытка оператора поднять цену по твердой смете
+			},
+		};
+
+		const report = validatePlanToInvoice(payload);
+
+		// Должно требовать авторизацию руководства и блокировать выписку без оверрайда
+		assert.equal(report.canGenerateWorkOrder, false, "Выписка наряда по твердой смете с повышением цены обязана блокироваться без согласования руководства!");
+		assert.equal(report.items[0]?.requiresAdminOverride, true);
+		assert.equal(report.items[0]?.patientSurchargeKopecks, 300000); // 2 шт. * 1 500 ₽ = 3 000 ₽ доплата
+		assert.equal(report.supplementaryAgreementNeeded, true, "Требуется Дополнительное соглашение (ст. 709 ГК РФ)");
+	});
 });
 
 describe("priceLockEngine (Feature #41)", () => {

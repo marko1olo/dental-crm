@@ -36,6 +36,7 @@ import { registerBillingRoutes } from "../../routes/billing.js";
 import { registerDocumentRoutes } from "../../routes/documents.js";
 import { registerInvoiceRoutes } from "../../routes/invoices.js";
 import { registerPatientRoutes } from "../../routes/patients.js";
+import { registerPrescriptionRoutes } from "../../routes/prescriptions.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import {
@@ -190,6 +191,7 @@ describe("Prosecutor 3: Wave 6 Anonymous Patient Legal Shield & Tax Exemption Au
 		await registerDocumentRoutes(app);
 		await registerInvoiceRoutes(app);
 		await registerPatientRoutes(app);
+		await registerPrescriptionRoutes(app);
 		await app.ready();
 	});
 
@@ -627,5 +629,63 @@ describe("Prosecutor 3: Wave 6 Anonymous Patient Legal Shield & Tax Exemption Au
 		assert.equal(errPost.error, "Decree659OmsForbiddenError");
 
 		console.log("[ANONYMOUS OMS POLICY BARRIER PROOF] Запрет привязки полиса ОМС к анонимной карте полностью подтвержден!");
+	});
+
+	it("AUDIT 6.8: Попытка выписки льготного/ОМС рецепта для анонимной карты (POST /api/prescriptions) блокируется 422 Decree659OmsForbiddenError", async () => {
+		if (!databaseReady) return;
+
+		// 1. Создаем анонимного пациента
+		const anonPatientId = fixtureUuid(NAMESPACE, 99);
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(patients).values({
+				id: anonPatientId,
+				organizationId: ORG_ID,
+				fullName: "UUID_ANON_7788",
+				birthDate: "1990-01-01",
+				phone: "+79990007788",
+				administrativeProfile: {
+					isAnonymous: true,
+				},
+			});
+		});
+
+		// 2. Врач пытается выписать рецепт на анонима с указанием полиса ОМС
+		const rxRes = await app.inject({
+			method: "POST",
+			url: "/api/prescriptions",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": doctorToken,
+			},
+			payload: {
+				patientId: anonPatientId,
+				prescribingDoctorId: DOCTOR_ID,
+				formType: "form_107_1_u",
+				patientOmsPolicy: "1234567890123456",
+				items: [
+					{
+						innLatin: "Amoxicillinum",
+						dosageFormLatin: "Capsulae",
+						dosageDoseConcentration: "500 mg",
+						dispenseInstructionLatin: "D.t.d. N. 20",
+						signatureDirectionRussian: "По 1 капсуле 3 раза в день",
+						quantityPackages: 1,
+						durationDays: 7,
+						frequencyTimesPerDay: 3,
+						mealRelation: "after_meal",
+					},
+				],
+			},
+		});
+
+		console.log("\n[AUDIT 6.8 LOG] Попытка выписки льготного рецепта/ОМС для анонимного пациента:");
+		console.log(`HTTP Status: ${rxRes.statusCode}`);
+		console.log(`Response Body: ${rxRes.body}`);
+
+		assert.equal(rxRes.statusCode, 422, "Выписка рецепта с полисом ОМС на анонима обязана блокироваться со статусом 422");
+		const errRx = JSON.parse(rxRes.body);
+		assert.equal(errRx.error, "Decree659OmsForbiddenError");
+
+		console.log("[PRESCRIPTION OMS SHIELD PROOF] Блокировка льготных рецептов/ОМС для анонимов полностью подтверждена!");
 	});
 });

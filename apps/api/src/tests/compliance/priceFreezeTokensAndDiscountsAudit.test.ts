@@ -545,4 +545,180 @@ describe("Prosecutor 3: Price Freeze Tokens & Discount Modes Statutory Audit", {
 
 		console.log(`[AUDIT 1.5 PROOF] Мульти-количество quantity=3 проверено: Gross = 24 000 ₽, Discount 15% = 3 600 ₽ (от стоимости строки), Net = 20 400 ₽!`);
 	});
+
+	it("AUDIT 1.6: Режим 'plan_fixed' при мульти-количестве (quantity > 1): умножение lockedDiscountRub на quantity до копейки", async (t) => {
+		if (!databaseReady) {
+			t.skip("PostgreSQL недоступен");
+			return;
+		}
+
+		// 1. Создаем утвержденный план лечения с режимом 'plan_fixed' и скидкой 10%
+		const planId = fixtureUuid(NAMESPACE, 60);
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(treatmentPlans).values({
+				id: planId,
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				name: "План с фиксированной скидкой 10% на коронки",
+				status: "Approved",
+				approvedAt: new Date(),
+				totalPrice: "50000.00",
+				totalPriceRub: "50000.00",
+				discountMode: "plan_fixed",
+				planDiscountPercent: 10,
+				version: 1,
+			});
+
+			await db.insert(treatmentPlanItemsNew).values([
+				{
+					id: fixtureUuid(NAMESPACE, 61),
+					organizationId: ORG_ID,
+					planId,
+					priceId: `${SERVICE_CROWN_ID}::Коронка диоксид циркония`,
+					toothNumber: 15,
+					quantity: 2, // 2 коронки по 25 000 ₽ = 50 000 ₽
+					price: "25000.00",
+					discount: "2500.00", // Скидка за единицу: 2 500 ₽
+					phase: 1,
+				},
+			]);
+		});
+
+		// 2. Выпускаем токен фиксации цен
+		const tokenRes = await app.inject({
+			method: "POST",
+			url: `/api/patients/${PATIENT_ID}/treatment-plans/${planId}/price-freeze`,
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": doctorToken,
+			},
+			payload: {
+				policyKind: "standard_30_days",
+			},
+		});
+		assert.equal(tokenRes.statusCode, 201);
+
+		// 3. Выписываем наряд на 2 коронки
+		const invoiceRes = await app.inject({
+			method: "POST",
+			url: "/api/invoices/generate-from-plan",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": doctorToken,
+			},
+			payload: {
+				planId,
+				patientId: PATIENT_ID,
+				documentType: "work_order",
+				items: [
+					{
+						serviceId: SERVICE_CROWN_ID,
+						nameRu: "Коронка диоксид циркония",
+						code804n: "A16.07.004.001",
+						quantity: 2,
+						unitPriceRub: 25000,
+					},
+				],
+			},
+		});
+
+		assert.equal(invoiceRes.statusCode, 201);
+		const invoiceBody = invoiceRes.json();
+
+		// Проверяем:
+		// gross = 25 000 * 2 = 50 000 ₽
+		// discount = 2 500 * 2 = 5 000 ₽ (НЕ 2 500 ₽!)
+		// net = 50 000 - 5 000 = 45 000 ₽
+		assert.equal(invoiceBody.totalGrossRub, 50000);
+		assert.equal(invoiceBody.totalDiscountRub, 5000, "В режиме plan_fixed скидка должна быть 2 * 2500 = 5000 ₽!");
+		assert.equal(invoiceBody.totalNetRub, 45000);
+
+		const createdItemId = invoiceBody.createdTreatmentItemIds[0];
+		const [dbItem] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(treatmentItems)
+				.where(eq(treatmentItems.id, createdItemId))
+				.limit(1),
+		);
+
+		assert.ok(dbItem);
+		assert.equal(dbItem.quantity, "2");
+		assert.equal(Number(dbItem.unitPriceRub), 25000);
+		assert.equal(Number(dbItem.discountRub), 5000);
+		assert.equal(Number(dbItem.priceRub), 45000);
+
+		console.log(`[AUDIT 1.6 PROOF] plan_fixed multi-quantity проверено: Gross = 50 000 ₽, Discount = 5 000 ₽ (2 x 2 500 ₽), Net = 45 000 ₽!`);
+	});
+
+	it("AUDIT 1.7: Твердая смета (ст. 709 ГК РФ): блокировка одностороннего UPDATE_TO_CURRENT_PRICE без авторизации руководства", async (t) => {
+		if (!databaseReady) {
+			t.skip("PostgreSQL недоступен");
+			return;
+		}
+
+		// 1. Создаем утвержденный план с зафиксированной ценой
+		const planId = fixtureUuid(NAMESPACE, 70);
+		await withFixtureTenant(ORG_ID, async () => {
+			await db.insert(treatmentPlans).values({
+				id: planId,
+				organizationId: ORG_ID,
+				patientId: PATIENT_ID,
+				name: "План с твердой сметой",
+				status: "Approved",
+				approvedAt: new Date(),
+				totalPrice: "8000.00",
+				totalPriceRub: "8000.00",
+				discountMode: "none",
+				version: 1,
+			});
+
+			await db.insert(treatmentPlanItemsNew).values([
+				{
+					id: fixtureUuid(NAMESPACE, 71),
+					organizationId: ORG_ID,
+					planId,
+					priceId: `${SERVICE_FILLING_ID}::Световая пломба Filtek`,
+					toothNumber: 21,
+					quantity: 1,
+					price: "8000.00",
+					discount: "0",
+					phase: 1,
+				},
+			]);
+		});
+
+		// 2. В каталоге цена выросла до 12 000 ₽
+		// Оператор пытается принудительно обновить цену до текущего каталога (UPDATE_TO_CURRENT_PRICE) без admin override
+		const invoiceRes = await app.inject({
+			method: "POST",
+			url: "/api/invoices/generate-from-plan",
+			headers: {
+				"x-dente-clinic-token": clinicToken,
+				"x-dente-staff-token": doctorToken,
+			},
+			payload: {
+				planId,
+				patientId: PATIENT_ID,
+				documentType: "work_order",
+				items: [
+					{
+						serviceId: SERVICE_FILLING_ID,
+						nameRu: "Световая пломба Filtek",
+						code804n: "A16.07.002.001",
+						quantity: 1,
+						unitPriceRub: 12000, // Попытка оператора пробить 12 000 ₽ вместо 8 000 ₽
+					},
+				],
+			},
+		});
+
+		// Твердая смета защищает пациента: цена автоматически удерживается на уровне сметы 8 000 ₽ (клиника поглощает 4 000 ₽)
+		assert.equal(invoiceRes.statusCode, 201);
+		const invoiceBody = invoiceRes.json();
+		assert.equal(invoiceBody.totalNetRub, 8000, "Пациент защищен твердой сметой: цена должна остаться 8 000 ₽!");
+		assert.equal(invoiceBody.clinicAbsorptionRub, 4000, "Клиника обязана поглотить дельту 4 000 ₽!");
+
+		console.log(`[AUDIT 1.7 PROOF] Твердая смета защитила пациента: начислено 8 000 ₽, поглощение клиникой 4 000 ₽!`);
+	});
 });
