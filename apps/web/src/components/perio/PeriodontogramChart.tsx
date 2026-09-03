@@ -51,6 +51,7 @@ import React, {
 } from "react";
 import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
+import { HygieneIndicesPanel } from "../hygiene/HygieneIndicesPanel";
 
 export interface PeriodontogramChartProps {
 	readonly patientId?: string | undefined;
@@ -105,6 +106,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 	// Diagnostic breakdown accordion
 	const [isDiagnosticsExpanded, setIsDiagnosticsExpanded] = useState<boolean>(false);
+	const [isHygieneExpanded, setIsHygieneExpanded] = useState<boolean>(false);
 	const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 	const [copyStatus, setCopyStatus] = useState<boolean>(false);
 	const [insertStatus, setInsertStatus] = useState<boolean>(false);
@@ -257,7 +259,116 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 		}
 	}, [focusedSite, probingSequence]);
 
-	// ─── Keyboard Event Handling (Arrows, 0-9, B, P, S, M, F) ────────────────
+	// ─── Direct Keypad / NumPad Probing Input ────────────────────────────────
+	const handleKeypadDepth = useCallback(
+		(depth: number) => {
+			if (readOnly) return;
+			let target = focusedSite;
+			if (!target) {
+				if (probingSequence.length > 0) {
+					target = {
+						toothNumber: probingSequence[0]!.toothNumber,
+						siteKey: probingSequence[0]!.siteKey,
+					};
+					setFocusedSite(target);
+					setSelectedToothNumber(target.toothNumber);
+				} else {
+					return;
+				}
+			}
+			updateToothSite(target.toothNumber, target.siteKey, () => ({
+				probingDepthMm: depth,
+			}));
+			moveToNextSite();
+		},
+		[readOnly, focusedSite, probingSequence, updateToothSite, moveToNextSite],
+	);
+
+	const handleKeypadGingivalMargin = useCallback(
+		(delta: number) => {
+			if (readOnly || !focusedSite) return;
+			updateToothSite(focusedSite.toothNumber, focusedSite.siteKey, (prev) => ({
+				gingivalMarginMm: (prev.gingivalMarginMm ?? 0) + delta,
+			}));
+		},
+		[readOnly, focusedSite, updateToothSite],
+	);
+
+	const handleKeypadToggleBop = useCallback(() => {
+		if (readOnly) return;
+		let target = focusedSite;
+		if (!target && probingSequence.length > 0) {
+			target = {
+				toothNumber: probingSequence[0]!.toothNumber,
+				siteKey: probingSequence[0]!.siteKey,
+			};
+			setFocusedSite(target);
+			setSelectedToothNumber(target.toothNumber);
+		}
+		if (!target) return;
+		updateToothSite(target.toothNumber, target.siteKey, (prev) => ({
+			bleedingOnProbing: !prev.bleedingOnProbing,
+		}));
+	}, [readOnly, focusedSite, probingSequence, updateToothSite]);
+
+	const handleKeypadTogglePlaque = useCallback(() => {
+		if (readOnly) return;
+		let target = focusedSite;
+		if (!target && probingSequence.length > 0) {
+			target = {
+				toothNumber: probingSequence[0]!.toothNumber,
+				siteKey: probingSequence[0]!.siteKey,
+			};
+			setFocusedSite(target);
+			setSelectedToothNumber(target.toothNumber);
+		}
+		if (!target) return;
+		updateToothSite(target.toothNumber, target.siteKey, (prev) => ({
+			plaque: !prev.plaque,
+		}));
+	}, [readOnly, focusedSite, probingSequence, updateToothSite]);
+
+	const handleKeypadToggleSuppuration = useCallback(() => {
+		if (readOnly) return;
+		let target = focusedSite;
+		if (!target && probingSequence.length > 0) {
+			target = {
+				toothNumber: probingSequence[0]!.toothNumber,
+				siteKey: probingSequence[0]!.siteKey,
+			};
+			setFocusedSite(target);
+			setSelectedToothNumber(target.toothNumber);
+		}
+		if (!target) return;
+		updateToothSite(target.toothNumber, target.siteKey, (prev) => ({
+			suppuration: !prev.suppuration,
+		}));
+	}, [readOnly, focusedSite, probingSequence, updateToothSite]);
+
+	// 1-Click Mobility cycling on grid (0 -> I -> II -> III -> 0 по Энтину)
+	const handleCycleMobility = useCallback(
+		(toothNumber: number) => {
+			if (readOnly) return;
+			const current = toothMap.get(toothNumber)?.mobility ?? 0;
+			const next = ((current + 1) % 4) as 0 | 1 | 2 | 3;
+			updateToothProperties(toothNumber, { mobility: next });
+		},
+		[readOnly, toothMap, updateToothProperties],
+	);
+
+	// 1-Click Furcation cycling on grid (0 -> I -> II -> III -> IV -> 0)
+	const handleCycleFurcation = useCallback(
+		(toothNumber: number) => {
+			if (readOnly) return;
+			if (!isFurcationEligibleTooth(toothNumber)) return;
+			const current = toothMap.get(toothNumber)?.furcation ?? 0;
+			const next = ((current + 1) % 5) as 0 | 1 | 2 | 3 | 4;
+			updateToothProperties(toothNumber, { furcation: next });
+		},
+		[readOnly, toothMap, updateToothProperties],
+	);
+
+	// ─── Keyboard Event Handling (Arrows, 0-9, NumPad, B, P, S, M, F) ─────────
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLDivElement>) => {
 			if (readOnly) return;
@@ -270,7 +381,26 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 				return;
 			}
 
+			const isNumpadOrDigit =
+				/^[0-9]$/.test(e.key) || /^Numpad[0-9]$/.test(e.code);
+
 			if (!focusedSite) {
+				if (isNumpadOrDigit) {
+					e.preventDefault();
+					const rawChar = /^[0-9]$/.test(e.key) ? e.key : e.code.replace("Numpad", "");
+					const num = Number.parseInt(rawChar, 10);
+					const depth = num === 0 ? 10 : num;
+					if (probingSequence.length > 0) {
+						const first = probingSequence[0]!;
+						updateToothSite(first.toothNumber, first.siteKey, () => ({ probingDepthMm: depth }));
+						if (probingSequence.length > 1) {
+							const next = probingSequence[1]!;
+							setFocusedSite({ toothNumber: next.toothNumber, siteKey: next.siteKey });
+							setSelectedToothNumber(next.toothNumber);
+						}
+					}
+					return;
+				}
 				if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Tab"].includes(e.key)) {
 					e.preventDefault();
 					moveToNextSite();
@@ -280,13 +410,30 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 			const { toothNumber, siteKey } = focusedSite;
 
-			// Number entry (1..9, 0) for direct probing depth
-			if (/^[0-9]$/.test(e.key)) {
+			// Number entry (1..9, 0, NumPad 0..9) for direct probing depth
+			if (isNumpadOrDigit) {
 				e.preventDefault();
-				const num = Number.parseInt(e.key, 10);
+				const rawChar = /^[0-9]$/.test(e.key) ? e.key : e.code.replace("Numpad", "");
+				const num = Number.parseInt(rawChar, 10);
 				const depth = num === 0 ? 10 : num; // '0' maps to 10mm pocket depth
 				updateToothSite(toothNumber, siteKey, () => ({ probingDepthMm: depth }));
 				moveToNextSite();
+				return;
+			}
+
+			// Keypad +/- for Gingival Margin / Depth adjust
+			if (e.key === "+" || e.code === "NumpadAdd") {
+				e.preventDefault();
+				updateToothSite(toothNumber, siteKey, (prev) => ({
+					probingDepthMm: Math.min(15, (prev.probingDepthMm ?? 0) + 1),
+				}));
+				return;
+			}
+			if (e.key === "-" || e.code === "NumpadSubtract") {
+				e.preventDefault();
+				updateToothSite(toothNumber, siteKey, (prev) => ({
+					probingDepthMm: Math.max(0, (prev.probingDepthMm ?? 0) - 1),
+				}));
 				return;
 			}
 
@@ -379,6 +526,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 		[
 			readOnly,
 			focusedSite,
+			probingSequence,
 			toothMap,
 			updateToothSite,
 			updateToothProperties,
@@ -550,6 +698,22 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						>
 							<RotateCcw size={14} className="text-teal-400" />
 							<span>Очистить налет</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsHygieneExpanded((prev) => !prev)}
+							className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+								isHygieneExpanded
+									? "bg-teal-600 text-white border-teal-500 shadow-xs"
+									: "bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 hover:text-teal-300 border-[var(--line,#334155)] text-[var(--ink,#f8fafc)]"
+							}`}
+							title="Открыть экспресс-расчет индексов гигиены (OHI-S, PMA, КПИ)"
+							data-testid="perio-hygiene-indices-btn"
+						>
+							<ShieldCheck size={14} className={isHygieneExpanded ? "text-white" : "text-teal-400"} />
+							<span>Индексы гигиены (OHI-S / PMA / КПИ)</span>
+							{isHygieneExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
 						</button>
 
 						{onInsertToProtocol && (
@@ -778,6 +942,154 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
+			    HYGIENE INDICES PANEL (OHI-S, PMA, KPI LEUS)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			{isHygieneExpanded && (
+				<div className="animate-in fade-in duration-150">
+					<HygieneIndicesPanel
+						perioTeeth={teeth}
+						readOnly={readOnly}
+						onInsertToProtocol={onInsertToProtocol}
+					/>
+				</div>
+			)}
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    FAST NUMPAD & FLORIDA PROBE TOOLBAR (0-MODAL / GLOVE-FRIENDLY)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-teal-500/30 shadow-xs">
+				{/* Active Probe Site Info Badge */}
+				<div className="flex items-center gap-2 flex-wrap">
+					<div className="px-2.5 py-1 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 font-mono text-xs font-bold flex items-center gap-1.5">
+						<Zap size={14} className="text-teal-400 shrink-0" />
+						<span>
+							{focusedSite ? (
+								<>
+									Зуб <strong className="text-white text-sm">{focusedSite.toothNumber}</strong> •{" "}
+									{PERIO_SITES_CONFIG.find((s) => s.key === focusedSite.siteKey)?.shortKey} (
+									{PERIO_SITES_CONFIG.find((s) => s.key === focusedSite.siteKey)?.labelRu.split("(")[0]?.trim()}
+									)
+								</>
+							) : (
+								"Florida Probe: Выберите точку или нажмите 1..9 для старта"
+							)}
+						</span>
+					</div>
+					{focusedSite && (
+						<span className="text-xs font-mono font-bold text-slate-300">
+							Глубина:{" "}
+							<strong
+								className={`text-sm ${
+									(toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]?.probingDepthMm ?? 0) <= 3
+										? "text-emerald-400"
+										: (toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]?.probingDepthMm ?? 0) <= 5
+											? "text-amber-400"
+											: "text-rose-400"
+								}`}
+							>
+								{toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]?.probingDepthMm ?? 0} мм
+							</strong>
+						</span>
+					)}
+				</div>
+
+				{/* Large Touch/Glove NumPad 1..10 Buttons */}
+				<div className="flex items-center gap-1 flex-wrap">
+					<span className="text-[11px] font-bold text-[var(--muted,#94a3b8)] mr-1 hidden sm:inline">
+						NumPad:
+					</span>
+					{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((numVal) => {
+						const isNorm = numVal <= 3;
+						const isMod = numVal <= 5;
+						return (
+							<button
+								key={numVal}
+								type="button"
+								disabled={readOnly}
+								onClick={() => handleKeypadDepth(numVal)}
+								className={`min-w-[32px] sm:min-w-[38px] h-9 rounded-lg font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center border ${
+									isNorm
+										? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/30"
+										: isMod
+											? "bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border-amber-500/30"
+											: "bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 border-rose-500/40"
+								}`}
+								title={`Ввести глубину кармана ${numVal} мм и перейти к след. точке (также цифры 1..9, 0 на клавиатуре)`}
+							>
+								{numVal}
+							</button>
+						);
+					})}
+
+					<div className="h-6 w-[1px] bg-[var(--line,#334155)] mx-1 hidden sm:block" />
+
+					{/* Quick Toggles: BOP, PLQ, PUS */}
+					<button
+						type="button"
+						disabled={readOnly || !focusedSite}
+						onClick={handleKeypadToggleBop}
+						className={`px-2.5 h-9 rounded-lg font-bold text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer border ${
+							focusedSite && toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]?.bleedingOnProbing
+								? "bg-rose-500 text-white border-rose-400 shadow-xs"
+								: "bg-[var(--paper,#0f172a)] hover:bg-rose-500/20 text-rose-300 border-[var(--line,#334155)]"
+						}`}
+						title="Переключить кровоточивость (BOP) на активной точке (хоткей: B)"
+					>
+						<Droplets size={14} />
+						<span>BOP</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={readOnly || !focusedSite}
+						onClick={handleKeypadTogglePlaque}
+						className={`px-2.5 h-9 rounded-lg font-bold text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer border ${
+							focusedSite && toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]?.plaque
+								? "bg-amber-500 text-slate-950 font-black border-amber-400 shadow-xs"
+								: "bg-[var(--paper,#0f172a)] hover:bg-amber-500/20 text-amber-300 border-[var(--line,#334155)]"
+						}`}
+						title="Переключить налет (Plaque) на активной точке (хоткей: P)"
+					>
+						<span>PLQ</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={readOnly || !focusedSite}
+						onClick={handleKeypadToggleSuppuration}
+						className={`px-2 h-9 rounded-lg font-bold text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer border ${
+							focusedSite && toothMap.get(focusedSite.toothNumber)?.[focusedSite.siteKey]?.suppuration
+								? "bg-indigo-500 text-white border-indigo-400 shadow-xs"
+								: "bg-[var(--paper,#0f172a)] hover:bg-indigo-500/20 text-indigo-300 border-[var(--line,#334155)]"
+						}`}
+						title="Нагноение (хоткей: S)"
+					>
+						<span>PUS</span>
+					</button>
+
+					<div className="h-6 w-[1px] bg-[var(--line,#334155)] mx-1 hidden sm:block" />
+
+					{/* Step Prev / Next Buttons */}
+					<button
+						type="button"
+						onClick={moveToPreviousSite}
+						className="w-8 h-9 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-slate-300 border border-[var(--line,#334155)] font-bold text-xs flex items-center justify-center cursor-pointer"
+						title="Предыдущая точка (хоткей: Стрелка влево / Shift+Tab)"
+					>
+						←
+					</button>
+					<button
+						type="button"
+						onClick={moveToNextSite}
+						className="w-8 h-9 rounded-lg bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] text-teal-300 border border-[var(--line,#334155)] font-bold text-xs flex items-center justify-center cursor-pointer"
+						title="Следующая точка (хоткей: Стрелка вправо / Tab)"
+					>
+						→
+					</button>
+				</div>
+			</div>
+
+			{/* ═══════════════════════════════════════════════════════════════════
 			    MAIN FLORIDA PROBE 6-POINT INTERACTIVE DENTITION GRIDS
 			    ═══════════════════════════════════════════════════════════════════ */}
 			<div className="flex flex-col gap-6 overflow-x-auto pb-2">
@@ -811,6 +1123,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 										setFocusedSite({ toothNumber, siteKey });
 										setSelectedToothNumber(toothNumber);
 									}}
+									onCycleMobility={() => handleCycleMobility(toothNumber)}
+									onCycleFurcation={() => handleCycleFurcation(toothNumber)}
 									onToggleBop={(siteKey) => {
 										updateToothSite(toothNumber, siteKey, (prev) => ({
 											bleedingOnProbing: !prev.bleedingOnProbing,
@@ -872,6 +1186,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 										setFocusedSite({ toothNumber, siteKey });
 										setSelectedToothNumber(toothNumber);
 									}}
+									onCycleMobility={() => handleCycleMobility(toothNumber)}
+									onCycleFurcation={() => handleCycleFurcation(toothNumber)}
 									onToggleBop={(siteKey) => {
 										updateToothSite(toothNumber, siteKey, (prev) => ({
 											bleedingOnProbing: !prev.bleedingOnProbing,
@@ -1372,6 +1688,8 @@ interface PerioToothCardProps {
 	readonly readOnly: boolean;
 	readonly onSelectTooth: () => void;
 	readonly onFocusSite: (siteKey: PerioSiteKey) => void;
+	readonly onCycleMobility?: (() => void) | undefined;
+	readonly onCycleFurcation?: (() => void) | undefined;
 	readonly onToggleBop: (siteKey: PerioSiteKey) => void;
 	readonly onTogglePlaque: (siteKey: PerioSiteKey) => void;
 	readonly onToggleSuppuration: (siteKey: PerioSiteKey) => void;
@@ -1387,6 +1705,8 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 	readOnly,
 	onSelectTooth,
 	onFocusSite,
+	onCycleMobility,
+	onCycleFurcation,
 	onToggleBop,
 	onTogglePlaque,
 	onToggleSuppuration,
@@ -1421,7 +1741,7 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 						: "bg-[var(--paper,#0f172a)] hover:bg-[var(--paper-soft,#1e293b)] border-[var(--line,#334155)]"
 			}`}
 		>
-			{/* Tooth Number Header */}
+			{/* Tooth Number Header & 1-Click Mobility / Furcation Chips */}
 			<div className="w-full flex items-center justify-between text-[10px] font-bold px-0.5 mb-0.5">
 				<span
 					className={`${
@@ -1433,22 +1753,60 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 					{tooth.toothNumber}
 				</span>
 				<div className="flex items-center gap-0.5">
-					{isImplant && <span className="text-[9px] text-amber-400 font-mono">🔩</span>}
-					{tooth.mobility > 0 && (
-						<span
-							className="px-1 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[8px] font-bold"
-							title={`Подвижность ${MOBILITY_GRADES[tooth.mobility]?.nameRu}`}
-						>
-							M{tooth.mobility}
+					{isImplant && (
+						<span className="text-[9px] text-amber-400 font-mono" title="Имплантат">
+							🔩
 						</span>
 					)}
-					{tooth.furcation > 0 && (
-						<span
-							className="px-1 py-0.2 rounded bg-rose-500/20 text-rose-400 text-[8px] font-bold"
-							title={`Фуркация ${FURCATION_GRADES[tooth.furcation]?.nameRu}`}
+
+					{/* 1-Click Mobility Chip (по шкале Энтина 0..III) */}
+					{!isMissing && onCycleMobility && (
+						<button
+							type="button"
+							disabled={readOnly}
+							onClick={(e) => {
+								e.stopPropagation();
+								onCycleMobility();
+							}}
+							className={`px-1 py-0.2 rounded text-[8px] font-black tracking-tight cursor-pointer transition-all border ${
+								tooth.mobility === 0
+									? "bg-slate-800/40 text-slate-400 border-slate-700/50 hover:bg-amber-500/20 hover:text-amber-300"
+									: tooth.mobility === 1
+										? "bg-amber-500/25 text-amber-300 border-amber-500/40 ring-1 ring-amber-400/30"
+										: tooth.mobility === 2
+											? "bg-orange-500/30 text-orange-200 border-orange-500/50 ring-1 ring-orange-400/40"
+											: "bg-rose-500/35 text-rose-200 border-rose-500/60 ring-1 ring-rose-400/50 font-black animate-pulse"
+							}`}
+							title={`Подвижность по Энтину: ${MOBILITY_GRADES[tooth.mobility]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III)`}
+							aria-label={`Подвижность зуба ${tooth.toothNumber}: ${tooth.mobility}`}
+						>
+							M{tooth.mobility}
+						</button>
+					)}
+
+					{/* 1-Click Furcation Chip for Multi-Rooted Teeth (0..IV) */}
+					{!isMissing && isFurcationEligibleTooth(tooth.toothNumber) && onCycleFurcation && (
+						<button
+							type="button"
+							disabled={readOnly}
+							onClick={(e) => {
+								e.stopPropagation();
+								onCycleFurcation();
+							}}
+							className={`px-1 py-0.2 rounded text-[8px] font-black tracking-tight cursor-pointer transition-all border ${
+								tooth.furcation === 0
+									? "bg-slate-800/40 text-slate-400 border-slate-700/50 hover:bg-rose-500/20 hover:text-rose-300"
+									: tooth.furcation === 1
+										? "bg-amber-500/25 text-amber-300 border-amber-500/40 ring-1 ring-amber-400/30"
+										: tooth.furcation === 2
+											? "bg-orange-500/30 text-orange-200 border-orange-500/50 ring-1 ring-orange-400/40"
+											: "bg-rose-600/35 text-rose-200 border-rose-500/60 ring-1 ring-rose-400/50 font-black"
+							}`}
+							title={`Вовлечение фуркации: ${FURCATION_GRADES[tooth.furcation]?.nameRu ?? "0"} (клик для смены 0 -> I -> II -> III -> IV)`}
+							aria-label={`Фуркация зуба ${tooth.toothNumber}: ${tooth.furcation}`}
 						>
 							F{tooth.furcation}
-						</span>
+						</button>
 					)}
 				</div>
 			</div>
@@ -1474,9 +1832,9 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 								e.stopPropagation();
 								onFocusSite(sKey);
 							}}
-							className={`flex flex-col items-center justify-center py-0.5 px-0.5 rounded border transition-all ${
+							className={`flex flex-col items-center justify-center py-1 px-0.5 rounded border transition-all ${
 								isFocused
-									? "ring-2 ring-teal-400 bg-teal-500/20 border-teal-400"
+									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
 									: pd >= 6
 										? "bg-rose-500/20 border-rose-500/40 text-rose-300"
 										: pd >= 4
@@ -1484,10 +1842,10 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 											: "bg-[var(--paper-soft,#1e293b)]/80 border-[var(--line,#334155)]/60 text-emerald-400"
 							}`}
 						>
-							<span className="font-mono text-[10px] font-bold leading-none">{pd}</span>
+							<span className="font-mono text-[10px] font-black leading-none">{pd}</span>
 
-							{/* BOP & Plaque Indicators */}
-							<div className="flex items-center gap-0.5 mt-0.5">
+							{/* 1-Click BOP & Plaque Interactive Toggles */}
+							<div className="flex items-center gap-1 mt-0.5">
 								<button
 									type="button"
 									disabled={readOnly}
@@ -1495,13 +1853,22 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 										e.stopPropagation();
 										onToggleBop(sKey);
 									}}
-									className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
+									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.bleedingOnProbing
-											? "bg-rose-500 shadow-sm ring-1 ring-rose-300"
-											: "bg-zinc-600/40 hover:bg-rose-500/40"
+											? "bg-rose-500 border-rose-300 text-white shadow-xs ring-1 ring-rose-300"
+											: "bg-slate-700/60 border-slate-600/40 hover:bg-rose-500/50 hover:border-rose-400"
 									}`}
-									title="BOP (кровоточивость)"
-								/>
+									title={
+										site.bleedingOnProbing
+											? "BOP: Кровоточивость есть (клик для снятия)"
+											: "BOP: Кровоточивости нет (клик для отметки)"
+									}
+									aria-label="BOP"
+								>
+									{site.bleedingOnProbing && (
+										<span className="w-1.5 h-1.5 rounded-full bg-white block" />
+									)}
+								</button>
 								<button
 									type="button"
 									disabled={readOnly}
@@ -1509,13 +1876,22 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 										e.stopPropagation();
 										onTogglePlaque(sKey);
 									}}
-									className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
+									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.plaque
-											? "bg-amber-400 shadow-sm ring-1 ring-amber-200"
-											: "bg-zinc-600/40 hover:bg-amber-400/40"
+											? "bg-amber-400 border-amber-200 text-slate-950 shadow-xs ring-1 ring-amber-200"
+											: "bg-slate-700/60 border-slate-600/40 hover:bg-amber-400/50 hover:border-amber-300"
 									}`}
-									title="PLQ (налет)"
-								/>
+									title={
+										site.plaque
+											? "PLQ: Зубной налет есть (клик для снятия)"
+											: "PLQ: Зубного налета нет (клик для отметки)"
+									}
+									aria-label="PLQ"
+								>
+									{site.plaque && (
+										<span className="w-1.5 h-1.5 rounded-full bg-amber-950 block" />
+									)}
+								</button>
 							</div>
 						</div>
 					);
@@ -1555,9 +1931,9 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 								e.stopPropagation();
 								onFocusSite(sKey);
 							}}
-							className={`flex flex-col items-center justify-center py-0.5 px-0.5 rounded border transition-all ${
+							className={`flex flex-col items-center justify-center py-1 px-0.5 rounded border transition-all ${
 								isFocused
-									? "ring-2 ring-teal-400 bg-teal-500/20 border-teal-400"
+									? "ring-2 ring-teal-400 bg-teal-500/25 border-teal-400 shadow-xs"
 									: pd >= 6
 										? "bg-rose-500/20 border-rose-500/40 text-rose-300"
 										: pd >= 4
@@ -1565,10 +1941,10 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 											: "bg-[var(--paper-soft,#1e293b)]/80 border-[var(--line,#334155)]/60 text-emerald-400"
 							}`}
 						>
-							<span className="font-mono text-[10px] font-bold leading-none">{pd}</span>
+							<span className="font-mono text-[10px] font-black leading-none">{pd}</span>
 
-							{/* BOP & Plaque Indicators */}
-							<div className="flex items-center gap-0.5 mt-0.5">
+							{/* 1-Click BOP & Plaque Interactive Toggles */}
+							<div className="flex items-center gap-1 mt-0.5">
 								<button
 									type="button"
 									disabled={readOnly}
@@ -1576,13 +1952,22 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 										e.stopPropagation();
 										onToggleBop(sKey);
 									}}
-									className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
+									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.bleedingOnProbing
-											? "bg-rose-500 shadow-sm ring-1 ring-rose-300"
-											: "bg-zinc-600/40 hover:bg-rose-500/40"
+											? "bg-rose-500 border-rose-300 text-white shadow-xs ring-1 ring-rose-300"
+											: "bg-slate-700/60 border-slate-600/40 hover:bg-rose-500/50 hover:border-rose-400"
 									}`}
-									title="BOP (кровоточивость)"
-								/>
+									title={
+										site.bleedingOnProbing
+											? "BOP: Кровоточивость есть (клик для снятия)"
+											: "BOP: Кровоточивости нет (клик для отметки)"
+									}
+									aria-label="BOP"
+								>
+									{site.bleedingOnProbing && (
+										<span className="w-1.5 h-1.5 rounded-full bg-white block" />
+									)}
+								</button>
 								<button
 									type="button"
 									disabled={readOnly}
@@ -1590,13 +1975,22 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 										e.stopPropagation();
 										onTogglePlaque(sKey);
 									}}
-									className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
+									className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 										site.plaque
-											? "bg-amber-400 shadow-sm ring-1 ring-amber-200"
-											: "bg-zinc-600/40 hover:bg-amber-400/40"
+											? "bg-amber-400 border-amber-200 text-slate-950 shadow-xs ring-1 ring-amber-200"
+											: "bg-slate-700/60 border-slate-600/40 hover:bg-amber-400/50 hover:border-amber-300"
 									}`}
-									title="PLQ (налет)"
-								/>
+									title={
+										site.plaque
+											? "PLQ: Зубной налет есть (клик для снятия)"
+											: "PLQ: Зубного налета нет (клик для отметки)"
+									}
+									aria-label="PLQ"
+								>
+									{site.plaque && (
+										<span className="w-1.5 h-1.5 rounded-full bg-amber-950 block" />
+									)}
+								</button>
 							</div>
 						</div>
 					);
