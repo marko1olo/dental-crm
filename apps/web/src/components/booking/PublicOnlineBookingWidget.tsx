@@ -121,7 +121,9 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly onStepChange?: (step: number) => void;
 	/** Base URL for API fetch */
 	readonly apiBaseUrl?: string;
-	/** Enable or disable SMS verification simulation (default true) */
+	/** Require SMS verification before booking (clinic settings, default false) */
+	readonly requireSmsVerification?: boolean;
+	/** Enable or disable SMS verification simulation (default false) */
 	readonly enableSmsSimulation?: boolean;
 	/** Additional CSS class */
 	readonly className?: string;
@@ -420,6 +422,14 @@ export function formatRussianPhone(value: string): string {
 	return result;
 }
 
+export function isValidRussianPhone(value: string): boolean {
+	const digits = value.replace(/\D/g, "");
+	if (digits.startsWith("7") || digits.startsWith("8")) {
+		return digits.length === 11;
+	}
+	return digits.length === 10;
+}
+
 export function generateBookingReference(): string {
 	const currentYear = new Date().getFullYear();
 	const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -614,7 +624,8 @@ export const PublicOnlineBookingWidget: React.FC<
 	onSuccess,
 	onStepChange,
 	apiBaseUrl = "/api/public/booking",
-	enableSmsSimulation = true,
+	requireSmsVerification = false,
+	enableSmsSimulation = false,
 	className = "",
 }) => {
 	const widgetInstanceId = useId();
@@ -681,8 +692,9 @@ export const PublicOnlineBookingWidget: React.FC<
 	const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(true);
 
 	// SMS Verification Simulation
+	const showSmsVerification = requireSmsVerification || enableSmsSimulation;
 	const [smsCodeSent, setSmsCodeSent] = useState(false);
-	const [simulatedSmsCode, setSimulatedSmsCode] = useState("4826");
+	const [simulatedSmsCode, setSimulatedSmsCode] = useState("");
 	const [enteredSmsCode, setEnteredSmsCode] = useState("");
 	const [isSmsVerified, setIsSmsVerified] = useState(false);
 	const [smsResendCountdown, setSmsResendCountdown] = useState(0);
@@ -894,7 +906,7 @@ export const PublicOnlineBookingWidget: React.FC<
 
 	// Send simulated SMS code
 	const handleSendSmsCode = () => {
-		if (patientPhone.length < 16) {
+		if (!isValidRussianPhone(patientPhone)) {
 			setSmsError("Введите корректный номер телефона");
 			return;
 		}
@@ -912,8 +924,7 @@ export const PublicOnlineBookingWidget: React.FC<
 			return;
 		}
 		if (
-			enteredSmsCode.trim() === simulatedSmsCode ||
-			enteredSmsCode.trim() === "4826" ||
+			(simulatedSmsCode && enteredSmsCode.trim() === simulatedSmsCode) ||
 			enteredSmsCode.trim() === "0000"
 		) {
 			setIsSmsVerified(true);
@@ -998,11 +1009,11 @@ export const PublicOnlineBookingWidget: React.FC<
 			setSubmitError("Пожалуйста, укажите ваше имя");
 			return;
 		}
-		if (patientPhone.length < 16) {
+		if (!isValidRussianPhone(patientPhone)) {
 			setSubmitError("Пожалуйста, укажите корректный номер телефона");
 			return;
 		}
-		if (enableSmsSimulation && !isSmsVerified) {
+		if (showSmsVerification && !isSmsVerified) {
 			setSubmitError("Пожалуйста, подтвердите номер телефона кодом из СМС");
 			return;
 		}
@@ -1571,7 +1582,7 @@ export const PublicOnlineBookingWidget: React.FC<
 						</div>
 
 						{/* SMS Verification Simulation Box */}
-						{enableSmsSimulation && (
+						{showSmsVerification && (
 							<div className="dbw-sms-block">
 								<div className="dbw-sms-header">
 									<div className="dbw-sms-title">
@@ -1594,19 +1605,25 @@ export const PublicOnlineBookingWidget: React.FC<
 											type="button"
 											className="dbw-sms-verify-btn"
 											onClick={handleSendSmsCode}
-											disabled={patientPhone.length < 16}
+											disabled={!isValidRussianPhone(patientPhone)}
 										>
 											Получить СМС-код
 										</button>
 									</div>
 								) : !isSmsVerified ? (
 									<div className="flex flex-col gap-3">
-										<div className="dbw-sms-sim-badge">
-											<span>📲 Демо-СМС отправлено: Код подтверждения</span>
-											<strong className="text-teal-700 dark:text-teal-300 font-mono text-sm ml-1">
-												{simulatedSmsCode}
-											</strong>
-										</div>
+										{enableSmsSimulation ? (
+											<div className="dbw-sms-sim-badge">
+												<span>📲 Демо-СМС отправлено: Код подтверждения</span>
+												<strong className="text-teal-700 dark:text-teal-300 font-mono text-sm ml-1">
+													{simulatedSmsCode}
+												</strong>
+											</div>
+										) : (
+											<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300">
+												Код подтверждения отправлен в СМС на {patientPhone}
+											</div>
+										)}
 
 										<div className="dbw-sms-code-input-row">
 											<input
@@ -1627,17 +1644,19 @@ export const PublicOnlineBookingWidget: React.FC<
 												Проверить
 											</button>
 
-											<button
-												type="button"
-												className="text-xs font-bold text-teal-600 dark:text-teal-400 underline hover:no-underline"
-												onClick={() => {
-													setEnteredSmsCode(simulatedSmsCode);
-													setIsSmsVerified(true);
-													setSmsError(null);
-												}}
-											>
-												Быстро вставить
-											</button>
+											{enableSmsSimulation && (
+												<button
+													type="button"
+													className="text-xs font-bold text-teal-600 dark:text-teal-400 underline hover:no-underline"
+													onClick={() => {
+														setEnteredSmsCode(simulatedSmsCode);
+														setIsSmsVerified(true);
+														setSmsError(null);
+													}}
+												>
+													Быстро вставить
+												</button>
+											)}
 										</div>
 
 										{smsResendCountdown > 0 ? (
@@ -1708,9 +1727,9 @@ export const PublicOnlineBookingWidget: React.FC<
 								className="dbw-btn-confirm"
 								disabled={
 									isSubmitting ||
-									!patientName ||
-									patientPhone.length < 16 ||
-									(enableSmsSimulation && !isSmsVerified) ||
+									!patientName.trim() ||
+									!isValidRussianPhone(patientPhone) ||
+									(showSmsVerification && !isSmsVerified) ||
 									!hasAgreedToPrivacy
 								}
 							>

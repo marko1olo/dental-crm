@@ -21,6 +21,7 @@ import {
 	generateIcsCalendarContent,
 	generateMockSlotsForDate,
 	generateYandexCalendarUrl,
+	isValidRussianPhone,
 	localDateString,
 	resolveCategoryIcon,
 } from "../PublicOnlineBookingWidget";
@@ -158,7 +159,73 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		);
 	});
 
-	it("renders Step 4: Patient Info Form with SMS Verification simulation", () => {
+	it("renders Step 4: Patient Info Form without SMS simulation block by default (production booking flow)", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				initialStep: 4,
+			}),
+		);
+
+		assert.ok(
+			html.includes("Ваши контактные данные"),
+			"Contains Step 4 heading",
+		);
+		assert.ok(
+			html.includes("patient-name-input"),
+			"Contains patient full name input",
+		);
+		assert.ok(
+			html.includes("patient-phone-input"),
+			"Contains patient phone input",
+		);
+		assert.ok(
+			html.includes('placeholder="+7 (999) 000-00-00"'),
+			"Contains phone placeholder with Russian mask",
+		);
+		assert.ok(
+			html.includes("patient-comment-input"),
+			"Contains patient comment textarea",
+		);
+
+		// Must NOT contain demo SMS mocks or SMS verification block in production
+		assert.equal(
+			html.includes("Подтверждение номера телефона"),
+			false,
+			"Does NOT contain SMS verification block by default",
+		);
+		assert.equal(
+			html.includes("Демо-СМС"),
+			false,
+			"Does NOT contain 'Демо-СМС' text by default",
+		);
+		assert.equal(
+			html.includes("4826"),
+			false,
+			"Does NOT contain hardcoded code 4826",
+		);
+		assert.equal(
+			html.includes("Быстро вставить"),
+			false,
+			"Does NOT contain 'Быстро вставить' button by default",
+		);
+		assert.equal(
+			html.includes("Получить СМС-код"),
+			false,
+			"Does NOT contain 'Получить СМС-код' button by default",
+		);
+
+		// Privacy policy consent and final confirm button
+		assert.ok(
+			html.includes("privacy-checkbox"),
+			"Contains privacy consent checkbox",
+		);
+		assert.ok(
+			html.includes("Подтвердить запись"),
+			"Contains Final Confirm button",
+		);
+	});
+
+	it("renders Step 4: Patient Info Form with SMS Verification simulation when enableSmsSimulation is explicitly true", () => {
 		const html = renderToStaticMarkup(
 			createElement(PublicOnlineBookingWidget, {
 				initialStep: 4,
@@ -201,6 +268,37 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		assert.ok(
 			html.includes("Подтвердить запись"),
 			"Contains Final Confirm button",
+		);
+	});
+
+	it("renders Step 4: Patient Info Form with clinic SMS verification active but without demo mocks when requireSmsVerification is true", () => {
+		const html = renderToStaticMarkup(
+			createElement(PublicOnlineBookingWidget, {
+				initialStep: 4,
+				requireSmsVerification: true,
+				enableSmsSimulation: false,
+			}),
+		);
+
+		assert.ok(
+			html.includes("Подтверждение номера телефона"),
+			"Contains SMS verification title when clinic requires SMS",
+		);
+		assert.ok(
+			html.includes("Получить СМС-код"),
+			"Contains SMS request button",
+		);
+
+		// Must NOT show demo badge or fast insert mock button
+		assert.equal(
+			html.includes("Демо-СМС"),
+			false,
+			"Does not display 'Демо-СМС' badge",
+		);
+		assert.equal(
+			html.includes("Быстро вставить"),
+			false,
+			"Does not display 'Быстро вставить' button",
 		);
 	});
 
@@ -387,6 +485,49 @@ describe("PublicOnlineBookingWidget Utility Functions", () => {
 			"Preserves already formatted phone",
 		);
 		assert.equal(formatRussianPhone(""), "", "Returns empty for empty string");
+	});
+
+	it("isValidRussianPhone correctly validates Russian phone formats", () => {
+		assert.equal(
+			isValidRussianPhone("+7 (999) 123-45-67"),
+			true,
+			"Full formatted number is valid",
+		);
+		assert.equal(
+			isValidRussianPhone("89991234567"),
+			true,
+			"11 digits starting with 8 is valid",
+		);
+		assert.equal(
+			isValidRussianPhone("79991234567"),
+			true,
+			"11 digits starting with 7 is valid",
+		);
+		assert.equal(
+			isValidRussianPhone("9991234567"),
+			true,
+			"10 digits mobile number is valid",
+		);
+		assert.equal(
+			isValidRussianPhone("+7 (999) 123-45-6"),
+			false,
+			"Incomplete 9-digit number is invalid",
+		);
+		assert.equal(
+			isValidRussianPhone("+7 (999)"),
+			false,
+			"Short prefix is invalid",
+		);
+		assert.equal(
+			isValidRussianPhone(""),
+			false,
+			"Empty string is invalid",
+		);
+		assert.equal(
+			isValidRussianPhone("12345"),
+			false,
+			"Short string is invalid",
+		);
 	});
 
 	it("generateBookingReference generates structured ticket numbers", () => {
