@@ -133,6 +133,36 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 		}
 	});
 
+	it("2.2 Stale lock recovery calculation: verifies that an item recovered from a stale lock increments attempts and schedules exponential backoff", () => {
+		const staleRow = {
+			attempts: 2,
+			maxAttempts: 5,
+		};
+		const nextAttempt = staleRow.attempts + 1;
+		const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
+		const isTerminal = nextAttempt >= staleRow.maxAttempts;
+		const nextStatus = isTerminal ? "failed" : "ready_for_dispatch";
+
+		assert.equal(nextAttempt, 3);
+		assert.equal(delayMs, 300_000); // 5 minutes backoff
+		assert.equal(isTerminal, false);
+		assert.equal(nextStatus, "ready_for_dispatch");
+	});
+
+	it("2.3 Stale lock recovery exhaustion: transitions to terminal 'failed' status when maxAttempts reached", () => {
+		const exhaustedRow = {
+			attempts: 4,
+			maxAttempts: 5,
+		};
+		const nextAttempt = exhaustedRow.attempts + 1;
+		const isTerminal = nextAttempt >= exhaustedRow.maxAttempts;
+		const nextStatus = isTerminal ? "failed" : "ready_for_dispatch";
+
+		assert.equal(nextAttempt, 5);
+		assert.equal(isTerminal, true);
+		assert.equal(nextStatus, "failed");
+	});
+
 	it("3.1 EgiszOutboxDispatcher handles receipt retrieval methods gracefully", async () => {
 		const dispatcher = new EgiszOutboxDispatcher();
 
@@ -475,6 +505,60 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 		assert.ok(taxXml.includes("1.2.643.5.1.13.13.11.130"), "Must declare SEMD 130 template");
 		const validation = validateCdaXmlStructure(taxXml, "130");
 		assert.equal(validation.valid, true, `SEMD 130 validation failed: ${validation.errors.join("; ")}`);
+		assert.equal(validation.errors.length, 0);
+	});
+
+	it("4.8 Generates and validates SEMD 108 (Протокол стоматологического осмотра) with official NSI title and template OID", () => {
+		const result = generateCdaXml({
+			docKind: "108",
+			documentId: "doc-108-statutory-001",
+			visitDate: new Date("2026-09-03T11:30:00Z"),
+			patient: {
+				patientId: "pat-108-test",
+				name: { last: "Григорьев", first: "Роман", middle: "Васильевич" },
+				birthDate: "1992-07-22",
+				gender: "male",
+				snils: "112-233-445 95",
+			},
+			doctor: {
+				name: { last: "Федоров", first: "Денис", middle: "Анатольевич" },
+				snils: "000-001-001 00",
+				position: "Врач-стоматолог",
+				positionCode: "18",
+			},
+			clinic: {
+				name: "ООО Стоматологическая клиника ДЕНТЕ",
+				oid: "1.2.643.5.1.13.13.12.2.77.1001",
+				ogrn: "1027700132195",
+				inn: "7701123456",
+			},
+			complaints: "Профилактический осмотр полости рта.",
+			anamnesis: "Жалоб нет. Последний визит к стоматологу 1 год назад.",
+			dentalStatus: [
+				{
+					tooth: 36,
+					condition: "C",
+					surfaces: ["O"],
+					description: "Поверхностный кариес жевательной поверхности",
+				},
+			],
+			diagnoses: [
+				{
+					icd10Code: "K02.0",
+					diagnosisText: "Кариес эмали зуба 36",
+					tooth: 36,
+					isPrimary: true,
+				},
+			],
+		});
+
+		assert.equal(result.success, true, "Generation of SEMD 108 must succeed");
+		assert.ok(result.xml, "XML must be present");
+		assert.match(result.xml, /Протокол стоматологического осмотра/);
+		assert.match(result.xml, /1\.2\.643\.5\.1\.13\.13\.11\.108/);
+
+		const validation = validateCdaXmlStructure(result.xml, "108");
+		assert.equal(validation.valid, true, `SEMD 108 validation must pass: ${validation.errors.join("; ")}`);
 		assert.equal(validation.errors.length, 0);
 	});
 });

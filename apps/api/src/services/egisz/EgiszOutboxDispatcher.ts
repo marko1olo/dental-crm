@@ -303,14 +303,16 @@ export class EgiszOutboxDispatcher {
 
 		// 1. Stale lock recovery: auto-recover items stuck in 'sending' without transaction ID for > 5 minutes
 		const staleThreshold = new Date(Date.now() - 5 * 60_000);
-		await db
-			.update(egiszOutbox)
-			.set({
-				status: "ready_for_dispatch",
-				lockedAt: null,
-				lockedBy: null,
-				updatedAt: new Date(),
+		const staleRows = await db
+			.select({
+				id: egiszOutbox.id,
+				attempts: egiszOutbox.attempts,
+				maxAttempts: egiszOutbox.maxAttempts,
+				organizationId: egiszOutbox.organizationId,
+				visitId: egiszOutbox.visitId,
+				patientId: egiszOutbox.patientId,
 			})
+			.from(egiszOutbox)
 			.where(
 				and(
 					organizationId ? eq(egiszOutbox.organizationId, organizationId) : sql`1=1`,
@@ -322,6 +324,43 @@ export class EgiszOutboxDispatcher {
 					),
 				),
 			);
+
+		for (const staleRow of staleRows) {
+			const nextAttempt = staleRow.attempts + 1;
+			const delayMs = calculateEgiszRetryDelayMs(nextAttempt);
+			const isTerminal = nextAttempt >= staleRow.maxAttempts;
+			const nextStatus = isTerminal ? "failed" : "ready_for_dispatch";
+
+			await db
+				.update(egiszOutbox)
+				.set({
+					status: nextStatus,
+					attempts: nextAttempt,
+					nextAttemptAt: new Date(Date.now() + (isTerminal ? 0 : delayMs)),
+					lastErrorClass: "StaleLockTimeout",
+					lastErrorMessage: "Сброс зависшей блокировки воркера (таймаут отправки > 5 мин)",
+					lockedAt: null,
+					lockedBy: null,
+					updatedAt: new Date(),
+				})
+				.where(eq(egiszOutbox.id, staleRow.id));
+
+			await appendEgiszAuditLog(db, {
+				organizationId: staleRow.organizationId,
+				eventType: isTerminal ? "REMD_STALE_LOCK_EXHAUSTED" : "REMD_STALE_LOCK_RECOVERED",
+				entityType: "egisz_outbox",
+				entityId: staleRow.id,
+				patientId: staleRow.patientId,
+				payload: {
+					outboxId: staleRow.id,
+					visitId: staleRow.visitId,
+					previousAttempts: staleRow.attempts,
+					newAttempts: nextAttempt,
+					status: nextStatus,
+					retryScheduledInMs: isTerminal ? null : delayMs,
+				},
+			});
+		}
 
 		// 2. Process items from the robust egisz_outbox table
 		const now = new Date();
