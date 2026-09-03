@@ -626,7 +626,6 @@ export interface PediatricDiaryTextOptions {
 	readonly silvering?: PediatricSilveringOptions;
 	readonly fissureSealing?: PediatricFissureSealingOptions;
 	readonly pulpotomy?: PediatricPulpotomyOptions;
-	readonly twinkyStar?: PediatricTwinkyStarOptions;
 	readonly customNotes?: string;
 }
 
@@ -721,10 +720,6 @@ export function generatePediatricCariogramDiaryText(
 	if (options?.silvering) {
 		const silv = calculatePediatricSilveringProtocol(options.silvering);
 		procLines.push(`   • Серебрение (${silv.teethNumbers.join(", ")}): препарат ${silv.drug}, ${silv.applicationsCount}-я аппликация.`);
-	}
-	if (options?.twinkyStar) {
-		const tw = calculatePediatricTwinkyStarProtocol(options.twinkyStar);
-		procLines.push(`   • Цветная компомерная пломба Twinky Star (зуб ${tw.toothNumber}): оттенок ${tw.colorDefinition.nameRu} ${tw.colorDefinition.emoji} (${tw.colorDefinition.roleRu}). Ребенок лично выбрал цвет, пролонгированное выделение фтора.`);
 	}
 
 	if (procLines.length > 0) {
@@ -1237,190 +1232,6 @@ export function calculatePediatricPulpotomyProtocol(
 	};
 }
 
-// ------------------------------------------------------------------------------------------------
-// TWINKY STAR / COMPOMER COLORED FILLINGS CLINICAL PROTOCOL (VOCO)
-// ------------------------------------------------------------------------------------------------
-
-export const twinkyStarColorSchema = z.enum([
-	"blue",
-	"pink",
-	"gold",
-	"silver",
-	"green",
-]);
-export type TwinkyStarColor = z.infer<typeof twinkyStarColorSchema>;
-
-export interface TwinkyStarColorDefinition {
-	readonly color: TwinkyStarColor;
-	readonly nameRu: string;
-	readonly labelRu: string;
-	readonly shadeName: string;
-	readonly hexColor: string;
-	readonly badgeBg: string;
-	readonly badgeBorder: string;
-	readonly textColor: string;
-	readonly emoji: string;
-	readonly roleRu: string;
-	readonly childMotivationRu: string;
-}
-
-export const TWINKY_STAR_COLORS: Readonly<Record<TwinkyStarColor, TwinkyStarColorDefinition>> = {
-	blue: {
-		color: "blue",
-		nameRu: "Синий (Magic Blue)",
-		labelRu: "Синий",
-		shadeName: "Twinky Star Blue",
-		hexColor: "#2563eb",
-		badgeBg: "rgba(37, 99, 235, 0.15)",
-		badgeBorder: "rgba(37, 99, 235, 0.4)",
-		textColor: "#1d4ed8",
-		emoji: "🔷",
-		roleRu: "Супергеройский сапфир",
-		childMotivationRu: "Выбор маленького супергероя — цвет космической силы и защиты!",
-	},
-	pink: {
-		color: "pink",
-		nameRu: "Розовый (Princess Pink)",
-		labelRu: "Розовый",
-		shadeName: "Twinky Star Pink",
-		hexColor: "#ec4899",
-		badgeBg: "rgba(236, 72, 153, 0.15)",
-		badgeBorder: "rgba(236, 72, 153, 0.4)",
-		textColor: "#be185d",
-		emoji: "🌸",
-		roleRu: "Кристалл принцессы",
-		childMotivationRu: "Волшебный сверкающий кристалл для зубика настоящей принцессы!",
-	},
-	gold: {
-		color: "gold",
-		nameRu: "Золотой (Golden Star)",
-		labelRu: "Золотой",
-		shadeName: "Twinky Star Gold",
-		hexColor: "#eab308",
-		badgeBg: "rgba(234, 179, 8, 0.18)",
-		badgeBorder: "rgba(234, 179, 8, 0.5)",
-		textColor: "#b45309",
-		emoji: "⭐",
-		roleRu: "Золотая звезда смелости",
-		childMotivationRu: "Награда за смелость — сияющая золотая звездочка на зубике!",
-	},
-	silver: {
-		color: "silver",
-		nameRu: "Серебряный (Sparkling Silver)",
-		labelRu: "Серебряный",
-		shadeName: "Twinky Star Silver",
-		hexColor: "#64748b",
-		badgeBg: "rgba(100, 116, 139, 0.15)",
-		badgeBorder: "rgba(100, 116, 139, 0.4)",
-		textColor: "#334155",
-		emoji: "🛡️",
-		roleRu: "Серебряный щит рыцаря",
-		childMotivationRu: "Несокрушимый серебряный щит, защищающий зубик от микробов!",
-	},
-	green: {
-		color: "green",
-		nameRu: "Зеленый (Dragon Green)",
-		labelRu: "Зеленый",
-		shadeName: "Twinky Star Green",
-		hexColor: "#10b981",
-		badgeBg: "rgba(16, 185, 129, 0.15)",
-		badgeBorder: "rgba(16, 185, 129, 0.4)",
-		textColor: "#047857",
-		emoji: "🐉",
-		roleRu: "Драконий изумруд",
-		childMotivationRu: "Изумрудный драконий кристалл силы и здоровья!",
-	},
-};
-
-export interface PediatricTwinkyStarOptions {
-	readonly toothNumber: number;
-	readonly color: TwinkyStarColor;
-	readonly cavityClass?: "Class I" | "Class II" | undefined;
-	readonly surface?: string | undefined;
-	readonly patientAgeYears?: number | undefined;
-	readonly clinicalNotes?: string | undefined;
-}
-
-export interface PediatricTwinkyStarResult {
-	readonly procedureNameRu: string;
-	readonly toothNumber: number;
-	readonly color: TwinkyStarColor;
-	readonly colorDefinition: TwinkyStarColorDefinition;
-	readonly colorNameRu: string;
-	readonly colorEmoji: string;
-	readonly isPediatricTooth: boolean;
-	readonly material: string;
-	readonly cavityClass: "Class I" | "Class II";
-	readonly surface: string;
-	readonly materialNameRu: string;
-	readonly indicationsRu: string;
-	readonly protocolDescriptionRu: string;
-	readonly fluorideReleaseRu: string;
-	readonly childEngagementRu: string;
-	readonly parentRecommendationsRu: readonly string[];
-	readonly formattedDiaryEntryRu: string;
-}
-
-export function calculatePediatricTwinkyStarProtocol(
-	options: PediatricTwinkyStarOptions,
-): PediatricTwinkyStarResult {
-	const tooth = options.toothNumber;
-	const color = options.color ?? "blue";
-	const def = TWINKY_STAR_COLORS[color] ?? TWINKY_STAR_COLORS.blue;
-	const cavityClass = options.cavityClass ?? "Class I";
-	const surface = options.surface ?? (cavityClass === "Class I" ? "O" : "MO");
-	const materialNameRu = `Цветной светоотверждаемый компомер Twinky Star (VOCO, Германия) с эффектом блеска, оттенок ${def.nameRu}`;
-
-	const indicationsRu =
-		`Пломбирование кариозной полости ${cavityClass} (K02.1 Кариес дентина) временного зуба #${tooth}. Психологическая адаптация и вовлечение ребенка через выбор любимого цвета.`;
-
-	const fluorideReleaseRu =
-		"Пролонгированное выделение фторид-ионов из компомерной матрицы подавляет гликолиз бактерий и предотвращает возникновение вторичного кариеса по границе реставрации.";
-
-	const childEngagementRu =
-		`Ребенок лично выбрал оттенок «${def.nameRu}» (${def.roleRu}). Игровой формат устранил дентофобию и закрепил позитивный психологический контакт по шкале Франкла.`;
-
-	const protocolDescriptionRu =
-		`Аппликационная / инфильтрационная анестезия. Изоляция рабочего поля (ватные валики, слюноотсос / OptiDam). Щадящее препарирование кариозной полости зуба #${tooth} (${surface}) с удалением деминерализованного дентина. Медикаментозная обработка 0.05% хлоргексидином, высушивание без пересушивания. Нанесение самопротравливающего однокомпонентного адгезива Futurabond M, экспозиция 20 сек, раздувание воздухом, фотополимеризация 10 сек. Внесение цветного компомера Twinky Star (${def.nameRu}) слоями до 2 мм с адаптацией к краям полости. Направленная фотополимеризация светодиодной лампой 40 секунд. Финишное контурирование мелкозернистыми алмазными борами, полировка силиконовыми головками Dimanto до зеркального блеска. Ребенок осмотрел зуб в зеркальце — реакция восторженная.`;
-
-	const parentRecommendationsRu = [
-		"Не принимать твердую, грубую и окрашивающую пищу (ягоды, соки, шоколад) в течение 1.5–2 часов.",
-		"Цветной компомер выделяет фтор и защищает ткани зуба от рецидива кариеса.",
-		"Продолжать ежедневную чистку зубов 2 раза в день под родительским контролем (паста 1000–1450 ppm фтора).",
-		"Плановый диспансерный осмотр пломбы через 3–4 месяца.",
-	];
-
-	const formattedDiaryEntryRu = [
-		`ПРОТОКОЛ ЛЕЧЕНИЯ ДЕТСКОГО ПРИЕМА (ФОРМА 043/у)`,
-		`Диагноз: K02.1 Кариес дентина временного зуба #${tooth} (${cavityClass}, поверхность ${surface})`,
-		`Процедура: Реставрация цветным компомером с блестками Twinky Star (VOCO)`,
-		`Цвет пломбы: ${def.nameRu} ${def.emoji} (выбор ребенка: ${def.roleRu})`,
-		`Протокол: ${protocolDescriptionRu}`,
-		`Фтор-профилактика: ${fluorideReleaseRu}`,
-		`Психологический статус: Позитивная адаптация, ребенок гордится выбранным цветом пломбы. Выдана памятка родителям.`,
-	].join("\n");
-
-	return {
-		procedureNameRu: `Реставрация зуба #${tooth} цветным компомером Twinky Star (${def.nameRu})`,
-		toothNumber: tooth,
-		color,
-		colorDefinition: def,
-		colorNameRu: def.nameRu,
-		colorEmoji: def.emoji,
-		isPediatricTooth: tooth >= 51 && tooth <= 85,
-		material: "Twinky Star (VOCO, Германия)",
-		cavityClass,
-		surface,
-		materialNameRu,
-		indicationsRu,
-		protocolDescriptionRu,
-		fluorideReleaseRu,
-		childEngagementRu,
-		parentRecommendationsRu,
-		formattedDiaryEntryRu,
-	};
-}
-
 export interface PediatricParentMemoOptions {
 	readonly patientName?: string | undefined;
 	readonly patientAgeYears?: number | undefined;
@@ -1430,7 +1241,6 @@ export interface PediatricParentMemoOptions {
 	readonly silvering?: PediatricSilveringOptions | undefined;
 	readonly fissureSealing?: PediatricFissureSealingOptions | undefined;
 	readonly pulpotomy?: PediatricPulpotomyOptions | undefined;
-	readonly twinkyStar?: PediatricTwinkyStarOptions | undefined;
 	readonly generalHygieneAdvice?: boolean | undefined;
 	readonly customNotes?: string | undefined;
 }
@@ -1496,22 +1306,6 @@ export function generatePediatricParentRecommendations(
 		lines.push(`   ${silv.parentWarningRu}`);
 		lines.push(`   Рекомендации:`);
 		silv.parentRecommendationsRu.forEach((rec) => {
-			lines.push(`   • ${rec}`);
-		});
-	}
-
-	// 4. Twinky Star colored filling section
-	if (options?.twinkyStar) {
-		const tw = calculatePediatricTwinkyStarProtocol(options.twinkyStar);
-		lines.push("");
-		lines.push(`───────────────────────────────────────────────────────────────`);
-		lines.push(`4. ЦВЕТНАЯ ПЛОМБА TWINKY STAR (ЗУБ #${tw.toothNumber}, ЦВЕТ: ${tw.colorDefinition.nameRu.toUpperCase()} ${tw.colorDefinition.emoji}):`);
-		lines.push(`   Материал: ${tw.materialNameRu}.`);
-		lines.push(`   ${tw.childEngagementRu}`);
-		lines.push(`   ${tw.fluorideReleaseRu}`);
-		lines.push("");
-		lines.push(`   Рекомендации по уходу:`);
-		tw.parentRecommendationsRu.forEach((rec) => {
 			lines.push(`   • ${rec}`);
 		});
 	}
