@@ -98,7 +98,7 @@
 	top: 12px;
 	left: 50%;
 	transform: translateX(-50%);
-	z-index: 9999;
+	z-index: 9990;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -184,6 +184,26 @@
 	100% {
 		transform: scale(0.96);
 		box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+	}
+}
+
+/* Responsive constraints for Mobile & Tablet (Zero-Occlusion) */
+@media (max-width: 640px) {
+	.dnt-telephony-island-container,
+	.telephony-floating-widget,
+	.dnt-telephony-floating {
+		top: 8px;
+		max-width: calc(100vw - 16px);
+	}
+
+	.dnt-telephony-island-pill {
+		padding: 4px 10px;
+		max-width: calc(100vw - 20px);
+	}
+
+	.dnt-telephony-island-expanded {
+		width: calc(100vw - 16px);
+		max-width: calc(100vw - 16px);
 	}
 }
 

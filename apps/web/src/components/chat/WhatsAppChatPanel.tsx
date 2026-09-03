@@ -47,7 +47,6 @@ import {
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
 	resolvePatientUpcomingAppointment,
-	useTelephonyStore,
 } from "../../store/telephonyStore";
 import { showToast } from "../GlobalToast";
 import {
@@ -94,7 +93,6 @@ export function WhatsAppChatPanel({
 
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
-	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 
 	const effectivePatientId = patientId || selectedPatientId || null;
 
@@ -326,18 +324,15 @@ export function WhatsAppChatPanel({
 		showToast(`Открыт диалог в WhatsApp (${effectiveName})`, "info");
 	};
 
-	// Trigger outbound call simulation
+	// Outbound call to patient via native tel: protocol
 	const handleCallPatient = () => {
-		triggerIncomingCall({
-			phone: effectivePhone,
-			patientId: patient?.id || null,
-			patientName: effectiveName,
-			provider: "mango",
-			timestamp: new Date().toISOString(),
-			status: "answered",
-			callStartedAt: Date.now(),
-		});
-		showToast(`Вызов пациента ${effectiveName} (${formattedPhone})`, "info");
+		const cleanDigits = effectivePhone.replace(/[^\d+]/g, "");
+		if (cleanDigits) {
+			window.open(`tel:${cleanDigits}`, "_self");
+			showToast(`Набор номера: ${formattedPhone || effectivePhone}`, "info");
+		} else {
+			showToast("Номер телефона пациента не указан", "warning");
+		}
 	};
 
 	// Filter messages if search is active
