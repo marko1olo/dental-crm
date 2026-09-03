@@ -927,18 +927,18 @@ export const clinicalRules: ClinicalRule[] = [
 		category: "imaging",
 		specialty: "therapist",
 		action: "add_required_service",
-		severity: "blocker",
+		severity: "info",
 		ownerRole: "doctor",
 		triggerServiceIds: ["svc-therapy-caries"],
-		requiredServiceIds: ["svc-imaging-opg"],
+		requiredServiceIds: [],
 		requiresCompletedServiceIds: [],
 		blockedServiceIds: [],
 		condition:
-			"Если в плане есть терапия кариеса, должен быть снимок или подтвержденный отказ врача.",
+			"При глубоком кариесе рекомендуется прицельный снимок или визиография.",
 		warningText:
-			"Нельзя закрывать терапию без снимка или клинического основания для отказа.",
+			"Рекомендуется рентген-контроль глубины поражения твердых тканей.",
 		patientText:
-			"Снимок нужен, чтобы врач не лечил вслепую и не пропустил воспаление у корня.",
+			"Снимок помогает врачу оценить состояние корня и исключить скрытые очаги.",
 		active: true,
 	},
 	{
@@ -968,17 +968,17 @@ export const clinicalRules: ClinicalRule[] = [
 		title: "Ортопедия только после закрытия активной терапии",
 		category: "prosthetics",
 		specialty: "orthopedist",
-		action: "block_service",
-		severity: "blocker",
+		action: "schedule_followup",
+		severity: "warning",
 		ownerRole: "doctor",
 		triggerServiceIds: ["svc-prosthetics-crown"],
 		requiredServiceIds: [],
 		requiresCompletedServiceIds: ["svc-therapy-caries"],
-		blockedServiceIds: ["svc-prosthetics-crown"],
+		blockedServiceIds: [],
 		condition:
 			"Коронка в плане допустима только после закрытия активного очага и снимка.",
 		warningText:
-			"Не планируйте коронку как готовую работу, пока терапия не завершена.",
+			"Рекомендуется завершить терапию опорного зуба перед постоянным протезированием.",
 		patientText:
 			"Сначала нужно убрать воспаление и восстановить основание, потом защищать зуб коронкой.",
 		active: true,

@@ -318,18 +318,6 @@ export function ClinicalRulePanel({
 				<RefreshCw aria-hidden="true" size={16} />
 				{evaluating ? "Считаем…" : "Пересчитать по плану"}
 			</button>
-			{context === "visit" ? (
-				<button
-					type="button"
-					className="secondary-button"
-					disabled={evaluating}
-					onClick={() => void runLiveEvaluate(true)}
-					aria-label="Проверить план с остановкой на блокирующих правилах"
-					title="Если есть блокирующее противопоказание — покажем его отдельно"
-				>
-					{evaluating ? "Считаем…" : "Проверить с блокировкой"}
-				</button>
-			) : null}
 			{planContext && !planContext.serviceIds.length ? (
 				<span className="ops-note">В плане пока нет услуг для проверки.</span>
 			) : null}

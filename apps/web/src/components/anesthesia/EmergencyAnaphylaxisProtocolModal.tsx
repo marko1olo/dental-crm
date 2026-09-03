@@ -95,7 +95,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 	const [stopwatchSeconds, setStopwatchSeconds] = useState<number>(0);
 	const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
 	const [isMetronomeActive, setIsMetronomeActive] = useState<boolean>(false);
-	const [isSirenActive, setIsSirenActive] = useState<boolean>(false);
 
 	// 3. Checklist & Event Log State
 	const [completedChecklistItems, setCompletedChecklistItems] = useState<Record<string, boolean>>({});
@@ -117,7 +116,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 		} else {
 			setIsTimerRunning(false);
 			setIsMetronomeActive(false);
-			setIsSirenActive(false);
 		}
 	}, [isOpen, initialScenario, patientWeightKg, patientAge]);
 
@@ -133,36 +131,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 			if (timer) clearInterval(timer);
 		};
 	}, [isOpen, isTimerRunning]);
-
-	// CPR Metronome Loop (110 bpm -> ~545ms interval)
-	useEffect(() => {
-		let metronomeTimer: ReturnType<typeof setInterval> | null = null;
-		let beatCount = 0;
-		if (isOpen && isMetronomeActive) {
-			metronomeTimer = setInterval(() => {
-				beatCount++;
-				const isAccent = beatCount % 30 === 1; // Accent on first compression of 30-cycle
-				soundFeedback.playMetronomeClick(isAccent);
-			}, 545);
-		}
-		return () => {
-			if (metronomeTimer) clearInterval(metronomeTimer);
-		};
-	}, [isOpen, isMetronomeActive]);
-
-	// Emergency Siren Loop (every 2.5s)
-	useEffect(() => {
-		let sirenTimer: ReturnType<typeof setInterval> | null = null;
-		if (isOpen && isSirenActive) {
-			soundFeedback.playEmergencyAlarm();
-			sirenTimer = setInterval(() => {
-				soundFeedback.playEmergencyAlarm();
-			}, 2500);
-		}
-		return () => {
-			if (sirenTimer) clearInterval(sirenTimer);
-		};
-	}, [isOpen, isSirenActive]);
 
 	// Current Protocol Definition
 	const currentProtocol: EmergencyProtocolDefinition = useMemo(() => {
@@ -394,20 +362,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 					</div>
 
 					<div className="emergency-header-actions">
-						{/* Sound Siren Toggle */}
-						<button
-							type="button"
-							onClick={() => setIsSirenActive((prev) => !prev)}
-							className={
-								"emergency-action-btn " + (isSirenActive ? "danger animate-pulse" : "")
-							}
-							title="Сирена экстренной тревоги"
-							data-testid="siren-toggle-btn"
-						>
-							{isSirenActive ? <Volume2 size={18} /> : <VolumeX size={18} />}
-							<span>{isSirenActive ? "Сирена ВКЛ" : "Сирена"}</span>
-						</button>
-
 						{/* Call 112 / SBAR Script */}
 						<button
 							type="button"

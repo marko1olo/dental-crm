@@ -14,7 +14,6 @@ import {
 	Wrench,
 } from "lucide-react";
 import { AnesthesiaDosageCalculatorModal } from "../anesthesia/AnesthesiaDosageCalculatorModal";
-import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
 import type { ToothData, ToothState } from "../odontogram/ToothChart";
 import {
 	type EndoCanalData,
@@ -118,7 +117,6 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		toothData?.state === "Pulpitis" || toothData?.state === "Periodontitis",
 	);
 	const [isAnesthesiaModalOpen, setIsAnesthesiaModalOpen] = useState<boolean>(false);
-	const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState<boolean>(false);
 
 	const isFrontal = (toothNumber % 10) <= 3;
 
@@ -235,23 +233,6 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 					>
 						<Syringe size={14} />
 						<span>Анестезия (МРД)</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setIsEmergencyModalOpen(true)}
-						className="dente-text-action-btn"
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: "0.25rem",
-							color: "var(--bad-fg)",
-							fontWeight: 700,
-						}}
-						title="Экстренный протокол: Анафилаксия и токсичность МА (LAST / Липиды 20%)"
-						data-testid="tooth-matrix-emergency-btn"
-					>
-						<ShieldAlert size={14} />
-						<span>SOS / LAST</span>
 					</button>
 					{iropzCalculated > 0 && (
 						<span
@@ -583,18 +564,6 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 				onApplied={(res) => {
 					if (onInsertToProtocol) {
 						onInsertToProtocol(res.diaryEntryRu);
-					}
-				}}
-			/>
-
-			{/* Emergency Anaphylaxis & LAST Resuscitation Protocol Modal */}
-			<EmergencyAnaphylaxisProtocolModal
-				isOpen={isEmergencyModalOpen}
-				onClose={() => setIsEmergencyModalOpen(false)}
-				initialScenario="last_toxicity"
-				onInsertToVisitNote={(text) => {
-					if (onInsertToProtocol) {
-						onInsertToProtocol(text);
 					}
 				}}
 			/>

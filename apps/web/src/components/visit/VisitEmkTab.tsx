@@ -84,8 +84,6 @@ import {
 } from "../../lib/clinicalProtocols043";
 import { PatientMemoPrintModal } from "./PatientMemoPrintModal";
 import { AnesthesiaProtocolModal } from "../anesthesia/AnesthesiaProtocolModal";
-import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
-import { AnesthesiaAspirationJournalModal } from "./anesthesia/AnesthesiaAspirationJournalModal";
 import {
 	EndoCanalLogModal,
 	getDefaultCanalsForTooth,
@@ -309,8 +307,6 @@ export function VisitEmkTab() {
 	const [isPatientMemoModalOpen, setIsPatientMemoModalOpen] = React.useState<boolean>(false);
 	const [selectedMemoIdForPrint, setSelectedMemoIdForPrint] = React.useState<PostOpMemoId>("surgery_extraction");
 	const [isAnesthesiaProtocolModalOpen, setIsAnesthesiaProtocolModalOpen] = React.useState<boolean>(false);
-	const [isAnesthesiaAspirationModalOpen, setIsAnesthesiaAspirationModalOpen] = React.useState<boolean>(false);
-	const [isEmergencyProtocolModalOpen, setIsEmergencyProtocolModalOpen] = React.useState<boolean>(false);
 	const [selectedAnesDrugKey, setSelectedAnesDrugKey] = React.useState<string>("ultracain_ds_forte");
 	const [selectedCarpulesCount, setSelectedCarpulesCount] = React.useState<number>(1.0);
 
@@ -1971,25 +1967,6 @@ export function VisitEmkTab() {
 														<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 														<span>Расширенный калькулятор СтАР</span>
 													</button>
-													<button
-														type="button"
-														onClick={() => setIsAnesthesiaAspirationModalOpen(true)}
-														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[44px]"
-														data-testid="btn-open-anesthesia-aspiration-modal"
-													>
-														<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-														<span>Журнал аспирационных проб</span>
-													</button>
-													<button
-														type="button"
-														onClick={() => setIsEmergencyProtocolModalOpen(true)}
-														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[44px]"
-														data-testid="btn-open-emergency-protocol-modal"
-														title="Экстренный протокол: Анафилаксия и токсичность МА (LAST / Липиды 20%)"
-													>
-														<ShieldAlert className="w-3.5 h-3.5 text-red-500" />
-														<span>SOS / LAST Реанимация</span>
-													</button>
 												</div>
 											</div>
 
@@ -3020,43 +2997,6 @@ export function VisitEmkTab() {
 						const curr = visitNoteForm.treatmentPlan || "";
 						updateVisitNoteField("treatmentPlan", appendClinicalText(curr, diaryText, "\n\n"));
 						showToast("Протокол анестезии СтАР внесён в карту 043/у", "success", 3500);
-					}}
-				/>
-
-				{/* Модальное окно журнала аспирационных проб */}
-				<AnesthesiaAspirationJournalModal
-					isOpen={isAnesthesiaAspirationModalOpen}
-					onClose={() => setIsAnesthesiaAspirationModalOpen(false)}
-					initialPatientFullName={activePatient?.fullName || "Пациент"}
-					initialMedCardNumber={`043/у-${activePatient?.id?.slice(0, 8) || "2026"}`}
-					initialPatientAgeYears={patientAge}
-					initialPatientWeightKg={patientWeightKg}
-					initialToothNumber={typeof visitNoteForm?.diagnosis === "string" ? visitNoteForm.diagnosis.match(/\b\d{2}\b/)?.[0] || 46 : 46}
-					onApplyToDiary={(diaryText) => {
-						if (!updateVisitNoteField) return;
-						const curr = visitNoteForm.treatmentPlan || "";
-						updateVisitNoteField("treatmentPlan", appendClinicalText(curr, diaryText, "\n\n"));
-						showToast("Протокол аспирационной пробы внесён в карту 043/у", "success", 3500);
-					}}
-				/>
-
-				{/* Модальное окно экстренного протокола реанимации (Анафилаксия / LAST / Липидная реанимация 20%) */}
-				<EmergencyAnaphylaxisProtocolModal
-					isOpen={isEmergencyProtocolModalOpen}
-					onClose={() => setIsEmergencyProtocolModalOpen(false)}
-					initialScenario="last_toxicity"
-					patientName={activePatient?.fullName || "Пациент"}
-					patientAge={patientAge}
-					patientWeightKg={patientWeightKg}
-					clinicName="Стоматологическая клиника DENTE"
-					clinicAddress="ул. Клиническая, д. 1"
-					doctorName="Лечащий врач-стоматолог"
-					injectedAnestheticInfo={`${selectedAnesDrugKey} (${selectedCarpulesCount} карп.)`}
-					onInsertToVisitNote={(actText) => {
-						if (!updateVisitNoteField) return;
-						const curr = visitNoteForm.objectiveStatus || "";
-						updateVisitNoteField("objectiveStatus", appendClinicalText(curr, actText, "\n\n"));
-						showToast("Протокол экстренной помощи внесён в карту 043/у", "success", 3500);
 					}}
 				/>
 
