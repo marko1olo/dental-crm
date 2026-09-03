@@ -11,6 +11,11 @@ import {
 	OBTURATION_TECHNIQUE_OPTIONS,
 	REFERENCE_POINT_OPTIONS,
 	TAPER_OPTIONS,
+	QUICK_LENGTH_PRESETS,
+	STANDARD_ENDO_PRESET,
+	CAOH2_ENDO_PRESET,
+	applyStandardEndoProtocol,
+	applyCaOh2EndoProtocol,
 } from "../EndoCanalLogModal";
 
 describe("EndoCanalLogModal — Anatomical Defaults & FDI Presets", () => {
@@ -435,6 +440,96 @@ describe("EndoCanalLogModal — Structured Working Length Table (WL / MAF / Apex
 		});
 		assert.ok(fullProtocolTable.includes("Raypex 6"));
 		assert.ok(fullProtocolTable.includes("Визиография"));
+	});
+});
+
+describe("EndoCanalLogModal — 1-Click Clinical Presets & Quick Ergonomics", () => {
+	test("QUICK_LENGTH_PRESETS содержит ключевые клинические длины без модалок подтверждения", () => {
+		assert.deepEqual(QUICK_LENGTH_PRESETS, [19, 20, 21, 21.5, 22, 22.5, 23, 24]);
+	});
+
+	test("applyStandardEndoProtocol сохраняет замеренные длины и применяет ProTaper + AH Plus", () => {
+		const existingCanals: EndoCanalData[] = [
+			{
+				id: "c1",
+				canalName: "MB1",
+				referencePoint: "Щечный бугор (MB cusp)",
+				workingLengthMm: 21.5,
+				masterApicalFile: "ISO 25 (#25 красный)",
+				taper: ".04",
+				obturationTechnique: "Временная паста Ca(OH)2",
+			},
+			{
+				id: "c2",
+				canalName: "P",
+				referencePoint: "Нёбный бугор (Palatal cusp)",
+				workingLengthMm: 23.0,
+				masterApicalFile: "ISO 30 (#30 синий)",
+				taper: ".04",
+				obturationTechnique: "Временная паста Ca(OH)2",
+			},
+		];
+
+		const result = applyStandardEndoProtocol(existingCanals, 16);
+		assert.equal(result.canals.length, 2);
+		const canal0 = result.canals[0];
+		const canal1 = result.canals[1];
+		assert.ok(canal0, "Канал 0 должен существовать");
+		assert.ok(canal1, "Канал 1 должен существовать");
+		assert.equal(canal0.workingLengthMm, 21.5, "Длина MB1 сохранена");
+		assert.equal(canal1.workingLengthMm, 23.0, "Длина P сохранена");
+		assert.equal(canal0.sealer, "AH Plus");
+		assert.equal(canal1.sealer, "AH Plus");
+		assert.ok(canal0.obturationTechnique.includes("AH Plus"));
+		assert.ok(result.rotarySystem.includes("ProTaper"));
+		assert.ok(result.irrigation.includes("NaOCl"));
+		assert.ok(result.radiologyControl.includes("визиография"));
+	});
+
+	test("applyCaOh2EndoProtocol корректно выставляет лечебную повязку с Ca(OH)2 (Каласепт)", () => {
+		const result = applyCaOh2EndoProtocol([], 16);
+		assert.equal(result.canals.length, 4, "Заполняются 4 канала для зуба 16");
+		for (const canal of result.canals) {
+			assert.ok(canal.obturationTechnique.includes("Ca(OH)2"));
+			assert.ok(canal.sealer?.includes("Каласепт"));
+		}
+		assert.ok(result.irrigation.includes("EDTA"));
+		assert.ok(result.radiologyControl.includes("визиография"));
+	});
+
+	test("Пустые или незаполненные длины каналов корректно форматируются как '—' без падений и блокировок", () => {
+		const emptyCanals: EndoCanalData[] = [
+			{
+				id: "empty1",
+				canalName: "MB1",
+				referencePoint: "Щечный бугор",
+				workingLengthMm: "", // пусто
+				masterApicalFile: "ISO 25",
+				taper: ".06",
+				obturationTechnique: "Гуттаперча",
+			},
+			{
+				id: "empty2",
+				canalName: "DB",
+				referencePoint: "Дистально-щечный бугор",
+				workingLengthMm: 0, // ноль
+				masterApicalFile: "ISO 20",
+				taper: ".04",
+				obturationTechnique: "Гуттаперча",
+			},
+		];
+
+		const table = generateEndoCanalsTable043(emptyCanals);
+		assert.ok(table.includes("MB1"));
+		assert.ok(table.includes("—"));
+
+		const protocol = generateEndoProtocol043({
+			toothNumber: 16,
+			canals: emptyCanals,
+		});
+		assert.ok(protocol.includes("MB1"));
+		assert.ok(protocol.includes("DB"));
+		assert.ok(protocol.includes("ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ"));
 	});
 });
 

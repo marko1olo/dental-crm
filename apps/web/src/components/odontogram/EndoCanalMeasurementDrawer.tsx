@@ -49,6 +49,11 @@ import {
 	OBTURATION_TECHNIQUE_OPTIONS,
 	REFERENCE_POINT_OPTIONS,
 	TAPER_OPTIONS,
+	QUICK_LENGTH_PRESETS,
+	STANDARD_ENDO_PRESET,
+	CAOH2_ENDO_PRESET,
+	applyStandardEndoProtocol,
+	applyCaOh2EndoProtocol,
 	formatEndoCanalsTable043,
 	generateEndoProtocol043,
 	getDefaultCanalsForTooth,
@@ -62,6 +67,7 @@ export interface EndoCanalMeasurementDrawerProps {
 	readonly patientId?: string | undefined;
 	readonly initialCanals?: readonly EndoCanalData[] | undefined;
 	readonly initialIrrigation?: string | undefined;
+	readonly initialRotarySystem?: string | undefined;
 	readonly initialRadiologyControl?: string | undefined;
 	readonly onInsertToProtocol?: (
 		protocolText: string,
@@ -93,6 +99,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 	patientId,
 	initialCanals,
 	initialIrrigation,
+	initialRotarySystem,
 	initialRadiologyControl,
 	onInsertToProtocol,
 	onSaveCanals,
@@ -113,6 +120,9 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 	const [irrigation, setIrrigation] = useState<string>(
 		initialIrrigation ||
 			"3% NaOCl + 17% EDTA с ультразвуковой активацией (активный протокол ирригации)",
+	);
+	const [rotarySystem, setRotarySystem] = useState<string>(
+		initialRotarySystem || STANDARD_ENDO_PRESET.rotarySystem,
 	);
 	const [radiologyControl, setRadiologyControl] = useState<string>(
 		initialRadiologyControl ||
@@ -135,10 +145,20 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 			} else {
 				setCanals(getDefaultCanalsForTooth(toothNumber));
 			}
+			if (initialRotarySystem) setRotarySystem(initialRotarySystem);
+			if (initialIrrigation) setIrrigation(initialIrrigation);
+			if (initialRadiologyControl) setRadiologyControl(initialRadiologyControl);
 			setLastSpokenCanal(null);
 			setVoiceLiveMessage(null);
 		}
-	}, [isOpen, toothNumber, initialCanals]);
+	}, [
+		isOpen,
+		toothNumber,
+		initialCanals,
+		initialRotarySystem,
+		initialIrrigation,
+		initialRadiologyControl,
+	]);
 
 	// Voice engine subscription for real-time canal dictation
 	useEffect(() => {
@@ -273,12 +293,34 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		showToast("Восстановлены анатомические каналы по умолчанию", "info");
 	}, [toothNumber]);
 
+	// 1-Click Standard Protocols
+	const handleApplyStandardProtocol = useCallback(() => {
+		const preset = applyStandardEndoProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен стандартный протокол обтурации (ProTaper + AH Plus)", "success");
+	}, [canals, toothNumber]);
+
+	const handleApplyCaOh2Protocol = useCallback(() => {
+		const preset = applyCaOh2EndoProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен протокол временной повязки Ca(OH)2 (Каласепт)", "info");
+	}, [canals, toothNumber]);
+
 	// 1-Click Insertion into Visit Note (043/u)
 	const handleInsertToProtocol = useCallback(() => {
 		const protocolText = generateEndoProtocol043({
 			toothNumber,
 			canals,
 			irrigation,
+			rotarySystem,
 			radiologyControl,
 			apexLocator: apexLocatorModel,
 		});
@@ -302,7 +344,15 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(`Эндо-протокол зуба ${toothNumber} вставлен в дневник 043/у`, "success");
-	}, [toothNumber, canals, irrigation, radiologyControl, apexLocatorModel, onInsertToProtocol]);
+	}, [
+		toothNumber,
+		canals,
+		irrigation,
+		rotarySystem,
+		radiologyControl,
+		apexLocatorModel,
+		onInsertToProtocol,
+	]);
 
 	// Save clinical canal data
 	const handleSave = useCallback(async () => {
@@ -311,6 +361,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 			const clinicalData: EndoToothClinicalData = {
 				canals,
 				irrigation,
+				rotarySystem,
 				radiologyControl,
 				updatedAt: new Date().toISOString(),
 			};
@@ -327,7 +378,15 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		} finally {
 			setIsSaving(false);
 		}
-	}, [canals, irrigation, radiologyControl, toothNumber, onSaveCanals, onClose]);
+	}, [
+		canals,
+		irrigation,
+		rotarySystem,
+		radiologyControl,
+		toothNumber,
+		onSaveCanals,
+		onClose,
+	]);
 
 	if (!isOpen) return null;
 
@@ -412,6 +471,52 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 					)}
 				</div>
 
+				{/* ═══ 2.5 1-CLICK PROTOCOL TOOLBAR ═══ */}
+				<div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap shrink-0">
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<button
+							type="button"
+							data-testid="drawer-btn-standard-endo-protocol"
+							onClick={handleApplyStandardProtocol}
+							className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
+							title="1 клик: ProTaper/WaveOne, NaOCl 3% + ЭДТА, обтурация AH Plus + гуттаперча"
+						>
+							<Sparkles size={14} />
+							<span>Стандарт (ProTaper + AH-Plus)</span>
+						</button>
+
+						<button
+							type="button"
+							data-testid="drawer-btn-caoh2-endo-protocol"
+							onClick={handleApplyCaOh2Protocol}
+							className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+							title="1 клик: временная лечебная повязка с гидроксидом кальция Ca(OH)2"
+						>
+							<ShieldCheck size={14} />
+							<span>Повязка Ca(OH)2</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleResetDefaults}
+							className="min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer"
+							title="Сброс к стандарту FDI"
+						>
+							<RotateCcw size={13} />
+							<span>Стандарт FDI</span>
+						</button>
+					</div>
+
+					<button
+						type="button"
+						onClick={handleAddCanal}
+						className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+					>
+						<Plus size={14} />
+						<span>+ Канал</span>
+					</button>
+				</div>
+
 				{/* ═══ 3. MAIN CANAL LIST (SCROLLABLE) ═══ */}
 				<div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
 					{canals.map((canal, idx) => {
@@ -487,9 +592,10 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 													min="10"
 													max="35"
 													value={canal.workingLengthMm}
+													placeholder="—"
 													onChange={(e) =>
 														handleUpdateCanal(canal.id, {
-															workingLengthMm: parseFloat(e.target.value) || 0,
+															workingLengthMm: parseFloat(e.target.value) || e.target.value,
 														})
 													}
 													className="w-full text-center text-lg font-black bg-transparent border border-slate-200 dark:border-slate-700 rounded-xl py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[44px]"
@@ -506,6 +612,25 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 											>
 												<Plus size={16} />
 											</button>
+										</div>
+
+										{/* Quick Length Chips (1-tap fast input) */}
+										<div className="flex items-center gap-1 mt-2 flex-wrap">
+											{QUICK_LENGTH_PRESETS.map((presetLen) => (
+												<button
+													key={presetLen}
+													type="button"
+													onClick={() => handleUpdateCanal(canal.id, { workingLengthMm: presetLen })}
+													className={`min-h-[30px] px-2 py-0.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+														Number(canal.workingLengthMm) === presetLen
+															? "bg-red-600 text-white shadow-xs"
+															: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+													}`}
+													title={`Установить ${presetLen} мм`}
+												>
+													{presetLen}
+												</button>
+											))}
 										</div>
 									</div>
 
@@ -630,6 +755,18 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 						<h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
 							Протокол антисептики и рентген-контроля
 						</h3>
+
+						<div>
+							<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+								Инструментальная система (NiTi ProTaper / WaveOne)
+							</label>
+							<input
+								type="text"
+								value={rotarySystem}
+								onChange={(e) => setRotarySystem(e.target.value)}
+								className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+							/>
+						</div>
 
 						<div>
 							<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
