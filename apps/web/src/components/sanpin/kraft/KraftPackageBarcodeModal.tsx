@@ -929,12 +929,12 @@ export function KraftPackageBarcodeModal({
 											<Tag size={16} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
 											Live-превью термоэтикетки
 										</span>
-										<div style={{ display: "flex", gap: "4px" }}>
+										<div style={{ display: "flex", gap: "6px" }}>
 											<button
 												type="button"
 												onClick={() => setPreviewLabelSize("58x40")}
 												className={`kraft-pill-btn ${previewLabelSize === "58x40" ? "active" : ""}`}
-												style={{ minHeight: "36px", padding: "0.2rem 0.6rem", fontSize: "0.75rem" }}
+												style={{ minHeight: "44px", padding: "0.4rem 0.85rem", fontSize: "0.82rem" }}
 											>
 												58×40 мм
 											</button>
@@ -942,7 +942,7 @@ export function KraftPackageBarcodeModal({
 												type="button"
 												onClick={() => setPreviewLabelSize("43x25")}
 												className={`kraft-pill-btn ${previewLabelSize === "43x25" ? "active" : ""}`}
-												style={{ minHeight: "36px", padding: "0.2rem 0.6rem", fontSize: "0.75rem" }}
+												style={{ minHeight: "44px", padding: "0.4rem 0.85rem", fontSize: "0.82rem" }}
 											>
 												43×25 мм
 											</button>
@@ -1065,24 +1065,24 @@ export function KraftPackageBarcodeModal({
 											Аппаратный сканер 2D DataMatrix (СанПиН 3.3686-21)
 										</span>
 									</div>
-									<div style={{ display: "flex", gap: "0.4rem" }}>
+									<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 										{isCameraActive ? (
 											<>
 												<button
 													type="button"
 													onClick={handleToggleTorch}
-													className={`kraft-btn ${isTorchOn ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
-													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem" }}
+													className={`kraft-btn ${isTorchOn ? "kraft-btn-primary" : "kraft-btn-secondary"} touch-manipulation`}
+													style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 													title="Включить/выключить подсветку камеры"
 												>
-													<Zap size={14} />
+													<Zap size={15} />
 													<span>{isTorchOn ? "Подсветка ВКЛ" : "Подсветка"}</span>
 												</button>
 												<button
 													type="button"
 													onClick={handleToggleFacingMode}
-													className="kraft-btn kraft-btn-secondary"
-													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem" }}
+													className="kraft-btn kraft-btn-secondary touch-manipulation"
+													style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 													title="Переключить камеру (задняя / передняя)"
 												>
 													<span>{facingMode === "environment" ? "Основная камера" : "Фронтальная"}</span>
@@ -1090,10 +1090,10 @@ export function KraftPackageBarcodeModal({
 												<button
 													type="button"
 													onClick={stopCamera}
-													className="kraft-btn kraft-btn-secondary"
-													style={{ minHeight: "36px", padding: "0.35rem 0.65rem", fontSize: "0.75rem", color: "var(--bad-fg)" }}
+													className="kraft-btn kraft-btn-secondary touch-manipulation"
+													style={{ minHeight: "44px", padding: "0.45rem 0.85rem", fontSize: "0.85rem", color: "var(--bad-fg)", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 												>
-													<CameraOff size={14} />
+													<CameraOff size={15} />
 													<span>Остановить</span>
 												</button>
 											</>
@@ -1102,22 +1102,22 @@ export function KraftPackageBarcodeModal({
 												<button
 													type="button"
 													onClick={() => startCamera()}
-													className="kraft-btn kraft-btn-primary"
-													style={{ minHeight: "36px", padding: "0.35rem 0.85rem", fontSize: "0.8rem", fontWeight: 700 }}
+													className="kraft-btn kraft-btn-primary touch-manipulation"
+													style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.88rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
 													data-testid="start-camera-scan-btn"
 												>
-													<Camera size={15} />
+													<Camera size={16} />
 													<span>Запустить камеру 60 FPS</span>
 												</button>
 												{hardwareScanner.isCapacitorNative() && (
 													<button
 														type="button"
 														onClick={handleNativeMlKitScan}
-														className="kraft-btn kraft-btn-secondary"
-														style={{ minHeight: "36px", padding: "0.35rem 0.75rem", fontSize: "0.8rem" }}
+														className="kraft-btn kraft-btn-secondary touch-manipulation"
+														style={{ minHeight: "44px", padding: "0.45rem 0.95rem", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
 														data-testid="start-native-mlkit-btn"
 													>
-														<Smartphone size={15} />
+														<Smartphone size={16} />
 														<span>Сканер ML Kit</span>
 													</button>
 												)}
@@ -1631,20 +1631,20 @@ export function KraftPackageBarcodeModal({
 										<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>
 											Протокол термопринтера:
 										</label>
-										<div style={{ display: "flex", gap: "0.35rem" }}>
+										<div style={{ display: "flex", gap: "0.5rem" }}>
 											<button
 												type="button"
 												onClick={() => setTsplProtocol("tspl")}
-												className={`kraft-btn ${tsplProtocol === "tspl" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
-												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+												className={`kraft-btn ${tsplProtocol === "tspl" ? "kraft-btn-primary" : "kraft-btn-secondary"} touch-manipulation`}
+												style={{ flex: 1, minHeight: "44px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
 											>
 												TSPL (TSC/Xprinter)
 											</button>
 											<button
 												type="button"
 												onClick={() => setTsplProtocol("zpl")}
-												className={`kraft-btn ${tsplProtocol === "zpl" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
-												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+												className={`kraft-btn ${tsplProtocol === "zpl" ? "kraft-btn-primary" : "kraft-btn-secondary"} touch-manipulation`}
+												style={{ flex: 1, minHeight: "44px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
 											>
 												ZPL II (Zebra)
 											</button>
@@ -1656,20 +1656,20 @@ export function KraftPackageBarcodeModal({
 										<label style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>
 											Размер этикетки:
 										</label>
-										<div style={{ display: "flex", gap: "0.35rem" }}>
+										<div style={{ display: "flex", gap: "0.5rem" }}>
 											<button
 												type="button"
 												onClick={() => setTsplSize("58x40")}
-												className={`kraft-btn ${tsplSize === "58x40" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
-												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+												className={`kraft-btn ${tsplSize === "58x40" ? "kraft-btn-primary" : "kraft-btn-secondary"} touch-manipulation`}
+												style={{ flex: 1, minHeight: "44px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
 											>
 												58×40 мм
 											</button>
 											<button
 												type="button"
 												onClick={() => setTsplSize("43x25")}
-												className={`kraft-btn ${tsplSize === "43x25" ? "kraft-btn-primary" : "kraft-btn-secondary"}`}
-												style={{ flex: 1, minHeight: "38px", padding: "0.25rem 0.5rem" }}
+												className={`kraft-btn ${tsplSize === "43x25" ? "kraft-btn-primary" : "kraft-btn-secondary"} touch-manipulation`}
+												style={{ flex: 1, minHeight: "44px", padding: "0.45rem 0.75rem", fontSize: "0.85rem" }}
 											>
 												43×25 мм
 											</button>
