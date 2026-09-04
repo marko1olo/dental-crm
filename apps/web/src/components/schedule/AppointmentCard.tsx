@@ -1616,13 +1616,34 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									{useManualSelects ? (
 										<select
 											value={String(appointmentDraft.doctorUserId ?? "")}
-											onChange={(e) =>
+											onChange={(e) => {
+												const newDocId = e.target.value;
 												updateAppointmentScheduleDraft(
 													appointment.id,
 													"doctorUserId",
-													e.target.value,
-												)
-											}
+													newDocId,
+												);
+												if (newDocId) {
+													const doc = (dashboard.clinicSettings?.staff ?? []).find(
+														(m) => m.id === newDocId,
+													);
+													if (doc?.specialties?.length) {
+														const matchingChair = (dashboard.clinicSettings?.chairs ?? []).find(
+															(c) =>
+																c.active &&
+																c.specialization &&
+																doc.specialties.includes(c.specialization),
+														);
+														if (matchingChair && matchingChair.id !== appointmentDraft.chairId) {
+															updateAppointmentScheduleDraft(
+																appointment.id,
+																"chairId",
+																matchingChair.id,
+															);
+														}
+													}
+												}
+											}}
 											className="w-full min-h-[44px] p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none truncate"
 										>
 											<option value="">-- Выберите врача --</option>
@@ -1653,13 +1674,28 @@ export function AppointmentCard(props: AppointmentCardProps) {
 														type="button"
 														className={`quick-chip max-w-full truncate min-h-[44px] sm:min-h-0 inline-flex items-center ${appointmentDraft.doctorUserId === member.id ? "active" : ""}`}
 														title={member.fullName}
-														onClick={() =>
+														onClick={() => {
 															updateAppointmentScheduleDraft(
 																appointment.id,
 																"doctorUserId",
 																member.id,
-															)
-														}
+															);
+															if (member.specialties?.length) {
+																const matchingChair = (dashboard.clinicSettings?.chairs ?? []).find(
+																	(c) =>
+																		c.active &&
+																		c.specialization &&
+																		member.specialties.includes(c.specialization),
+																);
+																if (matchingChair && matchingChair.id !== appointmentDraft.chairId) {
+																	updateAppointmentScheduleDraft(
+																		appointment.id,
+																		"chairId",
+																		matchingChair.id,
+																	);
+																}
+															}
+														}}
 													>
 														<span className="truncate">{member.fullName}</span>
 													</button>
@@ -1668,7 +1704,10 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									)}
 								</div>
 
-								{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" && (
+								{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" &&
+									(dashboard.clinicSettings?.staff ?? []).some(
+										(m) => m.active && m.role === "assistant",
+									) && (
 									<div className="min-w-0">
 										<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 											Ассистент
@@ -1793,7 +1832,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 													normalizedAppointmentStatus(newStatus),
 												)
 											}
-											disabled={!appointmentReadyToSave}
+											disabled={appointmentSaveState === "saving"}
 										/>
 									</div>
 									{appointmentHasOpenVisit && (

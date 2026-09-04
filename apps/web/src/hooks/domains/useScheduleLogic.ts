@@ -711,6 +711,22 @@ export function useScheduleLogic({
 		// поле ассистента при этом принудительно очищается — условие становилось
 		// невыполнимым, и такая клиника не могла сохранить НИ ОДНУ запись:
 		// кнопка «Сохранить» активна, а сохранение молча возвращает ошибку.
+		// Авто-подстановка кресла и врача при их отсутствии перед валидацией (Мандат 8e / 8n)
+		if (!draft.chairId && dashboard?.clinicSettings?.chairs) {
+			const activeChairs = dashboard.clinicSettings.chairs.filter((c) => c.active);
+			if (activeChairs.length > 0 && activeChairs[0]) {
+				draft.chairId = activeChairs[0].id;
+			}
+		}
+		if (!draft.doctorUserId && dashboard?.clinicSettings?.staff) {
+			const activeDocs = dashboard.clinicSettings.staff.filter(
+				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+			);
+			if (activeDocs.length > 0 && activeDocs[0]) {
+				draft.doctorUserId = activeDocs[0].id;
+			}
+		}
+
 		const missing = appointmentScheduleMissingFields(
 			draft,
 			dashboard?.clinicSettings?.profile?.mode,
@@ -882,6 +898,22 @@ export function useScheduleLogic({
 			setError("Дождитесь завершения текущего создания записи.");
 			return false;
 		}
+		// Авто-подстановка кресла и врача при их отсутствии перед валидацией (Мандат 8e / 8n)
+		if (!newAppointmentDraft.chairId && dashboard?.clinicSettings?.chairs) {
+			const activeChairs = dashboard.clinicSettings.chairs.filter((c) => c.active);
+			if (activeChairs.length > 0 && activeChairs[0]) {
+				newAppointmentDraft.chairId = activeChairs[0].id;
+			}
+		}
+		if (!newAppointmentDraft.doctorUserId && dashboard?.clinicSettings?.staff) {
+			const activeDocs = dashboard.clinicSettings.staff.filter(
+				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+			);
+			if (activeDocs.length > 0 && activeDocs[0]) {
+				newAppointmentDraft.doctorUserId = activeDocs[0].id;
+			}
+		}
+
 		const missing = newAppointmentMissingFields(newAppointmentDraft);
 		if (missing.length) {
 			const message = `Перед созданием записи: ${missing.join("; ")}.`;

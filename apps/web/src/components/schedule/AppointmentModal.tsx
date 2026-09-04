@@ -150,7 +150,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	useEffect(() => {
 		if (!appointment || !isOpen) return;
 		const defaultDoc = appointment.doctorUserId || doctors[0]?.id || "";
-		const defaultChair = appointment.chairId || chairs[0]?.id || "";
+		let defaultChair = appointment.chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
+		if (!defaultChair && defaultDoc) {
+			const doc = doctors.find((d) => d.id === defaultDoc);
+			if (doc?.specialties?.length) {
+				const matchingChair = chairs.find(
+					(c) => c.specialization && doc.specialties.includes(c.specialization),
+				);
+				if (matchingChair) {
+					defaultChair = matchingChair.id;
+				}
+			}
+		}
+		if (!defaultChair && chairs.length > 0) {
+			defaultChair = chairs[0]?.id || "";
+		}
 		setPatientId(appointment.patientId ?? "");
 		setDoctorUserId(defaultDoc);
 		setAssistantUserId(appointment.assistantUserId ?? null);
@@ -305,7 +319,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		if (!appointment || isSaving) return;
 
 		const effectiveDoctorUserId = doctorUserId || doctors[0]?.id || "";
-		const effectiveChairId = chairId || chairs[0]?.id || "";
+		let effectiveChairId = chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
+		if (!effectiveChairId && effectiveDoctorUserId) {
+			const doc = doctors.find((d) => d.id === effectiveDoctorUserId);
+			if (doc?.specialties?.length) {
+				const matchingChair = chairs.find(
+					(c) => c.specialization && doc.specialties.includes(c.specialization),
+				);
+				if (matchingChair) {
+					effectiveChairId = matchingChair.id;
+				}
+			}
+		}
+		if (!effectiveChairId && chairs.length > 0) {
+			effectiveChairId = chairs[0]?.id || "";
+		}
 
 		if (!patientId || !effectiveDoctorUserId || !effectiveChairId || !startsAtLocal || !endsAtLocal) {
 			setError("Заполните все обязательные поля");
@@ -432,7 +460,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									onClick={() => {
 										setStatus("confirmed");
 									}}
-									className="px-3 py-1.5 rounded-lg font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+									className="px-3.5 py-2 min-h-[44px] rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
 									title="Перевести статус в «Подтвержден» в 1 клик"
 									data-testid="modal-confirm-online-booking-btn"
 								>
@@ -538,10 +566,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 														);
 													}
 												}}
-												className="h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shrink-0 cursor-pointer shadow-sm transition-all"
+												className="min-h-[44px] px-3 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all"
 												title="Синхронизировать время приема со сроком готовности наряда ЗТЛ"
 											>
-												<Calendar className="w-3.5 h-3.5" />
+												<Calendar className="w-4 h-4" />
 												На дату ЗТЛ
 											</button>
 										)}
@@ -628,7 +656,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										key={mins}
 										type="button"
 										onClick={() => applyDuration(mins)}
-										className={`min-h-[38px] px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+										className={`min-h-[44px] px-3.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
 											currentDurationMinutes === mins
 												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
 												: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)]"
@@ -647,7 +675,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							</label>
 							<select
 								value={doctorUserId}
-								onChange={(e) => setDoctorUserId(e.target.value)}
+								onChange={(e) => {
+									const newDocId = e.target.value;
+									setDoctorUserId(newDocId);
+									if (newDocId) {
+										const doc = doctors.find((d) => d.id === newDocId);
+										if (doc?.specialties?.length) {
+											const matchingChair = chairs.find(
+												(c) => c.specialization && doc.specialties.includes(c.specialization),
+											);
+											if (matchingChair) {
+												setChairId(matchingChair.id);
+											}
+										}
+									}
+								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							>
 								<option value="">-- Выберите врача --</option>
@@ -677,7 +719,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							</select>
 						</div>
 
-						{!isSoloDoctor && (
+						{!isSoloDoctor && assistants.length > 0 && (
 							<div>
 								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 									Ассистент (опционально)
@@ -698,7 +740,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						)}
 
 						{/* Status */}
-						<div className={isSoloDoctor ? "sm:col-span-2" : ""}>
+						<div className={isSoloDoctor || assistants.length === 0 ? "sm:col-span-2" : ""}>
 							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 								Статус приема
 							</label>
@@ -740,7 +782,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										key={preset.label}
 										type="button"
 										onClick={() => handleApplyReasonPreset(preset)}
-										className={`min-h-[36px] px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+										className={`min-h-[44px] px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
 											preset.tone === "emergency"
 												? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20"
 												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"

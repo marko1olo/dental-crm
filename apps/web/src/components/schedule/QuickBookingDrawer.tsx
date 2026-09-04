@@ -273,11 +273,24 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		setDoctorUserId(defaultDocId);
 
 		// Chair prefill
-		const defaultChairId =
+		let defaultChairId =
 			initialSlot?.chairId ||
 			(chairs.length === 1 ? chairs[0]?.id : "") ||
-			chairs[0]?.id ||
 			"";
+		if (!defaultChairId && defaultDocId) {
+			const doc = doctors.find((d) => d.id === defaultDocId);
+			if (doc?.specialties?.length) {
+				const matchingChair = chairs.find(
+					(c) => c.specialization && doc.specialties.includes(c.specialization),
+				);
+				if (matchingChair) {
+					defaultChairId = matchingChair.id;
+				}
+			}
+		}
+		if (!defaultChairId && chairs.length > 0) {
+			defaultChairId = chairs[0]?.id || "";
+		}
 		setChairId(defaultChairId);
 
 		// Assistant: опционально, без принудительного назначения
@@ -674,11 +687,24 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			(doctors.length === 1 ? doctors[0]?.id : "") ||
 			doctors[0]?.id ||
 			"";
-		const effectiveChairId =
+		let effectiveChairId =
 			chairId ||
 			(chairs.length === 1 ? chairs[0]?.id : "") ||
-			chairs[0]?.id ||
 			"";
+		if (!effectiveChairId && effectiveDoctorId) {
+			const doc = doctors.find((d) => d.id === effectiveDoctorId);
+			if (doc?.specialties?.length) {
+				const matchingChair = chairs.find(
+					(c) => c.specialization && doc.specialties.includes(c.specialization),
+				);
+				if (matchingChair) {
+					effectiveChairId = matchingChair.id;
+				}
+			}
+		}
+		if (!effectiveChairId && chairs.length > 0) {
+			effectiveChairId = chairs[0]?.id || "";
+		}
 
 		if (!effectiveDoctorId) {
 			setSubmitError("В клинике нет доступных врачей");
@@ -1609,7 +1635,21 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							</label>
 							<select
 								value={doctorUserId}
-								onChange={(e) => setDoctorUserId(e.target.value)}
+								onChange={(e) => {
+									const newDocId = e.target.value;
+									setDoctorUserId(newDocId);
+									if (newDocId) {
+										const doc = doctors.find((d) => d.id === newDocId);
+										if (doc?.specialties?.length) {
+											const matchingChair = chairs.find(
+												(c) => c.specialization && doc.specialties.includes(c.specialization),
+											);
+											if (matchingChair) {
+												setChairId(matchingChair.id);
+											}
+										}
+									}
+								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								required
 							>
@@ -1644,7 +1684,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							</select>
 						</div>
 
-						{!isSoloDoctor && (
+						{!isSoloDoctor && assistants.length > 0 && (
 							<div className="sm:col-span-2">
 								<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
 									Ассистент (опционально)

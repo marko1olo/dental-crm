@@ -822,33 +822,224 @@ export function Cornerstone3DViewer({
 		showToast(`Штангенциркуль: H=${measured.heightMm} мм, W=${measured.crestWidthMm} мм (${measured.implantFeasibility.isAdequate ? "✓ норма" : "⚠️ дефицит"})`, "info");
 	};
 
-	/**
-	 * Автоматическая или ручная разметка нижнечелюстного канала (Safety Margin 2.0 мм)
-	 */
-	const handleTraceMandibularNerve = () => {
-		setIsNerveTracingActive(true);
-		setActiveTool("NerveTracer");
-
-		// Если точек нерва еще нет, инициализируем анатомический ход
-		const currentNerve = restoredMarkupRef.current?.nervePoints || [];
-		if (currentNerve.length === 0) {
-			const defaultNerve: WorldPoint3[] = [
-				{ x: 25, y: -10, z: -40 },
-				{ x: 20, y: 5, z: -45 },
-				{ x: 15, y: 20, z: -50 },
-				{ x: 10, y: 35, z: -52 },
-			];
-			const updated = {
-				splinePoints: restoredMarkupRef.current?.splinePoints || [],
-				nervePoints: defaultNerve,
+	const addNerveControlPoint = useCallback(
+		(point: WorldPoint3) => {
+			const current = restoredMarkupRef.current?.nervePoints ?? [];
+			const nextNerve = [...current, point];
+			const updated: CtPlanningMarkup = {
+				splinePoints: restoredMarkupRef.current?.splinePoints ?? [],
+				nervePoints: nextNerve,
 				implants: storedImplantsOf(implantsRef.current),
 			};
 			setRestoredMarkup(updated);
 			restoredMarkupRef.current = updated;
+
+			if (implantsRef.current.length > 0) {
+				const nerveSpline = nextNerve.map((p) => vec3.fromValues(p.x, p.y, p.z));
+				const updatedImplants = implantsRef.current.map((imp) => ({
+					...imp,
+					distanceToNerve: distancePointToSpline(imp.endWorld, nerveSpline),
+				}));
+				setImplants(updatedImplants);
+				implantsRef.current = updatedImplants;
+				const last = updatedImplants[updatedImplants.length - 1];
+				if (last) setAiProtocolLog(implantProtocolLog(last));
+			}
+
 			void saveMarkupNow();
-			showToast("Трассировка нижнечелюстного нерва: коридор безопасности 2.0 мм активирован", "success");
+			showToast(
+				`Точка #${nextNerve.length} нижнечелюстного канала зафиксирована ([${point.x.toFixed(1)}, ${point.y.toFixed(1)}, ${point.z.toFixed(1)}])`,
+				"info",
+			);
+		},
+		[saveMarkupNow],
+	);
+
+	const addNervePointFromCurrentSlice = useCallback(() => {
+		const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+		const axialVp = renderingEngine?.getViewport(VIEWPORT_IDS.axial);
+		const focal = axialVp?.getCamera()?.focalPoint;
+		if (
+			!focal ||
+			focal.length < 3 ||
+			!Number.isFinite(focal[0]) ||
+			!Number.isFinite(focal[1]) ||
+			!Number.isFinite(focal[2])
+		) {
+			showToast(
+				"Точка фокуса не определена. Выберите срез кликом по КТ-просмотрщику",
+				"warning",
+			);
+			return;
+		}
+
+		addNerveControlPoint({
+			x: Number(focal[0].toFixed(2)),
+			y: Number(focal[1].toFixed(2)),
+			z: Number(focal[2].toFixed(2)),
+		});
+	}, [addNerveControlPoint]);
+
+	const completeNerveSpline = useCallback(() => {
+		const current = restoredMarkupRef.current?.nervePoints ?? [];
+		if (current.length < 2) {
+			showToast(
+				"Для формирования сплайна нижнечелюстного канала необходимо минимум 2 контрольные точки",
+				"warning",
+			);
+			return;
+		}
+
+		if (implantsRef.current.length > 0) {
+			const nerveSpline = current.map((p) => vec3.fromValues(p.x, p.y, p.z));
+			const updatedImplants = implantsRef.current.map((imp) => ({
+				...imp,
+				distanceToNerve: distancePointToSpline(imp.endWorld, nerveSpline),
+			}));
+			setImplants(updatedImplants);
+			implantsRef.current = updatedImplants;
+			const last = updatedImplants[updatedImplants.length - 1];
+			if (last) setAiProtocolLog(implantProtocolLog(last));
+		}
+
+		void saveMarkupNow();
+		showToast(
+			`Сплайн нижнечелюстного канала сформирован: ${current.length} опорных точек. Коридор безопасности 2.0 мм активен.`,
+			"success",
+		);
+	}, [saveMarkupNow]);
+
+	const clearNervePoints = useCallback(() => {
+		const updated: CtPlanningMarkup = {
+			splinePoints: restoredMarkupRef.current?.splinePoints ?? [],
+			nervePoints: [],
+			implants: storedImplantsOf(implantsRef.current),
+		};
+		setRestoredMarkup(updated);
+		restoredMarkupRef.current = updated;
+
+		if (implantsRef.current.length > 0) {
+			const updatedImplants = implantsRef.current.map((imp) => ({
+				...imp,
+				distanceToNerve: null,
+			}));
+			setImplants(updatedImplants);
+			implantsRef.current = updatedImplants;
+			const last = updatedImplants[updatedImplants.length - 1];
+			if (last) setAiProtocolLog(implantProtocolLog(last));
+		}
+
+		void saveMarkupNow();
+		showToast("Трассировка нижнечелюстного канала очищена (0 точек)", "info");
+	}, [saveMarkupNow]);
+
+	const handleViewportClickForNerve = useCallback(
+		(
+			viewportId: string,
+			container: HTMLElement | null,
+			e: React.MouseEvent<any>,
+		) => {
+			if (activeTool !== "NerveTracer" && !isNerveTracingActive) return;
+			if (!container) return;
+
+			const renderingEngine = cornerstone.getRenderingEngine("my-engine");
+			const vp = renderingEngine?.getViewport(viewportId);
+			if (!vp) return;
+
+			const rect = container.getBoundingClientRect();
+			const canvasX = e.clientX - rect.left;
+			const canvasY = e.clientY - rect.top;
+
+			let worldX: number | null = null;
+			let worldY: number | null = null;
+			let worldZ: number | null = null;
+
+			try {
+				if (
+					typeof (
+						vp as {
+							canvasToWorld?: (
+								pt: [number, number],
+							) => [number, number, number];
+						}
+					).canvasToWorld === "function"
+				) {
+					const pt = (
+						vp as {
+							canvasToWorld: (
+								pt: [number, number],
+							) => [number, number, number];
+						}
+					).canvasToWorld([canvasX, canvasY]);
+					if (
+						pt &&
+						Number.isFinite(pt[0]) &&
+						Number.isFinite(pt[1]) &&
+						Number.isFinite(pt[2])
+					) {
+						worldX = pt[0];
+						worldY = pt[1];
+						worldZ = pt[2];
+					}
+				}
+			} catch {
+				// fallback to camera focal point
+			}
+
+			if (worldX === null || worldY === null || worldZ === null) {
+				const focal = vp.getCamera()?.focalPoint;
+				if (
+					focal &&
+					Number.isFinite(focal[0]) &&
+					Number.isFinite(focal[1]) &&
+					Number.isFinite(focal[2])
+				) {
+					worldX = focal[0];
+					worldY = focal[1];
+					worldZ = focal[2];
+				}
+			}
+
+			if (worldX === null || worldY === null || worldZ === null) {
+				showToast("Не удалось определить 3D-координаты точки на срезе", "warning");
+				return;
+			}
+
+			addNerveControlPoint({
+				x: Number(worldX.toFixed(2)),
+				y: Number(worldY.toFixed(2)),
+				z: Number(worldZ.toFixed(2)),
+			});
+		},
+		[activeTool, isNerveTracingActive, addNerveControlPoint],
+	);
+
+	/**
+	 * Ручная разметка нижнечелюстного канала (коридор безопасности 2.0 мм).
+	 * ВНИМАНИЕ: генерация синтетических/фейковых координат категорически запрещена (Мандат 8k: CRM != Reality Simulator).
+	 */
+	const handleTraceMandibularNerve = () => {
+		if (activeTool === "NerveTracer") {
+			setIsNerveTracingActive(false);
+			setActiveTool("Crosshairs");
+			showToast("Режим трассировки нерва отключен", "info");
+			return;
+		}
+
+		setIsNerveTracingActive(true);
+		setActiveTool("NerveTracer");
+
+		const currentNerve = restoredMarkupRef.current?.nervePoints || [];
+		if (currentNerve.length === 0) {
+			showToast(
+				"Трассировка нижнечелюстного канала: 0 точек. Кликните по КТ-срезу для установки контрольной точки",
+				"info",
+			);
 		} else {
-			showToast(`Нижнечелюстной нерв: ${currentNerve.length} опорных точек (коридор безопасности 2.0 мм)`, "info");
+			showToast(
+				`Нижнечелюстной нерв: ${currentNerve.length} опорных точек (коридор безопасности 2.0 мм)`,
+				"info",
+			);
 		}
 	};
 
@@ -1277,9 +1468,13 @@ export function Cornerstone3DViewer({
 							color: activeTool === "NerveTracer" ? "#fff" : "var(--muted, #d4d4d8)",
 						}}
 						onClick={handleTraceMandibularNerve}
-						title="Трассировка нижнечелюстного канала (Safety Margin 2.0 мм)"
+						title={
+							(restoredMarkup?.nervePoints?.length ?? 0) === 0
+								? "Трассировка нижнечелюстного канала: 0 точек. Кликните по КТ-срезу для установки контрольной точки"
+								: `Трассировка нижнечелюстного канала: ${restoredMarkup?.nervePoints?.length} точек (коридор безопасности 2.0 мм)`
+						}
 					>
-						Нерв (2.0мм)
+						Нерв (2.0мм){(restoredMarkup?.nervePoints?.length ?? 0) > 0 ? ` [${restoredMarkup?.nervePoints?.length}]` : ""}
 					</button>
 					<button
 						type="button"
@@ -1520,13 +1715,202 @@ export function Cornerstone3DViewer({
 				</button>
 			</div>
 
+			{/* MANDIBULAR NERVE TRACING HUD (HONEST ZERO-MOCK STATUS & CONTROLS) */}
+			{(isNerveTracingActive || activeTool === "NerveTracer") && (
+				<div
+					role="region"
+					aria-label="Панель трассировки нижнечелюстного канала"
+					data-testid="nerve-tracing-hud"
+					style={{
+						position: "absolute",
+						top: "76px",
+						left: "50%",
+						transform: "translateX(-50%)",
+						zIndex: 25,
+						display: "flex",
+						alignItems: "center",
+						flexWrap: "wrap",
+						gap: "10px",
+						maxWidth: "min(94%, 56rem)",
+						backgroundColor: "rgba(18, 18, 18, 0.92)",
+						backdropFilter: "blur(16px)",
+						WebkitBackdropFilter: "blur(16px)",
+						border: "1px solid rgba(217, 119, 6, 0.5)",
+						boxShadow: "0 12px 32px -8px rgba(0, 0, 0, 0.75)",
+						padding: "8px 14px",
+						borderRadius: "14px",
+						color: "#f4f4f5",
+						fontSize: "12px",
+					}}
+				>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "8px",
+							flex: "1 1 auto",
+							minWidth: "260px",
+						}}
+					>
+						<span
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								minWidth: "22px",
+								height: "22px",
+								padding: "0 6px",
+								borderRadius: "6px",
+								backgroundColor:
+									(restoredMarkup?.nervePoints?.length ?? 0) > 0
+										? "rgba(16, 185, 129, 0.2)"
+										: "rgba(217, 119, 6, 0.2)",
+								color:
+									(restoredMarkup?.nervePoints?.length ?? 0) > 0
+										? "#34d399"
+										: "#fbbf24",
+								fontWeight: "bold",
+								fontSize: "11px",
+							}}
+						>
+							{restoredMarkup?.nervePoints?.length ?? 0}
+						</span>
+						<span style={{ fontWeight: 500, lineHeight: 1.3 }}>
+							{(restoredMarkup?.nervePoints?.length ?? 0) === 0
+								? "Трассировка нижнечелюстного канала: 0 точек. Кликните по КТ-срезу для установки контрольной точки"
+								: `Трассировка нижнечелюстного канала: ${restoredMarkup?.nervePoints?.length} ${
+										(restoredMarkup?.nervePoints?.length ?? 0) === 1
+											? "точка"
+											: (restoredMarkup?.nervePoints?.length ?? 0) < 5
+												? "точки"
+												: "точек"
+								  } (коридор безопасности 2.0 мм)`}
+						</span>
+					</div>
+
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "6px",
+							flexShrink: 0,
+						}}
+					>
+						<button
+							type="button"
+							style={{
+								minHeight: "36px",
+								minWidth: "36px",
+								padding: "6px 10px",
+								borderRadius: "8px",
+								fontSize: "12px",
+								fontWeight: 500,
+								cursor: "pointer",
+								border: "1px solid rgba(255,255,255,0.15)",
+								backgroundColor: "rgba(255,255,255,0.08)",
+								color: "#e4e4e7",
+								transition: "all 0.15s",
+								display: "flex",
+								alignItems: "center",
+								gap: "4px",
+							}}
+							onClick={addNervePointFromCurrentSlice}
+							title="Добавить контрольную точку по текущему фокусу среза"
+						>
+							+ Точка
+						</button>
+
+						<button
+							type="button"
+							style={{
+								minHeight: "36px",
+								minWidth: "36px",
+								padding: "6px 10px",
+								borderRadius: "8px",
+								fontSize: "12px",
+								fontWeight: 500,
+								cursor:
+									(restoredMarkup?.nervePoints?.length ?? 0) >= 2
+										? "pointer"
+										: "default",
+								border: "none",
+								backgroundColor:
+									(restoredMarkup?.nervePoints?.length ?? 0) >= 2
+										? "#059669"
+										: "rgba(255,255,255,0.06)",
+								color:
+									(restoredMarkup?.nervePoints?.length ?? 0) >= 2
+										? "#fff"
+										: "#71717a",
+								transition: "all 0.15s",
+								display: "flex",
+								alignItems: "center",
+								gap: "4px",
+							}}
+							onClick={completeNerveSpline}
+							title="Замкнуть сплайн канала (требуется от 2 точек)"
+						>
+							Замкнуть сплайн
+						</button>
+
+						<button
+							type="button"
+							style={{
+								minHeight: "36px",
+								minWidth: "36px",
+								padding: "6px 10px",
+								borderRadius: "8px",
+								fontSize: "12px",
+								fontWeight: 500,
+								cursor: "pointer",
+								border: "1px solid rgba(239,68,68,0.3)",
+								backgroundColor: "rgba(239,68,68,0.12)",
+								color: "#fca5a5",
+								transition: "all 0.15s",
+								display: "flex",
+								alignItems: "center",
+								gap: "4px",
+							}}
+							onClick={clearNervePoints}
+							title="Очистить все точки трассировки канала"
+						>
+							Очистить
+						</button>
+
+						<button
+							type="button"
+							style={{
+								minHeight: "36px",
+								minWidth: "36px",
+								padding: "6px 8px",
+								borderRadius: "8px",
+								fontSize: "12px",
+								fontWeight: 500,
+								cursor: "pointer",
+								border: "none",
+								backgroundColor: "rgba(255,255,255,0.06)",
+								color: "#a1a1aa",
+								transition: "all 0.15s",
+							}}
+							onClick={() => {
+								setIsNerveTracingActive(false);
+								setActiveTool("Crosshairs");
+							}}
+							title="Закрыть панель трассировки"
+						>
+							✕
+						</button>
+					</div>
+				</div>
+			)}
+
 			{/* PANOREX REFUSAL / READY BANNER */}
 			{panorexBanner && (
 				<div
 					role={panorexBanner.tone === "issue" ? "alert" : "status"}
 					aria-live="polite"
 					data-testid="panorex-arch-state"
-					className={`absolute left-1/2 top-24 z-30 -translate-x-1/2 max-w-[min(92%,34rem)] rounded-2xl border border-[var(--line-strong)] px-4 py-3 text-xs leading-relaxed break-words hyphens-auto sm:text-sm ${
+					className={`absolute left-1/2 ${isNerveTracingActive || activeTool === "NerveTracer" ? "top-36" : "top-24"} z-30 -translate-x-1/2 max-w-[min(92%,34rem)] rounded-2xl border border-[var(--line-strong)] px-4 py-3 text-xs leading-relaxed break-words hyphens-auto sm:text-sm ${
 						panorexBanner.tone === "issue"
 							? "bg-[var(--warn-bg)] text-[var(--warn-fg)]"
 							: "bg-[var(--ok-bg)] text-[var(--ok-fg)]"
@@ -1542,7 +1926,7 @@ export function Cornerstone3DViewer({
 					role={markupStatus.tone === "issue" ? "alert" : "status"}
 					aria-live="polite"
 					data-testid="ct-planning-storage-state"
-					className={`absolute left-1/2 top-40 z-30 -translate-x-1/2 max-w-[min(92%,34rem)] rounded-2xl border border-[var(--line-strong)] px-4 py-3 text-xs leading-relaxed break-words hyphens-auto sm:text-sm ${
+					className={`absolute left-1/2 ${isNerveTracingActive || activeTool === "NerveTracer" ? "top-52" : "top-40"} z-30 -translate-x-1/2 max-w-[min(92%,34rem)] rounded-2xl border border-[var(--line-strong)] px-4 py-3 text-xs leading-relaxed break-words hyphens-auto sm:text-sm ${
 						markupStatus.tone === "issue"
 							? "bg-[var(--warn-bg)] text-[var(--warn-fg)]"
 							: "bg-[var(--ok-bg)] text-[var(--ok-fg)]"
@@ -1689,8 +2073,16 @@ export function Cornerstone3DViewer({
 					<section
 						ref={axialRef}
 						aria-label="Просмотр Аксиальный"
-						style={{ width: "100%", height: "100%", touchAction: "none" }}
+						style={{
+							width: "100%",
+							height: "100%",
+							touchAction: "none",
+							cursor: activeTool === "NerveTracer" ? "crosshair" : "default",
+						}}
 						onContextMenu={(e) => e.preventDefault()}
+						onClick={(e) =>
+							handleViewportClickForNerve(VIEWPORT_IDS.axial, axialRef.current, e)
+						}
 					/>
 				</div>
 
@@ -1717,8 +2109,20 @@ export function Cornerstone3DViewer({
 					<section
 						ref={sagittalRef}
 						aria-label="Просмотр Сагиттальный"
-						style={{ width: "100%", height: "100%", touchAction: "none" }}
+						style={{
+							width: "100%",
+							height: "100%",
+							touchAction: "none",
+							cursor: activeTool === "NerveTracer" ? "crosshair" : "default",
+						}}
 						onContextMenu={(e) => e.preventDefault()}
+						onClick={(e) =>
+							handleViewportClickForNerve(
+								VIEWPORT_IDS.sagittal,
+								sagittalRef.current,
+								e,
+							)
+						}
 					/>
 				</div>
 
@@ -1745,8 +2149,20 @@ export function Cornerstone3DViewer({
 					<section
 						ref={coronalRef}
 						aria-label="Просмотр Корональный"
-						style={{ width: "100%", height: "100%", touchAction: "none" }}
+						style={{
+							width: "100%",
+							height: "100%",
+							touchAction: "none",
+							cursor: activeTool === "NerveTracer" ? "crosshair" : "default",
+						}}
 						onContextMenu={(e) => e.preventDefault()}
+						onClick={(e) =>
+							handleViewportClickForNerve(
+								VIEWPORT_IDS.coronal,
+								coronalRef.current,
+								e,
+							)
+						}
 					/>
 				</div>
 

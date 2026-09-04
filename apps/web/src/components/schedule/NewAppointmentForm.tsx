@@ -232,11 +232,26 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 			const activeDocs = dashboard.clinicSettings.staff.filter(
 				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
-			if (activeDocs.length === 1 && activeDocs[0]) {
+			if (activeDocs.length > 0 && activeDocs[0]) {
 				updateNewAppointmentDraft("doctorUserId", activeDocs[0].id);
 			}
 		}
 	}, [newAppointmentDraft?.doctorUserId, dashboard.clinicSettings?.staff, updateNewAppointmentDraft]);
+
+	// Авто-подбор кресла под специализацию выбранного врача (Мандат 8e / 8n)
+	useEffect(() => {
+		if (newAppointmentDraft?.doctorUserId && dashboard.clinicSettings?.chairs && dashboard.clinicSettings?.staff) {
+			const doc = dashboard.clinicSettings.staff.find((m) => m.id === newAppointmentDraft.doctorUserId);
+			if (doc?.specialties?.length) {
+				const matchingChair = dashboard.clinicSettings.chairs.find(
+					(c) => c.active && c.specialization && doc.specialties.includes(c.specialization),
+				);
+				if (matchingChair && matchingChair.id !== newAppointmentDraft.chairId) {
+					updateNewAppointmentDraft("chairId", matchingChair.id);
+				}
+			}
+		}
+	}, [newAppointmentDraft?.doctorUserId, dashboard.clinicSettings?.chairs, dashboard.clinicSettings?.staff, updateNewAppointmentDraft]);
 
 	const newAppointmentMissingSteps = appointmentScheduleMissingFields(
 		newAppointmentDraft as AppointmentScheduleDraft,
@@ -253,7 +268,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		);
 		return newAppointmentMissingSteps.filter((step) => {
 			if (step.includes("кресло") && activeChairs.length > 0) return false;
-			if (step.includes("врач") && activeDocs.length === 1) return false;
+			if (step.includes("врач") && activeDocs.length > 0) return false;
 			return true;
 		});
 	}, [newAppointmentMissingSteps, dashboard.clinicSettings?.chairs, dashboard.clinicSettings?.staff]);
@@ -972,7 +987,10 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							)}
 						</div>
 
-						{clinicMode !== "solo_doctor" && (
+						{clinicMode !== "solo_doctor" &&
+							(dashboard.clinicSettings?.staff ?? []).some(
+								(m) => m.active && m.role === "assistant",
+							) && (
 							<div>
 								<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 									Ассистент (опционально)
