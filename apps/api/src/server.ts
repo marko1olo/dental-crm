@@ -65,6 +65,7 @@ import { registerDiagnocatRoutes } from "./routes/integrations/diagnocat.js";
 import { registerFlexbeRoutes } from "./routes/integrations/flexbe.js";
 import registerIntegrationsRoutes from "./routes/integrations.js";
 import { inventoryRoutes } from "./routes/inventory.js";
+import { warehouseRoutes } from "./routes/warehouse/index.js";
 import { registerLabRoutes } from "./routes/lab.js";
 import { registerLeadsRoutes } from "./routes/leads.js";
 import { registerLoyaltyRoutes } from "./routes/loyalty.js";
@@ -770,6 +771,7 @@ export async function createDenteApiApp(
 	// apps/web обращается к /api/templates, а маршрута не существовало.
 	await registerTemplateRoutes(app);
 	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
+	await app.register(warehouseRoutes, { prefix: "/api/warehouse" });
 	await app.register(treatmentConsumablesRoutes, {
 		prefix: "/api/treatment-consumables",
 	});

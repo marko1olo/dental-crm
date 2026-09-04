@@ -355,3 +355,99 @@ export const DEFAULT_PSO_QUALITY_DEMO: readonly PsoQualityRecord[] = [
 	},
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. КОМПЛЕКСНЫЕ 1-КЛИКОВЫЕ ПРЕСЕТЫ СМЕНЫ МЕДСЕСТРЫ ЦСО (САНПИН 3.3686-21)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function createQuickCombinedPsoRecord(
+	operatorName = "Смирнова А.В. (медсестра ЦСО)",
+	instrumentName = "Терапевтический и хирургический инструментарий смены"
+): PsoQualityRecord {
+	return {
+		id: `pso-both-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		testType: "both",
+		instrumentName,
+		batchItemCount: 150,
+		testedSampleCount: 5,
+		azopyramResult: "negative",
+		phenolphthaleinResult: "negative",
+		detergentBrand: "Оптимакс Про 1.5%",
+		isApproved: true,
+		operatorName,
+		timestamp: new Date().toISOString(),
+		sanpinClause: "СанПиН 3.3686-21 пп. 3584-3585, форма № 366/у",
+		notes: "1-кликовая фиксация проб ПСО: азопирам (кровь) — отрицательно, фенолфталеин (щелочь) — отрицательно. Партия допущена к стерилизации.",
+	};
+}
+
+export function createQuickDailyShiftAutoclaveCycles(
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): readonly AutoclaveCycleRecord[] {
+	const now = Date.now();
+	return [
+		{
+			id: `cycle-shift-1-${now}`,
+			cycleNumber: 1,
+			...SANPIN_AUTOCLAVE_CLASS_B_PRESET,
+			loadDescription: "Утренний тест Бови-Дика + смотровые лотки терапевта (4 шт)",
+			operatorName,
+			timestamp: new Date(now - 6 * 3600 * 1000).toISOString(),
+		},
+		{
+			id: `cycle-shift-2-${now}`,
+			cycleNumber: 2,
+			...SANPIN_AUTOCLAVE_CLASS_B_PRESET,
+			loadDescription: "Эндодонтические наборы, турбинные и угловые наконечники в пакетах (6 шт)",
+			operatorName,
+			timestamp: new Date(now - 3 * 3600 * 1000).toISOString(),
+		},
+		{
+			id: `cycle-shift-3-${now}`,
+			cycleNumber: 3,
+			...SANPIN_AUTOCLAVE_CLASS_B_PRESET,
+			loadDescription: "Хирургические экстракционные наборы, кюреты, шовный материал (4 шт)",
+			operatorName,
+			timestamp: new Date().toISOString(),
+		},
+	];
+}
+
+export function createQuickDailyShiftPsoRecords(
+	operatorName = "Смирнова А.В. (медсестра ЦСО)"
+): readonly PsoQualityRecord[] {
+	const now = Date.now();
+	return [
+		{
+			id: `pso-shift-1-${now}`,
+			testType: "both",
+			instrumentName: "Терапевтические смотровые лотки (зеркала, зонды, пинцеты)",
+			batchItemCount: 120,
+			testedSampleCount: 5,
+			azopyramResult: "negative",
+			phenolphthaleinResult: "negative",
+			detergentBrand: "Оптимакс Про 1.5%",
+			isApproved: true,
+			operatorName,
+			timestamp: new Date(now - 5 * 3600 * 1000).toISOString(),
+			sanpinClause: "СанПиН 3.3686-21 пп. 3584-3585, форма № 366/у",
+			notes: "Азопирамовая и фенолфталеиновая пробы отрицательны. Скрытая кровь и остатки СМС отсутствуют.",
+		},
+		{
+			id: `pso-shift-2-${now}`,
+			testType: "both",
+			instrumentName: "Хирургический инструментарий (щипцы, элеваторы, кюреты)",
+			batchItemCount: 45,
+			testedSampleCount: 3,
+			azopyramResult: "negative",
+			phenolphthaleinResult: "negative",
+			detergentBrand: "Оптимакс Про 1.5%",
+			isApproved: true,
+			operatorName,
+			timestamp: new Date(now - 2 * 3600 * 1000).toISOString(),
+			sanpinClause: "СанПиН 3.3686-21 пп. 3584-3585, форма № 366/у",
+			notes: "Замковые щечки и рабочие поверхности чистые. Пробы отрицательны.",
+		},
+	];
+}
+
+
