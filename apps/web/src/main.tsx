@@ -12,11 +12,20 @@ import {
 	safeSessionStorageSetItem,
 } from "./lib/safeLocalStorage";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
-import { PublicBookingWidget } from "./pages/PublicBookingWidget";
-import { OdontogramStudioStandalone } from "./pages/OdontogramStudioStandalone";
-import { ClinicalModalsStudioStandalone } from "./pages/ClinicalModalsStudioStandalone";
-import { SttLaboratoryView } from "./pages/SttLaboratoryView";
 import { logger } from "./utils/logger";
+
+const PublicBookingWidget = React.lazy(() =>
+	import("./pages/PublicBookingWidget").then((m) => ({ default: m.PublicBookingWidget })),
+);
+const OdontogramStudioStandalone = React.lazy(() =>
+	import("./pages/OdontogramStudioStandalone").then((m) => ({ default: m.OdontogramStudioStandalone })),
+);
+const ClinicalModalsStudioStandalone = React.lazy(() =>
+	import("./pages/ClinicalModalsStudioStandalone").then((m) => ({ default: m.ClinicalModalsStudioStandalone })),
+);
+const SttLaboratoryView = React.lazy(() =>
+	import("./pages/SttLaboratoryView").then((m) => ({ default: m.SttLaboratoryView })),
+);
 // Первым: утилиты живут в каскадном слое и по правилам CSS уступают
 // любому объявлению вне слоёв, поэтому порядок импорта на них не влияет —
 // но так виднее, что это фундамент, а не переопределение.
@@ -98,13 +107,15 @@ if (publicPortalRoute) {
 	appRoot.render(
 		<React.StrictMode>
 			<BootErrorBoundary audience="public">
-				{publicPortalRoute.kind === "booking" ? (
-					<PublicBookingWidget
-						organizationId={publicPortalRoute.organizationId}
-					/>
-				) : (
-					<GuestLabPortal token={publicPortalRoute.token} />
-				)}
+				<React.Suspense fallback={null}>
+					{publicPortalRoute.kind === "booking" ? (
+						<PublicBookingWidget
+							organizationId={publicPortalRoute.organizationId}
+						/>
+					) : (
+						<GuestLabPortal token={publicPortalRoute.token} />
+					)}
+				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,
@@ -118,7 +129,9 @@ if (publicPortalRoute) {
 	appRoot.render(
 		<React.StrictMode>
 			<BootErrorBoundary audience="clinic">
-				<ClinicalModalsStudioStandalone />
+				<React.Suspense fallback={null}>
+					<ClinicalModalsStudioStandalone />
+				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,
@@ -132,7 +145,9 @@ if (publicPortalRoute) {
 	appRoot.render(
 		<React.StrictMode>
 			<BootErrorBoundary audience="clinic">
-				<OdontogramStudioStandalone />
+				<React.Suspense fallback={null}>
+					<OdontogramStudioStandalone />
+				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,
@@ -147,7 +162,9 @@ if (publicPortalRoute) {
 	appRoot.render(
 		<React.StrictMode>
 			<BootErrorBoundary audience="clinic">
-				<SttLaboratoryView />
+				<React.Suspense fallback={null}>
+					<SttLaboratoryView />
+				</React.Suspense>
 				<GlobalToast />
 			</BootErrorBoundary>
 		</React.StrictMode>,

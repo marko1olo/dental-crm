@@ -414,9 +414,16 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 		}
 	};
 
+	const volumeRef = useRef<CbctVoxelVolume | null>(null);
+	volumeRef.current = volume;
+
 	// Comprehensive unmount cleanup for offscreens, image data, and animation frames
 	useEffect(() => {
 		return () => {
+			if (volumeRef.current) {
+				disposeCbctVolume(volumeRef.current);
+				volumeRef.current = null;
+			}
 			axialOffscreenRef.current = null;
 			coronalOffscreenRef.current = null;
 			sagittalOffscreenRef.current = null;

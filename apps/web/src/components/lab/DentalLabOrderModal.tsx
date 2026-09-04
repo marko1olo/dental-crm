@@ -333,11 +333,6 @@ export function DentalLabOrderModal({
 			return;
 		}
 
-		if (selectedTeeth.length === 0) {
-			showToast("Выберите хотя бы один зуб в зубной формуле", "error");
-			return;
-		}
-
 		// Проверка финансового шлюза (50% аванс за этап)
 		// Не блокировать гарантийные переделки (0 ₽) и работы без оплаты пациентом (Мандат 8e / Без палок в колёса)
 		const isWarrantyOrder = Boolean(initialOrder?.isWarrantyRework || totalLabPriceRub === 0 || Number(priceRubInput) === 0);
@@ -348,7 +343,7 @@ export function DentalLabOrderModal({
 
 		setIsSubmitting(true);
 		try {
-			const toothFdiStr = selectedTeeth.join(", ");
+			const toothFdiStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Общий наряд / Челюсть целиком";
 			const finalShade =
 				shadeSystem === "3d_master"
 					? shade3dMaster
@@ -920,7 +915,7 @@ export function DentalLabOrderModal({
 								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{selectedTeeth.join(", ")}</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm whitespace-nowrap">{money(totalLabPriceRub)}</strong>
 							</span>
 						) : (
-							<span>Зубы не выбраны</span>
+							<span>Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">Общий наряд / Челюсть</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm whitespace-nowrap">{money(totalLabPriceRub)}</strong></span>
 						)}
 					</div>
 
@@ -936,7 +931,7 @@ export function DentalLabOrderModal({
 						<button
 							type="button"
 							onClick={() => handleSaveOrder()}
-							disabled={isSubmitting || selectedTeeth.length === 0}
+							disabled={isSubmitting}
 							className="min-h-[44px] px-4 sm:px-5 py-2.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white shadow-md shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all inline-flex items-center gap-2 cursor-pointer select-none"
 							data-testid="submit-lab-order-btn"
 						>
