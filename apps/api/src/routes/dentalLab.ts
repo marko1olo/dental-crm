@@ -126,6 +126,16 @@ export const CANONICAL_DENTAL_LAB_PRESETS = [
 
 function validateFdiToothNotation(value: string | null | undefined): boolean {
 	if (!value) return true;
+	const trimmed = value.trim();
+	if (!trimmed) return true;
+	// Разрешить общие наряды на челюсть (каппы, сплины, элайнеры, ПСПП) без привязки к одиночным зубам (Мандат 8e/8k)
+	if (
+		/^(общий|челюст|вч|нч|обе|all|general|full|none|арка|капп|сплинт)/i.test(trimmed) ||
+		trimmed.includes("Общий") ||
+		trimmed.includes("Челюсть")
+	) {
+		return true;
+	}
 	const parts = value.split(/[\s,;-]+/).filter(Boolean);
 	if (parts.length === 0) return true;
 	for (const part of parts) {
