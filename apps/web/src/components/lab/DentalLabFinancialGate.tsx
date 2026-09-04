@@ -36,6 +36,8 @@ export interface DentalLabFinancialGateProps {
 	readonly onClose?: () => void;
 	readonly patientName?: string;
 	readonly stageTitle?: string;
+	readonly doctorName?: string;
+	readonly defaultDoctorName?: string;
 	readonly defaultChiefDoctorName?: string;
 	readonly variant?: "modal" | "inline" | "banner";
 	readonly onConfirmOverride?: (override: {
@@ -55,25 +57,28 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 	onClose,
 	patientName = "Пациент",
 	stageTitle = "Ортопедический этап",
-	defaultChiefDoctorName = "Лечащий врач",
+	doctorName,
+	defaultDoctorName,
+	defaultChiefDoctorName,
 	variant = "modal",
 	onConfirmOverride,
 	onBlock,
 	onOpenInstallmentModal,
 	onAcceptAdvancePayment,
 }) => {
-	const [chiefDoctorInput, setChiefDoctorInput] = useState<string>(defaultChiefDoctorName);
-	const [overrideReason, setOverrideReason] = useState<string>(
-		"⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)",
-	);
-	const [showOverrideForm, setShowOverrideForm] = useState<boolean>(false);
+	const effectiveDoctorName =
+		doctorName ||
+		defaultDoctorName ||
+		(defaultChiefDoctorName && !defaultChiefDoctorName.includes("Смирнов А. В.")
+			? defaultChiefDoctorName
+			: "Лечащий врач");
 
 	if (!isOpen) return null;
 
 	const handleOverrideSubmit = () => {
 		const override = createDoctorClinicalOverride(
-			chiefDoctorInput || defaultChiefDoctorName || "Лечащий врач",
-			overrideReason || "⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)",
+			effectiveDoctorName,
+			"Отправить наряд в ЗТЛ — клиническое решение лечащего врача",
 		);
 		if (onConfirmOverride) {
 			onConfirmOverride(override);
@@ -101,12 +106,12 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 		if (gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" || gateResult.gateStatus === "DOCTOR_OVERRIDE") {
 			return (
 				<div
-					className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs"
+					className="flex items-center gap-2 p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-900 dark:text-teal-200 text-xs"
 					data-testid="lab-gate-banner-override"
 				>
-					<ShieldCheck size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+					<ShieldCheck size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 					<div className="flex-1 min-w-0">
-						<span className="font-bold">Разрешено лечащим врачом: </span>
+						<span className="font-bold">Клиническое решение лечащего врача: </span>
 						<span>{gateResult.overrideMeta?.doctorName} · {gateResult.overrideMeta?.reason}</span>
 					</div>
 				</div>
@@ -125,8 +130,13 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							Предупреждение: Аванс &lt; 50% ({formatKopecksRu(gateResult.totalPaidAndCoveredKopecks)} из {formatKopecksRu(gateResult.requiredAdvanceKopecks)})
 						</div>
 						<p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 mt-0.5">
-							Внесено {gateResult.paidPercent}% от стоимости этапа. Врач может отправить наряд в ЗТЛ под клиническую ответственность.
+							Внесено {gateResult.paidPercent}% от стоимости этапа. Врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Мандат 8e).
 						</p>
+						{gateResult.isPlanExpiredNotice && (
+							<p className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-0.5">
+								✓ {gateResult.isPlanExpiredNotice}
+							</p>
+						)}
 					</div>
 				</div>
 
@@ -134,20 +144,13 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 					{onConfirmOverride && (
 						<button
 							type="button"
-							onClick={() => {
-								const override = createDoctorClinicalOverride(
-									chiefDoctorInput || defaultChiefDoctorName || "Лечащий врач",
-									"⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)",
-								);
-								onConfirmOverride(override);
-								if (onClose) onClose();
-							}}
-							className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
+							onClick={handleOverrideSubmit}
+							className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer flex items-center gap-1.5"
 							data-testid="btn-lab-override-financial-gate"
-							title="Отправить наряд в ЗТЛ под клиническую автономию врача без предоплаты"
+							title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
 						>
 							<ShieldCheck size={14} />
-							<span>⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)</span>
+							<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
 						</button>
 					)}
 					{onOpenInstallmentModal && (
@@ -196,7 +199,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						}`}
 					>
 						{gateResult.gateStatus === "CLEARED" && "ОДОБРЕНО (>= 50%)"}
-						{gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" && "ОВЕРРАЙД ВРАЧА"}
+						{(gateResult.gateStatus === "CHIEF_DOCTOR_OVERRIDE" || gateResult.gateStatus === "DOCTOR_OVERRIDE") && "КЛИНИЧЕСКОЕ РЕШЕНИЕ ВРАЧА"}
 						{gateResult.gateStatus === "BLOCKED_REQUIRES_ADVANCE" && "АВАНС < 50%"}
 					</span>
 				</div>
@@ -229,20 +232,13 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 					<div className="pt-2 border-t border-[var(--border,#cbd5e1)]">
 						<button
 							type="button"
-							onClick={() => {
-								const override = createDoctorClinicalOverride(
-									chiefDoctorInput || defaultChiefDoctorName || "Лечащий врач",
-									"⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)",
-								);
-								onConfirmOverride(override);
-								if (onClose) onClose();
-							}}
-							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-xs transition cursor-pointer"
+							onClick={handleOverrideSubmit}
+							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition cursor-pointer"
 							data-testid="btn-lab-override-financial-gate"
-							title="Отправить наряд в ЗТЛ под клиническую автономию врача без предоплаты"
+							title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
 						>
 							<ShieldCheck size={15} />
-							<span>⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)</span>
+							<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
 						</button>
 					</div>
 				)}
@@ -302,7 +298,7 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 						</div>
 						<p className="text-amber-900/90 dark:text-amber-200 text-xs leading-relaxed">
 							Рекомендуемый аванс для запуска работ в ЗТЛ: <strong>{gateResult.minAdvancePercent}%</strong> (
-							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}). Врач вправе отправить заказ в лабораторию прямо сейчас в 1 клик.
+							{formatKopecksRu(gateResult.requiredAdvanceKopecks)}). Врач вправе отправить заказ в лабораторию прямо сейчас в 1 клик по клиническим показаниям.
 						</p>
 						{gateResult.isPlanExpiredNotice && (
 							<div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--teal-dark,var(--teal))] text-[11px] font-semibold leading-relaxed">
@@ -356,28 +352,28 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 					</div>
 
 					{/* Doctor Clinical Override (1-Click Autonomy) */}
-					<div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+					<div className="p-4 rounded-2xl bg-teal-500/10 border border-teal-500/30 space-y-3">
 						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-xs">
-								<Sparkles size={16} className="text-amber-600" />
+							<div className="flex items-center gap-2 text-teal-900 dark:text-teal-200 font-bold text-xs">
+								<Sparkles size={16} className="text-teal-600" />
 								<span>Клиническая автономия врача (Мандат 8e): отправка наряда без задержки</span>
 							</div>
-							<span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">
+							<span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-800 dark:text-teal-200 font-bold">
 								1 клик
 							</span>
 						</div>
-						<p className="text-[11px] text-amber-900/80 dark:text-amber-300/80 leading-relaxed m-0">
-							Врач вправе направить наряд в ЗТЛ под личную клиническую ответственность (экстренное показание, временная коронка PMMA, примерка моста) без бюрократических задержек и согласований начмеда.
+						<p className="text-[11px] text-teal-900/80 dark:text-teal-300/80 leading-relaxed m-0">
+							Врач имеет безусловное право направить наряд в ЗТЛ под личную клиническую ответственность (экстренное показание, временная коронка PMMA, примерка моста) без мастер-паролей и согласований начмедов.
 						</p>
 						<button
 							type="button"
 							onClick={handleOverrideSubmit}
-							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-500 active:scale-95 text-white shadow-sm transition cursor-pointer"
+							className="min-h-[44px] w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-teal-600 hover:bg-teal-500 active:scale-95 text-white shadow-sm transition cursor-pointer"
 							data-testid="btn-lab-override-financial-gate"
-							title="Отправить наряд в ЗТЛ под клиническую автономию врача без предоплаты"
+							title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
 						>
 							<ShieldCheck size={16} />
-							<span>⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)</span>
+							<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
 						</button>
 					</div>
 				</div>
@@ -390,28 +386,21 @@ export const DentalLabFinancialGate: React.FC<DentalLabFinancialGateProps> = ({
 							if (onBlock) onBlock();
 							if (onClose) onClose();
 						}}
-						className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-rose-600 hover:bg-rose-500/10 border border-transparent transition cursor-pointer"
+						className="min-h-[44px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/50 dark:hover:bg-slate-800 transition cursor-pointer"
 						data-testid="lab-gate-block-btn"
 					>
 						<XCircle size={15} />
-						<span>Отложить</span>
+						<span>Вернуться к редактированию</span>
 					</button>
 
 					<button
 						type="button"
-						onClick={() => {
-							const override = createDoctorClinicalOverride(
-								chiefDoctorInput || defaultChiefDoctorName || "Лечащий врач",
-								"⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)",
-							);
-							if (onConfirmOverride) onConfirmOverride(override);
-							if (onClose) onClose();
-						}}
+						onClick={handleOverrideSubmit}
 						className="min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-[var(--teal-fill,var(--teal,#0d9488))] hover:bg-[var(--teal-dark,#0f766e)] shadow-md transition cursor-pointer active:scale-95"
 						data-testid="lab-gate-direct-send-btn"
 					>
 						<Send size={15} />
-						<span>Отправить наряд в ЗТЛ (1 клик)</span>
+						<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
 					</button>
 				</div>
 			</div>

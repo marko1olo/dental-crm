@@ -400,6 +400,9 @@ export function DentalLabOrderModal({
 				frameworkTrialDate ? `Примерка каркаса: ${frameworkTrialDate}` : null,
 				ceramicTrialDate ? `Примерка керамики: ${ceramicTrialDate}` : null,
 				`Доля клиники/врача: ${clinicSharePct}% / ${doctorSharePct}% (Удержание с врача: ${money(doctorAmountRub)})`,
+				gateOverride?.authorized
+					? `Клиническое решение лечащего врача: отправка наряда в ЗТЛ согласована (${gateOverride.doctorName})`
+					: null,
 			]
 				.filter(Boolean)
 				.join("\n• ");
@@ -657,17 +660,17 @@ export function DentalLabOrderModal({
 					{/* ─── DOCTOR CLINICAL AUTONOMY OVERRIDE BANNER (Mandate 8e) ─── */}
 					{!financialGateResult.isGatePassed && !gateOverride && (
 						<div
-							className="p-3.5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+							className="p-3.5 rounded-2xl bg-teal-500/15 border-2 border-teal-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
 							data-testid="lab-order-clinical-autonomy-banner"
 						>
 							<div className="flex items-start gap-2.5 min-w-0">
-								<Sparkles size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+								<Sparkles size={18} className="text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
 								<div>
-									<div className="font-extrabold text-amber-900 dark:text-amber-200 text-xs">
+									<div className="font-extrabold text-teal-950 dark:text-teal-100 text-xs">
 										Финансовый контроль ЗТЛ: Внесено {financialGateResult.paidPercent}% (порог аванса 50%)
 									</div>
-									<div className="text-[11px] text-amber-800/90 dark:text-amber-300/90 mt-0.5">
-										Экстренное показание (временная PMMA, примерка моста). Врач может отправить заказ в 1 клик.
+									<div className="text-[11px] text-teal-900/80 dark:text-teal-300/80 mt-0.5">
+										Экстренное показание (временная PMMA, примерка моста). Врач может отправить наряд в 1 клик.
 									</div>
 									{financialGateResult.isPlanExpiredNotice && (
 										<div className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-1">
@@ -682,18 +685,30 @@ export function DentalLabOrderModal({
 								onClick={() => {
 									const override = createDoctorClinicalOverride(
 										formDoctorName || "Лечащий врач",
-										"⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)",
+										"Отправить наряд в ЗТЛ — клиническое решение лечащего врача",
 									);
 									setGateOverride(override);
-									showToast("⚡ Клиническая автономия врача: Отправка наряда без предоплаты разрешена", "success");
+									showToast(`Наряд ЗТЛ отправлен: клиническое решение лечащего врача (${override.doctorName})`, "success");
+									handleSaveOrder(undefined, true);
 								}}
-								className="min-h-[40px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
+								className="min-h-[40px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
 								data-testid="btn-lab-override-financial-gate"
-								title="Отправить наряд в ЗТЛ под клиническую автономию врача без предоплаты"
+								title="Отправить наряд в ЗТЛ — клиническое решение лечащего врача"
 							>
 								<ShieldCheck size={15} />
-								<span>⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)</span>
+								<span>Отправить наряд в ЗТЛ — клиническое решение лечащего врача</span>
 							</button>
+						</div>
+					)}
+
+					{/* ─── TREATMENT PLAN AGE SOFT NOTICE (Mandate 8e / 8n: Never blocks) ─── */}
+					{(financialGateResult.isGatePassed || Boolean(gateOverride)) && financialGateResult.isPlanExpiredNotice && (
+						<div
+							className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center gap-2.5 text-xs text-teal-800 dark:text-teal-200"
+							data-testid="lab-order-plan-expired-soft-notice"
+						>
+							<CheckCircle2 size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>{financialGateResult.isPlanExpiredNotice} (отправка наряда ЗТЛ не блокируется)</span>
 						</div>
 					)}
 
@@ -997,18 +1012,19 @@ export function DentalLabOrderModal({
 						gateResult={financialGateResult}
 						patientName={formPatientName}
 						stageTitle={`Наряд ЗТЛ: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`}
-						defaultChiefDoctorName={chiefDoctorName || "Д-р Смирнов А. В. (Главный врач)"}
+						doctorName={formDoctorName || "Лечащий врач"}
+						defaultDoctorName={formDoctorName || "Лечащий врач"}
+						defaultChiefDoctorName={chiefDoctorName || formDoctorName || "Лечащий врач"}
 						variant="modal"
 						onConfirmOverride={(override) => {
 							setGateOverride(override);
 							setIsGateModalOpen(false);
-							showToast(`Оверрайд главврача авторизован: ${override.doctorName}`, "success");
+							showToast(`Наряд ЗТЛ отправлен: клиническое решение лечащего врача (${override.doctorName})`, "success");
 							// Автоматически продолжаем сохранение наряда с оверрайдом
 							handleSaveOrder(undefined, true);
 						}}
 						onBlock={() => {
 							setIsGateModalOpen(false);
-							showToast("Отправка наряда в лабораторию заблокирована финансовым шлюзом", "warning");
 						}}
 						onOpenInstallmentModal={() => {
 							setIsGateModalOpen(false);
