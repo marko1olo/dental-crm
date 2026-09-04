@@ -119,7 +119,7 @@ export function PatientCreationModal({
 	> | null>(null);
 	const [showHints, setShowHints] = useState(false);
 	const [showDocFields, setShowDocFields] = useState(false);
-	const [isEmergencyOrPrimary, setIsEmergencyOrPrimary] = useState(false);
+	const [isEmergencyOrPrimary, setIsEmergencyOrPrimary] = useState(true);
 
 	const nameInputRef = useRef<HTMLInputElement>(null);
 

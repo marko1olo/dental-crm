@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
-import { FileEdit, ShieldCheck } from "lucide-react";
+import { FileEdit, ShieldCheck, Printer } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
+import { printPrimaryIntakePackage } from "../primaryIntakePackagePrintEngine";
 import { showToast } from "../../GlobalToast";
 import { money } from "../../../utils/financeUtils";
 import { appendChipToText } from "../documentChipText";
@@ -283,16 +284,40 @@ export const PaidServiceContractForm = React.memo(
 							оплаты и обязательных уведомлений пациента до лечения.
 						</p>
 					</div>
-					<button
-						type="button"
-						onClick={handleFillStandardContract}
-						className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
-						data-testid="btn-paid-contract-fill-norm"
-						title="1 клик: заполнить типовой договор клиники со стандартными реквизитами"
-					>
-						<ShieldCheck size={16} />
-						<span>Типовой договор (1 клик)</span>
-					</button>
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={() => {
+								printPrimaryIntakePackage({
+									patient: {
+										fullName: documentPatientFullName || "",
+									},
+									doctorFullName: activeDoctorFullName || "",
+								});
+								showToast(
+									"Бланк договора со строками «________» отправлен на печать",
+									"info",
+									3000,
+								);
+							}}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-strong)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--border,#cbd5e1)] shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							data-testid="btn-paid-contract-print-blank"
+							title="Печать пустого бланка договора со строками ________ для ручного заполнения пациентом до приёма (без 403-ошибок)"
+						>
+							<Printer size={16} />
+							<span>Бланк со строками «________»</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleFillStandardContract}
+							className="min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							data-testid="btn-paid-contract-fill-norm"
+							title="1 клик: заполнить типовой договор клиники со стандартными реквизитами"
+						>
+							<ShieldCheck size={16} />
+							<span>Типовой договор (1 клик)</span>
+						</button>
+					</div>
 				</div>
 				<PaidContractRequiredFieldsPanel
 					review={review}

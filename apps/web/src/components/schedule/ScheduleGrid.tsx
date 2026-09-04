@@ -55,6 +55,9 @@ export interface ScheduleGridProps {
 	appointmentLabels: Record<Appointment["status"], string>;
 	selectedChairId?: string | null;
 	selectedDoctorId?: string | null;
+	onAppointmentMove?:
+		| ((appointmentId: string, updates: any) => Promise<any> | void)
+		| undefined;
 }
 
 function extractTeethList(appointment: Appointment): string[] {

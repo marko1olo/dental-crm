@@ -975,9 +975,18 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						{clinicMode !== "solo_doctor" && (
 							<div>
 								<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
-									Ассистент
+									Ассистент (опционально)
 								</span>
 								<div className="flex flex-wrap gap-1.5">
+									<button
+										type="button"
+										className={`quick-chip ${!newAppointmentDraft.assistantUserId ? "active" : ""}`}
+										onClick={() =>
+											updateNewAppointmentDraft("assistantUserId", "")
+										}
+									>
+										Без ассистента
+									</button>
 									{(dashboard.clinicSettings?.staff ?? [])
 										.filter(
 											(member) => member.active && member.role === "assistant",

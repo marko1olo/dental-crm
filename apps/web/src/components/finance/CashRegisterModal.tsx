@@ -33,6 +33,7 @@ import {
 	Smartphone,
 	Sparkles,
 	Tag,
+	UserCheck,
 	Users,
 	Wallet,
 	X,
@@ -1168,6 +1169,19 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</button>
 									<button
 										type="button"
+										onClick={() => setSelectedDiscountPreset("colleague_100")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+											selectedDiscountPreset === "colleague_100"
+												? "bg-purple-600 text-white shadow-2xs ring-2 ring-purple-400"
+												: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
+										}`}
+										data-testid="btn-discount-colleague"
+									>
+										<UserCheck className="w-3.5 h-3.5 shrink-0" />
+										<span>Персонал 100%</span>
+									</button>
+									<button
+										type="button"
 										onClick={() => setSelectedDiscountPreset("manual_percent")}
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
 											selectedDiscountPreset === "manual_percent"
@@ -1189,6 +1203,19 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										</div>
 										<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">
 											ТК РФ ст. 137 / 54-ФЗ
+										</span>
+									</div>
+								)}
+
+								{/* Colleague / Staff 100% Clinical Notice Banner */}
+								{selectedDiscountPreset === "colleague_100" && (
+									<div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs flex items-center justify-between gap-2 flex-wrap" data-testid="colleague-staff-banner">
+										<div className="flex items-center gap-2 font-bold text-purple-900 dark:text-purple-200">
+											<UserCheck className="w-4 h-4 text-purple-600 shrink-0" />
+											<span>✓ Лечение персонала и коллег клиники: скидка 100% (к оплате 0 ₽, без блокировок и мастер-паролей)</span>
+										</div>
+										<span className="text-[11px] font-mono text-purple-700 dark:text-purple-300">
+											54-ФЗ / Корпоративная льгота
 										</span>
 									</div>
 								)}

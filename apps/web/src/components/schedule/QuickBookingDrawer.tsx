@@ -1527,7 +1527,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						{!isSoloDoctor && (
 							<div className="sm:col-span-2">
 								<label className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
-									Ассистент
+									Ассистент (опционально)
 								</label>
 								<select
 									value={assistantUserId}

@@ -321,7 +321,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		const success = await onSave(appointment.id, {
 			patientId,
 			doctorUserId,
-			assistantUserId: isSoloDoctor ? null : assistantUserId,
+			assistantUserId: isSoloDoctor ? null : (assistantUserId?.trim() || null),
 			chairId,
 			startsAt: startsAtIso,
 			endsAt: endsAtIso,
@@ -675,7 +675,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						{!isSoloDoctor && (
 							<div>
 								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] block mb-1.5">
-									Ассистент
+									Ассистент (опционально)
 								</label>
 								<select
 									value={assistantUserId ?? ""}
