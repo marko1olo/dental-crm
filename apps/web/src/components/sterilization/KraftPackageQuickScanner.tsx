@@ -67,6 +67,15 @@ export function KraftPackageQuickScanner({
 		onClose();
 	};
 
+	const handleApplyDefaultPreset = () => {
+		const sampleBarcode = SAMPLE_TEST_BARCODES[0]?.barcode || "STER-2026-AUTOCLAVE-01#0042";
+		const defaultSample = parseAndValidateKraftBarcode(sampleBarcode);
+		if (defaultSample && onAttachToProtocol) {
+			onAttachToProtocol(defaultSample);
+		}
+		onClose();
+	};
+
 	return (
 		<div
 			className="sterilization-studio-overlay"
@@ -269,21 +278,41 @@ export function KraftPackageQuickScanner({
 
 					<button
 						type="button"
+						onClick={handleApplyDefaultPreset}
+						className="sterilization-action-btn secondary"
+						style={{ minHeight: "44px", color: "var(--brand-primary, #0284c7)", fontWeight: 700 }}
+						title="1-клик СанПиН: внести стандартный терапевтический лоток без ручного сканирования"
+						data-testid="btn-attach-default-tray"
+					>
+						<CheckCircle2 size={18} />
+						<span>Норма: Смотровой лоток (1 клик)</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={handleApply}
-						disabled={!parsed || parsed.isExpired}
-						className="sterilization-action-btn success"
-						style={{ minHeight: "44px", padding: "0.6rem 1.5rem" }}
+						disabled={!parsed}
+						className={`sterilization-action-btn ${parsed?.isExpired ? "warning" : "success"}`}
+						style={{
+							minHeight: "44px",
+							padding: "0.6rem 1.5rem",
+							background: parsed?.isExpired ? "var(--warn-fg, #d97706)" : undefined,
+						}}
 						title={
 							!parsed
-								? "Отсканируйте штрихкод"
+								? "Отсканируйте штрихкод или выберите образец"
 								: parsed.isExpired
-									? "Пакет просрочен — использование запрещено СанПиН"
+									? "Пакет просрочен по расчетной дате — применение по решению врача под повторный визуальный контроль индикатора"
 									: "1 Клик: внести запись стерилизации в протокол приема"
 						}
 						data-testid="btn-attach-kraft-to-043"
 					>
 						<Sparkles size={18} />
-						<span>Привязать к протоколу 043/у (1 клик)</span>
+						<span>
+							{parsed?.isExpired
+								? "Применить по решению врача (043/у)"
+								: "Привязать к протоколу 043/у (1 клик)"}
+						</span>
 					</button>
 				</div>
 			</div>

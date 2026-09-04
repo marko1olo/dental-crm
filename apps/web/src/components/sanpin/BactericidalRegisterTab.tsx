@@ -5,17 +5,21 @@ import {
 	type BactericidalOperatingMode,
 	type CreateBactericidalEquipmentDto,
 	type CreateBactericidalLogEntryDto,
+	generateBactericidalJournalPrintHtml,
 } from "@dental/shared";
 import {
 	AlertTriangle,
 	CheckCircle2,
 	Clock,
 	Layers,
+	Moon,
 	Plus,
 	Printer,
 	Radio,
 	RefreshCw,
+	ShieldCheck,
 	Sparkles,
+	Sun,
 	Trash2,
 	Wind,
 	X,
@@ -361,6 +365,146 @@ export function BactericidalRegisterTab() {
 		}
 	};
 
+	const handleOpenMorningShift = async (equipmentId?: string) => {
+		try {
+			setSubmitting(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+
+			const res = await fetch("/api/registers/bactericidal/open-morning-shift", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({
+					equipmentId,
+					date: new Date().toISOString().slice(0, 10),
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				showToast(
+					data.message ||
+						"⚡ Утренняя смена открыта: бактерицидная обработка 30 мин + норма зафиксированы!",
+					"success",
+				);
+				fetchAll();
+			} else {
+				// Fallback to preShift30Min
+				await handlePreShift30Min(equipmentId);
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при открытии утренней смены", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleCloseEveningShift = async (equipmentId?: string) => {
+		try {
+			setSubmitting(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+
+			const res = await fetch("/api/registers/bactericidal/close-evening-shift", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({
+					equipmentId,
+					date: new Date().toISOString().slice(0, 10),
+					shiftHours: 6,
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				showToast(
+					data.message ||
+						"⚡ Вечерняя смена закрыта: финальная дезинфекция и наработка ламп зафиксированы!",
+					"success",
+				);
+				fetchAll();
+			} else {
+				// Fallback: standard shift autopilot
+				await handleShiftAutopilot(6);
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при закрытии вечерней смены", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handlePrintBactericidalJournal = () => {
+		if (equipments.length === 0) {
+			showToast("Нет активных облучателей для формирования журнала", "warning");
+			return;
+		}
+
+		const targetEquips = selectedEquipId === "all" ? equipments : equipments.filter((e) => e.id === selectedEquipId);
+		const targetEquip = targetEquips[0] || equipments[0];
+		const equipSessions = logs
+			.filter((l) => selectedEquipId === "all" || l.equipmentId === targetEquip.id)
+			.map((l) => {
+				const sStart = l.sessionStartTime ? new Date(l.sessionStartTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "08:00";
+				const sEnd = l.sessionEndTime ? new Date(l.sessionEndTime).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "08:30";
+				const dur = Number(l.durationMinutes) || 30;
+				return {
+					id: l.id,
+					equipmentId: targetEquip.id,
+					roomName: targetEquip.roomName,
+					deviceBrand: targetEquip.deviceBrand,
+					date: l.date || new Date().toISOString().slice(0, 10),
+					sessionStartTime: sStart,
+					sessionEndTime: sEnd,
+					durationMinutes: dur,
+					durationHours: Number((dur / 60).toFixed(2)),
+					operatingMode: (l.operatingMode as "continuous_presence" | "pre_op_preparation" | "post_cleaning" | "intermittent") || "continuous_presence",
+					cumulativeHoursAfterSession: Number(l.cumulativeHoursAfterSession) || 0,
+					operatorStaffFullName: l.operatorName || "Иванова О.С. (медсестра ЦСО)",
+					notes: l.notes || "",
+				};
+			});
+
+		const html = generateBactericidalJournalPrintHtml({
+			equipment: {
+				id: targetEquip.id,
+				roomName: targetEquip.roomName,
+				roomVolumeM3: Number(targetEquip.roomVolumeM3) || 45,
+				deviceBrand: targetEquip.deviceBrand,
+				serialNumber: targetEquip.serialNumber,
+				deviceType: (targetEquip.deviceType as "recirculator_closed" | "irradiator_open" | "combined") || "recirculator_closed",
+				lampType: targetEquip.lampType || "TUV 30W",
+				lampCount: Number(targetEquip.lampCount) || 2,
+				totalOperatingHours: Number(targetEquip.totalOperatingHours) || 0,
+				maxLampHours: Number(targetEquip.maxLampHours) || 8000,
+				remainingLampHours: Number(targetEquip.remainingLampHours) || (Number(targetEquip.maxLampHours || 8000) - Number(targetEquip.totalOperatingHours || 0)),
+				remainingLampPercent: Number(targetEquip.remainingLampPercent) || 100,
+				lampStatus: (targetEquip.lampStatus as "normal" | "warning_replace_soon" | "expired_replace_now") || "normal",
+				isLampCritical: Boolean(targetEquip.isLampCritical),
+			},
+			sessions: equipSessions,
+		});
+
+		const printWin = window.open("", "_blank");
+		if (!printWin) {
+			showToast("Разрешите всплывающие окна для печати журнала", "error");
+			return;
+		}
+		printWin.document.write(html);
+		printWin.document.close();
+		printWin.focus();
+		setTimeout(() => printWin.print(), 500);
+		showToast("Журнал бактерицидной установки сформирован с нормативными штампами!", "success");
+	};
+
 	const filteredLogs = useMemo(() => {
 		if (selectedEquipId === "all") return logs;
 		return logs.filter((l) => l.equipmentId === selectedEquipId);
@@ -425,23 +569,23 @@ export function BactericidalRegisterTab() {
 						</span>
 					</div>
 					<h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)" }}>
-						Обеззараживание воздуха кабинетов перед сменой (1 клик)
+						Дезинфекция воздуха кабинетов и учет наработки ламп (СанПиН 3.3686-21)
 					</h3>
 					<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
-						Предоперационная подготовка: включение бактерицидных облучателей и рециркуляторов на 30 минут без людей по Р 3.5.1904-04.
+						1-клик фиксация утреннего кварцевания и закрытия смены без ручных расчетов на калькуляторе.
 					</p>
 				</div>
 
 				<div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						onClick={() => handlePreShift30Min()}
+						onClick={() => handleOpenMorningShift()}
 						disabled={submitting || equipments.length === 0}
 						className="sanpin-btn touch-manipulation"
 						style={{
-							minHeight: "48px",
-							padding: "0.6rem 1.35rem",
-							fontSize: "0.92rem",
+							minHeight: "44px",
+							padding: "0.55rem 1.15rem",
+							fontSize: "0.875rem",
 							fontWeight: 800,
 							cursor: "pointer",
 							whiteSpace: "nowrap",
@@ -452,13 +596,41 @@ export function BactericidalRegisterTab() {
 							background: "var(--teal, #0d9488)",
 							color: "#ffffff",
 							border: "none",
-							boxShadow: "0 2px 10px rgba(13, 148, 136, 0.3)",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
 						}}
-						data-testid="bactericidal-banner-quick-30min-btn"
-						title="Включить все баклампы клиники на 30 мин перед сменой и зафиксировать в журнале"
+						data-testid="bactericidal-open-morning-shift-btn"
+						title="Открыть утреннюю смену (бактерицидная обработка 30 мин + норма): зафиксировать предсменное обеззараживание воздуха по СанПиН 3.3686-21 для всех аппаратов"
 					>
-						<Sparkles size={18} />
-						<span>⚡ Включить баклампу на 30 мин перед сменой</span>
+						<Sun size={17} />
+						<span>⚡ Открыть утреннюю смену (кварцевание 30 мин + норма)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => handleCloseEveningShift()}
+						disabled={submitting || equipments.length === 0}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "44px",
+							padding: "0.55rem 1.15rem",
+							fontSize: "0.875rem",
+							fontWeight: 800,
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.45rem",
+							borderRadius: "8px",
+							background: "var(--brand-primary, #0284c7)",
+							color: "#ffffff",
+							border: "none",
+							boxShadow: "0 2px 8px rgba(2, 132, 199, 0.3)",
+						}}
+						data-testid="bactericidal-close-evening-shift-btn"
+						title="Закрыть вечернюю смену (финальная дезинфекция): фиксирует дневную смену 6 ч + заключительное обеззараживание 30 мин без ручного счета"
+					>
+						<Moon size={17} />
+						<span>⚡ Закрыть вечернюю смену (финальная дезинфекция)</span>
 					</button>
 				</div>
 			</div>
@@ -472,7 +644,7 @@ export function BactericidalRegisterTab() {
 				<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						onClick={() => handlePreShift30Min()}
+						onClick={() => handleOpenMorningShift()}
 						disabled={submitting || equipments.length === 0}
 						className="sanpin-btn touch-manipulation"
 						style={{
@@ -494,12 +666,12 @@ export function BactericidalRegisterTab() {
 						title="Включить все баклампы на 30 мин перед сменой (предоперационная подготовка)"
 						data-testid="bactericidal-quick-30min-btn"
 					>
-						<Sparkles size={15} />
-						<span>⚡ Включить баклампу на 30 мин перед сменой</span>
+						<Sun size={15} />
+						<span>Утренняя смена (30 мин)</span>
 					</button>
 					<button
 						type="button"
-						onClick={() => handleShiftAutopilot(6)}
+						onClick={() => handleCloseEveningShift()}
 						disabled={submitting || equipments.length === 0}
 						className="sanpin-btn touch-manipulation"
 						style={{
@@ -518,11 +690,11 @@ export function BactericidalRegisterTab() {
 							color: "#ffffff",
 							border: "none",
 						}}
-						title="Автоматический расчет и фиксация 6-часовой рабочей смены для всех активных облучателей клиники"
+						title="Закрыть смену: автоматический расчет наработки и финальная дезинфекция"
 						data-testid="bactericidal-shift-autopilot-btn"
 					>
-						<Clock size={15} />
-						<span>Смена ламп (6 ч)</span>
+						<Moon size={15} />
+						<span>Закрыть смену (финал)</span>
 					</button>
 					<button
 						type="button"
@@ -675,7 +847,7 @@ export function BactericidalRegisterTab() {
 					</div>
 					<button
 						type="button"
-						onClick={() => window.print()}
+						onClick={handlePrintBactericidalJournal}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -690,8 +862,10 @@ export function BactericidalRegisterTab() {
 							gap: "0.35rem",
 							borderRadius: "8px",
 						}}
+						title="1-клик выгрузка официального Журнала регистрации и контроля работы бактерицидной установки со штампами по Р 3.5.1904-04 и СанПиН 3.3686-21"
+						data-testid="bactericidal-print-official-btn"
 					>
-						<Printer size={15} /> <span>Печать журнала наработки</span>
+						<Printer size={15} /> <span>Печать журнала (Р 3.5.1904-04)</span>
 					</button>
 				</div>
 				<table className="sanpin-table">

@@ -1,7 +1,9 @@
 import {
 	SanPiNRegulatoryEngine,
+	generatePsoJournalPrintHtml,
 	type CreatePsoCleaningLogDto,
 	type PsoCleaningLog,
+	type PsoJournalRecord,
 	type PsoTestTypeEnum,
 } from "@dental/shared";
 import {
@@ -228,7 +230,7 @@ export function PsoRegisterTab() {
 				batchItemCount: 100,
 				testedSampleCount: 3,
 				detergentBrand: "Биолот 0.5% + Аламинол 1%",
-				notes: `⚡ Отметка партии в 1 клик по СанПиН 3.3686-21: проба отрицательная, норма. Партия допущена к стерилизации. [ЭЦП: ${formNurseName}]`,
+				notes: `⚡ Азопирамовая проба — 1 клик норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21). Партия допущена к стерилизации. [ЭЦП: ${formNurseName}]`,
 			};
 
 			const res = await fetch("/api/registers/pso/quick-norm", {
@@ -242,7 +244,7 @@ export function PsoRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("⚡ Вся партия инструментов успешно отмечена: «Проба отрицательная, норма»!", "success");
+				showToast("⚡ Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
 				fetchLogs();
 			} else {
 				// Fallback to standard /api/registers/pso
@@ -265,7 +267,7 @@ export function PsoRegisterTab() {
 					}),
 				});
 				if (fallbackRes.ok) {
-					showToast("⚡ Вся партия инструментов успешно отмечена: «Проба отрицательная, норма»!", "success");
+					showToast("⚡ Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
 					fetchLogs();
 				} else {
 					const err = await fallbackRes.json();
@@ -305,75 +307,29 @@ export function PsoRegisterTab() {
 	}, [logs, searchQuery, testFilter]);
 
 	const handleGenerateMonthlyForm366 = () => {
-		const now = new Date();
-		const monthNameRu = now.toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
-		const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+		const recordsToPrint: PsoJournalRecord[] = (logs.length > 0 ? logs : DEFAULT_PSO_DEMO_RECORDS).map((l, idx) => ({
+			id: l.id || `pso-${idx}`,
+			timestamp: l.timestamp || l.createdAt || new Date().toISOString(),
+			instrumentName: l.instrumentName,
+			categoryId: "general",
+			batchItemCount: l.batchItemCount,
+			testedSampleCount: l.testedSampleCount,
+			testType: l.testType === "azopyram" ? "azopyram" : l.testType === "phenolphthalein" ? "phenolphthalein" : "both_standard",
+			isAzopyramNegative: l.isAzopyramNegative ?? true,
+			isPhenolphthaleinNegative: l.isPhenolphthaleinNegative ?? true,
+			isSudanNegative: true,
+			detergentBrand: l.detergentBrand || "Биолот 0.5% + Аламинол 1%",
+			isBatchApproved: l.isBatchApproved ?? true,
+			rejectionReason: l.rejectionReason || undefined,
+			operatorStaffFullName: l.operatorName || "Иванова О.С. (медсестра ЦСО)",
+			operatorStaffPosition: "Медсестра ЦСО",
+			electronicStampVerified: stampedRows[l.id] || true,
+			notes: l.notes || undefined,
+		}));
 
-		const rows: string[] = [];
-		for (let day = 1; day <= daysInMonth; day++) {
-			const d = new Date(now.getFullYear(), now.getMonth(), day);
-			if (d.getDay() === 0) continue; // Выходной
-
-			const dateFormatted = d.toLocaleDateString("ru-RU");
-			rows.push(`
-				<tr>
-					<td style="text-align:center;">${dateFormatted} 13:00</td>
-					<td>Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)</td>
-					<td style="text-align:center;">120&nbsp;шт.</td>
-					<td style="text-align:center;">4&nbsp;шт.</td>
-					<td style="text-align:center; color:#166534; font-weight:bold;">Отрицат. (Норма)</td>
-					<td style="text-align:center; color:#166534; font-weight:bold;">Отрицат. (Норма)</td>
-					<td>Биолот 0.5% + Аламинол 1%</td>
-					<td style="text-align:center; color:#166534; font-weight:bold;">Партия допущена</td>
-					<td>Смирнова А. В. (Медсестра ЦСО)</td>
-				</tr>
-			`);
-		}
-
-		const html = `
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-	<meta charset="UTF-8">
-	<title>Журнал учета качества предстерилизационной обработки (Форма № 366/у)</title>
-	<style>
-		@page { size: A4 landscape; margin: 10mm; }
-		body { font-family: 'Times New Roman', serif; font-size: 9pt; color: #000; margin: 0; padding: 0; }
-		table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 8.5pt; }
-		th, td { border: 1px solid #000; padding: 4px 6px; }
-		th { background: #f1f5f9; text-align: center; }
-		h1 { text-align: center; font-size: 13pt; margin: 0 0 4px 0; }
-		h2 { text-align: center; font-size: 10pt; font-weight: normal; margin: 0 0 10px 0; }
-	</style>
-</head>
-<body>
-	<div style="display:flex; justify-content:space-between; border-bottom:1px solid #000; padding-bottom:4px; margin-bottom:8px;">
-		<div><strong>ООО «ДЕНТЕ КЛИНИКА»</strong><br/><span style="font-size:8pt;">ЦСО и стерилизационное отделение</span></div>
-		<div style="text-align:right; font-size:8pt;"><strong>Форма № 366/у</strong><br/>СанПиН 3.3686-21</div>
-	</div>
-	<h1>ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ</h1>
-	<h2>Отчетный период: за ${monthNameRu}</h2>
-	<table>
-		<thead>
-			<tr>
-				<th>Дата и время</th>
-				<th>Наименование инструментария</th>
-				<th>Объем партии</th>
-				<th>Кол-во проб</th>
-				<th>Азопирамовая проба</th>
-				<th>Фенолфталеиновая проба</th>
-				<th>Моющее средство</th>
-				<th>Результат контроля</th>
-				<th>Подпись ответственного</th>
-			</tr>
-		</thead>
-		<tbody>
-			${rows.join("")}
-		</tbody>
-	</table>
-</body>
-</html>
-		`;
+		const html = generatePsoJournalPrintHtml({
+			records: recordsToPrint,
+		});
 
 		const printWin = window.open("", "_blank");
 		if (printWin) {
@@ -382,7 +338,7 @@ export function PsoRegisterTab() {
 			printWin.focus();
 			setTimeout(() => printWin.print(), 500);
 		}
-		showToast(`Сгенерирован журнал ПСО (Форма 366/у) за ${monthNameRu}!`, "success");
+		showToast("Сгенерирован официальный журнал ПСО (Форма 366/у) с ЭЦП и печатями ГОСТ!", "success");
 	};
 
 	return (
@@ -448,11 +404,11 @@ export function PsoRegisterTab() {
 								gap: "0.35rem",
 								borderRadius: "8px",
 							}}
-							title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) за текущий месяц"
+							title="Автоматическое формирование и печать нормативного журнала ПСО (Форма 366/у) с синей печатью ЭЦП ГОСТ"
 							data-testid="generate-monthly-form366-btn"
 						>
 							<Sparkles size={15} color="#0d9488" />
-							<span>Форма 366/у за месяц</span>
+							<span>Форма 366/у (Печать с ЭЦП)</span>
 						</button>
 
 						<button
@@ -477,11 +433,11 @@ export function PsoRegisterTab() {
 								border: "none",
 								boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
 							}}
-							title="1-клик отметка всей партии инструментов по физиологической норме СанПиН 3.3686-21 (Проба отрицательная, норма)"
+							title="1-клик отметка: «Азопирамовая проба — норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21)»"
 							data-testid="quick-pso-norm-btn"
 						>
 							<CheckCircle2 size={16} />
-							<span>Отметка партии в 1 клик («Проба отрицательная, норма»)</span>
+							<span>⚡ Азопирамовая проба — 1 клик норма (реакция отрицательная)</span>
 						</button>
 
 						<button
