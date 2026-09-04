@@ -1,17 +1,26 @@
 # 🏛️ DENTAL CRM (DENTE) — ПОЛНАЯ АРХИТЕКТУРНАЯ СПЕЦИФИКАЦИЯ И РЕЕСТР ТЕХНОЛОГИЧЕСКОГО ДОЛГА
 
-**Версия документа:** 2.0.0 (Deep Industrial Specification)  
-**Дата аудита:** Август 2026  
-**Ревизия репозитория:** `5687d73d9c6bce33105287b06cb551cb1bbedf95`  
-**Масштаб:** 1 101 файл, 20 771 279 байт (~20.8 МБ) исходного кода  
+> **Навигационный блок:**<br/>
+> 🗺️ **[Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**<br/>
+> 🏗️ **[Архитектура Системы (ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | **[docs/ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)**<br/>
+> 📚 **[База Знаний и Документация (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**<br/>
+> 🗄️ **[Реестр Базы Данных (DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**<br/>
+> ⚠️ **[Высшая Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
+
+**Версия документа:** 2.1.0 (Deep Industrial Specification)<br/>
+**Дата актуализации:** Сентябрь 2026<br/>
+**Среда исполнения:** React 19 (`@dental/web`), Node Fastify v5 (`@dental/api`), Native PostgreSQL 18.4 (`127.0.0.1:5432`, `.data/pg18`), WebWorker 3D MPR (`mprWorker.ts`), 3-уровневые планы лечения (`treatmentPlanEngine.ts`)<br/>
 
 ---
 
 ## 1. ИСПОЛНИТЕЛЬНОЕ РЕЗЮМЕ И СИСТЕМНЫЙ СРЕЗ
 
-Система **DENTE Dental CRM** — это многопользовательская облачно-локальная медицинская платформа (Fastify + React + PostgreSQL 18 + Drizzle ORM). В системе реализованы надежные финансовые и юридические алгоритмы (целочисленный расчет в копейках по 54-ФЗ, ФФД 1.2, справки НДФЛ КНД 1151156 XML 5.01, электронная подпись 043/у с детерминированным SHA-256 хешем и GiST-блокировки слотов расписания).
-
-Однако монолитный рост слоев `apps/web` и `apps/api` привел к возникновению критических архитектурных узлов, замедляющих разработку и создающих риски сбоев.
+Система **DENTE Dental CRM** — это многопользовательская облачно-локальная медицинская платформа (Fastify v5 + React 19 + PostgreSQL 18.4 + Drizzle ORM). В системе реализованы надежные финансовые и клинические алгоритмы:
+- Целочисленный расчет в копейках по 54-ФЗ, ФФД 1.2, справки НДФЛ КНД 1151156 XML 5.01;
+- Электронная подпись 043/у с детерминированным SHA-256 хешем и версионным аудитом («Исправленному верить»);
+- 3-уровневое планирование лечения (`treatmentPlanEngine.ts`): Эконом, Оптимум (рекомендованный), Премиум с калькулятором рассрочки и мобильным Segmented Control;
+- Клиентский 3D MPR движок КЛКТ в WebWorker (`mprWorker.ts`, `mprMath.ts`) с zero-copy передачей пиксельных буферов `Float32Array` в UI-поток и поддержкой WebGL / Cornerstone3D;
+- GiST-блокировки слотов расписания и multi-tenant изоляция через `withTenantCtx` и Row-Level Security (RLS).
 
 ---
 
@@ -57,9 +66,9 @@ apps/web/src/hooks/domains/
 
 ## 3. ГЛУБОКАЯ ДЕКОМПОЗИЦИЯ И АНАТОМИЯ BACKEND
 
-### 3.1. Карта доменного разделения схемы БД (`apps/api/src/db/schema.ts` — 5 000+ строк)
+### 3.1. Доменное разделение схемы БД (`apps/api/src/db/schema/` — РЕАЛИЗОВАНО В PRODUCTION)
 
-Схема базы данных разделяется на 10 строго типизированных файлов с единой точкой входа `apps/api/src/db/schema/index.ts`:
+Монолитный `schema.ts` был успешно декомпозирован на **20 модульных доменных файлов** в директории `apps/api/src/db/schema/`, а корневой `apps/api/src/db/schema.ts` стал 7-строчным реэкспорт-прокси (`export * from "./schema/index.js"`), сохраняющим 100% обратную совместимость:
 
 ```
 apps/api/src/db/schema/
@@ -73,6 +82,8 @@ apps/api/src/db/schema/
   ├── imaging.ts            # imagingStudies, dicomSeries, visiographSnapshots, ctVolumes
   ├── inventory.ts          # inventoryItems, inventoryBatches, materialDeductionRules, stockMovements
   ├── communications.ts     # uisCalls, telegramChats, chatMessages, messageTemplates, taskQueue
+  ├── sanpin.ts             # sterilizationLogs, autoclaveCycles, azopyramTests
+  ├── outpatientCore.ts     # outpatientCards, medicalHistoryRecords, somaticStatus
   └── system.ts             # system_background_jobs, fiscal_receipt_queue, audit_logs
 ```
 
@@ -127,4 +138,4 @@ CREATE INDEX idx_fiscal_queue_org_status ON fiscal_receipt_queue (organization_i
 | **Звуковые уведомления (#49)** | Хук написан, но не смонтирован в UI | Встроенные сигналы окончания приема и онлайн-заявок | Только системные пуши Windows | Подключение хука в `useAppLogic` + тумблер в настройках профиля |
 | **ККТ 54-ФЗ печать** | Серверная фискализация без оффлайн-буфера ККТ | Локальный агент печати на кассовом ПК | Веб-сервер Атол | Персистентная очередь `fiscal_receipt_queue` с авто-повтором |
 | **Фоновые бэкапы/аналитика** | In-process `setInterval` в Node.js | Служба Windows Service | Windows Scheduler / Cron | PostgreSQL-backed Queue (`system_background_jobs`) |
-| **3D КЛКТ / MPR** | Стековый 2D визиограф + проксирование на OHIF | Встроенный 3D DICOM модуль (DirectX/OpenGL) | Интеграция с EzDent-i / Planmeca | Нативный клиентский WebGL MPR вьюер на базе Cornerstone3D |
+| **3D КЛКТ / MPR** | Нативный клиентский WebWorker 3D MPR (`mprWorker.ts`, `mprMath.ts`) + Cornerstone3D + WebGL (РЕАЛИЗОВАНО В PRODUCTION) | Встроенный 3D DICOM модуль (DirectX/OpenGL) | Интеграция с EzDent-i / Planmeca | Полноценный мультипланарный комплекс (Axial, Coronal, Sagittal, Panorama + Cross-Sections) с zero-copy Float32Array буферами |

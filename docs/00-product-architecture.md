@@ -1,3 +1,14 @@
+# 🏛️ DENTE Dental CRM — Product Architecture
+
+> **Ключевые ссылки навигации:**<br/>
+> 🗺️ **Главный Индекс Документации:** **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**<br/>
+> 🏗️ **Архитектура Системы:** **[.agents/ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | **[docs/ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)**<br/>
+> 📚 **База Знаний и Документация:** **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**<br/>
+> 🗄️ **Реестр Базы Данных:** **[.agents/DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**<br/>
+> ⚠️ **Высшая Конституция (THE HAMMER):** **[.agents/THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
+
+---
+
 ## Competitive Parity & Audit Suite
 
 For full feature parity maps, 63-feature competitor matrix (IDENT, DentalPRO, iStom), PostgreSQL schemas, API route registries, and implementation options, see:
@@ -32,17 +43,17 @@ PWA rule:
 - do not cache `/api/*` medical responses in the service worker;
 - local offline queues are temporary continuity tools until encrypted storage, conflict resolution UI, auth, and deployment-grade backups exist.
 
-## Why This Stack
+## Production Technology Stack
 
-Recommended initial stack:
-- Web app: React + Vite + TypeScript.
-- API: TypeScript + Fastify.
-- Database: PostgreSQL.
-- ORM/migrations: Drizzle ORM.
-- Background jobs: BullMQ + Redis, or Postgres queue for MVP.
-- Documents: template-driven HTML -> PDF generation.
-- AI worker: separate Python or TypeScript service behind a job interface.
-- Deployment: Docker Compose first, then managed VPS/cloud.
+Active Production Stack (React 19, Node Fastify, PostgreSQL 18.4, WebWorker 3D MPR):
+- **Web App:** React 19 (`@dental/web`, React 19.2+) + Vite 6 + TypeScript 5.8+ + Tailwind CSS v4 + Vanilla Design Tokens (`var(--paper)`, `var(--paper-strong)`, `var(--ink)`).
+- **Backend API:** Fastify v5 (`@dental/api`, Fastify 5.3+) + TypeScript 5.8+ + Node.js 22+.
+- **Database Engine:** Native PostgreSQL 18.4 on `127.0.0.1:5432` (Data directory `.data/pg18`, pool via `pg.Pool`). Multi-tenant Row-Level Security (RLS) with `withTenantCtx` AsyncLocalStorage. PGlite is NOT installed.
+- **ORM & Migrations:** Drizzle ORM (v0.45+) with 20 modular domain schemas under `apps/api/src/db/schema/` and backward-compatible proxy `apps/api/src/db/schema.ts`.
+- **3D CBCT & DICOM MPR Hub:** Off-thread WebWorker (`apps/web/src/mprWorker.ts`, `mprMath.ts`) with zero-copy `Transferable ArrayBuffer` (`Float32Array`) slice generation, Cornerstone3D (`@cornerstonejs/core` v5.1+), and WebGL 2.0 / Canvas 2D multi-planar rendering.
+- **3-Tier Treatment Planning:** Multi-tier parallel clinical plans (`packages/shared/src/treatment-plans/treatmentPlanEngine.ts`) with Economy, Optimum (Recommended), and Premium/VIP tiers, 3 clinical stages, strict penny-exact kopeck balancing, installments, and mobile Segmented Control (`[ Эконом | ★ Оптимум | Премиум ]`).
+- **Clinical & Legal Documents:** Template-driven HTML -> Headless Chromium/Edge PDF export with deterministic SHA-256 integrity signatures and Mandate 8e draft watermarks.
+- **Real-Time Layer:** WebSocket Broker (`apps/api/src/services/websocketBroker.ts`) with typed clinical events, queue updates, and softphone signaling.
 
 Rejected for initial build:
 - Pure local desktop app: bad for phones, backups, remote access, and SaaS migration.
@@ -155,7 +166,11 @@ MVP must support one small dental cabinet with laptop + phones:
 4. Payments and documents
 - service catalog;
 - treatment plan line items linked to patient, visit, service, tooth, doctor, and chair;
-- treatment plan scenarios: urgent minimum, standard plan, optimal plan, phased/maintenance plan;
+- 3-tier parallel clinical plans: Economy (базовый), Optimum (рекомендованный баланс цена/качество/долговечность), Premium / VIP (максимальная эстетика и расширенная гарантия) с гарантией целочисленных расчетов в копейках без ошибок округления;
+- 3 клинических этапа лечения (1. Неотложная помощь и терапевтическая санация -> 2. Хирургия и имплантация -> 3. Ортопедия и эстетическая реабилитация);
+- мобильная эргономика через нативный Segmented Control `[ Эконом | ★ Оптимум | Премиум ]`, исключающий 2500px скролл-туннели (Мандат THE HAMMER §VI.3);
+- калькулятор рассрочки на 3, 6, 12, 24 месяца с точным ежемесячным взносом;
+- разделение стоимости на работу врача и материалы клиники (`splitLaborAndMaterials`);
 - scenario phases with amount, time window, focus, clinical pros, tradeoffs, and warnings;
 - service price list analysis for copied tables/OCR/photo text, including materials, brands, crown/restoration types, units, confidence, and review warnings before catalog mapping;
 - invoice/payment records;
@@ -185,7 +200,7 @@ MVP must support one small dental cabinet with laptop + phones:
 - local bridge use-plans run through `/api/system/local-bridges/use-plans`, converting bridge readiness into safe current paths for CBCT/MPR and imaging import: local worker, external viewer, metadata preview, or manual review;
 - dedicated Imaging page for patient image review, with the Shift screen reduced to counts and a fast entry point instead of a heavy viewer;
 - lightweight 2D viewer controls for rotate, flip, invert, brightness, contrast, zoom, and reset in the Imaging page;
-- CBCT/CT must be a separate DICOMweb/Cornerstone/OHIF-quality module with series loading, 3-plane MPR, oblique axes, panoramic reconstruction from CBCT, slice scroll, window/level presets, measurement/export tooling, resource policy, slice caps, cache, and external viewer handoff. The doctor-facing Imaging page may expose CBCT-only MPR controls, but it must not fake a volume as one flat image.
+- CBCT/CT 3D MPR client-side engine: выделенный фоновый WebWorker (`apps/web/src/mprWorker.ts`, `mprMath.ts`) с zero-copy передачей `Float32Array` буферов в главный поток, 3-плоскостная ортогональная MPR (Axial, Coronal, Sagittal), косые срезы (Oblique), криволинейная панорамная реконструкция зубной дуги (Catmull-Rom центростремительный сплайн) и поперечные кросс-секции зубов, пресеты окон Хаунсфилда (HU: кость D1–D4, мягкие ткани, эмаль, синус, нерв), измерительные калибры, интеграция Cornerstone3D (`@cornerstonejs/core`) и WebGL, без фризов пользовательского интерфейса.
 - read-only price-list analyzer that turns old clinic price sheets and price-list photos into reviewed service catalog candidates before any database write;
 - import preview before commit;
 - source-system mapping presets later.

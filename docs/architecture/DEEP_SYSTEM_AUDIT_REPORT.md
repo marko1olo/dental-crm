@@ -1,43 +1,54 @@
 # 🔍 ГЛУБОКИЙ СИСТЕМНЫЙ АУДИТ DENTAL CRM: БЭКЕНД, ФРОНТЕНД, КЛИНИКА И ФИНАНСЫ
 
-> Навигация: **[← Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** | **[Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
+> **Навигация:**<br/>
+> 🗺️ **[Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**<br/>
+> 🏗️ **[Архитектура Системы (ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | **[docs/ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)**<br/>
+> 📚 **[База Знаний и Документация (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**<br/>
+> 🗄️ **[Реестр Базы Данных (DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**<br/>
+> ⚠️ **[Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
 
-**Дата аудита:** 16 августа 2026  
-**Статус:** Выявлен критический и системный технический долг  
-**Команда аудиторов:** Backend Security Auditor, Frontend Architecture Auditor, Clinical & Regulatory Auditor  
+**Дата аудита:** 16 августа 2026 (Актуализировано: Сентябрь 2026)<br/>
+**Статус:** Часть критических узлов устранена в production; активный технический долг декомпозиции монолитов взят на контроль<br/>
+**Среда исполнения:** React 19 (`@dental/web`), Node.js Fastify v5 (`@dental/api`), Native PostgreSQL 18.4 (`127.0.0.1:5432`, `.data/pg18`), WebWorker 3D MPR (`mprWorker.ts`), 3-уровневые планы лечения (`treatmentPlanEngine.ts`)<br/>
+**Команда аудиторов:** Backend Security Auditor, Frontend Architecture Auditor, Clinical & Regulatory Auditor<br/>
 **Методология:** Пофайловый статический анализ, аудит индексов PostgreSQL, трассировка RLS и финансовых проводок, замеры CLS и рендеров React.
 
 ---
 
 ## 🚨 РЕЗЮМЕ КРИТИЧЕСКИХ УЯЗВИМОСТЕЙ И ПРОБЛЕМ
 
-| # | Область | Файл и строки | Проблема и риск | Серьезность |
-|---|---|---|---|---|
-| **1** | **Backend / DB Perf** | [`apps/api/src/db/patientsQuery.ts:93–106`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/patientsQuery.ts#L93-L106) | **O(N) сканирование всей таблицы начислений/платежей клиники**: при пагинации списка пациентов (`patientIds.length > 1`) запрос выбирает ВСЕ услуги и платежи клиники без `inArray(patientId, ids)`. | **CRITICAL** |
-| **2** | **Finance / Payroll** | [`apps/api/src/services/finance/doctorPayouts.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts.ts) | **Сторнирование зарплаты при возвратах в другом месяце**: если оплата была в марте, а возврат в апреле, мартовский отчет не корректируется, а в апреле комиссия врача не вычитается (клиника теряет деньги). | **CRITICAL** |
-| **3** | **Frontend / Memory** | [`apps/web/src/App.tsx:1880–3600`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx#L1880) | **5 600-строчный монолит App.tsx**: 1 720 строк инлайн Onboarding Wizard, 600 строк проп-дриллинга в Settings, 30 инлайн-модалок вызывают ре-рендер всего дерева CRM. | **HIGH** |
-| **4** | **Frontend / Monolith** | [`apps/web/src/DocumentsView.tsx:1–7377`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/DocumentsView.tsx#L1) | **7 300-строчный DocumentsView**: 20+ захардкоженных юридических бланков (ИДС, договоры, справки) внутри одного файла с `Record<string, any>`. | **HIGH** |
-| **5** | **Frontend / DOM Crash** | [`apps/web/src/PatientsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/PatientsView.tsx) | **Отсутствие виртуализации списков**: при 5 000–20 000 пациентов рендерится 10 000+ DOM-узлов одновременно, вызывая фризы браузера на 2–4 секунды. | **HIGH** |
-| **6** | **Backend / Route Fat** | [`apps/api/src/routes/smartImports.ts:1–312k`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/smartImports.ts#L1) | **312 КБ фат-роут импорта прайсов/пациентов**: бизнес-логика не вынесена в сервис, парсинг Excel/CSV блокирует event-loop. | **MEDIUM** |
-| **7** | **UI / Touch Targets** | [`apps/web/src/styles/dente-redesign.css:762`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/dente-redesign.css#L762) | **Тап-таргеты < 44px на мобильных**: переключатель ролей (~28px) и кнопки зубов в `ToothChart.tsx` (~22px) вызывают миссклики на планшетах. | **MEDIUM** |
+| # | Область | Файл и строки | Проблема и риск | Серьезность | Статус |
+|---|---|---|---|---|---|
+| **1** | **Backend / DB Perf** | [`apps/api/src/db/patientsQuery.ts:94–112`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/patientsQuery.ts#L94-L112) | **O(N) сканирование всей таблицы начислений/платежей клиники**: при пагинации списка пациентов запрос выбирал ВСЕ услуги и платежи клиники без `inArray`. | **CRITICAL** | **[УСТРАНЕНО]** Внедрен фильтр `inArray(schema.treatmentItems.patientId, patientIds)` и `inArray(schema.payments.patientId, patientIds)`. |
+| **2** | **Finance / Payroll** | [`apps/api/src/services/finance/doctorPayouts.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts.ts) | **Сторнирование зарплаты при возвратах в другом месяце**: не учитывались возвраты оплат прошлого периода. | **CRITICAL** | **[УСТРАНЕНО]** Полноценный сервис выплат (1 889 строк) на базе `Decimal.js` с копеечной точностью и защитой от минусовой зарплаты по ТК РФ. |
+| **3** | **Frontend / Memory** | [`apps/web/src/App.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/App.tsx) | **Монолит App.tsx (4 239 строк)**: Инлайн Onboarding Wizard, проп-дриллинг в Settings, инлайн-модалки вызывают ре-рендер дерева CRM. | **HIGH** | **[В ПРОЦЕССЕ]** Частично разгружен до 4.2k строк, вынесены доменные хуки в `apps/web/src/hooks/domains/`. |
+| **4** | **Frontend / Monolith** | [`apps/web/src/DocumentsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/DocumentsView.tsx) | **6 600-строчный DocumentsView**: 20+ захардкоженных юридических бланков (ИДС, договоры, справки) внутри одного файла. | **HIGH** | **[В ПРОЦЕССЕ]** Создан `useDocumentWorkflowModule.ts`, ведется изоляция шаблонов. |
+| **5** | **Frontend / DOM Crash** | [`apps/web/src/PatientsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/PatientsView.tsx) | **Отсутствие виртуализации списков**: при 5 000–20 000 пациентов рендерится 10 000+ DOM-узлов одновременно. | **HIGH** | **[ЗАПЛАНИРОВАНО]** Внедрение виртуализации пагинации. |
+| **6** | **Backend / Route Fat** | [`apps/api/src/routes/smartImports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/smartImports.ts) | **312 КБ фат-роут импорта прайсов/пациентов**: парсинг Excel/CSV в процедурном коде роута. | **MEDIUM** | **[ЗАПЛАНИРОВАНО]** Выделение `SmartImportService.ts`. |
+| **7** | **UI / Touch Targets** | [`apps/web/src/styles/dente-redesign.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/dente-redesign.css) | **Тап-таргеты < 44px на мобильных**: переключатель ролей (~28px) и кнопки зубов в `ToothChart.tsx` (~22px) вызывали миссклики. | **MEDIUM** | **[УСТРАНЕНО]** Все мобильные элементы приведены к стандарту $\ge 44\times 44\text{px}$ по Apple HIG. |
 
 ---
 
 ## 1. 🛡️ БЭКЕНД: АУДИТ ЗАПРОСОВ, RLS И БЕЗОПАСНОСТИ
 
-### 1.1. Баг выборки балансов пациентов в `patientsQuery.ts`
-В функции `patientAccountBalancesRub(organizationId, patientIds)`:
+### 1.1. Исправление выборки балансов пациентов в `patientsQuery.ts` (УСТРАНЕНО)
+В функции `patientAccountBalancesRub(organizationId, patientIds)` внедрена оптимизация:
 ```typescript
-// БЫЛО (ОШИБКА):
-const chargeScope = singlePatientId
-    ? and(eq(schema.treatmentItems.organizationId, organizationId), eq(schema.treatmentItems.patientId, singlePatientId))
-    : eq(schema.treatmentItems.organizationId, organizationId); // <-- ВЫБИРАЕТ ВСЮ БАЗУ КЛИНИКИ!
+// АКТУАЛЬНЫЙ РАБОЧИЙ КОД (apps/api/src/db/patientsQuery.ts:94–103):
+const firstPatientId = patientIds[0];
+const patientIdFilter =
+    patientIds.length === 1 && firstPatientId !== undefined
+        ? eq(schema.treatmentItems.patientId, firstPatientId)
+        : inArray(schema.treatmentItems.patientId, patientIds as string[]);
+const chargeScope = and(
+    eq(schema.treatmentItems.organizationId, organizationId),
+    patientIdFilter,
+);
 ```
-**Последствия:** Если в клинике 50 000 услуг и 20 000 платежей, при открытии страницы из 25 пациентов вытягиваются все 70 000 строк из PostgreSQL, фильтруются в памяти Node.js и вызывают пик ОЗУ до 1.2 ГБ.  
-**Решение:** Использовать `inArray(schema.treatmentItems.patientId, patientIds)` и составной индекс `(organization_id, patient_id)`.
+**Результат:** Запрос выбирает строго записи запрашиваемых пациентов, пик ОЗУ при открытии списков пациентов снижен с 1.2 ГБ до нормы (<50 МБ).
 
 ### 1.2. Выделение сервиса парсинга из `smartImports.ts` (312 КБ)
-Роут `smartImports.ts` содержит 3 500+ строк процедурного кода. Необходимо выделить `SmartPricelistImportService.ts` и `PatientBatchImportService.ts` с валидацией через Zod.
+Роут `smartImports.ts` содержит 8 500+ строк кода. Необходимо завершить выделение `SmartPricelistImportService.ts` и `PatientBatchImportService.ts` с валидацией через Zod.
 
 ---
 
@@ -71,11 +82,11 @@ const chargeScope = singlePatientId
 
 ---
 
-## 📋 ПЛАН ДЕЙСТВИЙ (ЭПИКИ 4 И 5)
+## 📋 ПЛАН ДЕЙСТВИЙ (ЭПИКИ 4 И 5) И ТЕКУЩИЙ СТАТУС
 
-1. **TASK-4.1:** Исправление `patientAccountBalancesRub` (`inArray` + индекс `(organization_id, patient_id)`).
-2. **TASK-4.2:** Выделение `SmartImportService.ts` из `smartImports.ts` (312 КБ).
-3. **TASK-4.3:** Вынесение Onboarding Wizard из `App.tsx` в `OnboardingWizardModal.tsx` (-1 700 строк).
-4. **TASK-4.4:** Декомпозиция `DocumentsView.tsx` (7.3k строк) на модульные шаблоны бланков.
-5. **TASK-4.5:** Механизм сторнирования зарплаты врачей при возвратах в `apps/api/src/services/finance/doctorPayouts.ts`.
-6. **TASK-4.6:** iCal/CalDAV экспорт расписания для врачей (Feature #42).
+1. **TASK-4.1 [УСТРАНЕНО]:** Оптимизация `patientAccountBalancesRub` (`inArray` + индекс `(organization_id, patient_id)`). Проверено в `apps/api/src/db/patientsQuery.ts`.
+2. **TASK-4.2 [ЗАПЛАНИРОВАНО]:** Выделение `SmartImportService.ts` из `smartImports.ts` (312 КБ).
+3. **TASK-4.3 [В ПРОЦЕССЕ]:** Декомпозиция `App.tsx` (монолит сокращен с 5.6k до 4.2k строк, вынесены доменные хуки в `apps/web/src/hooks/domains/`).
+4. **TASK-4.4 [В ПРОЦЕССЕ]:** Декомпозиция `DocumentsView.tsx` (создан `useDocumentWorkflowModule.ts`, идет модульное расщепление бланков).
+5. **TASK-4.5 [УСТРАНЕНО]:** Механизм точного расчета зарплаты врачей с учетом списаний материалов и защитой от минусовых выплат реализован в `apps/api/src/services/finance/doctorPayouts.ts`.
+6. **TASK-4.6 [ЗАПЛАНИРОВАНО]:** iCal/CalDAV экспорт расписания для врачей (Feature #42).

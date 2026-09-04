@@ -1,9 +1,15 @@
 # 🦷 DENTAL CRM (DENTE) — АРХИТЕКТУРНАЯ И ИНЖЕНЕРНАЯ СПЕЦИФИКАЦИЯ КЛИЕНТСКОГО WEBGL 3D MPR И CBCT ДВИЖКА
 
-**Версия документа:** 1.0.0 (Industrial Grade Specification)  
-**Статус:** Утверждено к реализации (Task TASK-3.4 / Epic-3)  
-**Ревизия проекта:** `5687d73d9c6bce33105287b06cb551cb1bbedf95`  
-**Целевая среда:** WebGL 2.0 / Three.js r160+ / Web Workers / TypeScript 5.5+  
+> **Навигационный блок:**<br/>
+> 🗺️ **[Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**<br/>
+> 🏗️ **[Архитектура Системы (ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** | **[docs/ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)**<br/>
+> 📚 **[База Знаний и Документация (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**<br/>
+> 🗄️ **[Реестр Базы Данных (DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**<br/>
+> ⚠️ **[Высшая Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
+
+**Версия документа:** 2.1.0 (Production Implementation Specification)<br/>
+**Статус:** Реализовано в production (WebWorker MPR + Cornerstone3D + WebGL)<br/>
+**Целевая среда:** React 19 (`@dental/web`), TypeScript 5.8+, Web Worker (`DedicatedWorkerGlobalScope`), Cornerstone3D v5.1+, WebGL 2.0, gl-matrix v3.4+<br/>
 
 ---
 
@@ -15,10 +21,11 @@
 - Эндодонтического анализа (поиск дополнительных каналов MB2, апикальных периодонтитов, резорбций).
 - Челюстно-лицевой хирургии и ортодонтии (ретенированные зубы, расщелины, кортикальные перфорации).
 
-Исторически DENTE CRM опиралась на проксирование внешних тяжелых PACS/OHIF серверов либо на 2D-визиографический просмотр. Настоящая спецификация формализует архитектуру **нативного клиентского 3D MPR движка** прямо в браузере врача:
-1. **Zero-Server GPU Compute:** Все тяжелые вычисления (Direct Volume Rendering / Raymarching, трилинейная интерполяция, криволинейная реконструкция ОПТГ, кросс-секции) выполняются на GPU рабочей станции врача через WebGL 2.0 (Three.js ShaderMaterial).
-2. **Нулевая задержка (60 FPS):** Интерактивное позиционирование имплантатов (3D STL overlay), поворот плоскостей сечения и регулировка окна плотности (Hounsfield Units / HU) происходят без сетевых задержек.
-3. **Безопасность пациента (Collision Detection):** Автоматический математический контроль расстояния между титановым имплантатом и нижнечелюстным нервом с клиническим буфером безопасности $\ge 2.0\text{ мм}$ и контролем перфорации кортикальной пластинки.
+Исторически DENTE CRM опиралась на проксирование внешних тяжелых PACS/OHIF серверов либо на 2D-визиографический просмотр. В кодовой базе DENTE реализован **нативный клиентский 3D MPR движок** прямо в браузере врача:
+1. **Zero-Server GPU/Worker Compute:** Тяжелые математические вычисления (интерполяция вокселей, криволинейная панорамная реконструкция ОПТГ вдоль сплайна зубной дуги, поперечные кросс-секции) выполняются в выделенном WebWorker (`apps/web/src/mprWorker.ts`, `mprMath.ts`) и на GPU через WebGL 2.0 / Cornerstone3D.
+2. **Zero-Copy Memory Transfer:** Передача сгенерированных пиксельных буферов `Float32Array` из воркера в UI-поток происходит через `Transferable Objects` (`ctx.postMessage(ok, [result.pixels.buffer])`), исключая клонирование мегабайтных массивов и гарантируя 60 FPS интерфейса.
+3. **Нулевая задержка (Zero Lag):** Интерактивное позиционирование имплантатов, вращение плоскостей сечения и регулировка окна плотности (Hounsfield Units / HU) происходят мгновенно без блокировки потока React 19.
+4. **Безопасность пациента (Collision Detection):** Автоматический математический контроль расстояния между титановым имплантатом и нижнечелюстным нервом с клиническим буфером безопасности $\ge 2.0\text{ мм}$ и контролем перфорации кортикальной пластинки.
 
 ---
 
@@ -42,7 +49,7 @@ graph LR
 - $(0028,0030)$ `PixelSpacing` ($\Delta x, \Delta y$) и $(0018,0050)$ `SliceThickness` / `SpacingBetweenSlices` ($\Delta z$).
 
 Аффинная матрица перехода из пространства вокселей (IJK) в мировое пространство пациента (LPS / World) $\mathbf{M}_{\text{IJK}\to\text{World}}$:
-$$\mathbf{M}_{\text{IJK}\to\text{World}} = \begin{bmatrix} 
+$$\mathbf{M}_{\text{IJK}\to\text{World}} = \begin{bmatrix}
 X_x \cdot \Delta x & Y_x \cdot \Delta y & Z_x \cdot \Delta z & S_x \\
 X_y \cdot \Delta x & Y_y \cdot \Delta y & Z_y \cdot \Delta z & S_y \\
 X_z \cdot \Delta x & Y_z \cdot \Delta y & Z_z \cdot \Delta z & S_z \\
@@ -71,15 +78,23 @@ $$\mathbf{P}_{\text{UVW}} = \operatorname{diag}\left(\frac{1}{D_x}, \frac{1}{D_y
 | `gl.R8` | `gl.RED` | `gl.UNSIGNED_BYTE` (8-bit normalized) | **104.8 МБ** | Оптимизированный fallback для мобильных GPU (с предобработанным окном). |
 | `gl.RGBA8` (1D Texture 256x1) | `gl.RGBA` | `gl.UNSIGNED_BYTE` | **1 КБ** | LUT Transfer Function (Карта цветового градиента и прозрачности). |
 
-### 3.3. Жизненный цикл и Web Workers
-Загрузка и парсинг DICOM выполняется в фоновом Web Worker без блокировки главного UI-потока (Main Thread):
-1. **Парсинг тегов:** Извлечение геометрии, шага вокселей и коэффициентов рескейлинга.
-2. **Сборка монолитного TypedArray:** Создание непрерывного буфера `Int16Array(dimX * dimY * dimZ)`.
-3. **Zero-Copy Transfer:** Передача владения через Transferable ArrayBuffer в Main Thread:
+### 3.3. Жизненный цикл и Web Workers (Production Реализация)
+Загрузка, парсинг КЛКТ и панорамная реконструкция срезов выполняются в фоновом Web Worker (`apps/web/src/mprWorker.ts`, `mprMath.ts`) без блокировки главного UI-потока React 19:
+1. **Парсинг тегов и считывание геометрии:** Извлечение пространственных метаданных (Patient LPS, Spacing, Direction, Origin) и коэффициентов рескейлинга HU.
+2. **Сборка монолитного TypedArray:** Создание непрерывного буфера вокселей `Int16Array` или `Float32Array`.
+3. **Панорамная реконструкция вдоль зубной дуги:** Функция `generatePanoramicImage` вычисляет срезы вдоль сплайна Катмулла-Рома с трилинейной интерполяцией вокселей и окном Хаунсфилда.
+4. **Zero-Copy Transfer:** Владение сгенерированным буфером пикселей передается в главный поток через Transferable ArrayBuffer:
    ```typescript
-   self.postMessage({ type: 'VOLUME_READY', buffer, metadata }, [buffer.buffer]);
+   // apps/web/src/mprWorker.ts
+   const ok: PanoramicWorkerResponse = {
+       success: true,
+       width: result.width,
+       height: result.height,
+       pixels: result.pixels,
+   };
+   ctx.postMessage(ok, [result.pixels.buffer]); // Zero-copy: передача владения буфером
    ```
-4. **Загрузка в GPU:** `gl.texImage3D(gl.TEXTURE_3D, 0, gl.R16I, dimX, dimY, dimZ, 0, gl.RED_INTEGER, gl.SHORT, buffer)`.
+5. **Отображение в UI:** Главный поток (`PanoramicRendererWindow.tsx`, `CbctMprWorkspace.tsx`) получает готовый пиксельный массив без сериализации и отрисовывает его на Canvas 2D / WebGL с частотой 60 FPS.
 
 ---
 
@@ -215,10 +230,10 @@ bool intersectAABB(vec3 rayOrigin, vec3 rayDir, out float tNear, out float tFar)
     vec3 t1 = (vec3(1.0) - rayOrigin) * invDir;
     vec3 tMin = min(t0, t1);
     vec3 tMax = max(t0, t1);
-    
+<br/>
     tNear = max(max(tMin.x, tMin.y), tMin.z);
     tFar  = min(min(tMax.x, tMax.y), tMax.z);
-    
+<br/>
     return tEnd >= tStart && tEnd > 0.0;
 }
 
@@ -244,55 +259,55 @@ vec3 calculateNormal(vec3 uvw, float step) {
 void main() {
     vec3 rayDir = normalize(vLocalRayDir);
     vec3 rayOrigin = vLocalRayOrigin;
-    
+<br/>
     float tNear, tFar;
     if (!intersectAABB(rayOrigin, rayDir, tNear, tFar)) {
         discard;
     }
-    
+<br/>
     tNear = max(tNear, 0.0);
-    
+<br/>
     // Дизеринг начального смещения для устранения колец вуалирования
     float t = tNear + uStepSize * uJitter;
-    
+<br/>
     vec4 accumulatedColor = vec4(0.0);
-    
+<br/>
     for (int i = 0; i < 768; i++) {
         if (t > tFar || accumulatedColor.a >= 0.98) {
             break;
         }
-        
+<br/>
         vec3 currentUVW = rayOrigin + rayDir * t;
         float hu = getVoxelHU(currentUVW);
-        
+<br/>
         // Нормализация диапазона HU [-1024..+3071] в текстурные координаты TF [0.0..1.0]
         float tfCoord = clamp((hu + 1024.0) / 4096.0, 0.0, 1.0);
         vec4 sampleColor = texture(uTransferFunction, vec2(tfCoord, 0.5));
-        
+<br/>
         if (sampleColor.a > 0.01) {
             // Расчет освещения Blinn-Phong только для видимых вокселей
             vec3 normal = calculateNormal(currentUVW, 1.5);
-            
+<br/>
             float diffuse = max(dot(normal, uLightDirection), 0.0);
             vec3 viewDir = -rayDir;
             vec3 halfVector = normalize(uLightDirection + viewDir);
             float specular = pow(max(dot(normal, halfVector), 0.0), uSpecularPower);
-            
+<br/>
             vec3 shadedRgb = sampleColor.rgb * (uAmbientColor + diffuse * vec3(0.8)) + vec3(specular * 0.3);
-            
+<br/>
             // Front-to-Back Alpha Composting
             float alpha = sampleColor.a * (uStepSize / 0.002);
             accumulatedColor.rgb += (1.0 - accumulatedColor.a) * shadedRgb * alpha;
             accumulatedColor.a   += (1.0 - accumulatedColor.a) * alpha;
         }
-        
+<br/>
         t += uStepSize;
     }
-    
+<br/>
     if (accumulatedColor.a <= 0.001) {
         discard;
     }
-    
+<br/>
     fragColor = accumulatedColor;
 }
 ```
@@ -385,10 +400,10 @@ export function evaluateImplantNerveProximity(
     for (const q of nervePointsWorld) {
         const apexToQ = vec3.subtract(vec3.create(), q, implant.apexWorld);
         const t = Math.max(0, Math.min(1, vec3.dot(apexToQ, axis) / axisLengthSq));
-        
+<br/>
         const closestPointOnAxis = vec3.scaleAndAdd(vec3.create(), implant.apexWorld, axis, t);
         const currentImplantRadius = implant.radiusApexMm + t * (implant.radiusCollarMm - implant.radiusApexMm);
-        
+<br/>
         const centerDistance = vec3.distance(q, closestPointOnAxis);
         const surfaceDistance = centerDistance - currentImplantRadius - nerveRadiusMm;
 
@@ -501,4 +516,4 @@ graph TD
 
 ---
 
-*Спецификация разработана в соответствии с Mandate 8b (`.agents/AGENTS.md`) и готова к непосредственной реализации в кодовой базе `apps/web/src/components/dicom/`.*
+*Спецификация актуализирована под кодовую базу DENTE: WebWorker `apps/web/src/mprWorker.ts`, математический модуль `apps/web/src/mprMath.ts` и вьюпорты `apps/web/src/components/dicom/` (CbctMprWorkspace.tsx, PanoramicRendererWindow.tsx).*
