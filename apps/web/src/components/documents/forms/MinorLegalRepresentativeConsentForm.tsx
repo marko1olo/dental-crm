@@ -20,6 +20,12 @@ export interface MinorLegalRepresentativeConsentFormProps extends DocumentVisitH
 	minorConsentDiagnosisOrIndicationValue?: () => string;
 }
 
+const MINOR_RELATION_CHIPS = [
+	{ label: "Мама", value: "Мать" },
+	{ label: "Папа", value: "Отец" },
+	{ label: "Опекун", value: "Опекун" },
+] as const;
+
 /**
  * ИДС на стоматологическое лечение несовершеннолетнего (педиатрия с законным представителем).
  * Ст. 20 ФЗ № 323-ФЗ и Приказ Минздрава № 1051н.
@@ -305,7 +311,39 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 						/>
 					</label>
 					<label>
-						Статус / родство
+						<span className="flex items-center justify-between gap-1 flex-wrap">
+							<span>Статус / родство</span>
+						</span>
+						<div
+							className="flex items-center gap-1.5 flex-wrap my-1"
+							role="group"
+							aria-label="Быстрый выбор статуса представителя"
+						>
+							{MINOR_RELATION_CHIPS.map((chip) => {
+								const isSelected =
+									minorRepresentativeRelation === chip.value ||
+									minorRepresentativeRelation?.toLowerCase() ===
+										chip.value.toLowerCase();
+								return (
+									<button
+										key={chip.value}
+										type="button"
+										onClick={(event) => {
+											event.preventDefault();
+											setMinorRepresentativeRelation(chip.value);
+										}}
+										className={`min-h-[36px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
+											isSelected
+												? "bg-teal-500/15 text-[var(--teal)] border-[var(--teal)] shadow-xs font-bold"
+												: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-hover)]"
+										}`}
+										data-testid={`minor-rel-chip-${chip.value.toLowerCase()}`}
+									>
+										{chip.label}
+									</button>
+								);
+							})}
+						</div>
 						<input
 							value={minorRepresentativeRelation}
 							onChange={(event) =>

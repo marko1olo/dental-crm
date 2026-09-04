@@ -9,7 +9,11 @@
  * 5. 100% честное сохранение без заглушек.
  */
 
-import { generateAnonymousPatientCode, type Patient } from "@dental/shared";
+import {
+	calculateAge,
+	generateAnonymousPatientCode,
+	type Patient,
+} from "@dental/shared";
 import {
 	AlertTriangle,
 	Building2,
@@ -132,6 +136,16 @@ export function PatientCreationModal({
 	const [showHints, setShowHints] = useState(false);
 	const [showDocFields, setShowDocFields] = useState(false);
 	const [isEmergencyOrPrimary, setIsEmergencyOrPrimary] = useState(true);
+
+	// Minor (< 14 years old) check for dynamic document labeling (birth certificate vs passport)
+	const patientAge = useMemo(() => {
+		if (!newPatientBirthDate?.trim()) return null;
+		const parsed = new Date(newPatientBirthDate);
+		if (Number.isNaN(parsed.getTime())) return null;
+		return calculateAge(newPatientBirthDate);
+	}, [newPatientBirthDate]);
+
+	const isMinorUnder14 = patientAge !== null && patientAge < 14;
 
 	const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -1016,7 +1030,9 @@ export function PatientCreationModal({
 										htmlFor="patient-create-passport"
 										className="create-patient-label"
 									>
-										Паспорт РФ{" "}
+										{isMinorUnder14
+											? "Свидетельство о рождении / Паспорт РФ"
+											: "Паспорт РФ"}{" "}
 										{fieldRequirements.requireIdentityDocument ? (
 											<span className="text-rose-500 font-bold">*</span>
 										) : (
@@ -1027,7 +1043,11 @@ export function PatientCreationModal({
 									</label>
 									<input
 										id="patient-create-passport"
-										placeholder="Серия и номер 0000 000000"
+										placeholder={
+											isMinorUnder14
+												? "Серия (римские) № 000000 или паспорт"
+												: "Серия и номер 0000 000000"
+										}
 										value={
 											patientAdministrativeProfileDraft.identityDocument || ""
 										}

@@ -85,6 +85,12 @@ const loyaltyTierLabels: Record<
 	platinum: "Платинум",
 };
 
+const RELATIONSHIP_QUICK_OPTIONS = [
+	{ label: "Мама", value: "Мать", recipient: "Законному представителю (мать)" },
+	{ label: "Папа", value: "Отец", recipient: "Законному представителю (отец)" },
+	{ label: "Опекун", value: "Опекун", recipient: "Законному представителю (опекун)" },
+] as const;
+
 type PatientAdministrativeFormProps = {
 	patientAdministrativeProfileDraft: PatientAdministrativeProfileDraft;
 	updatePatientAdministrativeProfileDraft: (
@@ -101,6 +107,13 @@ export function PatientAdministrativeForm({
 	weekdayOptions,
 	normalizeOptionalWorkingDaysDraft,
 }: PatientAdministrativeFormProps) {
+	const handleSelectRelationship = (value: string, defaultRecipient: string) => {
+		updatePatientAdministrativeProfileDraft("legalRepresentativeRelationship", value);
+		if (!patientAdministrativeProfileDraft.preferredDocumentRecipient?.trim()) {
+			updatePatientAdministrativeProfileDraft("preferredDocumentRecipient", defaultRecipient);
+		}
+	};
+
 	return (
 		<div className="clinic-profile-form-grid patient-admin-form-grid">
 			<div className="form-span-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 flex-wrap mb-2">
@@ -232,7 +245,40 @@ export function PatientAdministrativeForm({
 				/>
 			</label>
 			<label>
-				Кем приходится
+				<span className="flex items-center justify-between gap-1 flex-wrap">
+					<span>Кем приходится</span>
+				</span>
+				<div
+					className="flex items-center gap-1.5 flex-wrap my-0.5"
+					role="group"
+					aria-label="Быстрый выбор родства представителя"
+				>
+					{RELATIONSHIP_QUICK_OPTIONS.map((opt) => {
+						const isSelected =
+							patientAdministrativeProfileDraft.legalRepresentativeRelationship ===
+								opt.value ||
+							patientAdministrativeProfileDraft.legalRepresentativeRelationship?.toLowerCase() ===
+								opt.value.toLowerCase();
+						return (
+							<button
+								key={opt.value}
+								type="button"
+								onClick={(event) => {
+									event.preventDefault();
+									handleSelectRelationship(opt.value, opt.recipient);
+								}}
+								className={`min-h-[36px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
+									isSelected
+										? "bg-teal-500/15 text-[var(--teal)] border-[var(--teal)] shadow-xs font-bold"
+										: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-hover)]"
+								}`}
+								data-testid={`admin-rep-chip-${opt.value.toLowerCase()}`}
+							>
+								{opt.label}
+							</button>
+						);
+					})}
+				</div>
 				<input
 					autoComplete="off"
 					value={

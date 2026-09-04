@@ -90,6 +90,13 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 		).filter((p): p is ClinicalQuickPreset => Boolean(p));
 	}, []);
 
+	const surgeryQuickPresets = React.useMemo(() => {
+		const targetIds = ["surgery_extraction_complex", "surgery_periostotomy"];
+		return targetIds
+			.map((id) => CLINICAL_SOAP_PRESETS.find((p) => p.id === id))
+			.filter((p): p is ClinicalQuickPreset => Boolean(p));
+	}, []);
+
 	return (
 		<div
 			className={`clinical-quick-presets-bar p-4 rounded-2xl border border-[var(--border)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-3.5 ${className}`.trim()}
@@ -247,6 +254,55 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								</div>
 								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
 									{isHygiene ? "Осмотр, Air-Flow, фторирование" : isCaries ? "Кариес → Пломба + 804н" : isPulpitis ? "Анестезия + Экстирпация + Ca(OH)2" : isPerio ? "УЗ + AirFlow + Хлоргексидин" : "Удаление + Гемостаз + Шов"}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* ── ХИРУРГИЧЕСКИЕ БЫСТРЫЕ ДЕЙСТВИЯ (ОСТРАЯ БОЛЬ / ЭКСТРЕННАЯ ХИРУРГИЯ) ── */}
+			<div className="space-y-1.5 pt-1 border-t border-[var(--border)]" data-testid="surgery-quick-actions-section">
+				<div className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center justify-between">
+					<div className="flex items-center gap-1.5">
+						<Flame size={14} className="text-rose-500 shrink-0" />
+						<span>Хирургические быстрые действия (Острая боль):</span>
+					</div>
+					<span className="text-[11px] font-mono text-[var(--muted)] font-normal hidden sm:inline">
+						1 клик: сложное удаление / периостотомия
+					</span>
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
+					{surgeryQuickPresets.map((preset) => {
+						const isComplex = preset.id === "surgery_extraction_complex";
+						const dynamicBadge = isComplex
+							? currentTooth ? `Сложн. удаление ${currentTooth}` : "Сложн. удаление"
+							: currentTooth ? `Периостотомия ${currentTooth}` : "Периостотомия";
+						const subtitle = isComplex
+							? "Разъединение корней + Кюретаж + Швы"
+							: "Разрез + Вскрытие абсцесса + Дренаж";
+
+						return (
+							<button
+								key={`surgery-quick-${preset.id}`}
+								type="button"
+								onClick={() => handlePresetClick(preset)}
+								disabled={isLocked}
+								className="min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
+								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
+								data-testid={`btn-surgery-quick-${preset.id}`}
+							>
+								<div className="flex items-center justify-between w-full gap-1.5">
+									<div className="flex items-center gap-1.5 min-w-0">
+										<Bone size={17} className="text-rose-600 dark:text-rose-400 shrink-0" />
+										<span className="truncate font-black">{dynamicBadge}</span>
+									</div>
+									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
+										{preset.icd10}
+									</span>
+								</div>
+								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
+									{subtitle}
 								</span>
 							</button>
 						);
