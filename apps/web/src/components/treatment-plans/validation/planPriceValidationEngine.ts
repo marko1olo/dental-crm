@@ -436,10 +436,10 @@ export function validateTreatmentPlanPrices(
 			`Скидка согласована врачом: ${itemsRequiringAdminOverrideCount} позиций с индивидуальной скидкой учтены в расчете.`,
 		);
 	} else if (isPlanExpired && !isAuthorizedByAdmin) {
-		// Срок плана истек: не блокируем закрытие счета и расчет
+		// Смета составлена >30 дней назад: не блокируем создание нарядов ЗТЛ, оказание услуг и оплату
 		overallStatus = "APPROVED_PRICE_LOCKED";
 		validationMessages.push(
-			`Срок действия плана (${preset.validityDays} дн.) истек ${Math.abs(expiryDaysRemaining)} дн. назад. Цена зафиксирована по согласованию с врачом.`,
+			`Смета составлена >30 дней назад (актуальна / продлена, истек ${Math.abs(expiryDaysRemaining)} дн. назад). Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются. Цена зафиксирована по согласованию с врачом.`,
 		);
 	} else {
 		const isAnyUpdatedToCurrent = validatedItems.some(

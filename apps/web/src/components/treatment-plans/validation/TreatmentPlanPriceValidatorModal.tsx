@@ -320,9 +320,9 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 								{report.isPlanExpired ? (
 									<span
 										className="pv-badge pv-badge-warn"
-										title="Смета составлена более 30 дней назад. Оформление нарядов ЗТЛ и оплата разрешены по согласованию с врачом."
+										title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
 									>
-										<Clock size={12} /> Смета составлена &gt;30 дней назад ({report.planAgeDays} дн.)
+										<Clock size={12} /> Смета составлена &gt;30 дней назад (актуальна / продлена)
 									</span>
 								) : (
 									<span className="pv-badge pv-badge-ok">

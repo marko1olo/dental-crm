@@ -7,6 +7,7 @@ import {
 	Award,
 	Calculator,
 	Check,
+	Clock,
 	Coins,
 	CreditCard,
 	Download,
@@ -88,6 +89,7 @@ export interface TreatmentPlanModuleProps {
 	readonly onExportToCashier?: (data: CashierInvoiceExportData) => void;
 	readonly onPlanSaved?: (planId: string) => void;
 	readonly className?: string;
+	readonly planCreatedAtIso?: string;
 }
 
 export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
@@ -97,8 +99,16 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	onExportToCashier,
 	onPlanSaved,
 	className = "",
+	planCreatedAtIso,
 }) => {
 	const { dashboard, auth } = useAppLogicContext();
+
+	const planAgeDays = useMemo(() => {
+		if (!planCreatedAtIso) return 0;
+		const createdTime = new Date(planCreatedAtIso).getTime();
+		if (Number.isNaN(createdTime)) return 0;
+		return Math.max(0, Math.floor((Date.now() - createdTime) / (1000 * 60 * 60 * 24)));
+	}, [planCreatedAtIso]);
 	const [activeViewTab, setActiveViewTab] = useState<"3tier" | "stages" | "phased4">("3tier");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [discountPercent, setDiscountPercent] = useState<number>(0);
@@ -366,7 +376,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			patientName,
 			doctorId: auth?.currentUser?.id || "doc-01",
 			doctorFullName: auth?.currentUser?.name || "Д-р Смирнов А. В.",
-			createdAtIso: new Date().toISOString(),
+			createdAtIso: planCreatedAtIso || new Date().toISOString(),
 			items: allItems.map((it) => ({
 				itemId: it.id,
 				...(it.toothNumber !== undefined ? { toothNumber: it.toothNumber } : {}),
@@ -532,7 +542,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<Layers size={22} />
 					</div>
 					<div>
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 flex-wrap">
 							<h2 className="text-lg font-black text-[var(--ink,#0f172a)]">
 								Комплексный план лечения
 							</h2>
@@ -542,6 +552,15 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 							<span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-mono font-bold border border-emerald-500/20">
 								СтАР
 							</span>
+							{planAgeDays > 30 && (
+								<span
+									className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/30 inline-flex items-center gap-1 shadow-2xs"
+									title="Смета составлена >30 дней назад. Создание нарядов ЗТЛ, оказание услуг и оплата не блокируются (согласовано врачом)."
+								>
+									<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+									Смета составлена &gt;30 дней назад (актуальна / продлена)
+								</span>
+							)}
 						</div>
 						<p className="text-xs text-[var(--muted,#64748b)]">
 							Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong> ·{" "}

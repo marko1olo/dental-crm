@@ -97,7 +97,18 @@ const CONSUMABLE_PATTERNS = [
 	/ватн.*шарик/i,
 	/лоток.*одноразов/i,
 	/шприц.*одноразов/i,
+	/игла.*карпульн/i,
+	/игла.*одноразов/i,
+	/карпул/i,
+	/дезинфекц/i,
+	/антисептик.*салфет/i,
+	/простын.*одноразов/i,
+	/коффердам.*завеса/i,
 	/индивидуальный гигиенический набор/i,
+	/асептический комплект/i,
+	/индивидуальный.*набор/i,
+	/расходные материалы/i,
+	/одноразовый комплект/i,
 ];
 
 /**
@@ -116,7 +127,7 @@ export function isMicroConsumable(item: PlanItemLike): boolean {
 		category.includes("расходн") || category.includes("сиз") || category.includes("материал");
 	const price = item.priceRub ?? item.unitPriceRub ?? 0;
 
-	return isConsumableCategory && price > 0 && price <= 250;
+	return (isConsumableCategory && price > 0 && price <= 350) || (nameMatches && price <= 500);
 }
 
 export interface TreatmentPlanPresenterModalProps {

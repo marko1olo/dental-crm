@@ -498,6 +498,19 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 						</button>
 						<button
 							type="button"
+							onClick={() => setActiveStampTool((prev) => (prev === "Crown" ? null : "Crown"))}
+							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
+								activeStampTool === "Crown"
+									? "bg-[var(--brand-500,#3b82f6)] text-white font-black shadow-xs ring-2 ring-[var(--brand-500,#3b82f6)]/60"
+									: "bg-[var(--brand-500,#3b82f6)]/10 text-[var(--brand-500,#3b82f6)] hover:bg-[var(--brand-500,#3b82f6)]/20 border border-[var(--brand-500,#3b82f6)]/30"
+							}`}
+							title="Штамп: Коронка (Клик по зубу без меню)"
+							data-testid="stamp-crown-primary-btn"
+						>
+							Коронка (Кр)
+						</button>
+						<button
+							type="button"
 							onClick={() => setActiveStampTool((prev) => (prev === "Healthy" ? null : "Healthy"))}
 							className={`min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 ${
 								activeStampTool === "Healthy"

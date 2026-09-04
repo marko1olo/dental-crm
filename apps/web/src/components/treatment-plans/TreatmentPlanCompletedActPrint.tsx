@@ -13,6 +13,8 @@ import {
 	Check,
 	CheckCircle2,
 	Coins,
+	Eye,
+	EyeOff,
 	FileCheck,
 	FileText,
 	Layers,
@@ -27,6 +29,7 @@ import {
 	X,
 } from "lucide-react";
 import type { CompletedWorksActAndWriteOffData, PlanStageMaterialRequirement, TreatmentPlanItem } from "./types";
+import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 import {
 	BRAND_COLOR_PALETTES,
 	type DocumentBrandColor,
@@ -243,6 +246,17 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 		window.print();
 	};
 
+	const [showMicroConsumables, setShowMicroConsumables] = React.useState<boolean>(false);
+
+	const { visibleProcedures, microConsumables } = React.useMemo(() => {
+		const regular = actData.completedProcedures.filter((it) => !isMicroConsumable(it));
+		const micro = actData.completedProcedures.filter((it) => isMicroConsumable(it));
+		return {
+			visibleProcedures: showMicroConsumables ? actData.completedProcedures : regular,
+			microConsumables: micro,
+		};
+	}, [actData.completedProcedures, showMicroConsumables]);
+
 	const palette = BRAND_COLOR_PALETTES[branding.brandAccentColor] || BRAND_COLOR_PALETTES.deep_teal;
 
 	// Legal Clinic Requisites
@@ -374,6 +388,26 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 										: hasDeficit
 											? "Дефицит на складе"
 											: "Провести списание ТМЦ"}
+								</span>
+							</button>
+						)}
+						{microConsumables.length > 0 && (
+							<button
+								type="button"
+								onClick={() => setShowMicroConsumables((prev) => !prev)}
+								className="flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+								title={
+									showMicroConsumables
+										? "Сгруппировать мелкие расходники в один гигиенический комплект"
+										: "Показать мелкие расходники (валики, слюноотсосы, перчатки) отдельными строками"
+								}
+								data-testid="toggle-micro-consumables-act-btn"
+							>
+								{showMicroConsumables ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+								<span>
+									{showMicroConsumables
+										? "Скрыть мелкие расходники"
+										: `Расходники сгруппированы (${microConsumables.length})`}
 								</span>
 							</button>
 						)}
@@ -621,7 +655,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 								<span>1. Оказанные медицинские услуги (Номенклатура МЗ РФ № 804н)</span>
 							</div>
 							<span className="text-[11px] font-semibold lowercase opacity-90">
-								Позиций: {actData.completedProcedures.length}
+								Позиций: {visibleProcedures.length + (!showMicroConsumables && microConsumables.length > 0 ? 1 : 0)}
 							</span>
 						</div>
 
@@ -642,7 +676,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 									</tr>
 								</thead>
 								<tbody>
-									{actData.completedProcedures.map((it, idx) => (
+									{visibleProcedures.map((it, idx) => (
 										<tr
 											key={it.id || idx}
 											className="hover:bg-slate-50 transition-colors border-b border-slate-300 text-xs"
@@ -691,6 +725,40 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 											</td>
 										</tr>
 									))}
+
+									{!showMicroConsumables && microConsumables.length > 0 && (
+										<tr className="bg-slate-50/80 transition-colors border-b border-slate-300 text-xs italic text-slate-600">
+											<td className="border border-slate-300 p-2 text-center text-slate-400 font-mono text-[11px]">
+												{visibleProcedures.length + 1}
+											</td>
+											<td className="border border-slate-300 p-2 text-center font-mono text-xs font-semibold text-slate-500">
+												A26.07.001
+											</td>
+											<td className="border border-slate-300 p-2 text-center text-slate-400 font-mono">
+												—
+											</td>
+											<td className="border border-slate-300 p-2 font-medium text-slate-800 leading-snug">
+												<div className="font-semibold text-slate-900 not-italic">
+													Индивидуальный гигиенический и асептический комплект
+												</div>
+												<div className="text-[11px] text-slate-500 not-italic mt-0.5">
+													(валики, салфетки, перчатки, слюноотсосы, маски — {microConsumables.length} наим., включено в базовую стоимость оказанных услуг)
+												</div>
+											</td>
+											<td className="border border-slate-300 p-2 text-center font-mono font-bold">
+												1 компл.
+											</td>
+											<td className="border border-slate-300 p-2 text-right font-mono text-slate-600">
+												0,00 ₽
+											</td>
+											<td className="border border-slate-300 p-2 text-right font-mono text-slate-500">
+												0,00 ₽
+											</td>
+											<td className="border border-slate-300 p-2 text-right font-mono font-bold text-emerald-700 not-italic">
+												Включено
+											</td>
+										</tr>
+									)}
 
 									{/* Subtotals & Breakdown */}
 									<tr className="bg-slate-50 text-slate-700 text-xs font-semibold">
