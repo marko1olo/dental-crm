@@ -4,6 +4,8 @@ import {
 	type CleaningType,
 	type CreateGeneralCleaningLogDto,
 	type GeneralCleaningLog,
+	type GeneralCleaningJournalRecord,
+	generateGeneralCleaningJournalPrintHtml,
 } from "@dental/shared";
 import {
 	Calendar,
@@ -107,6 +109,123 @@ export function GeneralCleaningRegisterTab() {
 	useEffect(() => {
 		fetchLogs();
 	}, []);
+
+	// ⚡ 1-Клик фиксация генеральной уборки по норме СанПиН (Мандаты 8e, 8k)
+	const handleQuickRecordNormCleaning = async () => {
+		try {
+			setSubmitting(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const todayStr = new Date().toISOString().slice(0, 10);
+			const nowStr = new Date().toISOString();
+
+			const payload: CreateGeneralCleaningLogDto = {
+				cleaningType: "general",
+				scheduledDate: todayStr,
+				actualDateTime: nowStr,
+				roomName: "Операционная / Хирургический кабинет №1",
+				treatedAreaM2: 32.5,
+				disinfectantName: "Аламинол 5%",
+				activeIngredient: "Алкилдиметилбензиламмоний хлорид + Глутаровый альдегид",
+				solutionConcentrationPercent: 5.0,
+				applicationMethod: "wiping",
+				exposureTimeMinutes: 60,
+				uvIrradiationMinutes: 120,
+				ventilationMinutes: 15,
+				status: "completed",
+				notes: "Уборка по графику выполнена: Дезсредство Аламинол 5%, экспозиция 60 мин, УФ 120 мин, проветривание 15 мин. Поверхности чистые.",
+			};
+
+			const res = await fetch("/api/registers/cleaning", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify(payload),
+			});
+
+			if (res.ok) {
+				showToast("⚡ Уборка по норме СанПиН успешно зафиксирована (Аламинол 5%, 60 мин, УФ 120 мин)", "success");
+				await fetchLogs();
+			} else {
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Ошибка при фиксации уборки", "error");
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при фиксации уборки", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	// 🖨️ Официальная печатная форма журнала СанПиН 3.3686-21
+	const handlePrintJournal = () => {
+		const mappedRecords: GeneralCleaningJournalRecord[] = logs.map((log) => ({
+			id: log.id,
+			roomType: "surgical",
+			roomName: log.roomName,
+			scheduledDate: log.scheduledDate,
+			actualDateTime: log.actualDateTime,
+			treatedAreaM2: Number(log.treatedAreaM2) || 30,
+			disinfectantName: log.disinfectantName,
+			activeIngredient: log.activeIngredient || "ЧАС + Альдегиды",
+			solutionConcentrationPercent: Number(log.solutionConcentrationPercent) || 1.5,
+			applicationMethodRu: log.applicationMethod === "spraying" ? "Орошение" : "Двукратное протирание",
+			exposureTimeMinutes: Number(log.exposureTimeMinutes) || 60,
+			uvIrradiationMinutes: Number(log.uvIrradiationMinutes) || 60,
+			ventilationMinutes: Number(log.ventilationMinutes) || 15,
+			operatorStaffFullName: log.operatorName || "Смирнова А. В.",
+			inspectorStaffFullName: log.inspectorName || undefined,
+			isInspectorVerified: Boolean(log.inspectorName || log.status === "verified_by_inspector"),
+			status: (log.status as any) || "completed",
+			notes: log.notes || undefined,
+		}));
+
+		const html = generateGeneralCleaningJournalPrintHtml({
+			records: mappedRecords,
+			clinicInfo: {
+				name: "ООО «Стоматологическая клиника ДЕНТЕ»",
+				inn: "7701234567",
+				ogrn: "1027700123456",
+				address: "г. Москва, ул. Клиническая, д. 10",
+				licenseNumber: "№ ЛО41-01137-77/00368421",
+				chiefDoctor: "Смирнов А. В.",
+				headNurse: "Иванова М. П.",
+			},
+		});
+
+		const printWindow = window.open("", "_blank");
+		if (printWindow) {
+			printWindow.document.write(html);
+			printWindow.document.close();
+			printWindow.focus();
+			setTimeout(() => {
+				printWindow.print();
+			}, 250);
+		} else {
+			const iframe = document.createElement("iframe");
+			iframe.style.position = "fixed";
+			iframe.style.right = "0";
+			iframe.style.bottom = "0";
+			iframe.style.width = "0";
+			iframe.style.height = "0";
+			iframe.style.border = "none";
+			document.body.appendChild(iframe);
+			const doc = iframe.contentWindow?.document;
+			if (doc) {
+				doc.open();
+				doc.write(html);
+				doc.close();
+				iframe.contentWindow?.focus();
+				setTimeout(() => {
+					iframe.contentWindow?.print();
+					setTimeout(() => document.body.removeChild(iframe), 1000);
+				}, 300);
+			}
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -292,7 +411,29 @@ export function GeneralCleaningRegisterTab() {
 						</button>
 					</div>
 
-					<button type="button" onClick={() => window.print()} className="sanpin-btn sanpin-btn-secondary">
+					<button
+						type="button"
+						data-testid="nurse-1click-norm-cleaning-btn"
+						onClick={handleQuickRecordNormCleaning}
+						disabled={submitting}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							display: "flex",
+							alignItems: "center",
+							gap: "0.35rem",
+						}}
+						title="Мгновенная фиксация генеральной уборки кабинета по норме СанПиН (Аламинол 5%, 60 мин экспозиция, 120 мин УФ, 15 мин проветривание)"
+					>
+						<Sparkles size={15} /> 1-Клик норма СанПиН
+					</button>
+					<button
+						type="button"
+						onClick={handlePrintJournal}
+						className="sanpin-btn sanpin-btn-secondary"
+						data-testid="print-general-cleaning-journal-btn"
+					>
 						<Printer size={15} /> Печать журнала
 					</button>
 					<button
@@ -400,6 +541,30 @@ export function GeneralCleaningRegisterTab() {
 						</div>
 						<form onSubmit={handleSubmit}>
 							<div className="sanpin-modal-body">
+								<div style={{ marginBottom: "0.75rem", display: "flex", justifyContent: "flex-end" }}>
+									<button
+										type="button"
+										onClick={() => {
+											setFormCleaningType("general");
+											setFormScheduledDate(new Date().toISOString().slice(0, 10));
+											setFormActualDateTime(new Date().toISOString().slice(0, 16));
+											setFormRoomName("Операционная / Хирургический кабинет №1");
+											setFormAreaM2(32.5);
+											setFormDisinfectant("Аламинол 5%");
+											setFormActiveIngredient("ЧАС + Глутаровый альдегид");
+											setFormConcentration(5.0);
+											setFormAppMethod("wiping");
+											setFormExposureMin(60);
+											setFormUvMin(120);
+											setFormVentilationMin(15);
+											setFormNotes("Уборка по графику выполнена: Дезсредство Аламинол 5%, экспозиция 60 мин, УФ 120 мин, проветривание 15 мин.");
+										}}
+										className="sanpin-btn sanpin-btn-secondary"
+										style={{ fontSize: "0.78rem", padding: "0.3rem 0.6rem" }}
+									>
+										<Sparkles size={13} /> Заполнить норму СанПиН (Аламинол 5%, УФ 120 мин)
+									</button>
+								</div>
 								<div className="sanpin-form-row">
 									<div className="sanpin-form-group">
 										<label className="sanpin-form-label">Вид уборки</label>

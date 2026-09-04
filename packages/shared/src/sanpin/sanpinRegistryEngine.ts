@@ -1526,13 +1526,35 @@ export function generateBactericidalJournalPrintHtml(params: {
 </html>`;
 }
 
-export function generateGeneralCleaningJournalPrintHtml(params: {
-	records: readonly GeneralCleaningJournalRecord[];
-	clinicInfo?: ClinicLegalInfo | undefined;
-}): string {
-	const clinic = params.clinicInfo || DEFAULT_CLINIC_LEGAL;
+export function generateGeneralCleaningJournalPrintHtml(
+	recordsOrParams: readonly GeneralCleaningJournalRecord[] | {
+		records: readonly GeneralCleaningJournalRecord[];
+		clinicInfo?: ClinicLegalInfo | undefined;
+		periodLabelRu?: string | undefined;
+	},
+	clinicInfoArg?: ClinicLegalInfo | undefined,
+	periodLabelArg?: string | undefined,
+): string {
+	let records: readonly GeneralCleaningJournalRecord[];
+	let clinic: ClinicLegalInfo;
+	let periodLabel: string | undefined;
 
-	const rowsHtml = params.records
+	if (Array.isArray(recordsOrParams)) {
+		records = recordsOrParams;
+		clinic = clinicInfoArg || DEFAULT_CLINIC_LEGAL;
+		periodLabel = periodLabelArg;
+	} else {
+		const config = recordsOrParams as {
+			records: readonly GeneralCleaningJournalRecord[];
+			clinicInfo?: ClinicLegalInfo | undefined;
+			periodLabelRu?: string | undefined;
+		};
+		records = config.records || [];
+		clinic = config.clinicInfo || DEFAULT_CLINIC_LEGAL;
+		periodLabel = config.periodLabelRu;
+	}
+
+	const rowsHtml = records
 		.map((r, i) => {
 			return `<tr>
 				<td style="border: 1px solid #000; padding: 4px; text-align: center;">${i + 1}</td>
@@ -1568,7 +1590,7 @@ export function generateGeneralCleaningJournalPrintHtml(params: {
 	<div class="header">
 		<div style="font-weight: bold;">${clinic.name}</div>
 		<div class="title">ЖУРНАЛ ПРОВЕДЕНИЯ ГЕНЕРАЛЬНЫХ УБОРОК И ДЕЗИНФЕКЦИИ ПОМЕЩЕНИЙ</div>
-		<div style="font-size: 8pt; color: #333;">(В соответствии с требованиями СанПиН 3.3686-21, разд. IV)</div>
+		<div style="font-size: 8pt; color: #333;">(В соответствии с требованиями СанПиН 3.3686-21, разд. IV)${periodLabel ? ` • Период: ${periodLabel}` : ""}</div>
 	</div>
 
 	<table>
@@ -1588,7 +1610,7 @@ export function generateGeneralCleaningJournalPrintHtml(params: {
 			</tr>
 		</thead>
 		<tbody>
-			${rowsHtml || '<tr><td colspan="11" style="text-align: center; padding: 15px; border: 1px solid #000;">Записи генеральных уборок отсутствуют</td></tr>'}
+			${rowsHtml || '<tr><td colspan="11" style="text-align: center; padding: 15px; border: 1px solid #000;">Записи за выбранный период отсутствуют (Записи генеральных уборок отсутствуют)</td></tr>'}
 		</tbody>
 	</table>
 
@@ -2241,22 +2263,44 @@ export function generateTemperatureHumidityJournalPrintHtml(params: {
 // 11. CONSOLIDATED PRODUCTION CONTROL JOURNAL BINDER (ROSPOTREBNADZOR DOSSIER)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface SterilizerEquipmentRecord {
+	readonly id: string;
+	readonly name: string;
+	readonly brandModel: string;
+	readonly serialNumber: string;
+	readonly inventoryNumber?: string | null | undefined;
+	readonly deviceType: string;
+	readonly deviceClass?: string | null | undefined;
+	readonly chamberVolumeLiters?: number | string | null | undefined;
+	readonly locationRoom?: string | null | undefined;
+	readonly verificationExpiryDate?: string | null | undefined;
+	readonly lastMaintenanceDate?: string | null | undefined;
+	readonly nextMaintenanceDate?: string | null | undefined;
+	readonly status?: string | null | undefined;
+	readonly notes?: string | null | undefined;
+}
+
 export interface ConsolidatedSanpinJournalData {
 	readonly clinicInfo?: ClinicLegalInfo | undefined;
+	readonly clinicLegalInfo?: ClinicLegalInfo | undefined;
 	readonly periodLabelRu?: string | undefined;
 	readonly dateRange?: { readonly from: string; readonly to: string } | undefined;
 	readonly volumeNumber?: number | string | undefined;
 	readonly totalPagesCount?: number | undefined;
+	readonly generatedDateRu?: string | undefined;
+	readonly responsibleHeadNurseRu?: string | undefined;
 	// Раздел 1: Журнал предстерилизационной очистки (Форма № 366/у)
-	readonly psoRecords: readonly PsoJournalRecord[];
+	readonly psoRecords?: readonly PsoJournalRecord[] | undefined;
 	// Раздел 2: Журнал работы стерилизаторов (Форма № 257/у)
-	readonly form257Records: readonly Form257Record[];
+	readonly form257Records?: readonly Form257Record[] | undefined;
+	readonly sterilizationCycles?: readonly any[] | undefined;
+	readonly sterilizerEquipments?: readonly SterilizerEquipmentRecord[] | undefined;
 	// Раздел 3: Журнал бактерицидных установок и генеральных уборок
-	readonly bactericidalSessions: readonly BactericidalSessionRecord[];
+	readonly bactericidalSessions?: readonly BactericidalSessionRecord[] | undefined;
 	readonly bactericidalEquipments?: readonly BactericidalEquipmentRecord[] | undefined;
-	readonly generalCleanings: readonly GeneralCleaningJournalRecord[];
+	readonly generalCleanings?: readonly GeneralCleaningJournalRecord[] | undefined;
 	// Раздел 4: Журнал температурного режима холодильников
-	readonly temperatureLogs: readonly TemperatureHumidityLogRecord[];
+	readonly temperatureLogs?: readonly TemperatureHumidityLogRecord[] | undefined;
 }
 
 export function integerToRussianWords(num: number): string {
@@ -2357,7 +2401,7 @@ export function formatRussianSheetsCount(count: number): {
  * - Лист сшива и заверения («В настоящем журнале пронумеровано, прошнуровано и скреплено печатью X листов»).
  */
 export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpinJournalData): string {
-	const clinic = data.clinicInfo || DEFAULT_CLINIC_LEGAL;
+	const clinic = data.clinicInfo || data.clinicLegalInfo || DEFAULT_CLINIC_LEGAL;
 	const license = clinic.licenseNumber || "№ ЛО41-01137-77/00368421";
 	const volume = data.volumeNumber || clinic.volumeNumber || 1;
 	const periodLabel = data.periodLabelRu
@@ -2366,18 +2410,26 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 			? `с ${data.dateRange.from} по ${data.dateRange.to}`
 			: `за текущий отчетный период (${new Date().toLocaleDateString("ru-RU")})`;
 
+	const psoRecords = data.psoRecords || [];
+	const form257Records = (data.form257Records || data.sterilizationCycles || []) as readonly Form257Record[];
+	const bactericidalSessions = data.bactericidalSessions || [];
+	const generalCleanings = data.generalCleanings || [];
+	const temperatureLogs = data.temperatureLogs || [];
+	const sterilizerEquipments = data.sterilizerEquipments || [];
+	const bactericidalEquipments = data.bactericidalEquipments || [];
+
 	// Calculate sheet count if not explicitly given
-	const psoSheets = Math.max(1, Math.ceil(data.psoRecords.length / 14));
-	const f257Sheets = Math.max(1, Math.ceil(data.form257Records.length / 10));
-	const bacSheets = Math.max(1, Math.ceil(data.bactericidalSessions.length / 14));
-	const cleanSheets = Math.max(1, Math.ceil(data.generalCleanings.length / 12));
-	const tempSheets = Math.max(1, Math.ceil(data.temperatureLogs.length / 14));
+	const psoSheets = Math.max(1, Math.ceil(psoRecords.length / 14));
+	const f257Sheets = Math.max(1, Math.ceil(form257Records.length / 10));
+	const bacSheets = Math.max(1, Math.ceil(bactericidalSessions.length / 14));
+	const cleanSheets = Math.max(1, Math.ceil(generalCleanings.length / 12));
+	const tempSheets = Math.max(1, Math.ceil(temperatureLogs.length / 14));
 	const computedTotalSheets = 1 + psoSheets + f257Sheets + bacSheets + cleanSheets + tempSheets + 1;
 	const totalSheets = data.totalPagesCount || computedTotalSheets;
 	const sheetsFormatted = formatRussianSheetsCount(totalSheets);
 
 	// Section 1: PSO rows
-	const psoRowsHtml = data.psoRecords
+	const psoRowsHtml = psoRecords
 		.map((r, i) => `<tr>
 			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${i + 1}</td>
 			<td style="border: 1px solid #000; padding: 4px; white-space: nowrap;">${new Date(r.timestamp).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}</td>
@@ -2398,7 +2450,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 		.join("\n");
 
 	// Section 2: Form 257 rows
-	const f257RowsHtml = (data.form257Records || [])
+	const f257RowsHtml = (form257Records || [])
 		.map((rec, index) => {
 			const pt1 = (rec.chamberPoints || []).find((p) => p.pointIndex === 1)?.status === "passed" ? "+" : "-";
 			const pt2 = (rec.chamberPoints || []).find((p) => p.pointIndex === 2)?.status === "passed" ? "+" : "-";
@@ -2445,8 +2497,42 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 		})
 		.join("\n");
 
+	// Section 2: Sterilizer Equipments rows (Equipment Fleet)
+	const sterilizerEquipRowsHtml = (sterilizerEquipments || [])
+		.map((eq, i) => `<tr>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${i + 1}</td>
+			<td style="border: 1px solid #000; padding: 4px;"><strong>${eq.name || eq.brandModel}</strong></td>
+			<td style="border: 1px solid #000; padding: 4px; font-family: monospace; font-size: 7.5pt; text-align: center;">${eq.serialNumber || "—"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">Класс ${eq.deviceClass || "B"} (${eq.deviceType || "Паровой"})</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${eq.chamberVolumeLiters ? `${eq.chamberVolumeLiters} л` : "—"}</td>
+			<td style="border: 1px solid #000; padding: 4px;">${eq.locationRoom || "ЦСО"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${eq.verificationExpiryDate || "Действует"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: ${eq.status === "decommissioned" ? "#d00" : "#059669"};">
+				${eq.status === "decommissioned" ? "Списан" : "Допущен"}
+			</td>
+		</tr>`)
+		.join("\n");
+
+	// Section 3.1: Bactericidal Equipments rows (Fleet & Lamp Hours)
+	const bacEquipRowsHtml = (bactericidalEquipments || [])
+		.map((eq, i) => `<tr>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${i + 1}</td>
+			<td style="border: 1px solid #000; padding: 4px;"><strong>${eq.roomName}</strong></td>
+			<td style="border: 1px solid #000; padding: 4px;">${eq.deviceBrand}</td>
+			<td style="border: 1px solid #000; padding: 4px; font-family: monospace; font-size: 7.5pt; text-align: center;">${eq.serialNumber || "—"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${eq.deviceType === "recirculator_closed" ? "Рециркулятор (закрытый)" : eq.deviceType === "irradiator_open" ? "Облучатель (открытый)" : "Комбинированный"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${eq.lampType} (${eq.lampCount} шт)</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${eq.maxLampHours} ч</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold;">${eq.totalOperatingHours} ч</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${eq.remainingLampHours} ч (${eq.remainingLampPercent}%)</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: ${eq.isLampCritical ? "#d00" : "#059669"};">
+				${eq.lampStatus === "expired_replace_now" ? "Замена ламп!" : eq.lampStatus === "warning_replace_soon" ? "Внимание" : "Норма"}
+			</td>
+		</tr>`)
+		.join("\n");
+
 	// Section 3.1: Bactericidal sessions
-	const bacRowsHtml = data.bactericidalSessions
+	const bacRowsHtml = bactericidalSessions
 		.map((s, i) => `<tr>
 			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${i + 1}</td>
 			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${s.date}</td>
@@ -2462,7 +2548,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 		.join("\n");
 
 	// Section 3.2: General cleaning rows
-	const cleanRowsHtml = data.generalCleanings
+	const cleanRowsHtml = generalCleanings
 		.map((r, i) => `<tr>
 			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${i + 1}</td>
 			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${r.scheduledDate}</td>
@@ -2479,7 +2565,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 		.join("\n");
 
 	// Section 4: Temperature logs
-	const tempRowsHtml = data.temperatureLogs
+	const tempRowsHtml = temperatureLogs
 		.map((r, i) => `<tr>
 			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${i + 1}</td>
 			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${r.measurementDate}</td>
@@ -2772,7 +2858,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 			</tr>
 		</thead>
 		<tbody>
-			${psoRowsHtml || '<tr><td colspan="10" style="text-align: center; padding: 15px;">Записи за отчетный период отсутствуют</td></tr>'}
+			${psoRowsHtml || '<tr><td colspan="10" style="text-align: center; padding: 15px;">Записи предстерилизационной очистки за отчетный период отсутствуют (Записи за отчетный период отсутствуют)</td></tr>'}
 		</tbody>
 	</table>
 
@@ -2786,6 +2872,27 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 		<div class="section-title">ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ (ФОРМА № 257/у)</div>
 		<div class="section-legal-ref">Физический, химический (5 точек камеры КТ 1–5) и бактериологический контроль стерилизации • ${clinic.name}</div>
 	</div>
+
+	${sterilizerEquipRowsHtml ? `
+	<div style="font-weight: bold; margin: 8px 0 4px; font-size: 8.5pt; color: #1e293b;">Парк автоклавов и стерилизационного оборудования клиники:</div>
+	<table style="margin-bottom: 10px;">
+		<thead>
+			<tr>
+				<th style="width: 20px;">№</th>
+				<th>Наименование и модель</th>
+				<th style="width: 90px;">Заводской номер</th>
+				<th style="width: 80px;">Класс / Тип</th>
+				<th style="width: 60px;">Объем камеры</th>
+				<th style="width: 100px;">Кабинет / Место</th>
+				<th style="width: 85px;">Поверка до</th>
+				<th style="width: 70px;">Статус</th>
+			</tr>
+		</thead>
+		<tbody>
+			${sterilizerEquipRowsHtml}
+		</tbody>
+	</table>
+	<div style="font-weight: bold; margin: 6px 0 3px; font-size: 8.5pt; color: #1e293b;">Циклы стерилизации за отчетный период:</div>` : ""}
 
 	<table>
 		<thead>
@@ -2817,6 +2924,29 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 		<div class="section-title">ЖУРНАЛ РЕГИСТРАЦИИ И КОНТРОЛЯ РАБОТЫ БАКТЕРИЦИДНЫХ УСТАНОВОК</div>
 		<div class="section-legal-ref">Учет наработки часов ультрафиолетовых ламп и режимов обеззараживания воздуха помещений • ${clinic.name}</div>
 	</div>
+
+	${bacEquipRowsHtml ? `
+	<div style="font-weight: bold; margin: 8px 0 4px; font-size: 8.5pt; color: #1e293b;">Реестр бактерицидных облучателей и рециркуляторов (учет ресурса ламп):</div>
+	<table style="margin-bottom: 10px;">
+		<thead>
+			<tr>
+				<th style="width: 20px;">№</th>
+				<th>Помещение / Кабинет</th>
+				<th>Модель аппарата</th>
+				<th style="width: 85px;">Зав. номер</th>
+				<th style="width: 85px;">Тип установки</th>
+				<th style="width: 80px;">Лампы (тип, шт)</th>
+				<th style="width: 65px;">Ресурс (ч)</th>
+				<th style="width: 65px;">Наработка (ч)</th>
+				<th style="width: 75px;">Остаток (ч)</th>
+				<th style="width: 75px;">Состояние</th>
+			</tr>
+		</thead>
+		<tbody>
+			${bacEquipRowsHtml}
+		</tbody>
+	</table>
+	<div style="font-weight: bold; margin: 6px 0 3px; font-size: 8.5pt; color: #1e293b;">Сеансы обеззараживания воздуха за отчетный период:</div>` : ""}
 
 	<table>
 		<thead>
@@ -2949,7 +3079,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
  * - Лист сшива и заверения тома.
  */
 export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJournalData): string {
-	const clinic = data.clinicInfo || DEFAULT_CLINIC_LEGAL;
+	const clinic = data.clinicInfo || data.clinicLegalInfo || DEFAULT_CLINIC_LEGAL;
 	const license = clinic.licenseNumber || "№ ЛО41-01137-77/00368421";
 	const volume = data.volumeNumber || clinic.volumeNumber || 1;
 	const periodLabel = data.periodLabelRu
@@ -2958,11 +3088,19 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 			? `с ${data.dateRange.from} по ${data.dateRange.to}`
 			: `за текущий отчетный период (${new Date().toLocaleDateString("ru-RU")})`;
 
-	const psoSheets = Math.max(1, Math.ceil(data.psoRecords.length / 14));
-	const f257Sheets = Math.max(1, Math.ceil(data.form257Records.length / 10));
-	const bacSheets = Math.max(1, Math.ceil(data.bactericidalSessions.length / 14));
-	const cleanSheets = Math.max(1, Math.ceil(data.generalCleanings.length / 12));
-	const tempSheets = Math.max(1, Math.ceil(data.temperatureLogs.length / 14));
+	const psoRecords = data.psoRecords || [];
+	const form257Records = (data.form257Records || data.sterilizationCycles || []) as readonly Form257Record[];
+	const bactericidalSessions = data.bactericidalSessions || [];
+	const generalCleanings = data.generalCleanings || [];
+	const temperatureLogs = data.temperatureLogs || [];
+	const sterilizerEquipments = data.sterilizerEquipments || [];
+	const bactericidalEquipments = data.bactericidalEquipments || [];
+
+	const psoSheets = Math.max(1, Math.ceil(psoRecords.length / 14));
+	const f257Sheets = Math.max(1, Math.ceil(form257Records.length / 10));
+	const bacSheets = Math.max(1, Math.ceil(bactericidalSessions.length / 14));
+	const cleanSheets = Math.max(1, Math.ceil(generalCleanings.length / 12));
+	const tempSheets = Math.max(1, Math.ceil(temperatureLogs.length / 14));
 	const totalSheets = data.totalPagesCount || (1 + psoSheets + f257Sheets + bacSheets + cleanSheets + tempSheets + 1);
 	const sheetsFormatted = formatRussianSheetsCount(totalSheets);
 
@@ -2998,29 +3136,66 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 		"Примечания",
 	];
 	lines.push(psoHeaders.join(";"));
-	data.psoRecords.forEach((r, i) => {
-		lines.push([
-			escapeCsvField(i + 1),
-			escapeCsvField(r.id),
-			escapeCsvField(r.timestamp),
-			escapeCsvField(r.instrumentName),
-			escapeCsvField(r.batchItemCount),
-			escapeCsvField(r.testedSampleCount),
-			escapeCsvField(r.isAzopyramNegative ? "Отрицательная (Норма)" : "ПОЛОЖИТЕЛЬНАЯ (Кровь)"),
-			escapeCsvField(r.isPhenolphthaleinNegative ? "Отрицательная (Норма)" : "ПОЛОЖИТЕЛЬНАЯ (Щелочь)"),
-			escapeCsvField(r.isSudanNegative ? "Отрицательная (Норма)" : "ПОЛОЖИТЕЛЬНАЯ (Масло)"),
-			escapeCsvField(r.detergentBrand),
-			escapeCsvField(r.isBatchApproved ? "Допущено" : "БРАК"),
-			escapeCsvField(r.rejectionReason ?? ""),
-			escapeCsvField(r.operatorStaffFullName),
-			escapeCsvField(r.electronicStampVerified ? "ДА" : "НЕТ"),
-			escapeCsvField(r.notes ?? ""),
-		].join(";"));
-	});
+	if (psoRecords.length === 0) {
+		lines.push(`"Записи за отчетный период отсутствуют"`);
+	} else {
+		psoRecords.forEach((r, i) => {
+			lines.push([
+				escapeCsvField(i + 1),
+				escapeCsvField(r.id),
+				escapeCsvField(r.timestamp),
+				escapeCsvField(r.instrumentName),
+				escapeCsvField(r.batchItemCount),
+				escapeCsvField(r.testedSampleCount),
+				escapeCsvField(r.isAzopyramNegative ? "Отрицательная (Норма)" : "ПОЛОЖИТЕЛЬНАЯ (Кровь)"),
+				escapeCsvField(r.isPhenolphthaleinNegative ? "Отрицательная (Норма)" : "ПОЛОЖИТЕЛЬНАЯ (Щелочь)"),
+				escapeCsvField(r.isSudanNegative ? "Отрицательная (Норма)" : "ПОЛОЖИТЕЛЬНАЯ (Масло)"),
+				escapeCsvField(r.detergentBrand),
+				escapeCsvField(r.isBatchApproved ? "Допущено" : "БРАК"),
+				escapeCsvField(r.rejectionReason ?? ""),
+				escapeCsvField(r.operatorStaffFullName),
+				escapeCsvField(r.electronicStampVerified ? "ДА" : "НЕТ"),
+				escapeCsvField(r.notes ?? ""),
+			].join(";"));
+		});
+	}
 	lines.push("");
 
-	// SECTION 2: FORM 257/U
+	// SECTION 2: FORM 257/U & STERILIZER FLEET
 	lines.push(`"=== РАЗДЕЛ 2: ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ (ФОРМА № 257/У) ==="`);
+	if (sterilizerEquipments && sterilizerEquipments.length > 0) {
+		lines.push(`"--- ПАРК АВТОКЛАВОВ И СТЕРИЛИЗАЦИОННОГО ОБОРУДОВАНИЯ ---"`);
+		const sterilizerEquipHeaders = [
+			"№ п/п",
+			"ID",
+			"Наименование",
+			"Марка и модель",
+			"Заводской номер",
+			"Класс",
+			"Тип",
+			"Объем камеры (л)",
+			"Кабинет / Место",
+			"Срок поверки",
+			"Статус",
+		];
+		lines.push(sterilizerEquipHeaders.join(";"));
+		sterilizerEquipments.forEach((eq, i) => {
+			lines.push([
+				escapeCsvField(i + 1),
+				escapeCsvField(eq.id),
+				escapeCsvField(eq.name),
+				escapeCsvField(eq.brandModel),
+				escapeCsvField(eq.serialNumber),
+				escapeCsvField(eq.deviceClass ?? "B"),
+				escapeCsvField(eq.deviceType),
+				escapeCsvField(eq.chamberVolumeLiters ?? ""),
+				escapeCsvField(eq.locationRoom ?? ""),
+				escapeCsvField(eq.verificationExpiryDate ?? "Действует"),
+				escapeCsvField(eq.status === "decommissioned" ? "Списан" : "Допущен"),
+			].join(";"));
+		});
+		lines.push(`"--- ЦИКЛЫ СТЕРИЛИЗАЦИИ ---"`);
+	}
 	const f257Headers = [
 		"№ п/п",
 		"ID Записи",
@@ -3051,47 +3226,86 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 		"Примечания",
 	];
 	lines.push(f257Headers.join(";"));
-	data.form257Records.forEach((rec, i) => {
-		const pt1 = rec.chamberPoints.find((p) => p.pointIndex === 1)?.status === "passed" ? "ОК" : "БРАК";
-		const pt2 = rec.chamberPoints.find((p) => p.pointIndex === 2)?.status === "passed" ? "ОК" : "БРАК";
-		const pt3 = rec.chamberPoints.find((p) => p.pointIndex === 3)?.status === "passed" ? "ОК" : "БРАК";
-		const pt4 = rec.chamberPoints.find((p) => p.pointIndex === 4)?.status === "passed" ? "ОК" : "БРАК";
-		const pt5 = rec.chamberPoints.find((p) => p.pointIndex === 5)?.status === "passed" ? "ОК" : "БРАК";
+	if (form257Records.length === 0) {
+		lines.push(`"Записи циклов стерилизации отсутствуют"`);
+	} else {
+		form257Records.forEach((rec, i) => {
+			const pt1 = rec.chamberPoints.find((p) => p.pointIndex === 1)?.status === "passed" ? "ОК" : "БРАК";
+			const pt2 = rec.chamberPoints.find((p) => p.pointIndex === 2)?.status === "passed" ? "ОК" : "БРАК";
+			const pt3 = rec.chamberPoints.find((p) => p.pointIndex === 3)?.status === "passed" ? "ОК" : "БРАК";
+			const pt4 = rec.chamberPoints.find((p) => p.pointIndex === 4)?.status === "passed" ? "ОК" : "БРАК";
+			const pt5 = rec.chamberPoints.find((p) => p.pointIndex === 5)?.status === "passed" ? "ОК" : "БРАК";
 
-		lines.push([
-			escapeCsvField(i + 1),
-			escapeCsvField(rec.id),
-			escapeCsvField(rec.date),
-			escapeCsvField(rec.cycleNumber),
-			escapeCsvField(rec.sterilizerCode),
-			escapeCsvField(rec.sterilizerBrandModel),
-			escapeCsvField(rec.sterilizerSerialNumber),
-			escapeCsvField(rec.regimeNameRu),
-			escapeCsvField(rec.actualTemperatureCelsius),
-			escapeCsvField(rec.actualPressureBar),
-			escapeCsvField(rec.actualExposureMinutes),
-			escapeCsvField(rec.itemsDescriptionRu),
-			escapeCsvField(rec.packsCount),
-			escapeCsvField(rec.packagingNameRu),
-			escapeCsvField(rec.chemicalIndicatorNameRu),
-			escapeCsvField(pt1),
-			escapeCsvField(pt2),
-			escapeCsvField(pt3),
-			escapeCsvField(pt4),
-			escapeCsvField(pt5),
-			escapeCsvField(rec.areAllPointsPassed ? "Да" : "Нет"),
-			escapeCsvField(rec.isCyclePassed ? "СТЕРИЛЬНО" : "БРАК"),
-			escapeCsvField(rec.rejectionReason ?? ""),
-			escapeCsvField(rec.operatorStaffFullName),
-			escapeCsvField(rec.isHeadNurseVerified ? `Да (${rec.headNurseSignatureFullName ?? ""})` : "Нет"),
-			escapeCsvField(rec.digitalStampHash),
-			escapeCsvField(rec.notes ?? ""),
-		].join(";"));
-	});
+			lines.push([
+				escapeCsvField(i + 1),
+				escapeCsvField(rec.id),
+				escapeCsvField(rec.date),
+				escapeCsvField(rec.cycleNumber),
+				escapeCsvField(rec.sterilizerCode),
+				escapeCsvField(rec.sterilizerBrandModel),
+				escapeCsvField(rec.sterilizerSerialNumber),
+				escapeCsvField(rec.regimeNameRu),
+				escapeCsvField(rec.actualTemperatureCelsius),
+				escapeCsvField(rec.actualPressureBar),
+				escapeCsvField(rec.actualExposureMinutes),
+				escapeCsvField(rec.itemsDescriptionRu),
+				escapeCsvField(rec.packsCount),
+				escapeCsvField(rec.packagingNameRu),
+				escapeCsvField(rec.chemicalIndicatorNameRu),
+				escapeCsvField(pt1),
+				escapeCsvField(pt2),
+				escapeCsvField(pt3),
+				escapeCsvField(pt4),
+				escapeCsvField(pt5),
+				escapeCsvField(rec.areAllPointsPassed ? "Да" : "Нет"),
+				escapeCsvField(rec.isCyclePassed ? "СТЕРИЛЬНО" : "БРАК"),
+				escapeCsvField(rec.rejectionReason ?? ""),
+				escapeCsvField(rec.operatorStaffFullName),
+				escapeCsvField(rec.isHeadNurseVerified ? `Да (${rec.headNurseSignatureFullName ?? ""})` : "Нет"),
+				escapeCsvField(rec.digitalStampHash),
+				escapeCsvField(rec.notes ?? ""),
+			].join(";"));
+		});
+	}
 	lines.push("");
 
 	// SECTION 3.1: BACTERICIDAL
 	lines.push(`"=== РАЗДЕЛ 3.1: ЖУРНАЛ РЕГИСТРАЦИИ РАБОТЫ БАКТЕРИЦИДНЫХ УСТАНОВОК (Р 3.5.1904-04) ==="`);
+	if (data.bactericidalEquipments && data.bactericidalEquipments.length > 0) {
+		lines.push(`"--- РЕЕСТР БАКТЕРИЦИДНЫХ УСТАНОВОК И РЕЦИРКУЛЯТОРОВ ---"`);
+		const bacEquipHeaders = [
+			"№ п/п",
+			"ID",
+			"Помещение",
+			"Модель аппарата",
+			"Заводской номер",
+			"Тип установки",
+			"Лампы",
+			"Ресурс (ч)",
+			"Наработка (ч)",
+			"Остаток (ч)",
+			"Остаток (%)",
+			"Статус ламп",
+		];
+		lines.push(bacEquipHeaders.join(";"));
+		bactericidalEquipments.forEach((eq, i) => {
+			lines.push([
+				escapeCsvField(i + 1),
+				escapeCsvField(eq.id),
+				escapeCsvField(eq.roomName),
+				escapeCsvField(eq.deviceBrand),
+				escapeCsvField(eq.serialNumber),
+				escapeCsvField(eq.deviceType),
+				escapeCsvField(`${eq.lampType} (${eq.lampCount} шт)`),
+				escapeCsvField(eq.maxLampHours),
+				escapeCsvField(eq.totalOperatingHours),
+				escapeCsvField(eq.remainingLampHours),
+				escapeCsvField(eq.remainingLampPercent),
+				escapeCsvField(eq.lampStatus),
+			].join(";"));
+		});
+		lines.push(`"--- СЕАНСЫ ОБЕЗЗАРАЖИВАНИЯ ВОЗДУХА ---"`);
+	}
 	const bacHeaders = [
 		"№ п/п",
 		"ID",
@@ -3107,22 +3321,26 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 		"Оператор",
 	];
 	lines.push(bacHeaders.join(";"));
-	data.bactericidalSessions.forEach((s, i) => {
-		lines.push([
-			escapeCsvField(i + 1),
-			escapeCsvField(s.id),
-			escapeCsvField(s.date),
-			escapeCsvField(s.roomName),
-			escapeCsvField(s.deviceBrand),
-			escapeCsvField(s.sessionStartTime),
-			escapeCsvField(s.sessionEndTime),
-			escapeCsvField(s.durationMinutes),
-			escapeCsvField(s.durationHours),
-			escapeCsvField(s.operatingMode),
-			escapeCsvField(s.cumulativeHoursAfterSession),
-			escapeCsvField(s.operatorStaffFullName),
-		].join(";"));
-	});
+	if (bactericidalSessions.length === 0) {
+		lines.push(`"Сеансы работы установок отсутствуют"`);
+	} else {
+		bactericidalSessions.forEach((s, i) => {
+			lines.push([
+				escapeCsvField(i + 1),
+				escapeCsvField(s.id),
+				escapeCsvField(s.date),
+				escapeCsvField(s.roomName),
+				escapeCsvField(s.deviceBrand),
+				escapeCsvField(s.sessionStartTime),
+				escapeCsvField(s.sessionEndTime),
+				escapeCsvField(s.durationMinutes),
+				escapeCsvField(s.durationHours),
+				escapeCsvField(s.operatingMode),
+				escapeCsvField(s.cumulativeHoursAfterSession),
+				escapeCsvField(s.operatorStaffFullName),
+			].join(";"));
+		});
+	}
 	lines.push("");
 
 	// SECTION 3.2: GENERAL CLEANING
@@ -3144,24 +3362,28 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 		"Контроль заверен",
 	];
 	lines.push(cleanHeaders.join(";"));
-	data.generalCleanings.forEach((r, i) => {
-		lines.push([
-			escapeCsvField(i + 1),
-			escapeCsvField(r.id),
-			escapeCsvField(r.scheduledDate),
-			escapeCsvField(r.actualDateTime),
-			escapeCsvField(r.roomName),
-			escapeCsvField(r.roomType),
-			escapeCsvField(r.treatedAreaM2),
-			escapeCsvField(r.disinfectantName),
-			escapeCsvField(r.solutionConcentrationPercent),
-			escapeCsvField(r.exposureTimeMinutes),
-			escapeCsvField(r.uvIrradiationMinutes),
-			escapeCsvField(r.ventilationMinutes),
-			escapeCsvField(r.operatorStaffFullName),
-			escapeCsvField(r.isInspectorVerified ? "ДА" : "НЕТ"),
-		].join(";"));
-	});
+	if (generalCleanings.length === 0) {
+		lines.push(`"Записи генеральных уборок отсутствуют"`);
+	} else {
+		generalCleanings.forEach((r, i) => {
+			lines.push([
+				escapeCsvField(i + 1),
+				escapeCsvField(r.id),
+				escapeCsvField(r.scheduledDate),
+				escapeCsvField(r.actualDateTime),
+				escapeCsvField(r.roomName),
+				escapeCsvField(r.roomType),
+				escapeCsvField(r.treatedAreaM2),
+				escapeCsvField(r.disinfectantName),
+				escapeCsvField(r.solutionConcentrationPercent),
+				escapeCsvField(r.exposureTimeMinutes),
+				escapeCsvField(r.uvIrradiationMinutes),
+				escapeCsvField(r.ventilationMinutes),
+				escapeCsvField(r.operatorStaffFullName),
+				escapeCsvField(r.isInspectorVerified ? "ДА" : "НЕТ"),
+			].join(";"));
+		});
+	}
 	lines.push("");
 
 	// SECTION 4: REFRIGERATOR TEMPERATURE LOGS
@@ -3182,23 +3404,27 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 		"Ответственный",
 	];
 	lines.push(tempHeaders.join(";"));
-	data.temperatureLogs.forEach((r, i) => {
-		lines.push([
-			escapeCsvField(i + 1),
-			escapeCsvField(r.id),
-			escapeCsvField(r.measurementDate),
-			escapeCsvField(r.measurementPeriod === "morning" ? "Утро" : r.measurementPeriod === "evening" ? "Вечер" : r.measurementPeriod),
-			escapeCsvField(r.equipmentName),
-			escapeCsvField(r.location),
-			escapeCsvField(r.meterSerialNumber ? `${r.meterDeviceName} (№${r.meterSerialNumber})` : r.meterDeviceName),
-			escapeCsvField(r.temperatureCelsius),
-			escapeCsvField(r.relativeHumidityPercent !== undefined && r.relativeHumidityPercent !== null ? r.relativeHumidityPercent : ""),
-			escapeCsvField(`${r.targetTempMinCelsius}..${r.targetTempMaxCelsius}`),
-			escapeCsvField(r.isWithinNorm ? "ДА" : "ОТКЛОНЕНИЕ"),
-			escapeCsvField(r.correctiveAction || r.deviationReason || ""),
-			escapeCsvField(r.operatorStaffFullName),
-		].join(";"));
-	});
+	if (temperatureLogs.length === 0) {
+		lines.push(`"Записи температурного режима отсутствуют"`);
+	} else {
+		temperatureLogs.forEach((r, i) => {
+			lines.push([
+				escapeCsvField(i + 1),
+				escapeCsvField(r.id),
+				escapeCsvField(r.measurementDate),
+				escapeCsvField(r.measurementPeriod === "morning" ? "Утро" : r.measurementPeriod === "evening" ? "Вечер" : r.measurementPeriod),
+				escapeCsvField(r.equipmentName),
+				escapeCsvField(r.location),
+				escapeCsvField(r.meterSerialNumber ? `${r.meterDeviceName} (№${r.meterSerialNumber})` : r.meterDeviceName),
+				escapeCsvField(r.temperatureCelsius),
+				escapeCsvField(r.relativeHumidityPercent !== undefined && r.relativeHumidityPercent !== null ? r.relativeHumidityPercent : ""),
+				escapeCsvField(`${r.targetTempMinCelsius}..${r.targetTempMaxCelsius}`),
+				escapeCsvField(r.isWithinNorm ? "ДА" : "ОТКЛОНЕНИЕ"),
+				escapeCsvField(r.correctiveAction || r.deviationReason || ""),
+				escapeCsvField(r.operatorStaffFullName),
+			].join(";"));
+		});
+	}
 	lines.push("");
 
 	// SECTION 5: CERTIFICATION SHEET
