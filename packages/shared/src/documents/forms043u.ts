@@ -503,5 +503,10 @@ export const fullForm043uPayloadSchema = z.object({
 	generalTreatmentPlan: z.string().trim().min(1).max(4000),
 	// Дневники приёма SOAP
 	soapDiaries: z.array(soapVisitDiarySchema).default([]),
+	// Статус документа, ревизии и водяной знак печати
+	watermarkText: z.string().trim().max(100).nullable().optional(),
+	isDraft: z.boolean().optional(),
+	isClosed: z.boolean().optional(),
+	revisionCount: z.number().int().nonnegative().optional(),
 });
 export type FullForm043uPayload = z.infer<typeof fullForm043uPayloadSchema>;

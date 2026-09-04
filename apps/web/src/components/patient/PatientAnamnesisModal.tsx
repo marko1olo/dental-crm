@@ -132,9 +132,9 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 				case "clean":
 					setProfile({
 						...DEFAULT_PROFILE,
-						customChronicNotes: "Соматически здоров. Аллергический статус не отягощен.",
+						customChronicNotes: "Соматически здоров. Аллергический статус не отягощен. Физиологическая норма (без особенностей).",
 					});
-					showToast("Применен шаблон: Анамнез не отягощен (Здоров)", "info");
+					showToast("Применен шаблон: Соматически здоров / норма (без особенностей)", "info");
 					break;
 				case "cardio":
 					setProfile((prev) => ({
@@ -276,10 +276,12 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						<button
 							type="button"
 							onClick={() => applyPreset("clean")}
-							className="px-2.5 py-1 text-xs rounded-lg font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 hover:bg-emerald-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							className="px-3 py-1.5 min-h-[36px] text-xs rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-sm cursor-pointer shrink-0 transition-all inline-flex items-center gap-1.5 active:scale-98"
+							data-testid="btn-somatic-healthy-norm"
+							title="1 клик: соматически здоров, анамнез не отягощен, физиологическая норма"
 						>
-							<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-							<span>Здоров</span>
+							<ShieldCheck className="w-4 h-4 text-white shrink-0" />
+							<span>Соматически здоров / норма (без особенностей)</span>
 						</button>
 						<button
 							type="button"

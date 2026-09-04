@@ -193,7 +193,7 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 				</div>
 			</div>
 
-			{!isLocked && (
+			{!isLocked ? (
 				<div
 					className="doc-watermark-draft"
 					aria-hidden="true"
@@ -214,6 +214,28 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 					}}
 				>
 					ЧЕРНОВИК
+				</div>
+			) : (
+				<div
+					className="doc-watermark-signed"
+					aria-hidden="true"
+					style={{
+						position: "absolute",
+						top: "50%",
+						left: "50%",
+						transform: "translate(-50%, -50%) rotate(-32deg)",
+						fontSize: (revisionCount ?? 0) > 0 ? "42pt" : "50pt",
+						fontWeight: 900,
+						color: "rgba(16, 185, 129, 0.045)",
+						textTransform: "uppercase",
+						letterSpacing: "0.12em",
+						pointerEvents: "none",
+						zIndex: 0,
+						whiteSpace: "nowrap",
+						userSelect: "none",
+					}}
+				>
+					{(revisionCount ?? 0) > 0 ? "ИСПРАВЛЕННОМУ ВЕРИТЬ" : "ПОДПИСАНО ВРАЧОМ"}
 				</div>
 			)}
 

@@ -1179,7 +1179,7 @@ export function getForm043DocumentStatus(params: {
 			isDraft: false,
 			isLocked: true,
 			stampText: `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisions + 1})`,
-			watermarkText: null,
+			watermarkText: "ПОДПИСАНО ВРАЧОМ",
 			stampBadgeClass: "badge-revised",
 			canDoctorEditDirectly: true, // Врач свободно правит с версионным аудитом в 1 клик
 			amendmentAuditReasonDefault: "Исправленному верить",
@@ -1190,7 +1190,7 @@ export function getForm043DocumentStatus(params: {
 		isDraft: false,
 		isLocked: true,
 		stampText: "ПОДПИСАНО ВРАЧОМ",
-		watermarkText: null,
+		watermarkText: "ПОДПИСАНО ВРАЧОМ",
 		stampBadgeClass: "badge-signed",
 		canDoctorEditDirectly: true, // Врач свободно правит с версионным аудитом в 1 клик
 		amendmentAuditReasonDefault: "Исправленному верить",

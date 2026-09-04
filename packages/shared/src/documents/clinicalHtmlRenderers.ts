@@ -605,6 +605,9 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
       </div>
     `;
 
+	const isClosed = payload.isClosed ?? (payload.status === "signed" || payload.status === "completed");
+	const watermark = payload.watermarkText ?? (isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК");
+
 	return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -613,7 +616,8 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
   ${CLINICAL_DOCUMENT_PRINT_STYLES}
 </head>
 <body>
-<div class="doc-container">
+<div class="doc-container" style="position:relative;">
+  ${watermark ? `<div class="doc-watermark" aria-hidden="true" style="position:absolute; top:45%; left:50%; transform:translate(-50%, -50%) rotate(-32deg); font-size:52pt; font-weight:900; color:${isClosed ? "rgba(16, 185, 129, 0.05)" : "rgba(15, 23, 42, 0.045)"}; text-transform:uppercase; letter-spacing:0.12em; pointer-events:none; z-index:0; white-space:nowrap; user-select:none;">${escapeHtml(watermark)}</div>` : ""}
   <div class="header-grid">
     <div class="clinic-info">
       <div class="clinic-title">${escapeHtml(clinicName)}</div>

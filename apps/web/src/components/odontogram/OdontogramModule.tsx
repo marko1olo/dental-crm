@@ -24,6 +24,7 @@ import {
 	addWorkingDays,
 	calculateMaterialTotalCostKopecks,
 } from "../lab/labMath";
+import { evaluatePatientSafetyFlags } from "../patient/safetyMath";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
@@ -219,9 +220,29 @@ export const OdontogramModule = ({
 	}, [liveInvoiceItems]);
 
 	// Extract allergy and somatic risk warnings from active patient
-	const allergyText =
-		(activePatient as { allergies?: string | null } | undefined)?.allergies ||
-		(activePatient as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
+	const allergyText = useMemo(() => {
+		const pat = activePatient as any;
+		if (!pat) return null;
+		if (pat.allergies) return String(pat.allergies);
+		if (pat.anamnesis?.allergies) return String(pat.anamnesis.allergies);
+		if (pat.clinicalSafetyProfile) {
+			const flags = evaluatePatientSafetyFlags(pat.clinicalSafetyProfile);
+			const allergyFlags = flags.activeFlags.filter(
+				(f: { category: string }) =>
+					f.category === "anesthesia_allergy" || f.category === "general_allergy",
+			);
+			if (allergyFlags.length > 0) {
+				return allergyFlags.map((f: { shortBadge: string; titleRu: string }) => f.shortBadge || f.titleRu).join(", ");
+			}
+			if (pat.clinicalSafetyProfile.customAllergyNotes) {
+				return String(pat.clinicalSafetyProfile.customAllergyNotes);
+			}
+		}
+		if (typeof pat.notes === "string" && /аллерг|новокаин|лидокаин|артикаин/i.test(pat.notes)) {
+			return pat.notes;
+		}
+		return null;
+	}, [activePatient]);
 	const rawSomaticAlerts = (activePatient as { somaticAlerts?: string[] } | undefined)?.somaticAlerts;
 	const rawRiskLevel = (activePatient as { somaticRiskLevel?: string } | undefined)?.somaticRiskLevel;
 	const isCardiacOrDiabetes = Boolean(
@@ -946,7 +967,10 @@ export const OdontogramModule = ({
 								</div>
 								<div className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-100 flex items-center gap-2 flex-wrap break-words">
 									{allergyText && (
-										<span className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1.5 shadow-xs">
+										<span
+											className="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-mono font-black text-xs inline-flex items-center gap-1.5 shadow-xs"
+											data-testid="badge-critical-allergy-tier1"
+										>
 											<AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
 											<span>{allergyText}</span>
 										</span>
