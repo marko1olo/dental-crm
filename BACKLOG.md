@@ -1,3 +1,14 @@
+# 📋 ИСТОРИЧЕСКИЙ ЛОГ ВНЕДРЁННЫХ ЗАДАЧ (SHIPPED CHANGELOG)
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📐 Архитектурный Бэклог (docs/competitive-audit/BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
+>
+> ⚠️ **ПРЕДОСТЕРЕЖЕНИЕ ДЛЯ ИИ-АГЕНТОВ (МАНДАТЫ 8g & 8h):**  
+> Этот файл представляет собой **хронологический лог УЖЕ ВНЕДРЁННЫХ И ЗАКРЫТЫХ задач** (Historical Changelog of Shipped Features).  
+> **ВСЕ 100% описанных ниже эндпоинтов, панелей, компонентов и исправлений УЖЕ РЕАЛИЗОВАНЫ В КОДОВОЙ БАЗЕ** (`apps/api`, `apps/web`, `packages/shared`), покрыты тестами компилятора (`npm run typecheck`) и работают на живом сервере.  
+> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** воспринимать слово «Gap:» как несделанную работу и пытаться реализовывать эти задачи заново! Актуальный статус всех фич проверяйте строго в [`docs/competitive-audit/FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md).
+
+---
+
 ## 2026-08-01 — AI recognition jobs history (GET /api/ai/recognition-jobs)
 
 **Gap:** `POST /api/ai/recognition-jobs` already created jobs from Settings → ИИ «Лаборатория нейросетей» and showed only the last `recognitionJob` in memory. `GET /api/ai/recognition-jobs` (`listAiRecognitionJobsFromDb`, requireClinicalReadAccess + org) had **zero web callers**. After reload or preset change staff could not see queue/history or reopen a prior draft.

@@ -248,7 +248,7 @@ export function PrimaryIntakePackageModal({
 									title="Заполнить все 10 пунктов соматической анкеты нормой в 1 клик: аллергий нет, анестетики переносит, гемостаз в норме"
 								>
 									<Sparkles size={14} aria-hidden="true" />
-									<span>{isNormApplied ? "✓ Анкета: соматически здоров (норма)" : "⚡ Заполнить анкету: Соматически здоров / норма (1 клик)"}</span>
+									<span>{isNormApplied ? "Анкета: соматически здоров (норма)" : "Заполнить анкету: Соматически здоров / норма (1 клик)"}</span>
 								</button>
 								<span className="document-patient-badge">
 									<ShieldCheck size={14} aria-hidden="true" />
@@ -307,7 +307,7 @@ export function PrimaryIntakePackageModal({
 												title="Заполнить анкету соматической нормой"
 											>
 												<Sparkles size={13} aria-hidden="true" />
-												<span>{isNormApplied ? "✓ Норма" : "⚡ Норма (1 клик)"}</span>
+												<span>{isNormApplied ? "Норма" : "Норма (1 клик)"}</span>
 											</button>
 										)}
 
@@ -374,7 +374,7 @@ export function PrimaryIntakePackageModal({
 							title="1-Клик печать всего комплекта (Договор №736 + ИДС №1051н + ОПД №152-ФЗ + Анкета соматики) с подчеркиваниями под ручную подпись"
 						>
 							<Printer size={18} aria-hidden="true" />
-							<span>🖨️ Распечатать весь пакет первичного приёма (4 бланка)</span>
+							<span>Распечатать весь пакет первичного приёма (4 бланка)</span>
 						</button>
 
 						<button
@@ -392,7 +392,7 @@ export function PrimaryIntakePackageModal({
 							title="Заполнить анкету здоровья нормой (аллергий нет, противопоказаний нет)"
 						>
 							<Sparkles size={16} aria-hidden="true" />
-							<span>{isNormApplied ? "✓ Анкета в норме" : "⚡ Анкета: норма (1 клик)"}</span>
+							<span>{isNormApplied ? "Анкета в норме" : "Анкета: норма (1 клик)"}</span>
 						</button>
 
 						{missingKinds.length > 0 ? (

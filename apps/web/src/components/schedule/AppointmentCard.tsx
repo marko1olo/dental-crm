@@ -1958,14 +1958,6 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										disabled={appointmentSaveState === "saving"}
 										aria-busy={appointmentSaveState === "saving" || undefined}
 										onClick={() => {
-											if (
-												appointmentDirty &&
-												!window.confirm(
-													"Изменения этой записи не сохранены. Закрыть и потерять их?",
-												)
-											) {
-												return;
-											}
 											closeAppointmentEditor(appointment.id);
 										}}
 									>

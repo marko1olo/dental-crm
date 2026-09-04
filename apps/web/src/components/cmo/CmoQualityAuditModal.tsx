@@ -247,6 +247,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 	const [customComment, setCustomComment] = useState<string>("");
 	const [customSeverity, setCustomSeverity] = useState<"critical" | "major" | "minor">("major");
 	const [selectedPresetId, setSelectedPresetId] = useState<string>("");
+	const [copiedAct, setCopiedAct] = useState<boolean>(false);
 
 	const loadVerificationQueue = useCallback(async () => {
 		setIsLoading(true);
@@ -423,7 +424,8 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 		const text = exportVkkExpertiseActText(currentVkkAct);
 		try {
 			await navigator.clipboard.writeText(text);
-			alert("Текст Акта экспертизы ВКК 785н скопирован в буфер обмена!");
+			setCopiedAct(true);
+			setTimeout(() => setCopiedAct(false), 3000);
 		} catch {
 			// Fallback
 		}
@@ -869,8 +871,8 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 									className="cmo-btn-secondary"
 									onClick={handleCopyVkkActText}
 								>
-									<Download size={16} />
-									<span>Копировать текст</span>
+									{copiedAct ? <Check size={16} className="text-emerald-500" /> : <Download size={16} />}
+									<span>{copiedAct ? "Скопировано!" : "Копировать текст"}</span>
 								</button>
 							</div>
 

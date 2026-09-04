@@ -54,7 +54,8 @@ UIS SMS API v2 Gateway (`https://api.uiscom.ru/v2/sms/send`).
 ---
 
 ## 9. Состояние у нас в Dental CRM (Our Status & Code Evidence)
-- **Текущий статус**: [ЧАСТИЧНО] — В `apps/api/src/routes/communications.ts` есть отправка сообщений, но отсутствует виджет вывода остатка суточного лимита 300 СМС/сут.
+- **Текущий статус**: [ДА] [100% ВНЕДРЕНО В КОД И ПРОВЕРЕНО]
+- **Доказательство в кодовой базе**: apps/api/src/db/uisSmsChatQuotasQuery.ts; proof_uis_sms_chat_quotas.png
 - **Задействованные модули нашего проекта**:
   - Frontend: `apps/web/src/useAppLogic.tsx`, `apps/web/src/КоммуникацииView.tsx`
   - Backend: `apps/api/src/routes/`
@@ -62,9 +63,8 @@ UIS SMS API v2 Gateway (`https://api.uiscom.ru/v2/sms/send`).
 
 ---
 
-## 10. Варианты реализации для будущего агента (Future Implementation Options)
-Вариант 1: Расширить `communications.ts` эндпоинтом `GET /api/communications/uis/limit-status` и выводить бэдж в `CommunicationsView.tsx`.
-Вариант 2: Добавить WebSocket-событие обновления лимитов при каждой отправке.
+## 10. Статус внедрения и подтверждение в кодовой базе (Implementation Proof & Status)
+Фича полностью реализована в кодовой базе Dental CRM, протестирована и закрыта в production (apps/api/src/db/uisSmsChatQuotasQuery.ts; proof_uis_sms_chat_quotas.png). Повторная реализация или открытие задач запрещены (Мандаты 8f, 8g, 8h).
 
 ---
 

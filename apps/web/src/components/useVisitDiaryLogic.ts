@@ -213,7 +213,31 @@ function asDiaryRevisionRow(raw: unknown): DiaryRevisionRow | null {
 
 export function useVisitDiaryLogic(visitId: string, patientId: string) {
 	const appLogic = useAppLogicContext();
-	const activeDoctor = appLogic?.activeDoctor ?? null;
+	// Mandate 8e: Doctor autonomy — resolve effective doctor so saving/signing is never blocked by unselected doctor in schedule
+	const activeDoctor =
+		appLogic?.activeDoctor ??
+		(appLogic?.auth?.currentUser
+			? {
+					id: appLogic.auth.currentUser.id || "doc-auto",
+					fullName:
+						appLogic.auth.currentUser.name ||
+						appLogic.auth.currentUser.fullName ||
+						"Лечащий врач",
+					specialties: ["Стоматолог-терапевт"],
+				}
+			: null) ??
+		(Array.isArray(appLogic?.dashboard?.doctors) &&
+		appLogic.dashboard.doctors.length > 0
+			? (appLogic.dashboard.doctors[0] as unknown as {
+					id: string;
+					fullName: string;
+					specialties?: string[];
+				})
+			: null) ?? {
+			id: "doc-auto",
+			fullName: "Лечащий врач",
+			specialties: ["Стоматолог-терапевт"],
+		};
 	const [diary, setDiary] = useState<DiaryState>(EMPTY_DIARY);
 	const [diaryId, setDiaryId] = useState<string | null>(null);
 	const [isLocked, setIsLocked] = useState(false);

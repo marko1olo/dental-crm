@@ -5,11 +5,7 @@
 
 import assert from "node:assert/strict";
 
-const isVitest = Boolean(process.env.VITEST);
-// @ts-ignore — vitest is a dev tool in root, conditionally imported when running via vitest CLI
-const runner = isVitest ? await import("vitest") : await import("node:test");
-const describe = runner.describe;
-const test = isVitest ? (runner as any).test : (runner as any).default;
+import { describe, it as test } from "node:test";
 import { parseKopecks, sumKopecks } from "@dental/shared";
 import {
 	CLINICAL_BUNDLES,

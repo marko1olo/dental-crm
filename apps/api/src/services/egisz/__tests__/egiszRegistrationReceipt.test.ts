@@ -405,6 +405,7 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 
 	it("4.6 Generates and validates SEMD 109 / Form 043-1/у (Orthodontic Card) XML structure against XSD constraints", () => {
 		const orthodonticXml = generateSemd043_1uXml({
+			docKind: "043-1u",
 			documentId: "doc-ortho-001",
 			visitDate: new Date("2026-09-03T11:00:00Z"),
 			patient: {
@@ -428,17 +429,20 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 			},
 			orthodonticDiagnosis: "Дистальная окклюзия зубных рядов, сужение верхней челюсти",
 			icd10Code: "K07.2",
-			angleMolarClassRight: "class_2",
-			angleMolarClassLeft: "class_2",
+			angleMolarClassRight: "class_2_sub_1",
+			angleMolarClassLeft: "class_2_sub_1",
 			angleCanineClassRight: "class_2",
-			angleCanineClassLeft: "class_2",
-			facialType: "mesoprosopic",
-			profileType: "convex",
-			skeletalClass: "class_2_sub_1",
-			applianceType: "metal_braces_self_ligating",
-			plannedDurationMonths: 24,
-			estimatedCostKopecks: 25000000,
-			retentionType: "Съемный ретейнер на верхнюю челюсть, несъемный на нижнюю челюсть",
+			anthropometry: {
+				facialType: "mesoprosopic",
+				profileType: "convex",
+			},
+			cephalometry: {
+				skeletalClass: "class_2_sub_1",
+			},
+			appliancePlan: {
+				applianceType: "metal_braces_self_ligating",
+				estimatedDurationMonths: 24,
+			},
 			dentalStatus: [
 				{ tooth: 11, condition: "healthy" },
 				{ tooth: 21, condition: "healthy" },
@@ -453,6 +457,7 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 
 	it("4.7 Generates and validates SEMD 130 (Tax Deduction Certificate, KND 1151156) XML structure against XSD constraints", () => {
 		const taxXml = generateSemd130Xml({
+			docKind: "130",
 			certificateNumber: "130-2026-0001",
 			taxYear: 2025,
 			issueDate: new Date("2026-09-03T10:00:00Z"),
@@ -500,6 +505,9 @@ describe("EGISZ REMD Registration Receipts & Retry Backoff Engine", () => {
 					paymentAmountKopecks: 12000000,
 				},
 			],
+			totalOrdinaryTreatmentKopecks: 4500000,
+			totalExpensiveTreatmentKopecks: 12000000,
+			totalSumKopecks: 16500000,
 		});
 
 		assert.ok(taxXml.includes("1.2.643.5.1.13.13.11.130"), "Must declare SEMD 130 template");

@@ -115,7 +115,16 @@ import { VoiceDictationAssistantModal } from "../components/voice/VoiceDictation
 import { InformedConsentModal } from "../components/consents/InformedConsentModal";
 import { AnesthesiaProtocolModal } from "../components/anesthesia/AnesthesiaProtocolModal";
 import { AnesthesiaSafetyHubModal } from "../components/anesthesia/AnesthesiaSafetyHubModal";
-import { SterilizationJournalModal } from "../components/sanpin/SterilizationJournalModal";
+import { SterilizationJournalModal } from "../components/sterilization/SterilizationJournalModal";
+import { EmergencyAnaphylaxisProtocolModal } from "../components/anesthesia/EmergencyAnaphylaxisProtocolModal";
+import { ImagingModal } from "../components/imaging/ImagingModal";
+import { ImplantPassportModal } from "../components/implants/ImplantPassportModal";
+import { SurgeryCockpitModal } from "../components/surgery/SurgeryCockpitModal";
+import { SurgeryProtocolPanel } from "../components/surgery/SurgeryProtocolPanel";
+import { SurgeryVisitCockpit } from "../components/visit/surgery/SurgeryVisitCockpit";
+import { VisitSurgeryProtocolTab } from "../components/visit/surgery/VisitSurgeryProtocolTab";
+import { AnesthesiaAspirationJournalModal } from "../components/visit/anesthesia/AnesthesiaAspirationJournalModal";
+import { NurseCarpuleDisposalModal } from "../components/warehouse/NurseCarpuleDisposalModal";
 import { MedicalWasteJournalModal } from "../components/sanpin/waste/MedicalWasteJournalModal";
 import { EmergencyRescueModal } from "../components/emergency/EmergencyRescueModal";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal";
@@ -633,6 +642,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 	const [isDoctorMobileShiftOpen, setIsDoctorMobileShiftOpen] = useState(false);
 	const [isDoctorCockpitOpen, setIsDoctorCockpitOpen] = useState(false);
 	const [isVisitOdontogramOpen, setIsVisitOdontogramOpen] = useState(false);
+	const [isEmergencyAnaphylaxisOpen, setIsEmergencyAnaphylaxisOpen] = useState(false);
+	const [isImagingModalOpen, setIsImagingModalOpen] = useState(false);
+	const [isImplantPassportOpen, setIsImplantPassportOpen] = useState(false);
+	const [isSurgeryCockpitOpen, setIsSurgeryCockpitOpen] = useState(false);
+	const [isSurgeryVisitCockpitOpen, setIsSurgeryVisitCockpitOpen] = useState(false);
+	const [isAnesthesiaAspirationOpen, setIsAnesthesiaAspirationOpen] = useState(false);
+	const [isNurseCarpuleDisposalOpen, setIsNurseCarpuleDisposalOpen] = useState(false);
 		
 	const handleThemeChange = (themeId: string) => {
 		setActiveTheme(themeId);
@@ -4761,6 +4777,96 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</div>
 					</div>
 				</div>
+			)}
+
+			{isEmergencyAnaphylaxisOpen && (
+				<EmergencyAnaphylaxisProtocolModal
+					isOpen={isEmergencyAnaphylaxisOpen}
+					onClose={() => setIsEmergencyAnaphylaxisOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					doctorName="Д-р Смирнов Алексей Петрович"
+				/>
+			)}
+
+			{isImagingModalOpen && (
+				<ImagingModal
+					isOpen={isImagingModalOpen}
+					onClose={() => setIsImagingModalOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					modality="RVG"
+					toothFdiCode="16"
+				/>
+			)}
+
+			{isImplantPassportOpen && (
+				<ImplantPassportModal
+					isOpen={isImplantPassportOpen}
+					onClose={() => setIsImplantPassportOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					patientId="PAT-2026-0891"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					initialTooth={46}
+				/>
+			)}
+
+			{isSurgeryCockpitOpen && (
+				<SurgeryCockpitModal
+					isOpen={isSurgeryCockpitOpen}
+					onClose={() => setIsSurgeryCockpitOpen(false)}
+					patientName={SAMPLE_PATIENT.fullName}
+					patientId="PAT-2026-0891"
+					doctorName="Д-р Смирнов Алексей Петрович"
+					initialTooth={46}
+				/>
+			)}
+
+			{isSurgeryVisitCockpitOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
+					<div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-4">
+						<div className="flex justify-between items-center mb-4">
+							<h2 className="text-lg font-bold text-white">Хирургический визит-кокпит</h2>
+							<button type="button" onClick={() => setIsSurgeryVisitCockpitOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+						</div>
+						<SurgeryVisitCockpit
+							patientName={SAMPLE_PATIENT.fullName}
+							patientId="PAT-2026-0891"
+							doctorName="Д-р Смирнов Алексей Петрович"
+							activeTooth={46}
+						/>
+						<div className="mt-4 pt-4 border-t border-slate-700">
+							<SurgeryProtocolPanel
+								patientName={SAMPLE_PATIENT.fullName}
+								toothFdi={46}
+							/>
+						</div>
+						<div className="mt-4 pt-4 border-t border-slate-700">
+							<VisitSurgeryProtocolTab
+								patientName={SAMPLE_PATIENT.fullName}
+								patientId="PAT-2026-0891"
+								doctorName="Д-р Смирнов Алексей Петрович"
+								activeTooth={46}
+							/>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{isAnesthesiaAspirationOpen && (
+				<AnesthesiaAspirationJournalModal
+					isOpen={isAnesthesiaAspirationOpen}
+					onClose={() => setIsAnesthesiaAspirationOpen(false)}
+					initialPatientFullName={SAMPLE_PATIENT.fullName}
+					initialToothNumber="46"
+				/>
+			)}
+
+			{isNurseCarpuleDisposalOpen && (
+				<NurseCarpuleDisposalModal
+					isOpen={isNurseCarpuleDisposalOpen}
+					onClose={() => setIsNurseCarpuleDisposalOpen(false)}
+					initialDoctorName="Д-р Смирнов Алексей Петрович"
+					initialNurseName="Смирнова А. В. (медсестра)"
+				/>
 			)}
 
 			</div>

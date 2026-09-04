@@ -1065,11 +1065,11 @@ export interface LoyaltyDiscountRule {
 }
 
 export const LOYALTY_DISCOUNT_PRESETS: readonly LoyaltyDiscountRule[] = [
-	{ id: "round_hundreds", label: "⚡ Округлить до сотен (скидка на копейки)", description: "Скидка на копейки до сотен рублей (например, 7 428 ₽ -> 7 400 ₽)" },
+	{ id: "round_hundreds", label: "Округлить до сотен (скидка на копейки)", description: "Скидка на копейки до сотен рублей (например, 7 428 ₽ -> 7 400 ₽)" },
 	{ id: "discount_3", label: "Скидка 3%", percent: 3, description: "Быстрая скидка 3% без запроса мастер-паролей" },
 	{ id: "discount_5", label: "Скидка 5%", percent: 5, description: "Быстрая скидка 5% без запроса мастер-паролей" },
 	{ id: "discount_10", label: "Скидка 10%", percent: 10, description: "Быстрая скидка 10% без запроса мастер-паролей" },
-	{ id: "warranty_100", label: "★ 100% Гарантия / Переделка", percent: 100, description: "100% гарантийная переделка клинического этапа врачом без админ-паролей" },
+	{ id: "warranty_100", label: "100% Гарантия / Переделка", percent: 100, description: "100% гарантийная переделка клинического этапа врачом без админ-паролей" },
 	{ id: "colleague_100", label: "Персонал / Коллеги 100%", percent: 100, description: "100% скидка для медицинского персонала клиники и коллег" },
 	{ id: "pensioner_10", label: "Пенсионная 10%", percent: 10, description: "Скидка 10% для пенсионеров и ветеранов" },
 	{ id: "family_5", label: "Семейная 5%", percent: 5, description: "Скидка 5% по семейной программе" },

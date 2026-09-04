@@ -2,7 +2,7 @@
 
 > **ГЛАВНЫЙ ИНТЕРТЕКСТУАЛЬНЫЙ НАВИГАЦИОННЫЙ ХАБ СИСТЕМЫ**  
 > ⚠️ **Высшая Конституция (Supreme Law):** **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**  
-> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11: Mandate 8d — Бремя доказательства и 7 смертных грехов UI, Mandate 8e — Запрет на палки в колёса врачам, Mandates 8f–8j — Догматы T.A.R.S. честности, Rule != Task, динамического синхрона, стоматологического домена и «Работает — не трогай» со стоп-линией DoD)  
+> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11: Mandate 8d — Бремя доказательства и 7 смертных грехов UI, Mandate 8e — Запрет на палки в колёса врачам, Mandates 8f–8n — Догматы T.A.R.S. честности, Rule != Task, динамического синхрона, стоматологического домена, «Работает — не трогай» со стоп-линией DoD, ЦРМ != симулятор реальности, свежий контекст субагентов, Red Team аудит, суверенитет масштаба: от соло-врача на 1 кресле до сетевого холдинга без тупиков)  
 > 🚪 **Корневой входной файл:** **[AGENTS.md (Root)](file:///C:/Clinic_MVP/dental-crm/AGENTS.md)**  
 > ⚙️ **Шимы платформ:** **[GEMINI.md](file:///C:/Clinic_MVP/dental-crm/GEMINI.md)** | **[CLAUDE.md](file:///C:/Clinic_MVP/dental-crm/CLAUDE.md)**  
 > 📚 **Портал документации docs/:** **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**  
@@ -157,7 +157,7 @@
    - **Строгая медицинская типографика:** Никаких эмодзи в картах 043/у, актах, чеках — только векторные иконки Lucide.
 4. **Технологический Стек и Окружение:**
    - **Фронтенд:** React **19** (19.2.7) + Vite + Tailwind CSS. (Не React 18!).
-   - **Бэкенд:** Node.js + Fastify 4+ + TypeScript.
+   - **Бэкенд:** Node.js + Fastify 5+ (5.3.3) + TypeScript.
    - **СУБД:** Нативный PostgreSQL **18.4** по TCP на `127.0.0.1:5432` (`.data/pg18`). (PGlite НЕ установлен!).
    - **Бизнес-логика:** Пакет `packages/shared/` (@dental/shared).
 5. **Ограничения God Context (`apps/web/src/useAppLogic.tsx`):**
@@ -169,3 +169,9 @@
 7. **Кодировка UTF-8 и Пофайловый Git:**
    - Запрет моджибаке: PowerShell here-strings и `node -e` для ЗАПИСИ кириллицы запрещены. Все файлы — строгий UTF-8.
    - `git add <файл>` строго по конкретным изменённым файлам. Запрещено использовать `git add .`, чтобы не затереть работу соседних агентов роя.
+8. **Архивные рабочие заметки агентов (.agents/<role>/) и исторических бэклогов:**
+   - Папки `.agents/<role>/` (`orchestrator_*`, `worker_*`, `reviewer_*`, `sentinel_*`, `m1_*`, `r4_*` и др.) содержат **исторические рабочие заметки прошлых сессий**.
+   - Файлы `plan.md`, `BRIEFING.md`, `DISPATCH.md` в этих подпапках являются **архивными следами**. Они НЕ являются действующими планами, бэклогами или задачами!
+   - КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО брать задачи из старых `plan.md`, `BRIEFING.md` или файлов `HANDOFF_*.md`!
+   - Единственным источником актуального статуса системы являются: живой исходный код, компилятор (`npm run typecheck`), тесты и реестр [`docs/competitive-audit/FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md).
+

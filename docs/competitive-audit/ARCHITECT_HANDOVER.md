@@ -27,15 +27,15 @@
 
 В директории **`C:\Clinic_MVP\dental-crm\docs\competitive-audit\`** создан полный арсенал планирования:
 
-- 📋 **[FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — Главная матрица паритета 63 фич конкурентов со статусами (`[ЛУЧШЕ У НАС]`, `[ЧАСТИЧНО]`, `[НЕТ]`).
+- 📋 **[FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — Главная матрица паритета 63 фич конкурентов (все 63 фичи имеют статус `[ДА]` и 100% внедрены в кодовую базу с файлами доказательств).
 - 🗺️ **[OUR_CRM_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)** — Карта возможностей нашей CRM по всем 10 функциональным модулям.
 - 🗄️ **[DATABASE_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/DATABASE_DEEP_MAP.md)** — Карта PostgreSQL, Drizzle ORM энумы и 31 вид юридических бланков.
 - 🔌 **[API_ROUTES_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md)** — Реестр всех API-эндпоинтов по 48 серверным файлам Fastify.
 - 🖥️ **[FRONTEND_COMPONENTS_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FRONTEND_COMPONENTS_DEEP_MAP.md)** — Карта React 19 компонентов, 14 основных представлений (`AppView`), 3-tier архитектура и соблюдение Мандата 8e (мягкие предупреждения вместо блокировок врача, автосейв в IndexedDB, норма в 1 клик).
 - 🧮 **[ALGORITHMS_AND_SHARED_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/ALGORITHMS_AND_SHARED_DEEP_MAP.md)** — Исчерпывающий справочник модулей пакета `@dental/shared` (деньги в копейках, 54-ФЗ, СанПиН 3.3686-21, ЕГИСЗ РЭМД CDA R3, калькулятор анестезии, техкарты BOM), 3D КТ WebWorker и STT-шлюза.
 - 🧪 **[SCRIPTS_AND_CLI_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/SCRIPTS_AND_CLI_DEEP_MAP.md)** — Каталог обязательных pre-commit гейтов (кодировки UTF-8, токены CSS, динамические импорты, защита хуков useAppLogic, проверки fetch-ответов, контракт .env), 170+ смоук-тестов и визуального аудита.
-- 📐 **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)** — Архитектурные варианты внедрения (фичи `[НЕТ]` и `[ЧАСТИЧНО]`).
-- 📂 **[FEATURE_SPECS/](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURE_SPECS)** — 63 детальные карточки спецификаций по 13 обязательным полям.
+- 📐 **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)** — Архитектурный эталон внедрения фич (исторический лог внедрения: все 63 фичи закрыты в кодовой базе).
+- 📂 **[FEATURE_SPECS/](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURE_SPECS)** — 63 детальные карточки спецификаций по 13 обязательным полям (все имеют статус `[ДА] [100% ВНЕДРЕНО В КОД]`).
 
 ---
 

@@ -444,7 +444,7 @@ describe("денежные гейты выдачи: квитанция и воз
 
 describe("Бланки договора и ИДС с 0 ₽ и без врача для регистратуры", () => {
 	const sampleClinic: ClinicProfile = {
-		organizationId: "org-1",
+		organizationId: "11111111-1111-4111-8111-111111111111",
 		clinicName: "Клиника ДЕНТЕ",
 		legalName: "ООО Стоматология ДЕНТЕ",
 		inn: "7701234567",
@@ -456,16 +456,31 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 		medicalLicenseIssuer: "Департамент здравоохранения г. Москвы",
 		phone: "+7 (495) 000-00-00",
 		email: "info@dente.ru",
+		mode: "small_clinic",
+		timezone: "Europe/Moscow",
+		defaultVisitMinutes: 30,
+		scheduleDefaults: {
+			workdayStart: "08:00",
+			workdayEnd: "21:00",
+			workingDays: [1, 2, 3, 4, 5, 6],
+			appointmentBufferMinutes: 30,
+		},
+		networkEnabled: false,
+		egiszEnabled: false,
+		updatedAt: new Date().toISOString(),
 	};
 
 	const samplePatient: Patient = {
 		id: randomUUID(),
-		organizationId: "org-1",
+		organizationId: "11111111-1111-4111-8111-111111111111",
 		fullName: "Иванов Иван Иванович",
 		phone: "+79991112233",
 		birthDate: "1990-01-01",
 		status: "active",
-		balance: "0",
+		notes: null,
+		email: null,
+		administrativeProfile: null,
+		balanceRub: 0,
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 	};
@@ -500,21 +515,22 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 	test("Типовой бланк договора с 0 ₽ без назначенного врача генерирует подчеркивания и не блокирует выдачу", () => {
 		const blankContractDoc: GeneratedDocument = {
 			id: randomUUID(),
-			organizationId: "org-1",
+			organizationId: "11111111-1111-4111-8111-111111111111",
 			patientId: samplePatient.id,
 			kind: "paid_medical_services_contract",
 			title: "Договор на оказание платных медицинских услуг",
 			status: "draft",
+			visitId: null,
+			totalAmountRub: null,
+			issuedAt: null,
 			payload: {
 				paidMedicalServicesContract: {
 					contractNumber: "ДОГ-БЛАНК-01",
+					contractDate: "2026-09-03",
 					signedAt: "2026-09-03",
 					serviceStart: "2026-09-03",
 					serviceEndOrCondition: "до завершения курса лечения",
 					customerFullName: samplePatient.fullName,
-					customerPassport: "4500 123456",
-					customerAddress: "г. Москва, ул. Ленина, д. 1",
-					customerPhone: samplePatient.phone,
 					doctorFullName: "", // Врач ещё не назначен
 					estimatedTotalRub: 0, // 0 ₽ до осмотра
 					plannedCareReason: "по медицинским показаниям",
@@ -531,13 +547,11 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 					changesRequireWrittenAgreement: true,
 				},
 			},
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
 		};
 
 		const html = renderDocumentHtml(blankContractDoc, samplePatient, {
 			clinicProfile: sampleClinic,
-			items: [],
+			treatmentPlanItems: [],
 		});
 
 		// Проверяем наличие строк подчеркиваний для ручного заполнения
@@ -549,7 +563,7 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 		// Проверяем, что выдача документа не блокируется
 		const blockReason = documentIssueBlockReason(blankContractDoc, samplePatient, {
 			clinicProfile: sampleClinic,
-			items: [],
+			treatmentPlanItems: [],
 		});
 		assert.strictEqual(blockReason, null);
 	});
@@ -557,11 +571,14 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 	test("Типовой бланк ИДС без назначенного врача генерирует подчеркивания и не блокирует выдачу", () => {
 		const blankConsentDoc: GeneratedDocument = {
 			id: randomUUID(),
-			organizationId: "org-1",
+			organizationId: "11111111-1111-4111-8111-111111111111",
 			patientId: samplePatient.id,
 			kind: "informed_consent",
 			title: "Информированное добровольное согласие",
 			status: "draft",
+			visitId: null,
+			totalAmountRub: null,
+			issuedAt: null,
 			payload: {
 				informedConsent: {
 					intervention: "Стоматологическое вмешательство",
@@ -573,10 +590,11 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 					explainedRisks: ["болевой синдром", "отек"],
 					alternatives: ["отказ от медицинского вмешательства"],
 					aftercareRequirements: ["соблюдать рекомендации врача"],
+					patientQuestionsAnswered: true,
+					patientUnderstandsRisks: true,
+					patientMayWithdrawBeforeIntervention: true,
 				},
 			},
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
 		};
 
 		const html = renderDocumentHtml(blankConsentDoc, samplePatient, {

@@ -1,7 +1,7 @@
 # TEST_READY.md — Dental CRM (DENTE) Full E2E & Challenger Stress Test Suite (Round 42)
 
 
-> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [🧪 Тестовая Инфраструктура (TEST_INFRA.md)](file:///C:/Clinic_MVP/dental-crm/TEST_INFRA.md)
 ## Executive Summary
 The complete 4-Tier E2E test suite and Challenger Stress Audit covering all 15 core clinical, financial, UI/UX, and architectural features defined in `PROJECT.md` and `ORIGINAL_REQUEST.md` has been verified and executed. 100% of tests pass cleanly with exit code 0 against native PostgreSQL 18.
 

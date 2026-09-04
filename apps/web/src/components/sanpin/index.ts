@@ -18,7 +18,7 @@ export * from "./GeneralCleaningRegisterTab";
 export * from "./MedicalWasteRegisterTab";
 export * from "./PsoRegisterTab";
 export * from "./TemperatureHumidityRegisterTab";
-export * from "./SterilizationJournalModal";
+export * from "../sterilization/SterilizationJournalModal";
 export { validateSterilizationCycle } from "./sterilizationSanpinEngine";
 export * from "./AutoclaveEquipmentModal";
 export * from "./SterilizerEquipmentModal";

@@ -1,7 +1,16 @@
 # DENTALPIN vs DENTE DENTAL CRM: FULL COMPARATIVE ARCHITECTURE & INGESTION AUDIT
 
-
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+>
+> ⚠️ **ИСТОРИЧЕСКИЙ СРАВНИТЕЛЬНЫЙ АУДИТ (HISTORICAL BENCHMARK REPORT):**  
+> Этот отчёт фиксирует исследование сторонней кодовой базы Dentalpin OSS.  
+> **АКТУАЛЬНЫЙ СТАТУС (2026-09-04):**  
+> 1. Все ценные клинические алгоритмы (пародонтологические индексы PCR/BOP, нормализация телефонов E.164, 2FA подтверждение смет) **УЖЕ ВНЕДРЕНЫ В @dental/shared И @dental/web**.  
+> 2. Чужеродные региональные модули (испанская бухгалтерия A3asesor/Sage, индийский налог India GST, стационарные опросники) **ОТБРАКОВАНЫ ПО МАНДАТУ 8i (СУВЕРЕНИТЕТ АМБУЛАТОРНОГО СТОМАТОЛОГИЧЕСКОГО КОНТЕКСТА)**.  
+> 3. Повторная или дополнительная интеграция модулей Dentalpin **ЗАПРЕЩЕНА**.
+
+---
+
 > **Authoritative Technical Report**  
 > **Date**: 2026-08-27  
 > **Target Project**: DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`)  

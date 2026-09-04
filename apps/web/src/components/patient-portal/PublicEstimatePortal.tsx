@@ -77,6 +77,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 	const [rejectReason, setRejectReason] = useState<PublicRejectionReason>("price");
 	const [rejectNote, setRejectNote] = useState<string>("");
 	const [isSubmittingReject, setIsSubmittingReject] = useState<boolean>(false);
+	const [modalError, setModalError] = useState<string | null>(null);
 
 	// Canvas Ref for Signature
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -260,12 +261,13 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 
 			setAcceptSuccess(true);
 			setShowAcceptModal(false);
+			setModalError(null);
 			if (onAccepted && meta?.estimate_number) {
 				onAccepted(meta.estimate_number);
 			}
 			await fetchEstimateDetails();
 		} catch (err: any) {
-			alert(err.message || "Ошибка сохранения согласования.");
+			setModalError(err.message || "Ошибка сохранения согласования.");
 		} finally {
 			setIsSubmittingAccept(false);
 		}
@@ -275,6 +277,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 		if (isSubmittingReject) return;
 
 		setIsSubmittingReject(true);
+		setModalError(null);
 		try {
 			const res = await fetch(`${apiBaseUrl}/api/public/estimates/${token}/reject`, {
 				method: "POST",
@@ -295,12 +298,13 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 			}
 
 			setShowRejectModal(false);
+			setModalError(null);
 			if (onRejected) {
 				onRejected(rejectReason);
 			}
 			await fetchEstimateDetails();
 		} catch (err: any) {
-			alert(err.message || "Ошибка отправки решения.");
+			setModalError(err.message || "Ошибка отправки решения.");
 		} finally {
 			setIsSubmittingReject(false);
 		}
@@ -647,6 +651,12 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 								</button>
 							</div>
 
+							{modalError && (
+								<div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 text-xs font-medium">
+									{modalError}
+								</div>
+							)}
+
 							<div className="space-y-1.5">
 								<label className="text-xs font-bold text-[var(--ink,#0f172a)]">ФИО подписанта:</label>
 								<input
@@ -737,6 +747,12 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 									<X size={18} />
 								</button>
 							</div>
+
+							{modalError && (
+								<div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 text-xs font-medium">
+									{modalError}
+								</div>
+							)}
 
 							<div className="space-y-1.5">
 								<label className="text-xs font-bold text-[var(--ink,#0f172a)]">Укажите причину:</label>

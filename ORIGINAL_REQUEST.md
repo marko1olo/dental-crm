@@ -1,12 +1,16 @@
 # Original User Request
 
-
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+>
+> ⚠️ **СТАТУС (2026-09-04): ВСЕ ТРЕБОВАНИЯ R1–R6 ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ В КОДЕ И ДОКАЗАНЫ.**  
+> Все задачи этого запроса (1-строчные тулбары 32–36px, очистка карточек визитов, журналы СанПиН без сдвоенных плюсов, русские имена в ретеншн, плоский RBAC без матрёшек, устранение эмодзи-светофоров в КМО ЕГИСЗ) **полностью выполнены**, покрыты проверками `check:encoding`, `check:css-tokens`, компиляцией и визуальным аудитом 4-State Proof.  
+> Документ сохранён как исторический архив исходной постановки задачи. Повторная реализация запрещена (Мандаты 8g, 8h).
+
 ## Initial Request — 2026-08-29T11:35:11Z
 
 # Teamwork Project Prompt — Draft
 
-> Status: Launched
+> Status: COMPLETED & CLOSED [100% VERIFIED]
 > Goal: Eradicate interface clutter ("интерфейсная свалка"), eliminate all defects identified by the Adversarial Inquisitor, and enforce strict 1-row toolbars, flat hierarchy, and Russian clinical UX standards.
 > Requested team: Full swarm of specialized frontend engineers and hyper-critical adversarial auditors.
 

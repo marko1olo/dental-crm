@@ -121,18 +121,6 @@ const DECLARED_UNMOUNTED: ReadonlyArray<{
 			"Клинический микровиджет выписки электронных рецептов по Приказу Минздрава РФ № 1094н (Форма 107-1/у, 148-1/у-88 ПКУ, 148-1/у-04(л) льготный). Интегрирует автоматический фармакологический аудит безопасности (контроль ВРД/ВСД, матрица DDI межлекарственных взаимодействий, возрастные противопоказания и дублирование групп НПВП).",
 	},
 	{
-		file: "components/imaging/DicomViewerModal.tsx",
-		name: "DicomViewerModal",
-		reason:
-			"Автономное модальное окно полнофункционального 3D DICOM/КЛКТ просмотрщика (CornerstoneJS / VTK.js) с поддержкой MPR-аксиальных, сагиттальных и корональных срезов, HU-калибровкой плотности костной ткани и интерактивным планированием дентальных имплантатов.",
-	},
-	{
-		file: "components/imaging/DicomViewport.tsx",
-		name: "DicomViewport",
-		reason:
-			"Вспомогательный компонент WebGL/Canvas рендеринга срезов DICOM внутри DicomViewerModal с поддержкой оконных уровней (Window/Level), зума, паннинга и аннотаций.",
-	},
-	{
 		file: "components/offline/OfflineContinuityStrip.tsx",
 		name: "OfflineContinuityStrip",
 		reason:

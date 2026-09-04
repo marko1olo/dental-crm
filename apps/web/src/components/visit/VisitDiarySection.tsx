@@ -3,6 +3,7 @@ import {
 	AlertTriangle,
 	BarChart2,
 	Check,
+	CheckCircle2,
 	ChevronDown,
 	Clock,
 	FileText,
@@ -282,8 +283,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		[],
 	);
 
-	const diaryUnread =
-		loadState.phase === "loading" || loadState.phase === "failed";
+	// Mandate 8e: Doctor autonomy — failed network load does not disable inputs, doctor can continue writing and autosave locally
+	const diaryUnread = loadState.phase === "loading";
 	const fieldsDisabled = diaryUnread || (isLocked && !isRevising);
 
 	const ctx = useAppLogicContext();
@@ -699,6 +700,33 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</div>
 
 				<div className="vde-043__actions">
+					<button
+						type="button"
+						id="diary-1click-norm-btn"
+						data-testid="diary-1click-norm-btn"
+						onClick={() => {
+							setDiary((prev) =>
+								mergeSoapDiaryState(
+									prev,
+									{
+										anamnesis:
+											"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Жалоб активно не предъявляет.",
+										statusLocalis:
+											"Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена, без патологических элементов. Прикус физиологический. Десна в области зубов плотная, бледно-розовая, не кровоточит при зондировании. Зубные ряды интактны, устойчивы. Гигиена удовлетворительная.",
+									},
+									{ strategy: "smart_append" },
+								),
+							);
+							scheduleDebouncedSave();
+							showToast("Физиологическая норма внесена в карту (Мандат 8e)", "success");
+						}}
+						disabled={fieldsDisabled}
+						className="vde-043__btn"
+						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию (Мандат 8e)"
+					>
+						<CheckCircle2 className="w-4 h-4 text-emerald-500" />
+						Норма / Здоров
+					</button>
 					<button
 						type="button"
 						data-testid="open-1click-templates-btn"

@@ -73,10 +73,11 @@ export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 			: null,
 	);
 	const appointmentId = realVisitFieldId(activeAppointment?.id);
+	// Mandate 8e: Doctor autonomy — diary is never blocked for active patient
 	const diaryVisitId =
-		openVisitId && appointmentId && openVisitAppointmentId === appointmentId
-			? openVisitId
-			: null;
+		openVisitId ??
+		(appointmentId ? `visit-${appointmentId}` : null) ??
+		(activePatient?.id ? `draft-visit-${activePatient.id}` : null);
 	const diaryPatientId =
 		realVisitFieldId(
 			activeVisit && typeof activeVisit === "object"

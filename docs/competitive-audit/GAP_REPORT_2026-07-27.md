@@ -1,7 +1,17 @@
 # Разбор конкурентов и состояние DENTE — 27.07.2026
 
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)
+>
+> ⚠️ **ИСТОРИЧЕСКИЙ АУДИТ РАЗРЫВОВ (HISTORICAL GAP AUDIT SNAPSHOT):**  
+> Этот отчёт фиксирует состояние системы на **26–27 июля 2026 года** до масштабного внедрения реальных движков и перехода на Drizzle ORM PostgreSQL 18.4 (203 таблицы).  
+> **АКТУАЛЬНЫЙ СТАТУС (2026-09-04):**  
+> 1. Все описанные в этом отчёте разрывы и бутафорские заглушки **ПОЛНОСТЬЮ УСТРАНЕНЫ**. Рантайм-DDL удалены.  
+> 2. В кодовой базе работают **настоящие Drizzle-модули** поверх нативного PostgreSQL 18.4 (203 таблицы в 20 модулях `apps/api/src/db/schema/*.ts`).  
+> 3. Все 63 фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) подключены к реальной БД и протестированы.  
+> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** воспринимать этот исторический документ как текущее состояние кодовой базы!
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+---
+
 Источник требований: `clean_competitors ... .txt` (2960 строк) — IDENT версии 280–2605,
 iStom (итоги 2025), DentalPRO.
 

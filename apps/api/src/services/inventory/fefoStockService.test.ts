@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	fefoStockService,
 	type FefoDeductionResult,
-	type FefoBatchAllocation,
+	type FefoBatchUsage,
 } from "./fefoStockService.js";
 
 describe("FEFO Stock Service & Batch Invariants", () => {
@@ -39,7 +39,7 @@ describe("FEFO Stock Service & Batch Invariants", () => {
 
 		const requiredQty = 5;
 		let remainingNeed = requiredQty;
-		const allocated: FefoBatchAllocation[] = [];
+		const allocated: FefoBatchUsage[] = [];
 
 		for (const b of batches) {
 			if (remainingNeed <= 0) break;
@@ -52,7 +52,6 @@ describe("FEFO Stock Service & Batch Invariants", () => {
 				batchNumber: "LOT",
 				expirationDate: b.expirationDate,
 				quantityDeducted: toTake,
-				unitPriceRub: 250,
 			});
 			remainingNeed -= toTake;
 		}
@@ -82,7 +81,8 @@ describe("FEFO Stock Service & Batch Invariants", () => {
 		// Проверяем, что результат фиксирует перерасход
 		const result: FefoDeductionResult = {
 			inventoryItemId: itemId,
-			totalRequestedQty: requiredQty,
+			inventoryItemName: "Артикаин 4%",
+			requiredQty: requiredQty,
 			deductedQty: requiredQty,
 			batchesUsed: [
 				{
@@ -90,17 +90,15 @@ describe("FEFO Stock Service & Batch Invariants", () => {
 					batchNumber: "LOT-01",
 					expirationDate: "2026-07-01",
 					quantityDeducted: 3,
-					unitPriceRub: 200,
 				},
 			],
 			isOverdraft: true,
 			deficitQty: 7,
-			newTotalStock: -7,
 		};
 
 		assert.equal(result.isOverdraft, true);
 		assert.equal(result.deficitQty, 7);
-		assert.equal(result.newTotalStock, -7);
+		assert.equal(newStock, -7);
 		assert.equal(result.deductedQty, 10);
 	});
 

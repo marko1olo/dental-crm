@@ -53,6 +53,10 @@ Canonical source is `.agents/AGENTS.md` and `.agents/THE_HAMMER_MASTER_PROMPT.md
 10. **Continuous Dynamic Doc & Backlog Sync (Mandate 8h)**: The moment a feature is implemented or confirmed in code, immediately update `BACKLOG.md`, `FEATURES_REGISTRY.md`, and checklists to `[ЕСТЬ] / [ЗАКРЫТО]`. Never run agents in circles on already finished work.
 11. **Specialized Outpatient Domain Boundary & Anti-Cargo-Cult (Mandate 8i)**: Private outpatient dental practice only (Form 043/u, 804n nomenclature, SanPiN, StAR). No inpatient hospitals, bed registries, or general medicine forms (Form 025/u). Every entity must serve the dentist at the dental chair or the reception desk.
 12. **Anti-Refactoring Itch & Definition of Done Stop-Line (Mandate 8j)**: If code is stable, compiles cleanly, passes tests, and solves the task — NEVER refactor it for style or aesthetics. Once DoD is satisfied, STOP. Commit, report `HEAD: <hash>`, and await commands or proceed to the next isolated backlog item.
+13. **CRM != Reality Simulator & Friction-Killer (Mandate 8k)**: Outpatient CRM reduces friction, not simulates physical reality. No manual 192 perio points, no carpule-by-carpule logging, 1-click standard normal protocols.
+14. **Fresh Subagent Context & Anti-Zombie Doctrine (Mandate 8l)**: Do not reuse subagents after task completion. Spawn fresh subagents with clean context for new tasks.
+15. **Mandatory Red Teaming (Mandate 8m)**: Independent adversarial critic inquisition on all front and back edits. Zero self-approval.
+16. **Scale-Agnostic Adaptability & Zero Dead-Ends (Mandate 8n)**: From solo rental doctor (1 chair, no mandatory assistant, full 54-FZ cashier autonomy, 1-click package write-offs, no 403 on draft contracts) to enterprise network (DB branch isolation, RBAC, background CMO audit, MDLP/EGISZ). System never traps users in dead-ends.
 
 
 ## Path-scoped rules

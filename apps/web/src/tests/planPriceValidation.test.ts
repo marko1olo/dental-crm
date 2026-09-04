@@ -266,7 +266,8 @@ describe("Comprehensive Treatment Plan Validation Report", () => {
 		assert.equal(report.totalItemsCount, 5);
 		assert.equal(report.archivedItemsCount, 1);
 		assert.equal(report.overallStatus, "BLOCKED_ARCHIVED_SERVICE");
-		assert.equal(report.canGenerateWorkOrder, false);
+		// Mandate 8e: Expired or archived items do not block dental lab work order generation
+		assert.equal(report.canGenerateWorkOrder, true);
 		assert.equal(report.canGenerateCompletedAct, true);
 		assert.ok(report.validationMessages.length > 0);
 	});

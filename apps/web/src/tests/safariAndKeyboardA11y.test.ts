@@ -41,9 +41,9 @@ describe("Safari Audio Autoplay & Lazy Initialization Law", () => {
 		SoundFeedbackService.resetInstance();
 		const service = new SoundFeedbackService(null);
 
-		// До первого воспроизведения audioContext не должен быть активен в среде без window
-		assert.ok(service.isEnabled());
-		assert.equal(service.getVolume(), 0.7);
+		// По умолчанию звуковая сигнализация выключена (silent by default для врача в кабинете)
+		assert.ok(!service.isEnabled());
+		assert.equal(service.getVolume(), 0.0);
 
 		service.dispose();
 		SoundFeedbackService.resetInstance();

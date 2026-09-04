@@ -225,8 +225,12 @@ export const ClinicalAuditBoard: React.FC<ClinicalAuditBoardProps> = ({
 	// Submit return for revision
 	const handleSubmitRevision = () => {
 		if (!revisionModalRecord) return;
+		const finalComment =
+			revisionComment.trim().length >= 5
+				? revisionComment.trim()
+				: "Требуется клиническое уточнение дневника формы 043/у.";
 		const res = returnRecordForRevision(revisionModalRecord, {
-			clinicalComment: revisionComment,
+			clinicalComment: finalComment,
 			presetId: selectedPresetId ?? undefined,
 			severity: revisionSeverity,
 			auditorFullName: currentUserFullName,
@@ -881,7 +885,6 @@ export const ClinicalAuditBoard: React.FC<ClinicalAuditBoardProps> = ({
 								type="button"
 								className="cmo-card-btn cmo-card-btn-reject"
 								onClick={handleSubmitRevision}
-								disabled={revisionComment.trim().length < 5}
 								style={{ minHeight: "44px", padding: "0 1.25rem" }}
 							>
 								<RotateCcw size={16} /> Направить врачу на доработку

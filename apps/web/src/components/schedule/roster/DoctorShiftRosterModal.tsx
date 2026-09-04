@@ -628,12 +628,14 @@ export function DoctorShiftRosterModal({
 																		{shift.doctorName}
 																	</div>
 																	{shift.assistantName ? (
-																		<div className="roster-shift-asst">
-																			<span>🤝 {shift.assistantName}</span>
+																		<div className="roster-shift-asst flex items-center gap-1">
+																			<Users size={11} className="shrink-0 text-[var(--teal,#0d9488)]" />
+																			<span>{shift.assistantName}</span>
 																		</div>
 																	) : (
-																		<div style={{ fontSize: "0.6875rem", color: "#ef4444" }}>
-																			⚠️ Без ассистента
+																		<div className="flex items-center gap-1" style={{ fontSize: "0.6875rem", color: "#ef4444" }}>
+																			<AlertTriangle size={11} className="shrink-0" />
+																			<span>Без ассистента</span>
 																		</div>
 																	)}
 																</div>
