@@ -133,6 +133,11 @@ export function formatSeniorNurseDisposalActData(options: {
 	seniorNurseName?: string | undefined;
 	chiefDoctorName?: string | undefined;
 	dentistName?: string | undefined;
+	approverRole?: "senior_nurse" | "doctor" | "administrator" | "authorized_staff" | undefined;
+	approverName?: string | undefined;
+	approvedByFullName?: string | undefined;
+	approvedByPositionRu?: string | undefined;
+	paperJournalAcknowledged?: boolean | undefined;
 	crptReceiptNumber?: string | undefined;
 	notes?: string | undefined;
 	isSingleSigner?: boolean | undefined;
@@ -170,16 +175,41 @@ export function formatSeniorNurseDisposalActData(options: {
 	});
 
 	// В стоматологической клинике списание пустых карпул (медотходы Класса Б)
-	// проводится единолично старшей/дежурной медсестрой при isSingleSigner === true.
-	const useSingleNurse = options.isSingleSigner === true;
+	// проводится единолично при флаге isSingleSigner или учёте бумажного журнала (paperJournalAcknowledged),
+	// либо комиссионно по умолчанию (старшая медсестра + главврач + врач).
+	const isPaperAcknowledged = options.paperJournalAcknowledged === true;
+	const useSingleNurse = options.isSingleSigner === true || isPaperAcknowledged;
+	const role = options.approverRole ?? (options.seniorNurseName ? "senior_nurse" : "doctor");
+
+	let defaultApproverName = options.approverName ?? options.approvedByFullName;
+	let defaultPositionRu = options.approvedByPositionRu;
+	let commissionRoleTitleRu = "МОЛ / Ответственный";
+
+	if (role === "doctor") {
+		defaultApproverName = defaultApproverName ?? options.dentistName ?? options.chiefDoctorName ?? "Кузнецов М.С.";
+		defaultPositionRu = defaultPositionRu ?? "Врач-стоматолог (дежурный)";
+		commissionRoleTitleRu = "МОЛ / Дежурный врач";
+	} else if (role === "administrator") {
+		defaultApproverName = defaultApproverName ?? "Администратор клиники";
+		defaultPositionRu = defaultPositionRu ?? "Администратор клиники";
+		commissionRoleTitleRu = "Администратор (МОЛ)";
+	} else if (role === "authorized_staff") {
+		defaultApproverName = defaultApproverName ?? "Уполномоченный сотрудник";
+		defaultPositionRu = defaultPositionRu ?? "Уполномоченный сотрудник клиники";
+		commissionRoleTitleRu = "Уполномоченное лицо";
+	} else {
+		defaultApproverName = defaultApproverName ?? options.seniorNurseName ?? "Иванова Е.В.";
+		defaultPositionRu = defaultPositionRu ?? (useSingleNurse ? "Старшая медицинская сестра" : "Главный врач");
+		commissionRoleTitleRu = "МОЛ / Дежурная медсестра";
+	}
 
 	const commission = useSingleNurse
 		? [
 				{
-					role: "senior_nurse" as const,
-					roleTitleRu: "МОЛ / Дежурная медсестра",
-					fullName: options.seniorNurseName ?? "Иванова Е.В.",
-					positionRu: "Медицинская сестра (списание проведено единолично)",
+					role: (role === "doctor" ? "dentist" : role === "senior_nurse" ? "senior_nurse" : "chief_doctor") as "senior_nurse" | "dentist" | "chief_doctor",
+					roleTitleRu: commissionRoleTitleRu,
+					fullName: defaultApproverName,
+					positionRu: `${defaultPositionRu} (единолично${isPaperAcknowledged ? ", бумажный журнал учтён" : ""})`,
 				},
 			]
 		: [
@@ -203,6 +233,12 @@ export function formatSeniorNurseDisposalActData(options: {
 				},
 			];
 
+	let notes = options.notes;
+	if (isPaperAcknowledged) {
+		const paperNote = "Бумажный журнал учтён (старшая медсестра опциональна)";
+		notes = notes ? `${notes}; ${paperNote}` : paperNote;
+	}
+
 	return {
 		actNumber,
 		actDate,
@@ -221,13 +257,9 @@ export function formatSeniorNurseDisposalActData(options: {
 		totalCostRub: Number(totalCost.toFixed(2)),
 		totalCostInWordsRu: amountToRussianWords(totalCost),
 		totalQuantityInWordsRu: carpulesQuantityToRussianWords(actItems.length, "карпула"),
-		notes: options.notes,
-		approvedByFullName: useSingleNurse
-			? (options.seniorNurseName ?? "Иванова Е.В.")
-			: (options.chiefDoctorName ?? "Петров А.С."),
-		approvedByPositionRu: useSingleNurse
-			? "Старшая медицинская сестра"
-			: "Главный врач",
+		notes,
+		approvedByFullName: defaultApproverName,
+		approvedByPositionRu: defaultPositionRu,
 		approvalDate: actDate,
 	};
 }

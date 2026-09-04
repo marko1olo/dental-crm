@@ -80,6 +80,8 @@ export interface PlanItemForValidation {
 	readonly serviceId?: string | undefined;
 	readonly stageId?: string | undefined;
 	readonly stageTitleRu?: string | undefined;
+	readonly isWarrantyReplacement?: boolean | undefined;
+	readonly isComplimentary?: boolean | undefined;
 }
 
 export interface Service804nAnalogue {
@@ -346,8 +348,10 @@ export function validatePlanToInvoice(
 		const isArchived = catalogItem ? (!catalogItem.active || !!catalogItem.isArchived) : false;
 		const isExcessiveDiscount = planDiscount > planGross;
 		// Врач имеет право применить скидку (вплоть до 100% на переделки по гарантии и персонал).
-		// Недействительными являются только строго отрицательные цены (< 0) или скидки сверх 100%.
+		// Недействительными являются только строго отрицательные цены (< 0), скидки сверх 100%,
+		// либо нулевая цена без явного признака бесплатной/гарантийной услуги.
 		const isZeroOrInvalidPrice =
+			(planUnitPrice <= 0 && planDiscount === 0 && !item.isWarrantyReplacement && !item.isComplimentary) ||
 			planUnitPrice < 0 ||
 			(catalogItem ? catalogItem.basePriceKopecks < 0 : false) ||
 			isExcessiveDiscount;
@@ -391,17 +395,17 @@ export function validatePlanToInvoice(
 			suggestedResolution = "UPDATE_TO_CURRENT_PRICE";
 			requiresAdminOverride = true;
 			zeroPriceItemsCount++;
-		} else if (isPlanExpired && deltaKopecks > 0) {
+		} else if (isPlanExpired && deltaKopecks > 0 && deltaPercent <= inflationThreshold) {
 			discrepancyType = "PLAN_EXPIRED";
 			severity = "WARNING";
 			statusDesc = `Срок действия сметы истек (${planAgeDays} дн. > ${validityDays} дн.). Прейскурант вырос на ${deltaPercent}%`;
 			suggestedResolution = "UPDATE_TO_CURRENT_PRICE";
 			// Мандат 8e / Раздел VII: Истечение 30 дней с момента составления плана лечения
-			// НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату!
+			// НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату при стандартном удорожании!
 			requiresAdminOverride = false;
 			increasedItemsCount++;
 		} else if (deltaKopecks > 0) {
-			discrepancyType = "PRICE_INCREASED";
+			discrepancyType = isPlanExpired ? "PLAN_EXPIRED" : "PRICE_INCREASED";
 			increasedItemsCount++;
 			if (isPriceLocked) {
 				severity = "WARNING";
@@ -409,7 +413,9 @@ export function validatePlanToInvoice(
 				suggestedResolution = "LOCK_ORIGINAL_PRICE";
 			} else {
 				severity = deltaPercent > inflationThreshold ? "WARNING" : "OK";
-				statusDesc = `Удорожание услуги на +${deltaPercent}%. Требуется подтверждение`;
+				statusDesc = deltaPercent > inflationThreshold
+					? `Удорожание услуги на +${deltaPercent}%. Требуется подтверждение`
+					: `Удорожание услуги на +${deltaPercent}%`;
 				suggestedResolution = deltaPercent > inflationThreshold ? "ADMIN_OVERRIDE" : "UPDATE_TO_CURRENT_PRICE";
 				requiresAdminOverride = deltaPercent > inflationThreshold;
 			}
@@ -550,11 +556,14 @@ export function validatePlanToInvoice(
 	const hasZeroPrices = validatedItems.some(
 		(i) => i.effectiveUnitPriceKopecks < 0,
 	);
+	const hasInvalidPrices = validatedItems.some(
+		(i) => i.discrepancyType === "INVALID_PRICE",
+	);
 	const hasExcessiveDiscounts = validatedItems.some(
 		(i) => (i.planDiscountKopecks ?? 0) > i.planGrossKopecks,
 	);
 	const hasUnresolvedAdminOverrides =
-		validatedItems.some((i) => i.requiresAdminOverride && i.discrepancyType !== "PLAN_EXPIRED") &&
+		validatedItems.some((i) => i.requiresAdminOverride) &&
 		payload.adminOverrideAuthorized !== true;
 	// Мандат 8e / Раздел VII: Истечение 30 дней с момента составления плана лечения
 	// НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату (только нейтральный бейдж и предупреждение).
@@ -563,6 +572,7 @@ export function validatePlanToInvoice(
 	const canGenerateWorkOrder =
 		validatedItems.length > 0 &&
 		!hasUnresolvedArchivedOrMissing &&
+		!hasInvalidPrices &&
 		!hasZeroPrices &&
 		!hasExcessiveDiscounts &&
 		!hasUnresolvedAdminOverrides;
