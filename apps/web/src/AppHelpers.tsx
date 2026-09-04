@@ -4357,8 +4357,8 @@ export function appointmentScheduleDraftSignature(
 export function appointmentScheduleDateMissingSteps(
 	draft: AppointmentScheduleDraft,
 ): string[] {
-	const startsAt = draft.startsAt.trim();
-	const endsAt = draft.endsAt.trim();
+	const startsAt = (draft?.startsAt ?? "").trim();
+	const endsAt = (draft?.endsAt ?? "").trim();
 	const startsAtMs = Date.parse(startsAt);
 	const endsAtMs = Date.parse(endsAt);
 	return [

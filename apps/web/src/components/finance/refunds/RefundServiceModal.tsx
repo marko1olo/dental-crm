@@ -51,8 +51,10 @@ export interface RefundServiceModalProps {
 	readonly patientName: string;
 	readonly patientPhone?: string | undefined;
 	readonly originalPaymentId?: string | undefined;
+	readonly paymentId?: string | undefined;
 	readonly originalReceiptNumber?: string | undefined;
 	readonly originalFiscalSign?: string | undefined;
+	readonly fnSerial?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly doctorCommissionPct?: number | undefined;
 	readonly services?: readonly {
@@ -78,8 +80,10 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 	patientName,
 	patientPhone,
 	originalPaymentId,
+	paymentId,
 	originalReceiptNumber,
 	originalFiscalSign,
+	fnSerial,
 	doctorName = "Лечащий врач",
 	doctorCommissionPct = 30,
 	services = [],

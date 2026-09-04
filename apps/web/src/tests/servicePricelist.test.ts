@@ -24,6 +24,8 @@ import {
 	formatRubles,
 	generatePrintablePricelistHtml,
 	importPricelistFromCsv,
+	isClinicPackageOrCustomService,
+	isValidCatalogServiceCode,
 	isValidOrder804nCode,
 	kopecksToRubles,
 	parseRawCsvText,
@@ -435,4 +437,42 @@ describe('Statutory Order 804n Service Catalog & Pricelist Matrix Suite', () => 
 		});
 	});
 
+	describe('10. Clinical Synonym Search & Clinic Package Freedom (Mandate 8e)', () => {
+		it('finds statutory endo services by clinical synonyms "нерв", "депульпирование"', () => {
+			const resNerve = searchPricelistItems(STATUTORY_ORDER_804N_PRESETS, 'нерв');
+			assert.ok(resNerve.length > 0);
+			assert.ok(resNerve.some((s) => s.code804n === 'A16.07.030.001' || s.code804n === 'A16.07.008.001'));
+
+			const resDepulp = searchPricelistItems(STATUTORY_ORDER_804N_PRESETS, 'депульпирование');
+			assert.ok(resDepulp.length > 0);
+			assert.ok(resDepulp.some((s) => s.code804n === 'A16.07.030.001'));
+		});
+
+		it('finds services by colloquial terms: пломба, чистка, снимок, капа', () => {
+			const resPlomba = searchPricelistItems(STATUTORY_ORDER_804N_PRESETS, 'пломба');
+			assert.ok(resPlomba.length >= 2);
+
+			const resClean = searchPricelistItems(STATUTORY_ORDER_804N_PRESETS, 'чистка');
+			assert.ok(resClean.length >= 1);
+
+			const resSnimok = searchPricelistItems(STATUTORY_ORDER_804N_PRESETS, 'снимок');
+			assert.ok(resSnimok.length >= 1);
+
+			const resKapa = searchPricelistItems(STATUTORY_ORDER_804N_PRESETS, 'капа');
+			assert.ok(resKapa.length >= 1);
+			assert.ok(resKapa.some((s) => s.code804n === 'CLINIC.KAPA.001'));
+		});
+
+		it('validates clinic packages and non-804n commercial services without blocking', () => {
+			const giftCert = STATUTORY_ORDER_804N_PRESETS.find((s) => s.code804n === 'CLINIC.GIFT.010');
+			assert.ok(giftCert);
+			assert.equal(giftCert.category, 'package');
+			assert.equal(giftCert.isClinicPackage, true);
+			assert.equal(giftCert.basePriceRub, 10000);
+			assert.equal(isValidCatalogServiceCode(giftCert.code804n), true);
+			assert.equal(isClinicPackageOrCustomService(giftCert.code804n), true);
+		});
+	});
+
 });
+

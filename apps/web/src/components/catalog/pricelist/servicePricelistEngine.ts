@@ -257,7 +257,8 @@ export function applyBatchPriceMarkup(
 }
 
 // =============================================================================
-// 4. FAST SEARCH & FILTER INDEX
+// =============================================================================
+// 4. FAST SEARCH & CLINICAL SYNONYM RESOLVER
 // =============================================================================
 
 export interface SearchPricelistQuery {
@@ -270,6 +271,84 @@ export interface SearchPricelistQuery {
 	readonly profitabilityLevel?: ProfitabilityLevel | 'all' | undefined;
 }
 
+/**
+ * Clinical synonyms dictionary connecting common colloquial/clinical terms
+ * with Minzdrav Order 804n statutory categories, tags and prefixes.
+ *
+ * Mandate 8e: "Врач и администратор не обязаны зубрить 10-значные коды Минздрава".
+ * Entering "кариес", "пломба", "удаление", "коронка", "чистка", "гигиена", "нерв", "снимок"
+ * will immediately resolve to canonical 804n nomenclature procedures.
+ */
+export const CLINICAL_SYNONYM_DICT: Record<string, readonly string[]> = {
+	кариес: ['кариес', 'пломб', 'реставрац', 'композит', 'a16.07.002', 'fuji', 'estelite', 'filtek', 'сиц'],
+	пломба: ['пломб', 'кариес', 'реставрац', 'композит', 'a16.07.002', 'fuji', 'estelite', 'filtek', 'сиц', 'штифт', 'билдап'],
+	удаление: ['удален', 'экстракц', 'хирург', 'сепарац', 'элеватор', 'щипц', 'дистопирован', 'ретинирован', 'мудрост', 'a16.07.001', 'a16.07.024'],
+	коронка: ['коронк', 'протез', 'ортопед', 'циркони', 'металлокерам', 'e.max', 'emax', 'винир', 'вкладк', 'tibase', 'a16.07.006'],
+	чистка: ['чистк', 'гигиен', 'профилактик', 'скейлинг', 'air-flow', 'airflow', 'фторирован', 'ультразвук', 'налет', 'a16.07.051'],
+	гигиена: ['гигиен', 'чистк', 'профилактик', 'скейлинг', 'air-flow', 'airflow', 'фторирован', 'ультразвук', 'отбеливан', 'a16.07.051', 'a16.07.050'],
+	нерв: [
+		'пульпит',
+		'периодонтит',
+		'канал',
+		'эндодонт',
+		'обтурац',
+		'депульпир',
+		'экстирпац',
+		'гуттаперч',
+		'силер',
+		'мышьяк',
+		'распломбирован',
+		'ревизия',
+		'a16.07.030',
+		'a16.07.008',
+		'a16.07.082',
+		'a16.07.091',
+	],
+	снимок: ['снимок', 'рентген', 'rvg', 'визиограф', 'оптг', 'ортопантомограф', 'панорам', 'кт', 'клкт', 'томограф', 'vatech', 'a06.07'],
+	рентген: ['рентген', 'снимок', 'rvg', 'визиограф', 'оптг', 'ортопантомограф', 'панорам', 'кт', 'клкт', 'томограф', 'a06.07'],
+	пульпит: ['пульпит', 'нерв', 'канал', 'эндодонт', 'обтурац', 'a16.07.030', 'a16.07.008'],
+	укол: ['анестез', 'укол', 'инфильтрац', 'проводников', 'ультракаин', 'скандонест', 'мепивакаин', 'обезболиван', 'a16.07.004', 'a11.07.012'],
+	анестезия: ['анестез', 'укол', 'инфильтрац', 'проводников', 'ультракаин', 'скандонест', 'мепивакаин', 'обезболиван', 'a16.07.004', 'a11.07.012'],
+	имплант: ['имплант', 'имплантац', 'osstem', 'straumann', 'титан', 'синус-лифтинг', 'аугментац', 'формировател', 'фдм', 'a16.07.054'],
+	имплантация: ['имплантац', 'имплант', 'osstem', 'straumann', 'титан', 'синус-лифтинг', 'аугментац', 'формировател', 'фдм', 'a16.07.054'],
+	протез: ['протез', 'коронк', 'ортопед', 'циркони', 'металлокерам', 'винир', 'съемн', 'бюгел', 'a16.07.006'],
+	протезирование: ['протез', 'коронк', 'ортопед', 'циркони', 'металлокерам', 'винир', 'съемн', 'бюгел', 'a16.07.006'],
+	винир: ['винир', 'emax', 'e.max', 'реставрац', 'эстетик', 'a16.07.006.003', 'a16.07.002.003'],
+	виниры: ['винир', 'emax', 'e.max', 'реставрац', 'эстетик', 'a16.07.006.003', 'a16.07.002.003'],
+	брекеты: ['брекет', 'ортодонт', 'прикус', 'damon', 'дуга', 'a16.07.047'],
+	элайнеры: ['элайнер', 'капп', 'ортодонт', 'star smile', 'flexiligner', 'a16.07.047'],
+	капа: ['капп', 'капа', 'бруксизм', 'сплинт', 'элайнер', 'защитн', 'clinic.kapa'],
+	капы: ['капп', 'капа', 'бруксизм', 'сплинт', 'элайнер', 'защитн', 'clinic.kapa'],
+	швы: ['шов', 'швы', 'наложение швов', 'снятие швов', 'лигатур', 'clinic.sut', 'a16.07.017'],
+	сертификат: ['сертификат', 'подарочн', 'депозит', 'аванс', 'пакет', 'clinic.gift'],
+	пакет: ['пакет', 'комплекс', 'чекап', 'акци', 'программ', 'pkg'],
+	десна: ['десн', 'пародонт', 'гингивит', 'кюретаж', 'формировател', 'фдм', 'a16.07.039'],
+	отбеливание: ['отбеливан', 'zoom', 'beyond', 'белоснежн', 'a16.07.050'],
+};
+
+/**
+ * Returns expanded clinical synonyms including Russian grammatical inflections and stems.
+ */
+export function getClinicalSynonyms(token: string): readonly string[] {
+	const norm = normalizeSearchText(token);
+	if (!norm || norm.length === 0) return [];
+
+	const direct = CLINICAL_SYNONYM_DICT[norm];
+	if (direct) return direct;
+
+	const synonyms: string[] = [];
+	for (const [key, list] of Object.entries(CLINICAL_SYNONYM_DICT)) {
+		// Stem / prefix matching for Russian inflections (e.g. "кариеса", "пломбу", "удаления", "нерва", "снимка")
+		const minLen = Math.min(norm.length, key.length);
+		const stemLen = Math.max(3, Math.min(4, minLen));
+		if (norm.slice(0, stemLen) === key.slice(0, stemLen)) {
+			synonyms.push(...list);
+		}
+	}
+
+	return synonyms.length > 0 ? Array.from(new Set(synonyms)) : [];
+}
+
 function normalizeSearchText(text: string): string {
 	return text
 		.toLowerCase()
@@ -280,21 +359,24 @@ function normalizeSearchText(text: string): string {
 }
 
 /**
- * High-performance search and filtering (< 5ms over 1000 items).
+ * High-performance search and filtering (< 5ms over 1000 items) with clinical synonym resolution.
  */
 export function searchPricelistItems(
 	items: readonly ServicePricelistItem[],
-	query: SearchPricelistQuery,
+	query: SearchPricelistQuery | string,
 ): readonly ServicePricelistItem[] {
-	const rawSearch = query.searchTerm?.trim() ?? '';
+	const normalizedQuery: SearchPricelistQuery = typeof query === 'string' ? { searchTerm: query } : (query ?? {});
+	const rawSearch = normalizedQuery.searchTerm?.trim() ?? '';
 	const normSearch = normalizeSearchText(rawSearch);
 	const searchTokens = normSearch.length > 0 ? normSearch.split(' ').filter((t) => t.length > 0) : [];
 	const searchCleanCode = rawSearch.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
-	const categoryFilter = query.category && query.category !== 'all' ? query.category : null;
-	const specialtyFilter = query.specialty && query.specialty !== 'all' ? query.specialty : null;
-	const profitFilter = query.profitabilityLevel && query.profitabilityLevel !== 'all' ? query.profitabilityLevel : null;
-	const includeArchived = query.includeArchived ?? false;
+	const categoryFilter = normalizedQuery.category && normalizedQuery.category !== 'all' ? normalizedQuery.category : null;
+	const specialtyFilter = normalizedQuery.specialty && normalizedQuery.specialty !== 'all' ? normalizedQuery.specialty : null;
+	const profitFilter = normalizedQuery.profitabilityLevel && normalizedQuery.profitabilityLevel !== 'all' ? normalizedQuery.profitabilityLevel : null;
+	const includeArchived = normalizedQuery.includeArchived ?? false;
+	const minPriceFilter = normalizedQuery.minPriceRub;
+	const maxPriceFilter = normalizedQuery.maxPriceRub;
 
 	return items.filter((item) => {
 		if (!includeArchived && item.isArchived) {
@@ -308,10 +390,10 @@ export function searchPricelistItems(
 		if (specialtyFilter && item.specialty !== specialtyFilter) {
 			return false;
 		}
-		if (query.minPriceRub !== undefined && item.basePriceRub < query.minPriceRub) {
+		if (minPriceFilter !== undefined && item.basePriceRub < minPriceFilter) {
 			return false;
 		}
-		if (query.maxPriceRub !== undefined && item.basePriceRub > query.maxPriceRub) {
+		if (maxPriceFilter !== undefined && item.basePriceRub > maxPriceFilter) {
 			return false;
 		}
 		if (profitFilter) {
@@ -334,18 +416,32 @@ export function searchPricelistItems(
 			`${item.code804n} ${item.commercialTitle} ${item.statutoryTitle804n} ${item.tags.join(' ')} ${item.icd10Indications.join(' ')} ${CATEGORY_LABELS[item.category]} ${SPECIALTY_LABELS[item.specialty]}`,
 		);
 
-		return searchTokens.every((token) => searchableText.includes(token));
+		return searchTokens.every((token) => {
+			if (searchableText.includes(token)) return true;
+			const synonyms = getClinicalSynonyms(token);
+			return synonyms.some((syn) => searchableText.includes(syn));
+		});
 	});
 }
 
+/**
+ * Convenient shorthand for searching pricelist items by free-form clinical search term.
+ */
+export function searchPricelist(
+	items: readonly ServicePricelistItem[],
+	searchTerm: string,
+): readonly ServicePricelistItem[] {
+	return searchPricelistItems(items, { searchTerm });
+}
+
 // =============================================================================
-// 5. STATUTORY ORDER 804N CODE VALIDATION & AUTODETECTION
+// 5. STATUTORY ORDER 804N & CLINICAL CATALOG CODE VALIDATION
 // =============================================================================
 
 const ORDER_804N_REGEX = /^[AB]\d{2}\.\d{2,3}\.\d{2,3}(?:\.\d{2,3})?$/i;
 
 /**
- * Validates whether a code conforms to Minzdrav Order 804n syntax (e.g. A16.07.002.001 or B01.065.001).
+ * Validates whether a code conforms to Minzdrav Order 804n statutory syntax (e.g. A16.07.002.001 or B01.065.001).
  */
 export function isValidOrder804nCode(code: string): boolean {
 	if (!code || typeof code !== 'string') return false;
@@ -353,10 +449,42 @@ export function isValidOrder804nCode(code: string): boolean {
 }
 
 /**
- * Automatically detects the clinical dental category based on Order 804n code prefix.
+ * Checks whether a service code is valid for catalog use (either standard 804n code OR custom clinic package identifier).
+ *
+ * Mandate 8e (Freedom of Clinic): Clinics are never blocked from creating intra-clinic packages or services
+ * ("Подарочный сертификат", "Индивидуальная капа", "Снятие швов сторонней клиники") due to non-conformance with 804n regex.
  */
-export function detectCategoryFrom804nCode(code: string): Order804nCategory {
+export function isValidCatalogServiceCode(code: string): boolean {
+	if (!code || typeof code !== 'string') return false;
+	return code.trim().length > 0;
+}
+
+/**
+ * Checks if a code represents an intra-clinic custom service/package rather than standard statutory 804n.
+ */
+export function isClinicPackageOrCustomService(code: string): boolean {
+	return !isValidOrder804nCode(code);
+}
+
+/**
+ * Automatically detects the clinical dental category based on Order 804n code prefix or service title.
+ */
+export function detectCategoryFrom804nCode(code: string, title?: string): Order804nCategory {
 	const trimmed = code.trim().toUpperCase();
+	const titleLower = title?.toLowerCase() ?? '';
+
+	if (
+		trimmed.startsWith('PKG') ||
+		trimmed.startsWith('CLINIC.GIFT') ||
+		trimmed.startsWith('CLINIC.KAPA') ||
+		titleLower.includes('пакет') ||
+		titleLower.includes('комплекс') ||
+		titleLower.includes('сертификат') ||
+		titleLower.includes('капа')
+	) {
+		return 'package';
+	}
+
 	if (trimmed.startsWith('B01.065') || trimmed.startsWith('B01.003')) {
 		if (trimmed.startsWith('B01.003')) return 'anesthesia';
 		return 'consultation';
@@ -581,6 +709,7 @@ function parseCategoryFromLabel(label: string): Order804nCategory {
 	if (norm.includes('гигиен') || norm.includes('чистк') || norm.includes('отбеливан')) return 'hygiene';
 	if (norm.includes('анестез')) return 'anesthesia';
 	if (norm.includes('консульт') || norm.includes('осмотр')) return 'consultation';
+	if (norm.includes('пакет') || norm.includes('комплекс') || norm.includes('сертификат') || norm.includes('капа')) return 'package';
 	return 'other';
 }
 

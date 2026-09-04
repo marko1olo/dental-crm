@@ -246,8 +246,12 @@ export function validateBuyerInn(params: {
 export type QuickCheckoutPresetType =
 	| "100_card"
 	| "100_cash"
+	| "100_sbp"
 	| "use_deposit"
-	| "split_50_50";
+	| "deposit_cash"
+	| "deposit_sbp"
+	| "split_50_50"
+	| "split_three_way";
 
 export interface QuickCheckoutPresetResult {
 	readonly payments: readonly CheckoutSplitItem[];
@@ -259,8 +263,12 @@ export interface QuickCheckoutPresetResult {
  * 1-Click Quick Preset Engine (Mandate 8e — zero cashier friction):
  * - 100_card: 100% банковской картой (Тег 1081)
  * - 100_cash: 100% наличными (Тег 1031) с точной суммой без сдачи
+ * - 100_sbp: 100% СБП QR (Тег 1081)
  * - use_deposit: Списание депозита/аванса (Тег 1215) с доплатой картой при нехватке
+ * - deposit_cash: Списание депозита/аванса (Тег 1215) с доплатой наличными
+ * - deposit_sbp: Списание депозита/аванса (Тег 1215) с доплатой через СБП QR
  * - split_50_50: Сплит 50/50 (Карта + Наличные) с точностью до копейки без дрейфа float
+ * - split_three_way: Депозит + 50/50 Карта и Наличные
  */
 export function applyQuickCheckoutPreset(params: {
 	readonly totalBillKop: number;
@@ -285,6 +293,13 @@ export function applyQuickCheckoutPreset(params: {
 				activeMethod: "cash",
 			};
 		}
+		case "100_sbp": {
+			return {
+				payments: total > 0 ? [{ method: "sbp_qr", amountKop: total }] : [],
+				cashTenderedKop: 0,
+				activeMethod: "sbp_qr",
+			};
+		}
 		case "use_deposit": {
 			if (availableDeposit >= total && total > 0) {
 				return {
@@ -305,9 +320,59 @@ export function applyQuickCheckoutPreset(params: {
 				};
 			}
 			return {
-				payments: total > 0 ? [{ method: "patient_deposit", amountKop: total }] : [],
+				payments: total > 0 ? [{ method: "bank_card", amountKop: total }] : [],
 				cashTenderedKop: 0,
-				activeMethod: "patient_deposit",
+				activeMethod: "bank_card",
+			};
+		}
+		case "deposit_cash": {
+			if (availableDeposit >= total && total > 0) {
+				return {
+					payments: [{ method: "patient_deposit", amountKop: total }],
+					cashTenderedKop: 0,
+					activeMethod: "patient_deposit",
+				};
+			}
+			if (availableDeposit > 0 && total > availableDeposit) {
+				const remainderKop = total - availableDeposit;
+				return {
+					payments: [
+						{ method: "patient_deposit", amountKop: availableDeposit },
+						{ method: "cash", amountKop: remainderKop },
+					],
+					cashTenderedKop: remainderKop,
+					activeMethod: "cash",
+				};
+			}
+			return {
+				payments: total > 0 ? [{ method: "cash", amountKop: total }] : [],
+				cashTenderedKop: total,
+				activeMethod: "cash",
+			};
+		}
+		case "deposit_sbp": {
+			if (availableDeposit >= total && total > 0) {
+				return {
+					payments: [{ method: "patient_deposit", amountKop: total }],
+					cashTenderedKop: 0,
+					activeMethod: "patient_deposit",
+				};
+			}
+			if (availableDeposit > 0 && total > availableDeposit) {
+				const remainderKop = total - availableDeposit;
+				return {
+					payments: [
+						{ method: "patient_deposit", amountKop: availableDeposit },
+						{ method: "sbp_qr", amountKop: remainderKop },
+					],
+					cashTenderedKop: 0,
+					activeMethod: "sbp_qr",
+				};
+			}
+			return {
+				payments: total > 0 ? [{ method: "sbp_qr", amountKop: total }] : [],
+				cashTenderedKop: 0,
+				activeMethod: "sbp_qr",
 			};
 		}
 		case "split_50_50": {
@@ -326,7 +391,111 @@ export function applyQuickCheckoutPreset(params: {
 				activeMethod: "bank_card",
 			};
 		}
+		case "split_three_way": {
+			const usedDepositKop = Math.min(availableDeposit, total);
+			const remainderKop = Math.max(0, total - usedDepositKop);
+			const halfCardKop = Math.floor(remainderKop / 2);
+			const halfCashKop = remainderKop - halfCardKop;
+			const payments: CheckoutSplitItem[] = [];
+
+			if (usedDepositKop > 0) {
+				payments.push({ method: "patient_deposit", amountKop: usedDepositKop });
+			}
+			if (halfCardKop > 0) {
+				payments.push({ method: "bank_card", amountKop: halfCardKop });
+			}
+			if (halfCashKop > 0) {
+				payments.push({ method: "cash", amountKop: halfCashKop });
+			}
+
+			return {
+				payments,
+				cashTenderedKop: halfCashKop,
+				activeMethod: usedDepositKop > 0 ? "patient_deposit" : "bank_card",
+			};
+		}
 	}
+}
+
+export type FastCheckoutDiscountPreset =
+	| "none"
+	| "round_hundreds"
+	| "discount_3"
+	| "discount_5"
+	| "discount_10"
+	| "warranty_100"
+	| "colleague_100"
+	| "manual_percent";
+
+export interface FastCheckoutDiscountResult {
+	readonly grossKop: number;
+	readonly discountKop: number;
+	readonly netKop: number;
+	readonly discountRub: number;
+	readonly netRub: number;
+	readonly savingsText: string;
+	readonly effectivePercent: number;
+}
+
+/**
+ * Calculates doctor discounts and 100% warranty rework with exact integer kopecks (Mandate 8e: Doctor Autonomy).
+ * - round_hundreds: rounds bill down to hundreds of rubles in favor of the patient
+ * - warranty_100: 100% warranty rework discount (due 0 ₽) without admin passwords
+ * - colleague_100: 100% staff / doctor treatment (due 0 ₽)
+ */
+export function calculateFastCheckoutDiscount(params: {
+	readonly grossKop: number;
+	readonly preset: FastCheckoutDiscountPreset;
+	readonly customPercent?: number | undefined;
+}): FastCheckoutDiscountResult {
+	const gross = Math.max(0, params.grossKop);
+	if (gross === 0 || params.preset === "none") {
+		return {
+			grossKop: gross,
+			discountKop: 0,
+			netKop: gross,
+			discountRub: 0,
+			netRub: gross / 100,
+			savingsText: "0.00 ₽",
+			effectivePercent: 0,
+		};
+	}
+
+	let discountKop = 0;
+	if (params.preset === "round_hundreds") {
+		if (gross >= 10000) {
+			const roundedKop = Math.floor(gross / 10000) * 10000;
+			discountKop = gross - roundedKop;
+		} else {
+			const roundedKop = Math.floor(gross / 100) * 100;
+			discountKop = gross - roundedKop;
+		}
+	} else if (params.preset === "discount_3") {
+		discountKop = Math.round(gross * 0.03);
+	} else if (params.preset === "discount_5") {
+		discountKop = Math.round(gross * 0.05);
+	} else if (params.preset === "discount_10") {
+		discountKop = Math.round(gross * 0.10);
+	} else if (params.preset === "warranty_100" || params.preset === "colleague_100") {
+		discountKop = gross;
+	} else if (params.preset === "manual_percent") {
+		const pct = Math.max(0, Math.min(100, params.customPercent ?? 0));
+		discountKop = Math.round((gross * pct) / 100);
+	}
+
+	discountKop = Math.max(0, Math.min(gross, discountKop));
+	const netKop = gross - discountKop;
+	const effectivePercent = gross > 0 ? Math.round((discountKop / gross) * 100) : 0;
+
+	return {
+		grossKop: gross,
+		discountKop,
+		netKop,
+		discountRub: discountKop / 100,
+		netRub: netKop / 100,
+		savingsText: `${(discountKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`,
+		effectivePercent,
+	};
 }
 
 export interface FastCheckoutValidationResult {

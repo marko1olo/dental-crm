@@ -85,4 +85,104 @@ describe("Frictionless Patient Registration & Non-Blocking Invariants (Mandate 8
 			"Guidance must explicitly state that SNILS and passport do not block registration",
 		);
 	});
+
+	it("prints blank contract package with '_______' placeholders and 0 rubles without 403 or server errors (Mandate 8e)", async () => {
+		const { generatePrimaryIntakePackageHtml } = await import(
+			"../../documents/primaryIntakePackagePrintEngine.js"
+		);
+
+		// Blank patient (waiting area walk-in, zero documents entered yet)
+		const html = generatePrimaryIntakePackageHtml({
+			patient: null,
+			clinic: {
+				clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				legalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				inn: "7707083893",
+			},
+			intakeNormApplied: true,
+		});
+
+		assert.ok(html.includes("<!DOCTYPE html>"), "Must be valid HTML document");
+		assert.ok(
+			html.includes("ДОГОВОР") &&
+				html.includes("на оказание платных"),
+			"Contains standard medical services contract (PP RF 736)",
+		);
+		assert.ok(
+			html.includes("ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ"),
+			"Contains standard informed consent (Order 1051n)",
+		);
+		assert.ok(
+			html.includes("СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ"),
+			"Contains personal data consent (152-FZ)",
+		);
+		assert.ok(
+			html.includes("043/у") || html.includes("АНКЕТА"),
+			"Contains outpatient health questionnaire (043/u)",
+		);
+		// Underscores for manual handwriting
+		assert.ok(
+			html.includes("________________________________________"),
+			"Contains blank underline placeholders for patient name/address handwriting",
+		);
+		assert.ok(
+			html.includes("0 (ноль) рублей") || html.includes("0 ₽") || html.includes("ориентировочная"),
+			"Must handle 0 ruble / preliminary contract price gracefully",
+		);
+	});
+
+	it("allows booking appointment without mandatory assistant (solo doctor or dynamic assignment)", async () => {
+		const { appointmentScheduleMissingFields } = await import(
+			"../../../AppHelpers.js"
+		);
+
+		const staff = [
+			{
+				id: "doc-1",
+				fullName: "Д-р Барабаш С.В.",
+				role: "doctor" as const,
+				active: true,
+			},
+			{
+				id: "asst-1",
+				fullName: "Медсестра Иванова М.П.",
+				role: "assistant" as const,
+				active: true,
+			},
+		];
+		const chairs = [{ id: "chair-1", name: "Кабинет 1", active: true }];
+		const patients = [{ id: "pat-1", fullName: "Смирнова Анна", active: true }];
+
+		// Draft WITHOUT assistantUserId (doctor works solo or assistant is assigned dynamically)
+		const draftWithoutAssistant = {
+			patientId: "pat-1",
+			doctorUserId: "doc-1",
+			assistantUserId: "", // empty / not selected
+			chairId: "chair-1",
+			startsAt: "2026-09-04T14:00:00.000Z",
+			endsAt: "2026-09-04T14:30:00.000Z",
+			status: "planned" as const,
+			reason: "CITO! Острая боль",
+			comment: "Экстренный прием",
+		};
+
+		// biome-ignore lint/suspicious/noExplicitAny: test draft
+		const missing = appointmentScheduleMissingFields(draftWithoutAssistant as any, "small_clinic", staff as any, {
+			// biome-ignore lint/suspicious/noExplicitAny: test draft
+			chairs: chairs as any,
+			// biome-ignore lint/suspicious/noExplicitAny: test draft
+			patients: patients as any,
+		});
+
+		// Assistant must NEVER be in missing required fields!
+		assert.equal(
+			missing.length,
+			0,
+			`Expected zero missing required fields for solo booking, got: ${JSON.stringify(missing)}`,
+		);
+		assert.ok(
+			!missing.some((m) => m.toLowerCase().includes("ассистент")),
+			"Assistant selection must NEVER be a required step in appointment booking",
+		);
+	});
 });

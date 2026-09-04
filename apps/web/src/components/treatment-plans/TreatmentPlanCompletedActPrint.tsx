@@ -5,7 +5,7 @@
  * Постановлению Правительства РФ № 736 и ГОСТ Р 7.0.97-2016.
  */
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	Award,
@@ -35,7 +35,7 @@ import {
 	type DocumentBrandColor,
 	useDocumentBrandingStore,
 } from "../../store/documentBrandingStore";
-import { type Kopecks, formatKopecksRu, rublesToKopecks } from "@dental/shared";
+import { type Kopecks, formatKopecksRu, rublesToKopecks, sha256Hex } from "@dental/shared";
 import "../../styles/premium-document-print.css";
 
 export interface TreatmentPlanCompletedActPrintProps {
@@ -317,11 +317,80 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 
 	const hasDeficit = actData.writtenOffMaterials.some((m) => m.isDeficit);
 
-	// Cryptographic verification hash (SHA-256 simulation compliant with GOST R 7.0.97-2016)
-	const verificationHash =
-		"SHA-256: 8fbc" +
-		(actData.actNumber.replace(/\D/g, "") || "8821") +
-		"70e281943019a84fbe392019a84bce1849201849a019".slice(0, 24);
+	// Canonical representation of completed act body for cryptographic verification
+	const canonicalActPayload = useMemo(() => {
+		return JSON.stringify({
+			actNumber: actData.actNumber,
+			actDate: actData.actDate,
+			contractNumber: actData.contractNumber,
+			patientId: actData.patientId,
+			patientName: actData.patientName,
+			doctorFullName: actData.doctorFullName,
+			stageNumber: actData.stageNumber,
+			stageTitle: actData.stageTitle,
+			totalServiceRub: netServicesRub,
+			totalServiceKopecks: netServicesKopecks,
+			totalMaterialCostRub: netMaterialRub,
+			totalMaterialCostKopecks: netMaterialKopecks,
+			completedProcedures: actData.completedProcedures.map((p) => ({
+				id: p.id,
+				procedureName: p.name,
+				code804n: p.code804n,
+				toothNumber: p.toothNumber,
+				quantity: p.quantity,
+				unitPriceRub: p.unitPriceRub,
+				discountRub: p.discountRub,
+				totalRub: p.priceRub,
+			})),
+			writtenOffMaterials: actData.writtenOffMaterials.map((m) => ({
+				id: m.id,
+				materialName: m.materialName,
+				order804nCode: m.order804nCode,
+				quantityRequired: m.quantityRequired,
+				unitCostRub: m.unitCostRub,
+				totalCostRub: m.totalCostRub,
+			})),
+		});
+	}, [
+		actData,
+		netServicesRub,
+		netServicesKopecks,
+		netMaterialRub,
+		netMaterialKopecks,
+	]);
+
+	// Cryptographic verification hash (SHA-256 calculation compliant with GOST R 7.0.97-2016 via Web Crypto API)
+	const [verificationHash, setVerificationHash] = useState<string>(() => {
+		return `SHA-256: ${sha256Hex(canonicalActPayload)}`;
+	});
+
+	useEffect(() => {
+		let isCancelled = false;
+		async function updateHashWithWebCrypto() {
+			try {
+				if (typeof window !== "undefined" && window.crypto?.subtle?.digest) {
+					const encoder = new TextEncoder();
+					const data = encoder.encode(canonicalActPayload);
+					const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+					const hashArray = Array.from(new Uint8Array(hashBuffer));
+					const hex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+					if (!isCancelled) {
+						setVerificationHash(`SHA-256: ${hex}`);
+					}
+					return;
+				}
+			} catch (e) {
+				console.warn("[TreatmentPlanCompletedActPrint] Web Crypto API calculation failed, using fallback:", e);
+			}
+			if (!isCancelled) {
+				setVerificationHash(`SHA-256: ${sha256Hex(canonicalActPayload)}`);
+			}
+		}
+		updateHashWithWebCrypto();
+		return () => {
+			isCancelled = true;
+		};
+	}, [canonicalActPayload]);
 
 	return (
 		<div

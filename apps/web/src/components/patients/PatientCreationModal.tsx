@@ -18,6 +18,7 @@ import {
 	FileText,
 	Megaphone,
 	Plus,
+	Printer,
 	ShieldCheck,
 	Stethoscope,
 	UserPlus,
@@ -27,6 +28,7 @@ import {
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { printPrimaryIntakePackage } from "../documents/primaryIntakePackagePrintEngine";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { parsePatientDictationLocal } from "../../lib/smartPatientParser";
@@ -197,11 +199,49 @@ export function PatientCreationModal({
 	const quickActionReady =
 		quickIntakeValidationResult.isValid && !isPatientCreating;
 
+	const handlePrintBlankContract = () => {
+		const clinicProfile = appLogic?.dashboard?.clinicSettings?.profile;
+		printPrimaryIntakePackage({
+			patient: {
+				fullName: newPatientName.trim() || undefined,
+				phone: newPatientPhone.trim() || undefined,
+				birthDate: newPatientBirthDate.trim() || undefined,
+				snils: patientAdministrativeProfileDraft.snils || undefined,
+				passport: patientAdministrativeProfileDraft.identityDocument || undefined,
+			},
+			clinic: clinicProfile
+				? {
+						legalName: clinicProfile.legalName,
+						clinicName: clinicProfile.clinicName,
+						inn: clinicProfile.inn,
+						kpp: clinicProfile.kpp,
+						ogrn: clinicProfile.ogrn,
+						licenseNumber: clinicProfile.licenseNumber,
+						licenseDate: clinicProfile.licenseDate,
+						address: clinicProfile.actualAddress || clinicProfile.address,
+						phone: clinicProfile.phone,
+						directorFullName: clinicProfile.directorFullName,
+						directorTitle: clinicProfile.directorTitle,
+					}
+				: undefined,
+			doctorFullName: null,
+			intakeNormApplied: true,
+		});
+		showToast(
+			"Бланк договора со строками «________» отправлен на печать для зоны ожидания (без 403-ошибок)",
+			"info",
+			4000,
+		);
+	};
+
 	const handleCreate = async () => {
 		if (isPatientCreating) return;
-		if (!newPatientName.trim()) {
+		let effectiveName = newPatientName.trim();
+		if (!effectiveName) {
 			if (isEmergencyOrPrimary) {
-				setNewPatientName("Пациент с острой болью (CITO)");
+				effectiveName = "Пациент с острой болью (CITO)";
+				setNewPatientName(effectiveName);
+				usePatientStore.getState().setNewPatientName(effectiveName);
 			} else {
 				showToast(
 					"Укажите имя пациента или включите CITO для экстренной записи",
@@ -209,6 +249,8 @@ export function PatientCreationModal({
 				);
 				return;
 			}
+		} else {
+			usePatientStore.getState().setNewPatientName(effectiveName);
 		}
 		try {
 			// Attach advertising source note to administrative profile draft
@@ -234,9 +276,12 @@ export function PatientCreationModal({
 
 	const handleCreateAndBook = async () => {
 		if (isPatientCreating) return;
-		if (!newPatientName.trim()) {
+		let effectiveName = newPatientName.trim();
+		if (!effectiveName) {
 			if (isEmergencyOrPrimary) {
-				setNewPatientName("Пациент с острой болью (CITO)");
+				effectiveName = "Пациент с острой болью (CITO)";
+				setNewPatientName(effectiveName);
+				usePatientStore.getState().setNewPatientName(effectiveName);
 			} else {
 				showToast(
 					"Укажите имя пациента или включите CITO для экстренной записи",
@@ -244,6 +289,8 @@ export function PatientCreationModal({
 				);
 				return;
 			}
+		} else {
+			usePatientStore.getState().setNewPatientName(effectiveName);
 		}
 		try {
 			if (advertisingSource) {
@@ -294,9 +341,12 @@ export function PatientCreationModal({
 
 	const handleCreateAndOpenVisit = async () => {
 		if (isPatientCreating) return;
-		if (!newPatientName.trim()) {
+		let effectiveName = newPatientName.trim();
+		if (!effectiveName) {
 			if (isEmergencyOrPrimary) {
-				setNewPatientName("Пациент с острой болью (CITO)");
+				effectiveName = "Пациент с острой болью (CITO)";
+				setNewPatientName(effectiveName);
+				usePatientStore.getState().setNewPatientName(effectiveName);
 			} else {
 				showToast(
 					"Укажите имя пациента или включите CITO для экстренной записи",
@@ -304,6 +354,8 @@ export function PatientCreationModal({
 				);
 				return;
 			}
+		} else {
+			usePatientStore.getState().setNewPatientName(effectiveName);
 		}
 		try {
 			if (advertisingSource) {
@@ -1023,6 +1075,22 @@ export function PatientCreationModal({
 							onClick={onClose}
 						>
 							Отмена
+						</button>
+						<button
+							type="button"
+							className="secondary-button quick-create-print-blank-btn"
+							onClick={handlePrintBlankContract}
+							title="Распечатать бланк договора и согласий со строками «________» для ручного заполнения пациентом в зоне ожидания (Мандат 8e, без 403-ошибок)"
+							data-testid="patient-creation-print-blank-contract-btn"
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
+						>
+							<Printer size={15} aria-hidden="true" />
+							<span>Бланк договора («____»)</span>
 						</button>
 						<button
 							type="button"

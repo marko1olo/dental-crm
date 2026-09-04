@@ -608,18 +608,25 @@ export function usePatientLogic({
 			setError("Дождитесь завершения создания карточки пациента.");
 			return null;
 		}
-		const fullName = newPatientName.trim();
+		const storeState = usePatientStore.getState();
+		const fullName = (storeState.newPatientName || newPatientName).trim();
 		if (!fullName) {
 			setError("Укажите ФИО пациента перед созданием карточки.");
 			return null;
 		}
-		const isAnon = patientAdministrativeProfileDraft.isAnonymous === true;
+		const isAnon =
+			(storeState.patientAdministrativeProfileDraft.isAnonymous ??
+				patientAdministrativeProfileDraft.isAnonymous) === true;
 		const payload = {
 			fullName,
-			phone: nullablePatientDraftValue(newPatientPhone),
-			birthDate: nullablePatientDraftValue(newPatientBirthDate),
+			phone: nullablePatientDraftValue(storeState.newPatientPhone || newPatientPhone),
+			birthDate: nullablePatientDraftValue(storeState.newPatientBirthDate || newPatientBirthDate),
 			isAnonymous: isAnon,
-			anonymousCode: isAnon ? (patientAdministrativeProfileDraft.anonymousCode || null) : null,
+			anonymousCode: isAnon
+				? (storeState.patientAdministrativeProfileDraft.anonymousCode ||
+						patientAdministrativeProfileDraft.anonymousCode ||
+						null)
+				: null,
 		};
 		setIsPatientCreating(true);
 		try {
