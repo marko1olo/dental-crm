@@ -747,7 +747,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							if (appointmentPatient?.id) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
-							useAppStore.getState().setCurrentView("billing");
+							useAppStore.getState().setCurrentView("finance");
 							showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
 						}}
 						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-emerald-600/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 hover:bg-emerald-600/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
@@ -1321,7 +1321,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												if (appointmentPatient?.id) {
 													usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 												}
-												useAppStore.getState().setCurrentView("billing");
+												useAppStore.getState().setCurrentView("finance");
 												showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
 											}}
 											title="Перейти в кассу 54-ФЗ для расчёта"

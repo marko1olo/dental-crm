@@ -810,11 +810,6 @@ export function PaymentCapture({
 		taxDeductionRequested && !fiscalReceiptIssuedAt.trim()
 			? "для вычета укажите дату фискального чека"
 			: null,
-		taxDeductionRequested && !fiscalFn.trim() ? "для вычета укажите ФН" : null,
-		taxDeductionRequested && !fiscalFd.trim() ? "для вычета укажите ФД" : null,
-		taxDeductionRequested && !fiscalFpd.trim()
-			? "для вычета укажите ФПД"
-			: null,
 		taxDeductionRequested && !payerFullName.trim()
 			? "для вычета укажите ФИО плательщика явно"
 			: null,
