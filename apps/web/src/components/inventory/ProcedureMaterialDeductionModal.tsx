@@ -374,7 +374,7 @@ export function ProcedureMaterialDeductionModal({
 							)}
 							<span className="text-xs font-bold leading-tight">
 								{summary.hasDeficit
-									? `Дефицит материалов: ${summary.criticalCount} поз. требуют пополнения!`
+									? `Дефицит материалов: ${summary.criticalCount} поз. (Мягкий овердрафт: задержка накладной не блокирует экстренную операцию)`
 									: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
 							</span>
 						</div>
@@ -768,7 +768,7 @@ export function ProcedureMaterialDeductionModal({
 							disabled={isDeducting || lines.length === 0}
 							title={
 								summary.hasDeficit
-									? `Списание с фиксацией дефицита (${summary.criticalCount} поз.). Автоматически формируется заявка поставщику.`
+									? `Мягкий овердрафт разрешен (СанПиН / экстренная операция): списание с фиксацией дефицита (${summary.criticalCount} поз.). Задержка оприходования накладной не блокирует прием.`
 									: "Провести списание выбранных материалов"
 							}
 						>
@@ -776,7 +776,7 @@ export function ProcedureMaterialDeductionModal({
 							{isDeducting
 								? "Списание..."
 								: summary.hasDeficit
-									? `Списать с фиксацией дефицита (${summary.criticalCount} поз.)`
+									? `Списать (мягкий овердрафт: ${summary.criticalCount} поз.)`
 									: "Списать со склада"}
 						</button>
 					</div>
