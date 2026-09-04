@@ -22,6 +22,7 @@ import {
 } from "@dental/shared";
 import {
 	AlertCircle,
+	AlertTriangle,
 	Calendar,
 	Check,
 	CheckCircle2,
@@ -121,6 +122,165 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 	},
 ];
 
+export interface AllergyConflictDrugItem {
+	readonly id: string;
+	readonly tradeName: string;
+	readonly latinName: string;
+}
+
+export interface PrescriptionAllergyConflict {
+	readonly type: "penicillin" | "nsaid";
+	readonly matchedAllergyTerm: string;
+	readonly conflictingDrugs: readonly AllergyConflictDrugItem[];
+}
+
+export function detectPrescriptionAllergyConflicts(
+	patientAllergies: readonly string[] | string[] | string | null | undefined,
+	activeDrugs: readonly PrescriptionDrugItem[],
+): readonly PrescriptionAllergyConflict[] {
+	if (!patientAllergies || activeDrugs.length === 0) return [];
+
+	const rawList: string[] = [];
+	if (Array.isArray(patientAllergies)) {
+		for (const item of patientAllergies) {
+			if (typeof item === "string" && item.trim()) {
+				rawList.push(item.trim());
+			}
+		}
+	} else if (typeof patientAllergies === "string" && patientAllergies.trim()) {
+		const parts = patientAllergies.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+		rawList.push(...parts);
+	}
+
+	if (rawList.length === 0) return [];
+	const combinedText = rawList.join(" ").toLowerCase();
+
+	const conflicts: PrescriptionAllergyConflict[] = [];
+
+	// 1. Проверка аллергии на пенициллины (амоксициллин, амоксиклав, аугментин, флемоксин, ампициллин и др.)
+	const penicillinKeywords = [
+		"пеницилл",
+		"амоксициллин",
+		"амоксиклав",
+		"аугментин",
+		"флемоксин",
+		"ампициллин",
+		"penicillin",
+		"amoxicillin",
+		"amoxiclav",
+		"augmentin",
+		"ampicillin",
+	];
+	const matchedPenicillinKeyword = penicillinKeywords.find((kw) => combinedText.includes(kw));
+
+	if (matchedPenicillinKeyword) {
+		const penicillinDrugs = activeDrugs.filter((drug) => {
+			const drugText = `${drug.id} ${drug.tradeName} ${drug.latinName}`.toLowerCase();
+			return penicillinKeywords.some((kw) => drugText.includes(kw));
+		});
+
+		if (penicillinDrugs.length > 0) {
+			conflicts.push({
+				type: "penicillin",
+				matchedAllergyTerm: matchedPenicillinKeyword,
+				conflictingDrugs: penicillinDrugs.map((d) => ({
+					id: d.id,
+					tradeName: d.tradeName,
+					latinName: d.latinName,
+				})),
+			});
+		}
+	}
+
+	// 2. Проверка аллергии на НПВС/аспирин (нимесил, кеторол, ибупрофен, кетанов, аспирин и др.)
+	const nsaidKeywords = [
+		"нпвс",
+		"нпвп",
+		"nsaid",
+		"аспирин",
+		"аспиринов",
+		"ацетилсалицил",
+		"нимесил",
+		"нимесулид",
+		"nimesil",
+		"nimesulide",
+		"кеторол",
+		"кеторолак",
+		"кетанов",
+		"ketorol",
+		"ketorolac",
+		"ketanov",
+		"ибупрофен",
+		"нурофен",
+		"ibuprofen",
+		"nurofen",
+		"декскетопрофен",
+		"дексалгин",
+		"dexketoprofen",
+		"dexalgin",
+		"кетопрофен",
+		"кетонал",
+		"ketoprofen",
+		"диклофенак",
+		"diclofenac",
+		"мелоксикам",
+		"meloxicam",
+		"анальгетик",
+	];
+	const matchedNsaidKeyword = nsaidKeywords.find((kw) => combinedText.includes(kw));
+
+	if (matchedNsaidKeyword) {
+		const nsaidDrugs = activeDrugs.filter((drug) => {
+			if (drug.category === "nsaid") return true;
+			const drugText = `${drug.id} ${drug.tradeName} ${drug.latinName}`.toLowerCase();
+			return [
+				"нимесил",
+				"нимесулид",
+				"nimesil",
+				"nimesulide",
+				"кеторол",
+				"кеторолак",
+				"кетанов",
+				"ketorol",
+				"ketorolac",
+				"ketanov",
+				"ибупрофен",
+				"нурофен",
+				"ibuprofen",
+				"nurofen",
+				"декскетопрофен",
+				"дексалгин",
+				"dexketoprofen",
+				"dexalgin",
+				"кетопрофен",
+				"кетонал",
+				"ketoprofen",
+				"диклофенак",
+				"diclofenac",
+				"аспирин",
+				"ацетилсалицил",
+				"aspirin",
+				"мелоксикам",
+				"meloxicam",
+			].some((kw) => drugText.includes(kw));
+		});
+
+		if (nsaidDrugs.length > 0) {
+			conflicts.push({
+				type: "nsaid",
+				matchedAllergyTerm: matchedNsaidKeyword,
+				conflictingDrugs: nsaidDrugs.map((d) => ({
+					id: d.id,
+					tradeName: d.tradeName,
+					latinName: d.latinName,
+				})),
+			});
+		}
+	}
+
+	return conflicts;
+}
+
 export interface PrescriptionPrintModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -136,7 +296,9 @@ export interface PrescriptionPrintModalProps {
 		readonly gender?: string | null;
 		readonly snils?: string | null;
 		readonly omsPolicy?: string | null;
+		readonly allergies?: readonly string[] | string[] | string | null;
 	} | null;
+	readonly allergies?: readonly string[] | string[] | string | null;
 	readonly diary?: DiaryState | {
 		readonly diagnosisIcd10?: string | null;
 		readonly treatmentDescription?: string | null;
@@ -160,6 +322,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	isOpen,
 	onClose,
 	patient,
+	allergies,
 	diary,
 	doctorName,
 	doctorSpecialty,
@@ -370,7 +533,20 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		});
 	}, [activeForm, prescriptionDate, validityDays, isChronicSpecialCare, chronicPeriodicity, activeItems, patientAddress, patientSnils, patientOmsPolicy]);
 
+	// Patient allergies normalization & conflict detection (Mandates 8e & 8i)
+	const resolvedPatientAllergies = useMemo(() => {
+		if (allergies) return allergies;
+		if (patient?.allergies) return patient.allergies;
+		if ((patient as any)?.anamnesis?.allergies) return (patient as any).anamnesis.allergies;
+		return undefined;
+	}, [allergies, patient]);
 
+	const allergyConflicts = useMemo(() => {
+		return detectPrescriptionAllergyConflicts(resolvedPatientAllergies, activeItems);
+	}, [resolvedPatientAllergies, activeItems]);
+
+	const penicillinConflict = allergyConflicts.find((c) => c.type === "penicillin");
+	const nsaidConflict = allergyConflicts.find((c) => c.type === "nsaid");
 
 	const generatePrintHtml = useCallback((): string => {
 		if (activeForm === "107-1u") {
@@ -679,6 +855,11 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</div>
 							<p className="text-xs text-[var(--muted)] whitespace-normal break-words mt-0.5">
 								<span>{patientName}</span> · <span>Карта: {patientCard}</span> · <span>Диагноз: {diary?.diagnosisIcd10 || "K02.1"}</span>
+								{resolvedPatientAllergies && (
+									<span className="ml-1 text-amber-700 dark:text-amber-300 font-semibold">
+										· Аллергия: {Array.isArray(resolvedPatientAllergies) ? resolvedPatientAllergies.join(", ") : resolvedPatientAllergies}
+									</span>
+								)}
 							</p>
 						</div>
 					</div>
@@ -806,6 +987,77 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								<div>
 									<strong>Льготный отпуск лекарственных препаратов:</strong> Форма № 148-1/у-04(л)
 									требует указания категории льготы, СНИЛС, полиса ОМС и источника финансирования.
+								</div>
+							</div>
+						)}
+
+						{/* ── Allergy Conflict Warning Banners (Mandates 8e & 8i) ── */}
+						{penicillinConflict && (
+							<div
+								className="flex flex-col gap-2 p-3.5 rounded-xl bg-gradient-to-r from-red-500/20 via-rose-500/15 to-amber-500/15 border-2 border-red-600 text-red-950 dark:text-red-100 shadow-sm animate-in fade-in duration-200"
+								data-testid="allergy-conflict-penicillin"
+							>
+								<div className="flex items-start gap-2.5">
+									<AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5 animate-pulse" />
+									<div className="flex flex-col gap-1 min-w-0">
+										<div className="flex items-center gap-2 flex-wrap">
+											<span className="text-xs font-black uppercase tracking-wider text-red-700 dark:text-red-300">
+												⚠️ ВНИМАНИЕ: КЛИНИЧЕСКИЙ КОНФЛИКТ АЛЛЕРГИИ / РИСК АНАФИЛАКСИИ!
+											</span>
+											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-red-600 text-white shadow-xs">
+												Пенициллины
+											</span>
+										</div>
+										<p className="text-xs leading-relaxed">
+											У пациента в анамнезе зафиксирована аллергия на пенициллиновый ряд (маркер: <strong>«{penicillinConflict.matchedAllergyTerm}»</strong>). В рецепт включен антибиотик пенициллинового ряда: <strong>{penicillinConflict.conflictingDrugs.map((d) => d.tradeName).join(", ")}</strong>.
+										</p>
+										<p className="text-[11px] font-semibold text-red-700 dark:text-red-300 leading-snug">
+											Высокий риск развития анафилактического шока, отёка Квинке и острой токсико-аллергической реакции немедленного типа!
+										</p>
+										<div className="text-[11px] text-[var(--muted)] border-t border-red-300/40 dark:border-red-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
+											<span>
+												⚖️ <strong>Мандат 8e (Автономия врача):</strong> Рецепт НЕ блокируется, кнопка печати активна под личную клиническую ответственность лечащего врача.
+											</span>
+											<span className="text-[10px] italic text-[var(--muted)]">
+												Клиническая альтернатива: рассмотрите макролиды (Азитромицин / Сумамед 500 мг) или линкозамиды (Линкомицин 500 мг).
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{nsaidConflict && (
+							<div
+								className="flex flex-col gap-2 p-3.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-amber-500/15 to-orange-500/15 border-2 border-amber-600 text-amber-950 dark:text-amber-100 shadow-sm animate-in fade-in duration-200"
+								data-testid="allergy-conflict-nsaid"
+							>
+								<div className="flex items-start gap-2.5">
+									<ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+									<div className="flex flex-col gap-1 min-w-0">
+										<div className="flex items-center gap-2 flex-wrap">
+											<span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
+												⚠️ ВНИМАНИЕ: АЛЛЕРГИЧЕСКАЯ НЕПЕРЕНОСИМОСТЬ НПВС / АСПИРИНА!
+											</span>
+											<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shadow-xs">
+												НПВС / Анальгетики
+											</span>
+										</div>
+										<p className="text-xs leading-relaxed">
+											У пациента в анамнезе зафиксирована аллергия на НПВС/аспирин (маркер: <strong>«{nsaidConflict.matchedAllergyTerm}»</strong>). В рецепт включен препарат группы НПВС: <strong>{nsaidConflict.conflictingDrugs.map((d) => d.tradeName).join(", ")}</strong>.
+										</p>
+										<p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 leading-snug">
+											Риск развития бронхоспазма («аспириновая астма»), крапивницы, ангионевротического отёка и обострения язвенной болезни.
+										</p>
+										<div className="text-[11px] text-[var(--muted)] border-t border-amber-300/40 dark:border-amber-900/40 pt-1.5 mt-0.5 flex flex-col gap-0.5">
+											<span>
+												⚖️ <strong>Мандат 8e (Автономия врача):</strong> Печать бланка 107-1/у не блокируется. Врач автономен и принимает решение под свою клиническую ответственность.
+											</span>
+											<span className="text-[10px] italic text-[var(--muted)]">
+												Рекомендуется оценить степень сенсибилизации или применить альтернативное обезболивание (Парацетамол при отсутствии противопоказаний).
+											</span>
+										</div>
+									</div>
 								</div>
 							</div>
 						)}
@@ -1290,6 +1542,25 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							</span>
 						</div>
 
+						{/* Allergy Warning Preview Strip */}
+						{(penicillinConflict || nsaidConflict) && (
+							<div className="p-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200 text-xs flex items-center justify-between gap-2">
+								<div className="flex items-center gap-2 min-w-0">
+									<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+									<span className="font-bold truncate">
+										{penicillinConflict && nsaidConflict
+											? "Внимание: выписаны препараты с риском анафилаксии (Пенициллины + НПВС)"
+											: penicillinConflict
+												? "Внимание: выписан пенициллин при аллергии в анамнезе (Риск анафилаксии!)"
+												: "Внимание: выписан НПВС при аллергии на НПВС/аспирин в анамнезе"}
+									</span>
+								</div>
+								<span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white shrink-0">
+									Мандат 8e: печать доступна
+								</span>
+							</div>
+						)}
+
 						{/* Printable Physical Sheet Mockup */}
 						<div
 							className="p-5 sm:p-6 rounded-xl border border-slate-300 shadow-xl font-serif leading-relaxed flex flex-col gap-3 selection:bg-teal-100"
@@ -1494,6 +1765,12 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 						Соответствует Приказу Минздрава России от 24.11.2021 г. № 1094н.
 					</span>
 					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+						{(penicillinConflict || nsaidConflict) && (
+							<span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1">
+								<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+								<span>Аллергия в анамнезе (печать разрешена по Мандату 8e)</span>
+							</span>
+						)}
 						<button
 							type="button"
 							onClick={onClose}
