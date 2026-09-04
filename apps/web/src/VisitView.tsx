@@ -1542,7 +1542,11 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							className="primary-button min-h-[44px] px-3 py-2"
 							type="button"
 							style={{ minHeight: "44px", padding: "10px 16px", fontSize: "15px" }}
-							onClick={() => {
+							onClick={async () => {
+								if (!hasVisitTranscriptText) {
+									showToast("Сначала надиктуйте или введите текст для разбора", "info");
+									return;
+								}
 								const orchestratorResult =
 									AiOrchestrator.processEmkDictation(transcript);
 								const parsed =
@@ -1556,7 +1560,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								setShowSmartPreview(true);
 								setShowHints(false);
 							}}
-							disabled={!hasVisitTranscriptText}
 							aria-describedby={
 								!hasVisitTranscriptText ? "dictation-clear-guidance" : undefined
 							}
@@ -1572,8 +1575,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							className="secondary-button min-h-[44px] px-3 py-2"
 							type="button"
 							style={{ minHeight: "44px", padding: "10px 16px", fontSize: "15px" }}
-							onClick={buildDraft}
-							disabled={isDraftLoading || !visitDraftReadyToBuild}
+							onClick={() => {
+								if (isDraftLoading) return;
+								if (!visitDraftReadyToBuild) {
+									showToast(
+										visitDraftBuildMissingSteps?.join("; ") ||
+											"Надиктуйте текст или заполните заметку для сборки нейро-черновика",
+										"info",
+									);
+									return;
+								}
+								buildDraft();
+							}}
+							disabled={isDraftLoading}
 							aria-describedby={
 								!visitDraftReadyToBuild ? "visit-draft-missing" : undefined
 							}
@@ -1590,8 +1604,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						<button
 							className="secondary-button min-h-[44px] px-3 py-2"
 							type="button"
-							onClick={clearTranscriptWithUndo}
-							disabled={!hasVisitTranscriptText}
+							onClick={() => {
+								if (!hasVisitTranscriptText) {
+									showToast("Текст диктовки уже пуст", "info");
+									return;
+								}
+								clearTranscriptWithUndo();
+							}}
 							title="Очистить текст"
 						>
 							Очистить
@@ -3484,10 +3503,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 														)
 													) {
 														showToast(
-															`ПРЕДУПРЕЖДЕНИЕ: У пациента обнаружены бисфосфонаты в анамнезе. Имплантация противопоказана — риск остеонекроза. Проконсультируйтесь с хирургом-ортопедом.`,
-															"error",
+															`ВНИМАНИЕ: У пациента бисфосфонаты в анамнезе (риск остеонекроза челюсти). Окончательное решение принимает лечащий хирург.`,
+															"warning",
 														);
-														return;
 													}
 													setMaterialCategory("implant");
 												}}

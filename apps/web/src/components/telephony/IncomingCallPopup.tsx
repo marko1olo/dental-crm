@@ -876,6 +876,7 @@ export function IncomingCallPopup() {
 	};
 
 	if (typeof document === "undefined") return null;
+	if (isDoctorMode) return null;
 
 	return createPortal(
 		<>

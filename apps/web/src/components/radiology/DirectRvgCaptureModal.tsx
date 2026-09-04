@@ -446,7 +446,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		// Trigger direct image/DICOM download in browser
 		const link = document.createElement("a");
 		link.href = capturedImage;
-		link.download = `RVG_Tooth_${selectedTeeth.join("_")}_${patientCardNumber.replace(/[/\\?%*:|"<>]/g, "-")}.jpg`;
+		link.download = `RVG_Tooth_${selectedTeeth.join("_")}_${patientCardNumber.replace(/[/\\?%*:|"<>]/g, "-")}.dcm`;
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);

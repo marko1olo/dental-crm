@@ -249,3 +249,67 @@ test("Мандат 8e: DicomViewerModal, ImagingModal и RadiologyViewerModal п
 		"RadiologyViewerModal обязан иметь обработчик handleInsertNormaTo043",
 	);
 });
+
+test("Мандат 8e: DicomViewerModal содержит честную дропзону, запуск ИИ по кнопке врача и подтверждение находок без робо-перезаписи", () => {
+	const dicomModal = readSource("components/imaging/DicomViewerModal.tsx");
+
+	// Честная дропзона при отсутствии снимка
+	assert.ok(
+		dicomModal.includes("data-testid=\"dicom-viewer-dropzone\""),
+		"DicomViewerModal обязан содержать честную дропзону 'dicom-viewer-dropzone' для файлов",
+	);
+
+	// ИИ запускается строго по отдельной кнопке врача
+	assert.ok(
+		dicomModal.includes("data-testid=\"btn-dicom-run-ai\""),
+		"DicomViewerModal обязан содержать отдельную кнопку запуска ИИ 'btn-dicom-run-ai'",
+	);
+	assert.ok(
+		dicomModal.includes("handleRunAiAnalysis"),
+		"DicomViewerModal обязан запускать анализ ИИ только по отдельному вызову handleRunAiAnalysis",
+	);
+
+	// Запрещена автоматическая перезапись зубной формулы: только по кнопке подтверждения врача
+	assert.ok(
+		dicomModal.includes("data-testid=\"btn-dicom-apply-findings\""),
+		"DicomViewerModal обязан требовать подтверждения находок врачом через 'btn-dicom-apply-findings'",
+	);
+	assert.ok(
+		dicomModal.includes("handleApplyFindingsToChart"),
+		"DicomViewerModal обязан иметь обработчик подтверждения находок handleApplyFindingsToChart",
+	);
+
+	// Панель находок
+	assert.ok(
+		dicomModal.includes("data-testid=\"dicom-ai-findings-drawer\""),
+		"DicomViewerModal обязан содержать панель/шторку находок ИИ 'dicom-ai-findings-drawer'",
+	);
+
+	// Маршрут живой формулы
+	assert.ok(
+		dicomModal.includes("/tooth-states/batch"),
+		"DicomViewerModal обязан обращаться к /api/patients/:id/tooth-states/batch для живой формулы",
+	);
+});
+
+test("Мандат 8e: DirectRvgCaptureModal честно экспортирует .dcm, а IncomingCallPopup не прерывает прием врача", () => {
+	const directModal = readSource("components/radiology/DirectRvgCaptureModal.tsx");
+	const incomingCall = readSource("components/telephony/IncomingCallPopup.tsx");
+
+	// Честный экспорт DICOM с расширением .dcm (без подмены на .jpg)
+	assert.ok(
+		directModal.includes(".dcm"),
+		"DirectRvgCaptureModal обязан экспортировать файл с расширением .dcm",
+	);
+	assert.ok(
+		!directModal.includes("link.download = `RVG_Tooth_${selectedTeeth.join(\"_\")}_${patientCardNumber.replace(/[/\\\\?%*:|\"<>]/g, \"-\")}.jpg`"),
+		"DirectRvgCaptureModal не должен подменять .dcm на .jpg в download",
+	);
+
+	// Стерильная зона врача в телефонии
+	assert.ok(
+		incomingCall.includes("if (isDoctorMode) return null;"),
+		"IncomingCallPopup обязан блокировать показ входящего вызова в режиме врача перед createPortal",
+	);
+});
+

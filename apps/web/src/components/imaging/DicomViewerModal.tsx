@@ -5,23 +5,27 @@
 
 import {
 	Activity,
+	Check,
 	CheckCircle2,
-	Contrast,
 	Eye,
+	FileUp,
 	Layers,
-	Maximize2,
+	Loader2,
 	RotateCcw,
 	Ruler,
 	Sparkles,
-	Sun,
+	UploadCloud,
 	X,
-	ZoomIn,
-	ZoomOut,
 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
+import { actionFailureToast } from "../../lib/panelStateText.js";
+import { usePatientStore } from "../../store/patientStore.js";
 import { useVisitStore } from "../../store/visitStore.js";
+import { logger } from "../../utils/logger.js";
 import { showToast } from "../GlobalToast.js";
+import { TOOTH_STATE_LABELS, type ToothState } from "../odontogram/ToothChart.js";
 import { DicomViewport } from "./DicomViewport.js";
 import {
 	DENTAL_RADIOGRAPHY_PRESETS,
@@ -30,11 +34,12 @@ import {
 	type DicomViewportState,
 	type ImagingActiveTool,
 } from "./rvgViewerEngine.js";
+import { planVisiographFindings } from "./visiographFindings.js";
 
 export interface DicomViewerModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly imageSrc: string;
+	readonly imageSrc?: string | undefined;
 	readonly title?: string | undefined;
 	readonly toothFdiCode?: string | undefined;
 	readonly patientName?: string | undefined;
@@ -52,11 +57,59 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	studyDate,
 	onInsertToProtocol,
 }) => {
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [currentImageSrc, setCurrentImageSrc] = useState<string | null>(
+		imageSrc || null,
+	);
+	const [isDragOver, setIsDragOver] = useState(false);
 	const [viewportState, setViewportState] = useState<DicomViewportState>(
 		DEFAULT_DICOM_VIEWPORT_STATE,
 	);
 	const [measurements, setMeasurements] = useState<CalibratedRulerMeasurement[]>([]);
 	const [isNormaApplied, setIsNormaApplied] = useState(false);
+
+	// AI States (strictly on-demand, no automatic overwrite)
+	const [isAnalyzing, setIsAnalyzing] = useState(false);
+	const [aiReport, setAiReport] = useState<string | null>(null);
+	const [aiToothStates, setAiToothStates] = useState<Record<string, string> | null>(null);
+	const [selectedFindingCodes, setSelectedFindingCodes] = useState<Set<string>>(new Set());
+	const [appliedToothCodes, setAppliedToothCodes] = useState<string[]>([]);
+	const [isApplyingToChart, setIsApplyingToChart] = useState(false);
+	const [showFindingsDrawer, setShowFindingsDrawer] = useState(false);
+	const [formulaFailure, setFormulaFailure] = useState<string | null>(null);
+	const analysisInFlightRef = useRef(false);
+
+	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
+
+	const appLogic = useOptionalAppLogicContext();
+	const authRef = useRef(appLogic?.auth);
+	authRef.current = appLogic?.auth;
+
+	const denteClinicalReadHeaders = useCallback(
+		(extra?: Record<string, string>): Record<string, string> => {
+			const auth = authRef.current;
+			return auth && typeof auth.denteClinicalReadHeaders === "function"
+				? auth.denteClinicalReadHeaders(extra ?? {})
+				: { ...(extra ?? {}) };
+		},
+		[],
+	);
+
+	const denteClinicalMutationHeaders = useCallback(
+		(extra?: Record<string, string>): Record<string, string> => {
+			const auth = authRef.current;
+			return auth && typeof auth.denteClinicalMutationHeaders === "function"
+				? auth.denteClinicalMutationHeaders(extra ?? {})
+				: { ...(extra ?? {}) };
+		},
+		[],
+	);
+
+	useEffect(() => {
+		if (imageSrc) {
+			setCurrentImageSrc(imageSrc);
+		}
+	}, [imageSrc]);
 
 	if (!isOpen) return null;
 
@@ -91,6 +144,148 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		);
 	};
 
+	const processFile = (file: File) => {
+		if (!file.type.startsWith("image/") && !file.name.match(/\.(dcm|rvg|tiff|png|jpg|jpeg|bmp)$/i)) {
+			showToast("Поддерживаются снимки RVG, DICOM, TIFF, PNG, JPG, BMP", "warning");
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = () => {
+			const dataUrl = reader.result as string;
+			setCurrentImageSrc(dataUrl);
+			// Reset AI results for new image
+			setAiReport(null);
+			setAiToothStates(null);
+			setSelectedFindingCodes(new Set());
+			setAppliedToothCodes([]);
+			setShowFindingsDrawer(false);
+			setFormulaFailure(null);
+			setMeasurements([]);
+			setViewportState(DEFAULT_DICOM_VIEWPORT_STATE);
+		};
+		reader.readAsDataURL(file);
+	};
+
+	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) processFile(file);
+	};
+
+	const handleDrop = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+		const file = e.dataTransfer.files?.[0];
+		if (file) processFile(file);
+	};
+
+	const handleRunAiAnalysis = async () => {
+		if (!currentImageSrc) {
+			showToast("Сначала загрузите снимок для анализа", "warning");
+			return;
+		}
+		if (analysisInFlightRef.current || isAnalyzing) return;
+		analysisInFlightRef.current = true;
+		setIsAnalyzing(true);
+		setFormulaFailure(null);
+
+		try {
+			const res = await fetch("/api/imaging/visiograph-ai", {
+				method: "POST",
+				headers: denteClinicalReadHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({ imageBase64: currentImageSrc }),
+			});
+
+			if (!res.ok) {
+				const errData = await res.json().catch(() => ({}));
+				throw new Error(errData.error || `AI сервис недоступен (HTTP ${res.status})`);
+			}
+
+			const data = (await res.json()) as {
+				report: string;
+				toothStates: Record<string, string>;
+				warnings: string[];
+			};
+
+			setAiReport(data.report);
+			setAiToothStates(data.toothStates);
+
+			const plan = planVisiographFindings(data.toothStates);
+			const allValidCodes = plan.groups.flatMap((g) => g.teeth.map((t) => t.code));
+			setSelectedFindingCodes(new Set(allValidCodes));
+			setShowFindingsDrawer(true);
+			showToast("ИИ-анализ снимка завершён. Ознакомьтесь с находками.", "success");
+		} catch (err: any) {
+			logger.error("[DicomViewerModal] AI analysis failed:", err);
+			showToast(err.message || "Не удалось выполнить ИИ-анализ снимка", "error");
+		} finally {
+			analysisInFlightRef.current = false;
+			setIsAnalyzing(false);
+		}
+	};
+
+	const handleApplyFindingsToChart = async () => {
+		if (!aiToothStates) return;
+		const patientId = selectedPatientId;
+		if (!patientId) {
+			showToast("Пациент не выбран. Откройте карту пациента для внесения находок.", "warning");
+			return;
+		}
+
+		const plan = planVisiographFindings(aiToothStates);
+		if (plan.groups.length === 0) {
+			showToast("Нет подходящих для зубной формулы находок", "warning");
+			return;
+		}
+
+		setIsApplyingToChart(true);
+		setFormulaFailure(null);
+		const appliedCodes: string[] = [];
+		const writeFailures: string[] = [];
+
+		for (const group of plan.groups) {
+			const teethToApply = group.teeth.filter((t) => selectedFindingCodes.has(t.code));
+			if (teethToApply.length === 0) continue;
+
+			try {
+				const res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
+					method: "POST",
+					headers: denteClinicalMutationHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						toothNumbers: teethToApply.map((t) => t.toothNumber),
+						state: group.state,
+					}),
+				});
+
+				if (!res.ok) {
+					const raw = await res.text();
+					logger.error(`[DicomViewerModal] formula update failed: ${res.status} ${raw}`);
+					const label = TOOTH_STATE_LABELS[group.state] || group.state;
+					writeFailures.push(actionFailureToast(`Отметка «${label}» на зубах ${teethToApply.map((t) => t.code).join(", ")} не сохранена`, res.status));
+				} else {
+					appliedCodes.push(...teethToApply.map((t) => t.code));
+				}
+			} catch (err: any) {
+				logger.error("[DicomViewerModal] formula mutation request error:", err);
+				const label = TOOTH_STATE_LABELS[group.state] || group.state;
+				writeFailures.push(actionFailureToast(`Отметка «${label}» на зубах ${teethToApply.map((t) => t.code).join(", ")} не сохранена`, null));
+			}
+		}
+
+		if (writeFailures.length > 0) {
+			setFormulaFailure(writeFailures.join(" "));
+		}
+		if (appliedCodes.length > 0) {
+			setAppliedToothCodes((prev) => Array.from(new Set([...prev, ...appliedCodes])));
+			showToast(`В зубную формулу внесено находок: ${appliedCodes.length} (зубы: ${appliedCodes.join(", ")})`, "success");
+		}
+		setIsApplyingToChart(false);
+	};
+
 	const handleViewportChange = (nextState: Partial<DicomViewportState>) => {
 		setViewportState((prev) => ({ ...prev, ...nextState }));
 	};
@@ -115,6 +310,8 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		setMeasurements((prev) => [...prev, m]);
 	};
 
+	const plan = aiToothStates ? planVisiographFindings(aiToothStates) : null;
+
 	return (
 		<div
 			style={{
@@ -128,6 +325,14 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				fontFamily: "inherit",
 			}}
 		>
+			<input
+				type="file"
+				ref={fileInputRef}
+				accept="image/*,.dcm,.rvg,.png,.jpg,.jpeg,.tiff,.bmp"
+				style={{ display: "none" }}
+				onChange={handleFileInputChange}
+			/>
+
 			{/* Top Header Toolbar */}
 			<div
 				style={{
@@ -138,23 +343,108 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 					alignItems: "center",
 					justifyContent: "space-between",
 					padding: "0 16px",
+					gap: "12px",
 				}}
 			>
-				<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-					<Activity size={20} color="#0d9488" />
-					<div>
-						<div style={{ fontWeight: "bold", fontSize: "14px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+					<Activity size={20} color="#0d9488" style={{ flexShrink: 0 }} />
+					<div style={{ minWidth: 0 }}>
+						<div style={{ fontWeight: "bold", fontSize: "14px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 							{title} {toothFdiCode ? `· Зуб ${toothFdiCode}` : ""}
 						</div>
-						<div style={{ fontSize: "11px", color: "#94a3b8" }}>
+						<div style={{ fontSize: "11px", color: "#94a3b8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
 							{patientName ? `${patientName} · ` : ""}
 							{studyDate || "Дата снимка: сегодня"}
 						</div>
 					</div>
 				</div>
 
-				{/* Presets Chips */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+				{/* Presets & Actions */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "nowrap" }}>
+					{/* Upload / Change image button */}
+					<button
+						type="button"
+						onClick={() => fileInputRef.current?.click()}
+						style={{
+							padding: "6px 10px",
+							fontSize: "12px",
+							borderRadius: "6px",
+							border: "1px solid #334155",
+							backgroundColor: "#1e293b",
+							color: "#e2e8f0",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "5px",
+							fontWeight: 600,
+						}}
+						title="Загрузить снимок RVG/DICOM"
+					>
+						<FileUp size={14} />
+						<span>{currentImageSrc ? "Сменить снимок" : "Загрузить снимок"}</span>
+					</button>
+
+					{/* On-demand AI Button */}
+					<button
+						type="button"
+						data-testid="btn-dicom-run-ai"
+						onClick={handleRunAiAnalysis}
+						disabled={isAnalyzing || !currentImageSrc}
+						style={{
+							padding: "6px 12px",
+							fontSize: "12px",
+							borderRadius: "6px",
+							border: "1px solid #0d9488",
+							backgroundColor: isAnalyzing ? "#134e4a" : "#0f766e",
+							color: "#ccfbf1",
+							cursor: isAnalyzing || !currentImageSrc ? "not-allowed" : "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "6px",
+							fontWeight: 600,
+							opacity: !currentImageSrc ? 0.6 : 1,
+							transition: "all 0.2s ease",
+						}}
+						title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы (не перезаписывает карту без подтверждения)"
+					>
+						{isAnalyzing ? (
+							<>
+								<Loader2 size={14} className="animate-spin" />
+								<span>Анализ ИИ...</span>
+							</>
+						) : (
+							<>
+								<Sparkles size={14} />
+								<span>{aiReport ? "Перезапустить ИИ" : "Анализ ИИ"}</span>
+							</>
+						)}
+					</button>
+
+					{/* AI Findings Drawer Toggle */}
+					{aiToothStates && (
+						<button
+							type="button"
+							onClick={() => setShowFindingsDrawer((prev) => !prev)}
+							style={{
+								padding: "6px 10px",
+								fontSize: "12px",
+								borderRadius: "6px",
+								border: "1px solid #334155",
+								backgroundColor: showFindingsDrawer ? "#334155" : "#1e293b",
+								color: "#2dd4bf",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "5px",
+								fontWeight: 600,
+							}}
+							title="Показать / скрыть панель находок ИИ"
+						>
+							<Sparkles size={14} />
+							<span>Находки ИИ</span>
+						</button>
+					)}
+
 					<span
 						style={{
 							fontSize: "11px",
@@ -170,8 +460,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						}}
 						title="СанПиН 2.6.1.1192-03: При острой боли и неотложном приёме снимок доступен мгновенно, дозиметрия и ИДС вносятся без блокировки работы"
 					>
-						✓ Неотложный доступ (без блокировки ИДС)
+						✓ Неотложный доступ
 					</span>
+
 					{DENTAL_RADIOGRAPHY_PRESETS.map((p) => (
 						<button
 							key={p.id}
@@ -190,6 +481,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							{p.labelRu}
 						</button>
 					))}
+
 					<button
 						type="button"
 						data-testid="btn-dicom-norma-043"
@@ -231,16 +523,325 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 				</button>
 			</div>
 
-			{/* Center Viewport Area */}
-			<div style={{ flex: 1, position: "relative" }}>
-				<DicomViewport
-					imageSrc={imageSrc}
-					viewportState={viewportState}
-					onViewportChange={handleViewportChange}
-					measurements={measurements}
-					onAddMeasurement={handleAddMeasurement}
-				/>
-			</div>
+			{/* Center Area: Viewport or Clean Honest Dropzone */}
+			{!currentImageSrc ? (
+				<div
+					data-testid="dicom-viewer-dropzone"
+					onDragOver={(e) => {
+						e.preventDefault();
+						setIsDragOver(true);
+					}}
+					onDragLeave={() => setIsDragOver(false)}
+					onDrop={handleDrop}
+					style={{
+						flex: 1,
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						justifyContent: "center",
+						padding: "40px 20px",
+						backgroundColor: isDragOver ? "rgba(15, 23, 42, 0.98)" : "#020617",
+						border: isDragOver ? "2px dashed #0d9488" : "2px dashed #334155",
+						borderRadius: "12px",
+						margin: "24px",
+						cursor: "pointer",
+						transition: "all 0.2s ease",
+						textAlign: "center",
+					}}
+					onClick={() => fileInputRef.current?.click()}
+				>
+					<div
+						style={{
+							width: "72px",
+							height: "72px",
+							borderRadius: "50%",
+							backgroundColor: "rgba(13, 148, 136, 0.15)",
+							border: "1px solid rgba(13, 148, 136, 0.4)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							marginBottom: "18px",
+							color: "#2dd4bf",
+						}}
+					>
+						<UploadCloud size={36} />
+					</div>
+					<div style={{ fontSize: "17px", fontWeight: 700, color: "#f8fafc", marginBottom: "8px" }}>
+						Перетащите дентальный снимок (RVG / DICOM / PNG / TIFF)
+					</div>
+					<div style={{ fontSize: "13px", color: "#94a3b8", maxWidth: "480px", lineHeight: "1.5", marginBottom: "20px" }}>
+						Мгновенное открытие снимка &lt;50мс в полном разрешении датчика. Никаких задержек и ожидания ИИ.
+					</div>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							fileInputRef.current?.click();
+						}}
+						style={{
+							padding: "10px 20px",
+							borderRadius: "8px",
+							border: "none",
+							backgroundColor: "#0d9488",
+							color: "#ffffff",
+							fontSize: "14px",
+							fontWeight: 600,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "8px",
+							boxShadow: "0 4px 12px rgba(13, 148, 136, 0.3)",
+						}}
+					>
+						<FileUp size={16} /> Выбрать файл со снимком
+					</button>
+				</div>
+			) : (
+				<div style={{ flex: 1, position: "relative", display: "flex", overflow: "hidden" }}>
+					<div style={{ flex: 1, position: "relative", height: "100%" }}>
+						<DicomViewport
+							imageSrc={currentImageSrc}
+							viewportState={viewportState}
+							onViewportChange={handleViewportChange}
+							measurements={measurements}
+							onAddMeasurement={handleAddMeasurement}
+						/>
+					</div>
+
+					{/* AI Findings Drawer (Warm Context Side-sheet) */}
+					{showFindingsDrawer && (
+						<div
+							data-testid="dicom-ai-findings-drawer"
+							style={{
+								width: "360px",
+								backgroundColor: "#0f172a",
+								borderLeft: "1px solid #1e293b",
+								display: "flex",
+								flexDirection: "column",
+								zIndex: 10,
+								boxShadow: "-4px 0 20px rgba(0, 0, 0, 0.4)",
+							}}
+						>
+							{/* Drawer Header */}
+							<div
+								style={{
+									padding: "12px 16px",
+									borderBottom: "1px solid #1e293b",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									backgroundColor: "#1e293b",
+								}}
+							>
+								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+									<Sparkles size={16} color="#2dd4bf" />
+									<span style={{ fontWeight: 700, fontSize: "13px", color: "#f8fafc" }}>
+										Находки ИИ (Предварительный разбор)
+									</span>
+								</div>
+								<button
+									type="button"
+									onClick={() => setShowFindingsDrawer(false)}
+									style={{
+										background: "transparent",
+										border: "none",
+										color: "#94a3b8",
+										cursor: "pointer",
+										padding: "4px",
+									}}
+									title="Скрыть панель"
+								>
+									<X size={16} />
+								</button>
+							</div>
+
+							{/* Drawer Body */}
+							<div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+								<div
+									style={{
+										fontSize: "12px",
+										color: "#cbd5e1",
+										backgroundColor: "rgba(15, 23, 42, 0.6)",
+										border: "1px solid #334155",
+										borderRadius: "8px",
+										padding: "10px",
+										lineHeight: "1.4",
+									}}
+								>
+									ℹ️ Предварительный анализ. Данные <strong>не перезаписывают</strong> зубную формулу автоматически. Врач проверяет снимок и подтверждает внесение.
+								</div>
+
+								{plan && plan.groups.length > 0 ? (
+									<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+										<div style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+											Предлагаемые изменения в формулу:
+										</div>
+										{plan.groups.map((group) => {
+											const stateLabel = TOOTH_STATE_LABELS[group.state] || group.state;
+											return (
+												<div
+													key={group.state}
+													style={{
+														backgroundColor: "#1e293b",
+														borderRadius: "8px",
+														padding: "10px",
+														border: "1px solid #334155",
+													}}
+												>
+													<div style={{ fontSize: "13px", fontWeight: 700, color: "#f1f5f9", marginBottom: "8px" }}>
+														{stateLabel}:
+													</div>
+													<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+														{group.teeth.map((t) => {
+															const isChecked = selectedFindingCodes.has(t.code);
+															const isApplied = appliedToothCodes.includes(t.code);
+															return (
+																<label
+																	key={t.code}
+																	style={{
+																		display: "flex",
+																		alignItems: "center",
+																		gap: "10px",
+																		cursor: isApplied ? "default" : "pointer",
+																		fontSize: "13px",
+																		color: isApplied ? "#4ade80" : "#e2e8f0",
+																		userSelect: "none",
+																	}}
+																>
+																	<input
+																		type="checkbox"
+																		checked={isChecked}
+																		disabled={isApplied}
+																		onChange={(e) => {
+																			const next = new Set(selectedFindingCodes);
+																			if (e.target.checked) next.add(t.code);
+																			else next.delete(t.code);
+																			setSelectedFindingCodes(next);
+																		}}
+																		style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#0d9488" }}
+																	/>
+																	<span>
+																		Зуб #{t.code} — {stateLabel}
+																		{isApplied && " (✓ внесено)"}
+																	</span>
+																</label>
+															);
+														})}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								) : (
+									<div style={{ fontSize: "13px", color: "#94a3b8", textAlign: "center", padding: "16px 0" }}>
+										Патологических изменений, требующих изменения формулы, не обнаружено.
+									</div>
+								)}
+
+								{plan && plan.noFormulaStateCodes.length > 0 && (
+									<div
+										style={{
+											fontSize: "12px",
+											color: "#fbbf24",
+											backgroundColor: "rgba(245, 158, 11, 0.1)",
+											border: "1px solid rgba(245, 158, 11, 0.3)",
+											borderRadius: "8px",
+											padding: "10px",
+											lineHeight: "1.4",
+										}}
+									>
+										⚠️ Зубы {plan.noFormulaStateCodes.join(", ")} требуют внимания/наблюдения. Отметьте их на одонтограмме вручную.
+									</div>
+								)}
+
+								{formulaFailure && (
+									<div
+										style={{
+											fontSize: "12px",
+											color: "#f87171",
+											backgroundColor: "rgba(239, 68, 68, 0.1)",
+											border: "1px solid rgba(239, 68, 68, 0.3)",
+											borderRadius: "8px",
+											padding: "10px",
+											lineHeight: "1.4",
+										}}
+									>
+										{formulaFailure}
+									</div>
+								)}
+
+								{aiReport && (
+									<details style={{ marginTop: "auto", fontSize: "12px", color: "#94a3b8" }}>
+										<summary style={{ cursor: "pointer", padding: "6px 0", color: "#cbd5e1", fontWeight: 600 }}>
+											Полный отчёт модели
+										</summary>
+										<div
+											style={{
+												whiteSpace: "pre-wrap",
+												backgroundColor: "#020617",
+												padding: "10px",
+												borderRadius: "6px",
+												border: "1px solid #1e293b",
+												marginTop: "6px",
+												maxHeight: "160px",
+												overflowY: "auto",
+												fontFamily: "monospace",
+												fontSize: "11px",
+											}}
+										>
+											{aiReport}
+										</div>
+									</details>
+								)}
+							</div>
+
+							{/* Drawer Footer with Confirmation Gate */}
+							{plan && plan.groups.length > 0 && (
+								<div
+									style={{
+										padding: "14px 16px",
+										borderTop: "1px solid #1e293b",
+										backgroundColor: "#0f172a",
+									}}
+								>
+									<button
+										type="button"
+										data-testid="btn-dicom-apply-findings"
+										onClick={handleApplyFindingsToChart}
+										disabled={isApplyingToChart || selectedFindingCodes.size === 0}
+										style={{
+											width: "100%",
+											padding: "10px 16px",
+											borderRadius: "8px",
+											border: "none",
+											backgroundColor: isApplyingToChart ? "#334155" : "#0d9488",
+											color: "#ffffff",
+											fontSize: "13px",
+											fontWeight: 700,
+											cursor: isApplyingToChart || selectedFindingCodes.size === 0 ? "not-allowed" : "pointer",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											gap: "8px",
+											transition: "all 0.2s ease",
+										}}
+									>
+										{isApplyingToChart ? (
+											<>
+												<Loader2 size={16} className="animate-spin" /> Внесение в формулу...
+											</>
+										) : (
+											<>
+												<Check size={16} /> Применить к зубной формуле
+											</>
+										)}
+									</button>
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Bottom Controls Bar */}
 			<div
