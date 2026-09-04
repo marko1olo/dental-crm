@@ -180,7 +180,7 @@ export function KraftPackageBarcodeModal({
 	onAttachToProtocol,
 	initialAutoclaveId,
 	initialCycleNumber = 1,
-	initialOperatorName = "Смирнова А.В. (Медсестра ЦСО)",
+	initialOperatorName = "Персонал клиники",
 	initialBarcode = "",
 }: KraftPackageBarcodeModalProps) {
 	// ─── Modal State ─────────────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ export function KraftPackageBarcodeModal({
 		useState<string>(initialAutoclaveId || CLINIC_AUTOCLAVE_UNITS[0]?.id || "AUTO-01");
 	const [cycleNumber, setCycleNumber] = useState<number>(initialCycleNumber);
 	const [packQuantity, setPackQuantity] = useState<number>(10);
-	const [operatorName, setOperatorName] = useState<string>(initialOperatorName);
+	const [operatorName, setOperatorName] = useState<string>(initialOperatorName || "Персонал клиники");
 	const [customItemsText, setCustomItemsText] = useState<string>("");
 	const [previewLabelSize, setPreviewLabelSize] = useState<"58x40" | "43x25">("58x40");
 

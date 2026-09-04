@@ -36,6 +36,7 @@ import {
 	calculatePsoSampleRequirements,
 	calculateRequiredConcentrateForVolume,
 	createCabinetReadinessRecord,
+	createDefaultPaperJournalCabinetRecord,
 	createDefault5ChamberPoints,
 	createForm257Record,
 	evaluate5ChamberPoints,
@@ -701,6 +702,64 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			assert.ok(html.includes("СанПиН 3.3686-21"));
 			assert.ok(html.includes("ГОТОВ"));
 			assert.ok(html.includes("Смирнова Анна Викторовна"));
+		});
+
+		it("approves cabinet readiness by default when nurse did not fill CRM checklists (paper journal default)", () => {
+			const evalResult = evaluateCabinetReadiness({
+				appointmentType: "therapy",
+				surfaceDisinfection: {
+					isCompleted: false,
+					disinfectantBrand: "Бациллол АФ",
+					exposureMinutes: 0,
+				},
+				handpiecesSterility: {
+					isCompleted: false,
+					turbineHandpieceSterile: false,
+					contraAngleHandpieceSterile: false,
+					class5IndicatorsVerified: false,
+					packageIntegrityVerified: false,
+				},
+				sterileTray: {
+					isCompleted: false,
+					mirrorReady: false,
+					probeReady: false,
+					tweezersReady: false,
+					excavatorReady: false,
+					spatulaPluggerReady: false,
+				},
+				aspirationSystem: {
+					isCompleted: false,
+					salivaEjectorConnected: false,
+					hveVacuumConnected: false,
+					bacterialFilterChecked: false,
+				},
+				isolationCofferdam: {
+					isCompleted: false,
+					rubberDamSheetReady: false,
+					clampsReady: false,
+					forcepsReady: false,
+				},
+			});
+
+			assert.equal(evalResult.isFullyReady, true);
+			assert.equal(evalResult.missingItems.length, 0);
+			assert.equal(evalResult.statusMessageRu, "Готов по умолчанию (СанПиН соблюдён / бумажный журнал)");
+			assert.equal(evalResult.summaryBadgeRu, "Готов по умолчанию (бумажный журнал)");
+			assert.equal(evalResult.isPaperJournalDefault, true);
+		});
+
+		it("generates 1-click paper journal cabinet readiness record without nurse blocking doctor", () => {
+			const record = createDefaultPaperJournalCabinetRecord({
+				cabinetNumber: "2",
+				appointmentType: "surgery",
+			});
+
+			assert.equal(record.isFullyReady, true);
+			assert.equal(record.cabinetNumber, "2");
+			assert.equal(record.statusMessageRu, "Готов по умолчанию (СанПиН соблюдён / бумажный журнал)");
+			assert.equal(record.operatorStaffFullName, "Персонал клиники");
+			assert.equal(record.isPaperJournalDefault, true);
+			assert.ok(record.digitalStampHash.startsWith("CAB-CHECK-"));
 		});
 	});
 });

@@ -36,6 +36,7 @@ import {
 	type FdiToothRecord,
 	type ToothSurface,
 } from "../emr";
+import { useVisitCompletion } from "./useVisitCompletion";
 
 
 export interface RadiologySnapshotItem {
@@ -189,6 +190,21 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose, zoomImage]);
+
+	const formattedPatientName = useMemo(() => {
+		return patient ? formatPatientFullName(patient) : "Пациент";
+	}, [patient]);
+
+	const { completeVisit, isCompleting } = useVisitCompletion({
+		visitId: appLogic?.activeVisitId,
+		patientId: patient?.id,
+		patientName: formattedPatientName,
+		patientPhone: patient?.phone || "",
+		doctorName: doctorName || appLogic?.activeDoctor?.fullName,
+		doctorSpecialty: doctorSpecialty || appLogic?.activeDoctor?.specialties?.[0],
+		diary,
+		completedPlanItems: appLogic?.activeTreatmentPlanItems || [],
+	});
 
 	if (!isOpen || typeof document === "undefined") return null;
 
@@ -835,20 +851,21 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						</button>
 						<button
 							type="button"
-							onClick={() => {
+							onClick={async () => {
 								onClose();
 								if (onCompleteVisit) {
-									onCompleteVisit();
+									await onCompleteVisit();
 								} else {
-									showToast("Приём завершён: протокол 043/у сохранён, смета передана в кассу", "success", 4000);
+									await completeVisit();
 								}
 							}}
-							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer"
+							disabled={isCompleting}
+							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer disabled:opacity-50"
 							data-testid="summary-complete-visit-btn"
 							title="Завершить приём и сформировать чек"
 						>
 							<CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-							<span>Завершить приём</span>
+							<span>{isCompleting ? "Завершаю..." : "Завершить приём"}</span>
 						</button>
 					</div>
 				</div>

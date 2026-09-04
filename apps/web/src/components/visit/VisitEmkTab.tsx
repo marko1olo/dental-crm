@@ -99,6 +99,7 @@ import {
 	completeClinicalVisitAndAssembleEstimate,
 	type ClinicalVisitCompletionResult,
 } from "./clinicalVisitWorkflow";
+import { useVisitSave } from "./useVisitSave";
 import {
 	forgetVisitFlowResultOwner,
 	rememberVisitFlowResultOwner,
@@ -265,6 +266,20 @@ export function VisitEmkTab() {
 
 	const isSignedVisit = Boolean(dashboard?.activeVisit?.status === "signed");
 	const isLocked = isSignedVisit && !isRevisingVisitNote;
+
+	const {
+		saveState: soloSaveState,
+		flushPendingSave: flushSoloPendingSave,
+		hasUnsavedChanges: hasSoloUnsavedChanges,
+	} = useVisitSave({
+		visitId: (appLogic as any)?.activeVisitId || dashboard?.activeVisit?.id,
+		patientId: activePatient?.id,
+		organizationId: dashboard?.activeVisit?.organizationId,
+		visitNoteForm,
+		isLocked,
+		debounceMs: 400,
+		silent: true,
+	});
 
 	const cariesPreset = React.useMemo(
 		() => CLINICAL_SOAP_PRESETS.find((p) => p.id === "caries_medium"),
@@ -557,6 +572,9 @@ export function VisitEmkTab() {
 	const handleCompleteVisitAndGenerateReceipt = React.useCallback(async () => {
 		setIsCompletingVisit(true);
 		try {
+			if (flushSoloPendingSave) {
+				await flushSoloPendingSave();
+			}
 			if (flushPendingVisitSaves) {
 				await flushPendingVisitSaves();
 			}
@@ -584,7 +602,7 @@ export function VisitEmkTab() {
 		} finally {
 			setIsCompletingVisit(false);
 		}
-	}, [flushPendingVisitSaves, appLogic, dashboard, activePatient, visitNoteForm]);
+	}, [flushSoloPendingSave, flushPendingVisitSaves, appLogic, dashboard, activePatient, visitNoteForm]);
 
 	const handleApplyVoiceSoapNotes = React.useCallback(
 		(notes: Record<string, string>) => {
@@ -2829,7 +2847,7 @@ export function VisitEmkTab() {
 						{/* 1-Click Nurse/Doctor Quick Fill Assistants */}
 						<div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-900/60 flex flex-wrap gap-2">
 							<span className="text-xs font-bold text-amber-950 dark:text-amber-200 w-full mb-0.5">
-								Быстрые подсказки в 1 клик для медсестры и врача:
+								Быстрые подсказки в 1 клик для врача (автономный приём):
 							</span>
 							{(!visitNoteForm?.diagnosis || visitNoteForm.diagnosis.length < 4) && (
 								<>

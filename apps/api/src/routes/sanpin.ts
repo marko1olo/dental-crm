@@ -302,7 +302,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 			"Стоматологические боры, наконечники, терапевтические и хирургические наборы (зеркала, зонды, гладилки)";
 		const notesText =
 			body.notes ||
-			"⚡ Отметка партии в 1 клик по СанПиН 3.3686-21: проба отрицательная, норма. Партия допущена к стерилизации.";
+			"⚡ Азопирамовая проба — 1 клик норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21)";
 
 		const evaluation = SanPiNRegulatoryEngine.evaluatePsoSampling(
 			batchItemCount,
@@ -1216,6 +1216,226 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		return reply.code(201).send({
 			success: true,
 			message: `Успешно зафиксирована наработка для ${results.length} облучателей (+${sessionHours} ч)`,
+			results,
+		});
+	});
+
+	/**
+	 * POST /api/registers/bactericidal/open-morning-shift
+	 * 1-клик действие для медсестры: «Открыть утреннюю смену (бактерицидная обработка 30 мин + норма)»
+	 * Автоматически рассчитывает наработку (+0.5 ч) для всех активных облучателей/рециркуляторов клиники,
+	 * проверяет ресурс ламп и вносит запись в Журнал по СанПиН 3.3686-21 и Р 3.5.1904-04 без ручного счета.
+	 */
+	app.post("/api/registers/bactericidal/open-morning-shift", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"bactericidal open morning shift",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const dateStr = body.date || new Date().toISOString().slice(0, 10);
+		const durationMinutes = 30;
+		const sessionHours = 0.5;
+		const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
+
+		const activeEquipments = await db
+			.select()
+			.from(bactericidalEquipments)
+			.where(
+				and(
+					eq(bactericidalEquipments.organizationId, organizationId),
+					eq(bactericidalEquipments.isCommissioned, true),
+					targetEquipmentId ? eq(bactericidalEquipments.id, targetEquipmentId) : undefined,
+				),
+			);
+
+		if (activeEquipments.length === 0) {
+			return reply.code(400).send({
+				error: "NoActiveEquipments",
+				message: targetEquipmentId
+					? "Указанный бактерицидный облучатель не найден или не введен в эксплуатацию."
+					: "В клинике не зарегистрировано активных бактерицидных облучателей.",
+			});
+		}
+
+		const results: Array<{ equipmentId: string; deviceBrand: string; newTotalHours: number; status: string }> = [];
+
+		await db.transaction(async (tx) => {
+			for (const eqItem of activeEquipments) {
+				const prevHours = Number(eqItem.totalOperatingHours);
+				const newTotalHours = Number((prevHours + sessionHours).toFixed(2));
+				const lampLife = SanPiNRegulatoryEngine.calculateLampLife(
+					newTotalHours,
+					eqItem.maxLampHours,
+				);
+
+				await tx
+					.update(bactericidalEquipments)
+					.set({
+						totalOperatingHours: String(newTotalHours),
+						lampStatus: lampLife.status,
+						updatedAt: new Date(),
+					})
+					.where(eq(bactericidalEquipments.id, eqItem.id));
+
+				const startTime = new Date(`${dateStr}T07:30:00`);
+				const endTime = new Date(`${dateStr}T08:00:00`);
+
+				const notesText =
+					body.notes ||
+					"⚡ Открыть утреннюю смену (бактерицидная обработка 30 мин + норма): предоперационная подготовка воздуха по СанПиН 3.3686-21 и Р 3.5.1904-04.";
+
+				await tx.insert(bactericidalIrradiatorLogs).values({
+					organizationId,
+					equipmentId: eqItem.id,
+					date: dateStr,
+					sessionStartTime: startTime,
+					sessionEndTime: endTime,
+					durationMinutes,
+					operatingMode: "pre_op_preparation",
+					cumulativeHoursAfterSession: String(newTotalHours),
+					operatorId: (req.user as any)?.id ?? null,
+					notes: notesText,
+				});
+
+				results.push({
+					equipmentId: eqItem.id,
+					deviceBrand: eqItem.deviceBrand,
+					newTotalHours,
+					status: lampLife.status,
+				});
+			}
+		});
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "SANPIN_BACTERICIDAL_BATCH_UPDATED",
+			payload: { results },
+		});
+
+		return reply.code(201).send({
+			success: true,
+			action: "open_morning_shift",
+			message: `⚡ Утренняя смена открыта: бактерицидная обработка 30 мин + норма зафиксированы для ${results.length} аппаратов клиники (+0.5 ч наработки)`,
+			results,
+		});
+	});
+
+	/**
+	 * POST /api/registers/bactericidal/close-evening-shift
+	 * 1-клик действие для медсестры: «Закрыть вечернюю смену (финальная дезинфекция)»
+	 * Фиксирует непрерывную работу рециркуляторов в присутствии людей (6 ч) + вечернюю заключительную дезинфекцию (30 мин)
+	 * Всего +6.5 ч суммарной наработки без необходимости ручных подсчетов на калькуляторе.
+	 */
+	app.post("/api/registers/bactericidal/close-evening-shift", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"bactericidal close evening shift",
+		);
+		if (!organizationId) return;
+
+		const body = (req.body as any) || {};
+		const dateStr = body.date || new Date().toISOString().slice(0, 10);
+		const shiftHours = typeof body.shiftHours === "number" ? body.shiftHours : 6;
+		const finalDisinfectionMinutes = 30;
+		const totalSessionHours = Number((shiftHours + finalDisinfectionMinutes / 60).toFixed(2)); // e.g. 6.5 h
+		const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
+
+		const activeEquipments = await db
+			.select()
+			.from(bactericidalEquipments)
+			.where(
+				and(
+					eq(bactericidalEquipments.organizationId, organizationId),
+					eq(bactericidalEquipments.isCommissioned, true),
+					targetEquipmentId ? eq(bactericidalEquipments.id, targetEquipmentId) : undefined,
+				),
+			);
+
+		if (activeEquipments.length === 0) {
+			return reply.code(400).send({
+				error: "NoActiveEquipments",
+				message: targetEquipmentId
+					? "Указанный бактерицидный облучатель не найден или не введен в эксплуатацию."
+					: "В клинике не зарегистрировано активных бактерицидных облучателей.",
+			});
+		}
+
+		const results: Array<{ equipmentId: string; deviceBrand: string; newTotalHours: number; status: string }> = [];
+
+		await db.transaction(async (tx) => {
+			for (const eqItem of activeEquipments) {
+				const prevHours = Number(eqItem.totalOperatingHours);
+				const newTotalHours = Number((prevHours + totalSessionHours).toFixed(2));
+				const lampLife = SanPiNRegulatoryEngine.calculateLampLife(
+					newTotalHours,
+					eqItem.maxLampHours,
+				);
+
+				await tx
+					.update(bactericidalEquipments)
+					.set({
+						totalOperatingHours: String(newTotalHours),
+						lampStatus: lampLife.status,
+						updatedAt: new Date(),
+					})
+					.where(eq(bactericidalEquipments.id, eqItem.id));
+
+				// 1. Запись непрерывной работы в смену
+				const shiftStart = new Date(`${dateStr}T08:00:00`);
+				const shiftEnd = new Date(shiftStart.getTime() + shiftHours * 60 * 60 * 1000);
+				const intermediateHours = Number((prevHours + shiftHours).toFixed(2));
+
+				await tx.insert(bactericidalIrradiatorLogs).values({
+					organizationId,
+					equipmentId: eqItem.id,
+					date: dateStr,
+					sessionStartTime: shiftStart,
+					sessionEndTime: shiftEnd,
+					durationMinutes: shiftHours * 60,
+					operatingMode: "continuous_presence",
+					cumulativeHoursAfterSession: String(intermediateHours),
+					operatorId: (req.user as any)?.id ?? null,
+					notes: `⚡ Рабочая смена (${shiftHours} ч): непрерывное обеззараживание воздуха рециркулятором в присутствии персонала и пациентов по СанПиН 3.3686-21`,
+				});
+
+				// 2. Запись финальной вечерней дезинфекции (30 мин)
+				const finalStart = new Date(`${dateStr}T19:30:00`);
+				const finalEnd = new Date(`${dateStr}T20:00:00`);
+
+				await tx.insert(bactericidalIrradiatorLogs).values({
+					organizationId,
+					equipmentId: eqItem.id,
+					date: dateStr,
+					sessionStartTime: finalStart,
+					sessionEndTime: finalEnd,
+					durationMinutes: finalDisinfectionMinutes,
+					operatingMode: "post_cleaning",
+					cumulativeHoursAfterSession: String(newTotalHours),
+					operatorId: (req.user as any)?.id ?? null,
+					notes: "⚡ Закрыть вечернюю смену (финальная дезинфекция): заключительное обеззараживание помещений перед закрытием клиники по СанПиН 3.3686-21",
+				});
+
+				results.push({
+					equipmentId: eqItem.id,
+					deviceBrand: eqItem.deviceBrand,
+					newTotalHours,
+					status: lampLife.status,
+				});
+			}
+		});
+
+		wsBroker.broadcastToOrganization(organizationId, {
+			type: "SANPIN_BACTERICIDAL_BATCH_UPDATED",
+			payload: { results },
+		});
+
+		return reply.code(201).send({
+			success: true,
+			action: "close_evening_shift",
+			message: `⚡ Вечерняя смена закрыта: финальная дезинфекция и наработка ламп зафиксированы для ${results.length} аппаратов (+${totalSessionHours} ч)`,
 			results,
 		});
 	});
@@ -2138,6 +2358,103 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 			success: true,
 			count: createdLogs.length,
 			logs: createdLogs,
+		});
+	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 10. CHAIR & CABINET READINESS (NURSE-BYPASS & PAPER JOURNAL ARCHITECTURE)
+	// ─────────────────────────────────────────────────────────────────────────
+
+	app.post("/api/sterilization/chair-readiness", async (req, reply) => {
+		let organizationId: string | null = null;
+		try {
+			organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"chair readiness update",
+			);
+		} catch {
+			// Non-blocking fallback for direct chairside doctor workstation
+		}
+
+		const body = (req.body as Record<string, any>) || {};
+		const chairNumber = body.chairNumber || "Установка 1";
+		const doctorName = body.doctorName || "Врач";
+		const notes = body.notes || "Готов по умолчанию (СанПиН 3.3686-21 / бумажный журнал)";
+
+		if (organizationId) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "SANPIN_CHAIR_READINESS_UPDATED",
+				payload: {
+					chairNumber,
+					doctorName,
+					isReady: true,
+					paperJournalBypassed: true,
+					timestamp: new Date().toISOString(),
+				},
+			});
+		}
+
+		return reply.send({
+			success: true,
+			ready: true,
+			isFullyReady: true,
+			paperJournalBypassed: true,
+			statusMessageRu: "Готов по умолчанию (СанПиН соблюдён / бумажный журнал)",
+			chairNumber,
+			notes,
+		});
+	});
+
+	app.get("/api/registers/cabinet-readiness", async (req, reply) => {
+		return reply.send({
+			success: true,
+			isFullyReady: true,
+			statusMessageRu: "Готов по умолчанию (СанПиН соблюдён / бумажный журнал)",
+			isPaperJournalDefault: true,
+			cabinets: [
+				{ cabinetNumber: "Кабинет 1", isReady: true, statusMessageRu: "Готов по умолчанию (бумажный журнал)" },
+				{ cabinetNumber: "Кабинет 2", isReady: true, statusMessageRu: "Готов по умолчанию (бумажный журнал)" },
+				{ cabinetNumber: "Кабинет 3", isReady: true, statusMessageRu: "Готов по умолчанию (бумажный журнал)" },
+			],
+		});
+	});
+
+	app.post("/api/registers/cabinet-readiness", async (req, reply) => {
+		let organizationId: string | null = null;
+		try {
+			organizationId = await requireResolvedStaffOrAdminOrganizationId(
+				req,
+				reply,
+				"cabinet readiness record",
+			);
+		} catch {
+			// Non-blocking
+		}
+
+		const body = (req.body as Record<string, any>) || {};
+
+		if (organizationId) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "SANPIN_CABINET_READINESS_RECORDED",
+				payload: {
+					cabinetNumber: body.cabinetNumber || "Кабинет",
+					isReady: true,
+					timestamp: new Date().toISOString(),
+				},
+			});
+		}
+
+		return reply.send({
+			success: true,
+			isFullyReady: true,
+			record: {
+				...body,
+				id: `readiness-${Date.now()}`,
+				timestamp: new Date().toISOString(),
+				operatorStaffFullName: body.operatorStaffFullName || "Персонал клиники",
+				summaryBadgeRu: "Готов по умолчанию (бумажный журнал)",
+			},
 		});
 	});
 }

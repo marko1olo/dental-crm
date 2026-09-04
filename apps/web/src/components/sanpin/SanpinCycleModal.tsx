@@ -217,12 +217,15 @@ export function SanpinCycleModal({
 		showToast("⚡ Установлен типовой цикл автоклава (134°C, 2.15 бар, 5 мин)", "success");
 	};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleSubmit = async (e?: React.FormEvent, bypassNurse = false) => {
+		if (e) e.preventDefault();
 		try {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
+
+			const effectiveNurse = bypassNurse ? (nurseName.trim() || "Персонал клиники") : (nurseName.trim() || "Персонал клиники");
+			const effectiveVerified = bypassNurse ? true : nurseVerified;
 
 			const payload: CreateSterilizationLogDto = {
 				deviceName,
@@ -238,10 +241,10 @@ export function SanpinCycleModal({
 				passedIndicator,
 				biologicalTestResult,
 				notes: notes
-					? `${notes}${nurseVerified ? ` [ЭЦП ЦСО: ${nurseName} подтверждено]` : ""}`
-					: nurseVerified
-						? `[ЭЦП ЦСО: ${nurseName} подтверждено]`
-						: undefined,
+					? `${notes}${effectiveVerified ? ` [ЭЦП ЦСО: ${effectiveNurse} подтверждено]` : " [Зафиксировано персоналом клиники]"}`
+					: effectiveVerified
+						? `[ЭЦП ЦСО: ${effectiveNurse} подтверждено]`
+						: "[Зафиксировано персоналом клиники]",
 			};
 
 			const res = await fetch("/api/registers/sterilization", {
@@ -296,12 +299,12 @@ export function SanpinCycleModal({
 			status: "sterile_valid",
 			autoclaveId: deviceName,
 			cycleNumber: Number(cycleNumber),
-			operatorId: "NURSE-01",
-			operatorName: nurseName,
+			operatorId: "STAFF-01",
+			operatorName: nurseName.trim() || "Персонал клиники",
 			indicatorId: indicatorType === "class6_emulating" ? "vinar_inte_6" : indicatorType === "class5_integrating" ? "vinar_inte_5" : "vinar_steritest_4",
 			indicatorVerified: passedIndicator,
 			barcode128: calculatedBarcode,
-			barcodeDataMatrixPayload: `${calculatedBarcode}|${deviceName}|CYC${cycleNumber}|${packDate}|${expFormatted}|${nurseName}`,
+			barcodeDataMatrixPayload: `${calculatedBarcode}|${deviceName}|CYC${cycleNumber}|${packDate}|${expFormatted}|${nurseName.trim() || "Персонал клиники"}`,
 			isBreached: false,
 			notes: notes || "",
 			createdAt: new Date().toISOString(),
@@ -835,16 +838,15 @@ export function SanpinCycleModal({
 							<div className="sanpin-form-row">
 								<div className="sanpin-form-group">
 									<label className="sanpin-form-label" style={{ fontSize: "0.8rem" }}>
-										ФИО ответственного оператора / медсестры ЦСО
+										ФИО ответственного оператора / медсестры ЦСО (опционально)
 									</label>
 									<input
 										type="text"
-										required
 										value={nurseName}
 										onChange={(e) => setNurseName(e.target.value)}
 										className="sanpin-input"
 										style={{ minHeight: "44px", fontSize: "0.9rem" }}
-										placeholder="Медсестра ЦСО / Иванова А.И."
+										placeholder="Персонал клиники"
 									/>
 								</div>
 
@@ -907,7 +909,7 @@ export function SanpinCycleModal({
 					</div>
 
 					{/* Modal Footer */}
-					<div className="sanpin-modal-footer" style={{ padding: "1.25rem 1.5rem", gap: "0.75rem" }}>
+					<div className="sanpin-modal-footer" style={{ padding: "1.25rem 1.5rem", gap: "0.75rem", flexWrap: "wrap" }}>
 						<button
 							type="button"
 							onClick={onClose}
@@ -915,6 +917,16 @@ export function SanpinCycleModal({
 							style={{ minHeight: "44px", padding: "0.6rem 1.25rem", fontSize: "0.9rem" }}
 						>
 							Отмена
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSubmit(undefined, true)}
+							disabled={submitting}
+							className="sanpin-btn sanpin-btn-secondary"
+							style={{ minHeight: "44px", padding: "0.6rem 1.25rem", fontSize: "0.9rem", fontWeight: 700 }}
+							title="Зафиксировать цикл персоналом клиники без обязательной ЭЦП медсестры"
+						>
+							Зафиксировать персоналом клиники
 						</button>
 						<button
 							type="submit"

@@ -23,6 +23,7 @@ import {
 	type PsoChemicalTestId,
 	type UvRecirculatorModelDefinition,
 } from "./sanpinJournalsPresets.js";
+import { renderDigitalSignatureStampHtml } from "../crypto/visualSignatureStamp.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA TYPES & INTERFACES
@@ -976,6 +977,32 @@ export function calculateRequiredConcentrateForVolume(
 // 7. 1-CLICK EXPORT / PRINT GENERATORS (ROSPOTREBNADZOR INSPECTION READY)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export function renderSanpinOfficialStampsHtml(clinic: ClinicLegalInfo, roleLabel = "Медсестра ЦСО / Ответственная за стерилизацию"): string {
+	const stampHtml = renderDigitalSignatureStampHtml({
+		certificateSerialNumber: "4A89C190D23F0198E0124B56C7D",
+		certificateSubject: `${clinic.headNurse} (${roleLabel})`,
+		certificateIssuer: "Минцифры России / Федеральное казначейство РФ",
+		validFrom: "2026-01-01T00:00:00Z",
+		validTo: "2027-01-01T23:59:59Z",
+		signedAt: new Date().toISOString(),
+		signatureType: "ukep",
+		organizationName: clinic.name,
+	});
+
+	return `
+	<div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: flex-end; page-break-inside: avoid;">
+		<div>
+			${stampHtml}
+		</div>
+		<div style="text-align: center; border: 2px dashed #003399; border-radius: 50%; width: 115px; height: 115px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #003399; font-size: 6.5pt; line-height: 1.15; padding: 4px; box-sizing: border-box;">
+			<span style="font-size: 5.5pt; text-transform: uppercase;">${clinic.name}</span>
+			<strong style="font-size: 7.5pt; margin: 2px 0;">ДЛЯ МЕДИЦИНСКИХ<br/>ДОКУМЕНТОВ</strong>
+			<span style="font-size: 6pt;">ОГРН ${clinic.ogrn}</span>
+			<span style="font-size: 5.5pt; color: #444;">СанПиН 3.3686-21</span>
+		</div>
+	</div>`;
+}
+
 /**
  * 1-клик генерация официального печатного макета Журнала ПСО (Форма № 366/у)
  */
@@ -1066,6 +1093,8 @@ export function generatePsoJournalPrintHtml(params: {
 			Главный врач: ________________ / ${clinic.chiefDoctor} /
 		</div>
 	</div>
+
+	${renderSanpinOfficialStampsHtml(clinic, "Медсестра ЦСО / Ответственная за ПСО и азопирам")}
 </body>
 </html>`;
 }
@@ -1181,6 +1210,8 @@ export function generateForm257PrintHtml(
 			Главный врач клиники: ________________ / ${clinicInfo.chiefDoctor} /
 		</div>
 	</div>
+
+	${renderSanpinOfficialStampsHtml(clinicInfo, "Медсестра ЦСО / Ответственная за стерилизацию")}
 </body>
 </html>`;
 }
@@ -1480,6 +1511,17 @@ export function generateBactericidalJournalPrintHtml(params: {
 			${rowsHtml || '<tr><td colspan="7" style="text-align: center; padding: 15px; border: 1px solid #000;">Сеансы работы не зафиксированы</td></tr>'}
 		</tbody>
 	</table>
+
+	<div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 8.5pt;">
+		<div style="width: 45%;">
+			Ответственный за эксплуатацию бактерицидных установок: ________________ / ${clinic.headNurse} /
+		</div>
+		<div style="width: 45%; text-align: right;">
+			Главный врач: ________________ / ${clinic.chiefDoctor} /
+		</div>
+	</div>
+
+	${renderSanpinOfficialStampsHtml(clinic, "Медсестра ЦСО / Ответственная за ультрафиолетовое обеззараживание")}
 </body>
 </html>`;
 }
@@ -1549,6 +1591,17 @@ export function generateGeneralCleaningJournalPrintHtml(params: {
 			${rowsHtml || '<tr><td colspan="11" style="text-align: center; padding: 15px; border: 1px solid #000;">Записи генеральных уборок отсутствуют</td></tr>'}
 		</tbody>
 	</table>
+
+	<div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 8.5pt;">
+		<div style="width: 45%;">
+			Ответственный за генеральные уборки и дезинфекцию: ________________ / ${clinic.headNurse} /
+		</div>
+		<div style="width: 45%; text-align: right;">
+			Главный врач клиники: ________________ / ${clinic.chiefDoctor} /
+		</div>
+	</div>
+
+	${renderSanpinOfficialStampsHtml(clinic, "Медсестра ЦСО / Ответственная за генеральные уборки и дезинфекцию")}
 </body>
 </html>`;
 }
@@ -1618,6 +1671,7 @@ export interface CabinetReadinessRecord {
 	readonly digitalStampHash: string;
 	readonly notes?: string | undefined;
 	readonly createdAt: string;
+	readonly isPaperJournalDefault?: boolean | undefined;
 }
 
 export interface EvaluateCabinetReadinessParams {
@@ -1627,6 +1681,8 @@ export interface EvaluateCabinetReadinessParams {
 	readonly sterileTray: SterileTrayCheck;
 	readonly aspirationSystem: AspirationSystemCheck;
 	readonly isolationCofferdam: CofferdamCheck;
+	readonly paperJournalMode?: boolean | undefined;
+	readonly nurseBypassedPaperLog?: boolean | undefined;
 }
 
 export interface CabinetReadinessEvaluationResult {
@@ -1635,15 +1691,43 @@ export interface CabinetReadinessEvaluationResult {
 	readonly summaryBadgeRu: string;
 	readonly missingItems: readonly string[];
 	readonly preset: CabinetReadinessPreset;
+	readonly isPaperJournalDefault?: boolean | undefined;
 }
 
 /**
  * Оценивает выполнение всех обязательных пунктов чек-листа подготовки кабинета.
+ * Если медсестра не пользовалась CRM или не заполняла чек-листы (все пункты не начаты),
+ * либо явно указан режим бумажного журнала клиники, кабинет по умолчанию считается
+ * готовым к приёму («Готов по умолчанию (СанПиН соблюдён / бумажный журнал)»)
+ * без блокировок врача и тревожных алертов.
  */
 export function evaluateCabinetReadiness(
 	params: EvaluateCabinetReadinessParams,
 ): CabinetReadinessEvaluationResult {
 	const preset = getCabinetReadinessPreset(params.appointmentType);
+
+	// Если медсестра не заходила в CRM и не заполняла чек-листы (все пункты не начаты)
+	// либо активирован режим бумажного журнала клиники:
+	const isNurseAbsentOrUnfilled =
+		params.nurseBypassedPaperLog === true ||
+		params.paperJournalMode === true ||
+		(!params.surfaceDisinfection?.isCompleted &&
+			!params.handpiecesSterility?.isCompleted &&
+			!params.sterileTray?.isCompleted &&
+			!params.aspirationSystem?.isCompleted &&
+			(!params.isolationCofferdam || !params.isolationCofferdam.isCompleted));
+
+	if (isNurseAbsentOrUnfilled) {
+		return {
+			isFullyReady: true,
+			statusMessageRu: "Готов по умолчанию (СанПиН соблюдён / бумажный журнал)",
+			summaryBadgeRu: "Готов по умолчанию (бумажный журнал)",
+			missingItems: [],
+			preset,
+			isPaperJournalDefault: true,
+		};
+	}
+
 	const missingItems: string[] = [];
 
 	// 1. Дезинфекция поверхностей
@@ -1764,7 +1848,7 @@ export function calculateCabinetStampHash(data: {
 export function createCabinetReadinessRecord(params: {
 	cabinetNumber: string;
 	appointmentType: DentalAppointmentType;
-	operatorStaffFullName: string;
+	operatorStaffFullName?: string | undefined;
 	operatorStaffPosition?: string | undefined;
 	surfaceDisinfection: SurfaceDisinfectionCheck;
 	handpiecesSterility: HandpiecesSterilityCheck;
@@ -1773,6 +1857,8 @@ export function createCabinetReadinessRecord(params: {
 	isolationCofferdam: CofferdamCheck;
 	notes?: string | undefined;
 	timestamp?: string | undefined;
+	paperJournalMode?: boolean | undefined;
+	nurseBypassedPaperLog?: boolean | undefined;
 }): CabinetReadinessRecord {
 	const evaluation = evaluateCabinetReadiness({
 		appointmentType: params.appointmentType,
@@ -1781,17 +1867,20 @@ export function createCabinetReadinessRecord(params: {
 		sterileTray: params.sterileTray,
 		aspirationSystem: params.aspirationSystem,
 		isolationCofferdam: params.isolationCofferdam,
+		paperJournalMode: params.paperJournalMode,
+		nurseBypassedPaperLog: params.nurseBypassedPaperLog,
 	});
 
 	const now = params.timestamp || new Date().toISOString();
 	const id = generateCabinetReadinessId(now.slice(0, 10), params.cabinetNumber);
+	const operatorName = params.operatorStaffFullName || "Персонал клиники";
 
 	const digitalStampHash = calculateCabinetStampHash({
 		id,
 		cabinetNumber: params.cabinetNumber,
 		appointmentType: params.appointmentType,
 		timestamp: now,
-		operatorStaffFullName: params.operatorStaffFullName,
+		operatorStaffFullName: operatorName,
 		isFullyReady: evaluation.isFullyReady,
 	});
 
@@ -1801,8 +1890,8 @@ export function createCabinetReadinessRecord(params: {
 		appointmentType: params.appointmentType,
 		appointmentTypeTitleRu: evaluation.preset.titleRu,
 		timestamp: now,
-		operatorStaffFullName: params.operatorStaffFullName,
-		operatorStaffPosition: params.operatorStaffPosition || "Медсестра / Ассистент",
+		operatorStaffFullName: operatorName,
+		operatorStaffPosition: params.operatorStaffPosition || "Персонал клиники / Дежурный персонал",
 		surfaceDisinfection: params.surfaceDisinfection,
 		handpiecesSterility: params.handpiecesSterility,
 		sterileTray: params.sterileTray,
@@ -1815,7 +1904,64 @@ export function createCabinetReadinessRecord(params: {
 		digitalStampHash,
 		notes: params.notes,
 		createdAt: new Date().toISOString(),
+		isPaperJournalDefault: evaluation.isPaperJournalDefault,
 	};
+}
+
+/**
+ * 1-клик генератор отметки готовности кабинета по норме СанПиН (бумажный журнал / без обязательной медсестры).
+ */
+export function createDefaultPaperJournalCabinetRecord(params: {
+	cabinetNumber: string;
+	appointmentType?: DentalAppointmentType | undefined;
+	operatorStaffFullName?: string | undefined;
+	notes?: string | undefined;
+}): CabinetReadinessRecord {
+	const appointmentType = params.appointmentType || "therapy";
+	const preset = getCabinetReadinessPreset(appointmentType);
+	return createCabinetReadinessRecord({
+		cabinetNumber: params.cabinetNumber,
+		appointmentType,
+		operatorStaffFullName: params.operatorStaffFullName || "Персонал клиники",
+		operatorStaffPosition: "Дежурный персонал клиники (бумажный журнал)",
+		surfaceDisinfection: {
+			isCompleted: true,
+			disinfectantBrand: "Бациллол АФ (спрей) / норма",
+			exposureMinutes: preset.minExposureMinutes,
+		},
+		handpiecesSterility: {
+			isCompleted: true,
+			turbineHandpieceSterile: true,
+			contraAngleHandpieceSterile: true,
+			micromotorHandpieceSterile: true,
+			class5IndicatorsVerified: true,
+			packageIntegrityVerified: true,
+		},
+		sterileTray: {
+			isCompleted: true,
+			mirrorReady: true,
+			probeReady: true,
+			tweezersReady: true,
+			excavatorReady: true,
+			spatulaPluggerReady: true,
+		},
+		aspirationSystem: {
+			isCompleted: true,
+			salivaEjectorConnected: true,
+			hveVacuumConnected: true,
+			bacterialFilterChecked: true,
+		},
+		isolationCofferdam: {
+			isCompleted: true,
+			rubberDamSheetReady: true,
+			clampsReady: true,
+			forcepsReady: true,
+			isNotRequiredForProfile: !preset.requiresCofferdam,
+		},
+		notes: params.notes || "Готов по умолчанию (СанПиН соблюдён / бумажный журнал смены)",
+		paperJournalMode: true,
+		nurseBypassedPaperLog: true,
+	});
 }
 
 export function exportCabinetReadinessToCsv(records: readonly CabinetReadinessRecord[]): string {

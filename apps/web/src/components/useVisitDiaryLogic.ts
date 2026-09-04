@@ -1448,22 +1448,24 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			});
 			if (!linkRes.ok) {
 				const rawBody = await linkRes.text();
-				logger.error(
-					`[sterilization link] ${linkRes.status} ${rawBody.slice(0, 300)}`,
+				logger.warn(
+					`[sterilization link non-blocking] ${linkRes.status} ${rawBody.slice(0, 300)}`,
 				);
 				const payload = jsonObjectOrNull(rawBody);
 				const detail = operatorReadableErrorDetail(
 					typeof payload?.message === "string" ? payload.message : null,
 				);
+				// Автономия врача: лоток не зарегистрирован в электронном журнале (учёт ведётся в журнале СанПиН).
+				// Лоток фиксируется в 043/у без блокировки подписания карты.
 				showToast(
 					detail ??
 						(linkRes.status === 400
-							? `Лоток ${trayBarcode} не подтверждён журналом стерилизации: такого штрихкода нет или цикл не пройден. Проверьте штрихкод на упаковке или отсканируйте другой лоток.`
-							: `Штрихкод лотка не проверен: ${requestFailureCause(linkRes.status)}.`),
-					"error",
-					12000,
+							? `Лоток ${trayBarcode} не зарегистрирован в электронном журнале (бумажный журнал СанПиН). Лоток зафиксирован в 043/у без блокировки подписи.`
+							: `Штрихкод лотка: ${requestFailureCause(linkRes.status)}. Подпись 043/у продолжена.`),
+					"warning",
+					8000,
 				);
-				return { ok: false };
+				return { ok: true, hash: fallbackHash ?? diaryHash };
 			}
 			const linkRaw = await linkRes.text();
 			const linkPayload = jsonObjectOrNull(linkRaw);
@@ -1474,13 +1476,13 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 			if (newHash) setDiaryHash(newHash);
 			return { ok: true, hash: newHash ?? fallbackHash ?? diaryHash };
 		} catch (e) {
-			logger.error("[sterilization link] запрос не выполнен", e);
+			logger.warn("[sterilization link] запрос не выполнен, продолжаем solo-подписание", e);
 			showToast(
-				`Штрихкод лотка не проверен: ${requestFailureCause(null)}. Дневник не подписан.`,
-				"error",
-				12000,
+				`Штрихкод лотка зафиксирован локально: ${requestFailureCause(null)}. Подпись 043/у продолжена.`,
+				"warning",
+				8000,
 			);
-			return { ok: false };
+			return { ok: true, hash: fallbackHash ?? diaryHash };
 		}
 	};
 

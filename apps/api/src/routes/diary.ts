@@ -1471,7 +1471,11 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 					)
 					.orderBy(desc(sterilizationLogs.timestamp))
 					.limit(1);
-				if (trayLog?.status !== "passed") {
+				// Автономия врача и опциональность медсестры:
+				// Если лоток не внесён медсестрой в CRM (ведётся бумажный журнал СанПиН
+				// или упакован в стороннем ЦСО), не блокируем врача ошибкой invalid_tray —
+				// штрихкод сохраняется в 043/у. Отклоняем только при явной отметке о браке/аварии автоклава ('failed').
+				if (trayLog && trayLog.status === "failed") {
 					return { kind: "invalid_tray" as const };
 				}
 			}

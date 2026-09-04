@@ -2,6 +2,7 @@ import {
 	CABINET_READINESS_PRESETS,
 	calculateCabinetStampHash,
 	createCabinetReadinessRecord,
+	createDefaultPaperJournalCabinetRecord,
 	evaluateCabinetReadiness,
 	exportCabinetReadinessToCsv,
 	generateCabinetReadinessPrintHtml,
@@ -18,6 +19,7 @@ import {
 	Download,
 	FileSpreadsheet,
 	Filter,
+	Info,
 	Layers,
 	Printer,
 	RotateCcw,
@@ -179,7 +181,7 @@ export function CabinetReadinessTab() {
 		const record = createCabinetReadinessRecord({
 			cabinetNumber: selectedCabinet,
 			appointmentType: selectedProfile,
-			operatorStaffFullName: nurseName,
+			operatorStaffFullName: nurseName.trim() || "Персонал клиники",
 			operatorStaffPosition: nursePosition,
 			surfaceDisinfection: {
 				isCompleted: disinfectionCompleted,
@@ -305,6 +307,20 @@ export function CabinetReadinessTab() {
 		);
 	};
 
+	const handleStartAppointmentPaperLogNorm = () => {
+		const record = createDefaultPaperJournalCabinetRecord({
+			cabinetNumber: selectedCabinet,
+			appointmentType: selectedProfile,
+			operatorStaffFullName: nurseName || "Персонал клиники",
+			notes: "Приём начат (норма по бумажному журналу СанПиН 3.3686-21, без блокировок врача)",
+		});
+		setHistoryRecords((prev) => [record, ...prev]);
+		showToast(
+			`${selectedCabinet}: приём начат в штатном режиме (норма СанПиН / бумажный журнал). Блокировки сняты.`,
+			"success",
+		);
+	};
+
 	const handleExportCsv = () => {
 		const csv = exportCabinetReadinessToCsv(historyRecords);
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -337,16 +353,27 @@ export function CabinetReadinessTab() {
 						Экспресс-чек-лист: «Готовность кабинета и стоматологической установки»
 					</h2>
 					<p className="sanpin-pane-desc">
-						Стандартизированный протокол подготовки кабинета ассистентом/медсестрой перед приёмом по СанПиН 3.3686-21
+						Стандартизированный протокол подготовки кабинета по СанПиН 3.3686-21. Ведение в CRM опционально: при использовании бумажных журналов приём пациентов ведётся в штатном режиме без задержек и блокировок.
 					</p>
 				</div>
 
 				<div className="sanpin-pane-actions" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						onClick={handleOneClickConfirmCabinetReady}
+						onClick={handleStartAppointmentPaperLogNorm}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.95rem", background: "var(--teal)", color: "var(--on-teal, #fff)", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)" }}
+						title="1 Клик врачу: Начать приём без блокировок по норме СанПиН (бумажный журнал)"
+						data-testid="cabinet-readiness-start-appointment-btn"
+					>
+						<CheckCircle2 size={18} /> <span>Начать приём (норма)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleOneClickConfirmCabinetReady}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.92rem", fontWeight: 700, cursor: "pointer" }}
 						title="1 Клик: Отметить все пункты текущего профиля как готовые"
 						data-testid="cabinet-readiness-autofill-btn"
 					>
@@ -400,9 +427,9 @@ export function CabinetReadinessTab() {
 					<span>Шаг 2: Проверьте готовность (норма в 1 клик)</span>
 				</div>
 				<ArrowRight size={14} color="var(--muted, #64748b)" />
-				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg)" }}>
-					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>3</span>
-					<span>Шаг 3: Нажмите «Готово»</span>
+				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--ok-fg)" }}>
+					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--ok-fg)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>3</span>
+					<span>Шаг 3: Готов к приёму</span>
 				</div>
 				<div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>
 					<Save size={14} color="var(--ok-fg)" />
@@ -449,18 +476,18 @@ export function CabinetReadinessTab() {
 						Готовность кабинета к приёму пациентов
 					</h3>
 					<p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted, #64748b)" }}>
-						Физиологическая норма: дезинфекция поверхностей, стерильные наконечники 5 кл., смотровой лоток, аспирация и коффердам.
+						Физиологическая норма: дезинфекция поверхностей, стерильные наконечники 5 кл., смотровой лоток, аспирация и коффердам. Приём разрешён в штатном режиме.
 					</p>
 				</div>
 
 				<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						onClick={handleOneClickConfirmCabinetReady}
+						onClick={handleStartAppointmentPaperLogNorm}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{
 							minHeight: "52px",
-							padding: "0.75rem 1.75rem",
+							padding: "0.75rem 1.5rem",
 							fontSize: "0.98rem",
 							fontWeight: 800,
 							background: "var(--teal, #0d9488)",
@@ -472,10 +499,31 @@ export function CabinetReadinessTab() {
 							borderRadius: "0.65rem",
 							boxShadow: "0 4px 14px rgba(13, 148, 136, 0.35)",
 						}}
-						title="1 Клик: Подтвердить готовность кабинета к смене по норме СанПиН"
+						title="1 Клик: Начать приём (норма по бумажному журналу СанПиН)"
 					>
-						<ShieldCheck size={22} />
-						<span>Кабинет готов к смене (норма СанПиН) — 1 клик</span>
+						<CheckCircle2 size={22} />
+						<span>Начать приём (норма)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleOneClickConfirmCabinetReady}
+						className="sanpin-btn sanpin-btn-secondary"
+						style={{
+							minHeight: "52px",
+							padding: "0.75rem 1.25rem",
+							fontSize: "0.92rem",
+							fontWeight: 700,
+							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							gap: "0.5rem",
+							borderRadius: "0.65rem",
+						}}
+						title="Отметить все пункты электронного чек-листа"
+					>
+						<Zap size={18} />
+						<span>Зафиксировать в CRM</span>
 					</button>
 				</div>
 			</div>
@@ -718,60 +766,82 @@ export function CabinetReadinessTab() {
 							style={{
 								padding: "1rem",
 								borderRadius: "0.5rem",
-								background: evaluation.isFullyReady ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-								border: evaluation.isFullyReady ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
+								background: evaluation.isFullyReady ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
+								border: evaluation.isFullyReady ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(245, 158, 11, 0.3)",
 								marginBottom: "1rem",
 							}}
 						>
-							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", fontWeight: 800, color: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--bad-fg)" }}>
-								{evaluation.isFullyReady ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "1rem", fontWeight: 800, color: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg, #b45309)" }}>
+								{evaluation.isFullyReady ? <CheckCircle2 size={20} /> : <Info size={20} />}
 								<span>{evaluation.statusMessageRu}</span>
 							</div>
 
 							{evaluation.missingItems.length > 0 && (
 								<div style={{ marginTop: "0.5rem" }}>
-									<p style={{ margin: "0 0 0.3rem 0", fontSize: "0.82rem", fontWeight: 700, color: "var(--bad-fg)" }}>
-										Не выполнены обязательные пункты:
+									<p style={{ margin: "0 0 0.3rem 0", fontSize: "0.82rem", fontWeight: 700, color: "var(--warn-fg, #b45309)" }}>
+										Не заполнены пункты экспресс-проверки (при использовании бумажных журналов приём разрешён):
 									</p>
-									<ul style={{ margin: "0 0 0.5rem 1.25rem", padding: 0, fontSize: "0.8rem", color: "var(--bad-fg)" }}>
+									<ul style={{ margin: "0 0 0.5rem 1.25rem", padding: 0, fontSize: "0.8rem", color: "var(--muted)" }}>
 										{evaluation.missingItems.map((item, idx) => (
 											<li key={idx} style={{ marginBottom: "0.2rem" }}>{item}</li>
 										))}
 									</ul>
-									<button
-										type="button"
-										onClick={handleQuickFillAllReady}
-										className="sanpin-btn sanpin-btn-primary"
-										style={{
-											width: "100%",
-											minHeight: "44px",
-											padding: "0.5rem 1rem",
-											fontSize: "0.88rem",
-											background: "var(--teal)",
-											color: "var(--on-teal, #fff)",
-											fontWeight: 800,
-											cursor: "pointer",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											gap: "0.4rem",
-											boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
-										}}
-										title="1 Клик: Отметить все недостающие пункты чек-листа как готовые"
-									>
-										<Zap size={16} /> <span>Исправить и заполнить всё в 1 клик</span>
-									</button>
+									<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.5rem" }}>
+										<button
+											type="button"
+											onClick={handleStartAppointmentPaperLogNorm}
+											className="sanpin-btn sanpin-btn-primary"
+											style={{
+												flex: 1,
+												minHeight: "44px",
+												padding: "0.5rem 1rem",
+												fontSize: "0.88rem",
+												background: "var(--teal)",
+												color: "var(--on-teal, #fff)",
+												fontWeight: 800,
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: "0.4rem",
+											}}
+											title="Начать приём в штатном режиме (бумажный журнал)"
+										>
+											<CheckCircle2 size={16} /> <span>Начать приём (норма)</span>
+										</button>
+										<button
+											type="button"
+											onClick={handleQuickFillAllReady}
+											className="sanpin-btn sanpin-btn-secondary"
+											style={{
+												flex: 1,
+												minHeight: "44px",
+												padding: "0.5rem 1rem",
+												fontSize: "0.88rem",
+												fontWeight: 700,
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: "0.4rem",
+											}}
+											title="1 Клик: Отметить все недостающие пункты чек-листа как готовые"
+										>
+											<Zap size={16} /> <span>Заполнить чек-лист в 1 клик</span>
+										</button>
+									</div>
 								</div>
 							)}
 						</div>
 
 						<div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
 							<div>
-								<label style={{ fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>ФИО ассистента / медсестры:</label>
+								<label style={{ fontSize: "0.8rem", color: "var(--muted, #64748b)" }}>ФИО ассистента / медсестры (опционально):</label>
 								<input
 									type="text"
 									value={nurseName}
 									onChange={(e) => setNurseName(e.target.value)}
+									placeholder="Персонал клиники"
 									className="sanpin-input"
 									style={{ minHeight: "40px", fontSize: "0.85rem" }}
 								/>
@@ -851,8 +921,8 @@ export function CabinetReadinessTab() {
 												borderRadius: "0.3rem",
 												fontSize: "0.75rem",
 												fontWeight: 700,
-												background: rec.isFullyReady ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-												color: rec.isFullyReady ? "var(--ok-fg)" : "var(--bad-fg)",
+												background: rec.isFullyReady ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+												color: rec.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg, #b45309)",
 											}}
 										>
 											{rec.summaryBadgeRu}

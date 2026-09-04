@@ -640,14 +640,15 @@ export function SanpinRegisters() {
 		fetchSummary();
 	}, []);
 
-	const handleBatchNurseSign = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleBatchNurseSign = async (e?: React.FormEvent, bypassNurse = false) => {
+		if (e) e.preventDefault();
 		try {
 			setSigningShift(true);
+			const signerName = bypassNurse ? (nurseSignName.trim() || "Персонал клиники") : (nurseSignName.trim() || "Персонал клиники");
 			// Simulated or real batch sign
 			await new Promise((r) => setTimeout(r, 600));
 			showToast(
-				`Смена успешно заверена цифровым штампом ЭЦП (${nurseSignName}). Все циклы и пробы опечатаны.`,
+				`Смена успешно заверена цифровым штампом (${signerName}). Журналы СанПиН в норме.`,
 				"success",
 			);
 			setIsNurseSignModalOpen(false);
@@ -1715,21 +1716,21 @@ export function SanpinRegisters() {
 
 								<div className="sanpin-form-group">
 									<label className="sanpin-form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-										ФИО медсестры ЦСО / Старшей медсестры
+										ФИО медсестры ЦСО / Старшей медсестры (опционально)
 									</label>
 									<input
 										type="text"
-										required
 										value={nurseSignName}
 										onChange={(e) => setNurseSignName(e.target.value)}
 										className="sanpin-input"
+										placeholder="Персонал клиники"
 										style={{ minHeight: "44px", fontSize: "0.9rem" }}
 									/>
 								</div>
 
 								<div className="sanpin-form-group">
 									<label className="sanpin-form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>
-										PIN-код подтверждения ЭЦП
+										PIN-код подтверждения ЭЦП (опционально)
 									</label>
 									<input
 										type="password"
@@ -1743,7 +1744,7 @@ export function SanpinRegisters() {
 								</div>
 							</div>
 
-							<div className="sanpin-modal-footer" style={{ padding: "1rem 1.25rem", gap: "0.75rem" }}>
+							<div className="sanpin-modal-footer" style={{ padding: "1rem 1.25rem", gap: "0.75rem", flexWrap: "wrap" }}>
 								<button
 									type="button"
 									onClick={() => setIsNurseSignModalOpen(false)}
@@ -1751,6 +1752,16 @@ export function SanpinRegisters() {
 									style={{ minHeight: "44px", padding: "0.5rem 1.25rem" }}
 								>
 									Отмена
+								</button>
+								<button
+									type="button"
+									onClick={() => handleBatchNurseSign(undefined, true)}
+									disabled={signingShift}
+									className="sanpin-btn sanpin-btn-secondary"
+									style={{ minHeight: "44px", padding: "0.5rem 1rem", fontSize: "0.88rem", fontWeight: 700 }}
+									title="Пропустить медсестру: подтвердить журналы персоналом клиники"
+								>
+									Пропустить медсестру (Персонал клиники)
 								</button>
 								<button
 									type="submit"
