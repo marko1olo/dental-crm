@@ -1,7 +1,7 @@
 # E2E Test Infra: DENTE Dental CRM (Round 43)
 
+> 🧭 **Навигация:** [🗺️ Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [💻 Справочник Команд и Тестов (.agents/COMMANDS_AND_TESTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Test Philosophy
 - Opaque-box & requirement-driven verification across the 3 strictly isolated tiers.
 - Complete coverage across all 21 inventoried features in `PROJECT.md § Feature Inventory`.
@@ -32,14 +32,71 @@
 | 20 | 54-FZ Idempotency & Remediation | Idempotency keys, Banker's rounding, ACID | 5 | 5 | ✓ | ✓ |
 | 21 | Dual Track Acceptance & Gating | 100% test pass across shared, api, and web | 5 | 5 | ✓ | ✓ |
 
+---
+
 ## Test Runner Commands
-- Shared Business Logic & Statutory Tests:
-  `npm test -w @dental/shared`
-- Web UI, Odontogram, & Clinical Tests:
-  `node --import tsx --import ./testCssStub.mjs --test "src/components/odontogram/**/*.test.ts" "src/components/visit/**/*.test.ts" "src/tests/nurseProofUx.test.ts" "src/tests/perspectiveOdontogram.test.ts" "src/tests/challenger10ThemesWcagAudit.test.ts"`
-- Typecheck Gate:
-  `npm run typecheck`
-- Encoding Gate:
-  `node scripts/check-encoding.mjs`
-- CSS Token Gate:
-  `node scripts/check-css-tokens.mjs`
+
+### 1. Monorepo Full Test Suite
+- Run all unit and integration tests across all workspaces (`shared` ➔ `api` ➔ `web`):
+  ```bash
+  npm test
+  ```
+
+### 2. Workspace-Specific Test Runners
+- **Shared Business Logic & Statutory Tests (`@dental/shared`):**
+  ```bash
+  npm test -w @dental/shared
+  # Executes: node --import tsx --test "src/**/*.test.ts"
+  ```
+- **Fastify Backend API & Integration Tests (`@dental/api`):**
+  ```bash
+  npm test -w @dental/api
+  # Executes: node --import tsx --import ./src/tests/support/poolTeardown.ts --test "src/**/*.test.ts"
+  npm run test:contract -w @dental/api
+  # Executes contract breach proofs: node --import tsx --test src/tests/contract-breach-proofs.test.ts
+  ```
+- **React 19 Web Client UI & Odontogram Tests (`@dental/web`):**
+  ```bash
+  npm test -w @dental/web
+  # Executes: node --import tsx --import ./testCssStub.mjs --test "src/**/*.test.ts" "src/**/*.test.tsx"
+  ```
+- **Targeted Clinical & Ergonomic UI Test Suite:**
+  ```bash
+  node --import tsx --import ./testCssStub.mjs --test "src/components/odontogram/**/*.test.ts" "src/components/visit/**/*.test.ts" "src/tests/nurseProofUx.test.ts" "src/tests/perspectiveOdontogram.test.ts" "src/tests/challenger10ThemesWcagAudit.test.ts"
+  ```
+
+---
+
+## Monorepo Quality Gates (The Iron Gates)
+
+Every change must satisfy the quality gates before declaration of completion:
+
+| Gate Command | Script / Mechanism | Scope & Invariants Verified |
+|:---|:---|:---|
+| `npm run typecheck` | 5 chained stages (`shared` ➔ `shared:tests` ➔ `api` ➔ `api:tests` ➔ `web`) | Strict TypeScript compiler check (`tsc --noEmit`). Mandatory stage count verification (all 5 stages must complete with Exit 0). |
+| `npm run check:encoding` | `node scripts/check-encoding.mjs` | UTF-8 integrity check across 4,800+ files. Detects BOM, UTF-16 LE/BE, `U+FFFD`, and cp1252 mojibake. |
+| `npm run check:css-tokens` | `node scripts/check-css-tokens.mjs` | Verifies adherence to design tokens (`var(--paper)`, `var(--ink)`), zero light leaks in dark themes, and no raw rogue colors. |
+| `npm run check:tracked-ignored` | `node scripts/check-tracked-ignored.mjs` | Verifies Git worktree hygiene and prevents accidentally tracking ignored artifacts. |
+| `npm run check:dynamic-imports` | `node scripts/check-dynamic-imports.mjs` | Validates dynamic code splitting and lazy loading of heavy views and dialogs. |
+| `npm run check:env-contract` | `node --import tsx scripts/check-env-contract.mjs` | Verifies environment variable schemas, database ports, and runtime configurations. |
+| `npm run check:guarded-headers` | `node scripts/check-guarded-route-headers.mjs` | Ensures critical Fastify routes enforce tenant isolation and mutation headers. |
+| `npm run check:route-callers` | `node scripts/check-route-callers.mjs` | Verifies frontend client call paths match registered backend routes. |
+| `npm run check:fetch-response` | `node scripts/check-fetch-response-guard.mjs` | Enforces safe fetch wrappers and error boundary contracts. |
+| `npm run lint` | Chained quality check | Runs `check:encoding` ➔ `check:tracked-ignored` ➔ `check:dynamic-imports` ➔ `check:env-contract` ➔ `typecheck`. |
+
+---
+
+## Smoke Testing & Verification Suite (`scripts/`)
+
+- Full Smoke Suite:
+  ```bash
+  npm run smoke:all
+  ```
+- Specific High-Priority Verifications:
+  * `npm run smoke:chains` — Chain-proof validation of end-to-end clinical workflows.
+  * `npm run smoke:payment-idempotency` — Idempotency-Key handling and double-charge prevention under 54-FZ.
+  * `npm run smoke:clinical-rule-contract` — Clinical rules engine, Mandate 8e doctor autonomy, and contraindications.
+  * `npm run smoke:telegram-bot` — Telegram webhook routing, command processing, and authentication linking.
+  * `npm run smoke:mobile-overflow` — Mobile viewport ergonomics (390px) and zero horizontal overflow.
+  * `npm run smoke:tax-knd-xml` — FNS Form 1151156 XML generator and barcode payload.
+  * `npm run smoke:dist-freshness` — Verifies build artifacts freshness before releases.
