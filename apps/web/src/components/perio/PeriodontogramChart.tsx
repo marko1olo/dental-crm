@@ -49,7 +49,10 @@ import React, {
 	useRef,
 	useState,
 } from "react";
-import { getToothFolkAndAnatomicalNameRu } from "../../lib/clinicalProtocols043";
+import {
+	getToothFolkAndAnatomicalNameRu,
+	PERIO_PATHOLOGY_PRESETS,
+} from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 import { HygieneIndicesPanel } from "../hygiene/HygieneIndicesPanel";
 
@@ -110,6 +113,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 	const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 	const [copyStatus, setCopyStatus] = useState<boolean>(false);
 	const [insertStatus, setInsertStatus] = useState<boolean>(false);
+	// Florida Probe Tier 3 Isolation: detailed 192-point table is on-demand for periodontists
+	const [isTier3ProbingExpanded, setIsTier3ProbingExpanded] = useState<boolean>(false);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -617,6 +622,138 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 		showToast("Зубной налет очищен (индекс гигиены 100%)", "success", 4000);
 	}, [readOnly]);
 
+	// 1-Click Fast Therapist Pathology Preset: Zero Florida Probe 192-point barrier
+	const handleApplyTherapistPreset = useCallback(
+		(presetId: string) => {
+			if (readOnly) return;
+			const targetPreset = PERIO_PATHOLOGY_PRESETS.find((p) => p.id === presetId);
+			if (!targetPreset) return;
+
+			setTeeth((prevTeeth) =>
+				prevTeeth.map((tooth) => {
+					if (tooth.isMissing) return tooth;
+					const num = tooth.toothNumber;
+					const isLowerAnterior = [31, 32, 41, 42].includes(num);
+					const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(num);
+					const updated = { ...tooth };
+
+					let depth = 2;
+					let hasBop = false;
+					let hasCalculus = false;
+					let hasPlaque = false;
+					let mobility: 0 | 1 | 2 | 3 = 0;
+					let furcation: 0 | 1 | 2 | 3 | 4 = 0;
+
+					switch (presetId) {
+						case "perio_intact":
+							depth = 2;
+							hasBop = false;
+							hasCalculus = false;
+							hasPlaque = false;
+							mobility = 0;
+							furcation = 0;
+							break;
+
+						case "gingivitis_localized":
+							depth = isLowerAnterior ? 3 : 2;
+							hasBop = isLowerAnterior;
+							hasCalculus = isLowerAnterior;
+							hasPlaque = isLowerAnterior;
+							mobility = 0;
+							furcation = 0;
+							break;
+
+						case "gingivitis_generalized":
+							depth = 3;
+							hasBop = true;
+							hasCalculus = isLowerAnterior || isMolar;
+							hasPlaque = true;
+							mobility = 0;
+							furcation = 0;
+							break;
+
+						case "dental_calculus":
+							depth = isLowerAnterior ? 3 : 2;
+							hasBop = isLowerAnterior || isMolar;
+							hasCalculus = isLowerAnterior || isMolar;
+							hasPlaque = true;
+							mobility = 0;
+							furcation = 0;
+							break;
+
+						case "periodontitis_mild":
+							depth = isMolar || isLowerAnterior ? 4 : 3;
+							hasBop = isMolar || isLowerAnterior;
+							hasCalculus = true;
+							hasPlaque = true;
+							mobility = isLowerAnterior ? 1 : 0;
+							furcation = 0;
+							break;
+
+						case "periodontitis_moderate":
+							depth = isMolar ? 5 : isLowerAnterior ? 4 : 3;
+							hasBop = true;
+							hasCalculus = true;
+							hasPlaque = true;
+							mobility = isLowerAnterior ? 1 : 0;
+							furcation = isMolar && isFurcationEligibleTooth(num) ? 1 : 0;
+							break;
+
+						case "periodontitis_severe":
+							depth = isMolar ? 7 : isLowerAnterior ? 6 : 5;
+							hasBop = true;
+							hasCalculus = true;
+							hasPlaque = true;
+							mobility = isLowerAnterior ? 2 : isMolar ? 1 : 0;
+							furcation = isMolar && isFurcationEligibleTooth(num) ? 2 : 0;
+							break;
+
+						default:
+							depth = 2;
+							break;
+					}
+
+					updated.mobility = mobility;
+					updated.furcation = furcation;
+
+					for (const key of PERIO_SITE_KEYS) {
+						const site = tooth[key] ?? {
+							probingDepthMm: 2,
+							gingivalMarginMm: 0,
+							bleedingOnProbing: false,
+							suppuration: false,
+							plaque: false,
+							calculus: false,
+						};
+						const gm = site.gingivalMarginMm || 0;
+						const calMm = calculateClinicalAttachmentLevel(depth, gm);
+						updated[key] = {
+							...site,
+							probingDepthMm: depth,
+							bleedingOnProbing: hasBop,
+							calculus: hasCalculus,
+							plaque: hasPlaque,
+							calMm,
+						};
+					}
+					return updated;
+				}),
+			);
+
+			if (onInsertToProtocol) {
+				const protocolText = `• Пародонтологический осмотр: ${targetPreset.label}\n• Status localis: ${targetPreset.statusLocalis}\n• Рекомендованное лечение: ${targetPreset.treatmentDescription}`;
+				onInsertToProtocol(protocolText);
+			}
+
+			showToast(
+				`Статус пародонта зафиксирован: «${targetPreset.label}». Протокол перенесён в дневник 043/у.`,
+				"success",
+				5000,
+			);
+		},
+		[readOnly, onInsertToProtocol],
+	);
+
 	// ─── Protocol Generation & Clipboard Export ──────────────────────────────
 	const generateProtocolText = useCallback((): string => {
 		return generateComprehensivePerio043Text(teeth, summary, {
@@ -799,6 +936,95 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						</button>
 					</div>
 				)}
+			</div>
+
+			{/* ═══════════════════════════════════════════════════════════════════
+			    1-CLICK THERAPIST EXPRESS STATUS BAR (ZERO 192-POINTS BARRIER)
+			    ═══════════════════════════════════════════════════════════════════ */}
+			<div className="flex flex-col gap-2.5 p-3.5 sm:p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--ink,#f8fafc)] shadow-xs">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<Zap size={18} className="text-teal-400 shrink-0" />
+						<span className="text-sm font-black text-teal-300">
+							⚡ 1-Клик фиксация статуса пародонта для терапевта (без 192 точек):
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => setIsTier3ProbingExpanded((prev) => !prev)}
+						className="text-xs text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+						data-testid="perio-tier3-toggle-header-btn"
+					>
+						<span>{isTier3ProbingExpanded ? "Скрыть Florida Probe (Tier 3)" : "🔬 Детальная Florida Probe 6 точек (Tier 3)"}</span>
+						{isTier3ProbingExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+					</button>
+				</div>
+
+				<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("perio_intact")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-center active:scale-95 shadow-2xs"
+						title="Интактный пародонт: глубина бороздки 1–2 мм, BOP 0%, зубных отложений нет"
+						data-testid="perio-fast-intact"
+					>
+						[ ✓ Норма (Z01.2) ]
+					</button>
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("gingivitis_localized")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-center active:scale-95 shadow-2xs"
+						title="Гингивит локализованный: отек и кровоточивость межзубных сосочков во фронтальном отделе (BOP+)"
+						data-testid="perio-fast-gingivitis-loc"
+					>
+						[ Гингивит лок. ]
+					</button>
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("gingivitis_generalized")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-amber-600/20 hover:bg-amber-600/35 text-amber-200 border border-amber-500/40 transition-all cursor-pointer text-center active:scale-95 shadow-2xs"
+						title="Гингивит генерализованный: диффузный отек и кровоточивость десен обеих челюстей (BOP > 30%)"
+						data-testid="perio-fast-gingivitis-gen"
+					>
+						[ Гингивит генер. ]
+					</button>
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("periodontitis_mild")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-orange-500/15 hover:bg-orange-500/30 text-orange-300 border border-orange-500/35 transition-all cursor-pointer text-center active:scale-95 shadow-2xs"
+						title="Хронический пародонтит лёгкой степени: карманы 3.5–4 мм, BOP+, над/поддесневой камень"
+						data-testid="perio-fast-perio-1"
+					>
+						[ Пародонтит I ст. ]
+					</button>
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("periodontitis_moderate")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-center active:scale-95 shadow-2xs"
+						title="Хронический пародонтит средней степени: карманы 4–5 мм, ретракция десны 1-2 мм, подвижность I-II"
+						data-testid="perio-fast-perio-2"
+					>
+						[ Пародонтит II ст. ]
+					</button>
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("periodontitis_severe")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/35 transition-all cursor-pointer text-center active:scale-95 shadow-2xs"
+						title="Хронический пародонтит тяжёлой степени: карманы >6 мм, гноетечение, патологическая подвижность II-III"
+						data-testid="perio-fast-perio-3"
+					>
+						[ Пародонтит III ст. ]
+					</button>
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("dental_calculus")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border border-sky-500/35 transition-all cursor-pointer text-center active:scale-95 shadow-2xs"
+						title="Зубные отложения: массивный над- и поддесневой зубной камень на резцах и молярах (K03.6)"
+						data-testid="perio-fast-calculus"
+					>
+						[ Зубные отложения ]
+					</button>
+				</div>
 			</div>
 
 			{/* ═══════════════════════════════════════════════════════════════════
@@ -1000,9 +1226,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    FAST NUMPAD & FLORIDA PROBE TOOLBAR (0-MODAL / GLOVE-FRIENDLY)
+			    TIER 3: DETAILED FLORIDA PROBE (192 POINTS FOR PERIODONTISTS)
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-teal-500/30 shadow-xs">
+			{isTier3ProbingExpanded ? (
+				<div className="flex flex-col gap-4 animate-in fade-in duration-200">
+					{/* FAST NUMPAD & FLORIDA PROBE TOOLBAR (0-MODAL / GLOVE-FRIENDLY) */}
+					<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-teal-500/30 shadow-xs">
 				{/* Active Probe Site Info Badge */}
 				<div className="flex items-center gap-2 flex-wrap">
 					<div className="px-2.5 py-1 rounded-lg bg-teal-500/20 border border-teal-500/40 text-teal-300 font-mono text-xs font-bold flex items-center gap-1.5">
@@ -1264,6 +1493,33 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</div>
 				</div>
 			</div>
+			</div>
+		) : (
+			<div className="p-4 rounded-2xl bg-[var(--paper-soft,#1e293b)]/70 border border-dashed border-teal-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+				<div className="flex items-center gap-3">
+					<div className="p-2.5 rounded-xl bg-teal-500/15 text-teal-400 shrink-0">
+						<Layers size={22} />
+					</div>
+					<div className="flex flex-col gap-0.5">
+						<span className="text-sm font-black text-[var(--ink,#f8fafc)]">
+							Детальная Florida Probe (192 точки измерения — по 6 на каждый зуб)
+						</span>
+						<span className="text-xs text-[var(--muted,#94a3b8)]">
+							Изолирована в Tier 3 для углублённого пародонтологического приёма. На обычном терапевтическом приёме используйте 1-клик кнопки быстрой фиксации выше.
+						</span>
+					</div>
+				</div>
+				<button
+					type="button"
+					onClick={() => setIsTier3ProbingExpanded(true)}
+					className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/40 text-xs font-black transition-all cursor-pointer shrink-0 active:scale-95 flex items-center justify-center gap-1.5"
+					data-testid="expand-florida-probe-tier3-btn"
+				>
+					<Activity size={16} />
+					<span>🔬 Развернуть 192 точки (Tier 3)</span>
+				</button>
+			</div>
+		)}
 
 			{/* ═══════════════════════════════════════════════════════════════════
 			    TIER 2: SELECTED TOOTH GRANULAR INSPECTOR (WARM CONTEXT DRAWER)

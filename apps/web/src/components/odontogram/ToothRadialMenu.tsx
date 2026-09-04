@@ -137,8 +137,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 		? [
 				{
 					id: "caries",
-					label: "Кариес молочного зуба",
-					shortLabel: "Кариес",
+					label: "Кариес молочного зуба (C)",
+					shortLabel: "Кариес (C)",
 					state: "Caries",
 					icon: <Zap size={16} className="text-amber-200" />,
 					color: "from-amber-600 to-amber-800",
@@ -147,8 +147,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "pulpitis",
-					label: "Пульпотомия (MTA/Biodentine)",
-					shortLabel: "Пульпотомия",
+					label: "Пульпотомия / Пульпит (P)",
+					shortLabel: "Пульпит (P)",
 					state: "Pulpitis",
 					icon: <Flame size={16} className="text-rose-200" />,
 					color: "from-red-500 to-rose-700",
@@ -157,8 +157,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "periodontitis",
-					label: "Периодонтит молочного зуба",
-					shortLabel: "Периодонтит",
+					label: "Периодонтит (Pt)",
+					shortLabel: "Периодонтит (Pt)",
 					state: "Periodontitis",
 					icon: <Flame size={16} className="text-orange-200" />,
 					color: "from-orange-500 to-rose-600",
@@ -167,8 +167,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "filled",
-					label: "Пломба (СИЦ / Композит)",
-					shortLabel: "Пломба СИЦ",
+					label: "Пломба (F)",
+					shortLabel: "Пломба (F)",
 					state: "Filled",
 					icon: <Wrench size={16} className="text-slate-200" />,
 					color: "from-slate-500 to-slate-700",
@@ -177,8 +177,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "crown",
-					label: "Коронка NuSmile / 3M",
-					shortLabel: "NuSmile",
+					label: "Коронка NuSmile / 3M (Cr)",
+					shortLabel: "Коронка (Cr)",
 					state: "Crown",
 					icon: <Crown size={16} className="text-sky-200" />,
 					color: "from-sky-500 to-blue-700",
@@ -186,19 +186,19 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					hotkey: "Ц",
 				},
 				{
-					id: "sealant",
-					label: "Герметизация фиссур",
-					shortLabel: "Герметизация",
-					state: "Filled",
-					icon: <Sparkles size={16} className="text-teal-200" />,
-					color: "from-teal-500 to-emerald-700",
-					bgGradient: "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
-					hotkey: "Г",
+					id: "implant",
+					label: "Имплант / Герметизация (Imp)",
+					shortLabel: "Имплант (Imp)",
+					state: "Implant",
+					icon: <Hammer size={16} className="text-slate-200" />,
+					color: "from-slate-600 to-slate-800",
+					bgGradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
+					hotkey: "И",
 				},
 				{
 					id: "missing",
-					label: "Физиологическая смена (Выпал)",
-					shortLabel: "Смена",
+					label: "Отсутствует / Смена (X)",
+					shortLabel: "Отсутствует (X)",
 					state: "Missing",
 					icon: <Trash2 size={16} className="text-slate-300" />,
 					color: "from-slate-500 to-zinc-700",
@@ -207,8 +207,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "healthy",
-					label: "Здоровый молочный зуб",
-					shortLabel: "Здоров",
+					label: "Здоров (0)",
+					shortLabel: "Здоров (0)",
 					state: "Healthy",
 					icon: <Sparkles size={16} className="text-emerald-200" />,
 					color: "from-emerald-500 to-teal-700",
@@ -219,8 +219,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 		: [
 				{
 					id: "caries",
-					label: "Кариес",
-					shortLabel: "Кариес",
+					label: "Кариес (C)",
+					shortLabel: "Кариес (C)",
 					state: "Caries",
 					icon: <Zap size={16} className="text-amber-200" />,
 					color: "from-amber-600 to-amber-800",
@@ -229,8 +229,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "pulpitis",
-					label: "Пульпит",
-					shortLabel: "Пульпит",
+					label: "Пульпит (P)",
+					shortLabel: "Пульпит (P)",
 					state: "Pulpitis",
 					icon: <Flame size={16} className="text-rose-200" />,
 					color: "from-red-500 to-rose-700",
@@ -239,8 +239,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "periodontitis",
-					label: "Периодонтит",
-					shortLabel: "Периодонтит",
+					label: "Периодонтит (Pt)",
+					shortLabel: "Периодонтит (Pt)",
 					state: "Periodontitis",
 					icon: <Flame size={16} className="text-orange-200" />,
 					color: "from-orange-500 to-rose-600",
@@ -249,8 +249,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "filled",
-					label: "Пломба (Композит)",
-					shortLabel: "Пломба",
+					label: "Пломба (F)",
+					shortLabel: "Пломба (F)",
 					state: "Filled",
 					icon: <Wrench size={16} className="text-slate-200" />,
 					color: "from-slate-500 to-slate-700",
@@ -259,8 +259,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "crown",
-					label: "Коронка",
-					shortLabel: "Коронка",
+					label: "Коронка (Cr)",
+					shortLabel: "Коронка (Cr)",
 					state: "Crown",
 					icon: <Crown size={16} className="text-sky-200" />,
 					color: "from-sky-500 to-blue-700",
@@ -269,8 +269,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "implant",
-					label: "Имплантат (Титан)",
-					shortLabel: "Имплант",
+					label: "Имплант (Imp)",
+					shortLabel: "Имплант (Imp)",
 					state: "Implant",
 					icon: <Hammer size={16} className="text-slate-200" />,
 					color: "from-slate-600 to-slate-800",
@@ -279,8 +279,8 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 				},
 				{
 					id: "missing",
-					label: "Зуб отсутствует / Удален",
-					shortLabel: "Удален",
+					label: "Отсутствует (X)",
+					shortLabel: "Отсутствует (X)",
 					state: "Missing",
 					icon: <Trash2 size={16} className="text-rose-200" />,
 					color: "from-rose-600 to-red-800",
@@ -288,29 +288,9 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					hotkey: "0",
 				},
 				{
-					id: "retained",
-					label: "Ретинированный / дистопированный",
-					shortLabel: "Ретинирован",
-					state: "Retained",
-					icon: <AlertTriangle size={16} className="text-purple-200" />,
-					color: "from-purple-600 to-indigo-800",
-					bgGradient: "linear-gradient(135deg, #9333ea 0%, #6b21a8 100%)",
-					hotkey: "Р",
-				},
-				{
-					id: "root",
-					label: "Разрушенный корень",
-					shortLabel: "Корень",
-					state: "Root",
-					icon: <Trash2 size={16} className="text-rose-200" />,
-					color: "from-rose-700 to-red-900",
-					bgGradient: "linear-gradient(135deg, #be123c 0%, #881337 100%)",
-					hotkey: "R",
-				},
-				{
 					id: "healthy",
-					label: "Здоров",
-					shortLabel: "Здоров",
+					label: "Здоров (0)",
+					shortLabel: "Здоров (0)",
 					state: "Healthy",
 					icon: <Sparkles size={16} className="text-emerald-200" />,
 					color: "from-emerald-500 to-teal-700",
@@ -520,9 +500,56 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							</>
 						) : (
 							<>
+								{/* Quick Surface Combo Chips (1 tap): [MOD], [MO], [OD], [O], [V], [L/P], [B] */}
+								<div className="flex flex-col gap-1.5 pb-2 border-b border-[var(--odontogram-border-subtle)]">
+									<div className="flex items-center justify-between">
+										<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1 shrink-0">
+											Поверхности в 1 клик:
+										</span>
+										<span className="text-[11px] text-[var(--odontogram-ink-muted)]">
+											{selectedSurfaces.length > 0 ? selectedSurfaces.join(", ") : "Вся коронка"}
+										</span>
+									</div>
+									<div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-1.5 w-full">
+										{[
+											{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
+											{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
+											{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
+											{ label: "O", surfs: ["O"], title: "Окклюзионная (O/Жевательная)" },
+											{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
+											{ label: "L/P", surfs: ["L"], title: "Язычная / Нёбная (L/P)" },
+											{ label: "B", surfs: ["B"], title: "Буккальная / Щёчная (B)" },
+										].map((chip) => {
+											const isMatch =
+												chip.surfs.length === selectedSurfaces.length &&
+												chip.surfs.every((s) => selectedSurfaces.includes(s));
+											return (
+												<button
+													key={chip.label}
+													type="button"
+													onClick={() => {
+														const next = isMatch ? [] : [...chip.surfs];
+														setSelectedSurfaces(next);
+														onSelectSurfaces?.(next);
+													}}
+													className={`min-h-[48px] px-2 py-2 rounded-xl text-xs font-mono font-black border transition-all cursor-pointer select-none flex items-center justify-center touch-manipulation text-center ${
+														isMatch
+															? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+															: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
+													}`}
+													title={chip.title}
+													data-testid={`radial-mobile-quick-surf-${chip.label.replace("/", "-")}`}
+												>
+													[{chip.label}]
+												</button>
+											);
+										})}
+									</div>
+								</div>
+
 								{/* 6-Surface Toggles (>= 48x48px Touch Targets) */}
 								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1 shrink-0">6 Поверхностей:</span>
+									<span className="text-xs uppercase font-black text-teal-700 dark:text-teal-400 px-1 shrink-0">По отдельности:</span>
 									<div className="grid grid-cols-6 gap-1.5 sm:flex sm:items-center">
 										{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
 											const isActive = selectedSurfaces.includes(surf);
@@ -842,9 +869,47 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 							</div>
 						) : (
 							<div className="flex flex-col items-center gap-1.5">
-								{/* 6-Surface interactive toggle chips */}
+								{/* Quick Surface Combo Chips (1 tap): [MOD], [MO], [OD], [O], [V], [L/P], [B] */}
 								<div className="flex items-center gap-1">
-									<span className="text-[11px] uppercase font-black text-teal-700 dark:text-teal-400 px-1">6 Поверхностей:</span>
+									<span className="text-[11px] uppercase font-black text-teal-700 dark:text-teal-400 px-1">Поверхности:</span>
+									{[
+										{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
+										{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
+										{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
+										{ label: "O", surfs: ["O"], title: "Окклюзионная (O)" },
+										{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
+										{ label: "L/P", surfs: ["L"], title: "Язычная / Нёбная (L/P)" },
+										{ label: "B", surfs: ["B"], title: "Буккальная / Щёчная (B)" },
+									].map((chip) => {
+										const isMatch =
+											chip.surfs.length === selectedSurfaces.length &&
+											chip.surfs.every((s) => selectedSurfaces.includes(s));
+										return (
+											<button
+												key={chip.label}
+												type="button"
+												onClick={() => {
+													const next = isMatch ? [] : [...chip.surfs];
+													setSelectedSurfaces(next);
+													onSelectSurfaces?.(next);
+												}}
+												className={`min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation ${
+													isMatch
+														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
+												}`}
+												title={chip.title}
+												data-testid={`radial-desktop-quick-surf-${chip.label.replace("/", "-")}`}
+											>
+												[{chip.label}]
+											</button>
+										);
+									})}
+								</div>
+
+								{/* 6-Surface interactive toggle chips */}
+								<div className="flex items-center gap-1 pt-0.5 border-t border-[var(--odontogram-border-subtle)]">
+									<span className="text-[11px] uppercase font-black text-teal-700 dark:text-teal-400 px-1">Отдельно:</span>
 									{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
 										const isActive = selectedSurfaces.includes(surf);
 										return (

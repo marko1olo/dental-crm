@@ -94,55 +94,55 @@ const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 }> = [
 	{
 		state: "Caries",
-		label: "Кариес",
+		label: "Кариес (C)",
 		className:
 			"bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20",
 	},
 	{
 		state: "Pulpitis",
-		label: "Пульпит",
+		label: "Пульпит (P)",
 		className:
 			"bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
 	},
 	{
 		state: "Periodontitis",
-		label: "Периодонтит",
+		label: "Периодонтит (Pt)",
 		className:
 			"bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20",
 	},
 	{
 		state: "Filled",
-		label: "Пломба",
+		label: "Пломба (F)",
 		className:
 			"bg-teal-500/10 text-teal-300 border-teal-500/20 hover:bg-teal-500/20",
 	},
 	{
 		state: "Crown",
-		label: "Коронка",
+		label: "Коронка (Cr)",
 		className:
 			"bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
 	},
 	{
 		state: "Implant",
-		label: "Имплантат",
+		label: "Имплант (Imp)",
 		className:
 			"bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
 		state: "Planned_Implant",
-		label: "Имплантат в плане",
+		label: "Имплант в плане",
 		className:
 			"bg-indigo-500/10 text-indigo-300 border-indigo-500/20 hover:bg-indigo-500/20",
 	},
 	{
 		state: "Missing",
-		label: "Отсутствует",
+		label: "Отсутствует (X)",
 		className:
 			"bg-zinc-800/40 text-zinc-400 border-zinc-700/30 hover:bg-zinc-800/60",
 	},
 	{
 		state: "Healthy",
-		label: "Здоров",
+		label: "Здоров (0)",
 		className:
 			"bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
 	},
@@ -1353,6 +1353,51 @@ export const OdontogramModule = ({
 											{getToothFolkAndAnatomicalNameRu(menuConfig.toothNumber)}
 										</div>
 									)}
+								</div>
+
+								{/* Quick Surface Chips in 1 Tap */}
+								<div className="col-span-2 flex flex-col gap-1 mb-2 p-2 rounded-xl bg-[var(--odontogram-surface,#f1f5f9)] dark:bg-zinc-800/60 border border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700/50">
+									<div className="flex items-center justify-between px-1">
+										<span className="text-xs font-bold text-[var(--odontogram-ink-muted,#64748b)]">
+											Поверхности в 1 клик:
+										</span>
+										<span className="text-[11px] font-mono font-bold text-[var(--teal,#0d9488)]">
+											{activeSurfaces.length > 0 ? `[${activeSurfaces.join("")}]` : "вся коронка"}
+										</span>
+									</div>
+									<div className="flex flex-wrap items-center gap-1.5">
+										{[
+											{ label: "MOD", surfs: ["M", "O", "D"], title: "Медиально-окклюзионно-дистальная (MOD)" },
+											{ label: "MO", surfs: ["M", "O"], title: "Медиально-окклюзионная (MO)" },
+											{ label: "OD", surfs: ["O", "D"], title: "Окклюзионно-дистальная (OD)" },
+											{ label: "O", surfs: ["O"], title: "Окклюзионная (O/Жевательная)" },
+											{ label: "V", surfs: ["V"], title: "Вестибулярная (V)" },
+											{ label: "L/P", surfs: ["L"], title: "Язычная / Нёбная (L/P)" },
+											{ label: "B", surfs: ["B"], title: "Буккальная / Щёчная (B)" },
+										].map((chip) => {
+											const isMatch =
+												chip.surfs.length === activeSurfaces.length &&
+												chip.surfs.every((s) => activeSurfaces.includes(s));
+											return (
+												<button
+													key={chip.label}
+													type="button"
+													onClick={() => {
+														setActiveSurfaces(isMatch ? [] : [...chip.surfs]);
+													}}
+													className={`min-h-[38px] px-2.5 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+														isMatch
+															? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
+															: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)]"
+													}`}
+													title={chip.title}
+													data-testid={`odontogram-module-surf-${chip.label.replace("/", "-")}`}
+												>
+													[{chip.label}]
+												</button>
+											);
+										})}
+									</div>
 								</div>
 
 								{/* 1-Tap Tooth Status Assignment */}
