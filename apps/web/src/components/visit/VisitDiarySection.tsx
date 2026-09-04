@@ -73,6 +73,14 @@ import { PatientAllergySafetyBanner } from "../patient/PatientAllergySafetyBanne
 import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import "../../styles/visit-diary-043.css";
 
+const COMPLAINT_QUICK_CHIPS = [
+	"Острая боль от сладкого/холодного",
+	"Ноющие ночные боли",
+	"Выпала пломба",
+	"Плановый осмотр / Жалоб нет",
+	"Кровоточивость десен",
+] as const;
+
 export interface VisitDiarySectionProps {
 	visitId: string;
 	patientId: string;
@@ -565,6 +573,31 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 		showToast("Применена норма: соматически здоров / осмотр в норме", "success", 4000);
 	};
 
+	const handleAddComplaintChip = (chipText: string) => {
+		setDiary((prev) => {
+			const cur = (prev.anamnesis ?? "").trim();
+			if (!cur) {
+				return {
+					...prev,
+					anamnesis: `${chipText}.`,
+				};
+			}
+			if (cur.includes(chipText)) {
+				return prev;
+			}
+			const separator =
+				cur.endsWith(".") || cur.endsWith(";") || cur.endsWith("!")
+					? " "
+					: ". ";
+			return {
+				...prev,
+				anamnesis: `${cur}${separator}${chipText}.`,
+			};
+		});
+		scheduleDebouncedSave();
+		showToast(`Добавлена жалоба: «${chipText}»`, "info", 2000);
+	};
+
 	const icdEntry = (ICD10_DICTIONARY ?? []).find(
 		(i) => i?.code === diary?.diagnosisIcd10,
 	);
@@ -704,22 +737,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						type="button"
 						id="diary-1click-norm-btn"
 						data-testid="diary-1click-norm-btn"
-						onClick={() => {
-							setDiary((prev) =>
-								mergeSoapDiaryState(
-									prev,
-									{
-										anamnesis:
-											"Соматически здоров. Аллергоанамнез не отягощен. Вредных привычек нет. Жалоб активно не предъявляет.",
-										statusLocalis:
-											"Слизистая оболочка полости рта бледно-розовая, умеренно увлажнена, без патологических элементов. Прикус физиологический. Десна в области зубов плотная, бледно-розовая, не кровоточит при зондировании. Зубные ряды интактны, устойчивы. Гигиена удовлетворительная.",
-									},
-									{ strategy: "smart_append" },
-								),
-							);
-							scheduleDebouncedSave();
-							showToast("Физиологическая норма внесена в карту (Мандат 8e)", "success");
-						}}
+						onClick={handleApplyFullPhysiologicalNorm}
 						disabled={fieldsDisabled}
 						className="vde-043__btn"
 						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию (Мандат 8e)"
@@ -876,6 +894,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			{/* ── 1-Click Fast Clinical Presets Accordion (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
 				<details
+					open
 					className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-3 text-xs mb-1"
 					data-testid="fast-clinical-presets-bar"
 				>
@@ -885,6 +904,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							<span>1-Click Клинические протоколы и формулы (PSR, Дети, Кариес...)</span>
 						</span>
 						<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden">Развернуть &darr;</span>
+						<span className="text-[10px] font-normal text-[var(--muted)] hidden group-open:inline">Свернуть &uarr;</span>
 					</summary>
 					<div className="pt-2.5 flex flex-col gap-2">
 						<div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1247,6 +1267,43 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						onFocus={handleAutoResize}
 						placeholder="Со слов пациента: жалобы на боли, чувствительность..."
 					/>
+					{!fieldsDisabled && (
+						<div
+							className="flex flex-wrap items-center gap-1.5 pt-1.5"
+							data-testid="diary-complaint-chips"
+						>
+							<span className="text-[11px] font-bold text-[var(--muted)] shrink-0 flex items-center gap-1 mr-0.5 select-none">
+								<Activity className="w-3 h-3 text-[var(--teal)]" />
+								Жалобы:
+							</span>
+							{COMPLAINT_QUICK_CHIPS.map((chip) => {
+								const isPresent = Boolean(
+									diary.anamnesis && diary.anamnesis.includes(chip),
+								);
+								return (
+									<button
+										key={chip}
+										type="button"
+										onClick={() => handleAddComplaintChip(chip)}
+										className={`inline-flex items-center gap-1 px-2.5 py-1 min-h-[30px] rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${
+											isPresent
+												? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal-dark)] font-semibold"
+												: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
+										}`}
+										title={`Добавить жалобу в 1 клик: «${chip}»`}
+										data-testid={`complaint-chip-${chip.slice(0, 8)}`}
+									>
+										{isPresent ? (
+											<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
+										) : (
+											<Plus className="w-3 h-3 text-[var(--muted)] shrink-0" />
+										)}
+										<span className="whitespace-nowrap">{chip}</span>
+									</button>
+								);
+							})}
+						</div>
+					)}
 					{fieldInterimMap.anamnesis && (
 						<div
 							className="px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs font-semibold text-blue-600 dark:text-blue-400 italic animate-pulse flex items-center gap-1.5 select-none"

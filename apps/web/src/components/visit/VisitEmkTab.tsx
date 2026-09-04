@@ -1676,13 +1676,14 @@ export function VisitEmkTab() {
 			)}
 
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (Tier 2 Warm Context Accordion) */}
-			<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2.5 text-xs my-2">
+			<details open className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2.5 text-xs my-2">
 				<summary className="flex items-center justify-between cursor-pointer font-bold text-xs select-none list-none text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
 					<div className="flex items-center gap-2 min-w-0 pr-2">
 						<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
 						<span className="truncate">Экспресс-протоколы SOAP и шаблоны СтАР (1 клик)</span>
 					</div>
 					<span className="text-[10px] font-normal text-[var(--muted)] group-open:hidden shrink-0 ml-auto whitespace-nowrap">Развернуть &darr;</span>
+					<span className="text-[10px] font-normal text-[var(--muted)] hidden group-open:inline shrink-0 ml-auto whitespace-nowrap">Свернуть &uarr;</span>
 				</summary>
 				<div className="pt-2">
 					<ClinicalQuickPresetsBar
