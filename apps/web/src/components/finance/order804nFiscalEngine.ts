@@ -113,6 +113,10 @@ export interface FiscalReceipt54FzResult {
 	readonly customerContact: string;
 	readonly patientName: string;
 	readonly patientId: string;
+	/** 54-ФЗ Тег 1227 / 1228: Тип и реквизиты покупателя (только для юрлиц/ИП по 54-ФЗ, для физлиц НЕ требуется) */
+	readonly payerType?: "individual" | "legal_entity" | undefined;
+	readonly buyerInn?: string | undefined;
+	readonly buyerName?: string | undefined;
 	readonly items: readonly Order804nFiscalReceiptItem[];
 	readonly payments: SplitPaymentAllocation;
 	readonly totalRub: number;
@@ -754,6 +758,10 @@ export function generateFiscalReceipt54Fz(params: {
 	readonly originalFiscalDocumentNumber?: string | undefined;
 	readonly originalFiscalSign?: string | undefined;
 	readonly refundReason?: string | undefined;
+	/** 54-ФЗ: Тип и реквизиты покупателя (только для юрлиц/ИП, для физлиц НЕ требуется) */
+	readonly payerType?: "individual" | "legal_entity" | undefined;
+	readonly buyerInn?: string | undefined;
+	readonly buyerName?: string | undefined;
 }): FiscalReceipt54FzResult {
 	const {
 		items,
@@ -779,6 +787,9 @@ export function generateFiscalReceipt54Fz(params: {
 		originalFiscalDocumentNumber,
 		originalFiscalSign,
 		refundReason,
+		payerType = "individual",
+		buyerInn,
+		buyerName,
 	} = params;
 
 	const fiscalItemsData = mapTreatmentItemsToFiscalReceipt(items);
@@ -872,6 +883,9 @@ export function generateFiscalReceipt54Fz(params: {
 		...(originalFiscalDocumentNumber ? { originalFiscalDocumentNumber } : {}),
 		...(originalFiscalSign ? { originalFiscalSign } : {}),
 		...(refundReason ? { refundReason } : {}),
+		payerType,
+		...(buyerInn?.trim() ? { buyerInn: buyerInn.trim() } : {}),
+		...(buyerName?.trim() ? { buyerName: buyerName.trim() } : {}),
 	};
 }
 

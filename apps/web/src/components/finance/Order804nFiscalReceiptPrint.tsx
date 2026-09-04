@@ -55,10 +55,23 @@ export const Order804nFiscalReceiptPrint: React.FC<Order804nFiscalReceiptPrintPr
 					<span className="text-[var(--muted,#64748b)]">СМЕНА: №{receipt.shiftNumber}</span>
 					<span className="font-semibold">КАССИР: {receipt.cashierFullName}</span>
 				</div>
-				<div className="flex justify-between">
-					<span className="text-[var(--muted,#64748b)]">ПАЦИЕНТ:</span>
-					<span className="font-semibold truncate max-w-[200px]">{receipt.patientName}</span>
-				</div>
+				{receipt.buyerInn ? (
+					<>
+						<div className="flex justify-between">
+							<span className="text-[var(--muted,#64748b)]">ПОКУПАТЕЛЬ (Тег 1227):</span>
+							<span className="font-semibold truncate max-w-[200px]">{receipt.buyerName || receipt.patientName}</span>
+						</div>
+						<div className="flex justify-between">
+							<span className="text-[var(--muted,#64748b)]">ИНН ПОКУПАТЕЛЯ (Тег 1228):</span>
+							<span className="font-semibold font-mono">{receipt.buyerInn}</span>
+						</div>
+					</>
+				) : (
+					<div className="flex justify-between">
+						<span className="text-[var(--muted,#64748b)]">ПАЦИЕНТ:</span>
+						<span className="font-semibold truncate max-w-[200px]">{receipt.patientName}</span>
+					</div>
+				)}
 				<div className="flex justify-between">
 					<span className="text-[var(--muted,#64748b)]">КОНТАКТ:</span>
 					<span className="font-semibold">{receipt.customerContact}</span>

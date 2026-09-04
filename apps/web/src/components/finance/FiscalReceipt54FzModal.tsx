@@ -28,6 +28,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Undo2,
+	User,
 	Wallet,
 	X,
 	Zap,
@@ -138,6 +139,10 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const [insuranceAmount, setInsuranceAmount] = useState<number>(0);
 	const [guaranteeLetterNumber, setGuaranteeLetterNumber] = useState<string>("");
 	const [customerContact, setCustomerContact] = useState<string>(patientPhone);
+	// 54-ФЗ Тип плательщика: по умолчанию физлицо (ИНН строго НЕ требуется)
+	const [payerType, setPayerType] = useState<"individual" | "legal_entity">("individual");
+	const [buyerLegalName, setBuyerLegalName] = useState<string>("");
+	const [buyerInn, setBuyerInn] = useState<string>("");
 	const [isFiscalizing, setIsFiscalizing] = useState<boolean>(false);
 	const inFlightRef = React.useRef(false);
 	const lastClickTimeRef = React.useRef(0);
@@ -296,7 +301,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		return calculateSplitPaymentAllocation(totalKopecks, splitInput);
 	}, [totalKopecks, splitInput]);
 
-	const remainingRub = Math.round(allocation.remainingKopecks / 100);
+	const remainingRub = kopecksToRub(allocation.remainingKopecks);
 	const patientCoPayRub = allocation.patientCoPayRub;
 
 	// Select 100% to single payment method
@@ -418,31 +423,57 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	};
 
 	const handleFillRemaining = (type: "cash" | "card" | "sbp" | "deposit" | "certificate") => {
-		const unallocated = Math.max(0, remainingRub);
-		if (type === "cash") setCashAmount((prev) => prev + unallocated);
-		if (type === "card") setCardAmount((prev) => prev + unallocated);
-		if (type === "sbp") setSbpAmount((prev) => prev + unallocated);
-		if (type === "certificate") setCertificateAmount((prev) => prev + unallocated);
+		const unallocatedKop = Math.max(0, allocation.remainingKopecks);
+		if (unallocatedKop <= 0) return;
+		if (type === "cash") setCashAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
+		if (type === "card") setCardAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
+		if (type === "sbp") setSbpAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
+		if (type === "certificate") setCertificateAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		if (type === "deposit") {
-			const maxDepositCanUse = Math.min(patientDepositRub, depositAmount + unallocated);
-			setDepositAmount(maxDepositCanUse);
+			const maxDepositKop = Math.min(rubToKopecks(patientDepositRub), rubToKopecks(depositAmount) + unallocatedKop);
+			setDepositAmount(kopecksToRub(maxDepositKop));
 		}
 	};
 
 	const handleAutoDistributeRemaining = () => {
-		if (remainingRub <= 0) return;
+		const unallocatedKop = Math.max(0, allocation.remainingKopecks);
+		if (unallocatedKop <= 0) return;
 		if (cardAmount > 0 || (cashAmount === 0 && sbpAmount === 0 && depositAmount === 0 && certificateAmount === 0)) {
-			setCardAmount((prev) => prev + remainingRub);
+			setCardAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		} else if (sbpAmount > 0) {
-			setSbpAmount((prev) => prev + remainingRub);
+			setSbpAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		} else if (cashAmount > 0) {
-			setCashAmount((prev) => prev + remainingRub);
+			setCashAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		} else if (certificateAmount > 0) {
-			setCertificateAmount((prev) => prev + remainingRub);
+			setCertificateAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		} else {
-			setCardAmount((prev) => prev + remainingRub);
+			setCardAmount((prev) => kopecksToRub(rubToKopecks(prev) + unallocatedKop));
 		}
-		showToast(`Остаток ${formatMoneyRu(remainingRub)} распределен`, "success", 1500);
+		showToast(`Остаток ${formatMoneyRu(kopecksToRub(unallocatedKop))} распределен`, "success", 1500);
+	};
+
+	const handleAutoBalanceOverallocation = () => {
+		if (!allocation.isOverallocated) return;
+		let excessKop = Math.abs(allocation.remainingKopecks);
+		if (cardAmount > 0) {
+			const cardKop = rubToKopecks(cardAmount);
+			const deduct = Math.min(cardKop, excessKop);
+			setCardAmount(kopecksToRub(cardKop - deduct));
+			excessKop -= deduct;
+		}
+		if (excessKop > 0 && cashAmount > 0) {
+			const cashKop = rubToKopecks(cashAmount);
+			const deduct = Math.min(cashKop, excessKop);
+			setCashAmount(kopecksToRub(cashKop - deduct));
+			excessKop -= deduct;
+		}
+		if (excessKop > 0 && sbpAmount > 0) {
+			const sbpKop = rubToKopecks(sbpAmount);
+			const deduct = Math.min(sbpKop, excessKop);
+			setSbpAmount(kopecksToRub(sbpKop - deduct));
+			excessKop -= deduct;
+		}
+		showToast("Сумма оплат автоматически сбалансирована без переплаты", "success", 2000);
 	};
 
 	// Refund items calculation
@@ -497,6 +528,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 			customerContact: customerContact.trim() || patientPhone,
 			cashierFullName,
 			clinicLegalName: clinicName,
+			payerType,
+			buyerInn: payerType === "legal_entity" ? buyerInn : undefined,
+			buyerName: payerType === "legal_entity" ? buyerLegalName : undefined,
 		});
 	}, [
 		activeTab,
@@ -516,6 +550,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		cashierFullName,
 		clinicName,
 		taxYear,
+		payerType,
+		buyerInn,
+		buyerLegalName,
 	]);
 
 	const taxDeductionBreakdown = useMemo(() => {
@@ -677,12 +714,33 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 					activeSplit = { ...splitInput, cardRub: totalSumRub };
 				}
 			} else if (allocation.isOverallocated) {
-				showToast(
-					`Превышение суммы оплат над суммой чека на ${formatMoneyRu(Math.abs(remainingRub))}. Скорректируйте сумму.`,
-					"warning",
-					4000,
-				);
-				return;
+				const excessKop = Math.abs(allocation.remainingKopecks);
+				let remExcess = excessKop;
+				let newCardKop = rubToKopecks(activeSplit.cardRub || 0);
+				let newCashKop = rubToKopecks(activeSplit.cashRub || 0);
+				let newSbpKop = rubToKopecks(activeSplit.sbpRub || 0);
+				if (newCardKop > 0) {
+					const deduct = Math.min(newCardKop, remExcess);
+					newCardKop -= deduct;
+					remExcess -= deduct;
+				}
+				if (remExcess > 0 && newCashKop > 0) {
+					const deduct = Math.min(newCashKop, remExcess);
+					newCashKop -= deduct;
+					remExcess -= deduct;
+				}
+				if (remExcess > 0 && newSbpKop > 0) {
+					const deduct = Math.min(newSbpKop, remExcess);
+					newSbpKop -= deduct;
+					remExcess -= deduct;
+				}
+				const newCardRub = kopecksToRub(newCardKop);
+				const newCashRub = kopecksToRub(newCashKop);
+				const newSbpRub = kopecksToRub(newSbpKop);
+				setCardAmount(newCardRub);
+				setCashAmount(newCashRub);
+				setSbpAmount(newSbpRub);
+				activeSplit = { ...splitInput, cardRub: newCardRub, cashRub: newCashRub, receivedCashRub: Math.max(receivedCashRub, newCashRub), sbpRub: newSbpRub };
 			}
 		}
 
@@ -707,6 +765,9 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 					customerContact: customerContact.trim() || patientPhone,
 					cashierFullName,
 					clinicLegalName: clinicName,
+					payerType,
+					buyerInn: payerType === "legal_entity" ? buyerInn : undefined,
+					buyerName: payerType === "legal_entity" ? buyerLegalName : undefined,
 				})
 				: fiscalReceipt;
 
@@ -1871,15 +1932,29 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										</span>
 									</div>
 
-									<div className="flex items-center gap-3 justify-between sm:justify-end">
+									<div className="flex items-center gap-3 justify-between sm:justify-end flex-wrap">
 										{remainingRub > 0 && (
 											<button
 												type="button"
 												onClick={handleAutoDistributeRemaining}
 												className="min-h-[48px] px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-teal-600 text-white hover:bg-teal-500 shadow-md shadow-teal-600/20 cursor-pointer active:scale-95 transition-all flex items-center gap-1.5"
+												title={`Автоматически добавить остаток ${formatMoneyRu(remainingRub)} к способу оплаты`}
+												data-testid="btn-auto-distribute-remaining"
 											>
 												<Sparkles size={16} />
 												<span>Распределить остаток (+{formatMoneyRu(remainingRub)})</span>
+											</button>
+										)}
+										{allocation.isOverallocated && (
+											<button
+												type="button"
+												onClick={handleAutoBalanceOverallocation}
+												className="min-h-[48px] px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-amber-600 text-white hover:bg-amber-500 shadow-md shadow-amber-600/20 cursor-pointer active:scale-95 transition-all flex items-center gap-1.5"
+												title="Уменьшить суммы до точного совпадения со стоимостью услуг"
+												data-testid="btn-auto-balance-overallocated"
+											>
+												<Sparkles size={16} />
+												<span>Сбалансировать сумму (−{formatMoneyRu(Math.abs(remainingRub))})</span>
 											</button>
 										)}
 										<span className="font-mono text-sm sm:text-base font-black">
@@ -1892,8 +1967,100 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</div>
 								</div>
 
+								{/* 54-FZ Payer Type & Buyer Requisites (Physical Person vs B2B Legal Entity/IP) */}
+								<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] space-y-3" data-testid="54fz-payer-type-section">
+									<div className="flex items-center justify-between flex-wrap gap-2">
+										<div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
+											<User size={15} className="text-teal-600 dark:text-teal-400" />
+											<span>Тип плательщика (54-ФЗ):</span>
+										</div>
+										<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+											{payerType === "individual" ? "✓ 54-ФЗ: ИНН с физлиц НЕ требуется" : "54-ФЗ: B2B расчет (Теги 1227 / 1228)"}
+										</span>
+									</div>
+
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+										<button
+											type="button"
+											onClick={() => setPayerType("individual")}
+											className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all border ${
+												payerType === "individual"
+													? "bg-teal-600 text-white border-teal-600 shadow-sm"
+													: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-[var(--border,#cbd5e1)] hover:bg-slate-50 dark:hover:bg-slate-800"
+											}`}
+											data-testid="btn-payer-type-individual"
+											title="Физическое лицо (гражданин) — оплата картой, наличными или СБП. По закону 54-ФЗ ИНН строго НЕ требуется."
+										>
+											<User size={15} />
+											<span>Физическое лицо (без ИНН)</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => setPayerType("legal_entity")}
+											className={`min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-all border ${
+												payerType === "legal_entity"
+													? "bg-teal-600 text-white border-teal-600 shadow-sm"
+													: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border-[var(--border,#cbd5e1)] hover:bg-slate-50 dark:hover:bg-slate-800"
+											}`}
+											data-testid="btn-payer-type-legal"
+											title="Юридическое лицо или Индивидуальный предприниматель (безналичный B2B расчет по ст. 4.7 54-ФЗ)"
+										>
+											<Building2 size={15} />
+											<span>Юрлицо / ИП (B2B расчет)</span>
+										</button>
+									</div>
+
+									{/* Physical Person: Explicit zero-friction explanation */}
+									{payerType === "individual" ? (
+										<div className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 text-[11.5px] text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+											<ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+											<span>
+												По закону 54-ФЗ (п. 1 ст. 4.7) при расчетах с гражданами ИНН покупателя <strong>не требуется</strong>. Чек пробивается мгновенно в 1 клик.
+											</span>
+										</div>
+									) : (
+										/* B2B Legal Entity / IP: Optional requisites inputs (Tags 1227 and 1228) */
+										<div className="p-3 rounded-xl bg-[var(--paper-strong,var(--paper,#ffffff))] border border-teal-500/30 space-y-2.5" data-testid="b2b-requisites-box">
+											<div className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+												<FileText size={14} />
+												<span>Реквизиты покупателя (ФФД 1.2 Теги 1227 / 1228):</span>
+											</div>
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+												<div>
+													<label className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-1">
+														Наименование юрлица или ИП (Тег 1227):
+													</label>
+													<input
+														type="text"
+														value={buyerLegalName}
+														onChange={(e) => setBuyerLegalName(e.target.value)}
+														placeholder="ООО «Ромашка» или ИП Иванов И.И."
+														className="w-full min-h-[40px] px-3 py-1.5 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+													/>
+												</div>
+												<div>
+													<label className="block text-[11px] font-semibold text-[var(--muted,#64748b)] mb-1">
+														ИНН покупателя (Тег 1228, 10 или 12 цифр):
+													</label>
+													<input
+														type="text"
+														value={buyerInn}
+														onChange={(e) => setBuyerInn(e.target.value.replace(/[^\d]/g, "").slice(0, 12))}
+														placeholder="10 цифр для ЮЛ / 12 для ИП"
+														className="w-full min-h-[40px] px-3 py-1.5 text-xs font-mono rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
+													/>
+												</div>
+											</div>
+											<p className="text-[11px] text-[var(--muted,#64748b)] m-0">
+												Заполняется при безналичной оплате организацией или ИП по счету/корпоративной карте.
+											</p>
+										</div>
+									)}
+								</div>
+
 								{/* 54-FZ Electronic Contact Input */}
-								<div className="space-y-1.5 pt-2">
+								<div className="space-y-1.5 pt-1">
 									<label className="block text-xs font-semibold text-[var(--muted,#64748b)]">
 										Телефон или Email для отправки электронного чека (54-ФЗ, Тег 1008):
 									</label>
@@ -1962,8 +2129,14 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									<button
 										type="button"
 										onClick={() => handleExecuteFiscalization()}
-										disabled={isFiscalizing || allocation.isOverallocated}
+										disabled={isFiscalizing}
+										title={
+											isFiscalizing
+												? "Выполняется фискализация чека на ККТ..."
+												: `Пробить чек 54-ФЗ на сумму ${formatMoneyRu(totalSumRub)}`
+										}
 										className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
+										data-testid="btn-execute-fiscalization"
 									>
 										<ShieldCheck size={18} />
 										<span>

@@ -2122,6 +2122,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 							type="button"
 							onClick={() => handleFiscalize()}
 							disabled={isProcessing}
+							title={isProcessing ? "Идет фискализация чека 54-ФЗ..." : "Оплатить и пробить фискальный чек (54-ФЗ)"}
 							className="h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
 							data-testid="btn-cash-submit-fiscalize"
 						>

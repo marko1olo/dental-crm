@@ -290,6 +290,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<h2 id="payment-modal-title" className="text-base sm:text-lg font-bold m-0 flex items-center gap-2">
 							<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
 							<span>Прием оплаты • {amountRub} ₽</span>
+							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+								✓ 54-ФЗ
+							</span>
 						</h2>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0">
 							Пациент: <strong className="text-[var(--ink,#0f172a)]">{patientName}</strong>
@@ -633,6 +636,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											type="button"
 											disabled={patientDepositRub < totalDueRub || isSubmittingDeposit}
 											onClick={() => handleDepositSubmit("deposit")}
+											title={
+												isSubmittingDeposit
+													? "Выполняется списание с депозита..."
+													: patientDepositRub < totalDueRub
+													? `Недостаточно средств на депозите (${patientDepositRub.toLocaleString("ru-RU")} ₽ из ${totalDueRub.toLocaleString("ru-RU")} ₽). Используйте комбинированную оплату ниже.`
+													: `Списать ${amountRub} ₽ с личного депозита пациента`
+											}
 											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-deposit-full"
 										>
@@ -663,6 +673,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											type="button"
 											disabled={patientFamilyBalanceRub < totalDueRub || isSubmittingDeposit}
 											onClick={() => handleDepositSubmit("family")}
+											title={
+												isSubmittingDeposit
+													? "Выполняется списание с семейного баланса..."
+													: patientFamilyBalanceRub < totalDueRub
+													? `Недостаточно средств на семейном балансе (${patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽ из ${totalDueRub.toLocaleString("ru-RU")} ₽). Используйте комбинированную оплату ниже.`
+													: `Списать ${amountRub} ₽ с семейного баланса`
+											}
 											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-family-full"
 										>
