@@ -1,5 +1,13 @@
 # ОТЧЕТ ИНКВИЗИЦИИ 2: LIGHT MODE CONTRAST & VISUAL DEFECT AUDIT
 
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+> - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+
 **Роль:** Инспектор 2 — Light Mode Contrast Hound  
 **Субагент ID:** `4f183c6c-f9b0-4546-8d38-da62dbca65b2`  
 **Целевая область:** Скриншоты светлой темы (`docs/proofs/audit/*_light.png`, `docs/screenshots/*_light.png`)  

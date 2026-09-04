@@ -1,7 +1,15 @@
 # 📋 СВОДНЫЙ РЕЕСТР ДЕФЕКТОВ И ДОСЬЕ ИНКВИЗИЦИИ (NIGHT WATCH DEFECT REGISTRY)
 
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+> - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+
 **КОНСТИТУЦИЯ:** `C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md`  
-**ПРИКАЗ ДЛЯ ВСЕХ ВЕРСТАЛЬЩИКОВ И РАЗРАБОТЧИКОВ:** Читать данный файл ЦЕЛИКОМ от первой до последней строки перед внесением любых изменений в код и стили. Любые исправления обязаны строго закрывать указанные строки и файлы с сохранением стандартов 80/10/10, законов Фиттса, Хика, Миллера и презумпции брака.
+**ПРИКАЗ ДЛЯ ВСЕХ ВЕРСТАЛЬЩИКОВ И РАЗРАБОТЧИКОВ:** Читать данный файл ЦЕЛИКОМ от первой до последней строки перед внесением любых изменений в код и стили. Любые исправления обязаны строго закрывать указанные строки и файлы с сохранением стандартов 80/10/10, законов Фиттса, Хика, Миллера, стандартов Apple HIG, Мандата 8e и презумпции брака.
 
 ---
 
@@ -58,6 +66,17 @@
 | **DR-1** | [`MedicalRadiologyDropzone.tsx#L189-L247`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/MedicalRadiologyDropzone.tsx#L189-L247) | ИСПРАВЛЕНО (Устранены белые кнопки тестового снимка, фон зафиксирован на `bg-slate-800 text-slate-200 border-slate-700`). |
 | **DR-2** | [`RadiologyViewerModal.tsx#L1495`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/RadiologyViewerModal.tsx#L1495), [`L1902-L1953`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/RadiologyViewerModal.tsx#L1902-L1953) | ИСПРАВЛЕНО (Бейджи линеек и HUD зафиксированы на `bg-slate-950/95 border-cyan-500 backdrop-blur-md`). |
 | **DR-3** | [`HotFolderIntakeModal.tsx#L656-L661`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/HotFolderIntakeModal.tsx#L656-L661) | ИСПРАВЛЕНО (Устранены устаревшие хардкоды `text-[var(--ink,#fff)]`). |
+
+---
+
+### РАЗДЕЛ 6: АВТОНОМИЯ ВРАЧА И МАНДАТ 8e — РЕЕСТР УСТРАНЕННЫХ БЮРОКРАТИЧЕСКИХ БАРЬЕРОВ
+
+| ID | Модуль | Исходный барьер | Решение по Мандату 8e | Файл и строки | Статус |
+|---|---|---|---|---|---|
+| **CLIN-1** | Пародонтология | 192-точечный последовательный шаговый опросник зондирования глубин (по 6 точек на 32 зуба), съедавший 600px высоты модалки и блокировавший закрытие визита. | Внедрена физиологическая норма в 1 клик («Интактный пародонт»), 1-клик протокол профессиональной гигиены A16.07.051 AirFlow и авто-вычисление стадии AAP 2017. | [`PeriodontalChartingModal.tsx#L400-L492`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PeriodontalChartingModal.tsx#L400-L492) | **ИСПРАВЛЕНО И ДОКАЗАНО** |
+| **CLIN-2** | Склад & Сестринское дело | Бюрократический акт списания анестетиков на 12 полей с требованием комиссии из 3 человек для утилизации пустых карпул. | Медсестра списывает пустые карпулы анестетиков в 1 клик без комиссии из 3 человек. Быстрые бейджи `COMMON_ANESTHETICS` (Артикаин 1:100k, 1:200k, Септанест, Мепивакаин). Мягкий овердрафт склада с предупреждением вместо блокировки операции. | [`NurseCarpuleDisposalModal.tsx#L1-L120`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx#L1-L120) | **ИСПРАВЛЕНО И ДОКАЗАНО** |
+| **CLIN-3** | Касса 54-ФЗ | Блокировка пробития чека и вымогательство обязательного ИНН покупателя у физических лиц при оплате картой или наличными. | По 54-ФЗ (ФФД 1.2 тег 1228) ИНН покупателя требуется ТОЛЬКО для юридических лиц и ИП при безналичных расчетах. Физлица оплачивают в 1 клик без ввода ИНН. Поддержана комбинированная оплата (нал + карта + аванс/бонусы). | [`fastCheckoutEngine.ts#L180-L235`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts#L180-L235), [`FastCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/FastCheckoutModal.tsx) | **ИСПРАВЛЕНО И ДОКАЗАНО** |
+| **CLIN-4** | Радиовизиограф | Зависание интерфейса на 45 секунд из-за автоматического прогона каждого снимка через нейросеть с принудительной перезаписью зубной формулы. | Прямой захват снимка с USB-датчика $<50\text{ms}$ в 100% разрешении сенсора. Снимок по Spacebar. ИИ запускается строго по отдельной кнопке врача. Запрещена перезапись зубной формулы роботом без подтверждения врача. | [`DirectRvgCaptureModal.tsx#L306-L309`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx#L306-L309) | **ИСПРАВЛЕНО И ДОКАЗАНО** |
 
 ---
 

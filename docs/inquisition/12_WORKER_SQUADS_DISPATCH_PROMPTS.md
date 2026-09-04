@@ -1,8 +1,26 @@
 # БОЕВЫЕ СПЕЦИФИКАЦИИ И ПРОМПТЫ ДЛЯ 7 СПЕЦИАЛИЗИРОВАННЫХ БРИГАД
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+
 **Стандарт:** The Hammer Supreme Constitution (`.agents/MASTER_PROMPT.md`, `.agents/THE_HAMMER_MASTER_PROMPT.md`, `.agents/AGENTS.md`)  
 **Обязательное чтение перед работой:** Каждый субагент ОБЯЗАН прочитать файлы Конституции целиком до первого действия.  
 **Принцип:** ZERO MOCKS, ZERO PLACEHOLDERS, 100% PRODUCTION-READY CODE.
+
+### 🛑 КЛЮЧЕВЫЕ ИНВАРИАНТЫ ДЛЯ ВСЕХ 7 БРИГАД:
+1. **Мандат 8e (Автономия врача & Запрет на палки в колёса):** Никаких заблокированных кнопок без причины. Печать в любой момент («ЧЕРНОВИК» / «ПОДПИСАНО ВРАЧОМ»). Физиологическая норма в 1 клик. Debounced autosave на лету. Свобода скидок врача до 100%. Касса 54-ФЗ без требования ИНН с физлиц (тег 1228). 1-клик списание карпул медсестрой без комиссий из 3 человек. Визиограф $<50\text{ms}$ с ИИ строго по требованию врача и нулевой перезаписью формулы.
+2. **Apple macOS & iOS Studio Clinical HIG:** Тулбары строго **32–36px** в 1 строку ($\le 7$ элементов). Тач-таргеты строго $\ge 44\times 44\text{px}$. Закон Анти-Матрёшки (глубина модалок строго 1, запрет на карточки в карточках). Нулевые перекрытия рабочих областей плавающими блобами.
+3. **Реализованные и доказанные в кодовой базе стандарты:**
+   - 1-клик пародонтология: [`PeriodontalChartingModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PeriodontalChartingModal.tsx) (L400-L492).
+   - 1-клик списание карпул: [`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx) (L1-L120).
+   - 54-ФЗ без ИНН для физлиц: [`fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts) (L180-L235) и [`FastCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/FastCheckoutModal.tsx).
+   - Быстрый визиограф $<50\text{ms}$: [`DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx) (L306-L309).
 
 ---
 
@@ -26,6 +44,7 @@
   3. Ликвидация разрывов чисел: суммы вида `482 500 ₽` оборачивать в неразрывный формат через `formatMoneyRu()` с неразрывным пробелом `\u00A0` и запретом переноса `whitespace-nowrap`.
   4. Ликвидация английских амперсандов `&` в русскоязычных заголовках (замена на «и» или слэши `/`).
   5. Устранение слипания иконок с текстом (например, `🔍оиск` -> явный `gap-2` в flex-контейнере).
+  6. **Мандат 8e (Печать в любой момент):** Форма 043/у, согласия и сметы печатаются в любой момент без блокировок. Если приём не закрыт — со штампом «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ». Запрещены `disabled` кнопки «Печать» из-за незаполненных второстепенных полей соматики.
 - **Гейты верификации Бригады 1:**
   - `npm run check:encoding` (Exit 0)
   - `npm run typecheck -w @dental/web` (Exit 0)
@@ -50,6 +69,7 @@
   3. Устранение коллизии плавающего софтфона (`bottom: 80px, right: 16px`): добавить расписанию безопасный правый и нижний клиренс (`pb-24 pr-4 sm:pr-96`), чтобы софтфон никогда не перекрывал слоты 13:00–15:00.
   4. Ликвидация обрезания ФИО врачей и пациентов: добавление `min-w-0 flex-1 break-words` вместо слепого `truncate` на ключевых медицинских данных.
   5. Починка пустого белого экрана детской одонтограммы (`PediatricMixedDentitionModal.tsx`): отрендерить честную молочную формулу 51–85 с кнопками $\ge 44\text{px}$.
+  6. **Apple HIG & Touch-First:** строгое соблюдение эргономики работы в смотровых перчатках у кресла пациента (тач-таргеты $\ge 44\times 44\text{px}$, крупные зоны выбора квадрантов и поверхностей MOD).
 - **Гейты верификации Бригады 2:**
   - `npm run check:encoding` (Exit 0)
   - `npm run typecheck -w @dental/web` (Exit 0)
@@ -71,9 +91,10 @@
 - **Конкретные дефекты к устранению:**
   1. Сплющивание вложенных карточек глубины 3–4 до плоских панелей (Anti-Matryoshka Law: глубина строго 1).
   2. Зачистка свалки кнопок в строках таблиц (`RetentionAnalyticsView`): строго $\le 2$ кнопки прямого действия (например, `Позвонить`), остальные 15+ действий убрать в выпадающее меню `...`.
-  3. Сокращение вторичных тулбаров до 1 строки ($\le 7$ элементов).
+  3. Сокращение вторичных тулбаров до 1 строки ($\le 7$ элементов), высота строго 32–36px.
   4. Ликвидация конкурирующих кнопок Primary Action: строго 1 главная акцентная кнопка на экране/модалке, остальные действия — вторичные кнопки `btn-secondary` или аутлайн.
   5. Ликвидация Card-in-Table паттерна в `MaterialBomDeductionModal`: сжатие раздутых 80px карточек в компактную медицинскую таблицу со строками 36–40px.
+  6. **Мандат 8e & Эргономика 1 клика:** внедрение быстрых клинических пресетов вместо бюрократических визардов, по образцу доказанного модуля пародонтологии [`PeriodontalChartingModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PeriodontalChartingModal.tsx).
 - **Гейты верификации Бригады 3:**
   - `npm run check:encoding` (Exit 0)
   - `npm run typecheck -w @dental/web` (Exit 0)
@@ -87,6 +108,7 @@
 - **Целевые файлы:**
   - `apps/web/src/components/sanpin/SanpinRegistersView.tsx`
   - `apps/web/src/components/sanpin/SterilizationCycleModal.tsx`
+  - `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`
   - `packages/shared/src/sanpin/`
 - **Запретная зона:** Радиология и КЛКТ (Бригада 5), биллинг (Бригада 1), софтфон (Бригада 2).
 - **Конкретные дефекты к устранению:**
@@ -94,6 +116,7 @@
   2. Внедрение сквозной кнопки «1-Клик Автопилот смены СанПиН» для мгновенного заполнения типовых проб смены (азопирам, фенолфталеин, термометрия) в 1 клик.
   3. Устранение бага Z-Index (выпадающий список автоклава рендерится ПОД таблицей журнала — исправить `z-index: 50` и `relative` на родительском селекте).
   4. Сокращение высоты шапки с 340px до 90px, увеличив видимость строк таблицы стерилизации с 3 до 12+ строк на мониторе 1440px.
+  5. **Мандат 8e (Склад и медсестра):** медсестра списывает пустые карпулы анестетиков в 1 клик без комиссии из 3 человек ([`NurseCarpuleDisposalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx)). Мягкий овердрафт склада с предупреждением вместо блокировки лечебного процесса.
 - **Гейты верификации Бригады 4:**
   - `npm run typecheck -w @dental/shared` (Exit 0)
   - `npm run typecheck -w @dental/web` (Exit 0)
@@ -108,6 +131,7 @@
   - `apps/web/src/components/radiology/CbctMprViewer.tsx`
   - `apps/web/src/components/radiology/RadiologyDicomViewerModal.tsx`
   - `apps/web/src/components/radiology/CephalometricAnalysisModal.tsx`
+  - `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`
   - `packages/shared/src/dicom/`
 - **Запретная зона:** RBAC настройки (Бригада 6), СанПиН (Бригада 4), документы печати (Бригада 1).
 - **Конкретные дефекты к устранению:**
@@ -116,6 +140,7 @@
   3. Исправление анатомической инверсии верхних зубов в 2D радиовизиографе (зуб 16: корни направлены вверх).
   4. Замена слепящего белого фона инверсии LUT `#FFFFFF` на контрастный темно-серый фон `var(--paper)` с сохранением читаемости белого текста телеметрии.
   5. Корректная анатомическая трассировка нижнечелюстного нерва IAN в нижнечелюстном канале вне корней 46/47 зубов.
+  6. **Мандат 8e (Молниеносный визиограф):** прямой захват снимка с USB-датчика $<50\text{ms}$ ([`DirectRvgCaptureModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx)). Захват по Spacebar, мгновенное прикрепление к визиту. ИИ запускается строго по отдельной кнопке врача. Нулевая перезапись зубной формулы роботом.
 - **Гейты верификации Бригады 5:**
   - `npm run typecheck -w @dental/shared` (Exit 0)
   - `npm run typecheck -w @dental/web` (Exit 0)
@@ -131,6 +156,8 @@
   - `apps/web/src/components/settings/StaffCommissionsModal.tsx`
   - `apps/web/src/components/backup/OfflineBackupVaultPanel.tsx`
   - `apps/web/src/components/lab/GuestLabPortalView.tsx`
+  - `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`
+  - `apps/web/src/components/payments/checkout/fastCheckoutEngine.ts`
   - `apps/web/src/themeTokens.ts`
   - `apps/web/src/styles/`
 - **Запретная зона:** Документы 043/у (Бригада 1), КЛКТ (Бригада 5), СанПиН (Бригада 4).
@@ -140,6 +167,7 @@
   3. Исправление слепого черного текста на черном фоне в `14_settings_staff_commissions` (контраст $\ge 4.5:1$).
   4. Ликвидация слепящих белых подложек `#FFFFFF` в Dark Mode (замена инлайн-стилей `background: #fff` на токены `var(--paper)` / `var(--paper-strong)`).
   5. Ликвидация слепого текста в светлой теме (дропзона радиовизиографии: замена бледного `#cbd5e1` на контрастный `#334155` с контрастом $\ge 4.5:1$).
+  6. **Мандат 8e (Касса 54-ФЗ без палок в колёса):** комбинированная оплата (нал + карта + аванс/бонусы) в 1 клик ([`FastCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/FastCheckoutModal.tsx)). Запрещено требовать ИНН с физических лиц (тег 1228 ФФД 1.2 — строго для юрлиц/ИП). Врач имеет право применить скидку вплоть до 100% без блокировок.
 - **Гейты верификации Бригады 6:**
   - `npm run check:css-tokens` (Exit 0)
   - `npm run typecheck -w @dental/web` (Exit 0)
@@ -160,5 +188,6 @@
   2. Перевод съёмки всех 25 экранов с синтетической песочницы `ClinicalModalsStudioStandalone.tsx` на реальный Live-сервер Fastify/PostgreSQL (`http://127.0.0.1:4100` + `http://127.0.0.1:5173`).
   3. Ликвидация клонирования файлов с одинаковыми MD5-хешами (`copyFileSync` без реального перехода страницы).
   4. Удаление упоминаний фантомных скриптов `capture-audit-parity.mjs` и `capture-competitive-audit.mjs` из документации.
+  5. **Аутентичность Мандата 8e:** скриншотная фиксация работы 4 устраненных барьеров (1-клик пародонтология, 1-клик списание карпул, касса 54-ФЗ без ИНН физлиц, быстрый визиограф $<50\text{ms}$).
 - **Гейты верификации Бригады 7:**
   - `node scripts/take-live-audit-screenshots.mjs` (Exit 0, 100% уникальные MD5-хеши скриншотов $\ge 40\text{KB}$, Live Server HTTP 200 OK).

@@ -1,5 +1,13 @@
 # ОТЧЁТ ИНКВИЗИЦИИ 5: FITTS'S LAW & TOUCH TARGET AUDITOR
 
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+> - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+
 **Роль:** Инквизитор 5 — Fitts's Law & Touch Target Auditor  
 **Субагент ID:** `c62c7de2-9b83-4bf6-b61a-095c9cdd56f4`  
 **Целевая область:** Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  

@@ -1,4 +1,13 @@
 # 100% FULL-CODEBASE CENSUS & BLOAT INVENTORY V2.0
+
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+> - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+
 **Project:** DENTE Dental CRM (`apps/web`, `apps/api`, `packages/shared`)  
 **Audit Date:** 2026-08-27  
 **Authority:** Core Route (§8 Anti-Overthinking & Spec-Driven Doctrine / Запрет на научный фич-крип)  

@@ -1,5 +1,13 @@
 # ОТЧЁТ ИНКВИЗИЦИИ 9: TYPOGRAPHY, EMOJIS & FORMATTING SNIPER
 
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+> - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+
 **Роль:** Инквизитор 9 — Typography & Formatting Sniper  
 **Субагент ID:** `ffcb0522-f1cf-4171-aa3b-8ea98c25381d` / `3d6b3d5e-534d-41e0-b537-cdc3b40e9a8b`  
 **Целевая область:** Все скриншоты в `docs/proofs/audit/` и `docs/screenshots/`  

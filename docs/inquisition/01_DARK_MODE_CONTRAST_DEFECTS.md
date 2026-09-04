@@ -1,5 +1,13 @@
 # ОТЧЁТ ИНКВИЗИЦИИ 1: DARK MODE CONTRAST & VISUAL DEFECT AUDIT
 
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+> - [Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+
 **Роль:** Инквизитор 1 — Dark Mode Contrast Hound  
 **Субагент ID:** `83aecae3-b486-489f-aeb7-5f1f5b117c29`  
 **Целевая область:** Скриншоты темной темы (`docs/proofs/audit/*_dark.png`, `docs/screenshots/*_dark.png`, `docs/screenshots/cbct_tools/*.png`)  

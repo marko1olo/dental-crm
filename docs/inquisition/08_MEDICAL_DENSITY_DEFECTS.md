@@ -1,10 +1,49 @@
 # ОТЧЕТ ИНКВИЗИЦИИ 8: MEDICAL DENSITY AUDITOR
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+> 📖 **НАВИГАЦИЯ ПО СТАНДАРТАМ И ИНДЕКСАМ:**
+> - [Главный Индекс Документации (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+> - [Высшая Конституция: THE HAMMER (.agents/THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+> - [Стандарты UI, State и CSS (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)
+> - [Карта Представлений Фронтенда (.agents/FRONTEND_VIEWS_MAP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)
+> - [Сводный Реестр Инквизиции (00_INDEX.md)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)
+
 **Роль:** Инквизитор 8 — Medical Density Auditor  
 **Субагент ID:** `33148efd-950f-4fd2-afba-c1f6fb64767b`  
 **Целевая область:** Все скриншоты десктопных экранов (`docs/proofs/audit/*_pc_*.png`, `docs/screenshots/*_pc_*.png`)  
-**Основание:** `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md` и `THE_HAMMER_MASTER_PROMPT.md`  
-**Презумпция брака:** 100% подтверждена. Аудит десктопной плотности и борьба с баннерным блоатом.
+**Основание:** `C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md`, `THE_HAMMER_MASTER_PROMPT.md` и Мандат 8e  
+**Презумпция брака:** 100% подтверждена. Аудит десктопной плотности, эргономики Apple HIG и ликвидация бюрократического блоата.
+
+---
+
+## 🍏 СТАНДАРТЫ ЭРГОНОМИКИ APPLE & MAC (STUDIO CLINICAL HIG)
+
+1. **Десктопная панель пилота (80% сценариев):**
+   - Плотная профессиональная компоновка (Medical Density).
+   - Компактные тулбары строго **32–36px** высоты в 1 строку (запрет на 2–3 этажные штабеля кнопок).
+   - Информационная емкость первого экрана десктопа (1440x900 / 1920x1080) $\ge 70\%$: рабочая сетка расписания, зубная формула и таблица ЭМК не должны вытесняться декоративными баннерами.
+   - Запрет на баннерный блоат: шапки модулей $\le 48\text{px}$, суммарные плашки KPI $\le 44\text{px}$.
+2. **Мобильная и планшетная эргономика (10% + 10% сценариев):**
+   - Планшетная стойка у кресла (10%): сенсорные тач-таргеты строго $\ge 44\times 44\text{px}$ ($\ge 48\text{px}$ для работы в смотровых перчатках).
+   - Мобильный дежурный интерфейс (10%): адаптивный flex wrap и горизонтальный скролл с `touch-pan-x` без бокового вылета за 390px.
+3. **150ms Hover HUD и контекст по требованию:**
+   - Детализация по строкам, пациентам и услугам всплывает через быстрый 150ms Hover HUD без раздувания базовой высоты строк таблиц.
+4. **Запрет на плавающие блобы над рабочими областями:**
+   - Плавающие софтфоны (`TelephonyFloatingWidget`) и кнопки быстрого действия (FAB) не имеют права перекрывать рабочие области таблиц, слоты расписания или корни анатомической зубной формулы.
+
+---
+
+## 🛑 МАНДАТ 8e: ЛИКВИДАЦИЯ ПАЛОК В КОЛЁСА ВРАЧАМ И ПЕРСОНАЛУ
+
+В рамках стандарта «Софт для врача, а не врач для софта» устранены 4 критических бюрократических барьера:
+
+| ID | Область | Решенная проблема плотности и автономии | Файл и строки реализации |
+| :--- | :--- | :--- | :--- |
+| **DENS-PERIO** | Пародонтология | Ликвидирован 192-точечный пошаговый визард зондирования глубин, съедавший 600px модалки. Внедрен 1-клик пресет нормы, 1-клик протокол гигиены A16.07.051 и автоматический расчет стадии AAP 2017. | [`PeriodontalChartingModal.tsx#L400-L492`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PeriodontalChartingModal.tsx#L400-L492) |
+| **DENS-CARP** | Склад & Медсестра | Заменен 12-строчный акт списания на компактную модалку 480px с 1-клик списанием карпул анестетиков медсестрой без комиссий из 3 человек. Мягкий овердрафт склада с предупреждением. | [`NurseCarpuleDisposalModal.tsx#L1-L120`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx#L1-L120) |
+| **DENS-CASH** | Касса 54-ФЗ | Ликвидировано требование ИНН у физлиц (тег 1228 ФФД 1.2 — строго для юрлиц/ИП). Модалка оплаты сжата: комбинированная оплата (нал + карта + бонусы) в 1 клик на одном экране без скролла. | [`fastCheckoutEngine.ts#L180-L235`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts#L180-L235), [`FastCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/FastCheckoutModal.tsx) |
+| **DENS-RVG** | Радиовизиограф | Снимок с визиографа открывается $<50\text{ms}$ в 100% разрешении датчика без 45-секундных зависаний на нейросетях. ИИ запускается строго по кнопке врача. Нулевая перезапись формулы. | [`DirectRvgCaptureModal.tsx#L306-L309`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/DirectRvgCaptureModal.tsx#L306-L309) |
 
 ---
 
