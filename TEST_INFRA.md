@@ -1,5 +1,7 @@
 # E2E Test Infra: DENTE Dental CRM (Round 43)
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Test Philosophy
 - Opaque-box & requirement-driven verification across the 3 strictly isolated tiers.
 - Complete coverage across all 21 inventoried features in `PROJECT.md § Feature Inventory`.

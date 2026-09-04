@@ -1,5 +1,7 @@
 # DENTALPIN vs DENTE DENTAL CRM: FULL COMPARATIVE ARCHITECTURE & INGESTION AUDIT
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Authoritative Technical Report**  
 > **Date**: 2026-08-27  
 > **Target Project**: DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`)  
@@ -73,7 +75,7 @@ A comprehensive, zero-skimming architectural audit was conducted comparing **Den
 |                                                                                                   |
 |  [ 3D CBCT ROMEXIS 6 MPR ]  -->  [ ЕГИСЗ/РЭМД CDA R2 УКЭП ]  -->  [ ЭМК 043/у ГОСТ + СтАР ]       |
 |  [ ЧЕСТНЫЙ ЗНАК МДЛП ]      -->  [ 54-ФЗ ФФД 1.2 ККТ / СБП ] -->  [ ISQ ОСТЕОИНТЕГРАЦИЯ ]         |
-|  [ 5-ПОВЕРХНОСТНЫЙ ОДОНТО ] -->  [ MULTI-TENANT POSTGRES RLS ] --> [ PGLITE OFFLINE REPLICATION ] |
+|  [ 5-ПОВЕРХНОСТНЫЙ ОДОНТО ] -->  [ MULTI-TENANT POSTGRES RLS ] --> [ INDEXEDDB OFFLINE RESILIENCE ] |
 +---------------------------------------------------------------------------------------------------+
                                               vs
 +---------------------------------------------------------------------------------------------------+
@@ -112,8 +114,8 @@ A comprehensive, zero-skimming architectural audit was conducted comparing **Den
 - **Dentalpin**: Simplified 2D SVG tooth outline with single-condition status flags per tooth.
 
 ### 8. Enterprise Multi-Tenancy & Offline Data Resilience
-- **DENTE**: Multi-tenant architecture enforced at the database level via PostgreSQL Row Level Security (RLS) policies. Includes an offline replication engine (PGLite / IndexedDB) allowing full clinic operation during internet disconnects with automatic bidirectional conflict resolution upon reconnection.
-- **Dentalpin**: Single database with application-level clinic_id filters in queries without native database RLS enforcement or offline PGLite sync.
+- **DENTE**: Multi-tenant architecture enforced at the database level via native PostgreSQL 18.4 Row Level Security (RLS) policies (`withTenantCtx`). Includes an offline resilience engine (IndexedDB / ServiceWorker cache) allowing full clinic operation during internet disconnects with automatic bidirectional conflict resolution upon reconnection.
+- **Dentalpin**: Single database with application-level clinic_id filters in queries without native database RLS enforcement or offline sync.
 
 ---
 

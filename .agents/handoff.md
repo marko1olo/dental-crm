@@ -1,5 +1,7 @@
 # Handoff Report — Operation Night Watch: DENTE Enterprise Stabilization & Polish
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Observation
 Successfully conducted and audited the enterprise stabilization sprint for DENTE Dental CRM, covering all four mission domains:
 1. Frontend & Apple HIG Clinical Density (hitboxes >= 44x44px, anti-matryoshka depth <= 1, true darkroom compliance, zero horizontal overflow at 390px).

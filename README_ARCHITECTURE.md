@@ -1,5 +1,7 @@
 # Clinic MVP (DENTE) - Project Architecture Index
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 Welcome to the autonomous documentation for the DENTE Clinical CRM project. 
 
 The system is a monolithic full-stack application built using **React 19**, **Zustand**, and **TailwindCSS** on the frontend (`@dental/web`), powered by a **Fastify** and **PostgreSQL** (Drizzle ORM) backend (`@dental/api`). A shared package (`@dental/shared`) enforces strict domain logic across the stack.

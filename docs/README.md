@@ -64,28 +64,61 @@
 *   **[SYSTEM_AUDIT_AND_DEBT_SPEC.md](file:///C:/Clinic_MVP/dental-crm/docs/architecture/SYSTEM_AUDIT_AND_DEBT_SPEC.md)** — Спецификация технического долга и оптимизации производительности.
 *   **[BLOAT_CENSUS_PHASE_3.md](file:///C:/Clinic_MVP/dental-crm/docs/audit/BLOAT_CENSUS_PHASE_3.md)** — Перепись академического блоата и процедурных симуляций (ликвидировано ~9 140 строк).
 *   **[CODEBASE_BLOAT_CENSUS_V2.md](file:///C:/Clinic_MVP/dental-crm/docs/audit/CODEBASE_BLOAT_CENSUS_V2.md)** — Вторая фаза ликвидации дублирующих модулей.
+*   **[DENTALPIN_FULL_CODEBASE_MINING.md](file:///C:/Clinic_MVP/dental-crm/docs/audit/DENTALPIN_FULL_CODEBASE_MINING.md)** — Полный майнинг и анализ кодовой базы DentalPin.
+*   **[DENTALPIN_INGESTION_REPORT.md](file:///C:/Clinic_MVP/dental-crm/docs/audit/DENTALPIN_INGESTION_REPORT.md)** — Отчёт интеграции наработок DentalPin.
+*   **[GLOBAL_BLOAT_INVENTORY.md](file:///C:/Clinic_MVP/dental-crm/docs/audit/GLOBAL_BLOAT_INVENTORY.md)** — Глобальная инвентаризация и ликвидация избыточного кода.
 *   **[NIGHT_WATCH_DEFECT_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/audits/NIGHT_WATCH_DEFECT_REGISTRY.md)** — Реестр устранённых дефектов верстки, тач-таргетов и контрастности.
 
 ### 7. Инквизиция Интерфейса и Стандарты Эргономики (`inquisition/`)
 *   **[00_INDEX.md (Inquisition)](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)** — Главный реестр инквизиции интерфейса (12 стандартов проверки).
 *   Руководства по ликвидации дефектов:
-    *   `01_DARK_MODE_CONTRAST_DEFECTS.md` — Гигиена контраста в Dark Mode (WCAG AAA >= 4.5:1, отсутствие слепящих белых пятен).
-    *   `02_LIGHT_MODE_CONTRAST_DEFECTS.md` — Гигиена контраста в Light Mode (запрет бледного серого текста).
-    *   `03_MOBILE_390PX_OVERFLOW_DEFECTS.md` — Адаптивность 390px без горизонтального скролла.
-    *   `04_ZINDEX_COLLISION_DEFECTS.md` — Единая шкала z-index без коллизий виджетов и модалок.
-    *   `05_FITTS_TOUCH_TARGET_DEFECTS.md` — Закон Фиттса: мобильные тач-таргеты строго >= 44x44px.
-    *   `06_HICKS_MILLER_OVERLOAD_DEFECTS.md` — Законы Хика и Миллера: максимум 1 главное действие, скрытие в `...`.
-    *   `07_CBCT_RADIOLOGY_TRUTH_DEFECTS.md` — Реальный 16-bit DICOM без бутафорских Canvas-диорам.
-    *   `08_MEDICAL_DENSITY_DEFECTS.md` — Медицинская плотность macOS HIG (32–36px тулбары на десктопе).
-    *   `09_TYPOGRAPHY_EMOJIS_DEFECTS.md` — Строгая медицинская типографика, абсолютный запрет эмодзи в картах и актах.
-    *   `10_ANTI_MATRYOSHKA_DEFECTS.md` — Закон Анти-Матрёшки (глубина карточек и модалок <= 1).
-    *   `11_SCREENSHOT_PIPELINE_AUTHENTICITY.md` — Доказательство скриншотами с живого сервера.
-    *   `12_WORKER_SQUADS_DISPATCH_PROMPTS.md` — Инструкции и шаблоны вызова субагентов-ликвидаторов.
+    *   [01_DARK_MODE_CONTRAST_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/01_DARK_MODE_CONTRAST_DEFECTS.md) — Гигиена контраста в Dark Mode (WCAG AAA >= 4.5:1, отсутствие слепящих белых пятен).
+    *   [02_LIGHT_MODE_CONTRAST_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/02_LIGHT_MODE_CONTRAST_DEFECTS.md) — Гигиена контраста в Light Mode (запрет бледного серого текста).
+    *   [03_MOBILE_390PX_OVERFLOW_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/03_MOBILE_390PX_OVERFLOW_DEFECTS.md) — Адаптивность 390px без горизонтального скролла.
+    *   [04_ZINDEX_COLLISION_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/04_ZINDEX_COLLISION_DEFECTS.md) — Единая шкала z-index без коллизий виджетов и модалок.
+    *   [05_FITTS_TOUCH_TARGET_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/05_FITTS_TOUCH_TARGET_DEFECTS.md) — Закон Фиттса: мобильные тач-таргеты строго >= 44x44px.
+    *   [06_HICKS_MILLER_OVERLOAD_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/06_HICKS_MILLER_OVERLOAD_DEFECTS.md) — Законы Хика и Миллера: максимум 1 главное действие, скрытие в `...`.
+    *   [07_CBCT_RADIOLOGY_TRUTH_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/07_CBCT_RADIOLOGY_TRUTH_DEFECTS.md) — Реальный 16-bit DICOM без бутафорских Canvas-диорам.
+    *   [08_MEDICAL_DENSITY_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/08_MEDICAL_DENSITY_DEFECTS.md) — Медицинская плотность macOS HIG (32–36px тулбары на десктопе).
+    *   [09_TYPOGRAPHY_EMOJIS_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/09_TYPOGRAPHY_EMOJIS_DEFECTS.md) — Строгая медицинская типографика, абсолютный запрет эмодзи в картах и актах.
+    *   [10_ANTI_MATRYOSHKA_DEFECTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/10_ANTI_MATRYOSHKA_DEFECTS.md) — Закон Анти-Матрёшки (глубина карточек и модалок <= 1).
+    *   [11_SCREENSHOT_PIPELINE_AUTHENTICITY.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/11_SCREENSHOT_PIPELINE_AUTHENTICITY.md) — Доказательство скриншотами с живого сервера.
+    *   [12_WORKER_SQUADS_DISPATCH_PROMPTS.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/12_WORKER_SQUADS_DISPATCH_PROMPTS.md) — Инструкции и шаблоны вызова субагентов-ликвидаторов.
 
 ### 8. Бэклог Задач и Спринтов (`AgentTasks/`)
 *   **[TASK_BACKLOG_AND_SPECIFICATIONS.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_AND_SPECIFICATIONS.md)** — Общий реестр задач агентов и спецификации модулей.
 *   **[TASK_BACKLOG_SPRINT_5.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_SPRINT_5.md)** — Задачи Спринта 5.
 *   **[TASK_BACKLOG_SPRINT_6.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_SPRINT_6.md)** — Задачи Спринта 6.
+*   **Операционные передачи задач (Agent Handoffs):**
+    *   **[HANDOFF_2026-07-31_current.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_current.md)** — Актуальный статус передачи.
+    *   **[HANDOFF_2026-07-31_message_first_L40_41.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_message_first_L40_41.md)** — Этап L40-L41.
+    *   **[HANDOFF_2026-07-31_message_first_L42_en500.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_message_first_L42_en500.md)** — Этап L42.
+    *   **[HANDOFF_2026-07-31_message_first_L43_preset_panels.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_message_first_L43_preset_panels.md)** — Панели пресетов L43.
+
+---
+
+
+### 9. Системные Документы и Политики Репозитория
+*   **[README.md (Root)](file:///C:/Clinic_MVP/dental-crm/README.md)** — Техническая спецификация движка и руководство проекта.
+*   **[README_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/README_ARCHITECTURE.md)** — Обзорная архитектура репозитория.
+*   **[ARCHITECTURE.md (Root)](file:///C:/Clinic_MVP/dental-crm/ARCHITECTURE.md)** — Корневая архитектурная спецификация.
+*   **[BACKLOG.md (Root)](file:///C:/Clinic_MVP/dental-crm/BACKLOG.md)** — Корневой бэклог задач.
+*   **[CLINICAL_USER_MANUAL.md (Root)](file:///C:/Clinic_MVP/dental-crm/CLINICAL_USER_MANUAL.md)** — Корневое клиническое руководство.
+*   **[SECURITY.md](file:///C:/Clinic_MVP/dental-crm/SECURITY.md)** — Политика безопасности, модели угроз и реагирование на уязвимости.
+*   **[CONTRIBUTING.md](file:///C:/Clinic_MVP/dental-crm/CONTRIBUTING.md)** — Руководство контрибьютора и архитектурные инварианты.
+*   **[CODE_OF_CONDUCT.md](file:///C:/Clinic_MVP/dental-crm/CODE_OF_CONDUCT.md)** — Кодекс профессионального поведения и этики разработки.
+*   **[LICENSE.md](file:///C:/Clinic_MVP/dental-crm/LICENSE.md)** — Лицензия проекта.
+*   **[PORTABILITY_GUIDE.md](file:///C:/Clinic_MVP/dental-crm/PORTABILITY_GUIDE.md)** — Руководство по портированию (Web, Desktop, Mobile).
+*   **[PROJECT.md](file:///C:/Clinic_MVP/dental-crm/PROJECT.md)** — Паспорт проекта и глобальное видение.
+*   **[TEST_INFRA.md](file:///C:/Clinic_MVP/dental-crm/TEST_INFRA.md)** — Спецификация тестовой инфраструктуры.
+*   **[TEST_READY.md](file:///C:/Clinic_MVP/dental-crm/TEST_READY.md)** — Чек-лист готовности тестов.
+*   **[API_DISCREPANCY_REPORT.md](file:///C:/Clinic_MVP/dental-crm/API_DISCREPANCY_REPORT.md)** — Отчёт о расхождениях в API.
+*   **[ARCHITECT_HANDOVER.md (Root)](file:///C:/Clinic_MVP/dental-crm/ARCHITECT_HANDOVER.md)** — Акт передачи архитектурного контроля.
+*   **[FINAL_INVESTIGATION_REPORT.md](file:///C:/Clinic_MVP/dental-crm/FINAL_INVESTIGATION_REPORT.md)** — Финальный отчёт о расследовании системы.
+*   **[HANDOVER_AUDIT_2026-07-26.md](file:///C:/Clinic_MVP/dental-crm/HANDOVER_AUDIT_2026-07-26.md)** — Аудит передачи полномочий.
+*   **[ORIGINAL_REQUEST.md (Root)](file:///C:/Clinic_MVP/dental-crm/ORIGINAL_REQUEST.md)** — Исходные требования и исторический бриф.
+*   **[.agents/handoff.md](file:///C:/Clinic_MVP/dental-crm/.agents/handoff.md)** — Оперативный handoff агентов.
+*   **[task.md](file:///C:/Clinic_MVP/dental-crm/task.md)** | **[implementation_plan.md](file:///C:/Clinic_MVP/dental-crm/implementation_plan.md)** — Текущие операционные планы и задачи.
 
 ---
 

@@ -1,5 +1,7 @@
 # Справочник Автоматизации, Скриптов и Тестов Dental CRM (`scripts/`)
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Скрипты Визуального Аудита и Скриншотов
 - `scripts/comprehensive-visual-audit.mjs` — Полный визуальный аудит всех экранов CRM на ошибки верстки.
 - `scripts/screenshot-all-views.mjs` — Автоматический захват скриншотов всех главных вкладок (`Schedule`, `Patients`, `Visit`, `Documents`, `Communications`, `Finance`, `Settings`).

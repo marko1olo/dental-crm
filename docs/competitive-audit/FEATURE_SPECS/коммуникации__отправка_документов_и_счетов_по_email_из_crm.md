@@ -1,5 +1,7 @@
 # Спецификация функциональной фичи: коммуникации::отправка_документов_и_счетов_по_email_из_crm
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
 - **feature_key**: `коммуникации::отправка_документов_и_счетов_по_email_из_crm`
 - **Наименование**: Прямая отправка планов лечения и счетов по Email из CRM
@@ -72,3 +74,10 @@
 
 ## 12. Источник доказательства (Evidence Reference)
 Источник: clean_competitors, строки 224, 1378–1389.
+
+---
+
+## 13. Системные ссылки и навигация
+- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

@@ -1,5 +1,7 @@
 # Original User Request
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Initial Request — 2026-08-29T11:35:11Z
 
 # Teamwork Project Prompt — Draft

@@ -1,5 +1,7 @@
 # Алгоритмы, Валидаторы и Общий Пакет `@dental/shared`
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Пакет Общих Типов и Схем Zod (`packages/shared/src/index.ts`)
 
 - **Валидация Документов**:

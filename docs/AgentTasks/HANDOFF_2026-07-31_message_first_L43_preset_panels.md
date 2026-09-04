@@ -1,5 +1,7 @@
 # HANDOFF — 2026-07-31 — L43 preset message-first + schedule/settings panel wire
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Repo:** `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
 **Base after L42 handoff:** `320382c3b`  
 **This slice commits (see git log):**

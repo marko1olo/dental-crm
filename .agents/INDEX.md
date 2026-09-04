@@ -104,7 +104,34 @@
 46. **[CODEBASE_BLOAT_CENSUS_V2.md](file:///C:/Clinic_MVP/dental-crm/docs/audit/CODEBASE_BLOAT_CENSUS_V2.md)** — Вторая фаза ликвидации мертвого кода.
 47. **[NIGHT_WATCH_DEFECT_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/audits/NIGHT_WATCH_DEFECT_REGISTRY.md)** — Реестр устранённых дефектов верстки и эргономики.
 48. **[inquisition/00_INDEX.md](file:///C:/Clinic_MVP/dental-crm/docs/inquisition/00_INDEX.md)** — Реестр инквизиции интерфейса (12 стандартов проверки).
-49. **[AgentTasks/TASK_BACKLOG_AND_SPECIFICATIONS.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_AND_SPECIFICATIONS.md)** — Общий реестр задач агентов.
+50. **[AgentTasks/TASK_BACKLOG_AND_SPECIFICATIONS.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_AND_SPECIFICATIONS.md)** — Общий реестр задач агентов.
+51. **[TASK_BACKLOG_SPRINT_5.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_SPRINT_5.md)** | **[TASK_BACKLOG_SPRINT_6.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/TASK_BACKLOG_SPRINT_6.md)** — Задачи спринтов 5 и 6.
+52. **[HANDOFF_2026-07-31_current.md](file:///C:/Clinic_MVP/dental-crm/docs/AgentTasks/HANDOFF_2026-07-31_current.md)** — Передачи задач (L40..L43).
+53. **[handoff.md (.agents)](file:///C:/Clinic_MVP/dental-crm/.agents/handoff.md)** — Оперативный журнал передачи смены агентов.
+
+---
+
+
+### 6. Системные Документы и Политики Репозитория
+54. **[README.md (Root)](file:///C:/Clinic_MVP/dental-crm/README.md)** — Техническая спецификация движка и руководство проекта.
+55. **[README_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/README_ARCHITECTURE.md)** — Обзорная архитектура репозитория.
+56. **[ARCHITECTURE.md (Root)](file:///C:/Clinic_MVP/dental-crm/ARCHITECTURE.md)** — Корневая архитектурная спецификация.
+57. **[BACKLOG.md (Root)](file:///C:/Clinic_MVP/dental-crm/BACKLOG.md)** — Корневой бэклог задач.
+58. **[CLINICAL_USER_MANUAL.md (Root)](file:///C:/Clinic_MVP/dental-crm/CLINICAL_USER_MANUAL.md)** — Корневое клиническое руководство.
+59. **[SECURITY.md](file:///C:/Clinic_MVP/dental-crm/SECURITY.md)** — Политика безопасности и модели угроз.
+60. **[CONTRIBUTING.md](file:///C:/Clinic_MVP/dental-crm/CONTRIBUTING.md)** — Руководство контрибьютора и архитектурные инварианты.
+61. **[CODE_OF_CONDUCT.md](file:///C:/Clinic_MVP/dental-crm/CODE_OF_CONDUCT.md)** — Кодекс профессионального поведения и этики разработки.
+62. **[LICENSE.md](file:///C:/Clinic_MVP/dental-crm/LICENSE.md)** — Лицензия проекта.
+63. **[PORTABILITY_GUIDE.md](file:///C:/Clinic_MVP/dental-crm/PORTABILITY_GUIDE.md)** — Руководство по портированию (Web, Desktop, Mobile).
+64. **[PROJECT.md](file:///C:/Clinic_MVP/dental-crm/PROJECT.md)** — Паспорт проекта и глобальное видение.
+65. **[TEST_INFRA.md](file:///C:/Clinic_MVP/dental-crm/TEST_INFRA.md)** — Спецификация тестовой инфраструктуры.
+66. **[TEST_READY.md](file:///C:/Clinic_MVP/dental-crm/TEST_READY.md)** — Чек-лист готовности тестов.
+67. **[API_DISCREPANCY_REPORT.md](file:///C:/Clinic_MVP/dental-crm/API_DISCREPANCY_REPORT.md)** — Отчёт о расхождениях в API.
+68. **[ARCHITECT_HANDOVER.md (Root)](file:///C:/Clinic_MVP/dental-crm/ARCHITECT_HANDOVER.md)** — Акт передачи архитектурного контроля.
+69. **[FINAL_INVESTIGATION_REPORT.md](file:///C:/Clinic_MVP/dental-crm/FINAL_INVESTIGATION_REPORT.md)** — Финальный отчёт о расследовании системы.
+70. **[HANDOVER_AUDIT_2026-07-26.md](file:///C:/Clinic_MVP/dental-crm/HANDOVER_AUDIT_2026-07-26.md)** — Аудит передачи полномочий.
+71. **[ORIGINAL_REQUEST.md (Root)](file:///C:/Clinic_MVP/dental-crm/ORIGINAL_REQUEST.md)** — Исходные требования и исторический бриф.
+72. **[task.md](file:///C:/Clinic_MVP/dental-crm/task.md)** | **[implementation_plan.md](file:///C:/Clinic_MVP/dental-crm/implementation_plan.md)** — Текущие операционные планы и задачи.
 
 ---
 

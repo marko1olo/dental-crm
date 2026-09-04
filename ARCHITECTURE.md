@@ -1,5 +1,7 @@
 # 🦷 DENTE Dental CRM — Architecture Specification
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Enterprise Multi-Tenant Clinical Practice Management Architecture**  
 > Developed by **Жирняк** & **Адольф Петушков**
 

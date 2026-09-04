@@ -1,12 +1,13 @@
 # Детальная Карта Архитектуры и Модулей Dental CRM (DENTE)
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
 - **Backend API**: `apps/api` (Fastify 4+, TypeScript, Drizzle ORM, Node.js).
 - **Shared Package**: `packages/shared` (общие схемы Zod, DTO, типы документов, одонтограммы и интерфейсов).
 - **База данных**: **нативный PostgreSQL 18.4** по TCP на `127.0.0.1:5432`, драйвер `node-postgres`
-  (схема в `apps/api/src/db/schema.ts` — 3158 строк, 126 `pgTable` + 46 `pgEnum`; всего по всем модулям
-  схемы 129 таблиц, в живой базе 148).
+  (модульная схема в `apps/api/src/db/schema/*.ts`, экспортируемая через `apps/api/src/db/schema.ts` и `schema/index.ts`: 20 доменных модулей, 203 `pgTable` + `pgEnum`).
 
 > **Исправлено 2026-08-06.** Здесь стояло «React 18» и «PostgreSQL / PGlite», а размер схемы был указан
 > как «более 2300 строк». Все три утверждения неверны. React — 19.2.7 (`apps/web/package.json`), это

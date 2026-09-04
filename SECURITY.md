@@ -1,5 +1,7 @@
 # 🔒 Security Policy — marko1olo/dental-crm
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Vulnerability Disclosure, Threat Modeling & Defensive Architecture**  
 > Maintained by the **Жирняк & Адольф Петушков** Engineering Syndicate  
 > Project Scope: `DENTE Dental Practice CRM & Tomography Core`
@@ -7,16 +9,17 @@
 ---
 
 ## 📑 Table of Contents
-1. [🛡️ Supported Versions & Patch Lifecycle](#️-1-supported-versions--patch-lifecycle)
-2. [🎯 Domain Threat Model & Attack Surfaces](#-2-domain-threat-model--attack-surfaces)
-3. [🚨 Vulnerability Reporting & Disclosure Protocol](#-3-vulnerability-reporting--disclosure-protocol)
-4. [⏱️ Response SLAs & Remediation Timelines](#️-4-response-slas--remediation-timelines)
-5. [💎 Defensive Engineering Architecture](#-5-defensive-engineering-architecture)
-6. [🔍 Dependency Auditing & Supply Chain Safety](#-6-dependency-auditing--supply-chain-safety)
-7. [👥 Syndicate Security Contacts](#-7-syndicate-security-contacts)
+1. [🛡️ Supported Versions & Patch Lifecycle](#1-supported-versions--patch-lifecycle)
+2. [🎯 Domain Threat Model & Attack Surfaces](#2-domain-threat-model--attack-surfaces)
+3. [🚨 Vulnerability Reporting & Disclosure Protocol](#3-vulnerability-reporting--disclosure-protocol)
+4. [⏱️ Response SLAs & Remediation Timelines](#4-response-slas--remediation-timelines)
+5. [💎 Defensive Engineering Architecture](#5-defensive-engineering-architecture)
+6. [🔍 Dependency Auditing & Supply Chain Safety](#6-dependency-auditing--supply-chain-safety)
+7. [👥 Syndicate Security Contacts](#7-syndicate-security-contacts)
 
 ---
 
+<a id="1-supported-versions--patch-lifecycle"></a>
 ## 🛡️ 1. Supported Versions & Patch Lifecycle
 
 We actively maintain and provide critical security updates for the following release lines of **marko1olo/dental-crm**:
@@ -29,6 +32,7 @@ We actively maintain and provide critical security updates for the following rel
 
 ---
 
+<a id="2-domain-threat-model--attack-surfaces"></a>
 ## 🎯 2. Domain Threat Model & Attack Surfaces
 
 Security engineering in marko1olo/dental-crm is guided by the following domain-specific threat vector analyses:
@@ -56,6 +60,7 @@ Security engineering in marko1olo/dental-crm is guided by the following domain-s
 
 ---
 
+<a id="3-vulnerability-reporting--disclosure-protocol"></a>
 ## 🚨 3. Vulnerability Reporting & Disclosure Protocol
 
 If you discover a security flaw or exploit vector in **marko1olo/dental-crm**, do **NOT** post it publicly in open issues or discussions.
@@ -70,6 +75,7 @@ If you discover a security flaw or exploit vector in **marko1olo/dental-crm**, d
 
 ---
 
+<a id="4-response-slas--remediation-timelines"></a>
 ## ⏱️ 4. Response SLAs & Remediation Timelines
 
 * **Initial Triage & Acknowledgment**: Within **24–48 hours**.
@@ -79,6 +85,7 @@ If you discover a security flaw or exploit vector in **marko1olo/dental-crm**, d
 
 ---
 
+<a id="5-defensive-engineering-architecture"></a>
 ## 💎 5. Defensive Engineering Architecture
 
 All code running in this repository must adhere to defensive coding invariants:
@@ -88,6 +95,7 @@ All code running in this repository must adhere to defensive coding invariants:
 
 ---
 
+<a id="6-dependency-auditing--supply-chain-safety"></a>
 ## 🔍 6. Dependency Auditing & Supply Chain Safety
 
 1. Automated daily vulnerability scans on all dependencies via `npm audit` / `cargo audit` / `pip-audit`.
@@ -96,6 +104,7 @@ All code running in this repository must adhere to defensive coding invariants:
 
 ---
 
+<a id="7-syndicate-security-contacts"></a>
 ## 👥 7. Syndicate Security Contacts
 
 Developed, audited, and maintained under the security direction of **Жирняк** & **Адольф Петушков**.

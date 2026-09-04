@@ -1,5 +1,7 @@
 # Document Generation Forms & Legal Documentation Highway
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 Date: 2026-05-18 (Updated 2026-09-04)
 
 > ⚠️ **Нормативная база и системная конституция:**

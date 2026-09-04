@@ -1,5 +1,7 @@
 # Разбор конкурентов и состояние DENTE — 27.07.2026
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 Источник требований: `clean_competitors ... .txt` (2960 строк) — IDENT версии 280–2605,
 iStom (итоги 2025), DentalPRO.
 

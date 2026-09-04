@@ -1,5 +1,7 @@
 # HANDOFF — 2026-07-31 — API EN 500 → RU message (L42)
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Repo:** `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
 **HEAD = origin/main = `32ea7bcce`**  
 **Previous base:** `803858558` (L40–41 stamp)

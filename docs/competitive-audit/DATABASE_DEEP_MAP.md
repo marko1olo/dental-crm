@@ -1,5 +1,7 @@
 # Полная Карта Базы Данных и Сущностей Dental CRM (PostgreSQL / Drizzle ORM)
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Базовые перечисления (pgEnum)
 
 ### 1.1. Клинические и Приёмные статусы

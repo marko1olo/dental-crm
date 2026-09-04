@@ -1,5 +1,7 @@
 # BRIEFING — 2026-09-03T21:02:28Z
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Mission
 Comprehensive clinical audit of frontend and backend Dental CRM per THE_HAMMER_MASTER_PROMPT.md: eliminate academic bloat, procedural simulators, bureaucratic obstacles, and expand autonomy for doctors, assistants, registrars, and nurses across R1-R4.
 

@@ -1,5 +1,7 @@
 # Полный Карта Бэкенд-Маршрутов API Dental CRM (Fastify 4+)
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Пациенты, Лиды и Семейный баланс
 - `GET /api/patients` — Получить список пациентов с фильтрацией (поиск по ФИО, телефону, статусу).
 - `POST /api/patients` — Создать нового пациента.

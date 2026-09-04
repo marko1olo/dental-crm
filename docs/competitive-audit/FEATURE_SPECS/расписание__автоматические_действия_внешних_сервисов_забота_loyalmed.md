@@ -1,5 +1,7 @@
 # Спецификация функциональной фичи: расписание::автоматические_действия_внешних_сервисов_забота_loyalmed
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
 - **feature_key**: `расписание::автоматические_действия_внешних_сервисов_забота_loyalmed`
 - **Наименование**: Внешнее управление записями (Забота 2.0/LoyalMed) с логом источника
@@ -72,3 +74,10 @@
 
 ## 12. Источник доказательства (Evidence Reference)
 Источник: clean_competitors, строки 368–380, 532–541.
+
+---
+
+## 13. Системные ссылки и навигация
+- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

@@ -12,6 +12,7 @@
 
 * 📋 **[Главная конституция и правила](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** — Свод законов разработки, запрет моков, правило 8b.
 * 🗺️ **[Индекс документации](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Центральная карта документации кодовой базы.
+* 📚 **[Портал документации docs/](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** — Центральный шлюз документации и спецификаций проекта.
 * 🏗️ **[Архитектура системы](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Fastify, React 19, WebSocket Broker, сессия и proxy.
 * 🗄️ **[База данных и схема Drizzle](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4, 203 таблицы, RLS политики, миграции.
 * 💳 **[Биллинг и финансы](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — 54-ФЗ, эквайринг, семейный баланс, идемпотентность.

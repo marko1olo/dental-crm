@@ -1,5 +1,7 @@
 # Звіт про розходження API між фронтендом і сервером
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Дата:** 2025-01-28  
 **Метод:** Статичний розбір AST + живий сервер (Fastify route table)  
 **Знайдено:** 15 точок розходження (14 відсутніх маршрутів + 1 метод)

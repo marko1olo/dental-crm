@@ -1,5 +1,7 @@
 # 🎨 Web UI Standards, 3-Tier Architecture & Clinical Ergonomics
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Канонический статус**: Этот документ регламентирует стандарты вёрстки, эргономики, 3-уровневой архитектуры (Tier 1 Hot Path, Tier 2 Warm Context, Tier 3 Cold Backoffice), дизайн-токенов и управления состоянием фронтенда DENTE Dental CRM (`apps/web/src/`).
 > **Связанные документы конституции**:
 > - [AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) — Главная конституция и операционный мандат.

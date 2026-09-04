@@ -1,5 +1,7 @@
 # Speech Transcription Plan
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 Date: 2026-05-16
 
 > ⚠️ **КЛИНИЧЕСКИЙ РЕГЛАМЕНТ И СИСТЕМНЫЕ СВЯЗИ (MANDATE 8e):**

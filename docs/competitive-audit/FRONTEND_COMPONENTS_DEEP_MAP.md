@@ -1,5 +1,7 @@
 # Полная Карта Фронтенд-Компонентов Dental CRM (React 19 / TypeScript)
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Исправлено 2026-08-06.** В заголовке стояло «React 18». Фактически `apps/web/package.json` объявляет
 > `react ^19.2.7` и `react-dom ^19.2.7`, установлен 19.2.7. Расхождение на мажорную версию: агент,
 > поверивший прежнему заголовку, ищет несуществующие API и применяет устаревшие рекомендации.

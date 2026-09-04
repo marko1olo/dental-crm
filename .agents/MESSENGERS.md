@@ -1,5 +1,7 @@
 # MESSENGERS — WhatsApp Business & MAX (VK Max)
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > Status: IMPLEMENTED (schema + routes + UI). DB migration pending.
 > Telegram remains in its own `telegram` settings tab — NOT touched here.
 

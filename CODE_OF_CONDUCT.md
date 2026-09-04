@@ -1,20 +1,23 @@
 # 📜 Code of Conduct — marko1olo/dental-crm
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Engineering Meritocracy, Professional Ethics & Truthfulness Standard**  
 > Maintained by the **Жирняк & Адольф Петушков** Engineering Syndicate
 
 ---
 
 ## 📑 Table of Contents
-1. [🎯 Our Core Pledge](#-1-our-core-pledge)
-2. [🛡️ Engineering Principles & Zero-Slop Standard](#️-2-engineering-principles--zero-slop-standard)
-3. [🤝 Professional Collaboration & Communication](#-3-professional-collaboration--communication)
-4. [⚖️ Responsibilities & Enforcement Escalation](#️-4-responsibilities--enforcement-escalation)
-5. [📬 Reporting Channels & Resolution Protocol](#-5-reporting-channels--resolution-protocol)
-6. [👥 Syndicate Authorship Attribution](#-6-syndicate-authorship-attribution)
+1. [🎯 Our Core Pledge](#1-our-core-pledge)
+2. [🛡️ Engineering Principles & Zero-Slop Standard](#2-engineering-principles--zero-slop-standard)
+3. [🤝 Professional Collaboration & Communication](#3-professional-collaboration--communication)
+4. [⚖️ Responsibilities & Enforcement Escalation](#4-responsibilities--enforcement-escalation)
+5. [📬 Reporting Channels & Resolution Protocol](#5-reporting-channels--resolution-protocol)
+6. [👥 Syndicate Authorship Attribution](#6-syndicate-authorship-attribution)
 
 ---
 
+<a id="1-our-core-pledge"></a>
 ## 🎯 1. Our Core Pledge
 
 We, as maintainers and contributors to **marko1olo/dental-crm** (DENTE Dental Practice CRM & Tomography Core), are committed to fostering an open, technically rigorous, honest, and productive development environment. 
@@ -23,6 +26,7 @@ We welcome participants of all technical backgrounds who are dedicated to engine
 
 ---
 
+<a id="2-engineering-principles--zero-slop-standard"></a>
 ## 🛡️ 2. Engineering Principles & Zero-Slop Standard
 
 Our community prioritizes substance, deep competence, and objective truth over superficial appearance:
@@ -39,6 +43,7 @@ Our community prioritizes substance, deep competence, and objective truth over s
 
 ---
 
+<a id="3-professional-collaboration--communication"></a>
 ## 🤝 3. Professional Collaboration & Communication
 
 To maintain high standards, contributors agree to:
@@ -48,6 +53,7 @@ To maintain high standards, contributors agree to:
 
 ---
 
+<a id="4-responsibilities--enforcement-escalation"></a>
 ## ⚖️ 4. Responsibilities & Enforcement Escalation
 
 The syndicate maintainers (**Жирняк & Адольф Петушков**) are responsible for upholding these community standards and will apply the following escalation model:
@@ -60,12 +66,14 @@ The syndicate maintainers (**Жирняк & Адольф Петушков**) are
 
 ---
 
+<a id="5-reporting-channels--resolution-protocol"></a>
 ## 📬 5. Reporting Channels & Resolution Protocol
 
 If you experience or witness behavior that violates this Code of Conduct, please contact the syndicate maintainers via GitHub Issues or private security channels. Reports are handled confidentially with thorough, unbiased investigation.
 
 ---
 
+<a id="6-syndicate-authorship-attribution"></a>
 ## 👥 6. Syndicate Authorship Attribution
 
 All repositories in this ecosystem operate under the joint architectural stewardship of **Жирняк** & **Адольф Петушков**.

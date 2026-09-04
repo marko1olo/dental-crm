@@ -7,6 +7,8 @@
 
 # DENTAL-CRM — Technical Engine & Complete Specification
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 [![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
 [![Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
@@ -14,7 +16,7 @@
 
 > **Production-grade software engine & complete technical documentation.**
 
-[🎮 Play / Run](#) &nbsp;·&nbsp; [📊 Data Flow Pipeline](#-execution-pipeline--data-flow) &nbsp;·&nbsp; [📜 Original Human Documentation](#-original-human-developer-documentation) &nbsp;·&nbsp; [🇷🇺 Русская Версия](#-полная-русскоязычная-документация)
+[🎮 Play / Run](#) &nbsp;·&nbsp; [📊 Data Flow Pipeline](#execution-pipeline--data-flow) &nbsp;·&nbsp; [📜 Original Human Documentation](#original-human-developer-documentation) &nbsp;·&nbsp; [🇷🇺 Русская Версия](#подробное-русскоязычное-описание-проекта-marko1olodental-crm)
 
 </div>
 
@@ -26,6 +28,7 @@ This repository contains **marko1olo/dental-crm**. The system architecture enfor
 
 ---
 
+<a id="execution-pipeline--data-flow"></a>
 ## 📊 Execution Pipeline & Data Flow
 
 ```mermaid
@@ -360,6 +363,7 @@ CREATE POLICY tenant_isolation_policy ON patients
 FOR ALL USING (organization_id = CURRENT_SETTING('app.current_organization_id', true));
 ```
 
+<a id="original-human-developer-documentation"></a>
 ## 📜 Original Human Developer Documentation
 
 The section below contains **100% of the true, un-truncated, original human developer documentation** created for this repository:
@@ -570,6 +574,7 @@ Implemented prototype surface:
 <details>
 <summary>🇷🇺 <b>Полная Русскоязычная Документация (Нажмите для открытия)</b></summary>
 
+<a id="полная-русскоязычная-документация"></a>
 ### Подробное русскоязычное описание проекта marko1olo/dental-crm
 
 # DENTE / Dental CRM-MIS

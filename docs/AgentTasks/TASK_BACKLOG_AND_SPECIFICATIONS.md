@@ -1,5 +1,7 @@
 # 📋 ИНДУСТРИАЛЬНЫЙ ТАСК-ТРЕКЕР И ТЕХНИЧЕСКИЕ СПЕЦИФИКАЦИИ (ROADMAP)
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Проект:** Dental CRM (DENTE)  
 **Ревизия старта:** `5687d73d9c6bce33105287b06cb551cb1bbedf95`  
 **Стандарт разработки:** `.agents/AGENTS.md` (Mandate 8b: zero-mocks, no-sycophancy, test proof, single-file git add)  

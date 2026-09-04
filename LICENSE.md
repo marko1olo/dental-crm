@@ -1,5 +1,7 @@
 # DENTE Enterprise CRM & Clinic MVP: Proprietary & Source-Available Commercial License
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Copyright (c) 2026 Адольф Петушков. All Rights Reserved.**
 
 ---

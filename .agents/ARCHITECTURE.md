@@ -8,6 +8,7 @@ This document describes the structure, data flows, and architectural conventions
 
 * 📋 **[AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** — Core Identity, Standards, Mojibake Prevention Rules, and General Constraints.
 * 🗺️ **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Central Documentation Index.
+* 📚 **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** — Documentation Knowledge Hub & Specifications Gateway.
 * 🛣️ **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Comprehensive Fastify API Routes Catalog (771 endpoints, 14 domains, Zod validation, RBAC, DB tables).
 * 🗄️ **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — PostgreSQL 18.4 engine, Drizzle ORM schema (203 tables across 18 modules), RLS isolation, and migration pipeline.
 * 💳 **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — 54-FZ fiscal receipts, cashboxes, family shared balances, and payment idempotency.

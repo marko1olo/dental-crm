@@ -1,5 +1,7 @@
 # Руководство пользователя для клиники (CLINICAL USER MANUAL)
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Введение
 Данное руководство описывает работу с модулями планирования имплантации, генерации смет и КЛКТ/DICOM.
 

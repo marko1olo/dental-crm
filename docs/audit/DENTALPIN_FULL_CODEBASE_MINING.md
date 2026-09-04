@@ -1,5 +1,7 @@
 # DENTALPIN OSS: FULL 35-MODULE CODEBASE MINING & CLINICAL BEST PRACTICES MASTER INDEX
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Authoritative Technical Mining Document**  
 > **Date**: 2026-08-27  
 > **Target Project**: DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`)  

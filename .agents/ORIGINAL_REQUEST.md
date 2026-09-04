@@ -1,5 +1,7 @@
 # Original User Request
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Initial Request — 2026-08-31T19:26:34Z
 
 DENTE Autonomous Clinical Copilot Engine: An industrial multi-agent clinical assistant with real-time ReAct streaming thought-traces for doctors, 7-key Groq + 10-key Gemini pool failover, and automated clinical/SanPiN safety verification.

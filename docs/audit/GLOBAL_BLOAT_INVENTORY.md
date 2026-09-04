@@ -1,4 +1,6 @@
 # GLOBAL BLOAT & ACADEMIC OVERENGINEERING INVENTORY
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Project:** Стоматологическая CRM «DENTE» (Clinic MVP)  
 **Date:** 2026-08-27  
 **Authority:** Core Route (§8 Anti-Overthinking & Spec-Driven Doctrine / Запрет на научный фич-крип)  

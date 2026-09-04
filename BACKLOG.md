@@ -195,6 +195,8 @@ launch/cancel, подгрузка вместе с предпросмотром. 
 - **Verify:** `npx tsc -p apps/web --noEmit` clean; live API AuthRequired then staff headers.
 
 # DENTE CRM — demon backlog (Lead Security + Full-Stack)
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 2026-07-31 — communications/variables в редакторе шаблонов
 
 **БЫЛО:** GET `/api/communications/variables` отдавал каталог подстановок (`key`/`label`/`example`/`phi`) из `templateRenderer.communicationTemplateVariables`, но **zero web callers** — администратор набирал `{patient}` по памяти, мед. переменные не были видны до отказа предпросмотра.

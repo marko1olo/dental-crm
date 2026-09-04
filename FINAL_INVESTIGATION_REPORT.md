@@ -1,5 +1,7 @@
 # Фінальний звіт розслідування розходжень API фронтенду та сервера
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Дата:** 2025-01-28  
 **Виконавець:** Агент дослідження контрактів API  
 **Інструменти:** `scripts/check-route-callers.mjs`, `scripts/contract-breach-analysis.mjs`, `apps/api/src/tests/contract-breach-proofs.test.ts`

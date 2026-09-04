@@ -1,5 +1,7 @@
 # ARCHITECT HANDOFF & MISSION BRIEFING
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Date/Time**: 2026-07-31 14:10 (UTC+4)  
 **Repository**: `C:\Clinic_MVP\dental-crm`  
 **Current Branch**: `main`  

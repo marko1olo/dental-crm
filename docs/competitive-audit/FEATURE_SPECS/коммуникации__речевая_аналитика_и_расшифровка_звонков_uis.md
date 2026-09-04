@@ -1,5 +1,7 @@
 # Спецификация функциональной фичи: коммуникации::речевая_аналитика_и_расшифровка_звонков_uis
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
 - **feature_key**: `коммуникации::речевая_аналитика_и_расшифровка_звонков_uis`
 - **Наименование**: Расшифровка звонков с таймкодами и привязкой созданных событий
@@ -72,3 +74,10 @@
 
 ## 12. Источник доказательства (Evidence Reference)
 Источник: clean_competitors, строки 496, 547–556.
+
+---
+
+## 13. Системные ссылки и навигация
+- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

@@ -1,9 +1,11 @@
 # РЕЛЬСЫ МИГРАЦИИ: КЛИНИЧЕСКИЙ КОНТУР, ОДОНТОГРАММА, МКБ-10 И 448 ШАБЛОНОВ 043/У
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Из StomX (full_dump22) в Clinic MVP / DENTE
 
 > **Статус документа:** Производственная спецификация внедрения (Zero-Mock Blueprint)  
-> **Домен:** Клиническая карта (043/у), одонтограмма, реестр дефектов, МКБ-10, визирование начмедом  
-> **Дата:** 2026-09-03  
+> **Домен:** Клиническая карта (043/у), одонтограмма, реестр дефектов, МКБ-10, версионный аудит дневников визитов (Мандат 8e)  
+> **Дата:** 2026-09-04  
 
 ---
 
@@ -66,9 +68,13 @@
   16. Рентгенологические данные (доза мЗв, КЛКТ)
   17. Пародонтальный статус
 
-#### 1.5. Контур контроля качества начмедом и 24-часовой замок
-- **Машина состояний верификации:** `draft` -> `review` -> `approved` / `rejected` (с обязательным комментарием начмеда).
-- **24-часовой замок (`outpatient_edit_time`):** Врач может редактировать карту только в течение 24 часов после приема. По истечении 24 часов запись блокируется для врача и доступна для изменения только директору (`isDirector`).
+#### 1.5. Отличие философии DENTE (Мандат 8e) от бюрократии StomX (Начмед и 24-часовой замок)
+- **Бюрократическая ловушка StomX:** В StomX внедрена жесткая цеховая модель: `draft` -> `review` -> `approved` / `rejected` начмедом с 24-часовым замком намертво, после которого врач не может исправить даже опечатку без поклона директору.
+- **Стандарт DENTE (Мандат 8e: «Софт для врача, а не врач для софта»):**
+  * В частной клинике врач — ключевое лицо, а не бюрократический проситель. Никаких «начмедов», блокирующих приём пациентов.
+  * Врач свободно правит свои записи в 1 клик с **версионным аудитом («Исправленному верить»)**.
+  * История изменений сохраняется прозрачно (`outpatient_diary_versions`), защищая врача при юридических спорах без унизительных согласований.
+  * Любой текст сохраняется на лету (debounced autosave в IndexedDB). Печать доступна в любой момент: не закрыт приём — штамп «ЧЕРНОВИК», закрыт — «ПОДПИСАНО ВРАЧОМ».
 
 ---
 
@@ -82,8 +88,8 @@
    - Отсутствуют 78 клинических дефектов (дефекты пломбы/коронки, каналы, рецессии, клиновидные дефекты, импланты с остеоинтеграцией).
 4. **Отсутствие в БД 448 шаблонов 043/у**:
    - В DENTE зашито около 12 статических протоколов.
-5. **Отсутствие маршрутов верификации начмедом**:
-   - Нет очереди согласования ЭМК (`/api/outpatient/verify`) и 24-часового таймера.
+5. **Отсутствие версионного аудита дневников (Мандат 8e)**:
+   - Требуется прозрачное логирование правок дневника («Исправленному верить») без блокирующих 24-часовых замков.
 
 ---
 
@@ -166,22 +172,22 @@ export const outpatientTemplates = pgTable("outpatient_templates", {
   order: integer("order").notNull().default(0),
 });
 
-// 6. Верификация амбулаторных карт начмедом
-export const outpatientVerifications = pgTable("outpatient_verifications", {
+// 6. Версионный аудит дневников приёмов (Мандат 8e: «Исправленному верить»)
+export const outpatientDiaryVersions = pgTable("outpatient_diary_versions", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
   organizationId: uuid("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
   visitId: uuid("visit_id").notNull().references(() => visits.id, { onDelete: "cascade" }),
   patientId: uuid("patient_id").notNull().references(() => patients.id, { onDelete: "cascade" }),
   doctorId: uuid("doctor_id").notNull().references(() => users.id),
-  cmoUserId: uuid("cmo_user_id").references(() => users.id), // Начмед / Главврач
-  status: varchar("status", { length: 32 }).notNull().default("draft"), // "draft", "review", "approved", "rejected"
-  rejectionReason: text("rejection_reason"),
-  submittedAt: timestamp("submitted_at", { withTimezone: true }),
-  verifiedAt: timestamp("verified_at", { withTimezone: true }),
-  editableDeadline: timestamp("editable_deadline", { withTimezone: true }).notNull(), // 24 часа от даты приема
+  versionNumber: integer("version_number").notNull().default(1),
+  contentJson: jsonb("content_json").notNull(), // Полный слепок протокола 043/у
+  amendmentReason: text("amendment_reason"), // Причина изменения ("Исправленному верить: опечатка в номере зуба")
+  isSigned: boolean("is_signed").notNull().default(false),
+  signedAt: timestamp("signed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({
-  orgStatusIdx: index("idx_outpatient_verif_org_status").on(t.organizationId, t.status),
-  visitIdx: unique("uniq_outpatient_verif_visit").on(t.visitId),
+  orgVisitIdx: index("idx_outpatient_diary_org_visit").on(t.organizationId, t.visitId),
+  visitVerIdx: unique("uniq_outpatient_diary_visit_version").on(t.visitId, t.versionNumber),
 }));
 ```
 
@@ -197,5 +203,5 @@ export const outpatientVerifications = pgTable("outpatient_verifications", {
 6. `GET /api/patients/:patientId/tooth-defects` — Текущее клиническое состояние одонтограммы пациента со всеми активными дефектами.
 7. `POST /api/patients/:patientId/tooth-defects` — Добавление дефекта на зуб/челюсть.
 8. `DELETE /api/patients/:patientId/tooth-defects/:id` — Снятие/излечение дефекта.
-9. `GET /api/outpatient/verify` — Очередь амбулаторных карт на согласовании у начмеда/главврача.
-10. `PUT /api/outpatient/verify/:id/status` — Утверждение (`approved`) или возврат на доработку (`rejected`) карты начмедом с замечанием.
+9. `GET /api/outpatient/visits/:visitId/history` — История версий дневника визита (версионный аудит).
+10. `POST /api/outpatient/visits/:visitId/amend` — Сохранение корректирующей версии дневника врачом («Исправленному верить»).

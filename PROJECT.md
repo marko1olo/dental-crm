@@ -1,5 +1,7 @@
 # Project: DENTE Dental CRM (Round 43 — 3-Tier Clinical UX & Full-System Audit)
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Architecture
 - Module/package boundaries:
   - `@dental/shared`: Canonical clinical models, DTOs, CRDT LWW sync logic, Vector Clocks, 54-FZ kopecks arithmetic (`roundHalfEven`, `splitKopecks`), Statutory Form 043/u & Order 804n/834n EMR engines, SanPiN 3.3686-21 Kraft package verification, Multi-Currency CBR engine, Theme token definitions.

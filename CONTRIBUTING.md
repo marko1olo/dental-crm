@@ -1,5 +1,7 @@
 # 🛠️ Contributing to marko1olo/dental-crm
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 > **Engineering Mandate, Architectural Invariants & Contribution Standard**  
 > Maintained by the **Жирняк & Адольф Петушков** Engineering Syndicate  
 > Technology Foundation: `Fastify / PostgreSQL 18 / React 19 / TypeScript 5.8 / Drizzle ORM / DICOM MPR`
@@ -7,16 +9,17 @@
 ---
 
 ## 📑 Table of Contents
-1. [🏛️ Architectural Overview & Data Flow](#️-1-architectural-overview--data-flow)
-2. [📐 Strict Domain Invariants](#-2-strict-domain-invariants)
-3. [💻 Development Toolchain & Local Environment](#-3-development-toolchain--local-environment)
-4. [🧪 Testing Strategy & Verification Pipeline](#-4-testing-strategy--verification-pipeline)
-5. [💎 Code Standards & Anti-Patterns](#-5-code-standards--anti-patterns)
-6. [🚀 Pull Request Protocol & Review Workflow](#-6-pull-request-protocol--review-workflow)
-7. [👥 Syndicate Governance & Attribution](#-7-syndicate-governance--attribution)
+1. [🏛️ Architectural Overview & Data Flow](#1-architectural-overview--data-flow)
+2. [📐 Strict Domain Invariants](#2-strict-domain-invariants)
+3. [💻 Development Toolchain & Local Environment](#3-development-toolchain--local-environment)
+4. [🧪 Testing Strategy & Verification Pipeline](#4-testing-strategy--verification-pipeline)
+5. [💎 Code Standards & Anti-Patterns](#5-code-standards--anti-patterns)
+6. [🚀 Pull Request Protocol & Review Workflow](#6-pull-request-protocol--review-workflow)
+7. [👥 Syndicate Governance & Attribution](#7-syndicate-governance--attribution)
 
 ---
 
+<a id="1-architectural-overview--data-flow"></a>
 ## 🏛️ 1. Architectural Overview & Data Flow
 
 DENTE Dental Practice CRM & Tomography Core is engineered for maximum performance, deterministic state transitions, and zero computational slop. All contributions must respect existing subsystem boundaries and data flows:
@@ -37,6 +40,7 @@ graph TD
 
 ---
 
+<a id="2-strict-domain-invariants"></a>
 ## 📐 2. Strict Domain Invariants
 
 Every pull request is automatically audited against these immutable project invariants. If any invariant is violated, the PR will be rejected:
@@ -64,6 +68,7 @@ Every pull request is automatically audited against these immutable project inva
 
 ---
 
+<a id="3-development-toolchain--local-environment"></a>
 ## 💻 3. Development Toolchain & Local Environment
 
 ### 3.1 Environment Prerequisites
@@ -89,6 +94,7 @@ npm test || pytest || dotnet test || make test
 
 ---
 
+<a id="4-testing-strategy--verification-pipeline"></a>
 ## 🧪 4. Testing Strategy & Verification Pipeline
 
 Every non-trivial PR must contain empirical verification evidence. We do NOT accept "tested manually and looks fine":
@@ -99,6 +105,7 @@ Every non-trivial PR must contain empirical verification evidence. We do NOT acc
 
 ---
 
+<a id="5-code-standards--anti-patterns"></a>
 ## 💎 5. Code Standards & Anti-Patterns
 
 ### 5.1 Exemplary vs. Forbidden Patterns
@@ -125,6 +132,7 @@ export function calculateBadTotal(services: any[]): number {
 
 ---
 
+<a id="6-pull-request-protocol--review-workflow"></a>
 ## 🚀 6. Pull Request Protocol & Review Workflow
 
 ```mermaid
@@ -144,6 +152,7 @@ graph TD
 
 ---
 
+<a id="7-syndicate-governance--attribution"></a>
 ## 👥 7. Syndicate Governance & Attribution
 
 This project is authored and curated under the oversight of the **Жирняк & Адольф Петушков** Engineering Syndicate. All contributions merged into this repository will be credited to their authors while maintaining syndicate licensing integrity.

@@ -1,5 +1,7 @@
 # Передача работ по аудиту DENTE CRM — 26 июля 2026
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 Документ для продолжения работы в Claude Code. Здесь всё, что сделано, всё, что
 найдено и не исправлено, и всё, что нужно знать, чтобы не начинать заново.
 

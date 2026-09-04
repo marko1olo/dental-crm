@@ -1,5 +1,7 @@
 # Спецификация функциональной фичи: коммуникации::смс_от_uis
 
+
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Канонический ключ и название
 - **feature_key**: `коммуникации::смс_от_uis`
 - **Наименование**: Двусторонние СМС через UIS с режимом «Чат» и суточным лимитом
@@ -73,3 +75,10 @@ UIS SMS API v2 Gateway (`https://api.uiscom.ru/v2/sms/send`).
 
 ## 12. Источник доказательства (Evidence Reference)
 Источник: clean_competitors, строки 15–20, 79.
+
+---
+
+## 13. Системные ссылки и навигация
+- **Главный реестр документации:** [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)
+- **Портал базы знаний:** [docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+- **Реестр паритета фич:** [FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)

@@ -1,5 +1,7 @@
 # HANDOFF — 2026-07-31 — ScannerView + LeadsKanban message-first (L40–41)
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Repo:** `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
 **HEAD = origin/main = `803858558`**  
 **Previous base:** `bca70f14a` (workspace profile stamp)
