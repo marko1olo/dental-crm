@@ -1,9 +1,10 @@
 # 📚 DENTE Dental CRM — Documentation Hub & Knowledge Base
 
 > **Центральный шлюз документации проекта DENTE Dental CRM**  
-> Высшая Конституция: **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**  
-> Системная Конституция: **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**  
-> Главный Индекс и Матрица Навигации: **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**  
+> ⚠️ **Высшая Конституция (Supreme Law):** **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**  
+> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11: 8d — Бремя доказательства, 8e — Автономия врача, 8f–8n — T.A.R.S. честность, Rule != Task, динамический синхрон, «Работает — не трогай» DoD, ЦРМ != симулятор реальности, свежий контекст субагентов, Red Team аудит, соло-врач приоритет №1 и Zero Dead-Ends)  
+> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1:** Соло-врач (1–2 кресла, аренда, ИП/самозанятый) и небольшая частная клиника (1–3 кресла). До больших сетей нам ещё расти и расти! Вся первичная эргономика, 0-клик сценарии, 100% автономия, касса 54-ФЗ без ИНН физлиц, расписание без обязательного ассистента — строго под соло-врача и маленькую клинику. Сети закладываются «на вырост» без тупиков (Zero Dead-Ends), но НИКОГДА не усложняют жизнь соло-врачу.  
+> 🗺️ **Главный Индекс и Матрица Навигации:** **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**  
 
 ---
 

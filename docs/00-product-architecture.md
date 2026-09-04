@@ -111,11 +111,17 @@ Observed positioning:
 Weakness to attack:
 - Russian legal workflow, tax certificate generation, and EGISZ bridge matter locally.
 
-## Scale-Agnostic Spectrum & Target Clinic Personas (From Solo Rental Doctor to Enterprise Network)
+## Scale-Agnostic Spectrum & Target Clinic Personas (Primary Focus on Solo Doctor & Small Clinic)
 
-Система проектируется так, чтобы одинаково эффективно и без трения работать на любом масштабе стоматологической практики РФ:
+> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ ПРОДУКТА: СОЛО-ВРАЧ И НЕБОЛЬШАЯ КЛИНИКА (1–3 КРЕСЛА). ДО БОЛЬШИХ СЕТЕВЫХ КЛИНИК НАМ ЕЩЁ РАСТИ И РАСТИ!**
+> 
+> Наш главный, первичный и самый массовый пользователь прямо сейчас — это **соло-врач на аренде кресла / в собственном небольшом кабинете (ИП, самозанятый)** и **небольшая частная стоматологическая клиника на 1–3 установки** без раздутого штата и сложной иерархии.
+> До масштаба гигантских федеральных сетей на 10+ филиалов нам ещё расти и расти. Поэтому:
+> 1. **Любая фича, любой экран, форма и сценарий обязаны в ПЕРВУЮ очередь быть кристально удобными, быстрыми и понятными соло-врачу и маленькой клинике.** Если соло-врачу неудобно, если ему нужно сделать больше 1–2 кликов, если система требует от него несуществующего ассистента, кладовщика, начмеда или ИНН физлица — это БРАК.
+> 2. **Энтерпрайз-модули (крупные сети, филиалы, сложные комиссии, ЕГИСЗ, МДЛП) закладываются архитектурно по закону отсутствия тупиков (Zero Dead-Ends), но НИКОГДА не навязываются, не маячат перед глазами и не замедляют работу соло-врача.** В интерфейсе не должно быть сетевого шума, корпоративных селекторов и лишних вкладок.
+> 3. **Врач на аренде должен чувствовать абсолютный комфорт:** всё под рукой, 0 бюрократии, мгновенный приём, 1-клик касса 54-ФЗ, 1-клик списание анестетиков, чистая печать 043/у и договоров.
 
-### 1. Solo Rental Doctor / Частный кабинет (1–2 кресла, ИП, самозанятый на аренде)
+### 1. Solo Rental Doctor / Частный кабинет (1–2 кресла, ИП, самозанятый на аренде) — ГЛАВНЫЙ ФОКУС №1
 - **Профиль:** Врач работает один или с приходящим ассистентом. Совмещает роли директора, регистратора, лечащего врача, кассира и медсестры.
 - **Главная ценность:** Скорость, нулевая бюрократия, отсутствие навязанных ролей.
 - **Инварианты работы:**
@@ -124,7 +130,7 @@ Weakness to attack:
   * Списание расходников пакетом нормы в 1 клик («Стандартная анестезия», «Пломбирование») без складских комиссий и накладных.
   * Интерфейс отключает избыточный сетевой шум (виджеты колл-центров, выбор филиалов, тяжелые аудиты).
 
-### 2. Standard Private Dental Clinic (3–5 кресел)
+### 2. Standard Private Dental Clinic (3–5 кресел) — ВТОРОЙ КЛЮЧЕВОЙ СЕГМЕНТ
 - **Профиль:** Классическая клиника. Главврач, 1–2 администратора, 4–8 врачей-стоматологов, старшая медсестра, визиограф/ОПТГ.
 - **Главная ценность:** Четкая передача пациента между регистратурой и кабинетом, надежный финансовый и санитарный учет.
 - **Инварианты работы:**
@@ -133,7 +139,7 @@ Weakness to attack:
   * Семейный кошелек и сплит-платежи в кассе 54-ФЗ (нал + карта + аванс) без копеечных ошибок.
   * Журналы стерилизации СанПиН 3.3686-21 и автоклавирование в 1 клик.
 
-### 3. Large Dental Center / Enterprise Network (10+ кресел, филиальная сеть)
+### 3. Large Dental Center / Enterprise Network (10+ кресел, филиальная сеть) — СТРАТЕГИЧЕСКИЙ РЕЗЕРВ («НА ВЫРОСТ», ДО БОЛЬШИХ СЕТЕЙ НАМ ЕЩЁ РАСТИ)
 - **Профиль:** Масштабная сеть. Филиалы, единый колл-центр, собственная ЗТЛ, 3D КЛКТ, аптечный склад FEFO / МДЛП («Честный Знак»), ЕГИСЗ (РЭМД), корпоративный аудит начмеда (CMO), маркетинг и сквозная аналитика.
 - **Главная ценность:** Надежная филиальная изоляция, прозрачная зарплата врачей (Т-51 Net Revenue), регуляторный комплаенс.
 - **Инварианты работы:**
@@ -290,16 +296,33 @@ AI rule:
 - If software starts making independent diagnostic or treatment decisions, medical-device regulation risk rises sharply.
 - Keep AI as physician assistant until legal review says otherwise.
 
-## Product Positioning
+## Product Positioning & Target Clinic Spectrum
 
 Attack line:
-For a one-chair dental office: "start today, documents do not hurt, doctor dictates instead of typing, data can later move to full SaaS".
+For a one-chair dental office / rental doctor: "Start today in 1 minute, documents do not hurt, doctor dictates instead of typing, 1-click 54-FZ cashier, zero bureaucracy, grow seamlessly to multi-chair clinic".
 
 Not enough:
 - just another calendar;
 - generic CRM;
 - Telegram bot with a database;
 - pretty UI without document/legal workflow.
+
+### Strategic Focus #1: Solo Doctor & Small Clinic (1–3 Chairs)
+> ⚠️ **Core Priority: The solo practitioner on chair rental (ИП / самозанятый) and the compact private clinic (1–3 chairs) are our primary, day-to-day focus. To large enterprise networks we have a long way to grow.**
+> Every screen, shortcut, and default value is optimized for zero-friction solo operation first:
+> 1. Fast appointment creation without requiring an assistant (patient + time in 5 seconds).
+> 2. Cashier 54-FZ without demanding physical person INN (strictly required only for legal entities/sole proprietors).
+> 3. Printing blank contracts with `_______` lines before patient arrives without 403 Forbidden.
+> 4. 1-click clinical package write-offs (anesthesia, composite) without requiring a 3-person warehouse commission.
+> 5. Zero Dead-Ends Law: The software never traps the user or blocks treatment/checkout due to missing secondary back-office data.
+
+### Clinic Scale Spectrum (Zero Dead-Ends Architecture)
+1. **Category A: Solo Doctor / Rental Chair (1–2 chairs, ИП, самозанятый) — Core Priority #1:**
+   Combines doctor, receptionist, cashier, and nurse. Needs 0-click 54-FZ cashier, instant Form 043/u print, 1-click normal presets, zero corporate noise.
+2. **Category B: Standard Private Clinic (3–5 chairs) — Key Mid-Market:**
+   Clear separation between receptionist (billing, queue, calls) and doctor (sterile clinical zone, treatment plan, 043/u). Family wallets, SanPiN sterilization logs.
+3. **Category C: Enterprise Network (10+ chairs, multi-branch) — Strategic Future Runway:**
+   Tenant/branch isolation, background CMO audit without doctor blocking, MDLP Honest Sign, EGISZ REMD. Architecture accommodates growth without database migrations or retraining.
 
 ## Data Model Skeleton
 

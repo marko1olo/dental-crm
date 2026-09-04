@@ -58,6 +58,9 @@ export function SterilizerFleetManager({
 	// Modals
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<SterilizerEquipment | null>(null);
+	const [decommissionTarget, setDecommissionTarget] = useState<SterilizerEquipment | null>(null);
+	const [decommissionReason, setDecommissionReason] = useState("");
+	const [decommissionSubmitting, setDecommissionSubmitting] = useState(false);
 
 	// Load from server with local cache fallback
 	const fetchEquipments = async () => {
@@ -267,16 +270,19 @@ export function SterilizerFleetManager({
 			return;
 		}
 
-		const reason = window.prompt(
-			`Подтверждаете списание аппарата «${item.name}»? Укажите основание (Акт дефектации, износ, замена):`,
-			"Акт технической экспертизы и дефектации № ",
-		);
-		if (reason === null) return;
+		setDecommissionTarget(item);
+		setDecommissionReason(`Акт технической экспертизы и дефектации № ${item.inventoryNumber || ""}`.trim());
+	};
+
+	const handleConfirmDecommission = async () => {
+		if (!decommissionTarget) return;
+		const reason = decommissionReason.trim() || "Акт технической экспертизы и дефектации № б/н";
 
 		try {
+			setDecommissionSubmitting(true);
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
-			const res = await fetch(`/api/registers/sterilizers/equipments/${item.id}`, {
+			const res = await fetch(`/api/registers/sterilizers/equipments/${decommissionTarget.id}`, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
@@ -287,11 +293,11 @@ export function SterilizerFleetManager({
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast(`Аппарат «${item.name}» списан и выведен из эксплуатации`, "success");
+				showToast(`Аппарат «${decommissionTarget.name}» списан и выведен из эксплуатации`, "success");
 				fetchEquipments();
 			} else {
 				const updated = equipments.map((e) =>
-					e.id === item.id
+					e.id === decommissionTarget.id
 						? {
 								...e,
 								status: "decommissioned" as const,
@@ -304,10 +310,13 @@ export function SterilizerFleetManager({
 				setEquipments(updated);
 				localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
 				if (onEquipmentsChange) onEquipmentsChange(updated);
-				showToast(`Аппарат «${item.name}» списан`, "success");
+				showToast(`Аппарат «${decommissionTarget.name}» списан`, "success");
 			}
 		} catch (err) {
 			showToast("Ошибка списания", "error");
+		} finally {
+			setDecommissionSubmitting(false);
+			setDecommissionTarget(null);
 		}
 	};
 
@@ -937,6 +946,94 @@ export function SterilizerFleetManager({
 				onSuccess={fetchEquipments}
 				editingEquipment={editingItem}
 			/>
+
+			{/* Inline confirmation modal for Decommission (eliminates window.prompt) */}
+			{decommissionTarget && (
+				<div
+					style={{
+						position: "fixed",
+						inset: 0,
+						backgroundColor: "rgba(15, 23, 42, 0.6)",
+						backdropFilter: "blur(4px)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						zIndex: 9999,
+						padding: "1rem",
+					}}
+				>
+					<div
+						style={{
+							background: "var(--paper-strong, #ffffff)",
+							borderRadius: "12px",
+							boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+							maxWidth: "480px",
+							width: "100%",
+							padding: "1.25rem",
+							display: "flex",
+							flexDirection: "column",
+							gap: "1rem",
+							border: "1px solid var(--line, #e2e8f0)",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#dc2626" }}>
+							<Archive size={20} />
+							<h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+								Списание аппарата с баланса
+							</h3>
+						</div>
+
+						<p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted, #64748b)", lineHeight: 1.4 }}>
+							Подтверждаете списание аппарата <strong>«{decommissionTarget.name}»</strong>? Он будет выведен из эксплуатации и исключен из текущего цикла стерилизации.
+						</p>
+
+						<div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+							<label style={{ fontSize: "0.775rem", fontWeight: 600, color: "var(--ink, #0f172a)" }}>
+								Основание списания (Акт дефектации, износ, замена):
+							</label>
+							<input
+								type="text"
+								value={decommissionReason}
+								onChange={(e) => setDecommissionReason(e.target.value)}
+								placeholder="Акт технической экспертизы и дефектации № "
+								className="sanpin-input"
+								style={{ minHeight: "36px", fontSize: "0.85rem" }}
+								autoFocus
+							/>
+						</div>
+
+						<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.25rem" }}>
+							<button
+								type="button"
+								onClick={() => setDecommissionTarget(null)}
+								disabled={decommissionSubmitting}
+								className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+								style={{ minHeight: "34px", padding: "0.3rem 0.8rem", fontSize: "0.8rem" }}
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								onClick={() => void handleConfirmDecommission()}
+								disabled={decommissionSubmitting}
+								className="sanpin-btn touch-manipulation"
+								style={{
+									minHeight: "34px",
+									padding: "0.3rem 1rem",
+									background: "#dc2626",
+									color: "#ffffff",
+									fontSize: "0.8rem",
+									fontWeight: 700,
+									border: "none",
+									borderRadius: "6px",
+								}}
+							>
+								{decommissionSubmitting ? "Списание..." : "Подтвердить списание"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

@@ -56,7 +56,7 @@ Canonical source is `.agents/AGENTS.md` and `.agents/THE_HAMMER_MASTER_PROMPT.md
 13. **CRM != Reality Simulator & Friction-Killer (Mandate 8k)**: Outpatient CRM reduces friction, not simulates physical reality. No manual 192 perio points, no carpule-by-carpule logging, 1-click standard normal protocols.
 14. **Fresh Subagent Context & Anti-Zombie Doctrine (Mandate 8l)**: Do not reuse subagents after task completion. Spawn fresh subagents with clean context for new tasks.
 15. **Mandatory Red Teaming (Mandate 8m)**: Independent adversarial critic inquisition on all front and back edits. Zero self-approval.
-16. **Scale-Agnostic Adaptability & Zero Dead-Ends (Mandate 8n)**: From solo rental doctor (1 chair, no mandatory assistant, full 54-FZ cashier autonomy, 1-click package write-offs, no 403 on draft contracts) to enterprise network (DB branch isolation, RBAC, background CMO audit, MDLP/EGISZ). System never traps users in dead-ends.
+16. **Scale-Agnostic Adaptability, Zero Dead-Ends & Primary Focus on Solo Doctor / Small Clinic (Mandate 8n)**: Priority #1 is the solo practitioner on chair rental (1 chair) and compact clinic (1–3 chairs). To big enterprise chains we have a long way to grow! Full cashier 54-FZ autonomy without requiring patient INN, no mandatory assistant in schedule, no 403 on blank contracts, 1-click package write-offs. Enterprise modules (DB branch isolation, RBAC, background CMO audit, MDLP/EGISZ) are architected for growth (Zero Dead-Ends) but NEVER complicate or slow down the solo doctor.
 
 
 ## Path-scoped rules

@@ -66,12 +66,15 @@ export function SterilizerEquipmentModal({
 	const [notes, setNotes] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
-	// Selected preset id for highlighting
 	const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+	const [showDecommissionConfirm, setShowDecommissionConfirm] = useState(false);
+	const [decommissionReason, setDecommissionReason] = useState("Акт технической экспертизы и дефектации № ");
 
 	// Initialize form on open / edit change
 	useEffect(() => {
+		setShowDecommissionConfirm(false);
 		if (editingEquipment) {
+			setDecommissionReason(`Акт технической экспертизы и дефектации № ${editingEquipment.inventoryNumber || ""}`.trim());
 			setName(editingEquipment.name);
 			setBrandModel(editingEquipment.brandModel);
 			setSerialNumber(editingEquipment.serialNumber);
@@ -293,10 +296,9 @@ export function SterilizerEquipmentModal({
 	};
 
 	// Quick action: Decommission
-	const handleQuickDecommission = async () => {
+	const handleQuickDecommission = async (customReason?: string) => {
 		if (!editingEquipment) return;
-		const reason = window.prompt("Укажите основание списания / вывода из эксплуатации (Акт тех. состояния, износ, замена):", "Акт технической экспертизы и дефектации № ");
-		if (reason === null) return;
+		const reason = customReason?.trim() || decommissionReason.trim() || "Акт технической экспертизы и дефектации № б/н";
 
 		try {
 			setSubmitting(true);
@@ -312,7 +314,7 @@ export function SterilizerEquipmentModal({
 				body: JSON.stringify({ action: "decommission", decommissionReason: reason }),
 			});
 			if (res.ok) {
-				showToast(`Аппарат списан и выведен из реестра действующих стерилизаторов`, "success");
+				showToast("Аппарат списан и выведен из реестра действующих стерилизаторов", "success");
 				if (onSuccess) onSuccess();
 				onClose();
 			} else {
@@ -322,6 +324,7 @@ export function SterilizerEquipmentModal({
 			showToast("Сетевая ошибка", "error");
 		} finally {
 			setSubmitting(false);
+			setShowDecommissionConfirm(false);
 		}
 	};
 
@@ -702,15 +705,49 @@ export function SterilizerEquipmentModal({
 								)}
 
 								{status !== "decommissioned" && (
-									<button
-										type="button"
-										onClick={handleQuickDecommission}
-										disabled={submitting}
-										className="sanpin-btn sanpin-btn-secondary touch-manipulation"
-										style={{ minHeight: "36px", padding: "0.3rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "#dc2626" }}
-									>
-										<Archive size={14} /> Списать с баланса клиники
-									</button>
+									showDecommissionConfirm ? (
+										<div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", padding: "0.5rem", background: "rgba(220, 38, 38, 0.06)", borderRadius: "6px", border: "1px solid rgba(220, 38, 38, 0.25)", width: "100%" }}>
+											<label style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--ink, #0f172a)" }}>Основание списания (дефектация, износ, замена):</label>
+											<input
+												type="text"
+												value={decommissionReason}
+												onChange={(e) => setDecommissionReason(e.target.value)}
+												placeholder="Акт технической экспертизы и дефектации № "
+												className="sanpin-input"
+												style={{ minHeight: "32px", fontSize: "0.78rem" }}
+											/>
+											<div style={{ display: "flex", gap: "0.4rem", marginTop: "0.2rem" }}>
+												<button
+													type="button"
+													onClick={() => void handleQuickDecommission(decommissionReason)}
+													disabled={submitting}
+													className="sanpin-btn touch-manipulation"
+													style={{ minHeight: "30px", padding: "0.2rem 0.6rem", background: "#dc2626", color: "#fff", fontSize: "0.75rem", fontWeight: 700, border: "none", borderRadius: "4px" }}
+												>
+													Подтвердить списание
+												</button>
+												<button
+													type="button"
+													onClick={() => setShowDecommissionConfirm(false)}
+													disabled={submitting}
+													className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+													style={{ minHeight: "30px", padding: "0.2rem 0.6rem", fontSize: "0.75rem" }}
+												>
+													Отмена
+												</button>
+											</div>
+										</div>
+									) : (
+										<button
+											type="button"
+											onClick={() => setShowDecommissionConfirm(true)}
+											disabled={submitting}
+											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+											style={{ minHeight: "36px", padding: "0.3rem 0.75rem", fontSize: "0.8rem", fontWeight: 600, color: "#dc2626" }}
+										>
+											<Archive size={14} /> Списать с баланса клиники
+										</button>
+									)
 								)}
 
 								{status === "decommissioned" && (
