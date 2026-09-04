@@ -5,6 +5,7 @@
  */
 
 export * from "./DicomViewerModal";
+export * from "./ImagingModal";
 export * from "./DicomViewport";
 export * from "./MedicalPhotoViewer";
 export * from "./PhotoProtocolDropzone";

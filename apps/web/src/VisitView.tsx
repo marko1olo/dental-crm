@@ -1688,7 +1688,13 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 
 				<SpeechChunksInspector />
 
-				<VisiographAnalyzer />
+				<VisiographAnalyzer
+					onInsertToProtocol={(protocolText) => {
+						if (typeof appendToTranscript === "function") {
+							appendToTranscript(`\n\n${protocolText}`);
+						}
+					}}
+				/>
 
 				<section className="tooth-map" aria-label="Зубная карта">
 					{/*

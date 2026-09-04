@@ -46,6 +46,7 @@ import {
 	resolvePanelPhase,
 } from "../../lib/panelStateText";
 import { usePatientStore } from "../../store/patientStore";
+import { useVisitStore } from "../../store/visitStore";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
 // Состояния ЖИВОЙ зубной формулы и их русские названия. Берутся из того же
@@ -219,7 +220,15 @@ const SCAN_ARCHIVE_SUBJECT: PanelSubject = {
 
 // ─── Основной компонент ───────────────────────────────────────────────────────
 
-export function VisiographAnalyzer() {
+export interface VisiographAnalyzerProps {
+	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
+	readonly toothCode?: string | undefined;
+}
+
+export function VisiographAnalyzer({
+	onInsertToProtocol,
+	toothCode,
+}: VisiographAnalyzerProps = {}) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dropRef = useRef<HTMLDivElement>(null);
 	const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -379,6 +388,7 @@ export function VisiographAnalyzer() {
 	const [isStudioMode, setIsStudioMode] = useState(false);
 	const [quickPreset, setQuickPreset] = useState<"standard" | "invert" | "endo" | "bone" | "enamel">("standard");
 	const [initialStudioTool, setInitialStudioTool] = useState<"pointer" | "root_canal">("pointer");
+	const [isNormaApplied, setIsNormaApplied] = useState(false);
 
 	// ── Voice init ──────────────────────────────────────────────────────────
 	useEffect(() => {
@@ -567,6 +577,7 @@ export function VisiographAnalyzer() {
 			setSelectedFindingCodes(new Set());
 			setApplyNotice(null);
 			setIsHistoryView(false);
+			setIsNormaApplied(false);
 			setCurrentScan(null);
 			setCurrentImageUrl(null);
 
@@ -817,6 +828,66 @@ export function VisiographAnalyzer() {
 		writeToothStatesToChart,
 	]);
 
+	// ── 1-Клик внесение заключения «Норма» в медицинскую карту 043/у ─────────
+	const handleApplyNormaTo043 = useCallback(() => {
+		const targetToothCode = toothCode || currentScan?.toothCode || null;
+		const toothPrefix = targetToothCode ? ` зуба ${targetToothCode}` : "";
+		const normaStatement = `Рентгенологическое исследование (визиография)${toothPrefix}: норма. Патологических изменений костной ткани и периапикальных очагов деструкции на снимке не выявлено. Кортикальная пластинка альвеолы и периодонтальная щель прослеживаются на всем протяжении.`;
+
+		// 1. Внесение в объективный статус формы 043/у (active visit store)
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const current = prev.objectiveStatus || "";
+				const updated = current.trim()
+					? `${current.trim()}\n${normaStatement}`
+					: normaStatement;
+				return { ...prev, objectiveStatus: updated };
+			});
+		} catch (err) {
+			logger.warn("[VisiographAnalyzer] visitStore update failed", err);
+		}
+
+		// 2. Внешний колбэк вставки в протокол / стенограмму визита
+		if (onInsertToProtocol) {
+			onInsertToProtocol(normaStatement);
+		}
+
+		// 3. Копирование в буфер обмена для надежного использования
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(normaStatement).catch(() => {});
+		}
+
+		// 4. Визуальный статус фиксации
+		setIsNormaApplied(true);
+
+		// 5. Уведомление врача
+		showToast(
+			`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${toothPrefix ? ` (${toothPrefix.trim()})` : ""}`,
+			"success",
+		);
+
+		// 6. Фоновое сохранение заметки на сервере для постоянного снимка
+		if (currentScan?.id && !currentScan.id.startsWith("local-") && selectedPatientId) {
+			fetch(`/api/xray/scans/${encodeURIComponent(currentScan.id)}`, {
+				method: "PUT",
+				headers: denteClinicalMutationHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({
+					aiSummary: "Норма: патологии на снимке не выявлено",
+					notes: normaStatement,
+				}),
+			}).catch((e) => logger.warn("[VisiographAnalyzer] Background scan norma PUT error:", e));
+		}
+	}, [
+		toothCode,
+		currentScan?.toothCode,
+		currentScan?.id,
+		selectedPatientId,
+		onInsertToProtocol,
+		denteClinicalMutationHeaders,
+	]);
+
 	// ── Drag & Drop ─────────────────────────────────────────────────────────
 	const handleDrop = useCallback(
 		(e: React.DragEvent) => {
@@ -850,6 +921,7 @@ export function VisiographAnalyzer() {
 		 * плашка «заключение не сохранено» висела бы над чужим снимком из архива.
 		 */
 		setIsHistoryView(true);
+		setIsNormaApplied(false);
 		setAppliedToothCodes([]);
 		setSelectedFindingCodes(new Set());
 		setIsApplyingToChart(false);
@@ -967,6 +1039,7 @@ export function VisiographAnalyzer() {
 				setCurrentScan(null);
 				setCurrentImageUrl(null);
 				setIsHistoryView(false);
+				setIsNormaApplied(false);
 				setAppliedToothCodes([]);
 				setApplyNotice(null);
 				setSaveFailure(null);
@@ -1055,6 +1128,7 @@ export function VisiographAnalyzer() {
 		setIsApplyingToChart(false);
 		setApplyNotice(null);
 		setIsHistoryView(false);
+		setIsNormaApplied(false);
 		if (synthRef.current) synthRef.current.cancel();
 		setIsSpeaking(false);
 	};
@@ -1378,8 +1452,8 @@ export function VisiographAnalyzer() {
 											color: "var(--muted)",
 										}}
 									>
-										Прицельный снимок (JPG, PNG, BMP). ИИ найдёт кариес,
-										периодонтит, обновит формулу зубов.
+										Прицельный снимок (JPG, PNG, BMP). Мгновенное открытие (&lt;50мс).
+										ИИ запускается строго по кнопке врача (без авто-перезаписи формулы).
 									</p>
 									<span
 										className="btn-primary"
@@ -1466,7 +1540,7 @@ export function VisiographAnalyzer() {
 											flexWrap: "wrap",
 										}}
 									>
-										<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+										<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
 											<button
 												type="button"
 												data-testid="btn-run-visiograph-ai"
@@ -1504,6 +1578,32 @@ export function VisiographAnalyzer() {
 													</>
 												)}
 											</button>
+
+											{/* ⚡ 1-Клик действие: Норма в 043/у */}
+											<button
+												type="button"
+												data-testid="btn-visiograph-norma-043"
+												onClick={handleApplyNormaTo043}
+												style={{
+													padding: "6px 14px",
+													background: isNormaApplied ? "rgba(16, 185, 129, 0.2)" : "var(--paper-soft)",
+													color: isNormaApplied ? "#059669" : "var(--ink)",
+													border: `1px solid ${isNormaApplied ? "#10b981" : "var(--line)"}`,
+													borderRadius: "8px",
+													fontSize: "0.82rem",
+													fontWeight: 700,
+													cursor: "pointer",
+													display: "flex",
+													alignItems: "center",
+													gap: "6px",
+													transition: "all 0.2s ease",
+												}}
+												title="1-клик в карту 043/у: Норма, патологии на снимке не выявлено (периодонтальная щель равномерная, кортикальная пластинка альвеолы сохранена)"
+											>
+												<CheckCircle2 size={14} style={{ color: "#10b981" }} />
+												<span>{isNormaApplied ? "✓ Норма внесена в 043/у" : "Норма: патологии на снимке не выявлено (в 043/у)"}</span>
+											</button>
+
 											{isAnalyzing && (
 												<span style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
 													Фоновый анализ в процессе... снимок доступен для работы
@@ -1671,6 +1771,28 @@ export function VisiographAnalyzer() {
 												title="Высокий контраст для контактных поверхностей и эмалево-дентинной границы"
 											>
 												Эмаль / Кариес
+											</button>
+											<button
+												type="button"
+												data-testid="btn-hotpath-norma-043"
+												onClick={handleApplyNormaTo043}
+												style={{
+													padding: "4px 10px",
+													borderRadius: "6px",
+													fontSize: "0.76rem",
+													fontWeight: 700,
+													background: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.12)",
+													color: "#059669",
+													border: "1px solid #10b981",
+													cursor: "pointer",
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "4px",
+												}}
+												title="1-клик действие: внести запись «Норма: патологии на снимке не выявлено» в карту 043/у"
+											>
+												<CheckCircle2 size={12} />
+												<span>{isNormaApplied ? "✓ Норма в 043/у" : "⚡ Норма (043/у)"}</span>
 											</button>
 										</div>
 

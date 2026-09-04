@@ -430,7 +430,7 @@ export function VisitDiagnosticsTab(props?: {
 				</div>
 			) : null}
 
-			<VisiographAnalyzer />
+			<VisiographAnalyzer onInsertToProtocol={props?.onInsertToProtocol} />
 
 			{/*
 				Наряды в лабораторию читаются по пациенту приёма. Без пациента панель

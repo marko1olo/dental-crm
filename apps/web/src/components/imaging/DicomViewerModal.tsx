@@ -5,6 +5,7 @@
 
 import {
 	Activity,
+	CheckCircle2,
 	Contrast,
 	Eye,
 	Layers,
@@ -19,6 +20,8 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { useVisitStore } from "../../store/visitStore.js";
+import { showToast } from "../GlobalToast.js";
 import { DicomViewport } from "./DicomViewport.js";
 import {
 	DENTAL_RADIOGRAPHY_PRESETS,
@@ -36,6 +39,7 @@ export interface DicomViewerModalProps {
 	readonly toothFdiCode?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly studyDate?: string | undefined;
+	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
 }
 
 export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
@@ -46,13 +50,46 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	toothFdiCode,
 	patientName,
 	studyDate,
+	onInsertToProtocol,
 }) => {
 	const [viewportState, setViewportState] = useState<DicomViewportState>(
 		DEFAULT_DICOM_VIEWPORT_STATE,
 	);
 	const [measurements, setMeasurements] = useState<CalibratedRulerMeasurement[]>([]);
+	const [isNormaApplied, setIsNormaApplied] = useState(false);
 
 	if (!isOpen) return null;
+
+	const handleInsertNormaTo043 = () => {
+		const targetTooth = toothFdiCode ? ` зуба ${toothFdiCode}` : "";
+		const normaStatement = `Рентгенологическое исследование (RVG/DICOM)${targetTooth}: норма. Патологических изменений костной ткани и периапикальных очагов деструкции на снимке не выявлено. Кортикальная пластинка альвеолы и периодонтальная щель прослеживаются на всем протяжении.`;
+
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const current = prev.objectiveStatus || "";
+				const updated = current.trim()
+					? `${current.trim()}\n${normaStatement}`
+					: normaStatement;
+				return { ...prev, objectiveStatus: updated };
+			});
+		} catch {
+			// Outside visit context
+		}
+
+		if (onInsertToProtocol) {
+			onInsertToProtocol(normaStatement);
+		}
+
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(normaStatement).catch(() => {});
+		}
+
+		setIsNormaApplied(true);
+		showToast(
+			`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${targetTooth ? ` (${targetTooth.trim()})` : ""}`,
+			"success",
+		);
+	};
 
 	const handleViewportChange = (nextState: Partial<DicomViewportState>) => {
 		setViewportState((prev) => ({ ...prev, ...nextState }));
@@ -153,6 +190,29 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							{p.labelRu}
 						</button>
 					))}
+					<button
+						type="button"
+						data-testid="btn-dicom-norma-043"
+						onClick={handleInsertNormaTo043}
+						style={{
+							padding: "6px 12px",
+							fontSize: "12px",
+							borderRadius: "6px",
+							border: "1px solid #10b981",
+							backgroundColor: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "#064e3b",
+							color: "#a7f3d0",
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "5px",
+							fontWeight: 600,
+							transition: "all 0.2s ease",
+						}}
+						title="1-клик действие: внести запись «Норма: патологии на снимке не выявлено» в карту 043/у"
+					>
+						<CheckCircle2 size={14} />
+						<span>{isNormaApplied ? "✓ Норма в 043/у" : "⚡ Норма (043/у)"}</span>
+					</button>
 				</div>
 
 				<button

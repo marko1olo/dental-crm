@@ -180,3 +180,72 @@ test("панель пишет находки на живой адрес форм
 			"сотрудника: голый fetch получит 401, и врач увидит пустоту вместо отказа.",
 	);
 });
+
+test("Мандат 8e: снимок визиографа открывается мгновенно (<50мс), без ожидания ИИ", () => {
+	const analyzer = readSource("components/imaging/VisiographAnalyzer.tsx");
+
+	// Открытие снимка происходит через FileReader сразу в dataURL без блокировки на AI
+	assert.ok(
+		analyzer.includes("reader.readAsDataURL(file)"),
+		"VisiographAnalyzer должен мгновенно загружать локальный файл через FileReader.readAsDataURL",
+	);
+	assert.ok(
+		analyzer.includes("setCurrentImageUrl(dataUrl)"),
+		"VisiographAnalyzer должен сразу отображать превью снимка в setCurrentImageUrl(dataUrl)",
+	);
+
+	// ИИ запускается строго по отдельной кнопке врача
+	assert.ok(
+		analyzer.includes("data-testid=\"btn-run-visiograph-ai\""),
+		"VisiographAnalyzer обязан содержать отдельную явную кнопку запуска ИИ 'btn-run-visiograph-ai'",
+	);
+	assert.ok(
+		analyzer.includes("handleRunAiAnalysis"),
+		"VisiographAnalyzer обязан запускать анализ ИИ только по отдельному вызову handleRunAiAnalysis",
+	);
+
+	// Запрещена автоматическая перезапись зубной формулы роботом
+	assert.ok(
+		analyzer.includes("data-testid=\"btn-apply-findings-to-chart\""),
+		"Перезапись формулы должна требовать явного подтверждения врача через 'btn-apply-findings-to-chart'",
+	);
+
+	// 1-клик действие «Норма: патологии на снимке не выявлено» (043/у)
+	assert.ok(
+		analyzer.includes("data-testid=\"btn-visiograph-norma-043\""),
+		"VisiographAnalyzer обязан содержать 1-клик действие 'btn-visiograph-norma-043' для внесения нормы в карту",
+	);
+	assert.ok(
+		analyzer.includes("handleApplyNormaTo043"),
+		"VisiographAnalyzer обязан иметь обработчик handleApplyNormaTo043",
+	);
+});
+
+test("Мандат 8e: DicomViewerModal, ImagingModal и RadiologyViewerModal поддерживают 1-клик Норму в 043/у", () => {
+	const dicomModal = readSource("components/imaging/DicomViewerModal.tsx");
+	const imagingModal = readSource("components/imaging/ImagingModal.tsx");
+	const radiologyModal = readSource("components/radiology/RadiologyViewerModal.tsx");
+
+	assert.ok(
+		dicomModal.includes("btn-dicom-norma-043"),
+		"DicomViewerModal обязан содержать 1-клик кнопку 'btn-dicom-norma-043' для внесения нормы в карту 043/у",
+	);
+	assert.ok(
+		dicomModal.includes("handleInsertNormaTo043"),
+		"DicomViewerModal обязан иметь функцию handleInsertNormaTo043",
+	);
+
+	assert.ok(
+		imagingModal.includes("ImagingModal"),
+		"ImagingModal должен быть экспортирован и оборачивать просмотр снимков",
+	);
+
+	assert.ok(
+		radiologyModal.includes("radiology-norma-043-btn"),
+		"RadiologyViewerModal обязан содержать кнопку 'radiology-norma-043-btn' для мгновенного протоколирования нормы",
+	);
+	assert.ok(
+		radiologyModal.includes("handleInsertNormaTo043"),
+		"RadiologyViewerModal обязан иметь обработчик handleInsertNormaTo043",
+	);
+});

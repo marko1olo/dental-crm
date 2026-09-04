@@ -6,6 +6,7 @@ import {
 	Box,
 	Camera,
 	Check,
+	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
 	Columns,
@@ -65,6 +66,8 @@ import {
 	MedicalRadiologyDropzone,
 	SAMPLE_PATIENT_RVG_URL,
 } from "./MedicalRadiologyDropzone";
+import { showToast } from "../GlobalToast.js";
+import { useVisitStore } from "../../store/visitStore.js";
 
 import {
 	DEFAULT_WW_WL_PRESETS,
@@ -87,6 +90,7 @@ export interface RadiologyViewerModalProps {
 	onSaveStudy?: (updatedStudy: RadiologyStudy) => void;
 	onOpenReferralModal?: (study: RadiologyStudy) => void;
 	onOpenDoseSheetModal?: (study: RadiologyStudy) => void;
+	onInsertToProtocol?: ((text: string) => void) | undefined;
 }
 
 export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
@@ -98,6 +102,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	onSaveStudy,
 	onOpenReferralModal,
 	onOpenDoseSheetModal,
+	onInsertToProtocol,
 }) => {
 	const modalId = useId();
 	const viewportRef = useRef<HTMLDivElement>(null);
@@ -155,6 +160,11 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [isCalipersAccordionOpen, setIsCalipersAccordionOpen] = useState<boolean>(false);
 	const [isNervesAccordionOpen, setIsNervesAccordionOpen] = useState<boolean>(false);
 	const [isFiltersMenuOpen, setIsFiltersMenuOpen] = useState<boolean>(false);
+	const [isNormaApplied, setIsNormaApplied] = useState<boolean>(false);
+
+	useEffect(() => {
+		setIsNormaApplied(false);
+	}, [study?.id]);
 
 	const activeImageUrl = loadedImageUrl !== null ? loadedImageUrl : (study?.imageUrl || "");
 	const isImageLoaded = Boolean(activeImageUrl) && !isDropzoneOpen;
@@ -637,6 +647,40 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const doctorName = study?.doctorName || "Врач-рентгенолог";
 	const modalityLabel = study?.modalityLabel || "3D КЛКТ / ОПТГ";
 
+	const handleInsertNormaTo043 = useCallback(() => {
+		const teethList =
+			study?.teethFdi && study.teethFdi.length > 0
+				? ` (область зубов: ${study.teethFdi.join(", ")})`
+				: "";
+		const normaStatement = `Рентгенологическое исследование (${modalityLabel})${teethList}: норма. Патологических изменений костной ткани, очагов деструкции, остеопороза и склероза не выявлено. Кортикальные пластинки непрерывны, периодонтальная щель прослеживается на всем протяжении.`;
+
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const current = prev.objectiveStatus || "";
+				const updated = current.trim()
+					? `${current.trim()}\n${normaStatement}`
+					: normaStatement;
+				return { ...prev, objectiveStatus: updated };
+			});
+		} catch {
+			// outside visit context
+		}
+
+		if (onInsertToProtocol) {
+			onInsertToProtocol(normaStatement);
+		}
+
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(normaStatement).catch(() => {});
+		}
+
+		setIsNormaApplied(true);
+		showToast(
+			"Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у",
+			"success",
+		);
+	}, [modalityLabel, study?.teethFdi, onInsertToProtocol]);
+
 	const modalContent = (
 		<div
 			id={modalId}
@@ -713,6 +757,27 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 				{/* Right: Action Buttons (>= 44x44px touch targets) */}
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={handleInsertNormaTo043}
+						className={`flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer ${
+							isNormaApplied
+								? "bg-emerald-600/20 border border-emerald-500 text-emerald-400"
+								: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-emerald-500 text-[var(--ink,#cbd5e1)] hover:text-emerald-400"
+						}`}
+						title="Внести заключение «Норма: патологии на снимке не выявлено» в дневник 043/у"
+						data-testid="radiology-norma-043-btn"
+					>
+						{isNormaApplied ? (
+							<CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+						) : (
+							<Check className="w-4 h-4 text-emerald-400 shrink-0" />
+						)}
+						<span className="hidden sm:inline">
+							{isNormaApplied ? "Норма внесена" : "⚡ Норма (043/у)"}
+						</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={() => setIsHudVisible((prev) => !prev)}
