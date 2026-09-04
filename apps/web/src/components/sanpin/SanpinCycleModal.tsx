@@ -197,6 +197,26 @@ export function SanpinCycleModal({
 		setPackagingType(preset.packaging);
 	};
 
+	const handleApplyTypicalCycle = () => {
+		const targetEq = clinicEquipments[0];
+		if (targetEq) {
+			handleEquipmentSelect(targetEq);
+		} else {
+			handlePresetSelect(APPARATUS_PRESETS[0]!);
+		}
+		setTemperatureCelsius(134);
+		setPressureBar(2.15);
+		setDurationMin(5);
+		setIndicatorType("class5_integrating");
+		setPassedIndicator(true);
+		setPackagingType("kraft_heat_sealed");
+		setItemsDescription("Базовый стоматологический набор смены (лотки, зеркала, зонды, пинцеты, боры)");
+		setNurseVerified(true);
+		setNurseName("Медсестра ЦСО");
+		setNotes("СанПиН 3.3686-21. Все 5 контрольных точек камеры изменили цвет на эталон (Норма)");
+		showToast("⚡ Установлен типовой цикл автоклава (134°C, 2.15 бар, 5 мин)", "success");
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		try {
@@ -349,6 +369,55 @@ export function SanpinCycleModal({
 
 				<form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: "1 1 auto", minHeight: 0, overflow: "hidden" }}>
 					<div className="sanpin-modal-body" style={{ padding: "1.5rem", gap: "1.25rem", overflowY: "auto", flex: "1 1 auto", minHeight: 0 }}>
+						{/* 1-Click Typical Cycle Banner */}
+						<div
+							style={{
+								padding: "0.85rem 1rem",
+								borderRadius: "0.6rem",
+								background: "linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(13, 148, 136, 0.06) 100%)",
+								border: "1.5px solid var(--primary, #0284c7)",
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								gap: "0.75rem",
+								flexWrap: "wrap",
+							}}
+						>
+							<div>
+								<div style={{ fontWeight: 800, fontSize: "0.92rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+									<Sparkles size={16} color="var(--primary, #0284c7)" />
+									Типовой регламент автоклава по СанПиН 3.3686-21
+								</div>
+								<div style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.15rem" }}>
+									134°C, 2.15 бар, 5 мин, хим. индикатор 5 кл. (Медтест), крафт-пакеты термосварные
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={handleApplyTypicalCycle}
+								className="sanpin-btn touch-manipulation"
+								style={{
+									minHeight: "44px",
+									padding: "0.5rem 1rem",
+									fontSize: "0.85rem",
+									fontWeight: 700,
+									cursor: "pointer",
+									borderRadius: "6px",
+									background: "var(--primary, #0284c7)",
+									color: "#ffffff",
+									border: "none",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "0.35rem",
+								}}
+								data-testid="modal-quick-default-cycle-btn"
+								title="Заполнить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) в 1 клик"
+							>
+								<Sparkles size={15} />
+								<span>⚡ Применить типовой цикл (134°C, 2.1 бар, 5 мин)</span>
+							</button>
+						</div>
+
 						{/* Quick Apparatus Presets */}
 						<div>
 							<div style={{ fontSize: "0.85rem", fontWeight: 600, marginBottom: "0.5rem", color: "var(--ink)" }}>
