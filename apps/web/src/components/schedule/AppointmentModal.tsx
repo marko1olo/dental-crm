@@ -115,6 +115,25 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
+	const staff = dashboard?.clinicSettings?.staff ?? [];
+	const doctors = useMemo(
+		() => staff.filter((m) => m.active && (m.role === "doctor" || m.role === "owner")),
+		[staff],
+	);
+	const assistants = useMemo(
+		() => staff.filter((m) => m.active && m.role === "assistant"),
+		[staff],
+	);
+	const chairs = useMemo(
+		() => (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active),
+		[dashboard?.clinicSettings?.chairs],
+	);
+	const isSoloDoctor = dashboard?.clinicSettings?.profile?.mode === "solo_doctor";
+	const activePatients = useMemo(
+		() => (dashboard?.patients ?? []).filter((p) => p.status === "active"),
+		[dashboard?.patients],
+	);
+
 	const [patientId, setPatientId] = useState("");
 	const [doctorUserId, setDoctorUserId] = useState("");
 	const [assistantUserId, setAssistantUserId] = useState<string | null>(null);
@@ -130,10 +149,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 	useEffect(() => {
 		if (!appointment || !isOpen) return;
+		const defaultDoc = appointment.doctorUserId || doctors[0]?.id || "";
+		const defaultChair = appointment.chairId || chairs[0]?.id || "";
 		setPatientId(appointment.patientId ?? "");
-		setDoctorUserId(appointment.doctorUserId ?? "");
+		setDoctorUserId(defaultDoc);
 		setAssistantUserId(appointment.assistantUserId ?? null);
-		setChairId(appointment.chairId ?? "");
+		setChairId(defaultChair);
 		setStartsAtLocal(toDateTimeLocalValue(appointment.startsAt, timezone));
 		setEndsAtLocal(toDateTimeLocalValue(appointment.endsAt, timezone));
 		setStatus(appointment.status);
@@ -141,7 +162,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setComment(appointment.comment ?? "");
 		setError(null);
 		setIsSaving(false);
-	}, [appointment, isOpen, toDateTimeLocalValue, timezone]);
+	}, [appointment, isOpen, toDateTimeLocalValue, timezone, doctors, chairs]);
 
 	// Track active lab orders for the patient to align appointment slots with due dates
 	const [activeLabOrders, setActiveLabOrders] = useState<any[]>([]);
@@ -178,25 +199,6 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			cancelled = true;
 		};
 	}, [patientId, isOpen]);
-
-	const staff = dashboard?.clinicSettings?.staff ?? [];
-	const doctors = useMemo(
-		() => staff.filter((m) => m.active && (m.role === "doctor" || m.role === "owner")),
-		[staff],
-	);
-	const assistants = useMemo(
-		() => staff.filter((m) => m.active && m.role === "assistant"),
-		[staff],
-	);
-	const chairs = useMemo(
-		() => (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active),
-		[dashboard?.clinicSettings?.chairs],
-	);
-	const isSoloDoctor = dashboard?.clinicSettings?.profile?.mode === "solo_doctor";
-	const activePatients = useMemo(
-		() => (dashboard?.patients ?? []).filter((p) => p.status === "active"),
-		[dashboard?.patients],
-	);
 
 	const hasOpenVisit =
 		dashboard.activeVisit &&
@@ -302,7 +304,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		if (e) e.preventDefault();
 		if (!appointment || isSaving) return;
 
-		if (!patientId || !doctorUserId || !chairId || !startsAtLocal || !endsAtLocal) {
+		const effectiveDoctorUserId = doctorUserId || doctors[0]?.id || "";
+		const effectiveChairId = chairId || chairs[0]?.id || "";
+
+		if (!patientId || !effectiveDoctorUserId || !effectiveChairId || !startsAtLocal || !endsAtLocal) {
 			setError("Заполните все обязательные поля");
 			return;
 		}
@@ -320,9 +325,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 		const success = await onSave(appointment.id, {
 			patientId,
-			doctorUserId,
+			doctorUserId: effectiveDoctorUserId,
 			assistantUserId: isSoloDoctor ? null : (assistantUserId?.trim() || null),
-			chairId,
+			chairId: effectiveChairId,
 			startsAt: startsAtIso,
 			endsAt: endsAtIso,
 			status,
