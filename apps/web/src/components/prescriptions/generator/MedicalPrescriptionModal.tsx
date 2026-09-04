@@ -5,10 +5,13 @@ import {
 	Printer,
 	Check,
 	Clock,
+	Zap,
 } from "lucide-react";
 import {
 	DENTAL_MEDICATIONS_CATALOG,
+	DENTAL_FAST_PRESCRIPTION_PACKAGES,
 	type DentalMedicationPreset,
+	type DentalFastPrescriptionPackage,
 } from "./prescriptionPresets";
 import {
 	generateForm107Prescription,
@@ -40,13 +43,14 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 	const [selectedIds, setSelectedIds] = useState<readonly string[]>([
 		"nimesil_100",
 		"chlorhexidine_005",
+		"amoxiclav_875_125",
 	]);
 	const [validityDays, setValidityDays] = useState<15 | 60 | 365>(60);
 
 	const prescriptionDoc: Form107PrescriptionDocument = useMemo(() => {
 		return generateForm107Prescription({
 			prescriptionSeriesNumber: "РЕЦ-2026-5169",
-			dateIso: "2026-08-22",
+			dateIso: new Date().toISOString().split("T")[0] || "2026-08-22",
 			validityDays,
 			clinicName,
 			clinicOgrn: "1207700123456",
@@ -106,6 +110,50 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col md:flex-row gap-5 flex-1">
 					{/* Left Column: Medication Selector */}
 					<div className="flex-1 flex flex-col gap-3">
+						{/* 1-Click Fast Clinical Packages (Order 1094n) */}
+						<div className="flex flex-col gap-2 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5">
+							<div className="flex items-center justify-between">
+								<span className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+									<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+									1-Клик клинические пакеты (Приказ 1094н):
+								</span>
+								<span className="text-[10px] text-teal-700 dark:text-teal-300 font-medium">
+									0 кликов на поиск
+								</span>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								{DENTAL_FAST_PRESCRIPTION_PACKAGES.map((pkg) => {
+									const isPkgActive =
+										pkg.drugIds.length === selectedIds.length &&
+										pkg.drugIds.every((id) => selectedIds.includes(id));
+									return (
+										<button
+											key={pkg.id}
+											type="button"
+											onClick={() => setSelectedIds([...pkg.drugIds])}
+											className={"min-h-[44px] w-full p-2.5 rounded-lg border text-left transition-all flex flex-col gap-0.5 cursor-pointer " + (
+												isPkgActive
+													? "bg-teal-500/15 border-teal-600 ring-1 ring-teal-500 text-[var(--ink,#0f172a)] shadow-xs"
+													: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:border-teal-500/60 hover:bg-teal-500/5 text-[var(--muted,#64748b)]"
+											)}
+										>
+											<div className="flex items-center justify-between gap-2">
+												<span className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+													{pkg.label}
+												</span>
+												<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-teal-700 dark:text-teal-300 shrink-0">
+													{pkg.badge || `${pkg.drugIds.length} преп.`}
+												</span>
+											</div>
+											<span className="text-[11px] text-[var(--muted,#64748b)] leading-snug">
+												{pkg.desc}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
 						<div className="flex items-center justify-between">
 							<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 								Препараты ({selectedIds.length}/3 на бланк):

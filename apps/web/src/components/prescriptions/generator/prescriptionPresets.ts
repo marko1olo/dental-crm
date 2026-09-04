@@ -205,6 +205,20 @@ export const DENTAL_MEDICATIONS_CATALOG: readonly DentalMedicationPreset[] = [
 		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки во время еды через каждые 12 часов, курс 7 дней.",
 		validityDays: 60,
 	},
+	{
+		id: "ketorolac_10",
+		tradeNameRu: "Кетанов (Кеторолак 10 мг)",
+		activeSubstanceRu: "Кеторолак",
+		category: "nsaid",
+		categoryLabelRu: "НПВП / Анальгетик (Острая боль)",
+		latinRp: "Rp.: Tab. Ketorolaci 10 mg",
+		formRu: "таблетки, покрытые пленочной оболочкой",
+		dosageRu: "10 мг",
+		quantityLabel: "N. 10 (таблетки)",
+		dispenseLatin: "D.t.d. N 10 in tab.",
+		signaRu: "S. Внутрь по 1 таблетке (10 мг) при острой боли (не более 4 таблеток в сутки, курс до 5 дней).",
+		validityDays: 60,
+	},
 ];
 
 export interface DentalFastPrescriptionPackage {
@@ -212,25 +226,29 @@ export interface DentalFastPrescriptionPackage {
 	readonly label: string;
 	readonly desc: string;
 	readonly drugIds: readonly string[];
+	readonly badge?: string;
 }
 
 export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionPackage[] = [
 	{
-		id: "post_extraction_surgery",
-		label: "«После удаления / хирургии»",
-		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №10 + Супрастин 25 мг",
-		drugIds: ["amoxiclav_875_125", "nimesil_100", "suprastin_25"],
+		id: "post_extraction_implant",
+		label: "⚡ Комплект после удаления / имплантации (Нимесил 100мг + Хлоргексидин 0.05% + Амоксиклав 875/125)",
+		desc: "Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл + Амоксиклав 875/125 мг №14 (хирургический протокол)",
+		drugIds: ["nimesil_100", "chlorhexidine_005", "amoxiclav_875_125"],
+		badge: "Хирургия / Удаление",
 	},
 	{
-		id: "anti_inflammatory",
-		label: "«Противовоспалительный»",
-		desc: "Ибупрофен 400 мг №20 + Хлоргексидин 0.05% водный раствор 100 мл",
-		drugIds: ["ibuprofen_400", "chlorhexidine_005"],
+		id: "endo_periodontitis",
+		label: "⚡ Комплект: Эндодонтия / Периодонтит (Ибупрофен 400мг + Супрастин 25мг)",
+		desc: "Ибупрофен 400 мг №20 + Супрастин 25 мг №20 (противовоспалительный и противоотечный комплекс)",
+		drugIds: ["ibuprofen_400", "suprastin_25"],
+		badge: "Эндодонтия / Периодонтит",
 	},
 	{
-		id: "antiseptic_rinsing",
-		label: "«Антисептический / полоскания»",
-		desc: "Мирамистин 0.01% + Стоматофит",
-		drugIds: ["miramistin_001", "stomatophyt_100"],
+		id: "acute_pain_express",
+		label: "⚡ Экспресс-обезболивание (Кетанов / Кеторолак 10мг при острой боли)",
+		desc: "Кетанов (Кеторолак) 10 мг №10 (быстрое купирование выраженного болевого синдрома)",
+		drugIds: ["ketorolac_10"],
+		badge: "Острая боль",
 	},
 ];

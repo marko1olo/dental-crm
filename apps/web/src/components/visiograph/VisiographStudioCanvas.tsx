@@ -31,11 +31,16 @@ import {
 	Sparkles,
 	Trash2,
 	X,
+	Zap,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	CLINICAL_VISIOGRAPH_FILTERS,
+	type ClinicalVisiographFilterPreset,
+} from "./VisiographWindowPresets";
 import {
 	createDicomSecondaryCaptureFile,
 	exportCanvasToJpeg,
@@ -119,6 +124,9 @@ export function VisiographStudioCanvas({
 		...DEFAULT_VISIOGRAPH_IMAGE_PARAMS,
 	});
 
+	// Active clinical 1-click filter
+	const [activeClinicalFilter, setActiveClinicalFilter] = useState<string | null>(null);
+
 	// Active tool
 	const [activeTool, setActiveTool] = useState<ActiveVisiographTool>(initialTool);
 
@@ -157,7 +165,7 @@ export function VisiographStudioCanvas({
 	const [includeWatermark, setIncludeWatermark] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
 
-	// Load source image
+	// Load source image (<50ms instantaneous open without blocking on AI or calibration)
 	useEffect(() => {
 		const img = new Image();
 		img.crossOrigin = "anonymous";
@@ -166,6 +174,10 @@ export function VisiographStudioCanvas({
 			drawCanvas();
 		};
 		img.src = imageUrl;
+		if (img.complete && img.naturalWidth > 0) {
+			imageRef.current = img;
+			drawCanvas();
+		}
 	}, [imageUrl]);
 
 	// Redraw when adjustments or measurements change
@@ -468,10 +480,27 @@ export function VisiographStudioCanvas({
 	// Reset adjustments
 	const handleResetParams = () => {
 		setParams({ ...DEFAULT_VISIOGRAPH_IMAGE_PARAMS });
+		setActiveClinicalFilter(null);
+	};
+
+	// 1-Click Clinical Filter Application
+	const handleApplyClinicalFilter = (filter: ClinicalVisiographFilterPreset) => {
+		if (activeClinicalFilter === filter.id) {
+			// Toggle off back to default neutral parameters
+			setParams({ ...DEFAULT_VISIOGRAPH_IMAGE_PARAMS });
+			setActiveClinicalFilter(null);
+			return;
+		}
+		setParams({
+			...DEFAULT_VISIOGRAPH_IMAGE_PARAMS,
+			...filter.params,
+		});
+		setActiveClinicalFilter(filter.id);
 	};
 
 	// Apply Preset
 	const handleApplyPreset = (presetName: string) => {
+		setActiveClinicalFilter(null);
 		switch (presetName) {
 			case "endo":
 				setParams({ brightness: -5, contrast: 45, gamma: 0.85, sharpness: 55, invert: false });
@@ -746,58 +775,41 @@ export function VisiographStudioCanvas({
 					</button>
 				</div>
 
-				{/* Presets and Export */}
+				{/* 1-Click Clinical Filters Toolbar */}
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+					{CLINICAL_VISIOGRAPH_FILTERS.map((filter) => {
+						const isActive = activeClinicalFilter === filter.id;
+						return (
+							<button
+								key={filter.id}
+								type="button"
+								onClick={() => handleApplyClinicalFilter(filter)}
+								style={{
+									background: isActive ? "#1f6feb" : "#21262d",
+									color: isActive ? "#ffffff" : "#c9d1d9",
+									border: `1px solid ${isActive ? "#58a6ff" : "#30363d"}`,
+									borderRadius: "6px",
+									padding: "5px 9px",
+									fontSize: "0.78rem",
+									cursor: "pointer",
+									fontWeight: isActive ? 700 : 600,
+									display: "flex",
+									alignItems: "center",
+									gap: "4px",
+									transition: "all 0.15s ease",
+									boxShadow: isActive ? "0 0 8px rgba(31, 111, 235, 0.45)" : "none",
+								}}
+								title={`${filter.label} (${filter.badge}): ${filter.description}`}
+							>
+								<Zap size={13} style={{ color: isActive ? "#ffd600" : "#58a6ff", fill: isActive ? "#ffd600" : "none" }} />
+								<span>{filter.label}</span>
+							</button>
+						);
+					})}
+
 					<button
 						type="button"
-						onClick={() => handleApplyPreset("endo")}
-						style={{
-							background: "#21262d",
-							color: "#34d399",
-							border: "1px solid #30363d",
-							borderRadius: "6px",
-							padding: "5px 8px",
-							fontSize: "0.78rem",
-							cursor: "pointer",
-							fontWeight: 600,
-						}}
-						title="Пресет Эндодонтия: контрастирование апексов и устьев каналов"
-					>
-						Эндо
-					</button>
-					<button
-						type="button"
-						onClick={() => handleApplyPreset("bone")}
-						style={{
-							background: "#21262d",
-							color: "#c9d1d9",
-							border: "1px solid #30363d",
-							borderRadius: "6px",
-							padding: "5px 8px",
-							fontSize: "0.78rem",
-							cursor: "pointer",
-						}}
-					>
-						Кость
-					</button>
-					<button
-						type="button"
-						onClick={() => handleApplyPreset("enamel")}
-						style={{
-							background: "#21262d",
-							color: "#c9d1d9",
-							border: "1px solid #30363d",
-							borderRadius: "6px",
-							padding: "5px 8px",
-							fontSize: "0.78rem",
-							cursor: "pointer",
-						}}
-					>
-						Эмаль
-					</button>
-					<button
-						type="button"
-						onClick={() => handleApplyPreset("invert")}
+						onClick={() => setParams((prev) => ({ ...prev, invert: !prev.invert }))}
 						style={{
 							background: params.invert ? "#238636" : "#21262d",
 							color: "#ffffff",
@@ -808,6 +820,7 @@ export function VisiographStudioCanvas({
 							cursor: "pointer",
 							fontWeight: params.invert ? 600 : 400,
 						}}
+						title="Инверсия негатив / позитив"
 					>
 						Негатив
 					</button>
@@ -1007,7 +1020,10 @@ export function VisiographStudioCanvas({
 							min="-100"
 							max="100"
 							value={params.brightness}
-							onChange={(e) => setParams((p) => ({ ...p, brightness: Number(e.target.value) }))}
+							onChange={(e) => {
+								setParams((p) => ({ ...p, brightness: Number(e.target.value) }));
+								setActiveClinicalFilter(null);
+							}}
 							style={{ width: "100%", accentColor: "#58a6ff" }}
 						/>
 					</div>
@@ -1023,7 +1039,10 @@ export function VisiographStudioCanvas({
 							min="-100"
 							max="100"
 							value={params.contrast}
-							onChange={(e) => setParams((p) => ({ ...p, contrast: Number(e.target.value) }))}
+							onChange={(e) => {
+								setParams((p) => ({ ...p, contrast: Number(e.target.value) }));
+								setActiveClinicalFilter(null);
+							}}
 							style={{ width: "100%", accentColor: "#58a6ff" }}
 						/>
 					</div>
@@ -1040,7 +1059,10 @@ export function VisiographStudioCanvas({
 							max="3.0"
 							step="0.05"
 							value={params.gamma}
-							onChange={(e) => setParams((p) => ({ ...p, gamma: Number(e.target.value) }))}
+							onChange={(e) => {
+								setParams((p) => ({ ...p, gamma: Number(e.target.value) }));
+								setActiveClinicalFilter(null);
+							}}
 							style={{ width: "100%", accentColor: "#58a6ff" }}
 						/>
 					</div>
@@ -1056,7 +1078,10 @@ export function VisiographStudioCanvas({
 							min="0"
 							max="100"
 							value={params.sharpness}
-							onChange={(e) => setParams((p) => ({ ...p, sharpness: Number(e.target.value) }))}
+							onChange={(e) => {
+								setParams((p) => ({ ...p, sharpness: Number(e.target.value) }));
+								setActiveClinicalFilter(null);
+							}}
 							style={{ width: "100%", accentColor: "#58a6ff" }}
 						/>
 					</div>

@@ -1,6 +1,7 @@
 import assert from "node:assert";
 import { describe, test } from "node:test";
 import {
+	CLINICAL_VISIOGRAPH_FILTERS,
 	computeVoiRange,
 	huToGrayscale,
 	VISIOGRAPH_PRESETS_LIST,
@@ -83,6 +84,28 @@ describe("3D Visiograph & DICOM HU Presets Calibration", () => {
 
 		// Intermediate linear step: 0 HU is at quarter of range (500 from -500 out of 2000 range = 25%) -> ~64
 		assert.strictEqual(huToGrayscale(0, ww, wl), 64);
+	});
+
+	test("1-Click Clinical Filters: Bone, Endodontics, Caries are registered with clinical params", () => {
+		assert.strictEqual(CLINICAL_VISIOGRAPH_FILTERS.length, 3);
+
+		const boneFilter = CLINICAL_VISIOGRAPH_FILTERS.find((f) => f.id === "bone_periodont");
+		assert.ok(boneFilter);
+		assert.strictEqual(boneFilter.params.sharpness, 80);
+		assert.strictEqual(boneFilter.params.contrast, 32);
+		assert.ok(boneFilter.label.includes("Кость / Периодонт"));
+
+		const endoFilter = CLINICAL_VISIOGRAPH_FILTERS.find((f) => f.id === "endodontics");
+		assert.ok(endoFilter);
+		assert.strictEqual(endoFilter.params.contrast, 48);
+		assert.strictEqual(endoFilter.params.sharpness, 60);
+		assert.ok(endoFilter.label.includes("Эндодонтия"));
+
+		const cariesFilter = CLINICAL_VISIOGRAPH_FILTERS.find((f) => f.id === "caries_enamel");
+		assert.ok(cariesFilter);
+		assert.strictEqual(cariesFilter.params.gamma, 1.18);
+		assert.strictEqual(cariesFilter.params.brightness, 12);
+		assert.ok(cariesFilter.label.includes("Кариес / Эмаль"));
 	});
 });
 
