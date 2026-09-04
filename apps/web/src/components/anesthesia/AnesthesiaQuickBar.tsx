@@ -102,7 +102,11 @@ export function AnesthesiaQuickBar({
 	});
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [activeToastMessage, setActiveToastMessage] = useState<string | null>(null);
-	const [safetyWarning, setSafetyWarning] = useState<{ title: string; text: string } | null>(null);
+	const [safetyWarning, setSafetyWarning] = useState<{
+		title: string;
+		text: string;
+		carpulesCount?: number;
+	} | null>(null);
 
 	const asaStatus: AsaPhysicalStatus = hasCardiovascularRisk ? "asa_3" : "asa_1";
 
@@ -144,7 +148,7 @@ export function AnesthesiaQuickBar({
 	const selectedDrugInfo = DENTAL_ANESTHETICS[selectedDrugId] ?? DENTAL_ANESTHETICS.articaine_1_200k;
 	const maxSafeCarpules = singleCarpuleResult.maxSafeCarpulesCount;
 
-	const handleApplyCarpules = (carpulesCount: number) => {
+	const handleApplyCarpules = (carpulesCount: number, bypassCheck = false) => {
 		if (disabled) return;
 
 		const effectiveWeight = resolveClinicalDefaultWeightKg(
@@ -170,15 +174,20 @@ export function AnesthesiaQuickBar({
 		});
 
 		// Check critical contraindications
-		if (result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0)) {
+		if (!bypassCheck && (result.contraindicationsTriggered.length > 0 || (result.isOverdose && carpulesCount > 2.0))) {
 			setSafetyWarning({
 				title: "Соматический риск / Превышение МДД",
 				text: result.contraindicationsTriggered[0] || result.warnings[0] || "Обнаружен риск при введении препарата",
+				carpulesCount,
 			});
 			return;
 		}
 
-		onApplyAnesthesia(result.diaryEntryRu, result);
+		const diaryEntry = bypassCheck
+			? `${result.diaryEntryRu} (Введено по врачебному решению)`
+			: result.diaryEntryRu;
+
+		onApplyAnesthesia(diaryEntry, result);
 		setActiveToastMessage(
 			`Зафиксировано: ${selectedDrugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
 		);
@@ -362,10 +371,22 @@ export function AnesthesiaQuickBar({
 							onClick={() => {
 								setSafetyWarning(null);
 								setSelectedDrugId("mepivacaine_plain");
-								handleApplyCarpules(1.0);
+								handleApplyCarpules(1.0, true);
 							}}
 						>
 							Ввести Скандонест 3% (безопасно)
+						</button>
+						<button
+							type="button"
+							className="px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+							onClick={() => {
+								const count = safetyWarning.carpulesCount ?? 1.0;
+								setSafetyWarning(null);
+								handleApplyCarpules(count, true);
+							}}
+							title="Применить клиническое суждение врача и внести препарат в протокол 043/у"
+						>
+							Всё равно внести (врачебное решение)
 						</button>
 						<button
 							type="button"

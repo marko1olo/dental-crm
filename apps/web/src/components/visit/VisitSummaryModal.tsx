@@ -118,6 +118,7 @@ export interface VisitSummaryModalProps {
 	onOpenEgiszExport?: () => void;
 	onApplySynthesizedDiary?: (diary: VisitDiaryEntry043) => void;
 	onScheduleNextVisit?: () => void;
+	onCompleteVisit?: () => void;
 }
 
 function formatPatientFullName(
@@ -151,6 +152,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	onOpenEgiszExport,
 	onApplySynthesizedDiary,
 	onScheduleNextVisit,
+	onCompleteVisit,
 }) => {
 	const appLogic = useAppLogicContext() as any;
 	const [isNextStageModalOpen, setIsNextStageModalOpen] = useState(false);
@@ -830,6 +832,23 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						>
 							<Printer className="w-4 h-4" />
 							Печать Формы 043/у
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								onClose();
+								if (onCompleteVisit) {
+									onCompleteVisit();
+								} else {
+									showToast("Приём завершён: протокол 043/у сохранён, смета передана в кассу", "success", 4000);
+								}
+							}}
+							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer"
+							data-testid="summary-complete-visit-btn"
+							title="Завершить приём и сформировать чек"
+						>
+							<CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+							<span>Завершить приём</span>
 						</button>
 					</div>
 				</div>

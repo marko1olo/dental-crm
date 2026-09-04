@@ -49,7 +49,11 @@ import { logger } from "../../utils/logger";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import { CompletedServicesChecklist } from "./CompletedServicesChecklist";
+import {
+	CompletedServicesChecklist,
+	CLINICAL_SERVICE_BUNDLES,
+	type ClinicalServiceBundle,
+} from "./CompletedServicesChecklist";
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { AppointmentModal } from "../schedule/AppointmentModal";
@@ -1036,6 +1040,24 @@ export function VisitEmkTab() {
 			updateVisitNoteField("treatmentPlan", newPlan);
 			showToast(
 				`Услуга «${service.title}» (${service.basePriceRub.toLocaleString("ru-RU")} ₽) добавлена в протокол и счет`,
+				"success",
+				4000,
+			);
+		},
+		[updateVisitNoteField, visitNoteForm.treatmentPlan],
+	);
+
+	const handleAddBundleToPlan = React.useCallback(
+		(bundle: ClinicalServiceBundle) => {
+			if (!updateVisitNoteField) return;
+			const currPlan = (visitNoteForm.treatmentPlan || "").replace(/\s+$/, "");
+			const bundleLines = bundle.services.map(
+				(s) => `Выполнено: [${s.code804n}] ${s.title} — ${s.priceRub.toLocaleString("ru-RU")} ₽`,
+			);
+			const newPlan = currPlan ? `${currPlan}\n${bundleLines.join("\n")}` : bundleLines.join("\n");
+			updateVisitNoteField("treatmentPlan", newPlan);
+			showToast(
+				`Пакет «${bundle.title}» (${bundle.services.length} усл. на ${bundle.totalPriceRub.toLocaleString("ru-RU")} ₽) добавлен в протокол 043/у и счет`,
 				"success",
 				4000,
 			);
@@ -2558,6 +2580,40 @@ export function VisitEmkTab() {
 														</span>
 													</button>
 												))}
+											</div>
+											{/* Быстрые клинические пакеты Номенклатуры 804н */}
+											<div className="pt-2.5 border-t border-indigo-500/20">
+												<div className="flex items-center justify-between gap-1 mb-1.5">
+													<span className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+														<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+														Стандартные клинические пакеты (1 клик):
+													</span>
+													<span className="text-[10px] text-[var(--muted)]">Номенклатура 804н</span>
+												</div>
+												<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+													{CLINICAL_SERVICE_BUNDLES.map((bundle) => (
+														<button
+															key={bundle.id}
+															type="button"
+															onClick={() => handleAddBundleToPlan(bundle)}
+															className="flex items-center justify-between p-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:border-indigo-500 hover:bg-[var(--paper-strong)] active:scale-98 transition-all cursor-pointer text-left shadow-2xs touch-manipulation group"
+															title={bundle.services.map((s) => `• [${s.code804n}] ${s.title} (${s.priceRub.toLocaleString('ru-RU')} ₽)`).join('\n')}
+															data-testid={`clinical-bundle-btn-${bundle.id}`}
+														>
+															<div className="flex flex-col min-w-0 pr-1">
+																<span className="text-xs font-bold text-[var(--ink)] group-hover:text-indigo-600 dark:group-hover:text-indigo-300 truncate">
+																	{bundle.shortLabel}
+																</span>
+																<span className="text-[10px] text-[var(--muted)] truncate">
+																	{bundle.badge}
+																</span>
+															</div>
+															<span className="text-xs font-black font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 shrink-0">
+																{bundle.totalPriceRub.toLocaleString('ru-RU')} ₽
+															</span>
+														</button>
+													))}
+												</div>
 											</div>
 										</div>
 									</details>

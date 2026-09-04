@@ -1,7 +1,9 @@
 import React from "react";
+import { Zap } from "lucide-react";
 import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
+import { showToast } from "../GlobalToast";
 import {
 	planLineQuantity,
 	planLineTotalRub,
@@ -9,6 +11,75 @@ import {
 	visitOwnedPlanItems,
 } from "./completedServicesPlan";
 import { realVisitFieldId } from "./visitIdentity";
+
+export interface ClinicalServiceBundle {
+	id: string;
+	title: string;
+	shortLabel: string;
+	badge: string;
+	totalPriceRub: number;
+	services: Array<{
+		code804n: string;
+		title: string;
+		priceRub: number;
+	}>;
+}
+
+export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
+	{
+		id: "caries",
+		title: "Лечение кариеса",
+		shortLabel: "⚡ Пакет: Лечение кариеса",
+		badge: "Анестезия + Коффердам + Пломба",
+		totalPriceRub: 7500,
+		services: [
+			{ code804n: "А25.07.001", title: "Местная анестезия (инфильтрационная/проводниковая)", priceRub: 1200 },
+			{ code804n: "А16.07.051", title: "Изоляция рабочего поля (Коффердам/Раббердам)", priceRub: 800 },
+			{ code804n: "А16.07.002.010", title: "Препарирование и медикаментозная обработка кариозной полости", priceRub: 1000 },
+			{ code804n: "А16.07.002.011", title: "Восстановление зуба пломбой светового отверждения (композит)", priceRub: 4000 },
+			{ code804n: "А16.07.002.012", title: "Шлифовка и полировка пломбы", priceRub: 500 },
+		],
+	},
+	{
+		id: "endo_1",
+		title: "Эндодонтия (1-й этап)",
+		shortLabel: "⚡ Пакет: Эндодонтия (1-й этап)",
+		badge: "Анестезия + Коффердам + Экстирпация + Каналы + Временная пломба",
+		totalPriceRub: 8800,
+		services: [
+			{ code804n: "А25.07.001", title: "Местная анестезия", priceRub: 1200 },
+			{ code804n: "А16.07.051", title: "Изоляция рабочего поля (Коффердам)", priceRub: 800 },
+			{ code804n: "А16.07.030.001", title: "Экстирпация пульпы (депульпирование)", priceRub: 2000 },
+			{ code804n: "А16.07.030.002", title: "Механическая и медикаментозная обработка корневых каналов", priceRub: 3300 },
+			{ code804n: "А16.07.030.004", title: "Временная обтурация каналов лечебной пастой / Временная пломба", priceRub: 1500 },
+		],
+	},
+	{
+		id: "hygiene",
+		title: "Профгигиена",
+		shortLabel: "⚡ Пакет: Профгигиена",
+		badge: "УЗ-скейлинг + AirFlow + Полировка + Фторирование",
+		totalPriceRub: 6500,
+		services: [
+			{ code804n: "А16.07.050.001", title: "Ультразвуковое удаление зубных отложений (скейлинг)", priceRub: 2500 },
+			{ code804n: "А16.07.050.002", title: "Удаление пигментированного налета аппаратом Air-Flow", priceRub: 2200 },
+			{ code804n: "А16.07.050.003", title: "Полировка всех зубов профессиональными абразивными пастами", priceRub: 800 },
+			{ code804n: "А11.07.012", title: "Глубокое фторирование эмали (реминерализация)", priceRub: 1000 },
+		],
+	},
+	{
+		id: "surgery_extraction",
+		title: "Удаление зуба",
+		shortLabel: "⚡ Пакет: Удаление зуба",
+		badge: "Анестезия + Удаление + Гемостаз",
+		totalPriceRub: 5500,
+		services: [
+			{ code804n: "А25.07.001", title: "Местная анестезия", priceRub: 1200 },
+			{ code804n: "А16.07.001.001", title: "Удаление постоянного зуба", priceRub: 3500 },
+			{ code804n: "А16.07.001.002", title: "Остановка луночного кровотечения / местный гемостаз", priceRub: 800 },
+		],
+	},
+];
 
 /*
   ОТМЕТКА ВЫПОЛНЕННЫХ УСЛУГ. ЧТО ЗДЕСЬ БЫЛО СЛОМАНО — ВСЁ СРАЗУ.
@@ -207,6 +278,60 @@ export const CompletedServicesChecklist: React.FC = () => {
 		updateVisitNoteField("treatmentPlan", base ? `${base}\n${line}` : line);
 	};
 
+	const handleAddBundle = (bundle: ClinicalServiceBundle) => {
+		if (!updateVisitNoteField) return;
+		const bundleLines = bundle.services.map(
+			(s) => `Выполнено: [${s.code804n}] ${s.title} — ${money(s.priceRub)}`,
+		);
+		const base = (planText ?? "").replace(/\s+$/, "");
+		const updatedPlan = base
+			? `${base}\n${bundleLines.join("\n")}`
+			: bundleLines.join("\n");
+		updateVisitNoteField("treatmentPlan", updatedPlan);
+		showToast(
+			`Пакет «${bundle.title}» (${countLabel(bundle.services.length, "услуга", "услуги", "услуг")} на ${money(bundle.totalPriceRub)}) внесен в карту и счет`,
+			"success",
+			3500,
+		);
+	};
+
+	const renderClinicalBundlesBar = () => (
+		<div className="mb-3 p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/70 dark:border-indigo-800/50">
+			<div className="flex items-center justify-between gap-2 mb-2">
+				<span className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+					<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+					Быстрые клинические пакеты (1 клик):
+				</span>
+				<span className="text-[11px] text-slate-500 dark:text-slate-400">
+					Номенклатура 804н
+				</span>
+			</div>
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+				{CLINICAL_SERVICE_BUNDLES.map((b) => (
+					<button
+						key={b.id}
+						type="button"
+						onClick={() => handleAddBundle(b)}
+						className="flex flex-col items-start p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 transition-all text-left group"
+						title={b.services.map((s) => `• [${s.code804n}] ${s.title} (${money(s.priceRub)})`).join("\n")}
+					>
+						<div className="w-full flex items-center justify-between gap-1">
+							<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+								{b.shortLabel}
+							</span>
+							<span className="text-xs font-bold text-slate-900 dark:text-slate-200 font-mono">
+								{money(b.totalPriceRub)}
+							</span>
+						</div>
+						<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-full mt-0.5">
+							{b.badge}
+						</span>
+					</button>
+				))}
+			</div>
+		</div>
+	);
+
 	/*
 	  Приём не открыт — отмечать некуда: отметка дописывается в поле «План»
 	  ЭТОГО приёма, а без приёма её не примет и сохранение (оно требует
@@ -245,13 +370,13 @@ export const CompletedServicesChecklist: React.FC = () => {
 				<h4 className="m-0 mb-1 text-sm font-semibold text-slate-900 dark:text-white">
 					Отметка выполненного по плану лечения
 				</h4>
-				<p className="m-0 text-xs text-slate-500 dark:text-slate-400">
+				<p className="m-0 mb-3 text-xs text-slate-500 dark:text-slate-400">
 					{visitPatientName
-						? `У пациента ${visitPatientName} нет согласованного плана лечения — отмечать пока нечего.`
-						: "У пациента этого приёма нет согласованного плана лечения — отмечать пока нечего."}{" "}
-					План собирают в карточке пациента, и после этого его услуги появятся
-					здесь списком с ценами.
+						? `У пациента ${visitPatientName} нет предварительного плана лечения.`
+						: "У пациента этого приёма нет предварительного плана лечения."}{" "}
+					Вы можете внести стандартный клинический пакет услуг в 1 клик прямо сейчас:
 				</p>
+				{renderClinicalBundlesBar()}
 			</div>
 		);
 	}
@@ -270,6 +395,7 @@ export const CompletedServicesChecklist: React.FC = () => {
 				Отмеченное дописывается строкой «Выполнено…» в поле «План» этого приёма
 				— там его видно и там его можно поправить руками.
 			</p>
+			{renderClinicalBundlesBar()}
 			<div className="flex flex-col gap-1.5">
 				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 				{(planItems ?? []).map((item: any, index: number) => {

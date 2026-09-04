@@ -1850,6 +1850,10 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				onOpenPrescription={() => setShowPrescriptionModal(true)}
 				onOpenRadiologyReferral={() => setShowRadiologyReferralModal(true)}
 				onOpenEgiszExport={() => setShowEgiszModal(true)}
+				onCompleteVisit={async () => {
+					await doSave(false);
+					setShowSummaryModal(false);
+				}}
 			/>
 
 			{/* ── Prescription 107-1/u Modal ── */}
