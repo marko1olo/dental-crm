@@ -314,15 +314,13 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			return;
 		}
 
-		if (selectedTeeth.length === 0) {
-			showToast("Выберите хотя бы один зуб в зубной формуле", "warning");
-			return;
-		}
-
 		setSubmitting(true);
 		try {
 			const isBridge = restorationType === "bridge" && selectedTeeth.length > 1;
-			const toothFdiStr = selectedTeeth.join(", ");
+			const toothFdiStr =
+				selectedTeeth.length > 0
+					? selectedTeeth.join(", ")
+					: "Общий наряд / Челюсть целиком";
 			const bridgeNote = isBridge
 				? `Мостовидный протез (${selectedTeeth.length} ед.: ${selectedTeeth.join("-")})`
 				: null;

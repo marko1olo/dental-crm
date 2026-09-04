@@ -283,10 +283,10 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 
 	// Добавление позиций в гарантийный паспорт
 	const handleAddItem = () => {
-		if (selectedTeeth.length === 0) return;
-
 		const preset = getWarrantyPreset(activeCategory);
-		const newItems: WarrantyItem[] = selectedTeeth.map((tooth, idx) => ({
+		const targetTeeth =
+			selectedTeeth.length > 0 ? selectedTeeth : ["Общая конструкция / Челюсть"];
+		const newItems: WarrantyItem[] = targetTeeth.map((tooth, idx) => ({
 			id: `item_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
 			toothNumber: tooth,
 			category: activeCategory,
@@ -762,10 +762,13 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 										type="button"
 										className="warranty-btn-primary"
 										onClick={handleAddItem}
-										disabled={selectedTeeth.length === 0}
 									>
 										<Plus size={16} />
-										Добавить в гарантийный паспорт ({selectedTeeth.length} поз.)
+										Добавить в гарантийный паспорт (
+										{selectedTeeth.length > 0
+											? `${selectedTeeth.length} поз.`
+											: "общая конструкция"}
+										)
 									</button>
 								</div>
 

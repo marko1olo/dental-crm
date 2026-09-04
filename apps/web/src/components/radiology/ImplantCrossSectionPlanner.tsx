@@ -730,12 +730,20 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
             <button
               type="button"
               onClick={handleAddToTreatmentPlan}
-              disabled={audit.nerveSafety.isDangerous}
               className="action-btn-primary flex-1"
               data-testid="add-implant-to-plan-btn"
+              title={
+                audit.nerveSafety.isDangerous
+                  ? "Внимание: клиренс до нижнечелюстного канала < 1.0 мм. Добавить в план по клиническому решению врача (Мандат 8e)"
+                  : undefined
+              }
             >
               <Award size={16} />
-              <span>Добавить в план лечения ({audit.treatmentPlanItem.priceFormattedRu})</span>
+              <span>
+                {audit.nerveSafety.isDangerous
+                  ? `Добавить по решению врача (${audit.treatmentPlanItem.priceFormattedRu})`
+                  : `Добавить в план лечения (${audit.treatmentPlanItem.priceFormattedRu})`}
+              </span>
             </button>
 
             <button
