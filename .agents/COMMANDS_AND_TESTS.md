@@ -1,5 +1,7 @@
 # 💻 CLI Commands & Smoke Tests
 
+> Навигация: **[← Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** | **[Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** | **[Системный Закон (AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**
+
 This document catalogs commands for building, database management, lints, formatting, and the complete smoke testing suite.
 
 ---

@@ -1,16 +1,22 @@
 # AGENTS.md — Clinic MVP / DENTE Dental CRM
-"C:\Clinic_MVP\dental-crm\.agents\MASTER_PROMPT.md"  - абсолютное парвило, обзяательно к чтению
+
+> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ:** **[`C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** (и его зеркало `MASTER_PROMPT.md`) — абсолютный закон, обязателен к прочтению от первого до последнего символа перед началом любых действий!
+
 ## 📖 AGENT DOCUMENTATION INDEX
 Before starting any development or refactoring, you MUST load and read the following modular directories:
-- **[Documentation Index](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system.
-- **[System Architecture](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Monorepo layout, Fastify API, React client, WebSocket broker.
-- **[Database Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM over native PostgreSQL 18 at `127.0.0.1:5432` (`pg.Pool`, `DATABASE_URL` required; PGlite is NOT installed), migrations, seeding.
+- **[Documentation Index & Navigation Matrix](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system and AI Agent Navigation Matrix.
+- **[Supreme Law: THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — CTO Supremacy, zero mocks, presumption of defect, Apple/Mac HIG, Mandate 8e.
+- **[System Architecture](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Monorepo layout, Fastify API, React 19 client, WebSocket broker.
+- **[Database Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM over native PostgreSQL 18 at `127.0.0.1:5432` (`.data/pg18`, `pg.Pool`, `DATABASE_URL` required; PGlite is NOT installed), migrations, seeding.
+- **[Database Setup & Recovery](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Local PostgreSQL setup, `uuidv7()` polyfill, schema push bypass.
 - **[Telephony & Portal Details](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Call alerts, OTP auth portal specs.
 - **[CLI Commands & E2E Smoke Tests](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Biome commands, compiler gates, smoke scripts.
 - **[UI & State Standards](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — Tailwind directives, view preloading, God Context constraints.
 - **[Clinical Rules Engine](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Rule matching triggers and warning/blocking actions.
 - **[Billing & Finance Operations](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Payment idempotency checks and shared family wallets.
 - **[Outpatient Documents & PDF Lifecycle](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Headless Edge/Chrome PDF export and SHA-256 document signing.
+- **[Messengers Integration](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — WhatsApp Cloud API, VK MAX, inbound event broker.
+- **[Documentation Knowledge Hub](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** — Central gateway to docs/ directory, specifications, and clinical manuals.
 - **[Competitive Audit Suite](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — 63-feature competitive parity matrix, IDENT/DentalPRO/iStom specs & backlog.
 
 ## [CTO SUPREMACY & OPERATIONAL MANDATE]

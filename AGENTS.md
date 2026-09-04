@@ -1,18 +1,24 @@
 # AGENTS.md — Clinic MVP / DENTE Dental CRM
 
-**THE CONSTITUTION IS [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).** This root file is the discoverable standard entry point (the open AGENTS.md convention that Codex, Copilot, Cursor and Windsurf read first) and a documentation index. It is NOT the law and must never grow a second, divergent copy of it. Read `.agents/AGENTS.md` as a complete document before non-trivial work.
+> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** **[`C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** (и его зеркало `MASTER_PROMPT.md`) — абсолютный непреложный закон. Обязателен к прочтению от первого до последнего символа перед началом любых действий!
+>
+> **СИСТЕМНАЯ КОНСТИТУЦИЯ:** **[`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**. Этот корневой файл — discoverable standard entry point (конвенция AGENTS.md для Codex, Copilot, Cursor, Windsurf, Claude). Он индексирует документацию и фиксирует главные нерушимые правила.
 
 ## 📖 AGENT DOCUMENTATION INDEX
 Before starting any development or refactoring, you MUST load and read the following modular directories:
-- **[Documentation Index](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system.
-- **[System Architecture](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Monorepo layout, Fastify API, React client, WebSocket broker.
+- **[Documentation Index & Navigation Matrix](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system and AI Agent Navigation Matrix.
+- **[Supreme Law: THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — CTO Supremacy, zero mocks, presumption of defect, Apple/Mac HIG, Mandate 8e.
+- **[System Architecture](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Monorepo layout, Fastify API, React 19 client, WebSocket broker.
 - **[Database Registry](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM over native PostgreSQL 18.4 on `127.0.0.1:5432` (re-verified 2026-08-06; `@electric-sql/pglite` is not installed). **Data directory is `.data/pg18`, NOT `apps/api/dente-db`** — the older claim was wrong; `dente-db` is a PGlite leftover whose `postmaster.pid` holds PID `-42`. Also covers the `npm ci` trap that deletes the undeclared PostgreSQL binaries, the destructive `db:reset-seed` and the safety gate it acquired on 2026-08-06, migrations, and live RLS state.
+- **[Database Setup & Recovery](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Local PostgreSQL setup, `uuidv7()` polyfill, schema push bypass.
 - **[Telephony & Portal Details](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Call alerts, OTP auth portal specs.
 - **[CLI Commands & E2E Smoke Tests](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Biome commands, compiler gates, smoke scripts.
 - **[UI & State Standards](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — Tailwind directives, view preloading, God Context constraints.
 - **[Clinical Rules Engine](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Rule matching triggers and warning/blocking actions.
 - **[Billing & Finance Operations](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Payment idempotency checks and shared family wallets.
 - **[Outpatient Documents & PDF Lifecycle](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Headless Edge/Chrome PDF export and SHA-256 document signing.
+- **[Messengers Integration](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — WhatsApp Cloud API, VK MAX, inbound event broker.
+- **[Documentation Knowledge Hub](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** — Central gateway to docs/ directory, specifications, and clinical manuals.
 - **[Competitive Audit Suite](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — 63-feature competitive parity matrix, IDENT/DentalPRO/iStom specs & backlog.
 
 ---
@@ -53,6 +59,25 @@ BE PROACTIVE. EXECUTE.
 ## 🔨 МАКСИМАЛЬНАЯ КРИТИКА НА КАЖДОМ УРОВНЕ И ПОБУКВЕННЫЕ ОТЧЕТЫ (THE HAMMER INQUISITION)
 1. **ЖЕСТКАЯ КРИТИКА НА КАЖДОМ УРОВНЕ:** Требование максимальной критики действует на ВСЕХ уровнях без исключения (L1 Orchestrator, L2 Leads, L3 Workers, Red Team Critics). Каждый уровень обязан непрерывно критиковать входящий и собственный код, искать скрытые дефекты, проверять законы дизайна (Хик, Миллер, Фиттс, Якоб) и презумпцию брака.
 2. **ПОБУКВЕННЫЕ ОТЧЕТЫ БЕЗ КУПЮР:** Агенты других уровней, когда отчитываются, ОБЯЗАНЫ в отчете ПОБУКВЕННО приводить полные оригинальные отчеты своих субагентов с их критикой, дефект-листами и комментариями к ним. Запрещено умалчивать, обрезать или пересказывать отчеты субагентов.
+
+## 🛑 МАНДАТ 8e: АБСОЛЮТНЫЙ ЗАПРЕТ НА ПАЛКИ В КОЛЁСА ВРАЧАМ И ПЕРСОНАЛУ (DOCTOR AUTONOMY)
+1. **Софт для врача, а не врач для софта:** В частной стоматологической клинике софт обязан помогать врачу лечить людей, а не служить бюрократическим цербером. Любое препятствие, блокировка, лишний клик или искусственный запрет — это брак.
+2. **Никаких заблокированных кнопок без причины:** Кнопки «Сохранить», «Завершить приём», «Добавить услугу», «Печать» НИКОГДА не должны быть серыми (`disabled`) из-за незаполненных второстепенных полей (пульс, температура, влажность, 50 пунктов соматической анкеты).
+3. **Физиологическая норма по умолчанию:** Все осмотры и анамнез заполняются физиологической нормой в 1 клик («Соматически здоров / норма»). Врач правит только патологию.
+4. **Никаких запретов на черновики и согласований начмедов:** Врач свободно правит свои дневники в 1 клик с версионным аудитом («Исправленному верить»). Запрещены 24-часовые замки намертво.
+5. **Печать в любой момент:** Форма 043/у, согласия и сметы печатаются в любой момент: если приём не закрыт — со штампом «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ».
+6. **Защита от потери данных (Autosave):** Любой набранный врачом текст сохраняется на лету (debounced autosave). Смена вкладки, закрытие панели или входящий звонок телефонии НИКОГДА не уничтожают черновик визита.
+7. **Свобода скидок и переделок:** Врач имеет право применить скидку (вплоть до 100% на гарантийные переделки и персонал) без ввода мастер-паролей администратора. Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату.
+8. **Регистратура без палок в колёса:** Запрещено требовать обязательного выбора ассистента при создании записи в расписании. Регистратор имеет право распечатать пустой договор со строками `_______` для ручного заполнения без 403-ошибок.
+9. **Касса 54-ФЗ без палок в колёса:** Запрещено требовать ИНН с физических лиц при оплате наличными или картой (по 54-ФЗ ИНН нужен только юрлицам/ИП). Касса обязана принимать комбинированную оплату (нал + карта + аванс/бонусы) в 1 клик.
+10. **Склад и медсестра:** Медсестра списывает пустые карпулы анестетиков в 1 клик без комиссии из 3 человек. Мягкий овердрафт склада с предупреждением вместо блокировки операции.
+
+## 🍏 СТАНДАРТЫ ЭРГОНОМИКИ И ВЕРСТКИ APPLE & MAC (STUDIO CLINICAL HIG)
+1. **Десктопная панель пилота (80% сценариев):** Плотная профессиональная компоновка, компактные тулбары (32–36px), хоткеи (`Cmd/Ctrl+K`, `Esc`), 150ms Hover HUD, 0-клик касса 54-ФЗ и зубная формула.
+2. **Мобильная и планшетная эргономика (10% сценариев):** Тач-таргеты строго $\ge 44\times 44\text{px}$, нативный Segmented Control вместо 2500px скролла смет.
+3. **Закон Анти-Матрёшки:** Максимальная глубина модальных окон — СТРОГО 1. Карточки внутри карточек запрещены.
+4. **Медицинская типографика:** Никаких эмодзи в картах 043/у, актах, чеках — только строгие векторные иконки Lucide.
+
 
 
 
