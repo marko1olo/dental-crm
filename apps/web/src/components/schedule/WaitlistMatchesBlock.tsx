@@ -14,7 +14,9 @@
 
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { Zap } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast";
@@ -88,6 +90,67 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 	const [loading, setLoading] = useState(!lazy);
 	const [started, setStarted] = useState(!lazy);
 	const [called, setCalled] = useState<Set<string>>(new Set());
+	const [bookingId, setBookingId] = useState<string | null>(null);
+
+	const handleTakeSlot = async (match: WaitlistMatchRow) => {
+		if (bookingId) return;
+		setBookingId(match.entryId);
+		try {
+			// 1. Назначаем пациента в освободившееся окно
+			const patchRes = await fetch(
+				`/api/appointments/${encodeURIComponent(appointmentId)}`,
+				{
+					method: "PATCH",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						patientId: match.patientId,
+						status: "planned",
+						reason: match.reason || "Запись из листа ожидания (посадка в окно)",
+						comment: `Занято из листа ожидания: пациент ${match.patientName}`,
+					}),
+				},
+			);
+
+			if (!patchRes.ok) {
+				const err = await patchRes.json().catch(() => null);
+				showToast(
+					err?.message || "Не удалось занять окно расписания",
+					"error",
+				);
+				return;
+			}
+
+			// 2. Закрываем заявку в листе ожидания как выполненную
+			await fetch(`/api/waitlist/${encodeURIComponent(match.entryId)}`, {
+				method: "PUT",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify({ status: "fulfilled" }),
+			}).catch((err) => {
+				logger.warn("Failed to fulfill waitlist entry:", err);
+			});
+
+			showToast(
+				`Пациент «${match.patientName}» успешно записан в это окно!`,
+				"success",
+				5000,
+			);
+
+			// 3. Обновляем расписание и список кандидатов
+			if (appLogic?.loadDashboard) {
+				void appLogic.loadDashboard();
+			}
+			void load();
+		} catch (err) {
+			logger.error("Error booking slot for waitlist match:", err);
+			showToast("Ошибка при записи пациента в свободное окно", "error");
+		} finally {
+			setBookingId(null);
+		}
+	};
 
 	const load = useCallback(async () => {
 		if (!appointmentId) return;
@@ -372,7 +435,19 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 								<span className="ops-note" style={{ fontSize: 12 }}>
 									{match.reason}
 								</span>
-								<div style={{ display: "flex", gap: 8, marginTop: 2 }}>
+								<div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
+									<button
+										type="button"
+										disabled={Boolean(bookingId) || match.alreadyBooked}
+										onClick={() => void handleTakeSlot(match)}
+										className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs disabled:opacity-50"
+										data-testid={`waitlist-match-take-slot-${match.entryId}`}
+										title={`Занять это окно пациентом ${match.patientName}`}
+									>
+										<Zap size={13} className="fill-current text-amber-300" />
+										<span>{bookingId === match.entryId ? "Записываем…" : "⚡ Занять это окно"}</span>
+									</button>
+
 									{match.phone ? (
 										<a
 											className="secondary-button"
@@ -383,6 +458,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 												textDecoration: "none",
 												display: "inline-flex",
 												alignItems: "center",
+												minHeight: 36,
 											}}
 											data-testid={`waitlist-match-call-${match.entryId}`}
 										>
@@ -403,6 +479,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 											style={{
 												padding: "4px 10px",
 												fontSize: 12,
+												minHeight: 36,
 											}}
 											data-testid={`waitlist-match-mark-called-${match.entryId}`}
 											onClick={() =>

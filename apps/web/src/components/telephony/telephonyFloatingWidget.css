@@ -28,6 +28,24 @@
 	pointer-events: auto;
 }
 
+/* Compact Incoming Call Capsule (Top-Right Non-Blocking Pill, Fitts's Law) */
+.dnt-incoming-call-capsule {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 14px;
+	border-radius: 9999px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 0 16px 2px rgba(13, 148, 136, 0.2);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	animation: dnt-badge-drop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	box-sizing: border-box;
+	user-select: none;
+}
+
 /* Compact Incoming Call Badge (Top-Right Non-Blocking) */
 .dnt-incoming-call-badge {
 	display: flex;
@@ -299,6 +317,7 @@
 [data-theme="dark"] .dnt-telephony-card,
 [data-theme="dark"] .dnt-incoming-call-popup,
 [data-theme="dark"] .dnt-incoming-call-badge,
+[data-theme="dark"] .dnt-incoming-call-capsule,
 [data-theme="dark"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #0f172a);
 	border-color: var(--line-strong, #1e293b);
@@ -312,6 +331,7 @@
 [data-theme="night"] .dnt-telephony-card,
 [data-theme="night"] .dnt-incoming-call-popup,
 [data-theme="night"] .dnt-incoming-call-badge,
+[data-theme="night"] .dnt-incoming-call-capsule,
 [data-theme="night"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #181512);
 	border-color: var(--line-strong, #2d261e);
@@ -325,6 +345,7 @@
 [data-theme="ocean"] .dnt-telephony-card,
 [data-theme="ocean"] .dnt-incoming-call-popup,
 [data-theme="ocean"] .dnt-incoming-call-badge,
+[data-theme="ocean"] .dnt-incoming-call-capsule,
 [data-theme="ocean"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #0a192f);
 	border-color: var(--line-strong, #172a45);
@@ -338,6 +359,7 @@
 [data-theme="emerald"] .dnt-telephony-card,
 [data-theme="emerald"] .dnt-incoming-call-popup,
 [data-theme="emerald"] .dnt-incoming-call-badge,
+[data-theme="emerald"] .dnt-incoming-call-capsule,
 [data-theme="emerald"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #062016);
 	border-color: var(--line-strong, #0f3d2c);
@@ -351,6 +373,7 @@
 [data-theme="cyber_xray"] .dnt-telephony-card,
 [data-theme="cyber_xray"] .dnt-incoming-call-popup,
 [data-theme="cyber_xray"] .dnt-incoming-call-badge,
+[data-theme="cyber_xray"] .dnt-incoming-call-capsule,
 [data-theme="cyber_xray"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #030712);
 	border-color: var(--teal-dark, #0891b2);
@@ -364,6 +387,7 @@
 [data-theme="contrast"] .dnt-telephony-card,
 [data-theme="contrast"] .dnt-incoming-call-popup,
 [data-theme="contrast"] .dnt-incoming-call-badge,
+[data-theme="contrast"] .dnt-incoming-call-capsule,
 [data-theme="contrast"] .dnt-telephony-patient-drawer {
 	background: #000000;
 	border: 2px solid #ffffff;
@@ -377,6 +401,7 @@
 [data-theme="calm_teal"] .dnt-telephony-card,
 [data-theme="calm_teal"] .dnt-incoming-call-popup,
 [data-theme="calm_teal"] .dnt-incoming-call-badge,
+[data-theme="calm_teal"] .dnt-incoming-call-capsule,
 [data-theme="calm_teal"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #f0fdfa);
 	border-color: var(--line, #99f6e4);
@@ -390,6 +415,7 @@
 [data-theme="sakura"] .dnt-telephony-card,
 [data-theme="sakura"] .dnt-incoming-call-popup,
 [data-theme="sakura"] .dnt-incoming-call-badge,
+[data-theme="sakura"] .dnt-incoming-call-capsule,
 [data-theme="sakura"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #fdf2f8);
 	border-color: var(--line, #fbcfe8);
@@ -403,6 +429,7 @@
 [data-theme="warm_sand"] .dnt-telephony-card,
 [data-theme="warm_sand"] .dnt-incoming-call-popup,
 [data-theme="warm_sand"] .dnt-incoming-call-badge,
+[data-theme="warm_sand"] .dnt-incoming-call-capsule,
 [data-theme="warm_sand"] .dnt-telephony-patient-drawer {
 	background: var(--paper-strong, #fefce8);
 	border-color: var(--line, #fef08a);

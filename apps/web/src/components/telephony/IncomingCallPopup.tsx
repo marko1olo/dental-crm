@@ -10,6 +10,7 @@ import {
 	Check,
 	ChevronDown,
 	ChevronRight,
+	ChevronUp,
 	Clock,
 	Copy,
 	CreditCard,
@@ -527,7 +528,7 @@ export function IncomingCallPopup() {
 	const [whatsappSent, setWhatsappSent] = useState(false);
 	const [smsCopied, setSmsCopied] = useState(false);
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
-	const [isExpanded, setIsExpanded] = useState(true);
+	const [isExpanded, setIsExpanded] = useState(false);
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [newPatientNameInput, setNewPatientNameInput] = useState("");
 	const [showTransferPanel, setShowTransferPanel] = useState(false);
@@ -898,18 +899,111 @@ export function IncomingCallPopup() {
 
 	return createPortal(
 		<>
-			{/* Top-Right Ambient Incoming Call Badge (Non-blocking, Fitts's Law) */}
+			{/* Top-Right Ambient Incoming Call Badge / Capsule (Non-blocking, Fitts's Law) */}
 			<div
 				className="dnt-incoming-call-badge-container fixed top-3 right-4 sm:top-3 sm:right-5 z-[9990] flex flex-col items-end pointer-events-none"
 				style={{ zIndex: 9990 }}
 				data-testid="incoming-call-badge-container"
 			>
-				<div
-					className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[360px] sm:w-[420px] max-w-[calc(100vw-24px)]"
-					role="region"
-					aria-label="Входящий звонок телефонии"
-					data-testid="incoming-call-popup"
-				>
+				{!isExpanded ? (
+					/* 🟢 Compact Telephony Capsule (0-occlusion, non-blocking) */
+					<div
+						className="dnt-incoming-call-capsule pointer-events-auto flex items-center gap-2 p-1.5 sm:p-2 rounded-full border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-xl backdrop-blur-xl animate-badge-drop max-w-[calc(100vw-24px)]"
+						role="region"
+						aria-label="Входящий звонок телефонии (компактный режим)"
+						data-testid="incoming-call-capsule"
+					>
+						<span className="relative flex h-3 w-3 ml-1.5 shrink-0">
+							<span
+								className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+									isCallAnswered ? "bg-teal-400" : "bg-emerald-400"
+								}`}
+							/>
+							<span
+								className={`relative inline-flex rounded-full h-3 w-3 ${
+									isCallAnswered ? "bg-teal-500" : "bg-emerald-500"
+								}`}
+							/>
+						</span>
+						<div className="flex items-center gap-1.5 min-w-0">
+							<span
+								className="text-xs font-black text-[var(--ink,#0f172a)] truncate max-w-[130px] sm:max-w-[190px]"
+								title={callerName}
+							>
+								{callerName}
+							</span>
+							<span className="text-[11px] font-mono text-[var(--muted,#64748b)] hidden md:inline">
+								{formattedPhone}
+							</span>
+						</div>
+						<span className="font-mono text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-1 bg-[var(--paper-subtle,var(--paper-soft,#f1f5f9))] px-2 py-0.5 rounded-lg border border-[var(--line,#e2e8f0)] shrink-0">
+							<Clock size={11} />
+							{formatDurationTimer(elapsedSeconds)}
+						</span>
+						<div className="flex items-center gap-1 shrink-0">
+							{!isCallAnswered ? (
+								<>
+									<button
+										type="button"
+										onClick={handleAnswerCall}
+										className="px-3 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[36px] shadow-xs cursor-pointer active:scale-95"
+										title="Принять вызов"
+										data-testid="capsule-answer-call-btn"
+									>
+										<PhoneCall size={13} className="animate-pulse" />
+										<span>Ответить</span>
+									</button>
+									<button
+										type="button"
+										onClick={handleReject}
+										className="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[36px] cursor-pointer active:scale-95"
+										title="Сбросить вызов"
+										data-testid="capsule-reject-call-btn"
+									>
+										<PhoneOff size={13} />
+										<span>Сброс</span>
+									</button>
+								</>
+							) : (
+								<button
+									type="button"
+									onClick={handleReject}
+									className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all inline-flex items-center gap-1 min-h-[36px] shadow-xs cursor-pointer active:scale-95"
+									title="Завершить разговор"
+									data-testid="capsule-hangup-call-btn"
+								>
+									<PhoneOff size={13} />
+									<span>Завершить</span>
+								</button>
+							)}
+							<button
+								type="button"
+								onClick={() => setIsExpanded(true)}
+								className="min-h-[36px] min-w-[36px] rounded-full hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors cursor-pointer"
+								title="Развернуть карточку звонка с клиническими данными"
+								aria-label="Развернуть звонок"
+								data-testid="capsule-expand-btn"
+							>
+								<ChevronDown size={16} />
+							</button>
+							<button
+								type="button"
+								onClick={dismissCall}
+								className="min-h-[36px] min-w-[36px] rounded-full hover:bg-rose-50 dark:hover:bg-rose-950 text-[var(--muted,#64748b)] hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+								title="Скрыть бейдж"
+								aria-label="Скрыть звонок"
+							>
+								<X size={15} />
+							</button>
+						</div>
+					</div>
+				) : (
+					<div
+						className="dnt-incoming-call-badge pointer-events-auto flex flex-col gap-2 p-3 sm:p-3.5 rounded-2xl border border-[var(--line-strong,var(--line,#e2e8f0))] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] shadow-2xl backdrop-blur-xl animate-badge-drop w-[360px] sm:w-[420px] max-w-[calc(100vw-24px)]"
+						role="region"
+						aria-label="Входящий звонок телефонии"
+						data-testid="incoming-call-popup"
+					>
 					{/* Header Row: Call status, provider, live duration & quick actions */}
 					<div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[var(--line,#e2e8f0)]">
 						<div className="flex items-center gap-2 min-w-0">
@@ -994,6 +1088,18 @@ export function IncomingCallPopup() {
 								aria-label={isDndActive ? "Отключить режим DND" : "Включить режим «Не беспокоить»"}
 							>
 								{isDndActive ? <BellOff size={16} /> : <Bell size={16} />}
+							</button>
+
+							{/* Collapse to Capsule Button */}
+							<button
+								type="button"
+								onClick={() => setIsExpanded(false)}
+								className="min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-all cursor-pointer"
+								title="Свернуть в компактную капсулу"
+								aria-label="Свернуть в капсулу"
+								data-testid="badge-collapse-btn"
+							>
+								<ChevronUp size={16} />
 							</button>
 
 							{/* Dismiss / Minimize Badge Button (>= 44x44px touch target) */}
@@ -1194,6 +1300,7 @@ export function IncomingCallPopup() {
 						</button>
 					</div>
 				</div>
+				)}
 			</div>
 
 			{/* Patient Side Drawer (Slide-Over on the right edge, ZERO unmounting of active 043/u visit diary) */}

@@ -14,16 +14,21 @@ import {
 	Clock,
 	Copy,
 	CreditCard,
+	Edit3,
+	FileText,
 	MessageSquare,
 	MoreVertical,
 	Phone,
 	PhoneCall,
+	RotateCcw,
 	Scan,
+	Sparkles,
 	Stethoscope,
 	User,
 	UserCheck,
 	UserX,
 	X,
+	XCircle,
 	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
@@ -32,6 +37,8 @@ import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
@@ -608,6 +615,168 @@ export function AppointmentCard(props: AppointmentCardProps) {
 		(appointment?.reason ?? "").toLowerCase().includes("срочн")
 	);
 
+	// Закон Хика и Миллера: ровно 2 кнопки прямого действия на лицевой стороне карточки
+	const renderPrimaryFaceActions = () => {
+		if (appointmentEditing) return null;
+		const isLocked = Boolean(
+			appointmentHasOpenVisit &&
+				activeVisitLockedAppointmentStatuses?.has?.(displayStatus),
+		);
+
+		if (displayStatus === "planned" || displayStatus === "confirmed") {
+			return (
+				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating || isLocked}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleQuickStatusChange("arrived");
+						}}
+						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						title="Отметить прибытие пациента в клинику (Клавиша 1)"
+						data-testid="appointment-action-arrived-btn"
+					>
+						<UserCheck size={13} />
+						<span>Прибыл</span>
+					</button>
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating || isLocked}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleQuickStatusChange("in_treatment");
+							if (appointmentPatient?.id) {
+								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+							}
+						}}
+						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						title="Начать приём в кресле (Клавиша 2)"
+						data-testid="appointment-action-in-treatment-btn"
+					>
+						<Stethoscope size={13} />
+						<span>Начать приём</span>
+					</button>
+				</div>
+			);
+		}
+
+		if (displayStatus === "arrived") {
+			return (
+				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating || isLocked}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleQuickStatusChange("in_treatment");
+							if (appointmentPatient?.id) {
+								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+							}
+						}}
+						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						title="Пациент в кресле (Клавиша 2)"
+						data-testid="appointment-action-in-treatment-btn"
+					>
+						<Stethoscope size={13} />
+						<span>В кресло</span>
+					</button>
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating || isLocked}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleShiftAppointmentTime(15);
+						}}
+						className="min-h-[30px] px-2 py-1 rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 hover:bg-amber-500/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						title="Сдвинуть запись на +15 минут при опоздании"
+						data-testid="appointment-action-delay-btn"
+					>
+						<Clock size={13} />
+						<span>+15 мин</span>
+					</button>
+				</div>
+			);
+		}
+
+		if (displayStatus === "in_treatment") {
+			return (
+				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
+					<button
+						type="button"
+						disabled={isQuickStatusUpdating}
+						onClick={(e) => {
+							e.stopPropagation();
+							void handleQuickStatusChange("completed");
+						}}
+						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-slate-700 dark:bg-slate-600 hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						title="Завершить приём (Клавиша 3)"
+						data-testid="appointment-action-complete-btn"
+					>
+						<CheckCircle2 size={13} />
+						<span>Завершить</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							if (appointmentPatient?.id) {
+								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+							}
+							useAppStore.getState().setCurrentView("visit");
+							showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
+						}}
+						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						title="Открыть дневник приёма 043/у"
+						data-testid="appointment-action-open-visit-btn"
+					>
+						<FileText size={13} className="text-cyan-600" />
+						<span>Карта 043/у</span>
+					</button>
+				</div>
+			);
+		}
+
+		if (displayStatus === "completed") {
+			return (
+				<div className="flex items-center gap-1 shrink-0" data-testid="card-primary-actions">
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							if (appointmentPatient?.id) {
+								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+							}
+							useAppStore.getState().setCurrentView("billing");
+							showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
+						}}
+						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-emerald-600/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 hover:bg-emerald-600/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						title="Принять оплату по 54-ФЗ"
+						data-testid="appointment-action-billing-btn"
+					>
+						<CreditCard size={13} className="text-emerald-600" />
+						<span>Оплата 54-ФЗ</span>
+					</button>
+					<button
+						type="button"
+						onClick={(e) => {
+							e.stopPropagation();
+							repeatAppointment(appointment);
+						}}
+						className="min-h-[30px] px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						title="Повторить запись (Клавиша R)"
+						data-testid="appointment-action-repeat-btn"
+					>
+						<RotateCcw size={13} />
+						<span>Повторить</span>
+					</button>
+				</div>
+			);
+		}
+
+		return null;
+	};
+
 	return (
 		<div className="timeline-node min-w-0 max-w-full" key={appointment.id}>
 			<div className="timeline-line"></div>
@@ -1004,6 +1173,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								</span>
 							) : null}
 
+							{/* 2 кнопки прямого действия на лице карточки (Закон Хика и Миллера) */}
+							{renderPrimaryFaceActions()}
+
 							{/* Single Context Actions Menu Button [...] */}
 							<div className="relative inline-flex items-center shrink-0" ref={cardMenuRef}>
 								<button
@@ -1054,6 +1226,21 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
 											Связь и напоминания
 										</div>
+										{appointmentPatient?.phone ? (
+											<button
+												type="button"
+												className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+												role="menuitem"
+												onClick={() => {
+													setIsCardMenuOpen(false);
+													window.location.href = `tel:${appointmentPatient.phone}`;
+												}}
+												title={`Позвонить пациенту ${appointmentPatient.phone}`}
+											>
+												<Phone size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+												<span className="truncate">Позвонить ({appointmentPatient.phone})</span>
+											</button>
+										) : null}
 										<button
 											type="button"
 											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
@@ -1108,6 +1295,40 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
 											Операции с приемом
 										</div>
+										<button
+											type="button"
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												if (appointmentPatient?.id) {
+													usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+												}
+												useAppStore.getState().setCurrentView("patients");
+												showToast(`Открыта карта пациента: ${appointmentPatientName}`, "info");
+											}}
+											title="Открыть амбулаторную карту пациента (043/у)"
+										>
+											<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+											<span>Карта пациента (043/у)</span>
+										</button>
+										<button
+											type="button"
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												if (appointmentPatient?.id) {
+													usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
+												}
+												useAppStore.getState().setCurrentView("billing");
+												showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
+											}}
+											title="Перейти в кассу 54-ФЗ для расчёта"
+										>
+											<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+											<span>Принять оплату / Касса 54-ФЗ</span>
+										</button>
 										<button
 											type="button"
 											className="secondary-button appointment-repeat-button w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
@@ -1175,6 +1396,39 @@ export function AppointmentCard(props: AppointmentCardProps) {
 												<span>[ 📷 КТ / Рентген снимки ]</span>
 											</div>
 											<span className="text-[10px] font-mono opacity-70">X</span>
+										</button>
+
+										{/* 5. Статус и отмена */}
+										<div className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1">
+											Статус и отмена
+										</div>
+										<button
+											type="button"
+											disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												void handleQuickStatusChange("cancelled");
+											}}
+											title="Отменить приём"
+										>
+											<XCircle size={14} className="text-rose-600 shrink-0" />
+											<span>Отменить приём</span>
+										</button>
+										<button
+											type="button"
+											disabled={isQuickStatusUpdating || appointmentHasOpenVisit}
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-40"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												void handleQuickStatusChange("no_show");
+											}}
+											title="Отметить: пациент не явился"
+										>
+											<UserX size={14} className="text-amber-600 shrink-0" />
+											<span>Не явился (No-show)</span>
 										</button>
 									</div>
 								)}

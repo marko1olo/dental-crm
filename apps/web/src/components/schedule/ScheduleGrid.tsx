@@ -35,6 +35,7 @@ import { checkAppointmentResourceCollision } from "../../utils/scheduleCollision
 import { showToast } from "../GlobalToast";
 import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
 import { countLabel } from "../../lib/russianPlural";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface ScheduleGridProps {
 	dashboard: Dashboard;
@@ -1124,6 +1125,62 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														patientId: sourceAppt.patientId,
 														reason: sourceAppt.reason || undefined,
 													});
+												} else if (data?.type === "waitlist_item" && data.item) {
+													const waitlistItem = data.item;
+													const targetChairId = chair.id !== "default-chair" ? chair.id : null;
+													const targetDoctorId = selectedDoctorId || waitlistItem.preferredDoctorId || (dashboard?.clinicSettings?.staff?.find((m) => m.active && m.role === "doctor")?.id ?? null);
+													const slotDuration = waitlistItem.durationMinutes || 30;
+													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
+													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
+
+													// Pre-check collision before booking from waitlist
+													const collisionCheck = checkAppointmentResourceCollision(
+														{
+															startsAt: targetStartIso,
+															endsAt: targetEndIso,
+															doctorUserId: targetDoctorId,
+															chairId: targetChairId,
+															patientId: waitlistItem.patientId,
+														},
+														appointments,
+														{
+															staff: dashboard?.clinicSettings?.staff,
+															chairs: dashboard?.clinicSettings?.chairs,
+															patients: dashboard?.patients,
+															formatTimeFn: (iso) => toDateTimeLocalValue(iso, timezone).slice(11, 16),
+														},
+													);
+
+													if (collisionCheck.hasCollision) {
+														showToast(`⛔ Назначение заблокировано: ${collisionCheck.message}`, "error", 5000);
+														return;
+													}
+
+													onSlotClick({
+														dateKey,
+														startTime: hour,
+														chairId: targetChairId,
+														doctorUserId: targetDoctorId,
+														durationMinutes: slotDuration,
+														patientId: waitlistItem.patientId,
+														reason: waitlistItem.reason || "Запись из листа ожидания",
+													});
+
+													if (waitlistItem.id) {
+														fetch(`/api/waitlist/${waitlistItem.id}`, {
+															method: "PUT",
+															headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+															body: JSON.stringify({ status: "fulfilled" }),
+														}).catch((err) => {
+															console.warn("Failed to fulfill waitlist item:", err);
+														});
+													}
+
+													showToast(
+														`Пациент «${waitlistItem.patientName || "из очереди"}» назначен в свободное окно (${hour}:00)`,
+														"success",
+														4000,
+													);
 												}
 											} catch {
 												// Ignore invalid JSON drop

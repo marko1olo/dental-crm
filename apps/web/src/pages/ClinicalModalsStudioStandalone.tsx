@@ -4203,13 +4203,13 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 
 			{isIncomingCallOpen && (
 				<div
-					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					className="fixed top-3 right-4 z-[9990] pointer-events-none flex items-start justify-end max-w-[calc(100vw-32px)] overflow-y-auto"
 					role="dialog"
-					aria-modal="true"
+					aria-modal="false"
 					data-testid="incoming-call-modal-container"
 					data-modal-test="telephony-softphone-modal"
 				>
-					<div className="relative w-full max-w-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+					<div className="relative w-full max-w-2xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[90vh] flex flex-col pointer-events-auto backdrop-blur-xl">
 						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
 							<div className="flex items-center gap-2.5">
 								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
@@ -4252,12 +4252,12 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 
 			{isTelephonyWidgetOpen && (
 				<div
-					className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-md p-2 sm:p-4 overflow-y-auto"
+					className="fixed bottom-3 right-4 z-[9990] pointer-events-none flex items-end justify-end max-w-[calc(100vw-32px)]"
 					role="dialog"
-					aria-modal="true"
+					aria-modal="false"
 					data-testid="telephony-widget-modal-container"
 				>
-					<div className="relative w-full max-w-md bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[94vh] flex flex-col">
+					<div className="relative w-full max-w-md bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[90vh] flex flex-col pointer-events-auto backdrop-blur-xl">
 						<div className="flex items-center justify-between pb-3 border-b border-[var(--line,#e2e8f0)] mb-4 shrink-0">
 							<div className="flex items-center gap-2.5">
 								<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
