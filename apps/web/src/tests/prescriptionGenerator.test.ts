@@ -112,8 +112,8 @@ describe("Web Prescription Generator & Form 107/148 Engine (Order 1094n)", () =>
 		assert.ok(ketorolac.tradeNameRu.includes("Кетанов"));
 	});
 
-	it("6. 1-Click Fast Clinical Packages (Order 1094n): all 3 packages correctly defined and generate Form 107-1/u", () => {
-		assert.equal(DENTAL_FAST_PRESCRIPTION_PACKAGES.length, 3);
+	it("6. 1-Click Fast Clinical Packages (Order 1094n): all packages correctly defined and generate Form 107-1/u", () => {
+		assert.equal(DENTAL_FAST_PRESCRIPTION_PACKAGES.length, 4);
 
 		// Package 1: Post-extraction / implant
 		const pkg1 = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "post_extraction_implant");
@@ -183,5 +183,29 @@ describe("Web Prescription Generator & Form 107/148 Engine (Order 1094n)", () =>
 		});
 		assert.equal(doc3.items.length, 1);
 		assert.ok(doc3.items[0]?.latinRp.includes("Ketorolaci 10 mg"));
+
+		// Package 4: Pericoronitis / Abscess (Cyfran ST)
+		const pkg4 = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "cyfran_st_pericoronitis");
+		assert.ok(pkg4);
+		assert.deepEqual([...pkg4.drugIds], ["cyfran_st", "nimesil_100", "chlorhexidine_005"]);
+
+		const doc4 = generateForm107Prescription({
+			prescriptionSeriesNumber: "РЕЦ-ПЕРИКОР-01",
+			dateIso: "2026-08-22",
+			validityDays: 60,
+			clinicName: "ООО «Денте»",
+			clinicOgrn: "1207700123456",
+			clinicAddress: "Москва",
+			patientFullName: "Иванов И.И.",
+			patientBirthDate: "1990-01-01",
+			patientMedicalCardNumber: "043/у-01",
+			doctorFullName: "Д-р Смирнов А.П.",
+			doctorSpecialty: "Хирург-стоматолог",
+			selectedMedicationIds: pkg4.drugIds,
+		});
+		assert.equal(doc4.items.length, 3);
+		assert.ok(doc4.items[0]?.latinRp.includes("Ciprofloxacini"));
+		assert.ok(doc4.items[1]?.latinRp.includes("Nimesulidi"));
+		assert.ok(doc4.items[2]?.latinRp.includes("Chlorhexidini"));
 	});
 });

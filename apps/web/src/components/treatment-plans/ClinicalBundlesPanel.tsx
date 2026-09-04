@@ -6,7 +6,7 @@
  * Панель позволяет в 1 клик добавить готовый клинический комплекс в соответствующий этап плана лечения.
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Activity,
 	Check,
@@ -49,6 +49,13 @@ export const ClinicalBundlesPanel: React.FC<ClinicalBundlesPanelProps> = ({
 	const [isExpanded, setIsExpanded] = useState<boolean>(!compact);
 	const [lastAddedBundleId, setLastAddedBundleId] = useState<string | null>(null);
 	const [previewBundle, setPreviewBundle] = useState<ClinicalBundleDefinition | null>(null);
+
+	useEffect(() => {
+		if (initialToothNumber && initialToothNumber >= 11 && initialToothNumber <= 85) {
+			setSelectedTooth(initialToothNumber);
+			setCustomToothInput(String(initialToothNumber));
+		}
+	}, [initialToothNumber]);
 
 	const handleToothSelect = (tooth: number) => {
 		setSelectedTooth(tooth);

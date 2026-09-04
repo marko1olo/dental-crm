@@ -70,8 +70,6 @@ export const RESTORATIVE_MATERIALS: ReadonlyArray<{ id: RestorativeMaterialKey; 
 	{ id: "composite", label: "Композит", subLabel: "Светоотверждаемый наногибрид" },
 	{ id: "ceramic_emax", label: "Керамика E.max", subLabel: "Вкладка / Накладка" },
 	{ id: "zirconia", label: "Диоксид циркония", subLabel: "Prettau CAD/CAM" },
-	{ id: "amalgam", label: "Амальгама", subLabel: "Серебряная пломба" },
-	{ id: "gold", label: "Золотой сплав", subLabel: "Литой благородный металл" },
 ];
 
 export const TOOTH_STATES: ReadonlyArray<{ id: ToothState; label: string; color: string }> = [

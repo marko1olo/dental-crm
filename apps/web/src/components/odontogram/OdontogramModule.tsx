@@ -1,4 +1,4 @@
-import { isValidFdiToothNumber } from "@dental/shared";
+import { isValidFdiToothNumber, calculateAge } from "@dental/shared";
 import {
 	Activity,
 	AlertTriangle,
@@ -251,10 +251,25 @@ export const OdontogramModule = ({
 	);
 
 	const perspective = usePerspectiveStore((state) => state.perspective);
-	// New States for Pediatric & Multi-Select & Collapsible Treatment Estimator
+	// Child dentition auto-detection: if patient is under 12, default to pediatric milk teeth (51–85)
+	const isPatientChild = useMemo(() => {
+		const bDate = (activePatient as { birthDate?: string | null } | undefined)?.birthDate;
+		if (!bDate) return false;
+		const age = calculateAge(bDate);
+		return age !== null && age < 12;
+	}, [activePatient]);
+
 	const [isPediatricMode, setIsPediatricMode] = useState(
-		pediatricMode ?? perspective === "pediatric",
+		pediatricMode ?? (isPatientChild || perspective === "pediatric"),
 	);
+
+	useEffect(() => {
+		if (pediatricMode !== undefined) {
+			setIsPediatricMode(pediatricMode);
+		} else if (isPatientChild) {
+			setIsPediatricMode(true);
+		}
+	}, [pediatricMode, isPatientChild]);
 	const [isPediatricModalOpen, setIsPediatricModalOpen] = useState(false);
 	const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 	const [isEstimatorOpen, setIsEstimatorOpen] = useState(false);
@@ -1336,6 +1351,7 @@ export const OdontogramModule = ({
 										finding: findings[0],
 										soap,
 										mode: "smart_append",
+										immediate: true,
 									},
 								}),
 							);
@@ -1539,6 +1555,7 @@ export const OdontogramModule = ({
 															finding: findingPayload,
 															soap,
 															mode: "smart_append",
+															immediate: true,
 														},
 													}),
 												);
@@ -1840,6 +1857,11 @@ export const OdontogramModule = ({
 				isOpen={isPediatricModalOpen}
 				onClose={() => setIsPediatricModalOpen(false)}
 				teethData={teethData}
+				initialAge={
+					(activePatient as { birthDate?: string | null } | undefined)?.birthDate
+						? calculateAge((activePatient as { birthDate?: string | null }).birthDate!) ?? 7.5
+						: 7.5
+				}
 				onUpdateToothResorption={(toothNumber, resorptionStage) => {
 					setTeethData((prev) =>
 						prev.map((t) =>

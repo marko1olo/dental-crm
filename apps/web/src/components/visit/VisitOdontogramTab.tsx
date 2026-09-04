@@ -1,3 +1,4 @@
+import { calculateAge } from "@dental/shared";
 import { FileText, Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
@@ -10,6 +11,7 @@ export interface VisitOdontogramTabPatient {
 	id: string;
 	fullName?: string | null | undefined;
 	name?: string | null | undefined;
+	birthDate?: string | null | undefined;
 	[key: string]: unknown;
 }
 
@@ -109,6 +111,7 @@ export function VisitOdontogramTab(props?: VisitOdontogramTabProps) {
 				<OdontogramModule
 					patientId={activePatient.id}
 					pediatricMode={
+						(activePatient.birthDate ? (calculateAge(activePatient.birthDate) ?? 99) < 12 : false) ||
 						workspaceFlags.hasPediatricMode ||
 						(dashboard?.clinicSettings?.profile?.hasPediatricMode ?? false)
 					}
