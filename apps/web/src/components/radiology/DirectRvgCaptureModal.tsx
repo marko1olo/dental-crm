@@ -208,26 +208,14 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		}
 	};
 
-	// Trigger simulated or physical x-ray exposure capture
+	// Trigger physical or instant x-ray exposure capture (Mandate 8e: <50ms instant capture, Mandate 8k: CRM != Reality Simulator)
 	const handleTriggerCapture = useCallback(() => {
 		if (sensorStatus === "acquiring") return;
-		setSensorStatus("acquiring");
-		setAcquisitionProgress(15);
-
-		const step1 = setTimeout(() => setAcquisitionProgress(50), 300);
-		const step2 = setTimeout(() => setAcquisitionProgress(85), 650);
-		const step3 = setTimeout(() => {
-			setAcquisitionProgress(100);
-			setSensorStatus("captured");
-			setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
-			showToast("Снимок успешно получен с датчика RVG", "success");
-		}, 950);
-
-		return () => {
-			clearTimeout(step1);
-			clearTimeout(step2);
-			clearTimeout(step3);
-		};
+		// Мгновенный захват <50мс без искусственных задержек и симуляций калибровки шума
+		setSensorStatus("captured");
+		setAcquisitionProgress(100);
+		setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
+		showToast("Снимок успешно получен с датчика RVG", "success");
 	}, [sensorStatus, initialImageUrl]);
 
 	// Load source image into memory and paint canvas with filters
@@ -626,17 +614,17 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							)}
 						</div>
 
-						{/* Acquiring Animation Overlay */}
+						{/* Acquiring Animation Overlay (for external streaming / hardware transfer) */}
 						{sensorStatus === "acquiring" && (
 							<div className="rvg-acquiring-overlay" data-testid="rvg-acquiring-overlay">
 								<div className="rvg-scanner-beam" />
 								<Scan className="w-16 h-16 animate-pulse text-cyan-400" />
 								<div className="text-center">
 									<p className="text-sm font-bold tracking-wide text-cyan-200 uppercase">
-										Чтение 16-битной матрицы визиографа...
+										Получение снимка с визиографа...
 									</p>
 									<p className="text-xs font-mono text-cyan-400/80 mt-1">
-										Калибровка шума · Пакет {acquisitionProgress}%
+										Передача данных {acquisitionProgress}%
 									</p>
 								</div>
 							</div>

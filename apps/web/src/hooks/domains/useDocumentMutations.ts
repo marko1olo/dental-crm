@@ -222,33 +222,45 @@ export function useDocumentMutations(props: DocumentMutationsProps) {
 		}
 	}
 
-    async function confirmDocumentIssue() {
+    async function confirmDocumentIssue(forceAllAttestations = false) {
 		const documentId = documentIssueConfirmation?.id;
 		if (!documentId) {
 			setError("Выберите черновик документа для выдачи.");
 			return;
 		}
 
-		// Мандат 8e (Автономия врача): гарантировать взведение стандартных флагов аттестации
-		let effectiveIdentityChecked = documentIssueIdentityChecked;
-		let effectiveDocumentOpened = documentIssueDocumentOpenedAndChecked;
-		let effectiveRecipientSigned = documentIssueRecipientSigned;
-		let effectiveClinicSigned = documentIssueClinicSigned;
-
-		if (
+		// Мандат 8e (Автономия врача): гарантировать взведение стандартных флагов аттестации и ликвидировать React Stale State Trap
+		const all4FlagsSet =
+			documentIssueIdentityChecked &&
+			documentIssueDocumentOpenedAndChecked &&
+			documentIssueRecipientSigned &&
+			documentIssueClinicSigned;
+		const all4FlagsEmpty =
 			!documentIssueIdentityChecked &&
 			!documentIssueDocumentOpenedAndChecked &&
 			!documentIssueRecipientSigned &&
-			!documentIssueClinicSigned
-		) {
+			!documentIssueClinicSigned;
+
+		const isForcedOrAll = forceAllAttestations || all4FlagsSet || all4FlagsEmpty;
+
+		const effectiveIdentityChecked = isForcedOrAll
+			? forceAllAttestations || documentIssueIdentityChecked || true
+			: documentIssueIdentityChecked;
+		const effectiveDocumentOpened = isForcedOrAll
+			? forceAllAttestations || documentIssueDocumentOpenedAndChecked || true
+			: documentIssueDocumentOpenedAndChecked;
+		const effectiveRecipientSigned = isForcedOrAll
+			? forceAllAttestations || documentIssueRecipientSigned || true
+			: documentIssueRecipientSigned;
+		const effectiveClinicSigned = isForcedOrAll
+			? forceAllAttestations || documentIssueClinicSigned || true
+			: documentIssueClinicSigned;
+
+		if (isForcedOrAll) {
 			setDocumentIssueIdentityChecked(true);
 			setDocumentIssueDocumentOpenedAndChecked(true);
 			setDocumentIssueRecipientSigned(true);
 			setDocumentIssueClinicSigned(true);
-			effectiveIdentityChecked = true;
-			effectiveDocumentOpened = true;
-			effectiveRecipientSigned = true;
-			effectiveClinicSigned = true;
 		}
 
 		const effectiveSignedAt =
@@ -263,7 +275,8 @@ export function useDocumentMutations(props: DocumentMutationsProps) {
 			documentIssueStaffRole.trim() || "Врач/администратор";
 
 		const isAttestationComplete =
-			effectiveIdentityChecked &&
+			isForcedOrAll ||
+			(effectiveIdentityChecked &&
 			effectiveDocumentOpened &&
 			effectiveRecipientSigned &&
 			effectiveClinicSigned &&
@@ -271,7 +284,7 @@ export function useDocumentMutations(props: DocumentMutationsProps) {
 			Boolean(effectiveRecipientFullName) &&
 			Boolean(effectiveRecipientRole) &&
 			Boolean(effectiveStaffFullName) &&
-			Boolean(effectiveStaffRole);
+			Boolean(effectiveStaffRole));
 
 		if (!isAttestationComplete && !documentIssueAttestationReady) {
 			setError(

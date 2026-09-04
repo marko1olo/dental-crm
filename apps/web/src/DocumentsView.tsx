@@ -5590,9 +5590,12 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<div className="document-issue-checkboxes">
 						<div
 							style={{
+								gridColumn: "1 / -1",
 								display: "flex",
 								alignItems: "center",
 								justifyContent: "space-between",
+								flexWrap: "wrap",
+								gap: "6px",
 								paddingBottom: "4px",
 								marginBottom: "4px",
 								borderBottom: "1px solid var(--border-soft)",
@@ -5739,7 +5742,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								setDocumentIssueDocumentOpenedAndChecked(true);
 								setDocumentIssueRecipientSigned(true);
 								setDocumentIssueClinicSigned(true);
-								void confirmDocumentIssue();
+								void confirmDocumentIssue(true);
 							}}
 						>
 							{documentIssueSaving ? "Выдаю документ" : "Выдать после проверки"}
