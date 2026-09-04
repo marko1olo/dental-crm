@@ -793,21 +793,35 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				{/* Quick Discounts */}
 				<div className="flex items-center gap-2">
 					<span className="font-semibold text-[var(--muted,#64748b)]">Скидка:</span>
-					<div className="flex items-center gap-1">
+					<div className="flex items-center gap-1 flex-wrap">
 						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
 							<button
 								key={pct}
 								type="button"
 								onClick={() => setDiscountPercent(pct)}
+								title={
+									pct === 100
+										? "100% скидка: гарантийные переделки и персонал (без паролей и согласований)"
+										: `Применить скидку ${pct}%`
+								}
 								className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
 									discountPercent === pct
-										? "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
-										: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
+										? pct === 100
+											? "bg-emerald-600 text-white shadow-xs"
+											: "bg-[var(--teal,var(--brand-primary))] text-white shadow-xs"
+										: pct === 100
+											? "bg-[var(--paper-strong,var(--paper,#ffffff))] text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 border border-emerald-500/30"
+											: "bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)]"
 								}`}
 							>
-								{pct}%
+								{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
 							</button>
 						))}
+						{discountPercent === 100 && (
+							<span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 ml-1">
+								⚡ 0 ₽ (Гарантия / Персонал)
+							</span>
+						)}
 					</div>
 				</div>
 

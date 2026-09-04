@@ -12,24 +12,31 @@ import {
 	addMonthsToDate,
 	calculateMultiItemWarrantyTerms,
 	calculateWarrantyTerms,
+	createWarrantyRemediationOrder,
 	formatRussianDate,
 	formatShortDate,
 	generateCertificateId,
 	generateQrCodeSvg,
 	generateSha256,
 	generateWarrantyCertificateHtml,
+	generateWarrantyRemediationActHtml,
 	type WarrantyCertificateData,
 	type WarrantyItem,
+	type WarrantyRemediationOrder,
 	type WarrantyRiskFactors,
 } from "../components/warranty/warrantyEngine.js";
 import { WarrantyPassportModal } from "../components/warranty/WarrantyPassportModal.js";
 import {
 	DENTAL_MATERIALS_CATALOG,
+	getAllWarrantyDefectTemplates,
 	getAllWarrantyPresets,
+	getWarrantyDefectTemplate,
 	getWarrantyPreset,
 	MANDATORY_WARRANTY_CONDITIONS,
 	VITA_SHADES,
+	WARRANTY_DEFECT_TEMPLATES,
 	type WarrantyCategory,
+	type WarrantyDefectType,
 	WARRANTY_PRESETS,
 } from "../components/warranty/warrantyPresets.js";
 
@@ -381,4 +388,202 @@ test("Warranty Certificate HTML Generator (A4 / A5): Full document rendering & s
 
 test("WarrantyPassportModal: Component export verification", () => {
 	assert.equal(typeof WarrantyPassportModal, "function");
+});
+
+test("Mandate 8e: Warranty Defect Templates completeness & clinical presets", () => {
+	const templates = getAllWarrantyDefectTemplates();
+	assert.equal(templates.length, 8, "Must contain all 8 statutory dental defect remediation templates");
+
+	const expectedDefectTypes: WarrantyDefectType[] = [
+		"filling_loss",
+		"crown_decementation",
+		"ceramic_chip",
+		"screw_loosening",
+		"denture_fracture",
+		"retainer_debonding",
+		"occlusal_discomfort",
+		"custom_defect",
+	];
+
+	for (const type of expectedDefectTypes) {
+		const tmpl = getWarrantyDefectTemplate(type);
+		assert.ok(tmpl, `Defect template for ${type} must exist`);
+		assert.equal(tmpl.defectType, type);
+		assert.ok(tmpl.title.length > 5, `Title for ${type} must be meaningful`);
+		assert.ok(tmpl.clinicalDescription.length > 10, `Description for ${type} must be detailed`);
+		assert.ok(tmpl.recommendedAction.length > 10, `Action for ${type} must be detailed`);
+		assert.ok(Array.isArray(tmpl.defaultMaterials), "defaultMaterials must be an array");
+	}
+
+	// 1. Выпадение / скол пломбы
+	const fillingLoss = WARRANTY_DEFECT_TEMPLATES.filling_loss;
+	assert.ok(fillingLoss.title.includes("пломб"));
+	assert.ok(fillingLoss.defaultMaterials.some((m) => m.name.includes("Filtek") || m.name.includes("композит")));
+
+	// 2. Расцементировка коронки
+	const crownDecem = WARRANTY_DEFECT_TEMPLATES.crown_decementation;
+	assert.ok(crownDecem.title.includes("Расцементировка"));
+	assert.ok(crownDecem.defaultMaterials.some((m) => m.name.includes("цемент")));
+
+	// 3. Раскручивание винта имплантата
+	const screwLoose = WARRANTY_DEFECT_TEMPLATES.screw_loosening;
+	assert.ok(screwLoose.title.includes("винта"));
+	assert.ok(screwLoose.defaultMaterials.some((m) => m.name.includes("винт")));
+});
+
+test("Mandate 8e: 1-Click 0 ₽ Warranty Remediation Order creation without master password", () => {
+	const remediationOrder = createWarrantyRemediationOrder({
+		certificateId: "WAR-2026-TEST01",
+		toothNumber: "4.6",
+		originalWorkTitle: "Пломба световая Filtek",
+		defectType: "filling_loss",
+		doctorName: "Д-р Кузнецова Анна Павловна",
+		doctorSpecialty: "Врач-стоматолог терапевт",
+		patientFullName: "Сидоров Иван Сергеевич",
+		patientCardNumber: "043-991",
+		clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+		materials: [
+			{
+				id: "WH-COMP-001",
+				name: "Светоотверждаемый композит Filtek Ultimate (шприц)",
+				quantity: 0.5,
+				unit: "шприц",
+				lotNumber: "LOT-FLT-2026",
+			},
+			{
+				id: "WH-ADH-002",
+				name: "Адгезив Single Bond Universal",
+				quantity: 1,
+				unit: "доза",
+				lotNumber: "LOT-ADH-9912",
+			},
+		],
+	});
+
+	// Strict Mandate 8e Invariants:
+	assert.equal(remediationOrder.costToPatientRub, 0, "Patient cost for statutory warranty remediation must be strictly 0 ₽");
+	assert.equal(remediationOrder.discountPercent, 100, "Statutory warranty rework discount must be 100%");
+	assert.equal(remediationOrder.isFreeWarrantyService, true, "Must be flagged as free warranty service");
+	assert.equal(remediationOrder.requiresMasterPassword, false, "Mandate 8e: Doctor reworks must never require master password");
+	assert.equal(remediationOrder.warehouseDeductOnExecution, true, "Materials must be deducted from warehouse on fact");
+
+	assert.ok(remediationOrder.orderNumber.startsWith("ГП-"), "Order number must start with ГП- prefix");
+	assert.equal(remediationOrder.toothNumber, "4.6");
+	assert.equal(remediationOrder.certificateId, "WAR-2026-TEST01");
+	assert.equal(remediationOrder.defectType, "filling_loss");
+	assert.equal(remediationOrder.materialsDeducted.length, 2);
+	assert.equal(remediationOrder.integrityHash?.length, 64, "Must generate valid SHA-256 integrity hash");
+});
+
+test("Mandate 8e: Printable Warranty Remediation Act HTML generator (0 ₽, A4 print, statutory basis)", () => {
+	const order: WarrantyRemediationOrder = createWarrantyRemediationOrder({
+		certificateId: "WAR-2026-99001",
+		toothNumber: "2.1",
+		originalWorkTitle: "Коронка E.max",
+		defectType: "ceramic_chip",
+		doctorName: "Д-р Смирнов Игорь Олегович",
+		patientFullName: "Ковалева Мария Викторовна",
+		patientCardNumber: "043-777",
+		clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+		customFinding: "Скол режущего края керамической коронки 2.1",
+		customAction: "Шлифовка, полировка скола керамики алмазным бором, фторирование",
+		materials: [
+			{
+				id: "WH-POL-003",
+				name: "Полировочная головка Enhance",
+				quantity: 1,
+				unit: "шт",
+				lotNumber: "LOT-ENH-554",
+			},
+		],
+		notes: "Гарантийный случай подтвержден. Оплата не взимается.",
+	});
+
+	const actHtml = generateWarrantyRemediationActHtml(order);
+
+	assert.ok(actHtml.includes("<!DOCTYPE html>"), "Must be valid HTML document");
+	assert.ok(actHtml.includes("Акт гарантийного устранения дефекта"), "Must have statutory act title");
+	assert.ok(actHtml.includes(order.orderNumber), "Must include remediation order number");
+	assert.ok(actHtml.includes("Ковалева Мария Викторовна"), "Must include patient name");
+	assert.ok(actHtml.includes("2.1"), "Must include tooth number");
+	assert.ok(actHtml.includes("Скол режущего края керамической коронки 2.1"), "Must include defect description");
+	assert.ok(actHtml.includes("0 ₽"), "Must state 0 ₽ cost");
+	assert.ok(actHtml.includes("Закон РФ № 2300-1"), "Must cite statutory law 2300-1");
+	assert.ok(actHtml.includes("Полировочная головка Enhance"), "Must include warehouse materials");
+	assert.ok(actHtml.includes(order.integrityHash || ""), "Must include SHA-256 integrity hash");
+});
+
+test("Mandate 8e: Warranty Certificate includes remediation history table when present", () => {
+	const certId = generateCertificateId("WAR");
+	const calculation = calculateWarrantyTerms({
+		category: "composite_restoration",
+		riskFactors: {
+			hygieneScore: 0.8,
+			bruxism: false,
+			nightGuardPrescribed: false,
+			nightGuardUsed: false,
+			smoking: "none",
+			diabetes: "none",
+			malocclusion: false,
+			periodontitis: "none",
+		},
+		issueDate: "2026-08-22",
+	});
+
+	const order: WarrantyRemediationOrder = createWarrantyRemediationOrder({
+		certificateId: certId,
+		toothNumber: "3.6",
+		defectType: "filling_loss",
+		doctorName: "Д-р Семенова Ольга Васильевна",
+		patientFullName: "Григорьев Роман Дмитриевич",
+		patientCardNumber: "043-1122",
+	});
+
+	const certData: WarrantyCertificateData = {
+		certificateId: certId,
+		issueDate: "2026-08-22",
+		patient: {
+			fullName: "Григорьев Роман Дмитриевич",
+			cardNumber: "043-1122",
+		},
+		doctor: {
+			fullName: "Д-р Семенова Ольга Васильевна",
+			specialty: "Врач-стоматолог терапевт",
+		},
+		clinic: {
+			name: "ООО «ДЕНТЕ»",
+			legalName: "ООО «ДЕНТЕ КЛИНИК»",
+			licenseNumber: "ЛО-77-01-000000",
+			address: "г. Москва",
+			phone: "+7 (495) 000-00-00",
+		},
+		items: [
+			{
+				id: "i_1",
+				toothNumber: "3.6",
+				category: "composite_restoration",
+				clinicalWorkTitle: "Пломба световая 3.6",
+				materialName: "Filtek Ultimate",
+				manufacturer: "3M",
+				country: "США",
+				baseWarrantyMonths: 12,
+				baseServiceLifeMonths: 36,
+			},
+		],
+		calculation,
+		verificationUrl: `https://dente-clinic.ru/portal/warranty?cert=${certId}`,
+		qrCodeSvg: generateQrCodeSvg(`https://dente-clinic.ru/portal/warranty?cert=${certId}`),
+		integrityHash: generateSha256(`${certId}|Григорьев Роман Дмитриевич`),
+		signedByDoctor: true,
+		signedByChief: true,
+		attachedToForm043u: true,
+		remediations: [order],
+	};
+
+	const html = generateWarrantyCertificateHtml(certData);
+
+	assert.ok(html.includes("Гарантийные рекламации и устранение дефектов (0 ₽)"));
+	assert.ok(html.includes(order.orderNumber));
+	assert.ok(html.includes("3.6"));
+	assert.ok(html.includes("0 ₽ (100%)"));
 });

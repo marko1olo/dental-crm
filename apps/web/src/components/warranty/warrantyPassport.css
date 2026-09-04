@@ -586,3 +586,454 @@
 .warranty-btn-primary:active {
 	transform: translateY(1px);
 }
+
+/* ============================================================================
+   WARRANTY REMEDIATION & 0-RUBLE DEFECT REMOVAL STUDIO
+   Мандат 8e: Свобода скидок и переделок врача (Закон РФ № 2300-1 ст. 29)
+   ============================================================================ */
+
+/* 1-Click Quick Remediation Banner in Editor */
+.warranty-quick-remediation-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 12px 16px;
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	border: 1px solid var(--ok-fg, #10b981);
+	border-radius: 8px;
+	margin-bottom: 14px;
+}
+
+.warranty-remediation-banner-left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.warranty-remediation-banner-icon {
+	color: var(--ok-fg, #059669);
+	flex-shrink: 0;
+}
+
+.warranty-quick-remediation-banner strong {
+	font-size: 13px;
+	color: var(--ink);
+	display: block;
+}
+
+.warranty-quick-remediation-banner p {
+	font-size: 11.5px;
+	color: var(--ink-2);
+	margin: 2px 0 0 0;
+}
+
+.warranty-btn-remediation-quick {
+	min-height: 44px;
+	padding: 0 16px;
+	border-radius: 6px;
+	background: var(--ok-fg, #059669);
+	color: #ffffff;
+	border: none;
+	font-size: 12.5px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	transition: background 0.15s ease, transform 0.1s ease;
+	flex-shrink: 0;
+}
+
+.warranty-btn-remediation-quick:hover {
+	filter: brightness(1.1);
+}
+
+.warranty-btn-remediation-quick:active {
+	transform: translateY(1px);
+}
+
+/* Remediation Tab in Header */
+.warranty-tab-remediation {
+	color: var(--ok-fg, #059669);
+}
+
+.warranty-tab-remediation.active {
+	border-color: var(--ok-fg, #059669);
+	color: var(--ok-fg, #059669);
+}
+
+/* Remediation Container */
+.warranty-remediation-container {
+	max-width: 900px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* Statutory Notice Box */
+.warranty-remediation-statutory-box {
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--ok-fg, #059669);
+	border-left: 5px solid var(--ok-fg, #059669);
+	border-radius: 8px;
+	padding: 14px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.warranty-statutory-head {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.warranty-statutory-icon-box {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
+	color: var(--ok-fg, #059669);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.warranty-statutory-head h4 {
+	font-size: 14.5px;
+	font-weight: 800;
+	color: var(--ink);
+	margin: 0;
+}
+
+.warranty-statutory-head p {
+	font-size: 11.5px;
+	color: var(--ink-2);
+	margin: 2px 0 0 0;
+}
+
+.warranty-statutory-features {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.statutory-feat-pill {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	font-size: 11.5px;
+	color: var(--ink);
+}
+
+.statutory-feat-pill strong {
+	color: var(--ok-fg, #059669);
+}
+
+/* Success Notice */
+.warranty-success-alert {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	background: var(--ok-bg, rgba(16, 185, 129, 0.15));
+	border: 1px solid var(--ok-fg, #059669);
+	border-radius: 6px;
+	color: var(--ok-fg, #047857);
+	font-size: 12.5px;
+	font-weight: 600;
+}
+
+/* Form Card */
+.warranty-remediation-form-card {
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 16px;
+}
+
+.warranty-remediation-teeth-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.warranty-remediation-tooth-btn {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	transition: all 0.15s ease;
+}
+
+.warranty-remediation-tooth-btn strong {
+	font-size: 13px;
+	color: var(--teal);
+}
+
+.warranty-remediation-tooth-btn span {
+	font-size: 11px;
+	color: var(--ink-2);
+}
+
+.warranty-remediation-tooth-btn:hover {
+	border-color: var(--teal);
+}
+
+.warranty-remediation-tooth-btn.active {
+	border-color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+}
+
+/* Defect Templates Grid */
+.warranty-defect-templates-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+	gap: 8px;
+}
+
+.warranty-defect-btn {
+	min-height: 48px;
+	padding: 8px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	cursor: pointer;
+	text-align: left;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	transition: all 0.15s ease;
+}
+
+.warranty-defect-btn:hover {
+	border-color: var(--teal);
+}
+
+.warranty-defect-btn.active {
+	border-color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+}
+
+.defect-btn-title {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.defect-btn-sub {
+	font-size: 10.5px;
+	font-family: monospace;
+	color: var(--ink-2);
+}
+
+/* Textarea */
+.warranty-textarea {
+	width: 100%;
+	padding: 8px 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12.5px;
+	font-family: inherit;
+	resize: vertical;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.warranty-textarea:focus {
+	border-color: var(--teal);
+}
+
+/* Materials Pills */
+.warranty-materials-pills-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.warranty-material-chip {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	font-size: 12px;
+	color: var(--ink);
+}
+
+.mat-qty {
+	color: var(--teal);
+	font-size: 11.5px;
+}
+
+/* Action Bar */
+.warranty-remediation-action-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding-top: 14px;
+	border-top: 1px solid var(--line);
+	margin-top: 12px;
+	flex-wrap: wrap;
+}
+
+.warranty-zero-cost-block {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.zero-cost-lbl {
+	font-size: 12px;
+	color: var(--ink-2);
+}
+
+.zero-cost-val {
+	font-size: 22px;
+	font-weight: 900;
+	color: var(--ok-fg, #059669);
+}
+
+.zero-cost-note {
+	font-size: 11px;
+	color: var(--ok-fg, #059669);
+	font-weight: 600;
+}
+
+.warranty-btn-remediation-submit {
+	min-height: 44px;
+	padding: 0 20px;
+	border-radius: 6px;
+	border: 1px solid var(--ok-fg, #059669);
+	background: var(--ok-fg, #059669);
+	color: #ffffff;
+	font-size: 13.5px;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	transition: all 0.15s ease;
+	box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+}
+
+.warranty-btn-remediation-submit:hover {
+	filter: brightness(1.1);
+}
+
+.warranty-btn-remediation-submit:active {
+	transform: translateY(1px);
+}
+
+/* History List of Remediation Acts */
+.warranty-remediation-history-card {
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 16px;
+}
+
+.warranty-history-title {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--ink);
+	margin-bottom: 12px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.warranty-remediations-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.warranty-remediation-item-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.rem-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.rem-card-head-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.rem-card-number {
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.rem-card-tooth {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--teal);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.rem-card-date {
+	font-size: 11.5px;
+	color: var(--ink-2);
+}
+
+.rem-card-badge-free {
+	font-size: 11.5px;
+	font-weight: 800;
+	color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	padding: 2px 8px;
+	border-radius: 4px;
+	border: 1px solid var(--ok-fg, #059669);
+}
+
+.rem-card-body {
+	font-size: 12px;
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.rem-materials {
+	color: var(--ink-2);
+	font-size: 11.5px;
+}
+
+.rem-card-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+

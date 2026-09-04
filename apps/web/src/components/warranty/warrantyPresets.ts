@@ -64,6 +64,41 @@ export interface DentalMaterialMeta {
 }
 
 /**
+ * Типы клинических дефектов для 1-клик гарантийной переделки (0 ₽)
+ * Мандат 8e: Свобода скидок и переделок врача
+ */
+export type WarrantyDefectType =
+	| "filling_loss" // Выпадение / распломбировка / скол световой пломбы
+	| "crown_decementation" // Расцементировка искусственной коронки / мостовидного протеза
+	| "ceramic_chip" // Скол керамической облицовки / винира
+	| "screw_loosening" // Раскручивание / подвижность винта абатмента имплантата
+	| "denture_fracture" // Трещина / перелом базиса съемного протеза
+	| "retainer_debonding" // Отклейка ортодонтического ретейнера / брекета
+	| "occlusal_discomfort" // Окклюзионный дискомфорт / суперконтакт
+	| "custom_defect"; // Индивидуальный клинический дефект
+
+export interface WarrantyRemediationMaterialItem {
+	readonly id?: string | undefined;
+	readonly name: string;
+	readonly quantity: number;
+	readonly unit: string;
+	readonly lotNumber?: string | undefined;
+	readonly sku?: string | undefined;
+}
+
+export interface WarrantyDefectTemplate {
+	readonly defectType: WarrantyDefectType;
+	readonly code: string;
+	readonly title: string;
+	readonly shortTitle: string;
+	readonly category: WarrantyCategory;
+	readonly recommendedAction: string;
+	readonly clinicalDescription: string;
+	readonly defaultMaterials: readonly WarrantyRemediationMaterialItem[];
+	readonly statutoryBasis: string;
+}
+
+/**
  * Статутные гарантийные категории и нормативы СтАР
  */
 export const WARRANTY_PRESETS: Record<WarrantyCategory, WarrantyPreset> = {
@@ -542,3 +577,142 @@ export function getWarrantyPreset(category: WarrantyCategory): WarrantyPreset {
 export function getAllWarrantyPresets(): WarrantyPreset[] {
 	return Object.values(WARRANTY_PRESETS);
 }
+
+/**
+ * 1-клик шаблоны гарантийного устранения дефектов (0 ₽)
+ * Положение СтАР и Закон РФ № 2300-1 «О защите прав потребителей» (ст. 29)
+ * Мандат 8e: Свобода скидок и гарантийных переделок врача
+ */
+export const WARRANTY_DEFECT_TEMPLATES: Record<WarrantyDefectType, WarrantyDefectTemplate> = {
+	filling_loss: {
+		defectType: "filling_loss",
+		code: "DEF-FILL-01",
+		title: "Выпадение пломбы / дефект краевого прилегания (0 ₽)",
+		shortTitle: "Выпала пломба (0 ₽)",
+		category: "composite_restoration",
+		recommendedAction: "Некрэктомия по краю, адгезивная подготовка и повторное пломбирование нанокомпозитом",
+		clinicalDescription: "Частичная или полная утрата пломбы, скол композитного материала, нарушение краевой адаптации.",
+		defaultMaterials: [
+			{ name: "Композит светового отверждения (Filtek / Estelite)", quantity: 1, unit: "доз." },
+			{ name: "Адгезивная система Single Bond Universal", quantity: 1, unit: "доз." },
+			{ name: "Травильный гель 37% ортофосфорной кислоты", quantity: 1, unit: "доз." },
+			{ name: "Полировочные диски и щетки", quantity: 1, unit: "компл." },
+		],
+		statutoryBasis: "Закон РФ № 2300-1 ст. 29, Положение СтАР разд. 2 (Безвозмездное устранение недостатков)",
+	},
+	crown_decementation: {
+		defectType: "crown_decementation",
+		code: "DEF-CROWN-02",
+		title: "Расцементировка искусственной коронки / мостовидного протеза (0 ₽)",
+		shortTitle: "Расцементировка коронки (0 ₽)",
+		category: "ceramic_crown_veneer",
+		recommendedAction: "Ультразвуковая и пескоструйная очистка реставрации, антисептическая обработка культи и повторная адгезивная фиксация",
+		clinicalDescription: "Подвижность или самопроизвольное снятие коронки вследствие вымывания фиксирующего цемента.",
+		defaultMaterials: [
+			{ name: "Композитный фиксирующий цемент RelyX U200 / Fuji Plus", quantity: 1, unit: "доз." },
+			{ name: "Раствор хлоргексидина биглюконата 2%", quantity: 5, unit: "мл" },
+			{ name: "Праймер для керамики / металла", quantity: 1, unit: "доз." },
+		],
+		statutoryBasis: "Закон РФ № 2300-1 ст. 29, ГК РФ ст. 720–724 (Гарантийное восстановление фиксации)",
+	},
+	ceramic_chip: {
+		defectType: "ceramic_chip",
+		code: "DEF-CHIP-03",
+		title: "Скол облицовочной керамики / винира (0 ₽)",
+		shortTitle: "Скол керамики (0 ₽)",
+		category: "ceramic_crown_veneer",
+		recommendedAction: "Клиническая шлифовка скола, силанизация керамики и послойное моделирование нанокомпозитом",
+		clinicalDescription: "Поверхностный или краевой скол керамической массы без нарушения целостности каркаса.",
+		defaultMaterials: [
+			{ name: "Керамический праймер Monobond Plus / Silane", quantity: 1, unit: "доз." },
+			{ name: "Светоотверждаемый нанокомпозит эмалевый / опаковый", quantity: 1, unit: "доз." },
+			{ name: "Алмазная полировочная паста Diamond Polish", quantity: 1, unit: "доз." },
+		],
+		statutoryBasis: "Закон РФ № 2300-1 ст. 29 (Устранение дефекта ортопедической конструкции)",
+	},
+	screw_loosening: {
+		defectType: "screw_loosening",
+		code: "DEF-SCREW-04",
+		title: "Раскручивание / подвижность винта абатмента имплантата (0 ₽)",
+		shortTitle: "Подвижность винта абатмента (0 ₽)",
+		category: "implant_fixture",
+		recommendedAction: "Снятие окклюзионной заглушки, ревизия шахты, замена/динамометрическая затяжка винта абатмента (30–35 Н·см)",
+		clinicalDescription: "Ослабление резьбового соединения клинического винта абатмента при сохранной остеоинтеграции имплантата.",
+		defaultMaterials: [
+			{ name: "Клинический титановый винт абатмента", quantity: 1, unit: "шт" },
+			{ name: "Тефлоновая лента (PTFE) изоляции шахты", quantity: 1, unit: "компл." },
+			{ name: "Световой пломбировочный материал окклюзионного доступа", quantity: 1, unit: "доз." },
+		],
+		statutoryBasis: "Регламент СтАР по дентальной имплантологии, ГОСТ Р 55583",
+	},
+	denture_fracture: {
+		defectType: "denture_fracture",
+		code: "DEF-PROSTH-05",
+		title: "Трещина / перелом базиса съемного протеза (0 ₽)",
+		shortTitle: "Поломка базиса протеза (0 ₽)",
+		category: "removable_prosthesis",
+		recommendedAction: "Снятие контрольного оттиска с протезом, лабораторная сварка/починка базиса пластмассой холодной полимеризации",
+		clinicalDescription: "Линейная трещина или перелом акрилового базиса частичного/полного съемного протеза.",
+		defaultMaterials: [
+			{ name: "Базисная пластмасса холодной полимеризации (Vertex Castapress)", quantity: 1, unit: "порция" },
+			{ name: "Оттискная альгинатная масса", quantity: 1, unit: "порция" },
+		],
+		statutoryBasis: "Закон РФ № 2300-1 ст. 29, Положение СтАР разд. 4",
+	},
+	retainer_debonding: {
+		defectType: "retainer_debonding",
+		code: "DEF-ORTHO-06",
+		title: "Отклейка несъемного проволочного ретейнера (0 ₽)",
+		shortTitle: "Отклейка ретейнера (0 ₽)",
+		category: "orthodontic_aligners",
+		recommendedAction: "Пескоструйная очистка эмали, нанесение праймера и повторная фиксация звена ретейнера текучим композитом",
+		clinicalDescription: "Отрыв фиксирующего композитного замка несъемного ретейнера от поверхности одного или нескольких зубов.",
+		defaultMaterials: [
+			{ name: "Ортодонтический текучий светоотверждаемый композит Transbond LR", quantity: 1, unit: "доз." },
+			{ name: "Травильный гель 37%", quantity: 1, unit: "доз." },
+		],
+		statutoryBasis: "Клинические рекомендации Минздрава РФ по ортодонтии, ст. 29 Закона РФ № 2300-1",
+	},
+	occlusal_discomfort: {
+		defectType: "occlusal_discomfort",
+		code: "DEF-OCCL-07",
+		title: "Окклюзионный дискомфорт / пришлифовка суперконтакта (0 ₽)",
+		shortTitle: "Пришлифовка окклюзии (0 ₽)",
+		category: "composite_restoration",
+		recommendedAction: "Артикуляционная проба (Bausch 40 мкм), избирательное микропришлифовывание суперконтакта и полировка",
+		clinicalDescription: "Преждевременный окклюзионный контакт при смыкании зубных рядов, дискомфорт при жевании.",
+		defaultMaterials: [
+			{ name: "Артикуляционная бумага Bausch 40 мкм", quantity: 1, unit: "полоска" },
+			{ name: "Полировочная головка Enhance / PoGo", quantity: 1, unit: "шт" },
+		],
+		statutoryBasis: "Положение СтАР разд. 2 (Коррекция окклюзионных взаимоотношений по гарантии)",
+	},
+	custom_defect: {
+		defectType: "custom_defect",
+		code: "DEF-CUSTOM-08",
+		title: "Индивидуальное гарантийное устранение дефекта (0 ₽)",
+		shortTitle: "Гарантийный дефект (0 ₽)",
+		category: "composite_restoration",
+		recommendedAction: "Клиническая ревизия и безвозмездное устранение выявленного недостатка",
+		clinicalDescription: "Гарантийное обращение пациента в рамках действующего гарантийного срока клиники.",
+		defaultMaterials: [
+			{ name: "Расходные стоматологические материалы по факту манипуляции", quantity: 1, unit: "компл." },
+		],
+		statutoryBasis: "Закон РФ № 2300-1 ст. 29 «Права потребителя при обнаружении недостатков выполненной работы»",
+	},
+};
+
+/**
+ * Получить шаблон дефекта по типу
+ */
+export function getWarrantyDefectTemplate(defectType: WarrantyDefectType): WarrantyDefectTemplate {
+	return WARRANTY_DEFECT_TEMPLATES[defectType] || WARRANTY_DEFECT_TEMPLATES.filling_loss;
+}
+
+/**
+ * Получить все шаблоны дефектов списком
+ */
+export function getAllWarrantyDefectTemplates(): WarrantyDefectTemplate[] {
+	return Object.values(WARRANTY_DEFECT_TEMPLATES);
+}
+

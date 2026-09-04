@@ -11,3 +11,8 @@ export const VisitDiaryEditor: React.FC<VisitDiaryEditorProps> = (props) => {
 };
 
 export { VisitDiarySection };
+export {
+	VisitDiaryTemplateSelector,
+	CANONICAL_SOAP_TEMPLATES,
+	type Template,
+} from "./VisitDiaryTemplateSelector";

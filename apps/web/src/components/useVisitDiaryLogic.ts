@@ -17,6 +17,8 @@ import {
 	panelStateText,
 	requestFailureCause,
 } from "../lib/panelStateText";
+import { CLINICAL_SOAP_PRESETS } from "./visit/clinicalSoapPresets";
+import { CANONICAL_SOAP_TEMPLATES, type Template } from "./VisitDiaryTemplateSelector";
 import { useVisitStore } from "../store/visitStore";
 import { logger } from "../utils/logger";
 import {
@@ -721,39 +723,70 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 		return () => clearInterval(intervalTimer);
 	}, [diary, visitId, isLocked, isRevising, loadState.phase, localDiaryStorageKey]);
 
-	// ── Window beforeunload Tab Closure Protection
+	// ── Window beforeunload, visibilitychange, blur, pagehide & incoming call tab closure protection
 	useEffect(() => {
 		if (!visitId || (isLocked && !isRevising) || loadState.phase === "loading") return;
+
+		const flushImmediately = () => {
+			const hasUnsavedContent = Object.values(diary).some(
+				(v) => typeof v === "string" && v.trim().length > 0,
+			);
+			if (!hasUnsavedContent) return;
+			const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
+			try {
+				localStorage.setItem(storageKey, JSON.stringify(diary));
+			} catch {
+				// ignore localStorage quota errors
+			}
+			void saveOfflineDraft(
+				storageKey,
+				"DIARY_043_DRAFT",
+				visitId,
+				diary,
+			);
+			setLocalDraftSavedAt(new Date());
+		};
 
 		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
 			const hasUnsavedContent = Object.values(diary).some(
 				(v) => typeof v === "string" && v.trim().length > 0,
 			);
 			if (hasUnsavedContent) {
-				// Synchronously flush to localStorage and fire async save to IDB
-				try {
-					localStorage.setItem(localDiaryStorageKey, JSON.stringify(diary));
-				} catch {
-					// ignore
-				}
-				void saveOfflineDraft(
-					localDiaryStorageKey,
-					"DIARY_043_DRAFT",
-					visitId,
-					diary,
-				);
-
+				flushImmediately();
 				e.preventDefault();
 				e.returnValue = "В приеме есть несохраненные данные дневника 043/у. Закрыть страницу?";
 				return e.returnValue;
 			}
 		};
 
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "hidden") {
+				flushImmediately();
+			}
+		};
+
+		const handleBlur = () => {
+			flushImmediately();
+		};
+
+		const handleTelephonyCall = () => {
+			flushImmediately();
+		};
+
 		window.addEventListener("beforeunload", handleBeforeUnload);
+		window.addEventListener("pagehide", flushImmediately);
+		window.addEventListener("blur", handleBlur);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("dente-telephony-incoming-call", handleTelephonyCall);
+
 		return () => {
 			window.removeEventListener("beforeunload", handleBeforeUnload);
+			window.removeEventListener("pagehide", flushImmediately);
+			window.removeEventListener("blur", handleBlur);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("dente-telephony-incoming-call", handleTelephonyCall);
 		};
-	}, [diary, isLocked, loadState.phase, localDiaryStorageKey, visitId]);
+	}, [diary, isLocked, isRevising, loadState.phase, localDiaryStorageKey, visitId]);
 
 	// ── Resize textareas
 
@@ -994,20 +1027,20 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 
 	doSaveRef.current = doSave;
 
-	// ── Debounced Auto-Save (300ms) on diary modifications
+	// ── Debounced Auto-Save (300ms) with immediate synchronous localStorage protection
 	const scheduleDebouncedSave = useCallback(() => {
 		if (isLocked && !isRevising) return;
+		const storageKey = isRevising ? `${localDiaryStorageKey}_revision` : localDiaryStorageKey;
+		try {
+			localStorage.setItem(storageKey, JSON.stringify(diary));
+		} catch {
+			// ignore localStorage quota errors
+		}
 		if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 		debounceTimerRef.current = setTimeout(() => {
 			if (!isLocked) {
 				void doSaveRef.current?.(true);
 			} else if (isRevising) {
-				const storageKey = `${localDiaryStorageKey}_revision`;
-				try {
-					localStorage.setItem(storageKey, JSON.stringify(diary));
-				} catch {
-					// ignore
-				}
 				void saveOfflineDraft(
 					storageKey,
 					"DIARY_043_DRAFT",
@@ -1156,38 +1189,108 @@ export function useVisitDiaryLogic(visitId: string, patientId: string) {
 				showToast("Дневник подписан — изменения заблокированы.", "info");
 				return;
 			}
-			const found = CLINICAL_FAST_PRESETS.find((p) => p.id === presetId);
-			if (!found) return;
-			const target = found;
-			const incomingPayload: Partial<DiaryState> = {
-				anamnesis: target.anamnesis,
-				statusLocalis: target.statusLocalis,
-				diagnosisIcd10: target.defaultIcd10,
-				treatmentDescription: target.treatmentDescription,
-			};
-			if (target.complications) {
-				incomingPayload.complications = target.complications;
-			}
-			if (target.comorbidities) {
-				incomingPayload.comorbidities = target.comorbidities;
+			const fastFound = CLINICAL_FAST_PRESETS.find((p) => p.id === presetId);
+			if (fastFound) {
+				const target = fastFound;
+				const incomingPayload: Partial<DiaryState> = {};
+				if (target.anamnesis) incomingPayload.anamnesis = target.anamnesis;
+				if (target.statusLocalis) incomingPayload.statusLocalis = target.statusLocalis;
+				if (target.treatmentDescription) incomingPayload.treatmentDescription = target.treatmentDescription;
+				if (target.defaultIcd10) incomingPayload.diagnosisIcd10 = target.defaultIcd10;
+				if (target.complications) {
+					incomingPayload.complications = target.complications;
+				}
+				if (target.comorbidities) {
+					incomingPayload.comorbidities = target.comorbidities;
+				}
+
+				setDiary((prev) =>
+					mergeSoapDiaryState(
+						prev,
+						incomingPayload,
+						{ strategy: "smart_append" },
+					),
+				);
+				if (target.defaultIcd10) {
+					setIcdSearch(target.defaultIcd10);
+				}
+				scheduleDebouncedSave();
+				showToast(
+					`Клинический шаблон «${target.label}» применён`,
+					"success",
+					4000,
+				);
+				return;
 			}
 
-			setDiary((prev) =>
-				mergeSoapDiaryState(
-					prev,
-					incomingPayload,
-					{ strategy: "smart_append" },
-				),
-			);
-			if (target.defaultIcd10) {
-				setIcdSearch(target.defaultIcd10);
+			const soapFound = CLINICAL_SOAP_PRESETS.find((p) => p.id === presetId);
+			if (soapFound) {
+				const fullAnamnesis = [soapFound.complaint, soapFound.anamnesis]
+					.filter(Boolean)
+					.join("\n");
+				let treatmentWithRecs = soapFound.treatmentDescription;
+				if (soapFound.recommendations) {
+					treatmentWithRecs += `\n\nРекомендации:\n${soapFound.recommendations}`;
+				}
+				const incomingPayload: Partial<DiaryState> = {};
+				if (fullAnamnesis) incomingPayload.anamnesis = fullAnamnesis;
+				if (soapFound.statusLocalis) incomingPayload.statusLocalis = soapFound.statusLocalis;
+				if (soapFound.icd10) incomingPayload.diagnosisIcd10 = soapFound.icd10;
+				if (treatmentWithRecs) incomingPayload.treatmentDescription = treatmentWithRecs;
+
+				setDiary((prev) =>
+					mergeSoapDiaryState(
+						prev,
+						incomingPayload,
+						{ strategy: "smart_append" },
+					),
+				);
+				if (soapFound.icd10) {
+					setIcdSearch(soapFound.icd10);
+				}
+				scheduleDebouncedSave();
+				showToast(
+					`Клинический протокол «${soapFound.title}» применён`,
+					"success",
+					4000,
+				);
+				return;
 			}
-			scheduleDebouncedSave();
-			showToast(
-				`Клинический шаблон «${target.label}» применён`,
-				"success",
-				4000,
-			);
+
+			const canonicalMatch =
+				(CANONICAL_SOAP_TEMPLATES as Record<string, Template | undefined>)[presetId] ||
+				Object.values(CANONICAL_SOAP_TEMPLATES).find((t) => t.id === presetId);
+			if (canonicalMatch) {
+				const incomingPayload: Partial<DiaryState> = {};
+				if (canonicalMatch.prefilledAnamnesis) {
+					incomingPayload.anamnesis = canonicalMatch.prefilledAnamnesis;
+				}
+				if (canonicalMatch.prefilledObjective) {
+					incomingPayload.statusLocalis = canonicalMatch.prefilledObjective;
+				}
+				if (canonicalMatch.prefilledTreatment) {
+					incomingPayload.treatmentDescription = canonicalMatch.prefilledTreatment;
+				}
+				if (canonicalMatch.defaultIcd10) {
+					incomingPayload.diagnosisIcd10 = canonicalMatch.defaultIcd10;
+				}
+				setDiary((prev) =>
+					mergeSoapDiaryState(
+						prev,
+						incomingPayload,
+						{ strategy: "smart_append" },
+					),
+				);
+				if (canonicalMatch.defaultIcd10) {
+					setIcdSearch(canonicalMatch.defaultIcd10);
+				}
+				scheduleDebouncedSave();
+				showToast(
+					`Клинический протокол «${canonicalMatch.title}» применён`,
+					"success",
+					4000,
+				);
+			}
 		},
 		[isLocked, isRevising, scheduleDebouncedSave],
 	);

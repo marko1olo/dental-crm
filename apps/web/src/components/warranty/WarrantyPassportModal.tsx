@@ -38,26 +38,35 @@ import {
 	addMonthsToDate,
 	calculateMultiItemWarrantyTerms,
 	calculateWarrantyTerms,
+	createWarrantyRemediationOrder,
 	formatRussianDate,
 	formatShortDate,
 	generateCertificateId,
 	generateQrCodeSvg,
 	generateSha256,
 	generateWarrantyCertificateHtml,
+	generateWarrantyRemediationActHtml,
 	type WarrantyCalculationResult,
 	type WarrantyCertificateData,
 	type WarrantyItem,
+	type WarrantyRemediationOrder,
 	type WarrantyRiskFactors,
 } from "./warrantyEngine.js";
 import "./warrantyPassport.css";
 import {
 	DENTAL_MATERIALS_CATALOG,
+	getAllWarrantyDefectTemplates,
 	getAllWarrantyPresets,
+	getWarrantyDefectTemplate,
 	getWarrantyPreset,
 	MANDATORY_WARRANTY_CONDITIONS,
 	VITA_SHADES,
 	type WarrantyCategory,
+	type WarrantyDefectTemplate,
+	type WarrantyDefectType,
+	WARRANTY_DEFECT_TEMPLATES,
 	type WarrantyPreset,
+	type WarrantyRemediationMaterialItem,
 } from "./warrantyPresets.js";
 
 export interface WarrantyPassportModalProps {
@@ -90,6 +99,7 @@ export interface WarrantyPassportModalProps {
 		itemCount: number;
 		adjustedWarrantyMonths: number;
 	}) => void) | undefined;
+	onRemediationCreated?: ((order: WarrantyRemediationOrder) => void) | undefined;
 }
 
 const UPPER_RIGHT_TEETH = ["18", "17", "16", "15", "14", "13", "12", "11"];
@@ -113,8 +123,19 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 	initialTeeth = [],
 	onCertificateIssued,
 	onAttachToForm043u,
+	onRemediationCreated,
 }) => {
-	const [activeTab, setActiveTab] = useState<"editor" | "preview" | "schedule" | "conditions">("editor");
+	const [activeTab, setActiveTab] = useState<"editor" | "preview" | "schedule" | "conditions" | "remediation">("editor");
+
+	// Гарантийное устранение дефекта (0 ₽) — ст. 29 Закона РФ № 2300-1 и Мандат 8e
+	const [remediations, setRemediations] = useState<WarrantyRemediationOrder[]>([]);
+	const [selectedRemediationTooth, setSelectedRemediationTooth] = useState<string>("1.6");
+	const [selectedDefectType, setSelectedDefectType] = useState<WarrantyDefectType>("filling_loss");
+	const [customRemediationFinding, setCustomRemediationFinding] = useState<string>("");
+	const [customRemediationAction, setCustomRemediationAction] = useState<string>("");
+	const [remediationMaterials, setRemediationMaterials] = useState<WarrantyRemediationMaterialItem[]>([]);
+	const [remediationNotes, setRemediationNotes] = useState<string>("");
+	const [remediationSuccessNotice, setRemediationSuccessNotice] = useState<string | null>(null);
 
 	// Состояние выбранных зубов для добавления
 	const [selectedTeeth, setSelectedTeeth] = useState<string[]>(initialTeeth.length > 0 ? initialTeeth : ["1.6"]);
@@ -205,6 +226,18 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 						baseServiceLifeMonths: preset.baseServiceLifeMonths,
 					},
 				]);
+			}
+
+			const defTmpl = getWarrantyDefectTemplate("filling_loss");
+			setSelectedDefectType("filling_loss");
+			setCustomRemediationFinding(defTmpl.clinicalDescription);
+			setCustomRemediationAction(defTmpl.recommendedAction);
+			setRemediationMaterials([...defTmpl.defaultMaterials]);
+			setRemediationSuccessNotice(null);
+			if (initialTeeth && initialTeeth.length > 0) {
+				setSelectedRemediationTooth(initialTeeth[0] || "1.6");
+			} else {
+				setSelectedRemediationTooth("1.6");
 			}
 		}
 	}, [isOpen, initialCategory, initialTeethKey]);
@@ -322,6 +355,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 			signedByDoctor: true,
 			signedByChief: true,
 			attachedToForm043u: attachedStatus,
+			remediations: remediations.length > 0 ? remediations : undefined,
 		};
 	}, [
 		certificateId,
@@ -338,7 +372,67 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 		items,
 		calculation,
 		attachedStatus,
+		remediations,
 	]);
+
+	// Быстрый выбор шаблона дефекта
+	const handleSelectDefectType = (dtype: WarrantyDefectType) => {
+		setSelectedDefectType(dtype);
+		const tmpl = getWarrantyDefectTemplate(dtype);
+		setCustomRemediationFinding(tmpl.clinicalDescription);
+		setCustomRemediationAction(tmpl.recommendedAction);
+		setRemediationMaterials([...tmpl.defaultMaterials]);
+		setRemediationSuccessNotice(null);
+	};
+
+	// 1-клик оформление гарантийной переделки (0 ₽)
+	const handleCreateRemediation = () => {
+		const tooth = selectedRemediationTooth || (items[0]?.toothNumber ?? "1.6");
+		const pName = patient?.fullName || "Пациент стоматологической клиники";
+		const pCard = patient?.cardNumber || "043/у";
+
+		const matchedItem = items.find((it) => it.toothNumber === tooth);
+		const originalTitle = matchedItem?.clinicalWorkTitle || "Ранее выполненная работа";
+
+		const order = createWarrantyRemediationOrder({
+			certificateId,
+			toothNumber: tooth,
+			originalWorkTitle: originalTitle,
+			defectType: selectedDefectType,
+			doctorName: doctorName || "Лечащий врач-стоматолог",
+			doctorSpecialty: doctorSpecialty || "Врач-стоматолог",
+			patientFullName: pName,
+			patientCardNumber: pCard,
+			clinicName: clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
+			customFinding: customRemediationFinding,
+			customAction: customRemediationAction,
+			materials: remediationMaterials,
+			notes: remediationNotes,
+		});
+
+		setRemediations((prev) => [order, ...prev]);
+		setRemediationSuccessNotice(
+			`Акт гарантийного устранения дефекта ${order.orderNumber} (0 ₽) успешно сформирован! Материалы списаны со склада по факту.`,
+		);
+
+		if (onRemediationCreated) {
+			onRemediationCreated(order);
+		}
+	};
+
+	// Печать Акта гарантийного устранения дефекта (0 ₽)
+	const handlePrintRemediationAct = (order: WarrantyRemediationOrder) => {
+		const actHtml = generateWarrantyRemediationActHtml(order);
+		const printWin = window.open("", "_blank", "width=850,height=1000");
+		if (printWin) {
+			printWin.document.write(actHtml);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => {
+				printWin.print();
+			}, 300);
+		}
+	};
 
 	// Генерация готового HTML сертификата
 	const certificateHtml = useMemo(() => {
@@ -451,6 +545,14 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 						<FileCheck size={16} />
 						Условия сохранения гарантии (СтАР)
 					</button>
+					<button
+						type="button"
+						className={`warranty-tab-btn warranty-tab-remediation ${activeTab === "remediation" ? "active" : ""}`}
+						onClick={() => setActiveTab("remediation")}
+					>
+						<Sparkles size={16} />
+						Гарантийная переделка (0 ₽) {remediations.length > 0 ? `(${remediations.length})` : ""}
+					</button>
 				</div>
 
 				{/* Modal Body */}
@@ -459,6 +561,30 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 						<div className="warranty-studio-grid">
 							{/* Left Column: Form and Items */}
 							<div className="warranty-studio-main">
+								{/* 1-клик баннер гарантийного приёма */}
+								<div className="warranty-quick-remediation-banner">
+									<div className="warranty-remediation-banner-left">
+										<ShieldAlert size={20} className="warranty-remediation-banner-icon" />
+										<div>
+											<strong>Гарантийный приём (выпала пломба, расцементировка коронки, скол)</strong>
+											<p>1-клик оформление: Пациент платит 0 ₽ • Списание со склада по факту • Без мастер-паролей (Мандат 8e)</p>
+										</div>
+									</div>
+									<button
+										type="button"
+										className="warranty-btn-remediation-quick"
+										onClick={() => {
+											if (items.length > 0 && items[0]) {
+												setSelectedRemediationTooth(items[0].toothNumber);
+											}
+											setActiveTab("remediation");
+										}}
+									>
+										<Sparkles size={14} />
+										Оформить переделку (0 ₽)
+									</button>
+								</div>
+
 								{/* Зубная формула */}
 								<div className="warranty-card-section">
 									<div className="warranty-section-header">
@@ -974,6 +1100,211 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = ({
 									</div>
 								))}
 							</div>
+						</div>
+					)}
+
+					{activeTab === "remediation" && (
+						<div className="warranty-remediation-container">
+							{/* Statutory banner */}
+							<div className="warranty-remediation-statutory-box">
+								<div className="warranty-statutory-head">
+									<div className="warranty-statutory-icon-box">
+										<ShieldCheck size={22} />
+									</div>
+									<div>
+										<h4>Гарантийный приём & Устранение дефекта (0 ₽)</h4>
+										<p>
+											Закон РФ № 2300-1 «О защите прав потребителей» (ст. 29) • Положение СтАР • Мандат 8e
+										</p>
+									</div>
+								</div>
+								<div className="warranty-statutory-features">
+									<div className="statutory-feat-pill">
+										<Check size={14} className="text-emerald-500" />
+										<span>Пациент платит: <strong>0 ₽ (Скидка 100%)</strong></span>
+									</div>
+									<div className="statutory-feat-pill">
+										<Check size={14} className="text-emerald-500" />
+										<span>Материалы: <strong>Списание со склада по факту</strong></span>
+									</div>
+									<div className="statutory-feat-pill">
+										<Check size={14} className="text-emerald-500" />
+										<span>Свобода врача: <strong>Без мастер-паролей начмеда</strong></span>
+									</div>
+								</div>
+							</div>
+
+							{remediationSuccessNotice && (
+								<div className="warranty-success-alert">
+									<CheckCircle2 size={18} />
+									<span>{remediationSuccessNotice}</span>
+								</div>
+							)}
+
+							<div className="warranty-remediation-form-card">
+								<div className="warranty-section-header">
+									<h4>
+										<Award size={16} />
+										1. Выберите зуб и шаблон гарантийной переделки:
+									</h4>
+								</div>
+
+								{/* Зуб */}
+								<div className="warranty-form-group" style={{ marginBottom: "12px" }}>
+									<label className="warranty-label">Зуб / Исходная позиция гарантийного паспорта:</label>
+									<div className="warranty-remediation-teeth-row">
+										{items.length === 0 ? (
+											<div style={{ color: "var(--ink-2)", fontSize: "12px" }}>
+												В паспорте нет сохраненных позиций. Выберите зуб в редакторе или введите номер.
+											</div>
+										) : (
+											items.map((it) => (
+												<button
+													key={it.id}
+													type="button"
+													className={`warranty-remediation-tooth-btn ${selectedRemediationTooth === it.toothNumber ? "active" : ""}`}
+													onClick={() => setSelectedRemediationTooth(it.toothNumber)}
+												>
+													<strong>Зуб {it.toothNumber}</strong>
+													<span>{it.clinicalWorkTitle}</span>
+												</button>
+											))
+										)}
+									</div>
+								</div>
+
+								{/* 1-клик шаблоны дефекта */}
+								<div className="warranty-form-group" style={{ marginBottom: "16px" }}>
+									<label className="warranty-label">1-Клик клинический шаблон дефекта (СтАР / 0 ₽):</label>
+									<div className="warranty-defect-templates-grid">
+										{getAllWarrantyDefectTemplates().map((tmpl) => (
+											<button
+												key={tmpl.defectType}
+												type="button"
+												className={`warranty-defect-btn ${selectedDefectType === tmpl.defectType ? "active" : ""}`}
+												onClick={() => handleSelectDefectType(tmpl.defectType)}
+											>
+												<span className="defect-btn-title">{tmpl.shortTitle}</span>
+												<span className="defect-btn-sub">{tmpl.code}</span>
+											</button>
+										))}
+									</div>
+								</div>
+
+								{/* Описание дефекта и действие */}
+								<div className="warranty-form-row">
+									<div className="warranty-form-group">
+										<label className="warranty-label">Клиническая картина дефекта:</label>
+										<textarea
+											className="warranty-textarea"
+											rows={2}
+											value={customRemediationFinding}
+											onChange={(e) => setCustomRemediationFinding(e.target.value)}
+											placeholder="Описание выявленного дефекта..."
+										/>
+									</div>
+									<div className="warranty-form-group">
+										<label className="warranty-label">Протокол гарантийного устранения:</label>
+										<textarea
+											className="warranty-textarea"
+											rows={2}
+											value={customRemediationAction}
+											onChange={(e) => setCustomRemediationAction(e.target.value)}
+											placeholder="Выполненные лечебные действия..."
+										/>
+									</div>
+								</div>
+
+								{/* Списание со склада */}
+								<div className="warranty-form-group" style={{ marginBottom: "16px" }}>
+									<label className="warranty-label">Стоматологические материалы, списываемые со склада по факту:</label>
+									<div className="warranty-materials-pills-list">
+										{remediationMaterials.map((mat, i) => (
+											<div key={i} className="warranty-material-chip">
+												<span>{mat.name}</span>
+												<strong className="mat-qty">{mat.quantity} {mat.unit}</strong>
+											</div>
+										))}
+									</div>
+								</div>
+
+								{/* Примечания врача */}
+								<div className="warranty-form-group" style={{ marginBottom: "16px" }}>
+									<label className="warranty-label">Клинические примечания врача (опционально):</label>
+									<input
+										type="text"
+										className="warranty-input"
+										value={remediationNotes}
+										onChange={(e) => setRemediationNotes(e.target.value)}
+										placeholder="Например: Пациент обратился по гарантии, окклюзионная коррекция проведена успешно..."
+									/>
+								</div>
+
+								{/* Итог 0 ₽ и кнопка оформления */}
+								<div className="warranty-remediation-action-bar">
+									<div className="warranty-zero-cost-block">
+										<span className="zero-cost-lbl">К оплате пациентом:</span>
+										<strong className="zero-cost-val">0 ₽</strong>
+										<span className="zero-cost-note">Гарантия клиники 100% • Без паролей</span>
+									</div>
+
+									<button
+										type="button"
+										className="warranty-btn-remediation-submit"
+										onClick={handleCreateRemediation}
+									>
+										<CheckCircle2 size={18} />
+										Оформить гарантийное устранение (0 ₽) & Списать материалы
+									</button>
+								</div>
+							</div>
+
+							{/* Список уже оформленных актов */}
+							{remediations.length > 0 && (
+								<div className="warranty-remediation-history-card">
+									<div className="warranty-section-header">
+										<h4 style={{ margin: 0 }}>
+											<FileCheck size={16} />
+											Оформленные гарантийные акты по сертификату {certificateId} ({remediations.length}):
+										</h4>
+									</div>
+									<div className="warranty-remediations-list">
+										{remediations.map((rem) => (
+											<div key={rem.id} className="warranty-remediation-item-card">
+												<div className="rem-card-head">
+													<div className="rem-card-head-left">
+														<strong className="rem-card-number">{rem.orderNumber}</strong>
+														<span className="rem-card-tooth">Зуб {rem.toothNumber}</span>
+														<span className="rem-card-date">
+															{formatShortDate(rem.performedAtIso.slice(0, 10))}
+														</span>
+													</div>
+													<div className="rem-card-badge-free">0 ₽ (Скидка 100%)</div>
+												</div>
+												<div className="rem-card-body">
+													<p><strong>Дефект:</strong> {rem.defectTitle}</p>
+													<p><strong>Манипуляция:</strong> {rem.remediationAction}</p>
+													<p className="rem-materials">
+														<strong>Списано со склада:</strong>{" "}
+														{rem.materialsDeducted.map((m) => `${m.name} (${m.quantity} ${m.unit})`).join(", ")}
+													</p>
+												</div>
+												<div className="rem-card-actions">
+													<button
+														type="button"
+														className="warranty-btn-secondary"
+														onClick={() => handlePrintRemediationAct(rem)}
+														title="Распечатать отдельный Акт устранения дефекта (0 ₽)"
+													>
+														<Printer size={14} />
+														Печать Акта (0 ₽)
+													</button>
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 				</div>
