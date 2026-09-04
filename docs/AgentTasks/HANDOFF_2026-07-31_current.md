@@ -1,7 +1,13 @@
 # ARCHITECT HANDOFF & MISSION BRIEFING
 
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [Высшая Конституция THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+>
+> ⚠️ **HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):**
+> Этот документ является зафиксированным историческим отчётом спринта от 31 июля 2026 года.
+> Все перечисленные в нём задачи полностью выполнены, проверены и закрыты в кодовой базе.
+> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** использовать этот файл как список текущих невыполненных задач, брать их в повторную работу или ходить по кругу (Мандат 8g: Rule != Task, Мандат 8h: Динамическая синхронизация бэклогов).
+> Актуальный рабочий статус и активный бэклог находятся в: **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**, **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** и **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**.
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Date/Time**: 2026-07-31 14:10 (UTC+4)  
 **Repository**: `C:\Clinic_MVP\dental-crm`  
 **Current Branch**: `main`  

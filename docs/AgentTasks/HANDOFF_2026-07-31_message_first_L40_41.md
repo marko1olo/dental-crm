@@ -1,7 +1,13 @@
 # HANDOFF — 2026-07-31 — ScannerView + LeadsKanban message-first (L40–41)
 
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [Высшая Конституция THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)
+>
+> ⚠️ **HISTORICAL ARCHIVE SNAPSHOT (ИСТОРИЧЕСКИЙ АРХИВНЫЙ СЛЕПОК):**
+> Этот документ является зафиксированным историческим отчётом этапа L40–L41 от 31 июля 2026 года.
+> Все задачи закрыты (коммиты `36dc0ce02`, `803858558`).
+> **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** использовать этот файл как текущий список задач или брать из него задачи в повторную работу (Мандаты 8g, 8h).
+> Актуальный рабочий статус и активный бэклог: **[.agents/INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**, **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)** и **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**.
 
-> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Repo:** `C:\Clinic_MVP\dental-crm` (NOT hades / Hecton8)  
 **HEAD = origin/main = `803858558`**  
 **Previous base:** `bca70f14a` (workspace profile stamp)
