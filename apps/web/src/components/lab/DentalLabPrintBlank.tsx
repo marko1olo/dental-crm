@@ -9,6 +9,8 @@ import {
 	SURFACE_TEXTURE_OPTIONS,
 	generateBarcodeSvg,
 	generateQrCodeSvg,
+	type JawScope,
+	formatJawScopeLabel,
 } from "./labMath";
 
 export interface DentalLabPrintBlankProps {
@@ -17,6 +19,7 @@ export interface DentalLabPrintBlankProps {
 	formPatientName: string;
 	formDoctorName: string;
 	selectedTeeth: number[];
+	jawScope?: JawScope | null;
 	constructionType: string;
 	material: string;
 	shadeSystem: "classical" | "3d_master" | "bleach";
@@ -50,6 +53,7 @@ export function DentalLabPrintBlank({
 	formPatientName,
 	formDoctorName,
 	selectedTeeth,
+	jawScope,
 	constructionType,
 	material,
 	shadeSystem,
@@ -145,7 +149,16 @@ export function DentalLabPrintBlank({
 					<div className="space-y-1.5">
 						<div><strong>Пациент:</strong> <span className="font-bold">{formPatientName}</span></div>
 						<div><strong>Лечащий врач:</strong> <span className="font-bold">{formDoctorName}</span></div>
-						<div><strong>Зубная формула (FDI):</strong> <span className="font-bold text-sm bg-slate-100 px-2 py-0.5 rounded">{selectedTeeth.join(", ") || "—"}</span></div>
+						<div>
+							<strong>Зубная формула (FDI):</strong>{" "}
+							<span className="font-bold text-sm bg-slate-100 px-2 py-0.5 rounded">
+								{jawScope
+									? `Челюсть целиком: ${formatJawScopeLabel(jawScope)}`
+									: selectedTeeth.length > 0
+									? selectedTeeth.join(", ")
+									: "Челюсть целиком / Общечелюстное изделие"}
+							</span>
+						</div>
 						<div><strong>Слепок / Оттискная масса:</strong> <span className="font-bold">{impressionLabels[impressionType] || impressionType}</span></div>
 					</div>
 					<div className="space-y-1.5">

@@ -53,6 +53,9 @@ import {
 	ONE_CLICK_LAB_DEFAULTS,
 	EXPRESS_LAB_PRESETS,
 	type ExpressLabPreset,
+	type JawScope,
+	formatJawScopeLabel,
+	isJawWideConstruction,
 } from "./labMath";
 import { rublesToKopecks } from "@dental/shared";
 import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
@@ -111,8 +114,9 @@ export function DentalLabOrderModal({
 	const [formDoctorId, setFormDoctorId] = useState(doctorId || initialOrder?.doctorId || "");
 	const [formDoctorName, setFormDoctorName] = useState(doctorName || initialOrder?.doctorName || "Лечащий врач");
 
-	// Tooth Selection
+	// Tooth & Jaw Selection
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([]);
+	const [jawScope, setJawScope] = useState<JawScope | null>(initialOrder?.jawScope || null);
 	const [constructionType, setConstructionType] = useState<string>("single_crown");
 	const [material, setMaterial] = useState<string>("zirconia_multilayer");
 	const [impressionType, setImpressionType] = useState<string>("a_silicone");
@@ -169,6 +173,24 @@ export function DentalLabOrderModal({
 					.map((t) => Number.parseInt(t, 10))
 					.filter((n) => !Number.isNaN(n) && n >= 11 && n <= 85);
 				setSelectedTeeth(parsed);
+			} else {
+				setSelectedTeeth([]);
+			}
+			if (initialOrder.jawScope) {
+				setJawScope(initialOrder.jawScope);
+			} else if (initialOrder.toothFdi) {
+				const tf = initialOrder.toothFdi.toLowerCase();
+				if (tf.includes("обе челюсти") || tf.includes("both") || tf.includes("в/ч + н/ч")) {
+					setJawScope("both");
+				} else if (tf.includes("верхн") || tf.includes("в/ч") || tf.includes("upper")) {
+					setJawScope("upper");
+				} else if (tf.includes("нижн") || tf.includes("н/ч") || tf.includes("lower")) {
+					setJawScope("lower");
+				} else {
+					setJawScope(null);
+				}
+			} else {
+				setJawScope(null);
 			}
 			setConstructionType(initialOrder.constructionType || "single_crown");
 			setMaterial(initialOrder.material || "zirconia_multilayer");
@@ -343,7 +365,14 @@ export function DentalLabOrderModal({
 
 		setIsSubmitting(true);
 		try {
-			const toothFdiStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Общий наряд / Челюсть целиком";
+			let toothFdiStr: string;
+			if (jawScope) {
+				toothFdiStr = formatJawScopeLabel(jawScope);
+			} else if (selectedTeeth.length > 0) {
+				toothFdiStr = selectedTeeth.join(", ");
+			} else {
+				toothFdiStr = "Общий наряд / Челюсть целиком";
+			}
 			const finalShade =
 				shadeSystem === "3d_master"
 					? shade3dMaster
@@ -355,6 +384,7 @@ export function DentalLabOrderModal({
 				initialOrder?.isWarrantyRework ? "ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽ ДЛЯ ПАЦИЕНТА)" : null,
 				initialOrder?.reworkReason ? `Причина рекламации: ${initialOrder.reworkReason}` : null,
 				initialOrder?.originalOrderNumber ? `Исходный наряд ЗТЛ: № ${initialOrder.originalOrderNumber}` : null,
+				jawScope ? `Наряд на челюсть: ${formatJawScopeLabel(jawScope)}` : null,
 				clinicalNotes.trim(),
 				`Оттискная масса / Скан: ${impressionType}`,
 				`Конструкция: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`,
@@ -378,6 +408,7 @@ export function DentalLabOrderModal({
 				patientId: formPatientId,
 				doctorId: formDoctorId || null,
 				toothFdi: toothFdiStr,
+				jawScope: jawScope || undefined,
 				material: LAB_MATERIALS.find((m) => m.id === material)?.name || material,
 				colorVita: finalShade,
 				dueDate: dueDate ? new Date(dueDate).toISOString() : null,
@@ -455,6 +486,7 @@ export function DentalLabOrderModal({
 			const resultData: DentalLabOrderData = {
 				...savedOrder,
 				selectedTeeth,
+				jawScope,
 				constructionType,
 				material,
 				impressionType,
@@ -668,6 +700,8 @@ export function DentalLabOrderModal({
 					{/* ═══ TAB 1: MAIN SPECS & ODONTOGRAM ═══════════════════════════ */}
 					{activeTab === "main" && (
 						<DentalLabRestorationTab
+							jawScope={jawScope}
+							setJawScope={setJawScope}
 							selectedTeeth={selectedTeeth}
 							setSelectedTeeth={setSelectedTeeth}
 							toggleTooth={toggleTooth}
@@ -878,6 +912,7 @@ export function DentalLabOrderModal({
 							formPatientName={formPatientName}
 							formDoctorName={formDoctorName}
 							selectedTeeth={selectedTeeth}
+							jawScope={jawScope}
 							constructionType={constructionType}
 							material={material}
 							shadeSystem={shadeSystem}
@@ -910,7 +945,11 @@ export function DentalLabOrderModal({
 				{/* ─── MODAL FOOTER WITH SAVE / SUBMIT ───────────────────────────── */}
 				<div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 shrink-0">
 					<div className="text-xs text-slate-500 dark:text-slate-400 font-bold min-w-0 flex-1 sm:flex-initial">
-						{selectedTeeth.length > 0 ? (
+						{jawScope ? (
+							<span className="break-words">
+								Наряд на челюсть: <strong className="text-emerald-700 dark:text-emerald-300 text-sm font-extrabold">{formatJawScopeLabel(jawScope)}</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm whitespace-nowrap">{money(totalLabPriceRub)}</strong>
+							</span>
+						) : selectedTeeth.length > 0 ? (
 							<span className="break-words">
 								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{selectedTeeth.join(", ")}</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm whitespace-nowrap">{money(totalLabPriceRub)}</strong>
 							</span>

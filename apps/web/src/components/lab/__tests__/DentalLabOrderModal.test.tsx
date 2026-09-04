@@ -16,6 +16,10 @@ import {
 	generateBarcodeSvg,
 	generateQrCodeSvg,
 	formatGostOrderNumber,
+	isJawWideConstruction,
+	formatJawScopeLabel,
+	formatLabOrderTeethOrJaw,
+	type JawScope,
 } from "../labMath";
 
 describe("DentalLabOrderModal — Prosthetic Construction Types", () => {
@@ -237,3 +241,80 @@ describe("DentalLabOrderModal — Printable Blank Vector Barcode & QR Code Engin
 		assert.equal(formatted, "ЗТЛ-2608-ABCDEF");
 	});
 });
+
+describe("DentalLabOrderModal — Full-Jaw Orders & Mandate 8e Unblocker", () => {
+	test("isJawWideConstruction корректно определяет общечелюстные конструкции", () => {
+		assert.equal(isJawWideConstruction("nightguard_bruxism"), true);
+		assert.equal(isJawWideConstruction("occlusal_splint"), true);
+		assert.equal(isJawWideConstruction("sports_mouthguard"), true);
+		assert.equal(isJawWideConstruction("bleaching_tray"), true);
+		assert.equal(isJawWideConstruction("full_denture"), true);
+		assert.equal(isJawWideConstruction("custom_impression_tray"), true);
+		assert.equal(isJawWideConstruction("all_on_arch"), true);
+		assert.equal(isJawWideConstruction("all_on_4_6"), true);
+		assert.equal(isJawWideConstruction("clasp_denture"), true);
+		assert.equal(isJawWideConstruction("aligner_nightguard"), true);
+		assert.equal(isJawWideConstruction("aligners_nightguard"), true);
+
+		// Одиночные зубы не являются общечелюстными
+		assert.equal(isJawWideConstruction("single_crown"), false);
+		assert.equal(isJawWideConstruction("veneer"), false);
+		assert.equal(isJawWideConstruction("inlay_onlay"), false);
+		assert.equal(isJawWideConstruction("endocrown"), false);
+	});
+
+	test("formatJawScopeLabel возвращает канонические русские названия для челюстей", () => {
+		assert.equal(formatJawScopeLabel("upper"), "Верхняя челюсть (В/Ч)");
+		assert.equal(formatJawScopeLabel("lower"), "Нижняя челюсть (Н/Ч)");
+		assert.equal(formatJawScopeLabel("both"), "Обе челюсти (В/Ч + Н/Ч)");
+
+		assert.equal(formatJawScopeLabel("upper", true), "В/Ч целиком");
+		assert.equal(formatJawScopeLabel("lower", true), "Н/Ч целиком");
+		assert.equal(formatJawScopeLabel("both", true), "Обе челюсти");
+
+		assert.equal(formatJawScopeLabel(null), "");
+		assert.equal(formatJawScopeLabel(undefined), "");
+	});
+
+	test("formatLabOrderTeethOrJaw форматирует наряд на челюсть без одиночных зубов", () => {
+		// С явным jawScope
+		assert.equal(formatLabOrderTeethOrJaw({ jawScope: "upper" }), "В/Ч целиком");
+		assert.equal(formatLabOrderTeethOrJaw({ jawScope: "lower" }), "Н/Ч целиком");
+		assert.equal(formatLabOrderTeethOrJaw({ jawScope: "both" }), "Обе челюсти");
+
+		// Распознавание из toothFdi
+		assert.equal(formatLabOrderTeethOrJaw({ toothFdi: "Верхняя челюсть (В/Ч)" }), "В/Ч целиком");
+		assert.equal(formatLabOrderTeethOrJaw({ toothFdi: "Нижняя челюсть (Н/Ч)" }), "Н/Ч целиком");
+		assert.equal(formatLabOrderTeethOrJaw({ toothFdi: "Обе челюсти (В/Ч + Н/Ч)" }), "Обе челюсти");
+
+		// Общечелюстная конструкция без выбранных зубов
+		assert.equal(
+			formatLabOrderTeethOrJaw({
+				constructionType: "nightguard_bruxism",
+				selectedTeeth: [],
+			}),
+			"Челюсть целиком",
+		);
+
+		// Обычный наряд с зубами
+		assert.equal(formatLabOrderTeethOrJaw({ selectedTeeth: [16] }), "Зуб 16");
+		assert.equal(formatLabOrderTeethOrJaw({ selectedTeeth: [16, 17] }), "Зубы: 16, 17");
+	});
+
+	test("Мандат 8e: Наряд на челюсть оформляется без обязательного выбора зубов в формуле", () => {
+		// Заказ на каппу с пустой формулой зубов валиден
+		const jawOrder = {
+			patientId: "patient-101",
+			constructionType: "nightguard_bruxism",
+			jawScope: "both" as JawScope,
+			selectedTeeth: [],
+			priceRub: 15000,
+		};
+
+		assert.equal(jawOrder.selectedTeeth.length, 0, "Зубы не выбраны");
+		assert.equal(jawOrder.jawScope, "both", "Челюсть выбрана");
+		assert.equal(isJawWideConstruction(jawOrder.constructionType), true);
+		assert.equal(formatLabOrderTeethOrJaw(jawOrder), "Обе челюсти");
+	});
+});
+

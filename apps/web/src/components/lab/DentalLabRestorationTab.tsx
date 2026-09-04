@@ -11,6 +11,9 @@ import {
 	CONTACT_TIGHTNESS_OPTIONS,
 	SURFACE_TEXTURE_OPTIONS,
 	addWorkingDays,
+	type JawScope,
+	isJawWideConstruction,
+	formatJawScopeLabel,
 } from "./labMath";
 
 export interface DentalLabRestorationTabProps {
@@ -28,6 +31,9 @@ export interface DentalLabRestorationTabProps {
 	setClinicalNotes: (notes: string) => void;
 	impressionType?: string;
 	setImpressionType?: (type: string) => void;
+	// Jaw scope for full arch orders (splints, guards, full dentures)
+	jawScope?: JawScope | null;
+	setJawScope?: (scope: JawScope | null) => void;
 	// Tier 1 Hot Path Shade Props
 	shadeSystem?: "classical" | "3d_master" | "bleach";
 	setShadeSystem?: (system: "classical" | "3d_master" | "bleach") => void;
@@ -66,6 +72,8 @@ export function DentalLabRestorationTab({
 	setClinicalNotes,
 	impressionType = "a_silicone",
 	setImpressionType,
+	jawScope = null,
+	setJawScope,
 	shadeSystem = "classical",
 	setShadeSystem,
 	shadeClassical = "A2",
@@ -125,6 +133,128 @@ export function DentalLabRestorationTab({
 
 	return (
 		<div className="space-y-6">
+			{/* ─── ОБЩЕЧЕЛЮСТНОЙ ТУМБЛЕР / ЧИПЫ ВЫБОРА ЧЕЛЮСТИ (Мандат 8e / Без блокировок) ─── */}
+			<div
+				className={`p-4 rounded-2xl border transition-all ${
+					jawScope
+						? "bg-teal-500/10 dark:bg-teal-950/30 border-teal-500/50 shadow-xs"
+						: "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60"
+				}`}
+				data-testid="lab-jaw-scope-panel"
+			>
+				<div className="flex items-center justify-between flex-wrap gap-2 mb-2.5">
+					<div className="flex items-center gap-2">
+						<span className="p-1 rounded-lg bg-[var(--teal-surface)] text-[var(--teal)] font-bold text-xs">
+							<Layers size={15} />
+						</span>
+						<label className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 m-0">
+							Наряд на челюсть целиком (Общечелюстное изделие)
+						</label>
+					</div>
+					<span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+						Каппы, сплинты, ПСПП, шаблоны — выбор зубов не обязателен!
+					</span>
+				</div>
+
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+					<button
+						type="button"
+						onClick={() => setJawScope?.(jawScope === "upper" ? null : "upper")}
+						className={`min-h-[44px] px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between gap-2 touch-manipulation ${
+							jawScope === "upper"
+								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm ring-2 ring-teal-400/40"
+								: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-400 hover:bg-teal-50/20"
+						}`}
+						data-testid="jaw-scope-upper-btn"
+						aria-pressed={jawScope === "upper"}
+					>
+						<div className="flex items-center gap-2">
+							<span className="text-sm">⬆️</span>
+							<div className="text-left">
+								<div className="leading-tight">Верхняя челюсть</div>
+								<div className={`text-[10px] font-normal ${jawScope === "upper" ? "text-teal-100" : "text-slate-400"}`}>
+									(В/Ч)
+								</div>
+							</div>
+						</div>
+						{jawScope === "upper" && <CheckCircle2 size={16} className="text-white shrink-0" />}
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setJawScope?.(jawScope === "lower" ? null : "lower")}
+						className={`min-h-[44px] px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between gap-2 touch-manipulation ${
+							jawScope === "lower"
+								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm ring-2 ring-teal-400/40"
+								: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-400 hover:bg-teal-50/20"
+						}`}
+						data-testid="jaw-scope-lower-btn"
+						aria-pressed={jawScope === "lower"}
+					>
+						<div className="flex items-center gap-2">
+							<span className="text-sm">⬇️</span>
+							<div className="text-left">
+								<div className="leading-tight">Нижняя челюсть</div>
+								<div className={`text-[10px] font-normal ${jawScope === "lower" ? "text-teal-100" : "text-slate-400"}`}>
+									(Н/Ч)
+								</div>
+							</div>
+						</div>
+						{jawScope === "lower" && <CheckCircle2 size={16} className="text-white shrink-0" />}
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setJawScope?.(jawScope === "both" ? null : "both")}
+						className={`min-h-[44px] px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between gap-2 touch-manipulation ${
+							jawScope === "both"
+								? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-sm ring-2 ring-teal-400/40"
+								: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-400 hover:bg-teal-50/20"
+						}`}
+						data-testid="jaw-scope-both-btn"
+						aria-pressed={jawScope === "both"}
+					>
+						<div className="flex items-center gap-2">
+							<span className="text-sm">🔄</span>
+							<div className="text-left">
+								<div className="leading-tight">Обе челюсти</div>
+								<div className={`text-[10px] font-normal ${jawScope === "both" ? "text-teal-100" : "text-slate-400"}`}>
+									(В/Ч + Н/Ч)
+								</div>
+							</div>
+						</div>
+						{jawScope === "both" && <CheckCircle2 size={16} className="text-white shrink-0" />}
+					</button>
+				</div>
+
+				{jawScope && (
+					<div className="mt-2.5 p-2 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-between text-xs text-teal-900 dark:text-teal-200">
+						<div className="flex items-center gap-1.5 font-bold truncate">
+							<CheckCircle2 size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>
+								Наряд на челюсть:{" "}
+								<strong>
+									{jawScope === "upper"
+										? "Верхняя челюсть"
+										: jawScope === "lower"
+										? "Нижняя челюсть"
+										: "Обе челюсти"}
+								</strong>
+							</span>
+							<span className="text-[11px] font-normal opacity-85 hidden sm:inline">
+								· Врач свободен от выбора отдельных зубов (Мандат 8e)
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => setJawScope?.(null)}
+							className="text-[11px] font-bold text-slate-500 hover:text-rose-600 underline cursor-pointer shrink-0 ml-2"
+						>
+							Сбросить челюсть
+						</button>
+					</div>
+				)}
+			</div>
 			{/* FDI Direct Input with autoFocus & Validation */}
 			<div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl space-y-2">
 				<div className="flex items-center justify-between">
@@ -199,9 +329,11 @@ export function DentalLabRestorationTab({
 							Зубная формула (FDI ISO 3950)
 						</span>
 						<span className="text-xs px-3 py-1 rounded-full bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
-							{selectedTeeth.length > 0
+							{jawScope
+								? `Наряд на челюсть: ${jawScope === "upper" ? "Верхняя челюсть (В/Ч)" : jawScope === "lower" ? "Нижняя челюсть (Н/Ч)" : "Обе челюсти (В/Ч + Н/Ч)"}${selectedTeeth.length > 0 ? ` · зубы ${selectedTeeth.join(", ")}` : ""}`
+								: selectedTeeth.length > 0
 								? `Выбрано: ${selectedTeeth.join(", ")} (${selectedTeeth.length} ед.)`
-								: "Выберите зубы для наряда"}
+								: "Выберите челюсть целиком или зубы"}
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5 sm:gap-2 text-xs flex-wrap">
@@ -739,7 +871,12 @@ export function DentalLabRestorationTab({
 							<button
 								key={c.id}
 								type="button"
-								onClick={() => setConstructionType(c.id)}
+								onClick={() => {
+									setConstructionType(c.id);
+									if (isJawWideConstruction(c.id) && !jawScope) {
+										setJawScope?.("upper");
+									}
+								}}
 								className={`lab-construct-card ${isSelected ? "is-active" : ""}`}
 							>
 								<div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-[var(--teal)] border border-teal-200 dark:border-teal-800 flex-shrink-0">

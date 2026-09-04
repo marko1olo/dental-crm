@@ -7,6 +7,8 @@ import { generateQrMatrix, generateQrCodeSvg as sharedGenerateQrCodeSvg } from "
 
 // ─── TYPES & INTERFACES ────────────────────────────────────────────────────────
 
+export type JawScope = "upper" | "lower" | "both";
+
 export interface DentalLabOrderData {
 	id?: string;
 	patientId: string;
@@ -16,6 +18,7 @@ export interface DentalLabOrderData {
 	secureToken?: string;
 	toothFdi?: string | null;
 	selectedTeeth?: number[];
+	jawScope?: JawScope | null;
 	constructionType?: string;
 	material?: string | null;
 	impressionType?: string | null;
@@ -172,7 +175,111 @@ export const CONSTRUCTION_TYPES = [
 		icon: "post",
 		category: "Несъемное",
 	},
+	{
+		id: "nightguard_bruxism",
+		name: "Ночная каппа от бруксизма",
+		desc: "Термоформованная каппа против патологической стираемости (на челюсть целиком)",
+		icon: "guard",
+		category: "Каппы",
+	},
+	{
+		id: "occlusal_splint",
+		name: "Разгрузочный окклюзионный сплинт",
+		desc: "Миорелаксационный сплинт при дисфункции ВНЧС и мышечном гипертонусе (на челюсть)",
+		icon: "aligner",
+		category: "Каппы",
+	},
+	{
+		id: "sports_mouthguard",
+		name: "Спортивная защитная каппа",
+		desc: "Двухслойная защитная индивидуальная каппа для контактных видов спорта (на челюсть)",
+		icon: "guard",
+		category: "Каппы",
+	},
+	{
+		id: "bleaching_tray",
+		name: "Каппы для домашнего отбеливания",
+		desc: "Индивидуальные каппы с резервуарами для отбеливающего геля (на челюсть)",
+		icon: "guard",
+		category: "Каппы",
+	},
+	{
+		id: "full_denture",
+		name: "Полный съемный пластиночный протез (ПСПП)",
+		desc: "Акриловый пластиночный протез при полной адентии челюсти (на челюсть целиком)",
+		icon: "denture",
+		category: "Съемное",
+	},
+	{
+		id: "custom_impression_tray",
+		name: "Индивидуальная ложка / прикусной шаблон",
+		desc: "Акриловая индивидуальная ложка с восковыми валиками для прецизионного оттиска (на челюсть)",
+		icon: "denture",
+		category: "Съемное",
+	},
 ] as const;
+
+export function isJawWideConstruction(constructionId?: string | null): boolean {
+	if (!constructionId) return false;
+	return (
+		constructionId === "aligner_nightguard" ||
+		constructionId === "aligners_nightguard" ||
+		constructionId === "all_on_4_6" ||
+		constructionId === "all_on_arch" ||
+		constructionId === "clasp_denture" ||
+		constructionId === "nightguard_bruxism" ||
+		constructionId === "occlusal_splint" ||
+		constructionId === "sports_mouthguard" ||
+		constructionId === "bleaching_tray" ||
+		constructionId === "full_denture" ||
+		constructionId === "custom_impression_tray"
+	);
+}
+
+export function formatJawScopeLabel(
+	jawScope?: JawScope | string | null,
+	short = false,
+): string {
+	if (!jawScope) return "";
+	if (jawScope === "upper") return short ? "В/Ч целиком" : "Верхняя челюсть (В/Ч)";
+	if (jawScope === "lower") return short ? "Н/Ч целиком" : "Нижняя челюсть (Н/Ч)";
+	if (jawScope === "both") return short ? "Обе челюсти" : "Обе челюсти (В/Ч + Н/Ч)";
+	return String(jawScope);
+}
+
+export function formatLabOrderTeethOrJaw(order?: {
+	toothFdi?: string | null;
+	selectedTeeth?: number[];
+	jawScope?: JawScope | string | null;
+	constructionType?: string;
+} | null): string {
+	if (!order) return "—";
+
+	// 1. Explicit jawScope
+	if (order.jawScope === "upper") return "В/Ч целиком";
+	if (order.jawScope === "lower") return "Н/Ч целиком";
+	if (order.jawScope === "both") return "Обе челюсти";
+
+	// 2. Parse from toothFdi string if contains jaw indicators
+	const toothStr = (order.toothFdi || "").trim();
+	if (toothStr.includes("Обе челюсти") || toothStr.includes("В/Ч + Н/Ч")) return "Обе челюсти";
+	if (toothStr.includes("В/Ч") || toothStr.includes("Верхняя челюсть")) return "В/Ч целиком";
+	if (toothStr.includes("Н/Ч") || toothStr.includes("Нижняя челюсть")) return "Н/Ч целиком";
+
+	// 3. Fallback for jaw-wide construction without selected teeth
+	if (isJawWideConstruction(order.constructionType) && (!order.selectedTeeth || order.selectedTeeth.length === 0)) {
+		return "Челюсть целиком";
+	}
+
+	// 4. Selected teeth FDI
+	if (order.selectedTeeth && order.selectedTeeth.length > 0) {
+		return order.selectedTeeth.length === 1
+			? `Зуб ${order.selectedTeeth[0]}`
+			: `Зубы: ${order.selectedTeeth.join(", ")}`;
+	}
+
+	return toothStr || "Общий наряд";
+}
 
 export const MATERIALS = [
 	{

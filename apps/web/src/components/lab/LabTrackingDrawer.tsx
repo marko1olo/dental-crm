@@ -39,6 +39,7 @@ import {
 	generateBarcodeSvg,
 	generateQrCodeSvg,
 	formatGostOrderNumber,
+	formatLabOrderTeethOrJaw,
 } from "./labMath";
 
 export function LabTrackingDrawer({
@@ -213,7 +214,7 @@ export function LabTrackingDrawer({
 								Параметры реставрации
 							</span>
 							<span className="text-xs px-2.5 py-1 rounded-lg bg-[var(--teal-surface)] text-[var(--teal)] border border-[var(--teal-soft)] font-bold">
-								Зубы FDI: {order.selectedTeeth?.join(", ") || order.toothFdi || "—"}
+								{formatLabOrderTeethOrJaw(order)}
 							</span>
 						</div>
 						<div className="grid grid-cols-2 gap-3 text-xs">

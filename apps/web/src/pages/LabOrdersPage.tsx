@@ -27,6 +27,7 @@ import { showToast } from "../components/GlobalToast";
 import { DentalLabOrderModal, type DentalLabOrderData } from "../components/lab/DentalLabOrderModal";
 import { LabTrackingDrawer } from "../components/lab/LabTrackingDrawer";
 import { useAppStore } from "../store/appStore";
+import { formatLabOrderTeethOrJaw, isJawWideConstruction } from "../components/lab/labMath";
 
 export function LabOrdersPage() {
 	const [orders, setOrders] = useState<DentalLabOrderData[]>([]);
@@ -346,8 +347,22 @@ export function LabOrdersPage() {
 									{/* Card Top */}
 									<div className="flex items-start justify-between gap-2">
 										<div className="flex items-center gap-2">
-											<span className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center font-extrabold text-teal-700 dark:text-teal-400 text-xs font-mono">
-												{order.toothFdi || "—"}
+											<span
+												className={`min-h-[36px] px-2.5 py-1 rounded-xl font-extrabold text-xs flex items-center justify-center text-center ${
+													order.jawScope ||
+													isJawWideConstruction(order.constructionType) ||
+													Boolean(
+														order.toothFdi &&
+															(order.toothFdi.includes("челюст") ||
+																order.toothFdi.includes("В/Ч") ||
+																order.toothFdi.includes("Н/Ч")),
+													)
+														? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
+														: "bg-teal-500/10 border border-teal-500/30 text-teal-700 dark:text-teal-400 font-mono"
+												}`}
+												title={order.toothFdi || "Челюсть / Зубы"}
+											>
+												{formatLabOrderTeethOrJaw(order)}
 											</span>
 											<div>
 												<h3 className="text-xs sm:text-sm font-bold text-[var(--ink)] m-0">
