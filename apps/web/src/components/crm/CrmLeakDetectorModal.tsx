@@ -33,6 +33,9 @@ import {
 	startLeakLead,
 	syncLeakDetector,
 } from "../../lib/crmLeakDetectorApi";
+import { useAppStore } from "../../store/appStore";
+import { usePatientStore } from "../../store/patientStore";
+import { openWhatsAppChat } from "../../store/telephonyStore";
 import "./CrmLeakDetectorModal.css";
 
 interface Props {
@@ -181,6 +184,24 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 		setCopiedScript(true);
 		showToast("Скрипт скопирован в буфер обмена", "success");
 		setTimeout(() => setCopiedScript(false), 2000);
+	};
+
+	const handleOpenWhatsApp = (lead: CrmLeakLeadItem) => {
+		const text =
+			lead.aiReactivationSuggestion ||
+			`Здравствуйте, ${lead.patientFullName}! Вас приветствует стоматологическая клиника DENTE. Напоминаем о возможности пройти контрольный осмотр.`;
+		openWhatsAppChat(lead.phone, text);
+		showToast(`Чат WhatsApp открыт для ${lead.patientFullName}`, "success");
+	};
+
+	const handleBookAppointment = (lead: CrmLeakLeadItem) => {
+		usePatientStore.getState().setSelectedPatientId(lead.patientId);
+		useAppStore.getState().setCurrentView("schedule");
+		onClose();
+		showToast(
+			`Пациент ${lead.patientFullName} выбран. Выберите время приёма в расписании`,
+			"info",
+		);
 	};
 
 	if (!isOpen) return null;
@@ -442,9 +463,41 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
 											<td>
 												<div className="cld-actions-col">
+													{/* Быстрые 1-клик действия без модальных барьеров */}
+													<div className="cld-actions-quick-row">
+														<a
+															href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
+															className="cld-action-btn primary"
+															title={`Позвонить пациенту ${lead.phone}`}
+														>
+															<Phone size={12} />
+															Звонок
+														</a>
+
+														<button
+															type="button"
+															className="cld-action-btn success"
+															onClick={() => handleOpenWhatsApp(lead)}
+															title="Открыть диалог WhatsApp с текстом предложения"
+														>
+															<MessageCircle size={12} />
+															WhatsApp
+														</button>
+
+														<button
+															type="button"
+															className="cld-action-btn accent"
+															onClick={() => handleBookAppointment(lead)}
+															title="Перейти в расписание для записи пациента"
+														>
+															<Calendar size={12} />
+															Записать
+														</button>
+													</div>
+
 													<button
 														type="button"
-														className="cld-action-btn primary"
+														className="cld-action-btn"
 														onClick={() => handleCreateTask(lead)}
 														title="Создать задачу администратору перезвонить пациенту (реактивация в 1 клик)"
 													>

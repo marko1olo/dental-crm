@@ -341,6 +341,13 @@
 	min-width: 140px;
 }
 
+.cld-actions-quick-row {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
 .cld-action-btn {
 	height: 28px;
 	padding: 0 8px;
@@ -355,6 +362,8 @@
 	border: 1px solid var(--border, #e2e8f0);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
+	text-decoration: none;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .cld-action-btn:hover {
@@ -369,6 +378,26 @@
 
 .cld-action-btn.primary:hover {
 	background: #1d4ed8;
+}
+
+.cld-action-btn.success {
+	background: #16a34a;
+	color: #ffffff;
+	border-color: #16a34a;
+}
+
+.cld-action-btn.success:hover {
+	background: #15803d;
+}
+
+.cld-action-btn.accent {
+	background: #0284c7;
+	color: #ffffff;
+	border-color: #0284c7;
+}
+
+.cld-action-btn.accent:hover {
+	background: #0369a1;
 }
 
 .cld-action-btn.danger {

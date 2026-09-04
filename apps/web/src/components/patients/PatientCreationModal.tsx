@@ -289,7 +289,7 @@ export function PatientCreationModal({
 	) => {
 		if (event.key !== "Enter") return;
 		event.preventDefault();
-		if (!patientCreateReady) return;
+		if (!quickActionReady) return;
 		void handleCreate();
 	};
 
