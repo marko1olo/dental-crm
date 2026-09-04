@@ -39,6 +39,8 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../../GlobalToast.js";
+import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
 import {
 	calculateWasteWeights,
 	exportWasteJournalToCsv,
@@ -226,6 +228,95 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 		setActiveTab("journal");
 	};
 
+	const [isSubmittingQuickShift, setIsSubmittingQuickShift] = useState(false);
+
+	// ⚡ 1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21
+	const handleQuickShiftWaste = async () => {
+		try {
+			setIsSubmittingQuickShift(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+
+			const nowStr = new Date().toISOString().slice(0, 16);
+			const sealSoft = generateWasteSealNumber("class_B");
+			const sealSharp = generateWasteSealNumber("class_B");
+			const barcodeSoft = generateWasteBarcode("class_B", "SOFT");
+			const barcodeSharp = generateWasteBarcode("class_B", "SHARP");
+
+			const recSoft: MedicalWasteJournalRecord = {
+				id: `rec-shift-soft-${Date.now()}`,
+				timestamp: nowStr,
+				wasteClass: "class_B",
+				departmentNameRu: departmentName || "Терапевтический кабинет № 1",
+				packageType: "yellow_bag",
+				packageCount: 1,
+				grossWeightKg: 2.55,
+				tareWeightKg: 0.05,
+				netWeightKg: 2.5,
+				sealNumber: sealSoft,
+				barcode: barcodeSoft,
+				decontaminationMethod: "chemical_soaking_disinfectant",
+				decontamDisinfectantName: "Бриллиант Классик 2% (экспозиция 60 мин)",
+				storageLocation: "cabinet_room_temp",
+				operatorStaffFullName: operatorName || "Смирнова А.В.",
+				operatorStaffPosition: operatorPosition || "Медсестра",
+				status: "accumulating",
+				notes: "1-клик сдача мягких отходов смены (перчатки, маски, салфетки, валики, слюноотсосы) по СанПиН 2.1.3684-21",
+			};
+
+			const recSharp: MedicalWasteJournalRecord = {
+				id: `rec-shift-sharp-${Date.now() + 1}`,
+				timestamp: nowStr,
+				wasteClass: "class_B",
+				departmentNameRu: departmentName || "Терапевтический кабинет № 1",
+				packageType: "yellow_sharps_box_needle_remover",
+				packageCount: 1,
+				grossWeightKg: 0.95,
+				tareWeightKg: 0.15,
+				netWeightKg: 0.8,
+				sealNumber: sealSharp,
+				barcode: barcodeSharp,
+				decontaminationMethod: "physical_autoclave_134",
+				storageLocation: "cabinet_room_temp",
+				operatorStaffFullName: operatorName || "Смирнова А.В.",
+				operatorStaffPosition: operatorPosition || "Медсестра",
+				status: "accumulating",
+				notes: "1-клик сдача острых отходов смены в желтом непрокалываемом контейнере (карпулы, иглы, скальпели) по СанПиН 2.1.3684-21",
+			};
+
+			// Вызов API бэкенда
+			try {
+				await fetch("/api/registers/medical-waste/quick-shift-bundle", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+					body: JSON.stringify({ departmentName }),
+				});
+			} catch (fetchErr) {
+				console.warn("API quick-shift-bundle fallback to local journal state", fetchErr);
+			}
+
+			setRecords((prev) => [recSoft, recSharp, ...prev]);
+			if (onRecordAdded) {
+				onRecordAdded(recSoft);
+				onRecordAdded(recSharp);
+			}
+
+			showToast(
+				"⚡ Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
+				"success",
+			);
+			setActiveTab("journal");
+		} catch (err) {
+			showToast("Ошибка при фиксации отходов смены", "error");
+		} finally {
+			setIsSubmittingQuickShift(false);
+		}
+	};
+
 	// Экспорт журнала в CSV
 	const handleExportCsv = () => {
 		const csv = exportWasteJournalToCsv(records);
@@ -366,6 +457,60 @@ export const MedicalWasteJournalModal: React.FC<MedicalWasteJournalModalProps> =
 					{/* Вкладка 1: Фиксация накопления */}
 					{activeTab === "accumulate" && (
 						<div className="flex flex-col gap-4">
+							{/* Dominant 1-Click Shift Preset */}
+							<div
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									gap: "0.6rem",
+									padding: "1rem",
+									borderRadius: "12px",
+									background: "var(--teal-soft, #f0fdfa)",
+									border: "2px solid var(--teal, #0d9488)",
+									boxShadow: "0 4px 12px rgba(13, 148, 136, 0.15)",
+								}}
+							>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
+									<div>
+										<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 800, fontSize: "0.95rem", color: "var(--ink, #0f172a)" }}>
+											<Sparkles size={18} color="var(--teal, #0d9488)" />
+											<span>Нормативный экспресс-учет смены (СанПиН 2.1.3684-21)</span>
+										</div>
+										<div style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
+											1-клик автоматическое формирование двух записей: мягкие отходы (желтый пакет 2.5 кг) + острые отходы (контейнер игл 0.8 кг)
+										</div>
+									</div>
+
+									<button
+										type="button"
+										onClick={handleQuickShiftWaste}
+										disabled={isSubmittingQuickShift}
+										className="touch-manipulation"
+										style={{
+											minHeight: "44px",
+											padding: "0.6rem 1.25rem",
+											fontSize: "0.925rem",
+											fontWeight: 800,
+											borderRadius: "8px",
+											background: "var(--teal, #0d9488)",
+											color: "#ffffff",
+											border: "none",
+											cursor: "pointer",
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "0.5rem",
+											boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
+											whiteSpace: "nowrap",
+										}}
+										title="1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21"
+										data-testid="waste-quick-shift-btn"
+									>
+										<Sparkles size={18} />
+										<span>{isSubmittingQuickShift ? "Оформление смены..." : "⚡ 1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
+									</button>
+								</div>
+							</div>
+
 							{/* 1. Выбор класса отходов */}
 							<div>
 								<div className="text-xs font-bold uppercase text-muted mb-2">

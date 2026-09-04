@@ -6,6 +6,7 @@ import {
 	type GeneralCleaningLog,
 } from "@dental/shared";
 import {
+	Calendar,
 	CheckCircle2,
 	Clock,
 	FileCheck,
@@ -21,6 +22,7 @@ import {
 import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
+import { GeneralCleaningSchedule } from "./GeneralCleaningSchedule";
 
 export function GeneralCleaningRegisterTab() {
 	const [logs, setLogs] = useState<GeneralCleaningLog[]>([]);
@@ -28,6 +30,41 @@ export function GeneralCleaningRegisterTab() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [viewMode, setViewMode] = useState<"table" | "schedule">("table");
+	const [isAutopilotLoading, setIsAutopilotLoading] = useState(false);
+
+	// ⚡ 1-Клик автопилот графика генеральных уборок на месяц (по СанПиН каждые 7 дней)
+	const handleAutopilotMonth = async () => {
+		try {
+			setIsAutopilotLoading(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const res = await fetch("/api/registers/cleaning/autopilot-month", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({}),
+			});
+			if (res.ok) {
+				const data = await res.json().catch(() => ({}));
+				showToast(
+					`⚡ График генеральных уборок на месяц успешно заполнен (${data.count || 20} уборок по СанПиН 3.3686-21, интервал 7 дней)`,
+					"success",
+				);
+				await fetchLogs();
+			} else {
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Ошибка при генерации графика", "error");
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при генерации графика", "error");
+		} finally {
+			setIsAutopilotLoading(false);
+		}
+	};
 
 	// New cleaning form state
 	const [formCleaningType, setFormCleaningType] = useState<CleaningType>("general");
@@ -186,9 +223,77 @@ export function GeneralCleaningRegisterTab() {
 					</select>
 				</div>
 
-				<div style={{ display: "flex", gap: "0.5rem" }}>
+				<div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						onClick={handleAutopilotMonth}
+						disabled={isAutopilotLoading}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "44px",
+							padding: "0.5rem 1.15rem",
+							fontSize: "0.875rem",
+							fontWeight: 800,
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+							cursor: "pointer",
+							borderRadius: "8px",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.45rem",
+							whiteSpace: "nowrap",
+						}}
+						title="Автоматически заполнить график генеральных уборок на месяц с интервалом 7 дней для каждого кабинета клиники по СанПиН 3.3686-21"
+						data-testid="nurse-cleaning-monthly-autopilot-btn"
+					>
+						<Sparkles size={16} />
+						<span>
+							{isAutopilotLoading
+								? "Формирование графика..."
+								: "⚡ Заполнить график уборок на месяц (7 дн.)"}
+						</span>
+					</button>
+
+					<div style={{ display: "inline-flex", borderRadius: "8px", border: "1px solid var(--line, #cbd5e1)", overflow: "hidden" }}>
+						<button
+							type="button"
+							onClick={() => setViewMode("table")}
+							style={{
+								padding: "0.4rem 0.75rem",
+								minHeight: "44px",
+								fontSize: "0.825rem",
+								fontWeight: 700,
+								border: "none",
+								cursor: "pointer",
+								background: viewMode === "table" ? "var(--teal-soft, #f0fdfa)" : "var(--paper, #ffffff)",
+								color: viewMode === "table" ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)",
+							}}
+						>
+							Журнал (Таблица)
+						</button>
+						<button
+							type="button"
+							onClick={() => setViewMode("schedule")}
+							style={{
+								padding: "0.4rem 0.75rem",
+								minHeight: "44px",
+								fontSize: "0.825rem",
+								fontWeight: 700,
+								border: "none",
+								borderLeft: "1px solid var(--line, #cbd5e1)",
+								cursor: "pointer",
+								background: viewMode === "schedule" ? "var(--teal-soft, #f0fdfa)" : "var(--paper, #ffffff)",
+								color: viewMode === "schedule" ? "var(--teal, #0d9488)" : "var(--ink, #0f172a)",
+							}}
+						>
+							График на месяц (7 дн.)
+						</button>
+					</div>
+
 					<button type="button" onClick={() => window.print()} className="sanpin-btn sanpin-btn-secondary">
-						<Printer size={15} /> Печать журнала уборок
+						<Printer size={15} /> Печать журнала
 					</button>
 					<button
 						type="button"
@@ -200,8 +305,10 @@ export function GeneralCleaningRegisterTab() {
 				</div>
 			</div>
 
-			{/* Table of Cleaning Records */}
-			<div className="sanpin-table-wrapper">
+			{viewMode === "schedule" ? (
+				<GeneralCleaningSchedule logs={logs} onScheduleUpdated={fetchLogs} />
+			) : (
+				<div className="sanpin-table-wrapper">
 				<table className="sanpin-table">
 					<thead>
 						<tr>
@@ -281,6 +388,7 @@ export function GeneralCleaningRegisterTab() {
 					</tbody>
 				</table>
 			</div>
+			)}
 
 			{/* Modal for new Cleaning Entry */}
 			{isModalOpen && (

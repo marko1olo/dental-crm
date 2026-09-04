@@ -16,6 +16,7 @@ import {
 	Printer,
 	Search,
 	ShieldAlert,
+	Sparkles,
 	Tag,
 	Trash2,
 	Truck,
@@ -133,6 +134,41 @@ export function MedicalWasteRegisterTab() {
 			totalRecords: logs.length,
 		};
 	}, [logs]);
+
+	const [isQuickShiftLoading, setIsQuickShiftLoading] = useState(false);
+
+	const handleQuickShiftWaste = async () => {
+		try {
+			setIsQuickShiftLoading(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+
+			const res = await fetch("/api/registers/medical-waste/quick-shift-bundle", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({}),
+			});
+
+			if (res.ok) {
+				showToast(
+					"⚡ Отходы смены зафиксированы по СанПиН 2.1.3684-21 (Желтый пакет 2.5 кг + Контейнер игл 0.8 кг)",
+					"success",
+				);
+				await fetchLogs();
+			} else {
+				const err = await res.json().catch(() => ({}));
+				showToast(err.message || "Ошибка при фиксации смены отходов", "error");
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при фиксации отходов смены", "error");
+		} finally {
+			setIsQuickShiftLoading(false);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -254,6 +290,34 @@ export function MedicalWasteRegisterTab() {
 				</div>
 
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+					<button
+						type="button"
+						onClick={handleQuickShiftWaste}
+						disabled={isQuickShiftLoading}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "44px",
+							padding: "0.5rem 1.15rem",
+							fontSize: "0.875rem",
+							fontWeight: 800,
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+							cursor: "pointer",
+							borderRadius: "8px",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.45rem",
+							whiteSpace: "nowrap",
+						}}
+						title="1-Клик сдать отходы смены (Класс Б: пакет 2.5 кг + контейнер игл 0.8 кг) по СанПиН 2.1.3684-21"
+						data-testid="nurse-waste-quick-shift-tab-btn"
+					>
+						<Sparkles size={16} />
+						<span>{isQuickShiftLoading ? "Списание отходов..." : "⚡ 1-Клик отходы смены (Класс Б)"}</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={() => setIsWasteJournalModalOpen(true)}

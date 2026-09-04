@@ -1330,6 +1330,82 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		return updated;
 	});
 
+	app.post("/api/registers/cleaning/autopilot-month", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"cleaning autopilot create",
+		);
+		if (!organizationId) return;
+
+		const staff = req.user?.staff;
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = now.getMonth(); // 0-11
+
+		// Кабинеты стоматологической клиники со стандартными площадями по СанПиН
+		const rooms = [
+			{ name: "Кабинет № 1 (Терапия)", area: "24.5" },
+			{ name: "Кабинет № 2 (Ортопедия)", area: "22.0" },
+			{ name: "Операционная / Хирургический кабинет", area: "32.5" },
+			{ name: "Стерилизационная (ЦСО)", area: "18.0" },
+		];
+
+		// Дни месяца с шагом 7 дней (по СанПиН 3.3686-21: генеральная уборка каждые 7 дней)
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+		const cleaningDays: number[] = [];
+		for (let day = 1; day <= daysInMonth; day += 7) {
+			cleaningDays.push(day);
+		}
+
+		const entriesToInsert: Array<typeof generalCleaningLogs.$inferInsert> = [];
+
+		for (const day of cleaningDays) {
+			const scheduledDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+			const actualDate = new Date(year, month, day, 8, 0, 0);
+			const isPastOrToday = actualDate <= now;
+
+			for (const room of rooms) {
+				entriesToInsert.push({
+					organizationId,
+					cleaningType: "general",
+					scheduledDate: scheduledDateStr,
+					actualDateTime: actualDate,
+					roomName: room.name,
+					treatedAreaM2: room.area,
+					disinfectantName: "Аламинол 1.5%",
+					activeIngredient: "ЧАС + Глутаровый альдегид",
+					solutionConcentrationPercent: "1.5",
+					applicationMethod: "wiping",
+					exposureTimeMinutes: 60,
+					uvIrradiationMinutes: 60,
+					ventilationMinutes: 15,
+					operatorId: (req.user as any)?.id ?? null,
+					status: isPastOrToday ? "completed" : "scheduled",
+					notes: "График генеральных уборок (СанПиН 3.3686-21, интервал 7 дней)",
+				});
+			}
+		}
+
+		const created = await db
+			.insert(generalCleaningLogs)
+			.values(entriesToInsert)
+			.returning();
+
+		for (const log of created) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "SANPIN_CLEANING_ADDED",
+				payload: log,
+			});
+		}
+
+		return reply.code(201).send({
+			message: `График генеральных уборок сформирован на месяц (${created.length} записей, интервал 7 дней)`,
+			count: created.length,
+			records: created,
+		});
+	});
+
 	// ─────────────────────────────────────────────────────────────────────────
 	// 5. ЖУРНАЛ МЕДИЦИНСКИХ ОТХОДОВ А, Б, В, Г (СанПиН 2.1.3684-21)
 	// ─────────────────────────────────────────────────────────────────────────
@@ -1421,6 +1497,69 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		});
 
 		return reply.code(201).send(log);
+	});
+
+	app.post("/api/registers/medical-waste/quick-shift-bundle", async (req, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			req,
+			reply,
+			"waste quick-shift create",
+		);
+		if (!organizationId) return;
+
+		const staff = req.user?.staff;
+		const now = new Date();
+
+		// Нормативные записи по СанПиН 2.1.3684-21 для стоматологической смены:
+		// 1) Желтый пакет (мягкие отходы: перчатки, маски, салфетки, валики, слюноотсосы), 1 шт., брутто 2.55 кг, нетто 2.50 кг
+		// 2) Желтый непрокалываемый контейнер (острые отходы: карпулы, иглы, скальпели), 1 шт., брутто 0.95 кг, нетто 0.80 кг
+		const newLogs = await db
+			.insert(medicalWasteLogs)
+			.values([
+				{
+					organizationId,
+					operationType: "accumulation",
+					logDate: now,
+					wasteClass: "class_B",
+					wasteDescription: "Мягкие эпидемиологически опасные отходы смены (перчатки, маски, салфетки, валики, слюноотсосы)",
+					packageType: "yellow_bag",
+					packageCount: 1,
+					weightKg: "2.500",
+					volumeLiters: "30.00",
+					disinfectionMethod: "chemical_soaking",
+					disinfectantUsed: "Бриллиант Классик 2% (экспозиция 60 мин)",
+					responsibleStaffId: (req.user as any)?.id ?? null,
+					notes: "1-клик фиксация отходов смены (СанПиН 2.1.3684-21: брутто 2.55 кг, тара 0.05 кг, нетто 2.50 кг)",
+				},
+				{
+					organizationId,
+					operationType: "accumulation",
+					logDate: now,
+					wasteClass: "class_B",
+					wasteDescription: "Острые эпидемиологически опасные отходы смены (пустые карпулы анестетиков, инъекционные иглы, скальпели)",
+					packageType: "yellow_sharps_container",
+					packageCount: 1,
+					weightKg: "0.800",
+					volumeLiters: "2.00",
+					disinfectionMethod: "steam_autoclave",
+					disinfectantUsed: "Аппаратное автоклавирование 134°C (5 мин, 2.15 бар)",
+					responsibleStaffId: (req.user as any)?.id ?? null,
+					notes: "1-клик фиксация острых отходов смены в желтом непрокалываемом контейнере (СанПиН 2.1.3684-21: брутто 0.95 кг, тара 0.15 кг, нетто 0.80 кг)",
+				},
+			])
+			.returning();
+
+		for (const log of newLogs) {
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "SANPIN_WASTE_LOG_ADDED",
+				payload: log,
+			});
+		}
+
+		return reply.code(201).send({
+			message: "Отходы смены (Класс Б) успешно зафиксированы по СанПиН 2.1.3684-21",
+			records: newLogs,
+		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
