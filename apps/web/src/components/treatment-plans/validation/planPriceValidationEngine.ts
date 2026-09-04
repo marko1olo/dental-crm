@@ -458,13 +458,8 @@ export function validateTreatmentPlanPrices(
 		}
 	}
 
-	const canGenerateWorkOrder =
-		(!hasUnresolvedArchivedOrMissing || isAuthorizedByAdmin) &&
-		(overallStatus === "APPROVED_PRICE_LOCKED" ||
-			overallStatus === "APPROVED_CURRENT_PRICELIST" ||
-			isAuthorizedByAdmin);
-
-	// Формирование акта выполненных работ и расчет у кассы разрешены всегда без блокировки администратором
+	// Формирование зуботехнического наряда и акта выполненных работ разрешены всегда без блокировок врача
+	const canGenerateWorkOrder = true;
 	const canGenerateCompletedAct = true;
 
 	return {

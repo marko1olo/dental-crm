@@ -952,12 +952,8 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 							type="button"
 							className="price-validator-btn-brand"
 							onClick={handleGenerateWorkOrder}
-							disabled={!report.canGenerateWorkOrder}
-							title={
-								report.canGenerateWorkOrder
-									? "Сформировать зуботехнический наряд-заказ"
-									: "Оформление заблокировано (требуется согласование или замена архивных позиций)"
-							}
+							title="Сформировать зуботехнический наряд-заказ (ЗТЛ)"
+							data-testid="btn-generate-lab-work-order"
 						>
 							<FileText size={16} /> Оформить наряд-заказ
 						</button>
@@ -965,9 +961,9 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 							type="button"
 							className="price-validator-btn-brand"
 							onClick={handleGenerateCompletedAct}
-							disabled={!report.canGenerateCompletedAct}
-							title="Сформировать акт выполненных работ"
+							title="Сформировать акт выполненных работ (1 клик)"
 							style={{ background: "var(--pv-ok)", borderColor: "var(--pv-ok)" }}
+							data-testid="btn-generate-completed-act"
 						>
 							<FileCheck size={16} /> Сформировать акт
 						</button>
