@@ -653,9 +653,7 @@ export function SanpinRegisters() {
 		if (e) e.preventDefault();
 		try {
 			setSigningShift(true);
-			const signerName = bypassNurse ? (nurseSignName.trim() || "Персонал клиники") : (nurseSignName.trim() || "Персонал клиники");
-			// Simulated or real batch sign
-			await new Promise((r) => setTimeout(r, 600));
+			const signerName = bypassNurse ? "Персонал клиники" : (nurseSignName.trim() || "Персонал клиники");
 			showToast(
 				`Смена успешно заверена цифровым штампом (${signerName}). Журналы СанПиН в норме.`,
 				"success",
