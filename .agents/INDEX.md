@@ -2,7 +2,7 @@
 
 > **ГЛАВНЫЙ ИНТЕРТЕКСТУАЛЬНЫЙ НАВИГАЦИОННЫЙ ХАБ СИСТЕМЫ**  
 > ⚠️ **Высшая Конституция (Supreme Law):** **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**  
-> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11, Mandate 8e — Запрет на палки в колёса врачам)  
+> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11, Mandate 8e — Запрет на палки в колёса врачам, Mandates 8f–8h — Догматы T.A.R.S. честности, Rule != Task и непрерывного синхрона документации)  
 > 🚪 **Корневой входной файл:** **[AGENTS.md (Root)](file:///C:/Clinic_MVP/dental-crm/AGENTS.md)**  
 > ⚙️ **Шимы платформ:** **[GEMINI.md](file:///C:/Clinic_MVP/dental-crm/GEMINI.md)** | **[CLAUDE.md](file:///C:/Clinic_MVP/dental-crm/CLAUDE.md)**  
 > 📚 **Портал документации docs/:** **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**  

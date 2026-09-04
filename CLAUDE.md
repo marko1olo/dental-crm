@@ -48,6 +48,10 @@ Canonical source is `.agents/AGENTS.md` and `.agents/THE_HAMMER_MASTER_PROMPT.md
 5. **UTF-8 Encoding**: Never use PowerShell here-strings or `node -e` to WRITE Russian text. `node -e` stays fine for read-only checks.
 6. **No Obstacles to Doctors & Staff (Mandate 8e)**: The software serves the doctor, not vice versa. No disabled buttons without explanation, no draft bans, no 403 on blank contract print, 1-click physiological normals, free discounts up to 100% on warranty reworks, 54-FZ cash desk without physical person INN requirement, single-nurse carpule write-offs in 1 click.
 7. **Apple & Mac HIG Ergonomics (Studio Clinical HIG)**: Dense desktop flight panel (toolbars 32–36px), mobile/tablet touch targets $\ge 44\times 44\text{px}$, modal depth strictly 1 (Anti-Matryoshka), zero emojis in clinical/financial documents.
+8. **Ban on Hallucinating Defects From Memory (T.A.R.S. 100% Factual Honesty)**: Defects, bugs, and backlog tasks exist ONLY when proven by direct code inspection (`grep_search`/`view_file`), actual PNG screenshots (`view_file`), or compiler/test logs. Ban on dredging up phantom bugs from memory or vague impressions.
+9. **Rule != Pending Task**: Standards, master prompts, and mandates define quality criteria, NOT a pending task backlog! Never declare a feature missing without searching the live code first. If already implemented, do not touch working code.
+10. **Continuous Dynamic Doc & Backlog Sync**: The moment a feature is implemented or confirmed in code, immediately update `BACKLOG.md`, `FEATURES_REGISTRY.md`, and checklists to `[ЕСТЬ] / [ЗАКРЫТО]`. Never run agents in circles on already finished work.
+
 
 ## Path-scoped rules
 
