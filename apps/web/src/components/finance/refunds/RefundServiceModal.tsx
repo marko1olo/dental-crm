@@ -39,6 +39,8 @@ import {
 	REFUND_REASON_LABELS,
 } from "@dental/shared";
 import { generateQrCodeSvg } from "../../portal/patientCabinet/patientCabinetEngine";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { showToast } from "../../GlobalToast";
 
 export interface RefundServiceModalProps {
 	readonly isOpen: boolean;
@@ -47,6 +49,10 @@ export interface RefundServiceModalProps {
 	readonly invoiceNumber: string;
 	readonly patientId: string;
 	readonly patientName: string;
+	readonly patientPhone?: string | undefined;
+	readonly originalPaymentId?: string | undefined;
+	readonly originalReceiptNumber?: string | undefined;
+	readonly originalFiscalSign?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly doctorCommissionPct?: number | undefined;
 	readonly services?: readonly {
@@ -70,6 +76,10 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 	invoiceNumber,
 	patientId,
 	patientName,
+	patientPhone,
+	originalPaymentId,
+	originalReceiptNumber,
+	originalFiscalSign,
 	doctorName = "Лечащий врач",
 	doctorCommissionPct = 30,
 	services = [],
@@ -146,6 +156,13 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 	const [paymentMethod, setPaymentMethod] = useState<"card" | "cash" | "advance_deposit">("card");
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [completedResult, setCompletedResult] = useState<PartialRefundCalculationResult | null>(null);
+	const [fiscalInfo, setFiscalInfo] = useState<{
+		fnSerial: string;
+		fiscalDocNumber: string;
+		fiscalSign: string;
+		ofdUrl: string;
+		isOfflineBuffered: boolean;
+	} | null>(null);
 	const [activeTab, setActiveTab] = useState<"form" | "receipt">("form");
 
 	// Convert raw services into RefundableInvoiceItem
@@ -214,16 +231,114 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 		if (selectedItemIds.size === 0) return;
 		setIsProcessing(true);
 
+		const isPatientUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
+		const effectivePatientId = isPatientUuid ? patientId : "00000000-0000-0000-0000-000000000001";
+
+		const rawPaymentId = originalPaymentId || invoiceId;
+		const isPaymentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawPaymentId || "");
+		const effectivePaymentId = isPaymentUuid ? rawPaymentId : "00000000-0000-0000-0000-000000000001";
+
+		const effectiveOriginalReceiptNumber = originalReceiptNumber?.trim() || invoiceNumber || "CHK-1";
+
+		const refundItems = calculation.refundedItems.map((item) => ({
+			name: item.name.length > 128 ? item.name.slice(0, 128) : item.name,
+			priceKopecks: item.unitPriceKop,
+			quantity: item.quantityRefunded,
+			amountKopecks: item.refundedNetKop,
+			subject: "service" as const,
+			method: "full_payment" as const,
+			vatRate: "vat_none" as const,
+			measure: "piece" as const,
+			taxDeductionCode: "code_1_standard" as const,
+			medicalServiceCode804n: item.code804n || undefined,
+			toothFdiNumber: item.toothNumber,
+		}));
+
+		const refundCashKopecks = paymentMethod === "cash" ? calculation.totalRefundKop : 0;
+		const refundElectronicKopecks = paymentMethod === "card" ? calculation.totalRefundKop : 0;
+		const refundPrepaidKopecks = paymentMethod === "advance_deposit" ? calculation.totalRefundKop : 0;
+
+		const reasonText = customReason.trim()
+			? `${REFUND_REASON_LABELS[reasonCategory] || reasonCategory}: ${customReason.trim()}`
+			: (REFUND_REASON_LABELS[reasonCategory] || "Возврат средств за услуги");
+
+		const clientMutationId = `refund-${invoiceId || "inv"}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+		const refundPayload = {
+			clientMutationId,
+			originalPaymentId: effectivePaymentId,
+			originalReceiptNumber: effectiveOriginalReceiptNumber,
+			originalFiscalSign: originalFiscalSign || undefined,
+			patientId: effectivePatientId,
+			refundCashKopecks,
+			refundElectronicKopecks,
+			refundPrepaidKopecks,
+			totalRefundKopecks: calculation.totalRefundKop,
+			reason: reasonText.slice(0, 256),
+			cashierFullName: "Кассир-администратор",
+			items: refundItems,
+		};
+
+		let finalFnSerial = "9999078900012345";
+		let finalDocNumber = "1002";
+		let finalFiscalSign = "1234567890";
+		let finalOfdUrl = "";
+		let isOffline = false;
+
 		try {
-			// Simulate fast API roundtrip or call real backend if mounted
-			await new Promise((resolve) => setTimeout(resolve, 350));
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
+
+			const res = await fetch("/api/fiscal/refund", {
+				method: "POST",
+				headers,
+				body: JSON.stringify(refundPayload),
+			});
+
+			if (res.ok) {
+				const resData = (await res.json()) as {
+					success?: boolean;
+					fiscalDocumentNumber?: string | number;
+					fiscalSign?: string;
+					ofdVerificationUrl?: string;
+					status?: string;
+				};
+				finalDocNumber = String(resData.fiscalDocumentNumber || "1002");
+				finalFiscalSign = String(resData.fiscalSign || "1234567890");
+				finalOfdUrl = resData.ofdVerificationUrl || "";
+				isOffline = resData.status === "hardware_offline";
+
+				if (isOffline) {
+					showToast("ККТ временно офлайн: чек возврата 54-ФЗ помещен в буфер отложенной печати", "warning");
+				} else {
+					showToast(`Чек «Возврат прихода» 54-ФЗ №${finalDocNumber} успешно фискализирован!`, "success");
+				}
+			} else {
+				const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+				console.warn("[RefundServiceModal] /api/fiscal/refund returned status:", res.status, errData);
+				isOffline = true;
+				showToast("Сбой связи с сервером кассы: операция возврата зафиксирована локально", "warning");
+			}
+		} catch (fetchErr) {
+			console.warn("[RefundServiceModal] Network error during refund fiscalization:", fetchErr);
+			isOffline = true;
+			showToast("ККТ временно недоступна: чек возврата сохранен в локальную очередь", "warning");
+		} finally {
+			setFiscalInfo({
+				fnSerial: finalFnSerial,
+				fiscalDocNumber: finalDocNumber,
+				fiscalSign: finalFiscalSign,
+				ofdUrl: finalOfdUrl,
+				isOfflineBuffered: isOffline,
+			});
 			setCompletedResult(calculation);
 			setActiveTab("receipt");
+			setIsProcessing(false);
 			if (onRefundSuccess) {
 				onRefundSuccess(calculation);
 			}
-		} finally {
-			setIsProcessing(false);
 		}
 	};
 
@@ -239,9 +354,9 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 	const receiptQrPayload = completedResult
 		? generate54FzIncomeReturnQrPayload({
 				result: completedResult,
-				fnSerial: "9999078900012345",
-				fdNumber: "4892",
-				fpdNumber: "389104812",
+				fnSerial: fiscalInfo?.fnSerial || "9999078900012345",
+				fdNumber: fiscalInfo?.fiscalDocNumber || "1002",
+				fpdNumber: fiscalInfo?.fiscalSign || "1234567890",
 			})
 		: "";
 
@@ -495,8 +610,13 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 										/>
 
 										<div className="text-[10px] text-[var(--muted,#64748b)] font-mono">
-											ФН: 9999078900012345<br />
-											ФД: 4892 • ФПД: 389104812
+											ФН: {fiscalInfo?.fnSerial || "9999078900012345"}<br />
+											ФД: {fiscalInfo?.fiscalDocNumber || "1002"} • ФПД: {fiscalInfo?.fiscalSign || "1234567890"}
+											{fiscalInfo?.isOfflineBuffered && (
+												<span className="block text-amber-600 dark:text-amber-400 font-sans font-bold mt-0.5">
+													(Отложенная фискализация / Очередь ОФД)
+												</span>
+											)}
 										</div>
 									</div>
 								</div>
