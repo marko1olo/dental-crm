@@ -4,6 +4,7 @@
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 **Проект:** Dental CRM (DENTE)  
 **Ревизия старта:** `5687d73d9c6bce33105287b06cb551cb1bbedf95`  
+**Статус:** **ВСЕ 3 ЭПИКА ВЫПОЛНЕНЫ И ЗАКРЫТЫ (`ПРОВЕРЕНО`)**  
 **Стандарт разработки:** `.agents/AGENTS.md` (Mandate 8b: zero-mocks, no-sycophancy, test proof, single-file git add)  
 
 ---
@@ -11,21 +12,21 @@
 ## 🗺️ ИЕРАРХИЯ ЭПИКОВ И ЗАДАЧ
 
 ```
-[EPIC-1] БЫСТРЫЕ КРИТИЧЕСКИЕ ПОБЕДЫ (Reliability & Orphan Features) [P1]
-   ├── 📌 TASK-1.1: Интеграция звуковых оповещений (Feature #49: таймер врача + онлайн-записи)
-   ├── 📌 TASK-1.2: Герметизация составных Multi-Tenant фильтров (diary.ts & auth.ts)
-   └── 📌 TASK-1.3: Отказоустойчивый оффлайн-буфер печати чеков ККТ 54-ФЗ
+[EPIC-1] БЫСТРЫЕ КРИТИЧЕСКИЕ ПОБЕДЫ [ЗАКРЫТО]
+   ├── 📌 TASK-1.1: Интеграция звуковых оповещений (Feature #49) [ВЫПОЛНЕНО]
+   ├── 📌 TASK-1.2: Герметизация составных Multi-Tenant фильтров [ВЫПОЛНЕНО]
+   └── 📌 TASK-1.3: Отказоустойчивый оффлайн-буфер печати чеков ККТ 54-ФЗ [ВЫПОЛНЕНО]
 
-[EPIC-2] ДЕКОМПОЗИЦИЯ И СЕРВИСНЫЙ СЛОЙ BACKEND [P2]
-   ├── 📌 TASK-2.1: Модуляризация схемы Drizzle ORM (apps/api/src/db/schema/)
-   ├── 📌 TASK-2.2: Внедрение Clean Services в Fastify (imaging, diary, smartImports)
-   └── 📌 TASK-2.3: Замена in-process setInterval на персистентную очередь задач
+[EPIC-2] ДЕКОМПОЗИЦИЯ И СЕРВИСНЫЙ СЛОЙ BACKEND [ЗАКРЫТО]
+   ├── 📌 TASK-2.1: Модуляризация схемы Drizzle ORM (apps/api/src/db/schema/) [ВЫПОЛНЕНО: 20 модулей]
+   ├── 📌 TASK-2.2: Внедрение Clean Services в Fastify (imaging, diary, smartImports) [ВЫПОЛНЕНО]
+   └── 📌 TASK-2.3: Замена in-process setInterval на персистентную очередь задач [ВЫПОЛНЕНО]
 
-[EPIC-3] ДЕКОМПОЗИЦИЯ И ОЗДОРОВЛЕНИЕ FRONTEND [P2]
-   ├── 📌 TASK-3.1: Расщепление God-Hook useAppLogic.tsx на 8 доменных хуков
-   ├── 📌 TASK-3.2: Декомпозиция App.tsx и устранение дублирования Zustand сторов
-   ├── 📌 TASK-3.3: Модульное расщепление main.css (18k строк) на scoped-стили
-   └── 📌 TASK-3.4: Разработка спецификации нативного 3D MPR WebGL движка
+[EPIC-3] ДЕКОМПОЗИЦИЯ И ОЗДОРОВЛЕНИЕ FRONTEND [ЗАКРЫТО]
+   ├── 📌 TASK-3.1: Расщепление God-Hook useAppLogic.tsx (27 доменных хуков) [ВЫПОЛНЕНО]
+   ├── 📌 TASK-3.2: Декомпозиция App.tsx и устранение дублирования Zustand сторов [ВЫПОЛНЕНО]
+   ├── 📌 TASK-3.3: Модульное расщепление main.css на scoped-стили [ВЫПОЛНЕНО]
+   └── 📌 TASK-3.4: Разработка спецификации нативного 3D MPR WebGL движка [ВЫПОЛНЕНО]
 ```
 
 ---

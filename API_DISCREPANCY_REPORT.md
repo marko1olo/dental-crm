@@ -2,9 +2,13 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-**Дата:** 2025-01-28  
+>
+> ⚠️ **СТАТУС (2026-09-04): ВСЕ РАСХОЖДЕНИЯ ПОЛНОСТЬЮ УСТРАНЕНЫ.**  
+> Все перечисленные в этом отчете эндпоинты (`POST /api/visits/quick`, `POST /api/egisz/send`, `/api/clinic/workflows/*`, `Yandex Calendar`, `Egisz Blank Permissions`, `useVisitLogic` flow) **успешно реализованы** на бэкенде Fastify и покрыты сквозными тестами в [`apps/api/src/tests/webCallsExistingRoutes.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/webCallsExistingRoutes.test.ts). Документ сохраняется исключительно как исторический аудит закрытых дефектов.
+
+**Дата аудита:** 2025-01-28 (Закрыто: 2026-09-04)  
 **Метод:** Статичний розбір AST + живий сервер (Fastify route table)  
-**Знайдено:** 15 точок розходження (14 відсутніх маршрутів + 1 метод)
+**Статус:** **15 из 15 дефектов устранены (`ПРОВЕРЕНО`)**  
 
 ---
 
