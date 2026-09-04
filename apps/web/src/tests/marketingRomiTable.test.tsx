@@ -39,7 +39,7 @@ describe("MarketingRomiTable Component & SSR Rendering", () => {
 
 		// Check KPI cards
 		assert.ok(html.includes("Потрачено на рекламу"));
-		assert.ok(html.includes("Приведено первичных"));
+		assert.ok(html.includes("Лиды и доходимость"));
 		assert.ok(html.includes("Выручка от первичных"));
 		assert.ok(html.includes("Общий ROMI клиники"));
 

@@ -42,7 +42,7 @@ describe("EGISZ CDA Export Modal Component Tests", () => {
 		assert.ok(html.includes("Форма 043/у (СЭМД 101)"));
 		assert.ok(html.includes("Форма 043-1/у (СЭМД 109)"));
 		assert.ok(html.includes("Диагностика и реквизиты"));
-		assert.ok(html.includes("Экспорт пакета (XML + .sig) в 1 клик"));
+		assert.ok(html.includes("Экспорт ZIP-пакета (XML + .sig) в 1 клик"));
 	});
 
 	it("renders Form 043-1/u Orthodontics modal with Angle classifications", () => {

@@ -67,6 +67,7 @@ export const INVITABLE_STAFF_ROLES: readonly StaffRole[] = [
 	"administrator",
 	"assistant",
 	"manager",
+	"curator",
 	"owner",
 ];
 
@@ -92,7 +93,7 @@ export function inviteRoleTitle(role: StaffRole): string {
  * стоило прав доступа. Поэтому и этот список выведен из общего.
  */
 export const CREATABLE_STAFF_ROLES: readonly StaffRole[] =
-	INVITABLE_STAFF_ROLES.filter((role) => role !== "owner");
+	INVITABLE_STAFF_ROLES.filter((role) => role !== "owner" && role !== "curator");
 
 /**
  * Подпись роли сотрудника, у которой всегда есть текст.

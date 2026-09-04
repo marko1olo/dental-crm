@@ -715,7 +715,7 @@ export function calculatePatientMrd(params: {
 	const isCappedByAbsoluteMax = !isPediatric && weightLimitMg > drug.absoluteMaxDoseMg;
 
 	let mrdCarpules =
-		drug.mgPerCarpule > 0 ? Math.floor((mrdDoseMg / drug.mgPerCarpule) * 10) / 10 : 0;
+		drug.mgPerCarpule > 0 ? Math.round((mrdDoseMg / drug.mgPerCarpule) * 10) / 10 : 0;
 
 	let isCappedByCardio = false;
 	let maxSafeEpinephrineMg = HEALTHY_MAX_EPINEPHRINE_MG;

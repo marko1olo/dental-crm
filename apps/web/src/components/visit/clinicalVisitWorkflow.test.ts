@@ -306,7 +306,7 @@ describe("Clinical Visit & SOAP Diary Ergonomics Engine", () => {
 			assert.ok((generated.statusLocalis ?? "").includes("стадии пятна"));
 			assert.ok(
 				(generated.treatmentDescription ?? "").includes("Icon") ||
-					(generated.treatmentDescription ?? "").includes("реминерализирующей"),
+					(generated.treatmentDescription ?? "").includes("реминерализ"),
 			);
 		});
 

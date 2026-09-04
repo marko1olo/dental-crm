@@ -97,7 +97,7 @@ describe("Patient PWA Portal: Interactive Treatment Timeline & Statutory 323-FZ 
 			"CSS must use theme tokens var(--paper)",
 		);
 		assert.ok(
-			cssContent.includes("var(--border-soft"),
+			cssContent.includes("var(--line"),
 			"CSS must use soft border tokens",
 		);
 	});

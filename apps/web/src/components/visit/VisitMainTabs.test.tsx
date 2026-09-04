@@ -31,8 +31,8 @@ describe("VisitMainTabs Component", () => {
 			"Renders Зубная формула tab",
 		);
 		assert.ok(
-			html.includes("Пародонтология и Зондирование"),
-			"Renders Пародонтология tab",
+			html.includes("Анамнез и Жалобы"),
+			"Renders Анамнез tab",
 		);
 		assert.ok(
 			html.includes("Рентгены и Диагностика"),

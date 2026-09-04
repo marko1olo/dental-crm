@@ -393,7 +393,7 @@ describe('emergencyProtocols — 5. Statutory Emergency Resuscitation Algorithms
 			smpDoctorFullName: 'Д-р Ковалев'
 		});
 
-		assert.match(act, /ПРОТОКОЛ ОКАЗАНИЯ НЕОТЛОЖНОЙ МЕДИЦИНСКОЙ ПОМОЩИ/);
+		assert.match(act, /АКТ ОКАЗАНИЯ ЭКСТРЕННОЙ МЕДИЦИНСКОЙ ПОМОЩИ/);
 		assert.match(act, /Приказ МЗ РФ № 786н/);
 		assert.match(act, /Смирнов Андрей Васильевич/);
 		assert.match(act, /Адреналин 0.5 мг в\/м в бедро/);
@@ -414,7 +414,7 @@ describe('emergencyProtocols — 5. Statutory Emergency Resuscitation Algorithms
 			adrenalineGivenMg: 0.5
 		});
 
-		assert.match(script, /ШПАРГАЛКА ДЛЯ ДИСПЕТЧЕРА 112 \/ 103/);
+		assert.match(script, /СТАНДАРТ SBAR ПЕРЕДАЧИ ДИСПЕТЧЕРУ 112 \/ 103/);
 		assert.match(script, /Анафилактический шок/);
 		assert.match(script, /ул\. Усачева 29/);
 		assert.match(script, /Введен адреналин 0\.1% 0\.5 мг/);

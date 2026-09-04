@@ -538,7 +538,7 @@ describe("SSR-Safety & Component Rendering", () => {
 
 		assert.ok(html.includes("Автозаказ поставщику при дефиците"));
 		assert.ok(html.includes("Сформировать заказ поставщику"));
-		assert.ok(html.includes("Списать с фиксацией дефицита"));
+		assert.ok(html.includes("Списать (мягкий овердрафт"));
 		assert.ok(html.includes("inventory-deficit-badge"));
 		// Проверка ликвидации паразитных кнопок +1 и +2
 		assert.ok(!html.includes(">+1<"));

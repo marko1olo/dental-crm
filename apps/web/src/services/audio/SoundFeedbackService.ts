@@ -58,8 +58,8 @@ export class SoundFeedbackService {
 	private idleSuspendTimer: ReturnType<typeof setTimeout> | null = null;
 	private readonly idleTimeoutMs = 5000;
 
-	private enabled = false;
-	private volume = 0.0;
+	private enabled = true;
+	private volume = 0.7;
 	private hapticsEnabled = true;
 	private isDisposed = false;
 

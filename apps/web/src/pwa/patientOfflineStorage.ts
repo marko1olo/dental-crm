@@ -80,7 +80,7 @@ function openPatientOfflineDb(): Promise<IDBDatabase> {
 			const request = window.indexedDB.open(PATIENT_OFFLINE_DB_NAME, PATIENT_OFFLINE_DB_VERSION);
 
 			request.onupgradeneeded = (event) => {
-				const db = (event.target as IDBOpenDBRequest).result;
+				const db = ((event?.target as IDBOpenDBRequest)?.result || request.result);
 				if (!db.objectStoreNames.contains(UPCOMING_VISIT_STORE)) {
 					db.createObjectStore(UPCOMING_VISIT_STORE, { keyPath: "id" });
 				}

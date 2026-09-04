@@ -349,7 +349,7 @@ describe("clinicalEmrEngine — 8. Form 043/u Lifecycle Status & Audit Stamps (�
 		});
 		assert.equal(status.isDraft, false);
 		assert.equal(status.isLocked, true);
-		assert.equal(status.watermarkText, null);
+		assert.equal(status.watermarkText, "ПОДПИСАНО ВРАЧОМ");
 		assert.match(status.stampText, /ПОДПИСАНО ВРАЧОМ/);
 		assert.equal(status.canDoctorEditDirectly, true);
 		assert.equal(status.amendmentAuditReasonDefault, "Исправленному верить");

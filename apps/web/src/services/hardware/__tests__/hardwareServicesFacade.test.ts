@@ -16,6 +16,9 @@ describe("Hardware Services Facade Suite — Scanner, Printer & CallKit", () => 
 
 	beforeEach(() => {
 		FiscalReceiptQueueManager.clearQueue();
+		if (typeof window !== "undefined" && typeof window.dispatchEvent !== "function") {
+			(window as unknown as { dispatchEvent: () => boolean }).dispatchEvent = () => true;
+		}
 	});
 
 	afterEach(() => {
@@ -389,6 +392,7 @@ describe("Hardware Services Facade Suite — Scanner, Printer & CallKit", () => 
 			// Mock Capacitor Mobile environment with failing Bluetooth printer
 			Object.defineProperty(globalThis, "window", {
 				value: {
+					dispatchEvent: () => true,
 					denteMobileNative: {
 						isMobileApp: true,
 						platform: "android",

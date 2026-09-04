@@ -274,19 +274,19 @@ function setupMockIndexedDb() {
 		open: (name: string, version: number) => {
 			const req: {
 				result?: MockIDBDatabase;
-				onupgradeneeded?: (() => void) | null;
-				onsuccess?: (() => void) | null;
-				onerror?: (() => void) | null;
+				onupgradeneeded?: ((event?: any) => void) | null;
+				onsuccess?: ((event?: any) => void) | null;
+				onerror?: ((event?: any) => void) | null;
 			} = {};
 			setTimeout(() => {
 				if (!currentDb || currentDb.version !== version) {
 					currentDb = new MockIDBDatabase(name, version);
 					req.result = currentDb;
-					if (req.onupgradeneeded) req.onupgradeneeded();
+					if (req.onupgradeneeded) (req.onupgradeneeded as any)({ target: req });
 				} else {
 					req.result = currentDb;
 				}
-				if (req.onsuccess) req.onsuccess();
+				if (req.onsuccess) (req.onsuccess as any)({ target: req });
 			}, 0);
 			return req;
 		},

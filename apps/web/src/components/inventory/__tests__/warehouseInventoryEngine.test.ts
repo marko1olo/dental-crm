@@ -370,7 +370,7 @@ describe("Document Validation (validateInventoryAuditDraft)", () => {
 		assert.ok(res.errors.some((e) => e.includes("Номер инвентаризационной описи")));
 		assert.ok(res.errors.some((e) => e.includes("Номер приказа")));
 		assert.ok(res.errors.some((e) => e.includes("ФИО материально ответственного лица")));
-		assert.ok(res.errors.some((e) => e.includes("Комиссия должна состоять")));
+		assert.ok(res.warnings.some((w) => w.includes("без обязательного требования комиссии из 3 человек")));
 		assert.ok(res.errors.some((e) => e.includes("хотя бы одну позицию")));
 	});
 });

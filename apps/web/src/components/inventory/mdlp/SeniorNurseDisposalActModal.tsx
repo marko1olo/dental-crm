@@ -77,9 +77,12 @@ export const SeniorNurseDisposalActModal: React.FC<
 	>(initialApproverRole);
 	const [paperJournalAcknowledged, setPaperJournalAcknowledged] =
 		useState<boolean>(initialPaperJournalAcknowledged);
-	const [approverName, setApproverName] = useState<string>(
-		() => initialDentistName || initialSeniorNurseName || "Кузнецов М.С.",
-	);
+	const [approverName, setApproverName] = useState<string>(() => {
+		if (initialApproverRole === "senior_nurse") {
+			return initialSeniorNurseName || "Иванова Е.В.";
+		}
+		return initialDentistName || initialSeniorNurseName || "Кузнецов М.С.";
+	});
 	const [seniorNurseName, setSeniorNurseName] = useState<string>(
 		initialSeniorNurseName,
 	);

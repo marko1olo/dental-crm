@@ -108,7 +108,10 @@ export function determineAgeCategory(ageYears: number): PatientAgeCategory {
 	return 'adult';
 }
 
-export function calculateAgeReductionFactor(ageYears: number, _weightKg: number): number {
+export function calculateAgeReductionFactor(ageYears: number, weightKg?: number): number {
+	if (ageYears < 18 && typeof weightKg === "number" && weightKg > 0) {
+		return Math.min(1.0, Number((weightKg / 70).toFixed(2)));
+	}
 	if (ageYears >= 65) {
 		return 0.70; // 30% reduction for geriatric patients
 	}
