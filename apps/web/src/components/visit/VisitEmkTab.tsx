@@ -431,6 +431,9 @@ export function VisitEmkTab() {
 				| "clear"
 				| "copy",
 		) => {
+			if (formatType !== "copy" && isSignedVisit && !isRevisingVisitNote) {
+				setIsRevisingVisitNote(true);
+			}
 			const el = textareaRefs.current[fieldKey];
 			const currentValue = String(visitNoteForm?.[fieldKey] ?? "");
 
@@ -1817,6 +1820,9 @@ export function VisitEmkTab() {
 					const chips = QUICK_CHIPS[field.key] || [];
 
 					const handleChipClick = (chip: string) => {
+						if (isSignedVisit && !isRevisingVisitNote) {
+							setIsRevisingVisitNote(true);
+						}
 						if (!updateVisitNoteField) return;
 						const curr = visitNoteForm[field.key] || "";
 						const textToAppend =
@@ -2008,7 +2014,12 @@ export function VisitEmkTab() {
 								label={field.label}
 								value={visitNoteForm[field.key] ?? ""}
 								placeholder={`Введите ${field.label.toLowerCase()} или выберите кнопки быстрого набора...`}
-								onCommit={(key, val) => updateVisitNoteField?.(key, val)}
+								onCommit={(key, val) => {
+									if (isSignedVisit && !isRevisingVisitNote) {
+										setIsRevisingVisitNote(true);
+									}
+									updateVisitNoteField?.(key, val);
+								}}
 								textareaRef={(el) => {
 									textareaRefs.current[field.key] = el;
 								}}
@@ -3608,7 +3619,7 @@ export function VisitEmkTab() {
 				onClose={() => setIsSoapTemplatesModalOpen(false)}
 				onApplyPreset={handleApplyClinicalSoapPreset}
 				activeTooth={activeSelectedTooth}
-				isLocked={Boolean(dashboard?.activeVisit?.status === "signed")}
+				isLocked={isLocked}
 			/>
 
 			{/* ── ПЕЧАТНАЯ ВЕРСИЯ КАРТЫ 043/У И ДНЕВНИКА ПРИЁМА ДЛЯ А4 ── */}

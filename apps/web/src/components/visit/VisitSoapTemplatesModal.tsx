@@ -189,7 +189,6 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 	if (!isOpen) return null;
 
 	const handleApply = () => {
-		if (isLocked) return;
 		const effectiveTooth = activePreset.category !== "hygiene" ? (selectedTooth ?? activePreset.defaultTooth ?? 16) : null;
 		onApplyPreset(activePreset, effectiveTooth, applyMode);
 		onClose();
@@ -227,14 +226,22 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 							<BookOpen size={22} />
 						</div>
 						<div>
-							<h3 id="soap-templates-modal-title" className="text-base sm:text-lg font-extrabold flex items-center gap-2 text-[var(--ink)]">
+							<h3 id="soap-templates-modal-title" className="text-base sm:text-lg font-extrabold flex items-center gap-2 text-[var(--ink)] flex-wrap">
 								<span>Клинические протоколы Формы 043/у</span>
 								<span className="text-xs px-2 py-0.5 rounded-md font-mono font-black bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)]">
 									МКБ-10 • 804н • Склад
 								</span>
+								{isLocked && (
+									<span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+										<AlertCircle size={13} />
+										<span>Ревизия («Исправленному верить»)</span>
+									</span>
+								)}
 							</h3>
 							<p className="text-xs text-[var(--muted)]">
-								1 клик: Полный протокол SOAP, привязка услуги номенклатуры и технологическая карта списания
+								{isLocked
+									? "Визит подписан. Применение протокола автоматически активирует правку «Исправленному верить» с аудитом версий."
+									: "1 клик: Полный протокол SOAP, привязка услуги номенклатуры и технологическая карта списания"}
 							</p>
 						</div>
 					</div>
@@ -627,12 +634,16 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 						<button
 							type="button"
 							onClick={handleApply}
-							disabled={isLocked}
-							className="min-h-[48px] px-5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+							className="min-h-[48px] px-5 py-2 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md transition-all flex items-center gap-2 cursor-pointer touch-manipulation active:scale-[0.98]"
 							data-testid="btn-apply-soap-preset"
+							title={
+								isLocked
+									? "Применить протокол в режиме правки («Исправленному верить»)"
+									: "Применить протокол в 1 клик"
+							}
 						>
 							<Zap size={17} />
-							<span>Применить протокол в 1 клик</span>
+							<span>{isLocked ? "Внести в ревизию дневника" : "Применить протокол в 1 клик"}</span>
 						</button>
 					</div>
 				</div>
