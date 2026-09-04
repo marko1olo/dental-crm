@@ -183,21 +183,22 @@ async function assertNoResourceOverlap(
 	const ov = overlapping[0];
 	if (!ov) return;
 
+	let existingPatientName = "Пациент";
+	if (ov.patientId) {
+		const [p] = await executor
+			.select({ fullName: schema.patients.fullName })
+			.from(schema.patients)
+			.where(eq(schema.patients.id, ov.patientId))
+			.limit(1);
+		if (p?.fullName) existingPatientName = p.fullName;
+	}
+
 	// Порядок сообщений — от самого понятного администратору: пациент важнее
 	// врача, врач важнее ассистента, ассистент важнее кресла.
 	if (candidate.patientId && ov.patientId === candidate.patientId) {
-		throw new Error("У пациента уже есть запись в это время");
+		throw new Error(`У пациента ${existingPatientName} уже есть запись в это время`);
 	}
-	if (candidate.doctorUserId && ov.doctorUserId === candidate.doctorUserId) {
-		throw new Error("У врача уже есть запись в это время");
-	}
-	if (
-		candidate.assistantUserId &&
-		ov.assistantUserId === candidate.assistantUserId
-	) {
-		throw new Error("У ассистента уже есть запись в это время");
-	}
-	throw new Error("Кресло уже занято другой записью в это время");
+	throw new Error(`Внимание: на это время уже записан пациент ${existingPatientName}`);
 }
 
 /**
@@ -296,8 +297,8 @@ async function assertAppointmentResourcesBelongToOrganization(
 export async function createAppointmentInDb(
 	organizationId: string,
 	input: CreateAppointmentInput & {
-		allowEmergencyOverride?: boolean;
-		urgency?: "routine" | "urgent" | "emergency";
+		allowEmergencyOverride?: boolean | undefined;
+		urgency?: "routine" | "urgent" | "emergency" | undefined;
 	},
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	tx?: any,
@@ -318,13 +319,14 @@ export async function createAppointmentInDb(
 			.limit(1);
 
 		// Ст. 124 УК РФ (Неоказание помощи больному): если пациент обращается с острой болью
-		// или включен флаг allowEmergencyOverride, блокировка ЧС/архива НЕ должна блокировать оказание помощи!
+		// или включен флаг allowEmergencyOverride / allowOverbooking, блокировка ЧС/архива и овербукинг не блокируют приём!
 		const isEmergencyOverride = Boolean(
 			input.allowEmergencyOverride ||
+			input.allowOverbooking ||
 			input.urgency === "urgent" ||
 			input.urgency === "emergency" ||
-			/острая\s*боль|неотложн|экстрен/i.test(input.reason || "") ||
-			/острая\s*боль|неотложн|экстрен/i.test(input.comment || "")
+			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason || "") ||
+			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment || "")
 		);
 
 		if (!isEmergencyOverride) {
@@ -372,6 +374,15 @@ export async function createAppointmentInDb(
 	const candidateStarts = new Date(startsAtMs);
 	const candidateEnds = new Date(endsAtMs);
 
+	const isEmergencyOverrideOverall = Boolean(
+		input.allowEmergencyOverride ||
+		input.allowOverbooking ||
+		input.urgency === "urgent" ||
+		input.urgency === "emergency" ||
+		/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason || "") ||
+		/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment || "")
+	);
+
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const insertChecked = async (executor: any) => {
 		// Принадлежность проверяется ДО блокировки ресурсов: блокировать чужую
@@ -388,14 +399,16 @@ export async function createAppointmentInDb(
 				assistantUserId: input.assistantUserId,
 				patientId: input.patientId,
 			});
-			await assertNoResourceOverlap(executor, organizationId, {
-				startsAt: candidateStarts,
-				endsAt: candidateEnds,
-				chairId: input.chairId,
-				doctorUserId: input.doctorUserId,
-				assistantUserId: input.assistantUserId,
-				patientId: input.patientId,
-			});
+			if (!input.allowOverbooking && !isEmergencyOverrideOverall) {
+				await assertNoResourceOverlap(executor, organizationId, {
+					startsAt: candidateStarts,
+					endsAt: candidateEnds,
+					chairId: input.chairId,
+					doctorUserId: input.doctorUserId,
+					assistantUserId: input.assistantUserId,
+					patientId: input.patientId,
+				});
+			}
 		}
 
 		const [created] = await executor
@@ -443,8 +456,9 @@ export async function updateAppointmentInDb(
 	organizationId: string,
 	appointmentId: string,
 	input: UpdateAppointmentInput & {
-		allowEmergencyOverride?: boolean;
-		urgency?: "routine" | "urgent" | "emergency";
+		allowEmergencyOverride?: boolean | undefined;
+		allowOverbooking?: boolean | undefined;
+		urgency?: "routine" | "urgent" | "emergency" | undefined;
 	},
 ): Promise<Appointment> {
 	if (useInMemory()) {
@@ -515,10 +529,11 @@ export async function updateAppointmentInDb(
 			// Ст. 124 УК РФ (Неоказание помощи больному): при острой боли перенос/запись не блокируются!
 			const isEmergencyOverride = Boolean(
 				input.allowEmergencyOverride ||
+				input.allowOverbooking ||
 				input.urgency === "urgent" ||
 				input.urgency === "emergency" ||
-				/острая\s*боль|неотложн|экстрен/i.test(input.reason ?? existing.reason ?? "") ||
-				/острая\s*боль|неотложн|экстрен/i.test(input.comment ?? existing.comment ?? "")
+				/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason ?? existing.reason ?? "") ||
+				/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment ?? existing.comment ?? "")
 			);
 
 			if (!isEmergencyOverride) {
@@ -530,6 +545,15 @@ export async function updateAppointmentInDb(
 				}
 			}
 		}
+
+		const isEmergencyOverrideOverall = Boolean(
+			input.allowEmergencyOverride ||
+			input.allowOverbooking ||
+			input.urgency === "urgent" ||
+			input.urgency === "emergency" ||
+			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.reason ?? existing.reason ?? "") ||
+			/острая\s*боль|неотложн|экстрен|cito|пульпит|флюс/i.test(input.comment ?? existing.comment ?? "")
+		);
 
 		if (newStatus !== "cancelled" && newStatus !== "no_show") {
 			// Шаг 2: Блокировка всех затрагиваемых ресурсов (старых И новых) в каноническом порядке
@@ -559,16 +583,18 @@ export async function updateAppointmentInDb(
 
 			if (!locked) throw new Error("Запись не найдена");
 
-			// Шаг 4: Проверка отсутствия пересечений
-			await assertNoResourceOverlap(tx, organizationId, {
-				startsAt: candidateStarts,
-				endsAt: candidateEnds,
-				chairId: newChairId,
-				doctorUserId: newDoctorUserId,
-				assistantUserId: newAssistantUserId,
-				patientId: newPatientId,
-				excludeAppointmentId: appointmentId,
-			});
+			// Шаг 4: Проверка отсутствия пересечений (пропускается при овербукинге или острой боли)
+			if (!input.allowOverbooking && !isEmergencyOverrideOverall) {
+				await assertNoResourceOverlap(tx, organizationId, {
+					startsAt: candidateStarts,
+					endsAt: candidateEnds,
+					chairId: newChairId,
+					doctorUserId: newDoctorUserId,
+					assistantUserId: newAssistantUserId,
+					patientId: newPatientId,
+					excludeAppointmentId: appointmentId,
+				});
+			}
 		}
 
 		/*

@@ -229,6 +229,7 @@ function classifyAppointmentRejection(
 	if (
 		message.includes("уже есть запись") ||
 		message.includes("уже занято") ||
+		message.includes("Внимание: на это время уже записан пациент") ||
 		message.includes("23P01") ||
 		message.includes("exclusion constraint")
 	)
@@ -438,7 +439,8 @@ async function appointmentRejectionResponse(
 			error instanceof Error &&
 			(error.message.includes("уже есть запись") ||
 				error.message.includes("уже занято") ||
-				error.message.includes("Слот уже занят"))
+				error.message.includes("Слот уже занят") ||
+				error.message.includes("Внимание:"))
 		) {
 			specificMessage = error.message;
 		} else {

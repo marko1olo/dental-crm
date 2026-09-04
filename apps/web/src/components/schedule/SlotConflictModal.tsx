@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, Clock, Calendar, X } from "lucide-react";
+import { AlertTriangle, Clock, Calendar, X, Zap } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useModalA11y } from "../../hooks/useModalA11y";
 
@@ -9,6 +9,7 @@ export interface SlotConflictModalProps {
 	readonly conflictMessage?: string | null | undefined;
 	readonly suggestedSlots: readonly string[];
 	readonly onSelectSlot: (slotTime: string) => void;
+	readonly onOverbook?: (() => void) | undefined;
 	readonly patientName?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
 }
@@ -19,6 +20,7 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 	conflictMessage,
 	suggestedSlots,
 	onSelectSlot,
+	onOverbook,
 	patientName,
 	doctorName,
 }) => {
@@ -125,17 +127,35 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 				</div>
 
 				{/* Footer */}
-				<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-3">
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition-colors cursor-pointer"
-					>
-						Отмена
-					</button>
-					<span className="text-[11px] text-[var(--muted,#64748b)]">
-						Нажмите на слот для быстрого переноса
-					</span>
+				<div className="p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-wrap items-center justify-between gap-3">
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition-colors cursor-pointer"
+						>
+							Отмена
+						</button>
+						<span className="text-[11px] text-[var(--muted,#64748b)] hidden sm:inline">
+							Нажмите на слот для быстрого выбора
+						</span>
+					</div>
+
+					{onOverbook && (
+						<button
+							type="button"
+							data-testid="slot-conflict-overbook-btn"
+							onClick={() => {
+								onOverbook();
+								onClose();
+							}}
+							className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							title="Записать в это же время в режиме овербукинга для острой боли"
+						>
+							<Zap className="w-4 h-4" />
+							<span>Записать всё равно (овербукинг / CITO)</span>
+						</button>
+					)}
 				</div>
 			</div>
 		</div>

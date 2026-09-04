@@ -99,7 +99,10 @@ type ScheduleViewProps = {
 		appointment: Appointment,
 	) => AppointmentScheduleDraft;
 	closeAppointmentEditor: (appointmentId: string) => void;
-	createAppointmentFromDraft: () => Promise<boolean>;
+	createAppointmentFromDraft: (options?: {
+		allowOverbooking?: boolean;
+		allowEmergencyOverride?: boolean;
+	}) => Promise<boolean>;
 	dashboard: Dashboard;
 	editingAppointmentId: string | null;
 	formatTime: (value: string) => string;
@@ -129,7 +132,11 @@ type ScheduleViewProps = {
 	resetNewAppointmentDraft: () => void;
 	saveAppointmentSchedule: (
 		appointmentId: string,
-		options?: { closeEditorOnSave?: boolean },
+		options?: {
+			closeEditorOnSave?: boolean;
+			allowOverbooking?: boolean;
+			allowEmergencyOverride?: boolean;
+		},
 	) => Promise<boolean>;
 
 	shiftWarnings: Dashboard["shiftIntelligence"]["scheduleWarnings"];
@@ -1469,6 +1476,16 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					onAppointmentClick={(appointment) => {
 						setModalAppointment(appointment);
 					}}
+					onAppointmentMove={async (appointmentId, updates) => {
+						if (updates.startsAt) updateAppointmentScheduleDraft(appointmentId, "startsAt", updates.startsAt);
+						if (updates.endsAt) updateAppointmentScheduleDraft(appointmentId, "endsAt", updates.endsAt);
+						if (updates.chairId !== undefined) updateAppointmentScheduleDraft(appointmentId, "chairId", updates.chairId);
+						if (updates.doctorUserId !== undefined) updateAppointmentScheduleDraft(appointmentId, "doctorUserId", updates.doctorUserId);
+						return await saveAppointmentSchedule(appointmentId, {
+							allowOverbooking: updates.allowOverbooking ?? true,
+							allowEmergencyOverride: true,
+						});
+					}}
 					onQuickStatusChange={async (appointmentId, status) => {
 						updateAppointmentScheduleDraft(appointmentId, "status", status);
 						const success = await saveAppointmentSchedule(appointmentId);
@@ -1607,6 +1624,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						slotTime,
 						(logicContext as any)?.slotConflict?.appointmentId,
 					);
+				}}
+				onOverbook={() => {
+					const apptId = (logicContext as any)?.slotConflict?.appointmentId;
+					if (apptId) {
+						void saveAppointmentSchedule(apptId, {
+							allowOverbooking: true,
+							allowEmergencyOverride: true,
+						});
+					} else {
+						void createAppointmentFromDraft({
+							allowOverbooking: true,
+							allowEmergencyOverride: true,
+						});
+					}
+					(logicContext as any)?.setSlotConflict?.(null);
 				}}
 			/>
 

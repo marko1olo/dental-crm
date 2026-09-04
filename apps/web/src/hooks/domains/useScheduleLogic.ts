@@ -680,7 +680,11 @@ export function useScheduleLogic({
 
 	async function saveAppointmentSchedule(
 		appointmentId: string,
-		options: { closeEditorOnSave?: boolean } = {},
+		options: {
+			closeEditorOnSave?: boolean;
+			allowOverbooking?: boolean;
+			allowEmergencyOverride?: boolean;
+		} = {},
 	): Promise<boolean> {
 		if (appointmentScheduleSaveStates[appointmentId] === "saving") {
 			setError("Дождитесь завершения текущего сохранения записи.");
@@ -758,6 +762,12 @@ export function useScheduleLogic({
 					body: JSON.stringify({
 						...appointmentUpdateInputFromDraft(draft),
 						clientMutationId: mutationId,
+						...(options.allowOverbooking !== undefined
+							? { allowOverbooking: options.allowOverbooking }
+							: {}),
+						...(options.allowEmergencyOverride !== undefined
+							? { allowEmergencyOverride: options.allowEmergencyOverride }
+							: {}),
 					}),
 				},
 			);
@@ -856,7 +866,12 @@ export function useScheduleLogic({
 		);
 	}
 
-	async function createAppointmentFromDraft(): Promise<boolean> {
+	async function createAppointmentFromDraft(
+		options: {
+			allowOverbooking?: boolean;
+			allowEmergencyOverride?: boolean;
+		} = {},
+	): Promise<boolean> {
 		if (!dashboard) {
 			setError(
 				"Данные клиники еще не загружены. Повторите создание записи после загрузки рабочего экрана.",
@@ -896,6 +911,12 @@ export function useScheduleLogic({
 				body: JSON.stringify({
 					...appointmentCreateInputFromDraft(newAppointmentDraft),
 					clientMutationId: mutationId,
+					...(options.allowOverbooking !== undefined
+						? { allowOverbooking: options.allowOverbooking }
+						: {}),
+					...(options.allowEmergencyOverride !== undefined
+						? { allowEmergencyOverride: options.allowEmergencyOverride }
+						: {}),
 				}),
 			});
 			if (!response.ok) {
