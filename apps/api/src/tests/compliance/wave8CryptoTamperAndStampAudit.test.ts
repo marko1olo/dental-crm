@@ -90,7 +90,7 @@ describe("Wave 8: Crypto Tamper Audit, CAdES-BES Invariants, and Stamp Layout In
 
 			// АТАКА 1 БАЙТ НА БИНАРНЫЙ PDF: инвертируем один бит в байте
 			const tamperedPdfBuffer = Buffer.from(fakePdfBuffer);
-			tamperedPdfBuffer[15] ^= 0x01; // переворачиваем 1 бит
+			tamperedPdfBuffer[15]! ^= 0x01; // переворачиваем 1 бит
 
 			const tamperedHash = createHash("sha256").update(tamperedPdfBuffer).digest("hex");
 			assert.notStrictEqual(origHash, tamperedHash);
@@ -295,7 +295,7 @@ describe("Wave 8: Crypto Tamper Audit, CAdES-BES Invariants, and Stamp Layout In
 			// Извлекаем строку времени из HTML
 			const match = stampHtml.match(/Подписано:<\/strong>\s*([^<]+)/);
 			assert.ok(match, "Блок 'Подписано' обязан присутствовать в штампе");
-			const timeStr = match[1].trim();
+			const timeStr = match[1]!.trim();
 			assert.strictEqual(timeStr, "02.09.2026 17:35:12 (МСК)");
 			assert.match(timeStr, mskRegex);
 		});
@@ -313,7 +313,7 @@ describe("Wave 8: Crypto Tamper Audit, CAdES-BES Invariants, and Stamp Layout In
 			assert.ok(stampHtml.includes("01.01.2027 00:15:30 (МСК)"));
 			const match = stampHtml.match(/Подписано:<\/strong>\s*([^<]+)/);
 			assert.ok(match);
-			const timeStr = match[1].trim();
+			const timeStr = match[1]!.trim();
 			assert.strictEqual(timeStr, "01.01.2027 00:15:30 (МСК)");
 			assert.match(timeStr, mskRegex);
 		});
@@ -331,7 +331,7 @@ describe("Wave 8: Crypto Tamper Audit, CAdES-BES Invariants, and Stamp Layout In
 			assert.ok(stampHtml.includes("05.06.2026 09:07:08 (МСК)"));
 			const match = stampHtml.match(/Подписано:<\/strong>\s*([^<]+)/);
 			assert.ok(match);
-			const timeStr = match[1].trim();
+			const timeStr = match[1]!.trim();
 			assert.strictEqual(timeStr, "05.06.2026 09:07:08 (МСК)");
 			assert.match(timeStr, mskRegex);
 		});

@@ -21,6 +21,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -91,7 +92,6 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 				kpp: "770101001",
 				ogrn: "1157746123456",
 				legalAddress: "г. Москва, ул. Прокурорская, д. 10",
-				phone: "+74959990010",
 			});
 
 			const pinHash = await hashCredential(ADMIN_PIN);
@@ -122,13 +122,13 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 				organizationId: ORG_ID,
 				fullName: "Смирнов Алексей Константинович",
 				birthDate: "1988-04-12",
-				gender: "male",
 				phone: "+79031112233",
 				email: "smirnov.ak@mail.ru",
-				snils: "123-456-789 01",
-				inn: "770123456789",
-				isAnonymous: false,
-				balanceRub: 0,
+				administrativeProfile: {
+					snils: "123-456-789 01",
+					taxpayerInn: "770123456789",
+					isAnonymous: false,
+				} as unknown as PatientAdministrativeProfile,
 			});
 
 			// Пациент 2: Анонимный пациент (UUID_ANON) по ст. 84 323-ФЗ и ПП РФ №659
@@ -137,11 +137,8 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 				organizationId: ORG_ID,
 				fullName: `UUID_ANON_${PATIENT_ANON_ID.slice(0, 8)}`,
 				birthDate: "1990-01-01",
-				gender: "male",
 				phone: "+79990000000",
-				isAnonymous: true,
-				balanceRub: 0,
-				administrativeProfile: { isAnonymous: true },
+				administrativeProfile: { isAnonymous: true } as unknown as PatientAdministrativeProfile,
 			});
 
 			// Каталог услуг: Дорогостоящая имплантация (код 804н A16.07.054) и коронка (A16.07.004)
@@ -154,8 +151,8 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 					category: "surgery",
 					basePriceRub: 55000,
 					priceRub: 55000,
-					active: true,
-					decree458Expensive: true,
+					isActive: true,
+					isDecree458Expensive: true,
 				},
 				{
 					id: SERVICE_CROWN_ID,
@@ -165,8 +162,8 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 					category: "prosthetics",
 					basePriceRub: 25000,
 					priceRub: 25000,
-					active: true,
-					decree458Expensive: false,
+					isActive: true,
+					isDecree458Expensive: false,
 				},
 			]);
 
@@ -175,12 +172,12 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 				id: PLAN_REGULAR_ID,
 				organizationId: ORG_ID,
 				patientId: PATIENT_IDENTIFIED_ID,
-				authorDoctorId: DOCTOR_ID,
+				doctorId: DOCTOR_ID,
 				name: "План ортопедии: Коронка цирконий",
 				title: "План ортопедии: Коронка цирконий",
 				status: "Approved",
 				version: 1,
-				planDiscountPercent: "0",
+				planDiscountPercent: 0,
 				discountMode: "plan_fixed",
 			});
 
@@ -200,12 +197,12 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 				id: PLAN_EXPENSIVE_ID,
 				organizationId: ORG_ID,
 				patientId: PATIENT_IDENTIFIED_ID,
-				authorDoctorId: DOCTOR_ID,
+				doctorId: DOCTOR_ID,
 				name: "План хирургии: Имплантация Straumann",
 				title: "План хирургии: Имплантация Straumann",
 				status: "Approved",
 				version: 1,
-				planDiscountPercent: "0",
+				planDiscountPercent: 0,
 				discountMode: "plan_fixed",
 			});
 
@@ -225,7 +222,7 @@ describe("Prosecutor 3: Wave 10 Discount Integrity, Zero-Price & Anonymous Tax D
 				id: fixtureUuid(NAMESPACE, 50),
 				organizationId: ORG_ID,
 				patientId: PATIENT_IDENTIFIED_ID,
-				amountRub: "25000.00",
+				amountRub: 25000,
 				method: "card",
 				status: "paid",
 				paidAt: new Date("2026-03-15T10:00:00Z"),

@@ -20,6 +20,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -112,14 +113,13 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 				phone: "+79031112233",
 				email: "kuznetsov@example.com",
 				status: "active",
-				balanceRub: 0,
 				administrativeProfile: {
 					identityDocument: "Паспорт РФ 4515 987654",
 					snils: "123-456-789 00",
 					taxpayerInn: "770399887766",
 					registrationAddress: "г. Москва, ул. Ленина, д. 10",
 					isAnonymous: false,
-				},
+				} as unknown as PatientAdministrativeProfile,
 			});
 
 			// 2. Анонимный пациент (UUID_ANON) по Постановлению Правительства РФ №659
@@ -130,13 +130,12 @@ describe("Prosecutor 3: 54-FZ Split Payments, Income Returns & Decree 659 Tax Ex
 				birthDate: "1995-01-01",
 				phone: "+79990000000",
 				status: "active",
-				balanceRub: 0,
 				administrativeProfile: {
 					isAnonymous: true,
 					identityDocument: null,
 					snils: null,
 					taxpayerInn: null,
-				},
+				} as unknown as PatientAdministrativeProfile,
 			});
 
 			// Услуга коронки керамической: 50 000 ₽

@@ -157,7 +157,7 @@ describe("Prosecutor 3: Wave 7 Price Freeze Expiration & Inflation Surcharge Aud
 				patientId: PATIENT_EXPIRED_ID,
 				name: "Комплексный план имплантации",
 				status: "Approved",
-				totalPriceRub: 40000,
+				totalPriceRub: "40000.00",
 				approvedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000), // Утвержден 45 дней назад
 				createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
 			});
@@ -168,10 +168,10 @@ describe("Prosecutor 3: Wave 7 Price Freeze Expiration & Inflation Surcharge Aud
 				planId: PLAN_EXPIRED_ID,
 				priceId: `${SERVICE_IMPLANT_ID}::Дентальная имплантация Osstem`,
 				toothNumber: 46,
-				quantity: "1",
-				unitPriceRub: "40000",
-				totalPriceRub: "40000",
-				itemOrder: 1,
+				quantity: 1,
+				price: "40000.00",
+				discount: "0",
+				phase: 1,
 			});
 
 			// План 2: Утвержденный план эндодонтии (10 000 ₽)
@@ -181,7 +181,7 @@ describe("Prosecutor 3: Wave 7 Price Freeze Expiration & Inflation Surcharge Aud
 				patientId: PATIENT_THRESHOLD_ID,
 				name: "План эндодонтического лечения",
 				status: "Approved",
-				totalPriceRub: 10000,
+				totalPriceRub: "10000.00",
 				approvedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
 				createdAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
 			});
@@ -192,10 +192,10 @@ describe("Prosecutor 3: Wave 7 Price Freeze Expiration & Inflation Surcharge Aud
 				planId: PLAN_THRESHOLD_ID,
 				priceId: `${SERVICE_ENDODONTICS_ID}::Эндодонтическое лечение трехканального зуба`,
 				toothNumber: 26,
-				quantity: "1",
-				unitPriceRub: "10000",
-				totalPriceRub: "10000",
-				itemOrder: 1,
+				quantity: 1,
+				price: "10000.00",
+				discount: "0",
+				phase: 1,
 			});
 		});
 

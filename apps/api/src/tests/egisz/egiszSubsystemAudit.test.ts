@@ -21,7 +21,7 @@ import {
 } from "../../db/schema.js";
 import {
 	generateDentalCdaXml,
-	type DentalCdaXmlParams,
+	type EgiszCdaParams as DentalCdaXmlParams,
 } from "../../services/cda/index.js";
 import {
 	calculateEgiszRetryDelayMs,
@@ -73,7 +73,6 @@ describe("EGISZ REMD: CDA R3 Statutory Validation & Outbox DLQ (PostgreSQL 18.4)
 				address: "г. Москва, ул. Стоматологическая, д. 1",
 				timezone: "Europe/Moscow",
 				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 
 			await tx.insert(users).values({
@@ -139,7 +138,6 @@ describe("EGISZ REMD: CDA R3 Statutory Validation & Outbox DLQ (PostgreSQL 18.4)
 			doctorPositionCode: "18",
 			icd10Code: "K02.1",
 			diagnosisText: "Кариес дентина",
-			tooth: 16,
 			anamnesis: "Жалобы на кратковременные боли от термических раздражителей",
 			treatmentDescription: "Препарирование кариозной полости зуба 16, пломбирование светоотверждаемым композитом",
 			services: [

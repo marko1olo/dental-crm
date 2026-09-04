@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it, before, after } from "node:test";
 import { and, eq } from "drizzle-orm";
+import { patientAdministrativeProfileSchema } from "@dental/shared";
 import { db } from "../../db/client.js";
 import { createAppointmentInDb } from "../../db/appointmentsQuery.js";
 import {
@@ -9,6 +10,8 @@ import {
 } from "../../db/patientArchiveReasonsAndBlacklistsQuery.js";
 import { getPatientsFromDb } from "../../db/patientsQuery.js";
 import {
+	chairs,
+	clinics,
 	familyGroups,
 	organizations,
 	patientArchiveReasons,
@@ -31,6 +34,8 @@ import {
 const NAMESPACE = "patientArchive323Fz";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
 const DOCTOR_ID = fixtureUuid(NAMESPACE, 2);
+const CLINIC_ID = fixtureUuid(NAMESPACE, 3);
+const CHAIR_ID = fixtureUuid(NAMESPACE, 4);
 const PATIENT_A_ID = fixtureUuid(NAMESPACE, 10);
 const PATIENT_B_ID = fixtureUuid(NAMESPACE, 11);
 const DUPLICATE_PATIENT_ID = fixtureUuid(NAMESPACE, 12);
@@ -56,6 +61,19 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 				fullName: "Доктор Стоматологов-Хирург",
 			});
 
+			await tx.insert(clinics).values({
+				id: CLINIC_ID,
+				organizationId: ORG_ID,
+				name: "Тестовая клиника 323",
+			});
+
+			await tx.insert(chairs).values({
+				id: CHAIR_ID,
+				organizationId: ORG_ID,
+				clinicId: CLINIC_ID,
+				name: "Кресло 1",
+			});
+
 			await tx.insert(familyGroups).values({
 				id: FAMILY_GROUP_ID,
 				organizationId: ORG_ID,
@@ -63,41 +81,41 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 				balance: "5000.00",
 			});
 
-			await tx.insert(patients).values([
+			for (const p of [
 				{
 					id: PATIENT_A_ID,
 					organizationId: ORG_ID,
 					fullName: "Иванов Иван Иванович",
 					phone: "+79991112233",
-					status: "active",
+					status: "active" as const,
 				},
 				{
 					id: PATIENT_B_ID,
 					organizationId: ORG_ID,
 					fullName: "Петров Петр Петрович",
 					phone: "+79992223344",
-					status: "active",
+					status: "active" as const,
 					// Основная карточка имеет заполненный ИНН, но нет СНИЛС, паспорта и веса
-					administrativeProfile: {
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
 						taxpayerInn: "770123456789",
-					},
+					}),
 				},
 				{
 					id: DUPLICATE_PATIENT_ID,
 					organizationId: ORG_ID,
 					fullName: "Иванов Иван Дубль",
 					phone: "+79991112233",
-					status: "active",
+					status: "active" as const,
 					weightKg: "78.50",
 					familyGroupId: FAMILY_GROUP_ID,
 					// Дубль имеет СНИЛС, паспорт, полис ОМС и другой ИНН (который не должен перетереть основной)
-					administrativeProfile: {
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
 						snils: "123-456-789 00",
 						identityDocument: "Паспорт РФ 4510 123456",
 						insurancePolicyNumber: "1234567890123456",
 						taxpayerInn: "999999999999",
 						residentialAddress: "г. Москва, ул. Ленина, д. 10",
-					},
+					}),
 				},
 				// Пациенты для теста обнаружения дублей по СНИЛС
 				{
@@ -105,22 +123,24 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 					organizationId: ORG_ID,
 					fullName: "Сидорова Анна Павловна",
 					phone: "+79995556677",
-					status: "active",
-					administrativeProfile: {
+					status: "active" as const,
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
 						snils: "987-654-321 00",
-					},
+					}),
 				},
 				{
 					id: PATIENT_SNILS_2_ID,
 					organizationId: ORG_ID,
 					fullName: "Кузнецова Анна Павловна", // Сменила фамилию, телефон другой, но СНИЛС тот же!
 					phone: "+79998889900",
-					status: "active",
-					administrativeProfile: {
+					status: "active" as const,
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
 						snils: "987-654-321 00",
-					},
+					}),
 				},
-			]);
+			]) {
+				await tx.insert(patients).values(p);
+			}
 		});
 	});
 
@@ -215,11 +235,11 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 			async () => {
 				await createAppointmentInDb(ORG_ID, {
 					patientId: PATIENT_A_ID,
-					doctorId: DOCTOR_ID,
+					doctorUserId: DOCTOR_ID,
+					chairId: CHAIR_ID,
 					startsAt: new Date(Date.now() + 3600000).toISOString(),
 					endsAt: new Date(Date.now() + 7200000).toISOString(),
 					status: "planned",
-					type: "consultation",
 				});
 			},
 			(err: Error) => {
@@ -309,11 +329,11 @@ describe("Patient Archive Reasons & Booking Prohibition (323-ФЗ)", () => {
 			async () => {
 				await createAppointmentInDb(ORG_ID, {
 					patientId: DUPLICATE_PATIENT_ID,
-					doctorId: DOCTOR_ID,
+					doctorUserId: DOCTOR_ID,
+					chairId: CHAIR_ID,
 					startsAt: new Date(Date.now() + 3600000).toISOString(),
 					endsAt: new Date(Date.now() + 7200000).toISOString(),
 					status: "planned",
-					type: "consultation",
 				});
 			},
 			(err: Error) => {

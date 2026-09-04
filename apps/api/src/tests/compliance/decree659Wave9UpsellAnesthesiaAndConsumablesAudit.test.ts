@@ -104,31 +104,25 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 			const passwordHash = await hashCredential("Password123!");
 			const adminPinHash = await hashCredential(ADMIN_PIN);
 
-			await db.insert(users).values([
-				{
-					id: DOCTOR_ID,
-					organizationId: ORG_ID,
-					fullName: "Доктор Стоматолог Wave 9",
-					username: `doctor_wave9_${Date.now()}`,
-					role: "doctor",
-					passwordHash,
-					isActive: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: ADMIN_ID,
-					organizationId: ORG_ID,
-					fullName: "Главный Администратор Wave 9",
-					username: `admin_wave9_${Date.now()}`,
-					role: "admin",
-					passwordHash,
-					adminPinHash,
-					isActive: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-			]);
+			await db.insert(users).values({
+				id: DOCTOR_ID,
+				organizationId: ORG_ID,
+				fullName: "Доктор Стоматолог Wave 9",
+				email: `doctor_wave9_${Date.now()}@test.ru`,
+				role: "doctor",
+				passwordHash,
+				isActive: true,
+			});
+			await db.insert(users).values({
+				id: ADMIN_ID,
+				organizationId: ORG_ID,
+				fullName: "Главный Администратор Wave 9",
+				email: `admin_wave9_${Date.now()}@test.ru`,
+				role: "admin",
+				passwordHash,
+				pinCodeHash: adminPinHash,
+				isActive: true,
+			});
 
 			const secret = authTokenSecret();
 			clinicToken = signToken({ organizationId: ORG_ID }, secret);
@@ -172,32 +166,26 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				updatedAt: new Date(),
 			});
 
-			await db.insert(serviceCatalogItems).values([
-				{
-					id: SERVICE_CARIES_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.002",
-					title: "Лечение глубокого кариеса светоотверждаемым композитом",
-					category: "therapy",
-					basePriceRub: "6000.00",
-					priceRub: "6000.00",
-					active: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: SERVICE_ANESTHESIA_ID,
-					organizationId: ORG_ID,
-					code: "B01.003.004.001",
-					title: "Анестезия инфильтрационная Ультракаин Д-С 1.7 мл",
-					category: "other",
-					basePriceRub: "850.00",
-					priceRub: "850.00",
-					active: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-			]);
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_CARIES_ID,
+				organizationId: ORG_ID,
+				code: "A16.07.002",
+				title: "Лечение глубокого кариеса светоотверждаемым композитом",
+				category: "therapy",
+				basePriceRub: 6000,
+				priceRub: 6000,
+				isActive: true,
+			});
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_ANESTHESIA_ID,
+				organizationId: ORG_ID,
+				code: "B01.003.004.001",
+				title: "Анестезия инфильтрационная Ультракаин Д-С 1.7 мл",
+				category: "other",
+				basePriceRub: 850,
+				priceRub: 850,
+				isActive: true,
+			});
 
 			await db.insert(treatmentPlans).values({
 				id: PLAN_91_ID,
@@ -217,14 +205,10 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				organizationId: ORG_ID,
 				planId: PLAN_91_ID,
 				priceId: SERVICE_CARIES_ID,
-				nameRu: "Лечение глубокого кариеса светоотверждаемым композитом",
 				toothNumber: 16,
 				quantity: 1,
 				price: "6000.00",
 				discount: "0.00",
-				orderIndex: 0,
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 		});
 
@@ -278,9 +262,8 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				kind: "treatment_plan_acceptance",
 				status: "issued",
 				title: "Дополнительное соглашение №1 на проведение анестезии Ультракаин Д-С",
-				totalAmountRub: "1000.00",
+				totalAmountRub: 1000,
 				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 		});
 
@@ -338,44 +321,36 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				updatedAt: new Date(),
 			});
 
-			await db.insert(serviceCatalogItems).values([
-				{
-					id: SERVICE_ENDO_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.008",
-					title: "Эндодонтическое лечение корневого канала",
-					category: "therapy",
-					basePriceRub: "8000.00",
-					priceRub: "8000.00",
-					active: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: SERVICE_COFFERDAM_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.008.002",
-					title: "Изоляция рабочего поля системой Коффердам / Раббердам",
-					category: "other",
-					basePriceRub: "1200.00",
-					priceRub: "1200.00",
-					active: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: SERVICE_OPTRAGATE_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.008.003",
-					title: "Изоляция губ и щек ретрактором Оптрагейт",
-					category: "other",
-					basePriceRub: "600.00",
-					priceRub: "600.00",
-					active: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-			]);
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_ENDO_ID,
+				organizationId: ORG_ID,
+				code: "A16.07.008",
+				title: "Эндодонтическое лечение корневого канала",
+				category: "therapy",
+				basePriceRub: 8000,
+				priceRub: 8000,
+				isActive: true,
+			});
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_COFFERDAM_ID,
+				organizationId: ORG_ID,
+				code: "A16.07.008.002",
+				title: "Изоляция рабочего поля системой Коффердам / Раббердам",
+				category: "other",
+				basePriceRub: 1200,
+				priceRub: 1200,
+				isActive: true,
+			});
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_OPTRAGATE_ID,
+				organizationId: ORG_ID,
+				code: "A16.07.008.003",
+				title: "Изоляция губ и щек ретрактором Оптрагейт",
+				category: "other",
+				basePriceRub: 600,
+				priceRub: 600,
+				isActive: true,
+			});
 
 			await db.insert(treatmentPlans).values({
 				id: PLAN_92_ID,
@@ -395,14 +370,10 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				organizationId: ORG_ID,
 				planId: PLAN_92_ID,
 				priceId: SERVICE_ENDO_ID,
-				nameRu: "Эндодонтическое лечение корневого канала",
 				toothNumber: 26,
 				quantity: 1,
 				price: "8000.00",
 				discount: "0.00",
-				orderIndex: 0,
-				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 		});
 
@@ -466,32 +437,26 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				updatedAt: new Date(),
 			});
 
-			await db.insert(serviceCatalogItems).values([
-				{
-					id: SERVICE_EXTRACTION_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.001",
-					title: "Сложное удаление зуба с разъединением корней",
-					category: "surgery",
-					basePriceRub: "4000.00",
-					priceRub: "4000.00",
-					active: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: SERVICE_ARTICAINE_ID,
-					organizationId: ORG_ID,
-					code: "B01.003.004.002",
-					title: "Анестезия Артикаин с адреналином 1.7 мл",
-					category: "other",
-					basePriceRub: "600.00",
-					priceRub: "600.00",
-					active: true,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-			]);
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_EXTRACTION_ID,
+				organizationId: ORG_ID,
+				code: "A16.07.001",
+				title: "Сложное удаление зуба с разъединением корней",
+				category: "surgery",
+				basePriceRub: 4000,
+				priceRub: 4000,
+				isActive: true,
+			});
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_ARTICAINE_ID,
+				organizationId: ORG_ID,
+				code: "B01.003.004.002",
+				title: "Анестезия Артикаин с адреналином 1.7 мл",
+				category: "other",
+				basePriceRub: 600,
+				priceRub: 600,
+				isActive: true,
+			});
 
 			// План лечения утвержден (твердая смета): 1 удаление (4 000 ₽) + 1 карпула анестетика (600 ₽) = 4 600 ₽
 			await db.insert(treatmentPlans).values({
@@ -507,35 +472,25 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				updatedAt: new Date(),
 			});
 
-			await db.insert(treatmentPlanItemsNew).values([
-				{
-					id: fixtureUuid(NAMESPACE, 103),
-					organizationId: ORG_ID,
-					planId: PLAN_93_ID,
-					priceId: SERVICE_EXTRACTION_ID,
-					nameRu: "Сложное удаление зуба с разъединением корней",
-					toothNumber: 38,
-					quantity: 1,
-					price: "4000.00",
-					discount: "0.00",
-					orderIndex: 0,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-				{
-					id: fixtureUuid(NAMESPACE, 104),
-					organizationId: ORG_ID,
-					planId: PLAN_93_ID,
-					priceId: SERVICE_ARTICAINE_ID,
-					nameRu: "Анестезия Артикаин с адреналином 1.7 мл",
-					quantity: 1,
-					price: "600.00",
-					discount: "0.00",
-					orderIndex: 1,
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-			]);
+			await db.insert(treatmentPlanItemsNew).values({
+				id: fixtureUuid(NAMESPACE, 103),
+				organizationId: ORG_ID,
+				planId: PLAN_93_ID,
+				priceId: SERVICE_EXTRACTION_ID,
+				toothNumber: 38,
+				quantity: 1,
+				price: "4000.00",
+				discount: "0.00",
+			});
+			await db.insert(treatmentPlanItemsNew).values({
+				id: fixtureUuid(NAMESPACE, 104),
+				organizationId: ORG_ID,
+				planId: PLAN_93_ID,
+				priceId: SERVICE_ARTICAINE_ID,
+				quantity: 1,
+				price: "600.00",
+				discount: "0.00",
+			});
 		});
 
 		// Врач в ходе сложной операции израсходовал 3 карпулы вместо 1 (quantity = 3).
@@ -634,10 +589,8 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				id: fixtureUuid(NAMESPACE, 301),
 				organizationId: ORG_ID,
 				patientId: PATIENT_94_ID,
-				amountRub: "5000.00",
-				type: "advance",
+				amountRub: 5000,
 				method: "card",
-				paymentMethod: "card",
 				note: "Первоначальный аванс по плану",
 				createdAt: new Date(),
 				updatedAt: new Date(),
@@ -679,9 +632,8 @@ describe("Prosecutor 3: Wave 9 Upsell Consent Shield & Consumables Audit (Decree
 				kind: "treatment_plan_acceptance",
 				status: "issued",
 				title: "Дополнительное соглашение №2 на дополнительное обезболивание (анестезия Ультракаин)",
-				totalAmountRub: "2000.00",
+				totalAmountRub: 2000,
 				createdAt: new Date(),
-				updatedAt: new Date(),
 			});
 		});
 

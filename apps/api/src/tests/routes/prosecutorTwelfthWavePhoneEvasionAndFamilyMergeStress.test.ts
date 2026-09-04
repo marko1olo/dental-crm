@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
+import { patientAdministrativeProfileSchema } from "@dental/shared";
 import { db } from "../../db/client.js";
 import {
 	familyGroups,
@@ -84,62 +85,56 @@ describe("PROSECUTOR 2: ДВЕНАДЦАТАЯ ВОЛНА (PHONE EVASION, FAMILY
 			});
 
 			// Карточки пациентов
-			await tx.insert(patients).values([
-				{
-					id: PATIENT_A_ID,
-					organizationId: ORG_ID,
-					fullName: "Сергеев Сергей Сергеевич",
-					phone: "+7 (916) 123-45-67",
-					birthDate: "1985-05-15",
-					status: "active",
-					familyGroupId: FAMILY_A_ID,
-					balance: "1200.00",
-					administrativeProfile: {
-						snils: "111-222-333 44",
-					},
-				},
-				{
-					id: PATIENT_B_ID,
-					organizationId: ORG_ID,
-					fullName: "Сергеев Сергей Сергеевич",
-					// Номер с попыткой обхода: 8-ка, неразрывный пробел, добавочный
-					phone: "8\u00A0(916)\u00A0123-45-67 доб. 102",
-					birthDate: "1985-05-15",
-					status: "active",
-					familyGroupId: FAMILY_B_ID,
-					balance: "800.50",
-					weightKg: "82.50",
-					administrativeProfile: {
-						snils: "111-222-333 44",
-						identityDocument: "Паспорт РФ 4515 987654",
-					},
-				},
-				{
-					id: PATIENT_C_CHILD_ID,
-					organizationId: ORG_ID,
-					fullName: "Сергеев Денис Сергеевич", // Сын в дублирующей семье Б
-					phone: "+7 (916) 123-45-67",
-					birthDate: "2015-08-20",
-					status: "active",
-					familyGroupId: FAMILY_B_ID,
-					balance: "0.00",
-				},
-				{
-					id: PATIENT_FRIEND_ID,
-					organizationId: ORG_ID,
-					fullName: "Друг Семьи Приглашенный",
-					phone: "+7 (999) 777-88-99",
-					status: "active",
-				},
-			]);
+			await tx.insert(patients).values({
+				id: PATIENT_A_ID,
+				organizationId: ORG_ID,
+				fullName: "Сергеев Сергей Сергеевич",
+				phone: "+7 (916) 123-45-67",
+				birthDate: "1985-05-15",
+				status: "active" as const,
+				familyGroupId: FAMILY_A_ID,
+				administrativeProfile: patientAdministrativeProfileSchema.parse({
+					snils: "111-222-333 44",
+				}),
+			});
+			await tx.insert(patients).values({
+				id: PATIENT_B_ID,
+				organizationId: ORG_ID,
+				fullName: "Сергеев Сергей Сергеевич",
+				// Номер с попыткой обхода: 8-ка, неразрывный пробел, добавочный
+				phone: "8\u00A0(916)\u00A0123-45-67 доб. 102",
+				birthDate: "1985-05-15",
+				status: "active" as const,
+				familyGroupId: FAMILY_B_ID,
+				weightKg: "82.50",
+				administrativeProfile: patientAdministrativeProfileSchema.parse({
+					snils: "111-222-333 44",
+					identityDocument: "Паспорт РФ 4515 987654",
+				}),
+			});
+			await tx.insert(patients).values({
+				id: PATIENT_C_CHILD_ID,
+				organizationId: ORG_ID,
+				fullName: "Сергеев Денис Сергеевич", // Сын в дублирующей семье Б
+				phone: "+7 (916) 123-45-67",
+				birthDate: "2015-08-20",
+				status: "active" as const,
+				familyGroupId: FAMILY_B_ID,
+			});
+			await tx.insert(patients).values({
+				id: PATIENT_FRIEND_ID,
+				organizationId: ORG_ID,
+				fullName: "Друг Семьи Приглашенный",
+				phone: "+7 (999) 777-88-99",
+				status: "active" as const,
+			});
 
 			// Реферальная кампания
 			await tx.insert(referralCampaigns).values({
 				id: CAMPAIGN_ID,
 				organizationId: ORG_ID,
 				name: "Приведи друга 2026",
-				rewardType: "fixed_bonus",
-				rewardAmount: 500,
+				refereeWelcomePoints: "500.00",
 			});
 
 			// Реферальные коды

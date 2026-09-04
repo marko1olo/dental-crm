@@ -135,7 +135,6 @@ describe("PROSECUTOR 2: ПЯТНАДЦАТАЯ ВОЛНА (BOUNDARY RESCHEDULE, 
 						organizationId: ORG_ID,
 						clinicId: CLINIC_ID,
 						name: "Хирургическое кресло Alpha",
-						color: "#059669",
 						isActive: true,
 					})
 					.onConflictDoNothing();
@@ -146,8 +145,9 @@ describe("PROSECUTOR 2: ПЯТНАДЦАТАЯ ВОЛНА (BOUNDARY RESCHEDULE, 
 						{
 							id: DOCTOR_ID,
 							organizationId: ORG_ID,
-							fullName: "Профессор Хирургии А.Б.",
+							fullName: "Доктор Граничный Г.Г.",
 							role: "doctor",
+							email: "doc.boundary@test.ru",
 							isActive: true,
 						},
 						{
@@ -160,18 +160,20 @@ describe("PROSECUTOR 2: ПЯТНАДЦАТАЯ ВОЛНА (BOUNDARY RESCHEDULE, 
 					])
 					.onConflictDoNothing();
 
-				// Создаем пациентов
-				for (let i = 0; i < 15; i++) {
-					const pId = fixtureUuid(FIXTURE, PATIENT_BASE + i);
-					await db.insert(patients).values({
-						id: pId,
-						organizationId: ORG_ID,
-						fullName: `Пациент Граничного Тестирования ${i + 1}`,
-						phone: `+7 (926) 666-00-${i.toString().padStart(2, "0")}`,
-						status: "active",
-					});
+				// 10 запланированных приёмов для различных тестов граничных условий
+				for (let i = 0; i < 10; i++) {
+					const pId = fixtureUuid(FIXTURE, 50 + i);
+					await db
+						.insert(patients)
+						.values({
+							id: pId,
+							organizationId: ORG_ID,
+							fullName: `Пациент Граничный ${i + 1}`,
+							phone: `+799988800${i.toString().padStart(2, "0")}`,
+							status: "active",
+						})
+						.onConflictDoNothing();
 
-					// Приёмы на 2026-12-20
 					const apptId = fixtureUuid(FIXTURE, 100 + i);
 					const hour = 8 + i;
 					const startsAt = new Date(`2026-12-20T${hour.toString().padStart(2, "0")}:00:00.000Z`);
@@ -180,7 +182,6 @@ describe("PROSECUTOR 2: ПЯТНАДЦАТАЯ ВОЛНА (BOUNDARY RESCHEDULE, 
 					await db.insert(appointments).values({
 						id: apptId,
 						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
 						patientId: pId,
 						doctorUserId: DOCTOR_ID,
 						chairId: CHAIR_ID,
@@ -267,7 +268,7 @@ describe("PROSECUTOR 2: ПЯТНАДЦАТАЯ ВОЛНА (BOUNDARY RESCHEDULE, 
 				startsAt: new Date("2026-12-25T10:00:00.000Z"),
 				endsAt: new Date("2026-12-25T11:00:00.000Z"),
 			})
-			.where(eq(appointments.id, baseApptId));
+			.where(eq(appointments.id, baseApptId!));
 
 		// Тест 15.1.1: Стык впритык слева [09:00, 10:00) -> Должен быть 200 OK
 		const leftTouchId = createdApptIds[1];
@@ -360,7 +361,7 @@ describe("PROSECUTOR 2: ПЯТНАДЦАТАЯ ВОЛНА (BOUNDARY RESCHEDULE, 
 				startsAt: new Date("2026-12-26T14:00:00.000Z"),
 				endsAt: new Date("2026-12-26T15:00:00.000Z"),
 			})
-			.where(eq(appointments.id, anchorId));
+			.where(eq(appointments.id, anchorId!));
 
 		const idLeft = createdApptIds[6];
 		const idRight = createdApptIds[7];
@@ -480,6 +481,9 @@ describe("PROSECUTOR 2: ПЯТНАДЦАТАЯ ВОЛНА (BOUNDARY RESCHEDULE, 
 			.select()
 			.from(familyGroups)
 			.where(eq(familyGroups.id, FG_2_ID));
+
+		assert.ok(fgPrimary, "Основная группа должна существовать");
+		assert.ok(fgDuplicate, "Дублирующая группа должна существовать");
 
 		console.log(
 			`[PRIMARY FAMILY BALANCE]: ${fgPrimary.balance} ₽ (ожидалось: 20000.00)`,

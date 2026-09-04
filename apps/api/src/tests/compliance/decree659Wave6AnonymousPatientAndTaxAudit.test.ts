@@ -20,7 +20,10 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
-import { patientAdministrativeProfileSchema } from "@dental/shared";
+import {
+	patientAdministrativeProfileSchema,
+	type PatientAdministrativeProfile,
+} from "@dental/shared";
 import { db } from "../../db/client.js";
 import {
 	fiscalReceiptQueue,
@@ -160,7 +163,7 @@ describe("Prosecutor 3: Wave 6 Anonymous Patient Legal Shield & Tax Exemption Au
 				patientId: IDENTIFIED_PATIENT_ID,
 				name: "Утвержденный план комплексной профилактики",
 				status: "Approved",
-				totalPriceRub: 5000,
+				totalPriceRub: "5000.00",
 				approvedAt: new Date(),
 			});
 
@@ -169,10 +172,10 @@ describe("Prosecutor 3: Wave 6 Anonymous Patient Legal Shield & Tax Exemption Au
 				organizationId: ORG_ID,
 				planId: PLAN_ID,
 				priceId: `${SERVICE_CLEANING_ID}::Профессиональная гигиена полости рта`,
-				quantity: "1",
-				unitPriceRub: "5000",
-				totalPriceRub: "5000",
-				itemOrder: 1,
+				quantity: 1,
+				price: "5000.00",
+				discount: "0",
+				phase: 1,
 			});
 		});
 
@@ -645,7 +648,7 @@ describe("Prosecutor 3: Wave 6 Anonymous Patient Legal Shield & Tax Exemption Au
 				phone: "+79990007788",
 				administrativeProfile: {
 					isAnonymous: true,
-				},
+				} as unknown as PatientAdministrativeProfile,
 			});
 		});
 

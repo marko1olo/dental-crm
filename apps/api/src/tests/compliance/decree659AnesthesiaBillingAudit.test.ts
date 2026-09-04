@@ -170,7 +170,6 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 					price: "1500.00",
 					discount: "0",
 					phase: 1,
-					itemOrder: 1,
 				},
 				{
 					id: fixtureUuid(NAMESPACE, 32),
@@ -182,7 +181,6 @@ describe("Prosecutor 3: Decree 659 & Anesthesia Statutory Billing Audit", { conc
 					price: "25000.00",
 					discount: "0",
 					phase: 1,
-					itemOrder: 2,
 				},
 			]);
 		});

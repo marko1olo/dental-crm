@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { patientAdministrativeProfileSchema } from "@dental/shared";
 import { db } from "../../db/client.js";
 import {
 	appointments,
@@ -150,7 +151,6 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 						organizationId: ORG_ID,
 						clinicId: CLINIC_ID,
 						name: "Операционное кресло №1",
-						color: "#10b981",
 						isActive: true,
 					})
 					.onConflictDoNothing();
@@ -183,7 +183,7 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 						organizationId: ORG_ID,
 						fullName: `Пациент Гонки Расписания ${i + 1}`,
 						phone: `+7 (926) 777-01-0${i}`,
-						status: "active",
+						status: "active" as const,
 					});
 
 					// Исходный приём на разные часы/дни
@@ -195,7 +195,6 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 					await db.insert(appointments).values({
 						id: apptId,
 						organizationId: ORG_ID,
-						clinicId: CLINIC_ID,
 						patientId: pId,
 						doctorUserId: DOCTOR_ID,
 						chairId: CHAIR_ID,
@@ -233,7 +232,7 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 						fullName: "Финансовый Пациент Основной",
 						phone: "+7 (926) 888-00-01",
 						familyGroupId: FG_PRIMARY_ID,
-						status: "active",
+						status: "active" as const,
 					},
 					{
 						id: PATIENT_FIN_DUPLICATE_ID,
@@ -241,7 +240,7 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 						fullName: "Финансовый Пациент Дубль",
 						phone: "+7 (926) 888-00-02",
 						familyGroupId: FG_DUPLICATE_ID,
-						status: "active",
+						status: "active" as const,
 					},
 				]);
 
@@ -266,16 +265,16 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 				]);
 
 				// Пациенты для деанонимизации (Векторы 14.3 и 14.4)
-				await db.insert(patients).values([
+				for (const p of [
 					{
 						id: PATIENT_ANON_ID,
 						organizationId: ORG_ID,
 						fullName: "UUID_ANON-8899 Анонимный Пациент",
 						phone: "",
-						status: "active",
-						administrativeProfile: {
+						status: "active" as const,
+						administrativeProfile: patientAdministrativeProfileSchema.parse({
 							isAnonymous: true,
-						},
+						}),
 					},
 					{
 						id: PATIENT_IDENTIFIED_ID,
@@ -283,20 +282,17 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 						fullName: "Соколов Сергей Семенович",
 						phone: "+7 (926) 777-88-99",
 						birthDate: "1985-07-14",
-						status: "active",
-						administrativeProfile: {
+						status: "active" as const,
+						administrativeProfile: patientAdministrativeProfileSchema.parse({
 							snils: "123-456-789 01",
-							identityDocument: {
-								type: "passport_rf",
-								series: "4510",
-								number: "123456",
-								issueDate: "2015-05-20",
-							},
+							identityDocument: "Паспорт РФ 4510 123456",
 							insurancePolicyNumber: "1234567890123456",
 							isAnonymous: false,
-						},
+						}),
 					},
-				]);
+				]) {
+					await db.insert(patients).values(p);
+				}
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
@@ -441,19 +437,19 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 			.where(eq(familyGroups.id, FG_DUPLICATE_ID));
 
 		console.log(
-			`[PRIMARY POST-MERGE DEPOSIT]: ${primaryGroup.balance} руб (ожидалось: 8500.50)`,
+			`[PRIMARY POST-MERGE DEPOSIT]: ${primaryGroup!.balance} руб (ожидалось: 8500.50)`,
 		);
 		console.log(
-			`[DUPLICATE POST-MERGE DEPOSIT]: ${duplicateGroup.balance} руб (ожидалось: 0.00)`,
+			`[DUPLICATE POST-MERGE DEPOSIT]: ${duplicateGroup!.balance} руб (ожидалось: 0.00)`,
 		);
 
 		assert.strictEqual(
-			Number(primaryGroup.balance).toFixed(2),
+			Number(primaryGroup!.balance).toFixed(2),
 			"8500.50",
 			"Депозитный баланс объединен копейка в копейку: 5000.00 + 3500.50 = 8500.50",
 		);
 		assert.strictEqual(
-			Number(duplicateGroup.balance).toFixed(2),
+			Number(duplicateGroup!.balance).toFixed(2),
 			"0.00",
 			"Баланс дублирующей группы обнулен во избежание задвоения денег",
 		);
@@ -533,26 +529,28 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 			.from(patients)
 			.where(eq(patients.id, PATIENT_ANON_ID));
 
+		assert.ok(deanonymized, "deanonymized patient must exist");
+
 		console.log(
-			`[DE-ANONYMIZED PATIENT]: fullName = "${deanonymized.fullName}", phone = "${deanonymized.phone}"`,
+			`[DE-ANONYMIZED PATIENT]: fullName = "${deanonymized!.fullName}", phone = "${deanonymized!.phone}"`,
 		);
 
 		// Проверяем восстановление ФИО (деанонимизация)
 		assert.strictEqual(
-			deanonymized.fullName,
+			deanonymized!.fullName,
 			"Соколов Сергей Семенович",
 			"ФИО анонимной карты деанонимизировано и заменено на паспортное",
 		);
 
 		// Проверяем перенос телефона
 		assert.strictEqual(
-			deanonymized.phone,
+			deanonymized!.phone,
 			"+7 (926) 777-88-99",
 			"Телефон перенесен в основную карту",
 		);
 
 		// Проверяем административный профиль
-		const adminProfile = deanonymized.administrativeProfile as Record<string, unknown>;
+		const adminProfile = deanonymized!.administrativeProfile as Record<string, unknown>;
 		assert.ok(adminProfile, "Административный профиль перенесен");
 		assert.strictEqual(
 			adminProfile.snils,
@@ -586,34 +584,32 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 		const idAnonDup = fixtureUuid(FIXTURE, 71);
 
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.insert(patients).values([
+			for (const p of [
 				{
 					id: idPrimary,
 					organizationId: ORG_ID,
 					fullName: "Смирнова Анна Викторовна",
 					phone: "+7 (926) 333-22-11",
-					status: "active",
-					administrativeProfile: {
+					status: "active" as const,
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
 						snils: "987-654-321 00",
-						identityDocument: {
-							type: "passport_rf",
-							series: "4509",
-							number: "654321",
-						},
+						identityDocument: "Паспорт РФ 4509 654321",
 						isAnonymous: false,
-					},
+					}),
 				},
 				{
 					id: idAnonDup,
 					organizationId: ORG_ID,
 					fullName: "UUID_ANON-3344 Экстренная Запись",
 					phone: "",
-					status: "active",
-					administrativeProfile: {
+					status: "active" as const,
+					administrativeProfile: patientAdministrativeProfileSchema.parse({
 						isAnonymous: true,
-					},
+					}),
 				},
-			]);
+			]) {
+				await db.insert(patients).values(p);
+			}
 		});
 
 		const mergeRes = await app.inject({
@@ -633,19 +629,21 @@ describe("PROSECUTOR 2: ЧЕТЫРНАДЦАТАЯ ВОЛНА (RESCHEDULE RACE, 
 			.from(patients)
 			.where(eq(patients.id, idPrimary));
 
+		assert.ok(primaryPat, "primaryPat must exist");
+
 		console.log(
-			`[IDENTIFIED PRIMARY AFTER MERGE]: fullName = "${primaryPat.fullName}"`,
+			`[IDENTIFIED PRIMARY AFTER MERGE]: fullName = "${primaryPat!.fullName}"`,
 		);
 
 		// ФИО не должно стать анонимным!
 		assert.strictEqual(
-			primaryPat.fullName,
+			primaryPat!.fullName,
 			"Смирнова Анна Викторовна",
 			"ФИО основной паспортизированной карты сохранено без искажений",
 		);
 
 		// СНИЛС не затерт
-		const adminProfile = primaryPat.administrativeProfile as Record<string, unknown>;
+		const adminProfile = primaryPat!.administrativeProfile as Record<string, unknown>;
 		assert.strictEqual(
 			adminProfile.snils,
 			"987-654-321 00",

@@ -344,12 +344,14 @@ describe("PROSECUTOR 2: ТРИНАДЦАТАЯ ВОЛНА (INVENTORY STOCK RACE 
 				),
 			);
 
+		assert.ok(itemInDb, "itemInDb must exist");
+
 		console.log(
-			`[POSTGRESQL INVENTORY_ITEMS]: stockQuantity = ${itemInDb.stockQuantity}`,
+			`[POSTGRESQL INVENTORY_ITEMS]: stockQuantity = ${itemInDb!.stockQuantity}`,
 		);
 
 		assert.strictEqual(
-			Number(itemInDb.stockQuantity),
+			Number(itemInDb!.stockQuantity),
 			0,
 			"Остаток в БД обязан быть строго равен 0 (ни в коем случае не отрицательным!)",
 		);
@@ -431,12 +433,14 @@ describe("PROSECUTOR 2: ТРИНАДЦАТАЯ ВОЛНА (INVENTORY STOCK RACE 
 				),
 			);
 
+		assert.ok(itemInDb, "itemInDb must exist");
+
 		console.log(
-			`[BIDIRECTIONAL FINAL STOCK]: ${itemInDb.stockQuantity} шт (ожидалось: 5.000)`,
+			`[BIDIRECTIONAL FINAL STOCK]: ${itemInDb!.stockQuantity} шт (ожидалось: 5.000)`,
 		);
 
 		assert.strictEqual(
-			Number(itemInDb.stockQuantity),
+			Number(itemInDb!.stockQuantity),
 			5,
 			"Конечный остаток обязан быть математически точным: 5",
 		);

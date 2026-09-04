@@ -347,9 +347,9 @@ describe("Prosecutor 3: Wave 4 Alternative Plans & Cross-Invoicing Statutory Aud
 				items: [
 					{
 						itemId: "declined-item-1",
-						code804n: (declinedItems[0]?.itemSnapshot as Record<string, unknown>)?.code804n as string || "A16.07.004",
+						code804n: "A16.07.004",
 						serviceId: serviceIdToAttack,
-						nameRu: declinedItems[0]?.customTitle || "Услуга из отклоненного альтернативного плана",
+						nameRu: rejectedItemPriceId?.split("::")[1] || "Услуга из отклоненного альтернативного плана",
 						quantity: 1,
 						planUnitPriceRub: 15000,
 						effectiveUnitPriceRub: 15000,

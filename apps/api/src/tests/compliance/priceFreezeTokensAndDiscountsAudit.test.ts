@@ -125,28 +125,26 @@ describe("Prosecutor 3: Price Freeze Tokens & Discount Modes Statutory Audit", {
 				phone: "+79998887766",
 			});
 
-			await db.insert(serviceCatalogItems).values([
-				{
-					id: SERVICE_FILLING_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.002.001",
-					title: "Световая пломба Filtek",
-					category: "therapy",
-					basePriceRub: 8000,
-					priceRub: 8000,
-					active: true,
-				},
-				{
-					id: SERVICE_CROWN_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.004.001",
-					title: "Коронка диоксид циркония",
-					category: "prosthetics",
-					basePriceRub: 25000,
-					priceRub: 25000,
-					active: true,
-				},
-			]);
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_FILLING_ID,
+				organizationId: ORG_ID,
+				code: "A16.07.002.001",
+				title: "Световая пломба Filtek",
+				category: "therapy",
+				basePriceRub: 8000,
+				priceRub: 8000,
+				isActive: true,
+			});
+			await db.insert(serviceCatalogItems).values({
+				id: SERVICE_CROWN_ID,
+				organizationId: ORG_ID,
+				code: "A16.07.004.001",
+				title: "Коронка диоксид циркония",
+				category: "prosthetics",
+				basePriceRub: 25000,
+				priceRub: 25000,
+				isActive: true,
+			});
 		});
 	});
 

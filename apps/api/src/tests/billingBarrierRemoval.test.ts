@@ -28,6 +28,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				name: `Касса Клиника-${Date.now()}`,
 			})
 			.returning();
+		assert(org);
 
 		const [patient] = await db
 			.insert(patients)
@@ -37,6 +38,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				phone: "+79001112233",
 			})
 			.returning();
+		assert(patient);
 
 		const [visit] = await db
 			.insert(visits)
@@ -46,6 +48,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				status: "draft",
 			})
 			.returning();
+		assert(visit);
 
 		// Treatment item: 4600 ₽
 		await db.insert(treatmentItems).values({
@@ -55,7 +58,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			title: "Лечение пульпита одноканального зуба",
 			priceRub: 4600,
 			unitPriceRub: 4600,
-			quantity: 1,
+			quantity: "1",
 			status: "completed",
 		});
 
@@ -79,6 +82,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			.where(eq(advanceDepositTaggings.organizationId, org.id));
 
 		assert.equal(taggings.length, 1, "One advance deposit record must be created");
+		assert(taggings[0]);
 		assert.equal(Number(taggings[0].depositAmountRub), 400.0, "Exact overpayment 400 ₽ credited to deposit");
 		assert.equal(taggings[0].taggedTargetType, "patient_deposit");
 	});
@@ -90,6 +94,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				name: `Касса Скидка-${Date.now()}`,
 			})
 			.returning();
+		assert(org);
 
 		const [patient] = await db
 			.insert(patients)
@@ -98,6 +103,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				fullName: "Пациент со Скидкой",
 			})
 			.returning();
+		assert(patient);
 
 		const [catalogItem] = await db
 			.insert(serviceCatalogItems)
@@ -109,6 +115,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				priceRub: 5000,
 			})
 			.returning();
+		assert(catalogItem);
 
 		// Cashier accepts payment of 4500 ₽ (10% discount) without strict pre-catalog matching error
 		const payment = await createPaymentInDb(org.id, {
@@ -130,6 +137,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				name: `Касса Аддендум-${Date.now()}`,
 			})
 			.returning();
+		assert(org);
 
 		const [patient] = await db
 			.insert(patients)
@@ -138,6 +146,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				fullName: "Пациент Допуслуги",
 			})
 			.returning();
+		assert(patient);
 
 		// Patient has an approved treatment plan that does NOT include Cofferdam
 		await db.insert(treatmentPlans).values({
@@ -146,7 +155,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 			name: "Основной план лечения",
 			title: "Основной план лечения",
 			status: "Approved",
-			totalPriceRub: 20000,
+			totalPriceRub: "20000",
 		});
 
 		const [catalogItem] = await db
@@ -159,6 +168,7 @@ describe("Cashier Barrier Removal & Unblocked Operations", () => {
 				priceRub: 800,
 			})
 			.returning();
+		assert(catalogItem);
 
 		// Service outside treatment plan is paid and fiscalized without 422 error
 		const payment = await createPaymentInDb(org.id, {

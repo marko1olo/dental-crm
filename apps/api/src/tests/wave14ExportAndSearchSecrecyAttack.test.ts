@@ -214,7 +214,7 @@ test("RED-TEAM HAMMER: WAVE 14 — Export Endpoints & Medical Search Penetration
 					id: PAYMENT_ID,
 					organizationId: ORG_ID,
 					patientId: PATIENT_IVANOV_ID,
-					amountRub: "5000.00",
+					amountRub: 5000,
 					status: "paid",
 					paidAt: new Date("2026-09-01T10:00:00.000Z"),
 				}).onConflictDoNothing();

@@ -125,7 +125,7 @@ describe("Wave 9: Advanced Crypto Tamper Audit, Date Robustness, and Stamp Integ
 
 			// Инвертируем 1 бит в буфере PDF
 			const tamperedPdf = Buffer.from(pdfBuffer);
-			tamperedPdf[10] ^= 0x01;
+			tamperedPdf[10]! ^= 0x01;
 			const { sha256Hex: tamperedPdfHash } = computeBinaryDocumentSha256(tamperedPdf);
 
 			assert.notStrictEqual(origPdfHash, tamperedPdfHash);
@@ -300,7 +300,7 @@ describe("Wave 9: Advanced Crypto Tamper Audit, Date Robustness, and Stamp Integ
 
 			const match = stampHtml.match(/Подписано:<\/strong>\s*([^<]+)/);
 			assert.ok(match);
-			const timeStr = match[1].trim();
+			const timeStr = match[1]!.trim();
 			assert.strictEqual(timeStr, "02.09.2026 17:35:12 (МСК)");
 			assert.match(timeStr, mskRegex);
 		});
@@ -317,7 +317,7 @@ describe("Wave 9: Advanced Crypto Tamper Audit, Date Robustness, and Stamp Integ
 
 			const match = stampHtml.match(/Подписано:<\/strong>\s*([^<]+)/);
 			assert.ok(match);
-			const timeStr = match[1].trim();
+			const timeStr = match[1]!.trim();
 			assert.strictEqual(timeStr, "03.09.2026 00:00:00 (МСК)");
 			assert.match(timeStr, mskRegex);
 		});

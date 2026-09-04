@@ -310,32 +310,28 @@ describe("PROSECUTOR 2: ДЕВЯТАЯ ВОЛНА (MERGE COLLISION & FINANCIAL I
 		// Пациент А: 10:00 - 11:00 (Доктор 1, Кресло 1)
 		// Пациент Б: 10:30 - 11:30 (Доктор 2, Кресло 2) - нахлест 30 минут!
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.insert(appointments).values([
-				{
-					id: APPT_A_ID,
-					organizationId: ORG_ID,
-					clinicId: CLINIC_ID,
-					patientId: PATIENT_A_ID,
-					doctorUserId: DOCTOR_1_ID,
-					chairId: CHAIR_1_ID,
-					startsAt: new Date("2026-12-01T10:00:00.000Z"),
-					endsAt: new Date("2026-12-01T11:00:00.000Z"),
-					status: "planned",
-					reason: "Приём Пациента А",
-				},
-				{
-					id: APPT_B_ID,
-					organizationId: ORG_ID,
-					clinicId: CLINIC_ID,
-					patientId: PATIENT_B_ID,
-					doctorUserId: DOCTOR_2_ID,
-					chairId: CHAIR_2_ID,
-					startsAt: new Date("2026-12-01T10:30:00.000Z"),
-					endsAt: new Date("2026-12-01T11:30:00.000Z"),
-					status: "planned",
-					reason: "Приём Пациента Б",
-				},
-			]);
+			await db.insert(appointments).values({
+				id: APPT_A_ID,
+				organizationId: ORG_ID,
+				patientId: PATIENT_A_ID,
+				doctorUserId: DOCTOR_1_ID,
+				chairId: CHAIR_1_ID,
+				startsAt: new Date("2026-12-01T10:00:00.000Z"),
+				endsAt: new Date("2026-12-01T11:00:00.000Z"),
+				status: "planned" as const,
+				reason: "Приём Пациента А",
+			});
+			await db.insert(appointments).values({
+				id: APPT_B_ID,
+				organizationId: ORG_ID,
+				patientId: PATIENT_B_ID,
+				doctorUserId: DOCTOR_2_ID,
+				chairId: CHAIR_2_ID,
+				startsAt: new Date("2026-12-01T10:30:00.000Z"),
+				endsAt: new Date("2026-12-01T11:30:00.000Z"),
+				status: "planned" as const,
+				reason: "Приём Пациента Б",
+			});
 		});
 
 		// Попытка слияния Пациента А в Пациента Б

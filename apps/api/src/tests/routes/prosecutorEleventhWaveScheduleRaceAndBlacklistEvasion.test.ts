@@ -152,7 +152,6 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 						organizationId: ORG_ID,
 						clinicId: CLINIC_ID,
 						name: "Операционное кресло №1",
-						color: "#2563eb",
 						isActive: true,
 					})
 					.onConflictDoNothing();
@@ -207,11 +206,9 @@ describe("PROSECUTOR 2: ОДИННАДЦАТАЯ ВОЛНА (SCHEDULE RACE, EVAS
 					organizationId: ORG_ID,
 					patientId: PATIENT_BLACKLIST_ID,
 					patientName: BLACKLISTED_NAME,
-					recordType: "blacklist",
-					primaryReasonCategory: "non_payment",
-					reasonTitle: "Систематический дебош и неоплата",
+					isBlacklisted: true,
+					blacklistReason: "Систематический дебош и неоплата",
 					isBookingBlocked: true,
-					status: "active",
 				});
 
 				// Начальное состояние зубов для слияния (Вектор 11.6):

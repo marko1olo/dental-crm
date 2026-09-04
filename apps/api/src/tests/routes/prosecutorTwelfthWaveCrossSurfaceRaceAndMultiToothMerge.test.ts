@@ -132,7 +132,6 @@ describe("PROSECUTOR 2: ДВЕНАДЦАТАЯ ВОЛНА (CROSS-SURFACE RACE & 
 						organizationId: ORG_ID,
 						clinicId: CLINIC_ID,
 						name: "Операционное кресло №1",
-						color: "#3b82f6",
 						isActive: true,
 					})
 					.onConflictDoNothing();
@@ -194,11 +193,9 @@ describe("PROSECUTOR 2: ДВЕНАДЦАТАЯ ВОЛНА (CROSS-SURFACE RACE & 
 					organizationId: ORG_ID,
 					patientId: PATIENT_BLACKLIST_ID,
 					patientName: BLACKLISTED_NAME,
-					recordType: "blacklist",
-					primaryReasonCategory: "conflict_behavior",
-					reasonTitle: "Угрозы персоналу и оскорбления",
+					isBlacklisted: true,
+					blacklistReason: "Угрозы персоналу и оскорбления",
 					isBookingBlocked: true,
-					status: "active",
 				});
 
 				// Начальное состояние зубов для многозубного слияния (Вектор 12.5):
@@ -593,6 +590,7 @@ describe("PROSECUTOR 2: ДВЕНАДЦАТАЯ ВОЛНА (CROSS-SURFACE RACE & 
 				),
 			);
 
+		assert.ok(inDb, "Запись приёма должна существовать в БД");
 		assert.strictEqual(
 			inDb.patientId,
 			PATIENT_PRIMARY_ID,

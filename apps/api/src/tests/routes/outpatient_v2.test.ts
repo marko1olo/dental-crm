@@ -59,7 +59,7 @@ describe("Outpatient v2 & Clinical Core Integration Tests", () => {
 				phone: `+7999${Math.floor(1000000 + Math.random() * 9000000)}`,
 			})
 			.returning();
-		testDoctorId = user.id;
+		testDoctorId = user!.id;
 
 		const [patient] = await db
 			.insert(patients)
@@ -69,7 +69,7 @@ describe("Outpatient v2 & Clinical Core Integration Tests", () => {
 				phone: `+7911${Math.floor(1000000 + Math.random() * 9000000)}`,
 			})
 			.returning();
-		testPatientId = patient.id;
+		testPatientId = patient!.id;
 
 		const [visit] = await db
 			.insert(visits)
@@ -81,7 +81,7 @@ describe("Outpatient v2 & Clinical Core Integration Tests", () => {
 				diagnosis: "K04.0 Острый очаговый пульпит",
 			})
 			.returning();
-		testVisitId = visit.id;
+		testVisitId = visit!.id;
 
 		const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 часа дедлайн
 		const [verif] = await db
@@ -96,7 +96,7 @@ describe("Outpatient v2 & Clinical Core Integration Tests", () => {
 				submittedAt: new Date(),
 			})
 			.returning();
-		testVerificationId = verif.id;
+		testVerificationId = verif!.id;
 
 		app = Fastify();
 		await registerOutpatientV2Routes(app);

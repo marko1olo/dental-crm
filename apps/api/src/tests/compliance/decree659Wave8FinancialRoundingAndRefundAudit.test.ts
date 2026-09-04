@@ -178,7 +178,7 @@ describe("Prosecutor 3: Wave 8 Financial Rounding, Multi-Qty & 54-FZ Refund Audi
 				name: "Терапевтический план на 3 пломбы",
 				status: "Approved",
 				discountMode: "plan_fixed",
-				totalPriceRub: 13500, // 3 * (5000 - 500) = 13 500 ₽
+				totalPriceRub: "13500.00", // 3 * (5000 - 500) = 13 500 ₽
 				approvedAt: new Date(),
 				createdAt: new Date(),
 			});
@@ -192,7 +192,6 @@ describe("Prosecutor 3: Wave 8 Financial Rounding, Multi-Qty & 54-FZ Refund Audi
 				quantity: 3,
 				price: "5000.00",
 				discount: "500.00", // Скидка за единицу 500 ₽ (на 3 штуки = 1 500 ₽)
-				itemOrder: 1,
 			});
 
 			// План 2: Просроченная смета с токеном фиксации (цена была 10 000 ₽)
@@ -202,7 +201,7 @@ describe("Prosecutor 3: Wave 8 Financial Rounding, Multi-Qty & 54-FZ Refund Audi
 				patientId: PATIENT_EXPIRED_ID,
 				name: "План ортопедии с истекшим токеном",
 				status: "Approved",
-				totalPriceRub: 10000,
+				totalPriceRub: "10000.00",
 				approvedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000), // 40 дней назад
 				createdAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
 			});
@@ -216,7 +215,6 @@ describe("Prosecutor 3: Wave 8 Financial Rounding, Multi-Qty & 54-FZ Refund Audi
 				quantity: 1,
 				price: "10000.00",
 				discount: "0.00",
-				itemOrder: 1,
 			});
 
 			// Счет для проверки возвратов 54-ФЗ (10 000.00 ₽)
@@ -363,6 +361,7 @@ describe("Prosecutor 3: Wave 8 Financial Rounding, Multi-Qty & 54-FZ Refund Audi
 
 		assert.equal(insertedItems.length, 1);
 		const dbItem = insertedItems[0];
+		assert(dbItem);
 		assert.equal(dbItem.quantity, "3");
 		assert.equal(dbItem.unitPriceRub, 5000);
 		assert.equal(dbItem.discountRub, 1500);

@@ -236,7 +236,7 @@ test("RED-TEAM HAMMER: WAVE 10 — Marketing Attribution, Files & Audit Immutabi
 					id: PAYMENT_ID,
 					organizationId: ORG_ID,
 					patientId: ACTIVE_PATIENT_ID,
-					amountRub: "12500.00",
+					amountRub: 12500,
 					status: "paid",
 					method: "card",
 				}).onConflictDoNothing();

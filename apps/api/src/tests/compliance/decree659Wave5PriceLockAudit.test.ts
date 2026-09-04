@@ -20,6 +20,7 @@
 
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
+import type { PatientAdministrativeProfile } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
@@ -174,7 +175,7 @@ describe("Prosecutor 3: Wave 5 Price Lock & Statutory Estimate Audit (Decree 659
 					identityDocument: "Паспорт РФ 4515 998877",
 					taxpayerInn: "770999887766",
 					snils: "111-222-333 44",
-				},
+				} as unknown as PatientAdministrativeProfile,
 			});
 
 			// Утвержденный план лечения: цена 12 000 ₽
@@ -283,7 +284,7 @@ describe("Prosecutor 3: Wave 5 Price Lock & Statutory Estimate Audit (Decree 659
 				administrativeProfile: {
 					identityDocument: "Паспорт РФ 4516 112233",
 					snils: "222-333-444 55",
-				},
+				} as unknown as PatientAdministrativeProfile,
 			});
 
 			await tx.insert(treatmentPlans).values({
@@ -391,7 +392,7 @@ describe("Prosecutor 3: Wave 5 Price Lock & Statutory Estimate Audit (Decree 659
 				administrativeProfile: {
 					identityDocument: "Паспорт РФ 4517 778899",
 					snils: "333-444-555 66",
-				},
+				} as unknown as PatientAdministrativeProfile,
 			});
 
 			await tx.insert(treatmentPlans).values({
@@ -518,7 +519,7 @@ describe("Prosecutor 3: Wave 5 Price Lock & Statutory Estimate Audit (Decree 659
 				administrativeProfile: {
 					identityDocument: "Паспорт РФ 4518 556677",
 					snils: "444-555-666 77",
-				},
+				} as unknown as PatientAdministrativeProfile,
 			});
 
 			await tx.insert(treatmentPlans).values({
@@ -551,11 +552,11 @@ describe("Prosecutor 3: Wave 5 Price Lock & Statutory Estimate Audit (Decree 659
 				title: "Дополнительное соглашение к плану лечения",
 				kind: "treatment_plan_acceptance",
 				status: "issued", // Выдано и согласовано пациентом!
-				totalAmountRub: "18000.00",
-				payloadJson: {
+				totalAmountRub: 18000,
+				payloadJson: JSON.stringify({
 					reason: "Дополнительное соглашение на применение премиальных обтурационных материалов",
 					agreedAmountRub: 18000,
-				},
+				}),
 			});
 		});
 
