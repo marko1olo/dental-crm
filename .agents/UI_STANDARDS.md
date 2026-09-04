@@ -1,60 +1,169 @@
-# 🎨 Web UI Standards & State Management
+# 🎨 Web UI Standards, 3-Tier Architecture & Clinical Ergonomics
 
-This document defines user interface styling policies, component organization, and state rules.
-
----
-
-## 🎨 UI Styling: Tailwind CSS
-
-The frontend uses **Tailwind CSS** for layout, spacing, and colors.
-
-### 💅 Guidelines
-1.  **Tailwind Over Inline Styles:** Inline styles (`style={{ ... }}`) are discouraged unless dynamically calculating layout values (e.g., coordinates, scale). Always use Tailwind classes for typography, margins, backgrounds, and flex configurations.
-2.  **Color Consistency:** Follow the existing clinic theme colors (Emerald for positive states, Slate/Gray for cards, Red/Orange for alerts).
-3.  **Responsive Layouts:** All new interfaces must use Tailwind responsive modifiers (`sm:`, `md:`, `lg:`) to adapt to different screen dimensions. Test your layouts for both desktop viewports and mobile widths.
+> **Канонический статус**: Этот документ регламентирует стандарты вёрстки, эргономики, 3-уровневой архитектуры (Tier 1 Hot Path, Tier 2 Warm Context, Tier 3 Cold Backoffice), дизайн-токенов и управления состоянием фронтенда DENTE Dental CRM (`apps/web/src/`).
+> **Связанные документы конституции**:
+> - [AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) — Главная конституция и операционный мандат.
+> - [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) — Центральный реестр документации.
+> - [FRONTEND_VIEWS_MAP.md](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md) — Полная архитектурная карта всех 14 экранов, шторок, модалок и студий.
+> - [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) — Движок клинических правил и валидации приёма.
+> - [BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) — Финансовые правила, касса 54-ФЗ и семейные кошельки.
+> - [DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) — Печать документов, акты и подписание УКЭП/РЭМД.
 
 ---
 
-## 🧠 State Management: AppLogicContext
+## 🏛️ 1. УНИВЕРСАЛЬНАЯ 3-УРОВНЕВАЯ АРХИТЕКТУРА (THE 3-TIER INTERACTION DOCTRINE)
 
-DENTE relies on a single massive React context (`AppLogicContext`) backed by the `useAppLogic` hook.
+Любой интерфейс в DENTE строго декомпозируется на три функциональных уровня взаимодействия:
 
-### 🚨 The God-Context Constraints
-*   **The Return Object:** `useAppLogic` returns an object of over 500 fields. Because the return is typeless (`any` in context), any missing shorthands will compile successfully in Vite dev-server but **fail in production build typechecks**.
-*   **Modifying Context:** If you must add state:
-    1.  Declare the state inside `useAppLogic.tsx`.
-    2.  Add it to the return statement.
-    3.  Run `npm run typecheck` immediately to ensure no shorthand breaks.
-*   **Do not break bindings:** Never delete return values or variables from `useAppLogic` without verifying no components use them.
-
----
-
-## 🚀 Route Gating & View Preloading
-
-### 📂 View Preloading (`apps/web/src/workspacePreload.ts`)
-To eliminate component mounting delays inside the app's shell, DENTE imports views beforehand:
-```typescript
-import "./workspaceShell";
-import "./ScheduleView";
-import "./PatientsView";
-// ...
 ```
-*   **CRITICAL RULE:** If you create a new root view/page, you **MUST** register its import in `workspacePreload.ts`. If you skip this, Vite will dynamically lazy-load it, triggering Cumulative Layout Shift (CLS) warnings.
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ TIER 1: HOT PATH / IN-THE-ZONE (0 КЛИКОВ / ВСЕГДА НА ХОЛСТЕ)                    │
+│ Доминантный холст (зубная формула, сетка расписания, быстрый чек 54-ФЗ,         │
+│ статус пациента, аллергии, экстренная острая боль). БЕЗ МОДАЛЬНЫХ БАРЬЕРОВ.     │
+└──────────────────────────────────────┬──────────────────────────────────────────┘
+                                       │ 1 клик / Hover (150ms)
+┌──────────────────────────────────────▼──────────────────────────────────────────┐
+│ TIER 2: WARM CONTEXT / ENTITY DRAWER & ACCORDIONS (1 КЛИК / ВСПЛЫВАЮЩИЙ КОНТЕКСТ)│
+│ Боковые шторки (QuickBookingDrawer, EndoCanalMeasurementDrawer), Hover HUD,     │
+│ аккордеоны техкарт, дозировки анестезии, распределение семейного баланса.       │
+└──────────────────────────────────────┬──────────────────────────────────────────┘
+                                       │ Явный вход в специализированный кабинет
+┌──────────────────────────────────────▼──────────────────────────────────────────┐
+│ TIER 3: COLD BACKOFFICE / DEDICATED STUDIOS (СТУДИИ / КАБИНЕТНЫЙ РЕЖИМ)         │
+│ Тяжелые 3D MPR КЛКТ реконструкции, экспорт CDA R3 ЕГИСЗ с УКЭП КриптоПро,       │
+│ зарплатные ведомости Т-51 / табель Т-13, справка ФНС КНД 1151156, аудит склада. │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🟢 Tier 1: Hot Path / In-The-Zone (0 кликов / Оперативный контур)
+- **Доминантный холст**: Основная рабочая область (зубная формула FDI 11–48/51–85, сетка расписания на день, активный дневник визита 043/у) занимает $\ge 70\text{--}80\%$ площади экрана.
+- **Мгновенный триггер действий (0-клик)**:
+  - 1-клик смена статуса зуба из палитры состояний.
+  - Мгновенная фиксация острой боли (красный флаг).
+  - Срочный чек 54-ФЗ с суммой к оплате и выбором способа расчета в 1 тап.
+- **Абсолютный запрет блокирующих оверлеев**: Никаких модальных диалогов подтверждения (`window.confirm`) на главном пути врача.
+
+### 🟡 Tier 2: Warm Context / Inline Drawers & Hover HUD (1 клик / Контекстный слой)
+- **Привязка к сущности**: Контекстные панели выезжают справа или снизу строго по клику на конкретный объект (зуб, запись в календаре, строку счёта).
+- **Эргономика раскрытия**:
+  - **Hover HUD**: Всплывающий контекст за $0.15\text{s}$ (150ms) над карточкой записи без сдвига сетки (`backdrop-blur-md bg-[var(--paper-strong)]/90 border border-[var(--line)] shadow-xl`).
+  - **Entity Drawer**: Боковая шторка шириной $400\text{--}480\text{px}$ для быстрой записи (`QuickBookingDrawer`), эндодонтических промеров каналов (`EndoCanalMeasurementDrawer`) или журнала стерилизации.
+- **Закон Анти-Матрешки (Max Depth = 1)**: Запрещено открывать карточку внутри карточки или модалку поверх шторки.
+
+### 🔵 Tier 3: Cold Backoffice / Specialized Studios (Студии / Кабинетный режим)
+- **Изоляция тяжелых вычислений**: Специализированные рабочие пространства, не замедляющие горячий рендер:
+  - 3D DICOM / MPR просмотрщик КЛКТ (`CbctMprImplantStudioModal`).
+  - Криптографический модуль подписания ЕГИСЗ РЭМД с УКЭП (`EgiszRemdSigningModal`).
+  - Модуль расчета зарплат врачей по форме Т-51 (`DoctorPayrollModal`).
+  - Налоговые справки ФНС по форме КНД 1151156 (`TaxDeductionCertificateModal`).
+- **Строгая математика**: Только целочисленные копейки, строгие схемы валидации Zod, аудит версий.
 
 ---
 
-## 🌐 Design Adaptability (i18n, Themes & Scaling)
+## 🛑 2. МАНДАТ 8e: ЗАПРЕТ НА ПАЛКИ В КОЛЁСА ВРАЧАМ И ПЕРСОНАЛУ
 
-### 🌍 1. Multi-Language Support (i18n)
-- **Decouple Strings**: Writing raw Russian/English text strings inside React JSX is prohibited. All UI labels, buttons, notifications, placeholders, and tooltips must load dynamically from local dictionaries or via the translation API.
-- **Word Length Flexibility**: Translated text (e.g., Russian translation of English labels) can grow by 30-50% in character length. All layout structures (flex containers, grids, buttons) must support overflow-wrap, word-break, or flex-wrap to prevent text clipping and UI breakage.
+В частной стоматологической клинике софт обязан помогать врачу лечить пациентов, а не служить бюрократическим цербером госбольниц:
 
-### 🌓 2. Multi-Theme Support
-- **Support Core Themes**: UI layouts must support Light Mode, Dark Mode, and System Theme synchronization.
-- **Tokenized Styling**: Do not write static hex colors (`#ffffff`, `#000000`) in code or custom classes. Utilize semantic Tailwind color classes (e.g., `bg-white dark:bg-slate-900`, `text-slate-800 dark:text-slate-100`) or global CSS variables.
+1. **Никаких заблокированных кнопок без причины**:
+   - Кнопки «Сохранить», «Завершить приём», «Добавить услугу», «Печать» **НИКОГДА не должны быть серыми (`disabled`)** из-за незаполненных второстепенных полей (температура, пульс, влажность, 50 пунктов соматической анкеты).
+2. **Физиологическая норма по умолчанию**:
+   - Анамнез и осмотр заполняются нормой в 1 клик («Соматически здоров / норма»). Врач тратит время только на фиксацию патологии.
+3. **Черновики и свобода правок**:
+   - Запрещены 24-часовые блокировки ЭМК намертво. Врач имеет право исправлять свои дневники с фиксацией аудита («Исправленному верить»).
+4. **Печать в любой момент**:
+   - Форма 043/у, ИДС, акты и сметы печатаются в любой момент: если визит открыт — с водяным знаком «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ».
+5. **Защита от потери данных (Autosave)**:
+   - Debounced Autosave сохраняет любой ввод текста на лету в локальное состояние / IndexedDB. Звонок телефонии или закрытие вкладки не уничтожают дневник визита.
+6. **Свобода скидок и переделок**:
+   - Врач вправе применить скидку вплоть до 100% (гарантийная переделка, персонал) без ввода мастер-паролей администратора.
+7. **Регистратура без барьеров**:
+   - Запрещено требовать обязательного назначения ассистента при создании записи в расписании.
+   - Регистратор вправе распечатать пустой договор со строками `_______` для ручного заполнения до осмотра без 403-ошибок.
+8. **Касса 54-ФЗ без вымогательства ИНН**:
+   - Запрещено требовать ИНН с физических лиц при оплате картой/наличными (по закону 54-ФЗ ИНН обязателен только юрлицам и ИП).
+   - Комбинированная оплата (нал + карта + аванс + бонусы) проводится в 1 клик.
+9. **Склад и медсестра**:
+   - Списание пустых карпул анестетика в 1 клик без создания комиссии из трёх человек.
+   - Мягкий овердрафт: задержка накладной не блокирует проведение экстренной операции (выводится мягкое предупреждение с минусовым остатком партии).
+10. **Молниеносный рентген**:
+    - Снимок визиографа открывается $< 50\text{ms}$ в полном разрешении датчика. Нейросеть запускается исключительно по явной кнопке врача. Робот не имеет права молча перезаписывать диагнозы в зубной формуле без подтверждения врача.
 
-### 📐 3. Flexible Scaling and Density
-- **Fluid Layouts**: Layouts must scale correctly under different screen DPIs, device settings, and browser zooming levels.
-- **Relative Metrics**: Use relative sizing (`rem`, `em`, `%`, `vh`, `vw`) for sizing containers, fonts, paddings, and margins. Absolute pixels (`px`) are only allowed for thin borders or isolated micro-icons.
-- **Responsive Breaks**: Use Tailwind responsive prefixes (`sm:`, `md:`, `lg:`) to adjust content density and grid layouts on smaller tablet and mobile screens.
+---
+
+## 🖥️ 3. СТАНДАРТЫ APPLE macOS & iOS CLINICAL HIG
+
+### 🖥️ Десктопная рабочая станция врача и регистратуры (macOS Studio HIG / 80% сценариев)
+1. **Компактные тулбары 32–36px**:
+   - Запрещен «частокол» кнопок и многоэтажные панели. Вспомогательные кнопки имеют высоту $32\text{--}36\text{px}$ с аккуратными отступами (`gap-1.5` / `gap-2`).
+2. **Статусная капсула клиники (Clinic Control Pill)**:
+   - Все фоновые датчики (АТС, синхронизация базы данных, касса 54-ФЗ, выбор филиала) объединены в компактную статусную капсулу в верхнем баре (`workspaceTopbar`).
+3. **Разделение рабочих зон (Zero-Distraction Law)**:
+   - Экран врача (`VisitView`) — стерильная зона. Врач у кресла не отвлекается на телефонные звонки: телефония для роли `doctor` беззвучна и скрыта.
+   - Экран администратора — зона многозадачности: софтфон оформлен как тихий фоновый виджет, не перекрывающий таблицы расписания.
+
+### 📱 Мобильный интерфейс и планшет у кресла (iOS Clinical HIG / 20% сценариев)
+1. **Запрет на плавающий мусор (Zero Floating Blobs)**:
+   - Категорически **ЗАПРЕЩЕНО** размещать плавающие кнопки (FAB), круглые/квадратные виджеты телефонии или оверлеи поверх рабочих таблиц и списков.
+   - Все элементы управления принадлежат структуре экрана: Top Bar, Bottom Sheet или контекстное меню карточки.
+2. **Верхний амбиент-баннер событий**:
+   - Входящие звонки для администратора выезжают сверху в виде плавной капсулы (`[ 🟢 Пациент (Острая боль) • Ответить | Сброс ]`), не перекрывая слоты расписания.
+3. **Segmented Control вместо 2500px скролл-туннеля**:
+   - На экранах $\le 640\text{px}$ запрещено выстраивать 3 тарифа лечения вертикальной портянкой на 2500px.
+   - Используется нативный Segmented Control `[ Эконом | ★ Оптимум | Премиум ]` либо горизонтальный Swipe-стек: мгновенное переключение тарифа на одном экране с нулевым паразитным скроллом.
+4. **Тач-таргеты**:
+   - На планшетах и мобильных устройствах интерактивные элементы имеют размер $\ge 44\times 44\text{px}$ для уверенного нажатия медицинскими перчатками.
+
+---
+
+## 🎨 4. ДИЗАЙН-ТОКЕНЫ, ТЕМЫ И WCAG AAA КОНТРАСТНОСТЬ
+
+### 🚫 Полный запрет на хардкод цветов
+Категорически запрещено использовать статические hex-цвета (`#ffffff`, `#000000`, `#1e293b`) в инлайн-стилях или кастомных классах. Все стили строятся на семантических CSS-переменных дизайн-системы:
+
+| Токен переменной | Назначение |
+|---|---|
+| `var(--paper)` | Основной фон страницы и рабочего холста |
+| `var(--paper-strong)` | Фон панелей, карточек и модальных окон первого уровня |
+| `var(--paper-soft)` | Второстепенная подложка, неактивные секции, чередование строк |
+| `var(--ink)` | Основной контрастный текст (WCAG AAA $\ge 7:1$) |
+| `var(--ink-muted)` / `var(--muted)` | Второстепенный текст, подсказки, лейблы полей |
+| `var(--line)` / `var(--line-subtle)` | Тонкие делители и границы секций ($1\text{px}$) |
+| `var(--brand-primary)` / `var(--teal)` | Основной фирменный цвет активных кнопок и табов |
+| `var(--red)` / `var(--danger)` | Семантический цвет: острая боль, аллергия, критический долг |
+| `var(--amber)` / `var(--warning)` | Семантический цвет: черновик, бронь без предоплаты |
+| `var(--emerald)` / `var(--success)` | Семантический цвет: 100% оплата, статус «пациент явился» |
+
+### 🌓 Поддержка тем и Dark Mode в рентген-кабинете
+- В тёмной теме (`data-theme="dark"`) фон снимков и панелей выполняется в мягком глубоком цвете (`slate-950` / `neutral-900`), без слепящих белых пятен и без ядовитого чистого `#000000`.
+- В светлой теме запрещены нечитаемые бледно-серые надписи. Контрастность текста строго $\ge 4.5:1$.
+
+---
+
+## 🧠 5. АРХИТЕКТУРА СОСТОЯНИЯ: APPLOGIC CONTEXT & ZUSTAND STORES
+
+### 🚨 Ограничения God Context (`apps/web/src/useAppLogic.tsx`)
+1. **Неразрывность контракта (Return Object)**: Хук `useAppLogic` экспортирует центральное состояние приложения. Удаление полей из return-блока без синхронного обновления всех компонентов немедленно ломает тайпчек сборки.
+2. **Декомпозиция на доменные Zustand сторы**: Новая логика разделов изолируется в специализированные сторы (`apps/web/src/store/`):
+   - `scheduleStore.ts` — фильтры, слоты, выделенные записи расписания.
+   - `visitStore.ts` — активный визит, протокол 043/у, таймер приёма.
+   - `imagingStore.ts` — выбор срезов КЛКТ, плотность Хаунсфилда, RVG фильтры.
+   - `perspectiveStore.ts` — рабочие перспективы ролей (Frontdesk, Chairsider, Pediatric, Ortho).
+   - `telephonyStore.ts` — софтфон, статус звонка, вебсокет-оповещения.
+   - `themeStore.ts` — режимы Light / Dark / Auto.
+
+### 🚀 Предзагрузка представлений (`apps/web/src/workspacePreload.ts`)
+Все корневые представления (14 экранов) должны быть зарегистрированы в `workspacePreload.ts`. Это исключает микро-лаги и рывки интерфейса (Cumulative Layout Shift) при переключении разделов бокового меню.
+
+---
+
+## 📐 6. ВЕРИФИКАЦИЯ И ПРАВИЛА ПРИЁМКИ ЭКРАНОВ
+
+Любой экран фронтенда считается **БРАКОМ**, если на нём обнаружено хотя бы одно из нарушений:
+1. Тулбар содержит более 1 строки или более 8 неупорядоченных кнопок без группировки.
+2. Карточка записи или пациента содержит более 2 кнопок прямого действия (все второстепенные обязаны быть в выпадающем меню `...`).
+3. Модалка открыта поверх другой модалки (нарушение Anti-Matryoshka).
+4. Кнопка «Завершить приём» или «Печать» недоступна из-за второстепенного поля.
+5. Присутствуют неинформативные смайлики (🎉, 🚀, 🦷) вместо строгих векторных иконок Lucide.
+6. Плавающий виджет перекрывает рабочие строки таблицы или поля ввода.
+7. Текст выходит за рамки блока или обрезается многоточием без возможности просмотра полного содержимого через Hover HUD или тултип.
 

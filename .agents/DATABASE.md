@@ -2,6 +2,22 @@
 
 This document details the database architecture, migration mechanism, and table directory.
 
+---
+
+## 🧭 Documentation Navigation & Authority Links
+
+* 📋 **[AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** — Core Identity, Standards, Mojibake Prevention Rules, and General Constraints.
+* 🗺️ **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Central Documentation Index.
+* 🏗️ **[ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Monorepo layout, Fastify API structure, Vite Frontend, and Real-time WebSocket architecture.
+* 🛣️ **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Comprehensive Fastify API Routes Catalog (771 endpoints, 14 domains, Zod validation, RBAC, DB tables).
+* 💳 **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — 54-FZ fiscal receipts, cashboxes, family shared balances, and payment idempotency.
+* ⚕️ **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Clinical rules engine, triggers matching, prerequisite checks, and warning/blocking actions.
+* 📞 **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Mango/Zadarma/UIS Telephony webhooks, WebSocket broadcasts, Patient Portal OTP auth, and PWA setup.
+* 📄 **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — HTML-to-PDF rendering, Edge/Chrome headless spawning, and SHA-256 integrity document signing.
+* 💬 **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Config schemas, API routes, hooks, UI panels, and setup rules for WhatsApp Cloud API & VK MAX bots.
+
+---
+
 > **Re-measured 2026-08-06. Read this block before you trust any number below it.**
 > Every count in this document is a measurement with a date, not a standing fact. The counts as of
 > **2026-08-06** are stated inline below and were taken by running `fd`/`jq`/`wc` and by querying the
@@ -224,21 +240,35 @@ npm run db:reset-seed               # npx tsx apps/api/src/scripts/migrateStateT
 
 ---
 
-## 📋 Core Table Registry (`apps/api/src/db/schema.ts`)
+## 📋 Core Table Registry & Modular Domain Schema (`apps/api/src/db/schema/`)
 
-`schema.ts` is **3,158 lines** and declares **126 `pgTable` + 46 `pgEnum`**; with `communicationsSchema.ts`
-(2 tables, 1 enum) and `patientsSchema.ts` (1 table) the total is **129 tables** declared in Drizzle
-(measured 2026-08-06; the previous revision said 2,505 lines / 122 / 44 / 125 tables — all four stale).
-It is a monolith — read the region you need, not the whole file. This registry is an orientation aid, not
-the source of truth; `schema.ts` is.
+> **Re-measured 2026-09-04:**  
+> `apps/api/src/db/schema.ts` is **no longer a monolith**. It was refactored into a **7-line proxy** re-exporting `apps/api/src/db/schema/index.ts`.
+> The schema is now organized into **18 domain-driven modules** in `apps/api/src/db/schema/`, declaring **203 `pgTable`** definitions (measured 2026-09-04 with ripgrep across all schema files; the previous 2026-08-06 count of 129 tables is superseded).
+>
+> For the complete HTTP endpoint mapping to these tables, see **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** (771 endpoints with RBAC, Zod schemas, and DB table lineage).
 
-> **The live database has more tables than the schema declares, and that is expected.** Counted
-> 2026-08-06 against `dental_crm`: **148 tables in `public`** versus 129 `pgTable` declarations. The
-> difference is objects created by hand-written migration SQL that were never back-ported into
-> `schema.ts`, plus the runner's own ledger `_dente_migrations`. **Do not treat `schema.ts` as an
-> inventory of the database.** Query `pg_tables` when you need the real list; use `schema.ts` when you
-> need the types.
+### 🧩 Domain Schema Modules (`apps/api/src/db/schema/*.ts`)
+1. **`auth.ts`** (6 tables): `organizations`, `clinics`, `users`, `userInvitations`, `portalOtpCodes`, `clinicWorkflows`.
+2. **`patients.ts`** (22 tables): `patients`, `patientConsents`, `recentPatientHistory`, `patientServiceLineages`, `lostPatientsFilters`, `familyGroups`, `familyRecommendationSources`, `patientDuplicateMergeQueues`, `patientTaskTickets`, `patientReclamations`, `patientArchiveReasons`, `patientArchiveReasonsAndBlacklists`, `loyaltyPrograms`, `patientBonusBalances`, `bonusTransactions`, `referralCampaigns`, `patientReferralCodes`, `patientReferrals`, `patientDrugAllergies`, `patientRelationships`, etc.
+3. **`schedule.ts`** (15 tables): `chairs`, `appointments`, `cancellationReasonsTwoLevel`, `quickAppointmentConfirmations`, `urgentScheduleRequests`, `confirmationPerformanceReports`, `scheduleClipboardItems`, `scheduleTimeReservations`, `rebookingConversionRules`, `singleSessionEnforcements`, `appointmentWaitlists`, `clinicChairs`, `appointmentChannelInheritances`, `externalScheduleActionLogs`, `yandexCalendarSyncs`.
+4. **`billing.ts`** (16 tables): `payments`, `patientInvoices`, `invoiceItems`, `cashLedger`, `cashShifts`, `shiftDiscrepancyReports`, `sbpQrTransactions`, `fiscalReceiptQueue`, `paymentInstallments`, `installmentTranches`, etc.
+5. **`clinical.ts`** (24 tables): `diagnoses`, `clinicalRules`, `treatmentPlans`, `treatmentPlanStages`, `treatmentPlanItems`, `visitDiaries`, `signedOutpatientCards`, `anesthesiaLogs`, `implantPassports`, `dentalLabOrders`, `pharmacologyCatalog`, `prescriptions`, `orthodonticCases`, etc.
+6. **`imaging.ts`** (15 tables): `attachments`, `imagingStudies`, `aiJobs`, `imagingSeries`, `imagingInstances`, `imagingAnnotations`, `xrayScans`, `imagingViewerSessions`, `dicomWorkbenchBundles`, `patientCtPlannings`, `bulkImageOperationLogs`, `diagnocatAiFindings`, `diagnocatReports`.
+7. **`inventory.ts`** (13 tables): `inventoryItems`, `warehouses`, `stockBatches`, `inventoryTransactions`, `procedureMaterialRules`, `procedureTechCards`, `procedureTechCardItems`, `sterilizationLogs`, `preSterilizationCleaningLogs`, `autoclaveDailyTests`, `inventoryTransfers`, `inventoryTransferItems`, `mdlpItems`.
+8. **`sanpin.ts`** (8 tables): `sterilizerEquipments`, `bactericidalEquipments`, `bactericidalIrradiatorLogs`, `generalCleaningLogs`, `medicalWasteLogs`, `emergencyBiohazardLogs`, `temperatureHumidityEquipments`, `temperatureHumidityLogs`.
+9. **`finance_v2.ts`** (8 tables): `cashBoxes`, `cashBoxShifts`, `cashExpenseReasons`, `cashOperations`, `installmentContracts`, `installmentTranches`, `doctorPaymentRewards`, `doctorPayrollStatements`.
+10. **`documents_v2.ts`** (3 tables): `documentTemplateCategories`, `documentTemplates`, `documentTemplateVariables`.
+11. **`outpatientCore.ts`** (7 tables): `clinicalTeethCatalog`, `toothDefectsCatalog`, `mkbCategories`, `patientToothDefects`, `outpatientTemplateCategories`, `outpatientTemplates`, `outpatientVerifications`.
+12. **`communications.ts`** (12 tables): `communicationEvents`, `communicationTasks`, `messageTemplates`, `outboundMessageQueue`, `smsGateways`, `chatDialogs`, `chatMessages`, `telegramLinkCodes`, `telegramBotConfigs`, etc.
+13. **`crm_leak_detector.ts`** (4 tables): `crmLeakDetectorConfigs`, `crmLeakDetectorLeads`, `crmLeakDetectorAuditLogs`, `crmLeakDetectorRuns`.
+14. **`sync.ts`** (2 tables): `syncIdempotencyRecords`, `syncEntityVectors`.
+15. **`copilot.ts`** (6 tables): `copilotSessions`, `copilotMessages`, `copilotNudges`, `copilotAlerts`, `copilotAuditLogs`, `copilotFeedback`.
+16. **`rag.ts`** (1 table): `clinicalKnowledgeEmbeddings`.
+17. **`aiTelemetry.ts`** (3 tables): `aiPromptLogs`, `aiTokenSpendings`, `aiModelLatencies`.
+18. **`system.ts`** (6 tables): `auditEvents`, `systemSettings`, `backgroundJobs`, `featureFlags`, `branchOffices`, `backupLedger`.
 
+### 🧭 Core Orientation Tables
 | Table Name | Description | Key Fields / Relations |
 | :--- | :--- | :--- |
 | `organizations` | Tenant organizations (clinics group) | `id`, `name`, `loginId`, `passwordHash` |
@@ -250,8 +280,8 @@ the source of truth; `schema.ts` is.
 | `payments` | Financial transactions recorded | `id`, `patientId`, `amount`, `paymentMethod` |
 | `patient_invoices` | Patient bills generated for services | `id`, `patientId`, `totalAmount`, `status` |
 | `treatment_plans` | Global dental treatment plans | `id`, `patientId`, `title` |
-| `denteTelegramBotConfigs` | Chatbot credentials for organizations | `id`, `botToken`, `botUsername`, `status` |
-| `denteTelegramLinkCodes` | Active codes for linking Telegram accounts | `code`, `patientId`, `status` |
+| `inventory_items` | Warehouse material stock catalog | `id`, `name`, `stockQuantity`, `category` |
+| `sterilization_logs`| SanPiN sterilization pouch records | `id`, `barcode`, `cycleNumber`, `result` |
 | `imaging_studies` | DICOM/imaging metadata linked to patients | `id`, `patientId`, `studyInstanceUid` |
 | `crm_leads` | Marketing / incoming request funnel leads | `id`, `phone`, `status`, `organizationId` |
 
