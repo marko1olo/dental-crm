@@ -78,7 +78,6 @@ import {
 	generateSbpQrPayload,
 	generateSmsOtp,
 	openPrintWindow,
-	processSbpPayment,
 	signConsentWithPep,
 	verifySmsOtp,
 	type DentalHealthIndexResult,
@@ -92,6 +91,7 @@ import {
 	type PatientTaxDeductionCalculation,
 	type PatientTreatmentPlan,
 	type PatientWarrantyCard,
+	type SbpBankMember,
 	type SbpQrPayload,
 	type TreatmentPlanStage,
 	type TreatmentPlanTier,
@@ -167,6 +167,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	// Состояние модального окна СБП QR оплаты
 	const [activeSbpInvoice, setActiveSbpInvoice] = useState<PatientInvoiceItem | null>(null);
 	const [activeSbpPayload, setActiveSbpPayload] = useState<SbpQrPayload | null>(null);
+	const [isCheckingSbpStatus, setIsCheckingSbpStatus] = useState<boolean>(false);
+	const [sbpStatusMessage, setSbpStatusMessage] = useState<string | null>(null);
 
 	// Состояние SMS/OTP подписания согласия
 	const [signingConsent, setSigningConsent] = useState<PatientStatutoryConsent | null>(null);
@@ -226,6 +228,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 			if (e.key === "Escape") {
 				if (activeSbpInvoice) {
 					setActiveSbpInvoice(null);
+					setActiveSbpPayload(null);
+					setSbpStatusMessage(null);
+					setIsCheckingSbpStatus(false);
 				} else if (signingConsent) {
 					setSigningConsent(null);
 				} else if (onClose) {
@@ -333,25 +338,96 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		const payload = generateSbpQrPayload(inv);
 		setActiveSbpInvoice(inv);
 		setActiveSbpPayload(payload);
+		setSbpStatusMessage(null);
+		setIsCheckingSbpStatus(false);
 	};
 
-	// Симуляция успешной оплаты через СБП
-	const handleSimulateSbpSuccess = () => {
-		if (!activeSbpInvoice) return;
-		const paidInv = processSbpPayment(activeSbpInvoice);
+	// Переход по реальной платежной ссылке СБП / deepLink банка
+	const handleOpenBankApp = (bank: SbpBankMember) => {
+		if (!activeSbpPayload) return;
+		const deepLink = (bank as { deepLink?: string }).deepLink;
+		const targetUrl =
+			deepLink ||
+			(bank.schemaPrefix.startsWith("http")
+				? activeSbpPayload.sbpNspkPayloadString
+				: `${bank.schemaPrefix}${activeSbpPayload.qrId}`);
 
-		setData((prev) => ({
-			...prev,
-			invoices: prev.invoices.map((inv) => (inv.id === paidInv.id ? paidInv : inv)),
-		}));
-
-		if (onInvoicePaid) {
-			onInvoicePaid(paidInv);
+		try {
+			window.open(targetUrl, "_blank", "noopener,noreferrer");
+		} catch {
+			window.location.href = targetUrl;
 		}
+		showToast(`Переход в приложение «${bank.nameRu}» для оплаты через СБП...`);
+	};
 
-		setActiveSbpInvoice(null);
-		setActiveSbpPayload(null);
-		showToast(`Счет № ${paidInv.invoiceNumber} на сумму ${formatRubles(paidInv.totalAmountRub)} успешно оплачен через СБП!`);
+	// Реальный опрос статуса оплаты счета через API / честное уведомление о сверке с банком
+	const handleCheckSbpPaymentStatus = async () => {
+		if (!activeSbpInvoice || isCheckingSbpStatus) return;
+
+		setIsCheckingSbpStatus(true);
+		setSbpStatusMessage(null);
+
+		try {
+			let isPaidConfirmed = false;
+			let paidInvoiceFromServer: PatientInvoiceItem | null = null;
+
+			// Честный запрос к API клиники для проверки статуса счета
+			try {
+				const response = await fetch(`/api/invoices/${encodeURIComponent(activeSbpInvoice.id)}`, {
+					headers: { Accept: "application/json" },
+				});
+
+				if (response.ok) {
+					const invData = (await response.json().catch(() => null)) as {
+						status?: string;
+						isPaid?: boolean;
+						paidAmountRub?: number;
+						fiscalReceiptNumber?: string;
+						fiscalReceiptUrl?: string;
+						paidAtIso?: string;
+					} | null;
+
+					if (invData && (invData.status === "paid" || invData.isPaid)) {
+						isPaidConfirmed = true;
+						paidInvoiceFromServer = {
+							...activeSbpInvoice,
+							status: "paid",
+							paidAmountRub: invData.paidAmountRub ?? activeSbpInvoice.totalAmountRub,
+							remainingAmountRub: 0,
+							paidAtIso: invData.paidAtIso || new Date().toISOString(),
+							fiscalReceiptNumber: invData.fiscalReceiptNumber || activeSbpInvoice.fiscalReceiptNumber,
+							fiscalReceiptUrl: invData.fiscalReceiptUrl || activeSbpInvoice.fiscalReceiptUrl,
+							paymentMethod: "sbp",
+						};
+					}
+				}
+			} catch {
+				// Оффлайн или отсутствие связи с API в локальной среде
+			}
+
+			if (isPaidConfirmed && paidInvoiceFromServer) {
+				const finalInv = paidInvoiceFromServer;
+				setData((prev) => ({
+					...prev,
+					invoices: prev.invoices.map((inv) => (inv.id === finalInv.id ? finalInv : inv)),
+				}));
+				if (onInvoicePaid) {
+					onInvoicePaid(finalInv);
+				}
+				setActiveSbpInvoice(null);
+				setActiveSbpPayload(null);
+				setSbpStatusMessage(null);
+				showToast(`Оплата счета № ${finalInv.invoiceNumber} на сумму ${formatRubles(finalInv.totalAmountRub)} подтверждена банком!`);
+			} else {
+				// Платеж ещё не подтверждён банковской выпиской или эквайринговым шлюзом
+				const msg =
+					"Банковский шлюз СБП: платёж ещё не подтверждён банковской выпиской. Зачисление и закрытие счета произойдут автоматически после подтверждения банком (обычно занимает от 10 секунд до нескольких минут).";
+				setSbpStatusMessage(msg);
+				showToast("Платёж проверяется банком. Счет будет закрыт после фактического зачисления средств.");
+			}
+		} finally {
+			setIsCheckingSbpStatus(false);
+		}
 	};
 
 	// Открытие модального окна SMS/OTP подписания
@@ -2607,7 +2683,17 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 
 				{/* SBP QR PAYMENT MODAL SHEET */}
 				{activeSbpInvoice && activeSbpPayload && (
-					<div className="pc-sheet-overlay" onClick={() => setActiveSbpInvoice(null)} role="dialog" aria-modal="true">
+					<div
+						className="pc-sheet-overlay"
+						onClick={() => {
+							setActiveSbpInvoice(null);
+							setActiveSbpPayload(null);
+							setSbpStatusMessage(null);
+							setIsCheckingSbpStatus(false);
+						}}
+						role="dialog"
+						aria-modal="true"
+					>
 						<div className="pc-sheet-window" onClick={(e) => e.stopPropagation()} data-testid="sbp-payment-modal-sheet">
 							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -2617,7 +2703,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								<button
 									type="button"
 									className="pc-close-btn"
-									onClick={() => setActiveSbpInvoice(null)}
+									onClick={() => {
+										setActiveSbpInvoice(null);
+										setActiveSbpPayload(null);
+										setSbpStatusMessage(null);
+										setIsCheckingSbpStatus(false);
+									}}
 									aria-label="Закрыть"
 								>
 									<X size={18} />
@@ -2651,7 +2742,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										key={bank.id}
 										type="button"
 										className="pc-bank-btn"
-										onClick={handleSimulateSbpSuccess}
+										onClick={() => handleOpenBankApp(bank)}
 									>
 										<span style={{ width: "10px", height: "10px", borderRadius: "50%", background: bank.brandColorHex }} />
 										<span>{bank.nameRu}</span>
@@ -2659,16 +2750,44 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								))}
 							</div>
 
+							{sbpStatusMessage && (
+								<div
+									style={{
+										display: "flex",
+										alignItems: "flex-start",
+										gap: "8px",
+										padding: "10px 12px",
+										borderRadius: "8px",
+										background: "var(--pc-surface)",
+										border: "1px solid var(--pc-border)",
+										fontSize: "0.75rem",
+										color: "var(--pc-text-muted)",
+										lineHeight: 1.4,
+										textAlign: "left",
+									}}
+								>
+									<Info size={16} style={{ color: "var(--pc-primary)", flexShrink: 0, marginTop: "2px" }} />
+									<span>{sbpStatusMessage}</span>
+								</div>
+							)}
+
 							<div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
 								<button
 									type="button"
 									className="pc-btn-primary"
 									style={{ flex: 1 }}
-									onClick={handleSimulateSbpSuccess}
+									onClick={handleCheckSbpPaymentStatus}
+									disabled={isCheckingSbpStatus}
 									data-testid="confirm-sbp-payment-btn"
 								>
-									<CheckCircle2 size={16} />
-									<span>Я оплатил (Проверить статус)</span>
+									{isCheckingSbpStatus ? (
+										<RefreshCw size={16} className="animate-spin" />
+									) : (
+										<CheckCircle2 size={16} />
+									)}
+									<span>
+										{isCheckingSbpStatus ? "Проверка статуса..." : "Я оплатил (Проверить статус)"}
+									</span>
 								</button>
 							</div>
 						</div>
