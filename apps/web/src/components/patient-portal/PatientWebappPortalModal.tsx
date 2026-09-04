@@ -616,7 +616,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 							onClick={onClose}
 							className="pwa-mode-toggle-btn"
 							style={{ color: "var(--danger, #ef4444)" }}
-							title="Закрыть симулятор"
+							title="Закрыть предпросмотр"
 						>
 							<X size={16} />
 						</button>
