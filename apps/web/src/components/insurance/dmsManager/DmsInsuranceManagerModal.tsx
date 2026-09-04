@@ -28,7 +28,9 @@ import {
 	UserCheck,
 	X,
 	XCircle,
+	Zap,
 } from "lucide-react";
+import { showToast } from "../../GlobalToast";
 import "./dmsInsurance.css";
 import {
 	calculateDmsSplitInvoice,
@@ -384,23 +386,97 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 	if (!isOpen) return null;
 
 	// Обработчики действий
+	const handleActivateEmergencyLetter = () => {
+		const targetInsurerId = newLetterInsurerId || (patientContext?.insurerId as DmsInsurerId) || "sogaz";
+		const insMeta = getStatutoryInsurerById(targetInsurerId);
+		const emergencyLetterRecord: DmsGuaranteeLetterRecord = {
+			id: `gl-emergency-${Date.now()}`,
+			letterNumber: `ГП-ЭКСТРЕННО-${Date.now().toString().slice(-6)} (ДОСЫЛКА)`,
+			insurerId: targetInsurerId,
+			insurerName: insMeta?.shortName ?? "АО «СОГАЗ»",
+			patientId: patientContext?.id ?? `pat-emergency-${Date.now()}`,
+			patientFullName: patientContext?.fullName || newLetterPatientName || "Пациент с острой болью",
+			policyNumber: patientContext?.policyNumber || newLetterPolicyNumber || "ПОЛИС-ДМС-ОСТРАЯ-БОЛЬ",
+			programKey: "economy_emergency_only",
+			issueDate: new Date().toISOString().slice(0, 10),
+			validUntil: "2026-12-31",
+			totalLimitKopecks: rubToKopecks(50000),
+			usedAmountKopecks: 0,
+			approvedNomenclatureCodes: [
+				"A16.07.030.001", // Депульпирование
+				"A11.07.010", // Анестезия
+				"A16.07.011", // Вскрытие абсцесса
+				"A16.07.008.001", // Пломбирование канала / временная повязка
+				"A16.07.002.001", // Пломба светоотверждаемая
+				"B01.003.004.001", // Первичный прием по острой боли
+			],
+			approvedTeeth: ["Все"],
+			diagnosisMkb10: ["K04.0", "K04.4", "K04.6"],
+			status: "active",
+			curatorFullName: "Временное согласование по острой боли (досылка ГП)",
+			curatorPhone: insMeta?.phone ?? "8 (800) 000-00-00",
+			curatorEmail: insMeta?.email ?? "dms-urgent@clinic.ru",
+			attachedXrayUris: [],
+			notes: "⚡ Экстренная помощь по острой боли. Гарантийное письмо будет дослано страховой компанией. Временное согласование неотложных манипуляций (депульпирование, анестезия, вскрытие абсцесса) без блокировки кассы или приёма (Мандат 8e).",
+		};
+
+		setLetters((prev) => [emergencyLetterRecord, ...prev]);
+		setSelectedLetterIdForSplit(emergencyLetterRecord.id);
+
+		// Также сразу настраиваем Pre-Auth Studio
+		setPreAuthDiagnosisCode("K04.0");
+		setPreAuthDiagnosisTitle("Пульпит зуба (острый очаговый / острая боль)");
+		setPreAuthServiceCode("A16.07.030.001");
+		setPreAuthClinicalNotes(
+			"⚡ ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Гарантийное письмо будет дослано страховой компанией. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
+		);
+		setPreAuthOverrideStatus("approved");
+
+		showToast(
+			`⚡ Временное согласование по острой боли № ${emergencyLetterRecord.letterNumber} создано! Приём врача и касса 54-ФЗ разблокированы.`,
+			"success",
+		);
+	};
+
+	const handleActivateEmergencyPreAuth = () => {
+		setPreAuthDiagnosisCode("K04.0");
+		setPreAuthDiagnosisTitle("Пульпит зуба (острый очаговый / острая боль)");
+		setPreAuthServiceCode("A16.07.030.001");
+		setPreAuthClinicalNotes(
+			"⚡ ОСТРАЯ БОЛЬ. Неотложные манипуляции: анестезия, депульпирование зуба, купирование болевого синдрома. Гарантийное письмо будет дослано страховой компанией. Согласно Мандату 8e приём и касса 54-ФЗ не блокируются.",
+		);
+		setPreAuthOverrideStatus("approved");
+
+		// Гарантируем, что активное письмо по острой боли создано и доступно
+		const hasEmergencyLetter = letters.some((l) => l.letterNumber.includes("ЭКСТРЕННО") && l.status === "active");
+		if (!hasEmergencyLetter) {
+			handleActivateEmergencyLetter();
+		} else {
+			showToast("⚡ 1-Клик: Временное согласование по острой боли установлено! Приём и касса разблокированы.", "success");
+		}
+	};
+
 	const handleCreateNewLetter = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!newLetterNumber || !newLetterPatientName) return;
+		// Мандат 8e: если номер письма не введен, генерируем временный номер досылки без блокировки
+		const resolvedLetterNumber =
+			newLetterNumber.trim() || `ГП-ДОСЫЛКА-${Date.now().toString().slice(-6)}`;
+		const resolvedPatientName =
+			newLetterPatientName.trim() || patientContext?.fullName || "Пациент";
 
 		const insMeta = getStatutoryInsurerById(newLetterInsurerId);
 		const newLetterRecord: DmsGuaranteeLetterRecord = {
 			id: `gl-custom-${Date.now()}`,
-			letterNumber: newLetterNumber,
+			letterNumber: resolvedLetterNumber,
 			insurerId: newLetterInsurerId,
 			insurerName: insMeta?.shortName ?? "АО «СОГАЗ»",
 			patientId: `pat-${Date.now()}`,
-			patientFullName: newLetterPatientName,
+			patientFullName: resolvedPatientName,
 			policyNumber: newLetterPolicyNumber || "ПОЛИС-ДМС-2026",
 			programKey: newLetterProgramKey,
 			issueDate: new Date().toISOString().slice(0, 10),
 			validUntil: newLetterValidUntil,
-			totalLimitKopecks: rubToKopecks(newLetterLimitRub),
+			totalLimitKopecks: rubToKopecks(newLetterLimitRub > 0 ? newLetterLimitRub : 50000),
 			usedAmountKopecks: 0,
 			approvedNomenclatureCodes: newLetterCodes
 				.split(",")
@@ -410,18 +486,19 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 				.split(",")
 				.map((s) => s.trim())
 				.filter(Boolean),
-			diagnosisMkb10: [newLetterDiagnosis.trim()],
+			diagnosisMkb10: [newLetterDiagnosis.trim() || "K04.0"],
 			status: "active",
 			curatorFullName: "Дежурный эксперт ДМС",
 			curatorPhone: insMeta?.phone ?? "8 (800) 000-00-00",
 			curatorEmail: insMeta?.email ?? "dms@insurer.ru",
 			attachedXrayUris: [],
-			notes: "Создано администратором клиники вручную.",
+			notes: "Зарегистрировано администратором клиники (без блокировок).",
 		};
 
 		setLetters((prev) => [newLetterRecord, ...prev]);
 		setIsAddingLetter(false);
 		setNewLetterNumber("");
+		showToast(`Гарантийное письмо № ${newLetterRecord.letterNumber} зарегистрировано`, "success");
 	};
 
 	const handlePrintPreAuthRequest = () => {
@@ -584,6 +661,75 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 					   ========================================================= */}
 					{activeTab === "letters" && (
 						<>
+							{/* ⚡ 1-КЛИК: ЭКСТРЕННАЯ ПОМОЩЬ ПО ОСТРОЙ БОЛИ (МАНДАТ 8e) */}
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									gap: 12,
+									background:
+										"linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%)",
+									border: "1.5px solid rgba(239, 68, 68, 0.35)",
+									borderRadius: 12,
+									padding: "12px 16px",
+									flexWrap: "wrap",
+								}}
+							>
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: 10,
+										flex: 1,
+										minWidth: 260,
+									}}
+								>
+									<Zap size={22} color="#ef4444" style={{ flexShrink: 0 }} />
+									<div>
+										<div
+											style={{
+												fontWeight: 700,
+												fontSize: "0.875rem",
+												color: "var(--ink, #0f172a)",
+											}}
+										>
+											⚡ 1-Клик: Экстренная помощь по острой боли (письмо будет дослано страховой)
+										</div>
+										<div
+											style={{
+												fontSize: "0.75rem",
+												color: "var(--muted, #64748b)",
+												marginTop: 2,
+											}}
+										>
+											Мандат 8e: немедленная разблокировка приёма, депульпирования, анестезии и кассы 54-ФЗ с временным номером согласования
+										</div>
+									</div>
+								</div>
+								<button
+									type="button"
+									className="dms-btn-action"
+									style={{
+										background: "#ef4444",
+										color: "#ffffff",
+										border: "none",
+										fontWeight: 700,
+										padding: "10px 18px",
+										minHeight: 44,
+										borderRadius: 8,
+										cursor: "pointer",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 8,
+									}}
+									onClick={handleActivateEmergencyLetter}
+								>
+									<Zap size={16} />
+									⚡ Активировать по острой боли
+								</button>
+							</div>
+
 							{/* Панель фильтров и добавления */}
 							<div
 								style={{
@@ -692,10 +838,9 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 											<input
 												type="text"
 												className="dms-input"
-												placeholder="ГП-СОГАЗ-2026-..."
+												placeholder="ГП-СОГАЗ-2026-... (необязательно, сгенерируется авто)"
 												value={newLetterNumber}
 												onChange={(e) => setNewLetterNumber(e.target.value)}
-												required
 											/>
 										</div>
 										<div className="dms-field-group">
@@ -719,12 +864,11 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 											<input
 												type="text"
 												className="dms-input"
-												placeholder="Иванов Иван Иванович"
+												placeholder="Иванов Иван Иванович (по умолчанию контекст)"
 												value={newLetterPatientName}
 												onChange={(e) =>
 													setNewLetterPatientName(e.target.value)
 												}
-												required
 											/>
 										</div>
 										<div className="dms-field-group">
@@ -996,6 +1140,75 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 						<div
 							style={{ display: "flex", flexDirection: "column", gap: 16 }}
 						>
+							{/* ⚡ 1-КЛИК: ЭКСТРЕННАЯ ПОМОЩЬ ПО ОСТРОЙ БОЛИ (МАНДАТ 8e) */}
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									gap: 12,
+									background:
+										"linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.08) 100%)",
+									border: "1.5px solid rgba(239, 68, 68, 0.35)",
+									borderRadius: 12,
+									padding: "12px 16px",
+									flexWrap: "wrap",
+								}}
+							>
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: 10,
+										flex: 1,
+										minWidth: 260,
+									}}
+								>
+									<Zap size={22} color="#ef4444" style={{ flexShrink: 0 }} />
+									<div>
+										<div
+											style={{
+												fontWeight: 700,
+												fontSize: "0.875rem",
+												color: "var(--ink, #0f172a)",
+											}}
+										>
+											⚡ 1-Клик: Острая боль (согласование депульпирования / анестезии)
+										</div>
+										<div
+											style={{
+												fontSize: "0.75rem",
+												color: "var(--muted, #64748b)",
+												marginTop: 2,
+											}}
+										>
+											Мгновенно одобряет Pre-Auth статус (K04.0 / A16.07.030.001) без ожидания ответа страховой
+										</div>
+									</div>
+								</div>
+								<button
+									type="button"
+									className="dms-btn-action"
+									style={{
+										background: "#ef4444",
+										color: "#ffffff",
+										border: "none",
+										fontWeight: 700,
+										padding: "10px 18px",
+										minHeight: 44,
+										borderRadius: 8,
+										cursor: "pointer",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 8,
+									}}
+									onClick={handleActivateEmergencyPreAuth}
+								>
+									<Zap size={16} />
+									⚡ Согласовать экстренно
+								</button>
+							</div>
+
 							<div className="dms-kpi-grid">
 								<div className="dms-kpi-card">
 									<span className="dms-kpi-label">Статус проверки</span>

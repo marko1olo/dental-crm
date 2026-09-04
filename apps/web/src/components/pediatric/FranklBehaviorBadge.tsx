@@ -7,6 +7,7 @@ import {
 	Heart,
 	Info,
 	Sparkles,
+	Zap,
 } from "lucide-react";
 import {
 	type FranklRating,
@@ -18,6 +19,7 @@ import {
 export interface FranklBehaviorBadgeProps {
 	readonly rating?: FranklRating | undefined;
 	readonly onChange?: ((rating: FranklRating) => void) | undefined;
+	readonly onQuickSelect?: ((rating: FranklRating, note?: string) => void) | undefined;
 	readonly readOnly?: boolean | undefined;
 	readonly showStrategies?: boolean | undefined;
 	readonly compact?: boolean | undefined;
@@ -29,6 +31,7 @@ const FRANKL_RATINGS: readonly FranklRating[] = [1, 2, 3, 4];
 export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 	rating = 3,
 	onChange,
+	onQuickSelect,
 	readOnly = false,
 	showStrategies = true,
 	compact = false,
@@ -86,6 +89,41 @@ export const FranklBehaviorBadge: React.FC<FranklBehaviorBadgeProps> = ({
 					<span>{activeDef.nameRu}</span>
 				</div>
 			</div>
+
+			{/* ⚡ 1-клик быстрое заполнение: Поведение позитивное (Frankl 4/4) */}
+			{!readOnly && (
+				<button
+					type="button"
+					onClick={() => {
+						onChange?.(4);
+						onQuickSelect?.(4, "⚡ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания");
+					}}
+					className={`w-full min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl border flex items-center justify-between gap-2 font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-[0.99] select-none ${
+						rating === 4
+							? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs ring-2 ring-emerald-500/20"
+							: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] hover:bg-emerald-500/10 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] text-[var(--odontogram-ink,var(--ink,#0f172a))] hover:border-emerald-500/40"
+					}`}
+					title="⚡ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания"
+					data-testid="frankl-one-click-btn"
+				>
+					<span className="flex items-center gap-2 text-left">
+						<Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span className="truncate sm:whitespace-normal">
+							⚡ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания
+						</span>
+					</span>
+					{rating === 4 ? (
+						<span className="inline-flex items-center gap-1 text-xs font-black text-emerald-700 dark:text-emerald-300 shrink-0 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md">
+							<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+							Применено
+						</span>
+					) : (
+						<span className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium shrink-0">
+							Выбрать
+						</span>
+					)}
+				</button>
+			)}
 
 			{/* 4 Interactive Rating Selector Cards (1..4) */}
 			{!readOnly && (

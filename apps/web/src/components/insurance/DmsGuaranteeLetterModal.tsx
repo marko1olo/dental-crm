@@ -220,22 +220,50 @@ export function DmsGuaranteeLetterModal({
 		isExplicitlyApproved: true,
 	});
 
-	const handleSave = () => {
-		if (!policyNumber.trim() && !isEmergencyCare) {
-			showToast("Укажите номер полиса ДМС", "warning");
-			return;
+	const handleActivateEmergencyPainMode = () => {
+		setIsEmergencyCare(true);
+		const emergencyLetterNumber =
+			letterNumber.trim() && !letterNumber.startsWith("ГП-")
+				? letterNumber
+				: `ГП-ЭКСТРЕННО-ОСТРАЯ-БОЛЬ-${Date.now().toString().slice(-6)} (ДОСЫЛКА)`;
+		setLetterNumber(emergencyLetterNumber);
+		if (!policyNumber.trim()) {
+			setPolicyNumber(patient?.policyNumber || "ПОЛИС-ДМС-ОСТРАЯ-БОЛЬ");
 		}
-		if (!letterNumber.trim() && !isEmergencyCare) {
-			showToast("Укажите номер гарантийного письма", "warning");
-			return;
-		}
-		if (maxCoverageRub <= 0 && !isEmergencyCare) {
-			showToast("Лимит покрытия должен быть больше 0 ₽", "warning");
-			return;
-		}
+		setMaxCoverageRub((prev) => (prev < 35000 ? 50000 : prev));
+		setStatus("active");
+		// Неотложные манипуляции по острой боли (Номенклатура 804н)
+		const acuteServiceCodes = [
+			"A16.07.030.001", // депульпирование / инструментальная обработка канала
+			"A11.07.010", // инъекционная анестезия
+			"A16.07.011", // вскрытие абсцесса / поднадкостничного очага
+			"A16.07.008.001", // пломбирование корневого канала / временная повязка
+			"A16.07.002.001", // светоотверждаемая пломба
+			"B01.003.004.001", // прием врача при острой боли
+		];
+		setApprovedServiceCodes((prev) => Array.from(new Set([...prev, ...acuteServiceCodes])));
+		const acuteDiagnoses = ["K04.0", "K04.4"];
+		setApprovedDiagnosisCodes((prev) => Array.from(new Set([...prev, ...acuteDiagnoses])));
+		setNotes(
+			"⚡ Экстренная помощь по острой боли. Гарантийное письмо будет дослано страховой компанией в течение 1–3 рабочих дней. Временное согласование неотложных манипуляций (депульпирование, анестезия, вскрытие абсцесса) без блокировки кассы или приёма (Мандат 8e).",
+		);
+		showToast(
+			"⚡ Режим острой боли активирован: временное согласование неотложных манипуляций (депульпирование, анестезия, вскрытие абсцесса) включено без блокировки приёма или кассы!",
+			"success",
+		);
+	};
 
-		const resolvedPolicy = policyNumber.trim() || (patient?.policyNumber || "ЭКСТРЕННЫЙ-ДМС");
-		const resolvedLetterNum = letterNumber.trim() || `ГП-ЭКСТРЕННЫЙ-${Date.now()}`;
+	const handleSave = () => {
+		// Мандат 8e: если пациент пришел с острой болью, программа НЕ блокирует врача и не требует обязательного номера письма!
+		const resolvedPolicy =
+			policyNumber.trim() ||
+			patient?.policyNumber ||
+			(isEmergencyCare ? "ЭКСТРЕННЫЙ-ДМС-ОСТРАЯ-БОЛЬ" : "ПОЛИС-ДМС-БЕЗ-НОМЕРА");
+		const resolvedLetterNum =
+			letterNumber.trim() ||
+			(isEmergencyCare
+				? `ГП-ЭКСТРЕННО-${Date.now().toString().slice(-6)} (ДОСЫЛКА)`
+				: `ГП-ДМС-${Date.now().toString().slice(-6)}`);
 		const resolvedCoverage = maxCoverageRub > 0 ? maxCoverageRub : 50000;
 
 		const letter: DmsGuaranteeLetter = {
@@ -251,7 +279,7 @@ export function DmsGuaranteeLetterModal({
 			issueDate,
 			validFrom,
 			validUntil,
-			maxCoverageRub,
+			maxCoverageRub: resolvedCoverage,
 			usedAmountRub,
 			franchisePct: franchiseType === "percent" ? franchisePct : 0,
 			franchiseType,
@@ -267,7 +295,9 @@ export function DmsGuaranteeLetterModal({
 			onSave(letter);
 		}
 		showToast(
-			`Гарантийное письмо № ${letter.letterNumber} (${letter.insurerName}) успешно сохранено`,
+			isEmergencyCare
+				? `⚡ Временное согласование по острой боли № ${letter.letterNumber} сохранено. Приём и касса разблокированы!`
+				: `Гарантийное письмо № ${letter.letterNumber} (${letter.insurerName}) успешно сохранено`,
 			"success",
 		);
 		onClose();
@@ -316,6 +346,79 @@ export function DmsGuaranteeLetterModal({
 							</div>
 						</div>
 					)}
+
+					{/* ⚡ 1-Клик Режим: Экстренная помощь по острой боли (письмо будет дослано страховой) */}
+					<div
+						style={{
+							padding: "12px 16px",
+							borderRadius: "14px",
+							background: isEmergencyCare
+								? "linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(16, 185, 129, 0.12))"
+								: "rgba(245, 158, 11, 0.08)",
+							border: isEmergencyCare ? "2px solid #f59e0b" : "1px solid rgba(245, 158, 11, 0.35)",
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							flexWrap: "wrap",
+							gap: "12px",
+							marginBottom: "14px",
+							boxShadow: isEmergencyCare ? "0 4px 16px rgba(245, 158, 11, 0.15)" : "none",
+						}}
+					>
+						<div style={{ flex: 1, minWidth: "260px" }}>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+								<Zap size={18} className="text-amber-600" />
+								<strong style={{ fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
+									Экстренная помощь по острой боли (ДМС)
+								</strong>
+								{isEmergencyCare && (
+									<span
+										style={{
+											fontSize: "0.6875rem",
+											fontWeight: 800,
+											padding: "2px 8px",
+											borderRadius: "6px",
+											background: "#10b981",
+											color: "#ffffff",
+										}}
+									>
+										АКТИВНО
+									</span>
+								)}
+							</div>
+							<p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted, #64748b)", lineHeight: 1.4 }}>
+								Мандат 8e: если пациент пришел с острой болью, а письмо еще не пришло на почту — программа НЕ блокирует врача и не требует номер письма! Временное согласование на неотложные манипуляции (депульпирование, анестезия, вскрытие абсцесса).
+							</p>
+						</div>
+
+						<button
+							type="button"
+							onClick={handleActivateEmergencyPainMode}
+							style={{
+								minHeight: "44px",
+								padding: "8px 16px",
+								borderRadius: "10px",
+								border: "none",
+								background: isEmergencyCare ? "#10b981" : "#f59e0b",
+								color: "#ffffff",
+								fontWeight: 700,
+								fontSize: "0.8125rem",
+								cursor: "pointer",
+								display: "flex",
+								alignItems: "center",
+								gap: "8px",
+								boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+							}}
+							title="⚡ 1-клик: Экстренная помощь по острой боли (письмо будет дослано страховой)"
+						>
+							<Zap size={16} />
+							<span>
+								{isEmergencyCare
+									? "✓ Временное согласование включено"
+									: "⚡ 1-клик: Экстренная помощь по острой боли (письмо будет дослано)"}
+							</span>
+						</button>
+					</div>
 
 					{/* 1. Блок страховщика и реквизитов письма */}
 					<div className="dms-card">
@@ -828,6 +931,18 @@ export function DmsGuaranteeLetterModal({
 					>
 						Отмена
 					</button>
+					{isEmergencyCare && (
+						<button
+							type="button"
+							className="dms-btn dms-btn-primary"
+							style={{ background: "#059669", borderColor: "#059669", fontWeight: 700 }}
+							onClick={handleSave}
+							title="⚡ 1-клик: Применить временное согласование по острой боли и разблокировать прием"
+						>
+							<Zap size={18} />
+							⚡ 1-Клик: Сохранить экстренное согласование
+						</button>
+					)}
 					<button
 						type="button"
 						className="dms-btn dms-btn-primary"
