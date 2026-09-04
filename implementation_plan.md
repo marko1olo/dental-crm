@@ -1,5 +1,9 @@
-# Phase 8: Final Annihilation of App.tsx Prop-Drilling (Visit, Finance, Communications, Patients, Shift)
+# Phase 8: Final Annihilation of App.tsx Prop-Drilling (Visit, Finance, Communications, Patients, Shift) [ВЫПОЛНЕНО: 6548022a3145201946edd495e3b9e51cf277d8ef]
 
+
+> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+>
+> ⚠️ **СТАТУС: ПОЛНОСТЬЮ РЕАЛИЗОВАНО В КОММИТЕ `6548022a3145201946edd495e3b9e51cf277d8ef`.** Проп-дриллинг уничтожен для всех 6 представлений, деструктуризация `appLogicValue` сокращена на 256 идентификаторов, App.tsx уменьшен на 804 строки.
 The previous phase successfully decoupled `SettingsView`, `DocumentsView`, `ImagingView`, and `ScheduleView`, splitting form buckets into 21 files, and shrinking `App.tsx` by over 1000 lines. 
 However, 5 major monolithic views still remain heavily prop-drilled in `App.tsx`:
 - `VisitView` (104 props)
