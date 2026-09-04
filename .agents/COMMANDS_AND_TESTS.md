@@ -1,8 +1,15 @@
 # 💻 CLI Commands & Smoke Tests
 
+> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+>
+> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:**
+> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> До сетевых холдингов нам ещё расти и расти! Все команды сборки, линтеры и смоук-тесты проверяют стабильность монолита и отсутствие трения.
+>
+> 🛑 **СТОП-ЛИНИЯ DEFINITION OF DONE (МАНДАТ 8j) & ZERO DEAD-ENDS (МАНДАТ 8n):**
+> Код завершен только при: Exit 0 компиляторов, 0 ошибок кодировки (`check:encoding`), 0 нетипизированных моков, пофайловый `git add <file>`.
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-> Навигация: **[← Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** | **[Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** | **[Системный Закон (AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | **[Системный Закон (AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**
 
 This document catalogs commands for building, database management, lints, formatting, and the complete smoke testing suite.
 

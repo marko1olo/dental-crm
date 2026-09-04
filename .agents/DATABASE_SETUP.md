@@ -1,12 +1,18 @@
 # Локальная инфраструктура базы данных (PostgreSQL)
 
+> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+>
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [🗄️ База Данных (.agents/DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+>
+> ⚠️ **КАНОНИЧЕСКИЙ РЕЕСТР:** Каноническим описанием БД является **[`.agents/DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)**.
+> Текущая рабочая СУБД: **нативный PostgreSQL 18.4 TCP на `127.0.0.1:5432`** (директория данных `.data/pg18`).
+> Этот документ сохраняет исторические сведения о ручном развертывании и полифилле `uuidv7()`.
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 В этом документе задокументированы решения и архитектура локального окружения базы данных для Clinic MVP (DENTE). 
 
 ## 1. Портативный бинарник PostgreSQL
 Локальная база данных работает из изолированной папки `C:\Clinic_MVP\dental-crm\.postgres`. 
-- Это портативная сборка PostgreSQL 14.13 (от EnterpriseDB).
+- Историческая сборка: PostgreSQL 14.13 (EnterpriseDB), обновленная до нативного PostgreSQL 18.4 на `127.0.0.1:5432`.
 - **Пароль суперпользователя:** `dental`
 - **Порт:** `5432`
 - **Механизм аутентификации:** `scram-sha-256`
