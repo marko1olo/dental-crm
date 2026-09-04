@@ -886,7 +886,19 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								justifyContent: "center",
 							}}
 						>
-							<a className="primary-button" href="#patients">
+							{props.handleQuickConsult && (
+								<button
+									type="button"
+									className="primary-button"
+									onClick={() => props.handleQuickConsult?.()}
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+									data-testid="visit-empty-quick-consult-btn"
+								>
+									<Zap size={15} />
+									<span>Быстрый приём (CITO)</span>
+								</button>
+							)}
+							<a className="secondary-button" href="#patients">
 								Выбрать пациента
 							</a>
 							<a className="secondary-button" href="#schedule">
@@ -1028,6 +1040,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						shiftDateIso={dashboard?.todayIso || "2026-08-29"}
 						onOpenCockpit={() => setIsDoctorCockpitModalOpen(true)}
 						onInitiateBatchSign={() => setIsDoctorCockpitModalOpen(true)}
+						onEmergencyVisit={props.handleQuickConsult}
 					/>
 				)}
 

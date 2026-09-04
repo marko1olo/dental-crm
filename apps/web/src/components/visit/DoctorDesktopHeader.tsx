@@ -27,6 +27,7 @@ export interface DoctorDesktopHeaderProps {
 	readonly appointments?: readonly DoctorShiftAppointment[];
 	readonly onOpenCockpit?: () => void;
 	readonly onInitiateBatchSign?: () => void;
+	readonly onEmergencyVisit?: () => void;
 }
 
 export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
@@ -38,6 +39,7 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 	appointments = SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	onOpenCockpit,
 	onInitiateBatchSign,
+	onEmergencyVisit,
 }) => {
 	const doctorAppointments = useMemo(() => {
 		return filterDoctorShiftAppointments(appointments, doctorId, shiftDateIso);
@@ -112,6 +114,19 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 
 				{/* Right: Quick Action Controls */}
 				<div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+					{onEmergencyVisit && (
+						<button
+							type="button"
+							onClick={onEmergencyVisit}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-extrabold bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+							data-testid="doctor-header-emergency-cito-btn"
+							title="Экстренный приём пациента с острой болью (CITO)"
+						>
+							<Zap size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+							<span>Экстренный CITO</span>
+						</button>
+					)}
+
 					{unsignedCount > 0 && onInitiateBatchSign && (
 						<button
 							type="button"
