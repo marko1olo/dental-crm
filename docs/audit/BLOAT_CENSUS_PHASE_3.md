@@ -1,5 +1,7 @@
 # DENTE Dental CRM — Microscopic Bloat Expedition & Academic Over-Engineering Census (Phase 3)
 
+> Навигация: **[← Главный Индекс Документации (INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** | **[Конституция (THE HAMMER)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**
+
 **Authoritative Census Date**: 2026-08-27  
 **Scope**: Full Codebase Microscopic Audit (`apps/web`, `apps/api`, `packages/shared`)  
 **Standard**: DENTE Real-World Clinical Ergonomics (0–1 Clicks, Zero Academic Dioramas, Anti-Matryoshka, Zero Math in Hot Paths)
@@ -25,13 +27,13 @@ Following the successful elimination of duplicate SanPiN engines, Bracket Matrix
 ## 1. Odontogram & Periodontal Domain (`apps/web/src/components/odontogram/`)
 
 ### 1.1. Lang & Tonetti (2003) PRA Spider Diagram Vector Math
-- **File & Lines**: [`apps/web/src/components/odontogram/periodontalMath.ts:1-599`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/periodontalMath.ts#L1) (599 lines) & [`apps/web/src/components/odontogram/PeriodontalChartModule.tsx:750-890`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PeriodontalChartModule.tsx#L750)
+- **File & Lines**: `apps/web/src/components/odontogram/periodontalMath.ts:1-599` (599 lines, pruned) & `apps/web/src/components/odontogram/PeriodontalChartModule.tsx:750-890` (pruned/refactored)
 - **Bloat Rationale**: Implements academic 6-axis spider diagram polygon coordinate geometry (`PraSpiderResult`, `PraVectorResult`, `calculatePeriodontalRiskAssessment`). Generates theoretical radar vectors (BOP percentage, residual pockets >= 5mm, tooth loss, bone loss / age ratio, systemic/diabetes, smoking).
 - **Clinical Reality**: Dentists in real clinical workflows do not plot polygon coordinates on spider diagrams. They need 1-click **AAP 2017 / СтАР Stage & Grade** diagnostic classification (Stage I–IV, Grade A–C) and automatic generation of Form 043/у protocol text.
 - **Recommended Action**: Prune vector polygon rendering; keep only the 1-click AAP 2017 Stage/Grade evaluator (`derivePeriodontalDiagnosis`).
 
 ### 1.2. Sequential 192-Point Probing Step Wizard
-- **File & Lines**: [`apps/web/src/components/odontogram/PeriodontalChartModule.tsx:175-205`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/PeriodontalChartModule.tsx#L175) (1,125 lines)
+- **File & Lines**: `apps/web/src/components/odontogram/PeriodontalChartModule.tsx:175-205` (1,125 lines, pruned)
 - **Bloat Rationale**: Contains an academic sequential stepper state machine (`probingSequence.length`, `currentStepIndex`, `stepTo`) that forces a doctor through 32 teeth * 6 sites = 192 sequential clicks.
 - **Clinical Reality**: Dentists and hygienists enter periodontal depths via fast numpad keypad or voice dictation directly into affected sextants, not via a 192-step modal questionnaire.
 - **Recommended Action**: Remove sequential stepper state machine; allow direct interactive cell clicks and 1-click "Норма 1–2 мм (интактный пародонт)" preset fill.
@@ -53,7 +55,7 @@ Following the successful elimination of duplicate SanPiN engines, Bracket Matrix
 - **Recommended Action**: Collapse 1,129-line simulator into a lightweight 1-click carpule calculator with instant toxic dose guardrails.
 
 ### 2.2. Multi-Currency Medical Tourism Commercial Quote Modal
-- **File & Lines**: [`apps/web/src/components/finance/MedicalTourismQuoteModal.tsx:1-458`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/MedicalTourismQuoteModal.tsx#L1) (458 lines)
+- **File & Lines**: `apps/web/src/components/finance/MedicalTourismQuoteModal.tsx:1-458` (458 lines, pruned)
 - **Bloat Rationale**: Implements multi-currency commercial quoting in 10 international currencies (USD, EUR, CNY, AED, KZT, etc.) with bank conversion spread models and bilingual Russian/English export sheets.
 - **Clinical Reality**: 99.9% of dental practices operate strictly in RUB under 54-FZ fiscal legislation. International patient quoting can be handled by standard estimate exports without an embedded currency exchange desk.
 - **Recommended Action**: Retire `MedicalTourismQuoteModal.tsx` or archive into specialized Tier 3 add-ons.
@@ -63,7 +65,7 @@ Following the successful elimination of duplicate SanPiN engines, Bracket Matrix
 ## 3. Clinical Modals Domain (`apps/web/src/components/clinical/`)
 
 ### 3.1. Redundant Forwarding Barrel
-- **File & Lines**: [`apps/web/src/components/clinical/perio/index.ts:1-19`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/clinical/perio/index.ts#L1) (19 lines)
+- **File & Lines**: `apps/web/src/components/clinical/perio/index.ts:1-19` (19 lines, pruned)
 - **Bloat Rationale**: Unused forwarding barrel re-exporting `apps/web/src/components/odontogram/` components into an orphaned directory.
 - **Recommended Action**: Delete `apps/web/src/components/clinical/perio/index.ts` to prevent duplicate import confusion.
 

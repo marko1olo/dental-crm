@@ -22,8 +22,8 @@ All competitive feature extractions, parity registries, architecture maps, and s
 3. **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**
    - Architected implementation options with concrete file paths (`apps/web`, `apps/api`), database schema considerations, and risks for all `[НЕТ]` and `[ЧАСТИЧНО]` features.
 
-4. **[PROGRESS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/PROGRESS.md)**
-   - Audit cursor log confirming 100% completion (2961 / 2961 lines processed).
+4. **[GAP_REPORT_2026-07-27.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/GAP_REPORT_2026-07-27.md)**
+   - Current competitive gap report and audit progress. (Replaces the obsolete `PROGRESS.md` audit cursor log).
 
 5. **[FEATURE_SPECS/](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURE_SPECS)**
    - Self-contained specification markdown cards adhering strictly to the 13 mandatory specification fields.

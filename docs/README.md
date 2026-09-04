@@ -11,29 +11,34 @@
 
 Вся техническая и прикладная документация проекта разделена на специализированные разделы. Перед началом любых разработок, аудитов или рефакторинга изучите соответствующие спецификации.
 
-### 1. Архитектура и Базовые Спецификации
+### 1. Архитектура, Маршруты API и Базовые Спецификации
 *   **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный интерактивный граф навигации и матрица быстрого перехода для ИИ-агентов.
-*   **[ARCHITECTURE.md (.agents)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Архитектура монорепозитория, Fastify API, Vite + React 19, WebSocket-брокер, голосовой шлюз.
+*   **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Исчерпывающий каталог всех 771 роутов Fastify (14 доменов, Zod схемы, RBAC).
+*   **[FRONTEND_VIEWS_MAP.md](file:///C:/Clinic_MVP/dental-crm/.agents/FRONTEND_VIEWS_MAP.md)** — Карта всех 14 представлений фронтенда, шторок (Drawers) и модалок по 3-уровневой модели (Tier 1/2/3).
+*   **[UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — Стандарты вёрстки Apple/Mac HIG, Tailwind/Vanilla CSS токены, God Context `useAppLogic.tsx`.
+*   **[ARCHITECTURE.md (.agents)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Архитектура монорепозитория, Fastify API, Vite + React 19, WebSocket-брокер, ALS контекст `withTenantCtx`.
 *   **[00-product-architecture.md](file:///C:/Clinic_MVP/dental-crm/docs/00-product-architecture.md)** — Продуктовая архитектура, роли пользователей и целевые бизнес-процессы.
 *   **[ARCHITECTURE.md (docs)](file:///C:/Clinic_MVP/dental-crm/docs/ARCHITECTURE.md)** — Базовая спецификация конечного автомата зуба (FDI 11–48) и финансовых инвариантов СБП.
-*   **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Реестр схемы PostgreSQL 18.4 (`.data/pg18`), Drizzle ORM, RLS и миграции.
+*   **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Реестр схемы PostgreSQL 18.4 (`.data/pg18`), 18 модулей, 203 таблицы Drizzle ORM, RLS и миграции.
 *   **[DATABASE_SETUP.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Инфраструктура развёртывания локальной базы данных, polyfill `uuidv7()` и push-процедуры.
 *   **[COMMANDS_AND_TESTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/COMMANDS_AND_TESTS.md)** — Все консольные команды, 5-этапный typecheck, гейты кодировки и E2E smoke-тесты.
 
 ### 2. Клинический Контур, Документы и Речевой Ввод
+*   **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил, проверка противопоказаний, триггеры и Мандат 8e (Zero-Friction).
+*   **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр клинических шаблонов 043/у (K02–K08), пакетов комплексных услуг 804н, циклов автоклава B и формуляра анестезии.
 *   **[CLINICAL_USER_MANUAL.md](file:///C:/Clinic_MVP/dental-crm/docs/CLINICAL_USER_MANUAL.md)** — Клиническое руководство: работа с КЛКТ, расчёт Хаунсфилда (D1–D4), сметы, импорт и Dental UX законы.
-*   **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил, проверка противопоказаний, триггеры и блокировки.
-*   **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Жизненный цикл документов, генерация PDF через headless Chromium/Edge, хеширование SHA-256.
+*   **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Жизненный цикл документов, генерация PDF через headless Chromium/Edge, хеширование SHA-256, штамп ЧЕРНОВИК и УКЭП.
 *   **[12-document-generation-forms.md](file:///C:/Clinic_MVP/dental-crm/docs/12-document-generation-forms.md)** — Спецификации медицинских бланков (ИДС, договоры, справки НДФЛ КНД 1151156, акты 804н).
 *   **[05-speech-transcription-plan.md](file:///C:/Clinic_MVP/dental-crm/docs/05-speech-transcription-plan.md)** — Архитектура распознавания речи (Whisper/Yandex/Groq), нормализация терминов и защита от галлюцинаций.
 
 ### 3. Финансы, Касса 54-ФЗ и Склад
-*   **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Идемпотентность платежей (`clientMutationId`), касса 54-ФЗ, семейные балансы и кошельки.
+*   **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Идемпотентность платежей (`clientMutationId`), касса 54-ФЗ без ИНН у физлиц, комбинированные оплаты, семейные балансы и кошельки.
+*   **[WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)** — Складской учёт, 1-клик списание пустых карпул медсестрой, техкарты BOM, мягкий овердрафт при задержке накладных.
 *   **[02_FINANCIAL_CASHBOXES_INSTALLMENTS_AND_PAYROLL_RAILS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/02_FINANCIAL_CASHBOXES_INSTALLMENTS_AND_PAYROLL_RAILS.md)** — Многокассовость, рассрочки, наряды ЗТЛ и расчёт зарплат Т-51 Net Revenue.
-*   **[03_LEGAL_DOCUMENTS_UKEP_AND_WAREHOUSE_RAILS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/03_LEGAL_DOCUMENTS_UKEP_AND_WAREHOUSE_RAILS.md)** — Техкарты склада (BOM), СанПиН 3.3686-21, МДЛП Честный Знак, списание карпул медсестрой в 1 клик.
+*   **[03_LEGAL_DOCUMENTS_UKEP_AND_WAREHOUSE_RAILS.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/03_LEGAL_DOCUMENTS_UKEP_AND_WAREHOUSE_RAILS.md)** — Техкарты склада (BOM), СанПиН 3.3686-21, МДЛП Честный Знак.
 
 ### 4. Коммуникации, Телефония и Пациентский Портал
-*   **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Вебхуки Mango/Zadarma/UIS, WebSocket-события входящего вызова, OTP-авторизация и PWA портал.
+*   **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Вебхуки Mango/Zadarma/UIS, тихий режим софтфона для врача, ambient-баннер для регистратуры, OTP-авторизация и PWA портал.
 *   **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — Интеграция WhatsApp Cloud API, VK MAX bot, единый лог входящих сообщений.
 
 ### 5. Реестр Конкурентного Паритета и Реверс-Инжиниринг (`competitive-audit/`)
