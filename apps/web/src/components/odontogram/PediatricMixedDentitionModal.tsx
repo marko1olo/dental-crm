@@ -28,11 +28,48 @@ import type { ToothData } from "./ToothChart";
 import { showToast } from "../GlobalToast";
 import { FranklBehaviorBadge, PediatricParentMemoModal } from "../pediatric";
 import { PediatricCariogramTab } from "./PediatricCariogramTab";
+import { PediatricResorptionTab } from "./PediatricResorptionTab";
 import "./odontogram.css";
 import "./pediatricMixedDentition.css";
 
 const UPPER_PRIMARY_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 const LOWER_PRIMARY_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+
+export interface PediatricAgePreset {
+	readonly id: "primary" | "early_mixed" | "late_mixed";
+	readonly labelRu: string;
+	readonly ageRangeRu: string;
+	readonly targetAge: number;
+	readonly descriptionRu: string;
+	readonly teethSummaryRu: string;
+}
+
+export const PEDIATRIC_AGE_PRESETS: readonly PediatricAgePreset[] = [
+	{
+		id: "primary",
+		labelRu: "Временный прикус",
+		ageRangeRu: "3–5 лет",
+		targetAge: 4.5,
+		descriptionRu: "Все 20 молочных зубов интактны (51–85), физиологическая норма без постоянных моляров",
+		teethSummaryRu: "20 молочных зубов (51–85)",
+	},
+	{
+		id: "early_mixed",
+		labelRu: "Ранний сменный",
+		ageRangeRu: "6–8 лет",
+		targetAge: 7.0,
+		descriptionRu: "Смена резцов и прорезывание первых постоянных моляров (16, 26, 36, 46)",
+		teethSummaryRu: "Резцы 11..42 + 1-е моляры (16, 26, 36, 46)",
+	},
+	{
+		id: "late_mixed",
+		labelRu: "Поздний сменный",
+		ageRangeRu: "9–12 лет",
+		targetAge: 10.5,
+		descriptionRu: "Смена клыков и премоляров, подготовка ко 2-м постоянным молярам (17, 27, 37, 47)",
+		teethSummaryRu: "Клыки 13..43 + премоляры 14..45",
+	},
+];
 
 export interface PediatricMixedDentitionModalProps {
 	isOpen: boolean;
@@ -66,8 +103,11 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 		[selectedAge],
 	);
 
-	// 12-column mixed dentition arch models (unsevered anatomical 12 columns per jaw)
-	const upperRow12 = useMemo(() => {
+	// First permanent molars erupt at age ~6 years
+	const hasFirstPermanentMolars = selectedAge >= 6.0;
+
+	// Anatomical dental arch models (10 primary columns for 3–5 years, 12 columns for 6–12 years)
+	const upperRow = useMemo(() => {
 		const pairs: Array<{ primary: number; permanent: number }> = [
 			{ primary: 55, permanent: 15 },
 			{ primary: 54, permanent: 14 },
@@ -84,10 +124,10 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			const st = timelineAnalysis.toothStatuses.find((t) => t.predecessorPrimaryFdi === primary);
 			return st?.status === "future_permanent" ? permanent : primary;
 		});
-		return [16, ...mid, 26];
-	}, [timelineAnalysis.toothStatuses]);
+		return hasFirstPermanentMolars ? [16, ...mid, 26] : mid;
+	}, [hasFirstPermanentMolars, timelineAnalysis.toothStatuses]);
 
-	const lowerRow12 = useMemo(() => {
+	const lowerRow = useMemo(() => {
 		const pairs: Array<{ primary: number; permanent: number }> = [
 			{ primary: 85, permanent: 45 },
 			{ primary: 84, permanent: 44 },
@@ -104,8 +144,8 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			const st = timelineAnalysis.toothStatuses.find((t) => t.predecessorPrimaryFdi === primary);
 			return st?.status === "future_permanent" ? permanent : primary;
 		});
-		return [46, ...mid, 36];
-	}, [timelineAnalysis.toothStatuses]);
+		return hasFirstPermanentMolars ? [46, ...mid, 36] : mid;
+	}, [hasFirstPermanentMolars, timelineAnalysis.toothStatuses]);
 
 	// 2. Cariogram State
 	const [cariogramInput, setCariogramInput] = useState<CariogramInput>(DEFAULT_CARIOGRAM_INPUT);
@@ -377,13 +417,13 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					{activeTab === "timeline" && (
 						<div className="space-y-6 animate-in fade-in duration-200">
 							{/* Age Slider & Preset Bar */}
-							<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
+							<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 space-y-4">
 								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 									<div>
 										<span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--teal,#0d9488)]">
 											Калькулятор смены зубов
 										</span>
-										<h3 className="text-base sm:text-lg font-black text-[var(--odontogram-ink,var(--ink,#0f172a))]">
+										<h3 className="text-base sm:text-lg font-black text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100">
 											Возраст ребенка:{" "}
 											<span className="text-[var(--teal,#0d9488)] font-bold">
 												{selectedAge.toFixed(1)} лет ({Math.round(selectedAge * 12)} мес.)
@@ -398,11 +438,81 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 								</div>
 
-								{/* Range Slider */}
+								{/* Clinical Age Presets Bar (3-5 years, 6-8 years, 9-12 years) */}
 								<div className="space-y-2">
+									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
+										Клинические возрастные пресеты (Мандат 8e &amp; 8k — норма в 1 клик):
+									</div>
+									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+										{PEDIATRIC_AGE_PRESETS.map((preset) => {
+											const isSelected =
+												(preset.id === "primary" && selectedAge < 5.8) ||
+												(preset.id === "early_mixed" && selectedAge >= 5.8 && selectedAge < 8.5) ||
+												(preset.id === "late_mixed" && selectedAge >= 8.5);
+											return (
+												<div
+													key={preset.id}
+													onClick={() => setSelectedAge(preset.targetAge)}
+													className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
+														isSelected
+															? "border-teal-600 bg-teal-500/15 dark:bg-teal-950/30 shadow-sm ring-2 ring-teal-500/20"
+															: "border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-800"
+													}`}
+												>
+													<div>
+														<div className="flex items-center justify-between gap-1 mb-1">
+															<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100">
+																{preset.labelRu}
+															</span>
+															<span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-teal-500/15 text-teal-700 dark:text-teal-300">
+																{preset.ageRangeRu}
+															</span>
+														</div>
+														<p className="text-xs text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 line-clamp-2 font-medium">
+															{preset.descriptionRu}
+														</p>
+													</div>
+
+													<div className="mt-2.5 pt-2 border-t border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))]/60 dark:border-slate-800 flex items-center justify-between gap-2">
+														<span className="text-[11px] font-mono font-bold text-teal-700 dark:text-teal-300">
+															{preset.targetAge.toFixed(1)} лет
+														</span>
+														{onApplyAgeArch && (
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation();
+																	setSelectedAge(preset.targetAge);
+																	const analysis = calculateEruptionTimelineByAge(preset.targetAge);
+																	onApplyAgeArch([
+																		...analysis.expectedUpperArchTeeth,
+																		...analysis.expectedLowerArchTeeth,
+																	]);
+																	showToast(
+																		`Пресет «${preset.labelRu}» (${preset.ageRangeRu}) успешно применен к одонтограмме!`,
+																		"success",
+																		3000,
+																	);
+																}}
+																className="min-h-[36px] px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[11px] sm:text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1 shadow-xs"
+																title={`Применить формулу «${preset.labelRu}» в 1 клик`}
+															>
+																<Sparkles className="w-3.5 h-3.5 shrink-0" />
+																<span>Применить</span>
+															</button>
+														)}
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+
+								{/* Range Slider (Expanded from 3.0 to 13.5 years) */}
+								<div className="space-y-2 pt-2">
 									<input
 										type="range"
-										min="5.0"
+										min="3.0"
 										max="13.5"
 										step="0.1"
 										value={selectedAge}
@@ -411,10 +521,10 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 										aria-label="Возраст ребенка для расчета смены прикуса"
 									/>
 									<div className="flex justify-between text-[11px] sm:text-xs md:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-mono font-bold select-none">
-										<span>5.0<span className="hidden sm:inline font-normal"> лет</span></span>
+										<span>3.0<span className="hidden sm:inline font-normal"> (Временный)</span></span>
 										<span>6.0<span className="hidden sm:inline font-normal"> (1-е мол.)</span></span>
 										<span>7.5<span className="hidden sm:inline font-normal"> (Резцы)</span></span>
-										<span>9.0<span className="hidden sm:inline font-normal"> (Премол.)</span></span>
+										<span>9.5<span className="hidden sm:inline font-normal"> (Премол.)</span></span>
 										<span>12.0<span className="hidden sm:inline font-normal"> (2-е мол.)</span></span>
 										<span>13.5<span className="hidden sm:inline font-normal"> лет</span></span>
 									</div>
@@ -426,22 +536,24 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							</div>
 
 							{/* Dental Arch Visual Preview */}
-							<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
+							<div className="p-4 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 space-y-4">
 								<div className="flex items-center justify-between">
-									<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+									<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
 										Ожидаемая зубная формула в {selectedAge.toFixed(1)} лет
 									</h4>
 								</div>
 
 								<div className="w-full overflow-x-auto touch-pan-x snap-x pb-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 									<div className="min-w-[640px] space-y-4">
-										{/* Upper Arch 12-column grid */}
+										{/* Upper Arch */}
 										<div className="space-y-2">
 											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
-												Верхняя челюсть (12 зубов):
+												{hasFirstPermanentMolars
+													? "Верхняя челюсть (12 зубов, включая 1-е моляры):"
+													: "Верхняя челюсть (10 молочных зубов):"}
 											</div>
-											<div className="grid grid-cols-12 gap-2">
-												{upperRow12.map((num) => {
+											<div className={`grid gap-2 ${hasFirstPermanentMolars ? "grid-cols-12" : "grid-cols-10"}`}>
+												{upperRow.map((num) => {
 													const isPrim = isPrimaryTooth(num);
 													const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
 													return (
@@ -466,13 +578,15 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 											</div>
 										</div>
 
-										{/* Lower Arch 12-column grid */}
+										{/* Lower Arch */}
 										<div className="space-y-2">
 											<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
-												Нижняя челюсть (12 зубов):
+												{hasFirstPermanentMolars
+													? "Нижняя челюсть (12 зубов, включая 1-е моляры):"
+													: "Нижняя челюсть (10 молочных зубов):"}
 											</div>
-											<div className="grid grid-cols-12 gap-2">
-												{lowerRow12.map((num) => {
+											<div className={`grid gap-2 ${hasFirstPermanentMolars ? "grid-cols-12" : "grid-cols-10"}`}>
+												{lowerRow.map((num) => {
 													const isPrim = isPrimaryTooth(num);
 													const isErupting = timelineAnalysis.activelyEruptingPermanentTeeth.includes(num);
 													return (
@@ -642,156 +756,18 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					{/* TAB 3: PHYSIOLOGICAL ROOT RESORPTION STAGES (0–100%) */}
 					{/* ------------------------------------------------------------------------- */}
 					{activeTab === "resorption" && (
-						<div className="space-y-6 animate-in fade-in duration-200">
-							<div className="p-5 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-3">
-								<h3 className="text-base sm:text-lg font-black text-[var(--odontogram-ink,var(--ink,#0f172a))]">
-									Клиническая шкала физиологической резорбции корней молочных зубов
-								</h3>
-								<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] leading-relaxed font-medium">
-									Оценка степени рассасывания корней под давлением постоянного зачатка. Используется для планирования сроков удаления по ортодонтическим показаниям и контроля физиологической смены.
-								</p>
-							</div>
-
-							{/* 5 Stages Grid - Large Tactile Selector Cards */}
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-								{([0, 25, 50, 75, 100] as const).map((stage) => {
-									const def = RESORPTION_STAGE_DEFINITIONS[stage];
-									const isSelected = selectedResorptionStage === stage;
-									return (
-										<button
-											key={stage}
-											type="button"
-											onClick={() => {
-												setSelectedResorptionStage(stage);
-												if (onUpdateToothResorption) {
-													onUpdateToothResorption(selectedPrimaryTooth, stage);
-												}
-											}}
-											className={`min-h-[120px] p-4 rounded-2xl border-2 flex flex-col justify-between text-left transition-all cursor-pointer select-none active:scale-[0.98] ${
-												isSelected
-													? "border-teal-600 bg-teal-500/15 shadow-lg shadow-teal-500/10 ring-2 ring-teal-500/30"
-													: "border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))]"
-											}`}
-										>
-											<div className="flex items-center justify-between w-full">
-												<span
-													className="px-3 py-1 rounded-xl text-xs sm:text-sm font-black"
-													style={{ backgroundColor: def.badgeBg, color: def.badgeColor }}
-												>
-													{stage}%
-												</span>
-												<span className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-													{def.expectedMobilityDegree} ст.
-												</span>
-											</div>
-
-											<div className="my-1.5">
-												<div className="text-sm font-black text-[var(--odontogram-ink,var(--ink,#0f172a))] leading-snug">
-													{def.nameRu}
-												</div>
-												<div className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] line-clamp-2 mt-1 font-medium">
-													{def.clinicalSignRu}
-												</div>
-											</div>
-
-											<div className="text-xs sm:text-sm font-mono font-bold text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
-												{isSelected ? <Check className="w-4 h-4 shrink-0" /> : null}
-												<span>{isSelected ? "Выбрано" : "Выбрать"}</span>
-											</div>
-										</button>
-									);
-								})}
-							</div>
-
-							{/* Primary Teeth Tactile Grid Selector */}
-							<div className="p-5 sm:p-6 rounded-2xl bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] space-y-4">
-								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-									<div>
-										<h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-											Выберите молочный зуб для применения резорбции
-										</h4>
-										<p className="text-xs sm:text-sm text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium mt-0.5">
-											Текущий выбранный: <strong className="text-teal-600 dark:text-teal-400 font-mono text-sm sm:text-base font-black">Зуб {selectedPrimaryTooth}</strong> (преемник: постоянный {PRIMARY_TO_PERMANENT_SUCCESSOR_MAP[selectedPrimaryTooth]})
-										</p>
-									</div>
-
-									{onUpdateToothResorption && (
-										<button
-											type="button"
-											onClick={() => {
-												onUpdateToothResorption(
-													selectedPrimaryTooth,
-													selectedResorptionStage,
-												);
-											}}
-											className="min-h-[44px] px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs sm:text-sm font-bold shadow-md shadow-teal-600/20 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 shrink-0"
-										>
-											<Sparkles className="w-4 h-4 shrink-0" />
-											<span>Применить {selectedResorptionStage}% к зубу {selectedPrimaryTooth}</span>
-										</button>
-									)}
-								</div>
-
-								{/* Upper Arch Teeth Buttons */}
-								<div className="space-y-2">
-									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-										Верхний молочный ряд (55–65):
-									</div>
-									<div className="flex flex-wrap gap-2.5">
-										{UPPER_PRIMARY_TEETH.map((num) => {
-											const isSelected = selectedPrimaryTooth === num;
-											return (
-												<button
-													key={num}
-													type="button"
-													onClick={() => setSelectedPrimaryTooth(num)}
-													className={`min-w-[52px] min-h-[48px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center select-none ${
-														isSelected
-															? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20 scale-105"
-															: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-700/80"
-													}`}
-												>
-													<span>{num}</span>
-													<span className="text-xs font-bold opacity-80 font-sans">
-														→{PRIMARY_TO_PERMANENT_SUCCESSOR_MAP[num]}
-													</span>
-												</button>
-											);
-										})}
-									</div>
-								</div>
-
-								{/* Lower Arch Teeth Buttons */}
-								<div className="space-y-2">
-									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
-										Нижний молочный ряд (85–75):
-									</div>
-									<div className="flex flex-wrap gap-2.5">
-										{LOWER_PRIMARY_TEETH.map((num) => {
-											const isSelected = selectedPrimaryTooth === num;
-											return (
-												<button
-													key={num}
-													type="button"
-													onClick={() => setSelectedPrimaryTooth(num)}
-													className={`min-w-[52px] min-h-[48px] px-3.5 py-2 rounded-xl text-sm font-mono font-black border transition-all cursor-pointer active:scale-95 flex flex-col items-center justify-center select-none ${
-														isSelected
-															? "bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/20 scale-105"
-															: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-800/90 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-200 border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-700 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-700/80"
-													}`}
-												>
-													<span>{num}</span>
-													<span className="text-xs font-bold opacity-80 font-sans">
-														→{PRIMARY_TO_PERMANENT_SUCCESSOR_MAP[num]}
-													</span>
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							</div>
-						</div>
+						<PediatricResorptionTab
+							selectedPrimaryTooth={selectedPrimaryTooth}
+							onSelectPrimaryTooth={setSelectedPrimaryTooth}
+							selectedResorptionStage={selectedResorptionStage}
+							onSelectResorptionStage={setSelectedResorptionStage}
+							onUpdateToothResorption={onUpdateToothResorption}
+							onBatchUpdateResorption={onBatchUpdateResorption}
+							patientAgeYears={selectedAge}
+							onAgeChange={setSelectedAge}
+						/>
 					)}
+
 
 					{/* ------------------------------------------------------------------------- */}
 					{/* TAB 4: FRANKL BEHAVIOR SCALE & PARENT RECOMMENDATIONS */}
