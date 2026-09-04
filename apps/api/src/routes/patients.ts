@@ -466,6 +466,7 @@ export function patientArchiveRowsBlockBooking(
 }
 
 import {
+	createPatientInDb,
 	createPatientSafeInDb,
 	getPatientByIdFromDb,
 	getPatientsFromDb,
@@ -843,6 +844,10 @@ export async function registerPatientRoutes(app: FastifyInstance) {
 
 			if (safeResult.type === "duplicate") {
 				const dup = safeResult.duplicate as PatientDuplicateResult | null;
+				if (rawBody.allowDuplicate === true || (input as { allowDuplicate?: boolean }).allowDuplicate === true) {
+					const created = await createPatientInDb(orgId, inputWithSnils);
+					return reply.code(201).send(patientSchema.parse(created));
+				}
 				if (dup?.isNameOnlyDuplicate) {
 					return sendPatientNameOnlyDuplicate(reply, dup.candidate);
 				}

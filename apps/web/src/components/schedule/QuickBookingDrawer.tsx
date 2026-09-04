@@ -540,6 +540,22 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			});
 
 			if (!res.ok) {
+				if (res.status === 409) {
+					const dupData = (await res.json().catch(() => null)) as {
+						existingPatientId?: string;
+						existingPatient?: { id: string; fullName: string };
+					} | null;
+					if (dupData?.existingPatientId) {
+						const match = (dashboard?.patients ?? []).find((p) => p.id === dupData.existingPatientId);
+						if (match) {
+							selectPatient(match);
+							showToast(`Найден существующий пациент «${match.fullName}», выбран для записи`, "info", 4000);
+							return;
+						}
+					}
+					showToast("Пациент с похожими данными уже зарегистрирован в клинике", "warning", 4000);
+					return;
+				}
 				showToast("Не удалось создать пациента", "error");
 				return;
 			}
@@ -618,6 +634,26 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									],
 								});
 							}
+						}
+					} else if (res.status === 409) {
+						const dupData = (await res.json().catch(() => null)) as {
+							existingPatientId?: string;
+							existingPatient?: { id: string; fullName: string };
+						} | null;
+						if (dupData?.existingPatientId) {
+							activePatientId = dupData.existingPatientId;
+							setPatientId(dupData.existingPatientId);
+							const match = (dashboard?.patients ?? []).find(
+								(p) => p.id === dupData.existingPatientId,
+							);
+							if (match) {
+								setSelectedPatient(match);
+							}
+							showToast(
+								`Найден существующий пациент «${dupData.existingPatient?.fullName || candidateName}», выбран для записи`,
+								"info",
+								4000,
+							);
 						}
 					}
 				} catch (err) {

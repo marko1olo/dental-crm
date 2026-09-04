@@ -25,6 +25,7 @@ import {
 	Stethoscope,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import {
 	type DoctorShiftAppointment,
@@ -51,6 +52,7 @@ export interface DoctorDesktopHeaderProps {
 	readonly onOpenCockpitModal?: (() => void) | undefined;
 	readonly onOpenCockpit?: (() => void) | undefined;
 	readonly onInitiateBatchSign?: (() => void) | undefined;
+	readonly onEmergencyVisit?: (() => void) | undefined;
 }
 
 export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
@@ -68,6 +70,7 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 	onOpenCockpitModal,
 	onOpenCockpit,
 	onInitiateBatchSign,
+	onEmergencyVisit,
 }) => {
 	const effectiveCabinetName = cabinetName || chairName || "Кабинет № 1";
 	const [isCockpitOpen, setIsCockpitOpen] = useState<boolean>(false);
@@ -263,8 +266,20 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 						</div>
 					</div>
 				) : (
-					<div className="flex items-center justify-center text-xs text-[var(--ink-2,var(--muted,#cbd5e1))] px-2">
+					<div className="flex items-center gap-2 text-xs text-[var(--ink-2,var(--muted,#cbd5e1))] px-2 shrink-0">
 						<span>Нет активного приема в кресле</span>
+						{onEmergencyVisit && (
+							<button
+								type="button"
+								onClick={onEmergencyVisit}
+								className="min-h-[28px] px-2.5 py-0.5 rounded-lg bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-300 border border-rose-500/40 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer touch-manipulation animate-pulse"
+								title="Начать экстренный приём пациента с острой болью (CITO)"
+								data-testid="header-btn-emergency-cito"
+							>
+								<Zap size={12} className="text-rose-600 dark:text-rose-400 shrink-0" />
+								<span>Экстренный приём CITO</span>
+							</button>
+						)}
 					</div>
 				)}
 

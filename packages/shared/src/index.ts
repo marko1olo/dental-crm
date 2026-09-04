@@ -6768,6 +6768,7 @@ export const createPatientSchema = z.object({
 	administrativeProfile: patientAdministrativeProfileSchema
 		.nullable()
 		.optional(),
+	allowDuplicate: z.boolean().optional(),
 });
 export type CreatePatientInput = z.infer<typeof createPatientSchema>;
 
