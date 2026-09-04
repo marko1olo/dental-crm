@@ -55,6 +55,14 @@ describe("inputSanitation — медицинские форматы и рекв�
 				"Свидетельство о рождении I-МЮ №123456",
 			);
 			assert.equal(
+				formatRussianPassport("II-МЮ 654321"),
+				"II-МЮ 654321",
+			);
+			assert.equal(
+				formatRussianPassport("III-ЕР № 123456"),
+				"III-ЕР № 123456",
+			);
+			assert.equal(
 				formatRussianPassport("Загранпаспорт 51 №1234567"),
 				"Загранпаспорт 51 №1234567",
 			);
