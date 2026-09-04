@@ -1,9 +1,15 @@
 import { PEDIATRIC_MINOR_CONSENT_PRESET } from "@dental/shared";
 import React from "react";
-import { Baby } from "lucide-react";
+import { Baby, FileText, Printer } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
+import { usePatientStore } from "../../../store/patientStore";
+import { showToast } from "../../GlobalToast";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import type { DocumentVisitHints } from "./documentFormTypes";
+import {
+	generateMinorConsentPrintHtml,
+	printHtmlViaWindowOrIframe,
+} from "../../consents/consentTemplates.js";
 
 export interface MinorLegalRepresentativeConsentFormProps extends DocumentVisitHints {
 	minorRepresentativeNameValue?: () => string;
@@ -131,6 +137,11 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 			(state) => state.setMinorConsentAgeExplanation,
 		);
 
+		const patientCoreDraft = usePatientStore((state) => state.patientCoreDraft);
+		const patientAdministrativeProfileDraft = usePatientStore(
+			(state) => state.patientAdministrativeProfileDraft,
+		);
+
 		const applyPediatricPreset = () => {
 			setMinorConsentInterventionScope(PEDIATRIC_MINOR_CONSENT_PRESET.interventionScope);
 			setMinorConsentDiagnosisOrIndication(PEDIATRIC_MINOR_CONSENT_PRESET.diagnosisOrIndication);
@@ -138,20 +149,144 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 			setMinorConsentAlternatives(PEDIATRIC_MINOR_CONSENT_PRESET.alternativesExplained.join("\n"));
 		};
 
+		const handlePrintMinorConsent = () => {
+			const repName =
+				minorRepresentativeName ||
+				minorRepresentativeNameValue?.() ||
+				patientAdministrativeProfileDraft.legalRepresentativeFullName ||
+				"________________________________________";
+			const repRel =
+				minorRepresentativeRelation ||
+				patientAdministrativeProfileDraft.legalRepresentativeRelationship ||
+				"мать / отец / опекун / законный представитель";
+			const repDoc =
+				minorRepresentativeDocument ||
+				patientAdministrativeProfileDraft.legalRepresentativeIdentityDocument ||
+				"паспорт серия ______ № ________ выдан ____________________";
+			const repPhone =
+				minorRepresentativePhone ||
+				minorRepresentativePhoneValue?.() ||
+				patientAdministrativeProfileDraft.legalRepresentativePhone ||
+				patientCoreDraft.phone ||
+				"+7 (___) ___-__-__";
+
+			const childName =
+				minorConsentPatientFullName ||
+				minorConsentPatientFullNameValue?.() ||
+				patientCoreDraft.fullName ||
+				"________________________________________";
+			const childBirth =
+				minorConsentPatientBirthDate ||
+				minorConsentPatientBirthDateValue?.() ||
+				patientCoreDraft.birthDate ||
+				"«___» _________ _____ г.";
+
+			const html = generateMinorConsentPrintHtml({
+				representativeName: repName,
+				representativeRelation: repRel,
+				representativeDocument: repDoc,
+				representativePhone: repPhone,
+				childName: childName,
+				childBirthDate: childBirth,
+				doctorName:
+					minorConsentDoctorFullName ||
+					activeDoctorFullName ||
+					"Детский врач-стоматолог клиники",
+				interventionScope:
+					minorConsentInterventionScope ||
+					minorConsentInterventionScopeValue?.() ||
+					"Детский стоматологический осмотр, диагностика, адаптационный протокол, лечение",
+				diagnosisOrIndication:
+					minorConsentDiagnosisOrIndication ||
+					minorConsentDiagnosisOrIndicationValue?.() ||
+					"Санация полости рта ребенка, профилактика и лечение кариеса",
+				risks: minorConsentRisks,
+				alternatives: minorConsentAlternatives,
+				date: minorConsentSignedAt || new Date().toLocaleDateString("ru-RU"),
+				isBlank: false,
+			});
+			printHtmlViaWindowOrIframe(html);
+			showToast(
+				"Бланк согласия законного представителя отправлен на печать (А4)",
+				"info",
+				3000,
+			);
+		};
+
+		const handlePrintBlankMinorConsent = () => {
+			const html = generateMinorConsentPrintHtml({
+				isBlank: true,
+				date: "«___» _________ 20___ г.",
+			});
+			printHtmlViaWindowOrIframe(html);
+			showToast(
+				"Чистый бланк согласия представителя со строками «________» отправлен на печать",
+				"info",
+				3000,
+			);
+		};
+
 		return (
 			<DocumentPayloadCard
 				title="Согласие законного представителя (педиатрия)"
 				description="Информированное согласие на стоматологическое лечение несовершеннолетнего гражданина РФ до 15 лет (до 18 лет при наркологических расстройствах)."
 			>
-				<div style={{ marginBottom: "14px" }}>
+				<div
+					style={{
+						marginBottom: "14px",
+						display: "flex",
+						gap: "8px",
+						flexWrap: "wrap",
+						alignItems: "center",
+					}}
+				>
 					<button
 						type="button"
-						className="secondary-button inline-flex items-center gap-1.5"
-						style={{ minHeight: "44px", fontSize: "12px", padding: "8px 14px", borderRadius: "12px" }}
+						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
+						style={{
+							minHeight: "44px",
+							fontSize: "12px",
+							padding: "8px 14px",
+							borderRadius: "12px",
+						}}
 						onClick={applyPediatricPreset}
 					>
 						<Baby size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span>Заполнить стандартный протокол детского стоматологического лечения (323-ФЗ)</span>
+						<span>Заполнить стандартный протокол детского лечения (323-ФЗ)</span>
+					</button>
+
+					<button
+						type="button"
+						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
+						style={{
+							minHeight: "44px",
+							fontSize: "12px",
+							padding: "8px 14px",
+							borderRadius: "12px",
+						}}
+						data-testid="btn-print-minor-consent"
+						onClick={handlePrintMinorConsent}
+						title="Печать текущего заполненного согласия законного представителя на принтер (А4)"
+					>
+						<Printer size={14} className="text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
+						<span>Печать согласия представителя (1 клик)</span>
+					</button>
+
+					<button
+						type="button"
+						className="secondary-button inline-flex items-center gap-1.5 font-semibold"
+						style={{
+							minHeight: "44px",
+							fontSize: "12px",
+							padding: "8px 14px",
+							borderRadius: "12px",
+						}}
+						data-testid="btn-print-blank-minor-consent"
+						onClick={handlePrintBlankMinorConsent}
+						title="Печать чистого бланка согласия представителя со строками «________» для ручного заполнения"
+					>
+						<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<span>Печать чистого бланка («________»)</span>
 					</button>
 				</div>
 

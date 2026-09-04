@@ -30,6 +30,7 @@ import {
 	type ConsentTemplate,
 	type ConsentTemplateKey,
 	getAllConsentTemplates,
+	getBlankConsentSubstitutionContext,
 	getConsentTemplate,
 	renderConsentTemplate,
 	substitutePlaceholders,
@@ -43,7 +44,9 @@ import {
 	drawSmoothStrokeOnContext,
 	exportSignatureToSvg,
 	generateConsentIntegrityHash,
+	generatePaperSignatureSvg,
 	isSignatureEmpty,
+	PAPER_SIGNATURE_FALLBACK_PNG,
 	type SignaturePoint,
 	type SignatureStroke,
 	type SignatureVectorData,
@@ -98,9 +101,12 @@ export interface SignedConsentPayload {
 	vectorData: SignatureVectorData;
 	integrityHash: string;
 	signedAt: string;
-	verificationMethod: "tablet_stylus" | "sms_otp";
+	verificationMethod: "tablet_stylus" | "sms_otp" | "paper_physical";
 	smsOtpCode?: string | null;
 	attachedToForm043u: boolean;
+	paperOriginalStored?: boolean;
+	statusText?: string;
+	note?: string;
 }
 
 const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
@@ -131,7 +137,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	onConsentConfirmed,
 }) => {
 	const [activeKey, setActiveKey] = useState<ConsentTemplateKey>(initialTemplateKey);
-	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp">("tablet_stylus");
+	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp" | "paper_physical">("paper_physical");
+	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
 	
 	// Точечное редактирование контекста плейсхолдеров
 	const [customDiagnosis, setCustomDiagnosis] = useState<string>(diagnosisIcd || "");
@@ -157,6 +164,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	useEffect(() => {
 		if (isOpen) {
 			setActiveKey(initialTemplateKey);
+			setVerificationMethod("paper_physical");
+			setIsPrintingBlank(false);
 			setCustomDiagnosis(diagnosisIcd || "");
 			setCustomTeeth(toothNumbers || "");
 			setStrokes([]);
@@ -198,7 +207,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			clinicName: clinicName || clinicLegalName,
 			clinicLegalName: clinicLegalName || clinicName,
 			clinicAddress: clinicAddress || "г. Москва, ул. Клиническая, д. 10",
-			clinicOgrn: clinicOgrn || "1234567890123",
+			clinicOgrn: clinicOgrn || "1217700123456",
 			licenseNumber: licenseNumber || "ЛО41-01137-77/00123456",
 			diagnosisIcd: customDiagnosis || diagnosisIcd || "K02.1 Кариес дентина",
 			toothNumbers: customTeeth || toothNumbers || "1.6, 1.7",
@@ -221,13 +230,26 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		toothNumbers,
 	]);
 
+	// Контекст чистого бланка для печати со строками «________»
+	const printBlankContext = useMemo<ConsentSubstitutionContext>(() => {
+		return getBlankConsentSubstitutionContext({
+			clinicName: clinicName ?? null,
+			clinicLegalName: clinicLegalName ?? null,
+			clinicAddress: clinicAddress ?? null,
+			clinicOgrn: clinicOgrn ?? null,
+			licenseNumber: licenseNumber ?? null,
+		});
+	}, [clinicName, clinicLegalName, clinicAddress, clinicOgrn, licenseNumber]);
+
+	const effectiveContext = isPrintingBlank ? printBlankContext : substitutionContext;
+
 	const currentTemplate = useMemo<ConsentTemplate>(() => {
 		return getConsentTemplate(activeKey);
 	}, [activeKey]);
 
 	const rendered = useMemo(() => {
-		return renderConsentTemplate(currentTemplate, substitutionContext);
-	}, [currentTemplate, substitutionContext]);
+		return renderConsentTemplate(currentTemplate, effectiveContext);
+	}, [currentTemplate, effectiveContext]);
 
 	// Перерисовка Canvas при изменении strokes
 	const redrawCanvas = useCallback(() => {
@@ -427,13 +449,27 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		setTimeout(() => setCopiedHash(false), 2000);
 	};
 
-	// Печать документа А4
+	// Печать документа А4 (заполненный бланк)
 	const handlePrint = () => {
 		window.print();
 	};
 
-	// Проверка валидности подписания
+	// Печать чистого бланка ИДС со строками «________» для ручного заполнения пациентом до приема без 403-ошибок
+	const handlePrintBlank = () => {
+		setIsPrintingBlank(true);
+		setTimeout(() => {
+			window.print();
+			setTimeout(() => {
+				setIsPrintingBlank(false);
+			}, 600);
+		}, 80);
+	};
+
+	// Проверка валидности подписания (для бумажного носителя ВСЕГДА true — 0 блокировок)
 	const canSign = useMemo(() => {
+		if (verificationMethod === "paper_physical") {
+			return true;
+		}
 		if (verificationMethod === "tablet_stylus") {
 			return !isSignatureEmpty(strokes, 4);
 		}
@@ -443,31 +479,45 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		return false;
 	}, [verificationMethod, strokes, otpVerified]);
 
-	// Подписание и подтверждение
-	const handleConfirmSign = () => {
-		if (!canSign || isSubmitting) return;
+	// Подписание и подтверждение (включая мгновенный 1-клик для бумаги)
+	const handleConfirmSign = (forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => {
+		const method = forcedMethod || verificationMethod;
+		if (method !== "paper_physical" && !canSign) return;
+		if (isSubmitting) return;
 		setIsSubmitting(true);
 
 		try {
 			const canvas = canvasRef.current;
-			const bounds = calculateBoundingBox(strokes);
-			const svg = exportSignatureToSvg(
-				strokes,
-				bounds.width > 0 ? bounds.width + 20 : 320,
-				bounds.height > 0 ? bounds.height + 20 : 160,
-				{ backgroundColor: "#ffffff" },
-			);
-
+			let svg = "";
 			let pngBase64 = "";
-			if (canvas) {
-				pngBase64 = canvas.toDataURL("image/png");
+
+			if (method === "paper_physical") {
+				svg = generatePaperSignatureSvg({
+					date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
+					clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
+				});
+				pngBase64 = PAPER_SIGNATURE_FALLBACK_PNG;
+			} else {
+				const bounds = calculateBoundingBox(strokes);
+				svg = exportSignatureToSvg(
+					strokes,
+					bounds.width > 0 ? bounds.width + 20 : 320,
+					bounds.height > 0 ? bounds.height + 20 : 160,
+					{ backgroundColor: "#ffffff" },
+				);
+				if (canvas) {
+					pngBase64 = canvas.toDataURL("image/png");
+				}
 			}
 
 			const vectorData: SignatureVectorData = {
-				strokes,
-				bounds,
+				strokes: method === "paper_physical" ? [] : strokes,
+				bounds:
+					method === "paper_physical"
+						? { minX: 0, minY: 0, maxX: 400, maxY: 120, width: 400, height: 120 }
+						: calculateBoundingBox(strokes),
 				timestamp: Date.now(),
-				pointCount: strokes.reduce((acc, s) => acc + s.points.length, 0),
+				pointCount: method === "paper_physical" ? 0 : strokes.reduce((acc, s) => acc + s.points.length, 0),
 				integrityHash: integrityRecord.hash,
 			};
 
@@ -476,21 +526,26 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				code: currentTemplate.code,
 				title: currentTemplate.title,
 				fullTextContent: rendered.fullTextContent,
-				patientName: substitutionContext.patientName || "Не указан",
-				birthDate: substitutionContext.birthDate || "Не указана",
-				passport: substitutionContext.passport || "Не указан",
-				doctorName: substitutionContext.doctorName || "Не указан",
-				clinicName: substitutionContext.clinicName || "ООО «ДЕНТЕ»",
-				diagnosisIcd: substitutionContext.diagnosisIcd || "",
-				toothNumbers: substitutionContext.toothNumbers || "",
+				patientName: effectiveContext.patientName || "Не указан",
+				birthDate: effectiveContext.birthDate || "Не указана",
+				passport: effectiveContext.passport || "Не указан",
+				doctorName: effectiveContext.doctorName || "Не указан",
+				clinicName: effectiveContext.clinicName || "ООО «ДЕНТЕ»",
+				diagnosisIcd: effectiveContext.diagnosisIcd || "",
+				toothNumbers: effectiveContext.toothNumbers || "",
 				signatureSvg: svg,
 				signaturePngBase64: pngBase64,
 				vectorData,
 				integrityHash: integrityRecord.hash,
 				signedAt: new Date().toISOString(),
-				verificationMethod,
-				smsOtpCode: verificationMethod === "sms_otp" ? otpDigits.join("") : null,
+				verificationMethod: method,
+				smsOtpCode: method === "sms_otp" ? otpDigits.join("") : null,
 				attachedToForm043u: true,
+				paperOriginalStored: method === "paper_physical",
+				statusText:
+					method === "paper_physical"
+						? "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)"
+						: "Электронная подпись подтверждена",
 			};
 
 			if (onConsentSigned) {
@@ -501,7 +556,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				onConsentConfirmed({
 					consentType: currentTemplate.code,
 					intervention: currentTemplate.title,
-					toothOrArea: substitutionContext.toothNumbers || "Область лечения",
+					toothOrArea: effectiveContext.toothNumbers || "Область лечения",
 					confirmedAt: new Date().toISOString(),
 					integrityHash: integrityRecord.hash,
 				});
@@ -642,14 +697,93 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								</ul>
 							</section>
 						)}
+
+						{/* Блок подписей сторон (для печати бумажного бланка и подшивки в форму 043/у) */}
+						<div
+							className="consent-print-signatures-block"
+							style={{
+								marginTop: "1.5rem",
+								paddingTop: "1rem",
+								borderTop: "1px solid #cbd5e1",
+								display: "flex",
+								flexDirection: "column",
+								gap: "0.85rem",
+							}}
+						>
+							<div
+								style={{
+									display: "grid",
+									gridTemplateColumns: "1fr 1fr",
+									gap: "1.5rem",
+								}}
+							>
+								<div>
+									<div
+										style={{
+											fontSize: "11px",
+											fontWeight: "bold",
+											textTransform: "uppercase",
+											color: "#475569",
+											marginBottom: "4px",
+										}}
+									>
+										Пациент (законный представитель):
+									</div>
+									<div style={{ fontSize: "12px", color: "#0f172a" }}>
+										Подпись: __________________ / {effectiveContext.patientName || "____________________"} /
+									</div>
+								</div>
+								<div>
+									<div
+										style={{
+											fontSize: "11px",
+											fontWeight: "bold",
+											textTransform: "uppercase",
+											color: "#475569",
+											marginBottom: "4px",
+										}}
+									>
+										Лечащий врач:
+									</div>
+									<div style={{ fontSize: "12px", color: "#0f172a" }}>
+										Подпись: __________________ / {effectiveContext.doctorName || "____________________"} /
+									</div>
+								</div>
+							</div>
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "space-between",
+									fontSize: "11px",
+									color: "#64748b",
+								}}
+							>
+								<span>Дата: {effectiveContext.date || new Date().toLocaleDateString("ru-RU")}</span>
+								<span>Клиника: {effectiveContext.clinicName}</span>
+							</div>
+						</div>
 					</div>
 
 					{/* Выбор метода подписания */}
 					<div className="consent-method-selector">
 						<button
 							type="button"
+							className={`consent-method-card ${verificationMethod === "paper_physical" ? "active" : ""}`}
+							onClick={() => setVerificationMethod("paper_physical")}
+							data-testid="btn-method-paper-physical"
+						>
+							<FileCheck size={22} className="text-[var(--teal,#0d9488)]" />
+							<div>
+								<div className="font-bold text-sm">Бумажный бланк (Ручка / 043/у)</div>
+								<div className="text-xs text-muted">Оригинал подписан пациентом от руки (в 95% клиник РФ)</div>
+							</div>
+						</button>
+
+						<button
+							type="button"
 							className={`consent-method-card ${verificationMethod === "tablet_stylus" ? "active" : ""}`}
 							onClick={() => setVerificationMethod("tablet_stylus")}
+							data-testid="btn-method-tablet-stylus"
 						>
 							<PenTool size={22} className="text-[var(--teal,#0d9488)]" />
 							<div>
@@ -662,6 +796,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							type="button"
 							className={`consent-method-card ${verificationMethod === "sms_otp" ? "active" : ""}`}
 							onClick={() => setVerificationMethod("sms_otp")}
+							data-testid="btn-method-sms-otp"
 						>
 							<Smartphone size={22} className="text-[var(--teal,#0d9488)]" />
 							<div>
@@ -670,6 +805,78 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							</div>
 						</button>
 					</div>
+
+					{/* Подтверждение бумажного подписания (323-ФЗ) */}
+					{verificationMethod === "paper_physical" && (
+						<div
+							className="consent-paper-box"
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								gap: "0.85rem",
+								background: "var(--paper-soft)",
+								border: "1px solid var(--teal, #0d9488)",
+								borderRadius: "var(--radius-lg, 12px)",
+								padding: "1.25rem",
+							}}
+						>
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<ShieldCheck size={22} className="text-[var(--teal,#0d9488)]" />
+									<span className="font-bold text-sm">
+										Подписание на бумажном носителе (323-ФЗ ст. 20)
+									</span>
+								</div>
+								<span className="consent-statutory-badge">
+									Оригинал в карте 043/у
+								</span>
+							</div>
+							<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
+								Пациент ознакомился с текстом согласия и расписался шариковой ручкой на бумажном бланке.
+								Бумажный оригинал подшивается в медицинскую карту пациента формы № 043/у (нормативный срок хранения 25 лет).
+								В электронной карте фиксируется статус согласия с формированием криптографического отпечатка SHA-256.
+							</p>
+							<div className="flex items-center gap-3 pt-1 flex-wrap">
+								<button
+									type="button"
+									className="consent-action-btn primary"
+									data-testid="btn-confirm-paper-signed"
+									onClick={() => handleConfirmSign("paper_physical")}
+									disabled={isSubmitting}
+									style={{
+										minHeight: "44px",
+										fontSize: "14px",
+										fontWeight: "bold",
+										background: "var(--teal, #0d9488)",
+										color: "#ffffff",
+										boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)",
+									}}
+								>
+									<CheckCircle2 size={18} />
+									<span>⚡ Подтвердить подписание на бумаге (1 клик)</span>
+								</button>
+								<button
+									type="button"
+									className="consent-tool-btn"
+									onClick={handlePrint}
+									title="Печать заполненного бланка ИДС на принтер (А4)"
+								>
+									<Printer size={16} />
+									<span>Печать бланка (А4)</span>
+								</button>
+								<button
+									type="button"
+									className="consent-tool-btn"
+									data-testid="btn-print-blank-consent-inline"
+									onClick={handlePrintBlank}
+									title="Печать чистого бланка со строками «________» для ручного заполнения пациентом"
+								>
+									<FileText size={16} />
+									<span>Печать чистого бланка («________»)</span>
+								</button>
+							</div>
+						</div>
+					)}
 
 					{/* Сенсорный холст для подписи */}
 					{verificationMethod === "tablet_stylus" && (
@@ -818,15 +1025,27 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 				{/* Footer */}
 				<footer className="consent-modal-footer">
-					<button
-						type="button"
-						className="consent-action-btn secondary"
-						onClick={handlePrint}
-						title="Печать бумажного бланка А4"
-					>
-						<Printer size={18} />
-						<span>Распечатать (А4)</span>
-					</button>
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							className="consent-action-btn secondary"
+							onClick={handlePrint}
+							title="Печать заполненного бланка ИДС на принтер (А4)"
+						>
+							<Printer size={18} />
+							<span>Печать бланка (А4)</span>
+						</button>
+						<button
+							type="button"
+							className="consent-action-btn secondary"
+							data-testid="btn-print-blank-consent"
+							onClick={handlePrintBlank}
+							title="Печать чистого бланка со строками «________» для ручного заполнения"
+						>
+							<FileText size={18} />
+							<span>Печать чистого бланка («________»)</span>
+						</button>
+					</div>
 
 					<div className="flex items-center gap-3">
 						<button
@@ -840,11 +1059,21 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						<button
 							type="button"
 							className="consent-action-btn primary"
-							onClick={handleConfirmSign}
+							data-testid="btn-confirm-sign"
+							onClick={() => handleConfirmSign()}
 							disabled={!canSign || isSubmitting}
 						>
-							<FileCheck size={18} />
-							<span>Подписать и прикрепить к карте 043/у</span>
+							{verificationMethod === "paper_physical" ? (
+								<>
+									<CheckCircle2 size={18} />
+									<span>⚡ Подтвердить подписание на бумаге (1 клик)</span>
+								</>
+							) : (
+								<>
+									<FileCheck size={18} />
+									<span>Подписать и прикрепить к карте 043/у</span>
+								</>
+							)}
 						</button>
 					</div>
 				</footer>

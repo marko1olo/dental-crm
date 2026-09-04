@@ -568,17 +568,46 @@ export interface ConsentIntegrityPayload {
 		name?: string | null | undefined;
 		passportOrBirth?: string | null | undefined;
 		phone?: string | null | undefined;
-	};
+	} | string;
 	timestamp: string | number;
-	strokes: SignatureStroke[];
-	verificationMethod?: "tablet_stylus" | "sms_otp" | "printed_scan" | undefined;
+	strokes?: SignatureStroke[] | undefined;
+	verificationMethod?: "tablet_stylus" | "sms_otp" | "printed_scan" | "paper_physical" | undefined;
 	smsOtpCode?: string | null | undefined;
 }
 
 /**
+ * Канонический векторный SVG-штамп для подтверждения подписания на бумажном носителе.
+ * Фиксирует статус хранения оригинала в медицинской карте формы № 043/у (323-ФЗ, Приказ № 1051н).
+ */
+export function generatePaperSignatureSvg(options: {
+	date?: string | undefined;
+	clinicName?: string | undefined;
+	width?: number | undefined;
+	height?: number | undefined;
+} = {}): string {
+	const w = options.width || 400;
+	const h = options.height || 120;
+	const dateStr = options.date || new Date().toLocaleDateString("ru-RU");
+	const clinic = options.clinicName ? ` • ${options.clinicName}` : "";
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
+  <rect width="100%" height="100%" fill="#f8fafc" stroke="#0d9488" stroke-width="2" rx="8"/>
+  <text x="20" y="36" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0f172a">ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ</text>
+  <text x="20" y="58" font-family="sans-serif" font-size="11" fill="#334155">Бумажный оригинал подписан пациентом</text>
+  <text x="20" y="76" font-family="sans-serif" font-size="11" fill="#64748b">(хранится в архиве карты 043/у)</text>
+  <text x="20" y="98" font-family="sans-serif" font-size="10" fill="#0d9488">323-ФЗ ст. 20 • Приказ Минздрава № 1051н • ${dateStr}${clinic}</text>
+</svg>`;
+}
+
+/**
+ * Минимальный непрозрачный PNG (1x1 пиксель) для совместимости с API при бумажном подписании
+ */
+export const PAPER_SIGNATURE_FALLBACK_PNG =
+	"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
+/**
  * Генерация криптографического цифрового отпечатка (SHA-256) юридического документа
  * Связывает воедино неизменяемый текст согласия, данные пациента, временную метку
- * и векторные координаты рукописной подписи
+ * и векторный росчерк (или метод подтверждения), делая любую модификацию заметной.
  */
 export function generateConsentIntegrityHash(payload: ConsentIntegrityPayload): {
 	hash: string;
@@ -590,22 +619,35 @@ export function generateConsentIntegrityHash(payload: ConsentIntegrityPayload): 
 			? new Date(payload.timestamp).toISOString()
 			: new Date(payload.timestamp).toISOString();
 
-	// Каноническое представление векторных точек подписи
-	const serializedStrokes = payload.strokes
+	// Каноническое представление векторных точек подписи (для бумаги или SMS росчерк пустой)
+	const serializedStrokes = (payload.strokes || [])
 		.map((s, sIdx) => {
-			const pts = s.points
+			const pts = (s.points || [])
 				.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)},${p.time}`)
 				.join(";");
 			return `S${sIdx}:[${pts}]`;
 		})
 		.join("|");
 
+	const ptName =
+		typeof payload.patientInfo === "string"
+			? payload.patientInfo.trim().toUpperCase()
+			: (payload.patientInfo?.name || "").trim().toUpperCase();
+	const ptId =
+		typeof payload.patientInfo === "object" && payload.patientInfo !== null
+			? (payload.patientInfo.passportOrBirth || "").trim()
+			: "";
+	const ptPhone =
+		typeof payload.patientInfo === "object" && payload.patientInfo !== null
+			? (payload.patientInfo.phone || "").trim()
+			: "";
+
 	const canonicalLines = [
 		"--- CANONICAL DENTAL INFORMED CONSENT INTEGRITY RECORD ---",
 		`DOC_TEXT_HASH: ${generateSha256(payload.documentText)}`,
-		`PATIENT_NAME: ${(payload.patientInfo.name || "").trim().toUpperCase()}`,
-		`PATIENT_ID: ${(payload.patientInfo.passportOrBirth || "").trim()}`,
-		`PATIENT_PHONE: ${(payload.patientInfo.phone || "").trim()}`,
+		`PATIENT_NAME: ${ptName}`,
+		`PATIENT_ID: ${ptId}`,
+		`PATIENT_PHONE: ${ptPhone}`,
 		`TIMESTAMP: ${timestampIso}`,
 		`VERIFICATION_METHOD: ${payload.verificationMethod || "tablet_stylus"}`,
 		payload.smsOtpCode ? `OTP_DIGEST: ${generateSha256(payload.smsOtpCode)}` : null,

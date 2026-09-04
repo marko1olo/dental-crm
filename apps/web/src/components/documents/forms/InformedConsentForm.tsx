@@ -1,11 +1,16 @@
 import { BASE_INFORMED_CONSENT_PRESET } from "@dental/shared";
 import React, { useMemo } from "react";
-import { ClipboardList, ShieldCheck } from "lucide-react";
+import { ClipboardList, FileText, Printer, ShieldCheck } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
+import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import { informedConsentBlockersReview } from "../informedConsentBlockers";
 import type { DocumentVisitHints } from "./documentFormTypes";
+import {
+	generateConsentPrintHtml,
+	printHtmlViaWindowOrIframe,
+} from "../../consents/consentTemplates.js";
 
 /**
  * Информированное согласие: поля формы до создания документа.
@@ -115,6 +120,64 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 		(state) => state.setInformedConsentWithdrawUnderstood,
 	);
 
+	const patientCoreDraft = usePatientStore((state) => state.patientCoreDraft);
+	const patientAdministrativeProfileDraft = usePatientStore(
+		(state) => state.patientAdministrativeProfileDraft,
+	);
+
+	const handlePrintConsent = () => {
+		const html = generateConsentPrintHtml({
+			patientName:
+				patientCoreDraft.fullName || "________________________________________",
+			birthDate: patientCoreDraft.birthDate || "«___» _________ _____ г.",
+			passport:
+				patientAdministrativeProfileDraft.identityDocument ||
+				"серия ______ № ________ выдан ____________________",
+			snils: patientAdministrativeProfileDraft.snils || "___-___-___ __",
+			phone: patientCoreDraft.phone || "+7 (___) ___-__-__",
+			doctorName:
+				informedConsentDoctorFullName ||
+				activeDoctorFullName ||
+				"Врач-стоматолог клиники",
+			intervention:
+				informedConsentIntervention ||
+				"Стоматологический осмотр, диагностика и согласованный объем вмешательств",
+			toothOrArea:
+				informedConsentToothOrArea ||
+				inferredTreatmentArea ||
+				"Полость рта (все квадранты)",
+			diagnosisOrIndication:
+				informedConsentDiagnosisOrIndication ||
+				activeVisitComplaint ||
+				"Санация полости рта",
+			expectedBenefit: informedConsentExpectedBenefit,
+			anesthesia: informedConsentAnesthesia,
+			materialNotes: informedConsentMaterialNotes,
+			risks: informedConsentRisks,
+			alternatives: informedConsentAlternatives,
+			aftercare: informedConsentAftercare,
+			date:
+				informedConsentConfirmedAt ||
+				new Date().toLocaleDateString("ru-RU"),
+			isBlank: false,
+		});
+		printHtmlViaWindowOrIframe(html);
+		showToast("Бланк ИДС отправлен на печать (А4)", "info", 3000);
+	};
+
+	const handlePrintBlankConsent = () => {
+		const html = generateConsentPrintHtml({
+			isBlank: true,
+			date: "«___» _________ 20___ г.",
+		});
+		printHtmlViaWindowOrIframe(html);
+		showToast(
+			"Чистый бланк ИДС со строками «________» отправлен на печать",
+			"info",
+			3000,
+		);
+	};
+
 	const review = useMemo(
 		() =>
 			informedConsentBlockersReview({
@@ -182,11 +245,24 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 					</div>
 				) : null}
 		>
-			<div style={{ marginBottom: "14px" }}>
+			<div
+				style={{
+					marginBottom: "14px",
+					display: "flex",
+					gap: "8px",
+					flexWrap: "wrap",
+					alignItems: "center",
+				}}
+			>
 				<button
 					type="button"
 					className="secondary-button inline-flex items-center gap-1.5 font-bold"
-					style={{ minHeight: "44px", fontSize: "13px", padding: "8px 16px", borderRadius: "12px" }}
+					style={{
+						minHeight: "44px",
+						fontSize: "13px",
+						padding: "8px 16px",
+						borderRadius: "12px",
+					}}
 					data-testid="btn-informed-consent-fill-norm"
 					onClick={() => {
 						setInformedConsentIntervention(BASE_INFORMED_CONSENT_PRESET.intervention);
@@ -210,7 +286,41 @@ export const InformedConsentForm = React.memo(function InformedConsentForm({
 					}}
 				>
 					<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
-					<span>Заполнить ИДС нормой: первичный осмотр и рентген (1 клик)</span>
+					<span>Заполнить ИДС нормой (1 клик)</span>
+				</button>
+
+				<button
+					type="button"
+					className="secondary-button inline-flex items-center gap-1.5 font-semibold"
+					style={{
+						minHeight: "44px",
+						fontSize: "13px",
+						padding: "8px 14px",
+						borderRadius: "12px",
+					}}
+					data-testid="btn-print-informed-consent"
+					onClick={handlePrintConsent}
+					title="Печать текущего заполненного бланка ИДС на принтер (А4)"
+				>
+					<Printer size={16} className="text-blue-600 dark:text-blue-400 shrink-0" aria-hidden="true" />
+					<span>Печать бланка ИДС (1 клик)</span>
+				</button>
+
+				<button
+					type="button"
+					className="secondary-button inline-flex items-center gap-1.5 font-semibold"
+					style={{
+						minHeight: "44px",
+						fontSize: "13px",
+						padding: "8px 14px",
+						borderRadius: "12px",
+					}}
+					data-testid="btn-print-blank-informed-consent"
+					onClick={handlePrintBlankConsent}
+					title="Печать чистого бланка ИДС со строками «________» для ручного заполнения пациентом до приема без 403-ошибок"
+				>
+					<FileText size={16} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+					<span>Печать чистого бланка ИДС («________»)</span>
 				</button>
 			</div>
 			<label>
