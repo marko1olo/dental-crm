@@ -748,7 +748,6 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		lastClickTimeRef.current = now;
 		setIsFiscalizing(true);
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 800));
 			const opText =
 				activeTab === "refund"
 					? "Чек возврата прихода"
