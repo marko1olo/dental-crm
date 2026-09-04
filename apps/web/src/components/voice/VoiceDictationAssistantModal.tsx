@@ -8,7 +8,7 @@
  * 3. Парсинг русской клинической речи в реальном времени (номера зубов FDI, диагнозы МКБ-10, SOAP, анестезия).
  * 4. Превью-карточки распознанных команд (зеленые — высокое доверие, янтарные — требуется проверка).
  * 5. 1-клик применение команд в ЭМК и зубную формулу.
- * 6. Текстовый симулятор диктовки для ручного ввода и проверки.
+ * 6. Резервный текстовый ввод диктовки для ручной проверки.
  */
 
 import {
@@ -180,7 +180,7 @@ export function VoiceDictationAssistantModal({
 		}
 	};
 
-	// Ручная симуляция фразы
+	// Резервный текстовый ввод клинической фразы
 	const handleSimulateText = (textToSimulate: string) => {
 		if (!textToSimulate.trim()) return;
 		setTranscript(textToSimulate);
@@ -570,7 +570,7 @@ export function VoiceDictationAssistantModal({
 							</div>
 						)}
 
-					{/* Ручной ввод и симулятор команд */}
+					{/* Резервный текстовый ввод и клинические шаблоны */}
 					<div>
 						<div
 							style={{
@@ -580,7 +580,7 @@ export function VoiceDictationAssistantModal({
 								marginBottom: "8px",
 							}}
 						>
-							Быстрые примеры и симуляция команд:
+							Клинические голосовые шаблоны:
 						</div>
 						<div className="dnt-voice-cheatsheet">
 							{QUICK_EXAMPLES.map((example) => (
@@ -607,7 +607,7 @@ export function VoiceDictationAssistantModal({
 							type="text"
 							value={manualInput}
 							onChange={(e) => setManualInput(e.target.value)}
-							placeholder="Введите клиническую команду вручную для симуляции..."
+							placeholder="Введите клиническую команду текстом (резервный ввод)..."
 							className="dnt-voice-input"
 						/>
 						<button
