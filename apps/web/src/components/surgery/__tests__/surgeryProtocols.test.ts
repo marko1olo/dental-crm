@@ -1,15 +1,30 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+
+const { describe, it } = await (async () => {
+	try {
+		// @ts-ignore
+		return await import("vitest");
+	} catch {
+		return await import("node:test");
+	}
+})();
 import {
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	SIMPLE_EXTRACTION_NORM_TEXT,
 	ATYPICAL_EXTRACTION_NORM_TEXT,
 	SINUS_LIFT_GBR_NORM_TEXT,
 	PERICORONITIS_NORM_TEXT,
+	COMPLEX_EXTRACTION_NORM_TEXT,
+	PERIOSTOTOMY_NORM_TEXT,
 	SURGICAL_OPERATION_NORMS,
 	evaluateWarehouseOverdraft,
 	buildSurgicalDiaryEntry,
 } from "../surgeryProtocols";
+import {
+	CLINICAL_SOAP_PRESETS,
+	getPresetById,
+	validateSoapPreset,
+} from "../../visit/clinicalSoapPresets";
 
 describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 	it("1. Dental Implantation 1-click norm matches canonical text and 35 N/cm torque", () => {
@@ -38,12 +53,107 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		assert.ok(ids.includes("surgery_extraction_atypical"), "Must include atypical wisdom tooth norm");
 		assert.ok(ids.includes("surgery_sinus_lift_gbr"), "Must include sinus-lift/GBR norm");
 		assert.ok(ids.includes("surgery_pericoronitis"), "Must include pericoronitis norm");
+		assert.ok(ids.includes("surgery_extraction_complex"), "Must include complex extraction norm");
+		assert.ok(ids.includes("surgery_periostotomy"), "Must include emergency periostotomy norm");
 
 		for (const norm of SURGICAL_OPERATION_NORMS) {
 			assert.ok(norm.icd10.length > 0, `Norm ${norm.id} must have valid ICD-10 code`);
 			assert.ok(norm.standardProtocolTextRu.length > 50, `Norm ${norm.id} must have complete clinical text`);
 			assert.ok(norm.requiredMaterials.length > 0, `Norm ${norm.id} must declare required materials`);
 		}
+	});
+
+	it("2a. Complex tooth extraction norm (surgery_extraction_complex) has full clinical protocol & materials", () => {
+		const norm = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_complex");
+		assert.ok(norm, "surgery_extraction_complex must be present in SURGICAL_OPERATION_NORMS");
+		assert.equal(norm.title, "Сложное удаление зуба с разъединением корней и ушиванием");
+		assert.equal(norm.shortBadge, "Сложн. удаление");
+		assert.equal(norm.category, "extraction");
+		assert.equal(norm.icd10, "K04.7");
+		assert.equal(norm.icd10Label, "Периапикальный абсцесс без свища / Дистопия");
+		assert.equal(norm.standardProtocolTextRu, COMPLEX_EXTRACTION_NORM_TEXT);
+
+		// Clinical protocol details
+		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Инфильтрационная и проводниковая анестезия"));
+		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Сепарация корней бором с водяным охлаждением"));
+		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Люксация элеватором"));
+		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("кюретаж"));
+		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Альвожил"));
+		assert.ok(COMPLEX_EXTRACTION_NORM_TEXT.includes("Викрил 4-0"));
+
+		// Materials: Артикаин 1:100000 (2 шт), Шовный материал Викрил 4-0 (1 шт), Губка Альвожил (1 шт), Марлевые тампоны (2 шт)
+		const mats = norm.requiredMaterials;
+		const articaine = mats.find((m) => m.name.includes("Артикаин 1:100000"));
+		assert.ok(articaine, "Must have Articaine");
+		assert.equal(articaine.quantity, 2);
+
+		const suture = mats.find((m) => m.name.includes("Викрил 4-0"));
+		assert.ok(suture, "Must have Vicryl 4-0 suture");
+		assert.equal(suture.quantity, 1);
+
+		const sponge = mats.find((m) => m.name.includes("Альвожил"));
+		assert.ok(sponge, "Must have Alvogyl sponge");
+		assert.equal(sponge.quantity, 1);
+
+		const tampons = mats.find((m) => m.name.includes("Марлевые тампоны"));
+		assert.ok(tampons, "Must have gauze tampons");
+		assert.equal(tampons.quantity, 2);
+	});
+
+	it("2b. Periostotomy emergency norm (surgery_periostotomy) has incision, drainage & materials", () => {
+		const norm = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_periostotomy");
+		assert.ok(norm, "surgery_periostotomy must be present in SURGICAL_OPERATION_NORMS");
+		assert.equal(norm.title, "Вскрытие поднадкостничного очага воспаления (периостотомия) с дренированием");
+		assert.equal(norm.shortBadge, "Периостотомия");
+		assert.equal(norm.category, "emergency");
+		assert.equal(norm.icd10, "K10.2");
+		assert.equal(norm.icd10Label, "Воспалительные заболевания челюстей (острый гнойный периостит)");
+		assert.equal(norm.standardProtocolTextRu, PERIOSTOTOMY_NORM_TEXT);
+
+		// Protocol clinical details
+		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("Инфильтрационная анестезия по переходной складке"));
+		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("Разрез слизистой и надкостницы длиной 1.5–2 см"));
+		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("распатором"));
+		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("эвакуация гнойного экссудата"));
+		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("0.05% хлоргексидином"));
+		assert.ok(PERIOSTOTOMY_NORM_TEXT.includes("дренаж"));
+
+		// Materials: Артикаин 1:100000 (1 шт), Дренаж резиновый ленточный (1 шт), Хлоргексидин 0.05% (50 мл), Стерильные марлевые салфетки (2 шт)
+		const mats = norm.requiredMaterials;
+		const articaine = mats.find((m) => m.name.includes("Артикаин 1:100000"));
+		assert.ok(articaine, "Must have Articaine 1:100000");
+		assert.equal(articaine.quantity, 1);
+
+		const drain = mats.find((m) => m.name.includes("Дренаж резиновый ленточный"));
+		assert.ok(drain, "Must have rubber ribbon drain");
+		assert.equal(drain.quantity, 1);
+
+		const chlorhexidine = mats.find((m) => m.name.includes("Хлоргексидин 0.05%"));
+		assert.ok(chlorhexidine, "Must have chlorhexidine");
+		assert.equal(chlorhexidine.quantity, 50);
+
+		const wipes = mats.find((m) => m.name.includes("Стерильные марлевые салфетки"));
+		assert.ok(wipes, "Must have sterile gauze wipes");
+		assert.equal(wipes.quantity, 2);
+	});
+
+	it("2c. clinicalSoapPresets includes surgery_periostotomy with 804n A16.07.011, 2100 Rub and drainage care", () => {
+		const preset = getPresetById("surgery_periostotomy");
+		assert.ok(preset, "Preset surgery_periostotomy must exist in CLINICAL_SOAP_PRESETS");
+		assert.equal(preset.icd10, "K10.2");
+		assert.equal(preset.category, "surgery");
+		assert.ok(preset.service804n, "Must have 804n service");
+		assert.equal(preset.service804n.code804n, "A16.07.011");
+		assert.equal(preset.service804n.basePriceRub, 2100);
+		assert.ok(preset.service804n.title.includes("периостотомия"));
+
+		// Recommendations check: drainage care and next day appointment
+		assert.ok(preset.recommendations?.includes("Дренаж самостоятельно не извлекать"));
+		assert.ok(preset.recommendations?.includes("следующий день"));
+
+		// Form 043/u validator check
+		const validation = validateSoapPreset(preset);
+		assert.equal(validation.isValid, true, `Preset must be valid: ${validation.errors.join(", ")}`);
 	});
 
 	it("3. Soft warehouse overdraft NEVER blocks surgery (canProceed is always true)", () => {
