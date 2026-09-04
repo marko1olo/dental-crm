@@ -453,9 +453,7 @@ export const EgiszRemdHubModal: React.FC<EgiszRemdHubModalProps> = ({
 		setIsSigning(true);
 		try {
 			// In production, invoke CryptoPro CSP plugin via signatureService;
-			// In browser testing or without hardware token, synthesize statutory GOST R 34.10-2012 signature container
-			await new Promise((resolve) => setTimeout(resolve, 600));
-
+			// In browser testing or without hardware token, synthesize statutory GOST R 34.10-2012 signature container immediately (<10ms) without artificial simulation delays
 			const newDocSig = createMockGostSignature(
 				doctor.doctorFullName,
 				doctor.doctorSnils,
