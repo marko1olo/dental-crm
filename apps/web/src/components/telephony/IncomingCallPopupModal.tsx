@@ -214,12 +214,6 @@ export function IncomingCallPopupModal({
 	}, [rejectCall, handleClose]);
 
 	const handleOpenPatientCard = useCallback(() => {
-		if (crmCurrentView === "visit") {
-			const confirmLeave = window.confirm(
-				"Внимание: Вы находитесь на приёме (визит 043/у). Переход в общий список пациентов сменит текущий экран. Вы уверены, что хотите переключить экран?",
-			);
-			if (!confirmLeave) return;
-		}
 		if (resolvedPatient) {
 			setSelectedPatientId(resolvedPatient.id);
 			setCurrentView("patients");
@@ -234,7 +228,6 @@ export function IncomingCallPopupModal({
 			showToast(`Создание нового пациента для ${effectivePhone}`, "info");
 		}
 	}, [
-		crmCurrentView,
 		resolvedPatient,
 		effectivePhone,
 		setSelectedPatientId,
@@ -246,12 +239,6 @@ export function IncomingCallPopupModal({
 
 	const handleQuickBooking = useCallback(
 		(type: "urgent" | "consultation" | "tomorrow") => {
-			if (crmCurrentView === "visit") {
-				const confirmLeave = window.confirm(
-					"Внимание: Вы находитесь на приёме (визит 043/у). Переход в расписание сменит текущий экран. Вы уверены, что хотите переключить экран?",
-				);
-				if (!confirmLeave) return;
-			}
 			const today = new Date().toISOString().slice(0, 10);
 			const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 			const targetDate = type === "tomorrow" ? tomorrow : today;
@@ -279,7 +266,6 @@ export function IncomingCallPopupModal({
 			showToast(`Черновик записи на ${targetDate} ${targetTime} создан`, "success");
 		},
 		[
-			crmCurrentView,
 			resolvedPatient?.id,
 			setNewAppointmentDraft,
 			setCurrentView,

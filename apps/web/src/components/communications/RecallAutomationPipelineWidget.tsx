@@ -70,70 +70,57 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 			});
 			if (res.ok) {
 				const data = await res.json();
-				const items = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : [];
+				const items = Array.isArray(data)
+					? data
+					: Array.isArray(data.candidates)
+					? data.candidates
+					: Array.isArray(data.items)
+					? data.items
+					: [];
 				setRecalls(
 					items.map((r: any, idx: number) => ({
 						id: r.patientId || r.id || `cand-${idx}`,
 						patientId: r.patientId || r.id,
 						patientName: r.patientName || r.fullName || "Пациент",
 						patientPhone: r.patientPhone || r.phone || null,
-						dueMonth: r.dueMonth || "В этом месяце",
+						dueMonth: r.dueMonth || (r.lastCompletedAt ? new Date(r.lastCompletedAt).toLocaleDateString("ru-RU") : "В этом месяце"),
 						reason: r.reason || r.lastServiceName || "Плановый осмотр",
-						priority: (r.priority as "normal") || "normal",
+						priority: (r.priority as "normal") || (r.band === "overdue" ? "high" : "normal"),
 						status: (r.status as "pending") || "pending",
 						contactAttemptCount: r.contactAttemptCount || 0,
+						lastContactAttemptAt: r.lastContactAttemptAt,
+						linkedAppointmentDate: r.linkedAppointmentDate,
 					})),
 				);
+				if (data.byBand) {
+					setStats({
+						dueThisMonth: data.byBand.due || 0,
+						overdue: data.byBand.overdue || 0,
+						scheduledThisMonth: 0,
+						completedThisMonth: 0,
+						conversionRate: 0,
+					});
+				}
 			} else {
-				// Default sample data for smooth first render
-				const sampleRecalls: RecallCardItem[] = [
-					{
-						id: "rec-1",
-						patientId: "p-1",
-						patientName: "Алексей Соколов",
-						patientPhone: "+7 (916) 111-22-33",
-						dueMonth: "2026-09-01",
-						reason: "Профгигиена полости рта (6 мес)",
-						priority: "high",
-						status: "pending",
-						contactAttemptCount: 0,
-					},
-					{
-						id: "rec-2",
-						patientId: "p-2",
-						patientName: "Ирина Кузнецова",
-						patientPhone: "+7 (926) 333-44-55",
-						dueMonth: "2026-08-01",
-						reason: "Контрольный осмотр импланта 4.6",
-						priority: "normal",
-						status: "contacted_no_answer",
-						contactAttemptCount: 1,
-						lastContactAttemptAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-					},
-					{
-						id: "rec-3",
-						patientId: "p-3",
-						patientName: "Михаил Васильев",
-						patientPhone: "+7 (903) 777-88-99",
-						dueMonth: "2026-08-01",
-						reason: "Ортодонтическая активация",
-						priority: "normal",
-						status: "contacted_scheduled",
-						contactAttemptCount: 1,
-						linkedAppointmentDate: "2026-08-29 15:00",
-					},
-				];
-				setRecalls(sampleRecalls);
+				setRecalls([]);
 				setStats({
-					dueThisMonth: 12,
-					overdue: 3,
-					scheduledThisMonth: 8,
-					completedThisMonth: 6,
-					conversionRate: 0.67,
+					dueThisMonth: 0,
+					overdue: 0,
+					scheduledThisMonth: 0,
+					completedThisMonth: 0,
+					conversionRate: 0,
 				});
 			}
 		} catch (err) {
 			console.error("Failed to load recalls:", err);
+			setRecalls([]);
+			setStats({
+				dueThisMonth: 0,
+				overdue: 0,
+				scheduledThisMonth: 0,
+				completedThisMonth: 0,
+				conversionRate: 0,
+			});
 		} finally {
 			setLoading(false);
 		}

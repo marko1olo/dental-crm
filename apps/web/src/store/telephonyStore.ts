@@ -181,8 +181,10 @@ export interface TelephonyStore {
 	activeRecordingUrl: string | null;
 	isPlayingRecording: boolean;
 	transferState: CallTransferState;
+	isWsConnected: boolean;
 
 	// Actions
+	setWsConnected: (connected: boolean) => void;
 	setAgentState: (agentState: TelephonyAgentState) => void;
 	switchLine: (lineId: 1 | 2) => void;
 	holdCall: () => void;
@@ -1252,7 +1254,9 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 	activeRecordingUrl: null,
 	isPlayingRecording: false,
 	transferState: initialTransferState,
+	isWsConnected: false,
 
+	setWsConnected: (isWsConnected) => set({ isWsConnected }),
 	setAgentState: (agentState) => set({ agentState }),
 	switchLine: (lineId) => set({ activeLineId: lineId }),
 	holdCall: () => set({ isHeld: true }),

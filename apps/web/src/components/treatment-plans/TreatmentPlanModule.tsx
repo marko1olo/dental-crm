@@ -775,7 +775,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				<div className="flex items-center gap-2">
 					<span className="font-semibold text-[var(--muted,#64748b)]">Скидка:</span>
 					<div className="flex items-center gap-1">
-						{[0, 5, 10, 15, 20].map((pct) => (
+						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
 							<button
 								key={pct}
 								type="button"

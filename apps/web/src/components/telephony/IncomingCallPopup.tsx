@@ -46,7 +46,6 @@ import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { useWebsocket } from "../../hooks/useWebsocket";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
@@ -72,7 +71,7 @@ import {
 import { showToast } from "../GlobalToast";
 import "./telephonyFloatingWidget.css";
 
-function resolveTelephonyWsUrl(): string {
+export function resolveTelephonyWsUrl(): string {
 	const configured = (
 		import.meta as unknown as { env?: Record<string, string> }
 	).env?.VITE_WS_URL;
@@ -493,7 +492,6 @@ export function CallAudioPlayer({
 
 export function IncomingCallPopup() {
 	const activeCall = useTelephonyStore((s) => s.activeCall);
-	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
 	const answerCall = useTelephonyStore((s) => s.answerCall);
 	const connectCall = useTelephonyStore((s) => s.connectCall);
 	const acceptCall = useTelephonyStore((s) => s.acceptCall);
@@ -522,7 +520,7 @@ export function IncomingCallPopup() {
 	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
 	const isDndActive = agentState === "dnd";
 
-	const { lastMessage, isConnected } = useWebsocket(resolveTelephonyWsUrl());
+	const isConnected = useTelephonyStore((s) => s.isWsConnected);
 	const audioCtxRef = useRef<AudioContext | null>(null);
 
 	const [whatsappSent, setWhatsappSent] = useState(false);
@@ -561,24 +559,6 @@ export function IncomingCallPopup() {
 
 		return () => clearInterval(interval);
 	}, [activeCall]);
-
-	// Sync WebSocket Incoming Call Event to Telephony Store
-	useEffect(() => {
-		if (lastMessage?.type === "TELEPHONY_INCOMING_CALL" && lastMessage.payload) {
-			const p = lastMessage.payload;
-			triggerIncomingCall({
-				phone: p.phone || "",
-				patientId: p.patientId || null,
-				patientName: p.patientName || "Неизвестный номер",
-				callId: p.callId,
-				provider: p.provider || "mango",
-				timestamp: p.timestamp || new Date().toISOString(),
-				status: "ringing",
-				recordingUrl: p.recordingUrl,
-				callStartedAt: Date.now(),
-			});
-		}
-	}, [lastMessage, triggerIncomingCall]);
 
 	// Ringtone playback loop while active call is ringing (Suppressed for doctors and DND mode)
 	useEffect(() => {

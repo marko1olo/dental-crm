@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { StaffRole } from "@dental/shared";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -30,8 +31,12 @@ import {
 	Users,
 } from "lucide-react";
 import { ClinicControlPill } from "./components/Header";
-import { IncomingCallPopup } from "./components/telephony/IncomingCallPopup";
+import {
+	IncomingCallPopup,
+	resolveTelephonyWsUrl,
+} from "./components/telephony/IncomingCallPopup";
 import { TelephonyFloatingWidget } from "./components/telephony/TelephonyFloatingWidget";
+import { useWebsocket } from "./hooks/useWebsocket";
 import { useTelephonyStore } from "./store/telephonyStore";
 import { useAppStore } from "./store/appStore";
 import { RecentPatientHistoryWidget } from "./components/workspace/RecentPatientHistoryWidget";
@@ -88,6 +93,7 @@ export {
 	viewLabels,
 	IncomingCallPopup,
 	TelephonyFloatingWidget,
+	resolveTelephonyWsUrl,
 };
 
 type WorkspaceViewIntentHandler = (view: AppView) => void;
@@ -614,6 +620,8 @@ export function WorkspaceTopbar({
 	);
 	const activeCall = useTelephonyStore((s) => s.activeCall);
 	const agentState = useTelephonyStore((s) => s.agentState);
+	const triggerIncomingCall = useTelephonyStore((s) => s.triggerIncomingCall);
+	const setWsConnected = useTelephonyStore((s) => s.setWsConnected);
 	const currentView = useAppStore((s) => s.currentView);
 	// Absolute doctor immunity: when treating at chair (visit) or role is doctor, calls stay silent/background
 	const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";
@@ -624,6 +632,35 @@ export function WorkspaceTopbar({
 		!isDoctorMode &&
 		!isDndActive,
 	);
+
+	// Background telephony WebSocket listener at top shell level
+	const telephonyWsUrl = !isDoctorMode ? resolveTelephonyWsUrl() : "";
+	const { lastMessage, isConnected } = useWebsocket(telephonyWsUrl);
+
+	useEffect(() => {
+		setWsConnected(isConnected);
+	}, [isConnected, setWsConnected]);
+
+	useEffect(() => {
+		if (
+			!isDoctorMode &&
+			lastMessage?.type === "TELEPHONY_INCOMING_CALL" &&
+			lastMessage.payload
+		) {
+			const p = lastMessage.payload;
+			triggerIncomingCall({
+				phone: p.phone || "",
+				patientId: p.patientId || null,
+				patientName: p.patientName || "Неизвестный номер",
+				callId: p.callId,
+				provider: p.provider || "mango",
+				timestamp: p.timestamp || new Date().toISOString(),
+				status: "ringing",
+				recordingUrl: p.recordingUrl,
+				callStartedAt: Date.now(),
+			});
+		}
+	}, [lastMessage, triggerIncomingCall, isDoctorMode]);
 
 	return (
 		<header className="topbar">

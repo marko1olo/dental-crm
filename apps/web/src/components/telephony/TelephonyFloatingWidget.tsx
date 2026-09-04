@@ -457,13 +457,6 @@ export function TelephonyFloatingWidget({
 			});
 		}
 
-		if (crmCurrentView === "visit") {
-			const confirmLeave = window.confirm(
-				"Внимание: Вы находитесь на приёме (визит 043/у). Переход в расписание сменит текущий экран. Вы уверены, что хотите переключить экран?",
-			);
-			if (!confirmLeave) return;
-		}
-
 		setCurrentView("schedule");
 		acceptCall();
 		showToast(`Создан черновик записи: ${reason}`, "info");
@@ -1258,12 +1251,6 @@ export function TelephonyFloatingWidget({
 											<button
 												type="button"
 												onClick={() => {
-													if (crmCurrentView === "visit") {
-														const confirmLeave = window.confirm(
-															"Внимание: Вы находитесь на приёме (визит 043/у). Переход в общий список пациентов сменит текущий экран. Вы уверены, что хотите переключить экран?",
-														);
-														if (!confirmLeave) return;
-													}
 													if (resolvedPatient) {
 														setSelectedPatientId(resolvedPatient.id);
 														setCurrentView("patients");

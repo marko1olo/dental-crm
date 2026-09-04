@@ -1,12 +1,19 @@
 import {
 	AlertTriangle,
+	Calendar,
 	Check,
 	CheckCheck,
+	ClipboardList,
 	Clock,
+	ExternalLink,
 	FileText,
+	HeartPulse,
+	MapPin,
 	MessageSquare,
+	Phone,
 	Receipt,
 	RefreshCw,
+	Scan,
 	Send,
 	ShieldAlert,
 	Smile,
@@ -59,6 +66,8 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 		return Date.now() - lastTime < 24 * 60 * 60 * 1000;
 	}, [lastInboundAt]);
 
+	const cleanPhone = useMemo(() => (patientPhone || "").replace(/\D/g, ""), [patientPhone]);
+
 	const scrollToBottom = () => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	};
@@ -73,43 +82,31 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 			if (res.ok) {
 				const data = await res.json();
 				const list = Array.isArray(data) ? data : Array.isArray(data.messages) ? data.messages : [];
-				setMessages(
-					list.map((m: any) => ({
-						id: m.id,
-						direction: m.direction || "outbound",
-						status: m.status || "delivered",
-						bodyText: m.message || m.bodyText || "",
-						createdAt: m.createdAt,
-					})),
-				);
+				const parsed = list.map((m: any) => ({
+					id: m.id,
+					direction: m.direction || "outbound",
+					status: m.status || "delivered",
+					bodyText: m.message || m.bodyText || "",
+					createdAt: m.createdAt,
+				}));
+				setMessages(parsed);
+				const lastInbound = [...parsed].reverse().find((m) => m.direction === "inbound");
+				if (lastInbound?.createdAt) {
+					setLastInboundAt(lastInbound.createdAt);
+				}
 			} else {
-				// Fallback mock history for clean preview
-				setMessages([
-					{
-						id: "msg-1",
-						direction: "outbound",
-						status: "read",
-						bodyText: `Здравствуйте, ${patientName}! Напоминаем о вашей записи на приём завтра в 14:00.`,
-						templateKey: "appointment_reminder",
-						createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
-					},
-					{
-						id: "msg-2",
-						direction: "inbound",
-						status: "received",
-						bodyText: "Здравствуйте! Да, подтверждаю, обязательно буду.",
-						createdAt: new Date(Date.now() - 2.5 * 3600 * 1000).toISOString(),
-					},
-				]);
-				setLastInboundAt(new Date(Date.now() - 2.5 * 3600 * 1000).toISOString());
+				setMessages([]);
+				setLastInboundAt(null);
 			}
 		} catch (err) {
 			console.error("Failed to load WhatsApp thread:", err);
+			setMessages([]);
+			setLastInboundAt(null);
 		} finally {
 			setLoading(false);
 			setTimeout(scrollToBottom, 100);
 		}
-	}, [patientId, patientName]);
+	}, [patientId]);
 
 	useEffect(() => {
 		void fetchThread();
@@ -171,15 +168,26 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 
 	const handleQuickTemplate = (templateKey: string) => {
 		let text = "";
-		if (templateKey === "confirmation") {
+		if (templateKey === "reminder") {
+			text = `Здравствуйте, ${patientName}! Напоминаем о вашей записи в клинику ДЕНТЕ на завтра. Пожалуйста, подтвердите визит ответным сообщением ДА или позвоните нам.`;
+		} else if (templateKey === "confirmation") {
 			text = `Здравствуйте, ${patientName}! Ваша запись в клинику ДЕНТЕ подтверждена. Ждём вас!`;
+		} else if (templateKey === "route") {
+			text = `Здравствуйте, ${patientName}! Маршрут до клиники ДЕНТЕ: ул. Ленина, д. 10. Вход со двора, бесплатная парковка перед шлагбаумом (код 1234). Схема проезда: https://dente.clinic/contacts`;
+		} else if (templateKey === "xray") {
+			text = `Здравствуйте, ${patientName}! Доктор назначил вам диагностический 3D-снимок (КТ/рентген). Исследование занимает 2 минуты, подготовка не требуется. Ждём вас в рентген-кабинете!`;
+		} else if (templateKey === "treatment_plan") {
+			text = `Здравствуйте, ${patientName}! Ваш индивидуальный план лечения и сметы подготовлены доктором. Вы можете ознакомиться с ними в клинике или личном кабинете.`;
+		} else if (templateKey === "hygiene_6m") {
+			text = `Здравствуйте, ${patientName}! Прошло 6 месяцев с вашего последнего визита. Приглашаем на плановый контрольный осмотр и профгигиену для сохранения гарантии на пломбы и здоровье десен.`;
 		} else if (templateKey === "post_op") {
-			text = `Здравствуйте, ${patientName}! Напоминаем рекомендации после приёма: не принимать пищу 2 часа, избегать горячего 24ч. При вопросах мы на связи!`;
+			text = `Здравствуйте, ${patientName}! Напоминаем рекомендации после приёма: не принимать пищу 2 часа, избегать горячего 24ч. При любых вопросах мы на связи!`;
 		} else if (templateKey === "invoice") {
 			text = `Здравствуйте, ${patientName}! Ссылка на оплату счёта: https://dente.clinic/pay`;
 		}
 		if (text) {
 			setDraft(text);
+			showToast("Шаблон сообщения применён", "info");
 		}
 	};
 
@@ -253,21 +261,68 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 				</div>
 			</div>
 
-			{/* Quick Action Chips */}
+			{/* Quick Action Chips (8 Clinical Scenarios) */}
 			<div className="flex items-center gap-1.5 px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper)] overflow-x-auto text-xs">
-				<span className="text-[11px] text-[var(--muted)] whitespace-nowrap">Быстрые шаблоны:</span>
+				<span className="text-[11px] text-[var(--muted)] whitespace-nowrap font-medium">Шаблоны:</span>
+				<button
+					type="button"
+					onClick={() => handleQuickTemplate("reminder")}
+					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="Напоминание о визите завтра"
+				>
+					<Calendar className="h-3 w-3 text-amber-600" />
+					Завтра
+				</button>
 				<button
 					type="button"
 					onClick={() => handleQuickTemplate("confirmation")}
 					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="Подтверждение записи"
 				>
 					<Sparkles className="h-3 w-3 text-emerald-600" />
 					Подтверждение
 				</button>
 				<button
 					type="button"
+					onClick={() => handleQuickTemplate("route")}
+					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="Адрес и схема проезда"
+				>
+					<MapPin className="h-3 w-3 text-rose-500" />
+					Маршрут
+				</button>
+				<button
+					type="button"
+					onClick={() => handleQuickTemplate("xray")}
+					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="Назначен снимок КТ / ОПТГ"
+				>
+					<Scan className="h-3 w-3 text-cyan-600" />
+					Снимок КТ
+				</button>
+				<button
+					type="button"
+					onClick={() => handleQuickTemplate("treatment_plan")}
+					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="План лечения готов"
+				>
+					<ClipboardList className="h-3 w-3 text-indigo-600" />
+					План лечения
+				</button>
+				<button
+					type="button"
+					onClick={() => handleQuickTemplate("hygiene_6m")}
+					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="Контрольный осмотр и профгигиена через 6 месяцев"
+				>
+					<HeartPulse className="h-3 w-3 text-teal-600" />
+					Профгигиена 6м
+				</button>
+				<button
+					type="button"
 					onClick={() => handleQuickTemplate("post_op")}
 					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="Рекомендации после приёма"
 				>
 					<FileText className="h-3 w-3 text-blue-600" />
 					Памятка
@@ -276,6 +331,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 					type="button"
 					onClick={() => handleQuickTemplate("invoice")}
 					className="flex items-center gap-1 rounded-md border border-[var(--glass-border)] bg-[var(--paper-strong)] px-2.5 py-1 text-[11px] text-[var(--ink)] hover:bg-[var(--glass-panel)] whitespace-nowrap transition-colors"
+					title="Ссылка на оплату счёта"
 				>
 					<Receipt className="h-3 w-3 text-purple-600" />
 					Счёт
@@ -356,11 +412,61 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 					<button
 						type="submit"
 						disabled={sending || !draft.trim()}
-						className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors shrink-0 shadow-sm"
+						className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors shrink-0 shadow-sm cursor-pointer"
+						title="Отправить через шлюз WhatsApp WABA"
 					>
 						{sending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
 					</button>
 				</form>
+
+				{/* Multi-Channel Quick Direct Actions */}
+				{cleanPhone ? (
+					<div className="flex items-center justify-between text-[11px] pt-1.5 text-[var(--muted)] border-t border-[var(--glass-border)] mt-2">
+						<span className="flex items-center gap-1 font-medium">
+							Прямая связь:
+						</span>
+						<div className="flex items-center gap-2">
+							<a
+								href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(draft || `Здравствуйте, ${patientName}!`)}`}
+								target="_blank"
+								rel="noreferrer"
+								className="inline-flex items-center gap-1 text-emerald-600 hover:underline font-medium"
+								title="Открыть диалог в WhatsApp Web / Desktop"
+							>
+								WhatsApp
+								<ExternalLink className="h-2.5 w-2.5" />
+							</a>
+							<span>•</span>
+							<a
+								href={`https://t.me/+${cleanPhone}`}
+								target="_blank"
+								rel="noreferrer"
+								className="inline-flex items-center gap-1 text-sky-600 hover:underline font-medium"
+								title="Написать пациенту в Telegram"
+							>
+								Telegram
+								<ExternalLink className="h-2.5 w-2.5" />
+							</a>
+							<span>•</span>
+							<a
+								href={`sms:+${cleanPhone}?body=${encodeURIComponent(draft || "")}`}
+								className="inline-flex items-center gap-1 text-indigo-600 hover:underline font-medium"
+								title="Отправить SMS"
+							>
+								СМС
+							</a>
+							<span>•</span>
+							<a
+								href={`tel:+${cleanPhone}`}
+								className="inline-flex items-center gap-1 text-teal-600 hover:underline font-medium"
+								title={`Позвонить ${patientPhone}`}
+							>
+								<Phone className="h-2.5 w-2.5" />
+								Звонок
+							</a>
+						</div>
+					</div>
+				) : null}
 			</div>
 		</div>
 	);
