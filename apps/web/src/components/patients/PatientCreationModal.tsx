@@ -188,7 +188,15 @@ export function PatientCreationModal({
 		quickIntakeValidationResult.isValid && !isPatientCreating;
 
 	const handleCreate = async () => {
-		if (!quickActionReady) return;
+		if (isPatientCreating) return;
+		if (!newPatientName.trim()) {
+			if (isEmergencyOrPrimary) {
+				setNewPatientName("Пациент с острой болью (CITO)");
+			} else {
+				showToast("Укажите имя пациента или включите CITO для экстренной записи", "warning");
+				return;
+			}
+		}
 		try {
 			// Attach advertising source note to administrative profile draft
 			if (advertisingSource) {
@@ -212,7 +220,15 @@ export function PatientCreationModal({
 	};
 
 	const handleCreateAndBook = async () => {
-		if (!quickActionReady) return;
+		if (isPatientCreating) return;
+		if (!newPatientName.trim()) {
+			if (isEmergencyOrPrimary) {
+				setNewPatientName("Пациент с острой болью (CITO)");
+			} else {
+				showToast("Укажите имя пациента или включите CITO для экстренной записи", "warning");
+				return;
+			}
+		}
 		try {
 			if (advertisingSource) {
 				setPatientAdministrativeProfileDraft((prev) => ({
@@ -243,8 +259,8 @@ export function PatientCreationModal({
 				status: "planned",
 				startsAt,
 				endsAt,
-				reason: "Первичный приём и консультация",
-				comment: "",
+				reason: isEmergencyOrPrimary ? "CITO! Острая боль" : "Первичный приём и консультация",
+				comment: isEmergencyOrPrimary ? "Экстренный прием по острой боли (ст. 124 УК РФ)" : "",
 			});
 			useAppStore.getState().setCurrentView("schedule");
 			showToast(
@@ -257,7 +273,15 @@ export function PatientCreationModal({
 	};
 
 	const handleCreateAndOpenVisit = async () => {
-		if (!quickActionReady) return;
+		if (isPatientCreating) return;
+		if (!newPatientName.trim()) {
+			if (isEmergencyOrPrimary) {
+				setNewPatientName("Пациент с острой болью (CITO)");
+			} else {
+				showToast("Укажите имя пациента или включите CITO для экстренной записи", "warning");
+				return;
+			}
+		}
 		try {
 			if (advertisingSource) {
 				setPatientAdministrativeProfileDraft((prev) => ({
@@ -866,7 +890,7 @@ export function PatientCreationModal({
 							type="button"
 							className="secondary-button quick-create-book-action"
 							onClick={handleCreateAndBook}
-							disabled={!quickActionReady}
+							disabled={isPatientCreating}
 							title="Создать карту и сразу открыть расписание с выбранным пациентом"
 							data-testid="patient-creation-submit-and-book-btn"
 							style={{
@@ -883,7 +907,7 @@ export function PatientCreationModal({
 							type="button"
 							className="secondary-button quick-create-visit-action"
 							onClick={handleCreateAndOpenVisit}
-							disabled={!quickActionReady}
+							disabled={isPatientCreating}
 							title="Создать карту и сразу открыть приём 043/у (для дежурного врача)"
 							data-testid="patient-creation-submit-and-visit-btn"
 							style={{
@@ -900,7 +924,7 @@ export function PatientCreationModal({
 							type="button"
 							className="primary-button quick-create-action"
 							onClick={handleCreate}
-							disabled={!quickActionReady}
+							disabled={isPatientCreating}
 							aria-busy={isPatientCreating || undefined}
 							aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}
 							data-testid="patient-creation-submit-btn"

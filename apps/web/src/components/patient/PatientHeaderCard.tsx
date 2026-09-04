@@ -32,6 +32,7 @@ import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
 import { PatientLoyaltyHeader } from "../patients/PatientLoyaltyHeader";
 import { PatientSentimentBadge } from "./PatientSentimentBadge";
+import { printBlankMedicalContract } from "./blankContractPrint";
 
 export interface PatientHeaderCardProps {
 	patientId?: string | null | undefined;
@@ -312,6 +313,21 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 					>
 						<Stethoscope size={13} className="text-cyan-600" />
 						<span>Начать приём</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							void printBlankMedicalContract(resolvedPatient, {
+								clinicName: dashboard?.clinicSettings?.profile?.legalName,
+							});
+						}}
+						className="h-8 px-2.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500 hover:text-white text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors text-xs"
+						title="Распечатать пустой договор на оказание услуг со строками _______ (Мандат 8e)"
+						data-testid="header-print-blank-contract-btn"
+					>
+						<FileText size={13} className="text-amber-600" />
+						<span>Бланк договора (_______)</span>
 					</button>
 
 					{onOpenAnamnesis && (

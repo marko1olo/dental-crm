@@ -7,6 +7,7 @@ import {
 	formatSnils,
 	formatTaxpayerInn,
 } from "../../utils/inputSanitation";
+import { printBlankMedicalContract } from "./blankContractPrint";
 
 /*
  * Реквизиты пациента: паспорт, ИНН, СНИЛС, представитель, получатель
@@ -102,6 +103,32 @@ export function PatientAdministrativeForm({
 }: PatientAdministrativeFormProps) {
 	return (
 		<div className="clinic-profile-form-grid patient-admin-form-grid">
+			<div className="form-span-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 flex-wrap mb-2">
+				<div className="text-xs text-amber-950 dark:text-amber-100">
+					<strong>Бланк договора со строками _______</strong>
+					<p className="m-0 text-[11px] text-amber-800 dark:text-amber-300">
+						Регистратор имеет право распечатать пустой договор для ручного заполнения пациентом до приема врача (Мандат 8e).
+					</p>
+				</div>
+				<button
+					type="button"
+					onClick={() => {
+						void printBlankMedicalContract({
+							administrativeProfile: {
+								identityDocument: patientAdministrativeProfileDraft.identityDocument,
+								registrationAddress: patientAdministrativeProfileDraft.registrationAddress,
+								taxpayerInn: patientAdministrativeProfileDraft.taxpayerInn,
+								snils: patientAdministrativeProfileDraft.snils,
+							},
+						});
+					}}
+					className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+					data-testid="admin-form-print-blank-contract-btn"
+				>
+					<span>📄 Распечатать пустой договор (_______)</span>
+				</button>
+			</div>
+
 			<label>
 				Паспорт / Документ
 				<input

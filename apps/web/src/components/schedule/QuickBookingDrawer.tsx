@@ -4,6 +4,7 @@ import {
 	Calendar,
 	Check,
 	Clock,
+	FileText,
 	Flame,
 	Plus,
 	RotateCw,
@@ -44,6 +45,7 @@ import { checkAppointmentResourceCollision } from "../../utils/scheduleCollision
 import { showToast } from "../GlobalToast";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { SlotConflictModal } from "./SlotConflictModal";
+import { printBlankMedicalContract } from "../patient/blankContractPrint";
 
 export interface QuickBookingSlotInfo {
 	dateKey?: string | undefined;
@@ -512,9 +514,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 	const handleCreateInlinePatient = async (e: React.FormEvent) => {
 		e.preventDefault();
-		const fullName = newPatientFullName.trim();
+		const fullName =
+			newPatientFullName.trim() ||
+			(isEmergencyMode ? "Пациент с острой болью (CITO)" : "");
 		if (!fullName) {
-			showToast("Укажите ФИО пациента", "error");
+			showToast("Укажите ФИО пациента или используйте CITO", "error");
 			return;
 		}
 
@@ -566,13 +570,65 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		}
 	};
 
-	const handleSubmitBooking = async (e?: React.FormEvent) => {
+	const handleSubmitBooking = async (
+		e?: React.FormEvent,
+		options?: { overbookOverride?: boolean },
+	) => {
 		if (e) e.preventDefault();
 		if (isSubmitting) return;
 
-		if (!patientId) {
-			setSubmitError("Выберите или создайте пациента");
-			showToast("Выберите пациента перед сохранением записи", "error");
+		let activePatientId = patientId;
+
+		// 10-секундный CITO-прием: авто-создание пациента на лету без блокировок
+		if (!activePatientId) {
+			const candidateName =
+				newPatientFullName.trim() ||
+				searchQuery.trim() ||
+				(isEmergencyMode ? "Пациент с острой болью (CITO)" : "");
+
+			if (candidateName) {
+				try {
+					const headers =
+						typeof auth?.denteClinicalMutationHeaders === "function"
+							? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" })
+							: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+
+					const res = await fetchWithHandling("/api/patients", {
+						method: "POST",
+						headers,
+						body: JSON.stringify({
+							fullName: candidateName,
+							phone: newPatientPhone.trim() || null,
+							birthDate: newPatientBirthDate.trim() || null,
+						}),
+					});
+
+					if (res.ok) {
+						const created = (await res.json()) as Patient;
+						if (created?.id) {
+							activePatientId = created.id;
+							setPatientId(created.id);
+							setSelectedPatient(created);
+							if (typeof setDashboard === "function" && dashboard) {
+								setDashboard({
+									...dashboard,
+									patients: [
+										created,
+										...(dashboard.patients ?? []).filter((p) => p.id !== created.id),
+									],
+								});
+							}
+						}
+					}
+				} catch (err) {
+					logger.error("Auto patient creation failed in quick booking", err);
+				}
+			}
+		}
+
+		if (!activePatientId) {
+			setSubmitError("Укажите имя пациента или нажмите «+ Экспресс-пациент CITO»");
+			showToast("Укажите имя пациента для записи", "error");
 			searchInputRef.current?.focus();
 			return;
 		}
@@ -588,15 +644,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			chairs[0]?.id ||
 			"";
 
-		if (!patientId) {
-			setSubmitError("Выберите или создайте пациента");
-			showToast("Выберите пациента перед сохранением записи", "error");
-			searchInputRef.current?.focus();
-			return;
-		}
-
 		if (!effectiveDoctorId) {
-			setSubmitError("Выберите врача для приема");
+			setSubmitError("В клинике нет доступных врачей");
 			showToast("Выберите врача", "error");
 			return;
 		}
@@ -625,6 +674,15 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		setIsSubmitting(true);
 		setSubmitError(null);
 
+		const isOverbook =
+			Boolean(options?.overbookOverride) ||
+			collision.hasCollision ||
+			isEmergencyMode ||
+			reason.toLowerCase().includes("cito") ||
+			reason.toLowerCase().includes("острая") ||
+			comment.toLowerCase().includes("cito") ||
+			comment.toLowerCase().includes("острая");
+
 		try {
 			const mutationHeaders =
 				typeof auth?.scheduleMutationHeaders === "function"
@@ -632,15 +690,20 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
 
 			const payload = {
-				patientId,
+				patientId: activePatientId,
 				doctorUserId: effectiveDoctorId,
 				assistantUserId: assistantUserId || null,
 				chairId: effectiveChairId,
 				startsAt: startsAtIso,
 				endsAt: endsAtIso,
 				status,
-				reason: reason.trim() || null,
-				comment: comment.trim() || null,
+				reason: reason.trim() || (isEmergencyMode ? "CITO! Острая боль" : null),
+				comment:
+					comment.trim() ||
+					(isEmergencyMode ? "Экстренный прием по острой боли (ст. 124 УК РФ)" : null),
+				allowOverbooking: isOverbook,
+				allowEmergencyOverride: isOverbook,
+				urgency: isOverbook ? "urgent" : "routine",
 				clientMutationId: `quick-booking-${Date.now()}`,
 			};
 
@@ -962,22 +1025,43 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								<span>Пациент *</span>
 							</label>
 							{!showInlineNewPatient && (
-								<div className="flex items-center gap-2">
-									{isEmergencyMode && (
-										<button
-											type="button"
-											onClick={() => {
-												setShowInlineNewPatient(true);
-												setNewPatientFullName("Пациент с острой болью (CITO)");
-												setNewPatientPhone("");
-											}}
-											className="text-xs font-extrabold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 min-h-[36px] px-2 bg-rose-500/10 rounded-lg cursor-pointer"
-											title="Создать временную карту для пациента с острой болью"
-										>
-											<Flame size={13} />
-											<span>+ Экспресс-пациент CITO</span>
-										</button>
-									)}
+								<div className="flex items-center gap-2 flex-wrap">
+									<button
+										type="button"
+										onClick={() => {
+											setAppointmentType("emergency");
+											setReason("CITO! Острая боль");
+											setComment("Экстренный прием по острой боли (CITO / ст. 124 УК РФ)");
+											setDurationMinutes(30);
+											setShowInlineNewPatient(true);
+											setNewPatientFullName("Пациент с острой болью (CITO)");
+											setNewPatientPhone("");
+										}}
+										className="text-xs font-extrabold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 min-h-[36px] px-2 bg-rose-500/10 rounded-lg cursor-pointer"
+										title="Создать временную карту для пациента с острой болью за 1 клик"
+										data-testid="quick-booking-cito-express-btn"
+									>
+										<Flame size={13} />
+										<span>+ Экспресс-пациент CITO</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											void printBlankMedicalContract(
+												selectedPatient,
+												{
+													doctorName: doctors.find((d) => d.id === doctorUserId)?.fullName,
+													clinicName: dashboard?.clinicSettings?.profile?.legalName,
+												},
+											);
+										}}
+										className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 min-h-[36px] px-2 bg-amber-500/10 rounded-lg cursor-pointer"
+										title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
+										data-testid="quick-booking-print-blank-contract-btn"
+									>
+										<FileText size={13} className="text-amber-600" />
+										<span>Бланк договора (_______)</span>
+									</button>
 									<button
 										type="button"
 										onClick={() => {
@@ -1395,7 +1479,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								</div>
 								<button
 									type="submit"
-									disabled={isCreatingPatient || !newPatientFullName.trim()}
+									disabled={isCreatingPatient}
 									className="w-full min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
 								>
 									<Check size={14} />
@@ -1614,7 +1698,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					<button
 						type="button"
 						onClick={() => void handleSubmitBooking()}
-						disabled={isSubmitting || !patientId || (!doctorUserId && doctors.length > 1 && !doctors[0]) || (!chairId && chairs.length === 0)}
+						disabled={isSubmitting}
 						className={`flex-1 min-h-[44px] px-5 font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
 							collision.hasCollision
 								? "bg-amber-600 hover:bg-amber-700 text-white"
@@ -1687,6 +1771,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					suggestedSlots={slotConflict?.suggestedSlots ?? []}
 					patientName={selectedPatient?.fullName}
 					doctorName={doctors.find((d) => d.id === doctorUserId)?.fullName}
+					onOverbook={() => void handleSubmitBooking(undefined, { overbookOverride: true })}
 					onSelectSlot={(slotTime) => {
 						if (startsAtLocal) {
 							const datePrefix = startsAtLocal.slice(0, 11);

@@ -14,6 +14,7 @@ import { LoyaltyProgramModal } from "../loyalty/program/LoyaltyProgramModal";
 
 import { PatientAllergySafetyBanner } from "./PatientAllergySafetyBanner";
 import { PatientDuplicateAlert } from "../patients/PatientDuplicateAlert";
+import { printBlankMedicalContract } from "./blankContractPrint";
 
 export interface PatientWorkspaceViewProps {
 	patientId: string;
@@ -357,6 +358,22 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> =
 							>
 								<FileSpreadsheet className="w-3.5 h-3.5 mr-1 text-emerald-500 shrink-0" />
 								<span>Реестр ДМС</span>
+							</button>
+							<button
+								type="button"
+								className="min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 inline-flex items-center active:scale-95"
+								onClick={() => {
+									void printBlankMedicalContract(
+										{ id: patientId, fullName: patientName },
+										{ clinicName: dashboard?.clinicSettings?.profile?.legalName },
+									);
+								}}
+								title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
+								aria-label="Печать пустого договора"
+								data-testid="patient-print-blank-contract-btn"
+							>
+								<FileText className="w-3.5 h-3.5 mr-1 text-amber-600 dark:text-amber-400 shrink-0" />
+								<span>Бланк договора (_______)</span>
 							</button>
 							<div className="flex items-center gap-0.5 bg-[var(--paper-soft)] p-0.5 rounded-lg border border-[var(--line)] flex-wrap">
 								<button
