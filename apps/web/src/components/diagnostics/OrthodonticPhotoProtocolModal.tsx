@@ -21,6 +21,7 @@ import {
 	Sparkles,
 	Maximize2,
 	AlertCircle,
+	Copy,
 } from "lucide-react";
 import {
 	ORTHODONTIC_8_ANGLES,
@@ -42,7 +43,101 @@ import {
 	type MidlineShiftDirection,
 	type OrthodonticPhotoSlotRecord,
 } from "@dental/shared";
+import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore";
 import "./photoProtocol.css";
+
+export interface OrthodonticClinicalPreset {
+	id: string;
+	label: string;
+	shortLabel: string;
+	suggestedStage: OrthodonticSessionStage;
+	diagnosisRu: string;
+	complaint: string;
+	objective: string;
+	treatment: string;
+	recommendations: string;
+}
+
+export const ORTHODONTIC_CLINICAL_PRESETS: OrthodonticClinicalPreset[] = [
+	{
+		id: "aligner_bonding_steps_1_5",
+		label: "Фиксация аттачментов + выдача элайнеров (шаги 1–5)",
+		shortLabel: "Фиксация аттачментов + элайнеры (1–5)",
+		suggestedStage: "pre_treatment",
+		diagnosisRu: "К07.2 Аномалии соотношений зубных дуг. Элайнеротерапия (активный этап)",
+		complaint: "Плановый визит для начала активного этапа элайнеротерапии. Жалоб на острую боль нет.",
+		objective:
+			"Прикус и смыкание зубных рядов зафиксированы в фотопротоколе. Зубные ряды подготовлены к прямой фиксации аттачментов. Состояние твердых тканей зубов и краевого пародонта удовлетворительное, гигиена полости рта хорошая. Сепарация: проведена щадящая апроксимальная сепарация эмали (IPR) в контактах по утвержденному 3D-сетапу, калибровка щупами подтверждена.",
+		treatment:
+			"Профессиональная гигиена и очистка поверхностей зубов пастой без фтора. Изоляция операционного поля. Избирательное кислотное протравливание эмали 37% ортофосфорной кислотой (30 сек), смывание водой, бережное высушивание. Внесение светоотверждаемой адгезивной системы, фотополимеризация. Прямая фиксация композитных аттачментов по индивидуальному шаблону светоотверждаемым микрогибридным композитом повышенной прочности. Полимеризация каждого зуба по 20 сек. Шаблон снят, остатки композита удалены финирами и полировочными головками. Проведена апроксимальная сепарация эмали (IPR). Припасован первый сет элайнеров (Шаг 1): посадка прецизионная, ретенция надежная, дефектов окклюзии нет. Элайнеры шаги 1–5 выданы пациенту на руки.",
+		recommendations:
+			"Элайнеры шаги 1–5 выданы, аттачменты фиксированы, сепарация выполнена. Режим ношения: строго не менее 22 часов в сутки (снимать только во время приёма пищи и чистки зубов). Смена шагов каждые 10–14 дней. Использование чувисов при надевании по 5–10 минут 3 раза в день. Хранение в защитном антибактериальном боксе, очистка мягкой щеткой и прохладной водой. Следующий контрольный осмотр: через 6–8 недель перед переходом на шаг 6.",
+	},
+	{
+		id: "aligner_tracking_check",
+		label: "Контрольный осмотр на элайнерах (трекинг идеальный, переход на следующий шаг)",
+		shortLabel: "Контроль элайнеров (трекинг)",
+		suggestedStage: "active_monitoring",
+		diagnosisRu: "К07.2 Аномалии соотношений зубных дуг. Элайнеротерапия (мониторинг)",
+		complaint:
+			"Пациент жалоб не предъявляет. Отмечает комфортную адаптацию к аппаратуре и строгое соблюдение режима ношения (22 часа в сутки).",
+		objective:
+			"Контрольный осмотр на этапе ношения элайнеров. Композитные аттачменты на верхней и нижней челюстях визуально и инструментально интактны: сколов, дефектов фиксации и отклеек не выявлено. Трекинг перемещения зубов идеальный, полное соответствие утвержденному 3D-сетапу. Зазоры и щели между краем каппы и режущими краями зубов отсутствуют. Слизистая оболочка полости рта бледно-розовая, без признаков воспаления и натертостей.",
+		treatment:
+			"Контрольный осмотр окклюзии и плотности прилегания текущего шага капп. Проверка межзубных контактов флоссом. Очистка и антисептическая обработка полости рта. Одобрен переход на следующий плановый шаг элайнеров. Выдан следующий комплект капп.",
+		recommendations:
+			"Контрольный осмотр на элайнерах: трекинг идеальный, переход на следующий шаг разрешен. Продолжать ношение 22 ч/сутки с обязательным использованием чувисов при каждой смене капп. Соблюдать график смены элайнеров. Следующий контрольный визит через 4–6 недель.",
+	},
+	{
+		id: "braces_niti_powerchain_activation",
+		label: "Активация брекет-системы (замена дуги NiTi, эластические цепочки)",
+		shortLabel: "Активация брекетов (NiTi + цепочка)",
+		suggestedStage: "active_monitoring",
+		diagnosisRu: "К07.3 Аномалии положения отдельных зубов. Брекет-система (активация)",
+		complaint:
+			"Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку брекетов нет. Все элементы аппаратуры сохранны.",
+		objective:
+			"Вестибулярная несъемная брекет-система на верхней и нижней челюстях. Замки и брекеты стабильно фиксированы, подвижности элементов нет. Динамика нивелирования положительная, смыкание стабильно. Гигиена полости рта удовлетворительная.",
+		treatment:
+			"Сняты старые дуги и эластические лигатуры. Очистка и антисептическая обработка пазов брекетов (0.05% раствор хлоргексидина). Установка новых нивелирующих дуг NiTi: верхняя челюсть .016x.022\", нижняя челюсть .016\". Установлена эластическая цепочка Power Chain во фронтальном сегменте для консолидации зубного ряда и закрытия промежутков. Замки закрыты с контролем фиксации, дистальные концы дуг загнуты и зашлифованы, травма мягких тканей исключена.",
+		recommendations:
+			"Активация брекет-системы выполнена: замена дуги NiTi и установка эластической цепочки завершены. Тщательная гигиена (ортодонтическая щетка, ершики, ирригатор). Использование защитного воска при натирании. Исключить твердую и липкую пищу. Следующая активация через 4–5 недель.",
+	},
+];
+
+export function generateOrthodonticDiaryNote(
+	preset: OrthodonticClinicalPreset,
+	session: OrthodonticPhotoSession,
+	dateStr?: string,
+): string {
+	const effectiveDate = dateStr || new Date().toLocaleDateString("ru-RU");
+	const rightMolar = ANGLE_CLASS_LABELS_RU[session.findings.angleClassMolarRight] || "I класс";
+	const leftMolar = ANGLE_CLASS_LABELS_RU[session.findings.angleClassMolarLeft] || "I класс";
+	const overjet = session.findings.overjetMm ? `${session.findings.overjetMm} мм` : "норма";
+	const overbite = session.findings.overbiteMm ? `${session.findings.overbiteMm} мм` : "норма";
+	const smileArc = SMILE_ARC_LABELS_RU[session.findings.smileArc] || "консонантная";
+
+	return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)
+Дата приёма: ${effectiveDate}
+Пациент: ${session.patientName || "Пациент"}
+Врач: ${session.doctorName || "Врач-ортодонт"}
+Диагноз: ${preset.diagnosisRu}
+
+1. ЖАЛОБЫ:
+${preset.complaint}
+
+2. ОБЪЕКТИВНЫЙ СТАТУС:
+${preset.objective}
+• Окклюзионные параметры: моляры справа — ${rightMolar}, слева — ${leftMolar}. Сагиттальная щель: ${overjet}, резцовое перекрытие: ${overbite}. Дуга улыбки: ${smileArc}.
+• Фотопротокол: зафиксирован в 8 стандартных проекциях по Приказу Минздрава РФ № 834н.
+
+3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:
+${preset.treatment}
+
+4. РЕКОМЕНДАЦИИ И НАЗНАЧЕНИЯ:
+${preset.recommendations}`;
+}
 
 export interface OrthodonticPhotoProtocolModalProps {
 	isOpen: boolean;
@@ -56,6 +151,7 @@ export interface OrthodonticPhotoProtocolModalProps {
 	treatmentPlanStageId?: string;
 	treatmentStageTitle?: string;
 	onSaveSession?: (session: OrthodonticPhotoSession) => void;
+	onInsertProtocol043?: (protocolText: string) => void;
 }
 
 export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolModalProps> = ({
@@ -70,6 +166,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 	treatmentPlanStageId,
 	treatmentStageTitle = "Этап 1: Нивелирование и выравнивание зубных рядов",
 	onSaveSession,
+	onInsertProtocol043,
 }) => {
 	// Initialize session
 	const [session, setSession] = useState<OrthodonticPhotoSession>(() => {
@@ -92,6 +189,13 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 	const [selectedSlotForZoom, setSelectedSlotForZoom] = useState<OrthodonticAngleId | null>(null);
 	const [dragOverSlotId, setDragOverSlotId] = useState<OrthodonticAngleId | null>(null);
 	const [activeCategoryFilter, setActiveCategoryFilter] = useState<"all" | "extraoral" | "intraoral">("all");
+
+	// 1-Click Clinical Presets & 043 Diary State (Mandates 8e, 8k)
+	const [activePreset, setActivePreset] = useState<OrthodonticClinicalPreset | null>(
+		ORTHODONTIC_CLINICAL_PRESETS[0] ?? null,
+	);
+	const [insertProtocolOnSave, setInsertProtocolOnSave] = useState<boolean>(true);
+	const [showPresetPreview, setShowPresetPreview] = useState<boolean>(false);
 
 	// File input ref for uploading
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -119,6 +223,117 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 			updatedAt: new Date().toISOString(),
 		}));
 	}, []);
+
+	// Select clinical preset in 1 click
+	const handleSelectPreset = useCallback((preset: OrthodonticClinicalPreset) => {
+		setActivePreset(preset);
+		if (preset.suggestedStage !== session.stage) {
+			handleStageChange(preset.suggestedStage);
+		}
+		if (!session.findings.clinicalDiagnosisRu || session.findings.clinicalDiagnosisRu.trim() === "") {
+			setSession((prev) => ({
+				...prev,
+				findings: {
+					...prev.findings,
+					clinicalDiagnosisRu: preset.diagnosisRu,
+				},
+				updatedAt: new Date().toISOString(),
+			}));
+		}
+		showToast(`⚡ Выбран пресет: ${preset.shortLabel}`, "info");
+	}, [session.stage, session.findings.clinicalDiagnosisRu, handleStageChange]);
+
+	// 1-Click Insert Structured Protocol into Form 043/u (Mandates 8e, 8k)
+	const handleInsertProtocol043 = useCallback(
+		(presetToApply?: OrthodonticClinicalPreset) => {
+			const targetPreset = presetToApply || activePreset || ORTHODONTIC_CLINICAL_PRESETS[0]!;
+			if (!targetPreset) return;
+			const fullProtocolText = generateOrthodonticDiaryNote(targetPreset, session);
+
+			try {
+				const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+				if (setVisitNoteForm) {
+					setVisitNoteForm((prev) => {
+						const prevComplaint = prev.complaint || "";
+						const newComplaint = prevComplaint
+							? `${prevComplaint}\n\n[Ортодонтия] ${targetPreset.complaint}`
+							: `[Ортодонтия] ${targetPreset.complaint}`;
+
+						const prevObjective = prev.objectiveStatus || "";
+						const newObjective = prevObjective
+							? `${prevObjective}\n\n${fullProtocolText}`
+							: fullProtocolText;
+
+						const prevPlan = prev.treatmentPlan || "";
+						const newPlan = prevPlan
+							? `${prevPlan}\n\n[Ортодонтия] ${targetPreset.shortLabel}`
+							: `[Ортодонтия] ${targetPreset.shortLabel}: ${targetPreset.recommendations}`;
+
+						const prevDiagnosis = prev.diagnosis || "";
+						const newDiagnosis = prevDiagnosis
+							? `${prevDiagnosis}; ${targetPreset.diagnosisRu}`
+							: targetPreset.diagnosisRu;
+
+						return {
+							...prev,
+							complaint: newComplaint,
+							objectiveStatus: newObjective,
+							treatmentPlan: newPlan,
+							diagnosis: newDiagnosis,
+						};
+					});
+				}
+
+				// Reactive event for live SOAP note editors
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-apply-soap-protocol", {
+							detail: {
+								protocolText: fullProtocolText,
+								title: `Ортодонтия: ${targetPreset.shortLabel}`,
+								soap: {
+									complaint: targetPreset.complaint,
+									objective: fullProtocolText,
+									treatmentPlan: targetPreset.treatment,
+									recommendations: targetPreset.recommendations,
+									diagnosisIcd10: targetPreset.diagnosisRu,
+								},
+								mode: "smart_append",
+								immediate: true,
+							},
+						}),
+					);
+				}
+
+				if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
+					navigator.clipboard.writeText(fullProtocolText).catch(() => {});
+				}
+
+				onInsertProtocol043?.(fullProtocolText);
+				showToast("⚡ Протокол ортодонтии успешно внесен в дневник 043/у", "success");
+			} catch (_err) {
+				if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
+					navigator.clipboard.writeText(fullProtocolText).catch(() => {});
+				}
+				showToast("Протокол скопирован в буфер обмена", "info");
+			}
+		},
+		[activePreset, session, onInsertProtocol043],
+	);
+
+	// Fast copy to clipboard
+	const handleCopyProtocolToClipboard = useCallback(() => {
+		const targetPreset = activePreset || ORTHODONTIC_CLINICAL_PRESETS[0]!;
+		if (!targetPreset) return;
+		const fullProtocolText = generateOrthodonticDiaryNote(targetPreset, session);
+		if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
+			navigator.clipboard.writeText(fullProtocolText).then(() => {
+				showToast("⚡ Протокол ортодонтии скопирован в буфер обмена", "success");
+			}).catch(() => {
+				showToast("Не удалось скопировать", "error");
+			});
+		}
+	}, [activePreset, session]);
 
 	// Handle file upload
 	const handleFileSelect = useCallback(
@@ -230,7 +445,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 		}));
 	};
 
-	// 1-Click Export to Printable Presentation HTML / PDF
+	// 1-Click Export to Printable Presentation HTML / PDF (no artificial delays)
 	const handleExportPresentation = () => {
 		const htmlContent = renderOrthodonticPresentationHtml(session);
 		const printWindow = window.open("", "_blank");
@@ -238,14 +453,21 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 			printWindow.document.open();
 			printWindow.document.write(htmlContent);
 			printWindow.document.close();
-			// Auto print after small timeout for asset load
-			setTimeout(() => {
+			printWindow.focus();
+			if (printWindow.document.readyState === "complete") {
 				printWindow.print();
-			}, 350);
+			} else {
+				printWindow.onload = () => {
+					printWindow.print();
+				};
+			}
 		}
 	};
 
 	const handleSave = () => {
+		if (insertProtocolOnSave) {
+			handleInsertProtocol043();
+		}
 		if (onSaveSession) {
 			onSaveSession(session);
 		}
@@ -427,6 +649,68 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							)}
 						</div>
 					</div>
+
+					{/* 1-Click Clinical Presets Bar (Form 043/u) */}
+					<div className="ortho-presets-bar" role="group" aria-label="Готовые клинические пресеты ортодонтии">
+						<div className="ortho-presets-label">
+							<Sparkles size={14} className="text-amber-500 shrink-0" />
+							<span>1-клик пресеты 043/у:</span>
+						</div>
+						<div className="ortho-presets-list">
+							{ORTHODONTIC_CLINICAL_PRESETS.map((preset) => {
+								const isSelected = activePreset?.id === preset.id;
+								return (
+									<button
+										key={preset.id}
+										type="button"
+										onClick={() => handleSelectPreset(preset)}
+										className={`ortho-preset-pill ${isSelected ? "active" : ""}`}
+										title={preset.label}
+										data-testid={`ortho-preset-${preset.id}`}
+									>
+										<span>{preset.label}</span>
+									</button>
+								);
+							})}
+						</div>
+						<div className="flex items-center gap-1.5 shrink-0">
+							<button
+								type="button"
+								onClick={() => setShowPresetPreview(!showPresetPreview)}
+								className="ortho-preset-preview-toggle"
+								title={showPresetPreview ? "Скрыть предпросмотр протокола" : "Показать предпросмотр текста для 043/у"}
+								data-testid="toggle-preset-preview-btn"
+							>
+								<Eye size={13} />
+								<span>{showPresetPreview ? "Скрыть" : "Текст 043/у"}</span>
+							</button>
+							<button
+								type="button"
+								onClick={handleCopyProtocolToClipboard}
+								className="ortho-preset-copy-btn"
+								title="Скопировать структурированный протокол в буфер обмена"
+								data-testid="copy-ortho-protocol-btn"
+							>
+								<Copy size={13} />
+								<span>Копировать</span>
+							</button>
+						</div>
+					</div>
+
+					{/* Optional Collapsible Preset Preview */}
+					{showPresetPreview && activePreset && (
+						<div className="ortho-preset-preview-box" data-testid="ortho-preset-preview-box">
+							<div className="ortho-preset-preview-header">
+								<span className="font-semibold text-xs text-[var(--ink)]">
+									Предпросмотр структурированного протокола для Формы 043/у ({activePreset.shortLabel}):
+								</span>
+								<span className="text-[11px] text-[var(--muted)]">Мандат 8e • Без ручного набора</span>
+							</div>
+							<pre className="ortho-preset-preview-text">
+								{generateOrthodonticDiaryNote(activePreset, session)}
+							</pre>
+						</div>
+					)}
 
 					{/* 8-Slot Grid */}
 					<div className="ortho-8-grid">
@@ -721,11 +1005,31 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 
 				{/* 5. Modal Footer */}
 				<footer className="ortho-modal-footer">
-					<div className="text-xs text-[var(--muted)]">
-						<span>8 стандартных ортодонтических проекций • Приказ Минздрава РФ № 834н</span>
+					<div className="ortho-footer-left">
+						<label className="ortho-insert-checkbox-label">
+							<input
+								type="checkbox"
+								checked={insertProtocolOnSave}
+								onChange={(e) => setInsertProtocolOnSave(e.target.checked)}
+								className="ortho-checkbox"
+								data-testid="insert-protocol-on-save-checkbox"
+							/>
+							<span>Вносить в дневник 043/у при сохранении</span>
+						</label>
+						<span className="ortho-footer-ref-hint">Приказ МЗ РФ № 834н</span>
 					</div>
 
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-2.5">
+						<button
+							type="button"
+							onClick={() => handleInsertProtocol043()}
+							className="ortho-btn-insert-043"
+							title="Вставить структурированный протокол ортодонтии в дневник Form 043/у"
+							data-testid="insert-ortho-protocol-043-btn"
+						>
+							<FileText size={15} />
+							<span>Вставить протокол ортодонтии в дневник 043/у</span>
+						</button>
 						<button
 							type="button"
 							onClick={onClose}

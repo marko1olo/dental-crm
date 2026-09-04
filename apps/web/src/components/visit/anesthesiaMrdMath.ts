@@ -23,6 +23,8 @@ export type CarpuleVolumeMl = 1.7 | 1.8 | 2.0;
 
 export type PediatricFormula = 'clark' | 'young' | 'direct_mg_kg';
 
+import { resolveClinicalDefaultWeightKg } from '../anesthesia/anesthesiaEngine';
+
 export type SafetyZone = 'green_safe' | 'yellow_caution' | 'orange_warning' | 'red_stop';
 
 export type LimitingFactor =
@@ -164,8 +166,8 @@ export const EPINEPHRINE_LIMITS_MG = {
 
 export interface MrdCalculationParams {
 	readonly drugId: MrdDrugId;
-	readonly patientWeightKg: number;
-	readonly carpulesCount: number;
+	readonly patientWeightKg?: number | null | undefined;
+	readonly carpulesCount?: number | undefined;
 	readonly carpuleVolumeMl?: number | CarpuleVolumeMl | undefined;
 	readonly isCardiacRisk?: boolean | undefined;
 	readonly isPediatric?: boolean | undefined;
@@ -218,6 +220,7 @@ export interface MrdCalculationResult {
 	readonly soapDiaryText: string;
 }
 
+
 export function calculateClarkFactor(patientWeightKg: number): number {
 	const weight = Math.max(3, Math.min(150, patientWeightKg));
 	return Math.round((weight / 70) * 1000) / 1000;
@@ -244,15 +247,21 @@ export function calculateAnesthesiaMrd(params: MrdCalculationParams): MrdCalcula
 		? params.carpuleVolumeMl
 		: drug.defaultVolumeMl;
 
-	const weight = Math.max(5, Math.min(250, Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0 ? params.patientWeightKg : 70));
-	const carpules = Math.max(0, Number.isFinite(params.carpulesCount) ? params.carpulesCount : 1);
+	const hasValidInputWeight = typeof params.patientWeightKg === 'number' && Number.isFinite(params.patientWeightKg) && params.patientWeightKg > 0;
 	const age = params.patientAgeYears ?? null;
 
 	const isPediatric = Boolean(
 		params.isPediatric ||
 		(age !== null && age < 18) ||
-		weight < 40,
+		(hasValidInputWeight && params.patientWeightKg! < 40),
 	);
+
+	const weight = resolveClinicalDefaultWeightKg(
+		params.patientWeightKg,
+		params.patientAgeYears,
+		isPediatric,
+	);
+	const carpules = Math.max(0, Number.isFinite(params.carpulesCount) ? params.carpulesCount! : 1);
 
 	const mgActivePerCarpule = Math.round(carpuleVolume * drug.mgPerMlActive * 100) / 100;
 	const mgEpiPerCarpule = Math.round(carpuleVolume * drug.epinephrineMgPerMl * 10000) / 10000;

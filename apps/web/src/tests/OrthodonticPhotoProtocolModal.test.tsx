@@ -6,7 +6,11 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { OrthodonticPhotoProtocolModal } from "../components/diagnostics/OrthodonticPhotoProtocolModal";
+import {
+	OrthodonticPhotoProtocolModal,
+	ORTHODONTIC_CLINICAL_PRESETS,
+	generateOrthodonticDiaryNote,
+} from "../components/diagnostics/OrthodonticPhotoProtocolModal";
 import {
 	createEmptyOrthodonticSession,
 	updateSlotPhoto,
@@ -78,6 +82,24 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 		assert.ok(html.includes("Сагиттальная щель (Overjet)"));
 		assert.ok(html.includes("Дуга улыбки (Smile Arc)"));
 		assert.ok(html.includes("Смещение средней линии В/Ч"));
+
+		// 1-Click Clinical Presets Bar (Mandates 8e, 8k)
+		assert.ok(html.includes("1-клик пресеты 043/у:"));
+		assert.ok(html.includes('data-testid="ortho-preset-aligner_bonding_steps_1_5"'));
+		assert.ok(html.includes('data-testid="ortho-preset-aligner_tracking_check"'));
+		assert.ok(html.includes('data-testid="ortho-preset-braces_niti_powerchain_activation"'));
+		assert.ok(html.includes("Фиксация аттачментов + выдача элайнеров (шаги 1–5)"));
+		assert.ok(html.includes("Контрольный осмотр на элайнерах (трекинг идеальный, переход на следующий шаг)"));
+		assert.ok(html.includes("Активация брекет-системы (замена дуги NiTi, эластические цепочки)"));
+
+		// 1-Click Insert Button & Auto-Save Checkbox in Footer
+		assert.ok(html.includes('data-testid="insert-ortho-protocol-043-btn"'));
+		assert.ok(html.includes("Вставить протокол ортодонтии в дневник 043/у"));
+		assert.ok(html.includes('data-testid="insert-protocol-on-save-checkbox"'));
+		assert.ok(html.includes("Вносить в дневник 043/у при сохранении"));
+
+		// No disabled buttons
+		assert.ok(!html.includes("disabled"));
 	});
 
 	it("renders uploaded photos and overlay guidelines when session has images", () => {
@@ -118,5 +140,41 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 
 		// Active stage
 		assert.ok(html.includes("active-stage-active"));
+	});
+
+	it("correctly synthesizes 043/u diary notes for all three 1-click clinical presets", () => {
+		const session = createEmptyOrthodonticSession({
+			patientId: "pat-202",
+			patientName: "Кузнецова Анна Сергеевна",
+			doctorName: "Д-р Лебедева О. В.",
+			stage: "pre_treatment",
+		});
+
+		// Preset 1: Aligner bonding + steps 1-5 delivery
+		const preset1 = ORTHODONTIC_CLINICAL_PRESETS.find((p) => p.id === "aligner_bonding_steps_1_5")!;
+		assert.ok(preset1, "Preset 1 must exist");
+		const note1 = generateOrthodonticDiaryNote(preset1, session, "04.09.2026");
+		assert.ok(note1.includes("ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)"));
+		assert.ok(note1.includes("Кузнецова Анна Сергеевна"));
+		assert.ok(note1.includes("Элайнеры шаги 1–5 выданы, аттачменты фиксированы, сепарация выполнена"));
+		assert.ok(note1.includes("37% ортофосфорной кислотой"));
+		assert.ok(note1.includes("ношения: строго не менее 22 часов в сутки"));
+
+		// Preset 2: Aligner tracking check
+		const preset2 = ORTHODONTIC_CLINICAL_PRESETS.find((p) => p.id === "aligner_tracking_check")!;
+		assert.ok(preset2, "Preset 2 must exist");
+		const note2 = generateOrthodonticDiaryNote(preset2, session, "04.09.2026");
+		assert.ok(note2.includes("Трекинг перемещения зубов идеальный"));
+		assert.ok(note2.includes("Одобрен переход на следующий плановый шаг элайнеров"));
+		assert.ok(note2.includes("Контрольный осмотр на элайнерах: трекинг идеальный, переход на следующий шаг разрешен"));
+
+		// Preset 3: Braces activation + NiTi + Power Chain
+		const preset3 = ORTHODONTIC_CLINICAL_PRESETS.find((p) => p.id === "braces_niti_powerchain_activation")!;
+		assert.ok(preset3, "Preset 3 must exist");
+		const note3 = generateOrthodonticDiaryNote(preset3, session, "04.09.2026");
+		assert.ok(note3.includes("Активация брекет-системы выполнена"));
+		assert.ok(note3.includes("замена дуги NiTi и установка эластической цепочки"));
+		assert.ok(note3.includes("Power Chain"));
+		assert.ok(note3.includes(".016x.022\""));
 	});
 });
