@@ -3430,11 +3430,28 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													fontWeight: "bold",
 												}}
 												onClick={() => {
-													setAnesthesiaModalToothNumber(code);
-													setIsAnesthesiaModalOpen(true);
+													appendToEMKField(
+														"treatmentPlan",
+														`Анестезия зуба ${code}: Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.`,
+													);
+													showToast(`Анестезия зуба ${code} (1 карп.) внесена в протокол`, "success", 2500);
+													closeClinicalModal();
 												}}
 											>
-												<span className="flex-1 text-left">Анестезия & Дозировка (МРД)</span> <Syringe className="w-4 h-4 text-sky-500 shrink-0" />
+												<span className="flex-1 text-left">⚡ Анестезия зуба {code} (1 карп.)</span> <Syringe className="w-4 h-4 text-sky-500 shrink-0" />
+											</button>
+											<button
+												type="button"
+												className="text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors py-0.5 px-2 text-left inline-flex items-center gap-1 cursor-pointer"
+												onClick={() => {
+													setAnesthesiaModalToothNumber(code);
+													setIsAnesthesiaModalOpen(true);
+													closeClinicalModal();
+												}}
+												title="Расчет максимальной безопасной дозы и выбор препарата по весу"
+											>
+												<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
+												<span>Калькулятор доз и МДД...</span>
 											</button>
 											<button
 												type="button"
@@ -3646,7 +3663,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 				}}
 			/>
 
-			{/* Anesthesia Dosage Calculator & Safety Modal (МРД) */}
+			{/* Anesthesia Dosage Calculator & Safety Modal (МРД) — открывается строго по клику врача */}
 			<AnesthesiaDosageCalculatorModal
 				isOpen={isAnesthesiaModalOpen}
 				onClose={() => {

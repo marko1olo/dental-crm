@@ -129,6 +129,7 @@ const IMPLANT_PRESETS: Array<{ brand: string; model: string; defaultDia: number;
 	{ brand: "Dentium", model: "SuperLine SLA", defaultDia: 4.5, defaultLen: 10.0 },
 	{ brand: "Astra Tech", model: "OsseoSpeed EV", defaultDia: 4.2, defaultLen: 11.0 },
 	{ brand: "MegaGen", model: "AnyRidge Xpeed", defaultDia: 4.5, defaultLen: 10.0 },
+	{ brand: "MIS Implants", model: "Seven / V3 SLA", defaultDia: 4.2, defaultLen: 10.0 },
 ];
 
 export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModalProps> = ({

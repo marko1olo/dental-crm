@@ -1049,7 +1049,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 			{/* ── Anesthesia Quick Bar & Dosage Calculator (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (
 				<details
-					open
 					className="group rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] p-3.5 text-xs mb-2 shadow-xs"
 					data-testid="anesthesia-quick-logger-bar"
 				>

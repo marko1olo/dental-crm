@@ -1676,7 +1676,7 @@ export function VisitEmkTab() {
 			)}
 
 			{/* Быстрые клинические протоколы SOAP + МКБ-10 (Tier 2 Warm Context Accordion) */}
-			<details open className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2.5 text-xs my-2">
+			<details className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-2.5 text-xs my-2">
 				<summary className="flex items-center justify-between cursor-pointer font-bold text-xs select-none list-none text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
 					<div className="flex items-center gap-2 min-w-0 pr-2">
 						<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
@@ -2045,249 +2045,72 @@ export function VisitEmkTab() {
 
 							{field.key === "treatmentPlan" && (
 								<div className="flex flex-col gap-2.5 mt-1">
-									{/* Аккордеон: Местная карпульная анестезия & Расчет МДД по весу */}
-									<details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] overflow-hidden">
-										<summary className="flex items-center justify-between p-3 cursor-pointer font-bold text-xs sm:text-sm select-none list-none text-[var(--ink)] hover:bg-[var(--teal-soft)]/40 transition-colors">
-											<div className="flex items-center gap-2">
-												<span className="w-6 h-6 rounded-md bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] flex items-center justify-center text-xs">
-													<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-												</span>
-												<span>Местная карпульная анестезия & Расчет МДД по весу ({liveAnesCalc.drugName}, {selectedCarpulesCount} карп.)</span>
-											</div>
-											<ChevronDown size={16} className="text-[var(--muted)] transition-transform duration-200 group-open:rotate-180" />
-										</summary>
-										<div className="p-4 pt-1 flex flex-col gap-3 border-t border-[var(--teal,var(--line))]/20">
-											<div className="flex items-center justify-between gap-2 flex-wrap border-b border-[var(--teal,var(--line))]/20 pb-2.5">
-												<div>
-													<span className="text-xs font-extrabold text-[var(--ink)] block">
-														Стандарты СтАР и Минздрава РФ • Контроль токсической дозы
-													</span>
-												</div>
-												<div className="flex items-center gap-2 flex-wrap">
-													<button
-														type="button"
-														onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
-														className="text-xs font-bold px-3 py-1.5 rounded-lg border border-[var(--teal,var(--line))]/30 bg-[var(--paper)] text-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
-														data-testid="btn-open-anesthesia-protocol-modal"
-													>
-														<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
-														<span>Расширенный калькулятор СтАР</span>
-													</button>
-												</div>
-											</div>
+									{/* Быстрый протокол анестезии (1-клик пресеты) + скрытая кнопка калькулятора */}
+									<div className="flex items-center justify-between gap-2 flex-wrap p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
+										<div className="flex items-center gap-1.5 flex-wrap">
+											<span className="text-[11px] font-extrabold text-[var(--muted)] flex items-center gap-1">
+												<Syringe size={13} className="text-[var(--teal,var(--brand-primary))]" />
+												<span>Анестезия:</span>
+											</span>
+											<button
+												type="button"
+												onClick={() => {
+													if (!updateVisitNoteField) return;
+													const curr = visitNoteForm?.treatmentPlan || "";
+													const snippet = "Анестезия: инфильтрационная Sol. Ultracaini D-S 1:200 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.";
+													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
+													showToast("Анестезия (Ультракаин Д-С 1:200k, 1 карп.) внесена в протокол", "success", 2500);
+												}}
+												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer"
+												data-testid="btn-anes-ultracain-ds"
+												title="1 клик: внести стандартную анестезию 1:200 000 в протокол"
+											>
+												⚡ Ультракаин 1:200k (1 карп.)
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													if (!updateVisitNoteField) return;
+													const curr = visitNoteForm?.treatmentPlan || "";
+													const snippet = "Анестезия: проводниковая/инфильтрационная Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание глубокое.";
+													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
+													showToast("Анестезия (Ультракаин Форте 1:100k, 1 карп.) внесена в протокол", "success", 2500);
+												}}
+												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer"
+												data-testid="btn-anes-ultracain-ds-forte"
+												title="1 клик: внести глубокую анестезию 1:100 000 в протокол"
+											>
+												⚡ Ультракаин Форте (1 карп.)
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													if (!updateVisitNoteField) return;
+													const curr = visitNoteForm?.treatmentPlan || "";
+													const snippet = "Анестезия: инфильтрационная Sol. Scandonest 3% (без адреналина) — 1.7 мл (1 карпула). Аспирационная проба отрицательная. Обезболивание достаточное.";
+													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
+													showToast("Анестезия (Скандонест 3% без адреналина, 1 карп.) внесена в протокол", "success", 2500);
+												}}
+												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer"
+												data-testid="btn-anes-scandonest-3"
+												title="1 клик: безадреналиновая анестезия для кардио-пациентов"
+											>
+												⚡ Скандонест 3% (без адреналина)
+											</button>
+										</div>
 
-											{/* Выбор препарата анестетика */}
-											<div className="space-y-1.5">
-												<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-													1. Выберите анестетик (карпулы):
-												</label>
-												<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-													<button
-														type="button"
-														onClick={() => setSelectedAnesDrugKey("ultracain_ds_forte")}
-														className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[44px] flex items-start justify-between gap-2 ${
-															selectedAnesDrugKey === "ultracain_ds_forte"
-																? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
-																: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
-														}`}
-														data-testid="btn-anes-ultracain-ds-forte"
-													>
-														<div className="min-w-0">
-															<div className="text-xs font-extrabold truncate">
-																Ультракаин Д-С Форте
-															</div>
-															<div className="text-[11px] opacity-80">
-																1:100 000 · 1.7 мл (68 мг)
-															</div>
-														</div>
-														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 shrink-0">
-															1:100k
-														</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => setSelectedAnesDrugKey("ultracain_ds")}
-														className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[44px] flex items-start justify-between gap-2 ${
-															selectedAnesDrugKey === "ultracain_ds"
-																? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--ink)] ring-1 ring-[var(--teal)] shadow-2xs"
-																: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))]/40"
-														}`}
-														data-testid="btn-anes-ultracain-ds"
-													>
-														<div className="min-w-0">
-															<div className="text-xs font-extrabold truncate">
-																Ультракаин Д-С
-															</div>
-															<div className="text-[11px] opacity-80">
-																1:200 000 · 1.7 мл (68 мг)
-															</div>
-														</div>
-														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] border border-[var(--teal-soft)] shrink-0">
-															1:200k
-														</span>
-													</button>
-
-													<button
-														type="button"
-														onClick={() => setSelectedAnesDrugKey("scandonest_3")}
-														className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer touch-manipulation min-h-[44px] flex items-start justify-between gap-2 ${
-															selectedAnesDrugKey === "scandonest_3"
-																? "bg-[var(--ok-bg)] border-[var(--ok-fg)] text-[var(--ink)] ring-1 ring-[var(--ok-fg)]/40 shadow-2xs"
-																: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--ok-fg)]/40"
-														}`}
-														data-testid="btn-anes-scandonest-3"
-													>
-														<div className="min-w-0">
-															<div className="text-xs font-extrabold truncate text-[var(--ok-fg)]">
-																Скандонест 3%
-															</div>
-															<div className="text-[11px] opacity-80">
-																Без адреналина · 1.7 мл
-															</div>
-														</div>
-														<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--ok-bg)] text-[var(--ok-fg)] border border-[var(--ok-fg)]/30 shrink-0">
-															Группа риска
-														</span>
-													</button>
-												</div>
-											</div>
-
-											{/* Дозировка в карпулах и масса тела */}
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-												{/* Выбор числа карпул */}
-												<div className="space-y-1.5">
-													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] block">
-														2. Количество карпул: <strong>{selectedCarpulesCount} шт.</strong> ({liveAnesCalc.volumeMl} мл)
-													</label>
-													<div className="flex flex-wrap gap-1.5">
-														{[0.5, 1.0, 1.5, 2.0, 3.0].map((cCount) => (
-															<button
-																key={cCount}
-																type="button"
-																onClick={() => setSelectedCarpulesCount(cCount)}
-																className={`px-3 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer touch-manipulation min-h-[32px] h-8 ${
-																	selectedCarpulesCount === cCount
-																		? "bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,white)] border-[var(--teal)] shadow-2xs"
-																		: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)]"
-																}`}
-																data-testid={`btn-carpules-${cCount}`}
-															>
-																{cCount} карп.
-															</button>
-														))}
-													</div>
-												</div>
-
-												{/* Масса тела пациента */}
-												<div className="space-y-1.5">
-													<label className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--muted)] flex items-center justify-between">
-														<span>3. Масса тела пациента:</span>
-														<strong className={patientWeightKg > 0 ? "text-[var(--teal,var(--brand-primary))]" : "text-rose-500"}>
-															{patientWeightKg > 0 ? `${patientWeightKg} кг` : "Не указан"}
-														</strong>
-													</label>
-													<div className="flex items-center gap-2">
-														<input
-															type="range"
-															min={0}
-															max={140}
-															step={1}
-															value={patientWeightKg}
-															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 0)}
-															className="w-full accent-[var(--teal,var(--brand-primary))] cursor-pointer"
-															data-testid="input-patient-weight-slider"
-														/>
-														<input
-															type="number"
-															min={0}
-															max={250}
-															value={patientWeightKg || ""}
-															placeholder="0"
-															onChange={(e) => setPatientWeightKg(parseInt(e.target.value) || 0)}
-															className="w-16 min-h-[32px] h-8 px-2 py-1 text-xs font-bold text-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
-															data-testid="input-patient-weight-num"
-														/>
-													</div>
-												</div>
-											</div>
-
-											{/* Красный алерт при отсутствии фактического веса у ребенка */}
-											{Boolean(patientAge < 18 && (!patientWeightKg || patientWeightKg <= 0)) ? (
-												<div
-													className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 flex items-center gap-2.5 text-xs text-rose-700 dark:text-rose-300 font-bold"
-													role="alert"
-													data-testid="alert-pediatric-weight-required"
-												>
-													<AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
-													<span>Укажите фактический вес ребенка для расчета анестезии!</span>
-												</div>
-											) : null}
-
-											{/* Индикатор безопасности дозировки и кнопка внесения */}
-											<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 flex-wrap">
-												<div className="space-y-0.5 min-w-0 flex-1">
-													<div className="flex items-center gap-2">
-														<span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-															liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT"
-																? "bg-rose-500 animate-pulse"
-																: liveAnesCalc.safetyLevel === "safe"
-																	? "bg-[var(--ok-fg)]"
-																	: liveAnesCalc.safetyLevel === "caution"
-																		? "bg-lime-500"
-																		: liveAnesCalc.safetyLevel === "warning"
-																			? "bg-amber-500"
-																			: "bg-rose-500"
-														}`} />
-														<span className="text-xs font-bold text-[var(--ink)] truncate">
-															{liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" ? (
-																<span className="text-rose-600 dark:text-rose-400 font-extrabold">
-																	Расчет предельной дозы заблокирован (требуется вес)
-																</span>
-															) : (
-																<>
-																	МДД для {patientWeightKg} кг: макс. <strong>{liveAnesCalc.maxSafeCarpules} карп.</strong> ({liveAnesCalc.maxSafeDoseMg} мг)
-																</>
-															)}
-														</span>
-														{liveAnesCalc.safetyLevel !== "REQUIRES_WEIGHT_INPUT" && (
-															<span className="text-[11px] font-semibold text-[var(--muted)]">
-																• {liveAnesCalc.safetyPercentage}% от лимита
-															</span>
-														)}
-													</div>
-													<div className="text-[11px] text-[var(--muted)] truncate">
-														{liveAnesCalc.safetyLevel === "REQUIRES_WEIGHT_INPUT" ? (
-															<span className="text-rose-600 dark:text-rose-400">
-																{liveAnesCalc.warningMessage || "Укажите фактический вес для расчета"}
-															</span>
-														) : (
-															<>
-																Препарат: {liveAnesCalc.drugName} • Введено: {liveAnesCalc.volumeMl} мл ({liveAnesCalc.activeDoseMg} мг)
-																{liveAnesCalc.epinephrineMg > 0 ? ` • Адреналин: ${liveAnesCalc.epinephrineMg.toFixed(3)} мг` : " • Без адреналина"}
-															</>
-														)}
-													</div>
-												</div>
-
-												<button
-													type="button"
-													onClick={() => {
-														if (!updateVisitNoteField) return;
-														const curr = visitNoteForm?.treatmentPlan || "";
-														updateVisitNoteField(
-															"treatmentPlan",
-															appendClinicalText(curr, liveAnesCalc.formattedTreatmentSnippet, "\n\n"),
-														);
-														showToast(`Анестезия (${liveAnesCalc.drugName}, ${selectedCarpulesCount} карп.) внесена в протокол`, "success", 3000);
-													}}
-													className="min-h-[38px] px-4 py-1.5 text-xs sm:text-sm font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-2xs active:scale-95 cursor-pointer transition-all inline-flex items-center gap-2 shrink-0 touch-manipulation"
-													data-testid="btn-apply-anesthesia-to-plan"
-												>
-													<Syringe className="w-4 h-4" />
-													<span>+ Внести в протокол</span>
-												</button>
-											</div>
+										{/* Скрытая кнопка для сложного клинического расчета — открывается ТОЛЬКО если врач сам кликнет */}
+										<button
+											type="button"
+											onClick={() => setIsAnesthesiaProtocolModalOpen(true)}
+											className="text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors inline-flex items-center gap-1 cursor-pointer"
+											data-testid="btn-open-anesthesia-protocol-modal"
+											title="Открыть расширенный расчет доз и МДД по весу (только при необходимости)"
+										>
+											<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
+											<span>Калькулятор доз...</span>
+										</button>
+									</div>
 
 											{/* Предупреждение о кардиоваскулярном риске */}
 											{anesthesiaRisk.isWarningTriggered && (
@@ -2315,8 +2138,6 @@ export function VisitEmkTab() {
 													</button>
 												</div>
 											)}
-										</div>
-									</details>
 
 									{/* Аккордеон: ЭНДОДОНТИЯ: Таблица учета корневых каналов, апекслокатор, мастер-файлы и силеры */}
 									<details className="group rounded-xl border border-[var(--teal,var(--line))]/30 bg-[var(--teal-surface)] overflow-hidden">

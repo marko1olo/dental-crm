@@ -283,6 +283,40 @@ export function AnesthesiaDosageCalculatorModal({
 			}
 		}
 
+		// 3. Deduct empty carpules from warehouse inventory (1-click per Mandate 8e/8n with soft overdraft)
+		if (deductFromWarehouse) {
+			try {
+				const orgId = "org_default";
+				const writeoffRes = await fetch(
+					`/api/inventory/${orgId}/quick-writeoff-carpules`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({
+							carpulesCount,
+							drugName: calcResult.drug.tradeNamesRu[0] || calcResult.drug.activeSubstanceRu,
+							visitId: initialVisitId || null,
+							notes: `Списание со стоматологического приема: ${calcResult.drug.activeSubstanceRu} (${carpulesCount} карп.)`,
+						}),
+					},
+				);
+				if (writeoffRes.ok) {
+					const writeoffData = await writeoffRes.json().catch(() => ({}));
+					if (Array.isArray(writeoffData.warnings) && writeoffData.warnings.length > 0) {
+						showToast(
+							`Списано ${carpulesCount} карп. под операцию (мягкий овердрафт склада)`,
+							"warning",
+						);
+					}
+				}
+			} catch (inventoryErr) {
+				console.warn("Soft overdraft warehouse sync warning:", inventoryErr);
+			}
+		}
+
 		showToast(
 			`Протокол анестезии внесен в карту 043/у. Введено: ${carpulesCount} карп. (${calcResult.drug.activeSubstanceRu})`,
 			"success",
@@ -305,6 +339,7 @@ export function AnesthesiaDosageCalculatorModal({
 		patientAgeYears,
 		asaStatus,
 		hasCardioRisk,
+		deductFromWarehouse,
 		setVisitNoteForm,
 		onApplied,
 		onClose,
