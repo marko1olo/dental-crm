@@ -17,10 +17,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
 	AlertTriangle,
 	Check,
+	CheckCircle2,
 	Copy,
 	FileText,
+	ShieldAlert,
 	Syringe,
 	X,
+	Zap,
 } from 'lucide-react';
 import {
 	AnestheticDrugKey,
@@ -54,6 +57,7 @@ export interface AnesthesiaAspirationJournalModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly onApplyToDiary?: ((diaryText043: string, sessionData: AnesthesiaSessionData) => void) | undefined;
+	readonly onOpenEmergencyProtocol?: (() => void) | undefined;
 	readonly initialPatientFullName?: string | undefined;
 	readonly initialMedCardNumber?: string | undefined;
 	readonly initialPatientAgeYears?: number | undefined;
@@ -71,6 +75,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 	isOpen,
 	onClose,
 	onApplyToDiary,
+	onOpenEmergencyProtocol,
 	initialPatientFullName = 'Смирнова Екатерина Васильевна',
 	initialMedCardNumber = '043/у-2026/891',
 	initialPatientAgeYears = 36,

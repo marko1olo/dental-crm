@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Pause, Play, RotateCcw, Timer, Volume2, VolumeX } from 'lucide-react';
+import { CheckCircle2, Pause, Play, RotateCcw, Timer, Volume2, VolumeX, Zap } from 'lucide-react';
 import { TechniqueSpecification } from './anesthesiaTechniqueTypes';
 
 export interface AnesthesiaOnsetTimerWidgetProps {
@@ -17,6 +17,7 @@ export interface AnesthesiaOnsetTimerWidgetProps {
 	readonly onToggleTimer: () => void;
 	readonly onAddMinute: () => void;
 	readonly onResetTimer: () => void;
+	readonly onCompleteNow?: (() => void) | undefined;
 }
 
 export const AnesthesiaOnsetTimerWidget: React.FC<AnesthesiaOnsetTimerWidgetProps> = ({
@@ -29,6 +30,7 @@ export const AnesthesiaOnsetTimerWidget: React.FC<AnesthesiaOnsetTimerWidgetProp
 	onToggleTimer,
 	onAddMinute,
 	onResetTimer,
+	onCompleteNow,
 }) => {
 	const minutes = Math.floor(timerSecondsLeft / 60);
 	const seconds = timerSecondsLeft % 60;
@@ -76,14 +78,41 @@ export const AnesthesiaOnsetTimerWidget: React.FC<AnesthesiaOnsetTimerWidgetProp
 				>
 					{formattedTime}
 				</div>
-				<div className="text-[11px] text-zinc-400 mt-1 text-center">
+				<div className="text-[11px] text-zinc-400 mt-1 text-center font-medium">
 					{timerCompleted
-						? 'Анестезия наступила. Можно препарировать'
+						? '✓ Анестезия наступила. Можно препарировать'
 						: isTimerRunning
-							? `Ожидание диффузии: ${currentTechnique.shortNameRu}`
-							: `Рекомендовано: ${Math.round(currentTechnique.onsetMinutes.defaultWaitTimeSec / 60)} мин`}
+							? `Идет диффузия: ${currentTechnique.shortNameRu} (или подтвердите онемение)`
+							: `Ориентировочно: ${Math.round(currentTechnique.onsetMinutes.defaultWaitTimeSec / 60)} мин (не блокирует работу)`}
 				</div>
 			</div>
+
+			{/* 1-Click Immediate Clinical Numbness Confirmation */}
+			{onCompleteNow && (
+				<button
+					type="button"
+					onClick={onCompleteNow}
+					className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all min-h-[44px] shadow-xs cursor-pointer ${
+						timerCompleted
+							? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/50'
+							: 'bg-emerald-600 hover:bg-emerald-500 text-white hover:scale-[1.01]'
+					}`}
+					title="Подтвердить наступление блокады по клиническим признакам (без ожидания таймера)"
+					data-testid="btn-anesthesia-onset-complete-now"
+				>
+					{timerCompleted ? (
+						<>
+							<CheckCircle2 className="w-4 h-4 text-emerald-400" />
+							<span>Онемение подтверждено клиницистом</span>
+						</>
+					) : (
+						<>
+							<Zap className="w-4 h-4 text-amber-300 animate-pulse" />
+							<span>⚡ Онемение наступило (начать работу в 1 клик)</span>
+						</>
+					)}
+				</button>
+			)}
 
 			{/* Timer Controls */}
 			<div className="flex items-center gap-2 w-full">

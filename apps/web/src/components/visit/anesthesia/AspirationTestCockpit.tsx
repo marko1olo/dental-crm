@@ -112,21 +112,23 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 				<button
 					type="button"
 					onClick={onNegativeAspiration}
-					className={`w-full p-4 rounded-xl border font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-3 transition-all min-h-[56px] shadow-lg ${
+					data-testid="btn-aspiration-negative"
+					className={`w-full p-4 rounded-xl border font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-3 transition-all min-h-[56px] shadow-lg cursor-pointer ${
 						isNegative
 							? 'bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-500/50 shadow-emerald-900/30'
 							: 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-300 hover:scale-[1.01]'
 					}`}
 				>
 					<CheckCircle2 className="w-6 h-6 shrink-0" />
-					<span className="truncate">АСПИРАЦИОННАЯ ПРОБА: ОТРИЦАТЕЛЬНАЯ</span>
+					<span className="truncate">АСПИРАЦИОННАЯ ПРОБА: ОТРИЦАТЕЛЬНАЯ (1 КЛИК — ЧИСТО)</span>
 				</button>
 
 				{/* POSITIVE ASPIRATION BUTTON */}
 				<button
 					type="button"
 					onClick={onPositiveAspiration}
-					className={`w-full p-4 rounded-xl border font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-3 transition-all min-h-[56px] shadow-lg ${
+					data-testid="btn-aspiration-positive"
+					className={`w-full p-4 rounded-xl border font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-3 transition-all min-h-[56px] shadow-lg cursor-pointer ${
 						isPositive
 							? 'bg-rose-600 text-white border-rose-400 ring-2 ring-rose-500/50 shadow-rose-900/40 animate-pulse'
 							: 'bg-rose-500/20 hover:bg-rose-500/30 border-rose-500/50 text-rose-300 hover:scale-[1.01]'
