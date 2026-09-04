@@ -1393,7 +1393,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										>
 											<div className="flex items-center gap-2">
 												<Scan size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
-												<span>[ 📷 КТ / Рентген снимки ]</span>
+												<span>КТ / Рентген снимки</span>
 											</div>
 											<span className="text-[10px] font-mono opacity-70">X</span>
 										</button>
@@ -1917,8 +1917,9 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											id={`appointment-collision-${appointment?.id ?? ""}`}
 											role="alert"
 										>
-											<strong style={{ color: "var(--bad-fg)" }}>
-												⛔ {collision.message}
+											<strong style={{ color: "var(--bad-fg)", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+												<AlertTriangle size={14} className="shrink-0" aria-hidden="true" />
+												<span>{collision.message}</span>
 											</strong>
 										</div>
 									) : null}

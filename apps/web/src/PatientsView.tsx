@@ -4,11 +4,14 @@ import type {
 	PatientAdministrativeProfile,
 } from "@dental/shared";
 import {
+	AlertTriangle,
 	ArrowLeft,
 	ArrowRight,
 	ArrowRightLeft,
 	Calendar,
+	FileText,
 	Gift,
+	MoreHorizontal,
 	Plus,
 	Search,
 	ShieldCheck,
@@ -126,6 +129,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [isBranchTransferModalOpen, setIsBranchTransferModalOpen] = useState(false);
+	const [isPatientActionsMenuOpen, setIsPatientActionsMenuOpen] = useState(false);
 	const [mobileActiveView, setMobileActiveView] = useState<"list" | "card">("list");
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -566,7 +570,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							className="flex items-center gap-2 p-2.5 px-3 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
 							style={{ marginBottom: "6px" }}
 						>
-							<span className="text-sm" aria-hidden="true">⚠️</span>
+							<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
 							<span className="font-bold text-rose-800 dark:text-rose-200">
 								Внимание (аллергия / стоп-фактор):
 							</span>
@@ -826,50 +830,6 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							type="button"
 							onClick={() => {
 								if (!selectedPatient) return;
-								const now = new Date();
-								const pad = (n: number) => String(n).padStart(2, "0");
-								const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-								const currentHour = now.getHours();
-								const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
-								const endHour = Math.min(startHour + 1, 21);
-								const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
-								const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
-
-								useScheduleStore.getState().setNewAppointmentDraft({
-									patientId: selectedPatient.id,
-									doctorUserId: "",
-									assistantUserId: "",
-									chairId: "",
-									status: "planned",
-									startsAt,
-									endsAt,
-									reason: "Первичный приём и консультация",
-									comment: "",
-								});
-								useAppStore.getState().setCurrentView("schedule");
-								showToast(
-									`Пациент ${selectedPatient.fullName} выбран для записи в расписание`,
-									"success",
-								);
-							}}
-							disabled={!selectedPatient}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
-							title="Записать выбранного пациента в расписание"
-							data-testid="patient-card-book-appointment-btn"
-						>
-							<Calendar size={16} aria-hidden="true" />
-							<span>Записать в расписание</span>
-						</button>
-						<button
-							className="secondary-button"
-							type="button"
-							onClick={() => {
-								if (!selectedPatient) return;
 								usePatientStore
 									.getState()
 									.setSelectedPatientId(selectedPatient.id);
@@ -892,38 +852,162 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<Stethoscope size={16} aria-hidden="true" />
 							<span>Открыть приём</span>
 						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							onClick={() => setIsLoyaltyModalOpen(true)}
-							title="Программа лояльности и бонусы (54-ФЗ / ФФД 1.2)"
-							data-testid="open-loyalty-program-modal-btn"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
-						>
-							<Gift size={16} aria-hidden="true" />
-							<span>Программа лояльности</span>
-						</button>
-						<button
-							type="button"
-							className="secondary-button"
-							onClick={() => setIsBranchTransferModalOpen(true)}
-							title="Межфилиальный трансфер пациента, карты 043/у и нарядов ЗТЛ (152-ФЗ)"
-							data-testid="open-branch-transfer-modal-btn"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								minHeight: "36px",
-							}}
-						>
-							<ArrowRightLeft size={16} aria-hidden="true" />
-							<span>Трансфер в филиал</span>
-						</button>
+						<div className="relative inline-block" style={{ position: "relative" }}>
+							<button
+								type="button"
+								className="secondary-button"
+								onClick={() => setIsPatientActionsMenuOpen((v) => !v)}
+								title="Дополнительные действия с пациентом"
+								aria-label="Дополнительные действия с пациентом"
+								aria-haspopup="true"
+								aria-expanded={isPatientActionsMenuOpen}
+								data-testid="patient-card-more-actions-btn"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									justifyContent: "center",
+									minHeight: "36px",
+									minWidth: "36px",
+									padding: "0 8px",
+								}}
+							>
+								<MoreHorizontal size={16} aria-hidden="true" />
+							</button>
+
+							{isPatientActionsMenuOpen && (
+								<div
+									className="patient-actions-dropdown"
+									style={{
+										position: "absolute",
+										right: 0,
+										top: "calc(100% + 4px)",
+										zIndex: 100,
+										minWidth: "220px",
+										boxShadow: "var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
+										background: "var(--paper, #ffffff)",
+										border: "1px solid var(--border, var(--line, #cbd5e1))",
+										borderRadius: "10px",
+										padding: "4px",
+										display: "flex",
+										flexDirection: "column",
+										gap: "2px",
+									}}
+								>
+									<button
+										type="button"
+										className="patient-dropdown-item"
+										onClick={() => {
+											setIsPatientActionsMenuOpen(false);
+											if (!selectedPatient) return;
+											const now = new Date();
+											const pad = (n: number) => String(n).padStart(2, "0");
+											const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+											const currentHour = now.getHours();
+											const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
+											const endHour = Math.min(startHour + 1, 21);
+											const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
+											const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
+
+											useScheduleStore.getState().setNewAppointmentDraft({
+												patientId: selectedPatient.id,
+												doctorUserId: "",
+												assistantUserId: "",
+												chairId: "",
+												status: "planned",
+												startsAt,
+												endsAt,
+												reason: "Первичный приём и консультация",
+												comment: "",
+											});
+											useAppStore.getState().setCurrentView("schedule");
+											showToast(
+												`Пациент ${selectedPatient.fullName} выбран для записи в расписание`,
+												"success",
+											);
+										}}
+										disabled={!selectedPatient}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "8px",
+											width: "100%",
+											padding: "8px 12px",
+											fontSize: "13px",
+											fontWeight: 600,
+											border: "none",
+											background: "transparent",
+											color: "var(--ink, #0f172a)",
+											borderRadius: "6px",
+											cursor: "pointer",
+											textAlign: "left",
+										}}
+										title="Записать выбранного пациента в расписание"
+										data-testid="patient-card-book-appointment-btn"
+									>
+										<Calendar size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+										<span>Записать в расписание</span>
+									</button>
+
+									<button
+										type="button"
+										className="patient-dropdown-item"
+										onClick={() => {
+											setIsPatientActionsMenuOpen(false);
+											setIsLoyaltyModalOpen(true);
+										}}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "8px",
+											width: "100%",
+											padding: "8px 12px",
+											fontSize: "13px",
+											fontWeight: 600,
+											border: "none",
+											background: "transparent",
+											color: "var(--ink, #0f172a)",
+											borderRadius: "6px",
+											cursor: "pointer",
+											textAlign: "left",
+										}}
+										title="Программа лояльности и бонусы (54-ФЗ / ФФД 1.2)"
+										data-testid="open-loyalty-program-modal-btn"
+									>
+										<Gift size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+										<span>Программа лояльности</span>
+									</button>
+
+									<button
+										type="button"
+										className="patient-dropdown-item"
+										onClick={() => {
+											setIsPatientActionsMenuOpen(false);
+											setIsBranchTransferModalOpen(true);
+										}}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: "8px",
+											width: "100%",
+											padding: "8px 12px",
+											fontSize: "13px",
+											fontWeight: 600,
+											border: "none",
+											background: "transparent",
+											color: "var(--ink, #0f172a)",
+											borderRadius: "6px",
+											cursor: "pointer",
+											textAlign: "left",
+										}}
+										title="Межфилиальный трансфер пациента, карты 043/у и нарядов ЗТЛ (152-ФЗ)"
+										data-testid="open-branch-transfer-modal-btn"
+									>
+										<ArrowRightLeft size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+										<span>Трансфер в филиал</span>
+									</button>
+								</div>
+							)}
+						</div>
 					</div>
 					{patientCoreSaveGuidance ? (
 						<p
@@ -962,7 +1046,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 					>
 						<summary className="settings-advanced-toggle">
 							<span className="settings-advanced-label">
-								<span className="settings-advanced-icon">📄</span>
+								<span className="settings-advanced-icon">
+									<FileText size={16} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+								</span>
 								Паспортные данные и реквизиты документов
 							</span>
 							<span className="settings-advanced-hint">

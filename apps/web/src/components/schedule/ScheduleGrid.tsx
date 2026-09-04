@@ -452,18 +452,18 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														(patObj as { allergies?: string | null } | undefined)?.allergies ||
 														(patObj as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
 													if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
-														return `⚠️ Внимание: ${rawAllergies.trim()}`;
+														return `Внимание: ${rawAllergies.trim()}`;
 													}
 													const notes = patObj?.notes || "";
 													const match = notes.match(/аллерги[яеи][^.;\n]*/i);
 													if (match) {
-														return `⚠️ Внимание: ${match[0].trim()}`;
+														return `Внимание: ${match[0].trim()}`;
 													}
 													if (
 														/лидокаин/i.test(a?.reason || "") ||
 														/аллерги/i.test(a?.reason || "")
 													) {
-														return "⚠️ Внимание: Аллергия на лидокаин";
+														return "Внимание: Аллергия на лидокаин";
 													}
 													return null;
 												})();
@@ -843,19 +843,19 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																<AlertTriangle size={12} className="shrink-0 text-amber-600 dark:text-amber-400" />
 																<span className="truncate">
 																	{collision.sameDoctor && !collision.sameChair
-																		? "⚠️ Коллизия: врач записан в два кабинета одновременно"
+																		? "Коллизия: врач записан в два кабинета одновременно"
 																		: collision.sameDoctor && collision.sameChair
-																			? "⚠️ Коллизия: врач и кабинет"
+																			? "Коллизия: врач и кабинет"
 																			: collision.sameChair
-																				? "⚠️ Коллизия: кабинет занят"
+																				? "Коллизия: кабинет занят"
 																				: collision.sameAssistant
-																					? "⚠️ Коллизия: ассистент"
-																					: "⚠️ Коллизия: пациент"}
+																					? "Коллизия: ассистент"
+																					: "Коллизия: пациент"}
 																</span>
 															</div>
 														)}
 
-														{/* Compact 2-Button Action Bar (📞 Позвонить, 👤 Профиль) + More Options Dropdown (...) */}
+														{/* Compact 2-Button Action Bar (Позвонить, Профиль) + More Options Dropdown (...) */}
 														<div className="flex items-center gap-1.5 pt-1.5 border-t border-[var(--line)]/50 mt-1">
 															{patObj?.phone ? (
 																<a
@@ -1115,7 +1115,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													);
 
 													if (collisionCheck.hasCollision) {
-														showToast(`⛔ Перемещение заблокировано: ${collisionCheck.message}`, "error", 5000);
+														showToast(`Перемещение заблокировано: ${collisionCheck.message}`, "error", 5000);
 														return;
 													}
 
@@ -1155,7 +1155,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													);
 
 													if (collisionCheck.hasCollision) {
-														showToast(`⛔ Назначение заблокировано: ${collisionCheck.message}`, "error", 5000);
+														showToast(`Назначение заблокировано: ${collisionCheck.message}`, "error", 5000);
 														return;
 													}
 
@@ -1267,18 +1267,18 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				(mPatObj as { allergies?: string | null } | undefined)?.allergies ||
 				(mPatObj as { anamnesis?: { allergies?: string | null } } | undefined)?.anamnesis?.allergies;
 			if (rawAllergies && typeof rawAllergies === "string" && rawAllergies.trim()) {
-				return `⚠️ Внимание: ${rawAllergies.trim()}`;
+				return `Внимание: ${rawAllergies.trim()}`;
 			}
 			const notes = mPatObj?.notes || "";
 			const match = notes.match(/аллерги[яеи][^.;\n]*/i);
 			if (match) {
-				return `⚠️ Внимание: ${match[0].trim()}`;
+				return `Внимание: ${match[0].trim()}`;
 			}
 			if (
 				/лидокаин/i.test(selectedMobileAppt?.reason || "") ||
 				/аллерги/i.test(selectedMobileAppt?.reason || "")
 			) {
-				return "⚠️ Внимание: Аллергия на лидокаин";
+				return "Внимание: Аллергия на лидокаин";
 			}
 			return null;
 		})();

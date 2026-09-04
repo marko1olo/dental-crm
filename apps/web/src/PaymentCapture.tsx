@@ -6,7 +6,7 @@ import {
 	percentageOfKopecks,
 	splitKopecks,
 } from "@dental/shared";
-import { Banknote, Bot, Coins, CreditCard, UserRound } from "lucide-react";
+import { Banknote, Bot, Coins, CreditCard, QrCode, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { money } from "./AppHelpers";
 import { SberPosTerminalModal } from "./components/payments/sberPos/SberPosTerminalModal";
@@ -929,24 +929,27 @@ export function PaymentCapture({
 					>
 						<button
 							type="button"
-							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
+							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
 							onClick={() => handleSmartDictation("5000 наличными")}
 						>
-							💰 5000 наличными
+							<Banknote size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+							<span>5000 наличными</span>
 						</button>
 						<button
 							type="button"
-							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
+							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
 							onClick={() => handleSmartDictation("15000 по карте")}
 						>
-							💳 15000 картой
+							<CreditCard size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+							<span>15000 картой</span>
 						</button>
 						<button
 							type="button"
-							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
+							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
 							onClick={() => handleSmartDictation("20000 сбп, вычет")}
 						>
-							🧾 20000 СБП + вычет
+							<QrCode size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
+							<span>20000 СБП + вычет</span>
 						</button>
 					</div>
 					{showSmartPreview && smartParsedData && (

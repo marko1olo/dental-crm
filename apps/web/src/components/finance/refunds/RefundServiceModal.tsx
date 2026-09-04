@@ -700,24 +700,55 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 											<span>QR-код чека ФНС</span>
 										</div>
 
-										<div
-											className="p-2 bg-white rounded-xl border border-slate-200 shadow-sm"
-											dangerouslySetInnerHTML={{
-												__html: generateQrCodeSvg(receiptQrPayload, {
-													size: 140,
-													color: "#0f172a",
-													background: "#ffffff",
-												}),
-											}}
-										/>
+										{receiptQrPayload ? (
+											<div
+												className="p-2 bg-white rounded-xl border border-slate-200 shadow-sm"
+												dangerouslySetInnerHTML={{
+													__html: generateQrCodeSvg(receiptQrPayload, {
+														size: 140,
+														color: "#0f172a",
+														background: "#ffffff",
+													}),
+												}}
+											/>
+										) : (
+											<div className="w-[140px] h-[140px] p-2 bg-slate-100 dark:bg-slate-800/60 rounded-xl border border-dashed border-[var(--border,#e2e8f0)] flex flex-col items-center justify-center text-center text-[10px] text-[var(--muted,#64748b)]">
+												<Clock className="w-6 h-6 mb-1 text-amber-500" />
+												<span>Чек буферизован</span>
+												<span className="font-mono mt-0.5 text-[9px]">{fiscalInfo?.queueId ? `№ ${fiscalInfo.queueId.slice(-8)}` : "Офлайн"}</span>
+											</div>
+										)}
 
 										<div className="text-[10px] text-[var(--muted,#64748b)] font-mono">
-											ФН: {fiscalInfo?.fnSerial || "9999078900012345"}<br />
-											ФД: {fiscalInfo?.fiscalDocNumber || "1002"} • ФПД: {fiscalInfo?.fiscalSign || "1234567890"}
-											{fiscalInfo?.isOfflineBuffered && (
-												<span className="block text-amber-600 dark:text-amber-400 font-sans font-bold mt-0.5">
-													(Отложенная фискализация / Очередь ОФД)
-												</span>
+											{fiscalInfo?.isOfflineBuffered ? (
+												<>
+													<div>
+														Чек в очереди:{" "}
+														<span className="font-bold text-[var(--ink,#0f172a)]">
+															№ {fiscalInfo?.queueId || "Буферизован"}
+														</span>
+													</div>
+													<span className="block text-amber-600 dark:text-amber-400 font-sans font-bold mt-0.5">
+														(Отложенная фискализация / Буфер ОФД)
+													</span>
+												</>
+											) : (
+												<>
+													{fiscalInfo?.fnSerial && <div>ФН: {fiscalInfo.fnSerial}</div>}
+													<div>
+														ФД: {fiscalInfo?.fiscalDocNumber || "—"} • ФПД: {fiscalInfo?.fiscalSign || "—"}
+													</div>
+													{fiscalInfo?.ofdUrl && (
+														<a
+															href={fiscalInfo.ofdUrl}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="block text-teal-600 dark:text-teal-400 underline mt-1 font-sans font-medium hover:text-teal-700"
+														>
+															Проверить чек в ОФД ↗
+														</a>
+													)}
+												</>
 											)}
 										</div>
 									</div>

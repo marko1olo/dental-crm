@@ -17,7 +17,20 @@ import {
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { CheckCircle2, FileCode2, FileText, Printer, Shield } from "lucide-react";
+import {
+	CheckCircle2,
+	Clock,
+	Edit3,
+	FileCheck,
+	FileCode2,
+	FileText,
+	FolderArchive,
+	MoreHorizontal,
+	Printer,
+	Shield,
+	X,
+	Zap,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isoDateLabel } from "./AppHelpers";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
@@ -534,6 +547,19 @@ export function DocumentsView(props: DocumentsViewProps) {
 	const [registryKindFilter, setRegistryKindFilter] = useState("all");
 	const [docNavCategory, setDocNavCategory] = useState<string>("all");
 	const [docNavSearch, setDocNavSearch] = useState<string>("");
+	const [openDocActionMenuId, setOpenDocActionMenuId] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!openDocActionMenuId) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (!target?.closest(".document-row-actions-dropdown") && !target?.closest(".document-row-actions-btn")) {
+				setOpenDocActionMenuId(null);
+			}
+		};
+		window.addEventListener("click", handleClickOutside);
+		return () => window.removeEventListener("click", handleClickOutside);
+	}, [openDocActionMenuId]);
 
 	const egiszInitialPayload: Partial<Egisz043uPayload> = useMemo(() => {
 		const payload: Record<string, any> = {
@@ -1355,7 +1381,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 						✓ Выдано: {patientIssuedDocsCount}
 					</span>
 					<span className="document-stat-pill draft" title="Черновики в работе">
-						⏱ Черновиков: {patientDraftDocsCount}
+						<Clock size={13} className="inline mr-1 text-amber-500" aria-hidden="true" />
+						Черновиков: {patientDraftDocsCount}
 					</span>
 					<span className="document-stat-pill" title="Всего документов">
 						Всего: {typedActiveDocuments?.length ?? 0}
@@ -1374,8 +1401,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 				>
 					<div className="flex items-center gap-2.5">
 						<Printer size={18} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
-						<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)]">
-							⚡ Сформировать и напечатать пакет первичного приёма (Договор + общий ИДС + согласие на обработку ПД)
+						<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)] flex items-center gap-1.5">
+							<Zap size={15} className="text-amber-500 shrink-0" aria-hidden="true" />
+							Сформировать и напечатать пакет первичного приёма (Договор + общий ИДС + согласие на обработку ПД)
 						</span>
 					</div>
 					<span className="document-intake-quick-badge">
@@ -1699,7 +1727,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -1967,7 +1995,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -2301,7 +2329,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -2604,7 +2632,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -2885,7 +2913,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -3146,7 +3174,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -3422,7 +3450,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -3521,7 +3549,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -3629,7 +3657,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -3833,7 +3861,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -4342,7 +4370,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -4580,7 +4608,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -4792,7 +4820,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -4940,7 +4968,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -5144,7 +5172,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 										userSelect: "none",
 									}}
 								>
-									✏️ Ручная корректировка полей (развернуть)
+									<span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}><Edit3 size={13} aria-hidden="true" />Ручная корректировка полей (развернуть)</span>
 								</summary>
 								<div
 									className="document-payload-collapsed-content"
@@ -5347,7 +5375,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 				<details className="settings-advanced-block document-templates-collapsible">
 					<summary className="settings-advanced-toggle">
 						<span className="settings-advanced-label">
-							<span className="settings-advanced-icon">📂</span>
+							<span className="settings-advanced-icon">
+								<FolderArchive size={16} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
+							</span>
 							Каталог шаблонов документов ({documentFactoryGroups.length}{" "}
 							разделов, 30+ форм)
 						</span>
@@ -6243,11 +6273,15 @@ export function DocumentsView(props: DocumentsViewProps) {
 				totalCount={typedActiveDocuments?.length ?? 0}
 				filteredCount={filteredActiveDocuments.length}
 				availableKinds={availableRegistryKinds}
+				activeCategoryTab={activeCategoryTab}
+				onSelectCategoryTab={setActiveCategoryTab}
+				categoryCounts={navCategoryCounts}
 				onResetFilters={() => {
 					setRegistrySearchQuery("");
 					setRegistryStatusFilter("all");
 					setRegistryEdsFilter("all");
 					setRegistryKindFilter("all");
+					setActiveCategoryTab("all");
 				}}
 			/>
 
@@ -6306,92 +6340,11 @@ export function DocumentsView(props: DocumentsViewProps) {
 							<fieldset
 								className="document-actions"
 								aria-label={`Действия с документом: ${documentActionContext}`}
-								style={{ border: "none", padding: 0, margin: 0 }}
+								style={{ border: "none", padding: 0, margin: 0, display: "flex", alignItems: "center", gap: "6px" }}
 							>
 								<legend className="sr-only">{`Действия с документом: ${documentActionContext}`}</legend>
-								<button
-									className="doc-link"
-									type="button"
-									onClick={() => void openIssuedDocumentHtml(document.id)}
-									aria-describedby={documentLifecycleGuidanceId}
-									aria-label={`Открыть HTML документа: ${documentActionContext}`}
-									title={`Открыть HTML документа: ${documentActionContext}`}
-								>
-									Открыть
-								</button>
-								<button
-									className="doc-link"
-									type="button"
-									onClick={() => void loadDocumentAuditFacts(document.id)}
-									disabled={documentAuditLoading}
-									aria-busy={documentAuditLoading || undefined}
-									aria-describedby={documentLifecycleGuidanceId}
-									aria-label={`Открыть паспорт выдачи: ${documentActionContext}`}
-									title={`Открыть паспорт выдачи: ${documentActionContext}`}
-								>
-									{documentAuditLoading ? "Гружу" : "Паспорт"}
-								</button>
-								{documentArchiveAvailable ? (
-									<button
-										className="doc-link"
-										type="button"
-										onClick={() => void downloadIssuedDocumentHtml(document.id)}
-										aria-describedby={documentLifecycleGuidanceId}
-										aria-label={`Скачать HTML документа: ${documentActionContext}`}
-										title={`Скачать HTML документа: ${documentActionContext}`}
-									>
-										Скачать HTML
-									</button>
-								) : null}
-								<button
-									className="doc-link"
-									type="button"
-									onClick={() => void downloadIssuedDocumentPdf(document.id)}
-									aria-describedby={documentLifecycleGuidanceId}
-									aria-label={`Печать / Скачать PDF (${document.status === "draft" ? "Черновик" : "Выдан"}): ${documentActionContext}`}
-									title={`Печать / Скачать PDF (${document.status === "draft" ? "Черновик со штампом" : "Подписанный документ"}): ${documentActionContext}`}
-								>
-									{document.status === "draft" ? "Печать PDF (Черновик)" : "Скачать PDF"}
-								</button>
-								{document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
-									<>
-										<button
-											className="doc-link font-medium text-teal-700 dark:text-teal-400 hover:underline"
-											type="button"
-											onClick={() => void downloadTaxDocumentXml(document.id)}
-											aria-describedby={documentLifecycleGuidanceId}
-											aria-label={`Скачать XML-файл справки НДФЛ в формате ФНС (КНД 1151156): ${documentActionContext}`}
-											title={`Черновой файл ФНС: ${documentActionContext}`}
-										>
-											Черновой файл ФНС
-										</button>
-										<button
-											className="doc-link font-medium text-teal-700 dark:text-teal-400 hover:underline"
-											type="button"
-											onClick={() => setIsFnsNdflXmlOpen(true)}
-											aria-describedby={documentLifecycleGuidanceId}
-											aria-label={`Справка для ФНС (XML Приказ № ЕД-7-11/755@): ${documentActionContext}`}
-											title={`Справка для ФНС (XML Приказ № ЕД-7-11/755@): ${documentActionContext}`}
-										>
-											Справка для ФНС (XML Приказ № ЕД-7-11/755@)
-										</button>
-									</>
-								) : null}
-								{document.kind === "dental_medical_card_043u" ||
-								document.kind === "outpatient_medical_card_025u" ||
-								document.kind === "orthodontic_medical_card_043_1u" ||
-								document.kind === "medical_record_extract" ? (
-									<button
-										className="doc-link font-medium text-teal-700 dark:text-teal-400 hover:underline"
-										type="button"
-										onClick={() => setIsEgiszRemdOpen(true)}
-										aria-describedby={documentLifecycleGuidanceId}
-										aria-label={`Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2): ${documentActionContext}`}
-										title={`Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2): ${documentActionContext}`}
-									>
-										Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2)
-									</button>
-								) : null}
+
+								{/* Кнопка прямого действия 1: Проверить и выдать (для черновика) или Скачать PDF (для выданного) */}
 								{document.status === "draft" ? (
 									<button
 										className="doc-link"
@@ -6405,21 +6358,297 @@ export function DocumentsView(props: DocumentsViewProps) {
 									>
 										Проверить и выдать
 									</button>
-								) : null}
-								{document.status !== "voided" ? (
+								) : (
 									<button
-										className="text-button"
+										className="doc-link"
 										type="button"
-										disabled={documentStatusSaving}
-										aria-busy={documentStatusSaving || undefined}
-										onClick={() => requestDocumentVoid(document)}
+										onClick={() => void downloadIssuedDocumentPdf(document.id)}
 										aria-describedby={documentLifecycleGuidanceId}
-										aria-label={`Аннулировать документ: ${documentActionContext}`}
-										title={`Аннулировать документ: ${documentActionContext}`}
+										aria-label={`Печать / Скачать PDF: ${documentActionContext}`}
+										title={`Печать / Скачать PDF: ${documentActionContext}`}
 									>
-										Аннулировать
+										Скачать PDF
 									</button>
-								) : null}
+								)}
+
+								{/* Кнопка прямого действия 2: Открыть */}
+								<button
+									className="doc-link"
+									type="button"
+									onClick={() => void openIssuedDocumentHtml(document.id)}
+									aria-describedby={documentLifecycleGuidanceId}
+									aria-label={`Открыть HTML документа: ${documentActionContext}`}
+									title={`Открыть HTML документа: ${documentActionContext}`}
+								>
+									Открыть
+								</button>
+
+								{/* Контекстное меню дополнительных действий (...) */}
+								<div style={{ position: "relative", display: "inline-block" }}>
+									<button
+										className="doc-link document-row-actions-btn"
+										type="button"
+										onClick={() =>
+											setOpenDocActionMenuId(
+												openDocActionMenuId === document.id ? null : document.id,
+											)
+										}
+										aria-label={`Дополнительные действия с документом: ${documentActionContext}`}
+										title="Дополнительные действия"
+										aria-expanded={openDocActionMenuId === document.id}
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											minWidth: "32px",
+											padding: "0 6px",
+										}}
+									>
+										<MoreHorizontal size={15} aria-hidden="true" />
+									</button>
+
+									{openDocActionMenuId === document.id && (
+										<div
+											className="document-row-actions-dropdown"
+											style={{
+												position: "absolute",
+												right: 0,
+												top: "calc(100% + 4px)",
+												zIndex: 50,
+												minWidth: "220px",
+												boxShadow: "var(--shadow-3, 0 10px 25px -5px rgba(0,0,0,0.15))",
+												background: "var(--paper, #ffffff)",
+												border: "1px solid var(--border, var(--line, #cbd5e1))",
+												borderRadius: "8px",
+												padding: "4px",
+												display: "flex",
+												flexDirection: "column",
+												gap: "2px",
+											}}
+										>
+											<button
+												className="doc-dropdown-item"
+												type="button"
+												onClick={() => {
+													setOpenDocActionMenuId(null);
+													void loadDocumentAuditFacts(document.id);
+												}}
+												disabled={documentAuditLoading}
+												aria-busy={documentAuditLoading || undefined}
+												aria-label={`Открыть паспорт выдачи: ${documentActionContext}`}
+												title={`Открыть паспорт выдачи: ${documentActionContext}`}
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "8px",
+													width: "100%",
+													padding: "6px 10px",
+													fontSize: "12.5px",
+													fontWeight: 500,
+													border: "none",
+													background: "transparent",
+													color: "var(--ink, #0f172a)",
+													borderRadius: "4px",
+													cursor: "pointer",
+													textAlign: "left",
+												}}
+											>
+												<Shield size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+												<span>{documentAuditLoading ? "Загрузка паспорта..." : "Паспорт выдачи"}</span>
+											</button>
+
+											{documentArchiveAvailable ? (
+												<button
+													className="doc-dropdown-item"
+													type="button"
+													onClick={() => {
+														setOpenDocActionMenuId(null);
+														void downloadIssuedDocumentHtml(document.id);
+													}}
+													aria-label={`Скачать HTML документа: ${documentActionContext}`}
+													title={`Скачать HTML документа: ${documentActionContext}`}
+													style={{
+														display: "flex",
+														alignItems: "center",
+														gap: "8px",
+														width: "100%",
+														padding: "6px 10px",
+														fontSize: "12.5px",
+														fontWeight: 500,
+														border: "none",
+														background: "transparent",
+														color: "var(--ink, #0f172a)",
+														borderRadius: "4px",
+														cursor: "pointer",
+														textAlign: "left",
+													}}
+												>
+													<FileCode2 size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+													<span>Скачать HTML</span>
+												</button>
+											) : null}
+
+											{document.status === "draft" ? (
+												<button
+													className="doc-dropdown-item"
+													type="button"
+													onClick={() => {
+														setOpenDocActionMenuId(null);
+														void downloadIssuedDocumentPdf(document.id);
+													}}
+													aria-label={`Печать PDF (Черновик): ${documentActionContext}`}
+													title={`Печать PDF (Черновик со штампом): ${documentActionContext}`}
+													style={{
+														display: "flex",
+														alignItems: "center",
+														gap: "8px",
+														width: "100%",
+														padding: "6px 10px",
+														fontSize: "12.5px",
+														fontWeight: 500,
+														border: "none",
+														background: "transparent",
+														color: "var(--ink, #0f172a)",
+														borderRadius: "4px",
+														cursor: "pointer",
+														textAlign: "left",
+													}}
+												>
+													<Printer size={14} className="text-slate-500 shrink-0" aria-hidden="true" />
+													<span>Печать PDF (Черновик)</span>
+												</button>
+											) : null}
+
+											{document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
+												<>
+													<button
+														className="doc-dropdown-item"
+														type="button"
+														onClick={() => {
+															setOpenDocActionMenuId(null);
+															void downloadTaxDocumentXml(document.id);
+														}}
+														aria-label={`Скачать XML-файл справки НДФЛ в формате ФНС (КНД 1151156): ${documentActionContext}`}
+														title={`Черновой файл ФНС: ${documentActionContext}`}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: "8px",
+															width: "100%",
+															padding: "6px 10px",
+															fontSize: "12.5px",
+															fontWeight: 500,
+															border: "none",
+															background: "transparent",
+															color: "var(--ink, #0f172a)",
+															borderRadius: "4px",
+															cursor: "pointer",
+															textAlign: "left",
+														}}
+													>
+														<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+														<span>Черновой файл ФНС</span>
+													</button>
+													<button
+														className="doc-dropdown-item"
+														type="button"
+														onClick={() => {
+															setOpenDocActionMenuId(null);
+															setIsFnsNdflXmlOpen(true);
+														}}
+														aria-label={`Справка для ФНС (XML Приказ № ЕД-7-11/755@): ${documentActionContext}`}
+														title={`Справка для ФНС (XML Приказ № ЕД-7-11/755@): ${documentActionContext}`}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: "8px",
+															width: "100%",
+															padding: "6px 10px",
+															fontSize: "12.5px",
+															fontWeight: 500,
+															border: "none",
+															background: "transparent",
+															color: "var(--ink, #0f172a)",
+															borderRadius: "4px",
+															cursor: "pointer",
+															textAlign: "left",
+														}}
+													>
+														<FileText size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+														<span>Справка для ФНС (XML)</span>
+													</button>
+												</>
+											) : null}
+
+											{document.kind === "dental_medical_card_043u" ||
+											document.kind === "outpatient_medical_card_025u" ||
+											document.kind === "orthodontic_medical_card_043_1u" ||
+											document.kind === "medical_record_extract" ? (
+												<button
+													className="doc-dropdown-item"
+													type="button"
+													onClick={() => {
+														setOpenDocActionMenuId(null);
+														setIsEgiszRemdOpen(true);
+													}}
+													aria-label={`Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2): ${documentActionContext}`}
+													title={`Выгрузка СЭМД в ЕГИСЗ (РЭМД HL7 CDA R2): ${documentActionContext}`}
+													style={{
+														display: "flex",
+														alignItems: "center",
+														gap: "8px",
+														width: "100%",
+														padding: "6px 10px",
+														fontSize: "12.5px",
+														fontWeight: 500,
+														border: "none",
+														background: "transparent",
+														color: "var(--ink, #0f172a)",
+														borderRadius: "4px",
+														cursor: "pointer",
+														textAlign: "left",
+													}}
+												>
+													<FileCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+													<span>Выгрузка СЭМД в ЕГИСЗ</span>
+												</button>
+											) : null}
+
+											{document.status !== "voided" ? (
+												<button
+													className="doc-dropdown-item"
+													type="button"
+													disabled={documentStatusSaving}
+													aria-busy={documentStatusSaving || undefined}
+													onClick={() => {
+														setOpenDocActionMenuId(null);
+														requestDocumentVoid(document);
+													}}
+													aria-label={`Аннулировать документ: ${documentActionContext}`}
+													title={`Аннулировать документ: ${documentActionContext}`}
+													style={{
+														display: "flex",
+														alignItems: "center",
+														gap: "8px",
+														width: "100%",
+														padding: "6px 10px",
+														fontSize: "12.5px",
+														fontWeight: 500,
+														border: "none",
+														background: "transparent",
+														color: "var(--bad-fg, #ef4444)",
+														borderRadius: "4px",
+														cursor: "pointer",
+														textAlign: "left",
+													}}
+												>
+													<X size={14} className="shrink-0" aria-hidden="true" />
+													<span>Аннулировать</span>
+												</button>
+											) : null}
+										</div>
+									)}
+								</div>
 							</fieldset>
 						</article>
 					);
