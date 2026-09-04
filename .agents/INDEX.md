@@ -2,7 +2,7 @@
 
 > **ГЛАВНЫЙ ИНТЕРТЕКСТУАЛЬНЫЙ НАВИГАЦИОННЫЙ ХАБ СИСТЕМЫ**  
 > ⚠️ **Высшая Конституция (Supreme Law):** **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)**  
-> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11, Mandate 8e — Запрет на палки в колёса врачам, Mandates 8f–8h — Догматы T.A.R.S. честности, Rule != Task и непрерывного синхрона документации)  
+> 📜 **Системная Конституция:** **[.agents/AGENTS.md](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** (Мандаты 1..11: Mandate 8d — Бремя доказательства и 7 смертных грехов UI, Mandate 8e — Запрет на палки в колёса врачам, Mandates 8f–8j — Догматы T.A.R.S. честности, Rule != Task, динамического синхрона, стоматологического домена и «Работает — не трогай» со стоп-линией DoD)  
 > 🚪 **Корневой входной файл:** **[AGENTS.md (Root)](file:///C:/Clinic_MVP/dental-crm/AGENTS.md)**  
 > ⚙️ **Шимы платформ:** **[GEMINI.md](file:///C:/Clinic_MVP/dental-crm/GEMINI.md)** | **[CLAUDE.md](file:///C:/Clinic_MVP/dental-crm/CLAUDE.md)**  
 > 📚 **Портал документации docs/:** **[docs/README.md](file:///C:/Clinic_MVP/dental-crm/docs/README.md)**  
@@ -44,7 +44,7 @@
 ## 🗺️ Полная Карта Документации Репозитория
 
 ### 1. Конституция и Системное Управление (`.agents/`)
-1. **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — Высшая Конституция проекта (CTO Supremacy, презумпция брака, запрет сикофантии, стандарты macOS/iOS HIG, мандат автономии врачей 8e).
+1. **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — Высшая Конституция проекта (CTO Supremacy, бремя доказательства и 7 смертных грехов UI, запрет сикофантии, стандарты macOS/iOS HIG, мандат автономии врачей 8e, стоп-линия DoD).
 2. **[MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/MASTER_PROMPT.md)** — Идентичное зеркало Высшей Конституции.
 3. **[AGENTS.md (.agents)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)** — Системный закон монорепозитория: мандаты 1..11, PostgreSQL 18 на 127.0.0.1:5432, правила компиляторов, ast-grep read/write split, пофайловый git add, точность денег до копейки.
 4. **[AGENTS.md (Корневой)](file:///C:/Clinic_MVP/dental-crm/AGENTS.md)** — Точка входа для агентов (Codex, Copilot, Windsurf, Claude).

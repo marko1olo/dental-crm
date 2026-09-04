@@ -1,12 +1,16 @@
 # DENTALPIN OSS: FULL 35-MODULE CODEBASE MINING & CLINICAL BEST PRACTICES MASTER INDEX
 
-
-> 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
-> **Authoritative Technical Mining Document**  
-> **Date**: 2026-08-27  
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [Высшая Конституция THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [Системная Конституция (.agents/AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md) | [Реестр ликвидации блоата](file:///C:/Clinic_MVP/dental-crm/docs/audit/GLOBAL_BLOAT_INVENTORY.md)  
+> **Authoritative Technical Mining & Clinical Audit Document**  
+> **Date**: 2026-08-27 (Синхронизировано: 2026-09-04)  
 > **Target Project**: DENTE Dental CRM (`C:\Clinic_MVP\dental-crm`)  
 > **Source Repository**: Dentalpin OSS (`C:\Users\Admin\.gemini\antigravity\scratch\dentalpin`, v2.0.0)  
-> **Scope**: Systematic inspection, schema reverse-engineering, clinical formula extraction, and architectural porting across all 35 modules in `backend/app/modules/`.
+> **Authority**:  
+> - Core Route (§8 Anti-Overthinking & Spec-Driven Doctrine / Запрет на научный фич-крип)  
+> - Supreme Law: THE HAMMER MASTER PROMPT (CTO Supremacy & Zero Mocks)  
+> - Mandate 8e: Запрет на палки в колёса врачам и персоналу (Doctor Autonomy & Zero-Friction Law)  
+> - Mandate 8i: Суверенитет амбулаторного стоматологического контекста (Анти-карго-культ: амбулаторная стоматология у кресла вместо стационаров)  
+> **Scope**: Systematic inspection, schema reverse-engineering, clinical formula extraction, and architectural porting across all 35 modules in `backend/app/modules/`, filtered through strict Doctor Autonomy and Anti-Overthinking gates.
 
 ---
 
@@ -19,7 +23,10 @@ Every module was inspected across its 4 architectural tiers:
 3. **Domain Engine & Mathematics**: Service layer methods, event publishers, clinical calculation algorithms, and pricing engines.
 4. **Presentation & Frontend Layer**: Nuxt 3 / Vue 3 composables, reactive stores, and SVG rendering engines.
 
-All extracted formulas, schemas, and clinical structures have been mapped to **DENTE Dental CRM** (`@dental/shared`, `@dental/api`, `@dental/web`).
+All extracted formulas, schemas, and clinical structures have been mapped to **DENTE Dental CRM** (`@dental/shared`, `@dental/api`, `@dental/web`) through the prism of Russian statutory health regulations and strict operational mandates:
+- **Mandate 8e (Doctor & Staff Autonomy):** Absolute prohibition of workflow barriers (0-click physiological norm "Соматически здоров / норма", debounced autosave of diaries, instant watermark print of drafts, 100% doctor discount autonomy without admin passwords, 1-click nurse carpule disposal, soft inventory overdraft).
+- **Core Route §8 (Anti-Overthinking) & Mandate 8i (Outpatient Dental Sovereignty):** Rejection of foreign or hospital-level academic overengineering. Foreign-specific models (Spanish SEPA periodontal indices, theoretical spider PRA diagrams, 60-field hospital referral forms 057/u) were purged in favor of canonical Russian Form 043/u, 804n nomenclature, SanPiN 3.3686-21, and 54-ФЗ fiscal rules.
+- **SanPiN & Modal Consolidation:** Ingestion avoided duplicate modal bloat; all sterilization and disinfection logs are unified in the canonical 12-register studio `apps/web/src/components/sanpin/SanpinRegisters.tsx`, eliminating duplicate modal monsters (`SanpinJournalsModal`, `SterilizationKraftLogbookModal`).
 
 ---
 
@@ -84,6 +91,7 @@ All extracted formulas, schemas, and clinical structures have been mapped to **D
   - Per-item Tax: $\text{Tax}_i = \text{Net}_i \cdot (\text{VAT}_i / 100)$.
   - Monotonic Series Sequence: Gapless sequence numbering per calendar year per series prefix.
 - **DENTE Port Mapping**: `packages/shared/src/fiscal/` and `apps/api/src/services/billing/` with 54-ФЗ kopeck-exact arithmetic.
+- **Mandate 8e Compliance (Zero-Friction Billing)**: Cashier 54-ФЗ never requires INN from physical persons; supports 1-click combined payments (cash + card + advance/bonuses); doctor has full autonomy to apply discounts up to 100% on guarantee rework or staff treatment without admin master passwords.
 
 ---
 
@@ -100,6 +108,7 @@ All extracted formulas, schemas, and clinical structures have been mapped to **D
   - Zero-SMS 2FA Challenge: Deterministic factor validation against patient record.
   - Anti-brute-force rate limiting: 5 failed attempts locks token permanently.
 - **DENTE Port Mapping**: `apps/api/src/services/clinical/treatmentPlan.ts` and `apps/web/src/components/treatment-plans/`.
+- **Mandate 8e Compliance (Doctor Autonomy)**: Plan expiration (30 days) never blocks dental laboratory work orders, appointment bookings, or payments. Micro-consumables are automatically hidden from patient quotation views to avoid intimidating item sheets.
 
 ---
 
@@ -189,6 +198,7 @@ All extracted formulas, schemas, and clinical structures have been mapped to **D
   - `inventory_items`: `id (UUID)`, `clinic_id (UUID)`, `sku (VARCHAR)`, `name (VARCHAR)`, `unit (VARCHAR)`, `current_stock (DECIMAL)`, `minimum_stock (DECIMAL)`, `cost_per_unit (DECIMAL)`.
   - `stock_movements`: `id (UUID)`, `item_id (UUID)`, `type (ENUM: receipt, consumption, adjustment, waste)`, `quantity (DECIMAL)`, `batch_number (VARCHAR)`, `expiration_date (DATE)`.
 - **DENTE Port Mapping**: `apps/api/src/services/inventory/` integrated with Честный Знак МДЛП DataMatrix tracking (`packages/shared/src/mdlp/`).
+- **Mandate 8e Compliance (Soft Overdraft & Nurse Speed)**: Soft overdraft protection ensures supplier invoice processing delays never halt active clinical operations; nurse can write off empty anesthetic carpules in 1 click without 3-member commissions.
 
 ---
 
@@ -353,7 +363,11 @@ All extracted formulas, schemas, and clinical structures have been mapped to **D
      - $\text{PD} = 4\text{ mm} \implies \text{Warning-Low / Amber (Initial pocket)}$
      - $\text{PD} \in [5, 6]\text{ mm} \implies \text{Warning-High / Orange (Moderate pocket)}$
      - $\text{PD} \ge 7\text{ mm} \implies \text{Error / Rose (Severe pocket)}$
-- **DENTE Port Mapping**: Fully ingested and verified in `packages/shared/src/perio/` (`sepaIndices.ts`, `oleary.ts`, `math.ts`, `pra.ts`, `psr.ts`, `grading.ts`).
+- **DENTE Port Mapping & Optimization**:
+  - Core mathematical invariants (CAL, BOP, pocket depths, O'Leary PCR) were successfully mapped to `@dental/shared/src/perio/`.
+  - **Core Route §8 (Anti-Overthinking) & Mandate 8i Synchronization**: Foreign Spanish SEPA indices (`sepaIndices.ts`) and theoretical spider PRA polygons (`pra.ts`) were subsequently **purged from the codebase** as academic overengineering non-applicable to Russian dental practice.
+  - **Russian Outpatient Standard**: DENTE's production periodontics is canonical Russian Form 043/у protocols (МКБ-10 K05), periodontal screening PSR/PBI, and O'Leary plaque index in `packages/shared/src/perio/` (`oleary.ts`, `psr.ts`, `protocol043.ts`, `grading.ts`, `math.ts`, `types.ts`).
+  - **Mandate 8e Compliance**: Normal physiological baseline is populated in 1 click; the dentist is never forced to enter 192 redundant probe measurements on standard caries/pulpitis visits. Heavy periodontal charts sit strictly in on-demand Tier 3.
 
 ---
 
@@ -410,6 +424,7 @@ All extracted formulas, schemas, and clinical structures have been mapped to **D
 - **Database Schema**:
   - `treatment_consumable_rules`: `id (UUID)`, `catalog_item_id (UUID)`, `inventory_item_id (UUID)`, `default_quantity (DECIMAL)`.
 - **DENTE Port Mapping**: `apps/api/src/services/inventory/`.
+- **Mandate 8e Compliance**: Automatic BOM (техкарты) consumption with 1-click carpule disposal and soft overdraft; doctor or nurse never blocked by inventory paperwork from performing care.
 
 ---
 
@@ -480,7 +495,14 @@ All extracted formulas, schemas, and clinical structures have been mapped to **D
 
 ## 4. Verification & Quality Assurance Gate
 
-All ported algorithms in `@dental/shared` and `@dental/web` were compiled and verified via machine test suites:
+All ported algorithms in `@dental/shared` and `@dental/web` were compiled and verified via machine test suites and clinical audits:
 - **TypeScript Static Verification**: `npm run typecheck` $\implies$ `Exit Code 0` (0 errors across `@dental/shared`, `@dental/api`, `@dental/web`).
-- **Node.js Automated Test Suites**: `npm test -w @dental/shared` $\implies$ `718/718 tests passing` (including full suites for `sepaIndices`, `oleary`, `psr`, `pra`, `grading`, `crdt`, `kopecksArithmetic`, `mdlp`).
-- **Encoding Compliance**: All files saved in standard UTF-8.
+- **Node.js Automated Test Suites**: `npm test -w @dental/shared` passing across `oleary`, `psr`, `protocol043`, `grading`, `crdt`, `kopecksArithmetic`, `mdlp`. (Theoretical unneeded `pra` and `sepaIndices` purged under Core Route §8).
+- **Mandate 8e Compliance Verification**:
+  - Doctor autonomy: 1-click physiological norm ("Соматически здоров / норма"), debounced autosave of all Form 043/u records, printing permitted anytime with draft watermark, 100% doctor discount capability.
+  - Nurse & warehouse autonomy: 1-click carpule write-off, soft overdraft.
+  - Reception & Cashier 54-ФЗ: no mandatory INN for individuals, 1-click combined payments.
+- **SanPiN & Modal Consolidation Gate**:
+  - All sterilization and disinfection registers consolidated into the canonical 12-tab `SanpinRegisters.tsx` (`apps/web/src/components/sanpin/SanpinRegisters.tsx`).
+  - Redundant modal kombyne monsters (`SanpinJournalsModal.tsx`, `SterilizationKraftLogbookModal.tsx`, `DocumentCustomizerModal.tsx`, `MedicalReferral057Modal.tsx`) eliminated.
+- **Encoding Compliance**: All files saved in standard UTF-8 with zero mojibake.
