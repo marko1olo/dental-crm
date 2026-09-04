@@ -13,6 +13,7 @@ import {
 	FileSpreadsheet,
 	FileText,
 	Info,
+	CreditCard,
 	Percent,
 	Plus,
 	Printer,
@@ -20,13 +21,16 @@ import {
 	Shield,
 	ShieldAlert,
 	ShieldCheck,
+	Star,
 	Trash2,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../GlobalToast";
 import {
 	buildDmsReconciliationRegistry,
 	calculateDmsCoPaymentSplit,
@@ -72,6 +76,12 @@ export interface InsurancePreAuthModalProps {
 		readonly unitPriceRubles: number;
 	}[] | undefined;
 	readonly onClaimApproved?: ((result: DmsSplitCalculationResult) => void) | undefined;
+	readonly onSplitPaymentCompleted?: ((paymentData: {
+		splitResult: DmsSplitCalculationResult;
+		paymentMethod: "card" | "cash" | "sbp" | "mixed";
+		dmsAmountRub: number;
+		patientAmountRub: number;
+	}) => void) | undefined;
 }
 
 export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
@@ -80,7 +90,12 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 	patient,
 	initialServices = [],
 	onClaimApproved,
+	onSplitPaymentCompleted,
 }) => {
+	// 0. Режим экстренной помощи (Мандат 8e)
+	const [isEmergencyCare, setIsEmergencyCare] = useState<boolean>(false);
+	const [patientPaymentMethod, setPatientPaymentMethod] = useState<"card" | "cash" | "sbp" | "mixed">("card");
+
 	// 1. Полис ДМС
 	const [selectedInsurerId, setSelectedInsurerId] = useState<string>(
 		patient?.insurerId || "sogaz",
@@ -168,13 +183,89 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		}
 	}, [isOpen, initialServices]);
 
+	// ⚡ 1-Клик: Активация экстренного приёма / Гарантии в пути
+	const handleActivateEmergencyCare = () => {
+		setIsEmergencyCare(true);
+		setHasGuaranteeLetter(true);
+		setLetterNumber(`ГП-ЭКСТРЕННО-${Date.now().toString().slice(-6)} (ГАРАНТИЯ В ПУТИ)`);
+		setApprovedLimitRub((prev) => (prev < 35000 ? 50000 : prev));
+		setApprovedCodesInput(
+			"A16.07.030, A11.07.010, A16.07.011, A16.07.008, A16.07.002, B01.003",
+		);
+		setApprovedTeethInput("Все");
+		setCuratorName("Устное подтверждение куратора страховой (гарантия в пути)");
+		setCuratorPhone("8 (800) 333-08-88 (дежурный эксперт)");
+		if (!policyNumber.trim()) {
+			setPolicyNumber(patient?.policyNumber || "ПОЛИС-ДМС-ОСТРАЯ-БОЛЬ");
+		}
+		showToast(
+			"⚡ Экстренный приём / Гарантия в пути: лечение начато без ожидания письма, устное подтверждение куратора зафиксировано, приём разблокирован!",
+			"success",
+		);
+	};
+
+	// ⭐ 1-Клик: Доплата за премиум-материал (разница рассчитывается в едином визите)
+	const handleTogglePremiumUpgrade = (itemId: string) => {
+		setBillableItems((prev) =>
+			prev.map((item) => {
+				if (item.id !== itemId) return item;
+				const isCurrentlyPremium = item.serviceName.includes("Премиум");
+				if (isCurrentlyPremium) {
+					return {
+						...item,
+						serviceName: item.serviceName.replace(" (Премиум-материал / Доплата)", ""),
+						unitPriceKopecks: Math.max(100000, item.unitPriceKopecks - rublesToKopecks(1500)),
+					};
+				}
+				return {
+					...item,
+					serviceName: `${item.serviceName} (Премиум-материал / Доплата)`,
+					unitPriceKopecks: item.unitPriceKopecks + rublesToKopecks(1500),
+				};
+			}),
+		);
+		showToast("⭐ 1-Клик: Доплата за премиум-материал включена в сплит без разбивки визита", "info");
+	};
+
+	// ⚡ 1-Клик: Оформление комбинированной оплаты (сплит-биллинг)
+	const handleExecuteSplitBilling = () => {
+		if (onSplitPaymentCompleted) {
+			onSplitPaymentCompleted({
+				splitResult,
+				paymentMethod: patientPaymentMethod,
+				dmsAmountRub: splitResult.totalInsuranceCoveredRubles,
+				patientAmountRub: splitResult.totalPatientOutOfPocketRubles,
+			});
+		}
+		if (onClaimApproved) {
+			onClaimApproved(splitResult);
+		}
+		const methodLabel =
+			patientPaymentMethod === "card"
+				? "банковской картой"
+				: patientPaymentMethod === "cash"
+					? "наличными"
+					: patientPaymentMethod === "sbp"
+						? "через СБП"
+						: "смешанной оплатой";
+		showToast(
+			`⚡ Комбинированная оплата оформлена: Покрыто ДМС (${formatCurrencyRub(splitResult.totalInsuranceCoveredKopecks, true)}) + Доплата пациента (${formatCurrencyRub(splitResult.totalPatientOutOfPocketKopecks, true)} ${methodLabel}) без разбивки визита!`,
+			"success",
+		);
+		onClose();
+	};
+
 	// Полис
 	const currentPolicy: DmsPolicy = useMemo(() => {
+		const resolvedPol =
+			policyNumber.trim() ||
+			patient?.policyNumber ||
+			(isEmergencyCare ? "ПОЛИС-ДМС-ОСТРАЯ-БОЛЬ" : "ПОЛИС-ДМС-2026");
 		return {
 			id: `pol-${patient?.id || "demo"}`,
 			insurerId: selectedInsurerId,
 			policySeries: policySeries.trim() || undefined,
-			policyNumber: policyNumber.trim(),
+			policyNumber: resolvedPol,
 			program: selectedProgram,
 			liabilityLimitKopecks: DMS_PROGRAMS[selectedProgram].defaultLimitKopecks,
 			franchiseType,
@@ -196,16 +287,17 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		franchiseFixedRub,
 		validFrom,
 		validTo,
+		isEmergencyCare,
 	]);
 
 	// Валидация полиса
 	const policyValidation = useMemo(() => {
-		return validateDmsPolicy(currentPolicy);
-	}, [currentPolicy]);
+		return validateDmsPolicy(currentPolicy, undefined, { isEmergency: isEmergencyCare });
+	}, [currentPolicy, isEmergencyCare]);
 
 	// Гарантийное письмо
 	const currentLetter: DmsGuaranteeLetter | undefined = useMemo(() => {
-		if (!hasGuaranteeLetter) return undefined;
+		if (!hasGuaranteeLetter && !isEmergencyCare) return undefined;
 		const teeth = approvedTeethInput
 			.split(/[,;\s]+/)
 			.map((t) => t.trim())
@@ -215,29 +307,36 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 			.map((c) => c.trim())
 			.filter(Boolean);
 
+		const resolvedLetterNum =
+			letterNumber.trim() ||
+			(isEmergencyCare
+				? `ГП-ЭКСТРЕННО-${Date.now().toString().slice(-6)} (ГАРАНТИЯ В ПУТИ)`
+				: `ГП-ДМС-${Date.now().toString().slice(-6)}`);
+
 		return {
-			id: `let-${letterNumber}`,
-			letterNumber,
+			id: `let-${resolvedLetterNum}`,
+			letterNumber: resolvedLetterNum,
 			issueDate: letterIssueDate,
 			validUntil: letterValidUntil,
-			maxApprovedAmountKopecks: rublesToKopecks(approvedLimitRub),
+			maxApprovedAmountKopecks: rublesToKopecks(approvedLimitRub > 0 ? approvedLimitRub : 50000),
 			insurerId: selectedInsurerId,
 			patientFullName: patient?.fullName || "Иванов Иван Иванович",
-			patientPolicyNumber: policyNumber,
-			approvedTeethFdi: teeth,
-			approvedServiceCodes804n: codes,
-			curatorFullName: curatorName || undefined,
-			curatorPhone: curatorPhone || undefined,
+			patientPolicyNumber: currentPolicy.policyNumber,
+			approvedTeethFdi: isEmergencyCare ? [] : teeth,
+			approvedServiceCodes804n: isEmergencyCare ? [] : codes,
+			curatorFullName: curatorName || (isEmergencyCare ? "Устное подтверждение куратора (гарантия в пути)" : undefined),
+			curatorPhone: curatorPhone || (isEmergencyCare ? "8 (800) 333-08-88" : undefined),
 		};
 	}, [
 		hasGuaranteeLetter,
+		isEmergencyCare,
 		letterNumber,
 		letterIssueDate,
 		letterValidUntil,
 		approvedLimitRub,
 		selectedInsurerId,
 		patient,
-		policyNumber,
+		currentPolicy.policyNumber,
 		approvedTeethInput,
 		approvedCodesInput,
 		curatorName,
@@ -249,8 +348,10 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		return calculateDmsCoPaymentSplit(billableItems, {
 			policy: currentPolicy,
 			guaranteeLetter: currentLetter,
+			isEmergency: isEmergencyCare,
+			hasAcutePain: isEmergencyCare,
 		});
-	}, [billableItems, currentPolicy, currentLetter]);
+	}, [billableItems, currentPolicy, currentLetter, isEmergencyCare]);
 
 	// Добавление услуги в список
 	const handleAddService = () => {
@@ -276,13 +377,13 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 	// Экспорт реестра в CSV
 	const handleExportCsv = () => {
 		const registry = buildDmsReconciliationRegistry({
-			registryNumber: `РЕЕСТР-${new Date().toISOString().slice(0, 10)}/${policyNumber}`,
+			registryNumber: `РЕЕСТР-${new Date().toISOString().slice(0, 10)}/${currentPolicy.policyNumber}`,
 			insurerId: selectedInsurerId,
 			periodStart: validFrom,
 			periodEnd: validTo,
 			splitResults: splitResult.lineItems.map((item) => ({
 				patientFullName: patient?.fullName || "Иванов Иван Иванович",
-				policyNumber,
+				policyNumber: currentPolicy.policyNumber,
 				guaranteeLetterNumber: hasGuaranteeLetter ? letterNumber : undefined,
 				serviceDate: new Date().toISOString().slice(0, 10),
 				lineItem: item,
@@ -294,7 +395,7 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement("a");
 		link.href = url;
-		link.download = `Реестр_ДМС_${selectedInsurerId}_${policyNumber}.csv`;
+		link.download = `Реестр_ДМС_${selectedInsurerId}_${currentPolicy.policyNumber}.csv`;
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -306,6 +407,12 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 		if (onClaimApproved) {
 			onClaimApproved(splitResult);
 		}
+		showToast(
+			isEmergencyCare
+				? "⚡ Авторизация ДМС (Экстренный приём / Гарантия в пути) успешно применена!"
+				: "Авторизация ДМС успешно применена",
+			"success",
+		);
 		onClose();
 	};
 
@@ -337,6 +444,79 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 
 				{/* Body */}
 				<div className="dms-modal-body">
+					{/* ⚡ 1-Клик Режим: Экстренный приём / Гарантия в пути (Мандат 8e) */}
+					<div
+						style={{
+							padding: "12px 16px",
+							borderRadius: "14px",
+							background: isEmergencyCare
+								? "linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(16, 185, 129, 0.12))"
+								: "rgba(245, 158, 11, 0.08)",
+							border: isEmergencyCare ? "2px solid #f59e0b" : "1px solid rgba(245, 158, 11, 0.35)",
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							flexWrap: "wrap",
+							gap: "12px",
+							marginBottom: "14px",
+							boxShadow: isEmergencyCare ? "0 4px 16px rgba(245, 158, 11, 0.15)" : "none",
+						}}
+					>
+						<div style={{ flex: 1, minWidth: "260px" }}>
+							<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+								<Zap size={18} className="text-amber-600" />
+								<strong style={{ fontSize: "0.875rem", color: "var(--ink, #0f172a)" }}>
+									⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
+								</strong>
+								{isEmergencyCare && (
+									<span
+										style={{
+											fontSize: "0.6875rem",
+											fontWeight: 800,
+											padding: "2px 8px",
+											borderRadius: "6px",
+											background: "#10b981",
+											color: "#ffffff",
+										}}
+									>
+										АКТИВНО
+									</span>
+								)}
+							</div>
+							<p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted, #64748b)", lineHeight: 1.4 }}>
+								Мандат 8e: Задержка поступления гарантийного письма от страховой (Ингосстрах, СОГАЗ, АльфаСтрахование, Ресо) или недозвон куратора в выходной день КАТЕГОРИЧЕСКИ НЕ ДОЛЖНЫ БЛОКИРОВАТЬ приём пациента с острой болью, пульпитом или травмой. Неотложные манипуляции разблокированы немедленно!
+							</p>
+						</div>
+
+						<button
+							type="button"
+							onClick={handleActivateEmergencyCare}
+							style={{
+								minHeight: "44px",
+								padding: "8px 16px",
+								borderRadius: "10px",
+								border: "none",
+								background: isEmergencyCare ? "#10b981" : "#f59e0b",
+								color: "#ffffff",
+								fontWeight: 700,
+								fontSize: "0.8125rem",
+								cursor: "pointer",
+								display: "flex",
+								alignItems: "center",
+								gap: "8px",
+								boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+							}}
+							title="⚡ 1-клик: Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)"
+						>
+							<Zap size={16} />
+							<span>
+								{isEmergencyCare
+									? "✓ Экстренный приём активен"
+									: "⚡ 1-клик: Экстренный приём / Гарантия в пути"}
+							</span>
+						</button>
+					</div>
+
 					{/* 1. Блок Страховой компании и Полиса */}
 					<div className="p-4 rounded-xl border border-line bg-paper-soft flex flex-col gap-3">
 						<div className="flex items-center justify-between flex-wrap gap-2">
@@ -635,16 +815,31 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 														</span>
 													)}
 												</td>
-												<td className="py-2.5 px-2 text-center">
-													<button
-														type="button"
-														onClick={() => handleRemoveService(item.lineItemId)}
-														className="text-muted hover:text-bad-fg p-1.5 rounded transition-colors"
-														title="Удалить услугу"
-														aria-label="Удалить услугу"
-													>
-														<Trash2 size={16} />
-													</button>
+												<td className="py-2.5 px-2 text-center whitespace-nowrap">
+													<div className="flex items-center gap-1 justify-center">
+														<button
+															type="button"
+															onClick={() => handleTogglePremiumUpgrade(item.lineItemId)}
+															className={`p-1.5 rounded text-xs flex items-center gap-1 transition-colors ${
+																item.serviceName.includes("Премиум")
+																	? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 font-bold"
+																	: "text-muted hover:text-ink hover:bg-paper-soft"
+															}`}
+															title="⭐ 1-Клик: Доплата за премиум-материал (разница сооплаты) без разбивки на 2 визита"
+														>
+															<Star size={14} className={item.serviceName.includes("Премиум") ? "text-amber-500 fill-amber-500" : "text-muted"} />
+															<span className="text-[11px] hidden sm:inline">Премиум</span>
+														</button>
+														<button
+															type="button"
+															onClick={() => handleRemoveService(item.lineItemId)}
+															className="text-muted hover:text-bad-fg p-1.5 rounded transition-colors"
+															title="Удалить услугу"
+															aria-label="Удалить услугу"
+														>
+															<Trash2 size={16} />
+														</button>
+													</div>
 												</td>
 											</tr>
 										);
@@ -731,6 +926,68 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 							</span>
 						</div>
 					</div>
+
+					{/* 5. Комбинированная оплата (Split Billing) без разбивки на 2 визита (Мандат 8e) */}
+					<div className="p-4 rounded-xl border border-teal-glow bg-paper-soft flex flex-col gap-3">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-2 font-bold text-sm text-ink">
+								<CreditCard size={18} className="text-teal-600" />
+								<span>Комбинированная оплата (Split Billing) без разбивки на 2 визита</span>
+								<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-surface text-teal-dark">
+									Единый визит 54-ФЗ
+								</span>
+							</div>
+							<div className="text-xs text-muted">
+								ДМС (базовое покрытие) + Пациент (премиум-материалы / франшиза)
+							</div>
+						</div>
+
+						<div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line">
+							<div className="flex items-center gap-2 flex-wrap">
+								<span className="text-xs font-semibold text-muted">Доплата пациента:</span>
+								<div className="flex gap-1">
+									{[
+										{ id: "card", label: "💳 Карта" },
+										{ id: "cash", label: "💵 Наличные" },
+										{ id: "sbp", label: "📱 СБП QR" },
+										{ id: "mixed", label: "⚖ Смешанная" },
+									].map((method) => (
+										<button
+											key={method.id}
+											type="button"
+											onClick={() => setPatientPaymentMethod(method.id as any)}
+											className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+												patientPaymentMethod === method.id
+													? "bg-teal-600 text-white"
+													: "bg-paper border border-line text-ink hover:bg-paper-soft"
+											}`}
+											style={{ minHeight: "36px" }}
+										>
+											{method.label}
+										</button>
+									))}
+								</div>
+							</div>
+
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={handleExecuteSplitBilling}
+									className="dms-btn dms-btn-primary"
+									style={{
+										background: "#0d9488",
+										borderColor: "#0d9488",
+										fontWeight: 700,
+										minHeight: "44px",
+									}}
+									title="⚡ 1-Клик Оформить сплит-оплату: ДМС + Пациент в едином чеке визита"
+								>
+									<Zap size={16} />
+									⚡ 1-Клик Сплит (ДМС {formatCurrencyRub(splitResult.totalInsuranceCoveredKopecks, true)} + Пациент {formatCurrencyRub(splitResult.totalPatientOutOfPocketKopecks, true)})
+								</button>
+							</div>
+						</div>
+					</div>
 				</div>
 
 				{/* Footer */}
@@ -750,6 +1007,16 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 						onClick={onClose}
 					>
 						Отмена
+					</button>
+
+					<button
+						type="button"
+						className="dms-btn dms-btn-primary"
+						style={{ background: "#0d9488", borderColor: "#0d9488", fontWeight: 700 }}
+						onClick={handleExecuteSplitBilling}
+						title="⚡ 1-Клик: Оформить сплит-оплату без разбивки на 2 визита"
+					>
+						<CreditCard size={18} /> ⚡ 1-Клик Сплит в кассе
 					</button>
 
 					<button

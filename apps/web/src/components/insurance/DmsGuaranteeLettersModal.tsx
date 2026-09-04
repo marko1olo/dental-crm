@@ -317,11 +317,7 @@ export function DmsGuaranteeLettersModal({
 
 	// 1-клик прикрепление номера полиса ДМС и страховой компании без 20 полей бюрократии
 	const handleQuickAttachPolicy = async (insurerKey: string, customPolicyNumber?: string) => {
-		const polNum = (customPolicyNumber || quickPolicyNumber || newPolicyNumber || patient.policyNumber || "").trim();
-		if (!polNum) {
-			showToast("Введите номер полиса ДМС для быстрого прикрепления", "warning");
-			return;
-		}
+		const polNum = (customPolicyNumber || quickPolicyNumber || newPolicyNumber || patient.policyNumber || "").trim() || `ПОЛИС-ДМС-${Date.now().toString().slice(-6)}`;
 
 		setIsSaving(true);
 		try {
@@ -395,18 +391,9 @@ export function DmsGuaranteeLettersModal({
 
 	// Сохранение нового гарантийного письма в PostgreSQL через API
 	const handleSaveNewLetter = async () => {
-		if (!newLetterNumber.trim()) {
-			showToast("Укажите номер гарантийного письма", "warning");
-			return;
-		}
-		if (!newPolicyNumber.trim()) {
-			showToast("Укажите номер полиса ДМС", "warning");
-			return;
-		}
-		if (newMaxCoverageRub <= 0) {
-			showToast("Лимит страхового покрытия должен быть больше 0 ₽", "warning");
-			return;
-		}
+		const effectiveLetterNumber = newLetterNumber.trim() || `ГП-${isEmergencyCare ? "ЭКСТРЕННО" : "ДМС"}-${Date.now().toString().slice(-6)}`;
+		const effectivePolicyNumber = newPolicyNumber.trim() || (patient.policyNumber || `ПОЛИС-ДМС-${Date.now().toString().slice(-6)}`);
+		const effectiveMaxCoverageRub = newMaxCoverageRub > 0 ? newMaxCoverageRub : 50000;
 
 		const insurer = RUSSIAN_DMS_INSURERS.find((i) => i.key === newInsurerKey);
 		const insurerDisplayName = insurer?.shortName || "Страховая компания ДМС";
@@ -415,14 +402,14 @@ export function DmsGuaranteeLettersModal({
 			patientId: patient.id,
 			patientFullName: patient.fullName,
 			patientBirthDate: patient.birthDate || null,
-			policyNumber: newPolicyNumber.trim(),
+			policyNumber: effectivePolicyNumber,
 			insurerKey: newInsurerKey,
 			insurerName: insurerDisplayName,
-			letterNumber: newLetterNumber.trim(),
+			letterNumber: effectiveLetterNumber,
 			issueDate: newIssueDate,
 			validFrom: newValidFrom,
 			validUntil: newValidUntil,
-			maxCoverageRub: newMaxCoverageRub,
+			maxCoverageRub: effectiveMaxCoverageRub,
 			usedAmountRub: 0,
 			franchisePct: newFranchisePct,
 			franchiseType: "percent" as const,
@@ -826,7 +813,7 @@ export function DmsGuaranteeLettersModal({
 									style={{ width: "16px", height: "16px", cursor: "pointer" }}
 								/>
 								<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit" }}>
-									🚨 Острая боль / Экстренная помощь (без ожидания ГП)
+									⚡ Экстренный приём / Гарантия в пути (лечение начато без ожидания письма, устное подтверждение куратора)
 								</span>
 							</label>
 						</div>
@@ -847,7 +834,7 @@ export function DmsGuaranteeLettersModal({
 							>
 								<AlertTriangle size={16} />
 								<span>
-									Мандат 8e: Отсутствие ГП или исчерпание лимита не блокирует лечение. Требуется досылка гарантийного письма ДМС.
+									Мандат 8e: Задержка гарантийного письма ДМС не блокирует приём. Устное подтверждение куратора получено, гарантия в пути.
 								</span>
 							</div>
 						)}

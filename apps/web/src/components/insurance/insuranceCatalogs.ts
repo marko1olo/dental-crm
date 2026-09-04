@@ -298,6 +298,7 @@ export function getDmsInsurerById(id: string): DmsInsurerDefinition | undefined 
 export function validateDmsPolicy(
 	policy: Partial<DmsPolicy>,
 	checkDate: string = new Date().toISOString().slice(0, 10),
+	options: { isEmergency?: boolean } = {},
 ): {
 	isValid: boolean;
 	errors: string[];
@@ -305,6 +306,18 @@ export function validateDmsPolicy(
 } {
 	const errors: string[] = [];
 	const warnings: string[] = [];
+
+	// Мандат 8e: если это экстренный приём / острая боль, отсутствие полиса не блокирует врача
+	if (options.isEmergency) {
+		warnings.push(
+			"⚡ Экстренный приём / Гарантия в пути (Мандат 8e): отсутствие номера полиса или истекший срок не блокируют оказание неотложной помощи.",
+		);
+		return {
+			isValid: true,
+			errors: [],
+			warnings,
+		};
+	}
 
 	if (!policy.insurerId || !getDmsInsurerById(policy.insurerId)) {
 		errors.push("Не выбрана или не найдена страховая компания в реестре ДМС.");
