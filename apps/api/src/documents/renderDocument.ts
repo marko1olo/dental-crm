@@ -131,8 +131,8 @@ const documentStatusLabels: Record<GeneratedDocument["status"], string> = {
 
 function documentStatusBanner(document: GeneratedDocument) {
 	const textByStatus: Record<GeneratedDocument["status"], string> = {
-		draft: "ЧЕРНОВИК. ПЕРЕД ВЫДАЧЕЙ НУЖНА ПРОВЕРКА КЛИНИКИ",
-		issued: "ВЫДАНО. ПРОВЕРИТЬ ПОДПИСИ И ПРИЛОЖЕНИЯ ПЕРЕД ПЕРЕДАЧЕЙ",
+		draft: "ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)",
+		issued: "ПОДПИСАНО ВРАЧОМ",
 		voided: "АННУЛИРОВАНО. НЕ ИСПОЛЬЗОВАТЬ КАК ДЕЙСТВУЮЩИЙ ДОКУМЕНТ",
 	};
 

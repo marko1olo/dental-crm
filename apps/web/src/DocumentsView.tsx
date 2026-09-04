@@ -17,8 +17,8 @@ import {
 	type XrayCbctReferralPregnancyStatus,
 	type XrayCbctReferralStudyType,
 } from "@dental/shared";
-import { CheckCircle2, FileCode2, FileText, Shield } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, FileCode2, FileText, Printer, Shield } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isoDateLabel } from "./AppHelpers";
 import { AnamnesisField } from "./components/documents/AnamnesisField";
 import { DocumentUkepSignButton } from "./components/documents/DocumentUkepSignButton";
@@ -34,6 +34,7 @@ import {
 } from "./components/documents/DocumentNavTabs";
 import { DocumentQuickRoleScenarios } from "./components/documents/DocumentQuickRoleScenarios";
 import { PrimaryIntakePackageModal } from "./components/documents/PrimaryIntakePackageModal";
+import { printPrimaryIntakePackage } from "./components/documents/primaryIntakePackagePrintEngine";
 import { SurgicalPackageModal } from "./components/documents/SurgicalPackageModal";
 import { ClinicalVisitPackageModal } from "./components/documents/ClinicalVisitPackageModal";
 import { TaxAccountingPackageModal } from "./components/documents/TaxAccountingPackageModal";
@@ -477,6 +478,61 @@ export function DocumentsView(props: DocumentsViewProps) {
 	const [isClinicalVisitOpen, setIsClinicalVisitOpen] = useState(false);
 	const [isTaxAccountingOpen, setIsTaxAccountingOpen] = useState(false);
 	const [isHospitalSanpinOpen, setIsHospitalSanpinOpen] = useState(false);
+
+	const handleDirectPrintPrimaryIntake = useCallback(() => {
+		const store = useDocumentStore.getState();
+		printPrimaryIntakePackage({
+			patient: activePatient
+				? {
+						fullName: activePatient.fullName,
+						birthDate: activePatient.birthDate,
+						phone: activePatient.phone,
+						snils: (activePatient as any)?.administrativeProfile?.snils || (activePatient as any)?.snils,
+						registrationAddress: (activePatient as any)?.administrativeProfile?.registrationAddress || (activePatient as any)?.address,
+						address: (activePatient as any)?.administrativeProfile?.registrationAddress || (activePatient as any)?.address,
+						passportSeries: (activePatient as any)?.administrativeProfile?.passportSeries,
+						passportNumber: (activePatient as any)?.administrativeProfile?.passportNumber,
+						passportIssuedBy: (activePatient as any)?.administrativeProfile?.passportIssuedBy,
+						passportIssuedDate: (activePatient as any)?.administrativeProfile?.passportIssuedDate,
+						passportDepartmentCode: (activePatient as any)?.administrativeProfile?.passportDepartmentCode,
+						gender: (activePatient as any)?.gender,
+					}
+				: null,
+			clinic: clinicProfileDraft ? {
+				clinicName: clinicProfileDraft.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				legalName: clinicProfileDraft.legalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				fullName: clinicProfileDraft.legalName || "Общество с ограниченной ответственностью «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				shortName: clinicProfileDraft.clinicName || "ООО «ДЕНТЕ»",
+				inn: clinicProfileDraft.inn || "7707083893",
+				kpp: clinicProfileDraft.kpp || "770101001",
+				ogrn: clinicProfileDraft.ogrn || "1027700132195",
+				licenseNumber: clinicProfileDraft.licenseNumber || "ЛО41-01137-77/00368421",
+				licenseDate: clinicProfileDraft.licenseDate || "12.10.2021",
+				address: clinicProfileDraft.address || "г. Москва, ул. Большая Стоматологическая, д. 12",
+				actualAddress: clinicProfileDraft.address || "г. Москва, ул. Большая Стоматологическая, д. 12",
+				phone: clinicProfileDraft.phone || "+7 (495) 777-22-11",
+				directorTitle: clinicProfileDraft.directorTitle || "Генеральный директор",
+				directorFullName: clinicProfileDraft.directorFullName || "Барабаш С.В.",
+			} : undefined,
+			doctorFullName: activeDoctor?.fullName || null,
+			intakeNormApplied: true,
+			questionnaireAnswers: {
+				complaint: store.intakeChiefComplaint || "Плановый осмотр и консультация (жалоб нет)",
+				allergies: store.intakeAllergyStatus || "Аллергии и нежелательные реакции не отмечены.",
+				medications: store.intakeCurrentMedications || "Постоянные препараты не принимает.",
+				chronic: store.intakeChronicConditions || "Хронические заболевания отрицает.",
+				anticoagulants: store.intakeAnticoagulants || "Антикоагулянты не принимает.",
+				infections: store.intakeInfectiousRiskNotes || "Инфекционные риски не заявлены.",
+				cardioEndocrine: store.intakeCardioEndocrineNotes || "Сердечно-сосудистые патологии отрицает.",
+				pregnancy: store.intakePregnancyStatus || "not_applicable",
+			},
+		});
+		showToast(
+			"Пакет первичного приёма (Договор + общий ИДС + согласие ОПД + Анкета) отправлен на печать со строками «________»",
+			"success",
+			4000,
+		);
+	}, [activePatient, activeDoctor, clinicProfileDraft]);
 
 	const [activeCategoryTab, setActiveCategoryTab] =
 		useState<DocumentCategoryTab>("all");
@@ -1318,9 +1374,31 @@ export function DocumentsView(props: DocumentsViewProps) {
 				</div>
 			</div>
 
+			{/* 1.1 БЫСТРАЯ 1-КЛИК ПЕЧАТЬ ПАКЕТА ПЕРВИЧНОГО ПРИЁМА */}
+			<div className="document-intake-quick-action-bar">
+				<button
+					type="button"
+					className="document-intake-quick-print-btn"
+					onClick={handleDirectPrintPrimaryIntake}
+					data-testid="btn-quick-print-primary-intake-package"
+					title="Сформировать и напечатать полный пакет первичного приёма (Договор + общий ИДС + согласие на обработку ПД + Анкета) со строками «________» для быстрой ручной подписи на стойке регистрации (без 403-ошибок)"
+				>
+					<div className="flex items-center gap-2.5">
+						<Printer size={18} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+						<span className="font-extrabold text-xs sm:text-sm text-[var(--ink)]">
+							⚡ Сформировать и напечатать пакет первичного приёма (Договор + общий ИДС + согласие на обработку ПД)
+						</span>
+					</div>
+					<span className="document-intake-quick-badge">
+						Со строками «________» для ручной подписи
+					</span>
+				</button>
+			</div>
+
 			{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ В 1 КЛИК */}
 			<DocumentQuickRoleScenarios
 				onOpenPrimaryIntake={() => setIsPrimaryIntakeOpen(true)}
+				onPrintPrimaryIntake={handleDirectPrintPrimaryIntake}
 				onOpenSurgicalPackage={() => setIsSurgicalPackageOpen(true)}
 				onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
 				onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
@@ -6326,18 +6404,16 @@ export function DocumentsView(props: DocumentsViewProps) {
 										Скачать HTML
 									</button>
 								) : null}
-								{documentArchiveAvailable ? (
-									<button
-										className="doc-link"
-										type="button"
-										onClick={() => void downloadIssuedDocumentPdf(document.id)}
-										aria-describedby={documentLifecycleGuidanceId}
-										aria-label={`Скачать PDF документа: ${documentActionContext}`}
-										title={`Скачать PDF документа: ${documentActionContext}`}
-									>
-										Скачать PDF
-									</button>
-								) : null}
+								<button
+									className="doc-link"
+									type="button"
+									onClick={() => void downloadIssuedDocumentPdf(document.id)}
+									aria-describedby={documentLifecycleGuidanceId}
+									aria-label={`Печать / Скачать PDF (${document.status === "draft" ? "Черновик" : "Выдан"}): ${documentActionContext}`}
+									title={`Печать / Скачать PDF (${document.status === "draft" ? "Черновик со штампом" : "Подписанный документ"}): ${documentActionContext}`}
+								>
+									{document.status === "draft" ? "Печать PDF (Черновик)" : "Скачать PDF"}
+								</button>
 								{document.kind === "tax_deduction_certificate" && document.status === "issued" ? (
 									<>
 										<button
