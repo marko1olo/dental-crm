@@ -11,6 +11,7 @@ import {
 	Sparkles,
 	Trash2,
 	UploadCloud,
+	X,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
@@ -256,6 +257,48 @@ export function CephalometricCanvas({
 		setDraggingKey(null);
 	};
 
+	// Touch handlers for tablet / iPad ergonomics
+	const handleTouchStart = (e: React.TouchEvent) => {
+		if (e.touches.length === 1 && e.touches[0]) {
+			const touch = e.touches[0];
+			if (!activeTargetKey && !hoveredKey) {
+				setIsPanning(true);
+				setPanStart({ x: touch.clientX - pan.x, y: touch.clientY - pan.y });
+			}
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent) => {
+		if (isPanning && e.touches.length === 1 && e.touches[0]) {
+			const touch = e.touches[0];
+			setPan({
+				x: touch.clientX - panStart.x,
+				y: touch.clientY - panStart.y,
+			});
+		}
+	};
+
+	const handleTouchEnd = () => {
+		setIsPanning(false);
+		setDraggingKey(null);
+	};
+
+	// Escape key to cancel landmark selection or calibration
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				if (isCalibrating) {
+					setIsCalibrating(false);
+					setCalibrationPoints([]);
+				} else if (activeTargetKey) {
+					onSelectTargetKey(null);
+				}
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [activeTargetKey, isCalibrating, onSelectTargetKey]);
+
 	// CSS Filter Styles for X-ray manipulation
 	const getFilterStyle = (): React.CSSProperties => {
 		let filterString = `brightness(${brightness}%) contrast(${contrast}%)`;
@@ -320,6 +363,9 @@ export function CephalometricCanvas({
 			onMouseMove={imageUrl ? handleMouseMove : undefined}
 			onMouseUp={imageUrl ? handleMouseUp : undefined}
 			onMouseLeave={imageUrl ? handleMouseUp : undefined}
+			onTouchStart={imageUrl ? handleTouchStart : undefined}
+			onTouchMove={imageUrl ? handleTouchMove : undefined}
+			onTouchEnd={imageUrl ? handleTouchEnd : undefined}
 			onDragOver={handleDragOver}
 			onDragEnter={handleDragOver}
 			onDragLeave={handleDragLeave}
@@ -480,13 +526,25 @@ export function CephalometricCanvas({
 								Все 16 точек заданы. Расчет углов готов
 							</span>
 						) : activeTargetKey ? (
-							<span>
+							<span className="flex items-center gap-1">
 								<span className="text-slate-400 font-normal mr-1">
 									{landmarks[activeTargetKey] ? "Точка задана:" : "Установите точку:"}
 								</span>
 								<span className="text-teal-300 font-extrabold uppercase">
 									{CEPHALOMETRIC_LANDMARKS.find((l) => l.key === activeTargetKey)?.nameRu}
 								</span>
+								<button
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation();
+										onSelectTargetKey(null);
+									}}
+									className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer ml-1"
+									title="Отменить выбор ориентира (Esc)"
+									aria-label="Отменить выбор ориентира"
+								>
+									<X size={12} />
+								</button>
 							</span>
 						) : (
 							<span className="text-slate-300 font-medium">

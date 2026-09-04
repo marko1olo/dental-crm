@@ -128,8 +128,93 @@ export function OrthodonticVisitProtocolWidget({
 	const [powerChainType, setPowerChainType] = useState<string>("short");
 	const [notes, setNotes] = useState<string>("Пациент жалоб не предъявляет. Гигиена удовлетворительная.");
 
+	// 1-Click Autonomous Clinical Presets State
+	const [activePreset, setActivePreset] = useState<
+		"activation" | "wire_change" | "bonding" | "debonding" | null
+	>(null);
+
+	// Fast 1-Click Preset Handlers
+	const handlePresetActivation = () => {
+		setActivePreset("activation");
+		setTargetArch("both");
+		setSelectedTeeth([
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
+		]);
+		setBracketSlot("0.022");
+		setBracketSystem("damon_q2");
+		setArchwireMaterial("CuNiTi");
+		setArchwireSection(".016");
+		setSelectedActions(["ligature_change"]);
+		setElasticScheme("class_ii");
+		setElasticSize("kangaroo_1_4");
+		setElasticWear("22 часа/сутки");
+		setNotes(
+			"Плановый визит по графику ортодонтического лечения. Дуги сохранены без деформаций. Выполнена замена эластических лигатур, активация замков брекетов. Межчелюстная тяга скорректирована. Жалоб на острую боль и отклейку брекетов нет. Гигиена полости рта удовлетворительная.",
+		);
+		showToast("⚡ Пресет: Плановая активация применен", "info");
+	};
+
+	const handlePresetWireChange = () => {
+		setActivePreset("wire_change");
+		setTargetArch("both");
+		setSelectedTeeth([
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
+		]);
+		setBracketSlot("0.022");
+		setBracketSystem("damon_q2");
+		setArchwireMaterial("NiTi");
+		setArchwireSection(".016");
+		setSelectedActions(["wire_change", "ligature_change"]);
+		setElasticScheme("none");
+		setNotes(
+			"Плановая смена дуг на этапе нивелирования и юстировки. Установлены новые круглые никель-титановые дуги NiTi: верхняя челюсть .016\", нижняя челюсть .014\". Концы дуг подогнуты и зашлифованы, травма слизистой оболочки исключена. Замки закрыты со щелчком. Аппаратура стабильна.",
+		);
+		showToast("⚡ Пресет: Смена дуг (NiTi верх .016 / низ .014) применен", "info");
+	};
+
+	const handlePresetBonding = () => {
+		setActivePreset("bonding");
+		setTargetArch("upper");
+		setSelectedTeeth([17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27]);
+		setBracketSlot("0.022");
+		setBracketSystem("damon_q2");
+		setArchwireMaterial("NiTi");
+		setArchwireSection(".014");
+		setSelectedActions(["wire_change"]);
+		setElasticScheme("none");
+		setNotes(
+			"Первичная прямая фиксация несъемной вестибулярной брекет-системы на верхнюю челюсть (сегменты 17-27). Протравливание эмали 37% ортофосфорной кислотой (30 сек), тщательное смывание, высушивание. Нанесение праймера, позиционирование брекетов по индивидуальной высоте, фотополимеризация. Введена первичная нивелирующая дуга NiTi .014\". Концы дуг отожжены и подогнуты. Проведен подробный инструктаж по уходу за брекетами и гигиене полости рта, выдан защитный воск.",
+		);
+		showToast("⚡ Пресет: Фиксация брекет-системы (ВЧ) применен", "info");
+	};
+
+	const handlePresetDebonding = () => {
+		setActivePreset("debonding");
+		setTargetArch("both");
+		setSelectedTeeth(ANTERIOR_TEETH);
+		setBracketSlot("0.022");
+		setBracketSystem("damon_q2");
+		setSelectedActions(["debonding"]);
+		setElasticScheme("none");
+		setNotes(
+			"Окончание активного периода ортодонтического лечения. Атравматичное снятие брекет-системы специальными щипцами. Механическое удаление остатков композита твердосплавными финирами без повреждения эмали, полировка вестибулярных поверхностей. Фиксация несъемного проволочного ретейнера (флекс-дуга 0.0175\") на текучий композит в сегментах 13-23 и 33-43. Сняты оттиски/сканы для изготовления ретенционных капп. Окклюзия стабильна.",
+		);
+		showToast("⚡ Пресет: Снятие брекетов + ретейнер применен", "info");
+	};
+
+	const handlePresetAlignerLabOrder = () => {
+		setActivePreset(null);
+		setNotes(
+			"Сняты высокоточные оптические оттиски (3D интраоральное сканирование) для изготовления комплекта ортодонтических элайнеров / ретенционных капп в ЗТЛ. Наряд сформирован (срок 5 рабочих дней). План лечения активен без бюрократических согласований (Мандат 8e)."
+		);
+		showToast("⚡ 1-клик: Наряд на каппы/элайнеры в ЗТЛ сформирован", "success");
+	};
+
 	// Quick Arch Selectors
 	const handleSelectArch = (arch: TargetArch) => {
+		setActivePreset(null);
 		setTargetArch(arch);
 		if (arch === "upper") {
 			setSelectedTeeth([17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27]);
@@ -191,6 +276,15 @@ export function OrthodonticVisitProtocolWidget({
 			powerChainText = `\nУстановлена эластическая цепочка Power Chain (${powerChainType === "short" ? "короткий шаг" : powerChainType === "long" ? "длинный шаг" : "сплошная"}) в сегменте ${powerChainSpan}.`;
 		}
 
+		let archwireText = `• Текущая дуга: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}".`;
+		if (selectedActions.includes("debonding")) {
+			archwireText = "• Состояние аппаратуры: брекет-система снята. Зафиксирован несъемный проволочный ретейнер в сегментах 13-23 и 33-43.";
+		} else if (activePreset === "wire_change" || notes.includes("верхняя челюсть .016\", нижняя челюсть .014\"")) {
+			archwireText = "• Установленные дуги: ВЧ — NiTi .016\", НЧ — NiTi .014\" (круглые нивелирующие, норма).";
+		} else if (activePreset === "activation") {
+			archwireText = `• Текущие дуги: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}" (дуги сохранены без деформаций, активация замков).`;
+		}
+
 		return `ДНЕВНИК ОРТОДОНТИЧЕСКОГО ПРИЁМА (ФОРМА 043/у)
 Дата приёма: ${dateStr}
 Пациент: ${patientName}
@@ -201,7 +295,7 @@ ${notes || "Плановый визит по графику ортодонтич
 2. ОБЪЕКТИВНЫЙ СТАТУС:
 • Аппаратура: ${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}").
 • Зона фиксации/активации (зубы): ${teethListStr}.
-• Текущая дуга: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}".
+${archwireText}
 • Фиксация замков стабильна, окклюзионных контактов с брекетами не выявлено.
 
 3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:
@@ -230,6 +324,7 @@ ${notes || "Плановый визит по графику ортодонтич
 		powerChainType,
 		notes,
 		patientName,
+		activePreset,
 	]);
 
 	// Apply to Form 043/u
@@ -341,6 +436,190 @@ ${notes || "Плановый визит по графику ортодонтич
 				<div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-y-auto">
 					{/* Left Column: 1-Click Fast Ortho Controls */}
 					<div className="lg:col-span-7 p-4 sm:p-5 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-[var(--line,#e2e8f0)] dark:border-slate-800 overflow-y-auto">
+						{/* 0. Autonomous 1-Click Clinical Presets Panel */}
+						<div
+							data-testid="ortho-quick-presets-panel"
+							className="bg-amber-500/10 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-500/30 flex flex-col gap-2.5"
+						>
+							<div className="flex items-center justify-between flex-wrap gap-1">
+								<span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+									<Zap size={14} className="text-amber-600 dark:text-amber-400 fill-amber-500" />
+									Быстрые клинические пресеты (1 клик)
+								</span>
+								<span className="text-[11px] font-bold text-amber-700/80 dark:text-amber-400/80">
+									Мгновенное заполнение параметров и SOAP 043/у
+								</span>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								<button
+									type="button"
+									onClick={handlePresetActivation}
+									data-testid="ortho-preset-routine-activation"
+									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+										activePreset === "activation"
+											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
+											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
+									}`}
+								>
+									<div
+										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+											activePreset === "activation"
+												? "bg-white/20 text-white"
+												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+										}`}
+									>
+										<RotateCcw size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight">
+											⚡ 1-клик: Плановая активация
+										</div>
+										<div
+											className={`text-[10px] truncate ${
+												activePreset === "activation"
+													? "text-amber-100"
+													: "text-slate-500 dark:text-slate-400"
+											}`}
+										>
+											(смена лигатур / эластиков, дуги сохранены)
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={handlePresetWireChange}
+									data-testid="ortho-preset-wire-change"
+									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+										activePreset === "wire_change"
+											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
+											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
+									}`}
+								>
+									<div
+										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+											activePreset === "wire_change"
+												? "bg-white/20 text-white"
+												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+										}`}
+									>
+										<Zap size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight">
+											⚡ 1-клик: Смена дуг
+										</div>
+										<div
+											className={`text-[10px] truncate ${
+												activePreset === "wire_change"
+													? "text-amber-100"
+													: "text-slate-500 dark:text-slate-400"
+											}`}
+										>
+											(NiTi верх 0.016 / низ 0.014, норма)
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={handlePresetBonding}
+									data-testid="ortho-preset-bracket-bonding"
+									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+										activePreset === "bonding"
+											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
+											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
+									}`}
+								>
+									<div
+										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+											activePreset === "bonding"
+												? "bg-white/20 text-white"
+												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+										}`}
+									>
+										<Sparkles size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight">
+											⚡ 1-клик: Фиксация брекет-системы
+										</div>
+										<div
+											className={`text-[10px] truncate ${
+												activePreset === "bonding"
+													? "text-amber-100"
+													: "text-slate-500 dark:text-slate-400"
+											}`}
+										>
+											(1 челюсть)
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={handlePresetDebonding}
+									data-testid="ortho-preset-debonding-retainer"
+									className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+										activePreset === "debonding"
+											? "bg-amber-500 text-white border-amber-600 shadow-sm font-black ring-2 ring-amber-400"
+											: "bg-white dark:bg-slate-900 border-amber-500/30 hover:border-amber-500 text-slate-800 dark:text-slate-100"
+									}`}
+								>
+									<div
+										className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+											activePreset === "debonding"
+												? "bg-white/20 text-white"
+												: "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+										}`}
+									>
+										<CheckCircle2 size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight">
+											⚡ 1-клик: Снятие брекет-системы
+										</div>
+										<div
+											className={`text-[10px] truncate ${
+												activePreset === "debonding"
+													? "text-amber-100"
+													: "text-slate-500 dark:text-slate-400"
+											}`}
+										>
+											(+ установка несъемного ретейнера)
+										</div>
+									</div>
+								</button>
+
+								<button
+									type="button"
+									onClick={handlePresetAlignerLabOrder}
+									data-testid="ortho-preset-aligner-lab-order"
+									className="min-h-[44px] p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer bg-white dark:bg-slate-900 border-teal-500/40 hover:border-teal-500 text-slate-800 dark:text-slate-100"
+								>
+									<div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-teal-500/15 text-teal-600 dark:text-teal-400">
+										<Zap size={14} />
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
+											⚡ 1-клик: Наряд ЗТЛ (Элайнеры / Каппа)
+										</div>
+										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
+											(срок 5 раб. дней, без согласований начмеда)
+										</div>
+									</div>
+								</button>
+							</div>
+
+							<div className="flex items-center gap-2 p-2.5 rounded-lg bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/20 text-xs">
+								<CheckCircle2 size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="text-[11px] font-bold text-teal-900 dark:text-teal-200">
+									Мандат 8e: Истечение 30 дней плана НЕ БЛОКИРУЕТ ортодонтические манипуляции, заказ капп/элайнеров в ЗТЛ или оплату.
+								</span>
+							</div>
+						</div>
+
 						{/* 1. Dental Arch Quick Presets & Formula */}
 						<div className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/50 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center justify-between mb-2">

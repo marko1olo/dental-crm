@@ -18,6 +18,7 @@ import {
 	Printer,
 	RefreshCw,
 	RotateCcw,
+	Save,
 	Sliders,
 	Sparkles,
 	Sun,
@@ -29,6 +30,7 @@ import {
 import React, { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore";
 import "./CephalometricAnalysisModal.css";
 import {
 	CephalometricCanvas,
@@ -147,21 +149,166 @@ export function CephalometricAnalysisModal({
 		reader.readAsDataURL(file);
 	};
 
+	// Form 043-1/u Consultation Synthesis without full Ceph requirement
+	const generateConsultationNoteWithoutCeph = useCallback(() => {
+		const dateStr = new Date().toLocaleDateString("ru-RU");
+		const imageStatus = isImageLoaded
+			? "Боковая ТРГ загружена в систему, прикреплена к электронной медицинской карте."
+			: "Направлен на выполнение боковой ТРГ черепа (телерентгенографии).";
+
+		const landmarkStatus =
+			analysis.placedCount > 0
+				? `Установлено анатомических ориентиров: ${analysis.placedCount} из ${analysis.totalCount}. `
+				: "Ориентиры не расставлены (предварительный клинический осмотр). ";
+
+		return `ПЕРВИЧНАЯ ОРТОДОНТИЧЕСКАЯ КОНСУЛЬТАЦИЯ (ФОРМА 043-1/у)
+Дата приёма: ${dateStr}
+Пациент: ${patientName || "Пациент"}
+
+1. КЛИНИЧЕСКИЙ ОСМОТР И АНАМНЕЗ:
+• Жалобы: нарушение эстетики улыбки, скученность зубных рядов, затрудненное пережёвывание пищи.
+• Внешний осмотр: симметрия лица сохранена, носогубные складки умеренно выражены. Смыкание губ без выраженного напряжения.
+• Визуальная оценка профиля: гармоничный / умеренно выпуклый профиль.
+• Осмотр полости рта: слизистая оболочка бледно-розовая, умеренно увлажнена. Прикрепление уздечек губ и языка в пределах нормы.
+
+2. ДИАГНОСТИЧЕСКИЙ СТАТУС (ТРГ / ТЕЛЕРЕНТГЕНОГРАФИЯ):
+• ${imageStatus}
+• ${landmarkStatus}Полный угловой цефалометрический расчет Штайнера/Твида/Риккетса отложен на этап детального цифрового моделирования (Setup) и не блокирует текущую консультацию.
+
+3. ПРЕДВАРИТЕЛЬНЫЙ ДИАГНОЗ ПО МКБ-10:
+• K07.2 Аномалии соотношений зубных дуг.
+• K07.3 Аномалии положения зубов (скученное положение резцов).
+
+4. ПЛАН ВЕДЕНИЯ И НАЗНАЧЕНИЯ:
+• Фотометрический протокол лица и зубных рядов (8 стандартных проекций).
+• Снятие диагностических оттисков / интраоральное 3D-сканирование для виртуального сетапа.
+• Профессиональная гигиена полости рта и санация очагов кариеса перед фиксацией ортодонтической аппаратуры.
+• Повторный приём: обсуждение 3D-плана перемещения зубов и выбор аппаратуры (брекеты / элайнеры).`;
+	}, [isImageLoaded, analysis.placedCount, analysis.totalCount, patientName]);
+
+	// Effective protocol text for Form 043/u
+	const currentEffectiveProtocolText = useMemo(() => {
+		if (analysis.placedCount >= 10) {
+			return analysis.diagnosis.protocol043Text;
+		}
+		return generateConsultationNoteWithoutCeph();
+	}, [analysis.placedCount, analysis.diagnosis.protocol043Text, generateConsultationNoteWithoutCeph]);
+
 	// Insert into Form 043/y Callback
 	const handleInsertToChart = () => {
 		if (onInsertToProtocol) {
-			onInsertToProtocol(analysis.diagnosis.protocol043Text);
+			onInsertToProtocol(currentEffectiveProtocolText);
 		}
+		// Direct populate visit store if active
+		try {
+			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+			if (setVisitNoteForm) {
+				setVisitNoteForm((prev) => ({
+					...prev,
+					complaint: prev.complaint
+						? `${prev.complaint}\n\n[Ортодонтия] Ортодонтический прием (ТРГ)`
+						: "Ортодонтический приём. Жалобы на скученность зубов и прикус.",
+					objectiveStatus: prev.objectiveStatus
+						? `${prev.objectiveStatus}\n\n${currentEffectiveProtocolText}`
+						: currentEffectiveProtocolText,
+					treatmentPlan: prev.treatmentPlan
+						? `${prev.treatmentPlan}\n\n[Ортодонтия] Диагностический протокол ТРГ сохранен.`
+						: "Ортодонтическое лечение: протокол ТРГ сохранен, согласование аппаратуры.",
+				}));
+			}
+		} catch {
+			// ignore
+		}
+
+		// Dispatch event
+		if (typeof window !== "undefined") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							protocolText: currentEffectiveProtocolText,
+							title: "Протокол ТРГ (Форма 043/у)",
+							soap: {
+								treatmentDescription: currentEffectiveProtocolText,
+							},
+							mode: "smart_append",
+						},
+					}),
+				);
+			} catch {
+				// ignore
+			}
+		}
+
 		showToast("Протокол ТРГ успешно вставлен в ортодонтическую карту Формы 043/у!", "success");
 		onClose();
 	};
 
+	// Save Consultation without full Ceph calculations (Zero doctor blocking)
+	const handleSaveConsultationWithoutCeph = useCallback(() => {
+		const consultationText = generateConsultationNoteWithoutCeph();
+
+		// 1. Trigger parent protocol callback if provided
+		if (onInsertToProtocol) {
+			onInsertToProtocol(consultationText);
+		}
+
+		// 2. Direct populate visit store if active
+		try {
+			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+			if (setVisitNoteForm) {
+				setVisitNoteForm((prev) => ({
+					...prev,
+					complaint: prev.complaint
+						? `${prev.complaint}\n\n[Ортодонтия] Первичная консультация ортодонта`
+						: "Консультация врача-ортодонта. Жалобы на скученность зубов и нарушение прикуса.",
+					objectiveStatus: prev.objectiveStatus
+						? `${prev.objectiveStatus}\n\n${consultationText}`
+						: consultationText,
+					treatmentPlan: prev.treatmentPlan
+						? `${prev.treatmentPlan}\n\n[Ортодонтия] Направлен на диагностический сетап, санацию и профгигиену.`
+						: "Ортодонтическое лечение: диагностический сетап, санация, согласование брекетов/элайнеров.",
+				}));
+			}
+		} catch {
+			// ignore
+		}
+
+		// 3. Dispatch global SOAP event for reactive note updating
+		if (typeof window !== "undefined") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							protocolText: consultationText,
+							title: "Ортодонтическая консультация (без полного ТРГ-расчета)",
+							soap: {
+								treatmentDescription: consultationText,
+							},
+							mode: "smart_append",
+						},
+					}),
+				);
+			} catch {
+				// ignore
+			}
+		}
+
+		// 4. Copy to clipboard silently
+		if (navigator?.clipboard?.writeText) {
+			navigator.clipboard.writeText(consultationText).catch(() => {});
+		}
+
+		showToast("Консультация сохранена в карту (без полного ТРГ-расчета)", "success");
+		onClose();
+	}, [generateConsultationNoteWithoutCeph, onInsertToProtocol, onClose]);
+
 	// Copy Protocol Text
 	const handleCopyText = async () => {
 		try {
-			await navigator.clipboard.writeText(analysis.diagnosis.protocol043Text);
+			await navigator.clipboard.writeText(currentEffectiveProtocolText);
 			setCopied(true);
-			showToast("Протокол ТРГ скопирован в буфер обмена", "success");
+			showToast("Протокол скопирован в буфер обмена", "success");
 			setTimeout(() => setCopied(false), 2000);
 		} catch {
 			showToast("Не удалось скопировать текст", "error");
@@ -215,6 +362,18 @@ export function CephalometricAnalysisModal({
 					</div>
 
 					<div className="flex items-center gap-2 shrink-0">
+						<button
+							type="button"
+							onClick={handleSaveConsultationWithoutCeph}
+							data-testid="save-consultation-without-ceph-btn"
+							className="min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-500/50"
+							title="Сохранить консультацию ортодонта в карту 043-1/у без полного расчерчивания ТРГ"
+						>
+							<Save size={16} />
+							<span className="hidden sm:inline">Сохранить консультацию без ТРГ</span>
+							<span className="sm:hidden">Без ТРГ</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={onClose}
@@ -286,10 +445,6 @@ export function CephalometricAnalysisModal({
 					<button
 						type="button"
 						onClick={() => {
-							if (!isImageLoaded) {
-								showToast("Сначала загрузите снимок ТРГ", "warning");
-								return;
-							}
 							setMobileView("report");
 							setActiveTab("report");
 						}}
@@ -297,7 +452,7 @@ export function CephalometricAnalysisModal({
 							mobileView === "report"
 								? "bg-teal-600 text-white shadow-md font-extrabold"
 								: "bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700"
-						} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
+						}`}
 						data-testid="ceph-mobile-tab-report"
 					>
 						<FileText size={14} />
@@ -509,18 +664,14 @@ export function CephalometricAnalysisModal({
 							<button
 								type="button"
 								onClick={() => {
-									if (isImageLoaded) {
-										setActiveTab("report");
-										setMobileView("report");
-									} else {
-										showToast("Сначала загрузите снимок ТРГ", "warning");
-									}
+									setActiveTab("report");
+									setMobileView("report");
 								}}
 								className={`min-h-[44px] sm:min-h-0 sm:h-9 px-1 sm:px-2 py-1 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-all cursor-pointer ${
 									activeTab === "report"
 										? "border-teal-400 text-teal-300 bg-slate-800 rounded-t-lg shadow-xs"
 										: "border-transparent text-slate-400 hover:text-slate-100 bg-transparent"
-								} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
+								}`}
 								title="Форма 043/у-ТРГ (Ортодонтический протокол)"
 							>
 								<FileText size={14} className="shrink-0" />
@@ -618,7 +769,18 @@ export function CephalometricAnalysisModal({
 								</div>
 
 								{/* Bottom Action */}
-								<div className="mt-3 pt-3 border-t border-slate-800 shrink-0">
+								<div className="mt-3 pt-3 border-t border-slate-800 shrink-0 flex flex-col gap-2">
+									<button
+										type="button"
+										onClick={handleSaveConsultationWithoutCeph}
+										data-testid="tab1-save-consultation-without-ceph-btn"
+										className="w-full min-h-[44px] py-2.5 px-3 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+										title="Сохранить предварительную консультацию ортодонта в карту без ожидания расстановки всех 16 точек"
+									>
+										<Save size={16} />
+										<span>Сохранить консультацию без полного ТРГ-расчета</span>
+									</button>
+
 									<button
 										type="button"
 										disabled={!isImageLoaded || placedPercent === 0}
@@ -626,7 +788,7 @@ export function CephalometricAnalysisModal({
 											setActiveTab("metrics");
 											setMobileView("metrics");
 										}}
-										className={`w-full min-h-[48px] py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
+										className={`w-full min-h-[44px] py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
 											!isImageLoaded || placedPercent === 0
 												? "bg-slate-700 text-slate-400 opacity-60 cursor-not-allowed"
 												: "bg-[var(--teal)] hover:opacity-90 text-white cursor-pointer"
@@ -878,7 +1040,7 @@ export function CephalometricAnalysisModal({
 								{/* Protocol Text Area */}
 								<textarea
 									readOnly
-									value={analysis.diagnosis.protocol043Text}
+									value={currentEffectiveProtocolText}
 									aria-label="Текст протокола ТРГ для формы 043/у"
 									className="flex-1 min-h-[320px] p-4 bg-slate-900 border border-slate-800 rounded-xl font-mono text-xs sm:text-sm text-slate-200 resize-none outline-none focus:border-teal-400 leading-relaxed shadow-inner"
 								/>
@@ -892,6 +1054,15 @@ export function CephalometricAnalysisModal({
 									>
 										<Sparkles size={18} />
 										<span>Вставить в ортодонтическую карту Формы 043/у</span>
+									</button>
+									<button
+										type="button"
+										onClick={handleSaveConsultationWithoutCeph}
+										data-testid="tab3-save-consultation-without-ceph-btn"
+										className="w-full min-h-[44px] py-2.5 px-3 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+									>
+										<Save size={16} />
+										<span>Сохранить консультацию без полного ТРГ-расчета</span>
 									</button>
 									<p className="text-xs text-slate-400 text-center m-0 min-w-0 break-words">
 										Текст и угловые расчеты будут добавлены в дневник приёма и историю болезни пациента

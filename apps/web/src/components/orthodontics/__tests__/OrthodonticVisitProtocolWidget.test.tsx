@@ -104,4 +104,41 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(CLINICAL_ACTIONS.some((a) => a.id === "power_chain"));
 		assert.ok(CLINICAL_ACTIONS.some((a) => a.id === "rebracket"));
 	});
+
+	it("renders 4 autonomous 1-click clinical presets with correct testids and labels", () => {
+		const html = renderToString(
+			<OrthodonticVisitProtocolWidget
+				isOpen={true}
+				onClose={() => {}}
+				patientId="pat-102"
+				patientName="Петрова Анна Сергеевна"
+			/>,
+		);
+
+		// Autonomous Presets Panel
+		assert.ok(html.includes("data-testid=\"ortho-quick-presets-panel\""));
+		assert.ok(html.includes("Быстрые клинические пресеты (1 клик)"));
+
+		// 1. Routine activation
+		assert.ok(html.includes("data-testid=\"ortho-preset-routine-activation\""));
+		assert.ok(html.includes("Плановая активация"));
+
+		// 2. Wire change
+		assert.ok(html.includes("data-testid=\"ortho-preset-wire-change\""));
+		assert.ok(html.includes("Смена дуг"));
+
+		// 3. Bracket bonding
+		assert.ok(html.includes("data-testid=\"ortho-preset-bracket-bonding\""));
+		assert.ok(html.includes("Фиксация брекет-системы"));
+
+		// 4. Debonding + retainer
+		assert.ok(html.includes("data-testid=\"ortho-preset-debonding-retainer\""));
+		assert.ok(html.includes("Снятие брекет-системы"));
+
+		// 5. Aligner Lab Order (Mandate 8e)
+		assert.ok(html.includes("data-testid=\"ortho-preset-aligner-lab-order\""));
+		assert.ok(html.includes("Наряд ЗТЛ (Элайнеры / Каппа)"));
+		assert.ok(html.includes("Мандат 8e: Истечение 30 дней плана НЕ БЛОКИРУЕТ"));
+	});
 });
+
