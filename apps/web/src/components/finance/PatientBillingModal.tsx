@@ -531,6 +531,20 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
 								<span>★ 100% Гарантия</span>
 							</button>
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("colleague_100")}
+								className={`h-8 px-2.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+									discountPreset === "colleague_100"
+										? "bg-purple-600 text-white shadow-2xs"
+										: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
+								}`}
+								data-testid="btn-discount-colleague"
+								title="100% скидка для медицинского персонала и коллег (Мандат 8e)"
+							>
+								<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+								<span>Персонал 100%</span>
+							</button>
 							{discountPreset !== "none" && (
 								<button
 									type="button"
@@ -613,6 +627,19 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						</div>
 						<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">
 							Чек 0 ₽ / Гарантия
+						</span>
+					</div>
+				)}
+
+				{/* Colleague / Staff 100% Banner */}
+				{discountPreset === "colleague_100" && (
+					<div className="px-4 sm:px-6 py-2 bg-purple-50 dark:bg-purple-950/40 border-b border-purple-200 dark:border-purple-800 text-xs flex items-center justify-between gap-2 flex-wrap" data-testid="colleague-discount-banner">
+						<div className="flex items-center gap-2 font-bold text-purple-900 dark:text-purple-200">
+							<ShieldCheck className="w-4 h-4 text-purple-600 shrink-0" />
+							<span>★ 100% Скидка сотруднику (Мандат 8e): лечение персонала без мастер-паролей</span>
+						</div>
+						<span className="text-[11px] font-mono text-purple-700 dark:text-purple-300">
+							Чек 0 ₽ / Персонал
 						</span>
 					</div>
 				)}
@@ -1641,6 +1668,8 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						patientId={patient?.id || "pat-1"}
 						patientName={patient?.fullName || "Пациент"}
 						patientPhone={patient?.phone || "+7 (999) 000-00-00"}
+						patientDepositRub={patientDepositRub || patient?.depositRub || 0}
+						patientFamilyBalanceRub={patientFamilyBalanceRub || patient?.familyBalanceRub || 0}
 						clinicName={clinicLegalName}
 						clinicLicense={clinicLicenseNumber}
 					/>

@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	calculateStageAdvanceAmount,
+	calculateFastCheckoutDiscount,
+	applyQuickCheckoutPreset,
 	generate54FzFiscalPayload,
+	validateBuyerInn,
 	validateCheckoutSplit,
 	type FastCheckoutInput,
 } from "./fastCheckoutEngine";
@@ -83,6 +86,30 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 			assert.equal(payload.paymentsDistribution.electronicKop, 3150000); // Тег 1081
 			assert.equal(payload.paymentsDistribution.cashKop, 0);
 		});
+
+		it("omits Tag 1228 (buyerInn) for physical persons even if non-empty string provided", () => {
+			const input: FastCheckoutInput = {
+				orderId: "ORD-9913",
+				totalBillKop: 100000,
+				payments: [{ method: "bank_card", amountKop: 100000 }],
+				clientType: "physical_person",
+				buyerInn: "770123456789",
+			};
+			const payload = generate54FzFiscalPayload(input);
+			assert.equal(payload.buyerInn, undefined, "Tag 1228 must be undefined for physical persons");
+		});
+
+		it("includes Tag 1228 (buyerInn) for legal entity / B2B transactions", () => {
+			const input: FastCheckoutInput = {
+				orderId: "ORD-9914",
+				totalBillKop: 5000000,
+				payments: [{ method: "bank_card", amountKop: 5000000 }],
+				clientType: "legal_entity",
+				buyerInn: "7701234567",
+			};
+			const payload = generate54FzFiscalPayload(input);
+			assert.equal(payload.buyerInn, "7701234567");
+		});
 	});
 
 	describe("3. validateCheckoutSplit", () => {
@@ -110,6 +137,18 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 			assert.equal(res.isValid, false);
 			assert.equal(res.remainingDueKop, 500000);
 		});
+
+		it("allows 0 ₽ total bill (Mandate 8e: 100% warranty rework / staff discount)", () => {
+			const input: FastCheckoutInput = {
+				orderId: "ORD-WARRANTY-ZERO",
+				totalBillKop: 0,
+				payments: [],
+				clientType: "physical_person",
+			};
+			const res = validateCheckoutSplit(input);
+			assert.equal(res.isValid, true, "0 ₽ bill for warranty rework must be valid");
+			assert.equal(res.remainingDueKop, 0);
+		});
 	});
 
 	describe("4. 54-FZ Buyer INN Verification (Mandate 8e: Zero obstacle for physical persons)", () => {
@@ -123,6 +162,22 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 			};
 			const res = validateCheckoutSplit(input);
 			assert.equal(res.isValid, true);
+		});
+
+		it("never blocks checkout for physical persons even if INN is incomplete or non-12 digits", () => {
+			const innResShort = validateBuyerInn({ clientType: "physical_person", buyerInn: "12345" });
+			assert.equal(innResShort.isValid, true, "Physical person INN must never block validation");
+			assert.equal(innResShort.isRequired, false);
+
+			const input: FastCheckoutInput = {
+				orderId: "ORD-PHYS-2",
+				totalBillKop: 150000,
+				payments: [{ method: "bank_card", amountKop: 150000 }],
+				clientType: "physical_person",
+				buyerInn: "12345",
+			};
+			const res = validateCheckoutSplit(input);
+			assert.equal(res.isValid, true, "Checkout split must remain valid even with short INN");
 		});
 
 		it("requires valid 10-digit INN for legal entities", () => {
@@ -148,4 +203,94 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 			assert.equal(resValid.isValid, true);
 		});
 	});
+
+	describe("5. Doctor Discount & Warranty Autonomy (Mandate 8e)", () => {
+		const GROSS_KOP = 1258050; // 12 580.50 ₽
+
+		it("calculates 100% warranty discount (due 0 ₽) without admin password", () => {
+			const res = calculateFastCheckoutDiscount({
+				grossKop: GROSS_KOP,
+				preset: "warranty_100",
+			});
+			assert.equal(res.grossKop, GROSS_KOP);
+			assert.equal(res.discountKop, GROSS_KOP);
+			assert.equal(res.netKop, 0);
+			assert.equal(res.effectivePercent, 100);
+		});
+
+		it("calculates 100% staff / colleague discount (due 0 ₽)", () => {
+			const res = calculateFastCheckoutDiscount({
+				grossKop: GROSS_KOP,
+				preset: "colleague_100",
+			});
+			assert.equal(res.netKop, 0);
+			assert.equal(res.discountKop, GROSS_KOP);
+			assert.equal(res.effectivePercent, 100);
+		});
+
+		it("calculates round_hundreds discount in patient favor", () => {
+			// 12 580.50 ₽ -> rounds down to 12 500.00 ₽ (discount 80.50 ₽ = 8050 kop)
+			const res = calculateFastCheckoutDiscount({
+				grossKop: GROSS_KOP,
+				preset: "round_hundreds",
+			});
+			assert.equal(res.netKop, 1250000);
+			assert.equal(res.discountKop, 8050);
+		});
+
+		it("calculates 5% and 10% presets accurately in integer kopecks", () => {
+			const res5 = calculateFastCheckoutDiscount({
+				grossKop: 100000, // 1000.00 ₽
+				preset: "discount_5",
+			});
+			assert.equal(res5.discountKop, 5000);
+			assert.equal(res5.netKop, 95000);
+
+			const res10 = calculateFastCheckoutDiscount({
+				grossKop: 100000,
+				preset: "discount_10",
+			});
+			assert.equal(res10.discountKop, 10000);
+			assert.equal(res10.netKop, 90000);
+		});
+
+		it("calculates manual percentage discount accurately", () => {
+			const res = calculateFastCheckoutDiscount({
+				grossKop: 100000,
+				preset: "manual_percent",
+				customPercent: 15,
+			});
+			assert.equal(res.discountKop, 15000);
+			assert.equal(res.netKop, 85000);
+		});
+	});
+
+	describe("6. 1-Click Split Presets (Exact kopecks, no float drift)", () => {
+		it("calculates split_50_50 cleanly for odd kopeck total", () => {
+			const res = applyQuickCheckoutPreset({
+				totalBillKop: 100001, // 1000.01 ₽
+				preset: "split_50_50",
+			});
+			assert.equal(res.payments.length, 2);
+			const card = res.payments.find((p) => p.method === "bank_card")!;
+			const cash = res.payments.find((p) => p.method === "cash")!;
+			assert.equal(card.amountKop + cash.amountKop, 100001, "Sum of split must equal exact total");
+			assert.equal(card.amountKop, 50000);
+			assert.equal(cash.amountKop, 50001);
+		});
+
+		it("calculates use_deposit with card remainder when deposit is partial", () => {
+			const res = applyQuickCheckoutPreset({
+				totalBillKop: 1000000, // 10 000 ₽
+				preset: "use_deposit",
+				availableDepositKop: 300000, // 3 000 ₽
+			});
+			assert.equal(res.payments.length, 2);
+			const dep = res.payments.find((p) => p.method === "patient_deposit")!;
+			const card = res.payments.find((p) => p.method === "bank_card")!;
+			assert.equal(dep.amountKop, 300000);
+			assert.equal(card.amountKop, 700000);
+		});
+	});
 });
+

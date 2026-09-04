@@ -197,19 +197,20 @@ export function validateBuyerInn(params: {
 
 	if (clientType === "physical_person") {
 		// Физическое лицо — ИНН строго опционален. Пустое поле 100% валидно.
+		// В соответствии со ст. 4.7 № 54-ФЗ и Мандатом 8e чек физлица КАТЕГОРИЧЕСКИ НЕ БЛОКИРУЕТСЯ из-за ИНН (isValid: true).
 		const cleanInn = (params.buyerInn ?? "").replace(/\D/g, "");
 		if (!cleanInn) {
 			return { isValid: true, isRequired: false };
 		}
-		// Если физлицо указало ИНН добровольно (например, для справки 13% НДФЛ в налоговую), проверяем корректность 12 цифр
-		if (cleanInn.length !== 12) {
-			return {
-				isValid: false,
-				isRequired: false,
-				errorRu: "ИНН физического лица должен содержать 12 цифр (или оставьте поле пустым)",
-			};
-		}
-		return { isValid: true, isRequired: false };
+		// Если физлицо указало ИНН добровольно (например, для справки 13% НДФЛ), проверяем формат, но НИКОГДА не блокируем кассу
+		return {
+			isValid: true,
+			isRequired: false,
+			errorRu:
+				cleanInn.length !== 12 && cleanInn.length !== 10
+					? "ИНН физического лица обычно содержит 12 цифр (для чека 54-ФЗ поле опционально и не блокирует оплату)"
+					: undefined,
+		};
 	}
 
 	const cleanInn = (params.buyerInn ?? "").replace(/\D/g, "");
@@ -809,7 +810,8 @@ export function generate54FzFiscalPayload(
 		clientContact: contact,
 		isElectronicReceiptOnly,
 		clientType,
-		buyerInn: cleanBuyerInn || undefined,
+		// FFD 1.2 Тег 1228 передается строго для ЮЛ/ИП. Для физлиц исключается, чтобы не вызывать ошибку ККТ.
+		buyerInn: clientType === "physical_person" ? undefined : (cleanBuyerInn || undefined),
 		buyerName: input.buyerName?.trim() || undefined,
 		taxSystem: input.taxSystem || "usn_income_outcome",
 		calculationType: 1,

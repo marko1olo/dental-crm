@@ -41,12 +41,14 @@ import {
 	calculateSplitRemainingKop,
 	calculateCashChangeKop,
 	applyQuickCheckoutPreset,
+	calculateFastCheckoutDiscount,
 	type CheckoutSplitItem,
 	type Ffd12FiscalPayload,
 	type TreatmentPlanStageOption,
 	type StagePaymentMode,
 	type ClientLegalType,
 	type QuickCheckoutPresetType,
+	type FastCheckoutDiscountPreset,
 } from "./fastCheckoutEngine";
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
 import { KktLanPrinterService } from "../../../services/hardware/kktLanPrinter";
@@ -115,6 +117,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [buyerInn, setBuyerInn] = useState<string>("");
 	const [buyerName, setBuyerName] = useState<string>("");
 	const [isElectronicReceiptOnly, setIsElectronicReceiptOnly] = useState<boolean>(false);
+	const [discountPreset, setDiscountPreset] = useState<FastCheckoutDiscountPreset>("none");
+	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
 
 	// Compute base stage amount in kopecks from selected stage or fallback
 	const baseStageAmountKop = useMemo(() => {
@@ -125,18 +129,29 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		return stage ? stage.amountKop : initialTotalBillKop;
 	}, [selectedStageId, initialTotalBillKop, stages]);
 
+	// Doctor discount calculation (Mandate 8e: 100% warranty, 100% staff, round to hundreds, zero friction)
+	const discountCalc = useMemo(() => {
+		return calculateFastCheckoutDiscount({
+			grossKop: baseStageAmountKop,
+			preset: discountPreset,
+			customPercent: customDiscountPercent,
+		});
+	}, [baseStageAmountKop, discountPreset, customDiscountPercent]);
+
+	const discountedStageAmountKop = discountCalc.netKop;
+
 	// Compute advance & 54-FZ Tag 1215 calculation
 	const stageCalc = useMemo(() => {
 		return calculateStageAdvanceAmount(
-			baseStageAmountKop,
+			discountedStageAmountKop,
 			stagePaymentMode,
 			Math.round(advanceAlreadyPaidRub * 100)
 		);
-	}, [baseStageAmountKop, stagePaymentMode, advanceAlreadyPaidRub]);
+	}, [discountedStageAmountKop, stagePaymentMode, advanceAlreadyPaidRub]);
 
 	const effectiveBillKop = stageCalc.requiredAmountKop;
 	const targetBillKop = stagePaymentMode === "advance_offset_tag1215"
-		? baseStageAmountKop
+		? discountedStageAmountKop
 		: effectiveBillKop;
 	const targetBillRub = targetBillKop / 100;
 
@@ -659,6 +674,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<span className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${validation.isValid ? "bg-emerald-600" : "bg-amber-500"} text-white text-[10px]`}>3</span>
 							<span>Шаг 3: Пробить чек 54-ФЗ</span>
 						</div>
+						<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+							✓ 54-ФЗ: ИНН с физлиц НЕ требуется
+						</span>
 						<button
 							type="button"
 							onClick={() => setIsSimpleCashierMode((prev) => !prev)}
@@ -686,48 +704,233 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								Мгновенный расчет без ручного ввода цифр
 							</span>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_card")}
-								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-card"
 								title="Оплатить 100% банковской картой через терминал"
 							>
 								<CreditCard size={15} className="shrink-0 text-blue-600" />
-								<span className="truncate">⚡ 1-клик: Оплата картой (100%)</span>
+								<span className="truncate">⚡ Картой 100%</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_cash")}
-								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-cash"
 								title="Оплатить 100% наличными (ровно в кассу)"
 							>
 								<Banknote size={15} className="shrink-0 text-emerald-600" />
-								<span className="truncate">⚡ 1-клик: Оплата наличными (100%)</span>
+								<span className="truncate">⚡ Нал 100%</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("100_sbp")}
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-teal-500/40 bg-[var(--paper,#ffffff)] hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-100-sbp"
+								title="Оплатить 100% по СБП QR"
+							>
+								<QrCode size={15} className="shrink-0 text-teal-600" />
+								<span className="truncate">⚡ СБП QR 100%</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("use_deposit")}
-								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-use-deposit"
-								title="Списать аванс / депозит пациента по Тегу 1215 54-ФЗ"
+								title="Списать аванс / депозит пациента по Тегу 1215 54-ФЗ с доплатой картой"
 							>
 								<Coins size={15} className="shrink-0 text-amber-600" />
-								<span className="truncate">⚡ 1-клик: Списать аванс / депозит пациента</span>
+								<span className="truncate">⚡ Аванс + Карта</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("deposit_cash")}
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-deposit-cash"
+								title="Списать аванс / депозит пациента с доплатой наличными"
+							>
+								<Coins size={15} className="shrink-0 text-emerald-600" />
+								<span className="truncate">⚡ Аванс + Нал</span>
 							</button>
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("split_50_50")}
-								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-purple-500/40 bg-[var(--paper,#ffffff)] hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-purple-500/40 bg-[var(--paper,#ffffff)] hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-split-50-50"
 								title="Разделить 50/50: половина картой, половина наличными (без копеечного дрейфа)"
 							>
 								<Layers size={15} className="shrink-0 text-purple-600" />
-								<span className="truncate">⚡ 1-клик: Сплит 50/50 (Карта + Наличные)</span>
+								<span className="truncate">⚡ 50% Карта + 50% Нал</span>
 							</button>
 						</div>
+					</div>
+
+					{/* Скидки врача и Гарантийные переделки (Мандат 8e: Doctor Autonomy) */}
+					<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col gap-2 shadow-xs" data-testid="checkout-doctor-discounts-section">
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+								<Sparkles size={14} className="text-teal-600" />
+								Скидки врача и Гарантия (Мандат 8e):
+							</span>
+							{discountCalc.discountKop > 0 && (
+								<span className="text-xs font-bold font-mono text-teal-700 dark:text-teal-300">
+									Скидка: {(discountCalc.discountKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ ({discountCalc.effectivePercent}%)
+								</span>
+							)}
+						</div>
+						<div className="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("round_hundreds")}
+								className={`h-8 px-2.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
+									discountPreset === "round_hundreds"
+										? "bg-amber-600 text-white shadow-2xs ring-2 ring-amber-400"
+										: "bg-[var(--paper,#ffffff)] hover:bg-amber-500/10 text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+								}`}
+								data-testid="btn-discount-round-hundreds"
+								title="Округлить сумму чека до сотен рублей (скидка на копейки в пользу пациента)"
+							>
+								<Sparkles size={13} className="text-amber-500" />
+								<span>До сотен ₽</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("discount_3")}
+								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									discountPreset === "discount_3"
+										? "bg-teal-600 text-white shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+								}`}
+								data-testid="btn-discount-3"
+							>
+								3%
+							</button>
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("discount_5")}
+								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									discountPreset === "discount_5"
+										? "bg-teal-600 text-white shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+								}`}
+								data-testid="btn-discount-5"
+							>
+								5%
+							</button>
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("discount_10")}
+								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									discountPreset === "discount_10"
+										? "bg-teal-600 text-white shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+								}`}
+								data-testid="btn-discount-10"
+							>
+								10%
+							</button>
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("warranty_100")}
+								className={`h-8 px-3 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+									discountPreset === "warranty_100"
+										? "bg-blue-600 text-white shadow-2xs ring-2 ring-blue-400"
+										: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+								}`}
+								data-testid="btn-discount-warranty"
+								title="100% гарантийная переделка (к оплате 0 ₽, без блокировок)"
+							>
+								<ShieldCheck size={14} className="shrink-0" />
+								<span>★ 100% Гарантия</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("colleague_100")}
+								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+									discountPreset === "colleague_100"
+										? "bg-purple-600 text-white shadow-2xs ring-2 ring-purple-400"
+										: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
+								}`}
+								data-testid="btn-discount-colleague"
+								title="100% скидка для коллег и медицинского персонала"
+							>
+								<span>Персонал 100%</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setDiscountPreset("manual_percent")}
+								className={`h-8 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									discountPreset === "manual_percent"
+										? "bg-teal-700 text-white shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
+								}`}
+								data-testid="btn-discount-manual-percent"
+							>
+								Ручная %
+							</button>
+							{discountPreset !== "none" && (
+								<button
+									type="button"
+									onClick={() => {
+										setDiscountPreset("none");
+										setCustomDiscountPercent(0);
+									}}
+									className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--muted,#64748b)] border border-[var(--line,#cbd5e1)] cursor-pointer transition-all active:scale-95"
+									data-testid="btn-discount-none"
+									title="Сбросить скидку"
+								>
+									✕ Сброс (0%)
+								</button>
+							)}
+						</div>
+
+						{/* Banners for active discounts */}
+						{discountPreset === "round_hundreds" && (
+							<div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-amber-950 dark:text-amber-100">
+								<div className="flex items-center gap-2 font-bold">
+									<Sparkles size={14} className="text-amber-600 shrink-0" />
+									<span>✓ Округление до сотен: копейки списаны в пользу пациента. К оплате: {(discountCalc.netKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+								</div>
+								<span className="text-[11px] font-mono text-amber-700 dark:text-amber-300">54-ФЗ / Точность до копейки</span>
+							</div>
+						)}
+						{discountPreset === "warranty_100" && (
+							<div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-blue-950 dark:text-blue-100">
+								<div className="flex items-center gap-2 font-bold">
+									<ShieldCheck size={14} className="text-blue-600 shrink-0" />
+									<span>★ 100% Гарантийная переделка (Мандат 8e): стоимость списана в 0 ₽ без блокировок</span>
+								</div>
+								<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">Чек 0 ₽ / Гарантия</span>
+							</div>
+						)}
+						{discountPreset === "colleague_100" && (
+							<div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-purple-950 dark:text-purple-100">
+								<div className="flex items-center gap-2 font-bold">
+									<ShieldCheck size={14} className="text-purple-600 shrink-0" />
+									<span>★ 100% Скидка сотруднику (Мандат 8e): лечение персонала без мастер-паролей</span>
+								</div>
+								<span className="text-[11px] font-mono text-purple-700 dark:text-purple-300">Чек 0 ₽ / Персонал</span>
+							</div>
+						)}
+						{discountPreset === "manual_percent" && (
+							<div className="flex items-center gap-2 pt-1">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)]">Процент скидки врача (%):</label>
+								<input
+									type="number"
+									min={0}
+									max={100}
+									value={customDiscountPercent || ""}
+									onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+									className="h-8 w-20 px-2 rounded-lg border border-[var(--line,#cbd5e1)] text-xs font-bold text-right"
+									placeholder="0"
+									data-testid="input-custom-discount-percent"
+								/>
+								<span className="text-xs font-bold">%</span>
+							</div>
+						)}
 					</div>
 
 					{/* Treatment Stage Selector */}
