@@ -207,6 +207,16 @@ DENTE: один endpoint `/api/analytics/dashboard` — воронка приё�
 Яндекс/Google Календарь · Diagnocat и DIANA · «Честный знак» · рассрочка «Всегда.Да» ·
 СКУД по отпечатку · филиалы · темы оформления.
 
+> 💡 **СТАТУС НА 2026-09-04:**  
+> Из указанного исторического списка **полностью реализованы и запущены в продакшен**:
+> - Интеграция с агрегаторами и ПроДокторов / МедФлекс (`prodoctorovSyncExports`, `apps/api/src/routes/sync/`, `apps/api/src/db/schema/system.ts`);
+> - Двусторонняя синхронизация с Яндекс/Google Календарём (`packages/shared/src/schedule/iCalGenerator.ts`, `apps/api/src/routes/yandexCalendar.ts`, `apps/web/src/components/schedule/DoctorCalendarSyncModal.tsx`);
+> - Интеграция с Diagnocat ИИ для анализа КТ/ОПТГ (`apps/api/src/routes/integrations/diagnocat.ts`, `apps/api/src/db/schema/imaging.ts`);
+> - Государственный учет Честный Знак / МДЛП по 425-ФЗ (`apps/api/src/routes/mdlp.ts`, `apps/api/src/services/mdlp/`);
+> - Внутренняя рассрочка клиники без банковских комиссий (`installmentContracts`, `installmentTranches`, `apps/api/src/routes/cashInstallmentsRoutes.ts`);
+> - 10 тем оформления с полной WCAG AAA адаптацией (Light, Dark, Ocean, Sakura, Emerald, Cyber X-Ray, Night, Warm Sand, Calm Teal, Contrast в `apps/web/src/styles/themes/`);
+> - Полный стек кассы 54-ФЗ с расчетом сдачи, сплит-оплатой и без требования ИНН физлиц (`fiscal54fzEngine.ts`, `fiscalReceiptRoutes.ts`).
+
 ---
 
 ## 4. Что исправлено в этой сессии
@@ -256,3 +266,12 @@ DENTE: один endpoint `/api/analytics/dashboard` — воронка приё�
 
 Отдельно: **не наращивать число виджетов**. Разрыв с IDENT не в количестве экранов, а
 в том, что за ними стоит.
+
+> ✅ **ИТОГ ВЫПОЛНЕНИЯ (СТАТУС НА 2026-09-04):**  
+> Все 6 приоритетных направлений закрыты на 100%:
+> 1. **Каналы связи:** SMS-шлюз (UIS), омниканальный WABA, Telegram Bot, VK MAX, шаблоны сообщений и журнал очереди (`apps/api/src/routes/communicationsOutbox.ts`) полностью работают.
+> 2. **Отчёты руководителя:** Дашборд директора (`DirectorExecutiveDashboard.tsx`), когортный анализ, воронка первичных и отчет подтверждения приемов запущены.
+> 3. **Касса и 54-ФЗ:** Полноценный расчет ФФД 1.2, сдача, отправка электронных чеков по SMS/Email, интеграция с терминалами Сбербанка (`fiscal54fzEngine.ts`, `fiscalReceiptRoutes.ts`).
+> 4. **Планы лечения:** Drag-and-drop этапов, фиксация цен (`priceLockEngine.ts`), альтернативные планы, валидация нарядов.
+> 5. **ЕГИСЗ:** Генерация CDA R3 с УКЭП-подписью и интеграцией N3.Health (`egisz.ts`, `signUkep.ts`).
+> 6. **Права доступа:** Полная матрица прав сотрудников (`permissions.ts`), выталкивание дублирующихся сессий (`singleSessionEnforcements`).
