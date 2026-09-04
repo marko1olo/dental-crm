@@ -88,7 +88,7 @@ test("нулевая касса при заданной ставке даёт н
 	assert.match(note, /Кассы за период нет/);
 });
 
-test("удержание идёт ПОСЛЕ начисления процента, а не до", () => {
+test("удержание идёт ПОСЛЕ начисления процента, а не до, но не может уводить выплату в минус (ТК РФ)", () => {
 	const result = computeDoctorPayout({
 		revenueRub: 10000,
 		materialCostRub: 4000,
@@ -98,13 +98,11 @@ test("удержание идёт ПОСЛЕ начисления процент
 	});
 	assert.equal(result.accruedRub, 3000);
 	assert.equal(result.withheldMaterialRub, 4000);
-	assert.equal(result.payoutRub, -1000);
-	// Обратный порядок (касса − материалы) × ставка дал бы 1800: другая
-	// договорённость с врачом и другая зарплата.
-	assert.notEqual(result.payoutRub, 1800);
+	// По ТК РФ заработная плата не может быть отрицательной (payout >= 0)
+	assert.equal(result.payoutRub, 0);
 });
 
-test("материалы дороже начисленного: выплата отрицательная и не обнуляется", () => {
+test("материалы дороже начисленного: выплата не может быть отрицательной по ТК РФ (минимальная 0 ₽)", () => {
 	const result = computeDoctorPayout({
 		revenueRub: 5000,
 		materialCostRub: 4000,
@@ -114,7 +112,7 @@ test("материалы дороже начисленного: выплата �
 	});
 	assert.equal(result.accruedRub, 1250);
 	assert.equal(result.withheldMaterialRub, 4000);
-	assert.equal(result.payoutRub, -2750);
+	assert.equal(result.payoutRub, 0);
 
 	const note = payoutRowNote({
 		state: result.state,
@@ -125,7 +123,29 @@ test("материалы дороже начисленного: выплата �
 		payoutRub: result.payoutRub,
 		revenueRub: 5000,
 	});
-	assert.match(note, /долг врача клинике/);
+	assert.match(note, /Отрицательная выплата по ТК РФ запрещена/);
+});
+
+test("гарантийные заказы ЗТЛ (isWarranty: true) списываются на рекламационный фонд клиники и не удерживаются с врача", () => {
+	const result = computeDoctorPayout({
+		revenueRub: 50000,
+		commissionPct: 30, // 15 000 ₽ начислено
+		materialCostRub: 1000,
+		materialMovements: 1,
+		materialDeductionPct: 100, // 1 000 ₽ удержано материалов
+		labCostRub: 12000, // Стоимость ЗТЛ 12 000 ₽
+		labOrdersCount: 1,
+		labDeductionPct: 100,
+		isWarranty: true, // Гарантийная переделка
+	});
+
+	assert.equal(result.state, "computed");
+	assert.equal(result.accruedRub, 15000);
+	assert.equal(result.withheldMaterialRub, 1000);
+	// С врача ЗТЛ НЕ удерживается: 0 ₽
+	assert.equal(result.withheldLabRub, 0);
+	// 15 000 - 1 000 - 0 = 14 000 ₽
+	assert.equal(result.payoutRub, 14000);
 });
 
 test("копейка не теряется: половина округляется вверх", () => {

@@ -22,6 +22,7 @@ import {
 	kopecksToRub,
 	parseChestnyZnakDataMatrix,
 	parseKopecks,
+	rublesToKopecks,
 	buildFiscalReceiptPayloadSignature,
 	buildFiscalRefundPayloadSignature,
 	verifyFiscalCompositeIdempotencyKey,
@@ -34,7 +35,16 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
-import { fiscalReceiptQueue, payments, serviceCatalogItems } from "../../db/schema.js";
+import {
+	cashBoxes,
+	cashBoxShifts,
+	cashOperations,
+	fiscalReceiptQueue,
+	patients,
+	payments,
+	serviceCatalogItems,
+} from "../../db/schema.js";
+import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import { Fiscal54FzService, Fiscal54FzValidationError } from "../../services/billing/fiscal54fzService.js";
 import { FiscalReceiptFactory } from "../../services/kkt/FiscalReceiptFactory.js";
 import {
@@ -42,6 +52,387 @@ import {
 	type KktLanConfig,
 	LanKktDriverService,
 } from "../../services/hardware/index.js";
+
+async function applyCashBoxFiscalReceipt(
+	tx: any,
+	orgId: string,
+	data: {
+		patientId?: string | null;
+		cashBoxId?: string | null;
+		operationType: string;
+		cashKopecks: number;
+		electronicCardKopecks: number;
+		sbpKopecks: number;
+		prepaidKopecks: number;
+		creditKopecks: number;
+		totalKopecks: number;
+		cashierFullName?: string | null;
+	},
+	printResult: {
+		fiscalDocumentNumber?: number | string | null;
+		ofdVerificationUrl?: string | null;
+	},
+): Promise<void> {
+	await ensureOrganizationCashBoxes(orgId);
+	const allBoxes = await tx
+		.select()
+		.from(cashBoxes)
+		.where(eq(cashBoxes.organizationId, orgId));
+
+	if (!allBoxes || allBoxes.length === 0) return;
+
+	let validPatientId: string | null = null;
+	if (data.patientId) {
+		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patientId);
+		if (isUuid) {
+			const [p] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, data.patientId), eq(patients.organizationId, orgId)))
+				.limit(1);
+			if (p) {
+				validPatientId = p.id;
+			}
+		}
+	}
+
+	const mainBox = allBoxes.find((b: any) => b.isMain || b.type === "main") || allBoxes[0];
+	const cashlessBox = allBoxes.find((b: any) => b.isCashless || b.type === "cashless") || mainBox;
+
+	// If a specific cash box was selected by the cashier
+	if (data.cashBoxId) {
+		const chosenBox = allBoxes.find((b: any) => b.id === data.cashBoxId) || mainBox;
+		const totalInflowKop = (data.cashKopecks || 0) + (data.electronicCardKopecks || 0) + (data.sbpKopecks || 0);
+		const amountRub = kopecksToRub(totalInflowKop);
+		const balanceBefore = Number(chosenBox.balanceRub) || 0;
+		const balanceAfter = Math.round((balanceBefore + amountRub) * 100) / 100;
+
+		await tx
+			.update(cashBoxes)
+			.set({
+				balanceRub: balanceAfter,
+				updatedAt: new Date(),
+			})
+			.where(eq(cashBoxes.id, chosenBox.id));
+
+		const [activeShift] = await tx
+			.select()
+			.from(cashBoxShifts)
+			.where(
+				and(
+					eq(cashBoxShifts.cashBoxId, chosenBox.id),
+					eq(cashBoxShifts.status, "open"),
+				),
+			)
+			.limit(1);
+
+		if (activeShift && amountRub > 0) {
+			const updatedIncome = Math.round(((Number(activeShift.incomeTotalRub) || 0) + amountRub) * 100) / 100;
+			await tx
+				.update(cashBoxShifts)
+				.set({
+					incomeTotalRub: updatedIncome,
+					updatedAt: new Date(),
+				})
+				.where(eq(cashBoxShifts.id, activeShift.id));
+		}
+
+		await tx.insert(cashOperations).values({
+			organizationId: orgId,
+			cashBoxId: chosenBox.id,
+			shiftId: activeShift?.id ?? null,
+			operationType: "income",
+			amountRub,
+			balanceBeforeRub: balanceBefore,
+			balanceAfterRub: balanceAfter,
+			reasonText: `Фискальный чек 54-ФЗ №${printResult.fiscalDocumentNumber || "б/н"}`,
+			operatorName: data.cashierFullName || null,
+			patientId: validPatientId,
+			kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
+			kkmReceiptUrl: printResult.ofdVerificationUrl || null,
+			metadata: {
+				cashKopecks: data.cashKopecks,
+				electronicCardKopecks: data.electronicCardKopecks,
+				sbpKopecks: data.sbpKopecks,
+				prepaidKopecks: data.prepaidKopecks,
+				creditKopecks: data.creditKopecks,
+				totalKopecks: data.totalKopecks,
+			},
+		});
+		return;
+	}
+
+	// Automatic routing: cash -> mainBox, card/sbp -> cashlessBox
+	const cashKop = data.cashKopecks || 0;
+	const electronicKop = (data.electronicCardKopecks || 0) + (data.sbpKopecks || 0);
+
+	if (cashKop > 0 || (cashKop === 0 && electronicKop === 0)) {
+		const amountRub = kopecksToRub(cashKop);
+		const balanceBefore = Number(mainBox.balanceRub) || 0;
+		const balanceAfter = Math.round((balanceBefore + amountRub) * 100) / 100;
+
+		await tx
+			.update(cashBoxes)
+			.set({
+				balanceRub: balanceAfter,
+				updatedAt: new Date(),
+			})
+			.where(eq(cashBoxes.id, mainBox.id));
+
+		const [activeShift] = await tx
+			.select()
+			.from(cashBoxShifts)
+			.where(
+				and(
+					eq(cashBoxShifts.cashBoxId, mainBox.id),
+					eq(cashBoxShifts.status, "open"),
+				),
+			)
+			.limit(1);
+
+		if (activeShift && amountRub > 0) {
+			const updatedIncome = Math.round(((Number(activeShift.incomeTotalRub) || 0) + amountRub) * 100) / 100;
+			await tx
+				.update(cashBoxShifts)
+				.set({
+					incomeTotalRub: updatedIncome,
+					updatedAt: new Date(),
+				})
+				.where(eq(cashBoxShifts.id, activeShift.id));
+		}
+
+		await tx.insert(cashOperations).values({
+			organizationId: orgId,
+			cashBoxId: mainBox.id,
+			shiftId: activeShift?.id ?? null,
+			operationType: "income",
+			amountRub,
+			balanceBeforeRub: balanceBefore,
+			balanceAfterRub: balanceAfter,
+			reasonText: `Фискальный чек 54-ФЗ (наличные) №${printResult.fiscalDocumentNumber || "б/н"}`,
+			operatorName: data.cashierFullName || null,
+			patientId: validPatientId,
+			kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
+			kkmReceiptUrl: printResult.ofdVerificationUrl || null,
+			metadata: {
+				cashKopecks: cashKop,
+				totalKopecks: data.totalKopecks,
+			},
+		});
+	}
+
+	if (electronicKop > 0) {
+		const amountRub = kopecksToRub(electronicKop);
+		const balanceBefore = Number(cashlessBox.balanceRub) || 0;
+		const balanceAfter = Math.round((balanceBefore + amountRub) * 100) / 100;
+
+		await tx
+			.update(cashBoxes)
+			.set({
+				balanceRub: balanceAfter,
+				updatedAt: new Date(),
+			})
+			.where(eq(cashBoxes.id, cashlessBox.id));
+
+		const [activeShift] = await tx
+			.select()
+			.from(cashBoxShifts)
+			.where(
+				and(
+					eq(cashBoxShifts.cashBoxId, cashlessBox.id),
+					eq(cashBoxShifts.status, "open"),
+				),
+			)
+			.limit(1);
+
+		if (activeShift && amountRub > 0) {
+			const updatedIncome = Math.round(((Number(activeShift.incomeTotalRub) || 0) + amountRub) * 100) / 100;
+			await tx
+				.update(cashBoxShifts)
+				.set({
+					incomeTotalRub: updatedIncome,
+					updatedAt: new Date(),
+				})
+				.where(eq(cashBoxShifts.id, activeShift.id));
+		}
+
+		await tx.insert(cashOperations).values({
+			organizationId: orgId,
+			cashBoxId: cashlessBox.id,
+			shiftId: activeShift?.id ?? null,
+			operationType: "income",
+			amountRub,
+			balanceBeforeRub: balanceBefore,
+			balanceAfterRub: balanceAfter,
+			reasonText: `Фискальный чек 54-ФЗ (безналичные) №${printResult.fiscalDocumentNumber || "б/н"}`,
+			operatorName: data.cashierFullName || null,
+			patientId: validPatientId,
+			kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
+			kkmReceiptUrl: printResult.ofdVerificationUrl || null,
+			metadata: {
+				electronicCardKopecks: data.electronicCardKopecks,
+				sbpKopecks: data.sbpKopecks,
+				totalKopecks: data.totalKopecks,
+			},
+		});
+	}
+}
+
+async function applyCashBoxFiscalRefund(
+	tx: any,
+	orgId: string,
+	data: {
+		patientId?: string | null;
+		refundCashKopecks: number;
+		refundElectronicKopecks: number;
+		refundPrepaidKopecks: number;
+		totalRefundKopecks: number;
+		cashierFullName?: string | null;
+		originalReceiptNumber?: string | null;
+	},
+	printResult: {
+		fiscalDocumentNumber?: number | string | null;
+		ofdVerificationUrl?: string | null;
+	},
+): Promise<void> {
+	await ensureOrganizationCashBoxes(orgId);
+	const allBoxes = await tx
+		.select()
+		.from(cashBoxes)
+		.where(eq(cashBoxes.organizationId, orgId));
+
+	if (!allBoxes || allBoxes.length === 0) return;
+
+	let validPatientId: string | null = null;
+	if (data.patientId) {
+		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patientId);
+		if (isUuid) {
+			const [p] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(and(eq(patients.id, data.patientId), eq(patients.organizationId, orgId)))
+				.limit(1);
+			if (p) {
+				validPatientId = p.id;
+			}
+		}
+	}
+
+	const mainBox = allBoxes.find((b: any) => b.isMain || b.type === "main") || allBoxes[0];
+	const cashlessBox = allBoxes.find((b: any) => b.isCashless || b.type === "cashless") || mainBox;
+
+	const cashKop = data.refundCashKopecks || 0;
+	if (cashKop > 0) {
+		const amountRub = kopecksToRub(cashKop);
+		const balanceBefore = Number(mainBox.balanceRub) || 0;
+		const balanceAfter = Math.round((balanceBefore - amountRub) * 100) / 100;
+
+		await tx
+			.update(cashBoxes)
+			.set({
+				balanceRub: balanceAfter,
+				updatedAt: new Date(),
+			})
+			.where(eq(cashBoxes.id, mainBox.id));
+
+		const [activeShift] = await tx
+			.select()
+			.from(cashBoxShifts)
+			.where(
+				and(
+					eq(cashBoxShifts.cashBoxId, mainBox.id),
+					eq(cashBoxShifts.status, "open"),
+				),
+			)
+			.limit(1);
+
+		if (activeShift && amountRub > 0) {
+			const updatedExpense = Math.round(((Number(activeShift.expenseTotalRub) || 0) + amountRub) * 100) / 100;
+			await tx
+				.update(cashBoxShifts)
+				.set({
+					expenseTotalRub: updatedExpense,
+					updatedAt: new Date(),
+				})
+				.where(eq(cashBoxShifts.id, activeShift.id));
+		}
+
+		await tx.insert(cashOperations).values({
+			organizationId: orgId,
+			cashBoxId: mainBox.id,
+			shiftId: activeShift?.id ?? null,
+			operationType: "expense",
+			amountRub,
+			balanceBeforeRub: balanceBefore,
+			balanceAfterRub: balanceAfter,
+			reasonText: `Возврат по фискальному чеку 54-ФЗ №${printResult.fiscalDocumentNumber || data.originalReceiptNumber || "б/н"}`,
+			operatorName: data.cashierFullName || null,
+			patientId: validPatientId,
+			kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
+			kkmReceiptUrl: printResult.ofdVerificationUrl || null,
+			metadata: {
+				refundCashKopecks: cashKop,
+				totalRefundKopecks: data.totalRefundKopecks,
+			},
+		});
+	}
+
+	const electronicKop = data.refundElectronicKopecks || 0;
+	if (electronicKop > 0) {
+		const amountRub = kopecksToRub(electronicKop);
+		const balanceBefore = Number(cashlessBox.balanceRub) || 0;
+		const balanceAfter = Math.round((balanceBefore - amountRub) * 100) / 100;
+
+		await tx
+			.update(cashBoxes)
+			.set({
+				balanceRub: balanceAfter,
+				updatedAt: new Date(),
+			})
+			.where(eq(cashBoxes.id, cashlessBox.id));
+
+		const [activeShift] = await tx
+			.select()
+			.from(cashBoxShifts)
+			.where(
+				and(
+					eq(cashBoxShifts.cashBoxId, cashlessBox.id),
+					eq(cashBoxShifts.status, "open"),
+				),
+			)
+			.limit(1);
+
+		if (activeShift && amountRub > 0) {
+			const updatedExpense = Math.round(((Number(activeShift.expenseTotalRub) || 0) + amountRub) * 100) / 100;
+			await tx
+				.update(cashBoxShifts)
+				.set({
+					expenseTotalRub: updatedExpense,
+					updatedAt: new Date(),
+				})
+				.where(eq(cashBoxShifts.id, activeShift.id));
+		}
+
+		await tx.insert(cashOperations).values({
+			organizationId: orgId,
+			cashBoxId: cashlessBox.id,
+			shiftId: activeShift?.id ?? null,
+			operationType: "expense",
+			amountRub,
+			balanceBeforeRub: balanceBefore,
+			balanceAfterRub: balanceAfter,
+			reasonText: `Возврат по фискальному чеку 54-ФЗ (безналичные) №${printResult.fiscalDocumentNumber || data.originalReceiptNumber || "б/н"}`,
+			operatorName: data.cashierFullName || null,
+			patientId: validPatientId,
+			kkmDocNumber: printResult.fiscalDocumentNumber ? String(printResult.fiscalDocumentNumber) : null,
+			kkmReceiptUrl: printResult.ofdVerificationUrl || null,
+			metadata: {
+				refundElectronicKopecks: electronicKop,
+				totalRefundKopecks: data.totalRefundKopecks,
+			},
+		});
+	}
+}
 
 export async function registerFiscalReceiptRoutes(
 	app: FastifyInstance,
@@ -393,6 +784,8 @@ export async function registerFiscalReceiptRoutes(
 					})
 					.returning();
 
+				await applyCashBoxFiscalReceipt(tx, orgId, data, printResult);
+
 				return reply.status(201).send({
 					success: true,
 					replayed: false,
@@ -429,33 +822,37 @@ export async function registerFiscalReceiptRoutes(
 			receiptIssuedAt: printResult.receiptIssuedAt,
 		};
 
-		const [queueRow] = await db
-			.insert(fiscalReceiptQueue)
-			.values({
-				organizationId: orgId,
-				visitId: data.visitId || null,
-				receiptType: data.operationType,
-				status: printResult.status,
-				payloadJson: payloadToStore,
-				lastError: isOffline ? printResult.errorMessage || "KKT hardware offline or out of paper" : null,
-				retryCount: isOffline ? 1 : 0,
-				printedAt: isOffline ? null : now,
-			})
-			.returning();
+		return await db.transaction(async (tx) => {
+			const [queueRow] = await tx
+				.insert(fiscalReceiptQueue)
+				.values({
+					organizationId: orgId,
+					visitId: data.visitId || null,
+					receiptType: data.operationType,
+					status: printResult.status,
+					payloadJson: payloadToStore,
+					lastError: isOffline ? printResult.errorMessage || "KKT hardware offline or out of paper" : null,
+					retryCount: isOffline ? 1 : 0,
+					printedAt: isOffline ? null : now,
+				})
+				.returning();
 
-		return reply.status(201).send({
-			success: true,
-			replayed: false,
-			queueId: queueRow?.id,
-			status: queueRow?.status,
-			fnSerial: printResult.fnSerial,
-			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
-			fiscalSign: printResult.fiscalSign,
-			receiptIssuedAt: printResult.receiptIssuedAt,
-			ofdVerificationUrl: printResult.ofdVerificationUrl,
-			qrString: printResult.qrString,
-			compiledReceipt: compiled,
-			hardwareWarning: isOffline ? printResult.errorMessage : null,
+			await applyCashBoxFiscalReceipt(tx, orgId, data, printResult);
+
+			return reply.status(201).send({
+				success: true,
+				replayed: false,
+				queueId: queueRow?.id,
+				status: queueRow?.status,
+				fnSerial: printResult.fnSerial,
+				fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+				fiscalSign: printResult.fiscalSign,
+				receiptIssuedAt: printResult.receiptIssuedAt,
+				ofdVerificationUrl: printResult.ofdVerificationUrl,
+				qrString: printResult.qrString,
+				compiledReceipt: compiled,
+				hardwareWarning: isOffline ? printResult.errorMessage : null,
+			});
 		});
 	});
 
@@ -598,6 +995,8 @@ export async function registerFiscalReceiptRoutes(
 					})
 					.returning();
 
+				await applyCashBoxFiscalRefund(tx, orgId, data, printResult);
+
 				return reply.status(200).send({
 					success: true,
 					replayed: false,
@@ -637,18 +1036,6 @@ export async function registerFiscalReceiptRoutes(
 		const isOffline = printResult.status === "hardware_offline";
 		const now = new Date();
 
-		let validPaymentId: string | null = null;
-		if (data.originalPaymentId) {
-			const [existingPayment] = await db
-				.select({ id: payments.id })
-				.from(payments)
-				.where(and(eq(payments.id, data.originalPaymentId), eq(payments.organizationId, orgId)))
-				.limit(1);
-			if (existingPayment) {
-				validPaymentId = existingPayment.id;
-			}
-		}
-
 		const payloadToStore: Record<string, unknown> = {
 			...compiled,
 			clientMutationId: data.clientMutationId ?? null,
@@ -660,30 +1047,46 @@ export async function registerFiscalReceiptRoutes(
 			receiptIssuedAt: printResult.receiptIssuedAt,
 		};
 
-		const [queueRow] = await db
-			.insert(fiscalReceiptQueue)
-			.values({
-				organizationId: orgId,
-				paymentId: validPaymentId,
-				receiptType: "income_return",
-				status: printResult.status,
-				payloadJson: payloadToStore,
-				lastError: isOffline ? printResult.errorMessage || "KKT offline on refund" : null,
-				retryCount: isOffline ? 1 : 0,
-				printedAt: isOffline ? null : now,
-			})
-			.returning();
+		return await db.transaction(async (tx) => {
+			let validPaymentId: string | null = null;
+			if (data.originalPaymentId) {
+				const [existingPayment] = await tx
+					.select({ id: payments.id })
+					.from(payments)
+					.where(and(eq(payments.id, data.originalPaymentId), eq(payments.organizationId, orgId)))
+					.limit(1);
+				if (existingPayment) {
+					validPaymentId = existingPayment.id;
+				}
+			}
 
-		return reply.status(200).send({
-			success: true,
-			replayed: false,
-			refundQueueId: queueRow?.id,
-			status: queueRow?.status,
-			originalReceiptNumber: data.originalReceiptNumber,
-			fiscalDocumentNumber: printResult.fiscalDocumentNumber,
-			fiscalSign: printResult.fiscalSign,
-			ofdVerificationUrl: printResult.ofdVerificationUrl,
-			totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
+			const [queueRow] = await tx
+				.insert(fiscalReceiptQueue)
+				.values({
+					organizationId: orgId,
+					paymentId: validPaymentId,
+					receiptType: "income_return",
+					status: printResult.status,
+					payloadJson: payloadToStore,
+					lastError: isOffline ? printResult.errorMessage || "KKT offline on refund" : null,
+					retryCount: isOffline ? 1 : 0,
+					printedAt: isOffline ? null : now,
+				})
+				.returning();
+
+			await applyCashBoxFiscalRefund(tx, orgId, data, printResult);
+
+			return reply.status(200).send({
+				success: true,
+				replayed: false,
+				refundQueueId: queueRow?.id,
+				status: queueRow?.status,
+				originalReceiptNumber: data.originalReceiptNumber,
+				fiscalDocumentNumber: printResult.fiscalDocumentNumber,
+				fiscalSign: printResult.fiscalSign,
+				ofdVerificationUrl: printResult.ofdVerificationUrl,
+				totalRefundRub: kopecksToNumericString(data.totalRefundKopecks),
+			});
 		});
 	});
 

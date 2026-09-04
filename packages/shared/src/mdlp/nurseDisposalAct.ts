@@ -170,12 +170,8 @@ export function formatSeniorNurseDisposalActData(options: {
 	});
 
 	// В стоматологической клинике списание пустых карпул (медотходы Класса Б)
-	// по умолчанию проводится единолично дежурной медсестрой без бюрократической комиссии из 3 человек.
-	const useSingleNurse =
-		options.isSingleSigner === true ||
-		(options.isSingleSigner !== false &&
-			options.requireCommission !== true &&
-			(!options.chiefDoctorName || !options.dentistName));
+	// проводится единолично старшей/дежурной медсестрой при isSingleSigner === true.
+	const useSingleNurse = options.isSingleSigner === true;
 
 	const commission = useSingleNurse
 		? [

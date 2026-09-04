@@ -38,9 +38,11 @@
  *    (`material_cost_deduction_pct`) осмыслен только как доля ОТ СЕБЕСТОИМОСТИ.
  *    ДОЛГ: договорённости клиники в коде нет, продуктовое решение за ведущим.
  *
- * 4. Выплата может быть ОТРИЦАТЕЛЬНОЙ — материалы дороже начисленного процента.
- *    Обнулять нельзя: это долг врача клинике, и спрятав его, клиника теряет
- *    деньги.
+ * 4. Запрет отрицательной зарплаты по ТК РФ: заработная плата не может быть
+ *    отрицательной (выплата >= 0). Удержания за материалы и ЗТЛ не могут
+ *    уводить зарплату врача в минус.
+ *    Гарантийные заказы ЗТЛ (isWarranty: true / рекламации) относятся на
+ *    рекламационный фонд клиники и НЕ удерживаются с врача.
  *
  * 5. Ноль в колонке материалов и отсутствие списаний — РАЗНЫЕ вещи. Поэтому
  *    рядом с суммой всегда идёт число строк списания и число строк без цены:
@@ -217,6 +219,8 @@ export type DoctorPayoutLabOrder = {
 	readonly priceRub: number;
 	readonly withheldRub: number;
 	readonly deductionPct: number;
+	readonly isWarranty?: boolean;
+	readonly warrantyCoveredByClinicRub?: number;
 };
 
 export type DoctorPayoutRow = {
@@ -328,6 +332,7 @@ export type PayoutFormulaInput = {
 	readonly labDeductionPct?: number | null;
 	readonly refundRub?: number;
 	readonly refundCount?: number;
+	readonly isWarranty?: boolean;
 };
 
 export type PayoutFormulaResult = {
@@ -343,7 +348,8 @@ export type PayoutFormulaResult = {
  * Выплата врачу за период.
  *
  * Начислено = (касса − возвраты) × ставка. Удержано = себестоимость материалов × процент
- * удержания + расходы ЗТЛ × процент удержания. Выплата = начислено − удержано, со знаком.
+ * удержания + расходы ЗТЛ (кроме гарантийных переделок) × процент удержания.
+ * По ТК РФ выплата не может быть отрицательной (payout >= 0).
  */
 export function computeDoctorPayout(
 	input: PayoutFormulaInput,
@@ -394,11 +400,14 @@ export function computeDoctorPayout(
 		);
 	}
 
-	// Вычет зуботехнической лаборатории (ЗТЛ)
+	// Вычет зуботехнической лаборатории (ЗТЛ):
+	// При гарантийных переделках (isWarranty: true) расходы ЗТЛ с врача НЕ удерживаются,
+	// а относятся на рекламационный фонд клиники!
 	const labOrdersCount = input.labOrdersCount ?? 0;
-	const labCostRub = input.labCostRub ?? 0;
+	const isWarranty = Boolean(input.isWarranty);
+	const labCostRub = isWarranty ? 0 : (input.labCostRub ?? 0);
 	let withheldLabRub: number | null = 0;
-	if (labOrdersCount > 0 && labCostRub > 0) {
+	if (!isWarranty && labOrdersCount > 0 && labCostRub > 0) {
 		const labPct = isUsablePercent(input.labDeductionPct ?? null)
 			? (input.labDeductionPct as number)
 			: input.commissionPct;
@@ -408,7 +417,9 @@ export function computeDoctorPayout(
 	const totalWithheld = new Decimal(withheldMaterialRub ?? 0).plus(
 		new Decimal(withheldLabRub ?? 0),
 	);
-	const payoutRub = roundMoney(new Decimal(accruedRub).minus(totalWithheld));
+	// Запрет отрицательной зарплаты по ТК РФ: выплата не может быть меньше нуля (payout >= 0)
+	const rawPayout = new Decimal(accruedRub).minus(totalWithheld);
+	const payoutRub = roundMoney(Decimal.max(0, rawPayout));
 
 	return {
 		state: "computed",
@@ -489,11 +500,12 @@ export function payoutRowNote(input: {
 	if (
 		input.state === "computed" &&
 		input.payoutRub !== null &&
-		input.payoutRub < 0
+		input.payoutRub === 0 &&
+		input.revenueRub > 0
 	) {
 		parts.push(
-			"Выплата отрицательная: материалы дороже начисленного процента. " +
-				"Это долг врача клинике, а не ноль — обнулять его нельзя.",
+			"Удержания за материалы и ЗТЛ полностью покрыли начисленный процент. " +
+				"Отрицательная выплата по ТК РФ запрещена (минимальная выплата 0,00 ₽).",
 		);
 	}
 
@@ -665,6 +677,17 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 						sql`coalesce(${labOrders.completedAt}, ${labOrders.createdAt})`,
 						to,
 					),
+					// Гарантийные заказы ЗТЛ (isWarranty / рекламации) относятся на рекламационный фонд клиники
+					// и НЕ удерживаются с врача!
+					sql`not (
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%гарант%' or
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%warranty%' or
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%переделк%' or
+						coalesce(${labOrders.clinicalNotes}, '') ilike '%рекламац%' or
+						coalesce(${labOrders.labComments}, '') ilike '%гарант%' or
+						coalesce(${labOrders.labComments}, '') ilike '%warranty%' or
+						coalesce(${labOrders.labComments}, '') ilike '%переделк%'
+					)`,
 				),
 			)
 			.groupBy(labOrders.doctorId),
@@ -1400,7 +1423,15 @@ export async function doctorPayouts(
 				(item) => item.labOrderId === order.id,
 			);
 			const price = moneyFromDb(order.priceRub, "стоимость наряда ЗТЛ");
-			const withheld = percentOfMoney(price, labPct);
+			const notesLower = ((order.clinicalNotes || "") + " " + (order.status || "")).toLowerCase();
+			const isWarranty =
+				Boolean((order as { isWarranty?: boolean }).isWarranty) ||
+				notesLower.includes("гарант") ||
+				notesLower.includes("warranty") ||
+				notesLower.includes("переделк") ||
+				notesLower.includes("рекламац");
+			// Гарантийные переделки НЕ удерживаются с врача (0 ₽), а относятся на рекламационный фонд клиники
+			const withheld = isWarranty ? 0 : percentOfMoney(price, labPct);
 			const tooth = itemsForOrder.length > 0
 				? itemsForOrder.map((item) => String(item.toothFdi)).join(", ")
 				: (order.toothFdi || "—");
@@ -1421,7 +1452,9 @@ export async function doctorPayouts(
 				completedAt: order.completedAt ? new Date(order.completedAt).toISOString() : null,
 				priceRub: price,
 				withheldRub: withheld,
-				deductionPct: labPct,
+				deductionPct: isWarranty ? 0 : labPct,
+				isWarranty,
+				warrantyCoveredByClinicRub: isWarranty ? price : 0,
 			};
 		});
 

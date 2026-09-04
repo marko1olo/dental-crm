@@ -189,7 +189,10 @@ export async function register(app: FastifyInstance) {
 			// 152-ФЗ / 323-ФЗ ст. 13: врачебная тайна в плане лечения
 			const identity = getRequestIdentity(request);
 			const access = evaluateClinicalAccess(identity.role);
-			if (!access.hasClinicalAccess) {
+			if (
+				!access.hasClinicalAccess &&
+				!isReceptionistAllowedPrimaryDoc(document.kind, identity.role)
+			) {
 				return reply
 					.code(403)
 					.send(

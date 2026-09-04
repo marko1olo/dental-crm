@@ -12,6 +12,7 @@ import {
 	crmLeadStatusSchema,
 	generateClinicalRiskReason,
 	generateReactivationScript,
+	isClinicalObservationPause,
 } from "@dental/shared";
 import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -47,7 +48,19 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 
 		const querySchema = z.object({
 			minDays: z.coerce.number().min(30).default(CLINICAL_LEAK_THRESHOLD_DAYS),
-			status: z.enum(["all", "new", "in_progress", "contacted", "rebooked", "declined", "archived"]).default("all"),
+			status: z
+				.enum([
+					"all",
+					"new",
+					"in_progress",
+					"contacted",
+					"rebooked",
+					"declined",
+					"archived",
+					"clinical_observation_pause",
+					"CLINICAL_OBSERVATION_PAUSE",
+				])
+				.default("all"),
 			doctorId: z.string().uuid().optional(),
 			hasUncompletedPlan: z.enum(["true", "false"]).optional(),
 			search: z.string().optional(),
@@ -69,7 +82,13 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 			];
 
 			if (status !== "all") {
-				conditions.push(eq(crmLeakDetectorLeads.leadStatus, status));
+				if (status === "clinical_observation_pause" || status === "CLINICAL_OBSERVATION_PAUSE") {
+					conditions.push(
+						sql`${crmLeakDetectorLeads.leadStatus} IN ('clinical_observation_pause', 'CLINICAL_OBSERVATION_PAUSE')`,
+					);
+				} else {
+					conditions.push(eq(crmLeakDetectorLeads.leadStatus, status));
+				}
 			}
 			if (doctorId) {
 				conditions.push(eq(crmLeakDetectorLeads.lastDoctorId, doctorId));
@@ -145,6 +164,14 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 						  AND a.status IN ('completed', 'arrived', 'in_treatment')
 						ORDER BY a.starts_at DESC LIMIT 1
 					)`,
+					lastReason: sql<string | null>`(
+						SELECT a.reason FROM ${appointments} a
+						WHERE a.organization_id = ${orgId}
+						  AND a.patient_id = ${patients.id}
+						  AND a.starts_at <= ${now}
+						  AND a.status IN ('completed', 'arrived', 'in_treatment')
+						ORDER BY a.starts_at DESC LIMIT 1
+					)`,
 					uncompletedPlansSum: sql<number>`COALESCE((
 						SELECT sum(tp.total_amount_rub) FROM ${treatmentPlans} tp
 						WHERE tp.organization_id = ${orgId}
@@ -190,15 +217,31 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 				const diffDays = Math.floor((now.getTime() - lastVisit.getTime()) / MS_PER_DAY);
 				if (diffDays < CLINICAL_LEAK_THRESHOLD_DAYS) continue;
 
-				// Имя врача
+				// Имя врача и специализация
 				let doctorName: string | null = null;
+				let doctorSpecialty: string | null = null;
 				if (row.lastDoctorId) {
-					const [doc] = await tx.select({ name: users.fullName }).from(users).where(eq(users.id, row.lastDoctorId)).limit(1);
+					const [doc] = await tx
+						.select({ name: users.fullName, specialties: users.specialties })
+						.from(users)
+						.where(eq(users.id, row.lastDoctorId))
+						.limit(1);
 					doctorName = doc?.name || null;
+					if (doc?.specialties) {
+						const specs = Array.isArray(doc.specialties) ? doc.specialties : [String(doc.specialties)];
+						doctorSpecialty = specs.map((s) => String(s)).join(", ") || null;
+					}
 				}
 
 				const hasUncompletedPlan = Number(row.uncompletedPlansSum) > 0;
-				const riskReason = generateClinicalRiskReason(diffDays, hasUncompletedPlan, null);
+				const isPause = isClinicalObservationPause(
+					doctorSpecialty,
+					row.lastReason,
+					diffDays,
+					hasUncompletedPlan,
+				);
+				const targetStatus = isPause ? "CLINICAL_OBSERVATION_PAUSE" : "new";
+				const riskReason = generateClinicalRiskReason(diffDays, hasUncompletedPlan, doctorSpecialty, isPause);
 				const script = generateReactivationScript(
 					row.fullName || "Пациент",
 					clinicName,
@@ -216,7 +259,13 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 
 				if (existing) {
 					// Не сбрасываем статус, если уже в работе или сконвертирован
-					if (existing.leadStatus === "new" || existing.leadStatus === "archived") {
+					const isModifiableStatus =
+						existing.leadStatus === "new" ||
+						existing.leadStatus === "archived" ||
+						existing.leadStatus === "CLINICAL_OBSERVATION_PAUSE" ||
+						existing.leadStatus === "clinical_observation_pause";
+
+					if (isModifiableStatus) {
 						await tx
 							.update(crmLeakDetectorLeads)
 							.set({
@@ -224,9 +273,11 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 								lastVisitDate: lastVisit,
 								lastDoctorId: row.lastDoctorId,
 								lastDoctorName: doctorName,
+								lastSpecialty: doctorSpecialty,
 								uncompletedPlanSumRub: Number(row.uncompletedPlansSum),
 								hasUncompletedPlan,
 								clinicalRiskReason: riskReason,
+								leadStatus: targetStatus,
 								aiReactivationSuggestion: script,
 								updatedAt: now,
 							})
@@ -241,10 +292,11 @@ export async function registerCrmLeakDetectorRoutes(app: FastifyInstance) {
 						lastVisitDate: lastVisit,
 						lastDoctorId: row.lastDoctorId,
 						lastDoctorName: doctorName,
+						lastSpecialty: doctorSpecialty,
 						uncompletedPlanSumRub: Number(row.uncompletedPlansSum),
 						hasUncompletedPlan,
 						clinicalRiskReason: riskReason,
-						leadStatus: "new",
+						leadStatus: targetStatus,
 						aiReactivationSuggestion: script,
 					});
 					createdCount++;

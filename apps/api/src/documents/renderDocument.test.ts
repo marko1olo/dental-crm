@@ -470,7 +470,7 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 		updatedAt: new Date().toISOString(),
 	};
 
-	test("isReceptionistAllowedPrimaryDoc разрешает договор и ИДС для регистратора", () => {
+	test("isReceptionistAllowedPrimaryDoc разрешает договор, ИДС, 043/у и план лечения для регистратора", () => {
 		assert.strictEqual(
 			isReceptionistAllowedPrimaryDoc("paid_medical_services_contract", "receptionist"),
 			true,
@@ -484,7 +484,15 @@ describe("Бланки договора и ИДС с 0 ₽ и без врача 
 			true,
 		);
 		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("dental_medical_card_043u", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
 			isReceptionistAllowedPrimaryDoc("treatment_plan", "receptionist"),
+			true,
+		);
+		assert.strictEqual(
+			isReceptionistAllowedPrimaryDoc("daily_dentist_diary_037u", "receptionist"),
 			false,
 		);
 	});

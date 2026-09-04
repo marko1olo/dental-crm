@@ -5,6 +5,7 @@ import {
 	calculateLeakFunnelMetrics,
 	generateClinicalRiskReason,
 	generateReactivationScript,
+	isClinicalObservationPause,
 	isQualifiedForLeakLead,
 	type CrmLeakDetectorCandidate,
 	type CrmLeakLeadItem,
@@ -140,4 +141,93 @@ test("crmLeakDetectorEngine: корректно рассчитывает вор�
 	assert.equal(funnel.rebookedRevenuePotentialRub, 7500);
 	assert.equal(funnel.totalUncompletedPlanSumRub, 25000);
 	assert.equal(funnel.averageDaysSinceVisit, 240);
+});
+
+test("crmLeakDetectorEngine: определяет физиологическую паузу и исключает из оттока врачей", () => {
+	// Имплантация 180 дней -> остеоинтеграция, пауза
+	assert.equal(isClinicalObservationPause("surgery", null, 180, false), true);
+	assert.equal(isClinicalObservationPause("Хирургия-имплантология", null, 240, false), true);
+	assert.equal(isClinicalObservationPause(null, "Установка дентального имплантата", 200, false), true);
+
+	// Имплантация >270 дней -> уже превысила срок остеоинтеграции
+	assert.equal(isClinicalObservationPause("surgery", null, 300, false), false);
+
+	// Ортодонтия до 2 лет (730 дней) -> пауза/активное лечение
+	assert.equal(isClinicalObservationPause("orthodontics", null, 350, false), true);
+	assert.equal(isClinicalObservationPause("Ортодонт", null, 600, false), true);
+	assert.equal(isClinicalObservationPause(null, "Активация брекет-системы", 300, false), true);
+
+	// Терапия 220 дней -> НЕ пауза, а клинический отток
+	assert.equal(isClinicalObservationPause("therapy", null, 220, false), false);
+
+	// Проверка исключения из topChurnDoctors воронки
+	const leadsWithPause: CrmLeakLeadItem[] = [
+		{
+			id: "l1",
+			organizationId: "org1",
+			patientId: "p1",
+			patientFullName: "Пациент Терапевта",
+			phone: "+79991112233",
+			daysSinceLastVisit: 220,
+			lastVisitDate: "2026-01-01T10:00:00Z",
+			lastDoctorId: "doc1",
+			lastDoctorName: "Д-р Терапевтов",
+			lastSpecialty: "Терапия",
+			uncompletedPlanSumRub: 0,
+			hasUncompletedPlan: false,
+			clinicalRiskReason: "Кариес",
+			leadStatus: "new",
+			assignedAdminUserId: null,
+			assignedAdminName: null,
+			contactAttemptsCount: 0,
+			lastContactAt: null,
+			lastContactChannel: null,
+			lastContactNotes: null,
+			rebookedAppointmentId: null,
+			rebookedDate: null,
+			declineReason: null,
+			declineComment: null,
+			aiReactivationSuggestion: "",
+			createdAt: "2026-08-01T10:00:00Z",
+			updatedAt: "2026-08-01T10:00:00Z",
+		},
+		{
+			id: "l2",
+			organizationId: "org1",
+			patientId: "p2",
+			patientFullName: "Пациент Хирурга Остеоинтеграция",
+			phone: "+79994445566",
+			daysSinceLastVisit: 215,
+			lastVisitDate: "2026-01-05T10:00:00Z",
+			lastDoctorId: "doc2",
+			lastDoctorName: "Д-р Хирургов",
+			lastSpecialty: "Хирургия",
+			uncompletedPlanSumRub: 0,
+			hasUncompletedPlan: false,
+			clinicalRiskReason: "Остеоинтеграция",
+			leadStatus: "CLINICAL_OBSERVATION_PAUSE",
+			assignedAdminUserId: null,
+			assignedAdminName: null,
+			contactAttemptsCount: 0,
+			lastContactAt: null,
+			lastContactChannel: null,
+			lastContactNotes: null,
+			rebookedAppointmentId: null,
+			rebookedDate: null,
+			declineReason: null,
+			declineComment: null,
+			aiReactivationSuggestion: "",
+			createdAt: "2026-08-01T10:00:00Z",
+			updatedAt: "2026-08-01T10:00:00Z",
+		},
+	];
+
+	const funnel = calculateLeakFunnelMetrics(leadsWithPause);
+	assert.equal(funnel.totalIdentifiedLeads, 2);
+	assert.equal(funnel.clinicalObservationPauseCount, 1);
+	// Д-р Хирургов НЕ ДОЛЖЕН попасть в topChurnDoctors, так как его пациент на остеоинтеграции!
+	assert.equal(funnel.topChurnDoctors.length, 1);
+	assert.equal(funnel.topChurnDoctors[0]?.doctorName, "Д-р Терапевтов");
+	assert.equal(funnel.topChurnSpecialties.length, 1);
+	assert.equal(funnel.topChurnSpecialties[0]?.specialty, "Терапия");
 });
