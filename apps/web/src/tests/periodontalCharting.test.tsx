@@ -102,5 +102,30 @@ describe("Periodontal Charting & Clinical Indices (PeriodontalChartingModal)", (
 			assert.ok(html.includes("Индекс налета PLI"));
 			assert.ok(html.includes("Кровоточивость борозды SBI"));
 		});
+
+		it("renders 1-click clinical presets toolbar (Norm, Gingivitis, Periodontitis, Form 043/u) without cartoon emojis", () => {
+			const html = renderToString(
+				<PeriodontalChartingModal
+					isOpen={true}
+					onClose={() => {}}
+					patientName="Тестовый Пациент"
+				/>,
+			);
+
+			// Check all clinical presets and 043/u actions
+			assert.ok(html.includes("Пародонт в норме (1-2 мм, без BOP)"));
+			assert.ok(html.includes("Гингивит (глубина 2 мм, BOP)"));
+			assert.ok(html.includes("Пародонтит легкий (3-4 мм)"));
+			assert.ok(html.includes("В дневник 043/у"));
+			assert.ok(html.includes('data-testid="perio-preset-norm-btn"'));
+			assert.ok(html.includes('data-testid="perio-preset-gingivitis-btn"'));
+			assert.ok(html.includes('data-testid="perio-preset-periodontitis-btn"'));
+			assert.ok(html.includes('data-testid="perio-modal-insert-043-btn"'));
+
+			// Mandate 8d, sin #7: Zero cartoon emojis in medical/clinical forms
+			assert.equal(html.includes("⚡"), false, "Must not contain lightning bolt emoji");
+			assert.equal(html.includes("💡"), false, "Must not contain lightbulb emoji");
+			assert.equal(html.includes("🦷"), false, "Must not contain tooth emoji");
+		});
 	});
 });

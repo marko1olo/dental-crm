@@ -379,43 +379,153 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		showToast("Протокол перио-карты успешно вставлен в дневник 043/у!", "success");
 	}, [teeth, summary, doctorName, onInsertToProtocol]);
 
-	// 1-Click Physiological Norm across all 32 teeth (Mandate 8e: Doctor Autonomy)
-	const handleApplyPhysiologicalNorm = useCallback(() => {
-		setTeeth(createDefaultPerioTeeth());
+	// 1. «Пародонт в норме (1-2 мм, без BOP)» — 1 клик, createDefaultPerioTeeth(2), сбрасывает кровоточивость и рецессии, рассчитывает идеальные индексы
+	const handleApplyNormalPreset = useCallback(() => {
+		const defaultTeeth = createDefaultPerioTeeth(2);
+		setTeeth((prev) => {
+			const hasMissing = prev.some((t) => t.isMissing);
+			if (!hasMissing) return defaultTeeth;
+			return defaultTeeth.map((dt) => {
+				const prevTooth = prev.find((t) => t.toothNumber === dt.toothNumber);
+				return prevTooth?.isMissing ? { ...dt, isMissing: true } : dt;
+			});
+		});
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Все 32 зуба установлены в физиологическую норму (глубина 1–2 мм, 0% кровоточивости, 0% налёта)!", "success", 4000);
+		showToast(
+			"Пародонт в норме (1-2 мм, без BOP): кровоточивость и рецессии сброшены, идеальные индексы",
+			"success",
+		);
 	}, []);
 
-	// 1-Click Physiological Norm directly into Form 043/u
-	const handleInsertNormTo043 = useCallback(() => {
-		const defaultTeeth = createDefaultPerioTeeth();
-		setTeeth(defaultTeeth);
-		const normText = "Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
+	// Alias for backwards compatibility
+	const handleApplyPhysiologicalNorm = handleApplyNormalPreset;
 
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${normText}`
-				: normText,
-		}));
+	// 2. «Гингивит (глубина 2 мм, локальная кровоточивость)» — 1 клик
+	const handleApplyGingivitisPreset = useCallback(() => {
+		const baseTeeth = createDefaultPerioTeeth(2);
+		const gingivitisTeeth = baseTeeth.map((tooth) => {
+			const num = tooth.toothNumber;
+			// Localized bleeding (~15-20% of sites): interproximal sites of molars and lower incisors
+			const isMolar = num % 10 >= 6;
+			const isLowerAnterior = (num >= 31 && num <= 33) || (num >= 41 && num <= 43);
+			const isPremolar = num % 10 === 4 || num % 10 === 5;
 
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: normText,
-					mode: "smart_append",
-				},
-			}),
-		);
+			const hasMesialBop = isMolar || isLowerAnterior;
+			const hasDistalBop = isMolar;
+			const hasPlaque = isMolar || isLowerAnterior || isPremolar;
+			const hasCalculus = num === 16 || num === 26 || num === 31 || num === 41; // OHI-S index sites
 
-		onInsertToProtocol?.(normText);
+			const makeSite = (
+				site: typeof tooth.mesioBuccal,
+				bop: boolean,
+				plq: boolean,
+				calc: boolean,
+			) => ({
+				...site,
+				probingDepthMm: 2,
+				gingivalMarginMm: 0,
+				calMm: 2,
+				bleedingOnProbing: bop,
+				plaque: plq,
+				calculus: calc,
+				suppuration: false,
+			});
+
+			return {
+				...tooth,
+				mobility: 0 as const,
+				furcation: 0 as const,
+				mesioBuccal: makeSite(tooth.mesioBuccal, hasMesialBop, hasPlaque, hasCalculus),
+				midBuccal: makeSite(tooth.midBuccal, false, hasPlaque, false),
+				distoBuccal: makeSite(tooth.distoBuccal, hasDistalBop, hasPlaque, false),
+				mesioLingual: makeSite(tooth.mesioLingual, hasMesialBop, hasPlaque, hasCalculus),
+				midLingual: makeSite(tooth.midLingual, false, false, hasCalculus),
+				distoLingual: makeSite(tooth.distoLingual, hasDistalBop, hasPlaque, false),
+			};
+		});
+
+		setTeeth((prev) => {
+			const hasMissing = prev.some((t) => t.isMissing);
+			if (!hasMissing) return gingivitisTeeth;
+			return gingivitisTeeth.map((gt) => {
+				const prevTooth = prev.find((t) => t.toothNumber === gt.toothNumber);
+				return prevTooth?.isMissing ? { ...gt, isMissing: true } : gt;
+			});
+		});
+
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Физиологическая норма пародонта установлена и внесена в 043/у!", "success", 4000);
-	}, [onInsertToProtocol]);
+		showToast(
+			"Пресет «Гингивит»: глубина 2 мм, локальная кровоточивость (BOP ~20%), без потери прикрепления",
+			"info",
+		);
+	}, []);
+
+	// 3. «Пародонтит легкий (глубина 3-4 мм)» — 1 клик
+	const handleApplyMildPeriodontitisPreset = useCallback(() => {
+		const baseTeeth = createDefaultPerioTeeth(2);
+		const mildPerioTeeth = baseTeeth.map((tooth) => {
+			const num = tooth.toothNumber;
+			const isMolar = num % 10 >= 6;
+			const isPremolar = num % 10 === 4 || num % 10 === 5;
+
+			// Interproximal depths 3-4 mm for molars/premolars, 2-3 mm anterior
+			const interproxDepth = isMolar ? 4 : isPremolar ? 3 : 2;
+			const midDepth = isMolar ? 3 : 2;
+			const recession = isMolar ? 1 : 0;
+			const hasBop = isMolar || (isPremolar && num % 2 === 0);
+			const hasPlaque = isMolar || isPremolar;
+			const hasCalculus = isMolar || isPremolar || num === 31 || num === 41;
+
+			const makeSite = (
+				site: typeof tooth.mesioBuccal,
+				depth: number,
+				gm: number,
+				bop: boolean,
+				plq: boolean,
+				calc: boolean,
+			) => ({
+				...site,
+				probingDepthMm: depth,
+				gingivalMarginMm: gm,
+				calMm: depth + gm,
+				bleedingOnProbing: bop,
+				plaque: plq,
+				calculus: calc,
+				suppuration: false,
+			});
+
+			return {
+				...tooth,
+				mobility: 0 as const,
+				furcation: 0 as const,
+				mesioBuccal: makeSite(tooth.mesioBuccal, interproxDepth, recession, hasBop, hasPlaque, hasCalculus),
+				midBuccal: makeSite(tooth.midBuccal, midDepth, 0, false, hasPlaque, false),
+				distoBuccal: makeSite(tooth.distoBuccal, interproxDepth, recession, hasBop, hasPlaque, hasCalculus),
+				mesioLingual: makeSite(tooth.mesioLingual, interproxDepth, 0, hasBop, hasPlaque, hasCalculus),
+				midLingual: makeSite(tooth.midLingual, midDepth, 0, false, false, hasCalculus),
+				distoLingual: makeSite(tooth.distoLingual, interproxDepth, 0, hasBop, hasPlaque, hasCalculus),
+			};
+		});
+
+		setTeeth((prev) => {
+			const hasMissing = prev.some((t) => t.isMissing);
+			if (!hasMissing) return mildPerioTeeth;
+			return mildPerioTeeth.map((pt) => {
+				const prevTooth = prev.find((t) => t.toothNumber === pt.toothNumber);
+				return prevTooth?.isMissing ? { ...pt, isMissing: true } : pt;
+			});
+		});
+
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			"Пресет «Пародонтит легкий»: глубина карманов 3–4 мм, CAL 3–5 мм, кровоточивость (BOP)",
+			"info",
+		);
+	}, []);
 
 	// 1-Click Routine Hygienist Status & Invoice (Mandate 8e: 90% routine hygiene loop)
 	const handleQuickHygieneAirFlow = useCallback(() => {
-		const defaultTeeth = createDefaultPerioTeeth();
+		const defaultTeeth = createDefaultPerioTeeth(2);
 		setTeeth(defaultTeeth);
 
 		const hygieneText = "Зубные отложения удалены УЗ + Air Flow, десна бледно-розовая, обработка антисептиком. Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
@@ -451,6 +561,32 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast("Профгигиена УЗ + Air Flow (A16.07.051) зафиксирована в дневнике 043/у и смете!", "success", 4000);
 	}, [onInsertToProtocol]);
+
+	// 1-Click Physiological Norm directly into Form 043/u
+	const handleInsertNormTo043 = useCallback(() => {
+		handleApplyNormalPreset();
+		const normText = "Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${normText}`
+				: normText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: normText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(normText);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Физиологическая норма пародонта установлена и внесена в 043/у!", "success", 4000);
+	}, [handleApplyNormalPreset, onInsertToProtocol]);
 
 	// 1-Click Fast Pathology Markup for active tooth
 	const handleMarkActiveToothPocket = useCallback((depth = 5, hasBop = true) => {
@@ -608,68 +744,91 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 					</div>
 				</div>
 
-				{/* 1-Click Fast Actions Bar (Zero-Friction Doctor Autonomy) */}
-				<div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-950 dark:text-emerald-100 flex-wrap">
-					<div className="flex items-center gap-2 flex-wrap">
+				{/* 1-Row Clinical Presets Toolbar (Mandates 8d, 8e, 8k: Strict 1-Row, Hick's Law, Zero Mocks) */}
+				<div
+					className="perio-presets-toolbar"
+					role="toolbar"
+					aria-label="Клинические пресеты пародонтограммы"
+				>
+					<div className="perio-presets-group">
+						<span className="perio-presets-label">
+							Пресеты:
+						</span>
+
+						{/* 1. Пародонт в норме (1-2 мм, без BOP) */}
+						<button
+							type="button"
+							onClick={handleApplyNormalPreset}
+							className="perio-preset-btn perio-preset-btn--norm"
+							title="Установить все 32 зуба в физиологическую норму: глубина 1-2 мм, без BOP, идеальные индексы (1 клик)"
+							data-testid="perio-preset-norm-btn"
+						>
+							<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span>Пародонт в норме (1-2 мм, без BOP)</span>
+						</button>
+
+						{/* 2. Гингивит (глубина 2 мм, локальная кровоточивость) */}
+						<button
+							type="button"
+							onClick={handleApplyGingivitisPreset}
+							className="perio-preset-btn perio-preset-btn--gingivitis"
+							title="Клинический пресет гингивита: глубина 2 мм, локальная кровоточивость BOP ~20%, без потери прикрепления (1 клик)"
+							data-testid="perio-preset-gingivitis-btn"
+						>
+							<Droplets size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>Гингивит (глубина 2 мм, BOP)</span>
+						</button>
+
+						{/* 3. Пародонтит легкий (глубина 3-4 мм) */}
+						<button
+							type="button"
+							onClick={handleApplyMildPeriodontitisPreset}
+							className="perio-preset-btn perio-preset-btn--periodontitis"
+							title="Клинический пресет легкого пародонтита I стадии: глубина карманов 3-4 мм, межзубный CAL, кровоточивость (1 клик)"
+							data-testid="perio-preset-periodontitis-btn"
+						>
+							<AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+							<span>Пародонтит легкий (3-4 мм)</span>
+						</button>
+
+						{/* 4. Профгигиена */}
 						<button
 							type="button"
 							onClick={handleQuickHygieneAirFlow}
-							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white font-black text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
-							title="Экспресс-гигиена: УЗ + Air Flow, антисептика, норма десны и добавление A16.07.051 в смету и 043/у (1 клик)"
+							className="perio-preset-btn perio-preset-btn--hygiene"
+							title="Экспресс-гигиена: УЗ + Air Flow, протокол в 043/у и добавление услуги A16.07.051 в смету (1 клик)"
 							data-testid="perio-modal-quick-hygiene-btn"
 						>
-							<Sparkles size={15} />
-							<span>⚡ Профгигиена: УЗ + Air Flow (A16.07.051)</span>
+							<Sparkles size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+							<span>Профгигиена (УЗ + Air Flow)</span>
 						</button>
 
-						<button
-							type="button"
-							onClick={handleInsertNormTo043}
-							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
-							title="Установить все 32 зуба в норму и внести протокол в 043/у: глубина 1–2 мм, BOP 0%, подвижности нет"
-							data-testid="perio-modal-norm-043-btn"
-						>
-							<ShieldCheck size={15} />
-							<span>⚡ Норма пародонта в 043/у (1 клик)</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleApplyPhysiologicalNorm}
-							className="min-h-[40px] px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
-							title="Установить все 32 зуба в физиологическую норму: карманы 1-2 мм, без кровоточивости и налета"
-							data-testid="perio-modal-norm-btn"
-						>
-							<Check size={14} />
-							<span>Вся норма на зубы</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={() => handleMarkActiveToothPocket(5, true)}
-							className="min-h-[40px] px-3 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-800 dark:text-rose-200 border border-rose-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
-							title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для активного зуба #${activeToothNum}`}
-							data-testid="perio-modal-pathology-btn"
-						>
-							<Droplets size={14} className="text-rose-500" />
-							<span>Зуб #{activeToothNum}: карман 5 мм + BOP</span>
-						</button>
-
+						{/* 5. Очистить налет */}
 						<button
 							type="button"
 							onClick={handleClearPlaque}
-							className="min-h-[40px] px-3 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 active:scale-95 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
-							title="Очистить зубной налёт и камень по всем зубам"
+							className="perio-preset-btn"
+							title="Очистить зубной налёт и камень по всем 32 зубам"
 							data-testid="perio-modal-clear-plaque-btn"
 						>
-							<RotateCcw size={14} className="text-teal-500" />
+							<RotateCcw size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
 							<span>Очистить налет</span>
 						</button>
 					</div>
 
-					<span className="text-xs text-[var(--muted,#64748b)] font-semibold">
-						💡 Режим терапевта: норма в 1 клик, ручные промеры только для проблемных участков.
-					</span>
+					<div className="perio-presets-group">
+						{/* 6. 1-клик в протокол 043/у */}
+						<button
+							type="button"
+							onClick={handleInsertTo043}
+							className="perio-preset-btn perio-preset-btn--protocol"
+							title="Вставить сформированный протокол осмотра пародонта в дневник Формы 043/у (1 клик)"
+							data-testid="perio-modal-insert-043-btn"
+						>
+							<FileText size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>В дневник 043/у</span>
+						</button>
+					</div>
 				</div>
 
 				{/* 3. Dental Arch Selector & Tooth Matrix */}
@@ -797,6 +956,18 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 								>
 									{activeTooth.isMissing ? "Отсутствует (Адентия)" : "Пометить отсутствующим"}
 								</button>
+								{!activeTooth.isMissing && (
+									<button
+										type="button"
+										onClick={() => handleMarkActiveToothPocket(5, true)}
+										className="min-h-[44px] px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-800 dark:text-rose-200 border border-rose-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+										title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для активного зуба #${activeToothNum}`}
+										data-testid="perio-modal-pathology-btn"
+									>
+										<Droplets size={14} className="text-rose-500" />
+										<span>Карман 5 мм + BOP</span>
+									</button>
+								)}
 							</div>
 
 							<div className="flex items-center gap-3 flex-wrap">

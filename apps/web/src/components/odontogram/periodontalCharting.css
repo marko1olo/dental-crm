@@ -361,3 +361,114 @@
 .perio-secondary-btn:hover {
 	background: var(--paper-strong);
 }
+
+/* Presets Toolbar (Mandates 8d, 8e, 8k: Strict 1-Row, Hick's Law, Touch >= 44px) */
+.perio-presets-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 24px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	overflow-x: auto;
+	scrollbar-width: thin;
+	white-space: nowrap;
+}
+
+.perio-presets-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.perio-presets-label {
+	font-size: 11px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--muted);
+	margin-right: 4px;
+	flex-shrink: 0;
+}
+
+.perio-preset-btn {
+	min-height: 44px;
+	padding: 8px 14px;
+	border-radius: 12px;
+	font-size: 13px;
+	font-weight: 700;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	user-select: none;
+	touch-action: manipulation;
+}
+
+.perio-preset-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-1);
+}
+
+.perio-preset-btn:active {
+	transform: scale(0.97);
+}
+
+.perio-preset-btn--norm {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	border-color: var(--ok-fg, #10b981);
+	color: var(--ink);
+}
+
+.perio-preset-btn--norm:hover {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.2));
+}
+
+.perio-preset-btn--gingivitis {
+	background: var(--warn-bg, rgba(245, 158, 11, 0.1));
+	border-color: var(--warn-fg, #f59e0b);
+	color: var(--ink);
+}
+
+.perio-preset-btn--gingivitis:hover {
+	background: var(--warn-bg, rgba(245, 158, 11, 0.2));
+}
+
+.perio-preset-btn--periodontitis {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	border-color: var(--bad-fg, #ef4444);
+	color: var(--ink);
+}
+
+.perio-preset-btn--periodontitis:hover {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.2));
+}
+
+.perio-preset-btn--hygiene {
+	background: rgba(6, 182, 212, 0.1);
+	border-color: #06b6d4;
+	color: var(--ink);
+}
+
+.perio-preset-btn--hygiene:hover {
+	background: rgba(6, 182, 212, 0.2);
+}
+
+.perio-preset-btn--protocol {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	border-color: var(--teal, #0d9488);
+	color: var(--ink);
+	font-weight: 800;
+}
+
+.perio-preset-btn--protocol:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
