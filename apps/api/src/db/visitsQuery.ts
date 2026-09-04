@@ -418,52 +418,12 @@ export async function acceptVisitDraftInDb(
 				);
 		}
 
-		// Опциональный контур контроля качества: регистрируем карту в очереди верификации начмеда (дедлайн 24 часа)
-		try {
-			const deadline = new Date(savedAt.getTime() + 24 * 60 * 60 * 1000);
-			const patientId = signedRow.patientId;
-			let doctorId: string | null = null;
-			if (signedRow.appointmentId) {
-				const [appRow] = await tx
-					.select({ doctorUserId: schema.appointments.doctorUserId })
-					.from(schema.appointments)
-					.where(eq(schema.appointments.id, signedRow.appointmentId))
-					.limit(1);
-				doctorId = appRow?.doctorUserId ?? null;
-			}
-			if (!doctorId) {
-				const [staff] = await tx
-					.select({ id: schema.users.id })
-					.from(schema.users)
-					.where(eq(schema.users.organizationId, organizationId))
-					.limit(1);
-				doctorId = staff?.id ?? null;
-			}
-
-			if (patientId && doctorId) {
-				await tx
-					.insert(schema.outpatientVerifications)
-					.values({
-						organizationId,
-						visitId: input.visitId,
-						patientId,
-						doctorId,
-						status: "review",
-						submittedAt: savedAt,
-						editableDeadline: deadline,
-					})
-					.onConflictDoUpdate({
-						target: schema.outpatientVerifications.visitId,
-						set: {
-							status: "review",
-							submittedAt: savedAt,
-							editableDeadline: deadline,
-						},
-					});
-			}
-		} catch (verifError) {
-			console.warn("[visitsQuery] Предупреждение: регистрация в outpatientVerifications не удалась:", verifError);
-		}
+		/*
+		 * Свобода врача и версионный аудит («Исправленному верить»):
+		 * В частной стоматологии исключена принудительная бюрократическая блокировка через 24h
+		 * и стационарные комиссии начмедов (Приказ № 203н не должен парализовать работу клиники).
+		 * Любые исправления фиксируются в visit_diary_revisions без дедлайнов и замков.
+		 */
 
 		const signedVisit = projectVisitRow(signedRow);
 		const saveReceipt: VisitSaveReceipt = {
