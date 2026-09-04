@@ -65,6 +65,7 @@ import {
 	inventoryTransactions,
 	labItems,
 	labOrders,
+	organizations,
 	patients,
 	payments,
 	serviceCatalogItems,
@@ -72,6 +73,17 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
+import {
+	classifyServiceCategory,
+	DENTAL_SPECIALTY_NAMES_RU,
+	type DentalSpecialtyCategory,
+	type CategoryAccrualBreakdown,
+	generateDoctorT51Html,
+	type DoctorT51PrintPayload,
+	type DoctorT51VisitItem,
+	type DoctorT51LabItem,
+	isGeneralClinicOverheadConsumable,
+} from "@dental/shared";
 import {
 	currentMonthPeriod,
 	type ReportPeriod,
@@ -179,6 +191,8 @@ export type DoctorPayoutVisitService = {
 	readonly id: string;
 	readonly title: string;
 	readonly order804nCode: string | null;
+	readonly category?: string | null;
+	readonly specialty?: DentalSpecialtyCategory;
 	readonly toothCode: string | null;
 	readonly priceRub: number;
 	readonly quantity: number;
@@ -191,6 +205,8 @@ export type DoctorPayoutVisitMaterial = {
 	readonly unit: string;
 	readonly unitCostRub: number;
 	readonly totalCostRub: number;
+	readonly isOverheadConsumable?: boolean;
+	readonly coveredByClinic?: boolean;
 };
 
 export type DoctorPayoutVisit = {
@@ -241,6 +257,9 @@ export type DoctorPayoutRow = {
 	readonly materialMovementsUnpriced: number;
 	readonly materialsState: DoctorPayoutMaterialsState;
 
+	/** Себестоимость общеклинических расходников (салфетки, валики), оплаченных клиникой. */
+	readonly overheadCostRub?: number;
+
 	/** Расходы на зуботехническую лабораторию (ЗТЛ). */
 	readonly labCostRub: number;
 	readonly labOrdersCount: number;
@@ -258,6 +277,12 @@ export type DoctorPayoutRow = {
 	readonly accruedRub: number | null;
 	readonly withheldMaterialRub: number | null;
 	readonly payoutRub: number | null;
+
+	/** Детализация начислений по категориям (терапия, ортопедия, хирургия, ортодонтия, гигиена). */
+	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[];
+
+	/** Печатная форма расчетного листка Т-51. */
+	readonly t51Html?: string;
 
 	/** Причина и действие человеческим языком — для показа как есть. */
 	readonly note: string;
@@ -277,6 +302,8 @@ export type DoctorPayoutTotals = {
 	/** Касса без врача: платёж без визита или визит без приёма. */
 	readonly unattributedRevenueRub: number;
 	readonly materialCostRub: number;
+	/** Себестоимость общеклинических расходников (салфетки, валики), покрываемых клиникой. */
+	readonly overheadCostRub?: number;
 	readonly labCostRub: number;
 	/** Итоги считаются ТОЛЬКО по врачам, у которых ставка задана. */
 	readonly accruedRub: number;
@@ -327,6 +354,7 @@ export type PayoutFormulaInput = {
 	readonly materialMovements: number;
 	readonly commissionPct: number | null;
 	readonly materialDeductionPct: number | null;
+	readonly overheadCostRub?: number;
 	readonly labCostRub?: number;
 	readonly labOrdersCount?: number;
 	readonly labDeductionPct?: number | null;
@@ -615,18 +643,34 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 				materialCostRub: sql<number>`
 					coalesce(
 						sum(
-							coalesce(${inventoryTransactions}."unit_cost_rub", 0)
-							* abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
+							case
+								when coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)'
+								then 0
+								else coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
+							end
 						),
 						0
 					)::numeric(12,2)
 				`.as("material_cost_rub"),
+				overheadCostRub: sql<number>`
+					coalesce(
+						sum(
+							case
+								when coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)'
+								then coalesce(${inventoryTransactions}."unit_cost_rub", 0) * abs(coalesce(${inventoryTransactions}."quantity_changed", 0))
+								else 0
+							end
+						),
+						0
+					)::numeric(12,2)
+				`.as("overhead_cost_rub"),
 				movements: sql<number>`count(*)::int`.as("movements"),
 				movementsUnpriced: sql<number>`count(*) filter (
-					where ${inventoryTransactions}."unit_cost_rub" is null
+					where (${inventoryTransactions}."unit_cost_rub" is null
 					   or ${inventoryTransactions}."unit_cost_rub" = 0
 					   or ${inventoryTransactions}."quantity_changed" is null
-					   or ${inventoryTransactions}."quantity_changed" = 0
+					   or ${inventoryTransactions}."quantity_changed" = 0)
+					  and not (coalesce(${inventoryItems}."name", '') ~* '(салфетк|ватн.*валик|валик.*стомат|слюноотсос|нагрудник|бахил|стаканчик|перчатк|маск|чехол для позиционер|дезинфицирующ.*салфетк)')
 				)::int`.as("movements_unpriced"),
 			})
 			.from(inventoryTransactions)
@@ -636,6 +680,16 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			)
 			.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
 			.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+			.leftJoin(
+				inventoryItems,
+				and(
+					or(
+						eq(inventoryTransactions.itemId, inventoryItems.id),
+						eq(inventoryTransactions.inventoryItemId, inventoryItems.id),
+					),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
 			.where(
 				and(
 					eq(inventoryTransactions.organizationId, organizationId),
@@ -814,6 +868,10 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 					sql<number>`coalesce(${materials.materialCostRub}, 0)::numeric(12,2)`.as(
 						"doctor_material_cost_rub",
 					),
+				overheadCostRub:
+					sql<number>`coalesce(${materials.overheadCostRub}, 0)::numeric(12,2)`.as(
+						"doctor_overhead_cost_rub",
+					),
 				materialMovements:
 					sql<number>`coalesce(${materials.movements}, 0)::int`.as(
 						"doctor_material_movements",
@@ -887,6 +945,7 @@ function buildDoctorPayoutAggregateQuery(scope: DoctorPayoutScope) {
 			revenueRub: doctorRows.revenueRub,
 			paymentCount: doctorRows.paymentCount,
 			materialCostRub: doctorRows.materialCostRub,
+			overheadCostRub: doctorRows.overheadCostRub,
 			materialMovements: doctorRows.materialMovements,
 			materialMovementsUnpriced: doctorRows.materialMovementsUnpriced,
 			labCostRub: doctorRows.labCostRub,
@@ -1115,6 +1174,8 @@ async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope) {
 		visitId: string | null;
 		title: string;
 		order804nCode: string | null;
+		category: string | null;
+		specialty: string | null;
 		toothCode: string | null;
 		priceRub: unknown;
 		quantity: unknown;
@@ -1137,6 +1198,8 @@ async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope) {
 				visitId: treatmentItems.visitId,
 				title: treatmentItems.title,
 				order804nCode: serviceCatalogItems.order804nCode,
+				category: serviceCatalogItems.category,
+				specialty: serviceCatalogItems.specialty,
 				toothCode: treatmentItems.toothCode,
 				priceRub: treatmentItems.priceRub,
 				quantity: treatmentItems.quantity,
@@ -1260,12 +1323,44 @@ async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope) {
 			);
 	}
 
+	const orgRows = await db
+		.select({
+			name: organizations.name,
+			inn: organizations.inn,
+		})
+		.from(organizations)
+		.where(eq(organizations.id, organizationId))
+		.limit(1);
+	const organizationName = orgRows[0]?.name ?? "Стоматологическая клиника";
+	const organizationInn = orgRows[0]?.inn ?? undefined;
+
+	const doctorSpecialtyRates = await db
+		.select({
+			userId: doctorCommissions.userId,
+			specialty: doctorCommissions.specialty,
+			serviceCategory: doctorCommissions.serviceCategory,
+			commissionPct: doctorCommissions.commissionPct,
+		})
+		.from(doctorCommissions)
+		.where(
+			and(
+				eq(doctorCommissions.organizationId, organizationId),
+				eq(doctorCommissions.isActive, true),
+				lte(doctorCommissions.effectiveFrom, to),
+				isNotNull(doctorCommissions.userId),
+			),
+		)
+		.orderBy(desc(doctorCommissions.effectiveFrom));
+
 	return {
+		organizationName,
+		organizationInn,
 		paidVisitsDetails,
 		visitServices,
 		visitMaterials,
 		rawLabOrders,
 		rawLabItems,
+		doctorSpecialtyRates,
 	};
 }
 
@@ -1304,6 +1399,10 @@ export async function doctorPayouts(
 			row.materialCostRub,
 			"себестоимость материалов",
 		);
+		const overheadCostRub = moneyFromDb(
+			row.overheadCostRub ?? 0,
+			"общеклинические расходники",
+		);
 		const materialMovements = Number(row.materialMovements ?? 0);
 		const materialMovementsUnpriced = Number(
 			row.materialMovementsUnpriced ?? 0,
@@ -1329,6 +1428,7 @@ export async function doctorPayouts(
 			materialMovements,
 			commissionPct,
 			materialDeductionPct,
+			overheadCostRub,
 			labCostRub,
 			labOrdersCount,
 			labDeductionPct,
@@ -1358,27 +1458,40 @@ export async function doctorPayouts(
 			} else {
 				const servicesForVisit = drillDown.visitServices
 					.filter((srv) => srv.visitId === v.visitId)
-					.map((srv) => ({
-						id: srv.id,
-						title: srv.title,
-						order804nCode: srv.order804nCode ?? "A16.07.002",
-						toothCode: srv.toothCode ?? null,
-						priceRub: moneyFromDb(srv.priceRub, "цена услуги 804н"),
-						quantity: Number(srv.quantity ?? 1),
-					}));
+					.map((srv) => {
+						const specialty = classifyServiceCategory(
+							srv.category || srv.title,
+							srv.order804nCode,
+						);
+						return {
+							id: srv.id,
+							title: srv.title,
+							order804nCode: srv.order804nCode ?? "A16.07.002",
+							category: srv.category ?? null,
+							specialty,
+							toothCode: srv.toothCode ?? null,
+							priceRub: moneyFromDb(srv.priceRub, "цена услуги 804н"),
+							quantity: Number(srv.quantity ?? 1),
+						};
+					});
 
 				const materialsForVisit = drillDown.visitMaterials
 					.filter((mat) => mat.visitId === v.visitId)
 					.map((mat) => {
 						const qty = Math.abs(Number(mat.quantityChanged ?? 0));
 						const unitCost = moneyFromDb(mat.unitCostRub, "себестоимость материала");
+						const totalCost = roundMoney(new Decimal(qty).times(new Decimal(unitCost)));
+						const matName = mat.name ?? "Расходный материал";
+						const isOverhead = isGeneralClinicOverheadConsumable(matName);
 						return {
 							id: mat.id,
-							name: mat.name ?? "Расходный материал",
+							name: matName,
 							quantity: qty,
 							unit: mat.unit ?? "шт",
 							unitCostRub: unitCost,
-							totalCostRub: roundMoney(new Decimal(qty).times(new Decimal(unitCost))),
+							totalCostRub: totalCost,
+							isOverheadConsumable: isOverhead,
+							coveredByClinic: isOverhead,
 						};
 					});
 
@@ -1458,6 +1571,108 @@ export async function doctorPayouts(
 			};
 		});
 
+		// Build specialty category breakdown
+		const doctorRates = drillDown.doctorSpecialtyRates.filter(
+			(r) => r.userId === row.doctorUserId,
+		);
+		const categoryTotals = new Map<DentalSpecialtyCategory, number>();
+		for (const v of doctorVisitsList) {
+			for (const srv of v.services) {
+				const cat = srv.specialty ?? "other";
+				const current = categoryTotals.get(cat) ?? 0;
+				const srvCost = roundMoney(new Decimal(srv.priceRub).times(srv.quantity));
+				categoryTotals.set(cat, roundMoney(new Decimal(current).plus(srvCost)));
+			}
+		}
+
+		const categoryBreakdown: CategoryAccrualBreakdown[] = [];
+		for (const [cat, grossRub] of categoryTotals.entries()) {
+			const matchedRate = doctorRates.find(
+				(r) =>
+					(r.serviceCategory && r.serviceCategory.toLowerCase() === cat.toLowerCase()) ||
+					(r.specialty && r.specialty.toLowerCase() === cat.toLowerCase()),
+			);
+			const appliedPct =
+				matchedRate && isUsablePercent(percentFromDb(matchedRate.commissionPct, "specialty commission"))
+					? percentFromDb(matchedRate.commissionPct, "specialty commission")!
+					: (commissionPct ?? 0);
+
+			const grossKop = Math.round(grossRub * 100);
+			const accruedRub = percentOfMoney(grossRub, appliedPct);
+			const accruedKop = Math.round(accruedRub * 100);
+
+			categoryBreakdown.push({
+				category: cat,
+				categoryNameRu: DENTAL_SPECIALTY_NAMES_RU[cat] ?? cat,
+				appliedPercent: appliedPct,
+				grossRevenueKop: grossKop as any,
+				grossRevenueRub: grossRub,
+				netBaseKop: grossKop as any,
+				netBaseRub: grossRub,
+				accruedKop: accruedKop as any,
+				accruedRub,
+			});
+		}
+
+		const t51Visits: DoctorT51VisitItem[] = doctorVisitsList.flatMap((v) =>
+			v.services.map((srv) => {
+				const srvTotal = roundMoney(new Decimal(srv.priceRub).times(srv.quantity));
+				const srvAccrued = percentOfMoney(srvTotal, commissionPct ?? 0);
+				return {
+					visitId: v.visitId,
+					visitDate: v.visitDate,
+					patientName: v.patientName,
+					medicalCardNumber: v.medicalCardNumber,
+					serviceTitle: srv.title,
+					order804nCode: srv.order804nCode,
+					toothCode: srv.toothCode,
+					priceRub: srvTotal,
+					accruedRub: srvAccrued,
+				};
+			}),
+		);
+
+		const t51LabOrders: DoctorT51LabItem[] = doctorLabOrdersList.map((lo) => ({
+			orderNumber: lo.orderNumber,
+			patientName: lo.patientName,
+			restorationType: lo.restorationType,
+			toothFdi: lo.toothFdi,
+			priceRub: lo.priceRub,
+			withheldRub: lo.withheldRub,
+			isWarranty: Boolean(lo.isWarranty),
+		}));
+
+		const t51Payload: DoctorT51PrintPayload = {
+			organizationName: drillDown.organizationName,
+			organizationInn: drillDown.organizationInn,
+			doctorName: row.doctorName,
+			personnelNumber: row.doctorUserId.slice(0, 8).toUpperCase(),
+			specialtyTitle: row.role === "doctor" ? "Врач-стоматолог" : row.role,
+			periodFromIso: scope.from.toISOString(),
+			periodToIso: scope.to.toISOString(),
+			grossRevenueRub: revenueRub,
+			netBaseRevenueRub: roundMoney(
+				Decimal.max(
+					0,
+					new Decimal(revenueRub)
+						.minus(new Decimal(labCostRub))
+						.minus(new Decimal(materialCostRub)),
+				),
+			),
+			pieceworkAccruedRub: computed.accruedRub ?? 0,
+			totalAccruedRub: computed.accruedRub ?? 0,
+			ndflTaxRub: roundMoney(new Decimal(computed.accruedRub ?? 0).times(0.13)),
+			withheldLabRub: computed.withheldLabRub ?? 0,
+			withheldMaterialRub: computed.withheldMaterialRub ?? 0,
+			overheadConsumablesCoveredRub: overheadCostRub,
+			netPayoutRub: computed.payoutRub ?? 0,
+			categoryBreakdown: categoryBreakdown.length > 0 ? categoryBreakdown : undefined,
+			visits: t51Visits.length > 0 ? t51Visits : undefined,
+			labOrders: t51LabOrders.length > 0 ? t51LabOrders : undefined,
+		};
+
+		const t51Html = generateDoctorT51Html(t51Payload);
+
 		return {
 			doctorUserId: row.doctorUserId,
 			doctorName: row.doctorName,
@@ -1466,6 +1681,7 @@ export async function doctorPayouts(
 			revenueRub,
 			paymentCount: Number(row.paymentCount ?? 0),
 			materialCostRub,
+			overheadCostRub,
 			materialMovements,
 			materialMovementsUnpriced,
 			materialsState,
@@ -1482,6 +1698,8 @@ export async function doctorPayouts(
 			accruedRub: computed.accruedRub,
 			withheldMaterialRub: computed.withheldMaterialRub,
 			payoutRub: computed.payoutRub,
+			categoryBreakdown: categoryBreakdown.length > 0 ? categoryBreakdown : undefined,
+			t51Html,
 			note: payoutRowNote({
 				state: computed.state,
 				materialsState,
@@ -1516,12 +1734,14 @@ export async function doctorPayouts(
 	let withheldLab = new Decimal(0);
 	let payout = new Decimal(0);
 	let materialCost = new Decimal(0);
+	let totalOverheadCost = new Decimal(0);
 	let totalLabCost = new Decimal(0);
 	let doctorsCounted = 0;
 	let doctorsWithoutRate = 0;
 
 	for (const row of rows) {
 		materialCost = materialCost.plus(new Decimal(row.materialCostRub));
+		totalOverheadCost = totalOverheadCost.plus(new Decimal(row.overheadCostRub ?? 0));
 		totalLabCost = totalLabCost.plus(new Decimal(row.labCostRub));
 		if (
 			row.state === "computed" &&
@@ -1563,10 +1783,6 @@ export async function doctorPayouts(
 		);
 	}
 	limitations.push(
-		"Разные проценты за терапию и ортопедию не поддержаны: ставка применяется как одна на врача. " +
-			"Категория услуги у платежа в базе не хранится, привязать процент к услуге нечем.",
-	);
-	limitations.push(
 		"Возвраты в расчёт не входят: перевод платежа в статус «возврат» в рабочем коде не выполняет никто, " +
 			"и колонка возвратов была бы гарантированным нулём.",
 	);
@@ -1582,6 +1798,7 @@ export async function doctorPayouts(
 				new Decimal(totalRevenueRub).minus(new Decimal(attributableRevenueRub)),
 			),
 			materialCostRub: roundMoney(materialCost),
+			overheadCostRub: roundMoney(totalOverheadCost),
 			labCostRub: roundMoney(totalLabCost),
 			accruedRub: roundMoney(accrued),
 			withheldMaterialRub: roundMoney(withheldMaterial),
@@ -1594,4 +1811,76 @@ export async function doctorPayouts(
 		limitations,
 		isEmpty: rows.length === 0,
 	};
+}
+
+/**
+ * Генерирует расчетный листок по форме Т-51 для конкретной строки выплаты врача.
+ */
+export function generateDoctorT51Payslip(
+	doctorRow: DoctorPayoutRow,
+	options?: {
+		organizationName?: string;
+		organizationInn?: string;
+		periodFrom?: string;
+		periodTo?: string;
+	},
+): string {
+	const t51Visits: DoctorT51VisitItem[] = (doctorRow.visits ?? []).flatMap((v) =>
+		v.services.map((srv) => {
+			const srvTotal = roundMoney(new Decimal(srv.priceRub).times(srv.quantity));
+			const srvAccrued = percentOfMoney(srvTotal, doctorRow.commissionPct ?? 0);
+			return {
+				visitId: v.visitId,
+				visitDate: v.visitDate,
+				patientName: v.patientName,
+				medicalCardNumber: v.medicalCardNumber,
+				serviceTitle: srv.title,
+				order804nCode: srv.order804nCode,
+				toothCode: srv.toothCode,
+				priceRub: srvTotal,
+				accruedRub: srvAccrued,
+			};
+		}),
+	);
+
+	const t51LabOrders: DoctorT51LabItem[] = (doctorRow.labOrders ?? []).map((lo) => ({
+		orderNumber: lo.orderNumber,
+		patientName: lo.patientName,
+		restorationType: lo.restorationType,
+		toothFdi: lo.toothFdi,
+		priceRub: lo.priceRub,
+		withheldRub: lo.withheldRub,
+		isWarranty: Boolean(lo.isWarranty),
+	}));
+
+	const payload: DoctorT51PrintPayload = {
+		organizationName: options?.organizationName ?? "Стоматологическая клиника",
+		organizationInn: options?.organizationInn,
+		doctorName: doctorRow.doctorName,
+		personnelNumber: doctorRow.doctorUserId.slice(0, 8).toUpperCase(),
+		specialtyTitle: doctorRow.role === "doctor" ? "Врач-стоматолог" : doctorRow.role,
+		periodFromIso: options?.periodFrom ?? new Date().toISOString(),
+		periodToIso: options?.periodTo ?? new Date().toISOString(),
+		grossRevenueRub: doctorRow.revenueRub,
+		netBaseRevenueRub: roundMoney(
+			Decimal.max(
+				0,
+				new Decimal(doctorRow.revenueRub)
+					.minus(new Decimal(doctorRow.labCostRub))
+					.minus(new Decimal(doctorRow.materialCostRub)),
+			),
+		),
+		pieceworkAccruedRub: doctorRow.accruedRub ?? 0,
+		totalAccruedRub: doctorRow.accruedRub ?? 0,
+		ndflTaxRub: roundMoney(new Decimal(doctorRow.accruedRub ?? 0).times(0.13)),
+		withheldLabRub: doctorRow.withheldLabRub ?? 0,
+		withheldMaterialRub: doctorRow.withheldMaterialRub ?? 0,
+		overheadConsumablesCoveredRub: doctorRow.overheadCostRub ?? 0,
+		netPayoutRub: doctorRow.payoutRub ?? 0,
+		categoryBreakdown: doctorRow.categoryBreakdown,
+		visits: t51Visits.length > 0 ? t51Visits : undefined,
+		labOrders: t51LabOrders.length > 0 ? t51LabOrders : undefined,
+	};
+
+	return generateDoctorT51Html(payload);
 }

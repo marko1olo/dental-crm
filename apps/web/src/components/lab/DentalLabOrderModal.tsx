@@ -329,7 +329,9 @@ export function DentalLabOrderModal({
 		}
 
 		// Проверка финансового шлюза (50% аванс за этап)
-		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed) {
+		// Не блокировать гарантийные переделки (0 ₽) и работы без оплаты пациентом (Мандат 8e / Без палок в колёса)
+		const isWarrantyOrder = Boolean(initialOrder?.isWarrantyRework || totalLabPriceRub === 0 || Number(priceRubInput) === 0);
+		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed && !isWarrantyOrder) {
 			setIsGateModalOpen(true);
 			return;
 		}
@@ -345,6 +347,9 @@ export function DentalLabOrderModal({
 					: shadeClassical;
 
 			const comprehensiveNotes = [
+				initialOrder?.isWarrantyRework ? "ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽ ДЛЯ ПАЦИЕНТА)" : null,
+				initialOrder?.reworkReason ? `Причина рекламации: ${initialOrder.reworkReason}` : null,
+				initialOrder?.originalOrderNumber ? `Исходный наряд ЗТЛ: № ${initialOrder.originalOrderNumber}` : null,
 				clinicalNotes.trim(),
 				`Оттискная масса / Скан: ${impressionType}`,
 				`Конструкция: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`,

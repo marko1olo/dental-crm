@@ -46,6 +46,10 @@ export interface DentalLabOrderData {
 	clinicSharePct?: number;
 	doctorSharePct?: number;
 	doctorDeductionRub?: number | null;
+	isWarrantyRework?: boolean;
+	reworkReason?: string;
+	originalOrderId?: string;
+	originalOrderNumber?: string;
 	createdAt?: string;
 	updatedAt?: string;
 }
@@ -668,6 +672,21 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		surfaceTexture: "smooth",
 		cementGapMicrons: 50,
 		badge: "База",
+	},
+	{
+		id: "warranty_rework_free",
+		title: "Гарантийная переделка (0 ₽ / 4 дня)",
+		shortDesc: "Бесплатная гарантийная доработка / переделка скола или прилегания (0 ₽ для пациента)",
+		constructionType: "single_crown",
+		materialId: "zirconia_multilayer",
+		colorVita: "A2",
+		workingDays: 4,
+		priceRub: 0,
+		occlusalScheme: "mutually_protected",
+		contactTightness: "normal",
+		surfaceTexture: "natural_anatomy",
+		cementGapMicrons: 30,
+		badge: "Гарантия (0 ₽)",
 	},
 ];
 

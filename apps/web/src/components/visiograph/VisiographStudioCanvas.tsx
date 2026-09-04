@@ -10,6 +10,7 @@
  */
 
 import {
+	Activity,
 	AlertTriangle,
 	CheckCircle2,
 	Compass,
@@ -75,6 +76,7 @@ export interface VisiographStudioCanvasProps {
 	toothCode?: string | null | undefined;
 	studyId?: string | undefined;
 	doctorName?: string | undefined;
+	initialTool?: ActiveVisiographTool;
 	onSaveToRecord?: (
 		imageDataUri: string,
 		exportMeta: {
@@ -92,7 +94,8 @@ export type ActiveVisiographTool =
 	| "ruler"
 	| "calibrate"
 	| "angle"
-	| "lesion";
+	| "lesion"
+	| "root_canal";
 
 export function VisiographStudioCanvas({
 	imageUrl,
@@ -101,6 +104,7 @@ export function VisiographStudioCanvas({
 	toothCode = null,
 	studyId,
 	doctorName = "Врач-рентгенолог ДЕНТЕ",
+	initialTool = "pointer",
 	onSaveToRecord,
 	onClose,
 }: VisiographStudioCanvasProps) {
@@ -116,7 +120,7 @@ export function VisiographStudioCanvas({
 	});
 
 	// Active tool
-	const [activeTool, setActiveTool] = useState<ActiveVisiographTool>("pointer");
+	const [activeTool, setActiveTool] = useState<ActiveVisiographTool>(initialTool);
 
 	// Calibration
 	const [calibration, setCalibration] = useState<CalibrationReference>({
@@ -258,6 +262,47 @@ export function VisiographStudioCanvas({
 					}
 					ctx.stroke();
 				}
+			} else if (activeTool === "root_canal") {
+				ctx.strokeStyle = "#10b981";
+				ctx.lineWidth = 2.5;
+				ctx.setLineDash([2, 2]);
+				ctx.beginPath();
+				const first = drawingPoints[0];
+				if (first) {
+					ctx.moveTo(first.x, first.y);
+					for (let i = 1; i < drawingPoints.length; i++) {
+						const p = drawingPoints[i];
+						if (p) ctx.lineTo(p.x, p.y);
+					}
+					if (hoverPos) {
+						ctx.lineTo(hoverPos.x, hoverPos.y);
+					}
+					ctx.stroke();
+
+					// Draw point nodes
+					const allPts = hoverPos ? [...drawingPoints, hoverPos] : drawingPoints;
+					for (const pt of allPts) {
+						ctx.fillStyle = "#10b981";
+						ctx.beginPath();
+						ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+						ctx.fill();
+					}
+
+					// Live working length readout
+					let dist = 0;
+					for (let i = 1; i < allPts.length; i++) {
+						const pA = allPts[i - 1];
+						const pB = allPts[i];
+						if (pA && pB) dist += distance2D(pA, pB);
+					}
+					const lengthMm = dist * calibration.scaleMmPerPixel;
+					const last = allPts[allPts.length - 1];
+					if (last) {
+						ctx.fillStyle = "#10b981";
+						ctx.font = "bold 13px monospace";
+						ctx.fillText(`⚡ WL = ${lengthMm.toFixed(1)} мм (Апекс)`, last.x + 8, last.y - 8);
+					}
+				}
 			}
 		}
 		ctx.restore();
@@ -379,6 +424,8 @@ export function VisiographStudioCanvas({
 				}
 			}
 			setDrawingPoints((prev) => [...prev, pt]);
+		} else if (activeTool === "root_canal") {
+			setDrawingPoints((prev) => [...prev, pt]);
 		}
 	};
 
@@ -390,6 +437,25 @@ export function VisiographStudioCanvas({
 				toothCode ?? undefined,
 			);
 			setLesions((prev) => [...prev, lesion]);
+			setDrawingPoints([]);
+		} else if (activeTool === "root_canal" && drawingPoints.length >= 2) {
+			let totalDist = 0;
+			for (let i = 1; i < drawingPoints.length; i++) {
+				const pA = drawingPoints[i - 1];
+				const pB = drawingPoints[i];
+				if (pA && pB) totalDist += distance2D(pA, pB);
+			}
+			const lengthMm = totalDist * calibration.scaleMmPerPixel;
+			const p1 = drawingPoints[0]!;
+			const pLast = drawingPoints[drawingPoints.length - 1]!;
+			const newRuler = calculateRuler(
+				p1,
+				pLast,
+				calibration.scaleMmPerPixel,
+				`Канал: ${lengthMm.toFixed(1)} мм (WL/Апекс)`,
+			);
+			newRuler.color = "#10b981";
+			setRulers((prev) => [...prev, newRuler]);
 			setDrawingPoints([]);
 		}
 	};
@@ -407,6 +473,9 @@ export function VisiographStudioCanvas({
 	// Apply Preset
 	const handleApplyPreset = (presetName: string) => {
 		switch (presetName) {
+			case "endo":
+				setParams({ brightness: -5, contrast: 45, gamma: 0.85, sharpness: 55, invert: false });
+				break;
 			case "bone":
 				setParams({ brightness: 5, contrast: 25, gamma: 0.9, sharpness: 35, invert: false });
 				break;
@@ -651,10 +720,51 @@ export function VisiographStudioCanvas({
 					>
 						<AlertTriangle size={14} /> Очаг деструкции (мм²)
 					</button>
+
+					<button
+						type="button"
+						onClick={() => {
+							setActiveTool("root_canal");
+							setDrawingPoints([]);
+						}}
+						style={{
+							background: activeTool === "root_canal" ? "#047857" : "#21262d",
+							color: activeTool === "root_canal" ? "#a7f3d0" : "#10b981",
+							border: `1px solid ${activeTool === "root_canal" ? "#10b981" : "#30363d"}`,
+							borderRadius: "6px",
+							padding: "6px 10px",
+							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							gap: "4px",
+							fontSize: "0.82rem",
+							fontWeight: 700,
+						}}
+						title="Эндо-линейка (Apex Locator): измерение длины корневого канала в мм по анатомической кривой корня (двойной клик для фиксации)"
+					>
+						<Activity size={14} /> Эндо-линейка (Апекс, мм)
+					</button>
 				</div>
 
 				{/* Presets and Export */}
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+					<button
+						type="button"
+						onClick={() => handleApplyPreset("endo")}
+						style={{
+							background: "#21262d",
+							color: "#34d399",
+							border: "1px solid #30363d",
+							borderRadius: "6px",
+							padding: "5px 8px",
+							fontSize: "0.78rem",
+							cursor: "pointer",
+							fontWeight: 600,
+						}}
+						title="Пресет Эндодонтия: контрастирование апексов и устьев каналов"
+					>
+						Эндо
+					</button>
 					<button
 						type="button"
 						onClick={() => handleApplyPreset("bone")}

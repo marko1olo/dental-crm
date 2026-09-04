@@ -483,6 +483,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 			case "fitting_scheduled":
 			case "fitting_in_mouth":
 			case "correction_remake":
+			case "warranty_rework":
 			case "refitting":
 				return "refitting";
 			case "delivered_completed":
@@ -534,6 +535,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				return "clinical_try_in";
 			case "refitting":
 			case "correction_remake":
+			case "warranty_rework":
 			case "refitting_remake":
 				return "refitting_remake";
 			case "delivered_completed":
@@ -619,7 +621,13 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				return { kind: "not_found" as const };
 			}
 
-			if (currentOrder.isLockedInstalled) {
+			const isWarrantyRequest =
+				targetStatus === "refitting" ||
+				body.stage === "warranty_rework" ||
+				body.stage === "correction_remake" ||
+				body.stage === "refitting";
+
+			if (currentOrder.isLockedInstalled && !isWarrantyRequest) {
 				return { kind: "locked_installed" as const };
 			}
 
@@ -637,6 +645,8 @@ export async function registerLabRoutes(app: FastifyInstance) {
 						["in_progress", "received", "completed", "cancelled"].includes(targetStatus)) ||
 					(currentStatus === "sent" &&
 						["in_progress", "shipped", "received", "cancelled"].includes(targetStatus)) ||
+					(currentStatus === "completed" &&
+						["refitting"].includes(targetStatus)) ||
 					targetStatus === "cancelled";
 
 				if ((!allowed || !allowed.includes(targetStatus)) && !isPermittedShortcut) {
@@ -686,6 +696,9 @@ export async function registerLabRoutes(app: FastifyInstance) {
 
 			if (targetStatus) {
 				updateValues.status = targetStatus;
+			}
+			if (isWarrantyRequest) {
+				updateValues.isLockedInstalled = false;
 			}
 			if (updatedClinicalNotes !== undefined) {
 				updateValues.clinicalNotes = updatedClinicalNotes;

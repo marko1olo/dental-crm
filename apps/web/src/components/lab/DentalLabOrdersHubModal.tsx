@@ -34,6 +34,7 @@ import {
 	Clock,
 	Truck,
 	RotateCcw,
+	Send,
 } from "lucide-react";
 import "./dentalLabWorkflow.css";
 import {
@@ -213,6 +214,14 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	const [newAppointmentId, setNewAppointmentId] = useState<string>("");
 	const [newClinicalNotes, setNewClinicalNotes] = useState<string>("");
 
+	// Всплывающие уведомления (Мандат 8e / Мгновенная обратная связь врачу)
+	const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+	const showToast = useCallback((msg: string) => {
+		setToastMessage(msg);
+		setTimeout(() => setToastMessage(null), 3500);
+	}, []);
+
 	// ─── СТАТИСТИКА И ДЕТЕКЦИЯ ───────────────────────────────────────────────
 
 	const delayedOrders = useMemo(() => {
@@ -289,7 +298,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
 		if (onSaveOrder) onSaveOrder(updated);
-	}, [onSaveOrder]);
+		showToast(`Наряд № ${order.orderNumber}: переведен в статус «${LAB_WORKFLOW_STATUSES[nextStage].nameRu}»`);
+	}, [onSaveOrder, showToast]);
 
 	// Отправка на гарантийную переделку / рекламацию в ЗТЛ
 	const handleWarrantyReworkSubmit = useCallback((e?: React.FormEvent) => {
@@ -304,8 +314,9 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 		setOrders((prev) => prev.map((o) => (o.id === warrantyReworkOrder.id ? updated : o)));
 		if (onSaveOrder) onSaveOrder(updated);
+		showToast(`Наряд № ${warrantyReworkOrder.orderNumber}: оформлена гарантийная рекламация (0 ₽ для пациента)`);
 		setWarrantyReworkOrder(null);
-	}, [warrantyReworkOrder, warrantyReason, onSaveOrder]);
+	}, [warrantyReworkOrder, warrantyReason, onSaveOrder, showToast]);
 
 	// Создание нового наряда
 	const handleCreateOrderSubmit = useCallback((e: React.FormEvent) => {
@@ -341,6 +352,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 		setOrders((prev) => [created, ...prev]);
 		if (onSaveOrder) onSaveOrder(created);
+		showToast(`Наряд № ${created.orderNumber} успешно создан`);
 
 		// Сброс формы
 		setIsCreateModalOpen(false);
@@ -366,6 +378,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		newAppointmentId,
 		newClinicalNotes,
 		onSaveOrder,
+		showToast,
 	]);
 
 	// Экспорт в CSV
@@ -401,6 +414,29 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	return (
 		<div className="ztl-hub-backdrop" role="dialog" aria-modal="true" aria-labelledby="ztl-hub-title">
 			<div className="ztl-hub-modal">
+				{toastMessage && (
+					<div
+						style={{
+							position: "absolute",
+							top: "4.5rem",
+							right: "2rem",
+							zIndex: 10001,
+							background: "var(--ink, #0f172a)",
+							color: "var(--paper, #ffffff)",
+							padding: "0.5rem 1rem",
+							borderRadius: "8px",
+							boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+							display: "flex",
+							alignItems: "center",
+							gap: "0.5rem",
+							fontSize: "0.8125rem",
+							fontWeight: 600,
+						}}
+					>
+						<CheckCircle2 size={16} style={{ color: "var(--ok-fg, #10b981)" }} />
+						<span>{toastMessage}</span>
+					</div>
+				)}
 				{/* ─── 1. ШАПКА ХАБА ────────────────────────────────────────────── */}
 				<header className="ztl-hub-header">
 					<div className="ztl-hub-title-group">
@@ -601,9 +637,10 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 													</span>
 												</div>
 
-												{order.isWarrantyRework && order.originalOrderNumber && (
-													<div style={{ marginTop: "4px", fontSize: "10.5px", color: "#e11d48", fontWeight: 700 }}>
-														🔄 Рекламация наряда № {order.originalOrderNumber}
+												{order.isWarrantyRework && (
+													<div style={{ marginTop: "4px", fontSize: "10.5px", color: "#e11d48", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
+														<RotateCcw size={11} />
+														<span>ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽){order.originalOrderNumber ? ` • исх. № ${order.originalOrderNumber}` : ""}</span>
 													</div>
 												)}
 
@@ -643,8 +680,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 
 												{/* Финансы: цена / себестоимость в копейках */}
 												<div className="ztl-card-price-row">
-													<span title="Стоимость для пациента">
-														{order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽
+													<span title="Стоимость для пациента" style={order.isWarrantyRework ? { color: "#10b981", fontWeight: 700 } : undefined}>
+														{order.isWarrantyRework ? "0 ₽ (Гарантия)" : `${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽`}
 													</span>
 													<span style={{ color: "var(--muted, #64748b)", fontSize: "10px" }} title="Себестоимость ЗТЛ">
 														Себест: {order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽
@@ -683,7 +720,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 															title="Отправить на гарантийную переделку / рекламацию"
 														>
 															<RotateCcw size={12} />
-															<span>Рекламация</span>
+															<span>Рекламация (0 ₽)</span>
 														</button>
 													) : order.currentStage === "warranty_rework" ? (
 														<button
@@ -692,8 +729,38 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 															onClick={() => handleAdvanceStage(order)}
 															title="Отправить работу повторно в ЗТЛ"
 														>
-															<ChevronRight size={12} />
-															<span>В ЗТЛ</span>
+															<Send size={12} />
+															<span>Отправить в ЗТЛ</span>
+														</button>
+													) : order.currentStage === "draft" ? (
+														<button
+															type="button"
+															className="ztl-btn-card-action ztl-btn-advance"
+															onClick={() => handleAdvanceStage(order)}
+															title="Передать наряд и слепки в ЗТЛ"
+														>
+															<Send size={12} />
+															<span>Отправить в ЗТЛ</span>
+														</button>
+													) : order.currentStage === "sent_to_lab" ? (
+														<button
+															type="button"
+															className="ztl-btn-card-action ztl-btn-advance"
+															onClick={() => handleAdvanceStage(order)}
+															title="Назначить клиническую примерку"
+														>
+															<Calendar size={12} />
+															<span>Примерка назначена</span>
+														</button>
+													) : order.currentStage === "fitting_scheduled" ? (
+														<button
+															type="button"
+															className="ztl-btn-card-action ztl-btn-advance"
+															onClick={() => handleAdvanceStage(order)}
+															title="Зафиксировать и сдать работу пациенту"
+														>
+															<CheckCircle2 size={12} />
+															<span>Сдано пациенту</span>
 														</button>
 													) : (
 														<button
@@ -703,6 +770,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 															title="Передвинуть на следующий клинический статус"
 														>
 															<ChevronRight size={12} />
+															<span>Далее</span>
 														</button>
 													)}
 												</div>

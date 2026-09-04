@@ -21,6 +21,7 @@ import {
 	calculatePinchZoom,
 	disposeWebGlRenderingContext,
 	measureDistanceMm,
+	measureRootCanalWorkingLength,
 	type CalibratedRulerMeasurement,
 	type DicomViewportState,
 	type Point2D,
@@ -45,6 +46,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const glRef = useRef<WebGLRenderingContext | null>(null);
 	const rawImageRef = useRef<HTMLImageElement | null>(null);
+	const filteredCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
 	// Touch gesture tracking refs
 	const touchStartDistanceRef = useRef<number>(0);
@@ -57,6 +59,61 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 	const [draftRulerStart, setDraftRulerStart] = useState<Point2D | null>(null);
 	const [draftRulerCurrent, setDraftRulerCurrent] = useState<Point2D | null>(null);
 
+	// In-progress root canal tracing points
+	const [draftCanalPoints, setDraftCanalPoints] = useState<Point2D[]>([]);
+
+	// Cache offscreen filtered canvas buffer when tonal/filter parameters change
+	const updateFilteredBuffer = useCallback(() => {
+		const img = rawImageRef.current;
+		if (!img || img.width === 0 || img.height === 0) return;
+
+		let offscreen = filteredCanvasRef.current;
+		if (!offscreen) {
+			offscreen = document.createElement("canvas");
+			filteredCanvasRef.current = offscreen;
+		}
+		offscreen.width = img.width;
+		offscreen.height = img.height;
+		const offCtx = offscreen.getContext("2d");
+		if (!offCtx) return;
+
+		offCtx.drawImage(img, 0, 0);
+		try {
+			const imgData = offCtx.getImageData(0, 0, img.width, img.height);
+			const lut = buildDicomTonalLUT({
+				windowWidth: viewportState.windowWidth,
+				windowCenter: viewportState.windowCenter,
+				invert: viewportState.invert,
+				gamma: viewportState.gamma,
+			});
+
+			for (let i = 0; i < imgData.data.length; i += 4) {
+				imgData.data[i] = lut[imgData.data[i]!]!;
+				imgData.data[i + 1] = lut[imgData.data[i + 1]!]!;
+				imgData.data[i + 2] = lut[imgData.data[i + 2]!]!;
+			}
+
+			if (viewportState.sharpen > 0 && img.width <= 1200) {
+				const sharpened = apply2DConvolutionFilter(imgData.data, img.width, img.height, SHARPEN_KERNEL_3X3);
+				imgData.data.set(sharpened);
+			} else if (viewportState.emboss && img.width <= 1200) {
+				const embossed = apply2DConvolutionFilter(imgData.data, img.width, img.height, EMBOSS_SHADOW_KERNEL_3X3, 128);
+				imgData.data.set(embossed);
+			}
+
+			offCtx.putImageData(imgData, 0, 0);
+		} catch {
+			// Fallback keeps raw drawImage
+		}
+	}, [
+		viewportState.windowWidth,
+		viewportState.windowCenter,
+		viewportState.invert,
+		viewportState.gamma,
+		viewportState.sharpen,
+		viewportState.emboss,
+	]);
+
 	// Load source image
 	useEffect(() => {
 		const img = new Image();
@@ -64,11 +121,20 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		img.src = imageSrc;
 		img.onload = () => {
 			rawImageRef.current = img;
+			updateFilteredBuffer();
 			renderScene();
 		};
-	}, [imageSrc]);
+	}, [imageSrc, updateFilteredBuffer]);
 
-	// Render canvas scene
+	// Rebuild filtered buffer when filters change
+	useEffect(() => {
+		if (rawImageRef.current) {
+			updateFilteredBuffer();
+			renderScene();
+		}
+	}, [updateFilteredBuffer]);
+
+	// Render canvas scene: zero DOM allocation during pan/zoom
 	const renderScene = useCallback(() => {
 		const canvas = canvasRef.current;
 		const img = rawImageRef.current;
@@ -90,48 +156,17 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		ctx.scale(viewportState.zoom, viewportState.zoom);
 		ctx.translate(-img.width / 2, -img.height / 2);
 
-		// Draw base image into offscreen buffer for filtering
-		const offscreen = document.createElement("canvas");
-		offscreen.width = img.width;
-		offscreen.height = img.height;
-		const offCtx = offscreen.getContext("2d");
-		if (offCtx) {
-			offCtx.drawImage(img, 0, 0);
-			try {
-				const imgData = offCtx.getImageData(0, 0, img.width, img.height);
-				const lut = buildDicomTonalLUT({
-					windowWidth: viewportState.windowWidth,
-					windowCenter: viewportState.windowCenter,
-					invert: viewportState.invert,
-					gamma: viewportState.gamma,
-				});
-
-				// Apply LUT
-				for (let i = 0; i < imgData.data.length; i += 4) {
-					imgData.data[i] = lut[imgData.data[i]!]!;
-					imgData.data[i + 1] = lut[imgData.data[i + 1]!]!;
-					imgData.data[i + 2] = lut[imgData.data[i + 2]!]!;
-				}
-
-				// Apply Sharpen / Emboss filters if enabled
-				if (viewportState.sharpen > 0 && img.width <= 1200) {
-					const sharpened = apply2DConvolutionFilter(imgData.data, img.width, img.height, SHARPEN_KERNEL_3X3);
-					imgData.data.set(sharpened);
-				} else if (viewportState.emboss && img.width <= 1200) {
-					const embossed = apply2DConvolutionFilter(imgData.data, img.width, img.height, EMBOSS_SHADOW_KERNEL_3X3, 128);
-					imgData.data.set(embossed);
-				}
-
-				offCtx.putImageData(imgData, 0, 0);
-				ctx.drawImage(offscreen, 0, 0);
-			} catch {
-				ctx.drawImage(img, 0, 0);
-			}
+		// Fast blit from pre-rendered filtered buffer
+		const filteredCanvas = filteredCanvasRef.current;
+		if (filteredCanvas) {
+			ctx.drawImage(filteredCanvas, 0, 0);
+		} else {
+			ctx.drawImage(img, 0, 0);
 		}
 
 		// Draw calibrated rulers
 		for (const r of measurements) {
-			drawRulerOnContext(ctx, r.p1, r.p2, `${r.lengthMm.toFixed(1)} мм`);
+			drawRulerOnContext(ctx, r.p1, r.p2, r.labelRu || `${r.lengthMm.toFixed(1)} мм`);
 		}
 
 		// Draw draft ruler in progress
@@ -140,8 +175,45 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 			drawRulerOnContext(ctx, draftRulerStart, draftRulerCurrent, `${m.distanceMm.toFixed(1)} мм (черновик)`, "#f59e0b");
 		}
 
+		// Draw draft root canal tracer in progress
+		if (draftCanalPoints.length > 0) {
+			const activePts = draftRulerCurrent ? [...draftCanalPoints, draftRulerCurrent] : draftCanalPoints;
+			ctx.save();
+			ctx.strokeStyle = "#10b981";
+			ctx.lineWidth = 2.5;
+			ctx.setLineDash([3, 3]);
+			ctx.beginPath();
+			const startPt = activePts[0];
+			if (startPt) {
+				ctx.moveTo(startPt.x, startPt.y);
+				for (let i = 1; i < activePts.length; i++) {
+					const pt = activePts[i];
+					if (pt) ctx.lineTo(pt.x, pt.y);
+				}
+				ctx.stroke();
+
+				// Draw apical markers
+				for (const pt of activePts) {
+					ctx.fillStyle = "#10b981";
+					ctx.beginPath();
+					ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
+					ctx.fill();
+				}
+
+				// Measure working length live
+				const canalResult = measureRootCanalWorkingLength(activePts, viewportState.calibrationMmPerPixel);
+				const lastPt = activePts[activePts.length - 1];
+				if (lastPt) {
+					ctx.fillStyle = "#10b981";
+					ctx.font = "bold 13px monospace";
+					ctx.fillText(`⚡ WL = ${canalResult.totalLengthMm.toFixed(1)} мм (Апекс)`, lastPt.x + 8, lastPt.y - 8);
+				}
+			}
+			ctx.restore();
+		}
+
 		ctx.restore();
-	}, [viewportState, measurements, draftRulerStart, draftRulerCurrent]);
+	}, [viewportState, measurements, draftRulerStart, draftRulerCurrent, draftCanalPoints]);
 
 	useEffect(() => {
 		renderScene();
@@ -201,35 +273,73 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		}
 	};
 
-	// Mouse click handler for Ruler tool
+	// Mouse click handler for Ruler and Root Canal Tracer tools
 	const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-		if (viewportState.activeTool !== "ruler") return;
 		const rect = canvasRef.current?.getBoundingClientRect();
 		if (!rect) return;
 
 		// Convert screen coordinate to image coordinate
 		const clickX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
 		const clickY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
+		const clickPt: Point2D = { x: clickX, y: clickY };
 
-		if (!draftRulerStart) {
-			setDraftRulerStart({ x: clickX, y: clickY });
-			setDraftRulerCurrent({ x: clickX, y: clickY });
-		} else {
-			const p2 = { x: clickX, y: clickY };
-			const dist = measureDistanceMm(draftRulerStart, p2, viewportState.calibrationMmPerPixel);
+		if (viewportState.activeTool === "ruler") {
+			if (!draftRulerStart) {
+				setDraftRulerStart(clickPt);
+				setDraftRulerCurrent(clickPt);
+			} else {
+				const dist = measureDistanceMm(draftRulerStart, clickPt, viewportState.calibrationMmPerPixel);
+				if (onAddMeasurement) {
+					onAddMeasurement({
+						id: `ruler-${Date.now()}`,
+						p1: draftRulerStart,
+						p2: clickPt,
+						lengthPx: dist.distancePx,
+						lengthMm: dist.distanceMm,
+						calibrationMmPerPixel: viewportState.calibrationMmPerPixel,
+						labelRu: `${dist.distanceMm.toFixed(1)} мм`,
+					});
+				}
+				setDraftRulerStart(null);
+				setDraftRulerCurrent(null);
+			}
+		} else if (viewportState.activeTool === "root_canal_tracer") {
+			setDraftCanalPoints((prev) => [...prev, clickPt]);
+		}
+	};
+
+	const handleCanvasDoubleClick = () => {
+		if (viewportState.activeTool === "root_canal_tracer" && draftCanalPoints.length >= 2) {
+			const m = measureRootCanalWorkingLength(draftCanalPoints, viewportState.calibrationMmPerPixel);
 			if (onAddMeasurement) {
 				onAddMeasurement({
-					id: `ruler-${Date.now()}`,
-					p1: draftRulerStart,
-					p2,
-					lengthPx: dist.distancePx,
-					lengthMm: dist.distanceMm,
+					id: `canal-${Date.now()}`,
+					p1: draftCanalPoints[0]!,
+					p2: draftCanalPoints[draftCanalPoints.length - 1]!,
+					lengthPx: m.totalLengthPx,
+					lengthMm: m.totalLengthMm,
 					calibrationMmPerPixel: viewportState.calibrationMmPerPixel,
-					labelRu: `${dist.distanceMm.toFixed(1)} мм`,
+					labelRu: `⚡ Канал: ${m.totalLengthMm.toFixed(1)} мм (WL/Apex)`,
 				});
 			}
-			setDraftRulerStart(null);
+			setDraftCanalPoints([]);
 			setDraftRulerCurrent(null);
+		}
+	};
+
+	const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+		if (viewportState.activeTool === "ruler" && draftRulerStart) {
+			const rect = canvasRef.current?.getBoundingClientRect();
+			if (!rect) return;
+			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
+			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
+			setDraftRulerCurrent({ x: currentX, y: currentY });
+		} else if (viewportState.activeTool === "root_canal_tracer" && draftCanalPoints.length > 0) {
+			const rect = canvasRef.current?.getBoundingClientRect();
+			if (!rect) return;
+			const currentX = (e.clientX - rect.left - (rect.width / 2 + viewportState.panX)) / viewportState.zoom + (rawImageRef.current?.width || 0) / 2;
+			const currentY = (e.clientY - rect.top - (rect.height / 2 + viewportState.panY)) / viewportState.zoom + (rawImageRef.current?.height || 0) / 2;
+			setDraftRulerCurrent({ x: currentX, y: currentY });
 		}
 	};
 
@@ -250,8 +360,18 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 		>
 			<canvas
 				ref={canvasRef}
-				style={{ width: "100%", height: "100%", display: "block", cursor: viewportState.activeTool === "ruler" ? "crosshair" : "grab" }}
+				style={{
+					width: "100%",
+					height: "100%",
+					display: "block",
+					cursor:
+						viewportState.activeTool === "ruler" || viewportState.activeTool === "root_canal_tracer"
+							? "crosshair"
+							: "grab",
+				}}
 				onClick={handleCanvasClick}
+				onDoubleClick={handleCanvasDoubleClick}
+				onMouseMove={handleMouseMove}
 			/>
 		</div>
 	);

@@ -594,6 +594,80 @@ export function AutoclaveRegisterTab() {
 				<p>СанПиН 3.3686-21 «Санитарно-эпидемиологические требования по профилактике инфекционных болезней»</p>
 			</div>
 
+			{/* Dominant 1-Click Autoclave Shift Cycle Hero Banner */}
+			<div
+				style={{
+					background: "linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(13, 148, 136, 0.06) 100%)",
+					border: "2px solid var(--primary, #0284c7)",
+					borderRadius: "0.85rem",
+					padding: "1rem 1.25rem",
+					marginTop: "0.5rem",
+					marginBottom: "0.75rem",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					gap: "1.25rem",
+					flexWrap: "wrap",
+				}}
+			>
+				<div style={{ flex: "1 1 320px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+						<span
+							style={{
+								padding: "0.2rem 0.5rem",
+								borderRadius: "0.4rem",
+								background: "var(--primary, #0284c7)",
+								color: "#ffffff",
+								fontSize: "0.75rem",
+								fontWeight: 800,
+								textTransform: "uppercase",
+								letterSpacing: "0.05em",
+							}}
+						>
+							СанПиН 3.3686-21 • Форма № 257/у
+						</span>
+						<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
+							Типовой регламент стерилизации смены
+						</span>
+					</div>
+					<h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)" }}>
+						Регистрация цикла автоклава в 1 клик (без ручного ввода 20 полей)
+					</h3>
+					<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
+						Паровое автоклавирование: 134°C, 2.15 бар, 5 мин экспозиция, химический индикатор 5 класса (норма СанПиН), термосвариваемые крафт-пакеты.
+					</p>
+				</div>
+
+				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						onClick={handleQuickShiftBatch}
+						disabled={isLoggingBatch}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "48px",
+							padding: "0.6rem 1.4rem",
+							fontSize: "0.92rem",
+							fontWeight: 800,
+							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.45rem",
+							borderRadius: "8px",
+							background: "var(--primary, #0284c7)",
+							color: "#ffffff",
+							border: "none",
+							boxShadow: "0 2px 10px rgba(2, 132, 199, 0.3)",
+						}}
+						data-testid="banner-autoclave-quick-shift-btn"
+						title="Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин) и внести в Форму 257/у"
+					>
+						<Sparkles size={18} />
+						<span>⚡ Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин)</span>
+					</button>
+				</div>
+			</div>
+
 			{/* Table of Sterilization Cycles with Integrated Compact Header (Height <= 36px) */}
 			<div className="sanpin-table-wrapper w-full overflow-x-auto" style={{ position: "relative", zIndex: 1, width: "100%", overflowX: "auto" }}>
 				<div
@@ -682,7 +756,7 @@ export function AutoclaveRegisterTab() {
 							data-testid="sanpin-autoclave-quick-shift-btn"
 							title="1-Клик регистрация нормативного цикла стерилизации смены (134°C / 5 мин / 2.15 бар / норма СанПиН 3.3686-21)"
 						>
-							<Sparkles size={16} /> <span>⚡ 1-Клик цикл смены</span>
+							<Sparkles size={16} /> <span>⚡ Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин)</span>
 						</button>
 
 						{/* Action: ⚡ 1-Клик печать наклеек (10 шт. / 30 дн.) без модалок */}

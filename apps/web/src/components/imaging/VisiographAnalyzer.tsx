@@ -1,4 +1,5 @@
 import {
+	Activity,
 	AlertTriangle,
 	Bone,
 	Bot,
@@ -376,6 +377,8 @@ export function VisiographAnalyzer() {
 	 */
 	const [openFailure, setOpenFailure] = useState<string | null>(null);
 	const [isStudioMode, setIsStudioMode] = useState(false);
+	const [quickPreset, setQuickPreset] = useState<"standard" | "invert" | "endo" | "bone" | "enamel">("standard");
+	const [initialStudioTool, setInitialStudioTool] = useState<"pointer" | "root_canal">("pointer");
 
 	// ── Voice init ──────────────────────────────────────────────────────────
 	useEffect(() => {
@@ -1510,7 +1513,10 @@ export function VisiographAnalyzer() {
 
 										<button
 											type="button"
-											onClick={() => setIsStudioMode((prev) => !prev)}
+											onClick={() => {
+												setInitialStudioTool("pointer");
+												setIsStudioMode((prev) => !prev);
+											}}
 											style={{
 												padding: "6px 12px",
 												background: isStudioMode
@@ -1537,6 +1543,163 @@ export function VisiographAnalyzer() {
 										</button>
 									</div>
 
+									{/* Клинический бейдж: неотложный доступ по СанПиН 2.6.1.1192-03 */}
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											gap: "8px",
+											flexWrap: "wrap",
+											padding: "6px 12px",
+											background: "rgba(16, 185, 129, 0.08)",
+											border: "1px solid rgba(16, 185, 129, 0.25)",
+											borderRadius: "8px",
+											fontSize: "0.78rem",
+											color: "var(--ink)",
+										}}
+									>
+										<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+											<CheckCircle2 size={14} style={{ color: "#10b981", flexShrink: 0 }} />
+											<span>
+												<strong>Снимок открыт мгновенно (&lt;50мс)</strong> в полном разрешении. При острой боли и неотложной помощи дозиметрия и ИДС вносятся без блокировки снимка (СанПиН 2.6.1.1192-03).
+											</span>
+										</div>
+										<span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>
+											ИИ Diagnocat: по кнопке врача (без авто-перезаписи карты)
+										</span>
+									</div>
+
+									{/* ⚡ 1-Клик у кресла (Hot Path пресеты фильтрации и эндо-линейка) */}
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											gap: "8px",
+											flexWrap: "wrap",
+											padding: "6px 10px",
+											background: "var(--paper-soft)",
+											border: "1px solid var(--line)",
+											borderRadius: "8px",
+										}}
+									>
+										<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+											<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginRight: "4px" }}>
+												⚡ 1-КЛИК У КРЕСЛА:
+											</span>
+											<button
+												type="button"
+												onClick={() => setQuickPreset("standard")}
+												style={{
+													padding: "4px 10px",
+													borderRadius: "6px",
+													fontSize: "0.76rem",
+													fontWeight: quickPreset === "standard" ? 700 : 500,
+													background: quickPreset === "standard" ? "var(--teal)" : "transparent",
+													color: quickPreset === "standard" ? "var(--on-teal, white)" : "var(--ink)",
+													border: "1px solid " + (quickPreset === "standard" ? "var(--teal)" : "var(--line)"),
+													cursor: "pointer",
+												}}
+											>
+												Стандарт
+											</button>
+											<button
+												type="button"
+												onClick={() => setQuickPreset("invert")}
+												style={{
+													padding: "4px 10px",
+													borderRadius: "6px",
+													fontSize: "0.76rem",
+													fontWeight: quickPreset === "invert" ? 700 : 500,
+													background: quickPreset === "invert" ? "var(--teal)" : "transparent",
+													color: quickPreset === "invert" ? "var(--on-teal, white)" : "var(--ink)",
+													border: "1px solid " + (quickPreset === "invert" ? "var(--teal)" : "var(--line)"),
+													cursor: "pointer",
+												}}
+												title="Негатив для обнаружения микротрещин корня и тонких линий перелома"
+											>
+												Негатив / Трещины
+											</button>
+											<button
+												type="button"
+												onClick={() => setQuickPreset("endo")}
+												style={{
+													padding: "4px 10px",
+													borderRadius: "6px",
+													fontSize: "0.76rem",
+													fontWeight: quickPreset === "endo" ? 700 : 500,
+													background: quickPreset === "endo" ? "var(--teal)" : "transparent",
+													color: quickPreset === "endo" ? "var(--on-teal, white)" : "var(--ink)",
+													border: "1px solid " + (quickPreset === "endo" ? "var(--teal)" : "var(--line)"),
+													cursor: "pointer",
+												}}
+												title="Контраст для поиска апикального сужения (WL) и устьев каналов"
+											>
+												Эндо / Апекс
+											</button>
+											<button
+												type="button"
+												onClick={() => setQuickPreset("bone")}
+												style={{
+													padding: "4px 10px",
+													borderRadius: "6px",
+													fontSize: "0.76rem",
+													fontWeight: quickPreset === "bone" ? 700 : 500,
+													background: quickPreset === "bone" ? "var(--teal)" : "transparent",
+													color: quickPreset === "bone" ? "var(--on-teal, white)" : "var(--ink)",
+													border: "1px solid " + (quickPreset === "bone" ? "var(--teal)" : "var(--line)"),
+													cursor: "pointer",
+												}}
+												title="Периодонтальная щель, костная ткань и очаги деструкции"
+											>
+												Кость / Периодонт
+											</button>
+											<button
+												type="button"
+												onClick={() => setQuickPreset("enamel")}
+												style={{
+													padding: "4px 10px",
+													borderRadius: "6px",
+													fontSize: "0.76rem",
+													fontWeight: quickPreset === "enamel" ? 700 : 500,
+													background: quickPreset === "enamel" ? "var(--teal)" : "transparent",
+													color: quickPreset === "enamel" ? "var(--on-teal, white)" : "var(--ink)",
+													border: "1px solid " + (quickPreset === "enamel" ? "var(--teal)" : "var(--line)"),
+													cursor: "pointer",
+												}}
+												title="Высокий контраст для контактных поверхностей и эмалево-дентинной границы"
+											>
+												Эмаль / Кариес
+											</button>
+										</div>
+
+										<button
+											type="button"
+											onClick={() => {
+												setInitialStudioTool("root_canal");
+												setIsStudioMode(true);
+											}}
+											style={{
+												padding: "4px 10px",
+												borderRadius: "6px",
+												fontSize: "0.76rem",
+												fontWeight: 700,
+												background: "rgba(16, 185, 129, 0.15)",
+												color: "#059669",
+												border: "1px solid #10b981",
+												cursor: "pointer",
+												display: "flex",
+												alignItems: "center",
+												gap: "5px",
+											}}
+											title="Открыть эндо-линейку для измерения рабочей длины канала (WL, мм) по анатомической кривизне корня"
+										>
+											<Activity size={13} />
+											<span>⚡ Эндо-линейка (Апекс, мм)</span>
+										</button>
+									</div>
+
 									{isStudioMode ? (
 										<VisiographStudioCanvas
 											imageUrl={currentImageUrl}
@@ -1548,6 +1711,7 @@ export function VisiographAnalyzer() {
 											}
 											toothCode={currentScan.toothCode}
 											studyId={currentScan.id}
+											initialTool={initialStudioTool}
 											onClose={() => setIsStudioMode(false)}
 										/>
 									) : (
@@ -1561,6 +1725,19 @@ export function VisiographAnalyzer() {
 											<ShadowAnalystImageSlider
 												imageUrl={currentImageUrl}
 												enhanced={true}
+												viewerStyle={{
+													filter:
+														quickPreset === "invert"
+															? "invert(1) contrast(1.3)"
+															: quickPreset === "endo"
+																? "contrast(1.6) brightness(1.15)"
+																: quickPreset === "bone"
+																	? "contrast(1.4) brightness(0.95)"
+																	: quickPreset === "enamel"
+																		? "contrast(1.8) brightness(1.05)"
+																		: undefined,
+													transition: "filter 0.15s ease",
+												}}
 											/>
 										</div>
 									)}

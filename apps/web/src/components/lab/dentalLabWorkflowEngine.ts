@@ -903,6 +903,23 @@ export function sendOrderToWarrantyRework(
 
 	const reworkNote = `Гарантийная переделка (исходный наряд № ${order.orderNumber}): ${reworkReason}`;
 
+	// Гарантийная переделка для пациента СТРОГО 0 ₽ (Мандат 8e / Без поборов с пациента)
+	const warrantyFinancials: DentalLabWorkflowFinancials = {
+		...order.financials,
+		patientPriceTotalKopecks: 0,
+		patientPriceTotalRub: 0,
+		pricePerUnitKopecks: 0,
+		clinicGrossMarginKopecks: 0,
+		clinicGrossMarginRub: 0,
+		grossMarginPercent: 0,
+		doctorWageBaseKopecks: 0,
+		doctorWageKopecks: 0,
+		doctorWageRub: 0,
+		clinicNetProfitKopecks: -order.financials.labCostKopecks,
+		clinicNetProfitRub: -order.financials.labCostTotalRub,
+		isBalanced: true,
+	};
+
 	return {
 		...order,
 		currentStage: "warranty_rework",
@@ -910,6 +927,7 @@ export function sendOrderToWarrantyRework(
 		reworkReason,
 		originalOrderId: order.originalOrderId || order.id,
 		originalOrderNumber: order.originalOrderNumber || order.orderNumber,
+		financials: warrantyFinancials,
 		expectedLabDateIso: newExpectedIso,
 		stageHistory: [
 			...order.stageHistory,
@@ -1152,7 +1170,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 	<table class="header-table">
 		<tr>
 			<td style="vertical-align: middle;">
-				<h1 class="title">Наряд-заказ № ${order.orderNumber}</h1>
+				<h1 class="title">Наряд-заказ № ${order.orderNumber} ${order.isWarrantyRework ? '<span style="color: #f43f5e; font-size: 12px; background: #ffe4e6; border: 1px solid #f43f5e; border-radius: 4px; padding: 2px 8px; vertical-align: middle; margin-left: 8px;">ГАРАНТИЙНАЯ ПЕРЕДЕЛКА (0 ₽)</span>' : ''}</h1>
 				<p class="subtitle">${order.clinicName} • Зуботехническая лаборатория «${order.labName}»</p>
 			</td>
 			<td style="text-align: right; vertical-align: middle;">
@@ -1160,6 +1178,14 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 			</td>
 		</tr>
 	</table>
+
+	${order.isWarrantyRework ? `
+	<div class="box" style="background: #fff1f2; border: 1px solid #fecdd3; margin-bottom: 6px;">
+		<div class="data-row"><span class="label" style="color: #e11d48; width: 180px;">Основание переделки:</span> <span class="value" style="color: #9f1239;">${order.reworkReason || "Гарантийная рекламация: скол облицовки / коррекция прилегания"}</span></div>
+		${order.originalOrderNumber ? `<div class="data-row"><span class="label" style="color: #e11d48; width: 180px;">Исходный наряд-заказ:</span> <span class="value">№ ${order.originalOrderNumber}</span></div>` : ""}
+		<div class="data-row"><span class="label" style="color: #e11d48; width: 180px;">Стоимость для пациента:</span> <span class="value" style="color: #15803d; font-weight: 800;">0 ₽ (БЕЗУСЛОВНАЯ ГАРАНТИЯ КЛИНИКИ)</span></div>
+	</div>
+	` : ""}
 
 	<div class="grid-2">
 		<div class="col">
@@ -1176,7 +1202,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 		</div>
 	</div>
 
-	<!-- 4-Статусный трек клинического процесса -->
+	<!-- 5-Статусный трек клинического процесса -->
 	<div class="status-strip">
 		<div class="status-cell ${order.currentStage === "draft" ? "active" : ""}">
 			1. Черновик
@@ -1189,6 +1215,9 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 		</div>
 		<div class="status-cell ${order.currentStage === "installed_completed" ? "active" : ""}">
 			4. Сдано пациенту
+		</div>
+		<div class="status-cell ${order.currentStage === "warranty_rework" ? "active" : ""}" style="${order.currentStage === "warranty_rework" ? "background: #f43f5e; color: #ffffff;" : ""}">
+			5. Гарантия (0 ₽)
 		</div>
 	</div>
 
@@ -1223,7 +1252,7 @@ export function generateDentalLabOrderA4PrintBlank(order: DentalLabWorkflowOrder
 	<div class="section-title">4. Взаиморасчеты и финансовый контроль</div>
 	<div class="grid-2">
 		<div class="col">
-			<div class="data-row"><span class="label">Стоимость для пациента:</span> <span class="value">${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽</span></div>
+			<div class="data-row"><span class="label">Стоимость для пациента:</span> <span class="value" ${order.isWarrantyRework ? 'style="color: #15803d; font-weight: 800;"' : ''}>${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} ₽ ${order.isWarrantyRework ? '(0 ₽ гарантия)' : ''}</span></div>
 			<div class="data-row"><span class="label">Себестоимость ЗТЛ:</span> <span class="value">${order.financials.labCostTotalRub.toLocaleString("ru-RU")} ₽</span></div>
 			<div class="data-row"><span class="label">Маржа клиники:</span> <span class="value" style="color: #0d9488;">${order.financials.clinicGrossMarginRub.toLocaleString("ru-RU")} ₽ (${order.financials.grossMarginPercent}%)</span></div>
 		</div>

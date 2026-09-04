@@ -217,6 +217,7 @@ export interface DoctorNetSalaryBreakdown {
 
 	/** Удержанный НДФЛ 13% */
 	readonly ndflTaxKop: Kopecks;
+	readonly ndflTaxRub: number;
 	/** Себестоимость общеклинических расходников (салфетки, валики), оплаченных клиникой */
 	readonly overheadConsumablesCoveredKop: Kopecks;
 	readonly overheadConsumablesCoveredRub: number;

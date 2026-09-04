@@ -295,6 +295,72 @@ export function BactericidalRegisterTab() {
 		}
 	};
 
+	const handlePreShift30Min = async (equipmentId?: string) => {
+		try {
+			setSubmitting(true);
+			const clinicToken = readDenteClinicToken();
+			const staffToken = readDenteStaffToken();
+			const durationMinutes = 30;
+
+			const res = await fetch("/api/registers/bactericidal/shift-autopilot", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				},
+				body: JSON.stringify({
+					equipmentId,
+					durationMinutes,
+					date: new Date().toISOString().slice(0, 10),
+					operatingMode: "pre_op_preparation",
+					notes: "⚡ Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21",
+				}),
+			});
+
+			if (res.ok) {
+				const data = await res.json();
+				showToast(
+					equipmentId
+						? "⚡ Включение баклампы на 30 мин перед сменой зафиксировано!"
+						: `⚡ Включение всех бакламп на 30 мин перед сменой зафиксировано (${data.results?.length ?? equipments.length} аппаратов)!`,
+					"success",
+				);
+				fetchAll();
+			} else {
+				// Fallback: iterate over equipments sequentially
+				const targetEqs = equipmentId ? equipments.filter((e) => e.id === equipmentId) : equipments;
+				let updatedCount = 0;
+				for (const eq of targetEqs) {
+					const fRes = await fetch("/api/registers/bactericidal/logs", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+							...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+						},
+						body: JSON.stringify({
+							equipmentId: eq.id,
+							date: new Date().toISOString().slice(0, 10),
+							sessionStartTime: "07:30",
+							sessionEndTime: "08:00",
+							durationMinutes: 30,
+							operatingMode: "pre_op_preparation",
+							notes: "⚡ Включение баклампы перед сменой (30 мин) по СанПиН 3.3686-21",
+						}),
+					});
+					if (fRes.ok) updatedCount++;
+				}
+				showToast(`⚡ Сеанс 30 мин перед сменой зафиксирован для ${updatedCount} аппаратов`, "success");
+				fetchAll();
+			}
+		} catch (err) {
+			showToast("Сетевая ошибка при фиксации 30-минутного сеанса", "error");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
 	const filteredLogs = useMemo(() => {
 		if (selectedEquipId === "all") return logs;
 		return logs.filter((l) => l.equipmentId === selectedEquipId);
@@ -322,6 +388,81 @@ export function BactericidalRegisterTab() {
 				<p>Руководство Р 3.5.1904-04 / СанПиН 3.3686-21</p>
 			</div>
 
+			{/* Dominant 1-Click Pre-Shift 30min Hero Banner (SanPiN 3.3686-21) */}
+			<div
+				style={{
+					background: "linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(13, 148, 136, 0.06) 100%)",
+					border: "2px solid var(--teal, #0d9488)",
+					borderRadius: "0.85rem",
+					padding: "1rem 1.25rem",
+					marginTop: "0.5rem",
+					marginBottom: "0.75rem",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					gap: "1.25rem",
+					flexWrap: "wrap",
+				}}
+			>
+				<div style={{ flex: "1 1 320px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+						<span
+							style={{
+								padding: "0.2rem 0.5rem",
+								borderRadius: "0.4rem",
+								background: "var(--teal, #0d9488)",
+								color: "#ffffff",
+								fontSize: "0.75rem",
+								fontWeight: 800,
+								textTransform: "uppercase",
+								letterSpacing: "0.05em",
+							}}
+						>
+							СанПиН 3.3686-21
+						</span>
+						<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
+							Подготовка воздуха перед началом рабочей смены
+						</span>
+					</div>
+					<h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)" }}>
+						Обеззараживание воздуха кабинетов перед сменой (1 клик)
+					</h3>
+					<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
+						Предоперационная подготовка: включение бактерицидных облучателей и рециркуляторов на 30 минут без людей по Р 3.5.1904-04.
+					</p>
+				</div>
+
+				<div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						onClick={() => handlePreShift30Min()}
+						disabled={submitting || equipments.length === 0}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "48px",
+							padding: "0.6rem 1.35rem",
+							fontSize: "0.92rem",
+							fontWeight: 800,
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.45rem",
+							borderRadius: "8px",
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+							boxShadow: "0 2px 10px rgba(13, 148, 136, 0.3)",
+						}}
+						data-testid="bactericidal-banner-quick-30min-btn"
+						title="Включить все баклампы клиники на 30 мин перед сменой и зафиксировать в журнале"
+					>
+						<Sparkles size={18} />
+						<span>⚡ Включить баклампу на 30 мин перед сменой</span>
+					</button>
+				</div>
+			</div>
+
 			{/* Equipment Fleet Cards */}
 			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
 				<h3 style={{ margin: 0, fontSize: "1.05rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -329,6 +470,33 @@ export function BactericidalRegisterTab() {
 					Парк бактерицидных облучателей и рециркуляторов клиники ({equipments.length} шт.)
 				</h3>
 				<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						onClick={() => handlePreShift30Min()}
+						disabled={submitting || equipments.length === 0}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "44px",
+							height: "44px",
+							padding: "0.4rem 0.95rem",
+							fontSize: "0.85rem",
+							fontWeight: 700,
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.4rem",
+							borderRadius: "8px",
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+						}}
+						title="Включить все баклампы на 30 мин перед сменой (предоперационная подготовка)"
+						data-testid="bactericidal-quick-30min-btn"
+					>
+						<Sparkles size={15} />
+						<span>⚡ Включить баклампу на 30 мин перед сменой</span>
+					</button>
 					<button
 						type="button"
 						onClick={() => handleShiftAutopilot(6)}
@@ -353,8 +521,8 @@ export function BactericidalRegisterTab() {
 						title="Автоматический расчет и фиксация 6-часовой рабочей смены для всех активных облучателей клиники"
 						data-testid="bactericidal-shift-autopilot-btn"
 					>
-						<Sparkles size={15} />
-						<span>⚡ Авто-учет смены всех ламп (6 ч)</span>
+						<Clock size={15} />
+						<span>Смена ламп (6 ч)</span>
 					</button>
 					<button
 						type="button"
@@ -438,7 +606,28 @@ export function BactericidalRegisterTab() {
 								</div>
 							)}
 
-							<div style={{ marginTop: "auto", paddingTop: "0.5rem", display: "flex", justifyContent: "flex-end" }}>
+							<div style={{ marginTop: "auto", paddingTop: "0.5rem", display: "flex", justifyContent: "flex-end", gap: "0.4rem", flexWrap: "wrap" }}>
+								<button
+									type="button"
+									onClick={() => handlePreShift30Min(eq.id)}
+									disabled={submitting}
+									style={{
+										minHeight: "44px",
+										fontSize: "0.85rem",
+										padding: "0.45rem 0.85rem",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "0.35rem",
+										color: "var(--teal, #0d9488)",
+										borderColor: "var(--teal, #0d9488)",
+										fontWeight: 600,
+									}}
+									className="sanpin-btn sanpin-btn-secondary touch-manipulation"
+									title="Включить этот аппарат на 30 мин перед сменой (предоперационная подготовка по СанПиН)"
+									data-testid={`bactericidal-card-quick-30min-${eq.id}`}
+								>
+									<Sparkles size={15} /> ⚡ 30 мин перед сменой
+								</button>
 								<button
 									type="button"
 									onClick={() => handleReplaceLamps(eq.id, eq.deviceBrand)}
@@ -676,6 +865,34 @@ export function BactericidalRegisterTab() {
 						</div>
 						<form onSubmit={handleAddSession}>
 							<div className="sanpin-modal-body">
+								<div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+									<button
+										type="button"
+										onClick={() => {
+											setPresetDuration(30);
+											setLogStartTime("07:30");
+											setLogEndTime("08:00");
+											setLogMode("pre_op_preparation");
+											setLogNotes("⚡ Включение баклампы перед сменой (30 мин) — норма СанПиН 3.3686-21");
+										}}
+										className="sanpin-btn sanpin-btn-secondary"
+										style={{
+											minHeight: "44px",
+											fontSize: "0.82rem",
+											padding: "0.4rem 0.85rem",
+											fontWeight: 700,
+											color: "var(--teal, #0d9488)",
+											borderColor: "var(--teal, #0d9488)",
+											display: "inline-flex",
+											alignItems: "center",
+											gap: "0.35rem",
+										}}
+										data-testid="log-modal-prefill-30min-btn"
+									>
+										<Sparkles size={14} /> ⚡ 30 мин перед сменой (норма СанПиН)
+									</button>
+								</div>
+
 								<div className="sanpin-form-group">
 									<label className="sanpin-form-label">Выберите облучатель / помещение</label>
 									<select

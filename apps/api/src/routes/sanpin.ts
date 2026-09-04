@@ -1134,8 +1134,9 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 		const body = (req.body as any) || {};
 		const durationMinutes = typeof body.durationMinutes === "number" ? body.durationMinutes : 360; // 6 hours default shift
 		const dateStr = body.date || new Date().toISOString().slice(0, 10);
-		const operatingMode = body.operatingMode || "continuous_presence";
+		const operatingMode = body.operatingMode || (durationMinutes <= 60 ? "pre_op_preparation" : "continuous_presence");
 		const sessionHours = Number((durationMinutes / 60).toFixed(2));
+		const targetEquipmentId = body.equipmentId ? String(body.equipmentId) : undefined;
 
 		const activeEquipments = await db
 			.select()
@@ -1144,13 +1145,16 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 				and(
 					eq(bactericidalEquipments.organizationId, organizationId),
 					eq(bactericidalEquipments.isCommissioned, true),
+					targetEquipmentId ? eq(bactericidalEquipments.id, targetEquipmentId) : undefined,
 				),
 			);
 
 		if (activeEquipments.length === 0) {
 			return reply.code(400).send({
 				error: "NoActiveEquipments",
-				message: "В клинике не зарегистрировано активных бактерицидных облучателей.",
+				message: targetEquipmentId
+					? "Указанный бактерицидный облучатель не найден или не введен в эксплуатацию."
+					: "В клинике не зарегистрировано активных бактерицидных облучателей.",
 			});
 		}
 
@@ -1177,6 +1181,12 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 				const startTime = new Date(`${dateStr}T08:00:00`);
 				const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
 
+				const notesText =
+					body.notes ||
+					(durationMinutes <= 30 && operatingMode === "pre_op_preparation"
+						? "⚡ Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21."
+						: `⚡ Автоматический учет смены (${sessionHours} ч / ${durationMinutes} мин) по Р 3.5.1904-04 / СанПиН 3.3686-21.`);
+
 				await tx.insert(bactericidalIrradiatorLogs).values({
 					organizationId,
 					equipmentId: eqItem.id,
@@ -1186,7 +1196,7 @@ export async function registerSanpinRoutes(app: FastifyInstance) {
 					durationMinutes,
 					operatingMode,
 					cumulativeHoursAfterSession: String(newTotalHours),
-					notes: `⚡ Автоматический учет смены (${sessionHours} ч / ${durationMinutes} мин) по Р 3.5.1904-04 / СанПиН 3.3686-21.`,
+					notes: notesText,
 				});
 
 				results.push({

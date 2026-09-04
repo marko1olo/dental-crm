@@ -118,6 +118,23 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 				{/* Presets Chips */}
 				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+					<span
+						style={{
+							fontSize: "11px",
+							padding: "4px 8px",
+							borderRadius: "6px",
+							background: "rgba(16, 185, 129, 0.15)",
+							color: "#34d399",
+							border: "1px solid rgba(16, 185, 129, 0.3)",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "4px",
+							fontWeight: 600,
+						}}
+						title="СанПиН 2.6.1.1192-03: При острой боли и неотложном приёме снимок доступен мгновенно, дозиметрия и ИДС вносятся без блокировки работы"
+					>
+						✓ Неотложный доступ (без блокировки ИДС)
+					</span>
 					{DENTAL_RADIOGRAPHY_PRESETS.map((p) => (
 						<button
 							key={p.id}
@@ -215,6 +232,27 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						}}
 					>
 						<Ruler size={16} /> Линейка (мм)
+					</button>
+					<button
+						type="button"
+						onClick={() => handleViewportChange({ activeTool: "root_canal_tracer" })}
+						style={{
+							padding: "8px 12px",
+							borderRadius: "6px",
+							border: "none",
+							backgroundColor: viewportState.activeTool === "root_canal_tracer" ? "#047857" : "#1e293b",
+							color: viewportState.activeTool === "root_canal_tracer" ? "#a7f3d0" : "#ffffff",
+							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							gap: "6px",
+							fontSize: "13px",
+							fontWeight: 600,
+							whiteSpace: "nowrap",
+						}}
+						title="Эндо-линейка (Apex Locator): измерение рабочей длины канала в мм (клик по точкам вдоль кривой корня, двойной клик для фиксации)"
+					>
+						<Activity size={16} /> Эндо-линейка (Апекс, мм)
 					</button>
 				</div>
 
