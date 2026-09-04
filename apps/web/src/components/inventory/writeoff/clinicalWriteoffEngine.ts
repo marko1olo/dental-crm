@@ -128,6 +128,8 @@ export interface ClinicalWriteoffDocument {
 	readonly notes?: string | undefined;
 	readonly confirmedAt?: string | undefined;
 	readonly clinicInfo?: ClinicLegalInfo | undefined;
+	readonly isQuickCarpuleWriteoff?: boolean | undefined;
+	readonly writtenOffByRole?: string | undefined;
 }
 
 /**
@@ -423,6 +425,114 @@ export function updateLineActualQuantity(
 	};
 }
 
+export interface QuickCarpuleWriteoffParams {
+	readonly cabinetId?: string | undefined;
+	readonly cabinetNameRu?: string | undefined;
+	readonly nurseFullName?: string | undefined;
+	readonly nurseRole?: string | undefined;
+	readonly count?: number | undefined;
+	readonly materialId?: string | undefined;
+	readonly lotNumber?: string | undefined;
+	readonly notes?: string | undefined;
+	readonly stockBatches?: readonly CabinetStockBatch[] | undefined;
+	readonly actDate?: string | undefined;
+	readonly statutoryFormType?: "0504230" | "M11" | "TORG16" | undefined;
+}
+
+/**
+ * Быстрое списание пустых использованных карпул и ампул анестетиков в 1 клик
+ * старшей медсестрой или ассистентом без необходимости созыва комиссии из 3 человек.
+ */
+export function createQuickCarpuleWriteoffDocument(
+	params: QuickCarpuleWriteoffParams = {},
+): ClinicalWriteoffDocument {
+	const materialId = params.materialId || "mat_articaine_ultracain";
+	const material =
+		getClinicalMaterialById(materialId) ||
+		CLINICAL_MATERIALS_CATALOG.find((m) => m.category === "anesthesia") ||
+		CLINICAL_MATERIALS_CATALOG[0]!;
+	const count = Math.max(1, params.count ?? 1);
+	const batches = params.stockBatches || DENTAL_CABINET_STOCK_PRESETS;
+	const cabinetId = params.cabinetId || "cab-01";
+	const cabinetNameRu = params.cabinetNameRu || "Кабинет терапевтической стоматологии №1";
+	const actDate = params.actDate || new Date().toISOString().slice(0, 10);
+	const nurseFullName = params.nurseFullName || "Смирнова Анна Викторовна";
+	const nurseRole = params.nurseRole || "Старшая медицинская сестра";
+
+	const fefoResult = findBestBatchFefo(material.id, count, batches, cabinetId, actDate);
+	const unitCostKopecks = fefoResult.batch?.unitCostKopecks ?? material.defaultUnitCostKopecks;
+	const stockAvailable = fefoResult.batch?.quantityAvailable ?? 100;
+	const criticalThreshold = fefoResult.batch?.criticalThreshold ?? 10;
+	const stockStatus = evaluateStockAvailability(stockAvailable, count, criticalThreshold);
+
+	const line: ClinicalWriteoffLine = {
+		id: `line_carpule_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+		serviceCode: "A16.07.030.001",
+		serviceTitle: "Утилизация пустых карпул/ампул анестетика",
+		toothNumber: undefined,
+		materialId: material.id,
+		sku: material.sku,
+		nameRu: material.nameRu,
+		category: material.category,
+		unit: material.unit,
+		okeiCode: material.okeiCode,
+		standardQuantity: count,
+		actualQuantity: count,
+		discrepancyQuantity: 0,
+		discrepancyReasonCode: "standard_consumption",
+		discrepancyNotes: params.notes || "Экспресс-списание использованных карпул анестетика (1 клик)",
+		batchId: fefoResult.batch?.batchId,
+		lotNumber: params.lotNumber || fefoResult.batch?.lotNumber || "LOT-ART-2026",
+		serialNumber: undefined,
+		expirationDate: fefoResult.batch?.expirationDate || "2027-12-31",
+		daysUntilExpiration: fefoResult.daysUntilExpiration,
+		isExpiringSoon: fefoResult.isExpiringSoon,
+		isExpired: false,
+		cabinetId,
+		cabinetNameRu,
+		stockAvailable,
+		criticalThreshold,
+		stockStatus,
+		unitCostKopecks,
+		totalCostKopecks: calculateLineCostKopecks(unitCostKopecks, count),
+		isMandatory: true,
+		requiresLotTracking: material.requiresLotTracking,
+		requiresSerialNumber: false,
+	};
+
+	const totals = calculateClinicalWriteoffTotals([line], 1);
+	const actNumber = `КАРП-${Date.now().toString().slice(-6)}`;
+
+	return {
+		id: `doc_carpule_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		actNumber,
+		actDate,
+		patientName: "Списание пустых карпул (кабинет)",
+		doctorFullName: nurseFullName,
+		doctorSpecialty: nurseRole,
+		assistantFullName: nurseFullName,
+		cabinetId,
+		cabinetNameRu,
+		completedServices: [
+			{
+				serviceCode: "A16.07.030.001",
+				serviceTitle: "Утилизация использованных карпул/ампул анестетика",
+				quantityMultiplier: count,
+			},
+		],
+		lines: [line],
+		totals,
+		statutoryFormType: params.statutoryFormType || "0504230",
+		status: "confirmed",
+		notes:
+			params.notes ||
+			"Единоличное экспресс-списание использованных карпул анестетика старшей медсестрой без созыва комиссии",
+		confirmedAt: new Date().toISOString(),
+		isQuickCarpuleWriteoff: true,
+		writtenOffByRole: nurseRole,
+	};
+}
+
 /**
  * Валидация готового документа списания перед фиксацией
  */
@@ -435,13 +545,18 @@ export function validateWriteoffDocument(
 } {
 	const errors: string[] = [];
 	const warnings: string[] = [];
+	const isQuick = doc.isQuickCarpuleWriteoff === true;
 
-	if (!doc.patientName || doc.patientName.trim().length < 2) {
+	if (!isQuick && (!doc.patientName || doc.patientName.trim().length < 2)) {
 		errors.push("Укажите ФИО пациента для списания материалов в медицинскую карту.");
 	}
 
-	if (!doc.doctorFullName || doc.doctorFullName.trim().length < 2) {
-		errors.push("Укажите ФИО лечащего врача (материально ответственного лица).");
+	if (!doc.doctorFullName && !doc.assistantFullName) {
+		errors.push(
+			isQuick
+				? "Укажите лицо, производящее списание карпул (старшая медсестра / ассистент)."
+				: "Укажите ФИО лечащего врача (материально ответственного лица).",
+		);
 	}
 
 	if (!doc.lines || doc.lines.length === 0) {
@@ -606,10 +721,29 @@ export function generateAct0504230Html(
 
 	<p>
 		Всего израсходовано <strong>${doc.lines.length}</strong> наименований на общую сумму <strong>${totals.totalCostRubles.toFixed(2)} руб.</strong> (${totals.totalCostFormatted}).<br>
-		Списание произведено в соответствии с клиническими протоколами Минздрава РФ и технологическими картами по Приказу № 804н.
+		${
+			doc.isQuickCarpuleWriteoff
+				? "Списание пустых использованных карпул и ампул анестетиков произведено старшей медсестрой / ассистентом в упрощенном порядке (без созыва комиссии)."
+				: "Списание произведено в соответствии с клиническими протоколами Минздрава РФ и технологическими картами по Приказу № 804н."
+		}
 	</p>
 
-	<div class="signatures-row">
+	${
+		doc.isQuickCarpuleWriteoff
+			? `<div class="signatures-row">
+		<div class="sign-col" style="width: 45%;">
+			<strong>СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО):</strong><br>
+			${doc.writtenOffByRole || info.headNursePosition || "Старшая медицинская сестра"}<br>
+			________________ / ${doc.assistantFullName || doc.doctorFullName || info.headNurseFullName} /<br>
+			«____» ________________ 2026 г.
+		</div>
+		<div class="sign-col" style="width: 45%;">
+			<strong>МАТЕРИАЛЬНО ОТВЕТСТВЕННОЕ ЛИЦО:</strong><br>
+			${doc.doctorSpecialty || "Заведующий кабинетом"}<br>
+			________________ / ${doc.doctorFullName || info.chiefDoctorFullName} /
+		</div>
+	</div>`
+			: `<div class="signatures-row">
 		<div class="sign-col">
 			<strong>УТВЕРЖДАЮ:</strong><br>
 			${info.chiefDoctorPosition}<br>
@@ -626,7 +760,8 @@ export function generateAct0504230Html(
 			${doc.doctorSpecialty}<br>
 			________________ / ${doc.doctorFullName} /
 		</div>
-	</div>
+	</div>`
+	}
 </body>
 </html>`;
 }
@@ -818,7 +953,21 @@ export function generateTorg16Html(
 		</tbody>
 	</table>
 
-	<div class="signs">
+	${
+		doc.isQuickCarpuleWriteoff
+			? `<div class="signs">
+		<div style="width: 45%;">
+			<strong>Списание произведено единолично:</strong><br>
+			${doc.writtenOffByRole || info.headNursePosition || "Старшая медицинская сестра"}<br>
+			________________ / ${doc.assistantFullName || doc.doctorFullName || info.headNurseFullName} /
+		</div>
+		<div style="width: 45%;">
+			<strong>Согласовано (МОЛ):</strong><br>
+			${doc.doctorSpecialty || info.chiefDoctorPosition}<br>
+			________________ / ${doc.doctorFullName || info.chiefDoctorFullName} /
+		</div>
+	</div>`
+			: `<div class="signs">
 		<div>
 			<strong>Член комиссии:</strong><br>
 			${doc.doctorSpecialty}<br>
@@ -834,7 +983,8 @@ export function generateTorg16Html(
 			${info.chiefDoctorPosition}<br>
 			________________ / ${info.chiefDoctorFullName} /
 		</div>
-	</div>
+	</div>`
+	}
 </body>
 </html>`;
 }

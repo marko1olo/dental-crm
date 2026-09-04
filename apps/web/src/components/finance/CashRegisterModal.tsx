@@ -368,6 +368,19 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			});
 
 			const totalKopecks = rubToKopecks(totalInvoiceRub);
+
+			// Penny rebalancing on line items: distribute delta between totalKopecks and sum of lines to the last line item
+			if (lineItems.length > 0) {
+				const currentItemsSum = lineItems.reduce((acc, it) => acc + it.amountKopecks, 0);
+				const deltaItemsKop = totalKopecks - currentItemsSum;
+				if (deltaItemsKop !== 0) {
+					const lastItem = lineItems[lineItems.length - 1];
+					if (lastItem) {
+						lastItem.amountKopecks = Math.max(0, lastItem.amountKopecks + deltaItemsKop);
+					}
+				}
+			}
+
 			const isSplit = activeTab === "split" || selectedTender === "split";
 			let cashKop = isSplit
 				? rubToKopecks(splitCashRub)
@@ -391,6 +404,14 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				: selectedTender === "family"
 				? Math.min(totalKopecks, rubToKopecks(patientFamilyBalanceRub || 0))
 				: 0;
+			let creditKop = 0;
+
+			// Честная рассрочка клиники (0% переплат): первый взнос оплачивается картой, остаток оформляется в кредит
+			if (selectedTender === "installment") {
+				const downPaymentKop = Math.round((totalKopecks * downPaymentPercent) / 100);
+				cardKop = downPaymentKop;
+				creditKop = Math.max(0, totalKopecks - downPaymentKop);
+			}
 
 			// Если выбран депозит/семейный счет на основном экране, но средств не хватает на 100% чека,
 			// остаток автоматически списывается картой в 1 клик (без блокировки)
@@ -422,6 +443,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 			const payload = {
 				clientMutationId: idempotencyKey,
+				cashBoxId: selectedCashBoxId || undefined,
 				patientId: effectivePatientId,
 				operationType,
 				customerContact: patientPhone || patientName,
@@ -432,7 +454,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				electronicCardKopecks: cardKop,
 				sbpKopecks: sbpKop,
 				prepaidKopecks: prepaidKop,
-				creditKopecks: 0,
+				creditKopecks: creditKop,
 				totalKopecks,
 			};
 
@@ -495,6 +517,30 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 					: "Чек 54-ФЗ принят в обработку (ККТ / ОФД)",
 			);
 
+			// Real clinic installment contract creation via POST /api/installments
+			if (selectedTender === "installment" && totalInvoiceRub > 0) {
+				try {
+					const downPaymentRub = kopecksToRub(cardKop);
+					if (downPaymentRub < totalInvoiceRub) {
+						await fetch("/api/installments", {
+							method: "POST",
+							headers: denteAdminSecretRequestHeaders({
+								"Content-Type": "application/json",
+							}),
+							body: JSON.stringify({
+								patientId: effectivePatientId,
+								totalAmountRub: totalInvoiceRub,
+								downPaymentRub,
+								monthsCount: installmentMonths,
+								notes: `Договор внутренней рассрочки клиники 0% на ${installmentMonths} мес. Первый взнос: ${downPaymentRub} ₽. Чек 54-ФЗ №${fiscalDocNumber || "б/н"}.`,
+							}),
+						});
+					}
+				} catch (instErr) {
+					console.warn("[CashRegisterModal] Failed to create installment contract:", instErr);
+				}
+			}
+
 			// Dispatch thermal receipt print via HardwarePrinter Facade (Bluetooth LE / LAN TCP / Web)
 			const printPayload: FiscalReceiptPrintPayload = {
 				clinicName,
@@ -512,13 +558,10 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 					markingCode: it.markingCode ? it.markingCode : undefined,
 				})),
 				totalRub: totalInvoiceRub,
-				cashRub: selectedTender === "cash" ? totalInvoiceRub : splitCashRub,
-				electronicRub: selectedTender === "card" ? totalInvoiceRub : splitCardRub,
-				sbpRub: selectedTender === "sbp" ? totalInvoiceRub : splitSbpRub,
-				prepaidRub:
-					selectedTender === "deposit" || selectedTender === "family"
-						? totalInvoiceRub
-						: splitDepositRub + splitFamilyRub,
+				cashRub: kopecksToRub(cashKop),
+				electronicRub: kopecksToRub(cardKop),
+				sbpRub: kopecksToRub(sbpKop),
+				prepaidRub: kopecksToRub(prepaidKop),
 			};
 
 			try {
@@ -539,26 +582,59 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	};
 
 	const buildPrintPayload = (): FiscalReceiptPrintPayload => {
+		const totalKopecks = rubToKopecks(totalInvoiceRub);
+		const isSplit = activeTab === "split" || selectedTender === "split";
+		let cashKop = isSplit
+			? rubToKopecks(splitCashRub)
+			: selectedTender === "cash"
+			? totalKopecks
+			: 0;
+		let cardKop = isSplit
+			? rubToKopecks(splitCardRub)
+			: selectedTender === "card"
+			? totalKopecks
+			: 0;
+		let sbpKop = isSplit
+			? rubToKopecks(splitSbpRub)
+			: selectedTender === "sbp"
+			? totalKopecks
+			: 0;
+		let prepaidKop = isSplit
+			? rubToKopecks(splitDepositRub + splitFamilyRub)
+			: selectedTender === "deposit"
+			? Math.min(totalKopecks, rubToKopecks(patientDepositRub || 0))
+			: selectedTender === "family"
+			? Math.min(totalKopecks, rubToKopecks(patientFamilyBalanceRub || 0))
+			: 0;
+
+		if (selectedTender === "installment") {
+			const downPaymentKop = Math.round((totalKopecks * downPaymentPercent) / 100);
+			cardKop = downPaymentKop;
+		}
+
+		if (!isSplit && (selectedTender === "deposit" || selectedTender === "family")) {
+			if (prepaidKop < totalKopecks) {
+				cardKop = totalKopecks - prepaidKop;
+			}
+		}
+
 		return {
 			operationType,
 			items: effectiveItems.map((it) => ({
 				name: it.name,
 				priceRub: it.priceRub,
 				quantity: it.quantity,
-				amountRub: it.priceRub * it.quantity - (it.discountRub || 0),
+				amountRub: Math.max(0, it.priceRub * it.quantity - (it.discountRub || 0)),
 				medicalServiceCode804n: it.code804n || undefined,
 				markingCode: it.markingCode || undefined,
 			})),
 			totalRub: totalInvoiceRub,
-			electronicRub: selectedTender === "card" ? totalInvoiceRub : splitCardRub,
-			cashRub: selectedTender === "cash" ? totalInvoiceRub : splitCashRub,
-			sbpRub: selectedTender === "sbp" ? totalInvoiceRub : splitSbpRub,
-			prepaidRub:
-				selectedTender === "deposit" || selectedTender === "family"
-					? totalInvoiceRub
-					: splitDepositRub + splitFamilyRub,
+			electronicRub: kopecksToRub(cardKop),
+			cashRub: kopecksToRub(cashKop),
+			sbpRub: kopecksToRub(sbpKop),
+			prepaidRub: kopecksToRub(prepaidKop),
 			cashierFullName,
-			cashierInn: "7701234567",
+			cashierInn: clinicInn,
 			clinicName,
 			customerContact: patientPhone || patientName,
 		};

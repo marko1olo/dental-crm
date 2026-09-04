@@ -23,6 +23,7 @@ import {
 	kopecksToRubles,
 	updateLineActualQuantity,
 	validateWriteoffDocument,
+	createQuickCarpuleWriteoffDocument,
 } from "../writeoff/clinicalWriteoffEngine.js";
 import {
 	CLINICAL_MATERIALS_CATALOG,
@@ -351,3 +352,54 @@ describe("SSR Rendering of ClinicalWriteoffModal", () => {
 		assert.ok(html.includes("Норма (804н)"));
 	});
 });
+
+describe("Single-Signatory Quick Carpule & Anesthetic Writeoff (Медсестра в 1 клик без комиссии)", () => {
+	it("createQuickCarpuleWriteoffDocument создает валидный акт экспресс-списания пустых карпул без ошибок", () => {
+		const doc = createQuickCarpuleWriteoffDocument({
+			cabinetId: "cab-01",
+			nurseFullName: "Смирнова А.В.",
+			nurseRole: "Старшая медицинская сестра",
+			count: 3,
+			materialId: "mat_articaine_ultracain",
+		});
+
+		assert.ok(doc.isQuickCarpuleWriteoff === true);
+		assert.equal(doc.lines.length, 1);
+		assert.equal(doc.lines[0]?.actualQuantity, 3);
+		assert.equal(doc.writtenOffByRole, "Старшая медицинская сестра");
+		assert.ok(doc.actNumber.startsWith("КАРП-"));
+
+		// Валидация проходит успешно без ФИО конкретного пациента (утилизация по кабинету)
+		const validation = validateWriteoffDocument(doc);
+		assert.ok(validation.isValid, `Валидация должна быть успешной: ${validation.errors.join(", ")}`);
+		assert.equal(validation.errors.length, 0);
+	});
+
+	it("generateAct0504230Html формирует единоличную подпись старшей медсестры без требования комиссии из 3 человек", () => {
+		const doc = createQuickCarpuleWriteoffDocument({
+			cabinetId: "cab-01",
+			nurseFullName: "Смирнова А.В.",
+			nurseRole: "Старшая медицинская сестра",
+			count: 2,
+		});
+
+		const html = generateAct0504230Html(doc);
+		assert.ok(html.includes("СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО)"), "Должен быть блок единоличного списания");
+		assert.ok(html.includes("Смирнова А.В."));
+		assert.ok(!html.includes("ПРЕДСЕДАТЕЛЬ КОМИССИИ"), "Не должно быть созыва комиссии из 3 человек");
+		assert.ok(html.includes("упрощенном порядке (без созыва комиссии)"));
+	});
+
+	it("generateTorg16Html формирует единоличное списание старшей медсестрой без комиссии", () => {
+		const doc = createQuickCarpuleWriteoffDocument({
+			cabinetId: "cab-01",
+			nurseFullName: "Смирнова А.В.",
+			count: 5,
+		});
+
+		const html = generateTorg16Html(doc);
+		assert.ok(html.includes("Списание произведено единолично"), "Должна быть единоличная подпись в ТОРГ-16");
+		assert.ok(!html.includes("Член комиссии:"), "Не должно быть членов комиссии в ТОРГ-16");
+	});
+});
+

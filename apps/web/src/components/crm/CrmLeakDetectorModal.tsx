@@ -270,6 +270,12 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 							{(metrics?.rebookedRevenuePotentialRub ?? 0).toLocaleString("ru-RU")} ₽
 						</span>
 					</div>
+					<div className="cld-kpi-card" title="Пациенты на этапе остеоинтеграции (4–6 мес.) или ортодонтии (до 2 лет) — физиологическая норма, исключены из оттока">
+						<span className="cld-kpi-label">Клин. пауза (норма)</span>
+						<span className="cld-kpi-val">
+							{metrics?.clinicalObservationPauseCount ?? 0}
+						</span>
+					</div>
 					<div className="cld-kpi-card">
 						<span className="cld-kpi-label">Брошенные планы</span>
 						<span className="cld-kpi-val highlight">
@@ -301,6 +307,7 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 						<option value="contacted">Связались</option>
 						<option value="rebooked">Записаны</option>
 						<option value="declined">Отказ</option>
+						<option value="CLINICAL_OBSERVATION_PAUSE">Клин. пауза (остеоинтеграция / ортодонтия)</option>
 					</select>
 
 					<label className="cld-filter-checkbox">
@@ -417,6 +424,9 @@ export const CrmLeakDetectorModal: React.FC<Props> = ({ isOpen, onClose }) => {
 													{lead.leadStatus === "rebooked" && "Записан"}
 													{lead.leadStatus === "declined" && "Отказ"}
 													{lead.leadStatus === "archived" && "В архиве"}
+													{(lead.leadStatus === "CLINICAL_OBSERVATION_PAUSE" ||
+														lead.leadStatus === "clinical_observation_pause") &&
+														"Клин. пауза (норма)"}
 												</span>
 												{lead.assignedAdminName && (
 													<div className="text-xs text-slate-500 mt-1">

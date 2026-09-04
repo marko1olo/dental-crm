@@ -188,7 +188,7 @@ export function PatientCreationModal({
 		quickIntakeValidationResult.isValid && !isPatientCreating;
 
 	const handleCreate = async () => {
-		if (!patientCreateReady) return;
+		if (!quickActionReady) return;
 		try {
 			// Attach advertising source note to administrative profile draft
 			if (advertisingSource) {
@@ -199,6 +199,13 @@ export function PatientCreationModal({
 			}
 			await createPatient();
 			onClose();
+			if (validationResult.missingRequiredLabels.length > 0) {
+				showToast(
+					`Пациент создан. Поля (${validationResult.missingRequiredLabels.join(", ")}) можно внести позже при оформлении договора`,
+					"info",
+					4000,
+				);
+			}
 		} catch {
 			// Managed by store/appLogic
 		}
@@ -893,7 +900,7 @@ export function PatientCreationModal({
 							type="button"
 							className="primary-button quick-create-action"
 							onClick={handleCreate}
-							disabled={!patientCreateReady}
+							disabled={!quickActionReady}
 							aria-busy={isPatientCreating || undefined}
 							aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}
 							data-testid="patient-creation-submit-btn"

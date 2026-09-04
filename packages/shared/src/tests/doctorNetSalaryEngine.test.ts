@@ -3,6 +3,9 @@ import test from "node:test";
 import {
 	calculateDoctorNetSalary,
 	calculateServicesPayrollBreakdown,
+	classifyServiceCategory,
+	generateDoctorT51Html,
+	isGeneralClinicOverheadConsumable,
 } from "../finance/doctorNetSalaryEngine.js";
 
 test("calculateDoctorNetSalary: correctly calculates Net Revenue according to Form T-51 statutory formula", () => {
@@ -151,5 +154,97 @@ test("calculateDoctorNetSalary: Labor Code RF (ТК РФ ст. 137, 192) protect
 	// Бонус обнулился до 0 ₽, но база не уменьшилась: 17 500 + 10 000 + 0 = 27 500 ₽
 	assert.strictEqual(resultExceedingBonus.effectiveBonusesRub, 0);
 	assert.strictEqual(resultExceedingBonus.totalAccruedRub, 27500);
+});
+
+test("isGeneralClinicOverheadConsumable: protects standard clinic hygiene supplies from doctor salary deductions", () => {
+	// Общеклинические расходники: НЕ удерживаются из зарплаты врача
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Салфетка нагрудная двухслойная"), true);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Ватные валики стоматологические 10 мм"), true);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Слюноотсос одноразовый с наконечником"), true);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Перчатки нитриловые неопудренные размер M"), true);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Маска медицинская трехслойная"), true);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Стаканчик одноразовый пластиковый 200 мл"), true);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Бахилы полиэтиленовые стандарт"), true);
+
+	// Прямые клинические материалы: удерживаются при наличии техкарты списания
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Дентальный имплантат Straumann BLX 4.0"), false);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Костный трансплантат Bio-Oss 0.5g"), false);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Композитный шприц Filtek Ultimate A2"), false);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Мембрана Bio-Gide 25x25 мм"), false);
+	assert.strictEqual(isGeneralClinicOverheadConsumable("Анестетик Убистезин Форте 4% карпула"), false);
+});
+
+test("classifyServiceCategory: maps service titles and Order 804n codes to clinical specialties", () => {
+	assert.strictEqual(classifyServiceCategory("Лечение кариеса и пломба световой полимеризации", "A16.07.002.001"), "therapy");
+	assert.strictEqual(classifyServiceCategory("Металлокерамическая коронка на оксиде циркония", "A16.07.004"), "orthopedics");
+	assert.strictEqual(classifyServiceCategory("Операция установки дентального имплантата", "A16.07.006"), "surgery");
+	assert.strictEqual(classifyServiceCategory("Фиксация металлической брекет-системы Damon", "A16.07.048"), "orthodontics");
+	assert.strictEqual(classifyServiceCategory("Профессиональная гигиена полости рта Air Flow", "A16.07.051"), "hygiene");
+});
+
+test("generateDoctorT51Html: generates compliant Unified Form T-51 payslip with itemized visits and lab orders", () => {
+	const html = generateDoctorT51Html({
+		organizationName: 'ООО "ДЕНТЕ ДЕНТАЛ КЛИНИК"',
+		organizationInn: "7701234567",
+		doctorName: "Смирнов Алексей Владимирович",
+		personnelNumber: "ВР-007",
+		specialtyTitle: "Врач-стоматолог ортопед",
+		periodFromIso: "2026-08-01T00:00:00.000Z",
+		periodToIso: "2026-08-31T23:59:59.000Z",
+		grossRevenueRub: 150000,
+		netBaseRevenueRub: 120000,
+		pieceworkAccruedRub: 30000,
+		fixedSalaryRub: 20000,
+		bonusesRub: 5000,
+		totalAccruedRub: 55000,
+		ndflTaxRub: 7150,
+		withheldLabRub: 25000,
+		withheldMaterialRub: 5000,
+		overheadConsumablesCoveredRub: 3400,
+		netPayoutRub: 47850,
+		visits: [
+			{
+				visitId: "v-1",
+				visitDate: "2026-08-10T11:00:00.000Z",
+				patientName: "Ковалев Игорь Николаевич",
+				medicalCardNumber: "043/у-1082",
+				serviceTitle: "Препарирование и коронка E.max",
+				order804nCode: "A16.07.004.001",
+				toothCode: "21",
+				priceRub: 35000,
+				accruedRub: 8750,
+			},
+		],
+		labOrders: [
+			{
+				orderNumber: "ЗТЛ-9901",
+				patientName: "Ковалев Игорь Николаевич",
+				restorationType: "Безметалловая коронка E.max",
+				toothFdi: "21",
+				priceRub: 12000,
+				withheldRub: 3000,
+				isWarranty: false,
+			},
+			{
+				orderNumber: "ЗТЛ-9902",
+				patientName: "Сидорова Анна Павловна",
+				restorationType: "Переделка циркониевого абатмента",
+				toothFdi: "16",
+				priceRub: 8000,
+				withheldRub: 0,
+				isWarranty: true, // Гарантия — 0 ₽ удержания
+			},
+		],
+	});
+
+	assert.ok(html.includes("Расчетный листок"));
+	assert.ok(html.includes("Унифицированная форма № Т-51"));
+	assert.ok(html.includes("Смирнов Алексей Владимирович"));
+	assert.ok(html.includes("Ковалев Игорь Николаевич"));
+	assert.ok(html.includes("A16.07.004.001"));
+	assert.ok(html.includes("ЗТЛ-9901"));
+	assert.ok(html.includes("Гарантия (0 ₽)"));
+	assert.ok(html.includes("47") && html.includes("850"));
+	assert.ok(html.includes("Общеклинические расходники"));
 });
 

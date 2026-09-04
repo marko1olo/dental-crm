@@ -33,6 +33,7 @@ import {
 	FileText,
 	Clock,
 	Truck,
+	RotateCcw,
 } from "lucide-react";
 import "./dentalLabWorkflow.css";
 import {
@@ -41,9 +42,11 @@ import {
 	LabWorkflowStatus,
 	LAB_WORKFLOW_STATUSES,
 	LAB_WORKFLOW_STATUS_ORDER,
+	ALL_LAB_WORKFLOW_STATUSES,
 	DentalLabWorkflowOrder,
 	createDentalLabOrder,
 	advanceLabOrderStage,
+	sendOrderToWarrantyRework,
 	getNextLabProductionStage,
 	generateDentalLabOrderA4PrintBlank,
 	exportDentalLabOrdersToCsv,
@@ -181,6 +184,8 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 	// Модалка создания / деталей наряда
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 	const [inspectingOrder, setInspectingOrder] = useState<DentalLabWorkflowOrder | null>(null);
+	const [warrantyReworkOrder, setWarrantyReworkOrder] = useState<DentalLabWorkflowOrder | null>(null);
+	const [warrantyReason, setWarrantyReason] = useState<string>("Скол керамической облицовки");
 
 	// Форма создания нового наряда
 	const [newPatientName, setNewPatientName] = useState<string>("");
@@ -249,13 +254,14 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		});
 	}, [orders, onlyDelayedFilter, selectedLab, selectedWorkType, searchQuery]);
 
-	// Группировка по 4 клиническим статусам
+	// Группировка по стадиям клинического цикла (включая гарантийную переделку)
 	const ordersByStage = useMemo(() => {
 		const map: Record<LabWorkflowStatus, DentalLabWorkflowOrder[]> = {
 			draft: [],
 			sent_to_lab: [],
 			fitting_scheduled: [],
 			installed_completed: [],
+			warranty_rework: [],
 		};
 
 		for (const ord of filteredOrders) {
@@ -284,6 +290,22 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 		setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
 		if (onSaveOrder) onSaveOrder(updated);
 	}, [onSaveOrder]);
+
+	// Отправка на гарантийную переделку / рекламацию в ЗТЛ
+	const handleWarrantyReworkSubmit = useCallback((e?: React.FormEvent) => {
+		if (e) e.preventDefault();
+		if (!warrantyReworkOrder) return;
+
+		const updated = sendOrderToWarrantyRework(
+			warrantyReworkOrder,
+			warrantyReason || "Гарантийная рекламация: скол / завышение прикуса",
+			"Врач-ортопед",
+		);
+
+		setOrders((prev) => prev.map((o) => (o.id === warrantyReworkOrder.id ? updated : o)));
+		if (onSaveOrder) onSaveOrder(updated);
+		setWarrantyReworkOrder(null);
+	}, [warrantyReworkOrder, warrantyReason, onSaveOrder]);
 
 	// Создание нового наряда
 	const handleCreateOrderSubmit = useCallback((e: React.FormEvent) => {
@@ -538,9 +560,9 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 					</div>
 				</section>
 
-				{/* ─── 4. КАНБАН-ДОСКА (4 КЛИНИЧЕСКИХ СТАТУСА) ───────────────────── */}
+				{/* ─── 4. КАНБАН-ДОСКА (КЛИНИЧЕСКИЙ ЦИКЛ + ГАРАНТИЙНАЯ ПЕРЕДЕЛКА) ──── */}
 				<main className="ztl-kanban-board">
-					{LAB_WORKFLOW_STATUS_ORDER.map((stageId) => {
+					{ALL_LAB_WORKFLOW_STATUSES.map((stageId) => {
 						const stageDef = LAB_WORKFLOW_STATUSES[stageId];
 						const stageOrders = ordersByStage[stageId] || [];
 
@@ -553,6 +575,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 											{stageId === "sent_to_lab" && <Truck size={16} />}
 											{stageId === "fitting_scheduled" && <Calendar size={16} />}
 											{stageId === "installed_completed" && <CheckCircle2 size={16} />}
+											{stageId === "warranty_rework" && <RotateCcw size={16} />}
 										</span>
 										<h3 className="ztl-column-title">{stageDef.nameRu}</h3>
 									</div>
@@ -577,6 +600,12 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 														Зубы: {order.selectedTeeth.join(", ")}
 													</span>
 												</div>
+
+												{order.isWarrantyRework && order.originalOrderNumber && (
+													<div style={{ marginTop: "4px", fontSize: "10.5px", color: "#e11d48", fontWeight: 700 }}>
+														🔄 Рекламация наряда № {order.originalOrderNumber}
+													</div>
+												)}
 
 												<h4 className="ztl-card-patient-name" title={order.patientName}>
 													{order.patientName}
@@ -642,7 +671,31 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 														<Printer size={12} />
 														<span>А4</span>
 													</button>
-													{order.currentStage !== "installed_completed" && (
+													{order.currentStage === "installed_completed" ? (
+														<button
+															type="button"
+															className="ztl-btn-card-action"
+															style={{ color: "#e11d48", borderColor: "#fecdd3", fontWeight: 700 }}
+															onClick={() => {
+																setWarrantyReason("Скол керамической облицовки");
+																setWarrantyReworkOrder(order);
+															}}
+															title="Отправить на гарантийную переделку / рекламацию"
+														>
+															<RotateCcw size={12} />
+															<span>Рекламация</span>
+														</button>
+													) : order.currentStage === "warranty_rework" ? (
+														<button
+															type="button"
+															className="ztl-btn-card-action ztl-btn-advance"
+															onClick={() => handleAdvanceStage(order)}
+															title="Отправить работу повторно в ЗТЛ"
+														>
+															<ChevronRight size={12} />
+															<span>В ЗТЛ</span>
+														</button>
+													) : (
 														<button
 															type="button"
 															className="ztl-btn-card-action ztl-btn-advance"
@@ -914,6 +967,16 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							</header>
 
 							<div className="ztl-detail-body">
+								{inspectingOrder.isWarrantyRework && (
+									<div style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#9f1239", padding: "8px 12px", borderRadius: "6px", fontSize: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+										<RotateCcw size={16} color="#e11d48" />
+										<div>
+											<strong>Гарантийная рекламация!</strong> Исходный наряд: <strong>№ {inspectingOrder.originalOrderNumber || inspectingOrder.originalOrderId}</strong>
+											{inspectingOrder.reworkReason && <div style={{ fontSize: "11px", marginTop: "2px" }}>Причина: {inspectingOrder.reworkReason}</div>}
+										</div>
+									</div>
+								)}
+
 								<div className="ztl-form-grid-2">
 									<div>
 										<p style={{ margin: "0 0 2px 0", fontSize: "11px", color: "var(--muted, #64748b)" }}>Пациент:</p>
@@ -982,6 +1045,23 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 							</div>
 
 							<footer className="ztl-detail-footer">
+								{inspectingOrder.currentStage === "installed_completed" && (
+									<button
+										type="button"
+										className="ztl-btn-secondary"
+										style={{ color: "#e11d48", borderColor: "#fecdd3", fontWeight: 700 }}
+										onClick={() => {
+											const target = inspectingOrder;
+											setInspectingOrder(null);
+											setWarrantyReason("Скол керамической облицовки");
+											setWarrantyReworkOrder(target);
+										}}
+										title="Оформить рекламацию и отправить на гарантийную переделку"
+									>
+										<RotateCcw size={14} />
+										<span>Рекламация</span>
+									</button>
+								)}
 								<button
 									type="button"
 									className="ztl-btn-secondary"
@@ -1000,6 +1080,81 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 									Закрыть
 								</button>
 							</footer>
+						</div>
+					</div>
+				)}
+
+				{/* ─── 7. МОДАЛЬНОЕ ОКНО ОФОРМЛЕНИЯ ГАРАНТИЙНОЙ РЕКЛАМАЦИИ В ЗТЛ ────── */}
+				{warrantyReworkOrder && (
+					<div className="ztl-detail-overlay">
+						<div className="ztl-detail-card" style={{ maxWidth: "480px" }}>
+							<header className="ztl-detail-header" style={{ borderBottom: "2px solid #e11d48" }}>
+								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+									<RotateCcw size={18} color="#e11d48" />
+									<h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#e11d48" }}>
+										Гарантийная рекламация наряда № {warrantyReworkOrder.orderNumber}
+									</h3>
+								</div>
+								<button
+									type="button"
+									className="ztl-btn-icon"
+									onClick={() => setWarrantyReworkOrder(null)}
+								>
+									<X size={16} />
+								</button>
+							</header>
+
+							<form onSubmit={handleWarrantyReworkSubmit}>
+								<div className="ztl-detail-body">
+									<p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "var(--muted, #64748b)" }}>
+										Работа для пациента <strong>{warrantyReworkOrder.patientName}</strong> будет переведена в статус
+										«Гарантийная переделка» с сохранением ссылки на исходный наряд № {warrantyReworkOrder.orderNumber}.
+									</p>
+
+									<div className="ztl-form-group">
+										<label className="ztl-form-label">Причина рекламации / замечания врача *</label>
+										<select
+											className="ztl-select"
+											style={{ width: "100%", marginBottom: "8px" }}
+											value={warrantyReason}
+											onChange={(e) => setWarrantyReason(e.target.value)}
+										>
+											<option value="Скол керамической облицовки">Скол керамической облицовки</option>
+											<option value="Завышение прикуса / окклюзионный блок">Завышение прикуса / окклюзионный блок</option>
+											<option value="Несоответствие цвета / оттенка VITA">Несоответствие цвета / оттенка VITA</option>
+											<option value="Нарушение краевого прилегания (уступ)">Нарушение краевого прилегания (уступ)</option>
+											<option value="Балансирование каркаса на культе">Балансирование каркаса на культе</option>
+											<option value="Другая причина (указать вручную)">Другая причина (указать вручную)</option>
+										</select>
+
+										<textarea
+											className="ztl-form-input"
+											style={{ height: "70px", padding: "6px 10px", resize: "none" }}
+											placeholder="Уточнение дефекта для зубного техника..."
+											value={warrantyReason}
+											onChange={(e) => setWarrantyReason(e.target.value)}
+										/>
+									</div>
+								</div>
+
+								<footer className="ztl-detail-footer">
+									<button
+										type="button"
+										className="ztl-btn-secondary"
+										onClick={() => setWarrantyReworkOrder(null)}
+									>
+										Отмена
+									</button>
+									<button
+										type="submit"
+										className="ztl-btn-primary"
+										style={{ background: "#e11d48", borderColor: "#be123c", color: "#ffffff" }}
+									>
+										<RotateCcw size={14} />
+										<span>Отправить на рекламацию</span>
+									</button>
+								</footer>
+							</form>
 						</div>
 					</div>
 				)}

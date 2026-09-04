@@ -328,6 +328,12 @@
 	color: #64748b;
 }
 
+.cld-status-pill.CLINICAL_OBSERVATION_PAUSE,
+.cld-status-pill.clinical_observation_pause {
+	background: #ecfeff;
+	color: #0e7490;
+}
+
 .cld-actions-col {
 	display: flex;
 	flex-direction: column;

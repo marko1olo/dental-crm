@@ -57,8 +57,8 @@ async function applyCashBoxFiscalReceipt(
 	tx: any,
 	orgId: string,
 	data: {
-		patientId?: string | null;
-		cashBoxId?: string | null;
+		patientId?: string | null | undefined;
+		cashBoxId?: string | null | undefined;
 		operationType: string;
 		cashKopecks: number;
 		electronicCardKopecks: number;
@@ -66,14 +66,14 @@ async function applyCashBoxFiscalReceipt(
 		prepaidKopecks: number;
 		creditKopecks: number;
 		totalKopecks: number;
-		cashierFullName?: string | null;
+		cashierFullName?: string | null | undefined;
 	},
 	printResult: {
-		fiscalDocumentNumber?: number | string | null;
-		ofdVerificationUrl?: string | null;
+		fiscalDocumentNumber?: number | string | null | undefined;
+		ofdVerificationUrl?: string | null | undefined;
 	},
 ): Promise<void> {
-	await ensureOrganizationCashBoxes(orgId);
+	await ensureOrganizationCashBoxes(tx, orgId);
 	const allBoxes = await tx
 		.select()
 		.from(cashBoxes)
@@ -282,20 +282,20 @@ async function applyCashBoxFiscalRefund(
 	tx: any,
 	orgId: string,
 	data: {
-		patientId?: string | null;
+		patientId?: string | null | undefined;
 		refundCashKopecks: number;
 		refundElectronicKopecks: number;
 		refundPrepaidKopecks: number;
 		totalRefundKopecks: number;
-		cashierFullName?: string | null;
-		originalReceiptNumber?: string | null;
+		cashierFullName?: string | null | undefined;
+		originalReceiptNumber?: string | null | undefined;
 	},
 	printResult: {
-		fiscalDocumentNumber?: number | string | null;
-		ofdVerificationUrl?: string | null;
+		fiscalDocumentNumber?: number | string | null | undefined;
+		ofdVerificationUrl?: string | null | undefined;
 	},
 ): Promise<void> {
-	await ensureOrganizationCashBoxes(orgId);
+	await ensureOrganizationCashBoxes(tx, orgId);
 	const allBoxes = await tx
 		.select()
 		.from(cashBoxes)

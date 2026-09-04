@@ -1120,20 +1120,11 @@ export async function registerAnalyticsRoutes(app: FastifyInstance) {
 					),
 				);
 
-			const [visitsWithDiaryRow] = await db
-				.select({ count: sql<number>`count(*)::int` })
-				.from(visits)
-				.where(
-					and(
-						eq(visits.organizationId, orgId),
-						gte(visits.createdAt, startDate),
-					),
-				);
-
+			// 3. Честный подсчет диагностических ИИ-осмотров Diagnocat AI
+			// Запрещена подмена на visitsWithDiaryRow: если клиника не пользуется ИИ, честно возвращаем 0
 			const aiExaminedCount = Math.max(
 				Number(aiReportsRow?.count || 0),
 				Number(aiFindingsRow?.count || 0),
-				Math.min(Number(visitsWithDiaryRow?.count || 0), Number(apptSummary?.attendedCount || 0)),
 			);
 
 			// 4. Планы лечения и санация

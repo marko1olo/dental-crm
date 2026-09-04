@@ -254,6 +254,57 @@ export function CabinetReadinessTab() {
 		showToast("Все пункты чек-листа отмечены как проверенные и готовые", "info");
 	};
 
+	const handleOneClickConfirmCabinetReady = () => {
+		handleQuickFillAllReady();
+		const record = createCabinetReadinessRecord({
+			cabinetNumber: selectedCabinet,
+			appointmentType: selectedProfile,
+			operatorStaffFullName: nurseName,
+			operatorStaffPosition: nursePosition,
+			surfaceDisinfection: {
+				isCompleted: true,
+				disinfectantBrand,
+				exposureMinutes: currentPreset.minExposureMinutes,
+			},
+			handpiecesSterility: {
+				isCompleted: true,
+				turbineHandpieceSterile: true,
+				contraAngleHandpieceSterile: true,
+				micromotorHandpieceSterile: true,
+				class5IndicatorsVerified: true,
+				packageIntegrityVerified: true,
+			},
+			sterileTray: {
+				isCompleted: true,
+				mirrorReady: true,
+				probeReady: true,
+				tweezersReady: true,
+				excavatorReady: true,
+				spatulaPluggerReady: true,
+			},
+			aspirationSystem: {
+				isCompleted: true,
+				salivaEjectorConnected: true,
+				hveVacuumConnected: true,
+				bacterialFilterChecked: true,
+			},
+			isolationCofferdam: {
+				isCompleted: true,
+				rubberDamSheetReady: true,
+				clampsReady: true,
+				forcepsReady: true,
+				isNotRequiredForProfile: !currentPreset.requiresCofferdam,
+			},
+			notes: notes || "Подтверждена готовность всех узлов кабинета к смене (норма СанПиН)",
+		});
+
+		setHistoryRecords((prev) => [record, ...prev]);
+		showToast(
+			`${selectedCabinet}: готовность к смене подтверждена по норме СанПиН (1 клик)`,
+			"success",
+		);
+	};
+
 	const handleExportCsv = () => {
 		const csv = exportCabinetReadinessToCsv(historyRecords);
 		const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -293,13 +344,13 @@ export function CabinetReadinessTab() {
 				<div className="sanpin-pane-actions" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						onClick={handleQuickFillAllReady}
+						onClick={handleOneClickConfirmCabinetReady}
 						className="sanpin-btn sanpin-btn-primary"
 						style={{ minHeight: "48px", padding: "0.6rem 1.25rem", fontSize: "0.95rem", background: "var(--teal)", color: "var(--on-teal, #fff)", fontWeight: 800, cursor: "pointer", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)" }}
 						title="1 Клик: Отметить все пункты текущего профиля как готовые"
 						data-testid="cabinet-readiness-autofill-btn"
 					>
-						<Zap size={18} /> <span>Заполнить всё готовым (1 клик)</span>
+						<Zap size={18} /> <span>Кабинет готов к смене (норма СанПиН)</span>
 					</button>
 
 					<button
@@ -346,7 +397,7 @@ export function CabinetReadinessTab() {
 				<ArrowRight size={14} color="var(--muted, #64748b)" />
 				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: "var(--teal)" }}>
 					<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "22px", height: "22px", borderRadius: "50%", background: "var(--teal)", color: "var(--on-teal, #fff)", fontSize: "0.75rem" }}>2</span>
-					<span>Шаг 2: Проверьте чек-лист</span>
+					<span>Шаг 2: Проверьте готовность (норма в 1 клик)</span>
 				</div>
 				<ArrowRight size={14} color="var(--muted, #64748b)" />
 				<div style={{ display: "flex", alignItems: "center", gap: "0.45rem", fontWeight: 700, fontSize: "0.88rem", color: evaluation.isFullyReady ? "var(--ok-fg)" : "var(--warn-fg)" }}>
@@ -359,198 +410,301 @@ export function CabinetReadinessTab() {
 				</div>
 			</div>
 
-			{/* Main Checklist Card */}
-			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem", marginTop: "1rem" }}>
-				{/* Column 1: Configuration & Disinfection */}
-				<div style={{ background: "var(--paper, #fff)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem" }}>
-					<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", color: "var(--brand-primary, #2563eb)" }}>
-						<Filter size={18} /> Шаг 1: Профиль приёма и Кабинет
-					</h3>
-
-					<div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-						<div>
-							<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "0.3rem" }}>
-								Стоматологический кабинет:
-							</label>
-							<select
-								value={selectedCabinet}
-								onChange={(e) => setSelectedCabinet(e.target.value)}
-								className="sanpin-input"
-								style={{ width: "100%", minHeight: "44px" }}
-							>
-								<option value="Кабинет № 1">Кабинет № 1 (Терапия/Эндодонтия)</option>
-								<option value="Кабинет № 2">Кабинет № 2 (Терапия/Ортопедия)</option>
-								<option value="Хирургический кабинет">Хирургический кабинет (Операционная)</option>
-								<option value="Детский кабинет">Детский кабинет</option>
-								<option value="Ортодонтический кабинет">Ортодонтический кабинет</option>
-							</select>
-						</div>
-
-						<div>
-							<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "0.3rem" }}>
-								Специализация / Профиль приёма:
-							</label>
-							<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.4rem" }}>
-								{CABINET_READINESS_PRESETS.map((p) => (
-									<button
-										key={p.type}
-										type="button"
-										onClick={() => {
-											setSelectedProfile(p.type);
-											setExposureMinutes(p.minExposureMinutes);
-										}}
-										style={{
-											minHeight: "42px",
-											padding: "0.4rem 0.6rem",
-											fontSize: "0.82rem",
-											fontWeight: selectedProfile === p.type ? 800 : 500,
-											background: selectedProfile === p.type ? "rgba(37, 99, 235, 0.12)" : "var(--paper-subtle, #f8fafc)",
-											border: selectedProfile === p.type ? "2px solid var(--brand-primary, #2563eb)" : "1px solid var(--paper-border, #cbd5e1)",
-											color: selectedProfile === p.type ? "var(--brand-primary, #2563eb)" : "inherit",
-											borderRadius: "0.5rem",
-											cursor: "pointer",
-											textAlign: "left",
-										}}
-									>
-										{p.shortLabelRu}
-									</button>
-								))}
-							</div>
-						</div>
-
-						<div style={{ marginTop: "0.5rem", borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: "0.75rem" }}>
-							<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem", color: "var(--teal)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-								<Sparkles size={16} /> Дезинфекция поверхностей установки:
-							</h4>
-
-							<label style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.85rem", marginBottom: "0.5rem", cursor: "pointer" }}>
-								<input
-									type="checkbox"
-									checked={disinfectionCompleted}
-									onChange={(e) => setDisinfectionCompleted(e.target.checked)}
-									style={{ width: "18px", height: "18px" }}
-								/>
-								<span>Поверхности протерты (кресло, столик, светильник, шланги)</span>
-							</label>
-
-							<div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "0.5rem" }}>
-								<div>
-									<label style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Дезсредство:</label>
-									<input
-										type="text"
-										value={disinfectantBrand}
-										onChange={(e) => setDisinfectantBrand(e.target.value)}
-										className="sanpin-input"
-										style={{ minHeight: "38px", fontSize: "0.85rem" }}
-									/>
-								</div>
-								<div>
-									<label style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Экспозиция (мин):</label>
-									<input
-										type="number"
-										min={1}
-										max={30}
-										value={exposureMinutes}
-										onChange={(e) => setExposureMinutes(Number(e.target.value))}
-										className="sanpin-input"
-										style={{ minHeight: "38px", fontSize: "0.85rem" }}
-									/>
-								</div>
-							</div>
-							{exposureMinutes < currentPreset.minExposureMinutes && (
-								<div style={{ color: "var(--bad-fg)", fontSize: "0.75rem", marginTop: "0.3rem", fontWeight: 600 }}>
-									Внимание: требуется экспозиция не менее {currentPreset.minExposureMinutes} мин!
-								</div>
-							)}
-						</div>
+			{/* Dominant 1-Click Readiness Hero Banner (Zero Clutter) */}
+			<div
+				style={{
+					background: "linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(37, 99, 235, 0.06) 100%)",
+					border: "2px solid var(--teal, #0d9488)",
+					borderRadius: "0.85rem",
+					padding: "1.25rem",
+					marginTop: "0.75rem",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					gap: "1.5rem",
+					flexWrap: "wrap",
+				}}
+			>
+				<div style={{ flex: "1 1 320px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
+						<span
+							style={{
+								padding: "0.25rem 0.6rem",
+								borderRadius: "0.4rem",
+								background: "var(--teal, #0d9488)",
+								color: "#ffffff",
+								fontSize: "0.75rem",
+								fontWeight: 800,
+								textTransform: "uppercase",
+								letterSpacing: "0.05em",
+							}}
+						>
+							СанПиН 3.3686-21
+						</span>
+						<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink, #1e293b)" }}>
+							{selectedCabinet} • {currentPreset.shortLabelRu}
+						</span>
 					</div>
+					<h3 style={{ margin: "0 0 0.4rem 0", fontSize: "1.15rem", fontWeight: 800, color: "var(--ink, #0f172a)" }}>
+						Готовность кабинета к приёму пациентов
+					</h3>
+					<p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted, #64748b)" }}>
+						Физиологическая норма: дезинфекция поверхностей, стерильные наконечники 5 кл., смотровой лоток, аспирация и коффердам.
+					</p>
 				</div>
 
-				{/* Column 2: Handpieces, Sterile Tray & Aspiration */}
-				<div style={{ background: "var(--paper, #fff)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem" }}>
-					<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem", color: "var(--brand-primary, #2563eb)" }}>
-						<Sparkles size={18} /> Шаг 2: Стерильные инструменты и Аспирация
-					</h3>
+				<div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+					<button
+						type="button"
+						onClick={handleOneClickConfirmCabinetReady}
+						className="sanpin-btn sanpin-btn-primary"
+						style={{
+							minHeight: "52px",
+							padding: "0.75rem 1.75rem",
+							fontSize: "0.98rem",
+							fontWeight: 800,
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							cursor: "pointer",
+							display: "flex",
+							alignItems: "center",
+							gap: "0.6rem",
+							borderRadius: "0.65rem",
+							boxShadow: "0 4px 14px rgba(13, 148, 136, 0.35)",
+						}}
+						title="1 Клик: Подтвердить готовность кабинета к смене по норме СанПиН"
+					>
+						<ShieldCheck size={22} />
+						<span>Кабинет готов к смене (норма СанПиН) — 1 клик</span>
+					</button>
+				</div>
+			</div>
 
-					<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.85rem" }}>
-						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-							<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
-								Наконечники и крафт-пакеты:
-							</strong>
-							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", cursor: "pointer" }}>
-								<input type="checkbox" checked={turbineSterile} onChange={(e) => setTurbineSterile(e.target.checked)} />
-								<span>Турбинный наконечник стерилен</span>
-							</label>
-							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", cursor: "pointer" }}>
-								<input type="checkbox" checked={contraAngleSterile} onChange={(e) => setContraAngleSterile(e.target.checked)} />
-								<span>Угловой / микромоторный наконечник стерилен</span>
-							</label>
-							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-								<input type="checkbox" checked={class5Verified} onChange={(e) => setClass5Verified(e.target.checked)} />
-								<span style={{ fontWeight: 600, color: "var(--ok-fg, #059669)" }}>Индикатор 5 класса (Интеграл/Медтест) проверен</span>
-							</label>
-						</div>
+			{/* Collapsible 20-Checklist Section (For Exceptions / Breakdowns) */}
+			<details
+				style={{
+					background: "var(--paper, #fff)",
+					border: "1px solid var(--paper-border, #e2e8f0)",
+					borderRadius: "0.75rem",
+					padding: "1rem",
+					marginTop: "1rem",
+				}}
+			>
+				<summary
+					style={{
+						cursor: "pointer",
+						fontWeight: 700,
+						fontSize: "0.92rem",
+						display: "flex",
+						alignItems: "center",
+						gap: "0.5rem",
+						color: "var(--brand-primary, #2563eb)",
+						userSelect: "none",
+					}}
+				>
+					<Filter size={16} />
+					<span>Детальный чек-лист узлов установки (20 параметров — для исключений и поломок)</span>
+					<span style={{ marginLeft: "auto", fontSize: "0.8rem", color: "var(--muted, #64748b)", fontWeight: 500 }}>
+						Развернуть для ручной корректировки
+					</span>
+				</summary>
 
-						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-							<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
-								Базовый смотровой лоток:
-							</strong>
-							<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.25rem" }}>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={mirrorReady} onChange={(e) => setMirrorReady(e.target.checked)} />
-									<span>Зеркало</span>
+				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.25rem", marginTop: "1rem" }}>
+					{/* Column 1: Configuration & Disinfection */}
+					<div style={{ background: "var(--paper-subtle, #f8fafc)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem" }}>
+						<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", color: "var(--brand-primary, #2563eb)" }}>
+							<Filter size={18} /> Шаг 1: Профиль приёма и Кабинет
+						</h3>
+
+						<div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+							<div>
+								<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "0.3rem" }}>
+									Стоматологический кабинет:
 								</label>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={probeReady} onChange={(e) => setProbeReady(e.target.checked)} />
-									<span>Зонд</span>
+								<select
+									value={selectedCabinet}
+									onChange={(e) => setSelectedCabinet(e.target.value)}
+									className="sanpin-input"
+									style={{ width: "100%", minHeight: "44px" }}
+								>
+									<option value="Кабинет № 1">Кабинет № 1 (Терапия/Эндодонтия)</option>
+									<option value="Кабинет № 2">Кабинет № 2 (Терапия/Ортопедия)</option>
+									<option value="Хирургический кабинет">Хирургический кабинет (Операционная)</option>
+									<option value="Детский кабинет">Детский кабинет</option>
+									<option value="Ортодонтический кабинет">Ортодонтический кабинет</option>
+								</select>
+							</div>
+
+							<div>
+								<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "0.3rem" }}>
+									Специализация / Профиль приёма:
 								</label>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={tweezersReady} onChange={(e) => setTweezersReady(e.target.checked)} />
-									<span>Пинцет</span>
+								<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.4rem" }}>
+									{CABINET_READINESS_PRESETS.map((p) => (
+										<button
+											key={p.type}
+											type="button"
+											onClick={() => {
+												setSelectedProfile(p.type);
+												setExposureMinutes(p.minExposureMinutes);
+											}}
+											style={{
+												minHeight: "42px",
+												padding: "0.4rem 0.6rem",
+												fontSize: "0.82rem",
+												fontWeight: selectedProfile === p.type ? 800 : 500,
+												background: selectedProfile === p.type ? "rgba(37, 99, 235, 0.12)" : "var(--paper-subtle, #f8fafc)",
+												border: selectedProfile === p.type ? "2px solid var(--brand-primary, #2563eb)" : "1px solid var(--paper-border, #cbd5e1)",
+												color: selectedProfile === p.type ? "var(--brand-primary, #2563eb)" : "inherit",
+												borderRadius: "0.5rem",
+												cursor: "pointer",
+												textAlign: "left",
+											}}
+										>
+											{p.shortLabelRu}
+										</button>
+									))}
+								</div>
+							</div>
+
+							<div style={{ marginTop: "0.5rem", borderTop: "1px solid var(--line, #e2e8f0)", paddingTop: "0.75rem" }}>
+								<h4 style={{ fontSize: "0.9rem", fontWeight: 700, marginBottom: "0.5rem", color: "var(--teal)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+									<Sparkles size={16} /> Дезинфекция поверхностей установки:
+								</h4>
+
+								<label style={{ display: "flex", alignItems: "center", gap: "0.6rem", fontSize: "0.85rem", marginBottom: "0.5rem", cursor: "pointer" }}>
+									<input
+										type="checkbox"
+										checked={disinfectionCompleted}
+										onChange={(e) => setDisinfectionCompleted(e.target.checked)}
+										style={{ width: "18px", height: "18px" }}
+									/>
+									<span>Поверхности протерты (кресло, столик, светильник, шланги)</span>
 								</label>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
-									<input type="checkbox" checked={excavatorReady} onChange={(e) => setExcavatorReady(e.target.checked)} />
-									<span>Экскаватор</span>
-								</label>
-								<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", gridColumn: "span 2" }}>
-									<input type="checkbox" checked={spatulaReady} onChange={(e) => setSpatulaReady(e.target.checked)} />
-									<span>Гладилка-штопфер</span>
-								</label>
+
+								<div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "0.5rem" }}>
+									<div>
+										<label style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Дезсредство:</label>
+										<input
+											type="text"
+											value={disinfectantBrand}
+											onChange={(e) => setDisinfectantBrand(e.target.value)}
+											className="sanpin-input"
+											style={{ minHeight: "38px", fontSize: "0.85rem" }}
+										/>
+									</div>
+									<div>
+										<label style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>Экспозиция (мин):</label>
+										<input
+											type="number"
+											min={1}
+											max={30}
+											value={exposureMinutes}
+											onChange={(e) => setExposureMinutes(Number(e.target.value))}
+											className="sanpin-input"
+											style={{ minHeight: "38px", fontSize: "0.85rem" }}
+										/>
+									</div>
+								</div>
+								{exposureMinutes < currentPreset.minExposureMinutes && (
+									<div style={{ color: "var(--bad-fg)", fontSize: "0.75rem", marginTop: "0.3rem", fontWeight: 600 }}>
+										Внимание: требуется экспозиция не менее {currentPreset.minExposureMinutes} мин!
+									</div>
+								)}
 							</div>
 						</div>
+					</div>
 
-						<div style={{ background: "var(--paper-subtle, #f8fafc)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
-							<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
-								Аспирационная система и Коффердам:
-							</strong>
-							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", cursor: "pointer" }}>
-								<input type="checkbox" checked={salivaConnected} onChange={(e) => setSalivaConnected(e.target.checked)} />
-								<span>Слюноотсос (канюля подключена)</span>
-							</label>
-							<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", cursor: "pointer" }}>
-								<input type="checkbox" checked={hveConnected} onChange={(e) => setHveConnected(e.target.checked)} />
-								<span>Пылесос (высокообъемная канюля)</span>
-							</label>
-							{currentPreset.requiresCofferdam && (
-								<div style={{ marginTop: "0.4rem", borderTop: "1px dashed var(--line, #cbd5e1)", paddingTop: "0.4rem" }}>
-									<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
-										<input
-											type="checkbox"
-											checked={rubberDamReady && clampsReady && forcepsReady}
-											onChange={(e) => {
-												const val = e.target.checked;
-												setRubberDamReady(val);
-												setClampsReady(val);
-												setForcepsReady(val);
-											}}
-										/>
-										<span style={{ fontWeight: 600, color: "var(--teal)" }}>Коффердам (платок, клампы 2A/W8A, щипцы)</span>
+					{/* Column 2: Handpieces, Sterile Tray & Aspiration */}
+					<div style={{ background: "var(--paper-subtle, #f8fafc)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem" }}>
+						<h3 style={{ fontSize: "1rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem", color: "var(--brand-primary, #2563eb)" }}>
+							<Sparkles size={18} /> Шаг 2: Стерильные инструменты и Аспирация
+						</h3>
+
+						<div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.85rem" }}>
+							<div style={{ background: "var(--paper, #fff)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
+								<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
+									Наконечники и крафт-пакеты:
+								</strong>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", cursor: "pointer" }}>
+									<input type="checkbox" checked={turbineSterile} onChange={(e) => setTurbineSterile(e.target.checked)} />
+									<span>Турбинный наконечник стерилен</span>
+								</label>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", cursor: "pointer" }}>
+									<input type="checkbox" checked={contraAngleSterile} onChange={(e) => setContraAngleSterile(e.target.checked)} />
+									<span>Угловой / микромоторный наконечник стерилен</span>
+								</label>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+									<input type="checkbox" checked={class5Verified} onChange={(e) => setClass5Verified(e.target.checked)} />
+									<span style={{ fontWeight: 600, color: "var(--ok-fg, #059669)" }}>Индикатор 5 класса (Интеграл/Медтест) проверен</span>
+								</label>
+							</div>
+
+							<div style={{ background: "var(--paper, #fff)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
+								<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
+									Базовый смотровой лоток:
+								</strong>
+								<div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.25rem" }}>
+									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
+										<input type="checkbox" checked={mirrorReady} onChange={(e) => setMirrorReady(e.target.checked)} />
+										<span>Зеркало</span>
+									</label>
+									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
+										<input type="checkbox" checked={probeReady} onChange={(e) => setProbeReady(e.target.checked)} />
+										<span>Зонд</span>
+									</label>
+									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
+										<input type="checkbox" checked={tweezersReady} onChange={(e) => setTweezersReady(e.target.checked)} />
+										<span>Пинцет</span>
+									</label>
+									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer" }}>
+										<input type="checkbox" checked={excavatorReady} onChange={(e) => setExcavatorReady(e.target.checked)} />
+										<span>Экскаватор</span>
+									</label>
+									<label style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", gridColumn: "span 2" }}>
+										<input type="checkbox" checked={spatulaReady} onChange={(e) => setSpatulaReady(e.target.checked)} />
+										<span>Гладилка-штопфер</span>
 									</label>
 								</div>
-							)}
+							</div>
+
+							<div style={{ background: "var(--paper, #fff)", padding: "0.65rem", borderRadius: "0.5rem", border: "1px solid var(--line, #e2e8f0)" }}>
+								<strong style={{ display: "block", marginBottom: "0.4rem", color: "var(--ink, #1e293b)" }}>
+									Аспирационная система и Коффердам:
+								</strong>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", cursor: "pointer" }}>
+									<input type="checkbox" checked={salivaConnected} onChange={(e) => setSalivaConnected(e.target.checked)} />
+									<span>Слюноотсос (канюля подключена)</span>
+								</label>
+								<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", cursor: "pointer" }}>
+									<input type="checkbox" checked={hveConnected} onChange={(e) => setHveConnected(e.target.checked)} />
+									<span>Пылесос (высокообъемная канюля)</span>
+								</label>
+								{currentPreset.requiresCofferdam && (
+									<div style={{ marginTop: "0.4rem", borderTop: "1px dashed var(--line, #cbd5e1)", paddingTop: "0.4rem" }}>
+										<label style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer" }}>
+											<input
+												type="checkbox"
+												checked={rubberDamReady && clampsReady && forcepsReady}
+												onChange={(e) => {
+													const val = e.target.checked;
+													setRubberDamReady(val);
+													setClampsReady(val);
+													setForcepsReady(val);
+												}}
+											/>
+											<span style={{ fontWeight: 600, color: "var(--teal)" }}>Коффердам (платок, клампы 2A/W8A, щипцы)</span>
+										</label>
+									</div>
+								)}
+							</div>
 						</div>
 					</div>
 				</div>
+			</details>
+
+			{/* Main Checklist Verdict Card */}
+			<div style={{ marginTop: "1rem" }}>
 
 				{/* Column 3: Readiness Verdict & Signature */}
 				<div style={{ background: "var(--paper, #fff)", border: "1px solid var(--paper-border, #e2e8f0)", borderRadius: "0.75rem", padding: "1.25rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>

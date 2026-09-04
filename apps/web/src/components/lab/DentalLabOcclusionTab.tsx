@@ -157,31 +157,43 @@ export function DentalLabOcclusionTab({
 				</div>
 			</div>
 
-			{/* Cement Gap Settings */}
-			<div className="bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-4 space-y-3">
-				<div className="flex items-center justify-between">
-					<label className="block text-xs font-bold text-[var(--ink)]">
-						Цементный зазор CAD/CAM (Cement Space Gap)
-					</label>
-					<span className="text-base font-black text-[var(--teal)] font-mono">
-						{cementGapMicrons} мкм
+			{/* Technical Milling & Cement Gap Settings (Collapsible for Clean Doctor View) */}
+			<details className="group bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl p-3.5 transition-all">
+				<summary className="flex items-center justify-between cursor-pointer list-none select-none text-xs font-bold text-[var(--ink)]">
+					<div className="flex items-center gap-2">
+						<span className="text-[var(--muted)] group-open:rotate-90 transition-transform">▸</span>
+						<span>Технические параметры CAD/CAM фрезерования (ЗТЛ)</span>
+					</div>
+					<span className="text-xs font-mono font-bold text-[var(--teal)] px-2 py-0.5 rounded bg-[var(--teal-surface)]">
+						Зазор: {cementGapMicrons || 30} мкм
 					</span>
+				</summary>
+
+				<div className="pt-3.5 mt-3 border-t border-[var(--line)] space-y-3">
+					<div className="flex items-center justify-between">
+						<label className="block text-xs font-bold text-[var(--ink)]">
+							Цементный зазор CAD/CAM (Cement Space Gap)
+						</label>
+						<span className="text-sm font-black text-[var(--teal)] font-mono">
+							{cementGapMicrons} мкм
+						</span>
+					</div>
+					<input
+						type="range"
+						min="10"
+						max="100"
+						step="5"
+						value={cementGapMicrons}
+						onChange={(e) => setCementGapMicrons(Number(e.target.value))}
+						className="w-full h-3 accent-[var(--teal)] cursor-pointer"
+					/>
+					<div className="flex justify-between text-[11px] text-[var(--muted)] font-medium">
+						<span>10 мкм (Прецизионная)</span>
+						<span>30–40 мкм (Стандарт ISO)</span>
+						<span>100 мкм (Широкий зазор)</span>
+					</div>
 				</div>
-				<input
-					type="range"
-					min="10"
-					max="100"
-					step="5"
-					value={cementGapMicrons}
-					onChange={(e) => setCementGapMicrons(Number(e.target.value))}
-					className="w-full h-3 accent-[var(--teal)] cursor-pointer"
-				/>
-				<div className="flex justify-between text-xs text-[var(--muted)] font-medium">
-					<span>10 мкм (Прецизионная посадка)</span>
-					<span>30–40 мкм (Стандарт ISO)</span>
-					<span>100 мкм (Широкий зазор)</span>
-				</div>
-			</div>
+			</details>
 		</div>
 	);
 }

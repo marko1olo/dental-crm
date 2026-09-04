@@ -24,6 +24,7 @@ import {
 	generateQrCodeSvg,
 	generateDentalLabOrderA4PrintBlank,
 	exportDentalLabOrdersToCsv,
+	sendOrderToWarrantyRework,
 } from "../dentalLabWorkflowEngine";
 
 describe("1. Orthopedic Work Types Catalog (Каталог ортопедических конструкций)", () => {
@@ -409,3 +410,38 @@ describe("8. A4 Printable Blank for Courier & CSV Export", () => {
 		assert.ok(csv.includes("16000"));
 	});
 });
+
+describe("9. Warranty Rework & Reclamation Lifecycle (Гарантийные переделки)", () => {
+	test("canAdvanceLabStage разрешает переход из installed_completed в warranty_rework", () => {
+		assert.equal(canAdvanceLabStage("installed_completed", "warranty_rework"), true);
+		assert.equal(canAdvanceLabStage("warranty_rework", "sent_to_lab"), true);
+	});
+
+	test("sendOrderToWarrantyRework корректно переводит наряд в warranty_rework с сохранением исходного номера наряда", () => {
+		const completedOrder = createDentalLabOrder({
+			patientId: "pat-rework-1",
+			patientName: "Смирнова Елена Александровна",
+			doctorId: "doc-1",
+			doctorName: "Д-р Ковалев С. П.",
+			workTypeId: "crown_emax",
+			selectedTeeth: [11],
+			initialStatus: "installed_completed",
+		});
+
+		assert.equal(completedOrder.currentStage, "installed_completed");
+
+		const reworkOrder = sendOrderToWarrantyRework(
+			completedOrder,
+			"Скол керамики режущего края через 3 дня после фиксации",
+			"Д-р Ковалев С. П.",
+		);
+
+		assert.equal(reworkOrder.currentStage, "warranty_rework");
+		assert.equal(reworkOrder.isWarrantyRework, true);
+		assert.equal(reworkOrder.originalOrderId, completedOrder.id);
+		assert.equal(reworkOrder.originalOrderNumber, completedOrder.orderNumber);
+		assert.ok(reworkOrder.reworkReason?.includes("Скол керамики"));
+		assert.ok(reworkOrder.stageHistory.some((h) => h.stage === "warranty_rework"));
+	});
+});
+

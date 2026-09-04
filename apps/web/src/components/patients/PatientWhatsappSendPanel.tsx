@@ -13,7 +13,19 @@
  * 3. Валидация прав (requireNonDoctorAccess), очистка номера и защита от сбоев сети.
  */
 
-import { Calendar, CheckCircle2, MessageSquare, Send, Sparkles, Stethoscope } from "lucide-react";
+import {
+	Calendar,
+	CheckCircle2,
+	ClipboardList,
+	ExternalLink,
+	MapPin,
+	MessageSquare,
+	Phone,
+	Scan,
+	Send,
+	Sparkles,
+	Stethoscope,
+} from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import { operatorReadableErrorDetail } from "../../AppHelpers";
@@ -70,6 +82,15 @@ export const PatientWhatsappSendPanel: React.FC<
 	const phoneHint = (patientPhone ?? "").trim();
 	const clinicName = dashboard?.clinicSettings?.name || "клиника DENTE";
 
+	const cleanPhone = useMemo(() => {
+		const raw = (patientPhone ?? "").replace(/\D/g, "");
+		if (!raw) return "";
+		if (raw.length === 11 && raw.startsWith("8")) {
+			return `7${raw.slice(1)}`;
+		}
+		return raw;
+	}, [patientPhone]);
+
 	// Поиск ближайшей будущей записи пациента
 	const upcomingAppointment = useMemo(() => {
 		if (!pid || !dashboard?.appointments) return null;
@@ -83,7 +104,7 @@ export const PatientWhatsappSendPanel: React.FC<
 
 	// Генераторы быстрых шаблонов сообщений
 	const applyTemplate = useCallback(
-		(type: "reminder" | "confirmation" | "hygiene" | "checkup") => {
+		(type: "reminder" | "confirmation" | "hygiene" | "checkup" | "xray" | "treatment_plan" | "route") => {
 			let text = "";
 			const doctor = upcomingAppointment?.doctorName || "лечащему врачу";
 			const dateStr = upcomingAppointment
@@ -120,12 +141,24 @@ export const PatientWhatsappSendPanel: React.FC<
 				case "checkup":
 					text = `Здравствуйте, ${nameHint}! Как ваше самочувствие после недавнего лечения в ${clinicName}? Напоминаем о возможности пройти контрольный осмотр. Если вас что-то беспокоит, напишите нам.`;
 					break;
+
+				case "xray":
+					text = `Здравствуйте, ${nameHint}! Вам назначен диагностический 3D-снимок (КТ / ОПТГ). Исследование занимает 2 минуты, подготовка не требуется. Ждём вас в рентген-кабинете ${clinicName}!`;
+					break;
+
+				case "treatment_plan":
+					text = `Здравствуйте, ${nameHint}! Ваш индивидуальный план лечения и сметы подготовлены доктором. Вы можете ознакомиться с ними в клинике ${clinicName} или личном кабинете.`;
+					break;
+
+				case "route":
+					text = `Здравствуйте, ${nameHint}! Маршрут до клиники ${clinicName}: ул. Ленина, д. 10. Вход со двора, бесплатная парковка перед шлагбаумом. Схема проезда: https://dente.clinic/contacts`;
+					break;
 			}
 
 			setMessage(text);
 			setError(null);
 			setLastOk(null);
-			showToast("Шаблон WhatsApp применён", "info");
+			showToast("Шаблон сообщения применён", "info");
 		},
 		[clinicName, nameHint, upcomingAppointment],
 	);
@@ -237,7 +270,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<Sparkles size={12} className="text-amber-400" />
 					Быстрые шаблоны:
 				</span>
-				<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
 					<button
 						type="button"
 						onClick={() => applyTemplate("reminder")}
@@ -293,6 +326,48 @@ export const PatientWhatsappSendPanel: React.FC<
 							После лечения
 						</span>
 					</button>
+
+					<button
+						type="button"
+						onClick={() => applyTemplate("xray")}
+						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+					>
+						<span className="flex items-center gap-1">
+							<Scan size={12} className="text-cyan-400" />
+							<span>Снимок КТ</span>
+						</span>
+						<span className="text-[10px] text-zinc-500 font-normal truncate">
+							Диагностика
+						</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => applyTemplate("treatment_plan")}
+						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+					>
+						<span className="flex items-center gap-1">
+							<ClipboardList size={12} className="text-indigo-400" />
+							<span>План лечения</span>
+						</span>
+						<span className="text-[10px] text-zinc-500 font-normal truncate">
+							Сметы готовы
+						</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => applyTemplate("route")}
+						className="min-h-[44px] px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-emerald-950/60 active:scale-95 border border-zinc-800 hover:border-emerald-500/40 text-zinc-200 hover:text-emerald-300 text-xs font-semibold text-left transition-all flex flex-col justify-center"
+					>
+						<span className="flex items-center gap-1">
+							<MapPin size={12} className="text-rose-400" />
+							<span>Маршрут</span>
+						</span>
+						<span className="text-[10px] text-zinc-500 font-normal truncate">
+							Схема и парковка
+						</span>
+					</button>
 				</div>
 			</div>
 
@@ -343,17 +418,48 @@ export const PatientWhatsappSendPanel: React.FC<
 						<span>{busy ? "Отправляю…" : "Отправить в WhatsApp"}</span>
 					</button>
 
-					{phoneHint && (
-						<button
-							type="button"
-							onClick={handleOpenWebWhatsApp}
-							className="min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-emerald-300 border border-zinc-700 hover:border-emerald-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
-							title="Открыть в веб-версии WhatsApp"
-						>
-							<MessageSquare size={14} />
-							<span>Открыть wa.me</span>
-						</button>
-					)}
+					{cleanPhone ? (
+						<div className="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								onClick={handleOpenWebWhatsApp}
+								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-emerald-300 border border-zinc-700 hover:border-emerald-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								title="Открыть в веб-версии WhatsApp"
+							>
+								<MessageSquare size={14} />
+								<span>wa.me</span>
+								<ExternalLink size={11} className="opacity-60" />
+							</button>
+
+							<a
+								href={`https://t.me/+${cleanPhone}`}
+								target="_blank"
+								rel="noreferrer"
+								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-sky-300 border border-zinc-700 hover:border-sky-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								title="Написать пациенту в Telegram"
+							>
+								<span>Telegram</span>
+								<ExternalLink size={11} className="opacity-60" />
+							</a>
+
+							<a
+								href={`sms:+${cleanPhone}?body=${encodeURIComponent(message.trim() || "")}`}
+								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-indigo-300 border border-zinc-700 hover:border-indigo-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								title="Отправить SMS"
+							>
+								<span>SMS</span>
+							</a>
+
+							<a
+								href={`tel:+${cleanPhone}`}
+								className="min-h-[44px] px-3 py-2 text-xs font-semibold rounded-xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-teal-300 border border-zinc-700 hover:border-teal-500/30 inline-flex items-center justify-center gap-1.5 transition-all"
+								title={`Позвонить на ${phoneHint}`}
+							>
+								<Phone size={14} />
+								<span>Звонок</span>
+							</a>
+						</div>
+					) : null}
 				</div>
 
 				<span

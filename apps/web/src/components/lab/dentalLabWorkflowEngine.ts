@@ -167,7 +167,8 @@ export type LabWorkflowStatus =
 	| "draft"                // 1. Черновик (оформление ортопедом)
 	| "sent_to_lab"          // 2. Отправлено в ЗТЛ (передано курьеру)
 	| "fitting_scheduled"    // 3. Примерка назначена [fittingDate / appointmentId]
-	| "installed_completed"; // 4. Сдано пациенту (окончательная фиксация)
+	| "installed_completed"  // 4. Сдано пациенту (окончательная фиксация)
+	| "warranty_rework";     // 5. Гарантийная переделка / рекламация ЗТЛ
 
 export type LabProductionStageId = LabWorkflowStatus; // Совместимость с компонентами
 
@@ -223,6 +224,16 @@ export const LAB_WORKFLOW_STATUSES: Record<LabWorkflowStatus, LabWorkflowStatusD
 		badgeClass: "badge-emerald",
 		colorHex: "#10b981",
 	},
+	warranty_rework: {
+		id: "warranty_rework",
+		stepIndex: 5,
+		nameRu: "Гарантийная переделка / рекламация",
+		shortTitleRu: "Переделка / Рекламация",
+		descriptionRu: "Работа направлена в ЗТЛ на гарантийную переделку или доработку (скол керамики, завышение прикуса, коррекция краевого прилегания).",
+		icon: "RotateCcw",
+		badgeClass: "badge-rose",
+		colorHex: "#f43f5e",
+	},
 };
 
 export const LAB_WORKFLOW_STATUS_ORDER: readonly LabWorkflowStatus[] = [
@@ -232,22 +243,36 @@ export const LAB_WORKFLOW_STATUS_ORDER: readonly LabWorkflowStatus[] = [
 	"installed_completed",
 ];
 
+export const ALL_LAB_WORKFLOW_STATUSES: readonly LabWorkflowStatus[] = [
+	...LAB_WORKFLOW_STATUS_ORDER,
+	"warranty_rework",
+];
+
 // Алиасы для обратной совместимости
 export const LAB_PRODUCTION_STAGES = LAB_WORKFLOW_STATUSES;
 export const LAB_PRODUCTION_STAGE_ORDER = LAB_WORKFLOW_STATUS_ORDER;
 
 /**
  * Проверка возможности перехода между статусами наряд-заказа ЗТЛ.
+ * Включает переход из installed_completed в warranty_rework («Гарантийная переделка / доработка»).
  */
 export function canAdvanceLabStage(
 	currentStage: LabWorkflowStatus,
 	targetStage: LabWorkflowStatus,
 ): boolean {
 	if (currentStage === targetStage) return true;
+	if (targetStage === "warranty_rework") {
+		// Разрешен переход на гарантийную переделку из сданной работы или примерки
+		return currentStage === "installed_completed" || currentStage === "fitting_scheduled";
+	}
+	if (currentStage === "warranty_rework") {
+		// Из гарантийной переделки работа может снова поехать в ЗТЛ, на примерку или быть зафиксирована
+		return targetStage === "sent_to_lab" || targetStage === "fitting_scheduled" || targetStage === "installed_completed";
+	}
 	const currentIndex = LAB_WORKFLOW_STATUSES[currentStage]?.stepIndex ?? 1;
 	const targetIndex = LAB_WORKFLOW_STATUSES[targetStage]?.stepIndex ?? 1;
 	// Разрешен переход вперед или возврат назад (например, повторная примерка или доработка)
-	return targetIndex >= 1 && targetIndex <= 4 && currentIndex >= 1;
+	return targetIndex >= 1 && targetIndex <= 5 && currentIndex >= 1;
 }
 
 /**
@@ -256,6 +281,9 @@ export function canAdvanceLabStage(
 export function getNextLabProductionStage(
 	currentStage: LabWorkflowStatus,
 ): LabWorkflowStatus | null {
+	if (currentStage === "warranty_rework") {
+		return "sent_to_lab";
+	}
 	const currentIndex = LAB_WORKFLOW_STATUS_ORDER.indexOf(currentStage);
 	if (currentIndex === -1 || currentIndex >= LAB_WORKFLOW_STATUS_ORDER.length - 1) {
 		return null;
@@ -631,6 +659,10 @@ export interface DentalLabWorkflowOrder {
 	readonly clinicalNotes?: string | undefined;
 	readonly technicianNotes?: string | undefined;
 	readonly isUrgent?: boolean | undefined;
+	readonly originalOrderId?: string | undefined;
+	readonly originalOrderNumber?: string | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly reworkReason?: string | undefined;
 	readonly createdAtIso: string;
 	readonly updatedAtIso: string;
 }
@@ -668,6 +700,10 @@ export interface CreateDentalLabOrderParams {
 	readonly clinicalNotes?: string | undefined;
 	readonly technicianNotes?: string | undefined;
 	readonly isUrgent?: boolean | undefined;
+	readonly originalOrderId?: string | undefined;
+	readonly originalOrderNumber?: string | undefined;
+	readonly isWarrantyRework?: boolean | undefined;
+	readonly reworkReason?: string | undefined;
 	readonly initialStatus?: LabWorkflowStatus | undefined;
 }
 
@@ -777,6 +813,10 @@ export function createDentalLabOrder(params: CreateDentalLabOrderParams): Dental
 		clinicalNotes: params.clinicalNotes,
 		technicianNotes: params.technicianNotes,
 		isUrgent: params.isUrgent ?? false,
+		originalOrderId: params.originalOrderId,
+		originalOrderNumber: params.originalOrderNumber,
+		isWarrantyRework: params.isWarrantyRework ?? false,
+		reworkReason: params.reworkReason,
 		createdAtIso: nowIso,
 		updatedAtIso: nowIso,
 	};
@@ -794,6 +834,7 @@ export function advanceLabOrderStage(
 ): DentalLabWorkflowOrder {
 	const nowIso = new Date().toISOString();
 	const isInstalled = newStage === "installed_completed";
+	const isWarranty = newStage === "warranty_rework" || Boolean(order.isWarrantyRework);
 
 	const delayAlert = checkLabDeadlineAndAlert({
 		expectedLabDate: order.expectedLabDateIso,
@@ -814,6 +855,9 @@ export function advanceLabOrderStage(
 	return {
 		...order,
 		currentStage: newStage,
+		isWarrantyRework: isWarranty,
+		originalOrderId: order.originalOrderId || (newStage === "warranty_rework" ? order.id : undefined),
+		originalOrderNumber: order.originalOrderNumber || (newStage === "warranty_rework" ? order.orderNumber : undefined),
 		stageHistory: [
 			...order.stageHistory,
 			{
@@ -821,6 +865,59 @@ export function advanceLabOrderStage(
 				timestampIso: nowIso,
 				authorName,
 				note: autoNote,
+			},
+		],
+		delayAlert,
+		isDelayedAlert: delayAlert.isDelayedAlert,
+		updatedAtIso: nowIso,
+	};
+}
+
+/**
+ * Отправка сданного наряд-заказа на гарантийную переделку / рекламацию в ЗТЛ.
+ * Сохраняет прямую ссылку на исходный заказ-наряд, фиксирует причину рекламации
+ * и пересчитывает плановый срок готовности доработки ЗТЛ (+4 рабочих дня).
+ */
+export function sendOrderToWarrantyRework(
+	order: DentalLabWorkflowOrder,
+	reworkReason: string = "Гарантийная рекламация: скол керамики / завышение прикуса / краевое прилегание",
+	authorName: string = "Врач-ортопед",
+	currentDate: Date = new Date(),
+): DentalLabWorkflowOrder {
+	const nowIso = currentDate.toISOString();
+	const newExpectedDate = addWorkingDaysRu(currentDate, 4);
+	const newExpectedIso = formatDateToIsoDay(newExpectedDate);
+
+	const delayAlert = checkLabDeadlineAndAlert({
+		expectedLabDate: newExpectedIso,
+		scheduledVisitDate: undefined,
+		fittingDate: undefined,
+		appointmentId: undefined,
+		currentDate,
+		isInstalledOrCompleted: false,
+		orderNumber: order.orderNumber,
+		patientName: order.patientName,
+		doctorName: order.doctorName,
+		labName: order.labName,
+	});
+
+	const reworkNote = `Гарантийная переделка (исходный наряд № ${order.orderNumber}): ${reworkReason}`;
+
+	return {
+		...order,
+		currentStage: "warranty_rework",
+		isWarrantyRework: true,
+		reworkReason,
+		originalOrderId: order.originalOrderId || order.id,
+		originalOrderNumber: order.originalOrderNumber || order.orderNumber,
+		expectedLabDateIso: newExpectedIso,
+		stageHistory: [
+			...order.stageHistory,
+			{
+				stage: "warranty_rework",
+				timestampIso: nowIso,
+				authorName,
+				note: reworkNote,
 			},
 		],
 		delayAlert,

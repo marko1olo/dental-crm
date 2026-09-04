@@ -4,6 +4,7 @@ import {
 	CheckCircle2,
 	ChevronRight,
 	Clock,
+	ExternalLink,
 	Filter,
 	MessageSquare,
 	Phone,
@@ -364,27 +365,72 @@ export const RecallAutomationPipelineWidget: React.FC<RecallAutomationPipelineWi
 							</div>
 
 							{/* Actions */}
-							<div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--glass-border)]">
+							<div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--glass-border)]">
+								{recall.patientPhone ? (
+									<>
+										<a
+											href={`tel:+${recall.patientPhone.replace(/\D/g, "").replace(/^8/, "7")}`}
+											className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] hover:text-teal-600 transition-colors"
+											title={`Позвонить ${recall.patientPhone}`}
+										>
+											<Phone className="h-3.5 w-3.5 text-teal-600" />
+											<span className="hidden sm:inline">Звонок</span>
+										</a>
+
+										<a
+											href={`https://t.me/+${recall.patientPhone.replace(/\D/g, "").replace(/^8/, "7")}`}
+											target="_blank"
+											rel="noreferrer"
+											className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] hover:text-sky-600 transition-colors"
+											title="Написать в Telegram"
+										>
+											<span className="text-sky-600 font-semibold text-[11px]">TG</span>
+											<ExternalLink className="h-3 w-3 opacity-60" />
+										</a>
+									</>
+								) : null}
+
+								{onOpenScheduleModal ? (
+									<button
+										type="button"
+										onClick={() => onOpenScheduleModal(recall.patientId, recall.patientName)}
+										className="min-h-[36px] inline-flex items-center gap-1 rounded-xl bg-[var(--accent)] px-2.5 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-all shadow-sm"
+										title="Записать пациента в расписание"
+									>
+										<Calendar className="h-3.5 w-3.5" />
+										<span>Записать</span>
+									</button>
+								) : null}
+
 								<button
 									type="button"
-									onClick={() => void handleSendWhatsAppReminder(recall)}
+									onClick={() => {
+										if (onOpenChat) {
+											onOpenChat(recall.patientId, recall.patientName, recall.patientPhone);
+										} else {
+											void handleSendWhatsAppReminder(recall);
+										}
+									}}
 									disabled={actioningId === recall.id}
-									className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
+									className="min-h-[36px] inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
+									title="Отправить напоминание или открыть диалог в WhatsApp"
 								>
 									{actioningId === recall.id ? (
 										<RefreshCw className="h-3.5 w-3.5 animate-spin" />
 									) : (
 										<MessageSquare className="h-3.5 w-3.5" />
 									)}
-									WhatsApp
+									<span>WhatsApp</span>
 								</button>
+
 								<button
 									type="button"
 									onClick={() => handleSnoozeRecall(recall.id, 1)}
-									className="flex items-center gap-1 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-2 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
+									className="min-h-[36px] inline-flex items-center gap-1 rounded-xl border border-[var(--glass-border)] bg-[var(--paper)] px-2.5 py-1.5 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] transition-colors"
+									title="Отложить вызов на 1 месяц"
 								>
 									<Clock className="h-3.5 w-3.5 text-[var(--muted)]" />
-									+1 мес
+									<span>+1 мес</span>
 								</button>
 							</div>
 						</div>

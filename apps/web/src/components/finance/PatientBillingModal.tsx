@@ -59,6 +59,7 @@ import { OneCExportButton } from "./OneCExportButton";
 import { Fiscal54FzReceiptModal } from "./fiscal/Fiscal54FzReceiptModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
 import { TaxDeductionModal } from "../tax/TaxDeductionModal";
+import type { TaxDeductionPaymentItem } from "@dental/shared";
 import { useModalA11y } from "../../hooks/useModalA11y";
 
 export interface PatientBillingModalProps {
@@ -86,6 +87,7 @@ export interface PatientBillingModalProps {
 	readonly initialServices?: readonly InvoiceServiceItem[] | undefined;
 	readonly contractNumber?: string | undefined;
 	readonly contractDateIso?: string | undefined;
+	readonly fiscalPayments?: readonly TaxDeductionPaymentItem[] | undefined;
 	readonly onFiscalize?: (() => void) | undefined;
 }
 
@@ -133,6 +135,7 @@ export const PatientBillingModal: React.FC<PatientBillingModalProps> = ({
 	initialServices = [],
 	contractNumber = "Д-2026/089",
 	contractDateIso,
+	fiscalPayments,
 	onFiscalize,
 }) => {
 	const [activeTab, setActiveTab] = useState<"preview" | "friendly" | "details">("friendly");
@@ -1492,17 +1495,23 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 						patientInn=""
 						clinicName={clinicLegalName}
 						clinicLicenseNumber={clinicLicenseNumber}
-						payments={services.map((s, idx) => ({
-							id: s.id || `srv-${idx + 1}`,
-							dateIso: new Date().toISOString(),
-							receiptNumber: String(idx + 1),
-							fiscalDocumentNumber: String(idx + 101),
-							fiscalSign: "987654321",
-							serviceName: s.name,
-							code804n: s.code804n || "A16.07.002",
-							amountRub: (s.priceRub || 0) * (s.quantity || 1) - (s.discountRub || 0),
-							taxCode: s.category === "implantology" || s.category === "surgery" ? ("2" as const) : ("1" as const),
-						}))}
+						payments={
+							fiscalPayments && fiscalPayments.length > 0
+								? fiscalPayments
+								: services.map((s, idx) => ({
+										id: s.id || `srv-${idx + 1}`,
+										// Честная дата договора/акта без подмены на new Date()
+										dateIso: contractDateIso || actParams.contractDateIso || actParams.actDateIso || "",
+										// Без выдуманных номеров чеков и фискального признака '987654321'
+										receiptNumber: "",
+										fiscalDocumentNumber: "",
+										fiscalSign: "",
+										serviceName: s.name,
+										code804n: s.code804n || "A16.07.002",
+										amountRub: (s.priceRub || 0) * (s.quantity || 1) - (s.discountRub || 0),
+										taxCode: s.category === "implantology" || s.category === "surgery" ? ("2" as const) : ("1" as const),
+									}))
+						}
 					/>
 				)}
 			</div>
