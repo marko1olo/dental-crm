@@ -63,10 +63,10 @@ export function HospitalSanpinPackageModal({
 						<Building size={24} color="var(--brand-700, #0d9488)" aria-hidden="true" />
 						<div>
 							<h3 id="hospital-package-title" style={{ margin: 0 }}>
-								Пакет «Стационар, СанПиН и Гос. Реестры»
+								Пакет «СанПиН, ЭЛН и Гос. Реестры»
 							</h3>
 							<span style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
-								{patient ? `Пациент: ${patient.fullName}` : "Гос. реестры, СанПиН и взаимодействие со стационарами"}
+								{patient ? `Пациент: ${patient.fullName}` : "Гос. реестры, СанПиН, ЭЛН и направления в ЧЛХ"}
 							</span>
 						</div>
 					</div>

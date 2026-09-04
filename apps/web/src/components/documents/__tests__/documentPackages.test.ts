@@ -4,6 +4,7 @@ import { type DocumentKind, type GeneratedDocument } from "@dental/shared";
 import { SURGICAL_STATUTORY_ITEMS } from "../SurgicalPackageModal";
 import { generatePrimaryIntakePackageHtml } from "../primaryIntakePackagePrintEngine";
 import { generateSurgicalPackageHtml } from "../surgicalPackagePrintEngine";
+import { generateClinicalPackageHtml } from "../clinicalPackagePrintEngine";
 
 describe("Document Packages and 1-Click Intake Scenarios", () => {
 	test("Surgical package contains all 6 statutory medical documents", () => {
@@ -130,6 +131,51 @@ describe("Document Packages and 1-Click Intake Scenarios", () => {
 
 	test("Surgical Package: handles blank patient data with clean underlines without throwing (Mandate 8e)", () => {
 		const html = generateSurgicalPackageHtml({
+			patient: null,
+			clinic: null,
+			doctorFullName: null,
+		});
+
+		assert.ok(html.includes("________________________________________"), "Outputs underlines for missing full name");
+		assert.ok(html.includes("серия ______ № ________"), "Outputs underlines for missing passport");
+		assert.ok(!html.includes("undefined"), "Must not contain undefined in rendered text");
+	});
+
+	test("Clinical Package: 1-click HTML generator creates all 3 statutory sheets with page breaks (Mandate 8e/8k)", () => {
+		const html = generateClinicalPackageHtml({
+			patient: {
+				fullName: "Иванова Ольга Петровна",
+				birthDate: "1994-08-12",
+				phone: "+7 (926) 333-22-11",
+			},
+			clinic: {
+				clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				inn: "7707083893",
+			},
+			doctorFullName: "Терапевт Соколова Е.А.",
+			treatmentDetails: {
+				treatmentType: "Лечение глубокого кариеса и эстетическая реставрация",
+				toothNumbers: "16, 15",
+				diagnosisIcd10: "K02.1 Кариес дентина",
+				anestheticName: "Убистезин форте 1:100 000",
+			},
+		});
+
+		assert.ok(html.includes("Информированное добровольное согласие на терапевтическое стоматологическое лечение"), "Must contain therapeutic informed consent");
+		assert.ok(html.includes("ФЗ № 323-ФЗ ст. 20"), "Must cite Federal Law 323-FZ");
+		assert.ok(html.includes("1051н"), "Must cite Order 1051n");
+		assert.ok(html.includes("Информированное согласие и протокол на проведение местной и проводниковой анестезии"), "Must contain anesthesia consent");
+		assert.ok(html.includes("Памятка пациента после терапевтического стоматологического лечения зубов и пломбирования"), "Must contain post-treatment memo");
+		assert.ok(html.includes("Закон РФ № 2300-1"), "Must cite Consumer Protection Law 2300-1");
+		assert.ok(html.includes("page-break-after: always"), "Must include page-breaks between sheets");
+		assert.ok(html.includes("Иванова Ольга Петровна"), "Must render patient name");
+		assert.ok(html.includes("Терапевт Соколова Е.А."), "Must render doctor name");
+		assert.ok(html.includes("K02.1 Кариес дентина"), "Must render diagnosis");
+		assert.ok(!html.includes("undefined"), "Must not contain undefined in rendered text");
+	});
+
+	test("Clinical Package: handles blank patient data with clean underlines without throwing (Mandate 8e)", () => {
+		const html = generateClinicalPackageHtml({
 			patient: null,
 			clinic: null,
 			doctorFullName: null,
