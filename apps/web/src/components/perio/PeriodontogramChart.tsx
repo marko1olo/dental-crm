@@ -55,6 +55,7 @@ import {
 } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
 import { HygieneIndicesPanel } from "../hygiene/HygieneIndicesPanel";
+import { useVisitStore } from "../../store/visitStore";
 
 export interface PeriodontogramChartProps {
 	readonly patientId?: string | undefined;
@@ -646,6 +647,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 					switch (presetId) {
 						case "perio_intact":
+						case "hygiene_airflow_ultrasound":
 							depth = 2;
 							hasBop = false;
 							hasCalculus = false;
@@ -740,9 +742,40 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 				}),
 			);
 
+			const protocolText = `• Пародонтологический осмотр: ${targetPreset.label}\n• Status localis: ${targetPreset.statusLocalis}\n• Рекомендованное лечение: ${targetPreset.treatmentDescription}`;
+
 			if (onInsertToProtocol) {
-				const protocolText = `• Пародонтологический осмотр: ${targetPreset.label}\n• Status localis: ${targetPreset.statusLocalis}\n• Рекомендованное лечение: ${targetPreset.treatmentDescription}`;
 				onInsertToProtocol(protocolText);
+			}
+
+			// In addition, inject into useVisitStore if available
+			useVisitStore.getState().setVisitNoteForm((prev) => ({
+				...prev,
+				objectiveStatus: prev.objectiveStatus
+					? `${prev.objectiveStatus}\n\n${protocolText}`
+					: protocolText,
+			}));
+
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: protocolText,
+						mode: "smart_append",
+					},
+				}),
+			);
+
+			if (presetId === "hygiene_airflow_ultrasound") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-estimate-service", {
+						detail: {
+							code: "A16.07.051",
+							name: "Профессиональная гигиена полости рта и зубов (УЗ + Air Flow)",
+							price: 5500,
+							category: "hygiene",
+						},
+					}),
+				);
 			}
 
 			showToast(
@@ -960,7 +993,17 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</button>
 				</div>
 
-				<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+				<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("hygiene_airflow_ultrasound")}
+						className="min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-black bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-center active:scale-95 shadow-2xs flex items-center justify-center gap-1"
+						title="Профгигиена: УЗ-скейлинг + Air Flow, антисептика, норма десны и добавление A16.07.051 в смету и дневник 043/у (1 клик)"
+						data-testid="perio-fast-hygiene-airflow"
+					>
+						<Sparkles size={13} className="text-cyan-400 shrink-0" />
+						<span>⚡ УЗ + Air Flow (A16.07.051)</span>
+					</button>
 					<button
 						type="button"
 						onClick={() => handleApplyTherapistPreset("perio_intact")}

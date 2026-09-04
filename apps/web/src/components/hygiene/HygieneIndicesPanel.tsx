@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore";
 
 export interface HygieneIndicesPanelProps {
 	/** Optional existing perio dentition for 1-click auto-sync */
@@ -110,6 +111,49 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		showToast("Индексы гигиены установлены в физиологическую норму (OHI-S 0, PMA 0%, КПИ 0)", "success", 3500);
 	}, [readOnly]);
 
+	// 1-Click Routine Hygienist Status & Invoice (Mandate 8e: 90% routine hygiene loop)
+	const handleQuickHygieneAirFlow = useCallback(() => {
+		if (readOnly) return;
+		setAssessments(createHealthyHygieneAssessment());
+
+		const hygieneText =
+			"Зубные отложения удалены УЗ + Air Flow, десна бледно-розовая, обработка антисептиком. Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${hygieneText}`
+				: hygieneText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: hygieneText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-estimate-service", {
+				detail: {
+					code: "A16.07.051",
+					name: "Профессиональная гигиена полости рта и зубов (УЗ + Air Flow)",
+					price: 5500,
+					category: "hygiene",
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(hygieneText);
+		showToast(
+			"Профгигиена УЗ + Air Flow (A16.07.051) зафиксирована: индексы гигиены в норме, запись в 043/у и смета обновлены!",
+			"success",
+			4000,
+		);
+	}, [readOnly, onInsertToProtocol]);
+
 	const handleSyncFromPerio = useCallback(() => {
 		if (readOnly || !perioTeeth || perioTeeth.length === 0) return;
 		const derived = deriveHygieneFromPerioTeeth(perioTeeth);
@@ -167,11 +211,22 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					<div className="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
+							onClick={handleQuickHygieneAirFlow}
+							className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+							title="Экспресс-профгигиена: индексы в норму, запись в дневник 043/у и добавление услуги A16.07.051 в смету"
+							data-testid="hygiene-quick-airflow-btn"
+						>
+							<Sparkles size={14} />
+							<span>⚡ Профгигиена УЗ + Air Flow (A16.07.051)</span>
+						</button>
+
+						<button
+							type="button"
 							onClick={handleSetAllHealthy}
 							className="px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-500/15 hover:text-emerald-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
 							title="Установить все индексы в физиологическую норму (Здоров / Интактен)"
 						>
-							<Sparkles size={14} className="text-emerald-400" />
+							<ShieldCheck size={14} className="text-emerald-400" />
 							<span>Норма в 1 клик</span>
 						</button>
 

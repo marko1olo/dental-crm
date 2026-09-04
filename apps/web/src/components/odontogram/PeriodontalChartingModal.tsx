@@ -386,6 +386,72 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		showToast("Все 32 зуба установлены в физиологическую норму (глубина 1–2 мм, 0% кровоточивости, 0% налёта)!", "success", 4000);
 	}, []);
 
+	// 1-Click Physiological Norm directly into Form 043/u
+	const handleInsertNormTo043 = useCallback(() => {
+		const defaultTeeth = createDefaultPerioTeeth();
+		setTeeth(defaultTeeth);
+		const normText = "Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${normText}`
+				: normText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: normText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(normText);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Физиологическая норма пародонта установлена и внесена в 043/у!", "success", 4000);
+	}, [onInsertToProtocol]);
+
+	// 1-Click Routine Hygienist Status & Invoice (Mandate 8e: 90% routine hygiene loop)
+	const handleQuickHygieneAirFlow = useCallback(() => {
+		const defaultTeeth = createDefaultPerioTeeth();
+		setTeeth(defaultTeeth);
+
+		const hygieneText = "Зубные отложения удалены УЗ + Air Flow, десна бледно-розовая, обработка антисептиком. Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${hygieneText}`
+				: hygieneText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: hygieneText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-estimate-service", {
+				detail: {
+					code: "A16.07.051",
+					name: "Профессиональная гигиена полости рта и зубов (УЗ + Air Flow)",
+					price: 5500,
+					category: "hygiene",
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(hygieneText);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Профгигиена УЗ + Air Flow (A16.07.051) зафиксирована в дневнике 043/у и смете!", "success", 4000);
+	}, [onInsertToProtocol]);
+
 	// 1-Click Fast Pathology Markup for active tooth
 	const handleMarkActiveToothPocket = useCallback((depth = 5, hasBop = true) => {
 		setTeeth((prev) =>
@@ -547,30 +613,52 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 					<div className="flex items-center gap-2 flex-wrap">
 						<button
 							type="button"
-							onClick={handleApplyPhysiologicalNorm}
-							className="min-h-[40px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
-							title="Установить все 32 зуба в физиологическую норму: карманы 1-2 мм, без кровоточивости и налета (1 клик)"
-							data-testid="perio-modal-norm-btn"
+							onClick={handleQuickHygieneAirFlow}
+							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white font-black text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							title="Экспресс-гигиена: УЗ + Air Flow, антисептика, норма десны и добавление A16.07.051 в смету и 043/у (1 клик)"
+							data-testid="perio-modal-quick-hygiene-btn"
 						>
 							<Sparkles size={15} />
-							<span>⚡ Вся физиологическая норма (1 клик)</span>
+							<span>⚡ Профгигиена: УЗ + Air Flow (A16.07.051)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleInsertNormTo043}
+							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							title="Установить все 32 зуба в норму и внести протокол в 043/у: глубина 1–2 мм, BOP 0%, подвижности нет"
+							data-testid="perio-modal-norm-043-btn"
+						>
+							<ShieldCheck size={15} />
+							<span>⚡ Норма пародонта в 043/у (1 клик)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleApplyPhysiologicalNorm}
+							className="min-h-[40px] px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							title="Установить все 32 зуба в физиологическую норму: карманы 1-2 мм, без кровоточивости и налета"
+							data-testid="perio-modal-norm-btn"
+						>
+							<Check size={14} />
+							<span>Вся норма на зубы</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={() => handleMarkActiveToothPocket(5, true)}
-							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-800 dark:text-rose-200 border border-rose-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							className="min-h-[40px] px-3 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-800 dark:text-rose-200 border border-rose-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
 							title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для активного зуба #${activeToothNum}`}
 							data-testid="perio-modal-pathology-btn"
 						>
 							<Droplets size={14} className="text-rose-500" />
-							<span>Патология на зуб #{activeToothNum} (5 мм + BOP)</span>
+							<span>Зуб #{activeToothNum}: карман 5 мм + BOP</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleClearPlaque}
-							className="min-h-[40px] px-3.5 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 active:scale-95 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
+							className="min-h-[40px] px-3 py-2 rounded-xl bg-teal-500/15 hover:bg-teal-500/25 active:scale-95 text-teal-800 dark:text-teal-200 border border-teal-500/30 font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 touch-manipulation"
 							title="Очистить зубной налёт и камень по всем зубам"
 							data-testid="perio-modal-clear-plaque-btn"
 						>
@@ -886,3 +974,6 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		</div>
 	);
 };
+
+export const PerioChartModal = PeriodontalChartingModal;
+export type PerioChartModalProps = PeriodontalChartingModalProps;
