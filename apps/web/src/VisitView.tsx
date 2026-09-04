@@ -236,6 +236,7 @@ export interface VisitViewProps {
 
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalTasksPanel } from "./ClinicalTasksPanel";
+import { ClinicalRulePanel as DefaultClinicalRulePanel } from "./ClinicalRulePanel";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { EndoCanalLogModal } from "./components/odontogram/EndoCanalLogModal";
 import { AnesthesiaDosageCalculatorModal } from "./components/anesthesia/AnesthesiaDosageCalculatorModal";
@@ -257,11 +258,14 @@ import {
 	Activity,
 	AlertCircle,
 	AlertOctagon,
-	AlertTriangle,
+	AlertTriangle as DefaultAlertTriangle,
 	Anchor,
 	Ban,
-	CheckCircle2,
+	Bot as DefaultBot,
+	Check as DefaultCheck,
+	CheckCircle2 as DefaultCheckCircle2,
 	CircleDot,
+	ClipboardCheck as DefaultClipboardCheck,
 	ClipboardList,
 	Compass,
 	Crown,
@@ -274,7 +278,7 @@ import {
 	Scissors,
 	Shield,
 	ShieldCheck,
-	Sparkles,
+	Sparkles as DefaultSparkles,
 	Stethoscope,
 	Syringe,
 	Wrench,
@@ -289,14 +293,14 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	> &
 		Partial<VisitViewProps>;
 	const {
-		AlertTriangle,
-		Bot,
-		Check,
-		CheckCircle2,
-		ClinicalRulePanel,
-		ClipboardCheck,
-		Mic,
-		Sparkles,
+		AlertTriangle = DefaultAlertTriangle,
+		Bot = DefaultBot,
+		Check = DefaultCheck,
+		CheckCircle2 = DefaultCheckCircle2,
+		ClinicalRulePanel = DefaultClinicalRulePanel,
+		ClipboardCheck = DefaultClipboardCheck,
+		Mic = LucideMic,
+		Sparkles = DefaultSparkles,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		acceptDraftToVisit,
 		activeAppointment,

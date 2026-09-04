@@ -210,42 +210,32 @@ export function App() {
 		syncNow: syncOfflineMutations,
 		isSyncing: isSyncingMutations,
 	} = useOfflineMutationQueue();
+	/*
+		256 ИМЁН УБРАНЫ ИЗ ЭТОГО РАЗБОРА, ПОТОМУ ЧТО ПРЕДСТАВЛЕНИЯ
+		(VisitView, FinanceView, CommunicationsView, DocumentsView, PatientsView, ShiftView)
+		ИНТЕГРИРОВАНЫ С useAppLogicContext() И БЕРУТ ДАННЫЕ НАПРЯМУЮ ИЗ КОНТЕКСТА.
+		В useAppLogic.tsx ВСЕ ЗНАЧЕНИЯ ПОЛНОСТЬЮ СОХРАНЕНЫ ДЛЯ КОНТЕКСТА.
+	*/
 	const {
-		acceptDraftToVisit,
 		activeAppointment,
-		activeChair,
 		activeCommunicationTasks,
 		activeDoctor,
-		activeDocuments,
 		activeImagingStudies,
-		activeIssuedPaidContracts,
 		activePatient,
 		activeVisitPatient,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		activePatientCallablePhone,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		activePatientHasCallablePhone,
 		activePatientInsight,
-		activePayments,
-		activeQueueRole,
 		activeSettingsTabButtonRef,
 		activeSpeechProviderHealth,
-		activeTreatmentPlanItems,
-		activeTreatmentPlanScenarios,
 		activeUsableDocuments,
-		activeVisitClinicalRuleEvaluations,
-		activeVisitClinicalRuleSummary,
 		activeWorkspaceProfile,
 		addChair,
 		addImagingViewerNoteAnnotation,
 		addMigrationDiscoveryCandidateToSmartImport,
 		addStaffMember,
 		analyzePricelist,
-		appendToTranscript,
 		applyCtPlanningQuickAction,
 		applyMprClinicalPreset,
 		applyNearestMprClinicalPreset,
-		applyPostVisitCarePreset,
 		applyProtocolTemplate,
 		appointmentLabels,
 		appointmentReadinessById,
@@ -270,8 +260,6 @@ export function App() {
 		buildDicomViewerLaunchManifest,
 		buildDicomViewerToolStateBundle,
 		buildDicomViewerWorkbenchManifest,
-		buildDraft,
-		buildOfflineDraft,
 		canRetryImagingViewerSave,
 		cancelBrowserImagingFolderScan,
 		cancelBrowserMigrationScan,
@@ -285,7 +273,6 @@ export function App() {
 		chairScheduleSaveStates,
 		chairScheduleSavingId,
 		changeClinicMode,
-		changePostVisitCareTopic,
 		checkDicomWebConnector,
 		checkDicomWorkstationReadiness,
 		chooseRecognitionPreset,
@@ -296,8 +283,6 @@ export function App() {
 		clearDicomWorkbenchRecovery,
 		clearLocalImagingFolderRecovery,
 		clearPricelistImage,
-		clearTranscriptWithUndo,
-		clearedTranscriptSnapshot,
 		clinicModeLabels,
 		clinicProfileDraft,
 		clinicProfileSaveState,
@@ -308,28 +293,12 @@ export function App() {
 		commitImagingImport,
 		commitImport,
 		commitSmartImport,
-		communicationChannelLabels,
-		communicationDocumentTaskActionLabels,
-		communicationIntentLabels,
-		communicationNote,
-		communicationPriorityLabels,
-		communicationSavingTaskId,
-		communicationStatusLabels,
-		compactDocumentText,
-		completeCommunicationTask,
-		completedActContractReferenceForUi,
-		completedActFiscalReceiptLines,
-		completedActPaidRubValue,
-		confirmDocumentIssue,
-		confirmDocumentVoid,
 		continueOnboardingInDraftMode,
 		copyTelegramTextToClipboard,
 		createAppointmentFromDraft,
 		createClinicalRuleFromSettings,
 		createCtPlanningArtifact,
-		createDocument,
 		createImagingStudy,
-		createPatient,
 		createTelegramLinkCode,
 		ctPlanningActiveQuickActionId,
 		ctPlanningAnnotationRefs,
@@ -373,43 +342,24 @@ export function App() {
 		dicomWorkbenchServerBundle,
 		dicomWorkbenchSourceIsRedacted,
 		dicomWorkstationReadiness,
-		dictationQuickPhrases,
 		discoverDicomFolders,
 		discoverMigrationSources,
 		dismissOnboarding,
-		documentActionLabels,
 		documentDetectedKindLabel,
 		documentFactoryGroups,
 		documentIngestion,
 		documentIngestionQualityLabels,
 		documentIngestionTarget,
-		documentIssueAttestationReady,
-		documentIssueConfirmation,
-		documentIssueSignatureModeLabels,
-		documentKindsForCommunicationTask,
 		documentLabels,
-		documentPatient,
-		documentSourceStatusClassNames,
-		documentStatusLabels,
-		documentVoidConfirmation,
-		documentVoidReady,
-		documentVoidReasonLabels,
 		downloadDicomViewerToolStateBundle,
 		downloadDicomWorkbenchManifest,
-		downloadIssuedDocumentHtml,
-		downloadIssuedDocumentPdf,
 		downloadMigrationHandoffReport,
 		downloadPersistenceExport,
 		downloadSmartImportReport,
 		downloadSmartImportSafeHandoffReport,
-		downloadTaxDocumentXml,
 		downloadTelegramQrSvg,
 		draft,
 		editingAppointmentId,
-		eligiblePaymentReceiptPayments,
-		eligibleRefundCorrectionPayments,
-		eligibleTaxPayments,
-		emptyDictationVoiceActionLabel,
 		error,
 		filteredPatients,
 		filteredTelegramOutboxItems,
@@ -426,7 +376,6 @@ export function App() {
 		handleBrowserDirectoryInputChange,
 		handleBrowserMigrationInputChange,
 		handleMprKeyboardNavigation,
-		hasVisitTranscriptText,
 		hiddenTelegramOutboxItemCount,
 		imagingComparisonCandidates,
 		imagingConnectorCards,
@@ -465,14 +414,8 @@ export function App() {
 		importSourceKind,
 		importSourceLabels,
 		importText,
-		inferredTreatmentArea,
 		ingestImportFile,
 		ingestionTargetLabels,
-		installmentScheduleBaseDocumentTitleValue,
-		installmentScheduleInstallmentRows,
-		installmentSchedulePrepaidRubValue,
-		installmentScheduleRemainingRubValue,
-		installmentScheduleTotalRubValue,
 		integrationCapabilityLabels,
 		integrationCategoryLabels,
 		integrationStatusLabels,
@@ -492,8 +435,6 @@ export function App() {
 		isDicomWorkbenchReconnecting,
 		isDicomWorkbenchServerSaving,
 		isDicomWorkstationChecking,
-		isDraftAccepting,
-		isDraftLoading,
 		isImagingFolderScanning,
 		isImagingImportCommitting,
 		isImagingImportLoading,
@@ -508,12 +449,10 @@ export function App() {
 		isMigrationSourceProbeLoading,
 		isMigrationSourceWorkupLoading,
 		isOnline,
-		isPaymentSaving,
 		isPendingVisitSyncing,
 		isPersistenceExporting,
 		isPricelistAnalyzing,
 		isRecognitionLoading,
-		isServerVoiceRecording,
 		isSmartImportCommitting,
 		isSmartImportLoading,
 		isSmartReportLoading,
@@ -526,18 +465,9 @@ export function App() {
 		isTelegramOutboxLoadingMore,
 		isTelegramSendingDue,
 		isTelegramSettingsSaving,
-		isTranscriptPolishing,
-		isVisitDictating,
-		isVisitNoteDirty,
-		issuedMedicalCopyRequestDocuments,
-		lastLocalSavedAt,
-		lastPendingVisitSaveAt,
-		lastServerDraftSavedAt,
-		lastVisitSaveReceipt,
 		latestDicomWorkbenchServerBundle,
 		legalMissingFields,
 		legalReadinessPercent,
-		loadDocumentAuditFacts,
 		loadLocalBridgeUsePlans,
 		loadMoreTelegramChatLinks,
 		loadMoreTelegramLinkCodes,
@@ -551,30 +481,17 @@ export function App() {
 		localBridgeStatusValue,
 		localBridgeUsePathLabels,
 		localBridgeUsePlans,
-		localDraftWasRestored,
 		localImagingFolderDraft,
 		localImagingModelRoleLabels,
 		localImagingOrganizer,
 		localImagingOrganizerActionLabels,
 		lockTelegramAdminSession,
 		lookupClinicPublicProfile,
-		markPostVisitManualEdited,
 		markTelegramSettingsDirty,
-		medicalDocumentReleaseChannelLabels,
 		migrationAutopilot,
 		migrationSourceDiscovery,
 		migrationSourceProbe,
 		migrationSourceWorkup,
-		minorConsentDiagnosisOrIndicationValue,
-		minorConsentInterventionScopeValue,
-		minorConsentPatientBirthDateValue,
-		minorConsentPatientFullNameValue,
-		minorRepresentativeFullNameValue,
-		minorRepresentativeIdentityDocumentValue,
-		minorRepresentativePhoneValue,
-		minorRepresentativeRelationshipValue,
-		money,
-		mostLoadedResource,
 		moveOnboardingTo,
 		mprActiveProjectionLabel,
 		mprActiveProjectionOrientation,
@@ -649,37 +566,19 @@ export function App() {
 		newStaffRole,
 		newStaffSpecialty,
 		nextOnboardingStep,
-		normalizeOptionalWorkingDaysDraft,
 		normalizeUiLanguageInput,
 		normalizedAppointmentStatus,
 		normalizedAppointmentStatusFilter,
 		normalizedClinicalRuleAction,
 		normalizedClinicalRuleSeverity,
 		normalizedDentalSpecialty,
-		normalizedDocumentIssueSignatureMode,
-		normalizedDocumentKind,
-		normalizedDocumentVoidReasonCode,
-		normalizedMedicalDocumentReleaseChannel,
-		normalizedOutpatient025uDemographicCode,
-		normalizedPatientIntakePregnancyStatus,
-		normalizedPaymentRefundCorrectionAction,
-		normalizedPaymentRefundCorrectionMethod,
-		normalizedPostVisitCareTopic,
-		normalizedProcedureSpecificConsentProcedure,
 		normalizedServiceCategory,
 		normalizedStaffRole,
-		normalizedTaxApplicationDeliveryChannel,
-		normalizedTaxApplicationForm,
-		normalizedTaxApplicationRelationshipSelect,
 		normalizedTelegramBotMode,
 		normalizedTelegramLinkSubjectType,
 		normalizedTelegramOutboxStatusFilter,
 		normalizedTelegramOutboxTemplateFilter,
 		normalizedTelegramPrivacyMode,
-		normalizedTreatmentPlanAcceptanceVariant,
-		normalizedXrayPregnancyStatus,
-		normalizedXrayPriority,
-		normalizedXrayStudyType,
 		ohifBaseUrl,
 		onboardingBlockingIssues,
 		onboardingChairCreateGuidanceId,
@@ -695,66 +594,18 @@ export function App() {
 		onboardingTelegramRecommendations,
 		onboardingTelegramVisualCardKeys,
 		openAppointmentEditor,
-		openCommunicationTaskDocumentWorkflow,
-		openIssuedDocumentHtml,
 		openOnboardingGuide,
 		openScheduleWarning,
-		openVisitWarningAction,
 		organizeLocalImagingSources,
-		outpatient025uMedicalCardNumberValue,
-		paidContractTotalRubValue,
-		patientAdministrativeProfileValidationMessage,
-		patientBillingSummary,
-		patientClinicalRuleEvaluations,
-		patientClinicalRuleSummary,
-		patientInsightById,
-		patientInsightRiskLabels,
-		patientIntakePregnancyStatusOptions,
 		patientName,
-		postVisitCareTopicOptions,
-		paymentAmount,
-		paymentFeedback,
-		paymentFiscalCashierName,
-		paymentFiscalFd,
-		paymentFiscalFn,
-		paymentFiscalFpd,
-		paymentFiscalReceiptIssuedAt,
-		paymentFiscalReceiptLabelForUi,
-		paymentFiscalReceiptNumber,
-		paymentFiscalReceiptUrl,
-		paymentInvoiceTotalRubValue,
-		paymentMethod,
-		paymentMethodLabels,
-		paymentPatientContextMessage,
-		paymentPatientContextReady,
-		paymentPayerBirthDate,
-		paymentPayerFullName,
-		paymentPayerIdentityDocument,
-		paymentPayerInn,
-		paymentPayerRelationship,
-		paymentReceiptFiscalReceiptLines,
-		paymentReceiptIssuedByValue,
-		paymentReceiptPayerBirthDateValue,
-		paymentReceiptPayerFullNameValue,
-		paymentReceiptPayerIdentityDocumentValue,
-		paymentReceiptPayerInnValue,
-		paymentReceiptPayerRelationshipValue,
-		paymentTaxDeductionCode,
 		pendingSpeechChunkCount,
-		pendingSpeechFlushActionLabel,
-		pendingSpeechFlushActionTitle,
 		pendingVisitSaveCount,
 		persistenceHealth,
 		persistenceIntegrity,
-		photoVideoMaterialOptions,
 		pickBrowserImagingFolder,
 		pickBrowserMigrationSource,
 		planMigrationDiscoveryCandidate,
-		plannedServiceLinesForFinancialPayload,
 		policyAuditEventLabels,
-		polishTranscript,
-		polishingField,
-		polishSingleField,
 		prepareDicomWorkbenchFromFolder,
 		previewDicomFirstFrame,
 		previewDicomFirstFrameSlice,
@@ -768,29 +619,12 @@ export function App() {
 		previousOnboardingStep,
 		pricelistAnalysis,
 		pricelistImageBase64,
-		/*
-      ШЕСТЬ ИМЁН УБРАНЫ ИЗ ЭТОГО РАЗБОРА, ПОТОМУ ЧТО ОТСЮДА ИХ НЕ ЧИТАЛ НИКТО.
-      App.tsx вынимал их из useAppLogic() и передавал в <SettingsView …> — а
-      SettingsView (SettingsView.tsx:367) берёт из пропсов РОВНО activeStaffUser,
-      всё остальное читает сам из useAppLogicContext(), хранилища настроек и
-      производных значений. Индексная подпись [key: string]: any в
-      SettingsViewProps позволяла компилятору молчать: пропс передавался и
-      выбрасывался.
-      Значения при этом живы и нужны — их берут из контекста SettingsView.tsx
-      (замечания разбора, подпись фото, сводка материалов, материал строки) и
-      components/settings/SettingsPricesTab.tsx (имя файла фото, режимы
-      разборщика). Поэтому убран именно проброс, а не сами значения: в
-      useAppLogic.tsx они остаются в возвращаемом объекте.
-    */
 		pricelistRecognitionBrandGroups,
 		pricelistRecognitionServiceGroups,
 		pricelistSourceKind,
 		pricelistSourceKindLabels,
 		pricelistText,
-		primaryVisitWarning,
 		probeMigrationDiscoveryCandidate,
-		procedureSpecificConsentProcedureOptions,
-		query,
 		recognitionJob,
 		recognitionKind,
 		recognitionPresets,
@@ -799,16 +633,11 @@ export function App() {
 		recognitionText,
 		recommendedActionPriorityLabels,
 		reconnectDicomWorkbenchFromCurrentFolder,
-		recordPayment,
 		refreshBrowserContinuity,
 		refreshSpeechRuntime,
-		releaseProtectionNote,
 		rememberLocalImagingFolder,
-		renderClinicalToothRowsEditor,
 		reopenOnboarding,
 		requestBrowserStoragePersistence,
-		requestDocumentIssue,
-		requestDocumentVoid,
 		resetMprControls,
 		resetNewAppointmentDraft,
 		restoreDicomWorkbenchServerBundle,
@@ -822,47 +651,24 @@ export function App() {
 		saveChairSchedule,
 		saveClinicProfileFromDraft,
 		saveDicomWorkbenchBundleToServer,
-		savePatientAdministrativeProfile,
-		savePatientCore,
 		saveStaffSchedule,
 		saveTelegramSettings,
 		scanDicomFolderSeries,
 		scanImagingFolder,
-		scenarioPriorityLabels,
-		scenarioStrategyLabels,
 		scheduleAdminSecretDraft,
 		scheduleAdminSecretSession,
 		scrollToVisitArea,
-		selectAllEligibleTaxPaymentsForCurrentDocument,
 		selectCtPlanningImplant,
-		selectRefundOriginalPayment,
-		selectedCompletedActContractDocumentId,
-		selectedDocumentMetadata,
-		selectedDocumentUsesTaxPaymentSelection,
-		selectedEligibleTaxPayments,
 		selectedImagingStudy,
 		selectedImagingViewerPlan,
-		selectedPatient,
-		selectedPaymentReceiptIdSet,
-		selectedPaymentReceiptPayments,
-		selectedPaymentReceiptTotalRub,
-		selectedProtocolTemplate,
-		selectedRefundCorrectionPayment,
-		selectedReleaseSourceRequestDocumentId,
 		selectedSpecialty,
-		selectedTaxDocumentPayerKey,
-		selectedTaxPaymentIdSet,
-		selectedTaxPaymentTotalRub,
 		selectedUiLanguageOption,
 		selectedWorkspaceRole,
 		sendDueTelegramOutbox,
 		sendRecognitionResultToImport,
 		sendTelegramOutboxItem,
-		serverDraftSyncState,
 		serviceCategoryLabels,
 		serviceTitle,
-		setClearedTranscriptSnapshot,
-		setCommunicationNote,
 		setCtPlanningActiveQuickActionId,
 		setCtPlanningImplantPlan,
 		setCurrentView,
@@ -924,30 +730,13 @@ export function App() {
 		setNewStaffRole,
 		setNewStaffSpecialty,
 		setOhifBaseUrl,
-		setPaymentAmount,
-		setPaymentFiscalCashierName,
-		setPaymentFiscalFd,
-		setPaymentFiscalFn,
-		setPaymentFiscalFpd,
-		setPaymentFiscalReceiptIssuedAt,
-		setPaymentFiscalReceiptNumber,
-		setPaymentFiscalReceiptUrl,
-		setPaymentMethod,
-		setPaymentPayerBirthDate,
-		setPaymentPayerFullName,
-		setPaymentPayerIdentityDocument,
-		setPaymentPayerInn,
-		setPaymentPayerRelationship,
-		setPaymentTaxDeductionCode,
 		setPricelistAnalysis,
 		setPricelistSourceKind,
 		setPricelistText,
 		setQuery,
 		setRecognitionJob,
 		setRecognitionText,
-		setReleaseProtectionNote,
 		setSelectedImagingStudyId,
-		setSelectedProtocolId,
 		setSelectedSpecialty,
 		setSelectedWorkspaceRole,
 		setSettingsAdminSecretDraft,
@@ -967,7 +756,6 @@ export function App() {
 		setTelegramReviewUrlDraft,
 		setTelegramTokenTtlDraft,
 		setTelegramWelcomeImageUrlDraft,
-		setTranscript,
 		setUiLanguage,
 		setUiPreferencesSyncError,
 		setUsePricelistAi,
@@ -989,11 +777,7 @@ export function App() {
 		smartImportPreview,
 		smartImportText,
 		sortedAppointments,
-		sortedCommunicationTasks,
-		specialtiesWithTemplates,
 		specialtyLabels,
-		specialtyProtocolTemplates,
-		speechGatewayActiveProviderIsLocal,
 		speechGatewayCanUpload,
 		speechGatewayHealthReport,
 		speechGatewayStatus,
@@ -1004,13 +788,10 @@ export function App() {
 		speechProviderRuntimeById,
 		speechProviderSelectionLabels,
 		speechProviderStatusLabels,
-		speechRecognitionReady,
 		speechRecordingPathLabels,
 		speechRecordingRecovery,
 		speechRecordingStrategy,
 		speechRecoveryStateLabels,
-		speechStatusNote,
-		speechTranscriptionBusy,
 		staffRoleLabels,
 		staffScheduleDirtyIds,
 		staffScheduleDraftFromWorkingHours,
@@ -1019,14 +800,6 @@ export function App() {
 		staffScheduleSavingId,
 		stageLocalImagingFolderRecovery,
 		startImportDictation,
-		startServerVoiceRecording,
-		startVisitDictation,
-		stopServerVoiceRecording,
-		structuredPayloadDocumentKinds,
-		taxApplicationDeliveryChannelOptions,
-		taxApplicationFormOptions,
-		taxApplicationRelationshipOptions,
-		taxDocumentPayerOptions,
 		telegramAdminSecretDraft,
 		telegramAdminSecretSession,
 		telegramAllowVoiceIntakeDraft,
@@ -1094,67 +867,28 @@ export function App() {
 		toggleChairWorkingDay,
 		toggleClinicWorkingDay,
 		toggleClinicalRule,
-		togglePhotoVideoMaterial,
 		toggleStaffWorkingDay,
 		toggleTelegramFeature,
-		toothRows,
-		toothStateByCode,
-		setToothState,
-		transcript,
-		treatmentAcceptancePlannedTotalRub,
-		treatmentEstimatePatientOrPayerFullNameValue,
-		treatmentEstimateTotalRubValue,
-		treatmentEstimateTreatmentBasisValue,
-		treatmentStatusLabels,
 		uiLanguage,
 		uiLanguageOptions,
 		uiPreferencesSyncError,
-		undoTranscriptClear,
 		unlockTelegramAdminSession,
 		updateAppointmentScheduleDraft,
 		updateChairScheduleDay,
 		updateChairScheduleDraft,
 		updateClinicProfileDraft,
 		updateNewAppointmentDraft,
-		updatePatientAdministrativeProfileDraft,
-		updatePatientCoreDraft,
 		updateStaffScheduleDay,
 		updateStaffScheduleDraft,
 		updateTelegramPostVisitCheckupDelayDraft,
 		updateTelegramVisualCardUrlDraft,
-		updateVisitNoteField,
 		usePricelistAi,
 		viewLabels,
 		visibleImagingStudies,
-		visibleRecommendedActions,
 		visibleScheduleSuggestions,
 		visibleTelegramOutboxItems,
-		visibleVisitSpecialtyFocusOptions,
-		visitCloseChecklist,
-		visitDraftBuildMissingSteps,
-		visitDraftMissingFieldLabel,
-		visitDraftQualityLabels,
-		visitDraftReadyToBuild,
-		visitDraftSignalLabel,
-		visitDraftUserEditedRef,
-		visitNoteAcceptMissingSteps,
-		visitNoteActionLabel,
-		visitNoteFieldDefinitions,
-		visitNoteForm,
-		visitNoteReadyToAccept,
-		visitNoteStatusLabel,
-		visitPrimaryAction,
-		visitSafetyCards,
-		visitSaveReceiptText,
-		visitWarnings,
-		visitWorkflowSteps,
-		warrantyLinkedActOrContractValue,
-		warrantyServiceOrWorkNameValue,
-		warrantyTeethOrAreaValue,
 		weekdayOptions,
 		workspaceScopeLabels,
-		xrayPregnancyStatusOptions,
-		xrayStudyTypeOptions,
 		accessUnlockRequired,
 		accessUnlockMessage,
 		clinicalAdminSecretDraft,
@@ -2363,18 +2097,7 @@ export function App() {
 									</section>
 								}
 							>
-								<ShiftView
-									visibleRecommendedActions={visibleRecommendedActions}
-									recommendedActionPriorityLabels={
-										recommendedActionPriorityLabels
-									}
-									staffRoleLabels={staffRoleLabels}
-									dashboard={dashboard}
-									activeQueueRole={activeQueueRole}
-									setError={setError}
-									mostLoadedResource={mostLoadedResource}
-									setSelectedPatientId={setSelectedPatientId}
-								/>
+								<ShiftView />
 							</Suspense>
 						</WorkspaceRouteErrorBoundary>
 					) : null}
@@ -2746,31 +2469,7 @@ export function App() {
 											</section>
 										}
 									>
-										<PatientsView
-											createPatient={createPatient}
-											filteredPatients={filteredPatients}
-											money={money}
-											normalizeOptionalWorkingDaysDraft={
-												normalizeOptionalWorkingDaysDraft
-											}
-											patientAdministrativeProfileValidationMessage={
-												patientAdministrativeProfileValidationMessage
-											}
-											patientInsightById={patientInsightById}
-											patientInsightRiskLabels={patientInsightRiskLabels}
-											query={query}
-											savePatientAdministrativeProfile={
-												savePatientAdministrativeProfile
-											}
-											savePatientCore={savePatientCore}
-											selectedPatient={selectedPatient}
-											setQuery={setQuery}
-											updatePatientAdministrativeProfileDraft={
-												updatePatientAdministrativeProfileDraft
-											}
-											updatePatientCoreDraft={updatePatientCoreDraft}
-											weekdayOptions={weekdayOptions}
-										/>
+										<PatientsView />
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
@@ -2798,128 +2497,7 @@ export function App() {
 											</section>
 										}
 									>
-										<VisitView
-											AlertTriangle={AlertTriangle}
-											Bot={Bot}
-											Check={Check}
-											CheckCircle2={CheckCircle2}
-											ClinicalRulePanel={ClinicalRulePanel}
-											ClipboardCheck={ClipboardCheck}
-											Mic={Mic}
-											Sparkles={Sparkles}
-											acceptDraftToVisit={acceptDraftToVisit}
-											activeAppointment={activeAppointment}
-											activeChair={activeChair}
-											activeDoctor={activeDoctor}
-											activeImagingStudies={activeImagingStudies}
-											activePatient={activePatient}
-											activePatientInsight={activePatientInsight}
-											activeUsableDocuments={activeUsableDocuments}
-											activeVisitClinicalRuleEvaluations={
-												activeVisitClinicalRuleEvaluations
-											}
-											activeVisitClinicalRuleSummary={
-												activeVisitClinicalRuleSummary
-											}
-											appendToTranscript={appendToTranscript}
-											applyProtocolTemplate={applyProtocolTemplate}
-											buildDraft={buildDraft}
-											buildOfflineDraft={buildOfflineDraft}
-											clearTranscriptWithUndo={clearTranscriptWithUndo}
-											clearedTranscriptSnapshot={clearedTranscriptSnapshot}
-											clinicalRuleActionLabels={clinicalRuleActionLabels}
-											clinicalRuleSeverityLabels={clinicalRuleSeverityLabels}
-											dashboard={dashboard}
-											dictationQuickPhrases={dictationQuickPhrases}
-											draft={draft}
-											emptyDictationVoiceActionLabel={
-												emptyDictationVoiceActionLabel
-											}
-											flushPendingSpeechChunks={flushPendingSpeechChunks}
-											flushPendingVisitSaves={flushPendingVisitSaves}
-											formatTime={formatTime}
-											hasVisitTranscriptText={hasVisitTranscriptText}
-											imagingKindLabels={imagingKindLabels}
-											isDraftAccepting={isDraftAccepting}
-											isDraftLoading={isDraftLoading}
-											isOnline={isOnline}
-											isPendingVisitSyncing={isPendingVisitSyncing}
-											isServerVoiceRecording={isServerVoiceRecording}
-											isTranscriptPolishing={isTranscriptPolishing}
-											isVisitDictating={isVisitDictating}
-											isVisitNoteDirty={isVisitNoteDirty}
-											lastLocalSavedAt={lastLocalSavedAt}
-											lastPendingVisitSaveAt={lastPendingVisitSaveAt}
-											lastServerDraftSavedAt={lastServerDraftSavedAt}
-											lastVisitSaveReceipt={lastVisitSaveReceipt}
-											localDraftWasRestored={localDraftWasRestored}
-											openVisitWarningAction={openVisitWarningAction}
-											pendingSpeechChunkCount={pendingSpeechChunkCount}
-											pendingSpeechFlushActionLabel={
-												pendingSpeechFlushActionLabel
-											}
-											pendingSpeechFlushActionTitle={
-												pendingSpeechFlushActionTitle
-											}
-											pendingVisitSaveCount={pendingVisitSaveCount}
-											polishTranscript={polishTranscript}
-											polishingField={polishingField}
-											polishSingleField={polishSingleField}
-											primaryVisitWarning={primaryVisitWarning}
-											scrollToVisitArea={scrollToVisitArea}
-											selectedProtocolTemplate={selectedProtocolTemplate}
-											selectedSpecialty={selectedSpecialty}
-											serverDraftSyncState={serverDraftSyncState}
-											serviceTitle={serviceTitle}
-											setClearedTranscriptSnapshot={
-												setClearedTranscriptSnapshot
-											}
-											setSelectedProtocolId={setSelectedProtocolId}
-											setSelectedSpecialty={setSelectedSpecialty}
-											setTranscript={setTranscript}
-											specialtiesWithTemplates={specialtiesWithTemplates}
-											specialtyLabels={specialtyLabels}
-											specialtyProtocolTemplates={specialtyProtocolTemplates}
-											speechGatewayActiveProviderIsLocal={
-												speechGatewayActiveProviderIsLocal
-											}
-											speechGatewayStatus={speechGatewayStatus}
-											speechRecognitionReady={speechRecognitionReady}
-											speechStatusNote={speechStatusNote}
-											speechTranscriptionBusy={speechTranscriptionBusy}
-											staffRoleLabels={staffRoleLabels}
-											startServerVoiceRecording={startServerVoiceRecording}
-											startVisitDictation={startVisitDictation}
-											stopServerVoiceRecording={stopServerVoiceRecording}
-											toothRows={toothRows}
-											toothStateByCode={toothStateByCode}
-											setToothState={setToothState}
-											transcript={transcript}
-											undoTranscriptClear={undoTranscriptClear}
-											updateVisitNoteField={updateVisitNoteField}
-											visibleVisitSpecialtyFocusOptions={
-												visibleVisitSpecialtyFocusOptions
-											}
-											visitCloseChecklist={visitCloseChecklist}
-											visitDraftBuildMissingSteps={visitDraftBuildMissingSteps}
-											visitDraftMissingFieldLabel={visitDraftMissingFieldLabel}
-											visitDraftQualityLabels={visitDraftQualityLabels}
-											visitDraftReadyToBuild={visitDraftReadyToBuild}
-											visitDraftSignalLabel={visitDraftSignalLabel}
-											visitDraftUserEditedRef={visitDraftUserEditedRef}
-											visitNoteAcceptMissingSteps={visitNoteAcceptMissingSteps}
-											visitNoteActionLabel={visitNoteActionLabel}
-											visitNoteFieldDefinitions={visitNoteFieldDefinitions}
-											visitNoteForm={visitNoteForm}
-											visitNoteReadyToAccept={visitNoteReadyToAccept}
-											visitNoteStatusLabel={visitNoteStatusLabel}
-											visitPrimaryAction={visitPrimaryAction}
-											visitSafetyCards={visitSafetyCards}
-											visitSaveReceiptText={visitSaveReceiptText}
-											visitWarnings={visitWarnings}
-											visitWorkflowSteps={visitWorkflowSteps}
-											selectedWorkspaceRole={selectedWorkspaceRole}
-										/>
+										<VisitView />
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
@@ -2946,258 +2524,7 @@ export function App() {
 											</div>
 										}
 									>
-										<DocumentsView
-											activeAppointment={activeAppointment}
-											activeDoctor={activeDoctor}
-											activeDocuments={activeDocuments}
-											activeIssuedPaidContracts={activeIssuedPaidContracts}
-											activePatient={activePatient}
-											activeUsableDocuments={activeUsableDocuments}
-											applyPostVisitCarePreset={applyPostVisitCarePreset}
-											changePostVisitCareTopic={changePostVisitCareTopic}
-											clinicProfileDraft={clinicProfileDraft}
-											compactDocumentText={compactDocumentText}
-											completedActContractReferenceForUi={
-												completedActContractReferenceForUi
-											}
-											completedActFiscalReceiptLines={
-												completedActFiscalReceiptLines
-											}
-											completedActPaidRubValue={completedActPaidRubValue}
-											confirmDocumentIssue={confirmDocumentIssue}
-											confirmDocumentVoid={confirmDocumentVoid}
-											createDocument={createDocument}
-											dashboard={dashboard}
-											documentActionLabels={documentActionLabels}
-											documentIssueAttestationReady={
-												documentIssueAttestationReady
-											}
-											documentIssueConfirmation={documentIssueConfirmation}
-											documentIssueSignatureModeLabels={
-												documentIssueSignatureModeLabels
-											}
-											documentLabels={documentLabels}
-											documentPatient={documentPatient}
-											documentSourceStatusClassNames={
-												documentSourceStatusClassNames
-											}
-											documentStatusLabels={documentStatusLabels}
-											documentVoidConfirmation={documentVoidConfirmation}
-											documentVoidReady={documentVoidReady}
-											documentVoidReasonLabels={documentVoidReasonLabels}
-											downloadIssuedDocumentHtml={downloadIssuedDocumentHtml}
-											downloadIssuedDocumentPdf={downloadIssuedDocumentPdf}
-											downloadTaxDocumentXml={downloadTaxDocumentXml}
-											eligiblePaymentReceiptPayments={
-												eligiblePaymentReceiptPayments
-											}
-											eligibleRefundCorrectionPayments={
-												eligibleRefundCorrectionPayments
-											}
-											eligibleTaxPayments={eligibleTaxPayments}
-											formatDateTime={formatDateTime}
-											formatShortDate={formatShortDate}
-											inferredTreatmentArea={inferredTreatmentArea}
-											installmentScheduleBaseDocumentTitleValue={
-												installmentScheduleBaseDocumentTitleValue
-											}
-											installmentScheduleInstallmentRows={
-												installmentScheduleInstallmentRows
-											}
-											installmentSchedulePrepaidRubValue={
-												installmentSchedulePrepaidRubValue
-											}
-											installmentScheduleRemainingRubValue={
-												installmentScheduleRemainingRubValue
-											}
-											installmentScheduleTotalRubValue={
-												installmentScheduleTotalRubValue
-											}
-											issuedMedicalCopyRequestDocuments={
-												issuedMedicalCopyRequestDocuments
-											}
-											loadDocumentAuditFacts={loadDocumentAuditFacts}
-											markPostVisitManualEdited={markPostVisitManualEdited}
-											medicalDocumentReleaseChannelLabels={
-												medicalDocumentReleaseChannelLabels
-											}
-											minorConsentDiagnosisOrIndicationValue={
-												minorConsentDiagnosisOrIndicationValue
-											}
-											minorConsentInterventionScopeValue={
-												minorConsentInterventionScopeValue
-											}
-											minorConsentPatientBirthDateValue={
-												minorConsentPatientBirthDateValue
-											}
-											minorConsentPatientFullNameValue={
-												minorConsentPatientFullNameValue
-											}
-											minorRepresentativeFullNameValue={
-												minorRepresentativeFullNameValue
-											}
-											minorRepresentativeIdentityDocumentValue={
-												minorRepresentativeIdentityDocumentValue
-											}
-											minorRepresentativePhoneValue={
-												minorRepresentativePhoneValue
-											}
-											minorRepresentativeRelationshipValue={
-												minorRepresentativeRelationshipValue
-											}
-											money={money}
-											normalizedDocumentIssueSignatureMode={
-												normalizedDocumentIssueSignatureMode
-											}
-											normalizedDocumentKind={normalizedDocumentKind}
-											normalizedDocumentVoidReasonCode={
-												normalizedDocumentVoidReasonCode
-											}
-											normalizedMedicalDocumentReleaseChannel={
-												normalizedMedicalDocumentReleaseChannel
-											}
-											normalizedOutpatient025uDemographicCode={
-												normalizedOutpatient025uDemographicCode
-											}
-											normalizedPatientIntakePregnancyStatus={
-												normalizedPatientIntakePregnancyStatus
-											}
-											normalizedPaymentRefundCorrectionAction={
-												normalizedPaymentRefundCorrectionAction
-											}
-											normalizedPaymentRefundCorrectionMethod={
-												normalizedPaymentRefundCorrectionMethod
-											}
-											normalizedPostVisitCareTopic={
-												normalizedPostVisitCareTopic
-											}
-											normalizedProcedureSpecificConsentProcedure={
-												normalizedProcedureSpecificConsentProcedure
-											}
-											normalizedTaxApplicationDeliveryChannel={
-												normalizedTaxApplicationDeliveryChannel
-											}
-											normalizedTaxApplicationForm={
-												normalizedTaxApplicationForm
-											}
-											normalizedTaxApplicationRelationshipSelect={
-												normalizedTaxApplicationRelationshipSelect
-											}
-											normalizedTreatmentPlanAcceptanceVariant={
-												normalizedTreatmentPlanAcceptanceVariant
-											}
-											normalizedXrayPregnancyStatus={
-												normalizedXrayPregnancyStatus
-											}
-											normalizedXrayPriority={normalizedXrayPriority}
-											normalizedXrayStudyType={normalizedXrayStudyType}
-											openIssuedDocumentHtml={openIssuedDocumentHtml}
-											outpatient025uMedicalCardNumberValue={
-												outpatient025uMedicalCardNumberValue
-											}
-											paidContractTotalRubValue={paidContractTotalRubValue}
-											patientIntakePregnancyStatusOptions={
-												patientIntakePregnancyStatusOptions
-											}
-											patientName={patientName}
-											paymentFiscalReceiptLabelForUi={
-												paymentFiscalReceiptLabelForUi
-											}
-											paymentInvoiceTotalRubValue={paymentInvoiceTotalRubValue}
-											paymentReceiptFiscalReceiptLines={
-												paymentReceiptFiscalReceiptLines
-											}
-											paymentReceiptIssuedByValue={paymentReceiptIssuedByValue}
-											paymentReceiptPayerBirthDateValue={
-												paymentReceiptPayerBirthDateValue
-											}
-											paymentReceiptPayerFullNameValue={
-												paymentReceiptPayerFullNameValue
-											}
-											paymentReceiptPayerIdentityDocumentValue={
-												paymentReceiptPayerIdentityDocumentValue
-											}
-											paymentReceiptPayerInnValue={paymentReceiptPayerInnValue}
-											paymentReceiptPayerRelationshipValue={
-												paymentReceiptPayerRelationshipValue
-											}
-											photoVideoMaterialOptions={photoVideoMaterialOptions}
-											plannedServiceLinesForFinancialPayload={
-												plannedServiceLinesForFinancialPayload
-											}
-											postVisitCareTopicOptions={postVisitCareTopicOptions}
-											procedureSpecificConsentProcedureOptions={
-												procedureSpecificConsentProcedureOptions
-											}
-											releaseProtectionNote={releaseProtectionNote}
-											renderClinicalToothRowsEditor={
-												renderClinicalToothRowsEditor
-											}
-											requestDocumentIssue={requestDocumentIssue}
-											requestDocumentVoid={requestDocumentVoid}
-											selectAllEligibleTaxPaymentsForCurrentDocument={
-												selectAllEligibleTaxPaymentsForCurrentDocument
-											}
-											selectedCompletedActContractDocumentId={
-												selectedCompletedActContractDocumentId
-											}
-											selectedDocumentMetadata={selectedDocumentMetadata}
-											selectedDocumentUsesTaxPaymentSelection={
-												selectedDocumentUsesTaxPaymentSelection
-											}
-											selectedEligibleTaxPayments={selectedEligibleTaxPayments}
-											selectedPaymentReceiptIdSet={selectedPaymentReceiptIdSet}
-											selectedPaymentReceiptPayments={
-												selectedPaymentReceiptPayments
-											}
-											selectedPaymentReceiptTotalRub={
-												selectedPaymentReceiptTotalRub
-											}
-											selectedRefundCorrectionPayment={
-												selectedRefundCorrectionPayment
-											}
-											selectedReleaseSourceRequestDocumentId={
-												selectedReleaseSourceRequestDocumentId
-											}
-											selectedTaxDocumentPayerKey={selectedTaxDocumentPayerKey}
-											selectedTaxPaymentIdSet={selectedTaxPaymentIdSet}
-											selectedTaxPaymentTotalRub={selectedTaxPaymentTotalRub}
-											selectRefundOriginalPayment={selectRefundOriginalPayment}
-											setReleaseProtectionNote={setReleaseProtectionNote}
-											structuredPayloadDocumentKinds={
-												structuredPayloadDocumentKinds
-											}
-											taxApplicationDeliveryChannelOptions={
-												taxApplicationDeliveryChannelOptions
-											}
-											taxApplicationFormOptions={taxApplicationFormOptions}
-											taxApplicationRelationshipOptions={
-												taxApplicationRelationshipOptions
-											}
-											taxDocumentPayerOptions={taxDocumentPayerOptions}
-											togglePhotoVideoMaterial={togglePhotoVideoMaterial}
-											treatmentAcceptancePlannedTotalRub={
-												treatmentAcceptancePlannedTotalRub
-											}
-											treatmentEstimatePatientOrPayerFullNameValue={
-												treatmentEstimatePatientOrPayerFullNameValue
-											}
-											treatmentEstimateTotalRubValue={
-												treatmentEstimateTotalRubValue
-											}
-											treatmentEstimateTreatmentBasisValue={
-												treatmentEstimateTreatmentBasisValue
-											}
-											warrantyLinkedActOrContractValue={
-												warrantyLinkedActOrContractValue
-											}
-											warrantyServiceOrWorkNameValue={
-												warrantyServiceOrWorkNameValue
-											}
-											warrantyTeethOrAreaValue={warrantyTeethOrAreaValue}
-											xrayPregnancyStatusOptions={xrayPregnancyStatusOptions}
-											xrayStudyTypeOptions={xrayStudyTypeOptions}
-										/>
+										<DocumentsView />
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
@@ -3225,88 +2552,7 @@ export function App() {
 											</section>
 										}
 									>
-										<FinanceView
-											onCreateDocument={createDocument}
-											activePayments={activePayments}
-											activeTreatmentPlanItems={activeTreatmentPlanItems}
-											activeTreatmentPlanScenarios={
-												activeTreatmentPlanScenarios
-											}
-											billingSummary={patientBillingSummary}
-											clinicalRuleEvaluations={patientClinicalRuleEvaluations}
-											clinicalRuleActionLabels={clinicalRuleActionLabels}
-											clinicalRuleSeverityLabels={clinicalRuleSeverityLabels}
-											clinicalRuleSummary={patientClinicalRuleSummary}
-											dashboard={dashboard}
-											documentPatient={documentPatient}
-											formatDateTime={formatDateTime}
-											isPaymentSaving={isPaymentSaving}
-											money={money}
-											onGoToDocuments={() => {
-												window.location.hash = "documents";
-											}}
-											onGoToPrices={() => {
-												setSettingsTab("prices");
-												window.location.hash = "settings/prices";
-											}}
-											onGoToVisit={() => {
-												window.location.hash = "visit";
-											}}
-											onRecordPayment={recordPayment}
-											paymentAmount={paymentAmount}
-											paymentFeedback={paymentFeedback}
-											paymentFiscalCashierName={paymentFiscalCashierName}
-											paymentFiscalFd={paymentFiscalFd}
-											paymentFiscalFn={paymentFiscalFn}
-											paymentFiscalFpd={paymentFiscalFpd}
-											paymentFiscalReceiptIssuedAt={
-												paymentFiscalReceiptIssuedAt
-											}
-											paymentFiscalReceiptLabel={paymentFiscalReceiptLabelForUi}
-											paymentFiscalReceiptNumber={paymentFiscalReceiptNumber}
-											paymentFiscalReceiptUrl={paymentFiscalReceiptUrl}
-											paymentMethod={paymentMethod}
-											paymentMethodLabels={paymentMethodLabels}
-											paymentPatientContextMessage={
-												paymentPatientContextMessage
-											}
-											paymentPatientContextReady={paymentPatientContextReady}
-											paymentPayerBirthDate={paymentPayerBirthDate}
-											paymentPayerFullName={paymentPayerFullName}
-											paymentPayerIdentityDocument={
-												paymentPayerIdentityDocument
-											}
-											paymentPayerInn={paymentPayerInn}
-											paymentPayerRelationship={paymentPayerRelationship}
-											paymentTaxDeductionCode={paymentTaxDeductionCode}
-											scenarioPriorityLabels={scenarioPriorityLabels}
-											scenarioStrategyLabels={scenarioStrategyLabels}
-											serviceCategoryLabels={serviceCategoryLabels}
-											serviceTitle={serviceTitle}
-											setPaymentAmount={setPaymentAmount}
-											setPaymentFiscalCashierName={setPaymentFiscalCashierName}
-											setPaymentFiscalFd={setPaymentFiscalFd}
-											setPaymentFiscalFn={setPaymentFiscalFn}
-											setPaymentFiscalFpd={setPaymentFiscalFpd}
-											setPaymentFiscalReceiptIssuedAt={
-												setPaymentFiscalReceiptIssuedAt
-											}
-											setPaymentFiscalReceiptNumber={
-												setPaymentFiscalReceiptNumber
-											}
-											setPaymentFiscalReceiptUrl={setPaymentFiscalReceiptUrl}
-											setPaymentMethod={setPaymentMethod}
-											setPaymentPayerBirthDate={setPaymentPayerBirthDate}
-											setPaymentPayerFullName={setPaymentPayerFullName}
-											setPaymentPayerIdentityDocument={
-												setPaymentPayerIdentityDocument
-											}
-											setPaymentPayerInn={setPaymentPayerInn}
-											setPaymentPayerRelationship={setPaymentPayerRelationship}
-											setPaymentTaxDeductionCode={setPaymentTaxDeductionCode}
-											staffRoleLabels={staffRoleLabels}
-											treatmentStatusLabels={treatmentStatusLabels}
-										/>
+										<FinanceView />
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}
@@ -3334,33 +2580,7 @@ export function App() {
 											</section>
 										}
 									>
-										<CommunicationsView
-											communicationChannelLabels={communicationChannelLabels}
-											communicationDocumentTaskActionLabels={
-												communicationDocumentTaskActionLabels
-											}
-											communicationIntentLabels={communicationIntentLabels}
-											communicationNote={communicationNote}
-											communicationPriorityLabels={communicationPriorityLabels}
-											communicationStatusLabels={communicationStatusLabels}
-											completeCommunicationTask={completeCommunicationTask}
-											dashboard={dashboard}
-											documentKindsForCommunicationTask={
-												documentKindsForCommunicationTask
-											}
-											documentLabels={documentLabels}
-											formatDateTime={formatDateTime}
-											communicationSavingTaskId={communicationSavingTaskId}
-											onCommunicationNoteChange={setCommunicationNote}
-											onGoToSchedule={() => {
-												window.location.hash = "schedule";
-											}}
-											openCommunicationTaskDocumentWorkflow={
-												openCommunicationTaskDocumentWorkflow
-											}
-											sortedCommunicationTasks={sortedCommunicationTasks}
-											staffRoleLabels={staffRoleLabels}
-										/>
+										<CommunicationsView />
 									</Suspense>
 								</WorkspaceRouteErrorBoundary>
 							) : null}

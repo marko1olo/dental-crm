@@ -90,6 +90,7 @@ import {
 	type MedicalDocumentReleaseChannel,
 	useDocumentStore,
 } from "./store/documentStore";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type TaxDocumentPayerOption = {
 	key: string;
@@ -109,7 +110,7 @@ type MedicalCopyRequestSourceDocument = GeneratedDocument & {
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
-type DocumentsViewProps = Record<string, any>;
+export type DocumentsViewProps = Record<string, any>;
 
 const EXTRACT_DIAGNOSIS_CHIPS = [
 	"Кариес",
@@ -151,7 +152,12 @@ function humanizeDocumentAuditText(value: string): string {
 		.replace(/\bXML\b/g, "электронный файл");
 }
 
-export function DocumentsView(props: DocumentsViewProps) {
+export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
+	const logicContext = useAppLogicContext();
+	const props = { ...logicContext, ...rawProps } as ReturnType<
+		typeof useAppLogicContext
+	> &
+		DocumentsViewProps;
 	const documentKindMetadata = sharedDocumentKindMetadata as Record<
 		DocumentKind,
 		DocumentKindMetadata

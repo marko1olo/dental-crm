@@ -166,73 +166,79 @@ const EMPTY_CLINICAL_RULE_SUMMARY: Dashboard["clinicalRuleSummary"] = {
 	coveredRules: 0,
 };
 
-export function FinanceView({
-	activePayments = [],
-	activeTreatmentPlanItems = [],
-	activeTreatmentPlanScenarios = [],
-	billingSummary = null,
-	clinicalRuleEvaluations = [],
-	clinicalRuleActionLabels = noLabels(),
-	clinicalRuleSeverityLabels = noLabels(),
-	clinicalRuleSummary = EMPTY_CLINICAL_RULE_SUMMARY,
-	dashboard,
-	documentPatient = null,
-	formatDateTime = (val: string) => val || "",
-	isPaymentSaving = false,
-	/*
-	 * БЫЛО своё форматирование: `${val.toLocaleString("ru-RU")} ₽`. Оно печатает
-	 * 1500.5 как «1 500,5 ₽», и полтинник в такой записи читается как пять копеек.
-	 * Общий money() из AppHelpers показывает «1 500,50 ₽» — и ровно так же те же
-	 * суммы выглядят в форме приёма оплаты и в семейном кошельке на этом экране.
-	 */
-	money = formatMoney,
-	onCreateDocument,
-	onGoToDocuments = () => {},
-	onGoToPrices = () => {},
-	onGoToVisit = () => {},
-	onRecordPayment = () => {},
-	paymentAmount = "",
-	paymentFeedback = "",
-	paymentFiscalCashierName = "",
-	paymentFiscalFd = "",
-	paymentFiscalFn = "",
-	paymentFiscalFpd = "",
-	paymentFiscalReceiptIssuedAt = "",
-	paymentFiscalReceiptNumber = "",
-	paymentFiscalReceiptUrl = "",
-	paymentFiscalReceiptLabel = () => "",
-	paymentMethod = "cash",
-	paymentMethodLabels = noLabels(),
-	paymentPatientContextMessage = "",
-	paymentPatientContextReady = true,
-	paymentPayerBirthDate = "",
-	paymentPayerFullName = "",
-	paymentPayerIdentityDocument = "",
-	paymentPayerInn = "",
-	paymentPayerRelationship = "",
-	paymentTaxDeductionCode = "",
-	scenarioPriorityLabels = noLabels(),
-	scenarioStrategyLabels = noLabels(),
-	serviceCategoryLabels = noLabels(),
-	serviceTitle = (id: string) => id,
-	setPaymentAmount = () => {},
-	setPaymentFiscalCashierName = () => {},
-	setPaymentFiscalFd = () => {},
-	setPaymentFiscalFn = () => {},
-	setPaymentFiscalFpd = () => {},
-	setPaymentFiscalReceiptIssuedAt = () => {},
-	setPaymentFiscalReceiptNumber = () => {},
-	setPaymentFiscalReceiptUrl = () => {},
-	setPaymentMethod = () => {},
-	setPaymentPayerBirthDate = () => {},
-	setPaymentPayerFullName = () => {},
-	setPaymentPayerIdentityDocument = () => {},
-	setPaymentPayerInn = () => {},
-	setPaymentPayerRelationship = () => {},
-	setPaymentTaxDeductionCode = () => {},
-	staffRoleLabels = noLabels(),
-	treatmentStatusLabels = noLabels(),
-}: FinanceViewComponentProps) {
+export function FinanceView(rawProps?: FinanceViewComponentProps) {
+	const logicContext = useAppLogicContext();
+	const props = { ...logicContext, ...rawProps } as ReturnType<
+		typeof useAppLogicContext
+	> &
+		FinanceViewComponentProps;
+	const {
+		activePayments = (props.activePayments ?? props.dashboard?.payments ?? []) as Payment[],
+		activeTreatmentPlanItems = (props.activeTreatmentPlanItems ?? props.dashboard?.treatmentPlanItems ?? []) as TreatmentPlanItem[],
+		activeTreatmentPlanScenarios = (props.activeTreatmentPlanScenarios ?? props.dashboard?.treatmentPlanScenarios ?? []) as TreatmentPlanScenario[],
+		billingSummary = props.billingSummary ?? (props as any).patientBillingSummary ?? null,
+		clinicalRuleEvaluations = props.clinicalRuleEvaluations ?? (props as any).patientClinicalRuleEvaluations ?? [],
+		clinicalRuleActionLabels = props.clinicalRuleActionLabels ?? noLabels(),
+		clinicalRuleSeverityLabels = props.clinicalRuleSeverityLabels ?? noLabels(),
+		clinicalRuleSummary = props.clinicalRuleSummary ?? (props as any).patientClinicalRuleSummary ?? EMPTY_CLINICAL_RULE_SUMMARY,
+		dashboard = props.dashboard,
+		documentPatient = props.documentPatient ?? null,
+		formatDateTime = props.formatDateTime ?? ((val: string) => val || ""),
+		isPaymentSaving = props.isPaymentSaving ?? false,
+		/*
+		 * БЫЛО своё форматирование: `${val.toLocaleString("ru-RU")} ₽`. Оно печатает
+		 * 1500.5 как «1 500,5 ₽», и полтинник в такой записи читается как пять копеек.
+		 * Общий money() из AppHelpers показывает «1 500,50 ₽» — и ровно так же те же
+		 * суммы выглядят в форме приёма оплаты и в семейном кошельке на этом экране.
+		 */
+		money = props.money ?? formatMoney,
+		onCreateDocument = props.onCreateDocument ?? (props as any).createDocument,
+		onGoToDocuments = props.onGoToDocuments ?? (() => { window.location.hash = "documents"; }),
+		onGoToPrices = props.onGoToPrices ?? (() => { (props as any).setSettingsTab?.("prices"); window.location.hash = "settings/prices"; }),
+		onGoToVisit = props.onGoToVisit ?? (() => { window.location.hash = "visit"; }),
+		onRecordPayment = props.onRecordPayment ?? (props as any).recordPayment ?? (() => {}),
+		paymentAmount = props.paymentAmount ?? "",
+		paymentFeedback = props.paymentFeedback ?? "",
+		paymentFiscalCashierName = props.paymentFiscalCashierName ?? "",
+		paymentFiscalFd = props.paymentFiscalFd ?? "",
+		paymentFiscalFn = props.paymentFiscalFn ?? "",
+		paymentFiscalFpd = props.paymentFiscalFpd ?? "",
+		paymentFiscalReceiptIssuedAt = props.paymentFiscalReceiptIssuedAt ?? "",
+		paymentFiscalReceiptNumber = props.paymentFiscalReceiptNumber ?? "",
+		paymentFiscalReceiptUrl = props.paymentFiscalReceiptUrl ?? "",
+		paymentFiscalReceiptLabel = props.paymentFiscalReceiptLabel ?? (props as any).paymentFiscalReceiptLabelForUi ?? (() => ""),
+		paymentMethod = props.paymentMethod ?? "cash",
+		paymentMethodLabels = props.paymentMethodLabels ?? noLabels(),
+		paymentPatientContextMessage = props.paymentPatientContextMessage ?? "",
+		paymentPatientContextReady = props.paymentPatientContextReady ?? true,
+		paymentPayerBirthDate = props.paymentPayerBirthDate ?? "",
+		paymentPayerFullName = props.paymentPayerFullName ?? "",
+		paymentPayerIdentityDocument = props.paymentPayerIdentityDocument ?? "",
+		paymentPayerInn = props.paymentPayerInn ?? "",
+		paymentPayerRelationship = props.paymentPayerRelationship ?? "",
+		paymentTaxDeductionCode = props.paymentTaxDeductionCode ?? "",
+		scenarioPriorityLabels = props.scenarioPriorityLabels ?? noLabels(),
+		scenarioStrategyLabels = props.scenarioStrategyLabels ?? noLabels(),
+		serviceCategoryLabels = props.serviceCategoryLabels ?? noLabels(),
+		serviceTitle = props.serviceTitle ?? ((id: string) => id),
+		setPaymentAmount = props.setPaymentAmount ?? (() => {}),
+		setPaymentFiscalCashierName = props.setPaymentFiscalCashierName ?? (() => {}),
+		setPaymentFiscalFd = props.setPaymentFiscalFd ?? (() => {}),
+		setPaymentFiscalFn = props.setPaymentFiscalFn ?? (() => {}),
+		setPaymentFiscalFpd = props.setPaymentFiscalFpd ?? (() => {}),
+		setPaymentFiscalReceiptIssuedAt = props.setPaymentFiscalReceiptIssuedAt ?? (() => {}),
+		setPaymentFiscalReceiptNumber = props.setPaymentFiscalReceiptNumber ?? (() => {}),
+		setPaymentFiscalReceiptUrl = props.setPaymentFiscalReceiptUrl ?? (() => {}),
+		setPaymentMethod = props.setPaymentMethod ?? (() => {}),
+		setPaymentPayerBirthDate = props.setPaymentPayerBirthDate ?? (() => {}),
+		setPaymentPayerFullName = props.setPaymentPayerFullName ?? (() => {}),
+		setPaymentPayerIdentityDocument = props.setPaymentPayerIdentityDocument ?? (() => {}),
+		setPaymentPayerInn = props.setPaymentPayerInn ?? (() => {}),
+		setPaymentPayerRelationship = props.setPaymentPayerRelationship ?? (() => {}),
+		setPaymentTaxDeductionCode = props.setPaymentTaxDeductionCode ?? (() => {}),
+		staffRoleLabels = props.staffRoleLabels ?? noLabels(),
+		treatmentStatusLabels = props.treatmentStatusLabels ?? noLabels(),
+	} = props;
 	/*
 	 * ЗАЧЕМ РАЗДЕЛУ ОБЩИЙ КОНТЕКСТ. Списание с семейного счёта уходит прямо из
 	 * панели кошелька и создаёт настоящий платёж (POST /api/finance/family/pay
@@ -243,8 +249,7 @@ export function FinanceView({
 	 * прежний список платежей — и брал те же деньги второй раз, наличными.
 	 * Перечитываем дашборд после успешного списания.
 	 */
-	const appLogic = useAppLogicContext();
-	const loadDashboard = appLogic?.loadDashboard;
+	const loadDashboard = logicContext?.loadDashboard;
 	const reloadAfterFamilyPayment = useCallback(() => {
 		void loadDashboard?.();
 	}, [loadDashboard]);

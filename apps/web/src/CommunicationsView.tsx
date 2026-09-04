@@ -28,13 +28,13 @@ import { hasCapability } from "./lib/clinicCapabilities";
 import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import { countLabel } from "./lib/russianPlural";
 import { useSettingsStore } from "./store/settingsStore";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
 type CommunicationEvent = Dashboard["communicationEvents"][number];
 
-// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-type CommunicationsViewProps = {
+export type CommunicationsViewProps = {
 	communicationChannelLabels: Record<CommunicationTask["channel"], string>;
 	communicationDocumentTaskActionLabels: Partial<
 		Record<GeneratedDocument["kind"], string>
@@ -467,26 +467,31 @@ function CommunicationEventRow({
 	);
 }
 
-export function CommunicationsView({
-	communicationChannelLabels,
-	communicationDocumentTaskActionLabels,
-	communicationIntentLabels,
-	communicationNote,
-	communicationPriorityLabels,
-	communicationSavingTaskId,
-	communicationStatusLabels,
-	completeCommunicationTask,
-	dashboard,
-	documentKindsForCommunicationTask,
-	documentLabels,
-	formatDateTime,
-	onCommunicationNoteChange,
-	onGoToSchedule,
-	openCommunicationTaskDocumentWorkflow,
-	sortedCommunicationTasks,
-	staffRoleLabels,
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-}: any = {}) {
+export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) {
+	const logicContext = useAppLogicContext();
+	const props = { ...logicContext, ...rawProps } as ReturnType<
+		typeof useAppLogicContext
+	> &
+		Partial<CommunicationsViewProps>;
+	const {
+		communicationChannelLabels,
+		communicationDocumentTaskActionLabels,
+		communicationIntentLabels,
+		communicationNote = props.communicationNote ?? "",
+		communicationPriorityLabels,
+		communicationSavingTaskId = props.communicationSavingTaskId ?? null,
+		communicationStatusLabels,
+		completeCommunicationTask,
+		dashboard,
+		documentKindsForCommunicationTask,
+		documentLabels,
+		formatDateTime,
+		onCommunicationNoteChange = props.onCommunicationNoteChange ?? (props as any).setCommunicationNote ?? (() => {}),
+		onGoToSchedule = props.onGoToSchedule ?? (() => { window.location.hash = "schedule"; }),
+		openCommunicationTaskDocumentWorkflow,
+		sortedCommunicationTasks,
+		staffRoleLabels,
+	} = props;
 	const communicationNoteInputId = "communication-closing-note";
 	const communicationNoteDescriptionId = "communication-closing-note-guidance";
 	// Режим клиники решает, какие разделы уместны. Пока профиль не загружен,

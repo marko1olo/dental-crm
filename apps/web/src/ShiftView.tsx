@@ -24,6 +24,7 @@ import { DoctorShiftControlBar, ShiftCallout } from "./components/shift";
 import { EmkControlBoard } from "./components/visit/EmkControlBoard";
 import { countLabel } from "./lib/russianPlural";
 import { DoctorPayrollModal } from "./components/finance/payroll/DoctorPayrollModal";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 /** Calendar date in local clinic time. */
 function localCalendarDateString(date: Date = new Date()): string {
@@ -73,21 +74,44 @@ function formatClockTime(value: unknown): string {
 	});
 }
 
-export function ShiftView({
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
-	activePatientHasCallablePhone,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: automated suppression
-	activePatientCallablePhone,
-	visibleRecommendedActions,
-	recommendedActionPriorityLabels,
-	staffRoleLabels,
-	dashboard,
-	activeQueueRole,
-	setError,
-	mostLoadedResource,
-	setSelectedPatientId,
+export type ShiftViewProps = {
+	activePatientHasCallablePhone?: boolean;
+	activePatientCallablePhone?: string | null;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-}: any) {
+	visibleRecommendedActions?: any[];
+	recommendedActionPriorityLabels?: Record<string, string>;
+	staffRoleLabels?: Record<string, string>;
+	dashboard?: Dashboard;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	activeQueueRole?: any;
+	setError?: (err: unknown) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	mostLoadedResource?: any;
+	setSelectedPatientId?: (id: string | null) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: allow extra props for tests/context
+	[key: string]: any;
+};
+
+export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
+	const logicContext = useAppLogicContext();
+	const props = { ...logicContext, ...rawProps } as ReturnType<
+		typeof useAppLogicContext
+	> &
+		ShiftViewProps;
+	const {
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
+		activePatientHasCallablePhone,
+		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
+		activePatientCallablePhone,
+		visibleRecommendedActions,
+		recommendedActionPriorityLabels,
+		staffRoleLabels,
+		dashboard,
+		activeQueueRole,
+		setError,
+		mostLoadedResource,
+		setSelectedPatientId,
+	} = props;
 	const patientsById = useMemo(() => {
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		const index = new Map<string, any>();
