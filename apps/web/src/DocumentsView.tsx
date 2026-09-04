@@ -328,15 +328,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 		documentVoidStaffRole,
 		documentVoidStatusReviewed,
 		outpatient025uAllergyHistory,
-		outpatient025uBloodGroup,
 		outpatient025uDisabilityGroup,
 		outpatient025uEmploymentCode,
 		outpatient025uFinalEpicrisis,
-		outpatient025uKellK1,
 		outpatient025uOfficialForm274nChecked,
-		outpatient025uOtherBloodData,
-		outpatient025uPalliativeCareNeedCode,
-		outpatient025uRhFactor,
 		outpatient025uThirdPartyDataChecked,
 		outpatient025uWorkOrStudyPlace,
 		paymentFiscalReceiptNumber,
@@ -410,15 +405,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 		setDocumentVoidStaffRole,
 		setDocumentVoidStatusReviewed,
 		setOutpatient025uAllergyHistory,
-		setOutpatient025uBloodGroup,
 		setOutpatient025uDisabilityGroup,
 		setOutpatient025uEmploymentCode,
 		setOutpatient025uFinalEpicrisis,
-		setOutpatient025uKellK1,
 		setOutpatient025uOfficialForm274nChecked,
-		setOutpatient025uOtherBloodData,
-		setOutpatient025uPalliativeCareNeedCode,
-		setOutpatient025uRhFactor,
 		setOutpatient025uThirdPartyDataChecked,
 		setOutpatient025uWorkOrStudyPlace,
 		setRefundAccountantDecision,
@@ -1163,11 +1153,10 @@ export function DocumentsView(props: DocumentsViewProps) {
 		[],
 	);
 
-	const hospitalSanpinKinds = useMemo(
+	const certificatesSanpinKinds = useMemo(
 		() =>
 			new Set<DocumentKind>([
 				"outpatient_medical_card_025u",
-				"dental_medical_card_043u",
 				"medical_record_extract",
 				"radiation_dose_sheet",
 				"xray_cbct_referral",
@@ -1183,9 +1172,9 @@ export function DocumentsView(props: DocumentsViewProps) {
 			intake: allDocs.filter((d) => intakeKinds.has(d.kind)).length,
 			clinical: allDocs.filter((d) => clinicalKinds.has(d.kind)).length,
 			finance_tax: allDocs.filter((d) => financeTaxKinds.has(d.kind)).length,
-			hospital_sanpin: allDocs.filter((d) => hospitalSanpinKinds.has(d.kind)).length,
+			certificates_sanpin: allDocs.filter((d) => certificatesSanpinKinds.has(d.kind)).length,
 		};
-	}, [typedActiveDocuments, intakeKinds, clinicalKinds, financeTaxKinds, hospitalSanpinKinds]);
+	}, [typedActiveDocuments, intakeKinds, clinicalKinds, financeTaxKinds, certificatesSanpinKinds]);
 
 	const availableRegistryKinds = useMemo(() => {
 		const kindsSet = new Set<DocumentKind>();
@@ -1217,8 +1206,8 @@ export function DocumentsView(props: DocumentsViewProps) {
 			result = result.filter((d) => clinicalKinds.has(d.kind));
 		} else if (activeCategoryTab === "finance_tax") {
 			result = result.filter((d) => financeTaxKinds.has(d.kind));
-		} else if (activeCategoryTab === "hospital_sanpin") {
-			result = result.filter((d) => hospitalSanpinKinds.has(d.kind));
+		} else if (activeCategoryTab === "certificates_sanpin") {
+			result = result.filter((d) => certificatesSanpinKinds.has(d.kind));
 		}
 
 		// Status Filter
@@ -1293,7 +1282,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 		intakeKinds,
 		clinicalKinds,
 		financeTaxKinds,
-		hospitalSanpinKinds,
+		certificatesSanpinKinds,
 		documentLabels,
 		dashboard?.patients,
 	]);
@@ -1416,7 +1405,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 						setSelectedDocumentKind("dental_medical_card_043u");
 					} else if (tab === "finance_tax") {
 						setSelectedDocumentKind("tax_deduction_certificate");
-					} else if (tab === "hospital_sanpin") {
+					} else if (tab === "certificates_sanpin") {
 						setSelectedDocumentKind("radiation_dose_sheet");
 					}
 				}}
@@ -4104,57 +4093,7 @@ export function DocumentsView(props: DocumentsViewProps) {
 												}
 											/>
 										</label>
-										<label>
-											Паллиативная помощь
-											<input
-												value={outpatient025uPalliativeCareNeedCode}
-												onChange={(event) =>
-													setOutpatient025uPalliativeCareNeedCode(
-														event.target.value,
-													)
-												}
-											/>
-										</label>
 									</div>
-									<div className="document-payload-row">
-										<label>
-											Группа крови
-											<input
-												value={outpatient025uBloodGroup}
-												onChange={(event) =>
-													setOutpatient025uBloodGroup(event.target.value)
-												}
-											/>
-										</label>
-										<label>
-											Rh
-											<input
-												value={outpatient025uRhFactor}
-												onChange={(event) =>
-													setOutpatient025uRhFactor(event.target.value)
-												}
-											/>
-										</label>
-										<label>
-											Kell K1
-											<input
-												value={outpatient025uKellK1}
-												onChange={(event) =>
-													setOutpatient025uKellK1(event.target.value)
-												}
-											/>
-										</label>
-									</div>
-									<label>
-										Другие данные крови
-										<textarea
-											value={outpatient025uOtherBloodData}
-											onChange={(event) =>
-												setOutpatient025uOtherBloodData(event.target.value)
-											}
-											rows={2}
-										/>
-									</label>
 									<label>
 										Аллергологический анамнез
 										<textarea

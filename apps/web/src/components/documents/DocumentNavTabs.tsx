@@ -4,7 +4,7 @@ import {
 	UserCheck,
 	Stethoscope,
 	Receipt,
-	Building2,
+	FileCheck,
 } from "lucide-react";
 
 export type DocumentCategoryTab =
@@ -12,7 +12,7 @@ export type DocumentCategoryTab =
 	| "intake"
 	| "clinical"
 	| "finance_tax"
-	| "hospital_sanpin";
+	| "certificates_sanpin";
 
 export interface DocumentNavTabsProps {
 	readonly activeTab: DocumentCategoryTab;
@@ -51,9 +51,9 @@ export function DocumentNavTabs({
 			icon: <Receipt size={16} aria-hidden="true" />,
 		},
 		{
-			id: "hospital_sanpin",
-			label: "Госпитализация и СанПиН",
-			icon: <Building2 size={16} aria-hidden="true" />,
+			id: "certificates_sanpin",
+			label: "Справки, рентген и СанПиН",
+			icon: <FileCheck size={16} aria-hidden="true" />,
 		},
 	];
 
@@ -77,7 +77,10 @@ export function DocumentNavTabs({
 					>
 						{tab.icon}
 						<span>{tab.label}</span>
-						<span className="document-nav-tab-badge" aria-label={`Количество: ${count}`}>
+						<span
+							className="document-nav-tab-badge"
+							aria-label={`Количество: ${count}`}
+						>
 							{count}
 						</span>
 					</button>

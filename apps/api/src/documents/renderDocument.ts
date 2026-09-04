@@ -4663,8 +4663,11 @@ function outpatientMedicalCard025u(
     ${outpatient025uTextRecordsTable(payload.medicalCommissionRecords, "нет данных по врачебной комиссии")}
     <h2>Диспансерное наблюдение</h2>
     ${outpatient025uTextRecordsTable(payload.dispensaryObservationEntries, "нет данных по диспансерному наблюдению")}
-    <h2>Госпитализации</h2>
-    ${outpatient025uEventRowsTable(payload.hospitalizationRows, "нет данных по госпитализациям")}
+    ${
+			payload.hospitalizationRows && payload.hospitalizationRows.length > 0
+				? `<h2>Госпитализации</h2>\n    ${outpatient025uEventRowsTable(payload.hospitalizationRows, "нет данных по госпитализациям")}`
+				: ""
+		}
     <h2>Операции в амбулаторных условиях</h2>
     ${outpatient025uEventRowsTable(payload.ambulatorySurgeryRows, "нет данных по амбулаторным операциям")}
     <h2>Рентгенологические исследования и дозы</h2>
@@ -4708,14 +4711,15 @@ function render025uSpecialistVisitRecord(
           ${row("Диспансерное наблюдение", outpatient025uValue(record.dispensaryObservation))}
           ${row("Назначения", record.orders)}
           ${row("Проведенное лечение", record.treatmentProvided)}
-          ${row("Лекарства и физиотерапия", outpatient025uValue(record.medicinesAndPhysiotherapy))}
-          ${row("Лист нетрудоспособности / справка", outpatient025uValue(record.sickLeaveOrCertificate))}
+          ${row("Медикаменты и физиотерапия", outpatient025uValue(record.medicinesAndPhysiotherapy))}
+          ${row("Листок нетрудоспособности / справка", outpatient025uValue(record.sickLeaveOrCertificate))}
           ${row("Льготные рецепты", outpatient025uValue(record.preferentialPrescriptions))}
-          ${row("Согласие / отказ", record.informedConsentOrRefusal)}
+          ${row("ИДС / отказ", record.informedConsentOrRefusal)}
         </table>
-        <h3>Стоматологическая клиническая детализация</h3>
+        <h4>Стоматологические строки по зубам и сегментам</h4>
         ${
-					record.clinicalToothRows.length
+					Array.isArray(record.clinicalToothRows) &&
+					record.clinicalToothRows.length > 0
 						? clinicalToothRowsTable(record.clinicalToothRows)
 						: "<p>нет клинических строк в этой записи</p>"
 				}
@@ -4769,11 +4773,9 @@ function render025uPatientInfo(
       ${row("Занятость", outpatient025uValue(payload.employmentCode))}
       ${row("Группа инвалидности", outpatient025uValue(payload.disabilityGroup))}
       ${row("Место работы / учебы", outpatient025uValue(payload.workOrStudyPlace))}
-      ${row("Паллиативная помощь", outpatient025uValue(payload.palliativeCareNeedCode))}
-      ${row("Группа крови", outpatient025uValue(payload.bloodGroup))}
-      ${row("Rh-фактор", outpatient025uValue(payload.rhFactor))}
-      ${row("Kell K1", outpatient025uValue(payload.kellK1))}
-      ${row("Иные данные крови", outpatient025uValue(payload.otherBloodData))}
+      ${payload.bloodGroup?.trim() ? row("Группа крови", payload.bloodGroup.trim()) : ""}
+      ${payload.rhFactor?.trim() ? row("Rh-фактор", payload.rhFactor.trim()) : ""}
+      ${payload.otherBloodData?.trim() ? row("Иные данные крови", payload.otherBloodData.trim()) : ""}
       ${row("Аллергии и нежелательные реакции", outpatient025uValue(payload.allergyHistory))}
     </table>`;
 }
