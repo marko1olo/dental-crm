@@ -9,9 +9,7 @@
  * 5. 100% честное сохранение без заглушек.
  */
 
-import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { generateAnonymousPatientCode, type Patient } from "@dental/shared";
 import {
 	AlertTriangle,
 	Building2,
@@ -26,10 +24,13 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import { generateAnonymousPatientCode, type Patient } from "@dental/shared";
+import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { parsePatientDictationLocal } from "../../lib/smartPatientParser";
+import type { PatientCoreDraft } from "../../PatientsView";
 import {
 	type SmartParsedPayload,
 	SmartParsePreview,
@@ -37,16 +38,15 @@ import {
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { useScheduleStore } from "../../store/scheduleStore";
-import { showToast } from "../GlobalToast";
 import {
 	formatOmsPolicy,
 	formatPhoneNumber,
 	formatRussianPassport,
 	formatSnils,
 } from "../../utils/inputSanitation";
-import { searchPatientsQuick } from "../schedule/patientSearchEngine";
+import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
-import type { PatientCoreDraft } from "../../PatientsView";
+import { searchPatientsQuick } from "../schedule/patientSearchEngine";
 import {
 	DENTAL_ADVERTISING_SOURCES,
 	loadPatientFieldRequirements,
@@ -90,27 +90,37 @@ export function PatientCreationModal({
 	const patients = appLogic?.dashboard?.patients ?? [];
 
 	// Active requirements from clinic settings / storage
-	const [fieldRequirements, setFieldRequirements] = useState<PatientFieldRequirements>(() => {
-		return customRequirements ?? loadPatientFieldRequirements();
-	});
+	const [fieldRequirements, setFieldRequirements] =
+		useState<PatientFieldRequirements>(() => {
+			return customRequirements ?? loadPatientFieldRequirements();
+		});
 
 	useEffect(() => {
 		if (isOpen) {
-			setFieldRequirements(customRequirements ?? loadPatientFieldRequirements());
+			setFieldRequirements(
+				customRequirements ?? loadPatientFieldRequirements(),
+			);
 		}
 	}, [isOpen, customRequirements]);
 
 	// Advertising source state in modal
 	const [advertisingSource, setAdvertisingSource] = useState<string>(
-		patientAdministrativeProfileDraft.preferredAppointmentNote?.startsWith("src:")
-			? patientAdministrativeProfileDraft.preferredAppointmentNote.replace("src:", "")
+		patientAdministrativeProfileDraft.preferredAppointmentNote?.startsWith(
+			"src:",
+		)
+			? patientAdministrativeProfileDraft.preferredAppointmentNote.replace(
+					"src:",
+					"",
+				)
 			: "website_online",
 	);
 
 	const potentialDuplicates = useMemo(() => {
 		const name = (newPatientName ?? "").trim();
 		if (name.length < 3) return [];
-		return searchPatientsQuick(patients, name, 3).filter((item) => item.score >= 35);
+		return searchPatientsQuick(patients, name, 3).filter(
+			(item) => item.score >= 35,
+		);
 	}, [patients, newPatientName]);
 
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
@@ -193,7 +203,10 @@ export function PatientCreationModal({
 			if (isEmergencyOrPrimary) {
 				setNewPatientName("Пациент с острой болью (CITO)");
 			} else {
-				showToast("Укажите имя пациента или включите CITO для экстренной записи", "warning");
+				showToast(
+					"Укажите имя пациента или включите CITO для экстренной записи",
+					"warning",
+				);
 				return;
 			}
 		}
@@ -225,7 +238,10 @@ export function PatientCreationModal({
 			if (isEmergencyOrPrimary) {
 				setNewPatientName("Пациент с острой болью (CITO)");
 			} else {
-				showToast("Укажите имя пациента или включите CITO для экстренной записи", "warning");
+				showToast(
+					"Укажите имя пациента или включите CITO для экстренной записи",
+					"warning",
+				);
 				return;
 			}
 		}
@@ -259,8 +275,12 @@ export function PatientCreationModal({
 				status: "planned",
 				startsAt,
 				endsAt,
-				reason: isEmergencyOrPrimary ? "CITO! Острая боль" : "Первичный приём и консультация",
-				comment: isEmergencyOrPrimary ? "Экстренный прием по острой боли (ст. 124 УК РФ)" : "",
+				reason: isEmergencyOrPrimary
+					? "CITO! Острая боль"
+					: "Первичный приём и консультация",
+				comment: isEmergencyOrPrimary
+					? "Экстренный прием по острой боли (ст. 124 УК РФ)"
+					: "",
 			});
 			useAppStore.getState().setCurrentView("schedule");
 			showToast(
@@ -278,7 +298,10 @@ export function PatientCreationModal({
 			if (isEmergencyOrPrimary) {
 				setNewPatientName("Пациент с острой болью (CITO)");
 			} else {
-				showToast("Укажите имя пациента или включите CITO для экстренной записи", "warning");
+				showToast(
+					"Укажите имя пациента или включите CITO для экстренной записи",
+					"warning",
+				);
 				return;
 			}
 		}
@@ -380,13 +403,42 @@ export function PatientCreationModal({
 							gap: "12px",
 						}}
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-							<Zap size={18} style={{ flexShrink: 0, color: isEmergencyOrPrimary ? "#f43f5e" : "var(--muted)" }} />
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "10px",
+								minWidth: 0,
+							}}
+						>
+							<Zap
+								size={18}
+								style={{
+									flexShrink: 0,
+									color: isEmergencyOrPrimary ? "#f43f5e" : "var(--muted)",
+								}}
+							/>
 							<div style={{ fontSize: "12px" }}>
-								<div style={{ fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
+								<div
+									style={{
+										fontWeight: "bold",
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+									}}
+								>
 									Острая боль / Первичный осмотр (без документов)
 									{isEmergencyOrPrimary && (
-										<span style={{ fontSize: "10px", fontWeight: "bold", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#f43f5e", color: "#ffffff" }}>
+										<span
+											style={{
+												fontSize: "10px",
+												fontWeight: "bold",
+												padding: "1px 6px",
+												borderRadius: "4px",
+												backgroundColor: "#f43f5e",
+												color: "#ffffff",
+											}}
+										>
 											АКТИВЕН
 										</span>
 									)}
@@ -410,9 +462,7 @@ export function PatientCreationModal({
 								backgroundColor: isEmergencyOrPrimary
 									? "#f43f5e"
 									: "var(--paper-strong)",
-								color: isEmergencyOrPrimary
-									? "#ffffff"
-									: "var(--ink)",
+								color: isEmergencyOrPrimary ? "#ffffff" : "var(--ink)",
 								border: "1px solid var(--glass-border)",
 								minHeight: "36px",
 							}}
@@ -441,13 +491,44 @@ export function PatientCreationModal({
 							gap: "12px",
 						}}
 					>
-						<div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
-							<EyeOff size={18} style={{ flexShrink: 0, color: patientAdministrativeProfileDraft.isAnonymous ? "#f59e0b" : "var(--muted)" }} />
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "10px",
+								minWidth: 0,
+							}}
+						>
+							<EyeOff
+								size={18}
+								style={{
+									flexShrink: 0,
+									color: patientAdministrativeProfileDraft.isAnonymous
+										? "#f59e0b"
+										: "var(--muted)",
+								}}
+							/>
 							<div style={{ fontSize: "12px" }}>
-								<div style={{ fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
+								<div
+									style={{
+										fontWeight: "bold",
+										display: "flex",
+										alignItems: "center",
+										gap: "6px",
+									}}
+								>
 									Анонимный приём (ПП РФ №659)
 									{patientAdministrativeProfileDraft.isAnonymous && (
-										<span style={{ fontSize: "10px", fontWeight: "bold", padding: "1px 6px", borderRadius: "4px", backgroundColor: "#f59e0b", color: "#ffffff" }}>
+										<span
+											style={{
+												fontSize: "10px",
+												fontWeight: "bold",
+												padding: "1px 6px",
+												borderRadius: "4px",
+												backgroundColor: "#f59e0b",
+												color: "#ffffff",
+											}}
+										>
 											АКТИВЕН
 										</span>
 									)}
@@ -478,7 +559,8 @@ export function PatientCreationModal({
 								minHeight: "36px",
 							}}
 							onClick={() => {
-								const nextIsAnon = !patientAdministrativeProfileDraft.isAnonymous;
+								const nextIsAnon =
+									!patientAdministrativeProfileDraft.isAnonymous;
 								if (nextIsAnon) {
 									const anonCode = generateAnonymousPatientCode();
 									setPatientAdministrativeProfileDraft((prev) => ({
@@ -486,7 +568,10 @@ export function PatientCreationModal({
 										isAnonymous: true,
 										anonymousCode: anonCode,
 									}));
-									if (!newPatientName.trim() || newPatientName.startsWith("UUID_ANON")) {
+									if (
+										!newPatientName.trim() ||
+										newPatientName.startsWith("UUID_ANON")
+									) {
 										setNewPatientName(anonCode);
 									}
 								} else {
@@ -501,7 +586,9 @@ export function PatientCreationModal({
 								}
 							}}
 						>
-							{patientAdministrativeProfileDraft.isAnonymous ? "Отключить" : "Включить"}
+							{patientAdministrativeProfileDraft.isAnonymous
+								? "Отключить"
+								: "Включить"}
 						</button>
 					</div>
 
@@ -514,13 +601,19 @@ export function PatientCreationModal({
 							>
 								ФИО пациента <span className="text-rose-500 font-bold">*</span>
 							</label>
-							<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+							<div
+								style={{ display: "flex", alignItems: "center", gap: "6px" }}
+							>
 								<button
 									type="button"
 									className="create-patient-smart-parse-btn"
 									onClick={() => setShowHints(!showHints)}
 									title="Показать примеры голосового ввода"
-									style={{ fontSize: "12px", minHeight: "32px", padding: "4px 8px" }}
+									style={{
+										fontSize: "12px",
+										minHeight: "32px",
+										padding: "4px 8px",
+									}}
 								>
 									{showHints ? "Скрыть подсказку" : "? Подсказка"}
 								</button>
@@ -583,7 +676,8 @@ export function PatientCreationModal({
 									if (payload) {
 										setNewPatientName(payload.fullName || newPatientName);
 										if (payload.phone) setNewPatientPhone(payload.phone);
-										if (payload.birthDate) setNewPatientBirthDate(payload.birthDate);
+										if (payload.birthDate)
+											setNewPatientBirthDate(payload.birthDate);
 										if (payload.notes && updatePatientCoreDraft) {
 											updatePatientCoreDraft("notes", payload.notes);
 										}
@@ -607,13 +701,17 @@ export function PatientCreationModal({
 								data-testid="create-patient-duplicate-warning"
 							>
 								<div className="flex items-start gap-2">
-									<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+									<AlertTriangle
+										size={16}
+										className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
+									/>
 									<div className="space-y-0.5">
 										<p className="font-bold m-0">
 											Похожий пациент уже зарегистрирован:
 										</p>
 										<p className="m-0 text-[var(--muted)]">
-											Во избежание дублирования карт вы можете открыть существующую карту:
+											Во избежание дублирования карт вы можете открыть
+											существующую карту:
 										</p>
 									</div>
 								</div>
@@ -631,7 +729,9 @@ export function PatientCreationModal({
 											<span className="font-bold text-[var(--ink)]">
 												{item.patient.fullName}
 												{item.patient.phone ? ` · ${item.patient.phone}` : ""}
-												{item.patient.birthDate ? ` · д.р. ${item.patient.birthDate}` : ""}
+												{item.patient.birthDate
+													? ` · д.р. ${item.patient.birthDate}`
+													: ""}
 											</span>
 											<span className="text-[11px] text-[var(--teal)] font-semibold shrink-0">
 												Открыть карту &rarr;
@@ -654,7 +754,9 @@ export function PatientCreationModal({
 								{fieldRequirements.requirePhone ? (
 									<span className="text-rose-500 font-bold">*</span>
 								) : (
-									<span className="text-xs text-[var(--muted)] font-normal">(опция)</span>
+									<span className="text-xs text-[var(--muted)] font-normal">
+										(опция)
+									</span>
 								)}
 							</label>
 							<input
@@ -688,7 +790,9 @@ export function PatientCreationModal({
 								{fieldRequirements.requireBirthDate ? (
 									<span className="text-rose-500 font-bold">*</span>
 								) : (
-									<span className="text-xs text-[var(--muted)] font-normal">(опция)</span>
+									<span className="text-xs text-[var(--muted)] font-normal">
+										(опция)
+									</span>
 								)}
 							</label>
 							<input
@@ -724,7 +828,9 @@ export function PatientCreationModal({
 								{fieldRequirements.requireAdvertisingSource ? (
 									<span className="text-rose-500 font-bold">*</span>
 								) : (
-									<span className="text-xs text-[var(--muted)] font-normal">(для аналитики)</span>
+									<span className="text-xs text-[var(--muted)] font-normal">
+										(для аналитики)
+									</span>
 								)}
 							</span>
 							{fieldRequirements.requireAdvertisingSource && (
@@ -743,14 +849,18 @@ export function PatientCreationModal({
 						>
 							<option value="">— Выберите источник обращения —</option>
 							<optgroup label="Онлайн-самозапись (Автоматические каналы)">
-								{DENTAL_ADVERTISING_SOURCES.filter((s) => s.isOnlineSelfBooking).map((s) => (
+								{DENTAL_ADVERTISING_SOURCES.filter(
+									(s) => s.isOnlineSelfBooking,
+								).map((s) => (
 									<option key={s.key} value={s.key}>
 										{s.label}
 									</option>
 								))}
 							</optgroup>
 							<optgroup label="Администратор, Сарафан и Офлайн">
-								{DENTAL_ADVERTISING_SOURCES.filter((s) => !s.isOnlineSelfBooking).map((s) => (
+								{DENTAL_ADVERTISING_SOURCES.filter(
+									(s) => !s.isOnlineSelfBooking,
+								).map((s) => (
 									<option key={s.key} value={s.key}>
 										{s.label}
 									</option>
@@ -781,16 +891,23 @@ export function PatientCreationModal({
 							</span>
 						</button>
 
-						{(showDocFields || fieldRequirements.requireSnils || fieldRequirements.requireIdentityDocument) && (
+						{(showDocFields ||
+							fieldRequirements.requireSnils ||
+							fieldRequirements.requireIdentityDocument) && (
 							<div className="create-patient-grid-2 mt-2 gap-3">
 								<div className="create-patient-form-field">
-									<label htmlFor="patient-create-snils" className="create-patient-label flex items-center gap-1">
+									<label
+										htmlFor="patient-create-snils"
+										className="create-patient-label flex items-center gap-1"
+									>
 										<ShieldCheck size={13} className="text-[var(--teal)]" />
 										СНИЛС{" "}
 										{fieldRequirements.requireSnils ? (
 											<span className="text-rose-500 font-bold">* (ЕГИСЗ)</span>
 										) : (
-											<span className="text-xs text-[var(--muted)] font-normal">(опция)</span>
+											<span className="text-xs text-[var(--muted)] font-normal">
+												(опция)
+											</span>
 										)}
 									</label>
 									<input
@@ -812,16 +929,26 @@ export function PatientCreationModal({
 											{validationResult.errors.snils}
 										</span>
 									)}
+									<span className="text-[10px] text-[var(--muted)] block mt-0.5">
+										Не блокирует регистрацию (Мандат 8e). Требуется для выгрузки
+										в ЕГИСЗ (РЭМД).
+									</span>
 								</div>
 
 								<div className="create-patient-form-field">
-									<label htmlFor="patient-create-oms" className="create-patient-label">
+									<label
+										htmlFor="patient-create-oms"
+										className="create-patient-label"
+									>
 										Полис ОМС / ДМС
 									</label>
 									<input
 										id="patient-create-oms"
 										placeholder="Номер полиса"
-										value={patientAdministrativeProfileDraft.insurancePolicyNumber || ""}
+										value={
+											patientAdministrativeProfileDraft.insurancePolicyNumber ||
+											""
+										}
 										onChange={(e) =>
 											setPatientAdministrativeProfileDraft((prev) => ({
 												...prev,
@@ -833,18 +960,25 @@ export function PatientCreationModal({
 								</div>
 
 								<div className="create-patient-form-field create-patient-full-width">
-									<label htmlFor="patient-create-passport" className="create-patient-label">
+									<label
+										htmlFor="patient-create-passport"
+										className="create-patient-label"
+									>
 										Паспорт РФ{" "}
 										{fieldRequirements.requireIdentityDocument ? (
 											<span className="text-rose-500 font-bold">*</span>
 										) : (
-											<span className="text-xs text-[var(--muted)] font-normal">(опция)</span>
+											<span className="text-xs text-[var(--muted)] font-normal">
+												(опция)
+											</span>
 										)}
 									</label>
 									<input
 										id="patient-create-passport"
 										placeholder="Серия и номер 0000 000000"
-										value={patientAdministrativeProfileDraft.identityDocument || ""}
+										value={
+											patientAdministrativeProfileDraft.identityDocument || ""
+										}
 										onChange={(e) =>
 											setPatientAdministrativeProfileDraft((prev) => ({
 												...prev,
@@ -859,6 +993,10 @@ export function PatientCreationModal({
 											{validationResult.errors.identityDocument}
 										</span>
 									)}
+									<span className="text-[10px] text-[var(--muted)] block mt-0.5">
+										Не блокирует регистрацию (Мандат 8e). Можно внести позже при
+										оформлении договора.
+									</span>
 								</div>
 							</div>
 						)}
@@ -926,7 +1064,14 @@ export function PatientCreationModal({
 							onClick={handleCreate}
 							disabled={isPatientCreating}
 							aria-busy={isPatientCreating || undefined}
-							aria-describedby={patientCreateGuidance ? "patient-create-guidance" : undefined}
+							aria-describedby={
+								patientCreateGuidance ? "patient-create-guidance" : undefined
+							}
+							title={
+								isPatientCreating
+									? "Создание карточки..."
+									: "Создать амбулаторную карту пациента 043/у (без блокировки по СНИЛС/паспорту)"
+							}
 							data-testid="patient-creation-submit-btn"
 							style={{
 								display: "inline-flex",
@@ -936,7 +1081,9 @@ export function PatientCreationModal({
 							}}
 						>
 							<Plus size={18} aria-hidden="true" />
-							<span>{isPatientCreating ? "Создание..." : "Создать пациента"}</span>
+							<span>
+								{isPatientCreating ? "Создание..." : "Создать пациента"}
+							</span>
 						</button>
 					</div>
 				</footer>

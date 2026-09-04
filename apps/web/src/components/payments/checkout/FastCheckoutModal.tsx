@@ -37,14 +37,19 @@ import {
 	calculateStageAdvanceAmount,
 	DEFAULT_TREATMENT_STAGES,
 	splitStateToCheckoutPayments,
+	paymentsToSplitState,
 	calculateSplitRemainingKop,
 	calculateCashChangeKop,
+	applyQuickCheckoutPreset,
 	type CheckoutSplitItem,
 	type Ffd12FiscalPayload,
 	type TreatmentPlanStageOption,
 	type StagePaymentMode,
+	type ClientLegalType,
+	type QuickCheckoutPresetType,
 } from "./fastCheckoutEngine";
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager";
+import { KktLanPrinterService } from "../../../services/hardware/kktLanPrinter";
 import { showToast } from "../../GlobalToast";
 import { useModalA11y } from "../../../hooks/useModalA11y";
 import "./fastCheckout.css";
@@ -56,6 +61,8 @@ export interface FastCheckoutModalProps {
 	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
+	readonly patientEmail?: string | undefined;
+	readonly patientDepositRub?: number | undefined;
 	readonly orderId?: string | undefined;
 	readonly stages?: readonly TreatmentPlanStageOption[] | undefined;
 	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
@@ -68,6 +75,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	initialPaymentMethod,
 	patientName = "Смирнова Екатерина Васильевна",
 	patientPhone = "+7 (999) 123-45-67",
+	patientEmail = "patient@example.com",
+	patientDepositRub = 85000,
 	orderId = "CHK-2026-891",
 	stages = DEFAULT_TREATMENT_STAGES,
 	onPaymentComplete,
@@ -102,6 +111,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
 	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(true);
 	const [selectedForeignCurrency, setSelectedForeignCurrency] = useState<SupportedCurrency>("USD");
+	const [clientType, setClientType] = useState<ClientLegalType>("physical_person");
+	const [buyerInn, setBuyerInn] = useState<string>("");
+	const [buyerName, setBuyerName] = useState<string>("");
+	const [isElectronicReceiptOnly, setIsElectronicReceiptOnly] = useState<boolean>(false);
 
 	// Compute base stage amount in kopecks from selected stage or fallback
 	const baseStageAmountKop = useMemo(() => {
@@ -232,6 +245,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			payments,
 			cashTenderedKop: Math.round(cashTenderedRub * 100),
 			patientPhone,
+			patientEmail,
+			clientType,
+			buyerInn: buyerInn || undefined,
+			buyerName: buyerName || undefined,
+			isElectronicReceiptOnly,
 		});
 	}, [
 		orderId,
@@ -239,9 +257,31 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		payments,
 		cashTenderedRub,
 		patientPhone,
+		patientEmail,
+		clientType,
+		buyerInn,
+		buyerName,
+		isElectronicReceiptOnly,
 	]);
 
 	if (!isOpen) return null;
+
+	const handleQuickPreset = (preset: QuickCheckoutPresetType) => {
+		const result = applyQuickCheckoutPreset({
+			totalBillKop: targetBillKop,
+			preset,
+			availableDepositKop: Math.round(patientDepositRub * 100),
+		});
+		setActiveMethod(result.activeMethod);
+		const splitState = paymentsToSplitState(result.payments);
+		setCardAmountRub(splitState.cardRub);
+		setCashAmountRub(splitState.cashRub);
+		setSbpAmountRub(splitState.sbpRub);
+		setDepositAmountRub(splitState.depositRub);
+		setLoyaltyAmountRub(splitState.loyaltyRub);
+		setDmsAmountRub(splitState.dmsRub ?? 0);
+		setCashTenderedRub(result.cashTenderedKop / 100);
+	};
 
 	const handleStageSelect = (stageId: string) => {
 		setSelectedStageId(stageId);
@@ -322,7 +362,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		setLoyaltyAmountRub((prev) => +(prev + remainingRub).toFixed(2));
 	};
 
-	const handleExecutePayment = async () => {
+	const handleExecutePayment = async (forceOfflineBuffer = false) => {
 		const now = Date.now();
 		if (inFlightRef.current || isPrinting || now - lastClickTimeRef.current < 600) {
 			return;
@@ -366,22 +406,96 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				totalBillKop: targetBillKop,
 				payments,
 				patientPhone,
+				patientEmail,
+				clientType,
+				buyerInn: buyerInn || undefined,
+				buyerName: buyerName || undefined,
+				isElectronicReceiptOnly,
 				idempotencyKey: compositeIdempotencyKey,
 			},
 			{
 				paymentMethodTag1214: stageCalc.ffdTag1214,
 				paymentSubjectTag1212: stageCalc.ffdTag1212,
 				idempotencyKey: compositeIdempotencyKey,
+				isElectronicReceiptOnly,
+				offlineBuffered: forceOfflineBuffer,
 			}
 		);
 
+		// 1. Принудительный буфер отложенной фискализации или сетевой офлайн (Mandate 8e — пациент не ждет у стойки)
+		if (forceOfflineBuffer || !navigator.onLine) {
+			FiscalReceiptQueueManager.enqueueReceipt(
+				{
+					operationType: "income",
+					customerContact: patientPhone || patientEmail || "",
+					cashierFullName: "Кассир",
+					totalRub: targetBillRub,
+					items: [
+						{
+							name: "Стоматологические услуги по плану лечения",
+							priceRub: targetBillRub,
+							quantity: 1,
+							amountRub: targetBillRub,
+							paymentMethod: "full_payment",
+							paymentSubject: "service",
+						},
+					],
+					cashRub: payload.paymentsDistribution.cashKop / 100,
+					electronicRub: payload.paymentsDistribution.electronicKop / 100,
+					prepaidRub: payload.paymentsDistribution.advancePrepaymentKop / 100,
+					taxationSystem: "usn_income_expense",
+				},
+				forceOfflineBuffer
+					? "Ручной перевод в буфер отложенной фискализации (ККТ временно офлайн)"
+					: "Офлайн-режим (потеря сетевого соединения с ККТ)",
+				compositeIdempotencyKey
+			);
+			setIsOfflineBuffered(true);
+			showToast(
+				"Платёж сохранён в буфер отложенной фискализации 54-ФЗ. Пациент рассчитан, стойка свободна!",
+				"success"
+			);
+
+			if (onPaymentComplete) {
+				onPaymentComplete({ ...payload, offlineBuffered: true });
+			}
+
+			setTimeout(() => {
+				setIsPrinting(false);
+				inFlightRef.current = false;
+				onClose();
+			}, 400);
+			return;
+		}
+
+		// 2. Штатная печать на ККТ с автоматическим буферированием при отказе оборудования
 		try {
-			// If offline or simulated KKT issue, enqueue safely
-			if (!navigator.onLine) {
+			const printResult = await KktLanPrinterService.printReceipt({
+				operationType: "income",
+				customerContact: patientPhone || patientEmail || "",
+				cashierFullName: "Кассир",
+				totalRub: targetBillRub,
+				items: [
+					{
+						name: "Стоматологические услуги по плану лечения",
+						priceRub: targetBillRub,
+						quantity: 1,
+						amountRub: targetBillRub,
+						paymentMethod: "full_payment",
+						paymentSubject: "service",
+					},
+				],
+				cashRub: payload.paymentsDistribution.cashKop / 100,
+				electronicRub: payload.paymentsDistribution.electronicKop / 100,
+				prepaidRub: payload.paymentsDistribution.advancePrepaymentKop / 100,
+				taxationSystem: "usn_income_expense",
+			});
+
+			if (!printResult.success || printResult.status === "hardware_offline") {
 				FiscalReceiptQueueManager.enqueueReceipt(
 					{
 						operationType: "income",
-						customerContact: patientPhone || "",
+						customerContact: patientPhone || patientEmail || "",
 						cashierFullName: "Кассир",
 						totalRub: targetBillRub,
 						items: [
@@ -399,32 +513,45 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 						prepaidRub: payload.paymentsDistribution.advancePrepaymentKop / 100,
 						taxationSystem: "usn_income_expense",
 					},
-					"Офлайн-режим (потеря интернет-соединения)",
+					printResult.error || "ККТ временно недоступна / нет бумаги",
 					compositeIdempotencyKey
 				);
 				setIsOfflineBuffered(true);
 				showToast(
-					"Чек сохранен в локальную офлайн-очередь 54-ФЗ. Зависание ККТ исключено.",
-					"info"
+					"ККТ временно офлайн: чек помещён в буфер отложенной фискализации. Пациент отпущен без задержек!",
+					"warning"
 				);
-			}
 
-			if (onPaymentComplete) {
-				onPaymentComplete(payload);
+				if (onPaymentComplete) {
+					onPaymentComplete({ ...payload, offlineBuffered: true });
+				}
+			} else {
+				if (isElectronicReceiptOnly) {
+					showToast(
+						`Электронный чек 54-ФЗ отправлен на ${patientPhone || patientEmail || "контакт пациента"} (бумага сэкономлена)!`,
+						"success"
+					);
+				} else {
+					showToast("Чек 54-ФЗ успешно пробит на кассовом аппарате!", "success");
+				}
+
+				if (onPaymentComplete) {
+					onPaymentComplete(payload);
+				}
 			}
 
 			setTimeout(() => {
 				setIsPrinting(false);
 				inFlightRef.current = false;
 				onClose();
-			}, 800);
-		} catch {
-			// Emergency buffer queue fallback
+			}, 600);
+		} catch (err: unknown) {
+			// Аварийный fallback — чек не теряется, сохраняется в локальный буфер
 			FiscalReceiptQueueManager.enqueueReceipt(
 				{
 					operationType: "income",
-					customerContact: patientPhone || "",
-					cashierFullName: "Сидорова Анна Павловна",
+					customerContact: patientPhone || patientEmail || "",
+					cashierFullName: "Кассир",
 					totalRub: targetBillRub,
 					items: [
 						{
@@ -441,17 +568,24 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					prepaidRub: payload.paymentsDistribution.advancePrepaymentKop / 100,
 					taxationSystem: "usn_income_expense",
 				},
-				"Аварийный сбой связи с ККТ",
+				err instanceof Error ? err.message : "Аварийный сбой связи с ККТ",
 				compositeIdempotencyKey
 			);
 			setIsOfflineBuffered(true);
 			showToast(
-				"Сбой ККТ: чек помещен в локальный буфер автоповтора 54-ФЗ",
+				"ККТ не отвечает: чек сохранен в локальный буфер отложенной фискализации 54-ФЗ. Пациент отпущен!",
 				"warning"
 			);
-			setIsPrinting(false);
-			inFlightRef.current = false;
-			onClose();
+
+			if (onPaymentComplete) {
+				onPaymentComplete({ ...payload, offlineBuffered: true });
+			}
+
+			setTimeout(() => {
+				setIsPrinting(false);
+				inFlightRef.current = false;
+				onClose();
+			}, 600);
 		}
 	};
 
@@ -539,6 +673,61 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							<span>Простая касса</span>
 							<span className="text-[10px] opacity-90 font-mono">[{isSimpleCashierMode ? "Крупно" : "Сплит"}]</span>
 						</button>
+					</div>
+
+					{/* Быстрые 1-клик сценарии оплаты (Свобода кассира & Mandate 8e) */}
+					<div className="p-3.5 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-teal-500/30 flex flex-col gap-2.5 shadow-xs" data-testid="quick-presets-section">
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<span className="text-xs font-black text-teal-800 dark:text-teal-200 uppercase tracking-wider flex items-center gap-1.5">
+								<Zap size={14} className="text-amber-500 fill-amber-500" />
+								Быстрые 1-клик сценарии оплаты (0 барьеров):
+							</span>
+							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)]">
+								Мгновенный расчет без ручного ввода цифр
+							</span>
+						</div>
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("100_card")}
+								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-100-card"
+								title="Оплатить 100% банковской картой через терминал"
+							>
+								<CreditCard size={15} className="shrink-0 text-blue-600" />
+								<span className="truncate">⚡ 1-клик: Оплата картой (100%)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("100_cash")}
+								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-100-cash"
+								title="Оплатить 100% наличными (ровно в кассу)"
+							>
+								<Banknote size={15} className="shrink-0 text-emerald-600" />
+								<span className="truncate">⚡ 1-клик: Оплата наличными (100%)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("use_deposit")}
+								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-use-deposit"
+								title="Списать аванс / депозит пациента по Тегу 1215 54-ФЗ"
+							>
+								<Coins size={15} className="shrink-0 text-amber-600" />
+								<span className="truncate">⚡ 1-клик: Списать аванс / депозит пациента</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("split_50_50")}
+								className="min-h-[46px] px-3 py-2 rounded-xl border-2 border-purple-500/40 bg-[var(--paper,#ffffff)] hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-split-50-50"
+								title="Разделить 50/50: половина картой, половина наличными (без копеечного дрейфа)"
+							>
+								<Layers size={15} className="shrink-0 text-purple-600" />
+								<span className="truncate">⚡ 1-клик: Сплит 50/50 (Карта + Наличные)</span>
+							</button>
+						</div>
 					</div>
 
 					{/* Treatment Stage Selector */}
@@ -1149,7 +1338,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							onClick={handleExecutePayment}
+							onClick={() => void handleExecutePayment()}
 							disabled={!validation.isValid || isPrinting}
 							className="min-h-[52px] px-8 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-base font-extrabold flex items-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
 						>

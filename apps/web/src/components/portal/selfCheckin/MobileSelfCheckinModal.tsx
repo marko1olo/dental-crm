@@ -1,19 +1,24 @@
-import React, { useState, useMemo } from "react";
+import { generateQrCodeSvg } from "@dental/shared";
 import {
 	Activity,
 	AlertCircle,
 	CheckCircle2,
 	Droplets,
 	HeartPulse,
+	ShieldCheck,
 	Ticket,
+	Zap,
 } from "lucide-react";
-import { generateQrCodeSvg } from "@dental/shared";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { SignaturePadCanvas } from "./SignaturePadCanvas";
 import {
+	createPhysiologicalNormSomaticQuestionnaire,
+	evaluateSomaticRisks,
 	INITIAL_SOMATIC_QUESTIONNAIRE,
+	PHYSIOLOGICAL_NORM_SOMATIC_QUESTIONNAIRE,
 	type SomaticQuestionnaireData,
 	type SomaticRiskAlert,
-	evaluateSomaticRisks,
 } from "./SomaticQuestionnaireEngine";
 import "./selfCheckin.css";
 
@@ -104,7 +109,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	const [authError, setAuthError] = useState<string | null>(null);
 
 	// Consents State
-	const [consents, setConsents] = useState<StatutoryConsentItem[]>(DEFAULT_CONSENTS);
+	const [consents, setConsents] =
+		useState<StatutoryConsentItem[]>(DEFAULT_CONSENTS);
 	const [activeConsentIndex, setActiveConsentIndex] = useState(0);
 	const [currentSvgSignature, setCurrentSvgSignature] = useState("");
 
@@ -112,9 +118,11 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	const [somaticData, setSomaticData] = useState<SomaticQuestionnaireData>(
 		INITIAL_SOMATIC_QUESTIONNAIRE,
 	);
+	const [isNormApplied, setIsNormApplied] = useState(false);
 	const [allergyDetails, setAllergyDetails] = useState("");
 	const [cardioDetails, setCardioDetails] = useState("");
 	const [coagulationDetails, setCoagulationDetails] = useState("");
+	const [consentNotice, setConsentNotice] = useState<string | null>(null);
 
 	const checkinCode = useMemo(() => {
 		const raw = `${patientName || "PATIENT"}-${appointmentTime || "TIME"}`;
@@ -128,7 +136,11 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 	const checkinQrSvg = useMemo(() => {
 		const verifyUrl = `https://dente.clinic/checkin/verify?ticket=${encodeURIComponent(checkinCode)}`;
-		return generateQrCodeSvg(verifyUrl, { size: 84, margin: 1, title: `Талон чекина ${checkinCode}` });
+		return generateQrCodeSvg(verifyUrl, {
+			size: 84,
+			margin: 1,
+			title: `Талон чекина ${checkinCode}`,
+		});
 	}, [checkinCode]);
 
 	// 1-Touch Checkin State: последние 4 цифры телефона или быстрый клик
@@ -172,7 +184,12 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 	// Consent Signature Confirm
 	const handleSignCurrentConsent = () => {
-		if (!currentSvgSignature) return;
+		if (!currentSvgSignature) {
+			setConsentNotice(
+				"Поставьте росчерк на холсте выше или воспользуйтесь кнопкой «Подписать ПЭП (63-ФЗ)»",
+			);
+			return;
+		}
 
 		const updated = [...consents];
 		const current = updated[activeConsentIndex];
@@ -183,6 +200,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		}
 		setConsents(updated);
 		setCurrentSvgSignature("");
+		setConsentNotice(null);
 
 		// Move to next consent or proceed to somatic step
 		if (activeConsentIndex < consents.length - 1) {
@@ -190,6 +208,73 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		} else {
 			setStep("somatic");
 		}
+	};
+
+	// 1-Click Simple Electronic Signature (PEP 63-ФЗ) for current consent
+	const handleSignCurrentConsentWithPep = () => {
+		const updated = [...consents];
+		const current = updated[activeConsentIndex];
+		if (current) {
+			current.isSigned = true;
+			current.signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ПЭП (63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
+			current.signedAtIso = new Date().toISOString();
+		}
+		setConsents(updated);
+		setCurrentSvgSignature("");
+		setConsentNotice(null);
+
+		if (activeConsentIndex < consents.length - 1) {
+			setActiveConsentIndex(activeConsentIndex + 1);
+		} else {
+			setStep("somatic");
+		}
+	};
+
+	// 1-Click Simple Electronic Signature (PEP 63-ФЗ) for ALL statutory consents
+	const handleSignAllConsentsWithPep = () => {
+		const now = new Date();
+		const nowIso = now.toISOString();
+		const dtStr = now.toLocaleString("ru-RU");
+		const signed = consents.map((c) => ({
+			...c,
+			isSigned: true,
+			signatureSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ПЭП (63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${dtStr}</text></svg>`,
+			signedAtIso: nowIso,
+		}));
+		setConsents(signed);
+		setConsentNotice(null);
+		setStep("somatic");
+	};
+
+	// 1-Click Physiological Norm Application (Mandate 8e)
+	const handleApplyPhysiologicalNorm = () => {
+		setSomaticData(createPhysiologicalNormSomaticQuestionnaire());
+		setAllergyDetails("");
+		setCardioDetails("");
+		setCoagulationDetails("");
+		setIsNormApplied(true);
+	};
+
+	// 1-Click Physiological Norm & Instant 5-Second Completion
+	const handleApplyPhysiologicalNormAndFinish = () => {
+		const normData = createPhysiologicalNormSomaticQuestionnaire();
+		setSomaticData(normData);
+		setAllergyDetails("");
+		setCardioDetails("");
+		setCoagulationDetails("");
+		setIsNormApplied(true);
+
+		const evaluatedNorm = evaluateSomaticRisks(normData);
+		setIsSubmitting(true);
+		setTimeout(() => {
+			setIsSubmitting(false);
+			setStep("completed");
+			onCheckinSuccess?.({
+				patientId: "patient-selfcheckin-001",
+				signedConsents: consents.filter((c) => c.isSigned).map((c) => c.id),
+				somaticProfile: evaluatedNorm,
+			});
+		}, 300);
 	};
 
 	// Somatic Health Update & Submission
@@ -319,7 +404,11 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									type="text"
 									className="selfcheckin-input text-center text-xl font-mono font-black tracking-widest"
 									value={phoneDigits}
-									onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 4))}
+									onChange={(e) =>
+										setPhoneDigits(
+											e.target.value.replace(/\D/g, "").slice(0, 4),
+										)
+									}
 									placeholder="••••"
 									maxLength={4}
 									data-testid="one-touch-phone-input"
@@ -328,17 +417,42 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								<button
 									type="button"
 									className="selfcheckin-btn-primary w-full py-3 text-base font-bold flex items-center justify-center gap-2"
-									onClick={handleOneTouchCheckin}
-									disabled={isSubmitting || phoneDigits.length < 4}
+									onClick={() => {
+										if (phoneDigits.length < 4) {
+											setAuthError(
+												"Пожалуйста, введите 4 последние цифры номера мобильного телефона.",
+											);
+											return;
+										}
+										handleOneTouchCheckin();
+									}}
+									disabled={isSubmitting}
+									title={
+										isSubmitting
+											? "Регистрация прибытия в клинику..."
+											: phoneDigits.length < 4
+												? "Введите 4 последние цифры номера телефона для подтверждения прибытия"
+												: "Подтвердить прибытие в клинику и получить талон"
+									}
 									data-testid="one-touch-checkin-btn"
 								>
 									<CheckCircle2 size={20} />
-									<span>{isSubmitting ? "Регистрация прибытия..." : "Я в клинике — Получить талон"}</span>
+									<span>
+										{isSubmitting
+											? "Регистрация прибытия..."
+											: "Я в клинике — Получить талон"}
+									</span>
 								</button>
 								<button
 									type="button"
-									className="w-full py-2 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center justify-center gap-1.5"
+									className="w-full py-2 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer"
 									onClick={handleOneTouchCheckin}
+									disabled={isSubmitting}
+									title={
+										isSubmitting
+											? "Регистрация прибытия..."
+											: "Быстрый чекин по персональному QR-коду"
+									}
 									data-testid="qr-checkin-btn"
 								>
 									<Ticket size={15} />
@@ -360,23 +474,41 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{showOptionalDocs && (
 									<div className="mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs space-y-2 text-slate-600 dark:text-slate-300">
 										<p>
-											При чекине в 1 касание согласие на медицинское вмешательство (323-ФЗ) и обработку данных (152-ФЗ) подтверждается простой электронной подписью по номеру телефона (ПЭП 63-ФЗ).
+											При чекине в 1 касание согласие на медицинское
+											вмешательство (323-ФЗ) и обработку данных (152-ФЗ)
+											подтверждается простой электронной подписью по номеру
+											телефона (ПЭП 63-ФЗ).
 										</p>
-										<div className="flex gap-2">
+										<div className="flex flex-wrap gap-2 pt-1">
 											<button
 												type="button"
-												className="text-teal-600 font-bold underline"
+												className="text-teal-600 dark:text-teal-400 font-bold underline cursor-pointer"
 												onClick={() => setStep("consents")}
+												title="Открыть бланки согласий для персональной росписи"
 											>
 												Открыть бланк подписи вручную
 											</button>
 											<span>·</span>
 											<button
 												type="button"
-												className="text-teal-600 font-bold underline"
+												className="text-teal-600 dark:text-teal-400 font-bold underline cursor-pointer"
 												onClick={() => setStep("somatic")}
+												title="Открыть анкету здоровья для заполнения"
 											>
 												Заполнить соматическую анкету
+											</button>
+											<span>·</span>
+											<button
+												type="button"
+												className="text-emerald-600 dark:text-emerald-400 font-bold underline cursor-pointer flex items-center gap-1"
+												onClick={() => {
+													handleApplyPhysiologicalNorm();
+													setStep("somatic");
+												}}
+												title="Открыть анкету здоровья с предзаполненной физиологической нормой (хронических патологий нет)"
+											>
+												<Zap size={13} />
+												<span>⚡ Норма по умолчанию (Мандат 8e)</span>
 											</button>
 										</div>
 									</div>
@@ -392,6 +524,24 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{/* STEP 2: Statutory Consents with Vector Touch Signature */}
 					{step === "consents" && currentConsent && (
 						<div className="selfcheckin-step-box">
+							<div className="selfcheckin-consents-quick-bar">
+								<button
+									type="button"
+									className="w-full py-2.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+									onClick={handleSignAllConsentsWithPep}
+									disabled={isSubmitting}
+									title={
+										isSubmitting
+											? "Регистрация подписей..."
+											: "Подписать все 3 согласия (ИДС и ПДН) простой электронной подписью 63-ФЗ в 1 клик"
+									}
+									data-testid="sign-all-consents-pep-btn"
+								>
+									<ShieldCheck size={16} />
+									<span>⚡ Подписать все согласия ПЭП (63-ФЗ) в 1 клик</span>
+								</button>
+							</div>
+
 							<div className="selfcheckin-consent-nav">
 								{consents.map((item, idx) => (
 									<button
@@ -403,6 +553,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										onClick={() => {
 											setActiveConsentIndex(idx);
 											setCurrentSvgSignature("");
+											setConsentNotice(null);
 										}}
 									>
 										{item.isSigned ? "✓ " : ""}
@@ -414,7 +565,8 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 							<div className="selfcheckin-consent-card">
 								<div className="selfcheckin-consent-header">
 									<span className="selfcheckin-consent-badge">
-										{currentConsent.categoryRu} • {currentConsent.statutoryBasis}
+										{currentConsent.categoryRu} •{" "}
+										{currentConsent.statutoryBasis}
 									</span>
 									<h3 className="selfcheckin-consent-title">
 										{currentConsent.titleRu}
@@ -437,7 +589,11 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 											✓ Документ подписан простой электронной подписью (63-ФЗ)
 										</div>
 										<div className="selfcheckin-signed-meta">
-											Время: {currentConsent.signedAtIso?.slice(0, 19).replace("T", " ")} UTC
+											Время:{" "}
+											{currentConsent.signedAtIso
+												?.slice(0, 19)
+												.replace("T", " ")}{" "}
+											UTC
 										</div>
 										{currentConsent.signatureSvg && (
 											<div
@@ -456,16 +612,47 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										<SignaturePadCanvas
 											width={360}
 											height={160}
-											onSignatureChange={(svg) => setCurrentSvgSignature(svg)}
+											onSignatureChange={(svg) => {
+												setCurrentSvgSignature(svg);
+												if (svg) setConsentNotice(null);
+											}}
 										/>
-										<button
-											type="button"
-											className="selfcheckin-btn-primary"
-											onClick={handleSignCurrentConsent}
-											disabled={!currentSvgSignature}
-										>
-											Подтвердить подпись документа ({currentConsent.code})
-										</button>
+										<div className="flex flex-col sm:flex-row gap-2 mt-2">
+											<button
+												type="button"
+												className="selfcheckin-btn-primary flex-1"
+												onClick={handleSignCurrentConsent}
+												disabled={isSubmitting}
+												title={
+													isSubmitting
+														? "Идет сохранение..."
+														: !currentSvgSignature
+															? "Поставьте подпись пальцем выше или нажмите «Подписать ПЭП (63-ФЗ)»"
+															: `Подтвердить подпись документа (${currentConsent.code})`
+												}
+											>
+												Подтвердить подпись документа ({currentConsent.code})
+											</button>
+											<button
+												type="button"
+												className="py-2 px-3 rounded-lg border border-teal-500/40 bg-teal-500/10 text-teal-800 dark:text-teal-200 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-teal-500/20 transition-all cursor-pointer whitespace-nowrap"
+												onClick={handleSignCurrentConsentWithPep}
+												disabled={isSubmitting}
+												title="Подписать данный документ простой электронной подписью (63-ФЗ) без рисования стилусом"
+												data-testid="consent-sign-pep-single-btn"
+											>
+												<ShieldCheck
+													size={15}
+													className="text-teal-600 dark:text-teal-400"
+												/>
+												<span>Подписать ПЭП (63-ФЗ)</span>
+											</button>
+										</div>
+										{consentNotice && (
+											<div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium">
+												{consentNotice}
+											</div>
+										)}
 									</div>
 								)}
 							</div>
@@ -485,9 +672,62 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{/* STEP 3: Somatic Health Questionnaire */}
 					{step === "somatic" && (
 						<div className="selfcheckin-step-box">
+							{/* 1-Click Physiological Norm Banner (Mandate 8e) */}
+							<div
+								className="selfcheckin-norm-quick-banner"
+								data-testid="somatic-norm-banner"
+							>
+								<div className="selfcheckin-norm-header">
+									<div className="selfcheckin-norm-title-row">
+										<ShieldCheck size={18} className="selfcheckin-norm-icon" />
+										<span className="selfcheckin-norm-title">
+											Физиологическая норма по умолчанию (Мандат 8e)
+										</span>
+									</div>
+									{isNormApplied && (
+										<span className="selfcheckin-norm-applied-badge">
+											✓ Норма активна
+										</span>
+									)}
+								</div>
+								<p className="selfcheckin-norm-description">
+									Если у вас нет аллергий на анестезию/лекарства,
+									сердечно-сосудистых патологий и склонности к кровотечениям —
+									заполните анкету нормой в 1 клик и завершите чекин за 5
+									секунд:
+								</p>
+								<div className="selfcheckin-norm-btn-group">
+									<button
+										type="button"
+										className="selfcheckin-btn-norm-quick"
+										onClick={handleApplyPhysiologicalNorm}
+										data-testid="somatic-norm-1click-btn"
+										title="Заполнить анкету физиологической нормой: хронических заболеваний, аллергий и патологий нет"
+									>
+										<Zap size={16} />
+										<span>
+											⚡ Соматически здоров (хронических заболеваний, аллергий и
+											патологий нет / норма)
+										</span>
+									</button>
+									<button
+										type="button"
+										className="selfcheckin-btn-norm-finish"
+										onClick={handleApplyPhysiologicalNormAndFinish}
+										disabled={isSubmitting}
+										data-testid="somatic-norm-instant-finish-btn"
+										title="Заполнить нормой и сразу завершить чекин за 5 секунд"
+									>
+										<CheckCircle2 size={16} />
+										<span>Завершить за 5 сек ➔</span>
+									</button>
+								</div>
+							</div>
+
 							<div className="selfcheckin-somatic-intro">
-								Пожалуйста, отметьте особенности здоровья для безопасного
-								подбора анестезии и клинических протоколов:
+								Пожалуйста, отметьте выявленные особенности здоровья (если
+								имеются) для безопасного подбора анестезии и клинических
+								протоколов:
 							</div>
 
 							{/* Live Risk Alerts Preview */}
@@ -505,7 +745,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												{alert.severity === "danger" ? "🚨 " : "⚠️ "}
 												{alert.title}
 											</div>
-											<div className="selfcheckin-alert-msg">{alert.message}</div>
+											<div className="selfcheckin-alert-msg">
+												{alert.message}
+											</div>
 											<div className="selfcheckin-alert-action">
 												<strong>Рекомендация:</strong> {alert.recommendedAction}
 											</div>
@@ -518,7 +760,15 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Allergies Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										<AlertCircle size={16} color="#d97706" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										<AlertCircle
+											size={16}
+											color="#d97706"
+											style={{
+												display: "inline-block",
+												verticalAlign: "middle",
+												marginRight: "6px",
+											}}
+										/>
 										1. Аллергологический анамнез
 									</div>
 									<label className="selfcheckin-checkbox-label">
@@ -535,7 +785,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												})
 											}
 										/>
-										<span>Имеются аллергические реакции на медикаменты/вещества</span>
+										<span>
+											Имеются аллергические реакции на медикаменты/вещества
+										</span>
 									</label>
 
 									{somaticData.allergies.hasAllergies && (
@@ -588,7 +840,15 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Cardio Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										<HeartPulse size={16} color="#dc2626" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										<HeartPulse
+											size={16}
+											color="#dc2626"
+											style={{
+												display: "inline-block",
+												verticalAlign: "middle",
+												marginRight: "6px",
+											}}
+										/>
 										2. Сердечно-сосудистая система
 									</div>
 									<label className="selfcheckin-checkbox-label">
@@ -639,7 +899,15 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Coagulation Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										<Droplets size={16} color="#991b1b" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										<Droplets
+											size={16}
+											color="#991b1b"
+											style={{
+												display: "inline-block",
+												verticalAlign: "middle",
+												marginRight: "6px",
+											}}
+										/>
 										3. Свертываемость крови и антикоагулянты
 									</div>
 									<label className="selfcheckin-checkbox-label">
@@ -657,7 +925,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												})
 											}
 										/>
-										<span>Прием кроверазжижающих (Ксарелто, Варфарин, Аспирин)</span>
+										<span>
+											Прием кроверазжижающих (Ксарелто, Варфарин, Аспирин)
+										</span>
 									</label>
 									{somaticData.coagulation.onAnticoagulants && (
 										<input
@@ -673,7 +943,15 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{/* Pregnancy / Diabetes Card */}
 								<div className="selfcheckin-question-card">
 									<div className="selfcheckin-card-title">
-										<Activity size={16} color="#2563eb" style={{ display: "inline-block", verticalAlign: "middle", marginRight: "6px" }} />
+										<Activity
+											size={16}
+											color="#2563eb"
+											style={{
+												display: "inline-block",
+												verticalAlign: "middle",
+												marginRight: "6px",
+											}}
+										/>
 										4. Диабет / Беременность
 									</div>
 									<div className="selfcheckin-suboptions-row">
@@ -715,13 +993,23 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 							<button
 								type="button"
-								className="selfcheckin-btn-primary selfcheckin-btn-submit"
+								className={`selfcheckin-btn-primary selfcheckin-btn-submit ${isNormApplied ? "selfcheckin-btn-accent" : ""}`}
 								onClick={handleCompleteCheckin}
 								disabled={isSubmitting}
+								title={
+									isSubmitting
+										? "Сохранение анкеты здоровья..."
+										: isNormApplied
+											? "Завершить самочекин с физиологической нормой (5 сек)"
+											: "Завершить самочекин и передать анкету врачу"
+								}
+								data-testid="somatic-complete-checkin-btn"
 							>
 								{isSubmitting
 									? "Сохранение..."
-									: "Завершить самочекин и передать врачу"}
+									: isNormApplied
+										? "⚡ Завершить самочекин (Физиологическая норма) за 5 секунд ➔"
+										: "Завершить самочекин и передать врачу"}
 							</button>
 						</div>
 					)}
@@ -729,7 +1017,14 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{/* STEP 4: Completed Pass */}
 					{step === "completed" && (
 						<div className="selfcheckin-step-box selfcheckin-completed-box">
-							<div className="selfcheckin-success-badge" style={{ display: "flex", justifyContent: "center", marginBottom: "0.75rem" }}>
+							<div
+								className="selfcheckin-success-badge"
+								style={{
+									display: "flex",
+									justifyContent: "center",
+									marginBottom: "0.75rem",
+								}}
+							>
 								<CheckCircle2 size={48} color="#059669" />
 							</div>
 							<h3 className="selfcheckin-completed-title">
@@ -742,11 +1037,17 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 
 							<div className="selfcheckin-pass-card">
 								<div className="selfcheckin-pass-patient">{patientName}</div>
-								<div className="selfcheckin-pass-time">Прием: {appointmentTime}</div>
+								<div className="selfcheckin-pass-time">
+									Прием: {appointmentTime}
+								</div>
 								<div className="selfcheckin-pass-qr">
 									<div
 										className="selfcheckin-qr-container"
-										style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}
+										style={{
+											display: "flex",
+											justifyContent: "center",
+											padding: "8px 0",
+										}}
 										dangerouslySetInnerHTML={{ __html: checkinQrSvg }}
 									/>
 									<div
@@ -770,7 +1071,15 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										<span>Электронный талон чекина: #{checkinCode}</span>
 									</div>
 								</div>
-								<div className="selfcheckin-pass-status" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+								<div
+									className="selfcheckin-pass-status"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: "6px",
+									}}
+								>
 									<CheckCircle2 size={16} color="#059669" />
 									<span>Врач уведомлен о вашем прибытии в клинику</span>
 								</div>

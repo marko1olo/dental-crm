@@ -680,6 +680,126 @@
 	font-weight: 500;
 }
 
+/* 1-Click Physiological Norm Banner (Mandate 8e) */
+.selfcheckin-norm-quick-banner {
+	padding: 0.875rem 1rem;
+	border-radius: 12px;
+	border: 1.5px solid rgba(16, 185, 129, 0.4);
+	background: rgba(16, 185, 129, 0.08);
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+}
+
+.selfcheckin-norm-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.selfcheckin-norm-title-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.selfcheckin-norm-icon {
+	color: #059669;
+	flex-shrink: 0;
+}
+
+.selfcheckin-norm-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: #065f46;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.selfcheckin-norm-applied-badge {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	padding: 0.2rem 0.5rem;
+	border-radius: 9999px;
+	background: #059669;
+	color: #ffffff;
+}
+
+.selfcheckin-norm-description {
+	margin: 0;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	color: #064e3b;
+}
+
+.selfcheckin-norm-btn-group {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.selfcheckin-btn-norm-quick {
+	flex: 1;
+	min-height: 44px;
+	padding: 0.625rem 1rem;
+	border-radius: 10px;
+	border: none;
+	background: #059669;
+	color: #ffffff;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.selfcheckin-btn-norm-quick:hover {
+	background: #047857;
+	transform: translateY(-1px);
+}
+
+.selfcheckin-btn-norm-quick:active {
+	transform: translateY(0);
+}
+
+.selfcheckin-btn-norm-finish {
+	min-height: 44px;
+	padding: 0.625rem 1.125rem;
+	border-radius: 10px;
+	border: none;
+	background: #047857;
+	color: #ffffff;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.selfcheckin-btn-norm-finish:hover {
+	background: #065f46;
+	transform: translateY(-1px);
+}
+
+.selfcheckin-btn-norm-finish:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.selfcheckin-consents-quick-bar {
+	margin-bottom: 0.75rem;
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 640px) {
 	.selfcheckin-modal-backdrop {

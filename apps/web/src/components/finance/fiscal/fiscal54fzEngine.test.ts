@@ -29,6 +29,8 @@ import {
 	reconcileAcquiringWithKkt,
 	exportAcquiringReconciliationToCsv,
 	generateAcquiringReconciliationPrintHtml,
+	calculateRoundToHundredsDiscountRub,
+	roundToHundredsRub,
 	type QueuedReceiptDraft,
 	type AcquiringTerminalTransaction,
 	type KktFiscalElectronicRecord,
@@ -1129,6 +1131,52 @@ describe("Frontend 54-FZ (FFD 1.2) Fiscal Engine Tests", () => {
 		assert.ok(html.includes("Сидорова А. П."));
 		assert.ok(html.includes("28000.00 ₽"));
 		assert.ok(html.includes("Сошлось копейка в копейку"));
+	});
+
+	it("1.26 distributeLoyaltyDiscountAcrossItems — 1-click round to hundreds (7 428 ₽ -> 7 400 ₽) and fast discounts (3%, 5%, 10%, 100% warranty)", () => {
+		const items = [
+			{ id: "1", name: "Лечение кариеса", quantity: 1, priceRub: 4428.5 },
+			{ id: "2", name: "Анестезия Убистезин", quantity: 1, priceRub: 3000 },
+		]; // Total: 7 428.50 ₽ (742,850 kop)
+
+		// 1. Round to hundreds: 7 428.50 ₽ -> 7 400.00 ₽ (discount 28.50 ₽)
+		const roundRes = distributeLoyaltyDiscountAcrossItems(items, { preset: "round_hundreds" });
+		assert.equal(roundRes.totalGrossRub, 7428.5);
+		assert.equal(roundRes.totalNetRub, 7400);
+		assert.equal(roundRes.totalDiscountRub, 28.5);
+		assert.equal(roundRes.totalNetKopecks, 740000);
+		assert.equal(roundRes.totalDiscountKopecks, 2850);
+		assert.ok(roundRes.savingsText.includes("Округление до сотен"));
+
+		// Verify helper functions
+		assert.equal(calculateRoundToHundredsDiscountRub(7428), 28);
+		assert.equal(roundToHundredsRub(7428), 7400);
+		assert.equal(calculateRoundToHundredsDiscountRub(7428.5), 28.5);
+		assert.equal(roundToHundredsRub(7428.5), 7400);
+
+		// 2. 3% discount
+		const disc3Res = distributeLoyaltyDiscountAcrossItems(items, { preset: "discount_3" });
+		const expected3Kop = Math.round(742850 * 0.03); // 22286 kop = 222.86 ₽
+		assert.equal(disc3Res.totalDiscountKopecks, expected3Kop);
+		assert.equal(disc3Res.totalNetKopecks, 742850 - expected3Kop);
+
+		// 3. 5% discount
+		const disc5Res = distributeLoyaltyDiscountAcrossItems(items, { preset: "discount_5" });
+		const expected5Kop = Math.round(742850 * 0.05); // 37143 kop = 371.43 ₽
+		assert.equal(disc5Res.totalDiscountKopecks, expected5Kop);
+		assert.equal(disc5Res.totalNetKopecks, 742850 - expected5Kop);
+
+		// 4. 10% discount
+		const disc10Res = distributeLoyaltyDiscountAcrossItems(items, { preset: "discount_10" });
+		const expected10Kop = Math.round(742850 * 0.10); // 74285 kop = 742.85 ₽
+		assert.equal(disc10Res.totalDiscountKopecks, expected10Kop);
+		assert.equal(disc10Res.totalNetKopecks, 742850 - expected10Kop);
+
+		// 5. 100% warranty rework (0 ₽ to pay)
+		const warrantyRes = distributeLoyaltyDiscountAcrossItems(items, { preset: "warranty_100" });
+		assert.equal(warrantyRes.totalDiscountKopecks, 742850);
+		assert.equal(warrantyRes.totalNetKopecks, 0);
+		assert.equal(warrantyRes.totalNetRub, 0);
 	});
 });
 

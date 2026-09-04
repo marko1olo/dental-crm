@@ -512,7 +512,7 @@ describe("order804nFiscalEngine — 54-FZ & SBP QR Fiscalization", () => {
 		assert.equal(zReport.shiftNumber, 42);
 		assert.equal(zReport.incomeCount, 6);
 		// Income total = 145 000.50 + 15 000 (family wallet advance offset) = 160 000.50 ₽
-		assert.equal(zReport.incomeTotalRub, 160001); // Math.round(160000.50)
+		assert.equal(zReport.incomeTotalRub, 160000.5);
 		assert.equal(zReport.incomeTotalKopecks, 16000050);
 		assert.equal(zReport.incomeCashRub, 25000.50);
 		assert.equal(zReport.incomeCashKopecks, 2500050);

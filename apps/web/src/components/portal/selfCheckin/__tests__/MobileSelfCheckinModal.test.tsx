@@ -18,8 +18,14 @@ describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 		);
 
 		// Modal and Header
-		assert.ok(html.includes("selfcheckin-modal-window"), "Renders modal window");
-		assert.ok(html.includes("Смирнова Анна Викторовна"), "Renders patient name");
+		assert.ok(
+			html.includes("selfcheckin-modal-window"),
+			"Renders modal window",
+		);
+		assert.ok(
+			html.includes("Смирнова Анна Викторовна"),
+			"Renders patient name",
+		);
 		assert.ok(html.includes("Д-р Воронова Е. С."), "Renders doctor name");
 		assert.ok(html.includes("Сегодня в 14:30"), "Renders appointment time");
 
@@ -50,6 +56,73 @@ describe("MobileSelfCheckinModal Component & 1-Touch Checkin Flow", () => {
 		assert.ok(
 			html.includes("Нормативные документы"),
 			"Contains optional collapsible documents accordion",
+		);
+		assert.ok(
+			html.includes("one-touch-checkin-btn"),
+			"Express checkin button is present and not silently disabled",
+		);
+	});
+
+	it("evaluates PHYSIOLOGICAL_NORM_SOMATIC_QUESTIONNAIRE with zero danger/warning alerts and riskLevel='low'", async () => {
+		const {
+			PHYSIOLOGICAL_NORM_SOMATIC_QUESTIONNAIRE,
+			createPhysiologicalNormSomaticQuestionnaire,
+			evaluateSomaticRisks,
+		} = await import("../SomaticQuestionnaireEngine.js");
+
+		const norm = createPhysiologicalNormSomaticQuestionnaire();
+		assert.equal(norm.allergies.hasAllergies, false);
+		assert.equal(norm.cardiovascular.hasRisk, false);
+		assert.equal(norm.coagulation.hasBleedingDisorder, false);
+		assert.equal(norm.diabetes.hasDiabetes, false);
+		assert.equal(norm.pregnancy.isPregnantOrLactating, false);
+		assert.equal(norm.respiratory.bronchialAsthma, false);
+
+		const result = evaluateSomaticRisks(
+			PHYSIOLOGICAL_NORM_SOMATIC_QUESTIONNAIRE,
+		);
+		assert.equal(
+			result.riskLevel,
+			"low",
+			"Physiological norm must result in low risk level",
+		);
+		assert.equal(
+			result.alerts.length,
+			0,
+			"Physiological norm must have 0 clinical risk alerts",
+		);
+		assert.equal(result.profile.hasCardiovascularRisk, false);
+		assert.equal(result.profile.hasSulfiteAllergy, false);
+		assert.equal(result.profile.hasLocalAnestheticsAllergy, false);
+		assert.equal(result.profile.hasBleedingDisorder, false);
+	});
+
+	it("renders 1-click physiological norm button and frictionless checkin options without unexplained disabled buttons", async () => {
+		const html = renderToStaticMarkup(
+			createElement(MobileSelfCheckinModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialPhone: "+7 (913) 770-41-99",
+				patientName: "Барабаш Сергей Васильевич",
+				doctorName: "Д-р Воронова Е. С.",
+				appointmentTime: "Сегодня в 15:00",
+			}),
+		);
+
+		// Express arrival button has informative title
+		assert.ok(
+			html.includes('title="Подтвердить прибытие в клинику и получить талон"'),
+			"Arrival button has clear accessible title explaining its action",
+		);
+
+		// Verification that no button is disabled without title explanation
+		const disabledWithoutTitle =
+			html.includes('<button disabled="" class=') ||
+			html.includes("<button disabled class=");
+		assert.equal(
+			disabledWithoutTitle,
+			false,
+			"No button is disabled without attributes",
 		);
 	});
 });

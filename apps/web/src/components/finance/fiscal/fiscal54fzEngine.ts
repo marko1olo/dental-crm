@@ -1044,6 +1044,10 @@ export function generate54FzZReportReceiptTapeText(params: ZReportPrintTapeParam
 // ============================================================================
 
 export type LoyaltyDiscountPreset =
+	| "round_hundreds"
+	| "discount_3"
+	| "discount_5"
+	| "discount_10"
 	| "pensioner_10"
 	| "family_5"
 	| "employee_20"
@@ -1061,11 +1065,15 @@ export interface LoyaltyDiscountRule {
 }
 
 export const LOYALTY_DISCOUNT_PRESETS: readonly LoyaltyDiscountRule[] = [
+	{ id: "round_hundreds", label: "⚡ Округлить до сотен (скидка на копейки)", description: "Скидка на копейки до сотен рублей (например, 7 428 ₽ -> 7 400 ₽)" },
+	{ id: "discount_3", label: "Скидка 3%", percent: 3, description: "Быстрая скидка 3% без запроса мастер-паролей" },
+	{ id: "discount_5", label: "Скидка 5%", percent: 5, description: "Быстрая скидка 5% без запроса мастер-паролей" },
+	{ id: "discount_10", label: "Скидка 10%", percent: 10, description: "Быстрая скидка 10% без запроса мастер-паролей" },
+	{ id: "warranty_100", label: "★ 100% Гарантия / Переделка", percent: 100, description: "100% гарантийная переделка клинического этапа врачом без админ-паролей" },
+	{ id: "colleague_100", label: "Персонал / Коллеги 100%", percent: 100, description: "100% скидка для медицинского персонала клиники и коллег" },
 	{ id: "pensioner_10", label: "Пенсионная 10%", percent: 10, description: "Скидка 10% для пенсионеров и ветеранов" },
 	{ id: "family_5", label: "Семейная 5%", percent: 5, description: "Скидка 5% по семейной программе" },
 	{ id: "employee_20", label: "Сотрудник 20%", percent: 20, description: "Скидка 20% для сотрудников клиники и их родственников" },
-	{ id: "warranty_100", label: "Гарантийная переделка 100%", percent: 100, description: "100% гарантийная переделка клинического этапа врачом без админ-паролей" },
-	{ id: "colleague_100", label: "Персонал / Коллеги 100%", percent: 100, description: "100% скидка для медицинского персонала клиники и коллег" },
 	{ id: "manual_percent", label: "Ручная %", description: "Индивидуальная процентная скидка врача (до 100%)" },
 	{ id: "manual_rub", label: "Ручная ₽", description: "Индивидуальная фиксированная скидка в рублях (до 100%)" },
 	{ id: "none", label: "Без скидки", percent: 0, description: "Полная стоимость без скидки" },
@@ -1154,7 +1162,22 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 	let targetDiscountKopecks = 0;
 	let isCapped = false;
 
-	if (params.preset === "pensioner_10") {
+	if (params.preset === "round_hundreds") {
+		// Округление до сотен рублей (скидка на копейки): 7 428 ₽ -> 7 400 ₽ (скидка 28 ₽)
+		if (totalGrossKopecks >= 10000) {
+			const roundedKopecks = Math.floor(totalGrossKopecks / 10000) * 10000;
+			targetDiscountKopecks = totalGrossKopecks - roundedKopecks;
+		} else {
+			const roundedKopecks = Math.floor(totalGrossKopecks / 100) * 100;
+			targetDiscountKopecks = totalGrossKopecks - roundedKopecks;
+		}
+	} else if (params.preset === "discount_3") {
+		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.03);
+	} else if (params.preset === "discount_5") {
+		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.05);
+	} else if (params.preset === "discount_10") {
+		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.10);
+	} else if (params.preset === "pensioner_10") {
 		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.10);
 	} else if (params.preset === "family_5") {
 		targetDiscountKopecks = Math.round(totalGrossKopecks * 0.05);
@@ -1232,6 +1255,10 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 		maximumFractionDigits: 2,
 	});
 
+	const savingsText = params.preset === "round_hundreds"
+		? `Округление до сотен: скидка ${savingsFormatted} ₽`
+		: `Экономия для пациента: ${savingsFormatted} ₽`;
+
 	return {
 		items: updatedItems,
 		totalGrossKopecks,
@@ -1241,9 +1268,35 @@ export function distributeLoyaltyDiscountAcrossItems<T extends {
 		totalNetKopecks,
 		totalNetRub: kopecksToRub(totalNetKopecks),
 		effectivePercent,
-		savingsText: `Экономия для пациента: ${savingsFormatted} ₽`,
+		savingsText,
 		isCapped,
 	};
+}
+
+/**
+ * Вычисляет скидку на копейки для округления вниз до сотен рублей.
+ * Например, для 7 428 ₽ возвращает 28 ₽ (к оплате 7 400 ₽).
+ */
+export function calculateRoundToHundredsDiscountRub(grossRub: number): number {
+	const grossKop = Math.max(0, rubToKopecks(grossRub));
+	if (grossKop >= 10000) {
+		const roundedKop = Math.floor(grossKop / 10000) * 10000;
+		return kopecksToRub(grossKop - roundedKop);
+	}
+	const roundedKop = Math.floor(grossKop / 100) * 100;
+	return kopecksToRub(grossKop - roundedKop);
+}
+
+/**
+ * Округляет сумму до сотен рублей вниз (скидка на копейки).
+ * Например, для 7 428 ₽ возвращает 7 400 ₽.
+ */
+export function roundToHundredsRub(grossRub: number): number {
+	const grossKop = Math.max(0, rubToKopecks(grossRub));
+	if (grossKop >= 10000) {
+		return kopecksToRub(Math.floor(grossKop / 10000) * 10000);
+	}
+	return kopecksToRub(Math.floor(grossKop / 100) * 100);
 }
 
 // ----------------------------------------------------------------------------

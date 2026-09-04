@@ -111,4 +111,41 @@ describe("fastCheckoutEngine & 54-FZ Tag 1215 Suite", () => {
 			assert.equal(res.remainingDueKop, 500000);
 		});
 	});
+
+	describe("4. 54-FZ Buyer INN Verification (Mandate 8e: Zero obstacle for physical persons)", () => {
+		it("accepts physical persons paying without INN (FFD 1.2 Tag 1228 is B2B-only)", () => {
+			const input: FastCheckoutInput = {
+				orderId: "ORD-PHYS-1",
+				totalBillKop: 250000,
+				payments: [{ method: "bank_card", amountKop: 250000 }],
+				clientType: "physical_person",
+				buyerInn: "", // Empty INN for patient
+			};
+			const res = validateCheckoutSplit(input);
+			assert.equal(res.isValid, true);
+		});
+
+		it("requires valid 10-digit INN for legal entities", () => {
+			const invalidInput: FastCheckoutInput = {
+				orderId: "ORD-B2B-1",
+				totalBillKop: 250000,
+				payments: [{ method: "bank_card", amountKop: 250000 }],
+				clientType: "legal_entity",
+				buyerInn: "123", // Too short
+			};
+			const resInvalid = validateCheckoutSplit(invalidInput);
+			assert.equal(resInvalid.isValid, false);
+			assert.ok(resInvalid.errorMessageRu?.includes("10 цифр"));
+
+			const validInput: FastCheckoutInput = {
+				orderId: "ORD-B2B-2",
+				totalBillKop: 250000,
+				payments: [{ method: "bank_card", amountKop: 250000 }],
+				clientType: "legal_entity",
+				buyerInn: "7701234567",
+			};
+			const resValid = validateCheckoutSplit(validInput);
+			assert.equal(resValid.isValid, true);
+		});
+	});
 });

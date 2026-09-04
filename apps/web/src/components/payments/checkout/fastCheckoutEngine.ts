@@ -24,6 +24,8 @@ export interface FastCheckoutSplitState {
 	readonly dmsRub?: number | undefined;
 }
 
+export type ClientLegalType = "physical_person" | "legal_entity" | "individual_entrepreneur";
+
 export interface FastCheckoutInput {
 	readonly orderId: string;
 	readonly totalBillKop: number;
@@ -33,6 +35,10 @@ export interface FastCheckoutInput {
 	readonly patientPhone?: string | undefined;
 	readonly taxSystem?: "usn_income_outcome" | "patent" | "osno" | undefined;
 	readonly idempotencyKey?: string | undefined;
+	readonly clientType?: ClientLegalType | undefined;
+	readonly buyerInn?: string | undefined;
+	readonly buyerName?: string | undefined;
+	readonly isElectronicReceiptOnly?: boolean | undefined;
 }
 
 export interface TreatmentPlanStageOption {
@@ -171,6 +177,158 @@ export function calculateStageAdvanceAmount(
 	}
 }
 
+export interface BuyerInnValidationResult {
+	readonly isValid: boolean;
+	readonly isRequired: boolean;
+	readonly errorRu?: string | undefined;
+}
+
+/**
+ * Statutory 54-FZ Buyer INN validation rule:
+ * - Физические лица (пациенты розницы): ИНН КАТЕГОРИЧЕСКИ НЕ ТРЕБУЕТСЯ по закону 54-ФЗ при оплате наличными или картой!
+ *   Валидация отключена, поле строго опционально. Никаких препятствий и блокировок кассира.
+ * - Юридические лица и индивидуальные предприниматели: ИНН обязателен (10 цифр для ЮЛ, 12 цифр для ИП) по ст. 4.7 № 54-ФЗ.
+ */
+export function validateBuyerInn(params: {
+	readonly clientType?: ClientLegalType | undefined;
+	readonly buyerInn?: string | undefined;
+}): BuyerInnValidationResult {
+	const clientType = params.clientType ?? "physical_person";
+
+	if (clientType === "physical_person") {
+		// Физическое лицо — ИНН строго опционален. Пустое поле 100% валидно.
+		const cleanInn = (params.buyerInn ?? "").replace(/\D/g, "");
+		if (!cleanInn) {
+			return { isValid: true, isRequired: false };
+		}
+		// Если физлицо указало ИНН добровольно (например, для справки 13% НДФЛ в налоговую), проверяем корректность 12 цифр
+		if (cleanInn.length !== 12) {
+			return {
+				isValid: false,
+				isRequired: false,
+				errorRu: "ИНН физического лица должен содержать 12 цифр (или оставьте поле пустым)",
+			};
+		}
+		return { isValid: true, isRequired: false };
+	}
+
+	const cleanInn = (params.buyerInn ?? "").replace(/\D/g, "");
+	if (!cleanInn) {
+		return {
+			isValid: false,
+			isRequired: true,
+			errorRu:
+				clientType === "legal_entity"
+					? "Для юридического лица обязателен ИНН (10 цифр) по 54-ФЗ"
+					: "Для индивидуального предпринимателя обязателен ИНН (12 цифр) по 54-ФЗ",
+		};
+	}
+
+	if (clientType === "legal_entity" && cleanInn.length !== 10) {
+		return {
+			isValid: false,
+			isRequired: true,
+			errorRu: "ИНН юридического лица должен содержать ровно 10 цифр",
+		};
+	}
+
+	if (clientType === "individual_entrepreneur" && cleanInn.length !== 12) {
+		return {
+			isValid: false,
+			isRequired: true,
+			errorRu: "ИНН индивидуального предпринимателя должен содержать ровно 12 цифр",
+		};
+	}
+
+	return { isValid: true, isRequired: true };
+}
+
+export type QuickCheckoutPresetType =
+	| "100_card"
+	| "100_cash"
+	| "use_deposit"
+	| "split_50_50";
+
+export interface QuickCheckoutPresetResult {
+	readonly payments: readonly CheckoutSplitItem[];
+	readonly cashTenderedKop: number;
+	readonly activeMethod: CheckoutPaymentMethodType;
+}
+
+/**
+ * 1-Click Quick Preset Engine (Mandate 8e — zero cashier friction):
+ * - 100_card: 100% банковской картой (Тег 1081)
+ * - 100_cash: 100% наличными (Тег 1031) с точной суммой без сдачи
+ * - use_deposit: Списание депозита/аванса (Тег 1215) с доплатой картой при нехватке
+ * - split_50_50: Сплит 50/50 (Карта + Наличные) с точностью до копейки без дрейфа float
+ */
+export function applyQuickCheckoutPreset(params: {
+	readonly totalBillKop: number;
+	readonly preset: QuickCheckoutPresetType;
+	readonly availableDepositKop?: number | undefined;
+}): QuickCheckoutPresetResult {
+	const total = Math.max(0, params.totalBillKop);
+	const availableDeposit = Math.max(0, params.availableDepositKop ?? 0);
+
+	switch (params.preset) {
+		case "100_card": {
+			return {
+				payments: total > 0 ? [{ method: "bank_card", amountKop: total }] : [],
+				cashTenderedKop: 0,
+				activeMethod: "bank_card",
+			};
+		}
+		case "100_cash": {
+			return {
+				payments: total > 0 ? [{ method: "cash", amountKop: total }] : [],
+				cashTenderedKop: total,
+				activeMethod: "cash",
+			};
+		}
+		case "use_deposit": {
+			if (availableDeposit >= total && total > 0) {
+				return {
+					payments: [{ method: "patient_deposit", amountKop: total }],
+					cashTenderedKop: 0,
+					activeMethod: "patient_deposit",
+				};
+			}
+			if (availableDeposit > 0 && total > availableDeposit) {
+				const remainderKop = total - availableDeposit;
+				return {
+					payments: [
+						{ method: "patient_deposit", amountKop: availableDeposit },
+						{ method: "bank_card", amountKop: remainderKop },
+					],
+					cashTenderedKop: 0,
+					activeMethod: "patient_deposit",
+				};
+			}
+			return {
+				payments: total > 0 ? [{ method: "patient_deposit", amountKop: total }] : [],
+				cashTenderedKop: 0,
+				activeMethod: "patient_deposit",
+			};
+		}
+		case "split_50_50": {
+			const halfCardKop = Math.floor(total / 2);
+			const halfCashKop = total - halfCardKop;
+			const payments: CheckoutSplitItem[] = [];
+			if (halfCardKop > 0) {
+				payments.push({ method: "bank_card", amountKop: halfCardKop });
+			}
+			if (halfCashKop > 0) {
+				payments.push({ method: "cash", amountKop: halfCashKop });
+			}
+			return {
+				payments,
+				cashTenderedKop: halfCashKop,
+				activeMethod: "bank_card",
+			};
+		}
+	}
+}
+
 export interface FastCheckoutValidationResult {
 	readonly isValid: boolean;
 	readonly totalPaidKop: number;
@@ -194,9 +352,14 @@ export interface Ffd12FiscalPayload {
 		readonly creditKop: number; // Тег 1216
 		readonly barterOtherKop: number; // Тег 1217
 	};
-	readonly clientContact?: string | undefined;
+	readonly clientContact?: string | undefined; // Тег 1008
+	readonly isElectronicReceiptOnly: boolean; // Отказ от бумажного чека по ст. 1.2 54-ФЗ
+	readonly clientType: ClientLegalType;
+	readonly buyerInn?: string | undefined; // Тег 1228 (только ЮЛ/ИП)
+	readonly buyerName?: string | undefined; // Тег 1227
 	readonly taxSystem: string;
 	readonly calculationType: 1;
+	readonly offlineBuffered?: boolean | undefined;
 }
 
 /**
@@ -352,6 +515,22 @@ export function calculateCashChangeKop(
 }
 
 export function validateCheckoutSplit(input: FastCheckoutInput): FastCheckoutValidationResult {
+	const innValidation = validateBuyerInn({
+		clientType: input.clientType,
+		buyerInn: input.buyerInn,
+	});
+
+	if (!innValidation.isValid && innValidation.errorRu) {
+		return {
+			isValid: false,
+			totalPaidKop: 0,
+			totalBillKop: input.totalBillKop,
+			remainingDueKop: input.totalBillKop,
+			cashChangeDueKop: 0,
+			errorMessageRu: innValidation.errorRu,
+		};
+	}
+
 	let totalPaid = 0;
 	let cashAmount = 0;
 
@@ -406,6 +585,8 @@ export function generate54FzFiscalPayload(
 		paymentMethodTag1214?: number | undefined;
 		paymentSubjectTag1212?: number | undefined;
 		idempotencyKey?: string | undefined;
+		isElectronicReceiptOnly?: boolean | undefined;
+		offlineBuffered?: boolean | undefined;
 	},
 ): Ffd12FiscalPayload {
 	let cashKop = 0;
@@ -436,6 +617,11 @@ export function generate54FzFiscalPayload(
 	}
 
 	const contact = input.patientPhone || input.patientEmail || undefined;
+	const isElectronicReceiptOnly = Boolean(
+		options?.isElectronicReceiptOnly ?? input.isElectronicReceiptOnly ?? false,
+	);
+	const clientType = input.clientType ?? "physical_person";
+	const cleanBuyerInn = input.buyerInn?.replace(/\D/g, "");
 
 	return {
 		ffdVersion: "1.2",
@@ -452,7 +638,49 @@ export function generate54FzFiscalPayload(
 			barterOtherKop,
 		},
 		clientContact: contact,
+		isElectronicReceiptOnly,
+		clientType,
+		buyerInn: cleanBuyerInn || undefined,
+		buyerName: input.buyerName?.trim() || undefined,
 		taxSystem: input.taxSystem || "usn_income_outcome",
 		calculationType: 1,
+		offlineBuffered: options?.offlineBuffered ?? false,
+	};
+}
+
+export interface OfflineFiscalBufferItem {
+	readonly orderId: string;
+	readonly totalRub: number;
+	readonly totalKop: number;
+	readonly paymentsDistribution: Ffd12FiscalPayload["paymentsDistribution"];
+	readonly customerContact: string;
+	readonly isElectronicReceiptOnly: boolean;
+	readonly idempotencyKey: string;
+	readonly clientType: ClientLegalType;
+	readonly buyerInn?: string | undefined;
+	readonly queuedAt: string;
+	readonly reason: string;
+}
+
+/**
+ * Creates an offline fiscal buffer record when KKT hardware is offline,
+ * ensuring zero patient wait time at the reception counter (Mandate 8e).
+ */
+export function createOfflineFiscalBufferItem(
+	payload: Ffd12FiscalPayload,
+	reason = "ККТ временно недоступна (автосохранение в буфер отложенной фискализации)",
+): OfflineFiscalBufferItem {
+	return {
+		orderId: payload.orderId,
+		totalRub: payload.totalSumKop / 100,
+		totalKop: payload.totalSumKop,
+		paymentsDistribution: payload.paymentsDistribution,
+		customerContact: payload.clientContact || "",
+		isElectronicReceiptOnly: payload.isElectronicReceiptOnly,
+		idempotencyKey: payload.idempotencyKey || `offline-${Date.now()}`,
+		clientType: payload.clientType,
+		buyerInn: payload.buyerInn,
+		queuedAt: new Date().toISOString(),
+		reason,
 	};
 }

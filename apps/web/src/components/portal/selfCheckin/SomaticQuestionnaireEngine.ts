@@ -77,7 +77,13 @@ export interface SomaticRiskAlert {
 	title: string;
 	message: string;
 	recommendedAction: string;
-	category: "allergy" | "cardio" | "hemostasis" | "metabolic" | "pregnancy" | "general";
+	category:
+		| "allergy"
+		| "cardio"
+		| "hemostasis"
+		| "metabolic"
+		| "pregnancy"
+		| "general";
 }
 
 export interface SomaticHealthProfile {
@@ -146,6 +152,70 @@ export const INITIAL_SOMATIC_QUESTIONNAIRE: SomaticQuestionnaireData = {
 };
 
 /**
+ * Physiological norm by default (Mandate 8e):
+ * Patient has no allergies, no cardiovascular risks, no coagulation disorders, and no chronic pathologies.
+ */
+export const PHYSIOLOGICAL_NORM_SOMATIC_QUESTIONNAIRE: SomaticQuestionnaireData =
+	{
+		allergies: {
+			hasAllergies: false,
+			sulfiteAllergy: false,
+			localAnestheticsAllergy: false,
+			antibioticsAllergy: false,
+			latexAllergy: false,
+			drugList: [],
+			details: "",
+		},
+		cardiovascular: {
+			hasRisk: false,
+			hypertension: false,
+			arrhythmia: false,
+			ischemicHeartDisease: false,
+			heartAttackHistory: false,
+			pacemaker: false,
+			details: "",
+		},
+		diabetes: {
+			hasDiabetes: false,
+			type: "type2",
+			insulinDependent: false,
+			glucoseLevel: "",
+			details: "",
+		},
+		coagulation: {
+			hasBleedingDisorder: false,
+			onAnticoagulants: false,
+			anticoagulantName: "",
+			hemophilia: false,
+			details: "",
+		},
+		pregnancy: {
+			isPregnantOrLactating: false,
+			trimester: 2,
+			weeks: 20,
+			lactating: false,
+		},
+		respiratory: {
+			bronchialAsthma: false,
+			copd: false,
+			details: "",
+		},
+		infectious: {
+			hepatitisBOrC: false,
+			hiv: false,
+			tuberculosis: false,
+			details: "",
+		},
+		currentMedications: [],
+		additionalNotes:
+			"Соматически здоров / физиологическая норма (хронических заболеваний, аллергий и патологий не выявлено).",
+	};
+
+export function createPhysiologicalNormSomaticQuestionnaire(): SomaticQuestionnaireData {
+	return JSON.parse(JSON.stringify(PHYSIOLOGICAL_NORM_SOMATIC_QUESTIONNAIRE));
+}
+
+/**
  * Calculates somatic risk alerts and risk level from patient questionnaire responses
  */
 export function evaluateSomaticRisks(data: SomaticQuestionnaireData): {
@@ -168,7 +238,9 @@ export function evaluateSomaticRisks(data: SomaticQuestionnaireData): {
 	const hasLocalAnestheticsAllergy = Boolean(
 		allergies.localAnestheticsAllergy ||
 			(allergies.details &&
-				/анестетик|новокаин|лидокаин|ультракаин|септанест/i.test(allergies.details)),
+				/анестетик|новокаин|лидокаин|ультракаин|септанест/i.test(
+					allergies.details,
+				)),
 	);
 	const hasBronchialAsthma = Boolean(
 		respiratory.bronchialAsthma ||

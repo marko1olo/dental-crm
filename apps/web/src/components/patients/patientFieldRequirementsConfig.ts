@@ -11,7 +11,10 @@
 
 import { validateStaffSnils } from "@dental/shared";
 import { z } from "zod";
-import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage";
+import {
+	safeLocalStorageGetItem,
+	safeLocalStorageSetItem,
+} from "../../lib/safeLocalStorage";
 
 export const patientFieldRequirementsSchema = z.object({
 	requirePhone: z.boolean().default(true),
@@ -21,7 +24,9 @@ export const patientFieldRequirementsSchema = z.object({
 	requireIdentityDocument: z.boolean().default(false),
 });
 
-export type PatientFieldRequirements = z.infer<typeof patientFieldRequirementsSchema>;
+export type PatientFieldRequirements = z.infer<
+	typeof patientFieldRequirementsSchema
+>;
 
 export const DEFAULT_PATIENT_FIELD_REQUIREMENTS: PatientFieldRequirements = {
 	requirePhone: true,
@@ -31,7 +36,8 @@ export const DEFAULT_PATIENT_FIELD_REQUIREMENTS: PatientFieldRequirements = {
 	requireIdentityDocument: false,
 };
 
-export const PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY = "dental_crm_patient_field_requirements_v1";
+export const PATIENT_FIELD_REQUIREMENTS_STORAGE_KEY =
+	"dental_crm_patient_field_requirements_v1";
 
 /**
  * Рекламные источники и каналы привлечения пациентов для стоматологии.
@@ -127,7 +133,8 @@ export const DENTAL_ADVERTISING_SOURCES: readonly AdvertisingSourceOption[] = [
 		label: "Корпоративная программа / ДМС",
 		category: "Корпоратив",
 		isOnlineSelfBooking: false,
-		description: "Прикрепление по страховому полису ДМС или договору предприятия",
+		description:
+			"Прикрепление по страховому полису ДМС или договору предприятия",
 	},
 	{
 		key: "other",
@@ -226,28 +233,35 @@ export function validatePatientDraftWithRequirements(
 			}
 		}
 	} else if (phoneRaw && phoneDigits.length > 0 && phoneDigits.length < 5) {
-		errors.phone = "Номер телефона слишком короткий. Исправьте или очистите поле.";
+		errors.phone =
+			"Номер телефона слишком короткий. Исправьте или очистите поле.";
 	}
 
 	// 3. Рекламный источник (по настройке, кроме экстренного/первичного приёма)
 	const sourceTrimmed = (draft.advertisingSource || "").trim();
 	if (requirements.requireAdvertisingSource && !draft.isEmergencyOrPrimary) {
 		if (!sourceTrimmed) {
-			errors.advertisingSource = "Укажите рекламный источник для сквозной аналитики";
+			errors.advertisingSource =
+				"Укажите рекламный источник для сквозной аналитики";
 			missingRequiredLabels.push("Рекламный источник");
 		}
 	}
 
 	// 4. СНИЛС (по настройке с проверкой контрольной суммы 192-П, кроме анонимного режима по ПП РФ №659 и экстренного приёма)
 	const snilsRaw = (draft.snils || "").trim();
-	if (requirements.requireSnils && !draft.isAnonymous && !draft.isEmergencyOrPrimary) {
+	if (
+		requirements.requireSnils &&
+		!draft.isAnonymous &&
+		!draft.isEmergencyOrPrimary
+	) {
 		if (!snilsRaw) {
 			errors.snils = "СНИЛС обязателен для передачи данных в ЕГИСЗ (РЭМД)";
 			missingRequiredLabels.push("СНИЛС");
 		} else {
 			const snilsVal = validateStaffSnils(snilsRaw);
 			if (!snilsVal.isValid) {
-				errors.snils = snilsVal.error || "Некорректный СНИЛС (ошибка контрольной суммы)";
+				errors.snils =
+					snilsVal.error || "Некорректный СНИЛС (ошибка контрольной суммы)";
 				missingRequiredLabels.push("СНИЛС (контрольная сумма)");
 			}
 		}
@@ -262,14 +276,19 @@ export function validatePatientDraftWithRequirements(
 	const birthDateTrimmed = (draft.birthDate || "").trim();
 	if (requirements.requireBirthDate && !draft.isEmergencyOrPrimary) {
 		if (!birthDateTrimmed) {
-			errors.birthDate = "Дата рождения обязательна для амбулаторной карты 043/у";
+			errors.birthDate =
+				"Дата рождения обязательна для амбулаторной карты 043/у";
 			missingRequiredLabels.push("Дата рождения");
 		}
 	}
 
 	// 6. Паспорт РФ (по настройке, кроме анонимного режима по ПП РФ №659 и экстренного приёма)
 	const docTrimmed = (draft.identityDocument || "").trim();
-	if (requirements.requireIdentityDocument && !draft.isAnonymous && !draft.isEmergencyOrPrimary) {
+	if (
+		requirements.requireIdentityDocument &&
+		!draft.isAnonymous &&
+		!draft.isEmergencyOrPrimary
+	) {
 		if (!docTrimmed) {
 			errors.identityDocument = "Паспортные данные обязательны для договора";
 			missingRequiredLabels.push("Паспорт");
@@ -278,13 +297,20 @@ export function validatePatientDraftWithRequirements(
 
 	const isValid = Object.keys(errors).length === 0;
 
+	// Invariants (Mandate 8e): SNILS, passport, and patronymic NEVER block patient registration.
+	// Only full name (if not CITO) and valid phone (if required) can prevent immediate submission.
+	const blockingLabels = missingRequiredLabels.filter(
+		(l) => l === "ФИО" || l.includes("телефон"),
+	);
+	const advisoryLabels = missingRequiredLabels.filter(
+		(l) => l !== "ФИО" && !l.includes("телефон"),
+	);
+
 	let guidanceMessage: string | null = null;
-	if (!isValid) {
-		if (missingRequiredLabels.length === 1) {
-			guidanceMessage = `Заполните обязательное поле: «${missingRequiredLabels[0]}».`;
-		} else {
-			guidanceMessage = `Заполните обязательные поля клиники: ${missingRequiredLabels.map((l) => `«${l}»`).join(", ")}.`;
-		}
+	if (blockingLabels.length > 0) {
+		guidanceMessage = `Заполните обязательное поле для записи: «${blockingLabels.join(", ")}» (или включите режим «Острая боль / CITO»).`;
+	} else if (advisoryLabels.length > 0) {
+		guidanceMessage = `Рекомендуемые поля клиники: ${advisoryLabels.map((l) => `«${l}»`).join(", ")} (не блокируют регистрацию — можно внести позже в карте или при печати договора).`;
 	}
 
 	return {

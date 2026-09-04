@@ -349,7 +349,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	};
 
 	// Fast 1-Click fiscalize action with rage click debounce + atomic ref lock
-	const handleFiscalize = async () => {
+	const handleFiscalize = async (overrideTender?: "card" | "cash" | "sbp") => {
 		const now = Date.now();
 		if (inFlightRef.current || isProcessing || now - lastClickTimeRef.current < 600) {
 			return;
@@ -358,6 +358,10 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		lastClickTimeRef.current = now;
 		setIsProcessing(true);
 		try {
+			if (overrideTender) {
+				setSelectedTender(overrideTender);
+			}
+
 			// Construct composite idempotency key per 54-FZ
 			const idempotencyKey = createCompositeIdempotencyKey(
 				patientId || "fiscal-patient",
@@ -403,20 +407,21 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				}
 			}
 
-			const isSplit = activeTab === "split" || selectedTender === "split";
+			const effectiveTender = overrideTender || selectedTender;
+			const isSplit = !overrideTender && (activeTab === "split" || selectedTender === "split");
 			let cashKop = isSplit
 				? rubToKopecks(splitCashRub)
-				: selectedTender === "cash"
+				: effectiveTender === "cash"
 				? totalKopecks
 				: 0;
 			let cardKop = isSplit
 				? rubToKopecks(splitCardRub)
-				: selectedTender === "card"
+				: effectiveTender === "card"
 				? totalKopecks
 				: 0;
 			let sbpKop = isSplit
 				? rubToKopecks(splitSbpRub)
-				: selectedTender === "sbp"
+				: effectiveTender === "sbp"
 				? totalKopecks
 				: 0;
 			let prepaidKop = isSplit
@@ -1054,6 +1059,10 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											data-testid="select-cash-discount"
 										>
 											<option value="none">Без скидки (0%)</option>
+											<option value="round_hundreds">⚡ Округлить до сотен (скидка на копейки)</option>
+											<option value="discount_3">3% Скидка</option>
+											<option value="discount_5">5% Скидка</option>
+											<option value="discount_10">10% Скидка</option>
 											<option value="warranty_100">★ 100% Гарантия / Переделка (Врач)</option>
 											<option value="colleague_100">100% Сотрудник / Коллега</option>
 											<option value="pensioner_10">10% Пенсионная</option>
@@ -1104,19 +1113,60 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 								</div>
 
-								{/* 1-Tap Fast Preset Pills (Hick's Law) */}
+								{/* 1-Tap Fast Preset Pills (Hick's Law & Mandate 8e: Freedom for Doctors) */}
 								<div className="flex flex-wrap items-center gap-1.5 pt-0.5">
 									<button
 										type="button"
-										onClick={() => setSelectedDiscountPreset("none")}
+										onClick={() => setSelectedDiscountPreset("round_hundreds")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1 ${
+											selectedDiscountPreset === "round_hundreds"
+												? "bg-amber-600 text-white shadow-2xs ring-2 ring-amber-400"
+												: "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-100"
+										}`}
+										data-testid="btn-discount-round-hundreds"
+										title="Округлить сумму чека вниз до сотен рублей (скидка на копейки, например 7 428 ₽ -> 7 400 ₽)"
+									>
+										<Sparkles className="w-3.5 h-3.5 text-amber-500" />
+										<span>⚡ Округлить до сотен рублей (скидка на копейки)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("discount_3")}
 										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "none"
-												? "bg-slate-700 text-white shadow-2xs"
+											selectedDiscountPreset === "discount_3"
+												? "bg-teal-600 text-white shadow-2xs"
 												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
 										}`}
-										data-testid="btn-discount-none"
+										data-testid="btn-discount-3"
+										title="Быстрая скидка 3% без запроса мастер-паролей"
 									>
-										Без скидки (0%)
+										3%
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("discount_5")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "discount_5"
+												? "bg-teal-600 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-5"
+										title="Быстрая скидка 5% без запроса мастер-паролей"
+									>
+										5%
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("discount_10")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "discount_10"
+												? "bg-teal-600 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-10"
+										title="Быстрая скидка 10% без запроса мастер-паролей"
+									>
+										10%
 									</button>
 									<button
 										type="button"
@@ -1127,32 +1177,9 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
 										}`}
 										data-testid="btn-discount-pensioner"
+										title="Пенсионная скидка 10%"
 									>
 										Пенсионная 10%
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("family_5")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "family_5"
-												? "bg-pink-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
-										}`}
-										data-testid="btn-discount-family"
-									>
-										Семейная 5%
-									</button>
-									<button
-										type="button"
-										onClick={() => setSelectedDiscountPreset("employee_20")}
-										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-											selectedDiscountPreset === "employee_20"
-												? "bg-indigo-600 text-white shadow-2xs"
-												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
-										}`}
-										data-testid="btn-discount-employee"
-									>
-										Сотрудник 20%
 									</button>
 									<button
 										type="button"
@@ -1163,9 +1190,10 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
 										}`}
 										data-testid="btn-discount-warranty"
+										title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
 									>
 										<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-										<span>★ Гарантия 100% (Переделка)</span>
+										<span>★ 100% Гарантия (Переделка)</span>
 									</button>
 									<button
 										type="button"
@@ -1192,7 +1220,32 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									>
 										Ручная %
 									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("none")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "none"
+												? "bg-slate-700 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-none"
+									>
+										Сброс (0%)
+									</button>
 								</div>
+
+								{/* Round-off 100 Rubles Clinical Notice Banner */}
+								{selectedDiscountPreset === "round_hundreds" && (
+									<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs flex items-center justify-between gap-2 flex-wrap" data-testid="round-hundreds-banner">
+										<div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
+											<Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+											<span>✓ Округление до сотен: копейки списаны в пользу пациента. К оплате ровно {totalInvoiceRub.toLocaleString("ru-RU")} ₽</span>
+										</div>
+										<span className="text-[11px] font-mono text-amber-700 dark:text-amber-300">
+											54-ФЗ / Точность до копейки
+										</span>
+									</div>
+								)}
 
 								{/* Warranty 100% Clinical Notice Banner */}
 								{selectedDiscountPreset === "warranty_100" && (
@@ -1219,6 +1272,56 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										</span>
 									</div>
 								)}
+							</div>
+
+							{/* ⚡ Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
+							<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div className="flex items-center gap-2">
+										<Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+										<span className="text-xs font-black text-[var(--ink)] uppercase tracking-wider">
+											Экспресс-оплата в 1 клик (чек фискализируется мгновенно):
+										</span>
+									</div>
+									<span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+										✓ 54-ФЗ: ИНН с физлиц НЕ требуется
+									</span>
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+									<button
+										type="button"
+										onClick={() => handleFiscalize("card")}
+										disabled={isProcessing}
+										className="h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+										data-testid="btn-express-pay-card"
+										title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+									>
+										<CreditCard className="w-4 h-4 shrink-0" />
+										<span>⚡ Оплатить картой (вся сумма)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => handleFiscalize("cash")}
+										disabled={isProcessing}
+										className="h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+										data-testid="btn-express-pay-cash"
+										title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+									>
+										<Banknote className="w-4 h-4 shrink-0" />
+										<span>⚡ Оплатить наличными (вся сумма)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => handleFiscalize("sbp")}
+										disabled={isProcessing}
+										className="h-10 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+										data-testid="btn-express-pay-sbp"
+										title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+									>
+										<QrCode className="w-4 h-4 shrink-0" />
+										<span>⚡ Оплатить через СБП</span>
+									</button>
+								</div>
 							</div>
 
 							{/* 1-Click Fast Payment Tender Selection Panel (32-36px height buttons) */}
@@ -2017,7 +2120,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 						<button
 							type="button"
-							onClick={handleFiscalize}
+							onClick={() => handleFiscalize()}
 							disabled={isProcessing}
 							className="h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
 							data-testid="btn-cash-submit-fiscalize"
