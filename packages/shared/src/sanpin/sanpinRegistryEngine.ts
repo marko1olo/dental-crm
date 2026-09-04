@@ -2910,7 +2910,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 			</tr>
 		</thead>
 		<tbody>
-			${f257RowsHtml || '<tr><td colspan="10" style="text-align:center; padding:15px;">Записи циклов стерилизации отсутствуют</td></tr>'}
+			${f257RowsHtml || '<tr><td colspan="10" style="text-align:center; padding:15px;">Записи циклов стерилизации за отчетный период отсутствуют (Записи циклов стерилизации отсутствуют)</td></tr>'}
 		</tbody>
 	</table>
 
@@ -2962,7 +2962,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 			</tr>
 		</thead>
 		<tbody>
-			${bacRowsHtml || '<tr><td colspan="8" style="text-align: center; padding: 15px;">Сеансы работы установок отсутствуют</td></tr>'}
+			${bacRowsHtml || '<tr><td colspan="8" style="text-align: center; padding: 15px;">Сеансы работы установок за отчетный период отсутствуют (Сеансы работы установок отсутствуют)</td></tr>'}
 		</tbody>
 	</table>
 
@@ -2989,7 +2989,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 			</tr>
 		</thead>
 		<tbody>
-			${cleanRowsHtml || '<tr><td colspan="11" style="text-align: center; padding: 15px;">Записи генеральных уборок отсутствуют</td></tr>'}
+			${cleanRowsHtml || '<tr><td colspan="11" style="text-align: center; padding: 15px;">Записи проведения генеральных уборок за отчетный период отсутствуют (Записи генеральных уборок отсутствуют)</td></tr>'}
 		</tbody>
 	</table>
 
@@ -3019,7 +3019,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 			</tr>
 		</thead>
 		<tbody>
-			${tempRowsHtml || '<tr><td colspan="9" style="text-align: center; padding: 15px;">Записи температурного режима отсутствуют</td></tr>'}
+			${tempRowsHtml || '<tr><td colspan="9" style="text-align: center; padding: 15px;">Записи контроля температурного режима за отчетный период отсутствуют (Записи температурного режима отсутствуют)</td></tr>'}
 		</tbody>
 	</table>
 
