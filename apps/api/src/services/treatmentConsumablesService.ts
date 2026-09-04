@@ -645,6 +645,12 @@ export class TreatmentConsumablesService {
 			visitId: string;
 			userId?: string | null | undefined;
 			transactionType?: "auto_deduct" | "manual_writeoff" | undefined;
+			services?: Array<{ serviceId: string; quantity?: number | undefined }> | undefined;
+			items?: Array<{ inventoryItemId: string; quantity: number; reason?: string | null | undefined }> | undefined;
+			carpulesCount?: number | undefined;
+			drugName?: string | undefined;
+			paperJournalAcknowledged?: boolean | undefined;
+			allowOverdraft?: boolean | undefined;
 		},
 	): Promise<StockDeductionResult> {
 		const {
@@ -654,8 +660,8 @@ export class TreatmentConsumablesService {
 			transactionType = "auto_deduct",
 		} = params;
 
-		// 1. Fetch uncompleted treatment items for visit
-		const uncompletedItems = await tx
+		// 1. Fetch target treatment items for visit (uncompleted first, with fallback to completed if no tx exist)
+		let targetItems = await tx
 			.select()
 			.from(treatmentItems)
 			.where(
@@ -666,60 +672,85 @@ export class TreatmentConsumablesService {
 				),
 			);
 
-		if (uncompletedItems.length === 0) {
-			return { completedTreatmentItems: 0, deductions: [], warnings: [] };
+		if (targetItems.length === 0) {
+			// Проверяем: возможно, врач уже завершил прием, но списание материалов со склада ещё не производилось!
+			const existingTx = await tx
+				.select({ id: inventoryTransactions.id })
+				.from(inventoryTransactions)
+				.where(
+					and(
+						eq(inventoryTransactions.visitId, visitId),
+						eq(inventoryTransactions.organizationId, organizationId),
+					),
+				)
+				.limit(1);
+
+			if (existingTx.length === 0) {
+				targetItems = await tx
+					.select()
+					.from(treatmentItems)
+					.where(
+						and(
+							eq(treatmentItems.visitId, visitId),
+							eq(treatmentItems.organizationId, organizationId),
+							ne(treatmentItems.status, "cancelled"),
+						),
+					);
+			}
 		}
 
-		// Mark treatment items as completed
-		await tx
-			.update(treatmentItems)
-			.set({ status: "completed" })
-			.where(
-				and(
-					eq(treatmentItems.visitId, visitId),
-					eq(treatmentItems.organizationId, organizationId),
-				),
-			);
+		// Помечаем незавершённые строки приёма как завершённые
+		const uncompletedToMark = targetItems.filter((it) => it.status !== "completed");
+		if (uncompletedToMark.length > 0) {
+			await tx
+				.update(treatmentItems)
+				.set({ status: "completed" })
+				.where(
+					and(
+						eq(treatmentItems.visitId, visitId),
+						eq(treatmentItems.organizationId, organizationId),
+						inArray(
+							treatmentItems.id,
+							uncompletedToMark.map((it) => it.id),
+						),
+					),
+				);
+		}
 
-		// 2. Gather service IDs
-		const serviceIds = uncompletedItems
+		// 2. Gather service IDs from visit items and direct parameters
+		const serviceIdsFromItems = targetItems
 			.map((it) => it.serviceId)
 			.filter((id): id is string => typeof id === "string" && id.length > 0);
 
-		if (serviceIds.length === 0) {
-			return {
-				completedTreatmentItems: uncompletedItems.length,
-				deductions: [],
-				warnings: [],
-			};
-		}
+		const serviceIdsFromParams = (params.services ?? [])
+			.map((s) => s.serviceId)
+			.filter((id): id is string => typeof id === "string" && id.length > 0);
+
+		const allServiceIds = Array.from(
+			new Set([...serviceIdsFromItems, ...serviceIdsFromParams]),
+		);
 
 		// 3. Find procedure material rules
-		const rules = await tx
-			.select()
-			.from(procedureMaterialRules)
-			.where(
-				and(
-					inArray(procedureMaterialRules.serviceId, serviceIds),
-					or(
-						eq(procedureMaterialRules.organizationId, organizationId),
-						isNull(procedureMaterialRules.organizationId),
+		const rules = allServiceIds.length > 0
+			? await tx
+				.select()
+				.from(procedureMaterialRules)
+				.where(
+					and(
+						inArray(procedureMaterialRules.serviceId, allServiceIds),
+						or(
+							eq(procedureMaterialRules.organizationId, organizationId),
+							isNull(procedureMaterialRules.organizationId),
+						),
 					),
-				),
-			);
-
-		if (rules.length === 0) {
-			return {
-				completedTreatmentItems: uncompletedItems.length,
-				deductions: [],
-				warnings: [],
-			};
-		}
+				)
+			: [];
 
 		// 4. Aggregate required quantities
 		const requiredByItem = new Map<string, number>();
 
-		for (const item of uncompletedItems) {
+		// 4a. Deductions from treatment items
+		for (const item of targetItems) {
 			if (!item.serviceId) continue;
 			const serviceQty = Number(item.quantity ?? 1);
 			if (!isDeductibleQuantity(serviceQty)) continue;
@@ -737,11 +768,71 @@ export class TreatmentConsumablesService {
 			}
 		}
 
+		// 4b. Deductions from directly passed services
+		if (params.services && params.services.length > 0) {
+			for (const srv of params.services) {
+				if (!srv.serviceId) continue;
+				const srvQty = Number(srv.quantity ?? 1);
+				if (!isDeductibleQuantity(srvQty)) continue;
+
+				const matchingRules = rules.filter((r) => r.serviceId === srv.serviceId);
+				for (const rule of matchingRules) {
+					const itemId = rule.inventoryItemId ?? rule.materialItemId;
+					if (!itemId) continue;
+					const ruleQty = Number(rule.quantityToDeduct ?? rule.requiredQty ?? 1);
+					if (!isDeductibleQuantity(ruleQty)) continue;
+
+					const deductionAmount = ruleQty * srvQty;
+					const current = requiredByItem.get(itemId) ?? 0;
+					requiredByItem.set(itemId, current + deductionAmount);
+				}
+			}
+		}
+
+		// 4c. Deductions from directly passed items
+		if (params.items && params.items.length > 0) {
+			for (const it of params.items) {
+				if (!it.inventoryItemId) continue;
+				const qty = Number(it.quantity);
+				if (!isDeductibleQuantity(qty)) continue;
+				const current = requiredByItem.get(it.inventoryItemId) ?? 0;
+				requiredByItem.set(it.inventoryItemId, current + qty);
+			}
+		}
+
+		// 4d. Deductions from carpulesCount (anesthetics auto-matching)
+		if (params.carpulesCount && params.carpulesCount > 0) {
+			const drugSearch = (params.drugName || "артикаин").toLowerCase();
+			const clinicItems = await tx
+				.select()
+				.from(inventoryItems)
+				.where(eq(inventoryItems.organizationId, organizationId));
+
+			let anestheticItem = clinicItems.find(
+				(inv) =>
+					(params.drugName && inv.name.toLowerCase().includes(drugSearch)) ||
+					inv.name.toLowerCase().includes("артикаин") ||
+					inv.name.toLowerCase().includes("ультракаин") ||
+					inv.name.toLowerCase().includes("септонест") ||
+					inv.name.toLowerCase().includes("скандонест") ||
+					inv.name.toLowerCase().includes("анесте") ||
+					(inv.unit && inv.unit.toLowerCase().includes("карп")),
+			);
+			if (!anestheticItem && clinicItems.length > 0) {
+				anestheticItem = clinicItems[0];
+			}
+			if (anestheticItem) {
+				const current = requiredByItem.get(anestheticItem.id) ?? 0;
+				requiredByItem.set(anestheticItem.id, current + params.carpulesCount);
+			}
+		}
+
 		if (requiredByItem.size === 0) {
 			return {
-				completedTreatmentItems: uncompletedItems.length,
+				completedTreatmentItems: targetItems.length,
 				deductions: [],
 				warnings: [],
+				isOverdraft: false,
 			};
 		}
 
@@ -764,6 +855,7 @@ export class TreatmentConsumablesService {
 		const deductions: StockDeductionRecord[] = [];
 		const warnings: StockDeductionWarning[] = [];
 		const transactionsToInsert: Array<typeof inventoryTransactions.$inferInsert> = [];
+		let hasAnyOverdraft = false;
 
 		for (const itemId of sortedItemIds) {
 			const requiredQty = requiredByItem.get(itemId);
@@ -783,6 +875,7 @@ export class TreatmentConsumablesService {
 			// Дефицит материалов: при нехватке остатка списываем в отрицательный остаток (дефицит),
 			// фиксируем предупреждение в результате списания, чтобы врач беспрепятственно завершил прием.
 			if (newStock < 0) {
+				hasAnyOverdraft = true;
 				console.warn(
 					`[treatmentConsumablesService] Списание в дефицит по материалу «${inv.name}» (ID: ${inv.id}) ` +
 						`для визита ${visitId} (клиника ${organizationId}): в наличии ${baseStock}, требовалось ${requiredQty}, итоговый дефицит: ${newStock}.`,
@@ -791,7 +884,7 @@ export class TreatmentConsumablesService {
 					type: "out_of_stock",
 					itemId: inv.id,
 					itemName: inv.name,
-					message: `Внимание: списание в дефицит по материалу «${inv.name}» (в наличии было ${baseStock}, списано ${requiredQty}, остаток: ${newStock} ${inv.unit ?? "шт"}). Списано под операцию, требуется оприходование.`,
+					message: `Внимание: списание в дефицит по материалу «${inv.name}» (в наличии было ${baseStock}, списано ${requiredQty}, остаток: ${newStock} ${inv.unit ?? "шт"}). Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена).`,
 					currentStock: newStock,
 					criticalThreshold: threshold,
 					expirationDate: inv.expirationDate,
@@ -861,8 +954,8 @@ export class TreatmentConsumablesService {
 				isOverdraft,
 				userId,
 				notes: isOverdraft
-					? `Списано под операцию, требуется оприходование (мягкий овердрафт склада по приёму ${visitId}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."}`
-					: `Автосписание по приёму ${visitId}`,
+					? `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена по приёму ${visitId}): дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`
+					: `Автосписание по приёму ${visitId}${params.paperJournalAcknowledged ? " (бумажный журнал учтён, старшая медсестра опциональна)" : ""}`,
 			});
 
 			deductions.push({
@@ -880,9 +973,10 @@ export class TreatmentConsumablesService {
 		}
 
 		return {
-			completedTreatmentItems: uncompletedItems.length,
+			completedTreatmentItems: targetItems.length,
 			deductions,
 			warnings,
+			isOverdraft: hasAnyOverdraft,
 		};
 	}
 

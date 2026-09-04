@@ -43,6 +43,9 @@ const mdlpBatchDisposeBodySchema = z.object({
 	doctorId: z.string().uuid().optional().nullable(),
 	doctorName: z.string().trim().optional().nullable(),
 	reason: z.string().trim().optional().nullable(),
+	approverRole: z.string().trim().optional().nullable(),
+	approverName: z.string().trim().optional().nullable(),
+	paperJournalAcknowledged: z.boolean().optional().default(true),
 	useQueue: z.boolean().optional().default(false),
 	items: z.array(mdlpDisposeBodySchema).optional(),
 });
@@ -73,6 +76,14 @@ const mdlpActGenerateBodySchema = z.object({
 	seniorNurseName: z.string().trim().optional(),
 	chiefDoctorName: z.string().trim().optional(),
 	dentistName: z.string().trim().optional(),
+	approverRole: z
+		.enum(["senior_nurse", "doctor", "administrator", "authorized_staff"])
+		.optional()
+		.default("doctor"),
+	approverName: z.string().trim().optional(),
+	approvedByFullName: z.string().trim().optional(),
+	approvedByPositionRu: z.string().trim().optional(),
+	paperJournalAcknowledged: z.boolean().optional().default(true),
 	crptReceiptNumber: z.string().trim().optional(),
 	notes: z.string().trim().optional(),
 	useQueue: z.boolean().optional().default(true),

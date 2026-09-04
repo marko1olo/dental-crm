@@ -61,8 +61,9 @@ const inventoryStockBodySchema = z.object({
 			message:
 				"Количество для склада не разобрано: его нужно указать числом, например 10 для прихода или 10 для списания. Исправьте количество и повторите.",
 		}),
-	allowOverdraft: z.boolean().default(true),
+	allowOverdraft: z.boolean().default(true).optional(),
 	reason: z.string().optional(),
+	isClinicalOperation: z.boolean().optional(),
 });
 
 const inventoryRuleBodySchema = z.object({
@@ -375,7 +376,15 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 			const actualAdjustment = adjustment;
 			const newStock = currentStock + actualAdjustment;
 			const isOverdraft = newStock < 0;
-			if (isOverdraft && parsedStock.data.allowOverdraft === false) {
+			const isClinicalOperation =
+				parsedStock.data.isClinicalOperation === true ||
+				Boolean(
+					parsedStock.data.reason &&
+						/(операци|лечени|при[её]м|визит|дефицит|экстрен|карпул|анесте|расход)/i.test(
+							parsedStock.data.reason,
+						),
+				);
+			if (isOverdraft && parsedStock.data.allowOverdraft === false && !isClinicalOperation) {
 				return { insufficientStock: true as const, currentStock };
 			}
 
@@ -403,7 +412,7 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 					transactionType: isOverdraft ? "emergency_overdraft" : "manual_adjust",
 					isOverdraft,
 					notes: isOverdraft
-						? (parsedStock.data.reason || `Списано под операцию, требуется оприходование (мягкий овердрафт: дефицит ${Math.abs(newStock)} ед.)`)
+						? (parsedStock.data.reason || `Списано под операцию, требуется оприходование (мягкий минусовой овердрафт партии, накладная ещё не внесена: дефицит ${Math.abs(newStock)} ед.)`)
 						: (parsedStock.data.reason || null),
 					userId: userContext?.id ?? null,
 				});
@@ -429,6 +438,13 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 				message:
 					"Остаток не сохранён: сервер не смог записать движение по складу. Проверьте остаток в списке склада и повторите операцию; если повторится, сообщите администратору клиники.",
 			});
+		if (result.isOverdraft) {
+			return {
+				...result.updated,
+				isOverdraft: true,
+				warning: `Мягкий минусовой овердрафт партии: накладная ещё не внесена, списано под операцию (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед.).`,
+			};
+		}
 		return result.updated;
 	});
 

@@ -217,9 +217,9 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		}
 
 		setItems((prev) => [...quickItems, ...prev]);
-		setReason("Оказание медицинской помощи — пустые карпулы смены по СанПиН 3.3686-21");
+		setReason("Оказание медицинской помощи — пустые карпулы смены по СанПиН 3.3686-21 (бумажный журнал учтён)");
 		showToast(
-			"⚡ Списаны все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание готово в 1 клик единолично медсестрой (без комиссии)",
+			"⚡ Списаны все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание готово в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)",
 			"info",
 		);
 	}, [patientId, patientName, visitId, doctorId, doctorName, cabinetId]);
@@ -765,7 +765,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							className="mdlp-btn mdlp-btn-secondary"
 							onClick={() => setIsActModalOpen(true)}
 							disabled={items.length === 0}
-							title="Сформировать и напечатать Акт списания для старшей медсестры"
+							title="Сформировать и утвердить Акт списания карпул (бумажный журнал учтён, старшая медсестра опциональна)"
 						>
 							<FileText size={16} /> Печать акта списания
 						</button>
@@ -773,7 +773,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							type="button"
 							className="mdlp-btn mdlp-btn-secondary font-semibold text-teal-700"
 							onClick={handleQuickNurseCarpulesDisposal}
-							title="Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест) в 1 клик единолично медсестрой (без комиссии)"
+							title="Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест) в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)"
 							data-testid="footer-quick-carpules-btn"
 						>
 							<Sparkles size={15} className="text-amber-500" /> ⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
@@ -814,13 +814,16 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 				</footer>
 			</div>
 
-			{/* Модальное окно акта списания для старшей медсестры */}
+			{/* Модальное окно акта списания (бумажный журнал учтён, старшая медсестра опциональна) */}
 			{isActModalOpen && (
 				<SeniorNurseDisposalActModal
 					isOpen={isActModalOpen}
 					onClose={() => setIsActModalOpen(false)}
 					items={items}
 					organizationName={organizationName}
+					initialDentistName={doctorName}
+					initialApproverRole="doctor"
+					initialPaperJournalAcknowledged={true}
 				/>
 			)}
 		</div>

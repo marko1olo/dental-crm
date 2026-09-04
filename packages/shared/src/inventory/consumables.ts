@@ -161,6 +161,7 @@ export const stockDeductionResultSchema = z.object({
 	completedTreatmentItems: z.number(),
 	deductions: z.array(stockDeductionRecordSchema),
 	warnings: z.array(stockDeductionWarningSchema).optional(),
+	isOverdraft: z.boolean().optional(),
 });
 
 export type StockDeductionResult = z.infer<typeof stockDeductionResultSchema>;
@@ -175,6 +176,27 @@ export const visitStockDeductionRequestSchema = z.object({
 		.enum(["auto_deduct", "manual_writeoff"])
 		.default("auto_deduct")
 		.optional(),
+	services: z
+		.array(
+			z.object({
+				serviceId: z.string().min(1),
+				quantity: z.number().positive().default(1).optional(),
+			}),
+		)
+		.optional(),
+	items: z
+		.array(
+			z.object({
+				inventoryItemId: z.string().min(1),
+				quantity: z.number().positive(),
+				reason: z.string().nullable().optional(),
+			}),
+		)
+		.optional(),
+	carpulesCount: z.number().nonnegative().optional(),
+	drugName: z.string().optional(),
+	paperJournalAcknowledged: z.boolean().default(true).optional(),
+	allowOverdraft: z.boolean().default(true).optional(),
 });
 
 export type VisitStockDeductionRequest = z.infer<

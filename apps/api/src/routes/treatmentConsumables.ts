@@ -297,13 +297,19 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 		return options;
 	});
 
-	// POST /:organizationId/deduct/visit — Auto-deduct consumables for visit
+	// POST /:organizationId/deduct/visit — Auto-deduct consumables for visit (doctor instant solo writeoff)
 	server.post<{
 		Params: { organizationId: string };
 		Body: {
 			visitId: string;
 			userId?: string | null;
 			transactionType?: "auto_deduct" | "manual_writeoff";
+			services?: Array<{ serviceId: string; quantity?: number }>;
+			items?: Array<{ inventoryItemId: string; quantity: number; reason?: string | null }>;
+			carpulesCount?: number;
+			drugName?: string;
+			paperJournalAcknowledged?: boolean;
+			allowOverdraft?: boolean;
 		};
 	}>("/:organizationId/deduct/visit", async (request, reply) => {
 		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
@@ -333,6 +339,12 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 					visitId: parsedBody.data.visitId,
 					...(parsedBody.data.userId !== undefined ? { userId: parsedBody.data.userId } : { userId: (request.user as any)?.id ?? null }),
 					...(parsedBody.data.transactionType !== undefined ? { transactionType: parsedBody.data.transactionType } : {}),
+					...(parsedBody.data.services !== undefined ? { services: parsedBody.data.services } : {}),
+					...(parsedBody.data.items !== undefined ? { items: parsedBody.data.items } : {}),
+					...(parsedBody.data.carpulesCount !== undefined ? { carpulesCount: parsedBody.data.carpulesCount } : {}),
+					...(parsedBody.data.drugName !== undefined ? { drugName: parsedBody.data.drugName } : {}),
+					...(parsedBody.data.paperJournalAcknowledged !== undefined ? { paperJournalAcknowledged: parsedBody.data.paperJournalAcknowledged } : {}),
+					...(parsedBody.data.allowOverdraft !== undefined ? { allowOverdraft: parsedBody.data.allowOverdraft } : {}),
 				});
 			});
 			return result;

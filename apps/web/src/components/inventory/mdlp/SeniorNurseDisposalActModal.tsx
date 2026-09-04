@@ -42,6 +42,8 @@ export interface SeniorNurseDisposalActModalProps {
 	readonly initialChiefDoctorName?: string | undefined;
 	readonly initialDentistName?: string | undefined;
 	readonly onApproveAct?: ((actData: SeniorNurseDisposalActData) => void | Promise<void>) | undefined;
+	readonly initialApproverRole?: "doctor" | "senior_nurse" | "administrator" | "authorized_staff" | undefined;
+	readonly initialPaperJournalAcknowledged?: boolean | undefined;
 }
 
 export const SeniorNurseDisposalActModal: React.FC<
@@ -59,6 +61,8 @@ export const SeniorNurseDisposalActModal: React.FC<
 	initialChiefDoctorName = "Петров А.С.",
 	initialDentistName = "Кузнецов М.С.",
 	onApproveAct,
+	initialApproverRole = "doctor",
+	initialPaperJournalAcknowledged = true,
 }) => {
 	const now = new Date();
 	const [actNumber, setActNumber] = useState<string>(
@@ -67,6 +71,14 @@ export const SeniorNurseDisposalActModal: React.FC<
 	);
 	const [actDate, setActDate] = useState<string>(
 		() => now.toISOString().slice(0, 10),
+	);
+	const [approverRole, setApproverRole] = useState<
+		"doctor" | "senior_nurse" | "administrator" | "authorized_staff"
+	>(initialApproverRole);
+	const [paperJournalAcknowledged, setPaperJournalAcknowledged] =
+		useState<boolean>(initialPaperJournalAcknowledged);
+	const [approverName, setApproverName] = useState<string>(
+		() => initialDentistName || initialSeniorNurseName || "Кузнецов М.С.",
 	);
 	const [seniorNurseName, setSeniorNurseName] = useState<string>(
 		initialSeniorNurseName,
@@ -83,18 +95,31 @@ export const SeniorNurseDisposalActModal: React.FC<
 	const [showPoModal, setShowPoModal] = useState<boolean>(false);
 	const [copiedPo, setCopiedPo] = useState<boolean>(false);
 
-	const handleApproveSolo = async () => {
+	const handleApproveAct = async (isPaperLog = paperJournalAcknowledged) => {
 		setIsApproved(true);
-		showToast(
-			`⚡ Акт списания №${actNumber} утверждён старшей медсестрой единолично (без комиссии из 3 человек)`,
-			"info",
-		);
+		const message = isPaperLog
+			? `⚡ Акт списания №${actNumber} утверждён: бумажный журнал учтён, участие старшей медсестры опционально`
+			: `⚡ Акт списания №${actNumber} утверждён единолично (без комиссии из 3 человек)`;
+		showToast(message, "info");
 		if (onApproveAct) {
 			await onApproveAct(actData);
 		}
 	};
 
+	const handleApproveSolo = () => handleApproveAct(false);
+
 	const actData: SeniorNurseDisposalActData = useMemo(() => {
+		let rolePositionRu: string | undefined;
+		if (approverRole === "doctor") {
+			rolePositionRu = "Врач-стоматолог (дежурный)";
+		} else if (approverRole === "administrator") {
+			rolePositionRu = "Администратор клиники";
+		} else if (approverRole === "authorized_staff") {
+			rolePositionRu = "Уполномоченный сотрудник клиники";
+		} else {
+			rolePositionRu = isSingleSigner ? "Дежурная медицинская сестра" : "Старшая медицинская сестра";
+		}
+
 		return formatSeniorNurseDisposalActData({
 			actNumber,
 			actDate,
@@ -103,9 +128,14 @@ export const SeniorNurseDisposalActModal: React.FC<
 			organizationAddress,
 			departmentName,
 			cabinetName,
-			seniorNurseName,
+			seniorNurseName: approverRole === "senior_nurse" ? approverName : seniorNurseName,
 			chiefDoctorName: isSingleSigner ? undefined : chiefDoctorName,
-			dentistName: isSingleSigner ? undefined : dentistName,
+			dentistName: approverRole === "doctor" ? approverName : dentistName,
+			approverRole,
+			approverName,
+			approvedByFullName: approverName,
+			approvedByPositionRu: rolePositionRu,
+			paperJournalAcknowledged,
 			isSingleSigner,
 			notes: notes.trim() || undefined,
 			items,
@@ -121,6 +151,9 @@ export const SeniorNurseDisposalActModal: React.FC<
 		seniorNurseName,
 		chiefDoctorName,
 		dentistName,
+		approverRole,
+		approverName,
+		paperJournalAcknowledged,
 		isSingleSigner,
 		notes,
 		items,
@@ -258,14 +291,18 @@ export const SeniorNurseDisposalActModal: React.FC<
 				</header>
 
 				<div className="mdlp-modal-body">
-					{/* СанПиН 3.3686-21 и Critical Threshold Alert Banner */}
+					{/* Опциональность медсестры & Бумажный журнал учтён Banner */}
 					<div
 						style={{
 							marginBottom: 12,
 							padding: "10px 14px",
 							borderRadius: 10,
-							background: "rgba(245, 158, 11, 0.1)",
-							border: "1px solid rgba(245, 158, 11, 0.4)",
+							background: paperJournalAcknowledged
+								? "rgba(13, 148, 136, 0.08)"
+								: "rgba(245, 158, 11, 0.08)",
+							border: paperJournalAcknowledged
+								? "1px solid rgba(13, 148, 136, 0.3)"
+								: "1px solid rgba(245, 158, 11, 0.3)",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "space-between",
@@ -274,28 +311,55 @@ export const SeniorNurseDisposalActModal: React.FC<
 						}}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-							<ShieldAlert size={20} style={{ color: "var(--warn-fg, #d97706)", flexShrink: 0 }} />
+							<CheckCircle2
+								size={20}
+								style={{
+									color: paperJournalAcknowledged
+										? "var(--teal, #0d9488)"
+										: "var(--warn-fg, #d97706)",
+									flexShrink: 0,
+								}}
+							/>
 							<div>
 								<div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
-									СанПиН 3.3686-21: Контроль неснижаемого остатка медикаментов
+									{paperJournalAcknowledged
+										? "Бумажный журнал учтён • Старшая медсестра опциональна"
+										: "СанПиН 3.3686-21: Контроль неснижаемого остатка медикаментов"}
 								</div>
 								<div style={{ fontSize: 12, color: "var(--muted)" }}>
-									При списании зафиксировано достижение критического порога остатков. Рекомендуется 1-кликовое пополнение.
+									{paperJournalAcknowledged
+										? "Медсестра ведёт локальный бумажный журнал или отсутствует. Акт списания утверждается в 1 клик дежурным врачом или администратором."
+										: "При списании зафиксировано достижение порога остатков. Рекомендуется 1-кликовое пополнение."}
 								</div>
 							</div>
 						</div>
 
-						{generatedPurchaseOrder && (
-							<button
-								type="button"
-								className="mdlp-btn mdlp-btn-primary"
-								style={{ fontSize: 12, padding: "6px 12px" }}
-								onClick={() => setShowPoModal(true)}
+						<div className="flex items-center gap-2">
+							<label
+								className="flex items-center gap-2 text-xs font-bold text-teal-800 bg-teal-100/70 border border-teal-300 rounded px-2.5 py-1.5 cursor-pointer select-none"
+								title="Отметьте, если учёт карпул ведётся в физическом бумажном журнале отделения (старшая медсестра в CRM опциональна)"
 							>
-								<ShoppingCart size={15} />
-								Заказ поставщику (1 клик)
-							</button>
-						)}
+								<input
+									type="checkbox"
+									checked={paperJournalAcknowledged}
+									onChange={(e) => setPaperJournalAcknowledged(e.target.checked)}
+									className="rounded border-teal-400 text-teal-600 focus:ring-teal-500 h-4 w-4"
+								/>
+								<span>Бумажный журнал учтён</span>
+							</label>
+
+							{generatedPurchaseOrder && (
+								<button
+									type="button"
+									className="mdlp-btn mdlp-btn-primary"
+									style={{ fontSize: 12, padding: "6px 12px" }}
+									onClick={() => setShowPoModal(true)}
+								>
+									<ShoppingCart size={15} />
+									Заказ (1 клик)
+								</button>
+							)}
+						</div>
 					</div>
 
 					{/* Паспорт и состав подписантов */}
@@ -308,7 +372,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 								{isApproved && (
 									<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 border border-teal-300 text-teal-800 text-[11px] font-bold">
 										<CheckCircle2 size={13} className="text-teal-600" />
-										Акт утверждён единолично
+										{paperJournalAcknowledged ? "Акт утверждён (бумажный журнал учтён)" : "Акт утверждён единолично"}
 									</span>
 								)}
 							</div>
@@ -319,17 +383,66 @@ export const SeniorNurseDisposalActModal: React.FC<
 									onChange={(e) => setIsSingleSigner(e.target.checked)}
 									className="rounded border-line text-primary focus:ring-primary h-4 w-4"
 								/>
-								<span>Единоличное списание медсестрой (без комиссии)</span>
+								<span>Единоличное утверждение (без комиссии из 3 человек)</span>
 							</label>
 						</div>
 
 						{isSingleSigner && (
 							<div className="text-[11px] text-teal-700 bg-teal-50/70 border border-teal-200/60 rounded px-2.5 py-1.5 leading-relaxed">
-								⚡ <strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится единолично старшей медсестрой без блокирующего требования комиссии из 3 человек.
+								⚡ <strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится в 1 клик врачом, администратором или медсестрой без бюрократического требования комиссии из 3 человек.
 							</div>
 						)}
 
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+						<div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+							<div>
+								<label
+									htmlFor="act-approver-role"
+									className="text-xs font-semibold text-muted block mb-1"
+								>
+									Кто утверждает списание
+								</label>
+								<select
+									id="act-approver-role"
+									value={approverRole}
+									onChange={(e) => {
+										const newRole = e.target.value as typeof approverRole;
+										setApproverRole(newRole);
+										if (newRole === "doctor") {
+											setApproverName(dentistName || initialDentistName || "Кузнецов М.С.");
+										} else if (newRole === "senior_nurse") {
+											setApproverName(seniorNurseName || initialSeniorNurseName || "Иванова Е.В.");
+										} else if (newRole === "administrator") {
+											setApproverName("Администратор клиники");
+										} else if (newRole === "authorized_staff") {
+											setApproverName("Уполномоченный сотрудник");
+										}
+									}}
+									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs font-bold text-ink"
+								>
+									<option value="doctor">👨‍⚕️ Врач-стоматолог (дежурный)</option>
+									<option value="senior_nurse">👩‍⚕️ Старшая медсестра</option>
+									<option value="administrator">💼 Администратор клиники</option>
+									<option value="authorized_staff">👤 Уполномоченный сотрудник</option>
+								</select>
+							</div>
+
+							<div>
+								<label
+									htmlFor="act-approver-name"
+									className="text-xs font-semibold text-muted block mb-1"
+								>
+									ФИО утверждающего лица
+								</label>
+								<input
+									id="act-approver-name"
+									type="text"
+									value={approverName}
+									onChange={(e) => setApproverName(e.target.value)}
+									placeholder="ФИО сотрудника..."
+									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs font-semibold text-ink"
+								/>
+							</div>
+
 							<div>
 								<label
 									htmlFor="act-number-input"
@@ -362,24 +475,24 @@ export const SeniorNurseDisposalActModal: React.FC<
 								/>
 							</div>
 
-							<div>
-								<label
-									htmlFor="act-nurse-input"
-									className="text-xs font-semibold text-muted block mb-1"
-								>
-									{isSingleSigner ? "Дежурная медицинская сестра (МОЛ)" : "Старшая медицинская сестра"}
-								</label>
-								<input
-									id="act-nurse-input"
-									type="text"
-									value={seniorNurseName}
-									onChange={(e) => setSeniorNurseName(e.target.value)}
-									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink font-semibold"
-								/>
-							</div>
-
 							{!isSingleSigner && (
 								<>
+									<div>
+										<label
+											htmlFor="act-nurse-input"
+											className="text-xs font-semibold text-muted block mb-1"
+										>
+											Старшая медицинская сестра
+										</label>
+										<input
+											id="act-nurse-input"
+											type="text"
+											value={seniorNurseName}
+											onChange={(e) => setSeniorNurseName(e.target.value)}
+											className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink font-semibold"
+										/>
+									</div>
+
 									<div>
 										<label
 											htmlFor="act-chief-input"
@@ -414,7 +527,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 								</>
 							)}
 
-							<div className={isSingleSigner ? "col-span-1 md:col-span-3" : ""}>
+							<div className="col-span-1 md:col-span-4">
 								<label
 									htmlFor="act-notes-input"
 									className="text-xs font-semibold text-muted block mb-1"
@@ -476,12 +589,22 @@ export const SeniorNurseDisposalActModal: React.FC<
 							type="button"
 							className="mdlp-btn mdlp-btn-primary font-bold"
 							style={{ height: 44, padding: "0 18px", fontSize: 13 }}
-							onClick={handleApproveSolo}
-							data-testid="approve-solo-nurse-act-btn"
-							title="Утвердить акт списания пустых карпул старшей медсестрой единолично в 1 клик (без комиссии из 3 человек)"
+							onClick={() => handleApproveAct(paperJournalAcknowledged)}
+							data-testid="approve-act-paper-journal-btn"
+							title={
+								paperJournalAcknowledged
+									? "Утвердить списание в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)"
+									: "Утвердить акт единолично в 1 клик (без комиссии из 3 человек)"
+							}
 						>
 							<CheckCircle2 size={18} />
-							{isApproved ? "✓ Акт утверждён единолично" : "⚡ Утвердить акт единолично (1 клик)"}
+							{isApproved
+								? paperJournalAcknowledged
+									? "✓ Списание утверждено (бумажный журнал учтён)"
+									: "✓ Акт утверждён единолично"
+								: paperJournalAcknowledged
+									? "⚡ Утвердить списание (бумажный журнал учтён)"
+									: "⚡ Утвердить акт единолично (1 клик)"}
 						</button>
 					</div>
 				</footer>

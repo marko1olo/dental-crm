@@ -97,6 +97,11 @@ export interface MdlpActGenerateInput {
 	seniorNurseName?: string | undefined;
 	chiefDoctorName?: string | undefined;
 	dentistName?: string | undefined;
+	approverRole?: "senior_nurse" | "doctor" | "administrator" | "authorized_staff" | undefined;
+	approverName?: string | undefined;
+	approvedByFullName?: string | undefined;
+	approvedByPositionRu?: string | undefined;
+	paperJournalAcknowledged?: boolean | undefined;
 	crptReceiptNumber?: string | undefined;
 	notes?: string | undefined;
 	items?: MdlpCarpuleQueueItem[] | undefined;
@@ -533,6 +538,11 @@ export class MdlpDisposalService {
 			seniorNurseName: input.seniorNurseName,
 			chiefDoctorName: input.chiefDoctorName,
 			dentistName: input.dentistName,
+			approverRole: input.approverRole,
+			approverName: input.approverName,
+			approvedByFullName: input.approvedByFullName,
+			approvedByPositionRu: input.approvedByPositionRu,
+			paperJournalAcknowledged: input.paperJournalAcknowledged,
 			crptReceiptNumber: input.crptReceiptNumber,
 			notes: input.notes,
 			items: queueItems,
