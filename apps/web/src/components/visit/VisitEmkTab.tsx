@@ -284,6 +284,9 @@ export function VisitEmkTab() {
 	);
 
 	const handleApplyPhysiologicalNorm = React.useCallback(() => {
+		if (isSignedVisit && !isRevisingVisitNote) {
+			setIsRevisingVisitNote(true);
+		}
 		if (!updateVisitNoteField) return;
 		updateVisitNoteField(
 			"complaint",
@@ -303,7 +306,7 @@ export function VisitEmkTab() {
 			"Проведен комплексный профилактический осмотр полости рта, пальпация лимфоузлов, зондирование зубодесневых бороздок. Патологий твердых тканей зубов и пародонта не выявлено. Проведена индивидуальная беседа по гигиене полости рта. Рекомендован плановый контрольный профосмотр через 6 месяцев.",
 		);
 		showToast("Заполнена физиологическая норма: соматически здоров, норма по умолчанию", "success", 3000);
-	}, [updateVisitNoteField]);
+	}, [updateVisitNoteField, isSignedVisit, isRevisingVisitNote]);
 	const [selectedPrescriptionDrugIds, setSelectedPrescriptionDrugIds] = React.useState<string[]>([
 		"amoxiclav_875_125",
 		"nimesulide_100",
@@ -723,6 +726,9 @@ export function VisitEmkTab() {
 			chosenTooth?: number | null,
 			mode: "clean_replace" | "smart_append" = "clean_replace",
 		) => {
+			if (isSignedVisit && !isRevisingVisitNote) {
+				setIsRevisingVisitNote(true);
+			}
 			if (!updateVisitNoteField) return;
 			const targetTooth =
 				chosenTooth ||
@@ -768,7 +774,7 @@ export function VisitEmkTab() {
 					anesText =
 						"Инфильтрационная/проводниковая анестезия: Sol. Scandonest 3% (Мепивакаин 3% без вазоконстриктора) — 1.7 мл (по кардио-соматическому профилю пациента).";
 					showToast(
-						"⚠️ Выбран Скандонест 3% (без адреналина) по соматическому профилю пациента",
+						"[ВНИМАНИЕ] Выбран Скандонест 3% (без адреналина) по соматическому профилю пациента",
 						"warning",
 						4000,
 					);
@@ -901,6 +907,8 @@ export function VisitEmkTab() {
 			visitNoteForm,
 			anesthesiaRisk.hasHypertensionRisk,
 			activePatient,
+			isSignedVisit,
+			isRevisingVisitNote,
 		],
 	);
 	/*
@@ -1580,11 +1588,10 @@ export function VisitEmkTab() {
 				<button
 					type="button"
 					data-testid="btn-quick-soap-caries"
-					disabled={isLocked}
 					onClick={() => {
 						if (cariesPreset) handleApplyClinicalSoapPreset(cariesPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -1593,11 +1600,10 @@ export function VisitEmkTab() {
 				<button
 					type="button"
 					data-testid="btn-quick-soap-pulpitis"
-					disabled={isLocked}
 					onClick={() => {
 						if (pulpitisPreset) handleApplyClinicalSoapPreset(pulpitisPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -1606,11 +1612,10 @@ export function VisitEmkTab() {
 				<button
 					type="button"
 					data-testid="btn-quick-soap-periodontitis"
-					disabled={isLocked}
 					onClick={() => {
 						if (periodontitisPreset) handleApplyClinicalSoapPreset(periodontitisPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
@@ -1619,11 +1624,10 @@ export function VisitEmkTab() {
 				<button
 					type="button"
 					data-testid="btn-quick-soap-hygiene"
-					disabled={isLocked}
 					onClick={() => {
 						if (hygienePreset) handleApplyClinicalSoapPreset(hygienePreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
 				>
 					<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
@@ -1632,9 +1636,8 @@ export function VisitEmkTab() {
 				<button
 					type="button"
 					data-testid="btn-quick-soap-norm"
-					disabled={isLocked}
 					onClick={handleApplyPhysiologicalNorm}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
 				>
 					<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -1665,7 +1668,7 @@ export function VisitEmkTab() {
 						activeTooth={activeSelectedTooth}
 						onSelectActiveTooth={(tooth) => setActiveSelectedTooth(tooth)}
 						onSelectPreset={(preset, chosenTooth) => handleApplyClinicalSoapPreset(preset, chosenTooth, "clean_replace")}
-						isLocked={isLocked}
+						isLocked={false}
 						onOpenPriceSearch={() => setIsPriceSearchModalOpen(true)}
 						onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 					/>
@@ -2802,7 +2805,7 @@ export function VisitEmkTab() {
 							<div className="flex items-center gap-2">
 								<span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white font-bold text-xs">!</span>
 								<strong className="text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-bold">
-									Чтобы сохранить запись приема, осталось заполнить:
+									Рекомендовано для амбулаторной карты 043/у (или нажмите «Заполнить нормой в 1 клик»):
 								</strong>
 							</div>
 							<button
@@ -3628,12 +3631,14 @@ export function VisitEmkTab() {
 							Время: {dashboard?.activeVisit?.time || new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
 						</div>
 						{isSignedVisit ? (
-							<div className="mt-2 inline-flex items-center px-2.5 py-1 border-2 border-emerald-700 rounded text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50">
-								✓ ПОДПИСАНО ВРАЧОМ
+							<div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 border-2 border-emerald-700 rounded text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-50">
+								<Check className="w-3.5 h-3.5 stroke-[3]" />
+								<span>ПОДПИСАНО ВРАЧОМ</span>
 							</div>
 						) : (
-							<div className="mt-2 inline-flex items-center px-2.5 py-1 border-2 border-amber-600 rounded text-[11px] font-black uppercase tracking-wider text-amber-800 bg-amber-50">
-								⚠ ЧЕРНОВИК • НЕ ПОДПИСАНО
+							<div className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 border-2 border-amber-600 rounded text-[11px] font-black uppercase tracking-wider text-amber-800 bg-amber-50">
+								<AlertTriangle className="w-3.5 h-3.5" />
+								<span>ЧЕРНОВИК • НЕ ПОДПИСАНО</span>
 							</div>
 						)}
 					</div>
@@ -3641,7 +3646,10 @@ export function VisitEmkTab() {
 
 				{!isSignedVisit && (
 					<div className="mb-3 py-1.5 px-3 bg-amber-50 border border-amber-300 rounded text-[11px] text-amber-900 font-semibold flex items-center justify-between">
-						<span>⚠ СТАТУС ДОКУМЕНТА: ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ).</span>
+						<span className="flex items-center gap-1.5">
+							<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+							<span>СТАТУС ДОКУМЕНТА: ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ).</span>
+						</span>
 						<span className="text-[10px] text-amber-700">Юридической силы без подписи врача не имеет</span>
 					</div>
 				)}

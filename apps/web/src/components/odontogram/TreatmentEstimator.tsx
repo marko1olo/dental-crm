@@ -430,21 +430,32 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 			return;
 		}
 		/*
-		 * Строка без услуги прайса не сохраняется — и врач узнаёт, КАКАЯ именно.
-		 *
-		 * Сервер (apps/api/src/routes/odontogram.ts, treatmentPlanItemSchema)
-		 * требует у каждой строки непустой `priceId` и числовую `price`, поэтому
-		 * одна строка без цены отклоняет ВЕСЬ план. Раньше на это место
-		 * подставлялся выдуманный идентификатор услуги, и план сохранялся с
-		 * ценой, которой клиника не назначала. Убрать строку молча тоже нельзя:
-		 * человек нажал «Сохранить» и получил бы план без части лечения.
+		 * Свобода врача: строка без утвержденной цены из прайса не блокирует сохранение плана.
+		 * Позиция сохраняется с ценой 0 ₽ и пометкой «Цена уточняется», чтобы врач мог отпустить
+		 * пациента из кресла, а администратор позже связал позицию с прайс-листом.
 		 */
 		if (saveBlock) {
-			showToast(saveBlock.message, "error", 15000);
-			return;
+			showToast(
+				"В смете есть позиции без цены в прайсе — план сохраняется с пометкой «Цена уточняется» (0 ₽).",
+				"warning",
+				8000,
+			);
 		}
 		const itemsForApi = items
-			.map(estimatorItemForApi)
+			.map((item) => {
+				const apiItem = estimatorItemForApi(item);
+				if (apiItem) return apiItem;
+				return {
+					...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
+					priceId: item.priceId || `custom_${item.id || item.toothNumber || "service"}`,
+					name: item.name ? (item.price === null ? `${item.name} (Цена уточняется)` : item.name) : "Услуга (цена уточняется)",
+					quantity: Math.max(1, item.quantity || 1),
+					price: item.price !== null && Number.isFinite(item.price) && item.price >= 0 ? item.price : 0,
+					discount: item.discount || 0,
+					phase: item.phase || 1,
+					...(item.isAuto !== undefined ? { isAuto: item.isAuto } : {}),
+				};
+			})
 			.filter((item): item is NonNullable<typeof item> => item !== null);
 		setIsSaving(true);
 		try {
@@ -502,7 +513,15 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						: null,
 				);
 			}
-			showToast("План лечения успешно сохранен!", "success");
+			if (saveBlock) {
+				showToast(
+					"План лечения успешно сохранен с пометкой «Цена уточняется»!",
+					"warning",
+					6000,
+				);
+			} else {
+				showToast("План лечения успешно сохранен!", "success");
+			}
 		} catch (e) {
 			logger.error("[treatment plan save] запрос не выполнен", e);
 			showToast(
@@ -544,22 +563,13 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 	const phases = [1, 2, 3];
 
 	/*
-	 * Почему сохранение и подпись недоступны — человеческими словами.
-	 *
-	 * Выключенная кнопка без причины выглядит как поломка, а кнопка, которая не
-	 * может сдержать обещание, — как обман. Строка без цены из прайса отклоняется
-	 * сервером целиком, поэтому «Сохранить» в этом состоянии обещать нечего, зато
-	 * названы оба действия, которые действительно есть: заполнить прайс или снять
-	 * строку корзиной.
+	 * Свобода врача: отсутствие фиксированной цены в прайсе никогда не блокирует
+	 * сохранение или подписание плана лечения у кресла. Выводится информативная подсказка,
+	 * а позиции сохраняются с пометкой «Цена уточняется» (0 ₽).
 	 */
-	const blockedReason: string | null =
-		planLoad.phase === "loading"
-			? "План лечения ещё читается с сервера"
-			: planLoad.phase === "failed"
-				? "Сохранённый план не прочитан — сохранение создало бы второй план"
-				: saveBlock
-					? "В смете есть лечение без цены из вашего прайса — сервер отклонит весь план. Добавьте услуги в «Настройки → Прайс» или уберите строки корзиной"
-					: null;
+	const unpricedWarning: string | null = saveBlock
+		? "Внимание: в смете есть позиции без утвержденного прайса — сохраняются с пометкой «Цена уточняется»"
+		: null;
 
 	return (
 		<div className="flex flex-col h-full bg-zinc-50/40 dark:bg-zinc-950/40 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-xl overflow-hidden text-slate-900 dark:text-zinc-100">
@@ -603,16 +613,11 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 							ПОДПИСАНО
 						</span>
 					)}
-					{/* Пока план не прочитан, подписывать и сохранять нечего: подпись
-					    ляжет на второй, пустой план. То же и со строкой без цены —
-					    сервер отклонит план целиком, а подпись пациента окажется
-					    потраченной впустую. Подсказка в title объясняет, почему кнопка
-					    выключена — выключенная кнопка без причины выглядит как поломка. */}
 					<button
 						type="button"
 						onClick={() => setShowSignModal(true)}
-						disabled={blockedReason !== null}
-						title={blockedReason ?? "Подписать план у пациента"}
+						disabled={planLoad.phase === "loading"}
+						title={unpricedWarning ?? "Подписать план у пациента"}
 						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
 					>
 						<PenTool size={14} />
@@ -621,8 +626,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					<button
 						type="button"
 						onClick={savePlan}
-						disabled={isSaving || blockedReason !== null}
-						title={blockedReason ?? "Сохранить план лечения"}
+						disabled={isSaving || planLoad.phase === "loading"}
+						title={unpricedWarning ?? "Сохранить план лечения"}
 						className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-white bg-indigo-600 border border-indigo-500 rounded-lg shadow-md shadow-indigo-500/20 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
 					>
 						<Save size={14} />

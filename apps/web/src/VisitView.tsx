@@ -275,6 +275,7 @@ import {
 	Shield,
 	ShieldCheck,
 	Sparkles,
+	Stethoscope,
 	Syringe,
 	Wrench,
 	XCircle,
@@ -450,7 +451,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const [visitSubViewTab, setVisitSubViewTab] = useState<VisitSubViewTab>("emk");
 	const [showHints, setShowHints] = useState(false);
 	const [showSmartPreview, setShowSmartPreview] = useState(false);
-	const [isVoiceHudCollapsed, setIsVoiceHudCollapsed] = useState(false);
+	const [isVoiceHudCollapsed, setIsVoiceHudCollapsed] = useState(true);
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const [smartParsedData, setSmartParsedData] = useState<any>(null);
 
@@ -931,7 +932,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										title="Критический стоп-фактор / аллергия пациента!"
 									>
 										<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-										<span>⛔ АЛЛЕРГИЯ: {activePatientAllergyText}</span>
+										<span>АЛЛЕРГИЯ: {activePatientAllergyText}</span>
 									</span>
 								)}
 							</div>
@@ -3105,11 +3106,17 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							>
 								{/* ── LEFT: Diagnosis ── */}
 								<div className="_ccm-panel">
-									<h4 className="_ccm-h">🩺 Диагностика</h4>
+									<h4 className="_ccm-h flex items-center gap-1.5">
+										<Stethoscope className="w-4 h-4 text-indigo-500 shrink-0" />
+										<span>Диагностика</span>
+									</h4>
 
 									{visitWarnings && visitWarnings.length > 0 && (
-										<div className="_ccm-warn">
-											<strong>⚠️ Риски:</strong>{" "}
+										<div className="_ccm-warn flex items-center gap-1 flex-wrap">
+											<strong className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+												<AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+												Риски:
+											</strong>{" "}
 											{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
 											{visitWarnings.map((w: any) => w.title).join(" · ")}
 										</div>
