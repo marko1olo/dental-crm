@@ -50,4 +50,39 @@ describe("Dental Implantology & RFA ISQ Biomechanical Engine", () => {
 		assert.equal(evalIntegrated.protocol, "immediate_functional_loading");
 		assert.equal(evalIntegrated.status, "secondary_osseointegrated");
 	});
+
+	it("evaluates loading protocol by insertion torque alone when Osstell ISQ is null (Mandate 8e doctor autonomy)", () => {
+		const meanResult = ImplantStabilityCalculator.calculateMeanIsq(null, null, null);
+		assert.equal(meanResult.isqMean, null);
+		assert.equal(meanResult.isqAnisotropyDelta, null);
+
+		const evalHighTorque = ImplantStabilityCalculator.evaluateLoadingProtocol(
+			null,
+			45,
+			0,
+		);
+		assert.equal(evalHighTorque.protocol, "immediate_functional_loading");
+		assert.equal(evalHighTorque.status, "primary_mechanical_high");
+
+		const evalMediumTorque = ImplantStabilityCalculator.evaluateLoadingProtocol(
+			null,
+			32,
+			0,
+		);
+		assert.equal(evalMediumTorque.protocol, "transgingival_one_stage");
+
+		const evalStandardTorque = ImplantStabilityCalculator.evaluateLoadingProtocol(
+			null,
+			25,
+			0,
+		);
+		assert.equal(evalStandardTorque.protocol, "delayed_loading");
+
+		const evalLowTorque = ImplantStabilityCalculator.evaluateLoadingProtocol(
+			null,
+			15,
+			0,
+		);
+		assert.equal(evalLowTorque.protocol, "submerged_two_stage");
+	});
 });

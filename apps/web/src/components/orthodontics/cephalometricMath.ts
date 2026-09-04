@@ -345,6 +345,30 @@ export const DEFAULT_CEPH_LANDMARKS_PRESET: LandmarkMap = {
 	L1a: { x: 428, y: 495 }, // Lower Incisor Apex (25° to NB, 88° to MP)
 };
 
+export const CLASS_I_NORMAL_LANDMARKS_PRESET: LandmarkMap = {
+	...DEFAULT_CEPH_LANDMARKS_PRESET,
+	B: { x: 460, y: 440 },
+	Pog: { x: 466, y: 490 },
+	Gn: { x: 456, y: 520 },
+	Me: { x: 435, y: 540 },
+};
+
+export const CLASS_II_DISTAL_LANDMARKS_PRESET: LandmarkMap = {
+	...DEFAULT_CEPH_LANDMARKS_PRESET,
+	B: { x: 440, y: 440 },
+	Pog: { x: 446, y: 490 },
+	Gn: { x: 436, y: 520 },
+	Me: { x: 415, y: 540 },
+};
+
+export const CLASS_III_MESIAL_LANDMARKS_PRESET: LandmarkMap = {
+	...DEFAULT_CEPH_LANDMARKS_PRESET,
+	B: { x: 485, y: 440 },
+	Pog: { x: 491, y: 490 },
+	Gn: { x: 480, y: 520 },
+	Me: { x: 460, y: 540 },
+};
+
 // ─── Core Cephalometric Calculator ────────────────────────────────────────────
 
 export function calculateCephalometrics(

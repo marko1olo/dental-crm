@@ -2375,7 +2375,7 @@ function hasPaymentPayerIdentity(payment: Payment): boolean {
 	return Boolean(
 		hasPersonNameParts(payment.payerFullName) &&
 			isValidDateLike(payment.payerBirthDate) &&
-			(payerInnLength === 10 || payerInnLength === 12) &&
+			(payerInnLength === 0 || payerInnLength === 10 || payerInnLength === 12) &&
 			present(payment.payerIdentityDocument) &&
 			normalizedTaxpayerRelationship(payment.payerRelationship),
 	);
@@ -5741,7 +5741,7 @@ function documentIssueBlockReasonRaw(
 			document.kind === "payment_refund_correction_request" &&
 			!hasAllPaymentPayerIdentities(paidPayments)
 		) {
-			return "Платежный документ требует ФИО, дату рождения, ИНН, документ удостоверения личности и связь плательщика с пациентом в каждом включенном платеже.";
+			return "Платежный документ требует ФИО, дату рождения, документ удостоверения личности и связь плательщика с пациентом в каждом включенном платеже.";
 		}
 	}
 

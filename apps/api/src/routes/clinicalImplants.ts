@@ -115,7 +115,7 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 						? String(input.averageHounsfieldUnits)
 						: null,
 					finalInsertionTorqueNcm: String(input.finalInsertionTorqueNcm),
-					baselineIsq: Math.round(isqMean),
+					baselineIsq: isqMean !== null ? Math.round(isqMean) : 70,
 					initialProtocol: protocol,
 					corticalTapUsed: input.corticalTapUsed,
 					underdrillingUsed: input.underdrillingUsed,
@@ -132,22 +132,28 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 				throw new Error("Не удалось сохранить протокол установки имплантата в базе данных.");
 			}
 
-			// Record baseline ISQ measurement entry
-			await tx.insert(implantIsqMeasurements).values({
-				organizationId: orgId,
-				installationId: installation.id,
-				measuredByDoctorId: null,
-				visitId: input.visitId ?? null,
-				daysPostOp: 0,
-				isqMesiodistal: input.baselineIsqMesiodistal,
-				isqBuccolingual: input.baselineIsqBuccolingual,
-				isqDistopalatal: input.baselineIsqDistopalatal ?? null,
-				isqMean: String(isqMean),
-				isqAnisotropyDelta,
-				stabilityStatus: "primary_mechanical_high",
-				recommendedLoadingDecision: decisionRationale,
-				isBiologicalDipDetected: false,
-			});
+			// Record baseline ISQ measurement entry only if Osstell ISQ was physically measured
+			if (
+				input.baselineIsqMesiodistal != null &&
+				input.baselineIsqBuccolingual != null &&
+				isqMean != null
+			) {
+				await tx.insert(implantIsqMeasurements).values({
+					organizationId: orgId,
+					installationId: installation.id,
+					measuredByDoctorId: null,
+					visitId: input.visitId ?? null,
+					daysPostOp: 0,
+					isqMesiodistal: input.baselineIsqMesiodistal,
+					isqBuccolingual: input.baselineIsqBuccolingual,
+					isqDistopalatal: input.baselineIsqDistopalatal ?? null,
+					isqMean: String(isqMean),
+					isqAnisotropyDelta: isqAnisotropyDelta ?? 0,
+					stabilityStatus: "primary_mechanical_high",
+					recommendedLoadingDecision: decisionRationale,
+					isBiologicalDipDetected: false,
+				});
+			}
 
 			// Update Odontogram tooth state to 'Implant'
 			await tx
@@ -166,7 +172,7 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 				toothNumber: input.toothNumberFdi,
 				state: "Implant",
 				surfaces: ["implant_site"],
-				notes: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (ISQ: ${Math.round(isqMean)}, ${input.finalInsertionTorqueNcm} Н·см)`,
+				notes: `Имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм (${isqMean !== null ? `ISQ: ${Math.round(isqMean)}, ` : ""}${input.finalInsertionTorqueNcm} Н·см)`,
 			});
 
 			await tx.insert(toothStateHistory).values({
@@ -363,8 +369,8 @@ export async function registerClinicalImplantRoutes(app: FastifyInstance) {
 					isqMesiodistal: input.isqMesiodistal,
 					isqBuccolingual: input.isqBuccolingual,
 					isqDistopalatal: input.isqDistopalatal ?? null,
-					isqMean: String(isqMean),
-					isqAnisotropyDelta,
+					isqMean: String(isqMean ?? 70),
+					isqAnisotropyDelta: isqAnisotropyDelta ?? 0,
 					stabilityStatus: status,
 					recommendedLoadingDecision: decisionRationale,
 					isBiologicalDipDetected: isBiologicalDip,

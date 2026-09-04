@@ -41,6 +41,9 @@ import {
 	calculateCephalometrics,
 	CEPHALOMETRIC_LANDMARKS,
 	DEFAULT_CEPH_LANDMARKS_PRESET,
+	CLASS_I_NORMAL_LANDMARKS_PRESET,
+	CLASS_II_DISTAL_LANDMARKS_PRESET,
+	CLASS_III_MESIAL_LANDMARKS_PRESET,
 	type LandmarkKey,
 	type LandmarkMap,
 	type Point2D,
@@ -783,16 +786,12 @@ export function CephalometricAnalysisModal({
 
 									<button
 										type="button"
-										disabled={!isImageLoaded || placedPercent === 0}
 										onClick={() => {
 											setActiveTab("metrics");
 											setMobileView("metrics");
 										}}
-										className={`w-full min-h-[44px] py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
-											!isImageLoaded || placedPercent === 0
-												? "bg-slate-700 text-slate-400 opacity-60 cursor-not-allowed"
-												: "bg-[var(--teal)] hover:opacity-90 text-white cursor-pointer"
-										}`}
+										className="w-full min-h-[44px] py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all bg-[var(--teal)] hover:opacity-90 text-white cursor-pointer"
+										data-testid="tab1-to-metrics-btn"
 									>
 										<span>Перейти к расчету углов (Steiner, Tweed, Downs)</span>
 										<ArrowRight size={16} />
@@ -804,6 +803,49 @@ export function CephalometricAnalysisModal({
 						{/* Tab 2: Cephalometric Measurements Table & Cards (Steiner, Tweed, Downs, Jacobson, Ricketts) */}
 						{activeTab === "metrics" && (
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-y-auto bg-slate-950">
+								{/* Quick Clinical Presets for Lab protocols (Mandate 8e) */}
+								<div className="mb-3 p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-col gap-2 shrink-0">
+									<div className="text-xs font-bold text-slate-300 flex items-center justify-between">
+										<span>Ввод по протоколу лаборатории (1 клик):</span>
+										<span className="text-[11px] text-slate-400">Пикассо / Золотое Сечение / КЛКТ</span>
+									</div>
+									<div className="grid grid-cols-3 gap-2">
+										<button
+											type="button"
+											onClick={() => {
+												setLandmarks(CLASS_I_NORMAL_LANDMARKS_PRESET);
+												showToast("Применен пресет: Скелетный класс I (Норма)");
+											}}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all text-center cursor-pointer"
+											data-testid="btn-ceph-preset-class-1"
+										>
+											Класс I (Норма)
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setLandmarks(CLASS_II_DISTAL_LANDMARKS_PRESET);
+												showToast("Применен пресет: Скелетный класс II (Дистальный)");
+											}}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all text-center cursor-pointer"
+											data-testid="btn-ceph-preset-class-2"
+										>
+											Класс II (Дистальный)
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setLandmarks(CLASS_III_MESIAL_LANDMARKS_PRESET);
+												showToast("Применен пресет: Скелетный класс III (Мезиальный)");
+											}}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all text-center cursor-pointer"
+											data-testid="btn-ceph-preset-class-3"
+										>
+											Класс III (Мезиальный)
+										</button>
+									</div>
+								</div>
+
 								{/* Quick Diagnosis Banner */}
 								<div className="mb-4 p-4 rounded-xl bg-teal-950/70 border border-teal-500/40 shadow-sm">
 									<div className="text-xs font-black text-teal-400 uppercase tracking-wider">

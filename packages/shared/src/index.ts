@@ -13371,8 +13371,8 @@ export const createImplantInstallationSchema = z.object({
 	boneDensityClass: boneDensityClassSchema.default("D2"),
 	averageHounsfieldUnits: z.number().min(-1000).max(3000).optional().nullable(),
 	finalInsertionTorqueNcm: z.number().min(5).max(100),
-	baselineIsqMesiodistal: z.number().int().min(1).max(100),
-	baselineIsqBuccolingual: z.number().int().min(1).max(100),
+	baselineIsqMesiodistal: z.number().int().min(1).max(100).optional().nullable(),
+	baselineIsqBuccolingual: z.number().int().min(1).max(100).optional().nullable(),
 	baselineIsqDistopalatal: z.number().int().min(1).max(100).optional().nullable(),
 	corticalTapUsed: z.boolean().default(false),
 	underdrillingUsed: z.boolean().default(false),
@@ -13403,12 +13403,17 @@ export type RecordIsqMeasurementInput = z.infer<
 
 export class ImplantStabilityCalculator {
 	static calculateMeanIsq(
-		md: number,
-		bl: number,
+		md?: number | null,
+		bl?: number | null,
 		dp?: number | null,
-	): { isqMean: number; isqAnisotropyDelta: number } {
-		const values = [md, bl];
+	): { isqMean: number | null; isqAnisotropyDelta: number | null } {
+		const values: number[] = [];
+		if (md !== undefined && md !== null) values.push(md);
+		if (bl !== undefined && bl !== null) values.push(bl);
 		if (dp !== undefined && dp !== null) values.push(dp);
+		if (values.length === 0) {
+			return { isqMean: null, isqAnisotropyDelta: null };
+		}
 		const sum = values.reduce((acc, v) => acc + v, 0);
 		const isqMean = Number((sum / values.length).toFixed(2));
 		const isqAnisotropyDelta = Math.max(...values) - Math.min(...values);
@@ -13416,7 +13421,7 @@ export class ImplantStabilityCalculator {
 	}
 
 	static evaluateLoadingProtocol(
-		isqMean: number,
+		isqMean: number | null,
 		insertionTorqueNcm: number,
 		daysPostOp: number,
 	): {
@@ -13425,6 +13430,39 @@ export class ImplantStabilityCalculator {
 		decisionRationale: string;
 		isBiologicalDip: boolean;
 	} {
+		if (isqMean === null) {
+			if (insertionTorqueNcm >= 35 && insertionTorqueNcm <= 55) {
+				return {
+					protocol: "immediate_functional_loading",
+					status: "primary_mechanical_high",
+					decisionRationale: `Высокая первичная стабильность по торку (Torque=${insertionTorqueNcm} Н·см). Разрешена немедленная нагрузка (Immediate Provisionalization) при отсутствии парафункций.`,
+					isBiologicalDip: false,
+				};
+			}
+			if (insertionTorqueNcm >= 30) {
+				return {
+					protocol: "transgingival_one_stage",
+					status: "primary_mechanical_adequate",
+					decisionRationale: `Умеренная первичная стабильность по торку (Torque=${insertionTorqueNcm} Н·см). Одноэтапный протокол с формирователем десны. Ранняя нагрузка через 6-8 недель.`,
+					isBiologicalDip: false,
+				};
+			}
+			if (insertionTorqueNcm >= 20) {
+				return {
+					protocol: "delayed_loading",
+					status: "primary_mechanical_adequate",
+					decisionRationale: `Стандартная первичная стабильность по торку (Torque=${insertionTorqueNcm} Н·см). Стандартный протокол нагрузки через 8-12 недель.`,
+					isBiologicalDip: false,
+				};
+			}
+			return {
+				protocol: "submerged_two_stage",
+				status: "primary_mechanical_adequate",
+				decisionRationale: `Низкая первичная стабильность (Torque=${insertionTorqueNcm} < 20 Н·см). Двухэтапный протокол с глухим ушиванием на 3-6 месяцев.`,
+				isBiologicalDip: false,
+			};
+		}
+
 		const isBiologicalDip =
 			daysPostOp >= 14 && daysPostOp <= 30 && isqMean < 68;
 

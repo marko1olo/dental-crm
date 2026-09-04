@@ -28,7 +28,6 @@ import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
 import "./insurance.css";
 import {
-	calculateServiceDmsDistribution,
 	DMS_STANDARD_EXCLUSIONS,
 	formatRubKopecks,
 	NOMENCLATURE_804N_CATALOG,
@@ -83,8 +82,6 @@ export function DmsGuaranteeLetterModal({
 	const statusSelectId = useId();
 	const serviceSearchInputId = useId();
 	const notesTextareaId = useId();
-	const simPriceInputId = useId();
-	const simQtyInputId = useId();
 
 	const todayStr = useMemo(() => new Date().toISOString().split("T")[0] ?? "2026-08-22", []);
 	const nextMonthStr = useMemo(() => {
@@ -165,11 +162,6 @@ export function DmsGuaranteeLetterModal({
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>("all");
 
-	// Интерактивный симулятор доплаты
-	const [simulatedPriceRub, setSimulatedPriceRub] = useState<number>(12500);
-	const [simulatedQuantity, setSimulatedQuantity] = useState<number>(1);
-	const [simulatedIsExcluded, setSimulatedIsExcluded] = useState<boolean>(false);
-
 	if (!isOpen) return null;
 
 	const activeInsurer = RUSSIAN_DMS_INSURERS.find((i) => i.key === insurerKey);
@@ -208,17 +200,6 @@ export function DmsGuaranteeLetterModal({
 			prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
 		);
 	};
-
-	// Результат симулятора доплаты (Copay)
-	const simulationResult = calculateServiceDmsDistribution({
-		priceRub: simulatedPriceRub,
-		quantity: simulatedQuantity,
-		isExcluded: simulatedIsExcluded,
-		franchisePct: franchiseType === "percent" ? franchisePct : 0,
-		franchiseFixedRub: franchiseType === "fixed_rub" ? franchiseFixedRub : 0,
-		remainingLetterLimitRub: remainingLimitRub,
-		isExplicitlyApproved: true,
-	});
 
 	const handleActivateEmergencyPainMode = () => {
 		setIsEmergencyCare(true);
@@ -833,78 +814,6 @@ export function DmsGuaranteeLetterModal({
 									</div>
 								);
 							})}
-						</div>
-					</div>
-
-					{/* 5. Интерактивный калькулятор-симулятор доплаты (Live Copay Preview) */}
-					<div className="dms-card" style={{ background: "rgba(2, 132, 199, 0.03)", borderColor: "rgba(2, 132, 199, 0.2)" }}>
-						<h3 className="dms-card-title">
-							<Calculator size={18} className="text-[var(--brand-primary,#0d9488)]" />
-							5. Проверка распределения сумм (Live Copay Simulator)
-						</h3>
-
-						<div className="dms-grid-3">
-							<div className="dms-field-group">
-								<label htmlFor={simPriceInputId} className="dms-label">Пример стоимости приема (₽)</label>
-								<input
-									id={simPriceInputId}
-									type="number"
-									value={simulatedPriceRub}
-									onChange={(e) => setSimulatedPriceRub(Number(e.target.value) || 0)}
-									className="dms-input font-mono"
-								/>
-							</div>
-
-							<div className="dms-field-group">
-								<label htmlFor={simQtyInputId} className="dms-label">Количество услуг</label>
-								<input
-									id={simQtyInputId}
-									type="number"
-									min="1"
-									value={simulatedQuantity}
-									onChange={(e) => setSimulatedQuantity(Number(e.target.value) || 1)}
-									className="dms-input font-mono"
-								/>
-							</div>
-
-							<div className="dms-field-group">
-								<span className="dms-label">Исключение из ДМС?</span>
-								<label className={`dms-checkbox-pill ${simulatedIsExcluded ? "active" : ""}`} style={{ marginTop: "0" }}>
-									<input
-										type="checkbox"
-										checked={simulatedIsExcluded}
-										onChange={(e) => setSimulatedIsExcluded(e.target.checked)}
-									/>
-									<span>{simulatedIsExcluded ? "Да (Исключение)" : "Нет (Покрывается)"}</span>
-								</label>
-							</div>
-						</div>
-
-						{/* Результат расчета */}
-						<div className="dms-stats-row" style={{ marginTop: "14px" }}>
-							<div className="dms-stat-card">
-								<span className="dms-stat-label">Итого стоимость</span>
-								<span className="dms-stat-value">{formatRubKopecks(simulationResult.lineTotalRub)}</span>
-							</div>
-							<div className="dms-stat-card" style={{ borderColor: "#10b981" }}>
-								<span className="dms-stat-label">Покрыто ДМС</span>
-								<span className="dms-stat-value text-[var(--ok-fg,#059669)]">
-									{formatRubKopecks(simulationResult.dmsCoveredRub)}
-								</span>
-							</div>
-							<div className="dms-stat-card" style={{ borderColor: "#f59e0b" }}>
-								<span className="dms-stat-label">Доплата пациента (Copay)</span>
-								<span className="dms-stat-value text-[var(--warn-fg,#d97706)]">
-									{formatRubKopecks(simulationResult.patientPaidRub)}
-								</span>
-							</div>
-							<div className="dms-stat-card">
-								<span className="dms-stat-label">Эффективное покрытие</span>
-								<span className="dms-stat-value">{simulationResult.effectiveCoveragePct}%</span>
-							</div>
-						</div>
-						<div style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)", marginTop: "6px" }}>
-							{simulationResult.reason}
 						</div>
 					</div>
 
