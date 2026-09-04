@@ -13,7 +13,8 @@ import {
 	FileText,
 	Check,
 	User,
-	Clock
+	Clock,
+	Zap,
 } from 'lucide-react';
 import {
 	AnestheticDrugId,
@@ -36,6 +37,7 @@ export interface AnesthesiaProtocolModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onApplyToDiary?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
+	onOpenEmergencyProtocol?: (() => void) | undefined;
 	initialToothNumber?: number | string | undefined;
 	initialPatientWeightKg?: number | undefined;
 	initialPatientAgeYears?: number | undefined;
@@ -47,6 +49,7 @@ export function AnesthesiaProtocolModal({
 	isOpen,
 	onClose,
 	onApplyToDiary,
+	onOpenEmergencyProtocol,
 	initialToothNumber = 46,
 	initialPatientWeightKg = 70,
 	initialPatientAgeYears = 35,
@@ -151,7 +154,7 @@ export function AnesthesiaProtocolModal({
 		aspirationConfirmed,
 		seriesNumber,
 		batchNumber,
-		expValidation.formattedExpDateRu,
+		expValidation,
 		assistantName,
 		bpSystolic,
 		bpDiastolic,
@@ -165,11 +168,28 @@ export function AnesthesiaProtocolModal({
 		setTimeout(() => setIsCopied(false), 2000);
 	};
 
+	const hasRiskOrOverdose = calcResult.isOverdose || calcResult.contraindicationsTriggered.length > 0;
+
 	const handleApply = () => {
 		if (onApplyToDiary) {
-			onApplyToDiary(calcResult.diaryEntryRu, calcResult);
+			const textToSave = hasRiskOrOverdose
+				? `${calcResult.diaryEntryRu} (Введено по врачебному решению с учетом соматического статуса)`
+				: calcResult.diaryEntryRu;
+			onApplyToDiary(textToSave, calcResult);
 		}
 		onClose();
+	};
+
+	const handleApplyQuickNormPreset = () => {
+		setSelectedDrugId('articaine_1_100k');
+		setCarpulesCount(1.0);
+		setTechniqueId('mandibular_torus');
+		setNeedleType('g27_long_35mm');
+		setAspirationConfirmed(true);
+		setBpSystolic(120);
+		setBpDiastolic(80);
+		setHeartRateBpm(72);
+		setSpo2Percent(98);
 	};
 
 	if (!isOpen) return null;
@@ -184,14 +204,48 @@ export function AnesthesiaProtocolModal({
 						<span>Протокол местной анестезии & Калькулятор безопасности доз</span>
 						<span className="anesthesia-header-badge">СтАР / Минздрав РФ</span>
 					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="anesthesia-btn"
-						style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem', border: 'none' }}
-					>
-						<X size={20} />
-					</button>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+						{onOpenEmergencyProtocol && (
+							<button
+								type="button"
+								onClick={onOpenEmergencyProtocol}
+								className="anesthesia-btn"
+								style={{
+									minHeight: '32px',
+									padding: '0.25rem 0.625rem',
+									fontSize: '0.75rem',
+									background: 'var(--bad-fg, #ef4444)',
+									color: '#fff',
+									border: 'none',
+									fontWeight: 800,
+									cursor: 'pointer',
+								}}
+								title="Экстренная помощь: Анафилаксия, токсичность (LAST), коллапс (112)"
+								data-testid="btn-anesthesia-open-emergency"
+							>
+								🚨 ШОК / LAST 112
+							</button>
+						)}
+						<button
+							type="button"
+							onClick={handleApplyQuickNormPreset}
+							className="anesthesia-btn"
+							style={{ minHeight: '32px', padding: '0.25rem 0.625rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+							title="Заполнить нормой: Артикаин 1:100k (1.7 мл), аспирация (-)"
+							data-testid="btn-anesthesia-norm-preset"
+						>
+							<Zap size={14} color="var(--brand-primary, var(--teal))" />
+							<span>Норма 1 клик</span>
+						</button>
+						<button
+							type="button"
+							onClick={onClose}
+							className="anesthesia-btn"
+							style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem', border: 'none' }}
+						>
+							<X size={20} />
+						</button>
+					</div>
 				</div>
 
 				{/* Body */}
@@ -631,12 +685,17 @@ export function AnesthesiaProtocolModal({
 					<button
 						type="button"
 						onClick={handleApply}
-						disabled={calcResult.isOverdose || calcResult.contraindicationsTriggered.length > 0}
-						className={`anesthesia-btn ${calcResult.isOverdose || calcResult.contraindicationsTriggered.length > 0 ? 'disabled' : 'anesthesia-btn-primary'}`}
-						style={{ minHeight: '36px' }}
+						className={`anesthesia-btn ${hasRiskOrOverdose ? 'anesthesia-btn-warning' : 'anesthesia-btn-primary'}`}
+						style={{
+							minHeight: '36px',
+							background: hasRiskOrOverdose ? 'var(--warn-fg, #d97706)' : undefined,
+							color: hasRiskOrOverdose ? '#fff' : undefined,
+							cursor: 'pointer',
+						}}
+						data-testid="btn-anesthesia-protocol-apply"
 					>
 						<CheckCircle2 size={16} />
-						Применить протокол в карту (043/у)
+						<span>{hasRiskOrOverdose ? 'Применить по врачебному решению (043/у)' : 'Применить протокол в карту (043/у)'}</span>
 					</button>
 				</div>
 			</div>

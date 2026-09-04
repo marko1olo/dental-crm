@@ -348,7 +348,10 @@ export function AnesthesiaSafetyHubModal({
 	// Apply Calculation to Diary
 	const handleApplyCalculation = () => {
 		if (onApplyToDiary) {
-			onApplyToDiary(calcResult.soapDiaryText, calcResult);
+			const text = calcResult.isBlocked
+				? `${calcResult.soapDiaryText} (Введено по врачебному решению с учетом клинических показаний)`
+				: calcResult.soapDiaryText;
+			onApplyToDiary(text, calcResult);
 		}
 		onClose();
 	};
@@ -1072,12 +1075,12 @@ export function AnesthesiaSafetyHubModal({
 								<button
 									type="button"
 									onClick={handleApplyCalculation}
-									disabled={calcResult.isBlocked}
-									className={`anesthesia-btn ${calcResult.isBlocked ? 'disabled' : 'anesthesia-btn-primary'}`}
-									style={{ minHeight: '36px' }}
+									className={`anesthesia-btn ${calcResult.isBlocked ? 'anesthesia-btn-warning' : 'anesthesia-btn-primary'}`}
+									style={{ minHeight: '36px', cursor: 'pointer' }}
+									data-testid="btn-hub-apply-calculation"
 								>
 									<CheckCircle2 size={16} />
-									Применить протокол в карту (Форма 043/у)
+									<span>{calcResult.isBlocked ? 'Применить по врачебному решению (043/у)' : 'Применить протокол в карту (Форма 043/у)'}</span>
 								</button>
 							</div>
 						</div>

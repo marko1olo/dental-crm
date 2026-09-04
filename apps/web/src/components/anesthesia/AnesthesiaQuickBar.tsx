@@ -10,6 +10,7 @@ import {
 	ShieldAlert,
 	Activity,
 	Trash2,
+	Zap,
 } from "lucide-react";
 import {
 	type AnestheticDrugId,
@@ -23,6 +24,7 @@ import {
 	type AnesthesiaCalculationResult,
 	type AsaPhysicalStatus,
 } from "./anesthesiaEngine";
+import { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocols043";
 
 export interface AnesthesiaQuickBarProps {
 	patientWeightKg?: number | undefined;
@@ -34,6 +36,8 @@ export interface AnesthesiaQuickBarProps {
 	targetToothNumberFdi?: number | string | undefined;
 	onApplyAnesthesia: (diaryText: string, result: AnesthesiaCalculationResult) => void;
 	onDisposalCarpules?: ((carpulesCount: number, drugId: AnestheticDrugId) => void) | undefined;
+	onOpenEmergencyProtocol?: (() => void) | undefined;
+	onOpenAspirationJournal?: (() => void) | undefined;
 	disabled?: boolean | undefined;
 }
 
@@ -87,6 +91,8 @@ export function AnesthesiaQuickBar({
 	targetToothNumberFdi,
 	onApplyAnesthesia,
 	onDisposalCarpules,
+	onOpenEmergencyProtocol,
+	onOpenAspirationJournal,
 	disabled = false,
 }: AnesthesiaQuickBarProps) {
 	const defaultWeight = resolveClinicalDefaultWeightKg(
@@ -205,6 +211,35 @@ export function AnesthesiaQuickBar({
 		}
 	};
 
+	const handleApplyStandardNormPreset = () => {
+		if (disabled) return;
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
+		const result = calculateAnesthesiaSafety({
+			drugId: "articaine_1_100k",
+			carpulesCount: 1.0,
+			patientWeightKg: effectiveWeight,
+			patientAgeYears,
+			asaStatus: "asa_1",
+			hasCardiovascularRisk: false,
+			hasSulfiteAllergy: false,
+			hasBronchialAsthma: false,
+			isPregnantOrLactating: false,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			targetToothNumberFdi,
+			aspirationNegativeConfirmed: true,
+		});
+
+		const normDiaryText = `Инфильтрационная/проводниковая анестезия: ${STANDARD_ANESTHESIA_NORM_PRESET_RU}`;
+		onApplyAnesthesia(normDiaryText, result);
+		setActiveToastMessage("Норма анестезии внесена в протокол в 1 клик!");
+		setTimeout(() => setActiveToastMessage(null), 3500);
+	};
+
 	return (
 		<div className="anesthesia-quick-bar" data-testid="anesthesia-quick-bar">
 			{/* ── Top Bar: Title & Somatic Tags & Weight & Configure ── */}
@@ -226,7 +261,30 @@ export function AnesthesiaQuickBar({
 					)}
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 flex-wrap">
+					{onOpenEmergencyProtocol && (
+						<button
+							type="button"
+							onClick={onOpenEmergencyProtocol}
+							className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs animate-pulse"
+							title="Экстренная помощь: Анафилаксия, LAST (липиды 20%), шок (112)"
+							data-testid="btn-anesthesia-quick-emergency"
+						>
+							<ShieldAlert size={14} />
+							<span>🚨 Шок / LAST 112</span>
+						</button>
+					)}
+					{onOpenAspirationJournal && (
+						<button
+							type="button"
+							onClick={onOpenAspirationJournal}
+							className="px-2.5 py-1 rounded-lg bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1 transition-colors cursor-pointer"
+							title="Открыть подробный журнал проводниковой анестезии и аспирационной пробы"
+							data-testid="btn-anesthesia-quick-journal"
+						>
+							<span>Журнал пробы</span>
+						</button>
+					)}
 					<span className="text-[11px] text-[var(--muted)]">1-клик выбор дозировки</span>
 				</div>
 			</div>
@@ -284,6 +342,18 @@ export function AnesthesiaQuickBar({
 						<Plus size={13} className="text-[var(--teal)]" />
 						Ввести дозу (1 клик):
 					</span>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={handleApplyStandardNormPreset}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/50 text-xs sm:text-sm font-black text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="1 клик норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
+						data-testid="anesthesia-dose-norm-preset"
+					>
+						<Zap size={14} className="text-amber-300 shrink-0" />
+						<span>⚡ Норма: Артикаин 1:100k (1.7 мл)</span>
+					</button>
 
 					<button
 						type="button"

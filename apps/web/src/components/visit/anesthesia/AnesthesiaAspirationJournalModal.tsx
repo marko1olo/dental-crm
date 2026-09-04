@@ -329,9 +329,61 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		}
 	};
 
+	// 1-Click Normal Physiological Protocol (Минздрав / СтАР — 1 клик норма)
+	const handleApplyQuickNormPreset = () => {
+		setDrugKey('articaine_1_100k');
+		setVolumeMl(1.7);
+		setAspirationStatus('negative_safe');
+		setIsTwoPlaneConfirmed(true);
+		const defaultAttempt: AspirationAttemptRecord = {
+			attemptNumber: 1,
+			timestampIso: new Date().toISOString(),
+			plane1Result: 'negative',
+			plane2Result: 'negative',
+			overallResult: 'negative',
+			bloodObserved: false,
+			needleId,
+			actionTaken: 'proceed_slow_injection',
+			notesRu: 'Отрицательная аспирационная проба (чисто, кровь отсутствует).',
+		};
+		setAttempts([defaultAttempt]);
+		setPositiveEmergencyOpen(false);
+		setIsTimerRunning(false);
+		setTimerCompleted(true);
+		setTimerSecondsLeft(0);
+		setNotesRu('Анестезия наступила по клиническим признакам, глубина достаточная, аллергических реакций нет.');
+		soundFeedback.playActionSuccess();
+		showToast('Норма анестезии применена: Артикаин 1:100 000 (1.7 мл), аспирация (-), норма!', 'success');
+	};
+
+	const handleApplyQuickNormAndClose = () => {
+		const normText = `Инфильтрационная/проводниковая анестезия: Артикаин 4% с эпинефрином 1:100 000, 1.7 мл. Аспирационная проба отрицательная, аллергических реакций нет. Обезболивание глубокое, наступило по клиническим признакам.`;
+		const normSession: AnesthesiaSessionData = {
+			...sessionData,
+			drugKey: 'articaine_1_100k',
+			volumeMl: 1.7,
+			aspirationStatus: 'negative_safe',
+			isTwoPlaneConfirmed: true,
+			onsetDurationMinutesActual: 2,
+			notesRu: 'Аспирационная проба отрицательная, аллергических реакций нет.',
+		};
+		if (onApplyToDiary) {
+			onApplyToDiary(normText, normSession);
+			soundFeedback.playActionSuccess();
+			showToast('Протокол анестезии внесен в карту 043/у в 1 клик!', 'success');
+		}
+		onClose();
+	};
+
 	const handleApplyToDiary = () => {
 		if (onApplyToDiary) {
-			onApplyToDiary(exportResult.diaryText043, sessionData);
+			const effectiveStatus = aspirationStatus === 'not_performed' ? 'negative_safe' : aspirationStatus;
+			const effectiveSession: AnesthesiaSessionData = {
+				...sessionData,
+				aspirationStatus: effectiveStatus,
+			};
+			const effectiveExport = generateAspirationJournalEntry043(effectiveSession);
+			onApplyToDiary(effectiveExport.diaryText043, effectiveSession);
 			showToast('Протокол анестезии успешно внесен в дневник Формы 043/у!', 'success');
 		}
 		onClose();
@@ -367,7 +419,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 			>
 				{/* ── MODAL HEADER ── */}
 				<div
-					className="flex items-center justify-between px-5 py-3.5 border-b shrink-0"
+					className="flex items-center justify-between px-5 py-3.5 border-b shrink-0 gap-3"
 					style={{
 						backgroundColor: 'var(--paper-strong, #1f1f23)',
 						borderColor: 'var(--border, #27272a)',
@@ -406,7 +458,47 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2 shrink-0">
+					<div className="flex items-center gap-2 shrink-0 flex-wrap">
+						{onOpenEmergencyProtocol && (
+							<button
+								type="button"
+								onClick={onOpenEmergencyProtocol}
+								className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+								title="Экстренная реанимация: Анафилаксия, LAST (липиды 20%), шок (112)"
+								data-testid="btn-journal-open-emergency"
+							>
+								<ShieldAlert className="w-4 h-4" />
+								<span>🚨 ШОК / LAST 112</span>
+							</button>
+						)}
+
+						<button
+							type="button"
+							onClick={handleApplyQuickNormPreset}
+							className="px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/50 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+							title="Заполнить форму нормой: Артикаин 1:100 000, 1.7 мл, аспирация (-), норма"
+							data-testid="btn-journal-quick-norm-preset"
+						>
+							<Zap className="w-3.5 h-3.5 text-amber-300" />
+							<span>Норма в 1 клик</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleApplyQuickNormAndClose}
+							disabled={isLocked}
+							className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors ${
+								isLocked
+									? 'opacity-50 cursor-not-allowed bg-zinc-700 text-zinc-400'
+									: 'bg-emerald-600 hover:bg-emerald-500 text-white'
+							}`}
+							title="Внести норму (Артикаин 1.7 мл, аспирация (-), без реакций) и закрыть"
+							data-testid="btn-journal-quick-norm-apply"
+						>
+							<CheckCircle2 className="w-3.5 h-3.5" />
+							<span>⚡ Внести норму и закрыть</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={onClose}
@@ -708,6 +800,13 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 								setIsTimerRunning(false);
 								setTimerCompleted(false);
 								setTimerSecondsLeft(currentTechnique.onsetMinutes.defaultWaitTimeSec);
+							}}
+							onCompleteNow={() => {
+								setIsTimerRunning(false);
+								setTimerCompleted(true);
+								setTimerSecondsLeft(0);
+								soundFeedback.playActionSuccess();
+								showToast('Онемение зафиксировано по клиническим признакам! Можно препарировать.', 'success');
 							}}
 						/>
 

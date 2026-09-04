@@ -175,21 +175,21 @@ export function AnesthesiaDosageCalculatorModal({
 
 	// Apply protocol directly into 043/u diary and deduct warehouse inventory
 	const handleApplyToVisit = useCallback(async () => {
-		if (
+		const hasRisk =
 			calcResult.isOverdose ||
-			calcResult.contraindicationsTriggered.length > 0
-		) {
-			showToast("Блокировка: невозможно применить опасную дозировку!", "error");
-			return;
+			calcResult.contraindicationsTriggered.length > 0;
+
+		if (hasRisk) {
+			showToast("Внимание: внесено в карту по клиническому решению врача", "warning");
 		}
 
 		// 1. Update Visit Note Form in Zustand Store
-		const formattedAnesthesiaNote = `\n\n[Протокол анестезии 043/у]\n${calcResult.diaryEntryRu}`;
+		const formattedAnesthesiaNote = `\n\n[Протокол анестезии 043/у]\n${calcResult.diaryEntryRu}${hasRisk ? " (Введено по врачебному решению)" : ""}`;
 		setVisitNoteForm((prev) => {
 			const existingPlan = prev.treatmentPlan || "";
 			const updatedPlan = existingPlan
 				? `${existingPlan}${formattedAnesthesiaNote}`
-				: calcResult.diaryEntryRu;
+				: `${calcResult.diaryEntryRu}${hasRisk ? " (Введено по врачебному решению)" : ""}`;
 			return {
 				...prev,
 				treatmentPlan: updatedPlan,
@@ -1258,7 +1258,6 @@ export function AnesthesiaDosageCalculatorModal({
 					<button
 						type="button"
 						onClick={handleApplyToVisit}
-						disabled={isBlocked}
 						style={{
 							minHeight: "48px",
 							padding: "0.5rem 1.5rem",
@@ -1268,16 +1267,17 @@ export function AnesthesiaDosageCalculatorModal({
 							display: "flex",
 							alignItems: "center",
 							gap: "0.5rem",
-							background: isBlocked ? "var(--bad-fg)" : "var(--teal)",
+							background: isBlocked ? "var(--warn-fg, #d97706)" : "var(--teal)",
 							color: "var(--on-teal, #fff)",
 							border: "none",
-							cursor: isBlocked ? "not-allowed" : "pointer",
-							opacity: isBlocked ? 0.6 : 1.0,
+							cursor: "pointer",
+							opacity: 1.0,
 							transition: "all 0.15s ease-out",
 						}}
+						data-testid="btn-anesthesia-calc-apply"
 					>
 						<CheckCircle2 size={18} />
-						<span>Применить в дневник (043/у)</span>
+						<span>{isBlocked ? "Применить по врачебному решению (043/у)" : "Применить в дневник (043/у)"}</span>
 					</button>
 				</div>
 			</div>

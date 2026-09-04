@@ -28,6 +28,7 @@ import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import {
 	ANESTHESIA_QUICK_PRESETS,
+	STANDARD_ANESTHESIA_NORM_PRESET_RU,
 	appendRecommendationToSoap,
 	CLINICAL_FAST_PRESETS,
 	extractSomaticRiskProfileFromText,
@@ -47,8 +48,11 @@ import {
 } from "../VisitDiaryPhotoUpload";
 import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
+import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
+import { AnesthesiaAspirationJournalModal } from "./anesthesia/AnesthesiaAspirationJournalModal";
 import { DENTAL_ANESTHETICS } from "../anesthesia/anesthesiaCatalog";
 import { ToothAnesthesiaCalculator } from "../diagnostic/ToothAnesthesiaCalculator";
+import { calculateAge } from "@dental/shared";
 import {
 	generatePediatricCariogramDiaryText,
 } from "../odontogram/pediatricDentitionEngine";
