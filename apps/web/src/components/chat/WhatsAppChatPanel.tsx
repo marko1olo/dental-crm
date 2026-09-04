@@ -5,55 +5,40 @@ import {
 	CalendarCheck,
 	Check,
 	CheckCheck,
-	Clock,
-	Copy,
 	CreditCard,
 	FileCheck,
 	FileText,
-	Info,
 	MapPin,
 	MessageSquare,
-	MoreVertical,
-	Paperclip,
 	Phone,
-	PhoneCall,
-	Plus,
+	RefreshCw,
 	Search,
 	Send,
 	Shield,
-	Smile,
 	Sparkles,
 	Stethoscope,
 	User,
 	UserCheck,
 	X,
-	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
-import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
-import { useScheduleStore } from "../../store/scheduleStore";
 import {
 	calculatePatientFinancialStatus,
 	formatPatientInitials,
 	formatPhoneDisplay,
-	generateAppointmentConfirmationMessage,
-	generateWhatsAppConfirmationUrl,
 	getAvatarColor,
-	normalizePhoneDigits,
 	openWhatsAppChat,
 	resolvePatientFromPhone,
 	resolvePatientLastVisit,
 	resolvePatientUpcomingAppointment,
 } from "../../store/telephonyStore";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import {
-	type AppointmentWhatsAppMessageParams,
-	generateAppointmentSmsMessage,
 	generateAppointmentWhatsAppMessage,
-	getPreparationInstructionForReason,
 } from "../schedule/generateAppointmentWhatsAppMessage";
 
 export interface ChatMessage {
@@ -78,6 +63,8 @@ export interface WhatsAppChatPanelProps {
 
 /**
  * WhatsApp & Patient Communications Chat Panel
+ * Strict Mandate 8k (No procedural status simulators, no fake timers)
+ * Strict Mandate 8e (Doctor & Staff autonomy, zero misleading fake states)
  * With upgraded message bubble typography, responsive layout for 390px viewports (min-w-0 break-words),
  * and quick appointment reminder chips with clinical preparation guidance.
  */
@@ -92,7 +79,6 @@ export function WhatsAppChatPanel({
 	const dashboard = ctx?.dashboard;
 
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
-	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 
 	const effectivePatientId = patientId || selectedPatientId || null;
 
@@ -150,31 +136,10 @@ export function WhatsAppChatPanel({
 		dashboard?.todayIso,
 	]);
 
-	// Conversation messages state
-	const [messages, setMessages] = useState<ChatMessage[]>(() => {
-		const now = new Date();
-		const t1 = new Date(now.getTime() - 3600000 * 2).toISOString();
-		const t2 = new Date(now.getTime() - 3600000).toISOString();
-
-		return [
-			{
-				id: "msg-init-1",
-				sender: "clinic",
-				senderName: "DENTE Администратор",
-				text: `Здравствуйте, ${effectiveName}! Вас приветствует стоматологическая клиника ${dashboard?.clinicSettings?.name || "DENTE"}. Чем мы можем вам помочь?`,
-				timestamp: t1,
-				status: "read",
-			},
-			{
-				id: "msg-init-2",
-				sender: "patient",
-				senderName: effectiveName,
-				text: "Добрый день! Подскажите, пожалуйста, по поводу записи на приём и стоимости чистки зубов.",
-				timestamp: t2,
-				status: "read",
-			},
-		];
-	});
+	// Conversation messages state: clean empty state, no hardcoded fake messages (Mandate 8k)
+	const [messages, setMessages] = useState<ChatMessage[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+	const [isSending, setIsSending] = useState(false);
 
 	const [inputText, setInputText] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -192,7 +157,62 @@ export function WhatsAppChatPanel({
 		scrollToBottom();
 	}, [messages, scrollToBottom]);
 
-	// Quick Clinical & Administrative WhatsApp Templates
+	// Fetch real conversation messages from backend API
+	const fetchThread = useCallback(async () => {
+		if (!effectivePatientId) {
+			setMessages([]);
+			return;
+		}
+		setIsLoading(true);
+		try {
+			const res = await fetch(
+				`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}`,
+				{
+					headers: denteAdminSecretRequestHeaders(),
+				},
+			);
+			if (res.ok) {
+				const data = await res.json();
+				const list = Array.isArray(data)
+					? data
+					: Array.isArray(data.messages)
+						? data.messages
+						: [];
+				const parsed: ChatMessage[] = list.map((m: any) => ({
+					id:
+						m.id ||
+						`msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+					sender: m.direction === "inbound" ? "patient" : "clinic",
+					senderName:
+						m.direction === "inbound"
+							? m.patientName || effectiveName
+							: "DENTE Администратор",
+					text: m.message || m.bodyText || "",
+					timestamp: m.createdAt || new Date().toISOString(),
+					status:
+						m.direction === "inbound"
+							? undefined
+							: m.status === "delivered" || m.status === "read"
+								? m.status
+								: "sent",
+				}));
+				setMessages(parsed);
+			} else {
+				setMessages([]);
+			}
+		} catch (err) {
+			console.error("Failed to load WhatsApp conversation thread:", err);
+			setMessages([]);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [effectivePatientId, effectiveName]);
+
+	useEffect(() => {
+		void fetchThread();
+	}, [fetchThread]);
+
+	// Quick Clinical & Administrative WhatsApp Templates (Studio Clinical HIG: Vector icons, zero emojis)
 	const quickTemplates = useMemo(() => {
 		const clinicName = dashboard?.clinicSettings?.name || "клинику DENTE";
 		const clinicAddress =
@@ -200,9 +220,27 @@ export function WhatsAppChatPanel({
 
 		return [
 			{
+				id: "appt_reminder",
+				icon: <Calendar size={14} className="text-teal-400" />,
+				label: "Напоминание о приёме",
+				category: "appointment",
+				buildText: () =>
+					upcomingAppointment
+						? `Здравствуйте, ${effectiveName}! Напоминаем о вашей записи на приём в стоматологию ${clinicName}: ${upcomingAppointment.formattedDate} в ${upcomingAppointment.formattedTime} к врачу ${upcomingAppointment.doctorName || "специалисту"}. Ждём вас!`
+						: `Здравствуйте, ${effectiveName}! Напоминаем о запланированном визите в стоматологическую клинику ${clinicName}. Пожалуйста, сообщите, если вам потребуется скорректировать время приёма.`,
+			},
+			{
+				id: "surgery_memo",
+				icon: <FileText size={14} className="text-amber-400" />,
+				label: "Рекомендации после удаления",
+				category: "clinical",
+				buildText: () =>
+					`Здравствуйте, ${effectiveName}! Рекомендации после хирургического вмешательства / удаления в клинике ${clinicName}:\n1. Не принимать пищу 2 часа до окончания действия анестезии.\n2. Не полоскать полость рта в первые сутки (сохраняйте кровяной сгусток!).\n3. Исключить горячую пищу, бани, сауны и физические нагрузки на 3–5 дней.\n4. При возникновении вопросов звоните нам в клинику: ${dashboard?.clinicSettings?.phone || ""}. До скорой встречи!`,
+			},
+			{
 				id: "appt_confirm",
-				icon: "⚡",
-				label: "Подтверждение приёма",
+				icon: <CalendarCheck size={14} className="text-emerald-400" />,
+				label: "Подтверждение визита",
 				category: "appointment",
 				buildText: () =>
 					upcomingAppointment
@@ -217,16 +255,8 @@ export function WhatsAppChatPanel({
 						: `Здравствуйте, ${effectiveName}! Напоминаем о вашей записи в стоматологию ${clinicName}. Пожалуйста, подтвердите визит ответным сообщением ДА.`,
 			},
 			{
-				id: "surgery_memo",
-				icon: "📌",
-				label: "Памятка: Удаление / Хирургия",
-				category: "clinical",
-				buildText: () =>
-					`Здравствуйте, ${effectiveName}! Памятка перед хирургическим приёмом в ${clinicName}:\n1. Пожалуйста, плотно перекусите за 1–1.5 часа до визита.\n2. Воздержитесь от приёма аспирина и кроворазжижающих за 24 часа.\n3. При себе иметь паспорт. До встречи!`,
-			},
-			{
 				id: "hygiene_memo",
-				icon: "✨",
+				icon: <Sparkles size={14} className="text-cyan-400" />,
 				label: "Памятка: Профгигиена / Air Flow",
 				category: "clinical",
 				buildText: () =>
@@ -234,7 +264,7 @@ export function WhatsAppChatPanel({
 			},
 			{
 				id: "ortho_memo",
-				icon: "🦷",
+				icon: <Stethoscope size={14} className="text-indigo-400" />,
 				label: "Памятка: Ортодонтия / Каппы",
 				category: "clinical",
 				buildText: () =>
@@ -242,7 +272,7 @@ export function WhatsAppChatPanel({
 			},
 			{
 				id: "therapy_memo",
-				icon: "💊",
+				icon: <Shield size={14} className="text-blue-400" />,
 				label: "Памятка: Лечение кариеса",
 				category: "clinical",
 				buildText: () =>
@@ -250,7 +280,7 @@ export function WhatsAppChatPanel({
 			},
 			{
 				id: "debt_reminder",
-				icon: "💳",
+				icon: <CreditCard size={14} className="text-rose-400" />,
 				label: "Оплата / Баланс",
 				category: "financial",
 				buildText: () =>
@@ -258,7 +288,7 @@ export function WhatsAppChatPanel({
 			},
 			{
 				id: "docs_ready",
-				icon: "📋",
+				icon: <FileCheck size={14} className="text-purple-400" />,
 				label: "Справка для налоговой",
 				category: "administrative",
 				buildText: () =>
@@ -266,7 +296,7 @@ export function WhatsAppChatPanel({
 			},
 			{
 				id: "address_parking",
-				icon: "📍",
+				icon: <MapPin size={14} className="text-orange-400" />,
 				label: "Адрес и парковка",
 				category: "navigation",
 				buildText: () =>
@@ -276,20 +306,23 @@ export function WhatsAppChatPanel({
 	}, [dashboard?.clinicSettings, upcomingAppointment, effectiveName, financialSummary]);
 
 	// Apply Quick Template into Input Textarea
-	const handleApplyTemplate = (tmpl: (typeof quickTemplates)[0]) => {
+	const handleApplyTemplate = (tmpl?: (typeof quickTemplates)[0]) => {
+		if (!tmpl) return;
 		const text = tmpl.buildText();
 		setInputText(text);
 		setSelectedChipTemplate(tmpl.id);
 		textareaRef.current?.focus();
+		showToast("Шаблон подготовлен к отправке", "info");
 	};
 
-	// Send message handler
-	const handleSendMessage = () => {
+	// Send message handler (Strict Mandate 8k: Real status 'sent', zero procedural simulation)
+	const handleSendMessage = async () => {
 		const text = inputText.trim();
-		if (!text) return;
+		if (!text || isSending) return;
 
+		const newMsgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 		const newMsg: ChatMessage = {
-			id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+			id: newMsgId,
 			sender: "clinic",
 			senderName: "DENTE Администратор",
 			text,
@@ -300,26 +333,49 @@ export function WhatsAppChatPanel({
 		setMessages((prev) => [...prev, newMsg]);
 		setInputText("");
 		setSelectedChipTemplate(null);
+		setIsSending(true);
 
-		// Simulate message status transitions: sent -> delivered -> read
-		setTimeout(() => {
-			setMessages((prev) =>
-				prev.map((m) => (m.id === newMsg.id ? { ...m, status: "delivered" } : m)),
-			);
-		}, 800);
+		try {
+			if (effectivePatientId) {
+				const res = await fetch(
+					`/api/communications/inbox/${encodeURIComponent(effectivePatientId)}/send`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({
+							message: text,
+							channel: "whatsapp",
+						}),
+					},
+				);
 
-		setTimeout(() => {
-			setMessages((prev) =>
-				prev.map((m) => (m.id === newMsg.id ? { ...m, status: "read" } : m)),
-			);
-		}, 2000);
+				if (!res.ok) {
+					const data = await res.json().catch(() => ({}));
+					showToast(data.message || "Ошибка отправки сообщения через шлюз", "error");
+					setMessages((prev) =>
+						prev.map((m) => (m.id === newMsgId ? { ...m, status: "failed" } : m)),
+					);
+					return;
+				}
+			}
 
-		showToast("Сообщение отправлено пациенту", "success");
+			showToast("Сообщение отправлено", "success");
+		} catch (err) {
+			console.error("Failed to send message via API:", err);
+			showToast("Сообщение сохранено локально", "info");
+		} finally {
+			setIsSending(false);
+		}
 	};
 
 	// Open WhatsApp in Native App / Web with current drafted or templated text
 	const handleLaunchWhatsAppNative = () => {
-		const text = inputText.trim() || `Здравствуйте, ${effectiveName}! Вас приветствует стоматология ${dashboard?.clinicSettings?.name || "DENTE"}.`;
+		const text =
+			inputText.trim() ||
+			`Здравствуйте, ${effectiveName}! Вас приветствует стоматология ${dashboard?.clinicSettings?.name || "DENTE"}.`;
 		openWhatsAppChat(effectivePhone, text);
 		showToast(`Открыт диалог в WhatsApp (${effectiveName})`, "info");
 	};
@@ -346,7 +402,7 @@ export function WhatsAppChatPanel({
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
-			handleSendMessage();
+			void handleSendMessage();
 		}
 	};
 
@@ -355,7 +411,7 @@ export function WhatsAppChatPanel({
 			className={`flex flex-col h-full w-full bg-[var(--paper,#0f172a)] text-[var(--ink,#f8fafc)] border border-[var(--line,#334155)] rounded-2xl shadow-xl overflow-hidden font-sans ${className}`}
 			data-testid="whatsapp-chat-panel"
 		>
-			{/* Top Bar: Patient Profile Info & Actions */}
+			{/* Top Bar: Patient Profile Info & Actions (Single row 36px/44px, Hick's law) */}
 			<div className="flex items-center justify-between px-4 py-3 bg-[var(--paper-soft,rgba(30,41,59,0.7))] border-b border-[var(--line,#334155)] backdrop-blur-md">
 				<div className="flex items-center gap-3 min-w-0">
 					{onClose && (
@@ -409,6 +465,18 @@ export function WhatsAppChatPanel({
 
 				{/* Header Actions */}
 				<div className="flex items-center gap-1">
+					{/* Refresh messages */}
+					<button
+						type="button"
+						onClick={fetchThread}
+						disabled={isLoading}
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
+						title="Обновить переписку"
+						aria-label="Обновить переписку"
+					>
+						<RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
+					</button>
+
 					{/* Search in chat */}
 					<button
 						type="button"
@@ -504,7 +572,7 @@ export function WhatsAppChatPanel({
 			{/* Quick Appointment Reminder & Clinical Preparation Chips (Scrollable touch targets >= 44x44px) */}
 			<div className="p-2.5 bg-[var(--paper,#0f172a)] border-b border-[var(--line,#334155)]">
 				<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#94a3b8)] mb-1.5 px-1 flex items-center gap-1">
-					<Sparkles size={11} className="text-amber-400" />
+					<Sparkles size={11} className="text-teal-400" />
 					<span>Быстрые шаблоны с клинической памяткой:</span>
 				</div>
 				<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -528,11 +596,91 @@ export function WhatsAppChatPanel({
 			</div>
 
 			{/* Messages Stream: Upgraded Typography & min-w-0 break-words */}
-			<div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[var(--paper-soft,rgba(15,23,42,0.4))]">
+			<div className="flex-1 p-4 overflow-y-auto space-y-3 bg-[var(--paper-soft,rgba(15,23,42,0.4))] flex flex-col">
 				{filteredMessages.length === 0 ? (
-					<div className="py-12 text-center text-xs text-[var(--muted,#94a3b8)]">
-						Сообщений не найдено.
-					</div>
+					isLoading ? (
+						<div className="my-auto py-16 text-center text-xs text-[var(--muted,#94a3b8)] flex flex-col items-center justify-center gap-2">
+							<RefreshCw size={22} className="animate-spin text-teal-400" />
+							<span>Загрузка переписки...</span>
+						</div>
+					) : searchQuery ? (
+						<div className="my-auto py-16 text-center text-xs text-[var(--muted,#94a3b8)] flex flex-col items-center justify-center gap-2">
+							<Search size={22} className="opacity-40" />
+							<span>По запросу «{searchQuery}» сообщений не найдено</span>
+							<button
+								type="button"
+								onClick={() => setSearchQuery("")}
+								className="min-h-[44px] px-3 py-1.5 text-xs text-teal-400 hover:underline inline-flex items-center justify-center"
+							>
+								Сбросить поиск
+							</button>
+						</div>
+					) : (
+						/* Clean Empty State with Quick Medical Presets (Mandate 8k & 8e) */
+						<div className="my-auto flex flex-col items-center justify-center text-center p-4 sm:p-6 max-w-md mx-auto w-full animate-fade-in">
+							<div className="w-14 h-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center mb-3 shadow-inner">
+								<MessageSquare size={26} />
+							</div>
+							<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#f8fafc)] mb-1">
+								История переписки пуста
+							</h4>
+							<p className="text-xs text-[var(--muted,#94a3b8)] leading-relaxed mb-4">
+								Здесь будут отображаться реальные сообщения диалога с пациентом {effectiveName}. Выберите быстрый клинический шаблон для начала общения:
+							</p>
+							<div className="flex flex-col gap-2 w-full">
+								{/* Preset 1: Напоминание о приёме */}
+								<button
+									type="button"
+									onClick={() => handleApplyTemplate(quickTemplates[0])}
+									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-950/40 text-[var(--ink,#f8fafc)] hover:text-teal-300 border border-[var(--line,#334155)] hover:border-teal-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
+								>
+									<span className="p-1.5 rounded-lg bg-teal-500/10 text-teal-400 group-hover:bg-teal-500/20">
+										<Calendar size={16} />
+									</span>
+									<div className="min-w-0 flex-1">
+										<div className="font-bold">Напоминание о приёме</div>
+										<div className="text-[11px] text-[var(--muted,#94a3b8)] truncate font-normal">
+											Напоминание о запланированном визите и времени
+										</div>
+									</div>
+								</button>
+
+								{/* Preset 2: Рекомендации после удаления */}
+								<button
+									type="button"
+									onClick={() => handleApplyTemplate(quickTemplates[1])}
+									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-amber-950/40 text-[var(--ink,#f8fafc)] hover:text-amber-300 border border-[var(--line,#334155)] hover:border-amber-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
+								>
+									<span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20">
+										<FileText size={16} />
+									</span>
+									<div className="min-w-0 flex-1">
+										<div className="font-bold">Рекомендации после удаления</div>
+										<div className="text-[11px] text-[var(--muted,#94a3b8)] truncate font-normal">
+											Послеоперационный режим, гемостаз и уход
+										</div>
+									</div>
+								</button>
+
+								{/* Preset 3: Подтверждение визита */}
+								<button
+									type="button"
+									onClick={() => handleApplyTemplate(quickTemplates[2])}
+									className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-950/40 text-[var(--ink,#f8fafc)] hover:text-emerald-300 border border-[var(--line,#334155)] hover:border-emerald-500/50 text-xs font-semibold flex items-center gap-2.5 transition-all text-left group active:scale-[0.99]"
+								>
+									<span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20">
+										<CalendarCheck size={16} />
+									</span>
+									<div className="min-w-0 flex-1">
+										<div className="font-bold">Подтверждение визита</div>
+										<div className="text-[11px] text-[var(--muted,#94a3b8)] truncate font-normal">
+											Запрос подтверждения записи ответным сообщением
+										</div>
+									</div>
+								</button>
+							</div>
+						</div>
+					)
 				) : (
 					filteredMessages.map((msg) => {
 						const isClinic = msg.sender === "clinic";
@@ -572,11 +720,24 @@ export function WhatsAppChatPanel({
 									>
 										<span>{timeStr}</span>
 										{isClinic && (
-											<span>
+											<span
+												className="inline-flex items-center"
+												title={
+													msg.status === "read"
+														? "Прочитано"
+														: msg.status === "delivered"
+															? "Доставлено"
+															: msg.status === "failed"
+																? "Ошибка доставки"
+																: "Отправлено"
+												}
+											>
 												{msg.status === "read" ? (
 													<CheckCheck size={13} className="text-cyan-300" />
 												) : msg.status === "delivered" ? (
 													<CheckCheck size={13} className="opacity-70" />
+												) : msg.status === "failed" ? (
+													<AlertCircle size={13} className="text-rose-400" />
 												) : (
 													<Check size={13} className="opacity-70" />
 												)}
@@ -609,13 +770,13 @@ export function WhatsAppChatPanel({
 					{/* Send Button >= 44x44px */}
 					<button
 						type="button"
-						onClick={handleSendMessage}
-						disabled={!inputText.trim()}
+						onClick={() => void handleSendMessage()}
+						disabled={!inputText.trim() || isSending}
 						className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 text-white font-bold text-xs sm:text-sm transition-all inline-flex items-center justify-center gap-1.5 shadow-md shadow-teal-950/40"
 						aria-label="Отправить сообщение"
 					>
-						<Send size={16} />
-						<span className="hidden sm:inline">Отправить</span>
+						<Send size={16} className={isSending ? "animate-pulse" : ""} />
+						<span className="hidden sm:inline">{isSending ? "Отправка..." : "Отправить"}</span>
 					</button>
 				</div>
 			</div>
