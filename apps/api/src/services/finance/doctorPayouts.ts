@@ -258,7 +258,7 @@ export type DoctorPayoutRow = {
 	readonly materialsState: DoctorPayoutMaterialsState;
 
 	/** Себестоимость общеклинических расходников (салфетки, валики), оплаченных клиникой. */
-	readonly overheadCostRub?: number;
+	readonly overheadCostRub?: number | undefined;
 
 	/** Расходы на зуботехническую лабораторию (ЗТЛ). */
 	readonly labCostRub: number;
@@ -268,7 +268,7 @@ export type DoctorPayoutRow = {
 	/** Ставка: `commission_pct`, ничто иное. null — строки ставки нет. */
 	readonly commissionPct: number | null;
 	readonly materialDeductionPct: number | null;
-	readonly labDeductionPct?: number | null;
+	readonly labDeductionPct?: number | null | undefined;
 	readonly rateEffectiveFrom: string | null;
 	/** Сколько активных ставок нашлось: уникальности в БД нет, взята свежая. */
 	readonly rateRowCount: number;
@@ -279,10 +279,10 @@ export type DoctorPayoutRow = {
 	readonly payoutRub: number | null;
 
 	/** Детализация начислений по категориям (терапия, ортопедия, хирургия, ортодонтия, гигиена). */
-	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[];
+	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[] | undefined;
 
 	/** Печатная форма расчетного листка Т-51. */
-	readonly t51Html?: string;
+	readonly t51Html?: string | undefined;
 
 	/** Причина и действие человеческим языком — для показа как есть. */
 	readonly note: string;
@@ -1644,7 +1644,7 @@ export async function doctorPayouts(
 
 		const t51Payload: DoctorT51PrintPayload = {
 			organizationName: drillDown.organizationName,
-			organizationInn: drillDown.organizationInn,
+			organizationInn: drillDown.organizationInn ?? "",
 			doctorName: row.doctorName,
 			personnelNumber: row.doctorUserId.slice(0, 8).toUpperCase(),
 			specialtyTitle: row.role === "doctor" ? "Врач-стоматолог" : row.role,
@@ -1666,9 +1666,9 @@ export async function doctorPayouts(
 			withheldMaterialRub: computed.withheldMaterialRub ?? 0,
 			overheadConsumablesCoveredRub: overheadCostRub,
 			netPayoutRub: computed.payoutRub ?? 0,
-			categoryBreakdown: categoryBreakdown.length > 0 ? categoryBreakdown : undefined,
-			visits: t51Visits.length > 0 ? t51Visits : undefined,
-			labOrders: t51LabOrders.length > 0 ? t51LabOrders : undefined,
+			...(categoryBreakdown.length > 0 ? { categoryBreakdown } : {}),
+			...(t51Visits.length > 0 ? { visits: t51Visits } : {}),
+			...(t51LabOrders.length > 0 ? { labOrders: t51LabOrders } : {}),
 		};
 
 		const t51Html = generateDoctorT51Html(t51Payload);
@@ -1698,7 +1698,7 @@ export async function doctorPayouts(
 			accruedRub: computed.accruedRub,
 			withheldMaterialRub: computed.withheldMaterialRub,
 			payoutRub: computed.payoutRub,
-			categoryBreakdown: categoryBreakdown.length > 0 ? categoryBreakdown : undefined,
+			...(categoryBreakdown.length > 0 ? { categoryBreakdown } : {}),
 			t51Html,
 			note: payoutRowNote({
 				state: computed.state,
@@ -1855,7 +1855,7 @@ export function generateDoctorT51Payslip(
 
 	const payload: DoctorT51PrintPayload = {
 		organizationName: options?.organizationName ?? "Стоматологическая клиника",
-		organizationInn: options?.organizationInn,
+		organizationInn: options?.organizationInn ?? "",
 		doctorName: doctorRow.doctorName,
 		personnelNumber: doctorRow.doctorUserId.slice(0, 8).toUpperCase(),
 		specialtyTitle: doctorRow.role === "doctor" ? "Врач-стоматолог" : doctorRow.role,
@@ -1877,9 +1877,11 @@ export function generateDoctorT51Payslip(
 		withheldMaterialRub: doctorRow.withheldMaterialRub ?? 0,
 		overheadConsumablesCoveredRub: doctorRow.overheadCostRub ?? 0,
 		netPayoutRub: doctorRow.payoutRub ?? 0,
-		categoryBreakdown: doctorRow.categoryBreakdown,
-		visits: t51Visits.length > 0 ? t51Visits : undefined,
-		labOrders: t51LabOrders.length > 0 ? t51LabOrders : undefined,
+		...(doctorRow.categoryBreakdown && doctorRow.categoryBreakdown.length > 0
+			? { categoryBreakdown: doctorRow.categoryBreakdown }
+			: {}),
+		...(t51Visits.length > 0 ? { visits: t51Visits } : {}),
+		...(t51LabOrders.length > 0 ? { labOrders: t51LabOrders } : {}),
 	};
 
 	return generateDoctorT51Html(payload);

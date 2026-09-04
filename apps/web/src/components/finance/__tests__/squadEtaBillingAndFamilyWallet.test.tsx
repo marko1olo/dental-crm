@@ -90,6 +90,10 @@ describe("Squad Eta — 54-FZ Billing, POS Cash Register & Family Wallet", () =>
 		);
 
 		assert.ok(html.includes('data-testid="cash-register-modal"'), "Cash register modal must be rendered in DOM");
+		assert.ok(html.includes('data-testid="doctor-discounts-panel"'), "Doctor discount & warranty panel must be present");
+		assert.ok(html.includes('data-testid="select-cash-discount"'), "Discount selector must be present");
+		assert.ok(html.includes('data-testid="btn-discount-warranty"'), "100% warranty discount button must be present");
+		assert.ok(html.includes('data-testid="btn-discount-pensioner"'), "Pensioner discount button must be present");
 		assert.ok(html.includes('data-testid="cash-tender-panel"'), "Tender panel must be present");
 		assert.ok(html.includes('data-testid="btn-tender-card"'), "Card tender button must be present");
 		assert.ok(html.includes('data-testid="btn-tender-sbp"'), "SBP tender button must be present");

@@ -427,26 +427,26 @@ export interface DoctorT51LabItem {
 
 export interface DoctorT51PrintPayload {
 	readonly organizationName: string;
-	readonly organizationInn?: string;
+	readonly organizationInn?: string | undefined;
 	readonly doctorName: string;
-	readonly personnelNumber?: string;
+	readonly personnelNumber?: string | undefined;
 	readonly specialtyTitle: string;
 	readonly periodFromIso: string;
 	readonly periodToIso: string;
 	readonly grossRevenueRub: number;
 	readonly netBaseRevenueRub: number;
 	readonly pieceworkAccruedRub: number;
-	readonly fixedSalaryRub?: number;
-	readonly bonusesRub?: number;
+	readonly fixedSalaryRub?: number | undefined;
+	readonly bonusesRub?: number | undefined;
 	readonly totalAccruedRub: number;
 	readonly ndflTaxRub: number;
 	readonly withheldLabRub: number;
 	readonly withheldMaterialRub: number;
-	readonly overheadConsumablesCoveredRub?: number;
+	readonly overheadConsumablesCoveredRub?: number | undefined;
 	readonly netPayoutRub: number;
-	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[];
-	readonly visits?: readonly DoctorT51VisitItem[];
-	readonly labOrders?: readonly DoctorT51LabItem[];
+	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[] | undefined;
+	readonly visits?: readonly DoctorT51VisitItem[] | undefined;
+	readonly labOrders?: readonly DoctorT51LabItem[] | undefined;
 }
 
 /**

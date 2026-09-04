@@ -44,6 +44,8 @@ import {
 	compileFiscalDraftSummary,
 	distributeLoyaltyDiscountAcrossItems,
 	getCashPresetSuggestions,
+	LOYALTY_DISCOUNT_PRESETS,
+	type LoyaltyDiscountPreset,
 	type FiscalItemDraft,
 	type SplitTenderState,
 	type CompiledReceiptSummary,
@@ -147,6 +149,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(6);
 	const [downPaymentPercent, setDownPaymentPercent] = useState<number>(30);
 
+	// Скидки врача и гарантийные переделки (до 100% без блокировок и паролей начмеда)
+	const [selectedDiscountPreset, setSelectedDiscountPreset] = useState<LoyaltyDiscountPreset>("none");
+	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(0);
+	const [customDiscountRub, setCustomDiscountRub] = useState<number>(0);
+
 	React.useEffect(() => {
 		let isMounted = true;
 		fetch("/api/cash/cash-box", {
@@ -179,7 +186,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	const [customServiceName, setCustomServiceName] = useState<string>("Стоматологические услуги");
 
 	// Honest items: if no items provided, use manual custom input without fabricating tooth 16 caries
-	const effectiveItems: readonly FiscalItemDraft[] = useMemo(() => {
+	const rawEffectiveItems: readonly FiscalItemDraft[] = useMemo(() => {
 		if (items.length > 0) return items;
 		const sum = customAmountRub > 0 ? customAmountRub : (totalAmountRub || 0);
 		if (sum <= 0) return [];
@@ -199,7 +206,21 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		];
 	}, [items, customAmountRub, customServiceName, totalAmountRub]);
 
+	// Распределение скидок врача / гарантии (до 100% без копеечных погрешностей)
+	const discountResult = useMemo(() => {
+		return distributeLoyaltyDiscountAcrossItems(rawEffectiveItems, {
+			preset: selectedDiscountPreset,
+			customPercent: customDiscountPercent,
+			customRub: customDiscountRub,
+		});
+	}, [rawEffectiveItems, selectedDiscountPreset, customDiscountPercent, customDiscountRub]);
+
+	const effectiveItems: readonly FiscalItemDraft[] = discountResult.items;
+
 	const totalInvoiceRub = useMemo(() => {
+		if (selectedDiscountPreset !== "none" || discountResult.totalDiscountRub > 0) {
+			return discountResult.totalNetRub;
+		}
 		if (items.length === 0 && customAmountRub > 0) {
 			return customAmountRub;
 		}
@@ -207,7 +228,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			return totalAmountRub;
 		}
 		return effectiveItems.reduce((acc, it) => acc + (it.priceRub * it.quantity - (it.discountRub || 0)), 0);
-	}, [items, customAmountRub, totalAmountRub, effectiveItems]);
+	}, [selectedDiscountPreset, discountResult, items.length, customAmountRub, totalAmountRub, effectiveItems]);
 
 	// Prepare compiled summary based on current tender
 	const compiledSummary: CompiledReceiptSummary = useMemo(() => {
@@ -1017,6 +1038,162 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 					{activeTab === "checkout" && (
 						<div className="space-y-4" data-testid="cash-checkout-view">
+							{/* Doctor Discounts & Warranty Bar (Anti-Matryoshka, Freedom for Doctors) */}
+							<div className="p-3.5 sm:p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="doctor-discounts-panel">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div className="flex items-center gap-2 font-bold text-[var(--ink)] text-xs sm:text-sm">
+										<Percent className="w-4 h-4 text-teal-600 shrink-0" />
+										<span className="uppercase tracking-wider">Скидки врача и Гарантия:</span>
+									</div>
+									<div className="flex items-center gap-2 flex-wrap">
+										<select
+											value={selectedDiscountPreset}
+											onChange={(e) => setSelectedDiscountPreset(e.target.value as LoyaltyDiscountPreset)}
+											className="h-8 px-2.5 rounded-lg text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] outline-none cursor-pointer"
+											data-testid="select-cash-discount"
+										>
+											<option value="none">Без скидки (0%)</option>
+											<option value="warranty_100">★ 100% Гарантия / Переделка (Врач)</option>
+											<option value="colleague_100">100% Сотрудник / Коллега</option>
+											<option value="pensioner_10">10% Пенсионная</option>
+											<option value="family_5">5% Семейная</option>
+											<option value="employee_20">20% Сотрудник клиники</option>
+											<option value="manual_percent">Ручная скидка (%)</option>
+											<option value="manual_rub">Ручная скидка (₽)</option>
+										</select>
+
+										{selectedDiscountPreset === "manual_percent" && (
+											<div className="flex items-center gap-1">
+												<input
+													type="number"
+													min={0}
+													max={100}
+													value={customDiscountPercent || ""}
+													onChange={(e) => setCustomDiscountPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+													onKeyDown={handleInputEnterKeyDown}
+													placeholder="0%"
+													className="h-8 w-16 px-2 text-xs font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-teal-500"
+												/>
+												<span className="text-xs font-bold text-[var(--ink)]">%</span>
+											</div>
+										)}
+
+										{selectedDiscountPreset === "manual_rub" && (
+											<div className="flex items-center gap-1">
+												<input
+													type="number"
+													min={0}
+													max={discountResult.totalGrossRub}
+													value={customDiscountRub || ""}
+													onChange={(e) => setCustomDiscountRub(Math.max(0, parseFloat(e.target.value) || 0))}
+													onKeyDown={handleInputEnterKeyDown}
+													placeholder="0 ₽"
+													className="h-8 w-20 px-2 text-xs font-bold font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-teal-500"
+												/>
+												<span className="text-xs font-bold text-[var(--ink)]">₽</span>
+											</div>
+										)}
+
+										{discountResult.totalDiscountRub > 0 && (
+											<div className="h-8 px-2.5 rounded-lg bg-[var(--ok-bg,#f0fdf4)] border border-[var(--ok-fg,#059669)]/30 text-[var(--ok-fg,#059669)] font-extrabold flex items-center gap-1.5 text-xs whitespace-nowrap">
+												<Sparkles className="w-3.5 h-3.5 text-[var(--ok-fg,#059669)] shrink-0" />
+												<span>{discountResult.savingsText} ({discountResult.effectivePercent}%)</span>
+											</div>
+										)}
+									</div>
+								</div>
+
+								{/* 1-Tap Fast Preset Pills (Hick's Law) */}
+								<div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("none")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "none"
+												? "bg-slate-700 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-none"
+									>
+										Без скидки (0%)
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("pensioner_10")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "pensioner_10"
+												? "bg-teal-600 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-pensioner"
+									>
+										Пенсионная 10%
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("family_5")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "family_5"
+												? "bg-pink-600 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-family"
+									>
+										Семейная 5%
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("employee_20")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "employee_20"
+												? "bg-indigo-600 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-employee"
+									>
+										Сотрудник 20%
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("warranty_100")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+											selectedDiscountPreset === "warranty_100"
+												? "bg-blue-600 text-white shadow-2xs ring-2 ring-blue-400"
+												: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+										}`}
+										data-testid="btn-discount-warranty"
+									>
+										<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+										<span>★ Гарантия 100% (Переделка)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => setSelectedDiscountPreset("manual_percent")}
+										className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+											selectedDiscountPreset === "manual_percent"
+												? "bg-amber-600 text-white shadow-2xs"
+												: "bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)]"
+										}`}
+										data-testid="btn-discount-manual"
+									>
+										Ручная %
+									</button>
+								</div>
+
+								{/* Warranty 100% Clinical Notice Banner */}
+								{selectedDiscountPreset === "warranty_100" && (
+									<div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs flex items-center justify-between gap-2 flex-wrap" data-testid="warranty-rework-banner">
+										<div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-200">
+											<ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+											<span>✓ Гарантийная переделка клинического этапа: скидка 100% (к оплате 0 ₽, без паролей администратора)</span>
+										</div>
+										<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">
+											ТК РФ ст. 137 / 54-ФЗ
+										</span>
+									</div>
+								)}
+							</div>
+
 							{/* 1-Click Fast Payment Tender Selection Panel (32-36px height buttons) */}
 							<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3.5" data-testid="cash-tender-panel">
 								<div className="flex items-center justify-between flex-wrap gap-2">
