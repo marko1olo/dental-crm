@@ -37,6 +37,14 @@ import {
 	type LabWorkflowStatus,
 	type LabStlScanAttachment,
 } from "./dentalLabWorkflowEngine";
+import {
+	EXPRESS_LAB_PRESETS,
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_BRUXISM_SPLINT,
+	EXPRESS_PRESET_CUSTOM_ABUTMENT,
+	EXPRESS_PRESET_REMOVABLE_ACRY_FREE,
+	type ExpressLabPreset,
+} from "./labMath";
 import "./labWorkOrderConstructor.css";
 
 function formatKopecksToRubles(kopecks: number): string {
@@ -106,6 +114,7 @@ export interface LabWorkOrderData {
 	workTypeId: OrthopedicWorkTypeId;
 	constructionNameRu: string;
 	teethFdi: number[];
+	toothFdi?: string | undefined;
 	shadeBody: string;
 	shadeStump?: string | undefined;
 	shadeBleach?: string | undefined;
@@ -176,19 +185,27 @@ const DEFAULT_CONSTRUCTIONS: Array<{
 	},
 	{
 		id: "custom_abutment",
-		title: "All-on-4 / All-on-6 и Индивидуальный абатмент",
+		title: "All-on-4 / All-on-6 и Индивидуальный абатмент (Ti-Base + коронка ZrO2)",
 		category: "Имплантопротезирование",
-		desc: "Фрезерованная титановая балка или индивидуальный Ti-Base абатмент с винтовой фиксацией.",
-		defaultPriceKop: 3800000,
-		defaultCostKop: 1400000,
+		desc: "Фрезерованный индивидуальный Ti-Base абатмент с винтовой фиксацией и анатомической коронкой ZrO2.",
+		defaultPriceKop: 3500000,
+		defaultCostKop: 1200000,
 	},
 	{
 		id: "aligners",
-		title: "Элайнеры и Ортодонтические каппы / Сплинты",
+		title: "Элайнеры и Ортодонтические каппы / Сплинты (Каппа от бруксизма)",
 		category: "Ортодонтия и гнатология",
-		desc: "Высокоточные полиуретановые каппы для исправления прикуса или депрограммации ВНЧС.",
+		desc: "Высокоточная биосовместимая полимерная каппа / окклюзионный сплинт для разобщения прикуса и защиты зубов.",
+		defaultPriceKop: 1500000,
+		defaultCostKop: 450000,
+	},
+	{
+		id: "removable_acrylic",
+		title: "Съемный протез Acry-Free / Квадротти (нейлон)",
+		category: "Съемное протезирование",
+		desc: "Безакриловый полугибкий термопласт без свободного мономера с дентоальвеолярными кламмерами в цвет десны.",
 		defaultPriceKop: 4500000,
-		defaultCostKop: 1800000,
+		defaultCostKop: 1600000,
 	},
 	{
 		id: "clasp_prosthesis",
@@ -255,8 +272,56 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 		if (selectedTeeth.length === 0) {
 			setSelectedTeeth([16]);
 		}
-		showToast("⚡ Пресет: Коронка ZrO2, цвет А2, срок 5 раб. дней применен", "success");
+		showToast("⚡ Пресет: Коронка ZrO2, цвет А2, срок 5 раб. дней (24 000 ₽ / 7 500 ₽) применен", "success");
 	}, [selectedTeeth.length]);
+
+	const handleApplyBruxismSplintPreset = useCallback(() => {
+		setSelectedWorkType("aligners");
+		setSelectedShade("A2");
+		setSelectedStumpShade("");
+		setPatientPriceKop(1500000);
+		setLabCostKop(450000);
+		setDueDateIso(addBusinessDays(new Date(), 3));
+		setSpecialInstructions(
+			"Каппа от бруксизма / миорелаксирующий окклюзионный сплинт на челюсть (общий наряд), биосовместимый полимер, разобщение прикуса 1.5–2 мм, срок 3 рабочих дня"
+		);
+		// Не требовать обязательного выбора одиночного зуба (общий наряд / челюсть)
+		setSelectedTeeth([]);
+		showToast("⚡ Пресет: Каппа от бруксизма / Сплинт на челюсть, 3 раб. дня (15 000 ₽ / 4 500 ₽) применен", "success");
+	}, []);
+
+	const handleApplyCustomAbutmentPreset = useCallback(() => {
+		setSelectedWorkType("custom_abutment");
+		setSelectedShade("A2");
+		setSelectedStumpShade("ND9");
+		setSelectedImplantSystem("Osstem TS III (SA / CA)");
+		setSelectedAbutmentType("Ti-Base (Титановое основание)");
+		setPatientPriceKop(3500000);
+		setLabCostKop(1200000);
+		setDueDateIso(addBusinessDays(new Date(), 7));
+		setSpecialInstructions(
+			"Индивидуальный титановый абатмент Ti-Base + анатомическая коронка ZrO2 Katana ML с винтовой фиксацией, шахта винта с окклюзионным выходом, срок 7 рабочих дней"
+		);
+		if (selectedTeeth.length === 0) {
+			setSelectedTeeth([46]);
+		}
+		showToast("⚡ Пресет: Индивидуальный абатмент Ti-Base + коронка ZrO2, 7 раб. дней (35 000 ₽ / 12 000 ₽) применен", "success");
+	}, [selectedTeeth.length]);
+
+	const handleApplyRemovableNylonPreset = useCallback(() => {
+		setSelectedWorkType("removable_acrylic");
+		setSelectedShade("A2");
+		setSelectedStumpShade("");
+		setPatientPriceKop(4500000);
+		setLabCostKop(1600000);
+		setDueDateIso(addBusinessDays(new Date(), 8));
+		setSpecialInstructions(
+			"Съемный нейлоновый протез Acry-Free / Квадротти, полугибкий термопласт без свободного мономера с дентоальвеолярными кламмерами в цвет десны, гарнитурные зубы Ivoclar Vivodent, срок 8 рабочих дней"
+		);
+		// Съемный протез на всю челюсть
+		setSelectedTeeth([]);
+		showToast("⚡ Пресет: Съемный нейлоновый протез Acry-Free / Квадротти, 8 раб. дней (45 000 ₽ / 16 000 ₽) применен", "success");
+	}, []);
 
 	const [patientPriceKop, setPatientPriceKop] = useState<number>(4800000);
 	const [labCostKop, setLabCostKop] = useState<number>(1500000);
@@ -309,6 +374,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 	// Assembled Order Data
 	const assembledOrder: LabWorkOrderData = useMemo(() => {
 		const orderNum = `ЗТЛ-${Date.now().toString().slice(-6)}`;
+		const toothFdiStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Общий наряд / Челюсть";
 		return {
 			orderId: `lab-ord-${Date.now()}`,
 			orderNumberRu: orderNum,
@@ -320,6 +386,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 			workTypeId: selectedWorkType,
 			constructionNameRu: activeConstruction.title,
 			teethFdi: selectedTeeth,
+			toothFdi: toothFdiStr,
 			shadeBody: selectedShade,
 			shadeStump: selectedStumpShade || undefined,
 			shadeBleach: selectedBleachShade || undefined,
@@ -377,7 +444,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 	}, [assembledOrder, onExportPdf]);
 
 	const handleSendToChat = useCallback(() => {
-		const teethStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Не указаны";
+		const teethStr = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Общий наряд / Челюсть";
 		const textSummary =
 			`ЗАКАЗ-НАРЯД ${assembledOrder.orderNumberRu}\n` +
 			`Пациент: ${patientName}\n` +
@@ -430,16 +497,49 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-1.5 flex-wrap justify-end">
 						<button
 							type="button"
 							onClick={handleApplyStandardZirconiaPreset}
-							className="min-h-[40px] px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="min-h-[36px] px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer"
 							data-testid="lab-apply-1click-zirconia-preset"
-							title="Стандартный пресет: Коронка ZrO2, цвет А2, анатомическая форма, срок 5 рабочих дней"
+							title="Стандартный пресет: Коронка ZrO2, А2, 5 дней (1 клик) — 24 000 ₽ / 7 500 ₽"
 						>
-							<Zap size={15} />
+							<Zap size={14} />
 							<span>⚡ Коронка ZrO2, А2, 5 дней (1 клик)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleApplyBruxismSplintPreset}
+							className="min-h-[36px] px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+							data-testid="lab-apply-1click-splint-preset"
+							title="Экспресс-пресет: Каппа от бруксизма / Сплинт (15 000 ₽ / 4 500 ₽, 3 раб. дня, общий наряд / челюсть)"
+						>
+							<Zap size={14} />
+							<span>⚡ Сплинт/Каппа (3д)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleApplyCustomAbutmentPreset}
+							className="min-h-[36px] px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+							data-testid="lab-apply-1click-abutment-preset"
+							title="Экспресс-пресет: Индивидуальный абатмент Ti-Base + коронка ZrO2 (35 000 ₽ / 12 000 ₽, 7 раб. дней)"
+						>
+							<Zap size={14} />
+							<span>⚡ Ti-Base + ZrO2 (7д)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleApplyRemovableNylonPreset}
+							className="min-h-[36px] px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+							data-testid="lab-apply-1click-nylon-preset"
+							title="Экспресс-пресет: Съемный нейлоновый протез Acry-Free / Квадротти (45 000 ₽ / 16 000 ₽, 8 раб. дней, общий наряд / челюсть)"
+						>
+							<Zap size={14} />
+							<span>⚡ Acry-Free (8д)</span>
 						</button>
 
 						<button
@@ -548,7 +648,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 									</div>
 								</div>
 
-								{/* Step 1: Зуб или Мост */}
+								{/* Step 1: Зуб, Мост или Общий наряд / Челюсть */}
 								<div className="flex flex-col gap-1.5">
 									<span className="text-[11px] font-black text-slate-700 dark:text-slate-300">
 										1-й клик — Зуб или Мост:
@@ -585,6 +685,22 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 										>
 											Мостовидный протез ({selectedTeeth.length > 1 ? selectedTeeth.join(", ") : "14, 15, 16"})
 										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedTeeth([]);
+												showToast("Выбран общий наряд / на всю челюсть (каппа, сплинт или протез)", "info");
+											}}
+											className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+												selectedTeeth.length === 0
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+											}`}
+											data-testid="quick-jaw-general"
+										>
+											Челюсть / Общий наряд (без зуба)
+										</button>
 									</div>
 								</div>
 
@@ -596,78 +712,62 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 									<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 										<button
 											type="button"
-											onClick={() => {
-												setSelectedWorkType("crown_zirconia");
-												setPatientPriceKop(2400000);
-												setLabCostKop(750000);
-												setDueDateIso(addBusinessDays(new Date(), 5));
-											}}
+											onClick={handleApplyStandardZirconiaPreset}
 											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-												selectedWorkType === "crown_zirconia"
+												selectedWorkType === "crown_zirconia" && selectedAbutmentType === "none"
 													? "bg-teal-600 text-white border-teal-600 shadow-xs"
 													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
 											}`}
 											data-testid="quick-type-zirconia"
+											title="Коронка ZrO2 (24 000 ₽ / 7 500 ₽, 5 раб. дней)"
 										>
 											<span>Коронка ZrO2</span>
-											<span className="text-[10px] opacity-80">5 раб. дней</span>
+											<span className="text-[10px] opacity-80">24к / 7.5к · 5 дней</span>
 										</button>
 
 										<button
 											type="button"
-											onClick={() => {
-												setSelectedWorkType("crown_emax");
-												setPatientPriceKop(2600000);
-												setLabCostKop(850000);
-												setDueDateIso(addBusinessDays(new Date(), 5));
-											}}
+											onClick={handleApplyBruxismSplintPreset}
 											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-												selectedWorkType === "crown_emax"
+												selectedWorkType === "aligners"
 													? "bg-teal-600 text-white border-teal-600 shadow-xs"
 													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
 											}`}
-											data-testid="quick-type-emax"
+											data-testid="quick-type-splint"
+											title="Каппа от бруксизма / Сплинт (15 000 ₽ / 4 500 ₽, 3 раб. дня)"
 										>
-											<span>IPS e.max</span>
-											<span className="text-[10px] opacity-80">5 раб. дней</span>
+											<span>Сплинт / Каппа</span>
+											<span className="text-[10px] opacity-80">15к / 4.5к · 3 дня</span>
 										</button>
 
 										<button
 											type="button"
-											onClick={() => {
-												setSelectedWorkType("metal_ceramic");
-												setPatientPriceKop(1500000);
-												setLabCostKop(500000);
-												setDueDateIso(addBusinessDays(new Date(), 7));
-											}}
+											onClick={handleApplyCustomAbutmentPreset}
 											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-												selectedWorkType === "metal_ceramic"
+												selectedWorkType === "custom_abutment" || selectedAbutmentType === "titanium_base"
 													? "bg-teal-600 text-white border-teal-600 shadow-xs"
 													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
 											}`}
-											data-testid="quick-type-metal-ceramic"
+											data-testid="quick-type-abutment"
+											title="Индивидуальный абатмент Ti-Base + коронка ZrO2 (35 000 ₽ / 12 000 ₽, 7 раб. дней)"
 										>
-											<span>Металлокерамика</span>
-											<span className="text-[10px] opacity-80">7 раб. дней</span>
+											<span>Ti-Base + ZrO2</span>
+											<span className="text-[10px] opacity-80">35к / 12к · 7 дней</span>
 										</button>
 
 										<button
 											type="button"
-											onClick={() => {
-												setSelectedWorkType("clasp_prosthesis");
-												setPatientPriceKop(3200000);
-												setLabCostKop(1100000);
-												setDueDateIso(addBusinessDays(new Date(), 10));
-											}}
+											onClick={handleApplyRemovableNylonPreset}
 											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-												selectedWorkType === "clasp_prosthesis"
+												selectedWorkType === "removable_acrylic"
 													? "bg-teal-600 text-white border-teal-600 shadow-xs"
 													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
 											}`}
 											data-testid="quick-type-removable"
+											title="Съемный нейлоновый протез Acry-Free / Квадротти (45 000 ₽ / 16 000 ₽, 8 раб. дней)"
 										>
-											<span>Съемный протез</span>
-											<span className="text-[10px] opacity-80">10 раб. дней</span>
+											<span>Acry-Free протез</span>
+											<span className="text-[10px] opacity-80">45к / 16к · 8 дней</span>
 										</button>
 									</div>
 								</div>
@@ -774,13 +874,48 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 
 							{/* FDI Teeth Selector */}
 							<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-								<div className="flex items-center justify-between mb-2.5">
+								<div className="flex items-center justify-between mb-2.5 flex-wrap gap-2">
 									<span className="text-xs font-extrabold uppercase text-slate-600 dark:text-slate-400">
 										Зубы и квадранты (FDI Нотация 11–48):
 									</span>
-									<span className="text-xs font-mono font-bold text-teal-600 dark:text-teal-400">
-										Выбрано: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "нет"}
-									</span>
+									<div className="flex items-center gap-2 flex-wrap">
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedTeeth([]);
+												showToast("Зубы сброшены: Общий наряд / Челюсть", "info");
+											}}
+											className="text-[11px] px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-teal-600 font-bold cursor-pointer transition-colors"
+											data-testid="lab-teeth-clear-btn"
+										>
+											Общий наряд / Сброс
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedTeeth([18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]);
+												showToast("Выбрана вся верхняя челюсть (18–28)", "info");
+											}}
+											className="text-[11px] px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-teal-600 font-bold cursor-pointer transition-colors"
+											data-testid="lab-teeth-upper-jaw-btn"
+										>
+											Вся верхняя (18–28)
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedTeeth([48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]);
+												showToast("Выбрана вся нижняя челюсть (48–38)", "info");
+											}}
+											className="text-[11px] px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-teal-600 font-bold cursor-pointer transition-colors"
+											data-testid="lab-teeth-lower-jaw-btn"
+										>
+											Вся нижняя (48–38)
+										</button>
+										<span className="text-xs font-mono font-bold text-teal-600 dark:text-teal-400">
+											Выбрано: {selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Общий наряд / Челюсть"}
+										</span>
+									</div>
 								</div>
 
 								{/* Upper Arch (18-28) */}
@@ -1110,7 +1245,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 								<div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
 									<span className="text-slate-500 font-bold">Зубы (FDI):</span>
 									<span className="font-mono font-bold text-slate-900 dark:text-slate-100">
-										{selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "—"}
+										{selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "Общий наряд / Челюсть"}
 									</span>
 								</div>
 								<div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1.5">
@@ -1136,11 +1271,12 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 
 				{/* Modal Footer (Touch-First >= 48px) */}
 				<footer className="lab-constructor-footer">
-					<div className="text-xs text-slate-500 dark:text-slate-400">
+					<div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 flex-wrap">
 						<span>{activeConstruction.title} · </span>
 						<span className="font-bold text-teal-600 dark:text-teal-400">
 							Цвет {selectedShade}
 						</span>
+						<span> · {selectedTeeth.length > 0 ? `Зубы: ${selectedTeeth.join(", ")}` : "Общий наряд / Челюсть"}</span>
 					</div>
 
 					<div className="lab-footer-btn-group">

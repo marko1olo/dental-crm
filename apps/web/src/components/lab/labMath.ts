@@ -255,6 +255,16 @@ export const MATERIALS = [
 		baseCostKopecks: 250000,
 		unitCostRub: 2500,
 	},
+	{
+		id: "acry_free_nylon",
+		name: "Безакриловый термопласт Acry-Free / Quattro Ti (нейлон)",
+		desc: "Гипоаллергенный полугибкий термопласт для съемных протезов без свободного мономера",
+		category: "Съемное",
+		tag: "Гипоаллергенный",
+		costTier: "Премиум",
+		baseCostKopecks: 1600000,
+		unitCostRub: 16000,
+	},
 ] as const;
 
 export const LAB_MATERIALS = MATERIALS;
@@ -623,6 +633,14 @@ export interface ExpressLabPreset {
 	colorVita: string;
 	workingDays: number;
 	priceRub: number;
+	labCostRub?: number;
+	patientPriceRub?: number;
+	patientPriceKopecks?: number;
+	labCostKopecks?: number;
+	toothFdi?: string | null;
+	isFullArchOrJaw?: boolean;
+	implantSystem?: string;
+	abutmentType?: string;
 	occlusalScheme: string;
 	contactTightness: string;
 	surfaceTexture: string;
@@ -630,7 +648,106 @@ export interface ExpressLabPreset {
 	badge: string;
 }
 
+export const EXPRESS_PRESET_ZIRCONIA_CROWN: ExpressLabPreset = {
+	id: "zirconia_crown_express",
+	title: "Коронка ZrO2 (A2, 5 дней)",
+	shortDesc: "Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней (24 000 ₽ / 7 500 ₽)",
+	constructionType: "single_crown",
+	materialId: "zirconia_multilayer",
+	colorVita: "A2",
+	workingDays: 5,
+	priceRub: 24000,
+	labCostRub: 7500,
+	patientPriceRub: 24000,
+	patientPriceKopecks: 2400000,
+	labCostKopecks: 750000,
+	occlusalScheme: "mutually_protected",
+	contactTightness: "normal",
+	surfaceTexture: "natural_anatomy",
+	cementGapMicrons: 30,
+	badge: "Коронка ZrO2 (5 дн.)",
+};
+
+export const EXPRESS_PRESET_BRUXISM_SPLINT: ExpressLabPreset = {
+	id: "bruxism_splint_guard",
+	title: "Каппа от бруксизма / Сплинт (3 дня)",
+	shortDesc: "Каппа от бруксизма / Сплинт (3 дня, 15 000 ₽ / 4 500 ₽, без привязки к одиночным зубам: toothFdi: \"Общий наряд / Челюсть\")",
+	constructionType: "aligner_nightguard",
+	materialId: "biocompatible_3d_resin",
+	colorVita: "A2",
+	workingDays: 3,
+	priceRub: 15000,
+	labCostRub: 4500,
+	patientPriceRub: 15000,
+	patientPriceKopecks: 1500000,
+	labCostKopecks: 450000,
+	toothFdi: "Общий наряд / Челюсть",
+	isFullArchOrJaw: true,
+	occlusalScheme: "balanced_articulation",
+	contactTightness: "normal",
+	surfaceTexture: "satin_semi_matte",
+	cementGapMicrons: 0,
+	badge: "Сплинт / Каппа (3 дн.)",
+};
+
+export const EXPRESS_PRESET_CUSTOM_ABUTMENT: ExpressLabPreset = {
+	id: "custom_abutment_zirconia",
+	title: "Индивидуальный абатмент Ti-Base + коронка ZrO2 (7 дней)",
+	shortDesc: "Индивидуальный абатмент Ti-Base + коронка ZrO2 (7 дней, 35 000 ₽ / 12 000 ₽)",
+	constructionType: "implant_abutment",
+	materialId: "titanium_custom_abutment",
+	implantSystem: "Osstem TS III (SA / CA)",
+	abutmentType: "Ti-Base (Титановое основание)",
+	colorVita: "A2",
+	workingDays: 7,
+	priceRub: 35000,
+	labCostRub: 12000,
+	patientPriceRub: 35000,
+	patientPriceKopecks: 3500000,
+	labCostKopecks: 1200000,
+	occlusalScheme: "mutually_protected",
+	contactTightness: "normal",
+	surfaceTexture: "natural_anatomy",
+	cementGapMicrons: 30,
+	badge: "Ti-Base + ZrO2 (7 дн.)",
+};
+
+export const EXPRESS_PRESET_REMOVABLE_ACRY_FREE: ExpressLabPreset = {
+	id: "removable_acry_free",
+	title: "Съемный нейлоновый протез Acry-Free / Квадротти (8 дней)",
+	shortDesc: "Съемный нейлоновый протез Acry-Free / Квадротти (8 дней, 45 000 ₽ / 16 000 ₽)",
+	constructionType: "clasp_denture",
+	materialId: "acry_free_nylon",
+	colorVita: "A2",
+	workingDays: 8,
+	priceRub: 45000,
+	labCostRub: 16000,
+	patientPriceRub: 45000,
+	patientPriceKopecks: 4500000,
+	labCostKopecks: 1600000,
+	toothFdi: "Общий наряд / Челюсть",
+	isFullArchOrJaw: true,
+	occlusalScheme: "balanced_articulation",
+	contactTightness: "normal",
+	surfaceTexture: "high_gloss_glaze",
+	cementGapMicrons: 50,
+	badge: "Acry-Free (8 дн.)",
+};
+
+export const EXPRESS_PRESET_REMOVABLE_NYLON = EXPRESS_PRESET_REMOVABLE_ACRY_FREE;
+
+export const CANONICAL_EXPRESS_LAB_PRESETS: readonly ExpressLabPreset[] = [
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_BRUXISM_SPLINT,
+	EXPRESS_PRESET_CUSTOM_ABUTMENT,
+	EXPRESS_PRESET_REMOVABLE_ACRY_FREE,
+] as const;
+
 export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_BRUXISM_SPLINT,
+	EXPRESS_PRESET_CUSTOM_ABUTMENT,
+	EXPRESS_PRESET_REMOVABLE_ACRY_FREE,
 	{
 		id: "zirconia_a2_std",
 		title: "Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней",
@@ -639,7 +756,11 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		materialId: "zirconia_multilayer",
 		colorVita: "A2",
 		workingDays: 5,
-		priceRub: 6500,
+		priceRub: 24000,
+		labCostRub: 7500,
+		patientPriceRub: 24000,
+		patientPriceKopecks: 2400000,
+		labCostKopecks: 750000,
 		occlusalScheme: "mutually_protected",
 		contactTightness: "normal",
 		surfaceTexture: "natural_anatomy",
@@ -654,7 +775,11 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		materialId: "zirconia_multilayer",
 		colorVita: "A2",
 		workingDays: 5,
-		priceRub: 6500,
+		priceRub: 24000,
+		labCostRub: 7500,
+		patientPriceRub: 24000,
+		patientPriceKopecks: 2400000,
+		labCostKopecks: 750000,
 		occlusalScheme: "mutually_protected",
 		contactTightness: "normal",
 		surfaceTexture: "natural_anatomy",
@@ -669,7 +794,11 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		materialId: "emax_lithium_disilicate",
 		colorVita: "A2",
 		workingDays: 5,
-		priceRub: 7500,
+		priceRub: 26000,
+		labCostRub: 8500,
+		patientPriceRub: 26000,
+		patientPriceKopecks: 2600000,
+		labCostKopecks: 850000,
 		occlusalScheme: "mutually_protected",
 		contactTightness: "normal",
 		surfaceTexture: "natural_anatomy",
@@ -684,7 +813,11 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		materialId: "pfm_cocr",
 		colorVita: "A2",
 		workingDays: 7,
-		priceRub: 4000,
+		priceRub: 15000,
+		labCostRub: 5000,
+		patientPriceRub: 15000,
+		patientPriceKopecks: 1500000,
+		labCostKopecks: 500000,
 		occlusalScheme: "group_function",
 		contactTightness: "normal",
 		surfaceTexture: "natural_anatomy",
@@ -699,7 +832,11 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		materialId: "cobalt_chrome_cocr",
 		colorVita: "A2",
 		workingDays: 10,
-		priceRub: 12000,
+		priceRub: 32000,
+		labCostRub: 11000,
+		patientPriceRub: 32000,
+		patientPriceKopecks: 3200000,
+		labCostKopecks: 1100000,
 		occlusalScheme: "balanced_articulation",
 		contactTightness: "normal",
 		surfaceTexture: "natural_anatomy",
@@ -715,6 +852,10 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		colorVita: "A2",
 		workingDays: 2,
 		priceRub: 1500,
+		labCostRub: 600,
+		patientPriceRub: 1500,
+		patientPriceKopecks: 150000,
+		labCostKopecks: 60000,
 		occlusalScheme: "group_function",
 		contactTightness: "normal",
 		surfaceTexture: "smooth",
@@ -730,6 +871,10 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		colorVita: "A2",
 		workingDays: 3,
 		priceRub: 2500,
+		labCostRub: 1000,
+		patientPriceRub: 2500,
+		patientPriceKopecks: 250000,
+		labCostKopecks: 100000,
 		occlusalScheme: "group_function",
 		contactTightness: "normal",
 		surfaceTexture: "smooth",
@@ -745,6 +890,10 @@ export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 		colorVita: "A2",
 		workingDays: 4,
 		priceRub: 0,
+		labCostRub: 0,
+		patientPriceRub: 0,
+		patientPriceKopecks: 0,
+		labCostKopecks: 0,
 		occlusalScheme: "mutually_protected",
 		contactTightness: "normal",
 		surfaceTexture: "natural_anatomy",
