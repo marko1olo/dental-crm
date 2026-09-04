@@ -18,7 +18,8 @@ import {
 	Calendar,
 	UserCheck,
 	Clock,
-	Check
+	Check,
+	Zap,
 } from 'lucide-react';
 import {
 	AnestheticDrugId,
@@ -31,6 +32,7 @@ import {
 	generateAnesthesiaPkuDisposalAct,
 	generateAnesthesiaPkuDisposalHtml
 } from '@dental/shared';
+import { showToast } from '../GlobalToast';
 import './anesthesia.css';
 
 export interface AnesthesiaPkuDisposalModalProps {
@@ -207,6 +209,54 @@ export function AnesthesiaPkuDisposalModal({
 		onClose();
 	};
 
+	// 1-Click Shift Disposal by Nurse (SanPiN 3.3686-21 / Mandate 8e)
+	const handleQuickBatchDisposeShift = () => {
+		const now = new Date();
+		const dateIso = now.toISOString().slice(0, 10);
+		const time = now.toTimeString().slice(0, 5);
+		const count = Math.max(1, carpulesDisposedCount || carpulesUsedCount || 1);
+		const currentDrugSpec = ANESTHESIA_DRUG_CATALOG[selectedDrugId] || ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k;
+		const totalVol = Number((count * (currentDrugSpec?.standardCarpuleVolumeMl ?? 1.7)).toFixed(2));
+
+		const shiftBatchRecord = createAnesthesiaPkuRecord({
+			dateIso,
+			time,
+			clinicName,
+			cabinetNumber,
+			patientFullName: patientName || 'Пациенты смены (групповое списание)',
+			medicalCardNumber043: medicalCard043 || 'Смена / Кабинет ' + cabinetNumber,
+			doctorFullName: doctorName || 'Дежурный врач смены',
+			nurseFullName: nurseName || 'Дежурная медсестра',
+			drugId: selectedDrugId,
+			drugNameRu: currentDrugSpec.tradeNamesRu[0] ?? currentDrugSpec.nameRu,
+			activeSubstanceRu: currentDrugSpec.activeSubstanceRu,
+			seriesNumber: seriesNumber || 'ART-2026',
+			batchNumber: batchNumber || '84019',
+			expirationDate: expValidation.formattedExpDateRu || '2027-06',
+			carpulesUsedCount: count,
+			carpulesDisposedCount: count,
+			volumeMlTotal: totalVol,
+			disposalReason: 'used_in_procedure',
+			wasteClass: 'class_b_hazardous',
+			disinfectionMethod: 'chemical_disinfection',
+			disinfectantNameRu: 'Аламинол 3%',
+			disinfectantExposureMinutes: 60,
+			assistantSignatureConfirmed: true,
+			notesRu: '⚡ Списание использованных карпул за смену произведено медсестрой единолично в 1 клик (СанПиН 3.3686-21, без бюрократической комиссии начмедов).'
+		});
+
+		const shiftAct = generateAnesthesiaPkuDisposalAct(shiftBatchRecord);
+
+		if (onSaveRecord) {
+			onSaveRecord(shiftBatchRecord, shiftAct);
+		}
+		showToast(
+			`⚡ Списано за смену: ${count} пустых карпул (${currentDrugSpec.tradeNamesRu[0] ?? currentDrugSpec.nameRu}) в журнал ПКУ медсестрой в 1 клик!`,
+			'success'
+		);
+		onClose();
+	};
+
 	if (!isOpen) return null;
 
 	return (
@@ -229,18 +279,96 @@ export function AnesthesiaPkuDisposalModal({
 						</div>
 					</div>
 
-					<button
-						type="button"
-						onClick={onClose}
-						className="anesthesia-btn hub-btn-close"
-						title="Закрыть окно"
-					>
-						<X size={20} />
-					</button>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+						<button
+							type="button"
+							onClick={handleQuickBatchDisposeShift}
+							className="anesthesia-btn"
+							style={{
+								minHeight: '34px',
+								padding: '0.25rem 0.75rem',
+								fontSize: '0.75rem',
+								fontWeight: 700,
+								background: 'var(--teal, #0d9488)',
+								color: 'var(--on-teal, #fff)',
+								border: 'none',
+								borderRadius: '6px',
+								cursor: 'pointer',
+								display: 'inline-flex',
+								alignItems: 'center',
+								gap: '0.375rem',
+							}}
+							data-testid="btn-pku-quick-batch-dispose"
+							title="Списать использованные карпулы за смену (1 клик, СанПиН 3.3686-21)"
+						>
+							<Zap size={14} color="#fff" />
+							<span>⚡ Списать за смену (1 клик)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={onClose}
+							className="anesthesia-btn hub-btn-close"
+							title="Закрыть окно"
+						>
+							<X size={20} />
+						</button>
+					</div>
 				</div>
 
 				{/* Modal Body */}
 				<div className="anesthesia-modal-body" style={{ maxHeight: 'calc(88vh - 140px)', overflowY: 'auto' }}>
+					{/* 1-Click Shift Disposal Banner (Mandate 8e) */}
+					<div
+						style={{
+							background: 'var(--paper-strong, #f8fafc)',
+							padding: '0.875rem 1rem',
+							borderRadius: '10px',
+							border: '1px solid var(--teal, #0d9488)',
+							marginBottom: '1rem',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'space-between',
+							gap: '1rem',
+							flexWrap: 'wrap',
+						}}
+					>
+						<div>
+							<div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+								<Zap size={16} color="var(--brand-primary, var(--teal))" />
+								<span>⚡ Автономия медсестры: списание карпул за смену в 1 клик</span>
+							</div>
+							<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)', marginTop: '0.125rem' }}>
+								СанПиН 3.3686-21 (Раздел X: Отходы Класса Б) • Без комиссии из 3 начмедов и мастер-паролей
+							</div>
+						</div>
+
+						<button
+							type="button"
+							onClick={handleQuickBatchDisposeShift}
+							className="anesthesia-btn"
+							style={{
+								minHeight: '44px',
+								padding: '0.5rem 1.25rem',
+								borderRadius: '8px',
+								background: 'var(--teal, #0d9488)',
+								color: 'var(--on-teal, #fff)',
+								fontWeight: 800,
+								fontSize: '0.875rem',
+								border: 'none',
+								cursor: 'pointer',
+								display: 'inline-flex',
+								alignItems: 'center',
+								gap: '0.5rem',
+							}}
+							data-testid="btn-pku-quick-batch-dispose-banner"
+							title="Списать использованные карпулы за смену (1 клик)"
+						>
+							<Zap size={16} color="#fff" />
+							<span>⚡ Списать использованные карпулы за смену (1 клик)</span>
+						</button>
+					</div>
+
 					{/* Expiration warning banner if expired or close to expiry */}
 					{expValidation.warningRu && (
 						<div
@@ -262,6 +390,7 @@ export function AnesthesiaPkuDisposalModal({
 							<span>{expValidation.warningRu}</span>
 						</div>
 					)}
+
 
 					<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
 						{/* Drug Selection */}

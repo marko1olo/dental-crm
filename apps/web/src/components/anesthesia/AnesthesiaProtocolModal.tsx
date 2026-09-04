@@ -22,15 +22,18 @@ import {
 	INJECTION_TECHNIQUES,
 	InjectionTechniqueId,
 	NeedleGaugeType,
-	DENTAL_NEEDLES
+	DENTAL_NEEDLES,
+	STANDARD_ANESTHESIA_PRESETS,
 } from './anesthesiaCatalog';
 import {
 	AsaPhysicalStatus,
 	ASA_CLASSIFICATIONS,
 	calculateAnesthesiaSafety,
-	AnesthesiaCalculationResult
+	AnesthesiaCalculationResult,
+	resolveClinicalDefaultWeightKg,
 } from './anesthesiaEngine';
 import { validateCarpuleExpirationDate, evaluatePreoperativeVitalsSafety } from '@dental/shared';
+import { showToast } from '../GlobalToast';
 import './anesthesia.css';
 
 export interface AnesthesiaProtocolModalProps {
@@ -111,12 +114,44 @@ export function AnesthesiaProtocolModal({
 		}
 	};
 
+	// 1-Click Anesthesia Presets (Mandate 8e)
+	const applyStandardPreset = (presetKey: 'ultracain_ds' | 'articaine_mandibular' | 'mepivacaine_plain') => {
+		const preset = STANDARD_ANESTHESIA_PRESETS[presetKey];
+		if (!preset) return;
+		setSelectedDrugId(preset.drugId);
+		setCarpulesCount(preset.carpulesCount);
+		setTechniqueId(preset.techniqueId);
+		setNeedleType(preset.needleType);
+		setAspirationConfirmed(true);
+		setPatientWeightKg(prev => (prev && prev > 0 ? prev : preset.defaultWeightKg));
+		if (preset.hasCardioRisk) {
+			setHasCardioRisk(true);
+			setAsaStatus('asa_3');
+		} else {
+			setHasCardioRisk(false);
+			setAsaStatus('asa_1');
+		}
+		setHasSulfiteAllergy(false);
+		setHasAsthma(false);
+		setIsPregnant(false);
+		setBpSystolic(120);
+		setBpDiastolic(80);
+		setHeartRateBpm(72);
+		setSpo2Percent(98);
+		showToast(`Применен 1-клик пресет: ${preset.shortLabelRu}`, 'success');
+	};
+
 	// Calculation result
 	const calcResult: AnesthesiaCalculationResult = useMemo(() => {
+		const effectiveWeightKg = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
 		return calculateAnesthesiaSafety({
 			drugId: selectedDrugId,
 			carpulesCount,
-			patientWeightKg,
+			patientWeightKg: effectiveWeightKg,
 			patientAgeYears,
 			asaStatus,
 			hasCardiovascularRisk: hasCardioRisk || bpSystolic >= 140 || heartRateBpm > 90,
@@ -181,15 +216,7 @@ export function AnesthesiaProtocolModal({
 	};
 
 	const handleApplyQuickNormPreset = () => {
-		setSelectedDrugId('articaine_1_100k');
-		setCarpulesCount(1.0);
-		setTechniqueId('mandibular_torus');
-		setNeedleType('g27_long_35mm');
-		setAspirationConfirmed(true);
-		setBpSystolic(120);
-		setBpDiastolic(80);
-		setHeartRateBpm(72);
-		setSpo2Percent(98);
+		applyStandardPreset('articaine_mandibular');
 	};
 
 	if (!isOpen) return null;
@@ -250,6 +277,129 @@ export function AnesthesiaProtocolModal({
 
 				{/* Body */}
 				<div className="anesthesia-modal-body" style={{ maxHeight: 'calc(88vh - 140px)', overflowY: 'auto' }}>
+					{/* 1-Click Dominant Presets Bar (Mandate 8e) */}
+					<div
+						style={{
+							background: 'var(--paper-strong, #f8fafc)',
+							padding: '0.75rem 1rem',
+							borderRadius: '10px',
+							border: '1px solid var(--teal, #0d9488)',
+							marginBottom: '0.75rem',
+						}}
+					>
+						<div
+							style={{
+								fontSize: '0.8125rem',
+								fontWeight: 800,
+								display: 'flex',
+								alignItems: 'center',
+								gap: '0.375rem',
+								marginBottom: '0.5rem',
+								color: 'var(--teal, #0d9488)',
+							}}
+						>
+							<Zap size={16} color="var(--brand-primary, var(--teal))" />
+							<span>⚡ 1-клик пресеты стандартной анестезии (Минздрав РФ / Mandate 8e):</span>
+						</div>
+						<div
+							style={{
+								display: 'grid',
+								gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+								gap: '0.5rem',
+							}}
+						>
+							<button
+								type="button"
+								onClick={() => applyStandardPreset('ultracain_ds')}
+								className="anesthesia-btn"
+								style={{
+									minHeight: '40px',
+									padding: '0.375rem 0.625rem',
+									textAlign: 'left',
+									display: 'flex',
+									alignItems: 'center',
+									gap: '0.5rem',
+									borderRadius: '8px',
+									border: '1px solid var(--teal, #0d9488)',
+									background: selectedDrugId === 'articaine_1_200k' && techniqueId === 'infiltration' ? 'var(--teal-surface, rgba(13, 148, 136, 0.12))' : 'var(--paper, #fff)',
+									cursor: 'pointer',
+								}}
+								data-testid="btn-anesthesia-preset-ultracain-ds"
+								title="Ультракаин Д-С 1:200 000 (1 карпула 1.7 мл, инфильтрация, осложнений нет)"
+							>
+								<Zap size={15} color="#f59e0b" style={{ flexShrink: 0 }} />
+								<div style={{ flex: 1, minWidth: 0 }}>
+									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink)' }}>
+										⚡ Ультракаин Д-С 1:200k
+									</div>
+									<div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>
+										1 карп. 1.7 мл, инфильтрация, норма
+									</div>
+								</div>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => applyStandardPreset('articaine_mandibular')}
+								className="anesthesia-btn"
+								style={{
+									minHeight: '40px',
+									padding: '0.375rem 0.625rem',
+									textAlign: 'left',
+									display: 'flex',
+									alignItems: 'center',
+									gap: '0.5rem',
+									borderRadius: '8px',
+									border: '1px solid var(--teal, #0d9488)',
+									background: selectedDrugId === 'articaine_1_100k' && techniqueId === 'mandibular_torus' ? 'var(--teal-surface, rgba(13, 148, 136, 0.12))' : 'var(--paper, #fff)',
+									cursor: 'pointer',
+								}}
+								data-testid="btn-anesthesia-preset-articaine-mandibular"
+								title="Артикаин 4% 1:100 000 (1 карпула 1.7 мл, мандибулярная проводниковая, анестезия наступила через 3 мин)"
+							>
+								<Zap size={15} color="#f59e0b" style={{ flexShrink: 0 }} />
+								<div style={{ flex: 1, minWidth: 0 }}>
+									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink)' }}>
+										⚡ Артикаин 4% 1:100k
+									</div>
+									<div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>
+										1 карп. 1.7 мл, мандибулярная проводниковая
+									</div>
+								</div>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => applyStandardPreset('mepivacaine_plain')}
+								className="anesthesia-btn"
+								style={{
+									minHeight: '40px',
+									padding: '0.375rem 0.625rem',
+									textAlign: 'left',
+									display: 'flex',
+									alignItems: 'center',
+									gap: '0.5rem',
+									borderRadius: '8px',
+									border: '1px solid var(--teal, #0d9488)',
+									background: selectedDrugId === 'mepivacaine_plain' ? 'var(--teal-surface, rgba(13, 148, 136, 0.12))' : 'var(--paper, #fff)',
+									cursor: 'pointer',
+								}}
+								data-testid="btn-anesthesia-preset-mepivacaine-plain"
+								title="Мепивакаин 3% без вазоконстриктора (1 карпула 1.7 мл, для кардиологических больных и беременных)"
+							>
+								<Zap size={15} color="#10b981" style={{ flexShrink: 0 }} />
+								<div style={{ flex: 1, minWidth: 0 }}>
+									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink)' }}>
+										⚡ Мепивакаин 3% (Plain)
+									</div>
+									<div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>
+										1 карп. 1.7 мл, кардиобольные / беременные
+									</div>
+								</div>
+							</button>
+						</div>
+					</div>
+
 					{/* Expiration warning banner */}
 					{expValidation.warningRu && (
 						<div
@@ -278,15 +428,23 @@ export function AnesthesiaProtocolModal({
 						<div>
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
 								<label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--muted, #64748b)' }}>
-									Масса тела (кг):
+									Масса тела (по умолч. 70 кг):
 								</label>
 								<input
 									type="number"
-									autoFocus
 									min={5}
 									max={250}
-									value={patientWeightKg}
-									onChange={e => setPatientWeightKg(Math.max(5, parseInt(e.target.value) || 70))}
+									value={patientWeightKg || ''}
+									placeholder="70"
+									onChange={e => {
+										const raw = e.target.value.trim();
+										if (!raw) {
+											setPatientWeightKg(70);
+										} else {
+											const parsed = parseInt(raw, 10);
+											setPatientWeightKg(Number.isFinite(parsed) && parsed > 0 ? parsed : 70);
+										}
+									}}
 									style={{ width: '60px', height: '26px', fontSize: '0.8125rem', fontWeight: 700, textAlign: 'center', borderRadius: '4px', border: '1px solid var(--line, #e2e8f0)' }}
 								/>
 							</div>
@@ -295,10 +453,13 @@ export function AnesthesiaProtocolModal({
 								min={15}
 								max={140}
 								step={1}
-								value={patientWeightKg}
+								value={patientWeightKg || 70}
 								onChange={e => setPatientWeightKg(parseInt(e.target.value) || 70)}
 								style={{ width: '100%' }}
 							/>
+							<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)', marginTop: '0.125rem' }}>
+								Стандартный взрослый (70 кг), ввод граммов не требуется
+							</div>
 						</div>
 
 						{/* Age with Direct Numeric Input */}
@@ -692,6 +853,7 @@ export function AnesthesiaProtocolModal({
 							color: hasRiskOrOverdose ? '#fff' : undefined,
 							cursor: 'pointer',
 						}}
+						disabled={false}
 						data-testid="btn-anesthesia-protocol-apply"
 					>
 						<CheckCircle2 size={16} />

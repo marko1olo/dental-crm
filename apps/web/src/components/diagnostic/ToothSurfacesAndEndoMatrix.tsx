@@ -24,6 +24,14 @@ import {
 	MAF_ISO_OPTIONS,
 	TAPER_OPTIONS,
 	OBTURATION_TECHNIQUE_OPTIONS,
+	PULPITIS_COMPLETE_PRESET,
+	PERIODONTITIS_TEMP_PRESET,
+	OBTURATION_PERMANENT_PRESET,
+	getAnatomicalWorkingLength,
+	applyAnatomicalWorkingLengths,
+	applyPulpitisProtocol,
+	applyPeriodontitisTempProtocol,
+	applyObturationPermanentProtocol,
 	getDefaultCanalsForTooth,
 	generateEndoProtocol043,
 	generateEndoCanalsTable043,
@@ -270,7 +278,97 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Каналы сброшены к стандарту зуба #${toothNumber}`, "info");
 	};
 
-	// 1. [⚡ Экспресс ProTaper: 25.06 + NaOCl + AH Plus]
+	// 1. [⚡ 1-клик: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)]
+	const handleApplyPulpitisPreset = () => {
+		const preset = applyPulpitisProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setEndoRotarySystem(preset.rotarySystem);
+		setEndoIrrigation(preset.irrigation);
+		setEndoRadiologyControl(preset.radiologyControl);
+		setShowEndoTable(true);
+
+		onUpdateTooth?.({
+			state: toothData?.state === "Healthy" || toothData?.state === "Caries" ? "Pulpitis" : (toothData?.state ?? "Pulpitis"),
+			canalCount: preset.canals.length,
+			canalObturation: "gutta_percha",
+			clinicalData: {
+				canals: preset.canals,
+				rotarySystem: preset.rotarySystem,
+				irrigation: preset.irrigation,
+				radiologyControl: preset.radiologyControl,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Пульпит (ProTaper F2 + AH Plus)`, "success", 3000);
+	};
+
+	// 2. [⚡ 1-клик: Периодонтит 1 посещение (распломбировка, УЗ-активация NaOCl, временное вложение гидроокиси кальция Каласепт на 14 дней)]
+	const handleApplyPeriodontitisTempPreset = () => {
+		const preset = applyPeriodontitisTempProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setEndoRotarySystem(preset.rotarySystem);
+		setEndoIrrigation(preset.irrigation);
+		setEndoRadiologyControl(preset.radiologyControl);
+		setShowEndoTable(true);
+
+		onUpdateTooth?.({
+			state: "Periodontitis",
+			canalCount: preset.canals.length,
+			canalObturation: "calcium_hydroxide",
+			clinicalData: {
+				canals: preset.canals,
+				rotarySystem: preset.rotarySystem,
+				irrigation: preset.irrigation,
+				radiologyControl: preset.radiologyControl,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Периодонтит (Каласепт Ca(OH)2)`, "info", 3000);
+	};
+
+	// 3. [⚡ 1-клик: Обтурация каналов (постоянное пломбирование, рентген-контроль: гомогенно до апекса, без выхода за верхушку)]
+	const handleApplyObturationPermanentPreset = () => {
+		const preset = applyObturationPermanentProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setEndoRotarySystem(preset.rotarySystem);
+		setEndoIrrigation(preset.irrigation);
+		setEndoRadiologyControl(preset.radiologyControl);
+		setShowEndoTable(true);
+
+		onUpdateTooth?.({
+			state: toothData?.state === "Periodontitis" ? "Periodontitis" : "Filled",
+			canalCount: preset.canals.length,
+			canalObturation: "gutta_percha",
+			clinicalData: {
+				canals: preset.canals,
+				rotarySystem: preset.rotarySystem,
+				irrigation: preset.irrigation,
+				radiologyControl: preset.radiologyControl,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+		showToast(`Зуб #${toothNumber}: применён 1-клик протокол постоянной обтурации до апекса`, "success", 3000);
+	};
+
+	// 4. [⚡ Автозаполнение анатомической рабочей длины по номеру зуба в 1 клик]
+	const handleApplyAnatomicalLengths = () => {
+		const updated = applyAnatomicalWorkingLengths(canals, toothNumber);
+		setCanals(updated);
+		onUpdateTooth?.({
+			canalCount: updated.length,
+			clinicalData: {
+				...(toothData?.clinicalData as EndoToothClinicalData | undefined),
+				canals: updated,
+				rotarySystem: endoRotarySystem,
+				irrigation: endoIrrigation,
+				radiologyControl: endoRadiologyControl,
+				updatedAt: new Date().toISOString(),
+			},
+		});
+		showToast(`Анатомическая длина каналов автозаполнена для зуба #${toothNumber}`, "info", 3000);
+	};
+
+	// [Экспресс ProTaper: алиас для обратной совместимости]
 	const handleApplyExpressProTaper = () => {
 		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
 		const defaultCanals = getDefaultCanalsForTooth(toothNumber);

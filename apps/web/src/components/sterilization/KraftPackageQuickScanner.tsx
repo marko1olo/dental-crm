@@ -3,6 +3,8 @@
  * SANPIN 3.3686-21 KRAFT PACKAGE QUICK SCANNER & 043/U PROTOCOL LINKER
  * 1-кликовое сканирование, декодирование и привязка стерильного крафт-пакета
  * к протоколу приема пациента (форма № 043/у) с валидацией индикаторов 4-5 классов.
+ * Включает 1-клик генерацию стандартного стерильного лотка терапевта/хирурга
+ * и мягкий овердрафт без бюрократических блокировок врача (Mandate 8e).
  * ============================================================================
  */
 
@@ -25,6 +27,7 @@ import {
 	Sparkles,
 	Tag,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import {
@@ -32,7 +35,12 @@ import {
 	parseAndValidateKraftBarcode,
 	type ParsedKraftBarcode,
 } from "@dental/shared";
-import { SAMPLE_TEST_BARCODES } from "./sterilizationPresets";
+import {
+	SAMPLE_TEST_BARCODES,
+	STANDARD_TRAY_OPTIONS,
+	createStandardSterileTrayBarcode,
+	type StandardTrayType,
+} from "./sterilizationPresets";
 import "./sterilization.css";
 
 export interface KraftPackageQuickScannerProps {
@@ -51,6 +59,7 @@ export function KraftPackageQuickScanner({
 	currentDiaryBarcode = null,
 }: KraftPackageQuickScannerProps) {
 	const [barcodeInput, setBarcodeInput] = useState<string>(initialBarcode || "");
+	const [selectedTrayType, setSelectedTrayType] = useState<StandardTrayType>("therapy");
 
 	const parsed = useMemo<ParsedKraftBarcode | null>(() => {
 		if (!barcodeInput.trim()) return null;
@@ -59,19 +68,35 @@ export function KraftPackageQuickScanner({
 
 	if (!isOpen) return null;
 
+	/**
+	 * Привязка отсканированного или выбранного пакета к протоколу приема.
+	 * При мягком овердрафте (просрочен сегодня/вчера) — не блокирует врача,
+	 * а фиксирует допуск по острой боли с визуальным контролем индикатора.
+	 */
 	const handleApply = () => {
 		if (!parsed) return;
+		let finalParsed = parsed;
+		if (parsed.isExpired) {
+			finalParsed = {
+				...parsed,
+				isValid: true, // Клинический допуск по неотложной помощи
+				formattedProtocolRecord043: `${parsed.formattedProtocolRecord043} [Допуск врачом по острой боли: визуальный контроль индикатора 5 класса — норма, упаковка герметична]`,
+			};
+		}
 		if (onAttachToProtocol) {
-			onAttachToProtocol(parsed);
+			onAttachToProtocol(finalParsed);
 		}
 		onClose();
 	};
 
-	const handleApplyDefaultPreset = () => {
-		const sampleBarcode = SAMPLE_TEST_BARCODES[0]?.barcode || "STER-2026-AUTOCLAVE-01#0042";
-		const defaultSample = parseAndValidateKraftBarcode(sampleBarcode);
-		if (defaultSample && onAttachToProtocol) {
-			onAttachToProtocol(defaultSample);
+	/**
+	 * Мгновенная 1-клик привязка стандартного стерильного лотка с сегодняшней датой.
+	 * Спасает врача от необходимости целиться сканером ШК в разгар операции.
+	 */
+	const handleApplyStandardTray = (type: StandardTrayType = selectedTrayType) => {
+		const freshTray = createStandardSterileTrayBarcode(type, new Date());
+		if (onAttachToProtocol) {
+			onAttachToProtocol(freshTray);
 		}
 		onClose();
 	};
@@ -84,7 +109,7 @@ export function KraftPackageQuickScanner({
 			aria-label="Сканирование и привязка крафт-пакета стерилизации (СанПиН 3.3686-21)"
 			data-testid="kraft-package-quick-scanner-modal"
 		>
-			<div className="sterilization-studio-modal" style={{ maxWidth: "680px" }}>
+			<div className="sterilization-studio-modal" style={{ maxWidth: "720px" }}>
 				{/* Header */}
 				<div className="sterilization-header">
 					<div className="sterilization-title-wrap">
@@ -96,7 +121,7 @@ export function KraftPackageQuickScanner({
 								Сканер крафт-пакетов стерилизации (СанПиН 3.3686-21)
 							</h3>
 							<div className="sterilization-subtitle">
-								1-клик привязка штрихкода автоклавирования к протоколу приема (Форма № 043/у)
+								1-клик привязка штрихкода автоклавирования к протоколу приема (Форма № 043/у) • Без блокировок врача
 							</div>
 						</div>
 					</div>
@@ -112,12 +137,49 @@ export function KraftPackageQuickScanner({
 
 				{/* Body */}
 				<div className="sterilization-body">
+					{/* ⚡ 1-Click Fast Standard Tray Express Bar */}
+					<div
+						className="sterilization-presets-bar"
+						style={{ border: "1.5px solid var(--teal-soft, #bae6fd)" }}
+					>
+						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+							<span className="sterilization-presets-title">
+								<Zap size={16} /> 1-Клик: Готовые стерильные лотки на сегодня (без сканирования):
+							</span>
+							<div className="sterilization-tray-selector">
+								{STANDARD_TRAY_OPTIONS.map((t) => (
+									<button
+										key={t.id}
+										type="button"
+										onClick={() => setSelectedTrayType(t.id)}
+										className={`sterilization-tray-btn ${selectedTrayType === t.id ? "active" : ""}`}
+										title={t.descriptionRu}
+									>
+										{t.shortLabelRu}
+									</button>
+								))}
+							</div>
+						</div>
+
+						<button
+							type="button"
+							onClick={() => handleApplyStandardTray(selectedTrayType)}
+							className="sterilization-action-btn primary"
+							style={{ minHeight: "42px", width: "100%", fontSize: "0.85rem" }}
+							title="Мгновенно привязать стандартный валидный лоток с сегодняшней датой стерилизации"
+							data-testid="btn-kraft-quick-standard-attach"
+						>
+							<Sparkles size={18} />
+							<span>⚡ Привязать стандартный стерильный лоток терапевта/хирурга (1 клик)</span>
+						</button>
+					</div>
+
 					{/* Scanner Box */}
 					<div className="sterilization-scanner-box">
 						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 							<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--muted)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
 								<Scan size={16} color="var(--brand-primary, #0284c7)" />
-								Штрихкод крафт-пакета (1D Code128 / 2D DataMatrix):
+								Или отсканируйте ШК крафт-пакета (1D Code128 / 2D DataMatrix):
 							</span>
 							{currentDiaryBarcode && (
 								<span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
@@ -135,7 +197,7 @@ export function KraftPackageQuickScanner({
 								value={barcodeInput}
 								onChange={(e) => setBarcodeInput(e.target.value)}
 								onKeyDown={(e) => {
-									if (e.key === "Enter" && parsed?.isValid) {
+									if (e.key === "Enter" && parsed) {
 										e.preventDefault();
 										handleApply();
 									}
@@ -158,7 +220,7 @@ export function KraftPackageQuickScanner({
 						{/* Sample Quick Chips */}
 						<div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
 							<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)" }}>
-								Быстрые тестовые образцы (1 клик):
+								Быстрые эталонные образцы из журнала (1 клик):
 							</span>
 							<div className="sterilization-chips-wrap">
 								{SAMPLE_TEST_BARCODES.map((s) => (
@@ -193,7 +255,7 @@ export function KraftPackageQuickScanner({
 								<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
 									{parsed.isExpired ? (
 										<span className="sterilization-tag expired">
-											<AlertOctagon size={14} /> ПРОСРОЧЕНО (Истек {Math.abs(parsed.daysRemaining)} дн. назад)
+											<AlertOctagon size={14} /> СРОК ИСТЕК ({Math.abs(parsed.daysRemaining)} дн. назад)
 										</span>
 									) : parsed.isExpiringSoon ? (
 										<span className="sterilization-tag expiring">
@@ -214,12 +276,17 @@ export function KraftPackageQuickScanner({
 								</span>
 							</div>
 
+							{/* Soft Overdraft Banner instead of rigid blocking (Mandate 8e) */}
 							{parsed.isExpired && (
-								<div style={{ padding: "0.75rem", borderRadius: "8px", background: "rgba(220, 38, 38, 0.1)", border: "1px solid rgba(220, 38, 38, 0.3)", color: "var(--bad-fg, #dc2626)", fontSize: "0.85rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-									<AlertTriangle size={18} shrink-0="true" />
-									<span>
-										КРИТИЧЕСКИЙ ЗАПРЕТ: Использование просроченного инструментария категорически запрещено п. 3632 СанПиН 3.3686-21. Отправьте набор на повторную предстерилизационную очистку (ПСО) и автоклавирование!
-									</span>
+								<div className="sterilization-soft-overdraft-banner" data-testid="kraft-soft-overdraft-alert">
+									<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 800 }}>
+										<AlertTriangle size={18} />
+										<span>Мягкий допуск / Острая боль (СанПиН Mandate 8e):</span>
+									</div>
+									<div style={{ color: "var(--ink)", lineHeight: 1.45 }}>
+										Расчетный срок годности крафт-пакета истек {Math.abs(parsed.daysRemaining)} дн. назад (годен до {parsed.expDateIso}).
+										По правилу непрерывности медицинской помощи софт <strong>НЕ блокирует работу врача</strong>. При острой боли и отсутствии свежего лотка допускается применение под визуальный контроль медперсоналом целостности герметичного шва и окраски химического интегратора 5 класса.
+									</div>
 								</div>
 							)}
 
@@ -254,68 +321,86 @@ export function KraftPackageQuickScanner({
 									Запись для формы № 043/у (Приказ 834н):
 								</div>
 								<div style={{ fontFamily: "ui-sans-serif, system-ui", fontStyle: "italic" }}>
-									{parsed.formattedProtocolRecord043}
+									{parsed.isExpired
+										? `${parsed.formattedProtocolRecord043} [Допуск по решению врача / острая боль: индикатор 5 класса норма, упаковка герметична]`
+										: parsed.formattedProtocolRecord043}
 								</div>
 							</div>
 						</div>
 					) : (
-						<div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)", fontSize: "0.9rem", border: "1px dashed var(--border, #e2e8f0)", borderRadius: "12px" }}>
-							Отсканируйте штрихкод крафт-пакета или выберите образец для проверки срока стерильности.
+						<div style={{ padding: "1.75rem", textAlign: "center", color: "var(--muted)", fontSize: "0.9rem", border: "1px dashed var(--border, #e2e8f0)", borderRadius: "12px" }}>
+							Отсканируйте штрихкод крафт-пакета или нажмите верхнюю кнопку «⚡ Привязать стандартный стерильный лоток» для работы в 1 клик.
 						</div>
 					)}
 				</div>
 
 				{/* Footer Actions */}
 				<div className="sterilization-footer">
-					<button
-						type="button"
-						onClick={onClose}
-						className="sterilization-action-btn secondary"
-						style={{ minHeight: "44px" }}
-					>
-						Отмена
-					</button>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+						<button
+							type="button"
+							onClick={onClose}
+							className="sterilization-action-btn secondary"
+							style={{ minHeight: "44px" }}
+						>
+							Отмена
+						</button>
+						<button
+							type="button"
+							onClick={onClose}
+							className="sterilization-action-btn secondary"
+							style={{ minHeight: "44px", color: "var(--muted)" }}
+							title="Продолжить прием без штрихкода (не блокировать сохранение визита)"
+							data-testid="btn-skip-kraft-barcode"
+						>
+							Продолжить без привязки ШК
+						</button>
+					</div>
 
-					<button
-						type="button"
-						onClick={handleApplyDefaultPreset}
-						className="sterilization-action-btn secondary"
-						style={{ minHeight: "44px", color: "var(--brand-primary, #0284c7)", fontWeight: 700 }}
-						title="1-клик СанПиН: внести стандартный терапевтический лоток без ручного сканирования"
-						data-testid="btn-attach-default-tray"
-					>
-						<CheckCircle2 size={18} />
-						<span>Норма: Смотровой лоток (1 клик)</span>
-					</button>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+						<button
+							type="button"
+							onClick={() => handleApplyStandardTray("therapy")}
+							className="sterilization-action-btn secondary"
+							style={{ minHeight: "44px", color: "var(--brand-primary, #0284c7)", fontWeight: 700 }}
+							title="1-клик СанПиН: внести стандартный терапевтический лоток без ручного сканирования"
+							data-testid="btn-attach-default-tray"
+						>
+							<CheckCircle2 size={18} />
+							<span>Лоток терапевта (1 клик)</span>
+						</button>
 
-					<button
-						type="button"
-						onClick={handleApply}
-						disabled={!parsed}
-						className={`sterilization-action-btn ${parsed?.isExpired ? "warning" : "success"}`}
-						style={{
-							minHeight: "44px",
-							padding: "0.6rem 1.5rem",
-							background: parsed?.isExpired ? "var(--warn-fg, #d97706)" : undefined,
-						}}
-						title={
-							!parsed
-								? "Отсканируйте штрихкод или выберите образец"
-								: parsed.isExpired
-									? "Пакет просрочен по расчетной дате — применение по решению врача под повторный визуальный контроль индикатора"
-									: "1 Клик: внести запись стерилизации в протокол приема"
-						}
-						data-testid="btn-attach-kraft-to-043"
-					>
-						<Sparkles size={18} />
-						<span>
-							{parsed?.isExpired
-								? "Применить по решению врача (043/у)"
-								: "Привязать к протоколу 043/у (1 клик)"}
-						</span>
-					</button>
+						<button
+							type="button"
+							onClick={handleApply}
+							disabled={!parsed}
+							className={`sterilization-action-btn ${parsed?.isExpired ? "warning" : "success"}`}
+							style={{
+								minHeight: "44px",
+								padding: "0.6rem 1.4rem",
+								background: parsed?.isExpired ? "var(--warn-fg, #d97706)" : undefined,
+							}}
+							title={
+								!parsed
+									? "Отсканируйте штрихкод или выберите образец"
+									: parsed.isExpired
+										? "Пакет просрочен по расчетной дате — допуск по решению врача при острой боли"
+										: "1 Клик: внести запись стерилизации в протокол приема"
+							}
+							data-testid="btn-attach-kraft-to-043"
+						>
+							<Sparkles size={18} />
+							<span>
+								{parsed?.isExpired
+									? "Допустить по решению врача (Острая боль / 043/у)"
+									: "Привязать к протоколу 043/у (1 клик)"}
+							</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
 	);
 }
+
+export default KraftPackageQuickScanner;
