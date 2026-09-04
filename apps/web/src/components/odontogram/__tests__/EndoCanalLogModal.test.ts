@@ -16,6 +16,16 @@ import {
 	CAOH2_ENDO_PRESET,
 	applyStandardEndoProtocol,
 	applyCaOh2EndoProtocol,
+	getAnatomicalWorkingLength,
+	applyAnatomicalWorkingLengths,
+	applyExpressApicalEndoProtocol,
+	applyPulpitisProtocol,
+	applyPeriodontitisTempProtocol,
+	applyObturationPermanentProtocol,
+	EXPRESS_APICAL_OBTURATION_PRESET,
+	PULPITIS_COMPLETE_PRESET,
+	PERIODONTITIS_TEMP_PRESET,
+	OBTURATION_PERMANENT_PRESET,
 } from "../EndoCanalLogModal";
 
 describe("EndoCanalLogModal — Anatomical Defaults & FDI Presets", () => {
@@ -532,4 +542,114 @@ describe("EndoCanalLogModal — 1-Click Clinical Presets & Quick Ergonomics", ()
 		assert.ok(protocol.includes("ЭНДОДОНТИЧЕСКИЙ ПРОТОКОЛ"));
 	});
 });
+
+describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Autofill", () => {
+	test("getAnatomicalWorkingLength возвращает корректную анатомическую норму для резцов, клыков, премоляров и моляров", () => {
+		// Клыки (13, 23, 33, 43): 25.0 мм
+		assert.equal(getAnatomicalWorkingLength(13), 25.0);
+		assert.equal(getAnatomicalWorkingLength(23), 25.0);
+		assert.equal(getAnatomicalWorkingLength(33), 25.0);
+		assert.equal(getAnatomicalWorkingLength(43), 25.0);
+
+		// Резцы (11, 12, 21, 22, 31, 32, 41, 42): 22.0 мм
+		assert.equal(getAnatomicalWorkingLength(11), 22.0);
+		assert.equal(getAnatomicalWorkingLength(21), 22.0);
+		assert.equal(getAnatomicalWorkingLength(31), 22.0);
+		assert.equal(getAnatomicalWorkingLength(41), 22.0);
+
+		// Премоляры (14, 15, 24, 25, 34, 35, 44, 45): 21.0 мм
+		assert.equal(getAnatomicalWorkingLength(14), 21.0);
+		assert.equal(getAnatomicalWorkingLength(25), 21.0);
+		assert.equal(getAnatomicalWorkingLength(34), 21.0);
+		assert.equal(getAnatomicalWorkingLength(45), 21.0);
+
+		// Верхние моляры (16): P = 22.0 мм, MB1/MB2/DB = 20.0 мм
+		assert.equal(getAnatomicalWorkingLength(16, "P"), 22.0);
+		assert.equal(getAnatomicalWorkingLength(16, "Palatal"), 22.0);
+		assert.equal(getAnatomicalWorkingLength(16, "Нёбный"), 22.0);
+		assert.equal(getAnatomicalWorkingLength(16, "MB1"), 20.0);
+		assert.equal(getAnatomicalWorkingLength(16, "DB"), 20.0);
+
+		// Нижние моляры (46): D = 21.0 мм, MB/ML = 20.0 мм
+		assert.equal(getAnatomicalWorkingLength(46, "D"), 21.0);
+		assert.equal(getAnatomicalWorkingLength(46, "MB"), 20.0);
+		assert.equal(getAnatomicalWorkingLength(46, "ML"), 20.0);
+	});
+
+	test("applyAnatomicalWorkingLengths автозаполняет длины для всех каналов зуба в 1 клик", () => {
+		const canals: EndoCanalData[] = [
+			{
+				id: "c1",
+				canalName: "MB1",
+				referencePoint: "Щечный бугор",
+				workingLengthMm: "", // пусто
+				masterApicalFile: "ISO 25",
+				taper: ".06",
+				obturationTechnique: "Гуттаперча",
+			},
+			{
+				id: "c2",
+				canalName: "P",
+				referencePoint: "Нёбный бугор",
+				workingLengthMm: 0,
+				masterApicalFile: "ISO 30",
+				taper: ".06",
+				obturationTechnique: "Гуттаперча",
+			},
+		];
+
+		const autofilled = applyAnatomicalWorkingLengths(canals, 16);
+		assert.equal(autofilled[0]?.workingLengthMm, 20.0);
+		assert.equal(autofilled[1]?.workingLengthMm, 22.0);
+	});
+
+	test("applyExpressApicalEndoProtocol применяет протокол '⚡ Каналы обработаны и обтурированы до апекса' без бюрократии", () => {
+		const emptyCanals: EndoCanalData[] = [
+			{
+				id: "c-blank",
+				canalName: "MB1",
+				referencePoint: "Щечный бугор",
+				workingLengthMm: "", // врач не вбивал длину вручную
+				masterApicalFile: "",
+				taper: "",
+				obturationTechnique: "",
+			},
+		];
+
+		const result = applyExpressApicalEndoProtocol(emptyCanals, 16);
+		assert.ok(result.canals.length >= 1);
+		const c = result.canals[0];
+		assert.ok(c);
+		// Автозаполняется анатомическая норма 20.0 мм вместо блокировки
+		assert.equal(c.workingLengthMm, 20.0);
+		assert.equal(c.masterApicalFile, "ISO 25 (#25 красный)");
+		assert.equal(c.taper, ".06 (Конусность 6%)");
+		assert.equal(c.sealer, "AH Plus");
+		assert.ok(result.radiologyControl.includes("Apex 0.0"));
+		assert.ok(result.radiologyControl.includes("контрольным снимком"));
+		assert.ok(result.rotarySystem.includes("физиологического апекса"));
+		assert.ok(result.irrigation.includes("NaOCl"));
+	});
+
+	test("applyPulpitisProtocol и applyPeriodontitisTempProtocol устанавливают клинически выверенные протоколы", () => {
+		const pulpResult = applyPulpitisProtocol([], 21); // центральный резец
+		assert.equal(pulpResult.canals.length, 1);
+		assert.equal(pulpResult.canals[0]?.workingLengthMm, 21.0);
+		assert.ok(pulpResult.canals[0]?.notes?.includes("Пульпит"));
+
+		const perioResult = applyPeriodontitisTempProtocol([], 23); // клык
+		assert.equal(perioResult.canals.length, 1);
+		assert.equal(perioResult.canals[0]?.workingLengthMm, 24.0);
+		assert.equal(perioResult.canals[0]?.sealer, "Каласепт (гидроксид кальция)");
+		assert.ok(perioResult.radiologyControl.includes("Ca(OH)2"));
+	});
+
+	test("applyObturationPermanentProtocol заполняет постоянную обтурацию с контролем апекса", () => {
+		const obtuResult = applyObturationPermanentProtocol([], 46); // нижний моляр
+		assert.equal(obtuResult.canals.length, 3);
+		assert.ok(obtuResult.radiologyControl.includes("физиологического апекса"));
+		assert.ok(obtuResult.radiologyControl.includes("без выхода за верхушку"));
+	});
+});
+
 

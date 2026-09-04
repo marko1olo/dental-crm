@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Settings, Sparkles, Trash2, Zap } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { getToothConfig, getToothPath } from "../../utils/math/toothGeometry";
@@ -288,6 +288,9 @@ export interface ToothChartProps {
 	showPeriodontalBoneLoss?: boolean | undefined;
 	activeQuadrant?: OdontogramQuadrantId | undefined;
 	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
+	onMarkIntactDentition?: (() => void) | undefined;
+	onMarkWisdomTeethMissing?: (() => void) | undefined;
+	hideExpressActions?: boolean | undefined;
 	className?: string | undefined;
 }
 
@@ -2446,6 +2449,9 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	showPeriodontalBoneLoss = true,
 	activeQuadrant: controlledQuadrant,
 	onQuadrantChange,
+	onMarkIntactDentition,
+	onMarkWisdomTeethMissing,
+	hideExpressActions = false,
 	className = "",
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -2490,6 +2496,36 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			} else if (mode === "adult" && !["Q1", "Q2", "Q3", "Q4"].includes(currentQuadrant)) {
 				handleSelectQuadrant("Q1");
 			}
+		}
+	};
+
+	const handleMarkIntactDentition = () => {
+		if (onMarkIntactDentition) {
+			onMarkIntactDentition();
+			return;
+		}
+		if (onQuickStateChange) {
+			const allTargets = isMixedEffective
+				? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH]
+				: isPediatricEffective
+					? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+					: [...ALL_ADULT_TEETH_NUMBERS];
+			onQuickStateChange(allTargets, "Healthy");
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast("⚡ Санирован: вся зубная формула отмечена интактной", "success");
+		}
+	};
+
+	const handleMarkWisdomTeethMissing = () => {
+		if (onMarkWisdomTeethMissing) {
+			onMarkWisdomTeethMissing();
+			return;
+		}
+		if (onQuickStateChange) {
+			const wisdomTeeth = [18, 28, 38, 48];
+			onQuickStateChange(wisdomTeeth, "Missing");
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast("⚡ Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
 		}
 	};
 
@@ -2754,6 +2790,38 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		<div className={`tooth-chart-container ${className}`.trim()} ref={containerRef}>
 			{/* Shared SVG Shaders & Gradients */}
 			<DenteToothSvgDefs />
+
+			{/* 1-Click Express Formula Actions (Mandate 8e: Санирован / Интактный, Адентия 8-ок) */}
+			{!hideExpressActions && (
+				<div
+					className="odontogram-express-bar mb-2 select-none flex items-center gap-2 flex-wrap"
+					data-testid="tooth-chart-express-actions"
+				>
+					<button
+						type="button"
+						onClick={handleMarkIntactDentition}
+						className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+						title="⚡ 1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
+						data-testid="tooth-chart-mark-intact-btn"
+					>
+						<Zap size={14} className="text-emerald-600 dark:text-emerald-400" />
+						<span>⚡ Санирован / Интактный</span>
+					</button>
+
+					{!isPediatricEffective && (
+						<button
+							type="button"
+							onClick={handleMarkWisdomTeethMissing}
+							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+							title="⚡ 1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+							data-testid="tooth-chart-mark-wisdom-missing-btn"
+						>
+							<Zap size={14} className="text-zinc-500" />
+							<span>⚡ Без 8-ок (18, 28, 38, 48)</span>
+						</button>
+					)}
+				</div>
+			)}
 
 			{/* Responsive Dentition Formula Switcher (Adult 11–48 / Pediatric 51–85 / Mixed 24) */}
 			{!hideDentitionSwitcher && (

@@ -16,3 +16,5 @@ export * from "./TreatmentPlanPresenterModal";
 export * from "./TreatmentPlanRoadmap";
 export * from "./TreatmentPlanModule";
 export * from "./CuratorPlanAssignmentModal";
+export * from "./treatmentPlanBundlesEngine";
+export * from "./ClinicalBundlesPanel";

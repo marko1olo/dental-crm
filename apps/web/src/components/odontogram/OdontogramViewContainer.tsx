@@ -118,6 +118,8 @@ export interface OdontogramViewContainerProps {
 	isMultiSelectMode?: boolean | undefined;
 	onToggleMultiSelect?: ((enabled: boolean) => void) | undefined;
 	onSelectTeethGroup?: ((teeth: number[]) => void) | undefined;
+	onMarkIntactDentition?: (() => void) | undefined;
+	onMarkWisdomTeethMissing?: (() => void) | undefined;
 	patientId?: string | undefined;
 }
 
@@ -153,6 +155,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	isMultiSelectMode,
 	onToggleMultiSelect,
 	onSelectTeethGroup,
+	onMarkIntactDentition,
+	onMarkWisdomTeethMissing,
 	patientId,
 }) => {
 	// 1. Read mode from zustand app store or initialViewMode or localStorage preferences
@@ -175,12 +179,35 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [isLiveInvoiceOpen, setIsLiveInvoiceOpen] = useState<boolean>(false);
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
 	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
-	const [isConfirmSanitationModalOpen, setIsConfirmSanitationModalOpen] = useState<boolean>(false);
 	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
 	const [endoDrawerTooth, setEndoDrawerTooth] = useState<number | null>(null);
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [isLocalPerioOpen, setIsLocalPerioOpen] = useState<boolean>(false);
+
+	const handleMarkIntactDentition = useCallback(() => {
+		if (onMarkIntactDentition) {
+			onMarkIntactDentition();
+			return;
+		}
+		const allTeeth = pediatricMode
+			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+			: [...ALL_ADULT_TEETH_NUMBERS];
+		onQuickStateChange?.(allTeeth, "Healthy");
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("⚡ Санирован: вся зубная формула отмечена интактной (здоровой)", "success");
+	}, [onMarkIntactDentition, pediatricMode, onQuickStateChange]);
+
+	const handleMarkWisdomTeethMissing = useCallback(() => {
+		if (onMarkWisdomTeethMissing) {
+			onMarkWisdomTeethMissing();
+			return;
+		}
+		const wisdomTeeth = [18, 28, 38, 48];
+		onQuickStateChange?.(wisdomTeeth, "Missing");
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("⚡ Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
+	}, [onMarkWisdomTeethMissing, onQuickStateChange]);
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 	const moreMenuRef = React.useRef<HTMLDivElement>(null);
@@ -371,6 +398,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		hideQuadrantSwitcher,
 		activeQuadrant: controlledQuadrant,
 		onQuadrantChange,
+		onMarkIntactDentition: handleMarkIntactDentition,
+		onMarkWisdomTeethMissing: handleMarkWisdomTeethMissing,
 		showWisdomTeeth,
 		showPulpAndCanals,
 		className: "",
@@ -431,17 +460,33 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							})}
 						</div>
 
-						{/* 1-Click Total Sanitation Action */}
+						{/* 1-Click Total Sanitation & Wisdom Absence Action Triggers */}
 						{onQuickStateChange && (
-							<button
-								type="button"
-								onClick={() => setIsConfirmSanitationModalOpen(true)}
-								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--ok-bg,rgba(16,185,129,0.15))] text-[var(--ok-fg,#10b981)] hover:opacity-90 border border-[var(--ok-fg,rgba(16,185,129,0.3))] transition-all cursor-pointer shrink-0"
-								title="Тотальная санация: пометить все зубы здоровыми (Healthy) в 1 клик с подтверждением"
-								data-testid="total-sanitation-btn"
-							>
-								Санация
-							</button>
+							<div className="flex items-center gap-1 shrink-0">
+								<button
+									type="button"
+									onClick={handleMarkIntactDentition}
+									className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+									title="⚡ 1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
+									data-testid="mark-intact-dentition-btn"
+								>
+									<Zap size={13} className="text-emerald-600 dark:text-emerald-400" />
+									<span>⚡ Санирован</span>
+								</button>
+
+								{!pediatricMode && (
+									<button
+										type="button"
+										onClick={handleMarkWisdomTeethMissing}
+										className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+										title="⚡ 1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+										data-testid="mark-wisdom-missing-btn"
+									>
+										<Zap size={13} className="text-zinc-500" />
+										<span>⚡ Без 8-ок</span>
+									</button>
+								)}
+							</div>
 						)}
 					</div>
 
@@ -884,63 +929,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 				/>
 			)}
 
-			{/* Confirmation Modal for Total Sanitation / Bulk Reset */}
-			{isConfirmSanitationModalOpen && (
-				<div
-					className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby="confirm-sanitation-title"
-				>
-					<div className="bg-[var(--paper,#ffffff)] dark:bg-zinc-900 border border-[var(--line,#e2e8f0)] dark:border-zinc-800 text-[var(--ink,#0f172a)] w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
-						<div className="flex items-start gap-3">
-							<div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/25">
-								<AlertTriangle size={22} />
-							</div>
-							<div className="space-y-1">
-								<h3 id="confirm-sanitation-title" className="text-base font-extrabold text-[var(--ink,#0f172a)] dark:text-zinc-100 m-0">
-									Подтверждение тотальной санации всех зубов
-								</h3>
-								<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
-									Вы собираетесь пометить ВСЕ зубы интактными (здоровыми). Все текущие отметки кариеса, пульпита и пломб на схеме будут сброшены.
-								</p>
-							</div>
-						</div>
 
-						<div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 font-medium flex items-center gap-2">
-							<AlertTriangle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
-							<span>Это действие изменит статус всех зубов в зубной формуле пациента.</span>
-						</div>
-
-						<div className="flex flex-col sm:flex-row items-stretch gap-2.5 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-zinc-800">
-							<button
-								type="button"
-								onClick={() => setIsConfirmSanitationModalOpen(false)}
-								className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-[var(--teal)] hover:opacity-90 text-[var(--on-teal,#ffffff)] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
-								data-testid="btn-cancel-sanitation"
-							>
-								<X size={20} />
-								<span>Отмена (Оставить всё как есть)</span>
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									const allTeeth = pediatricMode
-										? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
-										: [...ALL_ADULT_TEETH_NUMBERS];
-									onQuickStateChange?.(allTeeth, "Healthy");
-									setIsConfirmSanitationModalOpen(false);
-								}}
-								className="flex-1 min-h-[52px] px-6 py-3 rounded-2xl text-base font-black bg-rose-600 hover:bg-rose-500 text-white transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99]"
-								data-testid="btn-confirm-sanitation"
-							>
-								<Trash2 size={20} />
-								<span>Да, удалить данные</span>
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
 
 			{/* Tier 2 Context Drawer for Selected Tooth */}
 			{contextDrawerTooth !== null && (

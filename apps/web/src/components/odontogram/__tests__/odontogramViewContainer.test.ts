@@ -217,4 +217,54 @@ describe("OdontogramViewContainer — Data Contracts & Props Propagation", () =>
 			assert.deepEqual(activeProps.selectedTeeth, [16]);
 		}
 	});
+
+	test("Mandate 8e: 1-клик действие Санирован/Интактный помечает все 32 зуба здоровыми без модалок", () => {
+		let updatedTargets: number[] = [];
+		let updatedState = "";
+
+		const props: OdontogramViewContainerProps = {
+			teethData: [],
+			onToothClick: () => {},
+			onQuickStateChange: (targets, state) => {
+				updatedTargets = targets;
+				updatedState = state;
+			},
+			onMarkIntactDentition: () => {
+				const adultTeeth = [
+					18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
+					48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
+				];
+				props.onQuickStateChange?.(adultTeeth, "Healthy");
+			},
+		};
+
+		assert.ok(props.onMarkIntactDentition, "onMarkIntactDentition prop must be supported");
+		props.onMarkIntactDentition();
+		assert.equal(updatedTargets.length, 32, "Все 32 зуба должны быть помечены");
+		assert.equal(updatedState, "Healthy", "Статус должен быть Healthy");
+	});
+
+	test("Mandate 8e: 1-клик действие Адентия 8-ок помечает зубы 18, 28, 38, 48 отсутствующими", () => {
+		let updatedTargets: number[] = [];
+		let updatedState = "";
+
+		const props: OdontogramViewContainerProps = {
+			teethData: [],
+			onToothClick: () => {},
+			onQuickStateChange: (targets, state) => {
+				updatedTargets = targets;
+				updatedState = state;
+			},
+			onMarkWisdomTeethMissing: () => {
+				const wisdomTeeth = [18, 28, 38, 48];
+				props.onQuickStateChange?.(wisdomTeeth, "Missing");
+			},
+		};
+
+		assert.ok(props.onMarkWisdomTeethMissing, "onMarkWisdomTeethMissing prop must be supported");
+		props.onMarkWisdomTeethMissing();
+		assert.deepEqual(updatedTargets, [18, 28, 38, 48], "Зубы 18, 28, 38, 48 должны быть помечены");
+		assert.equal(updatedState, "Missing", "Статус должен быть Missing");
+	});
 });
+

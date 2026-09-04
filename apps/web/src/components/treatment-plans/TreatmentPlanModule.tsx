@@ -62,6 +62,12 @@ import { TreatmentPlanComparatorModal } from "./comparator/TreatmentPlanComparat
 import { StagePaymentPlanModal } from "./stagePayment/StagePaymentPlanModal";
 import { TreatmentPlanPriceValidatorModal } from "./validation/TreatmentPlanPriceValidatorModal";
 import { TreatmentPlanPresenterModal } from "./TreatmentPlanPresenterModal";
+import { ClinicalBundlesPanel } from "./ClinicalBundlesPanel";
+import {
+	applyClinicalBundleToStages,
+	getClinicalBundleById,
+	type ClinicalBundleId,
+} from "./treatmentPlanBundlesEngine";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
 import { InvoiceGenerationModal } from "../finance/InvoiceGenerationModal";
 import { LabWorkOrderModal } from "../lab/orders/LabWorkOrderModal";
@@ -222,6 +228,14 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		} finally {
 			setIsCopilotExecuting(false);
 		}
+	};
+
+	const handleApplyClinicalBundle = (bundleId: ClinicalBundleId, toothNumber?: number) => {
+		const bundle = getClinicalBundleById(bundleId);
+		const updated = applyClinicalBundleToStages(stages, bundleId, toothNumber);
+		setCustomStages(updated);
+		const toothDesc = bundle?.requiresTooth ? ` (зуб ${toothNumber ?? bundle?.defaultTooth})` : "";
+		showToast(`Пакет «${bundle?.shortTitle || bundleId}» успешно добавлен в план${toothDesc}!`, "success", 4000);
 	};
 
 	const totalItemsCount = useMemo(() => {
@@ -938,6 +952,12 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					</div>
 				)}
 			</div>
+
+			{/* Turnkey Clinical Packages 1-Click Panel (Mandate 8e) */}
+			<ClinicalBundlesPanel
+				onApplyBundle={handleApplyClinicalBundle}
+				initialToothNumber={orthopedicTeeth[0] || 16}
+			/>
 
 			{/* Main Content Area */}
 			{activeViewTab === "3tier" ? (

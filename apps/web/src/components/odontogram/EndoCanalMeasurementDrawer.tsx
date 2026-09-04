@@ -52,6 +52,15 @@ import {
 	QUICK_LENGTH_PRESETS,
 	STANDARD_ENDO_PRESET,
 	CAOH2_ENDO_PRESET,
+	PULPITIS_COMPLETE_PRESET,
+	PERIODONTITIS_TEMP_PRESET,
+	OBTURATION_PERMANENT_PRESET,
+	getAnatomicalWorkingLength,
+	applyAnatomicalWorkingLengths,
+	applyPulpitisProtocol,
+	applyPeriodontitisTempProtocol,
+	applyObturationPermanentProtocol,
+	applyExpressApicalEndoProtocol,
 	applyStandardEndoProtocol,
 	applyCaOh2EndoProtocol,
 	formatEndoCanalsTable043,
@@ -293,7 +302,44 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		showToast("Восстановлены анатомические каналы по умолчанию", "info");
 	}, [toothNumber]);
 
-	// 1-Click Standard Protocols
+	// 1-Click Clinical Presets
+	const handleApplyPulpitisPreset = useCallback(() => {
+		const preset = applyPulpitisProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен 1-клик протокол: Пульпит (ProTaper F2 + AH Plus)", "success");
+	}, [canals, toothNumber]);
+
+	const handleApplyPeriodontitisTempPreset = useCallback(() => {
+		const preset = applyPeriodontitisTempProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен 1-клик протокол: Периодонтит 1 посещение (Каласепт)", "info");
+	}, [canals, toothNumber]);
+
+	const handleApplyObturationPermanentPreset = useCallback(() => {
+		const preset = applyObturationPermanentProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен 1-клик протокол: Постоянная обтурация до апекса", "success");
+	}, [canals, toothNumber]);
+
+	const handleApplyAnatomicalLengths = useCallback(() => {
+		const updated = applyAnatomicalWorkingLengths(canals, toothNumber);
+		setCanals(updated);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(`Анатомическая длина каналов автозаполнена для зуба #${toothNumber}`, "info");
+	}, [canals, toothNumber]);
+
 	const handleApplyStandardProtocol = useCallback(() => {
 		const preset = applyStandardEndoProtocol(canals, toothNumber);
 		setCanals(preset.canals);
@@ -314,11 +360,39 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		showToast("Применен протокол временной повязки Ca(OH)2 (Каласепт)", "info");
 	}, [canals, toothNumber]);
 
+	const handleApplyExpressApicalPreset = useCallback(() => {
+		const preset = applyExpressApicalEndoProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			"⚡ Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)",
+			"success",
+		);
+	}, [canals, toothNumber]);
+
+	const sanitizeCanalsForSubmission = useCallback(
+		(inputCanals: EndoCanalData[]): EndoCanalData[] => {
+			return inputCanals.map((c) => ({
+				...c,
+				workingLengthMm: c.workingLengthMm || getAnatomicalWorkingLength(toothNumber, c.canalName),
+				masterApicalFile: c.masterApicalFile || "ISO 25 (#25 красный)",
+				taper: c.taper || ".06 (Конусность 6%)",
+				referencePoint: c.referencePoint || "Реперный бугор",
+				obturationTechnique: c.obturationTechnique || "Гуттаперча + Силер (AH Plus)",
+			}));
+		},
+		[toothNumber],
+	);
+
 	// 1-Click Insertion into Visit Note (043/u)
 	const handleInsertToProtocol = useCallback(() => {
+		const effectiveCanals = sanitizeCanalsForSubmission(canals);
 		const protocolText = generateEndoProtocol043({
 			toothNumber,
-			canals,
+			canals: effectiveCanals,
 			irrigation,
 			rotarySystem,
 			radiologyControl,
@@ -339,7 +413,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 
 		// 2. Callback if provided
 		if (onInsertToProtocol) {
-			onInsertToProtocol(protocolText, canals);
+			onInsertToProtocol(protocolText, effectiveCanals);
 		}
 
 		SoundFeedbackService.getInstance().playActionSuccess();
@@ -352,14 +426,16 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		radiologyControl,
 		apexLocatorModel,
 		onInsertToProtocol,
+		sanitizeCanalsForSubmission,
 	]);
 
 	// Save clinical canal data
 	const handleSave = useCallback(async () => {
 		setIsSaving(true);
+		const effectiveCanals = sanitizeCanalsForSubmission(canals);
 		try {
 			const clinicalData: EndoToothClinicalData = {
-				canals,
+				canals: effectiveCanals,
 				irrigation,
 				rotarySystem,
 				radiologyControl,
@@ -367,7 +443,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 			};
 
 			if (onSaveCanals) {
-				await onSaveCanals(canals, clinicalData);
+				await onSaveCanals(effectiveCanals, clinicalData);
 			}
 
 			SoundFeedbackService.getInstance().playActionSuccess();
@@ -386,6 +462,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		toothNumber,
 		onSaveCanals,
 		onClose,
+		sanitizeCanalsForSubmission,
 	]);
 
 	if (!isOpen) return null;
@@ -472,49 +549,114 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 				</div>
 
 				{/* ═══ 2.5 1-CLICK PROTOCOL TOOLBAR ═══ */}
-				<div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap shrink-0">
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<button
-							type="button"
-							data-testid="drawer-btn-standard-endo-protocol"
-							onClick={handleApplyStandardProtocol}
-							className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
-							title="1 клик: ProTaper/WaveOne, NaOCl 3% + ЭДТА, обтурация AH Plus + гуттаперча"
-						>
+				<div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-2 shrink-0">
+					<div className="flex items-center justify-between gap-2 flex-wrap">
+						<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
 							<Sparkles size={14} />
-							<span>Стандарт (ProTaper + AH-Plus)</span>
-						</button>
-
+							<span>⚡ 1-клик протоколы:</span>
+						</div>
 						<button
 							type="button"
-							data-testid="drawer-btn-caoh2-endo-protocol"
-							onClick={handleApplyCaOh2Protocol}
-							className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
-							title="1 клик: временная лечебная повязка с гидроксидом кальция Ca(OH)2"
+							data-testid="btn-endo-anatomical-autofill"
+							onClick={handleApplyAnatomicalLengths}
+							className="min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-black bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1 transition-all cursor-pointer active:scale-98"
+							title="Автозаполнение анатомической рабочей длины по номеру зуба в 1 клик (резцы 22 мм, клыки 25 мм, премоляры 21 мм, моляры щечные 20 мм / нёбный 22 мм)"
 						>
-							<ShieldCheck size={14} />
-							<span>Повязка Ca(OH)2</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleResetDefaults}
-							className="min-h-[38px] px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer"
-							title="Сброс к стандарту FDI"
-						>
-							<RotateCcw size={13} />
-							<span>Стандарт FDI</span>
+							<Zap size={13} className="text-indigo-600 dark:text-indigo-400" />
+							<span>⚡ Авто-РД (FDI)</span>
 						</button>
 					</div>
 
-					<button
-						type="button"
-						onClick={handleAddCanal}
-						className="min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-sm transition-all cursor-pointer"
-					>
-						<Plus size={14} />
-						<span>+ Канал</span>
-					</button>
+					<div className="flex items-center justify-between gap-2 flex-wrap">
+						<div className="flex items-center gap-1.5 flex-wrap">
+							<button
+								type="button"
+								data-testid="btn-endo-preset-pulpitis-complete"
+								onClick={handleApplyPulpitisPreset}
+								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98"
+								title="⚡ 1-клик: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)"
+							>
+								<Zap size={13} />
+								<span>⚡ Пульпит: ProTaper F2 + AH Plus</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="btn-endo-preset-periodontitis-temp"
+								onClick={handleApplyPeriodontitisTempPreset}
+								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+								title="⚡ 1-клик: Периодонтит 1 посещение (распломбировка, УЗ-активация NaOCl, временное вложение гидроокиси кальция Каласепт на 14 дней)"
+							>
+								<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
+								<span>⚡ Периодонтит: Каласепт</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="btn-endo-preset-obturation-permanent"
+								onClick={handleApplyObturationPermanentPreset}
+								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
+								title="⚡ 1-клик: Обтурация каналов (постоянное пломбирование, рентген-контроль: гомогенно до апекса, без выхода за верхушку)"
+							>
+								<Check size={13} />
+								<span>⚡ Обтурация до апекса</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="drawer-btn-express-apical-endo-protocol"
+								onClick={handleApplyExpressApicalPreset}
+								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1.5 shadow-sm shadow-teal-600/20 transition-all cursor-pointer active:scale-98"
+								title="⚡ 1-клик: Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)"
+							>
+								<Zap size={13} />
+								<span>⚡ Обтурированы до апекса (апекслокатор + снимок)</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="drawer-btn-standard-endo-protocol"
+								onClick={handleApplyStandardProtocol}
+								className="sr-only"
+								tabIndex={-1}
+								aria-hidden="true"
+							>
+								Стандарт (ProTaper + AH-Plus)
+							</button>
+
+							<button
+								type="button"
+								data-testid="drawer-btn-caoh2-endo-protocol"
+								onClick={handleApplyCaOh2Protocol}
+								className="sr-only"
+								tabIndex={-1}
+								aria-hidden="true"
+							>
+								Повязка Ca(OH)2
+							</button>
+						</div>
+
+						<div className="flex items-center gap-1.5">
+							<button
+								type="button"
+								onClick={handleResetDefaults}
+								className="min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer"
+								title="Сброс к стандарту FDI"
+							>
+								<RotateCcw size={13} />
+								<span>Стандарт FDI</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={handleAddCanal}
+								className="min-h-[34px] px-3 py-1 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+							>
+								<Plus size={13} />
+								<span>+ Канал</span>
+							</button>
+						</div>
+					</div>
 				</div>
 
 				{/* ═══ 3. MAIN CANAL LIST (SCROLLABLE) ═══ */}
@@ -799,6 +941,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 					<div className="flex items-center gap-2 w-full sm:w-auto">
 						<button
 							type="button"
+							data-testid="btn-endo-save-protocol-043"
 							onClick={handleInsertToProtocol}
 							className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all min-h-[44px] cursor-pointer"
 							title="Вставить протокол эндодонтии в медицинскую карту 043/у"
