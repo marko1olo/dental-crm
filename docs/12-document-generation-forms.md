@@ -1,8 +1,16 @@
-# Document Generation Forms
+# Document Generation Forms & Legal Documentation Highway
 
-Date: 2026-05-18
+Date: 2026-05-18 (Updated 2026-09-04)
 
-Goal: the document generator must produce useful clinic drafts without pretending to be a signed legal system.
+> ⚠️ **Нормативная база и системная конституция:**
+> * **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — Высшая Конституция проекта (CTO Supremacy, презумпция брака, Apple/Mac HIG, Мандат 8e — Запрет на палки в колёса врачам и персоналу).
+> * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный интертекстуальный навигационный хаб.
+> * **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Жизненный цикл медицинской документации, печать черновиков, штампы УКЭП/ПЭП и headless PDF.
+> * **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Канонический реестр клинических протоколов 043/у по МКБ-10, пакетов 804н и СанПиН 3.3686-21.
+> * **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Клинический движок, одонтограмма, правила валидации визитов и защита автономии врача.
+> * **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Финансовый контур, касса 54-ФЗ и справка ФНС КНД 1151156.
+
+Goal: The document generator produces legally grounded, audit-ready, and print-perfect medical, legal, and financial documents with zero friction for doctors and clinic administrators (Mandate 8e).
 
 ## Current Catalog
 
@@ -53,18 +61,40 @@ Tax forms:
 - legacy pre-2024 tax deduction certificate draft for 2021-2023 payments;
 - payment registry for the tax certificate.
 
-## Verified Legal Anchors
+## Verified Legal Anchors & Regulatory Invariants
 
-- Tax deduction certificate for payments from 2024 onward: FNS Order of 2023-11-08 N EA-7-11/824@, KND 1151156. The app renders a clinic-reviewed HTML draft with a print-control block for лист 001/002, certificate number, correction number, payer/patient flag, identity-document kind code, service-code sums, and fiscal receipt basis. The API also exports a guarded XML draft at `/api/documents/:id/tax-xml` shaped to the published XSD 5.01 fields and runs an internal DENTE structural preflight before archiving; it is still not a signed ТКС package and not a substitute for external XSD/КЭП/ЭДО validation. Official FNS attachments for appendices 1-4 and the XSD 5.01 file are pinned in `docs/legal-sources/fns-knd-1151156.json` with bytes and SHA-256 so source drift is visible.
-- Pre-2024 treatment expenses must not be rendered as KND 1151156. The app routes 2021-2023 expenses to the legacy certificate draft based on the old certificate process, and blocks the legacy draft for 2024+ payments.
-- Informed consent/refusal: Health Ministry Order of 2021-11-12 N 1051n is the general anchor for informed voluntary consent/refusal forms through its stated validity period. Health Ministry Order of 2025-04-04 N 165n is a separate informed-consent/refusal source for clinical approbation workflows and must not be silently treated as the routine private dental consent template.
-- Paid medical service contract/act/payment forms: Government Resolution of 2023-05-11 N 736 is the anchor for paid medical service rules; the app drafts clinic-side documents and does not replace legal review.
-- Medical document copies/releases: Health Ministry Order of 2020-07-31 N 789n is the anchor. The generator separates the patient request from the release receipt and makes DICOM/source-file handoff explicit.
-- Radiology directions and result handling: Health Ministry Order of 2020-06-09 N 560n is the anchor for rules of radiological examinations. The DENTE X-ray/CBCT referral is a clinic workflow direction with required clinical question, indication, area, safety note, and result handoff fields; it is not a replacement for a radiology department's internal protocol.
-- Unified outpatient medical documentation: Health Ministry Order of 2025-05-13 N 274n was published on 2025-05-30, came into force on 2025-09-01, and is the current official anchor for exact outpatient record forms and maintenance procedures. DENTE now has a dedicated structured renderer for form 025/у, `Медицинская карта пациента, получающего медицинскую помощь в амбулаторных условиях`. It maps clinic legal facts, patient administrative facts, final diagnoses, signed specialist visit records, dental clinical rows, observations, events, X-ray dose rows, final epicrisis and required operator confirmations. The doctor-facing 025/у draft is recovered locally per patient/visit/form until changed, while final issue still requires signed source visits and operator confirmations. DENTE also maps form 043/у, `Медицинская карта стоматологического больного`, as a separate structured payload with organization/patient/doctor facts, visit clinical text, and required `clinicalToothRows` (tooth/segment, surfaces, status, planned action). Empty clinical tooth rows and unparseable visit/birth/license dates block issue. DENTE still does not claim ЕГИСЗ/MIS electronic exchange, УКЭП signing or official electronic medical-card storage for these forms.
+- **Tax deduction certificate for payments from 2024 onward (KND 1151156, FNS Order N EA-7-11/824@):**
+  * **Нормативная база:** Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@, пп. 3 п. 1 ст. 219 Налогового кодекса РФ.
+  * **Код услуги 01 (Обычное лечение):** Стандартная стоматологическая терапия, эстетическая реставрация, профессиональная гигиена, удаление зубов, базовое протезирование. Установлен совокупный предельный лимит социального налогового вычета — 150 000 ₽ в год (максимальный возврат 13% составляет до 19 500 ₽).
+  * **Код услуги 02 (Дорогостоящее лечение по Постановлению Правительства РФ № 458):** Дентальная имплантация, костно-пластические и реконструктивные операции на челюстях, синус-лифтинг, сложное ортопедическое протезирование на имплантатах. Предельный лимит отсутствует — налоговый вычет 13% рассчитывается со **всей фактически оплаченной суммы** без ограничений.
+  * **XML экспорт и валидация XSD 5.01:** Маршрут API `/api/documents/:id/tax-xml` генерирует машиночитаемый XML с корневым тегом `Документ` и атрибутом `КНД="1184043"`, проходящим внутренний структурный префлайт DENTE (проверка реквизитов организации, ИНН налогоплательщика, паспортных данных, разделения сумм по кодам 01 и 02). Справка связывается исключительно с проверенными фискальными чеками 54-ФЗ (`fiscalReceiptNumber`, `fiscalReceiptDate`).
+  * **Защита от повторной выдачи:** Повторная генерация справки за тот же налоговый период по тому же пациенту и налогоплательщику блокируется до аннулирования предыдущей через регламент `voidAttestation`.
+- **Pre-2024 treatment expenses:** Расходы на лечение за 2021–2023 годы формируются по прежней форме Справки об оплате медицинских услуг (Приказ Минздрава РФ и МНС РФ № 289/БГ-3-04/256) и строго блокируются для платежей с 2024 года.
+- **Информированные добровольные согласия и отказы (ИДС по Приказу Минздрава РФ № 1051н):**
+  * **Нормативная база:** Ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ «Об основах охраны здоровья граждан в РФ», Приказ Минздрава России от 12.11.2021 № 1051н.
+  * **Специализированные пакеты:** `CONSENT_THERAPY` (кариес, эндодонтия), `CONSENT_SURGERY_IMPLANT` (удаление, имплантация, костная пластика), `CONSENT_ORTHODONTICS` (брекеты, элайнеры), `CONSENT_ORTHOPEDICS` (коронки, виниры, съемные протезы), `CONSENT_HYGIENE_BLEACHING` (УЗ-скейлинг, Air-Flow, фторирование, отбеливание), `CONSENT_ANESTHESIA` (инфильтрационная, проводниковая анестезия препаратами артикаина/мепивакаина), `CONSENT_PERSONAL_DATA` (ФЗ № 152-ФЗ).
+  * **Цифровая подпись ПЭП:** Реализована через сенсорный холст (`SignatureCanvasPad`) с динамическим расчетом скорости росчерка, сглаживанием кривыми Безье и экспортом в защищенный векторный SVG для встраивания в PDF.
+  * **Отказ от медицинского вмешательства:** Формируется с обязательным разъяснением пациенту клинических рисков и возможных осложнений.
+- **Договор на оказание платных медицинских услуг (Постановление Правительства РФ № 736):**
+  * **Нормативная база:** Постановление Правительства РФ от 11.05.2023 № 736 «Об утверждении Правил предоставления медицинскими организациями платных медицинских услуг».
+  * **Регистратура без палок в колёса (Мандат 8e):** Регистратор имеет законное и техническое право распечатать бланк договора с суммой 0 ₽ и строками прочерков `_______` для ручного внесения паспортных данных пациентом до врачебного осмотра **БЕЗ 403-ошибок**.
+  * **Запрет на блокировку:** Система **НИКОГДА** не требует обязательного выбора ассистента или наличия согласованного плана лечения для печати бланка договора.
+- **Акты выполненных услуг по Номенклатуре медицинских услуг (Приказ Минздрава РФ № 804н):**
+  * **Нормативная база:** Приказ Минздрава России от 13.10.2017 № 804н.
+  * **Состав акта:** Коды медицинских вмешательств разделов A11 (инъекции, анестезия), A16 (оперативные вмешательства, препарирование, пломбирование), A06 (рентгенологические исследования), A02 (функциональные исследования, снятие оттисков), гарантийные обязательства клиники и установленный срок службы.
+  * **Скрытие микро-расходников (`hideInPatientPresentation: true`):** Мелкие расходные материалы (валики, салфетки, перчатки, матричные ленты, полировочные пасты) автоматически скрываются из клиентского акта, сохраняясь в чеке как часть комплексной услуги, но списываются со склада с поштучной точностью.
+- **Регламент статуса и штампа «ЧЕРНОВИК» (Мандат 8e):**
+  * **Открытый приём (`status: "draft"`):** Печать Формы 043/у, плана лечения или сметы разрешена в любой момент. Документ снабжается полупрозрачным фоновым водяным знаком под углом -32° `«ЧЕРНОВИК»` и статусной плашкой в шапке `«ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)»`.
+  * **Закрытый приём (`status: "signed"`):** Документ печатается со штампом `«ПОДПИСАНО ВРАЧОМ»` либо отметкой усиленной квалифицированной электронной подписи (УКЭП КриптоПро ГОСТ Р 34.10-2012 / ГОСТ Р 34.11-2012) с указанием номера сертификата и периода действия.
+  * **Версионный аудит («Исправленному верить»):** Жесткие 24-часовые замки запрещены. Врач правит карту при необходимости; каждое сохранение создает ревизию, а на печати выводится юридический штамп `«ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»` с фиксацией автора и даты изменения.
+- **Выдача копий и выписок из медицинских документов (Приказ Минздрава РФ № 789н):**
+  * Разделение заявления пациента и расписки о получении оригиналов/копий, эксплицитный экспорт DICOM-исследований на цифровых носителях.
+- **Рентгенологические направления (Приказ Минздрава РФ № 560н):**
+  * Направления на RVG / ОПТГ / КЛКТ с указанием клинической цели, анатомической зоны, противопоказаний и дозового контроля.
+- **Единая амбулаторная медицинская документация (Приказ Минздрава РФ № 274н):**
+  * Структурированный маппинг Формы № 025/у и специализированной Формы № 043/у (стоматологическая карта) с обязательными клиническими зубными строками (`clinicalToothRows`), привязкой к диагнозам МКБ-10 и визитам.
 
-
-Source checks verified again on 2026-05-25:
+Source checks verified again on 2026-05-25 (re-verified 2026-09-04):
 - FNS medical social deduction page: https://www.nalog.gov.ru/rn77/fl/interest/tax_deduction/fl_medik/
 - FNS order page for EA-7-11/824@: https://www.nalog.gov.ru/rn77/about_fts/docs/14112883/
 - FNS KND 1151156 form PDF: https://www.nalog.gov.ru/html/sites/www.new.nalog.ru/2023/about_fts/docs_fts/pril1_14112883.pdf
@@ -242,3 +272,79 @@ The same smoke now rejects tax certificate issue when an included fiscal payment
 - Issued HTML preview opens `/api/documents/:id/html` directly instead of fetching the HTML into a browser-owned `blob:` URL. The server response keeps the API `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, and restrictive HTML CSP headers in force for the preview.
 - If the browser blocks the popup, the UI leaves visible fallback guidance and immediately invokes the existing authenticated `html?download=1` archive download path. When the current clinic session relies on a custom clinical-secret header, the UI also uses the authenticated download fallback instead of opening a new tab that cannot carry that header. Operators still have the row-level `Скачать HTML` action when mobile Safari, clinic PCs, or desktop shells reject the automatic fallback.
 - `npm run smoke:document-html-preview-source` guards the source path against `fetch -> blob -> window.open(blob:)` regressions and checks the server HTML header hook.
+
+---
+
+## Detailed Legal Forms Specification & Execution Protocol
+
+### 1. Бланки информированных добровольных согласий (ИДС по Приказу Минздрава РФ № 1051н)
+- **Нормативная основа:** Статья 20 Федерального закона от 21.11.2011 № 323-ФЗ «Об основах охраны здоровья граждан в Российской Федерации», Приказ Минздрава России от 12.11.2021 № 1051н.
+- **Архитектура пакетов согласий:**
+  * `CONSENT_THERAPY` (ИДС-01-ТЕР): лечение кариеса, пульпита, периодонтита, эндодонтическое вмешательство, эстетическая реставрация композитами.
+  * `CONSENT_SURGERY_IMPLANT` (ИДС-02-ХИР): простое и сложное удаление зубов, синус-лифтинг, костная пластика, дентальная имплантация, установка формирователей десны.
+  * `CONSENT_ORTHODONTICS` (ИДС-03-ОРТ): ортодонтическое лечение с применением несъемной брекет-системы или съемных капп-элайнеров, ретенционный период.
+  * `CONSENT_ORTHOPEDICS` (ИДС-04-ОРТОПЕД): несъемное (коронки, мостовидные протезы, виниры) и съемное протезирование, снятие оптических или силиконовых слепков.
+  * `CONSENT_HYGIENE_BLEACHING` (ИДС-05-ГИГ): профессиональная гигиена полости рта (УЗ-скейлинг, Air-Flow Clinpro), глубокое фторирование, клиническое и домашнее отбеливание.
+  * `CONSENT_ANESTHESIA` (ИДС-06-АНЕСТ): местное обезболивание (инфильтрационная, проводниковая, интралигаментарная анестезия препаратами на основе артикаина/мепивакаина с вазоконстрикторами).
+  * `CONSENT_PERSONAL_DATA` (СОГЛ-ПД-152): согласие на обработку персональных данных в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ.
+  * `REFUSAL_INTERVENTION` (ОТКАЗ-ОТ-ВМЕШАТЕЛЬСТВА): официальный отказ пациента от предложенного медицинского вмешательства с разъяснением возможных неблагоприятных исходов (развитие флегмоны, потеря зуба, остеомиелит).
+- **Сенсорная векторная подпись ПЭП (Touch/Pad):**
+  * Пациент расписывается на планшете у кресла или экране регистратуры (`SignatureCanvasPad.tsx`).
+  * Алгоритм Безье сглаживает кривые, рассчитывает динамическую скорость росчерка (`calculatePointVelocity`) и толщину штриха (`calculateStrokeWidth`).
+  * Результат экспортируется в защищенный векторный SVG и Base64 PNG с отметкой точного времени, IP-адреса и идентификатора устройства.
+- **Динамическая интерполяция клинических переменных:**
+  * `{{PATIENT_NAME}}`, `{{BIRTH_DATE}}`, `{{PASSPORT}}`, `{{DOCTOR_NAME}}`, `{{CLINIC_NAME}}`, `{{DIAGNOSIS_ICD}}`, `{{TOOTH_NUMBERS}}`, `{{DATE}}`.
+
+### 2. Договоры на оказание платных медицинских услуг (Постановление Правительства РФ № 736)
+- **Нормативная основа:** Постановление Правительства РФ от 11.05.2023 № 736 «Об утверждении Правил предоставления медицинскими организациями платных медицинских услуг».
+- **Регистратура без палок в колёса (Мандат 8e):**
+  * Администратор/регистратор клиники имеет безусловное законное и системное право распечатать официальный договор с суммой 0 ₽ и строками прочерков `_______` для ручного заполнения паспортных данных пациентом до первичного осмотра врачом.
+  * Система **НИКОГДА** не выдает ошибку `403 Forbidden` и не блокирует печать бланка договора из-за отсутствия предварительно составленного плана лечения или неприкрепленного ассистента врача.
+- **Типы договоров:**
+  * Двусторонний договор: Клиника — Совершеннолетний пациент (Потребитель / Заказчик в одном лице).
+  * Трехсторонний договор: Клиника — Законный представитель (Родитель / Опекун / Заказчик) — Несовершеннолетний пациент (Потребитель).
+
+### 3. Справки об оплате медицинских услуг для ФНС (КНД 1151156, коды 01 и 02)
+- **Нормативная основа:** Приказ ФНС России от 08.11.2023 № ЕА-7-11/824@, пп. 3 п. 1 ст. 219 НК РФ.
+- **Дифференциация кодов медицинских услуг:**
+  * **Код 01 (Обычное лечение):** Терапевтическое лечение кариеса и пульпита, профгигиена, пародонтологические манипуляции, простое удаление зубов, терапевтическая ортодонтия. Лимит совокупного социального вычета составляет 150 000 ₽ в год (максимальный возврат 13% — до 19 500 ₽).
+  * **Код 02 (Дорогостоящее лечение по Постановлению Правительства РФ № 458):** Дентальная имплантация, костная пластика (аугментация альвеолярного отростка), расщепление костного гребня, открытый и закрытый синус-лифтинг, сложное протезирование с опорой на дентальные имплантаты. **Лимит вычета отсутствует**: государство возвращает 13% со **всей фактически уплаченной суммы**.
+- **Интеграция с фискальным контуром 54-ФЗ:**
+  * Справка формируется исключительно на основе подтвержденных фискальных оплат: обязательна сверка номеров фискальных чеков (`fiscalReceiptNumber`) и фискальных дат (`fiscalReceiptDate`).
+  * Привязка к ИНН и паспортным данным реального налогоплательщика (если плательщик и пациент — разные лица, формируется Лист 001 и Лист 002).
+- **Машиночитаемый XML экспорт (XSD 5.01):**
+  * Эндпоинт `GET /api/documents/:id/tax-xml` выгружает валидированный XML документ с тегом `Документ` и кодом `КНД="1184043"`.
+  * Встроенный структурный префлайт проверяет: 4-значный код налогового органа (СОНО), ИНН/КПП клиники, паспортные данные, раздельные суммы по коду 01 и 02.
+  * Блокировка дублирующих справок в рамках одного налогового года и одного налогоплательщика.
+
+### 4. Акты выполненных услуг по Номенклатуре Минздрава РФ № 804н
+- **Нормативная основа:** Приказ Минздрава России от 13.10.2017 № 804н «Об утверждении номенклатуры медицинских услуг».
+- **Структура акта:**
+  * Коды разделов Номенклатуры: A11 (инъекции и обезболивание), A16 (хирургические и терапевтические вмешательства), A06 (рентгенологические исследования), A02 (диагностические приемы и снятие оттисков).
+  * Фиксация гарантийных сроков и сроков службы по каждому виду выполненных работ (например: пломба Estelite — гарантия 24 мес, срок службы 36 мес; коронка из диоксида циркония — гарантия 36 мес, срок службы 60 мес; имплантат Osstem — гарантия 120 мес).
+- **Скрытие микро-расходников (`hideInPatientPresentation: true`):**
+  * Копеечные вспомогательные материалы (валики, салфетки, перчатки, матричные системы) не выводятся в печатную форму акта пациента, чтобы исключить загромождение документа десятками мелких позиций.
+  * На складе материалы списываются со 100% точностью через технологические карты (BOM).
+
+### 5. Регламент водяного знака и статусного штампа «ЧЕРНОВИК» (Мандат 8e)
+- **Приём в процессе (`status: "draft"`):**
+  * Любая форма (043/у, 025/у, предварительная смета, согласование плана) выводится на печать с диагональным (-32°) полупрозрачным водяным знаком `«ЧЕРНОВИК»` по диагонали всего листа A4.
+  * В шапке документа размещается контрастная статусная плашка: `«ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)»`.
+- **Приём завершен (`status: "signed"`):**
+  * Документ печатается без водяного знака «ЧЕРНОВИК».
+  * В подвале выводится штамп `«ПОДПИСАНО ВРАЧОМ»` с ФИО врача, датой и точным временем подписания, либо синий графический штамп УКЭП (КриптоПро ГОСТ Р 34.10-2012) с номером квалифицированного сертификата.
+- **Версионный аудит («Исправленному верить»):**
+  * При внесении врачом изменений в ранее подписанный дневник система создает запись ревизии (`visit_diary_revisions`).
+  * При последующей печати выводится юридический штамп: `«ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»` с фиксацией автора изменений и точного таймстемпа.
+
+---
+
+## Cross-References & System Documentation Hub
+
+* **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — Высшая Конституция проекта (CTO Supremacy, презумпция брака, Apple/Mac HIG, Мандат 8e — Запрет на палки в колёса врачам).
+* **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный интертекстуальный навигационный хаб.
+* **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Полное руководство по жизненному циклу документов, SHA-256 хэшированию, headless Chromium PDF генератору и аттестации подписей.
+* **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр клинических протоколов 043/у по МКБ-10, пакетов 804н и СанПиН 3.3686-21.
+* **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Клинический движок, одонтограмма, правила валидации визитов и защита автономии врача.
+* **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Касса 54-ФЗ, справка ФНС КНД 1151156, расчеты вычетов и семейные кошельки.
+* **[CLINICAL_USER_MANUAL.md](file:///C:/Clinic_MVP/dental-crm/docs/CLINICAL_USER_MANUAL.md)** — Клиническое руководство пользователя: КЛКТ, Хаунсфилд (D1–D4), сметы, Dental UX.

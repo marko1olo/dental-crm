@@ -2,17 +2,26 @@
 
 Date: 2026-05-16
 
+> ⚠️ **КЛИНИЧЕСКИЙ РЕГЛАМЕНТ И СИСТЕМНЫЕ СВЯЗИ (MANDATE 8e):**
+> Речевая транскрипция подчиняется абсолютным правилам эргономики [THE HAMMER](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и Мандату 8e (Zero-Friction Doctor Autonomy). 
+> - **Связанная системная документация:**
+>   - [Clinical Protocols Registry](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md) — структурирование транскриптов в SOAP 043/у и клинические протоколы.
+>   - [Clinical Rules Engine](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) — валидация клинических рисков и триггеры оповещений без блокировки сохранения.
+>   - [Documents Lifecycle](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) — выгрузка ЭМК 043/у в PDF, водяные знаки «ЧЕРНОВИК» и версионный аудит «ИСПРАВЛЕННОМУ ВЕРИТЬ».
+>   - [Documentation Index & Navigation Matrix](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) — центральная матрица документации.
+>   - [Clinical User Manual](file:///C:/Clinic_MVP/dental-crm/docs/CLINICAL_USER_MANUAL.md) — практическое руководство врача по заполнению дневников приёма и 1-клик норме.
+
 ## Product Goal
 
 Voice must reduce the doctor's load, not create a new fragile workflow.
 
 The visit screen should keep one primary path:
-1. doctor speaks or types;
+1. doctor speaks or types (autosave debounced 150–300 ms into IndexedDB protects against data loss);
 2. raw transcript is preserved;
-3. deterministic parser drafts structured EMR fields;
-4. optional model polish fixes punctuation and sectioning only;
-5. doctor reviews and saves;
-6. final signing stays separate.
+3. deterministic parser drafts structured EMR fields (SOAP: жалобы, анамнез, статус, диагноз, план);
+4. optional model polish fixes punctuation and sectioning only (never invents diagnoses or overrides tooth formula);
+5. doctor reviews and saves without blocking locks or disabled buttons;
+6. final signing stays separate (штамп «ЧЕРНОВИК» до закрытия приёма, «ПОДПИСАНО ВРАЧОМ» после).
 
 ## Provider Order
 
@@ -250,3 +259,11 @@ Current implementation:
 - Web Speech API: https://developer.mozilla.org/docs/Web/API/Web_Speech_API
 - Whisper.cpp: https://github.com/ggml-org/whisper.cpp
 - Vosk API: https://github.com/alphacep/vosk-api
+
+### Internal Clinical & Architecture References
+
+- [CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md) — структурирование терминов по МКБ-10 и номенклатуре 804н.
+- [CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) — правила валидации и подсказки врачу без блокировки рабочего процесса.
+- [DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) — жизненный цикл ЭМК, штампы версий и печать.
+- [INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) — реестр документации проекта.
+

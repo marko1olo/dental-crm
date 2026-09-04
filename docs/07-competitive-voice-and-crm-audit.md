@@ -45,10 +45,38 @@ All competitive feature extractions, parity registries, architecture maps, and s
 
 ---
 
-## What We Must Beat
+---
 
-Existing dental systems already cover basic scheduling, billing, and document printing. The key vectors where Dental CRM wins:
+## What We Must Beat & Key Competitive Vectors
 
-1. **Integrated 3D DICOM MPR Viewer**: Built directly into the browser workspace without requiring desktop installs or third-party launchers (`apps/web/src/ImagingView.tsx`, `mprWorker.ts`).
-2. **Voice Dictation & Speech Polish**: Integrated STT dictation with medical term normalization and local autosave continuity (`apps/api/src/routes/speech.ts`).
-3. **Smart Imports Engine**: Native automated database migration from IDENT, DentalPRO, and InfoClinica (`apps/api/src/routes/smartImports.ts`).
+Existing dental systems (IDENT, DentalPRO, iStom, InfoClinica) already cover basic scheduling, billing, and document printing, but suffer from bureaucratic friction, clunky desktop legacy, and rigid doctor barriers. The key vectors where Dental CRM (DENTE) decisively wins:
+
+1. **Zero-Friction Doctor Autonomy (Мандат 8e & Apple/Mac HIG)**:
+   - *Проблема конкурентов*: IDENT и DentalPRO блокируют карту через 24 часа «замком начмеда», требуют согласований заведующих для любой опечатки, и делают кнопки «Сохранить» или «Завершить приём» неактивными (`disabled`), если не заполнены 50 полей пульса, давления или влажности.
+   - *Решение DENTE*: Врач свободно правит свои дневники с версионным юридическим аудитом («ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»). Кнопки никогда не блокируются без объяснения. Печать доступна всегда (со штампом «ЧЕРНОВИК» или «ПОДПИСАНО ВРАЧОМ»).
+2. **Физиологическая норма в 1 клик («Соматически здоров / норма»)**:
+   - В 1 клик заполняются все осмотры, анамнез, пародонт, СОПР и прикус. Врач правит исключительно патологию. Конкуренты тратят 7–10 минут врача на рутинный опрос.
+3. **Молниеносный рентген и визиограф (<50 мс)**:
+   - Отображение снимка датчика на Canvas/WebGL за <50 мс в нативном разрешении без 45-секундного ожидания нейросетей. ИИ-сегментация зубов запускается строго по отдельной кнопке врача и никогда не перезаписывает зубную формулу без ручного подтверждения.
+4. **Integrated 3D DICOM MPR Viewer**:
+   - Полноценный мультипланарный 3D-просмотрщик КЛКТ (MPR: аксиальный, сагиттальный, корональный срезы, панорамная кривая, имплантационная линейка) прямо в браузере без установки тяжелого софта (Romexis, Ez3D-i, OnDemand3D) на каждый компьютер (`apps/web/src/ImagingView.tsx`, `mprWorker.ts`).
+5. **Voice Dictation & Speech Polish**:
+   - Встроенная медицинская речевая транскрипция с нормализацией стоматологических терминов, формул зубов и детерминированным парсингом в структуру SOAP с непрерывным локальным автосохранением в IndexedDB (`apps/api/src/routes/speech.ts`).
+6. **Регистратура, касса 54-ФЗ и склад без бюрократии**:
+   - Печать нулевых договоров с пропусками `_______` регистратором без блокировок и 403-ошибок.
+   - Касса не требует ИНН у физлиц, поддерживает комбинированную оплату (нал + безнал + аванс) в 1 клик.
+   - Списание пустых карпул анестетиков медсестрой в 1 клик без комиссии из 3 человек; мягкий овердрафт склада с предупреждением вместо срыва приёма.
+7. **Smart Imports Engine**:
+   - Нативный автоматический импорт баз данных из IDENT, DentalPRO и Инфоклиники (`apps/api/src/routes/smartImports.ts`).
+
+---
+
+## Internal Clinical & Architecture References
+
+- **[CLINICAL_USER_MANUAL.md](file:///C:/Clinic_MVP/dental-crm/docs/CLINICAL_USER_MANUAL.md)** — Практическое клиническое руководство врача: 1-клик норма, 30+ экспресс-шаблонов 043/у, регламент визиографа <50мс, автоклав класса B и утилизация карпул.
+- **[12-document-generation-forms.md](file:///C:/Clinic_MVP/dental-crm/docs/12-document-generation-forms.md)** — Юридическая спецификация бланков: ИДС 1051н, договор Пост. № 736, справка 13% НДФЛ КНД 1151156 (коды 01 и 02), акты 804н, штампы версий «ИСПРАВЛЕННОМУ ВЕРИТЬ» и водяные знаки «ЧЕРНОВИК».
+- **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр клинических протоколов, МКБ-10, номенклатура услуг 804н и клинические онтологии.
+- **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил и предупреждений в реальном времени.
+- **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Архитектура PDF-генерации (Chromium/Edge headless), ЭЦП/УКЭП и юридический жизненный цикл документов.
+- **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Матрица системной документации кодовой базы.
+
