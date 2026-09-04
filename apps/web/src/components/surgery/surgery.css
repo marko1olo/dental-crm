@@ -1,0 +1,176 @@
+/* ==========================================================================
+   SURGERY COCKPIT & SURGICAL PROTOCOL STYLES (DENTE Dental CRM Standards)
+   Touch-First Ergonomics for Surgical Theaters (>= 48px targets, sterile mode)
+   ========================================================================== */
+
+.surgery-cockpit-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1050;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.surgery-cockpit-modal {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-xl, 20px);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+	width: 100%;
+	max-width: 960px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.surgery-cockpit-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.surgery-cockpit-body {
+	padding: 20px;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.surgery-cockpit-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+/* Touch-First Sterile Glove Action Buttons (>= 48px) */
+.surgery-btn {
+	min-height: 48px;
+	padding: 10px 18px;
+	border-radius: 12px;
+	font-size: 13px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid transparent;
+	touch-action: manipulation;
+}
+
+.surgery-btn:active {
+	transform: scale(0.98);
+}
+
+.surgery-btn-primary {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+}
+
+.surgery-btn-primary:hover {
+	filter: brightness(1.08);
+}
+
+.surgery-btn-secondary {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+.surgery-btn-secondary:hover {
+	background: var(--paper-soft);
+}
+
+/* Sterile Glove Mode (Enlarged Controls >= 52px) */
+.sterile-glove-active .surgery-btn {
+	min-height: 54px;
+	padding: 14px 22px;
+	font-size: 14px;
+}
+
+/* Overdraft Alert Banner (Non-blocking Soft Notice) */
+.surgery-overdraft-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px 16px;
+	border-radius: 14px;
+	background: var(--amber-soft);
+	border: 1px solid var(--amber);
+	color: var(--ink);
+}
+
+.surgery-overdraft-icon {
+	color: var(--amber);
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+/* 1-Click Norm Cards */
+.surgery-norm-card {
+	min-height: 52px;
+	padding: 12px 16px;
+	border-radius: 14px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease-in-out;
+	touch-action: manipulation;
+}
+
+.surgery-norm-card:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft);
+}
+
+.surgery-norm-card.selected {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
+}
+
+/* Protocol Textarea */
+.surgery-protocol-textarea {
+	width: 100%;
+	min-height: 140px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 1.6;
+	resize: vertical;
+	box-sizing: border-box;
+}
+
+.surgery-protocol-textarea:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+}

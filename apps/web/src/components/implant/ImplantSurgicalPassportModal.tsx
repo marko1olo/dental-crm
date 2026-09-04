@@ -63,6 +63,7 @@ export interface ImplantSurgicalPassportData {
 	boneDensity: MischBoneClass;
 	drillingProtocolRu: string;
 	insertionTorqueNcm: number;
+	isIsqUsed?: boolean | undefined;
 	graftMaterials: {
 		boneGraft: string;
 		membrane: string;
@@ -152,11 +153,14 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 	const [boneDensity, setBoneDensity] = useState<MischBoneClass>("D2");
 	const [torqueNcm, setTorqueNcm] = useState<number>(40);
 
-	// Graft Materials
+	// Graft Materials (Standard implantation without expensive GBR by default)
 	const [boneGraft, setBoneGraft] = useState<string>("Geistlich Bio-Oss гранулы 0.5 г (0.25–1.0 мм)");
 	const [membrane, setMembrane] = useState<string>("Geistlich Bio-Gide резорбируемая 25×25 мм");
 	const [fixationPins, setFixationPins] = useState<string>("Master-Pin титановые пины 3 мм (2 шт.)");
-	const [isGbrPerformed, setIsGbrPerformed] = useState<boolean>(true);
+	const [isGbrPerformed, setIsGbrPerformed] = useState<boolean>(false);
+
+	// Stability measurement mode: Torque-only (default) vs Osstell/Penguin RFA ISQ device
+	const [isIsqEnabled, setIsIsqEnabled] = useState<boolean>(false);
 
 	// ISQ Dynamics (Day 0, Week 4, Week 8, Week 12)
 	const [isqDay0, setIsqDay0] = useState<IsqStageReading>({
@@ -224,32 +228,65 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 
 	// Loading Recommendation
 	const loadingRecommendation = useMemo(() => {
-		if (latestIsq >= 75 && torqueNcm >= 35) {
+		if (isGbrPerformed) {
 			return {
-				statusRu: "Готов к постоянному протезированию",
-				badgeColor: "text-emerald-700 bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300",
-				desc: "Высокий коэффициент стабильности (ISQ ≥ 75). Интеграция завершена, разрешена постоянная ортопедическая нагрузка.",
+				statusRu: "Пролонгированная интеграция с НКР (4–6 месяцев)",
+				badgeColor: "text-purple-700 bg-purple-100 dark:bg-purple-950/50 dark:text-purple-300",
+				desc: "Зона костной аугментации (графт + мембрана) требует созревания новообразованного костного матрикса перед протезированием.",
 			};
 		}
-		if (latestIsq >= 65) {
+		if (isIsqEnabled) {
+			if (latestIsq >= 75 && torqueNcm >= 35) {
+				return {
+					statusRu: "Готов к постоянному протезированию",
+					badgeColor: "text-emerald-700 bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300",
+					desc: "Высокий коэффициент стабильности (ISQ ≥ 75). Интеграция завершена, разрешена постоянная ортопедическая нагрузка.",
+				};
+			}
+			if (latestIsq >= 65) {
+				return {
+					statusRu: "Ранняя нагрузка / Временная коронка",
+					badgeColor: "text-sky-700 bg-sky-100 dark:bg-sky-950/50 dark:text-sky-300",
+					desc: "Достаточная стабильность (ISQ 65–74). Разрешена установка формирователя десны или временной разгруженной коронки.",
+				};
+			}
 			return {
-				statusRu: "Ранняя нагрузка / Временная коронка",
+				statusRu: "Отсроченная нагрузка (Требуется созревание)",
+				badgeColor: "text-amber-700 bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300",
+				desc: "Идет фаза активного остеогенеза. Рекомендовано выждать дополнительно 4–6 недель до ортопедического этапа.",
+			};
+		}
+		// Torque-only mode (without Osstell ISQ)
+		if (torqueNcm >= 35) {
+			return {
+				statusRu: "Высокая первичная стабильность (Торк ≥ 35 Н·см)",
+				badgeColor: "text-emerald-700 bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300",
+				desc: `Первичный торк введения ${torqueNcm} Н·см обеспечивает надежную механическую фиксацию. Разрешена установка формирователя десны или провизорной коронки вне окклюзии.`,
+			};
+		}
+		if (torqueNcm >= 20) {
+			return {
+				statusRu: "Стандартная стабильность (Торк 20–34 Н·см)",
 				badgeColor: "text-sky-700 bg-sky-100 dark:bg-sky-950/50 dark:text-sky-300",
-				desc: "Достаточная стабильность (ISQ 65–74). Разрешена установка формирователя десны или временной разгруженной коронки.",
+				desc: `Адекватная первичная фиксация (${torqueNcm} Н·см). Установка формирователя десны или двухэтапный протокол с периодом покоя 6–8 недель.`,
 			};
 		}
 		return {
-			statusRu: "Отсроченная нагрузка (Требуется созревание)",
+			statusRu: "Отсроченная нагрузка (Торк < 20 Н·см)",
 			badgeColor: "text-amber-700 bg-amber-100 dark:bg-amber-950/50 dark:text-amber-300",
-			desc: "Идет фаза активного остеогенеза. Рекомендовано выждать дополнительно 4–6 недель до ортопедического этапа.",
+			desc: `Низкий первичный торк (${torqueNcm} Н·см). Установка винта-заглушки, ушивание наглухо на 3–4 месяца.`,
 		};
-	}, [latestIsq, torqueNcm]);
+	}, [isIsqEnabled, latestIsq, torqueNcm, isGbrPerformed]);
 
 	// Surgery Protocol Form 043/u Generator
 	const generatedSurgeryProtocol = useMemo(() => {
 		const gbrText = isGbrPerformed
 			? `Проведена направленная костная регенерация (НКР): аугментация костным графтом ${boneGraft}, уложена и фиксирована барьерная мембрана ${membrane} с фиксацией пинами (${fixationPins}).`
-			: "Костная пластика не проводилась.";
+			: "Костная пластика не проводилась (стандартный протокол без аугментации).";
+
+		const stabilitySection = isIsqEnabled
+			? `5. RFA СТАБИЛОМЕТРИЯ (ISQ): Первичная стабильность (SmartPeg) = ${isqDay0.meanIsq} ISQ (V: ${isqDay0.vestibular}, L: ${isqDay0.lingual}, M: ${isqDay0.mesial}, D: ${isqDay0.distal}). Первичный торк: ${torqueNcm} Ncm.`
+			: `5. КОНТРОЛЬ СТАБИЛЬНОСТИ: Механическая первичная стабильность зафиксирована динамометрическим ключом: ${torqueNcm} Н·см (${torqueNcm >= 35 ? "высокая стабильность, достаточная для формирователя десны / ранней нагрузки" : torqueNcm >= 20 ? "стандартная стабильность" : "низкая стабильность, установка заглушки"}). RFA (ISQ) не применялся (контроль по торку).`;
 
 		return (
 			`ПРОТОКОЛ ОПЕРАЦИИ ДЕНТАЛЬНОЙ ИМПЛАНТАЦИИ (Форма 043/у)\n` +
@@ -261,7 +298,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 			`2. ДОСТУП: Разрез по гребню альвеолярного отростка с внутрибороздковыми разрезами. Сформирован и отслоен слизисто-надкостничный лоскут. Скелетирована костная площадка. Тип кости: ${boneDensity} (${BONE_DENSITY_DEFINITIONS[boneDensity].title}).\n` +
 			`3. ОСТЕОТОМИЯ: Препарирование имплантационного ложа согласно хирургическому протоколу ${selectedImplantPreset.brand} с обильной внешней и внутренней ирригацией стерильным охлажденным 0.9% NaCl (800 об/мин).\n` +
 			`4. ПОЗИЦИОНИРОВАНИЕ ИМПЛАНТАТА: Установлен дентальный имплантат ${selectedImplantPreset.brand} ${selectedImplantPreset.model} Ø ${diameterMm} мм, длина ${lengthMm} мм. Торк первичной стабилизации: ${torqueNcm} Ncm. Локализация платформы: субкрестально 0.5 мм. Серийный номер / LOT: ${lotNumber}.\n` +
-			`5. RFA СТАБИЛОМЕТРИЯ (ISQ): Первичная стабильность (SmartPeg) = ${isqDay0.meanIsq} ISQ (V: ${isqDay0.vestibular}, L: ${isqDay0.lingual}, M: ${isqDay0.mesial}, D: ${isqDay0.distal}).\n` +
+			`${stabilitySection}\n` +
 			`6. АУГМЕНТАЦИЯ: ${gbrText}\n` +
 			`7. УШИВАНИЕ: Мобилизация надкостницы. Рана послойно ушита без натяжения монофиламентным шовным материалом Prolene 5-0 (узловые и матрацные швы). Гемостаз полный. Назначена антибактериальная и противовоспалительная терапия.`
 		);
@@ -277,6 +314,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 		torqueNcm,
 		lotNumber,
 		isqDay0,
+		isIsqEnabled,
 		isGbrPerformed,
 		boneGraft,
 		membrane,
@@ -303,6 +341,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 			boneDensity,
 			drillingProtocolRu: BONE_DENSITY_DEFINITIONS[boneDensity].drillNote,
 			insertionTorqueNcm: torqueNcm,
+			isIsqUsed: isIsqEnabled,
 			graftMaterials: {
 				boneGraft,
 				membrane,
@@ -330,6 +369,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 		serialNumber,
 		boneDensity,
 		torqueNcm,
+		isIsqEnabled,
 		boneGraft,
 		membrane,
 		fixationPins,
@@ -359,8 +399,11 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 		if (onSavePassport) {
 			onSavePassport(assembledPassportData);
 		}
-		showToast(`Паспорт имплантата #${toothNumber} сохранен в историю пациента`, "success");
-	}, [assembledPassportData, toothNumber, onSavePassport]);
+		if (onInsertIntoDiary) {
+			onInsertIntoDiary(generatedSurgeryProtocol);
+		}
+		showToast(`Паспорт имплантата #${toothNumber} сохранен и внесен в карту 043/у`, "success");
+	}, [assembledPassportData, generatedSurgeryProtocol, toothNumber, onSavePassport, onInsertIntoDiary]);
 
 	if (!isOpen) return null;
 
@@ -418,7 +461,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 						data-testid="implant-tab-isq"
 					>
 						<TrendingUp size={18} />
-						<span>2. Динамика ISQ ({latestIsq})</span>
+						<span>2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? ` · ${latestIsq} ISQ` : " · Ключ"})</span>
 					</button>
 
 					<button
@@ -451,6 +494,85 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 					{/* TAB 1: Surgical Protocol & Bone */}
 					{activeTab === "protocol" && (
 						<div className="flex flex-col gap-5" data-testid="tab-content-protocol">
+							{/* 1-Click Protocol Presets (Standard vs GBR) */}
+							<div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-2.5">
+								<div className="text-xs font-extrabold uppercase text-slate-500 tracking-wider">
+									Клинический протокол вмешательства (1 клик):
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+									<button
+										type="button"
+										onClick={() => setIsGbrPerformed(false)}
+										className={
+											"min-h-[44px] px-3.5 py-2.5 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between " +
+											(!isGbrPerformed
+												? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+												: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-emerald-500")
+										}
+										data-testid="preset-standard-implantation"
+									>
+										<span className="flex items-center gap-2">
+											<Zap size={16} className={!isGbrPerformed ? "text-amber-300" : "text-emerald-500"} />
+											<span>⚡ Стандартная имплантация (без НКР / костной пластики)</span>
+										</span>
+										{!isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setIsGbrPerformed(true)}
+										className={
+											"min-h-[44px] px-3.5 py-2.5 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between " +
+											(isGbrPerformed
+												? "bg-sky-600 text-white border-sky-600 shadow-sm"
+												: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-sky-500")
+										}
+										data-testid="preset-gbr-implantation"
+									>
+										<span className="flex items-center gap-2">
+											<Layers size={16} className={isGbrPerformed ? "text-sky-200" : "text-sky-500"} />
+											<span>⚡ Имплантация с НКР (костная пластика)</span>
+										</span>
+										{isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
+									</button>
+								</div>
+							</div>
+
+							{/* 1-Click Stability Assessment Switcher: Torque vs ISQ */}
+							<div className="flex flex-wrap gap-2">
+								<button
+									type="button"
+									onClick={() => setIsIsqEnabled(false)}
+									className={
+										"px-3 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer " +
+										(!isIsqEnabled
+											? "bg-sky-600 text-white border-sky-600 shadow-sm"
+											: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-sky-500")
+									}
+									data-testid="btn-stability-torque-only"
+								>
+									<Activity size={16} />
+									<span>Контроль стабильности по торку (без аппарата ISQ)</span>
+									{!isIsqEnabled && <CheckCircle2 size={16} className="text-white shrink-0" />}
+								</button>
+
+								<button
+									type="button"
+									onClick={() => setIsIsqEnabled(true)}
+									className={
+										"px-3 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer " +
+										(isIsqEnabled
+											? "bg-purple-600 text-white border-purple-600 shadow-sm"
+											: "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-purple-500")
+									}
+									data-testid="btn-stability-isq-sensor"
+								>
+									<TrendingUp size={16} />
+									<span>Магнитный резонанс ISQ (Osstell / Penguin RFA)</span>
+									{isIsqEnabled && <CheckCircle2 size={16} className="text-white shrink-0" />}
+								</button>
+							</div>
+
 							{/* Implant System Preset Selection */}
 							<div>
 								<div className="text-xs font-extrabold uppercase text-slate-500 tracking-wider mb-2">
@@ -604,20 +726,33 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 
 							{/* GBR / Bone Grafting Accordion */}
 							<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-								<label className="flex items-center gap-3 cursor-pointer select-none">
-									<input
-										type="checkbox"
-										checked={isGbrPerformed}
-										onChange={(e) => setIsGbrPerformed(e.target.checked)}
-										className="w-5 h-5 rounded text-sky-600 accent-sky-600"
-										data-testid="checkbox-gbr"
-									/>
-									<span className="text-xs font-black uppercase text-slate-800 dark:text-slate-200">
-										Направленная костная регенерация (НКР / Графтинг):
+								<div className="flex items-center justify-between">
+									<label className="flex items-center gap-3 cursor-pointer select-none">
+										<input
+											type="checkbox"
+											checked={isGbrPerformed}
+											onChange={(e) => setIsGbrPerformed(e.target.checked)}
+											className="w-5 h-5 rounded text-sky-600 accent-sky-600"
+											data-testid="checkbox-gbr"
+										/>
+										<span className="text-xs font-black uppercase text-slate-800 dark:text-slate-200">
+											Направленная костная регенерация (НКР / Графтинг):
+										</span>
+									</label>
+									<span
+										className={
+											"text-[11px] font-bold px-2 py-0.5 rounded " +
+											(isGbrPerformed
+												? "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300"
+												: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300")
+										}
+										data-testid="gbr-status-badge"
+									>
+										{isGbrPerformed ? "НКР включена" : "Без костной пластики"}
 									</span>
-								</label>
+								</div>
 
-								{isGbrPerformed && (
+								{isGbrPerformed ? (
 									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
 										<div className="flex flex-col gap-1">
 											<span className="text-[11px] font-bold text-slate-500">Остеопластический материал:</span>
@@ -649,6 +784,10 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 											/>
 										</div>
 									</div>
+								) : (
+									<div className="text-[11px] text-slate-500 dark:text-slate-400">
+										Костная пластика не требуется. Имплантат полностью погружен в собственное костное ложе.
+									</div>
 								)}
 							</div>
 						</div>
@@ -657,71 +796,115 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 					{/* TAB 2: ISQ Remodeling Dynamics */}
 					{activeTab === "isq" && (
 						<div className="flex flex-col gap-5" data-testid="tab-content-isq">
-							{/* Loading Readiness Banner */}
-							<div className={"p-4 rounded-xl border flex items-center justify-between gap-4 " + loadingRecommendation.badgeColor}>
-								<div className="flex items-center gap-3">
-									<Zap size={22} className="shrink-0" />
-									<div>
-										<div className="text-sm font-black">{loadingRecommendation.statusRu}</div>
-										<div className="text-xs opacity-90">{loadingRecommendation.desc}</div>
-									</div>
-								</div>
-								<div className="text-right shrink-0">
-									<div className="text-2xl font-black font-mono">{latestIsq} ISQ</div>
-									<div className="text-[11px] font-bold">
-										{secondaryStabilityDelta >= 0 ? `+${secondaryStabilityDelta}` : secondaryStabilityDelta} Δ с момента установки
-									</div>
-								</div>
-							</div>
-
-							{/* 4 Timeline Stage Cards */}
-							<div className="implant-isq-timeline">
-								{[isqDay0, isqWeek4, isqWeek8, isqWeek12].map((st) => {
-									const isRecorded = st.recordedAtIso !== undefined;
-									const isDip = st.stageId === "week_4";
-									return (
-										<div
-											key={st.stageId}
-											className={"implant-isq-card " + (isRecorded ? "mature" : "")}
-											data-testid={"isq-card-" + st.stageId}
-										>
-											<div className="flex items-center justify-between">
-												<span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-													{st.labelRu}
-												</span>
-												{isRecorded ? (
-													<span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">
-														Зафиксировано
-													</span>
-												) : (
-													<span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-														Ожидается
-													</span>
-												)}
+							{!isIsqEnabled ? (
+								<div className="p-6 rounded-2xl border border-sky-200 dark:border-sky-900 bg-sky-50/60 dark:bg-sky-950/40 flex flex-col gap-4" data-testid="torque-only-panel">
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-3">
+											<div className="p-3 bg-sky-600 text-white rounded-xl">
+												<Activity size={24} />
 											</div>
-
-											<div className={"implant-isq-card-score " + (isDip ? "dip" : st.meanIsq >= 75 ? "high" : "")}>
-												<span>{st.meanIsq}</span>
-												<span className="text-xs font-bold text-slate-400">ISQ</span>
-											</div>
-
-											<div className="grid grid-cols-2 gap-1 text-[11px] font-mono text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
-												<div>Вестиб: {st.vestibular}</div>
-												<div>Язычно: {st.lingual}</div>
-												<div>Медиал: {st.mesial}</div>
-												<div>Дистал: {st.distal}</div>
+											<div>
+												<div className="text-sm font-black text-slate-900 dark:text-slate-100">
+													Первичная стабильность подтверждена динамометрическим ключом: {torqueNcm} N·cm
+												</div>
+												<div className="text-xs text-slate-600 dark:text-slate-400">
+													{loadingRecommendation.statusRu} · {loadingRecommendation.desc}
+												</div>
 											</div>
 										</div>
-									);
-								})}
-							</div>
+										<span className="text-xl font-black font-mono text-sky-700 dark:text-sky-400">
+											{torqueNcm} N·cm
+										</span>
+									</div>
 
-							<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-								<div className="font-extrabold text-slate-900 dark:text-slate-100 mb-1">
-									Биологическая кривая стабильности имплантата:
+									<div className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+										<div className="font-extrabold text-slate-800 dark:text-slate-200 mb-1">
+											Клинический протокол без аппарата ISQ (Osstell / Penguin):
+										</div>
+										Магнитный резонансный датчик не использовался. Фиксация в костном ложе достаточна для стандартного протокола остеоинтеграции. В карту 043/у внесены данные торка и плотности кости {boneDensity}.
+									</div>
+
+									<div className="flex justify-end">
+										<button
+											type="button"
+											onClick={() => setIsIsqEnabled(true)}
+											className="px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 hover:bg-purple-50 inline-flex items-center gap-2 cursor-pointer"
+											data-testid="btn-enable-isq-from-tab2"
+										>
+											<TrendingUp size={16} />
+											<span>Подключить протокол радиочастотного анализа ISQ</span>
+										</button>
+									</div>
 								</div>
-								На 3–4 неделе происходит физиологический спад первичной механической стабильности из-за остеокластической резорбции кости и переход к вторичной биологической стабильности за счёт формирования остеобластами зрелого матрикса.
-							</div>
+							) : (
+								<>
+									{/* Loading Readiness Banner */}
+									<div className={"p-4 rounded-xl border flex items-center justify-between gap-4 " + loadingRecommendation.badgeColor}>
+										<div className="flex items-center gap-3">
+											<Zap size={22} className="shrink-0" />
+											<div>
+												<div className="text-sm font-black">{loadingRecommendation.statusRu}</div>
+												<div className="text-xs opacity-90">{loadingRecommendation.desc}</div>
+											</div>
+										</div>
+										<div className="text-right shrink-0">
+											<div className="text-2xl font-black font-mono">{latestIsq} ISQ</div>
+											<div className="text-[11px] font-bold">
+												{secondaryStabilityDelta >= 0 ? `+${secondaryStabilityDelta}` : secondaryStabilityDelta} Δ с момента установки
+											</div>
+										</div>
+									</div>
+
+									{/* 4 Timeline Stage Cards */}
+									<div className="implant-isq-timeline">
+										{[isqDay0, isqWeek4, isqWeek8, isqWeek12].map((st) => {
+											const isRecorded = st.recordedAtIso !== undefined;
+											const isDip = st.stageId === "week_4";
+											return (
+												<div
+													key={st.stageId}
+													className={"implant-isq-card " + (isRecorded ? "mature" : "")}
+													data-testid={"isq-card-" + st.stageId}
+												>
+													<div className="flex items-center justify-between">
+														<span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
+															{st.labelRu}
+														</span>
+														{isRecorded ? (
+															<span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">
+																Зафиксировано
+															</span>
+														) : (
+															<span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+																Ожидается
+															</span>
+														)}
+													</div>
+
+													<div className={"implant-isq-card-score " + (isDip ? "dip" : st.meanIsq >= 75 ? "high" : "")}>
+														<span>{st.meanIsq}</span>
+														<span className="text-xs font-bold text-slate-400">ISQ</span>
+													</div>
+
+													<div className="grid grid-cols-2 gap-1 text-[11px] font-mono text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
+														<div>Вестиб: {st.vestibular}</div>
+														<div>Язычно: {st.lingual}</div>
+														<div>Медиал: {st.mesial}</div>
+														<div>Дистал: {st.distal}</div>
+													</div>
+												</div>
+											);
+										})}
+									</div>
+
+									<div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+										<div className="font-extrabold text-slate-900 dark:text-slate-100 mb-1">
+											Биологическая кривая стабильности имплантата:
+										</div>
+										На 3–4 неделе происходит физиологический спад первичной механической стабильности из-за остеокластической резорбции кости и переход к вторичной биологической стабильности за счёт формирования остеобластами зрелого матрикса.
+									</div>
+								</>
+							)}
 						</div>
 					)}
 
@@ -804,8 +987,10 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 										<span className="font-mono font-bold">{torqueNcm} Ncm</span>
 									</div>
 									<div>
-										<span className="text-slate-400 block mb-0.5">Стабильность ISQ:</span>
-										<span className="font-mono font-bold text-emerald-400">{latestIsq} ISQ</span>
+										<span className="text-slate-400 block mb-0.5">Стабильность:</span>
+										<span className="font-mono font-bold text-emerald-400">
+											{isIsqEnabled ? `${latestIsq} ISQ` : `Торк ${torqueNcm} N·cm`}
+										</span>
 									</div>
 								</div>
 							</div>
@@ -818,7 +1003,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 					<div className="text-xs text-slate-500 dark:text-slate-400">
 						<span>{selectedImplantPreset.brand} Ø {diameterMm}×{lengthMm} · </span>
 						<span className="font-bold text-sky-600 dark:text-sky-400">
-							{latestIsq} ISQ ({torqueNcm} Ncm)
+							{isIsqEnabled ? `${latestIsq} ISQ (${torqueNcm} Ncm)` : `Торк ${torqueNcm} N·cm (без ISQ)`}
 						</span>
 					</div>
 
@@ -840,7 +1025,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 							data-testid="implant-save-passport-btn"
 						>
 							<CheckCircle2 size={18} />
-							<span>Сохранить паспорт</span>
+							<span>Сохранить паспорт в карту 043/у</span>
 						</button>
 					</div>
 				</footer>

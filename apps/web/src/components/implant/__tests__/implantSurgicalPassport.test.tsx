@@ -53,6 +53,17 @@ describe("ImplantSurgicalPassportModal (Implantology Surgical Passport & ISQ Sui
 		// Action buttons in footer
 		assert.ok(html.includes("implant-insert-diary-btn"), "Must render Insert into diary button");
 		assert.ok(html.includes("implant-save-passport-btn"), "Must render Save passport button");
+		assert.ok(html.includes("Сохранить паспорт в карту 043/у"), "Save button must explicitly state saving into Form 043/u");
+		assert.ok(!html.includes("disabled"), "Primary action buttons must never be disabled");
+
+		// 1-Click Clinical Presets & GBR default state (Zero Academic Bloat)
+		assert.ok(html.includes("preset-standard-implantation"), "Must render 1-click standard implantation preset");
+		assert.ok(html.includes("preset-gbr-implantation"), "Must render 1-click GBR implantation preset");
+		assert.ok(html.includes("Без костной пластики"), "GBR must default to unchecked without pushing expensive biomaterials");
+
+		// 1-Click Stability Mode Switcher (Torque vs ISQ machine)
+		assert.ok(html.includes("btn-stability-torque-only"), "Must render 1-click torque stability button");
+		assert.ok(html.includes("btn-stability-isq-sensor"), "Must render 1-click ISQ sensor stability button");
 	});
 
 	it("returns null when isOpen is false", () => {

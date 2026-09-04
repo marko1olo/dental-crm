@@ -40,7 +40,8 @@ export interface ImplantIsqAssessmentInput {
 	toothNumberFdi: number | string;
 	insertionTorqueNcm: number;
 	boneDensity: MischBoneDensity;
-	isqReadings: DirectionalIsqReadings;
+	isqReadings?: DirectionalIsqReadings | undefined;
+	isIsqMeasured?: boolean | undefined;
 	isGbrOrSinusLift: boolean;
 	isImmediateExtractionSocket: boolean;
 	previousStages?: IsqMeasurementStage[];
@@ -60,6 +61,7 @@ export interface ImplantIsqAssessmentResult {
 	anisotropyDeltaIsq: number;
 	isqLevel: IsqStabilityLevel;
 	isqStatusRu: string;
+	isIsqMeasured: boolean;
 	boneDensity: MischBoneDensity;
 	loadingRecommendation: LoadingProtocolRecommendation;
 	loadingRecommendationTitleRu: string;
@@ -103,7 +105,15 @@ export function calculateIsqDirectionalStats(readings: DirectionalIsqReadings): 
 
 export function evaluateImplantIsqStability(input: ImplantIsqAssessmentInput): ImplantIsqAssessmentResult {
 	const torqueInfo = classifyTorqueBand(input.insertionTorqueNcm);
-	const stats = calculateIsqDirectionalStats(input.isqReadings);
+	const isIsqMeasured = input.isIsqMeasured ?? (input.isqReadings !== undefined);
+	const defaultReadings: DirectionalIsqReadings = {
+		vestibularBuccal: 70,
+		lingualPalatal: 70,
+		mesial: 70,
+		distal: 70,
+	};
+	const readings = input.isqReadings ?? defaultReadings;
+	const stats = calculateIsqDirectionalStats(readings);
 	const isqInfo = classifyIsqLevel(stats.meanIsq);
 
 	const warnings: string[] = [];
@@ -114,7 +124,7 @@ export function evaluateImplantIsqStability(input: ImplantIsqAssessmentInput): I
 		);
 	}
 
-	if (stats.anisotropyDelta >= 15) {
+	if (isIsqMeasured && stats.anisotropyDelta >= 15) {
 		warnings.push(
 			`Выраженная анизотропия фиксации (ΔISQ = ${stats.anisotropyDelta}). Возможен локальный костный дефект или тонкая вестибулярная кортикальная пластинка.`
 		);
@@ -133,25 +143,42 @@ export function evaluateImplantIsqStability(input: ImplantIsqAssessmentInput): I
 		loadingRecommendation = 'extended_healing_gbr';
 		loadingRecommendationTitleRu = 'Пролонгированная интеграция с НКР (4–6 месяцев)';
 		clinicalRationaleRu = 'Сайт после костной аугментации / синус-лифтинга требует полной васкуляризации костного графта до приложения жевательных сил.';
-	} else if (input.insertionTorqueNcm >= 35 && stats.meanIsq >= 70 && !input.isImmediateExtractionSocket) {
-		loadingRecommendation = 'immediate_loading_safe';
-		loadingRecommendationTitleRu = 'Протокол немедленной нагрузки (Immediate Loading)';
-		clinicalRationaleRu = `Высокий торк (${input.insertionTorqueNcm} Н·см) и высокий показатель RFA (${stats.meanIsq} ISQ) гарантируют микроподвижность < 50-100 мкм. Разрешена установка провизорной коронки вне окклюзии.`;
-	} else if (input.insertionTorqueNcm >= 20 && stats.meanIsq >= 60) {
-		loadingRecommendation = 'early_loading_6_weeks';
-		loadingRecommendationTitleRu = 'Ранняя нагрузка через 6–8 недель (Early Loading)';
-		clinicalRationaleRu = `Стабильность в пределах нормы (${input.insertionTorqueNcm} Н·см, ${stats.meanIsq} ISQ). Рекомендована установка формирователя десны и контрольное измерение ISQ через 6 недель.`;
+	} else if (isIsqMeasured) {
+		if (input.insertionTorqueNcm >= 35 && stats.meanIsq >= 70 && !input.isImmediateExtractionSocket) {
+			loadingRecommendation = 'immediate_loading_safe';
+			loadingRecommendationTitleRu = 'Протокол немедленной нагрузки (Immediate Loading)';
+			clinicalRationaleRu = `Высокий торк (${input.insertionTorqueNcm} Н·см) и высокий показатель RFA (${stats.meanIsq} ISQ) гарантируют микроподвижность < 50-100 мкм. Разрешена установка провизорной коронки вне окклюзии.`;
+		} else if (input.insertionTorqueNcm >= 20 && stats.meanIsq >= 60) {
+			loadingRecommendation = 'early_loading_6_weeks';
+			loadingRecommendationTitleRu = 'Ранняя нагрузка через 6–8 недель (Early Loading)';
+			clinicalRationaleRu = `Стабильность в пределах нормы (${input.insertionTorqueNcm} Н·см, ${stats.meanIsq} ISQ). Рекомендована установка формирователя десны и контрольное измерение ISQ через 6 недель.`;
+		} else {
+			loadingRecommendation = 'delayed_loading_3_months';
+			loadingRecommendationTitleRu = 'Отсроченная нагрузка (Conventional 3–4 месяца)';
+			clinicalRationaleRu = `Низкая первичная стабильность (${input.insertionTorqueNcm} Н·см / ${stats.meanIsq} ISQ). Установка заглушки, ушивание наглухо для предотвращения фиброинтеграции.`;
+		}
 	} else {
-		loadingRecommendation = 'delayed_loading_3_months';
-		loadingRecommendationTitleRu = 'Отсроченная нагрузка (Conventional 3–4 месяца)';
-		clinicalRationaleRu = `Низкая первичная стабильность (${input.insertionTorqueNcm} Н·см / ${stats.meanIsq} ISQ). Установка заглушки, ушивание наглухо для предотвращения фиброинтеграции.`;
+		// Pure torque-based evaluation (without Osstell ISQ machine)
+		if (input.insertionTorqueNcm >= 35 && !input.isImmediateExtractionSocket) {
+			loadingRecommendation = 'immediate_loading_safe';
+			loadingRecommendationTitleRu = 'Протокол немедленной нагрузки (Immediate Loading)';
+			clinicalRationaleRu = `Высокий первичный торк (${input.insertionTorqueNcm} Н·см) по динамометрическому ключу гарантирует жесткую фиксацию (микроподвижность < 50-100 мкм). Разрешена установка формирователя десны или провизорной коронки вне окклюзии.`;
+		} else if (input.insertionTorqueNcm >= 20) {
+			loadingRecommendation = 'early_loading_6_weeks';
+			loadingRecommendationTitleRu = 'Ранняя нагрузка через 6–8 недель (Early Loading)';
+			clinicalRationaleRu = `Стандартная первичная стабильность по ключу (${input.insertionTorqueNcm} Н·см). Рекомендована установка формирователя десны или двухэтапный протокол.`;
+		} else {
+			loadingRecommendation = 'delayed_loading_3_months';
+			loadingRecommendationTitleRu = 'Отсроченная нагрузка (Conventional 3–4 месяца)';
+			clinicalRationaleRu = `Низкий первичный торк (< 20 Н·см). Показана установка винта-заглушки и глухое ушивание слизистой на 3-4 месяца для предотвращения фиброинтеграции.`;
+		}
 	}
 
 	// Baseline comparison
 	let deltaFromBaselineIsq: number | null = null;
-	let osseointegrationVelocityRu = 'Первичная оценка (Day 0)';
+	let osseointegrationVelocityRu = isIsqMeasured ? 'Первичная оценка (Day 0)' : 'Контроль по торку (Day 0)';
 
-	if (input.previousStages && input.previousStages.length > 0) {
+	if (isIsqMeasured && input.previousStages && input.previousStages.length > 0) {
 		const baseline = input.previousStages[0]!;
 		deltaFromBaselineIsq = Number((stats.meanIsq - baseline.meanIsq).toFixed(1));
 
@@ -174,6 +201,7 @@ export function evaluateImplantIsqStability(input: ImplantIsqAssessmentInput): I
 		insertionTorqueNcm: input.insertionTorqueNcm,
 		boneDensity: input.boneDensity,
 		stats,
+		isIsqMeasured,
 		loadingRecommendationTitleRu,
 		surgeonName: input.surgeonName
 	});
@@ -185,6 +213,7 @@ export function evaluateImplantIsqStability(input: ImplantIsqAssessmentInput): I
 		lengthMm: input.lengthMm,
 		insertionTorqueNcm: input.insertionTorqueNcm,
 		meanIsq: stats.meanIsq,
+		isIsqMeasured,
 		surgeonName: input.surgeonName
 	});
 
@@ -194,13 +223,14 @@ export function evaluateImplantIsqStability(input: ImplantIsqAssessmentInput): I
 		insertionTorqueNcm: input.insertionTorqueNcm,
 		torqueCategory: torqueInfo.id,
 		torqueStatusRu: torqueInfo.statusBadgeRu,
-		directionalIsq: input.isqReadings,
+		directionalIsq: readings,
 		meanIsq: stats.meanIsq,
 		minIsq: stats.minIsq,
 		maxIsq: stats.maxIsq,
 		anisotropyDeltaIsq: stats.anisotropyDelta,
 		isqLevel: isqInfo.level,
-		isqStatusRu: isqInfo.nameRu,
+		isqStatusRu: isIsqMeasured ? isqInfo.nameRu : 'Контроль по торку (без аппарата ISQ)',
+		isIsqMeasured,
 		boneDensity: input.boneDensity,
 		loadingRecommendation,
 		loadingRecommendationTitleRu,
@@ -225,10 +255,16 @@ export function generateImplantSurgeryDiaryEntry(params: {
 	insertionTorqueNcm: number;
 	boneDensity: MischBoneDensity;
 	stats: { meanIsq: number; minIsq: number; maxIsq: number };
+	isIsqMeasured?: boolean;
 	loadingRecommendationTitleRu: string;
 	surgeonName: string;
 }): string {
-	return `Протокол дентальной имплантации (Форма № 043/у): В области отсутствующего зуба ${params.toothNumberFdi} сформировано костное ложе в кости типа ${params.boneDensity}. Установлен дентальный имплантат ${params.implantSystemName} Ø${params.diameterMm} x ${params.lengthMm} мм. Первичный торк фиксации: ${params.insertionTorqueNcm} Н·см. Резонансно-частотный анализ стабильности (RFA Osstell/Penguin): ISQ средний = ${params.stats.meanIsq} (диапазон ${params.stats.minIsq}..${params.stats.maxIsq} ISQ). Клиническое решение: ${params.loadingRecommendationTitleRu}. Хирург: ${params.surgeonName}.`;
+	const isqMeasured = params.isIsqMeasured ?? (params.stats.meanIsq > 0);
+	const stabilityPart = isqMeasured
+		? `Резонансно-частотный анализ стабильности (RFA Osstell/Penguin): ISQ средний = ${params.stats.meanIsq} (диапазон ${params.stats.minIsq}..${params.stats.maxIsq} ISQ). `
+		: `Контроль стабильности: по торку динамометрического ключа (${params.insertionTorqueNcm} Н·см, без аппарата ISQ). `;
+
+	return `Протокол дентальной имплантации (Форма № 043/у): В области отсутствующего зуба ${params.toothNumberFdi} сформировано костное ложе в кости типа ${params.boneDensity}. Установлен дентальный имплантат ${params.implantSystemName} Ø${params.diameterMm} x ${params.lengthMm} мм. Первичный торк фиксации: ${params.insertionTorqueNcm} Н·см. ${stabilityPart}Клиническое решение: ${params.loadingRecommendationTitleRu}. Хирург: ${params.surgeonName}.`;
 }
 
 export function generateImplantPassportRecord(params: {
@@ -238,8 +274,11 @@ export function generateImplantPassportRecord(params: {
 	lengthMm: number;
 	insertionTorqueNcm: number;
 	meanIsq: number;
+	isIsqMeasured?: boolean;
 	surgeonName: string;
 }): string {
 	const now = new Date().toLocaleDateString('ru-RU');
-	return `ПАСПОРТ ИМПЛАНТАТА • Зуб ${params.toothNumberFdi} • ${params.implantSystemName} Ø${params.diameterMm}x${params.lengthMm}мм • Дата: ${now} • Торк: ${params.insertionTorqueNcm} Н·см • ISQ: ${params.meanIsq} • Врач: ${params.surgeonName}`;
+	const isqMeasured = params.isIsqMeasured ?? (params.meanIsq > 0);
+	const isqPart = isqMeasured ? ` • ISQ: ${params.meanIsq}` : ` • Контроль по торку (без ISQ)`;
+	return `ПАСПОРТ ИМПЛАНТАТА • Зуб ${params.toothNumberFdi} • ${params.implantSystemName} Ø${params.diameterMm}x${params.lengthMm}мм • Дата: ${now} • Торк: ${params.insertionTorqueNcm} Н·см${isqPart} • Врач: ${params.surgeonName}`;
 }

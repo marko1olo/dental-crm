@@ -66,6 +66,7 @@ export function ImplantIsqProtocolModal({
 
 	// Surgical variables
 	const [insertionTorqueNcm, setInsertionTorqueNcm] = useState<number>(38);
+	const [isIsqMode, setIsIsqMode] = useState<boolean>(false); // Default to torque-only (without requiring 350k+ ruble ISQ device)
 	const [isqReadings, setIsqReadings] = useState<DirectionalIsqReadings>({
 		vestibularBuccal: 72,
 		lingualPalatal: 74,
@@ -88,6 +89,7 @@ export function ImplantIsqProtocolModal({
 			insertionTorqueNcm,
 			boneDensity,
 			isqReadings,
+			isIsqMeasured: isIsqMode,
 			isGbrOrSinusLift: isGbr,
 			isImmediateExtractionSocket: isImmediateExtraction,
 			surgeonName
@@ -100,6 +102,7 @@ export function ImplantIsqProtocolModal({
 		insertionTorqueNcm,
 		boneDensity,
 		isqReadings,
+		isIsqMode,
 		isGbr,
 		isImmediateExtraction,
 		surgeonName
@@ -241,6 +244,55 @@ export function ImplantIsqProtocolModal({
 						</label>
 					</div>
 
+					{/* 1-Click Protocol Mode Switcher: Torque vs ISQ */}
+					<div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+						<button
+							type="button"
+							onClick={() => setIsIsqMode(false)}
+							className="isq-btn"
+							style={{
+								minHeight: '44px',
+								fontWeight: 700,
+								fontSize: '0.8125rem',
+								background: !isIsqMode ? 'var(--brand-500, #3b82f6)' : 'var(--paper, #fff)',
+								color: !isIsqMode ? '#fff' : 'var(--ink, #0f172a)',
+								borderColor: !isIsqMode ? 'var(--brand-500, #3b82f6)' : 'var(--line, #e2e8f0)',
+								boxShadow: !isIsqMode ? '0 2px 8px rgba(59, 130, 246, 0.25)' : 'none',
+								display: 'inline-flex',
+								alignItems: 'center',
+								gap: '0.5rem'
+							}}
+							data-testid="btn-isq-modal-torque-only"
+						>
+							<Gauge size={18} />
+							<span>Контроль стабильности по торку (без аппарата ISQ)</span>
+							{!isIsqMode && <CheckCircle2 size={16} />}
+						</button>
+
+						<button
+							type="button"
+							onClick={() => setIsIsqMode(true)}
+							className="isq-btn"
+							style={{
+								minHeight: '44px',
+								fontWeight: 700,
+								fontSize: '0.8125rem',
+								background: isIsqMode ? '#8b5cf6' : 'var(--paper, #fff)',
+								color: isIsqMode ? '#fff' : 'var(--ink, #0f172a)',
+								borderColor: isIsqMode ? '#8b5cf6' : 'var(--line, #e2e8f0)',
+								boxShadow: isIsqMode ? '0 2px 8px rgba(139, 92, 246, 0.25)' : 'none',
+								display: 'inline-flex',
+								alignItems: 'center',
+								gap: '0.5rem'
+							}}
+							data-testid="btn-isq-modal-isq-rfa"
+						>
+							<Compass size={18} />
+							<span>Аппаратный RFA ISQ (Osstell / Penguin)</span>
+							{isIsqMode && <CheckCircle2 size={16} />}
+						</button>
+					</div>
+
 					{/* Sensor Instruments: Torque Gauge & 4-Directional ISQ */}
 					<div className="isq-sensors-grid">
 						{/* Panel 1: Insertion Torque Gauge */}
@@ -272,84 +324,140 @@ export function ImplantIsqProtocolModal({
 								value={insertionTorqueNcm}
 								onChange={e => setInsertionTorqueNcm(parseInt(e.target.value))}
 								style={{ width: '100%' }}
+								data-testid="isq-modal-torque-slider"
 							/>
+
+							{/* Quick Torque Presets (1-Click) */}
+							<div style={{ display: 'flex', justifyContent: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+								{[15, 25, 35, 40, 45, 55].map(tVal => (
+									<button
+										key={tVal}
+										type="button"
+										onClick={() => setInsertionTorqueNcm(tVal)}
+										className="isq-btn"
+										style={{
+											minHeight: '32px',
+											minWidth: '40px',
+											padding: '0.2rem 0.5rem',
+											fontSize: '0.75rem',
+											fontWeight: insertionTorqueNcm === tVal ? 800 : 600,
+											background: insertionTorqueNcm === tVal ? 'var(--brand-500, #3b82f6)' : 'var(--paper, #fff)',
+											color: insertionTorqueNcm === tVal ? '#fff' : 'var(--muted, #64748b)',
+											borderColor: insertionTorqueNcm === tVal ? 'var(--brand-500, #3b82f6)' : 'var(--line, #e2e8f0)'
+										}}
+									>
+										{tVal} Н·см
+									</button>
+								))}
+							</div>
 
 							<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)', textAlign: 'center' }}>
 								{TORQUE_STANDARDS[assessment.torqueCategory].clinicalImplicationRu}
 							</div>
 						</div>
 
-						{/* Panel 2: 4-Directional ISQ RFA Compass */}
-						<div className="isq-sensor-card">
-							<div className="isq-card-title">
-								<Compass size={18} color="var(--ok, #10b981)" />
-								RFA Датчики ISQ (4 направления)
-							</div>
-
-							{/* Compass Matrix */}
-							<div className="isq-cross-container">
-								<div />
-								{/* Vestibular */}
-								<div className="isq-direction-box">
-									<span className="isq-direction-label">Вестиб. (V)</span>
-									<input
-										type="number"
-										value={isqReadings.vestibularBuccal}
-										onChange={e => handleDirectionalIsqChange('vestibularBuccal', parseInt(e.target.value))}
-										className="isq-direction-input"
-									/>
-								</div>
-								<div />
-
-								{/* Mesial */}
-								<div className="isq-direction-box">
-									<span className="isq-direction-label">Медиал. (M)</span>
-									<input
-										type="number"
-										value={isqReadings.mesial}
-										onChange={e => handleDirectionalIsqChange('mesial', parseInt(e.target.value))}
-										className="isq-direction-input"
-									/>
+						{/* Panel 2: 4-Directional ISQ RFA Compass or Torque-Only Status */}
+						{isIsqMode ? (
+							<div className="isq-sensor-card" data-testid="panel-isq-compass">
+								<div className="isq-card-title">
+									<Compass size={18} color="var(--ok, #10b981)" />
+									RFA Датчики ISQ (4 направления)
 								</div>
 
-								{/* Center: Mean ISQ Badge */}
-								<div style={{ textAlign: 'center' }}>
-									<div style={{ fontSize: '1.5rem', fontWeight: 800, color: assessment.meanIsq >= 70 ? 'var(--ok, #10b981)' : assessment.meanIsq >= 60 ? 'var(--warn, #f59e0b)' : 'var(--bad, #ef4444)' }}>
-										{assessment.meanIsq}
+								{/* Compass Matrix */}
+								<div className="isq-cross-container">
+									<div />
+									{/* Vestibular */}
+									<div className="isq-direction-box">
+										<span className="isq-direction-label">Вестиб. (V)</span>
+										<input
+											type="number"
+											value={isqReadings.vestibularBuccal}
+											onChange={e => handleDirectionalIsqChange('vestibularBuccal', parseInt(e.target.value))}
+											className="isq-direction-input"
+										/>
 									</div>
-									<div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--muted, #64748b)' }}>ISQ СРЕДНИЙ</div>
+									<div />
+
+									{/* Mesial */}
+									<div className="isq-direction-box">
+										<span className="isq-direction-label">Медиал. (M)</span>
+										<input
+											type="number"
+											value={isqReadings.mesial}
+											onChange={e => handleDirectionalIsqChange('mesial', parseInt(e.target.value))}
+											className="isq-direction-input"
+										/>
+									</div>
+
+									{/* Center: Mean ISQ Badge */}
+									<div style={{ textAlign: 'center' }}>
+										<div style={{ fontSize: '1.5rem', fontWeight: 800, color: assessment.meanIsq >= 70 ? 'var(--ok, #10b981)' : assessment.meanIsq >= 60 ? 'var(--warn, #f59e0b)' : 'var(--bad, #ef4444)' }}>
+											{assessment.meanIsq}
+										</div>
+										<div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--muted, #64748b)' }}>ISQ СРЕДНИЙ</div>
+									</div>
+
+									{/* Distal */}
+									<div className="isq-direction-box">
+										<span className="isq-direction-label">Дистал. (D)</span>
+										<input
+											type="number"
+											value={isqReadings.distal}
+											onChange={e => handleDirectionalIsqChange('distal', parseInt(e.target.value))}
+											className="isq-direction-input"
+										/>
+									</div>
+
+									<div />
+									{/* Lingual */}
+									<div className="isq-direction-box">
+										<span className="isq-direction-label">Язычн. (L)</span>
+										<input
+											type="number"
+											value={isqReadings.lingualPalatal}
+											onChange={e => handleDirectionalIsqChange('lingualPalatal', parseInt(e.target.value))}
+											className="isq-direction-input"
+										/>
+									</div>
+									<div />
 								</div>
 
-								{/* Distal */}
-								<div className="isq-direction-box">
-									<span className="isq-direction-label">Дистал. (D)</span>
-									<input
-										type="number"
-										value={isqReadings.distal}
-										onChange={e => handleDirectionalIsqChange('distal', parseInt(e.target.value))}
-										className="isq-direction-input"
-									/>
+								<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted, #64748b)', borderTop: '1px solid var(--line, #e2e8f0)', paddingTop: '0.375rem' }}>
+									<span>Мин: <strong>{assessment.minIsq}</strong> / Макс: <strong>{assessment.maxIsq}</strong></span>
+									<span>Анизотропия Δ: <strong>{assessment.anisotropyDeltaIsq} ISQ</strong></span>
 								</div>
-
-								<div />
-								{/* Lingual */}
-								<div className="isq-direction-box">
-									<span className="isq-direction-label">Язычн. (L)</span>
-									<input
-										type="number"
-										value={isqReadings.lingualPalatal}
-										onChange={e => handleDirectionalIsqChange('lingualPalatal', parseInt(e.target.value))}
-										className="isq-direction-input"
-									/>
-								</div>
-								<div />
 							</div>
+						) : (
+							<div className="isq-sensor-card" data-testid="panel-torque-only" style={{ justifyContent: 'center' }}>
+								<div className="isq-card-title">
+									<CheckCircle2 size={18} color="var(--ok, #10b981)" />
+									Контроль стабильности по торку ключа
+								</div>
 
-							<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--muted, #64748b)', borderTop: '1px solid var(--line, #e2e8f0)', paddingTop: '0.375rem' }}>
-								<span>Мин: <strong>{assessment.minIsq}</strong> / Макс: <strong>{assessment.maxIsq}</strong></span>
-								<span>Анизотропия Δ: <strong>{assessment.anisotropyDeltaIsq} ISQ</strong></span>
+								<div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink, #0f172a)' }}>
+										✓ Аппарат ISQ не требуется
+									</div>
+									<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)', lineHeight: 1.5 }}>
+										Первичная стабильность подтверждена хирургическим динамометрическим ключом ({insertionTorqueNcm} Н·см). Заполнение 4 направлений не требуется.
+									</div>
+									<div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ok, #10b981)' }}>
+										Паспорт готов к мгновенному сохранению в 1 клик.
+									</div>
+								</div>
+
+								<button
+									type="button"
+									onClick={() => setIsIsqMode(true)}
+									className="isq-btn"
+									style={{ fontSize: '0.75rem', minHeight: '36px', padding: '0.375rem 0.75rem', alignSelf: 'flex-start' }}
+								>
+									<Compass size={14} />
+									<span>Подключить замеры ISQ (при наличии датчиков SmartPeg)</span>
+								</button>
 							</div>
-						</div>
+						)}
 					</div>
 
 					{/* Smart Clinical Recommendation Banner */}
@@ -449,6 +557,7 @@ export function ImplantIsqProtocolModal({
 							type="button"
 							onClick={onClose}
 							className="isq-btn"
+							data-testid="btn-close-isq-modal"
 						>
 							Закрыть
 						</button>
@@ -456,9 +565,10 @@ export function ImplantIsqProtocolModal({
 							type="button"
 							onClick={handleSave}
 							className="isq-btn isq-btn-primary"
+							data-testid="btn-save-isq-protocol"
 						>
 							<CheckCircle2 size={16} />
-							Сохранить протокол ISQ
+							{isIsqMode ? 'Сохранить протокол ISQ' : 'Сохранить протокол (по торку)'}
 						</button>
 					</div>
 				</div>

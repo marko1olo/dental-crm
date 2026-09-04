@@ -1,0 +1,75 @@
+/* ==========================================================================
+   VISIT SURGERY COCKPIT STYLES (DENTE CRM)
+   Tier 1 Hot-Path Surgical Protocol & Implantology Controls
+   ========================================================================== */
+
+.visit-surgery-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	border-radius: var(--radius-xl, 16px);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+}
+
+.visit-surgery-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: gap;
+	gap: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line);
+}
+
+.visit-surgery-touch-card {
+	min-height: 52px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease-in-out;
+	touch-action: manipulation;
+}
+
+.visit-surgery-touch-card:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.visit-surgery-touch-card.active {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
+	border-color: var(--teal, #0d9488);
+}
+
+/* Sterile Glove Mode (Extra Large Touch Targets) */
+.sterile-glove-active .visit-surgery-touch-card {
+	min-height: 60px;
+	padding: 14px 18px;
+}
+
+.visit-surgery-btn-action {
+	min-height: 48px;
+	padding: 10px 18px;
+	border-radius: 12px;
+	font-size: 13px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.15s ease-in-out;
+}
+
+.visit-surgery-btn-action:active {
+	transform: scale(0.98);
+}

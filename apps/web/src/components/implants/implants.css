@@ -1,0 +1,116 @@
+/* ==========================================================================
+   IMPLANTS MODULE STYLES (DENTE CRM)
+   Streamlined, Glove-friendly, Zero-barrier Surgical Passport Cards
+   ========================================================================== */
+
+.implant-passport-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1060;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.implant-passport-card-container {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-xl, 20px);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+	width: 100%;
+	max-width: 820px;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.implant-passport-header-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.implant-passport-content {
+	padding: 20px;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.implant-passport-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.implant-touch-btn {
+	min-height: 48px;
+	padding: 10px 18px;
+	border-radius: 12px;
+	font-size: 13px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	border: 1px solid transparent;
+	touch-action: manipulation;
+}
+
+.implant-touch-btn:active {
+	transform: scale(0.98);
+}
+
+.implant-system-pill {
+	min-height: 48px;
+	padding: 8px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 800;
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.implant-system-pill:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.implant-system-pill.selected {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal, #0d9488);
+}
+
+.implant-passport-display-card {
+	padding: 20px;
+	border-radius: 16px;
+	background: linear-gradient(135deg, var(--paper-soft), var(--paper));
+	border: 1px solid var(--line);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}

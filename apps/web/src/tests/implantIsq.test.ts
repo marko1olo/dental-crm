@@ -212,6 +212,96 @@ describe('Dental Implant Insertion Torque & ISQ RFA Sensor Suite', () => {
 			assert.ok(passport.includes('Зуб 36'));
 			assert.ok(passport.includes('Торк: 38 Н·см'));
 		});
+
+		it('generates Form 043/u diary and passport for torque-only mode (without ISQ apparatus)', () => {
+			const diary = generateImplantSurgeryDiaryEntry({
+				toothNumberFdi: 46,
+				implantSystemName: 'Osstem TS III',
+				diameterMm: 4.5,
+				lengthMm: 10.0,
+				insertionTorqueNcm: 40,
+				boneDensity: 'D2',
+				stats: { meanIsq: 0, minIsq: 0, maxIsq: 0 },
+				isIsqMeasured: false,
+				loadingRecommendationTitleRu: 'Немедленная нагрузка',
+				surgeonName: 'Д-р Ковалев С. П.'
+			});
+
+			assert.ok(diary.includes('Контроль стабильности: по торку динамометрического ключа (40 Н·см, без аппарата ISQ)'));
+
+			const passport = generateImplantPassportRecord({
+				toothNumberFdi: 46,
+				implantSystemName: 'Osstem TS III',
+				diameterMm: 4.5,
+				lengthMm: 10.0,
+				insertionTorqueNcm: 40,
+				meanIsq: 0,
+				isIsqMeasured: false,
+				surgeonName: 'Д-р Ковалев С. П.'
+			});
+
+			assert.ok(passport.includes('Торк: 40 Н·см • Контроль по торку (без ISQ)'));
+		});
+	});
+
+	describe('7. Solo Freedom: Torque-Only Stability Control (Without ISQ Apparatus)', () => {
+		it('evaluates high stability and immediate loading safely purely based on torque >= 35 Ncm', () => {
+			const res = evaluateImplantIsqStability({
+				implantSystemName: 'Straumann BLX',
+				diameterMm: 4.0,
+				lengthMm: 10.0,
+				toothNumberFdi: 36,
+				insertionTorqueNcm: 42,
+				boneDensity: 'D2',
+				isIsqMeasured: false,
+				isGbrOrSinusLift: false,
+				isImmediateExtractionSocket: false,
+				surgeonName: 'Д-р Ковалев'
+			});
+
+			assert.equal(res.isIsqMeasured, false);
+			assert.equal(res.isqStatusRu, 'Контроль по торку (без аппарата ISQ)');
+			assert.equal(res.loadingRecommendation, 'immediate_loading_safe');
+			assert.ok(res.clinicalRationaleRu.includes('динамометрическому ключу'));
+			assert.equal(res.warnings.length, 0, 'No false anisotropy warning when ISQ is not used');
+		});
+
+		it('evaluates standard stability (early loading) for torque 25 Ncm without ISQ', () => {
+			const res = evaluateImplantIsqStability({
+				implantSystemName: 'Dentium SuperLine',
+				diameterMm: 4.0,
+				lengthMm: 10.0,
+				toothNumberFdi: 15,
+				insertionTorqueNcm: 25,
+				boneDensity: 'D3',
+				isIsqMeasured: false,
+				isGbrOrSinusLift: false,
+				isImmediateExtractionSocket: false,
+				surgeonName: 'Д-р Ковалев'
+			});
+
+			assert.equal(res.isIsqMeasured, false);
+			assert.equal(res.loadingRecommendation, 'early_loading_6_weeks');
+		});
+
+		it('evaluates delayed loading for low torque < 20 Ncm without ISQ', () => {
+			const res = evaluateImplantIsqStability({
+				implantSystemName: 'Osstem TS III',
+				diameterMm: 4.0,
+				lengthMm: 8.5,
+				toothNumberFdi: 26,
+				insertionTorqueNcm: 15,
+				boneDensity: 'D4',
+				isIsqMeasured: false,
+				isGbrOrSinusLift: false,
+				isImmediateExtractionSocket: false,
+				surgeonName: 'Д-р Ковалев'
+			});
+
+			assert.equal(res.isIsqMeasured, false);
+			assert.equal(res.loadingRecommendation, 'delayed_loading_3_months');
+		});
 	});
 
 });
+
