@@ -67,6 +67,18 @@ export interface DentalFastPrescriptionSet {
 
 export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
 	{
+		id: "standard_anti_inflammatory_course",
+		label: "«Стандартный противовоспалительный курс»",
+		desc: "Амоксиклав (875/125 мг 2 р/д 5-7 дн.) + Нимесил (100 мг 2 р/д при болях) + Хлоргексидин 0.05% (ванночки 3-4 р/д)",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
+	},
+	{
+		id: "analgesia_nimesil",
+		label: "«Анальгезия» (Нимесил 100 мг)",
+		desc: "Нимесил (Нимесулид) 100 мг — по 1 пак. 2 раза в день при болях до 5 дней",
+		drugIds: ["nimesulide_100"],
+	},
+	{
 		id: "post_extraction_surgery",
 		label: "«После удаления / хирургии»",
 		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №10 + Супрастин 25 мг",
@@ -296,26 +308,26 @@ export interface PrescriptionPrintModalProps {
 		readonly gender?: string | null;
 		readonly snils?: string | null;
 		readonly omsPolicy?: string | null;
-		readonly allergies?: readonly string[] | string[] | string | null;
+		readonly allergies?: readonly string[] | string[] | string | null | undefined;
 	} | null;
-	readonly allergies?: readonly string[] | string[] | string | null;
+	readonly allergies?: readonly string[] | string[] | string | null | undefined;
 	readonly diary?: DiaryState | {
 		readonly diagnosisIcd10?: string | null;
 		readonly treatmentDescription?: string | null;
 		readonly anamnesis?: string | null;
 		readonly statusLocalis?: string | null;
 	} | null;
-	readonly doctorName?: string | null;
-	readonly doctorSpecialty?: string | null;
-	readonly doctorSnils?: string | null;
-	readonly clinicName?: string | null;
-	readonly clinicAddress?: string | null;
-	readonly clinicPhone?: string | null;
-	readonly clinicOgrn?: string | null;
-	readonly clinicInn?: string | null;
-	readonly medicalLicenseNumber?: string | null;
+	readonly doctorName?: string | null | undefined;
+	readonly doctorSpecialty?: string | null | undefined;
+	readonly doctorSnils?: string | null | undefined;
+	readonly clinicName?: string | null | undefined;
+	readonly clinicAddress?: string | null | undefined;
+	readonly clinicPhone?: string | null | undefined;
+	readonly clinicOgrn?: string | null | undefined;
+	readonly clinicInn?: string | null | undefined;
+	readonly medicalLicenseNumber?: string | null | undefined;
 	readonly initialSelectedDrugIds?: readonly string[] | undefined;
-	readonly onPrescriptionCreated?: (prescription: any) => void;
+	readonly onPrescriptionCreated?: ((prescription: any) => void) | undefined;
 }
 
 export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({

@@ -24,6 +24,7 @@ export type CarpuleVolumeMl = 1.7 | 1.8 | 2.0;
 export type PediatricFormula = 'clark' | 'young' | 'direct_mg_kg';
 
 import { resolveClinicalDefaultWeightKg } from '../anesthesia/anesthesiaEngine';
+export { resolveClinicalDefaultWeightKg };
 
 export type SafetyZone = 'green_safe' | 'yellow_caution' | 'orange_warning' | 'red_stop';
 
@@ -179,6 +180,7 @@ export interface MrdCalculationParams {
 
 export interface MrdCalculationResult {
 	readonly drug: MrdDrugSpecification;
+	readonly patientWeightKg: number;
 	readonly carpuleVolumeMl: number;
 	readonly mgActivePerCarpule: number;
 	readonly mgEpiPerCarpule: number;
@@ -211,6 +213,7 @@ export interface MrdCalculationResult {
 	readonly limitingFactorDescriptionRu: string;
 	readonly isCardiacRestricted: boolean;
 	readonly cardiacGateActive: boolean;
+	readonly isPediatric: boolean;
 	readonly isPediatricScaled: boolean;
 	readonly pediatricFormulaUsed: PediatricFormula | null;
 	readonly pediatricScalingFactor: number;
@@ -411,6 +414,7 @@ export function calculateAnesthesiaMrd(params: MrdCalculationParams): MrdCalcula
 
 	return {
 		drug,
+		patientWeightKg: weight,
 		carpuleVolumeMl: carpuleVolume,
 		mgActivePerCarpule,
 		mgEpiPerCarpule,
@@ -437,6 +441,7 @@ export function calculateAnesthesiaMrd(params: MrdCalculationParams): MrdCalcula
 		limitingFactorDescriptionRu: limitingDesc,
 		isCardiacRestricted: isCardiacRisk && !drug.isAdrenalineFree,
 		cardiacGateActive,
+		isPediatric,
 		isPediatricScaled: isPediatric,
 		pediatricFormulaUsed,
 		pediatricScalingFactor,

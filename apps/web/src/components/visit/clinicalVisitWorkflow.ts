@@ -360,6 +360,16 @@ export function completeClinicalVisitAndAssembleEstimate(
 	const totalNet = Math.max(0, roundToKopecks(totalGross - totalDiscount));
 	const totalNetKop = Math.round(totalNet * 100);
 
+	const itemsWithDiscount = allItems.map((item) => {
+		const itemGross = item.totalRub || item.priceRub * item.quantity;
+		const itemDiscount = discountPercent > 0 ? roundToKopecks(itemGross * (discountPercent / 100)) : (item.discountRub || 0);
+		return {
+			...item,
+			discountRub: itemDiscount,
+			totalRub: Math.max(0, roundToKopecks(itemGross - itemDiscount)),
+		};
+	});
+
 	const now = new Date();
 	const year = now.getFullYear();
 	const randNum = Math.floor(10000 + Math.random() * 90000);
@@ -367,7 +377,12 @@ export function completeClinicalVisitAndAssembleEstimate(
 	const invoiceId = `INV-${year}-${randNum}`;
 
 	const sbpQrUrl = `https://qr.nspk.ru/AD1000${randNum}?type=02&bank=100000000007&sum=${totalNetKop}&cur=RUB&crc=8192`;
-	const statusBannerText = `Смета сформирована: ${totalNet.toLocaleString("ru-RU")} ₽ • Чек передан на кассу / готов к оплате`;
+	
+	const isZeroDue = totalNet === 0;
+	const status: "ready_for_payment" | "completed" = isZeroDue ? "completed" : "ready_for_payment";
+	const statusBannerText = isZeroDue
+		? "Гарантийный прием / 100% скидка • Оплачено (скидка 100%)"
+		: `Смета сформирована: ${totalNet.toLocaleString("ru-RU")} ₽ • Чек передан на кассу / готов к оплате`;
 
 	return {
 		visitId: input.visitId,
@@ -380,8 +395,8 @@ export function completeClinicalVisitAndAssembleEstimate(
 		totalDiscountRub: totalDiscount,
 		totalNetRub: totalNet,
 		totalNetKop,
-		items: allItems,
-		status: "ready_for_payment",
+		items: itemsWithDiscount,
+		status,
 		statusBannerText,
 		sbpQrUrl,
 		sbpQrPayload: sbpQrUrl,

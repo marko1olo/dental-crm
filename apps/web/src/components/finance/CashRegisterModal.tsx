@@ -333,19 +333,29 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		}
 	};
 
-	const applyRemainingToMethod = (targetMethod: "card" | "cash" | "sbp") => {
+	const applyRemainingToMethod = (targetMethod: "card" | "cash" | "sbp" | "deposit" | "family") => {
 		const totalKop = rubToKopecks(totalInvoiceRub);
-		let otherKop = rubToKopecks(splitDepositRub) + rubToKopecks(splitFamilyRub);
+		let otherKop = 0;
 		if (targetMethod !== "card") otherKop += rubToKopecks(splitCardRub);
 		if (targetMethod !== "cash") otherKop += rubToKopecks(splitCashRub);
 		if (targetMethod !== "sbp") otherKop += rubToKopecks(splitSbpRub);
+		if (targetMethod !== "deposit") otherKop += rubToKopecks(splitDepositRub);
+		if (targetMethod !== "family") otherKop += rubToKopecks(splitFamilyRub);
 
 		const remKop = Math.max(0, totalKop - otherKop);
-		const remRub = kopecksToRub(remKop);
+		let finalKop = remKop;
+		if (targetMethod === "deposit") {
+			finalKop = Math.min(remKop, rubToKopecks(patientDepositRub || 0));
+		} else if (targetMethod === "family") {
+			finalKop = Math.min(remKop, rubToKopecks(patientFamilyBalanceRub || 0));
+		}
+		const remRub = kopecksToRub(finalKop);
 
 		if (targetMethod === "card") setSplitCardRub(remRub);
 		if (targetMethod === "cash") setSplitCashRub(remRub);
 		if (targetMethod === "sbp") setSplitSbpRub(remRub);
+		if (targetMethod === "deposit") setSplitDepositRub(remRub);
+		if (targetMethod === "family") setSplitFamilyRub(remRub);
 	};
 
 	// Fast 1-Click fiscalize action with rage click debounce + atomic ref lock
@@ -495,51 +505,66 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			let receiptDateIso = new Date().toISOString();
 			let qrUrl = "";
 
-			try {
-				const res = await fetch("/api/fiscal/receipts", {
-					method: "POST",
-					headers,
-					body: JSON.stringify(payload),
-				});
+			const isZeroDue = totalInvoiceRub === 0;
 
-				if (res.ok) {
-					const resData = (await res.json()) as {
-						fiscalSign?: string;
-						fiscalDocumentNumber?: number;
-						receiptIssuedAt?: string;
-						ofdVerificationUrl?: string;
-						qrString?: string;
-						compiledReceipt?: {
-							tag1077_fiscalSign?: string;
-							tag1040_fiscalDocumentNumber?: number;
-							tag1012_dateTime?: string;
+			if (isZeroDue) {
+				// Мандат 8e, п. 7: Гарантийный прием / 100% скидка.
+				// Ограждаем ККТ от вызова с нулевой суммой (защита от аппаратной ошибки ККТ "Сумма чека не может быть 0").
+				fiscalSign = "WARRANTY-100-GUARANTEE";
+				fiscalDocNumber = 0;
+				qrUrl = "";
+			} else {
+				try {
+					const res = await fetch("/api/fiscal/receipts", {
+						method: "POST",
+						headers,
+						body: JSON.stringify(payload),
+					});
+
+					if (res.ok) {
+						const resData = (await res.json()) as {
+							fiscalSign?: string;
+							fiscalDocumentNumber?: number;
+							receiptIssuedAt?: string;
+							ofdVerificationUrl?: string;
+							qrString?: string;
+							compiledReceipt?: {
+								tag1077_fiscalSign?: string;
+								tag1040_fiscalDocumentNumber?: number;
+								tag1012_dateTime?: string;
+							};
 						};
-					};
-					fiscalSign = resData.fiscalSign || resData.compiledReceipt?.tag1077_fiscalSign || "";
-					fiscalDocNumber = resData.fiscalDocumentNumber || resData.compiledReceipt?.tag1040_fiscalDocumentNumber || 0;
-					receiptDateIso = resData.receiptIssuedAt || new Date().toISOString();
-					qrUrl = resData.ofdVerificationUrl || resData.qrString || `https://check.ofd.ru/rec/${clinicInn}/${fiscalDocNumber}/${fiscalSign}`;
-				} else {
-					const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-					console.warn("[CashRegisterModal] /api/fiscal/receipts returned error:", res.status, errData);
+						fiscalSign = resData.fiscalSign || resData.compiledReceipt?.tag1077_fiscalSign || "";
+						fiscalDocNumber = resData.fiscalDocumentNumber || resData.compiledReceipt?.tag1040_fiscalDocumentNumber || 0;
+						receiptDateIso = resData.receiptIssuedAt || new Date().toISOString();
+						qrUrl = resData.ofdVerificationUrl || resData.qrString || `https://check.ofd.ru/rec/${clinicInn}/${fiscalDocNumber}/${fiscalSign}`;
+					} else {
+						const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+						console.warn("[CashRegisterModal] /api/fiscal/receipts returned error:", res.status, errData);
+					}
+				} catch (fetchErr) {
+					console.warn("[CashRegisterModal] Network error during fiscalization:", fetchErr);
 				}
-			} catch (fetchErr) {
-				console.warn("[CashRegisterModal] Network error during fiscalization:", fetchErr);
 			}
 
 			const receiptResult = {
-				fiscalSign: fiscalSign || "QUEUE-OFFLINE",
-				fiscalDocNumber: fiscalDocNumber || 1,
+				fiscalSign: fiscalSign || (isZeroDue ? "WARRANTY-100-GUARANTEE" : "QUEUE-OFFLINE"),
+				fiscalDocNumber: fiscalDocNumber || (isZeroDue ? 0 : 1),
 				receiptDateIso,
 				qrUrl,
 				idempotencyKey,
 				totalRub: totalInvoiceRub,
 				itemsCount: effectiveItems.length,
+				status: isZeroDue ? "Оплачено (скидка 100%)" : "Оплачено",
+				paymentStatus: isZeroDue ? "Оплачено (скидка 100%)" : "Оплачено",
+				isWarrantyRework: isZeroDue,
 			};
 
 			setFiscalSuccessReceipt(receiptResult);
 			setToastMsg(
-				fiscalDocNumber > 0
+				isZeroDue
+					? "Гарантийный прием оформлен (скидка 100%, 0 ₽). Визит закрыт!"
+					: fiscalDocNumber > 0
 					? `Чек 54-ФЗ №${fiscalDocNumber} успешно фискализирован!`
 					: "Чек 54-ФЗ принят в обработку (ККТ / ОФД)",
 			);
@@ -1287,18 +1312,35 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										✓ 54-ФЗ: ИНН с физлиц НЕ требуется
 									</span>
 								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-									<button
-										type="button"
-										onClick={() => handleFiscalize("card")}
-										disabled={isProcessing}
-										className="h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
-										data-testid="btn-express-pay-card"
-										title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
-									>
-										<CreditCard className="w-4 h-4 shrink-0" />
-										<span>⚡ Оплатить картой (вся сумма)</span>
-									</button>
+								{totalInvoiceRub === 0 ? (
+									<div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex-wrap gap-2">
+										<span className="text-xs font-bold text-emerald-800 dark:text-emerald-200">
+											✓ Сумма к оплате 0 ₽ (100% скидка / Гарантия). Закрытие визита без кассового аппарата:
+										</span>
+										<button
+											type="button"
+											onClick={() => handleFiscalize()}
+											disabled={isProcessing}
+											className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+											data-testid="btn-express-close-warranty-zero"
+										>
+											<Zap className="w-4 h-4 fill-white" />
+											<span>⚡ Закрыть визит в 1 клик (0 ₽)</span>
+										</button>
+									</div>
+								) : (
+									<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+										<button
+											type="button"
+											onClick={() => handleFiscalize("card")}
+											disabled={isProcessing}
+											className="h-10 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+											data-testid="btn-express-pay-card"
+											title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
+										>
+											<CreditCard className="w-4 h-4 shrink-0" />
+											<span>⚡ Оплатить картой (вся сумма)</span>
+										</button>
 									<button
 										type="button"
 										onClick={() => handleFiscalize("cash")}
@@ -1322,6 +1364,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<span>⚡ Оплатить через СБП</span>
 									</button>
 								</div>
+								)}
 							</div>
 
 							{/* 1-Click Fast Payment Tender Selection Panel (32-36px height buttons) */}
@@ -2008,6 +2051,34 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									>
 										Остаток Наличными
 									</button>
+									<button
+										type="button"
+										onClick={() => applyRemainingToMethod("sbp")}
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800 cursor-pointer transition-all active:scale-95"
+										data-testid="btn-split-remainder-sbp"
+									>
+										Остаток через СБП
+									</button>
+									{patientDepositRub > 0 && (
+										<button
+											type="button"
+											onClick={() => applyRemainingToMethod("deposit")}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer transition-all active:scale-95"
+											data-testid="btn-split-remainder-deposit"
+										>
+											Остаток с Депозита
+										</button>
+									)}
+									{patientFamilyBalanceRub > 0 && (
+										<button
+											type="button"
+											onClick={() => applyRemainingToMethod("family")}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 cursor-pointer transition-all active:scale-95"
+											data-testid="btn-split-remainder-family"
+										>
+											Остаток из Семьи
+										</button>
+									)}
 								</div>
 
 								{/* Split summary indicator */}
@@ -2118,17 +2189,30 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 							Отмена
 						</button>
 
-						<button
-							type="button"
-							onClick={() => handleFiscalize()}
-							disabled={isProcessing}
-							title={isProcessing ? "Идет фискализация чека 54-ФЗ..." : "Оплатить и пробить фискальный чек (54-ФЗ)"}
-							className="h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-							data-testid="btn-cash-submit-fiscalize"
-						>
-							<Receipt className="w-4 h-4" />
-							<span>{isProcessing ? "Фискализация..." : "Оплатить и Пробить Чек (54-ФЗ)"}</span>
-						</button>
+						{totalInvoiceRub === 0 ? (
+							<button
+								type="button"
+								onClick={() => handleFiscalize()}
+								disabled={isProcessing}
+								className="h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								data-testid="btn-cash-submit-zero-warranty"
+							>
+								<Zap className="w-4 h-4 fill-white" />
+								<span>{isProcessing ? "Закрытие..." : "Закрыть визит: Гарантия (0 ₽)"}</span>
+							</button>
+						) : (
+							<button
+								type="button"
+								onClick={() => handleFiscalize()}
+								disabled={isProcessing}
+								title={isProcessing ? "Идет фискализация чека 54-ФЗ..." : "Оплатить и пробить фискальный чек (54-ФЗ)"}
+								className="h-10 px-5 rounded-xl text-xs sm:text-sm font-extrabold bg-teal-600 hover:bg-teal-700 text-white shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+								data-testid="btn-cash-submit-fiscalize"
+							>
+								<Receipt className="w-4 h-4" />
+								<span>{isProcessing ? "Фискализация..." : "Оплатить и Пробить Чек (54-ФЗ)"}</span>
+							</button>
+						)}
 					</div>
 				</div>
 			</div>

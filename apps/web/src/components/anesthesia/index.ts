@@ -8,6 +8,7 @@ export * from './AnesthesiaQuickBar';
 export * from './AnesthesiaPkuDisposalModal';
 export * from './EmergencyAnaphylaxisProtocolModal';
 export * from '../visit/anesthesiaMrdMath';
+export { resolveClinicalDefaultWeightKg } from './anesthesiaEngine';
 export {
 	calculateAnesthesiaSafety as calculateAnesthesiaComprehensiveSafety,
 	ANESTHESIA_DRUG_CATALOG,

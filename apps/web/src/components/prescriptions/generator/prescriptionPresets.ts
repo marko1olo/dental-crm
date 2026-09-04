@@ -273,6 +273,20 @@ export interface DentalFastPrescriptionPackage {
 
 export const DENTAL_FAST_PRESCRIPTION_PACKAGES: readonly DentalFastPrescriptionPackage[] = [
 	{
+		id: "standard_anti_inflammatory_course",
+		label: "⚡ «Стандартный противовоспалительный курс» (Амоксиклав + Нимесил + Хлоргексидин)",
+		desc: "Амоксиклав 875/125 мг №14 + Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл",
+		drugIds: ["amoxiclav_875_125", "nimesil_100", "chlorhexidine_005"],
+		badge: "Курс 1094н",
+	},
+	{
+		id: "analgesia_nimesil",
+		label: "⚡ «Анальгезия» (Нимесил 100 мг)",
+		desc: "Нимесил (Нимесулид) 100 мг №9 (гранулы для суспензии при болях до 5 дней)",
+		drugIds: ["nimesil_100"],
+		badge: "Обезболивание",
+	},
+	{
 		id: "post_extraction_implant",
 		label: "⚡ Комплект после удаления / имплантации (Нимесил 100мг + Хлоргексидин 0.05% + Амоксиклав 875/125)",
 		desc: "Нимесил 100 мг №9 + Хлоргексидин 0.05% 100 мл + Амоксиклав 875/125 мг №14 (хирургический протокол)",

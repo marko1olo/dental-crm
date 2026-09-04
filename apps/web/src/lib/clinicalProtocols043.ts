@@ -27,6 +27,7 @@ import {
 	ANESTHESIA_DRUGS,
 	calculateAnesthesiaSafety,
 	checkAnesthesiaSomaticContraindications,
+	resolveClinicalDefaultWeightKg,
 	type AnesthesiaDrugKey,
 	type SomaticRiskProfile,
 } from "../components/visit/anesthesiaCalculatorEngine.js";
@@ -1657,7 +1658,11 @@ export function calculateAnesthesiaCarpulesSafety(params: {
 				params.patientAgeYears !== undefined &&
 				params.patientAgeYears < 18),
 	);
-	const weight = hasValidWeight ? params.patientWeightKg! : 0;
+	const weight = resolveClinicalDefaultWeightKg(
+		params.patientWeightKg,
+		params.patientAgeYears,
+		isPediatric,
+	);
 	const carpules = Math.max(
 		0.25,
 		Number.isFinite(params.carpulesCount) && (params.carpulesCount ?? 0) > 0

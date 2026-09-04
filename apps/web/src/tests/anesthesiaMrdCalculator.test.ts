@@ -9,6 +9,7 @@ import {
 	calculateYoungFactor,
 	MRD_DRUG_CATALOG,
 	EPINEPHRINE_LIMITS_MG,
+	resolveClinicalDefaultWeightKg,
 } from '../components/visit/anesthesiaMrdMath';
 
 describe('Dental Anesthesia Maximum Recommended Dose (MRD) Caliper & Cardiac Gate Suite', () => {
@@ -356,6 +357,56 @@ describe('Dental Anesthesia Maximum Recommended Dose (MRD) Caliper & Cardiac Gat
 			assert.match(res.soapDiaryText, /2\.55 мл \(1\.5 карп\., 102 мг действ\. в-ва/);
 			assert.match(res.soapDiaryText, /Кардиоконтроль: адреналин <= 0\.04 мг/);
 			assert.match(res.soapDiaryText, /Аспирационная проба отрицательная/);
+		});
+	});
+
+	describe('7. Clinical Weight Fallback & Chairside Autonomy (Mandate 8e)', () => {
+		it('falls back to 70 kg physiological adult weight when weight is undefined or null', () => {
+			const weightUndefined = resolveClinicalDefaultWeightKg(undefined, 30);
+			assert.equal(weightUndefined, 70);
+
+			const weightNull = resolveClinicalDefaultWeightKg(null, undefined);
+			assert.equal(weightNull, 70);
+
+			const weightZero = resolveClinicalDefaultWeightKg(0, 45);
+			assert.equal(weightZero, 70);
+		});
+
+		it('calculates exact 1 carpule Articaine 1:100 000 (1.7 ml) for adult without specified weight without alerts', () => {
+			const res = calculateAnesthesiaMrd({
+				drugId: 'articaine_1_100k',
+				// patientWeightKg is omitted
+				carpulesCount: 1.0,
+				carpuleVolumeMl: 1.7,
+			});
+
+			assert.equal(res.patientWeightKg, 70);
+			assert.equal(res.injectedActiveMg, 68.0);
+			assert.equal(res.maxSafeActiveMg, 490.0); // 70 * 7.0 = 490
+			assert.equal(res.activeDosePercent, 14); // 68 / 490 = 13.87% -> 14%
+			assert.equal(res.safetyZone, 'green_safe');
+			assert.equal(res.isOverdose, false);
+			assert.equal(res.contraindications.length, 0);
+		});
+
+		it('applies pediatric age-based weight formula for child when weight is omitted', () => {
+			// Age 7: 3 * 7 + 4 = 25 kg
+			const childWeight = resolveClinicalDefaultWeightKg(undefined, 7, true);
+			assert.equal(childWeight, 25);
+
+			const childRes = calculateAnesthesiaMrd({
+				drugId: 'articaine_1_200k',
+				patientAgeYears: 7,
+				isPediatric: true,
+				carpulesCount: 0.5,
+				carpuleVolumeMl: 1.7,
+			});
+
+			assert.equal(childRes.patientWeightKg, 25);
+			assert.equal(childRes.isPediatric, true);
+			assert.equal(childRes.maxSafeActiveMg, 125.0); // 25 * 5.0 = 125 mg
+			assert.equal(childRes.injectedActiveMg, 34.0); // 0.5 * 68 = 34 mg
+			assert.equal(childRes.safetyZone, 'green_safe');
 		});
 	});
 

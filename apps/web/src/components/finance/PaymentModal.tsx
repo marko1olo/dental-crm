@@ -379,6 +379,36 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 				{/* Modal Body */}
 				<div className="p-4 overflow-y-auto flex-1 space-y-4">
+					{totalDueRub === 0 && (
+						<div
+							className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex items-center justify-between gap-3 flex-wrap"
+							data-testid="banner-payment-zero-warranty"
+						>
+							<div className="flex items-center gap-2">
+								<CheckCircle size={18} className="text-emerald-600" />
+								<span className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
+									Гарантийный прием / 100% скидка (к оплате 0 ₽)
+								</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									showToast("Гарантийный прием оформлен (скидка 100%, 0 ₽). Визит закрыт!", "success");
+									onSuccess({
+										method: "warranty_discount_100",
+										amountKopecks: 0,
+									});
+									onClose();
+								}}
+								className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
+								data-testid="btn-payment-close-warranty-zero"
+							>
+								<Sparkles size={14} />
+								<span>⚡ Закрыть визит в 1 клик (0 ₽)</span>
+							</button>
+						</div>
+					)}
+
 					{activeMethod === "card_terminal" || activeMethod === "sberpay_qr" || activeMethod === "biometry" ? (
 						<SberPayIntegration
 							patientId={patientId}
@@ -576,6 +606,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								>
 									Остаток наличными
 								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const totalKop = rubToKopecks(totalDueRub);
+										const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitCashRub) + rubToKopecks(splitDepositRub);
+										setSplitSbpRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
+									}}
+									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer"
+									data-testid="btn-payment-remainder-sbp"
+								>
+									Остаток через СБП
+								</button>
+								{patientDepositRub > 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											const totalKop = rubToKopecks(totalDueRub);
+											const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitCashRub) + rubToKopecks(splitSbpRub);
+											const remKop = Math.max(0, totalKop - otherKop);
+											setSplitDepositRub(kopecksToRub(Math.min(remKop, rubToKopecks(patientDepositRub))));
+										}}
+										className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-indigo-400 cursor-pointer"
+										data-testid="btn-payment-remainder-deposit"
+									>
+										Остаток из аванса
+									</button>
+								)}
 							</div>
 
 							{/* Parity indicator */}

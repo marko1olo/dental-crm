@@ -37,7 +37,15 @@ test("PrescriptionPrintModal component contract and drug catalog integrity", () 
 	assert.equal(DENTAL_DRUG_DOSAGE_LIMITS.suprastin_25.maxSingleDoseMg, 25);
 	assert.equal(DENTAL_DRUG_DOSAGE_LIMITS.suprastin_25.maxDailyDoseMg, 100);
 
-	// Verify 3 1-click canonical dental packages in DENTAL_FAST_PRESCRIPTION_SETS
+	// Verify canonical dental fast packages in DENTAL_FAST_PRESCRIPTION_SETS
+	const stdCourseSet = DENTAL_FAST_PRESCRIPTION_SETS.find((s) => s.id === "standard_anti_inflammatory_course");
+	assert.ok(stdCourseSet, "Package 'Стандартный противовоспалительный курс' must exist");
+	assert.deepEqual(stdCourseSet?.drugIds, ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"]);
+
+	const analgesiaSet = DENTAL_FAST_PRESCRIPTION_SETS.find((s) => s.id === "analgesia_nimesil");
+	assert.ok(analgesiaSet, "Package 'Анальгезия' must exist");
+	assert.deepEqual(analgesiaSet?.drugIds, ["nimesulide_100"]);
+
 	const postSurgerySet = DENTAL_FAST_PRESCRIPTION_SETS.find((s) => s.id === "post_extraction_surgery");
 	assert.ok(postSurgerySet, "Package 'После удаления / хирургии' must exist");
 	assert.deepEqual(postSurgerySet?.drugIds, ["amoxiclav_875_125", "nimesulide_100", "suprastin_25"]);
@@ -85,3 +93,48 @@ test("PrescriptionPrintModal component contract and drug catalog integrity", () 
 	assert.ok(html.includes("М.П."));
 	assert.ok(html.includes("Смирнов А.П."));
 });
+
+test("Form 107-1/u standard dental anti-inflammatory course (Order 1094n) clean official print without emojis", () => {
+	const stdPayload = generatePrescriptionPayloadFromSoap({
+		clinic: {
+			fullName: 'ООО "Стоматология Денте"',
+			address: "г. Москва, ул. Арбат, 10",
+			medicalLicenseNumber: "ЛО-77-01-020584",
+			ogrn: "1207700123456",
+			inn: "7701234567",
+			phone: "+7 (495) 123-45-67",
+		},
+		patient: {
+			fullName: "Иванов Иван Иванович",
+			birthDate: "1988-07-20",
+			medicalCardNumber: "043/у-2026-89",
+		},
+		doctor: {
+			fullName: "Д-р Смирнов А.П.",
+			specialty: "Врач-стоматолог-хирург",
+		},
+		diagnosisIcd10: "K04.4",
+		drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
+		withStampAndSignature: true,
+	});
+
+	assert.equal(stdPayload.items.length, 3);
+	assert.ok(stdPayload.items[0]?.latinName.includes("Amoxicillini"));
+	assert.ok(stdPayload.items[1]?.latinName.includes("Nimesulidi"));
+	assert.ok(stdPayload.items[2]?.latinName.includes("Chlorhexidini"));
+
+	const html = renderForm107_1uHtml(stdPayload);
+	assert.ok(html.includes("Форма бланка № 107-1/у"));
+	assert.ok(html.includes("Приказ МЗ РФ № 1094н") || html.includes("1094н"));
+	assert.ok(html.includes("ООО &quot;Стоматология Денте&quot;") || html.includes("Стоматология Денте"));
+	assert.ok(html.includes("ЛО-77-01-020584"));
+	assert.ok(html.includes("Иванов Иван Иванович"));
+	assert.ok(html.includes("Смирнов А.П."));
+	assert.ok(html.includes("Rp.:"));
+	assert.ok(html.includes("D.t.d."));
+	assert.ok(html.includes("S."));
+
+	// Strict ban on emojis in official statutory print (Mandate 8d sin #7)
+	assert.doesNotMatch(html, /[\u{1F300}-\u{1F9FF}]/u);
+});
+

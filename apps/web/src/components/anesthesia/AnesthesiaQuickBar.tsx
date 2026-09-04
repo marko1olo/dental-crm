@@ -154,8 +154,11 @@ export function AnesthesiaQuickBar({
 	const selectedDrugInfo = DENTAL_ANESTHETICS[selectedDrugId] ?? DENTAL_ANESTHETICS.articaine_1_200k;
 	const maxSafeCarpules = singleCarpuleResult.maxSafeCarpulesCount;
 
-	const handleApplyCarpules = (carpulesCount: number, bypassCheck = false) => {
+	const handleApplyCarpules = (carpulesCount: number, bypassCheck = false, overrideDrugId?: AnestheticDrugId) => {
 		if (disabled) return;
+
+		const targetDrugId = overrideDrugId ?? selectedDrugId;
+		const drugInfo = DENTAL_ANESTHETICS[targetDrugId] ?? selectedDrugInfo;
 
 		const effectiveWeight = resolveClinicalDefaultWeightKg(
 			patientWeightKg,
@@ -164,7 +167,7 @@ export function AnesthesiaQuickBar({
 		);
 
 		const result = calculateAnesthesiaSafety({
-			drugId: selectedDrugId,
+			drugId: targetDrugId,
 			carpulesCount,
 			patientWeightKg: effectiveWeight,
 			patientAgeYears,
@@ -195,7 +198,7 @@ export function AnesthesiaQuickBar({
 
 		onApplyAnesthesia(diaryEntry, result);
 		setActiveToastMessage(
-			`Зафиксировано: ${selectedDrugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
+			`Зафиксировано: ${drugInfo.tradeNamesRu[0]} ${(carpulesCount * 1.7).toFixed(1)} мл (${carpulesCount} карп.) в протокол 043/у`,
 		);
 		setTimeout(() => setActiveToastMessage(null), 3500);
 	};
@@ -346,6 +349,21 @@ export function AnesthesiaQuickBar({
 					<button
 						type="button"
 						disabled={disabled}
+						onClick={() => {
+							setSelectedDrugId("articaine_1_100k");
+							handleApplyCarpules(1.0, false, "articaine_1_100k");
+						}}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/50 text-xs sm:text-sm font-black text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="1 клик: 1 карпула Артикаина 1:100 000 (1.7 мл) в протокол дневника без модалок"
+						data-testid="anesthesia-dose-1carp-articaine-100k"
+					>
+						<Zap size={14} className="text-emerald-500 shrink-0" />
+						<span>1 карпула Артикаина 1:100 000 (1.7 мл)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled}
 						onClick={handleApplyStandardNormPreset}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/50 text-xs sm:text-sm font-black text-blue-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="1 клик норма: Артикаин 4% 1:100 000 (1.7 мл), аспирация (-), аллергий нет"
@@ -404,14 +422,30 @@ export function AnesthesiaQuickBar({
 					</button>
 				</div>
 
-				{/* Maximum Safe Carpules Badge */}
-				<div className="flex items-center gap-2 text-xs text-[var(--muted)] font-medium shrink-0">
+				{/* Maximum Safe Carpules Badge & Live MRD Safety Badge */}
+				<div className="flex items-center gap-2 flex-wrap text-xs text-[var(--muted)] font-medium shrink-0">
 					<Activity size={14} className="text-[var(--teal)]" />
 					<span>
 						МДД для {patientWeightKg} кг:{" "}
 						<strong className="text-[var(--ink)] font-bold">
 							до {maxSafeCarpules} карп. ({(maxSafeCarpules * 1.7).toFixed(1)} мл)
 						</strong>
+					</span>
+					<span
+						data-testid="anesthesia-mrd-safety-badge"
+						className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-colors ${
+							singleCarpuleResult.safetyZone === "safe"
+								? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+								: singleCarpuleResult.safetyZone === "caution"
+								? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+								: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30"
+						}`}
+						title={`Расчет 1 карпулы (1.7 мл): ${singleCarpuleResult.percentOfMaxDose}% от МРД`}
+					>
+						<CheckCircle2 size={12} className={singleCarpuleResult.safetyZone === "safe" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"} />
+						<span>
+							{singleCarpuleResult.percentOfMaxDose}% от МРД — {singleCarpuleResult.safetyZone === "safe" ? "безопасно" : singleCarpuleResult.safetyZone === "caution" ? "внимание" : "опасно"}
+						</span>
 					</span>
 				</div>
 			</div>
