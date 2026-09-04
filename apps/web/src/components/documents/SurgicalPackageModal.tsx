@@ -12,8 +12,10 @@ import {
 	ShieldCheck,
 	Zap,
 	Scissors,
+	Printer,
 } from "lucide-react";
 import { formatShortDate } from "../../AppHelpers";
+import { printSurgicalPackage } from "./surgicalPackagePrintEngine";
 
 export interface SurgicalPackageModalProps {
 	readonly isOpen: boolean;
@@ -24,6 +26,8 @@ export interface SurgicalPackageModalProps {
 	readonly onCreateDocument: (kind: DocumentKind) => void;
 	readonly onOpenDocument: (documentId: string) => void;
 	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: clinic profile settings draft
+	readonly clinicProfileDraft?: any;
 }
 
 export interface SurgicalItem {
@@ -88,6 +92,7 @@ export function SurgicalPackageModal({
 	onCreateDocument,
 	onOpenDocument,
 	onSelectDocumentKind,
+	clinicProfileDraft,
 }: SurgicalPackageModalProps): React.JSX.Element | null {
 	if (!isOpen) return null;
 
@@ -106,6 +111,52 @@ export function SurgicalPackageModal({
 		for (const kind of missingKinds) {
 			onCreateDocument(kind);
 		}
+	};
+
+	const handleBatchPrint = () => {
+		printSurgicalPackage({
+			patient: patient
+				? {
+						fullName: patient.fullName,
+						birthDate: patient.birthDate,
+						phone: patient.phone,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						snils: (patient as any)?.administrativeProfile?.snils || (patient as any)?.snils,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						registrationAddress: (patient as any)?.administrativeProfile?.registrationAddress || (patient as any)?.address,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						address: (patient as any)?.administrativeProfile?.registrationAddress || (patient as any)?.address,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						passportSeries: (patient as any)?.administrativeProfile?.passportSeries,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						passportNumber: (patient as any)?.administrativeProfile?.passportNumber,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						passportIssuedBy: (patient as any)?.administrativeProfile?.passportIssuedBy,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						passportIssuedDate: (patient as any)?.administrativeProfile?.passportIssuedDate,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						passportDepartmentCode: (patient as any)?.administrativeProfile?.passportDepartmentCode,
+						// biome-ignore lint/suspicious/noExplicitAny: patient profile
+						gender: (patient as any)?.gender,
+					}
+				: null,
+			clinic: clinicProfileDraft
+				? {
+						clinicName: clinicProfileDraft.clinicName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+						legalName: clinicProfileDraft.legalName || "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+						fullName: clinicProfileDraft.legalName || "Общество с ограниченной ответственностью «ДЕНТЕ СТОМАТОЛОГИЯ»",
+						shortName: clinicProfileDraft.clinicName || "ООО «ДЕНТЕ»",
+						inn: clinicProfileDraft.inn || "7707083893",
+						kpp: clinicProfileDraft.kpp || "770101001",
+						ogrn: clinicProfileDraft.ogrn || "1027700132195",
+						licenseNumber: clinicProfileDraft.licenseNumber || "ЛО41-01137-77/00368421",
+						address: clinicProfileDraft.address || "г. Москва, ул. Большая Стоматологическая, д. 12",
+						actualAddress: clinicProfileDraft.address || "г. Москва, ул. Большая Стоматологическая, д. 12",
+						phone: clinicProfileDraft.phone || "+7 (495) 777-22-11",
+					}
+				: null,
+			doctorFullName: doctorFullName || "Хирург-стоматолог",
+		});
 	};
 
 	return (
@@ -218,21 +269,31 @@ export function SurgicalPackageModal({
 				</div>
 
 				<div className="document-package-modal-footer">
-					<div>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+						<button
+							type="button"
+							className="primary-button"
+							onClick={handleBatchPrint}
+							data-testid="surgical-batch-print-btn"
+							style={{ backgroundColor: "var(--teal-fill, #0d9488)" }}
+						>
+							<Printer size={16} aria-hidden="true" />
+							Печать хирургического пакета (3 бланка в 1 клик)
+						</button>
 						{missingKinds.length > 0 ? (
 							<button
 								type="button"
-								className="primary-button"
+								className="secondary-button"
 								onClick={handleBatchCreate}
 								data-testid="surgical-batch-create-btn"
 							>
 								<Zap size={16} aria-hidden="true" />
-								Сформировать хирургический пакет ({missingKinds.length}) в 1 клик
+								Сформировать в базе ({missingKinds.length})
 							</button>
 						) : (
 							<span className="inline-flex items-center gap-1.5" style={{ fontSize: "13px", color: "var(--success-fg, #10b981)", fontWeight: 600 }}>
 								<CheckCircle2 size={16} aria-hidden="true" />
-								Полный хирургический комплект документов сформирован
+								Комплект в базе сформирован
 							</span>
 						)}
 					</div>

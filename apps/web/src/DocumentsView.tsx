@@ -6743,6 +6743,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				onCreateDocument={(kind) => void createDocument(kind)}
 				onOpenDocument={(id) => void openIssuedDocumentHtml(id)}
 				onSelectDocumentKind={(kind) => setSelectedDocumentKind(kind)}
+				clinicProfileDraft={clinicProfileDraft}
 			/>
 
 			<ClinicalVisitPackageModal

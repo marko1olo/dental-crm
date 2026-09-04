@@ -3,6 +3,7 @@ import { describe, test } from "node:test";
 import { type DocumentKind, type GeneratedDocument } from "@dental/shared";
 import { SURGICAL_STATUTORY_ITEMS } from "../SurgicalPackageModal";
 import { generatePrimaryIntakePackageHtml } from "../primaryIntakePackagePrintEngine";
+import { generateSurgicalPackageHtml } from "../surgicalPackagePrintEngine";
 
 describe("Document Packages and 1-Click Intake Scenarios", () => {
 	test("Surgical package contains all 6 statutory medical documents", () => {
@@ -92,6 +93,50 @@ describe("Document Packages and 1-Click Intake Scenarios", () => {
 		assert.ok(html.includes("________________________________________"), "Outputs underlines for missing full name");
 		assert.ok(html.includes("серия ______ № ________"), "Outputs underlines for missing passport");
 		assert.ok(html.includes("____________________"), "Outputs underlines for missing SNILS without 403 or error");
+		assert.ok(!html.includes("undefined"), "Must not contain undefined in rendered text");
+	});
+
+	test("Surgical Package: 1-click HTML generator creates all 3 statutory sheets with page breaks (Mandate 8e/8k)", () => {
+		const html = generateSurgicalPackageHtml({
+			patient: {
+				fullName: "Кузнецов Дмитрий Сергеевич",
+				birthDate: "1985-11-20",
+				phone: "+7 (916) 555-44-33",
+			},
+			clinic: {
+				clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
+				inn: "7707083893",
+			},
+			doctorFullName: "Хирург-имплантолог Ковалев И.С.",
+			operationDetails: {
+				operationType: "Дентальная имплантация системы Dentium",
+				toothNumber: 36,
+				anestheticName: "Ультракаин Д-С форте 1:100 000",
+			},
+		});
+
+		assert.ok(html.includes("Информированное добровольное согласие на хирургическое"), "Must contain surgical informed consent");
+		assert.ok(html.includes("ФЗ № 323-ФЗ ст. 20"), "Must cite Federal Law 323-FZ");
+		assert.ok(html.includes("Информированное согласие и протокол на проведение местной и проводниковой анестезии"), "Must contain anesthesia consent");
+		assert.ok(html.includes("Приказ МЗ РФ № 1051н"), "Must cite Order 1051n");
+		assert.ok(html.includes("Памятка пациента после хирургического стоматологического вмешательства"), "Must contain post-op memo");
+		assert.ok(html.includes("Закон РФ № 2300-1"), "Must cite Consumer Protection Law 2300-1");
+		assert.ok(html.includes("page-break-after: always"), "Must include page-breaks between sheets");
+		assert.ok(html.includes("Кузнецов Дмитрий Сергеевич"), "Must render patient name");
+		assert.ok(html.includes("Хирург-имплантолог Ковалев И.С."), "Must render doctor name");
+		assert.ok(html.includes("Дентальная имплантация системы Dentium"), "Must render operation details");
+		assert.ok(!html.includes("undefined"), "Must not contain undefined in rendered text");
+	});
+
+	test("Surgical Package: handles blank patient data with clean underlines without throwing (Mandate 8e)", () => {
+		const html = generateSurgicalPackageHtml({
+			patient: null,
+			clinic: null,
+			doctorFullName: null,
+		});
+
+		assert.ok(html.includes("________________________________________"), "Outputs underlines for missing full name");
+		assert.ok(html.includes("серия ______ № ________"), "Outputs underlines for missing passport");
 		assert.ok(!html.includes("undefined"), "Must not contain undefined in rendered text");
 	});
 });
