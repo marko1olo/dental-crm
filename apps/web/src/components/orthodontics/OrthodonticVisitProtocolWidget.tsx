@@ -6,6 +6,7 @@ import {
 	Copy,
 	FileText,
 	Layers,
+	Plus,
 	RotateCcw,
 	Sparkles,
 	X,
@@ -40,6 +41,9 @@ export interface OrthodonticVisitProtocolWidgetProps {
 	patientName?: string | undefined;
 	selectedTooth?: number | null;
 	onSelectTooth?: (toothNumber: number) => void;
+	currentAligner?: number | undefined;
+	totalAligners?: number | undefined;
+	onIssueAlignerSet?: ((count: number, days: number) => void) | undefined;
 }
 
 const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
@@ -100,6 +104,49 @@ export const CLINICAL_ACTIONS = [
 	{ id: "debonding", label: "Снятие аппаратуры + ретейнер" },
 ];
 
+export interface AlignerAttachmentPreset {
+	id: string;
+	label: string;
+	shortLabel: string;
+	teeth: number[];
+	description: string;
+}
+
+export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
+	{
+		id: "standard",
+		label: "⚡ Стандартные аттачменты: клыки и премоляры (15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45)",
+		shortLabel: "Стандартные (клыки и премоляры)",
+		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
+		description:
+			"Фиксация композитных аттачментов по переносному шаблону на зубы 15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45. Подготовка эмали: механическая очистка пастой без фтора, протравливание 37% гелем ортофосфорной кислоты 30 сек, смывание, высушивание. Внесение адгезивной системы, фотополимеризация. Заполнение шаблона микрогибридным композитом, позиционирование на зубной ряд, фотополимеризация каждого зуба по 20 сек. Шаблон снят, удаление излишков композита твердосплавными финирами, финишная полировка. Припасован сет элайнеров №1: адаптация плотная, ретенция надежная.",
+	},
+	{
+		id: "intact",
+		label: "⚡ Аттачменты интактны, сколов нет",
+		shortLabel: "Аттачменты интактны, сколов нет",
+		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
+		description:
+			"Контрольный осмотр элайнеров. Композитные аттачменты на верхней и нижней челюстях визуально и инструментально интактны: сколов, дефектов фиксации и отклеек не выявлено. Элайнеры прилегают плотно по всему периметру, ретенция оптимальная, щелей между краем каппы и режущими краями зубов нет. Трекинг перемещения зубов полностью соответствует утвержденному виртуальному 3D-сетапу.",
+	},
+	{
+		id: "refixation",
+		label: "⚡ Повторная фиксация аттачмента (замена)",
+		shortLabel: "Повторная фиксация аттачмента (замена)",
+		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
+		description:
+			"Обнаружен скол / отклейка композитного аттачмента. Проведено механическое удаление остатков старого композита, очистка поверхности эмали. Протравливание 37% ортофосфорной кислотой, адгезивный протокол, повторная фиксация аттачмента по шаблону из композитного материала, фотополимеризация. Проверка посадки элайнера: фиксация и ретенция восстановлены.",
+	},
+	{
+		id: "debonding",
+		label: "⚡ Снятие аттачментов и полировка (финиш)",
+		shortLabel: "Снятие аттачментов и полировка (финиш)",
+		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
+		description:
+			"Завершение элайнер-терапии. Атравматичное сошлифовывание композитных аттачментов специальными твердосплавными финирами на пониженных оборотах с водяным охлаждением без повреждения эмали. Финишная полировка пастами и дисками до зеркального блеска, глубокое фторирование эмали. Выданы ретенционные каппы / сняты оттиски для ретейнеров.",
+	},
+];
+
 export function OrthodonticVisitProtocolWidget({
 	isOpen,
 	onClose,
@@ -107,6 +154,9 @@ export function OrthodonticVisitProtocolWidget({
 	patientName = "Пациент",
 	selectedTooth = null,
 	onSelectTooth,
+	currentAligner,
+	totalAligners,
+	onIssueAlignerSet,
 }: OrthodonticVisitProtocolWidgetProps) {
 	if (!isOpen) return null;
 
@@ -132,6 +182,10 @@ export function OrthodonticVisitProtocolWidget({
 	const [activePreset, setActivePreset] = useState<
 		"activation" | "wire_change" | "bonding" | "debonding" | null
 	>(null);
+
+	// Aligner & Attachments Express State
+	const [activeAttachmentPreset, setActiveAttachmentPreset] = useState<string | null>(null);
+	const [alignerSetIssued, setAlignerSetIssued] = useState<{ count: number; days: number } | null>(null);
 
 	// Fast 1-Click Preset Handlers
 	const handlePresetActivation = () => {
@@ -212,6 +266,92 @@ export function OrthodonticVisitProtocolWidget({
 		showToast("⚡ 1-клик: Наряд на каппы/элайнеры в ЗТЛ сформирован", "success");
 	};
 
+	// Aligner Attachments 1-Click Handlers (Mandates 8e, 8k, 8n)
+	const handleSelectAttachmentPreset = (presetId: string) => {
+		const preset = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === presetId);
+		if (!preset) return;
+		setActiveAttachmentPreset(presetId);
+		setActivePreset(null);
+		setBracketSystem("aligners");
+		setTargetArch("both");
+		if (preset.teeth && preset.teeth.length > 0) {
+			setSelectedTeeth(preset.teeth);
+		}
+		setNotes(preset.description);
+		showToast(`⚡ ${preset.shortLabel} выбран`, "info");
+	};
+
+	const handleIssueAlignerSetFromWidget = (count: number, days: number) => {
+		setAlignerSetIssued({ count, days });
+		onIssueAlignerSet?.(count, days);
+		const issueSummary = `Сдан сет элайнеров (${count} каппы на ${days} дн., режим 22 ч/сутки)`;
+		showToast(`⚡ ${issueSummary}`, "success");
+	};
+
+	const handleAppendAttachmentsToSoapNote = () => {
+		const currentPreset =
+			ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset) ||
+			ALIGNER_ATTACHMENT_PRESETS[0];
+		const textToAppend =
+			currentPreset?.description ||
+			"Композитные аттачменты элайнеров зафиксированы/проверены по протоколу.";
+
+		try {
+			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+			if (setVisitNoteForm) {
+				setVisitNoteForm((prev) => {
+					const prevObjective = prev.objectiveStatus || "";
+					const newObjective = prevObjective
+						? `${prevObjective}\n\n[Аттачменты элайнеров]\n${textToAppend}`
+						: `[Аттачменты элайнеров]\n${textToAppend}`;
+
+					const prevPlan = prev.treatmentPlan || "";
+					const newPlan = prevPlan
+						? `${prevPlan}\n\n[Ортодонтия] Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}`
+						: `[Ортодонтия] Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}.`;
+
+					return {
+						...prev,
+						objectiveStatus: newObjective,
+						treatmentPlan: newPlan,
+					};
+				});
+			}
+
+			// Reactive event for SOAP note editors
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							protocolText: `[Аттачменты элайнеров]\n${textToAppend}`,
+							title: "Аттачменты элайнеров",
+							soap: {
+								objective: textToAppend,
+								plan: `Элайнеры: ${currentPreset?.shortLabel || "контроль аттачментов"}`,
+							},
+							mode: "smart_append",
+							immediate: true,
+						},
+					}),
+				);
+			}
+
+			if (navigator?.clipboard?.writeText) {
+				navigator.clipboard.writeText(textToAppend).catch(() => {});
+			}
+
+			showToast(
+				"⚡ Аттачменты добавлены в протокол SOAP без стирания ранее набранного текста!",
+				"success",
+			);
+		} catch (_err) {
+			showToast("Протокол скопирован в буфер обмена", "info");
+			if (navigator?.clipboard?.writeText) {
+				navigator.clipboard.writeText(textToAppend).catch(() => {});
+			}
+		}
+	};
+
 	// Quick Arch Selectors
 	const handleSelectArch = (arch: TargetArch) => {
 		setActivePreset(null);
@@ -276,8 +416,21 @@ export function OrthodonticVisitProtocolWidget({
 			powerChainText = `\nУстановлена эластическая цепочка Power Chain (${powerChainType === "short" ? "короткий шаг" : powerChainType === "long" ? "длинный шаг" : "сплошная"}) в сегменте ${powerChainSpan}.`;
 		}
 
+		let attachmentText = "";
+		const currentAttachmentObj = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset);
+		if (currentAttachmentObj) {
+			attachmentText = `• Аттачменты элайнеров: ${currentAttachmentObj.description}`;
+		}
+
+		let alignerSetText = "";
+		if (alignerSetIssued) {
+			alignerSetText = `• Выдача элайнеров: выдан следующий сет капп (+${alignerSetIssued.days} дн., ${alignerSetIssued.count} каппы). Режим ношения: 22 ч/сутки.`;
+		}
+
 		let archwireText = `• Текущая дуга: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}".`;
-		if (selectedActions.includes("debonding")) {
+		if (bracketSystem === "aligners" || activeAttachmentPreset) {
+			archwireText = "• Состояние аппаратуры: прозрачные каппы (элайнеры), фиксация на аттачментах плотная, окклюзионных помех нет.";
+		} else if (selectedActions.includes("debonding")) {
 			archwireText = "• Состояние аппаратуры: брекет-система снята. Зафиксирован несъемный проволочный ретейнер в сегментах 13-23 и 33-43.";
 		} else if (activePreset === "wire_change" || notes.includes("верхняя челюсть .016\", нижняя челюсть .014\"")) {
 			archwireText = "• Установленные дуги: ВЧ — NiTi .016\", НЧ — NiTi .014\" (круглые нивелирующие, норма).";
@@ -290,25 +443,30 @@ export function OrthodonticVisitProtocolWidget({
 Пациент: ${patientName}
 
 1. ЖАЛОБЫ:
-${notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку брекетов нет."}
+${notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку аппаратуры нет."}
 
 2. ОБЪЕКТИВНЫЙ СТАТУС:
-• Аппаратура: ${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}").
+• Аппаратура: ${bracketSystem === "aligners" ? "Ортодонтические элайнеры (каппы с аттачментами)" : `${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}")`}.
 • Зона фиксации/активации (зубы): ${teethListStr}.
-${archwireText}
-• Фиксация замков стабильна, окклюзионных контактов с брекетами не выявлено.
+${attachmentText ? `${attachmentText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}
+• Фиксация аппаратуры стабильна, окклюзионных контактов с замками/каппами не выявлено.
 
 3. ПРОВЕДЁННОЕ ЛЕЧЕНИЕ:
-• Выполненные манипуляции: ${actionsListStr || "Активация аппаратуры"}.${powerChainText}
-• ${elasticsText}
+• Выполненные манипуляции: ${actionsListStr || (activeAttachmentPreset ? currentAttachmentObj?.shortLabel : "Активация аппаратуры")}.${powerChainText}
+${currentAttachmentObj ? `• ${currentAttachmentObj.description}\n` : ""}${alignerSetIssued ? `• Сдан сет элайнеров на ${alignerSetIssued.days} дн. (смена капп каждые ${Math.round(alignerSetIssued.days / alignerSetIssued.count)} дней).\n` : ""}• ${elasticsText}
 • Антисептическая обработка полости рта (0.05% раствор хлоргексидина).
-• Коррекция дистальных концов дуг, проверка комфорта мягких тканей щёк и губ.
+• Коррекция дистальных концов дуг / проверка комфорта краёв капп и мягких тканей.
 
 4. РЕКОМЕНДАЦИИ И НАЗНАЧЕНИЯ:
-• Строгое соблюдение гигиены (ортодонтическая щетка, монопучок, ершики, ирригатор).
+${bracketSystem === "aligners" || activeAttachmentPreset
+	? `• Ношение элайнеров строго не менее 20–22 часов в сутки (снимать только во время приёма пищи и чистки зубов).
+• Использование чувисов (жевательных валиков) для плотной посадки капп на зубах.
+• Хранение элайнеров в специальном вентилируемом боксе, промывание прохладной водой.
+• Следующий плановый приём: через ${alignerSetIssued ? `${Math.round(alignerSetIssued.days / 7)} недель` : "4–6 недель"}.`
+	: `• Строгое соблюдение гигиены (ортодонтическая щетка, монопучок, ершики, ирригатор).
 • Использование ортодонтического защитного воска при натирании.
 • Исключить из рациона твердую, волокнистую и липкую пищу.
-• Следующий плановый приём: через 4–6 недель.`;
+• Следующий плановый приём: через 4–6 недель.`}`;
 	}, [
 		bracketSlot,
 		bracketSystem,
@@ -325,10 +483,13 @@ ${archwireText}
 		notes,
 		patientName,
 		activePreset,
+		activeAttachmentPreset,
+		alignerSetIssued,
 	]);
 
 	// Apply to Form 043/u
 	const handleApplyToVisitNote = () => {
+		const currentAttachmentObj = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset);
 		try {
 			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
 			if (setVisitNoteForm) {
@@ -341,8 +502,8 @@ ${archwireText}
 						? `${prev.objectiveStatus}\n\n${generatedProtocol}`
 						: generatedProtocol,
 					treatmentPlan: prev.treatmentPlan
-						? `${prev.treatmentPlan}\n\n[Ортодонтия] Дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "эластики" : "активация"}`
-						: `Ортодонтическое лечение: дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}.`,
+						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: ${currentAttachmentObj?.shortLabel || "аттачменты"}` : `Дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
+						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры (${currentAttachmentObj?.shortLabel || "аттачменты"})` : `дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
 				}));
 			}
 
@@ -617,6 +778,112 @@ ${archwireText}
 								<span className="text-[11px] font-bold text-teal-900 dark:text-teal-200">
 									Мандат 8e: Истечение 30 дней плана НЕ БЛОКИРУЕТ ортодонтические манипуляции, заказ капп/элайнеров в ЗТЛ или оплату.
 								</span>
+							</div>
+						</div>
+
+						{/* 0.5 Express-Block: Aligner Attachments & Delivery (Mandates 8e, 8k, 8n) */}
+						<div
+							data-testid="aligner-attachments-express-block"
+							className="bg-indigo-50/70 dark:bg-indigo-950/30 p-3.5 rounded-xl border border-indigo-200/80 dark:border-indigo-800/50 flex flex-col gap-2.5"
+						>
+							<div className="flex items-center justify-between flex-wrap gap-1">
+								<span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+									<Sparkles size={14} className="text-indigo-600 dark:text-indigo-400" />
+									Аттачменты элайнеров
+								</span>
+								<span className="text-[11px] font-bold text-indigo-700/80 dark:text-indigo-400/80">
+									Экспресс-фиксация & контроль (1 клик)
+								</span>
+							</div>
+
+							{/* 4 Quick Presets */}
+							<div className="grid grid-cols-1 gap-1.5">
+								{ALIGNER_ATTACHMENT_PRESETS.map((preset) => {
+									const isSelected = activeAttachmentPreset === preset.id;
+									return (
+										<button
+											key={preset.id}
+											type="button"
+											onClick={() => handleSelectAttachmentPreset(preset.id)}
+											data-testid={`preset-${preset.id}-attachments`}
+											className={`min-h-[44px] p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all cursor-pointer ${
+												isSelected
+													? "bg-indigo-600 text-white border-indigo-700 shadow-sm font-black ring-2 ring-indigo-400"
+													: "bg-white dark:bg-slate-900 border-indigo-200 dark:border-indigo-900 hover:border-indigo-400 text-slate-800 dark:text-slate-100"
+											}`}
+										>
+											<div
+												className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+													isSelected
+														? "bg-white/20 text-white"
+														: "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300"
+												}`}
+											>
+												<Zap size={13} />
+											</div>
+											<div className="min-w-0 flex-1">
+												<div className="text-xs font-bold leading-tight">
+													{preset.label}
+												</div>
+												<div
+													className={`text-[10px] line-clamp-1 mt-0.5 ${
+														isSelected
+															? "text-indigo-100"
+															: "text-slate-500 dark:text-slate-400"
+													}`}
+												>
+													{preset.description}
+												</div>
+											</div>
+										</button>
+									);
+								})}
+							</div>
+
+							{/* Quick Set Delivery & Append Button */}
+							<div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-indigo-200/50 dark:border-indigo-800/40">
+								<div className="flex items-center gap-1.5 flex-wrap">
+									<button
+										type="button"
+										onClick={() => handleIssueAlignerSetFromWidget(2, 14)}
+										data-testid="widget-issue-set-2-aligners-btn"
+										className={`min-h-[38px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+											alignerSetIssued?.count === 2
+												? "bg-teal-600 text-white border-teal-700"
+												: "bg-white dark:bg-slate-900 border-teal-300 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50"
+										}`}
+										title="Выдать следующий сет из 2 капп на 14 дней"
+									>
+										<Zap size={13} />
+										<span>Сет 2 каппы (+14 дн.)</span>
+									</button>
+
+									<button
+										type="button"
+										onClick={() => handleIssueAlignerSetFromWidget(4, 28)}
+										data-testid="widget-issue-set-4-aligners-btn"
+										className={`min-h-[38px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+											alignerSetIssued?.count === 4
+												? "bg-teal-600 text-white border-teal-700"
+												: "bg-white dark:bg-slate-900 border-teal-300 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50"
+										}`}
+										title="Выдать следующий сет из 4 капп на 28 дней"
+									>
+										<Zap size={13} />
+										<span>Сет 4 каппы (+28 дн.)</span>
+									</button>
+								</div>
+
+								<button
+									type="button"
+									onClick={handleAppendAttachmentsToSoapNote}
+									data-testid="append-attachments-to-soap-btn"
+									className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+									title="Добавить запись об аттачментах в карту 043/у без стирания ранее набранного текста"
+								>
+									<Plus size={15} />
+									<span>Добавить в протокол визита SOAP без стирания ранее набранного текста</span>
+								</button>
 							</div>
 						</div>
 

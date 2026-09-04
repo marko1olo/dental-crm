@@ -32,6 +32,7 @@ import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
 import { usePatientStore } from "../../store/patientStore";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
+import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysisModal";
@@ -269,6 +270,41 @@ export function OrthodonticPerspectiveView() {
 			currentAligner: next,
 			lastActionSummary: `Выдан сет элайнеров №${fromAligner}–${next} (+${days} дн.)`,
 		});
+
+		// Append to active visit SOAP note (Form 043/u) if open, preserving existing text
+		const actionSummary = `Выдан следующий сет элайнеров: каппы №${fromAligner}–${next} (на ${days} дн.). Режим ношения: 22 ч/сутки. Смена каппы каждые ${Math.round(days / count)} дн. Посадка капп плотная, трекинг зубов стабилен.`;
+		try {
+			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
+			if (setVisitNoteForm) {
+				setVisitNoteForm((prev) => ({
+					...prev,
+					objectiveStatus: prev.objectiveStatus
+						? `${prev.objectiveStatus}\n\n[Элайнеры]\n${actionSummary}`
+						: `[Элайнеры]\n${actionSummary}`,
+					treatmentPlan: prev.treatmentPlan
+						? `${prev.treatmentPlan}\n\n[Ортодонтия] Сет элайнеров №${fromAligner}–${next} (+${days} дн.)`
+						: `[Ортодонтия] Сет элайнеров №${fromAligner}–${next} (+${days} дн.).`,
+				}));
+			}
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							protocolText: `[Элайнеры]\n${actionSummary}`,
+							title: `Сдача сета элайнеров №${fromAligner}–${next}`,
+							soap: {
+								objective: actionSummary,
+								plan: `Выдан сет элайнеров №${fromAligner}–${next} (+${days} дн.)`,
+							},
+							mode: "smart_append",
+							immediate: true,
+						},
+					}),
+				);
+			}
+		} catch {
+			// ignore outside active visit
+		}
 	};
 
 	const handleQuickWireChange = (material: string, section: string, arch: string) => {
@@ -447,6 +483,7 @@ export function OrthodonticPerspectiveView() {
 								type="button"
 								onClick={() => handleIssueSet(2, 14)}
 								disabled={currentAligner >= totalAligners}
+								data-testid="issue-set-2-aligners-btn"
 								className="min-h-[42px] px-3 py-2 rounded-xl bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-teal-200 dark:border-teal-800/60 cursor-pointer active:scale-95 transition-all shadow-2xs"
 								title="Выдать сет из 2 капп на 14 дней"
 							>
@@ -458,6 +495,7 @@ export function OrthodonticPerspectiveView() {
 								type="button"
 								onClick={() => handleIssueSet(4, 28)}
 								disabled={currentAligner >= totalAligners}
+								data-testid="issue-set-4-aligners-btn"
 								className="min-h-[42px] px-3 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-1.5 border border-[var(--line,#cbd5e1)] dark:border-slate-700 cursor-pointer active:scale-95 transition-all shadow-2xs"
 								title="Выдать сет из 4 капп на 28 дней"
 							>
@@ -806,6 +844,9 @@ export function OrthodonticPerspectiveView() {
 				onClose={() => setIsOrthoProtocolOpen(false)}
 				patientId={activePatient?.id}
 				patientName={activePatient?.fullName}
+				currentAligner={currentAligner}
+				totalAligners={totalAligners}
+				onIssueAlignerSet={handleIssueSet}
 			/>
 
 			{/* Orthodontic 8-Angle Photo Protocol Modal */}
