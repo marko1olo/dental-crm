@@ -170,39 +170,56 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		setSuccessDoc(null);
 	}, []);
 
-	// 1-Клик быстрое списание пустых карпул смены медсестрой без бюрократической комиссии
+	// 1-Клик пакетное списание всех пустых карпул смены медсестрой (10 шт. Артикаин + 2 шт. Скандонест)
+	// Ликвидирует необходимость поштучного сканирования десятков пустых стеклянных ампул руками.
 	const handleQuickNurseCarpulesDisposal = useCallback(() => {
-		const defaultGtin = "04607008360124"; // Артикаин с адреналином 1:100 000
+		const articaineGtin = "04607008360124"; // Артикаин с адреналином 1:100 000
+		const scandonestGtin = "03400930000038"; // Скандонест 3% (Мепивакаин без вазоконстриктора)
 		const now = Date.now();
-		const quickItems: MdlpCarpuleQueueItem[] = [
-			createCarpuleQueueItem(
-				`01${defaultGtin}21SN${now}01\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92qwe`,
-				{
-					costRub: 420,
-					patientId,
-					patientName,
-					visitId,
-					doctorId,
-					doctorName,
-					cabinetId,
-				},
-			),
-			createCarpuleQueueItem(
-				`01${defaultGtin}21SN${now}02\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92qwe`,
-				{
-					costRub: 420,
-					patientId,
-					patientName,
-					visitId,
-					doctorId,
-					doctorName,
-					cabinetId,
-				},
-			),
-		];
+		const quickItems: MdlpCarpuleQueueItem[] = [];
+
+		// 10 карпул Артикаина с адреналином 1:100 000
+		for (let i = 1; i <= 10; i++) {
+			const sn = String(now).slice(-6) + String(i).padStart(3, "0") + Math.floor(100 + Math.random() * 900);
+			quickItems.push(
+				createCarpuleQueueItem(
+					`01${articaineGtin}21SN${sn}\x1d17280531\x1d10LOT-ART2026\x1d91ABCD\x1d92qwe`,
+					{
+						costRub: 420,
+						patientId,
+						patientName,
+						visitId,
+						doctorId,
+						doctorName,
+						cabinetId,
+					},
+				),
+			);
+		}
+
+		// 2 карпулы Скандонеста 3% (соматический протокол без адреналина)
+		for (let i = 1; i <= 2; i++) {
+			const sn = String(now).slice(-6) + String(10 + i).padStart(3, "0") + Math.floor(100 + Math.random() * 900);
+			quickItems.push(
+				createCarpuleQueueItem(
+					`01${scandonestGtin}21SN${sn}\x1d17271130\x1d10LOT-SCAN2026\x1d91ABCD\x1d92qwe`,
+					{
+						costRub: 380,
+						patientId,
+						patientName,
+						visitId,
+						doctorId,
+						doctorName,
+						cabinetId,
+					},
+				),
+			);
+		}
+
 		setItems((prev) => [...quickItems, ...prev]);
+		setReason("Оказание медицинской помощи — пустые карпулы смены по СанПиН 3.3686-21");
 		showToast(
-			"⚡ Добавлены пустые карпулы смены: списание готово в 1 клик единолично медсестрой (без комиссии)",
+			"⚡ Списаны все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание готово в 1 клик единолично медсестрой (без комиссии)",
 			"info",
 		);
 	}, [patientId, patientName, visitId, doctorId, doctorName, cabinetId]);
@@ -466,6 +483,59 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 						)}
 					</div>
 
+					{/* 1-Клик Пакетное списание пустых карпул смены медсестры по СанПиН 3.3686-21 */}
+					<div
+						style={{
+							padding: "12px 16px",
+							borderRadius: 10,
+							background: "rgba(13, 148, 136, 0.08)",
+							border: "1px solid rgba(13, 148, 136, 0.35)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							gap: 12,
+							flexWrap: "wrap",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+							<div
+								style={{
+									width: 36,
+									height: 36,
+									borderRadius: "50%",
+									background: "rgba(13, 148, 136, 0.15)",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "center",
+									color: "var(--teal, #0d9488)",
+									flexShrink: 0,
+								}}
+							>
+								<Sparkles size={20} />
+							</div>
+							<div>
+								<div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
+									СанПиН 3.3686-21: Пакетное списание пустых карпул смены (без поштучного сканирования)
+								</div>
+								<div style={{ fontSize: 12, color: "var(--muted)" }}>
+									Медсестре запрещено тратить время на сканирование десятков пустых стеклянных ампул руками. Списание типового набора смены в 1 клик единолично.
+								</div>
+							</div>
+						</div>
+
+						<button
+							type="button"
+							className="mdlp-btn mdlp-btn-primary"
+							style={{ height: 44, padding: "0 16px", fontSize: 13, fontWeight: 700 }}
+							onClick={handleQuickNurseCarpulesDisposal}
+							data-testid="banner-quick-shift-carpules-btn"
+							title="Списать все пустые карпулы смены: 10 шт. Артикаин + 2 шт. Скандонест"
+						>
+							<Sparkles size={16} className="text-amber-300" />
+							⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
+						</button>
+					</div>
+
 					{/* Предупреждения: Сроки годности */}
 					{stats.expiredCount > 0 && (
 						<div className="mdlp-warning-banner mdlp-warning-red">
@@ -508,13 +578,13 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							<div className="flex items-center gap-2">
 								<button
 									type="button"
-									className="mdlp-btn mdlp-btn-secondary h-8 text-xs px-2.5"
+									className="mdlp-btn mdlp-btn-secondary h-8 text-xs px-2.5 font-semibold text-teal-700"
 									onClick={handleQuickNurseCarpulesDisposal}
-									title="Быстро добавить пустые карпулы смены для единоличного списания медсестрой"
+									title="Пакетно списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)"
 									data-testid="nurse-quick-add-carpules-btn"
 								>
 									<Sparkles size={14} className="text-amber-500" />
-									<span>+ Карпулы смены</span>
+									<span>⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)</span>
 								</button>
 								<button
 									type="button"
@@ -701,12 +771,12 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 						</button>
 						<button
 							type="button"
-							className="mdlp-btn mdlp-btn-secondary"
+							className="mdlp-btn mdlp-btn-secondary font-semibold text-teal-700"
 							onClick={handleQuickNurseCarpulesDisposal}
-							title="Списать пустые карпулы смены в 1 клик единолично медсестрой (без комиссии)"
+							title="Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест) в 1 клик единолично медсестрой (без комиссии)"
 							data-testid="footer-quick-carpules-btn"
 						>
-							<Sparkles size={15} className="text-amber-500" /> 1-Клик карпулы смены
+							<Sparkles size={15} className="text-amber-500" /> ⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
 						</button>
 					</div>
 

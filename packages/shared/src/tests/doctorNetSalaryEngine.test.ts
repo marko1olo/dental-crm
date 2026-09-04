@@ -117,3 +117,39 @@ test("calculateServicesPayrollBreakdown: itemizes services with isExpensive flag
 	// Total Net Base: 76000 - 9000 - 13300 = 53 700 RUB = 5 370 000 kop
 	assert.strictEqual(result.totalNetBaseKop, 5370000);
 });
+
+test("calculateDoctorNetSalary: Labor Code RF (ТК РФ ст. 137, 192) protects base salary from penalty deductions", () => {
+	// Сценарий 1: Врачу назначен дисциплинарный штраф 5000 руб при нулевых бонусах
+	// По ТК РФ штраф не может быть удержан из сдельной оплаты или оклада!
+	const resultWithoutBonus = calculateDoctorNetSalary({
+		grossRevenueRub: 100000,
+		labCostRub: 20000,
+		materialsCostRub: 10000,
+		categoryPercent: 25, // Piecework = 17 500 RUB
+		fixedSalaryRub: 10000, // Fixed = 10 000 RUB
+		bonusesRub: 0,
+		penaltiesRub: 5000, // Попытка вычесть штраф 5 000 ₽
+		ndflRatePercent: 13,
+	});
+
+	// Сдельная часть и оклад не тронуты: 17 500 + 10 000 = 27 500 ₽ (штраф не вычитается)
+	assert.strictEqual(resultWithoutBonus.totalAccruedRub, 27500);
+	assert.strictEqual(resultWithoutBonus.effectiveBonusesRub, 0);
+
+	// Сценарий 2: Штраф превышает начисленный бонус (депремирование только в пределах бонуса)
+	const resultExceedingBonus = calculateDoctorNetSalary({
+		grossRevenueRub: 100000,
+		labCostRub: 20000,
+		materialsCostRub: 10000,
+		categoryPercent: 25,
+		fixedSalaryRub: 10000,
+		bonusesRub: 3000, // Бонус 3 000 ₽
+		penaltiesRub: 8000, // Депремирование 8 000 ₽
+		ndflRatePercent: 13,
+	});
+
+	// Бонус обнулился до 0 ₽, но база не уменьшилась: 17 500 + 10 000 + 0 = 27 500 ₽
+	assert.strictEqual(resultExceedingBonus.effectiveBonusesRub, 0);
+	assert.strictEqual(resultExceedingBonus.totalAccruedRub, 27500);
+});
+

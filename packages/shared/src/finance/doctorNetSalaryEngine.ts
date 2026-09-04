@@ -3,7 +3,9 @@
  * 
  * ФОРМУЛА РАСЧЕТА ЧИСТОЙ ВЫРУЧКИ И ЗАРПЛАТЫ (Net Revenue Formula):
  * 1. Чистая база = Gross (Выручка) - Lab (ЗТЛ) - Materials (Себестоимость материалов)
- * 2. Начислено врачу = Чистая база * Category% + Fixed (Оклад) + salary_price (Фикс за услуги) + Премии - Штрафы
+ * 2. Начислено врачу = Чистая база * Category% + Fixed (Оклад) + salary_price (Фикс за услуги) + Эффективные премии
+ *    В соответствии со ст. 137 и ст. 192 ТК РФ дисциплинарные штрафы и удержания из оклада / сдельной базы запрещены.
+ *    Депремирование возможно исключительно путем неначисления или уменьшения стимулирующих выплат (бонусов)!
  * 3. На руки = Начислено врачу - 13% НДФЛ (или настраиваемая ставка налога)
  * 
  * Расчеты ведутся строго в целых копейках (Kopecks) для 100% защиты от float-дрейфа.
@@ -85,15 +87,19 @@ export interface DoctorNetSalaryBreakdown {
 	readonly serviceSalaryPriceKop: Kopecks;
 	readonly serviceSalaryPriceRub: number;
 
-	/** Бонусы и премии */
+	/** Бонусы и премии (стимулирующая часть) */
 	readonly bonusesKop: Kopecks;
 	readonly bonusesRub: number;
 
-	/** Штрафы и удержания */
+	/** Депремирование (уменьшение премии по регламенту) */
 	readonly penaltiesKop: Kopecks;
 	readonly penaltiesRub: number;
 
-	/** Итого начислено до налогообложения = Piecework + Fixed + SalaryPrice + Bonuses - Penalties */
+	/** Эффективная премия с учетом депремирования (не менее 0) */
+	readonly effectiveBonusesKop: Kopecks;
+	readonly effectiveBonusesRub: number;
+
+	/** Итого начислено до налогообложения по ТК РФ = Piecework + Fixed + SalaryPrice + EffectiveBonuses */
 	readonly totalAccruedKop: Kopecks;
 	readonly totalAccruedRub: number;
 
@@ -165,8 +171,12 @@ export function calculateDoctorNetSalary(input: DoctorNetSalaryInput): DoctorNet
 	const bonusesKop = toKop(input.bonusesRub, input.bonusesKop);
 	const penaltiesKop = toKop(input.penaltiesRub, input.penaltiesKop);
 
+	// Депремирование по ТК РФ (ст. 137, 192): неначисление или уменьшение стимулирующей премии,
+	// но категорически запрещено вычитать штрафы из сдельной части, оклада или процедурных тарифов!
+	const effectiveBonusesKop = Math.max(0, bonusesKop - penaltiesKop) as Kopecks;
+
 	// Общее начисление до налога
-	const rawAccruedKop = pieceworkAccruedKop + fixedSalaryKop + serviceSalaryPriceKop + bonusesKop - penaltiesKop;
+	const rawAccruedKop = pieceworkAccruedKop + fixedSalaryKop + serviceSalaryPriceKop + effectiveBonusesKop;
 	const totalAccruedKop = Math.max(0, rawAccruedKop) as Kopecks;
 
 	const ndflRatePercent = input.ndflRatePercent !== undefined ? Math.max(0, input.ndflRatePercent) : 13;
@@ -195,6 +205,8 @@ export function calculateDoctorNetSalary(input: DoctorNetSalaryInput): DoctorNet
 		bonusesRub: kopecksToRubles(bonusesKop),
 		penaltiesKop,
 		penaltiesRub: kopecksToRubles(penaltiesKop),
+		effectiveBonusesKop,
+		effectiveBonusesRub: kopecksToRubles(effectiveBonusesKop),
 		totalAccruedKop,
 		totalAccruedRub: kopecksToRubles(totalAccruedKop),
 		ndflRatePercent,

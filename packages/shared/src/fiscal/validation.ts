@@ -34,11 +34,11 @@ export const fiscalReceiptItemSchema = z
 		serviceId: z.string().uuid().optional().nullable(),
 		catalogItemId: z.string().uuid().optional().nullable(),
 		name: z.string().trim().min(1, "Наименование позиции обязательно").max(128, "Максимум 128 символов по ФФД 1.2 (Тег 1030)"),
-		priceKopecks: z.number().int().positive("Цена в копейках должна быть положительным числом"),
+		priceKopecks: z.number().int().min(0, "Цена в копейках должна быть неотрицательным числом"),
 		quantity: z.number().positive("Количество должно быть больше нуля").default(1),
 		discountKopecks: z.number().int().min(0).optional().nullable(),
 		discountPercent: z.number().min(0).max(100).optional().nullable(),
-		amountKopecks: z.number().int().positive("Сумма в копейках должна быть положительным числом"),
+		amountKopecks: z.number().int().min(0, "Сумма в копейках должна быть неотрицательным числом"),
 		subject: ffd12PaymentSubjectSchema.default("service"),
 		method: ffd12PaymentMethodSchema.default("full_payment"),
 		vatRate: ffd12VatRateSchema.default("vat_none"),
@@ -57,7 +57,13 @@ export const fiscalReceiptItemSchema = z
 	})
 	.superRefine((item, ctx) => {
 		// Verify exact integer kopecks arithmetic: priceKopecks * quantity == amountKopecks (or with discount)
-		const expectedAmount = Math.round(item.priceKopecks * item.quantity);
+		const rawAmount = Math.round(item.priceKopecks * item.quantity);
+		const discount =
+			item.discountKopecks ??
+			(item.discountPercent != null
+				? Math.round((rawAmount * item.discountPercent) / 100)
+				: 0);
+		const expectedAmount = Math.max(0, rawAmount - discount);
 		if (Math.abs(expectedAmount - item.amountKopecks) > 1) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
@@ -94,6 +100,7 @@ export const createFiscalReceiptPayloadSchema = z
 		invoiceId: z.string().uuid().optional().nullable(),
 		visitId: z.string().uuid().optional().nullable(),
 		documentId: z.string().uuid().optional().nullable(),
+		cashBoxId: z.string().uuid("Некорректный UUID кассового счёта").optional().nullable(),
 		patientId: z.string().uuid("Некорректный UUID пациента"),
 		operationType: ffd12OperationTypeSchema.default("income"),
 		taxationSystem: ffd12TaxationSystemSchema.default("usn_income"),
@@ -117,7 +124,7 @@ export const createFiscalReceiptPayloadSchema = z
 		sbpKopecks: z.number().int().min(0).default(0),
 		prepaidKopecks: z.number().int().min(0).default(0),
 		creditKopecks: z.number().int().min(0).default(0),
-		totalKopecks: z.number().int().positive("Общая сумма чека должна быть больше нуля"),
+		totalKopecks: z.number().int().min(0, "Общая сумма чека не может быть отрицательной"),
 		taxDeductionSummaryCode: taxDeductionCategorySchema.default("code_1_standard"),
 		/** Decree 659: Upsell Consent Shield attributes (Rules of 2026) */
 		treatmentPlanId: z.string().uuid().optional().nullable(),
@@ -138,7 +145,7 @@ export const createFiscalReceiptPayloadSchema = z
 			val.prepaidKopecks +
 			val.creditKopecks;
 
-		if (paymentsSum > 0 && paymentsSum !== val.totalKopecks) {
+		if (paymentsSum !== val.totalKopecks) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				message: `Сумма способов оплаты (${paymentsSum} коп.) не совпадает с общей суммой чека (${val.totalKopecks} коп.)`,
@@ -453,6 +460,7 @@ export function parseAndValidate54FzFtsQrString(qrString: string): Parsed54FzQrR
  */
 export function buildFiscalReceiptPayloadSignature(input: {
 	patientId: string;
+	cashBoxId?: string | null | undefined;
 	operationType?: string | undefined;
 	taxationSystem?: string | undefined;
 	totalKopecks: number;
@@ -480,6 +488,7 @@ export function buildFiscalReceiptPayloadSignature(input: {
 }): Record<string, unknown> {
 	return {
 		patientId: input.patientId,
+		cashBoxId: input.cashBoxId ?? null,
 		operationType: input.operationType ?? "income",
 		taxationSystem: input.taxationSystem ?? "usn_income",
 		totalKopecks: input.totalKopecks,

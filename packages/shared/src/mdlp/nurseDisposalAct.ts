@@ -172,8 +172,10 @@ export function formatSeniorNurseDisposalActData(options: {
 	// В стоматологической клинике списание пустых карпул (медотходы Класса Б)
 	// по умолчанию проводится единолично дежурной медсестрой без бюрократической комиссии из 3 человек.
 	const useSingleNurse =
-		options.isSingleSigner !== false &&
-		options.requireCommission !== true;
+		options.isSingleSigner === true ||
+		(options.isSingleSigner !== false &&
+			options.requireCommission !== true &&
+			(!options.chiefDoctorName || !options.dentistName));
 
 	const commission = useSingleNurse
 		? [
@@ -224,8 +226,12 @@ export function formatSeniorNurseDisposalActData(options: {
 		totalCostInWordsRu: amountToRussianWords(totalCost),
 		totalQuantityInWordsRu: carpulesQuantityToRussianWords(actItems.length, "карпула"),
 		notes: options.notes,
-		approvedByFullName: options.chiefDoctorName ?? "Петров А.С.",
-		approvedByPositionRu: "Главный врач",
+		approvedByFullName: useSingleNurse
+			? (options.seniorNurseName ?? "Иванова Е.В.")
+			: (options.chiefDoctorName ?? "Петров А.С."),
+		approvedByPositionRu: useSingleNurse
+			? "Старшая медицинская сестра"
+			: "Главный врач",
 		approvalDate: actDate,
 	};
 }
@@ -406,10 +412,14 @@ export function generateSeniorNurseDisposalActHtml(actData: SeniorNurseDisposalA
     <strong>Основание составления акта:</strong> ${actData.basisRu}.<br/>
     <strong>Регистрация в ИС МДЛП (Честный ЗНАК):</strong> Схема ${actData.schema10560ActionId} (Вывод из оборота для оказания медицинской помощи).
     ${actData.crptReceiptNumber ? `<br/><strong>Квитанция ЦРПТ / МДЛП:</strong> ${actData.crptReceiptNumber}` : ""}<br/>
-    <strong>Комиссия в составе:</strong>
+    ${
+			actData.commission.length === 1
+				? `<strong>Списание произведено единолично:</strong> ${actData.commission[0]?.positionRu} <strong>${actData.commission[0]?.fullName}</strong> (без сбора комиссии по СанПиН 3.3686-21).<br/>`
+				: `<strong>Комиссия в составе:</strong>
     <ul style="margin: 4px 0 6px 20px; padding: 0;">
       ${actData.commission.map((m) => `<li>${m.roleTitleRu} — ${m.positionRu} <strong>${m.fullName}</strong></li>`).join("")}
-    </ul>
+    </ul>`
+		}
     произвела осмотр и подтверждает фактический расход и списание следующих карпульных анестетиков и медикаментов:
   </div>
 

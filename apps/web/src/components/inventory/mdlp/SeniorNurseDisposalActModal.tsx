@@ -7,6 +7,7 @@ import {
 import {
 	AlertTriangle,
 	Check,
+	CheckCircle2,
 	Copy,
 	Download,
 	FileText,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../../GlobalToast.js";
 import {
 	type DeductionLineItem,
 	type SupplierPurchaseOrderView,
@@ -39,6 +41,7 @@ export interface SeniorNurseDisposalActModalProps {
 	readonly initialSeniorNurseName?: string | undefined;
 	readonly initialChiefDoctorName?: string | undefined;
 	readonly initialDentistName?: string | undefined;
+	readonly onApproveAct?: ((actData: SeniorNurseDisposalActData) => void | Promise<void>) | undefined;
 }
 
 export const SeniorNurseDisposalActModal: React.FC<
@@ -55,6 +58,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 	initialSeniorNurseName = "Иванова Е.В.",
 	initialChiefDoctorName = "Петров А.С.",
 	initialDentistName = "Кузнецов М.С.",
+	onApproveAct,
 }) => {
 	const now = new Date();
 	const [actNumber, setActNumber] = useState<string>(
@@ -72,11 +76,23 @@ export const SeniorNurseDisposalActModal: React.FC<
 	);
 	const [dentistName, setDentistName] = useState<string>(initialDentistName);
 	const [isSingleSigner, setIsSingleSigner] = useState<boolean>(true);
+	const [isApproved, setIsApproved] = useState<boolean>(false);
 	const [notes, setNotes] = useState<string>("");
 
 	// 1-Click заказ поставщику
 	const [showPoModal, setShowPoModal] = useState<boolean>(false);
 	const [copiedPo, setCopiedPo] = useState<boolean>(false);
+
+	const handleApproveSolo = async () => {
+		setIsApproved(true);
+		showToast(
+			`⚡ Акт списания №${actNumber} утверждён старшей медсестрой единолично (без комиссии из 3 человек)`,
+			"info",
+		);
+		if (onApproveAct) {
+			await onApproveAct(actData);
+		}
+	};
 
 	const actData: SeniorNurseDisposalActData = useMemo(() => {
 		return formatSeniorNurseDisposalActData({
@@ -285,9 +301,17 @@ export const SeniorNurseDisposalActModal: React.FC<
 					{/* Паспорт и состав подписантов */}
 					<div className="p-3 rounded-lg border border-line bg-paper-soft space-y-3">
 						<div className="flex items-center justify-between flex-wrap gap-2">
-							<span className="text-xs font-bold text-ink">
-								Параметры списания карпул
-							</span>
+							<div className="flex items-center gap-2">
+								<span className="text-xs font-bold text-ink">
+									Параметры списания карпул
+								</span>
+								{isApproved && (
+									<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 border border-teal-300 text-teal-800 text-[11px] font-bold">
+										<CheckCircle2 size={13} className="text-teal-600" />
+										Акт утверждён единолично
+									</span>
+								)}
+							</div>
 							<label className="flex items-center gap-2 text-xs font-semibold text-ink cursor-pointer select-none">
 								<input
 									type="checkbox"
@@ -298,6 +322,12 @@ export const SeniorNurseDisposalActModal: React.FC<
 								<span>Единоличное списание медсестрой (без комиссии)</span>
 							</label>
 						</div>
+
+						{isSingleSigner && (
+							<div className="text-[11px] text-teal-700 bg-teal-50/70 border border-teal-200/60 rounded px-2.5 py-1.5 leading-relaxed">
+								⚡ <strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится единолично старшей медсестрой без блокирующего требования комиссии из 3 человек.
+							</div>
+						)}
 
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 							<div>
@@ -436,10 +466,22 @@ export const SeniorNurseDisposalActModal: React.FC<
 
 						<button
 							type="button"
-							className="mdlp-btn mdlp-btn-primary"
+							className="mdlp-btn mdlp-btn-secondary"
 							onClick={handlePrint}
 						>
 							<Printer size={18} /> Печать акта списания
+						</button>
+
+						<button
+							type="button"
+							className="mdlp-btn mdlp-btn-primary font-bold"
+							style={{ height: 44, padding: "0 18px", fontSize: 13 }}
+							onClick={handleApproveSolo}
+							data-testid="approve-solo-nurse-act-btn"
+							title="Утвердить акт списания пустых карпул старшей медсестрой единолично в 1 клик (без комиссии из 3 человек)"
+						>
+							<CheckCircle2 size={18} />
+							{isApproved ? "✓ Акт утверждён единолично" : "⚡ Утвердить акт единолично (1 клик)"}
 						</button>
 					</div>
 				</footer>

@@ -19,12 +19,14 @@ import { z } from "zod";
 export const CLINICAL_LEAK_THRESHOLD_DAYS = 210;
 
 export const crmLeadStatusSchema = z.enum([
-	"new",          // Выявлен отток >210 дней, ожидает распределения
-	"in_progress",  // Взят в работу администратором
-	"contacted",    // Совершен звонок / отправлено персонализированное сообщение
-	"rebooked",     // Успех: записан на повторный прием / контрольный осмотр
-	"declined",     // Отказ: пациент уехал, лечится в другом месте, отложил
-	"archived",     // Архив: пациент перестал отвечать
+	"new",                         // Выявлен отток >210 дней, ожидает распределения
+	"in_progress",                 // Взят в работу администратором
+	"contacted",                   // Совершен звонок / отправлено персонализированное сообщение
+	"rebooked",                    // Успех: записан на повторный прием / контрольный осмотр
+	"declined",                    // Отказ: пациент уехал, лечится в другом месте, отложил
+	"archived",                    // Архив: пациент перестал отвечать
+	"clinical_observation_pause",  // Физиологическая норма: остеоинтеграция 4-6 мес, ортодонтия до 2 лет
+	"CLINICAL_OBSERVATION_PAUSE",  // Канонический статус для отчетов и воронки
 ]);
 export type CrmLeadStatus = z.infer<typeof crmLeadStatusSchema>;
 
@@ -102,6 +104,7 @@ export interface CrmLeakFunnelMetrics {
 	rebookedCount: number;
 	declinedCount: number;
 	archivedCount: number;
+	clinicalObservationPauseCount: number; // Лиды в статусе физиологической паузы
 	reactivationConversionPct: number; // rebooked / (rebooked + declined + contacted + in_progress)
 	rebookedRevenuePotentialRub: number; // potential revenue from rebooked patients
 	totalUncompletedPlanSumRub: number; // total revenue locked in uncompleted plans of churned patients
@@ -111,12 +114,59 @@ export interface CrmLeakFunnelMetrics {
 }
 
 /**
- * Проверяет, квалифицируется ли пациент как клиническая утечка (отток > 210 дней).
+ * Проверяет, квалифицируется ли пациент как кандидат в CRM детектор утечек (порог >= 210 дней).
  */
 export function isQualifiedForLeakLead(candidate: CrmLeakDetectorCandidate): boolean {
 	if (candidate.hasFutureAppointment) return false;
 	if (candidate.hasActiveWaitlist) return false;
 	return candidate.daysSinceLastVisit >= CLINICAL_LEAK_THRESHOLD_DAYS;
+}
+
+/**
+ * Проверяет, находится ли пациент в периоде плановой физиологической клинической паузы:
+ * • Ортодонтия (брекеты, элайнеры, ретенционные аппараты): активное лечение/ретенция до 2 лет (~730 дней).
+ * • Хирургия / имплантация (дентальная имплантация, синус-лифтинг, остеопластика):
+ *   период остеоинтеграции и ремоделирования костного регенерата 4–6 месяцев (~120–270 дней).
+ * В эти периоды пауза в 7 месяцев (210 дней) является физиологической нормой, а не оттоком!
+ */
+export function isClinicalObservationPause(
+	specialty: string | null | undefined,
+	serviceOrReasonTitle: string | null | undefined,
+	daysSinceLastVisit: number,
+	_hasUncompletedPlan?: boolean,
+): boolean {
+	const specLower = (specialty || "").toLowerCase();
+	const titleLower = (serviceOrReasonTitle || "").toLowerCase();
+
+	const isOrtho =
+		specLower.includes("orthodont") ||
+		specLower.includes("ортодон") ||
+		titleLower.includes("ортодон") ||
+		titleLower.includes("брекет") ||
+		titleLower.includes("элайнер") ||
+		titleLower.includes("капп") ||
+		titleLower.includes("ретенц");
+
+	const isImplantOrSurgery =
+		specLower.includes("surg") ||
+		specLower.includes("хирург") ||
+		specLower.includes("имплант") ||
+		titleLower.includes("имплант") ||
+		titleLower.includes("синус") ||
+		titleLower.includes("остео") ||
+		titleLower.includes("костн");
+
+	// Для ортодонтии (брекеты/элайнеры до 2 лет / 730 дней)
+	if (isOrtho && daysSinceLastVisit <= 730) {
+		return true;
+	}
+
+	// Для имплантации (остеоинтеграция 4-6 месяцев, ~120-270 дней)
+	if (isImplantOrSurgery && daysSinceLastVisit <= 270) {
+		return true;
+	}
+
+	return false;
 }
 
 /**
@@ -126,18 +176,27 @@ export function generateClinicalRiskReason(
 	daysSinceLastVisit: number,
 	hasUncompletedPlan: boolean,
 	lastSpecialty: string | null,
+	isObservationPause?: boolean,
 ): string {
 	const months = Math.floor(daysSinceLastVisit / 30);
+	const specLower = (lastSpecialty || "").toLowerCase();
+
+	if (isObservationPause) {
+		if (specLower.includes("orthodont") || specLower.includes("ортодон")) {
+			return `Физиологическая клиническая пауза ортодонтического лечения (${daysSinceLastVisit} дн. / ${months} мес.). Пациент находится в плановом периоде ношения аппаратуры или ретенции (до 2 лет). Не является оттоком врача.`;
+		}
+		return `Физиологическая клиническая пауза остеоинтеграции (${daysSinceLastVisit} дн. / ${months} мес.). Срок приживления имплантатов / ремоделирования кости составляет 4–6 месяцев. Не является оттоком врача.`;
+	}
 
 	if (hasUncompletedPlan) {
 		return `Пациент не посещал клинику ${daysSinceLastVisit} дн. (${months} мес.). Имеются незавершенные этапы комплексного плана лечения! Риск деформации зубного ряда и потери результатов предыдущего этапа.`;
 	}
 
-	if (lastSpecialty === "orthopedics") {
+	if (specLower.includes("orthoped") || specLower.includes("ортопед")) {
 		return `Прошло ${daysSinceLastVisit} дн. (${months} мес.) после сдачи ортопедической конструкции. Необходим контрольный осмотр окклюзии и краевого прилегания коронок.`;
 	}
 
-	if (lastSpecialty === "surgery") {
+	if (specLower.includes("surg") || specLower.includes("хирург")) {
 		return `Прошло ${daysSinceLastVisit} дн. (${months} мес.) после хирургического вмешательства / имплантации. Требуется рентген-контроль остеоинтеграции и состояния костной ткани.`;
 	}
 
@@ -183,6 +242,7 @@ export function calculateLeakFunnelMetrics(leads: readonly CrmLeakLeadItem[]): C
 	let rebookedCount = 0;
 	let declinedCount = 0;
 	let archivedCount = 0;
+	let clinicalObservationPauseCount = 0;
 	let totalDays = 0;
 	let totalUncompletedPlanSumRub = 0;
 
@@ -193,17 +253,33 @@ export function calculateLeakFunnelMetrics(leads: readonly CrmLeakLeadItem[]): C
 		totalDays += lead.daysSinceLastVisit;
 		totalUncompletedPlanSumRub += lead.uncompletedPlanSumRub;
 
-		if (lead.leadStatus === "in_progress") inProgressCount++;
-		else if (lead.leadStatus === "contacted") contactedCount++;
-		else if (lead.leadStatus === "rebooked") rebookedCount++;
-		else if (lead.leadStatus === "declined") declinedCount++;
-		else if (lead.leadStatus === "archived") archivedCount++;
+		const isPause =
+			lead.leadStatus === "CLINICAL_OBSERVATION_PAUSE" ||
+			lead.leadStatus === "clinical_observation_pause";
 
-		const doc = lead.lastDoctorName || "Не назначен";
-		doctorCounts[doc] = (doctorCounts[doc] || 0) + 1;
+		if (isPause) {
+			clinicalObservationPauseCount++;
+		} else if (lead.leadStatus === "in_progress") {
+			inProgressCount++;
+		} else if (lead.leadStatus === "contacted") {
+			contactedCount++;
+		} else if (lead.leadStatus === "rebooked") {
+			rebookedCount++;
+		} else if (lead.leadStatus === "declined") {
+			declinedCount++;
+		} else if (lead.leadStatus === "archived") {
+			archivedCount++;
+		}
 
-		const spec = lead.lastSpecialty || "Общая стоматология";
-		specialtyCounts[spec] = (specialtyCounts[spec] || 0) + 1;
+		// ИСКЛЮЧЕНИЕ: пациенты со статусом CLINICAL_OBSERVATION_PAUSE не являются оттоком!
+		// Для хирурга (остеоинтеграция 4-6 мес) и ортодонта (аппаратура/ретенция до 2 лет) это норма.
+		if (!isPause) {
+			const doc = lead.lastDoctorName || "Не назначен";
+			doctorCounts[doc] = (doctorCounts[doc] || 0) + 1;
+
+			const spec = lead.lastSpecialty || "Общая стоматология";
+			specialtyCounts[spec] = (specialtyCounts[spec] || 0) + 1;
+		}
 	}
 
 	const touchedCount = inProgressCount + contactedCount + rebookedCount + declinedCount;
@@ -231,6 +307,7 @@ export function calculateLeakFunnelMetrics(leads: readonly CrmLeakLeadItem[]): C
 		rebookedCount,
 		declinedCount,
 		archivedCount,
+		clinicalObservationPauseCount,
 		reactivationConversionPct,
 		rebookedRevenuePotentialRub,
 		totalUncompletedPlanSumRub: Math.round(totalUncompletedPlanSumRub * 100) / 100,

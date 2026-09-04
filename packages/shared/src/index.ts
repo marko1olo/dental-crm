@@ -2648,7 +2648,7 @@ export const paymentSchema = z.object({
 	patientId: z.string().uuid(),
 	visitId: z.string().uuid().nullable(),
 	documentId: z.string().uuid().nullable(),
-	amountRub: positiveMoneyRubSchema,
+	amountRub: nonNegativeMoneyRubSchema,
 	method: paymentMethodSchema,
 	status: paymentStatusSchema,
 	paidAt: z.string().nullable(),
@@ -7055,7 +7055,7 @@ export const createPaymentSchema = z
 		catalogItemId: z.string().uuid().nullable().optional(),
 		discountRub: nonNegativeMoneyRubSchema.nullable().optional(),
 		discountPercent: z.number().min(0).max(100).refine((val) => typeof val === "number" && Number.isFinite(val) && !Number.isNaN(val)).nullable().optional(),
-		amountRub: positiveMoneyRubSchema,
+		amountRub: nonNegativeMoneyRubSchema,
 		method: paymentMethodSchema.default("card"),
 		fiscalReceiptNumber: z.string().trim().max(120).nullable().optional(),
 		fiscalReceiptIssuedAt: strictFiscalReceiptIssuedAtSchema

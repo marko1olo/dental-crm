@@ -336,26 +336,37 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 				});
 			});
 			return result;
-		} catch (err) {
-			if (err instanceof InsufficientStockError) {
+		} catch (err: unknown) {
+			const isInsufficientStock =
+				err instanceof InsufficientStockError ||
+				(err as any)?.error === "InsufficientStock" ||
+				(err as any)?.name === "InsufficientStockError" ||
+				(err as any)?.code === "InsufficientStock";
+
+			if (isInsufficientStock) {
 				// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
 				// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.
+				const itemErr = err as any;
+				const invItemId = itemErr.inventoryItemId ?? "unknown";
+				const invItemName = itemErr.inventoryItemName ?? "Материал";
+				const avail = Number(itemErr.availableStock ?? 0);
+				const req = Number(itemErr.requiredStock ?? 1);
 				return reply.status(200).send({
 					success: true,
 					isOverdraft: true,
-					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}). Приём проведён без блокировки.`,
-					inventoryItemId: err.inventoryItemId,
-					inventoryItemName: err.inventoryItemName,
-					availableStock: err.availableStock,
-					requiredStock: err.requiredStock,
+					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Приём проведён без блокировки.`,
+					inventoryItemId: invItemId,
+					inventoryItemName: invItemName,
+					availableStock: avail,
+					requiredStock: req,
 					deductions: [],
 					warnings: [
 						{
 							type: "out_of_stock",
-							itemId: err.inventoryItemId,
-							itemName: err.inventoryItemName,
-							message: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}).`,
-							currentStock: err.availableStock - err.requiredStock,
+							itemId: invItemId,
+							itemName: invItemName,
+							message: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}).`,
+							currentStock: avail - req,
 							criticalThreshold: 0,
 						},
 					],
@@ -414,26 +425,37 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 				});
 			});
 			return result;
-		} catch (err) {
-			if (err instanceof InsufficientStockError) {
+		} catch (err: unknown) {
+			const isInsufficientStock =
+				err instanceof InsufficientStockError ||
+				(err as any)?.error === "InsufficientStock" ||
+				(err as any)?.name === "InsufficientStockError" ||
+				(err as any)?.code === "InsufficientStock";
+
+			if (isInsufficientStock) {
 				// Клинический закон: задержка накладной снабженцем не должна блокировать операцию и лечение зуба.
 				// Мягкий овердрафт: отдаем 200 OK с предупреждением о дефиците партии вместо блокирующего 409.
+				const itemErr = err as any;
+				const invItemId = itemErr.inventoryItemId ?? "unknown";
+				const invItemName = itemErr.inventoryItemName ?? "Материал";
+				const avail = Number(itemErr.availableStock ?? 0);
+				const req = Number(itemErr.requiredStock ?? 1);
 				return reply.status(200).send({
 					success: true,
 					isOverdraft: true,
-					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}). Процедура проведена без блокировки.`,
-					inventoryItemId: err.inventoryItemId,
-					inventoryItemName: err.inventoryItemName,
-					availableStock: err.availableStock,
-					requiredStock: err.requiredStock,
+					warning: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Процедура проведена без блокировки.`,
+					inventoryItemId: invItemId,
+					inventoryItemName: invItemName,
+					availableStock: avail,
+					requiredStock: req,
 					deductions: [],
 					warnings: [
 						{
 							type: "out_of_stock",
-							itemId: err.inventoryItemId,
-							itemName: err.inventoryItemName,
-							message: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${err.inventoryItemName}» (в наличии ${err.availableStock}, требовалось ${err.requiredStock}).`,
-							currentStock: err.availableStock - err.requiredStock,
+							itemId: invItemId,
+							itemName: invItemName,
+							message: `Мягкий овердрафт склада: зафиксирован дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}).`,
+							currentStock: avail - req,
 							criticalThreshold: 0,
 						},
 					],
@@ -508,5 +530,142 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 			...(expiringWithinDays !== undefined ? [{ expiringWithinDays }] : []),
 		);
 		return alerts;
+	});
+
+	// POST /:organizationId/deduct/emergency-writeoff — Emergency write-off with guaranteed soft overdraft
+	server.post<{
+		Params: { organizationId: string };
+		Body: {
+			items: Array<{
+				inventoryItemId: string;
+				quantity: number;
+				reason?: string | null;
+			}>;
+			visitId?: string | null;
+			userId?: string | null;
+			notes?: string | null;
+		};
+	}>("/:organizationId/deduct/emergency-writeoff", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment consumables emergency writeoff",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const emergencySchema = z.object({
+			items: z
+				.array(
+					z.object({
+						inventoryItemId: z.string().min(1, "Идентификатор материала обязателен"),
+						quantity: z.number().positive("Количество должно быть больше 0"),
+						reason: z.string().nullable().optional(),
+					}),
+				)
+				.min(1, { message: "Список позиций для списания не может быть пустым" }),
+			visitId: z.string().nullable().optional(),
+			userId: z.string().nullable().optional(),
+			notes: z.string().nullable().optional(),
+		});
+
+		const parsedBody = emergencySchema.safeParse(request.body);
+		if (!parsedBody.success) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: parsedBody.error.errors[0]?.message ?? "Неверные параметры запроса",
+			});
+		}
+
+		try {
+			const result = await db.transaction(async (tx) => {
+				return TreatmentConsumablesService.deductManualItems(tx, {
+					organizationId,
+					items: parsedBody.data.items,
+					visitId: parsedBody.data.visitId,
+					userId: parsedBody.data.userId ?? (request.user as any)?.id ?? null,
+					notes: parsedBody.data.notes,
+					allowOverdraft: true,
+				});
+			});
+			return result;
+		} catch (err: unknown) {
+			const isInsufficientStock =
+				err instanceof InsufficientStockError ||
+				(err as any)?.error === "InsufficientStock" ||
+				(err as any)?.name === "InsufficientStockError" ||
+				(err as any)?.code === "InsufficientStock";
+
+			if (isInsufficientStock) {
+				const itemErr = err as any;
+				const invItemId = itemErr.inventoryItemId ?? "unknown";
+				const invItemName = itemErr.inventoryItemName ?? "Материал";
+				const avail = Number(itemErr.availableStock ?? 0);
+				const req = Number(itemErr.requiredStock ?? 1);
+				return reply.status(200).send({
+					success: true,
+					isOverdraft: true,
+					warning: `Мягкий овердрафт склада: дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}). Операция проведена без блокировки.`,
+					inventoryItemId: invItemId,
+					inventoryItemName: invItemName,
+					availableStock: avail,
+					requiredStock: req,
+					deductions: [],
+					warnings: [
+						{
+							type: "out_of_stock",
+							itemId: invItemId,
+							itemName: invItemName,
+							message: `Мягкий овердрафт склада: дефицит по материалу «${invItemName}» (в наличии ${avail}, требовалось ${req}).`,
+							currentStock: avail - req,
+							criticalThreshold: 0,
+						},
+					],
+				});
+			}
+			throw err;
+		}
+	});
+
+	// POST /:organizationId/quick-writeoff-carpules — 1-Click carpules writeoff by nurse
+	server.post<{
+		Params: { organizationId: string };
+		Body: {
+			carpulesCount?: number;
+			drugName?: string;
+			visitId?: string | null;
+			userId?: string | null;
+			notes?: string | null;
+		};
+	}>("/:organizationId/quick-writeoff-carpules", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment consumables quick writeoff carpules",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const result = await db.transaction(async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffCarpules(tx, {
+				organizationId,
+				carpulesCount: body.carpulesCount,
+				drugName: body.drugName,
+				visitId: body.visitId ?? null,
+				userId: body.userId ?? (request.user as any)?.id ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
 	});
 };
