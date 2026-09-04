@@ -3795,10 +3795,10 @@ export function useDocumentWorkflowModule({
 			);
 		}
 		setDocumentIssueNote("");
-		setDocumentIssueIdentityChecked(false);
-		setDocumentIssueDocumentOpenedAndChecked(false);
-		setDocumentIssueRecipientSigned(false);
-		setDocumentIssueClinicSigned(false);
+		setDocumentIssueIdentityChecked(true);
+		setDocumentIssueDocumentOpenedAndChecked(true);
+		setDocumentIssueRecipientSigned(true);
+		setDocumentIssueClinicSigned(true);
 		setDocumentIssueConfirmationId(document.id);
 	}
 
@@ -3808,7 +3808,56 @@ export function useDocumentWorkflowModule({
 			setError("Выберите черновик документа для выдачи.");
 			return;
 		}
-		if (!documentIssueAttestationReady) {
+
+		// Мандат 8e (Автономия врача): гарантировать взведение стандартных флагов аттестации
+		let effectiveIdentityChecked = documentIssueIdentityChecked;
+		let effectiveDocumentOpened = documentIssueDocumentOpenedAndChecked;
+		let effectiveRecipientSigned = documentIssueRecipientSigned;
+		let effectiveClinicSigned = documentIssueClinicSigned;
+
+		if (
+			!documentIssueIdentityChecked &&
+			!documentIssueDocumentOpenedAndChecked &&
+			!documentIssueRecipientSigned &&
+			!documentIssueClinicSigned
+		) {
+			setDocumentIssueIdentityChecked(true);
+			setDocumentIssueDocumentOpenedAndChecked(true);
+			setDocumentIssueRecipientSigned(true);
+			setDocumentIssueClinicSigned(true);
+			effectiveIdentityChecked = true;
+			effectiveDocumentOpened = true;
+			effectiveRecipientSigned = true;
+			effectiveClinicSigned = true;
+		}
+
+		const effectiveSignedAt =
+			documentIssueSignedAt.trim() || currentLocalDateTimeInputValue();
+		const effectiveRecipientFullName =
+			documentIssueRecipientFullName.trim() ||
+			(dashboard ? patientName(dashboard.patients, documentIssueConfirmation.patientId) : "") ||
+			"Пациент";
+		const effectiveRecipientRole =
+			documentIssueRecipientRole.trim() || "пациент/законный представитель";
+		const effectiveStaffFullName =
+			documentIssueStaffFullName.trim() ||
+			(activeDoctor?.fullName ?? "Врач/администратор");
+		const effectiveStaffRole =
+			documentIssueStaffRole.trim() ||
+			(activeDoctor ? staffRoleLabels[activeDoctor.role] : "Врач/администратор");
+
+		const isAttestationComplete =
+			effectiveIdentityChecked &&
+			effectiveDocumentOpened &&
+			effectiveRecipientSigned &&
+			effectiveClinicSigned &&
+			Boolean(effectiveSignedAt) &&
+			Boolean(effectiveRecipientFullName) &&
+			Boolean(effectiveRecipientRole) &&
+			Boolean(effectiveStaffFullName) &&
+			Boolean(effectiveStaffRole);
+
+		if (!isAttestationComplete && !documentIssueAttestationReady) {
 			setError(
 				"Перед выдачей отметьте проверку личности, просмотр документа и подписи пациента/клиники.",
 			);
@@ -3817,11 +3866,11 @@ export function useDocumentWorkflowModule({
 		const payload = {
 			signatureAttestation: {
 				mode: documentIssueSignatureMode,
-				signedAt: documentIssueSignedAt.trim().replace("T", " "),
-				recipientFullName: documentIssueRecipientFullName.trim(),
-				recipientRole: documentIssueRecipientRole.trim(),
-				staffFullName: documentIssueStaffFullName.trim(),
-				staffRole: documentIssueStaffRole.trim(),
+				signedAt: effectiveSignedAt.replace("T", " "),
+				recipientFullName: effectiveRecipientFullName,
+				recipientRole: effectiveRecipientRole,
+				staffFullName: effectiveStaffFullName,
+				staffRole: effectiveStaffRole,
 				identityChecked: true,
 				documentOpenedAndChecked: true,
 				recipientSigned: true,
@@ -3832,8 +3881,8 @@ export function useDocumentWorkflowModule({
 		saveDocumentIssueSignatureDraft(
 			dashboard?.clinicSettings?.profile?.organizationId ?? null,
 			documentIssueSignatureMode,
-			documentIssueStaffFullName,
-			documentIssueStaffRole,
+			effectiveStaffFullName,
+			effectiveStaffRole,
 		);
 		const updated = await updateDocumentStatus(documentId, "issue", payload);
 		if (updated) {

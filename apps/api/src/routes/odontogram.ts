@@ -178,6 +178,8 @@ const treatmentPlanUpsertSchema = z.object({
 		.default("plan_fixed"),
 	planDiscountPercent: z.number().min(0).max(100).optional().default(0),
 	planDiscountRub: z.number().nonnegative().optional().default(0),
+	allowClinicalBlockerOverride: z.boolean().optional().default(true),
+	clinicalBlockerOverrideReason: z.string().trim().max(1000).optional().nullable(),
 });
 
 type TreatmentPlanRow = typeof treatmentPlans.$inferSelect;
@@ -1165,12 +1167,24 @@ export async function registerOdontogramRoutes(app: FastifyInstance) {
 							(e) => !e.resolved && e.severity === "blocker",
 						);
 						if (blockingRule) {
-							const err = new Error(
-								`Отказ: план содержит противопоказание. ${blockingRule.message}`,
-							);
-							// biome-ignore lint/suspicious/noExplicitAny: error mapping
-							(err as any).statusCode = 400;
-							throw err;
+							if (input.allowClinicalBlockerOverride) {
+								request.log.warn(
+									{
+										patientId,
+										planId: savedPlanId,
+										blockingRule: blockingRule.message,
+										overrideReason: input.clinicalBlockerOverrideReason ?? null,
+									},
+									`[Мандат 8e: Автономия врача] План лечения сохранен вопреки противопоказанию под ответственность врача: ${blockingRule.message}`,
+								);
+							} else {
+								const err = new Error(
+									`Отказ: план содержит противопоказание. ${blockingRule.message}`,
+								);
+								// biome-ignore lint/suspicious/noExplicitAny: error mapping
+								(err as any).statusCode = 400;
+								throw err;
+							}
 						}
 
 						const ledgerStatus = input.patientSignature

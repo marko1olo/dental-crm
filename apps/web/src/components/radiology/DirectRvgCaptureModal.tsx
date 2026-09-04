@@ -25,7 +25,6 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Sun,
-	Thermometer,
 	Truck,
 	UploadCloud,
 	Wifi,
@@ -151,7 +150,6 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 	// Sensor & Capture Lifecycle State
 	const [sensorStatus, setSensorStatus] = useState<SensorCaptureStatus>("ready");
 	const [selectedSensorModel, setSelectedSensorModel] = useState<string>("vatech_ezsensor_hd");
-	const [sensorTemperature, setSensorTemperature] = useState<number>(24.4);
 	const [acquisitionProgress, setAcquisitionProgress] = useState<number>(0);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -222,7 +220,6 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			setAcquisitionProgress(100);
 			setSensorStatus("captured");
 			setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
-			setSensorTemperature((prev) => Number((prev + 0.3).toFixed(1)));
 			showToast("Снимок успешно получен с датчика RVG", "success");
 		}, 950);
 
@@ -535,11 +532,6 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 									</option>
 								))}
 							</select>
-						</div>
-
-						<div className="rvg-telemetry-chip" title="Температура матрицы визиографа">
-							<Thermometer className="w-3.5 h-3.5 text-amber-400" />
-							<span>{sensorTemperature} °C</span>
 						</div>
 
 						<div className="rvg-telemetry-chip" title="Эффективная лучевая нагрузка по СанПиН">

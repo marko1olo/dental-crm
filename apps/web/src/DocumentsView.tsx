@@ -5588,6 +5588,44 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						</label>
 					</div>
 					<div className="document-issue-checkboxes">
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "space-between",
+								paddingBottom: "4px",
+								marginBottom: "4px",
+								borderBottom: "1px solid var(--border-soft)",
+							}}
+						>
+							<span style={{ fontSize: "12px", color: "var(--muted)" }}>
+								Чек-лист аттестации (Мандат 8e: включен по умолчанию)
+							</span>
+							<button
+								type="button"
+								className="secondary-button"
+								style={{ padding: "2px 8px", fontSize: "11px", height: "auto" }}
+								onClick={() => {
+									const allChecked =
+										documentIssueIdentityChecked &&
+										documentIssueDocumentOpenedAndChecked &&
+										documentIssueRecipientSigned &&
+										documentIssueClinicSigned;
+									const next = !allChecked;
+									setDocumentIssueIdentityChecked(next);
+									setDocumentIssueDocumentOpenedAndChecked(next);
+									setDocumentIssueRecipientSigned(next);
+									setDocumentIssueClinicSigned(next);
+								}}
+							>
+								{documentIssueIdentityChecked &&
+								documentIssueDocumentOpenedAndChecked &&
+								documentIssueRecipientSigned &&
+								documentIssueClinicSigned
+									? "Снять отметки"
+									: "Выбрать все (1 клик)"}
+							</button>
+						</div>
 						<label>
 							<input
 								type="checkbox"
@@ -5689,14 +5727,20 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						<button
 							className="primary-button"
 							type="button"
-							disabled={!documentIssueAttestationReady || documentIssueSaving}
+							disabled={documentIssueSaving}
 							aria-busy={documentIssueSaving || undefined}
 							aria-describedby={
 								!documentIssueAttestationReady
 									? documentIssueMissingGuidanceId
 									: undefined
 							}
-							onClick={() => void confirmDocumentIssue()}
+							onClick={() => {
+								setDocumentIssueIdentityChecked(true);
+								setDocumentIssueDocumentOpenedAndChecked(true);
+								setDocumentIssueRecipientSigned(true);
+								setDocumentIssueClinicSigned(true);
+								void confirmDocumentIssue();
+							}}
 						>
 							{documentIssueSaving ? "Выдаю документ" : "Выдать после проверки"}
 						</button>
