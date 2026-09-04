@@ -4,7 +4,7 @@
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).
-- **Backend API**: `apps/api` (Fastify 4+, TypeScript, Drizzle ORM, Node.js).
+- **Backend API**: `apps/api` (Fastify 5.3+, TypeScript, Drizzle ORM, Node.js).
 - **Shared Package**: `packages/shared` (общие схемы Zod, DTO, типы документов, одонтограммы и интерфейсов).
 - **База данных**: **нативный PostgreSQL 18.4** по TCP на `127.0.0.1:5432`, драйвер `node-postgres`
   (модульная схема в `apps/api/src/db/schema/*.ts`, экспортируемая через `apps/api/src/db/schema.ts` и `schema/index.ts`: 20 доменных модулей, 203 `pgTable` + `pgEnum`).

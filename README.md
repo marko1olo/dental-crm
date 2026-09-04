@@ -74,22 +74,25 @@ graph TD
 
 | Parameter Key | Type | Default Value | Description |
 |---|---|---|---|
-| `MAX_BUFFER_SIZE` | SizeT | `65536` | Maximum pre-allocated memory buffer in bytes |
-| `FRAME_RATE_TARGET` | Int | `60` | Target loop frequency in Hz |
-| `ENABLE_TELEMETRY` | Bool | `true` | Emit real-time JSON metrics to stdout |
-| `THREAD_POOL_COUNT` | Int | `8` | Worker thread allocations for parallel processing |
+| `DATABASE_URL` | String | `postgresql://...@127.0.0.1:5432/dental_crm` | Native PostgreSQL 18.4 TCP connection pool |
+| `API_PORT` | Int | `4100` | Fastify 5.3+ REST and WebSocket server port |
+| `WEB_PORT` | Int | `5173` | Vite development server port |
+| `DENTE_AUTOSAVE_DEBOUNCE_MS`| Int | `200` | Debounced EMR and visit draft autosave interval into IndexedDB |
+| `DENTE_PDF_EXPORT_TIMEOUT_MS`| Int | `15000` | Headless Chromium/Edge timeout for Form 043/u and contract PDF generation |
 
 </details>
 
 <details>
 <summary>⚡ <b>Performance Budget & Profiling Metrics (Click to Expand)</b></summary>
 
-### Memory & Execution Profile
+### Latency & Execution Profile
 
-- **GC Allocation Budget**: `0 B / frame` (Strict Zero Allocation).
-- **Target Frame Time**: `< 16.6 ms` (60 FPS minimum lock).
-- **VRAM Budget**: `< 512 MB` allocated statically at startup.
-- **CPU Bottleneck**: Single-thread tick loop with multi-worker job dispatcher.
+- **Backend API Latency Budget**: `< 200 ms` for standard REST routes under normal concurrency.
+- **RVG / Visiodent Opening Latency**: `< 50 ms` in full sensor resolution without AI blocking (Mandate 8e).
+- **Mobile Touch Targets**: `≥ 44 × 44 px` interactive target area per Apple HIG & WCAG AAA.
+- **Desktop Toolbar Density**: `32–36 px` single toolbar line without button clutter (Hick's Law).
+- **Financial Precision**: `100% integer kopecks` (`bigint`), zero floating-point math in billing and payroll.
+- **Modal Depth Limit**: Strictly `1` (Anti-Matryoshka Law, zero nested modals).
 
 </details>
 

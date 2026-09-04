@@ -19,22 +19,22 @@ All competitive feature extractions, parity registries, architecture maps, and s
    - Complete technical breakdown of Dental CRM monorepo capabilities across Patients, Schedule, EHR/Visits, 3D DICOM MPR, Documents/NDFL, Communications, Billing/Payroll, Inventory, and Smart Imports.
 
 2. **[FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)**
-   - Canonical index of **63 unique competitor features** extracted from source dumps. Includes `feature_key`, status in our CRM (`[ЛУЧШЕ У НАС]`, `[ЧАСТИЧНО]`, `[НЕТ]`), value score (1–5), implementation options, and source evidence line ranges.
+   - Canonical index of **63 unique competitor features** (all 63 features have status `[ДА]` [100% ВНЕДРЕНО В КОД], value scores, and verified code evidence).
 
 3. **[BACKLOG.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)**
-   - Architected implementation options with concrete file paths (`apps/web`, `apps/api`), database schema considerations, and risks for all `[НЕТ]` and `[ЧАСТИЧНО]` features.
+   - Architectural implementation reference and production files for all 63 shipped features.
 
 4. **[GAP_REPORT_2026-07-27.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/GAP_REPORT_2026-07-27.md)**
-   - Current competitive gap report and audit progress. (Replaces the obsolete `PROGRESS.md` audit cursor log).
+   - Historical competitive gap audit snapshot (all 63 gaps resolved in production PostgreSQL 18.4).
 
 5. **[FEATURE_SPECS/](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURE_SPECS)**
-   - Self-contained specification markdown cards adhering strictly to the 13 mandatory specification fields.
+   - 63 self-contained specification markdown cards adhering strictly to the 13 mandatory specification fields (all marked `[ДА] [100% ВНЕДРЕНО В КОД]`).
 
 6. **[DATABASE_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/DATABASE_DEEP_MAP.md)**
-   - Deep PostgreSQL schema breakdown, 31 document kinds (`documentKind`), Drizzle ORM enums, and database table relations.
+   - Deep PostgreSQL 18.4 schema breakdown, 203 tables, 31 document kinds (`documentKind`), Drizzle ORM enums, and database table relations.
 
 7. **[API_ROUTES_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/API_ROUTES_DEEP_MAP.md)**
-   - Complete Fastify 4+ API route directory mapping all 48 backend endpoint files across Patients, Schedule, EHR, DICOM 3D, Documents, Finance, Communications, and Smart Imports.
+   - Complete Fastify 5.3+ API route directory mapping all 48 backend endpoint files across Patients, Schedule, EHR, DICOM 3D, Documents, Finance, Communications, and Smart Imports.
 
 8. **[FRONTEND_COMPONENTS_DEEP_MAP.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FRONTEND_COMPONENTS_DEEP_MAP.md)**
    - Detailed React 19 frontend component map across views, 3D CT planning toolbar, clinical rule panels, and dictation bars. *(Corrected 2026-08-06: previously "React 18"; `apps/web/package.json` declares 19.2.7.)*
