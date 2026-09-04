@@ -291,24 +291,29 @@ export const InteractiveTreatmentTimelineWidget: React.FC<InteractiveTreatmentTi
 			doctorFullName: planProfile?.curatingDoctor || "Д-р Иванов Александр Сергеевич",
 			clinicName: "DENTE Стоматологический центр",
 		});
-		setSmsOtpInput("8492"); // Pre-filled statutory demo SMS code
+		setSmsOtpInput("");
 	};
 
-	const handleConfirmConsentSign = async () => {
+	const handleConfirmConsentSign = () => {
 		if (!activeConsent) return;
+		const code = smsOtpInput.trim();
+		if (!code) {
+			showToast("Введите код из СМС для подписания ИДС", "warning");
+			return;
+		}
 		setIsSigning(true);
 		triggerHaptic("success");
 
-		await new Promise((resolve) => setTimeout(resolve, 500));
 		playClinicalAudioFeedback("save_success");
 		setSignedConsentStageIds((prev) => ({
 			...prev,
 			[activeConsent.stageId]: true,
 		}));
-		showToast(`ИДС по 323-ФЗ успешно подписано СМС-кодом ${smsOtpInput}!`, "success");
+		showToast(`ИДС по 323-ФЗ успешно подписано СМС-кодом ${code}!`, "success");
 		onSignStatutoryConsent?.(activeConsent.stageId, activeConsent.statutoryActTitle);
 		setIsSigning(false);
 		setActiveConsent(null);
+		setSmsOtpInput("");
 	};
 
 	return (
@@ -574,7 +579,7 @@ export const InteractiveTreatmentTimelineWidget: React.FC<InteractiveTreatmentTi
 									/>
 									<button
 										type="button"
-										disabled={isSigning || !smsOtpInput}
+										disabled={isSigning || !smsOtpInput.trim()}
 										onClick={handleConfirmConsentSign}
 										className="treatment-action-btn primary flex-1"
 									>
