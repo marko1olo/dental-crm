@@ -1,6 +1,21 @@
 # БИБЛИЯ РЕВЕРС-ИНЖИНИРИНГА СТОМ-ИКС (STOMX DENTAL CRM)
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)
+>
+> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+>
+> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1:**
+> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> До сетевых холдингов нам ещё расти и расти! Все переносимые из StomX алгоритмы обязаны поддерживать 1-клик сценарии без трения и бюрократии.
+>
+> 🛑 **ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS — МАНДАТ 8n):**
+> Никаких тупиков и блокировок: касса 54-ФЗ без ИНН физлиц, списание материалов с мягким овердрафтом, расписание без обязательного ассистента.
+>
+> ⚖️ **МАНДАТЫ 8e–8n И 4 ДОГМАТА:**
+> - **Мандат 8e (Автономия врача):** Запрет на палки в колёса персоналу. Норма в 1 клик, autosave, печать черновиков в любой момент.
+> - **Мандат 8k (CRM != reality simulator):** Снижение трения, пакетные списания карпул, 043/у без академического оверинжиниринга.
+> - **Мандат 8j («Работает — не трогай»):** Железная стоп-линия Definition of Done (DoD).
+
 ## Исследование, полная спецификация и руководство по переносу в Clinic MVP / DENTE
 
 > **Статус:** Канонический документ реверс-инжиниринга  

@@ -9,6 +9,22 @@
 
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+>
+> ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
+>
+> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1 И ГЛАВНЫЙ АКЦЕНТ СИСТЕМЫ:**
+> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> До крупных сетевых холдингов нам ещё расти и расти! Вся система в первую очередь обязана быть молниеносной, монолитной и автономной для соло-врача и небольшого кабинета.
+>
+> 🛑 **ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS LAW — МАНДАТ 8n):**
+> Система **НИКОГДА** не должна заводить пользователя в тупик или блокировать приём пациента («нет ИНН физлица в чеке», «склад ещё не оприходован поставщиком», «не назначен ассистент», «истекли 30 дней сметы»).
+>
+> ⚖️ **ДОГМАТЫ И СТАНДАРТЫ (РАЗДЕЛЫ VIII–XIV):**
+> - **Догмат 1 (Мандат 8f, 8g):** T.A.R.S. 100% честность. Правило не равно задаче! Стандарты — это эталон приёмки, а не бэклог. Дефект существует только при инструментальном доказательстве.
+> - **Догмат 2 (Мандат 8h):** Динамический синхрон документации. Запрет повторной работы по кругу.
+> - **Догмат 3 (Мандат 8j):** «Работает — не трогай». Железная Стоп-Линия Definition of Done (DoD).
+> - **Догмат 4 (Мандат 8k):** CRM != симулятор реальности. Инструмент снижения трения: норма в 1 клик, пакетное списание, нулевой оверинжиниринг.
+> - **Мандат 8e (Автономия врача):** Запрет на палки в колёса персоналу. Мягкие предупреждения вместо блокировок. Свободные скидки врача (вплоть до 100%).
 [![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
 [![Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
@@ -582,25 +598,30 @@ Implemented prototype surface:
 
 # DENTE / Dental CRM-MIS
 
-Working repository for DENTE, a small-clinic dental CRM/MIS intended to grow into a hosted SaaS.
+Рабочий репозиторий DENTE — высокопроизводительной медицинской информационной системы и CRM для стоматологических клиник.
 
-Current status: architecture and product discovery. HECTON-8 rules are intentionally not applied to this product.
+> 🎯 **СТРАТЕГИЧЕСКИЙ ПРИОРИТЕТ №1:**
+> **Соло-врач (1–2 кресла, субаренда, ИП/самозанятый) и небольшая клиника (1–3 кресла)**.
+> Вся функциональность оптимизирована под работу без трения, без бюрократии и без навязывания госпитальных шаблонов. Сетевые холдинги поддерживаются архитектурно через мультитенантность и RBAC, но главный фокус — практическая автономность врача и администратора.
+>
+> 🛑 **ЗАКОН ОТСУТСТВИЯ ТУПИКОВ (ZERO DEAD-ENDS):**
+> Запрещены любые тупиковые блокировки приёма: касса 54-ФЗ принимает оплату без требования ИНН с физлиц, склад списывает материалы с мягким овердрафтом без блокировки спасения зуба, расписание создаёт запись без обязательного назначения ассистента.
 
-Primary document:
+Основные документы архитектуры и стандартов:
 - `docs/00-product-architecture.md`
-- current refusal-risk audit: `docs/04-product-risk-audit.md`
-- speech transcription plan: `docs/05-speech-transcription-plan.md`
-- speech provider research: `docs/06-speech-provider-research.md`
-- competitive voice/CRM audit: `docs/07-competitive-voice-and-crm-audit.md`
-- imaging/DICOM viewer plan: `docs/10-imaging-dicom-viewer-plan.md`
-- document generation forms: `docs/12-document-generation-forms.md`
-- DENTE Telegram bot plan: `docs/13-dente-telegram-bot-plan.md`
+- [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) — Высшая Конституция и Mandates 8e–8n
+- [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) — Главный Индекс и Матрица Навигации
+- [`.agents/DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md) — Схема базы данных (203 таблицы, 20 модулей)
+- [`.agents/API_ROUTES_CATALOG.md`](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md) — Реестр API Fastify (771 эндпоинт)
+- [`.agents/CLINICAL_PROTOCOLS_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md) — Форма 043/у, Номенклатура 804н, СанПиН
+- [`.agents/UI_STANDARDS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md) — Apple HIG, 1-строчные тулбары, глубина модалок = 1
 
-Prototype persistence:
-- mutable demo/MVP state is saved to `apps/api/.data/dental-crm-state.json` by default;
-- set `DENTAL_STATE_FILE` to move the state file;
-- set `DENTAL_STATE_PERSISTENCE=off` to return to seed-only in-memory behavior;
-- this is not a replacement for the planned PostgreSQL tenant database, backups, and auth enforcement.
+База данных и инфраструктура:
+- Нативный PostgreSQL **18.4** TCP на `127.0.0.1:5432` (`.data/pg18`).
+- 203 таблицы Drizzle ORM в 20 модульных доменах (`apps/api/src/db/schema/*.ts`).
+- Fastify 5.3+ REST API + WebSocket диспетчер (`apps/api`).
+- Клиентский SPA на React 19 + Vite (`apps/web`).
+- `@dental/shared` — разделяемые Zod-контракты и валидаторы.
 
 Useful checks:
 - `npm run typecheck`
@@ -624,7 +645,7 @@ Implemented prototype surface:
 - communication task cards for Telegram document requests now use stable workflow codes instead of localized titles, expose Russian quick actions for the real follow-up forms: tax application/current certificate/legacy certificate/register, medical copy request/extract/release receipt/visit certificate, and intake/personal-data/treatment/procedure/minor/photo-video consents; they preselect the DENTE document workflow and selected patient without auto-issuing a legal PDF from the queue;
 - Telegram private-chat free text and unsafe attachments are no longer silent: Russian words like `документы`, `налог`, `медкарта`, `анкета`, `согласие`, `памятка`, `расписание`, `нужен звонок`, `отзыв`, and `карта` route to inline-button flows; linked patients with specific document phrases create the same DENTE administrator handoff tasks as buttons, while photo/PDF/voice updates get a safe explanation with document/care/admin buttons and no echoed `file_id`;
 - generated document drafts now require a visible Russian review step before issuing: the operator sees the patient, amount, tax year/INN when relevant, opens the HTML draft, then presses `Выдать после проверки` instead of changing the legal status from a single row click;
-- document generation now includes a dedicated structured outpatient medical card 025/у (`Медицинская карта пациента, получающего медицинскую помощь в амбулаторных условиях`) anchored to Health Ministry Order N 274n; it is assembled from signed visit sources, patient/clinic administrative facts and dental clinical rows, recovers the doctor-facing draft locally per patient/visit/form until changed, blocks issue on unsigned or out-of-period source facts, and stays explicit that DENTE HTML/PDF is not ЕГИСЗ/УКЭП electronic exchange;
+- document generation now includes the canonical outpatient dental card Form 043/у (`Медицинская карта стоматологического пациента`, Приказ Минздрава СССР № 1030) as required by Mandate 8i (Outpatient Dental Context Sovereignty), assembled from signed visit sources, dental clinical rows (FDI odontogram, ICD-10 codes, 804n nomenclature services), and somatic anamnesis, with instant draft printing stamped «ЧЕРНОВИК» anytime per Mandate 8e;
 - Telegram schedule replies for linked patients now include signed inline buttons for the nearest appointment (`Подтвердить`, `Перенести`, `Позвоните мне`) while keeping the schedule text administrative-only; appointment callback signatures are scoped by `organizationId + clinicId + botConfigId + appointmentId + action + expiry`, contain no patient/diagnosis/payment facts, stay within Telegram `callback_data` limits, reject cross-bot replay, and handled callbacks create stable reschedule/call workflow tasks with a safe next-action keyboard (`Расписание`, `Документы`, `Позвать администратора`, `Конфиденциальность`) instead of a dead end;
 - Telegram care-topic buttons for extraction, implant, filling and hygiene now create or reuse doctor-owned post-visit instruction tasks with stable care workflow codes when no personalized DENTE recommendation has been issued yet; the bot smoke verifies all four callback paths, Communications shows `Подготовить памятку`, opens the post-visit recommendations form, applies the matching care preset, and the bot still sends only generic safe text until DENTE/portal has a real issued recommendation;
 - Telegram outbox API now returns the exact inline keyboard markup that will be sent, exposes server-side `status`/`templateKind` filters, count-before-page totals and cursor pagination, and the Settings UI previews Telegram-style rows with Russian labels plus `ссылка`/`действие` markers instead of flattening buttons into ambiguous text chips;
