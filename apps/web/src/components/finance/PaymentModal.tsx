@@ -16,8 +16,14 @@ import {
 	Printer,
 	ShieldCheck,
 	CheckCircle,
+	Users,
+	Sparkles,
 } from "lucide-react";
-import type { SberPosTransactionResponse } from "@dental/shared";
+import {
+	type SberPosTransactionResponse,
+	kopecksToRub,
+	rubToKopecks,
+} from "@dental/shared";
 import { SberPayIntegration } from "./SberPayIntegration.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
@@ -34,6 +40,8 @@ export interface PaymentModalProps {
 	readonly visitId?: string | undefined;
 	readonly documentId?: string | undefined;
 	readonly defaultMethod?: PaymentMethodTab | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly onClose: () => void;
 	readonly onSuccess: (paymentData: {
 		method: string;
@@ -52,12 +60,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	visitId,
 	documentId,
 	defaultMethod = "card_terminal",
+	patientDepositRub = 0,
+	patientFamilyBalanceRub = 0,
 	onClose,
 	onSuccess,
 }) => {
 	const [activeMethod, setActiveMethod] = useState<PaymentMethodTab>(defaultMethod);
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
 	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
+	const [isSubmittingDeposit, setIsSubmittingDeposit] = useState<boolean>(false);
 
 	// Multi-tender split payment state
 	const totalDueRub = Number((amountKopecks / 100).toFixed(2));
@@ -197,6 +208,62 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		}
 	};
 
+	const handleDepositSubmit = async (source: "deposit" | "family") => {
+		setIsSubmittingDeposit(true);
+		try {
+			const clientMutationId = `${source}:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+			const headers = denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+				"Idempotency-Key": clientMutationId,
+			});
+
+			const amountRubNumber = Number((amountKopecks / 100).toFixed(2));
+			const res = await fetch("/api/billing/payments", {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					patientId,
+					amountRub: amountRubNumber,
+					method: source === "family" ? "family_deposit" : "deposit",
+					visitId: visitId || null,
+					documentId: documentId || (invoiceId ? invoiceId : null),
+					clientMutationId,
+					note: source === "family"
+						? `Оплата с семейного баланса (${amountRub} ₽)`
+						: `Оплата с лицевого счета / аванса (${amountRub} ₽)`,
+				}),
+			});
+
+			if (!res.ok) {
+				const errorData = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+				const errorMsg =
+					(errorData && typeof errorData.message === "string" && errorData.message) ||
+					`Ошибка списания со счета: HTTP ${res.status}`;
+				showToast(errorMsg, "error");
+				return;
+			}
+
+			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+			showToast(
+				source === "family"
+					? `Оплата ${amountRub} ₽ с семейного баланса успешно списана`
+					: `Оплата ${amountRub} ₽ с аванса/депозита успешно списана`,
+				"success",
+			);
+			onSuccess({
+				method: source,
+				amountKopecks,
+				...paymentData,
+			});
+			onClose();
+		} catch (err: unknown) {
+			const errorMsg = err instanceof Error ? err.message : "Сбой соединения при списании со счета";
+			showToast(errorMsg, "error");
+		} finally {
+			setIsSubmittingDeposit(false);
+		}
+	};
+
 	const handleSberSuccess = (posRes: SberPosTransactionResponse) => {
 		onSuccess({
 			method: posRes.operationType,
@@ -277,6 +344,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					>
 						<Banknote size={16} className="text-emerald-600" />
 						<span>Наличные</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setActiveMethod("family_deposit")}
+						className={`min-h-[44px] px-3.5 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+							activeMethod === "family_deposit"
+								? "border-pink-500 bg-pink-500/10 text-pink-700 dark:text-pink-300 ring-2 ring-pink-400"
+								: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)]"
+						}`}
+						data-testid="tab-payment-family-deposit"
+					>
+						<Users size={16} className="text-pink-600" />
+						<span>Депозит / Семья</span>
 					</button>
 
 					<button
@@ -412,6 +493,40 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							{/* 1-Click Fast Auto-Balance Chips */}
 							<div className="flex items-center gap-1.5 flex-wrap pt-1">
 								<span className="text-[11px] text-[var(--muted,#64748b)] font-semibold">1-клик:</span>
+								{patientDepositRub > 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											const totalKop = rubToKopecks(totalDueRub);
+											const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub));
+											const remKop = Math.max(0, totalKop - depKop);
+											setSplitDepositRub(kopecksToRub(depKop));
+											setSplitCardRub(kopecksToRub(remKop));
+											setSplitCashRub(0);
+											setSplitSbpRub(0);
+										}}
+										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 cursor-pointer"
+									>
+										⚡ Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Карта
+									</button>
+								)}
+								{patientDepositRub > 0 && (
+									<button
+										type="button"
+										onClick={() => {
+											const totalKop = rubToKopecks(totalDueRub);
+											const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub));
+											const remKop = Math.max(0, totalKop - depKop);
+											setSplitDepositRub(kopecksToRub(depKop));
+											setSplitCashRub(kopecksToRub(remKop));
+											setSplitCardRub(0);
+											setSplitSbpRub(0);
+										}}
+										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 cursor-pointer"
+									>
+										⚡ Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Нал
+									</button>
+								)}
 								<button
 									type="button"
 									onClick={() => {
@@ -439,8 +554,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								<button
 									type="button"
 									onClick={() => {
-										const remainder = Math.max(0, Number((totalDueRub - (splitCashRub + splitDepositRub + splitSbpRub)).toFixed(2)));
-										setSplitCardRub(remainder);
+										const totalKop = rubToKopecks(totalDueRub);
+										const otherKop = rubToKopecks(splitCashRub) + rubToKopecks(splitDepositRub) + rubToKopecks(splitSbpRub);
+										setSplitCardRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
 									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer"
 								>
@@ -449,8 +565,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								<button
 									type="button"
 									onClick={() => {
-										const remainder = Math.max(0, Number((totalDueRub - (splitCardRub + splitDepositRub + splitSbpRub)).toFixed(2)));
-										setSplitCashRub(remainder);
+										const totalKop = rubToKopecks(totalDueRub);
+										const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitDepositRub) + rubToKopecks(splitSbpRub);
+										setSplitCashRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
 									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer"
 								>
@@ -479,8 +596,132 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							</button>
 						</div>
 					) : (
-						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-center text-xs">
-							Депозит / семейный кошелек
+						<div className="space-y-4" data-testid="payment-family-deposit-view">
+							<div className="p-4 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-3">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<Wallet className="w-5 h-5 text-pink-600" />
+										<h3 className="font-extrabold text-sm sm:text-base m-0 text-[var(--ink,#0f172a)]">
+											Оплата с депозита / семейного баланса
+										</h3>
+									</div>
+									<span className="text-xs font-mono font-bold text-[var(--muted,#64748b)]">
+										К списанию: {amountRub} ₽
+									</span>
+								</div>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+									{/* Personal Deposit Card */}
+									<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-2">
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)]">
+												<Wallet size={14} className="text-indigo-600" />
+												<span>Лицевой счет (Аванс)</span>
+											</div>
+											<span className="font-mono text-xs font-extrabold text-indigo-700 dark:text-indigo-300">
+												{patientDepositRub.toLocaleString("ru-RU")} ₽
+											</span>
+										</div>
+										<p className="text-[11px] text-[var(--muted,#64748b)] m-0 leading-tight">
+											{patientDepositRub >= totalDueRub
+												? "Средств на лицевом счете достаточно для полной оплаты."
+												: patientDepositRub > 0
+													? `Доступно ${patientDepositRub} ₽. Недостает ${(totalDueRub - patientDepositRub).toFixed(2)} ₽.`
+													: "На лицевом счете пациента нет авансовых средств."}
+										</p>
+										<button
+											type="button"
+											disabled={patientDepositRub < totalDueRub || isSubmittingDeposit}
+											onClick={() => handleDepositSubmit("deposit")}
+											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
+											data-testid="btn-pay-deposit-full"
+										>
+											<CheckCircle size={14} />
+											<span>Списать {amountRub} ₽ с депозита</span>
+										</button>
+									</div>
+
+									{/* Family Wallet Card */}
+									<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-2">
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink,#0f172a)]">
+												<Users size={14} className="text-pink-600" />
+												<span>Семейный общий баланс</span>
+											</div>
+											<span className="font-mono text-xs font-extrabold text-pink-700 dark:text-pink-300">
+												{patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽
+											</span>
+										</div>
+										<p className="text-[11px] text-[var(--muted,#64748b)] m-0 leading-tight">
+											{patientFamilyBalanceRub >= totalDueRub
+												? "Семейный баланс покрывает 100% стоимости счета."
+												: patientFamilyBalanceRub > 0
+													? `Доступно ${patientFamilyBalanceRub} ₽. Недостает ${(totalDueRub - patientFamilyBalanceRub).toFixed(2)} ₽.`
+													: "Семейный баланс пуст или не подключен."}
+										</p>
+										<button
+											type="button"
+											disabled={patientFamilyBalanceRub < totalDueRub || isSubmittingDeposit}
+											onClick={() => handleDepositSubmit("family")}
+											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
+											data-testid="btn-pay-family-full"
+										>
+											<CheckCircle size={14} />
+											<span>Списать {amountRub} ₽ с семейного счета</span>
+										</button>
+									</div>
+								</div>
+
+								{/* Insufficient Balance 1-Click Combo Resolver */}
+								{(patientDepositRub < totalDueRub && patientFamilyBalanceRub < totalDueRub) && (patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
+									<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-2">
+										<div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+											<Sparkles size={14} className="shrink-0" />
+											<span>Недостаточно средств для 100% оплаты со счета. Примените 1-клик комбо:</span>
+										</div>
+										<div className="flex items-center gap-2 flex-wrap">
+											{patientDepositRub > 0 && (
+												<button
+													type="button"
+													onClick={() => {
+														const totalKop = rubToKopecks(totalDueRub);
+														const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub));
+														const remKop = Math.max(0, totalKop - depKop);
+														setSplitDepositRub(kopecksToRub(depKop));
+														setSplitCardRub(kopecksToRub(remKop));
+														setSplitCashRub(0);
+														setSplitSbpRub(0);
+														setActiveMethod("split");
+													}}
+													className="h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												>
+													<CreditCard size={13} />
+													<span>Зачесть аванс {patientDepositRub} ₽ + остаток Картой</span>
+												</button>
+											)}
+											{patientDepositRub > 0 && (
+												<button
+													type="button"
+													onClick={() => {
+														const totalKop = rubToKopecks(totalDueRub);
+														const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub));
+														const remKop = Math.max(0, totalKop - depKop);
+														setSplitDepositRub(kopecksToRub(depKop));
+														setSplitCashRub(kopecksToRub(remKop));
+														setSplitCardRub(0);
+														setSplitSbpRub(0);
+														setActiveMethod("split");
+													}}
+													className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												>
+													<Banknote size={13} />
+													<span>Зачесть аванс {patientDepositRub} ₽ + остаток Наличными</span>
+												</button>
+											)}
+										</div>
+									</div>
+								)}
+							</div>
 						</div>
 					)}
 				</div>

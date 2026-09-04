@@ -52,6 +52,8 @@ import {
 	FAMILY_RELATIONSHIP_RU,
 	SbpQrEngine,
 	rublesToKopecks,
+	rubToKopecks,
+	kopecksToRub,
 } from "@dental/shared";
 import { showToast } from "../GlobalToast";
 import { generateQrCodeSvg } from "../portal/patientCabinet/patientCabinetEngine";
@@ -278,6 +280,63 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 		setMembers((prev) =>
 			prev.map((m) => (m.id === id ? { ...m, monthlyLimitRub: Math.max(0, limit) } : m)),
 		);
+	};
+
+	const handleQuickDeduct = (memberId: string, amountRub: number) => {
+		const member = members.find((m) => m.id === memberId);
+		if (!member) return;
+		if (amountRub <= 0) return;
+
+		const totalBalanceKop = rubToKopecks(totalBalanceRub);
+		if (totalBalanceKop <= 0) {
+			setToastMsg("Семейный баланс исчерпан.");
+			return;
+		}
+
+		const memberAllocatedKop = rubToKopecks(member.allocatedBalanceRub);
+		const maxAvailableKop = memberAllocatedKop > 0 ? Math.min(memberAllocatedKop, totalBalanceKop) : totalBalanceKop;
+		const requestedKop = rubToKopecks(amountRub);
+		const actualDeductKop = Math.min(requestedKop, maxAvailableKop);
+
+		if (actualDeductKop <= 0) {
+			setToastMsg(`Недостаточно средств для списания (${member.fullName})`);
+			return;
+		}
+
+		const actualDeductRub = kopecksToRub(actualDeductKop);
+		const newTotalBalanceRub = kopecksToRub(totalBalanceKop - actualDeductKop);
+		setTotalBalanceRub(newTotalBalanceRub);
+
+		setMembers((prev) =>
+			prev.map((m) => {
+				if (m.id !== memberId) return m;
+				const currentAllocatedKop = rubToKopecks(m.allocatedBalanceRub);
+				const newAllocatedKop = currentAllocatedKop > 0 ? Math.max(0, currentAllocatedKop - actualDeductKop) : 0;
+				const newSpentKop = rubToKopecks(m.spentThisMonthRub) + actualDeductKop;
+				return {
+					...m,
+					allocatedBalanceRub: kopecksToRub(newAllocatedKop),
+					spentThisMonthRub: kopecksToRub(newSpentKop),
+				};
+			}),
+		);
+
+		const newTx: FamilyTransactionRecord = {
+			id: `tx-deduct-${Date.now()}`,
+			dateIso: new Date().toISOString(),
+			memberId: member.id,
+			memberName: member.fullName,
+			memberRole: FAMILY_RELATIONSHIP_RU[member.role] || member.role,
+			type: "deduction",
+			amountRub: actualDeductRub,
+			description: `1-Клик списание с семейного баланса без пароля: ${member.fullName}`,
+			tenderSource: "deposit",
+			receiptNumber: `СЕМ-${Math.floor(1000 + Math.random() * 9000)}`,
+			status: "completed",
+		};
+
+		setTransactions((prev) => [newTx, ...prev]);
+		setToastMsg(`Списано ${actualDeductRub.toLocaleString("ru-RU")} ₽ в пользу: ${member.fullName}`);
 	};
 
 	const handleExecuteTopup = () => {
@@ -576,6 +635,41 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 													</div>
 												</div>
 											)}
+
+											{/* 1-Click Quick Deduction Strip without master password */}
+											<div className="pt-2.5 border-t border-[var(--line)]/60 flex items-center justify-between gap-2 flex-wrap">
+												<div className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--muted)]">
+													<Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+													<span>1-Клик Списание:</span>
+												</div>
+												<div className="flex items-center gap-1.5 flex-wrap">
+													{[1000, 3000, 5000].map((amt) => {
+														const memberAvailableRub = mem.allocatedBalanceRub > 0 ? Math.min(mem.allocatedBalanceRub, totalBalanceRub) : totalBalanceRub;
+														const isDisabled = totalBalanceRub <= 0 || memberAvailableRub <= 0;
+														return (
+															<button
+																key={amt}
+																type="button"
+																onClick={() => handleQuickDeduct(mem.id, amt)}
+																disabled={isDisabled}
+																className="h-7 px-2.5 rounded-lg text-[11px] font-bold bg-[var(--paper-soft)] hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-300 border border-[var(--border,#cbd5e1)] text-[var(--ink)] cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+																data-testid={`btn-quick-deduct-${mem.id}-${amt}`}
+															>
+																-{amt.toLocaleString("ru-RU")} ₽
+															</button>
+														);
+													})}
+													<button
+														type="button"
+														onClick={() => handleQuickDeduct(mem.id, mem.allocatedBalanceRub > 0 ? Math.min(mem.allocatedBalanceRub, totalBalanceRub) : totalBalanceRub)}
+														disabled={totalBalanceRub <= 0 || (mem.allocatedBalanceRub > 0 ? mem.allocatedBalanceRub : totalBalanceRub) <= 0}
+														className="h-7 px-2.5 rounded-lg text-[11px] font-extrabold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/40 cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+														data-testid={`btn-quick-deduct-${mem.id}-all`}
+													>
+														Весь доступный ({Math.min(mem.allocatedBalanceRub > 0 ? mem.allocatedBalanceRub : totalBalanceRub, totalBalanceRub).toLocaleString("ru-RU")} ₽)
+													</button>
+												</div>
+											</div>
 										</div>
 									);
 								})}

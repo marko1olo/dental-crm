@@ -33,9 +33,11 @@ import {
 } from "lucide-react";
 import {
 	generateOneCEnterpriseXml,
+	kopecksToRub,
 	type OneCDocumentType,
 	type OneCExportParams,
 	parseChestnyZnakDataMatrix,
+	rubToKopecks,
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { showToast } from "../GlobalToast";
@@ -314,51 +316,62 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		}
 	};
 
-	// 1-Click Fast Combined Payment (Нал + Карта + Аванс / Депозит)
+	// 1-Click Fast Combined Payment (Нал + Карта + Аванс / Депозит) с точностью до копейки
 	const applyCombinedPaymentPreset = (
 		mode: "advance_card" | "advance_cash" | "split_cash_card" | "advance_cash_card",
 	) => {
-		const targetTotal = Math.max(0, totalSumRub - insuranceAmount);
-		if (targetTotal === 0) return;
+		const targetTotalKop = Math.max(0, rubToKopecks(totalSumRub) - rubToKopecks(insuranceAmount));
+		if (targetTotalKop === 0) return;
+
+		const depAvailKop = rubToKopecks(patientDepositRub || 0);
 
 		if (mode === "advance_card") {
-			const depUsed = Math.min(patientDepositRub, targetTotal);
-			const remainder = targetTotal - depUsed;
-			setDepositAmount(depUsed);
-			setCardAmount(remainder);
+			const depUsedKop = Math.min(depAvailKop, targetTotalKop);
+			const remKop = Math.max(0, targetTotalKop - depUsedKop);
+			const depRub = kopecksToRub(depUsedKop);
+			const remRub = kopecksToRub(remKop);
+			setDepositAmount(depRub);
+			setCardAmount(remRub);
 			setCashAmount(0);
 			setSbpAmount(0);
 			setCertificateAmount(0);
-			showToast(`Комбинированная оплата: аванс ${formatMoneyRu(depUsed)} + карта ${formatMoneyRu(remainder)}`, "success", 2000);
+			showToast(`Комбинированная оплата: аванс ${formatMoneyRu(depRub)} + карта ${formatMoneyRu(remRub)}`, "success", 2000);
 		} else if (mode === "advance_cash") {
-			const depUsed = Math.min(patientDepositRub, targetTotal);
-			const remainder = targetTotal - depUsed;
-			setDepositAmount(depUsed);
-			setCashAmount(remainder);
+			const depUsedKop = Math.min(depAvailKop, targetTotalKop);
+			const remKop = Math.max(0, targetTotalKop - depUsedKop);
+			const depRub = kopecksToRub(depUsedKop);
+			const remRub = kopecksToRub(remKop);
+			setDepositAmount(depRub);
+			setCashAmount(remRub);
 			setCardAmount(0);
 			setSbpAmount(0);
 			setCertificateAmount(0);
-			showToast(`Комбинированная оплата: аванс ${formatMoneyRu(depUsed)} + наличные ${formatMoneyRu(remainder)}`, "success", 2000);
+			showToast(`Комбинированная оплата: аванс ${formatMoneyRu(depRub)} + наличные ${formatMoneyRu(remRub)}`, "success", 2000);
 		} else if (mode === "split_cash_card") {
-			const half = Math.floor(targetTotal / 2);
-			const otherHalf = targetTotal - half;
-			setCashAmount(half);
-			setCardAmount(otherHalf);
+			const halfKop = Math.floor(targetTotalKop / 2);
+			const otherKop = targetTotalKop - halfKop;
+			const cashRub = kopecksToRub(halfKop);
+			const cardRub = kopecksToRub(otherKop);
+			setCashAmount(cashRub);
+			setCardAmount(cardRub);
 			setDepositAmount(0);
 			setSbpAmount(0);
 			setCertificateAmount(0);
-			showToast(`Комбинированная оплата 50/50: наличные ${formatMoneyRu(half)} + карта ${formatMoneyRu(otherHalf)}`, "success", 2000);
+			showToast(`Комбинированная оплата 50/50: наличные ${formatMoneyRu(cashRub)} + карта ${formatMoneyRu(cardRub)}`, "success", 2000);
 		} else if (mode === "advance_cash_card") {
-			const depUsed = Math.min(patientDepositRub, targetTotal);
-			const remainder = targetTotal - depUsed;
-			const cashPart = Math.floor(remainder / 2);
-			const cardPart = remainder - cashPart;
-			setDepositAmount(depUsed);
-			setCashAmount(cashPart);
-			setCardAmount(cardPart);
+			const depUsedKop = Math.min(depAvailKop, targetTotalKop);
+			const remKop = Math.max(0, targetTotalKop - depUsedKop);
+			const cashKop = Math.floor(remKop / 2);
+			const cardKop = remKop - cashKop;
+			const depRub = kopecksToRub(depUsedKop);
+			const cashRub = kopecksToRub(cashKop);
+			const cardRub = kopecksToRub(cardKop);
+			setDepositAmount(depRub);
+			setCashAmount(cashRub);
+			setCardAmount(cardRub);
 			setSbpAmount(0);
 			setCertificateAmount(0);
-			showToast(`Комбинированная оплата (3 способа): аванс ${formatMoneyRu(depUsed)} + нал ${formatMoneyRu(cashPart)} + карта ${formatMoneyRu(cardPart)}`, "success", 2000);
+			showToast(`Комбинированная оплата: аванс ${formatMoneyRu(depRub)} + нал ${formatMoneyRu(cashRub)} + карта ${formatMoneyRu(cardRub)}`, "success", 2000);
 		}
 	};
 
@@ -691,6 +704,203 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		];
 		navigator.clipboard.writeText(lines.join("\n"));
 		showToast("Текст Акта выполненных работ скопирован в буфер!", "success", 2500);
+	};
+
+	// 🖨️ Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
+	const handlePrintSalesSlip = async () => {
+		const docNum = `ТЧ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+		const nowStr = new Date().toLocaleString("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+		const wholeRub = Math.floor(totalSumRub);
+		const kop = Math.round((totalSumRub - wholeRub) * 100);
+		const wordsRu = numberToWordsRu(wholeRub, kop);
+
+		const rowsHtml = activeItems
+			.map((it, idx) => {
+				const qty = it.quantity || 1;
+				const lineTotal = Math.max(0, it.priceRub * qty - (it.discountRub || 0));
+				return `
+					<tr>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: center;">${idx + 1}</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px;">
+							<strong>${it.name}</strong>
+							${it.toothNumber ? `<br><small style="color: #64748b;">Зуб FDI: ${it.toothNumber}</small>` : ""}
+							${it.code804n ? `<br><small style="color: #64748b;">Код Минздрава 804н: ${it.code804n}</small>` : ""}
+						</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: center;">${qty}</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-family: monospace;">${it.priceRub.toFixed(2)} ₽</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-family: monospace;">${(it.discountRub || 0).toFixed(2)} ₽</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-family: monospace; font-weight: bold;">${lineTotal.toFixed(2)} ₽</td>
+					</tr>
+				`;
+			})
+			.join("");
+
+		const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<title>Товарный чек № ${docNum}</title>
+	<style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+			font-size: 12px;
+			color: #0f172a;
+			margin: 20px;
+			line-height: 1.4;
+		}
+		.header {
+			border-bottom: 2px solid #0f172a;
+			padding-bottom: 10px;
+			margin-bottom: 12px;
+		}
+		.title {
+			font-size: 16px;
+			font-weight: 800;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			margin: 0 0 4px;
+		}
+		.non-fiscal-warning {
+			font-size: 10.5px;
+			font-weight: bold;
+			color: #475569;
+			text-transform: uppercase;
+			margin-bottom: 6px;
+		}
+		.meta-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+			font-size: 11.5px;
+			margin-top: 6px;
+		}
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 14px 0;
+			font-size: 11.5px;
+		}
+		th {
+			background: #f1f5f9;
+			border: 1px solid #cbd5e1;
+			padding: 8px;
+			font-weight: 700;
+			text-align: left;
+		}
+		.total-section {
+			margin-top: 14px;
+			padding: 10px;
+			background: #f8fafc;
+			border: 1px solid #cbd5e1;
+			border-radius: 6px;
+		}
+		.total-row {
+			display: flex;
+			justify-content: space-between;
+			font-size: 14px;
+			font-weight: 800;
+		}
+		.signatures {
+			display: flex;
+			justify-content: space-between;
+			margin-top: 36px;
+			padding-top: 10px;
+		}
+		.sig-box {
+			width: 45%;
+			border-top: 1px dashed #64748b;
+			padding-top: 6px;
+			font-size: 11px;
+		}
+		@media print {
+			body { margin: 0; }
+		}
+	</style>
+</head>
+<body>
+	<div class="header">
+		<div class="title">ТОВАРНЫЙ ЧЕК № ${docNum}</div>
+		<div class="non-fiscal-warning">НЕ ЯВЛЯЕТСЯ ФИСКАЛЬНЫМ ДОКУМЕНТОМ • ВЫДАН БЕЗ ККТ / ДЕТАЛИЗАЦИЯ УСЛУГ</div>
+		<div class="meta-grid">
+			<div>
+				<div><strong>Организация:</strong> ${clinicName}</div>
+				<div><strong>ИНН:</strong> 7701234567</div>
+				<div><strong>Лицензия:</strong> ЛО41-01137-77/00368421</div>
+			</div>
+			<div>
+				<div><strong>Дата и время:</strong> ${nowStr}</div>
+				<div><strong>Покупатель (пациент):</strong> ${patientName}</div>
+				<div><strong>Телефон:</strong> ${patientPhone}</div>
+			</div>
+		</div>
+	</div>
+
+	<table>
+		<thead>
+			<tr>
+				<th style="width: 32px; text-align: center;">№</th>
+				<th>Наименование медицинской работы (услуги)</th>
+				<th style="width: 50px; text-align: center;">Кол-во</th>
+				<th style="width: 90px; text-align: right;">Цена</th>
+				<th style="width: 80px; text-align: right;">Скидка</th>
+				<th style="width: 95px; text-align: right;">Сумма</th>
+			</tr>
+		</thead>
+		<tbody>
+			${rowsHtml}
+		</tbody>
+	</table>
+
+	<div class="total-section">
+		<div class="total-row">
+			<span>ИТОГО К ОПЛАТЕ:</span>
+			<span>${totalSumRub.toFixed(2)} ₽</span>
+		</div>
+		<div style="font-size: 11px; margin-top: 4px; color: #334155;">
+			Сумма прописью: <em>${wordsRu}</em>
+		</div>
+		<div style="font-size: 11px; margin-top: 4px; color: #334155;">
+			Форма расчета: <strong>Безналичный расчет / Без фискализации в ОФД</strong>
+		</div>
+	</div>
+
+	<div class="signatures">
+		<div class="sig-box">
+			Кассир (администратор): _________________ / ${cashierFullName}<br>
+			<small style="color: #64748b;">М.П.</small>
+		</div>
+		<div class="sig-box">
+			Покупатель (клиент): _________________ / ${patientName}<br>
+			<small style="color: #64748b;">Претензий по объему и стоимости не имею</small>
+		</div>
+	</div>
+
+	<script>
+		window.onload = function() {
+			try {
+				window.focus();
+				window.print();
+			} catch (e) {}
+		};
+	</script>
+</body>
+</html>`;
+
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, {
+				title: `Товарный чек № ${docNum}`,
+				downloadFilename: `tovarniy_check_${docNum}.html`,
+			});
+			showToast("Товарный чек отправлен на печать (без фискализации)", "success", 3000);
+		} catch {
+			showToast("Ошибка отправки товарного чека на печать", "error");
+		}
 	};
 
 	return (
@@ -1149,6 +1359,18 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												placeholder="0"
 												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
+											{remainingRub > 0 && (
+												<button
+													type="button"
+													onClick={() => handleFillRemaining("card")}
+													className="min-h-[48px] px-3 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
+													title={`Добавить остаток ${formatMoneyRu(remainingRub)} на карту`}
+													data-testid="btn-fill-remaining-card"
+												>
+													<Sparkles size={13} />
+													<span>+Остаток</span>
+												</button>
+											)}
 											{cardAmount < totalSumRub && (
 												<button
 													type="button"
@@ -1188,6 +1410,18 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												placeholder="0"
 												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
+											{remainingRub > 0 && (
+												<button
+													type="button"
+													onClick={() => handleFillRemaining("sbp")}
+													className="min-h-[48px] px-3 py-2 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
+													title={`Добавить остаток ${formatMoneyRu(remainingRub)} в СБП`}
+													data-testid="btn-fill-remaining-sbp"
+												>
+													<Sparkles size={13} />
+													<span>+Остаток</span>
+												</button>
+											)}
 											{sbpAmount < totalSumRub && (
 												<button
 													type="button"
@@ -1230,6 +1464,18 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 												placeholder="0"
 												className="min-h-[48px] w-28 sm:w-32 px-3 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] text-right"
 											/>
+											{remainingRub > 0 && (
+												<button
+													type="button"
+													onClick={() => handleFillRemaining("cash")}
+													className="min-h-[48px] px-3 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all active:scale-95 flex items-center gap-1 shadow-2xs"
+													title={`Добавить остаток ${formatMoneyRu(remainingRub)} наличными`}
+													data-testid="btn-fill-remaining-cash"
+												>
+													<Sparkles size={13} />
+													<span>+Остаток</span>
+												</button>
+											)}
 											{cashAmount < totalSumRub && (
 												<button
 													type="button"
@@ -2239,6 +2485,16 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								</span>
 							</div>
 							<div className="flex items-center gap-2.5">
+								<button
+									type="button"
+									onClick={handlePrintSalesSlip}
+									className="h-9 px-3.5 rounded-xl font-bold text-xs bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+									data-testid="btn-print-sales-slip-modal"
+									title="Напечатать товарный чек с номенклатурой 804н без фискализации в ОФД"
+								>
+									<FileText size={14} className="text-teal-600" />
+									<span>Товарный чек (без кассы)</span>
+								</button>
 								<button
 									type="button"
 									onClick={onClose}

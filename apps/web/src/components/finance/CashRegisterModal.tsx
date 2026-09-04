@@ -60,6 +60,7 @@ import { useModalA11y } from "../../hooks/useModalA11y";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter";
 import type { FiscalReceiptPrintPayload } from "../../services/hardware/hardwareTypes";
+import { numberToWordsRu } from "./invoiceEngine";
 
 export type CashRegisterTenderMethod =
 	| "card"
@@ -258,6 +259,72 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 			schedule,
 		};
 	}, [totalInvoiceRub, downPaymentPercent, installmentMonths]);
+
+	// Мгновенное распределение аванса/семейного депозита и остатка в 1 клик (строго в целых копейках)
+	const applySplitDepositAndRemainder = (targetMethod: "card" | "cash" | "sbp" = "card") => {
+		const totalKop = rubToKopecks(totalInvoiceRub);
+		const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub || 0));
+		const remKop = Math.max(0, totalKop - depKop);
+
+		const depRub = kopecksToRub(depKop);
+		const remRub = kopecksToRub(remKop);
+
+		setSplitDepositRub(depRub);
+		setSplitFamilyRub(0);
+		if (targetMethod === "card") {
+			setSplitCardRub(remRub);
+			setSplitCashRub(0);
+			setSplitSbpRub(0);
+		} else if (targetMethod === "cash") {
+			setSplitCashRub(remRub);
+			setSplitCardRub(0);
+			setSplitSbpRub(0);
+		} else {
+			setSplitSbpRub(remRub);
+			setSplitCardRub(0);
+			setSplitCashRub(0);
+		}
+	};
+
+	const applySplitFamilyAndRemainder = (targetMethod: "card" | "cash" | "sbp" = "card") => {
+		const totalKop = rubToKopecks(totalInvoiceRub);
+		const famKop = Math.min(totalKop, rubToKopecks(patientFamilyBalanceRub || 0));
+		const remKop = Math.max(0, totalKop - famKop);
+
+		const famRub = kopecksToRub(famKop);
+		const remRub = kopecksToRub(remKop);
+
+		setSplitFamilyRub(famRub);
+		setSplitDepositRub(0);
+		if (targetMethod === "card") {
+			setSplitCardRub(remRub);
+			setSplitCashRub(0);
+			setSplitSbpRub(0);
+		} else if (targetMethod === "cash") {
+			setSplitCashRub(remRub);
+			setSplitCardRub(0);
+			setSplitSbpRub(0);
+		} else {
+			setSplitSbpRub(remRub);
+			setSplitCardRub(0);
+			setSplitCashRub(0);
+		}
+	};
+
+	const applyRemainingToMethod = (targetMethod: "card" | "cash" | "sbp") => {
+		const totalKop = rubToKopecks(totalInvoiceRub);
+		let otherKop = rubToKopecks(splitDepositRub) + rubToKopecks(splitFamilyRub);
+		if (targetMethod !== "card") otherKop += rubToKopecks(splitCardRub);
+		if (targetMethod !== "cash") otherKop += rubToKopecks(splitCashRub);
+		if (targetMethod !== "sbp") otherKop += rubToKopecks(splitSbpRub);
+
+		const remKop = Math.max(0, totalKop - otherKop);
+		const remRub = kopecksToRub(remKop);
+
+		if (targetMethod === "card") setSplitCardRub(remRub);
+		if (targetMethod === "cash") setSplitCashRub(remRub);
+		if (targetMethod === "sbp") setSplitSbpRub(remRub);
+	};
 
 	// Fast 1-Click fiscalize action with rage click debounce + atomic ref lock
 	const handleFiscalize = async () => {
@@ -515,6 +582,212 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		const payload = buildPrintPayload();
 		hardwarePrinter.downloadPrintableReceipt(payload, `check_54fz_${Date.now()}.html`);
 		setToastMsg("Файл кассового чека загружен");
+	};
+
+	// 🖨️ Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
+	const handlePrintSalesSlip = async () => {
+		const docNum = `ТЧ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+		const nowStr = new Date().toLocaleString("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+		const tenderLabels: Record<string, string> = {
+			card: "Безналичный расчет (Банковская карта / POS-терминал)",
+			sbp: "Безналичный расчет (Система быстрых платежей СБП)",
+			cash: "Наличный расчет (Касса клиники)",
+			family: "Списание с семейного баланса",
+			deposit: "Списание с лицевого счета / Аванс",
+			installment: "Рассрочка клиники (0% переплат)",
+			split: "Комбинированная оплата (Смешанный расчет)",
+		};
+		const activeTenderLabel = tenderLabels[selectedTender] || "Безналичный расчет";
+		const wholeRub = Math.floor(totalInvoiceRub);
+		const kop = Math.round((totalInvoiceRub - wholeRub) * 100);
+		const wordsRu = numberToWordsRu(wholeRub, kop);
+
+		const rowsHtml = effectiveItems
+			.map((it, idx) => {
+				const lineTotal = Math.max(0, it.priceRub * it.quantity - (it.discountRub || 0));
+				return `
+					<tr>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: center;">${idx + 1}</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px;">
+							<strong>${it.name}</strong>
+							${it.toothFdiNumber ? `<br><small style="color: #64748b;">Зуб FDI: ${it.toothFdiNumber}</small>` : ""}
+							${it.code804n ? `<br><small style="color: #64748b;">Код Минздрава 804н: ${it.code804n}</small>` : ""}
+						</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: center;">${it.quantity}</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-family: monospace;">${it.priceRub.toFixed(2)} ₽</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-family: monospace;">${(it.discountRub || 0).toFixed(2)} ₽</td>
+						<td style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: right; font-family: monospace; font-weight: bold;">${lineTotal.toFixed(2)} ₽</td>
+					</tr>
+				`;
+			})
+			.join("");
+
+		const html = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<title>Товарный чек № ${docNum}</title>
+	<style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+			font-size: 12px;
+			color: #0f172a;
+			margin: 20px;
+			line-height: 1.4;
+		}
+		.header {
+			border-bottom: 2px solid #0f172a;
+			padding-bottom: 10px;
+			margin-bottom: 12px;
+		}
+		.title {
+			font-size: 16px;
+			font-weight: 800;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			margin: 0 0 4px;
+		}
+		.non-fiscal-warning {
+			font-size: 10.5px;
+			font-weight: bold;
+			color: #475569;
+			text-transform: uppercase;
+			margin-bottom: 6px;
+		}
+		.meta-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+			font-size: 11.5px;
+			margin-top: 6px;
+		}
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 14px 0;
+			font-size: 11.5px;
+		}
+		th {
+			background: #f1f5f9;
+			border: 1px solid #cbd5e1;
+			padding: 8px;
+			font-weight: 700;
+			text-align: left;
+		}
+		.total-section {
+			margin-top: 14px;
+			padding: 10px;
+			background: #f8fafc;
+			border: 1px solid #cbd5e1;
+			border-radius: 6px;
+		}
+		.total-row {
+			display: flex;
+			justify-content: space-between;
+			font-size: 14px;
+			font-weight: 800;
+		}
+		.signatures {
+			display: flex;
+			justify-content: space-between;
+			margin-top: 36px;
+			padding-top: 10px;
+		}
+		.sig-box {
+			width: 45%;
+			border-top: 1px dashed #64748b;
+			padding-top: 6px;
+			font-size: 11px;
+		}
+		@media print {
+			body { margin: 0; }
+		}
+	</style>
+</head>
+<body>
+	<div class="header">
+		<div class="title">ТОВАРНЫЙ ЧЕК № ${docNum}</div>
+		<div class="non-fiscal-warning">НЕ ЯВЛЯЕТСЯ ФИСКАЛЬНЫМ ДОКУМЕНТОМ • ВЫДАН БЕЗ ККТ / ЧЕРНОВИК РАСЧЕТА</div>
+		<div class="meta-grid">
+			<div>
+				<div><strong>Организация:</strong> ${clinicName}</div>
+				<div><strong>ИНН / КПП:</strong> ${clinicInn}</div>
+				<div><strong>Лицензия:</strong> ${clinicLicense}</div>
+			</div>
+			<div>
+				<div><strong>Дата и время:</strong> ${nowStr}</div>
+				<div><strong>Покупатель (пациент):</strong> ${patientName}</div>
+				<div><strong>Телефон:</strong> ${patientPhone}</div>
+			</div>
+		</div>
+	</div>
+
+	<table>
+		<thead>
+			<tr>
+				<th style="width: 32px; text-align: center;">№</th>
+				<th>Наименование работы (услуги)</th>
+				<th style="width: 50px; text-align: center;">Кол-во</th>
+				<th style="width: 90px; text-align: right;">Цена</th>
+				<th style="width: 80px; text-align: right;">Скидка</th>
+				<th style="width: 95px; text-align: right;">Сумма</th>
+			</tr>
+		</thead>
+		<tbody>
+			${rowsHtml}
+		</tbody>
+	</table>
+
+	<div class="total-section">
+		<div class="total-row">
+			<span>ИТОГО К ОПЛАТЕ:</span>
+			<span>${totalInvoiceRub.toFixed(2)} ₽</span>
+		</div>
+		<div style="font-size: 11px; margin-top: 4px; color: #334155;">
+			Сумма прописью: <em>${wordsRu}</em>
+		</div>
+		<div style="font-size: 11px; margin-top: 4px; color: #334155;">
+			Форма расчета: <strong>${activeTenderLabel}</strong> (без фискализации в ОФД)
+		</div>
+	</div>
+
+	<div class="signatures">
+		<div class="sig-box">
+			Кассир (продавец): _________________ / ${cashierFullName}<br>
+			<small style="color: #64748b;">М.П.</small>
+		</div>
+		<div class="sig-box">
+			Покупатель (клиент): _________________ / ${patientName}<br>
+			<small style="color: #64748b;">Претензий по объему и стоимости не имею</small>
+		</div>
+	</div>
+
+	<script>
+		window.onload = function() {
+			try {
+				window.focus();
+				window.print();
+			} catch (e) {}
+		};
+	</script>
+</body>
+</html>`;
+
+		try {
+			await hardwarePrinter.printHtmlWithPopupFallback(html, {
+				title: `Товарный чек № ${docNum}`,
+				downloadFilename: `tovarniy_check_${docNum}.html`,
+			});
+			setToastMsg("Товарный чек отправлен на печать (без фискализации в ОФД)");
+		} catch {
+			setToastMsg("Ошибка отправки товарного чека на печать");
+		}
 	};
 
 	const primaryInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -792,6 +1065,108 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</button>
 								</div>
 
+								{/* 1-Click Helper Banner when Deposit or Family balance is less than Invoice total */}
+								{selectedTender === "deposit" && patientDepositRub < totalInvoiceRub && (
+									<div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs space-y-2" data-testid="deposit-combo-banner">
+										<div className="flex items-center justify-between gap-2 flex-wrap">
+											<div className="flex items-center gap-1.5 font-bold text-indigo-900 dark:text-indigo-200">
+												<Wallet className="w-4 h-4 text-indigo-600 shrink-0" />
+												<span>
+													Аванс пациента: {patientDepositRub.toLocaleString("ru-RU")} ₽. Остаток к доплате: {(totalInvoiceRub - patientDepositRub).toLocaleString("ru-RU")} ₽
+												</span>
+											</div>
+											<span className="text-[11px] text-indigo-700 dark:text-indigo-300">
+												Выберите доплату в 1 клик (без блокировок кассы):
+											</span>
+										</div>
+										<div className="flex items-center gap-2 flex-wrap">
+											<button
+												type="button"
+												onClick={() => {
+													applySplitDepositAndRemainder("card");
+													setSelectedTender("split");
+													setActiveTab("split");
+												}}
+												className="h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												data-testid="btn-combo-deposit-card"
+											>
+												<CreditCard className="w-3.5 h-3.5" />
+												<span>Списать аванс {patientDepositRub.toLocaleString("ru-RU")} ₽ + остаток Картой</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													applySplitDepositAndRemainder("cash");
+													setSelectedTender("split");
+													setActiveTab("split");
+												}}
+												className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												data-testid="btn-combo-deposit-cash"
+											>
+												<Banknote className="w-3.5 h-3.5" />
+												<span>Списать аванс {patientDepositRub.toLocaleString("ru-RU")} ₽ + остаток Наличными</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													applySplitDepositAndRemainder("sbp");
+													setSelectedTender("split");
+													setActiveTab("split");
+												}}
+												className="h-8 px-3 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												data-testid="btn-combo-deposit-sbp"
+											>
+												<QrCode className="w-3.5 h-3.5" />
+												<span>Списать аванс {patientDepositRub.toLocaleString("ru-RU")} ₽ + остаток СБП</span>
+											</button>
+										</div>
+									</div>
+								)}
+
+								{selectedTender === "family" && patientFamilyBalanceRub < totalInvoiceRub && (
+									<div className="p-3 rounded-xl bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-800 text-xs space-y-2" data-testid="family-combo-banner">
+										<div className="flex items-center justify-between gap-2 flex-wrap">
+											<div className="flex items-center gap-1.5 font-bold text-pink-900 dark:text-pink-200">
+												<Users className="w-4 h-4 text-pink-600 shrink-0" />
+												<span>
+													Семейный счет: {patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽. Остаток к доплате: {(totalInvoiceRub - patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽
+												</span>
+											</div>
+											<span className="text-[11px] text-pink-700 dark:text-pink-300">
+												Выберите доплату в 1 клик:
+											</span>
+										</div>
+										<div className="flex items-center gap-2 flex-wrap">
+											<button
+												type="button"
+												onClick={() => {
+													applySplitFamilyAndRemainder("card");
+													setSelectedTender("split");
+													setActiveTab("split");
+												}}
+												className="h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												data-testid="btn-combo-family-card"
+											>
+												<CreditCard className="w-3.5 h-3.5" />
+												<span>Списать сем. счет {patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽ + остаток Картой</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													applySplitFamilyAndRemainder("cash");
+													setSelectedTender("split");
+													setActiveTab("split");
+												}}
+												className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+												data-testid="btn-combo-family-cash"
+											>
+												<Banknote className="w-3.5 h-3.5" />
+												<span>Списать сем. счет {patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽ + остаток Наличными</span>
+											</button>
+										</div>
+									</div>
+								)}
+
 								{/* 6 Кассовых счетов клиники (StomX Bible раздел 6) */}
 								{cashBoxesList.length > 0 && (
 									<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-xs">
@@ -1051,10 +1426,20 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								</h4>
 								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 									<div className="space-y-1">
-										<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
-											<CreditCard className="w-3.5 h-3.5 text-blue-600" />
-											<span>Банковская карта (Терминал), ₽:</span>
-										</label>
+										<div className="flex items-center justify-between">
+											<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
+												<CreditCard className="w-3.5 h-3.5 text-blue-600" />
+												<span>Банковская карта (Терминал), ₽:</span>
+											</label>
+											<button
+												type="button"
+												onClick={() => applyRemainingToMethod("card")}
+												className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+												title="Заполнить весь остаток суммы на карту"
+											>
+												+Весь остаток
+											</button>
+										</div>
 										<input
 											type="number"
 											min={0}
@@ -1067,10 +1452,20 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 
 									<div className="space-y-1">
-										<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
-											<Banknote className="w-3.5 h-3.5 text-emerald-600" />
-											<span>Наличные (Касса), ₽:</span>
-										</label>
+										<div className="flex items-center justify-between">
+											<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
+												<Banknote className="w-3.5 h-3.5 text-emerald-600" />
+												<span>Наличные (Касса), ₽:</span>
+											</label>
+											<button
+												type="button"
+												onClick={() => applyRemainingToMethod("cash")}
+												className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+												title="Заполнить весь остаток суммы наличными"
+											>
+												+Весь остаток
+											</button>
+										</div>
 										<input
 											type="number"
 											min={0}
@@ -1083,10 +1478,20 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 
 									<div className="space-y-1">
-										<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
-											<QrCode className="w-3.5 h-3.5 text-purple-600" />
-											<span>СБП QR (0.7%), ₽:</span>
-										</label>
+										<div className="flex items-center justify-between">
+											<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
+												<QrCode className="w-3.5 h-3.5 text-purple-600" />
+												<span>СБП QR (0.7%), ₽:</span>
+											</label>
+											<button
+												type="button"
+												onClick={() => applyRemainingToMethod("sbp")}
+												className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+												title="Заполнить весь остаток суммы через СБП"
+											>
+												+Весь остаток
+											</button>
+										</div>
 										<input
 											type="number"
 											min={0}
@@ -1099,10 +1504,22 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 
 									<div className="space-y-1">
-										<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
-											<Wallet className="w-3.5 h-3.5 text-indigo-600" />
-											<span>Депозит пациента (Тег 1215), ₽:</span>
-										</label>
+										<div className="flex items-center justify-between">
+											<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
+												<Wallet className="w-3.5 h-3.5 text-indigo-600" />
+												<span>Депозит пациента (Тег 1215), ₽:</span>
+											</label>
+											{patientDepositRub > 0 && (
+												<button
+													type="button"
+													onClick={() => setSplitDepositRub(Math.min(totalInvoiceRub, patientDepositRub))}
+													className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+													title="Использовать весь доступный депозит"
+												>
+													Макс ({patientDepositRub.toLocaleString("ru-RU")} ₽)
+												</button>
+											)}
+										</div>
 										<input
 											type="number"
 											min={0}
@@ -1116,10 +1533,22 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 
 									<div className="space-y-1">
-										<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
-											<Users className="w-3.5 h-3.5 text-pink-600" />
-											<span>Семейный счет (Тег 1215), ₽:</span>
-										</label>
+										<div className="flex items-center justify-between">
+											<label className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1.5">
+												<Users className="w-3.5 h-3.5 text-pink-600" />
+												<span>Семейный счет (Тег 1215), ₽:</span>
+											</label>
+											{patientFamilyBalanceRub > 0 && (
+												<button
+													type="button"
+													onClick={() => setSplitFamilyRub(Math.min(totalInvoiceRub, patientFamilyBalanceRub))}
+													className="text-[10px] font-bold text-pink-600 dark:text-pink-400 hover:underline cursor-pointer"
+													title="Использовать весь семейный счет"
+												>
+													Макс ({patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽)
+												</button>
+											)}
+										</div>
 										<input
 											type="number"
 											min={0}
@@ -1139,66 +1568,60 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									{patientDepositRub > 0 && (
 										<button
 											type="button"
-											onClick={() => {
-												const dep = Math.min(totalInvoiceRub, patientDepositRub);
-												setSplitDepositRub(dep);
-												setSplitCardRub(Number((totalInvoiceRub - dep).toFixed(2)));
-												setSplitCashRub(0);
-												setSplitSbpRub(0);
-												setSplitFamilyRub(0);
-											}}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer"
+											onClick={() => applySplitDepositAndRemainder("card")}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer transition-all active:scale-95"
+											data-testid="btn-split-preset-dep-card"
 										>
-											Весь аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + остаток Картой
+											⚡ Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Картой
 										</button>
 									)}
 									{patientDepositRub > 0 && (
 										<button
 											type="button"
-											onClick={() => {
-												const dep = Math.min(totalInvoiceRub, patientDepositRub);
-												setSplitDepositRub(dep);
-												setSplitCashRub(Number((totalInvoiceRub - dep).toFixed(2)));
-												setSplitCardRub(0);
-												setSplitSbpRub(0);
-												setSplitFamilyRub(0);
-											}}
-											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer"
+											onClick={() => applySplitDepositAndRemainder("cash")}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer transition-all active:scale-95"
+											data-testid="btn-split-preset-dep-cash"
 										>
-											Весь аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + остаток Наличными
+											⚡ Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Наличными
+										</button>
+									)}
+									{patientFamilyBalanceRub > 0 && (
+										<button
+											type="button"
+											onClick={() => applySplitFamilyAndRemainder("card")}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 cursor-pointer transition-all active:scale-95"
+											data-testid="btn-split-preset-family-card"
+										>
+											⚡ Сем. счет ({Math.min(totalInvoiceRub, patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽) + Картой
 										</button>
 									)}
 									<button
 										type="button"
 										onClick={() => {
-											const half = Number((totalInvoiceRub / 2).toFixed(2));
-											setSplitCardRub(half);
-											setSplitCashRub(Number((totalInvoiceRub - half).toFixed(2)));
+											const totalKop = rubToKopecks(totalInvoiceRub);
+											const halfKop = Math.floor(totalKop / 2);
+											const otherKop = totalKop - halfKop;
+											setSplitCardRub(kopecksToRub(halfKop));
+											setSplitCashRub(kopecksToRub(otherKop));
 											setSplitDepositRub(0);
 											setSplitSbpRub(0);
 											setSplitFamilyRub(0);
 										}}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)] cursor-pointer"
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-all active:scale-95"
 									>
 										50% Карта / 50% Нал
 									</button>
 									<button
 										type="button"
-										onClick={() => {
-											const currentOther = splitCashRub + splitSbpRub + splitDepositRub + splitFamilyRub;
-											setSplitCardRub(Math.max(0, Number((totalInvoiceRub - currentOther).toFixed(2))));
-										}}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 cursor-pointer"
+										onClick={() => applyRemainingToMethod("card")}
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 cursor-pointer transition-all active:scale-95"
 									>
 										Остаток на Карту
 									</button>
 									<button
 										type="button"
-										onClick={() => {
-											const currentOther = splitCardRub + splitSbpRub + splitDepositRub + splitFamilyRub;
-											setSplitCashRub(Math.max(0, Number((totalInvoiceRub - currentOther).toFixed(2))));
-										}}
-										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer"
+										onClick={() => applyRemainingToMethod("cash")}
+										className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer transition-all active:scale-95"
 									>
 										Остаток Наличными
 									</button>
@@ -1293,6 +1716,17 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handlePrintSalesSlip}
+							className="h-10 px-3.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--border,#cbd5e1)] text-[var(--ink)] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+							data-testid="btn-print-sales-slip"
+							title="Распечатать товарный чек с реквизитами клиники и кодами 804н без фискализации в ОФД"
+						>
+							<FileText className="w-4 h-4 text-teal-600" />
+							<span>Товарный чек (без кассы)</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={onClose}
