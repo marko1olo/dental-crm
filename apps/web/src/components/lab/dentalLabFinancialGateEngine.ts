@@ -41,6 +41,14 @@ export interface DentalLabFinancialGateParams {
 		readonly timestampIso: string;
 		readonly reason?: string | undefined;
 	} | undefined;
+	/**
+	 * Возраст плана лечения в днях.
+	 * Согласно Мандату 8e: «Истечение 30 дней с момента составления плана лечения
+	 * НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату.»
+	 */
+	readonly treatmentPlanAgeDays?: number | undefined;
+	/** Флаг истечения срока фиксации цен плана (>30 дней). Не блокирует ЗТЛ! */
+	readonly isPlanExpired?: boolean | undefined;
 }
 
 export interface DentalLabFinancialGateResult {
@@ -56,6 +64,7 @@ export interface DentalLabFinancialGateResult {
 	readonly warningMessageRu: string;
 	readonly detailedReasonRu: string;
 	readonly chiefDoctorOverrideAuthorized: boolean;
+	readonly isPlanExpiredNotice?: string | undefined;
 	readonly overrideMeta?: {
 		readonly doctorName: string;
 		readonly timestampIso: string;
@@ -100,6 +109,15 @@ export function checkDentalLabFinancialGate(
 		: undefined;
 	const isOverrideActive = Boolean(activeOverride?.authorized);
 
+	// Мандат 8e: Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ
+	// создание нарядов ЗТЛ, оказание услуг или оплату.
+	const isPlanOver30Days =
+		(params.treatmentPlanAgeDays !== undefined && params.treatmentPlanAgeDays > 30) ||
+		params.isPlanExpired === true;
+	const planExpiredNotice = isPlanOver30Days
+		? "План составлен >30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e)."
+		: undefined;
+
 	let gateStatus: DentalLabGateStatus;
 	let isGatePassed: boolean;
 
@@ -119,7 +137,7 @@ export function checkDentalLabFinancialGate(
 
 	const warningMessageRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Врач может отправить наряд под свою клиническую ответственность.`
+			? `Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Отправить наряд под ответственность главврача? Врач может отправить наряд под свою клиническую ответственность.`
 			: gateStatus === "DOCTOR_OVERRIDE"
 				? `Наряд ЗТЛ отправлен в производство под клиническую ответственность лечащего врача (${activeOverride?.doctorName || "Лечащий врач"}).`
 				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"
@@ -148,6 +166,7 @@ export function checkDentalLabFinancialGate(
 		warningMessageRu,
 		detailedReasonRu,
 		chiefDoctorOverrideAuthorized: isOverrideActive,
+		isPlanExpiredNotice: planExpiredNotice,
 		...(isOverrideActive && activeOverride
 			? {
 					overrideMeta: {

@@ -1,8 +1,9 @@
 import type React from "react";
-import { ArrowRight, FileCheck, Stethoscope, Building, ShieldPlus, Scissors } from "lucide-react";
+import { ArrowRight, FileCheck, Stethoscope, Building, ShieldPlus, Scissors, Printer } from "lucide-react";
 
 export interface DocumentQuickRoleScenariosProps {
 	readonly onOpenPrimaryIntake: () => void;
+	readonly onPrintPrimaryIntake?: (() => void) | undefined;
 	readonly onOpenClinicalVisit: () => void;
 	readonly onOpenSurgicalPackage?: (() => void) | undefined;
 	readonly onOpenTaxAccounting: () => void;
@@ -11,6 +12,7 @@ export interface DocumentQuickRoleScenariosProps {
 
 export function DocumentQuickRoleScenarios({
 	onOpenPrimaryIntake,
+	onPrintPrimaryIntake,
 	onOpenClinicalVisit,
 	onOpenSurgicalPackage,
 	onOpenTaxAccounting,
@@ -39,7 +41,24 @@ export function DocumentQuickRoleScenarios({
 					Договор (Пост. 736) + ИДС (323-ФЗ) + Согласие ОПД (152-ФЗ) + Анкета здоровья
 				</p>
 				<div className="document-scenario-footer">
-					<span>Сформировать пакет</span>
+					<div className="flex items-center gap-2">
+						{onPrintPrimaryIntake && (
+							<button
+								type="button"
+								className="scenario-quick-print-btn"
+								onClick={(e) => {
+									e.stopPropagation();
+									onPrintPrimaryIntake();
+								}}
+								title="Сформировать и напечатать пакет первичного приёма (Договор + общий ИДС + согласие ОПД) в 1 клик"
+								data-testid="scenario-primary-intake-print-btn"
+							>
+								<Printer size={13} aria-hidden="true" />
+								<span>Печать (1 клик)</span>
+							</button>
+						)}
+						<span>Сформировать пакет</span>
+					</div>
 					<ArrowRight size={14} aria-hidden="true" />
 				</div>
 			</button>

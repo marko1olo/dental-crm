@@ -50,6 +50,16 @@ describe("LabWorkOrderConstructorModal (CAD/CAM & Dental Lab Orders Suite)", () 
 		assert.ok(html.includes("lab-export-pdf-btn"), "Must contain PDF export button");
 		assert.ok(html.includes("lab-send-chat-btn"), "Must contain Send to chat button");
 		assert.ok(html.includes("lab-save-order-btn"), "Must contain Save order button");
+
+		// Mandate 8e & 1-Click Standard Preset
+		assert.ok(html.includes("lab-apply-1click-zirconia-preset"), "Must contain 1-click standard zirconia preset button");
+		assert.ok(html.includes("Коронка ZrO2, А2, 5 дней (1 клик)"), "Must contain 1-click preset label");
+		assert.ok(html.includes("Экспресс-наряд ЗТЛ в 3 клика (Мандат 8e)"), "Must display 3-click express bar");
+		assert.ok(html.includes("Истечение 30 дней плана НЕ БЛОКИРУЕТ"), "Must display Mandate 8e guarantee banner");
+		assert.ok(html.includes("data-testid=\"quick-tooth-single\""), "Must contain single tooth quick button");
+		assert.ok(html.includes("data-testid=\"quick-bridge-span\""), "Must contain bridge span quick button");
+		assert.ok(html.includes("data-testid=\"quick-type-zirconia\""), "Must contain zirconia quick button");
+		assert.ok(html.includes("data-testid=\"quick-shade-A2\""), "Must contain A2 shade quick button");
 	});
 
 	it("returns null when isOpen is false", () => {

@@ -36,6 +36,7 @@ import {
 	validatePaidContract736,
 	verifySmsSignOtp,
 } from "./paidContractEngine";
+import { printPrimaryIntakePackage } from "./primaryIntakePackagePrintEngine";
 import "./paidMedicalContract.css";
 
 export interface PaidMedicalContractModalProps {
@@ -1373,6 +1374,45 @@ export function PaidMedicalContractModal({
 						>
 							<Printer size={15} aria-hidden="true" />
 							<span>Печать А4 (ГОСТ)</span>
+						</button>
+						<button
+							type="button"
+							className="paid-contract-btn secondary"
+							onClick={() => {
+								printPrimaryIntakePackage({
+									patient: contractData.patient ? {
+										fullName: contractData.patient.fullName || "",
+										birthDate: contractData.patient.birthDate,
+										phone: contractData.patient.phone,
+										address: contractData.patient.registrationAddress || contractData.patient.actualAddress,
+										passportSeries: contractData.patient.passportSeries,
+										passportNumber: contractData.patient.passportNumber,
+										passportIssuedBy: contractData.patient.passportIssuedBy,
+										passportIssuedDate: contractData.patient.passportIssuedDate,
+										passportDepartmentCode: contractData.patient.passportDepartmentCode,
+										snils: contractData.patient.snils,
+									} : null,
+									clinic: contractData.clinic ? {
+										clinicName: contractData.clinic.shortName || contractData.clinic.fullName,
+										legalName: contractData.clinic.fullName,
+										fullName: contractData.clinic.fullName,
+										inn: contractData.clinic.inn,
+										kpp: contractData.clinic.kpp,
+										ogrn: contractData.clinic.ogrn,
+										licenseNumber: contractData.clinic.licenseNumber,
+										licenseDate: contractData.clinic.licenseDate,
+										address: contractData.clinic.legalAddress || contractData.clinic.actualAddress,
+										phone: contractData.clinic.phone,
+										directorFullName: contractData.clinic.directorFullName,
+									} : undefined,
+									doctorFullName: contractData.doctorFullName || "",
+								});
+							}}
+							data-testid="print-blank-contract-btn"
+							title="Печать чистого бланка договора со строками «________» для ручного заполнения пациентом до приёма"
+						>
+							<Printer size={15} aria-hidden="true" />
+							<span>Бланк («________»)</span>
 						</button>
 						<button
 							type="button"

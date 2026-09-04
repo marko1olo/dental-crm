@@ -420,7 +420,7 @@ export function DentalLabRestorationTab({
 				</div>
 			</div>
 
-			{/* 2-CLICK EXPRESS ORTHOPEDIC CONFIGURATOR (Mandate 8e: Fast 0-Click Core Loop) */}
+			{/* 3-CLICK EXPRESS ORTHOPEDIC CONFIGURATOR (Mandate 8e: Fast 0-Click Core Loop & 3-Click Law) */}
 			<div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-teal-500/10 to-amber-500/5 border-2 border-amber-500/30 space-y-4 shadow-sm">
 				<div className="flex items-center justify-between gap-2 flex-wrap">
 					<div className="flex items-center gap-2">
@@ -429,10 +429,10 @@ export function DentalLabRestorationTab({
 						</span>
 						<div>
 							<h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 m-0 leading-tight">
-								Экспресс-оформление наряда ЗТЛ в 2 клика
+								Оформление наряда ЗТЛ в 3 клика (Мандат 8e)
 							</h3>
 							<p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
-								Клик 1: Конструкция и материал · Клик 2: Цвет VITA · Авто-расчет срока сдачи
+								Клик 1: Зуб/Мост · Клик 2: Конструкция · Клик 3: Цвет VITA · Авто-срок сдачи
 							</p>
 						</div>
 					</div>
@@ -441,55 +441,137 @@ export function DentalLabRestorationTab({
 					</span>
 				</div>
 
-				{/* Step 1: Rapid Construction + Material Selection */}
+				{/* 1-CLICK STANDARD PRESET BUTTON (LAW 4) */}
+				<div className="p-3 bg-white dark:bg-slate-900/90 border border-amber-500/40 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+					<div className="min-w-0">
+						<div className="flex items-center gap-1.5 text-xs font-black text-amber-900 dark:text-amber-200">
+							<Sparkles size={15} className="text-amber-500 shrink-0" />
+							<span>1-КЛИК ПРЕСЕТ СТАНДАРТНОГО НАРЯДА:</span>
+						</div>
+						<p className="text-[11px] text-slate-600 dark:text-slate-300 m-0 mt-0.5 font-medium">
+							«Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней»
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => {
+							setConstructionType("single_crown");
+							setMaterial("zirconia_multilayer");
+							setShadeSystem?.("classical");
+							setShadeClassical?.("A2");
+							setShadeBody?.("A2");
+							setSurfaceTexture?.("natural_anatomy");
+							setCementGapMicrons?.(30);
+							setOcclusalScheme?.("mutually_protected");
+							setContactTightness?.("normal");
+							const due = addWorkingDays(new Date(), 5);
+							setDueDate(due.toISOString().slice(0, 10));
+						}}
+						className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+						data-testid="btn-apply-standard-zirconia-preset"
+						title="Применить стандартный ортопедический пресет (ZrO2, A2, анатомическая форма, 5 дней)"
+					>
+						<Zap size={14} className="fill-current" />
+						<span>⚡ Применить пресет (ZrO2 A2, 5 дней)</span>
+					</button>
+				</div>
+
+				{/* STEP 1: Зуб / Мост (1 клик) */}
 				<div className="space-y-2">
-					<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-						1. Выбор конструкции (1 клик):
-					</span>
+					<div className="flex items-center justify-between">
+						<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+							1. Зуб или Мост (Клик 1):
+						</span>
+						<span className="text-[11px] font-bold text-teal-600 dark:text-teal-400">
+							{constructionType === "bridge" ? "Мостовидный протез" : "Одиночная коронка / зуб"}
+						</span>
+					</div>
+					<div className="grid grid-cols-2 gap-2">
+						<button
+							type="button"
+							onClick={() => setConstructionType("single_crown")}
+							className={`min-h-[44px] p-2.5 rounded-xl border text-center text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+								constructionType === "single_crown"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] ring-2 ring-[var(--teal-soft)] shadow-xs"
+									: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-400"
+							}`}
+							data-testid="fast-type-single-crown"
+						>
+							<Crown size={15} />
+							<span>Одиночная коронка (Зуб)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setConstructionType("bridge")}
+							className={`min-h-[44px] p-2.5 rounded-xl border text-center text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+								constructionType === "bridge"
+									? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] ring-2 ring-[var(--teal-soft)] shadow-xs"
+									: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-teal-400"
+							}`}
+							data-testid="fast-type-bridge"
+						>
+							<Layers size={15} />
+							<span>Мостовидный протез (Мост)</span>
+						</button>
+					</div>
+				</div>
+
+				{/* STEP 2: Выбор конструкции из 4 ключевых (Клик 2) */}
+				<div className="space-y-2">
+					<div className="flex items-center justify-between">
+						<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+							2. Конструкция (Клик 2):
+						</span>
+						<span className="text-[11px] text-slate-500 dark:text-slate-400">
+							ZrO2 · E.max · Металлокерамика · Съемный протез
+						</span>
+					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
 						{[
 							{
 								id: "zirconia",
-								title: "Диоксид циркония (ZrO₂)",
+								title: "Коронка ZrO2 (диоксид циркония)",
 								subtitle: "Katana Multilayer (1100 МПа)",
-								constructionId: "single_crown",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
 								materialId: "zirconia_multilayer",
-								days: 7,
+								days: 5,
 								costRub: 6500,
-								badge: "Премиум",
+								badge: "5 раб. дней",
 							},
 							{
 								id: "emax",
-								title: "Стеклокерамика E-max",
+								title: "E.max (дисиликат лития)",
 								subtitle: "IPS e.max Press / CAD (500 МПа)",
-								constructionId: "single_crown",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
 								materialId: "emax_lithium_disilicate",
 								days: 5,
 								costRub: 7500,
-								badge: "Эстетика",
-							},
-							{
-								id: "pmma",
-								title: "Временная коронка PMMA",
-								subtitle: "Фрезерованный полимер CAD/CAM",
-								constructionId: "single_crown",
-								materialId: "pmma_temporary",
-								days: 2,
-								costRub: 1500,
-								badge: "Временная",
+								badge: "5 раб. дней",
 							},
 							{
 								id: "pfm",
-								title: "Металлокерамика CoCr",
-								subtitle: "Литой / фрезерованный КХС каркас",
-								constructionId: "single_crown",
+								title: "Металлокерамика (Co-Cr)",
+								subtitle: "Фрезерованный / литой КХС каркас",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
 								materialId: "pfm_cocr",
 								days: 7,
 								costRub: 4000,
-								badge: "Стандарт",
+								badge: "7 раб. дней",
+							},
+							{
+								id: "removable",
+								title: "Съемный протез (бюгель / акрил)",
+								subtitle: "Кламмерная или замковая фиксация",
+								constructionId: "clasp_denture",
+								materialId: "cobalt_chrome_cocr",
+								days: 10,
+								costRub: 12000,
+								badge: "10 раб. дней",
 							},
 						].map((opt) => {
-							const isMatch = constructionType === opt.constructionId && material === opt.materialId;
+							const isMatch =
+								(opt.id === "removable" && constructionType === "clasp_denture") ||
+								(opt.id !== "removable" && material === opt.materialId);
 							return (
 								<button
 									key={opt.id}
@@ -500,7 +582,7 @@ export function DentalLabRestorationTab({
 										const due = addWorkingDays(new Date(), opt.days);
 										setDueDate(due.toISOString().slice(0, 10));
 									}}
-									className={`min-h-[52px] p-3 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+									className={`min-h-[56px] p-3 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
 										isMatch
 											? "bg-[var(--teal-surface)] border-[var(--teal)] ring-2 ring-[var(--teal-soft)] shadow-xs"
 											: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-amber-400 hover:bg-amber-500/5"
@@ -508,7 +590,7 @@ export function DentalLabRestorationTab({
 									data-testid={`fast-ortho-${opt.id}`}
 								>
 									<div className="flex items-center justify-between gap-1">
-										<span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+										<span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
 											{opt.title}
 										</span>
 										{isMatch && <CheckCircle2 size={15} className="text-[var(--teal)] shrink-0" />}
@@ -518,7 +600,7 @@ export function DentalLabRestorationTab({
 									</div>
 									<div className="flex items-center justify-between gap-1 pt-2 mt-1 border-t border-slate-100 dark:border-slate-800 text-[10px]">
 										<span className="font-mono font-bold text-[var(--teal)]">{opt.costRub.toLocaleString("ru-RU")} ₽</span>
-										<span className="text-slate-500 dark:text-slate-400">+{opt.days} дн.</span>
+										<span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-200 font-bold">{opt.badge}</span>
 									</div>
 								</button>
 							);
@@ -526,23 +608,23 @@ export function DentalLabRestorationTab({
 					</div>
 				</div>
 
-				{/* Step 2: 1-Click Popular VITA Shades */}
+				{/* STEP 3: Цвет шкалы VITA (Клик 3) */}
 				<div className="space-y-2 pt-1 border-t border-amber-500/20">
 					<div className="flex items-center justify-between">
 						<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-							2. Популярные оттенки VITA (1 клик):
+							3. Цвет шкалы VITA (Клик 3):
 						</span>
 						<span className="text-xs font-bold text-[var(--teal)]">
-							Текущий: {shadeSystem === "bleach" ? (shadeBleach || "BL2") : (shadeClassical || "A2")}
+							Выбран: {shadeSystem === "bleach" ? (shadeBleach || "BL2") : (shadeClassical || "A2")}
 						</span>
 					</div>
-					<div className="grid grid-cols-5 gap-2">
+					<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
 						{[
-							{ shade: "A1", desc: "Светлый", isBleach: false },
-							{ shade: "A2", desc: "Универсальный", isBleach: false },
-							{ shade: "A3", desc: "Естественный", isBleach: false },
-							{ shade: "B1", desc: "Светло-желтый", isBleach: false },
+							{ shade: "A1", desc: "Светлый естественный", isBleach: false },
+							{ shade: "A2", desc: "Стандарт (60% пациентов)", isBleach: false },
+							{ shade: "A3", desc: "Насыщенный дентинный", isBleach: false },
 							{ shade: "BL2", desc: "Bleach отбеленный", isBleach: true },
+							{ shade: "B1", desc: "Светло-желтый тон", isBleach: false },
 						].map((item) => {
 							const swatch = SHADE_SWATCH_MAP[item.shade];
 							const isSelected = item.isBleach
@@ -589,6 +671,45 @@ export function DentalLabRestorationTab({
 								</button>
 							);
 						})}
+					</div>
+				</div>
+
+				{/* STEP 4: Срок сдачи (авто-расчет + быстрая корректировка) */}
+				<div className="p-3 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+					<div>
+						<span className="font-bold text-slate-800 dark:text-slate-200 block">
+							Плановый срок сдачи работы из ЗТЛ:
+						</span>
+						<span className="text-slate-500 dark:text-slate-400 text-[11px]">
+							Дата готовности в клинике (без учета выходных): <strong className="text-teal-600 dark:text-teal-400 font-mono">{dueDate || "Не указана"}</strong>
+						</span>
+					</div>
+					<div className="flex items-center gap-1.5 flex-wrap">
+						{[
+							{ label: "+3 дн (Срочно)", days: 3 },
+							{ label: "+5 дн (Стандарт)", days: 5 },
+							{ label: "+7 дн", days: 7 },
+							{ label: "+10 дн", days: 10 },
+						].map((chip) => (
+							<button
+								key={chip.days}
+								type="button"
+								onClick={() => {
+									const due = addWorkingDays(new Date(), chip.days);
+									setDueDate(due.toISOString().slice(0, 10));
+								}}
+								className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-[11px] font-bold text-slate-700 dark:text-slate-200 transition cursor-pointer"
+							>
+								{chip.label}
+							</button>
+						))}
+						<input
+							type="date"
+							value={dueDate}
+							onChange={(e) => setDueDate(e.target.value)}
+							className="h-8 px-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-teal-500"
+							title="Выбрать точную дату сдачи"
+						/>
 					</div>
 				</div>
 			</div>

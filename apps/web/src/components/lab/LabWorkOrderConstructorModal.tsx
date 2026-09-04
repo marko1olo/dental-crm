@@ -28,6 +28,7 @@ import {
 	Plus,
 	ShieldCheck,
 	AlertCircle,
+	Zap,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
@@ -40,6 +41,19 @@ import "./labWorkOrderConstructor.css";
 
 function formatKopecksToRubles(kopecks: number): string {
 	return `${Math.round(kopecks / 100).toLocaleString("ru-RU")} ₽`;
+}
+
+function addBusinessDays(startDate: Date, businessDays: number): string {
+	const result = new Date(startDate);
+	let added = 0;
+	while (added < businessDays) {
+		result.setDate(result.getDate() + 1);
+		const dayOfWeek = result.getDay();
+		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+			added++;
+		}
+	}
+	return result.toISOString().split("T")[0]!;
 }
 
 const VITA_CLASSICAL_SHADES = [
@@ -120,6 +134,8 @@ export interface LabWorkOrderConstructorModalProps {
 	readonly doctorName?: string | undefined;
 	readonly doctorId?: string | undefined;
 	readonly initialTeeth?: number[] | undefined;
+	readonly treatmentPlanAgeDays?: number | undefined;
+	readonly isPlanExpired?: boolean | undefined;
 	readonly onSaveOrder?: ((order: LabWorkOrderData) => void) | undefined;
 	readonly onExportPdf?: ((order: LabWorkOrderData) => void) | undefined;
 	readonly onSendToChat?: ((order: LabWorkOrderData, textSummary: string) => void) | undefined;
@@ -203,6 +219,8 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 	doctorName = "Лечащий врач (Ортопед)",
 	doctorId = "",
 	initialTeeth = [11, 21],
+	treatmentPlanAgeDays,
+	isPlanExpired,
 	onSaveOrder,
 	onExportPdf,
 	onSendToChat,
@@ -222,6 +240,23 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 	const [specialInstructions, setSpecialInstructions] = useState<string>(
 		"Анатомическая форма с выраженными краевыми валиками, микротекстура вестибулярной поверхности, прозрачный режущий край (0.8 мм транслуцентность)."
 	);
+	const [dueDateIso, setDueDateIso] = useState<string>(() => addBusinessDays(new Date(), 5));
+
+	const handleApplyStandardZirconiaPreset = useCallback(() => {
+		setSelectedWorkType("crown_zirconia");
+		setSelectedShade("A2");
+		setSelectedStumpShade("ND2");
+		setPatientPriceKop(2400000);
+		setLabCostKop(750000);
+		setDueDateIso(addBusinessDays(new Date(), 5));
+		setSpecialInstructions(
+			"Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
+		);
+		if (selectedTeeth.length === 0) {
+			setSelectedTeeth([16]);
+		}
+		showToast("⚡ Пресет: Коронка ZrO2, цвет А2, срок 5 раб. дней применен", "success");
+	}, [selectedTeeth.length]);
 
 	const [patientPriceKop, setPatientPriceKop] = useState<number>(4800000);
 	const [labCostKop, setLabCostKop] = useState<number>(1500000);
@@ -294,6 +329,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 			materialsRu: activeConstruction.desc,
 			scans,
 			status: currentStatus,
+			completionDeadlineIso: dueDateIso,
 			labCostKopecks: labCostKop,
 			patientPriceKopecks: patientPriceKop,
 			marginKopecks: marginKop,
@@ -318,6 +354,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 		selectedAbutmentType,
 		scans,
 		currentStatus,
+		dueDateIso,
 		labCostKop,
 		patientPriceKop,
 		marginKop,
@@ -393,15 +430,28 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 						</div>
 					</div>
 
-					<button
-						type="button"
-						onClick={onClose}
-						className="lab-constructor-close-btn"
-						aria-label="Закрыть конструктор заказ-нарядов"
-						data-testid="lab-constructor-close-btn"
-					>
-						<X size={20} />
-					</button>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleApplyStandardZirconiaPreset}
+							className="min-h-[40px] px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							data-testid="lab-apply-1click-zirconia-preset"
+							title="Стандартный пресет: Коронка ZrO2, цвет А2, анатомическая форма, срок 5 рабочих дней"
+						>
+							<Zap size={15} />
+							<span>⚡ Коронка ZrO2, А2, 5 дней (1 клик)</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={onClose}
+							className="lab-constructor-close-btn"
+							aria-label="Закрыть конструктор заказ-нарядов"
+							data-testid="lab-constructor-close-btn"
+						>
+							<X size={20} />
+						</button>
+					</div>
 				</header>
 
 				{/* Navigation Tabs (Touch-First >= 44px) */}
@@ -484,6 +534,212 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 					{/* TAB 1: Construction & FDI Teeth */}
 					{activeTab === "construction" && (
 						<div className="flex flex-col gap-5" data-testid="tab-content-construction">
+							{/* MANDATE 8e CLINICAL LAW & 3-CLICK ORTHOPEDIC BAR */}
+							<div className="p-3.5 rounded-xl bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/30 flex flex-col gap-3">
+								<div className="flex items-center justify-between flex-wrap gap-2">
+									<div className="flex items-center gap-2">
+										<ShieldCheck size={18} className="text-teal-600 dark:text-teal-400 shrink-0" />
+										<span className="text-xs font-black uppercase tracking-wider text-teal-900 dark:text-teal-200">
+											Экспресс-наряд ЗТЛ в 3 клика (Мандат 8e)
+										</span>
+									</div>
+									<div className="text-[11px] font-bold text-teal-800 dark:text-teal-300">
+										Истечение 30 дней плана НЕ БЛОКИРУЕТ наряд · Без согласований начмеда
+									</div>
+								</div>
+
+								{/* Step 1: Зуб или Мост */}
+								<div className="flex flex-col gap-1.5">
+									<span className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+										1-й клик — Зуб или Мост:
+									</span>
+									<div className="flex items-center gap-2 flex-wrap">
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedTeeth([16]);
+												showToast("Выбрана одиночная коронка (зуб 16)", "info");
+											}}
+											className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+												selectedTeeth.length === 1
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+											}`}
+											data-testid="quick-tooth-single"
+										>
+											Одиночная коронка ({selectedTeeth.length === 1 ? selectedTeeth[0] : "зуб 16"})
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedTeeth([14, 15, 16]);
+												showToast("Выбран мостовидный протез (зубы 14-16)", "info");
+											}}
+											className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+												selectedTeeth.length > 1
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+											}`}
+											data-testid="quick-bridge-span"
+										>
+											Мостовидный протез ({selectedTeeth.length > 1 ? selectedTeeth.join(", ") : "14, 15, 16"})
+										</button>
+									</div>
+								</div>
+
+								{/* Step 2: Конструкция (4 канонических варианта) */}
+								<div className="flex flex-col gap-1.5">
+									<span className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+										2-й клик — Конструкция:
+									</span>
+									<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedWorkType("crown_zirconia");
+												setPatientPriceKop(2400000);
+												setLabCostKop(750000);
+												setDueDateIso(addBusinessDays(new Date(), 5));
+											}}
+											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+												selectedWorkType === "crown_zirconia"
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+											}`}
+											data-testid="quick-type-zirconia"
+										>
+											<span>Коронка ZrO2</span>
+											<span className="text-[10px] opacity-80">5 раб. дней</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedWorkType("crown_emax");
+												setPatientPriceKop(2600000);
+												setLabCostKop(850000);
+												setDueDateIso(addBusinessDays(new Date(), 5));
+											}}
+											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+												selectedWorkType === "crown_emax"
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+											}`}
+											data-testid="quick-type-emax"
+										>
+											<span>IPS e.max</span>
+											<span className="text-[10px] opacity-80">5 раб. дней</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedWorkType("metal_ceramic");
+												setPatientPriceKop(1500000);
+												setLabCostKop(500000);
+												setDueDateIso(addBusinessDays(new Date(), 7));
+											}}
+											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+												selectedWorkType === "metal_ceramic"
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+											}`}
+											data-testid="quick-type-metal-ceramic"
+										>
+											<span>Металлокерамика</span>
+											<span className="text-[10px] opacity-80">7 раб. дней</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												setSelectedWorkType("clasp_prosthesis");
+												setPatientPriceKop(3200000);
+												setLabCostKop(1100000);
+												setDueDateIso(addBusinessDays(new Date(), 10));
+											}}
+											className={`min-h-[44px] p-2 rounded-lg border text-xs font-bold flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+												selectedWorkType === "clasp_prosthesis"
+													? "bg-teal-600 text-white border-teal-600 shadow-xs"
+													: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+											}`}
+											data-testid="quick-type-removable"
+										>
+											<span>Съемный протез</span>
+											<span className="text-[10px] opacity-80">10 раб. дней</span>
+										</button>
+									</div>
+								</div>
+
+								{/* Step 3: Цвет VITA & Срок */}
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+									<div className="flex flex-col gap-1.5">
+										<span className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+											3-й клик — Цвет VITA:
+										</span>
+										<div className="flex items-center gap-1.5 flex-wrap">
+											{["A1", "A2", "A3", "BL2"].map((shade) => (
+												<button
+													key={shade}
+													type="button"
+													onClick={() => setSelectedShade(shade)}
+													className={`min-h-[44px] min-w-[50px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+														selectedShade === shade
+															? "bg-teal-600 text-white border-teal-600 shadow-xs"
+															: "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+													}`}
+													data-testid={`quick-shade-${shade}`}
+												>
+													{shade}
+												</button>
+											))}
+										</div>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<span className="text-[11px] font-black text-slate-700 dark:text-slate-300">
+											Дата готовности (по рабочим дням):
+										</span>
+										<div className="flex items-center gap-1.5">
+											<input
+												type="date"
+												value={dueDateIso}
+												onChange={(e) => setDueDateIso(e.target.value)}
+												className="min-h-[40px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none"
+												data-testid="quick-due-date-input"
+											/>
+											<button
+												type="button"
+												onClick={() => setDueDateIso(addBusinessDays(new Date(), 3))}
+												className="min-h-[40px] px-2 text-[11px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-teal-500"
+											>
+												+3д
+											</button>
+											<button
+												type="button"
+												onClick={() => setDueDateIso(addBusinessDays(new Date(), 5))}
+												className="min-h-[40px] px-2 text-[11px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-teal-500"
+											>
+												+5д
+											</button>
+											<button
+												type="button"
+												onClick={() => setDueDateIso(addBusinessDays(new Date(), 7))}
+												className="min-h-[40px] px-2 text-[11px] font-bold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-teal-500"
+											>
+												+7д
+											</button>
+										</div>
+									</div>
+								</div>
+
+								{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) && (
+									<div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold leading-relaxed">
+										✓ План составлен &gt;30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e).
+									</div>
+								)}
+							</div>
 							<div>
 								<div className="text-xs font-extrabold uppercase text-slate-500 tracking-wider mb-2">
 									Выберите тип ортопедической конструкции:

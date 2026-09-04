@@ -23,7 +23,8 @@ import {
 	Crosshair,
 	Settings,
 	Search,
-	RotateCcw
+	RotateCcw,
+	Zap,
 } from 'lucide-react';
 import './labWorkOrder.css';
 
@@ -99,6 +100,8 @@ export interface LabWorkOrderModalProps {
 	readonly doctorId?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly initialTeeth?: number[] | undefined;
+	readonly treatmentPlanAgeDays?: number | undefined;
+	readonly isPlanExpired?: boolean | undefined;
 	readonly onSaveOrder?: ((order: LabWorkOrder) => void) | undefined;
 }
 
@@ -114,6 +117,8 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 	doctorId = 'doc-001',
 	doctorName = 'Д-р Ковалев С. П.',
 	initialTeeth = [21],
+	treatmentPlanAgeDays,
+	isPlanExpired,
 	onSaveOrder
 }) => {
 	const [activeTab, setActiveTab] = useState<ModalTab>('selection');
@@ -189,6 +194,20 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 		setMaterialId(preset.defaultMaterialId);
 		setPricePerUnit(preset.defaultPriceClinicRub);
 		setCostPerUnit(preset.defaultCostLabRub);
+	};
+
+	const handleApplyOneClickZirconiaPreset = () => {
+		handleProstheticTypeChange('crown_zirconia_monolithic');
+		setShadeSystem('classical');
+		setShadeCode('A2');
+		setStumpShadeCode('ND2');
+		setSurfaceTexture('microtexture');
+		setTranslucency('MT');
+		setClinicalNotes('Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней');
+		setCurrentStage('impression_sent');
+		if (selectedTeeth.length === 0) {
+			setSelectedTeeth([16]);
+		}
 	};
 
 	const financials = useMemo(() => {
@@ -315,9 +334,22 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 							{patientName} ({patientChartNumber})
 						</span>
 					</div>
-					<button className="lab-btn" style={{ padding: '0.25rem 0.5rem', minHeight: '36px', minWidth: '36px' }} onClick={onClose} aria-label="Закрыть">
-						<X size={20} />
-					</button>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+						<button
+							type="button"
+							className="lab-btn lab-btn-primary"
+							style={{ padding: '0.35rem 0.75rem', minHeight: '38px', fontSize: '0.75rem', fontWeight: 700 }}
+							onClick={handleApplyOneClickZirconiaPreset}
+							data-testid="lab-modal-apply-zirconia-preset"
+							title="Стандартный пресет: Коронка ZrO2, цвет А2, анатомическая форма, срок 5 рабочих дней"
+						>
+							<Zap size={15} />
+							<span>⚡ Коронка ZrO2, А2, 5 дней (1 клик)</span>
+						</button>
+						<button className="lab-btn" style={{ padding: '0.25rem 0.5rem', minHeight: '36px', minWidth: '36px' }} onClick={onClose} aria-label="Закрыть">
+							<X size={20} />
+						</button>
+					</div>
 				</header>
 
 				{/* Tabs Navigation */}
@@ -364,6 +396,131 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 					{/* TAB 1: SELECTION */}
 					{activeTab === 'selection' && (
 						<>
+							{/* Mandate 8e Clinical Law Banner & 3-Click Orthopedic Bar */}
+							<div style={{ padding: '0.75rem 1rem', borderRadius: '0.75rem', background: 'rgba(13, 148, 136, 0.08)', border: '1px solid rgba(13, 148, 136, 0.25)', display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1rem' }}>
+								<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+									<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+										<ShieldCheck size={18} color="var(--teal, #0d9488)" />
+										<span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--teal, #0d9488)' }}>
+											Экспресс-наряд ЗТЛ в 3 клика (Мандат 8e)
+										</span>
+									</div>
+									<div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted, #64748b)' }}>
+										Истечение 30 дней плана НЕ БЛОКИРУЕТ наряд · Без согласований начмеда
+									</div>
+								</div>
+
+								{/* Step 1: Зуб / Мост */}
+								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+									<span style={{ fontSize: '0.7rem', fontWeight: 800 }}>1-й клик — Зуб или Мост:</span>
+									<div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+										<button
+											type="button"
+											className={`lab-btn ${selectedTeeth.length === 1 ? 'lab-btn-primary' : ''}`}
+											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700 }}
+											onClick={() => setSelectedTeeth([16])}
+											data-testid="lab-quick-single-tooth"
+										>
+											Одиночная коронка ({selectedTeeth.length === 1 ? selectedTeeth[0] : 'зуб 16'})
+										</button>
+										<button
+											type="button"
+											className={`lab-btn ${selectedTeeth.length > 1 ? 'lab-btn-primary' : ''}`}
+											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700 }}
+											onClick={() => setSelectedTeeth([14, 15, 16])}
+											data-testid="lab-quick-bridge"
+										>
+											Мостовидный протез ({selectedTeeth.length > 1 ? selectedTeeth.join(', ') : '14, 15, 16'})
+										</button>
+									</div>
+								</div>
+
+								{/* Step 2: Конструкция */}
+								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+									<span style={{ fontSize: '0.7rem', fontWeight: 800 }}>2-й клик — Конструкция:</span>
+									<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
+										<button
+											type="button"
+											className={`lab-btn ${prostheticType === 'crown_zirconia_monolithic' ? 'lab-btn-primary' : ''}`}
+											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+											onClick={() => handleProstheticTypeChange('crown_zirconia_monolithic')}
+											data-testid="lab-quick-zirconia"
+										>
+											<span>Коронка ZrO2</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>5 раб. дней</span>
+										</button>
+										<button
+											type="button"
+											className={`lab-btn ${prostheticType === 'crown_emax_press' ? 'lab-btn-primary' : ''}`}
+											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+											onClick={() => handleProstheticTypeChange('crown_emax_press')}
+											data-testid="lab-quick-emax"
+										>
+											<span>IPS e.max Press</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>6 раб. дней</span>
+										</button>
+										<button
+											type="button"
+											className={`lab-btn ${prostheticType === 'veneer_refractory' ? 'lab-btn-primary' : ''}`}
+											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+											onClick={() => handleProstheticTypeChange('veneer_refractory')}
+											data-testid="lab-quick-veneer"
+										>
+											<span>Винир / Рефрактор</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>7 раб. дней</span>
+										</button>
+										<button
+											type="button"
+											className={`lab-btn ${prostheticType === 'removable_clasp_prosthesis' ? 'lab-btn-primary' : ''}`}
+											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+											onClick={() => handleProstheticTypeChange('removable_clasp_prosthesis')}
+											data-testid="lab-quick-clasp"
+										>
+											<span>Съемный бюгель</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>10 раб. дней</span>
+										</button>
+									</div>
+								</div>
+
+								{/* Step 3: Цвет VITA */}
+								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+									<span style={{ fontSize: '0.7rem', fontWeight: 800 }}>3-й клик — Цвет шкалы VITA:</span>
+									<div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+										{['A1', 'A2', 'A3', 'BL2'].map((shade) => (
+											<button
+												key={shade}
+												type="button"
+												className={`lab-btn ${shadeCode === shade ? 'lab-btn-primary' : ''}`}
+												style={{ minHeight: '38px', minWidth: '46px', fontSize: '0.75rem', fontWeight: 700 }}
+												onClick={() => {
+													setShadeSystem(shade.startsWith('BL') ? 'bleach' : 'classical');
+													setShadeCode(shade);
+												}}
+												data-testid={`lab-quick-shade-${shade}`}
+											>
+												{shade}
+											</button>
+										))}
+									</div>
+								</div>
+
+								{/* Срок готовности & Гарантия по Мандату 8e */}
+								<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(13, 148, 136, 0.2)' }}>
+									<div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--teal, #0d9488)' }}>
+										Срок изготовления: 5 раб. дней (до {schedule.expectedDeliveryDate})
+									</div>
+									<div style={{ fontSize: '0.7rem', color: 'var(--muted, #64748b)' }}>
+										CAD: {schedule.expectedCadDate} · Фрезеровка: {schedule.expectedMillingDate}
+									</div>
+								</div>
+
+								{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) && (
+									<div style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#047857', fontSize: '0.7rem', fontWeight: 700 }}>
+										✓ План составлен &gt;30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e).
+									</div>
+								)}
+							</div>
+
 							{/* 1-Click FDI Tooth Picker */}
 							<div className="lab-odontogram-panel">
 								<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

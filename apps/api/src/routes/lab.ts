@@ -34,6 +34,7 @@ import { getRequestIdentity } from "../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 import { wsBroker } from "../services/websocketBroker.js";
+import { registerDentalLabRoutes } from "./dentalLab.js";
 
 /*
  * Цена заказа лаборатории — деньги клиники. Колонка `numeric(12,2)`:
@@ -95,6 +96,9 @@ const createLabOrderSchema = z.object({
 });
 
 export async function registerLabRoutes(app: FastifyInstance) {
+	// Register express dental lab routes (3-click order, Mandate 8e guarantee, presets)
+	await registerDentalLabRoutes(app);
+
 	/**
 	 * GET /api/clinical/lab-orders
 	 * Получение всех заказов лаборатории клиники с возможностью фильтрации по пациенту.

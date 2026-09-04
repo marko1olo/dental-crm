@@ -418,6 +418,74 @@
 	border-color: var(--warn-fg);
 }
 
+.document-intake-quick-action-bar {
+	display: flex;
+	align-items: center;
+	margin-bottom: 2px;
+}
+
+.document-intake-quick-print-btn {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	padding: 10px 16px;
+	min-height: 48px;
+	border-radius: 12px;
+	background: var(--paper-strong);
+	border: 1.5px solid var(--teal);
+	color: var(--ink);
+	cursor: pointer;
+	box-shadow: var(--shadow-1);
+	transition: all var(--transition-fast);
+	font-family: inherit;
+}
+
+.document-intake-quick-print-btn:hover {
+	background: var(--paper-soft);
+	border-color: var(--teal-dark, #0d9488);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+}
+
+.document-intake-quick-print-btn:active {
+	transform: scale(0.99);
+}
+
+.document-intake-quick-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 10px;
+	border-radius: 8px;
+	font-size: 11px;
+	font-weight: 700;
+	background: var(--teal-10, rgba(13, 148, 136, 0.1));
+	color: var(--teal, #0d9488);
+	border: 1px solid var(--teal, #0d9488);
+}
+
+.scenario-quick-print-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	min-height: 28px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border: none;
+	cursor: pointer;
+	transition: opacity var(--transition-fast);
+}
+
+.scenario-quick-print-btn:hover {
+	opacity: 0.9;
+}
+
 .document-scenarios-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

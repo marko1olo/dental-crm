@@ -13,6 +13,7 @@ import {
 	Printer,
 	QrCode,
 	Send,
+	ShieldCheck,
 	Sparkles,
 	X,
 	Zap,
@@ -55,7 +56,10 @@ import {
 } from "./labMath";
 import { rublesToKopecks } from "@dental/shared";
 import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
-import { checkDentalLabFinancialGate } from "./dentalLabFinancialGateEngine";
+import {
+	checkDentalLabFinancialGate,
+	createDoctorClinicalOverride,
+} from "./dentalLabFinancialGateEngine";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { CashRegisterModal } from "../finance/CashRegisterModal";
 import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
@@ -83,6 +87,8 @@ export function DentalLabOrderModal({
 	stagePaidRub,
 	chiefDoctorName,
 	skipFinancialGate,
+	treatmentPlanAgeDays,
+	isPlanExpired,
 	onOrderSaved,
 }: DentalLabOrderModalProps) {
 	const [activeTab, setActiveTab] = useState<TabKey>("main");
@@ -261,17 +267,19 @@ export function DentalLabOrderModal({
 	};
 
 	const handleApplyOneClickDefaults = () => {
+		setConstructionType(ONE_CLICK_LAB_DEFAULTS.restorationTypeSingle);
 		setMaterial(ONE_CLICK_LAB_DEFAULTS.materialId);
 		setShadeSystem(ONE_CLICK_LAB_DEFAULTS.shadeSystem);
 		setShadeClassical(ONE_CLICK_LAB_DEFAULTS.colorVita);
 		setShadeBody(ONE_CLICK_LAB_DEFAULTS.colorVita);
+		setSurfaceTexture(ONE_CLICK_LAB_DEFAULTS.surfaceTexture);
 		setCementGapMicrons(ONE_CLICK_LAB_DEFAULTS.cementGapMicrons);
 		setTranslucency(ONE_CLICK_LAB_DEFAULTS.translucency);
 		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
 		setDueDate(due.toISOString().slice(0, 10));
 		showToast(
-			`Применены дефолты ЗТЛ: ${ONE_CLICK_LAB_DEFAULTS.materialName}, цвет VITA ${ONE_CLICK_LAB_DEFAULTS.colorVita}, срок 7 раб. дн. (до ${due.toLocaleDateString("ru-RU")})`,
-			"info",
+			`⚡ Применен 1-клик пресет: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
+			"success",
 			4000,
 		);
 	};
@@ -311,8 +319,10 @@ export function DentalLabOrderModal({
 			minAdvancePercent: 50,
 			chiefDoctorOverride: gateOverride ?? undefined,
 			doctorOverride: gateOverride ?? undefined,
+			treatmentPlanAgeDays,
+			isPlanExpired,
 		});
-	}, [stageTotalRub, totalLabPriceRub, stagePaidRub, patientDepositRub, gateOverride]);
+	}, [stageTotalRub, totalLabPriceRub, stagePaidRub, patientDepositRub, gateOverride, treatmentPlanAgeDays, isPlanExpired]);
 
 	// ─── SUBMIT HANDLER ────────────────────────────────────────────────────────
 	const handleSaveOrder = async (e?: React.FormEvent, forceSaveWithOverride = false) => {
@@ -534,11 +544,11 @@ export function DentalLabOrderModal({
 							type="button"
 							onClick={handleApplyOneClickDefaults}
 							className="min-h-[44px] inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-colors shadow-xs shrink-0"
-							title="1-клик дефолты ЗТЛ: Диоксид циркония / E.max, цвет VITA A2, срок 7 рабочих дней"
+							title="1-клик пресет: Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
 							data-testid="lab-order-apply-defaults-btn"
 						>
 							<Sparkles className="w-4 h-4 text-amber-500" />
-							<span className="hidden sm:inline">⚡ Дефолты (Цирконий A2, +7 дн.)</span>
+							<span className="hidden sm:inline">⚡ Пресет (ZrO2 А2, 5 дн.)</span>
 						</button>
 						<button
 							type="button"
@@ -616,6 +626,49 @@ export function DentalLabOrderModal({
 
 				{/* ─── MODAL BODY WITH TAB PANELS ───────────────────────────────── */}
 				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6">
+
+					{/* ─── DOCTOR CLINICAL AUTONOMY OVERRIDE BANNER (Mandate 8e) ─── */}
+					{!financialGateResult.isGatePassed && !gateOverride && (
+						<div
+							className="p-3.5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+							data-testid="lab-order-clinical-autonomy-banner"
+						>
+							<div className="flex items-start gap-2.5 min-w-0">
+								<Sparkles size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+								<div>
+									<div className="font-extrabold text-amber-900 dark:text-amber-200 text-xs">
+										Финансовый контроль ЗТЛ: Внесено {financialGateResult.paidPercent}% (порог аванса 50%)
+									</div>
+									<div className="text-[11px] text-amber-800/90 dark:text-amber-300/90 mt-0.5">
+										Экстренное показание (временная PMMA, примерка моста). Врач может отправить заказ в 1 клик.
+									</div>
+									{financialGateResult.isPlanExpiredNotice && (
+										<div className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-1">
+											✓ {financialGateResult.isPlanExpiredNotice}
+										</div>
+									)}
+								</div>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => {
+									const override = createDoctorClinicalOverride(
+										formDoctorName || "Лечащий врач",
+										"⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)",
+									);
+									setGateOverride(override);
+									showToast("⚡ Клиническая автономия врача: Отправка наряда без предоплаты разрешена", "success");
+								}}
+								className="min-h-[40px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0"
+								data-testid="btn-lab-override-financial-gate"
+								title="Отправить наряд в ЗТЛ под клиническую автономию врача без предоплаты"
+							>
+								<ShieldCheck size={15} />
+								<span>⚡ Клиническая автономия врача: Отправить наряд в ЗТЛ без предоплаты (Экстренное / клиническое показание)</span>
+							</button>
+						</div>
+					)}
 
 					{/* ═══ TAB 1: MAIN SPECS & ODONTOGRAM ═══════════════════════════ */}
 					{activeTab === "main" && (

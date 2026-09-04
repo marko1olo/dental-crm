@@ -68,6 +68,8 @@ export interface DentalLabOrderModalProps {
 	readonly stagePaidRub?: number | undefined;
 	readonly chiefDoctorName?: string | undefined;
 	readonly skipFinancialGate?: boolean | undefined;
+	readonly treatmentPlanAgeDays?: number | undefined;
+	readonly isPlanExpired?: boolean | undefined;
 	readonly onOrderSaved?: ((order: DentalLabOrderData) => void) | undefined;
 }
 
@@ -597,14 +599,15 @@ export function addWorkingDays(startDate: Date, workingDays = 7): Date {
 
 /**
  * Default standard parameters for 1-click lab order creation per Mandate 8e / Section VII:
- * Zirconia crown / E.max, VITA shade A2, +7 business days deadline.
+ * Zirconia crown (ZrO2), VITA shade A2, natural anatomy, 5 business days deadline.
  */
 export const ONE_CLICK_LAB_DEFAULTS = {
 	materialId: "zirconia_multilayer",
-	materialName: "Диоксид циркония Katana ML / E.max",
+	materialName: "Коронка ZrO2 (диоксид циркония)",
 	colorVita: "A2",
-	workingDays: 7,
+	workingDays: 5,
 	translucency: "HT",
+	surfaceTexture: "natural_anatomy",
 	cementGapMicrons: 30,
 	shadeSystem: "classical" as const,
 	restorationTypeSingle: "single_crown",
@@ -629,19 +632,79 @@ export interface ExpressLabPreset {
 
 export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 	{
-		id: "zirconia_a2",
-		title: "Циркониевая коронка A2 (7 дней)",
-		shortDesc: "Диоксид циркония Multi-layer, цвет VITA A2, срок 7 рабочих дней",
+		id: "zirconia_a2_std",
+		title: "Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней",
+		shortDesc: "Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней",
 		constructionType: "single_crown",
 		materialId: "zirconia_multilayer",
 		colorVita: "A2",
-		workingDays: 7,
+		workingDays: 5,
+		priceRub: 6500,
+		occlusalScheme: "mutually_protected",
+		contactTightness: "normal",
+		surfaceTexture: "natural_anatomy",
+		cementGapMicrons: 30,
+		badge: "Стандарт (5 дней)",
+	},
+	{
+		id: "zirconia_a2",
+		title: "Коронка ZrO2 A2 (5 дней)",
+		shortDesc: "Диоксид циркония Multi-layer, цвет VITA A2, анатомическая форма, срок 5 рабочих дней",
+		constructionType: "single_crown",
+		materialId: "zirconia_multilayer",
+		colorVita: "A2",
+		workingDays: 5,
 		priceRub: 6500,
 		occlusalScheme: "mutually_protected",
 		contactTightness: "normal",
 		surfaceTexture: "natural_anatomy",
 		cementGapMicrons: 30,
 		badge: "Топ выбор",
+	},
+	{
+		id: "emax_a2",
+		title: "Коронка E.max A2 (5 дней)",
+		shortDesc: "Прессованная керамика E.max Press, цвет VITA A2, срок 5 рабочих дней",
+		constructionType: "single_crown",
+		materialId: "emax_lithium_disilicate",
+		colorVita: "A2",
+		workingDays: 5,
+		priceRub: 7500,
+		occlusalScheme: "mutually_protected",
+		contactTightness: "normal",
+		surfaceTexture: "natural_anatomy",
+		cementGapMicrons: 30,
+		badge: "Эстетика",
+	},
+	{
+		id: "pfm_cocr_a2",
+		title: "Металлокерамика CoCr A2 (7 дней)",
+		shortDesc: "Металлокерамическая коронка CoCr, цвет VITA A2, срок 7 рабочих дней",
+		constructionType: "single_crown",
+		materialId: "pfm_cocr",
+		colorVita: "A2",
+		workingDays: 7,
+		priceRub: 4000,
+		occlusalScheme: "group_function",
+		contactTightness: "normal",
+		surfaceTexture: "natural_anatomy",
+		cementGapMicrons: 40,
+		badge: "Классика",
+	},
+	{
+		id: "removable_clasp",
+		title: "Съемный протез бюгельный (10 дней)",
+		shortDesc: "Бюгельный / частично-съемный протез с кламмерами, срок 10 рабочих дней",
+		constructionType: "clasp_denture",
+		materialId: "cobalt_chrome_cocr",
+		colorVita: "A2",
+		workingDays: 10,
+		priceRub: 12000,
+		occlusalScheme: "balanced_articulation",
+		contactTightness: "normal",
+		surfaceTexture: "natural_anatomy",
+		cementGapMicrons: 50,
+		badge: "Съемный",
 	},
 	{
 		id: "pmma_temp",
