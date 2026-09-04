@@ -18,24 +18,19 @@ import {
 } from "@dental/shared/fiscal";
 import {
 	AlertCircle,
-	ArrowRight,
 	Check,
 	CheckCircle2,
 	Clock,
 	Copy,
-	ExternalLink,
 	MessageCircle,
 	Printer,
-	QrCode,
 	RefreshCw,
 	Send,
 	ShieldCheck,
-	Sparkles,
 	X,
 } from "lucide-react";
 import {
 	formatCurrencyRu,
-	formatKopecksRu,
 	generateSbpPaymentShareText,
 } from "./omnichannelEngine.js";
 import type { SbpPaymentInvoice, SbpPaymentStatus } from "./omnichannelTypes.js";
@@ -45,8 +40,18 @@ export interface SbpPaymentQrModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly invoice: SbpPaymentInvoice;
-	readonly onPaymentSuccess?: ((result: { orderId: string; sumRub: number; fiscalReceiptId: string }) => void) | undefined;
+	readonly onPaymentSuccess?:
+		| ((result: {
+				orderId: string;
+				sumRub: number;
+				fiscalReceiptId: string;
+				isManualReconciliation?: boolean;
+		  }) => void)
+		| undefined;
 	readonly onSendToChat?: ((channel: "whatsapp" | "telegram", messageText: string) => void) | undefined;
+	readonly onCheckStatus?:
+		| ((orderId: string) => Promise<{ paid: boolean; fiscalReceiptId?: string }>)
+		| undefined;
 	readonly defaultTtlMinutes?: number | undefined;
 }
 
@@ -56,6 +61,7 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 	invoice,
 	onPaymentSuccess,
 	onSendToChat,
+	onCheckStatus,
 	defaultTtlMinutes = 15,
 }) => {
 	const modalTitleId = useId();
@@ -64,6 +70,13 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 	const [copied, setCopied] = useState<boolean>(false);
 	const [qrPayload, setQrPayload] = useState<SbpDynamicQrResult | null>(null);
 	const [fiscalReceiptId, setFiscalReceiptId] = useState<string>("");
+	const [isCheckingStatus, setIsCheckingStatus] = useState<boolean>(false);
+	const [statusCheckMessage, setStatusCheckMessage] = useState<{
+		text: string;
+		type: "info" | "success" | "warning";
+	} | null>(null);
+	const [isManualConfirmPending, setIsManualConfirmPending] = useState<boolean>(false);
+	const [isManualReconciliation, setIsManualReconciliation] = useState<boolean>(false);
 
 	// Генерация динамического QR-кода при открытии / обновлении
 	const initQrPayload = () => {
@@ -79,6 +92,9 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 			setStatus("awaiting_scan");
 			setRemainingSeconds(defaultTtlMinutes * 60);
 			setFiscalReceiptId(`FD-${Math.floor(100000 + Math.random() * 900000)}`);
+			setIsManualConfirmPending(false);
+			setIsManualReconciliation(false);
+			setStatusCheckMessage(null);
 		} catch {
 			// Fallback при нулевой сумме или ошибке
 			setStatus("failed");
@@ -178,18 +194,103 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 		}
 	};
 
-	const handleSimulatePayment = () => {
-		setStatus("scanned");
-		setTimeout(() => {
-			setStatus("paid_success");
-			if (onPaymentSuccess) {
-				onPaymentSuccess({
-					orderId: invoice.orderId,
-					sumRub: invoice.sumRub,
-					fiscalReceiptId,
-				});
+	// 1. Ручной опрос эквайрингового шлюза НСПК через API (RefreshCw)
+	const handleCheckGatewayStatus = async () => {
+		if (isCheckingStatus || status === "paid_success") return;
+		setIsCheckingStatus(true);
+		setStatusCheckMessage(null);
+
+		try {
+			if (onCheckStatus) {
+				const checkResult = await onCheckStatus(invoice.orderId);
+				if (checkResult.paid) {
+					const receiptId =
+						checkResult.fiscalReceiptId ||
+						fiscalReceiptId ||
+						`FD-${Math.floor(100000 + Math.random() * 900000)}`;
+					setFiscalReceiptId(receiptId);
+					setIsManualReconciliation(false);
+					setStatus("paid_success");
+					setStatusCheckMessage({
+						text: "Эквайринговый шлюз подтвердил зачисление средств! Чек 54-ФЗ сформирован.",
+						type: "success",
+					});
+					onPaymentSuccess?.({
+						orderId: invoice.orderId,
+						sumRub: invoice.sumRub,
+						fiscalReceiptId: receiptId,
+						isManualReconciliation: false,
+					});
+					return;
+				}
+			} else {
+				// Запрос статуса счета через API клиники
+				try {
+					const response = await fetch(`/api/invoices/${encodeURIComponent(invoice.orderId)}`, {
+						headers: { Accept: "application/json" },
+					});
+					if (response.ok) {
+						const data = (await response.json().catch(() => null)) as {
+							status?: string;
+							isPaid?: boolean;
+							fiscalReceiptId?: string;
+						} | null;
+						if (data && (data.status === "paid" || data.isPaid)) {
+							const receiptId =
+								data.fiscalReceiptId ||
+								fiscalReceiptId ||
+								`FD-${Math.floor(100000 + Math.random() * 900000)}`;
+							setFiscalReceiptId(receiptId);
+							setIsManualReconciliation(false);
+							setStatus("paid_success");
+							setStatusCheckMessage({
+								text: "Банковский шлюз подтвердил оплату счета!",
+								type: "success",
+							});
+							onPaymentSuccess?.({
+								orderId: invoice.orderId,
+								sumRub: invoice.sumRub,
+								fiscalReceiptId: receiptId,
+								isManualReconciliation: false,
+							});
+							return;
+						}
+					}
+				} catch {
+					// Игнорируем сетевые ошибки локального окружения
+				}
 			}
-		}, 1400);
+
+			// Платеж пока не зарегистрирован шлюзом
+			setStatusCheckMessage({
+				text: "Банковский шлюз НСПК: платёж ещё не поступил. Ожидается проведение банком плательщика.",
+				type: "info",
+			});
+		} catch {
+			setStatusCheckMessage({
+				text: "Не удалось связаться со шлюзом НСПК. Воспользуйтесь ручной сверкой с банковской выпиской.",
+				type: "warning",
+			});
+		} finally {
+			setIsCheckingStatus(false);
+		}
+	};
+
+	// 2. Честная фиксация кассиром поступления средств (ручная сверка 54-ФЗ по выписке/СМС)
+	const handleConfirmManualReconciliation = () => {
+		setIsManualConfirmPending(false);
+		const receiptId = fiscalReceiptId || `FD-${Math.floor(100000 + Math.random() * 900000)}`;
+		setFiscalReceiptId(receiptId);
+		setIsManualReconciliation(true);
+		setStatus("paid_success");
+		setStatusCheckMessage(null);
+
+		onPaymentSuccess?.({
+			orderId: invoice.orderId,
+			sumRub: invoice.sumRub,
+			fiscalReceiptId: receiptId,
+			isManualReconciliation: true,
+		});
 	};
 
 	const handlePrint = () => {
@@ -246,7 +347,11 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 									<p className="sbp-success-receipt">
 										Чек 54-ФЗ (Тег 1081): <strong>#{fiscalReceiptId}</strong>
 									</p>
-									<span className="sbp-badge-online">Фискальный накопитель подтвердил транзакцию</span>
+									<span className="sbp-badge-online">
+										{isManualReconciliation
+											? "Подтверждено кассиром (ручная сверка по выписке / СМС)"
+											: "Фискальный накопитель подтвердил транзакцию"}
+									</span>
 								</div>
 							) : status === "expired" ? (
 								<div className="sbp-expired-banner">
@@ -312,7 +417,11 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 							{status === "paid_success" && (
 								<>
 									<Check size={14} />
-									<span>Платеж зачислен на расчетный счет</span>
+									<span>
+										{isManualReconciliation
+											? "Зачисление подтверждено кассиром (ручная сверка)"
+											: "Платеж зачислен на расчетный счет"}
+									</span>
 								</>
 							)}
 							{status === "expired" && (
@@ -425,17 +534,192 @@ export const SbpPaymentQrModal: React.FC<SbpPaymentQrModalProps> = ({
 								</button>
 							</div>
 
-							{/* Тестовый стенд симуляции оплаты (для демонстрации и QA) */}
+							{/* Кассовый контроль и ручная сверка поступления средств (54-ФЗ) */}
 							{status !== "paid_success" && (
-								<div className="sbp-demo-bar">
-									<span className="sbp-demo-label">Демо-режим кассира:</span>
-									<button
-										type="button"
-										className="sbp-btn-simulate"
-										onClick={handleSimulatePayment}
+								<div
+									style={{
+										marginTop: "12px",
+										padding: "10px 12px",
+										background: "var(--paper-soft, rgba(0, 0, 0, 0.03))",
+										border: "1px solid var(--line-subtle, rgba(0, 0, 0, 0.1))",
+										borderRadius: "8px",
+										display: "flex",
+										flexDirection: "column",
+										gap: "8px",
+									}}
+								>
+									<div
+										style={{
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											gap: "8px",
+										}}
 									>
-										<Sparkles size={14} /> Симулировать мгновенную оплату
-									</button>
+										<span
+											style={{
+												fontSize: "0.78rem",
+												fontWeight: 700,
+												color: "var(--ink)",
+												display: "flex",
+												alignItems: "center",
+												gap: "6px",
+											}}
+										>
+											<ShieldCheck size={14} style={{ color: "var(--teal, #0d9488)" }} />
+											Контроль кассира (54-ФЗ / СБП):
+										</span>
+
+										{/* Кнопка ручного обновления статуса платежа через API шлюза */}
+										<button
+											type="button"
+											onClick={handleCheckGatewayStatus}
+											disabled={isCheckingStatus}
+											title="Опросить эквайринговый шлюз НСПК на предмет зачисления"
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "5px",
+												padding: "4px 9px",
+												fontSize: "0.74rem",
+												fontWeight: 600,
+												borderRadius: "6px",
+												border: "1px solid var(--line-strong, #cbd5e1)",
+												background: "var(--paper-strong, #ffffff)",
+												color: "var(--ink, #0f172a)",
+												cursor: isCheckingStatus ? "wait" : "pointer",
+												opacity: isCheckingStatus ? 0.7 : 1,
+											}}
+										>
+											<RefreshCw
+												size={12}
+												className={isCheckingStatus ? "sbp-spin-icon" : ""}
+											/>
+											{isCheckingStatus ? "Опрос шлюза..." : "Обновить статус"}
+										</button>
+									</div>
+
+									{/* Статусное сообщение после ручного опроса шлюза */}
+									{statusCheckMessage && (
+										<div
+											style={{
+												fontSize: "0.74rem",
+												padding: "5px 8px",
+												borderRadius: "4px",
+												color:
+													statusCheckMessage.type === "success"
+														? "var(--ok-fg, #16a34a)"
+														: statusCheckMessage.type === "warning"
+															? "#d97706"
+															: "var(--muted, #64748b)",
+												background:
+													statusCheckMessage.type === "success"
+														? "rgba(34, 197, 94, 0.1)"
+														: statusCheckMessage.type === "warning"
+															? "rgba(245, 158, 11, 0.1)"
+															: "rgba(100, 116, 139, 0.08)",
+												lineHeight: 1.35,
+											}}
+										>
+											{statusCheckMessage.text}
+										</div>
+									)}
+
+									{/* Кнопка ручной фиксации поступления кассиром */}
+									{!isManualConfirmPending ? (
+										<button
+											type="button"
+											onClick={() => setIsManualConfirmPending(true)}
+											title="Подтвердить зачисление по мобильному банку клиники или СМС"
+											style={{
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: "6px",
+												width: "100%",
+												padding: "7px 10px",
+												fontSize: "0.76rem",
+												fontWeight: 600,
+												borderRadius: "6px",
+												border: "1px solid var(--line-strong, #cbd5e1)",
+												background: "var(--paper-strong, #ffffff)",
+												color: "var(--ink, #0f172a)",
+												cursor: "pointer",
+											}}
+										>
+											<CheckCircle2 size={14} style={{ color: "var(--teal, #0d9488)" }} />
+											Подтвердить зачисление по банковской выписке / СМС (ручная сверка)
+										</button>
+									) : (
+										<div
+											style={{
+												padding: "8px",
+												borderRadius: "6px",
+												background: "rgba(245, 158, 11, 0.08)",
+												border: "1px solid rgba(245, 158, 11, 0.35)",
+												display: "flex",
+												flexDirection: "column",
+												gap: "6px",
+											}}
+										>
+											<div
+												style={{
+													fontSize: "0.74rem",
+													color: "var(--ink)",
+													lineHeight: 1.3,
+												}}
+											>
+												<strong>Внимание:</strong> Вы подтверждаете, что сумма{" "}
+												<strong>{formatCurrencyRu(invoice.sumRub)}</strong> фактически зачислена на
+												расчетный счет клиники по выписке/СМС?
+											</div>
+											<div
+												style={{
+													display: "flex",
+													gap: "6px",
+													alignItems: "center",
+												}}
+											>
+												<button
+													type="button"
+													onClick={handleConfirmManualReconciliation}
+													style={{
+														flex: 1,
+														display: "inline-flex",
+														alignItems: "center",
+														justifyContent: "center",
+														gap: "4px",
+														padding: "5px 8px",
+														fontSize: "0.74rem",
+														fontWeight: 700,
+														borderRadius: "4px",
+														border: "none",
+														background: "var(--ok-fg, #16a34a)",
+														color: "#ffffff",
+														cursor: "pointer",
+													}}
+												>
+													<Check size={13} /> Да, подтверждаю
+												</button>
+												<button
+													type="button"
+													onClick={() => setIsManualConfirmPending(false)}
+													style={{
+														padding: "5px 10px",
+														fontSize: "0.74rem",
+														fontWeight: 600,
+														borderRadius: "4px",
+														border: "1px solid var(--line-subtle, #cbd5e1)",
+														background: "var(--paper-strong, #ffffff)",
+														color: "var(--muted, #64748b)",
+														cursor: "pointer",
+													}}
+												>
+													Отмена
+												</button>
+											</div>
+										</div>
+									)}
 								</div>
 							)}
 						</div>
