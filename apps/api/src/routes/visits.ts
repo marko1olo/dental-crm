@@ -367,13 +367,24 @@ export async function registerVisitRoutes(app: FastifyInstance) {
 		let chair = activeChairs[0];
 		if (!chair) {
 			// Zero Dead-Ends (Мандат 8n): если в клинике ещё нет заведённых кресел (соло-врач на аренде / новый филиал),
-			// автоматически инициализируем «Кресло 1», не прерывая приём пациента блокирующей ошибкой
+			// автоматически инициализируем клинику и «Кресло 1», не прерывая приём пациента блокирующей ошибкой
 			const clinicRows = await database
 				.select({ id: clinics.id })
 				.from(clinics)
 				.where(eq(clinics.organizationId, orgId))
 				.limit(1);
-			const clinicId = clinicRows[0]?.id;
+			let clinicId = clinicRows[0]?.id;
+			if (!clinicId) {
+				const [createdClinic] = await database
+					.insert(clinics)
+					.values({
+						organizationId: orgId,
+						name: "Основная клиника",
+						address: "Кабинет врача",
+					})
+					.returning({ id: clinics.id });
+				clinicId = createdClinic?.id;
+			}
 			if (clinicId) {
 				const [createdChair] = await database
 					.insert(chairs)

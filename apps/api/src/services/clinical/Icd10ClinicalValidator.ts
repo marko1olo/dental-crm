@@ -109,8 +109,8 @@ export const DENTAL_ICD10_RUBRICS: Readonly<Record<string, DentalIcd10Category>>
 	K05: {
 		code: "K05",
 		titleRu: "Гингивит и болезни пародонта (острый/хронический гингивит, пародонтит, пародонтоз)",
-		requiresTooth: true,
-		description: "Воспалительное или деструктивное поражение тканей пародонта в области зуба/сегмента",
+		requiresTooth: false,
+		description: "Воспалительное или деструктивное поражение тканей пародонта (генерализованное или локализованное)",
 	},
 	K06: {
 		code: "K06",
@@ -252,9 +252,10 @@ export const DETAILED_DENTAL_ICD10_TITLES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Рубрики МКБ-10, для которых клиника строго требует указание зуба FDI.
+ * Рубрики МКБ-10, для которых клиника строго требует указание зуба FDI (K02 кариес, K04 пульпит/периодонтит).
+ * Болезни пародонта (K05) генерализованы либо локализованы, поэтому номер зуба для K05 опционален (Мандаты 8e, 8i, 8k).
  */
-export const TOOTH_SPECIFIC_RUBRICS = new Set<string>(["K02", "K04", "K05"]);
+export const TOOTH_SPECIFIC_RUBRICS = new Set<string>(["K02", "K04"]);
 
 export class Icd10ClinicalValidator {
 	/**
@@ -303,7 +304,7 @@ export class Icd10ClinicalValidator {
 	}
 
 	/**
-	 * Проверяет, является ли диагноз строго зубоспецифичным (K02, K04, K05).
+	 * Проверяет, является ли диагноз строго зубоспецифичным (K02, K04).
 	 */
 	public static isToothSpecificDiagnosis(code: unknown): boolean {
 		const normalized = Icd10ClinicalValidator.normalizeCode(code);
@@ -501,7 +502,7 @@ export class Icd10ClinicalValidator {
 					? String(diagnosisTooth).trim()
 					: "";
 
-		// 3. Проверка зубоспецифичных диагнозов (K02, K04, K05)
+		// 3. Проверка зубоспецифичных диагнозов (K02, K04)
 		if (isToothSpecific) {
 			if (!rawToothStr) {
 				return {

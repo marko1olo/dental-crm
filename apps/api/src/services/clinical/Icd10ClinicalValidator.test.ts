@@ -113,18 +113,18 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 		});
 	});
 
-	describe("3. Tooth-Specific Diagnosis Recognition (K02, K04, K05)", () => {
-		it("identifies K02, K04, K05 as tooth-specific", () => {
+	describe("3. Tooth-Specific Diagnosis Recognition (K02, K04)", () => {
+		it("identifies K02, K04 as tooth-specific", () => {
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K02.0"), true);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K02.1"), true);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K04.0"), true);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K04.5"), true);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K04.7"), true);
-			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K05.1"), true);
-			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K05.3"), true);
 		});
 
-		it("identifies non-tooth-specific diagnoses correctly", () => {
+		it("identifies non-tooth-specific diagnoses correctly (including generalized K05)", () => {
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K05.1"), false);
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K05.3"), false);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K08.1"), false);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K00.0"), false);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K07.2"), false);
@@ -250,11 +250,21 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 			}
 		});
 
-		it("fails with ToothRequired when tooth is missing for K05 (Gingivitis / Periodontitis)", () => {
-			const res = Icd10ClinicalValidator.validate("K05.1", undefined);
-			assert.equal(res.isValid, false);
-			if (!res.isValid) {
-				assert.equal(res.errorCode, "ToothRequired");
+		it("succeeds without tooth for generalized periodontal diagnoses (K05.0 gingivitis, K05.3 periodontitis) under Mandates 8e, 8k", () => {
+			const resGingivitis = Icd10ClinicalValidator.validate("K05.0", undefined);
+			assert.equal(resGingivitis.isValid, true);
+			if (resGingivitis.isValid) {
+				assert.equal(resGingivitis.normalizedCode, "K05.0");
+				assert.equal(resGingivitis.isToothSpecific, false);
+				assert.deepEqual(resGingivitis.parsedTeeth, []);
+			}
+
+			const resPeriodontitis = Icd10ClinicalValidator.validate("K05.3", null);
+			assert.equal(resPeriodontitis.isValid, true);
+			if (resPeriodontitis.isValid) {
+				assert.equal(resPeriodontitis.normalizedCode, "K05.3");
+				assert.equal(resPeriodontitis.isToothSpecific, false);
+				assert.deepEqual(resPeriodontitis.parsedTeeth, []);
 			}
 		});
 

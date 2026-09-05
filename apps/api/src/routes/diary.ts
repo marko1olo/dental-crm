@@ -99,6 +99,32 @@ const DIARY_CLINIC_UNKNOWN_REVISE_MESSAGE = clinicNotIdentifiedMessage(
 );
 
 /**
+ * Проверяет, имеет ли пользователь право подписывать, блокировать и исправлять дневник приёма 043/у.
+ * Подписание разрешено врачам всех специальностей (терапевт, хирург, ортопед, ортодонт, пародонтолог,
+ * имплантолог, гигиенист, рентгенолог), главврачам (chief_doctor, head_doctor, cmo), владельцам и администраторам (Мандат 8e).
+ */
+export function isDoctorOrClinicalSigner(role: string): boolean {
+	const normalized = (role || "").toLowerCase();
+	return (
+		normalized === "doctor" ||
+		normalized === "admin" ||
+		normalized === "owner" ||
+		normalized === "head_doctor" ||
+		normalized === "chief_doctor" ||
+		normalized === "chiefdoctor" ||
+		normalized === "cmo" ||
+		normalized === "therapist" ||
+		normalized === "surgeon" ||
+		normalized === "orthopedist" ||
+		normalized === "orthodontist" ||
+		normalized === "periodontist" ||
+		normalized === "implantologist" ||
+		normalized === "hygienist" ||
+		normalized === "radiologist"
+	);
+}
+
+/**
  * «Дневника нет» на чтении истории и на исправлении. Причина у сервера
  * установлена точно: строки с таким номером в этой клинике не существует.
  * Действие названо, потому что оно есть и оно одно — открыть приём заново;
@@ -535,7 +561,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 
 		const isSigning = data.status === "signed";
 
-		if (isSigning && role !== "doctor" && role !== "admin") {
+		if (isSigning && !isDoctorOrClinicalSigner(role)) {
 			// Голый код отказа здесь давал самое вредное из возможных указаний:
 			// клиент строит по 403 «войдите в смену заново или попросите
 			// администратора открыть доступ», а повторный вход ассистенту права
@@ -929,7 +955,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		 * врач, не понявший отказ, либо теряет заполненный текст, либо переписывает
 		 * его во второй записи.
 		 */
-		if (role !== "doctor" && role !== "admin") {
+		if (!isDoctorOrClinicalSigner(role)) {
 			return reply.code(403).send({
 				error: "OnlyDoctorsCanLock",
 				message: DIARY_SIGNING_ROLE_MESSAGE,
@@ -1325,13 +1351,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 		const userId: string | null = identity.userId ?? userContext?.id ?? null;
 		const role: string = identity.role ?? userContext?.role ?? "doctor";
 
-		const isPrivilegedRole =
-			role === "admin" ||
-			role === "doctor" ||
-			role === "owner" ||
-			role === "head_doctor" ||
-			role === "cmo" ||
-			role === "chief_doctor";
+		const isPrivilegedRole = isDoctorOrClinicalSigner(role);
 
 		if (!isPrivilegedRole) {
 			return reply.code(403).send({
@@ -1428,12 +1448,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 			if (!existing.isLocked) return { kind: "not_locked" as const };
 
 			const isAuthorized =
-				role === "admin" ||
-				role === "owner" ||
-				role === "head_doctor" ||
-				role === "chief_doctor" ||
-				role === "cmo" ||
-				role === "doctor" ||
+				isDoctorOrClinicalSigner(role) ||
 				(Boolean(userId) &&
 					(existing.doctorId === userId ||
 						existing.authorId === userId ||
@@ -1631,7 +1646,7 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 			return reply.code(400).send({
 				error: "InvalidTrayBarcode",
 				message:
-					"Лоток не подтверждён журналом стерилизации этой клиники: такого штрихкода нет или последний цикл не пройден. Укажите штрихкод с прошедшей стерилизацией или очистите поле лотка.",
+					"Лоток отмечен в журнале стерилизации как забракованный (авария или сбой автоклава). Замените лоток на стерильный или очистите поле лотка.",
 			});
 		}
 		if (reviseResult.kind === "update_lost") {

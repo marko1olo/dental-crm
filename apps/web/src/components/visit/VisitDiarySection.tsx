@@ -292,8 +292,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	);
 
 	// Mandate 8e: Doctor autonomy — failed network load does not disable inputs, doctor can continue writing and autosave locally
-	const diaryUnread = loadState.phase === "loading";
-	const fieldsDisabled = diaryUnread || (isLocked && !isRevising);
+	const fieldsDisabled = isLocked && !isRevising;
 
 	const ctx = useAppLogicContext();
 	const activePatient = ctx.activePatient;
@@ -830,7 +829,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									id="diary-top-revise-btn"
 									data-testid="diary-top-revise-btn"
 									onClick={() => beginRevise()}
-									disabled={diaryUnread}
+									disabled={isSaving}
 									className="vde-043__btn vde-043__btn--amber text-xs py-1 px-2.5 font-bold flex items-center gap-1"
 									title="Внести исправление в закрытый дневник («Исправленному верить»)"
 								>
@@ -839,30 +838,28 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							</div>
 						)
 					) : (
-						!diaryUnread && (
-							<VisitDiaryTemplateSelector
-								isLocked={isLocked}
-								// biome-ignore lint/suspicious/noExplicitAny: template handler
-								onSelectTemplate={(tmpl: any) => {
-									setDiary((prev) =>
-										mergeSoapDiaryState(
-											prev,
-											{
-												anamnesis: tmpl.prefilledAnamnesis,
-												statusLocalis: tmpl.prefilledObjective,
-												treatmentDescription: tmpl.prefilledTreatment,
-												diagnosisIcd10: tmpl.defaultIcd10,
-											},
-											{ strategy: "smart_append" },
-										),
-									);
-									if (tmpl.defaultIcd10) {
-										setIcdSearch(tmpl.defaultIcd10);
-									}
-									scheduleDebouncedSave();
-								}}
-							/>
-						)
+						<VisitDiaryTemplateSelector
+							isLocked={isLocked}
+							// biome-ignore lint/suspicious/noExplicitAny: template handler
+							onSelectTemplate={(tmpl: any) => {
+								setDiary((prev) =>
+									mergeSoapDiaryState(
+										prev,
+										{
+											anamnesis: tmpl.prefilledAnamnesis,
+											statusLocalis: tmpl.prefilledObjective,
+											treatmentDescription: tmpl.prefilledTreatment,
+											diagnosisIcd10: tmpl.defaultIcd10,
+										},
+										{ strategy: "smart_append" },
+									),
+								);
+								if (tmpl.defaultIcd10) {
+									setIcdSearch(tmpl.defaultIcd10);
+								}
+								scheduleDebouncedSave();
+							}}
+						/>
 					)}
 				</div>
 			</div>
@@ -1668,7 +1665,6 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						data-testid="diary-tray-scan"
 						onClick={() => setShowScanner(true)}
 						className="vde-043__btn text-[var(--teal)]"
-						disabled={diaryUnread}
 					>
 						<Activity className="w-4 h-4" />
 						{trayBarcode ? `Лоток: ${trayBarcode}` : "Сканировать Лоток"}
@@ -1680,7 +1676,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							onClick={() => {
 								void clearTrayBarcode();
 							}}
-							disabled={isSaving || diaryUnread}
+							disabled={isSaving}
 							className="vde-043__btn vde-043__btn--ghost vde-043__btn--icon"
 							title="Снять лоток с черновика"
 							aria-label="Снять лоток с черновика"
@@ -1692,13 +1688,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						type="button"
 						id="diary-save-btn"
 						onClick={() => doSave(false)}
-						disabled={isSaving || diaryUnread}
+						disabled={isSaving}
 						className="vde-043__btn"
-						title={
-							diaryUnread
-								? "Сохранение недоступно, пока записи приёма не прочитаны"
-								: undefined
-						}
 					>
 						{isSaving ? "Сохраняю..." : "Сохранить черновик"}
 					</button>
@@ -1811,7 +1802,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						id="diary-revise-btn"
 						data-testid="diary-revise-begin"
 						onClick={() => beginRevise()}
-						disabled={diaryUnread}
+						disabled={isSaving}
 						className="vde-043__btn vde-043__btn--amber ml-auto font-bold flex items-center gap-1.5"
 						title="Внести исправление в дневник (с сохранением истории версий «Исправленному верить»)"
 					>

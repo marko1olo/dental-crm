@@ -134,7 +134,7 @@ export function DocumentQuickRoleScenarios({
 				</div>
 			</button>
 
-			{/* 5. ГОСПИТАЛИЗАЦИЯ, САНПИН И ЭКСПЕРТИЗА */}
+			{/* 5. САНПИН, ЭЛН И ЭКСПЕРТИЗА */}
 			<button
 				type="button"
 				className="document-scenario-card"
@@ -152,7 +152,7 @@ export function DocumentQuickRoleScenarios({
 					Направление 057/у-04 + Больничный ЭЛН 1089н + Дозы 2.6.1 + Автоклав 257/у
 				</p>
 				<div className="document-scenario-footer">
-					<span>СанПиН и Госпитализация</span>
+					<span>СанПиН, ЭЛН и Экспертиза</span>
 					<ArrowRight size={14} aria-hidden="true" />
 				</div>
 			</button>
