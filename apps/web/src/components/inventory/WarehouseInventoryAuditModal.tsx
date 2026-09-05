@@ -99,10 +99,10 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 		initialDocument?.warehouseNameRu || "Главный склад расходных материалов",
 	);
 	const [molFullName, setMolFullName] = useState<string>(
-		initialDocument?.molFullName || "Васильев Олег Петрович",
+		initialDocument?.molFullName || "Ответственный сотрудник",
 	);
 	const [molPosition, setMolPosition] = useState<string>(
-		initialDocument?.molPosition || "Заведующий складом",
+		initialDocument?.molPosition || "Ответственный сотрудник",
 	);
 	const [status, setStatus] = useState<WarehouseInventoryStatus>(
 		initialDocument?.status || "reconciliation",
@@ -137,6 +137,106 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 			setToastMessage(null);
 		}, 3500);
 	}, []);
+
+	// 1-клик переключение на единоличную инвентаризацию (Соло-врач / Ответственный)
+	const handleSetSoloCommission = useCallback(() => {
+		const currentName = molFullName.trim() || "Ответственный сотрудник";
+		const currentPos = molPosition.trim() || "Ответственный сотрудник";
+		setCommission([
+			{
+				fullName: currentName,
+				position: currentPos,
+				role: "chairman",
+				roleRu: "Председатель комиссии (МОЛ / Единолично)",
+			},
+		]);
+		showToast("Установлена единоличная инвентаризация (Соло-врач / Ответственный).");
+	}, [molFullName, molPosition, showToast]);
+
+	// Восстановление стандартной комиссии из 4 человек
+	const handleSetStandardCommission = useCallback(() => {
+		setCommission(DEFAULT_COMMISSION_MEMBERS);
+		showToast("Восстановлен стандартный состав комиссии (4 человека).");
+	}, [showToast]);
+
+	// Изменение члена комиссии
+	const handleCommissionMemberChange = useCallback(
+		(index: number, field: "fullName" | "position", value: string) => {
+			setCommission((prev) =>
+				prev.map((m, i) => {
+					if (i !== index) return m;
+					return {
+						...m,
+						[field]: value,
+					};
+				}),
+			);
+			if (commission.length === 1) {
+				if (field === "fullName") setMolFullName(value);
+				if (field === "position") setMolPosition(value);
+			}
+		},
+		[commission.length],
+	);
+
+	// Удаление члена комиссии (если их больше одного)
+	const handleRemoveCommissionMember = useCallback((index: number) => {
+		setCommission((prev: readonly WarehouseInventoryCommissionMember[]): readonly WarehouseInventoryCommissionMember[] => {
+			if (prev.length <= 1) return prev;
+			const next: WarehouseInventoryCommissionMember[] = prev.filter((_, i) => i !== index);
+			const first = next[0];
+			if (next.length === 1 && first && first.role !== "chairman") {
+				const singleMember: WarehouseInventoryCommissionMember = {
+					fullName: first.fullName,
+					position: first.position,
+					role: "chairman",
+					roleRu: "Председатель комиссии (МОЛ / Единолично)",
+				};
+				return [singleMember];
+			}
+			return next;
+		});
+	}, []);
+
+	// Изменение ФИО МОЛ с синхронизацией единоличной комиссии
+	const handleMolFullNameChange = useCallback(
+		(val: string) => {
+			setMolFullName(val);
+			if (commission.length === 1) {
+				setCommission((prev) =>
+					prev.map((m, i) =>
+						i === 0
+							? {
+									...m,
+									fullName: val,
+								}
+							: m,
+					),
+				);
+			}
+		},
+		[commission.length],
+	);
+
+	// Изменение должности МОЛ с синхронизацией единоличной комиссии
+	const handleMolPositionChange = useCallback(
+		(val: string) => {
+			setMolPosition(val);
+			if (commission.length === 1) {
+				setCommission((prev) =>
+					prev.map((m, i) =>
+						i === 0
+							? {
+									...m,
+									position: val,
+								}
+							: m,
+					),
+				);
+			}
+		},
+		[commission.length],
+	);
 
 	// Сводные итоги
 	const totals: InventoryAuditTotals = useMemo(() => {
@@ -393,12 +493,12 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 					<div className="warehouse-inventory-header-actions">
 						<button
 							type="button"
-							className="warehouse-btn warehouse-btn-secondary"
+							className={`warehouse-btn ${showMetaDrawer ? "warehouse-btn-primary" : "warehouse-btn-secondary"}`}
 							onClick={() => setShowMetaDrawer((v) => !v)}
 							title="Реквизиты приказа и состав комиссии"
 						>
 							<SlidersHorizontal size={14} />
-							<span>Комиссия и приказ</span>
+							<span>Комиссия ({commission.length === 1 ? "Соло 1 чел." : `${commission.length} чел.`}) и приказ</span>
 						</button>
 
 						<button
@@ -573,8 +673,18 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 							<input
 								className="warehouse-meta-input"
 								value={molFullName}
-								onChange={(e) => setMolFullName(e.target.value)}
+								onChange={(e) => handleMolFullNameChange(e.target.value)}
 								placeholder="ФИО МОЛ"
+							/>
+						</div>
+
+						<div className="warehouse-meta-field">
+							<label className="warehouse-meta-label">Должность МОЛ</label>
+							<input
+								className="warehouse-meta-input"
+								value={molPosition}
+								onChange={(e) => handleMolPositionChange(e.target.value)}
+								placeholder="Должность МОЛ"
 							/>
 						</div>
 
@@ -586,6 +696,140 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 								onChange={(e) => setWarehouseNameRu(e.target.value)}
 								placeholder="Склад"
 							/>
+						</div>
+
+						{/* 2.1.1 Блок комиссии (Мандат 8e / 8n: Соло-врач и небольшая клиника) */}
+						<div
+							style={{
+								gridColumn: "1 / -1",
+								marginTop: 6,
+								paddingTop: 12,
+								borderTop: "1px solid var(--border, #e2e8f0)",
+								display: "flex",
+								flexDirection: "column",
+								gap: 10,
+							}}
+						>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									flexWrap: "wrap",
+									gap: 8,
+								}}
+							>
+								<div>
+									<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+										<label className="warehouse-meta-label" style={{ fontSize: "0.8125rem", margin: 0 }}>
+											Состав инвентаризационной комиссии (ИНВ-3 / ИНВ-19)
+										</label>
+										<span
+											style={{
+												fontSize: "0.75rem",
+												fontWeight: 700,
+												padding: "2px 8px",
+												borderRadius: 4,
+												background: commission.length === 1 ? "var(--ok-bg, #ecfdf5)" : "var(--info-bg, #eff6ff)",
+												color: commission.length === 1 ? "var(--ok-fg, #047857)" : "var(--info-fg, #1d4ed8)",
+												border: `1px solid ${commission.length === 1 ? "var(--ok-border, #a7f3d0)" : "var(--info-border, #bfdbfe)"}`,
+											}}
+										>
+											{commission.length === 1 ? "Единолично (1 чел.)" : `Комиссия (${commission.length} чел.)`}
+										</span>
+									</div>
+									<p style={{ fontSize: "0.75rem", color: "var(--muted)", margin: "2px 0 0 0" }}>
+										{commission.length === 1
+											? "Режим соло-врача / небольшой клиники (Мандаты 8e и 8n): подпись описи формируется за одного ответственного сотрудника без навязывания 4 фиктивных должностей."
+											: "Стандартный многоместный состав комиссии для крупных стоматологических клиник (ИНВ-22)."}
+									</p>
+								</div>
+
+								<div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+									<button
+										type="button"
+										className={`warehouse-btn ${commission.length === 1 ? "warehouse-btn-primary" : "warehouse-btn-secondary"}`}
+										onClick={handleSetSoloCommission}
+										title="Единоличная инвентаризация для соло-врача или ответственного сотрудника (1 член комиссии)"
+									>
+										<User size={14} />
+										<span>Единоличная инвентаризация (Соло-врач / Ответственный)</span>
+									</button>
+
+									{commission.length === 1 && (
+										<button
+											type="button"
+											className="warehouse-btn warehouse-btn-secondary"
+											onClick={handleSetStandardCommission}
+											title="Восстановить комиссию из 4 человек (Главный врач, МОЛ, Главная медсестра, Бухгалтер)"
+										>
+											<Layers size={14} />
+											<span>Комиссия из 4 человек (Стандарт)</span>
+										</button>
+									)}
+								</div>
+							</div>
+
+							{/* Список членов комиссии */}
+							<div
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									gap: 6,
+									background: "var(--paper, #ffffff)",
+									padding: 10,
+									borderRadius: 6,
+									border: "1px solid var(--border, #e2e8f0)",
+								}}
+							>
+								{commission.map((member, idx) => (
+									<div
+										key={idx}
+										style={{
+											display: "flex",
+											alignItems: "center",
+											gap: 8,
+											flexWrap: "wrap",
+										}}
+									>
+										<span
+											style={{
+												fontSize: "0.75rem",
+												fontWeight: 600,
+												minWidth: 160,
+												color: "var(--muted, #64748b)",
+											}}
+										>
+											{member.roleRu || (member.role === "chairman" ? "Председатель" : member.role === "mol" ? "МОЛ" : member.role === "accountant" ? "Бухгалтер" : "Член комиссии")}:
+										</span>
+										<input
+											className="warehouse-meta-input"
+											value={member.fullName}
+											onChange={(e) => handleCommissionMemberChange(idx, "fullName", e.target.value)}
+											placeholder="ФИО сотрудника"
+											style={{ flex: 1, minWidth: 180 }}
+										/>
+										<input
+											className="warehouse-meta-input"
+											value={member.position}
+											onChange={(e) => handleCommissionMemberChange(idx, "position", e.target.value)}
+											placeholder="Должность"
+											style={{ width: 200 }}
+										/>
+										{commission.length > 1 && (
+											<button
+												type="button"
+												className="warehouse-btn warehouse-btn-ghost"
+												onClick={() => handleRemoveCommissionMember(idx)}
+												title="Удалить члена комиссии"
+												style={{ padding: "0 6px", height: 28 }}
+											>
+												<Trash2 size={13} />
+											</button>
+										)}
+									</div>
+								))}
+							</div>
 						</div>
 					</div>
 				)}
@@ -847,7 +1091,7 @@ export const WarehouseInventoryAuditModal: React.FC<WarehouseInventoryAuditModal
 						)}
 						{!toastMessage && (
 							<span>
-								МОЛ: <b>{molFullName}</b> ({molPosition}) • Статус: <b>{status}</b>
+								МОЛ: <b>{molFullName}</b> ({molPosition}) • {commission.length === 1 ? "Комиссия: Единолично (Соло-врач)" : `Комиссия: ${commission.length} чел.`} • Статус: <b>{status}</b>
 							</span>
 						)}
 					</div>
