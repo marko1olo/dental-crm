@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import {
 	createStandardTrayKraftPackageRecord,
 	createDynamicKraftPackage,
-} from "../kraft/SeniorNurseKraftUnsealModal.js";
+} from "../kraft/kraftPackageEngine.js";
 import {
 	createStandardSterileTrayBarcode,
 	STANDARD_TRAY_OPTIONS,

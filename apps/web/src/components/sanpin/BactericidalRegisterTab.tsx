@@ -1217,7 +1217,7 @@ export function BactericidalRegisterTab() {
 											Наработка: <strong>{hoursPreview.nextH} ч</strong> из {hoursPreview.maxH} ч (остаток {hoursPreview.remH} ч)
 										</span>
 										<span style={{ fontWeight: 600, color: hoursPreview.pct >= 90 ? "#dc2626" : "#10b981" }}>
-											{hoursPreview.pct >= 100 ? "⚠️ Замена ламп" : hoursPreview.pct >= 90 ? "⚠️ Скоро замена" : "✓ Ресурс в норме"}
+											{hoursPreview.pct >= 100 ? "Замена ламп" : hoursPreview.pct >= 90 ? "Скоро замена" : "Ресурс в норме"}
 										</span>
 									</div>
 								)}

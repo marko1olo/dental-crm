@@ -462,7 +462,8 @@ export function SterilizerFleetManager({
 								cursor: "pointer",
 							}}
 						>
-							🟢 В работе ({stats.active})
+							<CheckCircle2 size={13} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "0.25rem" }} />
+							В работе ({stats.active})
 						</button>
 
 						<button
@@ -481,7 +482,8 @@ export function SterilizerFleetManager({
 								cursor: "pointer",
 							}}
 						>
-							🟡 На ТО ({stats.inMaint})
+							<Wrench size={13} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "0.25rem" }} />
+							На ТО ({stats.inMaint})
 						</button>
 
 						{stats.decom > 0 && (
@@ -501,7 +503,8 @@ export function SterilizerFleetManager({
 									cursor: "pointer",
 								}}
 							>
-								🔴 Списанные ({stats.decom})
+								<Archive size={13} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "0.25rem" }} />
+								Списанные ({stats.decom})
 							</button>
 						)}
 					</div>

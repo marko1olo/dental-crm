@@ -584,9 +584,9 @@ export function SterilizerEquipmentModal({
 								className="sanpin-select"
 								style={{ width: "100%", height: "38px", fontSize: "0.85rem", fontWeight: 600 }}
 							>
-								<option value="active">🟢 В работе (допущен к стерилизации)</option>
-								<option value="in_maintenance">🟡 На техобслуживании / Ремонте (ТО)</option>
-								<option value="decommissioned">🔴 Списан / Выведен из эксплуатации</option>
+								<option value="active">В работе (допущен к стерилизации)</option>
+								<option value="in_maintenance">На техобслуживании / Ремонте (ТО)</option>
+								<option value="decommissioned">Списан / Выведен из эксплуатации</option>
 							</select>
 						</div>
 

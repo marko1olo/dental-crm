@@ -53,6 +53,7 @@ import { RetroactiveBatchTab } from "./RetroactiveBatchTab";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { SanpinCycleModal } from "./SanpinCycleModal";
 import { KraftPackageModal } from "./KraftPackageModal";
+import { SeniorNurseKraftUnsealModal } from "./kraft/SeniorNurseKraftUnsealModal";
 import { AutoclaveLog257Modal } from "./autoclaveLog/AutoclaveLog257Modal";
 import { SterilizerFleetManager } from "./SterilizerFleetManager";
 import {
@@ -162,14 +163,23 @@ interface DisinfectantSolutionRecord {
 	volumeLiters: number;
 }
 
+function getRecentIsoDate(daysOffset = 0): string {
+	const d = new Date(Date.now() + daysOffset * 86400000);
+	return d.toISOString().slice(0, 10);
+}
+
+function getRecentDateTimeRu(daysOffset = 0, timeStr = "08:00"): string {
+	return `${getRecentIsoDate(daysOffset)} ${timeStr}`;
+}
+
 const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 	{
 		id: "ds-01",
 		tradeNameRu: "Аламинол (раствор 1.5%)",
 		purposeRu: "Предстерилизационная очистка и дезинфекция инструментов (ЦСО)",
 		concentrationPercent: 1.5,
-		preparationDate: "2026-08-29 08:00",
-		expiryDate: "2026-09-12 08:00",
+		preparationDate: getRecentDateTimeRu(0, "08:00"),
+		expiryDate: getRecentDateTimeRu(14, "08:00"),
 		testStripResultRu: "Дезиконт-Аламинол: 1.5% норма (тест пройден)",
 		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
 		volumeLiters: 10,
@@ -179,8 +189,8 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		tradeNameRu: "Бациллол АФ (экспресс-спрей)",
 		purposeRu: "Экстренная дезинфекция поверхностей установки и наконечников",
 		concentrationPercent: 100,
-		preparationDate: "2026-08-29 (заводской)",
-		expiryDate: "2027-08-29",
+		preparationDate: `${getRecentIsoDate(0)} (заводской)`,
+		expiryDate: getRecentIsoDate(365),
 		testStripResultRu: "Готовый заводской раствор (активен)",
 		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
 		volumeLiters: 1.0,
@@ -190,8 +200,8 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		tradeNameRu: "Оптимакс Про (раствор 1.0%)",
 		purposeRu: "Дезинфекция слепков, зуботехнических оттисков и ложек",
 		concentrationPercent: 1.0,
-		preparationDate: "2026-08-28 09:00",
-		expiryDate: "2026-09-11 09:00",
+		preparationDate: getRecentDateTimeRu(-1, "09:00"),
+		expiryDate: getRecentDateTimeRu(13, "09:00"),
 		testStripResultRu: "Тест-полоска Оптимакс: 1.0% норма",
 		responsibleNurseRu: "Смирнова Е.А. (старшая медсестра)",
 		volumeLiters: 5,
@@ -201,8 +211,8 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		tradeNameRu: "Дезискраб (раствор 2.0%)",
 		purposeRu: "Хирургическая обработка поверхностей и генеральная уборка операционной",
 		concentrationPercent: 2.0,
-		preparationDate: "2026-08-29 07:30",
-		expiryDate: "2026-09-12 07:30",
+		preparationDate: getRecentDateTimeRu(0, "07:30"),
+		expiryDate: getRecentDateTimeRu(14, "07:30"),
 		testStripResultRu: "Дезиконт-Дезискраб: 2.0% норма",
 		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
 		volumeLiters: 8,
@@ -212,8 +222,8 @@ const DEFAULT_DISINFECTANT_RECORDS: DisinfectantSolutionRecord[] = [
 		tradeNameRu: "Бриллиант Классик (раствор 2.0%)",
 		purposeRu: "Обезвреживание медицинских отходов классов Б и В",
 		concentrationPercent: 2.0,
-		preparationDate: "2026-08-29 08:15",
-		expiryDate: "2026-09-05 08:15",
+		preparationDate: getRecentDateTimeRu(0, "08:15"),
+		expiryDate: getRecentDateTimeRu(7, "08:15"),
 		testStripResultRu: "Тест-полоска Бриллиант: 2.0% норма",
 		responsibleNurseRu: "Иванова О.С. (медсестра ЦСО)",
 		volumeLiters: 15,
@@ -325,7 +335,7 @@ const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
 	{
 		id: "bac-01",
 		actNumberRu: "Акт № 264/С",
-		sampleDate: "2026-08-25",
+		sampleDate: getRecentIsoDate(-4),
 		targetObjectRu: "Наконечник турбинный и угловой после автоклавирования",
 		pathogensTestedRu: "БГКП, Staphylococcus aureus, спорообразующие бациллы",
 		resultRu: "Рост микрофлоры отсутствует (100% стерильно)",
@@ -335,7 +345,7 @@ const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
 	{
 		id: "bac-02",
 		actNumberRu: "Акт № 265/С",
-		sampleDate: "2026-08-25",
+		sampleDate: getRecentIsoDate(-4),
 		targetObjectRu: "Столик врача, подголовник кресла, светильник (Кабинет 1)",
 		pathogensTestedRu: "ОМЧ, БГКП, синегнойная палочка (Pseudomonas)",
 		resultRu: "ОМЧ < 10 КОЕ/см², патогенная микрофлора не выделена",
@@ -345,7 +355,7 @@ const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
 	{
 		id: "bac-03",
 		actNumberRu: "Акт № 266/С",
-		sampleDate: "2026-08-20",
+		sampleDate: getRecentIsoDate(-9),
 		targetObjectRu: "Крафт-пакет хирургический базовый (контроль стерильности)",
 		pathogensTestedRu: "Аэробные и факультативно-анаэробные бактерии",
 		resultRu: "Стерильность подтверждена, посев стерилен",
@@ -355,7 +365,7 @@ const DEFAULT_BAC_LAB_RECORDS: BacLabRecord[] = [
 	{
 		id: "bac-04",
 		actNumberRu: "Акт № 267/С",
-		sampleDate: "2026-08-15",
+		sampleDate: getRecentIsoDate(-14),
 		targetObjectRu: "Проба воздуха рабочей зоны при включенном Дезар-4",
 		pathogensTestedRu: "Общее микробное число (ОМЧ) в 1 м³ воздуха",
 		resultRu: "ОМЧ = 120 КОЕ/м³ (норматив до 500 КОЕ/м³ соблюден)",
@@ -460,7 +470,7 @@ interface NeedleDisposalRecord {
 const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 	{
 		id: "nd-01",
-		shiftDateRu: "2026-08-29 14:00",
+		shiftDateRu: getRecentDateTimeRu(0, "14:00"),
 		wasteTypeRu: "Иглы инъекционные карпульные 30G/27G отсеченные + карпулы анестетика",
 		treatmentMethodRu: "Иглоотсекатель / деструктор игл + хим. дезинфекция Бриллиант Классик 2%",
 		netWeightKg: 1.2,
@@ -470,7 +480,7 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 	},
 	{
 		id: "nd-02",
-		shiftDateRu: "2026-08-28 19:30",
+		shiftDateRu: getRecentDateTimeRu(-1, "19:30"),
 		wasteTypeRu: "Иглы хирургические шовные, лезвия скальпелей, карпулы пустые",
 		treatmentMethodRu: "Механическое разрушение + автоклавирование 134°C (класс Б)",
 		netWeightKg: 0.85,
@@ -480,7 +490,7 @@ const DEFAULT_NEEDLE_DISPOSAL_RECORDS: NeedleDisposalRecord[] = [
 	},
 	{
 		id: "nd-03",
-		shiftDateRu: "2026-08-27 20:00",
+		shiftDateRu: getRecentDateTimeRu(-2, "20:00"),
 		wasteTypeRu: "Отработанные инъекционные карпулы с остатками анестетика и крови",
 		treatmentMethodRu: "Химическое обезвреживание дезсредством в желтом баке",
 		netWeightKg: 1.4,
@@ -580,6 +590,7 @@ export function SanpinRegisters() {
 	const [isKraftModalOpen, setIsKraftModalOpen] = useState(false);
 	const [isJournal257ModalOpen, setIsJournal257ModalOpen] = useState(false);
 	const [isRetroactiveBatchModalOpen, setIsRetroactiveBatchModalOpen] = useState(false);
+	const [isSeniorNurseUnsealOpen, setIsSeniorNurseUnsealOpen] = useState(false);
 	const [isNurseSignModalOpen, setIsNurseSignModalOpen] = useState(false);
 	const [nurseSignName, setNurseSignName] = useState("Медсестра ЦСО");
 	const [nurseSignPin, setNurseSignPin] = useState("");
@@ -1095,10 +1106,10 @@ export function SanpinRegisters() {
 						</span>
 					</button>
 
-					{/* Сканировать крафт-пакет (Камера / 2D сканер) */}
+					{/* Сканировать / Вскрыть крафт-пакет (Камера / 2D сканер / 1-клик смотровой лоток) */}
 					<button
 						type="button"
-						onClick={() => setIsKraftModalOpen(true)}
+						onClick={() => setIsSeniorNurseUnsealOpen(true)}
 						className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -1111,10 +1122,10 @@ export function SanpinRegisters() {
 							whiteSpace: "nowrap",
 						}}
 						data-testid="sanpin-scan-kraft-btn"
-						title="Сканировать крафт-пакет: проверка стерильности и срока годности через камеру или USB-сканер"
+						title="Вскрыть / Сканировать крафт-пакет: 1-клик стандартный лоток, экспресс-сканер камеры 2D DataMatrix или допуск по острой боли"
 					>
 						<Scan size={16} color="var(--brand-primary, #2563eb)" />
-						<span>Сканировать крафт-пакет</span>
+						<span>Вскрыть / Сканировать крафт-пакет</span>
 					</button>
 
 					{/* Dropdown: [⋮ Опции СанПиН] — All secondary actions aggregated cleanly */}
@@ -1364,6 +1375,35 @@ export function SanpinRegisters() {
 								>
 									<Award size={15} color="var(--teal)" />
 									<span>ЭЦП медсестры ЦСО</span>
+								</button>
+
+								{/* Вскрыть крафт-пакет */}
+								<button
+									type="button"
+									onClick={() => {
+										setIsExportMenuOpen(false);
+										setIsSeniorNurseUnsealOpen(true);
+									}}
+									className="sanpin-dropdown-item"
+									style={{
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										padding: "0.5rem 0.75rem",
+										borderRadius: "6px",
+										background: "none",
+										border: "none",
+										width: "100%",
+										textAlign: "left",
+										fontSize: "0.825rem",
+										fontWeight: 600,
+										color: "var(--ink, #0f172a)",
+										cursor: "pointer",
+									}}
+									data-testid="open-senior-nurse-kraft-dropdown-btn"
+								>
+									<Scan size={15} color="var(--teal)" />
+									<span>Вскрыть крафт-пакет (1 клик / сканер)</span>
 								</button>
 
 								{/* Маркировка */}
@@ -1772,6 +1812,12 @@ export function SanpinRegisters() {
 			<KraftPackageModal
 				isOpen={isKraftModalOpen}
 				onClose={() => setIsKraftModalOpen(false)}
+			/>
+
+			{/* Senior Nurse Kraft Package Unseal Modal (1-Click standard tray, acute pain clearance, 2D camera) */}
+			<SeniorNurseKraftUnsealModal
+				isOpen={isSeniorNurseUnsealOpen}
+				onClose={() => setIsSeniorNurseUnsealOpen(false)}
 			/>
 
 			{/* Form 257/u Studio Modal: 5 Chamber Points, BioControl, Analytics */}
