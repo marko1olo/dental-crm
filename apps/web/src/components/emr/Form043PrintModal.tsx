@@ -57,6 +57,7 @@ export interface Form043PrintModalProps {
 	onSave?: (data: MedicalCardForm043uData) => void;
 	readOnly?: boolean;
 	onOpenCmoAudit?: () => void;
+	onOpenProtocolGenerator?: () => void;
 	cmoAuditorName?: string;
 	cmoAuditorRole?: "chief_medical_officer" | "deputy_cmo_qcr" | "medical_commission_chair";
 	isLocked?: boolean;
@@ -215,6 +216,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		onSave,
 		readOnly,
 		onOpenCmoAudit,
+		onOpenProtocolGenerator,
 		cmoAuditorName,
 		cmoAuditorRole,
 		isLocked,
@@ -464,6 +466,63 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		}, [formData]);
 
 		if (!isOpen) return null;
+
+		// Anti-Matryoshka (Sin 6, Mandate 8d): Render child modals sequentially (depth strictly 1).
+		// When CMO Audit or Protocol Generator is active, do NOT stack dialogs on top of each other.
+		if (isCmoAuditOpen) {
+			return (
+				<CmoEmrAuditModal
+					isOpen={true}
+					onClose={() => setIsCmoAuditOpen(false)}
+					records={[currentAuditRecord]}
+					onApproveRecord={(_recId, resolution) => {
+						setCmoResolution(resolution);
+					}}
+					onRejectRecord={(_recId, resolution) => {
+						setCmoResolution(resolution);
+					}}
+					currentAuditorName={cmoAuditorName || formData.clinic.chiefDoctorFullName || "Главный врач"}
+					currentAuditorRole={cmoAuditorRole || "chief_medical_officer"}
+				/>
+			);
+		}
+
+		if (isProtocolGeneratorOpen) {
+			return (
+				<EmrProtocolGeneratorModal
+					isOpen={true}
+					onClose={() => setIsProtocolGeneratorOpen(false)}
+					patientFullName={formData.passport.patientFullName}
+					patientBirthDate={formData.passport.patientBirthDate}
+					medicalCardNumber={formData.passport.medicalCardNumber}
+					doctorFullName={formData.passport.attendingDoctorFullName}
+					doctorSpecialty={formData.passport.attendingDoctorSpecialty}
+					odontogramTeeth={formData.dentalStatus.odontogramTeeth}
+					onApplyDiary={(newDiary) => {
+						setFormData((prev) => {
+							const updated = {
+								...prev,
+								visitDiaries: [newDiary, ...prev.visitDiaries],
+							};
+							onSave?.(updated);
+							return updated;
+						});
+						setIsProtocolGeneratorOpen(false);
+					}}
+					onApplyBatchDiaries={(newDiaries) => {
+						setFormData((prev) => {
+							const updated = {
+								...prev,
+								visitDiaries: [...newDiaries, ...prev.visitDiaries],
+							};
+							onSave?.(updated);
+							return updated;
+						});
+						setIsProtocolGeneratorOpen(false);
+					}}
+				/>
+			);
+		}
 
 		return (
 			<div className="emr043-modal-backdrop" role="dialog" aria-modal="true">
@@ -933,7 +992,14 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												type="button"
 												className="emr043-btn emr043-btn-primary touch-manipulation"
 												style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", background: "linear-gradient(135deg, #0d9488 0%, #059669 100%)", color: "white", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-												onClick={() => setIsProtocolGeneratorOpen(true)}
+												onClick={() => {
+													if (onOpenProtocolGenerator) {
+														onClose();
+														onOpenProtocolGenerator();
+													} else {
+														setIsProtocolGeneratorOpen(true);
+													}
+												}}
 												data-testid="form043-synthesize-diary-btn"
 												title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
 											>
@@ -945,8 +1011,12 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 												className="emr043-btn emr043-btn-secondary touch-manipulation"
 												style={{ minHeight: "44px", padding: "0.45rem 1rem", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
 												onClick={() => {
-													setIsCmoAuditOpen(true);
-													onOpenCmoAudit?.();
+													if (onOpenCmoAudit) {
+														onClose();
+														onOpenCmoAudit();
+													} else {
+														setIsCmoAuditOpen(true);
+													}
 												}}
 											>
 												<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#059669)]" />
@@ -1078,8 +1148,12 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 											className="emr043-btn emr043-btn-primary touch-manipulation"
 											style={{ minHeight: "44px", padding: "0.5rem 1.25rem", fontSize: "0.88rem", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
 											onClick={() => {
-												setIsCmoAuditOpen(true);
-												onOpenCmoAudit?.();
+												if (onOpenCmoAudit) {
+													onClose();
+													onOpenCmoAudit();
+												} else {
+													setIsCmoAuditOpen(true);
+												}
 											}}
 										>
 											<ShieldCheck className="w-4 h-4" />
@@ -1090,53 +1164,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							</div>
 						)}
 					</main>
-
-					{/* ── CMO EMR Quality Audit & Approval Modal ── */}
-					<CmoEmrAuditModal
-						isOpen={isCmoAuditOpen}
-						onClose={() => setIsCmoAuditOpen(false)}
-						records={[currentAuditRecord]}
-						onApproveRecord={(_recId, resolution) => {
-							setCmoResolution(resolution);
-						}}
-						onRejectRecord={(_recId, resolution) => {
-							setCmoResolution(resolution);
-						}}
-						currentAuditorName={cmoAuditorName || formData.clinic.chiefDoctorFullName || "Главный врач"}
-						currentAuditorRole={cmoAuditorRole || "chief_medical_officer"}
-					/>
-
-					{/* ── EMR Form 043/u Clinical Protocol 1-Click Generator Modal ── */}
-					<EmrProtocolGeneratorModal
-						isOpen={isProtocolGeneratorOpen}
-						onClose={() => setIsProtocolGeneratorOpen(false)}
-						patientFullName={formData.passport.patientFullName}
-						patientBirthDate={formData.passport.patientBirthDate}
-						medicalCardNumber={formData.passport.medicalCardNumber}
-						doctorFullName={formData.passport.attendingDoctorFullName}
-						doctorSpecialty={formData.passport.attendingDoctorSpecialty}
-						odontogramTeeth={formData.dentalStatus.odontogramTeeth}
-						onApplyDiary={(newDiary) => {
-							setFormData((prev) => {
-								const updated = {
-									...prev,
-									visitDiaries: [newDiary, ...prev.visitDiaries],
-								};
-								onSave?.(updated);
-								return updated;
-							});
-						}}
-						onApplyBatchDiaries={(newDiaries) => {
-							setFormData((prev) => {
-								const updated = {
-									...prev,
-									visitDiaries: [...newDiaries, ...prev.visitDiaries],
-								};
-								onSave?.(updated);
-								return updated;
-							});
-						}}
-					/>
 				</div>
 			</div>
 		);

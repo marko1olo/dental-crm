@@ -25,7 +25,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
-import { TimesheetT13Modal } from "../../payroll/TimesheetT13Modal";
+import { TimesheetT13Modal, type EmployeeInfo } from "../../payroll/TimesheetT13Modal";
 import {
 	type CabinetDefinition,
 	CLINIC_CABINETS_CATALOG,
@@ -66,6 +66,7 @@ export interface DoctorShiftRosterModalProps {
 	}>;
 	clinicName?: string;
 	onSave?: (shifts: DoctorShift[]) => Promise<void> | void;
+	onOpenT13Timesheet?: () => void;
 }
 
 export function DoctorShiftRosterModal({
@@ -77,6 +78,7 @@ export function DoctorShiftRosterModal({
 	appointments = [],
 	clinicName = 'ООО "Денте Клиник"',
 	onSave,
+	onOpenT13Timesheet,
 }: DoctorShiftRosterModalProps) {
 	// Base date: Monday of current week (defaulting to 2026-08-24)
 	const [weekStartDateIso, setWeekStartDateIso] = useState<string>("2026-08-24");
@@ -141,6 +143,30 @@ export function DoctorShiftRosterModal({
 	const t13Matrix = useMemo(() => {
 		return generateFormT13Matrix(staffList, shifts, selectedYear, selectedMonth);
 	}, [staffList, shifts, selectedYear, selectedMonth]);
+
+	// Form T-13 Employees mapped from real roster staffList (Mandate 8e, 8n)
+	const t13Employees: EmployeeInfo[] = useMemo(() => {
+		return staffList.map((s, index) => {
+			const roleDef = MEDICAL_STAFF_ROLES[s.role];
+			const positionRu = roleDef
+				? roleDef.nameRu
+				: s.isDoctor
+					? "Врач-стоматолог"
+					: "Ассистент врача-стоматолога";
+			const departmentRu = s.isDoctor ? "Лечебное отделение" : "Сестринская служба";
+			const defaultShiftHours = s.isDoctor ? 6.0 : s.role === "assistant" ? 7.8 : 6.0;
+			const tabNumber = s.tabNumber || String(101 + index).padStart(5, "0");
+
+			return {
+				id: s.id,
+				tabNumber,
+				name: s.fullName,
+				positionRu,
+				departmentRu,
+				defaultShiftHours,
+			};
+		});
+	}, [staffList]);
 
 	// Overall KPIs
 	const kpis = useMemo(() => {
@@ -354,6 +380,19 @@ export function DoctorShiftRosterModal({
 	};
 
 	if (!isOpen) return null;
+
+	// Anti-Matryoshka (Sin 6, Mandate 8d): Render TimesheetT13Modal sequentially (depth strictly 1).
+	// When T-13 interactive timesheet is open, do NOT render roster backdrop/container under it.
+	if (isT13ModalOpen) {
+		return (
+			<TimesheetT13Modal
+				isOpen={true}
+				onClose={() => setIsT13ModalOpen(false)}
+				clinicName={clinicName}
+				employees={t13Employees}
+			/>
+		);
+	}
 
 	return (
 		<div className="roster-modal-overlay" role="dialog" aria-modal="true" aria-label="Студия графиков сменности">
@@ -782,14 +821,32 @@ export function DoctorShiftRosterModal({
 										Норма: {monthNormObj?.normHours33 || 138.6} ч (врачи: 33 ч/нед, ассистенты: 39 ч/нед)
 									</span>
 								</div>
-								<button
-									type="button"
-									className="roster-btn roster-btn-secondary"
-									onClick={handleExportT13}
-								>
-									<Download size={16} />
-									<span>Скачать CSV (Excel / 1C)</span>
-								</button>
+								<div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+									<button
+										type="button"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => {
+											if (onOpenT13Timesheet) {
+												onClose();
+												onOpenT13Timesheet();
+											} else {
+												setIsT13ModalOpen(true);
+											}
+										}}
+										title="Открыть интерактивный табель Форма Т-13"
+									>
+										<CalendarIcon size={16} />
+										<span>Интерактивный табель Т-13</span>
+									</button>
+									<button
+										type="button"
+										className="roster-btn roster-btn-secondary"
+										onClick={handleExportT13}
+									>
+										<Download size={16} />
+										<span>Скачать CSV (Excel / 1C)</span>
+									</button>
+								</div>
 							</div>
 
 							<div className="t13-table-wrapper">
@@ -1174,14 +1231,6 @@ export function DoctorShiftRosterModal({
 					</div>
 				</div>
 			</div>
-
-			{/* Form T-13 Statutory Timesheet Modal */}
-			{isT13ModalOpen && (
-				<TimesheetT13Modal
-					isOpen={isT13ModalOpen}
-					onClose={() => setIsT13ModalOpen(false)}
-				/>
-			)}
 		</div>
 	);
 }

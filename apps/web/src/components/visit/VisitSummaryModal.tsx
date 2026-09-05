@@ -118,6 +118,7 @@ export interface VisitSummaryModalProps {
 	onOpenRadiologyReferral?: () => void;
 	onOpenEgiszExport?: () => void;
 	onApplySynthesizedDiary?: (diary: VisitDiaryEntry043) => void;
+	onOpenProtocolGenerator?: () => void;
 	onScheduleNextVisit?: () => void;
 	onCompleteVisit?: () => void;
 }
@@ -152,6 +153,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 	onOpenRadiologyReferral,
 	onOpenEgiszExport,
 	onApplySynthesizedDiary,
+	onOpenProtocolGenerator,
 	onScheduleNextVisit,
 	onCompleteVisit,
 }) => {
@@ -267,6 +269,101 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 		const s = (t.state || "").toLowerCase();
 		return s !== "healthy" && s !== "" && s !== "0";
 	});
+
+	// Anti-Matryoshka (Sin 6, Mandate 8d): Render sequentially with depth strictly 1.
+	// When protocol generator or next stage appointment modal is open, do NOT stack dialogs on top of each other.
+	if (isProtocolGeneratorOpen) {
+		return (
+			<EmrProtocolGeneratorModal
+				isOpen={true}
+				onClose={() => setIsProtocolGeneratorOpen(false)}
+				patientFullName={patientName !== "—" ? patientName : undefined}
+				patientBirthDate={patientBirth || undefined}
+				medicalCardNumber={patientCard || undefined}
+				initialToothNumber={diary.diagnosisTooth || (abnormalTeeth[0] ? String(abnormalTeeth[0].toothNumber) : undefined)}
+				initialIcd10Code={diary.diagnosisIcd10 || undefined}
+				initialSurfaces={(abnormalTeeth[0]?.surfaces as ToothSurface[]) || undefined}
+				doctorFullName={doctorName !== "—" ? (doctorName ?? undefined) : undefined}
+				doctorSpecialty={doctorSpecialty ?? undefined}
+				odontogramTeeth={mappedOdontogramTeeth}
+				onApplyDiary={(synthesized) => {
+					setSynthesizedDiaryPreview(synthesized);
+					if (onApplySynthesizedDiary) {
+						onApplySynthesizedDiary(synthesized);
+					}
+					setIsProtocolGeneratorOpen(false);
+				}}
+			/>
+		);
+	}
+
+	if (isNextStageModalOpen) {
+		return (
+			<AppointmentModal
+				isOpen={true}
+				appointment={nextVisitDraft}
+				dashboard={appLogic?.dashboard || { patients: [patient].filter(Boolean), clinicSettings: { staff: [], chairs: [] } }}
+				onClose={() => setIsNextStageModalOpen(false)}
+				onSave={async (appointmentId, draft) => {
+					try {
+						const res = await fetch("/api/appointments", {
+							method: "POST",
+							headers: appLogic?.auth?.scheduleMutationHeaders
+								? appLogic.auth.scheduleMutationHeaders({ "Content-Type": "application/json" })
+								: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+							body: JSON.stringify({
+								patientId: draft.patientId,
+								doctorUserId: draft.doctorUserId,
+								assistantUserId: draft.assistantUserId,
+								chairId: draft.chairId,
+								startsAt: draft.startsAt,
+								endsAt: draft.endsAt,
+								status: draft.status,
+								reason: draft.reason,
+								comment: draft.comment,
+								clientMutationId: `next-visit-${Date.now()}`,
+							}),
+						});
+						if (!res.ok) {
+							showToast("Не удалось записать пациента на прием", "error");
+							return false;
+						}
+						const nextDash = await res.json();
+						if (appLogic?.setDashboard) appLogic.setDashboard(nextDash);
+						showToast("Пациент успешно записан на следующий этап!", "success", 4000);
+						setIsNextStageModalOpen(false);
+						return true;
+					} catch {
+						showToast("Ошибка сохранения записи", "error");
+						return false;
+					}
+				}}
+				patientName={(patients, pid) => {
+					const found = (patients || []).find((p: any) => p.id === pid);
+					return found?.fullName || patientName || "Пациент";
+				}}
+				formatTime={(iso) => (iso ? iso.slice(11, 16) : "10:00")}
+				toDateTimeLocalValue={(iso) => {
+					if (!iso) return "";
+					return iso.slice(0, 16);
+				}}
+				fromDateTimeLocalValue={(val) => {
+					if (!val) return new Date().toISOString();
+					return new Date(val).toISOString();
+				}}
+				appointmentLabels={{
+					planned: "Запланирован",
+					confirmed: "Подтвержден",
+					arrived: "Пришел",
+					in_treatment: "В кресле",
+					completed: "Завершен",
+					cancelled: "Отменен",
+					no_show: "Не явился",
+				}}
+				activeVisitLockedAppointmentStatuses={new Set()}
+			/>
+		);
+	}
 
 	return createPortal(
 		<div
@@ -504,6 +601,7 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							type="button"
 							onClick={() => {
 								if (onScheduleNextVisit) {
+									onClose();
 									onScheduleNextVisit();
 								} else {
 									const d = new Date();
@@ -535,7 +633,14 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						</button>
 						<button
 							type="button"
-							onClick={() => setIsProtocolGeneratorOpen(true)}
+							onClick={() => {
+								if (onOpenProtocolGenerator) {
+									onClose();
+									onOpenProtocolGenerator();
+								} else {
+									setIsProtocolGeneratorOpen(true);
+								}
+							}}
 							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
 							data-testid="summary-synthesize-protocol-btn"
 						>
@@ -783,7 +888,14 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					<div className="flex flex-wrap items-center gap-2">
 						<button
 							type="button"
-							onClick={() => setIsProtocolGeneratorOpen(true)}
+							onClick={() => {
+								if (onOpenProtocolGenerator) {
+									onClose();
+									onOpenProtocolGenerator();
+								} else {
+									setIsProtocolGeneratorOpen(true);
+								}
+							}}
 							className="inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[48px] rounded-xl border border-[var(--teal,var(--line))]/40 bg-[var(--teal-surface)] text-[var(--teal,var(--brand-primary))] text-sm font-bold hover:bg-[var(--teal-soft,var(--paper-soft))] transition-colors cursor-pointer"
 							title="Сформировать дневник 043/у по МКБ-10 и формуле зубов"
 							data-testid="summary-open-protocol-generator-btn"
@@ -870,93 +982,6 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 					</div>
 				</div>
 			</div>
-
-			{/* EMR Form 043/u Clinical Protocol 1-Click Generator Modal */}
-			<EmrProtocolGeneratorModal
-				isOpen={isProtocolGeneratorOpen}
-				onClose={() => setIsProtocolGeneratorOpen(false)}
-				patientFullName={patientName !== "—" ? patientName : undefined}
-				patientBirthDate={patientBirth || undefined}
-				medicalCardNumber={patientCard || undefined}
-				initialToothNumber={diary.diagnosisTooth || (abnormalTeeth[0] ? String(abnormalTeeth[0].toothNumber) : undefined)}
-				initialIcd10Code={diary.diagnosisIcd10 || undefined}
-				initialSurfaces={(abnormalTeeth[0]?.surfaces as ToothSurface[]) || undefined}
-				doctorFullName={doctorName !== "—" ? (doctorName ?? undefined) : undefined}
-				doctorSpecialty={doctorSpecialty ?? undefined}
-				odontogramTeeth={mappedOdontogramTeeth}
-				onApplyDiary={(synthesized) => {
-					setSynthesizedDiaryPreview(synthesized);
-					if (onApplySynthesizedDiary) {
-						onApplySynthesizedDiary(synthesized);
-					}
-				}}
-			/>
-
-			{/* Document Customizer Drawer Modal */}
-			{/* Quick Next Visit Scheduler Modal */}
-			<AppointmentModal
-				isOpen={isNextStageModalOpen}
-				appointment={nextVisitDraft}
-				dashboard={appLogic?.dashboard || { patients: [patient].filter(Boolean), clinicSettings: { staff: [], chairs: [] } }}
-				onClose={() => setIsNextStageModalOpen(false)}
-				onSave={async (appointmentId, draft) => {
-					try {
-						const res = await fetch("/api/appointments", {
-							method: "POST",
-							headers: appLogic?.auth?.scheduleMutationHeaders
-								? appLogic.auth.scheduleMutationHeaders({ "Content-Type": "application/json" })
-								: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-							body: JSON.stringify({
-								patientId: draft.patientId,
-								doctorUserId: draft.doctorUserId,
-								assistantUserId: draft.assistantUserId,
-								chairId: draft.chairId,
-								startsAt: draft.startsAt,
-								endsAt: draft.endsAt,
-								status: draft.status,
-								reason: draft.reason,
-								comment: draft.comment,
-								clientMutationId: `next-visit-${Date.now()}`,
-							}),
-						});
-						if (!res.ok) {
-							showToast("Не удалось записать пациента на прием", "error");
-							return false;
-						}
-						const nextDash = await res.json();
-						if (appLogic?.setDashboard) appLogic.setDashboard(nextDash);
-						showToast("Пациент успешно записан на следующий этап!", "success", 4000);
-						setIsNextStageModalOpen(false);
-						return true;
-					} catch {
-						showToast("Ошибка сохранения записи", "error");
-						return false;
-					}
-				}}
-				patientName={(patients, pid) => {
-					const found = (patients || []).find((p: any) => p.id === pid);
-					return found?.fullName || patientName || "Пациент";
-				}}
-				formatTime={(iso) => (iso ? iso.slice(11, 16) : "10:00")}
-				toDateTimeLocalValue={(iso) => {
-					if (!iso) return "";
-					return iso.slice(0, 16);
-				}}
-				fromDateTimeLocalValue={(val) => {
-					if (!val) return new Date().toISOString();
-					return new Date(val).toISOString();
-				}}
-				appointmentLabels={{
-					planned: "Запланирован",
-					confirmed: "Подтвержден",
-					arrived: "Пришел",
-					in_treatment: "В кресле",
-					completed: "Завершен",
-					cancelled: "Отменен",
-					no_show: "Не явился",
-				}}
-				activeVisitLockedAppointmentStatuses={new Set()}
-			/>
 
 			{/* Zoom Lightbox Modal */}
 			{zoomImage && (
