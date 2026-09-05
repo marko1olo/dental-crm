@@ -428,3 +428,42 @@
 - **Тесты**:
   - `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (31 сценарий тестов, 100% passing)
 
+#### 2.10.43. ЗТЛ и ортопедия: отвязывание себестоимости от клинического наряда у кресла и 4-шаговый рабочий процесс (Мандаты 8e, 8i, 8k, 8n / Ортопедия и ЗТЛ)
+- **Суть и домен**: Полная декомпозиция финансовой себестоимости лаборатории и наряда врача-ортопеда у кресла. Клинический наряд в `DentalLabOrderModal.tsx` редуцирован ровно до 4 рабочих шагов: 1. Зубы и Конструкция, 2. Расцветка VITA и Культя, 3. Этапы ЗТЛ и Примерки, 4. Бланк наряда (ГОСТ) и QR. Вкладка себестоимости (`pricing`) вынесена из наряда у кресла в бэк-офис ЗТЛ. Из `DentalLabRestorationTab.tsx` полностью удален остаточный Exocad-блоат: лабораторные микро-ползунки цементного зазора в микронах (10–100 мкм), схемы окклюзии Доусона и плотность контактов. В печатном бланке ГОСТ (`DentalLabPrintBlank.tsx`) зафиксированы клинические ориентиры: «В привычной окклюзии (по силиконовому регистрату / шаблону)» и «Естественная анатомическая форма, физиологический контакт».
+- **Фронтенд**:
+  - `apps/web/src/components/lab/DentalLabOrderModal.tsx`, `DentalLabPrintBlank.tsx`, `DentalLabRestorationTab.tsx` (коммит `93e7b9884`).
+- **Тесты**:
+  - `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (блок `Chairside Clinical Order Architecture (Mandates 8e, 8i, 8k, 8n)`, 100% passing).
+
+#### 2.10.44. Склад: мягкий овердрафт при списании материалов по акту оказанных услуг (Мандаты 8e п. 10, 8n п. 2 / Склад и Акты)
+- **Суть и домен**: Устранение системных тупиков (Zero Dead-Ends) при списании материалов и проведении актов оказанных услуг. Задержка оприходования накладной поставщика не блокирует проведение акта сдачи-приемки на стойке администратора или у соло-врача. В `TreatmentPlanCompletedActPrint.tsx` снята блокировка `disabled={isExecuting || hasDeficit}`, кнопка преобразуется в «Провести списание (Мягкий овердрафт склада)» с предупреждающим бейджем. Предупреждения об аварийном списании в минус унифицированы в модальных окнах `ProcedureMaterialDeductionModal.tsx` и `ClinicalWriteoffModal.tsx` без выбивания ошибок.
+- **Бэкенд**:
+  - `apps/api/src/services/treatmentConsumablesService.ts`, миграция PostgreSQL 18 `0198_stock_warehouses_fefo_batches_and_bom.sql`.
+- **Фронтенд**:
+  - `apps/web/src/components/treatment-plans/TreatmentPlanCompletedActPrint.tsx`, `ProcedureMaterialDeductionModal.tsx`, `ClinicalWriteoffModal.tsx`, `NurseCarpuleDisposalModal.tsx` (коммит `fd9fd00a2`).
+- **Тесты**:
+  - `apps/web/src/components/treatment-plans/__tests__/softWarehouseOverdraft.test.ts` (5 тестов soft overdraft, 100% passing).
+
+#### 2.10.45. Клинический фотопротокол: ликвидация псевдонаучной пипетки VITA RGB и DSD-оверлеев в пользу эталонных шкал и чистых ортопедических ориентиров (Мандаты 8i, 8k / Фотопротокол)
+- **Суть и домен**: Очистка стоматологического фотопротокола от псевдонаучного оверинжиниринга. Из `photoProtocolMath.ts` полностью ликвидирована процедурная функция `findClosestVitaShade`, вычислявшая оттенок зуба по пикселям JPEG со смартфона (симулировавшая Delta-E с непредсказуемым освещением). Внедрена работа с физическими эталонами шкал VITA Classical (16 базовых + 4 Bleach BL1..BL4) и VITA 3D-Master (29 образцов) с точным спектральным расчетом $\Delta E_{00}$ (CIEDE2000) и $\Delta E_{76}$ между физическими вкладками. В `IncisalAlignmentGuideOverlay.tsx` удалены эстетические кривые золотого сечения и DSD-сетки; оставлены 4 чистых ортопедических ориентира: бипупиллярная линия, крен резцовой линии, средняя линия лица и правило третей. Сплит-вайпер «до/после» с поддержкой скролла и клавиатуры.
+- **Фронтенд**:
+  - `apps/web/src/components/photography/photoProtocolMath.ts`, `IncisalAlignmentGuideOverlay.tsx`, `PhotoCalibrationDrawer.tsx`, `BeforeAfterComparisonView.tsx` (коммит `4eccacca8`).
+- **Тесты**:
+  - `apps/web/src/components/photography/__tests__/photoProtocolSanity.test.ts` (10 тестов), `apps/web/src/tests/photoProtocol.test.ts`, `photoProtocolAdvanced.test.ts` (100% passing).
+
+#### 2.10.46. Пародонтология: экспресс-скрининг PSR в 1 клик, пресеты нормы пародонта и отключение клавиатурного тренажера (Мандаты 8e, 8k / Пародонтология)
+- **Суть и домен**: Быстрая фиксация статуса пародонта без навязывания ручного процедурного тренажера 192 точек карманов Florida Probe на рутинном приёме терапевта или гигиениста. Добавлены 1-клик пресеты: «Норма пародонта» (1–2 мм, 0% кровоточивости, PSR 0), «Гингивит» (2–3 мм, камень, кровоточивость, PSR 2), «Пародонтит ср. ст.» (5 мм, рецессия 1 мм, фуркация I, PSR 3*). Реализован посекстантный экспресс-скрининг PSR (S1..S6) по шкале ВОЗ (коды 0..4 и `*`). Перехват Numpad-клавиатуры выключен по умолчанию (`perio-probe-keyboard-toggle`), `tabIndex="-1"` предотвращает паразитный фокус. Генерация протокола Формы 043/у по МКБ-10 (K05.0, K05.1, K05.3) в 1 клик.
+- **Фронтенд**:
+  - `apps/web/src/components/perio/PeriodontogramChart.tsx`, `perioMath.ts`, `index.ts` (коммит `7475c0351`).
+- **Тесты**:
+  - `apps/web/src/components/perio/__tests__/periodontalQuickScreening.test.ts` (14 тестов, 100% passing).
+
+#### 2.10.47. Клиника и ЭМК: автономия всех врачей-специалистов при подписании Формы 043/у, обобщенный МКБ-10 пародонта и автосоздание кресла для соло-врача (Мандаты 8e, 8i, 8n / EHR & Соло-врач)
+- **Суть и домен**: Устранение бюрократических препонов при ведении амбулаторной истории болезни. Вспомогательная функция `isDoctorOrClinicalSigner` на бэкенде дневников расширяет право подписи, блокировки и ревизии записей 043/у на всех врачей-специалистов (`therapist`, `surgeon`, `orthopedist`, `orthodontist`, `periodontist`, `implantologist`, `hygienist`, `radiologist`, `cmo`, `chief_doctor`, `head_doctor`, `owner`) без 403 Forbidden. В `VisitDiarySection.tsx` удалена блокировка `diaryUnread`: поля не блокируются при сетевой загрузке, врач сразу начинает ввод с локальным автосохранением. В `Icd10ClinicalValidator.ts` рубрика K05 (болезни пародонта) переведена в категорию генерализованных заболеваний без обязательного зуба FDI. В `routes/visits.ts` добавлена автоинициализация сущностей клиники и «Кресло 1» при старте работы соло-врача на субаренде. В `DocumentQuickRoleScenarios.tsx` удален госпитальный термин «Госпитализация» («СанПиН, ЭЛН и Экспертиза»).
+- **Бэкенд**:
+  - `apps/api/src/routes/diary.ts`, `apps/api/src/routes/visits.ts`, `apps/api/src/services/clinical/Icd10ClinicalValidator.ts` (коммит `d1d06b473`).
+- **Фронтенд**:
+  - `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/documents/DocumentQuickRoleScenarios.tsx` (коммит `d1d06b473`).
+- **Тесты**:
+  - `apps/api/src/routes/__tests__/diaryClinicalRoles.test.ts`, `apps/api/src/services/clinical/Icd10ClinicalValidator.test.ts` (100% passing).
+
