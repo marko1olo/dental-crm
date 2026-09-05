@@ -300,7 +300,7 @@ export function AnesthesiaPkuDisposalModal({
 			disinfectantNameRu: 'Аламинол 3%',
 			disinfectantExposureMinutes: 60,
 			assistantSignatureConfirmed: true,
-			notesRu: '⚡ Списание использованных карпул за смену произведено медсестрой единолично в 1 клик (СанПиН 3.3686-21, без бюрократической комиссии начмедов).'
+			notesRu: 'Списание использованных карпул за смену произведено медсестрой единолично в 1 клик (СанПиН 3.3686-21, без бюрократической комиссии начмедов).'
 		});
 
 		const shiftAct = generateAnesthesiaPkuDisposalAct(shiftBatchRecord);
@@ -360,7 +360,7 @@ export function AnesthesiaPkuDisposalModal({
 							title="Списать использованные карпулы за смену (1 клик, СанПиН 3.3686-21)"
 						>
 							<Zap size={14} color="#fff" />
-							<span>⚡ Списать за смену (1 клик)</span>
+							<span>Списать за смену (1 клик)</span>
 						</button>
 
 						<button
@@ -424,7 +424,7 @@ export function AnesthesiaPkuDisposalModal({
 								title="Списать использованные карпулы за смену (1 клик)"
 							>
 								<Zap size={13} color="var(--teal, #0d9488)" />
-								<span>⚡ Пакетное списание за смену</span>
+								<span>Пакетное списание за смену</span>
 							</button>
 						</div>
 
@@ -741,7 +741,6 @@ export function AnesthesiaPkuDisposalModal({
 								onChange={e => {
 									setSelectedDrugId(e.target.value as AnestheticDrugId);
 									setCustomDrugTradeName('');
-									setActivePresetKey(null);
 								}}
 								className="hub-select"
 							>
