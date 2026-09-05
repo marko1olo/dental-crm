@@ -41,11 +41,17 @@ import {
 	Trash2,
 	UploadCloud,
 	X,
+	Zap,
 	ZoomIn,
 	ZoomOut,
 } from "lucide-react";
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+	RADIOLOGY_STANDARD_PROTOCOLS,
+	applyRadiologyProtocolToForm043,
+	type RadiologyProtocolPreset,
+} from "./radiologyProtocols";
 import {
 	ADULT_FDI_TEETH,
 	calculateCaliperRidgeDimensions,
@@ -161,10 +167,28 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	const [isNervesAccordionOpen, setIsNervesAccordionOpen] = useState<boolean>(false);
 	const [isFiltersMenuOpen, setIsFiltersMenuOpen] = useState<boolean>(false);
 	const [isNormaApplied, setIsNormaApplied] = useState<boolean>(false);
+	const [isProtocolsDropdownOpen, setIsProtocolsDropdownOpen] = useState<boolean>(false);
+	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
+	const protocolsDropdownRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		setIsNormaApplied(false);
+		setAppliedProtocolId(null);
 	}, [study?.id]);
+
+	useEffect(() => {
+		if (!isProtocolsDropdownOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				protocolsDropdownRef.current &&
+				!protocolsDropdownRef.current.contains(e.target as Node)
+			) {
+				setIsProtocolsDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isProtocolsDropdownOpen]);
 
 	const activeImageUrl = loadedImageUrl !== null ? loadedImageUrl : (study?.imageUrl || "");
 	const isImageLoaded = Boolean(activeImageUrl) && !isDropzoneOpen;
@@ -654,6 +678,16 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				: "";
 		const normaStatement = `Рентгенологическое исследование (${modalityLabel})${teethList}: норма. Патологических изменений костной ткани, очагов деструкции, остеопороза и склероза не выявлено. Кортикальные пластинки непрерывны, периодонтальная щель прослеживается на всем протяжении.`;
 
+		applyRadiologyProtocolToForm043({
+			protocol: normaStatement,
+			options: {
+				teethFdi: study?.teethFdi,
+				modalityLabel,
+			},
+			onInsertToProtocol,
+			showNotification: false,
+		});
+
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => {
 				const current = prev.objectiveStatus || "";
@@ -675,11 +709,32 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		}
 
 		setIsNormaApplied(true);
+		setAppliedProtocolId("norma");
 		showToast(
 			"Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у",
 			"success",
 		);
 	}, [modalityLabel, study?.teethFdi, onInsertToProtocol]);
+
+	const handleApplyProtocol = useCallback(
+		(preset: RadiologyProtocolPreset) => {
+			applyRadiologyProtocolToForm043({
+				protocol: preset,
+				options: {
+					teethFdi: study?.teethFdi,
+					modalityLabel,
+				},
+				onInsertToProtocol,
+				showNotification: true,
+			});
+			setAppliedProtocolId(preset.id);
+			if (preset.id === "norma") {
+				setIsNormaApplied(true);
+			}
+			setIsProtocolsDropdownOpen(false);
+		},
+		[modalityLabel, study?.teethFdi, onInsertToProtocol],
+	);
 
 	const modalContent = (
 		<div
@@ -757,6 +812,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 
 				{/* Right: Action Buttons (>= 44x44px touch targets) */}
 				<div className="flex items-center gap-2">
+					{/* 1-Click Norma Button (Mandate 8e) */}
 					<button
 						type="button"
 						onClick={handleInsertNormaTo043}
@@ -765,18 +821,82 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								? "bg-emerald-600/20 border border-emerald-500 text-emerald-400"
 								: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-emerald-500 text-[var(--ink,#cbd5e1)] hover:text-emerald-400"
 						}`}
-						title="Внести заключение «Норма: патологии на снимке не выявлено» в дневник 043/у"
+						title="Внести заключение «Рентген-норма» в дневник 043/у"
 						data-testid="radiology-norma-043-btn"
 					>
 						{isNormaApplied ? (
 							<CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
 						) : (
-							<Check className="w-4 h-4 text-emerald-400 shrink-0" />
+							<Zap className="w-4 h-4 text-amber-400 shrink-0" />
 						)}
 						<span className="hidden sm:inline">
-							{isNormaApplied ? "Норма внесена" : "⚡ Норма (043/у)"}
+							{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}
 						</span>
 					</button>
+
+					{/* 1-Click Protocols Menu Dropdown (Mandate 8e, 8i, 8k) */}
+					<div className="relative" ref={protocolsDropdownRef}>
+						<button
+							type="button"
+							onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
+							className={`flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-2.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 cursor-pointer ${
+								isProtocolsDropdownOpen
+									? "bg-[var(--teal-surface)] border-2 border-[var(--teal)] text-[var(--teal)]"
+									: "bg-[var(--paper,#1e293b)] border border-[var(--line,#334155)] hover:border-[var(--teal-soft)] text-[var(--ink,#cbd5e1)] hover:text-[var(--teal)]"
+							}`}
+							title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
+							aria-label="Выбрать рентгенологический протокол"
+							data-testid="radiology-protocols-menu-btn"
+						>
+							<FileText className="w-4 h-4 text-[var(--teal)] shrink-0" />
+							<span className="hidden xl:inline">Протоколы 043/у</span>
+							<ChevronDown
+								className={`w-3.5 h-3.5 transition-transform duration-200 ${
+									isProtocolsDropdownOpen ? "rotate-180" : ""
+								}`}
+							/>
+						</button>
+
+						{isProtocolsDropdownOpen && (
+							<div
+								className="absolute right-0 top-full mt-1.5 z-50 w-72 sm:w-80 rounded-2xl bg-slate-900 border border-slate-700 shadow-2xl p-2 flex flex-col gap-1 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+								role="menu"
+								aria-orientation="vertical"
+							>
+								<div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 flex items-center justify-between">
+									<span>Протоколы (Форма 043/у)</span>
+									<span className="text-[10px] text-teal-400 font-mono">1 клик</span>
+								</div>
+								{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
+									<button
+										key={preset.id}
+										type="button"
+										onClick={() => handleApplyProtocol(preset)}
+										className={`w-full min-h-[44px] text-left p-2 rounded-xl transition-all flex flex-col justify-center gap-0.5 cursor-pointer ${
+											appliedProtocolId === preset.id
+												? "bg-teal-950/80 border border-teal-500 text-teal-300"
+												: "hover:bg-slate-800 text-slate-200"
+										}`}
+										title={preset.text}
+										data-testid={`btn-apply-protocol-${preset.id}`}
+									>
+										<div className="flex items-center justify-between text-xs font-bold">
+											<span className="flex items-center gap-1.5">
+												<Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+												{preset.titleRu}
+											</span>
+											{appliedProtocolId === preset.id && (
+												<Check className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+											)}
+										</div>
+										<p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+											{preset.text}
+										</p>
+									</button>
+								))}
+							</div>
+						)}
+					</div>
 
 					<button
 						type="button"
@@ -880,7 +1000,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 				{/* ── TOOLBAR (Floating Cyber Dock: 5 Key Essential Tools + Filters Menu) ── */}
 				<nav
 					aria-label="Инструменты управления просмотрщиком"
-					className={`absolute left-2 sm:left-3 top-14 sm:top-4 z-40 w-11 flex flex-col items-center gap-1 p-1 rounded-xl bg-slate-900/95 border border-slate-700/70 shadow-2xl backdrop-blur-md ${
+					className={`absolute left-2 sm:left-3 top-14 sm:top-4 z-40 w-12 flex flex-col items-center gap-1 p-1 rounded-xl bg-slate-900/95 border border-slate-700/70 shadow-2xl backdrop-blur-md ${
 						!activeImageUrl || isDropzoneOpen
 							? "hidden md:flex"
 							: isMobileToolbarExpanded
@@ -899,7 +1019,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveCaliperStart(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "pan"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -921,7 +1041,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setIsControlsExpanded((prev) => !prev);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								isControlsExpanded
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -945,7 +1065,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setPendingLandmarkPos(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								activeTool === "ruler"
 									? "bg-teal-950/70 border-2 border-teal-400 text-teal-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -964,7 +1084,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={() => setInvert((prev) => !prev)}
-							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								invert
 									? "bg-amber-950/70 border-2 border-amber-400 text-amber-300 shadow-sm"
 									: "bg-slate-800/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-700"
@@ -983,7 +1103,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 							type="button"
 							disabled={!isImageLoaded}
 							onClick={handleResetAll}
-							className="min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+							className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center bg-rose-950/40 border border-rose-800/50 text-rose-300 hover:bg-rose-900/60 hover:text-rose-100 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
 							title="[Сброс] — Сбросить все настройки снимка и положение (0)"
 							aria-label="Сброс всех настроек снимка"
 							data-testid="tool-reset-all-btn"
@@ -1001,7 +1121,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setIsFiltersMenuOpen((prev) => !prev);
 								setIsControlsExpanded(false);
 							}}
-							className={`min-h-[44px] min-w-[44px] sm:w-8 sm:h-8 sm:min-h-0 sm:min-w-0 rounded-lg flex flex-col items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+							className={`w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg flex flex-col items-center justify-center border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
 								isFiltersMenuOpen ||
 								activeTool === "caliper" ||
 								activeTool === "nerve_tracer" ||
@@ -1048,7 +1168,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setPendingLandmarkPos(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+							className={`w-full min-h-[44px] flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
 								activeTool === "caliper"
 									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
 									: "hover:bg-slate-800 text-slate-200"
@@ -1075,7 +1195,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setPendingLandmarkPos(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+							className={`w-full min-h-[44px] flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
 								activeTool === "nerve_tracer"
 									? "bg-amber-950/80 border border-amber-400 text-amber-300 font-bold"
 									: "hover:bg-slate-800 text-slate-200"
@@ -1105,7 +1225,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setActiveCaliperStart(null);
 								setIsFiltersMenuOpen(false);
 							}}
-							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+							className={`w-full min-h-[44px] flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
 								activeTool === "landmark"
 									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
 									: "hover:bg-slate-800 text-slate-200"
@@ -1128,7 +1248,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setRotation((prev) => (prev + 90) % 360)}
-							className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-800 text-slate-200 transition-all cursor-pointer"
+							className="w-full min-h-[44px] flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-800 text-slate-200 transition-all cursor-pointer"
 							title={`Поворот по часовой стрелке 90° (R) — текущий: ${rotation}°`}
 							data-testid="tool-rotate-btn"
 						>
@@ -1143,7 +1263,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setFlipH((prev) => !prev)}
-							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+							className={`w-full min-h-[44px] flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
 								flipH
 									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
 									: "hover:bg-slate-800 text-slate-200"
@@ -1162,7 +1282,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setFlipV((prev) => !prev)}
-							className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
+							className={`w-full min-h-[44px] flex items-center justify-between px-2.5 py-2 rounded-xl transition-all cursor-pointer ${
 								flipV
 									? "bg-teal-950/80 border border-teal-400 text-teal-300 font-bold"
 									: "hover:bg-slate-800 text-slate-200"
@@ -1188,7 +1308,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 								setIsDropzoneOpen(true);
 								setIsFiltersMenuOpen(false);
 							}}
-							className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-800 text-slate-200 transition-all cursor-pointer border-t border-slate-700/70 mt-0.5 pt-1.5"
+							className="w-full min-h-[44px] flex items-center justify-between px-2.5 py-2 rounded-xl hover:bg-slate-800 text-slate-200 transition-all cursor-pointer border-t border-slate-700/70 mt-0.5 pt-1.5"
 							title="Загрузить другой снимок (DICOM / RVG)"
 							data-testid="viewer-toggle-dropzone-btn"
 						>
@@ -1803,10 +1923,20 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 															<X className="w-3.5 h-3.5" />
 														</button>
 													</div>
-													<div className={`text-[9px] font-semibold ${
+													<div className={`text-[9px] font-semibold flex items-center gap-1 ${
 														caliper.implantFeasibility.isAdequate ? "text-emerald-400" : "text-amber-400"
 													}`}>
-														{caliper.implantFeasibility.isAdequate ? "✓ Кость достаточна" : "⚠️ Дефицит кости"}
+														{caliper.implantFeasibility.isAdequate ? (
+															<>
+																<Check className="w-2.5 h-2.5 inline shrink-0" />
+																<span>Кость достаточна</span>
+															</>
+														) : (
+															<>
+																<AlertTriangle className="w-2.5 h-2.5 inline shrink-0" />
+																<span>Дефицит кости</span>
+															</>
+														)}
 													</div>
 												</div>
 											</foreignObject>
@@ -2106,6 +2236,47 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 												))}
 											</div>
 										)}
+									</div>
+								</div>
+
+								{/* Быстрые рентген-протоколы (Форма 043/у) — Мандат 8e п. 11, 8i, 8k */}
+								<div className="flex flex-col gap-2 p-3.5 rounded-2xl bg-[var(--paper,#020617)] border border-[var(--line,#1e293b)]">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-bold text-[var(--muted,#94a3b8)] uppercase tracking-wider flex items-center gap-1.5">
+											<Zap className="w-3.5 h-3.5 text-amber-400" />
+											Протоколы для 043/у (1 клик):
+										</span>
+										<span className="text-[10px] text-[var(--teal)] font-mono font-bold">Мандат 8e</span>
+									</div>
+									<div className="grid grid-cols-1 gap-1.5">
+										{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
+											<button
+												key={preset.id}
+												type="button"
+												onClick={() => handleApplyProtocol(preset)}
+												className={`w-full min-h-[44px] text-left p-2.5 rounded-xl border text-xs transition-all flex items-start justify-between gap-2 cursor-pointer ${
+													appliedProtocolId === preset.id
+														? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal)] font-bold"
+														: "bg-[var(--paper-soft,#0f172a)] border-[var(--line,#334155)] text-[var(--ink,#cbd5e1)] hover:text-white hover:border-[var(--teal-soft)]"
+												}`}
+												title={preset.text}
+												data-testid={`drawer-protocol-${preset.id}`}
+											>
+												<div className="flex flex-col gap-0.5 min-w-0">
+													<div className="font-bold flex items-center gap-1">
+														<span>{preset.titleRu}</span>
+													</div>
+													<span className="text-[11px] text-[var(--muted,#94a3b8)] line-clamp-1">
+														{preset.text}
+													</span>
+												</div>
+												{appliedProtocolId === preset.id ? (
+													<CheckCircle2 className="w-4 h-4 text-[var(--teal)] shrink-0 mt-0.5" />
+												) : (
+													<Check className="w-4 h-4 text-[var(--muted,#94a3b8)] shrink-0 mt-0.5" />
+												)}
+											</button>
+										))}
 									</div>
 								</div>
 

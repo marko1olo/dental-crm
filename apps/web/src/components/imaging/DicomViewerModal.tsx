@@ -5,9 +5,12 @@
 
 import {
 	Activity,
+	AlertTriangle,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	Eye,
+	FileText,
 	FileUp,
 	Layers,
 	Loader2,
@@ -16,6 +19,7 @@ import {
 	Sparkles,
 	UploadCloud,
 	X,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -35,6 +39,11 @@ import {
 	type ImagingActiveTool,
 } from "./rvgViewerEngine.js";
 import { planVisiographFindings } from "./visiographFindings.js";
+import {
+	RADIOLOGY_STANDARD_PROTOCOLS,
+	applyRadiologyProtocolToForm043,
+	type RadiologyProtocolPreset,
+} from "../radiology/radiologyProtocols.js";
 
 export interface DicomViewerModalProps {
 	readonly isOpen: boolean;
@@ -67,6 +76,23 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	);
 	const [measurements, setMeasurements] = useState<CalibratedRulerMeasurement[]>([]);
 	const [isNormaApplied, setIsNormaApplied] = useState(false);
+	const [isProtocolsDropdownOpen, setIsProtocolsDropdownOpen] = useState(false);
+	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
+	const protocolsDropdownRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!isProtocolsDropdownOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			if (
+				protocolsDropdownRef.current &&
+				!protocolsDropdownRef.current.contains(e.target as Node)
+			) {
+				setIsProtocolsDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isProtocolsDropdownOpen]);
 
 	// AI States (strictly on-demand, no automatic overwrite)
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -114,8 +140,21 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 	if (!isOpen) return null;
 
 	const handleInsertNormaTo043 = () => {
+		const normaPreset =
+			RADIOLOGY_STANDARD_PROTOCOLS.find((p) => p.id === "norma") ||
+			RADIOLOGY_STANDARD_PROTOCOLS[0]!;
 		const targetTooth = toothFdiCode ? ` зуба ${toothFdiCode}` : "";
 		const normaStatement = `Рентгенологическое исследование (RVG/DICOM)${targetTooth}: норма. Патологических изменений костной ткани и периапикальных очагов деструкции на снимке не выявлено. Кортикальная пластинка альвеолы и периодонтальная щель прослеживаются на всем протяжении.`;
+
+		applyRadiologyProtocolToForm043({
+			protocol: normaPreset.text,
+			options: {
+				toothFdi: toothFdiCode,
+				modalityLabel: "RVG/DICOM",
+			},
+			onInsertToProtocol,
+			showNotification: false,
+		});
 
 		try {
 			useVisitStore.getState().setVisitNoteForm((prev) => {
@@ -138,10 +177,28 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		}
 
 		setIsNormaApplied(true);
+		setAppliedProtocolId("norma");
 		showToast(
 			`Заключение «Норма: патологии на снимке не выявлено» внесено в карту 043/у${targetTooth ? ` (${targetTooth.trim()})` : ""}`,
 			"success",
 		);
+	};
+
+	const handleApplyProtocol = (preset: RadiologyProtocolPreset) => {
+		applyRadiologyProtocolToForm043({
+			protocol: preset,
+			options: {
+				toothFdi: toothFdiCode,
+				modalityLabel: "RVG/DICOM",
+			},
+			onInsertToProtocol,
+			showNotification: true,
+		});
+		setAppliedProtocolId(preset.id);
+		if (preset.id === "norma") {
+			setIsNormaApplied(true);
+		}
+		setIsProtocolsDropdownOpen(false);
 	};
 
 	const processFile = (file: File) => {
@@ -366,7 +423,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
 						style={{
-							padding: "6px 10px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 12px",
 							fontSize: "12px",
 							borderRadius: "6px",
 							border: "1px solid #334155",
@@ -375,6 +434,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "5px",
 							fontWeight: 600,
 						}}
@@ -391,7 +451,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						onClick={handleRunAiAnalysis}
 						disabled={isAnalyzing || !currentImageSrc}
 						style={{
-							padding: "6px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							fontSize: "12px",
 							borderRadius: "6px",
 							border: "1px solid #0d9488",
@@ -400,6 +462,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							cursor: isAnalyzing || !currentImageSrc ? "not-allowed" : "pointer",
 							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontWeight: 600,
 							opacity: !currentImageSrc ? 0.6 : 1,
@@ -426,7 +489,9 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							type="button"
 							onClick={() => setShowFindingsDrawer((prev) => !prev)}
 							style={{
-								padding: "6px 10px",
+								minHeight: "44px",
+								minWidth: "44px",
+								padding: "8px 12px",
 								fontSize: "12px",
 								borderRadius: "6px",
 								border: "1px solid #334155",
@@ -435,6 +500,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
+								justifyContent: "center",
 								gap: "5px",
 								fontWeight: 600,
 							}}
@@ -460,7 +526,8 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						}}
 						title="СанПиН 2.6.1.1192-03: При острой боли и неотложном приёме снимок доступен мгновенно, дозиметрия и ИДС вносятся без блокировки работы"
 					>
-						✓ Неотложный доступ
+						<Check size={12} color="#34d399" />
+						<span>Неотложный доступ</span>
 					</span>
 
 					{DENTAL_RADIOGRAPHY_PRESETS.map((p) => (
@@ -469,25 +536,33 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							type="button"
 							onClick={() => handleApplyPreset(p)}
 							style={{
-								padding: "6px 10px",
+								minHeight: "44px",
+								minWidth: "44px",
+								padding: "8px 12px",
 								fontSize: "12px",
 								borderRadius: "6px",
 								border: "1px solid #334155",
 								backgroundColor: "#1e293b",
 								color: "#e2e8f0",
 								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
 							}}
 						>
 							{p.labelRu}
 						</button>
 					))}
 
+					{/* 1-Click Norma Button (Mandate 8e) */}
 					<button
 						type="button"
 						data-testid="btn-dicom-norma-043"
 						onClick={handleInsertNormaTo043}
 						style={{
-							padding: "6px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							fontSize: "12px",
 							borderRadius: "6px",
 							border: "1px solid #10b981",
@@ -496,21 +571,167 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
-							gap: "5px",
+							justifyContent: "center",
+							gap: "6px",
 							fontWeight: 600,
 							transition: "all 0.2s ease",
 						}}
-						title="1-клик действие: внести запись «Норма: патологии на снимке не выявлено» в карту 043/у"
+						title="1-клик действие: внести заключение «Рентген-норма» в дневник 043/у"
 					>
-						<CheckCircle2 size={14} />
-						<span>{isNormaApplied ? "✓ Норма в 043/у" : "⚡ Норма (043/у)"}</span>
+						{isNormaApplied ? <CheckCircle2 size={14} /> : <Zap size={14} color="#34d399" />}
+						<span>{isNormaApplied ? "Норма внесена" : "Норма (043/у)"}</span>
 					</button>
+
+					{/* 1-Click Protocols Menu Dropdown (Mandate 8e, 8i, 8k) */}
+					<div style={{ position: "relative" }} ref={protocolsDropdownRef}>
+						<button
+							type="button"
+							data-testid="btn-dicom-protocols-menu"
+							onClick={() => setIsProtocolsDropdownOpen((prev) => !prev)}
+							style={{
+								minHeight: "44px",
+								minWidth: "44px",
+								padding: "8px 12px",
+								fontSize: "12px",
+								borderRadius: "6px",
+								border: isProtocolsDropdownOpen ? "1px solid #0d9488" : "1px solid #334155",
+								backgroundColor: isProtocolsDropdownOpen ? "#134e4a" : "#1e293b",
+								color: "#e2e8f0",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: "5px",
+								fontWeight: 600,
+							}}
+							title="Стандартные рентгенологические протоколы (043/у) — вставка в 1 клик"
+						>
+							<FileText size={14} color="#2dd4bf" />
+							<span>Протоколы (043/у)</span>
+							<ChevronDown
+								size={14}
+								style={{
+									transform: isProtocolsDropdownOpen ? "rotate(180deg)" : "none",
+									transition: "transform 0.2s ease",
+								}}
+							/>
+						</button>
+
+						{isProtocolsDropdownOpen && (
+							<div
+								style={{
+									position: "absolute",
+									right: 0,
+									top: "100%",
+									marginTop: "6px",
+									zIndex: 10000,
+									width: "320px",
+									backgroundColor: "#0f172a",
+									border: "1px solid #334155",
+									borderRadius: "10px",
+									padding: "8px",
+									boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+									display: "flex",
+									flexDirection: "column",
+									gap: "6px",
+								}}
+							>
+								<div
+									style={{
+										fontSize: "11px",
+										fontWeight: "bold",
+										color: "#94a3b8",
+										padding: "4px 8px",
+										borderBottom: "1px solid #1e293b",
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+									}}
+								>
+									<span>ПРОТОКОЛЫ 043/У</span>
+									<span style={{ color: "#2dd4bf", fontSize: "10px" }}>1 клик</span>
+								</div>
+								{RADIOLOGY_STANDARD_PROTOCOLS.map((preset) => (
+									<button
+										key={preset.id}
+										type="button"
+										onClick={() => handleApplyProtocol(preset)}
+										data-testid={`btn-dicom-protocol-${preset.id}`}
+										style={{
+											width: "100%",
+											minHeight: "44px",
+											textAlign: "left",
+											padding: "8px 10px",
+											borderRadius: "8px",
+											backgroundColor:
+												appliedProtocolId === preset.id
+													? "rgba(13, 148, 136, 0.2)"
+													: "#1e293b",
+											border:
+												appliedProtocolId === preset.id
+													? "1px solid #0d9488"
+													: "1px solid #334155",
+											color: "#f8fafc",
+											cursor: "pointer",
+											display: "flex",
+											flexDirection: "column",
+											gap: "3px",
+										}}
+										title={preset.text}
+									>
+										<div
+											style={{
+												display: "flex",
+												justifyContent: "space-between",
+												alignItems: "center",
+												width: "100%",
+											}}
+										>
+											<span
+												style={{
+													fontWeight: "bold",
+													fontSize: "12px",
+													display: "flex",
+													alignItems: "center",
+													gap: "5px",
+												}}
+											>
+												<Zap size={13} color="#f59e0b" />
+												{preset.titleRu}
+											</span>
+											{appliedProtocolId === preset.id && (
+												<Check size={14} color="#2dd4bf" />
+											)}
+										</div>
+										<span
+											style={{
+												fontSize: "11px",
+												color: "#94a3b8",
+												lineHeight: 1.3,
+												display: "-webkit-box",
+												WebkitLineClamp: 2,
+												WebkitBoxOrient: "vertical",
+												overflow: "hidden",
+											}}
+										>
+											{preset.text}
+										</span>
+									</button>
+								))}
+							</div>
+						)}
+					</div>
 				</div>
 
 				<button
 					type="button"
 					onClick={onClose}
 					style={{
+						minHeight: "44px",
+						minWidth: "44px",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
 						background: "transparent",
 						border: "none",
 						color: "#94a3b8",
@@ -720,9 +941,13 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 																		}}
 																		style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#0d9488" }}
 																	/>
-																	<span>
-																		Зуб #{t.code} — {stateLabel}
-																		{isApplied && " (✓ внесено)"}
+																	<span className="flex items-center gap-1">
+																		<span>Зуб #{t.code} — {stateLabel}</span>
+																		{isApplied && (
+																			<span className="inline-flex items-center gap-0.5 text-emerald-400 font-semibold ml-1">
+																				<Check size={12} /> внесено
+																			</span>
+																		)}
 																	</span>
 																</label>
 															);
@@ -748,9 +973,13 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 											borderRadius: "8px",
 											padding: "10px",
 											lineHeight: "1.4",
+											display: "flex",
+											alignItems: "center",
+											gap: "6px",
 										}}
 									>
-										⚠️ Зубы {plan.noFormulaStateCodes.join(", ")} требуют внимания/наблюдения. Отметьте их на одонтограмме вручную.
+										<AlertTriangle size={14} style={{ flexShrink: 0 }} />
+										<span>Зубы {plan.noFormulaStateCodes.join(", ")} требуют внимания/наблюдения. Отметьте их на одонтограмме вручную.</span>
 									</div>
 								)}
 
@@ -811,6 +1040,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 										disabled={isApplyingToChart || selectedFindingCodes.size === 0}
 										style={{
 											width: "100%",
+											minHeight: "44px",
 											padding: "10px 16px",
 											borderRadius: "8px",
 											border: "none",
@@ -861,14 +1091,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={() => handleViewportChange({ activeTool: "pan" })}
 						style={{
-							padding: "8px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							borderRadius: "6px",
 							border: "none",
 							backgroundColor: viewportState.activeTool === "pan" ? "#0d9488" : "#1e293b",
 							color: "#ffffff",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontSize: "13px",
 						}}
@@ -879,14 +1112,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={() => handleViewportChange({ activeTool: "ruler" })}
 						style={{
-							padding: "8px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							borderRadius: "6px",
 							border: "none",
 							backgroundColor: viewportState.activeTool === "ruler" ? "#0d9488" : "#1e293b",
 							color: "#ffffff",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontSize: "13px",
 							whiteSpace: "nowrap",
@@ -898,14 +1134,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={() => handleViewportChange({ activeTool: "root_canal_tracer" })}
 						style={{
-							padding: "8px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							borderRadius: "6px",
 							border: "none",
 							backgroundColor: viewportState.activeTool === "root_canal_tracer" ? "#047857" : "#1e293b",
 							color: viewportState.activeTool === "root_canal_tracer" ? "#a7f3d0" : "#ffffff",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontSize: "13px",
 							fontWeight: 600,
@@ -923,14 +1162,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={() => handleViewportChange({ invert: !viewportState.invert })}
 						style={{
-							padding: "8px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							borderRadius: "6px",
 							border: "none",
 							backgroundColor: viewportState.invert ? "#3b82f6" : "#1e293b",
 							color: "#ffffff",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontSize: "13px",
 						}}
@@ -942,14 +1184,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={() => handleViewportChange({ sharpen: viewportState.sharpen > 0 ? 0 : 35 })}
 						style={{
-							padding: "8px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							borderRadius: "6px",
 							border: "none",
 							backgroundColor: viewportState.sharpen > 0 ? "#8b5cf6" : "#1e293b",
 							color: "#ffffff",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontSize: "13px",
 						}}
@@ -961,14 +1206,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={() => handleViewportChange({ emboss: !viewportState.emboss })}
 						style={{
-							padding: "8px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							borderRadius: "6px",
 							border: "none",
 							backgroundColor: viewportState.emboss ? "#ec4899" : "#1e293b",
 							color: "#ffffff",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontSize: "13px",
 						}}
@@ -980,14 +1228,17 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						onClick={handleReset}
 						style={{
-							padding: "8px 12px",
+							minHeight: "44px",
+							minWidth: "44px",
+							padding: "8px 14px",
 							borderRadius: "6px",
 							border: "1px solid #475569",
 							backgroundColor: "transparent",
 							color: "#94a3b8",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
+							justifyContent: "center",
 							gap: "6px",
 							fontSize: "13px",
 						}}
