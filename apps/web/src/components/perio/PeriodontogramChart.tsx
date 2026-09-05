@@ -24,6 +24,7 @@ import {
 import {
 	Activity,
 	AlertCircle,
+	AlertTriangle,
 	ArrowDown,
 	ArrowUp,
 	Check,
@@ -856,6 +857,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					"• Пародонтологический осмотр: Хронический катаральный гингивит (K05.1).\n" +
 					"• Status localis: Отек десневых сосочков, гиперемия и цианоз маргинального края десны, выраженная кровоточивость при зондировании (BOP+), истинных пародонтальных карманов нет (глубина бороздок до 3 мм за счет отека десны), определяются наддесневые зубные отложения и мягкий зубной налет. Подвижности нет (0 ст.).\n" +
 					"• Рекомендованное лечение: Профессиональная гигиена полости рта (УЗ + AirFlow), противовоспалительная терапия, аппликации дентального геля.";
+			} else if (presetId === "periodontitis_mild") {
+				protocolText =
+					"• Пародонтологический осмотр: Хронический генерализованный пародонтит легкой степени тяжести (K05.3, Stage I Grade A).\n" +
+					"• Status localis: Десна умеренно гиперемирована, пастозна, с цианотичным оттенком, кровоточивость при зондировании (BOP+), глубина пародонтальных карманов 3-4 мм преимущественно в межзубных промежутках, рецессия десны до 1 мм, умеренные над- и поддесневые зубные отложения, патологическая подвижность зубов отсутствует (0 ст.). На рентгенограмме/КЛКТ: деструкция кортикальной пластинки и вершин межальвеолярных перегородок до 1/3 длины корней.\n" +
+					"• Рекомендованное лечение: Профессиональная гигиена полости рта (УЗ Piezon + субгингивальный AirFlow), закрытый кюретаж карманов, антисептическая обработка десны, обучение индивидуальной гигиене.";
 			} else if (presetId === "periodontitis_moderate") {
 				protocolText =
 					"• Пародонтологический осмотр: Хронический генерализованный пародонтит средней степени тяжести (K05.3, Stage II/III Grade B).\n" +
@@ -1163,8 +1169,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					<div className="flex items-center gap-2">
 						<Zap size={18} className="text-teal-400 shrink-0" />
 						<span className="text-sm font-black text-teal-300">
-							⚡ 1-Клик экспресс-пресеты пародонтолога и гигиениста (без 192
-							точек):
+							1-Клик экспресс-пресеты пародонтолога и гигиениста (без 192 точек):
 						</span>
 					</div>
 					<div className="flex items-center gap-2 flex-wrap">
@@ -1191,7 +1196,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							<span>
 								{isTier3ProbingExpanded
 									? "Скрыть Florida Probe (Tier 3)"
-									: "🔬 Детальная Florida Probe 6 точек (Tier 3)"}
+									: "Детальная Florida Probe 6 точек (Tier 3)"}
 							</span>
 							{isTier3ProbingExpanded ? (
 								<ChevronUp size={14} />
@@ -1202,19 +1207,19 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</div>
 				</div>
 
-				{/* 4 Dominant Express Clinical Presets (Mandate 8e) */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+				{/* 5 Dominant Express Clinical Presets (Mandate 8e, Zero Emojis) */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
 					{/* Preset 1: Норма пародонта */}
 					<button
 						type="button"
 						onClick={() => handleApplyTherapistPreset("perio_norm_express")}
 						className="min-h-[44px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="⚡ Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
+						title="Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
 						data-testid="perio-preset-norm-card"
 					>
 						<div className="flex items-center gap-1.5 font-black text-xs">
 							<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-							<span>⚡ Норма пародонта</span>
+							<span>Норма пародонта</span>
 						</div>
 						<span className="text-[10px] text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
 							бороздка &le; 2 мм, десна плотная, BOP 0%, карманов нет,
@@ -1227,12 +1232,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						onClick={() => handleApplyTherapistPreset("gingivitis_catarrhal")}
 						className="min-h-[44px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="⚡ Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
+						title="Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
 						data-testid="perio-preset-gingivitis-card"
 					>
 						<div className="flex items-center gap-1.5 font-black text-xs">
 							<Activity size={14} className="text-amber-400 shrink-0" />
-							<span>⚡ Катаральный гингивит</span>
+							<span>Катаральный гингивит</span>
 						</div>
 						<span className="text-[10px] text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
 							отек сосочков, кровоточивость (BOP+), карманов нет, наддесневой
@@ -1240,36 +1245,53 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						</span>
 					</button>
 
-					{/* Preset 3: Пародонтит средней степени */}
+					{/* Preset 3: Пародонтит легкий */}
+					<button
+						type="button"
+						onClick={() => handleApplyTherapistPreset("periodontitis_mild")}
+						className="min-h-[44px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+						title="Пародонтит легкой степени: глубина карманов 3-4 мм, межзубный CAL, кровоточивость, подвижность 0"
+						data-testid="perio-preset-mild-card"
+					>
+						<div className="flex items-center gap-1.5 font-black text-xs">
+							<AlertTriangle size={14} className="text-rose-400 shrink-0" />
+							<span>Пародонтит легкий (3-4 мм)</span>
+						</div>
+						<span className="text-[10px] text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
+							карманы 3–4 мм, межзубный CAL, кровоточивость, подвижность 0
+						</span>
+					</button>
+
+					{/* Preset 4: Пародонтит средней степени */}
 					<button
 						type="button"
 						onClick={() => handleApplyTherapistPreset("periodontitis_moderate")}
 						className="min-h-[44px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="⚡ Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
+						title="Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
 						data-testid="perio-preset-periodontitis-card"
 					>
 						<div className="flex items-center gap-1.5 font-black text-xs">
-							<Zap size={14} className="text-orange-400 shrink-0" />
-							<span>⚡ Пародонтит средней ст.</span>
+							<ShieldAlert size={14} className="text-orange-400 shrink-0" />
+							<span>Пародонтит средний (4-5 мм)</span>
 						</div>
 						<span className="text-[10px] text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
 							карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I ст.
 						</span>
 					</button>
 
-					{/* Preset 4: Профессиональная гигиена выполнена */}
+					{/* Preset 5: Профессиональная гигиена выполнена */}
 					<button
 						type="button"
 						onClick={() =>
 							handleApplyTherapistPreset("hygiene_pro_done_express")
 						}
 						className="min-h-[44px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="⚡ Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12"
+						title="Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12"
 						data-testid="perio-preset-pro-hygiene-card"
 					>
 						<div className="flex items-center gap-1.5 font-black text-xs">
 							<Sparkles size={14} className="text-cyan-400 shrink-0" />
-							<span>⚡ Профгигиена выполнена</span>
+							<span>Профгигиена выполнена</span>
 						</div>
 						<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
 							УЗ Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12

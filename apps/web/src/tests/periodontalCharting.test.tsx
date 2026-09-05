@@ -103,7 +103,7 @@ describe("Periodontal Charting & Clinical Indices (PeriodontalChartingModal)", (
 			assert.ok(html.includes("Кровоточивость борозды SBI"));
 		});
 
-		it("renders 1-click clinical presets toolbar (Norm, Gingivitis, Periodontitis, Form 043/u) without cartoon emojis", () => {
+		it("renders 1-click clinical presets toolbar (Norm, Gingivitis, Mild/Moderate Periodontitis, 5-Step Hygiene, Form 043/u) without cartoon emojis", () => {
 			const html = renderToString(
 				<PeriodontalChartingModal
 					isOpen={true}
@@ -116,16 +116,46 @@ describe("Periodontal Charting & Clinical Indices (PeriodontalChartingModal)", (
 			assert.ok(html.includes("Пародонт в норме (1-2 мм, без BOP)"));
 			assert.ok(html.includes("Гингивит (глубина 2 мм, BOP)"));
 			assert.ok(html.includes("Пародонтит легкий (3-4 мм)"));
+			assert.ok(html.includes("Пародонтит средний (4-5 мм)"));
+			assert.ok(html.includes("Профгигиена (УЗ + Air Flow)"));
 			assert.ok(html.includes("В дневник 043/у"));
 			assert.ok(html.includes('data-testid="perio-preset-norm-btn"'));
 			assert.ok(html.includes('data-testid="perio-preset-gingivitis-btn"'));
 			assert.ok(html.includes('data-testid="perio-preset-periodontitis-btn"'));
+			assert.ok(html.includes('data-testid="perio-preset-moderate-btn"'));
+			assert.ok(html.includes('data-testid="perio-modal-quick-hygiene-btn"'));
 			assert.ok(html.includes('data-testid="perio-modal-insert-043-btn"'));
 
 			// Mandate 8d, sin #7: Zero cartoon emojis in medical/clinical forms
 			assert.equal(html.includes("⚡"), false, "Must not contain lightning bolt emoji");
 			assert.equal(html.includes("💡"), false, "Must not contain lightbulb emoji");
 			assert.equal(html.includes("🦷"), false, "Must not contain tooth emoji");
+			assert.equal(html.includes("🔬"), false, "Must not contain microscope emoji");
+		});
+	});
+
+	describe("4. HygieneIndicesPanel Component & Express Presets (Mandates 8e, 8k)", () => {
+		it("renders all 5 express clinical presets and 043/u action without cartoon emojis", async () => {
+			const { HygieneIndicesPanel } = await import("../components/hygiene/HygieneIndicesPanel");
+			const html = renderToString(
+				<HygieneIndicesPanel
+					readOnly={false}
+				/>,
+			);
+
+			assert.ok(html.includes("Индексы гигиены полости рта (OHI-S, PMA, КПИ Леуса)"));
+			assert.ok(html.includes('data-testid="hygiene-preset-norm"'));
+			assert.ok(html.includes('data-testid="hygiene-preset-gingivitis"'));
+			assert.ok(html.includes('data-testid="hygiene-preset-mild-periodontitis"'));
+			assert.ok(html.includes('data-testid="hygiene-preset-periodontitis"'));
+			assert.ok(html.includes('data-testid="hygiene-preset-pro-hygiene"'));
+			assert.ok(html.includes('data-testid="hygiene-insert-to-043-btn"'));
+
+			// Zero cartoon emojis in buttons or labels
+			assert.equal(html.includes("⚡"), false, "Must not contain lightning bolt emoji");
+			assert.equal(html.includes("💡"), false, "Must not contain lightbulb emoji");
+			assert.equal(html.includes("🦷"), false, "Must not contain tooth emoji");
+			assert.equal(html.includes("🔬"), false, "Must not contain microscope emoji");
 		});
 	});
 });

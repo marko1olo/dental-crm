@@ -29,10 +29,12 @@ import {
 } from "@dental/shared";
 import {
 	Activity,
+	AlertTriangle,
 	Check,
 	Clipboard,
 	FileText,
 	RotateCcw,
+	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	Zap,
@@ -136,13 +138,13 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"⚡ Норма пародонта зафиксирована: бороздка <= 2 мм, десна плотная, BOP 0%, подвижность 0. Данные внесены в 043/у!",
+			"Норма пародонта зафиксирована: бороздка <= 2 мм, десна плотная, BOP 0%, подвижность 0. Данные внесены в 043/у!",
 			"success",
 			4000,
 		);
 	}, [readOnly, onInsertToProtocol]);
 
-	// 2. ⚡ Катаральный гингивит
+	// 2. Катаральный гингивит
 	const handlePresetCatarrhalGingivitis = useCallback(() => {
 		if (readOnly) return;
 		const gingivitisAssessments: Record<number, HygieneToothAssessment> = {
@@ -215,13 +217,92 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"⚡ Катаральный гингивит зафиксирован: отек сосочков, BOP+, наддесневые отложения. Данные внесены в 043/у!",
+			"Катаральный гингивит зафиксирован: отек сосочков, BOP+, наддесневые отложения. Данные внесены в 043/у!",
 			"warning",
 			4000,
 		);
 	}, [readOnly, onInsertToProtocol]);
 
-	// 3. ⚡ Пародонтит средней степени
+	// 3. Пародонтит легкой степени (глубина 3-4 мм)
+	const handlePresetMildPeriodontitis = useCallback(() => {
+		if (readOnly) return;
+		const mildPerioAssessments: Record<number, HygieneToothAssessment> = {
+			16: {
+				toothNumber: 16,
+				debrisScore: 1,
+				calculusScore: 2,
+				pmaScore: 2,
+				kpiScore: 3,
+			},
+			11: {
+				toothNumber: 11,
+				debrisScore: 1,
+				calculusScore: 1,
+				pmaScore: 2,
+				kpiScore: 2,
+			},
+			26: {
+				toothNumber: 26,
+				debrisScore: 1,
+				calculusScore: 2,
+				pmaScore: 2,
+				kpiScore: 3,
+			},
+			46: {
+				toothNumber: 46,
+				debrisScore: 2,
+				calculusScore: 2,
+				pmaScore: 2,
+				kpiScore: 3,
+			},
+			31: {
+				toothNumber: 31,
+				debrisScore: 1,
+				calculusScore: 1,
+				pmaScore: 2,
+				kpiScore: 2,
+			},
+			36: {
+				toothNumber: 36,
+				debrisScore: 2,
+				calculusScore: 2,
+				pmaScore: 2,
+				kpiScore: 3,
+			},
+		};
+		setAssessments(mildPerioAssessments);
+
+		const protocolText =
+			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит легкой степени тяжести (K05.3).\n" +
+			"• Status localis: Десна умеренно гиперемирована, пастозна, с цианотичным оттенком. Глубина пародонтальных карманов 3-4 мм, преимущественно в межзубных промежутках, кровоточивость при зондировании (BOP+). Рецессия десны до 1 мм, умеренное количество над- и поддесневого зубного камня, патологическая подвижность зубов отсутствует (0 ст.). На рентгенограмме/КЛКТ: деструкция кортикальной пластинки и вершин межальвеолярных перегородок до 1/3 длины корней.\n" +
+			"• Клинические индексы: OHI-S 1.8 (удовлетворительная), PMA 35% (умеренное воспаление сосочков и маргинального края), КПИ 2.5 (зубной камень, карманы 3-4 мм).\n" +
+			"• Рекомендовано: Профессиональная гигиена полости рта (УЗ Piezon + субгингивальный AirFlow), закрытый кюретаж карманов, антисептическая обработка десны, обучение гигиене.";
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${protocolText}`
+				: protocolText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: protocolText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(protocolText);
+		showToast(
+			"Пародонтит легкой степени зафиксирован: карманы 3-4 мм, над/поддесневой камень, BOP+. Данные внесены в 043/у!",
+			"warning",
+			4000,
+		);
+	}, [readOnly, onInsertToProtocol]);
+
+	// 4. Пародонтит средней степени
 	const handlePresetModeratePeriodontitis = useCallback(() => {
 		if (readOnly) return;
 		const perioAssessments: Record<number, HygieneToothAssessment> = {
@@ -294,13 +375,13 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"⚡ Пародонтит средней степени зафиксирован: карманы 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст. Данные внесены в 043/у!",
+			"Пародонтит средней степени зафиксирован: карманы 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст. Данные внесены в 043/у!",
 			"warning",
 			4000,
 		);
 	}, [readOnly, onInsertToProtocol]);
 
-	// 4. ⚡ Профессиональная гигиена выполнена
+	// 5. Профессиональная гигиена выполнена
 	const handlePresetProHygieneDone = useCallback(() => {
 		if (readOnly) return;
 		setAssessments(createHealthyHygieneAssessment());
@@ -345,7 +426,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"⚡ Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12. Дневник 043/у и смета обновлены!",
+			"Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12. Дневник 043/у и смета обновлены!",
 			"success",
 			4500,
 		);
@@ -484,29 +565,28 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 				)}
 			</div>
 
-			{/* ─── 1-Click Express Presets Strip (Mandate 8e: 4 Clinical Presets) ─── */}
+			{/* ─── 1-Click Express Presets Strip (Mandate 8e: 5 Clinical Presets, Zero Emojis) ─── */}
 			{!readOnly && (
 				<div className="flex flex-col gap-2 p-3 rounded-xl bg-teal-500/10 border border-teal-500/30">
 					<div className="flex items-center gap-2">
 						<Zap size={16} className="text-teal-400 shrink-0" />
 						<span className="text-xs font-black text-teal-300">
-							⚡ 1-Клик экспресс-пресеты пародонтолога и гигиениста (без 192
-							точек):
+							1-Клик экспресс-пресеты пародонтолога и гигиениста (без 192 точек):
 						</span>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
 						{/* Preset 1: Норма пародонта */}
 						<button
 							type="button"
 							onClick={handlePresetPeriodontalNorm}
 							className="min-h-[44px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="⚡ Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
+							title="Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
 							data-testid="hygiene-preset-norm"
 						>
 							<div className="flex items-center gap-1.5 font-black text-xs">
 								<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-								<span>⚡ Норма пародонта</span>
+								<span>Норма пародонта</span>
 							</div>
 							<span className="text-[10px] text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
 								бороздка &le; 2 мм, десна плотная, BOP 0%, карманов нет,
@@ -519,12 +599,12 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							type="button"
 							onClick={handlePresetCatarrhalGingivitis}
 							className="min-h-[44px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="⚡ Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
+							title="Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
 							data-testid="hygiene-preset-gingivitis"
 						>
 							<div className="flex items-center gap-1.5 font-black text-xs">
 								<Activity size={14} className="text-amber-400 shrink-0" />
-								<span>⚡ Катаральный гингивит</span>
+								<span>Катаральный гингивит</span>
 							</div>
 							<span className="text-[10px] text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
 								отек сосочков, кровоточивость (BOP+), карманов нет, наддесневой
@@ -532,17 +612,34 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							</span>
 						</button>
 
-						{/* Preset 3: Пародонтит средней степени */}
+						{/* Preset 3: Пародонтит легкий */}
+						<button
+							type="button"
+							onClick={handlePresetMildPeriodontitis}
+							className="min-h-[44px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+							title="Пародонтит легкой степени: глубина карманов 3-4 мм, над/поддесневой камень, BOP+, подвижность 0"
+							data-testid="hygiene-preset-mild-periodontitis"
+						>
+							<div className="flex items-center gap-1.5 font-black text-xs">
+								<AlertTriangle size={14} className="text-rose-400 shrink-0" />
+								<span>Пародонтит легкий (3-4 мм)</span>
+							</div>
+							<span className="text-[10px] text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
+								карманы 3–4 мм, над/поддесневой камень, кровоточивость, подвижность 0
+							</span>
+						</button>
+
+						{/* Preset 4: Пародонтит средней степени */}
 						<button
 							type="button"
 							onClick={handlePresetModeratePeriodontitis}
 							className="min-h-[44px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="⚡ Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
+							title="Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
 							data-testid="hygiene-preset-periodontitis"
 						>
 							<div className="flex items-center gap-1.5 font-black text-xs">
-								<Zap size={14} className="text-orange-400 shrink-0" />
-								<span>⚡ Пародонтит средней ст.</span>
+								<ShieldAlert size={14} className="text-orange-400 shrink-0" />
+								<span>Пародонтит средний (4-5 мм)</span>
 							</div>
 							<span className="text-[10px] text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
 								карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I
@@ -550,17 +647,17 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							</span>
 						</button>
 
-						{/* Preset 4: Профессиональная гигиена выполнена */}
+						{/* Preset 5: Профессиональная гигиена выполнена */}
 						<button
 							type="button"
 							onClick={handlePresetProHygieneDone}
 							className="min-h-[44px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="⚡ Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12"
+							title="Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12"
 							data-testid="hygiene-preset-pro-hygiene"
 						>
 							<div className="flex items-center gap-1.5 font-black text-xs">
 								<Sparkles size={14} className="text-cyan-400 shrink-0" />
-								<span>⚡ Профгигиена выполнена</span>
+								<span>Профгигиена выполнена</span>
 							</div>
 							<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
 								УЗ Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12

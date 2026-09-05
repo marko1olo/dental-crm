@@ -523,12 +523,90 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		);
 	}, []);
 
-	// 1-Click Routine Hygienist Status & Invoice (Mandate 8e: 90% routine hygiene loop)
+	// 4. «Пародонтит средней степени (глубина 4-5 мм, рецессия 1-2 мм, зубной камень)» — 1 клик
+	const handleApplyModeratePeriodontitisPreset = useCallback(() => {
+		const baseTeeth = createDefaultPerioTeeth(2);
+		const moderatePerioTeeth = baseTeeth.map((tooth) => {
+			const num = tooth.toothNumber;
+			const isMolar = num % 10 >= 6;
+			const isPremolar = num % 10 === 4 || num % 10 === 5;
+			const isLowerAnterior = (num >= 31 && num <= 33) || (num >= 41 && num <= 43);
+
+			const pocketDepth = isMolar ? 5 : isPremolar || isLowerAnterior ? 4 : 3;
+			const midDepth = isMolar ? 4 : 3;
+			const recession = isMolar || isPremolar ? 1 : 0;
+			const hasBop = true;
+			const hasPlaque = true;
+			const hasCalculus = true;
+			const mobility = isLowerAnterior ? (1 as const) : (0 as const);
+			const furcation = isMolar && isFurcationEligibleTooth(num) ? (1 as const) : (0 as const);
+
+			const makeSite = (
+				site: typeof tooth.mesioBuccal,
+				depth: number,
+				gm: number,
+			) => ({
+				...site,
+				probingDepthMm: depth,
+				gingivalMarginMm: gm,
+				calMm: depth + gm,
+				bleedingOnProbing: hasBop,
+				plaque: hasPlaque,
+				calculus: hasCalculus,
+				suppuration: false,
+			});
+
+			return {
+				...tooth,
+				mobility,
+				furcation,
+				mesioBuccal: makeSite(tooth.mesioBuccal, pocketDepth, recession),
+				midBuccal: makeSite(tooth.midBuccal, midDepth, recession),
+				distoBuccal: makeSite(tooth.distoBuccal, pocketDepth, recession),
+				mesioLingual: makeSite(tooth.mesioLingual, pocketDepth, recession),
+				midLingual: makeSite(tooth.midLingual, midDepth, recession),
+				distoLingual: makeSite(tooth.distoLingual, pocketDepth, recession),
+			};
+		});
+
+		setTeeth((prev) => {
+			const hasMissing = prev.some((t) => t.isMissing);
+			if (!hasMissing) return moderatePerioTeeth;
+			return moderatePerioTeeth.map((pt) => {
+				const prevTooth = prev.find((t) => t.toothNumber === pt.toothNumber);
+				return prevTooth?.isMissing ? { ...pt, isMissing: true } : pt;
+			});
+		});
+
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			"Пресет «Пародонтит средней степени»: глубина карманов 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I ст.",
+			"info",
+		);
+	}, []);
+
+	// 1-Click Statutory Prophylaxis Protocol (Mandates 8e, 8k: A16.07.051 Piezon + AirFlow + Detartrine + Bifluorid 12)
 	const handleQuickHygieneAirFlow = useCallback(() => {
 		const defaultTeeth = createDefaultPerioTeeth(2);
-		setTeeth(defaultTeeth);
+		setTeeth((prev) => {
+			const hasMissing = prev.some((t) => t.isMissing);
+			if (!hasMissing) return defaultTeeth;
+			return defaultTeeth.map((dt) => {
+				const prevTooth = prev.find((t) => t.toothNumber === dt.toothNumber);
+				return prevTooth?.isMissing ? { ...dt, isMissing: true } : dt;
+			});
+		});
 
-		const hygieneText = "Зубные отложения удалены УЗ + Air Flow, десна бледно-розовая, обработка антисептиком. Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
+		const hygieneText =
+			"• Профессиональная гигиена полости рта выполнена в полном объеме (A16.07.051):\n" +
+			"1. Удаление над- и поддесневых зубных отложений ультразвуковым пьезоэлектрическим скейлером Piezon (EMS).\n" +
+			"2. Снятие пигментированного зубного налета и биопленки воздушно-абразивным методом AirFlow (порошок на основе глицина 25 мкм, субгингивальная обработка).\n" +
+			"3. Полировка всех поверхностей зубов полировочной пастой Detartrine (Septodont) с циркулярными щеточками и резиновыми чашечками, апроксимальные поверхности обработаны штрипсами.\n" +
+			"4. Антисептическая медикаментозная обработка слизистой оболочки десны 0.05% раствором хлоргексидина биглюконата.\n" +
+			"5. Глубокое фторирование эмали и реминерализующая терапия препаратом Bifluorid 12 (VOCO).\n" +
+			"• Status localis: Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).\n" +
+			"• Клинические индексы после гигиены: OHI-S 0.0 (отличная), PMA 0% (воспаления нет), КПИ 0.0 (интактный периодонт).\n" +
+			"• Рекомендации: Индивидуальный подбор средств гигиены (зубная щетка, паста, флосс, ершики), соблюдение «белой диеты» в течение 2-3 часов.";
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
 			...prev,
@@ -550,7 +628,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 			new CustomEvent("dente-add-estimate-service", {
 				detail: {
 					code: "A16.07.051",
-					name: "Профессиональная гигиена полости рта и зубов (УЗ + Air Flow)",
+					name: "Профессиональная гигиена полости рта и зубов (УЗ Piezon + AirFlow глицин + Detartrine + Bifluorid 12)",
 					price: 5500,
 					category: "hygiene",
 				},
@@ -559,7 +637,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 
 		onInsertToProtocol?.(hygieneText);
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Профгигиена УЗ + Air Flow (A16.07.051) зафиксирована в дневнике 043/у и смете!", "success", 4000);
+		showToast("Профгигиена в 1 клик (УЗ Piezon + AirFlow + Detartrine + Bifluorid 12) зафиксирована в 043/у и смете!", "success", 4000);
 	}, [onInsertToProtocol]);
 
 	// 1-Click Physiological Norm directly into Form 043/u
@@ -789,6 +867,18 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 						>
 							<AlertTriangle size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
 							<span>Пародонтит легкий (3-4 мм)</span>
+						</button>
+
+						{/* 3b. Пародонтит средний (глубина 4-5 мм) */}
+						<button
+							type="button"
+							onClick={handleApplyModeratePeriodontitisPreset}
+							className="perio-preset-btn perio-preset-btn--moderate"
+							title="Клинический пресет пародонтита средней степени II стадии: глубина карманов 4-5 мм, рецессия 1-2 мм, поддесневой камень, BOP, подвижность I (1 клик)"
+							data-testid="perio-preset-moderate-btn"
+						>
+							<ShieldAlert size={16} className="text-red-600 dark:text-red-400 shrink-0" />
+							<span>Пародонтит средний (4-5 мм)</span>
 						</button>
 
 						{/* 4. Профгигиена */}
