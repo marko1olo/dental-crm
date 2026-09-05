@@ -326,14 +326,12 @@ async function runCascade(
 					`[visionAnalyzer] ${slot.provider} key=${candidate.fingerprint} failed: ${err.message}`,
 				);
 
-				// For rate-limit or auth — try next key after a safety delay to avoid spamming
+				// For rate-limit or auth — immediately try next candidate key without delay
 				if (statusCode === 429 || statusCode === 401 || statusCode === 403) {
-					await new Promise((resolve) => setTimeout(resolve, 3000));
 					continue;
 				}
-				// For network errors — also try next key after a safety delay
+				// For network errors — immediately try next candidate key without delay
 				if (!statusCode || statusCode >= 500) {
-					await new Promise((resolve) => setTimeout(resolve, 3000));
 					continue;
 				}
 				// Client errors (400, 422) — likely model/param issue, skip to next slot
