@@ -10,7 +10,7 @@ import { CephalometricAnalysisModal } from "../orthodontics/CephalometricAnalysi
 import { LabOrdersPanel } from "../LabOrdersPanel";
 import { ClinicalPhotoProtocolModal } from "../photography/ClinicalPhotoProtocolModal";
 import { CbctMprImplantStudioModal } from "../radiology/CbctMprImplantStudioModal";
-import { ImplantSurgicalPassportModal } from "../implant/ImplantSurgicalPassportModal";
+import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import { RadiologyReferralModal } from "./RadiologyReferralModal";
 import { imagingWriteTarget, realVisitFieldId } from "./visitIdentity";
 import {
@@ -600,7 +600,7 @@ export function VisitDiagnosticsTab(props?: {
 
 			{/* Dental Implant Surgical Passport & ISQ Tracker Modal */}
 			{isImplantPassportModalOpen && (
-				<ImplantSurgicalPassportModal
+				<ImplantPassportModal
 					isOpen={isImplantPassportModalOpen}
 					onClose={() => setIsImplantPassportModalOpen(false)}
 					patientName={visitPatientName || selectedPatientName || "Пациент"}

@@ -40,6 +40,8 @@ export {
 	getTorqueSpecsByBrand,
 } from "../implant/implantTorqueCatalog";
 export {
-	ImplantSurgicalPassportModal,
-	type ImplantSurgicalPassportData,
-} from "../implant/ImplantSurgicalPassportModal";
+	ImplantPassportModal as ImplantSurgicalPassportModal,
+} from "./ImplantPassportModal";
+export type {
+	FastImplantPassportData as ImplantSurgicalPassportData,
+} from "./implantQuickPresets";

@@ -9,6 +9,9 @@ import {
 	Copy,
 	AlertTriangle,
 	Printer,
+	Zap,
+	Layers,
+	TrendingUp,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
@@ -17,7 +20,6 @@ import {
 	STANDARD_LENGTHS,
 	QUICK_TORQUE_OPTIONS,
 	MISCH_DENSITY_NOTES,
-	createDefaultPassportRecord,
 	type FastImplantPassportData,
 	type MischDensity,
 } from "./implantQuickPresets";
@@ -58,7 +60,9 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	const [lotNumber, setLotNumber] = useState<string>("LOT-2026-OSS-8842");
 	const [serialNumber, setSerialNumber] = useState<string>("SN-991428");
 	const [isOverdraftActive, setIsOverdraftActive] = useState<boolean>(false);
-	const [activeView, setActiveView] = useState<"edit" | "preview">("edit");
+	const [activeTab, setActiveTab] = useState<"protocol" | "isq" | "diary" | "passport">("protocol");
+	const [isGbrPerformed, setIsGbrPerformed] = useState<boolean>(false);
+	const [isIsqEnabled, setIsIsqEnabled] = useState<boolean>(false);
 	const titleId = useId();
 
 	const selectedSystem =
@@ -94,21 +98,38 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		}
 	};
 
+	const generateDiaryText = () => {
+		const gbrText = isGbrPerformed
+			? "Проведена направленная костная регенерация (НКР): аугментация костным графтом, уложена барьерная мембрана."
+			: "Костная пластика не проводилась (стандартный протокол без аугментации).";
+
+		const stabilityText = isIsqEnabled
+			? `RFA стабилометрия: 74 ISQ. Первичный торк: ${assembledData.torqueNcm} Н·см.`
+			: `Механическая первичная стабильность: ${assembledData.torqueNcm} Н·см.`;
+
+		return (
+			`ПАСПОРТ ИМПЛАНТАТА (Зуб FDI #${toothFdi}):\n` +
+			`Установлен имплантат: ${assembledData.brand} ${assembledData.model} Ø ${assembledData.diameterMm} x ${assembledData.lengthMm} мм.\n` +
+			`Торк первичной стабильности: ${assembledData.torqueNcm} Н/см. Плотность кости: ${assembledData.boneDensity}.\n` +
+			`${stabilityText}\n` +
+			`Аугментация: ${gbrText}\n` +
+			`LOT: ${assembledData.lotNumber}, SN: ${assembledData.serialNumber}.\n` +
+			(isOverdraftActive ? "Примечание: списание проведено в мягкий овердрафт склада.\n" : "") +
+			`Рекомендации даны. Протокол зафиксирован.`
+		);
+	};
+
 	const handleSave = () => {
 		onSavePassport?.(assembledData);
+		if (onInsertIntoDiary) {
+			onInsertIntoDiary(generateDiaryText());
+		}
 		showToast(`Паспорт имплантата #${toothFdi} сохранен`, "success");
 		onClose();
 	};
 
 	const handleInsertDiary = () => {
-		const diaryEntry =
-			`ПАСПОРТ ИМПЛАНТАТА (Зуб FDI #${toothFdi}):\n` +
-			`Установлен имплантат: ${assembledData.brand} ${assembledData.model} Ø ${assembledData.diameterMm} x ${assembledData.lengthMm} мм.\n` +
-			`Торк первичной стабильности: ${assembledData.torqueNcm} Н/см. Плотность кости: ${assembledData.boneDensity}.\n` +
-			`LOT: ${assembledData.lotNumber}, SN: ${assembledData.serialNumber}.\n` +
-			(isOverdraftActive ? "Примечание: списание проведено в мягкий овердрафт склада.\n" : "") +
-			`Рекомендации даны. Протокол зафиксирован.`;
-
+		const diaryEntry = generateDiaryText();
 		if (onInsertIntoDiary) {
 			onInsertIntoDiary(diaryEntry);
 		}
@@ -152,8 +173,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 			data-testid="implant-passport-modal-backdrop"
 		>
 			<div
-				className={`implant-passport-card-container ${className}`.trim()}
-				data-testid="implant-passport-modal"
+				className={`implant-passport-card-container implant-surgical-passport-modal ${className}`.trim()}
+				data-testid="implant-passport-modal implant-surgical-passport-modal"
 			>
 				{/* Header */}
 				<header className="implant-passport-header-bar">
@@ -162,8 +183,11 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							<ShieldCheck size={22} />
 						</div>
 						<div>
-							<h2 id={titleId} className="text-base font-black text-[var(--ink)] flex items-center gap-2">
+							<h2 id={titleId} className="text-base font-black text-[var(--ink)] flex items-center gap-2 flex-wrap">
 								<span>Паспорт дентального имплантата</span>
+								<span className="text-xs text-[var(--muted)] font-normal hidden sm:inline">
+									· Хирургический паспорт имплантации
+								</span>
 								<span className="text-xs px-2.5 py-0.5 rounded-lg font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]">
 									Зуб FDI #{toothFdi}
 								</span>
@@ -188,12 +212,12 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 
 						<button
 							type="button"
-							onClick={() => setActiveView(activeView === "edit" ? "preview" : "edit")}
+							onClick={() => setActiveTab(activeTab === "passport" ? "protocol" : "passport")}
 							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs"
 							data-testid="btn-toggle-passport-view"
 						>
 							<Sliders size={15} />
-							<span>{activeView === "edit" ? "Предпросмотр карты" : "Параметры"}</span>
+							<span>{activeTab === "passport" ? "Параметры" : "Предпросмотр карты"}</span>
 						</button>
 
 						<button
@@ -201,12 +225,72 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							onClick={onClose}
 							className="implant-touch-btn bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)] p-2.5"
 							aria-label="Закрыть окно паспорта"
-							data-testid="btn-close-implant-passport"
+							data-testid="btn-close-implant-passport implant-passport-close-btn"
 						>
 							<X size={18} />
 						</button>
 					</div>
 				</header>
+
+				{/* Nav Tabs (Touch-First >= 44px) */}
+				<nav className="flex items-center gap-1.5 px-5 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] overflow-x-auto text-xs font-bold shrink-0" role="tablist">
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "protocol"}
+						onClick={() => setActiveTab("protocol")}
+						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+							activeTab === "protocol"
+								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="implant-tab-protocol"
+					>
+						1. Протокол & Кость
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "isq"}
+						onClick={() => setActiveTab("isq")}
+						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+							activeTab === "isq"
+								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="implant-tab-isq"
+					>
+						2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? " · 74 ISQ" : " · Ключ"})
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "diary"}
+						onClick={() => setActiveTab("diary")}
+						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+							activeTab === "diary"
+								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="implant-tab-diary"
+					>
+						3. В карту 043/у
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "passport"}
+						onClick={() => setActiveTab("passport")}
+						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+							activeTab === "passport"
+								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="implant-tab-passport"
+					>
+						4. Гарантийный паспорт
+					</button>
+				</nav>
 
 				{/* Body */}
 				<div className="implant-passport-content">
@@ -228,10 +312,150 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						</div>
 					)}
 
-					{activeView === "preview" ? (
-						<ImplantPassportCard data={assembledData} />
+					{activeTab === "passport" ? (
+						<div data-testid="tab-content-passport">
+							<ImplantPassportCard data={assembledData} />
+						</div>
+					) : activeTab === "isq" ? (
+						<div className="space-y-4" data-testid="tab-content-isq">
+							<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-4">
+								<div className="flex items-center gap-3">
+									<div className="p-3 bg-[var(--teal,#0d9488)] text-white rounded-xl">
+										<Activity size={24} />
+									</div>
+									<div>
+										<div className="text-sm font-black text-[var(--ink)]">
+											{isIsqEnabled ? "RFA магнитно-резонансная стабилометрия" : "Механический контроль торка ключом"}
+										</div>
+										<div className="text-xs text-[var(--muted)]">
+											Первичная стабильность: {torqueNcm} Н·см · {torqueNcm >= 35 ? "Высокая (оптимум)" : "Стандартная"}
+											{isIsqEnabled ? " · ISQ День 0: 74 (Остеоинтеграция стабильна)" : ""}
+										</div>
+									</div>
+								</div>
+								<div className="text-right">
+									<div className="text-xl font-black font-mono text-[var(--teal,#0d9488)]">
+										{torqueNcm} Н·см
+									</div>
+									{isIsqEnabled && (
+										<div className="text-xs font-bold text-[var(--muted)]">
+											74 ISQ
+										</div>
+									)}
+								</div>
+							</div>
+
+							<div className="p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] leading-relaxed">
+								<strong className="text-[var(--ink)] block mb-1">
+									Клинический протокол (Мандаты 8e, 8i, 8k):
+								</strong>
+								CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см и плотность кости {boneDensity}. Данные автоматически экспортируются в карту 043/у.
+							</div>
+						</div>
+					) : activeTab === "diary" ? (
+						<div className="space-y-3" data-testid="tab-content-diary">
+							<div className="flex items-center justify-between">
+								<span className="text-xs font-black uppercase text-[var(--muted)] tracking-wider">
+									Текст протокола для Карты 043/у:
+								</span>
+								<button
+									type="button"
+									onClick={() => {
+										navigator.clipboard?.writeText(generateDiaryText());
+										showToast("Протокол скопирован в буфер обмена", "success");
+									}}
+									className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs flex items-center gap-1.5"
+									data-testid="btn-copy-protocol"
+								>
+									<Copy size={14} />
+									<span>Скопировать</span>
+								</button>
+							</div>
+							<textarea
+								readOnly
+								value={generateDiaryText()}
+								className="w-full p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] font-mono text-xs text-[var(--ink)] leading-relaxed resize-none"
+								rows={8}
+								data-testid="protocol-preview-text"
+							/>
+						</div>
 					) : (
-						<div className="space-y-4">
+						<div className="space-y-4" data-testid="tab-content-protocol">
+							{/* 1-Click Clinical Presets (Standard vs GBR) */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
+								<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider">
+									Клинический протокол вмешательства (1 клик):
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+									<button
+										type="button"
+										onClick={() => setIsGbrPerformed(false)}
+										className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between ${
+											!isGbrPerformed
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+										}`}
+										data-testid="preset-standard-implantation"
+									>
+										<span className="flex items-center gap-2">
+											<Zap size={16} className={!isGbrPerformed ? "text-amber-300" : "text-[var(--teal,#0d9488)]"} />
+											<span>⚡ Стандартная имплантация (без НКР / Без костной пластики)</span>
+										</span>
+										{!isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setIsGbrPerformed(true)}
+										className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between ${
+											isGbrPerformed
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+										}`}
+										data-testid="preset-gbr-implantation"
+									>
+										<span className="flex items-center gap-2">
+											<Layers size={16} className={isGbrPerformed ? "text-sky-200" : "text-sky-500"} />
+											<span>⚡ Имплантация с НКР (костная пластика)</span>
+										</span>
+										{isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
+									</button>
+								</div>
+							</div>
+
+							{/* Stability Mode Switcher (Torque vs ISQ device) */}
+							<div className="flex flex-wrap gap-2">
+								<button
+									type="button"
+									onClick={() => setIsIsqEnabled(false)}
+									className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer ${
+										!isIsqEnabled
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									}`}
+									data-testid="btn-stability-torque-only"
+								>
+									<Activity size={16} />
+									<span>Контроль стабильности по торку (без аппарата ISQ)</span>
+									{!isIsqEnabled && <CheckCircle2 size={16} className="text-white shrink-0" />}
+								</button>
+
+								<button
+									type="button"
+									onClick={() => setIsIsqEnabled(true)}
+									className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer ${
+										isIsqEnabled
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									}`}
+									data-testid="btn-stability-isq-sensor"
+								>
+									<TrendingUp size={16} />
+									<span>Магнитный резонанс ISQ (Osstell / Penguin RFA)</span>
+									{isIsqEnabled && <CheckCircle2 size={16} className="text-white shrink-0" />}
+								</button>
+							</div>
+
 							{/* Выбор системы имплантации */}
 							<div>
 								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] block mb-2">
@@ -246,14 +470,60 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 												type="button"
 												onClick={() => handleBrandSelect(sys.brand)}
 												className={`implant-system-pill ${isSel ? "selected" : ""}`}
-												data-testid={`btn-system-${sys.brand}`}
+												data-testid={`btn-system-${sys.brand} implant-preset-btn-${sys.brand}`}
 											>
-												<div className="truncate">{sys.brand}</div>
+												<div className="truncate font-extrabold">{sys.brand}</div>
 												<div className="text-[10px] opacity-80 truncate">{sys.model}</div>
 											</button>
 										);
 									})}
 								</div>
+							</div>
+
+							{/* Misch Bone Density Cards */}
+							<div>
+								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted)] block mb-2">
+									Плотность кости (Классификация Misch D1–D4):
+								</span>
+								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-1">
+									{(["D1", "D2", "D3", "D4"] as MischDensity[]).map((b) => {
+										const isSel = boneDensity === b;
+										return (
+											<button
+												key={b}
+												type="button"
+												onClick={() => setBoneDensity(b)}
+												className={`p-2.5 rounded-xl text-left border cursor-pointer transition-all ${
+													isSel
+														? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--ink)] shadow-xs"
+														: "border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:border-[var(--line-strong,#94a3b8)]"
+												}`}
+												data-testid={`bone-card-${b}`}
+											>
+												<div className="flex items-center justify-between">
+													<span className="font-black text-xs text-[var(--teal,#0d9488)]">{b}</span>
+													{isSel && <CheckCircle2 size={14} className="text-[var(--teal,#0d9488)] shrink-0" />}
+												</div>
+												<div className="text-[11px] font-bold text-[var(--ink)] truncate">{MISCH_DENSITY_NOTES[b].title}</div>
+												<div className="text-[10px] text-[var(--muted)] truncate">{MISCH_DENSITY_NOTES[b].hint}</div>
+											</button>
+										);
+									})}
+								</div>
+								<select
+									id="passport-bone"
+									value={boneDensity}
+									onChange={(e) => setBoneDensity(e.target.value as MischDensity)}
+									className="sr-only"
+									data-testid="select-bone-density"
+									aria-label="Выбор плотности кости по Misch"
+								>
+									{(["D1", "D2", "D3", "D4"] as MischDensity[]).map((b) => (
+										<option key={b} value={b}>
+											{MISCH_DENSITY_NOTES[b].title}
+										</option>
+									))}
+								</select>
 							</div>
 
 							{/* Размеры и Торк */}
@@ -275,6 +545,16 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 											</option>
 										))}
 									</select>
+									<input
+										id="implant-dia"
+										type="number"
+										step="0.1"
+										value={diameterMm}
+										onChange={(e) => setDiameterMm(Number(e.target.value))}
+										className="sr-only"
+										data-testid="input-diameter"
+										aria-label="Диаметр имплантата числовой"
+									/>
 								</div>
 
 								<div className="flex flex-col gap-1">
@@ -294,12 +574,27 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 											</option>
 										))}
 									</select>
+									<input
+										id="implant-len"
+										type="number"
+										step="0.5"
+										value={lengthMm}
+										onChange={(e) => setLengthMm(Number(e.target.value))}
+										className="sr-only"
+										data-testid="input-length"
+										aria-label="Длина имплантата числовая"
+									/>
 								</div>
 
 								<div className="flex flex-col gap-1">
-									<label htmlFor="passport-torque" className="text-xs font-bold text-[var(--ink)]">
-										Торк стабилизации:
-									</label>
+									<div className="flex items-center justify-between">
+										<label htmlFor="passport-torque" className="text-xs font-bold text-[var(--ink)]">
+											Торк стабилизации:
+										</label>
+										<span className="text-xs font-mono font-black text-[var(--teal,#0d9488)]">
+											{torqueNcm} Н·см
+										</span>
+									</div>
 									<select
 										id="passport-torque"
 										value={torqueNcm}
@@ -313,30 +608,20 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 											</option>
 										))}
 									</select>
+									<input
+										type="range"
+										id="torque-slider"
+										min="15"
+										max="60"
+										step="5"
+										value={torqueNcm}
+										onChange={(e) => setTorqueNcm(Number(e.target.value))}
+										className="w-full h-2 bg-[var(--line)] rounded-lg appearance-none cursor-pointer accent-[var(--teal,#0d9488)] mt-1"
+										data-testid="torque-slider"
+										aria-label="Ползунок торка первичной стабилизации"
+									/>
 								</div>
 
-								<div className="flex flex-col gap-1">
-									<label htmlFor="passport-bone" className="text-xs font-bold text-[var(--ink)]">
-										Плотность кости:
-									</label>
-									<select
-										id="passport-bone"
-										value={boneDensity}
-										onChange={(e) => setBoneDensity(e.target.value as MischDensity)}
-										className="min-h-[48px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)]"
-										data-testid="select-bone-density"
-									>
-										{(["D1", "D2", "D3", "D4"] as MischDensity[]).map((b) => (
-											<option key={b} value={b}>
-												{MISCH_DENSITY_NOTES[b].title}
-											</option>
-										))}
-									</select>
-								</div>
-							</div>
-
-							{/* LOT и Серийный номер */}
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 								<div className="flex flex-col gap-1">
 									<label htmlFor="passport-lot" className="text-xs font-bold text-[var(--ink)]">
 										LOT / Партия завода:
@@ -347,10 +632,13 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 										value={lotNumber}
 										onChange={(e) => setLotNumber(e.target.value)}
 										className="min-h-[48px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-mono font-bold text-[var(--ink)]"
-										data-testid="input-passport-lot"
+										data-testid="input-lot input-passport-lot"
 									/>
 								</div>
+							</div>
 
+							{/* LOT и Серийный номер */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 								<div className="flex flex-col gap-1">
 									<label htmlFor="passport-sn" className="text-xs font-bold text-[var(--ink)]">
 										Серийный номер (SN):
@@ -361,24 +649,24 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 										value={serialNumber}
 										onChange={(e) => setSerialNumber(e.target.value)}
 										className="min-h-[48px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-mono font-bold text-[var(--ink)]"
-										data-testid="input-passport-sn"
+										data-testid="input-sn input-passport-sn"
 									/>
 								</div>
-							</div>
 
-							{/* Имитация овердрафта для проверки неблокирующего сохранения */}
-							<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
-								<span className="text-[var(--muted)]">
-									Складской статус: компоненты оприходованы
-								</span>
-								<button
-									type="button"
-									onClick={() => setIsOverdraftActive(!isOverdraftActive)}
-									className="text-xs font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
-									data-testid="btn-toggle-overdraft-test"
-								>
-									{isOverdraftActive ? "Снять овердрафт" : "Тест задержки накладной"}
-								</button>
+								{/* Имитация овердрафта для проверки неблокирующего сохранения */}
+								<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
+									<span className="text-[var(--muted)]">
+										Складской статус: компоненты оприходованы
+									</span>
+									<button
+										type="button"
+										onClick={() => setIsOverdraftActive(!isOverdraftActive)}
+										className="text-xs font-bold text-[var(--teal,#0d9488)] hover:underline cursor-pointer"
+										data-testid="btn-toggle-overdraft-test"
+									>
+										{isOverdraftActive ? "Снять овердрафт" : "Тест задержки накладной"}
+									</button>
+								</div>
 							</div>
 						</div>
 					)}
@@ -386,7 +674,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 
 				{/* Footer */}
 				<footer className="implant-passport-actions">
-					<div className="text-xs text-[var(--muted)]">
+					<div className="text-xs text-[var(--muted)] truncate">
 						{selectedSystem.brand} Ø {diameterMm} × {lengthMm} мм · {torqueNcm} Н/см
 					</div>
 
@@ -395,7 +683,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							type="button"
 							onClick={handlePrintPassport}
 							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5"
-							data-testid="btn-print-implant-passport-footer"
+							data-testid="btn-print-implant-passport-footer implant-print-passport-btn"
 							title="Распечатать паспорт имплантата"
 						>
 							<Printer size={15} className="text-[var(--teal,#0d9488)]" />
@@ -405,21 +693,21 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertDiary}
-							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)]"
-							data-testid="btn-passport-insert-diary"
+							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5"
+							data-testid="btn-passport-insert-diary implant-insert-diary-btn"
 						>
 							<FileText size={16} />
-							<span>Внести в 043/у</span>
+							<span>Внести в карту 043/у</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleSave}
-							className="implant-touch-btn bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-							data-testid="btn-save-implant-passport"
+							className="implant-touch-btn bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs flex items-center gap-1.5"
+							data-testid="btn-save-implant-passport implant-save-passport-btn"
 						>
 							<CheckCircle2 size={16} />
-							<span>Сохранить паспорт</span>
+							<span>Сохранить паспорт в карту 043/у</span>
 						</button>
 					</div>
 				</footer>
