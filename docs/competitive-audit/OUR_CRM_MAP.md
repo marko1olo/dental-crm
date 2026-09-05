@@ -53,22 +53,25 @@
   - `public_booking_slots` (`publicBooking.ts`) — доступные слоты онлайн-записи для интеграторов.
   - `urgentScheduleRequests` — срочные CITO-обращения с авто-подбором слота/врача и 1-клик печатью чистого договора со строками `_______`.
 
-### 2.3. Приём (EHR), 3D/2D Одонтограмма и Голосовой ввод
-- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`.
+### 2.3. Приём (EHR), 3D/2D Одонтограмма, Хирургия и Голосовой ввод
+- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`.
 - **Бэкенд**: `apps/api/src/routes/visits.ts`, `odontogram.ts`, `toothHistory.ts`, `clinical.ts`, `speech.ts`.
 - **Возможности**:
   - Интерактивная 2D/3D одонтограмма (32 зуба + молочная формула, кариес, пульпит, периодонтит, корень, имплант).
-  - 1-клик хирургический протокол имплантации (Dentium, Osstem, Straumann; торк 35 Н·см, ISQ 72) с авто-вставкой в дневник 043/у.
+  - 1-клик протоколы амбулаторной хирургии и имплантации по Номенклатуре 804н: простое удаление (A16.07.001), сложное удаление с фрагментацией бором Lindemann (A16.07.002), атипичное удаление ретинированного зуба мудрости (A16.07.024), неотложная периостотомия с дренажом (A16.07.011), дентальная имплантация (A16.07.006; Dentium, Osstem, Straumann; торк 35 Н·см, ISQ 72, ФДМ, Prolene 4-0) с авто-вставкой в дневник 043/у (`surgeryProtocols.ts`, `SurgeryCockpitModal.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, коммит `f150e4c7f`).
+  - Мягкий овердрафт склада расходников: задержка накладных шовного материала (Викрил, Пролен) и губок Альвожиль никогда не блокирует операцию (`evaluateWarehouseOverdraft`, коммит `f150e4c7f`).
+  - 1-клик протоколы терапии и эндодонтии по Номенклатуре 804н и СтАР: пульпит 1-е посещение (A16.07.030.001 + A16.07.008.002, NaOCl 3%, Calcept), пульпит 2-е посещение/обтурация (A16.07.008.001, гуттаперча + AH Plus), деструктивный периодонтит (A16.07.030.002, Metapex), кариес дентина (A16.07.002.001, Filtek/Estelite) с авто-вставкой дневника SOAP в карту 043/у (`clinicalSoapPresets.ts`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, коммит `1a9ec847f`).
   - Детская эндодонтия зубов 51..85 с авто-расчетом рабочей длины корневых каналов и утилитарный замер каналов в `EndoCanalMeasurementDrawer.tsx`.
   - Экспресс-протоколы гигиены и пародонтограммы в 1 клик (норма 1–2 мм, гингивит BOP+, пародонтит 3–4 мм и 4–5 мм, 5-этапная профгигиена УЗ Piezon + AirFlow + Detartrine + Bifluorid 12) с мгновенной вставкой в дневник 043/у без симулятора 192 точек (`HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`, коммит `d9f42454f`).
   - Защита черновика врача от потери (Autosave Flush) при входящем телефонном звонке (`telephonyStore.ts`, коммит `1d7d1d2f8`).
   - Голосовая диктовка врачом с авто-нормализацией медицинских терминов (`speech.ts`).
   - Система клинических правил `ClinicalRulePanel.tsx` (проверка обязательных услуг, предупреждения о противопоказаниях).
 
-### 2.4. 3D DICOM / MPR КТ Просмотрщик & ИИ Диагностика
-- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`.
-- **Бэкенд**: `apps/api/src/routes/imaging.ts`, `imaging_planning.ts`, `dicomweb.ts`, `ai.ts`, `xray.ts`.
+### 2.4. Ортодонтия, 3D DICOM / MPR КТ Просмотрщик & ИИ Диагностика
+- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `OrthodonticStudioModal.tsx`, `OrthoPhotoProtocolModal.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`.
+- **Бэкенд / Shared**: `apps/api/src/routes/imaging.ts`, `imaging_planning.ts`, `dicomweb.ts`, `ai.ts`, `xray.ts`, `packages/shared/src/orthodontics/orthoEngine.ts`, `types.ts`.
 - **Преимущество [ЛУЧШЕ У НАС]**:
+  - Полнофункциональная ортодонтическая студия `OrthodonticStudioModal.tsx` и движок `orthoEngine.ts`: 1-клик протоколы термоактивных дуг CuNiTi (.014 / .016), стальных и TMA рабочих дуг (.019x.025), межчелюстных эластиков (Rabbit, Fox), элайнеров (аттачменты, IPR, выдача наборов капп), фиксации и снятия брекетов с ретейнером, фотопротокол 9 ракурсов `OrthoPhotoProtocolModal.tsx` и 1-клик вставка SOAP-дневника в 043/у (коммит `5a007a4ab`).
   - Встроенный в веб-клиент 3D MPR КТ реконструктор (аксиальный, сагиттальный, корональный срезы).
   - Подлинная анатомическая шкала плотности кости по Misch (D1–D5: D1 >1250 HU, D2 850–1250 HU, D3 350–849 HU, D4 150–349 HU, D5 <150 HU) без аркадных HU-слайдеров и синтетических диорам нерва (`boneDensityMischMath.ts`, `implantSafetyEngine.ts`, коммит `48c7cdac2`).
   - Унифицированный модуль цефалометрии ТРГ `CephalometricAnalysisModal.tsx` с голосовой диктовкой анатомических ориентиров (коммит `95128f01e`).
@@ -109,13 +112,14 @@
   - Табель учета рабочего времени Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) с однострочным тулбаром 32–36px по Apple Studio HIG и защитой от падений `activeEmployee` (коммит `ff2dbb9c7`).
 
 ### 2.8. Склад, Стерилизация и Лабораторный портал
-- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`, `SanpinRegisters.tsx`, `AnesthesiaPkuDisposalModal.tsx`.
-- **Бэкенд / Shared**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`, `kraftPackageEngine.ts`, `pkuDisposal.ts`.
+- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`, `SanpinRegisters.tsx`, `AnesthesiaPkuDisposalModal.tsx`, `DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`.
+- **Бэкенд / Shared**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`, `kraftPackageEngine.ts`, `pkuDisposal.ts`, `labMath.ts`, `dentalLabFinancialGateEngine.ts`.
 - **Возможности**:
   - Списание расходных материалов на визиты.
+  - Наряды ЗТЛ в 1 клик (ZrO2 Prettau/Katana, временная PMMA CAD/CAM, МК Duceram Plus, винтовая коронка на Ti-Base / Multi-unit) и снятие 30-дневного срока блокировки плана лечения под Мандат 8e (`DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`, `labMath.ts`, `dentalLabFinancialGateEngine.ts`, коммит `96dc7246c`).
   - 1-клик вскрытие крафт-пакетов без комиссий из 3 человек по СанПиН 3.3686-21 и авто-привязка индикатора стерильности к визиту 043/у (`SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, коммит `0dc6e0fad`).
   - Экстренное вскрытие крафт-лотков и наборов при острой боли без задержек и бюрократических блокировок (`SanpinRegisters.tsx`, `kraftPackageEngine.ts`, коммит `5f0ee1df3`).
-  - Утилизация и списание карпул местных анестетиков (Ультракаин, Септанест, Скандонест) в 1 клик по СанПиН 3.3686-21 медсестрой без комиссии из 3 человек (`AnesthesiaPkuDisposalModal.tsx`, `pkuDisposal.ts`, коммит `d6a6eab26`).
+  - Утилизация и списание карпул местных анестетиков (Ультракаин, Септанест, Скандонест) в 1 клик по СанПиН 3.3686-21 медсестрой без комиссии из 3 человек (`AnesthesiaPkuDisposalModal.tsx`, `pkuDisposal.ts`, коммиты `d6a6eab26`, `2303c297e` — исключены все эмодзи по Греху № 7).
   - Мобильный портал смен врача `DoctorMobileShiftModal.tsx` со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенной фиксацией явок.
   - Журнал автоклавирования и стерилизационных партий (`sterilization.ts`).
   - Гостевой портал зуботехнических лабораторий (`GuestLabPortal.tsx`).
@@ -124,7 +128,7 @@
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
 - **Возможности**: Автоматический импорт баз данных из IDENT, DentalPRO, Инфоклиника и 1С:Стоматология.
 
-### 2.10. Тридцать две киллер-фичи снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
+### 2.10. Тридцать семь киллер-фич снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
 
 Наша стоматологическая CRM создана для реального врача у кресла и администратора на ресепшене, а не для бюрократического контроля. Все процессы подчиняются принципу «Врач правит только патологию, норма заполняется в 1 клик, система никогда не ставит палки в колёса».
 
@@ -342,13 +346,41 @@
 #### 2.10.32. 1-клик списание карпул анестетиков медсестрой без комиссии из 3 человек (Мандаты 8e, 8n / СанПиН 3.3686-21)
 - **Суть и домен**: Автономия операционной медсестры и ассистента при предметно-количественном учете (ПКУ) и списании карпул местных анестетиков (отходы класса Б). Полное устранение бюрократического созыва комиссии из 3 человек для частной амбулаторной стоматологии (Мандат 8e пункт 10). 1-клик пресеты: Ультракаин Д-С форте, Септанест 1:100 000, Скандонест 3% без вазоконстриктора (кардио-пациенты) и бой/брак карпул. Авто-расчет срока годности (+2 года), валидация просрочки, дезинфекция в Аламиноле 3% (60 мин), генерация печатного Акта утилизации и регламентного HTML-документа с однострочным подтверждением подписи в 1 клик.
 - **Фронтенд и Shared**:
-  - `apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx`, `packages/shared/src/anesthesia/pkuDisposal.ts`, `packages/shared/src/anesthesia/types.ts` (коммит `d6a6eab26`)
+  - `apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx`, `packages/shared/src/anesthesia/pkuDisposal.ts`, `packages/shared/src/anesthesia/types.ts` (коммиты `d6a6eab26`, `2303c297e`)
 - **Тесты**:
   - `apps/web/src/components/anesthesia/__tests__/anesthesiaPkuDisposal.test.tsx`, `packages/shared/src/tests/anesthesiaPkuDisposal.test.ts` (100% passing)
 
+#### 2.10.33. Ортодонтическая студия 1-клика: дуги CuNiTi/TMA, эластики, элайнеры, брекеты (Мандаты 8e, 8k / Ортодонтия)
+- **Суть и домен**: Полнофункциональная ортодонтическая студия `OrthodonticStudioModal.tsx` и движок `packages/shared/src/orthodontics/orthoEngine.ts`. 1-клик протоколы: термоактивные дуги CuNiTi (.014 / .016), стальные и TMA рабочие дуги (.019x.025), межчелюстные эластики (Класс II Rabbit, Класс III Fox, треугольные), элайнеры (аттачменты, сепарация IPR, выдача наборов элайнеров), фиксация и снятие брекетов Damon Q2 / Clarity Advanced с несъемным ретейнером. Однострочный тулбар 36px, фотопротокол 9 ракурсов `OrthoPhotoProtocolModal.tsx`, 1-клик вставка SOAP-дневника в карту 043/у без модальных барьеров (Закон Анти-Матрёшки).
+- **Фронтенд и Shared**:
+  - `apps/web/src/components/orthodontics/OrthodonticStudioModal.tsx`, `apps/web/src/components/orthodontics/OrthoPhotoProtocolModal.tsx`, `packages/shared/src/orthodontics/orthoEngine.ts`, `types.ts` (коммит `5a007a4ab`)
+- **Тесты**:
+  - `packages/shared/src/tests/orthoEngine.test.ts` (14 сценариев, 270 строк, 100% passing)
 
+#### 2.10.34. Амбулаторная хирургия 1-клика: простое/сложное удаление, периостотомия и мягкий овердрафт склада (Мандаты 8e, 8k, 8n & Zero Dead-Ends / Хирургия)
+- **Суть и домен**: Канонические протоколы амбулаторной хирургии по Номенклатуре 804н в `surgeryProtocols.ts`, `SurgeryCockpitModal.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`: (1) Простое удаление постоянного зуба (A16.07.001) щипцами/элеватором с кюретажем и гемостазом Альвожиль, (2) Сложное удаление (A16.07.002) с выкраиванием лоскута, распилом бифуркации бором Lindemann и ушиванием Викрил 4-0, (3) Атипичное удаление ретинированного зуба мудрости (A16.07.024) с остеотомией и сепарацией коронки, (4) Неотложная периостотомия (A16.07.011) с разрезом по переходной складке, эвакуацией гноя и дренированием, (5) Стандартная имплантация (A16.07.006, 35 Н·см, ISQ 72, ФДМ, Prolene 4-0). Алгоритм мягкого овердрафта `evaluateWarehouseOverdraft`: задержка оприходования шовного материала или гемостатической губки НИКОГДА не блокирует операцию (`canProceed: true`). Ноль эмодзи в Форме 043/у (Грех № 7).
+- **Фронтенд**:
+  - `apps/web/src/components/surgery/surgeryProtocols.ts`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgerySafetyChecklist.tsx`, `apps/web/src/components/visit/surgery/SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `surgery.css`, `visitSurgery.css` (коммит `f150e4c7f`)
+- **Тесты**:
+  - `apps/web/src/components/surgery/__tests__/surgeryProtocols.test.ts` (106 строк тестов, 100% passing), `surgeryCockpitModal.test.tsx`
 
+#### 2.10.35. Наряды ЗТЛ в 1 клик и безусловное снятие 30-дневного блока плана лечения (Мандаты 8e, 8k / Ортопедия и ЗТЛ)
+- **Суть и домен**: 1-клик экспресс-пресеты ортопедических конструкций в `labMath.ts`, `DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`, `labWorkOrderPresets.ts`: (1) Диоксид циркония ZrO2 Prettau / Katana ML (24 000 ₽ / 7 500 ₽, 5 дней), (2) Временная фрезерованная коронка PMMA CAD/CAM (3 500 ₽ / 1 200 ₽, 2 дня), (3) Металлокерамика Co-Cr Duceram Plus (15 000 ₽ / 5 000 ₽, 7 дней), (4) Винтовая коронка на имплантате Ti-Base / Multi-unit + ZrO2 (38 000 ₽ / 13 000 ₽, 7 дней). Ликвидация бюрократического блока по истечению 30 дней предварительного плана лечения в `dentalLabFinancialGateEngine.ts` и `LabWorkOrderModal.tsx` — срок давности плана выводится мягким зеленым бейджем соответствия Мандату 8e и НИКОГДА не блокирует отправку наряда в ЗТЛ, оказание услуг или оплату.
+- **Фронтенд и Shared**:
+  - `apps/web/src/components/lab/labMath.ts`, `DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `DentalLabOcclusionTab.tsx`, `dentalLabFinancialGateEngine.ts`, `orders/LabWorkOrderModal.tsx`, `orders/labWorkOrderPresets.ts` (коммиты `96dc7246c`, `97af039fc`)
+- **Тесты**:
+  - `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (123 строки тестов 1-клик пресетов и снятия 30-дневного блока, 100% passing)
 
+#### 2.10.36. Ликвидация эмодзи в актах утилизации анестетиков ПКУ по Смертному Греху № 7 (Мандат 8d / Документы)
+- **Суть и домен**: Полное удаление сырых мультяшных эмодзи (📦, 📝, 💉) из акта утилизации карпул местных анестетиков и интерфейсных кнопок в `AnesthesiaPkuDisposalModal.tsx`. Строгое соответствие Греху № 7 («Святость официальных документов — ноль мультяшных эмодзи в Form 043/u, актах, чеках 54-ФЗ — только строгие векторные иконки Lucide»).
+- **Фронтенд**:
+  - `apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx` (коммит `2303c297e`)
+- **Валидация**:
+  - 0 эмодзи в тексте и разметке, 100% соответствие Смертному Греху № 7
 
-
-
+#### 2.10.37. Терапия и эндодонтия: 1-клик протоколы пульпита, обтурации, периодонтита и кариеса без симулятора (Мандаты 8e, 8i, 8k, 8n / Терапия)
+- **Суть и домен**: Полнофункциональные 1-клик протоколы терапевтической стоматологии и эндодонтии по Номенклатуре 804н, клиническим рекомендациям СтАР и Форме 043/у в `clinicalSoapPresets.ts`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`: (1) Пульпит (1-е посещение) — экстирпация пульпы, мехобработка ProTaper/WaveOne, NaOCl 3% + ЭДТА 17%, Calcept под дентин-пасту (A16.07.030.001 + A16.07.008.002, K04.0), (2) Пульпит (2-е посещение) / Обтурация — распломбирование, высушивание штифтами, латеральная конденсация гуттаперчи с силером AH Plus / BioRoot, RVG контроль (A16.07.008.001, K04.0), (3) Периодонтит деструктивный — антисептическая и ультразвуковая дезинфекция, Metapex/Calcept на 14 дней (A16.07.030.002 + A16.07.008.002, K04.5), (4) Кариес дентина средний/глубокий — адгезивный протокол OptiBond / Single Bond, послойная реставрация Filtek / Estelite, полировка Enhance / Prisma Gloss (A16.07.002.001, K02.1). Однострочный тулбар 32–34px, векторные иконки Lucide без эмодзи (Грех № 7), тач-таргеты $\ge 44\text{--}50\text{px}$, мгновенная вставка в дневник визита без модальных барьеров.
+- **Фронтенд**:
+  - `apps/web/src/components/visit/clinicalSoapPresets.ts`, `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`, `apps/web/src/components/odontogram/EndoCanalLogModal.tsx`, `apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx` (коммит `1a9ec847f`)
+- **Тесты**:
+  - `apps/web/src/tests/clinicalSoapPresets.test.ts` (21/21 passing), `apps/web/src/components/odontogram/__tests__/EndoCanalLogModal.test.ts` (30/30 passing), `apps/web/src/components/visit/__tests__/clinicalSoapProtocols043.test.ts` (66/66 passing)
