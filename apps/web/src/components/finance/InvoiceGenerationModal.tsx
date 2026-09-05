@@ -344,6 +344,21 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 		}
 	};
 
+	// 1-Click Doctor Clinical Override under Mandate 8e
+	const handleDoctorClinicalOverride = () => {
+		const docName =
+			doctorFullName ||
+			auth?.currentUser?.name ||
+			"Лечащий врач";
+		setAdminOverrideAuthorized(true);
+		setAdminStaffName(`${docName} (клиническое решение врача)`);
+		showToast(
+			`Цены согласованы лечащим врачом (${docName}) в соответствии с Мандатом 8e`,
+			"success",
+			4000,
+		);
+	};
+
 	// Identify unapproved items under Decree 659 & Upsell Consent Shield
 	const unapprovedItems = useMemo(() => {
 		// If current plan itself is approved and signed, items inside it are approved
@@ -472,8 +487,13 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 		}
 
 		if (!report.canGenerateInvoice) {
+			if (!adminOverrideAuthorized) {
+				handleDoctorClinicalOverride();
+				return;
+			}
 			showToast(
-				"Формирование заблокировано: устраните архивные позиции прейскуранта",
+				report.blockingReasons[0] ||
+					"Формирование счета: проверьте позиции сметы или выберите аналог 804н",
 				"warning",
 				4000,
 			);
@@ -1005,13 +1025,23 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 
 					<div className="flex items-center gap-3">
 						{!adminOverrideAuthorized && (
-							<button
-								type="button"
-								onClick={() => setShowAdminPinDrawer(true)}
-								className="px-3 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold flex items-center gap-1.5 transition-colors"
-							>
-								<Key size={14} /> Согласование управляющим
-							</button>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={handleDoctorClinicalOverride}
+									className="px-3 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+									title="Согласовать цены под личную клиническую ответственность врача (Мандат 8e)"
+								>
+									<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400" /> Согласовать врачом
+								</button>
+								<button
+									type="button"
+									onClick={() => setShowAdminPinDrawer(true)}
+									className="px-3 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+								>
+									<Key size={14} /> PIN управляющего
+								</button>
+							</div>
 						)}
 						{adminOverrideAuthorized && (
 							<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold">
@@ -1023,7 +1053,6 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 							type="button"
 							onClick={handleCreateInvoice}
 							disabled={
-								!report.canGenerateInvoice ||
 								isSubmitting ||
 								isCreatingAddendum
 							}
@@ -1032,7 +1061,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 									? "Включает автосогласование дополнительных услуг по ПП РФ №659"
 									: undefined
 							}
-							className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-lg shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all active:scale-95"
+							className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-lg shadow-teal-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
 						>
 							<FileText size={16} />
 							{isSubmitting || isCreatingAddendum
