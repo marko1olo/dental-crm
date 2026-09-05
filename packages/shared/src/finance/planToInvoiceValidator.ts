@@ -545,20 +545,21 @@ export function validatePlanToInvoice(
 	const totalPatientSurchargeKopecks = sumKopecks(validatedItems.map((i) => i.patientSurchargeKopecks));
 
 	// Критерий готовности к выписке наряда / счёта:
-	// 1. Нет архивных / ненайденных позиций без замены на 804н аналог (DEFECT-PRICE-02 — НЕЛЬЗЯ обойти оверрайдом)
-	// 2. Нет недействительных нулевых цен (НЕЛЬЗЯ обойти оверрайдом)
-	// 3. Все превышения инфляции / скидки авторизованы администратором
-	// 4. Истекший срок плана согласован оверрайдом или покрыт действующим договором
-	const hasUnresolvedArchivedOrMissing = validatedItems.some(
-		(i) => (i.isArchived || !i.isFoundInCatalog) && i.selectedResolution !== "REPLACE_WITH_804N_ANALOGUE",
-	);
+	// 1. Позиции без аналога или с расхождениями разрешаются при авторизации врача/администратора (Мандат 8e п. 1, 2, 7)
+	// 2. Разрешены скидки до 100% и бесплатные услуги (0 руб. к списанию) на гарантию, профосмотры и персонал
+	// 3. Строго блокируются только математические ошибки (цена < 0 или скидка > 100%)
+	const hasUnresolvedArchivedOrMissing =
+		payload.adminOverrideAuthorized !== true &&
+		validatedItems.some(
+			(i) => (i.isArchived || !i.isFoundInCatalog) && i.selectedResolution !== "REPLACE_WITH_804N_ANALOGUE",
+		);
 	// Разрешены скидки до 100% (0 руб. к списанию) на гарантийные переделки и персонал без блокировок.
-	const hasZeroPrices = validatedItems.some(
+	const hasNegativePrices = validatedItems.some(
 		(i) => i.effectiveUnitPriceKopecks < 0,
 	);
-	const hasInvalidPrices = validatedItems.some(
-		(i) => i.discrepancyType === "INVALID_PRICE",
-	);
+	const hasInvalidPrices =
+		payload.adminOverrideAuthorized !== true &&
+		validatedItems.some((i) => i.discrepancyType === "INVALID_PRICE");
 	const hasExcessiveDiscounts = validatedItems.some(
 		(i) => (i.planDiscountKopecks ?? 0) > i.planGrossKopecks,
 	);
@@ -573,7 +574,7 @@ export function validatePlanToInvoice(
 		validatedItems.length > 0 &&
 		!hasUnresolvedArchivedOrMissing &&
 		!hasInvalidPrices &&
-		!hasZeroPrices &&
+		!hasNegativePrices &&
 		!hasExcessiveDiscounts &&
 		!hasUnresolvedAdminOverrides;
 

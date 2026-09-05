@@ -346,6 +346,36 @@ describe("planToInvoiceValidator (Feature #41)", () => {
 		assert.equal(report.canGenerateInvoice, true, "Истечение 30 дней плана НЕ БЛОКИРУЕТ выписку счетов или оплату (Мандат 8e / Раздел VII)");
 		assert.equal(report.blockingReasons.length, 0);
 	});
+
+	it("should allow invoice and work order generation when zero-price or legacy service is authorized by doctor clinical override (Mandate 8e)", () => {
+		const items: PlanItemForValidation[] = [
+			{
+				itemId: "item-free-consult",
+				toothNumber: null,
+				code804n: "A01.07.001",
+				nameRu: "Первичный осмотр и консультация (бесплатно по акции)",
+				quantity: 1,
+				planUnitPriceKopecks: 0,
+			},
+		];
+
+		const payload: PlanToInvoiceValidationPayload = {
+			planId: "PLAN-105",
+			patientId: "PAT-005",
+			planCreatedAtIso: new Date().toISOString(),
+			adminOverrideAuthorized: true,
+			adminOverrideStaffName: "Врач Иванов И. И. (клиническое решение врача)",
+			adminOverrideReason: "Бесплатная первичная консультация по акции клиники",
+			items,
+			catalog: mockCatalog,
+		};
+
+		const report = validatePlanToInvoice(payload);
+
+		assert.equal(report.canGenerateWorkOrder, true);
+		assert.equal(report.canGenerateInvoice, true);
+		assert.equal(report.adminOverrideInfo.isAuthorized, true);
+	});
 });
 
 describe("priceLockEngine (Feature #41)", () => {

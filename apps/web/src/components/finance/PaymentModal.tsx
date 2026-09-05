@@ -18,6 +18,7 @@ import {
 	CheckCircle,
 	Users,
 	Sparkles,
+	Zap,
 } from "lucide-react";
 import {
 	type SberPosTransactionResponse,
@@ -261,6 +262,34 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			showToast(errorMsg, "error");
 		} finally {
 			setIsSubmittingDeposit(false);
+		}
+	};
+
+	const handleDepositOrPartialCombo = (source: "deposit" | "family") => {
+		const availableBalance = source === "deposit" ? patientDepositRub : patientFamilyBalanceRub;
+		if (availableBalance >= totalDueRub) {
+			handleDepositSubmit(source);
+		} else if (availableBalance > 0) {
+			const totalKop = rubToKopecks(totalDueRub);
+			const balKop = Math.min(totalKop, rubToKopecks(availableBalance));
+			const remKop = Math.max(0, totalKop - balKop);
+			if (source === "deposit") {
+				setSplitDepositRub(kopecksToRub(balKop));
+				setSplitCardRub(kopecksToRub(remKop));
+				setSplitCashRub(0);
+				setSplitSbpRub(0);
+			} else {
+				setSplitDepositRub(kopecksToRub(balKop));
+				setSplitCardRub(kopecksToRub(remKop));
+				setSplitCashRub(0);
+				setSplitSbpRub(0);
+			}
+			setActiveMethod("split");
+			showToast(
+				`Зачтено ${kopecksToRub(balKop)} ₽ ${source === "family" ? "из семьи" : "с аванса"}. Остаток ${kopecksToRub(remKop)} ₽ перенесён на карту.`,
+				"info",
+				3500,
+			);
 		}
 	};
 
@@ -691,20 +720,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										</p>
 										<button
 											type="button"
-											disabled={patientDepositRub < totalDueRub || isSubmittingDeposit}
-											onClick={() => handleDepositSubmit("deposit")}
+											disabled={patientDepositRub <= 0 || isSubmittingDeposit}
+											onClick={() => handleDepositOrPartialCombo("deposit")}
 											title={
 												isSubmittingDeposit
 													? "Выполняется списание с депозита..."
-													: patientDepositRub < totalDueRub
-													? `Недостаточно средств на депозите (${patientDepositRub.toLocaleString("ru-RU")} ₽ из ${totalDueRub.toLocaleString("ru-RU")} ₽). Используйте комбинированную оплату ниже.`
-													: `Списать ${amountRub} ₽ с личного депозита пациента`
+													: patientDepositRub >= totalDueRub
+													? `Списать ${amountRub} ₽ с личного депозита пациента`
+													: patientDepositRub > 0
+													? `Зачесть ${patientDepositRub} ₽ с аванса + остаток ${(totalDueRub - patientDepositRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
+													: "На лицевом счете пациента нет авансовых средств"
 											}
 											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-deposit-full"
 										>
-											<CheckCircle size={14} />
-											<span>Списать {amountRub} ₽ с депозита</span>
+											{patientDepositRub >= totalDueRub ? (
+												<>
+													<CheckCircle size={14} />
+													<span>Списать {amountRub} ₽ с депозита</span>
+												</>
+											) : patientDepositRub > 0 ? (
+												<>
+													<Zap size={14} />
+													<span>Зачесть аванс {patientDepositRub} ₽ + остаток картой</span>
+												</>
+											) : (
+												<span>На депозите нет средств (0 ₽)</span>
+											)}
 										</button>
 									</div>
 
@@ -728,20 +770,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										</p>
 										<button
 											type="button"
-											disabled={patientFamilyBalanceRub < totalDueRub || isSubmittingDeposit}
-											onClick={() => handleDepositSubmit("family")}
+											disabled={patientFamilyBalanceRub <= 0 || isSubmittingDeposit}
+											onClick={() => handleDepositOrPartialCombo("family")}
 											title={
 												isSubmittingDeposit
 													? "Выполняется списание с семейного баланса..."
-													: patientFamilyBalanceRub < totalDueRub
-													? `Недостаточно средств на семейном балансе (${patientFamilyBalanceRub.toLocaleString("ru-RU")} ₽ из ${totalDueRub.toLocaleString("ru-RU")} ₽). Используйте комбинированную оплату ниже.`
-													: `Списать ${amountRub} ₽ с семейного баланса`
+													: patientFamilyBalanceRub >= totalDueRub
+													? `Списать ${amountRub} ₽ с семейного баланса`
+													: patientFamilyBalanceRub > 0
+													? `Зачесть ${patientFamilyBalanceRub} ₽ из семьи + остаток ${(totalDueRub - patientFamilyBalanceRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
+													: "Семейный баланс пуст или не подключен"
 											}
 											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-family-full"
 										>
-											<CheckCircle size={14} />
-											<span>Списать {amountRub} ₽ с семейного счета</span>
+											{patientFamilyBalanceRub >= totalDueRub ? (
+												<>
+													<CheckCircle size={14} />
+													<span>Списать {amountRub} ₽ с семейного счета</span>
+												</>
+											) : patientFamilyBalanceRub > 0 ? (
+												<>
+													<Zap size={14} />
+													<span>Зачесть из семьи {patientFamilyBalanceRub} ₽ + остаток картой</span>
+												</>
+											) : (
+												<span>Семейный баланс пуст (0 ₽)</span>
+											)}
 										</button>
 									</div>
 								</div>

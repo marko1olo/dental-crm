@@ -202,6 +202,8 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 				planUnitPriceKopecks: Math.round(Number(it.unitPriceRub || 0) * 100),
 				planDiscountKopecks: Math.round(Number(it.discountRub || 0) * 100),
 				categoryRu: it.category || "Терапия",
+				isWarrantyReplacement: Boolean(it.isWarrantyReplacement),
+				isComplimentary: Boolean(it.isComplimentary || Number(it.unitPriceRub || 0) === 0),
 				...(Array.isArray(it.surfaces) ? { surfaces: it.surfaces } : {}),
 				...(it.priceId ? { serviceId: String(it.priceId) } : {}),
 				...(it.phase ? { stageId: `stage-${it.phase}` } : {}),
@@ -486,13 +488,50 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			await handleCreateAddendum();
 		}
 
-		if (!report.canGenerateInvoice) {
-			if (!adminOverrideAuthorized) {
-				handleDoctorClinicalOverride();
-				return;
-			}
+		let isAuthorized = adminOverrideAuthorized;
+		let effectiveStaffName = adminStaffName;
+		if (!isAuthorized && !report.canGenerateInvoice) {
+			const docName =
+				doctorFullName ||
+				auth?.currentUser?.name ||
+				"Лечащий врач";
+			isAuthorized = true;
+			effectiveStaffName = `${docName} (клиническое решение врача)`;
+			setAdminOverrideAuthorized(true);
+			setAdminStaffName(effectiveStaffName);
 			showToast(
-				report.blockingReasons[0] ||
+				`Цены согласованы лечащим врачом (${docName}) в соответствии с Мандатом 8e`,
+				"success",
+				4000,
+			);
+		}
+
+		// Re-evaluate validation report with effective authorization
+		const effectiveReport = isAuthorized && !report.canGenerateInvoice
+			? validatePlanToInvoice({
+					planId,
+					planNumber,
+					planTitle,
+					patientId,
+					patientName,
+					doctorId: doctorUserId,
+					doctorFullName,
+					planCreatedAtIso,
+					approvedAtIso,
+					isSignedWithPatient,
+					items: itemsForValidation,
+					catalog: catalogLookup,
+					itemResolutionOverrides: itemResolutions,
+					itemAnalogueSelections,
+					adminOverrideAuthorized: true,
+					adminOverrideStaffName: effectiveStaffName,
+					adminOverrideReason: adminReasonInput || "Клиническое согласование врача (Мандат 8e)",
+			  })
+			: report;
+
+		if (!effectiveReport.canGenerateInvoice) {
+			showToast(
+				effectiveReport.blockingReasons[0] ||
 					"Формирование счета: проверьте позиции сметы или выберите аналог 804н",
 				"warning",
 				4000,
@@ -512,7 +551,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 				isSignedWithPatient,
 				doctorUserId: doctorUserId || auth?.currentUser?.id,
 				documentType,
-				items: report.items.map((it) => ({
+				items: effectiveReport.items.map((it) => ({
 					itemId: it.itemId,
 					toothNumber: it.toothNumber,
 					surfaces: it.surfaces,
@@ -529,13 +568,13 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 					serviceId:
 						it.suggested804nAnalogue?.serviceId || (it as any).serviceId,
 				})),
-				adminOverridePin: adminOverrideAuthorized
-					? adminPinInput.trim()
+				adminOverridePin: isAuthorized
+					? (adminPinInput.trim() || undefined)
 					: undefined,
-				adminOverrideReason: adminReasonInput.trim() || undefined,
+				adminOverrideReason: adminReasonInput.trim() || (isAuthorized ? effectiveStaffName : undefined),
 				notes: `Выписан ${documentType === "work_order" ? "наряд-заказ" : "счет"} по плану ${planNumber}. ${
-					report.totalClinicAbsorptionKopecks > 0
-						? `Гарантия неизменности цен: экономия пациента ${formatKopecksRu(report.totalClinicAbsorptionKopecks)}.`
+					effectiveReport.totalClinicAbsorptionKopecks > 0
+						? `Гарантия неизменности цен: экономия пациента ${formatKopecksRu(effectiveReport.totalClinicAbsorptionKopecks)}.`
 						: ""
 				}`,
 			};
