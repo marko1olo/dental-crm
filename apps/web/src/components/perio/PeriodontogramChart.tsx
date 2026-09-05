@@ -6,8 +6,8 @@ import {
 	calculatePerioIndices,
 	calculatePsrSextants,
 	createDefaultPerioTeeth,
-	formatPsrSextantsSummary,
 	FURCATION_GRADES,
+	formatPsrSextantsSummary,
 	generateComprehensivePerio043Text,
 	generateFullMouthProbingSequence,
 	isFurcationEligibleTooth,
@@ -20,6 +20,7 @@ import {
 	type PerioSiteKey,
 	type PerioToothRecord,
 	type ProbingStep,
+	PSR_SEXTANTS,
 } from "@dental/shared";
 import {
 	Activity,
@@ -42,7 +43,8 @@ import {
 	Trash2,
 	Zap,
 } from "lucide-react";
-import React, {
+import type React from "react";
+import {
 	useCallback,
 	useEffect,
 	useId,
@@ -54,9 +56,19 @@ import {
 	getToothFolkAndAnatomicalNameRu,
 	PERIO_PATHOLOGY_PRESETS,
 } from "../../lib/clinicalProtocols043";
+import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
 import { HygieneIndicesPanel } from "../hygiene/HygieneIndicesPanel";
-import { useVisitStore } from "../../store/visitStore";
+import {
+	applyGingivitisPreset,
+	applyHealthyPeriodontiumPreset,
+	applyPeriodontitisModeratePreset,
+	applyPsrSextantCode,
+	PERIO_EXPRESS_PRESETS,
+	type PerioExpressPresetId,
+	PSR_CODE_DEFINITIONS,
+	type PsrCode,
+} from "./perioMath";
 
 export interface PeriodontogramChartProps {
 	readonly patientId?: string | undefined;
@@ -71,6 +83,8 @@ export interface PeriodontogramChartProps {
 	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
 	readonly readOnly?: boolean | undefined;
 	readonly compactMode?: boolean | undefined;
+	readonly initialTier3Expanded?: boolean | undefined;
+	readonly initialProbeKeyboardEnabled?: boolean | undefined;
 }
 
 export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
@@ -84,6 +98,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 	onInsertToProtocol,
 	readOnly = false,
 	compactMode = false,
+	initialTier3Expanded = false,
+	initialProbeKeyboardEnabled = false,
 }) => {
 	const chartContainerId = useId();
 
@@ -122,7 +138,11 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 	const [insertStatus, setInsertStatus] = useState<boolean>(false);
 	// Florida Probe Tier 3 Isolation: detailed 192-point table is on-demand for periodontists
 	const [isTier3ProbingExpanded, setIsTier3ProbingExpanded] =
-		useState<boolean>(false);
+		useState<boolean>(initialTier3Expanded);
+	// Hardware electronic probe / Numpad keyboard capture: OFF by default (Mandates 8e, 8k)
+	const [isProbeKeyboardEnabled, setIsProbeKeyboardEnabled] = useState<boolean>(
+		initialProbeKeyboardEnabled,
+	);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -402,7 +422,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 	// ─── Keyboard Event Handling (Arrows, 0-9, NumPad, B, P, S, M, F) ─────────
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLDivElement>) => {
-			if (readOnly) return;
+			if (readOnly || !isProbeKeyboardEnabled) return;
 
 			// If focus is inside a standard text input, do not hijack typing
 			if (
@@ -576,6 +596,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 		},
 		[
 			readOnly,
+			isProbeKeyboardEnabled,
 			focusedSite,
 			probingSequence,
 			toothMap,
@@ -584,6 +605,82 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			moveToNextSite,
 			moveToPreviousSite,
 		],
+	);
+
+	// ─── 1-Click PSR Screening & Clinical Presets (Mandates 8e, 8k) ───────────
+	const handleApplyExpressPreset = useCallback(
+		(presetId: PerioExpressPresetId) => {
+			if (readOnly) return;
+			let updatedTeeth: PerioToothRecord[];
+			let protocolText = "";
+
+			switch (presetId) {
+				case "perio_norm_express":
+					updatedTeeth = applyHealthyPeriodontiumPreset(teeth);
+					protocolText =
+						"Пародонт: маргинальная десна бледно-розовая, плотная, глубина зубодесневой борозды 1-2 мм, кровоточивость отсутствует, подвижности зубов нет.";
+					break;
+				case "gingivitis_express":
+					updatedTeeth = applyGingivitisPreset(teeth);
+					protocolText =
+						"Пародонт: десна отечна, гиперемирована, валикообразно утолщена, выраженная диффузная кровоточивость при зондировании (BOP+), глубина десневых бороздок 2-3 мм (ложные карманы за счет отека, < 3.5 мм), зубодесневое прикрепление сохранено, наддесневой зубной камень, подвижности зубов нет (PSR 1-2).";
+					break;
+				case "periodontitis_moderate_express":
+					updatedTeeth = applyPeriodontitisModeratePreset(teeth);
+					protocolText =
+						"Пародонт: глубина пародонтальных карманов 3.5–5.0 мм (PSR 3), десна гиперемирована с цианотичным оттенком, выраженная кровоточивость при зондировании, над- и поддесневой зубной камень, рецессия десны 1-2 мм, патологическая подвижность зубов I ст.";
+					break;
+			}
+
+			setTeeth(updatedTeeth);
+
+			useVisitStore.getState().setVisitNoteForm((prev) => ({
+				...prev,
+				objectiveStatus: prev.objectiveStatus
+					? `${prev.objectiveStatus}\n\n${protocolText}`
+					: protocolText,
+			}));
+
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: protocolText,
+						mode: "smart_append",
+					},
+				}),
+			);
+
+			if (onInsertToProtocol) {
+				onInsertToProtocol(protocolText);
+			}
+
+			if (typeof navigator !== "undefined" && navigator.clipboard) {
+				void navigator.clipboard.writeText(protocolText);
+			}
+
+			const presetInfo = PERIO_EXPRESS_PRESETS[presetId];
+			showToast(
+				`Статус пародонта зафиксирован: «${presetInfo?.titleRu ?? presetId}». Протокол перенесён в дневник 043/у.`,
+				"success",
+				4500,
+			);
+		},
+		[readOnly, teeth, onInsertToProtocol],
+	);
+
+	const handleApplySextantCode = useCallback(
+		(sextantName: string, code: PsrCode, asterisk = false) => {
+			if (readOnly) return;
+			setTeeth((prev) =>
+				applyPsrSextantCode(prev, sextantName, code, asterisk),
+			);
+			showToast(
+				`Секстант ${sextantName}: установлен Код ${code}${asterisk ? "*" : ""} (PSR)`,
+				"info",
+				2500,
+			);
+		},
+		[readOnly],
 	);
 
 	// ─── 1-Click Fast Presets ────────────────────────────────────────────────
@@ -1011,7 +1108,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 		<div
 			id={chartContainerId}
 			ref={containerRef}
-			tabIndex={0}
+			tabIndex={isProbeKeyboardEnabled ? 0 : -1}
 			onKeyDown={handleKeyDown}
 			className="perio-chart-root w-full flex flex-col gap-4 p-4 sm:p-5 rounded-2xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] shadow-sm outline-none focus:ring-1 focus:ring-teal-500/50 select-none transition-all"
 			data-testid="interactive-periodontogram"
@@ -1050,13 +1147,13 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</div>
 				</div>
 
-				{/* 1-Click Fast Action Presets */}
+				{/* 1-Click Fast Action Presets (1 Row 32-36px Toolbar, Mandates 8d, HIG) */}
 				{!readOnly && (
-					<div className="flex items-center gap-2 flex-wrap">
+					<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 h-9">
 						<button
 							type="button"
 							onClick={handleSetAllIntact}
-							className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-500/15 hover:text-emerald-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-emerald-500/15 hover:text-emerald-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
 							title="Установить все 32 зуба в норму (PD 2мм, рецессия 0мм, BOP 0%)"
 							data-testid="perio-preset-intact"
 						>
@@ -1067,29 +1164,29 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => handleMarkSelectedToothPathology(5, true)}
-							className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer"
 							title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для выбранного зуба #${selectedToothNumber}`}
 							data-testid="perio-preset-tooth-pathology"
 						>
 							<Droplets size={14} className="text-rose-400" />
-							<span>Патология #{selectedToothNumber} (5мм+BOP)</span>
+							<span>#{selectedToothNumber} 5мм+BOP</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleMarkBopOnDeepPockets}
-							className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer"
 							title="Автоматически проставить кровоточивость на всех карманах глубиной ≥ 4 мм"
 							data-testid="perio-preset-bop-pockets"
 						>
 							<Droplets size={14} className="text-rose-400" />
-							<span>BOP на карманах ≥ 4мм</span>
+							<span>BOP ≥ 4мм</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleClearPlaque}
-							className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer"
 							title="Очистить весь зубной налет"
 							data-testid="perio-preset-clear-plaque"
 						>
@@ -1100,7 +1197,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsHygieneExpanded((prev) => !prev)}
-							className={`px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+							className={`h-9 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
 								isHygieneExpanded
 									? "bg-teal-600 text-white border-teal-500 shadow-xs"
 									: "bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 hover:text-teal-300 border-[var(--line,#334155)] text-[var(--ink,#f8fafc)]"
@@ -1112,7 +1209,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								size={14}
 								className={isHygieneExpanded ? "text-white" : "text-teal-400"}
 							/>
-							<span>Индексы гигиены (OHI-S / PMA / КПИ)</span>
+							<span>Индексы гигиены</span>
 							{isHygieneExpanded ? (
 								<ChevronUp size={12} />
 							) : (
@@ -1124,7 +1221,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertToProtocol}
-							className="px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="h-9 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 							title="Сформировать и вставить протокол пародонтограммы в дневник 043/у"
 							data-testid="perio-insert-protocol-btn"
 						>
@@ -1137,7 +1234,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyProtocol}
-							className="p-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-all cursor-pointer"
+							className="h-9 w-9 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] flex items-center justify-center transition-all cursor-pointer"
 							title="Копировать текст протокола в буфер"
 							aria-label="Копировать текст протокола"
 						>
@@ -1151,7 +1248,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsHelpOpen((prev) => !prev)}
-							className="p-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-all cursor-pointer"
+							className="h-9 w-9 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] flex items-center justify-center transition-all cursor-pointer"
 							title="Справка по горячим клавишам Florida Probe"
 							aria-label="Справка по горячим клавишам"
 						>
@@ -1162,22 +1259,41 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			</div>
 
 			{/* ═══════════════════════════════════════════════════════════════════
-			    1-CLICK THERAPIST EXPRESS STATUS BAR (ZERO 192-POINTS BARRIER)
+			    1-CLICK PSR SCREENING & CLINICAL PRESETS (MANDATES 8e, 8i, 8k, 8n)
 			    ═══════════════════════════════════════════════════════════════════ */}
-			<div className="flex flex-col gap-3 p-3.5 sm:p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--ink,#f8fafc)] shadow-xs">
-				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+			<div className="flex flex-col gap-3.5 p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-[var(--ink,#f8fafc)] shadow-xs">
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-teal-500/20">
 					<div className="flex items-center gap-2">
-						<Zap size={18} className="text-teal-400 shrink-0" />
-						<span className="text-sm font-black text-teal-300">
-							1-Клик экспресс-пресеты пародонтолога и гигиениста (без 192 точек):
-						</span>
+						<Activity size={18} className="text-teal-400 shrink-0" />
+						<h4 className="text-sm font-black text-teal-300">
+							Экспресс-скрининг пародонта PSR / CPITN (ВОЗ / СтАР) и 1-клик
+							пресеты
+						</h4>
 					</div>
-					<div className="flex items-center gap-2 flex-wrap">
+
+					<div className="flex items-center gap-2.5 flex-wrap">
+						{/* Hardware Probe / Numpad capture toggle (OFF by default, Mandate 8k) */}
+						<label
+							className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold px-2.5 h-9 rounded-lg bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] hover:bg-[var(--line,#334155)]/60 transition-colors"
+							title="Включить перехват Numpad и клавиш электронного зонда (по умолчанию выключен, чтобы не ломать набор текста)"
+						>
+							<input
+								type="checkbox"
+								checked={isProbeKeyboardEnabled}
+								onChange={(e) => setIsProbeKeyboardEnabled(e.target.checked)}
+								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer accent-teal-500"
+								data-testid="perio-probe-keyboard-toggle"
+							/>
+							<span className="text-[11px]">
+								Режим электронного зонда / Numpad
+							</span>
+						</label>
+
 						{!readOnly && (
 							<button
 								type="button"
 								onClick={handleInsertToProtocol}
-								className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+								className="h-9 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 								title="Внести текущее заключение пародонтограммы в дневник 043/у"
 								data-testid="perio-express-insert-043-btn"
 							>
@@ -1187,16 +1303,17 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								</span>
 							</button>
 						)}
+
 						<button
 							type="button"
 							onClick={() => setIsTier3ProbingExpanded((prev) => !prev)}
-							className="text-xs text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+							className="text-xs text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer transition-colors h-9 px-2.5 rounded-lg hover:bg-teal-500/15"
 							data-testid="perio-tier3-toggle-header-btn"
 						>
 							<span>
 								{isTier3ProbingExpanded
 									? "Скрыть Florida Probe (Tier 3)"
-									: "Детальная Florida Probe 6 точек (Tier 3)"}
+									: "Детальная Florida Probe 192 точки (Tier 3)"}
 							</span>
 							{isTier3ProbingExpanded ? (
 								<ChevronUp size={14} />
@@ -1207,105 +1324,212 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</div>
 				</div>
 
-				{/* 5 Dominant Express Clinical Presets (Mandate 8e, Zero Emojis) */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+				{/* 3 Dominant 1-Click Express Presets (Mandates 8e, 8k, Touch >= 44x44px, Zero Emojis) */}
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
 					{/* Preset 1: Норма пародонта */}
 					<button
 						type="button"
-						onClick={() => handleApplyTherapistPreset("perio_norm_express")}
-						className="min-h-[44px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
+						disabled={readOnly}
+						onClick={() => handleApplyExpressPreset("perio_norm_express")}
+						className="min-h-[50px] p-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
+						title="Норма пародонта: PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0, десна плотная бледно-розовая, подвижность 0"
 						data-testid="perio-preset-norm-card"
 					>
-						<div className="flex items-center gap-1.5 font-black text-xs">
-							<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-							<span>Норма пародонта</span>
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs sm:text-sm">
+							<span className="flex items-center gap-1.5 text-emerald-300">
+								<ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+								Норма пародонта (PSR 0)
+							</span>
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+								Z01.2
+							</span>
 						</div>
-						<span className="text-[10px] text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
-							бороздка &le; 2 мм, десна плотная, BOP 0%, карманов нет,
-							подвижность 0
+						<span className="text-[11px] text-emerald-200/80 leading-tight mt-1">
+							PSR 0 во всех секстантах, глубина &le; 2 мм, BOP 0, десна
+							бледно-розовая
 						</span>
 					</button>
 
-					{/* Preset 2: Катаральный гингивит */}
+					{/* Preset 2: Гингивит */}
 					<button
 						type="button"
-						onClick={() => handleApplyTherapistPreset("gingivitis_catarrhal")}
-						className="min-h-[44px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
+						disabled={readOnly}
+						onClick={() => handleApplyExpressPreset("gingivitis_express")}
+						className="min-h-[50px] p-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
+						title="Гингивит: PSR 1-2, карманы < 3.5 мм, диффузная кровоточивость при зондировании, наддесневой камень"
 						data-testid="perio-preset-gingivitis-card"
 					>
-						<div className="flex items-center gap-1.5 font-black text-xs">
-							<Activity size={14} className="text-amber-400 shrink-0" />
-							<span>Катаральный гингивит</span>
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs sm:text-sm">
+							<span className="flex items-center gap-1.5 text-amber-300">
+								<Activity size={16} className="text-amber-400 shrink-0" />
+								Гингивит (PSR 1-2)
+							</span>
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+								K05.1
+							</span>
 						</div>
-						<span className="text-[10px] text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
-							отек сосочков, кровоточивость (BOP+), карманов нет, наддесневой
-							камень
+						<span className="text-[11px] text-amber-200/80 leading-tight mt-1">
+							карманы &lt; 3.5 мм, диффузная кровоточивость BOP+, отек десны
 						</span>
 					</button>
 
-					{/* Preset 3: Пародонтит легкий */}
+					{/* Preset 3: Пародонтит средней степени */}
 					<button
 						type="button"
-						onClick={() => handleApplyTherapistPreset("periodontitis_mild")}
-						className="min-h-[44px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="Пародонтит легкой степени: глубина карманов 3-4 мм, межзубный CAL, кровоточивость, подвижность 0"
-						data-testid="perio-preset-mild-card"
-					>
-						<div className="flex items-center gap-1.5 font-black text-xs">
-							<AlertTriangle size={14} className="text-rose-400 shrink-0" />
-							<span>Пародонтит легкий (3-4 мм)</span>
-						</div>
-						<span className="text-[10px] text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
-							карманы 3–4 мм, межзубный CAL, кровоточивость, подвижность 0
-						</span>
-					</button>
-
-					{/* Preset 4: Пародонтит средней степени */}
-					<button
-						type="button"
-						onClick={() => handleApplyTherapistPreset("periodontitis_moderate")}
-						className="min-h-[44px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
+						disabled={readOnly}
+						onClick={() =>
+							handleApplyExpressPreset("periodontitis_moderate_express")
+						}
+						className="min-h-[50px] p-3 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/45 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
+						title="Пародонтит средней степени: PSR 3, карманы 3.5 - 5.5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
 						data-testid="perio-preset-periodontitis-card"
 					>
-						<div className="flex items-center gap-1.5 font-black text-xs">
-							<ShieldAlert size={14} className="text-orange-400 shrink-0" />
-							<span>Пародонтит средний (4-5 мм)</span>
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs sm:text-sm">
+							<span className="flex items-center gap-1.5 text-orange-300">
+								<AlertTriangle size={16} className="text-orange-400 shrink-0" />
+								Пародонтит ср. ст. (PSR 3)
+							</span>
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30">
+								K05.3
+							</span>
 						</div>
-						<span className="text-[10px] text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
-							карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I ст.
+						<span className="text-[11px] text-orange-200/80 leading-tight mt-1">
+							карманы до 5 мм (3.5–5.5 мм), кровоточивость, рецессия 1–2 мм
 						</span>
 					</button>
+				</div>
 
-					{/* Preset 5: Профессиональная гигиена выполнена */}
-					<button
-						type="button"
-						onClick={() =>
-							handleApplyTherapistPreset("hygiene_pro_done_express")
-						}
-						className="min-h-[44px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-						title="Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12"
-						data-testid="perio-preset-pro-hygiene-card"
-					>
-						<div className="flex items-center gap-1.5 font-black text-xs">
-							<Sparkles size={14} className="text-cyan-400 shrink-0" />
-							<span>Профгигиена выполнена</span>
-						</div>
-						<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
-							УЗ Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12
+				{/* 6-Sextants Rapid Interactive PSR Grid */}
+				<div className="flex flex-col gap-2 pt-2 border-t border-teal-500/20">
+					<div className="flex items-center justify-between flex-wrap gap-1.5">
+						<span className="text-xs font-bold text-teal-200 flex items-center gap-1.5">
+							<Layers size={14} className="text-teal-400" />
+							Секстанты PSR (по 6 участкам зубного ряда):
 						</span>
-					</button>
+						<span className="font-mono text-xs font-bold text-teal-300 bg-[var(--paper,#0f172a)] px-2 py-0.5 rounded border border-teal-500/30">
+							{psrSummaryText}
+						</span>
+					</div>
+
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+						{PSR_SEXTANTS.map((sextant) => {
+							const res = psrSextants[sextant.name];
+							const currentCode = res?.code ?? 0;
+							const hasAsterisk = res?.asterisk ?? false;
+
+							return (
+								<div
+									key={sextant.name}
+									className="p-2.5 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] flex flex-col gap-2 shadow-2xs"
+									data-testid={`psr-sextant-card-${sextant.name}`}
+								>
+									<div className="flex items-center justify-between">
+										<span className="font-bold text-xs text-[var(--ink,#f8fafc)]">
+											{sextant.name} ({sextant.teeth[0]}-
+											{sextant.teeth[sextant.teeth.length - 1]})
+										</span>
+										<span
+											className={`font-mono font-black text-xs px-1.5 py-0.5 rounded border ${
+												currentCode === 0
+													? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+													: currentCode === 1
+														? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+														: currentCode === 2
+															? "bg-sky-500/20 text-sky-300 border-sky-500/30"
+															: currentCode === 3
+																? "bg-orange-500/20 text-orange-300 border-orange-500/30"
+																: "bg-rose-500/25 text-rose-300 border-rose-500/40"
+											}`}
+										>
+											Код {currentCode}
+											{hasAsterisk ? "*" : ""}
+										</span>
+									</div>
+
+									{/* 1-Tap PSR Code Selector (Touch-friendly >= 44px hit envelope, 32px visual) */}
+									<div className="grid grid-cols-6 gap-1">
+										{([0, 1, 2, 3, 4] as const).map((codeVal) => {
+											const isSelected = currentCode === codeVal;
+											const def = PSR_CODE_DEFINITIONS[codeVal];
+											return (
+												<button
+													key={codeVal}
+													type="button"
+													disabled={readOnly}
+													onClick={() =>
+														handleApplySextantCode(
+															sextant.name,
+															codeVal,
+															hasAsterisk,
+														)
+													}
+													className={`min-h-[36px] min-w-[28px] rounded-lg font-black text-xs flex items-center justify-center transition-all cursor-pointer border ${
+														isSelected
+															? def.badgeClass +
+																" ring-1 ring-white/50 scale-105"
+															: "bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:text-white border-[var(--line,#334155)]"
+													}`}
+													title={`${def.labelRu}: ${def.descriptionRu}`}
+													data-testid={`psr-${sextant.name}-code-${codeVal}`}
+												>
+													{codeVal}
+												</button>
+											);
+										})}
+
+										{/* Asterisk (*) toggle */}
+										<button
+											type="button"
+											disabled={readOnly}
+											onClick={() =>
+												handleApplySextantCode(
+													sextant.name,
+													currentCode,
+													!hasAsterisk,
+												)
+											}
+											className={`min-h-[36px] min-w-[28px] rounded-lg font-black text-xs flex items-center justify-center transition-all cursor-pointer border ${
+												hasAsterisk
+													? "bg-rose-500 text-white border-rose-400 ring-1 ring-white/50"
+													: "bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:text-rose-400 border-[var(--line,#334155)]"
+											}`}
+											title="Астериск (*): патологическая подвижность >= II ст. или поражение фуркации"
+											data-testid={`psr-${sextant.name}-code-asterisk`}
+										>
+											*
+										</button>
+									</div>
+
+									<span className="text-[10px] text-[var(--muted,#94a3b8)] leading-tight truncate">
+										{PSR_CODE_DEFINITIONS[currentCode]?.shortTitleRu ?? ""}
+									</span>
+								</div>
+							);
+						})}
+					</div>
 				</div>
 
 				{/* Secondary Granular Presets Row */}
 				<div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-[var(--line,#334155)]/50">
 					<span className="text-[11px] text-[var(--muted,#94a3b8)] font-semibold mr-1">
-						Дополнительно:
+						Дополнительные шаблоны:
 					</span>
 					<button
 						type="button"
+						disabled={readOnly}
+						onClick={() =>
+							handleApplyTherapistPreset("hygiene_pro_done_express")
+						}
+						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-cyan-500/15 text-cyan-300 border border-[var(--line,#334155)] transition-all cursor-pointer flex items-center gap-1"
+						title="Профессиональная гигиена выполнена: ультразвук + AirFlow + полировка"
+						data-testid="perio-preset-pro-hygiene-card"
+					>
+						<Sparkles size={12} className="text-cyan-400" />
+						<span>Профгигиена выполнена</span>
+					</button>
+					<button
+						type="button"
+						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("gingivitis_localized")}
 						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500/15 text-amber-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
 						title="Гингивит локализованный: отек и кровоточивость межзубных сосочков во фронтальном отделе (BOP+)"
@@ -1314,6 +1538,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</button>
 					<button
 						type="button"
+						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("gingivitis_generalized")}
 						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500/15 text-amber-200 border border-[var(--line,#334155)] transition-all cursor-pointer"
 						title="Гингивит генерализованный: диффузный отек и кровоточивость десен обеих челюстей (BOP > 30%)"
@@ -1322,6 +1547,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</button>
 					<button
 						type="button"
+						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("periodontitis_mild")}
 						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-orange-500/15 text-orange-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
 						title="Хронический пародонтит лёгкой степени: карманы 3.5–4 мм, BOP+, над/поддесневой камень"
@@ -1330,6 +1556,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</button>
 					<button
 						type="button"
+						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("periodontitis_severe")}
 						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 text-rose-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
 						title="Хронический пародонтит тяжёлой степени: карманы >6 мм, гноетечение, подвижность II-III"
@@ -1338,6 +1565,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</button>
 					<button
 						type="button"
+						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("dental_calculus")}
 						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-sky-500/15 text-sky-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
 						title="Зубные отложения: массивный над- и поддесневой зубной камень на резцах и молярах (K03.6)"
@@ -1618,6 +1846,20 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 									</strong>
 								</span>
 							)}
+
+							{/* Numpad Keyboard intercept toggle in Tier 3 */}
+							<label className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] cursor-pointer text-xs select-none">
+								<input
+									type="checkbox"
+									data-testid="perio-probe-keyboard-toggle-tier3"
+									checked={isProbeKeyboardEnabled}
+									onChange={(e) => setIsProbeKeyboardEnabled(e.target.checked)}
+									className="accent-teal-500 w-3.5 h-3.5 rounded cursor-pointer"
+								/>
+								<span className="text-[var(--ink-soft,#94a3b8)] font-medium">
+									Клавиатура Numpad
+								</span>
+							</label>
 						</div>
 
 						{/* Large Touch/Glove NumPad 1..10 Buttons */}
@@ -1878,7 +2120,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						data-testid="expand-florida-probe-tier3-btn"
 					>
 						<Activity size={16} />
-						<span>🔬 Развернуть 192 точки (Tier 3)</span>
+						<span>Развернуть 192 точки (Tier 3)</span>
 					</button>
 				</div>
 			)}
@@ -2432,10 +2674,10 @@ const PerioToothCard: React.FC<PerioToothCardProps> = ({
 				<div className="flex items-center gap-0.5">
 					{isImplant && (
 						<span
-							className="text-[9px] text-amber-400 font-mono"
-							title="Имплантат"
+							className="text-[8px] font-bold text-amber-400 font-mono px-0.5 rounded bg-amber-500/10 border border-amber-500/30"
+							title="Дентальный имплантат"
 						>
-							🔩
+							ИМП
 						</span>
 					)}
 
