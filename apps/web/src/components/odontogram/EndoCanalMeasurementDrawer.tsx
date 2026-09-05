@@ -416,6 +416,22 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 			onInsertToProtocol(protocolText, effectiveCanals);
 		}
 
+		// 3. Global custom event for visit diary listeners
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							treatmentDescription: protocolText,
+						},
+						mode: "smart_append",
+					},
+				}),
+			);
+		} catch {
+			// fallback
+		}
+
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(`Эндо-протокол зуба ${toothNumber} вставлен в дневник 043/у`, "success");
 	}, [

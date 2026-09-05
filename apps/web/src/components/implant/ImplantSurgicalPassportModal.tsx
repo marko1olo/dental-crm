@@ -24,6 +24,7 @@ import {
 	Calendar,
 	QrCode,
 	Zap,
+	Printer,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import "./implantSurgicalPassport.css";
@@ -405,6 +406,15 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 		}
 		showToast(`Паспорт имплантата #${toothNumber} сохранен и внесен в карту 043/у`, "success");
 	}, [assembledPassportData, generatedSurgeryProtocol, toothNumber, onSavePassport, onInsertIntoDiary]);
+
+	const handlePrintPassport = useCallback(() => {
+		try {
+			window.print();
+		} catch {
+			// fallback
+		}
+		showToast(`Гарантийный паспорт имплантата #${toothNumber} отправлен на печать`, "success");
+	}, [toothNumber]);
 
 	if (!isOpen) return null;
 
@@ -936,6 +946,22 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 					{/* TAB 4: Patient Warranty Passport */}
 					{activeTab === "passport" && (
 						<div className="flex flex-col gap-5" data-testid="tab-content-passport">
+							<div className="flex items-center justify-between gap-2 flex-wrap">
+								<span className="text-xs font-extrabold uppercase text-slate-500 tracking-wider">
+									Сертификат & Гарантийный паспорт пациента:
+								</span>
+								<button
+									type="button"
+									onClick={handlePrintPassport}
+									className="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 inline-flex items-center gap-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
+									data-testid="implant-print-passport-btn"
+									title="Распечатать гарантийный паспорт / сертификат пациента (всегда доступно, с полями для ручного заполнения при необходимости)"
+								>
+									<Printer size={16} />
+									<span>Печать сертификата</span>
+								</button>
+							</div>
+
 							<div className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl flex flex-col gap-4">
 								<div className="flex items-center justify-between border-b border-slate-700 pb-3">
 									<div className="flex items-center gap-2">
@@ -952,7 +978,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 								<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
 									<div>
 										<span className="text-slate-400 block mb-0.5">Пациент:</span>
-										<span className="font-extrabold text-sm">{patientName}</span>
+										<span className="font-extrabold text-sm">{patientName?.trim() || "____________________________________"}</span>
 									</div>
 									<div>
 										<span className="text-slate-400 block mb-0.5">Имплантат:</span>
@@ -969,7 +995,7 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 									<div>
 										<span className="text-slate-400 block mb-0.5">Позиция (FDI):</span>
 										<span className="font-mono font-extrabold text-sm text-amber-300">
-											Зуб {toothNumber}
+											{toothNumber ? `Зуб ${toothNumber}` : "Зуб _____"}
 										</span>
 									</div>
 								</div>
@@ -977,11 +1003,11 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 								<div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs pt-3 border-t border-slate-700/80">
 									<div>
 										<span className="text-slate-400 block mb-0.5">LOT / Партия:</span>
-										<span className="font-mono">{lotNumber}</span>
+										<span className="font-mono">{lotNumber?.trim() || "____________________"}</span>
 									</div>
 									<div>
 										<span className="text-slate-400 block mb-0.5">Серийный номер:</span>
-										<span className="font-mono">{serialNumber}</span>
+										<span className="font-mono">{serialNumber?.trim() || "____________________"}</span>
 									</div>
 									<div>
 										<span className="text-slate-400 block mb-0.5">Первичный торк:</span>
@@ -992,6 +1018,18 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 										<span className="font-mono font-bold text-emerald-400">
 											{isIsqEnabled ? `${latestIsq} ISQ` : `Торк ${torqueNcm} N·cm`}
 										</span>
+									</div>
+								</div>
+
+								{/* Подпись врача и штамп клиники */}
+								<div className="pt-3 border-t border-dashed border-slate-700 text-xs text-slate-400 flex items-center justify-between gap-4 flex-wrap">
+									<div>
+										<span>Оперирующий хирург: </span>
+										<strong className="text-slate-200">{doctorName?.trim() || "____________________________________"}</strong>
+									</div>
+									<div>
+										<span>Подпись врача: ______________________ </span>
+										<span className="font-bold text-slate-200 ml-2">М.П. Клиники</span>
 									</div>
 								</div>
 							</div>
@@ -1009,6 +1047,17 @@ export const ImplantSurgicalPassportModal: React.FC<ImplantSurgicalPassportModal
 					</div>
 
 					<div className="implant-footer-btn-group">
+						<button
+							type="button"
+							onClick={handlePrintPassport}
+							className="implant-action-btn implant-action-btn-secondary"
+							data-testid="implant-print-passport-footer-btn"
+							title="Распечатать паспорт / гарантийный сертификат"
+						>
+							<Printer size={18} />
+							<span>Печать сертификата</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleInsertDiary}

@@ -574,6 +574,23 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		assert.equal(getAnatomicalWorkingLength(46, "D"), 21.0);
 		assert.equal(getAnatomicalWorkingLength(46, "MB"), 20.0);
 		assert.equal(getAnatomicalWorkingLength(46, "ML"), 20.0);
+
+		// Временные (молочные) зубы (51..85)
+		// Резцы: 16.0 мм
+		assert.equal(getAnatomicalWorkingLength(51), 16.0);
+		assert.equal(getAnatomicalWorkingLength(62), 16.0);
+		assert.equal(getAnatomicalWorkingLength(71), 16.0);
+		assert.equal(getAnatomicalWorkingLength(82), 16.0);
+		// Клыки: 18.0 мм
+		assert.equal(getAnatomicalWorkingLength(53), 18.0);
+		assert.equal(getAnatomicalWorkingLength(63), 18.0);
+		assert.equal(getAnatomicalWorkingLength(73), 18.0);
+		assert.equal(getAnatomicalWorkingLength(83), 18.0);
+		// Моляры: 16.5 мм
+		assert.equal(getAnatomicalWorkingLength(54), 16.5);
+		assert.equal(getAnatomicalWorkingLength(65), 16.5);
+		assert.equal(getAnatomicalWorkingLength(74), 16.5);
+		assert.equal(getAnatomicalWorkingLength(85), 16.5);
 	});
 
 	test("applyAnatomicalWorkingLengths автозаполняет длины для всех каналов зуба в 1 клик", () => {

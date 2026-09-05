@@ -19,6 +19,7 @@ import {
 	Download,
 	FileText,
 	Key,
+	Printer,
 	Shield,
 	ShieldAlert,
 	ShieldCheck,
@@ -35,6 +36,8 @@ import {
 	validateCdaParams,
 	validateDetachedSignature,
 	validateUkepCertificate,
+	renderForm043uHtml,
+	renderForm043_1uHtml,
 	EGISZ_OIDS,
 	type CdaSemd043_1uParams,
 	type CdaSemd101Params,
@@ -372,6 +375,73 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 		setClinicSig(sig);
 		showToast("Подпись медицинской организации (МО) успешно прикреплена", "success");
 	}, [currentClinic.name]);
+
+	// 1-Click Print Form 043/u or 043-1/u with DRAFT stamp (Mandate 8e)
+	const handlePrintDraft = useCallback(() => {
+		let html = "";
+		if (formType === "043_1u") {
+			html = renderForm043_1uHtml({
+				clinicLegalName: currentClinic.name,
+				clinicAddress: currentClinic.address,
+				clinicOgrn: currentClinic.ogrn,
+				clinicInn: currentClinic.inn,
+				patient: {
+					fullName: `${currentPatient.name.last} ${currentPatient.name.first} ${currentPatient.name.middle || ""}`.trim(),
+					birthDate: currentPatient.birthDate,
+					gender: currentPatient.gender,
+					phone: currentPatient.phone,
+					address: currentPatient.address,
+					medicalCardNumber: patientId,
+				},
+				doctor: {
+					fullName: `${currentDoctor.name.last} ${currentDoctor.name.first} ${currentDoctor.name.middle || ""}`.trim(),
+					specialty: currentDoctor.specialtyName,
+				},
+				diagnosisDetailed: diagnosis,
+				treatmentPlan: {
+					applianceName: applianceType,
+				},
+				watermarkText: doctorSig ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК",
+				isClosed: Boolean(doctorSig),
+			});
+		} else {
+			html = renderForm043uHtml({
+				clinicLegalName: currentClinic.name,
+				clinicAddress: currentClinic.address,
+				clinicOgrn: currentClinic.ogrn,
+				clinicInn: currentClinic.inn,
+				patient: {
+					fullName: `${currentPatient.name.last} ${currentPatient.name.first} ${currentPatient.name.middle || ""}`.trim(),
+					birthDate: currentPatient.birthDate,
+					gender: currentPatient.gender,
+					phone: currentPatient.phone,
+					address: currentPatient.address,
+					medicalCardNumber: patientId,
+					snils: currentPatient.snils,
+				},
+				attendingDoctorFullName: `${currentDoctor.name.last} ${currentDoctor.name.first} ${currentDoctor.name.middle || ""}`.trim(),
+				attendingDoctorSpecialty: currentDoctor.specialtyName,
+				chiefComplaint: "Осмотр и санация полости рта",
+				assessmentDiagnosisText: diagnosis,
+				watermarkText: doctorSig ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК",
+				isClosed: Boolean(doctorSig),
+			});
+		}
+
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.write(html);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => printWin.print(), 300);
+		}
+		showToast(
+			doctorSig
+				? "Печать формы с отметкой ЭЦП"
+				: "Печать черновика со штампом «ЧЕРНОВИК» (Мандат 8e)",
+			"info",
+		);
+	}, [formType, currentClinic, currentPatient, currentDoctor, patientId, diagnosis, applianceType, doctorSig]);
 
 	// 1-Click Export ZIP Package Handler
 	const handle1ClickExport = useCallback(async () => {
@@ -908,6 +978,17 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 					</div>
 
 					<div className="egisz-footer-actions">
+						<button
+							type="button"
+							className="egisz-btn egisz-btn-secondary"
+							onClick={handlePrintDraft}
+							title="Печать бланка (доступна всегда в 1 клик со штампом ЧЕРНОВИК при отсутствии ЭЦП, Мандат 8e)"
+							style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+						>
+							<Printer size={14} />
+							<span>{doctorSig ? "Печать бланка" : "Печать черновика (А4)"}</span>
+						</button>
+
 						<button
 							type="button"
 							className="egisz-btn egisz-btn-secondary"

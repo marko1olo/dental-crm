@@ -381,11 +381,25 @@ describe("7. UKEP Electronic Signatures & Visual Stamps (63-ФЗ / ГОСТ Р 7
 });
 
 describe("8. Printable HTML Forms & Standard File Names", () => {
-	it("8.1 Generates Form 043/u printable HTML containing odontogram", () => {
-		const html = generateForm043uPrintHtml(SAMPLE_DENTAL_SEMD_105_PRESET);
-		assert.ok(html.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (ФОРМА № 043/У)"));
-		assert.ok(html.includes("ЗУБНАЯ ФОРМУЛА (FDI / ISO 3950)"));
-		assert.ok(html.includes("K02.1"));
+	it("8.1 Generates Form 043/u printable HTML containing odontogram and draft watermark without UKEP (Mandate 8e)", () => {
+		const htmlDraft = generateForm043uPrintHtml(SAMPLE_DENTAL_SEMD_105_PRESET);
+		assert.ok(htmlDraft.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (ФОРМА № 043/У)"));
+		assert.ok(htmlDraft.includes("ЗУБНАЯ ФОРМУЛА (FDI / ISO 3950)"));
+		assert.ok(htmlDraft.includes("K02.1"));
+		assert.ok(htmlDraft.includes("ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ / БЕЗ ЭЦП (МАНДАТ 8E)"));
+		assert.ok(htmlDraft.includes("ШТАМП: ЧЕРНОВИК (МАНДАТ 8E)"));
+
+		const signedPayload = {
+			...SAMPLE_DENTAL_SEMD_105_PRESET,
+			doctorSignature: createMockGostSignature(
+				"Волкова Екатерина Сергеевна",
+				"000-001-001 00",
+				SAMPLE_DENTAL_SEMD_105_PRESET.clinic.clinicName,
+			),
+		};
+		const htmlSigned = generateForm043uPrintHtml(signedPayload);
+		assert.ok(!htmlSigned.includes("ЧЕРНОВИК — ДЛЯ ПРЕДВАРИТЕЛЬНОГО ОЗНАКОМЛЕНИЯ"));
+		assert.ok(htmlSigned.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
 	});
 
 	it("8.2 Generates FNS Tax Certificate (КНД 1151156) printable HTML", () => {

@@ -8,6 +8,7 @@ import {
 	FileText,
 	Copy,
 	AlertTriangle,
+	Printer,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import {
@@ -131,6 +132,15 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		onClose();
 	};
 
+	const handlePrintPassport = () => {
+		try {
+			window.print();
+		} catch {
+			// fallback
+		}
+		showToast(`Бланк паспорта имплантата #${toothFdi} отправлен на печать`, "success");
+	};
+
 	if (!isOpen) return null;
 
 	return (
@@ -165,6 +175,17 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handlePrintPassport}
+							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs flex items-center gap-1.5"
+							data-testid="btn-print-implant-passport"
+							title="Распечатать паспорт имплантата / гарантийный сертификат"
+						>
+							<Printer size={15} className="text-[var(--teal,#0d9488)]" />
+							<span>Печать бланка</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={() => setActiveView(activeView === "edit" ? "preview" : "edit")}
@@ -370,6 +391,17 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handlePrintPassport}
+							className="implant-touch-btn bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5"
+							data-testid="btn-print-implant-passport-footer"
+							title="Распечатать паспорт имплантата"
+						>
+							<Printer size={15} className="text-[var(--teal,#0d9488)]" />
+							<span>Печать</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleInsertDiary}

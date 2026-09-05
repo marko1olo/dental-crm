@@ -73,6 +73,59 @@ export const PERIOSTOTOMY_NORM_TEXT =
 	"Инфильтрационная анестезия по переходной складке Sol. Articaini 4% 1:100 000 — 1.7 мл. Разрез слизистой и надкостницы длиной 1.5–2 см в области проекции верхушки причинного зуба до кости. Отслоение надкостницы распатором, эвакуация гнойного экссудата. Антисептическая обработка 0.05% хлоргексидином. Введение ленточного резинового выпускника/дренажа для постоянного дренирования раны. Гемостаз стерильными марлевыми салфетками. Рекомендации даны, явка на следующий день.";
 
 /**
+ * 1-клик каноническая норма резекции верхушки корня (апикоэктомия с ретроградным пломбированием).
+ */
+export const APICOECTOMY_NORM_TEXT =
+	"Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Трапециевидный разрез слизистой в проекции верхушки причинного зуба, отслоен слизисто-надкостничный лоскут. Трепанация кортикальной пластинки шаровидным бором с водяным охлаждением. Резекция верхушки корня на 3 мм под углом 90° твердосплавным фиссурным бором. Цистэктомия/кюретаж периапикального очага. Ультразвуковое ретроградное препарирование апикальной части канала насадкой КСТ на глубину 3 мм. Ретроградное пломбирование МТА (ProRoot / Biodentine). Контроль гемостаза. Ушивание раны узловыми швами ПГА / Монофиламент 5-0. Контрольная радиовизиография: резекция выполнена, ретроградная пломба герметична. Рекомендации даны.";
+
+export interface StandardImplantationParams {
+	readonly toothFdi?: number;
+	readonly brand?: string;
+	readonly model?: string;
+	readonly diameterMm?: number;
+	readonly lengthMm?: number;
+	readonly torqueNcm?: number;
+	readonly isq?: number;
+	readonly capType?: "fdm" | "plug";
+	readonly sutureMaterial?: string;
+	readonly postOpXray?: boolean;
+}
+
+/**
+ * Генерация 1-клик канонического протокола дентальной имплантации (Mandates 8e, 8k СтАР).
+ */
+export function buildStandardImplantationProtocolText(
+	params: StandardImplantationParams = {},
+): string {
+	const toothStr = params.toothFdi ? `зуба FDI #${params.toothFdi}` : "имплантации";
+	const brand = params.brand || "Dentium";
+	const model = params.model ? ` ${params.model}` : "";
+	const dia = params.diameterMm ?? 4.0;
+	const len = params.lengthMm ?? 10.0;
+	const torque = params.torqueNcm ?? 35;
+	const isq = params.isq ?? 72;
+	const capStr =
+		params.capType === "plug"
+			? "Установлен винт-заглушка (двухэтапный протокол с ушиванием наглухо)."
+			: "Установлен формирователь десны (ФДМ).";
+	const suture = params.sutureMaterial || "Prolene 4-0";
+	const xrayStr =
+		params.postOpXray !== false
+			? " Выполнен контрольный прицельный радиовизиографический снимок: положение имплантата правильное, субкрестально 0.5 мм, без повреждения смежных анатомических структур."
+			: "";
+
+	return (
+		`Инфильтрационная анестезия Артикаин 1:100 000 — 1.7 мл. Разрез по гребню альвеолярного отростка в области ${toothStr}, отслоен слизисто-надкостничный лоскут. ` +
+		`Препарирование ложа фрезами по хирургическому протоколу ${brand} с обильным охлаждением стерильным 0.9% NaCl (800 об/мин). ` +
+		`Установлен дентальный имплантат ${brand}${model} Ø ${dia} × ${len} мм. ` +
+		`Первичная торк-стабильность ${torque} Н/см, RFA стабильность ISQ ${isq} (высокая первичная фиксация). ` +
+		`${capStr} ` +
+		`Мобилизация лоскута, наложены узловые швы ${suture} без натяжения. Гемостаз полный.${xrayStr} ` +
+		`Назначена антибактериальная и противовоспалительная терапия, рекомендации выданы.`
+	);
+}
+
+/**
  * Реестр 1-клик хирургических норм для хирурга-имплантолога.
  */
 export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
@@ -200,6 +253,24 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 			{ name: "Дренаж резиновый ленточный", unit: "шт.", quantity: 1, isWarehouseCritical: false },
 			{ name: "Хлоргексидин 0.05%", unit: "мл", quantity: 50, isWarehouseCritical: false },
 			{ name: "Стерильные марлевые салфетки", unit: "шт.", quantity: 2, isWarehouseCritical: false },
+		],
+	},
+	{
+		id: "surgery_apicoectomy",
+		title: "Резекция верхушки корня (апикоэктомия с ретроградным пломбированием)",
+		shortBadge: "Резекция корня",
+		category: "perio_surgery",
+		icd10: "K04.5",
+		icd10Label: "Хронический апикальный периодонтит / Апикальная гранулема",
+		defaultToothFdi: 21,
+		standardProtocolTextRu: APICOECTOMY_NORM_TEXT,
+		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
+		postOpRecommendationsRu:
+			"Холод локально 15 мин 3-4 раза в первые сутки. Щадящая диета 3-5 дней. Ротовые ванночки 0.05% хлоргексидином со 2-х суток. Осмотр через 3 дня, снятие швов через 7-10 дней.",
+		requiredMaterials: [
+			{ name: "Анестетик артикаиновый 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false },
+			{ name: "МТА материал для ретроградного пломбирования", unit: "доз.", quantity: 1, isWarehouseCritical: true },
+			{ name: "Шовный материал ПГА 5-0", unit: "шт.", quantity: 1, isWarehouseCritical: false },
 		],
 	},
 ];

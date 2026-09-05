@@ -13,10 +13,12 @@ import {
 	SURGICAL_OPERATION_NORMS,
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
+	buildStandardImplantationProtocolText,
 	type SurgicalOperationNorm,
 } from "../../surgery/surgeryProtocols";
 import { SurgeryCockpitModal } from "../../surgery/SurgeryCockpitModal";
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
+import { useVisitStore } from "../../../store/visitStore";
 
 export interface SurgeryVisitCockpitProps {
 	readonly activeTooth?: number | null;
@@ -44,15 +46,89 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 	const implantNorm = SURGICAL_OPERATION_NORMS[0]!;
 	const overdraftStatus = evaluateWarehouseOverdraft(implantNorm.requiredMaterials);
 
-	const handleOneClickNorm = (norm: SurgicalOperationNorm) => {
-		onApplyDiaryText?.(norm.standardProtocolTextRu);
+	const handleOneClickStandardImplantation = () => {
+		const text = buildStandardImplantationProtocolText({
+			toothFdi: effectiveTooth,
+			brand: "Dentium",
+			model: "SuperLine",
+			diameterMm: 4.0,
+			lengthMm: 10.0,
+			torqueNcm: 35,
+			isq: 72,
+			capType: "fdm",
+			sutureMaterial: "Prolene 4-0",
+			postOpXray: true,
+		});
+
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existing = prev.objectiveStatus?.trim() || "";
+				return {
+					...prev,
+					objectiveStatus: existing ? `${existing}\n\n${text}` : text,
+				};
+			});
+		} catch {
+			// fallback
+		}
+
+		onApplyDiaryText?.(text);
 
 		try {
 			window.dispatchEvent(
 				new CustomEvent("dente-apply-soap-protocol", {
 					detail: {
 						soap: {
-							treatmentDescription: norm.standardProtocolTextRu,
+							treatmentDescription: text,
+						},
+						mode: "smart_append",
+					},
+				}),
+			);
+		} catch {
+			// fallback
+		}
+
+		showToast(`⚡ 1-Клик норма: Имплантация 35 Н/см, ISQ 72, ФДМ внесена в карту 043/у`, "success");
+	};
+
+	const handleOneClickNorm = (norm: SurgicalOperationNorm) => {
+		const textToApply =
+			norm.id === "surgery_implant_standard"
+				? buildStandardImplantationProtocolText({
+						toothFdi: effectiveTooth,
+						brand: "Dentium",
+						model: "SuperLine",
+						diameterMm: 4.0,
+						lengthMm: 10.0,
+						torqueNcm: 35,
+						isq: 72,
+						capType: "fdm",
+						sutureMaterial: "Prolene 4-0",
+						postOpXray: true,
+					})
+				: norm.standardProtocolTextRu;
+
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existing = prev.objectiveStatus?.trim() || "";
+				return {
+					...prev,
+					objectiveStatus: existing ? `${existing}\n\n${textToApply}` : textToApply,
+				};
+			});
+		} catch {
+			// fallback
+		}
+
+		onApplyDiaryText?.(textToApply);
+
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							treatmentDescription: textToApply,
 						},
 						mode: "smart_append",
 					},
@@ -111,8 +187,23 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 				</div>
 			</div>
 
+			{/* 1-Клик Пресет: Экспресс-имплантация */}
+			<button
+				type="button"
+				onClick={handleOneClickStandardImplantation}
+				className="w-full min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center justify-between gap-2 cursor-pointer touch-manipulation hover:opacity-95 shadow-2xs transition-all active:scale-98"
+				data-testid="btn-quick-standard-implantation"
+				title="1-клик вставка в 043/у: Dentium SuperLine Ø4.0×10 мм, торк 35 Н/см, ISQ 72, ФДМ, швы Prolene 4-0, снимок"
+			>
+				<span className="flex items-center gap-2 truncate">
+					<Zap size={15} className="text-amber-300 shrink-0" />
+					<span className="truncate">⚡ Стандартная имплантация (35 Н/см, ISQ 72, ФДМ, Prolene 4-0)</span>
+				</span>
+				<span className="text-[11px] font-mono opacity-90 shrink-0">#{effectiveTooth}</span>
+			</button>
+
 			{/* 1-Клик кнопки норм */}
-			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2">
 				{SURGICAL_OPERATION_NORMS.map((norm) => (
 					<button
 						key={norm.id}

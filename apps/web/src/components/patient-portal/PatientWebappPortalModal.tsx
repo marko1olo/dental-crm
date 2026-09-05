@@ -473,49 +473,87 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 		handleOpenSbpPayment(stageInvoice);
 	};
 
-	// Simulate Instant SBP Payment Success
-	const handleSimulateSbpSuccess = () => {
+	// Check SBP Payment Status (Honest bank / API verification without zero-click debt cancellation)
+	const handleCheckSbpPaymentStatus = async () => {
 		if (!selectedInvoice || isProcessingPayment) return;
 		setIsProcessingPayment(true);
 
-		setTimeout(() => {
-			setIsProcessingPayment(false);
-			const paidInvNumber = selectedInvoice.invoiceNumber;
-			const paidRub = selectedInvoice.remainingAmountRub;
+		const invNumber = selectedInvoice.invoiceNumber;
+		const invId = selectedInvoice.id;
 
-			// Update Invoices State
-			setProfile((prev) => {
-				const updatedInvoices = prev.invoices.map((inv) =>
-					inv.invoiceNumber === paidInvNumber
-						? {
-								...inv,
-								status: "paid" as const,
-								paidAmountKopecks: inv.totalAmountKopecks,
-								paidAmountRub: inv.totalAmountRub,
-								remainingAmountKopecks: 0,
-								remainingAmountRub: 0,
-								paidAtIso: new Date().toISOString(),
-								fiscalReceiptNumber: `ФД-${Math.floor(100000 + Math.random() * 900000)}`,
-							}
-						: inv,
-				);
-				return {
-					...prev,
-					invoices: updatedInvoices,
-					totalDebtKopecks: Math.max(0, prev.totalDebtKopecks - selectedInvoice.remainingAmountKopecks),
-					totalDebtRub: kopecksToRubles(
-						Math.max(0, prev.totalDebtKopecks - selectedInvoice.remainingAmountKopecks),
-					),
+		try {
+			// Query portal payments API for real bank webhook / statement reconciliation
+			const res = await fetch(
+				`/api/portal/payments/status?invoiceNumber=${encodeURIComponent(invNumber)}&invoiceId=${encodeURIComponent(invId)}`,
+				{
+					method: "GET",
+					headers: { "Content-Type": "application/json" },
+				},
+			);
+
+			if (res.ok) {
+				const data = (await res.json()) as {
+					status?: string;
+					paidAmountRub?: number;
+					paidAtIso?: string;
+					fiscalReceiptNumber?: string;
 				};
-			});
 
-			setActiveSbpQr(null);
-			setSelectedInvoice(null);
-			setPaymentSuccessToast(`Оплата ${paidRub.toLocaleString("ru-RU")} ₽ успешно подтверждена банком через СБП! Чек 54-ФЗ сформирован.`);
-			onPaymentComplete?.(paidInvNumber, paidRub);
+				if (data.status === "paid") {
+					const paidRub = data.paidAmountRub ?? selectedInvoice.remainingAmountRub;
+					setProfile((prev) => {
+						const updatedInvoices = prev.invoices.map((inv) =>
+							inv.invoiceNumber === invNumber
+								? {
+										...inv,
+										status: "paid" as const,
+										paidAmountKopecks: inv.totalAmountKopecks,
+										paidAmountRub: inv.totalAmountRub,
+										remainingAmountKopecks: 0,
+										remainingAmountRub: 0,
+										paidAtIso: data.paidAtIso || new Date().toISOString(),
+										fiscalReceiptNumber: data.fiscalReceiptNumber,
+									}
+								: inv,
+						);
+						return {
+							...prev,
+							invoices: updatedInvoices,
+							totalDebtKopecks: Math.max(
+								0,
+								prev.totalDebtKopecks - selectedInvoice.remainingAmountKopecks,
+							),
+							totalDebtRub: kopecksToRubles(
+								Math.max(
+									0,
+									prev.totalDebtKopecks - selectedInvoice.remainingAmountKopecks,
+								),
+							),
+						};
+					});
 
-			setTimeout(() => setPaymentSuccessToast(null), 5000);
-		}, 1200);
+					setActiveSbpQr(null);
+					setSelectedInvoice(null);
+					setPaymentSuccessToast(
+						`Оплата ${paidRub.toLocaleString("ru-RU")} ₽ подтверждена банком! Чек 54-ФЗ: ${data.fiscalReceiptNumber || "сформирован"}.`,
+					);
+					onPaymentComplete?.(invNumber, paidRub);
+					setTimeout(() => setPaymentSuccessToast(null), 5000);
+					return;
+				}
+			}
+		} catch {
+			// Network error or standalone demo environment
+		} finally {
+			setIsProcessingPayment(false);
+		}
+
+		// Payment not yet confirmed by bank webhook / banking statement
+		showToast(
+			`Платёж по счёту №${invNumber} проверяется по банковской выписке СБП. Зачисление обычно занимает от нескольких секунд до 2 минут. Статус обновится после подтверждения банком.`,
+			"info",
+			5000,
+		);
 	};
 
 	// Open SMS-OTP Document Sign Modal
@@ -1534,15 +1572,15 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 										</div>
 									</div>
 
-									{/* Simulate instant confirmation */}
+									{/* Honest bank / API payment status verification */}
 									<button
 										type="button"
-										onClick={handleSimulateSbpSuccess}
+										onClick={handleCheckSbpPaymentStatus}
 										disabled={isProcessingPayment}
 										className="pwa-action-btn-primary"
 										style={{ minHeight: "46px" }}
 									>
-										{isProcessingPayment ? "Проверка платежа в банке..." : "Подтвердить тестовую оплату (Эмуляция)"}
+										{isProcessingPayment ? "Проверка статуса в банке..." : "Я оплатил (Проверить статус)"}
 									</button>
 								</div>
 							</div>
@@ -1575,7 +1613,7 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 										</p>
 									</div>
 
-									{/* OTP Input with auto-fill test hint */}
+									{/* OTP Input and resend control */}
 									<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
 										<input
 											type="text"
@@ -1587,16 +1625,12 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 											className="pwa-otp-input"
 											autoFocus
 										/>
-										<div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px" }}>
-											<button
-												type="button"
-												onClick={() => setSmsOtpInput(activeOtpCode)}
-												style={{ background: "none", border: "none", color: "var(--brand-500, #0d9488)", cursor: "pointer", fontWeight: 700 }}
-											>
-												Вставить код ({activeOtpCode})
-											</button>
+										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px" }}>
+											<span style={{ color: "var(--muted, #64748b)" }}>СМС отправлено</span>
 											<span style={{ color: "var(--muted, #64748b)" }}>
-												{otpResendCountdown > 0 ? `Повтор через ${otpResendCountdown} сек.` : (
+												{otpResendCountdown > 0 ? (
+													`Повтор через ${otpResendCountdown} сек.`
+												) : (
 													<button
 														type="button"
 														onClick={handleResendOtp}

@@ -27,3 +27,119 @@
 	flex-direction: column;
 	overflow: hidden;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ISOLATED STATUTORY PRINT STYLES (@media print) — FORM № 107-1/у (ORDER 1094н)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+@media print {
+	@page {
+		size: A5 portrait;
+		margin: 6mm;
+	}
+
+	/* Reset global document and hide everything outside the prescription */
+	html,
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		margin: 0 !important;
+		padding: 0 !important;
+		width: 100% !important;
+		height: auto !important;
+	}
+
+	body * {
+		visibility: hidden !important;
+	}
+
+	/* Unset modal backdrop and overlay styling completely */
+	.rx-modal-overlay {
+		position: static !important;
+		inset: auto !important;
+		background: transparent !important;
+		backdrop-filter: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		display: block !important;
+		z-index: auto !important;
+		overflow: visible !important;
+	}
+
+	/* Reset modal container to an invisible zero-margin wrapper */
+	.rx-modal-container {
+		position: static !important;
+		border: none !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		background: transparent !important;
+		color: #000000 !important;
+		width: 100% !important;
+		max-width: none !important;
+		max-height: none !important;
+		overflow: visible !important;
+		display: block !important;
+		padding: 0 !important;
+		margin: 0 !important;
+	}
+
+	.rx-modal-body {
+		padding: 0 !important;
+		margin: 0 !important;
+		display: block !important;
+		overflow: visible !important;
+	}
+
+	/* Completely suppress CRM UI: headers, footers, drug selectors, buttons, badges */
+	.rx-modal-header,
+	.rx-modal-footer,
+	.rx-medication-selector,
+	.rx-non-printable {
+		display: none !important;
+	}
+
+	/* Strictly show only the Form 107-1/u prescription blank and its children */
+	.rx-prescription-sheet,
+	.rx-prescription-sheet * {
+		visibility: visible !important;
+	}
+
+	.rx-prescription-sheet {
+		display: block !important;
+		position: relative !important;
+		width: 100% !important;
+		max-width: 148mm !important; /* Standard statutory A5 width */
+		margin: 0 auto !important;
+		padding: 6mm 6mm !important;
+		border: 1.5pt solid #0f172a !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		font-family: "Times New Roman", Times, Georgia, serif !important;
+		font-size: 10pt !important;
+		line-height: 1.35 !important;
+		box-sizing: border-box !important;
+		page-break-inside: avoid !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+
+	.rx-prescription-sheet * {
+		color: #000000 !important;
+		box-shadow: none !important;
+		text-shadow: none !important;
+	}
+
+	.rx-prescription-sheet .border-slate-300,
+	.rx-prescription-sheet .border-slate-400,
+	.rx-prescription-sheet [class*="border-"] {
+		border-color: #0f172a !important;
+	}
+
+	.rx-prescription-sheet .text-teal-700,
+	.rx-prescription-sheet .text-teal-600,
+	.rx-prescription-sheet .text-teal-400 {
+		color: #000000 !important;
+		font-weight: bold !important;
+	}
+}

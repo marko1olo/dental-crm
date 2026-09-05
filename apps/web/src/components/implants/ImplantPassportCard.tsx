@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Calendar, Activity, Copy, Check, QrCode } from "lucide-react";
+import { ShieldCheck, Calendar, Activity, Copy, Check, QrCode, Printer } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { FastImplantPassportData } from "./implantQuickPresets";
 import "./implants.css";
@@ -8,29 +8,48 @@ export interface ImplantPassportCardProps {
 	readonly data: FastImplantPassportData;
 	readonly className?: string;
 	readonly onCopySummary?: () => void;
+	readonly onPrint?: () => void;
 }
 
 export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 	data,
 	className = "",
 	onCopySummary,
+	onPrint,
 }) => {
-	const formattedDate = new Date(data.dateIso).toLocaleDateString("ru-RU");
+	const formattedDate = data.dateIso ? new Date(data.dateIso).toLocaleDateString("ru-RU") : "«____» ____________ 20___ г.";
+	const displayPatientName = data.patientName?.trim() || "____________________________________";
+	const displayLot = data.lotNumber?.trim() || "____________________";
+	const displaySn = data.serialNumber?.trim() || "____________________";
+	const displayDoctor = data.doctorName?.trim() || "________________________";
 
 	const handleCopy = () => {
 		const text =
-			`ПАСПОРТ ИМПЛАНТАТА (FDI #${data.toothFdi})\n` +
-			`Пациент: ${data.patientName} (${data.patientId})\n` +
+			`ПАСПОРТ ИМПЛАНТАТА (FDI #${data.toothFdi || "___"})\n` +
+			`Пациент: ${displayPatientName} (${data.patientId || "______"})\n` +
 			`Система: ${data.brand} ${data.model}\n` +
 			`Размер: Ø ${data.diameterMm} x ${data.lengthMm} мм\n` +
 			`Торк стабилизации: ${data.torqueNcm} Н/см\n` +
 			`Плотность кости: ${data.boneDensity}\n` +
-			`LOT: ${data.lotNumber} | SN: ${data.serialNumber}\n` +
-			`Дата операции: ${formattedDate} · Врач: ${data.doctorName}`;
+			`LOT: ${displayLot} | SN: ${displaySn}\n` +
+			`Дата операции: ${formattedDate} · Врач: ${displayDoctor}`;
 
 		navigator.clipboard?.writeText(text);
 		onCopySummary?.();
-		showToast(`Паспорт имплантата #${data.toothFdi} скопирован`, "success");
+		showToast(`Паспорт имплантата #${data.toothFdi || ""} скопирован`, "success");
+	};
+
+	const handlePrint = () => {
+		if (onPrint) {
+			onPrint();
+		} else {
+			try {
+				window.print();
+			} catch {
+				// fallback
+			}
+		}
+		showToast(`Бланк паспорта имплантата #${data.toothFdi || ""} отправлен на печать`, "success");
 	};
 
 	return (
@@ -48,14 +67,14 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 							Паспорт имплантата DENTE
 						</h4>
 						<span className="text-[11px] font-mono text-[var(--muted)]">
-							{data.passportId}
+							{data.passportId || "IMP-PASSPORT-BLANK"}
 						</span>
 					</div>
 				</div>
 
 				<div className="flex items-center gap-2">
 					<span className="px-2.5 py-1 rounded-lg text-xs font-mono font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]">
-						Зуб FDI #{data.toothFdi}
+						{data.toothFdi ? `Зуб FDI #${data.toothFdi}` : "Зуб FDI #____"}
 					</span>
 					<button
 						type="button"
@@ -66,13 +85,23 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					>
 						<Copy size={14} />
 					</button>
+					<button
+						type="button"
+						onClick={handlePrint}
+						className="min-h-[36px] px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer font-bold text-xs"
+						title="Распечатать паспорт / гарантийный сертификат"
+						data-testid="btn-print-passport-card"
+					>
+						<Printer size={14} className="text-[var(--teal,#0d9488)]" />
+						<span>Печать</span>
+					</button>
 				</div>
 			</div>
 
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">Пациент:</span>
-					<strong className="font-extrabold text-[var(--ink)]">{data.patientName}</strong>
+					<strong className="font-extrabold text-[var(--ink)]">{displayPatientName}</strong>
 				</div>
 
 				<div>
@@ -92,7 +121,7 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">Торк первичной стабильности:</span>
 					<strong className="font-mono font-extrabold text-[var(--teal-dark,#0f766e)]">
-						{`${data.torqueNcm} Н/см`}
+						{`${data.torqueNcm || 35} Н/см`}
 					</strong>
 				</div>
 			</div>
@@ -100,22 +129,34 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-2 border-t border-[var(--line)]">
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">LOT / Партия:</span>
-					<span className="font-mono font-bold text-[var(--ink)]">{data.lotNumber}</span>
+					<span className="font-mono font-bold text-[var(--ink)]">{displayLot}</span>
 				</div>
 
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">Серийный номер:</span>
-					<span className="font-mono font-bold text-[var(--ink)]">{data.serialNumber}</span>
+					<span className="font-mono font-bold text-[var(--ink)]">{displaySn}</span>
 				</div>
 
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">Плотность кости:</span>
-					<span className="font-bold text-[var(--ink)]">{data.boneDensity} (Misch)</span>
+					<span className="font-bold text-[var(--ink)]">{data.boneDensity || "D2"} (Misch)</span>
 				</div>
 
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">Дата операции:</span>
 					<span className="font-bold text-[var(--ink)]">{formattedDate}</span>
+				</div>
+			</div>
+
+			{/* Врач и подпись для сертификата */}
+			<div className="pt-3 border-t border-dashed border-[var(--line)] flex items-center justify-between gap-4 text-xs text-[var(--muted)] flex-wrap">
+				<div>
+					<span>Врач: </span>
+					<strong className="text-[var(--ink)]">{displayDoctor}</strong>
+				</div>
+				<div>
+					<span>Подпись: ______________________ </span>
+					<span className="font-bold text-[var(--ink)] ml-2">М.П.</span>
 				</div>
 			</div>
 

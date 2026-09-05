@@ -505,6 +505,29 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 		}
 	};
 
+	// ── 7. Print Form 043/u (Always 1-Click Available with DRAFT stamp if not signed, Mandate 8e) ──
+	const handlePrintForm043u = useCallback(() => {
+		if (!currentDoc) return;
+		const html = generateForm043uPrintHtml({
+			...currentDoc.payload,
+			doctorSignature: currentDoc.doctorSignature,
+			moSignature: currentDoc.clinicSignature,
+		});
+		const printWin = window.open("", "_blank");
+		if (printWin) {
+			printWin.document.write(html);
+			printWin.document.close();
+			printWin.focus();
+			setTimeout(() => printWin.print(), 300);
+		}
+		showToast(
+			currentDoc.doctorSignature
+				? "Печать протокола осмотра 043/у с отметкой ЭЦП"
+				: "Печать черновика формы 043/у со штампом «ЧЕРНОВИК» (Мандат 8e)",
+			"info",
+		);
+	}, [currentDoc]);
+
 	// Copy XML to clipboard
 	const handleCopyXml = () => {
 		navigator.clipboard.writeText(generatedXml);
@@ -573,6 +596,16 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 
 					{/* Actions & Close */}
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<button
+							type="button"
+							className="egisz-btn-secondary"
+							onClick={handlePrintForm043u}
+							title="Печать формы 043/у (доступна всегда в 1 клик со штампом ЧЕРНОВИК при отсутствии ЭЦП, Мандат 8e)"
+							style={{ display: "inline-flex", alignItems: "center", gap: "6px", minHeight: "36px", padding: "0 12px" }}
+						>
+							<Printer size={16} />
+							<span>{currentDoc?.doctorSignature ? "Печать 043/у (ЭЦП)" : "Печать 043/у (Черновик)"}</span>
+						</button>
 						<button
 							type="button"
 							className="egisz-btn-icon"
@@ -658,9 +691,21 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 							<div className="egisz-signing-workspace">
 								{/* 1. Document Summary Card */}
 								<div className="egisz-card">
-									<div className="egisz-card-title">
-										<FileText size={18} color="#0284c7" />
-										<span>{currentDoc.titleRu}</span>
+									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+										<div className="egisz-card-title" style={{ margin: 0 }}>
+											<FileText size={18} color="#0284c7" />
+											<span>{currentDoc.titleRu}</span>
+										</div>
+										<button
+											type="button"
+											className="egisz-btn-secondary"
+											onClick={handlePrintForm043u}
+											title="Быстрая печать протокола 043/у (доступна всегда в 1 клик со штампом ЧЕРНОВИК)"
+											style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+										>
+											<Printer size={16} />
+											<span>{currentDoc.doctorSignature ? "Распечатать с ЭЦП" : "Печать черновика (А4)"}</span>
+										</button>
 									</div>
 
 									<div className="egisz-grid-2col">

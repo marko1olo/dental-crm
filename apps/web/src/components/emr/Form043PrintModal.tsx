@@ -492,6 +492,19 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 									ПОДПИСАНО ВРАЧОМ
 								</span>
 							)}
+							<span
+								className={`px-2.5 py-0.5 rounded border text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 ${
+									cmoResolution?.decision === "approved"
+										? "border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+										: auditCheckSummary.score >= 90
+											? "border-teal-600/40 bg-teal-500/10 text-teal-700 dark:text-teal-300"
+											: "border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+								}`}
+								title={`Экспертиза качества по Приказу Минздрава РФ № 203н: ${auditCheckSummary.score}/100 баллов (${auditCheckSummary.passedCount}/${auditCheckSummary.totalCount} критериев)${cmoResolution ? ` • Статус: ${cmoResolution.decision === "approved" ? "Утверждено ВК" : "Замечания"}` : ""}`}
+							>
+								<ShieldCheck className="w-3 h-3" />
+								203н: {auditCheckSummary.score}/100 б.{cmoResolution?.decision === "approved" ? " (ВК)" : ""}
+							</span>
 							<div>
 								<h2 className="emr043-header-title">
 									Медицинская карта № {formData.passport.medicalCardNumber} (Форма 043/у)
@@ -671,16 +684,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							>
 								КЭР: <strong>{auditCheckSummary.score}%</strong> ({auditCheckSummary.passedCount}/{auditCheckSummary.totalCount})
 							</span>
-							<button
-								type="button"
-								className="emr043-cmo-trigger-link"
-								onClick={() => {
-									setIsCmoAuditOpen(true);
-									onOpenCmoAudit?.();
-								}}
-							>
-								Экспертиза ЭМК (Начмед / ВК) &rarr;
-							</button>
 						</div>
 					</div>
 
@@ -689,49 +692,6 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						{/* Вкладка 1: Обзор и интерактивный лист А4 */}
 						{activeTab === "overview" && (
 							<div className="emr043-preview-container" style={{ flexDirection: "column", alignItems: "center" }}>
-								<div className="emr043-audit-status-banner emr043-non-printable" style={{ width: "100%", maxWidth: "820px" }}>
-									<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-										<div className={`emr043-audit-badge-icon ${cmoResolution?.decision === "approved" ? "approved" : "pending"}`}>
-											<ShieldCheck className="w-6 h-6" />
-										</div>
-										<div>
-											<div style={{ fontWeight: 700, fontSize: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-												<span>Экспертиза качества медицинской карты (Приказ&nbsp;№&nbsp;203н)</span>
-												{cmoResolution ? (
-													<span className={`emr043-status-badge ${cmoResolution.decision}`}>
-														{cmoResolution.decision === "approved" ? "✓ Утверждено ВК / Начмед" : "⚠ Замечания КЭР"}
-													</span>
-												) : (
-													<span className="emr043-status-badge pending">Готова к экспертизе КЭР</span>
-												)}
-											</div>
-											<div style={{ fontSize: "12px", color: "var(--muted, #64748b)", marginTop: "2px" }}>
-												{cmoResolution ? (
-													<span>
-														Эксперт: <strong>{cmoResolution.auditorFullName}</strong> ({cmoResolution.auditorRole}) • Оценка:&nbsp;{cmoResolution.finalQualityScore}&nbsp;%
-													</span>
-												) : (
-													<span>
-														Автоматический скоринг Росздравнадзора: <strong>{auditCheckSummary.score} / 100&nbsp;баллов</strong> ({auditCheckSummary.defects.length === 0 ? "Дефектов не выявлено" : `Выявлено дефектов: ${auditCheckSummary.defects.length}`})
-													</span>
-												)}
-											</div>
-										</div>
-									</div>
-
-									<button
-										type="button"
-										className="emr043-btn emr043-btn-primary"
-										onClick={() => {
-											setIsCmoAuditOpen(true);
-											onOpenCmoAudit?.();
-										}}
-									>
-										<ShieldCheck className="w-4 h-4" />
-										<span>Экспертиза ЭМК (Начмед / ВК)</span>
-									</button>
-								</div>
-
 								<div
 									className="emr043-a4-sheet"
 									style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}

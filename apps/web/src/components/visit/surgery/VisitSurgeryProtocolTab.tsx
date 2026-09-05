@@ -15,10 +15,13 @@ import {
 	SURGICAL_OPERATION_NORMS,
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
+	buildStandardImplantationProtocolText,
 	type SurgicalOperationNorm,
+	type StandardImplantationParams,
 } from "../../surgery/surgeryProtocols";
 import { SurgerySafetyChecklist } from "../../surgery/SurgerySafetyChecklist";
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
+import { useVisitStore } from "../../../store/visitStore";
 import "./visitSurgery.css";
 
 export interface VisitSurgeryProtocolTabProps {
@@ -51,6 +54,15 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 	const [isImplantModalOpen, setIsImplantModalOpen] = useState<boolean>(false);
 	const [simulateOverdraft, setSimulateOverdraft] = useState<boolean>(false);
 
+	// 1-Клик параметры имплантации
+	const [implantBrand, setImplantBrand] = useState<string>("Dentium");
+	const [implantDiameter, setImplantDiameter] = useState<number>(4.0);
+	const [implantLength, setImplantLength] = useState<number>(10.0);
+	const [implantTorque, setImplantTorque] = useState<number>(35);
+	const [implantIsq, setImplantIsq] = useState<number>(72);
+	const [implantCap, setImplantCap] = useState<"fdm" | "plug">("fdm");
+	const [implantSuture, setImplantSuture] = useState<string>("Prolene 4-0");
+
 	const effectiveTooth = activeTooth ?? selectedTooth;
 
 	const handleToothSelect = (t: number) => {
@@ -69,16 +81,88 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 
 	const handleNormClick = (norm: SurgicalOperationNorm) => {
 		setSelectedNormId(norm.id);
-		setProtocolText(norm.standardProtocolTextRu);
+		if (norm.id === "surgery_implant_standard") {
+			const text = buildStandardImplantationProtocolText({
+				toothFdi: effectiveTooth,
+				brand: implantBrand,
+				diameterMm: implantDiameter,
+				lengthMm: implantLength,
+				torqueNcm: implantTorque,
+				isq: implantIsq,
+				capType: implantCap,
+				sutureMaterial: implantSuture,
+				postOpXray: true,
+			});
+			setProtocolText(text);
+		} else {
+			setProtocolText(norm.standardProtocolTextRu);
+		}
 		if (norm.defaultToothFdi && !activeTooth) {
 			handleToothSelect(norm.defaultToothFdi);
 		}
 		showToast(`Норма операции: «${norm.title}»`, "success");
 	};
 
+	// 1-Клик пресет: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, снимок)
+	const handleApplyStandardImplantationPreset = (
+		overrides?: Partial<StandardImplantationParams>,
+	) => {
+		setSelectedNormId("surgery_implant_standard");
+		const brand = overrides?.brand ?? implantBrand;
+		const dia = overrides?.diameterMm ?? implantDiameter;
+		const len = overrides?.lengthMm ?? implantLength;
+		const torque = overrides?.torqueNcm ?? implantTorque;
+		const isq = overrides?.isq ?? implantIsq;
+		const cap = overrides?.capType ?? implantCap;
+		const suture = overrides?.sutureMaterial ?? implantSuture;
+
+		if (overrides?.brand) setImplantBrand(overrides.brand);
+		if (overrides?.diameterMm) setImplantDiameter(overrides.diameterMm);
+		if (overrides?.lengthMm) setImplantLength(overrides.lengthMm);
+		if (overrides?.torqueNcm) setImplantTorque(overrides.torqueNcm);
+		if (overrides?.isq) setImplantIsq(overrides.isq);
+		if (overrides?.capType) setImplantCap(overrides.capType);
+		if (overrides?.sutureMaterial) setImplantSuture(overrides.sutureMaterial);
+
+		const generated = buildStandardImplantationProtocolText({
+			toothFdi: effectiveTooth,
+			brand,
+			diameterMm: dia,
+			lengthMm: len,
+			torqueNcm: torque,
+			isq,
+			capType: cap,
+			sutureMaterial: suture,
+			postOpXray: true,
+		});
+
+		setProtocolText(generated);
+		showToast(
+			`⚡ 1-Клик норма: ${brand} Ø${dia}×${len} мм, 35 Н/см, ISQ ${isq}, ${cap === "fdm" ? "ФДМ" : "Заглушка"}, ${suture}`,
+			"success",
+		);
+	};
+
 	const handleApplyToVisitDiary = () => {
+		// 1. Direct injection into useVisitStore
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existingObj = prev.objectiveStatus?.trim() || "";
+				return {
+					...prev,
+					objectiveStatus: existingObj
+						? `${existingObj}\n\n${protocolText}`
+						: protocolText,
+				};
+			});
+		} catch {
+			// fallback
+		}
+
+		// 2. Props callback
 		onApplyToDiary?.(protocolText);
 
+		// 3. Global custom event for visit diary listeners
 		try {
 			window.dispatchEvent(
 				new CustomEvent("dente-apply-soap-protocol", {
@@ -240,6 +324,149 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 							</button>
 						);
 					})}
+				</div>
+			</div>
+
+			{/* 1-Клик Экспресс-имплантация (Мандаты 8e, 8k) */}
+			<div className="p-3.5 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3">
+				<div className="flex items-center justify-between gap-2 flex-wrap">
+					<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
+						<Sparkles size={15} />
+						<span>1-Клик Пресет имплантации (Форма 043/у):</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => handleApplyStandardImplantationPreset()}
+						className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all"
+						data-testid="btn-preset-standard-implant-tab"
+						title="⚡ 1-клик: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, контрольный снимок)"
+					>
+						<Zap size={14} className="text-amber-300" />
+						<span>⚡ Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, Prolene 4-0, снимок)</span>
+					</button>
+				</div>
+
+				{/* Быстрые параметры в 1 клик */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+					{/* Система */}
+					<div className="space-y-1">
+						<span className="text-[11px] font-bold text-[var(--muted)]">Система:</span>
+						<div className="flex items-center gap-1 flex-wrap">
+							{[
+								{ brand: "Dentium", model: "SuperLine" },
+								{ brand: "Osstem", model: "TS III" },
+								{ brand: "Straumann", model: "BLX" },
+								{ brand: "Astra Tech", model: "EV" },
+							].map((s) => (
+								<button
+									key={s.brand}
+									type="button"
+									onClick={() =>
+										handleApplyStandardImplantationPreset({ brand: s.brand, model: s.model })
+									}
+									className={`min-h-[34px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+										implantBrand === s.brand
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									}`}
+									data-testid={`btn-implant-system-${s.brand}`}
+								>
+									{s.brand}
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Размер (Ø × длина) */}
+					<div className="space-y-1">
+						<span className="text-[11px] font-bold text-[var(--muted)]">Размер (Ø × Длина):</span>
+						<div className="flex items-center gap-1 flex-wrap">
+							{[
+								{ dia: 3.5, len: 10.0 },
+								{ dia: 4.0, len: 10.0 },
+								{ dia: 4.5, len: 10.0 },
+								{ dia: 4.0, len: 11.5 },
+							].map((sz) => (
+								<button
+									key={`${sz.dia}-${sz.len}`}
+									type="button"
+									onClick={() =>
+										handleApplyStandardImplantationPreset({ diameterMm: sz.dia, lengthMm: sz.len })
+									}
+									className={`min-h-[34px] px-2 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+										implantDiameter === sz.dia && implantLength === sz.len
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									}`}
+									data-testid={`btn-implant-size-${sz.dia}-${sz.len}`}
+								>
+									{`Ø${sz.dia}×${sz.len}`}
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Торк и ISQ */}
+					<div className="space-y-1">
+						<span className="text-[11px] font-bold text-[var(--muted)]">Стабильность:</span>
+						<div className="flex items-center gap-1 flex-wrap">
+							{[
+								{ torque: 35, isq: 72, label: "35 Н/см (ISQ 72)" },
+								{ torque: 45, isq: 75, label: "45 Н/см (ISQ 75)" },
+							].map((st) => (
+								<button
+									key={st.torque}
+									type="button"
+									onClick={() =>
+										handleApplyStandardImplantationPreset({ torqueNcm: st.torque, isq: st.isq })
+									}
+									className={`min-h-[34px] px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+										implantTorque === st.torque
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+											: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									}`}
+									data-testid={`btn-implant-torque-${st.torque}`}
+								>
+									{st.label}
+								</button>
+							))}
+						</div>
+					</div>
+
+					{/* Заглушка / Швы */}
+					<div className="space-y-1">
+						<span className="text-[11px] font-bold text-[var(--muted)]">Формирователь & Швы:</span>
+						<div className="flex items-center gap-1 flex-wrap">
+							<button
+								type="button"
+								onClick={() =>
+									handleApplyStandardImplantationPreset({ capType: "fdm", sutureMaterial: "Prolene 4-0" })
+								}
+								className={`min-h-[34px] px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									implantCap === "fdm"
+										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+								}`}
+								data-testid="btn-implant-cap-fdm"
+							>
+								ФДМ · Prolene 4-0
+							</button>
+							<button
+								type="button"
+								onClick={() =>
+									handleApplyStandardImplantationPreset({ capType: "plug", sutureMaterial: "Vicryl 4-0" })
+								}
+								className={`min-h-[34px] px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+									implantCap === "plug"
+										? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+								}`}
+								data-testid="btn-implant-cap-plug"
+							>
+								Заглушка · Vicryl
+							</button>
+						</div>
+					</div>
 				</div>
 			</div>
 

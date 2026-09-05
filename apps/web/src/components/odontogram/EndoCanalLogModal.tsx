@@ -19,6 +19,7 @@ import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore";
 
 export interface EndoCanalData {
 	readonly id: string;
@@ -206,11 +207,29 @@ export const EXPRESS_APICAL_OBTURATION_PRESET = {
  * - Нижние моляры (36-38, 46-48):
  *     • Щечные / медиальные (MB, ML): 20.0 мм
  *     • Дистальные (D, DL): 21.0 мм
+ * - Временные (молочные) зубы (51..85):
+ *     • Резцы (51, 52, 61, 62, 71, 72, 81, 82): 16.0 мм
+ *     • Клыки (53, 63, 73, 83): 18.0 мм
+ *     • Моляры (54, 55, 64, 65, 74, 75, 84, 85): 16.5 мм
  */
 export function getAnatomicalWorkingLength(toothNumber: number, canalName?: string): number {
+	const quadrant = Math.floor(toothNumber / 10);
 	const pos = toothNumber % 10;
 	const normCanal = (canalName || "").toUpperCase().trim();
+	const isPrimary = quadrant >= 5 && quadrant <= 8;
 
+	// Временные (молочные) зубы (51..85)
+	if (isPrimary) {
+		// Клыки (53, 63, 73, 83)
+		if (pos === 3) return 18.0;
+		// Резцы (51, 52, 61, 62, 71, 72, 81, 82)
+		if (pos === 1 || pos === 2) return 16.0;
+		// Моляры (54, 55, 64, 65, 74, 75, 84, 85)
+		if (pos === 4 || pos === 5) return 16.5;
+		return 16.5;
+	}
+
+	// Постоянные зубы (11..48)
 	// Клыки (13, 23, 33, 43)
 	if (pos === 3) return 25.0;
 
@@ -222,8 +241,7 @@ export function getAnatomicalWorkingLength(toothNumber: number, canalName?: stri
 
 	// Моляры (6, 7, 8)
 	if (pos === 6 || pos === 7 || pos === 8) {
-		const quadrant = Math.floor(toothNumber / 10);
-		const isUpper = quadrant === 1 || quadrant === 2 || quadrant === 5 || quadrant === 6;
+		const isUpper = quadrant === 1 || quadrant === 2;
 		if (isUpper) {
 			if (
 				normCanal === "P" ||
@@ -1101,9 +1119,42 @@ export function EndoCanalLogModal({
 			setIsSaving(false);
 		}
 
+		// 1. Direct injection into useVisitStore
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existingObj = prev.objectiveStatus?.trim() || "";
+				return {
+					...prev,
+					objectiveStatus: existingObj
+						? `${existingObj}\n\n${protocolTextToInsert}`
+						: protocolTextToInsert,
+				};
+			});
+		} catch {
+			// fallback
+		}
+
+		// 2. Callback if provided
 		if (onInsertToProtocol) {
 			onInsertToProtocol(protocolTextToInsert, effectiveCanals);
 		}
+
+		// 3. Global custom event for visit diary listeners
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: {
+							treatmentDescription: protocolTextToInsert,
+						},
+						mode: "smart_append",
+					},
+				}),
+			);
+		} catch {
+			// fallback
+		}
+
 		showToast(
 			`Эндодонтический протокол для зуба #${toothNumber} сохранен и вставлен в карту 043/у!`,
 			"success",
