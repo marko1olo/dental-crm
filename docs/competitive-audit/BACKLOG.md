@@ -461,8 +461,9 @@
     - По Конституции клиники (Раздел VII THE HAMMER): «Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату».
     - Вместо блокировки кнопки создания/отправки наряда ЗТЛ система выводит мягкий бирюзовый бейдж: `✓ План составлен >30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e) · Без согласований начмеда`.
 - **Статус**: 
-  - Фронтенд / Расчеты: `apps/web/src/components/lab/labMath.ts`, `DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `DentalLabOcclusionTab.tsx`, `dentalLabFinancialGateEngine.ts`, `orders/LabWorkOrderModal.tsx`, `orders/labWorkOrderPresets.ts` (коммиты `96dc7246c`, `97af039fc`)
-  - Тесты: `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (123 строки тестов 1-клик пресетов и снятия 30-дневного блока, 100% passing).
+  - Фронтенд / Расчеты: `apps/web/src/components/lab/labMath.ts`, `DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `dentalLabFinancialGateEngine.ts`, `orders/LabWorkOrderModal.tsx`, `orders/labWorkOrderPresets.ts` (коммиты `96dc7246c`, `97af039fc`).
+  - **Ликвидация академического блоата (Мандаты 8i, 8k, 8e)**: Избыточный компонент `DentalLabOcclusionTab.tsx` (концепции окклюзии Доусона, микроны фрезера ЗТЛ, перикиматы) официально снесён и удален из кодовой базы. В `DentalLabOrderModal.tsx` оставлено ровно 5 чистых вкладок (1. Зубы и Конструкция, 2. Расцветка VITA, 3. Этапы и Сроки, 4. Себестоимость, 5. Бланк ГОСТ).
+  - Тесты: `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (31 сценарий тестов 1-клик пресетов и снятия 30-дневного блока, 100% passing).
 
 ---
 
@@ -486,7 +487,7 @@
   - Все тач-таргеты $\ge 44\times 44\text{px}$ ($\ge 50\text{px}$ в карточках сценариев).
   - Мгновенная вставка в дневник визита Формы 043/у через глобальное событие `dente-apply-soap-protocol` и `useVisitStore`.
 - **Статус**:
-  - Фронтенд / Логика: `apps/web/src/components/visit/clinicalSoapPresets.ts`, `ClinicalQuickPresetsBar.tsx`, `apps/web/src/components/odontogram/EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`.
+  - Фронтенд / Логика: `apps/web/src/components/visit/clinicalSoapPresets.ts`, `ClinicalQuickPresetsBar.tsx`, `apps/web/src/components/odontogram/EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx` (коммит `1a9ec847f`).
   - Тесты: `apps/web/src/tests/clinicalSoapPresets.test.ts` (21/21 passing), `apps/web/src/components/odontogram/__tests__/EndoCanalLogModal.test.ts` (30/30 passing), `apps/web/src/components/visit/__tests__/clinicalSoapProtocols043.test.ts` (66/66 passing).
 
 ---
