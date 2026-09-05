@@ -718,7 +718,10 @@ export function usePatientIntakeLogic({
 					null,
 				documentSeriesNumber: identityDocument,
 				snils: patientProfile?.snils?.trim() || null,
-				medicalCardNumber: outpatient025uMedicalCardNumberValue() || null,
+				medicalCardNumber:
+					(documentPatient as { medicalCardNumber?: string; cardNumber?: string } | null | undefined)?.medicalCardNumber?.trim() ||
+					(documentPatient as { medicalCardNumber?: string; cardNumber?: string } | null | undefined)?.cardNumber?.trim() ||
+					`043/у-${new Date().getFullYear()}-${documentPatient?.id?.slice(0, 8).toUpperCase() ?? "PATIENT"}`,
 			},
 			doctor: {
 				fullName: doctor.fullName || activeDoctor?.fullName || "—",

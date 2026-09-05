@@ -1394,7 +1394,6 @@ export function validateDentalMedicalCard043U(
 		documentPatient,
 		clinicProfileDraft,
 		requiredDocumentField,
-		outpatient025uMedicalCardNumberValue,
 		dentalMedicalCard043uPayloadValue,
 	} = state as DocumentState & {
 		dentalMedicalCard043uPayloadValue?: () => {
@@ -1421,9 +1420,13 @@ export function validateDentalMedicalCard043U(
 		payload?.organization?.shortName?.trim() ||
 		clinicProfileDraft.legalName.trim() ||
 		clinicProfileDraft.clinicName.trim();
+	const patientToken =
+		documentPatient?.id?.slice(0, 8).toUpperCase() ?? "PATIENT";
 	const cardNumber =
 		payload?.patient?.medicalCardNumber?.trim() ||
-		outpatient025uMedicalCardNumberValue();
+		(documentPatient as { medicalCardNumber?: string; cardNumber?: string; id?: string } | undefined)?.medicalCardNumber?.trim() ||
+		(documentPatient as { medicalCardNumber?: string; cardNumber?: string; id?: string } | undefined)?.cardNumber?.trim() ||
+		(documentPatient?.id ? `043/у-${new Date().getFullYear()}-${patientToken}` : "");
 	const visitDate = payload?.visitDate?.trim() || recordExtractPeriodEnd;
 	const complaint =
 		payload?.complaint?.trim() ||
