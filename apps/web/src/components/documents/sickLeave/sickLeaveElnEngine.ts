@@ -787,13 +787,24 @@ export function generateSickLeavePatientMemoHtml(form: SickLeaveFormState, patie
 /**
  * Formats a concise summary for insertion into Dental EMR 043/u diary
  */
-export function generateEmrDiarySnippet(form: SickLeaveFormState, patient: SickLeavePatientData): string {
+export function generateEmrDiarySnippet(
+	form: SickLeaveFormState,
+	patient: SickLeavePatientData,
+	isDraft: boolean = false
+): string {
 	const totalDays = form.periods.reduce((acc, p) => acc + calculateDaysBetween(p.dateFrom, p.dateTo), 0);
 	const firstDate = form.periods[0]?.dateFrom || form.issueDate;
 	const lastDate = form.periods[form.periods.length - 1]?.dateTo || form.issueDate;
 
-	let snippet = `[ЭКСПЕРТИЗА ВРЕМЕННОЙ НЕТРУДОСПОСОБНОСТИ (ЭЛН)]\n`;
-	snippet += `Оформлен ЭЛН № ${form.elnNumber} (Приказ Минздрава РФ № 1089н).\n`;
+	let snippet = isDraft
+		? `[ЭКСПЕРТИЗА ВРЕМЕННОЙ НЕТРУДОСПОСОБНОСТИ (ЭЛН) — ЧЕРНОВИК ОФОРМЛЯЕТСЯ]\n`
+		: `[ЭКСПЕРТИЗА ВРЕМЕННОЙ НЕТРУДОСПОСОБНОСТИ (ЭЛН)]\n`;
+
+	if (isDraft) {
+		snippet += `[Черновик ЭЛН № ${form.elnNumber}, оформляется в карте 043/у]\n`;
+	} else {
+		snippet += `Оформлен ЭЛН № ${form.elnNumber} (Приказ Минздрава РФ № 1089н).\n`;
+	}
 	snippet += `Причина ВН: код ${form.reasonCode} (${form.icd10Code} - ${form.diagnosisText}).\n`;
 	snippet += `Период освобождения от работы: с ${formatDateRu(firstDate)} по ${formatDateRu(lastDate)} (продолжительность: ${totalDays} кал. дн.). Режим: ${form.regimeType === 'ambulatory' ? 'амбулаторный' : 'стационарный'}.\n`;
 
@@ -811,7 +822,11 @@ export function generateEmrDiarySnippet(form: SickLeaveFormState, patient: SickL
 		snippet += `Исход: статус 32 (Продолжает болеть, выдан новый ЭЛН ${form.nextElnNumber || ''}).\n`;
 	}
 
-	snippet += `Место работы: ${patient.employerName}. Памятка пациенту выдана. ЭЛН передан в СФР/ЕГИСЗ.`;
+	if (isDraft) {
+		snippet += `Место работы: ${patient.employerName || 'Уточняется'}. Памятка пациенту выдана. [Черновик ЭЛН: оформляется, ожидает передачи в СФР].`;
+	} else {
+		snippet += `Место работы: ${patient.employerName}. Памятка пациенту выдана. ЭЛН передан в СФР/ЕГИСЗ.`;
+	}
 	return snippet;
 }
 

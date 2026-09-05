@@ -206,6 +206,34 @@ export const DENTAL_CLINICAL_PRESETS: Record<string, DentalClinicalPreset> = {
 		clinicalDescriptionRu: 'Атипичная операция удаления ретинированного и дистопированного зуба с остеотомией кортикальной пластинки, фрагментацией зуба и ушиванием раны наглухо.',
 		expertJustificationRu: 'Послеоперационный реактивный отек, тризм жевательной мускулатуры 1-2 степени, выраженный болевой синдром, ограничение открывания рта.'
 	},
+	acute_alveolitis: {
+		id: 'acute_alveolitis',
+		titleRu: 'Острый альвеолит челюсти (воспаление лунки зуба после экстракции)',
+		shortTitleRu: 'Альвеолит лунки',
+		icd10Code: 'K10.3',
+		icd10TitleRu: 'Альвеолит челюстей',
+		reasonCode: '01',
+		recommendedMinDays: 3,
+		recommendedMaxDays: 6,
+		defaultDays: 4,
+		isVkMandatory: false,
+		clinicalDescriptionRu: 'Острый альвеолит лунки зуба. Ревизия лунки под инфильтрационной анестезией, удаление распада сгустка, антисептическая обработка, рыхлая тампонада гемостатической/йодоформной губкой.',
+		expertJustificationRu: 'Интенсивный болевой синдром с иррадиацией по тройничному нерву, субфебрилитет, регионарный лимфаденит, нарушение сна и трудоспособности, необходимость повторных перевязок.'
+	},
+	acute_pericoronitis: {
+		id: 'acute_pericoronitis',
+		titleRu: 'Острый перикоронит (воспаление десневого капюшона зуба мудрости)',
+		shortTitleRu: 'Острый перикоронит',
+		icd10Code: 'K05.2',
+		icd10TitleRu: 'Острый перикоронит',
+		reasonCode: '01',
+		recommendedMinDays: 3,
+		recommendedMaxDays: 5,
+		defaultDays: 4,
+		isVkMandatory: false,
+		clinicalDescriptionRu: 'Острый перикоронит в области третьего моляра. Иссечение капюшона (перикоронаротомия), эвакуация гнойного экссудата, антисептическое промывание, дренирование резиновым выпускником.',
+		expertJustificationRu: 'Боль при глотании, тризм жевательных мышц I-II степени, отек ретромолярной области, интоксикация, затруднение приема пищи и речи.'
+	},
 	odontogenic_sinusitis_perforation: {
 		id: 'odontogenic_sinusitis_perforation',
 		titleRu: 'Одонтогенный гайморит / перфорация дна гайморовой пазухи с пластикой',

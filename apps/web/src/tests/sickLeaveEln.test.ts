@@ -89,6 +89,24 @@ describe('Statutory Electronic Sick Leave (ЭЛН) & Medical Commission (Order �
 			assert.equal(trauma.defaultDays, 12);
 		});
 
+		it('verifies acute alveolitis and acute pericoronitis 1-click clinical presets', () => {
+			const alveolitis = DENTAL_CLINICAL_PRESETS.acute_alveolitis;
+			assert.ok(alveolitis);
+			assert.equal(alveolitis.icd10Code, 'K10.3');
+			assert.equal(alveolitis.reasonCode, '01');
+			assert.equal(alveolitis.defaultDays, 4);
+			assert.equal(alveolitis.isVkMandatory, false);
+			assert.ok(alveolitis.shortTitleRu.includes('Альвеолит'));
+
+			const pericoronitis = DENTAL_CLINICAL_PRESETS.acute_pericoronitis;
+			assert.ok(pericoronitis);
+			assert.equal(pericoronitis.icd10Code, 'K05.2');
+			assert.equal(pericoronitis.reasonCode, '01');
+			assert.equal(pericoronitis.defaultDays, 4);
+			assert.equal(pericoronitis.isVkMandatory, false);
+			assert.ok(pericoronitis.shortTitleRu.includes('перикоронит'));
+		});
+
 		it('verifies default medical commission hierarchy preset', () => {
 			assert.equal(DEFAULT_COMMISSION_PRESETS.length, 4);
 			const chair = DEFAULT_COMMISSION_PRESETS[0];
@@ -448,6 +466,13 @@ describe('Statutory Electronic Sick Leave (ЭЛН) & Medical Commission (Order �
 			assert.ok(snippet.includes('T81.2'));
 			assert.ok(snippet.includes('продолжительность: 8 кал. дн.'));
 			assert.ok(snippet.includes('Приступить к работе с 20.08.2026'));
+		});
+
+		it('generates non-blocking draft diary snippet for incomplete/draft ELN (Mandate 8e)', () => {
+			const draftSnippet = generateEmrDiarySnippet(sampleForm, samplePatient, true);
+			assert.ok(draftSnippet.includes('[ЭКСПЕРТИЗА ВРЕМЕННОЙ НЕТРУДОСПОСОБНОСТИ (ЭЛН) — ЧЕРНОВИК ОФОРМЛЯЕТСЯ]'));
+			assert.ok(draftSnippet.includes('[Черновик ЭЛН № 999847291039, оформляется в карте 043/у]'));
+			assert.ok(draftSnippet.includes('[Черновик ЭЛН: оформляется, ожидает передачи в СФР]'));
 		});
 	});
 });

@@ -50,6 +50,7 @@ import {
 	DEFAULT_CLINIC_LICENCE,
 	SINGLE_DOCTOR_MAX_DAYS
 } from "./sickLeaveElnEngine";
+import { showToast } from "../../GlobalToast";
 import "./sickLeaveEln.css";
 
 export interface SickLeaveElnModalProps {
@@ -341,22 +342,42 @@ export function SickLeaveElnModal({
 
 	// Handlers
 	const handleCopyDiarySnippet = () => {
-		const snippet = generateEmrDiarySnippet(formState, patientData);
+		const isDraft = !validation.isValid;
+		const snippet = generateEmrDiarySnippet(formState, patientData, isDraft);
 		navigator.clipboard.writeText(snippet);
 		setIsCopiedDiary(true);
 		setTimeout(() => setIsCopiedDiary(false), 2000);
+		if (isDraft) {
+			showToast("Черновик записи ЭЛН скопирован в буфер (требуется завершить оформление)", "info");
+		} else {
+			showToast("Запись ЭЛН скопирована в буфер обмена", "success");
+		}
 	};
 
 	const handleApplyDiary = () => {
-		const snippet = generateEmrDiarySnippet(formState, patientData);
+		const isDraft = !validation.isValid;
+		const snippet = generateEmrDiarySnippet(formState, patientData, isDraft);
 		if (onApplyToDiary) {
 			onApplyToDiary(snippet, formState);
+		}
+		if (isDraft) {
+			showToast("В дневник 043/у вставлен черновик ЭЛН (требуется завершить оформление)", "info");
+		} else {
+			showToast("Запись об ЭЛН успешно вставлена в дневник 043/у", "success");
 		}
 		onClose();
 	};
 
 	const handleSendSfr = () => {
+		if (!validation.isValid) {
+			const errorList = validation.errors.length > 0
+				? validation.errors.join("; ")
+				: "Не заполнены обязательные реквизиты для передачи в СФР (Приказ 1089н)";
+			showToast(`Невозможно отправить в СФР: ${errorList}`, "warning", 6000);
+			return;
+		}
 		setIsSfrSent(true);
+		showToast("ЭЛН успешно передан в информационную систему СФР", "success");
 		setTimeout(() => setIsSfrSent(false), 4000);
 	};
 
@@ -1093,9 +1114,9 @@ export function SickLeaveElnModal({
 
 						<button
 							type="button"
-							className={`sick-leave-btn ${isSfrSent ? 'success' : 'primary'} ${!validation.isValid ? 'disabled' : ''}`}
+							className={`sick-leave-btn ${isSfrSent ? 'success' : 'primary'}`}
 							onClick={handleSendSfr}
-							disabled={!validation.isValid}
+							title={!validation.isValid ? 'Нажмите для просмотра недостающих обязательных полей СФР' : 'Передать электронный листок в СФР'}
 						>
 							{isSfrSent ? <CheckCircle2 size={16} /> : <Send size={16} />}
 							{isSfrSent ? 'Успешно отправлено в СФР' : 'Отправить в СФР (ЭЛН)'}
@@ -1106,10 +1127,10 @@ export function SickLeaveElnModal({
 								type="button"
 								className="sick-leave-btn primary"
 								onClick={handleApplyDiary}
-								disabled={!validation.isValid}
+								title="Вставить запись в медицинскую карту 043/у (автономия врача: черновик вставляется без блокировок, Мандат 8e)"
 							>
 								<Check size={16} />
-								Вставить в дневник приема
+								{!validation.isValid ? 'Вставить в дневник (Черновик)' : 'Вставить в дневник приема'}
 							</button>
 						)}
 					</div>
