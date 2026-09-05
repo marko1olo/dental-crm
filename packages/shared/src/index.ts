@@ -44,6 +44,7 @@ export * from "./crypto/index.js";
 export * from "./doctor/index.js";
 export * from "./treatment-plans/index.js";
 export * from "./diagnostics/index.js";
+export * from "./orthodontics/index.js";
 export * from "./branches/index.js";
 export * from "./warehouse/index.js";
 export * from "./mobile/index.js";
