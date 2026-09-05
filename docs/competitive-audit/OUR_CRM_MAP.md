@@ -52,6 +52,7 @@
   - `staff_shifts` (`diary.ts`) — дневник смен врачей, учет рабочего времени.
   - `public_booking_slots` (`publicBooking.ts`) — доступные слоты онлайн-записи для интеграторов.
   - `urgentScheduleRequests` — срочные CITO-обращения с авто-подбором слота/врача и 1-клик печатью чистого договора со строками `_______`.
+  - Свобода соло-врача и опциональный ассистент при создании записи (`assistantUserId` опционален, нормализуется в `null` без 400/валидационных ошибок в `AppointmentModal.tsx`, `NewAppointmentForm.tsx`, `QuickBookingDrawer.tsx`, Мандаты 8e п. 8, 8n).
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма, Хирургия и Голосовой ввод
 - **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`.
@@ -77,6 +78,8 @@
   - Унифицированный модуль цефалометрии ТРГ `CephalometricAnalysisModal.tsx` с голосовой диктовкой анатомических ориентиров (коммит `95128f01e`).
   - Планирование виртуальной расстановки имплантов (`ctPlanningImplantFit.ts`).
   - ИИ-анализ панорамных и КТ снимков на патологии (`ai.ts`).
+  - 1-клик протоколы радиовизиографии (RVG) для Формы 043/у (`radiologyProtocols.ts`, `RadiologyViewerModal.tsx`, `DicomViewerModal.tsx`, коммит `b26f06059`): 4 канонических стандарта («Рентген-норма», «Периодонтит», «Контроль обтурации», «Резорбция кости») с мгновенной вставкой в дневник 043/у через `dente-apply-soap-protocol`, обновление `useVisitStore` и буфер обмена.
+  - Молниеносный просмотр визиографа (<50мс) без 45-секундных зависаний на нейросети. ИИ запускается строго по отдельной кнопке врача без несанкционированной перезаписи зубной формулы.
 
 ### 2.5. Документооборот, ИДС, НДФЛ, Рецепты 1094н, ЭЛН 1089н и ЕГИСЗ
 - **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `documentLogic.ts`, `documentValidators.ts`, `MedicalPrescriptionModal.tsx`, `PrescriptionPrintModal.tsx`, `SickLeaveElnModal.tsx`, `ImplantPassportModal.tsx`.
@@ -90,6 +93,7 @@
   - Рецептурные бланки Минздрава РФ по форме № 107-1/у (Приказ № 1094н) с 1-клик профильными стоматологическими пресетами и пакетами первой линии и резерва аллергий (Амоксиклав, Кларитромицин, Ибупрофен 400, Хлоргексидин, Холисал), латинскими сигнатурами и полиграфической печатью (`PrescriptionPrintModal.tsx`, `forms107_1u.ts`, коммиты `4cd580cc3`, `9e360aac1`).
   - ЭЛН по Приказу Минздрава РФ № 1089н с неблокирующей вставкой черновика в дневник 043/у и пресетами острой боли (альвеолит, перикоронит).
   - Справки для налогового вычета (НДФЛ код 1).
+  - 1-клик пакетные согласия ИДС (6 профильных пакетов: `standard_admission`, `surgery_implantation`, `orthodontics_aligners`, `orthopedics_prosthetics`, `pediatric_package`, `full_diagnostic`) с пакетным подписанием в 1 клик (`signPackageConsents`, `InformedConsentModal.tsx`) и 1-клик печатью чистых бланков А4 со строками `____________________` (`printBlankConsentPackage`) для ручного заполнения до осмотра без 403-ошибок (`consentTemplates.ts`, коммиты `7c359a562`, `6ea1b22f9`, `175b1a12e`).
   - Интеграция с ЕГИСЗ / РЭМД N3.Health (`egisz.ts`).
 
 ### 2.6. Омниканальные Коммуникации и Чаты
@@ -105,6 +109,7 @@
 - **Возможности**:
   - Проведение платежей (наличные, карта, аванс, семейный кошелек).
   - 1-клик комбинированная оплата в `PaymentModal.tsx` («Зачесть аванс N ₽ + остаток картой») без отключения кнопок при недостатке депозита (коммит `388b1ac24`).
+  - Касса 54-ФЗ без палок в колёса (Мандат 8e п. 9, 8n): отмена обязательного требования ИНН с физических лиц (ИНН требуется строго для ЮЛ и ИП), моментальные 1-клик пресеты комбинированной оплаты («Без сдачи», «100% карта», «Аванс + карта») без рассинхрона копеек, автономия скидок врача — 100% скидки на гарантийные переделки и лечение персонала закрывают приём в 1 клик (0 ₽) без ввода мастер-паролей (`PaymentModal.tsx`, `PaymentProcessingModal.tsx`, `cashboxOperations.ts`, коммит `ba8c60802`).
   - 100% гарантийные скидки врача (0 ₽) в `planToInvoiceValidator.ts` без блокировок и мастер-паролей (Мандат 8e).
   - Мгновенный сброс (flush) черновика дневника 043/у при входящем звонке телефонии для защиты от потери данных (`telephonyStore.ts`, коммит `1d7d1d2f8`).
   - Выписка счетов, наряд-заказов и актов с 1-клик клиническим согласованием врача (Мандат 8e) без обязательного мастер-пароля управляющего.
@@ -117,6 +122,8 @@
 - **Возможности**:
   - Списание расходных материалов на визиты.
   - Наряды ЗТЛ в 1 клик (ZrO2 Prettau/Katana, временная PMMA CAD/CAM, МК Duceram Plus, винтовая коронка на Ti-Base / Multi-unit) и снятие 30-дневного срока блокировки плана лечения под Мандат 8e (`DentalLabOrderModal.tsx`, `LabWorkOrderModal.tsx`, `labMath.ts`, `dentalLabFinancialGateEngine.ts`, коммит `96dc7246c`).
+  - Ликвидация академического Exocad-блоата из нарядов ЗТЛ: компонент `DentalLabOcclusionTab.tsx` (220 строк) полностью удален из проекта; удален аккордеон микро-параметров фрезера (схемы окклюзии Доусона, микроны зазора, перикиматы); наряд оптимизирован до 5 чистых вкладок врача (`DentalLabOrderModal.tsx`, коммиты `b26f06059`, `195a26365`, `e537a7112`).
+  - Очистка нарядов ЗТЛ и бланков от сырых эмодзи и скрытие внутренней себестоимости ЗТЛ из бланка пациента под Мандат 8d (`DentalLabPrintBlank.tsx`, `DentalLabRestorationTab.tsx`, `OrthodonticVisitProtocolWidget.tsx`).
   - 1-клик вскрытие крафт-пакетов без комиссий из 3 человек по СанПиН 3.3686-21 и авто-привязка индикатора стерильности к визиту 043/у (`SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, коммит `0dc6e0fad`).
   - Экстренное вскрытие крафт-лотков и наборов при острой боли без задержек и бюрократических блокировок (`SanpinRegisters.tsx`, `kraftPackageEngine.ts`, коммит `5f0ee1df3`).
   - Утилизация и списание карпул местных анестетиков (Ультракаин, Септанест, Скандонест) в 1 клик по СанПиН 3.3686-21 медсестрой без комиссии из 3 человек (`AnesthesiaPkuDisposalModal.tsx`, `pkuDisposal.ts`, коммиты `d6a6eab26`, `2303c297e` — исключены все эмодзи по Греху № 7).
@@ -128,7 +135,7 @@
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
 - **Возможности**: Автоматический импорт баз данных из IDENT, DentalPRO, Инфоклиника и 1С:Стоматология.
 
-### 2.10. Тридцать семь киллер-фич снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
+### 2.10. Сорок две киллер-фичи снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
 
 Наша стоматологическая CRM создана для реального врача у кресла и администратора на ресепшене, а не для бюрократического контроля. Все процессы подчиняются принципу «Врач правит только патологию, норма заполняется в 1 клик, система никогда не ставит палки в колёса».
 
@@ -385,3 +392,39 @@
   - `apps/web/src/components/visit/clinicalSoapPresets.ts`, `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`, `apps/web/src/components/odontogram/EndoCanalLogModal.tsx`, `apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx` (коммит `1a9ec847f`)
 - **Тесты**:
   - `apps/web/src/tests/clinicalSoapPresets.test.ts` (21/21 passing), `apps/web/src/components/odontogram/__tests__/EndoCanalLogModal.test.ts` (30/30 passing), `apps/web/src/components/visit/__tests__/clinicalSoapProtocols043.test.ts` (66/66 passing)
+
+#### 2.10.38. 1-клик пакетные согласия ИДС и печать чистых бланков со строками «________» (Мандаты 8e, 8k, 8n / Документы)
+- **Суть и домен**: Пакетные комплексы информированных добровольных согласий (ИДС) по ст. 20 323-ФЗ и Приказу Минздрава РФ № 1051н. Шесть готовых профильных пакетов: (1) Базовый первичный приём (`standard_admission`), (2) Хирургический комплекс имплантации и удаления (`surgery_implantation`), (3) Ортодонтический пакет брекетов и элайнеров (`orthodontics_aligners`), (4) Ортопедический пакет протезирования и коронок (`orthopedics_prosthetics`), (5) Детский приём с согласием законного представителя (`pediatric_package`), (6) Комплексная диагностика RVG + КЛКТ + ОПТГ (`full_diagnostic`). 1-клик печать пакета чистых бланков А4 со строками `____________________` (`printBlankConsentPackage`) для ручного заполнения на стойке регистрации без 403 Forbidden, 1-клик печать заполненного пакета (`printFilledConsentPackage`) и пакетное подписание всех ИДС визита в 1 клик (`signPackageConsents`, `InformedConsentModal.tsx`) с соблюдением Закона Анти-Матрёшки.
+- **Фронтенд**:
+  - `apps/web/src/components/consents/InformedConsentModal.tsx`, `apps/web/src/components/consents/consentTemplates.ts`, `apps/web/src/components/consents/informedConsent.css` (коммиты `7c359a562`, `6ea1b22f9`, `175b1a12e`)
+- **Тесты**:
+  - `apps/web/src/components/consents/__tests__/informedConsentPackageSigning.test.ts` (100% passing)
+
+#### 2.10.39. Касса 54-ФЗ без ИНН физлиц, 1-клик комбинированные платежи и автономия скидок врача (Мандаты 8e п. 9, 8n & 54-ФЗ / Финансы)
+- **Суть и домен**: Кассовый модуль 54-ФЗ без палок в колёса персоналу. Валидация ИНН строго опциональна для физлиц (`validateBuyerInn54Fz`, `validate54FzBuyerInn`) в полном соответствии с ФЗ-54 (ИНН требуется только ЮЛ и ИП). Касса пробивает чек наличными, картой или СБП без блокировок. Мгновенные 1-клик пресеты комбинированных оплат: «Без сдачи» (`createExactCashTenders`, нал = 100%, сдача 0 ₽), «100% карта» (`createFullCardTenders`), «Зачесть аванс + остаток картой» (`createDepositAndCardComboTenders`), распределение остатка в 1 клик (`allocateRemainderToTender`) без ошибок копеек. Автономия скидок врача: 100% скидки на гарантийные переделки и лечение персонала (`process100PercentDiscountCheckout`) закрывают визит в 1 клик (0 ₽) без ввода мастер-паролей и без фискализации нулевых чеков.
+- **Фронтенд**:
+  - `apps/web/src/components/finance/PaymentModal.tsx`, `PaymentProcessingModal.tsx`, `cashboxOperations.ts` (коммит `ba8c60802`)
+- **Тесты**:
+  - `apps/web/src/components/finance/__tests__/cashierAutonomy54Fz.test.ts` (14 сценариев, 324 строки тестов, 100% passing)
+
+#### 2.10.40. Расписание и регистратура: опциональный ассистент при записи для соло-врача (Мандаты 8e п. 8, 8n / Расписание)
+- **Суть и домен**: Снятие искусственных блокировок при создании записей в расписании для соло-врача и небольших клиник (1–3 кресла). Поле выбора ассистента (`assistantUserId`) сделано строго опциональным, что позволяет регистратору или соло-врачу создать запись за 5 секунд (Пациент + Время + Кресло). В формах `AppointmentModal.tsx`, `NewAppointmentForm.tsx`, `QuickBookingDrawer.tsx` поле нормализуется в `null` / пустую строку без ошибок валидации и без 400 Bad Request.
+- **Фронтенд**:
+  - `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/NewAppointmentForm.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx` (коммиты `ba8c60802`, `6ea1b22f9`)
+- **Тесты**:
+  - `apps/web/src/components/finance/__tests__/cashierAutonomy54Fz.test.ts` (сценарии валидации записи без ассистента, 100% passing)
+
+#### 2.10.41. Радиовизиография RVG: 1-клик рентген-протоколы для Формы 043/у и молниеносный просмотр (Мандаты 8e п. 11, 8i, 8k / Рентгенология)
+- **Суть и домен**: Цифровой модуль радиовизиографии RVG и протоколирования снимков для Формы 043/у. Четыре стандартизированных клинических заключения: (1) «Рентген-норма», (2) «Периодонтит (периапикальный очаг)», (3) «Контроль обтурации каналов», (4) «Маргинальная резорбция кости (пародонтит)». 1-клик вставка в дневник Формы 043/у через глобальное событие `dente-apply-soap-protocol`, обновление `useVisitStore` и буфер обмена (`applyRadiologyProtocolToForm043`). Молниеносный просмотр снимков визиографа (<50мс) без зависания на нейросети. ИИ запускается строго по отдельной кнопке врача, без несанкционированной перезаписи зубной формулы.
+- **Фронтенд**:
+  - `apps/web/src/components/radiology/radiologyProtocols.ts`, `RadiologyViewerModal.tsx`, `apps/web/src/components/imaging/DicomViewerModal.tsx` (коммиты `b26f06059`, `6ea1b22f9`)
+- **Тесты**:
+  - `apps/web/src/components/radiology/__tests__/radiologyViewerProtocols.test.ts` (198 строк тестов, 100% passing)
+
+#### 2.10.42. ЗТЛ и ортопедия: снос окклюзионного Exocad-блоата и себестоимости из наряда врача (Мандаты 8i, 8k, 8e, 8d / Ортопедия и ЗТЛ)
+- **Суть и домен**: Тотальная ликвидация академического оверинжиниринга и чужеродного функционала зуботехнических CAM-станков из наряда ортопеда: компонент `DentalLabOcclusionTab.tsx` (220 строк) полностью удален из репозитория; удален аккордеон микро-параметров фрезера (схемы окклюзии Доусона, микроны цементного зазора 10–100 мкм, перикиматы). Наряд ЗТЛ оптимизирован до 5 чистых вкладок врача (1. Зубы и Конструкция, 2. Расцветка VITA, 3. Этапы и Сроки, 4. Себестоимость, 5. Бланк ГОСТ). Внутренняя себестоимость ЗТЛ скрыта из печатного бланка пациента (`DentalLabPrintBlank.tsx`). Полное устранение сырых эмодзи (⬆️, ⬇️, 🔄, ⚡) из интерфейса нарядов ЗТЛ и ортодонтии (`OrthodonticVisitProtocolWidget.tsx`, `DentalLabRestorationTab.tsx`) с заменой на векторные иконки Lucide по Греху № 7.
+- **Фронтенд**:
+  - `apps/web/src/components/lab/DentalLabOrderModal.tsx`, `DentalLabRestorationTab.tsx`, `DentalLabPrintBlank.tsx`, `OrthodonticVisitProtocolWidget.tsx`, удален `DentalLabOcclusionTab.tsx` (коммиты `b26f06059`, `195a26365`, `e537a7112`, `6ea1b22f9`)
+- **Тесты**:
+  - `apps/web/src/components/lab/__tests__/DentalLabOrderModal.test.tsx` (31 сценарий тестов, 100% passing)
+
