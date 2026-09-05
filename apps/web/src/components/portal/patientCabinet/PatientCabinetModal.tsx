@@ -113,6 +113,10 @@ import {
 	type FriendlyBillingBreakdown,
 } from "./patientCareInstructionsEngine";
 import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
+import {
+	resolveTaxDeductionCategoryShared,
+	type TaxDeductionPaymentItem,
+} from "../../finance/taxDeductionEngine";
 import { SignaturePadCanvas, MobileSelfCheckinModal } from "../selfCheckin";
 import { PatientFriendlyOdontogram } from "../../patient-portal/PatientFriendlyOdontogram";
 import { TreatmentPlanStageCard } from "../../patient-portal/TreatmentPlanStageCard";
@@ -273,6 +277,62 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	}, [data.invoices, selectedTaxYear]);
 
 	const estimatedTaxRefundRub = taxDeductionCalc.totalRefundRub;
+
+	// Реальный реестр оплат пациента для справки об оплате медицинских услуг (КНД 1151156)
+	const taxDeductionPayments: TaxDeductionPaymentItem[] = useMemo(() => {
+		if (!data.invoices || data.invoices.length === 0) {
+			return [];
+		}
+
+		const paidInvoices = data.invoices.filter((inv) => inv.status === "paid");
+		const paymentItems: TaxDeductionPaymentItem[] = [];
+
+		for (const inv of paidInvoices) {
+			const paymentDate = inv.paidAtIso || inv.issueDateIso || new Date().toISOString();
+			const receiptNum = inv.fiscalReceiptNumber || `ЧЕК-${inv.invoiceNumber}`;
+			const fiscalDocNum = inv.invoiceNumber.replace(/\D/g, "") || "1001";
+			const fiscalSign = `ФПД-${fiscalDocNum.padStart(10, "0").slice(-10)}`;
+
+			if (inv.items && inv.items.length > 0) {
+				let itemIdx = 0;
+				for (const item of inv.items) {
+					itemIdx++;
+					const amountRub = item.totalRub > 0 ? item.totalRub : item.priceRub * (item.quantity || 1);
+					const taxCode = resolveTaxDeductionCategoryShared(item.code, item.titleRu);
+
+					paymentItems.push({
+						id: `${inv.id}-item-${itemIdx}`,
+						dateIso: paymentDate,
+						receiptNumber: receiptNum,
+						fiscalDocumentNumber: fiscalDocNum,
+						fiscalSign: fiscalSign,
+						serviceName: item.titleRu,
+						code804n: item.code || undefined,
+						amountRub: amountRub,
+						amountKopecks: Math.round(amountRub * 100),
+						taxCode: taxCode,
+					});
+				}
+			} else {
+				const amountRub = inv.paidAmountRub > 0 ? inv.paidAmountRub : inv.totalAmountRub;
+				const taxCode = resolveTaxDeductionCategoryShared(undefined, inv.titleRu);
+
+				paymentItems.push({
+					id: `${inv.id}-summary`,
+					dateIso: paymentDate,
+					receiptNumber: receiptNum,
+					fiscalDocumentNumber: fiscalDocNum,
+					fiscalSign: fiscalSign,
+					serviceName: inv.titleRu || "Стоматологические медицинские услуги",
+					amountRub: amountRub,
+					amountKopecks: Math.round(amountRub * 100),
+					taxCode: taxCode,
+				});
+			}
+		}
+
+		return paymentItems;
+	}, [data.invoices]);
 
 	// Зубной паспорт пациента с карточками каждого пролеченного зуба на понятном русском языке
 	const dentalPassport: PatientDentalPassport = useMemo(() => {
@@ -1468,8 +1528,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 												data-testid="order-tax-certificate-btn"
 												style={{ minHeight: "44px", padding: "8px 14px", fontSize: "0.8125rem", fontWeight: 800, flex: 1, touchAction: "manipulation" }}
 												onClick={() => {
-													downloadPatientTaxCertificate1151156(data, selectedTaxYear);
-													showToast(`Официальная справка КНД 1151156 за ${selectedTaxYear} год сформирована!`);
+													setIsTaxModalOpen(true);
 												}}
 											>
 												<Download size={14} />
@@ -2088,8 +2147,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											data-testid="order-tax-certificate-doc-btn"
 											style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", fontWeight: 800, touchAction: "manipulation" }}
 											onClick={() => {
-												downloadPatientTaxCertificate1151156(data, selectedTaxYear);
-												showToast(`Официальная справка КНД 1151156 за ${selectedTaxYear} год скачана!`);
+												setIsTaxModalOpen(true);
 											}}
 										>
 											<Download size={16} />
@@ -2101,8 +2159,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											data-testid="print-tax-knd-btn"
 											style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem", touchAction: "manipulation" }}
 											onClick={() => {
-												const html = generatePatientTaxCertificate1151156(data, selectedTaxYear);
-												openPrintWindow(html);
+												setIsTaxModalOpen(true);
 											}}
 										>
 											<Eye size={16} />
@@ -3471,6 +3528,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 						onClose={() => setIsTaxModalOpen(false)}
 						patientName={data.fullName}
 						patientBirthDate={data.birthDate}
+						patientInn={data.inn}
+						payments={taxDeductionPayments}
+						selectedYear={selectedTaxYear}
 					/>
 				)}
 			</div>

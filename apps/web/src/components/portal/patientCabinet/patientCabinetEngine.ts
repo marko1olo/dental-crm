@@ -205,6 +205,7 @@ export interface PatientPersonalCabinetData {
 	readonly phone: string;
 	readonly email?: string | undefined;
 	readonly birthDate?: string | undefined;
+	readonly inn?: string | undefined;
 	readonly cardNumber: string;
 	readonly curatingDoctor: string;
 	readonly loyaltyBonusBalance: number;

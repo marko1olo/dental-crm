@@ -18,6 +18,7 @@ import {
 	ShieldCheck,
 	Users,
 	FileStack,
+	Receipt,
 } from "lucide-react";
 import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,
@@ -59,6 +60,7 @@ export interface TaxDeductionCertificateModalProps {
 	readonly patientBirthDate?: string | undefined;
 	readonly patientInn?: string | undefined;
 	readonly payments?: readonly TaxDeductionPaymentItem[] | undefined;
+	readonly selectedYear?: number | undefined;
 	readonly clinicName?: string | undefined;
 	readonly clinicInn?: string | undefined;
 	readonly clinicKpp?: string | undefined;
@@ -72,55 +74,11 @@ export interface TaxDeductionCertificateModalProps {
 export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = "Смирнов Алексей Викторович",
-	patientBirthDate = "1985-05-12",
+	patientName = "",
+	patientBirthDate = "",
 	patientInn = "",
-	payments = [
-		{
-			id: "pay-1",
-			dateIso: "2024-03-15T10:00:00Z",
-			receiptNumber: "001",
-			fiscalDocumentNumber: "101",
-			fiscalSign: "987654321",
-			serviceName: "Лечение кариеса и пульпита (Терапия)",
-			code804n: "A16.07.002.001",
-			amountRub: 50000,
-			taxCode: "1",
-		},
-		{
-			id: "pay-2",
-			dateIso: "2024-06-20T14:30:00Z",
-			receiptNumber: "002",
-			fiscalDocumentNumber: "102",
-			fiscalSign: "987654322",
-			serviceName: "Дентальная имплантация Nobel Biocare (Хирургия)",
-			code804n: "A16.07.054.001",
-			amountRub: 150000,
-			taxCode: "2",
-		},
-		{
-			id: "pay-3",
-			dateIso: "2024-09-10T11:00:00Z",
-			receiptNumber: "003",
-			fiscalDocumentNumber: "103",
-			fiscalSign: "987654323",
-			serviceName: "Синус-лифтинг с костной пластикой",
-			code804n: "A16.07.041.002",
-			amountRub: 75000,
-			taxCode: "2",
-		},
-		{
-			id: "pay-4",
-			dateIso: "2025-02-10T12:00:00Z",
-			receiptNumber: "004",
-			fiscalDocumentNumber: "104",
-			fiscalSign: "987654324",
-			serviceName: "Ортодонтическое лечение",
-			code804n: "A16.07.048",
-			amountRub: 80000,
-			taxCode: "1",
-		},
-	],
+	payments = [],
+	selectedYear: propSelectedYear,
 	clinicName = "ООО «ДЕНТЕ КЛИНИКА»",
 	clinicInn = "7707083893",
 	clinicKpp = "770101001",
@@ -132,16 +90,64 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 }) => {
 	const currentYear = new Date().getFullYear();
 	const [activeTab, setActiveTab] = useState<"form" | "checks" | "family" | "xml">("form");
-	const [selectedYear, setSelectedYear] = useState<number>(2024);
+	const [selectedYear, setSelectedYear] = useState<number>(() => {
+		if (propSelectedYear) return propSelectedYear;
+		if (payments.length > 0) {
+			const paymentYears = payments
+				.map((p) => new Date(p.dateIso).getFullYear())
+				.filter((y) => !isNaN(y) && y > 2000);
+			if (paymentYears.length > 0) {
+				return Math.max(...paymentYears);
+			}
+		}
+		return currentYear;
+	});
 	const [payerRelationship, setPayerRelationship] = useState<TaxDeductionRelationship>("patient");
 	const [payerFullName, setPayerFullName] = useState<string>(patientName);
-	const [payerInn, setPayerInn] = useState<string>(patientInn || "500100732259");
+	const [payerInn, setPayerInn] = useState<string>(patientInn);
 	const [payerBirthDate, setPayerBirthDate] = useState<string>(patientBirthDate);
-	const [passportSeries, setPassportSeries] = useState<string>("4510");
-	const [passportNumber, setPassportNumber] = useState<string>("123456");
-	const [certificateNumber, setCertificateNumber] = useState<string>("842");
+	const [passportSeries, setPassportSeries] = useState<string>("");
+	const [passportNumber, setPassportNumber] = useState<string>("");
+	const [certificateNumber, setCertificateNumber] = useState<string>("1");
 	const [taxOfficeCode, setTaxOfficeCode] = useState<string>("7701");
 	const [isCopiedXml, setIsCopiedXml] = useState<boolean>(false);
+
+	React.useEffect(() => {
+		if (isOpen) {
+			if (patientName) setPayerFullName(patientName);
+			if (patientBirthDate) setPayerBirthDate(patientBirthDate);
+			if (patientInn) setPayerInn(patientInn);
+			if (propSelectedYear) {
+				setSelectedYear(propSelectedYear);
+			} else if (payments.length > 0) {
+				const paymentYears = payments
+					.map((p) => new Date(p.dateIso).getFullYear())
+					.filter((y) => !isNaN(y) && y > 2000);
+				if (paymentYears.length > 0 && !paymentYears.includes(selectedYear)) {
+					setSelectedYear(Math.max(...paymentYears));
+				}
+			}
+		}
+	}, [isOpen, patientName, patientBirthDate, patientInn, propSelectedYear, payments]);
+
+	const availableYears = useMemo(() => {
+		const baseYears = [currentYear - 2, currentYear - 1, currentYear];
+		const paymentYears = payments
+			.map((p) => new Date(p.dateIso).getFullYear())
+			.filter((y) => !isNaN(y) && y > 2000);
+		return Array.from(new Set([...baseYears, ...paymentYears])).sort((a, b) => a - b);
+	}, [currentYear, payments]);
+
+	const paymentsCountByYear = useMemo(() => {
+		const counts: Record<number, number> = {};
+		for (const p of payments) {
+			const yr = new Date(p.dateIso).getFullYear();
+			if (!isNaN(yr)) {
+				counts[yr] = (counts[yr] || 0) + 1;
+			}
+		}
+		return counts;
+	}, [payments]);
 	const [familyMembers, setFamilyMembers] = useState<FamilyMemberPayerConfig[]>([
 		{
 			id: "spouse",
@@ -411,6 +417,10 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	};
 
 	const handlePrint = () => {
+		if (yearPayments.length === 0) {
+			showToast("Нет подтвержденных оплат за выбранный период для формирования справки КНД 1151156", "warning");
+			return;
+		}
 		const params = getCertificateParams();
 		const html = renderOfficialTaxCertificateKnd1151156Html(params);
 		const win = window.open("", "_blank");
@@ -425,28 +435,48 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	};
 
 	const handleDownloadXml = () => {
+		if (yearPayments.length === 0) {
+			showToast("Нет подтвержденных оплат за выбранный период для выгрузки XML", "warning");
+			return;
+		}
 		const params = getCertificateParams();
 		downloadFnsTaxXmlFile(params);
 		showToast(`Файл ${xmlRepresentation.fileName} успешно выгружен для ТКС`, "success");
 	};
 
 	const handleDownloadNoMedoplXml = () => {
+		if (yearPayments.length === 0) {
+			showToast("Нет подтвержденных оплат за выбранный период для выгрузки NO_MEDOPL", "warning");
+			return;
+		}
 		const params = getCertificateParams();
 		downloadFnsNoMedoplXmlFile(params);
 		showToast("Файл NO_MEDOPL (Формат 5.01) выгружен для ФНС", "success");
 	};
 
 	const handleDownloadBatchXml = () => {
+		if (familyBatchResult.totalPaymentsCount === 0) {
+			showToast("Нет подтвержденных оплат за выбранный период для выгрузки пакета XML", "warning");
+			return;
+		}
 		downloadFnsBatchTaxXmlFile(familyBatchResult.batch);
 		showToast(`Пакетный реестр XML (${familyBatchResult.certificatesCount} справок) выгружен для ТКС`, "success");
 	};
 
 	const handleDownloadBatchNoMedoplXml = () => {
+		if (familyBatchResult.totalPaymentsCount === 0) {
+			showToast("Нет подтвержденных оплат за выбранный период для выгрузки NO_MEDOPL", "warning");
+			return;
+		}
 		downloadFnsBatchNoMedoplXmlFile(familyBatchResult.batch);
 		showToast(`Пакетный файл NO_MEDOPL 5.01 (${familyBatchResult.certificatesCount} справок) выгружен для ФНС`, "success");
 	};
 
 	const handlePrintBatch = () => {
+		if (familyBatchResult.totalPaymentsCount === 0) {
+			showToast("Нет подтвержденных оплат за выбранный период для печати пакета", "warning");
+			return;
+		}
 		const html = renderTaxDeductionBatchCertificateHtml(familyBatchResult.batch);
 		const win = window.open("", "_blank");
 		if (win) {
@@ -568,21 +598,35 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 											Лимит Кода 01: {selectedYear >= 2024 ? "150 000 ₽" : "120 000 ₽"}
 										</span>
 									</div>
-									<div className="flex gap-2">
-										{[2024, 2025, 2026].map((yr) => (
-											<button
-												key={yr}
-												type="button"
-												onClick={() => setSelectedYear(yr)}
-												className={`min-h-[44px] flex-1 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-													selectedYear === yr
-														? "bg-teal-600 text-white shadow-sm"
-														: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
-												}`}
-											>
-												{yr} год
-											</button>
-										))}
+									<div className="flex gap-2 flex-wrap">
+										{availableYears.map((yr) => {
+											const count = paymentsCountByYear[yr] || 0;
+											return (
+												<button
+													key={yr}
+													type="button"
+													onClick={() => setSelectedYear(yr)}
+													className={`min-h-[44px] flex-1 min-w-[80px] rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+														selectedYear === yr
+															? "bg-teal-600 text-white shadow-sm"
+															: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-teal-400"
+													}`}
+												>
+													<span>{yr} год</span>
+													{count > 0 && (
+														<span
+															className={`text-[11px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
+																selectedYear === yr
+																	? "bg-white/25 text-white"
+																	: "bg-teal-500/15 text-teal-700 dark:text-teal-300"
+															}`}
+														>
+															{count}
+														</span>
+													)}
+												</button>
+											);
+										})}
 									</div>
 								</div>
 
@@ -752,86 +796,113 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								</div>
 							</div>
 
-							{/* Real-Time Calculation Breakdown Card */}
-							<div className="p-4 sm:p-5 rounded-2xl bg-teal-500/5 border border-teal-500/30 space-y-4">
-								<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2.5">
-									<span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-teal-800 dark:text-teal-200">
-										<Coins size={16} className="text-teal-600" />
-										Расчет сумм вычета по Приказу 824@ за {selectedYear} год:
-									</span>
-									<span className="text-xs text-[var(--muted,#64748b)]">
-										Чеков за {selectedYear} г.: {targetYearSummary.receiptsCount}
-									</span>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-									{/* Code 01 */}
-									<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
-										<div className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
-											Код 01 (Обычное лечение)
-										</div>
-										<div className="text-lg font-bold font-mono text-teal-700 dark:text-teal-300">
-											{(targetYearSummary.code01Kopecks / 100).toLocaleString("ru-RU", {
-												minimumFractionDigits: 2,
-											})}{" "}
-											₽
-										</div>
-										<div className="text-[11px] text-[var(--muted,#64748b)]">
-											Лимит: {targetYearSummary.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽ / год
-										</div>
+							{/* Real-Time Calculation Breakdown Card OR Honest Empty State */}
+							{yearPayments.length === 0 ? (
+								<div className="p-6 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-center space-y-3">
+									<div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
+										<Receipt className="w-6 h-6" />
 									</div>
-
-									{/* Code 02 */}
-									<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
-										<div className="text-[11px] font-bold uppercase text-rose-500">
-											Код 02 (Дорогостоящее)
-										</div>
-										<div className="text-lg font-bold font-mono text-rose-700 dark:text-rose-300">
-											{(targetYearSummary.code02Kopecks / 100).toLocaleString("ru-RU", {
-												minimumFractionDigits: 2,
-											})}{" "}
-											₽
-										</div>
-										<div className="text-[11px] text-[var(--muted,#64748b)]">
-											Имплантация / без лимита
-										</div>
+									<div className="space-y-1.5 max-w-md mx-auto">
+										<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
+											Нет подтвержденных оплат за {selectedYear} год для формирования справки КНД 1151156
+										</h4>
+										<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
+											{payments.length === 0
+												? "В карточке пациента отсутствуют оплаченные счета по 54-ФЗ. Справка для налогового вычета формируется автоматически при наличии фискальных чеков."
+												: `За ${selectedYear} год оплаченных счетов не найдено. Выберите другой налоговый период выше или закройте окно.`}
+										</p>
 									</div>
-
-									{/* Estimated Refund */}
-									<div className="p-3 rounded-xl bg-teal-600 text-white space-y-1 shadow-sm">
-										<div className="text-[11px] font-bold uppercase opacity-90">
-											Возврат НДФЛ 13% (к выплате)
-										</div>
-										<div className="text-xl font-black font-mono">
-											{targetYearSummary.refund13EstimateRub.toLocaleString("ru-RU")} ₽
-										</div>
-										<div className="text-[11px] opacity-80">
-											(15% для дохода свыше 5 млн ₽: {targetYearSummary.refund15EstimateRub.toLocaleString("ru-RU")} ₽)
-										</div>
+									<div className="flex items-center justify-center gap-2 pt-2">
+										<button
+											type="button"
+											onClick={onClose}
+											className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-slate-500/10 cursor-pointer transition-colors"
+										>
+											Закрыть
+										</button>
 									</div>
 								</div>
+							) : (
+								<div className="p-4 sm:p-5 rounded-2xl bg-teal-500/5 border border-teal-500/30 space-y-4">
+									<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2.5">
+										<span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-teal-800 dark:text-teal-200">
+											<Coins size={16} className="text-teal-600" />
+											Расчет сумм вычета по Приказу 824@ за {selectedYear} год:
+										</span>
+										<span className="text-xs text-[var(--muted,#64748b)]">
+											Чеков за {selectedYear} г.: {targetYearSummary.receiptsCount}
+										</span>
+									</div>
 
-								{/* QR Verification preview & In-words preview */}
-								<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] flex items-center justify-between gap-4">
-									<div className="space-y-1 text-xs">
-										<div className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-											<ShieldCheck size={16} className="text-emerald-600" />
-											Сумма к вычету прописью:
+									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+										{/* Code 01 */}
+										<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+											<div className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400">
+												Код 01 (Обычное лечение)
+											</div>
+											<div className="text-lg font-bold font-mono text-teal-700 dark:text-teal-300">
+												{(targetYearSummary.code01Kopecks / 100).toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
+											</div>
+											<div className="text-[11px] text-[var(--muted,#64748b)]">
+												Лимит: {targetYearSummary.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽ / год
+											</div>
 										</div>
-										<div className="font-serif italic text-slate-700 dark:text-slate-300">
-											{amountToWordsRu(targetYearSummary.totalKopecks)}
+
+										{/* Code 02 */}
+										<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
+											<div className="text-[11px] font-bold uppercase text-rose-500">
+												Код 02 (Дорогостоящее)
+											</div>
+											<div className="text-lg font-bold font-mono text-rose-700 dark:text-rose-300">
+												{(targetYearSummary.code02Kopecks / 100).toLocaleString("ru-RU", {
+													minimumFractionDigits: 2,
+												})}{" "}
+												₽
+											</div>
+											<div className="text-[11px] text-[var(--muted,#64748b)]">
+												Имплантация / без лимита
+											</div>
 										</div>
-										<div className="text-[11px] text-[var(--muted,#64748b)]">
-											Лицензия клиники: {clinicLicenseNumber} от {clinicLicenseDate} г.
+
+										{/* Estimated Refund */}
+										<div className="p-3 rounded-xl bg-teal-600 text-white space-y-1 shadow-sm">
+											<div className="text-[11px] font-bold uppercase opacity-90">
+												Возврат НДФЛ 13% (к выплате)
+											</div>
+											<div className="text-xl font-black font-mono">
+												{targetYearSummary.refund13EstimateRub.toLocaleString("ru-RU")} ₽
+											</div>
+											<div className="text-[11px] opacity-80">
+												(15% для дохода свыше 5 млн ₽: {targetYearSummary.refund15EstimateRub.toLocaleString("ru-RU")} ₽)
+											</div>
 										</div>
 									</div>
-									<div
-										className="w-16 h-16 shrink-0 border border-slate-200 rounded-lg p-1 bg-white shadow-xs"
-										dangerouslySetInnerHTML={{ __html: qrSvgString }}
-										title="QR-код моментальной проверки подлинности справки в ФНС"
-									/>
+
+									{/* QR Verification preview & In-words preview */}
+									<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] flex items-center justify-between gap-4">
+										<div className="space-y-1 text-xs">
+											<div className="font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+												<ShieldCheck size={16} className="text-emerald-600" />
+												Сумма к вычету прописью:
+											</div>
+											<div className="font-serif italic text-slate-700 dark:text-slate-300">
+												{amountToWordsRu(targetYearSummary.totalKopecks)}
+											</div>
+											<div className="text-[11px] text-[var(--muted,#64748b)]">
+												Лицензия клиники: {clinicLicenseNumber} от {clinicLicenseDate} г.
+											</div>
+										</div>
+										<div
+											className="w-16 h-16 shrink-0 border border-slate-200 rounded-lg p-1 bg-white shadow-xs"
+											dangerouslySetInnerHTML={{ __html: qrSvgString }}
+											title="QR-код моментальной проверки подлинности справки в ФНС"
+										/>
+									</div>
 								</div>
-							</div>
+							)}
 						</>
 					)}
 
@@ -846,237 +917,305 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								</span>
 							</div>
 
-							<div className="border border-[var(--line,#e2e8f0)] rounded-2xl overflow-hidden bg-[var(--paper,#ffffff)]">
-								<table className="w-full text-xs text-left border-collapse">
-									<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] font-bold text-[var(--muted,#64748b)]">
-										<tr>
-											<th className="p-3">№</th>
-											<th className="p-3">Дата чека</th>
-											<th className="p-3">Чек / ФД</th>
-											<th className="p-3">ФПД</th>
-											<th className="p-3">Наименование услуги</th>
-											<th className="p-3">Код 804н</th>
-											<th className="p-3">Код вычета</th>
-											<th className="p-3 text-right">Сумма (руб.)</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-[var(--line,#e2e8f0)] font-medium">
-										{yearPayments.map((p, idx) => {
-											const code = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
-											const isCode02 = code === "2";
-											return (
-												<tr key={p.id} className="hover:bg-slate-500/5 transition-colors">
-													<td className="p-3 font-mono text-[var(--muted,#64748b)]">{idx + 1}</td>
-													<td className="p-3 font-mono">{p.dateIso.slice(0, 10)}</td>
-													<td className="p-3 font-mono font-bold">
-														{p.receiptNumber} / ФД №{p.fiscalDocumentNumber}
-													</td>
-													<td className="p-3 font-mono text-[11px] text-[var(--muted,#64748b)]">
-														{p.fiscalSign}
-													</td>
-													<td className="p-3 max-w-[220px] truncate">{p.serviceName}</td>
-													<td className="p-3 font-mono font-bold text-teal-700 dark:text-teal-300">
-														{p.code804n || "—"}
-													</td>
-													<td className="p-3">
-														<span
-															className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
-																isCode02
-																	? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20"
-																	: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
-															}`}
-														>
-															{isCode02 ? "Код 02 (Дорогостоящее)" : "Код 01 (Стандартное)"}
-														</span>
-													</td>
-													<td className="p-3 text-right font-mono font-bold text-sm">
-														{p.amountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-													</td>
-												</tr>
-											);
-										})}
-									</tbody>
-								</table>
-							</div>
+							{yearPayments.length === 0 ? (
+								<div className="p-8 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-center space-y-2">
+									<Receipt className="w-8 h-8 text-[var(--muted,#64748b)] mx-auto opacity-50" />
+									<div className="text-xs font-bold text-[var(--ink,#0f172a)]">
+										Нет кассовых чеков по 54-ФЗ за {selectedYear} год
+									</div>
+									<p className="text-[11px] text-[var(--muted,#64748b)] max-w-sm mx-auto m-0">
+										Кассовые чеки с фискальными признаками документов (ФД и ФПД) появятся здесь автоматически после фискализации оплаты.
+									</p>
+								</div>
+							) : (
+								<div className="border border-[var(--line,#e2e8f0)] rounded-2xl overflow-hidden bg-[var(--paper,#ffffff)]">
+									<table className="w-full text-xs text-left border-collapse">
+										<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] font-bold text-[var(--muted,#64748b)]">
+											<tr>
+												<th className="p-3">№</th>
+												<th className="p-3">Дата чека</th>
+												<th className="p-3">Чек / ФД</th>
+												<th className="p-3">ФПД</th>
+												<th className="p-3">Наименование услуги</th>
+												<th className="p-3">Код 804н</th>
+												<th className="p-3">Код вычета</th>
+												<th className="p-3 text-right">Сумма (руб.)</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-[var(--line,#e2e8f0)] font-medium">
+											{yearPayments.map((p, idx) => {
+												const code = p.taxCode || resolveTaxDeductionCategoryShared(p.code804n, p.serviceName);
+												const isCode02 = code === "2";
+												return (
+													<tr key={p.id} className="hover:bg-slate-500/5 transition-colors">
+														<td className="p-3 font-mono text-[var(--muted,#64748b)]">{idx + 1}</td>
+														<td className="p-3 font-mono">{p.dateIso.slice(0, 10)}</td>
+														<td className="p-3 font-mono font-bold">
+															{p.receiptNumber} / ФД №{p.fiscalDocumentNumber}
+														</td>
+														<td className="p-3 font-mono text-[11px] text-[var(--muted,#64748b)]">
+															{p.fiscalSign}
+														</td>
+														<td className="p-3 max-w-[220px] truncate">{p.serviceName}</td>
+														<td className="p-3 font-mono font-bold text-teal-700 dark:text-teal-300">
+															{p.code804n || "—"}
+														</td>
+														<td className="p-3">
+															<span
+																className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+																	isCode02
+																		? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20"
+																		: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20"
+																}`}
+															>
+																{isCode02 ? "Код 02 (Дорогостоящее)" : "Код 01 (Стандартное)"}
+															</span>
+														</td>
+														<td className="p-3 text-right font-mono font-bold text-sm">
+															{p.amountRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+														</td>
+													</tr>
+												);
+											})}
+										</tbody>
+									</table>
+								</div>
+							)}
 						</div>
 					)}
 
 					{activeTab === "family" && (
 						<div className="space-y-6">
-							{/* Family Banner */}
-							<div className="p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-transparent border border-teal-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
-								<div className="space-y-1">
-									<div className="flex items-center gap-2">
-										<span className="px-2.5 py-0.5 rounded-md bg-teal-600 text-white text-[11px] font-bold tracking-wide">
-											ПАКЕТ КНД 1151156 • {selectedYear} ГОД
-										</span>
-										<span className="text-xs font-mono text-[var(--muted,#64748b)]">
-											Справок в пакете: {familyBatchResult.certificatesCount} шт.
-										</span>
+							{familyBatchResult.totalPaymentsCount === 0 ? (
+								<div className="p-6 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-center space-y-3">
+									<div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
+										<Users className="w-6 h-6" />
 									</div>
-									<h3 className="text-base sm:text-lg font-bold m-0 text-[var(--ink,#0f172a)]">
-										Пакет справок на возврат НДФЛ для всей семьи
-									</h3>
-									<p className="text-xs text-[var(--muted,#64748b)] m-0">
-										Разделение сумм по Коду 01 (обычное лечение) и Коду 02 (дорогостоящее: имплантация, синус-лифтинг, остеопластика) с копеечной точностью.
-									</p>
-								</div>
-								<div className="p-3.5 rounded-xl bg-[var(--paper,#ffffff)] border border-teal-500/40 text-right shadow-xs">
-									<div className="text-[11px] uppercase tracking-wider text-[var(--muted,#64748b)] font-bold">
-										Суммарный возврат 13% семьи
+									<div className="space-y-1.5 max-w-md mx-auto">
+										<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
+											Нет оплат за {selectedYear} год для распределения между членами семьи
+										</h4>
+										<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
+											{payments.length === 0
+												? "В карточке пациента отсутствуют подтвержденные чеки по 54-ФЗ. Пакет справок на возврат НДФЛ для родственников формируется при наличии оплат."
+												: `За ${selectedYear} год чеков не найдено. Выберите другой налоговый период в переключателе годов.`}
+										</p>
 									</div>
-									<div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-										+{familyBatchResult.grandTotalRefund13Rub.toLocaleString("ru-RU")} ₽
-									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-										Всего расходов: {familyBatchResult.grandTotalRub.toLocaleString("ru-RU")} ₽
-									</div>
-								</div>
-							</div>
-
-							{/* Summary Breakdown Cards */}
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-								<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
-									<div className="text-xs text-[var(--muted,#64748b)] font-semibold">Код 01 (Обычное лечение)</div>
-									<div className="text-lg font-bold font-mono text-teal-700 dark:text-teal-300 mt-1">
-										{familyBatchResult.grandTotalCode01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-										Лимит: {selectedYear >= 2024 ? "150 000" : "120 000"} ₽ / чел.
-									</div>
-								</div>
-								<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
-									<div className="text-xs text-[var(--muted,#64748b)] font-semibold">Код 02 (Дорогостоящее лечение)</div>
-									<div className="text-lg font-bold font-mono text-rose-700 dark:text-rose-300 mt-1">
-										{familyBatchResult.grandTotalCode02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-										Без ограничений (п. 4 Пост. № 458)
-									</div>
-								</div>
-								<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
-									<div className="text-xs text-[var(--muted,#64748b)] font-semibold">Чеков в базе за {selectedYear} г.</div>
-									<div className="text-lg font-bold font-mono text-[var(--ink,#0f172a)] mt-1">
-										{familyBatchResult.totalPaymentsCount} шт.
-									</div>
-									<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-										54-ФЗ с фискальными номерами и ФПД
-									</div>
-								</div>
-							</div>
-
-							{/* Family Certificates Table */}
-							<div className="space-y-3">
-								<div className="flex items-center justify-between flex-wrap gap-2">
-									<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] m-0 flex items-center gap-2">
-										<Users size={16} className="text-teal-600" />
-										<span>Справки по членам семьи (плательщикам)</span>
-									</h4>
-									<div className="flex items-center gap-2">
+									<div className="flex items-center justify-center gap-2 pt-2">
 										<button
 											type="button"
-											onClick={handleDownloadBatchNoMedoplXml}
-											className="min-h-[38px] px-3 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold flex items-center gap-1 hover:bg-slate-500/10 cursor-pointer"
-											title="Выгрузить пакет NO_MEDOPL 5.01"
+											onClick={onClose}
+											className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-slate-500/10 cursor-pointer transition-colors"
 										>
-											<Download size={14} />
-											<span>NO_MEDOPL (5.01)</span>
-										</button>
-										<button
-											type="button"
-											onClick={handleDownloadBatchXml}
-											className="min-h-[38px] px-3.5 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 text-xs font-bold flex items-center gap-1.5 hover:bg-teal-500/10 cursor-pointer"
-										>
-											<Download size={14} />
-											<span>Пакет XML (ТКС)</span>
-										</button>
-										<button
-											type="button"
-											onClick={handlePrintBatch}
-											className="min-h-[38px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-										>
-											<Printer size={14} />
-											<span>Печать пакета А4</span>
+											Закрыть
 										</button>
 									</div>
 								</div>
+							) : (
+								<>
+									{/* Family Banner */}
+									<div className="p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-transparent border border-teal-500/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+										<div className="space-y-1">
+											<div className="flex items-center gap-2">
+												<span className="px-2.5 py-0.5 rounded-md bg-teal-600 text-white text-[11px] font-bold tracking-wide">
+													ПАКЕТ КНД 1151156 • {selectedYear} ГОД
+												</span>
+												<span className="text-xs font-mono text-[var(--muted,#64748b)]">
+													Справок в пакете: {familyBatchResult.certificatesCount} шт.
+												</span>
+											</div>
+											<h3 className="text-base sm:text-lg font-bold m-0 text-[var(--ink,#0f172a)]">
+												Пакет справок на возврат НДФЛ для всей семьи
+											</h3>
+											<p className="text-xs text-[var(--muted,#64748b)] m-0">
+												Разделение сумм по Коду 01 (обычное лечение) и Коду 02 (дорогостоящее: имплантация, синус-лифтинг, остеопластика) с копеечной точностью.
+											</p>
+										</div>
+										<div className="p-3.5 rounded-xl bg-[var(--paper,#ffffff)] border border-teal-500/40 text-right shadow-xs">
+											<div className="text-[11px] uppercase tracking-wider text-[var(--muted,#64748b)] font-bold">
+												Суммарный возврат 13% семьи
+											</div>
+											<div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+												+{familyBatchResult.grandTotalRefund13Rub.toLocaleString("ru-RU")} ₽
+											</div>
+											<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
+												Всего расходов: {familyBatchResult.grandTotalRub.toLocaleString("ru-RU")} ₽
+											</div>
+										</div>
+									</div>
 
-								<div className="rounded-2xl border border-[var(--line,#e2e8f0)] overflow-hidden bg-[var(--paper,#ffffff)] shadow-xs">
-									<table className="w-full text-left border-collapse text-xs">
-										<thead>
-											<tr className="border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] font-bold text-[var(--muted,#64748b)]">
-												<th className="p-3">Степень родства</th>
-												<th className="p-3">Налогоплательщик (ФИО)</th>
-												<th className="p-3 text-center">№ Справки</th>
-												<th className="p-3 text-center">Чеков</th>
-												<th className="p-3 text-right">Код 01 (Руб)</th>
-												<th className="p-3 text-right">Код 02 (Руб)</th>
-												<th className="p-3 text-right">Всего расходов</th>
-												<th className="p-3 text-right font-bold text-emerald-600">Возврат 13%</th>
-											</tr>
-										</thead>
-										<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
-											{familyBatchResult.summaries.map((s) => (
-												<tr key={s.relationship} className="hover:bg-teal-500/5 transition-colors">
-													<td className="p-3 font-semibold">
-														<span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-mono">
-															{TAX_DEDUCTION_RELATIONSHIP_MAP[s.relationship].shortLabelRu}
-														</span>
-													</td>
-													<td className="p-3 font-bold text-[var(--ink,#0f172a)]">{s.payerFullName}</td>
-													<td className="p-3 text-center font-mono font-bold text-teal-700 dark:text-teal-300">
-														№ {s.certificateNumber}
-													</td>
-													<td className="p-3 text-center font-mono">{s.receiptsCount}</td>
-													<td className="p-3 text-right font-mono">
-														{s.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-													</td>
-													<td className="p-3 text-right font-mono font-bold text-rose-700 dark:text-rose-300">
-														{s.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-													</td>
-													<td className="p-3 text-right font-mono font-bold">
-														{s.totalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-													</td>
-													<td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-														+{s.refund13EstimateRub.toLocaleString("ru-RU")} ₽
-													</td>
-												</tr>
-											))}
-										</tbody>
-									</table>
-								</div>
-							</div>
+									{/* Summary Breakdown Cards */}
+									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+										<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+											<div className="text-xs text-[var(--muted,#64748b)] font-semibold">Код 01 (Обычное лечение)</div>
+											<div className="text-lg font-bold font-mono text-teal-700 dark:text-teal-300 mt-1">
+												{familyBatchResult.grandTotalCode01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											</div>
+											<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
+												Лимит: {selectedYear >= 2024 ? "150 000" : "120 000"} ₽ / чел.
+											</div>
+										</div>
+										<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+											<div className="text-xs text-[var(--muted,#64748b)] font-semibold">Код 02 (Дорогостоящее лечение)</div>
+											<div className="text-lg font-bold font-mono text-rose-700 dark:text-rose-300 mt-1">
+												{familyBatchResult.grandTotalCode02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											</div>
+											<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
+												Без ограничений (п. 4 Пост. № 458)
+											</div>
+										</div>
+										<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+											<div className="text-xs text-[var(--muted,#64748b)] font-semibold">Чеков в базе за {selectedYear} г.</div>
+											<div className="text-lg font-bold font-mono text-[var(--ink,#0f172a)] mt-1">
+												{familyBatchResult.totalPaymentsCount} шт.
+											</div>
+											<div className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
+												54-ФЗ с фискальными номерами и ФПД
+											</div>
+										</div>
+									</div>
+
+									{/* Family Certificates Table */}
+									<div className="space-y-3">
+										<div className="flex items-center justify-between flex-wrap gap-2">
+											<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] m-0 flex items-center gap-2">
+												<Users size={16} className="text-teal-600" />
+												<span>Справки по членам семьи (плательщикам)</span>
+											</h4>
+											<div className="flex items-center gap-2">
+												<button
+													type="button"
+													onClick={handleDownloadBatchNoMedoplXml}
+													className="min-h-[38px] px-3 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold flex items-center gap-1 hover:bg-slate-500/10 cursor-pointer"
+													title="Выгрузить пакет NO_MEDOPL 5.01"
+												>
+													<Download size={14} />
+													<span>NO_MEDOPL (5.01)</span>
+												</button>
+												<button
+													type="button"
+													onClick={handleDownloadBatchXml}
+													className="min-h-[38px] px-3.5 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 text-xs font-bold flex items-center gap-1.5 hover:bg-teal-500/10 cursor-pointer"
+												>
+													<Download size={14} />
+													<span>Пакет XML (ТКС)</span>
+												</button>
+												<button
+													type="button"
+													onClick={handlePrintBatch}
+													className="min-h-[38px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+												>
+													<Printer size={14} />
+													<span>Печать пакета А4</span>
+												</button>
+											</div>
+										</div>
+
+										<div className="rounded-2xl border border-[var(--line,#e2e8f0)] overflow-hidden bg-[var(--paper,#ffffff)] shadow-xs">
+											<table className="w-full text-left border-collapse text-xs">
+												<thead>
+													<tr className="border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] font-bold text-[var(--muted,#64748b)]">
+														<th className="p-3">Степень родства</th>
+														<th className="p-3">Налогоплательщик (ФИО)</th>
+														<th className="p-3 text-center">№ Справки</th>
+														<th className="p-3 text-center">Чеков</th>
+														<th className="p-3 text-right">Код 01 (Руб)</th>
+														<th className="p-3 text-right">Код 02 (Руб)</th>
+														<th className="p-3 text-right">Всего расходов</th>
+														<th className="p-3 text-right font-bold text-emerald-600">Возврат 13%</th>
+													</tr>
+												</thead>
+												<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
+													{familyBatchResult.summaries.map((s) => (
+														<tr key={s.relationship} className="hover:bg-teal-500/5 transition-colors">
+															<td className="p-3 font-semibold">
+																<span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-mono">
+																	{TAX_DEDUCTION_RELATIONSHIP_MAP[s.relationship].shortLabelRu}
+																</span>
+															</td>
+															<td className="p-3 font-bold text-[var(--ink,#0f172a)]">{s.payerFullName}</td>
+															<td className="p-3 text-center font-mono font-bold text-teal-700 dark:text-teal-300">
+																№ {s.certificateNumber}
+															</td>
+															<td className="p-3 text-center font-mono">{s.receiptsCount}</td>
+															<td className="p-3 text-right font-mono">
+																{s.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+															</td>
+															<td className="p-3 text-right font-mono font-bold text-rose-700 dark:text-rose-300">
+																{s.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+															</td>
+															<td className="p-3 text-right font-mono font-bold">
+																{s.totalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+															</td>
+															<td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+																+{s.refund13EstimateRub.toLocaleString("ru-RU")} ₽
+															</td>
+														</tr>
+													))}
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</>
+							)}
 						</div>
 					)}
 
 					{activeTab === "xml" && (
 						<div className="space-y-3">
-							<div className="flex items-center justify-between">
-								<div>
-									<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] block">
-										Электронный XML-реестр сведений (КНД 1184043, Формат 5.01)
-									</span>
-									<span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-										Имя файла: {xmlRepresentation.fileName}
-									</span>
+							{yearPayments.length === 0 ? (
+								<div className="p-6 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-center space-y-3">
+									<div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center border border-amber-500/20">
+										<Receipt className="w-6 h-6" />
+									</div>
+									<div className="space-y-1.5 max-w-md mx-auto">
+										<h4 className="text-sm sm:text-base font-bold text-[var(--ink,#0f172a)] m-0">
+											Нет данных за {selectedYear} год для генерации реестра XML (КНД 1184043)
+										</h4>
+										<p className="text-xs text-[var(--muted,#64748b)] m-0 leading-relaxed">
+											Электронный реестр для ФНС формируется на основании фискальных чеков за выбранный налоговый период.
+										</p>
+									</div>
+									<div className="flex items-center justify-center gap-2 pt-2">
+										<button
+											type="button"
+											onClick={onClose}
+											className="min-h-[44px] px-5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-slate-500/10 cursor-pointer transition-colors"
+										>
+											Закрыть
+										</button>
+									</div>
 								</div>
-								<div className="flex gap-2">
-									<button
-										type="button"
-										onClick={handleCopyXml}
-										className="min-h-[36px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] text-xs font-bold flex items-center gap-1 hover:bg-slate-500/10 cursor-pointer"
-									>
-										{isCopiedXml ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-										<span>{isCopiedXml ? "Скопировано" : "Копировать XML"}</span>
-									</button>
-								</div>
-							</div>
+							) : (
+								<>
+									<div className="flex items-center justify-between">
+										<div>
+											<span className="text-xs font-bold uppercase tracking-wider text-[var(--muted,#64748b)] block">
+												Электронный XML-реестр сведений (КНД 1184043, Формат 5.01)
+											</span>
+											<span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+												Имя файла: {xmlRepresentation.fileName}
+											</span>
+										</div>
+										<div className="flex gap-2">
+											<button
+												type="button"
+												onClick={handleCopyXml}
+												className="min-h-[36px] px-3 rounded-xl border border-[var(--line,#cbd5e1)] text-xs font-bold flex items-center gap-1 hover:bg-slate-500/10 cursor-pointer"
+											>
+												{isCopiedXml ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+												<span>{isCopiedXml ? "Скопировано" : "Копировать XML"}</span>
+											</button>
+										</div>
+									</div>
 
-							<div className="relative">
-								<pre className="p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs overflow-x-auto max-h-[340px] border border-slate-800">
-									{xmlRepresentation.xmlContent}
-								</pre>
-							</div>
+									<div className="relative">
+										<pre className="p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs overflow-x-auto max-h-[340px] border border-slate-800">
+											{xmlRepresentation.xmlContent}
+										</pre>
+									</div>
+								</>
+							)}
 						</div>
 					)}
 				</div>
@@ -1087,12 +1226,20 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 						{clinicName} • ИНН {clinicInn} • КПП {clinicKpp}
 					</div>
 					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] hover:bg-slate-500/10 cursor-pointer transition-colors"
+						>
+							Закрыть
+						</button>
 						{activeTab === "family" ? (
 							<>
 								<button
 									type="button"
 									onClick={handleDownloadBatchNoMedoplXml}
-									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+									disabled={familyBatchResult.totalPaymentsCount === 0}
+									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
 									title="Скачать файл NO_MEDOPL Формат 5.01"
 								>
 									<Download size={15} />
@@ -1101,7 +1248,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handleDownloadBatchXml}
-									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+									disabled={familyBatchResult.totalPaymentsCount === 0}
+									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<Download size={16} />
 									<span>Выгрузить пакет XML (ТКС)</span>
@@ -1109,7 +1257,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handlePrintBatch}
-									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+									disabled={familyBatchResult.totalPaymentsCount === 0}
+									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<Printer size={16} />
 									<span>Печать пакета справок (А4)</span>
@@ -1120,7 +1269,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handleDownloadNoMedoplXml}
-									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+									disabled={yearPayments.length === 0}
+									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
 									title="Скачать файл NO_MEDOPL Формат 5.01"
 								>
 									<Download size={15} />
@@ -1129,7 +1279,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handleDownloadXml}
-									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+									disabled={yearPayments.length === 0}
+									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<Download size={16} />
 									<span>Выгрузить XML (ТКС)</span>
@@ -1137,7 +1288,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handlePrint}
-									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+									disabled={yearPayments.length === 0}
+									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<Printer size={16} />
 									<span>Печать справки КНД 1151156 (А4)</span>
