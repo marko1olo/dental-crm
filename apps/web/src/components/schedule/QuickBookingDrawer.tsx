@@ -1133,7 +1133,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							role="alert"
 						>
 							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-							<span>⚠️ {collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
+							<span>{collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
 						</div>
 					)}
 
@@ -1299,7 +1299,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												/>
 												<div className="space-y-0.5">
 													<p className="m-0 font-extrabold text-rose-700 dark:text-rose-300">
-														🔴 Требуется подтверждение за 2 часа!
+														Требуется подтверждение за 2 часа!
 													</p>
 													<p className="m-0 font-normal text-[11px]">
 														{patientReliability.receptionistAlert ||
@@ -1320,7 +1320,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												/>
 												<div className="space-y-0.5">
 													<p className="m-0 font-bold text-amber-800 dark:text-amber-300">
-														⚠️ Зона внимания регистратуры
+														Зона внимания регистратуры
 													</p>
 													<p className="m-0 font-normal text-[11px]">
 														{patientReliability.receptionistAlert ||
@@ -1847,10 +1847,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 					{/* Submit Error banner if any */}
 					{submitError && (
 						<div
-							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold"
+							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5"
 							role="alert"
 						>
-							⚠ {submitError}
+							<AlertTriangle size={14} className="shrink-0" />
+							<span>{submitError}</span>
 						</div>
 					)}
 				</div>

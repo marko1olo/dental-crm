@@ -10,6 +10,7 @@ import {
 	Clock,
 	Copy,
 	FlaskConical,
+	Globe,
 	Repeat,
 	User,
 	X,
@@ -23,39 +24,39 @@ import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 
 export const QUICK_APPOINTMENT_REASONS = [
 	{
-		label: "⚡ Острая боль (30 мин)",
+		label: "Острая боль (30 мин)",
 		reason: "Острая боль (Неотложная помощь / ст. 124 УК РФ)",
 		durationMinutes: 30,
-		comment: "⚡ Экстренно: обращение с острой болью (ст. 124 УК РФ)",
+		comment: "Экстренно: обращение с острой болью (ст. 124 УК РФ)",
 		status: "confirmed" as const,
 		tone: "emergency" as const,
 	},
 	{
-		label: "⚡ Консультация (30 мин)",
+		label: "Консультация (30 мин)",
 		reason: "Первичный осмотр и составление плана лечения",
 		durationMinutes: 30,
 		tone: "standard" as const,
 	},
 	{
-		label: "⚡ Терапия / Кариес (60 мин)",
+		label: "Терапия / Кариес (60 мин)",
 		reason: "Лечение кариеса / эстетическая реставрация",
 		durationMinutes: 60,
 		tone: "standard" as const,
 	},
 	{
-		label: "⚡ Профгигиена / AirFlow (60 мин)",
+		label: "Профгигиена / AirFlow (60 мин)",
 		reason: "Комплексная гигиена полости рта (AirFlow + УЗ)",
 		durationMinutes: 60,
 		tone: "standard" as const,
 	},
 	{
-		label: "⚡ Удаление зуба (45 мин)",
+		label: "Удаление зуба (45 мин)",
 		reason: "Хирургический прием: удаление зуба / анестезия",
 		durationMinutes: 45,
 		tone: "standard" as const,
 	},
 	{
-		label: "⚡ Примерка / ЗТЛ (30 мин)",
+		label: "Примерка / ЗТЛ (30 мин)",
 		reason: "Ортопедический прием: примерка / фиксация конструкции ЗТЛ",
 		durationMinutes: 30,
 		tone: "standard" as const,
@@ -451,7 +452,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							data-testid="modal-online-booking-banner"
 						>
 							<div className="flex items-center gap-2">
-								<span className="font-bold text-sm">🌐 Онлайн-запись через сайт</span>
+								<Globe size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+								<span className="font-bold text-sm">Онлайн-запись через сайт</span>
 								<span className="text-[var(--muted)]">Слот забронирован пациентом самостоятельно</span>
 							</div>
 							{status === "planned" && (
@@ -478,7 +480,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							role="alert"
 						>
 							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-							<span>⚠️ {collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
+							<span>{collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
 						</div>
 					)}
 
@@ -539,8 +541,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 														{dueDateObj?.toLocaleDateString("ru-RU")}
 													</strong>
 													{isBeforeLab && (
-														<span className="text-amber-600 dark:text-amber-400 font-bold ml-1">
-															(⚠️ прием назначен раньше готовности ЗТЛ)
+														<span className="text-amber-600 dark:text-amber-400 font-bold ml-1 inline-flex items-center gap-1">
+															<AlertTriangle size={11} className="shrink-0" />
+															<span>(прием назначен раньше готовности ЗТЛ)</span>
 														</span>
 													)}
 												</div>
@@ -811,10 +814,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 					{error && (
 						<div
-							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold"
+							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-1.5"
 							role="alert"
 						>
-							⚠ {error}
+							<AlertTriangle size={14} className="shrink-0" />
+							<span>{error}</span>
 						</div>
 					)}
 				</div>

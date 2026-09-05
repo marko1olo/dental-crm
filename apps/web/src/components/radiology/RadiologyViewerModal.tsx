@@ -736,6 +736,26 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		[modalityLabel, study?.teethFdi, onInsertToProtocol],
 	);
 
+	if (isCbctStudioOpen) {
+		return (
+			<CbctMprImplantStudioModal
+				isOpen={true}
+				onClose={() => setIsCbctStudioOpen(false)}
+				study={study}
+				patientName={patientName ?? study?.patientName ?? undefined}
+			/>
+		);
+	}
+
+	if (isMprViewerOpen) {
+		return (
+			<CbctMprViewer
+				study={study}
+				onClose={() => setIsMprViewerOpen(false)}
+			/>
+		);
+	}
+
 	const modalContent = (
 		<div
 			id={modalId}
@@ -2571,22 +2591,6 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 					</>
 				)}
 			</div>
-
-			{isCbctStudioOpen && (
-				<CbctMprImplantStudioModal
-					isOpen={isCbctStudioOpen}
-					onClose={() => setIsCbctStudioOpen(false)}
-					study={study}
-					patientName={patientName ?? study?.patientName ?? undefined}
-				/>
-			)}
-
-			{isMprViewerOpen && (
-				<CbctMprViewer
-					study={study}
-					onClose={() => setIsMprViewerOpen(false)}
-				/>
-			)}
 		</div>
 	);
 

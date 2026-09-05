@@ -1,5 +1,5 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import { AlertTriangle, Bot, Calendar, FlaskConical, Plus } from "lucide-react";
+import { AlertTriangle, Ban, Bot, Calendar, Check, FlaskConical, Plus, X } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppConstants";
@@ -370,7 +370,10 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							className="text-button text-xs py-0.5 px-2 opacity-70 hover:opacity-100 cursor-pointer"
 							title="Скрыть форму"
 						>
-							✕ Скрыть
+							<span className="inline-flex items-center gap-1">
+								<X size={12} className="shrink-0" />
+								<span>Скрыть</span>
+							</span>
 						</button>
 					)}
 				</div>
@@ -629,11 +632,13 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								role="alert"
 								title={`${collision.message}. Разрешена экстренная запись (острая боль / овербукинг)`}
 							>
-								⚠️ {collision.message} (овербукинг разрешен)
+								<AlertTriangle size={13} className="shrink-0" />
+								<span>{collision.message} (овербукинг разрешен)</span>
 							</span>
 						) : newAppointmentReadyToCreate ? (
-							<span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400 text-xs">
-								✓ Готово к созданию
+							<span className="save-state save-state-idle font-medium text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-1">
+								<Check size={13} className="shrink-0" />
+								<span>Готово к созданию</span>
 							</span>
 						) : (
 							/* БЫЛО: «Заполните поля» — какие именно, не сказано. Подробный
@@ -704,7 +709,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
           свёрнутой форме отказ сервера не отрисовывался нигде.
 
           ЧТО ВИДЕЛ АДМИНИСТРАТОР. Заполнил запись словами, у кнопки загорелось
-          «✓ Готово к созданию», нажал «Создать запись» — и НИЧЕГО. Ни записи в
+          «Готово к созданию», нажал «Создать запись» — и НИЧЕГО. Ни записи в
           расписании, ни объяснения. Нажимал ещё раз, потом ещё; при отказе по
           накладке или по правам так можно жать до конца смены. Пациенту в трубку
           говорят «записал вас на три», а записи нет.
@@ -765,8 +770,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 														{dueDateObj?.toLocaleDateString("ru-RU")}
 													</strong>
 													{isBeforeLab && (
-														<span className="text-amber-600 dark:text-amber-400 font-bold ml-1">
-															(⚠️ прием раньше готовности ЗТЛ)
+														<span className="text-amber-600 dark:text-amber-400 font-bold ml-1 inline-flex items-center gap-1">
+															<AlertTriangle size={11} className="shrink-0" />
+															<span>(прием раньше готовности ЗТЛ)</span>
 														</span>
 													)}
 												</div>
@@ -919,8 +925,9 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									className="mt-2 p-2 bg-red-500/10 border border-red-500/40 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold flex items-center gap-1.5"
 									role="alert"
 								>
+									<Ban size={14} className="shrink-0 text-red-600 dark:text-red-400" />
 									<span>
-										⛔ ЧЕРНЫЙ СПИСОК:{" "}
+										<strong>ЧЕРНЫЙ СПИСОК:</strong>{" "}
 										{blacklistStatus.reason ||
 											"Пациент заблокирован для записи на приём"}
 									</span>
@@ -930,8 +937,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									className="mt-2 p-2 bg-amber-500/10 border border-amber-500/40 text-amber-700 dark:text-amber-400 rounded-lg text-xs font-semibold flex items-center gap-1.5"
 									role="alert"
 								>
+									<AlertTriangle size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
 									<span>
-										⚠{" "}
 										{blacklistStatus.reason ||
 											"Статус блокировки записи не прочитан"}
 									</span>
@@ -1162,7 +1169,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							role="alert"
 						>
 							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-							<span>⚠️ {collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
+							<span>{collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
 						</div>
 					)}
 					<div className="appointment-editor-actions">

@@ -18,7 +18,7 @@ import {
 	generatePaperSignatureSvg,
 	PAPER_SIGNATURE_FALLBACK_PNG,
 } from "../signaturePadMath.js";
-import { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES } from "../InformedConsentModal.js";
+import { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES } from "../consentTemplates.js";
 
 describe("Informed Consent Packages & Batch Signing Suite (Mandates 8e, 8i, 8k, 8n)", () => {
 	const mockContext: ConsentSubstitutionContext = {

@@ -123,22 +123,7 @@ export interface SignedConsentPayload {
 	note?: string;
 }
 
-export const PACKAGE_SHORT_TITLES: Record<ConsentPackageKey, string> = {
-	PACKAGE_PRIMARY_VISIT: "Пакет: Первичный приём (4 док.)",
-	PACKAGE_SURGERY: "Пакет: Хирургия (3 док.)",
-	PACKAGE_ORTHOPEDICS: "Пакет: Ортопедия (3 док.)",
-};
-
-export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
-	CONSENT_THERAPY: "Терапия и Эндодонтия",
-	CONSENT_SURGERY_IMPLANT: "Хирургия / Имплантация",
-	CONSENT_ORTHODONTICS: "Ортодонтия (Брекеты)",
-	CONSENT_ORTHOPEDICS: "Ортопедия (Коронки)",
-	CONSENT_HYGIENE_BLEACHING: "Профгигиена и отбеливание",
-	CONSENT_ANESTHESIA: "Местная анестезия",
-	CONSENT_PERSONAL_DATA: "Персональные данные (152-ФЗ)",
-	CONSENT_INSPECTION_1051N: "Первичный осмотр / Рентген (1051н)",
-};
+export { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES } from "./consentTemplates.js";
 
 export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	isOpen,
