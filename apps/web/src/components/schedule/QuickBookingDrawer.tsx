@@ -58,6 +58,8 @@ export interface QuickBookingSlotInfo {
 	reason?: string | undefined;
 	isCitoEmergency?: boolean | undefined;
 	patientId?: string | null | undefined;
+	patientName?: string | null | undefined;
+	patientPhone?: string | null | undefined;
 }
 
 export interface QuickBookingDrawerProps {
@@ -308,16 +310,39 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				setSelectedPatient(null);
 				setSearchQuery("");
 			}
+			setShowInlineNewPatient(false);
+			setNewPatientFullName("");
+			setNewPatientPhone("");
+		} else if (initialSlot?.patientName) {
+			const candidateName = initialSlot.patientName.trim();
+			const found = (dashboard?.patients ?? []).find(
+				(p) => p.status === "active" && p.fullName.toLowerCase() === candidateName.toLowerCase(),
+			);
+			if (found) {
+				setPatientId(found.id);
+				setSelectedPatient(found);
+				setSearchQuery(found.fullName);
+				setShowInlineNewPatient(false);
+				setNewPatientFullName("");
+				setNewPatientPhone("");
+			} else {
+				setPatientId("");
+				setSelectedPatient(null);
+				setSearchQuery(candidateName);
+				setShowInlineNewPatient(true);
+				setNewPatientFullName(candidateName);
+				setNewPatientPhone(initialSlot?.patientPhone || "");
+			}
 		} else {
 			setPatientId("");
 			setSelectedPatient(null);
 			setSearchQuery("");
+			setShowInlineNewPatient(false);
+			setNewPatientFullName("");
+			setNewPatientPhone("");
 		}
 
 		setIsTypeaheadOpen(false);
-		setShowInlineNewPatient(false);
-		setNewPatientFullName("");
-		setNewPatientPhone("");
 		setNewPatientBirthDate("");
 		setShowDirtyConfirm(false);
 
@@ -1109,8 +1134,19 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									<button
 										type="button"
 										onClick={() => {
+											const candidateForPrint =
+												selectedPatient ||
+												(newPatientFullName.trim()
+													? {
+															fullName: newPatientFullName.trim(),
+															phone: newPatientPhone.trim() || undefined,
+															birthDate: newPatientBirthDate.trim() || undefined,
+														}
+													: searchQuery.trim()
+														? { fullName: searchQuery.trim() }
+														: null);
 											void printBlankMedicalContract(
-												selectedPatient,
+												candidateForPrint,
 												{
 													doctorName: doctors.find((d) => d.id === doctorUserId)?.fullName,
 													clinicName: dashboard?.clinicSettings?.profile?.legalName,
@@ -1539,16 +1575,42 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										</div>
 									</div>
 								</div>
-								<button
-									type="submit"
-									disabled={isCreatingPatient}
-									className="w-full min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-								>
-									<Check size={14} />
-									<span>
-										{isCreatingPatient ? "Создаю пациента…" : "Создать и выбрать"}
-									</span>
-								</button>
+								<div className="flex gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											void printBlankMedicalContract(
+												newPatientFullName.trim()
+													? {
+															fullName: newPatientFullName.trim(),
+															phone: newPatientPhone.trim() || undefined,
+															birthDate: newPatientBirthDate.trim() || undefined,
+														}
+													: null,
+												{
+													doctorName: doctors.find((d) => d.id === doctorUserId)?.fullName,
+													clinicName: dashboard?.clinicSettings?.profile?.legalName,
+												},
+											);
+										}}
+										className="flex-1 min-h-[44px] py-2 px-3 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-500/30 font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+										data-testid="quick-booking-inline-print-contract-btn"
+										title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
+									>
+										<FileText size={14} className="text-amber-600" />
+										<span>Печать договора (_______)</span>
+									</button>
+									<button
+										type="submit"
+										disabled={isCreatingPatient}
+										className="flex-1 min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+									>
+										<Check size={14} />
+										<span>
+											{isCreatingPatient ? "Создаю пациента…" : "Создать и выбрать"}
+										</span>
+									</button>
+								</div>
 							</form>
 						)}
 					</div>
