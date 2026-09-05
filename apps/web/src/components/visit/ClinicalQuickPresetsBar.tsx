@@ -24,6 +24,7 @@ import {
 	CLINICAL_PRESETS,
 	CLINICAL_SOAP_PRESETS,
 	TOP_EXPRESS_PRESET_IDS,
+	THERAPY_ENDO_QUICK_PRESET_IDS,
 } from "./clinicalSoapPresets";
 
 export type { ToothClinicalState, ClinicalQuickPreset, ClinicalSoapPreset, ClinicalPresetCategory };
@@ -86,6 +87,12 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 
 	const topExpressPresets = React.useMemo(() => {
 		return TOP_EXPRESS_PRESET_IDS.map((id) =>
+			CLINICAL_SOAP_PRESETS.find((p) => p.id === id),
+		).filter((p): p is ClinicalQuickPreset => Boolean(p));
+	}, []);
+
+	const therapyEndoQuickPresets = React.useMemo(() => {
+		return THERAPY_ENDO_QUICK_PRESET_IDS.map((id) =>
 			CLINICAL_SOAP_PRESETS.find((p) => p.id === id),
 		).filter((p): p is ClinicalQuickPreset => Boolean(p));
 	}, []);
@@ -254,6 +261,59 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								</div>
 								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
 									{isHygiene ? "Осмотр, Air-Flow, фторирование" : isCaries ? "Кариес → Пломба + 804н" : isPulpitis ? "Анестезия + Экстирпация + Ca(OH)2" : isPerio ? "УЗ + AirFlow + Хлоргексидин" : "Удаление + Гемостаз + Шов"}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* ── ТЕРАПИЯ И ЭНДОДОНТИЯ 1-КЛИК (БЕЗ СИМУЛЯТОРА: ПУЛЬПИТ / ОБТУРАЦИЯ / ПЕРИОДОНТИТ / КАРИЕС) ── */}
+			<div className="space-y-1.5 pt-1 border-t border-[var(--border)]" data-testid="therapy-endo-quick-actions-section">
+				<div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center justify-between">
+					<div className="flex items-center gap-1.5">
+						<Stethoscope size={14} className="text-blue-500 shrink-0" />
+						<span>Терапия и эндодонтия в 1 клик (СтАР / 804н / Без симулятора):</span>
+					</div>
+					<span className="text-[11px] font-mono text-[var(--muted)] font-normal hidden sm:inline">
+						Пульпит (1/2 эт.) · Периодонтит · Кариес + списание
+					</span>
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+					{therapyEndoQuickPresets.map((preset) => {
+						const dynamicBadge = currentTooth
+							? `${preset.shortBadge.replace(/\s*\d{2}/, "")} ${currentTooth}`
+							: preset.shortBadge;
+						const subtitle =
+							preset.id === "pulpitis_visit1"
+								? "Экстирпация + Ca(OH)2 под дентин-пасту"
+								: preset.id === "pulpitis_obturation"
+									? "Обтурация гуттаперчей + AH Plus"
+									: preset.id === "periodontitis_destructive"
+										? "УЗ дезинфекция + Metapex/Calcept"
+										: "OptiBond + Filtek/Estelite по слоям";
+
+						return (
+							<button
+								key={`therapy-endo-${preset.id}`}
+								type="button"
+								onClick={() => handlePresetClick(preset)}
+								disabled={isLocked}
+								className="min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left bg-blue-500/15 text-blue-950 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
+								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
+								data-testid={`btn-therapy-endo-${preset.id}`}
+							>
+								<div className="flex items-center justify-between w-full gap-1.5">
+									<div className="flex items-center gap-1.5 min-w-0">
+										<Stethoscope size={17} className="text-blue-600 dark:text-blue-400 shrink-0" />
+										<span className="truncate font-black">{dynamicBadge}</span>
+									</div>
+									<span className="text-xs font-mono px-1.5 py-0.5 rounded bg-[var(--paper)] text-[var(--ink)] border border-[var(--border)] font-bold shrink-0">
+										{preset.icd10}
+									</span>
+								</div>
+								<span className="text-xs font-medium text-[var(--muted)] truncate w-full">
+									{subtitle}
 								</span>
 							</button>
 						);

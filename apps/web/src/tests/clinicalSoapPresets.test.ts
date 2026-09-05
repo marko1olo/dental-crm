@@ -5,6 +5,7 @@ import {
 	CLINICAL_PRESETS,
 	CLINICAL_SOAP_PRESETS,
 	TOP_EXPRESS_PRESET_IDS,
+	THERAPY_ENDO_QUICK_PRESET_IDS,
 	applyClinicalPresetToVisitNote,
 	calculatePresetMaterialsCost,
 	formatSoapFromPreset,
@@ -267,5 +268,53 @@ describe("clinicalSoapPresets — Практичный клинический с
 	it("18. CLINICAL_PRESETS является алиасом CLINICAL_SOAP_PRESETS для обратной совместимости", () => {
 		assert.equal(CLINICAL_PRESETS, CLINICAL_SOAP_PRESETS);
 		assert.ok(CLINICAL_PRESETS.length >= 15);
+	});
+
+	// ── ТЕСТ 19: Терапевтические и эндодонтические экспресс-протоколы THERAPY_ENDO_QUICK_PRESET_IDS ──
+	it("19. THERAPY_ENDO_QUICK_PRESET_IDS содержит 4 специализированных протокола (пульпит 1/2 эт., периодонтит, кариес)", () => {
+		assert.equal(THERAPY_ENDO_QUICK_PRESET_IDS.length, 4);
+		assert.deepEqual(THERAPY_ENDO_QUICK_PRESET_IDS, [
+			"pulpitis_visit1",
+			"pulpitis_obturation",
+			"periodontitis_destructive",
+			"caries_medium",
+		]);
+
+		for (const id of THERAPY_ENDO_QUICK_PRESET_IDS) {
+			const preset = getPresetById(id);
+			assert.ok(preset, `Пресет «${id}» должен быть найден в справочнике`);
+			assert.equal(preset.category, "therapy", `Пресет «${id}» должен относиться к категории therapy`);
+		}
+	});
+
+	// ── ТЕСТ 20: Валидация протоколов пульпита 1-го и 2-го посещения (804н + МКБ-10 + материалы) ──
+	it("20. Протоколы пульпита 1-го и 2-го посещения содержат услуги A16.07.030/008 и списание Calcept/AH Plus", () => {
+		const visit1 = getPresetById("pulpitis_visit1");
+		assert.ok(visit1, "Пресет pulpitis_visit1 должен существовать");
+		assert.equal(visit1.icd10, "K04.0");
+		assert.equal(visit1.service804n?.code804n, "A16.07.030.001");
+		assert.ok(visit1.treatmentDescription.includes("ProTaper") || visit1.treatmentDescription.includes("WaveOne"));
+		assert.ok(visit1.treatmentDescription.includes("Calcept"));
+		assert.ok(visit1.materialsToDeduct?.some((m) => m.name.includes("Calcept") || m.name.includes("Каласепт")));
+
+		const obturation = getPresetById("pulpitis_obturation");
+		assert.ok(obturation, "Пресет pulpitis_obturation должен существовать");
+		assert.equal(obturation.icd10, "K04.0");
+		assert.equal(obturation.service804n?.code804n, "A16.07.008.001");
+		assert.ok(obturation.treatmentDescription.toLowerCase().includes("гуттаперч"));
+		assert.ok(obturation.treatmentDescription.includes("AH Plus"));
+		assert.ok(obturation.materialsToDeduct?.some((m) => m.name.includes("AH Plus")));
+		assert.ok(obturation.materialsToDeduct?.some((m) => m.name.toLowerCase().includes("гуттаперч")));
+	});
+
+	// ── ТЕСТ 21: Валидация протокола деструктивного периодонтита (K04.5 + A16.07.030.002 + Metapex/Calcept) ──
+	it("21. Протокол деструктивного периодонтита K04.5 содержит A16.07.030.002 и УЗ дезинфекцию Metapex", () => {
+		const perio = getPresetById("periodontitis_destructive");
+		assert.ok(perio, "Пресет periodontitis_destructive должен существовать");
+		assert.equal(perio.icd10, "K04.5");
+		assert.equal(perio.service804n?.code804n, "A16.07.030.002");
+		assert.ok(perio.treatmentDescription.includes("ультразвук") || perio.treatmentDescription.includes("УЗ"));
+		assert.ok(perio.treatmentDescription.includes("Metapex") || perio.treatmentDescription.includes("Calcept"));
+		assert.ok(perio.materialsToDeduct?.some((m) => m.name.includes("Metapex") || m.name.includes("Calcept")));
 	});
 });

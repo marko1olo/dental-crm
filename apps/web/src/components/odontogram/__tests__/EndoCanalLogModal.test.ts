@@ -22,10 +22,16 @@ import {
 	applyPulpitisProtocol,
 	applyPeriodontitisTempProtocol,
 	applyObturationPermanentProtocol,
+	applyPulpitisVisit1Protocol,
+	applyPulpitisObturationProtocol,
+	applyPeriodontitisDestructiveProtocol,
 	EXPRESS_APICAL_OBTURATION_PRESET,
 	PULPITIS_COMPLETE_PRESET,
 	PERIODONTITIS_TEMP_PRESET,
 	OBTURATION_PERMANENT_PRESET,
+	PULPITIS_VISIT1_PRESET,
+	PULPITIS_OBTURATION_PRESET,
+	PERIODONTITIS_DESTRUCTIVE_PRESET,
 } from "../EndoCanalLogModal";
 
 describe("EndoCanalLogModal — Anatomical Defaults & FDI Presets", () => {
@@ -620,7 +626,7 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		assert.equal(autofilled[1]?.workingLengthMm, 22.0);
 	});
 
-	test("applyExpressApicalEndoProtocol применяет протокол '⚡ Каналы обработаны и обтурированы до апекса' без бюрократии", () => {
+	test("applyExpressApicalEndoProtocol применяет протокол 'Каналы обработаны и обтурированы до апекса' без бюрократии", () => {
 		const emptyCanals: EndoCanalData[] = [
 			{
 				id: "c-blank",
@@ -666,6 +672,33 @@ describe("EndoCanalLogModal — Mandate 8e Express Protocols & Zero-Friction Aut
 		assert.equal(obtuResult.canals.length, 3);
 		assert.ok(obtuResult.radiologyControl.includes("физиологического апекса"));
 		assert.ok(obtuResult.radiologyControl.includes("без выхода за верхушку"));
+	});
+
+	test("applyPulpitisVisit1Protocol устанавливает протокол 1-го посещения пульпита (экстирпация + Calcept)", () => {
+		const result = applyPulpitisVisit1Protocol([], 16);
+		assert.equal(result.canals.length, 4, "Верхний моляр 16 должен содержать 4 канала");
+		assert.equal(result.canals[0]?.sealer, PULPITIS_VISIT1_PRESET.sealer);
+		assert.ok(result.radiologyControl.includes("Calcept"));
+		assert.ok(result.irrigation.includes("NaOCl"));
+		assert.ok(result.rotarySystem.includes("ProTaper"));
+	});
+
+	test("applyPulpitisObturationProtocol устанавливает протокол постоянной обтурации (AH Plus / BioRoot + RVG)", () => {
+		const result = applyPulpitisObturationProtocol([], 36);
+		assert.equal(result.canals.length, 3, "Нижний моляр 36 должен содержать 3 канала");
+		assert.equal(result.canals[0]?.sealer, PULPITIS_OBTURATION_PRESET.sealer);
+		assert.ok(result.radiologyControl.includes("RVG контроль"));
+		assert.ok(result.radiologyControl.includes("AH Plus / BioRoot"));
+		assert.ok(result.rotarySystem.includes("MAF"));
+	});
+
+	test("applyPeriodontitisDestructiveProtocol устанавливает протокол деструктивного периодонтита (Metapex/Calcept)", () => {
+		const result = applyPeriodontitisDestructiveProtocol([], 46);
+		assert.equal(result.canals.length, 3, "Нижний моляр 46 должен содержать 3 канала");
+		assert.equal(result.canals[0]?.sealer, PERIODONTITIS_DESTRUCTIVE_PRESET.sealer);
+		assert.ok(result.radiologyControl.includes("14 дней"));
+		assert.ok(result.radiologyControl.includes("Metapex/Calcept"));
+		assert.ok(result.irrigation.includes("хлоргексидин"));
 	});
 });
 

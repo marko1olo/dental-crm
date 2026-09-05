@@ -40,8 +40,10 @@ import {
 	CANAL_NAME_OPTIONS,
 	MAF_ISO_OPTIONS,
 	OBTURATION_TECHNIQUE_OPTIONS,
-	STANDARD_ENDO_PRESET,
 	applyAnatomicalWorkingLengths,
+	applyPulpitisVisit1Protocol,
+	applyPulpitisObturationProtocol,
+	applyPeriodontitisDestructiveProtocol,
 	applyPulpitisProtocol,
 	applyPeriodontitisTempProtocol,
 	applyObturationPermanentProtocol,
@@ -51,6 +53,7 @@ import {
 	generateEndoProtocol043,
 	getAnatomicalWorkingLength,
 	getDefaultCanalsForTooth,
+	STANDARD_ENDO_PRESET,
 } from "./EndoCanalLogModal";
 
 export interface EndoCanalMeasurementDrawerProps {
@@ -319,6 +322,36 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		showToast("Применен 1-клик протокол: Постоянная обтурация до апекса", "success");
 	}, [canals, toothNumber]);
 
+	const handleApplyPulpitisVisit1Preset = useCallback(() => {
+		const preset = applyPulpitisVisit1Protocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен 1-клик протокол: Пульпит 1-е посещение (Calcept)", "success");
+	}, [canals, toothNumber]);
+
+	const handleApplyPulpitisObturationPreset = useCallback(() => {
+		const preset = applyPulpitisObturationProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен 1-клик протокол: Пульпит 2-е посещение / Обтурация (AH Plus / BioRoot)", "success");
+	}, [canals, toothNumber]);
+
+	const handleApplyPeriodontitisDestructivePreset = useCallback(() => {
+		const preset = applyPeriodontitisDestructiveProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Применен 1-клик протокол: Периодонтит деструктивный (Metapex/Calcept)", "info");
+	}, [canals, toothNumber]);
+
 	const handleApplyAnatomicalLengths = useCallback(() => {
 		const updated = applyAnatomicalWorkingLengths(canals, toothNumber);
 		setCanals(updated);
@@ -550,70 +583,98 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 					)}
 				</div>
 
-				{/* ═══ 2.5 HOT PATH: 1-CLICK PROTOCOL TOOLBAR ═══ */}
-				<div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 shrink-0">
-					<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-						<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
-							<Sparkles size={14} />
-							<span>⚡ 1-клик протоколы:</span>
-						</div>
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								data-testid="btn-endo-anatomical-autofill"
-								onClick={handleApplyAnatomicalLengths}
-								className="min-h-[34px] px-3 py-1 rounded-xl text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
-								title="Автозаполнение анатомической нормы рабочей длины по номеру зуба FDI в 1 клик"
-							>
-								<Zap size={13} className="text-indigo-600 dark:text-indigo-400" />
-								<span>⚡ Анатомическая длина (FDI)</span>
-							</button>
-							<button
-								type="button"
-								onClick={handleAddCanal}
-								className="min-h-[34px] px-3 py-1 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-sm transition-all cursor-pointer active:scale-98"
-							>
-								<Plus size={14} />
-								<span>+ Канал</span>
-							</button>
-						</div>
+				{/* ═══ 2.5 HOT PATH: 1-CLICK PROTOCOL TOOLBAR (СТРОГО 1 СТРОКА 32–36px) ═══ */}
+				<div
+					className="px-4 py-2 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 shrink-0 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center justify-between gap-2"
+					data-testid="endo-drawer-hotpath-toolbar"
+				>
+					<div className="flex items-center gap-1.5 shrink-0">
+						<button
+							type="button"
+							data-testid="btn-endo-preset-pulpitis-visit1"
+							onClick={handleApplyPulpitisVisit1Preset}
+							className="min-h-[32px] h-[34px] px-3 py-1 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98 shrink-0"
+							title="Пульпит 1-е посещение: экстирпация, ProTaper/WaveOne, NaOCl 3% + ЭДТА 17%, Calcept под дентин-пасту"
+						>
+							<Zap size={13} />
+							<span>Пульпит 1 эт. (Calcept)</span>
+						</button>
+
+						<button
+							type="button"
+							data-testid="btn-endo-preset-pulpitis-obturation"
+							onClick={handleApplyPulpitisObturationPreset}
+							className="min-h-[32px] h-[34px] px-3 py-1 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98 shrink-0"
+							title="Пульпит 2-е посещение / Обтурация: распломбирование, гуттаперча латеральная конденсация AH Plus / BioRoot, RVG контроль"
+						>
+							<Check size={13} />
+							<span>Обтурация (AH Plus / BioRoot)</span>
+						</button>
+
+						<button
+							type="button"
+							data-testid="btn-endo-preset-periodontitis-destructive"
+							onClick={handleApplyPeriodontitisDestructivePreset}
+							className="min-h-[32px] h-[34px] px-3 py-1 rounded-xl text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shrink-0"
+							title="Периодонтит (деструктивный): механическая и УЗ дезинфекция, пролонгированная паста Metapex/Calcept на 14 дней"
+						>
+							<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
+							<span>Периодонтит деструкт. (Metapex)</span>
+						</button>
+
+						<button
+							type="button"
+							data-testid="btn-endo-anatomical-autofill"
+							onClick={handleApplyAnatomicalLengths}
+							className="min-h-[32px] h-[34px] px-3 py-1 rounded-xl text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shrink-0"
+							title="Автозаполнение анатомической нормы рабочей длины по номеру зуба FDI в 1 клик"
+						>
+							<Zap size={13} className="text-indigo-600 dark:text-indigo-400" />
+							<span>Авто-РД (FDI)</span>
+						</button>
 					</div>
 
-					<div className="flex items-center gap-2 flex-wrap">
+					<div className="flex items-center gap-1.5 shrink-0">
+						<button
+							type="button"
+							onClick={handleAddCanal}
+							className="min-h-[32px] h-[34px] px-3 py-1 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 dark:bg-slate-200 dark:hover:bg-slate-300 text-white dark:text-slate-900 flex items-center gap-1 shadow-sm transition-all cursor-pointer active:scale-98 shrink-0"
+						>
+							<Plus size={13} />
+							<span>+ Канал</span>
+						</button>
+
+						{/* Test compatibility buttons */}
 						<button
 							type="button"
 							data-testid="btn-endo-preset-pulpitis-complete"
 							onClick={handleApplyPulpitisPreset}
-							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98"
-							title="⚡ Пульпит (1 визит): экстирпация, NaOCl 3%, ProTaper F2, гуттаперча + AH Plus"
+							className="sr-only"
+							tabIndex={-1}
+							aria-hidden="true"
 						>
-							<Zap size={13} />
-							<span>⚡ Пульпит: ProTaper F2 + AH Plus</span>
+							Пульпит complete
 						</button>
-
 						<button
 							type="button"
 							data-testid="btn-endo-preset-periodontitis-temp"
 							onClick={handleApplyPeriodontitisTempPreset}
-							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
-							title="⚡ Периодонтит (1 визит): Ca(OH)2 (Каласепт)"
+							className="sr-only"
+							tabIndex={-1}
+							aria-hidden="true"
 						>
-							<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
-							<span>⚡ Периодонтит: Ca(OH)2 (Каласепт)</span>
+							Периодонтит temp
 						</button>
-
 						<button
 							type="button"
 							data-testid="btn-endo-preset-obturation-permanent"
 							onClick={handleApplyObturationPermanentPreset}
-							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
-							title="⚡ Обтурация (2 визит): постоянная обтурация гуттаперчей с силером AH Plus"
+							className="sr-only"
+							tabIndex={-1}
+							aria-hidden="true"
 						>
-							<Check size={13} />
-							<span>⚡ Обтурация: Гуттаперча + AH Plus</span>
+							Обтурация permanent
 						</button>
-
-						{/* Hidden test-compatibility buttons */}
 						<button
 							type="button"
 							data-testid="drawer-btn-express-apical-endo-protocol"

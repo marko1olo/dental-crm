@@ -144,6 +144,45 @@ export const CAOH2_ENDO_PRESET = {
 	sealer: "Каласепт (гидроксид кальция)",
 } as const;
 
+/** 1-клик протокол: Пульпит (1-е посещение): экстирпация, мехобработка ProTaper/WaveOne, NaOCl 3% + ЭДТА 17%, временное пломбирование гидроксидом кальция Calcept под дентин-пасту */
+export const PULPITIS_VISIT1_PRESET = {
+	rotarySystem: "Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF",
+	irrigation: "3% NaOCl + 17% EDTA с ультразвуковой активацией (активный протокол ирригации)",
+	radiologyControl:
+		"Контрольная радиовизиография: временное пломбирование гидроксидом кальция Calcept до физиологического апекса под герметичную дентин-пасту.",
+	obturationTechnique: "Временная обтурация Ca(OH)2 (Каласепт / Metapex)",
+	sealer: "Calcept (гидроксид кальция)",
+	masterApicalFile: "ISO 25 (#25 красный)",
+	taper: ".06 (Конусность 6%)",
+	notes: "Пульпит (1-е посещение): экстирпация, мехобработка ProTaper/WaveOne, NaOCl 3% + ЭДТА 17%, временное пломбирование гидроксидом кальция Calcept под дентин-пасту",
+} as const;
+
+/** 1-клик протокол: Пульпит (2-е посещение) / Обтурация: распломбирование временной пасты, высушивание бумажными штифтами, постоянная обтурация гуттаперчей методом латеральной конденсации с силером AH Plus / BioRoot, RVG контроль */
+export const PULPITIS_OBTURATION_PRESET = {
+	rotarySystem: "Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до MAF",
+	irrigation: "3% NaOCl + 17% EDTA с ультразвуковой активацией, высушивание бумажными штифтами",
+	radiologyControl:
+		"Контрольная радиовизиография (RVG контроль): постоянная обтурация гуттаперчей методом латеральной конденсации с силером AH Plus / BioRoot до физиологического апекса.",
+	obturationTechnique: "Латеральная компакция холодной гуттаперчи",
+	sealer: "AH Plus / BioRoot",
+	masterApicalFile: "ISO 25 (#25 красный)",
+	taper: ".06 (Конусность 6%)",
+	notes: "Пульпит (2-е посещение) / Обтурация: распломбирование временной пасты, высушивание бумажными штифтами, постоянная обтурация гуттаперчей методом латеральной конденсации с силером AH Plus / BioRoot, RVG контроль",
+} as const;
+
+/** 1-клик протокол: Периодонтит (деструктивный): механическая и ультразвуковая дезинфекция каналов, пролонгированная паста Metapex/Calcept на 14 дней */
+export const PERIODONTITIS_DESTRUCTIVE_PRESET = {
+	rotarySystem: "Ревизия и машинная обработка NiTi ProTaper / WaveOne с ультразвуковой дезинфекцией",
+	irrigation: "3% NaOCl + 17% EDTA + 2% хлоргексидин с ультразвуковой активацией, просушивание бумажными штифтами",
+	radiologyControl:
+		"Контрольная радиовизиография: пролонгированная паста Metapex/Calcept введена плотно до верхушки на 14 дней, герметичная повязка.",
+	obturationTechnique: "Временная обтурация Ca(OH)2 (Каласепт / Metapex)",
+	sealer: "Metapex / Calcept",
+	masterApicalFile: "ISO 25 (#25 красный)",
+	taper: ".06 (Конусность 6%)",
+	notes: "Периодонтит (деструктивный): механическая и ультразвуковая дезинфекция каналов, пролонгированная паста Metapex/Calcept на 14 дней",
+} as const;
+
 /** 1-клик протокол: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма) */
 export const PULPITIS_COMPLETE_PRESET = {
 	rotarySystem: "Машинная обработка NiTi ProTaper Gold до F2 (25.06) / WaveOne Gold Primary",
@@ -183,7 +222,7 @@ export const OBTURATION_PERMANENT_PRESET = {
 	notes: "Постоянное пломбирование: каналы высушены, обтурация гуттаперча + AH Plus, рентген-контроль гомогенно до апекса",
 } as const;
 
-/** 1-клик протокол: «⚡ Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)» */
+/** 1-клик протокол: «Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)» */
 export const EXPRESS_APICAL_OBTURATION_PRESET = {
 	rotarySystem: "Машинная обработка NiTi ProTaper Ultimate / WaveOne Gold до физиологического апекса",
 	irrigation: "3% NaOCl + 17% EDTA с ультразвуковой активацией (активный протокол ирригации), высушивание бумажными штифтами",
@@ -314,6 +353,114 @@ export function applyStandardEndoProtocol(
 }
 
 /**
+ * 1-клик применение протокола: Пульпит (1-е посещение: экстирпация, ProTaper/WaveOne, NaOCl 3% + ЭДТА 17%, Calcept под дентин-пасту)
+ */
+export function applyPulpitisVisit1Protocol(
+	canals: readonly EndoCanalData[],
+	toothNumber: number,
+): {
+	canals: EndoCanalData[];
+	irrigation: string;
+	rotarySystem: string;
+	radiologyControl: string;
+} {
+	const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+	const targetCanals = canals.length > 0 ? canals : defaultCanals;
+
+	const updatedCanals: EndoCanalData[] = targetCanals.map((c) => {
+		const anatLength = getAnatomicalWorkingLength(toothNumber, c.canalName);
+		return {
+			...c,
+			workingLengthMm: c.workingLengthMm || anatLength,
+			masterApicalFile: PULPITIS_VISIT1_PRESET.masterApicalFile,
+			taper: PULPITIS_VISIT1_PRESET.taper,
+			obturationTechnique: PULPITIS_VISIT1_PRESET.obturationTechnique,
+			sealer: PULPITIS_VISIT1_PRESET.sealer,
+			notes: PULPITIS_VISIT1_PRESET.notes,
+		};
+	});
+
+	return {
+		canals: updatedCanals,
+		irrigation: PULPITIS_VISIT1_PRESET.irrigation,
+		rotarySystem: PULPITIS_VISIT1_PRESET.rotarySystem,
+		radiologyControl: PULPITIS_VISIT1_PRESET.radiologyControl,
+	};
+}
+
+/**
+ * 1-клик применение протокола: Пульпит (2-е посещение / Обтурация: распломбирование, гуттаперча латеральная конденсация AH Plus / BioRoot, RVG контроль)
+ */
+export function applyPulpitisObturationProtocol(
+	canals: readonly EndoCanalData[],
+	toothNumber: number,
+): {
+	canals: EndoCanalData[];
+	irrigation: string;
+	rotarySystem: string;
+	radiologyControl: string;
+} {
+	const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+	const targetCanals = canals.length > 0 ? canals : defaultCanals;
+
+	const updatedCanals: EndoCanalData[] = targetCanals.map((c) => {
+		const anatLength = getAnatomicalWorkingLength(toothNumber, c.canalName);
+		return {
+			...c,
+			workingLengthMm: c.workingLengthMm || anatLength,
+			masterApicalFile: PULPITIS_OBTURATION_PRESET.masterApicalFile,
+			taper: PULPITIS_OBTURATION_PRESET.taper,
+			obturationTechnique: PULPITIS_OBTURATION_PRESET.obturationTechnique,
+			sealer: PULPITIS_OBTURATION_PRESET.sealer,
+			notes: PULPITIS_OBTURATION_PRESET.notes,
+		};
+	});
+
+	return {
+		canals: updatedCanals,
+		irrigation: PULPITIS_OBTURATION_PRESET.irrigation,
+		rotarySystem: PULPITIS_OBTURATION_PRESET.rotarySystem,
+		radiologyControl: PULPITIS_OBTURATION_PRESET.radiologyControl,
+	};
+}
+
+/**
+ * 1-клик применение протокола: Периодонтит (деструктивный: механическая и УЗ дезинфекция, Metapex/Calcept на 14 дней)
+ */
+export function applyPeriodontitisDestructiveProtocol(
+	canals: readonly EndoCanalData[],
+	toothNumber: number,
+): {
+	canals: EndoCanalData[];
+	irrigation: string;
+	rotarySystem: string;
+	radiologyControl: string;
+} {
+	const defaultCanals = getDefaultCanalsForTooth(toothNumber);
+	const targetCanals = canals.length > 0 ? canals : defaultCanals;
+
+	const updatedCanals: EndoCanalData[] = targetCanals.map((c) => {
+		const anatLength = getAnatomicalWorkingLength(toothNumber, c.canalName);
+		return {
+			...c,
+			workingLengthMm: c.workingLengthMm || anatLength,
+			masterApicalFile: PERIODONTITIS_DESTRUCTIVE_PRESET.masterApicalFile,
+			taper: PERIODONTITIS_DESTRUCTIVE_PRESET.taper,
+			obturationTechnique: PERIODONTITIS_DESTRUCTIVE_PRESET.obturationTechnique,
+			sealer: PERIODONTITIS_DESTRUCTIVE_PRESET.sealer,
+			notes: PERIODONTITIS_DESTRUCTIVE_PRESET.notes,
+		};
+	});
+
+	return {
+		canals: updatedCanals,
+		irrigation: PERIODONTITIS_DESTRUCTIVE_PRESET.irrigation,
+		rotarySystem: PERIODONTITIS_DESTRUCTIVE_PRESET.rotarySystem,
+		radiologyControl: PERIODONTITIS_DESTRUCTIVE_PRESET.radiologyControl,
+	};
+}
+
+/**
  * 1-клик применение протокола: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)
  */
 export function applyPulpitisProtocol(
@@ -423,7 +570,7 @@ export function applyObturationPermanentProtocol(
 
 /**
  * 1-клик применение экспресс-протокола:
- * «⚡ Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)».
+ * «Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)».
  * Ликвидирует любые бюрократические требования ручного заполнения каждого миллиметра:
  * анатомическая норма подставляется мгновенно, все каналы готовы к сохранению и вставке в 043/у.
  */
@@ -918,6 +1065,33 @@ export function EndoCanalLogModal({
 		);
 	};
 
+	const handleApplyPulpitisVisit1Preset = () => {
+		const preset = applyPulpitisVisit1Protocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		showToast("Применен 1-клик протокол: Пульпит 1-е посещение (Calcept)", "success");
+	};
+
+	const handleApplyPulpitisObturationPreset = () => {
+		const preset = applyPulpitisObturationProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		showToast("Применен 1-клик протокол: Пульпит 2-е посещение / Обтурация (AH Plus / BioRoot)", "success");
+	};
+
+	const handleApplyPeriodontitisDestructivePreset = () => {
+		const preset = applyPeriodontitisDestructiveProtocol(canals, toothNumber);
+		setCanals(preset.canals);
+		setIrrigation(preset.irrigation);
+		setRotarySystem(preset.rotarySystem);
+		setRadiologyControl(preset.radiologyControl);
+		showToast("Применен 1-клик протокол: Периодонтит деструктивный (Metapex/Calcept)", "info");
+	};
+
 	const handleApplyPulpitisPreset = () => {
 		const preset = applyPulpitisProtocol(canals, toothNumber);
 		setCanals(preset.canals);
@@ -952,7 +1126,7 @@ export function EndoCanalLogModal({
 		setRotarySystem(preset.rotarySystem);
 		setRadiologyControl(preset.radiologyControl);
 		showToast(
-			"⚡ Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)",
+			"Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)",
 			"success",
 		);
 	};
@@ -1227,7 +1401,7 @@ export function EndoCanalLogModal({
 						<div className="flex items-center justify-between gap-2 flex-wrap">
 							<div className="text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
 								<Sparkles size={15} />
-								<span>⚡ Быстрые 1-клик клинические протоколы эндодонтии:</span>
+								<span>Быстрые 1-клик клинические протоколы эндодонтии:</span>
 							</div>
 
 							<button
@@ -1238,20 +1412,53 @@ export function EndoCanalLogModal({
 								title="Автозаполнение анатомической рабочей длины по номеру зуба в 1 клик (резцы 22 мм, клыки 25 мм, премоляры 21 мм, моляры щечные 20 мм / нёбный 22 мм)"
 							>
 								<Zap size={14} className="text-indigo-600 dark:text-indigo-400" />
-								<span>⚡ Авто-РД по анатомии (FDI)</span>
+								<span>Авто-РД по анатомии (FDI)</span>
 							</button>
 						</div>
 
 						<div className="flex items-center gap-2 flex-wrap">
 							<button
 								type="button"
+								data-testid="btn-endo-preset-pulpitis-visit1"
+								onClick={handleApplyPulpitisVisit1Preset}
+								className="min-h-[42px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98"
+								title="1-клик: Пульпит 1-е посещение (экстирпация, ProTaper/WaveOne, NaOCl 3% + ЭДТА 17%, Calcept под дентин-пасту)"
+							>
+								<Zap size={15} />
+								<span>Пульпит 1 эт. (Calcept)</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="btn-endo-preset-pulpitis-obturation"
+								onClick={handleApplyPulpitisObturationPreset}
+								className="min-h-[42px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
+								title="1-клик: Пульпит 2-е посещение / Обтурация (распломбирование, гуттаперча латеральная конденсация AH Plus / BioRoot, RVG контроль)"
+							>
+								<Check size={15} />
+								<span>Обтурация (AH Plus / BioRoot)</span>
+							</button>
+
+							<button
+								type="button"
+								data-testid="btn-endo-preset-periodontitis-destructive"
+								onClick={handleApplyPeriodontitisDestructivePreset}
+								className="min-h-[42px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+								title="1-клик: Периодонтит (деструктивный: механическая и УЗ дезинфекция, пролонгированная паста Metapex/Calcept на 14 дней)"
+							>
+								<ShieldCheck size={15} className="text-amber-600 dark:text-amber-400" />
+								<span>Периодонтит деструкт. (Metapex)</span>
+							</button>
+
+							<button
+								type="button"
 								data-testid="btn-endo-preset-pulpitis-complete"
 								onClick={handleApplyPulpitisPreset}
 								className="min-h-[42px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)"
+								title="1-клик: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)"
 							>
 								<Zap size={15} />
-								<span>⚡ Пульпит: ProTaper F2 + AH Plus</span>
+								<span>Пульпит: ProTaper F2 + AH Plus</span>
 							</button>
 
 							<button
@@ -1259,10 +1466,10 @@ export function EndoCanalLogModal({
 								data-testid="btn-endo-preset-periodontitis-temp"
 								onClick={handleApplyPeriodontitisTempPreset}
 								className="min-h-[42px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Периодонтит 1 посещение (распломбировка, УЗ-активация NaOCl, временное вложение гидроокиси кальция Каласепт на 14 дней)"
+								title="1-клик: Периодонтит 1 посещение (распломбировка, УЗ-активация NaOCl, временное вложение гидроокиси кальция Каласепт на 14 дней)"
 							>
 								<ShieldCheck size={15} className="text-amber-600 dark:text-amber-400" />
-								<span>⚡ Периодонтит: Каласепт Ca(OH)2</span>
+								<span>Периодонтит: Каласепт Ca(OH)2</span>
 							</button>
 
 							<button
@@ -1270,10 +1477,10 @@ export function EndoCanalLogModal({
 								data-testid="btn-endo-preset-obturation-permanent"
 								onClick={handleApplyObturationPermanentPreset}
 								className="min-h-[42px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Обтурация каналов (постоянное пломбирование, рентген-контроль: гомогенно до апекса, без выхода за верхушку)"
+								title="1-клик: Обтурация каналов (постоянное пломбирование, рентген-контроль: гомогенно до апекса, без выхода за верхушку)"
 							>
 								<Check size={15} />
-								<span>⚡ Постоянная обтурация</span>
+								<span>Постоянная обтурация</span>
 							</button>
 
 							<button
@@ -1281,10 +1488,10 @@ export function EndoCanalLogModal({
 								data-testid="btn-express-apical-endo-protocol"
 								onClick={handleApplyExpressApicalPreset}
 								className="min-h-[42px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1.5 shadow-sm shadow-teal-600/20 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)"
+								title="1-клик: Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)"
 							>
 								<Check size={16} />
-								<span>⚡ Обтурированы до апекса (апекслокатор + снимок)</span>
+								<span>Обтурированы до апекса (апекслокатор + снимок)</span>
 							</button>
 
 							<button
