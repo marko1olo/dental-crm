@@ -115,7 +115,7 @@ export interface AlignerAttachmentPreset {
 export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
 	{
 		id: "standard",
-		label: "⚡ Стандартные аттачменты: клыки и премоляры (15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45)",
+		label: "Стандартные аттачменты: клыки и премоляры (15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45)",
 		shortLabel: "Стандартные (клыки и премоляры)",
 		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
 		description:
@@ -123,7 +123,7 @@ export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
 	},
 	{
 		id: "intact",
-		label: "⚡ Аттачменты интактны, сколов нет",
+		label: "Аттачменты интактны, сколов нет",
 		shortLabel: "Аттачменты интактны, сколов нет",
 		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
 		description:
@@ -131,7 +131,7 @@ export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
 	},
 	{
 		id: "refixation",
-		label: "⚡ Повторная фиксация аттачмента (замена)",
+		label: "Повторная фиксация аттачмента (замена)",
 		shortLabel: "Повторная фиксация аттачмента (замена)",
 		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
 		description:
@@ -139,7 +139,7 @@ export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
 	},
 	{
 		id: "debonding",
-		label: "⚡ Снятие аттачментов и полировка (финиш)",
+		label: "Снятие аттачментов и полировка (финиш)",
 		shortLabel: "Снятие аттачментов и полировка (финиш)",
 		teeth: [15, 14, 13, 23, 24, 25, 35, 34, 33, 43, 44, 45],
 		description:

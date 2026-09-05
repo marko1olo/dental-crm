@@ -568,8 +568,9 @@ export function DentalLabRestorationTab({
 							</p>
 						</div>
 					</div>
-					<span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30">
-						⚡ Hot Path ортопеда
+					<span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 inline-flex items-center gap-1">
+						<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+						<span>Hot Path ортопеда</span>
 					</span>
 				</div>
 
@@ -583,7 +584,7 @@ export function DentalLabRestorationTab({
 						{[
 							{
 								id: "zirconia_std",
-								title: "⚡ Цирконий (Prettau / Katana)",
+								title: "Цирконий (Prettau / Katana)",
 								subtitle: "Анатомическая форма · А-силикон · зазор 30 мкм",
 								materialId: "zirconia_multilayer",
 								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
@@ -599,7 +600,7 @@ export function DentalLabRestorationTab({
 							},
 							{
 								id: "pmma_temp",
-								title: "⚡ Временная PMMA CAD/CAM",
+								title: "Временная PMMA CAD/CAM",
 								subtitle: "Фрезерованная провизорная · зазор 40 мкм",
 								materialId: "pmma_temporary",
 								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
@@ -615,7 +616,7 @@ export function DentalLabRestorationTab({
 							},
 							{
 								id: "pfm_duceram",
-								title: "⚡ Металлокерамика (Duceram)",
+								title: "Металлокерамика (Duceram)",
 								subtitle: "Классика Co-Cr · VITA A2 · зазор 40 мкм",
 								materialId: "pfm_cocr",
 								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
@@ -631,7 +632,7 @@ export function DentalLabRestorationTab({
 							},
 							{
 								id: "implant_screw",
-								title: "⚡ Винтовая фиксация Ti-Base",
+								title: "Винтовая фиксация Ti-Base",
 								subtitle: "ZrO₂ + Ti-Base / Multi-unit · зазор 30 мкм",
 								materialId: "titanium_custom_abutment",
 								constructionId: "implant_abutment",

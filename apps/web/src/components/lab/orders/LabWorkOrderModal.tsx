@@ -401,7 +401,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 							title="Циркониевая коронка на свой зуб (Prettau / Katana) — стандарт (5 дней, 24 000 ₽ / 7 500 ₽)"
 						>
 							<Zap size={14} />
-							<span>⚡ ZrO₂ (5 дн.)</span>
+							<span>ZrO₂ (5 дн.)</span>
 						</button>
 						<button
 							type="button"
@@ -412,7 +412,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 							title="Временная фрезерованная коронка PMMA (1 клик) (2 дня, 3 500 ₽ / 1 200 ₽)"
 						>
 							<Zap size={14} />
-							<span>⚡ PMMA (2 дн.)</span>
+							<span>PMMA (2 дн.)</span>
 						</button>
 						<button
 							type="button"
@@ -423,7 +423,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 							title="Металлокерамическая коронка (Duceram Plus) — классика (7 дней, 15 000 ₽ / 5 000 ₽)"
 						>
 							<Zap size={14} />
-							<span>⚡ МК Duceram (7 дн.)</span>
+							<span>МК Duceram (7 дн.)</span>
 						</button>
 						<button
 							type="button"
@@ -434,7 +434,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 							title="Коронка на имплантате с винтовой фиксацией Multi-unit / Ti-Base (7 дней, 38 000 ₽ / 13 000 ₽)"
 						>
 							<Zap size={14} />
-							<span>⚡ Винтовая Ti-Base (7 дн.)</span>
+							<span>Винтовая Ti-Base (7 дн.)</span>
 						</button>
 						<button className="lab-btn" style={{ padding: '0.25rem 0.5rem', minHeight: '36px', minWidth: '36px' }} onClick={onClose} aria-label="Закрыть">
 							<X size={20} />

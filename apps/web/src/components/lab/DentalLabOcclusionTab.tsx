@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { CheckCircle2, Sparkles, Zap } from "lucide-react";
 import {
 	OCCLUSAL_SCHEMES,
 	CONTACT_TIGHTNESS_OPTIONS,
@@ -58,11 +58,12 @@ export function DentalLabOcclusionTab({
 								setSurfaceTexture("natural_anatomy");
 								setCementGapMicrons(30);
 							}}
-							className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+							className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer inline-flex items-center gap-1.5"
 							title="ZrO2 / Ti-Base: взаимно-защищенная, контакт 50 мкм, зазор 30 мкм"
 							data-testid="occlusion-preset-zirconia-btn"
 						>
-							⚡ ZrO₂ / Винтовая (30 мкм)
+							<Zap size={13} className="shrink-0" />
+							<span>ZrO₂ / Винтовая (30 мкм)</span>
 						</button>
 						<button
 							type="button"
@@ -72,11 +73,12 @@ export function DentalLabOcclusionTab({
 								setSurfaceTexture("natural_anatomy");
 								setCementGapMicrons(40);
 							}}
-							className="min-h-[36px] px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+							className="min-h-[36px] px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer inline-flex items-center gap-1.5"
 							title="PMMA / МК Duceram: групповая функция, контакт 50 мкм, зазор 40 мкм"
 							data-testid="occlusion-preset-pmma-pfm-btn"
 						>
-							⚡ PMMA / МК (40 мкм)
+							<Zap size={13} className="shrink-0" />
+							<span>PMMA / МК (40 мкм)</span>
 						</button>
 					</div>
 				</div>

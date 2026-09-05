@@ -628,8 +628,9 @@ export function DentalLabOrderModal({
 							</button>
 						))}
 					</div>
-					<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium hidden md:inline">
-						💡 1 клик заполняет конструкцию, материал, цвет A2, сроки и нормальную анатомию
+					<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium hidden md:inline flex items-center gap-1">
+						<Sparkles size={12} className="text-amber-500 shrink-0" />
+						<span>1 клик заполняет конструкцию, материал, цвет A2, сроки и нормальную анатомию</span>
 					</span>
 				</div>
 
