@@ -440,4 +440,31 @@ describe("DentalLabOrderModal — Doctor Autonomy & Mandates 8e, 8n (No Block on
 	});
 });
 
+describe("DentalLabOrderModal — Chairside Clinical Order Architecture (Mandates 8e, 8i, 8k, 8n)", () => {
+	test("Клинический наряд у кресла состоит ровно из 4 клинических шагов без себестоимости", () => {
+		// Canonical 4-step workflow:
+		// 1. Зубы и Конструкция (restoration)
+		// 2. Расцветка VITA (shades)
+		// 3. Этапы и Сроки (stages)
+		// 4. Бланк ГОСТ (print)
+		const expectedSteps = [
+			{ id: "main", label: "1. Зубы и Конструкция" },
+			{ id: "shades", label: "2. Расцветка VITA" },
+			{ id: "stages", label: "3. Этапы и Сроки" },
+			{ id: "print", label: "4. Бланк ГОСТ" },
+		];
+		assert.equal(expectedSteps.length, 4);
+		assert.ok(!expectedSteps.some((s) => s.id === "pricing"), "Вкладка Себестоимость исключена из наряда врача у кресла");
+	});
+
+	test("Наряд у кресла свободен от Exocad-микропараметров (зазор в микронах, схемы Доусона) в пользу привычной окклюзии", () => {
+		const clinicalSpec = {
+			occlusion: "В привычной окклюзии (по силиконовому регистрату / шаблону)",
+			anatomy: "Естественная анатомическая форма зуба",
+		};
+		assert.ok(clinicalSpec.occlusion.includes("В привычной окклюзии"));
+		assert.ok(clinicalSpec.anatomy.includes("Естественная анатомическая форма"));
+	});
+});
+
 

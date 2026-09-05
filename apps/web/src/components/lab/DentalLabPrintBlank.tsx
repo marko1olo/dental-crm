@@ -4,9 +4,6 @@ import { money } from "../../AppHelpers";
 import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
-	OCCLUSAL_SCHEMES,
-	CONTACT_TIGHTNESS_OPTIONS,
-	SURFACE_TEXTURE_OPTIONS,
 	generateBarcodeSvg,
 	generateQrCodeSvg,
 	type JawScope,
@@ -33,16 +30,16 @@ export interface DentalLabPrintBlankProps {
 	translucency: string;
 	mamelons: boolean;
 	calcifications: boolean;
-	occlusalScheme: string;
-	contactTightness: string;
-	surfaceTexture: string;
-	cementGapMicrons: number;
+	occlusalScheme?: string;
+	contactTightness?: string;
+	surfaceTexture?: string;
+	cementGapMicrons?: number;
 	impressionType?: string;
 	frameworkTrialDate?: string | null;
 	ceramicTrialDate?: string | null;
 	dueDate?: string | null;
 	clinicalNotes: string;
-	totalLabPriceRub: number;
+	totalLabPriceRub?: number;
 	portalUrl: string;
 	handlePrint: () => void;
 }
@@ -177,10 +174,8 @@ export function DentalLabPrintBlank({
 					<div className="grid grid-cols-2 gap-2 text-xs">
 						<div>• <strong>3-Зонная стратификация:</strong> Пришейка {shadeCervical} / Тело {shadeBody} / Край {shadeIncisal}</div>
 						<div>• <strong>Оптические свойства:</strong> {translucency} {mamelons ? "(Мамелоны)" : ""} {calcifications ? "(Кальцификаты)" : ""}</div>
-						<div>• <strong>Окклюзия:</strong> {OCCLUSAL_SCHEMES.find((o) => o.id === occlusalScheme)?.name}</div>
-						<div>• <strong>Апроксимальный контакт:</strong> {CONTACT_TIGHTNESS_OPTIONS.find((c) => c.id === contactTightness)?.name}</div>
-						<div>• <strong>Микротекстура:</strong> {SURFACE_TEXTURE_OPTIONS.find((s) => s.id === surfaceTexture)?.name}</div>
-						<div>• <strong>Цементный зазор:</strong> {cementGapMicrons} мкм</div>
+						<div>• <strong>Прикус / Окклюзия:</strong> В привычной окклюзии (по силиконовому регистрату / шаблону)</div>
+						<div>• <strong>Анатомия и контакты:</strong> Естественная анатомическая форма, физиологический контакт</div>
 					</div>
 					{frameworkTrialDate && (
 						<div className="text-xs">
@@ -202,7 +197,9 @@ export function DentalLabPrintBlank({
 				{/* Disinfection & SanPiN Mark */}
 				<div className="p-2.5 border border-dashed border-slate-300 rounded text-xs flex justify-between items-center text-slate-600">
 					<span>[СанПиН 3.3686-21] Оттиски / прикусные шаблоны дезинфицированы в дез. растворе</span>
-					<span className="font-bold">Стоимость наряда: {money(totalLabPriceRub)}</span>
+					{totalLabPriceRub != null && totalLabPriceRub > 0 && (
+						<span className="font-bold">Стоимость наряда: {money(totalLabPriceRub)}</span>
+					)}
 				</div>
 
 				{/* Barcode & QR Code Section */}

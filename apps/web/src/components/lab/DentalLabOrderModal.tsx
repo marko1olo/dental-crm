@@ -5,9 +5,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
-	DollarSign,
 	FlaskConical,
-	Layers,
 	Loader2,
 	Palette,
 	Printer,
@@ -67,13 +65,12 @@ import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { CashRegisterModal } from "../finance/CashRegisterModal";
 import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
 import { DentalLabShadeSelector } from "./DentalLabShadeSelector";
-import { DentalLabPricingTab } from "./DentalLabPricingTab";
 import { DentalLabPrintBlank } from "./DentalLabPrintBlank";
 
 // Re-export all types and constants for backwards compatibility with tests and callers
 export * from "./labMath";
 
-type TabKey = "main" | "shades" | "stages" | "pricing" | "print";
+type TabKey = "main" | "shades" | "stages" | "print";
 
 export function DentalLabOrderModal({
 	isOpen,
@@ -397,14 +394,10 @@ export function DentalLabOrderModal({
 				shadeStump ? `Культя: ${shadeStump}` : null,
 				`Транслюцентность: ${translucency}`,
 				mamelons ? "Эффект мамелонов" : null,
-				calcifications ? "Кальцификаты/пятна" : null,
-				`Окклюзия: ${OCCLUSAL_SCHEMES.find((o) => o.id === occlusalScheme)?.name || occlusalScheme}`,
-				`Апроксимальные контакты: ${CONTACT_TIGHTNESS_OPTIONS.find((c) => c.id === contactTightness)?.name || contactTightness}`,
-				`Текстура поверхности: ${SURFACE_TEXTURE_OPTIONS.find((s) => s.id === surfaceTexture)?.name || surfaceTexture}`,
-				`Цементный зазор: ${cementGapMicrons} мкм`,
+				"Окклюзия / Прикус: В привычной окклюзии (по силиконовому регистрату / шаблону)",
+				"Анатомия: Естественная анатомическая форма зуба",
 				frameworkTrialDate ? `Примерка каркаса: ${frameworkTrialDate}` : null,
 				ceramicTrialDate ? `Примерка керамики: ${ceramicTrialDate}` : null,
-				`Доля клиники/врача: ${clinicSharePct}% / ${doctorSharePct}% (Удержание с врача: ${money(doctorAmountRub)})`,
 				gateOverride?.authorized
 					? `Клиническое решение лечащего врача: отправка наряда в ЗТЛ согласована (${gateOverride.doctorName})`
 					: null,
@@ -646,8 +639,7 @@ export function DentalLabOrderModal({
 						{ id: "main", label: "1. Зубы и Конструкция", icon: FlaskConical, fullTitle: "1. Зубная формула и Конструкция" },
 						{ id: "shades", label: "2. Расцветка VITA", icon: Palette, fullTitle: "2. Расцветка VITA и Культя" },
 						{ id: "stages", label: "3. Этапы и Сроки", icon: Clock, fullTitle: "3. Этапы ЗТЛ и Примерки" },
-						{ id: "pricing", label: "4. Себестоимость", icon: DollarSign, fullTitle: "4. Себестоимость и Сделка" },
-						{ id: "print", label: "5. Бланк ГОСТ", icon: QrCode, fullTitle: "5. Бланк наряда (ГОСТ) и QR" },
+						{ id: "print", label: "4. Бланк ГОСТ", icon: QrCode, fullTitle: "4. Бланк наряда (ГОСТ) и QR" },
 					].map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
@@ -764,14 +756,6 @@ export function DentalLabOrderModal({
 							shadeBody={shadeBody}
 							setShadeBody={setShadeBody}
 							onOpenAdvancedShades={() => setActiveTab("shades")}
-							occlusalScheme={occlusalScheme}
-							setOcclusalScheme={setOcclusalScheme}
-							contactTightness={contactTightness}
-							setContactTightness={setContactTightness}
-							surfaceTexture={surfaceTexture}
-							setSurfaceTexture={setSurfaceTexture}
-							cementGapMicrons={cementGapMicrons}
-							setCementGapMicrons={setCementGapMicrons}
 						/>
 					)}
 
@@ -898,24 +882,7 @@ export function DentalLabOrderModal({
 						</div>
 					)}
 
-					{/* ═══ TAB 5: PRICING & DOCTOR SALARY DEDUCTION ══════════════════ */}
-					{activeTab === "pricing" && (
-						<DentalLabPricingTab
-							priceRubInput={priceRubInput}
-							setPriceRubInput={setPriceRubInput}
-							clinicSharePct={clinicSharePct}
-							setClinicSharePct={setClinicSharePct}
-							doctorSharePct={doctorSharePct}
-							setDoctorSharePct={setDoctorSharePct}
-							totalLabPriceRub={totalLabPriceRub}
-							clinicAmountRub={clinicAmountRub}
-							doctorAmountRub={doctorAmountRub}
-							isBalanced={isBalanced}
-							handleSharePreset={handleSharePreset}
-						/>
-					)}
-
-					{/* ═══ TAB 6: PRINTABLE BLANK (GOST) & QR CODE ══════════════════ */}
+					{/* ═══ TAB 4: PRINTABLE BLANK (GOST) & QR CODE ══════════════════ */}
 					{activeTab === "print" && (
 						<DentalLabPrintBlank
 							gostOrderNumber={gostOrderNumber}
@@ -937,10 +904,6 @@ export function DentalLabOrderModal({
 							translucency={translucency}
 							mamelons={mamelons}
 							calcifications={calcifications}
-							occlusalScheme={occlusalScheme}
-							contactTightness={contactTightness}
-							surfaceTexture={surfaceTexture}
-							cementGapMicrons={cementGapMicrons}
 							impressionType={impressionType}
 							frameworkTrialDate={frameworkTrialDate}
 							ceramicTrialDate={ceramicTrialDate}
@@ -958,14 +921,14 @@ export function DentalLabOrderModal({
 					<div className="text-xs text-slate-500 dark:text-slate-400 font-bold min-w-0 flex-1 sm:flex-initial">
 						{jawScope ? (
 							<span className="break-words">
-								Наряд на челюсть: <strong className="text-emerald-700 dark:text-emerald-300 text-sm font-extrabold">{formatJawScopeLabel(jawScope)}</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm whitespace-nowrap">{money(totalLabPriceRub)}</strong>
+								Наряд на челюсть: <strong className="text-emerald-700 dark:text-emerald-300 text-sm font-extrabold">{formatJawScopeLabel(jawScope)}</strong>
 							</span>
 						) : selectedTeeth.length > 0 ? (
 							<span className="break-words">
-								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{selectedTeeth.join(", ")}</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm whitespace-nowrap">{money(totalLabPriceRub)}</strong>
+								Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">{selectedTeeth.join(", ")}</strong>
 							</span>
 						) : (
-							<span>Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">Общий наряд / Челюсть</strong> · Себестоимость: <strong className="text-[var(--teal)] text-sm whitespace-nowrap">{money(totalLabPriceRub)}</strong></span>
+							<span>Зубы FDI: <strong className="text-slate-800 dark:text-slate-200 text-sm">Общий наряд / Челюсть</strong></span>
 						)}
 					</div>
 
