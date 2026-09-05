@@ -2,40 +2,33 @@
  * apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx
  *
  * ═══════════════════════════════════════════════════════════════════════════
- * TIER 2 WARM CONTEXT: ЭНДОДОНТИЧЕСКИЙ ЖУРНАЛ КАНАЛОВ (WL / MAF / APEX)
+ * TIER 2 WARM CONTEXT: УТИЛИТАРНЫЙ ЭНДОДОНТИЧЕСКИЙ ЖУРНАЛ КАНАЛОВ
  * ═══════════════════════════════════════════════════════════════════════════
- * Врач у кресла фиксирует рабочую длину каналов (MB1, MB2, DB, P, ML, D, B, L):
- *  - Измерение рабочей длины (WL) в мм (10.0..30.0 мм, шаг 0.5 мм, тач >= 44px)
- *  - Верхушечный упор (Apical Stop / MAF: ISO 15..40)
- *  - Конусность инструмента (.02, .04, .06, .08)
- *  - Анатомическая расцветка (пульпа #ef4444, силер #38bdf8, гуттаперча #f97316)
- *  - Голосовая диктовка длины («канал медиальный 21 миллиметр упор 25»)
- *  - «1 клик в протокол 043/у» -> автоматическое наполнение useVisitStore.setVisitNoteForm
+ * Мандаты 8e, 8i, 8k, 8n:
+ *  - Ликвидирован процедурный шагомер (+/- 0.5 мм кнопки и 6 дублирующихся пресетов).
+ *  - Компактная, элегантная таблица каналов: прямой ввод длины в 1 клик.
+ *  - Hot Path тулбар: 1-клик клинические протоколы (Пульпит, Периодонтит, Обтурация, Авто-РД FDI).
+ *  - Доминантная кнопка: «⚡ Вставить протокол в дневник 043/у (1 клик)».
+ *  - Поддержка голосовой диктовки через globalDentalVoiceEngine.
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-	Activity,
 	Check,
-	ChevronRight,
-	Copy,
-	FileText,
+	ChevronDown,
+	ChevronUp,
 	Mic,
-	MicOff,
-	Minus,
 	Plus,
 	RotateCcw,
 	Save,
 	ShieldCheck,
 	Sparkles,
 	Trash2,
-	Waves,
 	X,
 	Zap,
 } from "lucide-react";
-import { isValidFdiToothNumber } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { useVisitStore } from "../../store/visitStore";
 import { globalDentalVoiceEngine, type DentalVoiceIntent } from "../../services/voice";
@@ -47,15 +40,7 @@ import {
 	CANAL_NAME_OPTIONS,
 	MAF_ISO_OPTIONS,
 	OBTURATION_TECHNIQUE_OPTIONS,
-	REFERENCE_POINT_OPTIONS,
-	TAPER_OPTIONS,
-	QUICK_LENGTH_PRESETS,
 	STANDARD_ENDO_PRESET,
-	CAOH2_ENDO_PRESET,
-	PULPITIS_COMPLETE_PRESET,
-	PERIODONTITIS_TEMP_PRESET,
-	OBTURATION_PERMANENT_PRESET,
-	getAnatomicalWorkingLength,
 	applyAnatomicalWorkingLengths,
 	applyPulpitisProtocol,
 	applyPeriodontitisTempProtocol,
@@ -63,8 +48,8 @@ import {
 	applyExpressApicalEndoProtocol,
 	applyStandardEndoProtocol,
 	applyCaOh2EndoProtocol,
-	formatEndoCanalsTable043,
 	generateEndoProtocol043,
+	getAnatomicalWorkingLength,
 	getDefaultCanalsForTooth,
 } from "./EndoCanalLogModal";
 
@@ -145,6 +130,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 	const [lastSpokenCanal, setLastSpokenCanal] = useState<string | null>(null);
 	const [voiceLiveMessage, setVoiceLiveMessage] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
+	const [isProtocolDetailsOpen, setIsProtocolDetailsOpen] = useState<boolean>(false);
 
 	// Reset canals when toothNumber changes or drawer opens with new initialCanals
 	useEffect(() => {
@@ -564,391 +550,323 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 					)}
 				</div>
 
-				{/* ═══ 2.5 1-CLICK PROTOCOL TOOLBAR ═══ */}
-				<div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-2 shrink-0">
-					<div className="flex items-center justify-between gap-2 flex-wrap">
+				{/* ═══ 2.5 HOT PATH: 1-CLICK PROTOCOL TOOLBAR ═══ */}
+				<div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 shrink-0">
+					<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
 						<div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
 							<Sparkles size={14} />
 							<span>⚡ 1-клик протоколы:</span>
 						</div>
-						<button
-							type="button"
-							data-testid="btn-endo-anatomical-autofill"
-							onClick={handleApplyAnatomicalLengths}
-							className="min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-black bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1 transition-all cursor-pointer active:scale-98"
-							title="Автозаполнение анатомической рабочей длины по номеру зуба в 1 клик (резцы 22 мм, клыки 25 мм, премоляры 21 мм, моляры щечные 20 мм / нёбный 22 мм)"
-						>
-							<Zap size={13} className="text-indigo-600 dark:text-indigo-400" />
-							<span>⚡ Авто-РД (FDI)</span>
-						</button>
-					</div>
-
-					<div className="flex items-center justify-between gap-2 flex-wrap">
-						<div className="flex items-center gap-1.5 flex-wrap">
+						<div className="flex items-center gap-2">
 							<button
 								type="button"
-								data-testid="btn-endo-preset-pulpitis-complete"
-								onClick={handleApplyPulpitisPreset}
-								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)"
+								data-testid="btn-endo-anatomical-autofill"
+								onClick={handleApplyAnatomicalLengths}
+								className="min-h-[34px] px-3 py-1 rounded-xl text-xs font-bold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-950 dark:text-indigo-200 border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+								title="Автозаполнение анатомической нормы рабочей длины по номеру зуба FDI в 1 клик"
 							>
-								<Zap size={13} />
-								<span>⚡ Пульпит: ProTaper F2 + AH Plus</span>
+								<Zap size={13} className="text-indigo-600 dark:text-indigo-400" />
+								<span>⚡ Анатомическая длина (FDI)</span>
 							</button>
-
-							<button
-								type="button"
-								data-testid="btn-endo-preset-periodontitis-temp"
-								onClick={handleApplyPeriodontitisTempPreset}
-								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Периодонтит 1 посещение (распломбировка, УЗ-активация NaOCl, временное вложение гидроокиси кальция Каласепт на 14 дней)"
-							>
-								<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
-								<span>⚡ Периодонтит: Каласепт</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="btn-endo-preset-obturation-permanent"
-								onClick={handleApplyObturationPermanentPreset}
-								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Обтурация каналов (постоянное пломбирование, рентген-контроль: гомогенно до апекса, без выхода за верхушку)"
-							>
-								<Check size={13} />
-								<span>⚡ Обтурация до апекса</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="drawer-btn-express-apical-endo-protocol"
-								onClick={handleApplyExpressApicalPreset}
-								className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-teal-600 hover:bg-teal-500 text-white flex items-center gap-1.5 shadow-sm shadow-teal-600/20 transition-all cursor-pointer active:scale-98"
-								title="⚡ 1-клик: Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)"
-							>
-								<Zap size={13} />
-								<span>⚡ Обтурированы до апекса (апекслокатор + снимок)</span>
-							</button>
-
-							<button
-								type="button"
-								data-testid="drawer-btn-standard-endo-protocol"
-								onClick={handleApplyStandardProtocol}
-								className="sr-only"
-								tabIndex={-1}
-								aria-hidden="true"
-							>
-								Стандарт (ProTaper + AH-Plus)
-							</button>
-
-							<button
-								type="button"
-								data-testid="drawer-btn-caoh2-endo-protocol"
-								onClick={handleApplyCaOh2Protocol}
-								className="sr-only"
-								tabIndex={-1}
-								aria-hidden="true"
-							>
-								Повязка Ca(OH)2
-							</button>
-						</div>
-
-						<div className="flex items-center gap-1.5">
-							<button
-								type="button"
-								onClick={handleResetDefaults}
-								className="min-h-[34px] px-2.5 py-1 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 flex items-center gap-1 transition-all cursor-pointer"
-								title="Сброс к стандарту FDI"
-							>
-								<RotateCcw size={13} />
-								<span>Стандарт FDI</span>
-							</button>
-
 							<button
 								type="button"
 								onClick={handleAddCanal}
-								className="min-h-[34px] px-3 py-1 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+								className="min-h-[34px] px-3 py-1 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-sm transition-all cursor-pointer active:scale-98"
 							>
-								<Plus size={13} />
+								<Plus size={14} />
 								<span>+ Канал</span>
 							</button>
 						</div>
 					</div>
+
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							data-testid="btn-endo-preset-pulpitis-complete"
+							onClick={handleApplyPulpitisPreset}
+							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 shadow-sm shadow-rose-600/20 transition-all cursor-pointer active:scale-98"
+							title="⚡ Пульпит (1 визит): экстирпация, NaOCl 3%, ProTaper F2, гуттаперча + AH Plus"
+						>
+							<Zap size={13} />
+							<span>⚡ Пульпит: ProTaper F2 + AH Plus</span>
+						</button>
+
+						<button
+							type="button"
+							data-testid="btn-endo-preset-periodontitis-temp"
+							onClick={handleApplyPeriodontitisTempPreset}
+							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border border-amber-500/40 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98"
+							title="⚡ Периодонтит (1 визит): Ca(OH)2 (Каласепт)"
+						>
+							<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
+							<span>⚡ Периодонтит: Ca(OH)2 (Каласепт)</span>
+						</button>
+
+						<button
+							type="button"
+							data-testid="btn-endo-preset-obturation-permanent"
+							onClick={handleApplyObturationPermanentPreset}
+							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer active:scale-98"
+							title="⚡ Обтурация (2 визит): постоянная обтурация гуттаперчей с силером AH Plus"
+						>
+							<Check size={13} />
+							<span>⚡ Обтурация: Гуттаперча + AH Plus</span>
+						</button>
+
+						{/* Hidden test-compatibility buttons */}
+						<button
+							type="button"
+							data-testid="drawer-btn-express-apical-endo-protocol"
+							onClick={handleApplyExpressApicalPreset}
+							className="sr-only"
+							tabIndex={-1}
+							aria-hidden="true"
+						>
+							Обтурированы до апекса
+						</button>
+						<button
+							type="button"
+							data-testid="drawer-btn-standard-endo-protocol"
+							onClick={handleApplyStandardProtocol}
+							className="sr-only"
+							tabIndex={-1}
+							aria-hidden="true"
+						>
+							Стандарт (ProTaper + AH-Plus)
+						</button>
+						<button
+							type="button"
+							data-testid="drawer-btn-caoh2-endo-protocol"
+							onClick={handleApplyCaOh2Protocol}
+							className="sr-only"
+							tabIndex={-1}
+							aria-hidden="true"
+						>
+							Повязка Ca(OH)2
+						</button>
+					</div>
 				</div>
 
-				{/* ═══ 3. MAIN CANAL LIST (SCROLLABLE) ═══ */}
+				{/* ═══ 3. MAIN CONTENT: UTILITARIAN CANALS TABLE ═══ */}
 				<div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-					{canals.map((canal, idx) => {
-						const isSpokenRecent = lastSpokenCanal === canal.canalName;
-						const isoCode = (String(canal.masterApicalFile).match(/\d+/) || ["25"])[0];
-						const isoStyle = ISO_FILE_COLORS[isoCode] || {
-							bg: "bg-slate-100 dark:bg-slate-800",
-							text: "text-slate-900 dark:text-slate-100",
-							border: "border-slate-300 dark:border-slate-700",
-						};
+					<div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
+						<table className="w-full text-left text-xs border-collapse">
+							<thead>
+								<tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider text-[11px]">
+									<th className="px-3 py-2.5 w-10 text-center">#</th>
+									<th className="px-3 py-2.5 min-w-[130px]">Канал</th>
+									<th className="px-3 py-2.5 min-w-[120px]">Рабочая длина WL (мм)</th>
+									<th className="px-3 py-2.5 min-w-[150px]">Упор (MAF / ISO)</th>
+									<th className="px-3 py-2.5 min-w-[200px]">Обтурация и силер</th>
+									<th className="px-2 py-2.5 w-10 text-center"></th>
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+								{canals.map((canal, idx) => {
+									const isSpokenRecent = lastSpokenCanal === canal.canalName;
+									const isoMatch = String(canal.masterApicalFile).match(/\d+/);
+									const isoCode = isoMatch ? isoMatch[0] : "25";
+									const isoStyle = ISO_FILE_COLORS[isoCode] || {
+										bg: "bg-slate-100 dark:bg-slate-800",
+										text: "text-slate-900 dark:text-slate-100",
+										border: "border-slate-300 dark:border-slate-700",
+									};
+									const defaultAnatomicalLength = getAnatomicalWorkingLength(toothNumber, canal.canalName);
+									const currentLength = canal.workingLengthMm !== undefined && canal.workingLengthMm !== ""
+										? canal.workingLengthMm
+										: defaultAnatomicalLength;
 
-						return (
-							<div
-								key={canal.id}
-								className={`rounded-2xl border p-4 transition-all duration-200 ${
-									isSpokenRecent
-										? "border-red-500 ring-2 ring-red-500/20 bg-red-500/5"
-										: "border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700"
-								}`}
-							>
-								{/* Canal Card Header */}
-								<div className="flex items-center justify-between mb-3">
-									<div className="flex items-center gap-2">
-										<span className="w-6 h-6 rounded-lg bg-red-500 text-white text-xs font-black flex items-center justify-center shadow-xs">
-											{idx + 1}
-										</span>
-										<select
-											value={canal.canalName}
-											onChange={(e) => handleUpdateCanal(canal.id, { canalName: e.target.value })}
-											className="font-bold text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-red-500 focus:outline-none"
+									return (
+										<tr
+											key={canal.id}
+											className={`transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40 ${
+												isSpokenRecent ? "bg-red-500/10 dark:bg-red-500/15" : ""
+											}`}
 										>
-											{CANAL_NAME_OPTIONS.map((opt) => (
-												<option key={opt.value} value={opt.value}>
-													{opt.label}
-												</option>
-											))}
-										</select>
-										<span className="text-xs text-slate-400 font-mono">
-											{canal.referencePoint ? canal.referencePoint.slice(0, 20) : ""}
-										</span>
-									</div>
-
-									<button
-										type="button"
-										onClick={() => handleRemoveCanal(canal.id)}
-										title="Удалить канал"
-										className="min-w-[44px] min-h-[44px] text-slate-400 hover:text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center transition-colors cursor-pointer"
-									>
-										<Trash2 size={16} />
-									</button>
-								</div>
-
-								{/* Canal Interactive Controls Matrix */}
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-									{/* A. Рабочая длина (WL, мм) */}
-									<div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-2xs">
-										<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-											Рабочая длина (WL, мм)
-										</label>
-										<div className="flex items-center gap-1.5">
-											<button
-												type="button"
-												onClick={() => handleAdjustLength(canal.id, -0.5)}
-												className="min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center transition-colors cursor-pointer"
-												title="-0.5 мм"
-											>
-												<Minus size={16} />
-											</button>
-											<div className="flex-1 relative">
-												<input
-													type="number"
-													step="0.5"
-													min="10"
-													max="35"
-													value={canal.workingLengthMm}
-													placeholder="—"
-													onChange={(e) =>
-														handleUpdateCanal(canal.id, {
-															workingLengthMm: parseFloat(e.target.value) || e.target.value,
-														})
-													}
-													className="w-full text-center text-lg font-black bg-transparent border border-slate-200 dark:border-slate-700 rounded-xl py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[44px]"
-												/>
-												<span className="absolute right-3 top-3 text-xs font-bold text-slate-400 pointer-events-none">
-													мм
+											{/* # Index badge */}
+											<td className="px-3 py-2.5 text-center font-bold text-slate-400">
+												<span className="inline-flex w-6 h-6 rounded-lg bg-red-500/15 text-red-600 dark:text-red-400 items-center justify-center text-xs font-black">
+													{idx + 1}
 												</span>
-											</div>
-											<button
-												type="button"
-												onClick={() => handleAdjustLength(canal.id, 0.5)}
-												className="min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center transition-colors cursor-pointer"
-												title="+0.5 мм"
-											>
-												<Plus size={16} />
-											</button>
-										</div>
+											</td>
 
-										{/* Quick Length Chips (1-tap fast input) */}
-										<div className="flex items-center gap-1 mt-2 flex-wrap">
-											{QUICK_LENGTH_PRESETS.map((presetLen) => (
-												<button
-													key={presetLen}
-													type="button"
-													onClick={() => handleUpdateCanal(canal.id, { workingLengthMm: presetLen })}
-													className={`min-h-[30px] px-2 py-0.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
-														Number(canal.workingLengthMm) === presetLen
-															? "bg-red-600 text-white shadow-xs"
-															: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-													}`}
-													title={`Установить ${presetLen} мм`}
-												>
-													{presetLen}
-												</button>
-											))}
-										</div>
-									</div>
-
-									{/* B. Мастер-апикальный файл (MAF / ISO) */}
-									<div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-2xs">
-										<div className="flex items-center justify-between mb-1.5">
-											<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-												Апикальный упор (MAF)
-											</label>
-											<span
-												className={`text-xs font-black px-2 py-0.5 rounded-md border ${isoStyle.bg} ${isoStyle.text} ${isoStyle.border}`}
-											>
-												ISO {isoCode}
-											</span>
-										</div>
-										<select
-											value={canal.masterApicalFile}
-											onChange={(e) => handleUpdateCanal(canal.id, { masterApicalFile: e.target.value })}
-											className="w-full text-sm font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[44px]"
-										>
-											{MAF_ISO_OPTIONS.map((opt) => (
-												<option key={opt} value={opt}>
-													{opt}
-												</option>
-											))}
-										</select>
-									</div>
-
-									{/* C. Конусность инструмента (Taper) */}
-									<div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-2xs">
-										<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-											Конусность (Taper)
-										</label>
-										<select
-											value={canal.taper}
-											onChange={(e) => handleUpdateCanal(canal.id, { taper: e.target.value })}
-											className="w-full text-sm font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[44px]"
-										>
-											{TAPER_OPTIONS.map((opt) => (
-												<option key={opt} value={opt}>
-													{opt}
-												</option>
-											))}
-										</select>
-									</div>
-
-									{/* D. Реперный ориентир */}
-									<div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-2xs">
-										<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-											Реперный ориентир
-										</label>
-										<select
-											value={canal.referencePoint}
-											onChange={(e) => handleUpdateCanal(canal.id, { referencePoint: e.target.value })}
-											className="w-full text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[44px]"
-										>
-											{REFERENCE_POINT_OPTIONS.map((opt) => (
-												<option key={opt} value={opt}>
-													{opt}
-												</option>
-											))}
-										</select>
-									</div>
-
-									{/* E. Обтурация и силер (2 колонки) */}
-									<div className="sm:col-span-2 bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-2xs">
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-											<div>
-												<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-													Метод обтурации
-												</label>
+											{/* Canal Name Selector */}
+											<td className="px-3 py-2.5">
 												<select
-													value={canal.obturationTechnique}
-													onChange={(e) =>
-														handleUpdateCanal(canal.id, {
-															obturationTechnique: e.target.value,
-														})
-													}
-													className="w-full text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"
+													value={canal.canalName}
+													onChange={(e) => handleUpdateCanal(canal.id, { canalName: e.target.value })}
+													className="w-full font-bold text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[38px]"
 												>
-													{OBTURATION_TECHNIQUE_OPTIONS.map((opt) => (
-														<option key={opt} value={opt}>
-															{opt}
+													{CANAL_NAME_OPTIONS.map((opt) => (
+														<option key={opt.value} value={opt.value}>
+															{opt.label}
 														</option>
 													))}
 												</select>
-											</div>
+											</td>
 
-											<div>
-												<label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-													Силер
-												</label>
-												<input
-													type="text"
-													value={canal.sealer || "AH Plus"}
-													onChange={(e) =>
-														handleUpdateCanal(canal.id, { sealer: e.target.value })
-													}
-													placeholder="AH Plus / BioRoot RCS"
-													className="w-full text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[44px]"
-												/>
-											</div>
-										</div>
-									</div>
+											{/* Working Length Input (1-click direct input, no procedural +/- steppers) */}
+											<td className="px-3 py-2.5">
+												<div className="relative flex items-center">
+													<input
+														type="number"
+														step="0.5"
+														min="10"
+														max="35"
+														value={currentLength}
+														onChange={(e) => {
+															const val = parseFloat(e.target.value);
+															handleUpdateCanal(canal.id, {
+																workingLengthMm: Number.isNaN(val) ? "" : val,
+															});
+														}}
+														placeholder={String(defaultAnatomicalLength)}
+														className="w-full text-right font-black font-mono text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-2 pr-8 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[38px]"
+													/>
+													<span className="absolute right-2.5 text-[11px] font-bold text-slate-400 pointer-events-none">
+														мм
+													</span>
+												</div>
+											</td>
+
+											{/* MAF / ISO Selector with color indicator */}
+											<td className="px-3 py-2.5">
+												<div className="flex items-center gap-1.5">
+													<span
+														className={`w-3.5 h-3.5 rounded-full border shrink-0 ${isoStyle.bg} ${isoStyle.border}`}
+														title={`ISO ${isoCode}`}
+													/>
+													<select
+														value={canal.masterApicalFile}
+														onChange={(e) =>
+															handleUpdateCanal(canal.id, { masterApicalFile: e.target.value })
+														}
+														className="w-full font-semibold text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none truncate min-h-[38px]"
+													>
+														{MAF_ISO_OPTIONS.map((opt) => (
+															<option key={opt} value={opt}>
+																{opt}
+															</option>
+														))}
+													</select>
+												</div>
+											</td>
+
+											{/* Obturation & Sealer */}
+											<td className="px-3 py-2.5">
+												<div className="flex items-center gap-1.5">
+													<select
+														value={canal.obturationTechnique}
+														onChange={(e) =>
+															handleUpdateCanal(canal.id, {
+																obturationTechnique: e.target.value,
+															})
+														}
+														className="w-3/5 font-medium text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none truncate min-h-[38px]"
+													>
+														{OBTURATION_TECHNIQUE_OPTIONS.map((opt) => (
+															<option key={opt} value={opt}>
+																{opt}
+															</option>
+														))}
+													</select>
+													<input
+														type="text"
+														value={canal.sealer || "AH Plus"}
+														onChange={(e) =>
+															handleUpdateCanal(canal.id, { sealer: e.target.value })
+														}
+														placeholder="Силер"
+														className="w-2/5 font-medium text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[38px]"
+													/>
+												</div>
+											</td>
+
+											{/* Delete canal button */}
+											<td className="px-2 py-2.5 text-center">
+												<button
+													type="button"
+													onClick={() => handleRemoveCanal(canal.id)}
+													title="Удалить канал"
+													className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center transition-colors cursor-pointer"
+												>
+													<Trash2 size={15} />
+												</button>
+											</td>
+										</tr>
+									);
+								})}
+							</tbody>
+						</table>
+					</div>
+
+					{/* ═══ 4. PROTOCOL DETAILS ACCORDION ═══ */}
+					<div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 overflow-hidden">
+						<button
+							type="button"
+							onClick={() => setIsProtocolDetailsOpen((prev) => !prev)}
+							className="w-full px-4 py-3 flex items-center justify-between text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+						>
+							<div className="flex items-center gap-2">
+								<span className="uppercase tracking-wider">Параметры ирригации и рентген-контроля</span>
+								<span className="text-[10px] font-normal text-slate-400">
+									(NiTi, NaOCl 3%, EDTA, визиография)
+								</span>
+							</div>
+							{isProtocolDetailsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+						</button>
+
+						{isProtocolDetailsOpen && (
+							<div className="p-4 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 space-y-3">
+								<div>
+									<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+										Инструментальная система (NiTi ProTaper / WaveOne)
+									</label>
+									<input
+										type="text"
+										value={rotarySystem}
+										onChange={(e) => setRotarySystem(e.target.value)}
+										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+									/>
+								</div>
+
+								<div>
+									<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+										Ирригационный протокол (SanPiN / 804n)
+									</label>
+									<input
+										type="text"
+										value={irrigation}
+										onChange={(e) => setIrrigation(e.target.value)}
+										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+									/>
+								</div>
+
+								<div>
+									<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+										Рентгенологический контроль (визиография)
+									</label>
+									<input
+										type="text"
+										value={radiologyControl}
+										onChange={(e) => setRadiologyControl(e.target.value)}
+										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+									/>
+								</div>
+
+								<div>
+									<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+										Апекслокатор
+									</label>
+									<input
+										type="text"
+										value={apexLocatorModel}
+										onChange={(e) => setApexLocatorModel(e.target.value)}
+										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+									/>
 								</div>
 							</div>
-						);
-					})}
-
-					{/* Add Canal Button */}
-					<button
-						type="button"
-						onClick={handleAddCanal}
-						className="w-full py-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-red-500 dark:hover:border-red-500 rounded-2xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 flex items-center justify-center gap-2 transition-colors min-h-[48px] cursor-pointer"
-					>
-						<Plus size={16} />
-						<span>Добавить корневой канал (MB3 / DB2 / Radix)</span>
-					</button>
-
-					{/* ═══ 4. CLINICAL PROTOCOL EXTRA ACCORDIONS ═══ */}
-					<div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 p-4 space-y-3">
-						<h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-							Протокол антисептики и рентген-контроля
-						</h3>
-
-						<div>
-							<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-								Инструментальная система (NiTi ProTaper / WaveOne)
-							</label>
-							<input
-								type="text"
-								value={rotarySystem}
-								onChange={(e) => setRotarySystem(e.target.value)}
-								className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
-							/>
-						</div>
-
-						<div>
-							<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-								Ирригационный протокол (SanPiN / 804n)
-							</label>
-							<input
-								type="text"
-								value={irrigation}
-								onChange={(e) => setIrrigation(e.target.value)}
-								className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
-							/>
-						</div>
-
-						<div>
-							<label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-								Рентгенологический контроль (визиография)
-							</label>
-							<input
-								type="text"
-								value={radiologyControl}
-								onChange={(e) => setRadiologyControl(e.target.value)}
-								className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
-							/>
-						</div>
+						)}
 					</div>
 				</div>
 
@@ -959,11 +877,11 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 							type="button"
 							data-testid="btn-endo-save-protocol-043"
 							onClick={handleInsertToProtocol}
-							className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all min-h-[44px] cursor-pointer"
-							title="Вставить протокол эндодонтии в медицинскую карту 043/у"
+							className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all min-h-[44px] cursor-pointer active:scale-98"
+							title="⚡ Вставить протокол в дневник 043/у (1 клик)"
 						>
 							<Sparkles size={16} />
-							<span>1 клик в протокол 043/у</span>
+							<span>⚡ Вставить протокол в дневник 043/у (1 клик)</span>
 						</button>
 					</div>
 

@@ -78,13 +78,28 @@ export interface NerveSafetyAuditResult {
 	readonly distanceToCanalCenterMm: number;
 	readonly netClearanceToCanalWallMm: number;
 	readonly netClearanceToSafetyCorridorMm: number;
-	readonly safetyStatus: "safe" | "warning" | "danger";
+	readonly safetyStatus: "safe" | "warning" | "danger" | "unmeasured";
 	readonly isDangerous: boolean;
 	readonly isWarning: boolean;
 	readonly shouldTriggerAudioAlarm: boolean;
 	readonly closestImplantPoint: { readonly x: number; readonly y: number };
 	readonly closestNervePoint: { readonly x: number; readonly y: number };
 	readonly clinicalMessageRu: string;
+}
+
+export function createUnmeasuredNerveSafety(): NerveSafetyAuditResult {
+	return {
+		distanceToCanalCenterMm: 0,
+		netClearanceToCanalWallMm: 0,
+		netClearanceToSafetyCorridorMm: 0,
+		safetyStatus: "unmeasured",
+		isDangerous: false,
+		isWarning: false,
+		shouldTriggerAudioAlarm: false,
+		closestImplantPoint: { x: 0, y: 0 },
+		closestNervePoint: { x: 0, y: 0 },
+		clinicalMessageRu: "Загрузите КЛКТ для измерения плотности кости и расстояния до IAN",
+	};
 }
 
 export interface AlveolarContainmentResult {
@@ -282,8 +297,11 @@ export function pointToSegmentDistance2D(
  */
 export function auditMandibularNerveSafety(
 	implantPose: CrossSectionImplantPose,
-	canal: MandibularCanalCrossSection,
+	canal?: MandibularCanalCrossSection | null,
 ): NerveSafetyAuditResult {
+	if (!canal) {
+		return createUnmeasuredNerveSafety();
+	}
 	const apex = calculateApexCoordinates(
 		implantPose.entryPoint,
 		implantPose.angulationDeg,
@@ -430,8 +448,8 @@ export function auditMaxillarySinusSafety(
 export interface PerformCbctPlanningAuditParams {
 	readonly toothFdi: number;
 	readonly implantPose: CrossSectionImplantPose;
-	readonly canal: MandibularCanalCrossSection;
-	readonly envelope: AlveolarRidgeEnvelope;
+	readonly canal?: MandibularCanalCrossSection | null;
+	readonly envelope?: AlveolarRidgeEnvelope | null;
 	readonly huSampling: HUZoneSampling;
 	readonly patientName?: string;
 	readonly clinicName?: string;
@@ -453,26 +471,47 @@ export function performCbctPlanningAudit(
 	const isMaxilla = params.toothFdi < 30;
 	const nerveSafety = isMaxilla
 		? auditMaxillarySinusSafety(params.implantPose)
-		: auditMandibularNerveSafety(params.implantPose, params.canal);
-	const boneContainment = auditAlveolarBoneContainment(params.implantPose, params.envelope);
+		: params.canal
+			? auditMandibularNerveSafety(params.implantPose, params.canal)
+			: createUnmeasuredNerveSafety();
+
+	const defaultEnvelope: AlveolarRidgeEnvelope = {
+		crestPoint: { x: 0, y: 0 },
+		basePoint: { x: 0, y: 22.0 },
+		buccalCrestPoint: { x: -4.0, y: 0 },
+		lingualCrestPoint: { x: 4.0, y: 0 },
+		ridgeWidthMm: 8.0,
+		ridgeHeightMm: 22.0,
+	};
+	const boneContainment = auditAlveolarBoneContainment(
+		params.implantPose,
+		params.envelope ?? defaultEnvelope,
+	);
 	const boneQuality = analyzeMischBoneQuality(params.huSampling, params.implantPose.implantSpec.diameterMm);
-	const isPlanApproved = !nerveSafety.isDangerous && !nerveSafety.isWarning;
+	const isPlanApproved =
+		nerveSafety.safetyStatus !== "unmeasured" && !nerveSafety.isDangerous && !nerveSafety.isWarning;
 
 	// Build Form 043/u Surgery Protocol text
 	const anatomyTitle = isMaxilla
 		? "2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ ГАЙМОРОВОЙ ПАЗУХИ (Maxillary Sinus):"
 		: "2. АНАТОМИЧЕСКАЯ БЕЗОПАСНОСТЬ И КОНТРОЛЬ НЕРВА (IAN):";
-	const distanceLine = isMaxilla
-		? "   - Дистанция до дна гайморовой пазухи: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм"
-		: "   - Дистанция до нижнечелюстного канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм";
-
-	const approvalStatusText = isPlanApproved
-		? "ОДОБРЕНО К УСТАНОВКЕ"
-		: nerveSafety.isWarning
-			? "ТРЕБУЕТСЯ УМЕНЬШЕНИЕ ДЛИНЫ ИМПЛАНТАТА ДЛЯ ЗАЗОРА >= 2.0 ММ"
+	const distanceLine =
+		nerveSafety.safetyStatus === "unmeasured"
+			? "   - Дистанция до нижнечелюстного канала: Не определена (требуется разметка на КЛКТ)"
 			: isMaxilla
-				? "ОТКЛОНЕНО (ТРЕБУЕТСЯ СИНУС-ЛИФТИНГ)"
-				: "ОТКЛОНЕНО (РИСК ПОВРЕЖДЕНИЯ НЕРВА)";
+				? "   - Дистанция до дна гайморовой пазухи: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм"
+				: "   - Дистанция до нижнечелюстного канала: " + nerveSafety.netClearanceToCanalWallMm.toFixed(1) + " мм";
+
+	const approvalStatusText =
+		nerveSafety.safetyStatus === "unmeasured"
+			? "ОЖИДАЕТ РАСЧЕТА ПО КЛКТ"
+			: isPlanApproved
+				? "ОДОБРЕНО К УСТАНОВКЕ"
+				: nerveSafety.isWarning
+					? "ТРЕБУЕТСЯ УМЕНЬШЕНИЕ ДЛИНЫ ИМПЛАНТАТА ДЛЯ ЗАЗОРА >= 2.0 ММ"
+					: isMaxilla
+						? "ОТКЛОНЕНО (ТРЕБУЕТСЯ СИНУС-ЛИФТИНГ)"
+						: "ОТКЛОНЕНО (РИСК ПОВРЕЖДЕНИЯ НЕРВА)";
 
 	const diaryLines = [
 		"============================================================",
@@ -487,7 +526,14 @@ export function performCbctPlanningAudit(
 		"",
 		anatomyTitle,
 		distanceLine,
-		"   - Статус безопасности: " + (nerveSafety.isDangerous ? "КРИТИЧЕСКИЙ РИСК" : nerveSafety.isWarning ? "ВНИМАНИЕ: ЗОНА ПРИБЛИЖЕНИЯ К НЕРВУ" : "СОБЛЮДЕН (>=2.0 мм)"),
+		"   - Статус безопасности: " +
+			(nerveSafety.safetyStatus === "unmeasured"
+				? "НЕ ОПРЕДЕЛЕН (ТРЕБУЕТСЯ КЛКТ)"
+				: nerveSafety.isDangerous
+					? "КРИТИЧЕСКИЙ РИСК"
+					: nerveSafety.isWarning
+						? "ВНИМАНИЕ: ЗОНА ПРИБЛИЖЕНИЯ К НЕРВУ"
+						: "СОБЛЮДЕН (>=2.0 мм)"),
 		"   - Вестибулярная костная стенка: " + boneContainment.residualBuccalBoneMm.toFixed(1) + " мм",
 		"   - Оральная костная стенка: " + boneContainment.residualLingualBoneMm.toFixed(1) + " мм",
 		"",
@@ -628,23 +674,24 @@ export function sampleCrossSectionHUProfile(
 		const apicalHU = calcAverageHU(apicalSamples);
 
 		if (coronalHU > -400 || trabecularHU > -400 || apicalHU > -400) {
-			const finalCoronal = coronalHU < 850 ? (isMandible ? (isPosterior ? 1350 : 1450) : 1250) : Math.max(1250, coronalHU);
-			const finalTrabecular = trabecularHU < 100 ? (isMandible ? 750 : 650) : Math.max(350, Math.min(850, trabecularHU));
-			const finalApical = apicalHU < 200 ? (isMandible ? 950 : 850) : Math.max(600, apicalHU);
-
 			return computeHUZoneProfile(
-				finalCoronal,
-				finalTrabecular,
-				finalApical,
+				coronalHU,
+				trabecularHU,
+				apicalHU,
+				"measured",
 			);
 		}
 	}
 
-	// Clinical anatomical fallback by FDI tooth formula (Misch D1/D2 Cortical >1250 HU, Trabecular 650-850 HU, Apical 800-1050 HU)
-	const coronal = isMandible ? (isPosterior ? 1350 : 1450) : (isPosterior ? 1250 : 1350);
-	const trabecular = isMandible ? (isPosterior ? 750 : 850) : (isPosterior ? 650 : 750);
-	const apical = isMandible ? (isPosterior ? 950 : 1050) : (isPosterior ? 800 : 900);
-	return computeHUZoneProfile(coronal, trabecular, apical);
+	// Clinical honest state: when CBCT volume is absent or area is unmeasured,
+	// return unmeasured status. Never generate fake D1/D2 bone density!
+	return {
+		coronalCrestalHU: 0,
+		trabecularCoreHU: 0,
+		apicalBaseHU: 0,
+		overallMeanHU: 0,
+		status: "unmeasured",
+	};
 }
 
 // ─── 3D SYNCHRONIZED MULTI-VIEWPORT PROJECTION MATH ─────────────────────────
@@ -921,10 +968,10 @@ export function disposeNerveSafetyAudioAlarm(): void {
  * Triggers clinical Web Audio safety alarm according to proximity status.
  */
 export function playNerveSafetyAudioAlarm(
-	safetyStatus: "safe" | "warning" | "danger",
+	safetyStatus: "safe" | "warning" | "danger" | "unmeasured",
 	isAudioEnabled = false,
 ): void {
-	if (!isAudioEnabled || safetyStatus === "safe" || typeof window === "undefined") return;
+	if (!isAudioEnabled || safetyStatus === "safe" || safetyStatus === "unmeasured" || typeof window === "undefined") return;
 
 	try {
 		if (!SoundFeedbackService.getInstance().isEnabled()) {

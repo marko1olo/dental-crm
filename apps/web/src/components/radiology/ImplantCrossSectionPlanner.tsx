@@ -4,14 +4,11 @@ import {
   AlertTriangle,
   Award,
   CheckCircle2,
-  ChevronRight,
   Compass,
   Copy,
   Crown,
   FileText,
   Layers,
-  Maximize2,
-  Play,
   RotateCw,
   ShieldAlert,
   ShieldCheck,
@@ -29,9 +26,8 @@ import {
   type MischClassificationResult,
 } from "./boneDensityMischMath";
 import {
-  type CbctVoxelVolume,
   createEmptyCbctVolume,
-  sampleVoxelHU,
+  type CbctVoxelVolume,
 } from "./cbctMprMath";
 import {
   type DentalArchCurve,
@@ -44,9 +40,11 @@ import {
   auditAlveolarBoneContainment,
   auditMandibularNerveSafety,
   calculateApexCoordinates,
+  calculateImplant3DWorldPose,
   findImplantSpec,
   performCbctPlanningAudit,
   playNerveSafetyAudioAlarm,
+  sampleCrossSectionHUProfile,
   STANDARD_IMPLANT_CATALOG,
   SURGEON_IMPLANT_PRESETS,
   type AlveolarRidgeEnvelope,
@@ -68,6 +66,8 @@ export interface ImplantCrossSectionPlannerProps {
   readonly initialLengthMm?: number;
   readonly volume?: CbctVoxelVolume | null;
   readonly archCurve?: DentalArchCurve | null;
+  readonly canal?: MandibularCanalCrossSection | null;
+  readonly envelope?: AlveolarRidgeEnvelope | null;
   readonly onPlanApproved?: (audit: ComprehensiveCbctPlanAudit) => void;
   readonly onClose?: () => void;
 }
@@ -82,6 +82,8 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   initialLengthMm = 10.0,
   volume = null,
   archCurve = null,
+  canal = null,
+  envelope = null,
   onPlanApproved,
   onClose,
 }) => {
@@ -91,10 +93,6 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   const [entryX, setEntryX] = useState<number>(14.0);
   const [entryY, setEntryY] = useState<number>(5.0);
   const [angulationDeg, setAngulationDeg] = useState<number>(0);
-
-  const [coronalHU, setCoronalHU] = useState<number>(1350);
-  const [trabecularHU, setTrabecularHU] = useState<number>(750);
-  const [apicalHU, setApicalHU] = useState<number>(950);
 
   const [isAudioEnabled, setIsAudioEnabled] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -109,18 +107,18 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
 
   const crossSectionCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Real 3D CBCT voxel volume & dental arch curve reslicing
-  const effectiveVolume = useMemo(() => {
-    return volume ?? createEmptyCbctVolume(160, 160, 100, 0.4);
-  }, [volume]);
+  // Check if a real CBCT voxel volume is loaded (Zero-Mocks / Mandate 8k)
+  const hasRealVolume = Boolean(
+    volume && volume.data && !volume.isDisposed && volume.dimensions.width > 0,
+  );
 
   const effectiveArch = useMemo(() => {
     return archCurve ?? buildDentalArchCurve(DEFAULT_MANDIBULAR_ARCH_ANCHORS, "mandible");
   }, [archCurve]);
 
   const crossSectionSlice: CrossSectionSliceData | null = useMemo(() => {
-    if (!effectiveVolume || !effectiveArch) return null;
-    const slices = generateCrossSectionSlices(effectiveVolume, effectiveArch, 1.5, 0.0, {
+    if (!hasRealVolume || !volume || !effectiveArch) return null;
+    const slices = generateCrossSectionSlices(volume, effectiveArch, 1.5, 0.0, {
       windowWidth: 4400,
       windowLevel: 1300,
       widthMm: 28.0,
@@ -128,8 +126,13 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
       invert: false,
     });
     const toothStr = toothFdi.toString();
-    return slices.find((s) => s.nearestToothFdi === toothStr) ?? slices[Math.floor(slices.length / 2)] ?? slices[0] ?? null;
-  }, [effectiveVolume, effectiveArch, toothFdi]);
+    return (
+      slices.find((s) => s.nearestToothFdi === toothStr) ??
+      slices[Math.floor(slices.length / 2)] ??
+      slices[0] ??
+      null
+    );
+  }, [hasRealVolume, volume, effectiveArch, toothFdi]);
 
   useEffect(() => {
     if (!crossSectionCanvasRef.current || !crossSectionSlice) return;
@@ -143,20 +146,8 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     ctx.putImageData(imgData, 0, 0);
   }, [crossSectionSlice]);
 
-  const canal: MandibularCanalCrossSection = useMemo(() => ({
-    center: { x: 14.0, y: 26.5 },
-    radiusMm: 1.5,
-    safetyMarginMm: 2.0,
-  }), []);
-
-  const envelope: AlveolarRidgeEnvelope = useMemo(() => ({
-    crestPoint: { x: 14.0, y: 4.5 },
-    basePoint: { x: 14.0, y: 32.0 },
-    buccalCrestPoint: { x: 8.5, y: 5.0 },
-    lingualCrestPoint: { x: 19.5, y: 5.0 },
-    ridgeWidthMm: 11.0,
-    ridgeHeightMm: 27.5,
-  }), []);
+  const activeCanal: MandibularCanalCrossSection | null = hasRealVolume ? (canal ?? null) : null;
+  const activeEnvelope: AlveolarRidgeEnvelope | null = hasRealVolume ? (envelope ?? null) : null;
 
   const currentSpec: VirtualImplantSpec = useMemo(() => {
     return findImplantSpec(selectedBrand, diameterMm, lengthMm);
@@ -166,11 +157,32 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     entryPoint: { x: entryX, y: entryY },
     angulationDeg,
     implantSpec: currentSpec,
-  }), [entryX, entryY, angulationDeg, currentSpec]);
+    targetToothFdi: toothFdi,
+  }), [entryX, entryY, angulationDeg, currentSpec, toothFdi]);
+
+  const implant3DWorld = useMemo(() => {
+    if (!hasRealVolume || !crossSectionSlice) return null;
+    return calculateImplant3DWorldPose(
+      implantPose,
+      crossSectionSlice.centerPointMm,
+      crossSectionSlice.normalVector2D,
+      crossSectionSlice.heightMm,
+      4.0,
+    );
+  }, [hasRealVolume, crossSectionSlice, implantPose]);
 
   const huSampling: HUZoneSampling = useMemo(() => {
-    return computeHUZoneProfile(coronalHU, trabecularHU, apicalHU);
-  }, [coronalHU, trabecularHU, apicalHU]);
+    if (!hasRealVolume || !volume) {
+      return {
+        coronalCrestalHU: 0,
+        trabecularCoreHU: 0,
+        apicalBaseHU: 0,
+        overallMeanHU: 0,
+        status: "unmeasured",
+      };
+    }
+    return sampleCrossSectionHUProfile(volume, implantPose, implant3DWorld);
+  }, [hasRealVolume, volume, implantPose, implant3DWorld]);
 
   const boneQuality: MischClassificationResult = useMemo(() => {
     return analyzeMischBoneQuality(huSampling, diameterMm);
@@ -180,22 +192,22 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     return performCbctPlanningAudit({
       toothFdi,
       implantPose,
-      canal,
-      envelope,
+      canal: activeCanal,
+      envelope: activeEnvelope,
       huSampling,
       patientName,
     });
-  }, [toothFdi, implantPose, canal, envelope, huSampling, patientName]);
+  }, [toothFdi, implantPose, activeCanal, activeEnvelope, huSampling, patientName]);
 
   const drillSteps = useMemo(() => {
     return generateMischDrillSequence(boneQuality.mischClass, diameterMm, lengthMm);
   }, [boneQuality.mischClass, diameterMm, lengthMm]);
 
   useEffect(() => {
-    if (audit.nerveSafety.shouldTriggerAudioAlarm && isAudioEnabled) {
+    if (hasRealVolume && audit.nerveSafety.shouldTriggerAudioAlarm && isAudioEnabled) {
       playNerveSafetyAudioAlarm(audit.nerveSafety.safetyStatus, isAudioEnabled);
     }
-  }, [audit.nerveSafety.shouldTriggerAudioAlarm, audit.nerveSafety.safetyStatus, isAudioEnabled]);
+  }, [hasRealVolume, audit.nerveSafety.shouldTriggerAudioAlarm, audit.nerveSafety.safetyStatus, isAudioEnabled]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -215,8 +227,8 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   };
 
   const handleResetCenter = () => {
-    setEntryX(envelope.crestPoint.x);
-    setEntryY(envelope.crestPoint.y);
+    setEntryX(activeEnvelope?.crestPoint.x ?? 14.0);
+    setEntryY(activeEnvelope?.crestPoint.y ?? 5.0);
     setAngulationDeg(0);
   };
 
@@ -224,8 +236,8 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     setSelectedBrand(preset.brand);
     setDiameterMm(preset.diameterMm);
     setLengthMm(preset.lengthMm);
-    setEntryX(envelope.crestPoint.x);
-    setEntryY(envelope.crestPoint.y);
+    setEntryX(activeEnvelope?.crestPoint.x ?? 14.0);
+    setEntryY(activeEnvelope?.crestPoint.y ?? 5.0);
     setAngulationDeg(0);
     showToast(`⚡ Выбран имплантат: ${preset.title} (центрирован по гребню)`);
   };
@@ -236,11 +248,6 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
   const pxEntryY = entryY * SCALE_PX_PER_MM;
   const pxApexX = audit.apexPoint.x * SCALE_PX_PER_MM;
   const pxApexY = audit.apexPoint.y * SCALE_PX_PER_MM;
-
-  const pxCanalX = canal.center.x * SCALE_PX_PER_MM;
-  const pxCanalY = canal.center.y * SCALE_PX_PER_MM;
-  const pxCanalR = canal.radiusMm * SCALE_PX_PER_MM;
-  const pxSafetyR = (canal.radiusMm + canal.safetyMarginMm) * SCALE_PX_PER_MM;
 
   const statusColor = audit.nerveSafety.isDangerous
     ? "#ef4444"
@@ -302,21 +309,35 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
       </div>
 
       {/* NERVE SAFETY BANNER */}
-      <div className={`nerve-alarm-banner ${audit.nerveSafety.safetyStatus}`}>
-        <div className="flex items-center gap-2">
-          {audit.nerveSafety.isDangerous ? (
-            <ShieldAlert className="w-5 h-5 text-red-500 animate-bounce" />
-          ) : audit.nerveSafety.isWarning ? (
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-          ) : (
-            <ShieldCheck className="w-5 h-5 text-emerald-500" />
-          )}
-          <span>{audit.nerveSafety.clinicalMessageRu}</span>
+      {!hasRealVolume ? (
+        <div className="nerve-alarm-banner unmeasured" data-testid="cbct-unmeasured-banner">
+          <div className="flex items-center gap-2">
+            <Layers className="w-5 h-5 text-slate-400 shrink-0" />
+            <span className="text-xs text-[var(--muted)]">
+              Загрузите КЛКТ для измерения плотности кости и расстояния до IAN
+            </span>
+          </div>
+          <div className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--paper-strong)]/85 text-[var(--muted)] border border-[var(--line)]">
+            КЛКТ не загружена
+          </div>
         </div>
-        <div className="text-xs font-bold px-2.5 py-1 rounded-md bg-[var(--paper-strong)]/85 text-[var(--ink)] border border-[var(--line)] backdrop-blur-sm shadow-sm">
-          Дистанция: {audit.nerveSafety.netClearanceToCanalWallMm.toFixed(1)} мм
+      ) : (
+        <div className={`nerve-alarm-banner ${audit.nerveSafety.safetyStatus}`}>
+          <div className="flex items-center gap-2">
+            {audit.nerveSafety.isDangerous ? (
+              <ShieldAlert className="w-5 h-5 text-red-500 animate-bounce" />
+            ) : audit.nerveSafety.isWarning ? (
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+            ) : (
+              <ShieldCheck className="w-5 h-5 text-emerald-500" />
+            )}
+            <span>{audit.nerveSafety.clinicalMessageRu}</span>
+          </div>
+          <div className="text-xs font-bold px-2.5 py-1 rounded-md bg-[var(--paper-strong)]/85 text-[var(--ink)] border border-[var(--line)] backdrop-blur-sm shadow-sm">
+            Дистанция: {audit.nerveSafety.netClearanceToCanalWallMm.toFixed(1)} мм
+          </div>
         </div>
-      </div>
+      )}
 
       {/* TOAST NOTIFICATION */}
       {toastMessage && (
@@ -344,130 +365,144 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
             </button>
           </div>
 
-          <div className="cbct-slice-canvas-wrapper relative w-full h-[360px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
-            {/* 1. Real Transversal CBCT Voxel Slice Canvas */}
-            <canvas
-              ref={crossSectionCanvasRef}
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              data-testid="cbct-cross-section-voxel-canvas"
-            />
-
-            {/* 2. Interactive SVG Overlay */}
-            <svg className="cbct-svg-viewport absolute inset-0 w-full h-full" viewBox={`0 0 ${viewW} ${viewH}`}>
-              <defs>
-                <radialGradient id="nerveGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.0" />
-                </radialGradient>
-              </defs>
-
-              {/* Alveolar Crest Line */}
-              <line x1="20" y1="45" x2="260" y2="45" stroke="#475569" strokeWidth="1" strokeDasharray="3 3" />
-              <text x="25" y="40" fill="#94a3b8" fontSize="9" fontWeight="bold">Крестальный гребень</text>
-
-              {/* Mandibular Canal 2.0 mm Safety Corridor Halo */}
-              <circle
-                cx={pxCanalX}
-                cy={pxCanalY}
-                r={pxSafetyR}
-                fill="url(#nerveGlow)"
-                stroke="#f59e0b"
-                strokeWidth="1.5"
-                strokeDasharray="4 3"
-              />
-              <text x={pxCanalX + pxSafetyR + 4} y={pxCanalY - 4} fill="#f59e0b" fontSize="8" fontWeight="bold">
-                Зона безопасности 2.0 мм
-              </text>
-
-              {/* Mandibular Canal Core */}
-              <circle
-                cx={pxCanalX}
-                cy={pxCanalY}
-                r={pxCanalR}
-                fill="#dc2626"
-                stroke="#f87171"
-                strokeWidth="2"
-              />
-              <text x={pxCanalX} y={pxCanalY + 3} fill="#ffffff" fontSize="8" fontWeight="bold" textAnchor="middle">
-                IAN
-              </text>
-
-              {/* Distance Line from Apex to Nerve */}
-              <line
-                x1={pxApexX}
-                y1={pxApexY}
-                x2={audit.nerveSafety.closestNervePoint.x * SCALE_PX_PER_MM}
-                y2={audit.nerveSafety.closestNervePoint.y * SCALE_PX_PER_MM}
-                stroke={statusColor}
-                strokeWidth="2"
-                strokeDasharray="3 2"
+          {!hasRealVolume ? (
+            <div
+              className="cbct-slice-canvas-wrapper relative w-full h-[360px] bg-slate-950/90 rounded-xl overflow-hidden flex flex-col items-center justify-center p-6 text-center border border-[var(--line)]"
+              data-testid="cbct-empty-state"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 mb-3 shadow-inner">
+                <Layers className="w-7 h-7 text-teal-400/80" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-200 mb-1.5">
+                Загрузите КЛКТ для измерения плотности кости и расстояния до IAN
+              </h4>
+              <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+                Анатомический кросс-секционный срез, положение нижнечелюстного канала (IAN) и денситометрия HU рассчитываются по реальному исследованию пациента.
+              </p>
+            </div>
+          ) : (
+            <div className="cbct-slice-canvas-wrapper relative w-full h-[360px] bg-black rounded-xl overflow-hidden flex items-center justify-center">
+              {/* 1. Real Transversal CBCT Voxel Slice Canvas */}
+              <canvas
+                ref={crossSectionCanvasRef}
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                data-testid="cbct-cross-section-voxel-canvas"
               />
 
-              {/* Virtual Implant Body */}
-              <g transform={`rotate(${angulationDeg}, ${pxEntryX}, ${pxEntryY})`}>
-                <rect
-                  x={pxEntryX - (diameterMm * SCALE_PX_PER_MM) / 2}
-                  y={pxEntryY}
-                  width={diameterMm * SCALE_PX_PER_MM}
-                  height={lengthMm * SCALE_PX_PER_MM}
-                  rx={3}
-                  fill={statusColor}
-                  fillOpacity="0.85"
-                  stroke="#ffffff"
-                  strokeWidth="1.5"
-                />
-                {[0.25, 0.5, 0.75].map((factor, idx) => (
-                  <line
-                    key={idx}
-                    x1={pxEntryX - (diameterMm * SCALE_PX_PER_MM) / 2}
-                    y1={pxEntryY + lengthMm * SCALE_PX_PER_MM * factor}
-                    x2={pxEntryX + (diameterMm * SCALE_PX_PER_MM) / 2}
-                    y2={pxEntryY + lengthMm * SCALE_PX_PER_MM * factor}
+              {/* 2. Interactive SVG Overlay on Real Slice */}
+              <svg className="cbct-svg-viewport absolute inset-0 w-full h-full" viewBox={`0 0 ${viewW} ${viewH}`}>
+                {/* Real Mandibular Canal if segmented */}
+                {activeCanal && (
+                  <>
+                    <circle
+                      cx={activeCanal.center.x * SCALE_PX_PER_MM}
+                      cy={activeCanal.center.y * SCALE_PX_PER_MM}
+                      r={(activeCanal.radiusMm + activeCanal.safetyMarginMm) * SCALE_PX_PER_MM}
+                      fill="none"
+                      stroke="#f59e0b"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 3"
+                    />
+                    <circle
+                      cx={activeCanal.center.x * SCALE_PX_PER_MM}
+                      cy={activeCanal.center.y * SCALE_PX_PER_MM}
+                      r={activeCanal.radiusMm * SCALE_PX_PER_MM}
+                      fill="#dc2626"
+                      stroke="#f87171"
+                      strokeWidth="2"
+                    />
+                    <text
+                      x={activeCanal.center.x * SCALE_PX_PER_MM}
+                      y={activeCanal.center.y * SCALE_PX_PER_MM + 3}
+                      fill="#ffffff"
+                      fontSize="8"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      IAN
+                    </text>
+                    <line
+                      x1={pxApexX}
+                      y1={pxApexY}
+                      x2={audit.nerveSafety.closestNervePoint.x * SCALE_PX_PER_MM}
+                      y2={audit.nerveSafety.closestNervePoint.y * SCALE_PX_PER_MM}
+                      stroke={statusColor}
+                      strokeWidth="2"
+                      strokeDasharray="3 2"
+                    />
+                  </>
+                )}
+
+                {/* Virtual Implant Body */}
+                <g transform={`rotate(${angulationDeg}, ${pxEntryX}, ${pxEntryY})`}>
+                  <rect
+                    x={pxEntryX - (diameterMm * SCALE_PX_PER_MM) / 2}
+                    y={pxEntryY}
+                    width={diameterMm * SCALE_PX_PER_MM}
+                    height={lengthMm * SCALE_PX_PER_MM}
+                    rx={3}
+                    fill={statusColor}
+                    fillOpacity="0.85"
+                    stroke="#ffffff"
+                    strokeWidth="1.5"
+                  />
+                  {[0.25, 0.5, 0.75].map((factor, idx) => (
+                    <line
+                      key={idx}
+                      x1={pxEntryX - (diameterMm * SCALE_PX_PER_MM) / 2}
+                      y1={pxEntryY + lengthMm * SCALE_PX_PER_MM * factor}
+                      x2={pxEntryX + (diameterMm * SCALE_PX_PER_MM) / 2}
+                      y2={pxEntryY + lengthMm * SCALE_PX_PER_MM * factor}
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                      strokeOpacity="0.6"
+                    />
+                  ))}
+                  <rect
+                    x={pxEntryX - (diameterMm * SCALE_PX_PER_MM) / 2 - 1}
+                    y={pxEntryY - 3}
+                    width={diameterMm * SCALE_PX_PER_MM + 2}
+                    height={3}
+                    fill="#94a3b8"
                     stroke="#ffffff"
                     strokeWidth="1"
-                    strokeOpacity="0.6"
                   />
-                ))}
-                <rect
-                  x={pxEntryX - (diameterMm * SCALE_PX_PER_MM) / 2 - 1}
-                  y={pxEntryY - 3}
-                  width={diameterMm * SCALE_PX_PER_MM + 2}
-                  height={3}
-                  fill="#94a3b8"
-                  stroke="#ffffff"
-                  strokeWidth="1"
-                />
-              </g>
+                </g>
 
-              {/* Apex Tracking Dot */}
-              <circle cx={pxApexX} cy={pxApexY} r="3.5" fill="#ffffff" stroke={statusColor} strokeWidth="2" />
-              {/* Entry Point Handle */}
-              <circle cx={pxEntryX} cy={pxEntryY} r="4.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="2" />
+                {/* Apex Tracking Dot */}
+                <circle cx={pxApexX} cy={pxApexY} r="3.5" fill="#ffffff" stroke={statusColor} strokeWidth="2" />
+                {/* Entry Point Handle */}
+                <circle cx={pxEntryX} cy={pxEntryY} r="4.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="2" />
 
-              {/* Live Clearance Tag Box */}
-              <rect
-                x={pxApexX - 35}
-                y={pxApexY + 8}
-                width="70"
-                height="18"
-                rx="4"
-                fill="#0f172a"
-                fillOpacity="0.9"
-                stroke={statusColor}
-                strokeWidth="1"
-              />
-              <text
-                x={pxApexX}
-                y={pxApexY + 20}
-                fill="#ffffff"
-                fontSize="9"
-                fontWeight="bold"
-                textAnchor="middle"
-              >
-                {audit.nerveSafety.netClearanceToCanalWallMm.toFixed(1)} мм до IAN
-              </text>
-            </svg>
-          </div>
+                {/* Live Clearance Tag Box if Canal is segmented */}
+                {activeCanal && (
+                  <>
+                    <rect
+                      x={pxApexX - 35}
+                      y={pxApexY + 8}
+                      width="70"
+                      height="18"
+                      rx="4"
+                      fill="#0f172a"
+                      fillOpacity="0.9"
+                      stroke={statusColor}
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={pxApexX}
+                      y={pxApexY + 20}
+                      fill="#ffffff"
+                      fontSize="9"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      {audit.nerveSafety.netClearanceToCanalWallMm.toFixed(1)} мм до IAN
+                    </text>
+                  </>
+                )}
+              </svg>
+            </div>
+          )}
 
           {/* Navigation Mode Tabs */}
           <div className="chip-selector-group pt-1">
@@ -635,69 +670,74 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
           )}
 
           {activeTab === "misch" && (
-            <div className="planner-section-card">
+            <div className="planner-section-card" data-testid="misch-density-card">
               <div className="flex items-center justify-between">
                 <span className="section-title">
-                  <Activity size={16} className="text-[var(--teal)]" /> Оценка плотности кости (Misch)
+                  <Activity size={16} className="text-[var(--teal)]" />
+                  {hasRealVolume ? "Измеренная плотность кости (Misch HU)" : "Оценка плотности кости (Misch)"}
                 </span>
                 <span className={`misch-badge-pill ${boneQuality.mischClass}`}>
-                  Класс {boneQuality.mischClass}
+                  {hasRealVolume ? `Класс ${boneQuality.mischClass}` : "Не измерена"}
                 </span>
               </div>
 
-              <div className="space-y-3 pt-1">
-                <div className="range-slider-row">
-                  <div className="slider-label-bar">
-                    <span>Кортикальный гребень (Coronal 20%)</span>
-                    <span>{coronalHU} HU</span>
+              {!hasRealVolume ? (
+                <div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-center my-2">
+                  <Layers className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-60" />
+                  <div className="text-xs font-bold text-[var(--ink)]">
+                    Загрузите КЛКТ для измерения плотности кости и расстояния до IAN
                   </div>
-                  <input
-                    type="range"
-                    min="200"
-                    max="1800"
-                    step="50"
-                    value={coronalHU}
-                    onChange={(e) => setCoronalHU(parseInt(e.target.value, 10))}
-                    className="planner-range-input"
-                  />
+                  <div className="text-[11px] text-[var(--muted)] mt-1 leading-relaxed max-w-sm mx-auto">
+                    Значения плотности ткани (HU) рассчитываются автоматически по 3D вокселям томограммы. Ручной ввод и аркадные ползунки отключены в соответствии со стандартами клинической достоверности (Мандат 8k).
+                  </div>
                 </div>
+              ) : (
+                <div className="space-y-2 pt-1">
+                  <div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-[var(--ink)]">Кортикальный гребень (Coronal 20%)</div>
+                      <div className="text-[11px] text-[var(--muted)]">Плотность кортикальной пластинки</div>
+                    </div>
+                    <div className="text-sm font-bold font-mono text-[var(--teal,#0d9488)]">
+                      {huSampling.coronalCrestalHU} HU
+                    </div>
+                  </div>
 
-                <div className="range-slider-row">
-                  <div className="slider-label-bar">
-                    <span>Губчатый слой (Trabecular 60%)</span>
-                    <span>{trabecularHU} HU</span>
+                  <div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-[var(--ink)]">Губчатый слой (Trabecular 60%)</div>
+                      <div className="text-[11px] text-[var(--muted)]">Центральное трабекулярное ложе</div>
+                    </div>
+                    <div className="text-sm font-bold font-mono text-[var(--teal,#0d9488)]">
+                      {huSampling.trabecularCoreHU} HU
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="100"
-                    max="1400"
-                    step="50"
-                    value={trabecularHU}
-                    onChange={(e) => setTrabecularHU(parseInt(e.target.value, 10))}
-                    className="planner-range-input"
-                  />
-                </div>
 
-                <div className="range-slider-row">
-                  <div className="slider-label-bar">
-                    <span>Апикальная опора (Apical 20%)</span>
-                    <span>{apicalHU} HU</span>
+                  <div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-semibold text-[var(--ink)]">Апикальная опора (Apical 20%)</div>
+                      <div className="text-[11px] text-[var(--muted)]">Апикальная фиксация в кости</div>
+                    </div>
+                    <div className="text-sm font-bold font-mono text-[var(--teal,#0d9488)]">
+                      {huSampling.apicalBaseHU} HU
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="200"
-                    max="1600"
-                    step="50"
-                    value={apicalHU}
-                    onChange={(e) => setApicalHU(parseInt(e.target.value, 10))}
-                    className="planner-range-input"
-                  />
+
+                  <div className="p-2.5 rounded-lg bg-[var(--teal-surface,#f0fdfa)] border border-[var(--teal,#0d9488)]/30 flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-[var(--ink)]">Средняя плотность ложа</div>
+                      <div className="text-[11px] text-[var(--muted)]">{boneQuality.classNameRu}</div>
+                    </div>
+                    <div className="text-base font-extrabold font-mono text-[var(--teal,#0d9488)]">
+                      {huSampling.overallMeanHU} HU
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="pt-2">
                 <span className="text-xs font-bold text-[var(--ink)] block mb-1.5">
-                  Хирургический протокол сверления:
+                  {hasRealVolume ? "Хирургический протокол сверления:" : "Базовый протокол сверления (по умолчанию):"}
                 </span>
                 <div className="drilling-step-list">
                   {drillSteps.map((s) => (

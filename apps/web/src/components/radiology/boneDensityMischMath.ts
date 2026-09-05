@@ -15,13 +15,14 @@
  * 4. Form 043/u surgery diary clinical text formatting.
  */
 
-export type MischBoneClass = "D1" | "D2" | "D3" | "D4" | "D5";
+export type MischBoneClass = "D1" | "D2" | "D3" | "D4" | "D5" | "unmeasured";
 
 export interface HUZoneSampling {
 	readonly coronalCrestalHU: number; // Coronal 20% (Crestal cortical plate)
 	readonly trabecularCoreHU: number; // Mid 60% (Cancellous bone core)
 	readonly apicalBaseHU: number; // Apical 20% (Apical cortical engagement)
 	readonly overallMeanHU: number; // Weighted average HU
+	readonly status?: "measured" | "unmeasured";
 }
 
 export interface MischClassificationResult {
@@ -88,6 +89,7 @@ export function computeHUZoneProfile(
 	coronalHU: number,
 	trabecularHU: number,
 	apicalHU: number,
+	status: "measured" | "unmeasured" = "measured",
 ): HUZoneSampling {
 	// Weighted average: 25% coronal, 50% trabecular, 25% apical
 	const overall = Math.round(coronalHU * 0.25 + trabecularHU * 0.5 + apicalHU * 0.25);
@@ -96,6 +98,7 @@ export function computeHUZoneProfile(
 		trabecularCoreHU: Math.round(trabecularHU),
 		apicalBaseHU: Math.round(apicalHU),
 		overallMeanHU: overall,
+		status,
 	};
 }
 
@@ -106,6 +109,28 @@ export function analyzeMischBoneQuality(
 	sampling: HUZoneSampling,
 	implantDiameterMm = 4.0,
 ): MischClassificationResult {
+	if (sampling.status === "unmeasured") {
+		return {
+			mischClass: "unmeasured",
+			classNameRu: "Плотность не измерена (требуется КЛКТ)",
+			anatomicalLocationRu: "Не определено без томограммы",
+			tactileFeelRu: "Оценка плотности кости по КЛКТ не проводилась",
+			vascularityLevel: "moderate",
+			recommendedDrillingRpm: "Стандартный протокол производителя (800–1000 RPM)",
+			underdrillingRecommended: false,
+			underdrillingMm: 0,
+			corticalTapRequired: false,
+			countersinkRequired: false,
+			estimatedInsertionTorqueNcm: { minNcm: 30, maxNcm: 40, expectedNcm: 35 },
+			estimatedIsqScore: { minIsq: 65, maxIsq: 75, expectedIsq: 70 },
+			isImmediateLoadingEligible: false,
+			healingPeriodWeeks: 12,
+			clinicalAdvice: [
+				"Загрузите КЛКТ для измерения плотности кости (HU) по зонам ложа имплантата.",
+			],
+		};
+	}
+
 	const mischClass = classifyHUToMisch(sampling.overallMeanHU);
 
 	switch (mischClass) {
@@ -315,6 +340,13 @@ export function formatMischProtocolToDiaryText(
 	fdiTooth?: string | number,
 ): string {
 	const toothPrefix = fdiTooth ? "Зуб FDI #" + fdiTooth + " | " : "";
+	if (sampling.status === "unmeasured" || analysis.mischClass === "unmeasured") {
+		return [
+			toothPrefix + "ОЦЕНКА ПЛОТНОСТИ КОСТНОЙ ТКАНИ (КЛКТ / ХАУНСФИЛД):",
+			"- Статус: Плотность кости не измерена (КЛКТ не загружена)",
+			"- Рекомендация: Загрузите КЛКТ для измерения плотности ложа (HU) и выбора специализированного протокола сверления.",
+		].join("\n");
+	}
 	const lines = [
 		toothPrefix + "ОЦЕНКА ПЛОТНОСТИ КОСТНОЙ ТКАНИ (КЛКТ / ХАУНСФИЛД):",
 		"- Класс по Misch: " + analysis.classNameRu,
