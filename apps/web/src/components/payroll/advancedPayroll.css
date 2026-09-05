@@ -325,19 +325,24 @@
 .t13-toolbar {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	padding: 0.75rem 1.5rem;
+	padding: 0 1rem;
+	height: 2.25rem;
+	min-height: 2.25rem;
+	max-height: 2.25rem;
 	background-color: var(--paper, #ffffff);
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	gap: 0.75rem;
-	flex-wrap: wrap;
+	overflow-x: auto;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .t13-quick-fill-bar {
 	display: flex;
 	align-items: center;
 	gap: 0.375rem;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	white-space: nowrap;
 }
 
 .t13-day-col {
@@ -348,8 +353,8 @@
 }
 
 .t13-day-col.weekend {
-	background-color: rgba(244, 63, 94, 0.05);
-	color: #e11d48;
+	background-color: var(--bad-bg, rgba(244, 63, 94, 0.05));
+	color: var(--bad-fg, #e11d48);
 }
 
 .t13-code-select {
@@ -386,13 +391,14 @@
    ========================================================================= */
 
 .t13-print-sheet {
-	background-color: #ffffff;
-	color: #000000;
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #000000);
 	font-family: "Times New Roman", Times, serif;
 	font-size: 8pt;
 	line-height: 1.15;
 	padding: 8mm;
 	width: 100%;
+	border: 1px solid var(--line, #e2e8f0);
 }
 
 .t13-print-table {
@@ -403,14 +409,14 @@
 
 .t13-print-table th,
 .t13-print-table td {
-	border: 1px solid #000000;
+	border: 1px solid var(--line-strong, #000000);
 	padding: 2px 3px;
 	text-align: center;
 	vertical-align: middle;
 }
 
 .t13-print-table th {
-	background-color: #f2f2f2;
+	background-color: var(--paper-soft, #f2f2f2);
 	font-weight: bold;
 }
 
@@ -423,7 +429,7 @@
 }
 
 .t13-signature-line {
-	border-bottom: 1px solid #000000;
+	border-bottom: 1px solid var(--line-strong, #000000);
 	height: 1.5rem;
 	margin-bottom: 0.25rem;
 }
@@ -473,7 +479,24 @@
 	}
 
 	.t13-print-sheet {
+		background: #ffffff !important;
+		color: #000000 !important;
 		padding: 0 !important;
 		display: block !important;
+		border: none !important;
+	}
+
+	.t13-print-table th,
+	.t13-print-table td {
+		border: 1px solid #000000 !important;
+		color: #000000 !important;
+	}
+
+	.t13-print-table th {
+		background-color: #f2f2f2 !important;
+	}
+
+	.t13-signature-line {
+		border-bottom: 1px solid #000000 !important;
 	}
 }

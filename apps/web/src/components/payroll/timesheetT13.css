@@ -55,28 +55,28 @@
 }
 
 .timesheet-cell-work {
-	background-color: rgba(20, 184, 166, 0.08);
-	border-color: rgba(20, 184, 166, 0.3);
+	background-color: var(--teal-soft, rgba(20, 184, 166, 0.08));
+	border-color: var(--teal, rgba(20, 184, 166, 0.3));
 }
 
 .timesheet-cell-weekend {
-	background-color: rgba(148, 163, 184, 0.1);
-	border-color: rgba(148, 163, 184, 0.2);
+	background-color: var(--paper-soft, rgba(148, 163, 184, 0.1));
+	border-color: var(--line, rgba(148, 163, 184, 0.2));
 }
 
 .timesheet-cell-vacation {
-	background-color: rgba(59, 130, 246, 0.08);
-	border-color: rgba(59, 130, 246, 0.3);
+	background-color: var(--teal-soft, rgba(59, 130, 246, 0.08));
+	border-color: var(--teal, rgba(59, 130, 246, 0.3));
 }
 
 .timesheet-cell-sick {
-	background-color: rgba(244, 63, 94, 0.08);
-	border-color: rgba(244, 63, 94, 0.3);
+	background-color: var(--bad-bg, rgba(244, 63, 94, 0.08));
+	border-color: var(--bad-fg, rgba(244, 63, 94, 0.3));
 }
 
 .timesheet-cell-overtime {
-	background-color: rgba(245, 158, 11, 0.08);
-	border-color: rgba(245, 158, 11, 0.3);
+	background-color: var(--warn-bg, rgba(245, 158, 11, 0.08));
+	border-color: var(--warn-fg, rgba(245, 158, 11, 0.3));
 }
 
 @media print {
