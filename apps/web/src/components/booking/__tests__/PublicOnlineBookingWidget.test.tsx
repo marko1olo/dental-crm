@@ -261,6 +261,16 @@ describe("PublicOnlineBookingWidget Component & Embeddable Flow", () => {
 		);
 
 		// Privacy policy consent
+		assert.equal(
+			html.includes("Демо-СМС"),
+			false,
+			"Does not display 'Демо-СМС' badge",
+		);
+		assert.equal(
+			html.includes("Быстро вставить"),
+			false,
+			"Does not display 'Быстро вставить' cheat button",
+		);
 		assert.ok(
 			html.includes("privacy-checkbox"),
 			"Contains privacy consent checkbox",

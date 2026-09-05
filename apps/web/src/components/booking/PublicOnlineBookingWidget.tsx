@@ -606,6 +606,10 @@ export function generateEmbedSnippet(options: {
 // Main Component
 // ============================================================================
 
+const isDev = Boolean(
+	typeof import.meta !== "undefined" && import.meta.env?.DEV,
+);
+
 export const PublicOnlineBookingWidget: React.FC<
 	PublicOnlineBookingWidgetProps
 > = ({
@@ -1673,16 +1677,13 @@ export const PublicOnlineBookingWidget: React.FC<
 									</div>
 								) : !isSmsVerified ? (
 									<div className="flex flex-col gap-3">
-										{enableSmsSimulation ? (
-											<div className="dbw-sms-sim-badge">
-												<span>📲 Демо-СМС отправлено: Код подтверждения</span>
-												<strong className="text-teal-700 dark:text-teal-300 font-mono text-sm ml-1">
-													{simulatedSmsCode}
-												</strong>
-											</div>
-										) : (
-											<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300">
-												Код подтверждения отправлен в СМС на {patientPhone}
+										<div className="p-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 text-xs text-teal-800 dark:text-teal-300">
+											Код подтверждения отправлен в СМС на {patientPhone || "указанный номер"}
+										</div>
+
+										{isDev && enableSmsSimulation && simulatedSmsCode && (
+											<div className="dbw-sms-sim-badge text-xs font-mono text-slate-500 dark:text-slate-400">
+												<span>[DEV / Отладка: проверочный код {simulatedSmsCode}]</span>
 											</div>
 										)}
 
@@ -1704,20 +1705,6 @@ export const PublicOnlineBookingWidget: React.FC<
 											>
 												Проверить
 											</button>
-
-											{enableSmsSimulation && (
-												<button
-													type="button"
-													className="text-xs font-bold text-teal-600 dark:text-teal-400 underline hover:no-underline"
-													onClick={() => {
-														setEnteredSmsCode(simulatedSmsCode);
-														setIsSmsVerified(true);
-														setSmsError(null);
-													}}
-												>
-													Быстро вставить
-												</button>
-											)}
 										</div>
 
 										{smsResendCountdown > 0 ? (
