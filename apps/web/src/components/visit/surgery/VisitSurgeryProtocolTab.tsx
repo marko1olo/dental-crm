@@ -138,7 +138,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 
 		setProtocolText(generated);
 		showToast(
-			`⚡ 1-Клик норма: ${brand} Ø${dia}×${len} мм, 35 Н/см, ISQ ${isq}, ${cap === "fdm" ? "ФДМ" : "Заглушка"}, ${suture}`,
+			`1-Клик норма: ${brand} Ø${dia}×${len} мм, 35 Н/см, ISQ ${isq}, ${cap === "fdm" ? "ФДМ" : "Заглушка"}, ${suture}`,
 			"success",
 		);
 	};
@@ -319,7 +319,7 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 									{isSel && <CheckCircle2 size={16} className="text-[var(--teal,#0d9488)] shrink-0" />}
 								</div>
 								<span className="text-[10px] font-mono text-[var(--muted)] truncate">
-									{norm.icd10}
+									{norm.code804n ? `${norm.code804n} · ` : ""}{norm.icd10}
 								</span>
 							</button>
 						);
@@ -339,10 +339,10 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 						onClick={() => handleApplyStandardImplantationPreset()}
 						className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-2 cursor-pointer shadow-xs hover:opacity-95 transition-all"
 						data-testid="btn-preset-standard-implant-tab"
-						title="⚡ 1-клик: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, контрольный снимок)"
+						title="1-Клик: Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, швы Prolene 4-0, контрольный снимок)"
 					>
 						<Zap size={14} className="text-amber-300" />
-						<span>⚡ Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, Prolene 4-0, снимок)</span>
+						<span>Стандартная имплантация (торк 35 Н*см, ISQ 72, ФДМ, Prolene 4-0, снимок)</span>
 					</button>
 				</div>
 
@@ -503,7 +503,16 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			{/* Footer Actions */}
 			<footer className="flex items-center justify-between gap-3 pt-3 border-t border-[var(--line)] flex-wrap">
 				<div className="text-xs text-[var(--muted)]">
-					МКБ-10: <strong className="text-[var(--ink)]">{currentNorm.icd10}</strong> · Торк 35 Н/см
+					{currentNorm.code804n && (
+						<>
+							<span>804н: </span>
+							<strong className="text-[var(--ink)]">{currentNorm.code804n}</strong>
+							<span> · </span>
+						</>
+					)}
+					<span>МКБ-10: </span>
+					<strong className="text-[var(--ink)]">{currentNorm.icd10}</strong>
+					{currentNorm.category === "implant" ? " · Торк 35 Н/см" : ""}
 				</div>
 
 				<div className="flex items-center gap-2">

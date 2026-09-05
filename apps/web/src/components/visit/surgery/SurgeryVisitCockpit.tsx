@@ -89,7 +89,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 			// fallback
 		}
 
-		showToast(`⚡ 1-Клик норма: Имплантация 35 Н/см, ISQ 72, ФДМ внесена в карту 043/у`, "success");
+		showToast(`1-Клик норма: Имплантация 35 Н/см, ISQ 72, ФДМ внесена в карту 043/у`, "success");
 	};
 
 	const handleOneClickNorm = (norm: SurgicalOperationNorm) => {
@@ -168,7 +168,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsPassportModalOpen(true)}
-						className="min-h-[44px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:bg-[var(--paper-soft)]"
+						className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:bg-[var(--paper-soft)]"
 						data-testid="btn-cockpit-passport"
 					>
 						<Sliders size={14} />
@@ -178,7 +178,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsFullCockpitOpen(true)}
-						className="min-h-[44px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 shadow-2xs"
+						className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 shadow-2xs"
 						data-testid="btn-cockpit-full"
 					>
 						<Sparkles size={14} />
@@ -197,7 +197,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 			>
 				<span className="flex items-center gap-2 truncate">
 					<Zap size={15} className="text-amber-300 shrink-0" />
-					<span className="truncate">⚡ Стандартная имплантация (35 Н/см, ISQ 72, ФДМ, Prolene 4-0)</span>
+					<span className="truncate">Стандартная имплантация (35 Н/см, ISQ 72, ФДМ, Prolene 4-0)</span>
 				</span>
 				<span className="text-[11px] font-mono opacity-90 shrink-0">#{effectiveTooth}</span>
 			</button>
@@ -215,7 +215,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 					>
 						<div className="truncate">{norm.shortBadge}</div>
 						<div className="text-[10px] font-mono text-[var(--muted)] truncate">
-							{norm.category === "implant" ? "35 Н/см" : norm.icd10}
+							{norm.code804n ? `${norm.code804n}` : (norm.category === "implant" ? "35 Н/см" : norm.icd10)}
 						</div>
 					</button>
 				))}

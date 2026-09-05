@@ -52,18 +52,18 @@ export const SurgerySafetyChecklist: React.FC<SurgerySafetyChecklistProps> = ({
 			className={`p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] space-y-2.5 ${className}`.trim()}
 			data-testid="surgery-safety-checklist"
 		>
-			<div className="flex items-center justify-between gap-2 flex-wrap">
+			<div className="flex items-center justify-between gap-2 flex-wrap min-h-[36px]">
 				<div className="flex items-center gap-2">
 					<ShieldCheck size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span className="text-xs font-black uppercase tracking-wider text-[var(--ink)]">
-						Хирургический Time-Out (Протокол безопасности ВОЗ)
+						Хирургический Time-Out (Безопасность ВОЗ · Амбулаторная норма)
 					</span>
 				</div>
 
 				<button
 					type="button"
 					onClick={handleOneClickAllNorm}
-					className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 transition-all"
+					className="min-h-[34px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 transition-all"
 					data-testid="btn-timeout-all-norm"
 				>
 					<CheckCircle2 size={15} />

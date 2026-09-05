@@ -27,7 +27,19 @@ describe("SurgeryCockpitModal & SurgeryProtocolPanel (Surgical Cockpit)", () => 
 		assert.ok(html.includes("btn-norm-surgery_implant_standard"), "Must have 1-click implant norm");
 		assert.ok(html.includes("btn-norm-surgery_extraction_simple"), "Must have 1-click simple extraction");
 		assert.ok(html.includes("btn-norm-surgery_extraction_atypical"), "Must have 1-click atypical extraction");
+		assert.ok(html.includes("btn-norm-surgery_extraction_complex"), "Must have 1-click complex extraction");
+		assert.ok(html.includes("btn-norm-surgery_periostotomy"), "Must have 1-click periostotomy norm");
+		assert.ok(html.includes("A16.07.006"), "Must show 804n implant code");
+		assert.ok(html.includes("A16.07.001"), "Must show 804n simple extraction code");
+		assert.ok(html.includes("A16.07.002"), "Must show 804n complex extraction code");
+		assert.ok(html.includes("A16.07.024"), "Must show 804n atypical extraction code");
+		assert.ok(html.includes("A16.07.011"), "Must show 804n periostotomy code");
+		assert.ok(html.includes("btn-timeout-all-norm"), "Must have 1-click Time-Out norm button");
 		assert.ok(html.includes("btn-insert-surgery-diary"), "Must have Insert into diary button");
+
+		// Zero emojis in rendered HTML (Deadly Sin #7)
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		assert.equal(emojiRegex.test(html), false, "Rendered HTML must not contain forbidden emojis");
 	});
 
 	it("returns null when isOpen is false", () => {
@@ -53,6 +65,14 @@ describe("SurgeryCockpitModal & SurgeryProtocolPanel (Surgical Cockpit)", () => 
 		assert.ok(html.includes("36"), "Must show active tooth");
 		assert.ok(html.includes("FDI"), "Must show FDI label");
 		assert.ok(html.includes("btn-panel-norm-surgery_implant_standard"), "Must have implant norm button");
+		assert.ok(html.includes("btn-panel-norm-surgery_extraction_simple"), "Must have simple extraction button");
+		assert.ok(html.includes("btn-panel-norm-surgery_extraction_complex"), "Must have complex extraction button");
+		assert.ok(html.includes("btn-panel-norm-surgery_periostotomy"), "Must have periostotomy button");
+		assert.ok(html.includes("A16.07.001"), "Must show 804n code in panel");
 		assert.ok(html.includes("btn-panel-apply-diary"), "Must have Apply to diary button");
+
+		// Zero emojis in panel HTML
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		assert.equal(emojiRegex.test(html), false, "Panel HTML must not contain forbidden emojis");
 	});
 });

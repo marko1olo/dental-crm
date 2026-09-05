@@ -199,4 +199,110 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		assert.ok(diary.includes("ХОД ОПЕРАЦИИ:"));
 		assert.ok(diary.includes("Холод 15 минут"));
 	});
+
+	it("5. 5 canonical outpatient surgery protocols have correct 804n codes and clinical content (Mandates 8e, 8i)", () => {
+		// 1. Simple extraction: A16.07.001
+		const simpleExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_simple");
+		assert.ok(simpleExt, "surgery_extraction_simple must exist");
+		assert.equal(simpleExt.code804n, "A16.07.001");
+		assert.ok(simpleExt.standardProtocolTextRu.includes("щипцы"), "Must mention forceps");
+		assert.ok(simpleExt.standardProtocolTextRu.includes("элеватор"), "Must mention elevator");
+		assert.ok(simpleExt.standardProtocolTextRu.includes("кюретаж"), "Must mention curettage");
+		assert.ok(
+			simpleExt.standardProtocolTextRu.includes("Альвожиль") ||
+			simpleExt.standardProtocolTextRu.includes("губка"),
+			"Must mention Alvogyl or hemostatic sponge",
+		);
+
+		// 2. Complex extraction: A16.07.002
+		const complexExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_complex");
+		assert.ok(complexExt, "surgery_extraction_complex must exist");
+		assert.equal(complexExt.code804n, "A16.07.002");
+		assert.ok(complexExt.standardProtocolTextRu.includes("Lindemann"), "Must mention Lindemann bur");
+		assert.ok(complexExt.standardProtocolTextRu.toLowerCase().includes("люксация"), "Must mention luxation");
+		assert.ok(complexExt.standardProtocolTextRu.includes("Викрил 4-0"), "Must mention Vicryl 4-0");
+
+		// 3. Atypical / impacted wisdom tooth extraction: A16.07.024
+		const atypicalExt = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_extraction_atypical");
+		assert.ok(atypicalExt, "surgery_extraction_atypical must exist");
+		assert.equal(atypicalExt.code804n, "A16.07.024");
+		assert.ok(atypicalExt.standardProtocolTextRu.includes("выкраивание"), "Must mention flap incision");
+		assert.ok(atypicalExt.standardProtocolTextRu.includes("сепарация"), "Must mention separation");
+		assert.ok(atypicalExt.standardProtocolTextRu.includes("ушивание раны"), "Must mention wound suturing");
+
+		// 4. Emergency periostotomy: A16.07.011
+		const periost = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_periostotomy");
+		assert.ok(periost, "surgery_periostotomy must exist");
+		assert.equal(periost.code804n, "A16.07.011");
+		assert.ok(periost.standardProtocolTextRu.includes("переходной складке"), "Must mention mucobuccal fold incision");
+		assert.ok(periost.standardProtocolTextRu.includes("эвакуация гнойного экссудата"), "Must mention pus evacuation");
+		assert.ok(periost.standardProtocolTextRu.includes("дренаж"), "Must mention drainage");
+
+		// 5. Dental implantation: A16.07.006
+		const implant = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_implant_standard");
+		assert.ok(implant, "surgery_implant_standard must exist");
+		assert.equal(implant.code804n, "A16.07.006");
+		assert.ok(implant.standardProtocolTextRu.includes("35 Н/см"), "Must mention 35 N/cm torque");
+		assert.ok(
+			implant.standardProtocolTextRu.includes("формирователь десны") ||
+			implant.standardProtocolTextRu.includes("винт-заглушка"),
+			"Must mention healing abutment or cover screw",
+		);
+	});
+
+	it("6. Suture material and hemostatic sponge warehouse delays NEVER block surgery (canProceed: true under Mandate 8e)", () => {
+		const surgicalMaterials = [
+			{ name: "Шовный материал Викрил 4-0", isWarehouseCritical: false },
+			{ name: "Губка Альвожил", isWarehouseCritical: false },
+			{ name: "Артикаин 1:100000", isWarehouseCritical: false },
+		];
+
+		// Overdraft with delayed suture and sponge
+		const overdraftStatus = evaluateWarehouseOverdraft(
+			surgicalMaterials,
+			false,
+			["Шовный материал Викрил 4-0", "Губка Альвожил"],
+		);
+
+		assert.equal(overdraftStatus.hasOverdraft, true);
+		assert.equal(overdraftStatus.canProceed, true, "Mandate 8e: Operation CANNOT be blocked!");
+		assert.ok(overdraftStatus.pendingItems.includes("Шовный материал Викрил 4-0"));
+		assert.ok(overdraftStatus.pendingItems.includes("Губка Альвожил"));
+		assert.ok(overdraftStatus.detailsRu.includes("Операция не блокируется"));
+	});
+
+	it("7. Zero emojis in all surgical protocol texts and diary records for Form 043/u (Deadly Sin #7)", () => {
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+
+		for (const norm of SURGICAL_OPERATION_NORMS) {
+			assert.equal(
+				emojiRegex.test(norm.standardProtocolTextRu),
+				false,
+				`Norm ${norm.id} standardProtocolTextRu contains forbidden emojis`,
+			);
+			assert.equal(
+				emojiRegex.test(norm.title),
+				false,
+				`Norm ${norm.id} title contains forbidden emojis`,
+			);
+			assert.equal(
+				emojiRegex.test(norm.postOpRecommendationsRu),
+				false,
+				`Norm ${norm.id} postOpRecommendationsRu contains forbidden emojis`,
+			);
+		}
+
+		const diary = buildSurgicalDiaryEntry({
+			patientName: "Петров П. П.",
+			toothFdi: 36,
+			protocolText: SIMPLE_EXTRACTION_NORM_TEXT,
+			recommendations: "Марлевый тампон сплюнуть через 20 минут.",
+		});
+
+		assert.equal(
+			emojiRegex.test(diary),
+			false,
+			"Form 043/u diary entry contains forbidden emojis",
+		);
+	});
 });

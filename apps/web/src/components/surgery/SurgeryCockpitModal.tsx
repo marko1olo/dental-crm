@@ -253,7 +253,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 											{isSelected && <CheckCircle2 size={16} className="text-[var(--teal,#0d9488)] shrink-0" />}
 										</div>
 										<span className="text-[11px] font-mono text-[var(--muted)]">
-											{norm.shortBadge} · {norm.icd10}
+											{norm.code804n ? `${norm.code804n} · ` : ""}{norm.icd10}
 										</span>
 									</button>
 								);
@@ -273,7 +273,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 							<button
 								type="button"
 								onClick={handleCopyProtocol}
-								className="min-h-[44px] px-3 py-1 rounded-lg text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--paper-soft)]"
+								className="min-h-[34px] px-3 py-1 rounded-lg text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--paper-soft)]"
 								data-testid="btn-copy-protocol"
 							>
 								<Copy size={14} />
@@ -295,6 +295,13 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 				{/* Footer */}
 				<footer className="surgery-cockpit-footer">
 					<div className="text-xs text-[var(--muted)]">
+						{currentNorm.code804n && (
+							<>
+								<span>804н: </span>
+								<span className="font-bold text-[var(--ink)]">{currentNorm.code804n}</span>
+								<span> · </span>
+							</>
+						)}
 						<span>МКБ-10: </span>
 						<span className="font-bold text-[var(--ink)]">{currentNorm.icd10}</span>
 						<span> · Доступно сохранение без бюрократических барьеров</span>

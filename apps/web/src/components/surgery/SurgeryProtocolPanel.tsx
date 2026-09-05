@@ -108,7 +108,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 						<button
 							type="button"
 							onClick={() => onOpenImplantPassport(toothFdi)}
-							className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+							className="min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
 							data-testid="btn-panel-implant-passport"
 						>
 							<Sliders size={15} />
@@ -120,7 +120,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 						<button
 							type="button"
 							onClick={onOpenFullCockpit}
-							className="min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 transition-all shadow-xs"
+							className="min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 transition-all shadow-xs"
 							data-testid="btn-panel-full-cockpit"
 						>
 							<Sparkles size={15} />
@@ -142,7 +142,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 			)}
 
 			{/* 1-Клик кнопки норм */}
-			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2">
 				{SURGICAL_OPERATION_NORMS.map((norm) => {
 					const isSel = activeNormId === norm.id;
 					return (
@@ -150,7 +150,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 							key={norm.id}
 							type="button"
 							onClick={() => handleNormSelect(norm)}
-							className={`min-h-[48px] p-2 rounded-xl text-xs font-bold text-left border transition-all cursor-pointer touch-manipulation ${
+							className={`min-h-[46px] p-2 rounded-xl text-xs font-bold text-left border transition-all cursor-pointer touch-manipulation ${
 								isSel
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-2xs"
 									: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
@@ -158,7 +158,9 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 							data-testid={`btn-panel-norm-${norm.id}`}
 						>
 							<div className="truncate font-black">{norm.shortBadge}</div>
-							<div className="text-[10px] opacity-80 truncate">{norm.icd10}</div>
+							<div className="text-[10px] opacity-80 truncate">
+								{norm.code804n ? `${norm.code804n} · ` : ""}{norm.icd10}
+							</div>
 						</button>
 					);
 				})}
@@ -174,11 +176,11 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 					data-testid="panel-textarea-protocol"
 				/>
 
-				<div className="flex items-center justify-between gap-2 flex-wrap">
+				<div className="flex items-center justify-between gap-2 flex-wrap min-h-[36px]">
 					<button
 						type="button"
 						onClick={() => setShowChecklist(!showChecklist)}
-						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-0 cursor-pointer"
+						className="min-h-[34px] px-3 py-1 rounded-lg text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-0 cursor-pointer"
 					>
 						{showChecklist ? "Скрыть Time-Out ВОЗ" : "Показать Time-Out ВОЗ"}
 					</button>
@@ -190,7 +192,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 								navigator.clipboard?.writeText(customProtocolText);
 								showToast("Протокол скопирован", "success");
 							}}
-							className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1 cursor-pointer"
+							className="min-h-[34px] px-3 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1 cursor-pointer"
 							data-testid="btn-panel-copy"
 						>
 							<Copy size={14} />
@@ -200,7 +202,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 						<button
 							type="button"
 							onClick={handleApply}
-							className="min-h-[44px] px-4 py-1.5 rounded-lg text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 shadow-xs"
+							className="min-h-[34px] px-4 py-1 rounded-lg text-xs font-black bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 shadow-xs"
 							data-testid="btn-panel-apply-diary"
 						>
 							<FileText size={15} />
