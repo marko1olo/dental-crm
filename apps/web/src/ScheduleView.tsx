@@ -1647,7 +1647,66 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				className="schedule-widgets-container mt-6"
 				style={{ display: "flex", flexDirection: "column", gap: "16px" }}
 			>
-				<UrgentScheduleRequestsWidget />
+				<UrgentScheduleRequestsWidget
+					onBookUrgentRequest={(request) => {
+						const targetDate = scheduleDateFilter || clinicToday || todayScheduleDate();
+						const matchingDoc = (dashboard?.clinicSettings?.staff ?? []).find(
+							(s) =>
+								s.active &&
+								(s.role === "doctor" || s.role === "owner") &&
+								(s.fullName.toLowerCase().includes(request.doctorName.toLowerCase()) ||
+									request.doctorName.toLowerCase().includes(s.fullName.toLowerCase())),
+						);
+						const dutyDoctor =
+							matchingDoc ||
+							(dashboard?.clinicSettings?.staff ?? []).find(
+								(s) =>
+									s.active &&
+									(s.role === "doctor" || s.role === "owner") &&
+									(s.specialties?.includes("therapist") ||
+										s.specialties?.includes("surgeon") ||
+										s.specialties?.includes("general")),
+							) ||
+							(dashboard?.clinicSettings?.staff ?? []).find(
+								(s) => s.active && (s.role === "doctor" || s.role === "owner"),
+							);
+						const chairs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
+						const chair = chairs[0] || null;
+
+						const existingPatient = (dashboard?.patients ?? []).find(
+							(p) =>
+								p.status === "active" &&
+								p.fullName.toLowerCase() === request.patientName.toLowerCase(),
+						);
+
+						let startTime = request.preferredSlotTime || "";
+						if (!startTime || !/^\d{2}:\d{2}$/.test(startTime)) {
+							const now = new Date();
+							const roundedMins = Math.ceil(now.getMinutes() / 5) * 5;
+							now.setMinutes(roundedMins, 0, 0);
+							startTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+						}
+
+						setQuickBookingSlot({
+							dateKey: targetDate,
+							startTime,
+							startsAt: `${targetDate}T${startTime}:00.000Z`,
+							doctorUserId: dutyDoctor?.id || null,
+							chairId: chair?.id || null,
+							patientId: existingPatient?.id || null,
+							patientName: request.patientName,
+							durationMinutes: 20,
+							reason: `CITO! ${request.requestType || "Острая боль"}`,
+							isCitoEmergency: true,
+						});
+						setQuickBookingOpen(true);
+						showToast(
+							`Экстренная запись CITO для «${request.patientName}»: проверьте время и подтвердите запись в 1 клик`,
+							"info",
+							4000,
+						);
+					}}
+				/>
 				{/*
                 Буфер расписания: раньше здесь висела пустая коробка без писателей.
                 Теперь — кнопка «Буфер» в шапке, «В буфер» на карточке, панель

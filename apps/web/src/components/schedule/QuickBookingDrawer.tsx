@@ -154,15 +154,29 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			}
 			return "primary";
 		});
-	const [patientId, setPatientId] = useState<string>(
-		() => initialSlot?.patientId || "",
+
+	// Pre-resolved initial patient from slot info
+	const initialMatchedPatient = useMemo(() => {
+		if (initialSlot?.patientId && dashboard?.patients) {
+			return dashboard.patients.find((p) => p.id === initialSlot.patientId) || null;
+		}
+		if (initialSlot?.patientName && dashboard?.patients) {
+			const candidate = initialSlot.patientName.trim().toLowerCase();
+			return (
+				dashboard.patients.find(
+					(p) => p.status === "active" && p.fullName.toLowerCase() === candidate,
+				) || null
+			);
+		}
+		return null;
+	}, [initialSlot?.patientId, initialSlot?.patientName, dashboard?.patients]);
+
+	const [selectedPatient, setSelectedPatient] = useState<Patient | null>(
+		() => initialMatchedPatient,
 	);
-	const [selectedPatient, setSelectedPatient] = useState<Patient | null>(() => {
-		if (!initialSlot?.patientId || !dashboard?.patients) return null;
-		return (
-			dashboard.patients.find((p) => p.id === initialSlot.patientId) || null
-		);
-	});
+	const [patientId, setPatientId] = useState<string>(
+		() => initialSlot?.patientId || initialMatchedPatient?.id || "",
+	);
 	const [doctorUserId, setDoctorUserId] = useState<string>(
 		() => initialSlot?.doctorUserId || "",
 	);
@@ -191,15 +205,34 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const [status, setStatus] = useState<Appointment["status"]>("planned");
 
 	// Typeahead patient search
-	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [searchQuery, setSearchQuery] = useState<string>(() => {
+		if (initialMatchedPatient) return initialMatchedPatient.fullName;
+		if (initialSlot?.patientName) return initialSlot.patientName;
+		return "";
+	});
 	const [isTypeaheadOpen, setIsTypeaheadOpen] = useState<boolean>(false);
 	const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
 	// Inline new patient creation
-	const [showInlineNewPatient, setShowInlineNewPatient] = useState<boolean>(false);
-	const [newPatientFullName, setNewPatientFullName] = useState<string>("");
-	const [newPatientPhone, setNewPatientPhone] = useState<string>("");
+	const [showInlineNewPatient, setShowInlineNewPatient] = useState<boolean>(() => {
+		if (!initialSlot?.patientId && initialSlot?.patientName && !initialMatchedPatient) {
+			return true;
+		}
+		return false;
+	});
+	const [newPatientFullName, setNewPatientFullName] = useState<string>(() => {
+		if (!initialSlot?.patientId && initialSlot?.patientName && !initialMatchedPatient) {
+			return initialSlot.patientName;
+		}
+		return "";
+	});
+	const [newPatientPhone, setNewPatientPhone] = useState<string>(() => {
+		if (!initialSlot?.patientId && initialSlot?.patientPhone && !initialMatchedPatient) {
+			return initialSlot.patientPhone;
+		}
+		return "";
+	});
 	const [newPatientBirthDate, setNewPatientBirthDate] = useState<string>("");
 	const [isCreatingPatient, setIsCreatingPatient] = useState<boolean>(false);
 

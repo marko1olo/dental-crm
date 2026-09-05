@@ -270,5 +270,64 @@ describe("QuickBookingDrawer", () => {
 		assert.ok(html.includes("Требуется подтверждение за 2 часа"), "должно отображаться предупреждение о подтверждении за 2 часа");
 		assert.ok(html.includes("patient-reliability-risk-alert"), "должен быть testid алерта риска");
 	});
+
+	it("initializes existing patient by patientName from initialSlot", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(QuickBookingDrawer, {
+				isOpen: true,
+				onClose: () => {},
+				dashboard: mockDashboard as Dashboard,
+				initialSlot: {
+					patientName: "Иванов Иван Иванович",
+					dateKey: "2026-08-20",
+					startTime: "14:00",
+					durationMinutes: 30,
+				},
+			}),
+		);
+
+		assert.ok(html.includes("Иванов Иван Иванович"), "должен быть найден существующий пациент");
+		assert.ok(html.includes("selected-patient-card"), "должна быть карточка выбранного пациента");
+	});
+
+	it("initializes inline new patient form when patientName is not in database", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(QuickBookingDrawer, {
+				isOpen: true,
+				onClose: () => {},
+				dashboard: mockDashboard as Dashboard,
+				initialSlot: {
+					patientName: "Новиков Сергей Васильевич",
+					patientPhone: "+7 999 777-88-99",
+					dateKey: "2026-08-20",
+					startTime: "14:00",
+					durationMinutes: 30,
+				},
+			}),
+		);
+
+		assert.ok(html.includes("Новиков Сергей Васильевич"), "должно отображаться введенное имя");
+		assert.ok(html.includes("+7 999 777-88-99"), "должен отображаться введенный телефон");
+		assert.ok(html.includes("quick-booking-inline-print-contract-btn"), "должна быть кнопка печати договора в форме нового пациента");
+		assert.ok(html.includes("Печать договора (_______)"), "должен быть текст кнопки печати договора");
+	});
+
+	it("renders blank contract print button in header with underscores for empty contract", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(QuickBookingDrawer, {
+				isOpen: true,
+				onClose: () => {},
+				dashboard: mockDashboard as Dashboard,
+				initialSlot: {
+					dateKey: "2026-08-20",
+					startTime: "14:00",
+					durationMinutes: 30,
+				},
+			}),
+		);
+
+		assert.ok(html.includes("quick-booking-print-blank-contract-btn"), "должна быть кнопка печати чистого договора");
+		assert.ok(html.includes("Бланк договора (_______)"), "должно содержать подпись бланка со строками");
+	});
 });
 
