@@ -1,15 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-	AlertCircle,
 	Check,
-	ChevronDown,
-	ChevronUp,
 	FileText,
 	Heart,
-	Info,
 	Printer,
-	Smile,
-	Sparkles,
 } from "lucide-react";
 import {
 	type FranklRating,
@@ -19,6 +13,7 @@ import {
 } from "../odontogram/pediatricDentitionEngine";
 import { FranklBehaviorBadge } from "../pediatric/FranklBehaviorBadge";
 import type { ToothData } from "../odontogram/ToothChart";
+import type { RootResorptionStage } from "../odontogram/anatomicalToothGeometries";
 import { showToast } from "../GlobalToast";
 
 export interface ToothPediatricContextProps {
@@ -33,11 +28,48 @@ export interface ToothPediatricContextProps {
 	onOpenParentMemo?: (() => void) | undefined;
 }
 
-export const RESORPTION_STAGES = [
-	{ id: "resorption_1", label: "I степень", sub: "Рассасывание апикальной 1/3 корня" },
-	{ id: "resorption_2", label: "II степень", sub: "Рассасывание до 1/2 длины корня" },
-	{ id: "resorption_3", label: "III степень", sub: "Полное рассасывание корней / подвижность" },
-	{ id: "exfoliation", label: "Физиологическая смена", sub: "Выпадение молочного зуба" },
+export interface PediatricResorptionStageOption {
+	readonly id: RootResorptionStage;
+	readonly stage: RootResorptionStage;
+	readonly percent: number;
+	readonly label: string;
+	readonly sub: string;
+	readonly stageName: string;
+}
+
+export const RESORPTION_STAGES: readonly PediatricResorptionStageOption[] = [
+	{
+		id: 25,
+		stage: 25,
+		percent: 25,
+		label: "I стадия (25%)",
+		sub: "Апикальная резорбция (25% длины корня)",
+		stageName: "I стадия — апикальная резорбция",
+	},
+	{
+		id: 50,
+		stage: 50,
+		percent: 50,
+		label: "II стадия (50%)",
+		sub: "Средняя резорбция (50% длины корня)",
+		stageName: "II стадия — средняя резорбция",
+	},
+	{
+		id: 75,
+		stage: 75,
+		percent: 75,
+		label: "III стадия (75%)",
+		sub: "Пришеечная резорбция (сохранена 1/3)",
+		stageName: "III стадия — пришеечная резорбция",
+	},
+	{
+		id: 100,
+		stage: 100,
+		percent: 100,
+		label: "IV стадия (100%)",
+		sub: "Полная резорбция / эксфолиация (выпадение)",
+		stageName: "IV стадия — полная резорбция / эксфолиация",
+	},
 ] as const;
 
 export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
@@ -52,9 +84,27 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 	onOpenParentMemo,
 }) => {
 	const [franklRating, setFranklRating] = useState<FranklRating>(initialFrankl);
-	const [selectedResorption, setSelectedResorption] = useState<string>(
-		toothData?.rootResorptionStage ? String(toothData.rootResorptionStage) : "",
+
+	const initialResorption: RootResorptionStage | undefined =
+		(toothData?.rootResorptionStage && toothData.rootResorptionStage > 0)
+			? toothData.rootResorptionStage
+			: (toothData?.rootResorption && toothData.rootResorption > 0)
+				? toothData.rootResorption
+				: undefined;
+
+	const [selectedResorption, setSelectedResorption] = useState<RootResorptionStage | undefined>(
+		initialResorption,
 	);
+
+	useEffect(() => {
+		const currentResorption: RootResorptionStage | undefined =
+			(toothData?.rootResorptionStage && toothData.rootResorptionStage > 0)
+				? toothData.rootResorptionStage
+				: (toothData?.rootResorption && toothData.rootResorption > 0)
+					? toothData.rootResorption
+					: undefined;
+		setSelectedResorption(currentResorption);
+	}, [toothData?.rootResorptionStage, toothData?.rootResorption]);
 
 	const activeFranklDef: FranklRatingDefinition = getFranklDefinition(franklRating);
 
@@ -64,15 +114,43 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 		showToast(`Шкала Франкла обновлена: ${def.symbol} (${def.nameRu})`, "info");
 	};
 
-	const handleResorptionChange = (stageId: string) => {
-		const next = selectedResorption === stageId ? "" : stageId;
+	const handleResorptionChange = (stage: RootResorptionStage) => {
+		const next: RootResorptionStage | undefined = selectedResorption === stage ? undefined : stage;
 		setSelectedResorption(next);
 		onUpdateTooth?.({
-			rootResorptionStage: next ? (Number(next) as any) : undefined,
+			rootResorptionStage: next as RootResorptionStage,
 		});
 		if (next) {
-			const label = RESORPTION_STAGES.find((s) => s.id === stageId)?.label || stageId;
+			const stageItem = RESORPTION_STAGES.find((s) => s.stage === next);
+			const label = stageItem?.label || `${next}%`;
 			showToast(`Физиологическая резорбция зуба #${toothNumber}: ${label}`, "info");
+		} else {
+			showToast(`Физиологическая резорбция зуба #${toothNumber} сброшена`, "info");
+		}
+	};
+
+	const handleInsertResorptionProtocol = () => {
+		const currentStageItem = selectedResorption
+			? RESORPTION_STAGES.find((s) => s.stage === selectedResorption)
+			: undefined;
+
+		const stageName = currentStageItem?.stageName || "Физиологическая резорбция корней";
+		const percent = currentStageItem?.percent ?? (selectedResorption ?? 25);
+
+		const text = currentStageItem
+			? `Физиологическая резорбция корней зуба #${toothNumber}: ${stageName} (${percent}%). Физиологическая смена прикуса.`
+			: `Физиологическая резорбция корней зуба #${toothNumber}: признаки резорбции корней отсутствуют (0%). Физиологическая норма.`;
+
+		if (onInsertToProtocol) {
+			onInsertToProtocol(text);
+			showToast(`Запись о резорбции зуба #${toothNumber} внесена в 043/у!`, "success");
+		} else {
+			try {
+				navigator.clipboard.writeText(text);
+				showToast("Протокол резорбции скопирован", "success");
+			} catch {
+				showToast("Не удалось скопировать", "error");
+			}
 		}
 	};
 
@@ -124,17 +202,29 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 
 			{/* Physiological Root Resorption Staging (For Deciduous Teeth) */}
 			<div className="dente-resorption-box">
-				<label className="dente-field-label">
-					Физиологическая резорбция корней молочного зуба:
-				</label>
+				<div className="dente-surface-label-row">
+					<label className="dente-field-label" style={{ marginBottom: 0 }}>
+						Физиологическая резорбция корней молочного зуба:
+					</label>
+					<button
+						type="button"
+						onClick={handleInsertResorptionProtocol}
+						className="dente-secondary-btn"
+						style={{ minHeight: "30px", padding: "3px 10px", fontSize: "12px", gap: "5px" }}
+						title={`Внести запись о резорбции корней зуба #${toothNumber} в карту 043/у`}
+					>
+						<FileText size={13} />
+						<span>Внести в 043/у</span>
+					</button>
+				</div>
 				<div className="dente-resorption-grid">
 					{RESORPTION_STAGES.map((st) => {
-						const isSelected = selectedResorption === st.id;
+						const isSelected = selectedResorption === st.stage;
 						return (
 							<button
 								key={st.id}
 								type="button"
-								onClick={() => handleResorptionChange(st.id)}
+								onClick={() => handleResorptionChange(st.stage)}
 								className={`dente-resorption-btn ${isSelected ? "selected" : ""}`}
 							>
 								<span className="resorption-title">{st.label}</span>
