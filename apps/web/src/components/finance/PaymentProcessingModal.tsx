@@ -22,6 +22,7 @@ import {
 	Receipt,
 	UserCheck,
 	Zap,
+	Coins,
 } from "lucide-react";
 import { kopecksToRub, rubToKopecks } from "@dental/shared";
 import {
@@ -29,6 +30,10 @@ import {
 	process100PercentDiscountCheckout,
 	allocateRemainderToTender,
 	getFastCombinedTenderPresets,
+	calculateCashChange,
+	createExactCashTenders,
+	createFullCardTenders,
+	createDepositAndCardComboTenders,
 	type MultiTenderStateRub,
 	type PayerLegalType,
 } from "./cashboxOperations";
@@ -118,6 +123,17 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 	}, [totalAmountRub, discountPreset, customDiscountPercent]);
 
 	const totalDueRub = discountCalc.totalNetRub;
+
+	// Cash desk received amount state for change calculation
+	const [cashReceivedRub, setCashReceivedRub] = useState<number>(totalDueRub);
+
+	React.useEffect(() => {
+		setCashReceivedRub(totalDueRub);
+	}, [totalDueRub]);
+
+	const cashChange = useMemo(() => {
+		return calculateCashChange(totalDueRub, cashReceivedRub);
+	}, [totalDueRub, cashReceivedRub]);
 
 	// Buyer INN validation (strictly non-blocking for physical persons)
 	const innValidation = useMemo(() => {
@@ -216,6 +232,18 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 	const handleSubmitPayment = async () => {
 		if (inFlightRef.current || isSubmitting) return;
 
+		// B2B requires valid INN per 54-FZ; for physical persons INN NEVER blocks
+		if (payerType !== "physical_person" && !innValidation.isValid) {
+			showToast(
+				innValidation.errorRu ||
+					(payerType === "legal_entity"
+						? "Для юридического лица обязателен ИНН (10 цифр) по 54-ФЗ"
+						: "Для ИП обязателен ИНН (12 цифр) по 54-ФЗ"),
+				"error",
+			);
+			return;
+		}
+
 		// If total is 0 ₽, redirect to zero checkout
 		if (totalDueRub === 0) {
 			await handle100PercentZeroCheckout();
@@ -265,13 +293,14 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 			}
 
 			// Fiscalize 54-FZ receipt (INN never blocks physical persons)
+			const effectiveBuyerInn = buyerInn?.trim() ? buyerInn.trim() : undefined;
 			const payload = {
 				clientMutationId,
 				patientId,
 				customerContact: patientPhone || patientName,
 				cashierFullName,
 				cashierInn: clinicInn,
-				buyerInn: payerType === "legal_entity" || payerType === "individual_entrepreneur" ? buyerInn : undefined,
+				buyerInn: effectiveBuyerInn,
 				cashKopecks: cashKop,
 				electronicCardKopecks: cardKop,
 				sbpKopecks: sbpKop,
@@ -407,7 +436,8 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 								data-testid="btn-preset-warranty-100"
 							>
 								<ShieldCheck className="w-3.5 h-3.5" />
-								<span>⚡ Гарантия 100% (0 ₽)</span>
+								<Zap className="w-3.5 h-3.5 fill-current text-amber-400" />
+								<span>Гарантия 100% (0 ₽)</span>
 							</button>
 
 							<button
@@ -451,6 +481,64 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 						)}
 					</div>
 
+					{/* 1-Click Fast Presets Bar (Mandate 8e item 9 & Mandate 8n) */}
+					<div
+						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 flex-wrap"
+						data-testid="quick-payment-presets-bar"
+					>
+						<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1 mr-1">
+							<Zap className="w-3.5 h-3.5 text-amber-500" />
+							<span>1-клик:</span>
+						</span>
+						<button
+							type="button"
+							onClick={() => {
+								setSelectedTender("cash");
+								setCashReceivedRub(totalDueRub);
+								setSplitTenders(createExactCashTenders(totalDueRub));
+								showToast(`Выбрана оплата наличными «Без сдачи»: ${totalDueRub.toLocaleString("ru-RU")} ₽`, "info");
+							}}
+							className="min-h-[44px] px-3.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-300 hover:bg-emerald-100 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+							data-testid="preset-exact-cash"
+						>
+							<Banknote className="w-4 h-4 text-emerald-600" />
+							<Zap className="w-3 h-3 text-amber-500" />
+							<span>Без сдачи ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setSelectedTender("card");
+								setSplitTenders(createFullCardTenders(totalDueRub));
+								showToast(`Выбрана оплата картой 100%: ${totalDueRub.toLocaleString("ru-RU")} ₽`, "info");
+							}}
+							className="min-h-[44px] px-3.5 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-300 hover:bg-blue-100 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+							data-testid="preset-full-card"
+						>
+							<CreditCard className="w-4 h-4 text-blue-600" />
+							<Zap className="w-3 h-3 text-amber-500" />
+							<span>Оплата картой 100%</span>
+						</button>
+						{patientDepositRub > 0 && (
+							<button
+								type="button"
+								onClick={() => {
+									setSelectedTender("split");
+									setSplitTenders(createDepositAndCardComboTenders(totalDueRub, patientDepositRub));
+									const depKop = Math.min(rubToKopecks(totalDueRub), rubToKopecks(patientDepositRub));
+									const remKop = Math.max(0, rubToKopecks(totalDueRub) - depKop);
+									showToast(`Зачтено ${kopecksToRub(depKop)} ₽ из аванса + остаток ${kopecksToRub(remKop)} ₽ картой`, "info");
+								}}
+								className="min-h-[44px] px-3.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-300 hover:bg-indigo-100 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+								data-testid="preset-deposit-plus-card"
+							>
+								<Wallet className="w-4 h-4 text-indigo-600" />
+								<Zap className="w-3 h-3 text-amber-500" />
+								<span>Комбинированная (Весь аванс + остаток картой)</span>
+							</button>
+						)}
+					</div>
+
 					{/* 54-FZ Payer Type & INN (Non-blocking for citizens) */}
 					<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-2.5">
 						<div className="flex items-center justify-between flex-wrap gap-2">
@@ -460,8 +548,9 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 									54-ФЗ Реквизиты чека:
 								</span>
 							</div>
-							<span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
-								✓ Для физлиц ИНН НЕ требуется
+							<span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+								<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+								<span>Для физлиц ИНН НЕ требуется</span>
 							</span>
 						</div>
 
@@ -501,7 +590,28 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 							</button>
 						</div>
 
-						{payerType !== "physical_person" && (
+						{payerType === "physical_person" ? (
+							<div className="space-y-1 pt-1">
+								<label className="text-xs font-bold text-[var(--muted,#64748b)] flex items-center justify-between">
+									<span>ИНН гражданина (необязательно, для налогового вычета 13% НДФЛ):</span>
+									<span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Опционально</span>
+								</label>
+								<input
+									type="text"
+									value={buyerInn}
+									onChange={(e) => setBuyerInn(e.target.value)}
+									placeholder="12 цифр (необязательно, не блокирует оплату)"
+									data-testid="input-buyer-inn-physical"
+									className="h-9 w-full px-3 text-xs font-mono rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] outline-none focus:ring-2 focus:ring-teal-500"
+								/>
+								{buyerInn && innValidation.errorRu && (
+									<p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium m-0 flex items-center gap-1">
+										<AlertCircle className="w-3.5 h-3.5" />
+										<span>{innValidation.errorRu}</span>
+									</p>
+								)}
+							</div>
+						) : (
 							<div className="space-y-1 pt-1">
 								<label className="text-xs font-bold text-[var(--ink,#0f172a)] block">
 									ИНН {payerType === "legal_entity" ? "организации (10 цифр)" : "ИП (12 цифр)"} *
@@ -511,7 +621,8 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 									value={buyerInn}
 									onChange={(e) => setBuyerInn(e.target.value)}
 									placeholder={payerType === "legal_entity" ? "7701234567" : "770123456789"}
-									className="h-9 w-full px-3 text-xs font-mono rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
+									data-testid="input-buyer-inn-b2b"
+									className="h-9 w-full px-3 text-xs font-mono rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] outline-none focus:ring-2 focus:ring-teal-500"
 								/>
 								{innValidation.errorRu && (
 									<p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold m-0 flex items-center gap-1">
@@ -551,7 +662,10 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 
 							<button
 								type="button"
-								onClick={() => setSelectedTender("cash")}
+								onClick={() => {
+									setSelectedTender("cash");
+									setCashReceivedRub(totalDueRub);
+								}}
 								className={`min-h-[44px] px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs ${
 									selectedTender === "cash"
 										? "bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-400"
@@ -621,6 +735,105 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 						</div>
 					</div>
 
+					{/* Cash Tender Fast Calculator (54-FZ & Exact Cash) */}
+					{selectedTender === "cash" && (
+						<div
+							className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-3"
+							data-testid="cash-tender-details"
+						>
+							<div className="flex items-center justify-between flex-wrap gap-2">
+								<div className="flex items-center gap-2">
+									<Banknote className="w-5 h-5 text-emerald-600" />
+									<h4 className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] m-0">
+										Приём наличных в кассу (54-ФЗ)
+									</h4>
+								</div>
+								<span className="text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300">
+									К оплате: {totalDueRub.toLocaleString("ru-RU")} ₽
+								</span>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+								<div className="space-y-1">
+									<div className="flex items-center justify-between">
+										<label className="text-xs font-bold text-[var(--ink,#0f172a)]">
+											Внесено покупателем, ₽:
+										</label>
+										<button
+											type="button"
+											onClick={() => setCashReceivedRub(totalDueRub)}
+											className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer inline-flex items-center gap-1"
+											data-testid="btn-cash-exact-amount"
+										>
+											<Zap className="w-3 h-3 text-amber-500" />
+											<span>Без сдачи</span>
+										</button>
+									</div>
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={cashReceivedRub || ""}
+										onChange={(e) => setCashReceivedRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder={`${totalDueRub} ₽`}
+										data-testid="input-cash-received"
+										className="h-10 w-full px-3 text-sm font-bold font-mono rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] outline-none focus:ring-2 focus:ring-emerald-500"
+									/>
+								</div>
+
+								<div className="p-3 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] flex items-center justify-between">
+									<div>
+										<span className="text-xs text-[var(--muted,#64748b)] block font-semibold">Сдача клиенту:</span>
+										<strong
+											className={`text-base font-mono font-black ${
+												cashChange.isInsufficient ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+											}`}
+											data-testid="cash-change-display"
+										>
+											{cashChange.isInsufficient
+												? "Недостаточно средств"
+												: `${cashChange.changeRub.toLocaleString("ru-RU")} ₽`}
+										</strong>
+									</div>
+									{cashChange.isExactWithoutChange && (
+										<span className="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200">
+											Ровно без сдачи
+										</span>
+									)}
+								</div>
+							</div>
+
+							{/* Quick Denominations */}
+							<div className="flex items-center gap-1.5 flex-wrap pt-1">
+								<span className="text-[11px] font-bold text-[var(--muted,#64748b)]">Быстрый ввод:</span>
+								{[100, 500, 1000, 5000].map((denom) => (
+									<button
+										key={denom}
+										type="button"
+										onClick={() => setCashReceivedRub((prev) => prev + denom)}
+										className="min-h-[36px] px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)] cursor-pointer shadow-2xs"
+									>
+										+{denom} ₽
+									</button>
+								))}
+								<button
+									type="button"
+									onClick={() => setCashReceivedRub(Math.ceil(totalDueRub / 500) * 500)}
+									className="min-h-[36px] px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)] cursor-pointer shadow-2xs"
+								>
+									Округлить до 500 ₽
+								</button>
+								<button
+									type="button"
+									onClick={() => setCashReceivedRub(Math.ceil(totalDueRub / 1000) * 1000)}
+									className="min-h-[36px] px-2.5 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)] cursor-pointer shadow-2xs"
+								>
+									Округлить до 1000 ₽
+								</button>
+							</div>
+						</div>
+					)}
+
 					{/* Split Tender Controls (1-tap remainder buttons without manual kopeck typing) */}
 					{selectedTender === "split" && (
 						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-3">
@@ -628,9 +841,10 @@ export const PaymentProcessingModal: React.FC<PaymentProcessingModalProps> = ({
 								<h4 className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] m-0">
 									Комбинированная оплата (1-тап распределение остатка):
 								</h4>
-								<span className={`text-xs font-mono font-extrabold ${isSplitBalanced ? "text-emerald-600" : "text-amber-600"}`}>
-									{totalAllocatedRub.toLocaleString("ru-RU")} / {totalDueRub.toLocaleString("ru-RU")} ₽
-									{isSplitBalanced ? " ✓ Сходится" : " ⚠ Не сходится"}
+								<span className={`text-xs font-mono font-extrabold flex items-center gap-1 ${isSplitBalanced ? "text-emerald-600" : "text-amber-600"}`}>
+									{isSplitBalanced ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+									<span>{totalAllocatedRub.toLocaleString("ru-RU")} / {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+									<span>{isSplitBalanced ? "Сходится" : "Не сходится"}</span>
 								</span>
 							</div>
 

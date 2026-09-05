@@ -5,7 +5,7 @@
  * Supports Cash, Sberbank POS Terminal, SberPay QR, FacePay Biometry, Family Wallet, and Split Payments.
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
 	X,
 	CreditCard,
@@ -16,6 +16,12 @@ import {
 	Printer,
 	ShieldCheck,
 	CheckCircle,
+	CheckCircle2,
+	AlertCircle,
+	Coins,
+	Building2,
+	User,
+	FileText,
 	Users,
 	Sparkles,
 	Zap,
@@ -25,6 +31,11 @@ import {
 	kopecksToRub,
 	rubToKopecks,
 } from "@dental/shared";
+import {
+	calculateCashChange,
+	validate54FzBuyerInn,
+	type PayerType,
+} from "./cashboxOperations.js";
 import { SberPayIntegration } from "./SberPayIntegration.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
@@ -78,11 +89,79 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const [splitDepositRub, setSplitDepositRub] = useState<number>(0);
 	const [splitSbpRub, setSplitSbpRub] = useState<number>(0);
 
+	// 54-FZ Buyer Details & Cashier Autonomy state (Mandates 8e & 8n)
+	const [payerType, setPayerType] = useState<PayerType>("physical");
+	const [buyerInn, setBuyerInn] = useState<string>("");
+	const [buyerInnError, setBuyerInnError] = useState<string | null>(null);
+	const [receivedCashRub, setReceivedCashRub] = useState<number>(totalDueRub);
+
+	const cashChange = useMemo(() => {
+		return calculateCashChange(totalDueRub, receivedCashRub);
+	}, [receivedCashRub, totalDueRub]);
+
+	const handleInnChange = (value: string) => {
+		const cleaned = value.replace(/\D/g, "").slice(0, 12);
+		setBuyerInn(cleaned);
+		if (cleaned.length > 0) {
+			const validation = validate54FzBuyerInn(cleaned, payerType);
+			if (!validation.isValid) {
+				setBuyerInnError(validation.errorMessage || "Некорректный ИНН");
+			} else {
+				setBuyerInnError(null);
+			}
+		} else {
+			setBuyerInnError(null);
+		}
+	};
+
+	const applyExactCashPreset = () => {
+		setActiveMethod("cash");
+		setReceivedCashRub(totalDueRub);
+		setSplitCashRub(totalDueRub);
+		setSplitCardRub(0);
+		setSplitDepositRub(0);
+		setSplitSbpRub(0);
+		showToast(`Применен пресет: Без сдачи (${totalDueRub.toLocaleString("ru-RU")} ₽ нал)`, "info", 2000);
+	};
+
+	const applyFullCardPreset = () => {
+		setActiveMethod("card_terminal");
+		setSplitCardRub(totalDueRub);
+		setSplitCashRub(0);
+		setSplitDepositRub(0);
+		setSplitSbpRub(0);
+		showToast(`Применен пресет: Оплата картой 100% (${totalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
+	};
+
+	const applyDepositPlusCardPreset = () => {
+		const available = Math.min(totalDueRub, patientDepositRub);
+		const remainder = Number((totalDueRub - available).toFixed(2));
+		setSplitDepositRub(available);
+		setSplitCardRub(remainder);
+		setSplitCashRub(0);
+		setSplitSbpRub(0);
+		setActiveMethod("split");
+		showToast(
+			`Применен пресет: Аванс ${available.toLocaleString("ru-RU")} ₽ + Карта ${remainder.toLocaleString("ru-RU")} ₽`,
+			"info",
+			3000,
+		);
+	};
+
 	if (!isOpen) return null;
 
 	const amountRub = (amountKopecks / 100).toFixed(2);
 
 	const handleCashSubmit = async () => {
+		if (payerType === "legal_entity") {
+			const validation = validate54FzBuyerInn(buyerInn, payerType);
+			if (!validation.isValid) {
+				setBuyerInnError(validation.errorMessage || "Для юрлица/ИП требуется валидный ИНН");
+				showToast("Для юрлица/ИП требуется корректный ИНН (10 или 12 цифр)", "error");
+				return;
+			}
+		}
+
 		setIsSubmittingCash(true);
 		try {
 			const clientMutationId = `cash:${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -92,6 +171,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			});
 
 			const amountRubNumber = Number((amountKopecks / 100).toFixed(2));
+			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
+			const changeNote = cashChange.changeRub > 0 ? ` (получено ${receivedCashRub} ₽, сдача ${cashChange.changeRub} ₽)` : "";
+
 			// Record Cash transaction in backend via canonical billing payments endpoint
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
@@ -103,7 +185,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Оплата наличными через кассу (${amountRub} ₽)`,
+					note: `Оплата наличными через кассу (${amountRub} ₽)${changeNote}${innNote}`,
 				}),
 			});
 
@@ -138,6 +220,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const isBalanced = Math.abs(totalAllocatedRub - totalDueRub) < 0.009;
 
 	const handleSplitSubmit = async () => {
+		if (payerType === "legal_entity") {
+			const validation = validate54FzBuyerInn(buyerInn, payerType);
+			if (!validation.isValid) {
+				setBuyerInnError(validation.errorMessage || "Для юрлица/ИП требуется валидный ИНН");
+				showToast("Для юрлица/ИП требуется корректный ИНН (10 или 12 цифр)", "error");
+				return;
+			}
+		}
+
 		let effectiveCardRub = splitCardRub;
 		let effectiveCashRub = splitCashRub;
 		const effectiveDepositRub = splitDepositRub;
@@ -170,6 +261,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			if (effectiveSbpRub > 0) parts.push(`СБП ${effectiveSbpRub} ₽`);
 
 			const primaryMethod = effectiveCashRub > effectiveCardRub ? "cash" : "card";
+			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
 				headers,
@@ -180,7 +272,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Комбинированная оплата: ${parts.join(" + ")}`,
+					note: `Комбинированная оплата: ${parts.join(" + ")}${innNote}`,
 				}),
 			});
 
@@ -319,8 +411,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<h2 id="payment-modal-title" className="text-base sm:text-lg font-bold m-0 flex items-center gap-2">
 							<ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
 							<span>Прием оплаты • {amountRub} ₽</span>
-							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-								✓ 54-ФЗ
+							<span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 inline-flex items-center gap-1">
+								<CheckCircle2 size={12} />
+								<span>54-ФЗ</span>
 							</span>
 						</h2>
 						<p className="text-xs text-[var(--muted,#64748b)] m-0">
@@ -335,6 +428,57 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					>
 						<X size={18} />
 					</button>
+				</div>
+
+				{/* 1-Click Fast Presets Bar (Mandates 8e & 8n: Frictionless checkout) */}
+				<div className="p-2.5 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2 flex-wrap">
+					<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--muted,#64748b)]">
+						<Zap size={14} className="text-amber-500 shrink-0" />
+						<span>1-клик пресеты:</span>
+					</div>
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<button
+							type="button"
+							onClick={applyExactCashPreset}
+							className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeMethod === "cash" && cashChange.isExact
+									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-exact-cash"
+						>
+							<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
+							<span>Без сдачи ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+						</button>
+						<button
+							type="button"
+							onClick={applyFullCardPreset}
+							className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeMethod === "card_terminal"
+									? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-full-card"
+						>
+							<CreditCard size={14} className={activeMethod === "card_terminal" ? "text-white" : "text-blue-600"} />
+							<span>Картой 100% ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+						</button>
+						{patientDepositRub > 0 && (
+							<button
+								type="button"
+								onClick={applyDepositPlusCardPreset}
+								className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
+										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+								}`}
+								data-testid="preset-deposit-plus-card"
+							>
+								<Wallet size={14} className={activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0 ? "text-white" : "text-purple-600"} />
+								<span>Весь аванс ({Math.min(totalDueRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Карта</span>
+							</button>
+						)}
+					</div>
 				</div>
 
 				{/* Method Selector Tabs */}
@@ -408,6 +552,121 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 				{/* Modal Body */}
 				<div className="p-4 overflow-y-auto flex-1 space-y-4">
+					{/* 54-FZ Buyer Details (Mandates 8e & 8n: Frictionless, optional for physical persons) */}
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2.5">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink,#0f172a)]">
+								<Building2 size={14} className="text-indigo-600" />
+								<span>Чек 54-ФЗ: Данные покупателя</span>
+							</div>
+							<div className="flex items-center gap-1 p-0.5 bg-[var(--paper,#ffffff)] rounded-lg border border-[var(--line,#e2e8f0)]">
+								<button
+									type="button"
+									onClick={() => {
+										setPayerType("physical");
+										setBuyerInnError(null);
+									}}
+									className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										payerType === "physical"
+											? "bg-emerald-600 text-white shadow-2xs"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									data-testid="tab-payer-physical"
+								>
+									<User size={12} />
+									<span>Физлицо (Гражданин)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setPayerType("legal_entity")}
+									className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										payerType === "legal_entity"
+											? "bg-indigo-600 text-white shadow-2xs"
+											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									}`}
+									data-testid="tab-payer-legal"
+								>
+									<Building2 size={12} />
+									<span>Юрлицо / ИП</span>
+								</button>
+							</div>
+						</div>
+
+						{payerType === "physical" ? (
+							<div className="space-y-1">
+								<div className="flex items-center justify-between text-[11px] text-[var(--muted,#64748b)]">
+									<span className="flex items-center gap-1">
+										<FileText size={12} className="text-emerald-600" />
+										<span>ИНН пациента (необязательно, для справки НДФЛ 13%):</span>
+									</span>
+									<span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+										По 54-ФЗ для физлиц не требуется
+									</span>
+								</div>
+								<div className="relative">
+									<input
+										type="text"
+										value={buyerInn}
+										onChange={(e) => handleInnChange(e.target.value)}
+										placeholder="Необязательно (12 цифр для налогового вычета)"
+										maxLength={12}
+										className="h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-emerald-500"
+										data-testid="input-buyer-inn-physical"
+									/>
+									{buyerInn && (
+										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted,#64748b)]">
+											{buyerInn.length}/12
+										</span>
+									)}
+								</div>
+								{buyerInnError && (
+									<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 flex items-center gap-1">
+										<AlertCircle size={10} />
+										<span>{buyerInnError} (оплата не блокируется)</span>
+									</p>
+								)}
+							</div>
+						) : (
+							<div className="space-y-1">
+								<label className="text-[11px] font-bold text-[var(--ink,#0f172a)] flex items-center justify-between">
+									<span>ИНН юридического лица / ИП (10 или 12 цифр):</span>
+									<span className="text-[10px] text-indigo-600 font-bold">* Обязательно по 54-ФЗ</span>
+								</label>
+								<div className="relative">
+									<input
+										type="text"
+										value={buyerInn}
+										onChange={(e) => handleInnChange(e.target.value)}
+										placeholder="Введите 10 цифр (ООО) или 12 цифр (ИП)"
+										maxLength={12}
+										className={`h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper,#ffffff)] border rounded-lg text-[var(--ink,#0f172a)] outline-none ${
+											buyerInnError
+												? "border-rose-500 focus:border-rose-600"
+												: "border-[var(--line,#e2e8f0)] focus:border-indigo-500"
+										}`}
+										data-testid="input-buyer-inn-legal"
+									/>
+									{buyerInn && (
+										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted,#64748b)]">
+											{buyerInn.length} знаков
+										</span>
+									)}
+								</div>
+								{buyerInnError ? (
+									<p className="text-[10px] text-rose-600 dark:text-rose-400 m-0 flex items-center gap-1">
+										<AlertCircle size={10} />
+										<span>{buyerInnError}</span>
+									</p>
+								) : buyerInn.length === 10 || buyerInn.length === 12 ? (
+									<p className="text-[10px] text-emerald-600 dark:text-emerald-400 m-0 flex items-center gap-1">
+										<CheckCircle2 size={10} />
+										<span>ИНН валиден по формату 54-ФЗ для B2B расчетов</span>
+									</p>
+								) : null}
+							</div>
+						)}
+					</div>
+
 					{totalDueRub === 0 && (
 						<div
 							className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 flex items-center justify-between gap-3 flex-wrap"
@@ -433,7 +692,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								data-testid="btn-payment-close-warranty-zero"
 							>
 								<Sparkles size={14} />
-								<span>⚡ Закрыть визит в 1 клик (0 ₽)</span>
+								<span>Закрыть визит в 1 клик (0 ₽)</span>
 							</button>
 						</div>
 					)}
@@ -453,15 +712,91 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							}}
 						/>
 					) : activeMethod === "cash" ? (
-						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-4 text-center">
-							<div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-								<Banknote size={24} />
+						<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-4">
+							<div className="flex items-center gap-3">
+								<div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+									<Banknote size={20} />
+								</div>
+								<div>
+									<h3 className="text-sm font-bold m-0 text-[var(--ink,#0f172a)]">
+										Прием наличных денежных средств
+									</h3>
+									<p className="text-xs text-[var(--muted,#64748b)] m-0">
+										Сумма к внесению в кассу: <strong className="text-[var(--ink,#0f172a)]">{totalDueRub.toLocaleString("ru-RU")} ₽</strong>
+									</p>
+								</div>
 							</div>
-							<div>
-								<h3 className="text-sm font-bold m-0">Прием наличных денежных средств</h3>
-								<p className="text-xs text-[var(--muted,#64748b)] m-0">
-									Сумма к внесению в кассу клиники: <strong>{amountRub} ₽</strong>
-								</p>
+
+							<div className="space-y-2 p-3 bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line,#e2e8f0)]">
+								<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center justify-between">
+									<span>Получено от пациента наличными, ₽:</span>
+									<button
+										type="button"
+										onClick={() => setReceivedCashRub(totalDueRub)}
+										className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
+										data-testid="btn-cash-exact-amount"
+									>
+										<Coins size={12} />
+										<span>Ровно без сдачи ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+									</button>
+								</label>
+								<div className="flex items-center gap-2">
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={receivedCashRub || ""}
+										onChange={(e) => setReceivedCashRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder="0 ₽"
+										className="h-10 w-full px-3 text-base font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink,#0f172a)] outline-none focus:border-emerald-500"
+										data-testid="input-cash-received"
+									/>
+									<button
+										type="button"
+										onClick={() => setReceivedCashRub(totalDueRub)}
+										className="h-10 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0 hover:bg-emerald-100 cursor-pointer flex items-center gap-1"
+									>
+										<Zap size={14} />
+										<span>Без сдачи</span>
+									</button>
+								</div>
+
+								{/* Change Calculation Box */}
+								{cashChange.changeRub > 0 ? (
+									<div
+										className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs"
+										data-testid="cash-change-display"
+									>
+										<span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+											<Coins size={14} />
+											<span>Сдача пациенту:</span>
+										</span>
+										<span className="font-mono text-base font-black text-emerald-700 dark:text-emerald-300">
+											{cashChange.changeRub.toLocaleString("ru-RU")} ₽
+										</span>
+									</div>
+								) : cashChange.isExact ? (
+									<div
+										className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5"
+										data-testid="cash-exact-display"
+									>
+										<CheckCircle2 size={14} />
+										<span>Внесено ровно, без сдачи</span>
+									</div>
+								) : cashChange.shortageRub > 0 ? (
+									<div
+										className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center justify-between"
+										data-testid="cash-shortage-display"
+									>
+										<span className="flex items-center gap-1.5">
+											<AlertCircle size={14} />
+											<span>Недостает до полной суммы:</span>
+										</span>
+										<span className="font-mono font-bold">
+											{cashChange.shortageRub.toLocaleString("ru-RU")} ₽
+										</span>
+									</div>
+								) : null}
 							</div>
 
 							<button
@@ -469,6 +804,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								onClick={handleCashSubmit}
 								disabled={isSubmittingCash}
 								className="min-h-[44px] w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all"
+								data-testid="btn-cash-submit"
 							>
 								<CheckCircle size={16} />
 								<span>{isSubmittingCash ? "Фиксация..." : `Подтвердить прием ${amountRub} ₽ в кассу`}</span>
@@ -567,9 +903,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											setSplitCashRub(0);
 											setSplitSbpRub(0);
 										}}
-										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 cursor-pointer"
+										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 cursor-pointer flex items-center gap-1"
 									>
-										⚡ Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Карта
+										<Zap size={12} />
+										<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Карта</span>
 									</button>
 								)}
 								{patientDepositRub > 0 && (
@@ -584,9 +921,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											setSplitCardRub(0);
 											setSplitSbpRub(0);
 										}}
-										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 cursor-pointer"
+										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 cursor-pointer flex items-center gap-1"
 									>
-										⚡ Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Нал
+										<Zap size={12} />
+										<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Нал</span>
 									</button>
 								)}
 								<button
@@ -667,9 +1005,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							{/* Parity indicator */}
 							<div className="p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs font-bold">
 								<span>Всего распределено:</span>
-								<span className={`font-mono text-sm ${isBalanced ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
-									{totalAllocatedRub.toLocaleString("ru-RU")} / {totalDueRub.toLocaleString("ru-RU")} ₽
-									{isBalanced ? " ✓ Совпадает" : " ⚠ Не сходится"}
+								<span className={`font-mono text-sm flex items-center gap-1 ${isBalanced ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+									<span>{totalAllocatedRub.toLocaleString("ru-RU")} / {totalDueRub.toLocaleString("ru-RU")} ₽</span>
+									{isBalanced ? (
+										<span className="inline-flex items-center gap-1 ml-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+											<CheckCircle2 size={13} /> Совпадает
+										</span>
+									) : (
+										<span className="inline-flex items-center gap-1 ml-1.5 text-xs text-amber-600 dark:text-amber-400">
+											<AlertCircle size={13} /> Не сходится
+										</span>
+									)}
 								</span>
 							</div>
 

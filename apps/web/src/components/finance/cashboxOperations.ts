@@ -85,6 +85,40 @@ export function validateBuyerInn54Fz(params: {
 	};
 }
 
+export type PayerType = "physical" | "legal_entity" | "physical_person" | "individual_entrepreneur";
+
+/**
+ * Облегченная обёртка валидации ИНН 54-ФЗ для модальных окон оплаты.
+ */
+export function validate54FzBuyerInn(
+	buyerInn: string | undefined,
+	payerType: PayerType = "physical",
+): {
+	readonly isValid: boolean;
+	readonly isRequired: boolean;
+	readonly cleanInn?: string | undefined;
+	readonly errorMessage?: string | undefined;
+	readonly errorRu?: string | undefined;
+} {
+	const mappedLegalType: PayerLegalType =
+		payerType === "legal_entity"
+			? "legal_entity"
+			: payerType === "individual_entrepreneur"
+				? "individual_entrepreneur"
+				: "physical_person";
+	const res = validateBuyerInn54Fz({
+		payerType: mappedLegalType,
+		buyerInn,
+	});
+	return {
+		isValid: res.isValid,
+		isRequired: res.isRequired,
+		cleanInn: res.cleanInn,
+		errorMessage: res.errorRu,
+		errorRu: res.errorRu,
+	};
+}
+
 export interface ZeroDiscountCheckoutResult {
 	readonly isZeroDue: boolean;
 	readonly totalGrossRub: number;
@@ -330,4 +364,84 @@ export function getFastCombinedTenderPresets(params: {
 	}
 
 	return presets;
+}
+
+export interface CashChangeResult {
+	readonly totalDueRub: number;
+	readonly receivedCashRub: number;
+	readonly changeRub: number;
+	readonly changeKopecks: number;
+	readonly shortageRub: number;
+	readonly shortageKopecks: number;
+	readonly isExact: boolean;
+	readonly isExactWithoutChange: boolean;
+	readonly isInsufficient: boolean;
+	readonly isShortage: boolean;
+}
+
+/**
+ * Расчёт сдачи при приёме наличных:
+ * Если внесено ровно столько, сколько к оплате — режим «Без сдачи» (change = 0 ₽).
+ */
+export function calculateCashChange(totalDueRub: number, receivedCashRub: number): CashChangeResult {
+	const dueKop = rubToKopecks(Math.max(0, totalDueRub));
+	const recKop = rubToKopecks(Math.max(0, receivedCashRub));
+	const isExact = recKop === dueKop;
+	const isShortage = recKop < dueKop;
+	const changeKop = isShortage ? 0 : recKop - dueKop;
+	const shortageKop = isShortage ? dueKop - recKop : 0;
+	return {
+		totalDueRub: kopecksToRub(dueKop),
+		receivedCashRub: kopecksToRub(recKop),
+		changeRub: kopecksToRub(changeKop),
+		changeKopecks: changeKop,
+		shortageRub: kopecksToRub(shortageKop),
+		shortageKopecks: shortageKop,
+		isExact,
+		isExactWithoutChange: isExact,
+		isInsufficient: isShortage,
+		isShortage,
+	};
+}
+
+/**
+ * 1-клик пресет «Без сдачи»: наличные = 100% сумме чека, сдача 0 ₽.
+ */
+export function createExactCashTenders(totalDueRub: number): MultiTenderStateRub {
+	return {
+		cardRub: 0,
+		cashRub: totalDueRub,
+		sbpRub: 0,
+		depositRub: 0,
+		familyRub: 0,
+	};
+}
+
+/**
+ * 1-клик пресет «Оплата картой 100%».
+ */
+export function createFullCardTenders(totalDueRub: number): MultiTenderStateRub {
+	return {
+		cardRub: totalDueRub,
+		cashRub: 0,
+		sbpRub: 0,
+		depositRub: 0,
+		familyRub: 0,
+	};
+}
+
+/**
+ * 1-клик пресет «Комбинированная (Списать весь аванс + остаток картой)».
+ */
+export function createDepositAndCardComboTenders(totalDueRub: number, patientDepositRub: number): MultiTenderStateRub {
+	const totalKop = rubToKopecks(Math.max(0, totalDueRub));
+	const depKop = Math.min(totalKop, rubToKopecks(Math.max(0, patientDepositRub)));
+	const cardKop = Math.max(0, totalKop - depKop);
+	return {
+		cardRub: kopecksToRub(cardKop),
+		cashRub: 0,
+		sbpRub: 0,
+		depositRub: kopecksToRub(depKop),
+		familyRub: 0,
+	};
 }
