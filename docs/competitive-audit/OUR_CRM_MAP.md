@@ -89,10 +89,12 @@
   - Журнал отправки сообщений `communicationStatus: queued|sent|delivered|failed`.
 
 ### 2.7. Финансы, Платежи и Расчёт ЗП
-- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`, `InvoiceGenerationModal.tsx`.
+- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`, `InvoiceGenerationModal.tsx`, `PaymentModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/billing.ts`, `finance_family.ts`.
 - **Возможности**:
   - Проведение платежей (наличные, карта, аванс, семейный кошелек).
+  - 1-клик комбинированная оплата в `PaymentModal.tsx` («Зачесть аванс N ₽ + остаток картой») без отключения кнопок при недостатке депозита.
+  - Мгновенный сброс (flush) черновика дневника 043/у при входящем звонке телефонии для защиты от потери данных.
   - Выписка счетов, наряд-заказов и актов с 1-клик клиническим согласованием врача (Мандат 8e) без обязательного мастер-пароля управляющего.
   - Модуль расчёта зарплаты врачей и ассистентов с дифференцированными ставками (`PayrollView.tsx`).
 

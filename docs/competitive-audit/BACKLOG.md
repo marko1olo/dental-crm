@@ -306,6 +306,30 @@
 
 ---
 
+## 35. `финансы::комбинированная_оплата_аванс_карта_в_1_клик` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8k)
+- **Идея**: Снятие блокировок кнопок частичной оплаты в `PaymentModal`. Если остаток депозита или семейного баланса меньше общей суммы счета, кнопка не выключается в disabled, а предлагает 1-клик резолвер: «Зачесть аванс N ₽ + остаток картой» без ручного калькулятора. Защита черновика врача от потери (Autosave Flush) при входящем звонке телефонии.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/store/telephonyStore.ts`, `apps/web/src/useAppLogic.tsx` (коммит `1d7d1d2f8`).
+  - Тесты: 1372 теста shared пройдены.
+
+---
+
+## 36. `ортодонтия::цефалометрия_трг_голосовой_ввод_и_чистый_модальный_центр` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8k)
+- **Идея**: Устранение дубликата `OrthodonticCephTrackerModal.tsx`, объединение в канонический `CephalometricAnalysisModal.tsx`. Голосовая диктовка ориентиров цефалометрии через `globalDentalVoiceEngine` («точка Назион», «точка Сэлла»), авто-переход к следующей точке, 1-клик перенос расчетов углов в дневник 043/у.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/components/orthodontics/CephalometricAnalysisModal.tsx`, `cbctExportEngine.ts` (коммит `95128f01e`).
+  - Валидация: Exit Code 0, исключены аркадные HU-слайдеры.
+
+---
+
+## 37. `клиника::отвязка_стоматологической_карты_043_у_от_госпитальной_формы_025_у` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТ 8i)
+- **Идея**: Ликвидация госпитального заражения контекста: удалена зависимость амбулаторной стоматологической карты от многопрофильной поликлинической формы 025/у (`outpatient025uMedicalCardNumberValue`). Номер карты 043/у валидируется и формируется строго по стоматологическому регламенту.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/documentValidators.ts`, `apps/web/src/hooks/domains/useDocumentPayloads.ts`, `apps/web/src/hooks/domains/useDocumentWorkflowModule.ts`, `apps/web/src/hooks/domains/usePatientIntakeLogic.ts` (коммит `65be4645c`).
+  - Валидация: 0 ошибок компиляции, строгое соответствие амбулаторному домену.
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
 Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom) имеют статус **`[РЕАЛИЗОВАНО]`**:
