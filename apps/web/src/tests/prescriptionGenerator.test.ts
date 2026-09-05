@@ -217,5 +217,31 @@ describe("Web Prescription Generator & Form 107/148 Engine (Order 1094n)", () =>
 		assert.ok(doc4.items[0]?.latinRp.includes("Ciprofloxacini"));
 		assert.ok(doc4.items[1]?.latinRp.includes("Nimesulidi"));
 		assert.ok(doc4.items[2]?.latinRp.includes("Chlorhexidini"));
+
+		// Package 5: First-line Amoxiclav (Mandate 8i - dental outpatient standard)
+		const pkgAmox = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "amoxiclav_first_line");
+		assert.ok(pkgAmox, "amoxiclav_first_line must exist");
+		assert.deepEqual([...pkgAmox.drugIds], ["amoxiclav_875"]);
+
+		// Package 6: Clarithromycin reserve for penicillin allergy
+		const pkgClari = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "clarithromycin_reserve");
+		assert.ok(pkgClari, "clarithromycin_reserve must exist");
+		assert.deepEqual([...pkgClari.drugIds], ["clarithromycin_500"]);
+
+		// Package 7: Moderate pain Ibuprofen 400
+		const pkgIbu = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "ibuprofen_moderate_pain");
+		assert.ok(pkgIbu, "ibuprofen_moderate_pain must exist");
+		assert.deepEqual([...pkgIbu.drugIds], ["ibuprofen_400"]);
+
+		// Package 8: Antiseptic rinse Chlorhexidine 0.05%
+		const pkgChx = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "chlorhexidine_antiseptic_rinse");
+		assert.ok(pkgChx, "chlorhexidine_antiseptic_rinse must exist");
+		assert.deepEqual([...pkgChx.drugIds], ["chlorhexidine_005"]);
+
+		// Package 9: Dental anti-inflammatory gel
+		const pkgGel = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "anti_inflammatory_dental_gel");
+		assert.ok(pkgGel, "anti_inflammatory_dental_gel must exist");
+		assert.deepEqual([...pkgGel.drugIds], ["holisal_gel"]);
 	});
 });
+
