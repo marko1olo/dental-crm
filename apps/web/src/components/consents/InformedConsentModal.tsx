@@ -41,10 +41,12 @@ import {
 	getBlankConsentSubstitutionContext,
 	getConsentPackage,
 	getConsentTemplate,
+	PACKAGE_SHORT_TITLES,
 	printBlankConsentPackage,
 	printFilledConsentPackage,
 	renderConsentTemplate,
 	substitutePlaceholders,
+	TEMPLATE_SHORT_TITLES,
 } from "./consentTemplates.js";
 import "./informedConsent.css";
 import {
@@ -123,7 +125,7 @@ export interface SignedConsentPayload {
 	note?: string;
 }
 
-export { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES } from "./consentTemplates.js";
+export { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES };
 
 export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	isOpen,
