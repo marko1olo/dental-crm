@@ -127,7 +127,63 @@
 	outline: 2px solid var(--focus-ring);
 }
 
-/* Template Selector Tabs */
+/* Toolbar Row and Segmented Mode Switcher (1 row 32-36px Hick's Law) */
+.consent-toolbar-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.5rem 1.5rem;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	min-height: 44px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.consent-mode-segmented {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper);
+	padding: 2px;
+	border-radius: var(--radius-md, 8px);
+	border: 1px solid var(--line);
+	flex-shrink: 0;
+	height: 36px;
+}
+
+.consent-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.25rem 0.75rem;
+	height: 30px;
+	border-radius: var(--radius-sm, 6px);
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.consent-mode-btn:hover {
+	color: var(--ink);
+}
+
+.consent-mode-btn.active {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	box-shadow: var(--shadow-1);
+}
+
+.consent-mode-btn:focus-visible {
+	outline: 2px solid var(--focus-ring);
+}
+
+/* Template and Package Selector Tabs */
 .consent-tabs-scroll {
 	display: flex;
 	align-items: center;
@@ -138,6 +194,13 @@
 	overflow-x: auto;
 	scrollbar-width: thin;
 	flex-shrink: 0;
+}
+
+.consent-toolbar-row .consent-tabs-scroll {
+	padding: 0;
+	border-bottom: none;
+	background: transparent;
+	flex: 1 1 auto;
 }
 
 .consent-tab-btn {
@@ -174,6 +237,63 @@
 
 .consent-tab-btn:focus-visible {
 	outline: 2px solid var(--focus-ring);
+}
+
+/* Package Banner */
+.consent-package-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	padding: 0.65rem 1rem;
+	background: var(--teal-surface);
+	border: 1px solid var(--teal);
+	border-radius: var(--radius-lg, 10px);
+}
+
+.consent-package-banner-title {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: var(--teal-dark);
+}
+
+.consent-subdoc-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.3rem 0.65rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border-radius: var(--radius-sm, 6px);
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	min-height: 32px;
+}
+
+.consent-subdoc-chip:hover {
+	border-color: var(--teal);
+}
+
+.consent-subdoc-chip.active {
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	border-color: var(--teal-dark);
+	font-weight: 700;
+}
+
+.consent-paper-checkbox-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+	user-select: none;
 }
 
 /* Content Area */

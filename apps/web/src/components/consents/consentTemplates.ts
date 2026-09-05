@@ -20,7 +20,8 @@ export type ConsentTemplateKey =
 	| "CONSENT_ORTHOPEDICS"
 	| "CONSENT_HYGIENE_BLEACHING"
 	| "CONSENT_ANESTHESIA"
-	| "CONSENT_PERSONAL_DATA";
+	| "CONSENT_PERSONAL_DATA"
+	| "CONSENT_INSPECTION_1051N";
 
 export interface ConsentSection {
 	id: string;
@@ -546,17 +547,159 @@ export const CONSENT_PERSONAL_DATA: ConsentTemplate = {
 };
 
 /**
+ * 8. ИДС НА ПЕРВИЧНЫЙ ОСМОТР, ДИАГНОСТИКУ И РЕНТГЕН (CONSENT_INSPECTION_1051N)
+ * Приказ Министерства здравоохранения РФ от 12.11.2021 № 1051н, ст. 20 323-ФЗ
+ */
+export const CONSENT_INSPECTION_1051N: ConsentTemplate = {
+	key: "CONSENT_INSPECTION_1051N",
+	code: "ИДС-1051н",
+	title: "Информированное добровольное согласие на первичный осмотр, консультацию и рентгенологические исследования",
+	subtitle: "Первичное стоматологическое обследование, зондирование, радиовизиография (RVG), ортопантомография (ОПТГ) и конусно-лучевая томография (КЛКТ)",
+	category: "therapy",
+	statutoryBasis: "Ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Приказ Минздрава РФ от 12.11.2021 № 1051н, СанПиН 2.6.1.1192-03",
+	mandatoryPlaceholders: [
+		"{{PATIENT_NAME}}",
+		"{{BIRTH_DATE}}",
+		"{{DOCTOR_NAME}}",
+		"{{CLINIC_NAME}}",
+		"{{DATE}}",
+	],
+	sections: [
+		{
+			id: "preamble",
+			title: "1. Правовые основания и цели диагностического приема",
+			content:
+				"Я, {{PATIENT_NAME}}, дата рождения {{BIRTH_DATE}} (документ, удостоверяющий личность: {{PASSPORT}}), даю информированное добровольное согласие на медицинское обследование в клинике {{CLINIC_NAME}} лечащему врачу-стоматологу {{DOCTOR_NAME}} в соответствии со статьей 20 Федерального закона от 21.11.2011 № 323-ФЗ «Об основах охраны здоровья граждан в РФ» и Приказом Министерства здравоохранения РФ от 12.11.2021 № 1051н.",
+		},
+		{
+			id: "diagnostic_scope",
+			title: "2. Содержание диагностических манипуляций",
+			content:
+				"Мне разъяснены цели, методы первичного обследования, связанный с ними риск, возможные варианты и последствия. Диагностика включает: визуальный осмотр преддверия и полости рта, пальпацию регионарных лимфоузлов и жевательных мышц, зондирование зубов и пародонтальных карманов, холодовую термодиагностику (оценку жизнеспособности пульпы), электроодонтодиагностику (ЭОД), цифровую прицельную радиовизиографию (RVG), панорамную ортопантомографию (ОПТГ) и трехмерную конусно-лучевую компьютерную томографию (КЛКТ 3D челюстно-лицевой области), а также фотопротокол полости рта.",
+		},
+		{
+			id: "radiation_safety",
+			title: "3. Радиационная безопасность и защита пациента",
+			content:
+				"Мне разъяснено, что используемое цифровое рентгенодиагностическое оборудование клиники сертифицировано и обеспечивает минимальную лучевую нагрузку (от 2 до 45 мкЗв), полностью соответствующую требованиям СанПиН 2.6.1.1192-03 и Нормам радиационной безопасности (НРБ-99/2009). В процессе съемки обязательно используются индивидуальные средства защиты (свинцовый защитный фартук/воротник).",
+		},
+		{
+			id: "voluntary_and_refusal",
+			title: "4. Добровольность согласия и информированность",
+			content:
+				"Я подтверждаю, что имел(а) возможность задать врачу любые интересующие меня вопросы относительно целей обследования. Мне разъяснено право отказаться от диагностического вмешательства до его начала с пониманием того, что отказ от рентген-диагностики делает невозможным выявление скрытых межзубных кариозных полостей, кистогранулем и воспалительных процессов в костной ткани.",
+		},
+	],
+	aftercareInstructions: [
+		"Соблюдать врачебные рекомендации по результатам первичного осмотра и составленного предварительного плана лечения.",
+		"Явиться на согласованный клинический прием для санации очагов инфекции.",
+	],
+	riskFactors: [
+		"Беременность (особенно I триместр) — требует предварительного информирования врача до проведения лучевой диагностики.",
+		"Повышенный глоточный/рвотный рефлекс при установке внутриротового позиционера визиографа.",
+	],
+	alternativeTreatments: [
+		"Отказ от рентгенодиагностики с ограничением обследования исключительно визуальным осмотром и инструментальным зондированием.",
+	],
+};
+
+/**
  * Словарь всех стандартных согласий
  */
 export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
+	CONSENT_PERSONAL_DATA,
+	CONSENT_INSPECTION_1051N,
+	CONSENT_ANESTHESIA,
 	CONSENT_THERAPY,
 	CONSENT_SURGERY_IMPLANT,
 	CONSENT_ORTHODONTICS,
 	CONSENT_ORTHOPEDICS,
 	CONSENT_HYGIENE_BLEACHING,
-	CONSENT_ANESTHESIA,
-	CONSENT_PERSONAL_DATA,
 };
+
+/**
+ * ============================================================================
+ * ПАКЕТЫ СОГЛАСИЙ ИДС (1-КЛИК ПАКЕТНОЕ ПОДПИСАНИЕ И ПЕЧАТЬ — МАНДАТЫ 8e, 8k, 8n)
+ * Ликвидация бюрократического трения: одна подпись пациента / 1 код SMS OTP
+ * подтверждает весь комплекс документов при первичном приеме или операции!
+ * ============================================================================
+ */
+
+export type ConsentPackageKey =
+	| "PACKAGE_PRIMARY_VISIT"
+	| "PACKAGE_SURGERY"
+	| "PACKAGE_ORTHOPEDICS";
+
+export interface ConsentPackageDefinition {
+	key: ConsentPackageKey;
+	code: string;
+	title: string;
+	shortTitle: string;
+	subtitle: string;
+	templateKeys: readonly ConsentTemplateKey[];
+	description: string;
+}
+
+export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinition> = {
+	PACKAGE_PRIMARY_VISIT: {
+		key: "PACKAGE_PRIMARY_VISIT",
+		code: "ПАКЕТ-ПЕРВИЧНЫЙ",
+		title: "Пакет: Первичный приём",
+		shortTitle: "Первичный приём",
+		subtitle: "152-ФЗ + 1051н Осмотр и рентген + Местная анестезия + Терапия",
+		templateKeys: [
+			"CONSENT_PERSONAL_DATA",
+			"CONSENT_INSPECTION_1051N",
+			"CONSENT_ANESTHESIA",
+			"CONSENT_THERAPY",
+		],
+		description: "Обязательный первичный комплекс при первом визите взрослого пациента в клинику (4 документа за 1 подпись)",
+	},
+	PACKAGE_SURGERY: {
+		key: "PACKAGE_SURGERY",
+		code: "ПАКЕТ-ХИРУРГИЯ",
+		title: "Пакет: Хирургия и имплантация",
+		shortTitle: "Хирургия / Имплантация",
+		subtitle: "152-ФЗ + Местная анестезия + Хирургическое вмешательство / Имплантация",
+		templateKeys: [
+			"CONSENT_PERSONAL_DATA",
+			"CONSENT_ANESTHESIA",
+			"CONSENT_SURGERY_IMPLANT",
+		],
+		description: "Хирургический комплекс перед операциями удаления, костной пластики и имплантации (3 документа за 1 подпись)",
+	},
+	PACKAGE_ORTHOPEDICS: {
+		key: "PACKAGE_ORTHOPEDICS",
+		code: "ПАКЕТ-ОРТОПЕДИЯ",
+		title: "Пакет: Ортопедия",
+		shortTitle: "Ортопедия / Протезирование",
+		subtitle: "152-ФЗ + Местная анестезия + Ортопедическое лечение",
+		templateKeys: [
+			"CONSENT_PERSONAL_DATA",
+			"CONSENT_ANESTHESIA",
+			"CONSENT_ORTHOPEDICS",
+		],
+		description: "Ортопедический комплекс перед препарированием, слепками и фиксацией коронок (3 документа за 1 подпись)",
+	},
+};
+
+/**
+ * Получить список всех пакетов согласий
+ */
+export function getAllConsentPackages(): ConsentPackageDefinition[] {
+	return Object.values(CONSENT_PACKAGES);
+}
+
+/**
+ * Получить пакет согласий по ключу
+ */
+export function getConsentPackage(key: ConsentPackageKey): ConsentPackageDefinition {
+	const pkg = CONSENT_PACKAGES[key];
+	if (!pkg) {
+		throw new Error(`Неизвестный ключ пакета согласий: ${key}`);
+	}
+	return pkg;
+}
 
 /**
  * Получить список всех шаблонов в каталоге
@@ -1313,3 +1456,314 @@ export function generateMinorConsentPrintHtml(params: MinorConsentPrintParams): 
 </body>
 </html>`;
 }
+
+/**
+ * Параметры непрерывной печати пакета согласий ИДС (А4)
+ */
+export interface ConsentPackagePrintOptions {
+	mode?: "blank" | "filled";
+	isBlank?: boolean;
+	context?: ConsentSubstitutionContext;
+	clinicDefaults?: Partial<ConsentSubstitutionContext>;
+}
+
+/**
+ * Генерация непрерывного печатного документа пакета ИДС со строками «________» (или заполненными данными)
+ * Мандат 8e п. 8: Регистратура и врач печатают пакет бланков в 1 клик БЕЗ 403-ошибок!
+ */
+export function generateConsentPackagePrintHtml(
+	packageKey: ConsentPackageKey,
+	options: ConsentPackagePrintOptions = {},
+): string {
+	const pkg = getConsentPackage(packageKey);
+	const isBlank = options.mode === "blank" || Boolean(options.isBlank);
+
+	const baseContext = isBlank
+		? getBlankConsentSubstitutionContext(options.clinicDefaults || options.context)
+		: (options.context || getBlankConsentSubstitutionContext(options.clinicDefaults));
+
+	const clinicName = baseContext.clinicName || baseContext.clinicLegalName || "ООО «Стоматологическая клиника ДЕНТЕ»";
+	const clinicLicense = baseContext.licenseNumber || "ЛО41-01137-77/00368421";
+	const clinicAddress = baseContext.clinicAddress || "г. Москва, ул. Большая Стоматологическая, д. 12";
+	const today = baseContext.date || new Date().toLocaleDateString("ru-RU");
+
+	// Рендерим все документы пакета последовательно
+	const renderedSheets = pkg.templateKeys.map((tplKey, index) => {
+		const tpl = getConsentTemplate(tplKey);
+		const rendered = renderConsentTemplate(tpl, baseContext);
+
+		const ptName = isBlank ? "__________________________________________________" : (baseContext.patientName?.trim() || "__________________________________________________");
+		const ptBirth = isBlank ? "«___» _________ _____ г." : (baseContext.birthDate?.trim() || "«___» _________ _____ г.");
+		const ptPassport = isBlank ? "серия _______ № _________ выдан ___________________________________" : (baseContext.passport?.trim() || "серия _______ № _________ выдан ____________________");
+		const ptSnils = isBlank ? "___-___-___ __" : (baseContext.snils?.trim() || "___-___-___ __");
+		const ptPhone = isBlank ? "+7 (___) ___-__-__" : (baseContext.phone?.trim() || "+7 (___) ___-__-__");
+		const docName = isBlank ? "__________________________________________________" : (baseContext.doctorName?.trim() || "Лечащий врач-стоматолог");
+
+		return `
+    <div class="package-doc-sheet">
+      <div class="package-header-banner">
+        <div class="package-banner-title">
+          <span>${pkg.title.toUpperCase()}</span>
+          <span class="package-banner-badge">Документ ${index + 1} из ${pkg.templateKeys.length} • Код: ${tpl.code}</span>
+        </div>
+      </div>
+
+      <div class="sheet-header">
+        <div class="clinic-top-row">
+          <div>
+            <strong>${clinicName}</strong> · Лицензия: № ${clinicLicense}<br>
+            Адрес: ${clinicAddress}
+          </div>
+          <div style="text-align: right;">
+            <span class="statutory-badge">${tpl.statutoryBasis.split(",")[0] || "323-ФЗ ст. 20"}</span><br>
+            В медицинскую карту 043/у<br>
+            Дата: ${today}
+          </div>
+        </div>
+        <h1>${tpl.title}</h1>
+        <div class="sheet-subtitle">${tpl.subtitle}</div>
+      </div>
+
+      <div class="parties-block">
+        Я, <strong>${ptName}</strong>, дата рождения: ${ptBirth}, документ, удостоверяющий личность: ${ptPassport}, СНИЛС: ${ptSnils}, тел.: ${ptPhone},<br>
+        настоящим даю информированное добровольное согласие лечащему врачу <strong>${docName}</strong> в медицинской организации <strong>${clinicName}</strong>.
+      </div>
+
+      ${rendered.renderedSections.map((sec) => `
+        <div class="section-title">${sec.title}</div>
+        <p>${sec.content}</p>
+        ${sec.bullets && sec.bullets.length > 0 ? `
+          <ul class="bullets-list">
+            ${sec.bullets.map((b) => `<li>${b}</li>`).join("")}
+          </ul>
+        ` : ""}
+      `).join("")}
+
+      ${rendered.riskFactors.length > 0 ? `
+        <div class="risk-block">
+          <strong>Факторы риска и анатомические особенности:</strong>
+          <ul class="bullets-list">
+            ${rendered.riskFactors.map((rf) => `<li>${rf}</li>`).join("")}
+          </ul>
+        </div>
+      ` : ""}
+
+      ${rendered.aftercareInstructions.length > 0 ? `
+        <div class="aftercare-block">
+          <strong>Рекомендации и ограничения:</strong>
+          <ul class="bullets-list">
+            ${rendered.aftercareInstructions.map((ac) => `<li>${ac}</li>`).join("")}
+          </ul>
+        </div>
+      ` : ""}
+
+      <div class="signatures-row">
+        <div class="sign-box">
+          Пациент (законный представитель):<br>
+          <strong>${ptName}</strong>
+          <div class="sign-line"></div>
+          <div class="sign-hint">(личная подпись / дата: ${today})</div>
+        </div>
+        <div class="sign-box">
+          Лечащий врач-стоматолог:<br>
+          <strong>${docName}</strong>
+          <div class="sign-line"></div>
+          <div class="sign-hint">(подпись медицинского работника / дата: ${today})</div>
+        </div>
+      </div>
+    </div>
+    `;
+	}).join("\n");
+
+	return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>${pkg.title} — Бланк пакета ИДС</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 10mm 14mm 12mm 14mm;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 8.5pt;
+      line-height: 1.35;
+      color: #111827;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .package-doc-sheet {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100%;
+      page-break-after: always;
+      padding-bottom: 8pt;
+    }
+    .package-doc-sheet:last-child {
+      page-break-after: avoid;
+    }
+    .package-header-banner {
+      background: #f0fdfa;
+      border: 1px solid #0d9488;
+      border-radius: 3pt;
+      padding: 3pt 6pt;
+      margin-bottom: 4pt;
+    }
+    .package-banner-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 8pt;
+      color: #0f766e;
+    }
+    .package-banner-badge {
+      font-size: 7.5pt;
+      background: #ccfbf1;
+      padding: 1pt 4pt;
+      border-radius: 2pt;
+      color: #115e59;
+    }
+    .sheet-header {
+      border-bottom: 1.5px solid #111827;
+      padding-bottom: 3pt;
+      margin-bottom: 5pt;
+    }
+    .clinic-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-size: 7.5pt;
+      color: #4b5563;
+      margin-bottom: 3pt;
+    }
+    .statutory-badge {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 7pt;
+      font-weight: 700;
+      padding: 1.5pt 4pt;
+      border-radius: 2pt;
+      border: 0.5px solid #bae6fd;
+    }
+    h1 {
+      font-size: 10.5pt;
+      font-weight: 800;
+      text-align: center;
+      margin: 2pt 0 1pt 0;
+      letter-spacing: 0.3pt;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+    .sheet-subtitle {
+      font-size: 7.5pt;
+      text-align: center;
+      color: #475569;
+      margin-bottom: 3pt;
+    }
+    .parties-block {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 4pt 6pt;
+      border-radius: 3pt;
+      margin-bottom: 5pt;
+      font-size: 8pt;
+      line-height: 1.35;
+    }
+    .section-title {
+      font-weight: 700;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      margin: 3pt 0 2pt 0;
+      color: #1e293b;
+      border-bottom: 0.5px solid #e2e8f0;
+      padding-bottom: 1pt;
+    }
+    p {
+      margin: 0 0 3pt 0;
+      text-align: justify;
+    }
+    .bullets-list {
+      margin: 2pt 0 4pt 0;
+      padding-left: 14pt;
+      font-size: 8pt;
+    }
+    .bullets-list li {
+      margin-bottom: 1.5pt;
+    }
+    .risk-block, .aftercare-block {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      padding: 3pt 6pt;
+      border-radius: 3pt;
+      margin: 3pt 0;
+      font-size: 8pt;
+    }
+    .signatures-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16pt;
+      margin-top: 6pt;
+      padding-top: 5pt;
+      border-top: 1px solid #94a3b8;
+      font-size: 8pt;
+      page-break-inside: avoid;
+    }
+    .sign-box {
+      display: flex;
+      flex-direction: column;
+      gap: 2pt;
+    }
+    .sign-line {
+      border-bottom: 1px solid #0f172a;
+      height: 18pt;
+      margin-top: 3pt;
+    }
+    .sign-hint {
+      font-size: 6.5pt;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  ${renderedSheets}
+</body>
+</html>`;
+}
+
+/**
+ * 1-клик печать пакета чистых бланков со строками «________»
+ */
+export function printBlankConsentPackage(
+	packageKey: ConsentPackageKey,
+	clinicDefaults?: Partial<ConsentSubstitutionContext>,
+): void {
+	const html = generateConsentPackagePrintHtml(packageKey, {
+		isBlank: true,
+		...(clinicDefaults ? { clinicDefaults } : {}),
+	});
+	printHtmlViaWindowOrIframe(html, "dente-package-blank-print-iframe");
+}
+
+/**
+ * 1-клик печать пакета заполненных бланков А4
+ */
+export function printFilledConsentPackage(
+	packageKey: ConsentPackageKey,
+	context: ConsentSubstitutionContext,
+): void {
+	const html = generateConsentPackagePrintHtml(packageKey, {
+		isBlank: false,
+		context,
+	});
+	printHtmlViaWindowOrIframe(html, "dente-package-filled-print-iframe");
+}
+

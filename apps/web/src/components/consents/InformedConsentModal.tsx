@@ -9,7 +9,9 @@ import {
 	FileText,
 	Fingerprint,
 	KeyRound,
+	Layers,
 	Lock,
+	Package,
 	PenTool,
 	Printer,
 	RefreshCw,
@@ -17,21 +19,30 @@ import {
 	RotateCw,
 	ShieldCheck,
 	Smartphone,
+	Sparkles,
 	Trash2,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+	CONSENT_PACKAGES,
 	CONSENT_TEMPLATES,
+	type ConsentPackageDefinition,
+	type ConsentPackageKey,
 	type ConsentSubstitutionContext,
 	type ConsentTemplate,
 	type ConsentTemplateKey,
+	getAllConsentPackages,
 	getAllConsentTemplates,
 	getBlankConsentSubstitutionContext,
+	getConsentPackage,
 	getConsentTemplate,
+	printBlankConsentPackage,
+	printFilledConsentPackage,
 	renderConsentTemplate,
 	substitutePlaceholders,
 } from "./consentTemplates.js";
@@ -55,6 +66,8 @@ import {
 export interface InformedConsentModalProps {
 	isOpen: boolean;
 	onClose: () => void;
+	initialMode?: "packages" | "single";
+	initialPackageKey?: ConsentPackageKey;
 	initialTemplateKey?: ConsentTemplateKey;
 	patient?: {
 		fullName?: string | null;
@@ -75,6 +88,7 @@ export interface InformedConsentModalProps {
 	diagnosisIcd?: string | null;
 	toothNumbers?: string | null;
 	onConsentSigned?: (payload: SignedConsentPayload) => void;
+	onPackageSigned?: (payloads: SignedConsentPayload[]) => void;
 	onConsentConfirmed?: (payload: {
 		consentType: string;
 		intervention: string;
@@ -109,7 +123,13 @@ export interface SignedConsentPayload {
 	note?: string;
 }
 
-const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
+export const PACKAGE_SHORT_TITLES: Record<ConsentPackageKey, string> = {
+	PACKAGE_PRIMARY_VISIT: "Пакет: Первичный приём (4 док.)",
+	PACKAGE_SURGERY: "Пакет: Хирургия (3 док.)",
+	PACKAGE_ORTHOPEDICS: "Пакет: Ортопедия (3 док.)",
+};
+
+export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_THERAPY: "Терапия и Эндодонтия",
 	CONSENT_SURGERY_IMPLANT: "Хирургия / Имплантация",
 	CONSENT_ORTHODONTICS: "Ортодонтия (Брекеты)",
@@ -117,11 +137,14 @@ const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_HYGIENE_BLEACHING: "Профгигиена и отбеливание",
 	CONSENT_ANESTHESIA: "Местная анестезия",
 	CONSENT_PERSONAL_DATA: "Персональные данные (152-ФЗ)",
+	CONSENT_INSPECTION_1051N: "Первичный осмотр / Рентген (1051н)",
 };
 
 export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	isOpen,
 	onClose,
+	initialMode = "packages",
+	initialPackageKey = "PACKAGE_PRIMARY_VISIT",
 	initialTemplateKey = "CONSENT_THERAPY",
 	patient,
 	doctorName,
@@ -134,9 +157,14 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	diagnosisIcd,
 	toothNumbers,
 	onConsentSigned,
+	onPackageSigned,
 	onConsentConfirmed,
 }) => {
+	const [activeMode, setActiveMode] = useState<"packages" | "single">(initialMode);
+	const [activePackageKey, setActivePackageKey] = useState<ConsentPackageKey>(initialPackageKey);
 	const [activeKey, setActiveKey] = useState<ConsentTemplateKey>(initialTemplateKey);
+	const [previewTemplateKey, setPreviewTemplateKey] = useState<ConsentTemplateKey | null>(null);
+	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(true);
 	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp" | "paper_physical">("paper_physical");
 	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
 	
@@ -163,7 +191,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	// Синхронизация при открытии
 	useEffect(() => {
 		if (isOpen) {
+			setActiveMode(initialMode || "packages");
+			setActivePackageKey(initialPackageKey || "PACKAGE_PRIMARY_VISIT");
 			setActiveKey(initialTemplateKey);
+			setPreviewTemplateKey(null);
+			setPaperOriginalConfirmed(true);
 			setVerificationMethod("paper_physical");
 			setIsPrintingBlank(false);
 			setCustomDiagnosis(diagnosisIcd || "");
@@ -174,7 +206,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setOtpVerified(false);
 			setOtpCountdown(0);
 		}
-	}, [isOpen, initialTemplateKey, diagnosisIcd, toothNumbers]);
+	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, diagnosisIcd, toothNumbers]);
 
 	// Таймер обратного отсчета SMS OTP
 	useEffect(() => {
@@ -243,9 +275,22 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 	const effectiveContext = isPrintingBlank ? printBlankContext : substitutionContext;
 
+	const allPackages = useMemo(() => getAllConsentPackages(), []);
+	const currentPackage = useMemo(() => getConsentPackage(activePackageKey), [activePackageKey]);
+
+	const activeDocKey = useMemo<ConsentTemplateKey>(() => {
+		if (activeMode === "packages") {
+			if (previewTemplateKey && currentPackage.templateKeys.includes(previewTemplateKey)) {
+				return previewTemplateKey;
+			}
+			return currentPackage.templateKeys[0] || "CONSENT_PERSONAL_DATA";
+		}
+		return activeKey;
+	}, [activeMode, previewTemplateKey, currentPackage, activeKey]);
+
 	const currentTemplate = useMemo<ConsentTemplate>(() => {
-		return getConsentTemplate(activeKey);
-	}, [activeKey]);
+		return getConsentTemplate(activeDocKey);
+	}, [activeDocKey]);
 
 	const rendered = useMemo(() => {
 		return renderConsentTemplate(currentTemplate, effectiveContext);
@@ -451,18 +496,32 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 
 	// Печать документа А4 (заполненный бланк)
 	const handlePrint = () => {
-		window.print();
+		if (activeMode === "packages") {
+			printFilledConsentPackage(activePackageKey, effectiveContext);
+		} else {
+			window.print();
+		}
 	};
 
 	// Печать чистого бланка ИДС со строками «________» для ручного заполнения пациентом до приема без 403-ошибок
 	const handlePrintBlank = () => {
-		setIsPrintingBlank(true);
-		setTimeout(() => {
-			window.print();
+		if (activeMode === "packages") {
+			printBlankConsentPackage(activePackageKey, {
+				clinicName: clinicName ?? null,
+				clinicLegalName: clinicLegalName ?? null,
+				clinicAddress: clinicAddress ?? null,
+				clinicOgrn: clinicOgrn ?? null,
+				licenseNumber: licenseNumber ?? null,
+			});
+		} else {
+			setIsPrintingBlank(true);
 			setTimeout(() => {
-				setIsPrintingBlank(false);
-			}, 600);
-		}, 80);
+				window.print();
+				setTimeout(() => {
+					setIsPrintingBlank(false);
+				}, 600);
+			}, 80);
+		}
 	};
 
 	// Проверка валидности подписания (для бумажного носителя ВСЕГДА true — 0 блокировок)
@@ -479,7 +538,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		return false;
 	}, [verificationMethod, strokes, otpVerified]);
 
-	// Подписание и подтверждение (включая мгновенный 1-клик для бумаги)
+	// Подписание и подтверждение (включая мгновенный 1-клик для бумаги и пакетное подписание)
 	const handleConfirmSign = (forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => {
 		const method = forcedMethod || verificationMethod;
 		if (method !== "paper_physical" && !canSign) return;
@@ -521,45 +580,120 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				integrityHash: integrityRecord.hash,
 			};
 
-			const payload: SignedConsentPayload = {
-				templateKey: activeKey,
-				code: currentTemplate.code,
-				title: currentTemplate.title,
-				fullTextContent: rendered.fullTextContent,
-				patientName: effectiveContext.patientName || "Не указан",
-				birthDate: effectiveContext.birthDate || "Не указана",
-				passport: effectiveContext.passport || "Не указан",
-				doctorName: effectiveContext.doctorName || "Не указан",
-				clinicName: effectiveContext.clinicName || "ООО «ДЕНТЕ»",
-				diagnosisIcd: effectiveContext.diagnosisIcd || "",
-				toothNumbers: effectiveContext.toothNumbers || "",
-				signatureSvg: svg,
-				signaturePngBase64: pngBase64,
-				vectorData,
-				integrityHash: integrityRecord.hash,
-				signedAt: new Date().toISOString(),
-				verificationMethod: method,
-				smsOtpCode: method === "sms_otp" ? otpDigits.join("") : null,
-				attachedToForm043u: true,
-				paperOriginalStored: method === "paper_physical",
-				statusText:
-					method === "paper_physical"
-						? "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)"
-						: "Электронная подпись подтверждена",
-			};
+			if (activeMode === "packages") {
+				const pkg = currentPackage;
+				const signedPayloads: SignedConsentPayload[] = [];
 
-			if (onConsentSigned) {
-				onConsentSigned(payload);
-			}
+				for (const tplKey of pkg.templateKeys) {
+					const tpl = getConsentTemplate(tplKey);
+					const rend = renderConsentTemplate(tpl, effectiveContext);
+					const docHashRecord = generateConsentIntegrityHash({
+						documentText: rend.fullTextContent,
+						patientInfo: {
+							name: substitutionContext.patientName,
+							passportOrBirth: substitutionContext.passport || substitutionContext.birthDate,
+							phone: substitutionContext.phone,
+						},
+						timestamp: Date.now(),
+						strokes,
+						verificationMethod: method,
+						smsOtpCode: method === "sms_otp" && otpVerified ? otpDigits.join("") : null,
+					});
 
-			if (onConsentConfirmed) {
-				onConsentConfirmed({
-					consentType: currentTemplate.code,
-					intervention: currentTemplate.title,
-					toothOrArea: effectiveContext.toothNumbers || "Область лечения",
-					confirmedAt: new Date().toISOString(),
+					const docVectorData: SignatureVectorData = {
+						...vectorData,
+						integrityHash: docHashRecord.hash,
+					};
+
+					const payload: SignedConsentPayload = {
+						templateKey: tplKey,
+						code: tpl.code,
+						title: tpl.title,
+						fullTextContent: rend.fullTextContent,
+						patientName: effectiveContext.patientName || "Не указан",
+						birthDate: effectiveContext.birthDate || "Не указана",
+						passport: effectiveContext.passport || "Не указан",
+						doctorName: effectiveContext.doctorName || "Не указан",
+						clinicName: effectiveContext.clinicName || "ООО «ДЕНТЕ»",
+						diagnosisIcd: effectiveContext.diagnosisIcd || "",
+						toothNumbers: effectiveContext.toothNumbers || "",
+						signatureSvg: svg,
+						signaturePngBase64: pngBase64,
+						vectorData: docVectorData,
+						integrityHash: docHashRecord.hash,
+						signedAt: new Date().toISOString(),
+						verificationMethod: method,
+						smsOtpCode: method === "sms_otp" ? otpDigits.join("") : null,
+						attachedToForm043u: true,
+						paperOriginalStored: method === "paper_physical" || paperOriginalConfirmed,
+						statusText:
+							method === "paper_physical"
+								? "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)"
+								: "Пакет ИДС подписан в 1 клик",
+						note: `Пакет: ${pkg.title}`,
+					};
+
+					signedPayloads.push(payload);
+
+					if (onConsentSigned) {
+						onConsentSigned(payload);
+					}
+
+					if (onConsentConfirmed) {
+						onConsentConfirmed({
+							consentType: tpl.code,
+							intervention: tpl.title,
+							toothOrArea: effectiveContext.toothNumbers || "Область лечения",
+							confirmedAt: new Date().toISOString(),
+							integrityHash: docHashRecord.hash,
+						});
+					}
+				}
+
+				if (onPackageSigned) {
+					onPackageSigned(signedPayloads);
+				}
+			} else {
+				const payload: SignedConsentPayload = {
+					templateKey: activeDocKey,
+					code: currentTemplate.code,
+					title: currentTemplate.title,
+					fullTextContent: rendered.fullTextContent,
+					patientName: effectiveContext.patientName || "Не указан",
+					birthDate: effectiveContext.birthDate || "Не указана",
+					passport: effectiveContext.passport || "Не указан",
+					doctorName: effectiveContext.doctorName || "Не указан",
+					clinicName: effectiveContext.clinicName || "ООО «ДЕНТЕ»",
+					diagnosisIcd: effectiveContext.diagnosisIcd || "",
+					toothNumbers: effectiveContext.toothNumbers || "",
+					signatureSvg: svg,
+					signaturePngBase64: pngBase64,
+					vectorData,
 					integrityHash: integrityRecord.hash,
-				});
+					signedAt: new Date().toISOString(),
+					verificationMethod: method,
+					smsOtpCode: method === "sms_otp" ? otpDigits.join("") : null,
+					attachedToForm043u: true,
+					paperOriginalStored: method === "paper_physical" || paperOriginalConfirmed,
+					statusText:
+						method === "paper_physical"
+							? "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)"
+							: "Электронная подпись подтверждена",
+				};
+
+				if (onConsentSigned) {
+					onConsentSigned(payload);
+				}
+
+				if (onConsentConfirmed) {
+					onConsentConfirmed({
+						consentType: currentTemplate.code,
+						intervention: currentTemplate.title,
+						toothOrArea: effectiveContext.toothNumbers || "Область лечения",
+						confirmedAt: new Date().toISOString(),
+						integrityHash: integrityRecord.hash,
+					});
+				}
 			}
 
 			onClose();
@@ -583,10 +717,12 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								<ShieldCheck size={14} />
 								323-ФЗ • 152-ФЗ
 							</span>
-							<span className="consent-code-badge">{currentTemplate.code}</span>
+							<span className="consent-code-badge">
+								{activeMode === "packages" ? currentPackage.key : currentTemplate.code}
+							</span>
 						</div>
 						<h2 id="consent-modal-title" className="consent-title">
-							Информированное добровольное согласие (ИДС)
+							{activeMode === "packages" ? "Пакет информированных добровольных согласий (ИДС)" : "Информированное добровольное согласие (ИДС)"}
 						</h2>
 					</div>
 					<button
@@ -599,26 +735,113 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					</button>
 				</header>
 
-				{/* Шаблоны согласий (Табы) */}
-				<nav className="consent-tabs-scroll" aria-label="Шаблоны согласий">
-					{allTemplates.map((tpl) => {
-						const isActive = tpl.key === activeKey;
-						return (
-							<button
-								key={tpl.key}
-								type="button"
-								className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
-								onClick={() => setActiveKey(tpl.key)}
-								aria-selected={isActive}
-							>
-								<span>{TEMPLATE_SHORT_TITLES[tpl.key] || tpl.title}</span>
-							</button>
-						);
-					})}
-				</nav>
+				{/* Панель выбора режима и вкладок (1 строка 32-36px, Hick's Law) */}
+				<div className="consent-toolbar-row">
+					<div className="consent-mode-segmented">
+						<button
+							type="button"
+							className={`consent-mode-btn ${activeMode === "packages" ? "active" : ""}`}
+							onClick={() => {
+								setActiveMode("packages");
+								setPreviewTemplateKey(null);
+							}}
+							data-testid="tab-mode-packages"
+							aria-pressed={activeMode === "packages"}
+						>
+							<Layers size={14} />
+							<span>Пакеты ИДС (1 клик)</span>
+						</button>
+						<button
+							type="button"
+							className={`consent-mode-btn ${activeMode === "single" ? "active" : ""}`}
+							onClick={() => setActiveMode("single")}
+							data-testid="tab-mode-single"
+							aria-pressed={activeMode === "single"}
+						>
+							<FileText size={14} />
+							<span>Отдельные согласия</span>
+						</button>
+					</div>
+
+					<nav
+						className="consent-tabs-scroll"
+						aria-label={activeMode === "packages" ? "Пакеты согласий" : "Шаблоны согласий"}
+					>
+						{activeMode === "packages"
+							? allPackages.map((pkg) => {
+									const isActive = pkg.key === activePackageKey;
+									return (
+										<button
+											key={pkg.key}
+											type="button"
+											className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
+											onClick={() => {
+												setActivePackageKey(pkg.key);
+												setPreviewTemplateKey(null);
+											}}
+											aria-selected={isActive}
+											data-testid={`pkg-tab-${pkg.key}`}
+										>
+											<Sparkles size={14} />
+											<span>{PACKAGE_SHORT_TITLES[pkg.key] || pkg.title}</span>
+										</button>
+									);
+								})
+							: allTemplates.map((tpl) => {
+									const isActive = tpl.key === activeKey;
+									return (
+										<button
+											key={tpl.key}
+											type="button"
+											className={`consent-tab-btn shrink-0 flex-shrink-0 ${isActive ? "active" : ""}`}
+											onClick={() => setActiveKey(tpl.key)}
+											aria-selected={isActive}
+											data-testid={`tpl-tab-${tpl.key}`}
+										>
+											<span>{TEMPLATE_SHORT_TITLES[tpl.key] || tpl.title}</span>
+										</button>
+									);
+								})}
+					</nav>
+				</div>
 
 				{/* Тело модального окна */}
 				<div className="consent-modal-body">
+					{/* Баннер активного пакета с чипами быстрого предпросмотра документов */}
+					{activeMode === "packages" && (
+						<div className="consent-package-banner">
+							<div className="consent-package-banner-title">
+								<Package size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<div>
+									<div className="font-bold text-sm text-[var(--teal-dark,#0f766e)]">
+										{currentPackage.title} ({currentPackage.templateKeys.length} документа в пакете)
+									</div>
+									<div className="text-xs text-muted">
+										{currentPackage.description} • 1 росчерк или 1 клик подписывает все {currentPackage.templateKeys.length} документа сразу
+									</div>
+								</div>
+							</div>
+							<div className="flex items-center gap-1.5 flex-wrap">
+								<span className="text-xs font-semibold text-muted mr-1">Просмотр бланка:</span>
+								{currentPackage.templateKeys.map((k) => {
+									const t = getConsentTemplate(k);
+									const isSelected = k === activeDocKey;
+									return (
+										<button
+											key={k}
+											type="button"
+											className={`consent-subdoc-chip ${isSelected ? "active" : ""}`}
+											onClick={() => setPreviewTemplateKey(k)}
+											title={`Просмотреть ${t.title}`}
+										>
+											<span>{t.code}</span>
+											<span>{TEMPLATE_SHORT_TITLES[k] || t.title}</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
 					{/* Информационная панель метаданных */}
 					<div className="consent-meta-grid">
 						<div className="consent-meta-item">
@@ -836,6 +1059,21 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 								Бумажный оригинал подшивается в медицинскую карту пациента формы № 043/у (нормативный срок хранения 25 лет).
 								В электронной карте фиксируется статус согласия с формированием криптографического отпечатка SHA-256.
 							</p>
+
+							{/* Чекбокс подтверждения наличия бумажного оригинала */}
+							<label className="consent-paper-checkbox-label">
+								<input
+									type="checkbox"
+									checked={paperOriginalConfirmed}
+									onChange={(e) => setPaperOriginalConfirmed(e.target.checked)}
+									data-testid="checkbox-paper-original-stored"
+									style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
+								/>
+								<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
+									Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
+								</span>
+							</label>
+
 							<div className="flex items-center gap-3 pt-1 flex-wrap">
 								<button
 									type="button"
@@ -852,27 +1090,41 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 										boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)",
 									}}
 								>
-									<CheckCircle2 size={18} />
-									<span>⚡ Подтвердить подписание на бумаге (1 клик)</span>
+									<Zap size={18} />
+									<span>
+										{activeMode === "packages"
+											? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
+											: "Подтвердить подписание на бумаге (1 клик)"}
+									</span>
 								</button>
 								<button
 									type="button"
 									className="consent-tool-btn"
 									onClick={handlePrint}
-									title="Печать заполненного бланка ИДС на принтер (А4)"
+									title={
+										activeMode === "packages"
+											? "Многостраничная печать заполненного пакета ИДС (А4)"
+											: "Печать заполненного бланка ИДС на принтер (А4)"
+									}
 								>
 									<Printer size={16} />
-									<span>Печать бланка (А4)</span>
+									<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
 								</button>
 								<button
 									type="button"
 									className="consent-tool-btn"
 									data-testid="btn-print-blank-consent-inline"
 									onClick={handlePrintBlank}
-									title="Печать чистого бланка со строками «________» для ручного заполнения пациентом"
+									title={
+										activeMode === "packages"
+											? "Печать чистых бланков всего пакета со строками «________» для ручного заполнения"
+											: "Печать чистого бланка со строками «________» для ручного заполнения пациентом"
+									}
 								>
 									<FileText size={16} />
-									<span>Печать чистого бланка («________»)</span>
+									<span>
+										{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
+									</span>
 								</button>
 							</div>
 						</div>
@@ -1030,20 +1282,30 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							type="button"
 							className="consent-action-btn secondary"
 							onClick={handlePrint}
-							title="Печать заполненного бланка ИДС на принтер (А4)"
+							title={
+								activeMode === "packages"
+									? "Многостраничная печать заполненного пакета ИДС (А4)"
+									: "Печать заполненного бланка ИДС на принтер (А4)"
+							}
 						>
 							<Printer size={18} />
-							<span>Печать бланка (А4)</span>
+							<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
 						</button>
 						<button
 							type="button"
 							className="consent-action-btn secondary"
 							data-testid="btn-print-blank-consent"
 							onClick={handlePrintBlank}
-							title="Печать чистого бланка со строками «________» для ручного заполнения"
+							title={
+								activeMode === "packages"
+									? "Печать чистых бланков всего пакета со строками «________» для ручного заполнения"
+									: "Печать чистого бланка со строками «________» для ручного заполнения"
+							}
 						>
 							<FileText size={18} />
-							<span>Печать чистого бланка («________»)</span>
+							<span>
+								{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
+							</span>
 						</button>
 					</div>
 
@@ -1065,13 +1327,21 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						>
 							{verificationMethod === "paper_physical" ? (
 								<>
-									<CheckCircle2 size={18} />
-									<span>⚡ Подтвердить подписание на бумаге (1 клик)</span>
+									<Zap size={18} />
+									<span>
+										{activeMode === "packages"
+											? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
+											: "Подтвердить подписание на бумаге (1 клик)"}
+									</span>
 								</>
 							) : (
 								<>
 									<FileCheck size={18} />
-									<span>Подписать и прикрепить к карте 043/у</span>
+									<span>
+										{activeMode === "packages"
+											? `Подписать пакет (${currentPackage.templateKeys.length} док.) и прикрепить к 043/у`
+											: "Подписать и прикрепить к карте 043/у"}
+									</span>
 								</>
 							)}
 						</button>
