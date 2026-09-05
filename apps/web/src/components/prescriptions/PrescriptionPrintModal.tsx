@@ -67,16 +67,46 @@ export interface DentalFastPrescriptionSet {
 
 export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] = [
 	{
+		id: "amoxiclav_first_line",
+		label: "«Антибиотик первого ряда (Амоксиклав 875+125 мг)»",
+		desc: "Rp: Amoxicillini + Acidi clavulanici 875/125mg, D.t.d. N 14 in tab., S. По 1 таблетке 2 раза в день во время еды 7 дней.",
+		drugIds: ["amoxiclav_875_125"],
+	},
+	{
+		id: "clarithromycin_reserve",
+		label: "«Антибиотик резерва при аллергии на пенициллины (Кларитромицин 500 мг)»",
+		desc: "Rp: Clarithromycini 500mg, D.t.d. N 10 in tab., S. По 1 таблетке 1 раз в день 5-7 дней.",
+		drugIds: ["clarithromycin_500"],
+	},
+	{
+		id: "analgesia_nimesil",
+		label: "«НПВП / Обезболивающее при острой боли (Нимесил 100 мг)»",
+		desc: "Rp: Nimesulidi 100mg, D.t.d. N 10 in gran., S. По 1 пакетику 2 раза в день после еды, растворив в 100 мл воды, до 5 дней.",
+		drugIds: ["nimesulide_100"],
+	},
+	{
+		id: "ibuprofen_moderate_pain",
+		label: "«Обезболивающее умеренное (Ибупрофен 400 мг)»",
+		desc: "Rp: Ibuprofeni 400mg, D.t.d. N 20 in tab., S. По 1 таб. при болях, не более 3 таб. в сутки.",
+		drugIds: ["ibuprofen_400"],
+	},
+	{
+		id: "chlorhexidine_antiseptic_rinse",
+		label: "«Антисептик для полоскания (Хлоргексидин 0.05%)»",
+		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% 100ml, D.S. Ротовые ванночки 3 раза в день по 1 минуте после еды, 7-10 дней.",
+		drugIds: ["chlorhexidine_005"],
+	},
+	{
+		id: "anti_inflammatory_dental_gel",
+		label: "«Противовоспалительный гель (Холисал / Метрогил Дента)»",
+		desc: "Rp: Gel dentalis, D.S. Аппликации на область десен 2-3 раза в день после чистки зубов 7-10 дней.",
+		drugIds: ["cholisal_gel"],
+	},
+	{
 		id: "standard_anti_inflammatory_course",
 		label: "«Стандартный противовоспалительный курс»",
 		desc: "Амоксиклав (875/125 мг 2 р/д 5-7 дн.) + Нимесил (100 мг 2 р/д при болях) + Хлоргексидин 0.05% (ванночки 3-4 р/д)",
 		drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
-	},
-	{
-		id: "analgesia_nimesil",
-		label: "«Анальгезия» (Нимесил 100 мг)",
-		desc: "Нимесил (Нимесулид) 100 мг — по 1 пак. 2 раза в день при болях до 5 дней",
-		drugIds: ["nimesulide_100"],
 	},
 	{
 		id: "post_extraction_surgery",
@@ -95,30 +125,6 @@ export const DENTAL_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[]
 		label: "«Антисептический / полоскания»",
 		desc: "Мирамистин 0.01% + Стоматофит",
 		drugIds: ["miramistin_001", "stomatophyt_100"],
-	},
-	{
-		id: "amoxi_1000_nimesil",
-		label: "Амоксиклав 1000\u00A0мг + Нимесил 100\u00A0мг",
-		desc: "Антибиотик 875/125\u00A0мг + НПВС 100\u00A0мг (Периодонтит / Хирургия)",
-		drugIds: ["amoxiclav_875_125", "nimesulide_100"],
-	},
-	{
-		id: "nimesil_100",
-		label: "Нимесил 100\u00A0мг (НПВП)",
-		desc: "Rp: Gran. Nimesulidi 100 mg / По 1 пак. 2 раза в день при болях",
-		drugIds: ["nimesulide_100"],
-	},
-	{
-		id: "chlorhex_005",
-		label: "Хлоргексидин 0.05\u00A0% (Антисептик)",
-		desc: "Rp: Sol. Chlorhexidini bigluconatis 0.05% / Ротовые ванночки 3 раза в день",
-		drugIds: ["chlorhexidine_005"],
-	},
-	{
-		id: "cholisal",
-		label: "Холисал гель",
-		desc: "Стоматологический противовоспалительный гель",
-		drugIds: ["cholisal_gel"],
 	},
 	{
 		id: "periostitis_osteotropic",
@@ -328,6 +334,7 @@ export interface PrescriptionPrintModalProps {
 	readonly medicalLicenseNumber?: string | null | undefined;
 	readonly initialSelectedDrugIds?: readonly string[] | undefined;
 	readonly onPrescriptionCreated?: ((prescription: any) => void) | undefined;
+	readonly onInsertToDiary?: ((diaryText: string) => void) | undefined;
 }
 
 export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
@@ -347,6 +354,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 	medicalLicenseNumber = "ЛО41-01137-77/00368421",
 	initialSelectedDrugIds,
 	onPrescriptionCreated,
+	onInsertToDiary,
 }) => {
 	const [activeForm, setActiveForm] = useState<PrescriptionFormType>("107-1u");
 	const [selectedDrugIds, setSelectedDrugIds] = useState<string[]>([]);
@@ -833,6 +841,76 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 		handlePrint(html);
 	};
 
+	const formatDiaryTextForDrugs = useCallback(
+		(drugs: readonly PrescriptionDrugItem[]) => {
+			if (drugs.length === 0) return "";
+			const itemsText = drugs
+				.map(
+					(d, idx) =>
+						`${idx + 1}. ${d.latinName}\n   ${d.dispenseLatin}\n   ${d.signaRussian} [${d.tradeName}]`,
+				)
+				.join("\n");
+			return `Назначено медикаментозное лечение (рецепт № 107-1/у от ${new Date(prescriptionDate || Date.now()).toLocaleDateString("ru-RU")}):\n${itemsText}`;
+		},
+		[prescriptionDate],
+	);
+
+	const handleInsertToDiary = useCallback(
+		(overrideItems?: readonly PrescriptionDrugItem[]) => {
+			const targetItems = overrideItems || activeItems;
+			if (targetItems.length === 0) {
+				showToast("Выберите хотя бы один препарат для внесения в дневник", "warning", 3000);
+				return;
+			}
+			const diaryText = formatDiaryTextForDrugs(targetItems);
+			if (onInsertToDiary) {
+				onInsertToDiary(diaryText);
+			}
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				navigator.clipboard.writeText(diaryText).catch(() => {});
+			}
+			if (onPrescriptionCreated) {
+				onPrescriptionCreated({
+					seriesNumber: customSeriesNumber,
+					date: prescriptionDate,
+					formType: activeForm,
+					items: targetItems,
+					diaryText,
+				});
+			}
+			showToast("Назначения внесены в дневник 043/у (скопировано в буфер)", "success", 3000);
+		},
+		[
+			activeItems,
+			formatDiaryTextForDrugs,
+			onInsertToDiary,
+			onPrescriptionCreated,
+			customSeriesNumber,
+			prescriptionDate,
+			activeForm,
+		],
+	);
+
+	const handleApplyAndInsertToDiary = (preset: DentalFastPrescriptionSet) => {
+		setSelectedDrugIds([...preset.drugIds]);
+		setValidityDays("60");
+		const presetItems: PrescriptionDrugItem[] = preset.drugIds
+			.map((id) => fullCatalog.find((d) => d.id === id))
+			.filter((d): d is DentalPrescriptionDrugPreset => Boolean(d))
+			.map((d, index) => ({
+				id: `item-${index + 1}-${d.id}`,
+				latinName: d.latinRp,
+				tradeName: d.tradeNameRu,
+				form: d.formRu,
+				dosage: d.dosageRu,
+				quantity: d.quantityLabel,
+				dispenseLatin: d.dispenseLatin,
+				signaRussian: d.signaRu,
+				category: d.category,
+			}));
+		handleInsertToDiary(presetItems);
+	};
+
 	if (!isOpen || typeof document === "undefined") return null;
 
 	return createPortal(
@@ -1115,19 +1193,35 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 													</span>
 												</button>
 
-												<button
-													type="button"
-													title={`Печать набора ${preset.label} в 1 клик`}
-													onClick={(e) => {
-														e.stopPropagation();
-														handleApplyAndPrint(preset);
-													}}
-													className="flex items-center justify-center self-center px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shrink-0 transition-colors shadow-xs gap-1.5 cursor-pointer min-h-[44px] min-w-[44px]"
-													data-testid={`btn-fast-print-${preset.id}`}
-												>
-													<Printer className="w-4 h-4" />
-													<span className="hidden xl:inline">Печать</span>
-												</button>
+												<div className="flex items-center gap-1.5 shrink-0 self-center">
+													<button
+														type="button"
+														title={`Внести ${preset.label} в дневник 043/у`}
+														onClick={(e) => {
+															e.stopPropagation();
+															handleApplyAndInsertToDiary(preset);
+														}}
+														className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-800 hover:text-white dark:text-emerald-300 dark:hover:text-white text-[11px] font-bold transition-all border border-emerald-500/30 gap-1 cursor-pointer min-h-[40px]"
+														data-testid={`btn-fast-diary-${preset.id}`}
+													>
+														<FileText className="w-3.5 h-3.5" />
+														<span className="hidden xl:inline">В дневник</span>
+													</button>
+
+													<button
+														type="button"
+														title={`Печать набора ${preset.label} в 1 клик`}
+														onClick={(e) => {
+															e.stopPropagation();
+															handleApplyAndPrint(preset);
+														}}
+														className="flex items-center justify-center px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold shrink-0 transition-colors shadow-xs gap-1.5 cursor-pointer min-h-[40px] min-w-[40px]"
+														data-testid={`btn-fast-print-${preset.id}`}
+													>
+														<Printer className="w-4 h-4" />
+														<span className="hidden xl:inline">Печать</span>
+													</button>
+												</div>
 											</div>
 										);
 									})}
@@ -1494,8 +1588,18 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 								{/* Statutory verification feedback */}
 								<div className="flex items-center justify-between text-[11px] pt-1">
 									<span className="text-[var(--muted)]">Истекает: <strong>{validityAudit.expiresAtIso}</strong></span>
-									<span className={`font-bold ${validityAudit.isValid ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600"}`}>
-										{validityAudit.isValid ? `✔ Действителен (${validityAudit.daysRemaining} дн.)` : "✖ Нарушение норм 1094н"}
+									<span className={`font-bold inline-flex items-center gap-1 ${validityAudit.isValid ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600"}`}>
+										{validityAudit.isValid ? (
+											<>
+												<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+												<span>Действителен ({validityAudit.daysRemaining} дн.)</span>
+											</>
+										) : (
+											<>
+												<AlertCircle className="w-3.5 h-3.5 shrink-0" />
+												<span>Нарушение норм 1094н</span>
+											</>
+										)}
 									</span>
 								</div>
 								{validityAudit.errors.length > 0 && (
@@ -1596,7 +1700,7 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 									<div className="text-[9px]">ОГРН: {ogrn} · ИНН: {inn}</div>
 									<div className="text-[8.5px] font-sans">Лицензия: № {licNum}</div>
 									<div className="text-[8px] font-bold italic mt-0.5" style={{ color: withStampAndSignature ? "#2563eb" : "#64748b" }}>
-										{withStampAndSignature ? "★ ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ ★" : "(Штамп медицинской организации)"}
+										{withStampAndSignature ? "ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ" : "(Штамп медицинской организации)"}
 									</div>
 								</div>
 								<div className="w-5/12 text-right leading-tight text-[9px]" style={{ color: "#1e293b" }}>
@@ -1759,7 +1863,10 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							{isUkepSigned && ukepSignature && (
 								<div className="border border-sky-600 bg-sky-50/90 p-2 rounded text-[8.5px] font-sans text-sky-950 flex justify-between items-center mt-1">
 									<div>
-										<div className="font-bold text-sky-900">✔ ДОКУМЕНТ ПОДПИСАН УКЭП ВРАЧА</div>
+										<div className="font-bold text-sky-900 flex items-center gap-1.5">
+											<ShieldCheck className="w-3.5 h-3.5 text-sky-700 shrink-0 inline" />
+											<span>ДОКУМЕНТ ПОДПИСАН УКЭП ВРАЧА</span>
+										</div>
 										<div>Сертификат: <strong>{ukepSignature.certificateSerialNumber}</strong></div>
 										<div>Владелец: {ukepSignature.doctorFullName}</div>
 										<div>УЦ: {ukepSignature.certificateIssuer}</div>
@@ -1789,6 +1896,15 @@ export const PrescriptionPrintModal: React.FC<PrescriptionPrintModalProps> = ({
 							className="min-h-[48px] w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)] sm:border-transparent transition-colors text-center cursor-pointer"
 						>
 							Закрыть
+						</button>
+						<button
+							type="button"
+							onClick={() => handleInsertToDiary()}
+							className="min-h-[48px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all active:scale-[0.98] cursor-pointer"
+							data-testid="insert-to-diary-btn"
+						>
+							<FileText className="w-4 h-4 shrink-0" />
+							<span>Внести в дневник 043/у</span>
 						</button>
 						<button
 							type="button"

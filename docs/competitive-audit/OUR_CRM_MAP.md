@@ -54,20 +54,23 @@
   - `urgentScheduleRequests` — срочные CITO-обращения с авто-подбором слота/врача и 1-клик печатью чистого договора со строками `_______`.
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма и Голосовой ввод
-- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `EndoCanalLogModal.tsx`.
+- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/visits.ts`, `odontogram.ts`, `toothHistory.ts`, `clinical.ts`, `speech.ts`.
 - **Возможности**:
   - Интерактивная 2D/3D одонтограмма (32 зуба + молочная формула, кариес, пульпит, периодонтит, корень, имплант).
   - 1-клик хирургический протокол имплантации (Dentium, Osstem, Straumann; торк 35 Н·см, ISQ 72) с авто-вставкой в дневник 043/у.
-  - Детская эндодонтия зубов 51..85 с авто-расчетом рабочей длины корневых каналов.
+  - Детская эндодонтия зубов 51..85 с авто-расчетом рабочей длины корневых каналов и утилитарный замер каналов в `EndoCanalMeasurementDrawer.tsx`.
+  - Защита черновика врача от потери (Autosave Flush) при входящем телефонном звонке (`telephonyStore.ts`, коммит `1d7d1d2f8`).
   - Голосовая диктовка врачом с авто-нормализацией медицинских терминов (`speech.ts`).
   - Система клинических правил `ClinicalRulePanel.tsx` (проверка обязательных услуг, предупреждения о противопоказаниях).
 
 ### 2.4. 3D DICOM / MPR КТ Просмотрщик & ИИ Диагностика
-- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `mprMath.ts`, `mprWorker.ts`.
+- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/imaging.ts`, `imaging_planning.ts`, `dicomweb.ts`, `ai.ts`, `xray.ts`.
 - **Преимущество [ЛУЧШЕ У НАС]**:
   - Встроенный в веб-клиент 3D MPR КТ реконструктор (аксиальный, сагиттальный, корональный срезы).
+  - Подлинная анатомическая шкала плотности кости по Misch (D1–D5: D1 >1250 HU, D2 850–1250 HU, D3 350–849 HU, D4 150–349 HU, D5 <150 HU) без аркадных HU-слайдеров и синтетических диорам нерва (`boneDensityMischMath.ts`, `implantSafetyEngine.ts`, коммит `48c7cdac2`).
+  - Унифицированный модуль цефалометрии ТРГ `CephalometricAnalysisModal.tsx` с голосовой диктовкой анатомических ориентиров (коммит `95128f01e`).
   - Планирование виртуальной расстановки имплантов (`ctPlanningImplantFit.ts`).
   - ИИ-анализ панорамных и КТ снимков на патологии (`ai.ts`).
 
@@ -76,6 +79,9 @@
 - **Бэкенд**: `apps/api/src/routes/documents.ts`, `templates.ts`, `egisz.ts`.
 - **Возможности**:
   - Генерация договоров оказания платных мед. услуг, ИДС (информированных согласий), актов.
+  - Полная отвязка стоматологической карты 043/у от многопрофильной госпитальной формы 025/у под Мандат 8i (`documentValidators.ts`, `useDocumentPayloads.ts`, `usePatientIntakeLogic.ts`, коммит `65be4645c`).
+  - Унифицированный утилитарный паспорт имплантации `ImplantPassportModal.tsx` с производителями (Straumann, Osstem, Nobel, Dentium, Astra Tech), торком, ISQ и сносом 1000+ строк процедурного блоата (коммит `13fe5e9a0`).
+  - Ликвидация вложенных модальных окон (Анти-Матрёшка, Мандат 8d) в резюме визита и печати формы 043/у (`VisitSummaryModal.tsx`, `Form043PrintModal.tsx`, коммит `a5df76320`).
   - Рецептурные бланки Минздрава РФ по форме № 107-1/у (Приказ № 1094н) с полиграфической версткой, печатями и 1-клик сроками действия (15 / 60 / 365 дн.).
   - ЭЛН по Приказу Минздрава РФ № 1089н с неблокирующей вставкой черновика в дневник 043/у и пресетами острой боли (альвеолит, перикоронит).
   - Справки для налогового вычета (НДФЛ код 1).
@@ -89,20 +95,24 @@
   - Журнал отправки сообщений `communicationStatus: queued|sent|delivered|failed`.
 
 ### 2.7. Финансы, Платежи и Расчёт ЗП
-- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`, `InvoiceGenerationModal.tsx`, `PaymentModal.tsx`.
+- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`, `InvoiceGenerationModal.tsx`, `PaymentModal.tsx`, `FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/billing.ts`, `finance_family.ts`.
 - **Возможности**:
   - Проведение платежей (наличные, карта, аванс, семейный кошелек).
-  - 1-клик комбинированная оплата в `PaymentModal.tsx` («Зачесть аванс N ₽ + остаток картой») без отключения кнопок при недостатке депозита.
-  - Мгновенный сброс (flush) черновика дневника 043/у при входящем звонке телефонии для защиты от потери данных.
+  - 1-клик комбинированная оплата в `PaymentModal.tsx` («Зачесть аванс N ₽ + остаток картой») без отключения кнопок при недостатке депозита (коммит `388b1ac24`).
+  - 100% гарантийные скидки врача (0 ₽) в `planToInvoiceValidator.ts` без блокировок и мастер-паролей (Мандат 8e).
+  - Мгновенный сброс (flush) черновика дневника 043/у при входящем звонке телефонии для защиты от потери данных (`telephonyStore.ts`, коммит `1d7d1d2f8`).
   - Выписка счетов, наряд-заказов и актов с 1-клик клиническим согласованием врача (Мандат 8e) без обязательного мастер-пароля управляющего.
   - Модуль расчёта зарплаты врачей и ассистентов с дифференцированными ставками (`PayrollView.tsx`).
+  - Табель учета рабочего времени Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) с однострочным тулбаром 32–36px по Apple Studio HIG и защитой от падений `activeEmployee` (коммит `ff2dbb9c7`).
 
 ### 2.8. Склад, Стерилизация и Лабораторный портал
-- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`.
+- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`.
 - **Возможности**:
   - Списание расходных материалов на визиты.
+  - 1-клик вскрытие крафт-пакетов без комиссий из 3 человек по СанПиН 3.3686-21 и авто-привязка индикатора стерильности к визиту 043/у (`SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, коммит `0dc6e0fad`).
+  - Мобильный портал смен врача `DoctorMobileShiftModal.tsx` со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенной фиксацией явок.
   - Журнал автоклавирования и стерилизационных партий (`sterilization.ts`).
   - Гостевой портал зуботехнических лабораторий (`GuestLabPortal.tsx`).
 
@@ -259,6 +269,39 @@
   - `apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx`, `photoProtocol.css` (коммит `6e41e2458`)
 - **Тесты**:
   - 4 теста ортодонтического фотопротокола, 21 тест калькулятора анестезии пройдены.
+
+#### 2.10.21. Ликвидация аркадных HU-слайдеров и синтетических диорам нерва (Мандаты 8e, 8k / КТ и Рентгенология)
+- **Суть и домен**: Категорический запрет на игровую бутафорию и синтетические диорамы в рентгенологии. Ликвидированы аркадные слайдеры плотности кости и процедурные SVG-диорамы нижнечелюстного нерва. Внедрена подлинная анатомическая шкала Misch (D1–D5: D1 >1250 HU, D2 850–1250 HU, D3 350–849 HU, D4 150–349 HU, D5 <150 HU), честное состояние неразмеченного нижнечелюстного канала («0 точек») с гарантированным коридором безопасности 2.0 мм. Утилитарное измерение рабочей длины корневых каналов в `EndoCanalMeasurementDrawer.tsx`.
+- **Фронтенд и математика**:
+  - `apps/web/src/components/radiology/ImplantCrossSectionPlanner.tsx`, `boneDensityMischMath.ts`, `implantSafetyEngine.ts`, `apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx` (коммит `48c7cdac2`)
+
+#### 2.10.22. 1-клик комбинированный резолвер депозита и гарантийные скидки 100% (Мандат 8e / Финансы)
+- **Суть и домен**: Снятие блокировок кнопок частичной оплаты в кассе. Если остаток депозита или семейного баланса меньше суммы счета, кнопка не отключается в disabled, а предлагает 1-клик резолвер: «Зачесть аванс N ₽ + остаток картой» без ручного калькулятора. Сняты блокировки на применение 100% скидки врача при гарантийных переделках с нулевой ценой услуги (0 ₽) в счетах.
+- **Фронтенд и Shared**:
+  - `apps/web/src/components/finance/PaymentModal.tsx`, `InvoiceGenerationModal.tsx`, `packages/shared/src/finance/planToInvoiceValidator.ts` (коммиты `388b1ac24`, `1d7d1d2f8`)
+- **Тесты**:
+  - `packages/shared/src/tests/planToInvoiceValidator.test.ts` (100% passing)
+
+#### 2.10.23. Унификация хирургического паспорта имплантации и снос 1000+ строк блоата (Мандаты 8j, 8k, 8e / Хирургия)
+- **Суть и домен**: Ликвидация раздутого дубликата `ImplantSurgicalPassportModal.tsx` (-1097 строк мертвого процедурного кода и удаление `implantSurgicalPassport.css`). Полная унификация в канонический утилитарный `ImplantPassportModal.tsx` с пресетами ведущих имплантационных систем (Straumann, Osstem, Nobel Biocare, Dentium, Astra Tech), протоколированием торка (Н·см), ISQ, параметров лота/партии и 1-клик экспортом готового протокола в дневник Формы 043/у.
+- **Фронтенд**:
+  - `apps/web/src/components/implants/ImplantPassportModal.tsx`, `apps/web/src/components/visit/VisitDiagnosticsTab.tsx` (коммит `13fe5e9a0`)
+
+#### 2.10.24. Табель учета рабочего времени Т-13 с однострочным тулбаром 32–36px (Мандаты 8d, 8e / Кадры)
+- **Суть и домен**: Приведение табеля Т-13 к канонам Apple Studio HIG и Закону Хика (ровно 1 строка тулбара 32–36px вместо многоэтажного частокола кнопок). Устранение падений при смене сотрудника (`activeEmployee` guard), компактные переключатели периодов, полиграфическая точность печатной формы Т-13 Госкомстата РФ с автоматическим учетом явок, ночных смен и невыходов.
+- **Фронтенд**:
+  - `apps/web/src/components/payroll/FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`, `advancedPayroll.css`, `timesheetT13.css` (коммит `ff2dbb9c7`)
+
+#### 2.10.25. СанПиН крафт-пакеты в 1 клик без комиссий и мобильный портал смен врача (Мандаты 8e, 8n / Стерилизация и Портал)
+- **Суть и домен**: Обеспечение полной автономии соло-врача и старшей медсестры при вскрытии крафт-пакетов стерилизации по СанПиН 3.3686-21. 1-клик вскрытие и привязка индикатора стерильности/QR-кода пакета к приему пациента без созыва комиссий из 3 человек. Мобильный учет смен врача в портале (`DoctorMobileShiftModal.tsx`) со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенным подтверждением явки на смену.
+- **Фронтенд и тесты**:
+  - `apps/web/src/components/doctor-portal/DoctorMobileShiftModal.tsx`, `apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx`, `apps/web/src/components/sterilization/KraftPackageQuickScanner.tsx`, `sterilizationPresets.ts`, тесты `sanpinUnsealMandate8e.test.ts` (коммит `0dc6e0fad`)
+
+#### 2.10.26. Ликвидация матрешек и вложенных модалок в резюме визита и печати 043/у (Мандаты 8d(6), 8e / Интерфейс)
+- **Суть и домен**: Полное устранение нарушений Закона Анти-Матрёшки (глубина модальных окон строго 1). Ликвидированы открытия модалок поверх модалок в `VisitSummaryModal.tsx`, `Form043PrintModal.tsx` и `DoctorShiftRosterModal.tsx`. Все вторичные параметры вынесены во встроенные аккордеоны и плавные inline-панели с сохранением фокуса и автономии врача.
+- **Фронтенд**:
+  - `apps/web/src/components/visit/VisitSummaryModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx` (коммит `a5df76320`)
+
 
 
 

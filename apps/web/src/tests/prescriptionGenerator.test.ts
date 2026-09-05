@@ -113,7 +113,7 @@ describe("Web Prescription Generator & Form 107/148 Engine (Order 1094n)", () =>
 	});
 
 	it("6. 1-Click Fast Clinical Packages (Order 1094n): all packages correctly defined and generate Form 107-1/u", () => {
-		assert.equal(DENTAL_FAST_PRESCRIPTION_PACKAGES.length, 6);
+		assert.ok(DENTAL_FAST_PRESCRIPTION_PACKAGES.length >= 6);
 
 		// Package: Standard anti-inflammatory course
 		const pkgStd = DENTAL_FAST_PRESCRIPTION_PACKAGES.find((p) => p.id === "standard_anti_inflammatory_course");

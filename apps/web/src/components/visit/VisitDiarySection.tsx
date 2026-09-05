@@ -1961,6 +1961,15 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				doctorName={doctorName}
 				doctorSpecialty={doctorSpecialty}
 				clinicName={clinicName}
+				onInsertToDiary={(diaryText) => {
+					setDiary((prev) => ({
+						...prev,
+						treatmentDescription: prev.treatmentDescription
+							? `${prev.treatmentDescription}\n\n${diaryText}`
+							: diaryText,
+					}));
+					scheduleDebouncedSave();
+				}}
 			/>
 
 			{/* ── Radiology Referral Modal ── */}

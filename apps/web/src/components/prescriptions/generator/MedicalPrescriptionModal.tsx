@@ -6,6 +6,7 @@ import {
 	Check,
 	Clock,
 	Zap,
+	FileText,
 } from "lucide-react";
 import { renderForm107_1uHtml } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
@@ -30,10 +31,13 @@ export interface MedicalPrescriptionModalProps {
 	readonly doctorName?: string | undefined;
 	readonly doctorSpecialty?: string | undefined;
 	readonly clinicName?: string | undefined;
+	readonly onInsertToDiary?: ((diaryText: string) => void) | undefined;
 }
 
 const normalizeDrugId = (id: string): string => {
 	if (id === "amoxiclav_875_125") return "amoxiclav_875";
+	if (id === "nimesulide_100") return "nimesil_100";
+	if (id === "cholisal_gel") return "holisal_gel";
 	return id;
 };
 
@@ -51,6 +55,7 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 	doctorName = "Д-р Смирнов Алексей Петрович",
 	doctorSpecialty = "Врач-стоматолог терапевт-эндодонтист",
 	clinicName = "ООО «Денте Стоматология»",
+	onInsertToDiary,
 }) => {
 	const [selectedIds, setSelectedIds] = useState<readonly string[]>([
 		"nimesil_100",
@@ -58,6 +63,28 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 		"amoxiclav_875",
 	]);
 	const [validityDays, setValidityDays] = useState<15 | 60 | 365>(60);
+
+	const handleInsertToDiary = (overrideIds?: readonly string[]) => {
+		const targetIds = overrideIds || selectedIds;
+		if (targetIds.length === 0) {
+			showToast("Выберите хотя бы один препарат для внесения в дневник", "warning", 3000);
+			return;
+		}
+		const drugs = targetIds
+			.map((id) => DENTAL_MEDICATIONS_CATALOG.find((m) => normalizeDrugId(m.id) === normalizeDrugId(id)))
+			.filter((d): d is DentalMedicationPreset => Boolean(d));
+		const itemsText = drugs
+			.map((d, idx) => `${idx + 1}. ${d.latinRp}\n   ${d.dispenseLatin}\n   ${d.signaRu} [${d.tradeNameRu}]`)
+			.join("\n");
+		const diaryText = `Назначено медикаментозное лечение (рецепт № 107-1/у от ${new Date().toLocaleDateString("ru-RU")}):\n${itemsText}`;
+		if (onInsertToDiary) {
+			onInsertToDiary(diaryText);
+		}
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(diaryText).catch(() => {});
+		}
+		showToast("Назначения внесены в дневник 043/у (скопировано в буфер)", "success", 3000);
+	};
 
 	const prescriptionDoc: Form107PrescriptionDocument = useMemo(() => {
 		return generateForm107Prescription({
@@ -220,28 +247,58 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 										pkg.drugIds.length === selectedIds.length &&
 										pkg.drugIds.every((id) => isDrugSelected(id, selectedIds));
 									return (
-										<button
+										<div
 											key={pkg.id}
-											type="button"
-											onClick={() => setSelectedIds(pkg.drugIds.map(normalizeDrugId))}
-											className={"min-h-[44px] w-full p-2.5 rounded-lg border text-left transition-all flex flex-col gap-0.5 cursor-pointer " + (
+											className={"min-h-[44px] w-full p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1.5 " + (
 												isPkgActive
 													? "bg-teal-500/15 border-teal-600 ring-1 ring-teal-500 text-[var(--ink,#0f172a)] shadow-xs"
 													: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:border-teal-500/60 hover:bg-teal-500/5 text-[var(--muted,#64748b)]"
 											)}
 										>
-											<div className="flex items-center justify-between gap-2">
-												<span className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-													{pkg.label}
-												</span>
-												<span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-teal-700 dark:text-teal-300 shrink-0">
+											<div
+												onClick={() => setSelectedIds(pkg.drugIds.map(normalizeDrugId))}
+												className="flex items-center justify-between gap-2 cursor-pointer"
+											>
+												<div className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 text-left flex-1">
+													<Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+													<span>{pkg.label}</span>
+												</div>
+												<span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-teal-700 dark:text-teal-300 shrink-0">
 													{pkg.badge || `${pkg.drugIds.length} преп.`}
 												</span>
 											</div>
 											<span className="text-[11px] text-[var(--muted,#64748b)] leading-snug">
 												{pkg.desc}
 											</span>
-										</button>
+											<div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-[var(--line,#e2e8f0)]/50">
+												<button
+													type="button"
+													data-testid={`btn-med-fast-diary-${pkg.id}`}
+													onClick={() => {
+														setSelectedIds(pkg.drugIds.map(normalizeDrugId));
+														handleInsertToDiary(pkg.drugIds);
+													}}
+													className="min-h-[40px] px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/40 text-[var(--ink,#0f172a)] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+													title="Внести в дневник формы 043/у"
+												>
+													<FileText className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+													<span>В дневник</span>
+												</button>
+												<button
+													type="button"
+													data-testid={`btn-med-fast-print-${pkg.id}`}
+													onClick={() => {
+														setSelectedIds(pkg.drugIds.map(normalizeDrugId));
+														setTimeout(() => handlePrint(), 50);
+													}}
+													className="min-h-[40px] px-3 py-2 text-xs font-semibold rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+													title="Мгновенная печать рецепта по экспресс-прописи"
+												>
+													<Printer className="w-4 h-4 shrink-0" />
+													<span>Печать</span>
+												</button>
+											</div>
+										</div>
 									);
 								})}
 							</div>
@@ -430,6 +487,15 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 							className="min-h-[44px] w-full sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line)] sm:border-transparent transition-colors text-center cursor-pointer"
 						>
 							Закрыть
+						</button>
+						<button
+							type="button"
+							data-testid="med-rx-insert-to-diary-btn"
+							onClick={() => handleInsertToDiary()}
+							className="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800 transition-all cursor-pointer"
+						>
+							<FileText className="w-4 h-4 shrink-0" />
+							<span>Внести в дневник 043/у</span>
 						</button>
 						<button
 							type="button"

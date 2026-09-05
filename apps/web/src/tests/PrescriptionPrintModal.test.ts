@@ -88,10 +88,14 @@ test("PrescriptionPrintModal component contract and drug catalog integrity", () 
 	assert.ok(html.includes("Форма бланка № 107-1/у"));
 	assert.ok(html.includes("Приказ МЗ РФ № 1094н") || html.includes("1094н"));
 	assert.ok(html.includes("Петров Петр Петрович"));
-	assert.ok(html.includes("★ ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ ★"));
+	assert.ok(html.includes("ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ"));
 	assert.ok(html.includes("Для<br>рецептов"));
 	assert.ok(html.includes("М.П."));
 	assert.ok(html.includes("Смирнов А.П."));
+
+	// Strict ban on decorative symbols (stars, checkmarks) and emojis in official statutory print (Mandate 8d sin #7)
+	assert.doesNotMatch(html, /[★✔]/);
+	assert.doesNotMatch(html, /[\u{1F300}-\u{1F9FF}]/u);
 });
 
 test("Form 107-1/u standard dental anti-inflammatory course (Order 1094n) clean official print without emojis", () => {
@@ -134,7 +138,8 @@ test("Form 107-1/u standard dental anti-inflammatory course (Order 1094n) clean 
 	assert.ok(html.includes("D.t.d."));
 	assert.ok(html.includes("S."));
 
-	// Strict ban on emojis in official statutory print (Mandate 8d sin #7)
+	// Strict ban on emojis and decorative symbols in official statutory print (Mandate 8d sin #7)
 	assert.doesNotMatch(html, /[\u{1F300}-\u{1F9FF}]/u);
+	assert.doesNotMatch(html, /[★✔]/);
 });
 

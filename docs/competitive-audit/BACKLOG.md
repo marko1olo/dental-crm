@@ -307,10 +307,10 @@
 ---
 
 ## 35. `финансы::комбинированная_оплата_аванс_карта_в_1_клик` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8k)
-- **Идея**: Снятие блокировок кнопок частичной оплаты в `PaymentModal`. Если остаток депозита или семейного баланса меньше общей суммы счета, кнопка не выключается в disabled, а предлагает 1-клик резолвер: «Зачесть аванс N ₽ + остаток картой» без ручного калькулятора. Защита черновика врача от потери (Autosave Flush) при входящем звонке телефонии.
+- **Идея**: Снятие блокировок кнопок частичной оплаты в `PaymentModal`. Если остаток депозита или семейного баланса меньше общей суммы счета, кнопка не выключается в disabled, а предлагает 1-клик резолвер: «Зачесть аванс N ₽ + остаток картой» без ручного калькулятора. Защита черновика врача от потери (Autosave Flush) при входящем звонке телефонии. Разблокировка гарантийных скидок до 100% с нулевой ценой услуги (0 ₽) в `planToInvoiceValidator.ts` без административных блокировок.
 - **Статус**: 
-  - Фронтенд: `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/store/telephonyStore.ts`, `apps/web/src/useAppLogic.tsx` (коммит `1d7d1d2f8`).
-  - Тесты: 1372 теста shared пройдены.
+  - Фронтенд: `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/finance/InvoiceGenerationModal.tsx`, `apps/web/src/store/telephonyStore.ts`, `apps/web/src/useAppLogic.tsx` (коммиты `388b1ac24`, `1d7d1d2f8`).
+  - Тесты: `packages/shared/src/tests/planToInvoiceValidator.test.ts`, 1372 теста shared пройдены.
 
 ---
 
@@ -327,6 +327,46 @@
 - **Статус**: 
   - Фронтенд: `apps/web/src/documentValidators.ts`, `apps/web/src/hooks/domains/useDocumentPayloads.ts`, `apps/web/src/hooks/domains/useDocumentWorkflowModule.ts`, `apps/web/src/hooks/domains/usePatientIntakeLogic.ts` (коммит `65be4645c`).
   - Валидация: 0 ошибок компиляции, строгое соответствие амбулаторному домену.
+
+---
+
+## 38. `рентгенология::ликвидация_аркадных_hu_слайдеров_и_синтетических_svg_диорам` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8k & РАЗДЕЛ XI THE HAMMER)
+- **Идея**: Ликвидация игровых/аркадных слайдеров плотности кости и синтетических SVG-диорам нижнечелюстного нерва. Внедрение подлинной анатомической шкалы плотности кости по Misch (D1–D5: D1 >1250 HU, D2 850–1250 HU, D3 350–849 HU, D4 150–349 HU, D5 <150 HU), честного состояния неразмеченного нижнечелюстного канала («0 точек») с гарантированным коридором безопасности 2.0 мм в `ImplantCrossSectionPlanner.tsx` и математическом модуле `boneDensityMischMath.ts`. Утилитарное измерение рабочей длины корневых каналов в `EndoCanalMeasurementDrawer.tsx`.
+- **Статус**: 
+  - Фронтенд / Алгоритмы: `apps/web/src/components/radiology/ImplantCrossSectionPlanner.tsx`, `boneDensityMischMath.ts`, `implantSafetyEngine.ts`, `apps/web/src/components/odontogram/EndoCanalMeasurementDrawer.tsx` (коммит `48c7cdac2`).
+  - Валидация: 0 ошибок сборки, отсутствие бутафорских симуляторов, строгая клиническая точность.
+
+---
+
+## 39. `хирургия_имплантация::унификация_хирургического_паспорта_импланта_и_снос_блоата` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8j, 8k, 8e)
+- **Идея**: Ликвидация дублирующего раздутого компонента `ImplantSurgicalPassportModal.tsx` (-1097 строк процедурного кода и удаление `implantSurgicalPassport.css`). Полная унификация хирургического паспорта в канонический утилитарный `ImplantPassportModal.tsx` с пресетами ведущих имплантационных систем (Straumann, Osstem, Nobel Biocare, Dentium, Astra Tech), протоколированием торка (Н·см), ISQ (коэффициент стабильности имплантата), параметров лота/партии и 1-клик экспортом готового протокола в дневник Формы 043/у без паразитных задержек и многооконного ада.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/components/implants/ImplantPassportModal.tsx`, `apps/web/src/components/visit/VisitDiagnosticsTab.tsx` (коммит `13fe5e9a0`).
+  - Валидация: Exit Code 0, снос свыше 1000 строк мертвого процедурного блоата.
+
+---
+
+## 40. `зарплата_кадры::табель_учета_рабочего_времени_т13_с_однострочным_тулбаром` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e & APPLE HIG)
+- **Идея**: Приведение табеля Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) к канонам Apple Studio HIG и Закону Хика (ровно 1 строка тулбара 32–36px). Защита от сбоев при выборе сотрудника (`activeEmployee` guard), компактные переключатели расчетных периодов, полиграфическая точность формы Т-13 Госкомстата РФ с автоматическим учетом явок, ночных смен и невыходов врачей и ассистентов.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/components/payroll/FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`, `apps/web/src/components/payroll/advancedPayroll.css`, `timesheetT13.css` (коммит `ff2dbb9c7`).
+  - Валидация: 0 ошибок линтеров, ликвидация многоэтажного частокола кнопок, полное соответствие трудовому учету РФ.
+
+---
+
+## 41. `санпин_портал_врача::крафт_пакеты_без_комиссий_и_мобильные_смены_врача` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8n & САНПИН 3.3686-21)
+- **Идея**: Обеспечение полной автономии соло-врача и старшей медсестры при вскрытии крафт-пакетов стерилизации (`SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `sterilizationPresets.ts`). 1-клик вскрытие и привязка индикатора стерильности/QR-кода пакета к приему пациента без созыва комиссий из 3 человек. Мобильный учет смен врача в портале (`DoctorMobileShiftModal.tsx`) со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенным подтверждением явки на смену.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/components/doctor-portal/DoctorMobileShiftModal.tsx`, `apps/web/src/components/sanpin/kraft/SeniorNurseKraftUnsealModal.tsx`, `apps/web/src/components/sterilization/KraftPackageQuickScanner.tsx`, `sterilizationPresets.ts` (коммит `0dc6e0fad`).
+  - Тесты: unit-тесты `sanpinUnsealMandate8e.test.ts` (100% passing).
+
+---
+
+## 42. `интерфейс::ликвидация_матрешек_и_вложенных_модалок_в_резюме_визита_и_печати` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d(6), 8e & APPLE HIG)
+- **Идея**: Полное соблюдение Закона Анти-Матрёшки (глубина модальных окон строго 1) в `VisitSummaryModal.tsx`, `Form043PrintModal.tsx` и `DoctorShiftRosterModal.tsx`. Устранение открытий модалок поверх модалок (печать 043/у, подтверждения действий, графики смен врачей). Все вторичные параметры вынесены во встроенные аккордеоны и плавные inline-панели с сохранением фокуса и автономии врача.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/components/visit/VisitSummaryModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx` (коммит `a5df76320`).
+  - Валидация: Exit Code 0, исключены визуальные перекрытия и паразитные многоуровневые оверлеи.
 
 ---
 

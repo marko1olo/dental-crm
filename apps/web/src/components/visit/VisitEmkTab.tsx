@@ -2997,6 +2997,12 @@ export function VisitEmkTab() {
 					doctorName={appLogic?.auth?.currentUser?.name || "Лечащий врач стоматолог"}
 					doctorSpecialty="Стоматолог-терапевт"
 					clinicName={dashboard?.clinicSettings?.profile?.brandName || "Клиника ДЕНТЕ"}
+					onInsertToDiary={(diaryText) => {
+						if (!updateVisitNoteField) return;
+						const curr = visitNoteForm?.treatmentPlan || "";
+						updateVisitNoteField("treatmentPlan", appendClinicalText(curr, diaryText, "\n\n"));
+						showToast("Рецепт внесен в план лечения карты 043/у", "success", 3500);
+					}}
 				/>
 
 				{/* Модальное окно Акта выполненных работ и гарантийного талона (А4) */}

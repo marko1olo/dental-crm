@@ -2093,7 +2093,7 @@ ${CLINICAL_DOCUMENT_PRINT_STYLES}
       <div>Адрес: ${escapeHtml(clinicAddress)}</div>
       <div>Тел: ${escapeHtml(clinicPhone)}</div>
       <div>ОГРН: ${escapeHtml(clinicOgrn)} | ИНН: ${escapeHtml(clinicInn)} ${medLic ? `| ${medLic}` : ""}</div>
-      <div style="font-size:6.5pt; color:${withStamp ? "#2563eb" : "#64748b"}; margin-top:2px; font-weight:${withStamp ? "bold" : "normal"};">(${withStamp ? "★ ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ ★" : "Штамп медицинской организации"})</div>
+      <div style="font-size:6.5pt; color:${withStamp ? "#2563eb" : "#64748b"}; margin-top:2px; font-weight:${withStamp ? "bold" : "normal"};">(${withStamp ? "ШТАМП МЕДИЦИНСКОЙ ОРГАНИЗАЦИИ" : "Штамп медицинской организации"})</div>
     </div>
     <div class="form-title-box">
       <div>Министерство здравоохранения РФ</div>
