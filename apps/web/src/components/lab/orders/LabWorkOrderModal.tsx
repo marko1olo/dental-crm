@@ -215,7 +215,47 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 		setStumpShadeCode('ND2');
 		setSurfaceTexture('microtexture');
 		setTranslucency('MT');
-		setClinicalNotes('Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней');
+		setClinicalNotes('Коронка ZrO2 (диоксид циркония Prettau/Katana), цвет А2, анатомическая форма, срок 5 рабочих дней');
+		setCurrentStage('impression_sent');
+		if (selectedTeeth.length === 0) {
+			setSelectedTeeth([16]);
+		}
+	};
+
+	const handleApplyOneClickPmmaPreset = () => {
+		handleProstheticTypeChange('crown_pmma_temporary');
+		setShadeSystem('classical');
+		setShadeCode('A2');
+		setSurfaceTexture('microtexture');
+		setTranslucency('MT');
+		setClinicalNotes('Временная фрезерованная коронка PMMA CAD/CAM (1 клик), зазор 40 мкм, срок 2 рабочих дня');
+		setCurrentStage('impression_sent');
+		if (selectedTeeth.length === 0) {
+			setSelectedTeeth([16]);
+		}
+	};
+
+	const handleApplyOneClickPfmPreset = () => {
+		handleProstheticTypeChange('crown_pfm_cocr');
+		setShadeSystem('classical');
+		setShadeCode('A2');
+		setStumpShadeCode('ND2');
+		setSurfaceTexture('microtexture');
+		setTranslucency('MT');
+		setClinicalNotes('Металлокерамическая коронка (Duceram Plus) — классика Co-Cr, зазор 40 мкм, срок 7 рабочих дней');
+		setCurrentStage('impression_sent');
+		if (selectedTeeth.length === 0) {
+			setSelectedTeeth([16]);
+		}
+	};
+
+	const handleApplyOneClickImplantPreset = () => {
+		handleProstheticTypeChange('implant_screw_retained_crown');
+		setShadeSystem('classical');
+		setShadeCode('A2');
+		setSurfaceTexture('microtexture');
+		setTranslucency('MT');
+		setClinicalNotes('Коронка на имплантате с винтовой фиксацией (Multi-unit / титановое основание Ti-Base + ZrO2), срок 7 рабочих дней');
 		setCurrentStage('impression_sent');
 		if (selectedTeeth.length === 0) {
 			setSelectedTeeth([16]);
@@ -351,17 +391,50 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 								: 'Пациент'}
 						</span>
 					</div>
-					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+					<div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
 						<button
 							type="button"
-							className="lab-btn lab-btn-primary"
-							style={{ padding: '0.35rem 0.75rem', minHeight: '38px', fontSize: '0.75rem', fontWeight: 700 }}
+							className={`lab-btn ${prostheticType === 'crown_zirconia_monolithic' ? 'lab-btn-primary' : ''}`}
+							style={{ padding: '0.35rem 0.65rem', minHeight: '36px', fontSize: '0.75rem', fontWeight: 700 }}
 							onClick={handleApplyOneClickZirconiaPreset}
 							data-testid="lab-modal-apply-zirconia-preset"
-							title="Стандартный пресет: Коронка ZrO2, цвет А2, анатомическая форма, срок 5 рабочих дней"
+							title="Циркониевая коронка на свой зуб (Prettau / Katana) — стандарт (5 дней, 24 000 ₽ / 7 500 ₽)"
 						>
-							<Zap size={15} />
-							<span>⚡ Коронка ZrO2, А2, 5 дней (1 клик)</span>
+							<Zap size={14} />
+							<span>⚡ ZrO₂ (5 дн.)</span>
+						</button>
+						<button
+							type="button"
+							className={`lab-btn ${prostheticType === 'crown_pmma_temporary' ? 'lab-btn-primary' : ''}`}
+							style={{ padding: '0.35rem 0.65rem', minHeight: '36px', fontSize: '0.75rem', fontWeight: 700 }}
+							onClick={handleApplyOneClickPmmaPreset}
+							data-testid="lab-modal-apply-pmma-preset"
+							title="Временная фрезерованная коронка PMMA (1 клик) (2 дня, 3 500 ₽ / 1 200 ₽)"
+						>
+							<Zap size={14} />
+							<span>⚡ PMMA (2 дн.)</span>
+						</button>
+						<button
+							type="button"
+							className={`lab-btn ${prostheticType === 'crown_pfm_cocr' ? 'lab-btn-primary' : ''}`}
+							style={{ padding: '0.35rem 0.65rem', minHeight: '36px', fontSize: '0.75rem', fontWeight: 700 }}
+							onClick={handleApplyOneClickPfmPreset}
+							data-testid="lab-modal-apply-pfm-preset"
+							title="Металлокерамическая коронка (Duceram Plus) — классика (7 дней, 15 000 ₽ / 5 000 ₽)"
+						>
+							<Zap size={14} />
+							<span>⚡ МК Duceram (7 дн.)</span>
+						</button>
+						<button
+							type="button"
+							className={`lab-btn ${prostheticType === 'implant_screw_retained_crown' ? 'lab-btn-primary' : ''}`}
+							style={{ padding: '0.35rem 0.65rem', minHeight: '36px', fontSize: '0.75rem', fontWeight: 700 }}
+							onClick={handleApplyOneClickImplantPreset}
+							data-testid="lab-modal-apply-implant-preset"
+							title="Коронка на имплантате с винтовой фиксацией Multi-unit / Ti-Base (7 дней, 38 000 ₽ / 13 000 ₽)"
+						>
+							<Zap size={14} />
+							<span>⚡ Винтовая Ti-Base (7 дн.)</span>
 						</button>
 						<button className="lab-btn" style={{ padding: '0.25rem 0.5rem', minHeight: '36px', minWidth: '36px' }} onClick={onClose} aria-label="Закрыть">
 							<X size={20} />
@@ -422,8 +495,10 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 											Экспресс-наряд ЗТЛ в 3 клика (Мандат 8e)
 										</span>
 									</div>
-									<div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--muted, #64748b)' }}>
-										Истечение 30 дней плана НЕ БЛОКИРУЕТ наряд · Без согласований начмеда
+									<div style={{ fontSize: '0.7rem', fontWeight: 700, color: (isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) ? 'var(--teal, #0d9488)' : 'var(--muted, #64748b)' }}>
+										{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30))
+											? '✓ План составлен >30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряд ЗТЛ, услуги и оплату (Мандат 8e) · Без согласований начмеда'
+											: 'Истечение 30 дней плана НЕ БЛОКИРУЕТ наряд · Без согласований начмеда'}
 									</div>
 								</div>
 
@@ -454,7 +529,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 
 								{/* Step 2: Конструкция */}
 								<div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-									<span style={{ fontSize: '0.7rem', fontWeight: 800 }}>2-й клик — Конструкция:</span>
+									<span style={{ fontSize: '0.7rem', fontWeight: 800 }}>2-й клик — Конструкция (4 ключевых пресета):</span>
 									<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
 										<button
 											type="button"
@@ -463,38 +538,38 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 											onClick={() => handleProstheticTypeChange('crown_zirconia_monolithic')}
 											data-testid="lab-quick-zirconia"
 										>
-											<span>Коронка ZrO2</span>
-											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>5 раб. дней</span>
+											<span>Коронка ZrO2 Katana</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>5 дн. · 24 000 ₽ / 7 500 ₽</span>
 										</button>
 										<button
 											type="button"
-											className={`lab-btn ${prostheticType === 'crown_emax_press' ? 'lab-btn-primary' : ''}`}
+											className={`lab-btn ${prostheticType === 'crown_pmma_temporary' ? 'lab-btn-primary' : ''}`}
 											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-											onClick={() => handleProstheticTypeChange('crown_emax_press')}
-											data-testid="lab-quick-emax"
+											onClick={() => handleProstheticTypeChange('crown_pmma_temporary')}
+											data-testid="lab-quick-pmma"
 										>
-											<span>IPS e.max Press</span>
-											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>6 раб. дней</span>
+											<span>Временная PMMA</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>2 дня · 3 500 ₽ / 1 200 ₽</span>
 										</button>
 										<button
 											type="button"
-											className={`lab-btn ${prostheticType === 'veneer_refractory' ? 'lab-btn-primary' : ''}`}
+											className={`lab-btn ${prostheticType === 'crown_pfm_cocr' ? 'lab-btn-primary' : ''}`}
 											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-											onClick={() => handleProstheticTypeChange('veneer_refractory')}
-											data-testid="lab-quick-veneer"
+											onClick={() => handleProstheticTypeChange('crown_pfm_cocr')}
+											data-testid="lab-quick-pfm"
 										>
-											<span>Винир / Рефрактор</span>
-											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>7 раб. дней</span>
+											<span>Металлокерамика Duceram</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>7 дн. · 15 000 ₽ / 5 000 ₽</span>
 										</button>
 										<button
 											type="button"
-											className={`lab-btn ${prostheticType === 'removable_clasp_prosthesis' ? 'lab-btn-primary' : ''}`}
+											className={`lab-btn ${prostheticType === 'implant_screw_retained_crown' ? 'lab-btn-primary' : ''}`}
 											style={{ minHeight: '40px', fontSize: '0.75rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-											onClick={() => handleProstheticTypeChange('removable_clasp_prosthesis')}
-											data-testid="lab-quick-clasp"
+											onClick={() => handleProstheticTypeChange('implant_screw_retained_crown')}
+											data-testid="lab-quick-implant"
 										>
-											<span>Съемный бюгель</span>
-											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>10 раб. дней</span>
+											<span>Винтовая на имплантате</span>
+											<span style={{ fontSize: '0.65rem', opacity: 0.8 }}>7 дн. · 38 000 ₽ / 13 000 ₽</span>
 										</button>
 									</div>
 								</div>

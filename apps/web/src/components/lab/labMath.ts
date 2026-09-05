@@ -753,12 +753,13 @@ export interface ExpressLabPreset {
 	surfaceTexture: string;
 	cementGapMicrons: number;
 	badge: string;
+	impressionType?: string;
 }
 
 export const EXPRESS_PRESET_ZIRCONIA_CROWN: ExpressLabPreset = {
 	id: "zirconia_crown_express",
-	title: "Коронка ZrO2 (A2, 5 дней)",
-	shortDesc: "Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней (24 000 ₽ / 7 500 ₽)",
+	title: "Циркониевая коронка на свой зуб (Prettau / Katana) — стандарт",
+	shortDesc: "Анатомическая форма, контакт 50 мкм, зазор под цемент 30 мкм, скан/слепок А-силикон, 5 раб. дней (24 000 ₽ / 7 500 ₽)",
 	constructionType: "single_crown",
 	materialId: "zirconia_multilayer",
 	colorVita: "A2",
@@ -772,7 +773,73 @@ export const EXPRESS_PRESET_ZIRCONIA_CROWN: ExpressLabPreset = {
 	contactTightness: "normal",
 	surfaceTexture: "natural_anatomy",
 	cementGapMicrons: 30,
+	impressionType: "a_silicone",
 	badge: "Коронка ZrO2 (5 дн.)",
+};
+
+export const EXPRESS_PRESET_PMMA_TEMPORARY: ExpressLabPreset = {
+	id: "pmma_temporary_express",
+	title: "Временная фрезерованная коронка PMMA (1 клик)",
+	shortDesc: "Фрезерованная провизорная пластмасса CAD/CAM PMMA, зазор 40 мкм, срок 2 раб. дня (3 500 ₽ / 1 200 ₽)",
+	constructionType: "single_crown",
+	materialId: "pmma_temporary",
+	colorVita: "A2",
+	workingDays: 2,
+	priceRub: 3500,
+	labCostRub: 1200,
+	patientPriceRub: 3500,
+	patientPriceKopecks: 350000,
+	labCostKopecks: 120000,
+	occlusalScheme: "group_function",
+	contactTightness: "normal",
+	surfaceTexture: "natural_anatomy",
+	cementGapMicrons: 40,
+	impressionType: "a_silicone",
+	badge: "PMMA CAD/CAM (2 дн.)",
+};
+
+export const EXPRESS_PRESET_PFM_DUCERAM: ExpressLabPreset = {
+	id: "pfm_duceram_express",
+	title: "Металлокерамическая коронка (Duceram Plus) — классика",
+	shortDesc: "Металлокерамика Co-Cr (Duceram Plus), цвет VITA A2, зазор 40 мкм, срок 7 раб. дней (15 000 ₽ / 5 000 ₽)",
+	constructionType: "single_crown",
+	materialId: "pfm_cocr",
+	colorVita: "A2",
+	workingDays: 7,
+	priceRub: 15000,
+	labCostRub: 5000,
+	patientPriceRub: 15000,
+	patientPriceKopecks: 1500000,
+	labCostKopecks: 500000,
+	occlusalScheme: "group_function",
+	contactTightness: "normal",
+	surfaceTexture: "natural_anatomy",
+	cementGapMicrons: 40,
+	impressionType: "a_silicone",
+	badge: "МК Duceram (7 дн.)",
+};
+
+export const EXPRESS_PRESET_IMPLANT_SCREW_RETAINED: ExpressLabPreset = {
+	id: "implant_screw_retained_express",
+	title: "Коронка на имплантате с винтовой фиксацией (Multi-unit / титановое основание)",
+	shortDesc: "Винтовая фиксация: ZrO2 + Ti-Base / Multi-unit, зазор 30 мкм, срок 7 раб. дней (38 000 ₽ / 13 000 ₽)",
+	constructionType: "implant_abutment",
+	materialId: "titanium_custom_abutment",
+	implantSystem: "Osstem TS III (SA / CA)",
+	abutmentType: "Ti-Base (Титановое основание / Multi-unit)",
+	colorVita: "A2",
+	workingDays: 7,
+	priceRub: 38000,
+	labCostRub: 13000,
+	patientPriceRub: 38000,
+	patientPriceKopecks: 3800000,
+	labCostKopecks: 1300000,
+	occlusalScheme: "mutually_protected",
+	contactTightness: "normal",
+	surfaceTexture: "natural_anatomy",
+	cementGapMicrons: 30,
+	impressionType: "digital_scan_stl_ply",
+	badge: "Винтовая Ti-Base (7 дн.)",
 };
 
 export const EXPRESS_PRESET_BRUXISM_SPLINT: ExpressLabPreset = {
@@ -794,6 +861,7 @@ export const EXPRESS_PRESET_BRUXISM_SPLINT: ExpressLabPreset = {
 	contactTightness: "normal",
 	surfaceTexture: "satin_semi_matte",
 	cementGapMicrons: 0,
+	impressionType: "a_silicone",
 	badge: "Сплинт / Каппа (3 дн.)",
 };
 
@@ -816,6 +884,7 @@ export const EXPRESS_PRESET_CUSTOM_ABUTMENT: ExpressLabPreset = {
 	contactTightness: "normal",
 	surfaceTexture: "natural_anatomy",
 	cementGapMicrons: 30,
+	impressionType: "digital_scan_stl_ply",
 	badge: "Ti-Base + ZrO2 (7 дн.)",
 };
 
@@ -838,6 +907,7 @@ export const EXPRESS_PRESET_REMOVABLE_ACRY_FREE: ExpressLabPreset = {
 	contactTightness: "normal",
 	surfaceTexture: "high_gloss_glaze",
 	cementGapMicrons: 50,
+	impressionType: "a_silicone",
 	badge: "Acry-Free (8 дн.)",
 };
 
@@ -845,6 +915,9 @@ export const EXPRESS_PRESET_REMOVABLE_NYLON = EXPRESS_PRESET_REMOVABLE_ACRY_FREE
 
 export const CANONICAL_EXPRESS_LAB_PRESETS: readonly ExpressLabPreset[] = [
 	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_IMPLANT_SCREW_RETAINED,
 	EXPRESS_PRESET_BRUXISM_SPLINT,
 	EXPRESS_PRESET_CUSTOM_ABUTMENT,
 	EXPRESS_PRESET_REMOVABLE_ACRY_FREE,
@@ -852,6 +925,9 @@ export const CANONICAL_EXPRESS_LAB_PRESETS: readonly ExpressLabPreset[] = [
 
 export const EXPRESS_LAB_PRESETS: ExpressLabPreset[] = [
 	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_IMPLANT_SCREW_RETAINED,
 	EXPRESS_PRESET_BRUXISM_SPLINT,
 	EXPRESS_PRESET_CUSTOM_ABUTMENT,
 	EXPRESS_PRESET_REMOVABLE_ACRY_FREE,

@@ -9,6 +9,8 @@
 
 export type ProstheticTypeId =
 	| 'crown_zirconia_monolithic'    // Диоксид циркония Prettau / Katana ML
+	| 'crown_pmma_temporary'         // Временная фрезерованная коронка PMMA CAD/CAM
+	| 'crown_pfm_cocr'               // Металлокерамика Co-Cr (Duceram Plus)
 	| 'crown_emax_press'             // Пресс-керамика IPS e.max Press
 	| 'veneer_refractory'            // Керамический винир на рефракторе / полевошпатная керамика
 	| 'implant_screw_retained_crown' // Коронка на имплантате с винтовой фиксацией (Ti-base + ZrO₂)
@@ -55,8 +57,40 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 		requiresStumpShade: true,
 		requiresImplantSystem: false,
 		requiresFittingStage: false,
-		defaultPriceClinicRub: 18000,
-		defaultCostLabRub: 6500
+		defaultPriceClinicRub: 24000,
+		defaultCostLabRub: 7500
+	},
+	crown_pmma_temporary: {
+		id: 'crown_pmma_temporary',
+		nameRu: 'Временная фрезерованная коронка PMMA CAD/CAM (1 клик)',
+		shortNameRu: 'Временная PMMA CAD/CAM',
+		category: 'fixed',
+		categoryNameRu: 'Провизорное протезирование',
+		descriptionRu: 'Высокоточная провизорная коронка из фрезерованного полимера PMMA CAD/CAM, зазор 40 мкм.',
+		icon: 'crown',
+		defaultMaterialId: 'pmma_cad_cam',
+		standardTurnaroundWorkingDays: 2,
+		requiresStumpShade: false,
+		requiresImplantSystem: false,
+		requiresFittingStage: false,
+		defaultPriceClinicRub: 3500,
+		defaultCostLabRub: 1200
+	},
+	crown_pfm_cocr: {
+		id: 'crown_pfm_cocr',
+		nameRu: 'Металлокерамическая коронка (Duceram Plus) — классика',
+		shortNameRu: 'Металлокерамика Co-Cr (Duceram)',
+		category: 'fixed',
+		categoryNameRu: 'Несъемное протезирование',
+		descriptionRu: 'Классическая металлокерамика Co-Cr с фарфоровой облицовкой Duceram Plus, зазор 40 мкм.',
+		icon: 'crown',
+		defaultMaterialId: 'pfm_cocr_duceram',
+		standardTurnaroundWorkingDays: 7,
+		requiresStumpShade: true,
+		requiresImplantSystem: false,
+		requiresFittingStage: true,
+		defaultPriceClinicRub: 15000,
+		defaultCostLabRub: 5000
 	},
 	crown_emax_press: {
 		id: 'crown_emax_press',
@@ -103,8 +137,8 @@ export const PROSTHETIC_TYPES: Record<ProstheticTypeId, ProstheticTypeDefinition
 		requiresStumpShade: false,
 		requiresImplantSystem: true,
 		requiresFittingStage: true,
-		defaultPriceClinicRub: 35000,
-		defaultCostLabRub: 12000
+		defaultPriceClinicRub: 38000,
+		defaultCostLabRub: 13000
 	},
 	removable_clasp_prosthesis: {
 		id: 'removable_clasp_prosthesis',
@@ -224,6 +258,22 @@ export const LAB_MATERIALS: Record<string, DentalLabMaterial> = {
 		manufacturerRu: '3D Systems / Formlabs',
 		strengthMpa: 110,
 		indicationsRu: 'Хирургические навигационные шаблоны, позиционеры, прикусные сплинты.',
+		isBiocompatible: true
+	},
+	pmma_cad_cam: {
+		id: 'pmma_cad_cam',
+		nameRu: 'PMMA CAD/CAM (фрезерованный полимер)',
+		manufacturerRu: 'Yamahachi Dental / Huge Dental',
+		strengthMpa: 130,
+		indicationsRu: 'Провизорные фрезерованные коронки и мостовидные протезы длительного ношения.',
+		isBiocompatible: true
+	},
+	pfm_cocr_duceram: {
+		id: 'pfm_cocr_duceram',
+		nameRu: 'Металлокерамика Co-Cr + Duceram Plus / Kiss',
+		manufacturerRu: 'Dentsply Sirona / BEGO Wirobond',
+		strengthMpa: 650,
+		indicationsRu: 'Классические металлокерамические коронки и мостовидные конструкции.',
 		isBiocompatible: true
 	}
 };

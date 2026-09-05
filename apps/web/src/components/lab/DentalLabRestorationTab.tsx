@@ -573,39 +573,131 @@ export function DentalLabRestorationTab({
 					</span>
 				</div>
 
-				{/* 1-CLICK STANDARD PRESET BUTTON (LAW 4) */}
-				<div className="p-3 bg-white dark:bg-slate-900/90 border border-amber-500/40 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-					<div className="min-w-0">
-						<div className="flex items-center gap-1.5 text-xs font-black text-amber-900 dark:text-amber-200">
-							<Sparkles size={15} className="text-amber-500 shrink-0" />
-							<span>1-КЛИК ПРЕСЕТ СТАНДАРТНОГО НАРЯДА:</span>
-						</div>
-						<p className="text-[11px] text-slate-600 dark:text-slate-300 m-0 mt-0.5 font-medium">
-							«Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней»
-						</p>
+				{/* 1-CLICK STANDARD PRESETS (Mandate 8e: 4 Canonical Presets) */}
+				<div className="space-y-2">
+					<div className="flex items-center gap-1.5 text-xs font-black text-amber-900 dark:text-amber-200">
+						<Sparkles size={15} className="text-amber-500 shrink-0" />
+						<span>4 КАНОНИЧЕСКИХ 1-КЛИК ПРЕСЕТА (ОРТОПЕДИЯ БЕЗ СИМУЛЯТОРА):</span>
 					</div>
-					<button
-						type="button"
-						onClick={() => {
-							setConstructionType("single_crown");
-							setMaterial("zirconia_multilayer");
-							setShadeSystem?.("classical");
-							setShadeClassical?.("A2");
-							setShadeBody?.("A2");
-							setSurfaceTexture?.("natural_anatomy");
-							setCementGapMicrons?.(30);
-							setOcclusalScheme?.("mutually_protected");
-							setContactTightness?.("normal");
-							const due = addWorkingDays(new Date(), 5);
-							setDueDate(due.toISOString().slice(0, 10));
-						}}
-						className="min-h-[44px] px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-95 text-white font-bold text-xs shadow-sm transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
-						data-testid="btn-apply-standard-zirconia-preset"
-						title="Применить стандартный ортопедический пресет (ZrO2, A2, анатомическая форма, 5 дней)"
-					>
-						<Zap size={14} className="fill-current" />
-						<span>⚡ Применить пресет (ZrO2 A2, 5 дней)</span>
-					</button>
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+						{[
+							{
+								id: "zirconia_std",
+								title: "⚡ Цирконий (Prettau / Katana)",
+								subtitle: "Анатомическая форма · А-силикон · зазор 30 мкм",
+								materialId: "zirconia_multilayer",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
+								days: 5,
+								cementGap: 30,
+								occlusion: "mutually_protected",
+								contact: "normal",
+								texture: "natural_anatomy",
+								impression: "a_silicone",
+								pricePatientRub: 24000,
+								costLabRub: 7500,
+								badge: "5 раб. дней",
+							},
+							{
+								id: "pmma_temp",
+								title: "⚡ Временная PMMA CAD/CAM",
+								subtitle: "Фрезерованная провизорная · зазор 40 мкм",
+								materialId: "pmma_temporary",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
+								days: 2,
+								cementGap: 40,
+								occlusion: "group_function",
+								contact: "normal",
+								texture: "natural_anatomy",
+								impression: "a_silicone",
+								pricePatientRub: 3500,
+								costLabRub: 1200,
+								badge: "2 раб. дня",
+							},
+							{
+								id: "pfm_duceram",
+								title: "⚡ Металлокерамика (Duceram)",
+								subtitle: "Классика Co-Cr · VITA A2 · зазор 40 мкм",
+								materialId: "pfm_cocr",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
+								days: 7,
+								cementGap: 40,
+								occlusion: "group_function",
+								contact: "normal",
+								texture: "natural_anatomy",
+								impression: "a_silicone",
+								pricePatientRub: 15000,
+								costLabRub: 5000,
+								badge: "7 раб. дней",
+							},
+							{
+								id: "implant_screw",
+								title: "⚡ Винтовая фиксация Ti-Base",
+								subtitle: "ZrO₂ + Ti-Base / Multi-unit · зазор 30 мкм",
+								materialId: "titanium_custom_abutment",
+								constructionId: "implant_abutment",
+								days: 7,
+								cementGap: 30,
+								occlusion: "mutually_protected",
+								contact: "normal",
+								texture: "natural_anatomy",
+								impression: "digital_scan_stl_ply",
+								pricePatientRub: 38000,
+								costLabRub: 13000,
+								badge: "7 раб. дней",
+							},
+						].map((preset) => {
+							const isMatch =
+								material === preset.materialId &&
+								(preset.constructionId === "implant_abutment" ? constructionType === "implant_abutment" : true);
+							return (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => {
+										setConstructionType(preset.constructionId);
+										setMaterial(preset.materialId);
+										setShadeSystem?.("classical");
+										setShadeClassical?.("A2");
+										setShadeBody?.("A2");
+										setSurfaceTexture?.(preset.texture);
+										setCementGapMicrons?.(preset.cementGap);
+										setOcclusalScheme?.(preset.occlusion);
+										setContactTightness?.(preset.contact);
+										if (preset.impression) {
+											setImpressionType?.(preset.impression);
+										}
+										const due = addWorkingDays(new Date(), preset.days);
+										setDueDate(due.toISOString().slice(0, 10));
+									}}
+									className={`min-h-[64px] p-3 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer ${
+										isMatch
+											? "bg-[var(--teal-surface)] border-[var(--teal)] ring-2 ring-[var(--teal-soft)] shadow-xs"
+											: "bg-white dark:bg-slate-900 border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 shadow-2xs"
+									}`}
+									data-testid={`btn-apply-${preset.id}-preset`}
+									title={`${preset.title}: ${preset.subtitle} (${preset.pricePatientRub.toLocaleString("ru-RU")} ₽ / ${preset.costLabRub.toLocaleString("ru-RU")} ₽)`}
+								>
+									<div className="flex items-center justify-between gap-1">
+										<span className="text-xs font-black text-slate-900 dark:text-slate-100 leading-snug">
+											{preset.title}
+										</span>
+										{isMatch && <CheckCircle2 size={15} className="text-[var(--teal)] shrink-0" />}
+									</div>
+									<div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-1">
+										{preset.subtitle}
+									</div>
+									<div className="flex items-center justify-between gap-1 pt-2 mt-1 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+										<span className="font-mono font-bold text-[var(--teal)]">
+											{preset.pricePatientRub.toLocaleString("ru-RU")} ₽
+										</span>
+										<span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-200 font-bold">
+											{preset.badge}
+										</span>
+									</div>
+								</button>
+							);
+						})}
+					</div>
 				</div>
 
 				{/* STEP 1: Зуб / Мост (1 клик) */}
@@ -655,55 +747,55 @@ export function DentalLabRestorationTab({
 							2. Конструкция (Клик 2):
 						</span>
 						<span className="text-[11px] text-slate-500 dark:text-slate-400">
-							ZrO2 · E.max · Металлокерамика · Съемный протез
+							ZrO2 Katana · PMMA · Металлокерамика Duceram · Винтовая Ti-Base
 						</span>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
 						{[
 							{
 								id: "zirconia",
-								title: "Коронка ZrO2 (диоксид циркония)",
-								subtitle: "Katana Multilayer (1100 МПа)",
+								title: "Цирконий (Prettau / Katana)",
+								subtitle: "Анатомическая коронка ZrO₂ (1100 МПа)",
 								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
 								materialId: "zirconia_multilayer",
-								days: 5,
-								costRub: 6500,
-								badge: "5 раб. дней",
-							},
-							{
-								id: "emax",
-								title: "E.max (дисиликат лития)",
-								subtitle: "IPS e.max Press / CAD (500 МПа)",
-								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
-								materialId: "emax_lithium_disilicate",
 								days: 5,
 								costRub: 7500,
 								badge: "5 раб. дней",
 							},
 							{
+								id: "pmma",
+								title: "Временная PMMA CAD/CAM",
+								subtitle: "Фрезерованная провизорная пластмасса",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
+								materialId: "pmma_temporary",
+								days: 2,
+								costRub: 1200,
+								badge: "2 раб. дня",
+							},
+							{
 								id: "pfm",
-								title: "Металлокерамика (Co-Cr)",
-								subtitle: "Фрезерованный / литой КХС каркас",
+								title: "Металлокерамика (Duceram)",
+								subtitle: "Классический Co-Cr каркас + Duceram Plus",
 								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
 								materialId: "pfm_cocr",
 								days: 7,
-								costRub: 4000,
+								costRub: 5000,
 								badge: "7 раб. дней",
 							},
 							{
-								id: "removable",
-								title: "Съемный протез (бюгель / акрил)",
-								subtitle: "Кламмерная или замковая фиксация",
-								constructionId: "clasp_denture",
-								materialId: "cobalt_chrome_cocr",
-								days: 10,
-								costRub: 12000,
-								badge: "10 раб. дней",
+								id: "implant_screw",
+								title: "Винтовая фиксация Ti-Base",
+								subtitle: "ZrO₂ + титановое основание Multi-unit",
+								constructionId: "implant_abutment",
+								materialId: "titanium_custom_abutment",
+								days: 7,
+								costRub: 13000,
+								badge: "7 раб. дней",
 							},
 						].map((opt) => {
 							const isMatch =
-								(opt.id === "removable" && constructionType === "clasp_denture") ||
-								(opt.id !== "removable" && material === opt.materialId);
+								(opt.id === "implant_screw" && constructionType === "implant_abutment") ||
+								(opt.id !== "implant_screw" && material === opt.materialId);
 							return (
 								<button
 									key={opt.id}

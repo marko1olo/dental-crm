@@ -316,6 +316,12 @@ export function DentalLabOrderModal({
 		setContactTightness(preset.contactTightness);
 		setSurfaceTexture(preset.surfaceTexture);
 		setCementGapMicrons(preset.cementGapMicrons);
+		if (preset.impressionType) {
+			setImpressionType(preset.impressionType);
+		}
+		if (preset.isFullArchOrJaw && preset.toothFdi) {
+			setJawScope("both");
+		}
 		const due = addWorkingDays(new Date(), preset.workingDays);
 		setDueDate(due.toISOString().slice(0, 10));
 		setPriceRubInput(String(preset.priceRub));
@@ -626,6 +632,13 @@ export function DentalLabOrderModal({
 						💡 1 клик заполняет конструкцию, материал, цвет A2, сроки и нормальную анатомию
 					</span>
 				</div>
+
+				{financialGateResult.isPlanExpiredNotice && (
+					<div className="px-3 sm:px-6 py-1.5 bg-teal-500/10 border-b border-teal-500/20 text-[11px] font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+						<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>{financialGateResult.isPlanExpiredNotice}</span>
+					</div>
+				)}
 
 				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}
 				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">

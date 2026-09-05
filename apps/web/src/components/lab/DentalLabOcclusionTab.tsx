@@ -35,32 +35,51 @@ export function DentalLabOcclusionTab({
 }: DentalLabOcclusionTabProps) {
 	return (
 		<div className="space-y-6">
-			{/* Quick Clinical Norm Preset (Doctor Ergonomics) */}
-			<div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-950 dark:text-emerald-100 flex-wrap">
-				<div className="flex items-center gap-2">
-					<Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-					<div>
-						<span className="text-xs font-bold block">
-							Анатомическая норма (Стандарт ортопедии)
-						</span>
-						<span className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80">
-							Взаимно-защищенная окклюзия, нормальный контакт (50 мкм), естественная текстура, зазор 30 мкм
-						</span>
+			{/* Quick Clinical Norm Presets (Doctor Ergonomics — Mandates 8e, 8k) */}
+			<div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-950 dark:text-emerald-100 space-y-2.5">
+				<div className="flex items-center justify-between gap-3 flex-wrap">
+					<div className="flex items-center gap-2">
+						<Sparkles size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<div>
+							<span className="text-xs font-bold block">
+								Анатомическая норма (Стандарты ортопедии без симулятора)
+							</span>
+							<span className="text-[11px] text-emerald-900/80 dark:text-emerald-300/80">
+								Взаимно-защищенная окклюзия, контакт 50 мкм, естественная текстура, зазор 30/40 мкм
+							</span>
+						</div>
+					</div>
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={() => {
+								setOcclusalScheme("mutually_protected");
+								setContactTightness("normal");
+								setSurfaceTexture("natural_anatomy");
+								setCementGapMicrons(30);
+							}}
+							className="min-h-[36px] px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+							title="ZrO2 / Ti-Base: взаимно-защищенная, контакт 50 мкм, зазор 30 мкм"
+							data-testid="occlusion-preset-zirconia-btn"
+						>
+							⚡ ZrO₂ / Винтовая (30 мкм)
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setOcclusalScheme("group_function");
+								setContactTightness("normal");
+								setSurfaceTexture("natural_anatomy");
+								setCementGapMicrons(40);
+							}}
+							className="min-h-[36px] px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+							title="PMMA / МК Duceram: групповая функция, контакт 50 мкм, зазор 40 мкм"
+							data-testid="occlusion-preset-pmma-pfm-btn"
+						>
+							⚡ PMMA / МК (40 мкм)
+						</button>
 					</div>
 				</div>
-				<button
-					type="button"
-					onClick={() => {
-						setOcclusalScheme("mutually_protected");
-						setContactTightness("normal");
-						setSurfaceTexture("natural_anatomy");
-						setCementGapMicrons(30);
-					}}
-					className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-					title="Применить стандартные физиологические параметры в 1 клик"
-				>
-					⚡ Вся анатомическая норма (1 клик)
-				</button>
 			</div>
 
 			{/* Occlusal Scheme */}
