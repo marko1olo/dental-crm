@@ -10,6 +10,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	X,
+	Zap,
 } from "lucide-react";
 import {
 	ALL_PRIMARY_TEETH,
@@ -23,6 +24,9 @@ import {
 	calculateCariogramRisk,
 	calculateEruptionTimelineByAge,
 	type FranklRating,
+	calculatePediatricPhysiologicalNorm,
+	getPediatricProcedurePreset,
+	dispatchPediatricSoapProtocol,
 } from "./pediatricDentitionEngine";
 import type { ToothData } from "./ToothChart";
 import { showToast } from "../GlobalToast";
@@ -191,6 +195,77 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 		);
 	};
 
+	const handleApplyPrimaryNorm = () => {
+		const norm = calculatePediatricPhysiologicalNorm("primary");
+		setSelectedAge(4.5);
+		if (onApplyAgeArch) {
+			onApplyAgeArch([...ALL_PRIMARY_TEETH]);
+		}
+		if (onBatchUpdateResorption) {
+			const batch = ALL_PRIMARY_TEETH.map((t) => ({
+				toothNumber: t,
+				resorptionStage: 0 as ResorptionStagePercent,
+			}));
+			onBatchUpdateResorption(batch);
+		}
+		dispatchPediatricSoapProtocol({
+			diagnosisIcd10: norm.diagnosisIcd10,
+			statusLocalis: norm.statusLocalisRu,
+			treatmentDescription: norm.treatmentDescriptionRu,
+		});
+		showToast(
+			"⚡ 1-клик: Применена норма временного прикуса (51–85 интактны, кариеса нет, десна в норме). Протокол перенесен в 043/у!",
+			"success",
+		);
+	};
+
+	const handleApplyEarlyMixedNorm = () => {
+		const norm = calculatePediatricPhysiologicalNorm("early_mixed");
+		setSelectedAge(7.0);
+		if (onApplyAgeArch) {
+			const mixedArch = [
+				16, 55, 54, 53, 12, 11, 21, 22, 63, 64, 65, 26,
+				46, 85, 84, 83, 42, 41, 31, 32, 73, 74, 75, 36,
+			];
+			onApplyAgeArch(mixedArch);
+		}
+		if (onBatchUpdateResorption) {
+			const batch = [
+				{ toothNumber: 51, resorptionStage: 100 as ResorptionStagePercent },
+				{ toothNumber: 61, resorptionStage: 100 as ResorptionStagePercent },
+				{ toothNumber: 71, resorptionStage: 100 as ResorptionStagePercent },
+				{ toothNumber: 81, resorptionStage: 100 as ResorptionStagePercent },
+				{ toothNumber: 52, resorptionStage: 75 as ResorptionStagePercent },
+				{ toothNumber: 62, resorptionStage: 75 as ResorptionStagePercent },
+				{ toothNumber: 72, resorptionStage: 75 as ResorptionStagePercent },
+				{ toothNumber: 82, resorptionStage: 75 as ResorptionStagePercent },
+			];
+			onBatchUpdateResorption(batch);
+		}
+		dispatchPediatricSoapProtocol({
+			diagnosisIcd10: norm.diagnosisIcd10,
+			statusLocalis: norm.statusLocalisRu,
+			treatmentDescription: norm.treatmentDescriptionRu,
+		});
+		showToast(
+			"⚡ 1-клик: Применена норма раннего сменного прикуса (смена 11..42, моляры 16..46). Протокол перенесен в 043/у!",
+			"success",
+		);
+	};
+
+	const handleApplyProcedurePreset = (presetId: "saforide" | "fissurit" | "pulpotec") => {
+		const preset = getPediatricProcedurePreset(presetId);
+		dispatchPediatricSoapProtocol({
+			diagnosisIcd10: preset.diagnosisIcd10,
+			statusLocalis: preset.statusLocalisRu,
+			treatmentDescription: preset.treatmentDescriptionRu,
+		});
+		showToast(
+			`⚡ 1-клик: Протокол ${preset.labelRu} (${preset.serviceCode804n}) перенесен в карту 043/у!`,
+			"success",
+		);
+	};
+
 	// Keyboard Navigation and Fast Hotkeys
 	useEffect(() => {
 		if (!isOpen) return;
@@ -310,6 +385,19 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 	if (!isOpen) return null;
 
+	// Anti-Matryoshka (Sin 6, Mandate 8d): Render child modal sequentially (depth strictly 1).
+	if (isParentMemoModalOpen) {
+		return (
+			<PediatricParentMemoModal
+				isOpen={true}
+				onClose={() => setIsParentMemoModalOpen(false)}
+				onBack={() => setIsParentMemoModalOpen(false)}
+				initialFrankl={franklRating}
+				patientAgeYears={selectedAge}
+			/>
+		);
+	}
+
 	const modalContent = (
 		<div
 			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto overscroll-contain"
@@ -351,14 +439,14 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					</button>
 				</div>
 
-				{/* Navigation Tabs (>= 44px Touch Targets) */}
+				{/* Navigation Tabs (Strictly 1 row 32–36px under Sin #2) */}
 				<div
-					className="flex flex-wrap items-center gap-1.5 px-3 sm:px-4 pt-2 border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 shrink-0 w-full"
+					className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 h-[36px] min-h-[36px] border-b border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-surface,var(--paper-soft,#f8fafc))] dark:bg-slate-950/70 shrink-0 w-full overflow-x-auto no-scrollbar"
 				>
 					<button
 						type="button"
 						onClick={() => setActiveTab("timeline")}
-						className={`min-h-[44px] min-w-max shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+						className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 							activeTab === "timeline"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] dark:text-teal-400 bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] dark:bg-slate-900 shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
@@ -371,7 +459,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={() => setActiveTab("cariogram")}
-						className={`min-h-[44px] min-w-max shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+						className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 							activeTab === "cariogram"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] dark:text-teal-400 bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] dark:bg-slate-900 shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
@@ -384,7 +472,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={() => setActiveTab("resorption")}
-						className={`min-h-[44px] min-w-max shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+						className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 							activeTab === "resorption"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] dark:text-teal-400 bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] dark:bg-slate-900 shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
@@ -397,7 +485,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					<button
 						type="button"
 						onClick={() => setActiveTab("frankl")}
-						className={`min-h-[44px] min-w-max shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-t-xl transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
+						className={`h-[32px] min-h-[32px] min-w-max shrink-0 whitespace-nowrap px-3 text-xs font-bold rounded-t-lg transition-all border-b-2 cursor-pointer select-none inline-flex items-center justify-center ${
 							activeTab === "frankl"
 								? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] dark:text-teal-400 bg-[var(--odontogram-paper,var(--paper-strong,#ffffff))] dark:bg-slate-900 shadow-xs"
 								: "border-transparent text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400 hover:text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:hover:text-slate-200"
@@ -411,6 +499,131 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 				<div
 					className="flex-[1_1_auto] min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 md:p-8 pb-28 sm:pb-8 space-y-6 touch-pan-y"
 				>
+					{/* ⚡ 1-Клик Клинические Протоколы и Физиологическая Норма (Мандат 8e / 8i / 8k / 8n) */}
+					<div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-transparent border border-teal-500/30 space-y-2.5 shadow-xs">
+						<div className="flex items-center justify-between gap-2 flex-wrap">
+							<div className="flex items-center gap-2">
+								<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-300">
+									⚡ 1-Клик Клинические Протоколы &amp; Физиологическая Норма (Мандат 8e / Приказ 804н)
+								</span>
+							</div>
+							<span className="text-[11px] font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
+								0 лишних кликов • Без бюрократии • Готовый дневник 043/у
+							</span>
+						</div>
+
+						{/* Quick Action Buttons Grid */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+							{/* 1. Временный прикус — норма */}
+							<button
+								type="button"
+								onClick={handleApplyPrimaryNorm}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-emerald-500/40 hover:border-emerald-500 hover:bg-emerald-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								title="Установить норму временного прикуса: 20 интактных молочных зубов (51–85), кариеса нет, резорбция 0%"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold text-emerald-700 dark:text-emerald-400 truncate">
+										⚡ Временный прикус — норма
+									</div>
+									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
+										51–85 интактны, Z01.2, 0% резорбция
+									</div>
+								</div>
+								<Check className="w-4 h-4 text-emerald-600 shrink-0" />
+							</button>
+
+							{/* 2. Ранний сменный — норма */}
+							<button
+								type="button"
+								onClick={handleApplyEarlyMixedNorm}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-teal-500/40 hover:border-teal-500 hover:bg-teal-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								title="Установить норму раннего сменного прикуса: 7 лет, смена резцов 11..42, моляры 16, 26, 36, 46"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold text-teal-700 dark:text-teal-400 truncate">
+										⚡ Ранний сменный — норма
+									</div>
+									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
+										Смена 11..42, моляры 16, 26, 36, 46
+									</div>
+								</div>
+								<Check className="w-4 h-4 text-teal-600 shrink-0" />
+							</button>
+
+							{/* 3. Серебрение Saforide (A16.07.057) */}
+							<button
+								type="button"
+								onClick={() => handleApplyProcedurePreset("saforide")}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								title="Приказ 804н: A16.07.057 Серебрение эмали Saforide 38% (51, 52, 61, 62)"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold text-amber-700 dark:text-amber-400 truncate">
+										⚡ Saforide (A16.07.057)
+									</div>
+									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
+										Серебрение резцов 51, 52, 61, 62
+									</div>
+								</div>
+								<Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+							</button>
+
+							{/* 4. Герметизация фиссур Fissurit (A16.07.050) */}
+							<button
+								type="button"
+								onClick={() => handleApplyProcedurePreset("fissurit")}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-sky-500/40 hover:border-sky-500 hover:bg-sky-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								title="Приказ 804н: A16.07.050 Запечатывание фиссур Fissurit FX (16, 26, 36, 46)"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold text-sky-700 dark:text-sky-400 truncate">
+										⚡ Fissurit FX (A16.07.050)
+									</div>
+									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
+										Герметизация моляров 16, 26, 36, 46
+									</div>
+								</div>
+								<ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
+							</button>
+
+							{/* 5. Витальная пульпотомия Pulpotec (A16.07.009) */}
+							<button
+								type="button"
+								onClick={() => handleApplyProcedurePreset("pulpotec")}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								title="Приказ 804н: A16.07.009 Пульпотомия (ампутация пульпы) препаратом Pulpotec"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold text-rose-700 dark:text-rose-400 truncate">
+										⚡ Pulpotec (A16.07.009)
+									</div>
+									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
+										Пульпотомия мол. моляра 54
+									</div>
+								</div>
+								<Activity className="w-4 h-4 text-rose-600 shrink-0" />
+							</button>
+
+							{/* 6. Вставить протокол в карту 043/у */}
+							<button
+								type="button"
+								onClick={handleInsertCariogramTo043}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-sm text-left"
+								title="Мгновенно перенести текущий протокол, Cariogram и поведение по Франклу в дневник Формы 043/у"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold truncate">
+										⚡ В карту 043/у (1 клик)
+									</div>
+									<div className="text-[10px] text-teal-100 truncate">
+										Перенос протокола и статуса
+									</div>
+								</div>
+								<Zap className="w-4 h-4 text-amber-300 shrink-0" />
+							</button>
+						</div>
+					</div>
 					{/* ------------------------------------------------------------------------- */}
 					{/* TAB 1: ERUPTION & MIXED DENTITION TIMELINE */}
 					{/* ------------------------------------------------------------------------- */}
@@ -824,16 +1037,6 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 					</button>
 				</div>
 			</div>
-
-			{/* Child Modal: Parent Recommendations Generator */}
-			{isParentMemoModalOpen && (
-				<PediatricParentMemoModal
-					isOpen={isParentMemoModalOpen}
-					onClose={() => setIsParentMemoModalOpen(false)}
-					initialFrankl={franklRating}
-					patientAgeYears={selectedAge}
-				/>
-			)}
 		</div>
 	);
 

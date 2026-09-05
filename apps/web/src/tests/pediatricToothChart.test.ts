@@ -9,6 +9,10 @@ import {
 	PERMANENT_TO_PRIMARY_PREDECESSOR_MAP,
 	DEFAULT_CARIOGRAM_INPUT,
 	type ResorptionStagePercent,
+	calculatePediatricPhysiologicalNorm,
+	getPediatricProcedurePreset,
+	dispatchPediatricSoapProtocol,
+	ALL_PRIMARY_TEETH,
 } from "../components/odontogram/pediatricDentitionEngine";
 import {
 	TOP_TEETH,
@@ -263,6 +267,126 @@ describe("Pediatric Tooth Formula & Mixed Dentition Architecture", () => {
 			assert.equal(dmft.pediatricKpu.p, 1); // 52
 			assert.equal(dmft.pediatricKpu.u, 1); // 54
 			assert.equal(dmft.pediatricKpu.total, 4);
+		});
+	});
+
+	describe("8. Pediatric 1-Click Physiological Norm Presets (Mandates 8e, 8k, 8n)", () => {
+		it("generates 1-click primary dentition norm with 20 intact teeth (51–85) and 0% resorption", () => {
+			const norm = calculatePediatricPhysiologicalNorm("primary");
+			assert.equal(norm.diagnosisIcd10, "Z01.2");
+			assert.equal(norm.order804nCode, "B01.064.003");
+
+			// All 20 primary teeth intact
+			assert.equal(ALL_PRIMARY_TEETH.length, 20);
+			for (const tooth of ALL_PRIMARY_TEETH) {
+				assert.equal(norm.teethStates[tooth], "Healthy", `Tooth ${tooth} should be Healthy`);
+				assert.equal(norm.resorptionStages[tooth], 0, `Tooth ${tooth} should have 0% resorption`);
+			}
+
+			// Formal 043/u text structure
+			assert.match(norm.diaryText, /Временный прикус/);
+			assert.match(norm.diaryText, /Все 20 временных зубов/);
+			assert.match(norm.statusLocalis, /бледно-розовая/);
+			assert.match(norm.treatmentDescription, /гигиена полости рта/i);
+		});
+
+		it("generates 1-click early mixed dentition norm (11..42 exchanged + 16, 26, 36, 46 erupted)", () => {
+			const norm = calculatePediatricPhysiologicalNorm("early_mixed");
+			assert.equal(norm.diagnosisIcd10, "Z01.2");
+
+			// Permanent first molars and lower incisors erupted
+			assert.equal(norm.teethStates[16], "Healthy");
+			assert.equal(norm.teethStates[26], "Healthy");
+			assert.equal(norm.teethStates[36], "Healthy");
+			assert.equal(norm.teethStates[46], "Healthy");
+			assert.equal(norm.teethStates[31], "Healthy");
+			assert.equal(norm.teethStates[41], "Healthy");
+
+			// Exfoliated central primary incisors (100% resorption)
+			assert.equal(norm.resorptionStages[51], 100);
+			assert.equal(norm.resorptionStages[61], 100);
+			assert.equal(norm.resorptionStages[71], 100);
+			assert.equal(norm.resorptionStages[81], 100);
+
+			// Exfoliating lower lateral primary incisors (75% resorption)
+			assert.equal(norm.resorptionStages[72], 75);
+			assert.equal(norm.resorptionStages[82], 75);
+
+			assert.match(norm.diaryText, /Ранний сменный прикус/);
+			assert.match(norm.diaryText, /смена резцов/i);
+		});
+	});
+
+	describe("9. Order 804n Clinical Procedure Presets (Saforide, Fissurit FX, Pulpotec)", () => {
+		it("generates Order 804n A16.07.057 Saforide 38% silvering preset", () => {
+			const preset = getPediatricProcedurePreset("saforide");
+			assert.equal(preset.id, "saforide");
+			assert.equal(preset.serviceCode804n, "A16.07.057");
+			assert.equal(preset.diagnosisIcd10, "K02.0");
+			assert.deepEqual(preset.targetTeeth, [51, 52, 61, 62]);
+			assert.match(preset.nameRu, /Saforide/);
+			assert.match(preset.diaryText, /A16\.07\.057/);
+			assert.match(preset.diaryText, /Saforide/);
+			assert.match(preset.treatmentDescription, /серебрение/);
+		});
+
+		it("generates Order 804n A16.07.050 Fissurit FX non-invasive fissure sealing preset", () => {
+			const preset = getPediatricProcedurePreset("fissurit");
+			assert.equal(preset.id, "fissurit");
+			assert.equal(preset.serviceCode804n, "A16.07.050");
+			assert.equal(preset.diagnosisIcd10, "Z29.8");
+			assert.deepEqual(preset.targetTeeth, [16, 26, 36, 46]);
+			assert.match(preset.nameRu, /Fissurit/);
+			assert.match(preset.drugOrMaterial, /Fissurit FX/);
+			assert.match(preset.diaryText, /A16\.07\.050/);
+			assert.match(preset.diaryText, /VOCO/);
+			assert.match(preset.treatmentDescription, /герметизация фиссур/);
+		});
+
+		it("generates Order 804n A16.07.009 Pulpotec vital pulpotomy preset", () => {
+			const preset = getPediatricProcedurePreset("pulpotec");
+			assert.equal(preset.id, "pulpotec");
+			assert.equal(preset.serviceCode804n, "A16.07.009");
+			assert.equal(preset.diagnosisIcd10, "K04.0");
+			assert.deepEqual(preset.targetTeeth, [54]);
+			assert.match(preset.nameRu, /Pulpotec/);
+			assert.match(preset.diaryText, /A16\.07\.009/);
+			assert.match(preset.diaryText, /Pulpotec/);
+			assert.match(preset.treatmentDescription, /СИЦ/);
+		});
+	});
+
+	describe("10. Direct SOAP Protocol Event Generation for Form 043/u", () => {
+		it("safely executes dispatchPediatricSoapProtocol without errors", () => {
+			let eventFired = false;
+			let eventDetail: any = null;
+
+			const mockHandler = (e: any) => {
+				eventFired = true;
+				eventDetail = e.detail;
+			};
+
+			if (typeof window !== "undefined") {
+				window.addEventListener("dente-apply-soap-protocol", mockHandler);
+			}
+
+			const dispatched = dispatchPediatricSoapProtocol({
+				diagnosisIcd10: "Z01.2",
+				statusLocalis: "Проверка локального статуса",
+				treatmentDescription: "Проверка описания лечения",
+				mode: "smart_append",
+			});
+
+			if (typeof window !== "undefined") {
+				window.removeEventListener("dente-apply-soap-protocol", mockHandler);
+				assert.equal(dispatched, true);
+				assert.equal(eventFired, true);
+				assert.equal(eventDetail?.soap?.diagnosisIcd10, "Z01.2");
+				assert.equal(eventDetail?.mode, "smart_append");
+				assert.equal(eventDetail?.immediate, true);
+			} else {
+				assert.equal(dispatched, false);
+			}
 		});
 	});
 });

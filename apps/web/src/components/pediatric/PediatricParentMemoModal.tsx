@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertTriangle,
+	ArrowLeft,
 	Check,
 	Copy,
 	FileText,
@@ -39,6 +40,7 @@ export interface PediatricParentMemoModalProps {
 	initialFissureSealing?: PediatricFissureSealingOptions | undefined;
 	initialPulpotomy?: PediatricPulpotomyOptions | undefined;
 	onApplyFrankl?: ((rating: FranklRating, note?: string) => void) | undefined;
+	onBack?: (() => void) | undefined;
 }
 
 export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> = ({
@@ -53,6 +55,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 	initialFissureSealing,
 	initialPulpotomy,
 	onApplyFrankl,
+	onBack,
 }) => {
 	const [frankl, setFrankl] = useState<FranklRating>(initialFrankl);
 	const [hasAnesthesia, setHasAnesthesia] = useState<boolean>(true);
@@ -95,14 +98,19 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 			customNotes: customNotes.trim() || undefined,
 		});
 
+		// Clean all emojis for official printed medical memos (Deadly Sin #7: 0 emojis in documents)
+		const cleanedBaseText = baseText
+			.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{FE0F}]/gu, "")
+			.replace(/  +/g, " ");
+
 		if (!hasAnesthesia) {
-			return baseText;
+			return cleanedBaseText;
 		}
 
 		const anesthesiaSection = [
 			"",
 			"───────────────────────────────────────────────────────────────",
-			"⚠️ ВНИМАНИЕ РОДИТЕЛЯМ: ПАМЯТКА ПОСЛЕ МЕСТНОЙ АНЕСТЕЗИИ:",
+			"ВНИМАНИЕ РОДИТЕЛЯМ: ПАМЯТКА ПОСЛЕ МЕСТНОЙ АНЕСТЕЗИИ:",
 			"• Онемение губы, щеки и языка сохраняется в течение 2–3 часов после лечения.",
 			"• КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО: давать ребенку прикусывать, жевать или тереть онемевшую губу!",
 			"  Из-за отсутствия болевой чувствительности ребенок может сильно травмировать мягкие ткани",
@@ -115,7 +123,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 			"  дочищают зубы ребенку сами мягкой щеткой с возрастной фторидной пастой (1000–1450 ppm).",
 		].join("\n");
 
-		return `${baseText}\n${anesthesiaSection}`;
+		return `${cleanedBaseText}\n${anesthesiaSection}`;
 	}, [
 		patientName,
 		patientAgeYears,
@@ -195,7 +203,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 				</div>
 				${hasAnesthesia ? `
 					<div class="alert-box">
-						<div class="alert-title">⚠️ ВНИМАНИЕ: МЕСТНАЯ АНЕСТЕЗИЯ (НЕ КУСАТЬ ГУБУ!)</div>
+						<div class="alert-title">ВНИМАНИЕ: МЕСТНАЯ АНЕСТЕЗИЯ (НЕ КУСАТЬ ГУБУ!)</div>
 						<div class="alert-text">
 							Губа, щека и язык онемели на 2–3 часа. <strong>Категорически запретите ребенку прикусывать, жевать или тереть онемевшую губу!</strong><br/>
 							Не кормите ребенка твердой и горячей пищей до полного восстановления чувствительности. Разрешено теплое питье через трубочку.<br/>
@@ -244,6 +252,17 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 					</div>
 
 					<div className="flex items-center gap-2">
+						{onBack && (
+							<button
+								type="button"
+								onClick={onBack}
+								className="min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] text-[var(--odontogram-ink,var(--ink,#0f172a))] hover:bg-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] font-bold text-xs sm:text-sm border border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+								title="Вернуться к зубной формуле сменного прикуса"
+							>
+								<ArrowLeft className="w-4 h-4" />
+								<span>Назад к формуле</span>
+							</button>
+						)}
 						<button
 							type="button"
 							onClick={handlePrint}
@@ -337,7 +356,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 								<span>Шкала поведения Франкла (Frankl Scale):</span>
 							</span>
 							<span className="font-extrabold text-teal-700 dark:text-teal-300">
-								{getFranklDefinition(frankl).nameRu} ({frankl}/4) {getFranklDefinition(frankl).emoji}
+								{getFranklDefinition(frankl).nameRu} ({frankl}/4) [{getFranklDefinition(frankl).symbol}]
 							</span>
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -364,7 +383,9 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 										}}
 										title={def.descriptionRu}
 									>
-										<span>{def.emoji}</span>
+										<span className="font-mono font-black text-xs px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">
+											[{def.symbol}]
+										</span>
 										<span>{def.labelRu}</span>
 										{isSel && <Check className="w-3.5 h-3.5 ml-1" />}
 									</button>
