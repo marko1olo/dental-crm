@@ -27,6 +27,10 @@ import {
 	AnesthesiaDisposalReason,
 	AnesthesiaDisinfectionMethod,
 	AnesthesiaPkuDisposalRecord,
+	AnesthesiaPkuPresetKey,
+	ANESTHESIA_PKU_PRESETS,
+	calculateDefaultCarpuleExpirationDate,
+	createAnesthesiaPkuFromPreset,
 	validateCarpuleExpirationDate,
 	createAnesthesiaPkuRecord,
 	generateAnesthesiaPkuDisposalAct,
@@ -64,7 +68,7 @@ export function AnesthesiaPkuDisposalModal({
 	initialCarpulesUsed = 1,
 	initialSeriesNumber = 'ART-2026',
 	initialBatchNumber = '84019',
-	initialExpirationDate = '2027-06',
+	initialExpirationDate = '2028-09',
 	clinicName = 'Стоматологическая клиника DENTE',
 	cabinetNumber = '1'
 }: AnesthesiaPkuDisposalModalProps) {
@@ -73,6 +77,8 @@ export function AnesthesiaPkuDisposalModal({
 	const [doctorName, setDoctorName] = useState(initialDoctorName);
 	const [nurseName, setNurseName] = useState(initialNurseName);
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>(initialDrugId);
+	const [customDrugTradeName, setCustomDrugTradeName] = useState<string>('');
+	const [selectedPreset, setSelectedPreset] = useState<AnesthesiaPkuPresetKey | null>('ultracain_ds_forte_1');
 
 	const [seriesNumber, setSeriesNumber] = useState(initialSeriesNumber);
 	const [batchNumber, setBatchNumber] = useState(initialBatchNumber);
@@ -99,6 +105,57 @@ export function AnesthesiaPkuDisposalModal({
 	const drugSpec = ANESTHESIA_DRUG_CATALOG[selectedDrugId] || ANESTHESIA_DRUG_CATALOG.articaine_4_epi_100k;
 	const volumeMlTotal = Number((carpulesUsedCount * (drugSpec?.standardCarpuleVolumeMl ?? 1.7)).toFixed(2));
 
+	// 1-Click Preset Application Handler (Mandate 8e item 10)
+	const handleApplyPreset = (presetKey: AnesthesiaPkuPresetKey) => {
+		const preset = ANESTHESIA_PKU_PRESETS[presetKey];
+		if (!preset) return;
+
+		setSelectedPreset(presetKey);
+		setSelectedDrugId(preset.drugId);
+		setCustomDrugTradeName(preset.drugTradeNameRu);
+		setSeriesNumber(preset.standardSeriesNumber);
+		setBatchNumber(preset.standardBatchNumber);
+		setExpirationDate(calculateDefaultCarpuleExpirationDate(preset.expirationOffsetYears));
+		setCarpulesUsedCount(preset.carpulesCount);
+		setCarpulesDisposedCount(preset.carpulesCount);
+		setDisposalReason(preset.disposalReason);
+		setDisinfectionMethod(preset.disinfectionMethod);
+		setDisinfectantName(preset.disinfectantNameRu);
+		setDisinfectantExposureMinutes(preset.disinfectantExposureMinutes);
+		setAssistantSignatureConfirmed(true);
+		setNotesRu(preset.notesRu);
+
+		showToast(`Пресет применен: ${preset.titleRu} (списание без комиссии)`, 'success');
+	};
+
+	// 1-Click Instant Preset Disposal (Mandate 8e item 10)
+	const handleInstantPresetDisposal = (presetKey: AnesthesiaPkuPresetKey) => {
+		const preset = ANESTHESIA_PKU_PRESETS[presetKey];
+		if (!preset) return;
+
+		const record = createAnesthesiaPkuFromPreset(presetKey, {
+			clinicName,
+			cabinetNumber,
+			patientFullName: patientName || 'Пациент на приеме (1-клик списание)',
+			medicalCardNumber043: medicalCard043 || '043-2026/01',
+			doctorFullName: doctorName || 'Лечащий врач',
+			nurseFullName: nurseName || 'Дежурная медсестра',
+			seriesNumber: seriesNumber || preset.standardSeriesNumber,
+			batchNumber: batchNumber || preset.standardBatchNumber,
+			expirationDate: calculateDefaultCarpuleExpirationDate(preset.expirationOffsetYears),
+			carpulesUsedCount: 1,
+			carpulesDisposedCount: 1,
+			assistantSignatureConfirmed: true,
+		});
+
+		const text = generateAnesthesiaPkuDisposalAct(record);
+		if (onSaveRecord) {
+			onSaveRecord(record, text);
+		}
+		showToast(`⚡ Списано в 1 клик: ${preset.titleRu} (медсестра ${nurseName}, без комиссии)!`, 'success');
+		onClose();
+	};
+
 	// Current Record
 	const pkuRecord: AnesthesiaPkuDisposalRecord = useMemo(() => {
 		const now = new Date();
@@ -115,7 +172,7 @@ export function AnesthesiaPkuDisposalModal({
 			doctorFullName: doctorName,
 			nurseFullName: nurseName,
 			drugId: selectedDrugId,
-			drugNameRu: drugSpec.tradeNamesRu[0] ?? drugSpec.nameRu,
+			drugNameRu: customDrugTradeName || (drugSpec.tradeNamesRu[0] ?? drugSpec.nameRu),
 			activeSubstanceRu: drugSpec.activeSubstanceRu,
 			seriesNumber: seriesNumber || 'НЕ УКАЗАНА',
 			batchNumber: batchNumber || 'НЕ УКАЗАНА',
@@ -139,6 +196,7 @@ export function AnesthesiaPkuDisposalModal({
 		doctorName,
 		nurseName,
 		selectedDrugId,
+		customDrugTradeName,
 		drugSpec,
 		seriesNumber,
 		batchNumber,
@@ -318,8 +376,9 @@ export function AnesthesiaPkuDisposalModal({
 
 				{/* Modal Body */}
 				<div className="anesthesia-modal-body" style={{ maxHeight: 'calc(88vh - 140px)', overflowY: 'auto' }}>
-					{/* 1-Click Shift Disposal Banner (Mandate 8e) */}
+					{/* 1-Click Quick Disposal Presets Panel (Mandate 8e item 10, 8k, 8n / SanPiN 3.3686-21) */}
 					<div
+						className="anesthesia-pku-presets-card"
 						style={{
 							background: 'var(--paper-strong, #f8fafc)',
 							padding: '0.875rem 1rem',
@@ -327,46 +386,326 @@ export function AnesthesiaPkuDisposalModal({
 							border: '1px solid var(--teal, #0d9488)',
 							marginBottom: '1rem',
 							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'space-between',
-							gap: '1rem',
-							flexWrap: 'wrap',
+							flexDirection: 'column',
+							gap: '0.75rem',
 						}}
+						data-testid="pku-quick-presets-panel"
 					>
-						<div>
-							<div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-								<Zap size={16} color="var(--brand-primary, var(--teal))" />
-								<span>⚡ Автономия медсестры: списание карпул за смену в 1 клик</span>
+						<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+							<div>
+								<div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+									<Zap size={16} color="var(--brand-primary, var(--teal))" />
+									<span>1-клик быстрые пресеты списания анестезии и ПКУ (СанПиН 3.3686-21 / Мандат 8e)</span>
+								</div>
+								<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)', marginTop: '0.125rem' }}>
+									Автозаполнение серии, партии, срока (+2 г.), дезинфекции. Достаточно подписи медсестры в 1 клик (без комиссии из 3 человек!).
+								</div>
 							</div>
-							<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)', marginTop: '0.125rem' }}>
-								СанПиН 3.3686-21 (Раздел X: Отходы Класса Б) • Без комиссии из 3 начмедов и мастер-паролей
-							</div>
+
+							<button
+								type="button"
+								onClick={handleQuickBatchDisposeShift}
+								className="anesthesia-btn"
+								style={{
+									minHeight: '34px',
+									padding: '0.25rem 0.75rem',
+									fontSize: '0.75rem',
+									fontWeight: 700,
+									background: 'transparent',
+									color: 'var(--teal, #0d9488)',
+									border: '1px solid var(--teal, #0d9488)',
+									borderRadius: '6px',
+									cursor: 'pointer',
+									display: 'inline-flex',
+									alignItems: 'center',
+									gap: '0.375rem',
+								}}
+								data-testid="btn-pku-quick-batch-dispose-banner"
+								title="Списать использованные карпулы за смену (1 клик)"
+							>
+								<Zap size={13} color="var(--teal, #0d9488)" />
+								<span>⚡ Пакетное списание за смену</span>
+							</button>
 						</div>
 
-						<button
-							type="button"
-							onClick={handleQuickBatchDisposeShift}
-							className="anesthesia-btn"
-							style={{
-								minHeight: '44px',
-								padding: '0.5rem 1.25rem',
-								borderRadius: '8px',
-								background: 'var(--teal, #0d9488)',
-								color: 'var(--on-teal, #fff)',
-								fontWeight: 800,
-								fontSize: '0.875rem',
-								border: 'none',
-								cursor: 'pointer',
-								display: 'inline-flex',
-								alignItems: 'center',
-								gap: '0.5rem',
-							}}
-							data-testid="btn-pku-quick-batch-dispose-banner"
-							title="Списать использованные карпулы за смену (1 клик)"
-						>
-							<Zap size={16} color="#fff" />
-							<span>⚡ Списать использованные карпулы за смену (1 клик)</span>
-						</button>
+						{/* 4 Quick Preset Cards Grid */}
+						<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
+							{/* Preset 1: Ultracain DS Forte */}
+							<div
+								className={`anesthesia-preset-box ${selectedPreset === 'ultracain_ds_forte_1' ? 'active' : ''}`}
+								style={{
+									display: 'flex',
+									flexDirection: 'column',
+									justifyContent: 'space-between',
+									padding: '0.625rem 0.75rem',
+									borderRadius: '8px',
+									border: selectedPreset === 'ultracain_ds_forte_1' ? '2px solid var(--teal, #0d9488)' : '1px solid var(--line, #e2e8f0)',
+									background: selectedPreset === 'ultracain_ds_forte_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper, #fff)',
+									gap: '0.375rem',
+									transition: 'all 0.15s ease',
+								}}
+							>
+								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem' }}>
+									<div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--ink)' }}>
+										Ультракаин Д-С Форте
+									</div>
+									<span style={{ fontSize: '0.6875rem', color: 'var(--muted)', background: 'var(--surface)', padding: '1px 5px', borderRadius: '4px' }}>1:100k</span>
+								</div>
+								<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)', lineHeight: 1.3 }}>
+									1 карп. • Серия ART • +2 года • Аламинол 3% 60 мин
+								</div>
+								<div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.25rem' }}>
+									<button
+										type="button"
+										onClick={() => handleApplyPreset('ultracain_ds_forte_1')}
+										style={{
+											flex: 1,
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.75rem',
+											fontWeight: 700,
+											background: 'var(--teal, #0d9488)',
+											color: '#fff',
+											border: 'none',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											textAlign: 'center',
+										}}
+										data-testid="btn-preset-ultracain"
+										title="Автозаполнить форму пресетом Ультракаин Д-С Форте"
+									>
+										Автозаполнить
+									</button>
+									<button
+										type="button"
+										onClick={() => handleInstantPresetDisposal('ultracain_ds_forte_1')}
+										style={{
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.6875rem',
+											fontWeight: 700,
+											background: 'transparent',
+											color: 'var(--teal, #0d9488)',
+											border: '1px solid var(--teal, #0d9488)',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											whiteSpace: 'nowrap',
+										}}
+										data-testid="btn-instant-ultracain"
+										title="Списать 1 карпулу Ультракаин Д-С Форте сразу в 1 клик"
+									>
+										В 1 клик
+									</button>
+								</div>
+							</div>
+
+							{/* Preset 2: Septanest */}
+							<div
+								className={`anesthesia-preset-box ${selectedPreset === 'septanest_100_1' ? 'active' : ''}`}
+								style={{
+									display: 'flex',
+									flexDirection: 'column',
+									justifyContent: 'space-between',
+									padding: '0.625rem 0.75rem',
+									borderRadius: '8px',
+									border: selectedPreset === 'septanest_100_1' ? '2px solid var(--teal, #0d9488)' : '1px solid var(--line, #e2e8f0)',
+									background: selectedPreset === 'septanest_100_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper, #fff)',
+									gap: '0.375rem',
+									transition: 'all 0.15s ease',
+								}}
+							>
+								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem' }}>
+									<div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--ink)' }}>
+										Септанест
+									</div>
+									<span style={{ fontSize: '0.6875rem', color: 'var(--muted)', background: 'var(--surface)', padding: '1px 5px', borderRadius: '4px' }}>1:100k</span>
+								</div>
+								<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)', lineHeight: 1.3 }}>
+									1 карп. • Серия SP • +2 года • Аламинол 3% 60 мин
+								</div>
+								<div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.25rem' }}>
+									<button
+										type="button"
+										onClick={() => handleApplyPreset('septanest_100_1')}
+										style={{
+											flex: 1,
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.75rem',
+											fontWeight: 700,
+											background: 'var(--teal, #0d9488)',
+											color: '#fff',
+											border: 'none',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											textAlign: 'center',
+										}}
+										data-testid="btn-preset-septanest"
+										title="Автозаполнить форму пресетом Септанест"
+									>
+										Автозаполнить
+									</button>
+									<button
+										type="button"
+										onClick={() => handleInstantPresetDisposal('septanest_100_1')}
+										style={{
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.6875rem',
+											fontWeight: 700,
+											background: 'transparent',
+											color: 'var(--teal, #0d9488)',
+											border: '1px solid var(--teal, #0d9488)',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											whiteSpace: 'nowrap',
+										}}
+										data-testid="btn-instant-septanest"
+										title="Списать 1 карпулу Септанест сразу в 1 клик"
+									>
+										В 1 клик
+									</button>
+								</div>
+							</div>
+
+							{/* Preset 3: Scandonest (Cardio) */}
+							<div
+								className={`anesthesia-preset-box ${selectedPreset === 'scandonest_3_1' ? 'active' : ''}`}
+								style={{
+									display: 'flex',
+									flexDirection: 'column',
+									justifyContent: 'space-between',
+									padding: '0.625rem 0.75rem',
+									borderRadius: '8px',
+									border: selectedPreset === 'scandonest_3_1' ? '2px solid var(--teal, #0d9488)' : '1px solid var(--line, #e2e8f0)',
+									background: selectedPreset === 'scandonest_3_1' ? 'var(--teal-soft, rgba(13, 148, 136, 0.08))' : 'var(--paper, #fff)',
+									gap: '0.375rem',
+									transition: 'all 0.15s ease',
+								}}
+							>
+								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem' }}>
+									<div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--ink)' }}>
+										Скандонест 3%
+									</div>
+									<span style={{ fontSize: '0.6875rem', color: 'var(--ok-fg)', background: 'var(--ok-bg, rgba(16, 185, 129, 0.12))', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>Кардио</span>
+								</div>
+								<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)', lineHeight: 1.3 }}>
+									1 карп. • Без адреналина • Серия SC • +2 года
+								</div>
+								<div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.25rem' }}>
+									<button
+										type="button"
+										onClick={() => handleApplyPreset('scandonest_3_1')}
+										style={{
+											flex: 1,
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.75rem',
+											fontWeight: 700,
+											background: 'var(--teal, #0d9488)',
+											color: '#fff',
+											border: 'none',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											textAlign: 'center',
+										}}
+										data-testid="btn-preset-scandonest"
+										title="Автозаполнить форму пресетом Скандонест 3% (Кардио)"
+									>
+										Автозаполнить
+									</button>
+									<button
+										type="button"
+										onClick={() => handleInstantPresetDisposal('scandonest_3_1')}
+										style={{
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.6875rem',
+											fontWeight: 700,
+											background: 'transparent',
+											color: 'var(--teal, #0d9488)',
+											border: '1px solid var(--teal, #0d9488)',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											whiteSpace: 'nowrap',
+										}}
+										data-testid="btn-instant-scandonest"
+										title="Списать 1 карпулу Скандонест 3% сразу в 1 клик"
+									>
+										В 1 клик
+									</button>
+								</div>
+							</div>
+
+							{/* Preset 4: Damaged / Broken Carpule */}
+							<div
+								className={`anesthesia-preset-box ${selectedPreset === 'damaged_broken_1' ? 'active' : ''}`}
+								style={{
+									display: 'flex',
+									flexDirection: 'column',
+									justifyContent: 'space-between',
+									padding: '0.625rem 0.75rem',
+									borderRadius: '8px',
+									border: selectedPreset === 'damaged_broken_1' ? '2px solid var(--warn, #f59e0b)' : '1px solid var(--line, #e2e8f0)',
+									background: selectedPreset === 'damaged_broken_1' ? 'rgba(245, 158, 11, 0.08)' : 'var(--paper, #fff)',
+									gap: '0.375rem',
+									transition: 'all 0.15s ease',
+								}}
+							>
+								<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem' }}>
+									<div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--warn-fg, #b45309)' }}>
+										Бой / повреждение
+									</div>
+									<span style={{ fontSize: '0.6875rem', color: 'var(--warn-fg, #b45309)', background: 'rgba(245, 158, 11, 0.15)', padding: '1px 5px', borderRadius: '4px' }}>Класс Б</span>
+								</div>
+								<div style={{ fontSize: '0.6875rem', color: 'var(--muted, #64748b)', lineHeight: 1.3 }}>
+									1 карп. • Механический бой • Дезинфекция осколков
+								</div>
+								<div style={{ display: 'flex', gap: '0.375rem', marginTop: '0.25rem' }}>
+									<button
+										type="button"
+										onClick={() => handleApplyPreset('damaged_broken_1')}
+										style={{
+											flex: 1,
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.75rem',
+											fontWeight: 700,
+											background: 'var(--warn, #f59e0b)',
+											color: '#fff',
+											border: 'none',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											textAlign: 'center',
+										}}
+										data-testid="btn-preset-damaged-broken"
+										title="Автозаполнить форму пресетом списания боя карпулы"
+									>
+										Автозаполнить
+									</button>
+									<button
+										type="button"
+										onClick={() => handleInstantPresetDisposal('damaged_broken_1')}
+										style={{
+											minHeight: '32px',
+											padding: '0.25rem 0.5rem',
+											fontSize: '0.6875rem',
+											fontWeight: 700,
+											background: 'transparent',
+											color: 'var(--warn-fg, #b45309)',
+											border: '1px solid var(--warn, #f59e0b)',
+											borderRadius: '6px',
+											cursor: 'pointer',
+											whiteSpace: 'nowrap',
+										}}
+										data-testid="btn-instant-damaged-broken"
+										title="Списать бой карпулы сразу в 1 клик"
+									>
+										В 1 клик
+									</button>
+								</div>
+							</div>
+						</div>
 					</div>
 
 					{/* Expiration warning banner if expired or close to expiry */}
@@ -399,7 +738,11 @@ export function AnesthesiaPkuDisposalModal({
 							<select
 								autoFocus
 								value={selectedDrugId}
-								onChange={e => setSelectedDrugId(e.target.value as AnestheticDrugId)}
+								onChange={e => {
+									setSelectedDrugId(e.target.value as AnestheticDrugId);
+									setCustomDrugTradeName('');
+									setActivePresetKey(null);
+								}}
 								className="hub-select"
 							>
 								{Object.values(ANESTHESIA_DRUG_CATALOG).map(drug => (
@@ -585,6 +928,39 @@ export function AnesthesiaPkuDisposalModal({
 								/>
 							</div>
 						</div>
+
+						{/* Single Nurse Signature Autonomy Check (Mandate 8e item 10) */}
+						<div
+							style={{
+								marginTop: '0.75rem',
+								padding: '0.625rem 0.875rem',
+								background: 'var(--paper, #fff)',
+								borderRadius: '8px',
+								border: '1px solid var(--line, #e2e8f0)',
+								display: 'flex',
+								alignItems: 'center',
+								justifyContent: 'space-between',
+								gap: '0.75rem',
+								flexWrap: 'wrap'
+							}}
+						>
+							<label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ink)' }}>
+								<input
+									type="checkbox"
+									checked={assistantSignatureConfirmed}
+									onChange={e => setAssistantSignatureConfirmed(e.target.checked)}
+									style={{ width: '16px', height: '16px', accentColor: 'var(--teal)' }}
+									data-testid="chk-assistant-signature"
+								/>
+								<span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+									<UserCheck size={16} color="var(--teal)" />
+									Подпись медсестры / ассистента подтверждена в 1 клик (Мандат 8e п. 10)
+								</span>
+							</label>
+							<span style={{ fontSize: '0.75rem', color: 'var(--ok-fg)', fontWeight: 600, background: 'var(--ok-bg, rgba(16, 185, 129, 0.12))', padding: '2px 8px', borderRadius: '4px' }}>
+								✓ Без комиссии из 3 человек
+							</span>
+						</div>
 					</div>
 
 					{/* Preview Mode Switcher */}
@@ -686,6 +1062,7 @@ export function AnesthesiaPkuDisposalModal({
 							onClick={handleSaveAndClose}
 							className="anesthesia-btn anesthesia-btn-primary"
 							style={{ minHeight: '36px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
+							data-testid="btn-save-pku-record"
 						>
 							<CheckCircle2 size={16} />
 							Внести в журнал ПКУ и прикрепить к 043/у

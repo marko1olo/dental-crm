@@ -121,6 +121,32 @@ export type AnesthesiaDisinfectionMethod =
 	| "chemical_disinfection"
 	| "autoclaving_destructive";
 
+export type AnesthesiaPkuPresetKey =
+	| "ultracain_ds_forte_1"
+	| "septanest_100_1"
+	| "scandonest_3_1"
+	| "damaged_broken_1";
+
+export interface AnesthesiaPkuPresetDefinition {
+	readonly presetId: AnesthesiaPkuPresetKey;
+	readonly titleRu: string;
+	readonly shortLabelRu: string;
+	readonly subtitleRu: string;
+	readonly drugId: AnestheticDrugId;
+	readonly drugTradeNameRu: string;
+	readonly activeSubstanceRu: string;
+	readonly carpulesCount: number;
+	readonly standardSeriesNumber: string;
+	readonly standardBatchNumber: string;
+	readonly expirationOffsetYears: number;
+	readonly disposalReason: AnesthesiaDisposalReason;
+	readonly disinfectionMethod: AnesthesiaDisinfectionMethod;
+	readonly disinfectantNameRu: string;
+	readonly disinfectantExposureMinutes: number;
+	readonly assistantSignatureConfirmed: boolean;
+	readonly notesRu: string;
+}
+
 export interface AnesthesiaPkuDisposalRecord {
 	readonly id: string;
 	readonly recordNumber: string; // Номер записи в журнале ПКУ (напр. "ПКУ-АН-2026/084")

@@ -8,9 +8,113 @@ import { ANESTHESIA_DRUG_CATALOG } from "./catalog.js";
 import type {
 	AnesthesiaCarpuleBatchInfo,
 	AnesthesiaPkuDisposalRecord,
+	AnesthesiaPkuPresetDefinition,
+	AnesthesiaPkuPresetKey,
 	AnesthesiaPkuSummaryLedger,
 	PreoperativeVitalsChecklist,
 } from "./types.js";
+
+/**
+ * Рассчитывает дату срока годности по умолчанию (+N лет от текущей или референсной даты).
+ * Формат: ГГГГ-ММ.
+ */
+export function calculateDefaultCarpuleExpirationDate(
+	offsetYears: number = 2,
+	referenceDate?: Date | string,
+): string {
+	const now = referenceDate
+		? typeof referenceDate === "string"
+			? new Date(referenceDate)
+			: referenceDate
+		: new Date();
+	const targetYear = now.getFullYear() + offsetYears;
+	const targetMonth = String(now.getMonth() + 1).padStart(2, "0");
+	return `${targetYear}-${targetMonth}`;
+}
+
+/**
+ * 1-клик быстрые пресеты списания карпул анестетиков и ПКУ (СанПиН 3.3686-21 / Мандат 8e п. 10).
+ * Устраняют трение при заполнении: автозаполнение серии, партии, срока годности (+2 г.), дезинфекции.
+ * Для списания НЕ требуется комиссия из 3 человек — достаточно подписи медсестры/ассистента в 1 клик!
+ */
+export const ANESTHESIA_PKU_PRESETS: Record<AnesthesiaPkuPresetKey, AnesthesiaPkuPresetDefinition> = {
+	ultracain_ds_forte_1: {
+		presetId: "ultracain_ds_forte_1",
+		titleRu: "1 карпула Ультракаин Д-С Форте (1:100 000)",
+		shortLabelRu: "1 карп. Ультракаин Форте (1:100k)",
+		subtitleRu: "Серия ART-2026 • Срок +2 г. • Аламинол 3% 60 мин • Введено пациенту",
+		drugId: "articaine_4_epi_100k",
+		drugTradeNameRu: "Ультракаин Д-С форте",
+		activeSubstanceRu: "Артикаина гидрохлорид 4% + Эпинефрин 1:100 000",
+		carpulesCount: 1,
+		standardSeriesNumber: "ART-2026",
+		standardBatchNumber: "84019",
+		expirationOffsetYears: 2,
+		disposalReason: "used_in_procedure",
+		disinfectionMethod: "chemical_disinfection",
+		disinfectantNameRu: "Аламинол 3%",
+		disinfectantExposureMinutes: 60,
+		assistantSignatureConfirmed: true,
+		notesRu: "Списание 1 карпулы Ультракаин Д-С Форте (1:100 000): израсходовано на приеме (введено пациенту). Дезинфекция Аламинол 3% 60 мин. Списано медсестрой в 1 клик (СанПиН 3.3686-21, Мандат 8e, без комиссии из 3 человек).",
+	},
+	septanest_100_1: {
+		presetId: "septanest_100_1",
+		titleRu: "1 карпула Септанест (1:100 000)",
+		shortLabelRu: "1 карп. Септанест (1:100k)",
+		subtitleRu: "Серия SP-2026 • Срок +2 г. • Аламинол 3% 60 мин • Введено пациенту",
+		drugId: "articaine_4_epi_100k",
+		drugTradeNameRu: "Септанест 1:100 000",
+		activeSubstanceRu: "Артикаина гидрохлорид 4% + Адреналин 1:100 000",
+		carpulesCount: 1,
+		standardSeriesNumber: "SP-2026",
+		standardBatchNumber: "73104",
+		expirationOffsetYears: 2,
+		disposalReason: "used_in_procedure",
+		disinfectionMethod: "chemical_disinfection",
+		disinfectantNameRu: "Аламинол 3%",
+		disinfectantExposureMinutes: 60,
+		assistantSignatureConfirmed: true,
+		notesRu: "Списание 1 карпулы Септанест (1:100 000): израсходовано на приеме (введено пациенту). Дезинфекция Аламинол 3% 60 мин. Списано медсестрой в 1 клик (СанПиН 3.3686-21, Мандат 8e, без комиссии из 3 человек).",
+	},
+	scandonest_3_1: {
+		presetId: "scandonest_3_1",
+		titleRu: "1 карпула Скандонест 3% (без вазоконстриктора, для сердечников)",
+		shortLabelRu: "1 карп. Скандонест 3% (Кардио)",
+		subtitleRu: "Без адреналина • Серия SC-2026 • Аламинол 3% 60 мин",
+		drugId: "mepivacaine_3_plain",
+		drugTradeNameRu: "Скандонест 3%",
+		activeSubstanceRu: "Мепивакаина гидрохлорид 3% (без вазоконстриктора)",
+		carpulesCount: 1,
+		standardSeriesNumber: "SC-2026",
+		standardBatchNumber: "51208",
+		expirationOffsetYears: 2,
+		disposalReason: "used_in_procedure",
+		disinfectionMethod: "chemical_disinfection",
+		disinfectantNameRu: "Аламинол 3%",
+		disinfectantExposureMinutes: 60,
+		assistantSignatureConfirmed: true,
+		notesRu: "Списание 1 карпулы Скандонест 3% (без вазоконстриктора, кардио): израсходовано на приеме. Дезинфекция Аламинол 3% 60 мин. Списано медсестрой в 1 клик (СанПиН 3.3686-21, Мандат 8e, без комиссии из 3 человек).",
+	},
+	damaged_broken_1: {
+		presetId: "damaged_broken_1",
+		titleRu: "Списать бой / повреждение карпулы в 1 клик",
+		shortLabelRu: "Списать бой / повреждение карпулы",
+		subtitleRu: "Механический бой • Дезинфекция осколков • Класс Б",
+		drugId: "articaine_4_epi_100k",
+		drugTradeNameRu: "Ультракаин Д-С форте",
+		activeSubstanceRu: "Артикаина гидрохлорид 4% + Эпинефрин 1:100 000",
+		carpulesCount: 1,
+		standardSeriesNumber: "ART-2026",
+		standardBatchNumber: "84019",
+		expirationOffsetYears: 2,
+		disposalReason: "damaged_broken",
+		disinfectionMethod: "chemical_disinfection",
+		disinfectantNameRu: "Аламинол 3%",
+		disinfectantExposureMinutes: 60,
+		assistantSignatureConfirmed: true,
+		notesRu: "Акт списания боя / повреждения карпулы анестетика оформлен медсестрой в 1 клик. Осколки дезинфицированы в растворе Аламинол 3% (60 мин) и утилизированы в желтый непрокалываемый контейнер Класса Б по СанПиН 3.3686-21 (без бюрократической комиссии из 3 человек).",
+	},
+};
 
 /**
  * Валидирует срок годности карпулы/ампулы анестетика с точностью до дня.
@@ -171,7 +275,7 @@ export function evaluatePreoperativeVitalsSafety(vitals: PreoperativeVitalsCheck
 }
 
 /**
- * Создает структурированную запись ПКУ и акта утилизации карпул по СанПиН 3.3686-21.
+ * Создает structured запись ПКУ и акта утилизации карпул по СанПиН 3.3686-21.
  */
 export function createAnesthesiaPkuRecord(
 	params: Omit<AnesthesiaPkuDisposalRecord, "id" | "recordNumber"> & {
@@ -192,11 +296,72 @@ export function createAnesthesiaPkuRecord(
 }
 
 /**
+ * Создает готовую к сохранению запись ПКУ на основе одного из быстрых 1-клик пресетов (Мандат 8e).
+ * Позволяет медсестре или врачу в 1 клик списать стандартные карпулы или бой без комиссии из 3 человек.
+ */
+export function createAnesthesiaPkuFromPreset(
+	presetKey: AnesthesiaPkuPresetKey,
+	params?: Partial<AnesthesiaPkuDisposalRecord> & {
+		referenceDate?: Date | string | undefined;
+	},
+): AnesthesiaPkuDisposalRecord {
+	const preset = ANESTHESIA_PKU_PRESETS[presetKey];
+	const refDate = params?.referenceDate
+		? typeof params.referenceDate === "string"
+			? new Date(params.referenceDate)
+			: params.referenceDate
+		: new Date();
+	const expDate = calculateDefaultCarpuleExpirationDate(preset.expirationOffsetYears, refDate);
+
+	const drugSpec = ANESTHESIA_DRUG_CATALOG[preset.drugId];
+	const isDamaged = preset.disposalReason === "damaged_broken" || params?.disposalReason === "damaged_broken";
+	const carpulesUsed = params?.carpulesUsedCount ?? (isDamaged ? 0 : preset.carpulesCount);
+	const carpulesDisposed = params?.carpulesDisposedCount ?? preset.carpulesCount;
+	const volPerCarpule = drugSpec?.standardCarpuleVolumeMl ?? 1.7;
+	const volumeMlTotal = params?.volumeMlTotal ?? Number((carpulesUsed * volPerCarpule).toFixed(2));
+
+	const dateIso = refDate.toISOString().slice(0, 10);
+	const time = refDate.toTimeString().slice(0, 5);
+
+	return createAnesthesiaPkuRecord({
+		dateIso: params?.dateIso ?? dateIso,
+		time: params?.time ?? time,
+		clinicName: params?.clinicName ?? "Стоматологическая клиника DENTE",
+		cabinetNumber: params?.cabinetNumber ?? "1",
+		patientFullName: params?.patientFullName ?? "Пациент на приеме (1-клик списание)",
+		medicalCardNumber043: params?.medicalCardNumber043 ?? "043-2026/01",
+		doctorFullName: params?.doctorFullName ?? "Лечащий врач-стоматолог",
+		nurseFullName: params?.nurseFullName ?? "Медсестра / Ассистент",
+		drugId: params?.drugId ?? preset.drugId,
+		drugNameRu: params?.drugNameRu ?? preset.drugTradeNameRu,
+		activeSubstanceRu: params?.activeSubstanceRu ?? preset.activeSubstanceRu,
+		seriesNumber: params?.seriesNumber ?? preset.standardSeriesNumber,
+		batchNumber: params?.batchNumber ?? preset.standardBatchNumber,
+		expirationDate: params?.expirationDate ?? expDate,
+		carpulesUsedCount: carpulesUsed,
+		carpulesDisposedCount: carpulesDisposed,
+		volumeMlTotal,
+		disposalReason: params?.disposalReason ?? preset.disposalReason,
+		wasteClass: "class_b_hazardous",
+		disinfectionMethod: params?.disinfectionMethod ?? preset.disinfectionMethod,
+		disinfectantNameRu: params?.disinfectantNameRu ?? preset.disinfectantNameRu,
+		disinfectantExposureMinutes: params?.disinfectantExposureMinutes ?? preset.disinfectantExposureMinutes,
+		assistantSignatureConfirmed: params?.assistantSignatureConfirmed ?? preset.assistantSignatureConfirmed,
+		notesRu: params?.notesRu ?? preset.notesRu,
+		...(params?.id ? { id: params.id } : {}),
+		...(params?.recordNumber ? { recordNumber: params.recordNumber } : {}),
+	});
+}
+
+export const create1ClickAnesthesiaPkuDisposalRecord = createAnesthesiaPkuFromPreset;
+
+
+/**
  * Генерирует официальный текстовый Акт списания и утилизации карпул анестетиков по правилам СанПиН 3.3686-21.
  */
 export function generateAnesthesiaPkuDisposalAct(record: AnesthesiaPkuDisposalRecord): string {
 	const drugSpec = ANESTHESIA_DRUG_CATALOG[record.drugId];
-	const drugTradeName = drugSpec?.tradeNamesRu[0] ?? record.drugNameRu;
+	const drugTradeName = record.drugNameRu || drugSpec?.tradeNamesRu[0] || drugSpec?.nameRu || "Местный анестетик";
 
 	const reasonText =
 		record.disposalReason === "used_in_procedure"
@@ -237,7 +402,8 @@ export function generateAnesthesiaPkuDisposalAct(record: AnesthesiaPkuDisposalRe
 		"───────────────────────────────────────────────────────────────────────────────",
 		"ПОДПИСИ ОТВЕТСТВЕННЫХ ЛИЦ:",
 		`Врач-стоматолог: ____________________ / ${record.doctorFullName} /`,
-		`Медицинская сестра / ассистент: ____________________ / ${record.nurseFullName} / ${record.assistantSignatureConfirmed ? "[ЭЦП ПОДТВЕРЖДЕНА]" : "[ТРЕБУЕТСЯ ПОДПИСЬ]"}`,
+		`Медицинская сестра / ассистент: ____________________ / ${record.nurseFullName} / ${record.assistantSignatureConfirmed ? "[ЭЦП ПОДТВЕРЖДЕНА В 1 КЛИК]" : "[ТРЕБУЕТСЯ ПОДПИСЬ]"}`,
+		"Порядок оформления: единоличное списание медсестрой/ассистентом в 1 клик (СанПиН 3.3686-21, Мандат 8e п. 10; комиссия из 3 человек не требуется).",
 		"═══════════════════════════════════════════════════════════════════════════════",
 	].join("\n");
 }
@@ -247,7 +413,7 @@ export function generateAnesthesiaPkuDisposalAct(record: AnesthesiaPkuDisposalRe
  */
 export function generateAnesthesiaPkuDisposalHtml(record: AnesthesiaPkuDisposalRecord): string {
 	const drugSpec = ANESTHESIA_DRUG_CATALOG[record.drugId];
-	const drugTradeName = drugSpec?.tradeNamesRu[0] ?? record.drugNameRu;
+	const drugTradeName = record.drugNameRu || drugSpec?.tradeNamesRu[0] || drugSpec?.nameRu || "Местный анестетик";
 
 	return `
 <div class="sanpin-pku-act-document" style="font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #0f172a; max-width: 760px; margin: 0 auto; padding: 20px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff;">
@@ -305,6 +471,7 @@ export function generateAnesthesiaPkuDisposalHtml(record: AnesthesiaPkuDisposalR
     <div><strong>Способ дезинфекции:</strong> ${record.disinfectionMethod === "chemical_disinfection" ? `Химическая дезинфекция в растворе «${record.disinfectantNameRu}» (${record.disinfectantExposureMinutes} мин)` : "Паровая стерилизация (автоклавирование)"}.</div>
     <div><strong>Сбор и хранение:</strong> Желтая герметичная непрокалываемая емкость для колюще-режущих отходов.</div>
     <div><strong>Причина списания:</strong> ${record.disposalReason === "used_in_procedure" ? "Израсходовано на приеме (введено пациенту)" : "Повреждение / бой карпулы"}.</div>
+    <div style="color: #0d9488; font-weight: 600; margin-top: 4px;">✓ Оформлено медсестрой в 1 клик (СанПиН 3.3686-21, Мандат 8e: без комиссии из 3 человек).</div>
   </div>
 
   <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 9.5pt;">
@@ -315,9 +482,10 @@ export function generateAnesthesiaPkuDisposalHtml(record: AnesthesiaPkuDisposalR
         <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">(подпись) / ${record.doctorFullName} /</div>
       </td>
       <td style="width: 50%; vertical-align: top;">
-        <div>Медсестра / Ассистент (списание выполнил):</div>
+        <div>Медсестра / Ассистент (списание выполнил в 1 клик):</div>
         <div style="margin-top: 24px; border-bottom: 1px solid #000; width: 80%;"></div>
-        <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">(подпись) / ${record.nurseFullName} /</div>
+        <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">(подпись) / ${record.nurseFullName} / ${record.assistantSignatureConfirmed ? '<span style="color: #0d9488; font-weight: bold;">[ПОДПИСЬ В 1 КЛИК]</span>' : ''}</div>
+        <div style="font-size: 7.5pt; color: #0d9488; margin-top: 4px;">✓ СанПиН 3.3686-21: оформлено медсестрой без комиссии из 3 человек</div>
       </td>
     </tr>
   </table>
