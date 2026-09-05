@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../../GlobalToast.js";
 import "./clinicalWriteoff.css";
 import {
 	type ClinicalWriteoffDocument,
@@ -246,9 +247,13 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		notes,
 	]);
 
-	// 1-Click Списание в наряд
+	// 1-Click Списание в наряд (Мандат 8e: без скрытых блокировок, ясный фидбек)
 	const handleConfirm = async () => {
-		if (!validation.isValid) return;
+		if (!validation.isValid) {
+			const errorMsg = validation.errors[0] ?? "Заполните обязательные поля акта списания";
+			showToast(errorMsg, "warning");
+			return;
+		}
 		if (onConfirmWriteoff) {
 			await onConfirmWriteoff(currentDocument);
 		}
@@ -410,6 +415,18 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 								<strong>Внимание! Партии, истекающие в течение 30 дней ({totals.expiringBatchesCount} поз.):</strong>
 								<div className="mt-0.5">
 									Материалы подлежат первоочередному списанию по регламенту FEFO.
+								</div>
+							</div>
+						</div>
+					)}
+
+					{totals.hasDeficit && !totals.hasExpiredLots && (
+						<div className="cw-warning-banner cw-warning-amber">
+							<AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							<div>
+								<strong>Мягкий овердрафт склада ({totals.deficitItemsCount} поз.):</strong>
+								<div className="mt-0.5">
+									Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Мандат 8e п. 10, Мандат 8n п. 2). Задержка накладной не блокирует прием.
 								</div>
 							</div>
 						</div>
@@ -790,13 +807,30 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 
 						<button
 							type="button"
-							className="cw-btn cw-btn-primary"
+							className={`cw-btn ${
+								!validation.isValid
+									? "cw-btn-secondary border-amber-500/50 text-amber-700 dark:text-amber-300"
+									: totals.hasDeficit
+										? "cw-btn-primary bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-white"
+										: "cw-btn-primary"
+							}`}
 							onClick={handleConfirm}
-							disabled={isDeducting || !validation.isValid}
+							disabled={isDeducting}
+							title={
+								!validation.isValid
+									? `Внимание: ${validation.errors[0] || "Требуется заполнить обязательные поля"}`
+									: totals.hasDeficit
+										? "Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Мандат 8e п. 10, Мандат 8n п. 2)"
+										: "Списать материалы со склада в наряд визита"
+							}
 						>
 							{isDeducting ? (
 								<>
 									<RefreshCw size={18} className="animate-spin" /> Списание со склада...
+								</>
+							) : totals.hasDeficit ? (
+								<>
+									<AlertTriangle size={18} /> Списать (мягкий овердрафт: {totals.deficitItemsCount} поз.)
 								</>
 							) : (
 								<>

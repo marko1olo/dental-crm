@@ -138,11 +138,13 @@
 ---
 
 ## 14. `склад::мягкий_овердрафт_склада_с_предупреждением` [РЕАЛИЗОВАНО] -> KILLER (ZERO DEAD-ENDS)
-- **Идея**: Задержка оприходования накладной поставщика никогда не блокирует прием пациента или операцию. Склад списывает расходники в контролируемый минус («emergency_overdraft») с предупреждением, а не выбивает ошибку с прерыванием операции.
+- **Идея**: Задержка оприходования накладной поставщика никогда не блокирует прием пациента, операцию или проведение акта оказанных услуг на ресепшене. Склад списывает расходники в контролируемый минус («emergency_overdraft») с предупреждающим бейджем («Провести списание (Мягкий овердрафт склада)»), а не блокирует кнопки (Мандаты 8e п. 10, 8n п. 2).
 - **Статус**: 
   - Сервис бэкенда: `apps/api/src/services/treatmentConsumablesService.ts` (`isOverdraft: true`, `transactionType: "emergency_overdraft"`)
   - Миграция PostgreSQL 18: `apps/api/drizzle/0198_stock_warehouses_fefo_batches_and_bom.sql`
-  - Фронтенд: `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx` (информационный бейдж вместо блокировок)
+  - Фронтенд проведения акта сдачи-приемки: `apps/web/src/components/treatment-plans/TreatmentPlanCompletedActPrint.tsx` (снята блокировка disabled={isExecuting || hasDeficit}, кнопка трансформируется в мягкий овердрафт с бейджем и подсказкой)
+  - Складские модальные окна: `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`
+  - Тесты: `apps/web/src/components/treatment-plans/__tests__/softWarehouseOverdraft.test.ts` (5 pass), `apps/web/src/tests/clinicalWriteoff.test.ts`, `apps/web/src/tests/inventoryDeduction.test.ts`
 
 ---
 

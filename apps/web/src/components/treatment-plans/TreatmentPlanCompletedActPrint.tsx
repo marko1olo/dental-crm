@@ -442,22 +442,36 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 							<button
 								type="button"
 								onClick={onConfirmExecuteWriteOff}
-								disabled={isExecuting || hasDeficit}
+								disabled={isExecuting}
 								className={`flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] flex-1 sm:flex-initial rounded-xl text-xs font-bold text-white shadow-md cursor-pointer transition-all ${
 									hasDeficit
-										? "bg-rose-600 hover:bg-rose-500 opacity-90"
+										? "bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 border border-amber-400/50"
 										: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
 								} disabled:opacity-50`}
-								title={hasDeficit ? "Невозможно списать: дефицит материалов на складе" : undefined}
+								title={
+									hasDeficit
+										? "Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Мандат 8e п. 10, Мандат 8n п. 2)"
+										: "Провести списание расходных материалов ТМЦ"
+								}
+								data-testid="execute-act-writeoff-btn"
 							>
-								<Package className="w-4 h-4" />
+								{hasDeficit ? (
+									<AlertTriangle className="w-4 h-4 shrink-0 text-yellow-200" />
+								) : (
+									<Package className="w-4 h-4 shrink-0" />
+								)}
 								<span>
 									{isExecuting
 										? "Проведение списания..."
 										: hasDeficit
-											? "Дефицит на складе"
+											? "Провести списание (Мягкий овердрафт склада)"
 											: "Провести списание ТМЦ"}
 								</span>
+								{hasDeficit && !isExecuting && (
+									<span className="px-1.5 py-0.5 rounded bg-amber-950/40 text-amber-200 text-[10px] font-mono font-bold uppercase tracking-wider border border-amber-300/40">
+										Овердрафт
+									</span>
+								)}
 							</button>
 						)}
 						{microConsumables.length > 0 && (
@@ -946,9 +960,9 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 											<td className="border border-slate-300 p-2 text-center font-mono text-xs">
 												{mat.inStockQuantity !== undefined ? (
 													mat.isDeficit ? (
-														<span className="text-rose-600 font-bold flex items-center justify-center gap-1">
-															<AlertTriangle className="w-3.5 h-3.5 inline shrink-0" />
-															<span>{mat.inStockQuantity} (Дефицит {mat.deficitQuantity})</span>
+														<span className="text-amber-700 dark:text-amber-400 font-bold flex items-center justify-center gap-1">
+															<AlertTriangle className="w-3.5 h-3.5 inline shrink-0 text-amber-600 dark:text-amber-400" />
+															<span>{mat.inStockQuantity} (Овердрафт -{mat.deficitQuantity})</span>
 														</span>
 													) : (
 														<span className="text-emerald-700 font-semibold flex items-center justify-center gap-1">
@@ -976,7 +990,7 @@ export const TreatmentPlanCompletedActPrint: React.FC<TreatmentPlanCompletedActP
 											{formatMoneyExact(netMaterialRub, netMaterialKopecks)}
 										</td>
 										<td className="border border-slate-300 p-2.5 text-center text-[11px] font-bold text-slate-600">
-											{hasDeficit ? "Имеется дефицит" : "Склад обеспечен"}
+											{hasDeficit ? "Мягкий овердрафт разрешен" : "Склад обеспечен"}
 										</td>
 									</tr>
 								</tbody>
