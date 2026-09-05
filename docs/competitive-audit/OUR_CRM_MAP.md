@@ -45,18 +45,21 @@
   - `waitlist` (`waitlist.ts`) — лист ожидания приема с приоритетами и желаемым временем.
 
 ### 2.2. Расписание, Календарь и Онлайн-запись
-- **Фронтенд**: `apps/web/src/ScheduleView.tsx`, `workspaceContinuityStrip.tsx`.
+- **Фронтенд**: `apps/web/src/ScheduleView.tsx`, `workspaceContinuityStrip.tsx`, `QuickBookingDrawer.tsx`, `UrgentScheduleRequestsWidget.tsx`.
 - **Бэкенд**: `apps/api/src/routes/schedule.ts`, `diary.ts`, `publicBooking.ts`.
 - **Сущности и таблицы**:
   - `appointments` (`id`, `patient_id`, `doctor_id`, `chair_id`, `start_time`, `end_time`, `status: planned|confirmed|arrived|in_treatment|completed|cancelled|no_show`).
   - `staff_shifts` (`diary.ts`) — дневник смен врачей, учет рабочего времени.
   - `public_booking_slots` (`publicBooking.ts`) — доступные слоты онлайн-записи для интеграторов.
+  - `urgentScheduleRequests` — срочные CITO-обращения с авто-подбором слота/врача и 1-клик печатью чистого договора со строками `_______`.
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма и Голосовой ввод
-- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`.
+- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `EndoCanalLogModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/visits.ts`, `odontogram.ts`, `toothHistory.ts`, `clinical.ts`, `speech.ts`.
 - **Возможности**:
   - Интерактивная 2D/3D одонтограмма (32 зуба + молочная формула, кариес, пульпит, периодонтит, корень, имплант).
+  - 1-клик хирургический протокол имплантации (Dentium, Osstem, Straumann; торк 35 Н·см, ISQ 72) с авто-вставкой в дневник 043/у.
+  - Детская эндодонтия зубов 51..85 с авто-расчетом рабочей длины корневых каналов.
   - Голосовая диктовка врачом с авто-нормализацией медицинских терминов (`speech.ts`).
   - Система клинических правил `ClinicalRulePanel.tsx` (проверка обязательных услуг, предупреждения о противопоказаниях).
 
@@ -68,11 +71,13 @@
   - Планирование виртуальной расстановки имплантов (`ctPlanningImplantFit.ts`).
   - ИИ-анализ панорамных и КТ снимков на патологии (`ai.ts`).
 
-### 2.5. Документооборот, ИДС, НДФЛ и ЕГИСЗ
-- **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `documentLogic.ts`, `documentValidators.ts`.
+### 2.5. Документооборот, ИДС, НДФЛ, Рецепты 1094н, ЭЛН 1089н и ЕГИСЗ
+- **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `documentLogic.ts`, `documentValidators.ts`, `MedicalPrescriptionModal.tsx`, `SickLeaveElnModal.tsx`, `ImplantPassportModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/documents.ts`, `templates.ts`, `egisz.ts`.
 - **Возможности**:
   - Генерация договоров оказания платных мед. услуг, ИДС (информированных согласий), актов.
+  - Рецептурные бланки Минздрава РФ по форме № 107-1/у (Приказ № 1094н) с полиграфической версткой, печатями и 1-клик сроками действия (15 / 60 / 365 дн.).
+  - ЭЛН по Приказу Минздрава РФ № 1089н с неблокирующей вставкой черновика в дневник 043/у и пресетами острой боли (альвеолит, перикоронит).
   - Справки для налогового вычета (НДФЛ код 1).
   - Интеграция с ЕГИСЗ / РЭМД N3.Health (`egisz.ts`).
 
@@ -84,10 +89,11 @@
   - Журнал отправки сообщений `communicationStatus: queued|sent|delivered|failed`.
 
 ### 2.7. Финансы, Платежи и Расчёт ЗП
-- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`.
+- **Фронтенд**: `apps/web/src/FinanceView.tsx`, `FinanceLedger.tsx`, `FinancePlanning.tsx`, `PaymentCapture.tsx`, `PayrollView.tsx`, `InvoiceGenerationModal.tsx`.
 - **Бэкенд**: `apps/api/src/routes/billing.ts`, `finance_family.ts`.
 - **Возможности**:
   - Проведение платежей (наличные, карта, аванс, семейный кошелек).
+  - Выписка счетов, наряд-заказов и актов с 1-клик клиническим согласованием врача (Мандат 8e) без обязательного мастер-пароля управляющего.
   - Модуль расчёта зарплаты врачей и ассистентов с дифференцированными ставками (`PayrollView.tsx`).
 
 ### 2.8. Склад, Стерилизация и Лабораторный портал

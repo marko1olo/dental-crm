@@ -2062,29 +2062,6 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 						</button>
 					</div>
 
-					{/* 22b. Implant Abutment & Emergence Profile Studio Trigger */}
-					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">
-						<div className="space-y-2">
-							<div className="flex items-center gap-2 text-[var(--teal)]">
-								<Crown className="w-5 h-5" />
-								<span className="font-bold text-sm text-[var(--ink)]">
-									Студия профиля прорезывания & Абатментов
-								</span>
-							</div>
-							<p className="text-xs text-[var(--muted)] leading-relaxed">
-								Расчет угла α (&lt; 30°), Platform Switching, моменты затяжки (25-35 N·cm), ASC и заказ-наряд ЗТЛ.
-							</p>
-						</div>
-						<button
-							type="button"
-							onClick={() => setIsRadiologyOpen(true)}
-							className="w-full min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--teal-fill,var(--teal))] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2"
-							data-testid="open-implant-abutment-studio-modal-btn"
-						>
-							<Crown size={15} />
-							<span>Открыть планирование имплантации</span>
-						</button>
-					</div>
 
 					{/* 22e. Clinical Photo Protocol & Before/After Slider Trigger */}
 					<div className="p-5 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-sm flex flex-col justify-between gap-4">

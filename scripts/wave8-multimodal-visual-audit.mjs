@@ -59,24 +59,24 @@ const RESOLUTIONS = [
 
 const MODULES = [
 	{
-		key: "endo",
-		name: "EndodonticCanalMaster",
-		titleRu: "Эндодонтия и электронный апекслокатор",
-	},
-	{
-		key: "cadcam",
-		name: "CadCamOcclusionHeatmap",
-		titleRu: "CAD/CAM окклюзионный Heatmap",
-	},
-	{
-		key: "implant",
-		name: "ImplantAbutmentStudio",
-		titleRu: "Студия профиля прорезывания и Абатментов",
-	},
-	{
 		key: "before_after",
 		name: "BeforeAfterComparison",
 		titleRu: "Фотопротокол — Слайдер До/После и VITA Shade",
+	},
+	{
+		key: "fiscal",
+		name: "FiscalCashier54FZ",
+		titleRu: "Касса 54-ФЗ и фискализация",
+	},
+	{
+		key: "treatment_plan_presenter",
+		name: "TreatmentPlanPresenter",
+		titleRu: "Презентер комплексного плана лечения",
+	},
+	{
+		key: "mdlp_scanning",
+		name: "MdlpChestnyZnakScanner",
+		titleRu: "Склад МДЛП и Честный Знак",
 	},
 ];
 
