@@ -3569,11 +3569,13 @@ export function useAppLogic(): any {
 		document.addEventListener("visibilitychange", handleVisibilityChange);
 		window.addEventListener("beforeunload", flushImmediately);
 		window.addEventListener("pagehide", flushImmediately);
+		window.addEventListener("dente-telephony-incoming-call", flushImmediately);
 
 		return () => {
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener("beforeunload", flushImmediately);
 			window.removeEventListener("pagehide", flushImmediately);
+			window.removeEventListener("dente-telephony-incoming-call", flushImmediately);
 		};
 	}, [
 		activeOrganizationId,

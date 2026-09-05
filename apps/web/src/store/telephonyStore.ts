@@ -1274,6 +1274,18 @@ export const useTelephonyStore = create<TelephonyStore>((set, get) => ({
 			transcript: undefined,
 		};
 
+		if (typeof window !== "undefined") {
+			try {
+				window.dispatchEvent(
+					new CustomEvent("dente-telephony-incoming-call", {
+						detail: historyItem,
+					}),
+				);
+			} catch {
+				// ignore in non-browser environments
+			}
+		}
+
 		set((state) => ({
 			activeCall: {
 				...call,
