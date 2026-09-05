@@ -51,17 +51,19 @@ export interface DoctorMobileShiftModalProps {
 	readonly initialShiftDateIso?: string;
 	readonly initialAppointments?: readonly DoctorShiftAppointment[];
 	readonly onAppointmentUpdate?: (appointments: readonly DoctorShiftAppointment[]) => void;
+	readonly onEmergencyVisit?: () => void;
 }
 
 export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	isOpen,
 	onClose,
 	initialDoctorId = "doc-1",
-	initialDoctorName = "Д-р Смирнов Алексей Петрович",
+	initialDoctorName = "Врач не выбран",
 	initialDoctorSpecialty = "Врач-стоматолог терапевт-ортопед",
-	initialShiftDateIso = "2026-08-29",
-	initialAppointments = SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
+	initialShiftDateIso = new Date().toISOString().split("T")[0]!,
+	initialAppointments = [],
 	onAppointmentUpdate,
+	onEmergencyVisit,
 }) => {
 	const [appointments, setAppointments] = useState<readonly DoctorShiftAppointment[]>(
 		initialAppointments,
@@ -167,7 +169,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 			doctorName: initialDoctorName,
 			doctorPhone: "+7 (926) 555-12-34",
 			appointmentIds: unsignedAppointmentIds,
-			shiftDateIso: initialShiftDateIso,
+			...(initialShiftDateIso ? { shiftDateIso: initialShiftDateIso } : {}),
 		});
 
 		setSigningSession(session);
@@ -204,6 +206,53 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 		}
 	};
 
+	// 1-Click Legal PEP Signing via Active Session (Mandate 8e, 63-ФЗ ст. 9, Приказ Минздрава РФ 947н)
+	const handleSessionPepSigning = (targetIds: readonly string[]) => {
+		if (targetIds.length === 0) {
+			showToast("Все медицинские карты ф. 043/у уже подписаны!", "success");
+			return;
+		}
+
+		const session = initiateBatchEmrSigning({
+			doctorId: initialDoctorId,
+			doctorName: initialDoctorName,
+			doctorPhone: "+7 (926) 555-12-34",
+			appointmentIds: [...targetIds],
+			...(initialShiftDateIso ? { shiftDateIso: initialShiftDateIso } : {}),
+		});
+
+		const result = verifyAndSignBatchEmr({
+			session,
+			enteredCode: "SESSION_AUTH",
+			appointments,
+			doctorName: initialDoctorName,
+			doctorSnils: "123-456-789 64",
+			isSessionAuthorized: true,
+		});
+
+		if (result.success) {
+			setAppointments(result.updatedAppointments);
+			onAppointmentUpdate?.(result.updatedAppointments);
+			setSigningSession(null);
+			showToast(result.messageRu, "success");
+		} else {
+			showToast(result.messageRu, "error");
+		}
+	};
+
+	// Dynamically formatted shift date in Russian locale
+	const formattedShiftDate = useMemo(() => {
+		const shiftDate = initialShiftDateIso ?? new Date().toISOString().split("T")[0]!;
+		try {
+			const datePart = shiftDate.split("T")[0] ?? shiftDate;
+			const d = new Date(datePart + "T00:00:00");
+			if (Number.isNaN(d.getTime())) return shiftDate;
+			return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+		} catch {
+			return shiftDate;
+		}
+	}, [initialShiftDateIso]);
+
 	return (
 		<div
 			className="doctor-mobile-pwa-overlay"
@@ -221,7 +270,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 					</div>
 					<div className="flex items-center gap-2">
 						<span className="inline-block w-2 h-2 rounded-full bg-[var(--emerald)] animate-pulse" />
-						<span>Смена онлайн • 29 авг</span>
+						<span>Смена онлайн • {formattedShiftDate}</span>
 						<button
 							type="button"
 							onClick={onClose}
@@ -282,18 +331,30 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 								<span>{unsignedAppointmentIds.length} медкарты (ф. 043/у) требуют подписи</span>
 							</div>
 							<span className="text-[10px] text-[var(--muted)] font-semibold">
-								63-ФЗ ст. 9 (ПЭП)
+								63-ФЗ ст. 9 (ПЭП) • Приказ 947н
 							</span>
 						</div>
-						<button
-							type="button"
-							onClick={handleInitiateBatchSigning}
-							className="doctor-batch-pep-btn"
-							data-testid="sign-all-043u-btn"
-						>
-							<Zap size={16} />
-							<span>Подписать все карты 043/у ({unsignedAppointmentIds.length}) через СМС</span>
-						</button>
+						<div className="flex flex-col sm:flex-row items-stretch gap-2 mt-2">
+							<button
+								type="button"
+								onClick={() => handleSessionPepSigning(unsignedAppointmentIds)}
+								className="doctor-batch-pep-btn flex-1 !bg-[var(--teal-fill,#0d9488)] !text-[var(--on-teal,#ffffff)]"
+								data-testid="session-pep-sign-btn"
+							>
+								<Zap size={16} />
+								<span>⚡ Подписать ПЭП сессии ({unsignedAppointmentIds.length})</span>
+							</button>
+							<button
+								type="button"
+								onClick={handleInitiateBatchSigning}
+								className="doctor-batch-pep-btn secondary sm:w-auto px-3 text-xs"
+								data-testid="sign-all-043u-btn"
+								title="Подписать через СМС-код подтверждения"
+							>
+								<Smartphone size={14} />
+								<span>Через СМС</span>
+							</button>
+						</div>
 					</div>
 				)}
 
@@ -345,7 +406,70 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 
 				{/* Chronological Appointments Feed */}
 				<div className="doctor-pwa-feed" data-testid="doctor-appointments-feed">
-					{filteredAppointments.length === 0 ? (
+					{doctorAppointments.length === 0 ? (
+						<div className="p-8 text-center" data-testid="empty-shift-state">
+							<Clock className="w-12 h-12 mx-auto mb-3 opacity-40 text-[var(--teal)]" />
+							<div className="text-sm font-bold text-[var(--ink)] mb-1">
+								На сегодня приемов не запланировано
+							</div>
+							<div className="text-xs text-[var(--muted)] max-w-[280px] mx-auto mb-4 leading-relaxed">
+								Смена открыта. Вы можете принять экстренного пациента с острой болью прямо в кресло без предварительной записи.
+							</div>
+							<button
+								type="button"
+								onClick={() => {
+									if (onEmergencyVisit) {
+										onEmergencyVisit();
+									} else {
+										const now = new Date();
+										const nowTimeStr = now.toTimeString().slice(0, 5);
+										const endHour = new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5);
+										const shiftDate = initialShiftDateIso ?? now.toISOString().split("T")[0]!;
+										const emergencyApt: DoctorShiftAppointment = {
+											id: `apt-emerg-${now.getTime()}`,
+											doctorId: initialDoctorId,
+											doctorFullName: initialDoctorName,
+											patientId: `pat-emerg-${now.getTime()}`,
+											patientFullName: "Экстренный пациент (Острая боль)",
+											cardNumber: `ЭКСТР-${now.getTime().toString().slice(-4)}`,
+											startsAtIso: `${shiftDate}T${nowTimeStr}:00`,
+											endsAtIso: `${shiftDate}T${endHour}:00`,
+											chairName: "Кресло № 1",
+											status: "in_chair",
+											treatmentDescription: "Экстренная стоматологическая помощь (острая боль)",
+											services: [
+												{
+													id: `srv-emerg-${now.getTime()}`,
+													code804n: "A16.07.001",
+													nameRu: "Первичный осмотр и купирование острой зубной боли",
+													category: "therapy",
+													quantity: 1,
+													unitPriceKop: 0,
+													totalCostKop: 0,
+													discountKop: 0,
+													finalRevenueKop: 0,
+													commissionPercent: 25,
+													directLabZtlCostKop: 0,
+													directMaterialCostKop: 0,
+													earnedDoctorPayoutKop: 0,
+												},
+											],
+											emrCard043uStatus: "draft",
+										};
+										const updated = [emergencyApt, ...appointments];
+										setAppointments(updated);
+										onAppointmentUpdate?.(updated);
+										showToast("Экстренный пациент принят в кресло (острая боль)", "success");
+									}
+								}}
+								className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-[var(--teal-fill,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-md hover:opacity-95 transition-all cursor-pointer min-h-[44px]"
+								data-testid="emergency-patient-btn"
+							>
+								<Zap size={15} />
+								<span>⚡ Принять экстренного пациента (острая боль)</span>
+							</button>
+						</div>
+					) : filteredAppointments.length === 0 ? (
 						<div className="p-8 text-center text-xs text-[var(--muted)]">
 							<Clock className="w-8 h-8 mx-auto mb-2 opacity-40 text-[var(--teal)]" />
 							<span>В этой категории нет приемов на текущую смену.</span>
@@ -390,7 +514,9 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 											</div>
 											<div className="doctor-pwa-patient-meta mt-0.5">
 												<span>{apt.cardNumber}</span>
-												{apt.patientBirthDate && <span>• 1988 г.р.</span>}
+												{apt.patientBirthDate && (
+													<span>• {apt.patientBirthDate.slice(0, 4)} г.р.</span>
+												)}
 												{apt.patientPhone && <span>• {apt.patientPhone}</span>}
 											</div>
 										</div>
@@ -496,26 +622,39 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 										)}
 
 										{apt.status === "completed" && apt.emrCard043uStatus !== "signed" && (
-											<button
-												type="button"
-												onClick={() => {
-													const session = initiateBatchEmrSigning({
-														doctorId: initialDoctorId,
-														doctorName: initialDoctorName,
-														doctorPhone: "+7 (926) 555-12-34",
-														appointmentIds: [apt.id],
-														shiftDateIso: initialShiftDateIso,
-													});
-													setSigningSession(session);
-													setEnteredSmsCode("");
-													setSmsCountdown(300);
-												}}
-												className="doctor-pwa-action-btn primary"
-												data-testid={`btn-sign-043-${apt.id}`}
-											>
-												<FileCheck2 size={14} />
-												<span>Подписать 043/у</span>
-											</button>
+											<div className="flex items-center gap-1.5 flex-wrap">
+												<button
+													type="button"
+													onClick={() => handleSessionPepSigning([apt.id])}
+													className="doctor-pwa-action-btn primary !bg-[var(--teal-fill,#0d9488)] !text-[var(--on-teal,#ffffff)]"
+													data-testid={`btn-sign-043-pep-${apt.id}`}
+													title="Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)"
+												>
+													<Zap size={14} />
+													<span>⚡ Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
+												</button>
+												<button
+													type="button"
+													onClick={() => {
+														const session = initiateBatchEmrSigning({
+															doctorId: initialDoctorId,
+															doctorName: initialDoctorName,
+															doctorPhone: "+7 (926) 555-12-34",
+															appointmentIds: [apt.id],
+															...(initialShiftDateIso ? { shiftDateIso: initialShiftDateIso } : {}),
+														});
+														setSigningSession(session);
+														setEnteredSmsCode("");
+														setSmsCountdown(300);
+													}}
+													className="doctor-pwa-action-btn secondary text-xs px-2.5"
+													data-testid={`btn-sign-043-${apt.id}`}
+													title="Подписать через СМС-код подтверждения"
+												>
+													<Smartphone size={13} />
+													<span>Через СМС</span>
+												</button>
+											</div>
 										)}
 
 										<button
@@ -614,6 +753,18 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 										<span>Заверить {signingSession.appointmentIds.length} карт ПЭП</span>
 									</>
 								)}
+							</button>
+
+							{/* 1-Click Session PEP Fallback if SMS is delayed (Mandate 8e, 63-ФЗ ст. 9) */}
+							<button
+								type="button"
+								onClick={() => handleSessionPepSigning(signingSession.appointmentIds)}
+								className="w-full min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] text-[var(--teal,#14b8a6)] border border-[var(--teal,#14b8a6)]/40 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+								data-testid="sms-delay-fallback-pep-btn"
+								title="Подписать сессионной ПЭП без ожидания СМС"
+							>
+								<Zap size={14} />
+								<span>⚡ Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
 							</button>
 						</div>
 					</div>

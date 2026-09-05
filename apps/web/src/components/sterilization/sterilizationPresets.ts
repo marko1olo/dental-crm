@@ -20,38 +20,49 @@ export interface SampleKraftBarcode {
 	readonly description?: string;
 }
 
-export const SAMPLE_TEST_BARCODES: readonly SampleKraftBarcode[] = [
-	{
-		label: "Терапевтический лоток (50 сут.)",
-		barcode: "KB2608250001",
-		badge: "Терапия",
-		description: "Стандартный смотровой лоток в самоклеящемся крафт-пакете",
-	},
-	{
-		label: "Эндодонтический набор (134°C / Класс 5)",
-		barcode: "ENDO-TRAY-2026",
-		badge: "Эндодонтия",
-		description: "Стерильный эндодонтический лоток с химическим интегратором 5 класса",
-	},
-	{
-		label: "Хирургический набор экстракционный",
-		barcode: "SURG-TRAY-2026",
-		badge: "Хирургия",
-		description: "Хирургические элеваторы и щипцы в двойной стерильной упаковке",
-	},
-	{
-		label: "2D DataMatrix (АК-01, Цикл №3)",
-		barcode: "KB-20260826-01#1|АК-01|CYC3|2026-08-26|2026-10-15|NURSE-01|set_therapeutic_tray",
-		badge: "DataMatrix 2D",
-		description: "Полный машиночитаемый паспорт стерилизации DataMatrix 2D",
-	},
-	{
-		label: "Просроченный пакет (Мягкий допуск острая боль)",
-		barcode: "KB2401010001",
-		badge: "Просрочен",
-		description: "Тест обнаружения нарушения п. 3632 СанПиН 3.3686-21 с мягким допуском",
-	},
-];
+function getDynamicSampleBarcodes(): readonly SampleKraftBarcode[] {
+	const now = new Date();
+	const packDateIso = now.toISOString().slice(0, 10);
+	const dateDigits = packDateIso.replace(/-/g, "").slice(2); // YYMMDD
+	const fullDateDigits = packDateIso.replace(/-/g, ""); // YYYYMMDD
+	const expDate = new Date(now.getTime() + 50 * 24 * 3600 * 1000);
+	const expDateIso = expDate.toISOString().slice(0, 10);
+
+	return [
+		{
+			label: "Терапевтический лоток (50 сут.)",
+			barcode: `KB${dateDigits}0001`,
+			badge: "Терапия",
+			description: "Стандартный смотровой лоток в самоклеящемся крафт-пакете",
+		},
+		{
+			label: "Эндодонтический набор (134°C / Класс 5)",
+			barcode: `ENDO-TRAY-${now.getFullYear()}`,
+			badge: "Эндодонтия",
+			description: "Стерильный эндодонтический лоток с химическим интегратором 5 класса",
+		},
+		{
+			label: "Хирургический набор экстракционный",
+			barcode: `SURG-TRAY-${now.getFullYear()}`,
+			badge: "Хирургия",
+			description: "Хирургические элеваторы и щипцы в двойной стерильной упаковке",
+		},
+		{
+			label: "2D DataMatrix (АК-01, Цикл №3)",
+			barcode: `KB-${fullDateDigits}-01#1|АК-01|CYC3|${packDateIso}|${expDateIso}|NURSE-01|set_therapeutic_tray`,
+			badge: "DataMatrix 2D",
+			description: "Полный машиночитаемый паспорт стерилизации DataMatrix 2D",
+		},
+		{
+			label: "Просроченный пакет (Мягкий допуск острая боль)",
+			barcode: "KB2401010001",
+			badge: "Просрочен",
+			description: "Тест обнаружения нарушения п. 3632 СанПиН 3.3686-21 с мягким допуском",
+		},
+	];
+}
+
+export const SAMPLE_TEST_BARCODES: readonly SampleKraftBarcode[] = getDynamicSampleBarcodes();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 2. ДАННЫЕ И ТИПЫ ДЛЯ ЖУРНАЛА АВТОКЛАВИРОВАНИЯ (ФОРМА № 257/У)
@@ -245,7 +256,7 @@ export function createStandardSterileTrayBarcode(
 	const dateDigits = packDateIso.replace(/-/g, "");
 	const rawInput = `KB-${dateDigits}-01#1|АК-01|CYC1|${packDateIso}|${expDateIso}|NURSE-01|${trayDef.toolSetCode}`;
 
-	const formattedProtocolRecord043 = `Стерилизация инструментария: АК-01 (Цикл №1 от ${packDateIso}, годен до ${expDateIso}). Крафт-пакет ${rawInput}. Индикатор 5 класса (ИнтеТЕСТ 134°C) — норма. ${operatorName} [СанПиН 3.3686-21]`;
+	const formattedProtocolRecord043 = `Инструменты стерильны. Крафт-пакет №${rawInput} (Стерилизация инструментария: АК-01, цикл №1 от ${packDateIso}, годен до ${expDateIso}, ${trayDef.labelRu}), индикатор 5 класса (ИнтеТЕСТ 134°C) — норма. ${operatorName} [СанПиН 3.3686-21] вскрыт при пациенте.`;
 
 	return {
 		rawInput,

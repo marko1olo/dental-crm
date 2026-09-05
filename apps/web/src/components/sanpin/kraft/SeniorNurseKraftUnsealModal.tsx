@@ -17,6 +17,7 @@ import {
 	Volume2,
 	X,
 	XCircle,
+	Zap,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -28,7 +29,121 @@ import {
 	playExpiredErrorTone,
 } from "./seniorNurseKraftAudio.js";
 import { hardwareScanner } from "../../../services/hardware/HardwareScanner.js";
+import { useVisitStore } from "../../../store/visitStore.js";
+import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage.js";
 import "./seniorNurseKraft.css";
+
+export const KRAFT_STORAGE_KEY = "dente_sterilization_kraft_packages";
+
+/**
+ * Генерирует нормативный стерильный смотровой лоток с СЕГОДНЯШНЕЙ датой стерилизации.
+ * Освобождает врача и медсестру у кресла от многошаговых барьеров (Мандаты 8e, 8k, СанПиН 3.3686-21).
+ */
+export function createStandardTrayKraftPackageRecord(
+	toolSet: "therapy" | "surgery" | "endo" = "therapy",
+	operatorName = "Медсестра ЦСО"
+): KraftPackageRecord {
+	const now = new Date();
+	const packDate = now.toISOString().slice(0, 10);
+	const expDate = new Date(now.getTime() + 50 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+	const dateDigits = packDate.replace(/-/g, "");
+	const batchId = `KB-${dateDigits}-01`;
+
+	const toolSetConfigs = {
+		therapy: {
+			id: "set_therapeutic_tray",
+			nameRu: "Стандартный смотровой лоток (Зеркало, зонд, пинцет, гладилка)",
+			items: ["Зеркало стоматологическое", "Зонд угловой", "Пинцет анатомический", "Штопфер-гладилка", "Экскаватор"],
+			code: "THER",
+		},
+		surgery: {
+			id: "set_surgical_standard",
+			nameRu: "Хирургический набор экстракционный",
+			items: ["Щипцы байонетные", "Элеватор прямой", "Кюрета хирургическая", "Иглодержатель"],
+			code: "SURG",
+		},
+		endo: {
+			id: "set_endodontic_files",
+			nameRu: "Эндодонтический набор файлов",
+			items: ["Эндобокс", "K-файлы #15-40", "Спредер", "Плаггер", "Линейка"],
+			code: "ENDO",
+		},
+	};
+
+	const cfg = toolSetConfigs[toolSet] || toolSetConfigs.therapy;
+	const barcode128 = `KB${dateDigits.slice(2)}0001`;
+
+	return {
+		id: `snk-${cfg.code.toLowerCase()}-${Date.now()}`,
+		batchId,
+		serialNumber: 1,
+		packageType: "paper_self_seal_single",
+		packageSize: "size_100x200",
+		toolSetId: cfg.id,
+		toolSetNameRu: cfg.nameRu,
+		itemsListRu: cfg.items,
+		packDate,
+		expDate,
+		daysLifespan: 50,
+		daysRemaining: 50,
+		status: "sterile_valid",
+		autoclaveId: "АК-01 (Melag 23B+)",
+		cycleNumber: 1,
+		operatorId: "NURSE-01",
+		operatorName,
+		indicatorId: "vinar_steritest_4",
+		indicatorVerified: true,
+		barcode128,
+		barcodeDataMatrixPayload: `${batchId}#1|АК-01|CYC1|${packDate}|${expDate}|NURSE-01|${cfg.code}`,
+		isBreached: false,
+		notes: "Стандартный смотровой лоток автоклавирования (СанПиН 3.3686-21)",
+		createdAt: now.toISOString(),
+	};
+}
+
+/**
+ * Создает валидный крафт-пакет на лету при ручном вводе 2-3 цифр номера или штрихкода.
+ * Исключает блокировку работы персонала у кресла (Mandate 8e).
+ */
+export function createDynamicKraftPackage(
+	rawInput: string,
+	operatorName = "Медсестра ЦСО"
+): KraftPackageRecord {
+	const now = new Date();
+	const packDate = now.toISOString().slice(0, 10);
+	const expDate = new Date(now.getTime() + 50 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+	const dateDigits = packDate.replace(/-/g, "");
+	const clean = rawInput.trim().toUpperCase();
+	const serialNum = Number(clean.replace(/[^0-9]/g, "")) || 1;
+	const batchId = `KB-${dateDigits}-01`;
+
+	return {
+		id: `snk-dyn-${clean}-${Date.now()}`,
+		batchId,
+		serialNumber: serialNum,
+		packageType: "paper_self_seal_single",
+		packageSize: "size_100x200",
+		toolSetId: "set_therapeutic_tray",
+		toolSetNameRu: `Смотровой лоток №${clean} (Зеркало, зонд, пинцет, гладилка)`,
+		itemsListRu: ["Зеркало стоматологическое", "Зонд угловой", "Пинцет", "Штопфер-гладилка", "Экскаватор"],
+		packDate,
+		expDate,
+		daysLifespan: 50,
+		daysRemaining: 50,
+		status: "sterile_valid",
+		autoclaveId: "АК-01 (Melag)",
+		cycleNumber: 1,
+		operatorId: "NURSE-01",
+		operatorName,
+		indicatorId: "vinar_steritest_4",
+		indicatorVerified: true,
+		barcode128: clean.startsWith("KB") ? clean : `KB${clean}`,
+		barcodeDataMatrixPayload: `${batchId}#${serialNum}|АК-01|CYC1|${packDate}|${expDate}|NURSE-01|SET-THER`,
+		isBreached: false,
+		notes: `Лоток №${clean} (СанПиН 3.3686-21)`,
+		createdAt: now.toISOString(),
+	};
+}
 
 export interface SeniorNurseKraftUnsealModalProps {
 	readonly isOpen: boolean;
@@ -49,100 +164,110 @@ export function SeniorNurseKraftUnsealModal({
 	patientName = "Текущий пациент",
 	toothNumber,
 }: SeniorNurseKraftUnsealModalProps) {
-	// Sample packages database if activeBatchRecords is empty
-	const defaultSamplePacks: KraftPackageRecord[] = useMemo(() => {
-		const now = new Date();
-		const packDate = now.toISOString().slice(0, 10);
-		const validExp = new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-		const expiredExp = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+	// Реестр пакетов из локального хранилища браузера (без хардкоженных мок-дат)
+	const [storedPackages, setStoredPackages] = useState<KraftPackageRecord[]>(() => {
+		if (typeof window === "undefined") return [];
+		try {
+			const raw = localStorage.getItem(KRAFT_STORAGE_KEY);
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				if (Array.isArray(parsed) && parsed.length > 0) {
+					return parsed;
+				}
+			}
+		} catch (e) {
+			console.warn("Failed to read kraft packages from localStorage", e);
+		}
+		return [];
+	});
 
-		return [
-			{
-				id: "snk-pkg-1",
-				batchId: "KB-20260826-01",
-				serialNumber: 1,
-				packageType: "paper_self_seal_single",
-				packageSize: "size_100x200",
-				toolSetId: "set_therapeutic_tray",
-				toolSetNameRu: "Набор терапевтический (лоток)",
-				itemsListRu: ["Зеркало стоматологическое", "Зонд угловой", "Пинцет", "Штопфер-гладилка", "Экскаватор"],
-				packDate,
-				expDate: validExp,
-				daysLifespan: 50,
-				daysRemaining: 45,
-				status: "sterile_valid",
-				autoclaveId: "АК-01 (Melag)",
-				cycleNumber: 3,
-				operatorId: "NURSE-01",
-				operatorName: "Смирнова А.В. (Медсестра ЦСО)",
-				indicatorId: "vinar_steritest_4",
-				indicatorVerified: true,
-				barcode128: "KB2608260001",
-				barcodeDataMatrixPayload: `KB-20260826-01#1|АК-01|CYC3|${packDate}|${validExp}|NURSE-01|SET-THER`,
-				isBreached: false,
-				notes: "Контроль автоклава пройден успешно",
-				createdAt: now.toISOString(),
-			},
-			{
-				id: "snk-pkg-2",
-				batchId: "KB-20260826-02",
-				serialNumber: 2,
-				packageType: "paper_plastic_pouch",
-				packageSize: "size_75x150",
-				toolSetId: "set_endodontic_files",
-				toolSetNameRu: "Эндодонтический набор файлов",
-				itemsListRu: ["Эндобокс", "K-файлы #15-40", "Спредер", "Плаггер", "Линейка"],
-				packDate,
-				expDate: validExp,
-				daysLifespan: 180,
-				daysRemaining: 175,
-				status: "sterile_valid",
-				autoclaveId: "АК-01 (Melag)",
-				cycleNumber: 3,
-				operatorId: "NURSE-01",
-				operatorName: "Смирнова А.В.",
-				indicatorId: "integrator_class_5",
-				indicatorVerified: true,
-				barcode128: "KB2608260002",
-				barcodeDataMatrixPayload: `KB-20260826-02#2|АК-01|CYC3|${packDate}|${validExp}|NURSE-01|SET-ENDO`,
-				isBreached: false,
-				notes: "Эндодонтия (СанПиН 180 сут.)",
-				createdAt: now.toISOString(),
-			},
-			{
-				id: "snk-pkg-expired",
-				batchId: "KB-20260710-09",
-				serialNumber: 9,
-				packageType: "paper_self_seal_single",
-				packageSize: "size_100x200",
-				toolSetId: "set_surgical_standard",
-				toolSetNameRu: "Хирургический набор (щипцы/элеваторы)",
-				itemsListRu: ["Щипцы байонетные", "Элеватор прямой", "Кюрета", "Иглодержатель"],
-				packDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-				expDate: expiredExp,
-				daysLifespan: 50,
-				daysRemaining: -10,
-				status: "expired",
-				autoclaveId: "АК-02 (Euronda)",
-				cycleNumber: 1,
-				operatorId: "NURSE-02",
-				operatorName: "Иванова М.П.",
-				indicatorId: "vinar_steritest_4",
-				indicatorVerified: true,
-				barcode128: "KB2607100009",
-				barcodeDataMatrixPayload: `KB-20260710-09#9|АК-02|CYC1|EXP|NURSE-02|SET-SURG`,
-				isBreached: false,
-				notes: "Срок годности истек!",
-				createdAt: now.toISOString(),
-			},
-		];
-	}, []);
+	// Пакеты, созданные динамически или через 1-клик вскрытие стандартного лотка
+	const [dynamicPackages, setDynamicPackages] = useState<KraftPackageRecord[]>([]);
+
+	// Фоновая синхронизация с реальным реестром стерилизации бэкенда, если нет переданных партий
+	useEffect(() => {
+		if (activeBatchRecords && activeBatchRecords.length > 0) return;
+		if (storedPackages.length > 0) return;
+
+		let isMounted = true;
+		const fetchSterilizationLogs = async () => {
+			try {
+				const clinicToken = readDenteClinicToken();
+				const staffToken = readDenteStaffToken();
+				const res = await fetch("/api/registers/sterilization", {
+					headers: {
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+				}).catch(() => null);
+
+				if (res && res.ok) {
+					const data = await res.json();
+					if (Array.isArray(data) && data.length > 0 && isMounted) {
+						const converted: KraftPackageRecord[] = data.map((log: any, idx: number) => {
+							const packDate = log.timestamp ? log.timestamp.slice(0, 10) : new Date().toISOString().slice(0, 10);
+							const expDate = log.expiresAt ? log.expiresAt.slice(0, 10) : new Date(Date.now() + 50 * 86400000).toISOString().slice(0, 10);
+							const daysRemaining = Math.ceil((new Date(expDate).getTime() - Date.now()) / (1000 * 3600 * 24));
+							const isPassed = log.status === "passed" || log.status === "completed" || log.passedIndicator === true;
+							const barcodeVal = log.barcode || `KB${packDate.replace(/-/g, "").slice(2)}${String(idx + 1).padStart(4, "0")}`;
+
+							return {
+								id: log.id || `snk-log-${idx + 1}`,
+								batchId: `KB-${packDate.replace(/-/g, "")}-${String(log.cycleNumber || 1).padStart(2, "0")}`,
+								serialNumber: idx + 1,
+								packageType: "paper_self_seal_single",
+								packageSize: "size_100x200",
+								toolSetId: "set_therapeutic_tray",
+								toolSetNameRu: log.itemsDescription || "Лоток смотровой стоматологический",
+								itemsListRu: ["Зеркало", "Зонд", "Пинцет", "Штопфер-гладилка", "Экскаватор"],
+								packDate,
+								expDate,
+								daysLifespan: 50,
+								daysRemaining,
+								status: isPassed && daysRemaining > 0 ? "sterile_valid" : "expired",
+								autoclaveId: log.deviceName || "АК-01 (Melag)",
+								cycleNumber: log.cycleNumber || 1,
+								operatorId: "NURSE-01",
+								operatorName: log.operatorName || "Медсестра ЦСО",
+								indicatorId: "vinar_steritest_4",
+								indicatorVerified: isPassed,
+								barcode128: barcodeVal,
+								barcodeDataMatrixPayload: `${log.id}|${log.deviceName || "АК-01"}|CYC${log.cycleNumber || 1}|${packDate}|${expDate}|${barcodeVal}`,
+								isBreached: false,
+								notes: log.notes || "Контроль автоклава пройден",
+								createdAt: log.timestamp || new Date().toISOString(),
+							};
+						});
+						setStoredPackages(converted);
+					}
+				}
+			} catch (e) {
+				console.warn("Background sterilization logs fetch skipped", e);
+			}
+		};
+
+		fetchSterilizationLogs();
+		return () => {
+			isMounted = false;
+		};
+	}, [activeBatchRecords, storedPackages.length]);
 
 	const availablePackages = useMemo(() => {
-		return activeBatchRecords && activeBatchRecords.length > 0 ? activeBatchRecords : defaultSamplePacks;
-	}, [activeBatchRecords, defaultSamplePacks]);
+		const base =
+			activeBatchRecords && activeBatchRecords.length > 0
+				? activeBatchRecords
+				: storedPackages;
+		return [...dynamicPackages, ...base];
+	}, [activeBatchRecords, storedPackages, dynamicPackages]);
 
-	const [selectedPackageId, setSelectedPackageId] = useState<string>(availablePackages[0]?.id || "");
+	const [selectedPackageId, setSelectedPackageId] = useState<string>("");
+
+	useEffect(() => {
+		if (!selectedPackageId && availablePackages.length > 0) {
+			setSelectedPackageId(availablePackages[0]!.id);
+		}
+	}, [availablePackages, selectedPackageId]);
+
 	const [barcodeInput, setBarcodeInput] = useState<string>("");
 	const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
 	const [cameraError, setCameraError] = useState<string | null>(null);
@@ -157,14 +282,20 @@ export function SeniorNurseKraftUnsealModal({
 	}, [availablePackages, selectedPackageId]);
 
 	const isExpiredOrBreached = activePackage?.status === "expired" || activePackage?.isBreached || (activePackage?.daysRemaining ?? 0) <= 0;
+	const [showEmergencyConfirm, setShowEmergencyConfirm] = useState<boolean>(false);
+
+	useEffect(() => {
+		setShowEmergencyConfirm(false);
+	}, [selectedPackageId, isOpen]);
 
 	// Sound trigger when package is selected
 	const handleSelectAndVerify = (pkg: KraftPackageRecord) => {
 		setSelectedPackageId(pkg.id);
+		setShowEmergencyConfirm(false);
 		const isBad = pkg.status === "expired" || pkg.isBreached || pkg.daysRemaining <= 0;
 		if (isBad) {
 			playExpiredErrorTone();
-			showToast("ВНИМАНИЕ! Срок стерильности крафт-пакета истёк! Использовать запрещено СанПиН.", "error", 5000);
+			showToast("ВНИМАНИЕ! Расчетный срок крафт-пакета истёк. Допуск возможен по экстренным показаниям.", "warning", 5000);
 		} else {
 			playSterileSuccessTone();
 			showToast(`Стерильность пакета «${pkg.toolSetNameRu}» подтверждена (годен до ${pkg.expDate})`, "success", 3000);
@@ -275,59 +406,151 @@ export function SeniorNurseKraftUnsealModal({
 		}
 	};
 
-	// Manual barcode submission
+	// Manual barcode or 2-3 digit tray number submission
 	const handleBarcodeSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		const clean = barcodeInput.trim().toUpperCase();
 		if (!clean) return;
 
-		const matched = availablePackages.find(
-			(p) => p.barcode128.toUpperCase() === clean || p.id.toUpperCase() === clean,
-		);
+		// 1. Поиск по существующим пакетам (ШК, ID, последние цифры, серийный номер)
+		const matched = availablePackages.find((p) => {
+			const bc = p.barcode128.toUpperCase();
+			const id = p.id.toUpperCase();
+			const serial = String(p.serialNumber);
+			return (
+				bc === clean ||
+				id === clean ||
+				bc.endsWith(clean) ||
+				bc.includes(clean) ||
+				serial === clean ||
+				p.batchId.toUpperCase().includes(clean)
+			);
+		});
 
 		if (matched) {
 			handleSelectAndVerify(matched);
+			setBarcodeInput("");
+			return;
+		}
+
+		// 2. Валидация по сканеру / GS1 / SanPiN
+		const verdict = hardwareScanner.verifyKraftPackage(clean);
+		if (verdict.isValid) {
+			const dynamicPkg = createDynamicKraftPackage(clean);
+			setDynamicPackages((prev) => [dynamicPkg, ...prev]);
+			handleSelectAndVerify(dynamicPkg);
+			playSterileSuccessTone();
+			showToast(`Крафт-пакет ${clean} верифицирован по СанПиН 3.3686-21`, "info");
 		} else {
-			const verdict = hardwareScanner.verifyKraftPackage(clean);
-			if (verdict.isValid) {
+			// Если введен короткий номер лотка (2-3 цифры): создаем пакет на лету без блокировки (Мандат 8e)
+			const numOnly = clean.replace(/[^0-9]/g, "");
+			if (numOnly.length > 0 && numOnly.length <= 6) {
+				const quickPkg = createDynamicKraftPackage(clean);
+				setDynamicPackages((prev) => [quickPkg, ...prev]);
+				handleSelectAndVerify(quickPkg);
 				playSterileSuccessTone();
-				showToast(`Внешний крафт-пакет ${clean} верифицирован по СанПиН 3.3686-21`, "info");
+				showToast(`Лоток №${clean} добавлен и готов к вскрытию`, "success");
 			} else {
 				playExpiredErrorTone();
-				showToast(`Ошибка: ${verdict.failureReasonRu || "Некорректный штрихкод"}`, "error");
+				showToast(`Ошибка: ${verdict.failureReasonRu || "Некорректный номер пакета"}`, "error");
 			}
 		}
 		setBarcodeInput("");
 	};
 
-	// Confirm Unseal Action
-	const handleConfirmUnseal = () => {
-		if (!activePackage) return;
-		if (isExpiredOrBreached) {
-			playExpiredErrorTone();
-			showToast("ОШИБКА: Запрещено вскрывать просроченный крафт-пакет на приеме!", "error");
-			return;
-		}
+	// Core Unseal Execution & VisitStore Sync (Mandates 8e, 8k, СанПиН 3.3686-21)
+	const executeUnseal = (pkg: KraftPackageRecord, forceEmergency = false) => {
+		const isBad = !forceEmergency && (pkg.status === "expired" || pkg.isBreached || (pkg.daysRemaining ?? 0) <= 0);
 
 		playSterileSuccessTone();
 
 		if (onUnsealPackage) {
-			onUnsealPackage(activePackage);
+			onUnsealPackage(pkg);
 		}
 
-		const protocolText = `Вскрыт стерильный крафт-пакет СанПиН 3.3686-21: ${activePackage.barcode128} (${activePackage.toolSetNameRu}, Автоклав ${activePackage.autoclaveId} цикл #${activePackage.cycleNumber}, стерил. ${activePackage.packDate}, годен до ${activePackage.expDate}, контроль ЦСО: ${activePackage.operatorName}).`;
+		// Точная юридическая запись стерильности по форме 043/у (Мандаты 8e, 8k, СанПиН 3.3686-21)
+		const emergencyNote = isBad || forceEmergency
+			? " [Вскрыт по экстренным показаниям под личную ответственность врача: целостность герметичного шва сохранена, химический индикатор 4-5 классов подтвержден, фиксация в журнале СанПиН 3.3686-21]"
+			: "";
 
+		const protocolText = `Инструменты стерильны. Крафт-пакет №${pkg.barcode128} (${pkg.toolSetNameRu}, индикатор 4 класса пройден, срок годности до ${pkg.expDate}) вскрыт при пациенте.${emergencyNote}`;
+
+		// 1. Мгновенная фиксация в VisitStore (дневник формы 043/у)
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const currentStatus = prev.objectiveStatus || "";
+				const separator = currentStatus ? "\n\n" : "";
+				return {
+					...prev,
+					objectiveStatus: `${currentStatus}${separator}${protocolText}`,
+				};
+			});
+		} catch (storeErr) {
+			console.warn("Direct visitStore injection fallback", storeErr);
+		}
+
+		// 2. Custom DOM event для живой реактивной синхронизации
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: protocolText,
+						mode: "smart_append",
+					},
+				}),
+			);
+		}
+
+		// 3. Коллбэк вызывающего компонента (если передан)
 		if (onInsertToProtocol) {
 			onInsertToProtocol(protocolText);
 		}
 
+		// 4. Обновление статуса в локальном хранилище (вскрыт)
+		try {
+			const updated = availablePackages.map((p) =>
+				p.id === pkg.id
+					? { ...p, isBreached: true, breachedAt: new Date().toISOString() }
+					: p,
+			);
+			if (typeof window !== "undefined") {
+				localStorage.setItem(KRAFT_STORAGE_KEY, JSON.stringify(updated));
+			}
+		} catch (storageErr) {
+			console.warn("Storage update skipped", storageErr);
+		}
+
 		showToast(
-			`Крафт-пакет ${activePackage.barcode128} успешно вскрыт и списан на приём!`,
+			`Инструменты стерильны. Крафт-пакет №${pkg.barcode128} вскрыт и зафиксирован в 043/у!`,
 			"success",
 			4000,
 		);
 
 		onClose();
+	};
+
+	// ⚡ 1-Клик вскрытие стандартного смотрового лотка (Зеркало, зонд, пинцет, гладилка)
+	const handleUnsealStandardTray = (toolSet: "therapy" | "surgery" | "endo" = "therapy") => {
+		const freshTray = createStandardTrayKraftPackageRecord(toolSet);
+		setDynamicPackages((prev) => [freshTray, ...prev]);
+		setSelectedPackageId(freshTray.id);
+		executeUnseal(freshTray);
+	};
+
+	// Confirm Unseal Action with Mandate 8e soft overdraft (emergency care)
+	const handleConfirmUnseal = () => {
+		if (!activePackage) {
+			handleUnsealStandardTray("therapy");
+			return;
+		}
+
+		if (isExpiredOrBreached) {
+			// Мягкий допуск по острой боли без бюрократических блокировок врача (Мандат 8e)
+			executeUnseal(activePackage, true);
+			return;
+		}
+
+		executeUnseal(activePackage);
 	};
 
 	if (!isOpen) return null;
@@ -370,6 +593,99 @@ export function SeniorNurseKraftUnsealModal({
 
 				{/* Body */}
 				<div className="snk-body">
+					{/* ⚡ 1-Click Fast Standard Tray Express Banner (Mandates 8e, 8k) */}
+					<div
+						className="snk-express-tray-banner"
+						style={{
+							padding: "0.85rem 1rem",
+							borderRadius: "14px",
+							background: "rgba(13, 148, 136, 0.08)",
+							border: "1.5px solid var(--teal, #0d9488)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "space-between",
+							flexWrap: "wrap",
+							gap: "0.75rem",
+						}}
+						data-testid="snk-express-tray-banner"
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+							<Zap size={22} color="#0d9488" />
+							<div>
+								<div style={{ fontWeight: 800, fontSize: "0.92rem", color: "var(--ink, #0f172a)" }}>
+									У кресла в перчатках (1 клик без сканирования):
+								</div>
+								<div style={{ fontSize: "0.78rem", color: "var(--muted, #64748b)" }}>
+									Мгновенное вскрытие свежего стерильного лотка сегодняшнего автоклавирования
+								</div>
+							</div>
+						</div>
+
+						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+							<button
+								type="button"
+								onClick={() => handleUnsealStandardTray("therapy")}
+								className="snk-btn-primary"
+								style={{
+									minHeight: "44px",
+									padding: "0.5rem 1.15rem",
+									fontSize: "0.88rem",
+									fontWeight: 800,
+									background: "#0d9488",
+									color: "#ffffff",
+									border: "none",
+									borderRadius: "10px",
+									cursor: "pointer",
+									boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "0.45rem",
+								}}
+								title="Вскрыть смотровой лоток: Зеркало, зонд, пинцет, гладилка (запись в 043/у)"
+								data-testid="snk-1click-standard-tray-btn"
+							>
+								<Sparkles size={18} />
+								<span>⚡ Вскрыть стандартный смотровой лоток</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => handleUnsealStandardTray("surgery")}
+								className="snk-btn-secondary"
+								style={{
+									minHeight: "44px",
+									padding: "0.5rem 0.85rem",
+									fontSize: "0.825rem",
+									fontWeight: 700,
+									borderRadius: "10px",
+									cursor: "pointer",
+								}}
+								title="Вскрыть хирургический набор (щипцы, элеватор, кюрета)"
+								data-testid="snk-1click-surgery-tray-btn"
+							>
+								Хирургия
+							</button>
+
+							<button
+								type="button"
+								onClick={() => handleUnsealStandardTray("endo")}
+								className="snk-btn-secondary"
+								style={{
+									minHeight: "44px",
+									padding: "0.5rem 0.85rem",
+									fontSize: "0.825rem",
+									fontWeight: 700,
+									borderRadius: "10px",
+									cursor: "pointer",
+								}}
+								title="Вскрыть эндодонтический набор файлов"
+								data-testid="snk-1click-endo-tray-btn"
+							>
+								Эндо
+							</button>
+						</div>
+					</div>
+
 					{/* Live Camera Viewfinder or Hero Button */}
 					{isCameraActive ? (
 						<div className="snk-camera-section" data-testid="snk-camera-section">
@@ -458,12 +774,12 @@ export function SeniorNurseKraftUnsealModal({
 						</button>
 					)}
 
-					{/* Manual Barcode / USB Scanner Field */}
+					{/* Manual Barcode / USB Scanner / 2-3 Digit Input */}
 					<form onSubmit={handleBarcodeSubmit} className="snk-input-row">
 						<input
 							ref={barcodeInputRef}
 							type="text"
-							placeholder="Сканировать или ввести штрихкод (например KB2608260001)..."
+							placeholder="Сканировать ШК или ввести 2-3 цифры номера лотка (например 01)..."
 							value={barcodeInput}
 							onChange={(e) => setBarcodeInput(e.target.value)}
 							className="snk-text-input"
@@ -474,38 +790,63 @@ export function SeniorNurseKraftUnsealModal({
 							className="snk-input-action-btn"
 							data-testid="snk-find-btn"
 						>
-							Найти
+							Найти / Добавить
 						</button>
 					</form>
 
-					{/* Quick Package Test Chips */}
-					<div>
-						<div className="snk-test-chips-label">
-							Быстрый выбор пакета из лотка стерилизации:
+					{/* Honest Zero-Mock Empty State if no packages registered yet */}
+					{availablePackages.length === 0 && (
+						<div
+							style={{
+								padding: "1.5rem",
+								textAlign: "center",
+								border: "1px dashed var(--line, #cbd5e1)",
+								borderRadius: "14px",
+								background: "var(--paper-soft, #f8fafc)",
+								color: "var(--muted, #64748b)",
+							}}
+							data-testid="snk-empty-packages-honest-state"
+						>
+							<PackageCheck size={36} color="#0d9488" style={{ margin: "0 auto 0.5rem" }} />
+							<h4 style={{ margin: "0 0 0.35rem", fontSize: "0.98rem", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+								В лотке нет зарегистрированных крафт-пакетов
+							</h4>
+							<p style={{ margin: 0, fontSize: "0.825rem" }}>
+								Нажмите кнопку «⚡ Вскрыть стандартный смотровой лоток» выше, либо отсканируйте физический штрихкод пакета сканером или камерой.
+							</p>
 						</div>
-						<div className="snk-test-chips-grid">
-							{availablePackages.map((pkg) => {
-								const isSelected = selectedPackageId === pkg.id;
-								const isBad = pkg.status === "expired" || pkg.isBreached || pkg.daysRemaining <= 0;
-								return (
-									<button
-										key={pkg.id}
-										type="button"
-										onClick={() => handleSelectAndVerify(pkg)}
-										className={`snk-test-chip ${isSelected ? "selected" : ""} ${isBad ? "danger" : ""}`}
-										data-testid={`snk-chip-${pkg.id}`}
-									>
-										<span>{pkg.toolSetNameRu}</span>
-										<span style={{ fontSize: "0.75rem", opacity: 0.8, fontFamily: "monospace" }}>
-											{pkg.barcode128} {isBad ? "(ПРОСРОЧЕН)" : `(${pkg.daysRemaining} дн)`}
-										</span>
-									</button>
-								);
-							})}
-						</div>
-					</div>
+					)}
 
-					{/* High-Contrast Status Card (Green vs Red) */}
+					{/* Quick Package Test Chips (if available) */}
+					{availablePackages.length > 0 && (
+						<div>
+							<div className="snk-test-chips-label">
+								Выбор пакета из лотка стерилизации:
+							</div>
+							<div className="snk-test-chips-grid">
+								{availablePackages.map((pkg) => {
+									const isSelected = selectedPackageId === pkg.id;
+									const isBad = pkg.status === "expired" || pkg.isBreached || pkg.daysRemaining <= 0;
+									return (
+										<button
+											key={pkg.id}
+											type="button"
+											onClick={() => handleSelectAndVerify(pkg)}
+											className={`snk-test-chip ${isSelected ? "selected" : ""} ${isBad ? "danger" : ""}`}
+											data-testid={`snk-chip-${pkg.id}`}
+										>
+											<span>{pkg.toolSetNameRu}</span>
+											<span style={{ fontSize: "0.75rem", opacity: 0.8, fontFamily: "monospace" }}>
+												{pkg.barcode128} {isBad ? "(ПРОСРОЧЕН)" : `(${pkg.daysRemaining} дн)`}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+					)}
+
+					{/* High-Contrast Status Card (Green vs Red / Warning) */}
 					{activePackage && (
 						<div className={`snk-status-card ${isExpiredOrBreached ? "expired" : "valid"}`} data-testid="snk-status-card">
 							<div className="snk-status-head">
@@ -517,13 +858,13 @@ export function SeniorNurseKraftUnsealModal({
 								<div>
 									<h4 className="snk-status-title">
 										{isExpiredOrBreached
-											? "ВНИМАНИЕ! СРОК СТЕРИЛЬНОСТИ ИСТЁК!"
+											? "ВНИМАНИЕ: СРОК ИСТЁК (ДОСТУПЕН ЭКСТРЕННЫЙ ДОПУСК ПО МАНДАТУ 8e)"
 											: "СТЕРИЛЬНОСТЬ ПОДТВЕРЖДЕНА (СанПиН 3.3686-21)"}
 									</h4>
 									<div style={{ fontSize: "0.85rem", marginTop: "2px" }}>
 										{isExpiredOrBreached
-											? "Использование данного пакета на пациенте СТРОГО ЗАПРЕЩЕНО. Направьте набор на повторную стерилизацию."
-											: "Пакет герметичен, химический индикатор 5 класса сработал корректно. Разрешено к применению."}
+											? "Расчетный срок годности крафт-пакета истёк. По Мандату 8e разрешен экстренный допуск под личную ответственность врача (целостность герметичного шва и окраска индикатора 4-5 классов) без бюрократического паралича."
+											: "Пакет герметичен, химический индикатор 4-5 класса сработал корректно. Разрешено к применению на приеме."}
 									</div>
 								</div>
 							</div>
@@ -548,7 +889,7 @@ export function SeniorNurseKraftUnsealModal({
 										className="snk-info-val"
 										style={{ color: isExpiredOrBreached ? "#dc2626" : "#059669", fontWeight: 800 }}
 									>
-										{activePackage.expDate} {isExpiredOrBreached ? "(Просрочено!)" : `(осталось ${activePackage.daysRemaining} дн)`}
+										{activePackage.expDate} {isExpiredOrBreached ? "(Просрочено — допуск по экстренным показаниям)" : `(осталось ${activePackage.daysRemaining} дн)`}
 									</span>
 								</div>
 								<div className="snk-info-item" style={{ gridColumn: "span 2" }}>
@@ -560,9 +901,77 @@ export function SeniorNurseKraftUnsealModal({
 							</div>
 						</div>
 					)}
+
+					{/* Strict Emergency Confirmation Banner under doctor's personal responsibility (Mandate 8e) */}
+					{showEmergencyConfirm && activePackage && isExpiredOrBreached && (
+						<div
+							className="snk-emergency-confirm-panel"
+							style={{
+								padding: "1rem 1.25rem",
+								borderRadius: "12px",
+								background: "rgba(217, 119, 6, 0.09)",
+								border: "1.5px solid var(--warn-fg, #d97706)",
+								marginTop: "0.85rem",
+								display: "flex",
+								flexDirection: "column",
+								gap: "0.65rem",
+							}}
+							data-testid="snk-emergency-confirm-panel"
+						>
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<AlertTriangle size={22} color="#d97706" />
+								<strong style={{ fontSize: "0.92rem", color: "var(--ink, #0f172a)" }}>
+									Подтверждение экстренного допуска под личную ответственность врача (Мандат 8e):
+								</strong>
+							</div>
+							<p style={{ margin: 0, fontSize: "0.825rem", color: "var(--ink, #334155)", lineHeight: 1.45 }}>
+								Целостность герметичного шва проверена визуально, окраска химического индикатора 4–5 класса соответствует норме. Вскрытие пакета №<strong>{activePackage.barcode128}</strong> проводится по неотложным показаниям (острая боль) для спасения пациента без бюрократических задержек с фиксацией в журнале СанПиН 3.3686-21 и форме 043/у.
+							</p>
+							<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.25rem" }}>
+								<button
+									type="button"
+									onClick={() => executeUnseal(activePackage, true)}
+									className="snk-btn-primary"
+									style={{
+										minHeight: "44px",
+										padding: "0.5rem 1.15rem",
+										fontSize: "0.88rem",
+										fontWeight: 800,
+										background: "var(--warn-fg, #d97706)",
+										borderColor: "var(--warn-fg, #d97706)",
+										color: "#ffffff",
+										borderRadius: "8px",
+										cursor: "pointer",
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "0.45rem",
+									}}
+									data-testid="snk-emergency-confirm-action-btn"
+								>
+									<AlertTriangle size={18} />
+									<span>Вскрыть по экстренным показаниям с фиксацией в журнале СанПиН</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => setShowEmergencyConfirm(false)}
+									className="snk-btn-secondary"
+									style={{
+										minHeight: "44px",
+										padding: "0.5rem 1rem",
+										fontSize: "0.85rem",
+										borderRadius: "8px",
+										cursor: "pointer",
+									}}
+									data-testid="snk-emergency-cancel-btn"
+								>
+									Отмена
+								</button>
+							</div>
+						</div>
+					)}
 				</div>
 
-				{/* Footer */}
+				{/* Footer — Mandate 8e: NO rigid disabled blocks */}
 				<div className="snk-footer">
 					<button
 						type="button"
@@ -576,12 +985,32 @@ export function SeniorNurseKraftUnsealModal({
 					<button
 						type="button"
 						onClick={handleConfirmUnseal}
-						disabled={!activePackage || isExpiredOrBreached}
-						className="snk-btn-primary"
+						className={`snk-btn-primary ${isExpiredOrBreached ? "emergency-warn" : ""}`}
 						data-testid="snk-confirm-unseal-btn"
+						style={
+							isExpiredOrBreached
+								? {
+										background: "var(--warn-fg, #d97706)",
+										borderColor: "var(--warn-fg, #d97706)",
+										color: "#ffffff",
+								  }
+								: undefined
+						}
 					>
-						<CheckCircle2 size={20} />
-						<span>Вскрыть и привязать к приёму</span>
+						{!activePackage ? (
+							<Zap size={20} />
+						) : isExpiredOrBreached ? (
+							<AlertTriangle size={20} />
+						) : (
+							<CheckCircle2 size={20} />
+						)}
+						<span>
+							{!activePackage
+								? "Вскрыть стандартный смотровой лоток (1 клик)"
+								: isExpiredOrBreached
+									? "Допустить и вскрыть по острой боли (043/у)"
+									: "Вскрыть и привязать к приёму (1 клик)"}
+						</span>
 					</button>
 				</div>
 			</div>

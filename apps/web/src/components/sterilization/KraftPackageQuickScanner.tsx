@@ -41,6 +41,8 @@ import {
 	createStandardSterileTrayBarcode,
 	type StandardTrayType,
 } from "./sterilizationPresets";
+import { showToast } from "../GlobalToast";
+import { useVisitStore } from "../../store/visitStore.js";
 import "./sterilization.css";
 
 export interface KraftPackageQuickScannerProps {
@@ -74,18 +76,64 @@ export function KraftPackageQuickScanner({
 	 * а фиксирует допуск по острой боли с визуальным контролем индикатора.
 	 */
 	const handleApply = () => {
-		if (!parsed) return;
+		if (!parsed) {
+			handleApplyStandardTray(selectedTrayType);
+			return;
+		}
 		let finalParsed = parsed;
 		if (parsed.isExpired) {
 			finalParsed = {
 				...parsed,
 				isValid: true, // Клинический допуск по неотложной помощи
-				formattedProtocolRecord043: `${parsed.formattedProtocolRecord043} [Допуск врачом по острой боли: визуальный контроль индикатора 5 класса — норма, упаковка герметична]`,
+				formattedProtocolRecord043: `${parsed.formattedProtocolRecord043} [Вскрыт по экстренным показаниям под личную ответственность врача: визуальный контроль индикатора 5 класса — норма, герметичность сохранена]`,
 			};
 		}
+		const protocolText = finalParsed.formattedProtocolRecord043;
+
+		// 1. Прямая фиксация в форме дневника 043/у (useVisitStore)
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existing = prev.objectiveStatus || "";
+				const alreadyIncludes =
+					(finalParsed.rawInput && existing.includes(finalParsed.rawInput)) ||
+					(finalParsed.batchId && existing.includes(finalParsed.batchId));
+				if (alreadyIncludes) return prev;
+				return {
+					...prev,
+					objectiveStatus: existing
+						? `${existing}\n\n${protocolText}`
+						: protocolText,
+				};
+			});
+		} catch (storeErr) {
+			console.warn("Direct visitStore injection fallback", storeErr);
+		}
+
+		// 2. Custom DOM event для живой реактивной синхронизации
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: protocolText,
+						mode: "smart_append",
+					},
+				}),
+			);
+		}
+
+		// 3. Коллбэк вызывающего компонента (если передан)
 		if (onAttachToProtocol) {
 			onAttachToProtocol(finalParsed);
 		}
+
+		showToast(
+			finalParsed.isExpired
+				? "Крафт-пакет зафиксирован в 043/у (допуск по острой боли)!"
+				: "Крафт-пакет зафиксирован в форме 043/у!",
+			"success",
+			3500,
+		);
+
 		onClose();
 	};
 
@@ -95,9 +143,50 @@ export function KraftPackageQuickScanner({
 	 */
 	const handleApplyStandardTray = (type: StandardTrayType = selectedTrayType) => {
 		const freshTray = createStandardSterileTrayBarcode(type, new Date());
+		const protocolText = freshTray.formattedProtocolRecord043;
+
+		// 1. Прямая фиксация в форме дневника 043/у (useVisitStore)
+		try {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const existing = prev.objectiveStatus || "";
+				const alreadyIncludes =
+					(freshTray.rawInput && existing.includes(freshTray.rawInput)) ||
+					(freshTray.batchId && existing.includes(freshTray.batchId));
+				if (alreadyIncludes) return prev;
+				return {
+					...prev,
+					objectiveStatus: existing
+						? `${existing}\n\n${protocolText}`
+						: protocolText,
+				};
+			});
+		} catch (storeErr) {
+			console.warn("Direct visitStore injection fallback", storeErr);
+		}
+
+		// 2. Custom DOM event для живой реактивной синхронизации
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						soap: protocolText,
+						mode: "smart_append",
+					},
+				}),
+			);
+		}
+
+		// 3. Коллбэк вызывающего компонента
 		if (onAttachToProtocol) {
 			onAttachToProtocol(freshTray);
 		}
+
+		showToast(
+			`Стандартный стерильный лоток (${freshTray.toolSetNameRu}) привязан к 043/у!`,
+			"success",
+			3500,
+		);
+
 		onClose();
 	};
 
@@ -170,7 +259,7 @@ export function KraftPackageQuickScanner({
 							data-testid="btn-kraft-quick-standard-attach"
 						>
 							<Sparkles size={18} />
-							<span>⚡ Привязать стандартный стерильный лоток терапевта/хирурга (1 клик)</span>
+							<span>⚡ Вскрыть стандартный стерильный смотровой лоток (1 клик)</span>
 						</button>
 					</div>
 
@@ -373,7 +462,6 @@ export function KraftPackageQuickScanner({
 						<button
 							type="button"
 							onClick={handleApply}
-							disabled={!parsed}
 							className={`sterilization-action-btn ${parsed?.isExpired ? "warning" : "success"}`}
 							style={{
 								minHeight: "44px",
@@ -382,18 +470,20 @@ export function KraftPackageQuickScanner({
 							}}
 							title={
 								!parsed
-									? "Отсканируйте штрихкод или выберите образец"
+									? "1 Клик: внести стандартный лоток в протокол приема (Форма 043/у)"
 									: parsed.isExpired
-										? "Пакет просрочен по расчетной дате — допуск по решению врача при острой боли"
+										? "Пакет просрочен по расчетной дате — вскрыть по экстренным показаниям под личную ответственность врача (Мандат 8e)"
 										: "1 Клик: внести запись стерилизации в протокол приема"
 							}
 							data-testid="btn-attach-kraft-to-043"
 						>
 							<Sparkles size={18} />
 							<span>
-								{parsed?.isExpired
-									? "Допустить по решению врача (Острая боль / 043/у)"
-									: "Привязать к протоколу 043/у (1 клик)"}
+								{!parsed
+									? "⚡ Вскрыть стандартный стерильный смотровой лоток (1 клик)"
+									: parsed.isExpired
+										? "Допустить и вскрыть по острой боли (043/у)"
+										: "Вскрыть и привязать к протоколу 043/у (1 клик)"}
 							</span>
 						</button>
 					</div>
