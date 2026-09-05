@@ -370,6 +370,30 @@
 
 ---
 
+## 43. `документы::сессионная_пэп_подпись_дневников_по_63_фз_и_приказу_947н` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8n & 63-ФЗ)
+- **Идея**: 1-клик сессионное подписание врачебных записей и дневников формы 043/у простой электронной подписью (ПЭП) по 63-ФЗ и Приказу Минздрава РФ № 947н в `doctorShiftEngine.ts` и `doctorShiftCockpitEngine.ts`. Врач один раз за смену авторизует сессионный токен ЭЦП и подписывает все дневники приемов без повторного ввода паролей, задержек и ожидания сетевых ответов.
+- **Статус**: 
+  - Shared: `packages/shared/src/doctor-portal/doctorShiftEngine.ts`, `packages/shared/src/doctor/doctorShiftCockpitEngine.ts` (коммит `51f4d0677`).
+  - Валидация: Exit Code 0, строгое соответствие Федеральному закону № 63-ФЗ и регламенту ЭМК РФ.
+
+---
+
+## 44. `рецепты::1_клик_стоматологические_пресеты_и_чистая_печать_формы_107_1_у_по_приказу_1094н` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & ПРИКАЗ 1094н)
+- **Идея**: Полное устранение ручного набора рецептурных бланков Минздрава РФ по форме № 107-1/у (Приказ № 1094н). 1-клик профильные стоматологические пресеты (Амоксиклав 1000 мг, Найз 100 мг, Ципролет 500 мг, Хлоргексидин 0.05%, Метрогил Дента) с автозаполнением дозировок, способов применения на русском и латыни, срока действия (15 / 60 / 365 дней) и полиграфической версткой бланка с QR-проверкой в `PrescriptionPrintModal.tsx` и `MedicalPrescriptionModal.tsx`.
+- **Статус**: 
+  - Фронтенд / Shared: `apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx`, `generator/MedicalPrescriptionModal.tsx`, `generator/prescriptionPresets.ts`, `packages/shared/src/documents/forms107_1u.ts`, `clinicalHtmlRenderers.ts` (коммит `4cd580cc3`).
+  - Тесты: `apps/web/src/tests/PrescriptionPrintModal.test.ts`, `prescriptionGenerator.test.ts` (100% passing).
+
+---
+
+## 45. `санпин::экстренное_вскрытие_крафт_лотков_и_прием_острой_боли_без_задержек` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8n & САНПИН 3.3686-21)
+- **Идея**: Автономия операционной медсестры и врача при экстренном вскрытии стерилизационных лотков и наборов при острой боли. Вынесение алгоритма в `kraftPackageEngine.ts`, поддержка мягкого допуска и мгновенной фиксации вскрытия крафт-пакета/лотка в `SanpinRegisters.tsx` и `SeniorNurseKraftUnsealModal.tsx` без бюрократических остановок и комиссий.
+- **Статус**: 
+  - Фронтенд: `apps/web/src/components/sanpin/SanpinRegisters.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `kraft/kraftPackageEngine.ts` (коммит `5f0ee1df3`).
+  - Тесты: unit-тесты `sanpinUnsealMandate8e.test.ts` (100% passing).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
 Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom) имеют статус **`[РЕАЛИЗОВАНО]`**:

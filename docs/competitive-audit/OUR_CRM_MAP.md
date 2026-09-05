@@ -75,14 +75,15 @@
   - ИИ-анализ панорамных и КТ снимков на патологии (`ai.ts`).
 
 ### 2.5. Документооборот, ИДС, НДФЛ, Рецепты 1094н, ЭЛН 1089н и ЕГИСЗ
-- **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `documentLogic.ts`, `documentValidators.ts`, `MedicalPrescriptionModal.tsx`, `SickLeaveElnModal.tsx`, `ImplantPassportModal.tsx`.
-- **Бэкенд**: `apps/api/src/routes/documents.ts`, `templates.ts`, `egisz.ts`.
+- **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `documentLogic.ts`, `documentValidators.ts`, `MedicalPrescriptionModal.tsx`, `PrescriptionPrintModal.tsx`, `SickLeaveElnModal.tsx`, `ImplantPassportModal.tsx`.
+- **Бэкенд / Shared**: `apps/api/src/routes/documents.ts`, `templates.ts`, `egisz.ts`, `packages/shared/src/documents/forms107_1u.ts`, `doctorShiftEngine.ts`.
 - **Возможности**:
   - Генерация договоров оказания платных мед. услуг, ИДС (информированных согласий), актов.
   - Полная отвязка стоматологической карты 043/у от многопрофильной госпитальной формы 025/у под Мандат 8i (`documentValidators.ts`, `useDocumentPayloads.ts`, `usePatientIntakeLogic.ts`, коммит `65be4645c`).
   - Унифицированный утилитарный паспорт имплантации `ImplantPassportModal.tsx` с производителями (Straumann, Osstem, Nobel, Dentium, Astra Tech), торком, ISQ и сносом 1000+ строк процедурного блоата (коммит `13fe5e9a0`).
   - Ликвидация вложенных модальных окон (Анти-Матрёшка, Мандат 8d) в резюме визита и печати формы 043/у (`VisitSummaryModal.tsx`, `Form043PrintModal.tsx`, коммит `a5df76320`).
-  - Рецептурные бланки Минздрава РФ по форме № 107-1/у (Приказ № 1094н) с полиграфической версткой, печатями и 1-клик сроками действия (15 / 60 / 365 дн.).
+  - Сессионное подписание врачебных протоколов ПЭП по 63-ФЗ и Приказу Минздрава РФ № 947н в 1 клик без постоянного повторного ввода паролей (`doctorShiftEngine.ts`, `doctorShiftCockpitEngine.ts`, коммит `51f4d0677`).
+  - Рецептурные бланки Минздрава РФ по форме № 107-1/у (Приказ № 1094н) с 1-клик профильными стоматологическими пресетами (Амоксиклав, Найз, Ципролет), латинскими сигнатурами и полиграфической печатью (`PrescriptionPrintModal.tsx`, `forms107_1u.ts`, коммит `4cd580cc3`).
   - ЭЛН по Приказу Минздрава РФ № 1089н с неблокирующей вставкой черновика в дневник 043/у и пресетами острой боли (альвеолит, перикоронит).
   - Справки для налогового вычета (НДФЛ код 1).
   - Интеграция с ЕГИСЗ / РЭМД N3.Health (`egisz.ts`).
@@ -107,11 +108,12 @@
   - Табель учета рабочего времени Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) с однострочным тулбаром 32–36px по Apple Studio HIG и защитой от падений `activeEmployee` (коммит `ff2dbb9c7`).
 
 ### 2.8. Склад, Стерилизация и Лабораторный портал
-- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`.
-- **Бэкенд**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`.
+- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`, `SanpinRegisters.tsx`.
+- **Бэкенд / Shared**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`, `kraftPackageEngine.ts`.
 - **Возможности**:
   - Списание расходных материалов на визиты.
   - 1-клик вскрытие крафт-пакетов без комиссий из 3 человек по СанПиН 3.3686-21 и авто-привязка индикатора стерильности к визиту 043/у (`SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, коммит `0dc6e0fad`).
+  - Экстренное вскрытие крафт-лотков и наборов при острой боли без задержек и бюрократических блокировок (`SanpinRegisters.tsx`, `kraftPackageEngine.ts`, коммит `5f0ee1df3`).
   - Мобильный портал смен врача `DoctorMobileShiftModal.tsx` со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенной фиксацией явок.
   - Журнал автоклавирования и стерилизационных партий (`sterilization.ts`).
   - Гостевой портал зуботехнических лабораторий (`GuestLabPortal.tsx`).
@@ -120,7 +122,7 @@
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
 - **Возможности**: Автоматический импорт баз данных из IDENT, DentalPRO, Инфоклиника и 1С:Стоматология.
 
-### 2.10. Двадцать киллер-фич снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
+### 2.10. Двадцать девять киллер-фич снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
 
 Наша стоматологическая CRM создана для реального врача у кресла и администратора на ресепшене, а не для бюрократического контроля. Все процессы подчиняются принципу «Врач правит только патологию, норма заполняется в 1 клик, система никогда не ставит палки в колёса».
 
@@ -301,6 +303,26 @@
 - **Суть и домен**: Полное устранение нарушений Закона Анти-Матрёшки (глубина модальных окон строго 1). Ликвидированы открытия модалок поверх модалок в `VisitSummaryModal.tsx`, `Form043PrintModal.tsx` и `DoctorShiftRosterModal.tsx`. Все вторичные параметры вынесены во встроенные аккордеоны и плавные inline-панели с сохранением фокуса и автономии врача.
 - **Фронтенд**:
   - `apps/web/src/components/visit/VisitSummaryModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx` (коммит `a5df76320`)
+
+#### 2.10.27. Сессионная ПЭП подпись дневников по 63-ФЗ и Приказу 947н в 1 клик (Мандаты 8e, 8n / Документы)
+- **Суть и домен**: Полное устранение бюрократического трения при электронном подписании медицинской документации (ЭМК Форма 043/у). Врач один раз за смену авторизует сессионную простую электронную подпись (ПЭП) по Федеральному закону № 63-ФЗ и Приказу Минздрава РФ № 947н, после чего подписывает дневники приемов в 1 клик без повторного ввода паролей, задержек и ожидания сетевых подтверждений.
+- **Shared и движок подписи**:
+  - `packages/shared/src/doctor-portal/doctorShiftEngine.ts`, `packages/shared/src/doctor/doctorShiftCockpitEngine.ts` (коммит `51f4d0677`)
+
+#### 2.10.28. 1-клик стоматологические рецепты Формы 107-1/у по Приказу 1094н (Мандат 8e / Рецепты)
+- **Суть и домен**: Мгновенная выписка и печать рецептов по форме № 107-1/у (Приказ Минздрава РФ № 1094н) без ручного ввода дозировок. Добавлены 1-клик профильные стоматологические пресеты (Амоксиклав 1000 мг, Найз 100 мг, Ципролет 500 мг, Хлоргексидин 0.05%, Метрогил Дента) с автозаполнением латинских сигнатур, сроков действия и полиграфической версткой с QR-верификацией.
+- **Фронтенд и Shared**:
+  - `apps/web/src/components/prescriptions/PrescriptionPrintModal.tsx`, `MedicalPrescriptionModal.tsx`, `prescriptionPresets.ts`, `packages/shared/src/documents/forms107_1u.ts` (коммит `4cd580cc3`)
+- **Тесты**:
+  - `apps/web/src/tests/PrescriptionPrintModal.test.ts`, `prescriptionGenerator.test.ts` (100% passing)
+
+#### 2.10.29. Экстренное вскрытие крафт-лотков и допуск при острой боли без задержек (Мандаты 8e, 8n / СанПиН 3.3686-21)
+- **Суть и домен**: Обеспечение автономии медсестры и врача при приеме экстренных CITO-пациентов с острой болью. Поддержка мягкого допуска нестерилизованных партий при аварийных ситуациях, мгновенная фиксация вскрытия крафт-лотков и наборов в журналах стерилизации без бюрократических комиссий и остановок приема.
+- **Фронтенд и алгоритмы**:
+  - `apps/web/src/components/sanpin/SanpinRegisters.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `kraftPackageEngine.ts` (коммит `5f0ee1df3`)
+- **Тесты**:
+  - `apps/web/src/components/sanpin/__tests__/sanpinUnsealMandate8e.test.ts` (100% passing)
+
 
 
 
