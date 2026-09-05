@@ -67,14 +67,13 @@ import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import { CashRegisterModal } from "../finance/CashRegisterModal";
 import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
 import { DentalLabShadeSelector } from "./DentalLabShadeSelector";
-import { DentalLabOcclusionTab } from "./DentalLabOcclusionTab";
 import { DentalLabPricingTab } from "./DentalLabPricingTab";
 import { DentalLabPrintBlank } from "./DentalLabPrintBlank";
 
 // Re-export all types and constants for backwards compatibility with tests and callers
 export * from "./labMath";
 
-type TabKey = "main" | "shades" | "occlusion" | "stages" | "pricing" | "print";
+type TabKey = "main" | "shades" | "stages" | "pricing" | "print";
 
 export function DentalLabOrderModal({
 	isOpen,
@@ -300,7 +299,7 @@ export function DentalLabOrderModal({
 		const due = addWorkingDays(new Date(), ONE_CLICK_LAB_DEFAULTS.workingDays);
 		setDueDate(due.toISOString().slice(0, 10));
 		showToast(
-			`⚡ Применен 1-клик пресет: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
+			`Применен 1-клик пресет: «Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней» (до ${due.toLocaleDateString("ru-RU")})`,
 			"success",
 			4000,
 		);
@@ -326,7 +325,7 @@ export function DentalLabOrderModal({
 		setDueDate(due.toISOString().slice(0, 10));
 		setPriceRubInput(String(preset.priceRub));
 		showToast(
-			`⚡ Пресет применен: ${preset.title} (${preset.shortDesc})`,
+			`Пресет применен: ${preset.title} (${preset.shortDesc})`,
 			"success",
 			4000,
 		);
@@ -584,7 +583,7 @@ export function DentalLabOrderModal({
 							data-testid="lab-order-apply-defaults-btn"
 						>
 							<Sparkles className="w-4 h-4 text-amber-500" />
-							<span className="hidden sm:inline">⚡ Пресет (ZrO2 А2, 5 дн.)</span>
+							<span className="hidden sm:inline">Пресет (ZrO2 А2, 5 дн.)</span>
 						</button>
 						<button
 							type="button"
@@ -644,12 +643,11 @@ export function DentalLabOrderModal({
 				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}
 				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
 					{[
-						{ id: "main", label: "1. Зубы и Вид", icon: FlaskConical, fullTitle: "1. Зубная формула и Конструкция" },
+						{ id: "main", label: "1. Зубы и Конструкция", icon: FlaskConical, fullTitle: "1. Зубная формула и Конструкция" },
 						{ id: "shades", label: "2. Расцветка VITA", icon: Palette, fullTitle: "2. Расцветка VITA и Культя" },
-						{ id: "occlusion", label: "3. Окклюзия", icon: Layers, fullTitle: "3. Окклюзия и Текстура" },
-						{ id: "stages", label: "4. Этапы и Сроки", icon: Clock, fullTitle: "4. Этапы ЗТЛ и Примерки" },
-						{ id: "pricing", label: "5. Себестоимость", icon: DollarSign, fullTitle: "5. Себестоимость и Сделка" },
-						{ id: "print", label: "6. Бланк ГОСТ", icon: QrCode, fullTitle: "6. Бланк наряда (ГОСТ) и QR" },
+						{ id: "stages", label: "3. Этапы и Сроки", icon: Clock, fullTitle: "3. Этапы ЗТЛ и Примерки" },
+						{ id: "pricing", label: "4. Себестоимость", icon: DollarSign, fullTitle: "4. Себестоимость и Сделка" },
+						{ id: "print", label: "5. Бланк ГОСТ", icon: QrCode, fullTitle: "5. Бланк наряда (ГОСТ) и QR" },
 					].map((tab) => {
 						const Icon = tab.icon;
 						const isActive = activeTab === tab.id;
@@ -687,8 +685,9 @@ export function DentalLabOrderModal({
 										Экстренное показание (временная PMMA, примерка моста). Врач может отправить наряд в 1 клик.
 									</div>
 									{financialGateResult.isPlanExpiredNotice && (
-										<div className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-1">
-											✓ {financialGateResult.isPlanExpiredNotice}
+										<div className="text-[11px] text-teal-700 dark:text-teal-300 font-bold mt-1 flex items-center gap-1">
+											<CheckCircle2 size={12} className="shrink-0" />
+											<span>{financialGateResult.isPlanExpiredNotice}</span>
 										</div>
 									)}
 								</div>
@@ -804,24 +803,7 @@ export function DentalLabOrderModal({
 						/>
 					)}
 
-					{/* ═══ TAB 3: OCCLUSION, CONTACTS, TEXTURE ══════════════════════ */}
-					{activeTab === "occlusion" && (
-						<DentalLabOcclusionTab
-							occlusalScheme={occlusalScheme}
-							setOcclusalScheme={setOcclusalScheme}
-							contactTightness={contactTightness}
-							setContactTightness={setContactTightness}
-							surfaceTexture={surfaceTexture}
-							setSurfaceTexture={setSurfaceTexture}
-							cementGapMicrons={cementGapMicrons}
-							setCementGapMicrons={setCementGapMicrons}
-							toothFdi={selectedTeeth[0] || initialToothFdi || 16}
-							materialId={material}
-							onMaterialChange={setMaterial}
-						/>
-					)}
-
-					{/* ═══ TAB 4: LAB STAGES & TRIAL FITTINGS TRACKER ═══════════════ */}
+					{/* ═══ TAB 3: LAB STAGES & TRIAL FITTINGS TRACKER ═══════════════ */}
 					{activeTab === "stages" && (
 						<div className="space-y-6">
 							<div>

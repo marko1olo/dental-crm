@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, ChevronDown, Layers, Palette, Crown, Sparkles, ShieldCheck, Shield, Compass, Scissors, FileText, Zap } from "lucide-react";
+import { CheckCircle2, ChevronDown, Layers, Palette, Crown, Sparkles, ShieldCheck, Shield, Compass, Scissors, FileText, Zap, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
 import {
 	CONSTRUCTION_TYPES,
 	LAB_MATERIALS,
@@ -169,7 +169,7 @@ export function DentalLabRestorationTab({
 						aria-pressed={jawScope === "upper"}
 					>
 						<div className="flex items-center gap-2">
-							<span className="text-sm">⬆️</span>
+							<ArrowUp size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
 							<div className="text-left">
 								<div className="leading-tight">Верхняя челюсть</div>
 								<div className={`text-[10px] font-normal ${jawScope === "upper" ? "text-teal-100" : "text-slate-400"}`}>
@@ -192,7 +192,7 @@ export function DentalLabRestorationTab({
 						aria-pressed={jawScope === "lower"}
 					>
 						<div className="flex items-center gap-2">
-							<span className="text-sm">⬇️</span>
+							<ArrowDown size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
 							<div className="text-left">
 								<div className="leading-tight">Нижняя челюсть</div>
 								<div className={`text-[10px] font-normal ${jawScope === "lower" ? "text-teal-100" : "text-slate-400"}`}>
@@ -215,7 +215,7 @@ export function DentalLabRestorationTab({
 						aria-pressed={jawScope === "both"}
 					>
 						<div className="flex items-center gap-2">
-							<span className="text-sm">🔄</span>
+							<RefreshCw size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />
 							<div className="text-left">
 								<div className="leading-tight">Обе челюсти</div>
 								<div className={`text-[10px] font-normal ${jawScope === "both" ? "text-teal-100" : "text-slate-400"}`}>

@@ -206,7 +206,7 @@ export function OrthodonticVisitProtocolWidget({
 		setNotes(
 			"Плановый визит по графику ортодонтического лечения. Дуги сохранены без деформаций. Выполнена замена эластических лигатур, активация замков брекетов. Межчелюстная тяга скорректирована. Жалоб на острую боль и отклейку брекетов нет. Гигиена полости рта удовлетворительная.",
 		);
-		showToast("⚡ Пресет: Плановая активация применен", "info");
+		showToast("Пресет: Плановая активация применен", "info");
 	};
 
 	const handlePresetWireChange = () => {
@@ -225,7 +225,7 @@ export function OrthodonticVisitProtocolWidget({
 		setNotes(
 			"Плановая смена дуг на этапе нивелирования и юстировки. Установлены новые круглые никель-титановые дуги NiTi: верхняя челюсть .016\", нижняя челюсть .014\". Концы дуг подогнуты и зашлифованы, травма слизистой оболочки исключена. Замки закрыты со щелчком. Аппаратура стабильна.",
 		);
-		showToast("⚡ Пресет: Смена дуг (NiTi верх .016 / низ .014) применен", "info");
+		showToast("Пресет: Смена дуг (NiTi верх .016 / низ .014) применен", "info");
 	};
 
 	const handlePresetBonding = () => {
@@ -241,7 +241,7 @@ export function OrthodonticVisitProtocolWidget({
 		setNotes(
 			"Первичная прямая фиксация несъемной вестибулярной брекет-системы на верхнюю челюсть (сегменты 17-27). Протравливание эмали 37% ортофосфорной кислотой (30 сек), тщательное смывание, высушивание. Нанесение праймера, позиционирование брекетов по индивидуальной высоте, фотополимеризация. Введена первичная нивелирующая дуга NiTi .014\". Концы дуг отожжены и подогнуты. Проведен подробный инструктаж по уходу за брекетами и гигиене полости рта, выдан защитный воск.",
 		);
-		showToast("⚡ Пресет: Фиксация брекет-системы (ВЧ) применен", "info");
+		showToast("Пресет: Фиксация брекет-системы (ВЧ) применен", "info");
 	};
 
 	const handlePresetDebonding = () => {
@@ -255,7 +255,7 @@ export function OrthodonticVisitProtocolWidget({
 		setNotes(
 			"Окончание активного периода ортодонтического лечения. Атравматичное снятие брекет-системы специальными щипцами. Механическое удаление остатков композита твердосплавными финирами без повреждения эмали, полировка вестибулярных поверхностей. Фиксация несъемного проволочного ретейнера (флекс-дуга 0.0175\") на текучий композит в сегментах 13-23 и 33-43. Сняты оттиски/сканы для изготовления ретенционных капп. Окклюзия стабильна.",
 		);
-		showToast("⚡ Пресет: Снятие брекетов + ретейнер применен", "info");
+		showToast("Пресет: Снятие брекетов + ретейнер применен", "info");
 	};
 
 	const handlePresetAlignerLabOrder = () => {
@@ -263,7 +263,7 @@ export function OrthodonticVisitProtocolWidget({
 		setNotes(
 			"Сняты высокоточные оптические оттиски (3D интраоральное сканирование) для изготовления комплекта ортодонтических элайнеров / ретенционных капп в ЗТЛ. Наряд сформирован (срок 5 рабочих дней). План лечения активен без бюрократических согласований (Мандат 8e)."
 		);
-		showToast("⚡ 1-клик: Наряд на каппы/элайнеры в ЗТЛ сформирован", "success");
+		showToast("1-клик: Наряд на каппы/элайнеры в ЗТЛ сформирован", "success");
 	};
 
 	// Aligner Attachments 1-Click Handlers (Mandates 8e, 8k, 8n)
@@ -278,14 +278,14 @@ export function OrthodonticVisitProtocolWidget({
 			setSelectedTeeth(preset.teeth);
 		}
 		setNotes(preset.description);
-		showToast(`⚡ ${preset.shortLabel} выбран`, "info");
+		showToast(`${preset.shortLabel} выбран`, "info");
 	};
 
 	const handleIssueAlignerSetFromWidget = (count: number, days: number) => {
 		setAlignerSetIssued({ count, days });
 		onIssueAlignerSet?.(count, days);
 		const issueSummary = `Сдан сет элайнеров (${count} каппы на ${days} дн., режим 22 ч/сутки)`;
-		showToast(`⚡ ${issueSummary}`, "success");
+		showToast(`${issueSummary}`, "success");
 	};
 
 	const handleAppendAttachmentsToSoapNote = () => {
@@ -341,7 +341,7 @@ export function OrthodonticVisitProtocolWidget({
 			}
 
 			showToast(
-				"⚡ Аттачменты добавлены в протокол SOAP без стирания ранее набранного текста!",
+				"Аттачменты добавлены в протокол SOAP без стирания ранее набранного текста!",
 				"success",
 			);
 		} catch (_err) {
@@ -634,7 +634,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight">
-											⚡ 1-клик: Плановая активация
+											1-клик: Плановая активация
 										</div>
 										<div
 											className={`text-[10px] truncate ${
@@ -669,7 +669,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight">
-											⚡ 1-клик: Смена дуг
+											1-клик: Смена дуг
 										</div>
 										<div
 											className={`text-[10px] truncate ${
@@ -704,7 +704,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight">
-											⚡ 1-клик: Фиксация брекет-системы
+											1-клик: Фиксация брекет-системы
 										</div>
 										<div
 											className={`text-[10px] truncate ${
@@ -739,7 +739,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight">
-											⚡ 1-клик: Снятие брекет-системы
+											1-клик: Снятие брекет-системы
 										</div>
 										<div
 											className={`text-[10px] truncate ${
@@ -764,7 +764,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									</div>
 									<div className="min-w-0 flex-1">
 										<div className="text-xs font-bold leading-tight text-teal-700 dark:text-teal-300">
-											⚡ 1-клик: Наряд ЗТЛ (Элайнеры / Каппа)
+											1-клик: Наряд ЗТЛ (Элайнеры / Каппа)
 										</div>
 										<div className="text-[10px] truncate text-slate-500 dark:text-slate-400">
 											(срок 5 раб. дней, без согласований начмеда)
