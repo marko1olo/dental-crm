@@ -101,3 +101,16 @@
 	}
 }
 
+.ceph-voice-bar {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 9999px;
+	font-size: 11px;
+	font-weight: 600;
+	background: rgba(13, 148, 136, 0.15);
+	color: var(--teal, #0d9488);
+	border: 1px solid rgba(13, 148, 136, 0.3);
+}
+

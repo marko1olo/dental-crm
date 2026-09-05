@@ -94,7 +94,7 @@ export interface CbctReportImplantRow {
 	readonly minTorqueNcm?: number | undefined;
 	readonly maxTorqueNcm?: number | undefined;
 	readonly distanceToIanMm?: number | undefined;
-	readonly ianSafetyStatus?: "safe" | "warning" | "danger" | "na" | undefined;
+	readonly ianSafetyStatus?: "safe" | "warning" | "danger" | "na" | "unmeasured" | undefined;
 	readonly ianMessageRu?: string | undefined;
 	readonly immediateLoading?: boolean | undefined;
 }
@@ -133,7 +133,7 @@ export interface CbctReportNerveData {
 	readonly distanceToCanalCenterMm: number;
 	readonly netClearanceToCanalWallMm: number;
 	readonly netClearanceToSafetyCorridorMm: number;
-	readonly safetyStatus: "safe" | "warning" | "danger";
+	readonly safetyStatus: "safe" | "warning" | "danger" | "unmeasured";
 	readonly clinicalMessageRu: string;
 }
 

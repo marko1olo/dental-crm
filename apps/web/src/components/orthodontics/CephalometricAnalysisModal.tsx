@@ -15,6 +15,8 @@ import {
 	Filter,
 	Flame,
 	Layers,
+	Mic,
+	MicOff,
 	Printer,
 	RefreshCw,
 	RotateCcw,
@@ -27,9 +29,11 @@ import {
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { showToast } from "../GlobalToast";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+import { globalDentalVoiceEngine } from "../../services/voice";
 import { useVisitStore } from "../../store/visitStore";
 import "./CephalometricAnalysisModal.css";
 import {
@@ -94,6 +98,10 @@ export function CephalometricAnalysisModal({
 	// Calibration & Scale (mm per pixel)
 	const [scaleMmPerPixel, setScaleMmPerPixel] = useState<number>(0.15);
 
+	// Voice STT State
+	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
+	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
+
 	// Copied state
 	const [copied, setCopied] = useState<boolean>(false);
 
@@ -108,7 +116,19 @@ export function CephalometricAnalysisModal({
 			...prev,
 			[key]: point,
 		}));
-	}, []);
+		void SoundFeedbackService.getInstance().playActionSuccess();
+
+		// Auto advance to next unplaced landmark
+		const currentIndex = CEPHALOMETRIC_LANDMARKS.findIndex((l) => l.key === key);
+		if (currentIndex !== -1) {
+			const nextUnplaced = CEPHALOMETRIC_LANDMARKS.slice(currentIndex + 1).find(
+				(l) => !landmarks[l.key] && l.key !== key,
+			);
+			if (nextUnplaced) {
+				setActiveTargetKey(nextUnplaced.key);
+			}
+		}
+	}, [landmarks]);
 
 	const handleRemoveLandmark = useCallback((key: LandmarkKey) => {
 		setLandmarks((prev) => {
@@ -117,6 +137,43 @@ export function CephalometricAnalysisModal({
 			return next;
 		});
 	}, []);
+
+	// Listen to Voice Engine for Landmark selection
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const unsub = globalDentalVoiceEngine.addListener({
+			onListeningChange: (isL) => {
+				setIsVoiceListening(isL);
+				if (!isL) setVoiceInterimText("");
+			},
+			onTranscriptChange: (interim, final) => {
+				setVoiceInterimText(interim || final || "");
+			},
+			onIntentParsed: (intent) => {
+				if (intent.cephLandmarks && intent.cephLandmarks.length > 0) {
+					const firstL = intent.cephLandmarks[0];
+					if (firstL) {
+						const matchedDef = CEPHALOMETRIC_LANDMARKS.find(
+							(l) => l.key.toLowerCase() === firstL.landmarkKey.toLowerCase(),
+						);
+						if (matchedDef) {
+							if (firstL.action === "clear") {
+								handleRemoveLandmark(matchedDef.key);
+								showToast(`Голос: Сброшена ${matchedDef.nameRu}`, "info");
+							} else {
+								setActiveTargetKey(matchedDef.key);
+								void SoundFeedbackService.getInstance().playActionSuccess();
+								showToast(`Голос: Выбран ориентир ${matchedDef.nameRu}`, "success");
+							}
+						}
+					}
+				}
+			},
+		});
+
+		return () => unsub();
+	}, [isOpen, handleRemoveLandmark]);
 
 	const handleResetLandmarks = () => {
 		setLandmarks({});
@@ -354,17 +411,69 @@ export function CephalometricAnalysisModal({
 								<span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold bg-teal-950/80 text-teal-300 border border-teal-500/40 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg shrink-0">
 									Steiner / Tweed / Downs / Ricketts
 								</span>
+								<span className="text-xs text-teal-400 font-semibold hidden md:inline">
+									· Цефалометрический трекер ТРГ
+								</span>
 							</div>
 							<p
 								className="text-xs sm:text-sm text-slate-400 m-0 mt-0.5 truncate"
 								style={{ color: "#94a3b8", margin: 0 }}
 							>
-								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} · Форма 043/у (Приказ МЗ РФ №834н)
+								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Форма 043/у (Приказ МЗ РФ №834н)
 							</p>
 						</div>
 					</div>
 
 					<div className="flex items-center gap-2 shrink-0">
+						{isVoiceListening && (
+							<div
+								className="ceph-voice-bar hidden md:inline-flex"
+								title="Идет голосовая диктовка ориентиров"
+							>
+								<Mic size={14} className="animate-pulse text-teal-400" />
+								<span className="max-w-[180px] truncate">
+									{voiceInterimText || "Слушаю («точка Назион», «точка А»)..."}
+								</span>
+							</div>
+						)}
+
+						<button
+							type="button"
+							onClick={async () => {
+								if (isVoiceListening) {
+									globalDentalVoiceEngine.stop();
+								} else {
+									const started = await globalDentalVoiceEngine.start();
+									if (!started) {
+										showToast("Не удалось запустить микрофон", "warning");
+									}
+								}
+							}}
+							className={`min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+								isVoiceListening
+									? "bg-teal-600/30 border-teal-500 text-teal-200 animate-pulse"
+									: "bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 hover:text-white"
+							}`}
+							title="Голосовая диктовка ориентиров цефалометрии"
+							data-testid="ceph-voice-toggle-btn"
+						>
+							{isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
+							<span className="hidden sm:inline">
+								{isVoiceListening ? "Стоп голос" : "Голос"}
+							</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handleInsertToChart}
+							data-testid="btn-insert-ceph-protocol"
+							className="min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-teal-400/50"
+							title="Перенести расчеты цефалометрии в дневник формы 043/у"
+						>
+							<FileText size={16} />
+							<span>В карту 043/у</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleSaveConsultationWithoutCeph}
@@ -419,7 +528,7 @@ export function CephalometricAnalysisModal({
 						}`}
 						data-testid="ceph-mobile-tab-landmarks"
 					>
-						<span>16 ориентиров ({isImageLoaded ? analysis.placedCount : 0}/16)</span>
+						<span>16 ориентиров (Точки: {isImageLoaded ? analysis.placedCount : 0}/16)</span>
 					</button>
 
 					<button
@@ -439,7 +548,7 @@ export function CephalometricAnalysisModal({
 						} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 						data-testid="ceph-mobile-tab-metrics"
 					>
-						<span>Расчет углов</span>
+						<span>Расчет углов (Анализ)</span>
 						{isImageLoaded && analysis.isComplete && (
 							<CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
 						)}
@@ -636,7 +745,7 @@ export function CephalometricAnalysisModal({
 								}`}
 								title="Ориентиры ТРГ"
 							>
-								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры ({isImageLoaded ? analysis.placedCount : 0})</span>
+								<span className="hidden sm:inline whitespace-nowrap">1. Ориентиры (Точки: {isImageLoaded ? analysis.placedCount : 0})</span>
 								<span className="sm:hidden whitespace-nowrap">1. Точки ({isImageLoaded ? analysis.placedCount : 0})</span>
 							</button>
 
@@ -657,8 +766,8 @@ export function CephalometricAnalysisModal({
 								} ${!isImageLoaded ? "opacity-60 cursor-not-allowed" : ""}`}
 								title="Расчет углов (Steiner, Tweed, Downs)"
 							>
-								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов</span>
-								<span className="sm:hidden whitespace-nowrap">2. Углы</span>
+								<span className="hidden sm:inline whitespace-nowrap">2. Расчет углов (Анализ)</span>
+								<span className="sm:hidden whitespace-nowrap">2. Анализ</span>
 								{isImageLoaded && analysis.isComplete && (
 									<CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
 								)}
