@@ -54,12 +54,13 @@
   - `urgentScheduleRequests` — срочные CITO-обращения с авто-подбором слота/врача и 1-клик печатью чистого договора со строками `_______`.
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма и Голосовой ввод
-- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`.
+- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`.
 - **Бэкенд**: `apps/api/src/routes/visits.ts`, `odontogram.ts`, `toothHistory.ts`, `clinical.ts`, `speech.ts`.
 - **Возможности**:
   - Интерактивная 2D/3D одонтограмма (32 зуба + молочная формула, кариес, пульпит, периодонтит, корень, имплант).
   - 1-клик хирургический протокол имплантации (Dentium, Osstem, Straumann; торк 35 Н·см, ISQ 72) с авто-вставкой в дневник 043/у.
   - Детская эндодонтия зубов 51..85 с авто-расчетом рабочей длины корневых каналов и утилитарный замер каналов в `EndoCanalMeasurementDrawer.tsx`.
+  - Экспресс-протоколы гигиены и пародонтограммы в 1 клик (норма 1–2 мм, гингивит BOP+, пародонтит 3–4 мм и 4–5 мм, 5-этапная профгигиена УЗ Piezon + AirFlow + Detartrine + Bifluorid 12) с мгновенной вставкой в дневник 043/у без симулятора 192 точек (`HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`, коммит `d9f42454f`).
   - Защита черновика врача от потери (Autosave Flush) при входящем телефонном звонке (`telephonyStore.ts`, коммит `1d7d1d2f8`).
   - Голосовая диктовка врачом с авто-нормализацией медицинских терминов (`speech.ts`).
   - Система клинических правил `ClinicalRulePanel.tsx` (проверка обязательных услуг, предупреждения о противопоказаниях).
@@ -83,7 +84,7 @@
   - Унифицированный утилитарный паспорт имплантации `ImplantPassportModal.tsx` с производителями (Straumann, Osstem, Nobel, Dentium, Astra Tech), торком, ISQ и сносом 1000+ строк процедурного блоата (коммит `13fe5e9a0`).
   - Ликвидация вложенных модальных окон (Анти-Матрёшка, Мандат 8d) в резюме визита и печати формы 043/у (`VisitSummaryModal.tsx`, `Form043PrintModal.tsx`, коммит `a5df76320`).
   - Сессионное подписание врачебных протоколов ПЭП по 63-ФЗ и Приказу Минздрава РФ № 947н в 1 клик без постоянного повторного ввода паролей (`doctorShiftEngine.ts`, `doctorShiftCockpitEngine.ts`, коммит `51f4d0677`).
-  - Рецептурные бланки Минздрава РФ по форме № 107-1/у (Приказ № 1094н) с 1-клик профильными стоматологическими пресетами (Амоксиклав, Найз, Ципролет), латинскими сигнатурами и полиграфической печатью (`PrescriptionPrintModal.tsx`, `forms107_1u.ts`, коммит `4cd580cc3`).
+  - Рецептурные бланки Минздрава РФ по форме № 107-1/у (Приказ № 1094н) с 1-клик профильными стоматологическими пресетами и пакетами первой линии и резерва аллергий (Амоксиклав, Кларитромицин, Ибупрофен 400, Хлоргексидин, Холисал), латинскими сигнатурами и полиграфической печатью (`PrescriptionPrintModal.tsx`, `forms107_1u.ts`, коммиты `4cd580cc3`, `9e360aac1`).
   - ЭЛН по Приказу Минздрава РФ № 1089н с неблокирующей вставкой черновика в дневник 043/у и пресетами острой боли (альвеолит, перикоронит).
   - Справки для налогового вычета (НДФЛ код 1).
   - Интеграция с ЕГИСЗ / РЭМД N3.Health (`egisz.ts`).
@@ -108,12 +109,13 @@
   - Табель учета рабочего времени Т-13 (`FormT13TimesheetModal.tsx`, `TimesheetT13Modal.tsx`) с однострочным тулбаром 32–36px по Apple Studio HIG и защитой от падений `activeEmployee` (коммит `ff2dbb9c7`).
 
 ### 2.8. Склад, Стерилизация и Лабораторный портал
-- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`, `SanpinRegisters.tsx`.
-- **Бэкенд / Shared**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`, `kraftPackageEngine.ts`.
+- **Фронтенд**: `apps/web/src/GuestLabPortal.tsx`, `ScannerView.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, `DoctorMobileShiftModal.tsx`, `SanpinRegisters.tsx`, `AnesthesiaPkuDisposalModal.tsx`.
+- **Бэкенд / Shared**: `apps/api/src/routes/inventory.ts`, `sterilization.ts`, `lab.ts`, `kraftPackageEngine.ts`, `pkuDisposal.ts`.
 - **Возможности**:
   - Списание расходных материалов на визиты.
   - 1-клик вскрытие крафт-пакетов без комиссий из 3 человек по СанПиН 3.3686-21 и авто-привязка индикатора стерильности к визиту 043/у (`SeniorNurseKraftUnsealModal.tsx`, `KraftPackageQuickScanner.tsx`, коммит `0dc6e0fad`).
   - Экстренное вскрытие крафт-лотков и наборов при острой боли без задержек и бюрократических блокировок (`SanpinRegisters.tsx`, `kraftPackageEngine.ts`, коммит `5f0ee1df3`).
+  - Утилизация и списание карпул местных анестетиков (Ультракаин, Септанест, Скандонест) в 1 клик по СанПиН 3.3686-21 медсестрой без комиссии из 3 человек (`AnesthesiaPkuDisposalModal.tsx`, `pkuDisposal.ts`, коммит `d6a6eab26`).
   - Мобильный портал смен врача `DoctorMobileShiftModal.tsx` со строгой типизацией `shiftDateIso` (`exactOptionalPropertyTypes`) и мгновенной фиксацией явок.
   - Журнал автоклавирования и стерилизационных партий (`sterilization.ts`).
   - Гостевой портал зуботехнических лабораторий (`GuestLabPortal.tsx`).
@@ -122,7 +124,7 @@
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
 - **Возможности**: Автоматический импорт баз данных из IDENT, DentalPRO, Инфоклиника и 1С:Стоматология.
 
-### 2.10. Двадцать девять киллер-фич снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
+### 2.10. Тридцать две киллер-фичи снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
 
 Наша стоматологическая CRM создана для реального врача у кресла и администратора на ресепшене, а не для бюрократического контроля. Все процессы подчиняются принципу «Врач правит только патологию, норма заполняется в 1 клик, система никогда не ставит палки в колёса».
 
@@ -322,6 +324,28 @@
   - `apps/web/src/components/sanpin/SanpinRegisters.tsx`, `SeniorNurseKraftUnsealModal.tsx`, `kraftPackageEngine.ts` (коммит `5f0ee1df3`)
 - **Тесты**:
   - `apps/web/src/components/sanpin/__tests__/sanpinUnsealMandate8e.test.ts` (100% passing)
+
+#### 2.10.30. Пакеты первой линии и резерва аллергий рецептов 107-1/у (Мандаты 8e, 8i / Приказ 1094н)
+- **Суть и домен**: Мгновенное назначение стоматологических пакетов медикаментов первой линии и резерва: Амоксиклав 875/125 мг (первая линия антибиотикотерапии), Кларитромицин 500 мг (резерв при аллергии на пенициллиновый ряд), Ибупрофен 400 мг (купирование умеренного болевого синдрома), Хлоргексидин 0.05% (антисептические полоскания) и стоматологический противовоспалительный гель Холисал. Генерация бланка № 107-1/у (Приказ Минздрава РФ № 1094н) с латинскими сигнатурами (Rp:), режимом дозирования и правилами приема в 1 клик.
+- **Фронтенд и Shared**:
+  - `apps/web/src/components/prescriptions/generator/prescriptionPresets.ts`, `packages/shared/src/documents/forms107_1u.ts` (коммит `9e360aac1`)
+- **Тесты**:
+  - `apps/web/src/tests/prescriptionGenerator.test.ts` (100% passing)
+
+#### 2.10.31. 1-клик протоколы гигиены и пародонтологии без симулятора 192 точек (Мандаты 8e, 8k / Пародонтограмма)
+- **Суть и домен**: Полный отказ от процедурного симулятора ручного ввода 192 точек глубины десневых карманов (Мандат 8k). 5 клинических экспресс-пресетов: (1) Пародонт в норме (глубина 1–2 мм, без BOP), (2) Катаральный гингивит (2 мм, отек десневых сосочков, BOP+), (3) Пародонтит легкий (3–4 мм, межзубный CAL), (4) Пародонтит средний (4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I ст.), (5) Профессиональная гигиена полости рта (5-этапный протокол: УЗ Piezon + AirFlow глицин + Detartrine + Bifluorid 12). Автоматический расчет индексов OHI-S, PMA, Silness-Loe, КПИ Леуса, SBI и 1-клик вставка заключения в дневник Формы 043/у. Строгое соблюдение Греха № 7 (ноль эмодзи в медицинских картах).
+- **Фронтенд**:
+  - `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`, `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `periodontalCharting.css`, `apps/web/src/components/perio/PeriodontogramChart.tsx` (коммит `d9f42454f`)
+- **Тесты**:
+  - `apps/web/src/tests/periodontalCharting.test.tsx` (100% passing)
+
+#### 2.10.32. 1-клик списание карпул анестетиков медсестрой без комиссии из 3 человек (Мандаты 8e, 8n / СанПиН 3.3686-21)
+- **Суть и домен**: Автономия операционной медсестры и ассистента при предметно-количественном учете (ПКУ) и списании карпул местных анестетиков (отходы класса Б). Полное устранение бюрократического созыва комиссии из 3 человек для частной амбулаторной стоматологии (Мандат 8e пункт 10). 1-клик пресеты: Ультракаин Д-С форте, Септанест 1:100 000, Скандонест 3% без вазоконстриктора (кардио-пациенты) и бой/брак карпул. Авто-расчет срока годности (+2 года), валидация просрочки, дезинфекция в Аламиноле 3% (60 мин), генерация печатного Акта утилизации и регламентного HTML-документа с однострочным подтверждением подписи в 1 клик.
+- **Фронтенд и Shared**:
+  - `apps/web/src/components/anesthesia/AnesthesiaPkuDisposalModal.tsx`, `packages/shared/src/anesthesia/pkuDisposal.ts`, `packages/shared/src/anesthesia/types.ts` (коммит `d6a6eab26`)
+- **Тесты**:
+  - `apps/web/src/components/anesthesia/__tests__/anesthesiaPkuDisposal.test.tsx`, `packages/shared/src/tests/anesthesiaPkuDisposal.test.ts` (100% passing)
+
 
 
 
