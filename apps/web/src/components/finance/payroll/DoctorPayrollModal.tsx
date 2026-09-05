@@ -6,13 +6,6 @@ import {
 	Download,
 	Calendar,
 	User,
-	Award,
-	Percent,
-	CheckCircle2,
-	DollarSign,
-	Layers,
-	ChevronRight,
-	TrendingUp,
 } from "lucide-react";
 import {
 	calculateDoctorPeriodPayroll,
@@ -20,7 +13,6 @@ import {
 	type DoctorCompletedServiceItem,
 	type DoctorPayrollResult,
 } from "./payrollEngine";
-import { DOCTOR_SPECIALTY_PAYROLL_PRESETS } from "./payrollPresets";
 import "./doctorPayroll.css";
 
 export interface DoctorPayrollModalProps {
@@ -35,94 +27,18 @@ export interface DoctorPayrollModalProps {
 	readonly initialBasePercentage?: number | undefined;
 }
 
-const SAMPLE_DOCTORS = [
-	{ id: "doc-1", name: "Д-р Смирнов Алексей Петрович", specialtyId: "therapist" },
-	{ id: "doc-2", name: "Д-р Васильев Максим Сергеевич", specialtyId: "orthopedist" },
-	{ id: "doc-3", name: "Д-р Ковалев Игорь Олегович", specialtyId: "surgeon_implantologist" },
-	{ id: "doc-4", name: "Д-р Морозова Анна Дмитриевна", specialtyId: "orthodontist" },
-	{ id: "doc-5", name: "Д-р Лебедева Ольга Викторовна", specialtyId: "hygienist" },
-];
-
-const SAMPLE_SERVICES: readonly DoctorCompletedServiceItem[] = [
-	{
-		id: "srv-1",
-		dateIso: "2026-08-18",
-		patientName: "Смирнова Екатерина Васильевна",
-		medicalCardNumber: "043/у-2026/891",
-		serviceNameRu: "Лечение пульпита 3-канального моляра",
-		order804nCode: "A16.07.002.001",
-		toothCode: "16",
-		category: "therapy",
-		grossRevenueKop: 1850000, // 18,500 RUB
-		labCostKop: 0,
-		materialCostKop: 120000, // 1,200 RUB
-	},
-	{
-		id: "srv-2",
-		dateIso: "2026-08-19",
-		patientName: "Кузнецов Дмитрий Анатольевич",
-		medicalCardNumber: "043/у-2026/742",
-		serviceNameRu: "Эстетическая реставрация фронтального зуба (Estelite Asteria)",
-		order804nCode: "A16.07.003",
-		toothCode: "11",
-		category: "therapy",
-		grossRevenueKop: 920000, // 9,200 RUB
-		labCostKop: 0,
-		materialCostKop: 80000,
-	},
-	{
-		id: "srv-3",
-		dateIso: "2026-08-20",
-		patientName: "Сидорова Светлана Сергеевна",
-		medicalCardNumber: "043/у-2026/512",
-		serviceNameRu: "Коронка из диоксида циркония CAD/CAM (Prettau)",
-		order804nCode: "A16.07.004.002",
-		toothCode: "24",
-		category: "orthopedics",
-		grossRevenueKop: 2800000, // 28,000 RUB
-		labCostKop: 750000, // 7,500 RUB ЗТЛ
-		materialCostKop: 150000, // 1,500 RUB
-	},
-	{
-		id: "srv-4",
-		dateIso: "2026-08-20",
-		patientName: "Иванова Мария Сергеевна",
-		medicalCardNumber: "043/у-2026/904",
-		serviceNameRu: "Комплексная профессиональная гигиена Air-Flow + УЗ",
-		order804nCode: "A16.07.051",
-		toothCode: "18-48",
-		category: "hygiene",
-		grossRevenueKop: 650000, // 6,500 RUB
-		labCostKop: 0,
-		materialCostKop: 40000,
-	},
-	{
-		id: "srv-5",
-		dateIso: "2026-08-21",
-		patientName: "Попов Артем Сергеевич",
-		medicalCardNumber: "043/у-2026/651",
-		serviceNameRu: "Продажа набора Curaprox Ortho 5460",
-		order804nCode: "—",
-		toothCode: undefined,
-		category: "retail_hygiene",
-		grossRevenueKop: 180000, // 1,800 RUB
-		labCostKop: 0,
-		materialCostKop: 0,
-	},
-];
-
 export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	isOpen,
 	onClose,
 	clinicName = "ООО «Денте Стоматология»",
-	doctorsList = SAMPLE_DOCTORS,
+	doctorsList = [],
 	initialDoctorId,
 	initialServices,
 	initialPeriodStart = "2026-08-01",
 	initialPeriodEnd = "2026-08-31",
 	initialBasePercentage,
 }) => {
-	const [selectedDoctorId, setSelectedDoctorId] = useState(initialDoctorId || doctorsList[0]?.id || "doc-1");
+	const [selectedDoctorId, setSelectedDoctorId] = useState(initialDoctorId || doctorsList[0]?.id || "");
 	const [periodStart, setPeriodStart] = useState(initialPeriodStart);
 	const [periodEnd, setPeriodEnd] = useState(initialPeriodEnd);
 	const [customPercent, setCustomPercent] = useState<number | undefined>(initialBasePercentage);
@@ -130,37 +46,42 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 
 	// Sync when initial values change
 	React.useEffect(() => {
-		if (initialDoctorId) setSelectedDoctorId(initialDoctorId);
+		if (initialDoctorId) {
+			setSelectedDoctorId(initialDoctorId);
+		} else if (doctorsList.length > 0 && !doctorsList.some((d) => d.id === selectedDoctorId)) {
+			setSelectedDoctorId(doctorsList[0]?.id ?? "");
+		}
 		if (initialPeriodStart) setPeriodStart(initialPeriodStart);
 		if (initialPeriodEnd) setPeriodEnd(initialPeriodEnd);
 		if (initialBasePercentage !== undefined) setCustomPercent(initialBasePercentage);
-	}, [initialDoctorId, initialPeriodStart, initialPeriodEnd, initialBasePercentage]);
+	}, [initialDoctorId, initialPeriodStart, initialPeriodEnd, initialBasePercentage, doctorsList, selectedDoctorId]);
 
 	const activeDoc = useMemo(() => {
+		if (doctorsList.length === 0) return null;
 		const found = doctorsList.find((d) => d.id === selectedDoctorId);
-		return found ?? doctorsList[0] ?? SAMPLE_DOCTORS[0]!;
+		return found ?? doctorsList[0] ?? null;
 	}, [doctorsList, selectedDoctorId]);
 
 	const servicesToUse = useMemo(() => {
-		return initialServices && initialServices.length > 0 ? initialServices : SAMPLE_SERVICES;
+		return initialServices ?? [];
 	}, [initialServices]);
 
 	const payrollResult: DoctorPayrollResult = useMemo(() => {
-		if (!isOpen) {
+		if (!isOpen || !activeDoc) {
 			return {
-				doctorId: activeDoc.id,
-				doctorName: activeDoc.name,
-				specialtyTitleRu: "",
+				doctorId: activeDoc?.id ?? "",
+				doctorName: activeDoc?.name ?? "Сотрудник не выбран",
+				specialtyTitleRu: "—",
 				periodLabelRu: `${periodStart} — ${periodEnd}`,
 				totalGrossRevenueKop: 0,
 				totalLabDeductionsKop: 0,
 				totalMaterialDeductionsKop: 0,
 				totalNetBaseKop: 0,
-				baseCommissionPercent: 0,
+				baseCommissionPercent: customPercent ?? 0,
 				earnedBaseCommissionKop: 0,
 				kpiBonusPercent: 0,
 				kpiBonusEarnedKop: 0,
-				kpiTierBadgeRu: "",
+				kpiTierBadgeRu: "—",
 				earnedRetailCommissionKop: 0,
 				grossPayoutBeforeTaxKop: 0,
 				ndfl13TaxKop: 0,
@@ -193,7 +114,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = `payroll_${payrollResult.doctorId}_${periodStart}.csv`;
+		a.download = `payroll_${payrollResult.doctorId || "report"}_${periodStart}.csv`;
 		a.click();
 		URL.revokeObjectURL(url);
 	};
@@ -240,13 +161,18 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							<select
 								value={selectedDoctorId}
 								onChange={(e) => setSelectedDoctorId(e.target.value)}
-								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
+								disabled={doctorsList.length === 0}
+								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] disabled:opacity-60 disabled:cursor-not-allowed"
 							>
-								{doctorsList.map((doc) => (
-									<option key={doc.id} value={doc.id}>
-										{doc.name}
-									</option>
-								))}
+								{doctorsList.length === 0 ? (
+									<option value="">Нет сотрудников для расчета</option>
+								) : (
+									doctorsList.map((doc) => (
+										<option key={doc.id} value={doc.id}>
+											{doc.name}
+										</option>
+									))
+								)}
 							</select>
 						</div>
 
@@ -325,65 +251,84 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						<h3 className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
 							Детализация выполненных нарядов и приемов за период:
 						</h3>
-						<div className="border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden">
-							<div className="overflow-x-auto">
-								<table className="w-full text-left text-xs">
-									<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
-										<tr>
-											<th className="p-2.5 font-semibold">Дата</th>
-											<th className="p-2.5 font-semibold">Пациент</th>
-											<th className="p-2.5 font-semibold">Услуга / Код 804н / Зуб</th>
-											<th className="p-2.5 font-semibold text-right">Выручка</th>
-											<th className="p-2.5 font-semibold text-right">Материалы</th>
-											<th className="p-2.5 font-semibold text-right">ЗТЛ</th>
-											<th className="p-2.5 font-semibold text-right">Начислено</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
-										{servicesToUse.map((srv) => {
-											const net = srv.grossRevenueKop - srv.labCostKop - srv.materialCostKop;
-											const earned = Math.round((net * payrollResult.baseCommissionPercent) / 100);
-											return (
-												<tr key={srv.id} className="hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
-													<td className="p-2.5 font-medium whitespace-nowrap">{srv.dateIso}</td>
-													<td className="p-2.5 font-medium">
-														<div>{srv.patientName}</div>
-														<div className="text-[10px] text-[var(--muted,#64748b)]">Карта: {srv.medicalCardNumber}</div>
-													</td>
-													<td className="p-2.5 text-[var(--ink,#0f172a)]">
-														<div className="font-medium">{srv.serviceNameRu}</div>
-														<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-															{srv.order804nCode && (
-																<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
-																	804н: {srv.order804nCode}
-																</span>
-															)}
-															{srv.toothCode && (
-																<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)]">
-																	Зуб {srv.toothCode}
-																</span>
-															)}
-														</div>
-													</td>
-													<td className="p-2.5 font-bold text-right whitespace-nowrap">
-														{(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
-													</td>
-													<td className="p-2.5 text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">
-														{srv.materialCostKop > 0 ? `- ${(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
-													</td>
-													<td className="p-2.5 text-amber-600 dark:text-amber-400 text-right whitespace-nowrap font-medium">
-														{srv.labCostKop > 0 ? `- ${(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
-													</td>
-													<td className="p-2.5 font-bold text-[var(--teal,#0d9488)] text-right whitespace-nowrap">
-														{(earned / 100).toLocaleString("ru-RU")} ₽
-													</td>
-												</tr>
-											);
-										})}
-									</tbody>
-								</table>
+						{servicesToUse.length === 0 ? (
+							<div
+								className="p-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-center flex flex-col items-center justify-center gap-2"
+								data-testid="doctor-payroll-services-empty"
+							>
+								<FileText className="w-8 h-8 text-[var(--muted,#64748b)]/60" />
+								<p className="text-xs sm:text-sm font-semibold text-[var(--ink,#0f172a)]">
+									{doctorsList.length === 0
+										? "Нет сотрудников для расчета за выбранный период"
+										: "Нет подтвержденных оказанных услуг за выбранный расчетный период"}
+								</p>
+								<p className="text-xs text-[var(--muted,#64748b)]">
+									{doctorsList.length === 0
+										? "Список специалистов клиники пуст или не был передан для расчета"
+										: "За выбранный диапазон дат у специалиста не зафиксировано выполненных приемов или закрытых нарядов"}
+								</p>
 							</div>
-						</div>
+						) : (
+							<div className="border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden">
+								<div className="overflow-x-auto">
+									<table className="w-full text-left text-xs">
+										<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+											<tr>
+												<th className="p-2.5 font-semibold">Дата</th>
+												<th className="p-2.5 font-semibold">Пациент</th>
+												<th className="p-2.5 font-semibold">Услуга / Код 804н / Зуб</th>
+												<th className="p-2.5 font-semibold text-right">Выручка</th>
+												<th className="p-2.5 font-semibold text-right">Материалы</th>
+												<th className="p-2.5 font-semibold text-right">ЗТЛ</th>
+												<th className="p-2.5 font-semibold text-right">Начислено</th>
+											</tr>
+										</thead>
+										<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
+											{servicesToUse.map((srv) => {
+												const net = srv.grossRevenueKop - srv.labCostKop - srv.materialCostKop;
+												const earned = Math.round((net * payrollResult.baseCommissionPercent) / 100);
+												return (
+													<tr key={srv.id} className="hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
+														<td className="p-2.5 font-medium whitespace-nowrap">{srv.dateIso}</td>
+														<td className="p-2.5 font-medium">
+															<div>{srv.patientName}</div>
+															<div className="text-[10px] text-[var(--muted,#64748b)]">Карта: {srv.medicalCardNumber}</div>
+														</td>
+														<td className="p-2.5 text-[var(--ink,#0f172a)]">
+															<div className="font-medium">{srv.serviceNameRu}</div>
+															<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+																{srv.order804nCode && (
+																	<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+																		804н: {srv.order804nCode}
+																	</span>
+																)}
+																{srv.toothCode && (
+																	<span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)]">
+																		Зуб {srv.toothCode}
+																	</span>
+																)}
+															</div>
+														</td>
+														<td className="p-2.5 font-bold text-right whitespace-nowrap">
+															{(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
+														</td>
+														<td className="p-2.5 text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">
+															{srv.materialCostKop > 0 ? `- ${(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
+														</td>
+														<td className="p-2.5 text-amber-600 dark:text-amber-400 text-right whitespace-nowrap font-medium">
+															{srv.labCostKop > 0 ? `- ${(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
+														</td>
+														<td className="p-2.5 font-bold text-[var(--teal,#0d9488)] text-right whitespace-nowrap">
+															{(earned / 100).toLocaleString("ru-RU")} ₽
+														</td>
+													</tr>
+												);
+											})}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 

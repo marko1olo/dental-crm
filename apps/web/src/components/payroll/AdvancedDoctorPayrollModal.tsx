@@ -86,175 +86,20 @@ export interface ClinicalDirectionSummary {
 	readonly earnedAccrualKop: number;
 }
 
-const DEFAULT_SAMPLE_SERVICES: readonly StaffDoctorCompletedServiceItem[] = [
-	{
-		id: "srv-adv-1",
-		dateIso: "2026-08-04",
-		patientName: "Смирнова Екатерина Васильевна",
-		medicalCardNumber: "043/у-2026/891",
-		serviceNameRu: "Эндодонтическое лечение 3-канального моляра под микроскопом",
-		order804nCode: "A16.07.002.001",
-		toothCode: "16",
-		category: "therapy",
-		grossRevenueKop: 2450000, // 24,500 RUB
-		labCostKop: 0,
-		materialCostKop: 180000, // 1,800 RUB
-	},
-	{
-		id: "srv-adv-2",
-		dateIso: "2026-08-07",
-		patientName: "Кузнецов Дмитрий Анатольевич",
-		medicalCardNumber: "043/у-2026/742",
-		serviceNameRu: "Художественная реставрация зуба 11 (Estelite Asteria)",
-		order804nCode: "A16.07.003",
-		toothCode: "11",
-		category: "therapy",
-		grossRevenueKop: 1400000, // 14,000 RUB
-		labCostKop: 0,
-		materialCostKop: 110000,
-	},
-	{
-		id: "srv-adv-3",
-		dateIso: "2026-08-11",
-		patientName: "Сидорова Светлана Сергеевна",
-		medicalCardNumber: "043/у-2026/512",
-		serviceNameRu: "Коронка из диоксида циркония CAD/CAM (Prettau)",
-		order804nCode: "A16.07.004.002",
-		toothCode: "24",
-		category: "orthopedics",
-		grossRevenueKop: 3400000, // 34,000 RUB
-		labCostKop: 850000, // 8,500 RUB ЗТЛ
-		materialCostKop: 160000, // 1,600 RUB
-	},
-	{
-		id: "srv-adv-4",
-		dateIso: "2026-08-14",
-		patientName: "Григорьев Роман Николаевич",
-		medicalCardNumber: "043/у-2026/410",
-		serviceNameRu: "Дентальная имплантация Straumann BLX + коллагеновая мембрана",
-		order804nCode: "A16.07.054",
-		toothCode: "36",
-		category: "surgery",
-		grossRevenueKop: 6800000, // 68,000 RUB
-		labCostKop: 0,
-		materialCostKop: 1900000, // 19,000 RUB (имплантат + костный материал)
-	},
-	{
-		id: "srv-adv-5",
-		dateIso: "2026-08-18",
-		patientName: "Иванова Мария Сергеевна",
-		medicalCardNumber: "043/у-2026/904",
-		serviceNameRu: "Комплексная профессиональная гигиена Air-Flow Prophylaxis Master",
-		order804nCode: "A16.07.051",
-		toothCode: "18-48",
-		category: "hygiene",
-		grossRevenueKop: 850000, // 8,500 RUB
-		labCostKop: 0,
-		materialCostKop: 60000,
-	},
-	{
-		id: "srv-adv-6",
-		dateIso: "2026-08-20",
-		patientName: "Попов Артем Сергеевич",
-		medicalCardNumber: "043/у-2026/651",
-		serviceNameRu: "Продажа домашнего набора Curaprox Ortho + Waterpik",
-		order804nCode: "—",
-		toothCode: undefined,
-		category: "retail_hygiene",
-		grossRevenueKop: 320000, // 3,200 RUB
-		labCostKop: 0,
-		materialCostKop: 0,
-	},
-];
-
-const DEFAULT_SAMPLE_DOCTORS: readonly DoctorStaffPayrollInput[] = [
-	{
-		employeeId: "doc-adv-1",
-		employeeTabNumber: "00101",
-		employeeFullName: "Смирнов Алексей Петрович",
-		specialtyId: "therapist",
-		periodStartIso: "2026-08-01",
-		periodEndIso: "2026-08-31",
-		daysWorked: 21,
-		hoursWorked: 126.0,
-		comprehensivePlansCount: 5,
-		comprehensivePlanBonusPerUnitKop: 500000,
-		services: DEFAULT_SAMPLE_SERVICES,
-	},
-	{
-		employeeId: "doc-adv-2",
-		employeeTabNumber: "00102",
-		employeeFullName: "Васильев Максим Сергеевич",
-		specialtyId: "orthopedist",
-		periodStartIso: "2026-08-01",
-		periodEndIso: "2026-08-31",
-		daysWorked: 20,
-		hoursWorked: 120.0,
-		comprehensivePlansCount: 7,
-		comprehensivePlanBonusPerUnitKop: 500000,
-		services: DEFAULT_SAMPLE_SERVICES.filter((s) => s.category === "orthopedics" || s.category === "therapy"),
-	},
-	{
-		employeeId: "doc-adv-3",
-		employeeTabNumber: "00103",
-		employeeFullName: "Ковалев Игорь Олегович",
-		specialtyId: "surgeon_implantologist",
-		periodStartIso: "2026-08-01",
-		periodEndIso: "2026-08-31",
-		daysWorked: 19,
-		hoursWorked: 114.0,
-		comprehensivePlansCount: 6,
-		comprehensivePlanBonusPerUnitKop: 500000,
-		services: DEFAULT_SAMPLE_SERVICES.filter((s) => s.category === "surgery" || s.category === "hygiene"),
-	},
-];
-
-const DEFAULT_SAMPLE_ASSISTANTS: readonly AssistantStaffPayrollInput[] = [
-	{
-		employeeId: "asst-adv-1",
-		employeeTabNumber: "00201",
-		employeeFullName: "Иванова Екатерина Сергеевна",
-		category: "highest",
-		periodStartIso: "2026-08-01",
-		periodEndIso: "2026-08-31",
-		shifts: [
-			{ id: "sh-1", dateIso: "2026-08-04", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: true, radiographsTakenCount: 6, surgeriesAssistedCount: 1 },
-			{ id: "sh-2", dateIso: "2026-08-07", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: false, radiographsTakenCount: 8, surgeriesAssistedCount: 0 },
-			{ id: "sh-3", dateIso: "2026-08-11", shiftType: "full_12h", hoursWorked: 12.0, isSterilizationShift: true, radiographsTakenCount: 10, surgeriesAssistedCount: 2 },
-			{ id: "sh-4", dateIso: "2026-08-14", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: false, radiographsTakenCount: 5, surgeriesAssistedCount: 3 },
-			{ id: "sh-5", dateIso: "2026-08-18", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: true, radiographsTakenCount: 4, surgeriesAssistedCount: 0 },
-			{ id: "sh-6", dateIso: "2026-08-20", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: false, radiographsTakenCount: 7, surgeriesAssistedCount: 1 },
-		],
-	},
-	{
-		employeeId: "asst-adv-2",
-		employeeTabNumber: "00202",
-		employeeFullName: "Петрова Анна Владимировна",
-		category: "first",
-		periodStartIso: "2026-08-01",
-		periodEndIso: "2026-08-31",
-		shifts: [
-			{ id: "sh-7", dateIso: "2026-08-05", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: false, radiographsTakenCount: 4, surgeriesAssistedCount: 0 },
-			{ id: "sh-8", dateIso: "2026-08-12", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: true, radiographsTakenCount: 5, surgeriesAssistedCount: 1 },
-			{ id: "sh-9", dateIso: "2026-08-19", shiftType: "standard_6h", hoursWorked: 6.0, isSterilizationShift: false, radiographsTakenCount: 6, surgeriesAssistedCount: 2 },
-		],
-	},
-];
-
 export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProps> = ({
 	isOpen,
 	onClose,
 	clinicName = "ООО «Денте Стоматология»",
 	organizationInn = "7701984512",
 	organizationKpp = "770101001",
-	doctorsList = DEFAULT_SAMPLE_DOCTORS,
-	assistantsList = DEFAULT_SAMPLE_ASSISTANTS,
+	doctorsList = [],
+	assistantsList = [],
 	initialDoctorId,
 	initialPeriodStart = "2026-08-01",
 	initialPeriodEnd = "2026-08-31",
 }) => {
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(
-		initialDoctorId || doctorsList[0]?.employeeId || "doc-adv-1"
+		initialDoctorId || doctorsList[0]?.employeeId || ""
 	);
 	const [periodStart, setPeriodStart] = useState<string>(initialPeriodStart);
 	const [periodEnd, setPeriodEnd] = useState<string>(initialPeriodEnd);
@@ -265,19 +110,66 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 
 	// Editable parameters for doctor
 	const [customPercent, setCustomPercent] = useState<number | undefined>(undefined);
-	const [plansCount, setPlansCount] = useState<number>(5);
+	const [plansCount, setPlansCount] = useState<number>(0);
 	const [manualAdjustmentRub, setManualAdjustmentRub] = useState<number>(0);
 	const [manualNote, setManualNote] = useState<string>("");
 
+	// Sync when initial values change
+	React.useEffect(() => {
+		if (initialDoctorId) {
+			setSelectedDoctorId(initialDoctorId);
+		} else if (doctorsList.length > 0 && !doctorsList.some((d) => d.employeeId === selectedDoctorId)) {
+			setSelectedDoctorId(doctorsList[0]?.employeeId ?? "");
+		}
+		if (initialPeriodStart) setPeriodStart(initialPeriodStart);
+		if (initialPeriodEnd) setPeriodEnd(initialPeriodEnd);
+	}, [initialDoctorId, initialPeriodStart, initialPeriodEnd, doctorsList, selectedDoctorId]);
+
 	const activeDocInput = useMemo(() => {
+		if (doctorsList.length === 0) return null;
 		const found = doctorsList.find((d) => d.employeeId === selectedDoctorId);
-		return found ?? doctorsList[0] ?? DEFAULT_SAMPLE_DOCTORS[0]!;
+		return found ?? doctorsList[0] ?? null;
 	}, [doctorsList, selectedDoctorId]);
+
+	React.useEffect(() => {
+		if (activeDocInput?.comprehensivePlansCount !== undefined) {
+			setPlansCount(activeDocInput.comprehensivePlansCount);
+		}
+	}, [activeDocInput]);
 
 	// Calculated Doctor Payroll
 	const doctorPayrollResult: DoctorStaffPayrollResult = useMemo(() => {
-		if (!isOpen) {
-			return calculateDoctorStaffPayroll(activeDocInput);
+		if (!isOpen || !activeDocInput) {
+			return {
+				employeeId: activeDocInput?.employeeId ?? "",
+				employeeTabNumber: activeDocInput?.employeeTabNumber ?? "—",
+				employeeFullName: activeDocInput?.employeeFullName ?? "Сотрудник не выбран",
+				role: "doctor" as const,
+				specialtyId: (activeDocInput?.specialtyId ?? "therapist") as DoctorSpecialtyId,
+				positionRu: "Врач-стоматолог",
+				departmentRu: "Клиническое отделение",
+				periodLabelRu: `${periodStart} — ${periodEnd}`,
+				daysWorked: 0,
+				hoursWorked: 0,
+				totalGrossRevenueKop: 0,
+				totalLabDeductionsKop: 0,
+				totalMaterialDeductionsKop: 0,
+				totalNetBaseKop: 0,
+				baseCommissionPercent: customPercent ?? 0,
+				earnedBaseCommissionKop: 0,
+				earnedRetailCommissionKop: 0,
+				comprehensivePlansCount: plansCount,
+				comprehensivePlanBonusKop: 0,
+				revenueKpiPercent: 0,
+				revenueKpiBonusKop: 0,
+				kpiBadgeLabelRu: "—",
+				minimumGuaranteeKop: 0,
+				minimumGuaranteeApplied: false,
+				manualAdjustmentKop: 0,
+				manualAdjustmentNoteRu: "",
+				grossPayoutBeforeTaxKop: 0,
+				servicesCount: 0,
+			};
 		}
 		return calculateDoctorStaffPayroll({
 			...activeDocInput,
@@ -292,7 +184,7 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 
 	// Calculated Assistant Payrolls
 	const assistantResults: readonly AssistantStaffPayrollResult[] = useMemo(() => {
-		if (!isOpen) return [];
+		if (!isOpen || assistantsList.length === 0) return [];
 		return assistantsList.map((asst) =>
 			calculateAssistantStaffPayroll({
 				...asst,
@@ -304,6 +196,8 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 
 	// Direction Summaries Breakdown
 	const directionSummaries: readonly ClinicalDirectionSummary[] = useMemo(() => {
+		if (!activeDocInput || activeDocInput.services.length === 0) return [];
+
 		const map: Record<string, { count: number; gross: number; lab: number; mat: number; title: string }> = {
 			therapy: { count: 0, gross: 0, lab: 0, mat: 0, title: "Терапия и эндодонтия" },
 			orthopedics: { count: 0, gross: 0, lab: 0, mat: 0, title: "Ортопедия (CAD/CAM)" },
@@ -355,17 +249,19 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 			organizationKpp,
 			periodStartIso: periodStart,
 			periodEndIso: periodEnd,
-			doctors: [
-				{
-					...activeDocInput,
-					periodStartIso: periodStart,
-					periodEndIso: periodEnd,
-					customBasePercentage: customPercent,
-					comprehensivePlansCount: plansCount,
-					manualAdjustmentKop: Math.round(manualAdjustmentRub * 100),
-					manualAdjustmentNoteRu: manualNote,
-				},
-			],
+			doctors: activeDocInput
+				? [
+						{
+							...activeDocInput,
+							periodStartIso: periodStart,
+							periodEndIso: periodEnd,
+							customBasePercentage: customPercent,
+							comprehensivePlansCount: plansCount,
+							manualAdjustmentKop: Math.round(manualAdjustmentRub * 100),
+							manualAdjustmentNoteRu: manualNote,
+						},
+				  ]
+				: [],
 			assistants: assistantsList,
 		});
 	}, [clinicName, organizationInn, organizationKpp, periodStart, periodEnd, activeDocInput, customPercent, plansCount, manualAdjustmentRub, manualNote, assistantsList]);
@@ -388,7 +284,7 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = `1C_ZUP_Doctor_${doctorPayrollResult.employeeTabNumber}_${periodStart}.xml`;
+		a.download = `1C_ZUP_Doctor_${doctorPayrollResult.employeeTabNumber || "00000"}_${periodStart}.xml`;
 		a.click();
 		URL.revokeObjectURL(url);
 	}, [xml1CContent, doctorPayrollResult.employeeTabNumber, periodStart]);
@@ -421,18 +317,21 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 
 	if (!isOpen) return null;
 
-	const filteredServices = activeDocInput.services.filter((s) => {
-		if (serviceFilter !== "all" && s.category !== serviceFilter) return false;
-		if (searchQuery.trim()) {
-			const q = searchQuery.toLowerCase();
-			const matchName = s.serviceNameRu.toLowerCase().includes(q);
-			const matchPatient = s.patientName.toLowerCase().includes(q);
-			const matchTooth = s.toothCode?.toLowerCase().includes(q);
-			const matchCode = s.order804nCode?.toLowerCase().includes(q);
-			return matchName || matchPatient || matchTooth || matchCode;
-		}
-		return true;
-	});
+	const filteredServices = useMemo(() => {
+		if (!activeDocInput || activeDocInput.services.length === 0) return [];
+		return activeDocInput.services.filter((s) => {
+			if (serviceFilter !== "all" && s.category !== serviceFilter) return false;
+			if (searchQuery.trim()) {
+				const q = searchQuery.toLowerCase();
+				const matchName = s.serviceNameRu.toLowerCase().includes(q);
+				const matchPatient = s.patientName.toLowerCase().includes(q);
+				const matchTooth = s.toothCode?.toLowerCase().includes(q);
+				const matchCode = s.order804nCode?.toLowerCase().includes(q);
+				return matchName || matchPatient || matchTooth || matchCode;
+			}
+			return true;
+		});
+	}, [activeDocInput, serviceFilter, searchQuery]);
 
 	// Approximate NDFL 13% for reference display
 	const ndfl13ReferenceKop = Math.round(doctorPayrollResult.grossPayoutBeforeTaxKop * 0.13);
@@ -491,13 +390,18 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 						<select
 							value={selectedDoctorId}
 							onChange={(e) => setSelectedDoctorId(e.target.value)}
-							className="w-full h-9 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
+							disabled={doctorsList.length === 0}
+							className="w-full h-9 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:ring-2 focus:ring-[var(--teal,#0d9488)] disabled:opacity-50"
 						>
-							{doctorsList.map((doc) => (
-								<option key={doc.employeeId} value={doc.employeeId}>
-									{doc.employeeFullName} ({doc.employeeTabNumber})
-								</option>
-							))}
+							{doctorsList.length === 0 ? (
+								<option value="">Нет сотрудников для расчета</option>
+							) : (
+								doctorsList.map((doc) => (
+									<option key={doc.employeeId} value={doc.employeeId}>
+										{doc.employeeFullName} ({doc.employeeTabNumber})
+									</option>
+								))
+							)}
 						</select>
 					</div>
 
@@ -644,7 +548,7 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 						className={`adv-payroll-tab-btn ${activeTab === "services" ? "active" : ""}`}
 					>
 						<Stethoscope className="w-4 h-4" />
-						Детализация нарядов ({activeDocInput.services.length})
+						Детализация нарядов ({activeDocInput?.services.length ?? 0})
 					</button>
 
 					<button
@@ -698,80 +602,94 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 								</span>
 							</div>
 
-							<div className="adv-direction-grid">
-								{directionSummaries.map((dir) => {
-									const grossShare = doctorPayrollResult.totalGrossRevenueKop > 0
-										? (dir.grossRevenueKop / doctorPayrollResult.totalGrossRevenueKop) * 100
-										: 0;
+							{directionSummaries.length === 0 ? (
+								<div className="p-8 text-center border border-[var(--line,#e2e8f0)] rounded-xl bg-[var(--paper,#ffffff)] flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
+									<Layers className="w-8 h-8 opacity-40 text-[var(--teal,#0d9488)]" />
+									<p className="text-xs font-semibold text-[var(--ink,#0f172a)]">
+										{doctorsList.length === 0
+											? "Нет сотрудников для расчета за выбранный период"
+											: "Нет подтвержденных оказанных услуг за выбранный расчетный период"}
+									</p>
+									<p className="text-[11px]">
+										Сдельные начисления по клиническим направлениям отсутствуют
+									</p>
+								</div>
+							) : (
+								<div className="adv-direction-grid">
+									{directionSummaries.map((dir) => {
+										const grossShare = doctorPayrollResult.totalGrossRevenueKop > 0
+											? (dir.grossRevenueKop / doctorPayrollResult.totalGrossRevenueKop) * 100
+											: 0;
 
-									return (
-										<div key={dir.categoryKey} className="adv-direction-card">
-											<div className="adv-direction-header">
-												<span className="font-bold text-xs text-[var(--ink,#0f172a)]">
-													{dir.titleRu}
-												</span>
-												<span className="adv-direction-badge">
-													{dir.count} услуг
-												</span>
-											</div>
-
-											<div className="flex flex-col gap-1.5 pt-1">
-												<div className="adv-direction-metric-row">
-													<span className="text-[var(--muted,#64748b)]">Выручка:</span>
-													<span className="font-bold text-[var(--ink,#0f172a)]">
-														{(dir.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
+										return (
+											<div key={dir.categoryKey} className="adv-direction-card">
+												<div className="adv-direction-header">
+													<span className="font-bold text-xs text-[var(--ink,#0f172a)]">
+														{dir.titleRu}
+													</span>
+													<span className="adv-direction-badge">
+														{dir.count} услуг
 													</span>
 												</div>
 
-												{dir.labCostKop > 0 && (
-													<div className="adv-direction-metric-row text-amber-600 dark:text-amber-400">
-														<span>Вычет ЗТЛ (лаборатория):</span>
-														<span className="font-semibold">
-															-{(dir.labCostKop / 100).toLocaleString("ru-RU")} ₽
+												<div className="flex flex-col gap-1.5 pt-1">
+													<div className="adv-direction-metric-row">
+														<span className="text-[var(--muted,#64748b)]">Выручка:</span>
+														<span className="font-bold text-[var(--ink,#0f172a)]">
+															{(dir.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
 														</span>
 													</div>
-												)}
 
-												{dir.materialCostKop > 0 && (
-													<div className="adv-direction-metric-row text-rose-600 dark:text-rose-400">
-														<span>Вычет материалов:</span>
-														<span className="font-semibold">
-															-{(dir.materialCostKop / 100).toLocaleString("ru-RU")} ₽
+													{dir.labCostKop > 0 && (
+														<div className="adv-direction-metric-row text-amber-600 dark:text-amber-400">
+															<span>Вычет ЗТЛ (лаборатория):</span>
+															<span className="font-semibold">
+																-{(dir.labCostKop / 100).toLocaleString("ru-RU")} ₽
+															</span>
+														</div>
+													)}
+
+													{dir.materialCostKop > 0 && (
+														<div className="adv-direction-metric-row text-rose-600 dark:text-rose-400">
+															<span>Вычет материалов:</span>
+															<span className="font-semibold">
+																-{(dir.materialCostKop / 100).toLocaleString("ru-RU")} ₽
+															</span>
+														</div>
+													)}
+
+													<div className="adv-direction-metric-row border-t border-[var(--line,#e2e8f0)] pt-1.5">
+														<span className="text-[var(--muted,#64748b)]">Расчетная база ({dir.commissionPercent}%):</span>
+														<span className="font-bold text-[var(--teal,#0d9488)]">
+															{(dir.netBaseKop / 100).toLocaleString("ru-RU")} ₽
 														</span>
 													</div>
-												)}
 
-												<div className="adv-direction-metric-row border-t border-[var(--line,#e2e8f0)] pt-1.5">
-													<span className="text-[var(--muted,#64748b)]">Расчетная база ({dir.commissionPercent}%):</span>
-													<span className="font-bold text-[var(--teal,#0d9488)]">
-														{(dir.netBaseKop / 100).toLocaleString("ru-RU")} ₽
-													</span>
+													<div className="adv-direction-metric-row bg-[var(--teal-soft,#f0fdfa)] p-1.5 rounded-lg">
+														<span className="font-bold text-[var(--teal,#0d9488)]">Сдельное начисление:</span>
+														<span className="font-black text-sm text-[var(--teal,#0d9488)]">
+															{(dir.earnedAccrualKop / 100).toLocaleString("ru-RU")} ₽
+														</span>
+													</div>
 												</div>
 
-												<div className="adv-direction-metric-row bg-[var(--teal-soft,#f0fdfa)] p-1.5 rounded-lg">
-													<span className="font-bold text-[var(--teal,#0d9488)]">Сдельное начисление:</span>
-													<span className="font-black text-sm text-[var(--teal,#0d9488)]">
-														{(dir.earnedAccrualKop / 100).toLocaleString("ru-RU")} ₽
-													</span>
+												<div className="flex flex-col gap-1 mt-auto pt-2">
+													<div className="flex justify-between text-[10px] text-[var(--muted,#64748b)]">
+														<span>Доля в общей выручке</span>
+														<span className="font-bold">{grossShare.toFixed(1)}%</span>
+													</div>
+													<div className="adv-progress-bar">
+														<div
+															className="adv-progress-fill"
+															style={{ width: `${Math.min(100, Math.max(5, grossShare))}%` }}
+														/>
+													</div>
 												</div>
 											</div>
-
-											<div className="flex flex-col gap-1 mt-auto pt-2">
-												<div className="flex justify-between text-[10px] text-[var(--muted,#64748b)]">
-													<span>Доля в общей выручке</span>
-													<span className="font-bold">{grossShare.toFixed(1)}%</span>
-												</div>
-												<div className="adv-progress-bar">
-													<div
-														className="adv-progress-fill"
-														style={{ width: `${Math.min(100, Math.max(5, grossShare))}%` }}
-													/>
-												</div>
-											</div>
-										</div>
-									);
-								})}
-							</div>
+										);
+									})}
+								</div>
+							)}
 						</div>
 					)}
 
@@ -799,7 +717,7 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 										onChange={(e) => setServiceFilter(e.target.value)}
 										className="h-9 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)]"
 									>
-										<option value="all">Все направления ({activeDocInput.services.length})</option>
+										<option value="all">Все направления ({activeDocInput?.services.length ?? 0})</option>
 										<option value="therapy">Терапия</option>
 										<option value="orthopedics">Ортопедия</option>
 										<option value="surgery">Хирургия</option>
@@ -810,75 +728,91 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 							</div>
 
 							<div className="border border-[var(--line,#e2e8f0)] rounded-xl overflow-hidden bg-[var(--paper,#ffffff)]">
-								<div className="overflow-x-auto">
-									<table className="w-full text-left text-xs border-collapse">
-										<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] font-semibold">
-											<tr>
-												<th className="p-2.5">Дата</th>
-												<th className="p-2.5">Пациент</th>
-												<th className="p-2.5">Услуга / Код 804н / Зуб</th>
-												<th className="p-2.5 text-right">Выручка брутто</th>
-												<th className="p-2.5 text-right">Вычет ЗТЛ</th>
-												<th className="p-2.5 text-right">Вычет материалов</th>
-												<th className="p-2.5 text-right">Чистая база</th>
-												<th className="p-2.5 text-right">Начислено врачу</th>
-											</tr>
-										</thead>
-										<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
-											{filteredServices.map((srv) => {
-												const isRetail = srv.category === "retail_hygiene";
-												const preset = DOCTOR_SPECIALTY_CONFIGS[activeDocInput.specialtyId] ?? DOCTOR_SPECIALTY_CONFIGS.therapist;
-												const pct = isRetail ? preset.retailProductsPercentage : (customPercent ?? preset.defaultPercentage);
-												const labDeduct = preset.deductsLabCosts ? srv.labCostKop : 0;
-												const matDeduct = preset.deductsMaterialCosts ? srv.materialCostKop : 0;
-												const netBase = Math.max(0, srv.grossRevenueKop - labDeduct - matDeduct);
-												const earned = isRetail
-													? Math.round((srv.grossRevenueKop * pct) / 100)
-													: Math.round((netBase * pct) / 100);
+								{filteredServices.length === 0 ? (
+									<div className="p-8 text-center flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
+										<Stethoscope className="w-8 h-8 opacity-40 text-[var(--teal,#0d9488)]" />
+										<p className="text-xs font-semibold text-[var(--ink,#0f172a)]">
+											{doctorsList.length === 0
+												? "Нет сотрудников для расчета за выбранный период"
+												: (activeDocInput?.services.length ?? 0) === 0
+													? "Нет подтвержденных оказанных услуг за выбранный расчетный период"
+													: "По заданным фильтрам услуг не найдено"}
+										</p>
+										<p className="text-[11px]">
+											При закрытии приемов и нарядов данные автоматически поступят в расчет ведомости
+										</p>
+									</div>
+								) : (
+									<div className="overflow-x-auto">
+										<table className="w-full text-left text-xs border-collapse">
+											<thead className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] font-semibold">
+												<tr>
+													<th className="p-2.5">Дата</th>
+													<th className="p-2.5">Пациент</th>
+													<th className="p-2.5">Услуга / Код 804н / Зуб</th>
+													<th className="p-2.5 text-right">Выручка брутто</th>
+													<th className="p-2.5 text-right">Вычет ЗТЛ</th>
+													<th className="p-2.5 text-right">Вычет материалов</th>
+													<th className="p-2.5 text-right">Чистая база</th>
+													<th className="p-2.5 text-right">Начислено врачу</th>
+												</tr>
+											</thead>
+											<tbody className="divide-y divide-[var(--line,#e2e8f0)]">
+												{filteredServices.map((srv) => {
+													const isRetail = srv.category === "retail_hygiene";
+													const preset = DOCTOR_SPECIALTY_CONFIGS[activeDocInput?.specialtyId ?? "therapist"] ?? DOCTOR_SPECIALTY_CONFIGS.therapist;
+													const pct = isRetail ? preset.retailProductsPercentage : (customPercent ?? preset.defaultPercentage);
+													const labDeduct = preset.deductsLabCosts ? srv.labCostKop : 0;
+													const matDeduct = preset.deductsMaterialCosts ? srv.materialCostKop : 0;
+													const netBase = Math.max(0, srv.grossRevenueKop - labDeduct - matDeduct);
+													const earned = isRetail
+														? Math.round((srv.grossRevenueKop * pct) / 100)
+														: Math.round((netBase * pct) / 100);
 
-												return (
-													<tr key={srv.id} className="hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
-														<td className="p-2.5 font-medium whitespace-nowrap">{srv.dateIso}</td>
-														<td className="p-2.5 font-semibold text-[var(--ink,#0f172a)]">
-															<div>{srv.patientName}</div>
-															<div className="text-[10px] text-[var(--muted,#64748b)]">Карта: {srv.medicalCardNumber}</div>
-														</td>
-														<td className="p-2.5">
-															<div className="font-medium text-[var(--ink,#0f172a)]">{srv.serviceNameRu}</div>
-															<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-																{srv.order804nCode && srv.order804nCode !== "—" && (
-																	<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
-																		804н: {srv.order804nCode}
-																	</span>
-																)}
-																{srv.toothCode && (
-																	<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)]">
-																		Зуб {srv.toothCode}
-																	</span>
-																)}
-															</div>
-														</td>
-														<td className="p-2.5 font-bold text-right whitespace-nowrap">
-															{(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
-														</td>
-														<td className="p-2.5 text-right whitespace-nowrap text-amber-600 dark:text-amber-400">
-															{srv.labCostKop > 0 ? `- ${(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
-														</td>
-														<td className="p-2.5 text-right whitespace-nowrap text-rose-600 dark:text-rose-400">
-															{srv.materialCostKop > 0 ? `- ${(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
-														</td>
-														<td className="p-2.5 text-right whitespace-nowrap font-bold text-[var(--teal,#0d9488)]">
-															{(netBase / 100).toLocaleString("ru-RU")} ₽
-														</td>
-														<td className="p-2.5 text-right whitespace-nowrap font-black text-[var(--ok-fg,#059669)]">
-															{(earned / 100).toLocaleString("ru-RU")} ₽ ({pct}%)
-														</td>
-													</tr>
-												);
-											})}
-										</tbody>
-									</table>
-								</div>
+													return (
+														<tr key={srv.id} className="hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
+															<td className="p-2.5 font-medium whitespace-nowrap">{srv.dateIso}</td>
+															<td className="p-2.5 font-semibold text-[var(--ink,#0f172a)]">
+																<div>{srv.patientName}</div>
+																<div className="text-[10px] text-[var(--muted,#64748b)]">Карта: {srv.medicalCardNumber}</div>
+															</td>
+															<td className="p-2.5">
+																<div className="font-medium text-[var(--ink,#0f172a)]">{srv.serviceNameRu}</div>
+																<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+																	{srv.order804nCode && srv.order804nCode !== "—" && (
+																		<span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+																			804н: {srv.order804nCode}
+																		</span>
+																	)}
+																	{srv.toothCode && (
+																		<span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[var(--teal-soft,#f0fdfa)] border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)]">
+																			Зуб {srv.toothCode}
+																		</span>
+																	)}
+																</div>
+															</td>
+															<td className="p-2.5 font-bold text-right whitespace-nowrap">
+																{(srv.grossRevenueKop / 100).toLocaleString("ru-RU")} ₽
+															</td>
+															<td className="p-2.5 text-right whitespace-nowrap text-amber-600 dark:text-amber-400">
+																{srv.labCostKop > 0 ? `- ${(srv.labCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
+															</td>
+															<td className="p-2.5 text-right whitespace-nowrap text-rose-600 dark:text-rose-400">
+																{srv.materialCostKop > 0 ? `- ${(srv.materialCostKop / 100).toLocaleString("ru-RU")} ₽` : "—"}
+															</td>
+															<td className="p-2.5 text-right whitespace-nowrap font-bold text-[var(--teal,#0d9488)]">
+																{(netBase / 100).toLocaleString("ru-RU")} ₽
+															</td>
+															<td className="p-2.5 text-right whitespace-nowrap font-black text-[var(--ok-fg,#059669)]">
+																{(earned / 100).toLocaleString("ru-RU")} ₽ ({pct}%)
+															</td>
+														</tr>
+													);
+												})}
+											</tbody>
+										</table>
+									</div>
+								)}
 							</div>
 						</div>
 					)}
@@ -895,161 +829,185 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 								</span>
 							</div>
 
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								{assistantResults.map((asst) => (
-									<div key={asst.employeeId} className="adv-assistant-card">
-										<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2.5">
-											<div>
-												<h4 className="font-bold text-xs text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-													<User className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-													{asst.employeeFullName}
-												</h4>
-												<p className="text-[10px] text-[var(--muted,#64748b)]">
-													Таб. № {asst.employeeTabNumber} • {asst.positionRu}
-												</p>
-											</div>
-											<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
-												{asst.category === "highest" ? "Высшая категория (+20%)" : asst.category === "first" ? "I категория (+15%)" : "Базовый тариф"}
-											</span>
-										</div>
-
-										<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-											<div className="adv-assistant-stat-chip">
-												<span>Смен:</span>
-												<span className="font-bold text-[var(--teal,#0d9488)]">{asst.totalShiftsCount} ({asst.totalHoursWorked.toFixed(1)}ч)</span>
-											</div>
-											<div className="adv-assistant-stat-chip">
-												<span>Снимков:</span>
-												<span className="font-bold text-blue-600">{asst.totalRadiographsCount} шт</span>
-											</div>
-											<div className="adv-assistant-stat-chip">
-												<span>Операций:</span>
-												<span className="font-bold text-purple-600">{asst.totalSurgeriesCount} оп</span>
-											</div>
-											<div className="adv-assistant-stat-chip">
-												<span>ЦСО:</span>
-												<span className="font-bold text-amber-600">{asst.sterilizationShiftsCount} см</span>
-											</div>
-										</div>
-
-										<div className="flex flex-col gap-1 text-xs border-t border-[var(--line,#e2e8f0)] pt-2 mt-1">
-											<div className="flex justify-between text-[var(--muted,#64748b)]">
-												<span>Базовая оплата смен:</span>
-												<span className="font-semibold text-[var(--ink,#0f172a)]">{(asst.baseShiftsPayoutKop / 100).toLocaleString("ru-RU")} ₽</span>
-											</div>
-											{asst.categoryBonusKop > 0 && (
-												<div className="flex justify-between text-blue-600">
-													<span>Надбавка за категорию (+{asst.categoryBonusPercent}%):</span>
-													<span className="font-semibold">+{(asst.categoryBonusKop / 100).toLocaleString("ru-RU")} ₽</span>
+							{assistantResults.length === 0 ? (
+								<div className="p-8 text-center border border-[var(--line,#e2e8f0)] rounded-xl bg-[var(--paper,#ffffff)] flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
+									<Users className="w-8 h-8 opacity-40 text-[var(--teal,#0d9488)]" />
+									<p className="text-xs font-semibold text-[var(--ink,#0f172a)]">
+										Нет данных по ассистентам за выбранный расчетный период
+									</p>
+									<p className="text-[11px]">
+										Смены, снимки и ассистирование на операциях отображаются по мере проведения процедур
+									</p>
+								</div>
+							) : (
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									{assistantResults.map((asst) => (
+										<div key={asst.employeeId} className="adv-assistant-card">
+											<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] pb-2.5">
+												<div>
+													<h4 className="font-bold text-xs text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+														<User className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+														{asst.employeeFullName}
+													</h4>
+													<p className="text-[10px] text-[var(--muted,#64748b)]">
+														Таб. № {asst.employeeTabNumber} • {asst.positionRu}
+													</p>
 												</div>
-											)}
-											{asst.radiographsPayoutKop > 0 && (
-												<div className="flex justify-between text-[var(--teal,#0d9488)]">
-													<span>Сдельная доплата за снимки (КЛКТ/ОПТГ):</span>
-													<span className="font-semibold">+{(asst.radiographsPayoutKop / 100).toLocaleString("ru-RU")} ₽</span>
-												</div>
-											)}
-											{asst.surgeriesPayoutKop > 0 && (
-												<div className="flex justify-between text-purple-600">
-													<span>Доплата за ассистирование на операциях:</span>
-													<span className="font-semibold">+{(asst.surgeriesPayoutKop / 100).toLocaleString("ru-RU")} ₽</span>
-												</div>
-											)}
-											{asst.sterilizationBonusKop > 0 && (
-												<div className="flex justify-between text-amber-600">
-													<span>Доплата за ЦСО и автоклавирование:</span>
-													<span className="font-semibold">+{(asst.sterilizationBonusKop / 100).toLocaleString("ru-RU")} ₽</span>
-												</div>
-											)}
-
-											<div className="flex justify-between items-center bg-[var(--paper,#ffffff)] p-2 rounded-lg border border-[var(--line,#e2e8f0)] font-bold text-xs mt-1">
-												<span className="text-[var(--teal,#0d9488)]">Всего начислено ассистенту:</span>
-												<span className="font-black text-sm text-[var(--ok-fg,#059669)]">
-													{(asst.grossPayoutBeforeTaxKop / 100).toLocaleString("ru-RU")} ₽
+												<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--teal-soft,#f0fdfa)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
+													{asst.category === "highest" ? "Высшая категория (+20%)" : asst.category === "first" ? "I категория (+15%)" : "Базовый тариф"}
 												</span>
 											</div>
+
+											<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+												<div className="adv-assistant-stat-chip">
+													<span>Смен:</span>
+													<span className="font-bold text-[var(--teal,#0d9488)]">{asst.totalShiftsCount} ({asst.totalHoursWorked.toFixed(1)}ч)</span>
+												</div>
+												<div className="adv-assistant-stat-chip">
+													<span>Снимков:</span>
+													<span className="font-bold text-blue-600">{asst.totalRadiographsCount} шт</span>
+												</div>
+												<div className="adv-assistant-stat-chip">
+													<span>Операций:</span>
+													<span className="font-bold text-purple-600">{asst.totalSurgeriesCount} оп</span>
+												</div>
+												<div className="adv-assistant-stat-chip">
+													<span>ЦСО:</span>
+													<span className="font-bold text-amber-600">{asst.sterilizationShiftsCount} см</span>
+												</div>
+											</div>
+
+											<div className="flex flex-col gap-1 text-xs border-t border-[var(--line,#e2e8f0)] pt-2 mt-1">
+												<div className="flex justify-between text-[var(--muted,#64748b)]">
+													<span>Базовая оплата смен:</span>
+													<span className="font-semibold text-[var(--ink,#0f172a)]">{(asst.baseShiftsPayoutKop / 100).toLocaleString("ru-RU")} ₽</span>
+												</div>
+												{asst.categoryBonusKop > 0 && (
+													<div className="flex justify-between text-blue-600">
+														<span>Надбавка за категорию (+{asst.categoryBonusPercent}%):</span>
+														<span className="font-semibold">+{(asst.categoryBonusKop / 100).toLocaleString("ru-RU")} ₽</span>
+													</div>
+												)}
+												{asst.radiographsPayoutKop > 0 && (
+													<div className="flex justify-between text-[var(--teal,#0d9488)]">
+														<span>Сдельная доплата за снимки (КЛКТ/ОПТГ):</span>
+														<span className="font-semibold">+{(asst.radiographsPayoutKop / 100).toLocaleString("ru-RU")} ₽</span>
+													</div>
+												)}
+												{asst.surgeriesPayoutKop > 0 && (
+													<div className="flex justify-between text-purple-600">
+														<span>Доплата за ассистирование на операциях:</span>
+														<span className="font-semibold">+{(asst.surgeriesPayoutKop / 100).toLocaleString("ru-RU")} ₽</span>
+													</div>
+												)}
+												{asst.sterilizationBonusKop > 0 && (
+													<div className="flex justify-between text-amber-600">
+														<span>Доплата за ЦСО и автоклавирование:</span>
+														<span className="font-semibold">+{(asst.sterilizationBonusKop / 100).toLocaleString("ru-RU")} ₽</span>
+													</div>
+												)}
+
+												<div className="flex justify-between items-center bg-[var(--paper,#ffffff)] p-2 rounded-lg border border-[var(--line,#e2e8f0)] font-bold text-xs mt-1">
+													<span className="text-[var(--teal,#0d9488)]">Всего начислено ассистенту:</span>
+													<span className="font-black text-sm text-[var(--ok-fg,#059669)]">
+														{(asst.grossPayoutBeforeTaxKop / 100).toLocaleString("ru-RU")} ₽
+													</span>
+												</div>
+											</div>
 										</div>
-									</div>
-								))}
-							</div>
+									))}
+								</div>
+							)}
 						</div>
 					)}
 
 					{/* TAB 4: KPI & Plans */}
 					{activeTab === "kpi" && (
-						<div className="flex flex-col gap-4 max-w-3xl">
-							<h3 className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
-								Параметры KPI, комплексных планов и ручных корректировок:
-							</h3>
+						doctorsList.length === 0 ? (
+							<div className="p-8 text-center border border-[var(--line,#e2e8f0)] rounded-xl bg-[var(--paper,#ffffff)] flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
+								<Award className="w-8 h-8 opacity-40 text-[var(--teal,#0d9488)]" />
+								<p className="text-xs font-semibold text-[var(--ink,#0f172a)]">
+									Нет сотрудников для расчета за выбранный период
+								</p>
+								<p className="text-[11px]">
+									Выберите врача для настройки KPI, комплексных планов и ручных корректировок
+								</p>
+							</div>
+						) : (
+							<div className="flex flex-col gap-4 max-w-3xl">
+								<h3 className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
+									Параметры KPI, комплексных планов и ручных корректировок:
+								</h3>
 
-							<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-3">
-								<div className="flex items-center justify-between">
-									<div>
-										<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-											<Award className="w-4 h-4 text-amber-500" />
-											Комплексные планы лечения (KPI):
-										</h4>
-										<p className="text-[11px] text-[var(--muted,#64748b)]">
-											Бонус 5,000 ₽ за каждый успешно завершенный комплексный план лечения
-										</p>
-									</div>
-									<div className="flex items-center gap-2">
-										<input
-											type="number"
-											min="0"
-											max="50"
-											value={plansCount}
-											onChange={(e) => setPlansCount(Number(e.target.value) || 0)}
-											className="w-20 h-9 text-center font-bold text-xs rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]"
-										/>
-										<span className="text-xs font-bold text-[var(--teal,#0d9488)]">
-											= {((plansCount * 500000) / 100).toLocaleString("ru-RU")} ₽
-										</span>
-									</div>
-								</div>
-
-								<div className="border-t border-[var(--line,#e2e8f0)] pt-3 flex items-center justify-between">
-									<div>
-										<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-											<TrendingUp className="w-4 h-4 text-blue-500" />
-											Премия за перевыполнение финансового плана клиники:
-										</h4>
-										<p className="text-[11px] text-[var(--muted,#64748b)]">
-											{doctorPayrollResult.kpiBadgeLabelRu} (+{doctorPayrollResult.revenueKpiPercent}%)
-										</p>
-									</div>
-									<span className="text-xs font-bold text-blue-600">
-										+{(doctorPayrollResult.revenueKpiBonusKop / 100).toLocaleString("ru-RU")} ₽
-									</span>
-								</div>
-
-								<div className="border-t border-[var(--line,#e2e8f0)] pt-3 flex flex-col gap-2">
+								<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-3">
 									<div className="flex items-center justify-between">
-										<h4 className="text-xs font-bold text-[var(--ink,#0f172a)]">
-											Разовая ручная корректировка (премия / удержание):
-										</h4>
+										<div>
+											<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+												<Award className="w-4 h-4 text-amber-500" />
+												Комплексные планы лечения (KPI):
+											</h4>
+											<p className="text-[11px] text-[var(--muted,#64748b)]">
+												Бонус 5,000 ₽ за каждый успешно завершенный комплексный план лечения
+											</p>
+										</div>
 										<div className="flex items-center gap-2">
 											<input
 												type="number"
-												step="500"
-												value={manualAdjustmentRub}
-												onChange={(e) => setManualAdjustmentRub(Number(e.target.value) || 0)}
-												className="w-32 h-9 text-right px-2 font-bold text-xs rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]"
-												placeholder="0.00 ₽"
+												min="0"
+												max="50"
+												value={plansCount}
+												onChange={(e) => setPlansCount(Number(e.target.value) || 0)}
+												className="w-20 h-9 text-center font-bold text-xs rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]"
 											/>
-											<span className="text-xs text-[var(--muted,#64748b)]">₽</span>
+											<span className="text-xs font-bold text-[var(--teal,#0d9488)]">
+												= {((plansCount * 500000) / 100).toLocaleString("ru-RU")} ₽
+											</span>
 										</div>
 									</div>
-									<input
-										type="text"
-										placeholder="Обоснование корректировки (напр., Премия за наставничество ординатора)..."
-										value={manualNote}
-										onChange={(e) => setManualNote(e.target.value)}
-										className="w-full h-8 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)]"
-									/>
+
+									<div className="border-t border-[var(--line,#e2e8f0)] pt-3 flex items-center justify-between">
+										<div>
+											<h4 className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
+												<TrendingUp className="w-4 h-4 text-blue-500" />
+												Премия за перевыполнение финансового плана клиники:
+											</h4>
+											<p className="text-[11px] text-[var(--muted,#64748b)]">
+												{doctorPayrollResult.kpiBadgeLabelRu} (+{doctorPayrollResult.revenueKpiPercent}%)
+											</p>
+										</div>
+										<span className="text-xs font-bold text-blue-600">
+											+{(doctorPayrollResult.revenueKpiBonusKop / 100).toLocaleString("ru-RU")} ₽
+										</span>
+									</div>
+
+									<div className="border-t border-[var(--line,#e2e8f0)] pt-3 flex flex-col gap-2">
+										<div className="flex items-center justify-between">
+											<h4 className="text-xs font-bold text-[var(--ink,#0f172a)]">
+												Разовая ручная корректировка (премия / удержание):
+											</h4>
+											<div className="flex items-center gap-2">
+												<input
+													type="number"
+													step="500"
+													value={manualAdjustmentRub}
+													onChange={(e) => setManualAdjustmentRub(Number(e.target.value) || 0)}
+													className="w-32 h-9 text-right px-2 font-bold text-xs rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)]"
+													placeholder="0.00 ₽"
+												/>
+												<span className="text-xs text-[var(--muted,#64748b)]">₽</span>
+											</div>
+										</div>
+										<input
+											type="text"
+											placeholder="Обоснование корректировки (напр., Премия за наставничество ординатора)..."
+											value={manualNote}
+											onChange={(e) => setManualNote(e.target.value)}
+											className="w-full h-8 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)]"
+										/>
+									</div>
 								</div>
 							</div>
-						</div>
+						)
 					)}
 
 					{/* TAB 5: 1C:ZUP 3.1 Export */}
@@ -1096,82 +1054,94 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 
 					{/* TAB 6: Doctor Slip Print Preview */}
 					{activeTab === "slip" && (
-						<div className="p-6 bg-[#ffffff] text-[#000000] border border-[var(--line,#e2e8f0)] rounded-xl font-mono text-xs flex flex-col gap-3">
-							<div className="text-center font-bold border-b pb-2">
-								<div className="text-sm">{clinicName}</div>
-								<div>РАСЧЕТНЫЙ ЛИСТОК ЗА {periodStart} — {periodEnd}</div>
+						doctorsList.length === 0 ? (
+							<div className="p-8 text-center border border-[var(--line,#e2e8f0)] rounded-xl bg-[var(--paper,#ffffff)] flex flex-col items-center justify-center gap-2 text-[var(--muted,#64748b)]">
+								<Printer className="w-8 h-8 opacity-40 text-[var(--teal,#0d9488)]" />
+								<p className="text-xs font-semibold text-[var(--ink,#0f172a)]">
+									Нет сотрудников для формирования расчетного листка
+								</p>
+								<p className="text-[11px]">
+									Выберите врача с подтвержденными начислениями для предпросмотра и печати
+								</p>
 							</div>
-
-							<div className="grid grid-cols-2 gap-2 text-[11px] pb-2 border-b">
-								<div><strong>Сотрудник:</strong> {doctorPayrollResult.employeeFullName} (Таб. № {doctorPayrollResult.employeeTabNumber})</div>
-								<div><strong>Должность:</strong> {doctorPayrollResult.positionRu}</div>
-								<div><strong>Подразделение:</strong> {doctorPayrollResult.departmentRu}</div>
-								<div><strong>Отработано:</strong> {doctorPayrollResult.daysWorked} дн ({doctorPayrollResult.hoursWorked.toFixed(1)} ч)</div>
-							</div>
-
-							<div className="flex flex-col gap-1 text-[11px]">
-								<div className="font-bold text-xs pb-1">НАЧИСЛЕНО:</div>
-								<div className="flex justify-between">
-									<span>1. Сдельная оплата ({doctorPayrollResult.baseCommissionPercent}% от чистой базы):</span>
-									<span>{(doctorPayrollResult.earnedBaseCommissionKop / 100).toFixed(2)} ₽</span>
-								</div>
-								{doctorPayrollResult.earnedRetailCommissionKop > 0 && (
-									<div className="flex justify-between">
-										<span>2. Комиссия за розничные средства гигиены:</span>
-										<span>{(doctorPayrollResult.earnedRetailCommissionKop / 100).toFixed(2)} ₽</span>
-									</div>
-								)}
-								{doctorPayrollResult.comprehensivePlanBonusKop > 0 && (
-									<div className="flex justify-between">
-										<span>3. Премия за комплексные планы лечения ({doctorPayrollResult.comprehensivePlansCount} шт):</span>
-										<span>{(doctorPayrollResult.comprehensivePlanBonusKop / 100).toFixed(2)} ₽</span>
-									</div>
-								)}
-								{doctorPayrollResult.revenueKpiBonusKop > 0 && (
-									<div className="flex justify-between">
-										<span>4. Премия за выполнение плана выручки (+{doctorPayrollResult.revenueKpiPercent}%):</span>
-										<span>{(doctorPayrollResult.revenueKpiBonusKop / 100).toFixed(2)} ₽</span>
-									</div>
-								)}
-								{doctorPayrollResult.manualAdjustmentKop !== 0 && (
-									<div className="flex justify-between">
-										<span>5. Ручная корректировка ({doctorPayrollResult.manualAdjustmentNoteRu || "Премия/удержание"}):</span>
-										<span>{(doctorPayrollResult.manualAdjustmentKop / 100).toFixed(2)} ₽</span>
-									</div>
-								)}
-
-								<div className="flex justify-between font-bold border-t pt-1.5 mt-1 text-xs">
-									<span>ВСЕГО НАЧИСЛЕНО (ГРОСС):</span>
-									<span>{(doctorPayrollResult.grossPayoutBeforeTaxKop / 100).toFixed(2)} ₽</span>
+						) : (
+							<div className="p-6 bg-[#ffffff] text-[#000000] border border-[var(--line,#e2e8f0)] rounded-xl font-mono text-xs flex flex-col gap-3">
+								<div className="text-center font-bold border-b pb-2">
+									<div className="text-sm">{clinicName}</div>
+									<div>РАСЧЕТНЫЙ ЛИСТОК ЗА {periodStart} — {periodEnd}</div>
 								</div>
 
-								<div className="flex justify-between text-rose-700 pt-1">
-									<span>УДЕРЖАНО: НДФЛ 13% (справочно):</span>
-									<span>-{(ndfl13ReferenceKop / 100).toFixed(2)} ₽</span>
+								<div className="grid grid-cols-2 gap-2 text-[11px] pb-2 border-b">
+									<div><strong>Сотрудник:</strong> {doctorPayrollResult.employeeFullName} (Таб. № {doctorPayrollResult.employeeTabNumber})</div>
+									<div><strong>Должность:</strong> {doctorPayrollResult.positionRu}</div>
+									<div><strong>Подразделение:</strong> {doctorPayrollResult.departmentRu}</div>
+									<div><strong>Отработано:</strong> {doctorPayrollResult.daysWorked} дн ({doctorPayrollResult.hoursWorked.toFixed(1)} ч)</div>
 								</div>
 
-								<div className="flex justify-between font-black text-sm border-t-2 border-black pt-1.5 mt-1">
-									<span>К ВЫПЛАТЕ НА РУКИ (НЕТТО):</span>
-									<span>{(netTakeHomeKop / 100).toFixed(2)} ₽</span>
+								<div className="flex flex-col gap-1 text-[11px]">
+									<div className="font-bold text-xs pb-1">НАЧИСЛЕНО:</div>
+									<div className="flex justify-between">
+										<span>1. Сдельная оплата ({doctorPayrollResult.baseCommissionPercent}% от чистой базы):</span>
+										<span>{(doctorPayrollResult.earnedBaseCommissionKop / 100).toFixed(2)} ₽</span>
+									</div>
+									{doctorPayrollResult.earnedRetailCommissionKop > 0 && (
+										<div className="flex justify-between">
+											<span>2. Комиссия за розничные средства гигиены:</span>
+											<span>{(doctorPayrollResult.earnedRetailCommissionKop / 100).toFixed(2)} ₽</span>
+										</div>
+									)}
+									{doctorPayrollResult.comprehensivePlanBonusKop > 0 && (
+										<div className="flex justify-between">
+											<span>3. Премия за комплексные планы лечения ({doctorPayrollResult.comprehensivePlansCount} шт):</span>
+											<span>{(doctorPayrollResult.comprehensivePlanBonusKop / 100).toFixed(2)} ₽</span>
+										</div>
+									)}
+									{doctorPayrollResult.revenueKpiBonusKop > 0 && (
+										<div className="flex justify-between">
+											<span>4. Премия за выполнение плана выручки (+{doctorPayrollResult.revenueKpiPercent}%):</span>
+											<span>{(doctorPayrollResult.revenueKpiBonusKop / 100).toFixed(2)} ₽</span>
+										</div>
+									)}
+									{doctorPayrollResult.manualAdjustmentKop !== 0 && (
+										<div className="flex justify-between">
+											<span>5. Ручная корректировка ({doctorPayrollResult.manualAdjustmentNoteRu || "Премия/удержание"}):</span>
+											<span>{(doctorPayrollResult.manualAdjustmentKop / 100).toFixed(2)} ₽</span>
+										</div>
+									)}
+
+									<div className="flex justify-between font-bold border-t pt-1.5 mt-1 text-xs">
+										<span>ВСЕГО НАЧИСЛЕНО (ГРОСС):</span>
+										<span>{(doctorPayrollResult.grossPayoutBeforeTaxKop / 100).toFixed(2)} ₽</span>
+									</div>
+
+									<div className="flex justify-between text-rose-700 pt-1">
+										<span>УДЕРЖАНО: НДФЛ 13% (справочно):</span>
+										<span>-{(ndfl13ReferenceKop / 100).toFixed(2)} ₽</span>
+									</div>
+
+									<div className="flex justify-between font-black text-sm border-t-2 border-black pt-1.5 mt-1">
+										<span>К ВЫПЛАТЕ НА РУКИ (НЕТТО):</span>
+										<span>{(netTakeHomeKop / 100).toFixed(2)} ₽</span>
+									</div>
+								</div>
+
+								<div className="pt-4 flex justify-between text-[10px] text-neutral-600">
+									<div>Бухгалтер: _________________ / _______________ /</div>
+									<div>Работник: _________________ / {doctorPayrollResult.employeeFullName} /</div>
+								</div>
+
+								<div className="pt-2 no-print flex justify-end">
+									<button
+										type="button"
+										onClick={() => window.print()}
+										className="adv-btn adv-btn-primary"
+									>
+										<Printer className="w-4 h-4" />
+										Печать расчетного листка
+									</button>
 								</div>
 							</div>
-
-							<div className="pt-4 flex justify-between text-[10px] text-neutral-600">
-								<div>Бухгалтер: _________________ / _______________ /</div>
-								<div>Работник: _________________ / {doctorPayrollResult.employeeFullName} /</div>
-							</div>
-
-							<div className="pt-2 no-print flex justify-end">
-								<button
-									type="button"
-									onClick={() => window.print()}
-									className="adv-btn adv-btn-primary"
-								>
-									<Printer className="w-4 h-4" />
-									Печать расчетного листка
-								</button>
-							</div>
-						</div>
+						)
 					)}
 				</div>
 
