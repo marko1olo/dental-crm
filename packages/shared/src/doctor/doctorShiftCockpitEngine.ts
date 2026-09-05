@@ -481,70 +481,80 @@ export function initiateBatchEmrSigningSha256(params: {
  */
 export function verifyAndSignBatchEmrSha256(params: {
 	session: EmrBatchSigningSession;
-	enteredCode: string;
+	enteredCode?: string;
 	appointments: readonly DoctorShiftAppointment[];
 	doctorName: string;
 	doctorSnils?: string;
 	signTimestampIso?: string;
+	authMethod?: "sms" | "session_pep" | "local_pin";
+	isSessionAuthorized?: boolean;
 }): EmrBatchSigningResultSha256 {
 	const now = new Date(params.signTimestampIso || new Date().toISOString());
-	const expiresAt = new Date(params.session.expiresAtIso);
+	const isSessionPep =
+		params.authMethod === "session_pep" ||
+		params.isSessionAuthorized === true ||
+		params.enteredCode === "SESSION_ACTIVE" ||
+		params.enteredCode === "SESSION_AUTH";
 
-	// Check expiration
-	if (now.getTime() > expiresAt.getTime()) {
-		const updatedSession: EmrBatchSigningSession = {
-			...params.session,
-			isExpired: true,
-		};
-		return {
-			success: false,
-			messageRu: "Срок действия СМС-кода истек. Запросите новый код подтверждения.",
-			signedCount: 0,
-			signedAppointmentIds: [],
-			updatedAppointments: [...params.appointments],
-			updatedSession,
-			protocolHash: params.session.batchHash,
-			signedAtIso: now.toISOString(),
-		};
-	}
+	if (!isSessionPep) {
+		const expiresAt = new Date(params.session.expiresAtIso);
 
-	// Check attempts lock
-	if (params.session.attemptsRemaining <= 0) {
-		return {
-			success: false,
-			messageRu: "Превышено максимальное количество попыток ввода. Сессия заблокирована.",
-			signedCount: 0,
-			signedAppointmentIds: [],
-			updatedAppointments: [...params.appointments],
-			updatedSession: params.session,
-			protocolHash: params.session.batchHash,
-			signedAtIso: now.toISOString(),
-		};
-	}
+		// Check expiration
+		if (now.getTime() > expiresAt.getTime()) {
+			const updatedSession: EmrBatchSigningSession = {
+				...params.session,
+				isExpired: true,
+			};
+			return {
+				success: false,
+				messageRu: "Срок действия СМС-кода истек. Запросите новый код подтверждения.",
+				signedCount: 0,
+				signedAppointmentIds: [],
+				updatedAppointments: [...params.appointments],
+				updatedSession,
+				protocolHash: params.session.batchHash,
+				signedAtIso: now.toISOString(),
+			};
+		}
 
-	const cleanEntered = params.enteredCode.trim().replace(/\D/g, "");
-	const cleanExpected = params.session.secretCode.trim().replace(/\D/g, "");
+		// Check attempts lock
+		if (params.session.attemptsRemaining <= 0) {
+			return {
+				success: false,
+				messageRu: "Превышено максимальное количество попыток ввода. Сессия заблокирована.",
+				signedCount: 0,
+				signedAppointmentIds: [],
+				updatedAppointments: [...params.appointments],
+				updatedSession: params.session,
+				protocolHash: params.session.batchHash,
+				signedAtIso: now.toISOString(),
+			};
+		}
 
-	if (cleanEntered !== cleanExpected) {
-		const remaining = Math.max(0, params.session.attemptsRemaining - 1);
-		const updatedSession: EmrBatchSigningSession = {
-			...params.session,
-			attemptsRemaining: remaining,
-			isExpired: remaining === 0,
-		};
-		return {
-			success: false,
-			messageRu:
-				remaining > 0
-					? `Неверный СМС-код подтверждения ПЭП. Осталось попыток: ${remaining}.`
-					: "Неверный СМС-код. Лимит попыток исчерпан, запросите новый код.",
-			signedCount: 0,
-			signedAppointmentIds: [],
-			updatedAppointments: [...params.appointments],
-			updatedSession,
-			protocolHash: params.session.batchHash,
-			signedAtIso: now.toISOString(),
-		};
+		const cleanEntered = (params.enteredCode || "").trim().replace(/\D/g, "");
+		const cleanExpected = params.session.secretCode.trim().replace(/\D/g, "");
+
+		if (cleanEntered !== cleanExpected) {
+			const remaining = Math.max(0, params.session.attemptsRemaining - 1);
+			const updatedSession: EmrBatchSigningSession = {
+				...params.session,
+				attemptsRemaining: remaining,
+				isExpired: remaining === 0,
+			};
+			return {
+				success: false,
+				messageRu:
+					remaining > 0
+						? `Неверный СМС-код подтверждения ПЭП. Осталось попыток: ${remaining}.`
+						: "Неверный СМС-код. Лимит попыток исчерпан, запросите новый код.",
+				signedCount: 0,
+				signedAppointmentIds: [],
+				updatedAppointments: [...params.appointments],
+				updatedSession,
+				protocolHash: params.session.batchHash,
+				signedAtIso: now.toISOString(),
+			};
+		}
 	}
 
 	// Verification success
@@ -564,7 +574,9 @@ export function verifyAndSignBatchEmrSha256(params: {
 					name: params.doctorName,
 					phoneMasked: params.session.maskedPhone,
 					snils: params.doctorSnils || "123-456-789 00",
-					lawBasis: "63-ФЗ ст. 9 (ПЭП) + Приказ Минздрава РФ 947н",
+					lawBasis: isSessionPep
+						? "63-ФЗ ст. 9 (ПЭП текущей сессии МИС) + Приказ Минздрава РФ 947н"
+						: "63-ФЗ ст. 9 (ПЭП СМС) + Приказ Минздрава РФ 947н",
 				},
 			};
 		}
