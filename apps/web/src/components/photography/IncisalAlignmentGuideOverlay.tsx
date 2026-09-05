@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type GuideOverlayType = 'bipupillary' | 'incisal' | 'midline' | 'golden_ratio' | 'thirds';
+export type GuideOverlayType = 'bipupillary' | 'incisal' | 'midline' | 'thirds';
 
 export interface IncisalAlignmentGuideOverlayProps {
 	activeGuides: Record<GuideOverlayType, boolean>;
@@ -8,6 +8,16 @@ export interface IncisalAlignmentGuideOverlayProps {
 	incisalCantingDegrees?: number;
 }
 
+/**
+ * Clinical Orthopedic Photographic Alignment Guides
+ * 
+ * Under Mandates 8i & 8k, procedural golden ratio curves and speculative DSD gimmicks
+ * are purged in favor of real clinical orthopedic reference lines:
+ * - Bipupillary line (горизонт зрачков)
+ * - Facial midline (срединно-лицевая линия)
+ * - Incisal edge horizontal & canting (резцовый край)
+ * - Rule of thirds (композиционная сетка третей)
+ */
 export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlayProps> = ({
 	activeGuides,
 	bipupillaryTiltDegrees = 0,
@@ -132,31 +142,6 @@ export const IncisalAlignmentGuideOverlay: React.FC<IncisalAlignmentGuideOverlay
 						fontFamily="sans-serif"
 					>
 						Резцовый край ({incisalCantingDegrees !== 0 ? `Крен: ${incisalCantingDegrees > 0 ? '+' : ''}${incisalCantingDegrees.toFixed(1)}°` : '0.0° Горизонт'})
-					</text>
-				</g>
-			)}
-
-			{/* 5. Golden Ratio Smile Curvature (Золотое сечение дуги улыбки) */}
-			{activeGuides.golden_ratio && (
-				<g>
-					<path
-						d="M 220 590 Q 500 750 780 590"
-						fill="none"
-						stroke="#eab308"
-						strokeWidth="3"
-						strokeDasharray="10 6"
-					/>
-					<rect x="360" y="760" width="280" height="24" rx="4" fill="rgba(15, 23, 42, 0.85)" />
-					<text
-						x="500"
-						y="776"
-						textAnchor="middle"
-						fill="#eab308"
-						fontSize="12"
-						fontWeight="700"
-						fontFamily="sans-serif"
-					>
-						Золотая кривая улыбки (1 : 0.618)
 					</text>
 				</g>
 			)}

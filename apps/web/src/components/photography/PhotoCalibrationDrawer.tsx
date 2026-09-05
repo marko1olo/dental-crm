@@ -6,10 +6,21 @@ import {
 	RotateCw,
 	FlipHorizontal,
 	FlipVertical,
-	Pipette,
+	Check,
+	Camera,
+	Palette,
 } from 'lucide-react';
 import { PhotoProtocolSlotDefinition, PhotoSlotRecord } from './photoGridPresets';
-import { findClosestVitaShade, ColorRGB, ShadeMatchResult } from './photoProtocolMath';
+import {
+	createVitaPhysicalTabReference,
+	VitaPhysicalTabReference,
+} from './photoProtocolMath';
+import {
+	VITA_CLASSICAL_SHADES,
+	VITA_3D_MASTER_SHADES,
+	VitaShade,
+	VitaSystemType,
+} from './vitaShadesCatalog';
 
 export interface PhotoCalibrationDrawerProps {
 	slotDef: PhotoProtocolSlotDefinition;
@@ -24,34 +35,16 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 	onClose,
 	onUpdateRecord,
 }) => {
-	const [activeGridOverlay, setActiveGridOverlay] = useState<'none' | 'thirds' | 'frankfurt' | 'golden_ratio' | 'esthetic_e'>('none');
-	const [dropperActive, setDropperActive] = useState<boolean>(false);
-	const [pickedShadeResult, setPickedShadeResult] = useState<ShadeMatchResult | null>(null);
+	const [activeGridOverlay, setActiveGridOverlay] = useState<'none' | 'thirds' | 'frankfurt'>('none');
+	const [selectedSystem, setSelectedSystem] = useState<VitaSystemType>('classical');
+	const [selectedShadeCode, setSelectedShadeCode] = useState<string>(record.detectedVitaShade || 'A2');
 	const editorCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-	const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-		if (!dropperActive) return;
-		const canvas = editorCanvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
+	const activeTabRef: VitaPhysicalTabReference = createVitaPhysicalTabReference(selectedShadeCode);
 
-		const rect = canvas.getBoundingClientRect();
-		const x = Math.floor(((e.clientX - rect.left) / rect.width) * canvas.width);
-		const y = Math.floor(((e.clientY - rect.top) / rect.height) * canvas.height);
-
-		try {
-			const pixel = ctx.getImageData(x, y, 1, 1).data;
-			const r = pixel[0] ?? 0;
-			const g = pixel[1] ?? 0;
-			const b = pixel[2] ?? 0;
-			const rgb: ColorRGB = { r, g, b };
-			const result = findClosestVitaShade(rgb, 'all');
-			setPickedShadeResult(result);
-			onUpdateRecord({ detectedVitaShade: result.shade.code });
-		} catch (err) {
-			console.error('Error picking color from canvas:', err);
-		}
+	const handleSelectShade = (code: string) => {
+		setSelectedShadeCode(code);
+		onUpdateRecord({ detectedVitaShade: code });
 	};
 
 	useEffect(() => {
@@ -108,42 +101,21 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 				ctx.font = 'bold 16px sans-serif';
 				ctx.fillText('Франкфуртская горизонталь', 20, canvas.height * 0.45 - 10);
 				ctx.fillText('Срединно-лицевая линия', canvas.width / 2 + 10, 30);
-			} else if (activeGridOverlay === 'golden_ratio') {
-				ctx.strokeStyle = '#eab308';
-				ctx.lineWidth = 2.5;
-				ctx.setLineDash([8, 6]);
-				const midX = canvas.width / 2;
-				const smileY = canvas.height * 0.6;
-				ctx.beginPath();
-				ctx.ellipse(midX, smileY, canvas.width * 0.25, canvas.height * 0.15, 0, 0, Math.PI);
-				ctx.stroke();
-				ctx.setLineDash([]);
-				ctx.fillStyle = '#eab308';
-				ctx.font = 'bold 14px sans-serif';
-				ctx.fillText('Золотое сечение улыбки (1 : 0.618 : 0.382)', midX - 140, smileY + 40);
-			} else if (activeGridOverlay === 'esthetic_e') {
-				ctx.strokeStyle = '#ec4899';
-				ctx.lineWidth = 3;
-				ctx.beginPath();
-				ctx.moveTo(canvas.width * 0.65, canvas.height * 0.2);
-				ctx.lineTo(canvas.width * 0.55, canvas.height * 0.85);
-				ctx.stroke();
-				ctx.fillStyle = '#ec4899';
-				ctx.font = 'bold 15px sans-serif';
-				ctx.fillText('Линия Риккетса (E-Line)', canvas.width * 0.65 + 10, canvas.height * 0.25);
 			}
 		};
 		img.src = record.imageUrl;
 	}, [record, activeGridOverlay]);
 
+	const shadesList: VitaShade[] = selectedSystem === 'classical' ? VITA_CLASSICAL_SHADES : VITA_3D_MASTER_SHADES;
+
 	return (
 		<div className="photo-editor-overlay" role="dialog" aria-modal="true">
 			<div className="photo-editor-modal">
-				{/* Editor Header */}
-				<div className="photo-protocol-header">
+				{/* Editor Header: 1 row, 32-36px height */}
+				<div className="photo-protocol-header" style={{ minHeight: '36px', height: '36px' }}>
 					<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 						<Sliders size={18} />
-						<span style={{ fontWeight: 700, fontSize: '16px' }}>
+						<span style={{ fontWeight: 700, fontSize: '15px' }}>
 							Калибровка кадра: {slotDef.titleRu}
 						</span>
 					</div>
@@ -151,6 +123,7 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 						className="photo-touch-btn"
 						onClick={onClose}
 						aria-label="Закрыть редактор"
+						style={{ minHeight: '32px', minWidth: '32px', padding: '4px' }}
 					>
 						<X size={18} />
 					</button>
@@ -162,12 +135,11 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 					<div className="photo-editor-canvas-pane">
 						<canvas
 							ref={editorCanvasRef}
-							onClick={handleCanvasClick}
 							style={{
 								maxWidth: '100%',
 								maxHeight: '100%',
 								objectFit: 'contain',
-								cursor: dropperActive ? 'crosshair' : 'default'
+								cursor: 'default',
 							}}
 						/>
 					</div>
@@ -182,78 +154,80 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 							<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
 								<button
 									className="photo-touch-btn"
+									style={{ minHeight: '44px' }}
 									onClick={() => {
 										onUpdateRecord({ rotationDegrees: ((record.rotationDegrees || 0) - 90 + 360) % 360 });
 									}}
 								>
-									<RotateCcw size={14} /> -90°
+									<RotateCcw size={15} /> -90°
 								</button>
 								<button
 									className="photo-touch-btn"
+									style={{ minHeight: '44px' }}
 									onClick={() => {
 										onUpdateRecord({ rotationDegrees: ((record.rotationDegrees || 0) + 90) % 360 });
 									}}
 								>
-									<RotateCw size={14} /> +90°
+									<RotateCw size={15} /> +90°
 								</button>
 								<button
 									className={`photo-touch-btn ${record.flipHorizontal ? 'primary' : ''}`}
+									style={{ minHeight: '44px' }}
 									onClick={() => {
 										onUpdateRecord({ flipHorizontal: !record.flipHorizontal });
 									}}
 									title="Отражение по горизонтали (зеркало)"
 								>
-									<FlipHorizontal size={14} /> Отразить H
+									<FlipHorizontal size={15} /> Отразить H
 								</button>
 								<button
 									className={`photo-touch-btn ${record.flipVertical ? 'primary' : ''}`}
+									style={{ minHeight: '44px' }}
 									onClick={() => {
 										onUpdateRecord({ flipVertical: !record.flipVertical });
 									}}
 								>
-									<FlipVertical size={14} /> Отразить V
+									<FlipVertical size={15} /> Отразить V
 								</button>
 							</div>
 						</div>
 
-						{/* 2. Overlays & Grids */}
+						{/* 2. Clinical Orthopedic Grids (Mandates 8i, 8k) */}
 						<div>
 							<h4 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>
-								Эстетические сетки & Оси
+								Ортопедические сетки & Ориентиры
 							</h4>
 							<select
 								value={activeGridOverlay}
-								onChange={(e) => setActiveGridOverlay(e.target.value as any)}
+								onChange={(e) => setActiveGridOverlay(e.target.value as 'none' | 'thirds' | 'frankfurt')}
 								style={{
 									width: '100%',
-									minHeight: '40px',
-									padding: '6px 10px',
+									minHeight: '44px',
+									padding: '8px 12px',
 									borderRadius: '8px',
 									border: '1px solid var(--line, #cbd5e1)',
 									background: 'var(--paper, #ffffff)',
 									color: 'var(--ink, #0f172a)',
 									fontSize: '13px',
-									fontWeight: 600
+									fontWeight: 600,
 								}}
 							>
 								<option value="none">Без сетки</option>
-								<option value="thirds">Правило третей</option>
-								<option value="frankfurt">Франкфуртская горизонталь & Центр</option>
-								<option value="golden_ratio">Золотое сечение улыбки (1.618)</option>
-								<option value="esthetic_e">Линия Риккетса (E-Line)</option>
+								<option value="thirds">Правило третей (композиция лица)</option>
+								<option value="frankfurt">Франкфуртская горизонталь & Срединная линия</option>
 							</select>
 						</div>
 
 						{/* 3. Color & Light Adjustments */}
 						<div>
 							<h4 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>
-								Яркость и Контраст
+								Экспозиция кадра
 							</h4>
 							<div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 								<div>
-									<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+									<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
 										<span>Яркость</span>
-										<span>{record.brightness || 0}</span>
+										<span style={{ fontWeight: 600 }}>{record.brightness || 0}</span>
 									</div>
 									<input
 										type="range"
@@ -261,13 +235,13 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 										max="50"
 										value={record.brightness || 0}
 										onChange={(e) => onUpdateRecord({ brightness: parseInt(e.target.value, 10) })}
-										style={{ width: '100%' }}
+										style={{ width: '100%', minHeight: '24px' }}
 									/>
 								</div>
 								<div>
-									<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+									<div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
 										<span>Контраст</span>
-										<span>{record.contrast || 0}</span>
+										<span style={{ fontWeight: 600 }}>{record.contrast || 0}</span>
 									</div>
 									<input
 										type="range"
@@ -275,61 +249,155 @@ export const PhotoCalibrationDrawer: React.FC<PhotoCalibrationDrawerProps> = ({
 										max="50"
 										value={record.contrast || 0}
 										onChange={(e) => onUpdateRecord({ contrast: parseInt(e.target.value, 10) })}
-										style={{ width: '100%' }}
+										style={{ width: '100%', minHeight: '24px' }}
 									/>
 								</div>
 							</div>
 						</div>
 
-						{/* 4. VITA Shade Matcher Dropper */}
-						<div className="shade-matching-box">
+						{/* 4. Physical VITA Tab Reference for Dental Lab (ZTL) — Mandates 8i, 8k */}
+						<div className="shade-matching-box" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 							<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-								<span style={{ fontSize: '13px', fontWeight: 700 }}>
-									Определение оттенка VITA
-								</span>
-								<button
-									className={`photo-touch-btn ${dropperActive ? 'primary' : ''}`}
-									style={{ minHeight: '36px', padding: '4px 10px', fontSize: '12px' }}
-									onClick={() => setDropperActive(!dropperActive)}
-								>
-									<Pipette size={14} />
-									{dropperActive ? 'Пипетка активна' : 'Выбрать точку'}
-								</button>
+								<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+									<Palette size={16} />
+									<span style={{ fontSize: '13px', fontWeight: 700 }}>
+										Эталон расцветки VITA для ЗТЛ
+									</span>
+								</div>
+								<div style={{ display: 'flex', gap: '4px' }}>
+									<button
+										type="button"
+										className={`photo-touch-btn ${selectedSystem === 'classical' ? 'primary' : ''}`}
+										style={{ minHeight: '32px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}
+										onClick={() => setSelectedSystem('classical')}
+									>
+										Classical
+									</button>
+									<button
+										type="button"
+										className={`photo-touch-btn ${selectedSystem === '3d_master' ? 'primary' : ''}`}
+										style={{ minHeight: '32px', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}
+										onClick={() => setSelectedSystem('3d_master')}
+									>
+										3D-Master
+									</button>
+								</div>
 							</div>
 
-							{pickedShadeResult ? (
-								<div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-									<div className="shade-swatch-row">
-										<div
-											className="shade-color-chip"
+							{/* Physical Shade Swatches Grid */}
+							<div
+								style={{
+									display: 'grid',
+									gridTemplateColumns: 'repeat(5, 1fr)',
+									gap: '4px',
+									maxHeight: '130px',
+									overflowY: 'auto',
+									padding: '2px',
+								}}
+							>
+								{shadesList.map((s) => {
+									const isSelected = s.code.toUpperCase() === selectedShadeCode.toUpperCase();
+									return (
+										<button
+											key={s.code}
+											type="button"
+											className="photo-touch-btn"
+											onClick={() => handleSelectShade(s.code)}
 											style={{
-												background: `rgb(${pickedShadeResult.shade.rgb.r}, ${pickedShadeResult.shade.rgb.g}, ${pickedShadeResult.shade.rgb.b})`
+												minHeight: '36px',
+												padding: '2px 4px',
+												display: 'flex',
+												flexDirection: 'column',
+												alignItems: 'center',
+												justifyContent: 'center',
+												background: isSelected ? 'var(--primary, #0d9488)' : 'var(--paper-soft, #f8fafc)',
+												color: isSelected ? '#ffffff' : 'var(--ink, #0f172a)',
+												border: isSelected ? '2px solid var(--primary-strong, #0f766e)' : '1px solid var(--line, #e2e8f0)',
+												borderRadius: '6px',
+												position: 'relative',
 											}}
-										/>
-										<div>
-											<div style={{ fontSize: '14px', fontWeight: 800 }}>
-												{pickedShadeResult.shade.code} ({pickedShadeResult.shade.nameRu})
-											</div>
-											<div style={{ fontSize: '11px', color: 'var(--muted, #64748b)' }}>
-												{pickedShadeResult.deltaEQualityRu}
-											</div>
-										</div>
+											title={`${s.code}: ${s.nameRu} — ${s.descriptionRu}`}
+										>
+											<span
+												style={{
+													width: '18px',
+													height: '10px',
+													borderRadius: '2px',
+													background: `rgb(${s.rgb.r}, ${s.rgb.g}, ${s.rgb.b})`,
+													border: '1px solid rgba(0,0,0,0.15)',
+													marginBottom: '2px',
+												}}
+											/>
+											<span style={{ fontSize: '10px', fontWeight: 700, lineHeight: 1 }}>
+												{s.code}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+
+							{/* Active Physical Tab Details Card */}
+							<div
+								style={{
+									padding: '8px 10px',
+									borderRadius: '8px',
+									background: 'var(--paper-soft, #f1f5f9)',
+									border: '1px solid var(--line, #cbd5e1)',
+									display: 'flex',
+									alignItems: 'center',
+									gap: '10px',
+								}}
+							>
+								<div
+									style={{
+										width: '28px',
+										height: '28px',
+										borderRadius: '6px',
+										background: `rgb(${activeTabRef.shade.rgb.r}, ${activeTabRef.shade.rgb.g}, ${activeTabRef.shade.rgb.b})`,
+										border: '1px solid rgba(0,0,0,0.2)',
+										flexShrink: 0,
+									}}
+								/>
+								<div style={{ flex: 1, minWidth: 0 }}>
+									<div style={{ fontSize: '13px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+										<span>{activeTabRef.shade.code}</span>
+										<span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--muted, #64748b)' }}>
+											({activeTabRef.shade.nameRu})
+										</span>
 									</div>
-									<div style={{ fontSize: '11px', color: 'var(--muted, #64748b)' }}>
-										{pickedShadeResult.shade.descriptionRu}
+									<div style={{ fontSize: '11px', color: 'var(--muted, #64748b)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+										{activeTabRef.shade.descriptionRu}
 									</div>
 								</div>
-							) : (
-								<div style={{ fontSize: '12px', color: 'var(--muted, #64748b)' }}>
-									Активируйте пипетку и кликните по поверхности эмали центрального резца.
-								</div>
-							)}
+								<Check size={16} style={{ color: 'var(--primary, #0d9488)', flexShrink: 0 }} />
+							</div>
+
+							{/* Clinical Reminder under Mandates 8i, 8k */}
+							<div
+								style={{
+									display: 'flex',
+									alignItems: 'flex-start',
+									gap: '6px',
+									padding: '6px 8px',
+									borderRadius: '6px',
+									background: 'rgba(13, 148, 136, 0.08)',
+									border: '1px solid rgba(13, 148, 136, 0.2)',
+									fontSize: '11px',
+									color: 'var(--ink, #0f172a)',
+									lineHeight: 1.3,
+								}}
+							>
+								<Camera size={14} style={{ color: 'var(--primary, #0d9488)', marginTop: '2px', flexShrink: 0 }} />
+								<span>
+									В наряд ЗТЛ передается эталон по физической расцветке. Для точного соответствия сделайте снимок с образцом у режущего края эмали при том же освещении.
+								</span>
+							</div>
 						</div>
 
 						{/* Close button */}
 						<button
 							className="photo-touch-btn primary"
-							style={{ marginTop: 'auto' }}
+							style={{ marginTop: 'auto', minHeight: '44px', fontWeight: 700 }}
 							onClick={onClose}
 						>
 							Готово

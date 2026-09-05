@@ -62,12 +62,11 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 	const [splitPercent, setSplitPercent] = useState<number>(50);
 	const [blendOpacity, setBlendOpacity] = useState<number>(0.5);
 
-	// Alignment Guides state
+	// Alignment Guides state (clean orthopedic guides: bipupillary, incisal, midline, thirds)
 	const [activeGuides, setActiveGuides] = useState<Record<GuideOverlayType, boolean>>({
 		bipupillary: false,
 		incisal: false,
 		midline: false,
-		golden_ratio: false,
 		thirds: false,
 	});
 	const [bipupillaryTilt, setBipupillaryTilt] = useState<number>(0);
@@ -485,14 +484,6 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
 						>
 							Срединная линия
-						</button>
-						<button
-							type="button"
-							className={`photo-touch-btn ${activeGuides.golden_ratio ? 'primary' : ''}`}
-							onClick={() => toggleGuide('golden_ratio')}
-							style={{ minHeight: '44px', minWidth: '44px', fontSize: '12px' }}
-						>
-							Золотое сечение
 						</button>
 						<button
 							type="button"

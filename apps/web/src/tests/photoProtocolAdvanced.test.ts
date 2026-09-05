@@ -41,7 +41,7 @@ import {
 	labToRgb,
 	colorDistanceDeltaE76,
 	colorDistanceDeltaE2000,
-	findClosestVitaShade,
+	createVitaPhysicalTabReference,
 	calculateSplitClipPath,
 	calculateWiperWheelDelta,
 	calculateKeyboardWiperDelta,
@@ -225,18 +225,16 @@ describe("Advanced Clinical Dental Photo Protocol & Wiper Slider Suite", () => {
 			assert.ok(deltaDark.lightnessImprovementRu.includes("Потемнение"));
 		});
 
-		it("identifies closest VITA shade from sRGB input", () => {
-			// Sample very close to A1
-			const sampleA1: ColorRGB = { r: 242, g: 232, b: 212 };
-			const matchA1 = findClosestVitaShade(sampleA1, "classical");
-			assert.equal(matchA1.shade.code, "A1");
-			assert.ok(matchA1.deltaE00 < 0.1);
-			assert.equal(matchA1.deltaEQuality, "excellent");
+		it("validates physical VITA shade tab reference creation under Mandates 8i & 8k", () => {
+			const refA1 = createVitaPhysicalTabReference("A1");
+			assert.equal(refA1.shadeCode, "A1");
+			assert.equal(refA1.system, "classical");
+			assert.equal(refA1.isBleach, false);
+			assert.ok(refA1.clinicalNoteRu.includes("ЗТЛ"));
 
-			// Sample close to ultra white BL1
-			const sampleBl1: ColorRGB = { r: 254, g: 252, b: 246 };
-			const matchBl1 = findClosestVitaShade(sampleBl1, "classical");
-			assert.equal(matchBl1.shade.code, "BL1");
+			const refBL1 = createVitaPhysicalTabReference("BL1");
+			assert.equal(refBL1.shadeCode, "BL1");
+			assert.equal(refBL1.isBleach, true);
 		});
 
 		it("accurately converts sRGB to CIELAB and back to sRGB", () => {

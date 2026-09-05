@@ -37,8 +37,9 @@ import {
 	labToRgb,
 	colorDistanceDeltaE76,
 	colorDistanceDeltaE2000,
-	findClosestVitaShade,
-	classifyHueGroup,
+	createVitaPhysicalTabReference,
+	getShadeHueGroup,
+	getVitaShadeByCode,
 	sortShadesByLightness,
 	VITA_CLASSICAL_SHADES,
 	VITA_CLASSICAL_STANDARD_SHADES,
@@ -293,26 +294,29 @@ describe("Clinical Dental Photography & Photo Protocol Suite", () => {
 			assert.ok(de00 > 0 && de00 < 10);
 		});
 
-		it("identifies closest VITA Classical shade accurately", () => {
-			const a2Shade = VITA_CLASSICAL_SHADES.find((s) => s.code === "A2")!;
-			const match = findClosestVitaShade(a2Shade.rgb, "classical");
+		it("creates physical VITA Classical shade tab reference for dental lab accurately", () => {
+			const tabA2 = createVitaPhysicalTabReference("A2");
 
-			assert.equal(match.shade.code, "A2");
-			assert.ok(match.deltaE00 < 0.5);
-			assert.equal(match.deltaEQuality, "excellent");
-			assert.ok(match.matchConfidencePercent >= 90);
+			assert.equal(tabA2.shadeCode, "A2");
+			assert.equal(tabA2.system, "classical");
+			assert.equal(tabA2.isBleach, false);
+			assert.ok(tabA2.clinicalNoteRu.includes("ЗТЛ"));
+			assert.ok(tabA2.clinicalNoteRu.includes("A2"));
 		});
 
-		it("identifies VITA Bleach shades", () => {
-			const bleachRgb: ColorRGB = { r: 252, g: 250, b: 242 };
-			const match = findClosestVitaShade(bleachRgb, "3d_master");
-			assert.equal(match.shade.code, "0M1");
-			assert.equal(match.shade.hueGroup, "Bleach");
+		it("identifies physical VITA Bleach tab references", () => {
+			const tabBleach = createVitaPhysicalTabReference("0M1");
+			assert.equal(tabBleach.shadeCode, "0M1");
+			assert.equal(tabBleach.system, "3d_master");
+			assert.equal(tabBleach.isBleach, true);
 		});
 
-		it("classifies tooth hue group (A, B, C, D, Bleach)", () => {
-			const hueB = classifyHueGroup({ r: 245, g: 238, b: 210 }); // Yellowish B
-			assert.equal(hueB === "B" || hueB === "Bleach", true);
+		it("classifies tooth hue group from physical reference tab (A, B, C, D, Bleach)", () => {
+			const hueB = getShadeHueGroup("B2");
+			assert.equal(hueB, "B");
+
+			const hueBleach = getShadeHueGroup("BL1");
+			assert.equal(hueBleach, "Bleach");
 
 			const sorted = sortShadesByLightness(VITA_CLASSICAL_STANDARD_SHADES);
 			assert.equal(sorted[0]?.code, "B1"); // B1 is lightest among standard 16 classical

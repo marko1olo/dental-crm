@@ -730,66 +730,35 @@ export function mirrorCoordinates(
 }
 
 // ---------------------------------------------------------------------------
-// 6. VITA Tooth Shade Matching Engine (sRGB <-> CIELAB & Delta E)
+// 6. Physical VITA Tooth Shade Reference & Colorimetry Engine (Mandates 8i, 8k)
 // ---------------------------------------------------------------------------
 
-export interface ShadeMatchResult {
+/**
+ * Physical VITA tab reference for clinical dental photography.
+ * Under Mandates 8i & 8k, automated smartphone sRGB shade picking is prohibited
+ * as clinically invalid without calibrated spectrophotometer, polarizing filter,
+ * and controlled white balance.
+ * Standard dental protocol requires manual matching using physical VITA tab
+ * photographed alongside the tooth under identical clinical lighting conditions.
+ */
+export interface VitaPhysicalTabReference {
+	shadeCode: string;
 	shade: VitaShade;
-	deltaE00: number; // Delta E 2000
-	deltaE76: number; // Delta E 76
-	matchConfidencePercent: number; // 0 to 100%
-	deltaEQuality: 'excellent' | 'good' | 'acceptable' | 'poor';
-	deltaEQualityRu: string;
-	topCandidates: Array<{ shade: VitaShade; deltaE00: number }>;
+	system: VitaSystemType;
+	isBleach: boolean;
+	clinicalNoteRu: string;
 }
 
-export function findClosestVitaShade(
-	rgb: ColorRGB,
-	system: 'classical' | '3d_master' | 'all' = 'all'
-): ShadeMatchResult {
-	const sampleLab = rgbToLab(rgb);
-
-	let candidates = ALL_VITA_SHADES;
-	if (system === 'classical') {
-		candidates = VITA_CLASSICAL_SHADES;
-	} else if (system === '3d_master') {
-		candidates = VITA_3D_MASTER_SHADES;
-	}
-
-	const evaluated = candidates.map(shade => {
-		const de00 = colorDistanceDeltaE2000(sampleLab, shade.lab);
-		const de76 = colorDistanceDeltaE76(sampleLab, shade.lab);
-		return { shade, deltaE00: de00, deltaE76: de76 };
-	});
-
-	evaluated.sort((a, b) => a.deltaE00 - b.deltaE00);
-	const defaultShade = VITA_CLASSICAL_SHADES[0] as VitaShade;
-	const best = evaluated[0] ?? { shade: defaultShade, deltaE00: 0, deltaE76: 0 };
-
-	let deltaEQuality: 'excellent' | 'good' | 'acceptable' | 'poor' = 'poor';
-	let deltaEQualityRu = 'Требуется перекалибровка освещения';
-
-	if (best.deltaE00 < 1.2) {
-		deltaEQuality = 'excellent';
-		deltaEQualityRu = 'Идеальное клиническое совпадение (ΔE < 1.2)';
-	} else if (best.deltaE00 < 2.7) {
-		deltaEQuality = 'good';
-		deltaEQualityRu = 'Хорошее совпадение оттенка (ΔE < 2.7)';
-	} else if (best.deltaE00 < 4.0) {
-		deltaEQuality = 'acceptable';
-		deltaEQualityRu = 'Приемлемый оттенок (ΔE < 4.0)';
-	}
-
-	const matchConfidence = Math.max(0, Math.min(100, Math.round(100 - best.deltaE00 * 15)));
-
+export function createVitaPhysicalTabReference(shadeCode: string): VitaPhysicalTabReference {
+	const shade = getVitaShadeByCode(shadeCode) || VITA_CLASSICAL_SHADES[1]!; // A2 default
+	const isBleach = shade.hueGroup === 'Bleach';
+	const clinicalNoteRu = `Эталон VITA ${shade.code} (${shade.nameRu}) зафиксирован по физической расцветке у зуба для ЗТЛ`;
 	return {
-		shade: best.shade,
-		deltaE00: best.deltaE00,
-		deltaE76: best.deltaE76,
-		matchConfidencePercent: matchConfidence,
-		deltaEQuality,
-		deltaEQualityRu,
-		topCandidates: evaluated.slice(0, 3).map(e => ({ shade: e.shade, deltaE00: e.deltaE00 })),
+		shadeCode: shade.code,
+		shade,
+		system: shade.system,
+		isBleach,
+		clinicalNoteRu,
 	};
 }
 
@@ -797,12 +766,7 @@ export function sortShadesByLightness(shades: VitaShade[]): VitaShade[] {
 	return [...shades].sort((a, b) => b.lab.L - a.lab.L);
 }
 
-export function classifyHueGroup(rgb: ColorRGB): 'A' | 'B' | 'C' | 'D' | 'Bleach' {
-	const best = findClosestVitaShade(rgb, 'classical');
-	if (best.shade.hueGroup === 'Bleach') return 'Bleach';
-	if (best.shade.hueGroup === 'A') return 'A';
-	if (best.shade.hueGroup === 'B') return 'B';
-	if (best.shade.hueGroup === 'C') return 'C';
-	if (best.shade.hueGroup === 'D') return 'D';
-	return 'A';
+export function getShadeHueGroup(shadeCode: string): 'A' | 'B' | 'C' | 'D' | 'L' | 'M' | 'R' | 'Bleach' {
+	const shade = getVitaShadeByCode(shadeCode);
+	return shade ? shade.hueGroup : 'A';
 }
