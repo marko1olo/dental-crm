@@ -669,3 +669,45 @@
 		border-bottom-color: var(--bad-fg);
 	}
 }
+
+/* ─── EMPTY STATE (МАНДАТ 8e / ЧЕСТНЫЙ EMPTY STATE) ────────────────────────── */
+
+.ztl-empty-state {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 48px 24px;
+	text-align: center;
+	background: var(--paper);
+}
+
+.ztl-empty-icon-wrap {
+	width: 64px;
+	height: 64px;
+	border-radius: 16px;
+	background: var(--teal-surface);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 16px;
+	border: 1px solid var(--teal);
+}
+
+.ztl-empty-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0 0 8px 0;
+}
+
+.ztl-empty-desc {
+	font-size: 13px;
+	color: var(--muted);
+	max-width: 440px;
+	line-height: 1.5;
+	margin: 0 0 20px 0;
+}
+

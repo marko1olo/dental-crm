@@ -30,6 +30,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { countLabel } from "../../lib/russianPlural";
+import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { usePerspectiveStore } from "../../store/perspectiveStore";
 import { useVisitStore } from "../../store/visitStore";
@@ -58,6 +59,9 @@ interface SubscriptionPayment {
 
 export function OrthodonticPerspectiveView() {
 	const { dashboard, auth, loadDashboard } = useAppLogicContext();
+	const activeDoctorName = useAppStore((s) => s.activeDoctorName);
+	const effectiveDoctorName = activeDoctorName || auth?.currentUser?.name || "Врач-ортодонт";
+	const effectiveClinicName = dashboard?.clinicSettings?.profile?.clinicName || "Стоматологическая клиника";
 	const setPerspective = usePerspectiveStore((s) => s.setPerspective);
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
@@ -855,6 +859,8 @@ export function OrthodonticPerspectiveView() {
 				onClose={() => setIsPhotoProtocolOpen(false)}
 				patientId={activePatient?.id}
 				patientName={activePatient?.fullName}
+				doctorName={effectiveDoctorName}
+				clinicName={effectiveClinicName}
 				treatmentStageTitle={stages.find((s) => s.number === currentStageNumber)?.title ?? ""}
 			/>
 		</div>

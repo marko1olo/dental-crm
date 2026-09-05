@@ -157,10 +157,10 @@ export interface OrthodonticPhotoProtocolModalProps {
 export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolModalProps> = ({
 	isOpen,
 	onClose,
-	patientId = "pat-ortho-001",
-	patientName = "Смирнова Екатерина Васильевна",
-	doctorName = "Д-р Смирнов Алексей Петрович",
-	clinicName = "ООО «Денте Стоматология»",
+	patientId = "",
+	patientName: propPatientName,
+	doctorName: propDoctorName,
+	clinicName: propClinicName,
 	initialSession,
 	treatmentPlanId,
 	treatmentPlanStageId,
@@ -168,11 +168,15 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 	onSaveSession,
 	onInsertProtocol043,
 }) => {
+	const patientName = (propPatientName && propPatientName.trim()) || "Пациент";
+	const doctorName = (propDoctorName && propDoctorName.trim()) || "Лечащий врач-ортодонт";
+	const clinicName = (propClinicName && propClinicName.trim()) || "Стоматологическая клиника";
+
 	// Initialize session
 	const [session, setSession] = useState<OrthodonticPhotoSession>(() => {
 		if (initialSession) return initialSession;
 		return createEmptyOrthodonticSession({
-			patientId,
+			patientId: patientId || "",
 			patientName,
 			doctorName,
 			clinicName,
@@ -201,12 +205,30 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const currentUploadingAngleRef = useRef<OrthodonticAngleId | null>(null);
 
-	// Sync initialSession updates
+	// Sync initialSession or prop updates when modal opens
 	useEffect(() => {
 		if (initialSession) {
 			setSession(initialSession);
+		} else if (isOpen) {
+			setSession((prev) => {
+				if (
+					(patientId && prev.patientId !== patientId) ||
+					(patientName && prev.patientName !== patientName) ||
+					(doctorName && prev.doctorName !== doctorName) ||
+					(clinicName && prev.clinicName !== clinicName)
+				) {
+					return {
+						...prev,
+						patientId: patientId || prev.patientId,
+						patientName,
+						doctorName,
+						clinicName,
+					};
+				}
+				return prev;
+			});
 		}
-	}, [initialSession]);
+	}, [initialSession, isOpen, patientId, patientName, doctorName, clinicName]);
 
 	// Completeness metrics
 	const completeness = useMemo(() => {
@@ -506,11 +528,11 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<div>
 							<h2 className="ortho-header-title">Ортодонтический фотопротокол (8 ракурсов)</h2>
 							<div className="ortho-header-subtitle">
-								<span>Пациент: <strong>{session.patientName}</strong></span>
+								<span>Пациент: <strong>{session.patientName || patientName}</strong></span>
 								<span>•</span>
-								<span>Врач: {session.doctorName}</span>
+								<span>Врач: {session.doctorName || doctorName}</span>
 								<span>•</span>
-								<span>{clinicName}</span>
+								<span>{session.clinicName || clinicName}</span>
 							</div>
 						</div>
 					</div>

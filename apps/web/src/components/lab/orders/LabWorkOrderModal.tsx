@@ -111,12 +111,12 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 	isOpen,
 	onClose,
 	initialOrder,
-	patientId = 'pat-001',
-	patientName = 'Иванов Иван Иванович',
-	patientChartNumber = 'К-8492',
-	doctorId = 'doc-001',
-	doctorName = 'Д-р Ковалев С. П.',
-	initialTeeth = [21],
+	patientId = '',
+	patientName = '',
+	patientChartNumber = '',
+	doctorId = '',
+	doctorName = '',
+	initialTeeth = [],
 	treatmentPlanAgeDays,
 	isPlanExpired,
 	onSaveOrder
@@ -124,9 +124,22 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 	const [activeTab, setActiveTab] = useState<ModalTab>('selection');
 
 	// Order configuration state
-	const [selectedTeeth, setSelectedTeeth] = useState<number[]>(
-		initialOrder ? initialOrder.selectedTeeth : initialTeeth
-	);
+	const [selectedTeeth, setSelectedTeeth] = useState<number[]>(() => {
+		if (initialOrder?.selectedTeeth && initialOrder.selectedTeeth.length > 0) {
+			return initialOrder.selectedTeeth;
+		}
+		if (initialTeeth && initialTeeth.length > 0) {
+			return initialTeeth;
+		}
+		return [];
+	});
+
+	// Синхронизация при внешнем изменении initialTeeth
+	React.useEffect(() => {
+		if (!initialOrder && initialTeeth && initialTeeth.length > 0) {
+			setSelectedTeeth(initialTeeth);
+		}
+	}, [initialOrder, initialTeeth]);
 	const [prostheticType, setProstheticType] = useState<ProstheticTypeId>(
 		initialOrder ? initialOrder.prostheticTypeId : 'crown_zirconia_monolithic'
 	);
@@ -181,8 +194,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 	const handleToothToggle = (toothNum: number) => {
 		setSelectedTeeth((prev) => {
 			if (prev.includes(toothNum)) {
-				const next = prev.filter((t) => t !== toothNum);
-				return next.length === 0 ? [toothNum] : next;
+				return prev.filter((t) => t !== toothNum);
 			}
 			return [...prev, toothNum].sort((a, b) => a - b);
 		});
@@ -229,14 +241,17 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 
 	const activeOrder: LabWorkOrder = useMemo(() => {
 		const preset = PROSTHETIC_TYPES[prostheticType];
+		const displayPatient = patientName.trim() || 'Пациент';
+		const displayDoctor = doctorName.trim() || 'Врач';
+
 		return {
 			id: initialOrder?.id || `lab-${Date.now()}`,
 			orderNumber: initialOrder?.orderNumber || 'ЛО-2026/08-0142',
-			patientId,
-			patientName,
-			patientChartNumber,
-			doctorId,
-			doctorName,
+			patientId: patientId || initialOrder?.patientId || `pat-${Date.now()}`,
+			patientName: displayPatient,
+			patientChartNumber: patientChartNumber?.trim() || initialOrder?.patientChartNumber || undefined,
+			doctorId: doctorId || initialOrder?.doctorId || 'doc-current',
+			doctorName: displayDoctor,
 			clinicName: 'DENTE Clinic',
 			labName: 'Центральная Лаборатория DENTE',
 			selectedTeeth,
@@ -252,7 +267,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 				{
 					stage: currentStage,
 					timestampIso: new Date().toISOString(),
-					authorName: doctorName,
+					authorName: displayDoctor,
 					note: stageNote || 'Статус обновлен в наряд-заказе'
 				}
 			],
@@ -331,7 +346,9 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 						</div>
 						<span className="lab-order-badge">{activeOrder.orderNumber}</span>
 						<span className="lab-order-badge" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--brand-500, #3b82f6)' }}>
-							{patientName} ({patientChartNumber})
+							{patientName.trim()
+								? `${patientName.trim()}${patientChartNumber?.trim() ? ` (${patientChartNumber.trim()})` : ''}`
+								: 'Пациент'}
 						</span>
 					</div>
 					<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -528,7 +545,7 @@ export const LabWorkOrderModal: React.FC<LabWorkOrderModalProps> = ({
 										Зубная формула FDI (1-Клик выбор зубов)
 									</div>
 									<div style={{ fontSize: '0.75rem', color: 'var(--muted, #64748b)' }}>
-										Выбрано: <strong>{selectedTeeth.join(', ')}</strong> ({selectedTeeth.length} ед.)
+										Выбрано: <strong>{selectedTeeth.length > 0 ? selectedTeeth.join(', ') : 'зуб не выбран'}</strong> ({selectedTeeth.length} ед.)
 									</div>
 								</div>
 

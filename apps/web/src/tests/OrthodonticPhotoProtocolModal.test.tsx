@@ -177,4 +177,24 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 		assert.ok(note3.includes("Power Chain"));
 		assert.ok(note3.includes(".016x.022\""));
 	});
+
+	it("renders dynamic neutral defaults and zero mock names when props are omitted", () => {
+		const html = renderToStaticMarkup(
+			createElement(OrthodonticPhotoProtocolModal, {
+				isOpen: true,
+				onClose: () => {},
+			}),
+		);
+
+		// Must render dynamic neutral defaults
+		assert.ok(html.includes("Пациент"));
+		assert.ok(html.includes("Лечащий врач-ортодонт"));
+		assert.ok(html.includes("Стоматологическая клиника"));
+
+		// Must NOT contain hardcoded mock names (Zero Mocks Mandate)
+		assert.ok(!html.includes("pat-ortho-001"));
+		assert.ok(!html.includes("Смирнова Екатерина Васильевна"));
+		assert.ok(!html.includes("Д-р Смирнов Алексей Петрович"));
+		assert.ok(!html.includes("ООО «Денте Стоматология»"));
+	});
 });
