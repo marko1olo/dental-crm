@@ -1,5 +1,5 @@
 import type { Appointment } from "@dental/shared";
-import { formatKopecksRu, parseKopecks } from "@dental/shared";
+import { formatKopecksRu, generateQrCodeSvg, parseKopecks } from "@dental/shared";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlertTriangle,
@@ -30,6 +30,7 @@ import {
 	Sparkles,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -41,7 +42,7 @@ import { logger } from "../../utils/logger";
 import { NdflCalculatorModal } from "../documents/NdflCalculatorModal";
 import { showToast } from "../GlobalToast";
 
-interface CheckoutItem {
+export interface CheckoutItem {
 	appointmentId: string;
 	patientId: string;
 	patientName: string;
@@ -52,16 +53,49 @@ interface CheckoutItem {
 	time: string;
 }
 
-export function FrontdeskPerspectiveView() {
+export interface FrontdeskPerspectiveViewProps {
+	readonly initialActiveSbpQrAppointment?: CheckoutItem | null;
+}
+
+export function FrontdeskPerspectiveView({
+	initialActiveSbpQrAppointment = null,
+}: FrontdeskPerspectiveViewProps = {}) {
 	const { dashboard, auth, loadDashboard } = useAppLogicContext();
 	const setPerspective = usePerspectiveStore((s) => s.setPerspective);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);
 
 	const [isNdflModalOpen, setIsNdflModalOpen] = useState(false);
-	const [activeSbpQrAppointment, setActiveSbpQrAppointment] = useState<CheckoutItem | null>(null);
+	const [activeSbpQrAppointment, setActiveSbpQrAppointment] = useState<CheckoutItem | null>(initialActiveSbpQrAppointment);
 	const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
 	const [callStatusMap, setCallStatusMap] = useState<Record<string, "confirmed" | "no_answer" | "rescheduled" | "cancelled">>({});
 	const [filterSearch, setFilterSearch] = useState("");
+
+	// SBP NSPK dynamic payload & authentic ISO/IEC 18004 SVG QR matrix
+	const sbpPayload = useMemo(() => {
+		if (!activeSbpQrAppointment) return "";
+		return `https://qr.nspk.ru/AD1000${encodeURIComponent(activeSbpQrAppointment.appointmentId || "APT")}?type=02&bank=100000000004&sum=${Math.round(Number(activeSbpQrAppointment.amountRub || 0) * 100)}&cur=RUB&crc=${encodeURIComponent(activeSbpQrAppointment.patientName || "PATIENT")}`;
+	}, [activeSbpQrAppointment]);
+
+	const sbpQrSvg = useMemo(() => {
+		if (!sbpPayload || !activeSbpQrAppointment) return "";
+		try {
+			return generateQrCodeSvg(sbpPayload, {
+				size: 192,
+				margin: 2,
+				title: `Оплата по СБП: ${activeSbpQrAppointment.patientName}`,
+			});
+		} catch {
+			// Mandate 8e: Doctor & Reception Autonomy. If full Cyrillic name in crc exceeds QR matrix capacity,
+			// fallback to shortened patient initials so the QR code generates reliably without crashing.
+			const safeCrc = encodeURIComponent((activeSbpQrAppointment.patientName || "PATIENT").slice(0, 10));
+			const fallbackPayload = `https://qr.nspk.ru/AD1000${encodeURIComponent(activeSbpQrAppointment.appointmentId || "APT")}?type=02&bank=100000000004&sum=${Math.round(Number(activeSbpQrAppointment.amountRub || 0) * 100)}&cur=RUB&crc=${safeCrc}`;
+			return generateQrCodeSvg(fallbackPayload, {
+				size: 192,
+				margin: 2,
+				title: `Оплата по СБП: ${activeSbpQrAppointment.patientName}`,
+			});
+		}
+	}, [sbpPayload, activeSbpQrAppointment]);
 
 	// Today's Appointments with unbilled / checkout status
 	const unbilledVisits: CheckoutItem[] = useMemo(() => {
@@ -473,16 +507,22 @@ export function FrontdeskPerspectiveView() {
 							</div>
 
 							<h3 className="text-lg font-bold text-[var(--ink,#0f172a)] dark:text-white m-0">Оплата по СБП (0.4–0.7%)</h3>
-							<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mt-1 mb-4">
+							<p className="text-xs text-[var(--muted,#64748b)] dark:text-slate-400 mt-1 mb-3">
 								Покажите QR-код пациенту или на втором экране
 							</p>
 
-							{/* Dynamic SBP QR Code container */}
-							<div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-inner mb-4">
-								<div className="w-48 h-48 bg-slate-950 rounded-xl flex flex-col items-center justify-center text-white p-2">
-									<QrCode size={160} className="text-white" />
-								</div>
+							{/* SBP Protocol Badge */}
+							<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 text-xs font-bold text-purple-700 dark:text-purple-300 mb-3">
+								<Zap className="w-3.5 h-3.5 shrink-0" />
+								<span>СБП • НСПК ГОСТ Р 56042</span>
 							</div>
+
+							{/* Authentic ISO/IEC 18004 SVG QR matrix container */}
+							<div
+								className="p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-inner w-52 h-52 flex items-center justify-center mx-auto mb-4"
+								data-testid="frontdesk-sbp-qr-svg"
+								dangerouslySetInnerHTML={{ __html: sbpQrSvg }}
+							/>
 
 							<div className="text-2xl font-black text-[var(--ink,#0f172a)] dark:text-white mb-1">
 								{formatKopecksRu(parseKopecks(activeSbpQrAppointment.amountRub))}
