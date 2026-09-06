@@ -47,6 +47,12 @@ import {
 	evaluateVascularRisk,
 	generateAspirationJournalEntry043,
 } from './aspirationSafetyEngine';
+import {
+	EXPRESS_ANESTHESIA_PRESETS,
+	ExpressAnesthesiaPreset,
+	ExpressAnesthesiaPresetId,
+	createExpressAspirationAttempt,
+} from './anesthesiaExpressPresets';
 import { AspirationTestCockpit } from './AspirationTestCockpit';
 import { AnesthesiaOnsetTimerWidget } from './AnesthesiaOnsetTimerWidget';
 import { AnesthesiaAnatomyMapWidget } from './AnesthesiaAnatomyMapWidget';
@@ -108,7 +114,10 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 	// 3. Category Filter Tab
 	const [categoryFilter, setCategoryFilter] = useState<TechniqueCategory | 'all'>('all');
 
-	// 4. Onset Countdown Timer State
+	// 4. Express Presets Active State (Mandates 8e, 8k, 8n)
+	const [activePresetId, setActivePresetId] = useState<ExpressAnesthesiaPresetId | null>(null);
+
+	// 5. Onset Countdown Timer State
 	const [timerSecondsLeft, setTimerSecondsLeft] = useState<number>(() =>
 		getRecommendedWaitTimeSeconds(initialTechniqueId),
 	);
@@ -134,6 +143,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 			setAttempts([]);
 			setPositiveEmergencyOpen(false);
 			setIsCopied(false);
+			setActivePresetId(null);
 		}
 	}, [
 		isOpen,
@@ -148,6 +158,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 
 	// Auto-adjust default needle & timer when technique changes
 	const handleTechniqueChange = (newTechId: ConductionTechniqueId) => {
+		setActivePresetId(null);
 		setTechniqueId(newTechId);
 		const techSpec = getTechniqueSpecification(newTechId);
 		setNeedleId(techSpec.recommendedNeedle);
@@ -156,6 +167,39 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		setTimerSecondsLeft(waitSec);
 		setIsTimerRunning(false);
 		setTimerCompleted(false);
+	};
+
+	// 1-Click Express Preset Handler (Mandates 8e, 8k, 8n)
+	const handleApplyExpressPreset = (preset: ExpressAnesthesiaPreset) => {
+		setActivePresetId(preset.id);
+		setTechniqueId(preset.techniqueId);
+		setNeedleId(preset.needleId);
+		setDrugKey(preset.drugKey);
+		setVolumeMl(preset.volumeMl);
+		setAspirationStatus('negative_safe');
+
+		const techSpec = getTechniqueSpecification(preset.techniqueId);
+		const requiresTwoPlane = preset.isTwoPlaneRequired || techSpec.aspirationPlanesRequired >= 2;
+		setIsTwoPlaneConfirmed(requiresTwoPlane);
+
+		const attempt: AspirationAttemptRecord = createExpressAspirationAttempt(preset, 1);
+		setAttempts([attempt]);
+		setPositiveEmergencyOpen(false);
+
+		// Stop running timer and mark completed since chairside protocol is instantly confirmed
+		setIsTimerRunning(false);
+		setTimerCompleted(true);
+		setTimerSecondsLeft(0);
+
+		setNotesRu(preset.notesRu);
+
+		// Ensure category filter doesn't hide the selected technique
+		if (categoryFilter !== 'all' && categoryFilter !== techSpec.category) {
+			setCategoryFilter('all');
+		}
+
+		soundFeedback.playActionSuccess();
+		showToast(`Экспресс-протокол: ${preset.title} применен! Аспирация (-).`, 'success');
 	};
 
 	// Audio chime on timer completion
@@ -511,6 +555,64 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 					</div>
 				</div>
 
+				{/* ── 1-CLICK EXPRESS PROTOCOLS HORIZONTAL BAR (МАНДАТЫ 8e, 8k, 8n) ── */}
+				<div
+					className="px-5 py-2.5 border-b shrink-0 flex flex-col gap-2"
+					style={{
+						backgroundColor: 'var(--paper-strong, #1f1f23)',
+						borderColor: 'var(--border, #27272a)',
+					}}
+					data-testid="anesthesia-express-presets-bar"
+				>
+					<div className="flex items-center justify-between flex-wrap gap-2">
+						<div className="flex items-center gap-2">
+							<span className="p-1 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">
+								<Zap className="w-3.5 h-3.5" />
+							</span>
+							<h3 className="text-xs font-bold uppercase tracking-wider text-zinc-200">
+								1-Клик экспресс-протоколы для Формы 043/у:
+							</h3>
+						</div>
+						<span className="text-[11px] text-zinc-400">
+							Мгновенное заполнение техники, препарата, иглы и отрицательной аспирации
+						</span>
+					</div>
+
+					<div className="flex items-stretch gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:overflow-x-visible">
+						{EXPRESS_ANESTHESIA_PRESETS.map((preset) => {
+							const isActive = activePresetId === preset.id;
+							return (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => handleApplyExpressPreset(preset)}
+									className={`p-2.5 rounded-xl border text-left transition-all min-h-[44px] min-w-[210px] sm:min-w-0 flex items-center gap-2.5 cursor-pointer shadow-xs ${
+										isActive
+											? 'bg-blue-600/25 border-blue-500 text-white ring-1 ring-blue-500/50'
+											: 'bg-zinc-900/80 hover:bg-zinc-800/90 border-zinc-700/60 text-zinc-200'
+									}`}
+									data-testid={`btn-express-preset-${preset.id}`}
+									title={`${preset.fullLabelRu} — клик для применения протокола`}
+								>
+									<div
+										className={`p-1.5 rounded-lg shrink-0 ${
+											isActive ? 'bg-blue-500 text-white' : 'bg-zinc-800 text-amber-400'
+										}`}
+									>
+										{isActive ? <Check className="w-3.5 h-3.5" /> : <Zap className="w-3.5 h-3.5" />}
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="font-bold text-xs truncate">{preset.title}</div>
+										<div className="text-[10px] text-zinc-400 truncate leading-tight mt-0.5">
+											{preset.subtitle}
+										</div>
+									</div>
+								</button>
+							);
+						})}
+					</div>
+				</div>
+
 				{/* ── MODAL BODY: 3-COLUMN CLINICAL COCKPIT ── */}
 				<div className="flex-1 overflow-y-auto p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
 					{/* ══ COLUMN 1: TECHNIQUE, NEEDLE & DRUG SELECTORS (4 Cols) ══ */}
@@ -644,7 +746,10 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 										<button
 											key={n.id}
 											type="button"
-											onClick={() => setNeedleId(n.id)}
+											onClick={() => {
+												setActivePresetId(null);
+												setNeedleId(n.id);
+											}}
 											className={`p-2 rounded-lg border text-left transition-all min-h-[44px] flex items-center gap-2 ${
 												isSelected
 													? 'bg-zinc-800 border-zinc-500 text-white'
@@ -693,7 +798,10 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 										<button
 											key={d.drugId}
 											type="button"
-											onClick={() => setDrugKey(d.drugId)}
+											onClick={() => {
+												setActivePresetId(null);
+												setDrugKey(d.drugId);
+											}}
 											className={`p-2 rounded-lg border text-left transition-all min-h-[44px] flex items-center justify-between ${
 												isSelected
 													? 'bg-blue-600/20 border-blue-500 text-blue-100'
@@ -720,7 +828,10 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 										<button
 											key={vol}
 											type="button"
-											onClick={() => setVolumeMl(vol)}
+											onClick={() => {
+												setActivePresetId(null);
+												setVolumeMl(vol);
+											}}
 											className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold min-h-[40px] border transition-all ${
 												isSelected
 													? 'bg-blue-600 text-white border-blue-500'
