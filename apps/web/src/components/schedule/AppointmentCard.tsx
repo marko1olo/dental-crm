@@ -635,7 +635,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							void handleQuickStatusChange("arrived");
 						}}
-						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Отметить прибытие пациента в клинику (Клавиша 1)"
 						data-testid="appointment-action-arrived-btn"
 					>
@@ -652,7 +652,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
 						}}
-						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Начать приём в кресле (Клавиша 2)"
 						data-testid="appointment-action-in-treatment-btn"
 					>
@@ -676,7 +676,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								usePatientStore.getState().setSelectedPatientId(appointmentPatient.id);
 							}
 						}}
-						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Пациент в кресле (Клавиша 2)"
 						data-testid="appointment-action-in-treatment-btn"
 					>
@@ -690,7 +690,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							void handleShiftAppointmentTime(15);
 						}}
-						className="min-h-[30px] px-2 py-1 rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 hover:bg-amber-500/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						className="min-h-[44px] sm:min-h-[32px] px-2 py-1 rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/40 hover:bg-amber-500/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
 						title="Сдвинуть запись на +15 минут при опоздании"
 						data-testid="appointment-action-delay-btn"
 					>
@@ -711,7 +711,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							void handleQuickStatusChange("completed");
 						}}
-						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-slate-700 dark:bg-slate-600 hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg bg-slate-700 dark:bg-slate-600 hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Завершить приём (Клавиша 3)"
 						data-testid="appointment-action-complete-btn"
 					>
@@ -728,7 +728,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							useAppStore.getState().setCurrentView("visit");
 							showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
 						}}
-						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
 						title="Открыть дневник приёма 043/у"
 						data-testid="appointment-action-open-visit-btn"
 					>
@@ -752,7 +752,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							useAppStore.getState().setCurrentView("finance");
 							showToast(`Касса 54-ФЗ: расчёт ${appointmentPatientName}`, "info");
 						}}
-						className="min-h-[30px] px-2.5 py-1 rounded-lg bg-emerald-600/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 hover:bg-emerald-600/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						className="min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-lg bg-emerald-600/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 hover:bg-emerald-600/25 active:scale-95 font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
 						title="Принять оплату по 54-ФЗ"
 						data-testid="appointment-action-billing-btn"
 					>
@@ -765,7 +765,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							e.stopPropagation();
 							repeatAppointment(appointment);
 						}}
-						className="min-h-[30px] px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
+						className="min-h-[44px] sm:min-h-[32px] px-2 py-1 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-bold text-xs inline-flex items-center gap-1 cursor-pointer transition-all"
 						title="Повторить запись (Клавиша R)"
 						data-testid="appointment-action-repeat-btn"
 					>
@@ -1000,7 +1000,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											void handleQuickStatusChange("confirmed");
 											handleCardMouseLeave();
 										}}
-										className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+										className={`px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
 											displayStatus === "confirmed"
 												? "bg-emerald-600 text-white border-emerald-600"
 												: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border-emerald-500/30 hover:bg-emerald-500/20"
@@ -1016,7 +1016,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											void handleQuickStatusChange("arrived");
 											handleCardMouseLeave();
 										}}
-										className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+										className={`px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
 											displayStatus === "arrived"
 												? "bg-amber-500 text-white border-amber-500"
 												: "bg-amber-500/10 text-amber-800 dark:text-amber-200 border-amber-500/30 hover:bg-amber-500/20"
@@ -1032,7 +1032,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 											void handleQuickStatusChange("in_treatment");
 											handleCardMouseLeave();
 										}}
-										className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+										className={`px-2.5 py-1.5 min-h-[44px] sm:min-h-[36px] rounded-lg text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
 											displayStatus === "in_treatment"
 												? "bg-[var(--teal,var(--brand-primary))] text-white border-[var(--teal)]"
 												: "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border-[var(--teal)]/30 hover:bg-[var(--teal-surface)]"

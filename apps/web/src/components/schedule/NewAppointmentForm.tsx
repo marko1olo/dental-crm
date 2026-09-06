@@ -829,7 +829,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 														);
 													}
 												}}
-												className="h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shrink-0 cursor-pointer shadow-sm transition-all"
+												className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shrink-0 cursor-pointer shadow-sm transition-all"
 												title="Синхронизировать время приема со сроком готовности наряда ЗТЛ"
 											>
 												<Calendar className="w-3.5 h-3.5" />
@@ -843,7 +843,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 					)}
 
 					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-4">
-						<label>
+						<label className="flex flex-col gap-1 text-xs font-semibold text-[var(--muted)]">
 							Начало
 							<input
 								type="datetime-local"
@@ -860,9 +860,10 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										),
 									)
 								}
+								className="min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none w-full"
 							/>
 						</label>
-						<label>
+						<label className="flex flex-col gap-1 text-xs font-semibold text-[var(--muted)]">
 							Окончание
 							<input
 								type="datetime-local"
@@ -879,6 +880,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										),
 									)
 								}
+								className="min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none w-full"
 							/>
 						</label>
 					</div>
@@ -974,7 +976,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						</div>
 
 						<div>
-							<span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-2">
+							<span className="text-xs font-semibold text-[var(--muted)] block mb-2">
 								Врач
 							</span>
 							{useManualSelects ? (
@@ -983,7 +985,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									onChange={(e) =>
 										updateNewAppointmentDraft("doctorUserId", e.target.value)
 									}
-									className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm outline-none"
+									className="w-full min-h-[44px] p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none"
 								>
 									<option value="">-- Выберите врача --</option>
 									{(dashboard.clinicSettings?.staff ?? [])
