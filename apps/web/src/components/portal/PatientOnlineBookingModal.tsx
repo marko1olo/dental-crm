@@ -52,10 +52,56 @@ export interface PatientOnlineBookingModalProps {
 	initialDoctorId?: string;
 	initialServiceId?: string;
 	initialBranchId?: string;
+	initialStep?: 1 | 2 | 3;
 	branches?: BookingBranch[];
 	doctors?: BookingDoctor[];
 	services?: BookingService[];
 	onBookingComplete?: (booking: OnlineBookingFormData) => void;
+	onStepChange?: (step: 1 | 2 | 3, doctorId: string, serviceId: string) => void;
+	actionRef?: React.MutableRefObject<{
+		proceedToStep2: () => void;
+		getSelectedDoctorId: () => string;
+		getSelectedServiceId: () => string;
+		getCurrentStep: () => 1 | 2 | 3;
+	} | null>;
+}
+
+/**
+ * Resolves doctor and service selection for Step 1 under Mandates 8e & 8n:
+ * 1. If solo doctor (doctors.length === 1), lock in doctors[0].
+ * 2. If !selectedDoctorId && doctors.length > 0, fallback to first available doctor.
+ * 3. If !selectedServiceId && services.length > 0, fallback to first available service.
+ * 4. Can proceed to step 2 whenever doctors and services exist without artificial blocks.
+ */
+export function resolveBookingStep1Selection(
+	doctors: BookingDoctor[],
+	services: BookingService[],
+	selectedDoctorId?: string,
+	selectedServiceId?: string,
+	availableDoctors?: BookingDoctor[],
+): {
+	effectiveDoctorId: string;
+	effectiveServiceId: string;
+	canProceed: boolean;
+	isSoloDoctor: boolean;
+	soloDoctorName: string | null;
+} {
+	const isSoloDoctor = doctors.length === 1;
+	const soloDoctorName = isSoloDoctor ? (doctors[0]?.fullName || null) : null;
+	const fallbackDoctorId = (availableDoctors && availableDoctors.length > 0 ? availableDoctors[0]?.id : doctors[0]?.id) || "";
+	const effectiveDoctorId = isSoloDoctor
+		? (doctors[0]?.id || "")
+		: (selectedDoctorId || fallbackDoctorId);
+	const effectiveServiceId = selectedServiceId || (services[0]?.id || "");
+	const canProceed = doctors.length > 0 && services.length > 0;
+
+	return {
+		effectiveDoctorId,
+		effectiveServiceId,
+		canProceed,
+		isSoloDoctor,
+		soloDoctorName,
+	};
 }
 
 const SPECIALTY_OPTIONS: Array<{ id: SpecialtyCategory; label: string }> = [
@@ -73,21 +119,28 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 	initialDoctorId,
 	initialServiceId,
 	initialBranchId,
+	initialStep,
 	branches = SAMPLE_BOOKING_BRANCHES,
 	doctors = SAMPLE_BOOKING_DOCTORS,
 	services = SAMPLE_BOOKING_SERVICES,
 	onBookingComplete,
+	onStepChange,
+	actionRef,
 }) => {
 	const modalTitleId = useId();
 
 	// Step flow state: 1 = Doctor/Service, 2 = Date/Time slot, 3 = SMS & Confirmation
-	const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+	const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(initialStep || 1);
 
-	// Step 1: Selection
+	// Step 1: Selection (default/fallback to doctors[0] and services[0] if present)
 	const [selectedBranchId, setSelectedBranchId] = useState<string>(initialBranchId || branches[0]?.id || "");
 	const [selectedSpecialty, setSelectedSpecialty] = useState<SpecialtyCategory>("all");
-	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(initialDoctorId || doctors[0]?.id || "");
-	const [selectedServiceId, setSelectedServiceId] = useState<string>(initialServiceId || services[0]?.id || "");
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(
+		initialDoctorId || doctors[0]?.id || "",
+	);
+	const [selectedServiceId, setSelectedServiceId] = useState<string>(
+		initialServiceId || services[0]?.id || "",
+	);
 
 	// Step 2: Date & Slot
 	const todayIso = new Date().toISOString().slice(0, 10);
@@ -114,27 +167,81 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 	const [bookingConfirmed, setBookingConfirmed] = useState<boolean>(false);
 	const [confirmedBookingData, setConfirmedBookingData] = useState<OnlineBookingFormData | null>(null);
 
-	// Filtered doctors
+	// Mandate 8e & 8n: Solo doctor auto-lock and Step 1 fallback selection
+	useEffect(() => {
+		const firstDoc = doctors[0];
+		if (doctors.length === 1 && firstDoc) {
+			if (selectedDoctorId !== firstDoc.id) {
+				setSelectedDoctorId(firstDoc.id);
+			}
+		} else if (!selectedDoctorId && firstDoc) {
+			setSelectedDoctorId(firstDoc.id);
+		}
+	}, [doctors, selectedDoctorId]);
+
+	useEffect(() => {
+		const firstSrv = services[0];
+		if (!selectedServiceId && firstSrv) {
+			setSelectedServiceId(firstSrv.id);
+		}
+	}, [services, selectedServiceId]);
+
+	// Filtered doctors (solo doctor is never filtered out by specialty or branch)
 	const availableDoctors = useMemo(
-		() => filterAvailableDoctors(doctors, selectedBranchId, selectedSpecialty),
+		() => (doctors.length === 1 ? doctors : filterAvailableDoctors(doctors, selectedBranchId, selectedSpecialty)),
 		[doctors, selectedBranchId, selectedSpecialty],
 	);
 
+	// Autonomy Step 1 Resolution
+	const step1Resolution = useMemo(
+		() => resolveBookingStep1Selection(doctors, services, selectedDoctorId, selectedServiceId, availableDoctors),
+		[doctors, services, selectedDoctorId, selectedServiceId, availableDoctors],
+	);
+
+	const effectiveDoctorId = step1Resolution.effectiveDoctorId;
+	const effectiveServiceId = step1Resolution.effectiveServiceId;
+
 	// Active doctor & active service details
 	const activeDoctor = useMemo(
-		() => doctors.find((d) => d.id === selectedDoctorId) || availableDoctors[0],
-		[doctors, selectedDoctorId, availableDoctors],
+		() => doctors.find((d) => d.id === effectiveDoctorId) || availableDoctors[0] || doctors[0],
+		[doctors, effectiveDoctorId, availableDoctors],
 	);
 
 	const activeService = useMemo(
-		() => services.find((s) => s.id === selectedServiceId) || services[0],
-		[services, selectedServiceId],
+		() => services.find((s) => s.id === effectiveServiceId) || services[0],
+		[services, effectiveServiceId],
 	);
 
 	const activeBranch = useMemo(
 		() => branches.find((b) => b.id === selectedBranchId) || branches[0],
 		[branches, selectedBranchId],
 	);
+
+	const handleProceedToStep2 = () => {
+		const nextDoctorId = effectiveDoctorId || doctors[0]?.id || "";
+		const nextServiceId = effectiveServiceId || services[0]?.id || "";
+
+		if (!selectedDoctorId && nextDoctorId) {
+			setSelectedDoctorId(nextDoctorId);
+		}
+		if (!selectedServiceId && nextServiceId) {
+			setSelectedServiceId(nextServiceId);
+		}
+		setCurrentStep(2);
+		if (onStepChange) {
+			onStepChange(2, nextDoctorId, nextServiceId);
+		}
+	};
+
+	// Expose synchronous action ref for direct interaction tests
+	if (actionRef) {
+		actionRef.current = {
+			proceedToStep2: handleProceedToStep2,
+			getSelectedDoctorId: () => effectiveDoctorId,
+			getSelectedServiceId: () => effectiveServiceId,
+			getCurrentStep: () => currentStep,
+		};
+	}
 
 	// Available time slots for the selected date & doctor
 	const timeSlots = useMemo(
@@ -364,19 +471,31 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 
 							{/* Doctor Selection Cards */}
 							<div className="space-y-2">
-								<div className="flex items-center justify-between">
+								<div className="flex items-center justify-between flex-wrap gap-2">
 									<label className="text-xs font-bold text-[var(--muted,#94a3b8)] uppercase tracking-wider">
-										Выберите врача ({availableDoctors.length}):
+										{doctors.length === 1 ? "Врач клиники:" : `Выберите врача (${availableDoctors.length}):`}
 									</label>
+									{doctors.length === 1 && doctors[0] && (
+										<span
+											className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-semibold"
+											data-testid="solo-doctor-badge"
+										>
+											<Sparkles className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+											<span>Приём ведёт: {doctors[0].fullName}</span>
+										</span>
+									)}
 								</div>
 
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 									{availableDoctors.map((doc) => {
-										const isSelected = selectedDoctorId === doc.id;
+										const isSelected = effectiveDoctorId === doc.id;
 										return (
 											<div
 												key={doc.id}
-												onClick={() => setSelectedDoctorId(doc.id)}
+												onClick={() => {
+													if (doctors.length === 1) return;
+													setSelectedDoctorId(doc.id);
+												}}
 												className={`booking-doctor-card ${isSelected ? "selected" : ""}`}
 												data-testid={`doctor-card-${doc.id}`}
 											>
@@ -419,7 +538,7 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 									{services.map((srv) => {
-										const isSelected = selectedServiceId === srv.id;
+										const isSelected = effectiveServiceId === srv.id;
 										return (
 											<div
 												key={srv.id}
@@ -869,8 +988,8 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 						{currentStep === 1 && (
 							<button
 								type="button"
-								disabled={!selectedDoctorId || !selectedServiceId}
-								onClick={() => setCurrentStep(2)}
+								disabled={doctors.length === 0 || services.length === 0}
+								onClick={handleProceedToStep2}
 								className="min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold bg-[var(--teal-fill,#0d9488)] text-white hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-md"
 								data-testid="booking-next-to-step-2-btn"
 							>
