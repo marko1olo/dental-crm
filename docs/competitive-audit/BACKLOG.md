@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-06 / WAVE 19): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 67 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ.**  
+> ⚠️ **СТАТУС (2026-09-06 / WAVE 18): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 89 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ.**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]` или `[ЧАСТИЧНО]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -641,7 +641,8 @@
   1. *Автоматическая регистрация незаведенных штрихкодов*: в `apps/api/src/routes/sterilization.ts` при сканировании лотка, которого ещё нет в базе, сервер не выбивает ошибку 400 Bad Request, а автоматически создает запись в `sterilizationLogs` (`buildAutoProvisionSterilizationLogValues`: Автоклав primary, класс B, 134°C / 2.1 bar, крафт-пакет, 5 класс индикатора, годен 30 дней) под ID текущего врача и бесшовно завершает привязку к визиту.
   2. *Мягкий допуск по экстренным показаниям (СанПиН 3.3686-21 п. 3632)*: функция `evaluateSterilizationLogForLinking` блокирует только реальный брак (`status != passed`). Если срок стерильности истек, но врач принимает экстренного CITO-пациента с острой болью, система разрешает мягкий допуск под личную ответственность врача с автоматической записью в дневник 043/у (`applyEmergencySterilizationToDiaryTreatment`).
 - **Статус**:
-  - Бэкенд: `apps/api/src/routes/sterilization.ts` (коммит `6c41ee42d`).
+  - Бэкенд: `apps/api/src/routes/sterilization.ts` (коммиты `6c41ee42d`, `719b7beac`).
+  - Тесты: `apps/api/src/routes/__tests__/sterilizationLinkAutonomy.test.ts` (100% passing).
 
 ---
 
@@ -666,12 +667,12 @@
 
 ## 69. `ортодонтия::1_клик_протокол_энгль_дуги_niti_сталь_и_винт_в_дневник_043у` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8i, 8k, 8n)
 - **Идея**: Быстрое ортодонтическое протоколирование без академического оверинжиниринга:
-  1. *1-клик классификация по Энглю*: экспресс-панель фиксации класса смыкания (Класс I, Класс II/1, Класс II/2, Класс III) в `OrthodonticVisitProtocolWidget.tsx`.
+  1. *1-клик классификация по Энглю*: экспресс-панель фиксации класса смыкания (Класс I, Класс II/1, Класс II/2, Класс III) в `OrthodonticVisitProtocolWidget.tsx` и `OrthodonticStudioModal.tsx`.
   2. *Селекторы рабочих дуг*: быстрый выбор рабочих дуг (круглые NiTi .014/.016, прямоугольные стальные SS .019x.025, TMA) для верхней и нижней челюстей.
   3. *Контроль расширяющего винта*: фиксация активации винта ортодонтической пластинки (шаг 1/4 оборота, 0.25 мм).
   4. *Генерация дневника 043/у*: мгновенная сборка лаконичного объективного статуса и конкатенация в дневник SOAP Формы 043/у.
 - **Статус**:
-  - Фронтенд / Shared: `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`, `OrthodonticStudioModal.tsx`, `packages/shared/src/orthodontics/orthoEngine.ts`, `types.ts` (коммит `6c41ee42d`).
+  - Фронтенд / Shared: `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`, `OrthodonticStudioModal.tsx`, `packages/shared/src/orthodontics/orthoEngine.ts`, `types.ts` (коммиты `6c41ee42d`, `719b7beac`).
   - Тесты: `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx` (100% passing).
 
 ---
@@ -884,9 +885,21 @@
 
 ---
 
+## 89. `стерилизация::1_клик_пресеты_лотков_у_кресла_без_сканера_санпин` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8n & САНПИН 3.3686-21)
+- **Идея**: Мгновенная привязка стерилизационных лотков у кресла врача без физического 2D-сканера штрихкодов:
+  1. *1-клик пресеты лотков*: в `VisitEmkTab.tsx` интегрирована панель `CHAIRSIDE_STERILIZATION_PRESETS` («Терапия стандарт» `TRAY-THERAPY-STD`, «Хирургия стандарт» `TRAY-SURGERY-STD`, «Осмотр/Консультация» `TRAY-EXAM-STD`) с крупными тач-таргетами $\ge 44\text{px}$.
+  2. *Бесшовный авто-провайдинг*: при нажатии на пресет код передается в API `/api/sterilization/:orgId/link-to-visit`, где автоматически инициализируется запись лотка со статусом `passed` (134°C, 2.1 bar, 5 класс индикатора, 30 дней) и привязывается к визиту 043/у без ошибок 400/404.
+  3. *Мягкий допуск экстренных операций*: врач сохраняет автономию приёма по СанПиН без блокировок и без необходимости подключения аппаратного сканера на каждом приеме.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/visit/VisitEmkTab.tsx` (коммит `719b7beac`).
+  - Бэкенд: `apps/api/src/routes/sterilization.ts` (коммиты `6c41ee42d`, `719b7beac`).
+  - Тесты: `apps/api/src/routes/__tests__/sterilizationLinkAutonomy.test.ts` (100% passing).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 35 дополнительных системных аддендум-фич клинической автономии (Wave 15..21, фичи 64..98) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 36 дополнительных системных аддендум-фич клинической автономии (Wave 15..21, фичи 64..99) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
