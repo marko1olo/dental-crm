@@ -527,9 +527,9 @@ export const TreatmentPlanPriceValidatorModal: React.FC<TreatmentPlanPriceValida
 								className={`price-validator-btn-secondary ${adminOverride.isAuthorized ? "pv-badge-ok" : ""}`}
 								onClick={() => setShowAdminDrawer(!showAdminDrawer)}
 							>
-								<KeyRound size={15} />{" "}
+								{adminOverride.isAuthorized ? <Check size={15} /> : <KeyRound size={15} />}{" "}
 								{adminOverride.isAuthorized
-									? "Согласовано ✓"
+									? "Согласовано"
 									: "Согласование управляющего"}
 							</button>
 						</div>

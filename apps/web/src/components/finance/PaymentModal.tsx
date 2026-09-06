@@ -441,7 +441,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<button
 							type="button"
 							onClick={applyExactCashPreset}
-							className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 								activeMethod === "cash" && cashChange.isExact
 									? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
 									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-emerald-400 text-[var(--ink,#0f172a)]"
@@ -454,7 +454,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<button
 							type="button"
 							onClick={applyFullCardPreset}
-							className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 								activeMethod === "card_terminal"
 									? "bg-blue-600 text-white border-blue-600 shadow-2xs"
 									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-blue-400 text-[var(--ink,#0f172a)]"
@@ -468,7 +468,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 							<button
 								type="button"
 								onClick={applyDepositPlusCardPreset}
-								className={`h-8 px-2.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 									activeMethod === "split" && splitDepositRub > 0 && splitCardRub > 0
 										? "bg-purple-600 text-white border-purple-600 shadow-2xs"
 										: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
@@ -567,7 +567,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										setPayerType("physical");
 										setBuyerInnError(null);
 									}}
-									className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 										payerType === "physical"
 											? "bg-emerald-600 text-white shadow-2xs"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -580,7 +580,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								<button
 									type="button"
 									onClick={() => setPayerType("legal_entity")}
-									className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+									className={`min-h-[44px] sm:min-h-[32px] px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 										payerType === "legal_entity"
 											? "bg-indigo-600 text-white shadow-2xs"
 											: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
@@ -689,7 +689,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									});
 									onClose();
 								}}
-								className="h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
+								className="min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
 								data-testid="btn-payment-close-warranty-zero"
 							>
 								<Sparkles size={14} />
@@ -904,7 +904,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											setSplitCashRub(0);
 											setSplitSbpRub(0);
 										}}
-										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 cursor-pointer flex items-center gap-1"
+										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 cursor-pointer flex items-center gap-1"
 									>
 										<Zap size={12} />
 										<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Карта</span>
@@ -922,7 +922,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											setSplitCardRub(0);
 											setSplitSbpRub(0);
 										}}
-										className="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 cursor-pointer flex items-center gap-1"
+										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 cursor-pointer flex items-center gap-1"
 									>
 										<Zap size={12} />
 										<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Нал</span>
@@ -936,7 +936,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										setSplitDepositRub(0);
 										setSplitSbpRub(0);
 									}}
-									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer"
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer flex items-center"
 								>
 									Всё на карту
 								</button>
@@ -948,7 +948,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										setSplitDepositRub(0);
 										setSplitSbpRub(0);
 									}}
-									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer"
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer flex items-center"
 								>
 									Всё наличными
 								</button>
@@ -959,7 +959,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										const otherKop = rubToKopecks(splitCashRub) + rubToKopecks(splitDepositRub) + rubToKopecks(splitSbpRub);
 										setSplitCardRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
-									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer"
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer flex items-center"
 								>
 									Остаток на карту
 								</button>
@@ -970,7 +970,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitDepositRub) + rubToKopecks(splitSbpRub);
 										setSplitCashRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
-									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer"
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer flex items-center"
 								>
 									Остаток наличными
 								</button>
@@ -981,7 +981,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitCashRub) + rubToKopecks(splitDepositRub);
 										setSplitSbpRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
-									className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer"
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer flex items-center"
 									data-testid="btn-payment-remainder-sbp"
 								>
 									Остаток через СБП
@@ -995,7 +995,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											const remKop = Math.max(0, totalKop - otherKop);
 											setSplitDepositRub(kopecksToRub(Math.min(remKop, rubToKopecks(patientDepositRub))));
 										}}
-										className="px-2 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-indigo-400 cursor-pointer"
+										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-indigo-400 cursor-pointer flex items-center"
 										data-testid="btn-payment-remainder-deposit"
 									>
 										Остаток из аванса
@@ -1078,7 +1078,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 													? `Зачесть ${patientDepositRub} ₽ с аванса + остаток ${(totalDueRub - patientDepositRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
 													: "На лицевом счете пациента нет авансовых средств"
 											}
-											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
+											className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-deposit-full"
 										>
 											{patientDepositRub >= totalDueRub ? (
@@ -1128,7 +1128,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 													? `Зачесть ${patientFamilyBalanceRub} ₽ из семьи + остаток ${(totalDueRub - patientFamilyBalanceRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
 													: "Семейный баланс пуст или не подключен"
 											}
-											className="w-full min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
+											className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-family-full"
 										>
 											{patientFamilyBalanceRub >= totalDueRub ? (
@@ -1169,7 +1169,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 														setSplitSbpRub(0);
 														setActiveMethod("split");
 													}}
-													className="h-8 px-3 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+													className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 												>
 													<CreditCard size={13} />
 													<span>Зачесть аванс {patientDepositRub} ₽ + остаток Картой</span>
@@ -1188,7 +1188,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 														setSplitSbpRub(0);
 														setActiveMethod("split");
 													}}
-													className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
+													className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 												>
 													<Banknote size={13} />
 													<span>Зачесть аванс {patientDepositRub} ₽ + остаток Наличными</span>

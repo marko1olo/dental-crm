@@ -24,6 +24,15 @@ import {
 	allocateRemainderToTender,
 	process100PercentDiscountCheckout,
 } from "../cashboxOperations.js";
+import {
+	validateTreatmentPlanPrices,
+	generateWorkOrderExportPayload,
+} from "../../treatment-plans/validation/planPriceValidationEngine.js";
+import {
+	PLAN_PRICE_POLICY_PRESETS,
+	SAMPLE_CURRENT_PRICELIST,
+	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+} from "../../treatment-plans/validation/planPriceValidationPresets.js";
 
 describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & FFD 1.2 Tag 1228)", () => {
 	it("Physical person without INN is 100% valid and never blocks receipt", () => {
@@ -320,5 +329,49 @@ describe("Doctor Autonomy on Warranty & Staff Discounts (Mandate 8e Item 7)", ()
 		assert.equal(result.status, "ready_for_payment");
 		assert.equal(result.paymentStatus, "Ожидает оплаты");
 		assert.equal(result.bypassKktZeroReceipt, false);
+	});
+});
+
+describe("Treatment Plan Doctor Autonomy & 30-Day Non-Blocking Guarantee (Mandates 8e Item 7 & 8n)", () => {
+	it("Plan older than 30 days is marked expired but NEVER blocks ZTL work orders or payments", () => {
+		const oldDate = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+		const oldPlan = {
+			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+			items: SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.items.filter((i) => i.itemId !== "item_5"),
+			createdAtIso: oldDate,
+		};
+		const report = validateTreatmentPlanPrices(
+			oldPlan,
+			SAMPLE_CURRENT_PRICELIST,
+			PLAN_PRICE_POLICY_PRESETS.standard_30,
+		);
+		assert.equal(report.isPlanExpired, true);
+		assert.equal(report.canGenerateWorkOrder, true, "ZTL work order creation must be allowed");
+		assert.equal(report.canGenerateCompletedAct, true, "Completed work act must be allowed");
+		assert.equal(report.overallStatus, "APPROVED_PRICE_LOCKED");
+		assert.match(report.validationMessages.join(" "), /не блокируются/);
+
+		const workOrder = generateWorkOrderExportPayload(report, "work_order");
+		assert.ok(workOrder.orderNumber.startsWith("НЗ-"));
+		assert.ok(workOrder.totalPayableRub > 0);
+	});
+
+	it("Doctor has 100% discount autonomy for warranty reworks and staff without admin pin", () => {
+		const planWith100Discount = {
+			...SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
+			items: SAMPLE_TREATMENT_PLAN_FOR_VALIDATION.items.map((item) => ({
+				...item,
+				planDiscountPercent: 100,
+				planDiscountRub: item.planUnitPriceRub,
+			})),
+		};
+		const report = validateTreatmentPlanPrices(
+			planWith100Discount,
+			SAMPLE_CURRENT_PRICELIST,
+			PLAN_PRICE_POLICY_PRESETS.standard_30,
+		);
+		assert.equal(report.canGenerateWorkOrder, true);
+		assert.equal(report.canGenerateCompletedAct, true);
+		assert.equal(report.resolvedNetRub, 0);
 	});
 });
