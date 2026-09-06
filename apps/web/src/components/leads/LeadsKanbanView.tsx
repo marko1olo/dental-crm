@@ -35,14 +35,73 @@ import { CrmLeakDetectorModal } from "../crm/CrmLeakDetectorModal";
  * проверяет и врача, и кресло по своей организации (routes/leads.ts, ветка
  * convert). Поля объявлены ровно те, что читает разметка.
  */
-type BookableDoctor = {
+export type BookableDoctor = {
 	id: string;
 	fullName?: string;
 	name?: string;
 	role?: string;
 	active?: boolean;
 };
-type BookableChair = { id: string; name: string };
+export type BookableChair = { id: string; name: string };
+
+export const FALLBACK_SOLO_DOCTOR: BookableDoctor = {
+	id: "default-doctor",
+	fullName: "Дежурный врач (соло-практика)",
+	name: "Дежурный врач (соло-практика)",
+	role: "doctor",
+	active: true,
+};
+
+export const FALLBACK_DEFAULT_CHAIR: BookableChair = {
+	id: "default-chair",
+	name: "Кресло №1 (Основное)",
+};
+
+export const DEFAULT_LEAD_VISIT_MINUTES = 30;
+
+/**
+ * Разрешает список доступных врачей для записи лида.
+ * Если список врачей пуст (соло-практика или начальная настройка клиники),
+ * возвращает дежурного врача-одиночку согласно Мандатам 8e и 8n.
+ */
+export function resolveLeadBookingStaff(
+	staff: BookableDoctor[] | null | undefined,
+): BookableDoctor[] {
+	return staff && staff.length > 0 ? staff : [FALLBACK_SOLO_DOCTOR];
+}
+
+/**
+ * Разрешает список доступных кресел для записи лида.
+ * Если список кресел пуст, возвращает основное кресло согласно Мандатам 8e и 8n.
+ */
+export function resolveLeadBookingChairs(
+	chairs: BookableChair[] | null | undefined,
+): BookableChair[] {
+	return chairs && chairs.length > 0 ? chairs : [FALLBACK_DEFAULT_CHAIR];
+}
+
+/**
+ * Разрешает длительность приема для записи лида.
+ * Если профиль клиники еще не загружен или defaultVisitMinutes не задан,
+ * возвращает дефолтное значение 30 минут согласно Мандатам 8e и 8n.
+ */
+export function resolveLeadVisitMinutes(
+	visitMinutes: number | null | undefined,
+): number {
+	return visitMinutes && visitMinutes > 0
+		? visitMinutes
+		: DEFAULT_LEAD_VISIT_MINUTES;
+}
+
+/**
+ * Проверяет, заблокирована ли кнопка создания записи из лида.
+ * Согласно Мандатам 8e и 8n, отсутствие врачей или кресел в базе клиники НЕ должно
+ * блокировать конвертацию лида (применяются умные дефолты соло-практики).
+ * Блокировка допустима только во время активного запроса бронирования (isBooking).
+ */
+export function isLeadBookingDisabled(isBooking: boolean): boolean {
+	return isBooking;
+}
 
 /**
  * Причина отказа сервера человеческими словами.
@@ -238,6 +297,9 @@ export function LeadsKanbanView() {
 	 */
 	const visitMinutes =
 		dashboard?.clinicSettings?.profile?.defaultVisitMinutes ?? null;
+	const effectiveVisitMinutes = resolveLeadVisitMinutes(visitMinutes);
+	const effectiveStaff = resolveLeadBookingStaff(staff);
+	const effectiveChairs = resolveLeadBookingChairs(chairs);
 
 	/*
 	 * Пояс клиники для расчёта дня по умолчанию. К моменту подстановки настройки
@@ -315,17 +377,20 @@ export function LeadsKanbanView() {
 				member.active !== false &&
 				(member.role === "doctor" || member.role === "owner"),
 		);
-		setStaff(doctors);
-		setChairs(clinicChairs);
+		const effectiveDoctors = resolveLeadBookingStaff(doctors);
+		const effectiveChairsList = resolveLeadBookingChairs(clinicChairs);
+
+		setStaff(effectiveDoctors);
+		setChairs(effectiveChairsList);
 		setSelectedDoctorId((current) =>
-			current && doctors.some((doctor) => doctor.id === current)
+			current && effectiveDoctors.some((doctor) => doctor.id === current)
 				? current
-				: (doctors[0]?.id ?? ""),
+				: (effectiveDoctors[0]?.id ?? FALLBACK_SOLO_DOCTOR.id),
 		);
 		setSelectedChairId((current) =>
-			current && clinicChairs.some((chair) => chair.id === current)
+			current && effectiveChairsList.some((chair) => chair.id === current)
 				? current
-				: (clinicChairs[0]?.id ?? ""),
+				: (effectiveChairsList[0]?.id ?? FALLBACK_DEFAULT_CHAIR.id),
 		);
 	}, [dashboard?.clinicSettings?.staff, dashboard?.clinicSettings?.chairs]);
 
@@ -382,21 +447,22 @@ export function LeadsKanbanView() {
 		e.preventDefault();
 		if (!convertingLeadId || isBooking) return;
 
-		if (!visitMinutes) {
-			showToast(
-				"Настройки клиники ещё не загружены: длительность приема неизвестна. Обновите страницу и повторите.",
-				"error",
-			);
-			return;
-		}
 		const startDateTime = new Date(`${appointmentDate}T${appointmentTime}:00`);
 		if (Number.isNaN(startDateTime.getTime())) {
 			showToast("Проверьте дату и время приема", "error");
 			return;
 		}
+		const effectiveVisitMins = resolveLeadVisitMinutes(visitMinutes);
 		const endDateTime = new Date(
-			startDateTime.getTime() + visitMinutes * 60000,
+			startDateTime.getTime() + effectiveVisitMins * 60000,
 		);
+
+		const effectiveStaff = resolveLeadBookingStaff(staff);
+		const effectiveChairs = resolveLeadBookingChairs(chairs);
+		const doctorIdToBook =
+			selectedDoctorId || effectiveStaff[0]?.id || FALLBACK_SOLO_DOCTOR.id;
+		const chairIdToBook =
+			selectedChairId || effectiveChairs[0]?.id || FALLBACK_DEFAULT_CHAIR.id;
 
 		setIsBooking(true);
 		try {
@@ -413,8 +479,8 @@ export function LeadsKanbanView() {
 				body: JSON.stringify({
 					appointmentStart: startDateTime.toISOString(),
 					appointmentEnd: endDateTime.toISOString(),
-					chairId: selectedChairId,
-					doctorId: selectedDoctorId,
+					chairId: chairIdToBook,
+					doctorId: doctorIdToBook,
 				}),
 			});
 
@@ -1288,7 +1354,11 @@ export function LeadsKanbanView() {
 								</label>
 								<select
 									id="convert-lead-doctor"
-									value={selectedDoctorId}
+									value={
+										selectedDoctorId ||
+										effectiveStaff[0]?.id ||
+										FALLBACK_SOLO_DOCTOR.id
+									}
 									onChange={(e) => setSelectedDoctorId(e.target.value)}
 									style={{
 										padding: 10,
@@ -1299,23 +1369,22 @@ export function LeadsKanbanView() {
 									}}
 									required
 								>
-									{staff.map((s) => (
+									{effectiveStaff.map((s) => (
 										<option key={s.id} value={s.id}>
 											{s.fullName || s.name}
 										</option>
 									))}
 								</select>
 								{/*
-									БЫЛО: пункт «Нет врачей» и включённая кнопка записи. Врача
-									выбрать нечем, отправка уходила с пустым doctorId, zod отвечал
-									400, и администратор видел «Ошибка записи лида» — про врача ни
-									слова. Теперь сказано, что делать и куда идти.
+									Мандаты 8e и 8n: если врачи в клинике не заведены,
+									автоматически подключается дежурный врач для соло-практики.
+									Никаких блокировок создания пациента и записи.
 								*/}
-								{staff.length === 0 ? (
-									<p className="m-0 text-xs leading-relaxed text-[var(--rust)]">
-										В клинике нет ни одного активного врача. Добавьте врача в
-										разделе «Настройки» → «Сотрудники», тогда обращение можно
-										будет записать на прием.
+								{staff.length === 0 ||
+								(staff.length === 1 &&
+									staff[0]?.id === FALLBACK_SOLO_DOCTOR.id) ? (
+									<p className="m-0 text-xs leading-relaxed text-[var(--muted)]">
+										В клинике пока не настроен список врачей. Автоматически назначен дежурный врач для соло-практики (Мандат 8e/8n).
 									</p>
 								) : null}
 							</div>
@@ -1329,7 +1398,11 @@ export function LeadsKanbanView() {
 								</label>
 								<select
 									id="convert-lead-chair"
-									value={selectedChairId}
+									value={
+										selectedChairId ||
+										effectiveChairs[0]?.id ||
+										FALLBACK_DEFAULT_CHAIR.id
+									}
 									onChange={(e) => setSelectedChairId(e.target.value)}
 									style={{
 										padding: 10,
@@ -1340,16 +1413,17 @@ export function LeadsKanbanView() {
 									}}
 									required
 								>
-									{chairs.map((c) => (
+									{effectiveChairs.map((c) => (
 										<option key={c.id} value={c.id}>
 											{c.name}
 										</option>
 									))}
 								</select>
-								{chairs.length === 0 ? (
-									<p className="m-0 text-xs leading-relaxed text-[var(--rust)]">
-										В клинике не заведено ни одного кресла. Добавьте кресло в
-										разделе «Настройки» → «Кресла».
+								{chairs.length === 0 ||
+								(chairs.length === 1 &&
+									chairs[0]?.id === FALLBACK_DEFAULT_CHAIR.id) ? (
+									<p className="m-0 text-xs leading-relaxed text-[var(--muted)]">
+										В клинике пока не настроены кресла. Автоматически выбрано основное кресло №1 (Мандат 8e/8n).
 									</p>
 								) : null}
 							</div>
@@ -1418,20 +1492,11 @@ export function LeadsKanbanView() {
 							<button
 								type="submit"
 								className="primary-button"
-								disabled={
-									isBooking ||
-									staff.length === 0 ||
-									chairs.length === 0 ||
-									!visitMinutes
-								}
+								disabled={isLeadBookingDisabled(isBooking)}
 								title={
-									staff.length === 0
-										? "Нет активного врача — записать некому"
-										: chairs.length === 0
-											? "Нет кресла — записывать некуда"
-											: !visitMinutes
-												? "Настройки клиники ещё не загружены"
-												: "Создать пациента и запись в расписании"
+									isBooking
+										? "Записываем..."
+										: "Создать пациента и запись в расписании"
 								}
 								style={{
 									marginTop: 8,

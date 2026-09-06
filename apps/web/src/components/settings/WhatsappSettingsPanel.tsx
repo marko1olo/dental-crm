@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
 	Check,
 	Copy,
@@ -16,10 +17,61 @@ import {
 } from "../../hooks/useWhatsappSettings.js";
 import { panelStateText } from "../../lib/panelStateText";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { showToast } from "../GlobalToast.js";
 import {
 	MessengerRoutingRules,
 	messengerRoutingChanged,
 } from "./MessengerRoutingRules.js";
+
+/**
+ * Вычисляет наличие несохраненных изменений в форме настроек WhatsApp.
+ */
+export function computeWhatsappSettingsDirty(params: {
+	phoneNumberIdDraft: string;
+	settingsPhoneNumberId: string | null | undefined;
+	webhookVerifyTokenDraft: string;
+	settingsWebhookVerifyToken: string | null | undefined;
+	isActiveDraft: boolean;
+	settingsIsActive: boolean | undefined;
+	enabledFeaturesDraft: string[];
+	settingsEnabledFeatures: string[] | undefined;
+	staffRoutingDraft: WhatsappStaffRouting;
+	settingsStaffRouting: WhatsappStaffRouting | undefined;
+	accessTokenDraft: string;
+}): boolean {
+	const featuresChanged =
+		params.enabledFeaturesDraft.length !==
+			(params.settingsEnabledFeatures?.length ?? 0) ||
+		params.enabledFeaturesDraft.some(
+			(f) => !(params.settingsEnabledFeatures ?? []).includes(f),
+		);
+
+	return (
+		params.phoneNumberIdDraft !== (params.settingsPhoneNumberId ?? "") ||
+		params.webhookVerifyTokenDraft !==
+			(params.settingsWebhookVerifyToken ?? "") ||
+		params.isActiveDraft !== (params.settingsIsActive ?? false) ||
+		featuresChanged ||
+		messengerRoutingChanged(
+			params.staffRoutingDraft,
+			params.settingsStaffRouting,
+		) ||
+		params.accessTokenDraft.trim() !== ""
+	);
+}
+
+/**
+ * Проверяет, заблокирована ли кнопка сохранения настроек WhatsApp.
+ * По Мандату 8e кнопка сохранения не должна блокироваться из-за отсутствия
+ * изменений (!dirty). Блокировка допустима ТОЛЬКО если сохранение небезопасно
+ * (!canSave — черновики ещё не прочитаны с сервера) либо уже идёт процесс сохранения (saveState === "saving").
+ */
+export function isWhatsappSettingsSaveDisabled(
+	canSave: boolean,
+	saveState: string,
+): boolean {
+	return !canSave || saveState === "saving";
+}
 
 interface StaffOption {
 	id: string;
@@ -29,6 +81,7 @@ interface StaffOption {
 interface Props {
 	staffOptions: StaffOption[];
 	serverBaseUrl: string | undefined;
+	useSettingsHook?: typeof useWhatsappSettings;
 }
 
 const WHATSAPP_FEATURE_LABELS: Record<string, string> = {
@@ -41,7 +94,11 @@ const WHATSAPP_FEATURE_LABELS: Record<string, string> = {
 	callback_requests: "Заявки на обратный звонок",
 };
 
-export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
+export function WhatsappSettingsPanel({
+	staffOptions,
+	serverBaseUrl,
+	useSettingsHook = useWhatsappSettings,
+}: Props) {
 	const {
 		settings,
 		status,
@@ -66,7 +123,9 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 		setStaffRoutingDraft,
 		save,
 		reload,
-	} = useWhatsappSettings();
+	} = useSettingsHook();
+
+	const [cleanSavedNotice, setCleanSavedNotice] = useState(false);
 
 	const webhookUrl = serverBaseUrl
 		? `${serverBaseUrl}/api/whatsapp/webhook`
@@ -76,25 +135,39 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 		void navigator.clipboard.writeText(webhookUrl);
 	};
 
-	const featuresChanged =
-		enabledFeaturesDraft.length !== (settings?.enabledFeatures?.length ?? 0) ||
-		enabledFeaturesDraft.some(
-			(f) => !(settings?.enabledFeatures ?? []).includes(f),
-		);
-
 	/*
 	 * Признак изменений. РОУТИНГ ЗДЕСЬ ОБЯЗАТЕЛЕН: без него владелец назначал,
 	 * кому идут входящие сообщения пациентов, а кнопка «Сохранить» оставалась
 	 * выключенной (`disabled={!dirty}`) — заполнил и сохранить нечем. Сравнение
 	 * самого роутинга — в MessengerRoutingRules, рядом с его формой.
 	 */
-	const dirty =
-		phoneNumberIdDraft !== (settings?.phoneNumberId ?? "") ||
-		webhookVerifyTokenDraft !== (settings?.webhookVerifyToken ?? "") ||
-		isActiveDraft !== (settings?.isActive ?? false) ||
-		featuresChanged ||
-		messengerRoutingChanged(staffRoutingDraft, settings?.staffRouting) ||
-		accessTokenDraft.trim() !== "";
+	const dirty = computeWhatsappSettingsDirty({
+		phoneNumberIdDraft,
+		settingsPhoneNumberId: settings?.phoneNumberId,
+		webhookVerifyTokenDraft,
+		settingsWebhookVerifyToken: settings?.webhookVerifyToken,
+		isActiveDraft,
+		settingsIsActive: settings?.isActive,
+		enabledFeaturesDraft,
+		settingsEnabledFeatures: settings?.enabledFeatures,
+		staffRoutingDraft,
+		settingsStaffRouting: settings?.staffRouting,
+		accessTokenDraft,
+	});
+
+	const handleSave = () => {
+		if (isWhatsappSettingsSaveDisabled(canSave, saveState)) {
+			return;
+		}
+		if (!dirty) {
+			showToast("Настройки актуальны (сохранено)", "info");
+			setCleanSavedNotice(true);
+			setTimeout(() => {
+				setCleanSavedNotice(false);
+			}, 2500);
+		}
+		void save();
+	};
 
 	/*
 	 * ЗНАЧОК СОСТОЯНИЯ НЕ ИМЕЕТ ПРАВА ВРАТЬ. Было два состояния, и в «Не
@@ -323,6 +396,60 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 				</div>
 
 				<div className="messenger-panel-actions">
+					<div
+						className="messenger-panel-status-indicator"
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "8px",
+							marginRight: "auto",
+						}}
+					>
+						{dirty ? (
+							<span
+								className="messenger-dirty-badge"
+								data-testid="dirty-badge"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									fontSize: "12px",
+									color: "var(--amber)",
+									fontWeight: 500,
+								}}
+							>
+								<span
+									className="dirty-dot"
+									style={{
+										width: "8px",
+										height: "8px",
+										borderRadius: "50%",
+										background: "var(--amber)",
+										display: "inline-block",
+										flexShrink: 0,
+									}}
+									aria-hidden="true"
+								/>
+								Есть несохраненные изменения
+							</span>
+						) : (
+							<span
+								className="messenger-clean-badge"
+								data-testid="clean-badge"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									fontSize: "12px",
+									color: "var(--muted)",
+								}}
+							>
+								{cleanSavedNotice
+									? "Настройки актуальны (сохранено)"
+									: "Настройки актуальны"}
+							</span>
+						)}
+					</div>
 					<button
 						type="button"
 						onClick={() => void reload()}
@@ -335,12 +462,12 @@ export function WhatsappSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 					</button>
 					<button
 						type="button"
-						onClick={() => void save()}
+						onClick={handleSave}
 						/* canSave — разрешение хука: настройки прочитаны и сохранение не
-						   затрёт живые значения. Раньше кнопка спрашивала только
-						   saveState, поэтому во время перечитывания настроек нажатие
-						   отправляло PUT с ещё не заполненными черновиками. */
-						disabled={!canSave || !dirty}
+						   затрёт живые значения. По Мандату 8e (автономия врача и персонала)
+						   кнопка не блокируется при !dirty, позволяя повторное сохранение
+						   для синхронизации настроек или принудительного обновления вебхука. */
+						disabled={isWhatsappSettingsSaveDisabled(canSave, saveState)}
 						className="btn-primary"
 					>
 						{saveState === "saving" && "Сохранение..."}
