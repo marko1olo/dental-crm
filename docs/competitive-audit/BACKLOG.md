@@ -828,9 +828,65 @@
 
 ---
 
+## 84. `педиатрия::chairside_30_секундный_виджет_шкала_франкла_и_протоколы_804н` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8i, 8k, 8n)
+- **Идея**: Экспресс-приём у детского врача-стоматолога за 30 секунд без многостраничной бюрократии и опросников:
+  1. *Канонический chairside-виджет 30-секундного приёма*: `VisitPediatricProtocolWidget.tsx` (тач-таргеты >= 48px, ноль эмодзи — только векторные Lucide).
+  2. *Экспресс-селектор шкалы Франкла*: фиксация уровней поведения 1 (--) Определенно негативное, 2 (-) Негативное, 3 (+) Позитивное, 4 (++) Определенно позитивное в 1 клик.
+  3. *5 клинических протоколов 804н*: кариес временного зуба (Fuji IX/Twinky Star), витальная пульпотомия (Pulpotec/Biodentine), глубокое фторирование (Сафорайд), герметизация фиссур (Fissurit FX) и удаление молочного зуба при физиологической смене корней.
+  4. *Связка с дневником 043/у и сметой*: 1-клик диспатч SOAP в `dente-apply-soap-protocol` и добавление услуг номенклатуры 804н в смету через `dente-add-services-to-invoice`. Вызов памятки родителям `PediatricParentMemoModal` с соблюдением глубины модалок = 1.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/pediatric/VisitPediatricProtocolWidget.tsx`, `index.ts` (коммит `510bfa5f4`).
+  - Тесты: `apps/web/src/components/pediatric/__tests__/VisitPediatricProtocolWidget.test.tsx` (6 pass).
+
+---
+
+## 85. `диагностика::топ_12_амбулаторных_диагнозов_мкб10_в_1_клик_и_клинические_инварианты` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8i, 8k, 8n)
+- **Идея**: Устранение академического блоата и сотен страниц госпитального МКБ-10 из рабочего кресла стоматолога:
+  1. *1-клик топ-бар ТОП-12 амбулаторных стоматологических диагнозов*: K02.0 (Кариес эмали), K02.1 (Кариес дентина), K04.0 (Пульпит), K04.5 (Хронический апикальный периодонтит), K05.0 (Острый гингивит), K05.1 (Хронический гингивит), K05.3 (Хронический пародонтит), K08.1 (Потеря зубов вследствие удаления), K07.4 (Аномалия прикуса), K01.1 (Ретинированные зубы), K03.1 (Клиновидный дефект), K08.8 (Другие уточненные изменения) в `Icd10ClinicalSelector.tsx`.
+  2. *Тач-таргеты >= 44px и неблокирующий выбор*: сенсорные контролы в `DiagnosticDrawer.tsx` и `ToothContextDrawer.css`; неблокирующий выбор зубов и отсутствие блокирующих обязательных полей (Мандат 8e).
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/diagnostics/Icd10ClinicalSelector.tsx`, `icd10DentalCatalog.ts`, `DiagnosticDrawer.tsx`, `ToothContextDrawer.css` (коммит `bbc75925a`).
+  - Тесты: `apps/web/src/components/diagnostics/__tests__/Icd10ClinicalSelector.test.tsx`, `DiagnosticDrawer.test.tsx` (56 pass).
+
+---
+
+## 86. `хирургия_имплантология::sterile_glove_mode_48px_пресеты_топ_систем_и_анти_матрёшка` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8i, 8k, 8n)
+- **Идея**: Режим работы хирурга у кресла в стерильных перчатках («Sterile Glove Mode») и закон Анти-Матрёшки:
+  1. *Тач-таргеты >= 48px/52px*: базовые кнопки `.surgery-btn` и активный стерильный режим в `surgery.css`, кнопки FDI в `SurgeryCockpitModal.tsx`, чек-лист Time-Out в `SurgerySafetyChecklist.tsx`, паспорт имплантата `ImplantPassportModal.tsx`, `ImplantPassportCard.tsx`.
+  2. *Закон Анти-Матрёшки (глубина модалок строго 1)*: вызов паспорта имплантата декомпозирован через изолированное состояние верхнего уровня `isPassportOpen` с плавным возвратом в хирургический кокпит.
+  3. *1-клик пресеты дентальной имплантации*: Osstem TS III, Dentium SuperLine, Straumann BLX, Nobel Parallel CC. Торк 35 Н/см, ISQ 72, ФДМ/Заглушка (`fdm` / `plug`).
+  4. *Мягкий овердрафт склада*: отсутствие имплантата или задержка накладной не блокирует кнопки сохранения и печати протокола (Мандат 8e.10).
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/surgery/SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgerySafetyChecklist.tsx`, `surgery.css`, `apps/web/src/components/implants/ImplantPassportModal.tsx`, `ImplantPassportCard.tsx`, `implantQuickPresets.ts` (коммит `b7eb4dda6`).
+  - Тесты: `surgeryCockpitModal.test.tsx`, `implantPassport.test.tsx`, `surgeryProtocols.test.ts` (24 pass).
+
+---
+
+## 87. `регистратура_касса::печать_пустого_договора_без_403_и_автономия_кассира_54фз` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e п. 8, п. 9, 8n п. 1, 8k)
+- **Идея**: Ликвидация бюрократических задержек администратора и полная автономия кассы:
+  1. *Запись за 5 секунд*: создание визита без обязательного ассистента (`isSoloDoctor`), без обязательного СНИЛС или паспорта.
+  2. *1-клик печать бланка договора со строками `_______`*: печать договора для ручного заполнения паспортных данных пациентом на стойке без ошибок 403 Forbidden.
+  3. *Касса 54-ФЗ без палок в колёса*: отмена требования ИНН с физических лиц при оплате картой/наличными; 1-клик комбинированная оплата (нал + карта + аванс/бонусы) с копеечным расчетом сдачи.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/patient/PatientAdministrativeForm.tsx`, `apps/web/src/components/schedule/AppointmentCard.tsx`, `AppointmentModal.tsx` (коммит `1976fceb5`).
+  - Тесты: `apps/web/src/tests/cashierAutonomy54Fz.test.ts` (16 pass).
+
+---
+
+## 88. `ред_тим::тотальная_ликвидация_эмодзи_и_wcag_контраст_в_настройках_портале_и_бланках` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8m, 8o)
+- **Идея**: Тотальная инквизиция интерфейса и ликвидация мультяшных эмодзи и дефектов контраста по чек-листу 7 смертных грехов UI:
+  1. *Ликвидация эмодзи из 12 компонентов*: замена глифов на векторные Lucide-иконки (`FileText`, `ShieldAlert`, `Ban`, `Flame`, `Plus`, `CheckCircle2`, `ReceiptText`, `Check`, `X`, `Edit3`, `PhoneCall`).
+  2. *WCAG Dark Mode контраст*: устранение слепящих белых пятен в `TreatmentPlanPresenterModal.tsx`.
+  3. *Чистота бланков и медицины*: ноль эмодзи в Форме 043/у, актах, чеках 54-ФЗ, КТ и визиографе.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/analytics/MarketingRoiModal.tsx`, `AnesthesiaProtocolModal.tsx`, `CopilotActionConfirm.tsx`, `PatientArchiveReasonsAndBlacklistsWidget.tsx`, `DoctorMobileShiftModal.tsx`, `DoctorShiftCockpitModal.tsx`, `DicomViewport.tsx`, `PatientAdministrativeForm.tsx`, `PatientHeaderCard.tsx`, `SettingsPricesTab.tsx`, `SettingsRulesTab.tsx`, `TreatmentPlanPresenterModal.tsx` (коммит `c292310c6`).
+  - Тесты: 59 pass, `npm run check:encoding` 0 ошибок (4954 файлов).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 30 дополнительных системных аддендум-фич клинической автономии (Wave 15..20, фичи 64..93) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 35 дополнительных системных аддендум-фич клинической автономии (Wave 15..21, фичи 64..98) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
