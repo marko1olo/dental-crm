@@ -137,11 +137,11 @@ export function checkDentalLabFinancialGate(
 
 	const warningMessageRu =
 		gateStatus === "BLOCKED_REQUIRES_ADVANCE"
-			? `Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Отправить наряд под ответственность главврача? Врач может отправить наряд под свою клиническую ответственность (Мандат 8e).`
+			? `Внимание: этап не оплачен. Требуется аванс ${formattedMissingAdvance}. Лечащий врач вправе отправить наряд в ЗТЛ под личную клиническую ответственность (Мандат 8e).`
 			: gateStatus === "DOCTOR_OVERRIDE"
 				? `Наряд ЗТЛ отправлен в производство под клиническую ответственность лечащего врача (${activeOverride?.doctorName || "Лечащий врач"}).`
 				: gateStatus === "CHIEF_DOCTOR_OVERRIDE"
-				? `Наряд ЗТЛ отправлен в производство под личную ответственность Главного врача (${activeOverride?.doctorName || "Главврач"}).`
+				? `Наряд ЗТЛ отправлен в производство под ответственность врача (${activeOverride?.doctorName || "Врач"}).`
 				: "Финансовый контроль пройден: аванс за этап внесен в полном объеме.";
 
 	const detailedReasonRu =

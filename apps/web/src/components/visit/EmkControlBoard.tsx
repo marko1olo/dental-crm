@@ -1407,9 +1407,17 @@ export function EmkControlBoard({ dashboard }: EmkControlBoardProps) {
 																color: sec.isComplete
 																	? "var(--good, #10b981)"
 																	: "var(--bad, #ef4444)",
+																display: "inline-flex",
+																alignItems: "center",
+																gap: "5px",
 															}}
 														>
-															{sec.isComplete ? "✓" : "⚠️"} {sec.nameRu}
+															{sec.isComplete ? (
+																<CheckCircle2 size={13} style={{ flexShrink: 0 }} />
+															) : (
+																<AlertTriangle size={13} style={{ flexShrink: 0 }} />
+															)}{" "}
+															{sec.nameRu}
 														</span>
 														<span
 															style={{

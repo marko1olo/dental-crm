@@ -36,6 +36,10 @@ import {
 	LOWER_TEETH,
 	ANTERIOR_TEETH,
 	generateOrthodonticSoapNote,
+	ANGLE_CLASS_OPTIONS,
+	type AngleClass,
+	WORKHORSE_ARCHWIRES,
+	type WorkhorseArchwireOption,
 	type ArchwireMaterial,
 	type ArchwireSection,
 	type BracketSlot,
@@ -95,6 +99,19 @@ export function OrthodonticStudioModal({
 	// Aligner State
 	const [activeAttachmentPreset, setActiveAttachmentPreset] = useState<string | null>(null);
 	const [alignerSetIssued, setAlignerSetIssued] = useState<{ count: number; days: number } | null>(null);
+
+	// Angle Classification State
+	const [angleClass, setAngleClass] = useState<AngleClass>("class_1");
+
+	// 1-Click Fast Workhorse Archwire Handler
+	const handleSelectWorkhorseWire = (wire: WorkhorseArchwireOption) => {
+		setArchwireMaterial(wire.material);
+		setArchwireSection(wire.section);
+		if (!selectedActions.includes("wire_change")) {
+			setSelectedActions((prev) => [...prev, "wire_change"]);
+		}
+		showToast(`Установлена рабочая дуга ${wire.label}`, "info");
+	};
 
 	// Photos state (Angle -> imageUrl)
 	const [photos, setPhotos] = useState<Record<string, string>>({});

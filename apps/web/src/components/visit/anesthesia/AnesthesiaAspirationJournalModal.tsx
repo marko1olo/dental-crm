@@ -468,7 +468,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 								data-testid="btn-journal-open-emergency"
 							>
 								<ShieldAlert className="w-4 h-4" />
-								<span>🚨 ШОК / LAST 112</span>
+								<span>ШОК / LAST 112</span>
 							</button>
 						)}
 

@@ -20,7 +20,7 @@ export interface ReferralPreset {
 export const CLINICAL_REFERRAL_PRESETS: readonly ReferralPreset[] = [
 	{
 		id: "cbct_both_jaws_preset",
-		title: "⚡ КЛКТ двух челюстей 3D (фокус 8х8 / 10х10 см) для имплантации и ортодонтии",
+		title: "КЛКТ двух челюстей 3D (фокус 8х8 / 10х10 см) для имплантации и ортодонтии",
 		shortLabel: "КЛКТ 3D двух челюстей",
 		badge: "3D КЛКТ",
 		studyType: "cbct_jaw_8x8",
@@ -34,7 +34,7 @@ export const CLINICAL_REFERRAL_PRESETS: readonly ReferralPreset[] = [
 	},
 	{
 		id: "cbct_segment_endo_preset",
-		title: "⚡ КЛКТ сегмента 5х5 см (эндодонтия, скрытые каналы, периодонтит, кисты)",
+		title: "КЛКТ сегмента 5х5 см (эндодонтия, скрытые каналы, периодонтит, кисты)",
 		shortLabel: "КЛКТ сегмента 5х5 см",
 		badge: "КЛКТ 5х5",
 		studyType: "cbct_segment_5x5",
@@ -48,7 +48,7 @@ export const CLINICAL_REFERRAL_PRESETS: readonly ReferralPreset[] = [
 	},
 	{
 		id: "optg_panoramic_preset",
-		title: "⚡ ОПТГ (ортопантомограмма) цифровая обзорная",
+		title: "ОПТГ (ортопантомограмма) цифровая обзорная",
 		shortLabel: "ОПТГ цифровая обзорная",
 		badge: "ОПТГ 2D",
 		studyType: "optg_digital_panoramic",
@@ -62,7 +62,7 @@ export const CLINICAL_REFERRAL_PRESETS: readonly ReferralPreset[] = [
 	},
 	{
 		id: "trg_lateral_preset",
-		title: "⚡ ТРГ черепа в боковой проекции для ортодонтического расчета",
+		title: "ТРГ черепа в боковой проекции для ортодонтического расчета",
 		shortLabel: "ТРГ боковая проекция",
 		badge: "ТРГ черепа",
 		studyType: "trg_cephalometric_lateral",
@@ -76,7 +76,7 @@ export const CLINICAL_REFERRAL_PRESETS: readonly ReferralPreset[] = [
 	},
 	{
 		id: "rvg_periapical_preset",
-		title: "⚡ Прицельная радиовизиография (RVG) зуба",
+		title: "Прицельная радиовизиография (RVG) зуба",
 		shortLabel: "Прицельный снимок (RVG)",
 		badge: "RVG 1 зуб",
 		studyType: "intraoral_radiovisiography",

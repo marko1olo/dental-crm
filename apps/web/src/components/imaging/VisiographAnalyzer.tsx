@@ -1547,16 +1547,18 @@ export function VisiographAnalyzer({
 												onClick={handleRunAiAnalysis}
 												disabled={isAnalyzing}
 												style={{
-													padding: "6px 14px",
+													minHeight: "44px",
+													padding: "8px 16px",
 													background: isAnalyzing ? "var(--paper-soft)" : "var(--teal)",
 													color: isAnalyzing ? "var(--muted)" : "var(--on-teal, white)",
 													border: "1px solid var(--teal)",
 													borderRadius: "8px",
-													fontSize: "0.82rem",
+													fontSize: "0.84rem",
 													fontWeight: 700,
 													cursor: isAnalyzing ? "wait" : "pointer",
-													display: "flex",
+													display: "inline-flex",
 													alignItems: "center",
+													justifyContent: "center",
 													gap: "6px",
 													transition: "all 0.2s ease",
 												}}
@@ -1585,16 +1587,18 @@ export function VisiographAnalyzer({
 												data-testid="btn-visiograph-norma-043"
 												onClick={handleApplyNormaTo043}
 												style={{
-													padding: "6px 14px",
+													minHeight: "44px",
+													padding: "8px 16px",
 													background: isNormaApplied ? "rgba(16, 185, 129, 0.2)" : "var(--paper-soft)",
 													color: isNormaApplied ? "#059669" : "var(--ink)",
 													border: `1px solid ${isNormaApplied ? "#10b981" : "var(--line)"}`,
 													borderRadius: "8px",
-													fontSize: "0.82rem",
+													fontSize: "0.84rem",
 													fontWeight: 700,
 													cursor: "pointer",
-													display: "flex",
+													display: "inline-flex",
 													alignItems: "center",
+													justifyContent: "center",
 													gap: "6px",
 													transition: "all 0.2s ease",
 												}}
@@ -1618,7 +1622,8 @@ export function VisiographAnalyzer({
 												setIsStudioMode((prev) => !prev);
 											}}
 											style={{
-												padding: "6px 12px",
+												minHeight: "44px",
+												padding: "8px 14px",
 												background: isStudioMode
 													? "var(--teal)"
 													: "var(--paper-soft)",
@@ -1627,11 +1632,12 @@ export function VisiographAnalyzer({
 													: "var(--ink)",
 												border: "1px solid var(--line)",
 												borderRadius: "8px",
-												fontSize: "0.82rem",
+												fontSize: "0.84rem",
 												fontWeight: 600,
 												cursor: "pointer",
-												display: "flex",
+												display: "inline-flex",
 												alignItems: "center",
+												justifyContent: "center",
 												gap: "6px",
 												transition: "all 0.2s ease",
 											}}
@@ -1692,14 +1698,18 @@ export function VisiographAnalyzer({
 												type="button"
 												onClick={() => setQuickPreset("standard")}
 												style={{
-													padding: "4px 10px",
+													minHeight: "44px",
+													padding: "8px 14px",
 													borderRadius: "6px",
-													fontSize: "0.76rem",
+													fontSize: "0.82rem",
 													fontWeight: quickPreset === "standard" ? 700 : 500,
 													background: quickPreset === "standard" ? "var(--teal)" : "transparent",
 													color: quickPreset === "standard" ? "var(--on-teal, white)" : "var(--ink)",
 													border: "1px solid " + (quickPreset === "standard" ? "var(--teal)" : "var(--line)"),
 													cursor: "pointer",
+													display: "inline-flex",
+													alignItems: "center",
+													justifyContent: "center",
 												}}
 											>
 												Стандарт
@@ -1708,14 +1718,18 @@ export function VisiographAnalyzer({
 												type="button"
 												onClick={() => setQuickPreset("invert")}
 												style={{
-													padding: "4px 10px",
+													minHeight: "44px",
+													padding: "8px 14px",
 													borderRadius: "6px",
-													fontSize: "0.76rem",
+													fontSize: "0.82rem",
 													fontWeight: quickPreset === "invert" ? 700 : 500,
 													background: quickPreset === "invert" ? "var(--teal)" : "transparent",
 													color: quickPreset === "invert" ? "var(--on-teal, white)" : "var(--ink)",
 													border: "1px solid " + (quickPreset === "invert" ? "var(--teal)" : "var(--line)"),
 													cursor: "pointer",
+													display: "inline-flex",
+													alignItems: "center",
+													justifyContent: "center",
 												}}
 												title="Негатив для обнаружения микротрещин корня и тонких линий перелома"
 											>
@@ -1725,14 +1739,18 @@ export function VisiographAnalyzer({
 												type="button"
 												onClick={() => setQuickPreset("endo")}
 												style={{
-													padding: "4px 10px",
+													minHeight: "44px",
+													padding: "8px 14px",
 													borderRadius: "6px",
-													fontSize: "0.76rem",
+													fontSize: "0.82rem",
 													fontWeight: quickPreset === "endo" ? 700 : 500,
 													background: quickPreset === "endo" ? "var(--teal)" : "transparent",
 													color: quickPreset === "endo" ? "var(--on-teal, white)" : "var(--ink)",
 													border: "1px solid " + (quickPreset === "endo" ? "var(--teal)" : "var(--line)"),
 													cursor: "pointer",
+													display: "inline-flex",
+													alignItems: "center",
+													justifyContent: "center",
 												}}
 												title="Контраст для поиска апикального сужения (WL) и устьев каналов"
 											>
@@ -1742,14 +1760,18 @@ export function VisiographAnalyzer({
 												type="button"
 												onClick={() => setQuickPreset("bone")}
 												style={{
-													padding: "4px 10px",
+													minHeight: "44px",
+													padding: "8px 14px",
 													borderRadius: "6px",
-													fontSize: "0.76rem",
+													fontSize: "0.82rem",
 													fontWeight: quickPreset === "bone" ? 700 : 500,
 													background: quickPreset === "bone" ? "var(--teal)" : "transparent",
 													color: quickPreset === "bone" ? "var(--on-teal, white)" : "var(--ink)",
 													border: "1px solid " + (quickPreset === "bone" ? "var(--teal)" : "var(--line)"),
 													cursor: "pointer",
+													display: "inline-flex",
+													alignItems: "center",
+													justifyContent: "center",
 												}}
 												title="Периодонтальная щель, костная ткань и очаги деструкции"
 											>
@@ -1759,14 +1781,18 @@ export function VisiographAnalyzer({
 												type="button"
 												onClick={() => setQuickPreset("enamel")}
 												style={{
-													padding: "4px 10px",
+													minHeight: "44px",
+													padding: "8px 14px",
 													borderRadius: "6px",
-													fontSize: "0.76rem",
+													fontSize: "0.82rem",
 													fontWeight: quickPreset === "enamel" ? 700 : 500,
 													background: quickPreset === "enamel" ? "var(--teal)" : "transparent",
 													color: quickPreset === "enamel" ? "var(--on-teal, white)" : "var(--ink)",
 													border: "1px solid " + (quickPreset === "enamel" ? "var(--teal)" : "var(--line)"),
 													cursor: "pointer",
+													display: "inline-flex",
+													alignItems: "center",
+													justifyContent: "center",
 												}}
 												title="Высокий контраст для контактных поверхностей и эмалево-дентинной границы"
 											>
@@ -1777,9 +1803,10 @@ export function VisiographAnalyzer({
 												data-testid="btn-hotpath-norma-043"
 												onClick={handleApplyNormaTo043}
 												style={{
-													padding: "4px 10px",
+													minHeight: "44px",
+													padding: "8px 14px",
 													borderRadius: "6px",
-													fontSize: "0.76rem",
+													fontSize: "0.82rem",
 													fontWeight: 700,
 													background: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.12)",
 													color: "#059669",
@@ -1787,11 +1814,12 @@ export function VisiographAnalyzer({
 													cursor: "pointer",
 													display: "inline-flex",
 													alignItems: "center",
+													justifyContent: "center",
 													gap: "4px",
 												}}
 												title="1-клик действие: внести запись «Норма: патологии на снимке не выявлено» в карту 043/у"
 											>
-												<CheckCircle2 size={12} />
+												<CheckCircle2 size={14} />
 												<span>{isNormaApplied ? "✓ Норма в 043/у" : "⚡ Норма (043/у)"}</span>
 											</button>
 										</div>
@@ -1803,21 +1831,23 @@ export function VisiographAnalyzer({
 												setIsStudioMode(true);
 											}}
 											style={{
-												padding: "4px 10px",
+												minHeight: "44px",
+												padding: "8px 14px",
 												borderRadius: "6px",
-												fontSize: "0.76rem",
+												fontSize: "0.82rem",
 												fontWeight: 700,
 												background: "rgba(16, 185, 129, 0.15)",
 												color: "#059669",
 												border: "1px solid #10b981",
 												cursor: "pointer",
-												display: "flex",
+												display: "inline-flex",
 												alignItems: "center",
+												justifyContent: "center",
 												gap: "5px",
 											}}
 											title="Открыть эндо-линейку для измерения рабочей длины канала (WL, мм) по анатомической кривизне корня"
 										>
-											<Activity size={13} />
+											<Activity size={14} />
 											<span>⚡ Эндо-линейка (Апекс, мм)</span>
 										</button>
 									</div>

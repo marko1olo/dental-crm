@@ -28,7 +28,7 @@ import { money } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import { rublesToKopecks } from "@dental/shared";
 import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
-import { checkDentalLabFinancialGate } from "./dentalLabFinancialGateEngine";
+import { checkDentalLabFinancialGate, createDoctorClinicalOverride } from "./dentalLabFinancialGateEngine";
 import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
 import {
 	type DentalLabOrderData,
@@ -57,9 +57,7 @@ export function LabTrackingDrawer({
 	const [stageNote, setStageNote] = useState<string>("");
 	const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
-	// Financial Gate & Installment States
-	const [isGateModalOpen, setIsGateModalOpen] = useState<boolean>(false);
-	const [pendingTargetStage, setPendingTargetStage] = useState<LabOrderStageKey | null>(null);
+	// Financial Gate & Installment States (Doctor Autonomy & Anti-Matryoshka: Inline Banner, Zero Blocking Modals)
 	const [gateOverride, setGateOverride] = useState<{
 		authorized: boolean;
 		doctorName: string;
@@ -101,6 +99,7 @@ export function LabTrackingDrawer({
 			availableDepositKopecks: depositKopecks,
 			labOrderPriceKopecks: orderPriceKopecks,
 			minAdvancePercent: 50,
+			doctorOverride: gateOverride ?? undefined,
 			chiefDoctorOverride: gateOverride ?? undefined,
 		});
 	}, [order, stageTotalRub, stagePaidRub, patientDepositRub, gateOverride]);
@@ -108,19 +107,21 @@ export function LabTrackingDrawer({
 	const currentStageIndex = LAB_ORDER_STAGES.findIndex((s) => s.id === activeStage);
 	const nextStage = currentStageIndex < LAB_ORDER_STAGES.length - 1 ? LAB_ORDER_STAGES[currentStageIndex + 1] : null;
 
-	const handleAdvanceStage = async (targetStage?: LabOrderStageKey, forceOverride = false) => {
+	const handleAdvanceStage = async (targetStage?: LabOrderStageKey) => {
 		const stageToSet = targetStage || nextStage?.id;
 		if (!stageToSet || !order.id) return;
 
-		// Проверка финансового шлюза при отправке в лабораторию
+		// Авто-применение клинического решения лечащего врача при авансе < 50% (Мандат 8e / Без палок в колёса)
 		if (
-			!forceOverride &&
 			(stageToSet === "in_progress" || stageToSet === "sent_to_lab") &&
-			!financialGateResult.isGatePassed
+			!financialGateResult.isGatePassed &&
+			!gateOverride
 		) {
-			setPendingTargetStage(stageToSet);
-			setIsGateModalOpen(true);
-			return;
+			const autoOverride = createDoctorClinicalOverride(
+				order.doctorName || "Лечащий врач",
+				"Перевод этапа ЗТЛ — клиническое решение лечащего врача (Мандат 8e)",
+			);
+			setGateOverride(autoOverride);
 		}
 
 		setIsUpdating(true);
@@ -359,6 +360,24 @@ export function LabTrackingDrawer({
 						</div>
 					</div>
 
+					{/* ─── DOCTOR CLINICAL AUTONOMY / FINANCIAL STATUS (Mandate 8e / Anti-Matryoshka: Inline Banner) ─── */}
+					{!financialGateResult.isGatePassed && !gateOverride && (
+						<DentalLabFinancialGate
+							gateResult={financialGateResult}
+							patientName={order.patientName || "Пациент"}
+							stageTitle={`Наряд ЗТЛ (${order.constructionType || "Протезирование"})`}
+							doctorName={order.doctorName || "Лечащий врач"}
+							variant="banner"
+							onConfirmOverride={(override) => {
+								setGateOverride(override);
+								showToast(`Наряд переведен: клиническое решение врача (${override.doctorName})`, "success");
+							}}
+							onOpenInstallmentModal={() => {
+								setIsInstallmentModalOpen(true);
+							}}
+						/>
+					)}
+
 					{/* ─── TECHNICIAN NOTES & LOG ─────────────────────────────────── */}
 					<div className="space-y-2">
 						<label className="block text-xs font-bold text-[var(--ink)]">
@@ -441,40 +460,6 @@ export function LabTrackingDrawer({
 				</div>
 			</div>
 
-			{/* ─── DENTAL LAB FINANCIAL GATE MODAL ───────────────────────── */}
-			{isGateModalOpen && (
-				<DentalLabFinancialGate
-					isOpen={isGateModalOpen}
-					onClose={() => {
-						setIsGateModalOpen(false);
-						setPendingTargetStage(null);
-					}}
-					gateResult={financialGateResult}
-					patientName={order.patientName || "Пациент"}
-					stageTitle={`Наряд ЗТЛ (${order.constructionType || "Протезирование"})`}
-					defaultChiefDoctorName={chiefDoctorName || "Д-р Смирнов А. В. (Главный врач)"}
-					variant="modal"
-					onConfirmOverride={(override) => {
-						setGateOverride(override);
-						setIsGateModalOpen(false);
-						showToast(`Оверрайд главврача авторизован: ${override.doctorName}`, "success");
-						if (pendingTargetStage) {
-							handleAdvanceStage(pendingTargetStage, true);
-							setPendingTargetStage(null);
-						}
-					}}
-					onBlock={() => {
-						setIsGateModalOpen(false);
-						setPendingTargetStage(null);
-						showToast("Перевод этапа наряда заблокирован финансовым контролем", "warning");
-					}}
-					onOpenInstallmentModal={() => {
-						setIsGateModalOpen(false);
-						setIsInstallmentModalOpen(true);
-					}}
-				/>
-			)}
-
 			{/* ─── BANK INSTALLMENT QR MODAL ─────────────────────────────── */}
 			{isInstallmentModalOpen && (
 				<BankInstallmentQrModal
@@ -484,15 +469,12 @@ export function LabTrackingDrawer({
 					stageAmountKopecks={rublesToKopecks(order.priceRub || 0)}
 					patientId={order.patientId}
 					patientName={order.patientName || "Пациент"}
-					onInstallmentApproved={(approval) => {
+					onInstallmentApproved={() => {
 						showToast(
 							`Рассрочка на сумму ${(order.priceRub || 0).toLocaleString("ru-RU")} ₽ одобрена банком!`,
 							"success",
 						);
-						if (pendingTargetStage) {
-							handleAdvanceStage(pendingTargetStage, true);
-							setPendingTargetStage(null);
-						}
+						handleAdvanceStage();
 					}}
 				/>
 			)}

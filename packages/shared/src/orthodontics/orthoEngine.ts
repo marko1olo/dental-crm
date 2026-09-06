@@ -10,8 +10,10 @@
  * 6. 1-Click Form 043/u SOAP Diary Note generation without clerical friction (Mandates 8e, 8k, 8n).
  */
 
+import type { AngleClass } from "../diagnostics/photoProtocolEngine.js";
 import type {
 	AlignerAttachmentPreset,
+	AngleClassOption,
 	ArchwireMaterial,
 	ArchwireMaterialOption,
 	ArchwireSection,
@@ -22,11 +24,70 @@ import type {
 	ElasticSizeOption,
 	OrthodonticQuickPreset,
 	OrthodonticSoapParams,
+	WorkhorseArchwireOption,
 } from "./types.js";
 
 export const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
 export const LOWER_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
 export const ANTERIOR_TEETH = [13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33];
+
+export const ANGLE_CLASS_OPTIONS: AngleClassOption[] = [
+	{
+		id: "class_1",
+		label: "I класс по Энглю (нейтральный прикус)",
+		shortLabel: "I класс",
+		desc: "Нейтральное соотношение первых постоянных моляров, клыковое ведение норма",
+	},
+	{
+		id: "class_2_div_1",
+		label: "II класс 1 подкласс (дистальный прикус, протрузия)",
+		shortLabel: "II/1 класс",
+		desc: "Дистальное соотношение моляров, протрузия (вестибулярный наклон) резцов ВЧ",
+	},
+	{
+		id: "class_2_div_2",
+		label: "II класс 2 подкласс (дистальный прикус, ретрузия)",
+		shortLabel: "II/2 класс",
+		desc: "Дистальное соотношение моляров, ретрузия (палатинальный наклон) резцов ВЧ",
+	},
+	{
+		id: "class_3",
+		label: "III класс по Энглю (мезиальный прикус / прогения)",
+		shortLabel: "III класс",
+		desc: "Мезиальное соотношение первых моляров, обратная резцовая окклюзия",
+	},
+];
+
+export const WORKHORSE_ARCHWIRES: WorkhorseArchwireOption[] = [
+	{
+		id: "niti_014",
+		label: "NiTi .014\"",
+		material: "NiTi",
+		section: ".014",
+		desc: "Первичное выравнивание, нивелирование и распутывание ротаций",
+	},
+	{
+		id: "niti_016",
+		label: "NiTi .016\"",
+		material: "NiTi",
+		section: ".016",
+		desc: "Нивелирование зубных рядов и первичный контроль формы зубной дуги",
+	},
+	{
+		id: "niti_018",
+		label: "NiTi .018\"",
+		material: "NiTi",
+		section: ".018",
+		desc: "Переходная жесткая круглая дуга перед установкой прямоугольных дуг",
+	},
+	{
+		id: "ss_019x025",
+		label: "SS .019x.025\"",
+		material: "SS",
+		section: ".019x.025",
+		desc: "Рабочая стальная прямоугольная дуга: закрытие промежутков и юстировка торка",
+	},
+];
 
 export const BRACKET_SYSTEMS: BracketSystemOption[] = [
 	{ id: "damon_q2", label: "Damon Q2", desc: "Металл · Пассивное самолигирование", category: "brackets" },
@@ -259,6 +320,11 @@ export function generateOrthodonticSoapNote(params: OrthodonticSoapParams): stri
 		.filter(Boolean)
 		.join("; ");
 
+	const angleObj = ANGLE_CLASS_OPTIONS.find((a) => a.id === params.angleClass);
+	const angleText = angleObj
+		? `• Прикус (классификация Энгля): ${angleObj.label}.\n`
+		: "• Прикус (классификация Энгля): I класс по Энглю (нейтральный прикус).\n";
+
 	let elasticsText = "Межчелюстная тяга не назначена.";
 	if (params.elasticScheme && params.elasticScheme !== "none") {
 		elasticsText = `Межчелюстные эластики: ${elasticObj?.label || ""} (${elasticSizeObj?.label || ""}, ${elasticSizeObj?.strength || ""}). Режим ношения: ${params.elasticWear || "22 часа/сутки"}.`;
@@ -303,7 +369,7 @@ export function generateOrthodonticSoapNote(params: OrthodonticSoapParams): stri
 ${params.notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку аппаратуры нет."}
 
 2. ОБЪЕКТИВНЫЙ СТАТУС:
-• Аппаратура: ${
+${angleText}• Аппаратура: ${
 	params.bracketSystem === "aligners"
 		? "Ортодонтические элайнеры (каппы с аттачментами)"
 		: params.bracketSystem === "removable_plate"

@@ -467,4 +467,66 @@ describe("DentalLabOrderModal — Chairside Clinical Order Architecture (Mandate
 	});
 });
 
+describe("DentalLabOrderModal — 6 Core Constructions & Full VITA Matrix (Mandate 8e / Orthopedic Lead)", () => {
+	test("Поддерживает все 6 канонических ортопедических конструкций в 1-клик доступе (+ PMMA)", () => {
+		const coreConstructions = [
+			{ id: "zirconia", name: "Коронка диоксид циркония (ZrO2 Katana)", constructionId: "single_crown", materialId: "zirconia_multilayer" },
+			{ id: "pfm", name: "Металлокерамика (PFM Co-Cr)", constructionId: "single_crown", materialId: "pfm_cocr" },
+			{ id: "emax_press", name: "IPS e.max Press", constructionId: "single_crown", materialId: "emax_lithium_disilicate" },
+			{ id: "ceramic_veneer", name: "Керамический винир", constructionId: "veneer", materialId: "emax_lithium_disilicate" },
+			{ id: "clasp_denture", name: "Съемный бюгель (Co-Cr)", constructionId: "clasp_denture", materialId: "cobalt_chrome_cocr" },
+			{ id: "implant_screw", name: "Индивидуальный абатмент Ti-Base", constructionId: "implant_abutment", materialId: "titanium_custom_abutment" },
+			{ id: "pmma", name: "Временная PMMA CAD/CAM", constructionId: "single_crown", materialId: "pmma_temporary" },
+		];
+
+		const materials = LAB_MATERIALS.map((m) => m.id);
+		const types = CONSTRUCTION_TYPES.map((c) => c.id);
+
+		for (const item of coreConstructions) {
+			assert.ok(materials.includes(item.materialId as any), `Материал ${item.materialId} должен присутствовать в LAB_MATERIALS`);
+			assert.ok(types.includes(item.constructionId as any), `Тип конструкции ${item.constructionId} должен присутствовать в CONSTRUCTION_TYPES`);
+		}
+	});
+
+	test("Полный спектр VITA Classical (A1..D4 = 16 оттенков) и Bleach (BL1..BL4) имеет готовые цветовые образцы", () => {
+		const allRequiredShades = [
+			"A1", "A2", "A3", "A3.5", "A4",
+			"B1", "B2", "B3", "B4",
+			"C1", "C2", "C3", "C4",
+			"D2", "D3", "D4",
+			"BL1", "BL2", "BL3", "BL4",
+		];
+
+		assert.equal(allRequiredShades.length, 20);
+
+		for (const shade of allRequiredShades) {
+			const swatch = SHADE_SWATCH_MAP[shade];
+			assert.ok(swatch, `Образец цвета для оттенка ${shade} должен быть зарегистрирован`);
+			assert.ok(swatch.bg.startsWith("#"), `Цвет фона для ${shade} должен быть валидным hex`);
+			assert.ok(swatch.desc.length > 0, `Описание оттенка ${shade} не должно быть пустым`);
+		}
+	});
+
+	test("Анти-Матрёшка (Грех №6): шлюз аванса ЗТЛ не открывает модальных окон поверх модального наряда или дровера", () => {
+		// Финансовый шлюз возвращает warning/blocked, но автономия врача (Мандат 8e)
+		// позволяет мгновенно продолжить через doctorOverride без модалок внутри модалок
+		const blockedGate = checkDentalLabFinancialGate({
+			stageTotalKopecks: rublesToKopecks(30000),
+			paidKopecks: rublesToKopecks(0),
+			doctorOverride: undefined,
+		});
+		assert.equal(blockedGate.isGatePassed, false);
+
+		// 1-клик оверрайда врача разблокирует шлюз
+		const docOverride = createDoctorClinicalOverride("Д-р Ортопедов И. В.", "Срочная фиксация коронки");
+		const clearedGate = checkDentalLabFinancialGate({
+			stageTotalKopecks: rublesToKopecks(30000),
+			paidKopecks: rublesToKopecks(0),
+			doctorOverride: docOverride,
+		});
+		assert.equal(clearedGate.isGatePassed, true);
+		assert.equal(clearedGate.gateStatus, "DOCTOR_OVERRIDE");
+	});
+});
+
 

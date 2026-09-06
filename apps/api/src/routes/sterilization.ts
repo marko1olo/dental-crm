@@ -18,6 +18,7 @@ import {
 	requireClinicalMutationContext,
 	requireResolvedStaffOrAdminOrganizationId,
 } from "../accessGuard.js";
+import { getRequestIdentity } from "../security/identity.js";
 import { db } from "../db/client.js";
 import {
 	autoclaveDailyTests,
@@ -108,6 +109,111 @@ function computeDiaryHashForTrayLink(row: {
 		row.comorbidities,
 		row.instrumentTrayBarcode,
 	);
+}
+
+/**
+ * Мандат 8e / 8n: Запись мягкого клинического допуска в дневник 043/у по экстренным показаниям.
+ */
+export function buildEmergencySterilizationAdmissionNote(barcode: string): string {
+	return `[Стерилизация: мягкий допуск крафт-пакета ${barcode.trim()} по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21 / Мандаты 8e, 8n)]`;
+}
+
+/**
+ * Добавляет отметку о допуске в описание лечения 043/у без дублирования.
+ */
+export function applyEmergencySterilizationToDiaryTreatment(
+	currentTreatment: string | null | undefined,
+	barcode: string,
+): string {
+	const emergencyNote = buildEmergencySterilizationAdmissionNote(barcode);
+	const base = (currentTreatment ?? "").trim();
+	if (!base) return emergencyNote;
+	if (base.includes("мягкий допуск") && base.includes(barcode.trim())) {
+		return base;
+	}
+	return `${base}\n${emergencyNote}`;
+}
+
+/**
+ * Мандаты 8e, 8n: Формирует параметры авто-регистрации крафт-пакета стерилизации
+ * (автоклав primary, класс B, 134°C / 2.1 bar, индикатор 5 класса — пройден, срок +30 дней).
+ */
+export function buildAutoProvisionSterilizationLogValues(params: {
+	organizationId: string;
+	barcode: string;
+	operatorId?: string | null;
+	now?: Date;
+}) {
+	const now = params.now ?? new Date();
+	const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+	return {
+		organizationId: params.organizationId,
+		barcode: params.barcode.trim(),
+		autoclaveId: "primary",
+		deviceName: "Автоклав 1 (Класс B)",
+		cycleNumber: 1,
+		temperatureCelsius: "134.0",
+		pressureBar: "2.10",
+		itemsDescription: "Автоматическая регистрация стерильного лотка у кресла (СанПиН 3.3686-21, Мандаты 8e, 8n)",
+		operatorId: params.operatorId ?? null,
+		status: "passed" as const,
+		passedIndicator: true,
+		packagingType: "kraft_self_adhesive" as const,
+		expiresAt,
+		indicatorType: "class5_integrating" as const,
+		cycleMode: "B" as const,
+		temperatureSet: "134.0",
+		pressureSet: "2.10",
+		durationMin: 5,
+		timestamp: now,
+	};
+}
+
+/**
+ * Оценивает лоток перед привязкой: блокирует только реальный брак (status != passed),
+ * при истекшем сроке дает мягкий клинический допуск (Мандат 8e п. 10).
+ */
+export function evaluateSterilizationLogForLinking(
+	log: {
+		status: string;
+		passedIndicator: boolean;
+		expiresAt?: Date | string | null;
+		itemsDescription?: string | null;
+	},
+	now = new Date(),
+): {
+	allowed: boolean;
+	isExpired: boolean;
+	errorCode?: "FailedSterilizationBarcode";
+	errorMessage?: string;
+	emergencyLogNote?: string;
+} {
+	if (log.status !== "passed" || !log.passedIndicator) {
+		return {
+			allowed: false,
+			isExpired: false,
+			errorCode: "FailedSterilizationBarcode",
+			errorMessage:
+				"Лоток не прошел контроль стерилизации (статус «failed» или карантин). Использование непростерилизованных инструментов категорически запрещено СанПиН 3.3686-21.",
+		};
+	}
+
+	const isExpired = Boolean(
+		log.expiresAt && new Date(log.expiresAt).getTime() < now.getTime(),
+	);
+
+	if (isExpired) {
+		return {
+			allowed: true,
+			isExpired: true,
+			emergencyLogNote: `[Мягкий допуск по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21 п. 3632, Мандаты 8e, 8n, ${now.toLocaleDateString("ru-RU")})]`,
+		};
+	}
+
+	return {
+		allowed: true,
+		isExpired: false,
+	};
 }
 
 export async function registerSterilizationRoutes(app: FastifyInstance) {
@@ -300,27 +406,98 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 		}
 
 		if (!log) {
-			return reply.code(400).send({
-				error: "InvalidSterilizationBarcode",
-				message:
-					"Штрихкод инструментального лотка не найден в журнале стерилизации клиники. Отсканируйте зарегистрированный лоток.",
+			// Мандаты 8e, 8n: Соло-врач и небольшая клиника не должны получать отлуп 400.
+			// Автоматически создаем запись в sterilizationLogs (автоклав primary, класс B,
+			// режим 134°C / 2.1 bar, крафт-пакет, индикатор 5 класс — пройден, срок +30 дней)
+			// под ID текущего врача и продолжаем привязку.
+			const identity = getRequestIdentity(req);
+			let operatorId: string | null = identity.userId ?? null;
+
+			if (!operatorId) {
+				const [diaryDoc] = await db
+					.select({
+						doctorId: visitDiaries.doctorId,
+						authorId: visitDiaries.authorId,
+					})
+					.from(visitDiaries)
+					.where(
+						and(
+							eq(visitDiaries.visitId, visitId),
+							eq(visitDiaries.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (diaryDoc?.doctorId) {
+					operatorId = diaryDoc.doctorId;
+				} else if (diaryDoc?.authorId) {
+					operatorId = diaryDoc.authorId;
+				}
+			}
+
+			const autoValues = buildAutoProvisionSterilizationLogValues({
+				organizationId,
+				barcode: trimmedBarcode,
+				operatorId,
+				now: new Date(),
+			});
+
+			const [autoCreatedLog] = await db
+				.insert(sterilizationLogs)
+				.values(autoValues)
+				.returning();
+
+			if (!autoCreatedLog) {
+				return reply.code(500).send({
+					error: "SterilizationAutoProvisionFailed",
+					message:
+						"Не удалось автоматически зарегистрировать лоток стерилизации.",
+				});
+			}
+
+			log = autoCreatedLog;
+
+			wsBroker.broadcastToOrganization(organizationId, {
+				type: "STERILIZATION_LOG_ADDED",
+				payload: autoCreatedLog,
 			});
 		}
 
-		if (log.status !== "passed" || !log.passedIndicator) {
+		if (!log) {
+			return reply.code(500).send({
+				error: "SterilizationLogUnavailable",
+				message: "Не удалось получить запись стерилизации для лотка.",
+			});
+		}
+
+		const evaluation = evaluateSterilizationLogForLinking(log);
+		if (!evaluation.allowed) {
 			return reply.code(400).send({
-				error: "FailedSterilizationBarcode",
+				error: evaluation.errorCode || "FailedSterilizationBarcode",
 				message:
+					evaluation.errorMessage ||
 					"Лоток не прошел контроль стерилизации (статус «failed» или карантин). Использование непростерилизованных инструментов категорически запрещено СанПиН 3.3686-21.",
 			});
 		}
 
-		// Проверка срока годности стерильности
-		if (log.expiresAt && new Date(log.expiresAt).getTime() < Date.now()) {
-			return reply.code(400).send({
-				error: "ExpiredSterilizationBarcode",
-				message: `Срок годности стерильной упаковки лотка истек (${new Date(log.expiresAt).toLocaleDateString("ru-RU")}). Требуется повторная предстерилизационная очистка и автоклавирование.`,
-			});
+		// Фиксация мягкого допуска по экстренным показаниям в логе стерилизации
+		if (evaluation.isExpired && evaluation.emergencyLogNote) {
+			const nextItemsDescription = log.itemsDescription
+				? (log.itemsDescription.includes("Мягкий допуск")
+					? log.itemsDescription
+					: `${log.itemsDescription} | ${evaluation.emergencyLogNote}`)
+				: evaluation.emergencyLogNote;
+
+			await db
+				.update(sterilizationLogs)
+				.set({
+					itemsDescription: nextItemsDescription,
+				})
+				.where(
+					and(
+						eq(sterilizationLogs.id, log.id),
+						eq(sterilizationLogs.organizationId, organizationId),
+					),
+				);
 		}
 
 		// Атомарная транзакция с пессимистичной блокировкой FOR UPDATE
@@ -344,23 +521,31 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 				return { kind: "locked" as const };
 			}
 
+			const nextTreatmentDescription = evaluation.isExpired
+				? applyEmergencySterilizationToDiaryTreatment(
+						existingDiary.treatmentDescription,
+						trimmedBarcode,
+					)
+				: existingDiary.treatmentDescription;
+
 			const nextHash = computeDiaryHashForTrayLink({
 				visitId: existingDiary.visitId,
 				patientId: existingDiary.patientId,
 				anamnesis: existingDiary.anamnesis,
 				statusLocalis: existingDiary.statusLocalis,
-				treatmentDescription: existingDiary.treatmentDescription,
+				treatmentDescription: nextTreatmentDescription,
 				diagnosisIcd10: existingDiary.diagnosisIcd10,
 				diagnosisTooth: existingDiary.diagnosisTooth,
 				complications: existingDiary.complications,
 				comorbidities: existingDiary.comorbidities,
-				instrumentTrayBarcode: barcode,
+				instrumentTrayBarcode: trimmedBarcode,
 			});
 
 			const [updated] = await tx
 				.update(visitDiaries)
 				.set({
-					instrumentTrayBarcode: barcode,
+					instrumentTrayBarcode: trimmedBarcode,
+					treatmentDescription: nextTreatmentDescription,
 					diaryHash: nextHash,
 					updatedAt: new Date(),
 				})

@@ -15,6 +15,16 @@ import {
 import React, { useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
+import {
+	ANGLE_CLASS_OPTIONS,
+	type AngleClass,
+	type AngleClassOption,
+	WORKHORSE_ARCHWIRES,
+	type WorkhorseArchwireOption,
+} from "@dental/shared";
+
+export { ANGLE_CLASS_OPTIONS, WORKHORSE_ARCHWIRES };
+export type { AngleClass, AngleClassOption, WorkhorseArchwireOption };
 
 export type BracketSlot = "0.018" | "0.022";
 export type ArchwireMaterial = "NiTi" | "CuNiTi" | "SS" | "TMA";
@@ -57,6 +67,7 @@ export const BRACKET_SYSTEMS = [
 	{ id: "mini_diamond", label: "Mini Diamond", desc: "Лигатурные классические" },
 	{ id: "pitts21", label: "Pitts 21", desc: "Квадратный паз .021" },
 	{ id: "aligners", label: "Элайнеры", desc: "Прозрачные каппы с аттачментами" },
+	{ id: "removable_plate", label: "Пластинка с винтом", desc: "Съемный пластиночный аппарат с расширяющим винтом" },
 ];
 
 export const ARCHWIRE_MATERIALS: Array<{ id: ArchwireMaterial; label: string; desc: string; badge: string }> = [
@@ -101,6 +112,8 @@ export const CLINICAL_ACTIONS = [
 	{ id: "power_chain", label: "Установка цепочки Power Chain" },
 	{ id: "rebracket", label: "Переклейка отклеившегося брекета" },
 	{ id: "ipr", label: "Сепарация эмали (IPR)" },
+	{ id: "plate_activation", label: "Активация дуги и кламмеров пластинки" },
+	{ id: "expansion_screw_activation", label: "Раскрутка расширяющего винта (1/4 об. = 0.25 мм)" },
 	{ id: "debonding", label: "Снятие аппаратуры + ретейнер" },
 ];
 
@@ -186,6 +199,21 @@ export function OrthodonticVisitProtocolWidget({
 	// Aligner & Attachments Express State
 	const [activeAttachmentPreset, setActiveAttachmentPreset] = useState<string | null>(null);
 	const [alignerSetIssued, setAlignerSetIssued] = useState<{ count: number; days: number } | null>(null);
+
+	// Angle Classification State & Plate Activation
+	const [angleClass, setAngleClass] = useState<AngleClass>("class_1");
+	const [plateActivationTurns, setPlateActivationTurns] = useState<number>(1);
+
+	// 1-Click Fast Workhorse Archwire Handler
+	const handleSelectWorkhorseArchwire = (wire: WorkhorseArchwireOption) => {
+		setActivePreset(null);
+		setArchwireMaterial(wire.material);
+		setArchwireSection(wire.section);
+		if (!selectedActions.includes("wire_change")) {
+			setSelectedActions((prev) => [...prev, "wire_change"]);
+		}
+		showToast(`Установлена рабочая дуга ${wire.label}`, "info");
+	};
 
 	// Fast 1-Click Preset Handlers
 	const handlePresetActivation = () => {
@@ -406,6 +434,11 @@ export function OrthodonticVisitProtocolWidget({
 			.filter(Boolean)
 			.join("; ");
 
+		const angleObj = ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass);
+		const angleText = angleObj
+			? `• Прикус (классификация Энгля): ${angleObj.label}.\n`
+			: "• Прикус (классификация Энгля): I класс по Энглю (нейтральный прикус).\n";
+
 		let elasticsText = "Межчелюстная тяга не назначена.";
 		if (elasticScheme !== "none") {
 			elasticsText = `Межчелюстные эластики: ${elasticObj?.label || ""} (${elasticSizeObj?.label || ""}, ${elasticSizeObj?.strength || ""}). Режим ношения: ${elasticWear}.`;
@@ -427,9 +460,16 @@ export function OrthodonticVisitProtocolWidget({
 			alignerSetText = `• Выдача элайнеров: выдан следующий сет капп (+${alignerSetIssued.days} дн., ${alignerSetIssued.count} каппы). Режим ношения: 22 ч/сутки.`;
 		}
 
+		let plateText = "";
+		if (bracketSystem === "removable_plate") {
+			plateText = `• Состояние аппарата: съемная пластинка с расширяющим винтом на ${archLabel}. Фиксация стабильна, кламмеры и вестибулярная дуга адаптированы. Раскрутка винта: ${plateActivationTurns}/4 оборота (${(plateActivationTurns * 0.25).toFixed(2)} мм).`;
+		}
+
 		let archwireText = `• Текущая дуга: ${archLabel} — ${materialObj?.badge || ""} сечением ${archwireSection}".`;
 		if (bracketSystem === "aligners" || activeAttachmentPreset) {
 			archwireText = "• Состояние аппаратуры: прозрачные каппы (элайнеры), фиксация на аттачментах плотная, окклюзионных помех нет.";
+		} else if (bracketSystem === "removable_plate") {
+			archwireText = plateText;
 		} else if (selectedActions.includes("debonding")) {
 			archwireText = "• Состояние аппаратуры: брекет-система снята. Зафиксирован несъемный проволочный ретейнер в сегментах 13-23 и 33-43.";
 		} else if (activePreset === "wire_change" || notes.includes("верхняя челюсть .016\", нижняя челюсть .014\"")) {
@@ -446,7 +486,13 @@ export function OrthodonticVisitProtocolWidget({
 ${notes || "Плановый визит по графику ортодонтического лечения. Жалоб на острую боль и отклейку аппаратуры нет."}
 
 2. ОБЪЕКТИВНЫЙ СТАТУС:
-• Аппаратура: ${bracketSystem === "aligners" ? "Ортодонтические элайнеры (каппы с аттачментами)" : `${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}")`}.
+${angleText}• Аппаратура: ${
+	bracketSystem === "aligners"
+		? "Ортодонтические элайнеры (каппы с аттачментами)"
+		: bracketSystem === "removable_plate"
+			? "Съемный пластиночный аппарат с расширяющим винтом"
+			: `${systemObj?.label || "Брекет-система"} (паз ${bracketSlot}")`
+}.
 • Зона фиксации/активации (зубы): ${teethListStr}.
 ${attachmentText ? `${attachmentText}\n` : ""}${alignerSetText ? `${alignerSetText}\n` : ""}${archwireText}
 • Фиксация аппаратуры стабильна, окклюзионных контактов с замками/каппами не выявлено.
@@ -463,7 +509,12 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 • Использование чувисов (жевательных валиков) для плотной посадки капп на зубах.
 • Хранение элайнеров в специальном вентилируемом боксе, промывание прохладной водой.
 • Следующий плановый приём: через ${alignerSetIssued ? `${Math.round(alignerSetIssued.days / 7)} недель` : "4–6 недель"}.`
-	: `• Строгое соблюдение гигиены (ортодонтическая щетка, монопучок, ершики, ирригатор).
+	: bracketSystem === "removable_plate"
+		? `• Ношение пластинки строго 20–22 часа в сутки (снимать во время еды и контактного спорта).
+• Активация расширяющего винта ключом строго по схеме (1 раз в 7 дней на 1/4 оборота по стрелке).
+• Хранение в сухом вентилируемом контейнере, ежедневная механическая чистка зубной щеткой и мылом.
+• Следующий контрольный приём: через 4 недели.`
+		: `• Строгое соблюдение гигиены (ортодонтическая щетка, монопучок, ершики, ирригатор).
 • Использование ортодонтического защитного воска при натирании.
 • Исключить из рациона твердую, волокнистую и липкую пищу.
 • Следующий плановый приём: через 4–6 недель.`}`;
@@ -485,6 +536,8 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		activePreset,
 		activeAttachmentPreset,
 		alignerSetIssued,
+		angleClass,
+		plateActivationTurns,
 	]);
 
 	// Apply to Form 043/u
@@ -502,8 +555,8 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						? `${prev.objectiveStatus}\n\n${generatedProtocol}`
 						: generatedProtocol,
 					treatmentPlan: prev.treatmentPlan
-						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: ${currentAttachmentObj?.shortLabel || "аттачменты"}` : `Дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
-						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры (${currentAttachmentObj?.shortLabel || "аттачменты"})` : `дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
+						? `${prev.treatmentPlan}\n\n[Ортодонтия] ${activeAttachmentPreset ? `Элайнеры: ${currentAttachmentObj?.shortLabel || "аттачменты"}` : bracketSystem === "removable_plate" ? `Пластинка с винтом (активация ${plateActivationTurns}/4 об.)` : `Дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "эластики" : "активация"}`}`
+						: `Ортодонтическое лечение: ${activeAttachmentPreset ? `Элайнеры (${currentAttachmentObj?.shortLabel || "аттачменты"})` : bracketSystem === "removable_plate" ? `пластинка с расширяющим винтом (${plateActivationTurns}/4 об.)` : `дуга ${archwireMaterial} ${archwireSection}", ${elasticScheme !== "none" ? "межчелюстная тяга" : "плановая активация"}`}.`,
 				}));
 			}
 
@@ -514,6 +567,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						detail: {
 							protocolText: generatedProtocol,
 							title: "Ортодонтический протокол (брекеты & дуги)",
+							angleClass,
 						},
 					}),
 				);
@@ -887,6 +941,47 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							</div>
 						</div>
 
+						{/* 0.8 1-Click Angle Malocclusion Classification Bar (I, II/1, II/2, III) */}
+						<div
+							data-testid="ortho-angle-class-selector"
+							className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
+						>
+							<div className="flex items-center justify-between">
+								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+									<Activity size={14} className="text-blue-500" />
+									Прикус по Энглю (1-клик фиксация)
+								</span>
+								<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+									{ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass)?.shortLabel}
+								</span>
+							</div>
+
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+								{ANGLE_CLASS_OPTIONS.map((opt) => {
+									const isSelected = angleClass === opt.id;
+									return (
+										<button
+											key={opt.id}
+											type="button"
+											onClick={() => setAngleClass(opt.id)}
+											data-testid={`angle-class-${opt.id}-btn`}
+											className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
+												isSelected
+													? "bg-blue-600 text-white border-blue-700 font-black shadow-xs ring-1 ring-blue-400"
+													: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+											}`}
+											title={opt.desc}
+										>
+											<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
+											<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+												{opt.id === "class_1" ? "Нейтральный" : opt.id === "class_2_div_1" ? "Протрузия" : opt.id === "class_2_div_2" ? "Ретрузия" : "Мезиальный"}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						</div>
+
 						{/* 1. Dental Arch Quick Presets & Formula */}
 						<div className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/50 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<div className="flex items-center justify-between mb-2">
@@ -1055,6 +1150,46 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							</div>
 						</div>
 
+						{/* 2.5 Removable Plate Expansion Screw Controls */}
+						{bracketSystem === "removable_plate" && (
+							<div
+								data-testid="ortho-screw-activation-controls"
+								className="p-3 rounded-xl bg-orange-500/10 dark:bg-orange-950/30 border border-orange-500/30 flex flex-col gap-2"
+							>
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-black uppercase tracking-wider text-orange-800 dark:text-orange-300 flex items-center gap-1.5">
+										<RotateCcw size={14} className="text-orange-600 dark:text-orange-400" />
+										Расширяющий винт пластинки
+									</span>
+									<span className="text-[11px] font-bold text-orange-700 dark:text-orange-300">
+										{plateActivationTurns}/4 об. ({(plateActivationTurns * 0.25).toFixed(2)} мм)
+									</span>
+								</div>
+								<div className="flex items-center gap-2">
+									{[1, 2, 3, 4].map((turns) => (
+										<button
+											key={turns}
+											type="button"
+											onClick={() => {
+												setPlateActivationTurns(turns);
+												if (!selectedActions.includes("expansion_screw_activation")) {
+													setSelectedActions((prev) => [...prev, "expansion_screw_activation"]);
+												}
+											}}
+											data-testid={`screw-turns-${turns}-btn`}
+											className={`min-h-[44px] flex-1 px-2 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+												plateActivationTurns === turns
+													? "bg-orange-500 text-white border-orange-600 font-black shadow-xs"
+													: "bg-white dark:bg-slate-900 border-orange-200 dark:border-orange-800 text-slate-700 dark:text-slate-300 hover:bg-orange-50"
+											}`}
+										>
+											{turns}/4 об. ({(turns * 0.25).toFixed(2)} мм)
+										</button>
+									))}
+								</div>
+							</div>
+						)}
+
 						{/* 3. Archwire Material (NiTi / CuNiTi / SS / TMA) */}
 						<div>
 							<span className="block text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
@@ -1138,6 +1273,47 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 											</button>
 										);
 									})}
+								</div>
+
+								{/* Canonical Workhorse Archwires Strip (1-click fast wires) */}
+								<div
+									data-testid="ortho-workhorse-wires-strip"
+									className="mt-2 p-2.5 rounded-xl bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/30 flex flex-col gap-1.5"
+								>
+									<div className="flex items-center justify-between">
+										<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1">
+											<Zap size={13} className="text-teal-600 dark:text-teal-400" />
+											Рабочие дуги ортодонта (1 клик)
+										</span>
+										<span className="text-[10px] text-teal-700/80 dark:text-teal-400/80 font-bold">
+											Мгновенный выбор материала и сечения
+										</span>
+									</div>
+
+									<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+										{WORKHORSE_ARCHWIRES.map((wire) => {
+											const isSelected = archwireMaterial === wire.material && archwireSection === wire.section;
+											return (
+												<button
+													key={wire.id}
+													type="button"
+													onClick={() => handleSelectWorkhorseArchwire(wire)}
+													data-testid={`quick-wire-${wire.id}-btn`}
+													className={`min-h-[44px] px-2 py-1 rounded-lg border text-left flex flex-col justify-center transition-all cursor-pointer ${
+														isSelected
+															? "bg-teal-600 text-white border-teal-700 font-black shadow-xs ring-1 ring-teal-400"
+															: "bg-white dark:bg-slate-900 border-teal-300/60 dark:border-teal-800 hover:border-teal-500 text-slate-800 dark:text-slate-100"
+													}`}
+													title={wire.desc}
+												>
+													<span className="text-xs font-bold leading-tight">{wire.label}</span>
+													<span className={`text-[10px] truncate ${isSelected ? "text-teal-100" : "text-slate-500 dark:text-slate-400"}`}>
+														{wire.material === "SS" ? "Рабочая сталь" : "Нивелирование"}
+													</span>
+												</button>
+											);
+										})}
+									</div>
 								</div>
 							</div>
 						</div>

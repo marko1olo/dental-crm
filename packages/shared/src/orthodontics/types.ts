@@ -9,6 +9,7 @@
  */
 
 import { z } from "zod";
+import type { AngleClass } from "../diagnostics/photoProtocolEngine.js";
 
 export const bracketSlotSchema = z.enum(["0.018", "0.022"]);
 export type BracketSlot = z.infer<typeof bracketSlotSchema>;
@@ -34,6 +35,21 @@ export type ArchwireSection = z.infer<typeof archwireSectionSchema>;
 
 export const targetArchSchema = z.enum(["upper", "lower", "both"]);
 export type TargetArch = z.infer<typeof targetArchSchema>;
+
+export interface AngleClassOption {
+	id: AngleClass;
+	label: string;
+	shortLabel: string;
+	desc: string;
+}
+
+export interface WorkhorseArchwireOption {
+	id: string;
+	label: string;
+	material: ArchwireMaterial;
+	section: ArchwireSection;
+	desc: string;
+}
 
 export interface BracketSystemOption {
 	id: string;
@@ -94,6 +110,7 @@ export interface OrthodonticQuickPreset {
 	activeAttachmentPreset?: string | null;
 	teeth?: number[];
 	notes: string;
+	angleClass?: AngleClass;
 }
 
 export interface OrthodonticSoapParams {
@@ -116,4 +133,5 @@ export interface OrthodonticSoapParams {
 	activeAttachmentPreset?: string | null;
 	alignerSetIssued?: { count: number; days: number } | null;
 	plateActivationTurns?: number;
+	angleClass?: AngleClass;
 }

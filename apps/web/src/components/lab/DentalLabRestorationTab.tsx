@@ -738,17 +738,17 @@ export function DentalLabRestorationTab({
 					</div>
 				</div>
 
-				{/* STEP 2: Выбор конструкции из 4 ключевых (Клик 2) */}
+				{/* STEP 2: Выбор конструкции из 6 канонических + PMMA (Клик 2) */}
 				<div className="space-y-2">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between flex-wrap gap-1">
 						<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
 							2. Конструкция (Клик 2):
 						</span>
 						<span className="text-[11px] text-slate-500 dark:text-slate-400">
-							ZrO2 Katana · PMMA · Металлокерамика Duceram · Винтовая Ti-Base
+							ZrO2 Katana · МК Co-Cr · IPS e.max · Винир · Бюгель · Ti-Base · PMMA
 						</span>
 					</div>
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
 						{[
 							{
 								id: "zirconia",
@@ -761,24 +761,44 @@ export function DentalLabRestorationTab({
 								badge: "5 раб. дней",
 							},
 							{
-								id: "pmma",
-								title: "Временная PMMA CAD/CAM",
-								subtitle: "Фрезерованная провизорная пластмасса",
-								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
-								materialId: "pmma_temporary",
-								days: 2,
-								costRub: 1200,
-								badge: "2 раб. дня",
-							},
-							{
 								id: "pfm",
-								title: "Металлокерамика (Duceram)",
+								title: "Металлокерамика (PFM Co-Cr)",
 								subtitle: "Классический Co-Cr каркас + Duceram Plus",
 								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
 								materialId: "pfm_cocr",
 								days: 7,
 								costRub: 5000,
 								badge: "7 раб. дней",
+							},
+							{
+								id: "emax_press",
+								title: "IPS e.max Press (Дисиликат)",
+								subtitle: "Прессованная стеклокерамика (500 МПа)",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
+								materialId: "emax_lithium_disilicate",
+								days: 4,
+								costRub: 8000,
+								badge: "4 раб. дня",
+							},
+							{
+								id: "ceramic_veneer",
+								title: "Керамический винир (E.max)",
+								subtitle: "Ультратонкая эстетическая накладка / рефрактор",
+								constructionId: "veneer",
+								materialId: "emax_lithium_disilicate",
+								days: 5,
+								costRub: 9000,
+								badge: "5 раб. дней",
+							},
+							{
+								id: "clasp_denture",
+								title: "Съемный бюгель (Co-Cr)",
+								subtitle: "Бюгельный протез на кламмерах / замках Bredent",
+								constructionId: "clasp_denture",
+								materialId: "cobalt_chrome_cocr",
+								days: 10,
+								costRub: 18000,
+								badge: "10 раб. дней",
 							},
 							{
 								id: "implant_screw",
@@ -790,10 +810,25 @@ export function DentalLabRestorationTab({
 								costRub: 13000,
 								badge: "7 раб. дней",
 							},
+							{
+								id: "pmma",
+								title: "Временная PMMA CAD/CAM",
+								subtitle: "Фрезерованная провизорная пластмасса",
+								constructionId: constructionType === "bridge" ? "bridge" : "single_crown",
+								materialId: "pmma_temporary",
+								days: 2,
+								costRub: 1200,
+								badge: "2 раб. дня",
+							},
 						].map((opt) => {
 							const isMatch =
+								(opt.id === "ceramic_veneer" && constructionType === "veneer") ||
+								(opt.id === "clasp_denture" && constructionType === "clasp_denture") ||
 								(opt.id === "implant_screw" && constructionType === "implant_abutment") ||
-								(opt.id !== "implant_screw" && material === opt.materialId);
+								(opt.id === "zirconia" && constructionType !== "veneer" && material === "zirconia_multilayer") ||
+								(opt.id === "pfm" && material === "pfm_cocr") ||
+								(opt.id === "emax_press" && constructionType !== "veneer" && material === "emax_lithium_disilicate") ||
+								(opt.id === "pmma" && material === "pmma_temporary");
 							return (
 								<button
 									key={opt.id}
@@ -830,23 +865,58 @@ export function DentalLabRestorationTab({
 					</div>
 				</div>
 
-				{/* STEP 3: Цвет шкалы VITA (Клик 3) */}
-				<div className="space-y-2 pt-1 border-t border-amber-500/20">
-					<div className="flex items-center justify-between">
-						<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
-							3. Цвет шкалы VITA (Клик 3):
-						</span>
-						<span className="text-xs font-bold text-[var(--teal)]">
-							Выбран: {shadeSystem === "bleach" ? (shadeBleach || "BL2") : (shadeClassical || "A2")}
-						</span>
+				{/* STEP 3: Цвет шкалы VITA (Клик 3) — Полный спектр A1..D4 + Bleach */}
+				<div className="space-y-2.5 pt-2 border-t border-amber-500/20">
+					<div className="flex items-center justify-between flex-wrap gap-2">
+						<div className="flex items-center gap-2">
+							<span className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+								3. Цвет шкалы VITA (Клик 3):
+							</span>
+							<span className="text-xs font-bold text-[var(--teal)]">
+								Выбран: {shadeSystem === "bleach" ? (shadeBleach || "BL2") : (shadeClassical || "A2")}
+							</span>
+						</div>
+						{onOpenAdvancedShades && (
+							<button
+								type="button"
+								onClick={onOpenAdvancedShades}
+								className="min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 transition cursor-pointer inline-flex items-center gap-1"
+							>
+								<Palette size={13} />
+								<span>Шкала культи ND / 3D-Master</span>
+							</button>
+						)}
 					</div>
-					<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+
+					{/* 1-Click Fast VITA Shades Matrix (A1..D4 + Bleach) */}
+					<div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-1.5">
 						{[
-							{ shade: "A1", desc: "Светлый естественный", isBleach: false },
-							{ shade: "A2", desc: "Стандарт (60% пациентов)", isBleach: false },
-							{ shade: "A3", desc: "Насыщенный дентинный", isBleach: false },
-							{ shade: "BL2", desc: "Bleach отбеленный", isBleach: true },
-							{ shade: "B1", desc: "Светло-желтый тон", isBleach: false },
+							// Group A (Standard 60% patients)
+							{ shade: "A1", desc: "Светлый", isBleach: false },
+							{ shade: "A2", desc: "Стандарт", isBleach: false },
+							{ shade: "A3", desc: "Дентин", isBleach: false },
+							{ shade: "A3.5", desc: "Темный A", isBleach: false },
+							{ shade: "A4", desc: "Интенсив", isBleach: false },
+							// Group B (Yellowish)
+							{ shade: "B1", desc: "Светло-желтый", isBleach: false },
+							{ shade: "B2", desc: "Желтый", isBleach: false },
+							{ shade: "B3", desc: "Насыщ. желтый", isBleach: false },
+							{ shade: "B4", desc: "Темно-желтый", isBleach: false },
+							// Bleach
+							{ shade: "BL2", desc: "Bleach", isBleach: true },
+							// Group C (Greyish)
+							{ shade: "C1", desc: "Светло-серый", isBleach: false },
+							{ shade: "C2", desc: "Серый", isBleach: false },
+							{ shade: "C3", desc: "Насыщ. серый", isBleach: false },
+							{ shade: "C4", desc: "Темно-серый", isBleach: false },
+							// Group D (Reddish-grey)
+							{ shade: "D2", desc: "Красно-серый", isBleach: false },
+							{ shade: "D3", desc: "Насыщ. D3", isBleach: false },
+							{ shade: "D4", desc: "Темный D4", isBleach: false },
+							// Additional Bleach
+							{ shade: "BL1", desc: "Ultra-White", isBleach: true },
+							{ shade: "BL3", desc: "Soft Bleach", isBleach: true },
+							{ shade: "BL4", desc: "Natural BL", isBleach: true },
 						].map((item) => {
 							const swatch = SHADE_SWATCH_MAP[item.shade];
 							const isSelected = item.isBleach
@@ -868,26 +938,27 @@ export function DentalLabRestorationTab({
 											setShadeBody?.(item.shade);
 										}
 									}}
-									className={`min-h-[44px] p-2 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
+									className={`min-h-[44px] p-1.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
 										isSelected
 											? "bg-[var(--teal-surface)] border-[var(--teal)] ring-2 ring-[var(--teal-soft)] shadow-xs"
 											: "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-slate-300"
 									}`}
 									data-testid={`fast-shade-${item.shade}`}
+									title={`${item.shade}: ${item.desc}`}
 								>
-									<div className="flex items-center gap-1.5">
+									<div className="flex items-center gap-1">
 										<span
-											className="w-3.5 h-3.5 rounded-full border shadow-2xs shrink-0"
+											className="w-3 h-3 rounded-full border shadow-2xs shrink-0"
 											style={{
 												backgroundColor: swatch?.bg || "#f0eae0",
 												borderColor: swatch?.border || "#ccc",
 											}}
 										/>
-										<span className="text-xs font-black text-slate-900 dark:text-slate-100">
+										<span className="text-[11px] font-black text-slate-900 dark:text-slate-100">
 											{item.shade}
 										</span>
 									</div>
-									<span className="text-[10px] text-slate-500 dark:text-slate-400 leading-none truncate max-w-full">
+									<span className="text-[9px] text-slate-500 dark:text-slate-400 leading-none truncate max-w-full">
 										{item.desc}
 									</span>
 								</button>

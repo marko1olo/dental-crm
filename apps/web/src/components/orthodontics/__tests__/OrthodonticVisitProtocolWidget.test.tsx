@@ -4,6 +4,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import {
 	ALIGNER_ATTACHMENT_PRESETS,
+	ANGLE_CLASS_OPTIONS,
 	ARCHWIRE_MATERIALS,
 	BRACKET_SYSTEMS,
 	CLINICAL_ACTIONS,
@@ -12,6 +13,7 @@ import {
 	OrthodonticVisitProtocolWidget,
 	RECT_SECTIONS,
 	ROUND_SECTIONS,
+	WORKHORSE_ARCHWIRES,
 } from "../OrthodonticVisitProtocolWidget";
 
 describe("OrthodonticVisitProtocolWidget Component", () => {
@@ -187,6 +189,79 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(ALIGNER_ATTACHMENT_PRESETS.some((p) => p.id === "intact"));
 		assert.ok(ALIGNER_ATTACHMENT_PRESETS.some((p) => p.id === "refixation"));
 		assert.ok(ALIGNER_ATTACHMENT_PRESETS.some((p) => p.id === "debonding"));
+	});
+
+	it("renders 1-click Angle classification selector bar with I, II/1, II/2, and III classes", () => {
+		const html = renderToString(
+			<OrthodonticVisitProtocolWidget
+				isOpen={true}
+				onClose={() => {}}
+				patientId="pat-104"
+				patientName="Кузнецов Дмитрий Павлович"
+			/>,
+		);
+
+		// Angle Selector Container
+		assert.ok(html.includes("data-testid=\"ortho-angle-class-selector\""));
+		assert.ok(html.includes("Прикус по Энглю (1-клик фиксация)"));
+
+		// 4 Angle Class Buttons
+		assert.ok(html.includes("data-testid=\"angle-class-class_1-btn\""));
+		assert.ok(html.includes("data-testid=\"angle-class-class_2_div_1-btn\""));
+		assert.ok(html.includes("data-testid=\"angle-class-class_2_div_2-btn\""));
+		assert.ok(html.includes("data-testid=\"angle-class-class_3-btn\""));
+
+		assert.ok(html.includes("I класс"));
+		assert.ok(html.includes("II/1 класс"));
+		assert.ok(html.includes("II/2 класс"));
+		assert.ok(html.includes("III класс"));
+
+		// Generated 043/u diary objective status includes Angle classification
+		assert.ok(html.includes("• Прикус (классификация Энгля):"));
+		assert.ok(html.includes("I класс по Энглю (нейтральный прикус)"));
+	});
+
+	it("renders 1-click workhorse archwires strip (NiTi .014, .016, .018, SS .019x.025)", () => {
+		const html = renderToString(
+			<OrthodonticVisitProtocolWidget
+				isOpen={true}
+				onClose={() => {}}
+				patientId="pat-105"
+				patientName="Морозова Ольга Игоревна"
+			/>,
+		);
+
+		// Workhorse Archwires Strip Container
+		assert.ok(html.includes("data-testid=\"ortho-workhorse-wires-strip\""));
+		assert.ok(html.includes("Рабочие дуги ортодонта (1 клик)"));
+
+		// 4 Standard Archwires
+		assert.ok(html.includes("data-testid=\"quick-wire-niti_014-btn\""));
+		assert.ok(html.includes("data-testid=\"quick-wire-niti_016-btn\""));
+		assert.ok(html.includes("data-testid=\"quick-wire-niti_018-btn\""));
+		assert.ok(html.includes("data-testid=\"quick-wire-ss_019x025-btn\""));
+
+		assert.ok(html.includes("NiTi .014"));
+		assert.ok(html.includes("NiTi .016"));
+		assert.ok(html.includes("NiTi .018"));
+		assert.ok(html.includes("SS .019x.025"));
+	});
+
+	it("exports canonical ANGLE_CLASS_OPTIONS and WORKHORSE_ARCHWIRES", () => {
+		assert.equal(ANGLE_CLASS_OPTIONS.length, 4);
+		assert.ok(ANGLE_CLASS_OPTIONS.some((a) => a.id === "class_1"));
+		assert.ok(ANGLE_CLASS_OPTIONS.some((a) => a.id === "class_2_div_1"));
+		assert.ok(ANGLE_CLASS_OPTIONS.some((a) => a.id === "class_2_div_2"));
+		assert.ok(ANGLE_CLASS_OPTIONS.some((a) => a.id === "class_3"));
+
+		assert.equal(WORKHORSE_ARCHWIRES.length, 4);
+		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "niti_014" && w.material === "NiTi" && w.section === ".014"));
+		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "niti_016" && w.material === "NiTi" && w.section === ".016"));
+		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "niti_018" && w.material === "NiTi" && w.section === ".018"));
+		assert.ok(WORKHORSE_ARCHWIRES.some((w) => w.id === "ss_019x025" && w.material === "SS" && w.section === ".019x.025"));
+
+		assert.ok(BRACKET_SYSTEMS.some((b) => b.id === "removable_plate"));
+		assert.ok(CLINICAL_ACTIONS.some((a) => a.id === "expansion_screw_activation"));
 	});
 });
 

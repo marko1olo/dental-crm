@@ -294,8 +294,9 @@ export const RadiologyReferralModal: React.FC<RadiologyReferralModalProps> = ({
 						<div>
 							<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] flex items-center gap-2">
 								Направление на рентген-диагностику (КЛКТ / ОПТГ / ТРГ / RVG)
-								<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">
-									⚡ 1 клик
+								<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 inline-flex items-center gap-1">
+									<Zap size={10} className="shrink-0" />
+									<span>1 клик</span>
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--muted)]">

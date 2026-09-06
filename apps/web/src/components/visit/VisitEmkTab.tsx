@@ -160,6 +160,17 @@ function DebouncedEmkTextarea({
 	const onCommitRef = React.useRef(onCommit);
 	onCommitRef.current = onCommit;
 
+	const flushCommit = React.useCallback(() => {
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+			debounceTimerRef.current = null;
+		}
+		if (localValueRef.current !== lastCommittedValueRef.current) {
+			lastCommittedValueRef.current = localValueRef.current;
+			onCommitRef.current(fieldKey, localValueRef.current);
+		}
+	}, [fieldKey]);
+
 	// Sync local value when external value changes (e.g. from templates, voice dictation, chips)
 	React.useEffect(() => {
 		if (value !== lastCommittedValueRef.current) {
@@ -185,26 +196,33 @@ function DebouncedEmkTextarea({
 	};
 
 	const handleBlur = () => {
-		if (debounceTimerRef.current) {
-			clearTimeout(debounceTimerRef.current);
-		}
-		if (localValue !== lastCommittedValueRef.current) {
-			lastCommittedValueRef.current = localValue;
-			onCommitRef.current(fieldKey, localValue);
-		}
+		flushCommit();
 	};
 
+	// Mandate 8e: flush uncommitted textarea content on window blur, tab switch, pagehide, or incoming call
 	React.useEffect(() => {
-		return () => {
-			if (debounceTimerRef.current) {
-				clearTimeout(debounceTimerRef.current);
-			}
-			if (localValueRef.current !== lastCommittedValueRef.current) {
-				lastCommittedValueRef.current = localValueRef.current;
-				onCommitRef.current(fieldKey, localValueRef.current);
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "hidden") {
+				flushCommit();
 			}
 		};
-	}, [fieldKey]);
+		const handleTelephony = () => {
+			flushCommit();
+		};
+
+		window.addEventListener("pagehide", flushCommit);
+		window.addEventListener("blur", flushCommit);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("dente-telephony-incoming-call", handleTelephony);
+
+		return () => {
+			window.removeEventListener("pagehide", flushCommit);
+			window.removeEventListener("blur", flushCommit);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("dente-telephony-incoming-call", handleTelephony);
+			flushCommit();
+		};
+	}, [flushCommit]);
 
 	return (
 		<textarea
@@ -2062,11 +2080,12 @@ export function VisitEmkTab() {
 													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
 													showToast("Анестезия (Ультракаин Д-С 1:200k, 1 карп.) внесена в протокол", "success", 2500);
 												}}
-												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer"
+												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
 												data-testid="btn-anes-ultracain-ds"
 												title="1 клик: внести стандартную анестезию 1:200 000 в протокол"
 											>
-												⚡ Ультракаин 1:200k (1 карп.)
+												<Syringe size={12} className="text-blue-500 shrink-0" />
+												<span>Ультракаин 1:200k (1 карп.)</span>
 											</button>
 											<button
 												type="button"
@@ -2077,11 +2096,12 @@ export function VisitEmkTab() {
 													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
 													showToast("Анестезия (Ультракаин Форте 1:100k, 1 карп.) внесена в протокол", "success", 2500);
 												}}
-												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer"
+												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
 												data-testid="btn-anes-ultracain-ds-forte"
 												title="1 клик: внести глубокую анестезию 1:100 000 в протокол"
 											>
-												⚡ Ультракаин Форте (1 карп.)
+												<Syringe size={12} className="text-blue-500 shrink-0" />
+												<span>Ультракаин Форте (1 карп.)</span>
 											</button>
 											<button
 												type="button"
@@ -2092,11 +2112,12 @@ export function VisitEmkTab() {
 													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
 													showToast("Анестезия (Скандонест 3% без адреналина, 1 карп.) внесена в протокол", "success", 2500);
 												}}
-												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer"
+												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
 												data-testid="btn-anes-scandonest-3"
 												title="1 клик: безадреналиновая анестезия для кардио-пациентов"
 											>
-												⚡ Скандонест 3% (без адреналина)
+												<Syringe size={12} className="text-blue-500 shrink-0" />
+												<span>Скандонест 3% (без адреналина)</span>
 											</button>
 										</div>
 

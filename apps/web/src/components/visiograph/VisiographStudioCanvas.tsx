@@ -630,7 +630,7 @@ export function VisiographStudioCanvas({
 				}}
 			>
 				{/* Tool selector */}
-				<div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
 					<button
 						type="button"
 						onClick={() => {
@@ -638,20 +638,22 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
+							minHeight: "44px",
 							background: activeTool === "pointer" ? "#1f6feb" : "#21262d",
 							color: "#ffffff",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "6px 10px",
+							padding: "8px 12px",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
-							fontSize: "0.82rem",
+							justifyContent: "center",
+							gap: "6px",
+							fontSize: "0.84rem",
 						}}
 						title="Указатель (Просмотр)"
 					>
-						<MousePointer size={14} /> Указатель
+						<MousePointer size={15} /> Указатель
 					</button>
 
 					<button
@@ -661,21 +663,23 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
+							minHeight: "44px",
 							background: activeTool === "ruler" ? "#1f6feb" : "#21262d",
 							color: "#00e5ff",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "6px 10px",
+							padding: "8px 12px",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
-							fontSize: "0.82rem",
+							justifyContent: "center",
+							gap: "6px",
+							fontSize: "0.84rem",
 							fontWeight: 600,
 						}}
 						title="Измерить расстояние между двумя точками (мм)"
 					>
-						<Ruler size={14} /> Линейка (мм)
+						<Ruler size={15} /> Линейка (мм)
 					</button>
 
 					<button
@@ -685,21 +689,23 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
+							minHeight: "44px",
 							background: activeTool === "calibrate" ? "#1f6feb" : "#21262d",
 							color: "#76ff03",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "6px 10px",
+							padding: "8px 12px",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
-							fontSize: "0.82rem",
+							justifyContent: "center",
+							gap: "6px",
+							fontSize: "0.84rem",
 							fontWeight: 600,
 						}}
 						title="Калибровка по эталону (5 мм шарик или резьба)"
 					>
-						<Scale size={14} /> Калибровка
+						<Scale size={15} /> Калибровка
 					</button>
 
 					<button
@@ -709,21 +715,23 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
+							minHeight: "44px",
 							background: activeTool === "angle" ? "#1f6feb" : "#21262d",
 							color: "#ffab00",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "6px 10px",
+							padding: "8px 12px",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
-							fontSize: "0.82rem",
+							justifyContent: "center",
+							gap: "6px",
+							fontSize: "0.84rem",
 							fontWeight: 600,
 						}}
 						title="Измерить угол наклона оси зуба или шахты имплантата"
 					>
-						<Compass size={14} /> Угломер
+						<Compass size={15} /> Угломер
 					</button>
 
 					<button
@@ -733,21 +741,23 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
+							minHeight: "44px",
 							background: activeTool === "lesion" ? "#1f6feb" : "#21262d",
 							color: "#ff1744",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "6px 10px",
+							padding: "8px 12px",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
-							fontSize: "0.82rem",
+							justifyContent: "center",
+							gap: "6px",
+							fontSize: "0.84rem",
 							fontWeight: 600,
 						}}
 						title="Выделить очаг деструкции (гранулема, киста) и рассчитать площадь в мм²"
 					>
-						<AlertTriangle size={14} /> Очаг деструкции (мм²)
+						<AlertTriangle size={15} /> Очаг деструкции (мм²)
 					</button>
 
 					<button
@@ -757,26 +767,28 @@ export function VisiographStudioCanvas({
 							setDrawingPoints([]);
 						}}
 						style={{
+							minHeight: "44px",
 							background: activeTool === "root_canal" ? "#047857" : "#21262d",
 							color: activeTool === "root_canal" ? "#a7f3d0" : "#10b981",
 							border: `1px solid ${activeTool === "root_canal" ? "#10b981" : "#30363d"}`,
 							borderRadius: "6px",
-							padding: "6px 10px",
+							padding: "8px 12px",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
-							fontSize: "0.82rem",
+							justifyContent: "center",
+							gap: "6px",
+							fontSize: "0.84rem",
 							fontWeight: 700,
 						}}
 						title="Эндо-линейка (Apex Locator): измерение длины корневого канала в мм по анатомической кривой корня (двойной клик для фиксации)"
 					>
-						<Activity size={14} /> Эндо-линейка (Апекс, мм)
+						<Activity size={15} /> Эндо-линейка (Апекс, мм)
 					</button>
 				</div>
 
 				{/* 1-Click Clinical Filters Toolbar */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
 					{CLINICAL_VISIOGRAPH_FILTERS.map((filter) => {
 						const isActive = activeClinicalFilter === filter.id;
 						return (
@@ -785,23 +797,25 @@ export function VisiographStudioCanvas({
 								type="button"
 								onClick={() => handleApplyClinicalFilter(filter)}
 								style={{
+									minHeight: "44px",
 									background: isActive ? "#1f6feb" : "#21262d",
 									color: isActive ? "#ffffff" : "#c9d1d9",
 									border: `1px solid ${isActive ? "#58a6ff" : "#30363d"}`,
 									borderRadius: "6px",
-									padding: "5px 9px",
-									fontSize: "0.78rem",
+									padding: "8px 12px",
+									fontSize: "0.82rem",
 									cursor: "pointer",
 									fontWeight: isActive ? 700 : 600,
-									display: "flex",
+									display: "inline-flex",
 									alignItems: "center",
-									gap: "4px",
+									justifyContent: "center",
+									gap: "6px",
 									transition: "all 0.15s ease",
 									boxShadow: isActive ? "0 0 8px rgba(31, 111, 235, 0.45)" : "none",
 								}}
 								title={`${filter.label} (${filter.badge}): ${filter.description}`}
 							>
-								<Zap size={13} style={{ color: isActive ? "#ffd600" : "#58a6ff", fill: isActive ? "#ffd600" : "none" }} />
+								<Zap size={14} style={{ color: isActive ? "#ffd600" : "#58a6ff", fill: isActive ? "#ffd600" : "none" }} />
 								<span>{filter.label}</span>
 							</button>
 						);
@@ -811,14 +825,18 @@ export function VisiographStudioCanvas({
 						type="button"
 						onClick={() => setParams((prev) => ({ ...prev, invert: !prev.invert }))}
 						style={{
+							minHeight: "44px",
 							background: params.invert ? "#238636" : "#21262d",
 							color: "#ffffff",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "5px 8px",
-							fontSize: "0.78rem",
+							padding: "8px 12px",
+							fontSize: "0.82rem",
 							cursor: "pointer",
 							fontWeight: params.invert ? 600 : 400,
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
 						}}
 						title="Инверсия негатив / позитив"
 					>
@@ -829,33 +847,39 @@ export function VisiographStudioCanvas({
 						type="button"
 						onClick={() => setCanvasRotationDeg((r) => (r + 90) % 360)}
 						style={{
+							minHeight: "44px",
 							background: "#21262d",
 							color: "#c9d1d9",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "5px 8px",
-							fontSize: "0.78rem",
+							padding: "8px 12px",
+							fontSize: "0.82rem",
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "3px",
+							justifyContent: "center",
+							gap: "4px",
 						}}
 						title="Повернуть снимок на 90°"
 					>
-						<RotateCw size={13} /> 90°
+						<RotateCw size={14} /> 90°
 					</button>
 
 					<button
 						type="button"
 						onClick={() => setCanvasRotationDeg((r) => (r + 180) % 360)}
 						style={{
+							minHeight: "44px",
 							background: "#21262d",
 							color: "#c9d1d9",
 							border: "1px solid #30363d",
 							borderRadius: "6px",
-							padding: "5px 8px",
-							fontSize: "0.78rem",
+							padding: "8px 12px",
+							fontSize: "0.82rem",
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
 							fontWeight: 600,
 						}}
 						title="Повернуть снимок на 180° (верхняя / нижняя челюсть)"
@@ -868,17 +892,22 @@ export function VisiographStudioCanvas({
 							type="button"
 							onClick={() => setCanvasZoom((z) => Math.max(0.4, Number((z - 0.2).toFixed(2))))}
 							style={{
+								minHeight: "44px",
+								minWidth: "44px",
 								background: "#21262d",
 								color: "#c9d1d9",
 								border: "1px solid #30363d",
 								borderRadius: "6px 0 0 6px",
-								padding: "5px 6px",
-								fontSize: "0.78rem",
+								padding: "8px 10px",
+								fontSize: "0.82rem",
 								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
 							}}
 							title="Уменьшить масштаб"
 						>
-							<ZoomOut size={13} />
+							<ZoomOut size={15} />
 						</button>
 						<button
 							type="button"
@@ -887,16 +916,21 @@ export function VisiographStudioCanvas({
 								setCanvasRotationDeg(0);
 							}}
 							style={{
+								minHeight: "44px",
+								minWidth: "48px",
 								background: "#21262d",
 								color: "#58a6ff",
 								borderTop: "1px solid #30363d",
 								borderBottom: "1px solid #30363d",
 								borderLeft: "none",
 								borderRight: "none",
-								padding: "5px 6px",
-								fontSize: "0.74rem",
+								padding: "8px 10px",
+								fontSize: "0.82rem",
 								cursor: "pointer",
 								fontFamily: "monospace",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
 							}}
 							title="Сброс масштаба и поворота (колесо мыши также масштабирует снимок)"
 						>
@@ -906,17 +940,22 @@ export function VisiographStudioCanvas({
 							type="button"
 							onClick={() => setCanvasZoom((z) => Math.min(3.5, Number((z + 0.2).toFixed(2))))}
 							style={{
+								minHeight: "44px",
+								minWidth: "44px",
 								background: "#21262d",
 								color: "#c9d1d9",
 								border: "1px solid #30363d",
 								borderRadius: "0 6px 6px 0",
-								padding: "5px 6px",
-								fontSize: "0.78rem",
+								padding: "8px 10px",
+								fontSize: "0.82rem",
 								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
 							}}
 							title="Увеличить масштаб"
 						>
-							<ZoomIn size={13} />
+							<ZoomIn size={15} />
 						</button>
 					</div>
 
@@ -924,17 +963,19 @@ export function VisiographStudioCanvas({
 						type="button"
 						onClick={() => setShowExportModal(true)}
 						style={{
+							minHeight: "44px",
 							background: "#238636",
 							color: "#ffffff",
 							border: "none",
 							borderRadius: "6px",
-							padding: "6px 12px",
+							padding: "8px 14px",
 							fontSize: "0.84rem",
 							fontWeight: 600,
 							cursor: "pointer",
-							display: "flex",
+							display: "inline-flex",
 							alignItems: "center",
-							gap: "4px",
+							justifyContent: "center",
+							gap: "6px",
 						}}
 					>
 						<FileDown size={15} /> Экспорт и ЭЦП
@@ -945,15 +986,20 @@ export function VisiographStudioCanvas({
 							type="button"
 							onClick={onClose}
 							style={{
+								minHeight: "44px",
+								minWidth: "44px",
 								background: "transparent",
 								color: "#8b949e",
 								border: "none",
 								cursor: "pointer",
-								padding: "4px",
+								padding: "8px",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
 							}}
 							title="Закрыть студию"
 						>
-							<X size={16} />
+							<X size={18} />
 						</button>
 					)}
 				</div>

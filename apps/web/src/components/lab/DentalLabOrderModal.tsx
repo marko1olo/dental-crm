@@ -358,11 +358,16 @@ export function DentalLabOrderModal({
 		}
 
 		// Проверка финансового шлюза (50% аванс за этап)
-		// Не блокировать гарантийные переделки (0 ₽) и работы без оплаты пациентом (Мандат 8e / Без палок в колёса)
+		// Автономия врача (Мандат 8e): не блокировать гарантийные переделки (0 ₽) и работы без оплаты.
+		// Если аванс < 50%, автоматически фиксируется клиническое решение лечащего врача без модальных барьеров (Anti-Matryoshka).
 		const isWarrantyOrder = Boolean(initialOrder?.isWarrantyRework || totalLabPriceRub === 0 || Number(priceRubInput) === 0);
-		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed && !isWarrantyOrder) {
-			setIsGateModalOpen(true);
-			return;
+		let effectiveOverride = gateOverride;
+		if (!skipFinancialGate && !forceSaveWithOverride && !financialGateResult.isGatePassed && !isWarrantyOrder && !effectiveOverride) {
+			effectiveOverride = createDoctorClinicalOverride(
+				formDoctorName || "Лечащий врач",
+				"Отправка наряда в ЗТЛ — клиническое решение лечащего врача (Мандат 8e)",
+			);
+			setGateOverride(effectiveOverride);
 		}
 
 		setIsSubmitting(true);
@@ -398,8 +403,8 @@ export function DentalLabOrderModal({
 				"Анатомия: Естественная анатомическая форма зуба",
 				frameworkTrialDate ? `Примерка каркаса: ${frameworkTrialDate}` : null,
 				ceramicTrialDate ? `Примерка керамики: ${ceramicTrialDate}` : null,
-				gateOverride?.authorized
-					? `Клиническое решение лечащего врача: отправка наряда в ЗТЛ согласована (${gateOverride.doctorName})`
+				effectiveOverride?.authorized
+					? `Клиническое решение лечащего врача: отправка наряда в ЗТЛ согласована (${effectiveOverride.doctorName})`
 					: null,
 			]
 				.filter(Boolean)
@@ -599,41 +604,7 @@ export function DentalLabOrderModal({
 					</div>
 				</div>
 
-				{/* ─── 1-CLICK EXPRESS PRESETS BAR (Mandate 8e: Fast Orthopedic Workflow) ─── */}
-				<div className="flex items-center justify-between gap-2 px-3 sm:px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex-wrap">
-					<div className="flex items-center gap-1.5 flex-wrap">
-						<span className="text-xs font-black text-amber-900 dark:text-amber-200 flex items-center gap-1 mr-1">
-							<Sparkles size={14} className="text-amber-500" />
-							<span>Экспресс 1-клик:</span>
-						</span>
-						{EXPRESS_LAB_PRESETS.map((preset) => (
-							<button
-								key={preset.id}
-								type="button"
-								onClick={() => handleApplyExpressPreset(preset)}
-								className="min-h-[36px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation"
-								title={preset.shortDesc}
-								data-testid={`lab-preset-btn-${preset.id}`}
-							>
-								<Zap size={13} className="text-amber-500 shrink-0" />
-								<span>{preset.title}</span>
-							</button>
-						))}
-					</div>
-					<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium hidden md:inline flex items-center gap-1">
-						<Sparkles size={12} className="text-amber-500 shrink-0" />
-						<span>1 клик заполняет конструкцию, материал, цвет A2, сроки и нормальную анатомию</span>
-					</span>
-				</div>
-
-				{financialGateResult.isPlanExpiredNotice && (
-					<div className="px-3 sm:px-6 py-1.5 bg-teal-500/10 border-b border-teal-500/20 text-[11px] font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
-						<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>{financialGateResult.isPlanExpiredNotice}</span>
-					</div>
-				)}
-
-				{/* ─── NAVIGATION TABS ───────────────────────────────────────────── */}
+				{/* ─── NAVIGATION TABS (Strictly 1 Clean Toolbar Row 32–36px / Hick's Law) ─── */}
 				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 text-xs shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden whitespace-nowrap">
 					{[
 						{ id: "main", label: "1. Зубы и Конструкция", icon: FlaskConical, fullTitle: "1. Зубная формула и Конструкция" },
@@ -719,7 +690,35 @@ export function DentalLabOrderModal({
 
 					{/* ═══ TAB 1: MAIN SPECS & ODONTOGRAM ═══════════════════════════ */}
 					{activeTab === "main" && (
-						<DentalLabRestorationTab
+						<div className="space-y-4">
+							{/* 1-Click Express Presets Bar (Integrated inside Tab 1) */}
+							<div className="flex items-center justify-between gap-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex-wrap">
+								<div className="flex items-center gap-1.5 flex-wrap">
+									<span className="text-xs font-black text-amber-900 dark:text-amber-200 flex items-center gap-1 mr-1">
+										<Sparkles size={14} className="text-amber-500" />
+										<span>Экспресс 1-клик:</span>
+									</span>
+									{EXPRESS_LAB_PRESETS.map((preset) => (
+										<button
+											key={preset.id}
+											type="button"
+											onClick={() => handleApplyExpressPreset(preset)}
+											className="min-h-[36px] px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 border border-amber-500/30 text-xs font-bold transition-all shadow-2xs hover:scale-102 active:scale-95 cursor-pointer flex items-center gap-1.5 touch-manipulation"
+											title={preset.shortDesc}
+											data-testid={`lab-preset-btn-${preset.id}`}
+										>
+											<Zap size={13} className="text-amber-500 shrink-0" />
+											<span>{preset.title}</span>
+										</button>
+									))}
+								</div>
+								<span className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium hidden md:inline flex items-center gap-1">
+									<Sparkles size={12} className="text-amber-500 shrink-0" />
+									<span>1 клик заполняет конструкцию, материал, цвет A2, сроки и нормальную анатомию</span>
+								</span>
+							</div>
+
+							<DentalLabRestorationTab
 							jawScope={jawScope}
 							setJawScope={setJawScope}
 							selectedTeeth={selectedTeeth}
@@ -757,6 +756,7 @@ export function DentalLabOrderModal({
 							setShadeBody={setShadeBody}
 							onOpenAdvancedShades={() => setActiveTab("shades")}
 						/>
+						</div>
 					)}
 
 					{/* ═══ TAB 2: VITA SHADES & STUMP PREPARATION ════════════════════ */}
@@ -962,41 +962,6 @@ export function DentalLabOrderModal({
 						</button>
 					</div>
 				</div>
-
-				{/* ─── DENTAL LAB FINANCIAL GATE MODAL ───────────────────────── */}
-				{isGateModalOpen && (
-					<DentalLabFinancialGate
-						isOpen={isGateModalOpen}
-						onClose={() => setIsGateModalOpen(false)}
-						gateResult={financialGateResult}
-						patientName={formPatientName}
-						stageTitle={`Наряд ЗТЛ: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`}
-						doctorName={formDoctorName || "Лечащий врач"}
-						defaultDoctorName={formDoctorName || "Лечащий врач"}
-						defaultChiefDoctorName={chiefDoctorName || formDoctorName || "Лечащий врач"}
-						variant="modal"
-						onConfirmOverride={(override) => {
-							setGateOverride(override);
-							setIsGateModalOpen(false);
-							showToast(`Наряд ЗТЛ отправлен: клиническое решение лечащего врача (${override.doctorName})`, "success");
-							// Автоматически продолжаем сохранение наряда с оверрайдом
-							handleSaveOrder(undefined, true);
-						}}
-						onBlock={() => {
-							setIsGateModalOpen(false);
-						}}
-						onOpenInstallmentModal={() => {
-							setIsGateModalOpen(false);
-							setIsInstallmentModalOpen(true);
-						}}
-						onAcceptAdvancePayment={() => {
-							setIsGateModalOpen(false);
-							const requiredAdvance = Math.max(1000, Math.round(totalLabPriceRub * 0.5));
-							setAdvancePaymentAmountRub(requiredAdvance);
-							setIsCashRegisterOpen(true);
-						}}
-					/>
-				)}
 
 				{/* ─── 54-FZ CASH REGISTER ADVANCE PAYMENT MODAL ─────────────── */}
 				{isCashRegisterOpen && (
