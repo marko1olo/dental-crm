@@ -59,6 +59,7 @@ export interface CephalometricAnalysisModalProps {
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly initialImageUrl?: string | undefined;
+	readonly initialTab?: ("landmarks" | "metrics" | "report") | undefined;
 	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
 }
 
@@ -68,12 +69,17 @@ export function CephalometricAnalysisModal({
 	patientId,
 	patientName,
 	initialImageUrl,
+	initialTab,
 	onInsertToProtocol,
 }: CephalometricAnalysisModalProps) {
 	// Active Tab inside the sidebar: 'landmarks' | 'metrics' | 'report'
-	const [activeTab, setActiveTab] = useState<"landmarks" | "metrics" | "report">("landmarks");
+	const [activeTab, setActiveTab] = useState<"landmarks" | "metrics" | "report">(
+		initialTab ?? "landmarks",
+	);
 	// Mobile Viewport Control (< lg / 390px): 'canvas' | 'landmarks' | 'metrics' | 'report'
-	const [mobileView, setMobileView] = useState<"canvas" | "landmarks" | "metrics" | "report">("canvas");
+	const [mobileView, setMobileView] = useState<"canvas" | "landmarks" | "metrics" | "report">(
+		initialTab ? initialTab : "canvas",
+	);
 
 	// Landmarks State (Initialized empty when no image is loaded to prevent fake 100% status)
 	const [landmarks, setLandmarks] = useState<LandmarkMap>(() =>
@@ -175,11 +181,22 @@ export function CephalometricAnalysisModal({
 		return () => unsub();
 	}, [isOpen, handleRemoveLandmark]);
 
-	const handleResetLandmarks = () => {
+	// 1-Click Clinical Presets Handler (Mandates 8e, 8k: Friction Eradication & 1-Click Normalcy)
+	const handleApplyPreset = useCallback((preset: LandmarkMap, label: string) => {
+		if (!imageUrl) {
+			setImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
+		}
+		setLandmarks(preset);
+		setActiveTargetKey(null);
+		showToast(`Применен пресет: ${label}`, "success");
+		void SoundFeedbackService.getInstance().playActionSuccess();
+	}, [imageUrl]);
+
+	const handleResetLandmarks = useCallback(() => {
 		setLandmarks({});
 		setActiveTargetKey(null);
 		showToast("Разметка ориентиров сброшена", "info");
-	};
+	}, []);
 
 	const handleLoadPreset = () => {
 		setImageUrl(SAMPLE_TRG_CEPHALOGRAM_URL);
@@ -422,6 +439,55 @@ export function CephalometricAnalysisModal({
 								{patientName ? `Пациент: ${patientName}` : "Ортодонтический модуль"} {patientId ? `• ID: ${patientId}` : ""} · Форма 043/у (Приказ МЗ РФ №834н)
 							</p>
 						</div>
+					</div>
+
+					{/* ── Верхняя панель управления: Клинические пресеты ТРГ в 1 клик (Мандаты 8e, 8k) ── */}
+					<div
+						className="hidden md:flex items-center gap-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800 shrink-0 mr-1"
+						data-testid="header-ceph-presets-bar"
+						style={{ backgroundColor: "#020617", borderColor: "#1e293b" }}
+					>
+						<span className="text-[11px] font-bold text-slate-400 px-1.5 whitespace-nowrap">
+							Пресеты:
+						</span>
+						<button
+							type="button"
+							onClick={() => handleApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "★ I Класс (Норма)")}
+							data-testid="header-preset-class-1"
+							className="h-8 px-2.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-xs"
+							title="★ I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
+						>
+							<Sparkles size={13} className="text-emerald-400 shrink-0" />
+							<span>★ I Класс (Норма)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => handleApplyPreset(CLASS_II_DISTAL_LANDMARKS_PRESET, "II Класс (Дистальный)")}
+							data-testid="header-preset-class-2"
+							className="h-8 px-2.5 rounded-lg bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-500/50 text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-xs"
+							title="II Класс (Дистальный) — выставляет ориентиры дистального прикуса"
+						>
+							<span>II Класс (Дистальный)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => handleApplyPreset(CLASS_III_MESIAL_LANDMARKS_PRESET, "III Класс (Мезиальный)")}
+							data-testid="header-preset-class-3"
+							className="h-8 px-2.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/50 text-xs font-black transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 shadow-xs"
+							title="III Класс (Мезиальный) — выставляет ориентиры мезиального прикуса"
+						>
+							<span>III Класс (Мезиальный)</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleResetLandmarks}
+							data-testid="header-preset-clear"
+							className="h-8 px-2 rounded-lg bg-slate-800 hover:bg-rose-950/70 hover:border-rose-600/60 text-slate-300 hover:text-rose-200 border border-slate-700 text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1"
+							title="Очистить разметку ориентиров для ручной укладки"
+						>
+							<Trash2 size={12} className="text-slate-400 shrink-0" />
+							<span>Очистить разметку</span>
+						</button>
 					</div>
 
 					<div className="flex items-center gap-2 shrink-0">
@@ -795,6 +861,69 @@ export function CephalometricAnalysisModal({
 						{/* Tab 1: Landmarks List & Placement Guidance (All Landmarks with >= 44x44px Touch Targets) */}
 						{activeTab === "landmarks" && (
 							<div className="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden">
+								{/* ── Тулбар клинических пресетов вкладки «1. Ориентиры» (Мандаты 8e, 8k) ── */}
+								<div
+									className="mb-3.5 p-3 rounded-xl bg-slate-900/95 border border-slate-800 shrink-0 flex flex-col gap-2"
+									style={{ backgroundColor: "#0f172a", borderColor: "#1e293b" }}
+									data-testid="tab1-ceph-presets-toolbar"
+								>
+									<div className="flex items-center justify-between gap-2">
+										<div className="flex items-center gap-1.5 min-w-0">
+											<Sparkles size={14} className="text-teal-400 shrink-0" />
+											<span className="text-xs font-black uppercase tracking-wider text-teal-300 truncate">
+												Клинические пресеты (1 клик):
+											</span>
+										</div>
+										<span className="text-[11px] text-slate-400 shrink-0 hidden sm:inline">
+											Норма и патология
+										</span>
+									</div>
+
+									<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+										<button
+											type="button"
+											onClick={() => handleApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "★ I Класс (Норма)")}
+											data-testid="tab1-preset-class-1"
+											className="min-h-[40px] px-2 py-1.5 rounded-xl bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 text-xs font-black transition-all text-center cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+											title="★ I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
+										>
+											<Sparkles size={13} className="text-emerald-400 shrink-0" />
+											<span className="truncate">★ I Класс (Норма)</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => handleApplyPreset(CLASS_II_DISTAL_LANDMARKS_PRESET, "II Класс (Дистальный)")}
+											data-testid="tab1-preset-class-2"
+											className="min-h-[40px] px-2 py-1.5 rounded-xl bg-amber-950/90 hover:bg-amber-900 text-amber-300 border border-amber-500/50 text-xs font-black transition-all text-center cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+											title="II Класс (Дистальный) — выставляет ориентиры дистального прикуса"
+										>
+											<span className="truncate">II Класс (Дистальный)</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => handleApplyPreset(CLASS_III_MESIAL_LANDMARKS_PRESET, "III Класс (Мезиальный)")}
+											data-testid="tab1-preset-class-3"
+											className="min-h-[40px] px-2 py-1.5 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/50 text-xs font-black transition-all text-center cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+											title="III Класс (Мезиальный) — выставляет ориентиры мезиального прикуса"
+										>
+											<span className="truncate">III Класс (Мезиальный)</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={handleResetLandmarks}
+											data-testid="tab1-preset-clear"
+											className="min-h-[40px] px-2 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-950/70 hover:border-rose-600/60 text-slate-300 hover:text-rose-200 border border-slate-700 text-xs font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1"
+											title="Очистить разметку ориентиров для ручной укладки"
+										>
+											<Trash2 size={13} className="shrink-0 text-slate-400" />
+											<span className="truncate">Очистить разметку</span>
+										</button>
+									</div>
+								</div>
+
 								{/* Progress Bar */}
 								<div className="mb-3.5 bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 shrink-0" style={{ backgroundColor: "#0f172a", borderColor: "#334155" }}>
 									<div className="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
@@ -918,39 +1047,44 @@ export function CephalometricAnalysisModal({
 										<span>Ввод по протоколу лаборатории (1 клик):</span>
 										<span className="text-[11px] text-slate-400">Пикассо / Золотое Сечение / КЛКТ</span>
 									</div>
-									<div className="grid grid-cols-3 gap-2">
+									<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 										<button
 											type="button"
-											onClick={() => {
-												setLandmarks(CLASS_I_NORMAL_LANDMARKS_PRESET);
-												showToast("Применен пресет: Скелетный класс I (Норма)");
-											}}
-											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all text-center cursor-pointer"
+											onClick={() => handleApplyPreset(CLASS_I_NORMAL_LANDMARKS_PRESET, "★ I Класс (Норма)")}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1 shadow-xs"
 											data-testid="btn-ceph-preset-class-1"
+											title="★ I Класс (Норма) — выставляет все 16 ориентиров по анатомической норме I класса"
 										>
-											Класс I (Норма)
+											<Sparkles size={12} className="text-emerald-400 shrink-0" />
+											<span className="truncate">★ I Класс (Норма)</span>
 										</button>
 										<button
 											type="button"
-											onClick={() => {
-												setLandmarks(CLASS_II_DISTAL_LANDMARKS_PRESET);
-												showToast("Применен пресет: Скелетный класс II (Дистальный)");
-											}}
-											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all text-center cursor-pointer"
+											onClick={() => handleApplyPreset(CLASS_II_DISTAL_LANDMARKS_PRESET, "II Класс (Дистальный)")}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-amber-950/70 hover:bg-amber-900/80 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1 shadow-xs"
 											data-testid="btn-ceph-preset-class-2"
+											title="II Класс (Дистальный) — выставляет ориентиры дистального прикуса"
 										>
-											Класс II (Дистальный)
+											<span className="truncate">II Класс (Дистальный)</span>
 										</button>
 										<button
 											type="button"
-											onClick={() => {
-												setLandmarks(CLASS_III_MESIAL_LANDMARKS_PRESET);
-												showToast("Применен пресет: Скелетный класс III (Мезиальный)");
-											}}
-											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all text-center cursor-pointer"
+											onClick={() => handleApplyPreset(CLASS_III_MESIAL_LANDMARKS_PRESET, "III Класс (Мезиальный)")}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1 shadow-xs"
 											data-testid="btn-ceph-preset-class-3"
+											title="III Класс (Мезиальный) — выставляет ориентиры мезиального прикуса"
 										>
-											Класс III (Мезиальный)
+											<span className="truncate">III Класс (Мезиальный)</span>
+										</button>
+										<button
+											type="button"
+											onClick={handleResetLandmarks}
+											className="min-h-[40px] px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/70 hover:border-rose-600/60 text-slate-300 hover:text-rose-200 border border-slate-700 text-xs font-bold transition-all text-center cursor-pointer flex items-center justify-center gap-1"
+											data-testid="btn-ceph-preset-clear"
+											title="Очистить разметку ориентиров для ручной укладки"
+										>
+											<Trash2 size={12} className="text-slate-400 shrink-0" />
+											<span className="truncate">Очистить разметку</span>
 										</button>
 									</div>
 								</div>
