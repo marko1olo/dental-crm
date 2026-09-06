@@ -499,6 +499,12 @@
 	color: var(--bad-fg);
 }
 
+.ops-notice--warn {
+	border-color: transparent;
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+}
+
 /* Сообщение «ни один канал не подключён»: заголовок, объяснение и действие. */
 .ops-channels-empty p {
 	margin: 6px 0 0;

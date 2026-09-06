@@ -232,12 +232,23 @@ async function readJson<T>(response: Response): Promise<T> {
  * счётчиков, обработчик читал четыре), а проверить это можно было только глазами в
  * браузере. Вынесенные чистые функции проверяются обычным тестом.
  */
-export function MessageDeliveryConsole() {
+export interface MessageDeliveryConsoleProps {
+	initialGateways?: GatewayStatus | null;
+	initialUisQuota?: {
+		remaining: number;
+		smsQuotaLimit: number;
+	} | null;
+	initialEnqueueChannel?: "sms" | "email" | "whatsapp" | "telegram";
+}
+
+export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 	const commQueries = useAppLogicContext();
 	const appLogic = useAppLogicContext();
 	const _auth = appLogic?.auth;
 
-	const [gateways, setGateways] = useState<GatewayStatus | null>(null);
+	const [gateways, setGateways] = useState<GatewayStatus | null>(
+		props?.initialGateways ?? null,
+	);
 	const [templates, setTemplates] = useState<TemplateItem[]>([]);
 	const [outbox, setOutbox] = useState<OutboxItem[]>([]);
 	const [summary, setSummary] = useState<Record<string, number>>({});
@@ -261,7 +272,7 @@ export function MessageDeliveryConsole() {
 	const [uisQuota, setUisQuota] = useState<{
 		remaining: number;
 		smsQuotaLimit: number;
-	} | null>(null);
+	} | null>(props?.initialUisQuota ?? null);
 
 	/*
 	 * Разовая постановка в очередь (POST /api/communications/outbox).
@@ -272,7 +283,7 @@ export function MessageDeliveryConsole() {
 	 */
 	const [enqueueChannel, setEnqueueChannel] = useState<
 		"sms" | "email" | "whatsapp" | "telegram"
-	>("sms");
+	>(props?.initialEnqueueChannel ?? "sms");
 	const [enqueueIntent, setEnqueueIntent] = useState("general");
 	const [enqueueScope, setEnqueueScope] = useState<"service" | "marketing">(
 		"service",
@@ -1147,14 +1158,21 @@ export function MessageDeliveryConsole() {
 							onChange={(event) => setEnqueueBody(event.target.value)}
 							placeholder="Текст сообщения..."
 							rows={4}
-							disabled={
-								enqueueChannel === "sms" &&
-								uisQuota !== null &&
-								uisQuota.remaining <= 0
-							}
 						/>
 					</span>
 				)}
+
+				{enqueueChannel === "sms" &&
+				uisQuota !== null &&
+				uisQuota.remaining <= 0 ? (
+					<div
+						className="ops-notice ops-notice--warn mb-3"
+						role="alert"
+						data-testid="sms-quota-warning-banner"
+					>
+						Лимит SMS исчерпан. Переключите канал на WhatsApp или Telegram для бесплатной отправки сообщения.
+					</div>
+				) : null}
 
 				<button
 					className="primary-button"
