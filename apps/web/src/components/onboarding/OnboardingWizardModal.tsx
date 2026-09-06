@@ -377,12 +377,24 @@ export function OnboardingWizardModal({
 	onboardingBlockingIssues,
 	onboardingDocumentReadinessIssues,
 	onboardingTelegramRecommendations,
-	dismissOnboarding,
+	dismissOnboarding: onDismissOnboarding,
 	saveClinicProfileFromDraft,
 	clinicProfileSaveState,
 	previousOnboardingStep,
 	nextOnboardingStep,
 }: OnboardingWizardModalProps) {
+	const dismissOnboarding = () => {
+		if (!onboardingReadyToFinish) {
+			if (typeof continueOnboardingInDraftMode === "function") {
+				void continueOnboardingInDraftMode();
+			} else {
+				onDismissOnboarding?.();
+			}
+			return;
+		}
+		onDismissOnboarding?.();
+	};
+
 	return (
 		<section
 			className="onboarding-shell"
@@ -1850,10 +1862,6 @@ export function OnboardingWizardModal({
 					className="secondary-button"
 					type="button"
 					onClick={dismissOnboarding}
-					aria-describedby={
-						!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined
-					}
-					disabled={!onboardingReadyToFinish}
 				>
 					Скрыть
 				</button>
