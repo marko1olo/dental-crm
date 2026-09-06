@@ -15,6 +15,7 @@
 import crypto from "node:crypto";
 import {
 	isValidVitaShade,
+	normalizeVitaShade,
 	nonNegativeMoneyRubSchema,
 	VALID_FDI_TOOTH_NUMBERS,
 	VITA_SHADE_VALIDATION_MESSAGE,
@@ -173,6 +174,7 @@ const expressLabOrderSchema = z.object({
 	colorVita: z
 		.string()
 		.trim()
+		.transform((val) => normalizeVitaShade(val))
 		.refine((val) => !val || isValidVitaShade(val), {
 			message: VITA_SHADE_VALIDATION_MESSAGE,
 		})
@@ -366,7 +368,7 @@ export async function registerDentalLabRoutes(app: FastifyInstance) {
 					secureToken,
 					toothFdi: teethFdiStr,
 					material: materialName,
-					colorVita: data.colorVita.toUpperCase(),
+					colorVita: normalizeVitaShade(data.colorVita),
 					dueDate: calculatedDueDate,
 					clinicalNotes: instructions,
 					priceRub: finalPrice,

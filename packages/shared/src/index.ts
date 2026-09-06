@@ -4603,8 +4603,29 @@ export const ALL_VALID_VITA_SHADES: ReadonlySet<string> = new Set<string>([
 	...VITA_3D_MASTER_SHADES,
 ]);
 
+/**
+ * Авто-нормализация кириллических гомоглифов при выборе оттенка зубов (Мандат 8e, Мандат 8k).
+ * Врачи и техники в РФ часто вводят оттенки на русской раскладке («А2», «В1», «С1», «Д3», «1М1», «2R1.5», «3Л2.5»).
+ * Преобразует русские буквы А, В, С, Д, М, Р, Л в соответствующие латинские A, B, C, D, M, R, L,
+ * обрезает пробелы и переводит в верхний регистр.
+ */
+export function normalizeVitaShade(shade: string): string {
+	if (!shade) return "";
+	return shade
+		.trim()
+		.toUpperCase()
+		.replace(/А/g, "A")
+		.replace(/В/g, "B")
+		.replace(/С/g, "C")
+		.replace(/Д/g, "D")
+		.replace(/М/g, "M")
+		.replace(/Р/g, "R")
+		.replace(/Л/g, "L");
+}
+
 export function isValidVitaShade(shade: string): boolean {
-	return ALL_VALID_VITA_SHADES.has(shade.trim().toUpperCase());
+	if (!shade) return false;
+	return ALL_VALID_VITA_SHADES.has(normalizeVitaShade(shade));
 }
 
 export const VITA_SHADE_VALIDATION_MESSAGE =
@@ -4613,10 +4634,10 @@ export const VITA_SHADE_VALIDATION_MESSAGE =
 export const vitaShadeSchema = z
 	.string()
 	.trim()
-	.refine(
-		(val) => isValidVitaShade(val),
-		{ message: VITA_SHADE_VALIDATION_MESSAGE },
-	);
+	.transform((val) => normalizeVitaShade(val))
+	.refine((val) => ALL_VALID_VITA_SHADES.has(val), {
+		message: VITA_SHADE_VALIDATION_MESSAGE,
+	});
 
 /** Таксономия стоматологических материалов для зуботехнической лаборатории */
 export const LAB_ORDER_MATERIALS = {

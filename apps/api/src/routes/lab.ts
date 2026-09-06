@@ -6,6 +6,7 @@ import {
 	nonNegativeMoneyRubSchema,
 	VALID_FDI_TOOTH_NUMBERS,
 	isValidVitaShade,
+	normalizeVitaShade,
 	VITA_SHADE_VALIDATION_MESSAGE,
 	restorationTypeSchema,
 	restorationMaterialSchema,
@@ -87,6 +88,7 @@ const toothFdiSchema = z
 const colorVitaSchema = z
 	.string()
 	.trim()
+	.transform((val) => normalizeVitaShade(val))
 	.refine(
 		(val) => !val || isValidVitaShade(val),
 		{ message: VITA_SHADE_VALIDATION_MESSAGE },
@@ -279,7 +281,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 					secureToken,
 					toothFdi: data.toothFdi || null,
 					material: data.material || null,
-					colorVita: data.colorVita ? data.colorVita.toUpperCase() : null,
+					colorVita: data.colorVita ? normalizeVitaShade(data.colorVita) : null,
 					dueDate: data.dueDate ? new Date(data.dueDate) : null,
 					clinicalNotes: data.clinicalNotes || null,
 					priceRub: data.priceRub != null ? data.priceRub : null,
@@ -427,7 +429,7 @@ export async function registerLabRoutes(app: FastifyInstance) {
 				.update(labOrders)
 				.set({
 					...updateData,
-					colorVita: updateData.colorVita ? updateData.colorVita.toUpperCase() : updateData.colorVita,
+					colorVita: updateData.colorVita ? normalizeVitaShade(updateData.colorVita) : updateData.colorVita,
 					dueDate: updateData.dueDate ? new Date(updateData.dueDate) : updateData.dueDate === null ? null : undefined,
 					...auditFields,
 					updatedAt: now,

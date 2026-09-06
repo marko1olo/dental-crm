@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
 	ALL_VALID_VITA_SHADES,
 	isValidVitaShade,
+	normalizeVitaShade,
+	vitaShadeSchema,
 	VITA_3D_MASTER_SHADES,
 	VITA_BLEACH_SHADES,
 	VITA_CLASSICAL_SHADES,
@@ -49,13 +51,69 @@ describe("Dental Laboratory VITA Shades & FDI Tooth Validation", () => {
 		}
 	});
 
-	it("rejects non-standard or invalid shade names", () => {
-		const invalidShades = ["E1", "Z9", "superwhite", "123", "A5", ""];
+	it("normalizes Cyrillic homoglyphs for VITA tooth shades (Mandates 8e, 8k)", () => {
+		// Russian homoglyph letters: А (U+0410), В (U+0412), С (U+0421), Д (U+0414), М (U+041C), Р (U+0420), Л (U+041B)
+		const homoglyphCases: Array<{ input: string; expected: string }> = [
+			{ input: "А1", expected: "A1" }, // Cyrillic А
+			{ input: "А2", expected: "A2" }, // Cyrillic А
+			{ input: "А3", expected: "A3" }, // Cyrillic А
+			{ input: "А3.5", expected: "A3.5" }, // Cyrillic А
+			{ input: "А4", expected: "A4" }, // Cyrillic А
+			{ input: "а2", expected: "A2" }, // Lowercase Cyrillic а
+			{ input: "  а3.5  ", expected: "A3.5" }, // Lowercase Cyrillic with whitespace
+			{ input: "В1", expected: "B1" }, // Cyrillic В
+			{ input: "В2", expected: "B2" }, // Cyrillic В
+			{ input: "в3", expected: "B3" }, // Lowercase Cyrillic в
+			{ input: "С1", expected: "C1" }, // Cyrillic С
+			{ input: "С2", expected: "C2" }, // Cyrillic С
+			{ input: "с3", expected: "C3" }, // Lowercase Cyrillic с
+			{ input: "D2", expected: "D2" }, // Latin D
+			{ input: "Д3", expected: "D3" }, // Cyrillic Д
+			{ input: "д4", expected: "D4" }, // Lowercase Cyrillic д
+			{ input: "1М1", expected: "1M1" }, // Cyrillic М
+			{ input: "1м2", expected: "1M2" }, // Lowercase Cyrillic м
+			{ input: "2R1.5", expected: "2R1.5" }, // Latin R
+			{ input: "2Р1.5", expected: "2R1.5" }, // Cyrillic Р
+			{ input: "2р2.5", expected: "2R2.5" }, // Lowercase Cyrillic р
+			{ input: "3L2.5", expected: "3L2.5" }, // Latin L
+			{ input: "3Л2.5", expected: "3L2.5" }, // Cyrillic Л
+			{ input: "3л1.5", expected: "3L1.5" }, // Lowercase Cyrillic л
+			{ input: "0М1", expected: "0M1" }, // Bleach 0M1 with Cyrillic М
+			{ input: "ВЛ1", expected: "BL1" }, // Bleach BL1 with Cyrillic В and Л
+			{ input: "вл2", expected: "BL2" }, // Lowercase Cyrillic вл
+		];
+
+		for (const { input, expected } of homoglyphCases) {
+			assert.equal(
+				normalizeVitaShade(input),
+				expected,
+				`Expected normalizeVitaShade('${input}') to be '${expected}'`,
+			);
+			assert.equal(
+				isValidVitaShade(input),
+				true,
+				`Expected isValidVitaShade('${input}') with Cyrillic homoglyph to be valid`,
+			);
+			const parsed = vitaShadeSchema.parse(input);
+			assert.equal(
+				parsed,
+				expected,
+				`Expected vitaShadeSchema.parse('${input}') to transform to '${expected}'`,
+			);
+		}
+	});
+
+	it("rejects non-standard or invalid shade names even with Cyrillic input", () => {
+		const invalidShades = ["E1", "Z9", "superwhite", "123", "A5", "Хлам", "Ж1", "Я2", "Ы", ""];
 		for (const shade of invalidShades) {
 			assert.equal(
 				isValidVitaShade(shade),
 				false,
-				`Expected shade ${shade} to be rejected`,
+				`Expected shade '${shade}' to be rejected`,
+			);
+			assert.throws(
+				() => vitaShadeSchema.parse(shade),
+				`Expected vitaShadeSchema.parse('${shade}') to throw validation error`,
 			);
 		}
 	});
