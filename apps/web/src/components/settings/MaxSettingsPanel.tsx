@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
 	Check,
 	Copy,
@@ -15,10 +16,44 @@ import {
 } from "../../hooks/useMaxSettings.js";
 import { panelStateText } from "../../lib/panelStateText";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import { showToast } from "../GlobalToast";
 import {
 	MessengerRoutingRules,
 	messengerRoutingChanged,
 } from "./MessengerRoutingRules.js";
+
+/**
+ * Вычисляет наличие несохраненных изменений в форме настроек MAX.
+ */
+export function computeMaxSettingsDirty(params: {
+	botIdDraft: string;
+	settingsBotId: string | null | undefined;
+	isActiveDraft: boolean;
+	settingsIsActive: boolean | undefined;
+	staffRoutingDraft: MaxStaffRouting;
+	settingsStaffRouting: MaxStaffRouting | undefined;
+	apiTokenDraft: string;
+}): boolean {
+	return (
+		params.botIdDraft !== (params.settingsBotId ?? "") ||
+		params.isActiveDraft !== (params.settingsIsActive ?? false) ||
+		messengerRoutingChanged(params.staffRoutingDraft, params.settingsStaffRouting) ||
+		params.apiTokenDraft.trim() !== ""
+	);
+}
+
+/**
+ * Проверяет, заблокирована ли кнопка сохранения настроек MAX.
+ * По Мандату 8e кнопка сохранения не должна блокироваться из-за отсутствия
+ * изменений (!dirty). Блокировка допустима ТОЛЬКО если сохранение небезопасно
+ * (!canSave — черновики ещё не прочитаны с сервера) либо уже идёт процесс сохранения (saveState === "saving").
+ */
+export function isMaxSettingsSaveDisabled(
+	canSave: boolean,
+	saveState: string,
+): boolean {
+	return !canSave || saveState === "saving";
+}
 
 interface StaffOption {
 	id: string;
@@ -28,9 +63,14 @@ interface StaffOption {
 interface Props {
 	staffOptions: StaffOption[];
 	serverBaseUrl: string | undefined;
+	useSettingsHook?: typeof useMaxSettings;
 }
 
-export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
+export function MaxSettingsPanel({
+	staffOptions,
+	serverBaseUrl,
+	useSettingsHook = useMaxSettings,
+}: Props) {
 	const {
 		settings,
 		status,
@@ -55,7 +95,9 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 		setStaffRoutingDraft,
 		save,
 		reload,
-	} = useMaxSettings();
+	} = useSettingsHook();
+
+	const [cleanSavedNotice, setCleanSavedNotice] = useState(false);
 
 	// The webhook URL is our server endpoint that MAX platform calls
 	const myWebhookUrl = serverBaseUrl
@@ -76,11 +118,29 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 	 * нет (адрес вебхука — наш собственный, он показан кодом ниже), значит и
 	 * измениться он не может.
 	 */
-	const dirty =
-		botIdDraft !== (settings?.botId ?? "") ||
-		isActiveDraft !== (settings?.isActive ?? false) ||
-		messengerRoutingChanged(staffRoutingDraft, settings?.staffRouting) ||
-		apiTokenDraft.trim() !== "";
+	const dirty = computeMaxSettingsDirty({
+		botIdDraft,
+		settingsBotId: settings?.botId,
+		isActiveDraft,
+		settingsIsActive: settings?.isActive,
+		staffRoutingDraft,
+		settingsStaffRouting: settings?.staffRouting,
+		apiTokenDraft,
+	});
+
+	const handleSave = () => {
+		if (isMaxSettingsSaveDisabled(canSave, saveState)) {
+			return;
+		}
+		if (!dirty) {
+			showToast("Настройки актуальны (сохранено)", "info");
+			setCleanSavedNotice(true);
+			setTimeout(() => {
+				setCleanSavedNotice(false);
+			}, 2500);
+		}
+		void save();
+	};
 
 	/*
 	 * ЗНАЧОК СОСТОЯНИЯ НЕ ИМЕЕТ ПРАВА ВРАТЬ. Было два состояния: «Подключён» и
@@ -257,24 +317,73 @@ export function MaxSettingsPanel({ staffOptions, serverBaseUrl }: Props) {
 				</div>
 
 				<div className="messenger-panel-actions">
-					<button
-						type="button"
-						onClick={() => void reload()}
-						disabled={loading}
-						className="btn-secondary"
-						aria-label="Обновить данные"
-						title="Обновить"
+					<div
+						className="messenger-panel-actions-left"
+						style={{ display: "flex", alignItems: "center", gap: "10px" }}
 					>
-						<RefreshCw size={14} />
-					</button>
+						<button
+							type="button"
+							onClick={() => void reload()}
+							disabled={loading}
+							className="btn-secondary"
+							aria-label="Обновить данные"
+							title="Обновить"
+						>
+							<RefreshCw size={14} />
+						</button>
+						{dirty ? (
+							<span
+								className="messenger-dirty-badge"
+								data-testid="dirty-badge"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									fontSize: "12px",
+									color: "var(--amber)",
+									fontWeight: 500,
+								}}
+							>
+								<span
+									className="dirty-dot"
+									style={{
+										width: "8px",
+										height: "8px",
+										borderRadius: "50%",
+										background: "var(--amber)",
+										display: "inline-block",
+										flexShrink: 0,
+									}}
+									aria-hidden="true"
+								/>
+								Есть несохраненные изменения
+							</span>
+						) : (
+							<span
+								className="messenger-clean-badge"
+								data-testid="clean-badge"
+								style={{
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									fontSize: "12px",
+									color: "var(--muted)",
+								}}
+							>
+								{cleanSavedNotice
+									? "Настройки актуальны (сохранено)"
+									: "Настройки актуальны"}
+							</span>
+						)}
+					</div>
 					<button
 						type="button"
-						onClick={() => void save()}
+						onClick={handleSave}
 						/* canSave — разрешение хука: настройки прочитаны и сохранение не
-						   затрёт живые значения. Раньше кнопка спрашивала только
-						   saveState, поэтому во время перечитывания настроек нажатие
-						   отправляло PUT с ещё не заполненными черновиками. */
-						disabled={!canSave || !dirty}
+						   затрёт живые значения. По Мандату 8e (автономия врача и персонала)
+						   кнопка не блокируется при !dirty, позволяя повторное сохранение
+						   и форс-пуш конфигурации без тупиков. */
+						disabled={!canSave || saveState === "saving"}
 						className="btn-primary"
 					>
 						{saveState === "saving" && "Сохранение..."}
