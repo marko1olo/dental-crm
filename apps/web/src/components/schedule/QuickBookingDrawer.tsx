@@ -46,6 +46,7 @@ import { showToast } from "../GlobalToast";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { SlotConflictModal } from "./SlotConflictModal";
 import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
 
 export interface QuickBookingSlotInfo {
 	dateKey?: string | undefined;
@@ -325,6 +326,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		}
 		if (!defaultChairId && chairs.length > 0) {
 			defaultChairId = chairs[0]?.id || "";
+		}
+		if (!defaultChairId) {
+			defaultChairId = DEFAULT_SOLO_CHAIR.id;
 		}
 		setChairId(defaultChairId);
 
@@ -762,6 +766,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		}
 		if (!effectiveChairId && chairs.length > 0) {
 			effectiveChairId = chairs[0]?.id || "";
+		}
+		if (!effectiveChairId) {
+			effectiveChairId = DEFAULT_SOLO_CHAIR.id;
 		}
 
 		if (!effectiveDoctorId) {
@@ -1771,6 +1778,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								required
 							>
 								<option value="">-- Выберите кресло --</option>
+								{chairs.length === 0 && (
+									<option value={DEFAULT_SOLO_CHAIR.id}>
+										{DEFAULT_SOLO_CHAIR.name} (Соло-практика)
+									</option>
+								)}
 								{chairs.map((c) => (
 									<option key={c.id} value={c.id}>
 										{c.name}

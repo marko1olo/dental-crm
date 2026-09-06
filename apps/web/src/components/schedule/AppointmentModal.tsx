@@ -24,6 +24,7 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
 
 export const QUICK_APPOINTMENT_REASONS = [
 	{
@@ -168,6 +169,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		}
 		if (!defaultChair && chairs.length > 0) {
 			defaultChair = chairs[0]?.id || "";
+		}
+		if (!defaultChair && chairs.length === 0) {
+			defaultChair = DEFAULT_SOLO_CHAIR.id;
 		}
 		setPatientId(appointment.patientId ?? "");
 		setDoctorUserId(defaultDoc);
@@ -737,6 +741,11 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							>
 								<option value="">-- Выберите кресло --</option>
+								{chairs.length === 0 && (
+									<option value={DEFAULT_SOLO_CHAIR.id}>
+										{DEFAULT_SOLO_CHAIR.name} (Соло-практика)
+									</option>
+								)}
 								{chairs.map((c) => (
 									<option key={c.id} value={c.id}>
 										{c.name}

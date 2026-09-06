@@ -95,16 +95,26 @@ const HOURS = [
 	"20:00",
 ];
 
+export const DEFAULT_SOLO_CHAIR = {
+	id: "default-chair",
+	name: "Кресло 1 (Основное)",
+	roomNumber: "1",
+	room: "1",
+	isActive: true,
+	active: true,
+	color: "var(--teal, #0d9488)",
+};
+
 export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGridProps) {
 	const {
 		dashboard,
 		dateKey,
-		appointments,
+		appointments = [],
 		onSlotClick,
 		onAppointmentClick,
 		onQuickStatusChange,
 		patientName,
-		toDateTimeLocalValue,
+		toDateTimeLocalValue = (iso: string) => (iso ? iso.slice(0, 16) : ""),
 		appointmentLabels,
 		selectedChairId,
 		selectedDoctorId,
@@ -166,15 +176,21 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const chairs = useMemo(() => {
 		const all = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
 		if (selectedChairId) {
-			return all.filter((c) => c.id === selectedChairId);
+			const filtered = all.filter((c) => c.id === selectedChairId);
+			if (filtered.length > 0) return filtered;
 		}
-		return all.length > 0 ? all : [{ id: "default-chair", name: "Кабинет 1" }];
+		return all;
 	}, [dashboard?.clinicSettings?.chairs, selectedChairId]);
+
+	const effectiveChairs = useMemo(() => {
+		return chairs && chairs.length > 0 ? chairs : [DEFAULT_SOLO_CHAIR];
+	}, [chairs]);
 
 	// Group appointments by chair and day
 	const dayAppointments = useMemo(() => {
-		return appointments.filter((a) => {
-			const localDate = toDateTimeLocalValue(a.startsAt, timezone).slice(0, 10);
+		const safeAppts = appointments || [];
+		return safeAppts.filter((a) => {
+			const localDate = toDateTimeLocalValue ? toDateTimeLocalValue(a.startsAt, timezone).slice(0, 10) : a.startsAt.slice(0, 10);
 			return localDate === dateKey;
 		});
 	}, [appointments, dateKey, toDateTimeLocalValue, timezone]);
@@ -291,10 +307,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		return calculateDailyChairDoctorTally({
 			dateKey,
 			appointments,
-			chairs: dashboard?.clinicSettings?.chairs ?? [],
+			chairs: (dashboard?.clinicSettings?.chairs && dashboard.clinicSettings.chairs.length > 0 ? dashboard.clinicSettings.chairs : effectiveChairs) as any,
 			doctors: ((dashboard?.clinicSettings as any)?.staff ?? []) as any[],
 		});
-	}, [dateKey, appointments, dashboard?.clinicSettings?.chairs, (dashboard?.clinicSettings as any)?.staff]);
+	}, [dateKey, appointments, dashboard?.clinicSettings?.chairs, effectiveChairs, (dashboard?.clinicSettings as any)?.staff]);
 
 	return (
 		<div className="space-y-3">
@@ -311,11 +327,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					<button
 						type="button"
 						onClick={() => {
-							const firstChair = chairs[0];
+							const firstChair = effectiveChairs[0];
 							onSlotClick({
 								dateKey,
 								startTime: "09:00",
-								chairId: firstChair?.id || "chair-1",
+								chairId: firstChair?.id || DEFAULT_SOLO_CHAIR.id,
 							});
 						}}
 						className="primary-button min-h-[38px] px-3.5 flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer"
@@ -357,7 +373,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				<div
 					className="grid min-w-[700px] border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
 					style={{
-						gridTemplateColumns: `80px repeat(${chairs.length}, minmax(180px, 1fr))`,
+						gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
 					}}
 				>
 					{/* Time corner header */}
@@ -367,7 +383,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					</div>
 
 					{/* Chair Column Headers with Visit Count & Occupancy */}
-					{chairs.map((chair) => {
+					{effectiveChairs.map((chair) => {
 						const chairStat = dailyTally.chairs.find((c) => c.chairId === chair.id);
 						return (
 							<div
@@ -393,7 +409,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							key={hour}
 							className="grid min-w-[700px] hover:bg-[var(--paper-soft)]/50 transition-colors"
 							style={{
-								gridTemplateColumns: `80px repeat(${chairs.length}, minmax(180px, 1fr))`,
+								gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
 							}}
 						>
 							{/* Time label */}
@@ -402,10 +418,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							</div>
 
 							{/* Chair Cells */}
-							{chairs.map((chair) => {
+							{effectiveChairs.map((chair) => {
 								const slotStartIso = `${dateKey}T${hour}:00.000Z`;
 								const cellAppointments = dayAppointments.filter((a) => {
-									if (chair.id !== "default-chair" && a.chairId !== chair.id) {
+									if (chair.id !== DEFAULT_SOLO_CHAIR.id && a.chairId !== chair.id) {
 										return false;
 									}
 									const aTime = toDateTimeLocalValue(a.startsAt, timezone).slice(
@@ -1204,7 +1220,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															onSlotClick({
 																dateKey,
 																startTime: hour,
-																chairId: chair.id !== "default-chair" ? chair.id : null,
+																chairId: chair.id,
 																doctorUserId: selectedDoctorId || null,
 																durationMinutes: 30,
 																reason: "Острая боль (CITO Резерв)",
@@ -1228,7 +1244,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														onSlotClick({
 															dateKey,
 															startTime: hour,
-															chairId: chair.id !== "default-chair" ? chair.id : null,
+															chairId: chair.id,
 															doctorUserId: selectedDoctorId || null,
 															durationMinutes: 30,
 														})
@@ -1256,7 +1272,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		const mPatName = patientName(dashboard.patients, selectedMobileAppt.patientId);
 		const mPatObj = dashboard.patients?.find((p) => p.id === selectedMobileAppt.patientId);
 		const mDocObj = dashboard.clinicSettings?.staff?.find((s) => s.id === selectedMobileAppt.doctorUserId);
-		const mChairObj = dashboard.clinicSettings?.chairs?.find((c) => c.id === selectedMobileAppt.chairId);
+		const mChairObj = dashboard.clinicSettings?.chairs?.find((c) => c.id === selectedMobileAppt.chairId) || (selectedMobileAppt.chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : undefined);
 		const mRawBal = mPatObj?.balanceRub ?? (mPatObj as { balance?: number | string | null } | undefined)?.balance;
 		const mBalance = mRawBal !== undefined && mRawBal !== null && mRawBal !== "" && Number.isFinite(Number(mRawBal)) ? Number(mRawBal) : null;
 		const mTeeth = extractTeethList(selectedMobileAppt);
