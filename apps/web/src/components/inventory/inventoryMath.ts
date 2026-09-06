@@ -771,6 +771,52 @@ export const ALL_PROCEDURE_TECH_MAPS: readonly ProcedureTechMap[] = [
 ];
 
 /**
+ * Клинический пакет списания материалов (1 клик).
+ * Объединяет стандартный набор СИЗ, крафт-пакеты стерилизации, анестезию
+ * и специализированные материалы процедуры.
+ * Мандаты 8e (автономия врача), 8k (CRM != тренажер/симулятор), 8n (соло-врач).
+ */
+export interface ClinicalTechMapPackage {
+	readonly id: string;
+	readonly title: string;
+	readonly description: string;
+	readonly codes: readonly string[];
+}
+
+export const CLINICAL_PROCEDURE_PACKAGES: readonly ClinicalTechMapPackage[] = [
+	{
+		id: "pkg-therapy",
+		title: "Пакет Терапия",
+		description: "СИЗ + Крафт + Анестезия + Кариес",
+		codes: ["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.004", "A16.07.002.001"],
+	},
+	{
+		id: "pkg-endo",
+		title: "Пакет Эндодонтия",
+		description: "СИЗ + Крафт + Анестезия + Эндо 1 кан.",
+		codes: ["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.004", "A16.07.030.001"],
+	},
+	{
+		id: "pkg-hygiene",
+		title: "Пакет Гигиена",
+		description: "СИЗ + Крафт + Профгигиена",
+		codes: ["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.051"],
+	},
+	{
+		id: "pkg-surgery",
+		title: "Пакет Хирургия",
+		description: "СИЗ + Крафт + Анестезия + Удаление",
+		codes: ["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.004", "A16.07.001.001"],
+	},
+	{
+		id: "pkg-implant",
+		title: "Пакет Имплантация",
+		description: "СИЗ + Крафт + Анестезия + Имплантация",
+		codes: ["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.004", "A16.07.054"],
+	},
+];
+
+/**
  * Позиция списания в текущем сеансе приема
  */
 export interface DeductionLineItem {
@@ -1122,6 +1168,88 @@ export function createDeductionLinesFromTechMaps(
 	}
 
 	return lines;
+}
+
+/**
+ * Быстрое создание строк списания по клиническому пакету в 1 клик
+ * (Мандаты 8e, 8k, 8n)
+ */
+export function createDeductionLinesFromPackage(
+	pkg: ClinicalTechMapPackage | string,
+	warehouseItems: readonly InventoryItem[] = [],
+): DeductionLineItem[] {
+	const targetPackage =
+		typeof pkg === "string"
+			? CLINICAL_PROCEDURE_PACKAGES.find(
+					(p) => p.id === pkg || p.title === pkg,
+				)
+			: pkg;
+	if (!targetPackage) {
+		return [];
+	}
+	return createDeductionLinesFromTechMaps(
+		targetPackage.codes,
+		warehouseItems,
+		true,
+	);
+}
+
+/**
+ * Быстрое добавление произвольного расходника без обязательного наличия в каталоге склада
+ * (Solo Doctor & Empty Catalog Resilience, Mandate 8e, Mandate 8n)
+ */
+export function createQuickCustomLineItem(
+	materialName: string,
+	options?: {
+		unit?: string;
+		quantity?: number;
+		warehouseItems?: readonly InventoryItem[];
+		unitCostRub?: string | number;
+	},
+): DeductionLineItem {
+	const trimmedName = materialName.trim();
+	const unit = options?.unit?.trim() || "шт.";
+	const qty =
+		options?.quantity !== undefined && options.quantity > 0
+			? options.quantity
+			: 1;
+	const warehouseItems = options?.warehouseItems || [];
+	const matched = matchMaterialToWarehouse(trimmedName, warehouseItems);
+
+	let unitCostKopecks = 0;
+	if (options?.unitCostRub !== undefined) {
+		try {
+			unitCostKopecks =
+				typeof options.unitCostRub === "number"
+					? Math.round(options.unitCostRub * 100)
+					: parseKopecks(options.unitCostRub);
+		} catch {
+			unitCostKopecks = 0;
+		}
+	} else if (matched?.unitCostRub !== undefined && matched.unitCostRub !== "") {
+		try {
+			unitCostKopecks = parseKopecks(matched.unitCostRub);
+		} catch {
+			unitCostKopecks = 0;
+		}
+	}
+
+	return {
+		id: `custom-quick-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		materialName: trimmedName,
+		category: "other",
+		unit,
+		quantity: qty,
+		standardQuantity: qty,
+		unitCostKopecks,
+		stockQuantity: matched?.stockQuantity ?? 0,
+		criticalThreshold: matched?.criticalThreshold ?? 0,
+		inventoryItemId: matched?.id,
+		lotNumber: matched?.lotNumber,
+		expirationDate: matched?.expirationDate,
+		source: "manual",
+		mandatory: false,
+	};
 }
 
 /**

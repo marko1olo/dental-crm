@@ -24,11 +24,14 @@ import {
 	ShoppingCart,
 	Trash2,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	ALL_PROCEDURE_TECH_MAPS,
+	CLINICAL_PROCEDURE_PACKAGES,
+	type ClinicalTechMapPackage,
 	type DeductionLineItem,
 	type DeductionSummary,
 	type SupplierPurchaseOrderView,
@@ -38,6 +41,7 @@ import {
 	calculateDeductionSummary,
 	calculateLineCostKopecks,
 	createDeductionLinesFromTechMaps,
+	createQuickCustomLineItem,
 	createSupplierPurchaseOrderFromLines,
 	declineUnitRu,
 	evaluateStockStatus,
@@ -97,6 +101,9 @@ export function ProcedureMaterialDeductionModal({
 	// Выбор кастомного материала со склада
 	const [selectedCustomId, setSelectedCustomId] = useState("");
 
+	// Быстрый ввод названия расходника (Solo Doctor Resilience, Mandate 8e, 8n)
+	const [customMaterialName, setCustomMaterialName] = useState("");
+
 	// Защита от отрицательных остатков (Default: true)
 	const [preventNegativeStock, setPreventNegativeStock] = useState(true);
 
@@ -123,8 +130,48 @@ export function ProcedureMaterialDeductionModal({
 			);
 			setSearchQuery("");
 			setActiveCategory("all");
+			setCustomMaterialName("");
 		}
 	}, [isOpen, initialTechMapCodes, warehouseItems]);
+
+	// Активация клинического пакета в 1 клик (Мандат 8e / 8k / 8n)
+	const handleApplyPackage = (packageCodes: readonly string[]) => {
+		setSelectedMapCodes([...packageCodes]);
+
+		const generated = createDeductionLinesFromTechMaps(
+			packageCodes,
+			warehouseItems,
+			true,
+		);
+
+		setLines((oldLines) => {
+			const oldQtyMap = new Map<string, number>();
+			for (const o of oldLines) {
+				oldQtyMap.set(o.materialName.toLowerCase().trim(), o.quantity);
+			}
+			const updated = generated.map((g) => {
+				const oldQty = oldQtyMap.get(g.materialName.toLowerCase().trim());
+				return oldQty !== undefined ? { ...g, quantity: oldQty } : g;
+			});
+
+			// Сохраняем кастомные строки, добавленные вручную (Solo Doctor Resilience)
+			const manualLines = oldLines.filter((l) => l.source === "manual");
+			for (const m of manualLines) {
+				if (
+					!updated.some(
+						(u) =>
+							u.id === m.id ||
+							u.materialName.toLowerCase().trim() ===
+								m.materialName.toLowerCase().trim(),
+					)
+				) {
+					updated.push(m);
+				}
+			}
+
+			return updated;
+		});
+	};
 
 	// Переключение техкарты
 	const handleToggleTechMap = (code: string) => {
@@ -145,10 +192,27 @@ export function ProcedureMaterialDeductionModal({
 				for (const o of oldLines) {
 					oldQtyMap.set(o.materialName.toLowerCase().trim(), o.quantity);
 				}
-				return generated.map((g) => {
+				const updated = generated.map((g) => {
 					const oldQty = oldQtyMap.get(g.materialName.toLowerCase().trim());
 					return oldQty !== undefined ? { ...g, quantity: oldQty } : g;
 				});
+
+				// Сохраняем кастомные строки, добавленные вручную
+				const manualLines = oldLines.filter((l) => l.source === "manual");
+				for (const m of manualLines) {
+					if (
+						!updated.some(
+							(u) =>
+								u.id === m.id ||
+								u.materialName.toLowerCase().trim() ===
+									m.materialName.toLowerCase().trim(),
+						)
+					) {
+						updated.push(m);
+					}
+				}
+
+				return updated;
 			});
 
 			return nextCodes;
@@ -241,6 +305,31 @@ export function ProcedureMaterialDeductionModal({
 			setLines((prev) => [...prev, newLine]);
 		}
 		setSelectedCustomId("");
+	};
+
+	// Быстрое добавление произвольного расходника без привязки к каталогу склада (Solo Doctor Resilience)
+	const handleAddQuickCustomMaterial = () => {
+		const trimmed = customMaterialName.trim();
+		if (!trimmed) return;
+
+		const normName = trimmed.toLowerCase();
+		const existing = lines.find(
+			(l) => l.materialName.toLowerCase().trim() === normName,
+		);
+
+		if (existing) {
+			setLines((prev) =>
+				prev.map((l) =>
+					l.id === existing.id ? { ...l, quantity: l.quantity + 1 } : l,
+				),
+			);
+		} else {
+			const newLine = createQuickCustomLineItem(trimmed, {
+				warehouseItems,
+			});
+			setLines((prev) => [...prev, newLine]);
+		}
+		setCustomMaterialName("");
 	};
 
 	// Сводный расчет
@@ -517,6 +606,43 @@ export function ProcedureMaterialDeductionModal({
 						<X size={20} />
 					</button>
 				</header>
+
+				{/* 1-CLICK CLINICAL PACKAGES BAR (MANDATE 8e / 8k / 8n) */}
+				<div className="inventory-clinical-packages-bar" data-testid="clinical-packages-bar">
+					<div className="inventory-clinical-packages-header">
+						<span className="inventory-clinical-packages-label">
+							<Zap size={14} className="shrink-0" />
+							Клинические пакеты (1 клик):
+						</span>
+						<span className="inventory-clinical-packages-hint">
+							СИЗ + Крафт + анестезия + протокол лечения
+						</span>
+					</div>
+					<div className="inventory-packages-chips">
+						{CLINICAL_PROCEDURE_PACKAGES.map((pkg) => {
+							const isPackageActive = pkg.codes.every((c) =>
+								selectedMapCodes.includes(c),
+							);
+							return (
+								<button
+									key={pkg.id}
+									type="button"
+									className={`inventory-package-btn ${isPackageActive ? "active" : ""}`}
+									data-testid={`package-btn-${pkg.id}`}
+									onClick={() => handleApplyPackage(pkg.codes)}
+									title={`${pkg.title}: ${pkg.description}`}
+								>
+									{isPackageActive ? (
+										<CheckCircle2 size={15} className="shrink-0" />
+									) : (
+										<Package size={14} className="shrink-0 opacity-70" />
+									)}
+									<span>{pkg.title}</span>
+								</button>
+							);
+						})}
+					</div>
+				</div>
 
 				{/* TECH MAP SELECTOR BAR */}
 				<div className="inventory-tech-maps-bar">
@@ -835,37 +961,78 @@ export function ProcedureMaterialDeductionModal({
 					)}
 				</div>
 
-				{/* ADD CUSTOM MATERIAL FROM WAREHOUSE */}
-				{warehouseItems.length > 0 && (
-					<div className="inventory-add-custom-bar">
+				{/* ADD CUSTOM MATERIAL: WAREHOUSE CATALOG & QUICK ADD (SOLO DOCTOR RESILIENCE) */}
+				<div className="inventory-add-custom-bar" data-testid="inventory-add-custom-bar">
+					<div className="inventory-add-custom-inputs">
 						<span
-							style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)" }}
+							style={{ fontSize: 13, fontWeight: 700, color: "var(--muted)", whiteSpace: "nowrap" }}
 						>
-							Добавить материал со склада:
+							Добавить расходник:
 						</span>
-						<select
-							className="inventory-add-select"
-							value={selectedCustomId}
-							onChange={(e) => setSelectedCustomId(e.target.value)}
-						>
-							<option value="">-- Выберите материал из каталога склада --</option>
-							{warehouseItems.map((item) => (
-								<option key={item.id} value={item.id}>
-									{item.name} (остаток: {item.stockQuantity} шт.)
-								</option>
-							))}
-						</select>
-						<button
-							type="button"
-							className="inventory-add-btn"
-							onClick={handleAddCustomMaterial}
-							disabled={!selectedCustomId}
-						>
-							<Plus size={16} />
-							Добавить
-						</button>
+
+						{warehouseItems.length > 0 && (
+							<div style={{ display: "flex", alignItems: "center", gap: "8px", flex: "1 1 300px", minWidth: "220px" }}>
+								<select
+									className="inventory-add-select"
+									value={selectedCustomId}
+									onChange={(e) => setSelectedCustomId(e.target.value)}
+									aria-label="Выбрать материал из каталога склада"
+									data-testid="warehouse-select-custom"
+								>
+									<option value="">-- Выберите из каталога склада --</option>
+									{warehouseItems.map((item) => (
+										<option key={item.id} value={item.id}>
+											{item.name} (остаток: {item.stockQuantity} шт.)
+										</option>
+									))}
+								</select>
+								<button
+									type="button"
+									className="inventory-add-btn"
+									onClick={handleAddCustomMaterial}
+									disabled={!selectedCustomId}
+									data-testid="warehouse-add-custom-btn"
+									title="Добавить выбранный из каталога материал"
+								>
+									<Plus size={16} />
+									Добавить со склада
+								</button>
+								<span style={{ fontSize: 12, color: "var(--muted)", padding: "0 4px", whiteSpace: "nowrap" }}>или</span>
+							</div>
+						)}
+
+						{/* Quick text input for Solo Doctor & Empty Catalog Resilience */}
+						<div style={{ display: "flex", alignItems: "center", gap: "6px", flex: "1 1 260px", minWidth: "220px" }}>
+							<input
+								type="text"
+								className="inventory-quick-custom-input"
+								placeholder="Или введите название расходника..."
+								aria-label="Или введите название расходника"
+								data-testid="quick-custom-material-input"
+								value={customMaterialName}
+								onChange={(e) => setCustomMaterialName(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault();
+										handleAddQuickCustomMaterial();
+									}
+								}}
+								style={{ flex: 1 }}
+							/>
+							<button
+								type="button"
+								className="inventory-add-btn"
+								onClick={handleAddQuickCustomMaterial}
+								disabled={!customMaterialName.trim()}
+								data-testid="quick-custom-material-add-btn"
+								title="Добавить расходник без каталога склада"
+							>
+								<Plus size={16} />
+								Добавить
+							</button>
+						</div>
 					</div>
-				)}
+				</div>
 
 				{/* FOOTER & ACTIONS */}
 				<footer className="inventory-deduction-footer">

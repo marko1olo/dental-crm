@@ -106,6 +106,92 @@
 	color: var(--ink);
 }
 
+/* 1-Click Clinical Packages Bar (Mandate 8e, 8k, 8n) */
+.inventory-clinical-packages-bar {
+	padding: 8px 20px;
+	background: var(--paper-strong);
+	border-bottom: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.inventory-clinical-packages-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.inventory-clinical-packages-label {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--teal-dark);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+}
+
+.inventory-clinical-packages-hint {
+	font-size: 11px;
+	color: var(--muted);
+	font-style: italic;
+}
+
+.inventory-packages-chips {
+	display: flex;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	padding-bottom: 2px;
+	gap: 6px;
+	scrollbar-width: none;
+}
+
+.inventory-packages-chips::-webkit-scrollbar {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	.inventory-packages-chips {
+		flex-wrap: wrap;
+		overflow-x: visible;
+	}
+}
+
+.inventory-package-btn {
+	min-height: 32px;
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	flex-shrink: 0;
+	white-space: nowrap;
+	min-width: max-content;
+	transition: all 0.15s ease;
+}
+
+.inventory-package-btn:hover {
+	border-color: var(--teal);
+	background: var(--teal-soft);
+}
+
+.inventory-package-btn.active {
+	background: var(--teal);
+	color: #ffffff;
+	border-color: var(--teal-dark);
+	box-shadow: 0 2px 8px var(--teal-glow);
+}
+
 /* Tech Maps Quick Bar */
 .inventory-tech-maps-bar {
 	padding: 8px 20px;
@@ -594,9 +680,9 @@
 	border: 1px solid var(--amber);
 }
 
-/* Add custom material bar */
+/* Add custom material bar (Solo Doctor Resilience, Mandate 8e, 8n) */
 .inventory-add-custom-bar {
-	padding: 14px 24px;
+	padding: 12px 20px;
 	background: var(--paper-soft);
 	border-top: 1px solid var(--line);
 	display: flex;
@@ -606,37 +692,77 @@
 	flex-wrap: wrap;
 }
 
+.inventory-add-custom-inputs {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+}
+
 .inventory-add-select {
 	flex: 1;
-	min-width: 260px;
-	height: 48px;
-	padding: 0 14px;
-	border-radius: 12px;
+	min-width: 200px;
+	height: 38px;
+	padding: 0 12px;
+	border-radius: 8px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 600;
+	transition: border-color 0.15s ease;
+}
+
+.inventory-add-select:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-soft);
+}
+
+.inventory-quick-custom-input {
+	height: 38px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 500;
+	transition: border-color 0.15s ease;
+}
+
+.inventory-quick-custom-input:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--teal-soft);
 }
 
 .inventory-add-btn {
-	min-height: 48px;
-	padding: 0 20px;
-	border-radius: 12px;
+	min-height: 38px;
+	height: 38px;
+	padding: 0 16px;
+	border-radius: 8px;
 	border: 1px solid var(--teal-dark);
 	background: var(--teal);
 	color: #ffffff;
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 	cursor: pointer;
+	white-space: nowrap;
 	transition: background 0.15s ease;
 }
 
-.inventory-add-btn:hover {
+.inventory-add-btn:hover:not(:disabled) {
 	background: var(--teal-dark);
+}
+
+.inventory-add-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 /* Footer & Summary */
