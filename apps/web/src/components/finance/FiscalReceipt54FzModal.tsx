@@ -106,6 +106,84 @@ function formatMoneyRu(value: number): string {
 	);
 }
 
+/**
+ * 1-Click Экспресс-выбор всех позиций плана лечения для 100% возврата (Мандаты 8e, 8k, 8n).
+ */
+export function selectAllRefundItems(items: readonly TreatmentPlanItem[]): Record<string, boolean> {
+	const allSelected: Record<string, boolean> = {};
+	for (const item of items) {
+		allSelected[item.id] = true;
+	}
+	return allSelected;
+}
+
+/**
+ * 1-Click Сброс выбора позиций возврата (очистка).
+ */
+export function deselectAllRefundItems(): Record<string, boolean> {
+	return {};
+}
+
+/**
+ * Расчет эффективных позиций для чека возврата прихода (54-ФЗ / ФФД 1.2).
+ * Поддерживает как частичный/полный возврат по смете, так и возврат аванса/депозита без услуг.
+ */
+export function calculateRefundActiveItems(params: {
+	readonly items: readonly TreatmentPlanItem[];
+	readonly selection: Record<string, boolean>;
+	readonly isAdvanceRefund: boolean;
+	readonly advanceAmountRub: number;
+	readonly advancePurpose: string;
+}): readonly TreatmentPlanItem[] {
+	const { items, selection, isAdvanceRefund, advanceAmountRub, advancePurpose } = params;
+
+	if (isAdvanceRefund) {
+		if (advanceAmountRub <= 0) return [];
+		return [
+			{
+				id: "refund-advance-deposit",
+				code804n: "",
+				name: advancePurpose.trim() || "Возврат аванса / денежных средств",
+				category: "Возврат",
+				unitPriceRub: advanceAmountRub,
+				priceRub: advanceAmountRub,
+				quantity: 1,
+				discountRub: 0,
+				phase: 1,
+				stageKind: "stage_1_therapy",
+			},
+		];
+	}
+
+	return items.filter((i) => Boolean(selection[i.id]));
+}
+
+/**
+ * Расчет сумм и валидация готовности к фискализации возврата прихода (54-ФЗ).
+ */
+export function calculateRefundFiscalSummary(params: {
+	readonly items: readonly TreatmentPlanItem[];
+	readonly selection: Record<string, boolean>;
+	readonly isAdvanceRefund: boolean;
+	readonly advanceAmountRub: number;
+	readonly advancePurpose: string;
+}): {
+	readonly effectiveItems: readonly TreatmentPlanItem[];
+	readonly totalRub: number;
+	readonly totalKopecks: number;
+	readonly canFiscalize: boolean;
+} {
+	const effectiveItems = calculateRefundActiveItems(params);
+	const fiscalData = mapTreatmentItemsToFiscalReceipt(effectiveItems);
+
+	return {
+		effectiveItems,
+		totalRub: fiscalData.totalRub,
+		totalKopecks: fiscalData.totalKopecks,
+		canFiscalize: fiscalData.totalRub > 0,
+	};
+}
+
 export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	isOpen,
 	items,
@@ -147,10 +225,17 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	const inFlightRef = React.useRef(false);
 	const lastClickTimeRef = React.useRef(0);
 
-	// Refund state (Возврат прихода при отказе от части услуг)
+	// Refund state (Возврат прихода при отказе от части услуг / возврат аванса 54-ФЗ)
 	const [refundItemSelection, setRefundItemSelection] = useState<Record<string, boolean>>({});
 	const [refundReason, setRefundReason] = useState<string>("Отказ пациента от части услуг плана лечения");
 	const [originalReceiptNumberForRefund, setOriginalReceiptNumberForRefund] = useState<string>("");
+	const [refundMode, setRefundMode] = useState<"items" | "advance">(
+		items.length === 0 ? "advance" : "items",
+	);
+	const [refundAdvanceAmountRub, setRefundAdvanceAmountRub] = useState<number>(
+		items.length === 0 && patientDepositRub && patientDepositRub > 0 ? patientDepositRub : 0,
+	);
+	const [refundAdvancePurpose, setRefundAdvancePurpose] = useState<string>("Возврат аванса / денежных средств");
 
 	// Correction state (Чек коррекции 54-ФЗ)
 	const [correctionType, setCorrectionType] = useState<"self_initiated" | "by_instruction">("self_initiated");
@@ -476,12 +561,26 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		showToast("Сумма оплат автоматически сбалансирована без переплаты", "success", 2000);
 	};
 
-	// Refund items calculation
-	const refundActiveItems = useMemo(() => {
-		const hasAnySelection = Object.values(refundItemSelection).some(Boolean);
-		if (!hasAnySelection) return activeItems;
-		return activeItems.filter((i) => refundItemSelection[i.id]);
-	}, [activeItems, refundItemSelection]);
+	const handleSelectAllRefundItems = () => {
+		setRefundItemSelection(selectAllRefundItems(activeItems));
+	};
+
+	const handleDeselectAllRefundItems = () => {
+		setRefundItemSelection(deselectAllRefundItems());
+	};
+
+	// Refund items calculation (Мандаты 8e, 8k, 8n: экспресс-возврат и возврат аванса без привязки к смете)
+	const isAdvanceRefund = activeItems.length === 0 || refundMode === "advance";
+
+	const refundActiveItems = useMemo<readonly TreatmentPlanItem[]>(() => {
+		return calculateRefundActiveItems({
+			items: activeItems,
+			selection: refundItemSelection,
+			isAdvanceRefund,
+			advanceAmountRub: refundAdvanceAmountRub,
+			advancePurpose: refundAdvancePurpose,
+		});
+	}, [isAdvanceRefund, activeItems, refundItemSelection, refundAdvanceAmountRub, refundAdvancePurpose]);
 
 	const refundFiscalData = useMemo(() => {
 		return mapTreatmentItemsToFiscalReceipt(refundActiveItems);
@@ -2159,56 +2258,176 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										Формирование чека возврата прихода (ФФД 1.2 Тег 1054 = 2)
 									</h4>
 									<p className="text-xs text-rose-800 dark:text-rose-300 mt-1">
-										Отметьте позиции, от которых пациент отказался. Сумма возврата будет автоматически распределена с сохранением копеечной точности по методу наибольших остатков.
+										Отметьте позиции, от которых пациент отказался, или оформите возврат аванса/депозита. Сумма возврата будет автоматически распределена с сохранением копеечной точности по методу наибольших остатков.
 									</p>
 								</div>
 							</div>
 
-							{/* Refused items picker */}
-							<div className="space-y-2">
-								<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
-									1. Выберите отменяемые услуги плана лечения:
-								</h4>
-								<div className="divide-y divide-[var(--border,#cbd5e1)] rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] overflow-hidden">
-									{activeItems.map((item) => {
-										const isSelected = refundItemSelection[item.id] ?? false;
-										const itemRub = (item.unitPriceRub || item.priceRub || 0) * (item.quantity || 1) - (item.discountRub || 0);
-										return (
-											<label
-												key={item.id}
-												className="flex items-center justify-between p-3.5 hover:bg-[var(--paper-strong,var(--paper,#ffffff))] cursor-pointer transition-colors"
-											>
-												<div className="flex items-center gap-3">
-													<input
-														type="checkbox"
-														checked={isSelected}
-														onChange={(e) =>
-															setRefundItemSelection((prev) => ({
-																...prev,
-																[item.id]: e.target.checked,
-															}))
-														}
-														className="w-5 h-5 rounded text-rose-600 accent-rose-600 cursor-pointer"
-													/>
-													<div>
-														<span className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] block">
-															{item.name} {item.toothNumber ? `(зуб №${item.toothNumber})` : ""}
-														</span>
-														<span className="text-xs text-[var(--muted,#64748b)]">
-															{item.code804n ? `[${item.code804n}] · ` : ""}
-															{item.quantity || 1} шт. × {formatMoneyRu(item.unitPriceRub || item.priceRub || 0)}
-															{item.discountRub ? ` (- скидка ${formatMoneyRu(item.discountRub)})` : ""}
-														</span>
-													</div>
-												</div>
-												<span className="font-mono font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400">
-													{formatMoneyRu(itemRub)}
-												</span>
-											</label>
-										);
-									})}
+							{/* Mode switcher if items exist */}
+							{activeItems.length > 0 && (
+								<div className="flex items-center gap-2 p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] w-fit text-xs">
+									<button
+										type="button"
+										onClick={() => setRefundMode("items")}
+										data-testid="btn-refund-mode-items"
+										className={`px-3 py-1.5 font-bold rounded-lg transition-colors cursor-pointer ${
+											refundMode === "items"
+												? "bg-rose-600 text-white shadow-xs"
+												: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+										}`}
+									>
+										По услугам плана ({activeItems.length})
+									</button>
+									<button
+										type="button"
+										onClick={() => setRefundMode("advance")}
+										data-testid="btn-refund-mode-advance"
+										className={`px-3 py-1.5 font-bold rounded-lg transition-colors cursor-pointer ${
+											refundMode === "advance"
+												? "bg-rose-600 text-white shadow-xs"
+												: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+										}`}
+									>
+										Возврат аванса / по номеру чека
+									</button>
 								</div>
-							</div>
+							)}
+
+							{/* Either Advance return form OR Items picker */}
+							{isAdvanceRefund ? (
+								<div
+									className="space-y-4 p-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/20"
+									data-testid="refund-advance-container"
+								>
+									<div className="flex items-center gap-2 text-rose-950 dark:text-rose-200 font-bold text-xs sm:text-sm">
+										<Wallet size={18} className="text-rose-600 shrink-0" />
+										<span>Возврат аванса / денежных средств по номеру фискального чека (54-ФЗ)</span>
+									</div>
+									<p className="text-xs text-rose-800 dark:text-rose-300">
+										{activeItems.length === 0
+											? "Услуги плана лечения не привязаны. Введите сумму к возврату и назначение платежа для фискализации чека возврата прихода (ФФД 1.2 Тег 1054 = 2)."
+											: "Режим возврата аванса/депозита без изменения состава оказанных услуг плана лечения."}
+									</p>
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+										<div>
+											<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+												Сумма возврата (₽):
+											</label>
+											<input
+												type="number"
+												min="0"
+												step="0.01"
+												value={refundAdvanceAmountRub === 0 ? "" : refundAdvanceAmountRub}
+												onChange={(e) => {
+													const val = Number.parseFloat(e.target.value);
+													setRefundAdvanceAmountRub(Number.isNaN(val) || val < 0 ? 0 : val);
+												}}
+												placeholder="0.00 ₽"
+												data-testid="input-refund-advance-amount"
+												className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-mono font-bold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-rose-500"
+											/>
+											{patientDepositRub > 0 && (
+												<div className="mt-1.5 flex items-center gap-2">
+													<span className="text-[11px] text-[var(--muted,#64748b)]">
+														Доступный депозит: {formatMoneyRu(patientDepositRub)}
+													</span>
+													<button
+														type="button"
+														onClick={() => setRefundAdvanceAmountRub(patientDepositRub)}
+														data-testid="btn-use-full-deposit-refund"
+														className="text-[11px] font-bold text-rose-600 hover:text-rose-700 underline cursor-pointer"
+													>
+														Заполнить всю сумму
+													</button>
+												</div>
+											)}
+										</div>
+										<div>
+											<label className="block text-xs font-semibold text-[var(--muted,#64748b)] mb-1">
+												Назначение платежа:
+											</label>
+											<input
+												type="text"
+												value={refundAdvancePurpose}
+												onChange={(e) => setRefundAdvancePurpose(e.target.value)}
+												placeholder="Возврат аванса / денежных средств"
+												data-testid="input-refund-advance-purpose"
+												className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-rose-500"
+											/>
+										</div>
+									</div>
+								</div>
+							) : (
+								<div className="space-y-2">
+									<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+										<h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted,#64748b)]">
+											1. Выберите отменяемые услуги плана лечения:
+										</h4>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												onClick={handleSelectAllRefundItems}
+												data-testid="btn-refund-select-all"
+												className="min-h-[32px] px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-950/60 dark:text-rose-200 dark:hover:bg-rose-900 border border-rose-300 dark:border-rose-800 transition-colors cursor-pointer flex items-center gap-1.5"
+												title="Отметить все позиции для полного 100% возврата"
+											>
+												<Check size={14} />
+												<span>Выбрать все позиции (100% возврат)</span>
+											</button>
+											<button
+												type="button"
+												onClick={handleDeselectAllRefundItems}
+												data-testid="btn-refund-deselect-all"
+												className="min-h-[32px] px-3 py-1.5 text-xs font-medium rounded-xl bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--muted,#64748b)] border border-[var(--border,#cbd5e1)] transition-colors cursor-pointer flex items-center gap-1.5"
+												title="Снять выбор со всех позиций"
+											>
+												<X size={14} />
+												<span>Снять выбор</span>
+											</button>
+										</div>
+									</div>
+									<div className="divide-y divide-[var(--border,#cbd5e1)] rounded-2xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] overflow-hidden">
+										{activeItems.map((item) => {
+											const isSelected = refundItemSelection[item.id] ?? false;
+											const itemRub = (item.unitPriceRub || item.priceRub || 0) * (item.quantity || 1) - (item.discountRub || 0);
+											return (
+												<label
+													key={item.id}
+													className="flex items-center justify-between p-3.5 hover:bg-[var(--paper-strong,var(--paper,#ffffff))] cursor-pointer transition-colors"
+												>
+													<div className="flex items-center gap-3">
+														<input
+															type="checkbox"
+															checked={isSelected}
+															onChange={(e) =>
+																setRefundItemSelection((prev) => ({
+																	...prev,
+																	[item.id]: e.target.checked,
+																}))
+															}
+															data-testid={`checkbox-refund-${item.id}`}
+															className="w-5 h-5 rounded text-rose-600 accent-rose-600 cursor-pointer"
+														/>
+														<div>
+															<span className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] block">
+																{item.name} {item.toothNumber ? `(зуб №${item.toothNumber})` : ""}
+															</span>
+															<span className="text-xs text-[var(--muted,#64748b)]">
+																{item.code804n ? `[${item.code804n}] · ` : ""}
+																{item.quantity || 1} шт. × {formatMoneyRu(item.unitPriceRub || item.priceRub || 0)}
+																{item.discountRub ? ` (- скидка ${formatMoneyRu(item.discountRub)})` : ""}
+															</span>
+														</div>
+													</div>
+													<span className="font-mono font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400">
+														{formatMoneyRu(itemRub)}
+													</span>
+												</label>
+											);
+										})}
+									</div>
+								</div>
+							)}
 
 							{/* Refund details inputs */}
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2221,6 +2440,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										value={originalReceiptNumberForRefund}
 										onChange={(e) => setOriginalReceiptNumberForRefund(e.target.value)}
 										placeholder="CHK-2026-XXXXX"
+										data-testid="input-refund-original-receipt"
 										className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-mono rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
 									/>
 								</div>
@@ -2233,6 +2453,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 										value={refundReason}
 										onChange={(e) => setRefundReason(e.target.value)}
 										placeholder="Отказ пациента / Коррекция"
+										data-testid="input-refund-reason"
 										className="w-full min-h-[44px] px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)]"
 									/>
 								</div>
@@ -2243,6 +2464,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 								type="button"
 								onClick={() => handleExecuteFiscalization()}
 								disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+								data-testid="btn-execute-refund"
 								className="w-full min-h-[52px] flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99]"
 							>
 								<RotateCcw size={18} />
@@ -3140,6 +3362,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									type="button"
 									onClick={() => handleExecuteFiscalization()}
 									disabled={refundFiscalData.totalRub <= 0 || isFiscalizing}
+									data-testid="btn-refund-footer-execute"
 									className="h-9 px-5 rounded-xl font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 shadow-md cursor-pointer transition-all active:scale-[0.99] flex items-center gap-1.5"
 								>
 									<RotateCcw size={15} />
