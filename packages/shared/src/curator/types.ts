@@ -129,7 +129,7 @@ export const curatorPatientQueueItemSchema = z.object({
 	remainingAmountRub: z.number().nonnegative().default(0),
 	remainingAmountKopecks: z.number().int().nonnegative().default(0),
 	funnelStage: curatorFunnelStageSchema,
-	curatorId: z.string().uuid(),
+	curatorId: z.string().nullable().optional(),
 	curatorFullName: z.string().min(1),
 	assignedAt: z.string(),
 	stageUpdatedAt: z.string(),
@@ -228,13 +228,13 @@ export interface CuratorQueueFilterOptions {
 }
 
 /**
- * Запрос на закрепление / смену куратора
+ * Запрос на закрепление / смену куратора (с поддержкой автономии врача / без куратора)
  */
 export const curatorPlanAssignmentPayloadSchema = z.object({
-	patientId: z.string().uuid(),
-	treatmentPlanId: z.string().uuid(),
-	curatorId: z.string().uuid(),
-	curatorFullName: z.string().min(1),
+	patientId: z.string(),
+	treatmentPlanId: z.string(),
+	curatorId: z.string().nullable().optional(),
+	curatorFullName: z.string().min(1).default("Лечащий врач (без куратора)"),
 	initialStage: curatorFunnelStageSchema.default("consultation"),
 	customCommissionPercent: z.number().min(0).max(100).nullable().optional(),
 	notes: z.string().max(1000).nullable().optional(),
