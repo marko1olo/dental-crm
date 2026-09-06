@@ -183,6 +183,8 @@ const expressLabOrderSchema = z.object({
 	specialInstructions: z.string().trim().optional().nullable(),
 	treatmentPlanAgeDays: z.number().int().nonnegative().optional().nullable(),
 	isOneClickPreset: z.boolean().optional().default(false),
+	doctorClinicalOverride: z.boolean().optional().default(false),
+	doctorOverrideReason: z.string().trim().optional().nullable(),
 });
 
 const checkPlanContinuitySchema = z.object({
@@ -343,11 +345,16 @@ export async function registerDentalLabRoutes(app: FastifyInstance) {
 			const secureToken = crypto.randomUUID();
 			const finalPrice = data.priceRub ?? defaultPriceRub;
 
-			const instructions = data.specialInstructions
+			let instructions = data.specialInstructions
 				? data.specialInstructions
 				: data.isOneClickPreset
 					? "Коронка ZrO2 (диоксид циркония), цвет А2, анатомическая форма, срок 5 рабочих дней"
 					: `Конструкция: ${data.construction}, цвет: ${data.colorVita}`;
+
+			if (data.doctorClinicalOverride) {
+				const overrideNote = `[Клинический оверрайд врача: ${data.doctorOverrideReason || "Аванс < 50% / Срочное изготовление по клиническим показаниям"} (Мандат 8e)]`;
+				instructions = `${instructions}\n${overrideNote}`;
+			}
 
 			const [createdOrder] = await tx
 				.insert(labOrders)
@@ -421,6 +428,8 @@ export async function registerDentalLabRoutes(app: FastifyInstance) {
 					planAgeDays: planAge,
 					blocked: false,
 					canProceed: true,
+					doctorClinicalOverride: Boolean(data.doctorClinicalOverride),
+					doctorOverrideReason: data.doctorOverrideReason ?? null,
 					guarantee:
 						"Истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ (Мандат 8e). Запрещены согласования начмеда.",
 				},

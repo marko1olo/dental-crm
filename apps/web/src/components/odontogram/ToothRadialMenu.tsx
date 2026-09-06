@@ -38,6 +38,7 @@ export interface ToothRadialMenuProps {
 	onSelectState: (state: ToothState, surfaces?: readonly string[], subType?: string) => void;
 	onSelectSurfaces?: (surfaces: readonly string[]) => void;
 	onOpenEndo?: () => void;
+	onOpenTherapy?: () => void;
 	onAddToInvoice?: () => void;
 	onClose: () => void;
 }
@@ -51,6 +52,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	onSelectState,
 	onSelectSurfaces,
 	onOpenEndo,
+	onOpenTherapy,
 	onAddToInvoice,
 	onClose,
 }) => {
@@ -678,9 +680,22 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 						</div>
 					)}
 
-					{/* Quick Actions (Endo / Invoice) */}
-					{Boolean(onOpenEndo || onAddToInvoice) && (
+					{/* Quick Actions (Therapy / Endo / Invoice) */}
+					{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
 						<div className="flex items-center gap-2 pt-1 border-t border-[var(--odontogram-border-subtle)]">
+							{onOpenTherapy && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenTherapy();
+										onClose();
+									}}
+									className="flex-1 min-h-[48px] min-w-[48px] py-3 px-3 rounded-xl text-sm font-black text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+								>
+									<Zap size={18} />
+									<span>Терапия 043/у</span>
+								</button>
+							)}
 							{onOpenEndo && (
 								<button
 									type="button"
@@ -1042,7 +1057,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					)}
 
 					{/* Quick Action Footer Controls */}
-					{Boolean(onOpenEndo || onAddToInvoice) && (
+					{Boolean(onOpenTherapy || onOpenEndo || onAddToInvoice) && (
 						<div
 							className="absolute flex items-center gap-2 pointer-events-auto bg-[var(--odontogram-paper)] backdrop-blur-xl px-3 py-1.5 rounded-full border border-[var(--odontogram-border)] shadow-2xl z-20"
 							style={{
@@ -1051,6 +1066,25 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								transform: "translate(-50%, 0)",
 							}}
 						>
+							{onOpenTherapy && (
+								<button
+									type="button"
+									onClick={() => {
+										onOpenTherapy();
+										onClose();
+									}}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: "6px",
+										background: "transparent",
+									}}
+									className="min-h-[36px] text-xs font-black text-teal-700 dark:text-teal-300 hover:bg-teal-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+								>
+									<Zap size={14} />
+									<span>Терапия 043/у</span>
+								</button>
+							)}
 							{onOpenEndo && (
 								<button
 									type="button"
@@ -1064,7 +1098,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										gap: "6px",
 										background: "transparent",
 									}}
-									className="min-h-[32px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+									className="min-h-[36px] text-xs font-black text-rose-600 dark:text-rose-300 hover:bg-rose-500/15 px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
 									<Wrench size={14} />
 									<span>Журнал каналов</span>
@@ -1083,7 +1117,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										gap: "6px",
 										background: "transparent",
 									}}
-									className="min-h-[32px] text-xs font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
+									className="min-h-[36px] text-xs font-black text-[var(--teal,#0d9488)] hover:bg-[var(--teal-soft,rgba(13,148,136,0.15))] px-3 py-1 rounded-lg transition-colors cursor-pointer border-0"
 								>
 									<Coins size={14} />
 									<span>В смету</span>

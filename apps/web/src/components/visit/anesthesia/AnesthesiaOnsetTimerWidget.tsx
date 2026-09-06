@@ -108,7 +108,7 @@ export const AnesthesiaOnsetTimerWidget: React.FC<AnesthesiaOnsetTimerWidgetProp
 					) : (
 						<>
 							<Zap className="w-4 h-4 text-amber-300 animate-pulse" />
-							<span>⚡ Онемение наступило (начать работу в 1 клик)</span>
+							<span>Онемение наступило (начать работу в 1 клик)</span>
 						</>
 					)}
 				</button>

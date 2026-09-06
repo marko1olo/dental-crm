@@ -496,7 +496,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 							data-testid="btn-journal-quick-norm-apply"
 						>
 							<CheckCircle2 className="w-3.5 h-3.5" />
-							<span>⚡ Внести норму и закрыть</span>
+							<span>Внести норму и закрыть</span>
 						</button>
 
 						<button

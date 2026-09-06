@@ -81,8 +81,9 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 				{/* Body */}
 				<div className="p-5 sm:p-6 space-y-4">
 					<div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-medium space-y-1">
-						<p className="m-0 font-bold">
-							⛔ {conflictMessage || "Выбранное время уже занято другой записью."}
+						<p className="m-0 font-bold flex items-center gap-1.5">
+							<AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>{conflictMessage || "Выбранное время уже занято другой записью."}</span>
 						</p>
 						<p className="m-0 text-xs opacity-90">
 							{patientName ? `Пациент: ${patientName}. ` : ""}

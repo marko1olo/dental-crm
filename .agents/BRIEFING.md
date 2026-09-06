@@ -1,13 +1,13 @@
-# BRIEFING — 2026-09-04T11:22:00Z
+# BRIEFING — 2026-09-04T11:52:00Z
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 ## Mission
-Eliminate 7 deadly sins UI defects (replace cartoon emojis with Lucide, eliminate button landfill on document & patient cards, compress multi-row toolbars) and eliminate mock test stubs in 54-FZ refund fiscalization across R1-R4.
+Full elimination of prop-drilling in App.tsx, integration of views (VisitView, FinanceView, CommunicationsView, DocumentsView, PatientsView, ShiftView) with useAppLogicContext(), and cleanup of hundreds of lines of unused appLogicValue destructuring in App.tsx without breaking internal logic, reactivity, and memoization.
 
 ## 🔒 My Identity
 - Archetype: sentinel
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r60
-- Orchestrator: to be spawned (teamwork_preview_orchestrator_r60)
+- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r61
+- Orchestrator: to be spawned (teamwork_preview_orchestrator)
 - Victory Auditor: to be spawned on victory claim
 
 ## 🔒 Key Constraints
@@ -18,7 +18,7 @@ Eliminate 7 deadly sins UI defects (replace cartoon emojis with Lucide, eliminat
 - Full multi-agent engineering team with adversarial clinical critics
 
 ## User Context
-- **Last user request**: UI 7 deadly sins remediation (R1: cartoon emoji replacement with Lucide in DocumentsView, PatientsView, AppointmentCard, ScheduleGrid, PaymentCapture; R2: button landfill elimination to max 2 direct action buttons in DocumentsView & PatientsView; R3: compress DocumentsView header to 32-36px toolbar; R4: eliminate test stubs 9999078900012345, 1002, 1234567890 in RefundServiceModal.tsx and bind real fiscal response fields).
+- **Last user request**: R1: Integrate FinanceView, CommunicationsView, DocumentsView, ShiftView with useAppLogicContext() (optional rawProps fallback for unit tests); R2: Eliminate prop drilling in App.tsx for VisitView, FinanceView, CommunicationsView, DocumentsView, PatientsView, ShiftView; R3: Clean up hundreds of unused variables in appLogicValue destructuring in App.tsx (lines 213-1166); R4: Machine verification (check:encoding, web & api typecheck, tests).
 - **Pending clarifications**: none
 - **Delivered results**: none yet (round starting)
 
@@ -33,4 +33,4 @@ Eliminate 7 deadly sins UI defects (replace cartoon emojis with Lucide, eliminat
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — user intent record
 - C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md — Master prompt authority
-- C:\Clinic_MVP\dental-crm\.agents\BRIEFING.md — Sentinel persistent briefing
+- C:\Clinic_MVP\dental-crm\.agents\sentinel_r61\BRIEFING.md — Sentinel persistent briefing

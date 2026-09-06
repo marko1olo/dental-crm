@@ -1084,11 +1084,11 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											data-testid="select-cash-discount"
 										>
 											<option value="none">Без скидки (0%)</option>
-											<option value="round_hundreds">⚡ Округлить до сотен (скидка на копейки)</option>
+											<option value="round_hundreds">Округлить до сотен (скидка на копейки)</option>
 											<option value="discount_3">3% Скидка</option>
 											<option value="discount_5">5% Скидка</option>
 											<option value="discount_10">10% Скидка</option>
-											<option value="warranty_100">★ 100% Гарантия / Переделка (Врач)</option>
+											<option value="warranty_100">100% Гарантия / Переделка (Врач)</option>
 											<option value="colleague_100">100% Сотрудник / Коллега</option>
 											<option value="pensioner_10">10% Пенсионная</option>
 											<option value="family_5">5% Семейная</option>
@@ -1152,7 +1152,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										title="Округлить сумму чека вниз до сотен рублей (скидка на копейки, например 7 428 ₽ -> 7 400 ₽)"
 									>
 										<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-										<span>⚡ Округлить до сотен рублей (скидка на копейки)</span>
+										<span>Округлить до сотен рублей (скидка на копейки)</span>
 									</button>
 									<button
 										type="button"
@@ -1325,7 +1325,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											data-testid="btn-express-close-warranty-zero"
 										>
 											<Zap className="w-4 h-4 fill-white" />
-											<span>⚡ Закрыть визит в 1 клик (0 ₽)</span>
+											<span>Закрыть визит в 1 клик (0 ₽)</span>
 										</button>
 									</div>
 								) : (
@@ -1339,7 +1339,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 										>
 											<CreditCard className="w-4 h-4 shrink-0" />
-											<span>⚡ Оплатить картой (вся сумма)</span>
+											<span>Оплатить картой (вся сумма)</span>
 										</button>
 									<button
 										type="button"
@@ -1350,7 +1350,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
 										<Banknote className="w-4 h-4 shrink-0" />
-										<span>⚡ Оплатить наличными (вся сумма)</span>
+										<span>Оплатить наличными (вся сумма)</span>
 									</button>
 									<button
 										type="button"
@@ -1361,7 +1361,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
 										<QrCode className="w-4 h-4 shrink-0" />
-										<span>⚡ Оплатить через СБП</span>
+										<span>Оплатить через СБП</span>
 									</button>
 								</div>
 								)}
@@ -1998,7 +1998,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 cursor-pointer transition-all active:scale-95"
 											data-testid="btn-split-preset-dep-card"
 										>
-											⚡ Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Картой
+											Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Картой
 										</button>
 									)}
 									{patientDepositRub > 0 && (
@@ -2008,7 +2008,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 cursor-pointer transition-all active:scale-95"
 											data-testid="btn-split-preset-dep-cash"
 										>
-											⚡ Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Наличными
+											Аванс ({Math.min(totalInvoiceRub, patientDepositRub).toLocaleString("ru-RU")} ₽) + Наличными
 										</button>
 									)}
 									{patientFamilyBalanceRub > 0 && (
@@ -2018,7 +2018,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 cursor-pointer transition-all active:scale-95"
 											data-testid="btn-split-preset-family-card"
 										>
-											⚡ Сем. счет ({Math.min(totalInvoiceRub, patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽) + Картой
+											Сем. счет ({Math.min(totalInvoiceRub, patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽) + Картой
 										</button>
 									)}
 									<button

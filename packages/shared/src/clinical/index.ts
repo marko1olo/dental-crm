@@ -7,3 +7,5 @@ export * from "./cmoEmkQualityAuditEngine.js";
 export * from "./clinicalDdiDrugSafetyEngine.js";
 export * from "./visitWorkOrder.js";
 export * from "./endoProtocolEngine.js";
+export * from "./restorationProtocolEngine.js";
+export * from "./therapyProtocolEngine.js";

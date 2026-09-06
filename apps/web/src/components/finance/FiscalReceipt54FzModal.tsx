@@ -1107,7 +1107,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="h-8 w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-center cursor-pointer transition-colors border border-transparent hover:border-[var(--border,#cbd5e1)] shrink-0"
+						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-8 sm:w-8 p-1.5 rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,var(--paper,#ffffff))] flex items-center justify-center cursor-pointer transition-colors border border-transparent hover:border-[var(--border,#cbd5e1)] shrink-0"
 						aria-label="Закрыть модальное окно"
 					>
 						<X size={18} />
@@ -1367,7 +1367,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											title="Округлить сумму чека до сотен рублей (скидка на копейки в пользу пациента)"
 										>
 											<Sparkles className="w-3.5 h-3.5 shrink-0" />
-											<span>⚡ Округлить до сотен рублей (скидка на копейки)</span>
+											<span>Округлить до сотен рублей (скидка на копейки)</span>
 										</button>
 									</div>
 
@@ -1537,7 +1537,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 										>
 											<CreditCard className="w-4 h-4 shrink-0" />
-											<span>⚡ Оплатить картой (вся сумма)</span>
+											<span>Оплатить картой (вся сумма)</span>
 										</button>
 										<button
 											type="button"
@@ -1548,7 +1548,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 										>
 											<Banknote className="w-4 h-4 shrink-0" />
-											<span>⚡ Оплатить наличными (вся сумма)</span>
+											<span>Оплатить наличными (вся сумма)</span>
 										</button>
 										<button
 											type="button"
@@ -1559,7 +1559,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 											title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 										>
 											<QrCode className="w-4 h-4 shrink-0" />
-											<span>⚡ Оплатить через СБП</span>
+											<span>Оплатить через СБП</span>
 										</button>
 									</div>
 								</div>

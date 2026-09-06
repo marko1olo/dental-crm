@@ -259,7 +259,7 @@ export function KraftPackageQuickScanner({
 							data-testid="btn-kraft-quick-standard-attach"
 						>
 							<Sparkles size={18} />
-							<span>⚡ Вскрыть стандартный стерильный смотровой лоток (1 клик)</span>
+							<span>Вскрыть стандартный стерильный смотровой лоток (1 клик)</span>
 						</button>
 					</div>
 
@@ -480,7 +480,7 @@ export function KraftPackageQuickScanner({
 							<Sparkles size={18} />
 							<span>
 								{!parsed
-									? "⚡ Вскрыть стандартный стерильный смотровой лоток (1 клик)"
+									? "Вскрыть стандартный стерильный смотровой лоток (1 клик)"
 									: parsed.isExpired
 										? "Допустить и вскрыть по острой боли (043/у)"
 										: "Вскрыть и привязать к протоколу 043/у (1 клик)"}

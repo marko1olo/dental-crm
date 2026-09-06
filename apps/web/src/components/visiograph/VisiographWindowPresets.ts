@@ -127,7 +127,7 @@ export interface ClinicalVisiographFilterPreset {
 export const CLINICAL_VISIOGRAPH_FILTERS: readonly ClinicalVisiographFilterPreset[] = [
 	{
 		id: "bone_periodont",
-		label: "⚡ Кость / Периодонт",
+		label: "Кость / Периодонт",
 		shortLabel: "Кость / Периодонт",
 		badge: "высокая резкость / фильтр костных балок",
 		description: "Фильтр костных балок, периодонтальной щели и кортикальной пластинки (высокая резкость)",
@@ -141,7 +141,7 @@ export const CLINICAL_VISIOGRAPH_FILTERS: readonly ClinicalVisiographFilterPrese
 	},
 	{
 		id: "endodontics",
-		label: "⚡ Эндодонтия",
+		label: "Эндодонтия",
 		shortLabel: "Эндодонтия",
 		badge: "контраст апекса и каналов",
 		description: "Контраст верхушки корня (апекса), кривизны и устьев корневых каналов",
@@ -155,7 +155,7 @@ export const CLINICAL_VISIOGRAPH_FILTERS: readonly ClinicalVisiographFilterPrese
 	},
 	{
 		id: "caries_enamel",
-		label: "⚡ Кариес / Эмаль",
+		label: "Кариес / Эмаль",
 		shortLabel: "Кариес / Эмаль",
 		badge: "мягкие ткани и пришеечная зона",
 		description: "Диагностика пришеечного кариеса, мягких тканей десны и деминерализации эмали",

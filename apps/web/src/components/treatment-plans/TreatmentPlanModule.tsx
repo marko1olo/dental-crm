@@ -783,7 +783,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 									data-testid="lab-work-order-one-click-btn"
 								>
 									<Zap size={14} className="text-amber-600 dark:text-amber-400" />
-									<span>⚡ Наряд ЗТЛ в 1 клик (Цирконий A2)</span>
+									<span>Наряд ЗТЛ в 1 клик (Цирконий A2)</span>
 								</button>
 							</div>
 						)}
@@ -833,7 +833,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						))}
 						{discountPercent === 100 && (
 							<span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 ml-1">
-								⚡ 0 ₽ (Гарантия / Персонал)
+								0 ₽ (Гарантия / Персонал)
 							</span>
 						)}
 					</div>

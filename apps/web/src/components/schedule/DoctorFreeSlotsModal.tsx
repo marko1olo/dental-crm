@@ -153,7 +153,7 @@ export const DoctorFreeSlotsModal: React.FC<DoctorFreeSlotsModalProps> = ({
 						</span>
 						<div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
 							{[
-								{ offset: 0, label: "📅 С сегодня" },
+								{ offset: 0, label: "С сегодня" },
 								{ offset: 7, label: "+ Через 7 дней" },
 								{ offset: 14, label: "+ Через 14 дней" },
 								{ offset: 30, label: "+ Через 1 месяц (30 дн.)" },

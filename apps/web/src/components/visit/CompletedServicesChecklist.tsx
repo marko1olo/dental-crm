@@ -29,7 +29,7 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 	{
 		id: "caries",
 		title: "Лечение кариеса",
-		shortLabel: "⚡ Пакет: Лечение кариеса",
+		shortLabel: "Пакет: Лечение кариеса",
 		badge: "Анестезия + Коффердам + Пломба",
 		totalPriceRub: 7500,
 		services: [
@@ -43,7 +43,7 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 	{
 		id: "endo_1",
 		title: "Эндодонтия (1-й этап)",
-		shortLabel: "⚡ Пакет: Эндодонтия (1-й этап)",
+		shortLabel: "Пакет: Эндодонтия (1-й этап)",
 		badge: "Анестезия + Коффердам + Экстирпация + Каналы + Временная пломба",
 		totalPriceRub: 8800,
 		services: [
@@ -57,7 +57,7 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 	{
 		id: "hygiene",
 		title: "Профгигиена",
-		shortLabel: "⚡ Пакет: Профгигиена",
+		shortLabel: "Пакет: Профгигиена",
 		badge: "УЗ-скейлинг + AirFlow + Полировка + Фторирование",
 		totalPriceRub: 6500,
 		services: [
@@ -70,7 +70,7 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 	{
 		id: "surgery_extraction",
 		title: "Удаление зуба",
-		shortLabel: "⚡ Пакет: Удаление зуба",
+		shortLabel: "Пакет: Удаление зуба",
 		badge: "Анестезия + Удаление + Гемостаз",
 		totalPriceRub: 5500,
 		services: [

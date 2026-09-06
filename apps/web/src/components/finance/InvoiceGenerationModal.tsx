@@ -694,7 +694,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-2 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+							className="min-h-[44px] min-w-[44px] p-2 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer flex items-center justify-center"
 							aria-label="Закрыть"
 						>
 							<X size={20} />

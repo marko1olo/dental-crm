@@ -186,7 +186,7 @@ export function SterilizationJournalModal({
 			operatorFullName: nurseOperator,
 			operatorPosition: "Медицинская сестра ЦСО",
 			electronicSignatureHash: sigHash,
-			notes: "⚡ Экспресс-фиксация цикла 134°C / 2.15 bar (СанПиН 3.3686-21, 1 клик).",
+			notes: "Экспресс-фиксация цикла 134°C / 2.15 bar (СанПиН 3.3686-21, 1 клик).",
 			createdAt: now.toISOString(),
 		};
 

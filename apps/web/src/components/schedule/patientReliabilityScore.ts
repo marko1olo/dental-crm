@@ -412,7 +412,7 @@ export function calculatePatientReliability(
 		summary = "Нет истории визитов";
 		badgeClass = "bg-sky-500/15 text-sky-800 dark:text-sky-200 border-sky-500/40";
 		requiresTwoHourConfirmation = false;
-		receptionistAlert = "Первичный визит. Напомнить пациенту взять паспорт и СНИЛС для оформления договора.";
+		receptionistAlert = "Первичный визит. Оформить договор и ИДС (или распечатать бланк со строками _______).";
 	} else if (
 		consecutiveNoShows >= 2 ||
 		noShowCount >= 3 ||

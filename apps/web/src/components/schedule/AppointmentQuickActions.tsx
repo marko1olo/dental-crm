@@ -334,7 +334,7 @@ export function AppointmentQuickActions({
 						<MessageSquare size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
 						{showLabels && (
 							<span className="break-words leading-none text-center">
-								{compact ? "WA" : "💬 WA: 24ч"}
+								{compact ? "WA" : "WA: 24ч"}
 							</span>
 						)}
 					</button>

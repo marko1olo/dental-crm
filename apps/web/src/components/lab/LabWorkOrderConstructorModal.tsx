@@ -272,7 +272,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 		if (selectedTeeth.length === 0) {
 			setSelectedTeeth([16]);
 		}
-		showToast("⚡ Пресет: Коронка ZrO2, цвет А2, срок 5 раб. дней (24 000 ₽ / 7 500 ₽) применен", "success");
+		showToast("Пресет: Коронка ZrO2, цвет А2, срок 5 раб. дней (24 000 ₽ / 7 500 ₽) применен", "success");
 	}, [selectedTeeth.length]);
 
 	const handleApplyBruxismSplintPreset = useCallback(() => {
@@ -287,7 +287,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 		);
 		// Не требовать обязательного выбора одиночного зуба (общий наряд / челюсть)
 		setSelectedTeeth([]);
-		showToast("⚡ Пресет: Каппа от бруксизма / Сплинт на челюсть, 3 раб. дня (15 000 ₽ / 4 500 ₽) применен", "success");
+		showToast("Пресет: Каппа от бруксизма / Сплинт на челюсть, 3 раб. дня (15 000 ₽ / 4 500 ₽) применен", "success");
 	}, []);
 
 	const handleApplyCustomAbutmentPreset = useCallback(() => {
@@ -305,7 +305,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 		if (selectedTeeth.length === 0) {
 			setSelectedTeeth([46]);
 		}
-		showToast("⚡ Пресет: Индивидуальный абатмент Ti-Base + коронка ZrO2, 7 раб. дней (35 000 ₽ / 12 000 ₽) применен", "success");
+		showToast("Пресет: Индивидуальный абатмент Ti-Base + коронка ZrO2, 7 раб. дней (35 000 ₽ / 12 000 ₽) применен", "success");
 	}, [selectedTeeth.length]);
 
 	const handleApplyRemovableNylonPreset = useCallback(() => {
@@ -320,7 +320,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 		);
 		// Съемный протез на всю челюсть
 		setSelectedTeeth([]);
-		showToast("⚡ Пресет: Съемный нейлоновый протез Acry-Free / Квадротти, 8 раб. дней (45 000 ₽ / 16 000 ₽) применен", "success");
+		showToast("Пресет: Съемный нейлоновый протез Acry-Free / Квадротти, 8 раб. дней (45 000 ₽ / 16 000 ₽) применен", "success");
 	}, []);
 
 	const [patientPriceKop, setPatientPriceKop] = useState<number>(4800000);
@@ -506,7 +506,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 							title="Стандартный пресет: Коронка ZrO2, А2, 5 дней (1 клик) — 24 000 ₽ / 7 500 ₽"
 						>
 							<Zap size={14} />
-							<span>⚡ Коронка ZrO2, А2, 5 дней (1 клик)</span>
+							<span>Коронка ZrO2, А2, 5 дней (1 клик)</span>
 						</button>
 
 						<button
@@ -517,7 +517,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 							title="Экспресс-пресет: Каппа от бруксизма / Сплинт (15 000 ₽ / 4 500 ₽, 3 раб. дня, общий наряд / челюсть)"
 						>
 							<Zap size={14} />
-							<span>⚡ Сплинт/Каппа (3д)</span>
+							<span>Сплинт/Каппа (3д)</span>
 						</button>
 
 						<button
@@ -528,7 +528,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 							title="Экспресс-пресет: Индивидуальный абатмент Ti-Base + коронка ZrO2 (35 000 ₽ / 12 000 ₽, 7 раб. дней)"
 						>
 							<Zap size={14} />
-							<span>⚡ Ti-Base + ZrO2 (7д)</span>
+							<span>Ti-Base + ZrO2 (7д)</span>
 						</button>
 
 						<button
@@ -539,7 +539,7 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 							title="Экспресс-пресет: Съемный нейлоновый протез Acry-Free / Квадротти (45 000 ₽ / 16 000 ₽, 8 раб. дней, общий наряд / челюсть)"
 						>
 							<Zap size={14} />
-							<span>⚡ Acry-Free (8д)</span>
+							<span>Acry-Free (8д)</span>
 						</button>
 
 						<button
@@ -835,8 +835,9 @@ export const LabWorkOrderConstructorModal: React.FC<LabWorkOrderConstructorModal
 								</div>
 
 								{(isPlanExpired || (treatmentPlanAgeDays !== undefined && treatmentPlanAgeDays > 30)) && (
-									<div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold leading-relaxed">
-										✓ План составлен &gt;30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e).
+									<div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold leading-relaxed flex items-center gap-1.5">
+										<CheckCircle2 size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+										<span>План составлен &gt;30 дней назад: по закону клиники срок плана НЕ БЛОКИРУЕТ наряды ЗТЛ, услуги и оплату (Мандат 8e).</span>
 									</div>
 								)}
 							</div>

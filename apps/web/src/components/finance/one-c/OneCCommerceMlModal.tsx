@@ -254,7 +254,7 @@ export function OneCCommerceMlModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-2 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer shrink-0"
+						className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer shrink-0"
 						aria-label="Закрыть модальное окно"
 					>
 						<X size={20} />

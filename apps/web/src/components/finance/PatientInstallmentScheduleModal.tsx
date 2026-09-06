@@ -173,7 +173,7 @@ export const PatientInstallmentScheduleModal: React.FC<PatientInstallmentSchedul
 					<button
 						type="button"
 						onClick={onClose}
-						className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+						className="min-h-[44px] min-w-[44px] p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center"
 						aria-label="Закрыть"
 						data-testid="close-installment-modal-btn"
 					>

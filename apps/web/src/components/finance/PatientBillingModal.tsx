@@ -301,6 +301,95 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 	if (!isOpen) return null;
 
+	// Anti-Matryoshka Law (Mandate 8d, Sin 6): Modal depth strictly 1.
+	// Dedicated secondary cabinets render at top level rather than nested inside the billing dialog.
+	if (isFiscalOpen) {
+		return (
+			<Fiscal54FzReceiptModal
+				isOpen={isFiscalOpen}
+				onClose={() => setIsFiscalOpen(false)}
+				items={services.map((s) => ({
+					id: s.id,
+					name: s.name,
+					code804n: s.code804n,
+					toothFdiNumber: s.toothNumber ? Number(s.toothNumber) : undefined,
+					quantity: s.quantity,
+					priceRub: s.priceRub,
+					discountRub: s.discountRub,
+					subject: "service" as const,
+					method: "full_payment" as const,
+					vatRate: "vat_none" as const,
+					measure: "piece" as const,
+					taxDeductionCategory: s.category === "implantology" ? ("2" as const) : ("1" as const),
+				}))}
+				patientId={patient?.id || "pat-1"}
+				patientName={patient?.fullName || "Пациент"}
+				patientPhone={patient?.phone || "+7 (999) 000-00-00"}
+				patientDepositRub={patientDepositRub || patient?.depositRub || 0}
+				patientFamilyBalanceRub={patientFamilyBalanceRub || patient?.familyBalanceRub || 0}
+				clinicName={clinicLegalName}
+				clinicLicense={clinicLicenseNumber}
+			/>
+		);
+	}
+
+	if (isRefundOpen) {
+		return (
+			<RefundServiceModal
+				isOpen={isRefundOpen}
+				onClose={() => setIsRefundOpen(false)}
+				invoiceId={contractNumber || "inv-1"}
+				invoiceNumber={summary.actNumber}
+				patientId={patient?.id || "pat-1"}
+				patientName={actParams.patient.fullName}
+				doctorName={actParams.doctor.fullName}
+				doctorCommissionPct={30}
+				services={summary.items.map((it) => ({
+					id: it.id,
+					name: it.name,
+					code804n: it.code804n || undefined,
+					toothNumber: it.toothNumber ? Number(it.toothNumber) : undefined,
+					priceRub: it.priceRub,
+					quantity: it.quantity,
+					doctorName: actParams.doctor.fullName,
+					commissionPct: 30,
+				}))}
+				onRefundSuccess={(res) => {
+					setToastMsg(`Чек возврата ${res.refundOperationNumber} на сумму ${res.totalRefundRub} ₽ сформирован.`);
+				}}
+			/>
+		);
+	}
+
+	if (isTaxModalOpen) {
+		return (
+			<TaxDeductionModal
+				isOpen={isTaxModalOpen}
+				onClose={() => setIsTaxModalOpen(false)}
+				patientName={patient?.fullName || "Пациент"}
+				patientBirthDate={patient?.birthDate || undefined}
+				patientInn=""
+				clinicName={clinicLegalName}
+				clinicLicenseNumber={clinicLicenseNumber}
+				payments={
+					fiscalPayments && fiscalPayments.length > 0
+						? fiscalPayments
+						: services.map((s, idx) => ({
+								id: s.id || `srv-${idx + 1}`,
+								dateIso: contractDateIso || actParams.contractDateIso || actParams.actDateIso || "",
+								receiptNumber: "",
+								fiscalDocumentNumber: "",
+								fiscalSign: "",
+								serviceName: s.name,
+								code804n: s.code804n || "A16.07.002",
+								amountRub: (s.priceRub || 0) * (s.quantity || 1) - (s.discountRub || 0),
+								taxCode: s.category === "implantology" || s.category === "surgery" ? ("2" as const) : ("1" as const),
+							}))
+				}
+			/>
+		);
+	}
+
 	return (
 		<div
 			ref={modalRef}
@@ -449,7 +538,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							data-testid="select-loyalty-discount"
 						>
 							<option value="none">Без скидки</option>
-							<option value="round_hundreds">⚡ Округлить до сотен рублей</option>
+							<option value="round_hundreds">Округлить до сотен рублей</option>
 							<option value="discount_3">Скидка 3%</option>
 							<option value="discount_5">Скидка 5%</option>
 							<option value="discount_10">Скидка 10%</option>
@@ -476,7 +565,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 								title="Округлить сумму чека до сотен рублей (скидка на копейки в пользу пациента)"
 							>
 								<Sparkles className="w-3.5 h-3.5 shrink-0" />
-								<span>⚡ До сотен ₽</span>
+								<span>До сотен ₽</span>
 							</button>
 							<button
 								type="button"
@@ -706,7 +795,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										title="Оплатить картой 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
 										<CreditCard className="w-4 h-4 shrink-0" />
-										<span>⚡ Оплатить картой (вся сумма)</span>
+										<span>Оплатить картой (вся сумма)</span>
 									</button>
 									<button
 										type="button"
@@ -724,7 +813,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										title="Оплатить наличными 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
 										<Banknote className="w-4 h-4 shrink-0" />
-										<span>⚡ Оплатить наличными (вся сумма)</span>
+										<span>Оплатить наличными (вся сумма)</span>
 									</button>
 									<button
 										type="button"
@@ -741,7 +830,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 										title="Оплатить через СБП QR 100% суммы и моментально пробить чек 54-ФЗ в 1 клик"
 									>
 										<QrCode className="w-4 h-4 shrink-0" />
-										<span>⚡ Оплатить через СБП</span>
+										<span>Оплатить через СБП</span>
 									</button>
 								</div>
 							</div>
@@ -1644,92 +1733,6 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							</button>
 						</div>
 					</div>
-				)}
-
-				{/* 54-FZ Fiscal Receipt Modal */}
-				{isFiscalOpen && (
-					<Fiscal54FzReceiptModal
-						isOpen={isFiscalOpen}
-						onClose={() => setIsFiscalOpen(false)}
-						items={services.map((s) => ({
-							id: s.id,
-							name: s.name,
-							code804n: s.code804n,
-							toothFdiNumber: s.toothNumber ? Number(s.toothNumber) : undefined,
-							quantity: s.quantity,
-							priceRub: s.priceRub,
-							discountRub: s.discountRub,
-							subject: "service" as const,
-							method: "full_payment" as const,
-							vatRate: "vat_none" as const,
-							measure: "piece" as const,
-							taxDeductionCategory: s.category === "implantology" ? ("2" as const) : ("1" as const),
-						}))}
-						patientId={patient?.id || "pat-1"}
-						patientName={patient?.fullName || "Пациент"}
-						patientPhone={patient?.phone || "+7 (999) 000-00-00"}
-						patientDepositRub={patientDepositRub || patient?.depositRub || 0}
-						patientFamilyBalanceRub={patientFamilyBalanceRub || patient?.familyBalanceRub || 0}
-						clinicName={clinicLegalName}
-						clinicLicense={clinicLicenseNumber}
-					/>
-				)}
-
-				{/* 54-FZ Partial Refund & Doctor Clawback Modal */}
-				{isRefundOpen && (
-					<RefundServiceModal
-						isOpen={isRefundOpen}
-						onClose={() => setIsRefundOpen(false)}
-						invoiceId={contractNumber || "inv-1"}
-						invoiceNumber={summary.actNumber}
-						patientId={patient?.id || "pat-1"}
-						patientName={actParams.patient.fullName}
-						doctorName={actParams.doctor.fullName}
-						doctorCommissionPct={30}
-						services={summary.items.map((it) => ({
-							id: it.id,
-							name: it.name,
-							code804n: it.code804n || undefined,
-							toothNumber: it.toothNumber ? Number(it.toothNumber) : undefined,
-							priceRub: it.priceRub,
-							quantity: it.quantity,
-							doctorName: actParams.doctor.fullName,
-							commissionPct: 30,
-						}))}
-						onRefundSuccess={(res) => {
-							setToastMsg(`Чек возврата ${res.refundOperationNumber} на сумму ${res.totalRefundRub} ₽ сформирован.`);
-						}}
-					/>
-				)}
-
-				{/* 13% Personal Income Tax Deduction Modal (Form КНД 1151156) */}
-				{isTaxModalOpen && (
-					<TaxDeductionModal
-						isOpen={isTaxModalOpen}
-						onClose={() => setIsTaxModalOpen(false)}
-						patientName={patient?.fullName || "Пациент"}
-						patientBirthDate={patient?.birthDate || undefined}
-						patientInn=""
-						clinicName={clinicLegalName}
-						clinicLicenseNumber={clinicLicenseNumber}
-						payments={
-							fiscalPayments && fiscalPayments.length > 0
-								? fiscalPayments
-								: services.map((s, idx) => ({
-										id: s.id || `srv-${idx + 1}`,
-										// Честная дата договора/акта без подмены на new Date()
-										dateIso: contractDateIso || actParams.contractDateIso || actParams.actDateIso || "",
-										// Без выдуманных номеров чеков и фискального признака '987654321'
-										receiptNumber: "",
-										fiscalDocumentNumber: "",
-										fiscalSign: "",
-										serviceName: s.name,
-										code804n: s.code804n || "A16.07.002",
-										amountRub: (s.priceRub || 0) * (s.quantity || 1) - (s.discountRub || 0),
-										taxCode: s.category === "implantology" || s.category === "surgery" ? ("2" as const) : ("1" as const),
-									}))
-						}
-					/>
 				)}
 			</div>
 		</div>

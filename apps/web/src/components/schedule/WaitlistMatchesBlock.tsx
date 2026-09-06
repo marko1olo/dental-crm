@@ -445,7 +445,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 										title={`Занять это окно пациентом ${match.patientName}`}
 									>
 										<Zap size={13} className="fill-current text-amber-300" />
-										<span>{bookingId === match.entryId ? "Записываем…" : "⚡ Занять это окно"}</span>
+										<span>{bookingId === match.entryId ? "Записываем…" : "Занять это окно"}</span>
 									</button>
 
 									{match.phone ? (
