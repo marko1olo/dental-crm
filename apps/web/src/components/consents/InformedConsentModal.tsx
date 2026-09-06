@@ -2,31 +2,20 @@ import {
 	AlertTriangle,
 	Check,
 	CheckCircle2,
-	ChevronRight,
 	Copy,
-	Download,
 	FileCheck,
 	FileText,
-	Fingerprint,
-	KeyRound,
 	Layers,
 	Lock,
 	Package,
-	PenTool,
 	Printer,
-	RefreshCw,
-	RotateCcw,
-	RotateCw,
 	ShieldCheck,
-	Smartphone,
 	Sparkles,
-	Trash2,
-	User,
 	X,
 	Zap,
 } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	CONSENT_PACKAGES,
@@ -45,23 +34,13 @@ import {
 	printBlankConsentPackage,
 	printFilledConsentPackage,
 	renderConsentTemplate,
-	substitutePlaceholders,
 	TEMPLATE_SHORT_TITLES,
 } from "./consentTemplates.js";
 import "./informedConsent.css";
 import {
-	calculateBoundingBox,
-	calculatePointVelocity,
-	calculateStrokeWidth,
-	drawAllStrokesOnCanvas,
-	drawSmoothStrokeOnContext,
-	exportSignatureToSvg,
 	generateConsentIntegrityHash,
 	generatePaperSignatureSvg,
-	isSignatureEmpty,
 	PAPER_SIGNATURE_FALLBACK_PNG,
-	type SignaturePoint,
-	type SignatureStroke,
 	type SignatureVectorData,
 } from "./signaturePadMath.js";
 
@@ -128,6 +107,17 @@ export interface SignedConsentPayload {
 
 export { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES };
 
+/**
+ * InformedConsentModal
+ *
+ * Чистая Print-First консоль информированных добровольных согласий (ИДС)
+ * по Федеральному закону № 323-ФЗ ст. 20 и Приказу Минздрава РФ № 1051н.
+ *
+ * В амбулаторной стоматологии (Мандаты 8e, 8i, 8k, 8n) согласия строго
+ * РАСПЕЧАТЫВАЮТСЯ НА БУМАГЕ («ТОК ПЕЧАТЬ»), подписываются шариковой ручкой
+ * и подшиваются в медицинскую карту пациента формы № 043/у на 25 лет.
+ * Процедурный симулятор сенсорного росчерка стилусом и SMS OTP устранены.
+ */
 export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	isOpen,
 	onClose,
@@ -154,26 +144,12 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const [activeKey, setActiveKey] = useState<ConsentTemplateKey>(initialTemplateKey);
 	const [previewTemplateKey, setPreviewTemplateKey] = useState<ConsentTemplateKey | null>(null);
 	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(true);
-	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp" | "paper_physical">(initialVerificationMethod);
 	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
-	
-	// Точечное редактирование контекста плейсхолдеров
+
+	// Редактирование контекста плейсхолдеров
 	const [customDiagnosis, setCustomDiagnosis] = useState<string>(diagnosisIcd || "");
 	const [customTeeth, setCustomTeeth] = useState<string>(toothNumbers || "");
-	
-	// Canvas ref и состояние рисования
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const [strokes, setStrokes] = useState<SignatureStroke[]>([]);
-	const [undoneStrokes, setUndoneStrokes] = useState<SignatureStroke[]>([]);
-	const [isDrawing, setIsDrawing] = useState(false);
-	const currentStrokeRef = useRef<SignaturePoint[]>([]);
 
-	// Состояние SMS / OTP подтверждения
-	const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
-	const [otpSentTime, setOtpSentTime] = useState<number | null>(null);
-	const [otpCountdown, setOtpCountdown] = useState<number>(0);
-	const [otpVerified, setOtpVerified] = useState<boolean>(false);
 	const [copiedHash, setCopiedHash] = useState<boolean>(false);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -185,28 +161,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setActiveKey(initialTemplateKey);
 			setPreviewTemplateKey(null);
 			setPaperOriginalConfirmed(true);
-			setVerificationMethod(initialVerificationMethod || "paper_physical");
 			setIsPrintingBlank(false);
 			setCustomDiagnosis(diagnosisIcd || "");
 			setCustomTeeth(toothNumbers || "");
-			setStrokes([]);
-			setUndoneStrokes([]);
-			setOtpDigits(["", "", "", "", "", ""]);
-			setOtpVerified(false);
-			setOtpCountdown(0);
 		}
-	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, initialVerificationMethod, diagnosisIcd, toothNumbers]);
+	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, diagnosisIcd, toothNumbers]);
 
-	// Таймер обратного отсчета SMS OTP
-	useEffect(() => {
-		if (otpCountdown <= 0) return;
-		const timer = setInterval(() => {
-			setOtpCountdown((prev) => Math.max(0, prev - 1));
-		}, 1000);
-		return () => clearInterval(timer);
-	}, [otpCountdown]);
-
-	// Обработка Esc для закрытия
+	// Закрытие по Escape
 	useEffect(() => {
 		if (!isOpen) return;
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -233,8 +194,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			diagnosisIcd: customDiagnosis || diagnosisIcd || "K02.1 Кариес дентина",
 			toothNumbers: customTeeth || toothNumbers || "1.6, 1.7",
 			date: new Date().toLocaleDateString("ru-RU"),
-			snils: patient?.snils || null,
-			phone: patient?.phone || null,
+		snils: patient?.snils || null,
+		phone: patient?.phone || null,
 		};
 	}, [
 		patient,
@@ -285,183 +246,8 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		return renderConsentTemplate(currentTemplate, effectiveContext);
 	}, [currentTemplate, effectiveContext]);
 
-	// Перерисовка Canvas при изменении strokes
-	const redrawCanvas = useCallback(() => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		drawAllStrokesOnCanvas(canvas, strokes, { backgroundColor: "#ffffff" });
-	}, [strokes]);
-
-	useEffect(() => {
-		redrawCanvas();
-	}, [redrawCanvas]);
-
-	// Адаптация размера canvas при монтировании и ресайзе
-	useEffect(() => {
-		if (!isOpen) return;
-		const updateCanvasSize = () => {
-			const canvas = canvasRef.current;
-			const container = containerRef.current;
-			if (!canvas || !container) return;
-
-			const rect = container.getBoundingClientRect();
-			const dpr = window.devicePixelRatio || 1;
-
-			canvas.width = rect.width * dpr;
-			canvas.height = rect.height * dpr;
-
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				ctx.scale(dpr, dpr);
-			}
-			redrawCanvas();
-		};
-
-		const t = setTimeout(updateCanvasSize, 50);
-		window.addEventListener("resize", updateCanvasSize);
-		return () => {
-			clearTimeout(t);
-			window.removeEventListener("resize", updateCanvasSize);
-		};
-	}, [isOpen, redrawCanvas]);
-
-	// Координаты курсора / тача относительно canvas (CSS пиксели)
-	const getPointFromEvent = (e: React.PointerEvent<HTMLCanvasElement>): SignaturePoint => {
-		const canvas = canvasRef.current;
-		if (!canvas) return { x: 0, y: 0, time: Date.now() };
-
-		const rect = canvas.getBoundingClientRect();
-		return {
-			x: e.clientX - rect.left,
-			y: e.clientY - rect.top,
-			time: Date.now(),
-			pressure: e.pressure && e.pressure > 0 && e.pressure <= 1 ? e.pressure : undefined,
-		};
-	};
-
-	// Обработчики сенсорного рисования
-	const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		e.currentTarget.setPointerCapture(e.pointerId);
-		setIsDrawing(true);
-		const point = getPointFromEvent(e);
-		currentStrokeRef.current = [point];
-
-		const canvas = canvasRef.current;
-		const ctx = canvas?.getContext("2d");
-		if (ctx) {
-			drawSmoothStrokeOnContext(ctx, { points: [point], isDot: true });
-		}
-	};
-
-	const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!isDrawing) return;
-		const point = getPointFromEvent(e);
-		currentStrokeRef.current.push(point);
-
-		const pts = currentStrokeRef.current;
-		const canvas = canvasRef.current;
-		const ctx = canvas?.getContext("2d");
-		if (ctx && pts.length >= 2) {
-			const lastTwo = pts.slice(-2);
-			const p0 = lastTwo[0];
-			const p1 = lastTwo[1];
-			if (p0 && p1) {
-				const v = calculatePointVelocity(p0, p1);
-				const w = calculateStrokeWidth(v, p1.pressure);
-
-				ctx.strokeStyle = "#0f172a";
-				ctx.fillStyle = "#0f172a";
-				ctx.lineWidth = w;
-				ctx.lineCap = "round";
-				ctx.lineJoin = "round";
-				ctx.beginPath();
-				ctx.moveTo(p0.x, p0.y);
-				ctx.lineTo(p1.x, p1.y);
-				ctx.stroke();
-			}
-		}
-	};
-
-	const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!isDrawing) return;
-		setIsDrawing(false);
-		try {
-			e.currentTarget.releasePointerCapture(e.pointerId);
-		} catch {
-			// игнорируем ошибки отмены захвата указателя
-		}
-
-		if (currentStrokeRef.current.length > 0) {
-			const newStroke: SignatureStroke = {
-				points: [...currentStrokeRef.current],
-				color: "#0f172a",
-			};
-			setStrokes((prev) => [...prev, newStroke]);
-			setUndoneStrokes([]);
-			currentStrokeRef.current = [];
-		}
-	};
-
-	const handleClearCanvas = () => {
-		setStrokes([]);
-		setUndoneStrokes([]);
-		const canvas = canvasRef.current;
-		if (canvas) {
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				ctx.fillStyle = "#ffffff";
-				ctx.fillRect(0, 0, canvas.width, canvas.height);
-			}
-		}
-	};
-
-	const handleUndo = () => {
-		if (strokes.length === 0) return;
-		const last = strokes[strokes.length - 1];
-		if (!last) return;
-		setStrokes((prev) => prev.slice(0, -1));
-		setUndoneStrokes((prev) => [...prev, last]);
-	};
-
-	const handleRedo = () => {
-		if (undoneStrokes.length === 0) return;
-		const last = undoneStrokes[undoneStrokes.length - 1];
-		if (!last) return;
-		setUndoneStrokes((prev) => prev.slice(0, -1));
-		setStrokes((prev) => [...prev, last]);
-	};
-
-	// Генерация и отправка тестового SMS OTP
-	const handleSendOtp = () => {
-		setOtpSentTime(Date.now());
-		setOtpCountdown(60);
-		setOtpDigits(["", "", "", "", "", ""]);
-		setOtpVerified(false);
-	};
-
-	const handleOtpChange = (index: number, val: string) => {
-		const digit = val.replace(/\D/g, "").slice(-1);
-		const newDigits = [...otpDigits];
-		newDigits[index] = digit;
-		setOtpDigits(newDigits);
-
-		// Автопереход к следующему инпуту
-		if (digit && index < 5) {
-			const nextInput = document.getElementById(`otp-digit-${index + 1}`);
-			nextInput?.focus();
-		}
-
-		// Проверка 6 цифр
-		if (newDigits.every((d) => d.length === 1)) {
-			setOtpVerified(true);
-		} else {
-			setOtpVerified(false);
-		}
-	};
-
-	// Расчет криптографического отпечатка
+	// Расчет криптографического отпечатка SHA-256
 	const integrityRecord = useMemo(() => {
-		const fullOtp = otpDigits.join("");
 		return generateConsentIntegrityHash({
 			documentText: rendered.fullTextContent,
 			patientInfo: {
@@ -470,17 +256,19 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 				phone: substitutionContext.phone,
 			},
 			timestamp: Date.now(),
-			strokes,
-			verificationMethod,
-			smsOtpCode: verificationMethod === "sms_otp" && otpVerified ? fullOtp : null,
+			strokes: [],
+			verificationMethod: "paper_physical",
+			smsOtpCode: null,
 		});
-	}, [rendered.fullTextContent, substitutionContext, strokes, verificationMethod, otpVerified, otpDigits]);
+	}, [rendered.fullTextContent, substitutionContext]);
 
 	// Копирование хеша
 	const handleCopyHash = () => {
-		navigator.clipboard.writeText(integrityRecord.hash);
-		setCopiedHash(true);
-		setTimeout(() => setCopiedHash(false), 2000);
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(integrityRecord.hash);
+			setCopiedHash(true);
+			setTimeout(() => setCopiedHash(false), 2000);
+		}
 	};
 
 	// Печать документа А4 (заполненный бланк)
@@ -513,59 +301,23 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 		}
 	};
 
-	// Проверка валидности подписания (для бумажного носителя ВСЕГДА true — 0 блокировок)
-	const canSign = useMemo(() => {
-		if (verificationMethod === "paper_physical") {
-			return true;
-		}
-		if (verificationMethod === "tablet_stylus") {
-			return !isSignatureEmpty(strokes, 4);
-		}
-		if (verificationMethod === "sms_otp") {
-			return otpVerified;
-		}
-		return false;
-	}, [verificationMethod, strokes, otpVerified]);
-
-	// Подписание и подтверждение (включая мгновенный 1-клик для бумаги и пакетное подписание)
-	const handleConfirmSign = (forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => {
-		const method = forcedMethod || verificationMethod;
-		if (method !== "paper_physical" && !canSign) return;
+	// Подписание и подтверждение на бумаге в 1 клик (Мандаты 8e, 8i, 8k, 8n)
+	const handleConfirmSign = (_forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 
 		try {
-			const canvas = canvasRef.current;
-			let svg = "";
-			let pngBase64 = "";
-
-			if (method === "paper_physical") {
-				svg = generatePaperSignatureSvg({
-					date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
-					clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
-				});
-				pngBase64 = PAPER_SIGNATURE_FALLBACK_PNG;
-			} else {
-				const bounds = calculateBoundingBox(strokes);
-				svg = exportSignatureToSvg(
-					strokes,
-					bounds.width > 0 ? bounds.width + 20 : 320,
-					bounds.height > 0 ? bounds.height + 20 : 160,
-					{ backgroundColor: "#ffffff" },
-				);
-				if (canvas) {
-					pngBase64 = canvas.toDataURL("image/png");
-				}
-			}
+			const svg = generatePaperSignatureSvg({
+				date: effectiveContext.date || new Date().toLocaleDateString("ru-RU"),
+				clinicName: effectiveContext.clinicName || "ООО «Стоматологическая клиника ДЕНТЕ»",
+			});
+			const pngBase64 = PAPER_SIGNATURE_FALLBACK_PNG;
 
 			const vectorData: SignatureVectorData = {
-				strokes: method === "paper_physical" ? [] : strokes,
-				bounds:
-					method === "paper_physical"
-						? { minX: 0, minY: 0, maxX: 400, maxY: 120, width: 400, height: 120 }
-						: calculateBoundingBox(strokes),
+				strokes: [],
+				bounds: { minX: 0, minY: 0, maxX: 400, maxY: 120, width: 400, height: 120 },
 				timestamp: Date.now(),
-				pointCount: method === "paper_physical" ? 0 : strokes.reduce((acc, s) => acc + s.points.length, 0),
+				pointCount: 0,
 				integrityHash: integrityRecord.hash,
 			};
 
@@ -584,9 +336,9 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							phone: substitutionContext.phone,
 						},
 						timestamp: Date.now(),
-						strokes,
-						verificationMethod: method,
-						smsOtpCode: method === "sms_otp" && otpVerified ? otpDigits.join("") : null,
+						strokes: [],
+						verificationMethod: "paper_physical",
+						smsOtpCode: null,
 					});
 
 					const docVectorData: SignatureVectorData = {
@@ -611,14 +363,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						vectorData: docVectorData,
 						integrityHash: docHashRecord.hash,
 						signedAt: new Date().toISOString(),
-						verificationMethod: method,
-						smsOtpCode: method === "sms_otp" ? otpDigits.join("") : null,
+						verificationMethod: "paper_physical",
+						smsOtpCode: null,
 						attachedToForm043u: true,
-						paperOriginalStored: method === "paper_physical" || paperOriginalConfirmed,
-						statusText:
-							method === "paper_physical"
-								? "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)"
-								: "Пакет ИДС подписан в 1 клик",
+						paperOriginalStored: paperOriginalConfirmed,
+						statusText: "Бумажный оригинал пакета подписан пациентом (хранится в архиве карты 043/у)",
 						note: `Пакет: ${pkg.title}`,
 					};
 
@@ -660,14 +409,11 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 					vectorData,
 					integrityHash: integrityRecord.hash,
 					signedAt: new Date().toISOString(),
-					verificationMethod: method,
-					smsOtpCode: method === "sms_otp" ? otpDigits.join("") : null,
+					verificationMethod: "paper_physical",
+					smsOtpCode: null,
 					attachedToForm043u: true,
-					paperOriginalStored: method === "paper_physical" || paperOriginalConfirmed,
-					statusText:
-						method === "paper_physical"
-							? "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)"
-							: "Электронная подпись подтверждена",
+					paperOriginalStored: paperOriginalConfirmed,
+					statusText: "Бумажный оригинал подписан пациентом (хранится в архиве карты 043/у)",
 				};
 
 				if (onConsentSigned) {
@@ -696,7 +442,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const allTemplates = getAllConsentTemplates();
 
 	const modalContent = (
-		<div className="consent-modal-overlay print-layer" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="consent-modal-title">
+		<div
+			className="consent-modal-overlay print-layer"
+			onClick={onClose}
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="consent-modal-title"
+		>
 			<div className="consent-modal-container" onClick={(e) => e.stopPropagation()}>
 				{/* Header */}
 				<header className="consent-header">
@@ -704,14 +456,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						<div className="consent-header-badge-row">
 							<span className="consent-statutory-badge">
 								<ShieldCheck size={14} />
-								323-ФЗ • 152-ФЗ
+								323-ФЗ • 1051н
 							</span>
 							<span className="consent-code-badge">
 								{activeMode === "packages" ? currentPackage.key : currentTemplate.code}
 							</span>
 						</div>
 						<h2 id="consent-modal-title" className="consent-title">
-							{activeMode === "packages" ? "Пакет информированных добровольных согласий (ИДС)" : "Информированное добровольное согласие (ИДС)"}
+							{activeMode === "packages"
+								? "Пакет информированных добровольных согласий (ИДС)"
+								: "Информированное добровольное согласие (ИДС)"}
 						</h2>
 					</div>
 					<button
@@ -775,7 +529,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											<span>{PACKAGE_SHORT_TITLES[pkg.key] || pkg.title}</span>
 										</button>
 									);
-								})
+							  })
 							: allTemplates.map((tpl) => {
 									const isActive = tpl.key === activeKey;
 									return (
@@ -790,7 +544,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											<span>{TEMPLATE_SHORT_TITLES[tpl.key] || tpl.title}</span>
 										</button>
 									);
-								})}
+							  })}
 					</nav>
 				</div>
 
@@ -806,7 +560,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 										{currentPackage.title} ({currentPackage.templateKeys.length} документа в пакете)
 									</div>
 									<div className="text-xs text-muted">
-										{currentPackage.description} • 1 росчерк или 1 клик подписывает все {currentPackage.templateKeys.length} документа сразу
+										{currentPackage.description} • 1 клик подтверждает подписание всех {currentPackage.templateKeys.length} документов на бумаге
 									</div>
 								</div>
 							</div>
@@ -831,6 +585,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							</div>
 						</div>
 					)}
+
 					{/* Информационная панель метаданных */}
 					<div className="consent-meta-grid">
 						<div className="consent-meta-item">
@@ -976,296 +731,104 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 						</div>
 					</div>
 
-					{/* Выбор метода подписания */}
-					<div className="consent-method-selector">
-						<button
-							type="button"
-							className={`consent-method-card ${verificationMethod === "paper_physical" ? "active" : ""}`}
-							onClick={() => setVerificationMethod("paper_physical")}
-							data-testid="btn-method-paper-physical"
-						>
-							<FileCheck size={22} className="text-[var(--teal,#0d9488)]" />
-							<div>
-								<div className="font-bold text-sm">Бумажный бланк (Ручка / 043/у)</div>
-								<div className="text-xs text-muted">Оригинал подписан пациентом от руки (в 95% клиник РФ)</div>
+					{/* Блок подтверждения бумажного оригинала и печати (323-ФЗ ст. 20) */}
+					<div
+						className="consent-paper-box"
+						style={{
+							display: "flex",
+							flexDirection: "column",
+							gap: "0.85rem",
+							background: "var(--paper-soft)",
+							border: "1px solid var(--teal, #0d9488)",
+							borderRadius: "var(--radius-lg, 12px)",
+							padding: "1.25rem",
+						}}
+					>
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<ShieldCheck size={22} className="text-[var(--teal,#0d9488)]" />
+								<span className="font-bold text-sm">
+									Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)
+								</span>
 							</div>
-						</button>
+							<span className="consent-statutory-badge">
+								Оригинал в карте 043/у
+							</span>
+						</div>
+						<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
+							Пациент знакомится с текстом согласия и расписывается шариковой ручкой на бумажном бланке.
+							Бумажный оригинал подшивается в амбулаторную медицинскую карту пациента формы № 043/у (срок хранения 25 лет).
+							В электронной карте фиксируется отметка с криптографическим отпечатком SHA-256.
+						</p>
 
-						<button
-							type="button"
-							className={`consent-method-card ${verificationMethod === "tablet_stylus" ? "active" : ""}`}
-							onClick={() => setVerificationMethod("tablet_stylus")}
-							data-testid="btn-method-tablet-stylus"
-						>
-							<PenTool size={22} className="text-[var(--teal,#0d9488)]" />
-							<div>
-								<div className="font-bold text-sm">Сенсорная подпись (Стилус / Палец)</div>
-								<div className="text-xs text-muted">Непосредственный росчерк на экране планшета</div>
-							</div>
-						</button>
+						{/* Чекбокс подтверждения наличия бумажного оригинала */}
+						<label className="consent-paper-checkbox-label">
+							<input
+								type="checkbox"
+								checked={paperOriginalConfirmed}
+								onChange={(e) => setPaperOriginalConfirmed(e.target.checked)}
+								data-testid="checkbox-paper-original-stored"
+								style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
+							/>
+							<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
+								Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
+							</span>
+						</label>
 
-						<button
-							type="button"
-							className={`consent-method-card ${verificationMethod === "sms_otp" ? "active" : ""}`}
-							onClick={() => setVerificationMethod("sms_otp")}
-							data-testid="btn-method-sms-otp"
-						>
-							<Smartphone size={22} className="text-[var(--teal,#0d9488)]" />
-							<div>
-								<div className="font-bold text-sm">SMS / OTP подтверждение</div>
-								<div className="text-xs text-muted">Одноразовый 6-значный код верификации</div>
-							</div>
-						</button>
+						<div className="flex items-center gap-3 pt-1 flex-wrap">
+							<button
+								type="button"
+								className="consent-action-btn primary"
+								data-testid="btn-confirm-paper-signed"
+								onClick={() => handleConfirmSign("paper_physical")}
+								disabled={isSubmitting}
+								style={{
+									minHeight: "44px",
+									fontSize: "14px",
+									fontWeight: "bold",
+									background: "var(--teal, #0d9488)",
+									color: "#ffffff",
+									boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)",
+								}}
+							>
+								<Zap size={18} />
+								<span>
+									{activeMode === "packages"
+										? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
+										: "Подтвердить подписание на бумаге (1 клик)"}
+								</span>
+							</button>
+							<button
+								type="button"
+								className="consent-tool-btn"
+								onClick={handlePrint}
+								title={
+									activeMode === "packages"
+										? "Многостраничная печать заполненного пакета ИДС (А4)"
+										: "Печать заполненного бланка ИДС на принтер (А4)"
+								}
+							>
+								<Printer size={16} />
+								<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
+							</button>
+							<button
+								type="button"
+								className="consent-tool-btn"
+								data-testid="btn-print-blank-consent-inline"
+								onClick={handlePrintBlank}
+								title={
+									activeMode === "packages"
+										? "Печать чистых бланков всего пакета со строками «________» для ручного заполнения"
+										: "Печать чистого бланка со строками «________» для ручного заполнения пациентом"
+								}
+							>
+								<FileText size={16} />
+								<span>
+									{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
+								</span>
+							</button>
+						</div>
 					</div>
-
-					{/* Подтверждение бумажного подписания (323-ФЗ) */}
-					{verificationMethod === "paper_physical" && (
-						<div
-							className="consent-paper-box"
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								gap: "0.85rem",
-								background: "var(--paper-soft)",
-								border: "1px solid var(--teal, #0d9488)",
-								borderRadius: "var(--radius-lg, 12px)",
-								padding: "1.25rem",
-							}}
-						>
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-2">
-									<ShieldCheck size={22} className="text-[var(--teal,#0d9488)]" />
-									<span className="font-bold text-sm">
-										Подписание на бумажном носителе (323-ФЗ ст. 20)
-									</span>
-								</div>
-								<span className="consent-statutory-badge">
-									Оригинал в карте 043/у
-								</span>
-							</div>
-							<p className="text-xs text-muted" style={{ margin: 0, lineHeight: 1.5 }}>
-								Пациент ознакомился с текстом согласия и расписался шариковой ручкой на бумажном бланке.
-								Бумажный оригинал подшивается в медицинскую карту пациента формы № 043/у (нормативный срок хранения 25 лет).
-								В электронной карте фиксируется статус согласия с формированием криптографического отпечатка SHA-256.
-							</p>
-
-							{/* Чекбокс подтверждения наличия бумажного оригинала */}
-							<label className="consent-paper-checkbox-label">
-								<input
-									type="checkbox"
-									checked={paperOriginalConfirmed}
-									onChange={(e) => setPaperOriginalConfirmed(e.target.checked)}
-									data-testid="checkbox-paper-original-stored"
-									style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--teal, #0d9488)" }}
-								/>
-								<span style={{ fontSize: "13px", fontWeight: 600, color: "var(--ink)" }}>
-									Оригинал подписан пациентом от руки на бумаге (подшит в карту № 043/у)
-								</span>
-							</label>
-
-							<div className="flex items-center gap-3 pt-1 flex-wrap">
-								<button
-									type="button"
-									className="consent-action-btn primary"
-									data-testid="btn-confirm-paper-signed"
-									onClick={() => handleConfirmSign("paper_physical")}
-									disabled={isSubmitting}
-									style={{
-										minHeight: "44px",
-										fontSize: "14px",
-										fontWeight: "bold",
-										background: "var(--teal, #0d9488)",
-										color: "#ffffff",
-										boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)",
-									}}
-								>
-									<Zap size={18} />
-									<span>
-										{activeMode === "packages"
-											? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
-											: "Подтвердить подписание на бумаге (1 клик)"}
-									</span>
-								</button>
-								<button
-									type="button"
-									className="consent-tool-btn"
-									onClick={handlePrint}
-									title={
-										activeMode === "packages"
-											? "Многостраничная печать заполненного пакета ИДС (А4)"
-											: "Печать заполненного бланка ИДС на принтер (А4)"
-									}
-								>
-									<Printer size={16} />
-									<span>{activeMode === "packages" ? "Печать пакета (А4)" : "Печать бланка (А4)"}</span>
-								</button>
-								<button
-									type="button"
-									className="consent-tool-btn"
-									data-testid="btn-print-blank-consent-inline"
-									onClick={handlePrintBlank}
-									title={
-										activeMode === "packages"
-											? "Печать чистых бланков всего пакета со строками «________» для ручного заполнения"
-											: "Печать чистого бланка со строками «________» для ручного заполнения пациентом"
-									}
-								>
-									<FileText size={16} />
-									<span>
-										{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
-									</span>
-								</button>
-							</div>
-						</div>
-					)}
-
-					{/* Сенсорный холст для подписи */}
-					{verificationMethod === "tablet_stylus" && (
-						<div className="consent-signature-hud">
-							<div ref={containerRef} className="consent-canvas-wrapper">
-								<canvas
-									ref={canvasRef}
-									className="consent-canvas-element"
-									onPointerDown={handlePointerDown}
-									onPointerMove={handlePointerMove}
-									onPointerUp={handlePointerUp}
-									onPointerCancel={handlePointerUp}
-									role="img"
-									aria-label="Поле для сенсорной подписи пациента"
-								/>
-								{strokes.length === 0 && !isDrawing && (
-									<div className="consent-canvas-watermark">
-										<PenTool size={24} />
-										<span>Распишитесь стилусом или пальцем здесь</span>
-									</div>
-								)}
-								<div className="consent-canvas-baseline" />
-							</div>
-
-							<div className="consent-canvas-tools">
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										className="consent-tool-btn"
-										onClick={handleUndo}
-										disabled={strokes.length === 0}
-										title="Отменить последний штрих"
-										aria-label="Отменить последний штрих"
-									>
-										<RotateCcw size={16} />
-										<span>Назад</span>
-									</button>
-									<button
-										type="button"
-										className="consent-tool-btn"
-										onClick={handleRedo}
-										disabled={undoneStrokes.length === 0}
-										title="Вернуть отмененный штрих"
-										aria-label="Вернуть отмененный штрих"
-									>
-										<RotateCw size={16} />
-										<span>Вперед</span>
-									</button>
-									<button
-										type="button"
-										className="consent-tool-btn"
-										onClick={handleClearCanvas}
-										disabled={strokes.length === 0}
-										title="Очистить поле подписи"
-										aria-label="Очистить поле подписи"
-									>
-										<Trash2 size={16} />
-										<span>Очистить</span>
-									</button>
-									<button
-										type="button"
-										className="consent-tool-btn"
-										data-testid="btn-stylus-paper-fallback"
-										onClick={() => handleConfirmSign("paper_physical")}
-										title="Пациент расписался на бумаге — подтвердить в 1 клик (Мандат 8e)"
-									>
-										<Zap size={14} className="text-amber-500" />
-										<span>На бумаге (1 клик)</span>
-									</button>
-								</div>
-
-								<div className="text-xs font-semibold text-muted">
-									{strokes.length > 0
-										? `Штрихов: ${strokes.length} • Точек: ${strokes.reduce((acc, s) => acc + s.points.length, 0)}`
-										: "Ожидание росчерка..."}
-								</div>
-							</div>
-						</div>
-					)}
-
-					{/* SMS OTP блок */}
-					{verificationMethod === "sms_otp" && (
-						<div className="consent-otp-box">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-2">
-									<KeyRound size={20} className="text-[var(--teal,#0d9488)]" />
-									<span className="font-bold text-sm">Код подтверждения из SMS</span>
-								</div>
-								{substitutionContext.phone && (
-									<span className="text-xs text-muted">на номер: {substitutionContext.phone}</span>
-								)}
-							</div>
-
-							<div className="consent-otp-inputs">
-								{otpDigits.map((digit, idx) => (
-									<input
-										key={idx}
-										id={`otp-digit-${idx}`}
-										type="text"
-										inputMode="numeric"
-										maxLength={1}
-										value={digit}
-										onChange={(e) => handleOtpChange(idx, e.target.value)}
-										className="consent-otp-digit"
-										aria-label={`Цифра ${idx + 1} кода подтверждения`}
-									/>
-								))}
-							</div>
-
-							<div className="flex items-center justify-between pt-2">
-								<div className="flex items-center gap-2">
-									<button
-										type="button"
-										className="consent-tool-btn"
-										onClick={handleSendOtp}
-										disabled={otpCountdown > 0}
-									>
-										<RefreshCw size={14} className={otpCountdown > 0 ? "animate-spin" : ""} />
-										<span>
-											{otpCountdown > 0
-												? `Повтор через ${otpCountdown} сек.`
-												: otpSentTime
-													? "Отправить код повторно"
-													: "Отправить код по SMS"}
-										</span>
-									</button>
-
-									<button
-										type="button"
-										className="consent-tool-btn"
-										data-testid="btn-sms-paper-fallback"
-										onClick={() => handleConfirmSign("paper_physical")}
-										title="Код SMS не пришел — подтвердить на бумаге в 1 клик (Мандат 8e)"
-									>
-										<Zap size={14} className="text-amber-500" />
-										<span>На бумаге при сбое SMS (1 клик)</span>
-									</button>
-								</div>
-
-								{otpVerified && (
-									<div className="flex items-center gap-1 text-sm font-bold text-ok-fg">
-										<CheckCircle2 size={16} />
-										<span>Код подтвержден</span>
-									</div>
-								)}
-							</div>
-						</div>
-					)}
 
 					{/* Панель криптографической целостности SHA-256 */}
 					<div className="consent-integrity-card">
@@ -1335,27 +898,14 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							className="consent-action-btn primary"
 							data-testid="btn-confirm-sign"
 							onClick={() => handleConfirmSign()}
-							disabled={!canSign || isSubmitting}
+							disabled={isSubmitting}
 						>
-							{verificationMethod === "paper_physical" ? (
-								<>
-									<Zap size={18} />
-									<span>
-										{activeMode === "packages"
-											? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
-											: "Подтвердить подписание на бумаге (1 клик)"}
-									</span>
-								</>
-							) : (
-								<>
-									<FileCheck size={18} />
-									<span>
-										{activeMode === "packages"
-											? `Подписать пакет (${currentPackage.templateKeys.length} док.) и прикрепить к 043/у`
-											: "Подписать и прикрепить к карте 043/у"}
-									</span>
-								</>
-							)}
+							<Zap size={18} />
+							<span>
+								{activeMode === "packages"
+									? `Подтвердить пакет (${currentPackage.templateKeys.length} док.) в 1 клик`
+									: "Подтвердить подписание на бумаге (1 клик)"}
+							</span>
 						</button>
 					</div>
 				</footer>

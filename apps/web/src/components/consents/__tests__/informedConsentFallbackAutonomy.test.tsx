@@ -1,14 +1,17 @@
 /**
  * informedConsentFallbackAutonomy.test.tsx
  *
- * Unit tests for 1-Click Paper Fallback Autonomy in InformedConsentModal:
- * - In tablet_stylus mode with empty strokes: btn-stylus-paper-fallback unblocks signing in 1 click
- * - In sms_otp mode with unverified OTP: btn-sms-paper-fallback unblocks signing in 1 click
+ * Unit tests for Pure Print-First Informed Consent Autonomy (Mandates 8e, 8i, 8k, 8n):
+ * - Eradication of stylus canvas and SMS OTP procedural simulator bloat.
+ * - Print-first triggers: filled A4 print and blank («________») package print.
+ * - 1-Click Paper Confirmation with SHA-256 integrity hash.
+ * - Multi-document package batch confirmation in 1 click.
  *
  * CONSTITUTION & RULES:
  * - THE HAMMER MASTER PROMPT & .agents/AGENTS.md
- * - Mandate 8e: Doctor & Staff Autonomy (No disabled buttons holding clinicians hostage)
- * - Mandate 8k: CRM != Reality Simulator (Friction-Killer Law)
+ * - Mandate 8e: Doctor & Staff Autonomy (Instant print in 1 click; 0 disabled buttons)
+ * - Mandate 8i: Specialized Outpatient Context (Form 043/u, 323-FZ Art. 20, 1051n)
+ * - Mandate 8k: CRM != Reality Simulator (Friction-Killer Law; paper-first reality)
  * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty
  */
 
@@ -155,6 +158,7 @@ function setupMockDom() {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
+		print: vi.fn(),
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
 		Element: class {},
@@ -213,7 +217,7 @@ async function clickNode(node: MockDomNode) {
 	});
 }
 
-describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 8k, 8n)", () => {
+describe("Informed Consent Pure Print-First & Paper Autonomy (Mandates 8e, 8i, 8k, 8n)", () => {
 	const mockPatient = {
 		fullName: "Сидоров Алексей Петрович",
 		birthDate: "12.04.1988",
@@ -222,13 +226,12 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 		cardNumber: "043-2026/89",
 	};
 
-	it("renders fallback button markup in tablet_stylus mode", () => {
+	it("renders pure Print-First console with ZERO canvas and ZERO SMS OTP simulator elements", () => {
 		const html = renderToString(
 			<InformedConsentModal
 				isOpen={true}
 				onClose={() => {}}
 				initialMode="single"
-				initialVerificationMethod="tablet_stylus"
 				patient={mockPatient}
 				doctorName="Д-р Смирнов А. В."
 				diagnosisIcd="K02.1"
@@ -236,39 +239,44 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 			/>,
 		);
 
-		expect(html).toContain('data-testid="btn-stylus-paper-fallback"');
-		expect(html).toContain("На бумаге (1 клик)");
-		expect(html).toContain(
-			"Пациент расписался на бумаге — подтвердить в 1 клик (Мандат 8e)",
-		);
-		// Main confirm button is disabled because strokes are empty
-		expect(html).toContain('data-testid="btn-confirm-sign" disabled');
+		// Zero touchscreen canvas simulator
+		expect(html).not.toContain("<canvas");
+		expect(html).not.toContain("consent-canvas-element");
+		expect(html).not.toContain("Распишитесь стилусом");
+
+		// Zero SMS OTP inputs
+		expect(html).not.toContain("consent-otp-digit");
+		expect(html).not.toContain("otp-digit-0");
+		expect(html).not.toContain("Отправить код по SMS");
+
+		// Print and statutory elements are prominent
+		expect(html).toContain("323-ФЗ • 1051н");
+		expect(html).toContain("Подписание на бумажном носителе (323-ФЗ ст. 20, Приказ МЗ РФ № 1051н)");
+		expect(html).toContain('data-testid="checkbox-paper-original-stored"');
+		expect(html).toContain('data-testid="btn-confirm-sign"');
+		// Mandate 8e: Confirm button is NEVER disabled
+		expect(html).not.toContain('data-testid="btn-confirm-sign" disabled');
 	});
 
-	it("renders fallback button markup in sms_otp mode", () => {
+	it("renders prominent print actions: filled A4 print and blank («________») print buttons", () => {
 		const html = renderToString(
 			<InformedConsentModal
 				isOpen={true}
 				onClose={() => {}}
-				initialMode="single"
-				initialVerificationMethod="sms_otp"
+				initialMode="packages"
+				initialPackageKey="PACKAGE_PRIMARY_VISIT"
 				patient={mockPatient}
 				doctorName="Д-р Смирнов А. В."
-				diagnosisIcd="K02.1"
-				toothNumbers="1.6"
 			/>,
 		);
 
-		expect(html).toContain('data-testid="btn-sms-paper-fallback"');
-		expect(html).toContain("На бумаге при сбое SMS (1 клик)");
-		expect(html).toContain(
-			"Код SMS не пришел — подтвердить на бумаге в 1 клик (Мандат 8e)",
-		);
-		// Main confirm button is disabled because OTP is unverified
-		expect(html).toContain('data-testid="btn-confirm-sign" disabled');
+		expect(html).toContain("Печать пакета (А4)");
+		expect(html).toContain('data-testid="btn-print-blank-consent"');
+		expect(html).toContain("Печать чистых бланков пакета («________»)");
+		expect(html).toContain('data-testid="btn-print-blank-consent-inline"');
 	});
 
-	it("in tablet_stylus mode with empty strokes: clicking btn-stylus-paper-fallback triggers onConsentSigned with verificationMethod: paper_physical", async () => {
+	it("clicking btn-confirm-paper-signed confirms in 1 click with verificationMethod: paper_physical", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
 		const onConsentSigned = vi.fn();
@@ -280,7 +288,6 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 					isOpen={true}
 					onClose={onClose}
 					initialMode="single"
-					initialVerificationMethod="tablet_stylus"
 					patient={mockPatient}
 					doctorName="Д-р Смирнов А. В."
 					diagnosisIcd="K02.1"
@@ -290,13 +297,13 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 			);
 		});
 
-		const fallbackBtn = findNodeByTestId(
+		const confirmPaperBtn = findNodeByTestId(
 			doc.body,
-			"btn-stylus-paper-fallback",
+			"btn-confirm-paper-signed",
 		);
-		expect(fallbackBtn).not.toBeNull();
+		expect(confirmPaperBtn).not.toBeNull();
 
-		await clickNode(fallbackBtn!);
+		await clickNode(confirmPaperBtn!);
 
 		expect(onConsentSigned).toHaveBeenCalledTimes(1);
 		const payload: SignedConsentPayload = onConsentSigned.mock.calls[0][0];
@@ -312,10 +319,11 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 		});
 	});
 
-	it("in sms_otp mode with unverified OTP: clicking btn-sms-paper-fallback triggers onConsentSigned with verificationMethod: paper_physical", async () => {
+	it("clicking primary btn-confirm-sign confirms in 1 click without disabling blockers", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
 		const onConsentSigned = vi.fn();
+		const onConsentConfirmed = vi.fn();
 		const onClose = vi.fn();
 
 		await act(async () => {
@@ -324,28 +332,27 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 					isOpen={true}
 					onClose={onClose}
 					initialMode="single"
-					initialVerificationMethod="sms_otp"
 					patient={mockPatient}
 					doctorName="Д-р Смирнов А. В."
 					diagnosisIcd="K02.1"
 					toothNumbers="1.6"
 					onConsentSigned={onConsentSigned}
+					onConsentConfirmed={onConsentConfirmed}
 				/>,
 			);
 		});
 
-		const fallbackBtn = findNodeByTestId(doc.body, "btn-sms-paper-fallback");
-		expect(fallbackBtn).not.toBeNull();
+		const mainConfirmBtn = findNodeByTestId(doc.body, "btn-confirm-sign");
+		expect(mainConfirmBtn).not.toBeNull();
 
-		await clickNode(fallbackBtn!);
+		await clickNode(mainConfirmBtn!);
 
 		expect(onConsentSigned).toHaveBeenCalledTimes(1);
 		const payload: SignedConsentPayload = onConsentSigned.mock.calls[0][0];
 		expect(payload.verificationMethod).toBe("paper_physical");
 		expect(payload.paperOriginalStored).toBe(true);
 		expect(payload.attachedToForm043u).toBe(true);
-		expect(payload.patientName).toBe("Сидоров Алексей Петрович");
-		expect(payload.signatureSvg).toContain("ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ");
+		expect(onConsentConfirmed).toHaveBeenCalledTimes(1);
 		expect(onClose).toHaveBeenCalledTimes(1);
 
 		await act(async () => {
@@ -353,7 +360,7 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 		});
 	});
 
-	it("in package batch mode: clicking stylus fallback signs all package documents with paper_physical", async () => {
+	it("in package batch mode: confirms all 4 documents in 1 click with paper_physical", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
 		const onConsentSigned = vi.fn();
@@ -367,7 +374,6 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 					onClose={onClose}
 					initialMode="packages"
 					initialPackageKey="PACKAGE_PRIMARY_VISIT"
-					initialVerificationMethod="tablet_stylus"
 					patient={mockPatient}
 					doctorName="Д-р Смирнов А. В."
 					onConsentSigned={onConsentSigned}
@@ -376,13 +382,10 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 			);
 		});
 
-		const fallbackBtn = findNodeByTestId(
-			doc.body,
-			"btn-stylus-paper-fallback",
-		);
-		expect(fallbackBtn).not.toBeNull();
+		const confirmBtn = findNodeByTestId(doc.body, "btn-confirm-sign");
+		expect(confirmBtn).not.toBeNull();
 
-		await clickNode(fallbackBtn!);
+		await clickNode(confirmBtn!);
 
 		// PACKAGE_PRIMARY_VISIT has 4 documents (152-FZ, 1051n, Anesthesia, Therapy)
 		expect(onConsentSigned).toHaveBeenCalledTimes(4);
@@ -395,6 +398,7 @@ describe("Informed Consent 1-Click Stylus & SMS Fallback Autonomy (Mandates 8e, 
 			expect(p.verificationMethod).toBe("paper_physical");
 			expect(p.paperOriginalStored).toBe(true);
 			expect(p.attachedToForm043u).toBe(true);
+			expect(p.statusText).toContain("Бумажный оригинал пакета подписан");
 		}
 		expect(onClose).toHaveBeenCalledTimes(1);
 

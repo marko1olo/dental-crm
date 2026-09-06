@@ -34,9 +34,9 @@ import {
 	smoothStrokeToBezierCurves,
 } from "../components/consents/signaturePadMath.js";
 
-test("Informed Consents Library: all 7 statutory Russian dental consent templates integrity (323-FZ & 152-FZ)", () => {
+test("Informed Consents Library: all 8 statutory Russian dental consent templates integrity (323-FZ & 152-FZ & 1051n)", () => {
 	const templates = getAllConsentTemplates();
-	assert.equal(templates.length, 7, "Must contain exactly 7 statutory consent templates");
+	assert.equal(templates.length, 8, "Must contain exactly 8 statutory consent templates (including 1051n)");
 
 	const expectedKeys: ConsentTemplateKey[] = [
 		"CONSENT_THERAPY",
@@ -46,6 +46,7 @@ test("Informed Consents Library: all 7 statutory Russian dental consent template
 		"CONSENT_HYGIENE_BLEACHING",
 		"CONSENT_ANESTHESIA",
 		"CONSENT_PERSONAL_DATA",
+		"CONSENT_INSPECTION_1051N",
 	];
 
 	for (const key of expectedKeys) {

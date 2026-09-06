@@ -798,14 +798,18 @@
 - **Тесты**:
   - `apps/api/src/tests/routes/leadsConversionAutonomy.test.ts` (3 теста, 100% passing).
 
-#### 2.10.87. ИДС: 1-кликовое подтверждение на бумаге в панелях планшета и SMS OTP (Мандаты 8e, 8k, 8n / ИДС & Согласия)
-- **Суть и домен**: Избавление врачей от блокировок при аппаратных сбоях сенсора планшета, севшем стилусе или задержках SMS-провайдера (Фича #126):
-  1. *Инлайн fallback*: кнопки `btn-stylus-paper-fallback` («На бумаге (1 клик)») и `btn-sms-paper-fallback` («На бумаге при сбое SMS (1 клик)») в интерфейсе `InformedConsentModal.tsx`.
-  2. *Мгновенное подписание*: вызов `handleConfirmSign("paper_physical")` без необходимости смены вкладок с поддержкой пакетного режима.
+#### 2.10.87. ИДС: чистая Print-First консоль («ТОК ПЕЧАТЬ») и 1-клик подтверждение на бумаге (Мандаты 8e, 8i, 8k, 8n / ИДС & Согласия)
+- **Суть и домен**: Ликвидация академического оверинжиниринга и процедурного симулятора рисования стилусом/пальцем на экране и SMS OTP по ст. 20 323-ФЗ и Приказу МЗ РФ № 1051н (Фича #126):
+  1. *Чистый Print-First («ТОК ПЕЧАТЬ»)*: распечатка согласий на А4, подписание пациентом шариковой ручкой и подшивка в амбулаторную карту № 043/у (срок хранения 25 лет). Полностью удалены `<canvas>`, pointer events, физика сглаживания штриха и инпуты SMS OTP.
+  2. *Приоритет печати*: «Печать пакета (А4)» / «Печать бланка (А4)» и «Печать чистых бланков пакета («________»)» (для регистратуры без 403 Forbidden).
+  3. *Мгновенное подтверждение в 1 клик*: «Подтвердить подписание на бумаге (1 клик)» и пакетное подтверждение фиксируют статус `paper_physical`, `paperOriginalStored: true`, `attachedToForm043u: true` и вычисляют SHA-256 цифровой отпечаток без каких-либо блокировок.
 - **Фронтенд**:
-  - `apps/web/src/components/consents/InformedConsentModal.tsx` (коммит `75377d8ef`).
+  - `apps/web/src/components/consents/InformedConsentModal.tsx`, `apps/web/src/components/consents/informedConsent.css`.
 - **Тесты**:
   - `apps/web/src/components/consents/__tests__/informedConsentFallbackAutonomy.test.tsx` (5 тестов, 100% passing).
+  - `apps/web/src/components/consents/__tests__/informedConsentPackageSigning.test.ts` (13 тестов, 100% passing).
+  - `apps/web/src/tests/InformedConsentModal.test.ts` (100% passing).
+  - `apps/web/src/tests/informedConsent.test.ts` (8 тестов, 100% passing).
 
 #### 2.10.88. Онбординг: свобода сокрытия и черновик мастера без тупиков (Мандаты 8e, 8n / Онбординг & Настройки)
 - **Суть и домен**: Полная ликвидация принудительного удержания врача в мастере первичной настройки (Фича #127):
