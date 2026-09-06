@@ -28,6 +28,61 @@ import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 
+export const CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS: CreateTemperatureHumidityEquipmentDto[] = [
+	{
+		equipmentType: "refrigerator_cold",
+		name: "Фармацевтический холодильник Pozis ХФ-250 (№1)",
+		location: "Процедурный кабинет / Стерилизационная",
+		meterDeviceName: "Электронный термометр-гигрометр ТМЦ-1",
+		meterSerialNumber: "SN-TM-2024-918",
+		targetTempMinCelsius: 2.0,
+		targetTempMaxCelsius: 8.0,
+		targetHumidityMinPercent: undefined,
+		targetHumidityMaxPercent: undefined,
+	},
+	{
+		equipmentType: "storage_room",
+		name: "Кабинет терапевтической стоматологии №1 (ВИТ-2)",
+		location: "Основной лечебный блок (Кабинет №1)",
+		meterDeviceName: "Психрометрический гигрометр ВИТ-2",
+		meterSerialNumber: "VIT2-4412",
+		targetTempMinCelsius: 15.0,
+		targetTempMaxCelsius: 25.0,
+		targetHumidityMinPercent: 30,
+		targetHumidityMaxPercent: 65,
+	},
+];
+
+export async function provisionCanonicalTemperatureEquipments(options?: {
+	customFetch?: typeof fetch;
+	headers?: Record<string, string>;
+}): Promise<any[]> {
+	const fetchFn = options?.customFetch || (typeof fetch !== "undefined" ? fetch : undefined);
+	if (!fetchFn) return [];
+	const clinicToken = readDenteClinicToken();
+	const staffToken = readDenteStaffToken();
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+		...(options?.headers || {}),
+	};
+
+	const createdList: any[] = [];
+	for (const preset of CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS) {
+		const res = await fetchFn("/api/registers/temperature-humidity/equipments", {
+			method: "POST",
+			headers,
+			body: JSON.stringify(preset),
+		});
+		if (res.ok) {
+			const item = await res.json();
+			createdList.push(item);
+		}
+	}
+	return createdList;
+}
+
 export function TemperatureHumidityRegisterTab() {
 	const [equipments, setEquipments] = useState<any[]>([]);
 	const [logs, setLogs] = useState<any[]>([]);
@@ -117,6 +172,40 @@ export function TemperatureHumidityRegisterTab() {
 
 	const [isLoggingShift, setIsLoggingShift] = useState(false);
 
+	const handleProvisionCanonicalEquipment = async (showSuccessToast = true): Promise<any[]> => {
+		try {
+			setSubmitting(true);
+			const createdList = await provisionCanonicalTemperatureEquipments();
+			if (createdList.length > 0) {
+				if (showSuccessToast) {
+					showToast("⚡ Типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2) успешно подключено!", "success");
+				}
+				await fetchAll();
+				setLogEquipId(createdList[0].id);
+				return createdList;
+			} else {
+				showToast("Ошибка при подключении типового оснащения", "error");
+				return [];
+			}
+		} catch (err) {
+			console.error("Provisioning error", err);
+			showToast("Сетевая ошибка при подключении типового оснащения", "error");
+			return [];
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleOpenLogModal = async () => {
+		if (equipments.length === 0) {
+			const provisioned = await handleProvisionCanonicalEquipment(false);
+			if (provisioned && provisioned.length > 0) {
+				setLogEquipId(provisioned[0].id);
+			}
+		}
+		setIsLogModalOpen(true);
+	};
+
 	const handleShiftAutopilot = async (period: "morning" | "evening" = "morning") => {
 		try {
 			setIsLoggingShift(true);
@@ -127,6 +216,11 @@ export function TemperatureHumidityRegisterTab() {
 				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
 				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
 			};
+
+			let currentEquips = equipments;
+			if (currentEquips.length === 0) {
+				currentEquips = await handleProvisionCanonicalEquipment(false);
+			}
 
 			const res = await fetch("/api/registers/temperature-humidity/shift-autopilot", {
 				method: "POST",
@@ -140,14 +234,14 @@ export function TemperatureHumidityRegisterTab() {
 			if (res.ok) {
 				const data = await res.json();
 				showToast(
-					`⚡ Норма температуры и влажности (${period === "morning" ? "утро" : "вечер"}) зафиксирована для всех ${data.count ?? equipments.length} объектов!`,
+					`⚡ Норма температуры и влажности (${period === "morning" ? "утро" : "вечер"}) зафиксирована для всех ${data.count ?? (currentEquips.length || 2)} объектов!`,
 					"success",
 				);
 				await fetchAll();
 			} else {
 				// Fallback: log for each equipment sequentially
 				let logged = 0;
-				for (const eq of equipments) {
+				for (const eq of currentEquips) {
 					const isFridge = eq.equipmentType?.includes("refrigerator");
 					const fRes = await fetch("/api/registers/temperature-humidity/logs", {
 						method: "POST",
@@ -313,15 +407,91 @@ export function TemperatureHumidityRegisterTab() {
 					</button>
 					<button
 						type="button"
-						onClick={() => setIsLogModalOpen(true)}
-						disabled={equipments.length === 0}
+						onClick={handleOpenLogModal}
 						className="sanpin-btn sanpin-btn-secondary"
 						style={{ minHeight: "44px" }}
+						data-testid="temp-manual-log-btn"
 					>
 						<ThermometerSun size={15} /> Внести замер вручную
 					</button>
 				</div>
 			</div>
+
+			{/* Zero-Setup Autonomy Banner (Mandate 8e, 8n) */}
+			{equipments.length === 0 && (
+				<div
+					className="sanpin-zero-setup-banner"
+					style={{
+						background: "linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(37, 99, 235, 0.06) 100%)",
+						border: "2px dashed var(--teal, #0d9488)",
+						borderRadius: "0.85rem",
+						padding: "1.1rem 1.25rem",
+						marginTop: "0.75rem",
+						marginBottom: "0.75rem",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "1.25rem",
+						flexWrap: "wrap",
+					}}
+					data-testid="temp-zero-setup-banner"
+				>
+					<div style={{ flex: "1 1 320px" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+							<span
+								style={{
+									padding: "0.2rem 0.5rem",
+									borderRadius: "0.4rem",
+									background: "var(--teal, #0d9488)",
+									color: "#ffffff",
+									fontSize: "0.75rem",
+									fontWeight: 800,
+									textTransform: "uppercase",
+									letterSpacing: "0.05em",
+								}}
+							>
+								СанПиН 3.3686-21 • Zero-Setup
+							</span>
+							<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
+								Быстрый старт для соло-врача и малых клиник
+							</span>
+						</div>
+						<div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)", marginBottom: "0.2rem" }}>
+							Объекты температурного учета не зарегистрированы
+						</div>
+						<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
+							Подключите типовое оснащение (холодильник Pozis ХФ-250 для анестетиков + гигрометр ВИТ-2 в кабинете) в 1 клик для автоматического ведения журнала.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => handleProvisionCanonicalEquipment(true)}
+						disabled={submitting || isLoggingShift}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "44px",
+							padding: "0.55rem 1.15rem",
+							fontSize: "0.875rem",
+							fontWeight: 800,
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.45rem",
+							borderRadius: "8px",
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
+						}}
+						data-testid="temp-zero-setup-provision-btn"
+						title="Подключить типовое оснащение: фармацевтический холодильник Pozis ХФ-250 (+2..+8°C) и Кабинет терапевтической стоматологии №1 с гигрометром ВИТ-2 (+15..+25°C, влажность 30..65%)"
+					>
+						<Sparkles size={17} />
+						<span>⚡ Подключить типовое оснащение (Холодильник Pozis + Кабинет ВИТ-2)</span>
+					</button>
+				</div>
+			)}
 
 			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
 				{equipments.map((eq) => (

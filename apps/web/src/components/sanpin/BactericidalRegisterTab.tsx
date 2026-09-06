@@ -29,6 +29,45 @@ import React, { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 
+export const CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET: CreateBactericidalEquipmentDto = {
+	roomName: "Кабинет терапевтической стоматологии №1",
+	roomVolumeM3: 45.0,
+	deviceBrand: "Дезар-4 (ОРУБн-3-3-«КРОНТ»)",
+	serialNumber: "DZ-004812",
+	deviceType: "recirculator_closed",
+	lampType: "TUV 15W / 30W",
+	lampCount: 3,
+	maxLampHours: 8000,
+	totalOperatingHours: 0,
+};
+
+export async function provisionCanonicalBactericidalEquipment(options?: {
+	customFetch?: typeof fetch;
+	headers?: Record<string, string>;
+}): Promise<any | null> {
+	const fetchFn = options?.customFetch || (typeof fetch !== "undefined" ? fetch : undefined);
+	if (!fetchFn) return null;
+	const clinicToken = readDenteClinicToken();
+	const staffToken = readDenteStaffToken();
+	const headers: Record<string, string> = {
+		"Content-Type": "application/json",
+		...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+		...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+		...(options?.headers || {}),
+	};
+
+	const res = await fetchFn("/api/registers/bactericidal/equipments", {
+		method: "POST",
+		headers,
+		body: JSON.stringify(CANONICAL_BACTERICIDAL_EQUIPMENT_PRESET),
+	});
+
+	if (res.ok) {
+		return await res.json();
+	}
+	return null;
+}
+
 export function BactericidalRegisterTab() {
 	const [equipments, setEquipments] = useState<any[]>([]);
 	const [logs, setLogs] = useState<any[]>([]);
@@ -238,60 +277,106 @@ export function BactericidalRegisterTab() {
 		}
 	};
 
+	const handleProvisionCanonicalEquipment = async (showSuccessToast = true): Promise<any[]> => {
+		try {
+			setSubmitting(true);
+			const created = await provisionCanonicalBactericidalEquipment();
+			if (created) {
+				if (showSuccessToast) {
+					showToast("⚡ Типовой рециркулятор (Дезар-4, Кабинет №1) успешно подключен!", "success");
+				}
+				await fetchAll();
+				setLogEquipId(created.id);
+				return [created];
+			} else {
+				showToast("Ошибка при подключении типового рециркулятора", "error");
+				return [];
+			}
+		} catch (err) {
+			console.error("Bactericidal provision error", err);
+			showToast("Сетевая ошибка при подключении типового рециркулятора", "error");
+			return [];
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	const handleOpenLogModal = async () => {
+		if (equipments.length === 0) {
+			const created = await handleProvisionCanonicalEquipment(false);
+			if (created && created.length > 0) {
+				setLogEquipId(created[0].id);
+			}
+		}
+		setIsLogModalOpen(true);
+	};
+
+	const executeShiftAutopilot = async (durationHours: number, currentEquips: any[]) => {
+		const clinicToken = readDenteClinicToken();
+		const staffToken = readDenteStaffToken();
+		const durationMinutes = durationHours * 60;
+
+		const res = await fetch("/api/registers/bactericidal/shift-autopilot", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+			},
+			body: JSON.stringify({
+				durationMinutes,
+				date: new Date().toISOString().slice(0, 10),
+				operatingMode: "continuous_presence",
+			}),
+		});
+
+		if (res.ok) {
+			const data = await res.json();
+			showToast(
+				`⚡ Автоматический учет смены (${durationHours} ч) выполнен для всех ${data.results?.length ?? currentEquips.length} аппаратов!`,
+				"success",
+			);
+			await fetchAll();
+		} else {
+			// Fallback: iterate over currentEquips sequentially
+			let updatedCount = 0;
+			for (const eq of currentEquips) {
+				const fRes = await fetch("/api/registers/bactericidal/logs", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+					body: JSON.stringify({
+						equipmentId: eq.id,
+						date: new Date().toISOString().slice(0, 10),
+						sessionStartTime: "08:00",
+						sessionEndTime: `${String(8 + durationHours).padStart(2, "0")}:00`,
+						durationMinutes,
+						operatingMode: "continuous_presence",
+						notes: `⚡ Авто-учет смены (${durationHours} ч) по Р 3.5.1904-04`,
+					}),
+				});
+				if (fRes.ok) updatedCount++;
+			}
+			showToast(`⚡ Наработка ламп обновлена (+${durationHours} ч) для ${updatedCount} аппаратов`, "success");
+			await fetchAll();
+		}
+	};
+
 	const handleShiftAutopilot = async (durationHours = 6) => {
 		try {
 			setSubmitting(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const durationMinutes = durationHours * 60;
-
-			const res = await fetch("/api/registers/bactericidal/shift-autopilot", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
-				body: JSON.stringify({
-					durationMinutes,
-					date: new Date().toISOString().slice(0, 10),
-					operatingMode: "continuous_presence",
-				}),
-			});
-
-			if (res.ok) {
-				const data = await res.json();
-				showToast(
-					`⚡ Автоматический учет смены (${durationHours} ч) выполнен для всех ${data.results?.length ?? equipments.length} аппаратов!`,
-					"success",
-				);
-				fetchAll();
-			} else {
-				// Fallback: iterate over equipments sequentially
-				let updatedCount = 0;
-				for (const eq of equipments) {
-					const fRes = await fetch("/api/registers/bactericidal/logs", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-							...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-						},
-						body: JSON.stringify({
-							equipmentId: eq.id,
-							date: new Date().toISOString().slice(0, 10),
-							sessionStartTime: "08:00",
-							sessionEndTime: `${String(8 + durationHours).padStart(2, "0")}:00`,
-							durationMinutes,
-							operatingMode: "continuous_presence",
-							notes: `⚡ Авто-учет смены (${durationHours} ч) по Р 3.5.1904-04`,
-						}),
-					});
-					if (fRes.ok) updatedCount++;
+			let currentEquips = equipments;
+			if (currentEquips.length === 0) {
+				currentEquips = await handleProvisionCanonicalEquipment(false);
+				if (currentEquips.length === 0) {
+					showToast("Не удалось подключить типовой рециркулятор", "error");
+					return;
 				}
-				showToast(`⚡ Наработка ламп обновлена (+${durationHours} ч) для ${updatedCount} аппаратов`, "success");
-				fetchAll();
 			}
+			await executeShiftAutopilot(durationHours, currentEquips);
 		} catch (err) {
 			showToast("Сетевая ошибка при авто-учете смены", "error");
 		} finally {
@@ -299,65 +384,78 @@ export function BactericidalRegisterTab() {
 		}
 	};
 
+	const executePreShift30Min = async (equipmentId: string | undefined, currentEquips: any[]) => {
+		const clinicToken = readDenteClinicToken();
+		const staffToken = readDenteStaffToken();
+		const durationMinutes = 30;
+
+		const res = await fetch("/api/registers/bactericidal/shift-autopilot", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+			},
+			body: JSON.stringify({
+				equipmentId,
+				durationMinutes,
+				date: new Date().toISOString().slice(0, 10),
+				operatingMode: "pre_op_preparation",
+				notes: "⚡ Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21",
+			}),
+		});
+
+		if (res.ok) {
+			const data = await res.json();
+			showToast(
+				equipmentId
+					? "⚡ Включение баклампы на 30 мин перед сменой зафиксировано!"
+					: `⚡ Включение всех бакламп на 30 мин перед сменой зафиксировано (${data.results?.length ?? currentEquips.length} аппаратов)!`,
+				"success",
+			);
+			await fetchAll();
+		} else {
+			// Fallback: iterate over currentEquips sequentially
+			const targetEqs = equipmentId ? currentEquips.filter((e) => e.id === equipmentId) : currentEquips;
+			let updatedCount = 0;
+			for (const eq of targetEqs) {
+				const fRes = await fetch("/api/registers/bactericidal/logs", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+						...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+					},
+					body: JSON.stringify({
+						equipmentId: eq.id,
+						date: new Date().toISOString().slice(0, 10),
+						sessionStartTime: "07:30",
+						sessionEndTime: "08:00",
+						durationMinutes: 30,
+						operatingMode: "pre_op_preparation",
+						notes: "⚡ Включение баклампы перед сменой (30 мин) по СанПиН 3.3686-21",
+					}),
+				});
+				if (fRes.ok) updatedCount++;
+			}
+			showToast(`⚡ Сеанс 30 мин перед сменой зафиксирован для ${updatedCount} аппаратов`, "success");
+			await fetchAll();
+		}
+	};
+
 	const handlePreShift30Min = async (equipmentId?: string) => {
 		try {
 			setSubmitting(true);
-			const clinicToken = readDenteClinicToken();
-			const staffToken = readDenteStaffToken();
-			const durationMinutes = 30;
-
-			const res = await fetch("/api/registers/bactericidal/shift-autopilot", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
-				body: JSON.stringify({
-					equipmentId,
-					durationMinutes,
-					date: new Date().toISOString().slice(0, 10),
-					operatingMode: "pre_op_preparation",
-					notes: "⚡ Включение баклампы перед сменой (30 мин) — предоперационная подготовка по СанПиН 3.3686-21",
-				}),
-			});
-
-			if (res.ok) {
-				const data = await res.json();
-				showToast(
-					equipmentId
-						? "⚡ Включение баклампы на 30 мин перед сменой зафиксировано!"
-						: `⚡ Включение всех бакламп на 30 мин перед сменой зафиксировано (${data.results?.length ?? equipments.length} аппаратов)!`,
-					"success",
-				);
-				fetchAll();
-			} else {
-				// Fallback: iterate over equipments sequentially
-				const targetEqs = equipmentId ? equipments.filter((e) => e.id === equipmentId) : equipments;
-				let updatedCount = 0;
-				for (const eq of targetEqs) {
-					const fRes = await fetch("/api/registers/bactericidal/logs", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-							...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-						},
-						body: JSON.stringify({
-							equipmentId: eq.id,
-							date: new Date().toISOString().slice(0, 10),
-							sessionStartTime: "07:30",
-							sessionEndTime: "08:00",
-							durationMinutes: 30,
-							operatingMode: "pre_op_preparation",
-							notes: "⚡ Включение баклампы перед сменой (30 мин) по СанПиН 3.3686-21",
-						}),
-					});
-					if (fRes.ok) updatedCount++;
+			let currentEquips = equipments;
+			if (currentEquips.length === 0) {
+				currentEquips = await handleProvisionCanonicalEquipment(false);
+				if (currentEquips.length === 0) {
+					showToast("Не удалось подключить типовой рециркулятор", "error");
+					return;
 				}
-				showToast(`⚡ Сеанс 30 мин перед сменой зафиксирован для ${updatedCount} аппаратов`, "success");
-				fetchAll();
 			}
+			const targetId = equipmentId || (currentEquips.length === 1 ? currentEquips[0].id : undefined);
+			await executePreShift30Min(targetId, currentEquips);
 		} catch (err) {
 			showToast("Сетевая ошибка при фиксации 30-минутного сеанса", "error");
 		} finally {
@@ -370,16 +468,28 @@ export function BactericidalRegisterTab() {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
+			const headers = {
+				"Content-Type": "application/json",
+				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+			};
+
+			let currentEquips = equipments;
+			if (currentEquips.length === 0) {
+				currentEquips = await handleProvisionCanonicalEquipment(false);
+				if (currentEquips.length === 0) {
+					showToast("Не удалось подключить типовой рециркулятор", "error");
+					return;
+				}
+			}
+
+			const targetId = equipmentId || (currentEquips.length === 1 ? currentEquips[0].id : undefined);
 
 			const res = await fetch("/api/registers/bactericidal/open-morning-shift", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers,
 				body: JSON.stringify({
-					equipmentId,
+					equipmentId: targetId,
 					date: new Date().toISOString().slice(0, 10),
 				}),
 			});
@@ -391,10 +501,10 @@ export function BactericidalRegisterTab() {
 						"⚡ Утренняя смена открыта: бактерицидная обработка 30 мин + норма зафиксированы!",
 					"success",
 				);
-				fetchAll();
+				await fetchAll();
 			} else {
-				// Fallback to preShift30Min
-				await handlePreShift30Min(equipmentId);
+				// Fallback to preShift30Min with currentEquips
+				await executePreShift30Min(targetId, currentEquips);
 			}
 		} catch (err) {
 			showToast("Сетевая ошибка при открытии утренней смены", "error");
@@ -408,16 +518,28 @@ export function BactericidalRegisterTab() {
 			setSubmitting(true);
 			const clinicToken = readDenteClinicToken();
 			const staffToken = readDenteStaffToken();
+			const headers = {
+				"Content-Type": "application/json",
+				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+			};
+
+			let currentEquips = equipments;
+			if (currentEquips.length === 0) {
+				currentEquips = await handleProvisionCanonicalEquipment(false);
+				if (currentEquips.length === 0) {
+					showToast("Не удалось подключить типовой рециркулятор", "error");
+					return;
+				}
+			}
+
+			const targetId = equipmentId || (currentEquips.length === 1 ? currentEquips[0].id : undefined);
 
 			const res = await fetch("/api/registers/bactericidal/close-evening-shift", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
-					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
-				},
+				headers,
 				body: JSON.stringify({
-					equipmentId,
+					equipmentId: targetId,
 					date: new Date().toISOString().slice(0, 10),
 					shiftHours: 6,
 				}),
@@ -430,10 +552,10 @@ export function BactericidalRegisterTab() {
 						"⚡ Вечерняя смена закрыта: финальная дезинфекция и наработка ламп зафиксированы!",
 					"success",
 				);
-				fetchAll();
+				await fetchAll();
 			} else {
-				// Fallback: standard shift autopilot
-				await handleShiftAutopilot(6);
+				// Fallback: standard shift autopilot with currentEquips
+				await executeShiftAutopilot(6, currentEquips);
 			}
 		} catch (err) {
 			showToast("Сетевая ошибка при закрытии вечерней смены", "error");
@@ -580,7 +702,7 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleOpenMorningShift()}
-						disabled={submitting || equipments.length === 0}
+						disabled={submitting}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -608,7 +730,7 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleCloseEveningShift()}
-						disabled={submitting || equipments.length === 0}
+						disabled={submitting}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -645,7 +767,7 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleOpenMorningShift()}
-						disabled={submitting || equipments.length === 0}
+						disabled={submitting}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -672,7 +794,7 @@ export function BactericidalRegisterTab() {
 					<button
 						type="button"
 						onClick={() => handleCloseEveningShift()}
-						disabled={submitting || equipments.length === 0}
+						disabled={submitting}
 						className="sanpin-btn touch-manipulation"
 						style={{
 							minHeight: "44px",
@@ -706,15 +828,92 @@ export function BactericidalRegisterTab() {
 					</button>
 					<button
 						type="button"
-						onClick={() => setIsLogModalOpen(true)}
-						disabled={equipments.length === 0}
+						onClick={handleOpenLogModal}
+						disabled={submitting}
 						className="sanpin-btn sanpin-btn-primary touch-manipulation"
 						style={{ minHeight: "44px" }}
+						data-testid="bactericidal-manual-session-btn"
 					>
 						<Clock size={15} /> Внести сеанс облучения
 					</button>
 				</div>
 			</div>
+
+			{/* Zero-Setup Autonomy Banner (Mandate 8e, 8n) */}
+			{equipments.length === 0 && (
+				<div
+					className="sanpin-zero-setup-banner"
+					style={{
+						background: "linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(2, 132, 199, 0.06) 100%)",
+						border: "2px dashed var(--teal, #0d9488)",
+						borderRadius: "0.85rem",
+						padding: "1.1rem 1.25rem",
+						marginTop: "0.75rem",
+						marginBottom: "0.75rem",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						gap: "1.25rem",
+						flexWrap: "wrap",
+					}}
+					data-testid="bactericidal-zero-setup-banner"
+				>
+					<div style={{ flex: "1 1 320px" }}>
+						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+							<span
+								style={{
+									padding: "0.2rem 0.5rem",
+									borderRadius: "0.4rem",
+									background: "var(--teal, #0d9488)",
+									color: "#ffffff",
+									fontSize: "0.75rem",
+									fontWeight: 800,
+									textTransform: "uppercase",
+									letterSpacing: "0.05em",
+								}}
+							>
+								СанПиН 3.3686-21 • Zero-Setup
+							</span>
+							<span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--ink)" }}>
+								Быстрый старт для соло-врача и малых клиник
+							</span>
+						</div>
+						<div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--ink)", marginBottom: "0.2rem" }}>
+							Парк бактерицидных установок пуст
+						</div>
+						<p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
+							Подключите стандартный закрытый рециркулятор Дезар-4 (ОРУБн-3-3-«КРОНТ», V=45 м³) для Кабинета №1 в 1 клик без ручного ввода паспортов и счетчиков.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => handleProvisionCanonicalEquipment(true)}
+						disabled={submitting}
+						className="sanpin-btn touch-manipulation"
+						style={{
+							minHeight: "44px",
+							padding: "0.55rem 1.15rem",
+							fontSize: "0.875rem",
+							fontWeight: 800,
+							cursor: "pointer",
+							whiteSpace: "nowrap",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.45rem",
+							borderRadius: "8px",
+							background: "var(--teal, #0d9488)",
+							color: "#ffffff",
+							border: "none",
+							boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)",
+						}}
+						data-testid="bactericidal-zero-setup-provision-btn"
+						title="Подключить типовой рециркулятор: Дезар-4 (ОРУБн-3-3-«КРОНТ») для Кабинета терапевтической стоматологии №1 (V=45 м³, 8000 ч ресурс ламп)"
+					>
+						<Sparkles size={17} />
+						<span>⚡ Подключить типовой рециркулятор (Дезар-4, Кабинет №1)</span>
+					</button>
+				</div>
+			)}
 
 			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
 				{equipments.map((eq) => {
