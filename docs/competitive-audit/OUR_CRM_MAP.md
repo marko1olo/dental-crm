@@ -789,5 +789,42 @@
 - **Тесты**:
   - `apps/web/src/components/portal/__tests__/patientOnlineBookingAutonomy.test.tsx` (7 тестов, 100% passing).
 
+#### 2.10.86. Лиды и расписание: Zero Dead-Ends фолбэки врача и кресла при конвертации в запись (Мандаты 8e, 8n, 8k / Лиды & CRM)
+- **Суть и домен**: Устранение 400 Bad Request при конвертации лида в приём расписания для соло-врача и клиник с незаполненным списком кресел (Фича #125):
+  1. *Гибкая Zod-схема*: в `convertLeadSchema` поля `chairId` и `doctorId` стали опциональными, допуская системные маркеры `default-doctor` и `default-chair`.
+  2. *Автономное разрешение ресурсов*: поиск первого активного врача в организации и мягкое разрешение кресла с допуском `chairId: null` в `createAppointmentInDb` при аренде кресла без системных отказов.
+- **Бэкенд**:
+  - `apps/api/src/routes/leads.ts`, `apps/api/src/db/appointmentsQuery.ts` (коммит `e4422a5f7`).
+- **Тесты**:
+  - `apps/api/src/tests/routes/leadsConversionAutonomy.test.ts` (3 теста, 100% passing).
+
+#### 2.10.87. ИДС: 1-кликовое подтверждение на бумаге в панелях планшета и SMS OTP (Мандаты 8e, 8k, 8n / ИДС & Согласия)
+- **Суть и домен**: Избавление врачей от блокировок при аппаратных сбоях сенсора планшета, севшем стилусе или задержках SMS-провайдера (Фича #126):
+  1. *Инлайн fallback*: кнопки `btn-stylus-paper-fallback` («На бумаге (1 клик)») и `btn-sms-paper-fallback` («На бумаге при сбое SMS (1 клик)») в интерфейсе `InformedConsentModal.tsx`.
+  2. *Мгновенное подписание*: вызов `handleConfirmSign("paper_physical")` без необходимости смены вкладок с поддержкой пакетного режима.
+- **Фронтенд**:
+  - `apps/web/src/components/consents/InformedConsentModal.tsx` (коммит `75377d8ef`).
+- **Тесты**:
+  - `apps/web/src/components/consents/__tests__/informedConsentFallbackAutonomy.test.tsx` (5 тестов, 100% passing).
+
+#### 2.10.88. Онбординг: свобода сокрытия и черновик мастера без тупиков (Мандаты 8e, 8n / Онбординг & Настройки)
+- **Суть и домен**: Полная ликвидация принудительного удержания врача в мастере первичной настройки (Фича #127):
+  1. *Разблокированная кнопка «Скрыть»*: удаление `disabled={!onboardingReadyToFinish}` в `OnboardingWizardModal.tsx`.
+  2. *Безопасное сохранение черновика*: вызов `continueOnboardingInDraftMode()` при досрочном выходе для неотложного приёма пациентов без потери введенных реквизитов.
+- **Фронтенд**:
+  - `apps/web/src/components/onboarding/OnboardingWizardModal.tsx` (коммит `7a2be91c0`).
+- **Тесты**:
+  - `apps/web/src/components/onboarding/__tests__/onboardingDismissAutonomy.test.tsx` (5 тестов, 100% passing).
+
+#### 2.10.89. Коммуникации: постоянно активное поле ввода сообщений и подсказка WhatsApp/Telegram (Мандаты 8e, 8n / Коммуникации & Чат)
+- **Суть и домен**: Устранение блокировки набора сообщений при исчерпании SMS-квоты (Фича #128):
+  1. *Свободный набор*: снятие `disabled` с поля `#enqueue-body` в `MessageDeliveryConsole.tsx` при нулевом остатке SMS.
+  2. *Инфо-баннер*: подсказка `.ops-notice--warn` о возможности бесплатной отправки через WhatsApp или Telegram без стирания набранного текста.
+- **Фронтенд**:
+  - `apps/web/src/components/communications/MessageDeliveryConsole.tsx`, `apps/web/src/styles/dente-operations.css` (коммит `19a46976a`).
+- **Тесты**:
+  - `apps/web/src/components/communications/__tests__/messageDeliveryConsoleAutonomy.test.tsx` (5 тестов, 100% passing).
+
+
 
 
