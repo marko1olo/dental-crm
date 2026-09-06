@@ -11,6 +11,8 @@ declare module "vitest" {
 		toContain(expected: any): void;
 		toHaveLength(expected: number): void;
 		toMatch(expected: string | RegExp): void;
+		toHaveBeenCalledTimes(expected: number): void;
+		toThrow(expected?: any): void;
 		not: Assertion<T>;
 	}
 

@@ -71,6 +71,7 @@ export interface InformedConsentModalProps {
 	initialMode?: "packages" | "single";
 	initialPackageKey?: ConsentPackageKey;
 	initialTemplateKey?: ConsentTemplateKey;
+	initialVerificationMethod?: "tablet_stylus" | "sms_otp" | "paper_physical";
 	patient?: {
 		fullName?: string | null;
 		birthDate?: string | null;
@@ -133,6 +134,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	initialMode = "packages",
 	initialPackageKey = "PACKAGE_PRIMARY_VISIT",
 	initialTemplateKey = "CONSENT_THERAPY",
+	initialVerificationMethod = "paper_physical",
 	patient,
 	doctorName,
 	doctorSpecialty,
@@ -152,7 +154,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	const [activeKey, setActiveKey] = useState<ConsentTemplateKey>(initialTemplateKey);
 	const [previewTemplateKey, setPreviewTemplateKey] = useState<ConsentTemplateKey | null>(null);
 	const [paperOriginalConfirmed, setPaperOriginalConfirmed] = useState<boolean>(true);
-	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp" | "paper_physical">("paper_physical");
+	const [verificationMethod, setVerificationMethod] = useState<"tablet_stylus" | "sms_otp" | "paper_physical">(initialVerificationMethod);
 	const [isPrintingBlank, setIsPrintingBlank] = useState<boolean>(false);
 	
 	// Точечное редактирование контекста плейсхолдеров
@@ -183,7 +185,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setActiveKey(initialTemplateKey);
 			setPreviewTemplateKey(null);
 			setPaperOriginalConfirmed(true);
-			setVerificationMethod("paper_physical");
+			setVerificationMethod(initialVerificationMethod || "paper_physical");
 			setIsPrintingBlank(false);
 			setCustomDiagnosis(diagnosisIcd || "");
 			setCustomTeeth(toothNumbers || "");
@@ -193,7 +195,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setOtpVerified(false);
 			setOtpCountdown(0);
 		}
-	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, diagnosisIcd, toothNumbers]);
+	}, [isOpen, initialMode, initialPackageKey, initialTemplateKey, initialVerificationMethod, diagnosisIcd, toothNumbers]);
 
 	// Таймер обратного отсчета SMS OTP
 	useEffect(() => {
@@ -1175,6 +1177,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 										<Trash2 size={16} />
 										<span>Очистить</span>
 									</button>
+									<button
+										type="button"
+										className="consent-tool-btn"
+										data-testid="btn-stylus-paper-fallback"
+										onClick={() => handleConfirmSign("paper_physical")}
+										title="Пациент расписался на бумаге — подтвердить в 1 клик (Мандат 8e)"
+									>
+										<Zap size={14} className="text-amber-500" />
+										<span>На бумаге (1 клик)</span>
+									</button>
 								</div>
 
 								<div className="text-xs font-semibold text-muted">
@@ -1216,21 +1228,34 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							</div>
 
 							<div className="flex items-center justify-between pt-2">
-								<button
-									type="button"
-									className="consent-tool-btn"
-									onClick={handleSendOtp}
-									disabled={otpCountdown > 0}
-								>
-									<RefreshCw size={14} className={otpCountdown > 0 ? "animate-spin" : ""} />
-									<span>
-										{otpCountdown > 0
-											? `Повтор через ${otpCountdown} сек.`
-											: otpSentTime
-												? "Отправить код повторно"
-												: "Отправить код по SMS"}
-									</span>
-								</button>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										className="consent-tool-btn"
+										onClick={handleSendOtp}
+										disabled={otpCountdown > 0}
+									>
+										<RefreshCw size={14} className={otpCountdown > 0 ? "animate-spin" : ""} />
+										<span>
+											{otpCountdown > 0
+												? `Повтор через ${otpCountdown} сек.`
+												: otpSentTime
+													? "Отправить код повторно"
+													: "Отправить код по SMS"}
+										</span>
+									</button>
+
+									<button
+										type="button"
+										className="consent-tool-btn"
+										data-testid="btn-sms-paper-fallback"
+										onClick={() => handleConfirmSign("paper_physical")}
+										title="Код SMS не пришел — подтвердить на бумаге в 1 клик (Мандат 8e)"
+									>
+										<Zap size={14} className="text-amber-500" />
+										<span>На бумаге при сбое SMS (1 клик)</span>
+									</button>
+								</div>
 
 								{otpVerified && (
 									<div className="flex items-center gap-1 text-sm font-bold text-ok-fg">
