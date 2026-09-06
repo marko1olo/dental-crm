@@ -63,63 +63,63 @@ export const SurgerySafetyChecklist: React.FC<SurgerySafetyChecklistProps> = ({
 				<button
 					type="button"
 					onClick={handleOneClickAllNorm}
-					className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 transition-all"
+					className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 transition-all shadow-xs"
 					data-testid="btn-timeout-all-norm"
 				>
-					<CheckCircle2 size={15} />
+					<CheckCircle2 size={16} />
 					<span>1-Клик норма (Time-Out)</span>
 				</button>
 			</div>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-				<label className="flex items-center gap-2 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none">
+				<label className="min-h-[48px] p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none touch-manipulation flex items-center gap-2.5 hover:border-[var(--teal,#0d9488)] transition-all">
 					<input
 						type="checkbox"
 						checked={checks.patientIdentity}
 						onChange={() => handleToggle("patientIdentity")}
-						className="w-4 h-4 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)]"
+						className="w-5 h-5 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)] shrink-0 cursor-pointer"
 						data-testid="check-patient-identity"
 					/>
-					<span className="font-semibold text-[var(--ink)]">
+					<span className="font-semibold text-[var(--ink)] leading-snug">
 						Пациент идентифицирован ({patientName}), аллергоанамнез чист
 					</span>
 				</label>
 
-				<label className="flex items-center gap-2 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none">
+				<label className="min-h-[48px] p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none touch-manipulation flex items-center gap-2.5 hover:border-[var(--teal,#0d9488)] transition-all">
 					<input
 						type="checkbox"
 						checked={checks.zoneVerified}
 						onChange={() => handleToggle("zoneVerified")}
-						className="w-4 h-4 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)]"
+						className="w-5 h-5 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)] shrink-0 cursor-pointer"
 						data-testid="check-zone-verified"
 					/>
-					<span className="font-semibold text-[var(--ink)]">
+					<span className="font-semibold text-[var(--ink)] leading-snug">
 						Область операции сверена: Зуб FDI #{toothFdi}
 					</span>
 				</label>
 
-				<label className="flex items-center gap-2 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none">
+				<label className="min-h-[48px] p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none touch-manipulation flex items-center gap-2.5 hover:border-[var(--teal,#0d9488)] transition-all">
 					<input
 						type="checkbox"
 						checked={checks.sterilityConfirmed}
 						onChange={() => handleToggle("sterilityConfirmed")}
-						className="w-4 h-4 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)]"
+						className="w-5 h-5 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)] shrink-0 cursor-pointer"
 						data-testid="check-sterility"
 					/>
-					<span className="font-semibold text-[var(--ink)]">
+					<span className="font-semibold text-[var(--ink)] leading-snug">
 						Стерильность стола и физиодиспенсера подтверждена
 					</span>
 				</label>
 
-				<label className="flex items-center gap-2 p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none">
+				<label className="min-h-[48px] p-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] cursor-pointer select-none touch-manipulation flex items-center gap-2.5 hover:border-[var(--teal,#0d9488)] transition-all">
 					<input
 						type="checkbox"
 						checked={checks.warehouseNoticeAcknowledged}
 						onChange={() => handleToggle("warehouseNoticeAcknowledged")}
-						className="w-4 h-4 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)]"
+						className="w-5 h-5 rounded text-[var(--teal,#0d9488)] accent-[var(--teal,#0d9488)] shrink-0 cursor-pointer"
 						data-testid="check-warehouse"
 					/>
-					<span className="font-semibold text-[var(--ink)]">
+					<span className="font-semibold text-[var(--ink)] leading-snug">
 						Складской учет: овердрафт активен (без блокировки операции)
 					</span>
 				</label>

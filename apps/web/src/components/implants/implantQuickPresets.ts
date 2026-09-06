@@ -15,8 +15,16 @@ export interface FastImplantSystemPreset {
 export const FAST_IMPLANT_SYSTEM_PRESETS: readonly FastImplantSystemPreset[] = [
 	{
 		brand: "Osstem",
-		model: "TS III CA Ultra-Clean",
+		model: "TS III SA/CA",
 		defaultDiameterMm: 4.0,
+		defaultLengthMm: 10.0,
+		defaultTorqueNcm: 35,
+		recommendedDrillRpm: 800,
+	},
+	{
+		brand: "Dentium",
+		model: "SuperLine SLA",
+		defaultDiameterMm: 4.5,
 		defaultLengthMm: 10.0,
 		defaultTorqueNcm: 35,
 		recommendedDrillRpm: 800,
@@ -31,17 +39,9 @@ export const FAST_IMPLANT_SYSTEM_PRESETS: readonly FastImplantSystemPreset[] = [
 	},
 	{
 		brand: "Nobel Biocare",
-		model: "NobelActive TiUltra",
+		model: "Nobel Parallel CC",
 		defaultDiameterMm: 4.3,
 		defaultLengthMm: 11.5,
-		defaultTorqueNcm: 35,
-		recommendedDrillRpm: 800,
-	},
-	{
-		brand: "Dentium",
-		model: "SuperLine SLA",
-		defaultDiameterMm: 4.5,
-		defaultLengthMm: 10.0,
 		defaultTorqueNcm: 35,
 		recommendedDrillRpm: 800,
 	},
@@ -77,6 +77,19 @@ export const QUICK_TORQUE_OPTIONS = [25, 30, 35, 40, 45, 50];
 
 export type MischDensity = "D1" | "D2" | "D3" | "D4";
 
+export type ImplantCapType = "fdm" | "plug";
+
+export const IMPLANT_CAP_TYPE_LABELS: Record<ImplantCapType, { title: string; hint: string }> = {
+	fdm: {
+		title: "ФДМ (формирователь десны)",
+		hint: "Одноэтапный протокол с формированием десневого контура",
+	},
+	plug: {
+		title: "Винт-заглушка (Cover screw)",
+		hint: "Двухэтапный протокол с ушиванием раны наглухо",
+	},
+};
+
 export const MISCH_DENSITY_NOTES: Record<MischDensity, { title: string; hint: string }> = {
 	D1: { title: "D1 — Плотная кость", hint: "Передний отдел н/ч (>1250 HU). Метчик обязателен." },
 	D2: { title: "D2 — Плотная + губчатая", hint: "Дистальный отдел н/ч (850–1250 HU). Оптимальная остеоинтеграция." },
@@ -96,6 +109,7 @@ export interface FastImplantPassportData {
 	readonly serialNumber: string;
 	readonly boneDensity: MischDensity;
 	readonly isqDay0?: number;
+	readonly capType?: ImplantCapType;
 	readonly patientName?: string;
 	readonly patientId?: string;
 	readonly doctorName?: string;
@@ -112,6 +126,8 @@ export function createDefaultPassportRecord(params: {
 	diameterMm?: number;
 	lengthMm?: number;
 	torqueNcm?: number;
+	isqDay0?: number;
+	capType?: ImplantCapType;
 	patientName?: string;
 	patientId?: string;
 	doctorName?: string;
@@ -131,7 +147,8 @@ export function createDefaultPassportRecord(params: {
 		lotNumber: `LOT-${new Date().getFullYear()}-${preset.brand.slice(0, 3).toUpperCase()}-${timestampSuffix}`,
 		serialNumber: `SN-${timestampSuffix}`,
 		boneDensity: tooth > 30 && tooth < 49 ? "D2" : "D3",
-		isqDay0: 74,
+		isqDay0: params.isqDay0 ?? 72, // 72 ISQ каноническая первичная фиксация (RFA)
+		capType: params.capType ?? "fdm", // ФДМ по умолчанию
 		patientName: params.patientName ?? "Пациент",
 		patientId: params.patientId ?? "PAT-01",
 		doctorName: params.doctorName ?? "Хирург-имплантолог",

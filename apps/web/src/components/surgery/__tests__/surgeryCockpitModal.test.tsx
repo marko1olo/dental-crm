@@ -75,4 +75,62 @@ describe("SurgeryCockpitModal & SurgeryProtocolPanel (Surgical Cockpit)", () => 
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
 		assert.equal(emojiRegex.test(html), false, "Panel HTML must not contain forbidden emojis");
 	});
+
+	it("renders 1-click implant presets bar and capType switcher in SurgeryCockpitModal", () => {
+		const html = renderToString(
+			<SurgeryCockpitModal
+				isOpen={true}
+				onClose={() => {}}
+				patientName="Кузнецов Иван"
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("surgery-implant-presets-bar"), "Must have 1-click implant presets bar");
+		assert.ok(html.includes("Osstem"), "Must have Osstem preset button");
+		assert.ok(html.includes("Dentium"), "Must have Dentium preset button");
+		assert.ok(html.includes("Straumann"), "Must have Straumann preset button");
+		assert.ok(html.includes("Nobel"), "Must have Nobel preset button");
+		assert.ok(html.includes("btn-cockpit-cap-fdm"), "Must have ФДМ 1-click button");
+		assert.ok(html.includes("btn-cockpit-cap-plug"), "Must have Заглушка 1-click button");
+		assert.ok(html.includes("btn-open-implant-passport"), "Must have button to open implant passport");
+		assert.ok(html.includes("min-h-[48px]"), "Must satisfy >= 48px touch targets standard for sterile glove mode");
+	});
+
+	it("renders 1-click implant presets bar and capType switcher in SurgeryProtocolPanel", () => {
+		const html = renderToString(
+			<SurgeryProtocolPanel
+				toothFdi={46}
+				patientName="Кузнецов Иван"
+			/>,
+		);
+
+		assert.ok(html.includes("panel-implant-presets-bar"), "Must have panel implant presets bar");
+		assert.ok(html.includes("btn-panel-cap-fdm"), "Must have panel ФДМ toggle");
+		assert.ok(html.includes("btn-panel-cap-plug"), "Must have panel Заглушка toggle");
+		assert.ok(html.includes("btn-panel-implant-passport"), "Must have button to open passport in panel");
+		assert.ok(html.includes("min-h-[48px]"), "Must satisfy >= 48px touch targets in panel");
+	});
+
+	it("Anti-Matryoshka Law: Modal nesting depth strictly 1 (no modal inside modal)", () => {
+		// SurgeryCockpitModal mounts directly without nesting
+		const cockpitHtml = renderToString(
+			<SurgeryCockpitModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+		assert.ok(cockpitHtml.includes("surgery-cockpit-modal"));
+		assert.ok(!cockpitHtml.includes("implant-passport-modal"), "Implant passport modal must NOT be nested inside cockpit DOM");
+
+		// When opened, ImplantPassportModal mounts as solitary root modal (depth 1)
+		const passportHtml = renderToString(
+			<SurgeryCockpitModal
+				isOpen={false}
+				onClose={() => {}}
+			/>,
+		);
+		assert.equal(passportHtml, "");
+	});
 });

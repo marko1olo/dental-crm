@@ -12,10 +12,12 @@ import {
 	Sliders,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { ImplantPassportModal } from "../implants/ImplantPassportModal";
 import {
 	SURGICAL_OPERATION_NORMS,
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
+	buildStandardImplantationProtocolText,
 	type SurgicalOperationNorm,
 } from "./surgeryProtocols";
 import { SurgerySafetyChecklist } from "./SurgerySafetyChecklist";
@@ -36,6 +38,13 @@ export interface SurgeryCockpitModalProps {
 
 const COMMON_SURGERY_TEETH = [46, 36, 16, 26, 48, 38, 18, 28, 11, 21, 14, 24, 34, 44];
 
+const TOP_IMPLANT_PRESETS = [
+	{ brand: "Osstem", model: "TS III SA/CA", dia: 4.0, len: 10.0, label: "Osstem TS III" },
+	{ brand: "Dentium", model: "SuperLine SLA", dia: 4.5, len: 10.0, label: "Dentium SuperLine" },
+	{ brand: "Straumann", model: "BLX Roxolid", dia: 4.0, len: 10.0, label: "Straumann BLX" },
+	{ brand: "Nobel Biocare", model: "Nobel Parallel CC", dia: 4.3, len: 11.5, label: "Nobel Parallel CC" },
+];
+
 export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 	isOpen,
 	onClose,
@@ -53,6 +62,9 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 	const [protocolText, setProtocolText] = useState<string>(DENTAL_IMPLANTATION_NORM_TEXT);
 	const [isSterileGloveMode, setIsSterileGloveMode] = useState<boolean>(true);
 	const [simulateOverdraft, setSimulateOverdraft] = useState<boolean>(false);
+	const [isPassportOpen, setIsPassportOpen] = useState<boolean>(false);
+	const [selectedImplantBrand, setSelectedImplantBrand] = useState<string>("Dentium");
+	const [selectedCapType, setSelectedCapType] = useState<"fdm" | "plug">("fdm");
 	const titleId = useId();
 
 	const currentNorm =
@@ -72,6 +84,29 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 			setToothFdi(norm.defaultToothFdi);
 		}
 		showToast(`Применена 1-клик норма: «${norm.title}»`, "success");
+	};
+
+	const applyImplantPreset = (
+		brand: string,
+		model: string,
+		dia: number,
+		len: number,
+		cap: "fdm" | "plug",
+	) => {
+		setSelectedImplantBrand(brand);
+		setSelectedCapType(cap);
+		const text = buildStandardImplantationProtocolText({
+			toothFdi,
+			brand,
+			model,
+			diameterMm: dia,
+			lengthMm: len,
+			torqueNcm: 35,
+			isq: 72,
+			capType: cap,
+		});
+		setProtocolText(text);
+		showToast(`Имплантация: ${brand} 35 Н/см, ISQ 72, ${cap === "plug" ? "Заглушка" : "ФДМ"}`, "success");
 	};
 
 	const handleCopyProtocol = () => {
@@ -108,10 +143,33 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 		if (onOpenImplantPassport) {
 			onOpenImplantPassport(toothFdi);
 		}
+		setIsPassportOpen(true);
 		showToast(`Переход к паспорту имплантата #${toothFdi}`, "info");
 	};
 
 	if (!isOpen) return null;
+
+	// Anti-Matryoshka Law (Mandate 8d, Sin 6): Modal depth strictly 1.
+	// Secondary cabinets (Implant Passport) render at top level rather than nested inside the cockpit dialog.
+	if (isPassportOpen) {
+		return (
+			<ImplantPassportModal
+				isOpen={isPassportOpen}
+				onClose={() => setIsPassportOpen(false)}
+				patientName={patientName}
+				patientId={patientId}
+				doctorName={doctorName}
+				doctorId={doctorId}
+				initialTooth={toothFdi}
+				onInsertIntoDiary={(diaryText) => {
+					setProtocolText((prev) => `${prev}\n\n${diaryText}`);
+					if (onInsertIntoDiary) {
+						onInsertIntoDiary(diaryText);
+					}
+				}}
+			/>
+		);
+	}
 
 	return (
 		<div
@@ -149,7 +207,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSterileGloveMode(!isSterileGloveMode)}
-							className={`surgery-btn text-xs ${
+							className={`surgery-btn text-xs min-h-[48px] touch-manipulation ${
 								isSterileGloveMode
 									? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)]"
 									: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
@@ -164,7 +222,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="surgery-btn surgery-btn-secondary p-2.5"
+							className="surgery-btn surgery-btn-secondary min-h-[48px] min-w-[48px] p-2.5 touch-manipulation"
 							aria-label="Закрыть хирургический кокпит"
 							data-testid="btn-close-surgery-cockpit"
 						>
@@ -190,7 +248,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setSimulateOverdraft(false)}
-								className="surgery-btn text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]"
+								className="surgery-btn min-h-[48px] text-xs bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] touch-manipulation"
 								data-testid="btn-dismiss-overdraft-notice"
 							>
 								Ознакомлен
@@ -204,7 +262,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 							<span className="text-xs font-black uppercase tracking-wider text-[var(--teal,#0d9488)]">
 								Зуб операции (FDI):
 							</span>
-							<span className="text-sm font-black font-mono px-2 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)]">
+							<span className="text-sm font-black font-mono px-2.5 py-1 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 								#{toothFdi}
 							</span>
 						</div>
@@ -215,7 +273,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 									key={t}
 									type="button"
 									onClick={() => setToothFdi(t)}
-									className={`min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-mono font-black transition-all cursor-pointer touch-manipulation ${
+									className={`min-h-[48px] min-w-[48px] px-2.5 py-1.5 rounded-xl text-xs font-mono font-black transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 										toothFdi === t
 											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
 											: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
@@ -261,6 +319,102 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 						</div>
 					</div>
 
+					{/* 1-Клик Пресеты имплантации (топовые системы, торк 35 Н/см, ISQ 72, ФДМ/заглушка) */}
+					{selectedNormId === "surgery_implant_standard" && (
+						<div
+							className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3"
+							data-testid="surgery-implant-presets-bar"
+						>
+							<div className="flex items-center justify-between gap-2 flex-wrap">
+								<div className="flex items-center gap-2">
+									<Zap size={16} className="text-[var(--teal,#0d9488)]" />
+									<span className="text-xs font-black uppercase tracking-wider text-[var(--ink)]">
+										1-Клик Пресеты имплантации (Торк 35 Н/см · ISQ 72)
+									</span>
+								</div>
+								<div className="flex items-center gap-2 text-xs">
+									<span className="px-2.5 py-1 rounded-lg font-mono font-black bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
+										35 Н/см (канон)
+									</span>
+									<span className="px-2.5 py-1 rounded-lg font-mono font-black bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal-soft,rgba(13,148,136,0.3))]">
+										72 ISQ (RFA)
+									</span>
+								</div>
+							</div>
+
+							{/* Выбор системы: Osstem TS III, Dentium SuperLine, Straumann BLX, Nobel Parallel CC */}
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+								{TOP_IMPLANT_PRESETS.map((preset) => {
+									const isSel = selectedImplantBrand === preset.brand;
+									return (
+										<button
+											key={preset.brand}
+											type="button"
+											onClick={() => applyImplantPreset(preset.brand, preset.model, preset.dia, preset.len, selectedCapType)}
+											className={`min-h-[48px] p-2.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-center touch-manipulation ${
+												isSel
+													? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+													: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+											}`}
+											data-testid={`btn-preset-implant-${preset.brand}`}
+										>
+											<div className="flex items-center justify-between">
+												<span className="font-extrabold text-xs">{preset.label}</span>
+												{isSel && <CheckCircle2 size={16} className="text-white shrink-0" />}
+											</div>
+											<div className="text-[10px] font-mono opacity-85">
+												Ø {preset.dia} × {preset.len} мм
+											</div>
+										</button>
+									);
+								})}
+							</div>
+
+							{/* 1-Клик ФДМ vs Заглушка */}
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-[var(--line)]">
+								<button
+									type="button"
+									onClick={() => {
+										const curr = TOP_IMPLANT_PRESETS.find((p) => p.brand === selectedImplantBrand) ?? TOP_IMPLANT_PRESETS[1]!;
+										applyImplantPreset(curr.brand, curr.model, curr.dia, curr.len, "fdm");
+									}}
+									className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
+										selectedCapType === "fdm"
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									}`}
+									data-testid="btn-cockpit-cap-fdm"
+								>
+									<span className="flex flex-col">
+										<span className="font-extrabold">ФДМ (формирователь десны)</span>
+										<span className="text-[10px] opacity-85">Одноэтапный протокол с формированием контура</span>
+									</span>
+									{selectedCapType === "fdm" && <CheckCircle2 size={18} className="text-white shrink-0" />}
+								</button>
+
+								<button
+									type="button"
+									onClick={() => {
+										const curr = TOP_IMPLANT_PRESETS.find((p) => p.brand === selectedImplantBrand) ?? TOP_IMPLANT_PRESETS[1]!;
+										applyImplantPreset(curr.brand, curr.model, curr.dia, curr.len, "plug");
+									}}
+									className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
+										selectedCapType === "plug"
+											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+									}`}
+									data-testid="btn-cockpit-cap-plug"
+								>
+									<span className="flex flex-col">
+										<span className="font-extrabold">Винт-заглушка (Cover screw)</span>
+										<span className="text-[10px] opacity-85">Двухэтапный протокол (ушивание наглухо)</span>
+									</span>
+									{selectedCapType === "plug" && <CheckCircle2 size={18} className="text-white shrink-0" />}
+								</button>
+							</div>
+						</div>
+					)}
+
 					{/* Хирургический Time-Out Checklist */}
 					<SurgerySafetyChecklist toothFdi={toothFdi} patientName={patientName} />
 
@@ -273,10 +427,10 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 							<button
 								type="button"
 								onClick={handleCopyProtocol}
-								className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--paper-soft)] touch-manipulation"
+								className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--paper-soft)] touch-manipulation transition-all"
 								data-testid="btn-copy-protocol"
 							>
-								<Copy size={14} />
+								<Copy size={16} />
 								<span>Скопировать</span>
 							</button>
 						</div>

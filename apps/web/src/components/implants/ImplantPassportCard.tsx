@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Calendar, Activity, Copy, Check, QrCode, Printer } from "lucide-react";
+import { ShieldCheck, Calendar, Activity, Copy, Check, QrCode, Printer, AlertTriangle } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { FastImplantPassportData } from "./implantQuickPresets";
 import "./implants.css";
@@ -22,6 +22,10 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 	const displayLot = data.lotNumber?.trim() || "____________________";
 	const displaySn = data.serialNumber?.trim() || "____________________";
 	const displayDoctor = data.doctorName?.trim() || "________________________";
+	const capTypeRu =
+		data.capType === "plug"
+			? "Винт-заглушка (двухэтапный протокол с ушиванием наглухо)"
+			: "ФДМ (формирователь десны, одноэтапный протокол)";
 
 	const handleCopy = () => {
 		const text =
@@ -30,6 +34,8 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 			`Система: ${data.brand} ${data.model}\n` +
 			`Размер: Ø ${data.diameterMm} x ${data.lengthMm} мм\n` +
 			`Торк стабилизации: ${data.torqueNcm} Н/см\n` +
+			`ISQ: ${data.isqDay0 ?? 72} (RFA магнитно-резонансный анализ)\n` +
+			`Формирователь / Заглушка: ${capTypeRu}\n` +
 			`Плотность кости: ${data.boneDensity}\n` +
 			`LOT: ${displayLot} | SN: ${displaySn}\n` +
 			`Дата операции: ${formattedDate} · Врач: ${displayDoctor}`;
@@ -79,20 +85,20 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<button
 						type="button"
 						onClick={handleCopy}
-						className="p-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer"
+						className="min-h-[48px] min-w-[48px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer flex items-center justify-center touch-manipulation transition-all"
 						title="Скопировать данные паспорта"
 						data-testid="btn-copy-passport-card"
 					>
-						<Copy size={14} />
+						<Copy size={16} />
 					</button>
 					<button
 						type="button"
 						onClick={handlePrint}
-						className="min-h-[36px] px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer font-bold text-xs"
+						className="min-h-[48px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer font-bold text-xs touch-manipulation transition-all"
 						title="Распечатать паспорт / гарантийный сертификат"
 						data-testid="btn-print-passport-card"
 					>
-						<Printer size={14} className="text-[var(--teal,#0d9488)]" />
+						<Printer size={16} className="text-[var(--teal,#0d9488)]" />
 						<span>Печать</span>
 					</button>
 				</div>
@@ -119,9 +125,10 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				</div>
 
 				<div>
-					<span className="text-[11px] text-[var(--muted)] block">Торк первичной стабильности:</span>
+					<span className="text-[11px] text-[var(--muted)] block">Торк / Стабильность:</span>
 					<strong className="font-mono font-extrabold text-[var(--teal-dark,#0f766e)]">
 						{`${data.torqueNcm || 35} Н/см`}
+						{data.isqDay0 ? ` · ${data.isqDay0} ISQ` : ""}
 					</strong>
 				</div>
 			</div>
@@ -138,8 +145,10 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				</div>
 
 				<div>
-					<span className="text-[11px] text-[var(--muted)] block">Плотность кости:</span>
-					<span className="font-bold text-[var(--ink)]">{data.boneDensity || "D2"} (Misch)</span>
+					<span className="text-[11px] text-[var(--muted)] block">Формирователь / Заглушка:</span>
+					<span className="font-bold text-[var(--ink)]">
+						{data.capType === "plug" ? "Винт-заглушка (2 этапа)" : "ФДМ (формирователь десны)"}
+					</span>
 				</div>
 
 				<div>
@@ -155,14 +164,19 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 					<strong className="text-[var(--ink)]">{displayDoctor}</strong>
 				</div>
 				<div>
+					<span>Плотность кости: </span>
+					<strong className="text-[var(--ink)]">{data.boneDensity || "D2"} (Misch)</strong>
+				</div>
+				<div>
 					<span>Подпись: ______________________ </span>
 					<span className="font-bold text-[var(--ink)] ml-2">М.П.</span>
 				</div>
 			</div>
 
 			{data.isWarehouseOverdraft && (
-				<div className="p-2.5 rounded-lg bg-[var(--amber-surface,rgba(245,158,11,0.1))] text-xs text-[var(--amber-dark,#b45309)]">
-					⚠️ Списание зафиксировано в мягкий овердрафт склада до проведения накладной.
+				<div className="p-2.5 rounded-lg bg-[var(--amber-surface,rgba(245,158,11,0.1))] text-xs text-[var(--amber-dark,#b45309)] flex items-center gap-2">
+					<AlertTriangle size={15} className="shrink-0 text-[var(--amber,#f59e0b)]" />
+					<span>Списание зафиксировано в мягкий овердрафт склада до проведения накладной (Мандат 8e).</span>
 				</div>
 			)}
 		</div>

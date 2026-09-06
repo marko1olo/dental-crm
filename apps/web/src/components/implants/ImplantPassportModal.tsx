@@ -22,6 +22,7 @@ import {
 	MISCH_DENSITY_NOTES,
 	type FastImplantPassportData,
 	type MischDensity,
+	type ImplantCapType,
 } from "./implantQuickPresets";
 import { ImplantPassportCard } from "./ImplantPassportCard";
 import "./implants.css";
@@ -57,6 +58,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	const [lengthMm, setLengthMm] = useState<number>(10.0);
 	const [torqueNcm, setTorqueNcm] = useState<number>(35); // 35 Н/см по умолчанию
 	const [boneDensity, setBoneDensity] = useState<MischDensity>("D2");
+	const [capType, setCapType] = useState<ImplantCapType>("fdm");
 	const [lotNumber, setLotNumber] = useState<string>("LOT-2026-OSS-8842");
 	const [serialNumber, setSerialNumber] = useState<string>("SN-991428");
 	const [isOverdraftActive, setIsOverdraftActive] = useState<boolean>(false);
@@ -80,7 +82,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		lotNumber: lotNumber.trim() || `LOT-${selectedSystem.brand.slice(0, 3)}-AUTO`,
 		serialNumber: serialNumber.trim() || `SN-${Date.now().toString().slice(-4)}`,
 		boneDensity,
-		isqDay0: 74,
+		isqDay0: 72,
+		capType,
 		patientName,
 		patientId,
 		doctorName,
@@ -104,17 +107,23 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 			: "Костная пластика не проводилась (стандартный протокол без аугментации).";
 
 		const stabilityText = isIsqEnabled
-			? `RFA стабилометрия: 74 ISQ. Первичный торк: ${assembledData.torqueNcm} Н·см.`
+			? `RFA магнитно-резонансная стабилометрия: 72 ISQ. Первичный торк: ${assembledData.torqueNcm} Н·см.`
 			: `Механическая первичная стабильность: ${assembledData.torqueNcm} Н·см.`;
+
+		const capText =
+			capType === "plug"
+				? "Установлен винт-заглушка (двухэтапный протокол с ушиванием раны наглухо)."
+				: "Установлен формирователь десны (ФДМ, одноэтапный протокол с формированием десневого контура).";
 
 		return (
 			`ПАСПОРТ ИМПЛАНТАТА (Зуб FDI #${toothFdi}):\n` +
 			`Установлен имплантат: ${assembledData.brand} ${assembledData.model} Ø ${assembledData.diameterMm} x ${assembledData.lengthMm} мм.\n` +
 			`Торк первичной стабильности: ${assembledData.torqueNcm} Н/см. Плотность кости: ${assembledData.boneDensity}.\n` +
 			`${stabilityText}\n` +
+			`${capText}\n` +
 			`Аугментация: ${gbrText}\n` +
 			`LOT: ${assembledData.lotNumber}, SN: ${assembledData.serialNumber}.\n` +
-			(isOverdraftActive ? "Примечание: списание проведено в мягкий овердрафт склада.\n" : "") +
+			(isOverdraftActive ? "Примечание: списание проведено в мягкий овердрафт склада (Мандат 8e).\n" : "") +
 			`Рекомендации даны. Протокол зафиксирован.`
 		);
 	};
@@ -232,17 +241,17 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 					</div>
 				</header>
 
-				{/* Nav Tabs (Touch-First >= 44px) */}
-				<nav className="flex items-center gap-1.5 px-5 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] overflow-x-auto text-xs font-bold shrink-0" role="tablist">
+				{/* Nav Tabs (Touch-First >= 48px) */}
+				<nav className="flex items-center gap-2 px-5 py-2 bg-[var(--paper-soft)] border-b border-[var(--line)] overflow-x-auto text-xs font-bold shrink-0" role="tablist">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "protocol"}
 						onClick={() => setActiveTab("protocol")}
-						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 							activeTab === "protocol"
 								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
 						}`}
 						data-testid="implant-tab-protocol"
 					>
@@ -253,24 +262,24 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						role="tab"
 						aria-selected={activeTab === "isq"}
 						onClick={() => setActiveTab("isq")}
-						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 							activeTab === "isq"
 								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
 						}`}
 						data-testid="implant-tab-isq"
 					>
-						2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? " · 74 ISQ" : " · Ключ"})
+						2. Стабильность ({torqueNcm} Н·см{isIsqEnabled ? " · 72 ISQ" : " · Ключ"})
 					</button>
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "diary"}
 						onClick={() => setActiveTab("diary")}
-						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 							activeTab === "diary"
 								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
 						}`}
 						data-testid="implant-tab-diary"
 					>
@@ -281,10 +290,10 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 						role="tab"
 						aria-selected={activeTab === "passport"}
 						onClick={() => setActiveTab("passport")}
-						className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+						className={`min-h-[48px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 							activeTab === "passport"
 								? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)]"
 						}`}
 						data-testid="implant-tab-passport"
 					>
@@ -300,7 +309,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 							<AlertTriangle size={18} className="text-[var(--amber,#f59e0b)] shrink-0" />
 							<div className="flex-1">
 								<strong className="text-[var(--amber-dark,#b45309)]">Мягкий овердрафт склада: </strong>
-								<span>Задержка накладной не блокирует сохранение. Паспорт сохраняется штатно.</span>
+								<span>Задержка накладной не блокирует сохранение (Мандат 8e). Паспорт сохраняется штатно.</span>
 							</div>
 							<button
 								type="button"
@@ -328,8 +337,8 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 											{isIsqEnabled ? "RFA магнитно-резонансная стабилометрия" : "Механический контроль торка ключом"}
 										</div>
 										<div className="text-xs text-[var(--muted)]">
-											Первичная стабильность: {torqueNcm} Н·см · {torqueNcm >= 35 ? "Высокая (оптимум)" : "Стандартная"}
-											{isIsqEnabled ? " · ISQ День 0: 74 (Остеоинтеграция стабильна)" : ""}
+											Первичная стабильность: {torqueNcm} Н·см · {torqueNcm >= 35 ? "Высокая (оптимум 35 Н/см)" : "Стандартная"}
+											{isIsqEnabled ? " · ISQ День 0: 72 (Остеоинтеграция стабильна)" : ""}
 										</div>
 									</div>
 								</div>
@@ -339,7 +348,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									</div>
 									{isIsqEnabled && (
 										<div className="text-xs font-bold text-[var(--muted)]">
-											74 ISQ
+											72 ISQ
 										</div>
 									)}
 								</div>
@@ -349,7 +358,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 								<strong className="text-[var(--ink)] block mb-1">
 									Клинический протокол (Мандаты 8e, 8i, 8k):
 								</strong>
-								CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см и плотность кости {boneDensity}. Данные автоматически экспортируются в карту 043/у.
+								CRM не симулирует микро-замеры 16 точек анизотропии в перчатках у кресла. Зафиксирован надежный первичный торк {torqueNcm} Н·см, ISQ {assembledData.isqDay0 ?? 72} и плотность кости {boneDensity}. Данные автоматически экспортируются в карту 043/у.
 							</div>
 						</div>
 					) : activeTab === "diary" ? (
@@ -390,7 +399,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									<button
 										type="button"
 										onClick={() => setIsGbrPerformed(false)}
-										className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between ${
+										className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
 											!isGbrPerformed
 												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
 												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
@@ -407,7 +416,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									<button
 										type="button"
 										onClick={() => setIsGbrPerformed(true)}
-										className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between ${
+										className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
 											isGbrPerformed
 												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
 												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
@@ -423,12 +432,54 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 								</div>
 							</div>
 
+							{/* 1-Click Выбор: ФДМ vs Винт-заглушка (Gingiva Former vs Cover Screw) */}
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2">
+								<div className="text-xs font-black uppercase text-[var(--muted)] tracking-wider">
+									Формирователь десны / Винт-заглушка (1 клик):
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+									<button
+										type="button"
+										onClick={() => setCapType("fdm")}
+										className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
+											capType === "fdm"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+										}`}
+										data-testid="btn-cap-type-fdm"
+									>
+										<span className="flex flex-col">
+											<span className="font-extrabold">ФДМ (формирователь десны)</span>
+											<span className="text-[10px] opacity-85">Одноэтапный протокол с формированием контура</span>
+										</span>
+										{capType === "fdm" && <CheckCircle2 size={18} className="text-white shrink-0" />}
+									</button>
+
+									<button
+										type="button"
+										onClick={() => setCapType("plug")}
+										className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold text-left border cursor-pointer transition-all flex items-center justify-between touch-manipulation ${
+											capType === "plug"
+												? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
+												: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
+										}`}
+										data-testid="btn-cap-type-plug"
+									>
+										<span className="flex flex-col">
+											<span className="font-extrabold">Винт-заглушка (Cover screw)</span>
+											<span className="text-[10px] opacity-85">Двухэтапный протокол (ушивание наглухо)</span>
+										</span>
+										{capType === "plug" && <CheckCircle2 size={18} className="text-white shrink-0" />}
+									</button>
+								</div>
+							</div>
+
 							{/* Stability Mode Switcher (Torque vs ISQ device) */}
 							<div className="flex flex-wrap gap-2">
 								<button
 									type="button"
 									onClick={() => setIsIsqEnabled(false)}
-									className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer ${
+									className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer touch-manipulation ${
 										!isIsqEnabled
 											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
@@ -436,14 +487,14 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									data-testid="btn-stability-torque-only"
 								>
 									<Activity size={16} />
-									<span>Контроль стабильности по торку (без аппарата ISQ)</span>
+									<span>Контроль стабильности по торку (35 Н/см ключом)</span>
 									{!isIsqEnabled && <CheckCircle2 size={16} className="text-white shrink-0" />}
 								</button>
 
 								<button
 									type="button"
 									onClick={() => setIsIsqEnabled(true)}
-									className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer ${
+									className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 cursor-pointer touch-manipulation ${
 										isIsqEnabled
 											? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] border-[var(--teal,#0d9488)] shadow-xs"
 											: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal,#0d9488)]"
@@ -451,7 +502,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									data-testid="btn-stability-isq-sensor"
 								>
 									<TrendingUp size={16} />
-									<span>Магнитный резонанс ISQ (Osstell / Penguin RFA)</span>
+									<span>Магнитный резонанс ISQ (72 ISQ Osstell / Penguin)</span>
 									{isIsqEnabled && <CheckCircle2 size={16} className="text-white shrink-0" />}
 								</button>
 							</div>

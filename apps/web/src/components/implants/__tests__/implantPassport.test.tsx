@@ -93,4 +93,72 @@ describe("Implant Passport Module & Zero-Bureaucracy Cockpit", () => {
 
 		assert.equal(html, "");
 	});
+
+	it("6. Fast implant presets include capType, ISQ 72, and top 4 implant brands", () => {
+		const record = createDefaultPassportRecord({
+			toothFdi: 36,
+			brand: "Dentium",
+			patientName: "Иванов И. И.",
+		});
+
+		assert.equal(record.isqDay0, 72, "Default ISQ must be 72");
+		assert.equal(record.torqueNcm, 35, "Default torque must be 35 N/cm");
+		assert.equal(record.capType, "fdm", "Default capType must be fdm (формирователь десны)");
+
+		const systems = FAST_IMPLANT_SYSTEM_PRESETS.map((s) => s.brand);
+		assert.deepEqual(
+			systems.slice(0, 4),
+			["Osstem", "Dentium", "Straumann", "Nobel Biocare"],
+			"Top 4 brands must be Osstem, Dentium, Straumann, Nobel Biocare",
+		);
+	});
+
+	it("7. ImplantPassportModal renders capType toggle buttons and min-h-[48px] touch targets", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={36}
+				patientName="Иванов И. И."
+			/>,
+		);
+
+		assert.ok(html.includes("btn-cap-type-fdm"), "Must have ФДМ toggle button");
+		assert.ok(html.includes("btn-cap-type-plug"), "Must have Заглушка toggle button");
+		assert.ok(html.includes("min-h-[48px]"), "Must enforce >= 48px touch targets for gloved operation");
+		assert.ok(html.includes("ISQ"), "Must display ISQ field");
+		assert.ok(html.includes("72"), "Must show default ISQ value 72");
+
+		// Zero emojis in ImplantPassportModal
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		assert.equal(emojiRegex.test(html), false, "ImplantPassportModal must not contain emojis");
+	});
+
+	it("8. ImplantPassportCard renders capType, ISQ 72, and zero emojis", () => {
+		const record = {
+			...createDefaultPassportRecord({
+				toothFdi: 46,
+				brand: "Straumann",
+				patientName: "Сидоров А. В.",
+				capType: "plug",
+				isqDay0: 74,
+			}),
+			isWarehouseOverdraft: true,
+		};
+
+		const html = renderToString(<ImplantPassportCard data={record} />);
+
+		assert.ok(html.includes("Винт-заглушка (2 этапа)"), "Must render plug cap type");
+		assert.ok(html.includes("74"), "Must render ISQ value");
+		assert.ok(html.includes("min-h-[48px]"), "Must have 48px action buttons");
+
+		// Verify zero emoji in ImplantPassportCard (specifically AlertTriangle SVG icon instead of raw emoji warning)
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+		assert.equal(emojiRegex.test(html), false, "ImplantPassportCard must not contain emojis");
+		assert.ok(
+			html.includes("lucide-triangle-alert") || html.includes("lucide-alert-triangle"),
+			"Must render Lucide AlertTriangle vector icon",
+		);
+		assert.ok(html.includes("мягкий овердрафт склада"), "Must display soft overdraft notice");
+	});
 });
