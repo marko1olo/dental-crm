@@ -19,6 +19,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Thermometer,
+	Zap,
 } from "lucide-react";
 import React, { useState } from "react";
 import {
@@ -36,6 +37,89 @@ import {
 	type PackagingTypeId,
 	type SterilizationRegimeId,
 } from "./autoclaveLogPresets.js";
+
+export const EXPRESS_CYCLE_DEFAULTS = {
+	regimeId: "steam_134_5min" as const,
+	targetTemperatureCelsius: 134,
+	targetPressureBar: 2.1,
+	targetExposureMinutes: 5,
+	itemsDescription:
+		"Наконечники турбинные и угловые, смотровые лотки (зеркала, зонды, пинцеты), хирургический инструмент",
+	defaultPacksCount: 14,
+	packagingType: "kraft_pouch_sealed" as const,
+	defaultOperatorName: "Смирнова Анна Викторовна (Медсестра ЦСО)",
+	fallbackOperatorName: "Дежурный ассистент",
+	fallbackItemsDescription: "Смотровые лотки и наконечники (стандартный набор)",
+	fallbackPacksCount: 1,
+} as const;
+
+export interface ExpressCycleFillState {
+	readonly selectedRegimeId: SterilizationRegimeId;
+	readonly actualTemp: number;
+	readonly actualPressure: number;
+	readonly actualTime: number;
+	readonly itemsDescription: string;
+	readonly packsCount: number;
+	readonly packagingType: PackagingTypeId;
+	readonly operatorFullName: string;
+	readonly chamberPoints: ChamberPointEvaluation[];
+}
+
+export function computeExpressStandardCycleValues(params: {
+	currentPacksCount?: number;
+	currentOperatorName?: string;
+	defaultOperatorName?: string;
+	selectedIndicatorId?: string;
+}): ExpressCycleFillState {
+	const packs =
+		params.currentPacksCount !== undefined && params.currentPacksCount > 0
+			? params.currentPacksCount
+			: EXPRESS_CYCLE_DEFAULTS.defaultPacksCount;
+	const operator =
+		params.currentOperatorName?.trim() ||
+		params.defaultOperatorName?.trim() ||
+		EXPRESS_CYCLE_DEFAULTS.defaultOperatorName;
+
+	return {
+		selectedRegimeId: EXPRESS_CYCLE_DEFAULTS.regimeId,
+		actualTemp: EXPRESS_CYCLE_DEFAULTS.targetTemperatureCelsius,
+		actualPressure: EXPRESS_CYCLE_DEFAULTS.targetPressureBar,
+		actualTime: EXPRESS_CYCLE_DEFAULTS.targetExposureMinutes,
+		itemsDescription: EXPRESS_CYCLE_DEFAULTS.itemsDescription,
+		packsCount: packs,
+		packagingType: EXPRESS_CYCLE_DEFAULTS.packagingType,
+		operatorFullName: operator,
+		chamberPoints: createDefault5ChamberPoints(params.selectedIndicatorId ?? "intetest_v_134_5", true),
+	};
+}
+
+export function resolveAutoclaveCycleFallbacks(input: {
+	operatorFullName?: string;
+	defaultOperatorName?: string;
+	itemsDescription?: string;
+	packsCount?: number;
+}): {
+	readonly operatorStaffFullName: string;
+	readonly itemsDescriptionRu: string;
+	readonly packsCount: number;
+} {
+	const operatorStaffFullName =
+		input.operatorFullName?.trim() ||
+		input.defaultOperatorName?.trim() ||
+		EXPRESS_CYCLE_DEFAULTS.fallbackOperatorName;
+	const itemsDescriptionRu =
+		input.itemsDescription?.trim() || EXPRESS_CYCLE_DEFAULTS.fallbackItemsDescription;
+	const packsCount =
+		input.packsCount !== undefined && input.packsCount > 0
+			? input.packsCount
+			: EXPRESS_CYCLE_DEFAULTS.fallbackPacksCount;
+
+	return {
+		operatorStaffFullName,
+		itemsDescriptionRu,
+		packsCount,
+	};
+}
 
 export interface AutoclaveNewCycleTabProps {
 	readonly onSaveRecord: (record: Form257Record) => void;
@@ -128,11 +212,36 @@ export function AutoclaveNewCycleTab({
 	});
 
 	const areAllPointsPassed = chamberPoints.every((pt) => pt.status === "passed");
-	const isFormValid = itemsDescription.trim().length > 0 && packsCount > 0 && operatorFullName.trim().length > 0;
+
+	// 1-Click Экспресс-заполнение стандартного цикла (Мандаты 8e, 8k, 8n)
+	const handleExpressStandardCycle = () => {
+		const filled = computeExpressStandardCycleValues({
+			currentPacksCount: packsCount,
+			currentOperatorName: operatorFullName,
+			defaultOperatorName,
+			selectedIndicatorId,
+		});
+		setSelectedRegimeId(filled.selectedRegimeId);
+		setActualTemp(filled.actualTemp);
+		setActualPressure(filled.actualPressure);
+		setActualTime(filled.actualTime);
+		setItemsDescription(filled.itemsDescription);
+		setPacksCount(filled.packsCount);
+		setPackagingType(filled.packagingType);
+		setOperatorFullName(filled.operatorFullName);
+		setChamberPoints([...filled.chamberPoints]);
+	};
 
 	const handleSave = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!isFormValid) return;
+
+		const { operatorStaffFullName, itemsDescriptionRu, packsCount: resolvedPacksCount } =
+			resolveAutoclaveCycleFallbacks({
+				operatorFullName,
+				defaultOperatorName,
+				itemsDescription,
+				packsCount,
+			});
 
 		const newRecord = createForm257Record({
 			date: cycleDate,
@@ -144,11 +253,11 @@ export function AutoclaveNewCycleTab({
 				actualPressureBar: actualPressure,
 				actualExposureMinutes: actualTime,
 			},
-			itemsDescriptionRu: itemsDescription.trim(),
-			packsCount,
+			itemsDescriptionRu,
+			packsCount: resolvedPacksCount,
 			packagingType,
 			chamberPoints,
-			operatorStaffFullName: operatorFullName.trim(),
+			operatorStaffFullName,
 			headNurseSignatureFullName: isHeadNurseVerified ? headNurseFullName.trim() : undefined,
 			isHeadNurseVerified,
 			notes: notes.trim() || undefined,
@@ -159,7 +268,58 @@ export function AutoclaveNewCycleTab({
 	};
 
 	return (
-		<form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+		<form onSubmit={handleSave} noValidate style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+			{/* 0. Экспресс-заполнение стандартного цикла (Мандаты 8e, 8k, 8n) */}
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					gap: "1rem",
+					flexWrap: "wrap",
+					padding: "0.875rem 1.25rem",
+					background: "var(--paper-soft, #f8fafc)",
+					border: "1px solid var(--line, #e2e8f0)",
+					borderRadius: "14px",
+				}}
+			>
+				<div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+					<span style={{ fontSize: "0.875rem", fontWeight: 700, color: "var(--ink, #0f172a)", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+						<Zap size={16} color="var(--teal, #0d9488)" />
+						Автоклавирование без бюрократии (СанПиН 3.3686-21)
+					</span>
+					<span style={{ fontSize: "0.75rem", color: "var(--muted, #64748b)" }}>
+						Регистрация типового цикла для смотровых наборов и наконечников в 1 клик
+					</span>
+				</div>
+
+				<button
+					type="button"
+					data-testid="express-standard-cycle-btn"
+					onClick={handleExpressStandardCycle}
+					className="autoclave-btn autoclave-btn-primary"
+					style={{
+						minHeight: "44px",
+						display: "inline-flex",
+						alignItems: "center",
+						justifyContent: "center",
+						gap: "0.5rem",
+						padding: "0.625rem 1.25rem",
+						fontSize: "0.875rem",
+						fontWeight: 700,
+						background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)",
+						color: "#ffffff",
+						boxShadow: "0 2px 6px rgba(13, 148, 136, 0.35)",
+						cursor: "pointer",
+					}}
+					title="Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)"
+					aria-label="Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)"
+				>
+					<Zap size={18} />
+					<span>Экспресс-заполнение: Стандартный цикл (134°C / 5 мин / 14 упаковок)</span>
+				</button>
+			</div>
+
 			{/* 1. Быстрый выбор регламентного режима (1-Click) */}
 			<div>
 				<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
@@ -267,9 +427,9 @@ export function AutoclaveNewCycleTab({
 						min={1}
 						max={500}
 						className="autoclave-input"
-						value={packsCount}
+						value={packsCount > 0 ? packsCount : ""}
 						onChange={(e) => setPacksCount(Number(e.target.value))}
-						required
+						placeholder="14"
 					/>
 				</div>
 			</div>
@@ -426,7 +586,7 @@ export function AutoclaveNewCycleTab({
 					className="autoclave-textarea"
 					value={itemsDescription}
 					onChange={(e) => setItemsDescription(e.target.value)}
-					required
+					placeholder="Смотровые лотки и наконечники (стандартный набор)"
 				/>
 			</div>
 
@@ -441,7 +601,7 @@ export function AutoclaveNewCycleTab({
 						className="autoclave-input"
 						value={operatorFullName}
 						onChange={(e) => setOperatorFullName(e.target.value)}
-						required
+						placeholder="Дежурный ассистент"
 					/>
 				</div>
 
@@ -490,9 +650,8 @@ export function AutoclaveNewCycleTab({
 
 				<button
 					type="submit"
-					disabled={!isFormValid}
 					className="autoclave-btn autoclave-btn-primary"
-					style={{ minWidth: "220px" }}
+					style={{ minWidth: "220px", minHeight: "44px" }}
 				>
 					<Save size={18} />
 					Записать цикл в Форму 257/у
