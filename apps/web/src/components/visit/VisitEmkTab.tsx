@@ -57,7 +57,7 @@ import {
 import { EgiszMultipleDiagnosesWidget } from "./EgiszMultipleDiagnosesWidget";
 import { EgiszCdaExportModal } from "../egisz/EgiszCdaExportModal";
 import { AppointmentModal } from "../schedule/AppointmentModal";
-import { type Appointment, calculateAge } from "@dental/shared";
+import { type Appointment, calculateAge, generateQrCodeSvg } from "@dental/shared";
 import { PrescriptionModal } from "./PrescriptionModal";
 import { PatientBillingModal } from "../finance/PatientBillingModal";
 import { InformedConsentModal, type SignedConsentPayload } from "../consents/InformedConsentModal";
@@ -382,6 +382,23 @@ export function VisitEmkTab() {
 	const [completionResult, setCompletionResult] = React.useState<ClinicalVisitCompletionResult | null>(null);
 	const [isCompletingVisit, setIsCompletingVisit] = React.useState<boolean>(false);
 	const [isSbpQrModalOpen, setIsSbpQrModalOpen] = React.useState<boolean>(false);
+
+	const sbpPayload = React.useMemo(() => {
+		if (!completionResult) return "";
+		return (
+			`https://qr.nspk.ru/AD1000${encodeURIComponent(completionResult.receiptNumber || "REC")}` +
+			`?type=02&bank=100000000004&sum=${Math.round(completionResult.totalNetRub * 100)}&cur=RUB&crc=${encodeURIComponent(completionResult.patientName || "PATIENT")}`
+		);
+	}, [completionResult]);
+
+	const sbpQrSvg = React.useMemo(() => {
+		if (!completionResult || !sbpPayload) return "";
+		return generateQrCodeSvg(sbpPayload, {
+			size: 192,
+			margin: 2,
+			title: `Оплата по СБП: ${completionResult.receiptNumber}`,
+		});
+	}, [completionResult, sbpPayload]);
 	const [isNextVisitModalOpen, setIsNextVisitModalOpen] = React.useState<boolean>(false);
 	const [nextVisitAppointment, setNextVisitAppointment] = React.useState<Appointment | null>(null);
 	const [activeSelectedTooth, setActiveSelectedTooth] = React.useState<number | null>(null);
@@ -3495,23 +3512,19 @@ export function VisitEmkTab() {
 							Пациент сканирует QR-код камерой смартфона или в приложении любого банка РФ (0% комиссии)
 						</div>
 
-						<div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border-2 border-slate-200 shadow-inner w-56 h-56 mx-auto">
-							<svg viewBox="0 0 100 100" className="w-48 h-48">
-								<rect width="100" height="100" fill="white" />
-								{/* Corner Markers */}
-								<rect x="5" y="5" width="25" height="25" fill="var(--ink, #0f172a)" />
-								<rect x="8" y="8" width="19" height="19" fill="white" />
-								<rect x="11" y="11" width="13" height="13" fill="var(--ink, #0f172a)" />
-								<rect x="70" y="5" width="25" height="25" fill="var(--ink, #0f172a)" />
-								<rect x="73" y="8" width="19" height="19" fill="white" />
-								<rect x="76" y="11" width="13" height="13" fill="var(--ink, #0f172a)" />
-								<rect x="5" y="70" width="25" height="25" fill="var(--ink, #0f172a)" />
-								<rect x="8" y="73" width="19" height="19" fill="white" />
-								<rect x="11" y="76" width="13" height="13" fill="var(--ink, #0f172a)" />
-								{/* Central SBP icon badge */}
-								<circle cx="50" cy="50" r="14" fill="var(--ok-fg, #059669)" />
-								<text x="50" y="54" fontSize="9" fontWeight="900" fill="white" textAnchor="middle">СБП</text>
-							</svg>
+						<div className="flex flex-col items-center justify-center gap-2.5">
+							{/* SBP Protocol Badge */}
+							<div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--ok-bg)] border border-[var(--ok-fg)]/30 text-xs font-bold text-[var(--ok-fg)]">
+								<Zap className="w-3.5 h-3.5 shrink-0" />
+								<span>СБП • НСПК ГОСТ Р 56042</span>
+							</div>
+
+							{/* ISO/IEC 18004 Authentic Algorithmic QR Matrix */}
+							<div
+								className="flex items-center justify-center p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-inner w-56 h-56 mx-auto"
+								data-testid="sbp-qr-svg-container"
+								dangerouslySetInnerHTML={{ __html: sbpQrSvg }}
+							/>
 						</div>
 
 						<div className="space-y-1">
