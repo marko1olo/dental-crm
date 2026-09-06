@@ -19,6 +19,7 @@ import {
 	AlertTriangle,
 	Award,
 	Calendar,
+	Camera,
 	Check,
 	CheckCircle2,
 	ChevronDown,
@@ -79,6 +80,7 @@ export interface PatientPlanViewProps {
 	readonly phone?: string | undefined;
 	readonly birthDate?: string | undefined;
 	readonly fullCabinetData?: PatientPersonalCabinetData | undefined;
+	readonly scans?: readonly PatientDiagnosticScan[] | undefined;
 	readonly onPayStageSbp?: ((stage: TreatmentPlanStage) => void) | undefined;
 	readonly onBookAppointment?: (() => void) | undefined;
 	readonly onRescheduleAppointment?: (() => void) | undefined;
@@ -179,7 +181,7 @@ export const PATIENT_COMFORT_STANDARDS = [
 export interface PatientDiagnosticScan {
 	readonly id: string;
 	readonly titleRu: string;
-	readonly modality: "rvg" | "optg" | "cbct";
+	readonly modality: "rvg" | "optg" | "cbct" | "trg";
 	readonly modalityRu: string;
 	readonly dateRu: string;
 	readonly toothFdi?: string | undefined;
@@ -197,22 +199,20 @@ export const DEFAULT_PATIENT_SCANS: readonly PatientDiagnosticScan[] = [
 		dateRu: "28.08.2026",
 		toothFdi: "16",
 		doseMicroSv: 2.0,
-		previewUrl:
-			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><rect width='200' height='200' fill='%230f172a'/><path d='M60 40 Q100 15 140 40 L130 150 Q100 180 70 150 Z' fill='%2394a3b8' opacity='0.7'/><circle cx='100' cy='85' r='18' fill='%2338bdf8' opacity='0.6'/><line x1='100' y1='85' x2='100' y2='155' stroke='%2338bdf8' stroke-width='4'/><text x='100' y='188' fill='%2338bdf8' font-size='11' font-family='sans-serif' text-anchor='middle'>RVG 1.6</text></svg>",
+		previewUrl: "/radiology/sample_rvg_tooth16.jpg",
 		conclusionRu:
 			"Каналы запломбированы до физиологической верхушки, деструкции костной ткани не выявлено.",
 	},
 	{
 		id: "scan-2",
-		titleRu: "Панорамная ортопантомография (ОПТГ)",
-		modality: "optg",
-		modalityRu: "Панорамный снимок ОПТГ",
+		titleRu: "Телерентгенография черепа (ТРГ)",
+		modality: "trg",
+		modalityRu: "Телерентгенограмма ТРГ",
 		dateRu: "14.07.2026",
-		doseMicroSv: 14.0,
-		previewUrl:
-			"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'><rect width='200' height='200' fill='%230f172a'/><path d='M30 110 Q100 40 170 110 Q100 160 30 110 Z' fill='none' stroke='%2394a3b8' stroke-width='16' opacity='0.5'/><text x='100' y='105' fill='%23e2e8f0' font-size='12' font-family='sans-serif' font-weight='bold' text-anchor='middle'>ОПТГ (ОБЗОР)</text><text x='100' y='125' fill='%2338bdf8' font-size='10' font-family='sans-serif' text-anchor='middle'>14.07.2026</text></svg>",
+		doseMicroSv: 18.0,
+		previewUrl: "/radiology/sample_trg_cephalogram.jpg",
 		conclusionRu:
-			"Обзорный снимок челюстно-лицевой области: состояние периапикальных тканей стабильное.",
+			"Телерентгенограмма в боковой проекции: анатомические ориентиры стабильны, соотношение челюстей нормогнатическое, угол ANB 2.5°.",
 	},
 ];
 
@@ -224,6 +224,7 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	phone = "+7 (999) 123-45-67",
 	birthDate = "1984-05-14",
 	fullCabinetData,
+	scans,
 	onPayStageSbp,
 	onBookAppointment,
 	onRescheduleAppointment,
@@ -232,6 +233,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 	emergencyPhone = "+7 (800) 555-35-35",
 	emergencyWhatsappNumber = "79991234567",
 }) => {
+	// Diagnostic scans to render (defaults to real clinical samples)
+	const activeScans = scans ?? DEFAULT_PATIENT_SCANS;
 	// Diagnostic Scans State (Fast pure 2D viewer with zero lag)
 	const [selectedDiagnosticScan, setSelectedDiagnosticScan] = useState<PatientDiagnosticScan | null>(null);
 	const [scanZoom, setScanZoom] = useState<number>(1);
@@ -964,47 +967,91 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 					</span>
 				</div>
 
-				<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px" }}>
-					{DEFAULT_PATIENT_SCANS.map((scan) => (
-						<div
-							key={scan.id}
-							style={{
-								backgroundColor: "var(--pc-bg, #0f172a)",
-								border: "1px solid var(--pc-border, #334155)",
-								borderRadius: "10px",
-								overflow: "hidden",
-								display: "flex",
-								flexDirection: "column",
-							}}
-							data-testid={`plan-scan-card-${scan.id}`}
-						>
+				{activeScans.length === 0 ? (
+					<div
+						data-testid="plan-scans-empty-state"
+						style={{
+							padding: "32px 16px",
+							textAlign: "center",
+							backgroundColor: "var(--pc-bg, #0f172a)",
+							border: "1px dashed var(--pc-border, #334155)",
+							borderRadius: "10px",
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							justifyContent: "center",
+							gap: "10px",
+						}}
+					>
+						<Camera size={32} style={{ color: "var(--pc-text-muted, #94a3b8)", opacity: 0.6 }} />
+						<div style={{ fontSize: "13px", fontWeight: 700, color: "var(--pc-text-main, var(--ink, #0f172a))" }}>
+							Диагностические снимки не прикреплены
+						</div>
+						<p style={{ margin: 0, fontSize: "11px", color: "var(--pc-text-muted, #94a3b8)", maxWidth: "340px", lineHeight: "1.4" }}>
+							В карте пациента пока нет загруженных радиовизиографических или томографических снимков. Снимки появятся здесь сразу после проведения рентген-диагностики.
+						</p>
+					</div>
+				) : (
+					<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px" }}>
+						{activeScans.map((scan) => (
 							<div
+								key={scan.id}
 								style={{
-									position: "relative",
-									height: "140px",
-									backgroundColor: "#020617",
+									backgroundColor: "var(--pc-bg, #0f172a)",
+									border: "1px solid var(--pc-border, #334155)",
+									borderRadius: "10px",
+									overflow: "hidden",
 									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									cursor: "pointer",
+									flexDirection: "column",
 								}}
-								onClick={() => {
-									setSelectedDiagnosticScan(scan);
-									setScanZoom(1);
-									setScanInvert(false);
-								}}
-								title="Нажмите для увеличения снимка"
+								data-testid={`plan-scan-card-${scan.id}`}
 							>
-								<img
-									src={scan.previewUrl}
-									alt={scan.titleRu}
-									loading="lazy"
+								<div
 									style={{
-										maxHeight: "100%",
-										maxWidth: "100%",
-										objectFit: "contain",
+										position: "relative",
+										height: "140px",
+										backgroundColor: "#020617",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										cursor: "pointer",
 									}}
-								/>
+									onClick={() => {
+										setSelectedDiagnosticScan(scan);
+										setScanZoom(1);
+										setScanInvert(false);
+									}}
+									title="Нажмите для увеличения снимка"
+								>
+									{scan.previewUrl ? (
+										<img
+											src={scan.previewUrl}
+											alt={scan.titleRu}
+											loading="lazy"
+											style={{
+												maxHeight: "100%",
+												maxWidth: "100%",
+												objectFit: "contain",
+											}}
+										/>
+									) : (
+										<div
+											data-testid={`scan-placeholder-${scan.id}`}
+											style={{
+												display: "flex",
+												flexDirection: "column",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: "6px",
+												color: "var(--pc-text-muted, #94a3b8)",
+												padding: "16px",
+												textAlign: "center",
+											}}
+										>
+											<Camera size={28} style={{ opacity: 0.7 }} />
+											<span style={{ fontSize: "11px", fontWeight: 600 }}>Снимок обрабатывается</span>
+										</div>
+									)}
 								<span
 									style={{
 										position: "absolute",
@@ -1066,7 +1113,8 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 						</div>
 					))}
 				</div>
-			</div>
+			)}
+		</div>
 
 			{/* 5. STAGES LIST WITH TRANSPARENT CARDS */}
 			<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -1428,18 +1476,34 @@ export const PatientPlanView: React.FC<PatientPlanViewProps> = ({
 								overflow: "hidden",
 							}}
 						>
-							<img
-								src={selectedDiagnosticScan.previewUrl}
-								alt={selectedDiagnosticScan.titleRu}
-								style={{
-									maxWidth: "100%",
-									maxHeight: "100%",
-									objectFit: "contain",
-									transform: `scale(${scanZoom})`,
-									filter: scanInvert ? "invert(1) contrast(1.3)" : "contrast(1.1)",
-									transition: "transform 0.15s ease",
-								}}
-							/>
+							{selectedDiagnosticScan.previewUrl ? (
+								<img
+									src={selectedDiagnosticScan.previewUrl}
+									alt={selectedDiagnosticScan.titleRu}
+									style={{
+										maxWidth: "100%",
+										maxHeight: "100%",
+										objectFit: "contain",
+										transform: `scale(${scanZoom})`,
+										filter: scanInvert ? "invert(1) contrast(1.3)" : "contrast(1.1)",
+										transition: "transform 0.15s ease",
+									}}
+								/>
+							) : (
+								<div
+									data-testid="modal-scan-empty-placeholder"
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "center",
+										gap: "8px",
+										color: "var(--pc-text-muted, #94a3b8)",
+									}}
+								>
+									<Camera size={36} style={{ opacity: 0.5 }} />
+									<span style={{ fontSize: "12px", fontWeight: 600 }}>Файл снимка не прикреплен</span>
+								</div>
+							)}
 						</div>
 
 						{/* Conclusion */}

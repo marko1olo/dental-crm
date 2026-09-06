@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import {
 	MoveHorizontal,
 	MoveVertical,
+	Camera,
 	Eye,
 	Sliders,
 	RotateCw,
@@ -237,23 +238,39 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 			loadedCount++;
 			if (loadedCount >= 2) {
 				// Draw Before Image
-				if (imgBefore.width > 0) {
+				if (beforeSlotRecord.imageUrl && imgBefore.width > 0) {
 					ctx.drawImage(imgBefore, 30, contentY, colWidth, contentHeight);
 					ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
 					ctx.fillRect(40, contentY + 20, 220, 40);
 					ctx.fillStyle = '#38bdf8';
 					ctx.font = 'bold 22px sans-serif';
 					ctx.fillText(`ДО: ${getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До'} (${beforeShade})`, 50, contentY + 48);
+				} else {
+					ctx.fillStyle = '#1e293b';
+					ctx.fillRect(30, contentY, colWidth, contentHeight);
+					ctx.fillStyle = '#64748b';
+					ctx.font = 'bold 20px sans-serif';
+					ctx.textAlign = 'center';
+					ctx.fillText(`Кадр «До» не загружен (${getSlotDefinitionById(beforeSlotId)?.shortLabelRu || 'До'})`, 30 + colWidth / 2, contentY + contentHeight / 2);
+					ctx.textAlign = 'left';
 				}
 
 				// Draw After Image
-				if (imgAfter.width > 0) {
+				if (afterSlotRecord.imageUrl && imgAfter.width > 0) {
 					ctx.drawImage(imgAfter, 30 + colWidth + 30, contentY, colWidth, contentHeight);
 					ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
 					ctx.fillRect(30 + colWidth + 40, contentY + 20, 240, 40);
 					ctx.fillStyle = '#4ade80';
 					ctx.font = 'bold 22px sans-serif';
 					ctx.fillText(`ПОСЛЕ: ${getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После'} (${afterShade})`, 30 + colWidth + 50, contentY + 48);
+				} else {
+					ctx.fillStyle = '#1e293b';
+					ctx.fillRect(30 + colWidth + 30, contentY, colWidth, contentHeight);
+					ctx.fillStyle = '#64748b';
+					ctx.font = 'bold 20px sans-serif';
+					ctx.textAlign = 'center';
+					ctx.fillText(`Кадр «После» не загружен (${getSlotDefinitionById(afterSlotId)?.shortLabelRu || 'После'})`, 30 + colWidth + 30 + colWidth / 2, contentY + contentHeight / 2);
+					ctx.textAlign = 'left';
 				}
 
 				// Bottom Watermark bar
@@ -280,8 +297,17 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 		imgAfter.onload = renderImages;
 		imgAfter.onerror = renderImages;
 
-		imgBefore.src = beforeSlotRecord.imageUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="%231e293b" width="100%" height="100%"/><text fill="%2364748b" x="50%" y="50%" text-anchor="middle">Кадр До</text></svg>';
-		imgAfter.src = afterSlotRecord.imageUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="%231e293b" width="100%" height="100%"/><text fill="%2364748b" x="50%" y="50%" text-anchor="middle">Кадр После</text></svg>';
+		if (beforeSlotRecord.imageUrl) {
+			imgBefore.src = beforeSlotRecord.imageUrl;
+		} else {
+			renderImages();
+		}
+
+		if (afterSlotRecord.imageUrl) {
+			imgAfter.src = afterSlotRecord.imageUrl;
+		} else {
+			renderImages();
+		}
 	}, [exportFormat, clinicName, patientName, patientCardNumber, doctorName, beforeShade, afterShade, beforeSlotRecord.imageUrl, afterSlotRecord.imageUrl, beforeSlotId, afterSlotId]);
 
 	return (
@@ -593,8 +619,20 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 							}}
 						/>
 					) : (
-						<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>
-							Кадр «До» не загружен
+						<div
+							data-testid="before-slot-placeholder"
+							style={{
+								display: 'flex',
+								flexDirection: 'column',
+								alignItems: 'center',
+								justifyContent: 'center',
+								height: '100%',
+								color: '#64748b',
+								gap: '8px',
+							}}
+						>
+							<Camera size={36} style={{ opacity: 0.5 }} />
+							<span style={{ fontSize: '13px', fontWeight: 600 }}>Кадр «До» не загружен</span>
 						</div>
 					)}
 
@@ -752,7 +790,22 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 					<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{beforeSlotRecord.imageUrl ? (
 							<img src={beforeSlotRecord.imageUrl} alt="До" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-						) : <span style={{ color: '#64748b' }}>Нет кадра «До»</span>}
+						) : (
+							<div
+								data-testid="side-by-side-before-placeholder"
+								style={{
+									display: 'flex',
+									flexDirection: 'column',
+									alignItems: 'center',
+									justifyContent: 'center',
+									gap: '8px',
+									color: '#64748b',
+								}}
+							>
+								<Camera size={32} style={{ opacity: 0.5 }} />
+								<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «До»</span>
+							</div>
+						)}
 						<div className="ba-pill-tag before" style={{ position: 'absolute', bottom: '12px', left: '12px', background: 'rgba(15, 23, 42, 0.8)', color: '#38bdf8', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
 							ДО ({beforeShade})
 						</div>
@@ -761,7 +814,22 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 					<div style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{afterSlotRecord.imageUrl ? (
 							<img src={afterSlotRecord.imageUrl} alt="После" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-						) : <span style={{ color: '#64748b' }}>Нет кадра «После»</span>}
+						) : (
+							<div
+								data-testid="side-by-side-after-placeholder"
+								style={{
+									display: 'flex',
+									flexDirection: 'column',
+									alignItems: 'center',
+									justifyContent: 'center',
+									gap: '8px',
+									color: '#64748b',
+								}}
+							>
+								<Camera size={32} style={{ opacity: 0.5 }} />
+								<span style={{ fontSize: '12px', fontWeight: 600 }}>Нет кадра «После»</span>
+							</div>
+						)}
 						<div className="ba-pill-tag after" style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(15, 23, 42, 0.8)', color: '#4ade80', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 800 }}>
 							ПОСЛЕ ({afterShade})
 						</div>
@@ -786,12 +854,28 @@ export const BeforeAfterComparisonView: React.FC<BeforeAfterComparisonViewProps>
 						<span style={{ fontSize: '13px', fontWeight: 700 }}>{Math.round(blendOpacity * 100)}%</span>
 					</div>
 
-					<div style={{ position: 'relative', width: '100%', height: '520px', background: '#020617', borderRadius: '16px', overflow: 'hidden' }}>
+					<div style={{ position: 'relative', width: '100%', height: '520px', background: '#020617', borderRadius: '16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 						{beforeSlotRecord.imageUrl && (
 							<img src={beforeSlotRecord.imageUrl} alt="До" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
 						)}
 						{afterSlotRecord.imageUrl && (
 							<img src={afterSlotRecord.imageUrl} alt="После" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: blendOpacity }} />
+						)}
+						{!beforeSlotRecord.imageUrl && !afterSlotRecord.imageUrl && (
+							<div
+								data-testid="blend-empty-placeholder"
+								style={{
+									display: 'flex',
+									flexDirection: 'column',
+									alignItems: 'center',
+									justifyContent: 'center',
+									gap: '8px',
+									color: '#64748b',
+								}}
+							>
+								<Camera size={36} style={{ opacity: 0.5 }} />
+								<span style={{ fontSize: '13px', fontWeight: 600 }}>Кадры «До» и «После» не загружены</span>
+							</div>
 						)}
 					</div>
 				</div>

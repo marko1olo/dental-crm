@@ -1246,31 +1246,72 @@ export const PatientWebappPortalModal: React.FC<PatientWebappPortalModalProps> =
 												onPointerUp={handlePointerUp}
 											>
 												{/* Before Layer */}
-												<img
-													src={currentGallery.beforeSlot.imageUrl}
-													alt="До"
-													style={{
-														position: "absolute",
-														inset: 0,
-														width: "100%",
-														height: "100%",
-														objectFit: "cover",
-													}}
-												/>
+												{currentGallery.beforeSlot.imageUrl ? (
+													<img
+														src={currentGallery.beforeSlot.imageUrl}
+														alt="До"
+														style={{
+															position: "absolute",
+															inset: 0,
+															width: "100%",
+															height: "100%",
+															objectFit: "cover",
+														}}
+													/>
+												) : (
+													<div
+														data-testid="pwa-slider-before-placeholder"
+														style={{
+															position: "absolute",
+															inset: 0,
+															display: "flex",
+															flexDirection: "column",
+															alignItems: "center",
+															justifyContent: "center",
+															backgroundColor: "#1e293b",
+															color: "#94a3b8",
+															gap: "6px",
+														}}
+													>
+														<Camera size={28} style={{ opacity: 0.6 }} />
+														<span style={{ fontSize: "12px", fontWeight: 600 }}>{currentGallery.beforeSlot.labelRu}</span>
+													</div>
+												)}
 
 												{/* After Layer with Clip-path */}
-												<img
-													src={currentGallery.afterSlot.imageUrl}
-													alt="После"
-													style={{
-														position: "absolute",
-														inset: 0,
-														width: "100%",
-														height: "100%",
-														objectFit: "cover",
-														clipPath: calculateSplitClipPath(splitPercent, "vertical"),
-													}}
-												/>
+												{currentGallery.afterSlot.imageUrl ? (
+													<img
+														src={currentGallery.afterSlot.imageUrl}
+														alt="После"
+														style={{
+															position: "absolute",
+															inset: 0,
+															width: "100%",
+															height: "100%",
+															objectFit: "cover",
+															clipPath: calculateSplitClipPath(splitPercent, "vertical"),
+														}}
+													/>
+												) : (
+													<div
+														data-testid="pwa-slider-after-placeholder"
+														style={{
+															position: "absolute",
+															inset: 0,
+															display: "flex",
+															flexDirection: "column",
+															alignItems: "center",
+															justifyContent: "center",
+															backgroundColor: "#0f766e",
+															color: "#ccfbf1",
+															gap: "6px",
+															clipPath: calculateSplitClipPath(splitPercent, "vertical"),
+														}}
+													>
+														<Camera size={28} style={{ opacity: 0.6 }} />
+														<span style={{ fontSize: "12px", fontWeight: 600 }}>{currentGallery.afterSlot.labelRu}</span>
+													</div>
+												)}
 
 												{/* Wiper handle line */}
 												<div
