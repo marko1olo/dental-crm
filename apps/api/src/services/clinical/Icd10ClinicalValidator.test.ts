@@ -36,6 +36,22 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 			assert.equal(Icd10ClinicalValidator.normalizeCode("k040"), "K04.0");
 			assert.equal(Icd10ClinicalValidator.normalizeCode("К051"), "K05.1");
 			assert.equal(Icd10ClinicalValidator.normalizeCode("K0402"), "K04.02");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("Z012"), "Z01.2");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("z000"), "Z00.0");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("Z463"), "Z46.3");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("Z464"), "Z46.4");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("z965"), "Z96.5");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("z1384"), "Z13.84");
+		});
+
+		it("normalizes dental Z-codes", () => {
+			assert.equal(Icd10ClinicalValidator.normalizeCode("z01.2"), "Z01.2");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("  Z01.2  "), "Z01.2");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("z00.0"), "Z00.0");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("Z13.84"), "Z13.84");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("z46.3"), "Z46.3");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("Z46.4"), "Z46.4");
+			assert.equal(Icd10ClinicalValidator.normalizeCode("z96.5"), "Z96.5");
 		});
 
 		it("handles empty or non-string values gracefully", () => {
@@ -46,7 +62,7 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 		});
 	});
 
-	describe("2. Dental ICD-10 Section Verification (K00–K14)", () => {
+	describe("2. Dental ICD-10 Section Verification (K00–K14 & Dental Z-Codes)", () => {
 		it("accepts all valid dental rubrics from K00 to K14", () => {
 			const validCodes = [
 				"K00.0", // Адентия
@@ -89,12 +105,33 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 			}
 		});
 
+		it("accepts all valid dental Z-codes for healthy checkups and routine exams", () => {
+			const validZCodes = [
+				"Z01.2", // Стоматологическое обследование / осмотр / гигиена
+				"Z00.0", // Общий медицинский осмотр
+				"Z13.84", // Скрининг стоматологических нарушений
+				"Z46.3", // Примерка зубного протеза
+				"Z46.4", // Примерка ортодонтического устройства
+				"Z96.5", // Наличие зубных имплантатов
+			];
+
+			for (const code of validZCodes) {
+				assert.equal(
+					Icd10ClinicalValidator.isDentalIcd10(code),
+					true,
+					`Код ${code} должен быть признан стоматологическим Z-кодом`,
+				);
+			}
+		});
+
 		it("rejects non-dental and invalid ICD-10 codes", () => {
 			const nonDentalCodes = [
 				"J00", // ОРВИ
 				"I10", // Гипертония
 				"M54.5", // Люмбаго
-				"Z01.2", // Стоматологический осмотр (Z-класс)
+				"Z01.1", // Обследование уха и слуха (не стоматологический Z-код)
+				"Z00.1", // Осмотр ребенка (не Z00.0)
+				"Z96.6", // Наличие ортопедических суставных имплантатов (не зубных)
 				"A00", // Холера
 				"K25.0", // Язва желудка (не K00-K14)
 				"K99",
@@ -131,6 +168,15 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K10.3"), false);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K12.0"), false);
 			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("K14.0"), false);
+		});
+
+		it("identifies dental Z-codes as non-tooth-specific (Mandates 8e, 8k)", () => {
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("Z01.2"), false);
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("Z00.0"), false);
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("Z13.84"), false);
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("Z46.3"), false);
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("Z46.4"), false);
+			assert.equal(Icd10ClinicalValidator.isToothSpecificDiagnosis("Z96.5"), false);
 		});
 	});
 
@@ -223,12 +269,106 @@ describe("Icd10ClinicalValidator — Clinical Protocol & EMR Integrity", () => {
 			}
 		});
 
-		it("fails with Icd10Invalid when code is outside K00-K14", () => {
+		it("fails with Icd10Invalid when code is outside dental section (K00-K14 & Z-codes)", () => {
 			const res = Icd10ClinicalValidator.validate("J06.9", "16");
 			assert.equal(res.isValid, false);
 			if (!res.isValid) {
 				assert.equal(res.errorCode, "Icd10Invalid");
 				assert.match(res.errorMessage, /стоматологический раздел МКБ-10/i);
+				assert.match(res.errorMessage, /K00–K14, Z01\.2, Z00\.0, Z13\.84, Z46\.3\/4, Z96\.5/i);
+			}
+		});
+
+		it("succeeds for healthy checkup Z01.2 without tooth (Mandates 8e, 8k Doctor Autonomy)", () => {
+			const res = Icd10ClinicalValidator.validate("Z01.2");
+			assert.equal(res.isValid, true);
+			if (res.isValid) {
+				assert.equal(res.normalizedCode, "Z01.2");
+				assert.equal(res.baseRubric, "Z01");
+				assert.equal(
+					res.categoryTitle,
+					"Стоматологическое обследование (профилактический осмотр, гигиена полости рта, санация)",
+				);
+				assert.equal(res.isToothSpecific, false);
+				assert.deepEqual(res.parsedTeeth, []);
+			}
+		});
+
+		it("succeeds for routine general medical checkup Z00.0 without tooth", () => {
+			const res = Icd10ClinicalValidator.validate("Z00.0");
+			assert.equal(res.isValid, true);
+			if (res.isValid) {
+				assert.equal(res.normalizedCode, "Z00.0");
+				assert.equal(res.baseRubric, "Z00");
+				assert.equal(res.categoryTitle, "Общий медицинский осмотр (профилактический)");
+				assert.equal(res.isToothSpecific, false);
+				assert.deepEqual(res.parsedTeeth, []);
+			}
+		});
+
+		it("succeeds for dental screening Z13.84 without tooth", () => {
+			const res = Icd10ClinicalValidator.validate("Z13.84");
+			assert.equal(res.isValid, true);
+			if (res.isValid) {
+				assert.equal(res.normalizedCode, "Z13.84");
+				assert.equal(res.baseRubric, "Z13");
+				assert.equal(
+					res.categoryTitle,
+					"Специальное скрининговое обследование для выявления стоматологических нарушений",
+				);
+				assert.equal(res.isToothSpecific, false);
+				assert.deepEqual(res.parsedTeeth, []);
+			}
+		});
+
+		it("succeeds for prosthetics fitting Z46.3 without tooth and optionally with tooth", () => {
+			const resWithout = Icd10ClinicalValidator.validate("Z46.3");
+			assert.equal(resWithout.isValid, true);
+			if (resWithout.isValid) {
+				assert.equal(resWithout.normalizedCode, "Z46.3");
+				assert.equal(resWithout.baseRubric, "Z46");
+				assert.equal(resWithout.isToothSpecific, false);
+				assert.deepEqual(resWithout.parsedTeeth, []);
+			}
+
+			const resWith = Icd10ClinicalValidator.validate("Z46.3", "11, 21");
+			assert.equal(resWith.isValid, true);
+			if (resWith.isValid) {
+				assert.equal(resWith.normalizedCode, "Z46.3");
+				assert.equal(resWith.isToothSpecific, false);
+				assert.deepEqual(resWith.parsedTeeth, [11, 21]);
+			}
+		});
+
+		it("succeeds for orthodontic fitting Z46.4 without tooth", () => {
+			const res = Icd10ClinicalValidator.validate("Z46.4");
+			assert.equal(res.isValid, true);
+			if (res.isValid) {
+				assert.equal(res.normalizedCode, "Z46.4");
+				assert.equal(res.baseRubric, "Z46");
+				assert.equal(res.categoryTitle, "Примерка и подгонка ортодонтического устройства");
+				assert.equal(res.isToothSpecific, false);
+				assert.deepEqual(res.parsedTeeth, []);
+			}
+		});
+
+		it("succeeds for dental implants Z96.5 without tooth and optionally with tooth", () => {
+			const resWithout = Icd10ClinicalValidator.validate("Z96.5");
+			assert.equal(resWithout.isValid, true);
+			if (resWithout.isValid) {
+				assert.equal(resWithout.normalizedCode, "Z96.5");
+				assert.equal(resWithout.baseRubric, "Z96");
+				assert.equal(resWithout.categoryTitle, "Наличие зубных и нижнечелюстных имплантатов");
+				assert.equal(resWithout.isToothSpecific, false);
+				assert.deepEqual(resWithout.parsedTeeth, []);
+			}
+
+			const resWith = Icd10ClinicalValidator.validate("Z96.5", "36, 46");
+			assert.equal(resWith.isValid, true);
+			if (resWith.isValid) {
+				assert.equal(resWith.normalizedCode, "Z96.5");
+				assert.equal(resWith.isToothSpecific, false);
+				assert.deepEqual(resWith.parsedTeeth, [36, 46]);
 			}
 		});
 

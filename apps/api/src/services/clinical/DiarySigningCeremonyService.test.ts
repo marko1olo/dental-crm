@@ -140,8 +140,51 @@ describe("DiarySigningCeremonyService — Unit & Domain Logic", () => {
 		assert.equal(DiarySigningCeremonyService.isDentalIcd10("J00"), false);
 		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K02.1"), true);
 		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K04.0"), true);
-		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K05.1"), true);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K05.1"), false);
 		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("K08.1"), false);
+
+		// Z-коды профилактических осмотров, диспансеризации и примерки (Мандаты 8e, 8k)
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("Z01.2"), true);
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("Z00.0"), true);
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("Z13.84"), true);
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("Z46.3"), true);
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("Z46.4"), true);
+		assert.equal(DiarySigningCeremonyService.isDentalIcd10("Z96.5"), true);
+
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("Z01.2"), false);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("Z00.0"), false);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("Z13.84"), false);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("Z46.3"), false);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("Z46.4"), false);
+		assert.equal(DiarySigningCeremonyService.isToothSpecificDiagnosis("Z96.5"), false);
+
+		// Валидация протокола для здорового пациента (Z01.2) без указания зуба
+		const healthyRes = DiarySigningCeremonyService.validateClinicalProtocol("Z01.2");
+		assert.equal(healthyRes.isValid, true);
+		if (healthyRes.isValid) {
+			assert.equal(healthyRes.normalizedCode, "Z01.2");
+			assert.equal(healthyRes.baseRubric, "Z01");
+			assert.equal(healthyRes.isToothSpecific, false);
+			assert.deepEqual(healthyRes.parsedTeeth, []);
+		}
+
+		// Валидация протокола для общего осмотра (Z00.0) и скрининга (Z13.84)
+		const routineRes = DiarySigningCeremonyService.validateClinicalProtocol("Z00.0");
+		assert.equal(routineRes.isValid, true);
+		const screeningRes = DiarySigningCeremonyService.validateClinicalProtocol("Z13.84");
+		assert.equal(screeningRes.isValid, true);
+
+		// Валидация протокола для протезирования/имплантатов с опциональным зубом
+		const fittingRes = DiarySigningCeremonyService.validateClinicalProtocol("Z46.3", "21");
+		assert.equal(fittingRes.isValid, true);
+		if (fittingRes.isValid) {
+			assert.deepEqual(fittingRes.parsedTeeth, [21]);
+		}
+		const implantRes = DiarySigningCeremonyService.validateClinicalProtocol("Z96.5", "36");
+		assert.equal(implantRes.isValid, true);
+		if (implantRes.isValid) {
+			assert.deepEqual(implantRes.parsedTeeth, [36]);
+		}
 
 		// Valid tooth-specific protocol
 		const validRes = DiarySigningCeremonyService.validateClinicalProtocol("K02.1", "36");
