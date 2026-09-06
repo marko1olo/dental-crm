@@ -215,7 +215,8 @@ export function evaluateClinicalAccess(
 		return {
 			hasClinicalAccess: false,
 			normalizedRole: "admin",
-			reason: "Системный администратор без клинической роли (аппаратная блокировка врачебной тайны)",
+			reason:
+				"Системный администратор без клинической роли (аппаратная блокировка врачебной тайны)",
 		};
 	}
 
@@ -233,7 +234,57 @@ export function evaluateClinicalAccess(
 		return {
 			hasClinicalAccess: false,
 			normalizedRole: role,
-			reason: "Сотрудник регистратуры не является лечащим врачом (152-ФЗ / 323-ФЗ)",
+			reason:
+				"Сотрудник регистратуры не является лечащим врачом (152-ФЗ / 323-ФЗ)",
+		};
+	}
+
+	// Куратор лечения (curator)
+	if (role === "curator") {
+		const clinicalRole = extra?.clinicalRole?.trim().toLowerCase();
+		const isClinicalCurator =
+			(clinicalRole && CLINICAL_STAFF_ROLES.has(clinicalRole)) ||
+			extra?.canSignMedicalRecords === true ||
+			(Array.isArray(extra?.specialties) && extra.specialties.length > 0);
+
+		if (isClinicalCurator) {
+			return {
+				hasClinicalAccess: true,
+				normalizedRole: "curator_clinical",
+				reason:
+					"Куратор лечения с подтвержденной квалификацией врача/ассистента (Мандат 8e)",
+			};
+		}
+
+		return {
+			hasClinicalAccess: false,
+			normalizedRole: "curator",
+			reason:
+				"Куратор лечения без подтвержденной клинической квалификации врача (152-ФЗ / 323-ФЗ)",
+		};
+	}
+
+	// Управляющий (manager)
+	if (role === "manager") {
+		const clinicalRole = extra?.clinicalRole?.trim().toLowerCase();
+		const isClinicalManager =
+			(clinicalRole && CLINICAL_STAFF_ROLES.has(clinicalRole)) ||
+			extra?.canSignMedicalRecords === true ||
+			(Array.isArray(extra?.specialties) && extra.specialties.length > 0);
+
+		if (isClinicalManager) {
+			return {
+				hasClinicalAccess: true,
+				normalizedRole: "manager_clinical",
+				reason:
+					"Управляющий с подтвержденной клинической квалификацией врача (Мандат 8e)",
+			};
+		}
+
+		return {
+			hasClinicalAccess: false,
+			normalizedRole: "manager",
+			reason: "Управляющий без клинической роли (152-ФЗ / 323-ФЗ)",
 		};
 	}
 
@@ -256,6 +307,7 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
 			id?: string | null;
 			canSignMedicalRecords?: boolean;
 			clinicalRole?: string | null;
+			specialties?: string[] | null;
 		};
 	};
 
@@ -283,9 +335,15 @@ export function shouldStripMedicalData(request: FastifyRequest): boolean {
 		reqAny.user?.canSignMedicalRecords ??
 		false;
 
+	const specialtiesClaim =
+		(identity as unknown as { specialties?: string[] | null }).specialties ??
+		reqAny.user?.specialties ??
+		null;
+
 	const evalResult = evaluateClinicalAccess(rawRole, {
 		clinicalRole: clinicalRoleClaim,
 		canSignMedicalRecords,
+		specialties: specialtiesClaim,
 	});
 
 	// Если нет клинического доступа — требуется аппаратное усечение
@@ -319,7 +377,7 @@ export const CLINICAL_DIAGNOSTIC_PATTERNS: readonly RegExp[] = [
 	/лидокаин\S*/gi,
 	/имплантат\S*/gi,
 	/имплантаци\S*/gi,
-	/синус[_\-]?лифтинг\S*/gi,
+	/синус[_-]?лифтинг\S*/gi,
 	/остеомиелит\S*/gi,
 	/флегмон\S*/gi,
 	/абсцесс\S*/gi,
@@ -450,7 +508,8 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 		// 1. Обработка строковых полезных нагрузок (JSON, CSV, XML, plain text)
 		if (typeof payload === "string") {
 			const rawContentType = reply.getHeader("content-type");
-			const contentType = typeof rawContentType === "string" ? rawContentType.toLowerCase() : "";
+			const contentType =
+				typeof rawContentType === "string" ? rawContentType.toLowerCase() : "";
 
 			if (contentType.includes("application/json")) {
 				if (hasForbiddenClinicalKeyInJson(payload)) {
@@ -476,7 +535,8 @@ export function registerMedicalSecrecyPayloadStripping(app: FastifyInstance) {
 		// 2. Обработка Buffer полезных нагрузок (бинарные буферы выгрузок CSV/XML)
 		if (Buffer.isBuffer(payload)) {
 			const rawContentType = reply.getHeader("content-type");
-			const contentType = typeof rawContentType === "string" ? rawContentType.toLowerCase() : "";
+			const contentType =
+				typeof rawContentType === "string" ? rawContentType.toLowerCase() : "";
 
 			const isTextOrExport =
 				contentType.includes("text/") ||

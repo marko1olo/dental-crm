@@ -16,16 +16,16 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import Fastify from "fastify";
+import { authTokenSecret } from "../../security/authSecret.js";
+import {
+	getMedicalAccessAuditTrailFromDb,
+	recordMedicalRecordAccessAudit,
+} from "../../security/medicalAuditTrail.js";
 import {
 	evaluateClinicalAccess,
 	registerMedicalSecrecyPayloadStripping,
 	stripDiagnosisPayload,
 } from "../../security/medicalSecrecyWarden.js";
-import {
-	getMedicalAccessAuditTrailFromDb,
-	recordMedicalRecordAccessAudit,
-} from "../../security/medicalAuditTrail.js";
-import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { fixtureUuid } from "../support/fixtureOrganizations.js";
 
@@ -47,13 +47,18 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 			// 5 обязательных клинических полей по ТЗ:
 			diagnosis: "K02.1 Глубокий кариес дентина",
 			emr_records: [
-				{ id: "emr-1", protocol: "Первичный осмотр 043-у", complaints: "Острая боль" },
+				{
+					id: "emr-1",
+					protocol: "Первичный осмотр 043-у",
+					complaints: "Острая боль",
+				},
 			],
 			odontogram: {
 				tooth36: { state: "caries", surfaces: ["MOD"] },
 				tooth46: { state: "pulpitis" },
 			},
-			clinicalNotes: "Пациент жалуется на острую ночную пульсирующую боль в зубе 36",
+			clinicalNotes:
+				"Пациент жалуется на острую ночную пульсирующую боль в зубе 36",
 			mkb10: "K02.1",
 			// Дополнительные производные поля
 			diagnosisIcd10: "K02.1",
@@ -66,22 +71,61 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 		const stripped = stripDiagnosisPayload(rawPayload);
 
 		// Убеждаемся, что поля вырезаны ФИЗИЧЕСКИ (отсутствуют ключи в объекте)
-		assert.strictEqual("diagnosis" in stripped, false, "diagnosis должен быть физически вырезан");
-		assert.strictEqual("emr_records" in stripped, false, "emr_records должен быть физически вырезан");
-		assert.strictEqual("odontogram" in stripped, false, "odontogram должен быть физически вырезан");
-		assert.strictEqual("clinicalNotes" in stripped, false, "clinicalNotes должен быть физически вырезан");
-		assert.strictEqual("mkb10" in stripped, false, "mkb10 должен быть физически вырезан");
-		assert.strictEqual("diagnosisIcd10" in stripped, false, "diagnosisIcd10 должен быть физически вырезан");
-		assert.strictEqual("diagnosisTooth" in stripped, false, "diagnosisTooth должен быть физически вырезан");
-		assert.strictEqual("toothStates" in stripped, false, "toothStates должен быть физически вырезан");
-		assert.strictEqual("clinical_notes" in stripped, false, "clinical_notes должен быть физически вырезан");
+		assert.strictEqual(
+			"diagnosis" in stripped,
+			false,
+			"diagnosis должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"emr_records" in stripped,
+			false,
+			"emr_records должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"odontogram" in stripped,
+			false,
+			"odontogram должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"clinicalNotes" in stripped,
+			false,
+			"clinicalNotes должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"mkb10" in stripped,
+			false,
+			"mkb10 должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"diagnosisIcd10" in stripped,
+			false,
+			"diagnosisIcd10 должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"diagnosisTooth" in stripped,
+			false,
+			"diagnosisTooth должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"toothStates" in stripped,
+			false,
+			"toothStates должен быть физически вырезан",
+		);
+		assert.strictEqual(
+			"clinical_notes" in stripped,
+			false,
+			"clinical_notes должен быть физически вырезан",
+		);
 
 		// Убеждаемся, что неклинические данные остались нетронутыми
 		assert.strictEqual(stripped.id, PATIENT_ID);
 		assert.strictEqual(stripped.fullName, "Иванов Иван Иванович");
 		assert.strictEqual(stripped.phone, "+79991234567");
 		assert.strictEqual(stripped.balanceRub, 2500);
-		assert.strictEqual(stripped.notes, "Административное примечание: вход со двора (НЕ должно удаляться)");
+		assert.strictEqual(
+			stripped.notes,
+			"Административное примечание: вход со двора (НЕ должно удаляться)",
+		);
 	});
 
 	test("Рекурсивное усечение вложенных массивов и структур", () => {
@@ -159,11 +203,51 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 	});
 
 	test("evaluateClinicalAccess: Администратор с подтвержденной квалификацией врача имеет доступ", () => {
-		const adminDoctor = evaluateClinicalAccess("admin", { clinicalRole: "doctor" });
+		const adminDoctor = evaluateClinicalAccess("admin", {
+			clinicalRole: "doctor",
+		});
 		assert.strictEqual(adminDoctor.hasClinicalAccess, true);
 
-		const adminSigning = evaluateClinicalAccess("admin", { canSignMedicalRecords: true });
+		const adminSigning = evaluateClinicalAccess("admin", {
+			canSignMedicalRecords: true,
+		});
 		assert.strictEqual(adminSigning.hasClinicalAccess, true);
+	});
+
+	test("evaluateClinicalAccess: Куратор лечения (curator) с подтвержденной клинической квалификацией имеет доступ (Мандат 8e)", () => {
+		const curatorDoctor = evaluateClinicalAccess("curator", {
+			clinicalRole: "doctor",
+		});
+		assert.strictEqual(curatorDoctor.hasClinicalAccess, true);
+		assert.strictEqual(curatorDoctor.normalizedRole, "curator_clinical");
+
+		const curatorSigning = evaluateClinicalAccess("curator", {
+			canSignMedicalRecords: true,
+		});
+		assert.strictEqual(curatorSigning.hasClinicalAccess, true);
+		assert.strictEqual(curatorSigning.normalizedRole, "curator_clinical");
+
+		const curatorSpecialties = evaluateClinicalAccess("curator", {
+			specialties: ["therapist"],
+		});
+		assert.strictEqual(curatorSpecialties.hasClinicalAccess, true);
+		assert.strictEqual(curatorSpecialties.normalizedRole, "curator_clinical");
+
+		const curatorPlain = evaluateClinicalAccess("curator");
+		assert.strictEqual(curatorPlain.hasClinicalAccess, false);
+		assert.strictEqual(curatorPlain.normalizedRole, "curator");
+	});
+
+	test("evaluateClinicalAccess: Управляющий (manager) с подтвержденной клинической квалификацией имеет доступ (Мандат 8e)", () => {
+		const managerSurgeon = evaluateClinicalAccess("manager", {
+			clinicalRole: "surgeon",
+		});
+		assert.strictEqual(managerSurgeon.hasClinicalAccess, true);
+		assert.strictEqual(managerSurgeon.normalizedRole, "manager_clinical");
+
+		const managerPlain = evaluateClinicalAccess("manager");
+		assert.strictEqual(managerPlain.hasClinicalAccess, false);
+		assert.strictEqual(managerPlain.normalizedRole, "manager");
 	});
 
 	// =========================================================================
@@ -229,7 +313,10 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 		assert.strictEqual(resDoctor.statusCode, 200);
 		const doctorBody = JSON.parse(resDoctor.payload);
 		assert.strictEqual(doctorBody.diagnosis, "K02.1");
-		assert.strictEqual(doctorBody.clinicalNotes, "секретная клиническая запись");
+		assert.strictEqual(
+			doctorBody.clinicalNotes,
+			"секретная клиническая запись",
+		);
 		assert.strictEqual(doctorBody.mkb10, "K02.1");
 		assert.ok(Array.isArray(doctorBody.emr_records));
 		assert.ok(doctorBody.odontogram);
