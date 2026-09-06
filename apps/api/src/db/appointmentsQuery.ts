@@ -296,7 +296,8 @@ async function assertAppointmentResourcesBelongToOrganization(
 
 export async function createAppointmentInDb(
 	organizationId: string,
-	input: CreateAppointmentInput & {
+	input: Omit<CreateAppointmentInput, "chairId"> & {
+		chairId?: string | null | undefined;
 		allowEmergencyOverride?: boolean | undefined;
 		urgency?: "routine" | "urgent" | "emergency" | undefined;
 	},
@@ -304,7 +305,7 @@ export async function createAppointmentInDb(
 	tx?: any,
 ): Promise<Appointment> {
 	if (useInMemory()) {
-		return createAppointmentInMemory(input);
+		return createAppointmentInMemory(input as unknown as CreateAppointmentInput);
 	}
 	if (input.patientId) {
 		const [patient] = await db

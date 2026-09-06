@@ -7,7 +7,13 @@ import {
 } from "../accessGuard.js";
 import { createAppointmentInDb } from "../db/appointmentsQuery.js";
 import { db } from "../db/client.js";
-import { clinicChairs, crmLeads, patients, users } from "../db/schema.js";
+import {
+	chairs,
+	clinicChairs,
+	crmLeads,
+	patients,
+	users,
+} from "../db/schema.js";
 import { normalizePatientAdministrativeProfile } from "../sampleData.js";
 import { wsBroker } from "../services/websocketBroker.js";
 
@@ -21,8 +27,8 @@ const leadSchema = z.object({
 const convertLeadSchema = z.object({
 	appointmentStart: z.string().datetime(),
 	appointmentEnd: z.string().datetime(),
-	chairId: z.string().uuid(),
-	doctorId: z.string().uuid(),
+	chairId: z.string().optional().nullable(),
+	doctorId: z.string().optional().nullable(),
 	organizationId: z.string().uuid().optional(),
 });
 
@@ -208,30 +214,139 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 				return { alreadyConverted: true as const };
 			}
 
-			const [doctor] = await tx
-				.select({ id: users.id })
-				.from(users)
-				.where(
-					and(
-						eq(users.id, payload.doctorId),
-						eq(users.organizationId, organizationId),
-						eq(users.isActive, true),
-					),
-				)
-				.limit(1);
+			// Doctor resolution:
+			// If payload.doctorId is provided and is a valid UUID, attempt to find that active user.
+			// If not provided, or if "default-doctor", or if user is not found:
+			// Find the first active user in organizationId (from users table where organizationId = organizationId and isActive = true).
+			// If an active user is found, use that doctor's ID! Only if NO active users exist at all in the organization, return { doctorNotFound: true as const }.
+			let doctor: { id: string } | undefined;
+			const candidateDoctorId = payload.doctorId;
+			const isValidDoctorUuid =
+				typeof candidateDoctorId === "string" &&
+				candidateDoctorId !== "default-doctor" &&
+				z.string().uuid().safeParse(candidateDoctorId).success;
+
+			if (isValidDoctorUuid && candidateDoctorId) {
+				const [foundDoctor] = await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(
+						and(
+							eq(users.id, candidateDoctorId),
+							eq(users.organizationId, organizationId),
+							eq(users.isActive, true),
+						),
+					)
+					.limit(1);
+				doctor = foundDoctor;
+			}
+
+			if (!doctor) {
+				const [fallbackDoctor] = await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(
+						and(
+							eq(users.organizationId, organizationId),
+							eq(users.isActive, true),
+						),
+					)
+					.limit(1);
+				doctor = fallbackDoctor;
+			}
+
 			if (!doctor) return { doctorNotFound: true as const };
 
-			const [chair] = await tx
-				.select({ id: clinicChairs.id })
-				.from(clinicChairs)
-				.where(
-					and(
-						eq(clinicChairs.id, payload.chairId),
-						eq(clinicChairs.organizationId, organizationId),
-					),
-				)
-				.limit(1);
-			if (!chair) return { chairNotFound: true as const };
+			// Chair resolution:
+			// If payload.chairId is provided, not "default-chair", and is a valid UUID, attempt to find that chair in clinicChairs.
+			// If not found, or if payload.chairId is "default-chair" or omitted:
+			// Find the first chair in clinicChairs for this organizationId. If found, use its ID.
+			// If NO chairs exist in clinicChairs at all, resolvedChairId is undefined (since createAppointmentInDb accepts optional chairId and schema.appointments.chairId is nullable).
+			let resolvedChairId: string | undefined;
+			const candidateChairId = payload.chairId;
+			const isValidChairUuid =
+				typeof candidateChairId === "string" &&
+				candidateChairId !== "default-chair" &&
+				z.string().uuid().safeParse(candidateChairId).success;
+
+			if (isValidChairUuid && candidateChairId) {
+				const [foundChair] = await tx
+					.select({ id: clinicChairs.id })
+					.from(clinicChairs)
+					.where(
+						and(
+							eq(clinicChairs.id, candidateChairId),
+							eq(clinicChairs.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (foundChair) {
+					resolvedChairId = foundChair.id;
+				}
+			}
+
+			if (!resolvedChairId) {
+				const [firstChair] = await tx
+					.select({ id: clinicChairs.id })
+					.from(clinicChairs)
+					.where(eq(clinicChairs.organizationId, organizationId))
+					.limit(1);
+				if (firstChair) {
+					resolvedChairId = firstChair.id;
+				}
+			}
+
+			// If clinicChairs didn't yield a chair, check if chairs table has a matching chair for the organization
+			if (!resolvedChairId && isValidChairUuid && candidateChairId) {
+				const [foundInChairs] = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.id, candidateChairId),
+							eq(chairs.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (foundInChairs) {
+					resolvedChairId = foundInChairs.id;
+				}
+			}
+
+			if (!resolvedChairId) {
+				const [firstInChairs] = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.organizationId, organizationId),
+							eq(chairs.isActive, true),
+						),
+					)
+					.limit(1);
+				if (firstInChairs) {
+					resolvedChairId = firstInChairs.id;
+				}
+			}
+
+			// In createAppointmentInDb, input.chairId is checked against schema.chairs.
+			// If resolvedChairId was from clinicChairs and not present in schema.chairs,
+			// verify it exists in schema.chairs so foreign key constraint does not fail.
+			if (resolvedChairId) {
+				const [existsInChairs] = await tx
+					.select({ id: chairs.id })
+					.from(chairs)
+					.where(
+						and(
+							eq(chairs.id, resolvedChairId),
+							eq(chairs.organizationId, organizationId),
+						),
+					)
+					.limit(1);
+				if (!existsInChairs) {
+					resolvedChairId = undefined;
+				}
+			}
 
 			// 1. Create Patient from Lead with advertising source preserved
 			const leadSource = lead.source ? String(lead.source).trim() : null;
@@ -250,15 +365,16 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 						: null,
 				})
 				.returning();
-			if (!patient) throw new Error("Не удалось создать карту пациента из лида");
+			if (!patient)
+				throw new Error("Не удалось создать карту пациента из лида");
 
 			// 2. Create Appointment via protected business logic
 			const appointment = await createAppointmentInDb(
 				organizationId,
 				{
 					patientId: patient.id,
-					doctorUserId: payload.doctorId,
-					chairId: payload.chairId,
+					doctorUserId: doctor.id,
+					chairId: resolvedChairId ?? undefined,
 					startsAt: payload.appointmentStart,
 					endsAt: payload.appointmentEnd,
 					status: "planned",
@@ -394,4 +510,3 @@ export async function registerLeadsRoutes(app: FastifyInstance) {
 		});
 	});
 }
-
