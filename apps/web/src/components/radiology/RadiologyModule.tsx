@@ -233,6 +233,19 @@ const DEFAULT_SAMPLE_STUDIES: RadiologyStudy[] = [
 	},
 ];
 
+/**
+ * Helper to identify 3D CBCT imaging studies (Mandate 8c: Tier 3 Studio vs 2D Viewer).
+ */
+export function isCbctStudy(
+	study: Partial<RadiologyStudy> | null | undefined,
+): boolean {
+	if (!study) return false;
+	if (study.modality === "cbct_3d") return true;
+	if (typeof study.studyType === "string" && study.studyType.startsWith("cbct"))
+		return true;
+	return false;
+}
+
 export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 	patient,
 	doctorName = "Др. Смирнов А.В.",
@@ -330,9 +343,16 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 		if (onSaveStudies) onSaveStudies(updatedList);
 	};
 
-	// Open Single Viewer
+	// Open Single Viewer or directly 3D CBCT Studio (Anti-Matryoshka Law: Modal depth strictly 1)
 	const handleOpenViewer = (study: RadiologyStudy) => {
+		if (isCbctStudy(study)) {
+			setActiveViewerStudy(study);
+			setIsViewerModalOpen(false);
+			setIsCbctStudioOpen(true);
+			return;
+		}
 		setActiveViewerStudy(study);
+		setIsCbctStudioOpen(false);
 		setIsViewerModalOpen(true);
 	};
 
@@ -410,7 +430,15 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						{/* 3D CBCT MPR & Implant Studio Button */}
 						<button
 							type="button"
-							onClick={() => setIsCbctStudioOpen(true)}
+							onClick={() => {
+								const cbctStudy =
+									activeViewerStudy && isCbctStudy(activeViewerStudy)
+										? activeViewerStudy
+										: studies.find(isCbctStudy) || null;
+								setActiveViewerStudy(cbctStudy);
+								setIsViewerModalOpen(false);
+								setIsCbctStudioOpen(true);
+							}}
 							className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] hover:border-[var(--teal)] text-[var(--ink)] hover:text-[var(--teal)] text-xs md:text-sm font-bold shadow-sm transition-all"
 							data-testid="open-cbct-mpr-studio-btn"
 						>
@@ -691,6 +719,11 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 						setIsViewerModalOpen(false);
 						setIsDoseSheetModalOpen(true);
 					}}
+					onOpenCbctStudio={(cbctStudy) => {
+						setIsViewerModalOpen(false);
+						setActiveViewerStudy(cbctStudy);
+						setIsCbctStudioOpen(true);
+					}}
 				/>
 			)}
 
@@ -727,8 +760,15 @@ export const RadiologyModule: React.FC<RadiologyModuleProps> = ({
 			{isCbctStudioOpen && (
 				<CbctMprImplantStudioModal
 					isOpen={isCbctStudioOpen}
-					onClose={() => setIsCbctStudioOpen(false)}
-					study={activeViewerStudy}
+					onClose={() => {
+						setIsCbctStudioOpen(false);
+						setActiveViewerStudy(null);
+					}}
+					study={
+						activeViewerStudy && isCbctStudy(activeViewerStudy)
+							? activeViewerStudy
+							: studies.find(isCbctStudy) || null
+					}
 					patientName={patientFullName}
 				/>
 			)}

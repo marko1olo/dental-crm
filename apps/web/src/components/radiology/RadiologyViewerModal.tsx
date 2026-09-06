@@ -96,6 +96,7 @@ export interface RadiologyViewerModalProps {
 	onSaveStudy?: (updatedStudy: RadiologyStudy) => void;
 	onOpenReferralModal?: (study: RadiologyStudy) => void;
 	onOpenDoseSheetModal?: (study: RadiologyStudy) => void;
+	onOpenCbctStudio?: (study: RadiologyStudy) => void;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
 }
 
@@ -108,6 +109,7 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 	onSaveStudy,
 	onOpenReferralModal,
 	onOpenDoseSheetModal,
+	onOpenCbctStudio,
 	onInsertToProtocol,
 }) => {
 	const modalId = useId();
@@ -736,11 +738,23 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 		[modalityLabel, study?.teethFdi, onInsertToProtocol],
 	);
 
+	const handleOpenCbctStudioFromViewer = useCallback(() => {
+		if (!study) return;
+		if (onOpenCbctStudio) {
+			onOpenCbctStudio(study);
+		} else {
+			setIsCbctStudioOpen(true);
+		}
+	}, [study, onOpenCbctStudio]);
+
 	if (isCbctStudioOpen) {
 		return (
 			<CbctMprImplantStudioModal
 				isOpen={true}
-				onClose={() => setIsCbctStudioOpen(false)}
+				onClose={() => {
+					setIsCbctStudioOpen(false);
+					onClose();
+				}}
 				study={study}
 				patientName={patientName ?? study?.patientName ?? undefined}
 			/>
@@ -956,16 +970,17 @@ export const RadiologyViewerModal: React.FC<RadiologyViewerModalProps> = ({
 						<span className="hidden sm:inline">3D MPR / ОПТГ</span>
 					</button>
 
-					{study?.modality === "cbct_3d" && (
+					{(study?.modality === "cbct_3d" ||
+						(typeof study?.studyType === "string" && study.studyType.startsWith("cbct"))) && (
 						<button
 							type="button"
-							onClick={() => setIsCbctStudioOpen(true)}
+							onClick={handleOpenCbctStudioFromViewer}
 							className="flex items-center justify-center gap-2 min-h-[44px] min-w-[44px] px-3.5 py-2.5 rounded-xl bg-[var(--teal-fill,var(--teal))] hover:opacity-90 text-[var(--on-teal,#ffffff)] text-xs font-bold shadow-md transition-all shrink-0 cursor-pointer"
-							title="Открыть 3D MPR имплант-планировщик"
+							title="Открыть 3D КЛКТ Студию имплант-планирования"
 							data-testid="open-cbct-mpr-studio-from-viewer-btn"
 						>
 							<Box className="w-4 h-4" />
-							<span>Имплант-студия</span>
+							<span>3D КЛКТ Студия</span>
 						</button>
 					)}
 

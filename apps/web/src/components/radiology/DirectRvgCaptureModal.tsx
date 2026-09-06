@@ -39,6 +39,10 @@ import {
 } from "./radiologyMath";
 import { SAMPLE_PATIENT_RVG_URL } from "./MedicalRadiologyDropzone";
 import {
+	createDicomSecondaryCaptureFile,
+	triggerBinaryDownload,
+} from "../visiograph/VisiographDicomExporter";
+import {
 	RvgFiltersToolbar,
 	DEFAULT_RVG_FILTERS,
 	type RvgFilterPreset,
@@ -46,6 +50,61 @@ import {
 } from "./RvgFiltersToolbar";
 import type { RadiologyStudy } from "./types";
 import "./rvgCapture.css";
+
+/**
+ * Pure validator for local radiology files uploaded by the doctor.
+ * Supports Part 10 DICOM (.dcm, .dicom), TIFF (.tif, .tiff), PNG (.png), JPG/JPEG (.jpg, .jpeg), WebP (.webp).
+ */
+export function validateRadiologyUploadFile(file: { name: string; type?: string }): {
+	isValid: boolean;
+	format: "dicom" | "tiff" | "image" | "unsupported";
+} {
+	const lowerName = file.name.toLowerCase();
+	const isDicom = lowerName.endsWith(".dcm") || lowerName.endsWith(".dicom");
+	const isTiff = lowerName.endsWith(".tif") || lowerName.endsWith(".tiff");
+	const isImage =
+		lowerName.endsWith(".png") ||
+		lowerName.endsWith(".jpg") ||
+		lowerName.endsWith(".jpeg") ||
+		lowerName.endsWith(".webp") ||
+		(file.type?.startsWith("image/") ?? false);
+
+	if (isDicom) return { isValid: true, format: "dicom" };
+	if (isTiff) return { isValid: true, format: "tiff" };
+	if (isImage) return { isValid: true, format: "image" };
+	return { isValid: false, format: "unsupported" };
+}
+
+/**
+ * Computes exact file name and MIME type for export without extension spoofing.
+ * Prevents downloading JPEG with .dcm extension when DICOM buffer is unavailable.
+ */
+export function getDirectRvgExportFileName(
+	teeth: string[],
+	cardNumber: string,
+	hasDicomBuffer: boolean,
+	imageUrl: string,
+): { filename: string; mimeType: string; isDicom: boolean } {
+	const sanitizedCard = (cardNumber || "043-u").replace(/[/\\?%*:|"<>]/g, "-");
+	const toothTag = teeth.length > 0 ? teeth.join("_") : "16";
+
+	if (hasDicomBuffer) {
+		return {
+			filename: `RVG_Tooth_${toothTag}_${sanitizedCard}.dcm`,
+			mimeType: "application/dicom",
+			isDicom: true,
+		};
+	}
+
+	const isPng = imageUrl.startsWith("data:image/png");
+	const ext = isPng ? "png" : "jpg";
+	const mime = isPng ? "image/png" : "image/jpeg";
+	return {
+		filename: `RVG_Tooth_${toothTag}_${sanitizedCard}.${ext}`,
+		mimeType: mime,
+		isDicom: false,
+	};
+}
 
 export type SensorCaptureStatus = "ready" | "acquiring" | "captured";
 
@@ -217,6 +276,73 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		setCapturedImage(initialImageUrl || SAMPLE_PATIENT_RVG_URL);
 		showToast("Снимок успешно получен с датчика RVG", "success");
 	}, [sensorStatus, initialImageUrl]);
+
+	// Direct File Upload & Ingestion State (Mandate 8e: Doctor Autonomy, no sensor lock-in)
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [isDragOver, setIsDragOver] = useState<boolean>(false);
+
+	const handleProcessFile = useCallback((file: File) => {
+		const validation = validateRadiologyUploadFile(file);
+
+		if (!validation.isValid) {
+			showToast(
+				`Неподдерживаемый формат файла: ${file.name}. Поддерживаются: DICOM (.dcm), TIFF, PNG, JPG`,
+				"error",
+			);
+			return false;
+		}
+
+		const reader = new FileReader();
+		reader.onload = () => {
+			const result = reader.result;
+			if (typeof result === "string") {
+				setCapturedImage(result);
+				setSensorStatus("captured");
+				setAcquisitionProgress(100);
+				setClinicalNotes((prev) =>
+					prev.startsWith("Контрольная прицельная")
+						? `Загружен снимок: ${file.name} (${Math.round(file.size / 1024)} КБ).`
+						: prev,
+				);
+				showToast(`Снимок ${file.name} успешно загружен`, "success");
+			}
+		};
+		reader.onerror = () => {
+			showToast(`Ошибка чтения файла: ${file.name}`, "error");
+		};
+		reader.readAsDataURL(file);
+		return true;
+	}, []);
+
+	const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (files && files.length > 0 && files[0]) {
+			handleProcessFile(files[0]);
+		}
+		e.target.value = "";
+	};
+
+	const handleViewportDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(true);
+	};
+
+	const handleViewportDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+	};
+
+	const handleViewportDrop = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+		const files = e.dataTransfer.files;
+		if (files && files.length > 0 && files[0]) {
+			handleProcessFile(files[0]);
+		}
+	};
 
 	// Load source image into memory and paint canvas with filters
 	useEffect(() => {
@@ -401,7 +527,7 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 		showToast(`Снимок зуба ${selectedTeeth.join(", ")} прикреплен и отправлен в заказ ЗТЛ`, "success");
 	};
 
-	// 1-Click Action 3: Export DICOM (.dcm)
+	// 1-Click Action 3: Export DICOM (.dcm) or Genuine Image (.jpg/.png) without extension spoofing
 	const handleExportDicom = () => {
 		const currentSensor = SENSOR_MODELS.find((s) => s.id === selectedSensorModel);
 		const currentIso = new Date().toISOString();
@@ -422,21 +548,68 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 			imageUrl: capturedImage,
 			doctorName,
 			status: "completed",
+			metadata: {
+				kv: voltageKv,
+				ma: currentMa,
+				exposureSec,
+				pixelSpacingMm: currentSensor?.pixelSpacing || 0.035,
+				apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
+			},
 		};
 
 		if (onExportDicom) {
 			onExportDicom(studyRecord);
 		}
 
-		// Trigger direct image/DICOM download in browser
-		const link = document.createElement("a");
-		link.href = capturedImage;
-		link.download = `RVG_Tooth_${selectedTeeth.join("_")}_${patientCardNumber.replace(/[/\\?%*:|"<>]/g, "-")}.dcm`;
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
+		// Attempt genuine Part 10 DICOM generation if canvas is available
+		let dicomBytes: Uint8Array | null = null;
+		const canvas = canvasRef.current;
+		if (canvas && canvas.width > 0 && canvas.height > 0) {
+			try {
+				dicomBytes = createDicomSecondaryCaptureFile(canvas, {
+					patientId: patientId || "PAT-001",
+					patientFullName: patientName || "UNKNOWN^PATIENT",
+					clinicName: "ООО «Денте Стоматология»",
+					doctorFullName: doctorName || "Д-р Смирнов А.П.",
+					modality: "IO",
+					toothCode: selectedTeeth.join(", "),
+					scaleMmPerPixel: currentSensor?.pixelSpacing || 0.035,
+				});
+			} catch (err) {
+				console.warn(
+					"DirectRvgCaptureModal: Failed to generate DICOM buffer, falling back to honest image export",
+					err,
+				);
+			}
+		}
 
-		showToast(`Файл цифрового снимка DICOM/RVG для зуба ${selectedTeeth.join(", ")} успешно экспортирован`, "success");
+		const exportInfo = getDirectRvgExportFileName(
+			selectedTeeth,
+			patientCardNumber,
+			Boolean(dicomBytes && dicomBytes.length > 0),
+			capturedImage,
+		);
+
+		if (dicomBytes && dicomBytes.length > 0) {
+			triggerBinaryDownload(dicomBytes, exportInfo.filename, exportInfo.mimeType);
+			showToast(
+				`Файл цифрового снимка DICOM Part 10 (.dcm) для зуба ${selectedTeeth.join(", ")} успешно экспортирован`,
+				"success",
+			);
+		} else {
+			// Honest image download fallback with genuine .jpg / .png extension — NEVER masquerading JPEG as .dcm
+			const link = document.createElement("a");
+			link.href = capturedImage;
+			link.download = exportInfo.filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			const extLabel = exportInfo.filename.split(".").pop()?.toUpperCase() || "IMAGE";
+			showToast(
+				`Файл цифрового снимка (${extLabel}) для зуба ${selectedTeeth.join(", ")} успешно экспортирован`,
+				"success",
+			);
+		}
 	};
 
 	if (!isOpen) return null;
@@ -544,6 +717,26 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 										: "Захват с датчика (Space)"}
 							</span>
 						</button>
+
+						{/* Direct File Upload from Disk Button (Mandate 8e: Doctor Autonomy) */}
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							className="rvg-trigger-btn rvg-trigger-btn-secondary"
+							data-testid="rvg-upload-file-btn"
+							title="Загрузить снимок с диска (DICOM, TIFF, PNG, JPG)"
+						>
+							<UploadCloud className="w-3.5 h-3.5 text-teal-300" />
+							<span>Загрузить с диска</span>
+						</button>
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept=".dcm,.dicom,.tif,.tiff,.png,.jpg,.jpeg,.webp,image/*"
+							className="hidden"
+							onChange={handleFileInputChange}
+							data-testid="rvg-file-input"
+						/>
 					</div>
 				</div>
 
@@ -630,16 +823,27 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = ({
 							</div>
 						)}
 
-						{/* Viewport Canvas Container */}
+						{/* Viewport Canvas Container with Drag-and-Drop Dropzone Support */}
 						<div
-							className={`rvg-canvas-container ${isDragging ? "grabbing" : ""}`}
+							className={`rvg-canvas-container ${isDragging ? "grabbing" : ""} ${isDragOver ? "dragover" : ""}`}
 							onMouseDown={handleMouseDown}
 							onMouseMove={handleMouseMove}
 							onMouseUp={handleMouseUp}
 							onMouseLeave={handleMouseUp}
 							onWheel={handleWheel}
+							onDragOver={handleViewportDragOver}
+							onDragLeave={handleViewportDragLeave}
+							onDrop={handleViewportDrop}
 							data-testid="rvg-canvas-container"
 						>
+							{isDragOver && (
+								<div className="rvg-drop-overlay" data-testid="rvg-drop-overlay">
+									<UploadCloud className="w-12 h-12 text-teal-400 animate-bounce" />
+									<span className="text-sm font-bold text-teal-200">
+										Отпустите файл для загрузки снимка (DICOM, TIFF, PNG, JPG)
+									</span>
+								</div>
+							)}
 							<canvas
 								ref={canvasRef}
 								className="rvg-render-canvas"
