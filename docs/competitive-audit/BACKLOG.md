@@ -783,9 +783,54 @@
 
 ---
 
+## 80. `ортопедия::1_клик_протоколы_препарирования_примерки_фиксации_и_автономия_врача_зтл` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e п. 7, 8i, 8k, 8n)
+- **Идея**: Устранение бюрократического трения и академического блоата в ортопедическом приёме:
+  1. *4 канонических ортопедических протокола в 1 клик*: препарирование под ZrO2/e.max (уступ chamfer 0.5–1.0 мм, нить 00/0, А-силикон/3Shape TRIOS), примерка каркаса (прилегание зондом, контакты флоссом, копирка Bausch 40 мкм), постоянная фиксация (CoJet/Al2O3 50 мкм, Monobond Plus, RelyX U200, рентген-контроль RVG), съёмное протезирование (ЦСЧ, восковые валики, сдача).
+  2. *Связка с одонтограммой и сметой*: авто-выставление статуса `Crown`, добавление услуги в Этап 3 плана лечения (`stage_3_orthopedics`).
+  3. *Клинический оверрайд врача при авансе < 50%*: направление наряда в лабораторию под личную клиническую ответственность без вызова начмеда и блокирующих диалогов.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/orthopedics/orthopedicProtocols.ts`, `OrthopedicsChairsidePanel.tsx`, `apps/web/src/components/VisitDiaryTemplateSelector.tsx`, `apps/web/src/components/lab/LabWorkOrderConstructorModal.tsx` (коммит `4fcaf8c39`).
+  - Бэкенд: `apps/api/src/routes/dentalLab.ts`, `apps/api/src/scripts/seedTemplates.ts`.
+  - Тесты: `apps/web/src/components/orthopedics/__tests__/orthopedicProtocols.test.ts` (7 pass).
+
+---
+
+## 81. `терапия::1_клик_протоколы_реставраций_кариеса_замены_пломб_и_классификатор_блэка` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8i, 8k, 8n)
+- **Идея**: Фиксация терапевтического реставрационного приёма за 30 секунд без процедурного симулятора тыканья десятков параметров:
+  1. *4 канонических пресета в 1 клик*: кариес эмали/дентина (K02.0, K02.1 / A16.07.002), замена несостоятельной пломбы (K08.8 / A16.07.031 + A16.07.002), клиновидный дефект / эрозия (K03.1, K03.0), фронтальная эстетическая реставрация (11–23, 31–43, силиконовый ключ, стратификация).
+  2. *Авто-классификатор Блэка*: расчет классов I–VI по номеру зуба FDI и выбранным поверхностям (`[MOD]`, `[MO]`, `[OD]`, `[O]`, `[V]`, `[C]`).
+  3. *Гарантийный расчет СтАР*: авто-индикация гарантийного срока 12–24 мес и срока службы 24–36 мес.
+  4. *Chairside-виджет 30-секундной терапии*: мгновенный диспатч SOAP в Форму 043/у (`dente-apply-soap-protocol`) и добавление услуги 804н в смету (`dente-add-services-to-invoice`).
+- **Статус**:
+  - Shared: `packages/shared/src/clinical/restorationProtocolEngine.ts`, `therapyProtocolEngine.ts`, `packages/shared/src/emr/emrProtocolPresets.ts`.
+  - Фронтенд: `apps/web/src/components/visit/therapy/VisitTherapyProtocolWidget.tsx`, `apps/web/src/components/odontogram/ToothRadialMenu.tsx` (коммит `4fcaf8c39`).
+  - Тесты: `packages/shared/src/clinical/therapyProtocolEngine.test.ts` (12 pass), `apps/web/src/components/visit/therapy/__tests__/VisitTherapyProtocolWidget.test.tsx` (2 pass).
+
+---
+
+## 82. `финансы::анти_матрёшка_кабинетов_чеков_возвратов_и_ндфл_глубина_1` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТ 8d П. 6 & МАНДАТ 8e)
+- **Идея**: Строгое соблюдение закона Анти-Матрёшки в финансовом модуле:
+  1. *Ликвидация модалок поверх модалок*: вторичные кабинеты `Fiscal54FzReceiptModal`, `RefundServiceModal`, `TaxDeductionModal` вынесены из DOM-дерева модального окна `PatientBillingModal`.
+  2. *Верхнеуровневый рендеринг*: при открытии чека, возврата или справки НДФЛ они отображаются как самостоятельные полноэкранные кабинеты (модальная глубина строго 1), возвращая в акт выполненных работ при закрытии.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/finance/PatientBillingModal.tsx` (коммит `4fcaf8c39`).
+
+---
+
+## 83. `гигиена_ui::полная_ликвидация_эмодзи_из_визиографа_стерилизации_и_бланков` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТ 8d П. 7)
+- **Идея**: Полное искоренение мультяшных глифов и эмодзи из профессиональных медицинских и аппаратных интерфейсов:
+  1. *Радиовизиограф*: фильтры костных балок, эндодонтии и эмали очищены от сырых глифов в пользу векторных Lucide иконок.
+  2. *Стерилизация СанПиН 3.3686-21*: кнопки экспресс-вскрытия стандартного смотрового лотка и записи журнала 257/у переведены на чистую медицинскую типографику без эмодзи.
+  3. *Анестезия*: кнопки внесения нормы аспирационной пробы и таймера фиксации онемения очищены от глифов в пользу Lucide `<CheckCircle2 />` и `<Zap />`.
+  4. *Пакеты услуг*: карточки комплексных пакетов (кариес, эндо, гигиена, хирургия) приведены к стандарту Apple HIG.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/visiograph/VisiographWindowPresets.ts`, `apps/web/src/components/visit/CompletedServicesChecklist.tsx`, `apps/web/src/components/sterilization/KraftPackageQuickScanner.tsx`, `apps/web/src/components/sterilization/SterilizationJournalModal.tsx`, `apps/web/src/components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`, `apps/web/src/components/visit/anesthesia/AnesthesiaOnsetTimerWidget.tsx` (коммит `4fcaf8c39`).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 26 дополнительных системных аддендум-фич клинической автономии (Wave 15, 16, 17, 18 & 19, фичи 64..89) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 30 дополнительных системных аддендум-фич клинической автономии (Wave 15..20, фичи 64..93) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
