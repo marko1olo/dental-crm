@@ -262,7 +262,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 				updatedAt: new Date().toISOString(),
 			}));
 		}
-		showToast(`⚡ Выбран пресет: ${preset.shortLabel}`, "info");
+		showToast(`Выбран пресет: ${preset.shortLabel}`, "info");
 	}, [session.stage, session.findings.clinicalDiagnosisRu, handleStageChange]);
 
 	// 1-Click Insert Structured Protocol into Form 043/u (Mandates 8e, 8k)
@@ -332,7 +332,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 				}
 
 				onInsertProtocol043?.(fullProtocolText);
-				showToast("⚡ Протокол ортодонтии успешно внесен в дневник 043/у", "success");
+				showToast("Протокол ортодонтии успешно внесен в дневник 043/у", "success");
 			} catch (_err) {
 				if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
 					navigator.clipboard.writeText(fullProtocolText).catch(() => {});
@@ -350,7 +350,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 		const fullProtocolText = generateOrthodonticDiaryNote(targetPreset, session);
 		if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
 			navigator.clipboard.writeText(fullProtocolText).then(() => {
-				showToast("⚡ Протокол ортодонтии скопирован в буфер обмена", "success");
+				showToast("Протокол ортодонтии скопирован в буфер обмена", "success");
 			}).catch(() => {
 				showToast("Не удалось скопировать", "error");
 			});

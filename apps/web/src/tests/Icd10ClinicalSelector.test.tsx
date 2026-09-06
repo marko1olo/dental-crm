@@ -46,13 +46,22 @@ describe("Icd10ClinicalSelector React Component", () => {
 
 		// Quick popular presets section (1-click chips)
 		assert.ok(
-			html.includes("Частые клинические диагнозы (1 клик)"),
+			html.includes("ТОП-12 амбулаторных диагнозов (1 клик)"),
 			"Contains quick presets section header",
 		);
+		// Assert presence of all TOP-12 diagnoses
+		assert.ok(html.includes("K02.0"), "Contains K02.0 quick chip");
 		assert.ok(html.includes("K02.1"), "Contains K02.1 quick chip");
 		assert.ok(html.includes("K04.0"), "Contains K04.0 quick chip");
+		assert.ok(html.includes("K04.5"), "Contains K04.5 quick chip");
+		assert.ok(html.includes("K05.0"), "Contains K05.0 quick chip");
 		assert.ok(html.includes("K05.1"), "Contains K05.1 quick chip");
+		assert.ok(html.includes("K05.3"), "Contains K05.3 quick chip");
 		assert.ok(html.includes("K08.1"), "Contains K08.1 quick chip");
+		assert.ok(html.includes("K07.4"), "Contains K07.4 quick chip");
+		assert.ok(html.includes("K01.1"), "Contains K01.1 quick chip");
+		assert.ok(html.includes("K03.1"), "Contains K03.1 quick chip");
+		assert.ok(html.includes("K08.8"), "Contains K08.8 quick chip");
 	});
 
 	it("renders selected diagnosis preview card with FDI tooth selector for tooth-specific diagnosis (K02.1)", () => {

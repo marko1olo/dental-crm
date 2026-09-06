@@ -206,8 +206,8 @@
 
 .dente-accordion-trigger {
 	width: 100%;
-	min-height: 38px;
-	padding: 8px 14px;
+	min-height: 44px;
+	padding: 10px 14px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -309,13 +309,13 @@
 }
 
 .dente-touch-chip {
-	min-height: 30px;
-	padding: 4px 8px;
+	min-height: 44px;
+	padding: 6px 12px;
 	border-radius: 6px;
 	border: 1px solid var(--line);
 	background: var(--paper);
 	color: var(--ink);
-	font-size: 11.5px;
+	font-size: 12px;
 	font-weight: 700;
 	display: flex;
 	align-items: center;
@@ -356,11 +356,11 @@
 	background: transparent;
 	border: none;
 	color: var(--teal);
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 700;
 	cursor: pointer;
-	min-height: 28px;
-	padding: 0 6px;
+	min-height: 44px;
+	padding: 4px 10px;
 	display: inline-flex;
 	align-items: center;
 }
@@ -386,8 +386,8 @@
 
 .dente-surface-tile {
 	min-width: 54px;
-	min-height: 36px;
-	padding: 3px 6px;
+	min-height: 44px;
+	padding: 4px 8px;
 	border-radius: 6px;
 	border: 1.5px solid var(--line);
 	background: var(--paper-strong);
@@ -445,16 +445,19 @@
 }
 
 .dente-macro-chip {
-	min-height: 28px;
-	padding: 3px 8px;
+	min-height: 44px;
+	padding: 6px 12px;
 	border-radius: 6px;
 	border: 1px solid var(--line, #cbd5e1);
 	background: var(--paper-strong, #ffffff);
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 700;
 	color: var(--ink, #0f172a);
 	cursor: pointer;
 	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .dente-macro-chip:hover {
@@ -470,8 +473,8 @@
 }
 
 .dente-material-btn {
-	min-height: 36px;
-	padding: 4px 8px;
+	min-height: 44px;
+	padding: 6px 10px;
 	border-radius: 6px;
 	border: 1px solid var(--line, #cbd5e1);
 	background: var(--paper, #f8fafc);
@@ -626,14 +629,14 @@
 .dente-quick-endo-trigger-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 4px;
-	min-height: 28px;
-	padding: 2px 8px;
+	gap: 6px;
+	min-height: 44px;
+	padding: 6px 12px;
 	border-radius: 6px;
 	background: rgba(13, 148, 136, 0.12);
 	border: 1px solid var(--teal, #0d9488);
 	color: var(--teal-strong, #0f766e);
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 700;
 	cursor: pointer;
 	transition: all 0.15s ease;
@@ -645,16 +648,19 @@
 }
 
 .dente-surface-quick-combo-btn {
-	min-height: 28px;
-	padding: 2px 8px;
+	min-height: 44px;
+	padding: 6px 12px;
 	border-radius: 6px;
 	border: 1px solid var(--line);
 	background: var(--paper-strong);
 	color: var(--ink);
-	font-size: 11px;
+	font-size: 12px;
 	font-weight: 800;
 	cursor: pointer;
 	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .dente-surface-quick-combo-btn:hover {
@@ -1405,13 +1411,13 @@
 }
 
 .dente-secondary-btn {
-	min-height: 34px;
-	padding: 6px 12px;
+	min-height: 44px;
+	padding: 8px 14px;
 	border-radius: 8px;
 	background: var(--paper-strong);
 	border: 1px solid var(--line);
 	color: var(--ink);
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
@@ -1435,8 +1441,8 @@
 }
 
 .dente-drawer-btn-secondary {
-	min-height: 34px;
-	padding: 6px 14px;
+	min-height: 44px;
+	padding: 8px 16px;
 	border-radius: 8px;
 	background: var(--paper);
 	border: 1px solid var(--line);

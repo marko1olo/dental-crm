@@ -144,13 +144,13 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-height: 32px;
-	padding: 4px 12px;
+	min-height: 44px;
+	padding: 8px 14px;
 	border-radius: 6px;
 	border: none;
 	background: transparent;
 	color: var(--muted);
-	font-size: 12.5px;
+	font-size: 13px;
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.15s ease;
@@ -185,8 +185,8 @@
 	gap: 8px;
 	flex: 1;
 	min-width: 200px;
-	min-height: 32px;
-	padding: 0 10px;
+	min-height: 44px;
+	padding: 0 12px;
 	border-radius: 8px;
 	background: var(--paper-soft);
 	border: 1px solid var(--glass-border);
@@ -196,7 +196,7 @@
 	flex: 1;
 	border: none;
 	background: transparent;
-	font-size: 12.5px;
+	font-size: 13px;
 	color: var(--ink);
 	outline: none;
 }
@@ -208,13 +208,13 @@
 }
 
 .dente-diagnostic-select {
-	min-height: 32px;
-	padding: 0 10px;
+	min-height: 44px;
+	padding: 0 12px;
 	border-radius: 8px;
 	background: var(--paper-soft);
 	border: 1px solid var(--glass-border);
 	color: var(--ink);
-	font-size: 12.5px;
+	font-size: 13px;
 	outline: none;
 	cursor: pointer;
 }
@@ -223,13 +223,13 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-height: 32px;
-	padding: 4px 12px;
+	min-height: 44px;
+	padding: 8px 14px;
 	border-radius: 8px;
 	border: 1px solid var(--glass-border);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 12.5px;
+	font-size: 13px;
 	font-weight: 600;
 	cursor: pointer;
 	transition: background 0.15s ease;

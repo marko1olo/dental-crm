@@ -273,7 +273,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Каналы сброшены к стандарту зуба #${toothNumber}`, "info");
 	};
 
-	// 1. [⚡ 1-клик: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)]
+	// 1. [1-клик: Пульпит (экстирпация, NaOCl 3%, ProTaper Gold F2, латеральная компакция AH Plus + гуттаперча, норма)]
 	const handleApplyPulpitisPreset = () => {
 		const preset = applyPulpitisProtocol(canals, toothNumber);
 		setCanals(preset.canals);
@@ -297,7 +297,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Пульпит (ProTaper F2 + AH Plus)`, "success", 3000);
 	};
 
-	// 2. [⚡ 1-клик: Периодонтит 1 посещение (распломбировка, УЗ-активация NaOCl, временное вложение гидроокиси кальция Каласепт на 14 дней)]
+	// 2. [1-клик: Периодонтит 1 посещение (распломбировка, УЗ-активация NaOCl, временное вложение гидроокиси кальция Каласепт на 14 дней)]
 	const handleApplyPeriodontitisTempPreset = () => {
 		const preset = applyPeriodontitisTempProtocol(canals, toothNumber);
 		setCanals(preset.canals);
@@ -321,7 +321,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Зуб #${toothNumber}: применён 1-клик протокол Периодонтит (Каласепт Ca(OH)2)`, "info", 3000);
 	};
 
-	// 3. [⚡ 1-клик: Обтурация каналов (постоянное пломбирование, рентген-контроль: гомогенно до апекса, без выхода за верхушку)]
+	// 3. [1-клик: Обтурация каналов (постоянное пломбирование, рентген-контроль: гомогенно до апекса, без выхода за верхушку)]
 	const handleApplyObturationPermanentPreset = () => {
 		const preset = applyObturationPermanentProtocol(canals, toothNumber);
 		setCanals(preset.canals);
@@ -345,7 +345,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Зуб #${toothNumber}: применён 1-клик протокол постоянной обтурации до апекса`, "success", 3000);
 	};
 
-	// 4. [⚡ Автозаполнение анатомической рабочей длины по номеру зуба в 1 клик]
+	// 4. [Автозаполнение анатомической рабочей длины по номеру зуба в 1 клик]
 	const handleApplyAnatomicalLengths = () => {
 		const updated = applyAnatomicalWorkingLengths(canals, toothNumber);
 		setCanals(updated);
@@ -404,7 +404,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Зуб #${toothNumber}: применён протокол ProTaper 25.06 + AH Plus (1 клик)`, "success", 3000);
 	};
 
-	// 2. [⚡ Временная лечебная обтурация: Каласепт (Ca(OH)2)]
+	// 2. [Временная лечебная обтурация: Каласепт (Ca(OH)2)]
 	const handleApplyCalaseptCaOh2 = () => {
 		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
 		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
@@ -445,7 +445,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 		showToast(`Зуб #${toothNumber}: применён протокол Каласепт Ca(OH)2 (1 клик)`, "info", 3000);
 	};
 
-	// 3. [⚡ Распломбировка / Ревизия (D1-D3, Сольвент)]
+	// 3. [Распломбировка / Ревизия (D1-D3, Сольвент)]
 	const handleApplyRetreatmentRevision = () => {
 		const baseCanals = canals.length > 0 ? canals : getDefaultCanalsForTooth(toothNumber);
 		const defaultCanals = getDefaultCanalsForTooth(toothNumber);
@@ -743,7 +743,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 								title="Быстрый протокол ProTaper 25.06 (1 клик)"
 							>
 								<Zap size={12} />
-								<span>⚡ Экспресс ProTaper</span>
+								<span>Экспресс ProTaper</span>
 							</button>
 						)}
 						<button
@@ -778,7 +778,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 									data-testid="endo-preset-protaper"
 								>
 									<Zap size={14} />
-									<span>⚡ Экспресс ProTaper: 25.06 + NaOCl + AH Plus</span>
+									<span>Экспресс ProTaper: 25.06 + NaOCl + AH Plus</span>
 								</button>
 								<button
 									type="button"
@@ -788,7 +788,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 									data-testid="endo-preset-calasept"
 								>
 									<ShieldAlert size={14} />
-									<span>⚡ Временная лечебная обтурация: Каласепт (Ca(OH)2)</span>
+									<span>Временная лечебная обтурация: Каласепт (Ca(OH)2)</span>
 								</button>
 								<button
 									type="button"
@@ -798,7 +798,7 @@ export const ToothSurfacesAndEndoMatrix: React.FC<ToothSurfacesAndEndoMatrixProp
 									data-testid="endo-preset-revision"
 								>
 									<RotateCcw size={14} />
-									<span>⚡ Распломбировка / Ревизия (D1-D3, Сольвент)</span>
+									<span>Распломбировка / Ревизия (D1-D3, Сольвент)</span>
 								</button>
 							</div>
 						</div>

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import {
 	POPULAR_CLINICAL_PRESETS,
+	TOP_12_AMBULATORY_PRESETS,
 	DENTAL_ICD10_MAP,
 	type DentalIcd10Item,
 	type DentalSpecialty,
@@ -297,15 +298,15 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 				})}
 			</div>
 
-			{/* 3. 1-Click быстрые популярные пресеты диагнозов (если нет поискового запроса) */}
+			{/* 3. Мгновенный 1-клик топ-бар ТОП-12 амбулаторных стоматологических диагнозов */}
 			{!searchQuery && activeRubricTab === "ALL" && (
-				<div className="icd10-quick-presets-section">
+				<div className="icd10-quick-presets-section" data-testid="icd10-top12-section">
 					<div className="icd10-section-label">
-						<Activity size={16} />
-						Частые клинические диагнозы (1 клик):
+						<Activity size={16} aria-hidden="true" />
+						<span>ТОП-12 амбулаторных диагнозов (1 клик):</span>
 					</div>
-					<div className="icd10-chips-grid">
-						{POPULAR_CLINICAL_PRESETS.slice(0, 8).map((preset) => {
+					<div className="icd10-chips-grid" role="group" aria-label="Быстрый выбор ТОП-12 стоматологических диагнозов">
+						{TOP_12_AMBULATORY_PRESETS.map((preset) => {
 							const isSelected = selectedCode === preset.code;
 							return (
 								<button
@@ -313,10 +314,12 @@ export const Icd10ClinicalSelector: React.FC<Icd10ClinicalSelectorProps> = ({
 									type="button"
 									className={`icd10-preset-chip ${isSelected ? "is-selected" : ""}`}
 									onClick={() => handleSelectDiagnosis(preset)}
+									data-testid={`top12-preset-${preset.code}`}
+									title={`1 клик: ${preset.code} — ${preset.titleRu}`}
 								>
 									<span className="icd10-chip-code">{preset.code}</span>
 									<span className="icd10-chip-title">{preset.shortTitleRu}</span>
-									{isSelected && <Check size={16} color="var(--teal)" />}
+									{isSelected && <Check size={16} color="var(--teal)" aria-hidden="true" />}
 								</button>
 							);
 						})}

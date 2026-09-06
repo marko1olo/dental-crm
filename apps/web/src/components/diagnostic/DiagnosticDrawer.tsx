@@ -308,10 +308,11 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 										<button
 											type="button"
 											className="dente-diagnostic-close-btn"
-											style={{ minWidth: 24, minHeight: 24, padding: 0 }}
+											style={{ minWidth: 44, minHeight: 44, padding: 0 }}
 											onClick={() => setSearchQuery("")}
+											aria-label="Очистить поиск"
 										>
-											<X size={14} />
+											<X size={16} />
 										</button>
 									)}
 								</div>
@@ -416,7 +417,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 															<button
 																type="button"
 																className="dente-diagnostic-action-btn"
-																style={{ minHeight: 28, padding: "2px 8px", fontSize: 11 }}
+																style={{ minHeight: 44, padding: "4px 10px", fontSize: 12 }}
 																onClick={(e) => {
 																	e.stopPropagation();
 																	handleCopyCorrelationId(log.correlationId!);
@@ -511,7 +512,7 @@ export const DiagnosticDrawer: React.FC<DiagnosticDrawerProps> = ({
 														<button
 															type="button"
 															className="dente-diagnostic-action-btn"
-															style={{ minHeight: 28, padding: "2px 8px", fontSize: 11 }}
+															style={{ minHeight: 44, padding: "4px 10px", fontSize: 12 }}
 															onClick={(e) => {
 																e.stopPropagation();
 																handleCopyCorrelationId(net.correlationId);
