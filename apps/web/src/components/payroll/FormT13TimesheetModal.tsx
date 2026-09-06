@@ -292,18 +292,6 @@ export const FormT13TimesheetModal: React.FC<FormT13TimesheetModalProps> = ({
 				days: [],
 			});
 		}
-		if (!activeEmployee) {
-			return calculateEmployeeTimesheetT13({
-				employeeId: "emp-empty",
-				employeeTabNumber: "00000",
-				employeeFullName: "—",
-				positionRu: "—",
-				departmentRu: "—",
-				year,
-				month,
-				days: [],
-			});
-		}
 		return (
 			allResults.find((r) => r.employeeId === activeEmployee.id) ??
 			calculateEmployeeTimesheetT13({

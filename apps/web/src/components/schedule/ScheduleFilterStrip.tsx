@@ -1,7 +1,8 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer } from "lucide-react";
 import React, { type ReactElement, useState, useRef, useEffect } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
+import { printBlankMedicalContract } from "../patient/blankContractPrint";
 
 export interface ScheduleStaffMember {
 	id: string;
@@ -420,6 +421,21 @@ export function ScheduleFilterStrip({
 									<span>Пациент (Ctrl+K)</span>
 								</button>
 							)}
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsOptionsMenuOpen(false);
+									void printBlankMedicalContract(null);
+								}}
+								className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+								title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e, без 403)"
+								data-testid="schedule-toolbar-print-blank-contract-btn"
+							>
+								<Printer size={14} className="text-[var(--teal,var(--brand-primary))]" />
+								<span>Бланк договора (_______)</span>
+							</button>
 
 							{onToggleSmartAi && (
 								<button

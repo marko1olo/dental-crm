@@ -194,7 +194,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 								{morningSlots.length > 0 && (
 									<div className="dbw-slot-group">
 										<div className="dbw-slots-period-label">
-											<Sunrise size={16} /> ☀️ Утро (до 12:00)
+											<Sunrise size={16} /> Утро (до 12:00)
 										</div>
 										<div className="dbw-slots-grid">
 											{morningSlots.map((slot) => (
@@ -215,7 +215,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 								{afternoonSlots.length > 0 && (
 									<div className="dbw-slot-group">
 										<div className="dbw-slots-period-label">
-											<Sun size={16} /> 🌤️ День (12:00 - 16:00)
+											<Sun size={16} /> День (12:00 - 16:00)
 										</div>
 										<div className="dbw-slots-grid">
 											{afternoonSlots.map((slot) => (
@@ -236,7 +236,7 @@ export const BookingSlotPicker: React.FC<BookingSlotPickerProps> = ({
 								{eveningSlots.length > 0 && (
 									<div className="dbw-slot-group">
 										<div className="dbw-slots-period-label">
-											<Sunset size={16} /> 🌙 Вечер (после 16:00)
+											<Sunset size={16} /> Вечер (после 16:00)
 										</div>
 										<div className="dbw-slots-grid">
 											{eveningSlots.map((slot) => (

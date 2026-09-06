@@ -20,6 +20,7 @@ import {
 	MoreVertical,
 	Phone,
 	PhoneCall,
+	Printer,
 	RotateCcw,
 	Scan,
 	Sparkles,
@@ -40,6 +41,7 @@ import { openWhatsAppChat } from "../../store/telephonyStore";
 import { useAppStore } from "../../store/appStore";
 import { usePatientStore } from "../../store/patientStore";
 import { AppointmentQuickActions } from "./AppointmentQuickActions";
+import { printBlankMedicalContract } from "../patient/blankContractPrint";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -1311,6 +1313,23 @@ export function AppointmentCard(props: AppointmentCardProps) {
 										>
 											<FileText size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 											<span>Карта пациента (043/у)</span>
+										</button>
+										<button
+											type="button"
+											className="w-full text-left px-2.5 py-2 min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+											role="menuitem"
+											onClick={() => {
+												setIsCardMenuOpen(false);
+												void printBlankMedicalContract(appointmentPatient, {
+													doctorName: appointmentDoctor?.fullName,
+													clinicName: dashboard?.clinicSettings?.profile?.clinicName,
+												});
+											}}
+											title="Распечатать пустой договор со строками _______ для пациента (Мандат 8e, без 403)"
+											data-testid="appointment-card-print-blank-contract-btn"
+										>
+											<Printer size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+											<span>Печать бланка договора (_______)</span>
 										</button>
 										<button
 											type="button"
