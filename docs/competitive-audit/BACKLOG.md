@@ -1034,9 +1034,31 @@
 
 ---
 
+## 102. `рентгенология::прямая_маршрутизация_3d_клкт_студии_и_настоящий_part10_dicom_экспорт_визиографа` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8c, 8d, 8e, ФИЧА #112)
+- **Идея**: Ликвидация модального ада (Анти-Матрёшка) и обеспечение честного медицинского экспорта в модуле рентгенологии:
+  1. *Прямая маршрутизация 3D КЛКТ Студии (Мандат 8d п. 6, Анти-Матрёшка)*: в `RadiologyModule.tsx` и `RadiologyViewerModal.tsx` при клике на КЛКТ-исследование (`isCbctStudy`: `modality === "cbct_3d"` или `studyType.startsWith("cbct")`) система открывает полнофункциональный имплант-планировщик `CbctMprImplantStudioModal` напрямую (Tier 3 Studio), минуя нерелевантный 2D-визиограф. При переходе в 3D Студию из 2D-просмотрщика промежуточная модалка закрывается, гарантируя модальную глубину строго 1.
+  2. *Прямая загрузка RVG-снимков с диска и Drag-and-Drop (Мандат 8e, Автономия врача)*: в `DirectRvgCaptureModal.tsx` добавлена кнопка «Загрузить с диска» (`data-testid="rvg-upload-file-btn"`) и нативная drag-and-drop дропзона (`data-testid="rvg-canvas-container"`, `rvg-drop-overlay`). Врач автономен от аппаратных датчиков и может моментально визуализировать снимки форматов DICOM (`.dcm`, `.dicom`), TIFF, PNG, JPG.
+  3. *Настоящий Part 10 DICOM Secondary Capture экспорт*: при экспорте снимка функция `createDicomSecondaryCaptureFile` генерирует честный бинарный буфер DICOM Part 10 с метаданными пациента, аппарата и масштаба. Если снимок экспортируется как изображение (JPEG/PNG), файл сохраняется со своим подлинным расширением без фиктивной маскировки JPEG под `.dcm` (`getDirectRvgExportFileName`).
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/radiology/RadiologyModule.tsx`, `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`, `apps/web/src/components/radiology/RadiologyViewerModal.tsx`, `apps/web/src/components/radiology/rvgCapture.css` (коммит `18acde3ef`).
+  - Тесты: `apps/web/src/components/radiology/__tests__/radiologyViewerRoutingAutonomy.test.ts` (10 сценариев, 100% passing).
+
+---
+
+## 103. `портал_пациента::ликвидация_бутафорских_svg_диорам_и_привязка_реальных_клинических_снимков` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТ 11, CORE ROUTE RULE 7 & 11, ФИЧА #113)
+- **Идея**: Полное искоренение синтетических SVG-заглушек и процедурных муляжей в веб-портале пациента и фотопротоколе:
+  1. *Ликвидация фейковых SVG data URLs*: в `PatientPlanView.tsx` массив `DEFAULT_PATIENT_SCANS` очищен от фальшивых `data:image/svg+xml` диорам; подключены реальные клинические снимки (`/radiology/sample_rvg_tooth16.jpg`, `/radiology/sample_trg_cephalogram.jpg`) с указанием реальных лучевых нагрузок в микрозивертах (мкЗв) и модальностей (RVG, КЛКТ, ТРГ, ОПТГ).
+  2. *Честные пустые состояния (Zero-Mock Fallback)*: при отсутствии загруженных снимков отображается чистое нейтральное пустое состояние `data-testid="plan-scans-empty-state"` («Диагностические снимки не прикреплены») с иконкой `Camera` вместо генерации бутафорских SVG-зубов. В процессе обработки DICOM отображается статус ожидания реконструкции без псевдо-картинок.
+  3. *Очистка фотопротокола «До/После»*: в `patientWebappEngine.ts` и `BeforeAfterComparisonView.tsx` удалены встроенные SVG-заглушки (`Кадр До / Кадр После`). Не загруженные слоты фотопротокола рендерят честные аккуратные плейсхолдеры с иконкой `Camera`, а холст экспорта отображает информативные плашки ожидания кадров.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/patient-portal/PatientPlanView.tsx`, `apps/web/src/components/patient-portal/PatientWebappPortalModal.tsx`, `apps/web/src/components/patient-portal/patientWebappEngine.ts`, `apps/web/src/components/photography/BeforeAfterComparisonView.tsx` (коммит `0685f1a17`).
+  - Тесты: `apps/web/src/components/patient-portal/__tests__/patientScansZeroDiorama.test.tsx` (100% passing).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 48 дополнительных системных аддендум-фич клинической автономии (Wave 15..22, фичи 64..111) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 50 дополнительных системных аддендум-фич клинической автономии (Wave 15..22b, фичи 64..113) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

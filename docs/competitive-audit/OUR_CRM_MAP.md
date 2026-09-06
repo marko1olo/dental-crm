@@ -692,3 +692,24 @@
   - `apps/web/src/components/leads/LeadsKanbanView.tsx`, `apps/web/src/components/settings/WhatsappSettingsPanel.tsx` (коммит `98240203a`).
 - **Тесты**:
   - `apps/web/src/components/leads/__tests__/leadsKanbanBookingAutonomy.test.ts` (100% passing), `apps/web/src/components/settings/__tests__/whatsappSettingsAutonomy.test.ts` (100% passing).
+
+#### 2.10.76. Рентгенология: прямая маршрутизация 3D КЛКТ студии (глубина 1), drag-and-drop загрузка RVG с диска и валидный Part 10 DICOM экспорт визиографа (Мандаты 8c, 8d, 8e, 8k / Рентгенология & КЛКТ)
+- **Суть и домен**: Соблюдение 3-уровневой архитектуры (Tier 3 Cold Backoffice Studio), закона Анти-Матрёшки (глубина строго 1) и клинической автономии врача в модуле цифровой рентгенологии (Фича #112). В `RadiologyModule.tsx`, `RadiologyViewerModal.tsx` и `DirectRvgCaptureModal.tsx`:
+  1. *Прямая маршрутизация 3D КЛКТ Студии*: вспомогательная функция `isCbctStudy` определяет 3D-исследования (`modality === "cbct_3d"` либо префикс `studyType === "cbct_*"`). При выборе томограммы в карточке пациента система сразу запускает полноразмерную студию имплант-планирования `CbctMprImplantStudioModal`, исключая открытие промежуточного нерелевантного 2D-визиографа. При переходе в 3D Студию из окна 2D-просмотра промежуточная модалка закрывается, исключая наложение окон друг на друга.
+  2. *Прямая загрузка RVG-снимков с диска и Drag-and-Drop*: по Мандату 8e (врач не зависит от сбоев физического датчика) в окно прямого захвата визиографа добавлена кнопка «Загрузить с диска» (`data-testid="rvg-upload-file-btn"`) и Drag-and-Drop область поверх холста (`data-testid="rvg-canvas-container"`, `rvg-drop-overlay`). Поддерживаются медицинские форматы DICOM (`.dcm`, `.dicom`), TIFF (`.tif`, `.tiff`), а также PNG, JPG и WebP.
+  3. *Настоящий Part 10 DICOM Secondary Capture экспорт*: функция экспорта использует `createDicomSecondaryCaptureFile` для синтеза валидного бинарного файла стандарта DICOM Part 10 с атрибутами пациента, врача, клиники, физического разрешения (scaleMmPerPixel) и параметров экспозиции (кВ, мА, с). Ликвидирована опасная маскировка: обычные изображения сохраняются со своим подлинным расширением (`.jpg`, `.png`), исключая повреждение PACS-архивов поддельными `.dcm` файлами (`getDirectRvgExportFileName`).
+- **Фронтенд**:
+  - `apps/web/src/components/radiology/RadiologyModule.tsx`, `apps/web/src/components/radiology/DirectRvgCaptureModal.tsx`, `apps/web/src/components/radiology/RadiologyViewerModal.tsx`, `apps/web/src/components/radiology/rvgCapture.css` (коммит `18acde3ef`).
+- **Тесты**:
+  - `apps/web/src/components/radiology/__tests__/radiologyViewerRoutingAutonomy.test.ts` (10 тестов, 100% passing).
+
+#### 2.10.77. Портал пациента и фотопротокол: ликвидация синтетических SVG-диорам, честный рендеринг клинических снимков и zero-mock плейсхолдеры (Мандат 11, Core Route Правила 7 & 11, Мандаты 8d, 8e / Портал пациента & Фотопротокол)
+- **Суть и домен**: Бескомпромиссная ликвидация синтетических SVG-диорам и процедурных муляжей в пациентском и клиническом контуре (Фича #113). В `PatientPlanView.tsx`, `PatientWebappPortalModal.tsx`, `patientWebappEngine.ts` и `BeforeAfterComparisonView.tsx`:
+  1. *Ликвидация фейковых SVG data URLs*: из массива `DEFAULT_PATIENT_SCANS` полностью удалены искусственные строки `data:image/svg+xml`. Портал пациента привязан к реальным клиническим снимкам (`/radiology/sample_rvg_tooth16.jpg`, `/radiology/sample_trg_cephalogram.jpg`) с обязательным указанием модальности (RVG, КЛКТ, ТРГ, ОПТГ) и лучевой нагрузки в микрозивертах (мкЗв), соответствующей радиационной безопасности.
+  2. *Честные пустые состояния (Zero-Mock Fallback)*: если в карте пациента нет прикрепленных диагностических снимков, интерфейс выводит аккуратное честное пустое состояние `data-testid="plan-scans-empty-state"` («Диагностические снимки не прикреплены») с векторной иконкой Lucide `Camera` вместо процедурной генерации фальшивых зубов. При снимке в процессе обработки выводится информационный блок «Снимок обрабатывается (Идет реконструкция срезов DICOM)» без бутафории.
+  3. *Очистка фотопротокола до/после*: в генераторе предустановленных галерей `getPresetBeforeAfterGalleries` и компоненте `BeforeAfterComparisonView.tsx` удалены инлайновые SVG-заглушки (`data:image/svg+xml;utf8,<svg...><rect fill="#1e293b"...>`). Незаполненные слоты фотопротокола («До» и «После») рендерят чистый плейсхолдер с векторной иконкой `Camera`, а холст экспорта парных снимков честно выводит текст о статусе загрузки кадров.
+- **Фронтенд**:
+  - `apps/web/src/components/patient-portal/PatientPlanView.tsx`, `apps/web/src/components/patient-portal/PatientWebappPortalModal.tsx`, `apps/web/src/components/patient-portal/patientWebappEngine.ts`, `apps/web/src/components/photography/BeforeAfterComparisonView.tsx` (коммит `0685f1a17`).
+- **Тесты**:
+  - `apps/web/src/components/patient-portal/__tests__/patientScansZeroDiorama.test.tsx` (5 тестов, 100% passing).
+
