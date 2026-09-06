@@ -245,6 +245,7 @@ export function OrthodonticStudioModal({
 			activeAttachmentPreset,
 			alignerSetIssued,
 			plateActivationTurns: plateScrewTurns,
+			angleClass,
 		});
 	}, [
 		patientName,
@@ -265,6 +266,7 @@ export function OrthodonticStudioModal({
 		activeAttachmentPreset,
 		alignerSetIssued,
 		plateScrewTurns,
+		angleClass,
 	]);
 
 	// Apply into Form 043/u (Mandate 8e: zero friction)
@@ -293,6 +295,7 @@ export function OrthodonticStudioModal({
 						detail: {
 							protocolText: generatedProtocol,
 							title: `Ортодонтия (${bracketSystemLabel})`,
+							angleClass,
 							soap: {
 								complaint: notes || "Плановый визит по графику ортодонтического лечения. Жалоб нет.",
 								objective: generatedProtocol,
@@ -529,6 +532,47 @@ export function OrthodonticStudioModal({
 								</div>
 							</div>
 
+							{/* 1-Click Angle Malocclusion Classification Bar (I, II/1, II/2, III) */}
+							<div
+								data-testid="studio-angle-class-selector"
+								className="bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 flex flex-col gap-2"
+							>
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
+										<Activity size={14} className="text-blue-500" />
+										Прикус по Энглю (1-клик фиксация)
+									</span>
+									<span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+										{ANGLE_CLASS_OPTIONS.find((a) => a.id === angleClass)?.shortLabel}
+									</span>
+								</div>
+
+								<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+									{ANGLE_CLASS_OPTIONS.map((opt) => {
+										const isSelected = angleClass === opt.id;
+										return (
+											<button
+												key={opt.id}
+												type="button"
+												onClick={() => setAngleClass(opt.id)}
+												data-testid={`studio-angle-${opt.id}-btn`}
+												className={`min-h-[44px] px-2 py-1.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all cursor-pointer ${
+													isSelected
+														? "bg-blue-600 text-white border-blue-700 font-black shadow-xs ring-1 ring-blue-400"
+														: "bg-[var(--paper,#ffffff)] dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+												}`}
+												title={opt.desc}
+											>
+												<span className="text-xs font-bold leading-tight">{opt.shortLabel}</span>
+												<span className={`text-[10px] truncate w-full ${isSelected ? "text-blue-100" : "text-slate-400"}`}>
+													{opt.id === "class_1" ? "Нейтральный" : opt.id === "class_2_div_1" ? "Протрузия" : opt.id === "class_2_div_2" ? "Ретрузия" : "Мезиальный"}
+												</span>
+											</button>
+										);
+									})}
+								</div>
+							</div>
+
 							{/* Apparatus Type & System Selector */}
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 								{/* System */}
@@ -654,6 +698,47 @@ export function OrthodonticStudioModal({
 													{sec}"
 												</button>
 											))}
+										</div>
+
+										{/* Canonical Workhorse Archwires Strip (1-click fast wires) */}
+										<div
+											data-testid="studio-workhorse-wires-strip"
+											className="mt-1 p-2 rounded-xl bg-teal-500/10 dark:bg-teal-950/30 border border-teal-500/30 flex flex-col gap-1.5"
+										>
+											<div className="flex items-center justify-between">
+												<span className="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1">
+													<Zap size={13} className="text-teal-600 dark:text-teal-400" />
+													Рабочие дуги ортодонта (1 клик)
+												</span>
+												<span className="text-[10px] text-teal-700/80 dark:text-teal-400/80 font-bold">
+													Мгновенный выбор
+												</span>
+											</div>
+
+											<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+												{WORKHORSE_ARCHWIRES.map((wire) => {
+													const isSelected = archwireMaterial === wire.material && archwireSection === wire.section;
+													return (
+														<button
+															key={wire.id}
+															type="button"
+															onClick={() => handleSelectWorkhorseWire(wire)}
+															data-testid={`studio-wire-${wire.id}-btn`}
+															className={`min-h-[44px] px-2 py-1 rounded-lg border text-left flex flex-col justify-center transition-all cursor-pointer ${
+																isSelected
+																	? "bg-teal-600 text-white border-teal-700 font-black shadow-xs ring-1 ring-teal-400"
+																	: "bg-white dark:bg-slate-900 border-teal-300/60 dark:border-teal-800 hover:border-teal-500 text-slate-800 dark:text-slate-100"
+															}`}
+															title={wire.desc}
+														>
+															<span className="text-xs font-bold leading-tight">{wire.label}</span>
+															<span className={`text-[10px] truncate ${isSelected ? "text-teal-100" : "text-slate-500 dark:text-slate-400"}`}>
+																{wire.material === "SS" ? "Рабочая сталь" : "Нивелирование"}
+															</span>
+														</button>
+													);
+												})}
+											</div>
 										</div>
 									</div>
 								</div>

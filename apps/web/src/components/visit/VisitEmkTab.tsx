@@ -1170,75 +1170,109 @@ export function VisitEmkTab() {
 		}
 	};
 
-	const handleLinkSterilizationTray = async (e: React.FormEvent) => {
-		e.preventDefault();
-		const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
-		if (!visitId) {
-			showToast(
-				"Сначала выберите или откройте активный визит для привязки лотка",
-				"warning",
-			);
-			return;
-		}
-		if (!trayBarcode.trim()) {
-			showToast("Укажите штрихкод простерилизованного лотка", "warning");
-			return;
-		}
-		if (isLinkingTray) return;
-		setIsLinkingTray(true);
-		try {
-			/*
-			 * POST /api/sterilization/link — klinicheskaya mutaciya visit_diaries.
-			 * BYLO: denteClinicalReadHeaders (read-secret). Pri requireClinicalMutation
-			 * na API read-secret ne prohodit mutation gate → 403 u zakazchika.
-			 * STALO: denteClinicalMutationHeaders, kak diary draft/lock.
-			 */
-			const headers = appLogic.auth?.denteClinicalMutationHeaders?.({
-				"Content-Type": "application/json",
-			}) ?? { "Content-Type": "application/json" };
-			const res = await fetch("/api/sterilization/link", {
-				method: "POST",
-				headers,
-				body: JSON.stringify({ visitId, barcode: trayBarcode.trim() }),
-			});
-			if (!res.ok) {
-				const errData = (await res.json().catch((err: unknown) => {
-					logger.error(err);
-					showToast(
-						actionFailureToast(
-							"Ошибка чтения ответа",
-							(err as { status?: number })?.status ?? null,
-						),
-						"error",
-					);
-					return null;
-				})) as { message?: string; error?: string } | null;
+	const CHAIRSIDE_STERILIZATION_PRESETS = React.useMemo(
+		() =>
+			[
+				{
+					id: "therapy",
+					code: "TRAY-THERAPY-STD",
+					label: "Терапевтический лоток",
+				},
+				{
+					id: "surgery",
+					code: "TRAY-SURGERY-STD",
+					label: "Хирургический лоток",
+				},
+				{
+					id: "exam",
+					code: "TRAY-EXAM-STD",
+					label: "Стерильный набор (Осмотр)",
+				},
+			] as const,
+		[],
+	);
+
+	const executeLinkSterilizationTray = React.useCallback(
+		async (barcodeToLink: string) => {
+			const targetBarcode = barcodeToLink.trim();
+			if (!targetBarcode) {
+				showToast("Укажите или выберите штрихкод стерильного лотка", "warning");
+				return;
+			}
+			const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
+			if (!visitId) {
 				showToast(
-					errData?.message ||
-						errData?.error ||
-						"Лоток не прошёл стерилизацию или не найден в журнале",
-					"error",
+					"Сначала выберите или откройте активный визит для привязки лотка",
+					"warning",
 				);
 				return;
 			}
-			setLinkedBarcode(trayBarcode.trim());
-			setTrayBarcode("");
-			showToast(
-				`Лоток ${trayBarcode.trim()} успешно привязан к дневнику приема`,
-				"success",
-			);
-		} catch (err) {
-			logger.error("[EMK] Ошибка привязки лотка стерилизации:", err);
-			showToast(
-				actionFailureToast(
-					"Ошибка привязки лотка стерилизации",
-					(err as { status?: number })?.status ?? null,
-				),
-				"error",
-			);
-		} finally {
-			setIsLinkingTray(false);
+			if (isLinkingTray) return;
+			setIsLinkingTray(true);
+			try {
+				/*
+				 * POST /api/sterilization/link — клиническая мутация visit_diaries.
+				 * Требует denteClinicalMutationHeaders.
+				 */
+				const headers =
+					appLogic.auth?.denteClinicalMutationHeaders?.({
+						"Content-Type": "application/json",
+					}) ?? { "Content-Type": "application/json" };
+				const res = await fetch("/api/sterilization/link", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({ visitId, barcode: targetBarcode }),
+				});
+				if (!res.ok) {
+					const errData = (await res.json().catch((err: unknown) => {
+						logger.error(err);
+						showToast(
+							actionFailureToast(
+								"Ошибка чтения ответа",
+								(err as { status?: number })?.status ?? null,
+							),
+							"error",
+						);
+						return null;
+					})) as { message?: string; error?: string } | null;
+					showToast(
+						errData?.message ||
+							errData?.error ||
+							"Лоток не прошёл стерилизацию или не найден в журнале",
+						"error",
+					);
+					return;
+				}
+				setLinkedBarcode(targetBarcode);
+				setTrayBarcode(targetBarcode);
+				showToast(
+					`Лоток ${targetBarcode} успешно привязан к дневнику приема`,
+					"success",
+				);
+			} catch (err) {
+				logger.error("[EMK] Ошибка привязки лотка стерилизации:", err);
+				showToast(
+					actionFailureToast(
+						"Ошибка привязки лотка стерилизации",
+						(err as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+			} finally {
+				setIsLinkingTray(false);
+			}
+		},
+		[dashboard?.activeVisit?.id, isLinkingTray, appLogic.auth],
+	);
+
+	const handleLinkSterilizationTray = async (e: React.FormEvent) => {
+		e.preventDefault();
+		const targetBarcode =
+			trayBarcode.trim() || CHAIRSIDE_STERILIZATION_PRESETS[0].code;
+		if (!trayBarcode.trim()) {
+			setTrayBarcode(targetBarcode);
 		}
+		await executeLinkSterilizationTray(targetBarcode);
 	};
 
 	const handleConsentSigned = React.useCallback(
@@ -3107,30 +3141,83 @@ export function VisitEmkTab() {
 						</label>
 						{linkedBarcode ? (
 							<span className="text-xs font-bold text-[var(--ok-fg)] bg-[var(--ok-bg)] px-2.5 py-1 rounded-lg border border-[var(--ok-fg)]/30 flex items-center gap-1">
-								<span>✓</span>
+								<Check size={14} className="shrink-0" />
 								<span>Лоток {linkedBarcode} привязан</span>
 							</span>
 						) : null}
+					</div>
+
+					{/* 1-клик пресеты лотков СанПиН без сканера (Мандаты 8e, 8n) */}
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="text-[11px] font-semibold text-[var(--muted)] flex items-center gap-1 shrink-0">
+							<Zap size={12} className="text-amber-500 shrink-0" />
+							Пресеты:
+						</span>
+						{CHAIRSIDE_STERILIZATION_PRESETS.map((preset) => {
+							const isSelected =
+								trayBarcode === preset.code || linkedBarcode === preset.code;
+							return (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => {
+										setTrayBarcode(preset.code);
+										void executeLinkSterilizationTray(preset.code);
+									}}
+									disabled={isLinkingTray}
+									title={`Привязать ${preset.label} (${preset.code}) в 1 клик`}
+									className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-medium border transition-colors cursor-pointer touch-manipulation ${
+										isSelected
+											? "bg-[var(--teal,var(--brand-primary))]/10 border-[var(--teal,var(--brand-primary))] text-[var(--teal,var(--brand-primary))] font-bold shadow-xs"
+											: "bg-[var(--paper-soft,var(--paper))] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-strong)] hover:border-[var(--line-strong)]"
+									}`}
+									data-testid={`btn-tray-preset-${preset.id}`}
+								>
+									<Zap
+										size={12}
+										className={
+											isSelected
+												? "text-[var(--teal,var(--brand-primary))] shrink-0"
+												: "text-amber-500 shrink-0"
+										}
+									/>
+									<span>{preset.label}</span>
+									<span className="font-mono text-[10px] opacity-70">
+										({preset.code})
+									</span>
+									{linkedBarcode === preset.code && (
+										<Check size={14} className="text-[var(--ok-fg)] shrink-0" />
+									)}
+								</button>
+							);
+						})}
 					</div>
 
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
 						<input
 							id="visit-tray-barcode-input"
 							type="text"
-							className="flex-1 text-xs sm:text-sm px-3.5 py-2.5 min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] font-mono"
-							placeholder="Отсканируйте или введите штрихкод лотка (напр. TRAY-2026-001)"
+							className="flex-1 text-xs sm:text-sm px-3.5 py-2.5 min-h-[44px] sm:min-h-[48px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] font-mono"
+							placeholder="Отсканируйте или выберите пресет (напр. TRAY-THERAPY-STD)"
 							value={trayBarcode}
 							onChange={(e) => setTrayBarcode(e.target.value)}
 							disabled={isLinkingTray}
 							data-testid="input-tray-barcode"
 						/>
 						<button
-							className="secondary-button text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[48px] rounded-xl inline-flex items-center justify-center touch-manipulation shrink-0 cursor-pointer"
+							className="secondary-button text-xs sm:text-sm font-bold py-2.5 px-4 min-h-[44px] sm:min-h-[48px] rounded-xl inline-flex items-center justify-center gap-1.5 touch-manipulation shrink-0 cursor-pointer"
 							type="submit"
-							disabled={isLinkingTray || !trayBarcode.trim()}
+							disabled={isLinkingTray}
 							data-testid="btn-link-tray-barcode"
 						>
-							{isLinkingTray ? "Проверка…" : "Привязать лоток"}
+							{isLinkingTray ? (
+								"Привязка…"
+							) : (
+								<>
+									<ScanLine size={14} className="shrink-0" />
+									<span>Привязать лоток</span>
+								</>
+							)}
 						</button>
 					</div>
 				</form>
