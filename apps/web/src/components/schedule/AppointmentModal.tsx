@@ -9,8 +9,10 @@ import {
 	Check,
 	Clock,
 	Copy,
+	FileText,
 	FlaskConical,
 	Globe,
+	Printer,
 	Repeat,
 	User,
 	X,
@@ -21,6 +23,7 @@ import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
+import { printBlankMedicalContract } from "../patient/blankContractPrint";
 
 export const QUICK_APPOINTMENT_REASONS = [
 	{
@@ -429,6 +432,26 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								<span className="hidden sm:inline">В буфер</span>
 							</button>
 						)}
+						<button
+							type="button"
+							onClick={() => {
+								const currentPatient = (dashboard?.patients ?? []).find((p) => p.id === patientId);
+								const currentDoctor = doctors.find((d) => d.id === doctorUserId);
+								void printBlankMedicalContract(
+									currentPatient || (patientId ? { fullName: currentPatientName } : null),
+									{
+										doctorName: currentDoctor?.fullName,
+										clinicName: dashboard?.clinicSettings?.profile?.legalName || dashboard?.clinicSettings?.profile?.clinicName,
+									},
+								);
+							}}
+							className="min-h-[44px] px-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+							title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения (Мандат 8e, без 403)"
+							data-testid="appointment-modal-print-blank-contract-btn"
+						>
+							<FileText size={15} className="text-amber-600 dark:text-amber-400" />
+							<span className="hidden sm:inline">Бланк договора (_______)</span>
+						</button>
 						<button
 							type="button"
 							onClick={onClose}

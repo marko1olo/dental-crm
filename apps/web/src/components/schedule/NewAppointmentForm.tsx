@@ -1,9 +1,10 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import { AlertTriangle, Ban, Bot, Calendar, Check, FlaskConical, Plus, X } from "lucide-react";
+import { AlertTriangle, Ban, Bot, Calendar, Check, FileText, FlaskConical, Plus, X } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppConstants";
 import { appointmentScheduleMissingFields } from "../../AppHelpers";
+import { printBlankMedicalContract } from "../patient/blankContractPrint";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { DictationHints } from "../../DictationHints";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -611,6 +612,32 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							{showCreateForm
 								? "Скрыть ручной ввод"
 								: "Показать все поля / Ручной ввод"}
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								const selectedPat = (dashboard.patients ?? []).find(
+									(p) => p.id === newAppointmentDraft?.patientId,
+								);
+								const selectedDoc = (dashboard.clinicSettings?.staff ?? []).find(
+									(m) => m.id === newAppointmentDraft?.doctorUserId,
+								);
+								void printBlankMedicalContract(
+									selectedPat || null,
+									{
+										doctorName: selectedDoc?.fullName,
+										clinicName:
+											dashboard.clinicSettings?.profile?.legalName ||
+											dashboard.clinicSettings?.profile?.clinicName,
+									},
+								);
+							}}
+							className="min-h-[44px] px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+							title="Распечатать пустой типовой договор со строками _______ для ручного заполнения (Мандат 8e, без 403)"
+							data-testid="new-appointment-print-blank-contract-btn"
+						>
+							<FileText size={14} className="text-amber-600 dark:text-amber-400" />
+							<span>Бланк договора (_______)</span>
 						</button>
 						{showCreateForm && (
 							<label className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer">
