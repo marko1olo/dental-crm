@@ -299,7 +299,7 @@ export function AnesthesiaProtocolModal({
 							}}
 						>
 							<Zap size={16} color="var(--brand-primary, var(--teal))" />
-							<span>⚡ 1-клик пресеты стандартной анестезии (Минздрав РФ / Mandate 8e):</span>
+							<span>1-клик пресеты стандартной анестезии (Минздрав РФ / Mandate 8e):</span>
 						</div>
 						<div
 							style={{
@@ -313,7 +313,7 @@ export function AnesthesiaProtocolModal({
 								onClick={() => applyStandardPreset('ultracain_ds')}
 								className="anesthesia-btn"
 								style={{
-									minHeight: '40px',
+									minHeight: '44px',
 									padding: '0.375rem 0.625rem',
 									textAlign: 'left',
 									display: 'flex',
@@ -330,7 +330,7 @@ export function AnesthesiaProtocolModal({
 								<Zap size={15} color="#f59e0b" style={{ flexShrink: 0 }} />
 								<div style={{ flex: 1, minWidth: 0 }}>
 									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink)' }}>
-										⚡ Ультракаин Д-С 1:200k
+										Ультракаин Д-С 1:200k
 									</div>
 									<div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>
 										1 карп. 1.7 мл, инфильтрация, норма
@@ -343,7 +343,7 @@ export function AnesthesiaProtocolModal({
 								onClick={() => applyStandardPreset('articaine_mandibular')}
 								className="anesthesia-btn"
 								style={{
-									minHeight: '40px',
+									minHeight: '44px',
 									padding: '0.375rem 0.625rem',
 									textAlign: 'left',
 									display: 'flex',
@@ -360,7 +360,7 @@ export function AnesthesiaProtocolModal({
 								<Zap size={15} color="#f59e0b" style={{ flexShrink: 0 }} />
 								<div style={{ flex: 1, minWidth: 0 }}>
 									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink)' }}>
-										⚡ Артикаин 4% 1:100k
+										Артикаин 4% 1:100k
 									</div>
 									<div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>
 										1 карп. 1.7 мл, мандибулярная проводниковая
@@ -373,7 +373,7 @@ export function AnesthesiaProtocolModal({
 								onClick={() => applyStandardPreset('mepivacaine_plain')}
 								className="anesthesia-btn"
 								style={{
-									minHeight: '40px',
+									minHeight: '44px',
 									padding: '0.375rem 0.625rem',
 									textAlign: 'left',
 									display: 'flex',
@@ -390,7 +390,7 @@ export function AnesthesiaProtocolModal({
 								<Zap size={15} color="#10b981" style={{ flexShrink: 0 }} />
 								<div style={{ flex: 1, minWidth: 0 }}>
 									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink)' }}>
-										⚡ Мепивакаин 3% (Plain)
+										Мепивакаин 3% (Plain)
 									</div>
 									<div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>
 										1 карп. 1.7 мл, кардиобольные / беременные

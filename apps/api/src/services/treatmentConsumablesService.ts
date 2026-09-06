@@ -1912,6 +1912,199 @@ export class TreatmentConsumablesService {
 	}
 
 	/**
+	 * 1-клик списание стандартного набора клинического приёма:
+	 * - «Терапевтический прием»: карпула анестетика + игла + перчатки + слюноотсос + валики + нагрудник
+	 * - «Хирургический прием»: карпула анестетика + игла + скальпель + шовный материал + гемостатическая губка
+	 * Реализует автономию врача и медсестры (Мандат 8e п. 10), исключает созыв комиссий и ручной ввод.
+	 * Поддерживает мягкий овердрафт при задержке накладных поставщика.
+	 */
+	static async quickWriteoffVisitBundle(
+		tx: DbExecutor,
+		params: {
+			organizationId: string;
+			visitType?: "therapy" | "surgery";
+			userId?: string | null;
+			visitId?: string | null;
+			notes?: string | null;
+		},
+	): Promise<{
+		success: boolean;
+		deductedItems: Array<{
+			itemId: string;
+			itemName: string;
+			quantity: number;
+			unit: string;
+			remainingStock: number;
+			isOverdraft: boolean;
+		}>;
+		warnings: string[];
+		message: string;
+	}> {
+		const { organizationId, visitType = "therapy", userId, visitId, notes } = params;
+
+		const visitDefinitions: Record<
+			"therapy" | "surgery",
+			Array<{
+				patterns: string[];
+				defaultName: string;
+				category: string;
+				unit: string;
+				qty: number;
+				defaultCost: string;
+			}>
+		> = {
+			therapy: [
+				{ patterns: ["артикаин", "ультракаин", "убистезин", "анестетик", "anesthetic"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 1, defaultCost: "120.00" },
+				{ patterns: ["игла карпульн", "иглы карпульн", "needle"], defaultName: "Иглы карпульные 0.3x21 мм", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "18.00" },
+				{ patterns: ["перчатк", "gloves"], defaultName: "Перчатки смотровые нитриловые (пара)", category: "Расходные материалы", unit: "пар", qty: 2, defaultCost: "35.00" },
+				{ patterns: ["слюноотсос", "saliva"], defaultName: "Слюноотсосы одноразовые", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "7.00" },
+				{ patterns: ["валик", "cotton"], defaultName: "Валики ватные стоматологические", category: "Расходные материалы", unit: "шт.", qty: 6, defaultCost: "1.50" },
+				{ patterns: ["нагрудн", "салфетк", "bib"], defaultName: "Салфетки стоматологические нагрудные", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "6.00" },
+			],
+			surgery: [
+				{ patterns: ["артикаин", "ультракаин", "убистезин", "анестетик", "anesthetic"], defaultName: "Артикаин 1:100 000 (карпула 1.7 мл)", category: "Анестетики", unit: "карп.", qty: 1, defaultCost: "120.00" },
+				{ patterns: ["игла карпульн", "иглы карпульн", "needle"], defaultName: "Иглы карпульные 0.4x35 мм", category: "Расходные материалы", unit: "шт.", qty: 1, defaultCost: "20.00" },
+				{ patterns: ["скальпел", "scalpel"], defaultName: "Скальпель хирургический одноразовый №15", category: "Хирургический инструментарий", unit: "шт.", qty: 1, defaultCost: "65.00" },
+				{ patterns: ["шовн", "нить", "suture"], defaultName: "Шовный материал полигликолид 4-0 с иглой", category: "Шовный материал", unit: "шт.", qty: 1, defaultCost: "220.00" },
+				{ patterns: ["гемостат", "губк", "альвостаз", "sponge"], defaultName: "Губка гемостатическая коллагеновая", category: "Хирургический инструментарий", unit: "шт.", qty: 1, defaultCost: "85.00" },
+			],
+		};
+
+		const activeDefinitions = visitDefinitions[visitType] || visitDefinitions.therapy;
+		const visitNameRu = visitType === "surgery" ? "Хирургический прием" : "Терапевтический прием";
+
+		const allOrgItems = await tx
+			.select()
+			.from(inventoryItems)
+			.where(eq(inventoryItems.organizationId, organizationId));
+
+		const resolvedItems: Array<{
+			item: typeof inventoryItems.$inferSelect;
+			qty: number;
+		}> = [];
+
+		for (const def of activeDefinitions) {
+			let matched = allOrgItems.find((inv) =>
+				def.patterns.some((p) => inv.name.toLowerCase().includes(p.toLowerCase())),
+			);
+
+			if (!matched) {
+				const [created] = await tx
+					.insert(inventoryItems)
+					.values({
+						organizationId,
+						name: def.defaultName,
+						category: def.category,
+						unit: def.unit,
+						stockQuantity: "0",
+						currentQty: "0",
+						criticalThreshold: "10",
+						unitCostRub: def.defaultCost,
+					})
+					.returning();
+				if (created) {
+					matched = created;
+					allOrgItems.push(created);
+				}
+			}
+
+			if (matched) {
+				resolvedItems.push({ item: matched, qty: def.qty });
+			}
+		}
+
+		const sortedIds = resolvedItems.map((r) => r.item.id).sort();
+		const lockedRows = await tx
+			.select()
+			.from(inventoryItems)
+			.where(
+				and(
+					inArray(inventoryItems.id, sortedIds),
+					eq(inventoryItems.organizationId, organizationId),
+				),
+			)
+			.for("update");
+
+		const lockedMap = new Map(lockedRows.map((r) => [r.id, r]));
+		const deductedItems: Array<{
+			itemId: string;
+			itemName: string;
+			quantity: number;
+			unit: string;
+			remainingStock: number;
+			isOverdraft: boolean;
+		}> = [];
+		const warnings: string[] = [];
+		const txRows: Array<typeof inventoryTransactions.$inferInsert> = [];
+
+		for (const target of resolvedItems) {
+			const inv = lockedMap.get(target.item.id);
+			if (!inv) continue;
+
+			const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
+			const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
+			const newStock = Number((baseStock - target.qty).toFixed(4));
+			const isOverdraft = newStock < 0;
+
+			await tx
+				.update(inventoryItems)
+				.set({
+					stockQuantity: String(newStock),
+					currentQty: String(newStock),
+					updatedAt: new Date(),
+				})
+				.where(
+					and(
+						eq(inventoryItems.id, inv.id),
+						eq(inventoryItems.organizationId, organizationId),
+					),
+				);
+
+			txRows.push({
+				organizationId,
+				visitId: visitId ?? null,
+				itemId: inv.id,
+				inventoryItemId: inv.id,
+				quantityChanged: String(-target.qty),
+				qty: String(-target.qty),
+				unitCostRub: inv.unitCostRub ?? "0",
+				transactionType: isOverdraft ? "emergency_overdraft" : "nurse_visit_bundle",
+				isOverdraft,
+				userId,
+				notes: isOverdraft
+					? `Списано под операцию, требуется оприходование (набор «${visitNameRu}»: дефицит ${Math.abs(newStock)} ${inv.unit ?? "ед."})`
+					: (notes || `1-клик списание набора «${visitNameRu}» (без комиссии)`),
+			});
+
+			if (isOverdraft) {
+				warnings.push(
+					`Позиция «${inv.name}»: списано под операцию, требуется оприходование (остаток: ${newStock} ${inv.unit ?? "ед."}).`,
+				);
+			}
+
+			deductedItems.push({
+				itemId: inv.id,
+				itemName: inv.name,
+				quantity: target.qty,
+				unit: inv.unit ?? "шт.",
+				remainingStock: newStock,
+				isOverdraft,
+			});
+		}
+
+		if (txRows.length > 0) {
+			await tx.insert(inventoryTransactions).values(txRows);
+		}
+
+		return {
+			success: true,
+			deductedItems,
+			warnings,
+			message: `Набор «${visitNameRu}» успешно списан (${deductedItems.length} позиций без комиссии).`,
+		};
+	}
+
+	/**
 	 * Экстренное списание списка материалов со склада с гарантированным мягким овердрафтом.
 	 * Гарантирует:
 	 * 1. Отсутствие 409 Conflict и блокировки врача/медсестры.

@@ -923,6 +923,70 @@ export function useInventoryLogic(organizationId: string) {
 		}
 	};
 
+	const isWritingOffVisitBundleRef = useRef(false);
+	const [isWritingOffVisitBundle, setIsWritingOffVisitBundle] = useState(false);
+
+	/**
+	 * 1-клик пакетное списание материалов по типовой карте визита:
+	 * - «Терапия»: карпула анестетика + игла + перчатки + слюноотсос + валики + нагрудник
+	 * - «Хирургия»: карпула анестетика + игла + скальпель + шовный материал + гемостатическая губка
+	 * Реализует мягкий овердрафт при задержке накладной и списание без созыва комиссии (Мандат 8e п. 10).
+	 */
+	const handleQuickWriteoffVisitBundle = async (
+		visitType: "therapy" | "surgery" = "therapy",
+		options?: {
+			visitId?: string;
+			notes?: string;
+		},
+	) => {
+		if (isWritingOffVisitBundleRef.current) return;
+		isWritingOffVisitBundleRef.current = true;
+		setIsWritingOffVisitBundle(true);
+
+		const visitNameRu = visitType === "surgery" ? "Хирургия" : "Терапия";
+
+		try {
+			const res = await fetch(
+				`/api/inventory/${organizationId}/quick-writeoff-visit-bundle`,
+				{
+					method: "POST",
+					headers: getHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						visitType,
+						visitId: options?.visitId,
+						notes: options?.notes,
+					}),
+				},
+			);
+
+			if (res.ok) {
+				const data = await res.json();
+				if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+					showToast(
+						`Визит «${visitNameRu}» списан. Мягкий овердрафт: «Списано под операцию, требуется оприходование»`,
+						"warning",
+					);
+				} else {
+					showToast(
+						`Набор «Визит: ${visitNameRu}» успешно списан в 1 клик (${data.deductedItems?.length || (visitType === "surgery" ? 5 : 6)} позиций без комиссии)`,
+						"success",
+					);
+				}
+				fetchItems();
+			} else {
+				showToast(`Ошибка списания набора визита «${visitNameRu}»`, "error");
+			}
+		} catch (e) {
+			logger.error(e);
+			showToast("Системная ошибка при списании набора визита", "error");
+		} finally {
+			isWritingOffVisitBundleRef.current = false;
+			setIsWritingOffVisitBundle(false);
+		}
+	};
+
 	const filteredItems = useMemo(() => {
 		if (!searchQuery.trim()) return items;
 		const q = searchQuery.toLowerCase();
@@ -1012,6 +1076,8 @@ export function useInventoryLogic(organizationId: string) {
 		isWritingOffCarpules,
 		handleQuickWriteoffShiftBundle,
 		isWritingOffShiftBundle,
+		handleQuickWriteoffVisitBundle,
+		isWritingOffVisitBundle,
 		getHeaders,
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 		servicesList: (dashboard as any)?.prices || dashboard?.serviceCatalog || [],

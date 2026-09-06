@@ -214,6 +214,17 @@ export function AnesthesiaQuickBar({
 		}
 	};
 
+	const handleNursePacketDisposal = () => {
+		if (disabled) return;
+		setActiveToastMessage(
+			"Списана 1 карпула Артикаин 1:100 000 + игла 30G: пакет списан медсестрой в 1 клик (Класс Б / ПКУ, без комиссии из 3 человек, мягкий овердрафт)",
+		);
+		setTimeout(() => setActiveToastMessage(null), 4000);
+		if (onDisposalCarpules) {
+			onDisposalCarpules(1.0, "articaine_1_100k");
+		}
+	};
+
 	const handleApplyStandardNormPreset = () => {
 		if (disabled) return;
 		const effectiveWeight = resolveClinicalDefaultWeightKg(
@@ -274,7 +285,7 @@ export function AnesthesiaQuickBar({
 							data-testid="btn-anesthesia-quick-emergency"
 						>
 							<ShieldAlert size={14} />
-							<span>🚨 Шок / LAST 112</span>
+							<span>Шок / LAST 112</span>
 						</button>
 					)}
 					{onOpenAspirationJournal && (
@@ -370,7 +381,7 @@ export function AnesthesiaQuickBar({
 						data-testid="anesthesia-dose-norm-preset"
 					>
 						<Zap size={14} className="text-amber-300 shrink-0" />
-						<span>⚡ Норма: Артикаин 1:100k (1.7 мл)</span>
+						<span>Норма: Артикаин 1:100k (1.7 мл)</span>
 					</button>
 
 					<button
@@ -419,6 +430,18 @@ export function AnesthesiaQuickBar({
 					>
 						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Списать карпулу (1 клик)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={handleNursePacketDisposal}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="Списать 1 карпулу Артикаин 1:100 000 + иглу 30G пакетом в 1 клик (СанПиН 3.3686-21, Мандат 8e п. 10, без комиссии, мягкий овердрафт)"
+						data-testid="nurse-quick-packet-disposal"
+					>
+						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span>Пакет: 1 карп. + игла 30G</span>
 					</button>
 				</div>
 

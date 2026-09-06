@@ -62,10 +62,10 @@
 	flex-shrink: 0;
 }
 
-/* Standard Clinical Toolbar Buttons (36px) */
+/* Standard Clinical Surgical Buttons (Touch-first >=44px, Mandate 8d) */
 .surgery-btn {
-	min-height: 36px;
-	padding: 6px 14px;
+	min-height: 44px;
+	padding: 8px 16px;
 	border-radius: 10px;
 	font-size: 13px;
 	font-weight: 700;

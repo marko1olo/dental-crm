@@ -63,7 +63,7 @@ export const SurgerySafetyChecklist: React.FC<SurgerySafetyChecklistProps> = ({
 				<button
 					type="button"
 					onClick={handleOneClickAllNorm}
-					className="min-h-[34px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 transition-all"
+					className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 active:scale-95 transition-all"
 					data-testid="btn-timeout-all-norm"
 				>
 					<CheckCircle2 size={15} />

@@ -1054,5 +1054,41 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 
 		return result;
 	});
+
+	// POST /:organizationId/quick-writeoff-visit-bundle — 1-клик списание набора клинического приёма
+	// (терапия: карпула + игла + перчатки + слюноотсос + валики + нагрудник;
+	//  хирургия: карпула + игла + скальпель + шовный материал + гемостатическая губка)
+	// без созыва комиссий и с поддержкой мягкого овердрафта (Мандат 8e п. 10).
+	server.post<{
+		Params: { organizationId: string };
+		Body?: { visitType?: "therapy" | "surgery"; visitId?: string; notes?: string };
+	}>("/:organizationId/quick-writeoff-visit-bundle", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory quick writeoff visit bundle",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const userContext = request.user;
+
+		const result = await db.transaction(async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+				organizationId,
+				visitType: body.visitType || "therapy",
+				userId: userContext?.id ?? null,
+				visitId: body.visitId ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
+	});
 };
 

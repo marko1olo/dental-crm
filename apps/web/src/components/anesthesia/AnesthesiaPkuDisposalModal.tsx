@@ -152,7 +152,7 @@ export function AnesthesiaPkuDisposalModal({
 		if (onSaveRecord) {
 			onSaveRecord(record, text);
 		}
-		showToast(`⚡ Списано в 1 клик: ${preset.titleRu} (медсестра ${nurseName}, без комиссии)!`, 'success');
+		showToast(`Списано в 1 клик: ${preset.titleRu} (медсестра ${nurseName}, без комиссии)!`, 'success');
 		onClose();
 	};
 
@@ -309,7 +309,7 @@ export function AnesthesiaPkuDisposalModal({
 			onSaveRecord(shiftBatchRecord, shiftAct);
 		}
 		showToast(
-			`⚡ Списано за смену: ${count} пустых карпул (${currentDrugSpec.tradeNamesRu[0] ?? currentDrugSpec.nameRu}) в журнал ПКУ медсестрой в 1 клик!`,
+			`Списано за смену: ${count} пустых карпул (${currentDrugSpec.tradeNamesRu[0] ?? currentDrugSpec.nameRu}) в журнал ПКУ медсестрой в 1 клик!`,
 			'success'
 		);
 		onClose();

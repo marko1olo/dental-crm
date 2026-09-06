@@ -57,6 +57,8 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasMepivacaineAllergy?: boolean | undefined;
 	readonly hasEsterAnestheticsAllergy?: boolean | undefined;
 	readonly hasSulfiteAllergy?: boolean | undefined;
+	readonly hasSulfitesAllergy?: boolean | undefined;
+	readonly hasAnestheticAllergy?: boolean | undefined;
 	readonly hasIodineAllergy?: boolean | undefined;
 	readonly hasAnaphylaxisHistory?: boolean | undefined;
 
@@ -72,11 +74,13 @@ export interface PatientClinicalSafetyProfile {
 
 	// 3. Гематология & Антикоагулянты
 	readonly takesAnticoagulants?: boolean | undefined;
+	readonly hasAnticoagulantTherapy?: boolean | undefined;
 	readonly anticoagulantName?: string | undefined; // Варфарин, Ксарелто, Эликвис, Тромбо АСС и т.д.
 	readonly lastInrValue?: number | undefined; // Значение МНО (INR)
 
 	// 4. Бисфосфонаты & Остеонекроз (MRONJ)
 	readonly takesBisphosphonates?: boolean | undefined;
+	readonly hasBisphosphonateTherapy?: boolean | undefined;
 	readonly bisphosphonateName?: string | undefined; // Акласта, Зомета, Фосамакс, Пролиа
 
 	// 5. Беременность и лактация
@@ -97,6 +101,7 @@ export interface PatientClinicalSafetyProfile {
 
 	// Свободные примечания
 	readonly customAllergyNotes?: string | undefined;
+	readonly customAllergiesNotes?: string | undefined;
 	readonly customChronicNotes?: string | undefined;
 	readonly currentMedicationsList?: string | undefined;
 	readonly lastUpdated?: string | undefined;
@@ -108,7 +113,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "pacemaker_exs",
 		category: "pacemaker_cardio",
 		severity: "critical",
-		shortBadge: "⛔ ЭКС: ЗАПРЕТ УЗ / ЭЛЕКТРОКОАГУЛЯЦИИ",
+		shortBadge: "[СТОП] ЭКС: ЗАПРЕТ УЗ / ЭЛЕКТРОКОАГУЛЯЦИИ",
 		titleRu: "Имплантированный электрокардиостимулятор (ЭКС / ИКД)",
 		fullDescription:
 			"У пациента установлен имплантированный электрокардиостимулятор или кардиовертер-дефибриллятор. Электромагнитные помехи (EMI) от ультразвуковых генераторов и электрохирургических аппаратов могут нарушить ритмовождение и вызвать фатальную аритмию (остановка сердца, фибрилляция желудочков).",
@@ -131,7 +136,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "bisphosphonates_mronj",
 		category: "bisphosphonates",
 		severity: "critical",
-		shortBadge: "⛔ БИСФОСФОНАТЫ: РИСК ОСТЕОНЕКРОЗА (MRONJ)",
+		shortBadge: "[СТОП] БИСФОСФОНАТЫ: РИСК ОСТЕОНЕКРОЗА (MRONJ)",
 		titleRu: "Бисфосфонатная терапия / Антирезорбтивные препараты",
 		fullDescription:
 			"Пациент получает или получал бисфосфонаты (Золедроновая кислота, Акласта, Зомета, Фосамакс/Алендронат, Бонвива) либо деносумаб (Пролиа, Эксджива). Экстремальный риск развития медикаментозного остеонекроза челюстей (MRONJ / БОНЧ) после любых хирургических манипуляций, удаления зубов или травмы надкостницы.",
@@ -154,7 +159,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "anticoagulants_bleeding",
 		category: "anticoagulants",
 		severity: "critical",
-		shortBadge: "⚠️ АНТИКОАГУЛЯНТЫ: РИСК КРОВОТЕЧЕНИЯ",
+		shortBadge: "[РИСК] АНТИКОАГУЛЯНТЫ: РИСК КРОВОТЕЧЕНИЯ",
 		titleRu: "Прием антикоагулянтов / Антиагрегантная терапия",
 		fullDescription:
 			"Пациент принимает препараты прямого или непрямого антикоагулянтного действия (Варфарин, Ксарелто/Ривароксабан, Эликвис/Апиксабан, Прадакса/Дабигатран) либо двойную антиагрегантную терапию (Плавикс/Клопидогрел + Тромбо АСС). Высокий риск профузного, труднокупируемого кровотечения.",
@@ -177,7 +182,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_articaine",
 		category: "anesthesia_allergy",
 		severity: "critical",
-		shortBadge: "⛔ АЛЛЕРГИЯ: АРТИКАИН (УЛЬТРАКАИН / СЕПТАНЕСТ)",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: АРТИКАИН (УЛЬТРАКАИН / СЕПТАНЕСТ)",
 		titleRu: "Острая аллергия на Артикаин (Ультракаин, Септанест, Убистезин)",
 		fullDescription:
 			"У пациента подтвержденная гиперчувствительность или анафилактоидная реакция на артикаин. Абсолютно противопоказано применение любых артикаин-содержащих растворов.",
@@ -197,7 +202,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_lidocaine",
 		category: "anesthesia_allergy",
 		severity: "critical",
-		shortBadge: "⛔ АЛЛЕРГИЯ: ЛИДОКАИН / СПРЕИ",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: ЛИДОКАИН / СПРЕИ",
 		titleRu: "Острая аллергия на Лидокаин (включая аэрозоли)",
 		fullDescription:
 			"У пациента аллергическая непереносимость Лидокаина. Противопоказаны как инъекционные формы, так и аппликационные спреи и гели на основе лидокаина (Динакаин, Лидокаин-спрей, Камистад).",
@@ -216,7 +221,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_mepivacaine",
 		category: "anesthesia_allergy",
 		severity: "critical",
-		shortBadge: "⛔ АЛЛЕРГИЯ: МЕПИВАКАИН (СКАНДОНЕСТ)",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: МЕПИВАКАИН (СКАНДОНЕСТ)",
 		titleRu: "Острая аллергия на Мепивакаин (Скандонест, Мепивастезин)",
 		fullDescription:
 			"Аллергическая непереносимость Мепивакаина. Запрещено использование Скандонеста 3% и Мепивастезина.",
@@ -234,7 +239,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_ester_anesthetics",
 		category: "anesthesia_allergy",
 		severity: "critical",
-		shortBadge: "⛔ АЛЛЕРГИЯ: ЭФИРНЫЕ АНЕСТЕТИКИ (НОВОКАИН / АНЕСТЕЗИН / БЕНЗОКАИН)",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: ЭФИРНЫЕ АНЕСТЕТИКИ (НОВОКАИН / АНЕСТЕЗИН / БЕНЗОКАИН)",
 		titleRu: "Аллергия на эфирные анестетики (Новокаин, Прокаин, Бензокаин, Дикаин)",
 		fullDescription:
 			"Истинная IgE-гиперчувствительность к сложным эфирам парааминобензойной кислоты (ПАБК). Противопоказаны инъекции новокаина/прокаина, дикаина/тетракаина и аппликационные гели на основе бензокаина/анестезина (Hurricaine, Dispodent, Topex).",
@@ -254,7 +259,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_sulfites",
 		category: "anesthesia_allergy",
 		severity: "critical",
-		shortBadge: "⛔ АЛЛЕРГИЯ: СУЛЬФИТЫ (БЕЗ ВАЗОКОНСТРИКТОРОВ)",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: СУЛЬФИТЫ (БЕЗ ВАЗОКОНСТРИКТОРОВ)",
 		titleRu: "Аллергия на сульфиты / Метабисульфит натрия (E223)",
 		fullDescription:
 			"Метабисульфит натрия используется как антиоксидант для стабилизации адреналина (эпинефрина) во всех анестетиках с вазоконстрикторами. При сульфитной непереносимости инъекция адреналинового анестетика вызывает тяжелый анафилактоидный шок или острый бронхоспазм.",
@@ -272,7 +277,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "pregnancy_trimester_1",
 		category: "pregnancy",
 		severity: "critical",
-		shortBadge: "🤰 БЕРЕМЕННОСТЬ 1 ТРИМЕСТР: ТОЛЬКО ОСТРАЯ БОЛЬ",
+		shortBadge: "[ОСОБЫЙ РЕЖИМ] БЕРЕМЕННОСТЬ 1 ТРИМЕСТР: ТОЛЬКО ОСТРАЯ БОЛЬ",
 		titleRu: "Беременность 1-й триместр (1–12 недель)",
 		fullDescription:
 			"Период активного органогенеза и формирования плаценты. Любые медикаменты, стресс и ионизирующее излучение несут потенциальный тератогенный риск и угрозу прерывания беременности.",
@@ -294,7 +299,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "pregnancy_trimester_2",
 		category: "pregnancy",
 		severity: "moderate",
-		shortBadge: "🤰 БЕРЕМЕННОСТЬ 2 ТРИМЕСТР: БЕЗОПАСНОЕ ОКНО",
+		shortBadge: "[ОСОБЫЙ РЕЖИМ] БЕРЕМЕННОСТЬ 2 ТРИМЕСТР: БЕЗОПАСНОЕ ОКНО",
 		titleRu: "Беременность 2-й триместр (13–27 недель)",
 		fullDescription:
 			"Оптимальный и наиболее стабильный период для проведения необходимой плановой санации, лечения кариеса и купирования очагов хронической одонтогенной инфекции.",
@@ -314,7 +319,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "pregnancy_trimester_3",
 		category: "pregnancy",
 		severity: "high",
-		shortBadge: "🤰 БЕРЕМЕННОСТЬ 3 ТРИМЕСТР: РИСК СИНДРОМА НПВ",
+		shortBadge: "[ОСОБЫЙ РЕЖИМ] БЕРЕМЕННОСТЬ 3 ТРИМЕСТР: РИСК СИНДРОМА НПВ",
 		titleRu: "Беременность 3-й триместр (28–40 недель)",
 		fullDescription:
 			"Поздние сроки беременности. Повышенный тонус матки, риск индуцирования преждевременных родов на фоне стресса и адреналина. Риск синдрома сдавления нижней полой вены (Supine Hypotensive Syndrome) в горизонтальном положении в стоматологическом кресле.",
@@ -335,7 +340,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "hypertension_cvd",
 		category: "chronic_somatic",
 		severity: "high",
-		shortBadge: "❤️ ГИПЕРТОНИЯ / ССЗ: ЛИМИТ АДРЕНАЛИНА (<= 0.04 МГ)",
+		shortBadge: "[РИСК] ГИПЕРТОНИЯ / ССЗ: ЛИМИТ АДРЕНАЛИНА (<= 0.04 МГ)",
 		titleRu: "Гипертоническая болезнь / ИБС / Кардиоваскулярный риск",
 		fullDescription:
 			"Пациент страдает артериальной гипертензией (I10–I15), ишемической болезнью сердца, перенес инфаркт миокарда или страдает нарушениями ритма. Адреналин может спровоцировать гипертонический криз, приступ стенокардии или острую аритмию.",
@@ -356,7 +361,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "diabetes_mellitus",
 		category: "chronic_somatic",
 		severity: "high",
-		shortBadge: "🩸 САХАРНЫЙ ДИАБЕТ: РИСК ГИПОГЛИКЕМИИ И АЛЬВЕОЛИТА",
+		shortBadge: "[РИСК] САХАРНЫЙ ДИАБЕТ: РИСК ГИПОГЛИКЕМИИ И АЛЬВЕОЛИТА",
 		titleRu: "Сахарный диабет 1 / 2 типа",
 		fullDescription:
 			"Нарушение углеводного обмена, снижение фагоцитарной активности лейкоцитов, микроангиопатия, замедленная регенерация тканей и склонность к гнойно-воспалительным осложнениям (альвеолит лунки). Риск острой гипогликемии на приеме.",
@@ -377,7 +382,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "bronchial_asthma",
 		category: "chronic_somatic",
 		severity: "high",
-		shortBadge: "🫁 БРОНХИАЛЬНАЯ АСТМА: ИНГАЛЯТОР НАГОТОВЕ",
+		shortBadge: "[РИСК] БРОНХИАЛЬНАЯ АСТМА: ИНГАЛЯТОР НАГОТОВЕ",
 		titleRu: "Бронхиальная астма (J45) / ХОБЛ",
 		fullDescription:
 			"Хроническое воспаление дыхательных путей с гиперреактивностью бронхов. Стресс, запахи стоматологических мономеров и метабисульфиты в анестетиках могут спровоцировать астматический статус.",
@@ -397,7 +402,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "epilepsy_seizures",
 		category: "chronic_somatic",
 		severity: "high",
-		shortBadge: "⚡ ЭПИЛЕПСИЯ: ЗАЩИТА ОТ ФОТОСТИМУЛЯЦИИ",
+		shortBadge: "[РИСК] ЭПИЛЕПСИЯ: ЗАЩИТА ОТ ФОТОСТИМУЛЯЦИИ",
 		titleRu: "Эпилепсия / Судорожный синдром (G40)",
 		fullDescription:
 			"Неврологическое заболевание с риском генерализованных судорожных приступов, провоцируемых фотостимуляцией (яркий свет рефлектора в глаза), эмоциональным стрессом или гипоксией.",
@@ -418,7 +423,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "hepatitis_hiv_infection",
 		category: "chronic_somatic",
 		severity: "high",
-		shortBadge: "🛡️ САНПИН: ОСОБЫЙ ИНФЕКЦИОННЫЙ РЕЖИМ",
+		shortBadge: "[САНПИН] ОСОБЫЙ ИНФЕКЦИОННЫЙ РЕЖИМ",
 		titleRu: "Вирусные гепатиты B/C, ВИЧ-инфекция (СанПиН 3.3686-21)",
 		fullDescription:
 			"Парентеральные вирусные инфекции. Требуют строгого соблюдения правил санитарно-противоэпидемического режима, индивидуальной защиты персонала и осторожности при назначении гепатотоксичных препаратов.",
@@ -439,7 +444,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_penicillin",
 		category: "general_allergy",
 		severity: "high",
-		shortBadge: "💊 АЛЛЕРГИЯ: ПЕНИЦИЛЛИНЫ (ЗАПРЕТ АМОКСИКЛАВА)",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: ПЕНИЦИЛЛИНЫ (ЗАПРЕТ АМОКСИКЛАВА)",
 		titleRu: "Аллергия на пенициллины и бета-лактамные антибиотики",
 		fullDescription:
 			"Гиперчувствительность к пенициллиновому ряду (Амоксициллин, Аугментин, Амоксиклав, Флемоксин). Риск перекрестной аллергии с цефалоспоринами до 5–10%.",
@@ -457,7 +462,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_latex",
 		category: "general_allergy",
 		severity: "high",
-		shortBadge: "🧤 АЛЛЕРГИЯ НА ЛАТЕКС (БЕСЛАТЕКСНЫЙ РЕЖИМ)",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ НА ЛАТЕКС (БЕСЛАТЕКСНЫЙ РЕЖИМ)",
 		titleRu: "Аллергия на натуральный латекс",
 		fullDescription:
 			"Контактная и системная гиперчувствительность к протеинам натурального каучукового латекса. Риск контактного хейлита, стоматита, крапивницы и отека Квинке.",
@@ -477,7 +482,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "allergy_iodine",
 		category: "general_allergy",
 		severity: "critical",
-		shortBadge: "⛔ АЛЛЕРГИЯ: ЙОД И ЙОДОФОРМ (ЗАПРЕТ БЕТАДИНА/МЕТАПЕКСА)",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: ЙОД И ЙОДОФОРМ (ЗАПРЕТ БЕТАДИНА/МЕТАПЕКСА)",
 		titleRu: "Аллергия на йод, йодоформ и повидон-йод",
 		fullDescription:
 			"Тяжелая контактная и системная гиперчувствительность к препаратам йода. Категорически противопоказано применение антисептиков на основе йода (Бетадин, Повидон-йод, Раствор Люголя, Йодинол), йодоформсодержащих паст для корневых каналов (Metapex, Апексдент с йодоформом) и хирургических турунд (Альвожил / Alveogyl с йодоформом).",
@@ -498,7 +503,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "pheochromocytoma_catecholamines",
 		category: "chronic_somatic",
 		severity: "critical",
-		shortBadge: "⛔ ФЕОХРОМОЦИТОМА: АБСОЛЮТНЫЙ ЗАПРЕТ ВАЗОКОНСТРИКТОРОВ",
+		shortBadge: "[СТОП] ФЕОХРОМОЦИТОМА: АБСОЛЮТНЫЙ ЗАПРЕТ ВАЗОКОНСТРИКТОРОВ",
 		titleRu: "Феохромоцитома (МКБ-10 C74.1 / D35.0)",
 		fullDescription:
 			"Гормонально-активная опухоль хромаффинной ткани надпочечников, секретирующая катехоламины. Экзогенное введение адреналина (эпинефрина) категорически противопоказано из-за риска смертельного гипертонического криза, отека легких и фибрилляции желудочков.",
@@ -518,7 +523,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "thyrotoxicosis_hyperthyroidism",
 		category: "chronic_somatic",
 		severity: "critical",
-		shortBadge: "⛔ ТИРЕОТОКСИКОЗ: ЗАПРЕТ АДРЕНАЛИНА",
+		shortBadge: "[СТОП] ТИРЕОТОКСИКОЗ: ЗАПРЕТ АДРЕНАЛИНА",
 		titleRu: "Тиреотоксикоз / Гипертиреоз (МКБ-10 E05)",
 		fullDescription:
 			"Повышенная чувствительность миокарда к экзогенным катехоламинам. Экстремальный риск тиреотоксического криза, тахиаритмии и фибрилляции желудочков при введении адреналина.",
@@ -538,7 +543,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "beta_blockers_interaction",
 		category: "chronic_somatic",
 		severity: "high",
-		shortBadge: "⚠️ БЕТА-БЛОКАТОРЫ: РИСК КРИЗА НА АДРЕНАЛИН",
+		shortBadge: "[РИСК] БЕТА-БЛОКАТОРЫ: РИСК КРИЗА НА АДРЕНАЛИН",
 		titleRu: "Прием бета-адреноблокаторов (Бисопролол, Анаприлин)",
 		fullDescription:
 			"Блокада бета-2-адренорецепторов сосудов при введении адреналина вызывает нескомпенсированную альфа-1-вазоконстрикцию, резкий подъем системного АД и рефлекторную тяжелую брадикардию.",
@@ -557,7 +562,7 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		id: "severe_hypertension_stage_3",
 		category: "chronic_somatic",
 		severity: "critical",
-		shortBadge: "⛔ АГ III СТАДИИ: ЗАПРЕТ АДРЕНАЛИНА",
+		shortBadge: "[СТОП] АГ III СТАДИИ: ЗАПРЕТ АДРЕНАЛИНА",
 		titleRu: "Артериальная гипертензия III ст. / Кризовое течение (АД > 180/110)",
 		fullDescription:
 			"Тяжелая гипертензия с высоким риском инсульта, инфаркта миокарда и расслоения аорты при выбросе или экзогенном введении адреналина.",
@@ -704,7 +709,7 @@ export function evaluatePatientSafetyFlags(
 			id: "anaphylaxis_history",
 			category: "anesthesia_allergy",
 			severity: "critical",
-			shortBadge: "⛔ АНАФИЛАКСИЯ В АНАМНЕЗЕ",
+			shortBadge: "[СТОП] АНАФИЛАКСИЯ В АНАМНЕЗЕ",
 			titleRu: "Отягощенный аллергоанамнез: анафилактический шок / ангионевротический отек",
 			description: "У пациента в анамнезе системные аллергические реакции немедленного типа (анафилаксия / отек Квинке). Повышенная готовность противошоковой укладки.",
 			forbiddenProcedures: ["Применение аллергенов и полипрагмазия"],
@@ -724,7 +729,7 @@ export function evaluatePatientSafetyFlags(
 			id: "custom_allergy_notes",
 			category: "anesthesia_allergy",
 			severity: "critical",
-			shortBadge: `⛔ АЛЛЕРГИЯ: ${rawNotes.toUpperCase()}`,
+			shortBadge: `[АЛЛЕРГИЯ] ${rawNotes.toUpperCase()}`,
 			titleRu: `Индивидуальная лекарственная/вещественная аллергия: ${rawNotes}`,
 			description: `У пациента зарегистрирована индивидуальная аллергия или гиперчувствительность: ${rawNotes}`,
 			forbiddenProcedures: [`Применение препаратов, содержащих ${rawNotes}`],
@@ -750,7 +755,7 @@ export function evaluatePatientSafetyFlags(
 
 	const formattedSummaryLine = activeFlags.length > 0
 		? activeFlags.map((f) => f.shortBadge).join(" ")
-		: "✅ Анамнез не отягощен. Критических стоп-факторов не выявлено.";
+		: "Анамнез не отягощен. Критических стоп-факторов не выявлено.";
 
 	const formattedDiarySection = formatSafetyProfileToDiaryText(profile);
 
@@ -1064,9 +1069,18 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 	if (profile.customChronicNotes) chronic.push(profile.customChronicNotes);
 
 	if (chronic.length > 0) {
-		items.push(`Сопутствующие соматические заболевания: ${chronic.join(", ")}.`);
+		if (
+			chronic.length === 1 &&
+			profile.customChronicNotes &&
+			(profile.customChronicNotes.toLowerCase().includes("соматически здоров") ||
+				profile.customChronicNotes.toLowerCase().includes("норма"))
+		) {
+			items.push(`Соматический статус: ${profile.customChronicNotes}.`);
+		} else {
+			items.push(`Сопутствующие соматические заболевания: ${chronic.join(", ")}.`);
+		}
 	} else {
-		items.push("Соматический статус: Хронические заболевания (ССЗ, диабет, астму, гепатиты) отрицает.");
+		items.push("Соматический статус: Соматически здоров / норма. Хронические заболевания (ССЗ, диабет, астму, гепатиты) со слов отрицает.");
 	}
 
 	return items.join("\n");

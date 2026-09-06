@@ -259,7 +259,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 																			data-testid={`item-lab-order-one-click-btn-${item.id}`}
 																		>
 																			<Zap size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
-																			<span>⚡ 1-клик</span>
+																			<span>1-клик</span>
 																		</button>
 																	)}
 																</>
@@ -297,7 +297,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 										{microConsumables.length > 0 && (
 											<div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between text-xs text-[var(--muted,#64748b)] border-t border-[var(--line,#e2e8f0)]">
 												<span>
-													✨ Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в процедуры
+													Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в процедуры
 												</span>
 												<button
 													type="button"
@@ -476,12 +476,12 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 														.filter((t): t is number => typeof t === "number" && t > 0);
 													onOneClickLabOrder(stageTeeth.length > 0 ? stageTeeth : undefined);
 												}}
-												className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer transition-colors shadow-2xs"
+												className="min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 dark:text-amber-200 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 cursor-pointer transition-colors shadow-2xs"
 												title="Оформить наряд в ЗТЛ в 1 клик (Диоксид циркония / E.max, цвет VITA A2, +7 раб. дней)"
 												data-testid={`stage-${stage.stageNumber}-lab-order-one-click-btn`}
 											>
 												<Zap size={13} className="text-amber-600 dark:text-amber-400" />
-												<span>⚡ 1-клик ЗТЛ (Цирконий A2, +7 дн.)</span>
+												<span>1-клик ЗТЛ (Цирконий A2, +7 дн.)</span>
 											</button>
 										)}
 									</>
@@ -491,7 +491,7 @@ export const TreatmentPlanStageCard: React.FC<TreatmentPlanStageCardProps> = ({
 								<button
 									type="button"
 									onClick={() => onExecuteWriteOffStage(stage)}
-									className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
+									className="min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 cursor-pointer transition-colors"
 									title="Сформировать Акт выполненных работ и провести списание ТМЦ со склада"
 								>
 									<Package size={13} />

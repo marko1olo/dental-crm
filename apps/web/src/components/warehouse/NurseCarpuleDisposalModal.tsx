@@ -143,8 +143,8 @@ export function NurseCarpuleDisposalModal({
 
 			setIsDisposed(true);
 			const msg = isOverdraft
-				? `⚡ Списание ${carpulesCount} пустых карпул выполнено единолично в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - currentStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
-				: `⚡ Списание ${carpulesCount} пустых карпул оформлено медсестрой единолично в 1 клик (СанПиН 3.3686-21, Акт ${actNumber}).`;
+				? `Списание ${carpulesCount} пустых карпул выполнено единолично в 1 клик (Мягкий овердрафт: дефицит ${carpulesCount - currentStockAvailable} шт. зафиксирован, накладная ещё не оприходована).`
+				: `Списание ${carpulesCount} пустых карпул оформлено медсестрой единолично в 1 клик (СанПиН 3.3686-21, Акт ${actNumber}).`;
 			showToast(msg, "success");
 			setTimeout(() => {
 				onClose();
@@ -247,11 +247,11 @@ export function NurseCarpuleDisposalModal({
 						</div>
 
 						<div className="flex items-center gap-2">
-							<div className="flex items-center border border-[var(--line,#e2e8f0)] rounded-lg bg-[var(--paper,#ffffff)] overflow-hidden h-10">
+							<div className="flex items-center border border-[var(--line,#e2e8f0)] rounded-lg bg-[var(--paper,#ffffff)] overflow-hidden min-h-[44px] h-11">
 								<button
 									type="button"
 									onClick={() => setCarpulesCount((prev) => Math.max(1, prev - 1))}
-									className="w-10 h-full flex items-center justify-center text-sm font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] active:bg-[var(--paper-strong,#e2e8f0)]"
+									className="w-11 min-h-[44px] h-full flex items-center justify-center text-sm font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] active:bg-[var(--paper-strong,#e2e8f0)]"
 								>
 									−
 								</button>
@@ -266,7 +266,7 @@ export function NurseCarpuleDisposalModal({
 								<button
 									type="button"
 									onClick={() => setCarpulesCount((prev) => prev + 1)}
-									className="w-10 h-full flex items-center justify-center text-sm font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] active:bg-[var(--paper-strong,#e2e8f0)]"
+									className="w-11 min-h-[44px] h-full flex items-center justify-center text-sm font-bold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] active:bg-[var(--paper-strong,#e2e8f0)]"
 								>
 									+
 								</button>
@@ -278,7 +278,7 @@ export function NurseCarpuleDisposalModal({
 									key={num}
 									type="button"
 									onClick={() => setCarpulesCount(num)}
-									className={`h-10 px-3 rounded-lg text-xs font-bold border transition-colors ${
+									className={`min-h-[44px] h-11 px-3.5 rounded-lg text-xs font-bold border transition-colors ${
 										carpulesCount === num
 											? "bg-teal-600 border-teal-600 text-white"
 											: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
@@ -291,7 +291,7 @@ export function NurseCarpuleDisposalModal({
 							<button
 								type="button"
 								onClick={() => setCarpulesCount(15)}
-								className="h-10 px-3 rounded-lg text-xs font-bold border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] ml-auto"
+								className="min-h-[44px] h-11 px-3.5 rounded-lg text-xs font-bold border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] ml-auto"
 								title="Списать весь расход за смену"
 							>
 								Вся смена (15)
@@ -365,7 +365,7 @@ export function NurseCarpuleDisposalModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-4 py-2 text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors"
+						className="min-h-[44px] px-4 py-2 text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] transition-colors flex items-center justify-center"
 					>
 						Отмена
 					</button>
@@ -374,7 +374,7 @@ export function NurseCarpuleDisposalModal({
 						type="button"
 						onClick={handleFastDispose}
 						disabled={isSubmitting || isDisposed}
-						className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all ${
+						className={`min-h-[44px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all ${
 							isDisposed
 								? "bg-emerald-600"
 								: "bg-teal-600 hover:bg-teal-700 active:scale-98"
@@ -386,7 +386,7 @@ export function NurseCarpuleDisposalModal({
 								? "Списано успешно!"
 								: isSubmitting
 									? "Оформление..."
-									: `⚡ Списать ${carpulesCount} шт. в 1 клик`}
+									: `Списать ${carpulesCount} шт. в 1 клик`}
 						</span>
 					</button>
 				</div>

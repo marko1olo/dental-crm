@@ -412,7 +412,7 @@ export function AnesthesiaDosageCalculatorModal({
 							}}
 						>
 							<Zap size={16} className="text-amber-400" />
-							<span>⚡ Доминантные 1-клик пресеты стандартной анестезии (Минздрав РФ / Mandate 8e):</span>
+							<span>Доминантные 1-клик пресеты стандартной анестезии (Минздрав РФ / Mandate 8e):</span>
 						</div>
 						<div
 							style={{
@@ -446,7 +446,7 @@ export function AnesthesiaDosageCalculatorModal({
 								<Zap size={16} className="text-amber-500 shrink-0" />
 								<div style={{ flex: 1, minWidth: 0 }}>
 									<div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--ink)" }}>
-										⚡ Ультракаин Д-С 1:200 000
+										Ультракаин Д-С 1:200 000
 									</div>
 									<div style={{ fontSize: "0.6875rem", color: "var(--muted)" }}>
 										1 карп. 1.7 мл, инфильтрация, норма
@@ -479,7 +479,7 @@ export function AnesthesiaDosageCalculatorModal({
 								<Zap size={16} className="text-amber-500 shrink-0" />
 								<div style={{ flex: 1, minWidth: 0 }}>
 									<div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--ink)" }}>
-										⚡ Артикаин 4% 1:100 000
+										Артикаин 4% 1:100 000
 									</div>
 									<div style={{ fontSize: "0.6875rem", color: "var(--muted)" }}>
 										1 карп. 1.7 мл, мандибулярная проводниковая
@@ -512,7 +512,7 @@ export function AnesthesiaDosageCalculatorModal({
 								<Zap size={16} className="text-emerald-500 shrink-0" />
 								<div style={{ flex: 1, minWidth: 0 }}>
 									<div style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--ink)" }}>
-										⚡ Мепивакаин 3% (Plain)
+										Мепивакаин 3% (Plain)
 									</div>
 									<div style={{ fontSize: "0.6875rem", color: "var(--muted)" }}>
 										1 карп. 1.7 мл, для кардиобольных / беременных

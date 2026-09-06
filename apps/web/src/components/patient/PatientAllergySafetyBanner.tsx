@@ -3,6 +3,7 @@ import {
 	AlertOctagon,
 	AlertTriangle,
 	Baby,
+	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
 	ClipboardEdit,
@@ -10,7 +11,7 @@ import {
 	HeartPulse,
 	Pill,
 	ShieldAlert,
-	Sparkles,
+	Syringe,
 	ZapOff,
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
@@ -94,6 +95,44 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 				);
 			}, [effectiveProfile, onSyncToEmkDiary]);
 
+			// 1-Click Соматически здоров / физиологическая норма
+			const handleApplySomaticNorm = useCallback(() => {
+				const normProfile: PatientClinicalSafetyProfile = {
+					hasPacemakerExs: false,
+					hasBisphosphonateTherapy: false,
+					hasAnticoagulantTherapy: false,
+					hasAnestheticAllergy: false,
+					hasSulfitesAllergy: false,
+					hasPenicillinAllergy: false,
+					hasLatexAllergy: false,
+					hasIodineAllergy: false,
+					hasHypertension: false,
+					hasCardiovascularDisease: false,
+					hasDiabetesMellitus: false,
+					hasBronchialAsthma: false,
+					hasEpilepsy: false,
+					hasHepatitis: false,
+					hasHiv: false,
+					hasPheochromocytoma: false,
+					hasThyrotoxicosis: false,
+					pregnancyTrimester: "none",
+					customAllergyNotes: "",
+					customChronicNotes: "Соматически здоров / физиологическая норма",
+					currentMedicationsList: "",
+					lastUpdated: new Date().toISOString(),
+				};
+				setLocalProfile(normProfile);
+				if (onUpdateProfile) {
+					onUpdateProfile(normProfile);
+				}
+				if (onSyncToEmkDiary) {
+					onSyncToEmkDiary(
+						"Соматический статус: Соматически здоров, физиологическая норма. Аллергоанамнез не отягощен.",
+					);
+				}
+				showToast("Зафиксирована норма: Соматически здоров (1 клик)", "success");
+			}, [onUpdateProfile, onSyncToEmkDiary]);
+
 			const bannerStyleClass = useMemo(() => {
 				if (evaluation.hasCriticalStopFlags) return "patient-safety-banner--critical";
 				if (evaluation.hasHighRiskFlags) return "patient-safety-banner--high";
@@ -111,7 +150,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 				if (evaluation.totalAlertCount > 0) {
 					return <HeartPulse className="w-5 h-5" />;
 				}
-				return <Sparkles className="w-5 h-5" />;
+				return <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />;
 			}, [evaluation]);
 
 			return (
@@ -120,7 +159,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 						role="alert"
 						aria-live={evaluation.hasCriticalStopFlags ? "assertive" : "polite"}
 						data-testid="patient-allergy-safety-banner"
-						className={`patient-safety-banner ${bannerStyleClass} ${className}`}
+						className={`patient-safety-banner ${bannerStyleClass} ${compact ? "patient-safety-banner--compact" : ""} ${className}`}
 					>
 						<div className="patient-safety-banner__header">
 							<div className="flex items-center gap-3 min-w-0 flex-1">
@@ -136,8 +175,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 												КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ ПАЦИЕНТА:
 											</span>
 										) : evaluation.hasHighRiskFlags ? (
-											<span className="font-black uppercase text-xs tracking-wider">
-												⚠️ СОМАТИЧЕСКИЕ ФАКТОРЫ РИСКА:
+											<span className="font-black uppercase text-xs tracking-wider inline-flex items-center gap-1.5">
+												<AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" aria-hidden="true" />
+												СОМАТИЧЕСКИЕ ФАКТОРЫ РИСКА:
 											</span>
 										) : (
 											<span className="font-bold text-xs">
@@ -159,13 +199,27 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 							</div>
 
 							<div className="patient-safety-banner__actions">
+								{/* 1-Click Соматически здоров / физиологическая норма */}
+								{evaluation.activeFlags.length === 0 && (
+									<button
+										type="button"
+										onClick={handleApplySomaticNorm}
+										className="safety-btn safety-btn--outline text-xs text-emerald-700 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 min-h-[44px]"
+										data-testid="banner-apply-somatic-norm-btn"
+										title="Зафиксировать физиологическую норму в 1 клик"
+									>
+										<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+										<span>Соматически здоров (норма)</span>
+									</button>
+								)}
+
 								{/* Кнопка разворачивания деталей */}
 								{evaluation.activeFlags.length > 0 && !compact && (
 									<button
 										type="button"
 										onClick={() => setIsDrawerOpen((prev) => !prev)}
 										aria-expanded={isDrawerOpen}
-										className="safety-btn safety-btn--outline text-xs"
+										className="safety-btn safety-btn--outline text-xs min-h-[44px]"
 									>
 										{isDrawerOpen ? (
 											<>
@@ -187,7 +241,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 										type="button"
 										onClick={handleSyncToDiary}
 										title="Скопировать и вставить в дневник 043/у"
-										className="safety-btn safety-btn--outline text-xs"
+										className="safety-btn safety-btn--outline text-xs min-h-[44px]"
 									>
 										<Copy className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 										В 043/у
@@ -199,7 +253,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 									<button
 										type="button"
 										onClick={() => setIsModalOpen(true)}
-										className={`safety-btn ${
+										className={`safety-btn min-h-[44px] ${
 											evaluation.hasCriticalStopFlags
 												? "safety-btn--primary-red"
 												: "safety-btn--outline"
@@ -253,8 +307,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 											{/* Запрещенные процедуры */}
 											{flag.forbiddenProcedures.length > 0 && (
 												<div className="safety-flag-card__section">
-													<div className="safety-flag-card__section-title safety-flag-card__section-title--forbidden">
-														🚫 Категорически противопоказано:
+													<div className="safety-flag-card__section-title safety-flag-card__section-title--forbidden inline-flex items-center gap-1.5">
+														<AlertOctagon className="w-3.5 h-3.5 text-rose-600 shrink-0" aria-hidden="true" />
+														<span>Категорически противопоказано:</span>
 													</div>
 													<ul className="safety-flag-card__list">
 														{flag.forbiddenProcedures.map((proc, i) => (
@@ -267,8 +322,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 											{/* Обязательные меры предосторожности */}
 											{flag.mandatoryPrecautions.length > 0 && (
 												<div className="safety-flag-card__section">
-													<div className="safety-flag-card__section-title safety-flag-card__section-title--precautions">
-														🛡️ Обязательный протокол ведения:
+													<div className="safety-flag-card__section-title safety-flag-card__section-title--precautions inline-flex items-center gap-1.5">
+														<ShieldAlert className="w-3.5 h-3.5 text-amber-600 shrink-0" aria-hidden="true" />
+														<span>Обязательный протокол ведения:</span>
 													</div>
 													<ul className="safety-flag-card__list">
 														{flag.mandatoryPrecautions.map((prec, i) => (
@@ -280,8 +336,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 
 											{/* Рекомендации по анестезии */}
 											{flag.recommendedAnesthesiaNotes && (
-												<div className="safety-flag-card__anesthesia-badge">
-													💉 Обезболивание: {flag.recommendedAnesthesiaNotes}
+												<div className="safety-flag-card__anesthesia-badge inline-flex items-center gap-1.5">
+													<Syringe className="w-3.5 h-3.5 text-teal-600 shrink-0" aria-hidden="true" />
+													<span>Обезболивание: {flag.recommendedAnesthesiaNotes}</span>
 												</div>
 											)}
 										</div>
@@ -291,8 +348,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 								{/* Общая сводка анестезии и предосторожностей */}
 								{evaluation.anestheticRecommendations.length > 0 && (
 									<div className="p-3 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/20 text-xs text-[var(--teal-dark,var(--teal))] flex flex-col gap-1">
-										<span className="font-bold uppercase tracking-wide">
-											💉 Сводные клинические рекомендации по анестезии:
+										<span className="font-bold uppercase tracking-wide inline-flex items-center gap-1.5">
+											<Syringe className="w-3.5 h-3.5 text-teal-600 shrink-0" aria-hidden="true" />
+											<span>Сводные клинические рекомендации по анестезии:</span>
 										</span>
 										<ul className="m-0 pl-4 space-y-0.5">
 											{evaluation.anestheticRecommendations.map((rec, i) => (

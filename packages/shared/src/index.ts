@@ -11,6 +11,7 @@ export * from "./legal/legalContractsAndConsents.js";
 export * from "./documents/index.js";
 export * from "./pediatricDentition.js";
 export * from "./toothCanalsAndBilling804n.js";
+export * from "./clinical/index.js";
 export * from "./perio/index.js";
 export * from "./emr/index.js";
 export * from "./sync/index.js";

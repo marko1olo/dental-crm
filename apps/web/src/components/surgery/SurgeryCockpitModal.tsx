@@ -273,7 +273,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 							<button
 								type="button"
 								onClick={handleCopyProtocol}
-								className="min-h-[34px] px-3 py-1 rounded-lg text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--paper-soft)]"
+								className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-bold text-[var(--ink)] bg-[var(--paper)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--paper-soft)] touch-manipulation"
 								data-testid="btn-copy-protocol"
 							>
 								<Copy size={14} />

@@ -680,4 +680,40 @@ export const treatmentConsumablesRoutes: FastifyPluginAsync = async (
 
 		return result;
 	});
+
+	// POST /:organizationId/quick-writeoff-visit-bundle — 1-клик списание набора клинического приёма
+	server.post<{
+		Params: { organizationId: string };
+		Body?: {
+			visitType?: "therapy" | "surgery";
+			visitId?: string | null;
+			userId?: string | null;
+			notes?: string | null;
+		};
+	}>("/:organizationId/quick-writeoff-visit-bundle", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"treatment consumables quick writeoff visit bundle",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId } = request.params;
+		if (resolvedOrgId !== organizationId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		const body = request.body ?? {};
+		const result = await db.transaction(async (tx) => {
+			return TreatmentConsumablesService.quickWriteoffVisitBundle(tx, {
+				organizationId,
+				visitType: body.visitType || "therapy",
+				visitId: body.visitId ?? null,
+				userId: body.userId ?? (request.user as any)?.id ?? null,
+				notes: body.notes ?? null,
+			});
+		});
+
+		return result;
+	});
 };

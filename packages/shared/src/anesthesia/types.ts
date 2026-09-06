@@ -125,7 +125,8 @@ export type AnesthesiaPkuPresetKey =
 	| "ultracain_ds_forte_1"
 	| "septanest_100_1"
 	| "scandonest_3_1"
-	| "damaged_broken_1";
+	| "damaged_broken_1"
+	| "articaine_100k_needle_30g_kit";
 
 export interface AnesthesiaPkuPresetDefinition {
 	readonly presetId: AnesthesiaPkuPresetKey;

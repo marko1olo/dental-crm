@@ -161,6 +161,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 		isWritingOffCarpules,
 		handleQuickWriteoffShiftBundle,
 		isWritingOffShiftBundle,
+		handleQuickWriteoffVisitBundle,
+		isWritingOffVisitBundle,
 		openAddModal,
 		openEditModal,
 		handleSaveItem,
@@ -782,8 +784,120 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 											<Syringe size={16} className="text-teal-600 shrink-0" />
 											<span>Списать карпулу (без комиссии)</span>
 										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-visit-therapy-btn"
+											onClick={() => {
+												handleQuickWriteoffVisitBundle("therapy");
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+												minHeight: "44px",
+											}}
+											title="1-клик списание набора визита «Терапия»: карпула + игла + перчатки + слюноотсос + валики + нагрудник"
+											role="menuitem"
+										>
+											<Sparkles size={16} className="text-teal-600 shrink-0" />
+											<span>Списать визит: Терапия (1 клик)</span>
+										</button>
+
+										<button
+											type="button"
+											className="secondary-button"
+											data-testid="nurse-menu-quick-visit-surgery-btn"
+											onClick={() => {
+												handleQuickWriteoffVisitBundle("surgery");
+												setIsOpsMenuOpen(false);
+											}}
+											style={{
+												display: "flex",
+												alignItems: "center",
+												gap: 8,
+												padding: "8px 12px",
+												borderRadius: 6,
+												border: "none",
+												background: "transparent",
+												color: "var(--ink)",
+												fontWeight: 500,
+												fontSize: 13,
+												cursor: "pointer",
+												textAlign: "left",
+												width: "100%",
+												minHeight: "44px",
+											}}
+											title="1-клик списание набора визита «Хирургия»: карпула + игла + скальпель + шовный материал + губка"
+											role="menuitem"
+										>
+											<Sparkles size={16} className="text-teal-600 shrink-0" />
+											<span>Списать визит: Хирургия (1 клик)</span>
+										</button>
 									</div>
 								)}
+							</div>
+
+							{/* 1-Клик типовой визит (Мандат 8e п. 10: терапия / хирургия) */}
+							<div style={{ display: "inline-flex", borderRadius: 8, overflow: "hidden", border: "1px solid var(--teal, #0d9488)" }}>
+								<button
+									type="button"
+									className="secondary-button"
+									data-testid="nurse-quick-visit-therapy-btn"
+									disabled={isWritingOffVisitBundle}
+									onClick={() => handleQuickWriteoffVisitBundle("therapy")}
+									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 6,
+										padding: "8px 12px",
+										minHeight: "44px",
+										fontWeight: 700,
+										fontSize: 13,
+										whiteSpace: "nowrap",
+										cursor: "pointer",
+										border: "none",
+										background: "var(--teal-soft, #ccfbf1)",
+										color: "var(--teal-dark, #0f766e)",
+									}}
+									title="1-клик списание набора визита «Терапия»: карпула анестетика + игла + перчатки + слюноотсос + валики + нагрудник"
+								>
+									<Sparkles size={16} />
+									<span>{isWritingOffVisitBundle ? "Списание..." : "⚡ Визит: Терапия"}</span>
+								</button>
+								<button
+									type="button"
+									data-testid="nurse-quick-visit-surgery-btn"
+									disabled={isWritingOffVisitBundle}
+									onClick={() => handleQuickWriteoffVisitBundle("surgery")}
+									style={{
+										padding: "8px 12px",
+										minHeight: "44px",
+										fontWeight: 700,
+										fontSize: 12,
+										whiteSpace: "nowrap",
+										cursor: "pointer",
+										border: "none",
+										borderLeft: "1px solid var(--teal, #0d9488)",
+										background: "var(--teal-soft, #ccfbf1)",
+										color: "var(--teal-dark, #0f766e)",
+									}}
+									title="1-клик списание набора визита «Хирургия»: карпула анестетика + игла + скальпель + шовный материал + губка"
+								>
+									⚡ Визит: Хирургия
+								</button>
 							</div>
 
 							<button
@@ -797,7 +911,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									alignItems: "center",
 									gap: 6,
 									padding: "8px 14px",
-									minHeight: "40px",
+									minHeight: "44px",
 									borderRadius: 8,
 									fontWeight: 700,
 									fontSize: 13,
@@ -810,7 +924,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 								title="Списать базовый набор приёма в 1 клик (перчатки 2 пары, маска 2 шт., слюноотсос 1 шт., нагрудник 1 шт., валики 6 шт.)"
 							>
 								<PackageCheck size={16} />
-								<span>{isWritingOffStandardKit ? "Списание..." : "Списать базовый набор"}</span>
+								<span>{isWritingOffStandardKit ? "Списание..." : "Базовый набор"}</span>
 							</button>
 
 							<button
@@ -824,7 +938,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									alignItems: "center",
 									gap: 6,
 									padding: "8px 14px",
-									minHeight: "40px",
+									minHeight: "44px",
 									borderRadius: 8,
 									fontWeight: 700,
 									fontSize: 13,
@@ -849,7 +963,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										alignItems: "center",
 										gap: 6,
 										padding: "8px 12px",
-										minHeight: "40px",
+										minHeight: "44px",
 										fontWeight: 700,
 										fontSize: 13,
 										whiteSpace: "nowrap",
@@ -869,7 +983,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									onClick={() => handleQuickWriteoffShiftBundle("orthopedics")}
 									style={{
 										padding: "8px 10px",
-										minHeight: "40px",
+										minHeight: "44px",
 										fontWeight: 600,
 										fontSize: 12,
 										cursor: "pointer",
@@ -888,7 +1002,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									onClick={() => handleQuickWriteoffShiftBundle("surgery")}
 									style={{
 										padding: "8px 10px",
-										minHeight: "40px",
+										minHeight: "44px",
 										fontWeight: 600,
 										fontSize: 12,
 										cursor: "pointer",

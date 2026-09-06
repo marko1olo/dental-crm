@@ -332,7 +332,7 @@ export const MinorLegalRepresentativeConsentForm = React.memo(
 											event.preventDefault();
 											setMinorRepresentativeRelation(chip.value);
 										}}
-										className={`min-h-[36px] px-3 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
+										className={`min-h-[44px] px-3.5 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
 											isSelected
 												? "bg-teal-500/15 text-[var(--teal)] border-[var(--teal)] shadow-xs font-bold"
 												: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-hover)]"

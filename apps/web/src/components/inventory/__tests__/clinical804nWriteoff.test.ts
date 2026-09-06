@@ -24,6 +24,7 @@ import {
 	updateLineActualQuantity,
 	validateWriteoffDocument,
 	createQuickCarpuleWriteoffDocument,
+	createQuickVisitWriteoffDocument,
 } from "../writeoff/clinicalWriteoffEngine.js";
 import {
 	CLINICAL_MATERIALS_CATALOG,
@@ -400,6 +401,55 @@ describe("Single-Signatory Quick Carpule & Anesthetic Writeoff (Медсестр
 		const html = generateTorg16Html(doc);
 		assert.ok(html.includes("Списание произведено единолично"), "Должна быть единоличная подпись в ТОРГ-16");
 		assert.ok(!html.includes("Член комиссии:"), "Не должно быть членов комиссии в ТОРГ-16");
+	});
+
+	it("createQuickVisitWriteoffDocument (Терапия) формирует комплект: карпула + игла + перчатки + слюноотсос + валики + нагрудник", () => {
+		const doc = createQuickVisitWriteoffDocument({
+			visitType: "therapy",
+			doctorFullName: "Кузнецов М.С.",
+		});
+
+		assert.ok(doc.actNumber.startsWith("ВИЗИТ-"));
+		assert.equal(doc.lines.length, 6, "Терапевтический визит должен содержать 6 позиций");
+		assert.ok(doc.isSingleSigner, "Должен быть включен режим единоличного списания");
+
+		const names = doc.lines.map((l) => l.nameRu.toLowerCase());
+		assert.ok(names.some((n) => n.includes("артикаин") || n.includes("анестетик")), "Должен быть анестетик");
+		assert.ok(names.some((n) => n.includes("игла")), "Должна быть игла карпульная");
+		assert.ok(names.some((n) => n.includes("перчатки")), "Должны быть перчатки");
+		assert.ok(names.some((n) => n.includes("слюноотсос")), "Должен быть слюноотсос");
+		assert.ok(names.some((n) => n.includes("валик")), "Должны быть валики");
+		assert.ok(names.some((n) => n.includes("нагрудник") || n.includes("салфетка")), "Должен быть нагрудник");
+
+		// Форма 0504230 без комиссии из 3 человек
+		const html0504230 = generateAct0504230Html(doc);
+		assert.ok(html0504230.includes("СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО)"));
+		assert.ok(!html0504230.includes("ПРЕДСЕДАТЕЛЬ КОМИССИИ"), "Не должно быть созыва комиссии");
+
+		// Форма ТОРГ-16 без членов комиссии
+		const htmlTorg16 = generateTorg16Html(doc);
+		assert.ok(htmlTorg16.includes("Списание произведено единолично"));
+		assert.ok(!htmlTorg16.includes("Член комиссии:"));
+	});
+
+	it("createQuickVisitWriteoffDocument (Хирургия) формирует комплект: карпула + игла + скальпель + шовный материал + губка", () => {
+		const doc = createQuickVisitWriteoffDocument({
+			visitType: "surgery",
+			doctorFullName: "Петров И.В.",
+		});
+
+		assert.ok(doc.actNumber.startsWith("ВИЗИТ-"));
+		assert.equal(doc.lines.length, 5, "Хирургический визит должен содержать 5 позиций");
+
+		const names = doc.lines.map((l) => l.nameRu.toLowerCase());
+		assert.ok(names.some((n) => n.includes("артикаин") || n.includes("анестетик")), "Должен быть анестетик");
+		assert.ok(names.some((n) => n.includes("игла")), "Должна быть игла карпульная");
+		assert.ok(names.some((n) => n.includes("скальпел") || n.includes("лезвие")), "Должен быть скальпель");
+		assert.ok(names.some((n) => n.includes("шовн")), "Должен быть шовный материал");
+		assert.ok(names.some((n) => n.includes("губка") || n.includes("альвостаз")), "Должна быть гемостатическая губка");
+
+		const validation = validateWriteoffDocument(doc);
+		assert.ok(validation.isValid, `Валидация должна быть успешной: ${validation.errors.join(", ")}`);
 	});
 });
 

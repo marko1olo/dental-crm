@@ -93,21 +93,25 @@ const CONSUMABLE_PATTERNS = [
 	/салфетк/i,
 	/перчатк/i,
 	/слюноотсос/i,
+	/шприц/i,
 	/бахил/i,
-	/маск[а-я]* одноразов/i,
+	/маск[а-я]*/i,
 	/микробраш/i,
+	/брашик/i,
 	/аппликатор.*браш/i,
 	/нагрудник/i,
 	/стаканчик/i,
-	/канюл.*одноразов/i,
+	/канюл/i,
 	/ватн.*шарик/i,
+	/ватн.*тампон/i,
+	/ватн.*валик/i,
+	/тампон/i,
 	/лоток.*одноразов/i,
-	/шприц.*одноразов/i,
 	/игла.*карпульн/i,
 	/игла.*одноразов/i,
 	/карпул/i,
 	/дезинфекц/i,
-	/антисептик.*салфет/i,
+	/антисептик/i,
 	/простын.*одноразов/i,
 	/коффердам.*завеса/i,
 	/индивидуальный гигиенический набор/i,
@@ -115,6 +119,9 @@ const CONSUMABLE_PATTERNS = [
 	/индивидуальный.*набор/i,
 	/расходные материалы/i,
 	/одноразовый комплект/i,
+	/насадк.*одноразов/i,
+	/чехол.*одноразов/i,
+	/позиционер.*чехол/i,
 ];
 
 /**
@@ -126,14 +133,16 @@ export function isMicroConsumable(item: PlanItemLike): boolean {
 	if (!name) return false;
 
 	const nameMatches = CONSUMABLE_PATTERNS.some((pattern) => pattern.test(name));
-	if (nameMatches) return true;
-
 	const category = (item.category ?? "").toLowerCase();
 	const isConsumableCategory =
 		category.includes("расходн") || category.includes("сиз") || category.includes("материал");
 	const price = item.priceRub ?? item.unitPriceRub ?? 0;
 
-	return (isConsumableCategory && price > 0 && price <= 350) || (nameMatches && price <= 500);
+	if (nameMatches) {
+		return price <= 500 || price === 0;
+	}
+
+	return isConsumableCategory && price > 0 && price <= 350;
 }
 
 export interface TreatmentPlanPresenterModalProps {
@@ -241,6 +250,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12 | 24>(12);
 	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
 	const [printDocFormat, setPrintDocFormat] = useState<"patient_friendly" | "official_appendix">("patient_friendly");
+	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
 
 	// AI Copilot & AI Audit state
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
@@ -437,6 +447,62 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		});
 		const toothDesc = bundle?.requiresTooth ? ` (зуб ${toothNumber ?? bundle?.defaultTooth})` : "";
 		setConfirmedNotice(`Пакет «${bundle?.shortTitle || bundleId}» добавлен в тариф «${selectedTier.title}»${toothDesc}!`);
+		setTimeout(() => setConfirmedNotice(null), 4000);
+	};
+
+	const handleApplyDoctorDiscount = (pct: number) => {
+		const validPct = Math.max(0, Math.min(100, pct));
+		setDoctorDiscountPercent(validPct);
+		setActiveTiers((prevTiers) => {
+			return prevTiers.map((tier) => {
+				const updatedStages = tier.stages.map((st) => {
+					const updatedItems = st.items.map((it) => {
+						const baseUnitPrice =
+							it.unitPriceRub > 0
+								? it.unitPriceRub
+								: Math.round(
+										(it.priceRub + (it.discountRub || 0)) /
+											Math.max(1, it.quantity || 1),
+									);
+						const discountPerUnit =
+							validPct > 0 ? Math.round((baseUnitPrice * validPct) / 100) : 0;
+						const finalUnitPrice = Math.max(0, baseUnitPrice - discountPerUnit);
+						const finalTotalRub = finalUnitPrice * Math.max(1, it.quantity || 1);
+						return {
+							...it,
+							unitPriceRub: baseUnitPrice,
+							discountRub: discountPerUnit * Math.max(1, it.quantity || 1),
+							priceRub: finalTotalRub,
+						};
+					});
+					const stTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub, 0);
+					return {
+						...st,
+						items: updatedItems,
+						totalRub: stTotalRub,
+						totalKopecks: parseKopecks(stTotalRub),
+					};
+				});
+
+				const updatedTier = recalculateTierFromStages(tier, updatedStages);
+				if (tier.tierId === selectedTierId) {
+					onSelectPlan?.(updatedTier);
+				}
+				return updatedTier;
+			});
+		});
+
+		if (validPct === 100) {
+			setConfirmedNotice(
+				"Применена 100% скидка врача (Гарантийная переделка / Персонал). Без мастер-паролей (Мандат 8e).",
+			);
+		} else if (validPct > 0) {
+			setConfirmedNotice(
+				`Применена скидка врача ${validPct}%. Сметы и график платежей пересчитаны.`,
+			);
+		} else {
+			setConfirmedNotice("Скидка сброшена (базовый прайс клиники).");
+		}
 		setTimeout(() => setConfirmedNotice(null), 4000);
 	};
 
@@ -687,6 +753,48 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					/>
 				</div>
 
+				{/* Doctor Discount Freedom Quick Bar (Mandate 8e / Section VII.2) */}
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-2 bg-[var(--tp-surface)] border-b border-[var(--tp-border)] no-print text-xs">
+					<div className="flex items-center gap-2 flex-wrap">
+						<div className="inline-flex items-center gap-1 font-bold text-[var(--tp-primary)]">
+							<Percent size={13} className="text-emerald-600 dark:text-emerald-400" />
+							<span>Скидка врача (Мандат 8e):</span>
+						</div>
+						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
+							<button
+								key={pct}
+								type="button"
+								onClick={() => handleApplyDoctorDiscount(pct)}
+								title={
+									pct === 100
+										? "100% скидка: гарантийные переделки и персонал без мастер-паролей администратора (Мандат 8e)"
+										: `Применить скидку ${pct}%`
+								}
+								className={`min-h-[36px] px-2.5 py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all ${
+									doctorDiscountPercent === pct
+										? pct === 100
+											? "bg-emerald-600 text-white shadow-xs"
+											: "bg-[var(--tp-primary)] text-white shadow-xs"
+										: pct === 100
+											? "bg-[var(--tp-surface-soft)] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 border border-emerald-500/30"
+											: "bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)]"
+								}`}
+								data-testid={`presenter-discount-btn-${pct}`}
+							>
+								{pct === 100 ? "100% (Гарантия)" : `${pct}%`}
+							</button>
+						))}
+						{doctorDiscountPercent === 100 && (
+							<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 ml-1">
+								0 ₽ (Гарантийная переделка / Персонал)
+							</span>
+						)}
+					</div>
+					<div className="text-[11px] text-[var(--tp-text-muted)] hidden lg:block">
+						Автономия врача: свободные скидки и переделки без согласований с администратором
+					</div>
+				</div>
+
 				{/* Modal Main Body */}
 				<main className="treatment-presenter-body">
 					{/* TAB 1: 3-Tier Side-by-Side Comparison */}
@@ -913,7 +1021,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<button
 											type="button"
 											onClick={() => toggleAllStages(true)}
-											className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer"
+											className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer inline-flex items-center justify-center"
 											data-testid="expand-all-stages-btn"
 										>
 											Развернуть все
@@ -921,7 +1029,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<button
 											type="button"
 											onClick={() => toggleAllStages(false)}
-											className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer"
+											className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--tp-surface-soft)] text-[var(--tp-text-muted)] hover:text-[var(--tp-text-main)] border border-[var(--tp-border)] cursor-pointer inline-flex items-center justify-center"
 											data-testid="collapse-all-stages-btn"
 										>
 											Свернуть все
@@ -1043,7 +1151,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																					<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
 																						<div className="flex items-center justify-between flex-wrap gap-2">
 																							<span className="flex items-center gap-1.5 font-medium">
-																								<span>✨ Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
+																								<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
 																							</span>
 																							<button
 																								type="button"
@@ -1187,7 +1295,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 																		<td colSpan={7} className="py-2.5 px-3 text-xs text-[var(--tp-text-muted)]">
 																			<div className="flex items-center justify-between flex-wrap gap-2">
 																				<span className="flex items-center gap-1.5 font-medium">
-																					<span>✨ Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
+																					<span>Сопутствующие микро-расходники ({microConsumables.length} поз.: валики, салфетки, перчатки, слюноотсосы) включены в стоимость процедур.</span>
 																				</span>
 																				<button
 																					type="button"
@@ -1330,26 +1438,28 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<button
 											type="button"
 											onClick={() => setPrintDocFormat("patient_friendly")}
-											className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
 												printDocFormat === "patient_friendly"
 													? "bg-white dark:bg-slate-700 text-teal-800 dark:text-teal-200 shadow-xs"
 													: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
 											}`}
 											data-testid="print-format-patient-btn"
 										>
-											📄 Смета для пациента
+											<FileText size={13} className="shrink-0" />
+											<span>Смета для пациента</span>
 										</button>
 										<button
 											type="button"
 											onClick={() => setPrintDocFormat("official_appendix")}
-											className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+											className={`min-h-[38px] inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
 												printDocFormat === "official_appendix"
 													? "bg-white dark:bg-slate-700 text-teal-800 dark:text-teal-200 shadow-xs"
 													: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
 											}`}
 											data-testid="print-format-official-btn"
 										>
-											⚖️ Приложение №1 (804н / ПП РФ №736)
+											<FileCheck2 size={13} className="shrink-0" />
+											<span>Приложение №1 (804н / ПП РФ №736)</span>
 										</button>
 									</div>
 
@@ -1357,7 +1467,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<button
 											type="button"
 											onClick={() => setShowMicroConsumables(!showMicroConsumables)}
-											className="px-3 py-1.5 rounded-lg border text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 cursor-pointer transition-colors"
+											className="min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 cursor-pointer transition-colors inline-flex items-center justify-center"
 											title="Скрывать мелкие расходные материалы (салфетки, валики, слюноотсосы) для чистоты сметы"
 										>
 											{showMicroConsumables ? "Скрыть микро-расходники" : "Детализировать микро-расходники"}
@@ -1420,8 +1530,9 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 											<strong className="text-teal-800 text-sm">
 												{selectedTier.title} ({getTierLetter(selectedTier.tierId)})
 											</strong>
-											<div className="text-emerald-700 font-bold text-[10.5px] mt-0.5">
-												★ Гарантия клиники: {selectedTier.warrantyYears} лет
+											<div className="text-emerald-700 font-bold text-[10.5px] mt-0.5 inline-flex items-center gap-1">
+												<ShieldCheck size={12} className="shrink-0 text-emerald-600" />
+												<span>Гарантия клиники: {selectedTier.warrantyYears} лет</span>
 											</div>
 										</div>
 									</div>
@@ -1455,7 +1566,10 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 															</span>
 														</div>
 														<div className="patient-stage-pill">
-															<span>⏱ Срок: ~{stage.estimatedWeeks} нед.</span>
+															<span className="inline-flex items-center gap-1">
+																<Clock size={11} className="shrink-0" />
+																<span>Срок: ~{stage.estimatedWeeks} нед.</span>
+															</span>
 															<span>•</span>
 															<span>Визитов: ~{stage.estimatedVisits}</span>
 														</div>

@@ -18,6 +18,10 @@ import {
 	calculateKpiScore,
 	calculateOhiSScore,
 	calculatePmaScore,
+	CLINICAL_PERIO_NORM_SUMMARY_RU,
+	CLINICAL_PRO_HYGIENE_SUMMARY_RU,
+	createClinicalPerioNormProtocolText,
+	createClinicalProHygieneProtocolText,
 	createHealthyHygieneAssessment,
 	deriveHygieneFromPerioTeeth,
 	HYGIENE_INDEX_TEETH_CONFIG,
@@ -108,17 +112,12 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		[readOnly],
 	);
 
-	// ─── 1-Click Express Clinical Presets (Mandate 8e) ──────────────────────
-	// 1. ⚡ Норма пародонта
+	// 1. Норма пародонта (Мандаты 8e, 8i, 8k, 8n)
 	const handlePresetPeriodontalNorm = useCallback(() => {
 		if (readOnly) return;
 		setAssessments(createHealthyHygieneAssessment());
 
-		const protocolText =
-			"• Экспресс-оценка гигиены и пародонта: Норма пародонта (физиологическая норма, Z01.2).\n" +
-			"• Status localis: Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.\n" +
-			"• Клинические индексы: OHI-S 0.0 (отличная), PMA 0% (воспаления нет), КПИ 0.0 (интактный периодонт).\n" +
-			"• Рекомендации: Профилактический осмотр через 6 месяцев, стандартная индивидуальная гигиена полости рта.";
+		const protocolText = createClinicalPerioNormProtocolText();
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
 			...prev,
@@ -138,7 +137,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"Норма пародонта зафиксирована: бороздка <= 2 мм, десна плотная, BOP 0%, подвижность 0. Данные внесены в 043/у!",
+			`${CLINICAL_PERIO_NORM_SUMMARY_RU}. Данные внесены в 043/у!`,
 			"success",
 			4000,
 		);
@@ -381,21 +380,12 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		);
 	}, [readOnly, onInsertToProtocol]);
 
-	// 5. Профессиональная гигиена выполнена
+	// 5. Профессиональная гигиена выполнена (Мандаты 8e, 8i, 8k, 8n)
 	const handlePresetProHygieneDone = useCallback(() => {
 		if (readOnly) return;
 		setAssessments(createHealthyHygieneAssessment());
 
-		const protocolText =
-			"• Профессиональная гигиена полости рта выполнена в полном объеме (A16.07.051):\n" +
-			"1. Удаление над- и поддесневых зубных отложений ультразвуковым пьезоэлектрическим скейлером Piezon (EMS).\n" +
-			"2. Снятие пигментированного зубного налета и биопленки воздушно-абразивным методом AirFlow (порошок на основе глицина 25 мкм, субгингивальная обработка).\n" +
-			"3. Полировка всех поверхностей зубов полировочной пастой Detartrine (Septodont) с циркулярными щеточками и резиновыми чашечками, апроксимальные поверхности обработаны штрипсами.\n" +
-			"4. Антисептическая медикаментозная обработка слизистой оболочки десны 0.05% раствором хлоргексидина биглюконата.\n" +
-			"5. Глубокое фторирование эмали и реминерализующая терапия препаратом Bifluorid 12 (VOCO).\n" +
-			"• Status localis: Зубные отложения и пигментация удалены полностью, поверхности зубов гладкие блестящие, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).\n" +
-			"• Клинические индексы после гигиены: OHI-S 0.0 (отличная), PMA 0% (воспаления нет), КПИ 0.0 (интактный периодонт).\n" +
-			"• Рекомендации: Индивидуальный подбор средств гигиены (зубная щетка, паста, флосс, ершики), соблюдение «белой диеты» в течение 2-3 часов.";
+		const protocolText = createClinicalProHygieneProtocolText();
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
 			...prev,
@@ -417,7 +407,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			new CustomEvent("dente-add-estimate-service", {
 				detail: {
 					code: "A16.07.051",
-					name: "Профессиональная гигиена полости рта и зубов (УЗ Piezon + AirFlow глицин + Detartrine + Bifluorid 12)",
+					name: CLINICAL_PRO_HYGIENE_SUMMARY_RU,
 					price: 5500,
 					category: "hygiene",
 				},
@@ -426,7 +416,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 		onInsertToProtocol?.(protocolText);
 		showToast(
-			"Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12. Дневник 043/у и смета обновлены!",
+			`${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Дневник 043/у и смета обновлены!`,
 			"success",
 			4500,
 		);
@@ -526,7 +516,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handleSyncFromPerio}
-								className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer"
+								className="min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation"
 								title="Импортировать налет и кровоточивость из пародонтограммы"
 							>
 								<RotateCcw size={14} className="text-teal-400" />
@@ -538,7 +528,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertTo043}
-							className="min-h-[40px] px-3.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="min-h-[44px] px-3.5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer touch-manipulation"
 							title="Вставить сводку индексов гигиены в дневник 043/у"
 							data-testid="hygiene-insert-to-043-btn"
 						>
@@ -551,7 +541,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="min-h-[40px] min-w-[40px] p-2 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-all cursor-pointer flex items-center justify-center"
+							className="min-h-[44px] min-w-[44px] p-2 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-all cursor-pointer flex items-center justify-center touch-manipulation"
 							title="Скопировать протокол в буфер обмена"
 							aria-label="Скопировать протокол в буфер"
 						>
@@ -652,7 +642,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							type="button"
 							onClick={handlePresetProHygieneDone}
 							className="min-h-[44px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="Профессиональная гигиена выполнена: ультразвук Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12"
+							title="Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal"
 							data-testid="hygiene-preset-pro-hygiene"
 						>
 							<div className="flex items-center gap-1.5 font-black text-xs">
@@ -660,7 +650,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 								<span>Профгигиена выполнена</span>
 							</div>
 							<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
-								УЗ Piezon + AirFlow глицин + полировка Detartrine + Bifluorid 12
+								УЗ Piezon + Air-Flow глицин + Kerr Cleanic + Fluocal
 							</span>
 						</button>
 					</div>
@@ -880,7 +870,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 												onClick={() =>
 													updateToothScore(cfg.toothNumber, "debrisScore", val)
 												}
-												className={`w-6 h-6 rounded text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+												className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													debris === val
 														? "bg-amber-500 text-slate-950 font-black shadow-xs ring-1 ring-amber-300"
 														: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] hover:text-white border border-[var(--line,#334155)]"
@@ -919,7 +909,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 														val,
 													)
 												}
-												className={`w-6 h-6 rounded text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+												className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													calculus === val
 														? "bg-orange-500 text-white font-black shadow-xs ring-1 ring-orange-300"
 														: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] hover:text-white border border-[var(--line,#334155)]"
@@ -963,7 +953,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 												onClick={() =>
 													updateToothScore(cfg.toothNumber, "pmaScore", val)
 												}
-												className={`w-6 h-6 rounded text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+												className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													pma === val
 														? val === 0
 															? "bg-emerald-500 text-slate-950 font-black ring-1 ring-emerald-300"
@@ -1002,7 +992,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 												onClick={() =>
 													updateToothScore(cfg.toothNumber, "kpiScore", val)
 												}
-												className={`w-6 h-6 rounded text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+												className={`min-h-[44px] min-w-[28px] sm:min-w-[32px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													kpi === val
 														? val === 0
 															? "bg-emerald-500 text-slate-950 font-black ring-1 ring-emerald-300"

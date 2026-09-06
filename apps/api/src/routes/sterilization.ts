@@ -515,7 +515,46 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 				.for("update");
 
 			if (!existingDiary) {
-				return { kind: "not_found" as const };
+				// Мандаты 8e, 8k: Если врач еще не сохранил черновик в 043/у, привязка стерильного лотка
+				// не должна завершаться ошибкой 404! Автоматически создаем черновик дневника для визита.
+				const identity = getRequestIdentity(req);
+				const doctorUserId = identity.userId ?? null;
+				const initialTreatmentDesc = evaluation.isExpired
+					? applyEmergencySterilizationToDiaryTreatment(null, trimmedBarcode)
+					: null;
+				const initialHash = computeDiaryHashForTrayLink({
+					visitId,
+					patientId: null,
+					anamnesis: null,
+					statusLocalis: null,
+					treatmentDescription: initialTreatmentDesc,
+					diagnosisIcd10: null,
+					diagnosisTooth: null,
+					complications: null,
+					comorbidities: null,
+					instrumentTrayBarcode: trimmedBarcode,
+				});
+
+				const [autoCreatedDiary] = await tx
+					.insert(visitDiaries)
+					.values({
+						organizationId,
+						visitId,
+						instrumentTrayBarcode: trimmedBarcode,
+						draftAuthorId: doctorUserId,
+						authorId: doctorUserId,
+						doctorId: doctorUserId,
+						treatmentDescription: initialTreatmentDesc,
+						diaryHash: initialHash,
+						isLocked: false,
+						content: "",
+					})
+					.returning();
+
+				if (!autoCreatedDiary) {
+					return { kind: "failed_insert" as const };
+				}
+				return { kind: "ok" as const, diary: autoCreatedDiary };
 			}
 			if (existingDiary.isLocked) {
 				return { kind: "locked" as const };
@@ -564,11 +603,11 @@ export async function registerSterilizationRoutes(app: FastifyInstance) {
 			return { kind: "ok" as const, diary: updated };
 		});
 
-		if (diary.kind === "not_found") {
-			return reply.code(404).send({
-				error: "VisitDiaryNotFound",
+		if (diary.kind === "failed_insert") {
+			return reply.code(500).send({
+				error: "VisitDiaryCreateFailed",
 				message:
-					"Дневник этого приема еще не сохранен, привязать лоток не к чему. Сохраните черновик дневника и повторите привязку.",
+					"Не удалось автоматически инициализировать дневник визита для привязки лотка.",
 			});
 		}
 		if (diary.kind === "locked") {

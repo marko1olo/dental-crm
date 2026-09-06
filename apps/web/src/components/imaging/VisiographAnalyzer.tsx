@@ -1645,7 +1645,7 @@ export function VisiographAnalyzer({
 											<Sparkles size={14} />
 											{isStudioMode
 												? "Свернуть 2D PACS Студию"
-												: "📐 Инструменты анализа (Линейка, Углы, Очаги, ЭЦП)"}
+												: "Инструменты анализа (Линейка, Углы, Очаги, ЭЦП)"}
 										</button>
 									</div>
 
@@ -1692,7 +1692,7 @@ export function VisiographAnalyzer({
 									>
 										<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
 											<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", marginRight: "4px" }}>
-												⚡ 1-КЛИК У КРЕСЛА:
+												1-КЛИК У КРЕСЛА:
 											</span>
 											<button
 												type="button"
@@ -1820,7 +1820,7 @@ export function VisiographAnalyzer({
 												title="1-клик действие: внести запись «Норма: патологии на снимке не выявлено» в карту 043/у"
 											>
 												<CheckCircle2 size={14} />
-												<span>{isNormaApplied ? "✓ Норма в 043/у" : "⚡ Норма (043/у)"}</span>
+												<span>{isNormaApplied ? "Норма в 043/у" : "Норма (043/у)"}</span>
 											</button>
 										</div>
 
@@ -1848,7 +1848,7 @@ export function VisiographAnalyzer({
 											title="Открыть эндо-линейку для измерения рабочей длины канала (WL, мм) по анатомической кривизне корня"
 										>
 											<Activity size={14} />
-											<span>⚡ Эндо-линейка (Апекс, мм)</span>
+											<span>Эндо-линейка (Апекс, мм)</span>
 										</button>
 									</div>
 

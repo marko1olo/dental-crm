@@ -312,7 +312,7 @@ export function VisiographStudioCanvas({
 					if (last) {
 						ctx.fillStyle = "#10b981";
 						ctx.font = "bold 13px monospace";
-						ctx.fillText(`⚡ WL = ${lengthMm.toFixed(1)} мм (Апекс)`, last.x + 8, last.y - 8);
+						ctx.fillText(`WL = ${lengthMm.toFixed(1)} мм (Апекс)`, last.x + 8, last.y - 8);
 					}
 				}
 			}
@@ -469,6 +469,18 @@ export function VisiographStudioCanvas({
 			newRuler.color = "#10b981";
 			setRulers((prev) => [...prev, newRuler]);
 			setDrawingPoints([]);
+
+			// Диспетчеризация замеренной длины канала для мгновенной передачи в Форму 043/у (Мандат 8e, 8k)
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-endo-wl-measured", {
+						detail: {
+							toothNumber: toothCode ? Number(toothCode) : 16,
+							lengthMm: Math.round(lengthMm * 10) / 10,
+						},
+					}),
+				);
+			}
 		}
 	};
 

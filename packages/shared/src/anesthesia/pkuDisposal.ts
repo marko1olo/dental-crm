@@ -114,6 +114,25 @@ export const ANESTHESIA_PKU_PRESETS: Record<AnesthesiaPkuPresetKey, AnesthesiaPk
 		assistantSignatureConfirmed: true,
 		notesRu: "Акт списания боя / повреждения карпулы анестетика оформлен медсестрой в 1 клик. Осколки дезинфицированы в растворе Аламинол 3% (60 мин) и утилизированы в желтый непрокалываемый контейнер Класса Б по СанПиН 3.3686-21 (без бюрократической комиссии из 3 человек).",
 	},
+	articaine_100k_needle_30g_kit: {
+		presetId: "articaine_100k_needle_30g_kit",
+		titleRu: "Списана 1 карпула Артикаин 1:100 000 + игла 30G",
+		shortLabelRu: "Пакет: 1 карп. Артикаин + игла 30G",
+		subtitleRu: "Пакетное списание: карпула 1.7 мл + игла карпульная 30G (Класс Б, Аламинол 3%)",
+		drugId: "articaine_4_epi_100k",
+		drugTradeNameRu: "Артикаин 1:100 000 (с иглой 30G)",
+		activeSubstanceRu: "Артикаина гидрохлорид 4% + Эпинефрин 1:100 000 + игла одноразовая 30G",
+		carpulesCount: 1,
+		standardSeriesNumber: "ART-2026",
+		standardBatchNumber: "84019",
+		expirationOffsetYears: 2,
+		disposalReason: "used_in_procedure",
+		disinfectionMethod: "chemical_disinfection",
+		disinfectantNameRu: "Аламинол 3%",
+		disinfectantExposureMinutes: 60,
+		assistantSignatureConfirmed: true,
+		notesRu: "Пакетное списание: 1 карпула Артикаин 1:100 000 (1.7 мл) + 1 игла карпульная одноразовая 30G. Израсходовано на приеме, дезинфекция Аламинол 3% 60 мин, утилизация в желтый контейнер Класса Б по СанПиН 3.3686-21. Списано в 1 клик медсестрой без комиссии из 3 человек (Мандат 8e п. 10).",
+	},
 };
 
 /**

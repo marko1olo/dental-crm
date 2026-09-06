@@ -964,6 +964,8 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 				<TreatmentPlan3TierComparison
 					tiers={planTiers}
 					selectedTierId={selectedTierId}
+					planAgeDays={planAgeDays}
+					planCreatedAtIso={planCreatedAtIso}
 					onSelectTier={(tier) => setSelectedTierId(tier.tierId)}
 					onApproveAndSign={(tier) => {
 						setSelectedTierId(tier.tierId);

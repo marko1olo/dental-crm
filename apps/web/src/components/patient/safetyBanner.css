@@ -59,8 +59,22 @@
 	border: 1.5px solid var(--info-fg);
 }
 
-/* Safe / Clear Banner (Анамнез чист — схлопывается в 0px для здоровых пациентов) */
+/* Safe / Clear Banner (Анамнез чист — спокойная 1-строчная плашка с 1-клик нормой) */
 .patient-safety-banner--safe {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	box-shadow: none;
+}
+
+[data-theme="dark"] .patient-safety-banner--safe,
+[data-theme="night"] .patient-safety-banner--safe,
+[data-theme="cyber_xray"] .patient-safety-banner--safe {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}
+
+/* В компактном режиме чистый безопасный баннер не занимает лишнее место */
+.patient-safety-banner--compact.patient-safety-banner--safe {
 	display: none !important;
 	height: 0 !important;
 	margin: 0 !important;
@@ -179,9 +193,9 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	min-height: 34px;
-	min-width: 34px;
-	padding: 0 12px;
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0 14px;
 	border-radius: 10px;
 	font-size: 12px;
 	font-weight: 700;
@@ -190,14 +204,6 @@
 	border: 1px solid transparent;
 	text-decoration: none;
 	box-sizing: border-box;
-}
-
-@media (max-width: 640px) {
-	.safety-btn {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0 14px;
-	}
 }
 
 .safety-btn--primary-red {

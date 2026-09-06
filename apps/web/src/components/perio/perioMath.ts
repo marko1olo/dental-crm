@@ -118,7 +118,8 @@ export const PSR_CODE_DEFINITIONS: Record<PsrCode, PsrCodeDefinition> = {
 export type PerioExpressPresetId =
 	| "perio_norm_express"
 	| "gingivitis_express"
-	| "periodontitis_moderate_express";
+	| "periodontitis_moderate_express"
+	| "pro_hygiene_express";
 
 export interface PerioExpressPreset {
 	readonly id: PerioExpressPresetId;
@@ -138,7 +139,7 @@ export const PERIO_EXPRESS_PRESETS: Record<
 		subtitleRu: "PSR 0 во всех секстантах, глубина <= 2 мм, BOP 0",
 		icd10: "Z01.2",
 		defaultProtocolRu:
-			"Пародонт: маргинальная десна бледно-розовая, плотная, глубина зубодесневой борозды 1-2 мм, кровоточивость отсутствует, подвижности зубов нет. Скрининг PSR: 0 во всех секстантах. Патологических карманов нет. Диагноз: Здоров (Z01.2).",
+			"Соматически здоров / глубина карманов 1-2 мм / кровоточивость 0 / зубной камень отсутствует / индекс PSR 0 / норма. Пародонт: маргинальная десна бледно-розовая, плотная, глубина зубодесневой борозды 1-2 мм, кровоточивость отсутствует, подвижности зубов нет. Скрининг PSR: 0 во всех секстантах. Патологических карманов нет. Диагноз: Здоров (Z01.2).",
 	},
 	gingivitis_express: {
 		id: "gingivitis_express",
@@ -155,6 +156,14 @@ export const PERIO_EXPRESS_PRESETS: Record<
 		icd10: "K05.3",
 		defaultProtocolRu:
 			"Пародонт: глубина пародонтальных карманов 3.5–5.0 мм (PSR 3), десна гиперемирована с цианотичным оттенком, выраженная кровоточивость при зондировании, над- и поддесневой зубной камень, рецессия десны 1-2 мм, патологическая подвижность зубов I ст. Диагноз: Хронический генерализованный пародонтит средней степени (K05.3).",
+	},
+	pro_hygiene_express: {
+		id: "pro_hygiene_express",
+		titleRu: "Профгигиена выполнена",
+		subtitleRu: "УЗ Piezon + Air-Flow глицин + Kerr Cleanic + Fluocal",
+		icd10: "Z01.2",
+		defaultProtocolRu:
+			"Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal.",
 	},
 };
 

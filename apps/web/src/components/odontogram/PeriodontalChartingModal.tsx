@@ -48,6 +48,10 @@ import {
 	calculateClinicalAttachmentLevel,
 	calculatePerioIndices,
 	calculatePsrSextants,
+	CLINICAL_PERIO_NORM_SUMMARY_RU,
+	CLINICAL_PRO_HYGIENE_SUMMARY_RU,
+	createClinicalPerioNormProtocolText,
+	createClinicalProHygieneProtocolText,
 	createDefaultPerioTeeth,
 	formatPsrSextantsSummary,
 	FURCATION_GRADES,
@@ -379,7 +383,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		showToast("Протокол перио-карты успешно вставлен в дневник 043/у!", "success");
 	}, [teeth, summary, doctorName, onInsertToProtocol]);
 
-	// 1. «Пародонт в норме (1-2 мм, без BOP)» — 1 клик, createDefaultPerioTeeth(2), сбрасывает кровоточивость и рецессии, рассчитывает идеальные индексы
+	// 1. «Пародонт в норме (1-2 мм, без BOP)» — 1 клик (Мандаты 8e, 8i, 8k, 8n)
 	const handleApplyNormalPreset = useCallback(() => {
 		const defaultTeeth = createDefaultPerioTeeth(2);
 		setTeeth((prev) => {
@@ -390,12 +394,33 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 				return prevTooth?.isMissing ? { ...dt, isMissing: true } : dt;
 			});
 		});
+
+		const normProtocolText = createClinicalPerioNormProtocolText();
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${normProtocolText}`
+				: normProtocolText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: normProtocolText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(normProtocolText);
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			"Пародонт в норме (1-2 мм, без BOP): кровоточивость и рецессии сброшены, идеальные индексы",
+			`${CLINICAL_PERIO_NORM_SUMMARY_RU}. Данные внесены в 043/у!`,
 			"success",
+			4000,
 		);
-	}, []);
+	}, [onInsertToProtocol]);
 
 	// Alias for backwards compatibility
 	const handleApplyPhysiologicalNorm = handleApplyNormalPreset;
@@ -585,7 +610,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		);
 	}, []);
 
-	// 1-Click Statutory Prophylaxis Protocol (Mandates 8e, 8k: A16.07.051 Piezon + AirFlow + Detartrine + Bifluorid 12)
+	// 1-Click Statutory Prophylaxis Protocol (Mandates 8e, 8k, 8n: A16.07.051 Piezon + Air-Flow + Kerr Cleanic + Fluocal)
 	const handleQuickHygieneAirFlow = useCallback(() => {
 		const defaultTeeth = createDefaultPerioTeeth(2);
 		setTeeth((prev) => {
@@ -597,16 +622,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 			});
 		});
 
-		const hygieneText =
-			"• Профессиональная гигиена полости рта выполнена в полном объеме (A16.07.051):\n" +
-			"1. Удаление над- и поддесневых зубных отложений ультразвуковым пьезоэлектрическим скейлером Piezon (EMS).\n" +
-			"2. Снятие пигментированного зубного налета и биопленки воздушно-абразивным методом AirFlow (порошок на основе глицина 25 мкм, субгингивальная обработка).\n" +
-			"3. Полировка всех поверхностей зубов полировочной пастой Detartrine (Septodont) с циркулярными щеточками и резиновыми чашечками, апроксимальные поверхности обработаны штрипсами.\n" +
-			"4. Антисептическая медикаментозная обработка слизистой оболочки десны 0.05% раствором хлоргексидина биглюконата.\n" +
-			"5. Глубокое фторирование эмали и реминерализующая терапия препаратом Bifluorid 12 (VOCO).\n" +
-			"• Status localis: Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).\n" +
-			"• Клинические индексы после гигиены: OHI-S 0.0 (отличная), PMA 0% (воспаления нет), КПИ 0.0 (интактный периодонт).\n" +
-			"• Рекомендации: Индивидуальный подбор средств гигиены (зубная щетка, паста, флосс, ершики), соблюдение «белой диеты» в течение 2-3 часов.";
+		const hygieneText = createClinicalProHygieneProtocolText();
 
 		useVisitStore.getState().setVisitNoteForm((prev) => ({
 			...prev,
@@ -628,7 +644,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 			new CustomEvent("dente-add-estimate-service", {
 				detail: {
 					code: "A16.07.051",
-					name: "Профессиональная гигиена полости рта и зубов (УЗ Piezon + AirFlow глицин + Detartrine + Bifluorid 12)",
+					name: CLINICAL_PRO_HYGIENE_SUMMARY_RU,
 					price: 5500,
 					category: "hygiene",
 				},
@@ -637,34 +653,13 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 
 		onInsertToProtocol?.(hygieneText);
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Профгигиена в 1 клик (УЗ Piezon + AirFlow + Detartrine + Bifluorid 12) зафиксирована в 043/у и смете!", "success", 4000);
+		showToast(`${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Данные внесены в 043/у и смету!`, "success", 4000);
 	}, [onInsertToProtocol]);
 
 	// 1-Click Physiological Norm directly into Form 043/u
 	const handleInsertNormTo043 = useCallback(() => {
 		handleApplyNormalPreset();
-		const normText = "Пародонт в норме: глубина бороздки 1–2 мм, кровоточивость при зондировании отсутствует (BOP 0%), патологической подвижности нет.";
-
-		useVisitStore.getState().setVisitNoteForm((prev) => ({
-			...prev,
-			objectiveStatus: prev.objectiveStatus
-				? `${prev.objectiveStatus}\n\n${normText}`
-				: normText,
-		}));
-
-		window.dispatchEvent(
-			new CustomEvent("dente-apply-soap-protocol", {
-				detail: {
-					soap: normText,
-					mode: "smart_append",
-				},
-			}),
-		);
-
-		onInsertToProtocol?.(normText);
-		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("Физиологическая норма пародонта установлена и внесена в 043/у!", "success", 4000);
-	}, [handleApplyNormalPreset, onInsertToProtocol]);
+	}, [handleApplyNormalPreset]);
 
 	// 1-Click Fast Pathology Markup for active tooth
 	const handleMarkActiveToothPocket = useCallback((depth = 5, hasBop = true) => {
@@ -838,7 +833,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 							type="button"
 							onClick={handleApplyNormalPreset}
 							className="perio-preset-btn perio-preset-btn--norm"
-							title="Установить все 32 зуба в физиологическую норму: глубина 1-2 мм, без BOP, идеальные индексы (1 клик)"
+							title="Установить норму: глубина карманов 1-2 мм, кровоточивость 0, зубной камень отсутствует, индекс PSR 0, протокол в 043/у (1 клик)"
 							data-testid="perio-preset-norm-btn"
 						>
 							<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -886,7 +881,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 							type="button"
 							onClick={handleQuickHygieneAirFlow}
 							className="perio-preset-btn perio-preset-btn--hygiene"
-							title="Экспресс-гигиена: УЗ + Air Flow, протокол в 043/у и добавление услуги A16.07.051 в смету (1 клик)"
+							title="Комплексная профгигиена: УЗ скейлинг + Air-Flow глицином + паста Kerr Cleanic + фторирование Fluocal, протокол в 043/у и смету (1 клик)"
 							data-testid="perio-modal-quick-hygiene-btn"
 						>
 							<Sparkles size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />

@@ -130,6 +130,7 @@ export interface ClinicalWriteoffDocument {
 	readonly clinicInfo?: ClinicLegalInfo | undefined;
 	readonly isQuickCarpuleWriteoff?: boolean | undefined;
 	readonly writtenOffByRole?: string | undefined;
+	readonly isSingleSigner?: boolean | undefined;
 }
 
 /**
@@ -529,7 +530,237 @@ export function createQuickCarpuleWriteoffDocument(
 			"Единоличное экспресс-списание использованных карпул анестетика старшей медсестрой без созыва комиссии",
 		confirmedAt: new Date().toISOString(),
 		isQuickCarpuleWriteoff: true,
+		isSingleSigner: true,
 		writtenOffByRole: nurseRole,
+	};
+}
+
+export interface QuickVisitWriteoffParams {
+	readonly visitType?: "therapy" | "surgery" | undefined;
+	readonly cabinetId?: string | undefined;
+	readonly cabinetNameRu?: string | undefined;
+	readonly actDate?: string | undefined;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
+	readonly assistantFullName?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly stockBatches?: readonly CabinetStockBatch[] | undefined;
+	readonly statutoryFormType?: "0504230" | "M11" | "TORG16" | undefined;
+	readonly notes?: string | undefined;
+	readonly isSingleSigner?: boolean | undefined;
+}
+
+/**
+ * 1-клик формирование акта списания материалов по типовой карте клинического визита:
+ * - «Терапия»: карпула анестетика + игла + перчатки + слюноотсос + валики + нагрудник
+ * - «Хирургия»: карпула анестетика + игла + скальпель + шовный материал + гемостатическая губка
+ * Без бюрократического созыва комиссии из 3 человек (Мандат 8e п. 10, Мандат 8n п. 2).
+ */
+export function createQuickVisitWriteoffDocument(
+	params: QuickVisitWriteoffParams = {},
+): ClinicalWriteoffDocument {
+	const visitType = params.visitType || "therapy";
+	const batches = params.stockBatches || DENTAL_CABINET_STOCK_PRESETS;
+	const cabinetId = params.cabinetId || (visitType === "surgery" ? "cab_02_surgery" : "cab_01_therapy");
+	const cabinetNameRu =
+		params.cabinetNameRu ||
+		(visitType === "surgery" ? "Кабинет хирургической стоматологии №2" : "Кабинет терапевтической стоматологии №1");
+	const actDate = params.actDate || new Date().toISOString().slice(0, 10);
+	const doctorFullName = params.doctorFullName || "Кузнецов Михаил Сергеевич";
+	const doctorSpecialty = params.doctorSpecialty || (visitType === "surgery" ? "Врач-стоматолог-хирург" : "Врач-стоматолог-терапевт");
+	const patientName = params.patientName || "Пациент клинического приёма";
+
+	const visitItemConfigs: Record<
+		"therapy" | "surgery",
+		Array<{
+			materialId: string;
+			quantity: number;
+			fallbackName: string;
+			fallbackCategory: "composite" | "adhesive" | "endo" | "implant" | "suture" | "anesthesia" | "hygiene" | "ppe" | "disinfection" | "auxiliary" | "surgery";
+			fallbackUnit: MaterialMeasurementUnit;
+			fallbackCostKopecks: Kopecks;
+		}>
+	> = {
+		therapy: [
+			{
+				materialId: "mat_articaine_ultracain",
+				quantity: 1,
+				fallbackName: "Анестетик артикаиновый 4% с эпинефрином 1:100000 1.7 мл",
+				fallbackCategory: "anesthesia",
+				fallbackUnit: "карп",
+				fallbackCostKopecks: 23000,
+			},
+			{
+				materialId: "mat_dental_needle_30g",
+				quantity: 1,
+				fallbackName: "Игла карпульная стоматологическая 30G евростандарт 25 мм",
+				fallbackCategory: "anesthesia",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 3000,
+			},
+			{
+				materialId: "mat_nitrile_gloves",
+				quantity: 2,
+				fallbackName: "Перчатки нитриловые неопудренные (пара)",
+				fallbackCategory: "ppe",
+				fallbackUnit: "пар",
+				fallbackCostKopecks: 3800,
+			},
+			{
+				materialId: "mat_saliva_ejector",
+				quantity: 1,
+				fallbackName: "Слюноотсос одноразовый стоматологический с гибким наконечником",
+				fallbackCategory: "ppe",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 1400,
+			},
+			{
+				materialId: "mat_cotton_rolls",
+				quantity: 6,
+				fallbackName: "Ватные валики стоматологические стерильные №2",
+				fallbackCategory: "ppe",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 400,
+			},
+			{
+				materialId: "mat_patient_bib",
+				quantity: 1,
+				fallbackName: "Салфетка нагрудная стоматологическая двухслойная (нагрудник)",
+				fallbackCategory: "ppe",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 800,
+			},
+		],
+		surgery: [
+			{
+				materialId: "mat_articaine_ultracain",
+				quantity: 1,
+				fallbackName: "Анестетик артикаиновый 4% с эпинефрином 1:100000 1.7 мл",
+				fallbackCategory: "anesthesia",
+				fallbackUnit: "карп",
+				fallbackCostKopecks: 23000,
+			},
+			{
+				materialId: "mat_dental_needle_30g",
+				quantity: 1,
+				fallbackName: "Игла карпульная стоматологическая 30G евростандарт 25 мм",
+				fallbackCategory: "anesthesia",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 3000,
+			},
+			{
+				materialId: "mat_surg_blade_15",
+				quantity: 1,
+				fallbackName: "Лезвие скальпеля хирургическое №15 Swann-Morton",
+				fallbackCategory: "surgery",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 8500,
+			},
+			{
+				materialId: "mat_suture_vicryl_40",
+				quantity: 1,
+				fallbackName: "Шовный материал Викрил / Монофил 4-0 с атравматической иглой",
+				fallbackCategory: "suture",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 38000,
+			},
+			{
+				materialId: "mat_hemostatic_sponge",
+				quantity: 1,
+				fallbackName: "Гемостатическая коллагеновая губка Альвостаз / Тахокомб",
+				fallbackCategory: "surgery",
+				fallbackUnit: "шт",
+				fallbackCostKopecks: 32000,
+			},
+		],
+	};
+
+	const items = visitItemConfigs[visitType] || visitItemConfigs.therapy;
+	const lines: ClinicalWriteoffLine[] = [];
+
+	for (const item of items) {
+		const matDef = getClinicalMaterialById(item.materialId);
+		const nameRu = matDef?.nameRu || item.fallbackName;
+		const category = matDef?.category || item.fallbackCategory;
+		const unit = matDef?.unit || item.fallbackUnit;
+		const sku = matDef?.sku || `SKU-${item.materialId.toUpperCase()}`;
+		const okeiCode = matDef?.okeiCode || "796";
+		const standardQty = item.quantity;
+		const actualQty = item.quantity;
+
+		const fefoResult = findBestBatchFefo(item.materialId, standardQty, batches, cabinetId, actDate);
+		const unitCostKopecks = fefoResult.batch?.unitCostKopecks ?? matDef?.defaultUnitCostKopecks ?? item.fallbackCostKopecks;
+		const stockAvailable = fefoResult.batch?.quantityAvailable ?? 50;
+		const criticalThreshold = fefoResult.batch?.criticalThreshold ?? 5;
+		const stockStatus = evaluateStockAvailability(stockAvailable, actualQty, criticalThreshold);
+
+		lines.push({
+			id: `line_visit_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+			serviceCode: visitType === "surgery" ? "A16.07.001.001" : "A16.07.002.001",
+			serviceTitle: visitType === "surgery" ? "Хирургический приём" : "Терапевтический приём",
+			toothNumber: undefined,
+			materialId: item.materialId,
+			sku,
+			nameRu,
+			category,
+			unit,
+			okeiCode,
+			standardQuantity: standardQty,
+			actualQuantity: actualQty,
+			discrepancyQuantity: 0,
+			discrepancyReasonCode: "standard_consumption",
+			discrepancyNotes: params.notes || `1-клик типовой визит (${visitType === "surgery" ? "Хирургия" : "Терапия"})`,
+			batchId: fefoResult.batch?.batchId,
+			lotNumber: fefoResult.batch?.lotNumber || "LOT-VISIT-2026",
+			serialNumber: undefined,
+			expirationDate: fefoResult.batch?.expirationDate || "2027-12-31",
+			daysUntilExpiration: fefoResult.daysUntilExpiration,
+			isExpiringSoon: fefoResult.isExpiringSoon,
+			isExpired: false,
+			cabinetId,
+			cabinetNameRu,
+			stockAvailable,
+			criticalThreshold,
+			stockStatus,
+			unitCostKopecks,
+			totalCostKopecks: calculateLineCostKopecks(unitCostKopecks, actualQty),
+			isMandatory: true,
+			requiresLotTracking: matDef?.requiresLotTracking || false,
+			requiresSerialNumber: false,
+		});
+	}
+
+	const totals = calculateClinicalWriteoffTotals(lines, 1);
+	const actNumber = `ВИЗИТ-${Date.now().toString().slice(-6)}`;
+
+	return {
+		id: `doc_visit_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+		actNumber,
+		actDate,
+		patientName,
+		doctorFullName,
+		doctorSpecialty,
+		assistantFullName: params.assistantFullName || doctorFullName,
+		cabinetId,
+		cabinetNameRu,
+		completedServices: [
+			{
+				serviceCode: visitType === "surgery" ? "A16.07.001.001" : "A16.07.002.001",
+				serviceTitle: visitType === "surgery" ? "Хирургический стоматологический приём" : "Терапевтический стоматологический приём",
+				quantityMultiplier: 1,
+			},
+		],
+		lines,
+		totals,
+		statutoryFormType: params.statutoryFormType || "0504230",
+		status: "confirmed",
+		notes:
+			params.notes ||
+			`1-клик списание набора визита (${visitType === "surgery" ? "Хирургия" : "Терапия"}) без комиссии из 3 человек`,
+		confirmedAt: new Date().toISOString(),
+		isQuickCarpuleWriteoff: false,
+		isSingleSigner: params.isSingleSigner !== false,
+		writtenOffByRole: doctorSpecialty,
 	};
 }
 
@@ -724,16 +955,18 @@ export function generateAct0504230Html(
 		${
 			doc.isQuickCarpuleWriteoff
 				? "Списание пустых использованных карпул и ампул анестетиков произведено старшей медсестрой / ассистентом в упрощенном порядке (без созыва комиссии)."
-				: "Списание произведено в соответствии с клиническими протоколами Минздрава РФ и технологическими картами по Приказу № 804н."
+				: doc.isSingleSigner
+					? "Списание произведено в упрощенном порядке лечащим врачом / ответственным сотрудником (без созыва комиссии по приказу клиники)."
+					: "Списание произведено в соответствии с клиническими протоколами Минздрава РФ и технологическими картами по Приказу № 804н."
 		}
 	</p>
 
 	${
-		doc.isQuickCarpuleWriteoff
+		doc.isQuickCarpuleWriteoff || doc.isSingleSigner
 			? `<div class="signatures-row">
 		<div class="sign-col" style="width: 45%;">
 			<strong>СПИСАНИЕ ПРОИЗВЕЛ (ЕДИНОЛИЧНО):</strong><br>
-			${doc.writtenOffByRole || info.headNursePosition || "Старшая медицинская сестра"}<br>
+			${doc.writtenOffByRole || (doc.isQuickCarpuleWriteoff ? (info.headNursePosition || "Старшая медицинская сестра") : (doc.doctorSpecialty || "Врач-стоматолог"))}<br>
 			________________ / ${doc.assistantFullName || doc.doctorFullName || info.headNurseFullName} /<br>
 			«____» ________________ 2026 г.
 		</div>
@@ -954,11 +1187,11 @@ export function generateTorg16Html(
 	</table>
 
 	${
-		doc.isQuickCarpuleWriteoff
+		doc.isQuickCarpuleWriteoff || doc.isSingleSigner
 			? `<div class="signs">
 		<div style="width: 45%;">
 			<strong>Списание произведено единолично:</strong><br>
-			${doc.writtenOffByRole || info.headNursePosition || "Старшая медицинская сестра"}<br>
+			${doc.writtenOffByRole || (doc.isQuickCarpuleWriteoff ? (info.headNursePosition || "Старшая медицинская сестра") : (doc.doctorSpecialty || "Врач-стоматолог"))}<br>
 			________________ / ${doc.assistantFullName || doc.doctorFullName || info.headNurseFullName} /
 		</div>
 		<div style="width: 45%;">

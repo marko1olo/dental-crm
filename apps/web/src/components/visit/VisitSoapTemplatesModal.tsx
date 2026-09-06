@@ -3,6 +3,7 @@ import {
 	Activity,
 	AlertCircle,
 	ArrowRight,
+	Baby,
 	Bone,
 	BookOpen,
 	Check,
@@ -196,6 +197,8 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 
 	const getCategoryIcon = (cat: ClinicalPresetCategory) => {
 		switch (cat) {
+			case "pediatric":
+				return <Baby size={16} className="text-teal-500 shrink-0" />;
 			case "therapy":
 				return <Stethoscope size={16} className="text-blue-500 shrink-0" />;
 			case "surgery":
@@ -306,6 +309,7 @@ export const VisitSoapTemplatesModal: React.FC<VisitSoapTemplatesModalProps> = (
 					<div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap">
 						{[
 							{ id: "all", label: "Все протоколы", count: CLINICAL_SOAP_PRESETS.length },
+							{ id: "pediatric", label: "Детская", count: CLINICAL_SOAP_PRESETS.filter((p) => p.category === "pediatric").length },
 							{ id: "therapy", label: "Терапия", count: CLINICAL_SOAP_PRESETS.filter((p) => p.category === "therapy").length },
 							{ id: "surgery", label: "Хирургия", count: CLINICAL_SOAP_PRESETS.filter((p) => p.category === "surgery").length },
 							{ id: "orthopedics", label: "Ортопедия", count: CLINICAL_SOAP_PRESETS.filter((p) => p.category === "orthopedics").length },

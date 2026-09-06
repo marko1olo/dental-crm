@@ -399,7 +399,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									>
 										<span className="flex items-center gap-2">
 											<Zap size={16} className={!isGbrPerformed ? "text-amber-300" : "text-[var(--teal,#0d9488)]"} />
-											<span>⚡ Стандартная имплантация (без НКР / Без костной пластики)</span>
+											<span>Стандартная имплантация (без НКР / Без костной пластики)</span>
 										</span>
 										{!isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
 									</button>
@@ -416,7 +416,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 									>
 										<span className="flex items-center gap-2">
 											<Layers size={16} className={isGbrPerformed ? "text-sky-200" : "text-sky-500"} />
-											<span>⚡ Имплантация с НКР (костная пластика)</span>
+											<span>Имплантация с НКР (костная пластика)</span>
 										</span>
 										{isGbrPerformed && <CheckCircle2 size={16} className="text-white shrink-0" />}
 									</button>

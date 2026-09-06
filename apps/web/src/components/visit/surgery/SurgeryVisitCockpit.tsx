@@ -168,7 +168,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsPassportModalOpen(true)}
-						className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:bg-[var(--paper-soft)]"
+						className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:bg-[var(--paper-soft)]"
 						data-testid="btn-cockpit-passport"
 					>
 						<Sliders size={14} />
@@ -178,7 +178,7 @@ export const SurgeryVisitCockpit: React.FC<SurgeryVisitCockpitProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsFullCockpitOpen(true)}
-						className="min-h-[36px] px-3 py-1 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 shadow-2xs"
+						className="min-h-[44px] px-3.5 py-1.5 rounded-lg text-xs font-extrabold bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] flex items-center gap-1.5 cursor-pointer touch-manipulation hover:opacity-90 shadow-2xs"
 						data-testid="btn-cockpit-full"
 					>
 						<Sparkles size={14} />

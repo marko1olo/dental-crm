@@ -41,6 +41,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Trash2,
+	X,
 	Zap,
 } from "lucide-react";
 import React from "react";
@@ -611,7 +612,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 	const handleApplyExpressPreset = useCallback(
 		(presetId: PerioExpressPresetId) => {
 			if (readOnly) return;
-			let updatedTeeth: PerioToothRecord[];
+			let updatedTeeth: PerioToothRecord[] = teeth;
 			let protocolText = "";
 
 			switch (presetId) {
@@ -797,20 +798,20 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								badge: "Z01.2",
 								defaultIcd10: "Z01.2",
 								statusLocalis:
-									"Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.",
+									"Соматически здоров / глубина карманов 1-2 мм / кровоточивость 0 / зубной камень отсутствует / индекс PSR 0 / норма. Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.",
 								treatmentDescription:
 									"Профилактический осмотр через 6 месяцев, стандартная индивидуальная гигиена полости рта.",
 							}
 						: presetId === "hygiene_pro_done_express"
 							? {
 									id: "hygiene_pro_done_express",
-									label: "Профессиональная гигиена выполнена (A16.07.051)",
+									label: "Комплексная профессиональная гигиена (A16.07.051)",
 									badge: "A16.07.051",
 									defaultIcd10: "Z01.2",
 									statusLocalis:
-										"Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).",
+										"Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal. Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).",
 									treatmentDescription:
-										"1. Ультразвуковой скейлинг Piezon (EMS). 2. Снятие биопленки AirFlow глицин 25 мкм. 3. Полировка пастой Detartrine. 4. Обработка хлоргексидином 0.05%. 5. Фторирование лаком Bifluorid 12.",
+										"1. Ультразвуковой скейлинг над- и поддесневых отложений Piezon (EMS). 2. Снятие биопленки и налета Air-Flow глицином 25 мкм. 3. Полировка пастой Kerr Cleanic. 4. Обработка хлоргексидином 0.05%. 5. Ремотерапия и фторирование эмали лаком Fluocal.",
 								}
 							: null);
 			if (!targetPreset) return;
@@ -946,7 +947,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			if (presetId === "perio_norm_express") {
 				protocolText =
 					"• Пародонтологический осмотр: Норма пародонта (физиологическая норма, Z01.2).\n" +
-					"• Status localis: Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.\n" +
+					"• Status localis: Соматически здоров / глубина карманов 1-2 мм / кровоточивость 0 / зубной камень отсутствует / индекс PSR 0 / норма. Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.\n" +
 					"• Диагноз: Здоров / Пародонт интактен (Z01.2).\n" +
 					"• Рекомендации: Профилактический осмотр через 6 месяцев, стандартная индивидуальная гигиена полости рта.";
 			} else if (presetId === "gingivitis_catarrhal") {
@@ -970,11 +971,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			) {
 				protocolText =
 					"• Профессиональная гигиена полости рта выполнена в полном объеме (A16.07.051):\n" +
+					"• Процедура: Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal.\n" +
 					"1. Удаление над- и поддесневых зубных отложений ультразвуковым пьезоэлектрическим скейлером Piezon (EMS).\n" +
 					"2. Снятие пигментированного зубного налета и биопленки воздушно-абразивным методом AirFlow (порошок на основе глицина 25 мкм, субгингивальная обработка).\n" +
-					"3. Полировка всех поверхностей зубов полировочной пастой Detartrine (Septodont) с циркулярными щеточками и резиновыми чашечками, апроксимальные поверхности обработаны штрипсами.\n" +
+					"3. Полировка всех поверхностей зубов полировочной пастой Kerr Cleanic (Kerr) с циркулярными щеточками и резиновыми чашечками, апроксимальные поверхности обработаны штрипсами.\n" +
 					"4. Антисептическая медикаментозная обработка слизистой оболочки десны 0.05% раствором хлоргексидина биглюконата.\n" +
-					"5. Глубокое фторирование эмали и реминерализующая терапия препаратом Bifluorid 12 (VOCO).\n" +
+					"5. Глубокое фторирование эмали и реминерализующая терапия препаратом Fluocal (Septodont).\n" +
 					"• Status localis: Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).\n" +
 					"• Рекомендации: «Белая диета» 2-3 часа, смена зубной щетки, индивидуальный подбор средств гигиены.";
 			} else {
@@ -1011,7 +1013,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					new CustomEvent("dente-add-estimate-service", {
 						detail: {
 							code: "A16.07.051",
-							name: "Профессиональная гигиена полости рта и зубов (УЗ Piezon + AirFlow глицин + Detartrine + Bifluorid 12)",
+							name: "Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal",
 							price: 5500,
 							category: "hygiene",
 						},
@@ -1463,7 +1465,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 															hasAsterisk,
 														)
 													}
-													className={`min-h-[36px] min-w-[28px] rounded-lg font-black text-xs flex items-center justify-center transition-all cursor-pointer border ${
+													className={`min-h-[44px] min-w-[32px] sm:min-w-[36px] rounded-lg font-black text-xs flex items-center justify-center transition-all cursor-pointer touch-manipulation border ${
 														isSelected
 															? def.badgeClass +
 																" ring-1 ring-white/50 scale-105"
@@ -1488,7 +1490,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 													!hasAsterisk,
 												)
 											}
-											className={`min-h-[36px] min-w-[28px] rounded-lg font-black text-xs flex items-center justify-center transition-all cursor-pointer border ${
+											className={`min-h-[44px] min-w-[32px] sm:min-w-[36px] rounded-lg font-black text-xs flex items-center justify-center transition-all cursor-pointer touch-manipulation border ${
 												hasAsterisk
 													? "bg-rose-500 text-white border-rose-400 ring-1 ring-white/50"
 													: "bg-[var(--paper-soft,#1e293b)] text-[var(--muted,#94a3b8)] hover:text-rose-400 border-[var(--line,#334155)]"
@@ -1520,8 +1522,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						onClick={() =>
 							handleApplyTherapistPreset("hygiene_pro_done_express")
 						}
-						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-cyan-500/15 text-cyan-300 border border-[var(--line,#334155)] transition-all cursor-pointer flex items-center gap-1"
-						title="Профессиональная гигиена выполнена: ультразвук + AirFlow + полировка"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-cyan-500/15 text-cyan-300 border border-[var(--line,#334155)] transition-all cursor-pointer touch-manipulation flex items-center gap-1"
+						title="Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal"
 						data-testid="perio-preset-pro-hygiene-card"
 					>
 						<Sparkles size={12} className="text-cyan-400" />
@@ -1531,7 +1533,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("gingivitis_localized")}
-						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500/15 text-amber-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500/15 text-amber-300 border border-[var(--line,#334155)] transition-all cursor-pointer touch-manipulation flex items-center"
 						title="Гингивит локализованный: отек и кровоточивость межзубных сосочков во фронтальном отделе (BOP+)"
 					>
 						Гингивит лок.
@@ -1540,7 +1542,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("gingivitis_generalized")}
-						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500/15 text-amber-200 border border-[var(--line,#334155)] transition-all cursor-pointer"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-amber-500/15 text-amber-200 border border-[var(--line,#334155)] transition-all cursor-pointer touch-manipulation flex items-center"
 						title="Гингивит генерализованный: диффузный отек и кровоточивость десен обеих челюстей (BOP > 30%)"
 					>
 						Гингивит генер.
@@ -1549,7 +1551,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("periodontitis_mild")}
-						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-orange-500/15 text-orange-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-orange-500/15 text-orange-300 border border-[var(--line,#334155)] transition-all cursor-pointer touch-manipulation flex items-center"
 						title="Хронический пародонтит лёгкой степени: карманы 3.5–4 мм, BOP+, над/поддесневой камень"
 					>
 						Пародонтит I ст.
@@ -1558,7 +1560,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("periodontitis_severe")}
-						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 text-rose-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-rose-500/15 text-rose-300 border border-[var(--line,#334155)] transition-all cursor-pointer touch-manipulation flex items-center"
 						title="Хронический пародонтит тяжёлой степени: карманы >6 мм, гноетечение, подвижность II-III"
 					>
 						Пародонтит III ст.
@@ -1567,7 +1569,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() => handleApplyTherapistPreset("dental_calculus")}
-						className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-sky-500/15 text-sky-300 border border-[var(--line,#334155)] transition-all cursor-pointer"
+						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-sky-500/15 text-sky-300 border border-[var(--line,#334155)] transition-all cursor-pointer touch-manipulation flex items-center"
 						title="Зубные отложения: массивный над- и поддесневой зубной камень на резцах и молярах (K03.6)"
 					>
 						Зубные отложения
@@ -1713,9 +1715,10 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsHelpOpen(false)}
-							className="text-slate-400 hover:text-white"
+							className="min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white cursor-pointer touch-manipulation"
+							aria-label="Закрыть справку"
 						>
-							✕
+							<X size={16} />
 						</button>
 					</div>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
@@ -2159,15 +2162,14 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 											isMissing: !selectedTooth.isMissing,
 										})
 									}
-									className={`px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
+									className={`min-h-[44px] px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all touch-manipulation flex items-center gap-1.5 ${
 										selectedTooth.isMissing
 											? "bg-zinc-700 text-zinc-200 border-zinc-600"
 											: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] border-[var(--line,#334155)] hover:text-white"
 									}`}
 								>
-									{selectedTooth.isMissing
-										? "Отсутствует ✓"
-										: "Отметить отсутствующим"}
+									<span>{selectedTooth.isMissing ? "Отсутствует" : "Отметить отсутствующим"}</span>
+									{selectedTooth.isMissing && <Check size={14} className="text-zinc-200" />}
 								</button>
 
 								<button
@@ -2177,13 +2179,14 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 											isImplant: !selectedTooth.isImplant,
 										})
 									}
-									className={`px-2.5 py-1 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
+									className={`min-h-[44px] px-3 py-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all touch-manipulation flex items-center gap-1.5 ${
 										selectedTooth.isImplant
 											? "bg-amber-500/20 text-amber-300 border-amber-500/40"
 											: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] border-[var(--line,#334155)] hover:text-white"
 									}`}
 								>
-									{selectedTooth.isImplant ? "Имплантат ✓" : "Имплантат"}
+									<span>Имплантат</span>
+									{selectedTooth.isImplant && <Check size={14} className="text-amber-300" />}
 								</button>
 
 								{/* Mobility Selector */}
@@ -2469,9 +2472,10 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsDiagnosticsExpanded(false)}
-							className="text-[var(--muted,#94a3b8)] hover:text-white text-xs cursor-pointer"
+							className="min-h-[44px] px-2.5 py-1.5 rounded-lg text-[var(--muted,#94a3b8)] hover:text-white hover:bg-[var(--line,#334155)]/30 text-xs font-medium cursor-pointer inline-flex items-center gap-1.5 transition-colors touch-manipulation"
 						>
-							Свернуть ✕
+							<span>Свернуть</span>
+							<ChevronUp size={14} />
 						</button>
 					</div>
 

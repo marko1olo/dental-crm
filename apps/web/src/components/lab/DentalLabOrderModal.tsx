@@ -56,13 +56,10 @@ import {
 	isJawWideConstruction,
 } from "./labMath";
 import { rublesToKopecks } from "@dental/shared";
-import { DentalLabFinancialGate } from "./DentalLabFinancialGate";
 import {
 	checkDentalLabFinancialGate,
 	createDoctorClinicalOverride,
 } from "./dentalLabFinancialGateEngine";
-import { BankInstallmentQrModal } from "../payments/BankInstallmentQrModal";
-import { CashRegisterModal } from "../finance/CashRegisterModal";
 import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
 import { DentalLabShadeSelector } from "./DentalLabShadeSelector";
 import { DentalLabPrintBlank } from "./DentalLabPrintBlank";
@@ -92,17 +89,13 @@ export function DentalLabOrderModal({
 }: DentalLabOrderModalProps) {
 	const [activeTab, setActiveTab] = useState<TabKey>("main");
 
-	// Financial Gate & Installment States
-	const [isGateModalOpen, setIsGateModalOpen] = useState(false);
+	// Doctor Clinical Override State (Mandates 8d, 8e)
 	const [gateOverride, setGateOverride] = useState<{
 		authorized: boolean;
 		doctorName: string;
 		timestampIso: string;
 		reason: string;
 	} | null>(null);
-	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
-	const [isCashRegisterOpen, setIsCashRegisterOpen] = useState(false);
-	const [advancePaymentAmountRub, setAdvancePaymentAmountRub] = useState(0);
 
 	// Form State
 	const [formPatientId, setFormPatientId] = useState(patientId || initialOrder?.patientId || "");
@@ -962,57 +955,6 @@ export function DentalLabOrderModal({
 						</button>
 					</div>
 				</div>
-
-				{/* ─── 54-FZ CASH REGISTER ADVANCE PAYMENT MODAL ─────────────── */}
-				{isCashRegisterOpen && (
-					<CashRegisterModal
-						isOpen={isCashRegisterOpen}
-						onClose={() => setIsCashRegisterOpen(false)}
-						patientId={formPatientId}
-						patientName={formPatientName}
-						totalAmountRub={advancePaymentAmountRub || Math.max(1000, Math.round(totalLabPriceRub * 0.5))}
-						items={[
-							{
-								id: `advance_lab_${Date.now()}`,
-								name: `Аванс за ортопедическую конструкцию: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`,
-								quantity: 1,
-								priceRub: advancePaymentAmountRub || Math.max(1000, Math.round(totalLabPriceRub * 0.5)),
-								subject: "service",
-								method: "advance",
-								vatRate: "vat_none",
-								measure: "piece",
-							},
-						]}
-						onPaymentComplete={() => {
-							setIsCashRegisterOpen(false);
-							showToast(
-								`Аванс в размере ${(advancePaymentAmountRub || Math.round(totalLabPriceRub * 0.5)).toLocaleString("ru-RU")} ₽ успешно внесен в кассу 54-ФЗ. Наряд разблокирован!`,
-								"success",
-							);
-							handleSaveOrder(undefined, true);
-						}}
-					/>
-				)}
-
-				{/* ─── BANK INSTALLMENT QR MODAL ─────────────────────────────── */}
-				{isInstallmentModalOpen && (
-					<BankInstallmentQrModal
-						isOpen={isInstallmentModalOpen}
-						onClose={() => setIsInstallmentModalOpen(false)}
-						stageTitle={`Наряд ЗТЛ: ${CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType}`}
-						stageAmountKopecks={rublesToKopecks(totalLabPriceRub)}
-						patientId={formPatientId}
-						patientName={formPatientName}
-						onInstallmentApproved={(approval) => {
-							showToast(
-								`Рассрочка на сумму ${totalLabPriceRub.toLocaleString("ru-RU")} ₽ одобрена банком ${approval.providerId.toUpperCase()}! Наряд разблокирован.`,
-								"success",
-							);
-							// После одобрения банк покрыл сумму, отправляем наряд
-							handleSaveOrder(undefined, true);
-						}}
-					/>
-				)}
 
 			</div>
 		</div>

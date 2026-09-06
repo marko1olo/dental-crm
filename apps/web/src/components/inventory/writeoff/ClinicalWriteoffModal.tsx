@@ -124,6 +124,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	const [selectedCabinetId, setSelectedCabinetId] = useState<string>(cabinetId);
 	const [statutoryFormType, setStatutoryFormType] = useState<"0504230" | "M11" | "TORG16">(defaultFormType);
 	const [notes, setNotes] = useState<string>("");
+	const [isSingleSigner, setIsSingleSigner] = useState<boolean>(true);
 
 	// 2. Строки списания
 	const [lines, setLines] = useState<ClinicalWriteoffLine[]>([]);
@@ -229,6 +230,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 			notes: notes.trim() || undefined,
 			confirmedAt: new Date().toISOString(),
 			clinicInfo: DEFAULT_CLINIC_LEGAL_INFO,
+			isSingleSigner,
 		};
 	}, [
 		actNumber,
@@ -245,6 +247,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 		totals,
 		statutoryFormType,
 		notes,
+		isSingleSigner,
 	]);
 
 	// 1-Click Списание в наряд (Мандат 8e: без скрытых блокировок, ясный фидбек)
@@ -393,6 +396,24 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 								/>
 							</div>
 						</div>
+					</div>
+
+					{/* РЕЖИМ СПИСАНИЯ: ЕДИНОЛИЧНОЕ УТВЕРЖДЕНИЕ ВРАЧОМ / МЕДСЕСТРОЙ (Мандат 8e, Мандат 8n) */}
+					<div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-line bg-paper text-xs">
+						<label className="flex items-center gap-2.5 cursor-pointer select-none">
+							<input
+								type="checkbox"
+								checked={isSingleSigner}
+								onChange={(e) => setIsSingleSigner(e.target.checked)}
+								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
+							/>
+							<span className="font-bold text-ink">
+								Единоличное списание лечащим врачом / ответственной медсестрой (без комиссии из 3 человек)
+							</span>
+						</label>
+						<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300">
+							{isSingleSigner ? "✓ Форма 0504230 / ТОРГ-16: без созыва комиссии" : "Стандартная комиссия (3 подписи)"}
+						</span>
 					</div>
 
 					{/* Предупреждения: Сроки годности или дефицит */}

@@ -1,6 +1,7 @@
 import React from "react";
 import {
 	Activity,
+	Baby,
 	Bone,
 	BookOpen,
 	Check,
@@ -376,6 +377,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 					<div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--paper)] border border-[var(--border)] overflow-x-auto flex-nowrap">
 						{[
 							{ id: "all", label: "Все шаблоны" },
+							{ id: "pediatric", label: "Детские" },
 							{ id: "therapy", label: "Терапия" },
 							{ id: "surgery", label: "Хирургия" },
 							{ id: "orthopedics", label: "Ортопедия" },
@@ -404,7 +406,9 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 				<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-w-0">
 					{filteredPresets.map((preset) => {
 						const categoryBadgeColor =
-							preset.category === "therapy"
+							preset.category === "pediatric"
+								? "bg-teal-500/10 text-teal-800 dark:text-teal-200 border-teal-500/20 hover:bg-teal-500/20"
+								: preset.category === "therapy"
 								? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 hover:bg-blue-500/20"
 								: preset.category === "surgery"
 									? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20 hover:bg-rose-500/20"
@@ -429,6 +433,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								data-testid={`quick-preset-${preset.id}`}
 							>
 								<div className="flex items-center gap-1.5 min-w-0 truncate">
+									{preset.category === "pediatric" && <Baby size={15} className="shrink-0 text-teal-600" />}
 									{preset.category === "therapy" && <Stethoscope size={15} className="shrink-0" />}
 									{preset.category === "surgery" && <Bone size={15} className="shrink-0" />}
 									{preset.category === "orthopedics" && <Crown size={15} className="shrink-0" />}

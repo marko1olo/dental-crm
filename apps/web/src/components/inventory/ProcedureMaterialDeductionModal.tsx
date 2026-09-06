@@ -755,11 +755,10 @@ export function ProcedureMaterialDeductionModal({
 												{/* Stepper / Input */}
 												<td className="inventory-td-stepper" style={{ whiteSpace: "nowrap" }}>
 													<div className="inventory-compact-stepper-wrap" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-														<div className="inventory-stepper-group" style={{ height: "26px" }}>
+														<div className="inventory-stepper-group">
 															<button
 																type="button"
 																className="inventory-stepper-btn"
-																style={{ minWidth: "22px", width: "22px", height: "26px", fontSize: "12px" }}
 																onClick={() => handleStepQuantity(line.id, -1)}
 																disabled={line.quantity <= 0}
 																aria-label="Уменьшить количество"
@@ -769,7 +768,6 @@ export function ProcedureMaterialDeductionModal({
 															<input
 																type="text"
 																className="inventory-stepper-input"
-																style={{ width: "36px", height: "26px", fontSize: "12px", padding: "0 1px" }}
 																value={line.quantity}
 																onChange={(e) =>
 																	handleDirectQuantityChange(line.id, e.target.value)
@@ -778,7 +776,6 @@ export function ProcedureMaterialDeductionModal({
 															<button
 																type="button"
 																className="inventory-stepper-btn"
-																style={{ minWidth: "22px", width: "22px", height: "26px", fontSize: "12px" }}
 																onClick={() => handleStepQuantity(line.id, 1)}
 																aria-label="Увеличить количество"
 															>

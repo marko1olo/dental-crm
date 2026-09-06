@@ -1,4 +1,4 @@
-import { Clipboard, Download, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { Baby, Clipboard, Download, HeartPulse, Loader2, Plus, ShieldCheck, Smile, Sparkles, Trash2, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../contexts/AppLogicContext";
 import { actionFailureToast } from "../lib/panelStateText";
@@ -17,8 +17,19 @@ export interface Template {
 	isBuiltIn?: boolean;
 }
 
+export type CanonicalSoapTemplateKey =
+	| "caries"
+	| "pulpitis"
+	| "periodontitis"
+	| "hygiene"
+	| "extraction"
+	| "pediatric_adaptation"
+	| "pediatric_caries"
+	| "pediatric_pulpotomy"
+	| "pediatric_silvering_fluoride";
+
 export const CANONICAL_SOAP_TEMPLATES: Record<
-	"caries" | "pulpitis" | "periodontitis" | "hygiene" | "extraction",
+	CanonicalSoapTemplateKey,
 	Template
 > = {
 	caries: {
@@ -84,6 +95,58 @@ export const CANONICAL_SOAP_TEMPLATES: Record<
 			"Коронковая часть причинного зуба разрушена ниже уровня десневого края / глубокий поддесневой дефект / ретенция и дистопия. Перкуссия болезненна. На прицельной рентгенограмме / КЛКТ: деструкция периапикальной костной ткани K04.7 / патологическое положение ретинированного зуба K01.1. Слизистая оболочка вокруг умеренно отечна.",
 		prefilledTreatment:
 			"Инфильтрационная и проводниковая анестезия (Артикаин 4% с эпинефрином 1:100 000 — 1.7 мл). Антисептическая обработка полости рта раствором хлоргексидина 0.05%. Синдесмотомия круговой связки зуба. Люксация, элевация, щипцы: атравматичная люксация элеватором, элевация и наложение анатомических щипцов, деликатная тракция зуба из альвеолы. Тщательный кюретаж лунки острой ложкой (кюретаж лунки, удаление грануляций и осколков). Антисептическое промывание. Местный гемостаз, альвожиль: внесение в лунку кровоостанавливающей антисептической губки Альвожиль (Alvogyl). Сближение краев лунки, марлевый шарик на 20 минут. Подробные рекомендации после удаления.",
+		isBuiltIn: true,
+	},
+	pediatric_adaptation: {
+		id: "canonical_pediatric_adaptation_z012",
+		title: "Детский: Адаптационный приём Z01.2",
+		category: "Детская стоматология",
+		defaultIcd10: "Z01.2",
+		prefilledAnamnesis:
+			"Ребёнок пришел на приём в сопровождении законного представителя (родителя). Жалоб на боли нет. Цель визита — первичное знакомство со стоматологическим кабинетом, формирование позитивного отношения к лечению зубов, профилактический осмотр. Аллергоанамнез со слов родителей не отягощен. Соматически здоров.",
+		prefilledObjective:
+			"Поведение по шкале Франкла: положительное (+) / абсолютно положительное (++). Ребёнок контактен, с интересом исследует обстановку кабинета. Конфигурация лица симметрична, лимфатические узлы не пальпируются. Слизистая оболочка полости рта бледно-розовая, чистая, влажная. Уздечки губ и языка прикреплены типично. Прикус сменный/временный, соответствует возрасту. Зубные ряды интактны / выявлены очаги деминерализации эмали, требующие плановой санации.",
+		prefilledTreatment:
+			"Психологическая адаптация ребёнка по технике Tell-Show-Do («Расскажи-Покажи-Сделай»). Демонстрация работы стоматологического зеркальца и «ветерочка» (пустера). Проведена бережная чистка зубов мягкой циркулярной щеточкой с детской полировочной пастой без абразива и без давления. Обучение ребёнка и родителей правильной технике чистки зубов на демонстрационной модели. Вручен поощрительный подарок за смелость. Контакт налажен, страх стоматолога отсутствует. Рекомендован повторный профилактический осмотр через 3–4 месяца.",
+		isBuiltIn: true,
+	},
+	pediatric_caries: {
+		id: "canonical_pediatric_caries_k021",
+		title: "Детский: Кариес молочного зуба K02.1",
+		category: "Детская стоматология",
+		defaultIcd10: "K02.1",
+		prefilledAnamnesis:
+			"Ребёнок в сопровождении законного представителя. Жалобы со стороны родителей на наличие темного пятна / кариозной полости во временном зубе, кратковременную реакцию на сладкое или холодное. Соматически здоров, аллергоанамнез без особенностей. По шкале Франкла: контактен, сотрудничает (+).",
+		prefilledObjective:
+			"Слизистая полости рта бледно-розовая, без признаков острого воспаления. Во временном зубе определяется кариозная полость средней глубины в пределах дентина, выполненная размягченным пигментированным дентином. Зондирование эмалево-дентинной границы слабо чувствительно, дно плотное, полость зуба закрыта. Перкуссия безболезненная. Реакция на холод кратковременная, сразу купируется. Физиологическая резорбция корней соответствует возрастной норме.",
+		prefilledTreatment:
+			"Аппликационная анестезия гелем (вкус вишня/клубника) + при необходимости деликатная инфильтрационная анестезия (Артикаин 1:200 000 по массе тела ребёнка, < 0.5 карпулы). Изоляция рабочего поля (коффердам / OptiDam / валики). Бережное препарирование кариозной полости твердосплавными шаровидными борами на пониженных оборотах с водно-воздушным охлаждением. Медикаментозная обработка 0.05% хлоргексидином. Реставрация: пломбирование цветным компомером Twinky Star / стеклоиономерным цементом Fuji IX / Vitremer с выделением фтора. Моделирование анатомической формы коронки зуба, фотополимеризация. Финишная шлифовка и полировка головками Enhance, покрытие фторлаком Clinpro White Varnish. Контроль окклюзии.",
+		isBuiltIn: true,
+	},
+	pediatric_pulpotomy: {
+		id: "canonical_pediatric_pulpotomy_k040",
+		title: "Детский: Пульпотомия молочного зуба K04.0",
+		category: "Детская стоматология",
+		defaultIcd10: "K04.0",
+		prefilledAnamnesis:
+			"Ребёнок в сопровождении родителя. Жалобы на боли во временном зубе от температурных раздражителей, боли во время приема пищи, ноющие боли накануне вечером. Обезболивающие препараты (Нурофен) с временным эффектом. Соматически здоров, аллергии нет. Поведение по Франклу: контактен (+/-).",
+		prefilledObjective:
+			"Во временном моляре глубокая кариозная полость, сообщающаяся с полостью зуба. Зондирование вскрытой точки коронковой пульпы резко болезненно, пульпа ярко-красного цвета, кровоточит. Перкуссия безболезненна или слабо чувствительна. Подвижности зуба нет. На прицельном RVG-снимке: сообщение кариозной полости с пульпарной камерой, периодонтальная щель без патологических изменений, корни без признаков патологической резорбции.",
+		prefilledTreatment:
+			"Аппликационная + инфильтрационная / мандибулярная анестезия (Артикаин 4% 1:200 000 дозировка по весу ребёнка). Изоляция коффердамом. Раскрытие полости зуба, полная ампутация коронковой пульпы (пульпотомия) шаровидным бором на высоких оборотах с обильным охлаждением до устьев корневых каналов. Гемостаз стерильным ватным тампоном с физраствором / 3% перекисью водорода в течение 2-3 минут. Нанесение лечебного препарата на устья корневой пульпы (Pulpotec / МТА ProRoot / минерал триоксид агрегат), герметизация стеклоиономерным подкладочным цементом Fuji / Vitremer. Восстановление коронковой части зуба: стандартная металлическая/циркониевая коронка NuSmile / реставрация СИЦ/композитом. Рентген-контроль.",
+		isBuiltIn: true,
+	},
+	pediatric_silvering_fluoride: {
+		id: "canonical_pediatric_silvering_fluoride_k020",
+		title: "Детский: Серебрение / Глубокое фторирование K02.0",
+		category: "Детская стоматология",
+		defaultIcd10: "K02.0",
+		prefilledAnamnesis:
+			"Ребёнок раннего детского возраста (до 3-4 лет) в сопровождении законного представителя. Жалобы на множественные белые/светло-коричневые пятна на передних временных зубах («бутылочный кариес»). Родители отмечают беспокойство ребёнка при чистке зубов. Соматически здоров. Поведение по Франклу: настороженное / адаптивное.",
+		prefilledObjective:
+			"Осмотр: на вестибулярных и контактных поверхностях верхних резцов и моляров определяются множественные очаги деминерализации эмали, циркулярный кариес в стадии пятна/поверхностного дефекта (K02.0). Зондирование шероховатое, безболезненное. Перкуссия безболезненна. Слизистая оболочка полости рта без признаков острого воспаления.",
+		prefilledTreatment:
+			"Очищение поверхностей зубов марлевым тампоном и щеточкой. Изоляция десны и губ ватными валиками, высушивание слабой струей воздуха. Проведена обработка кариозных поверхностей стабилизированным диаминофторидом серебра 38% (Сафорайд / Saforide) методом втирания в течение 2 минут / аппликация эмаль-герметизирующего ликвида глубокого фторирования (Tiefenfluorid / Белак-F). Родители предупреждены о стойком окрашивании кариозных зон в темно-коричневый цвет (при серебрении) и дали согласие. Назначен курс из 3 аппликаций через день и повторный осмотр через 3 месяца.",
 		isBuiltIn: true,
 	},
 };
@@ -449,7 +512,7 @@ export function VisitDiaryTemplateSelector({
 	]);
 
 	const applyCanonicalTemplate = useCallback(
-		(key: "caries" | "pulpitis" | "periodontitis" | "hygiene" | "extraction") => {
+		(key: CanonicalSoapTemplateKey) => {
 			if (isLocked) return;
 			const canonical = CANONICAL_SOAP_TEMPLATES[key];
 			setSelectedTemplate(canonical.id);
@@ -483,70 +546,135 @@ export function VisitDiaryTemplateSelector({
 				data-testid="btn-quick-soap-caries"
 				disabled={isLocked}
 				onClick={() => applyCanonicalTemplate("caries")}
-				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
 					isLocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Кариес дентина K02.1: OptiBond FL / Single Bond, светоотверждаемый композит, шлифовка/полировка Enhance"
 				}
 			>
-				<span>🦷 Кариес K02.1</span>
+				<span>Кариес K02.1</span>
 			</button>
 			<button
 				type="button"
 				data-testid="btn-quick-soap-pulpitis"
 				disabled={isLocked}
 				onClick={() => applyCanonicalTemplate("pulpitis")}
-				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
 					isLocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Острый пульпит K04.0: мехобработка ProTaper / WaveOne, ирригация NaOCl 3%, обтурация гуттаперчей + AH Plus"
 				}
 			>
-				<span>⚡ Пульпит K04.0</span>
+				<span>Пульпит K04.0</span>
 			</button>
 			<button
 				type="button"
 				data-testid="btn-quick-soap-periodontitis"
 				disabled={isLocked}
 				onClick={() => applyCanonicalTemplate("periodontitis")}
-				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
 					isLocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Периодонтит K04.7: распломбировка/обработка каналов, лечебная паста Ca(OH)2 на 10-14 дней, Septo-pack / Cavit"
 				}
 			>
-				<span>🩸 Периодонтит K04.7</span>
+				<span>Периодонтит K04.7</span>
 			</button>
 			<button
 				type="button"
 				data-testid="btn-quick-soap-hygiene"
 				disabled={isLocked}
 				onClick={() => applyCanonicalTemplate("hygiene")}
-				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
 					isLocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Профгигиена K03.6: ультразвук Piezon, Air-Flow с порошком на основе глицина, Detartrine, Bifluorid 12"
 				}
 			>
-				<span>✨ Профгигиена K03.6</span>
+				<span>Профгигиена K03.6</span>
 			</button>
 			<button
 				type="button"
 				data-testid="btn-quick-soap-extraction"
 				disabled={isLocked}
 				onClick={() => applyCanonicalTemplate("extraction")}
-				className="min-h-[36px] px-2.5 py-1 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
 					isLocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Удаление зуба K01.1 / K04.7: люксация, элевация, щипцы, кюретаж лунки, гемостаз, альвожиль"
 				}
 			>
-				<span>🩹 Удаление K01.1/K04.7</span>
+				<span>Удаление K01.1/K04.7</span>
+			</button>
+
+			{/* 4 детских 1-клик протокола (Мандаты 8e, 8i, 8k, 8n) */}
+			<span className="text-[11px] font-bold text-[var(--teal)] uppercase tracking-wider flex items-center gap-1 ml-1 sm:ml-2">
+				<Baby className="w-3.5 h-3.5 text-[var(--teal)]" /> Детский 1-Клик:
+			</span>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-pediatric-adaptation"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("pediatric_adaptation")}
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+				title={
+					isLocked
+						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
+						: "Адаптационный приём Z01.2: Tell-Show-Do, мягкая чистка, подарок, контакт налажен"
+				}
+			>
+				<Smile className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+				<span>Адаптация Z01.2</span>
+			</button>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-pediatric-caries"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("pediatric_caries")}
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 dark:text-blue-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+				title={
+					isLocked
+						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
+						: "Кариес молочного зуба K02.1: Twinky Star / СИЦ Fuji IX / Vitremer, глубокое фторирование"
+				}
+			>
+				<HeartPulse className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+				<span>Кариес молочн. K02.1</span>
+			</button>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-pediatric-pulpotomy"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("pediatric_pulpotomy")}
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+				title={
+					isLocked
+						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
+						: "Пульпотомия молочного зуба K04.0: Pulpotec / МТА / коронка NuSmile, гемостаз"
+				}
+			>
+				<Sparkles className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+				<span>Пульпотомия K04.0</span>
+			</button>
+			<button
+				type="button"
+				data-testid="btn-quick-soap-pediatric-silvering-fluoride"
+				disabled={isLocked}
+				onClick={() => applyCanonicalTemplate("pediatric_silvering_fluoride")}
+				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+				title={
+					isLocked
+						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
+						: "Серебрение / глубокое фторирование эмали K02.0: Сафорайд 38% / Белак / Tiefenfluorid"
+				}
+			>
+				<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+				<span>Серебрение / Фтор K02.0</span>
 			</button>
 		</div>
 	);

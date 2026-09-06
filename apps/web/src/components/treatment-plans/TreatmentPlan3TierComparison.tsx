@@ -44,15 +44,17 @@ import { isMicroConsumable } from "./TreatmentPlanPresenterModal";
 
 export interface TreatmentPlan3TierComparisonProps {
 	readonly tiers: readonly TreatmentPlanTier[];
-	readonly selectedTierId?: TreatmentPlanTierId;
-	readonly onSelectTier?: (tier: TreatmentPlanTier) => void;
-	readonly onApproveAndSign?: (tier: TreatmentPlanTier) => void;
-	readonly onOpenComparatorStudio?: () => void;
-	readonly onOpenStagePaymentStudio?: () => void;
-	readonly onOpenPriceValidatorStudio?: () => void;
-	readonly onOpenInstallment?: (tier: TreatmentPlanTier) => void;
-	readonly onPrintContract?: (tier: TreatmentPlanTier) => void;
-	readonly className?: string;
+	readonly selectedTierId?: TreatmentPlanTierId | undefined;
+	readonly planAgeDays?: number | undefined;
+	readonly planCreatedAtIso?: string | undefined;
+	readonly onSelectTier?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onApproveAndSign?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onOpenComparatorStudio?: (() => void) | undefined;
+	readonly onOpenStagePaymentStudio?: (() => void) | undefined;
+	readonly onOpenPriceValidatorStudio?: (() => void) | undefined;
+	readonly onOpenInstallment?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onPrintContract?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly className?: string | undefined;
 }
 
 function getTierShortLabel(tier: TreatmentPlanTier): string {
@@ -76,6 +78,8 @@ function getTierShortLabel(tier: TreatmentPlanTier): string {
 export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparisonProps> = ({
 	tiers,
 	selectedTierId = "optimum",
+	planAgeDays,
+	planCreatedAtIso,
 	onSelectTier,
 	onApproveAndSign,
 	onOpenComparatorStudio,
@@ -90,6 +94,13 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 	const [showNdflBreakdown, setShowNdflBreakdown] = useState<boolean>(true);
 	const [expandedStagesTierId, setExpandedStagesTierId] = useState<TreatmentPlanTierId | null>("optimum");
 	const [activePaymentMode, setActivePaymentMode] = useState<"installment" | "staged" | "discount">("installment");
+
+	const effectivePlanAgeDays =
+		typeof planAgeDays === "number"
+			? planAgeDays
+			: planCreatedAtIso
+				? Math.floor((Date.now() - new Date(planCreatedAtIso).getTime()) / (1000 * 60 * 60 * 24))
+				: 0;
 
 	// Синхронизация внешнего выбранного тарифа
 	useEffect(() => {
@@ -470,6 +481,19 @@ export const TreatmentPlan3TierComparison: React.FC<TreatmentPlan3TierComparison
 			className={`treatment-3tier-comparison flex flex-col gap-4 sm:gap-6 w-full pb-60 sm:pb-36 ${className}`.trim()}
 			data-testid="treatment-3tier-comparison"
 		>
+			{/* 30-Day Plan Age Unblocked Notice (Mandate 8e) */}
+			{effectivePlanAgeDays > 30 && (
+				<div
+					className="flex items-center gap-2.5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-xs font-semibold shadow-2xs"
+					data-testid="comparison-expired-unblocked-badge"
+				>
+					<Clock size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+					<span>
+						План лечения составлен {effectivePlanAgeDays} дн. назад. Стоимость зафиксирована по согласованию с врачом. Оказание услуг, оформление нарядов ЗТЛ и оплата производятся без ограничений (Мандат 8e).
+					</span>
+				</div>
+			)}
+
 			{/* Top Control Bar: Installments, Modes & Studio Triggers */}
 			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-3xl bg-[var(--paper-soft,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] text-xs text-[var(--ink,#0f172a)] shadow-xs">
 				<div className="flex items-center gap-3 min-w-0">

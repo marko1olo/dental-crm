@@ -78,7 +78,7 @@ export function generateComprehensivePerio043Text(
 	lines.push(`   Характеристика: ${diagnosis.stageDescriptionRu}`);
 	lines.push("");
 	lines.push("5. Рекомендованный план лечения и пародонтальной терапии:");
-	lines.push("   • Профессиональная гигиена полости рта (ультразвуковой скейлинг + полировка AirFlow).");
+	lines.push("   • Профессиональная гигиена полости рта (ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal).");
 	if (currentSummary.deepPocketsCount > 0 || currentSummary.maxPocketDepthMm >= 4) {
 		lines.push("   • Поддесневой скейлинг и сглаживание корней (Scaling & Root Planing / SRP) по секстантам под инфильтрационной анестезией.");
 		lines.push("   • Вектор-терапия / ультразвуковая антисептическая обработка пародонтальных карманов.");
