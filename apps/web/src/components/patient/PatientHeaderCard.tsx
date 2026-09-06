@@ -363,7 +363,7 @@ export const PatientHeaderCard: React.FC<PatientHeaderCardProps> = ({
 					<AlertOctagon size={18} className="text-rose-600 dark:text-rose-400 shrink-0 animate-pulse" />
 					<div className="flex-1 min-w-0">
 						<span className="uppercase tracking-wider font-black mr-1 text-[11px] text-rose-700 dark:text-rose-300">
-							⛔ АЛЛЕРГИЯ / СТОП-ФАКТОР:
+							АЛЛЕРГИЯ / СТОП-ФАКТОР:
 						</span>
 						<span className="break-words">{allergyText}</span>
 					</div>

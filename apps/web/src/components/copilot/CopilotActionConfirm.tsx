@@ -262,13 +262,15 @@ export const CopilotActionConfirm: React.FC<CopilotActionConfirmProps> = ({
                   : 'pending'
               }`}
             >
-              {resolved === 'confirm'
-                ? '✅ Подтверждено'
-                : resolved === 'reject'
-                ? '❌ Отклонено'
-                : isEditing
-                ? '✏️ Редактирование'
-                : 'Требуется подтверждение'}
+              {resolved === 'confirm' ? (
+                <span className="inline-flex items-center gap-1"><Check size={12} /> Подтверждено</span>
+              ) : resolved === 'reject' ? (
+                <span className="inline-flex items-center gap-1"><X size={12} /> Отклонено</span>
+              ) : isEditing ? (
+                <span className="inline-flex items-center gap-1"><Edit3 size={12} /> Редактирование</span>
+              ) : (
+                'Требуется подтверждение'
+              )}
             </span>
           </div>
 

@@ -1467,7 +1467,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 										<button
 											type="button"
 											onClick={() => setShowMicroConsumables(!showMicroConsumables)}
-											className="min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 cursor-pointer transition-colors inline-flex items-center justify-center"
+											className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 cursor-pointer transition-colors inline-flex items-center justify-center"
 											title="Скрывать мелкие расходные материалы (салфетки, валики, слюноотсосы) для чистоты сметы"
 										>
 											{showMicroConsumables ? "Скрыть микро-расходники" : "Детализировать микро-расходники"}

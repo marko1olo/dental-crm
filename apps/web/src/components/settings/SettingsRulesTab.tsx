@@ -6,7 +6,11 @@ import type {
 } from "@dental/shared";
 import {
 	Activity,
+	Ban,
+	CheckCircle2,
+	Flame,
 	Library,
+	Plus,
 	Power,
 	PowerOff,
 	Settings,
@@ -321,7 +325,7 @@ export function SettingsRulesTab() {
 
 					<div className="rules-builder-group full-width rules-service-grid">
 						<div className="rules-service-item">
-							<span>🔥 Услуга-триггер</span>
+							<span className="flex items-center gap-1.5"><Flame size={14} className="text-amber-500 shrink-0" /> Услуга-триггер</span>
 							<input
 								className="rules-builder-input"
 								type="text"
@@ -341,7 +345,7 @@ export function SettingsRulesTab() {
 							/>
 						</div>
 						<div className="rules-service-item">
-							<span>➕ Обязательно добавить</span>
+							<span className="flex items-center gap-1.5"><Plus size={14} className="text-teal-500 shrink-0" /> Обязательно добавить</span>
 							<input
 								className="rules-builder-input"
 								type="text"
@@ -361,7 +365,7 @@ export function SettingsRulesTab() {
 							/>
 						</div>
 						<div className="rules-service-item">
-							<span>✅ Должно быть завершено</span>
+							<span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-emerald-500 shrink-0" /> Должно быть завершено</span>
 							<input
 								className="rules-builder-input"
 								type="text"
@@ -381,7 +385,7 @@ export function SettingsRulesTab() {
 							/>
 						</div>
 						<div className="rules-service-item">
-							<span>⛔ Блокировать услугу</span>
+							<span className="flex items-center gap-1.5"><Ban size={14} className="text-rose-500 shrink-0" /> Блокировать услугу</span>
 							<input
 								className="rules-builder-input"
 								type="text"
@@ -544,22 +548,22 @@ export function SettingsRulesTab() {
 								<div className="premium-rule-conditions">
 									{(rule.triggerServiceIds ?? []).map((serviceId) => (
 										<span key={`${rule.id}-t-${serviceId}`}>
-											🔥 Если: {serviceTitle(serviceId)}
+											<Flame size={12} className="inline mr-1 text-amber-500 shrink-0" /> Если: {serviceTitle(serviceId)}
 										</span>
 									))}
 									{(rule.requiredServiceIds ?? []).map((serviceId) => (
 										<span key={`${rule.id}-r-${serviceId}`}>
-											➕ Добавить: {serviceTitle(serviceId)}
+											<Plus size={12} className="inline mr-1 text-teal-500 shrink-0" /> Добавить: {serviceTitle(serviceId)}
 										</span>
 									))}
 									{(rule.requiresCompletedServiceIds ?? []).map((serviceId) => (
 										<span key={`${rule.id}-c-${serviceId}`}>
-											✅ Нужно: {serviceTitle(serviceId)}
+											<CheckCircle2 size={12} className="inline mr-1 text-emerald-500 shrink-0" /> Нужно: {serviceTitle(serviceId)}
 										</span>
 									))}
 									{(rule.blockedServiceIds ?? []).map((serviceId) => (
 										<span className="blocked" key={`${rule.id}-b-${serviceId}`}>
-											⛔ Блок: {serviceTitle(serviceId)}
+											<Ban size={12} className="inline mr-1 text-rose-500 shrink-0" /> Блок: {serviceTitle(serviceId)}
 										</span>
 									))}
 								</div>

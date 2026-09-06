@@ -1196,7 +1196,7 @@ export function SettingsPricesTab() {
 											})
 										}
 									/>
-									<span>🧾 Учитывать в справках на налоговый вычет</span>
+									<span className="flex items-center gap-1.5"><ReceiptText size={14} className="text-amber-600 dark:text-amber-400 shrink-0" /> Учитывать в справках на налоговый вычет</span>
 								</label>
 								<label className="permission-toggle">
 									<input
@@ -1209,7 +1209,7 @@ export function SettingsPricesTab() {
 											})
 										}
 									/>
-									<span>🟢 Услуга активна (доступна для записи)</span>
+									<span className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" /> Услуга активна (доступна для записи)</span>
 								</label>
 							</div>
 

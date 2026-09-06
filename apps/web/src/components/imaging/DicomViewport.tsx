@@ -206,7 +206,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 				if (lastPt) {
 					ctx.fillStyle = "#10b981";
 					ctx.font = "bold 13px monospace";
-					ctx.fillText(`⚡ WL = ${canalResult.totalLengthMm.toFixed(1)} мм (Апекс)`, lastPt.x + 8, lastPt.y - 8);
+					ctx.fillText(`WL = ${canalResult.totalLengthMm.toFixed(1)} мм (Апекс)`, lastPt.x + 8, lastPt.y - 8);
 				}
 			}
 			ctx.restore();
@@ -319,7 +319,7 @@ export const DicomViewport: React.FC<DicomViewportProps> = ({
 					lengthPx: m.totalLengthPx,
 					lengthMm: m.totalLengthMm,
 					calibrationMmPerPixel: viewportState.calibrationMmPerPixel,
-					labelRu: `⚡ Канал: ${m.totalLengthMm.toFixed(1)} мм (WL/Apex)`,
+					labelRu: `Канал: ${m.totalLengthMm.toFixed(1)} мм (WL/Apex)`,
 				});
 			}
 			setDraftCanalPoints([]);

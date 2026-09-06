@@ -661,8 +661,9 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 												</span>
 											)}
 											{attr.sipCallDurationSeconds && attr.sipCallDurationSeconds > 0 ? (
-												<span className="marketing-roi-chip">
-													📞 SIP Запись ({attr.sipCallDurationSeconds} сек, {attr.sipProvider})
+												<span className="marketing-roi-chip inline-flex items-center gap-1">
+													<PhoneCall size={12} className="text-teal-400 shrink-0" />
+													<span>SIP Запись ({attr.sipCallDurationSeconds} сек, {attr.sipProvider})</span>
 												</span>
 											) : null}
 										</div>

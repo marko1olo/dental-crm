@@ -14,6 +14,7 @@
  */
 
 import type React from "react";
+import { Ban } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { usePatientResource } from "../../hooks/usePatientResource";
 import { formatShortDate } from "../../utils/formatting";
@@ -71,7 +72,7 @@ export const PatientArchiveReasonsAndBlacklistsWidget: React.FC<{
 		>
 			<div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-800 pb-2">
 				<div className="flex items-center space-x-2">
-					<span className="text-xl">🚫</span>
+					<Ban className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
 					{/* Было «Причины Архивации и Режим „Запрет Записи“ (Черный Список)» —
 						название раздела, написанное как заголовок инструкции. */}
 					<h3 className="font-semibold text-sm text-rose-700 dark:text-rose-400">

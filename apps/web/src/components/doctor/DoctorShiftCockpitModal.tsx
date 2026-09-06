@@ -268,7 +268,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 				const nextState = !prev;
 				if (nextState) {
 					setAssistantAlertDismissed(false);
-					showToast(`🔔 Вызов ассистента отправлен в ${cabinetName}`, "warning");
+					showToast(`Вызов ассистента отправлен в ${cabinetName}`, "warning");
 				} else {
 					showToast("Вызов ассистента отменен", "info");
 				}
@@ -637,7 +637,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 														<ShieldAlert size={14} className="shrink-0 text-rose-600 dark:text-rose-400" />
 														<span>
 															{/артикаин/i.test(activeAppointment.treatmentDescription || "")
-																? "Аллергия: Артикаин ⚠️"
+																? "Аллергия: Артикаин (риск шока)"
 																: "Аллергия: Лидокаин, Новокаин (отек Квинке)"}
 														</span>
 													</div>
@@ -901,7 +901,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 												<div className="mt-2.5 flex items-center gap-2 flex-wrap">
 													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-800/60 text-[11px] font-bold">
 														<ShieldAlert size={12} className="text-amber-600 dark:text-amber-400" />
-														<span>Аллергия: Артикаин ⚠️</span>
+														<span>Аллергия: Артикаин (риск шока)</span>
 													</span>
 													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-[var(--paper-soft,#1e293b)] text-slate-600 dark:text-[var(--ink-2,#cbd5e1)] border border-slate-200 dark:border-[var(--line,#334155)] text-[11px] font-semibold" data-testid="next-patient-emr-status">
 														<FileText size={12} className="text-teal-600 dark:text-teal-400" />

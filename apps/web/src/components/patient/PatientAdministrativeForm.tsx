@@ -1,5 +1,6 @@
 import type { PatientAdministrativeProfile } from "@dental/shared";
 import React, { type ChangeEvent } from "react";
+import { FileText } from "lucide-react";
 import {
 	formatOmsPolicy,
 	formatPhoneNumber,
@@ -138,7 +139,8 @@ export function PatientAdministrativeForm({
 					className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
 					data-testid="admin-form-print-blank-contract-btn"
 				>
-					<span>📄 Распечатать пустой договор (_______)</span>
+					<FileText size={15} className="shrink-0" />
+					<span>Распечатать пустой договор (_______)</span>
 				</button>
 			</div>
 

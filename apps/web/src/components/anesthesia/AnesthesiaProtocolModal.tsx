@@ -236,7 +236,7 @@ export function AnesthesiaProtocolModal({
 							<button
 								type="button"
 								onClick={onOpenEmergencyProtocol}
-								className="anesthesia-btn"
+								className="anesthesia-btn flex items-center gap-1.5"
 								style={{
 									minHeight: '32px',
 									padding: '0.25rem 0.625rem',
@@ -250,7 +250,8 @@ export function AnesthesiaProtocolModal({
 								title="Экстренная помощь: Анафилаксия, токсичность (LAST), коллапс (112)"
 								data-testid="btn-anesthesia-open-emergency"
 							>
-								🚨 ШОК / LAST 112
+								<ShieldAlert size={14} className="shrink-0" />
+								<span>ШОК / LAST 112</span>
 							</button>
 						)}
 						<button

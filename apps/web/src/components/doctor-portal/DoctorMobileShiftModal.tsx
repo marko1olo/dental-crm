@@ -342,7 +342,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 								data-testid="session-pep-sign-btn"
 							>
 								<Zap size={16} />
-								<span>⚡ Подписать ПЭП сессии ({unsignedAppointmentIds.length})</span>
+								<span>Подписать ПЭП сессии ({unsignedAppointmentIds.length})</span>
 							</button>
 							<button
 								type="button"
@@ -466,7 +466,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 								data-testid="emergency-patient-btn"
 							>
 								<Zap size={15} />
-								<span>⚡ Принять экстренного пациента (острая боль)</span>
+								<span>Принять экстренного пациента (острая боль)</span>
 							</button>
 						</div>
 					) : filteredAppointments.length === 0 ? (
@@ -631,7 +631,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 													title="Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)"
 												>
 													<Zap size={14} />
-													<span>⚡ Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
+													<span>Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
 												</button>
 												<button
 													type="button"
@@ -764,7 +764,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 								title="Подписать сессионной ПЭП без ожидания СМС"
 							>
 								<Zap size={14} />
-								<span>⚡ Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
+								<span>Подписать сессионной ПЭП (Авторизован в системе по 63-ФЗ ст. 9)</span>
 							</button>
 						</div>
 					</div>
