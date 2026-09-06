@@ -75,7 +75,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 		patientName: string;
 		planId: string;
 		planTitle: string;
-		currentCuratorId?: string;
+		currentCuratorId?: string | null | undefined;
 	} | null>(null);
 
 	// Local queue state (can be advanced interactively)

@@ -24,7 +24,7 @@ describe("SanPiN Microclimate & Bactericidal Zero-Setup Provisioning (Mandates 8
 		it("provides standard presets for Pozis pharmacy refrigerator and dental cabinet VIT-2", () => {
 			assert.equal(CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS.length, 2);
 
-			const pozis = CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS[0];
+			const pozis = CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS[0]!;
 			assert.equal(pozis.equipmentType, "refrigerator_cold");
 			assert.ok(pozis.name.includes("Pozis ХФ-250"));
 			assert.equal(pozis.targetTempMinCelsius, 2.0);
@@ -37,7 +37,7 @@ describe("SanPiN Microclimate & Bactericidal Zero-Setup Provisioning (Mandates 8
 			assert.equal(validatedPozis.equipmentType, "refrigerator_cold");
 			assert.equal(validatedPozis.isActive, true);
 
-			const vit2 = CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS[1];
+			const vit2 = CANONICAL_TEMPERATURE_EQUIPMENT_PRESETS[1]!;
 			assert.equal(vit2.equipmentType, "storage_room");
 			assert.ok(vit2.name.includes("ВИТ-2"));
 			assert.equal(vit2.targetTempMinCelsius, 15.0);
@@ -95,12 +95,12 @@ describe("SanPiN Microclimate & Bactericidal Zero-Setup Provisioning (Mandates 8
 
 			assert.equal(result.length, 2);
 			assert.equal(postCalls.length, 2);
-			assert.equal(postCalls[0].url, "/api/registers/temperature-humidity/equipments");
-			assert.ok(postCalls[0].body.name.includes("Pozis"));
-			assert.equal(postCalls[1].url, "/api/registers/temperature-humidity/equipments");
-			assert.ok(postCalls[1].body.name.includes("ВИТ-2"));
-			assert.equal(result[0].id, "mock-temp-1");
-			assert.equal(result[1].id, "mock-temp-2");
+			assert.equal(postCalls[0]!.url, "/api/registers/temperature-humidity/equipments");
+			assert.ok(postCalls[0]!.body.name.includes("Pozis"));
+			assert.equal(postCalls[1]!.url, "/api/registers/temperature-humidity/equipments");
+			assert.ok(postCalls[1]!.body.name.includes("ВИТ-2"));
+			assert.equal(result[0]!.id, "mock-temp-1");
+			assert.equal(result[1]!.id, "mock-temp-2");
 		});
 
 		it("provisionCanonicalBactericidalEquipment executes POST request for canonical recirculator", async () => {
@@ -130,8 +130,8 @@ describe("SanPiN Microclimate & Bactericidal Zero-Setup Provisioning (Mandates 8
 			assert.ok(result);
 			assert.equal(result.id, "mock-bac-1");
 			assert.equal(postCalls.length, 1);
-			assert.equal(postCalls[0].url, "/api/registers/bactericidal/equipments");
-			assert.ok(postCalls[0].body.deviceBrand.includes("Дезар-4"));
+			assert.equal(postCalls[0]!.url, "/api/registers/bactericidal/equipments");
+			assert.ok(postCalls[0]!.body.deviceBrand.includes("Дезар-4"));
 		});
 	});
 
