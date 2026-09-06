@@ -2015,7 +2015,7 @@ export function VisitEmkTab() {
 										type="button"
 										onClick={() => applyTextFormatting(field.key, "check")}
 										className="h-6 px-1.5 rounded hover:bg-[var(--paper-strong)] hover:text-[var(--ink)] text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
-										title="Отметка выполнения ([✓] )"
+										title="Отметка выполнения"
 										aria-label="Выполнено"
 									>
 										<CheckSquare size={12} />
@@ -3534,7 +3534,7 @@ export function VisitEmkTab() {
 								className="flex-1 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-extrabold bg-[var(--ok-fg)] hover:opacity-90 text-white transition-all cursor-pointer flex items-center justify-center gap-1.5"
 								data-testid="btn-confirm-sbp-paid"
 							>
-								<span>✓</span>
+								<Check size={16} className="shrink-0" />
 								<span>Подтвердить оплату</span>
 							</button>
 							<button
