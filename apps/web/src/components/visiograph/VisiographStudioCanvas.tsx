@@ -68,11 +68,43 @@ import {
 	computeCalibration,
 	DEFAULT_PIXEL_SCALE_MM,
 	distance2D,
+	recalculateLesionsWithScale,
+	recalculateRulersWithScale,
 	type AngleMeasurement,
 	type PeriapicalLesion,
 	type Point2D,
 	type RulerMeasurement,
 } from "./VisiographMeasurementMath";
+
+export interface SensorCalibrationPreset {
+	readonly id: string;
+	readonly label: string;
+	readonly pixelSizeMm: number;
+	readonly description: string;
+}
+
+export const STANDARD_SENSOR_PRESETS: readonly SensorCalibrationPreset[] = [
+	{
+		id: "rvg_size_1",
+		label: "Датчик RVG Размер 1 (20 мкм)",
+		pixelSizeMm: 0.020,
+		description: "Прицельный датчик 0.020 мм/пикс",
+	},
+	{
+		id: "rvg_size_2",
+		label: "Датчик RVG Размер 2 (25 мкм)",
+		pixelSizeMm: 0.025,
+		description: "Прицельный датчик 0.025 мм/пикс",
+	},
+	{
+		id: "opg_standard",
+		label: "ОПТГ стандарт (50 мкм)",
+		pixelSizeMm: 0.050,
+		description: "Панорамный снимок 0.050 мм/пикс",
+	},
+];
+
+export { recalculateRulersWithScale, recalculateLesionsWithScale };
 
 export interface VisiographStudioCanvasProps {
 	imageUrl: string;
@@ -130,7 +162,8 @@ export function VisiographStudioCanvas({
 	// Active tool
 	const [activeTool, setActiveTool] = useState<ActiveVisiographTool>(initialTool);
 
-	// Calibration
+	// Calibration & 1-Click Sensor Presets
+	const [activeSensorPresetId, setActiveSensorPresetId] = useState<string | null>(null);
 	const [calibration, setCalibration] = useState<CalibrationReference>({
 		type: "sphere_5mm",
 		p1: { x: 0, y: 0 },
@@ -466,6 +499,8 @@ export function VisiographStudioCanvas({
 				calibration.scaleMmPerPixel,
 				`Канал: ${lengthMm.toFixed(1)} мм (WL/Апекс)`,
 			);
+			newRuler.lengthPx = totalDist;
+			newRuler.lengthMm = lengthMm;
 			newRuler.color = "#10b981";
 			setRulers((prev) => [...prev, newRuler]);
 			setDrawingPoints([]);
@@ -487,6 +522,42 @@ export function VisiographStudioCanvas({
 	const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
 		const pt = getCanvasPoint(e);
 		setHoverPos(pt);
+	};
+
+	// 1-Click Clinical Sensor Preset Application (Mandates 8d, 8e, 8k)
+	const handleApplySensorPreset = (preset: SensorCalibrationPreset) => {
+		setActiveSensorPresetId(preset.id);
+		setIsCalibrated(true);
+		const newScale = preset.pixelSizeMm;
+		setCalibration((prev) => ({
+			...prev,
+			type: "custom_mm",
+			knownLengthMm: newScale * 100,
+			pixelDistance: 100,
+			scaleMmPerPixel: newScale,
+		}));
+
+		// Recalculate all committed rulers and periapical lesions in 1 click
+		setRulers((prev) => recalculateRulersWithScale(prev, newScale));
+		setLesions((prev) => recalculateLesionsWithScale(prev, newScale));
+
+		// Dispatch updated endodontic WL to Form 043/u if canal ruler exists
+		if (typeof window !== "undefined") {
+			const canalRuler = rulers.find(
+				(r) => r.label?.includes("WL") || r.label?.includes("Канал:"),
+			);
+			if (canalRuler) {
+				const updatedLength = canalRuler.lengthPx * newScale;
+				window.dispatchEvent(
+					new CustomEvent("dente-endo-wl-measured", {
+						detail: {
+							toothNumber: toothCode ? Number(toothCode) : 16,
+							lengthMm: Math.round(updatedLength * 10) / 10,
+						},
+					}),
+				);
+			}
+		}
 	};
 
 	// Reset adjustments
@@ -620,10 +691,10 @@ export function VisiographStudioCanvas({
 			style={{
 				display: "flex",
 				flexDirection: "column",
-				background: "#0d1117",
-				color: "#c9d1d9",
+				background: "var(--paper, #0d1117)",
+				color: "var(--ink, #c9d1d9)",
 				borderRadius: "12px",
-				border: "1px solid #30363d",
+				border: "1px solid var(--line, #30363d)",
 				overflow: "hidden",
 				minHeight: "580px",
 			}}
@@ -636,8 +707,8 @@ export function VisiographStudioCanvas({
 					alignItems: "center",
 					justifyContent: "space-between",
 					padding: "8px 12px",
-					background: "#161b22",
-					borderBottom: "1px solid #30363d",
+					background: "var(--paper-soft, #161b22)",
+					borderBottom: "1px solid var(--line, #30363d)",
 					gap: "8px",
 				}}
 			>
@@ -651,9 +722,9 @@ export function VisiographStudioCanvas({
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "pointer" ? "#1f6feb" : "#21262d",
-							color: "#ffffff",
-							border: "1px solid #30363d",
+							background: activeTool === "pointer" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+							color: activeTool === "pointer" ? "#ffffff" : "var(--ink, #c9d1d9)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							cursor: "pointer",
@@ -676,9 +747,9 @@ export function VisiographStudioCanvas({
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "ruler" ? "#1f6feb" : "#21262d",
-							color: "#00e5ff",
-							border: "1px solid #30363d",
+							background: activeTool === "ruler" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+							color: activeTool === "ruler" ? "#ffffff" : "var(--primary, #00e5ff)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							cursor: "pointer",
@@ -702,9 +773,9 @@ export function VisiographStudioCanvas({
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "calibrate" ? "#1f6feb" : "#21262d",
-							color: "#76ff03",
-							border: "1px solid #30363d",
+							background: activeTool === "calibrate" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+							color: activeTool === "calibrate" ? "#ffffff" : "var(--success, #76ff03)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							cursor: "pointer",
@@ -728,9 +799,9 @@ export function VisiographStudioCanvas({
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "angle" ? "#1f6feb" : "#21262d",
-							color: "#ffab00",
-							border: "1px solid #30363d",
+							background: activeTool === "angle" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+							color: activeTool === "angle" ? "#ffffff" : "var(--warning, #ffab00)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							cursor: "pointer",
@@ -754,9 +825,9 @@ export function VisiographStudioCanvas({
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "lesion" ? "#1f6feb" : "#21262d",
-							color: "#ff1744",
-							border: "1px solid #30363d",
+							background: activeTool === "lesion" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+							color: activeTool === "lesion" ? "#ffffff" : "var(--danger, #ff1744)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							cursor: "pointer",
@@ -780,9 +851,9 @@ export function VisiographStudioCanvas({
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "root_canal" ? "#047857" : "#21262d",
-							color: activeTool === "root_canal" ? "#a7f3d0" : "#10b981",
-							border: `1px solid ${activeTool === "root_canal" ? "#10b981" : "#30363d"}`,
+							background: activeTool === "root_canal" ? "var(--success, #047857)" : "var(--paper-strong, #21262d)",
+							color: activeTool === "root_canal" ? "#ffffff" : "var(--success, #10b981)",
+							border: `1px solid ${activeTool === "root_canal" ? "var(--success, #10b981)" : "var(--line, #30363d)"}`,
 							borderRadius: "6px",
 							padding: "8px 12px",
 							cursor: "pointer",
@@ -799,6 +870,50 @@ export function VisiographStudioCanvas({
 					</button>
 				</div>
 
+				{/* 1-Click Sensor Calibration Presets */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+					<span style={{ fontSize: "0.82rem", color: "var(--muted, #8b949e)", whiteSpace: "nowrap" }}>
+						Датчик:
+					</span>
+					<select
+						value={activeSensorPresetId ?? (isCalibrated ? "manual" : "")}
+						onChange={(e) => {
+							const val = e.target.value;
+							if (val === "manual") {
+								setActiveSensorPresetId(null);
+								setActiveTool("calibrate");
+								setDrawingPoints([]);
+							} else {
+								const preset = STANDARD_SENSOR_PRESETS.find((p) => p.id === val);
+								if (preset) {
+									handleApplySensorPreset(preset);
+								}
+							}
+						}}
+						style={{
+							minHeight: "44px",
+							background: "var(--paper-strong, #21262d)",
+							color: "var(--ink, #c9d1d9)",
+							border: "1px solid var(--line, #30363d)",
+							borderRadius: "6px",
+							padding: "8px 10px",
+							fontSize: "0.82rem",
+							cursor: "pointer",
+						}}
+						title="1-клик калибровка по стандартным датчикам RVG / ОПТГ (Мандат 8e, 8k)"
+					>
+						<option value="" disabled>
+							Калибровка датчика...
+						</option>
+						{STANDARD_SENSOR_PRESETS.map((p) => (
+							<option key={p.id} value={p.id}>
+								{p.label}
+							</option>
+						))}
+						<option value="manual">Ручная калибровка (шарик / резьба)</option>
+					</select>
+				</div>
+
 				{/* 1-Click Clinical Filters Toolbar */}
 				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
 					{CLINICAL_VISIOGRAPH_FILTERS.map((filter) => {
@@ -810,9 +925,9 @@ export function VisiographStudioCanvas({
 								onClick={() => handleApplyClinicalFilter(filter)}
 								style={{
 									minHeight: "44px",
-									background: isActive ? "#1f6feb" : "#21262d",
-									color: isActive ? "#ffffff" : "#c9d1d9",
-									border: `1px solid ${isActive ? "#58a6ff" : "#30363d"}`,
+									background: isActive ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+									color: isActive ? "#ffffff" : "var(--ink, #c9d1d9)",
+									border: `1px solid ${isActive ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
 									borderRadius: "6px",
 									padding: "8px 12px",
 									fontSize: "0.82rem",
@@ -827,7 +942,7 @@ export function VisiographStudioCanvas({
 								}}
 								title={`${filter.label} (${filter.badge}): ${filter.description}`}
 							>
-								<Zap size={14} style={{ color: isActive ? "#ffd600" : "#58a6ff", fill: isActive ? "#ffd600" : "none" }} />
+								<Zap size={14} style={{ color: isActive ? "#ffd600" : "var(--primary, #58a6ff)", fill: isActive ? "#ffd600" : "none" }} />
 								<span>{filter.label}</span>
 							</button>
 						);
@@ -838,9 +953,9 @@ export function VisiographStudioCanvas({
 						onClick={() => setParams((prev) => ({ ...prev, invert: !prev.invert }))}
 						style={{
 							minHeight: "44px",
-							background: params.invert ? "#238636" : "#21262d",
+							background: params.invert ? "var(--success, #238636)" : "var(--paper-strong, #21262d)",
 							color: "#ffffff",
-							border: "1px solid #30363d",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							fontSize: "0.82rem",
@@ -860,9 +975,9 @@ export function VisiographStudioCanvas({
 						onClick={() => setCanvasRotationDeg((r) => (r + 90) % 360)}
 						style={{
 							minHeight: "44px",
-							background: "#21262d",
-							color: "#c9d1d9",
-							border: "1px solid #30363d",
+							background: "var(--paper-strong, #21262d)",
+							color: "var(--ink, #c9d1d9)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							fontSize: "0.82rem",
@@ -882,9 +997,9 @@ export function VisiographStudioCanvas({
 						onClick={() => setCanvasRotationDeg((r) => (r + 180) % 360)}
 						style={{
 							minHeight: "44px",
-							background: "#21262d",
-							color: "#c9d1d9",
-							border: "1px solid #30363d",
+							background: "var(--paper-strong, #21262d)",
+							color: "var(--ink, #c9d1d9)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "6px",
 							padding: "8px 12px",
 							fontSize: "0.82rem",
@@ -906,9 +1021,9 @@ export function VisiographStudioCanvas({
 							style={{
 								minHeight: "44px",
 								minWidth: "44px",
-								background: "#21262d",
-								color: "#c9d1d9",
-								border: "1px solid #30363d",
+								background: "var(--paper-strong, #21262d)",
+								color: "var(--ink, #c9d1d9)",
+								border: "1px solid var(--line, #30363d)",
 								borderRadius: "6px 0 0 6px",
 								padding: "8px 10px",
 								fontSize: "0.82rem",
@@ -930,10 +1045,10 @@ export function VisiographStudioCanvas({
 							style={{
 								minHeight: "44px",
 								minWidth: "48px",
-								background: "#21262d",
-								color: "#58a6ff",
-								borderTop: "1px solid #30363d",
-								borderBottom: "1px solid #30363d",
+								background: "var(--paper-strong, #21262d)",
+								color: "var(--primary, #58a6ff)",
+								borderTop: "1px solid var(--line, #30363d)",
+								borderBottom: "1px solid var(--line, #30363d)",
 								borderLeft: "none",
 								borderRight: "none",
 								padding: "8px 10px",
@@ -954,9 +1069,9 @@ export function VisiographStudioCanvas({
 							style={{
 								minHeight: "44px",
 								minWidth: "44px",
-								background: "#21262d",
-								color: "#c9d1d9",
-								border: "1px solid #30363d",
+								background: "var(--paper-strong, #21262d)",
+								color: "var(--ink, #c9d1d9)",
+								border: "1px solid var(--line, #30363d)",
 								borderRadius: "0 6px 6px 0",
 								padding: "8px 10px",
 								fontSize: "0.82rem",
@@ -976,7 +1091,7 @@ export function VisiographStudioCanvas({
 						onClick={() => setShowExportModal(true)}
 						style={{
 							minHeight: "44px",
-							background: "#238636",
+							background: "var(--success, #238636)",
 							color: "#ffffff",
 							border: "none",
 							borderRadius: "6px",
@@ -1001,7 +1116,7 @@ export function VisiographStudioCanvas({
 								minHeight: "44px",
 								minWidth: "44px",
 								background: "transparent",
-								color: "#8b949e",
+								color: "var(--muted, #8b949e)",
 								border: "none",
 								cursor: "pointer",
 								padding: "8px",
@@ -1030,19 +1145,20 @@ export function VisiographStudioCanvas({
 				<div
 					style={{
 						width: "230px",
-						background: "#161b22",
-						borderRight: "1px solid #30363d",
+						background: "var(--paper-soft, #161b22)",
+						borderRight: "1px solid var(--line, #30363d)",
 						padding: "12px",
 						display: "flex",
 						flexDirection: "column",
 						gap: "12px",
 						fontSize: "0.82rem",
+						color: "var(--ink, #c9d1d9)",
 					}}
 				>
 					<div
 						style={{
 							fontWeight: 600,
-							color: "#58a6ff",
+							color: "var(--primary, #58a6ff)",
 							display: "flex",
 							alignItems: "center",
 							justifyContent: "space-between",
@@ -1058,7 +1174,7 @@ export function VisiographStudioCanvas({
 							style={{
 								background: "none",
 								border: "none",
-								color: "#8b949e",
+								color: "var(--muted, #8b949e)",
 								cursor: "pointer",
 								fontSize: "0.74rem",
 							}}
@@ -1082,7 +1198,7 @@ export function VisiographStudioCanvas({
 								setParams((p) => ({ ...p, brightness: Number(e.target.value) }));
 								setActiveClinicalFilter(null);
 							}}
-							style={{ width: "100%", accentColor: "#58a6ff" }}
+							style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
 						/>
 					</div>
 
@@ -1101,7 +1217,7 @@ export function VisiographStudioCanvas({
 								setParams((p) => ({ ...p, contrast: Number(e.target.value) }));
 								setActiveClinicalFilter(null);
 							}}
-							style={{ width: "100%", accentColor: "#58a6ff" }}
+							style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
 						/>
 					</div>
 
@@ -1121,7 +1237,7 @@ export function VisiographStudioCanvas({
 								setParams((p) => ({ ...p, gamma: Number(e.target.value) }));
 								setActiveClinicalFilter(null);
 							}}
-							style={{ width: "100%", accentColor: "#58a6ff" }}
+							style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
 						/>
 					</div>
 
@@ -1140,36 +1256,100 @@ export function VisiographStudioCanvas({
 								setParams((p) => ({ ...p, sharpness: Number(e.target.value) }));
 								setActiveClinicalFilter(null);
 							}}
-							style={{ width: "100%", accentColor: "#58a6ff" }}
+							style={{ width: "100%", accentColor: "var(--primary, #58a6ff)" }}
 						/>
 					</div>
 
-					<hr style={{ border: "none", borderTop: "1px solid #30363d", margin: "4px 0" }} />
+					<hr style={{ border: "none", borderTop: "1px solid var(--line, #30363d)", margin: "4px 0" }} />
 
-					{/* Calibration Status Box */}
+					{/* Calibration Status Box & 1-Click Sensor Presets */}
 					<div
 						style={{
-							background: "#0d1117",
+							background: "var(--paper-strong, #0d1117)",
 							padding: "8px",
 							borderRadius: "6px",
-							border: `1px solid ${isCalibrated ? "#238636" : "#30363d"}`,
+							border: `1px solid ${isCalibrated ? "var(--success, #238636)" : "var(--line, #30363d)"}`,
 							fontSize: "0.76rem",
+							display: "flex",
+							flexDirection: "column",
+							gap: "6px",
 						}}
 					>
-						<div style={{ fontWeight: 600, color: isCalibrated ? "#3fb950" : "#8b949e", marginBottom: 4 }}>
+						<div style={{ fontWeight: 600, color: isCalibrated ? "var(--success, #3fb950)" : "var(--muted, #8b949e)" }}>
 							{isCalibrated ? "✓ Откалибровано" : "⚠️ Стандартный масштаб"}
 						</div>
 						<div>1 px = {calibration.scaleMmPerPixel.toFixed(4)} мм</div>
 						{activeTool === "calibrate" && (
-							<div style={{ marginTop: 6, color: "#76ff03" }}>
+							<div style={{ marginTop: 2, color: "var(--success, #76ff03)" }}>
 								Кликните 2 точки на эталоне (шарик 5 мм) на снимке.
 							</div>
 						)}
+
+						{/* 1-Click Standard Sensor Buttons */}
+						<div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
+							<span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--muted, #8b949e)" }}>
+								Датчики (1 клик):
+							</span>
+							{STANDARD_SENSOR_PRESETS.map((preset) => {
+								const isSelected = activeSensorPresetId === preset.id;
+								return (
+									<button
+										key={preset.id}
+										type="button"
+										onClick={() => handleApplySensorPreset(preset)}
+										style={{
+											minHeight: "36px",
+											background: isSelected ? "var(--primary, #1f6feb)" : "var(--paper, #21262d)",
+											color: isSelected ? "#ffffff" : "var(--ink, #c9d1d9)",
+											border: `1px solid ${isSelected ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
+											borderRadius: "4px",
+											padding: "4px 8px",
+											fontSize: "0.73rem",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											textAlign: "left",
+										}}
+										title={preset.description}
+									>
+										<span>{preset.label}</span>
+										{isSelected && <CheckCircle2 size={13} />}
+									</button>
+								);
+							})}
+
+							<button
+								type="button"
+								onClick={() => {
+									setActiveSensorPresetId(null);
+									setActiveTool("calibrate");
+									setDrawingPoints([]);
+								}}
+								style={{
+									minHeight: "36px",
+									background: activeTool === "calibrate" ? "var(--primary, #1f6feb)" : "var(--paper, #21262d)",
+									color: activeTool === "calibrate" ? "#ffffff" : "var(--ink, #c9d1d9)",
+									border: `1px solid ${activeTool === "calibrate" ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
+									borderRadius: "4px",
+									padding: "4px 8px",
+									fontSize: "0.73rem",
+									cursor: "pointer",
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+								}}
+								title="Ручная калибровка по 2 точкам (шарик 5.0 мм или шаг резьбы)"
+							>
+								<span>Ручная калибровка (шарик / резьба)</span>
+								<Scale size={13} />
+							</button>
+						</div>
 					</div>
 
 					{/* Measurements Counter & Actions */}
 					<div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
-						<div style={{ fontSize: "0.74rem", color: "#8b949e" }}>
+						<div style={{ fontSize: "0.74rem", color: "var(--muted, #8b949e)" }}>
 							Замеры: {rulers.length} лин., {angles.length} угл., {lesions.length} очаг.
 						</div>
 						{(rulers.length > 0 || angles.length > 0 || lesions.length > 0) && (
@@ -1181,9 +1361,9 @@ export function VisiographStudioCanvas({
 									setLesions([]);
 								}}
 								style={{
-									background: "#21262d",
-									color: "#f85149",
-									border: "1px solid #30363d",
+									background: "var(--paper-strong, #21262d)",
+									color: "var(--danger, #f85149)",
+									border: "1px solid var(--line, #30363d)",
 									borderRadius: "6px",
 									padding: "5px 8px",
 									fontSize: "0.75rem",
@@ -1240,16 +1420,17 @@ export function VisiographStudioCanvas({
 					<div
 						style={{
 							width: "260px",
-							background: "#161b22",
-							borderLeft: "1px solid #30363d",
+							background: "var(--paper-soft, #161b22)",
+							borderLeft: "1px solid var(--line, #30363d)",
 							padding: "12px",
 							display: "flex",
 							flexDirection: "column",
 							gap: "8px",
 							fontSize: "0.78rem",
+							color: "var(--ink, #c9d1d9)",
 						}}
 					>
-						<div style={{ fontWeight: 600, color: "#ff1744" }}>
+						<div style={{ fontWeight: 600, color: "var(--danger, #ff1744)" }}>
 							Периапикальные очаги ({lesions.length})
 						</div>
 						<div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto" }}>
@@ -1257,19 +1438,19 @@ export function VisiographStudioCanvas({
 								<div
 									key={les.id}
 									style={{
-										background: "#0d1117",
+										background: "var(--paper-strong, #0d1117)",
 										padding: "8px",
 										borderRadius: "6px",
-										border: "1px solid #ff1744",
+										border: "1px solid var(--danger, #ff1744)",
 									}}
 								>
-									<div style={{ fontWeight: 600, color: "#ffffff" }}>
+									<div style={{ fontWeight: 600, color: "var(--ink, #ffffff)" }}>
 										Очаг #{idx + 1}: {les.classificationLabel}
 									</div>
-									<div style={{ color: "#00e5ff", marginTop: 2 }}>
+									<div style={{ color: "var(--primary, #00e5ff)", marginTop: 2 }}>
 										Площадь: <strong>{les.areaMm2.toFixed(1)} мм²</strong> (Ø {les.equivalentDiameterMm.toFixed(1)} мм)
 									</div>
-									<div style={{ color: "#8b949e", fontSize: "0.72rem", marginTop: 4 }}>
+									<div style={{ color: "var(--muted, #8b949e)", fontSize: "0.72rem", marginTop: 4 }}>
 										{les.treatmentRecommendation}
 									</div>
 								</div>
@@ -1294,15 +1475,15 @@ export function VisiographStudioCanvas({
 				>
 					<div
 						style={{
-							background: "#161b22",
-							border: "1px solid #30363d",
+							background: "var(--paper, #161b22)",
+							border: "1px solid var(--line, #30363d)",
 							borderRadius: "12px",
 							width: "480px",
 							padding: "20px",
 							display: "flex",
 							flexDirection: "column",
 							gap: "16px",
-							color: "#c9d1d9",
+							color: "var(--ink, #c9d1d9)",
 						}}
 					>
 						<div
@@ -1310,17 +1491,17 @@ export function VisiographStudioCanvas({
 								display: "flex",
 								justifyContent: "space-between",
 								alignItems: "center",
-								borderBottom: "1px solid #30363d",
+								borderBottom: "1px solid var(--line, #30363d)",
 								paddingBottom: "8px",
 							}}
 						>
-							<span style={{ fontWeight: 600, fontSize: "1rem", color: "#ffffff" }}>
+							<span style={{ fontWeight: 600, fontSize: "1rem", color: "var(--ink, #ffffff)" }}>
 								Юридический экспорт и фиксация снимка
 							</span>
 							<button
 								type="button"
 								onClick={() => setShowExportModal(false)}
-								style={{ background: "none", border: "none", color: "#8b949e", cursor: "pointer" }}
+								style={{ background: "none", border: "none", color: "var(--muted, #8b949e)", cursor: "pointer" }}
 							>
 								<X size={18} />
 							</button>
@@ -1328,7 +1509,7 @@ export function VisiographStudioCanvas({
 
 						{/* Format selector */}
 						<div>
-							<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: 6 }}>
+							<label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: 6, color: "var(--ink, #c9d1d9)" }}>
 								Формат файла:
 							</label>
 							<div style={{ display: "flex", gap: "8px" }}>
@@ -1338,9 +1519,9 @@ export function VisiographStudioCanvas({
 									style={{
 										flex: 1,
 										padding: "8px",
-										background: exportFormat === "jpeg" ? "#1f6feb" : "#21262d",
-										color: "#ffffff",
-										border: "1px solid #30363d",
+										background: exportFormat === "jpeg" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+										color: exportFormat === "jpeg" ? "#ffffff" : "var(--ink, #c9d1d9)",
+										border: "1px solid var(--line, #30363d)",
 										borderRadius: "6px",
 										cursor: "pointer",
 										fontWeight: 600,
@@ -1354,9 +1535,9 @@ export function VisiographStudioCanvas({
 									style={{
 										flex: 1,
 										padding: "8px",
-										background: exportFormat === "png" ? "#1f6feb" : "#21262d",
-										color: "#ffffff",
-										border: "1px solid #30363d",
+										background: exportFormat === "png" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+										color: exportFormat === "png" ? "#ffffff" : "var(--ink, #c9d1d9)",
+										border: "1px solid var(--line, #30363d)",
 										borderRadius: "6px",
 										cursor: "pointer",
 										fontWeight: 600,
@@ -1370,9 +1551,9 @@ export function VisiographStudioCanvas({
 									style={{
 										flex: 1,
 										padding: "8px",
-										background: exportFormat === "dicom" ? "#1f6feb" : "#21262d",
-										color: "#ffffff",
-										border: "1px solid #30363d",
+										background: exportFormat === "dicom" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
+										color: exportFormat === "dicom" ? "#ffffff" : "var(--ink, #c9d1d9)",
+										border: "1px solid var(--line, #30363d)",
 										borderRadius: "6px",
 										cursor: "pointer",
 										fontWeight: 600,
@@ -1384,7 +1565,7 @@ export function VisiographStudioCanvas({
 						</div>
 
 						{/* Watermark toggle */}
-						<label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.85rem" }}>
+						<label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.85rem", color: "var(--ink, #c9d1d9)" }}>
 							<input
 								type="checkbox"
 								checked={includeWatermark}
@@ -1398,13 +1579,14 @@ export function VisiographStudioCanvas({
 						{/* Details preview */}
 						<div
 							style={{
-								background: "#0d1117",
+								background: "var(--paper-strong, #0d1117)",
 								padding: "10px",
 								borderRadius: "6px",
 								fontSize: "0.78rem",
 								display: "flex",
 								flexDirection: "column",
 								gap: "4px",
+								color: "var(--ink, #c9d1d9)",
 							}}
 						>
 							<div><strong>Пациент:</strong> {patientFullName} (ID: {patientId})</div>
@@ -1420,9 +1602,9 @@ export function VisiographStudioCanvas({
 								onClick={() => setShowExportModal(false)}
 								style={{
 									padding: "8px 14px",
-									background: "#21262d",
-									color: "#c9d1d9",
-									border: "1px solid #30363d",
+									background: "var(--paper-strong, #21262d)",
+									color: "var(--ink, #c9d1d9)",
+									border: "1px solid var(--line, #30363d)",
 									borderRadius: "6px",
 									cursor: "pointer",
 								}}
@@ -1435,7 +1617,7 @@ export function VisiographStudioCanvas({
 								onClick={handleExecuteExport}
 								style={{
 									padding: "8px 16px",
-									background: "#238636",
+									background: "var(--success, #238636)",
 									color: "#ffffff",
 									border: "none",
 									borderRadius: "6px",

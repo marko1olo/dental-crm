@@ -333,3 +333,81 @@ export function calculatePeriapicalLesion(
 		color: "#ff1744", // High-visibility red
 	};
 }
+
+/**
+ * Standard 1-click clinical sensor presets in dental radiology.
+ */
+export interface DentalSensorPreset {
+	readonly id: string;
+	readonly label: string;
+	readonly shortLabel: string;
+	readonly pixelSizeMm: number;
+	readonly pixelPitchMicrons: number;
+	readonly description: string;
+}
+
+export const DENTAL_SENSOR_PRESETS: readonly DentalSensorPreset[] = [
+	{
+		id: "rvg_size_1",
+		label: "Датчик RVG Размер 1 (20 мкм / 0.020 мм/пикс)",
+		shortLabel: "RVG Р1 (20 мкм)",
+		pixelSizeMm: 0.020,
+		pixelPitchMicrons: 20,
+		description: "Стандартный прицельный радиовизиограф 0.020 мм/пикс (Размер 1)",
+	},
+	{
+		id: "rvg_size_2",
+		label: "Датчик RVG Размер 2 (25 мкм / 0.025 мм/пикс)",
+		shortLabel: "RVG Р2 (25 мкм)",
+		pixelSizeMm: 0.025,
+		pixelPitchMicrons: 25,
+		description: "Универсальный молярный радиовизиограф 0.025 мм/пикс (Размер 2)",
+	},
+	{
+		id: "opg_standard",
+		label: "ОПТГ стандарт (50 мкм / 0.050 мм/пикс)",
+		shortLabel: "ОПТГ стандарт (50 мкм)",
+		pixelSizeMm: 0.050,
+		pixelPitchMicrons: 50,
+		description: "Панорамная ортопантомография стандарт 0.050 мм/пикс",
+	},
+];
+
+/**
+ * Recalculates ruler lengths and endodontic working lengths (WL) when scale changes.
+ */
+export function recalculateRulersWithScale(
+	rulers: readonly RulerMeasurement[],
+	scaleMmPerPixel: number,
+): RulerMeasurement[] {
+	return rulers.map((r) => {
+		const lengthMm = r.lengthPx * scaleMmPerPixel;
+		let label = r.label;
+		if (label && (label.startsWith("Канал:") || label.includes("(WL/Апекс)"))) {
+			label = `Канал: ${lengthMm.toFixed(1)} мм (WL/Апекс)`;
+		}
+		return {
+			...r,
+			lengthMm,
+			label,
+		};
+	});
+}
+
+/**
+ * Recalculates periapical lesions when scale changes.
+ */
+export function recalculateLesionsWithScale(
+	lesions: readonly PeriapicalLesion[],
+	scaleMmPerPixel: number,
+): PeriapicalLesion[] {
+	return lesions.map((les) =>
+		calculatePeriapicalLesion(
+			les.points,
+			scaleMmPerPixel,
+			les.fdiToothCode,
+			les.id,
+		),
+	);
+}
+
