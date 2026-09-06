@@ -7,6 +7,12 @@
  * ============================================================================
  */
 
+import {
+	generateQrCodeDataUri,
+	generateQrCodeSvg,
+	generateQrMatrix,
+} from "@dental/shared";
+
 export type ClinicBranchId = "branch-central" | "branch-west" | "branch-north" | "branch-east";
 
 export interface ClinicBranchInfo {
@@ -250,12 +256,60 @@ export function generateTransferVerificationQrPayload(snapshot: PatientClinicalS
 	return `DENTE:TRF:${snapshot.snapshotId}:${snapshot.patientId}:${snapshot.checksumSha256.slice(0, 16)}`;
 }
 
-export function generateTransferVerificationQrSvg(_payloadOrSnapshot: string | PatientClinicalSnapshot, size = 180): string {
-	return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100"><rect width="100" height="100" fill="#fff"/><rect x="10" y="10" width="30" height="30" fill="#000"/><rect x="60" y="10" width="30" height="30" fill="#000"/><rect x="10" y="60" width="30" height="30" fill="#000"/><rect x="20" y="20" width="10" height="10" fill="#fff"/><rect x="70" y="20" width="10" height="10" fill="#fff"/><rect x="20" y="70" width="10" height="10" fill="#fff"/><rect x="45" y="45" width="10" height="10" fill="#000"/></svg>`;
+export interface TransferVerificationQrMatrixResult {
+	readonly matrix: boolean[][];
+	readonly size: number;
+	readonly version: number;
+	readonly payload: string;
 }
 
-export function generateTransferVerificationQrDataUri(payloadOrSnapshot: string | PatientClinicalSnapshot, size = 180): string {
-	const svg = generateTransferVerificationQrSvg(payloadOrSnapshot, size);
+export function generateTransferVerificationQrMatrix(
+	payloadOrSnapshot: string | PatientClinicalSnapshot,
+): TransferVerificationQrMatrixResult {
+	const payload =
+		typeof payloadOrSnapshot === "string"
+			? payloadOrSnapshot
+			: generateTransferVerificationQrPayload(payloadOrSnapshot);
+	const res = generateQrMatrix(payload, "M");
+	return {
+		matrix: res.matrix,
+		size: res.size,
+		version: res.version,
+		payload,
+	};
+}
+
+export function generateTransferVerificationQrSvg(
+	payloadOrSnapshot: string | PatientClinicalSnapshot,
+	size = 180,
+	options: {
+		readonly margin?: number;
+		readonly fgColor?: string;
+		readonly bgColor?: string;
+	} = {},
+): string {
+	const payload =
+		typeof payloadOrSnapshot === "string"
+			? payloadOrSnapshot
+			: generateTransferVerificationQrPayload(payloadOrSnapshot);
+	return generateQrCodeSvg(payload, {
+		size,
+		margin: options.margin ?? 4,
+		foregroundColor: options.fgColor ?? "#000000",
+		backgroundColor: options.bgColor ?? "#ffffff",
+	});
+}
+
+export function generateTransferVerificationQrDataUri(
+	payloadOrSnapshot: string | PatientClinicalSnapshot,
+	size = 180,
+	options: {
+		readonly margin?: number;
+		readonly fgColor?: string;
+		readonly bgColor?: string;
+	} = {},
+): string {
+	const svg = generateTransferVerificationQrSvg(payloadOrSnapshot, size, options);
 	return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
@@ -785,7 +839,8 @@ export function generateTransferActHtml(
 
 	<div class="qr-box">
 		<div class="qr-text">
-			<strong>ЭЛЕКТРОННАЯ ВЕРИФИКАЦИЯ ТРАНСФЕРА:</strong><br>
+			<strong>ЭЛЕКТРОННАЯ ВЕРИФИКАЦИЯ ТРАНСФЕРА (ISO/IEC 18004):</strong><br>
+			Верификационная строка: <code>${generateTransferVerificationQrPayload(snapshot)}</code><br>
 			Снимок защищен криптографической контрольной суммой SHA-256:<br>
 			<code>${snapshot.checksumSha256}</code><br>
 			<small>Отсканируйте QR-код 2D-сканером на ресепшн принимающего филиала для мгновенной верификации и автоматического импорта.</small>
