@@ -146,7 +146,8 @@ describe("TreatmentConsumablesService Unit Tests", () => {
 			assert.strictEqual(res.requiredMaterials[0]!.isSufficient, false);
 			assert.strictEqual(res.requiredMaterials[0]!.deficit, 3.0);
 			assert.strictEqual(res.warnings.length, 1);
-			assert.match(res.warnings[0]!, /Недостаточно материала «Анестетик Убистезин»/);
+			assert.match(res.warnings[0]!, /(?:дефицит|Недостаточно) материала «Анестетик Убистезин»/);
+			assert.match(res.warnings[0]!, /мягкий овердрафт/);
 		});
 
 		it("getInventoryAlerts accurately classifies stock states and expirations", async () => {

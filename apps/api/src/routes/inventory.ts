@@ -383,7 +383,15 @@ export const inventoryRoutes: FastifyPluginAsync = async (
 						/(операци|лечени|при[её]м|визит|дефицит|экстрен|карпул|анесте|расход)/i.test(
 							parsedStock.data.reason,
 						),
-				);
+				) ||
+				Boolean(
+					item.name &&
+						/(карпул|анесте|ультракаин|септодонт|септанест|скандонест|убистезин|артикаин|мепивакаин|перчатк|маск|игла|валик|слюноотсос)/i.test(
+							item.name,
+						),
+				) ||
+				item.category === "anesthetic" ||
+				item.category === "consumable";
 			if (isOverdraft && parsedStock.data.allowOverdraft === false && !isClinicalOperation) {
 				return { insufficientStock: true as const, currentStock };
 			}
