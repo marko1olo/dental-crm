@@ -103,9 +103,16 @@ export interface AssistantPayrollResult {
 export function calculateDoctorPeriodPayroll(
 	input: DoctorPayrollCalculationInput
 ): DoctorPayrollResult {
-	const defaultPreset = DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
+	const defaultPreset =
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "general_dentist") ??
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS[0]!;
 	const preset: DoctorSpecialtyCommissionRule =
 		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === input.specialtyId) ??
+		DOCTOR_SPECIALTY_PAYROLL_PRESETS.find(
+			(p) =>
+				(input.specialtyId === "solo-doctor" && p.specialtyId === "general_dentist") ||
+				(input.specialtyId === "surgeon" && p.specialtyId === "surgeon_implantologist")
+		) ??
 		defaultPreset;
 
 	const basePercent = input.customBasePercentage ?? preset.defaultPercentage;

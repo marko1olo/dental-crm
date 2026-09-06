@@ -13,7 +13,19 @@ import {
 	type DoctorCompletedServiceItem,
 	type DoctorPayrollResult,
 } from "./payrollEngine";
+import {
+	SOLO_DOCTOR_SPECIALTY_PRESETS,
+	type SoloDoctorSpecialtyPreset,
+} from "./payrollPresets";
 import "./doctorPayroll.css";
+
+export const DEFAULT_SOLO_DOCTOR = {
+	id: "solo-doctor",
+	name: "Лечащий врач (соло-практика)",
+	specialtyId: "general_dentist",
+} as const;
+
+export { SOLO_DOCTOR_SPECIALTY_PRESETS, type SoloDoctorSpecialtyPreset };
 
 export interface DoctorPayrollModalProps {
 	readonly isOpen: boolean;
@@ -39,6 +51,13 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	initialBasePercentage,
 }) => {
 	const [selectedDoctorId, setSelectedDoctorId] = useState(initialDoctorId || doctorsList[0]?.id || "");
+	const [soloSpecialtyId, setSoloSpecialtyId] = useState<string>(() => {
+		if (initialDoctorId && initialDoctorId !== "solo-doctor") {
+			const matched = SOLO_DOCTOR_SPECIALTY_PRESETS.find((s) => s.specialtyId === initialDoctorId);
+			if (matched) return matched.specialtyId;
+		}
+		return DEFAULT_SOLO_DOCTOR.specialtyId;
+	});
 	const [periodStart, setPeriodStart] = useState(initialPeriodStart);
 	const [periodEnd, setPeriodEnd] = useState(initialPeriodEnd);
 	const [customPercent, setCustomPercent] = useState<number | undefined>(initialBasePercentage);
@@ -48,6 +67,12 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	React.useEffect(() => {
 		if (initialDoctorId) {
 			setSelectedDoctorId(initialDoctorId);
+			if (initialDoctorId === "solo-doctor") {
+				setSoloSpecialtyId(DEFAULT_SOLO_DOCTOR.specialtyId);
+			} else {
+				const matched = SOLO_DOCTOR_SPECIALTY_PRESETS.find((s) => s.specialtyId === initialDoctorId);
+				if (matched) setSoloSpecialtyId(matched.specialtyId);
+			}
 		} else if (doctorsList.length > 0 && !doctorsList.some((d) => d.id === selectedDoctorId)) {
 			setSelectedDoctorId(doctorsList[0]?.id ?? "");
 		}
@@ -57,10 +82,20 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	}, [initialDoctorId, initialPeriodStart, initialPeriodEnd, initialBasePercentage, doctorsList, selectedDoctorId]);
 
 	const activeDoc = useMemo(() => {
-		if (doctorsList.length === 0) return null;
+		if (doctorsList.length === 0) {
+			const specId =
+				soloSpecialtyId === "solo-doctor" || !soloSpecialtyId
+					? DEFAULT_SOLO_DOCTOR.specialtyId
+					: soloSpecialtyId;
+			return {
+				id: DEFAULT_SOLO_DOCTOR.id,
+				name: DEFAULT_SOLO_DOCTOR.name,
+				specialtyId: specId,
+			};
+		}
 		const found = doctorsList.find((d) => d.id === selectedDoctorId);
 		return found ?? doctorsList[0] ?? null;
-	}, [doctorsList, selectedDoctorId]);
+	}, [doctorsList, selectedDoctorId, soloSpecialtyId]);
 
 	const servicesToUse = useMemo(() => {
 		return initialServices ?? [];
@@ -156,16 +191,28 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						<div className="flex flex-col gap-1">
 							<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
 								<User className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-								Врач / Специалист:
+								{doctorsList.length === 0 ? "Врач / Специализация (соло):" : "Врач / Специалист:"}
 							</label>
 							<select
-								value={selectedDoctorId}
-								onChange={(e) => setSelectedDoctorId(e.target.value)}
-								disabled={doctorsList.length === 0}
+								value={doctorsList.length === 0 ? soloSpecialtyId : selectedDoctorId}
+								onChange={(e) => {
+									if (doctorsList.length === 0) {
+										const val = e.target.value === "solo-doctor" ? DEFAULT_SOLO_DOCTOR.specialtyId : e.target.value;
+										setSoloSpecialtyId(val);
+									} else {
+										setSelectedDoctorId(e.target.value);
+									}
+								}}
+								disabled={false}
+								data-testid="doctor-payroll-select"
 								className="h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] disabled:opacity-60 disabled:cursor-not-allowed"
 							>
 								{doctorsList.length === 0 ? (
-									<option value="">Нет сотрудников для расчета</option>
+									SOLO_DOCTOR_SPECIALTY_PRESETS.map((spec) => (
+										<option key={spec.specialtyId} value={spec.specialtyId}>
+											{spec.labelRu}
+										</option>
+									))
 								) : (
 									doctorsList.map((doc) => (
 										<option key={doc.id} value={doc.id}>
@@ -258,14 +305,10 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							>
 								<FileText className="w-8 h-8 text-[var(--muted,#64748b)]/60" />
 								<p className="text-xs sm:text-sm font-semibold text-[var(--ink,#0f172a)]">
-									{doctorsList.length === 0
-										? "Нет сотрудников для расчета за выбранный период"
-										: "Нет подтвержденных оказанных услуг за выбранный расчетный период"}
+									Нет подтвержденных оказанных услуг за выбранный расчетный период
 								</p>
 								<p className="text-xs text-[var(--muted,#64748b)]">
-									{doctorsList.length === 0
-										? "Список специалистов клиники пуст или не был передан для расчета"
-										: "За выбранный диапазон дат у специалиста не зафиксировано выполненных приемов или закрытых нарядов"}
+									За выбранный диапазон дат у специалиста не зафиксировано выполненных приемов или закрытых нарядов
 								</p>
 							</div>
 						) : (

@@ -29,6 +29,16 @@ export interface KpiBonusTier {
 
 export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissionRule[] = [
 	{
+		specialtyId: "general_dentist",
+		titleRu: "Врач-стоматолог общей практики (соло)",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: true,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000, // 60,000 RUB
+		descriptionRu: "25% от выручки за вычетом лаборатории и прямых материалов + 10% за средства домашней гигиены.",
+	},
+	{
 		specialtyId: "therapist",
 		titleRu: "Врач-стоматолог терапевт / эндодонтист",
 		defaultPercentage: 25,
@@ -59,6 +69,16 @@ export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissio
 		descriptionRu: "20% от имплантации (за вычетом стоимости имплантата и мембран) + 30% от амбулаторных удалений зубов.",
 	},
 	{
+		specialtyId: "surgeon",
+		titleRu: "Врач-стоматолог хирург",
+		defaultPercentage: 20,
+		retailProductsPercentage: 5,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 10000000, // 100,000 RUB
+		descriptionRu: "20% от амбулаторных хирургических операций за вычетом стоимости расходных материалов.",
+	},
+	{
 		specialtyId: "orthodontist",
 		titleRu: "Врач-ортодонт (брекеты / элайнеры)",
 		defaultPercentage: 25,
@@ -69,6 +89,26 @@ export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissio
 		descriptionRu: "25% от активаций брекет-систем и регулярных приемов, за вычетом стоимости сетапа элайнеров.",
 	},
 	{
+		specialtyId: "periodontist",
+		titleRu: "Врач-стоматолог пародонтолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000, // 60,000 RUB
+		descriptionRu: "25% от пародонтологического лечения (Vector, кюретаж, шинирование) за вычетом материалов.",
+	},
+	{
+		specialtyId: "pediatric_dentist",
+		titleRu: "Детский врач-стоматолог",
+		defaultPercentage: 25,
+		retailProductsPercentage: 10,
+		deductsLabCosts: false,
+		deductsMaterialCosts: true,
+		minGuaranteeMonthlyKop: 6000000, // 60,000 RUB
+		descriptionRu: "25% от детского терапевтического приема и адаптации за вычетом материалов.",
+	},
+	{
 		specialtyId: "hygienist",
 		titleRu: "Гигиенист стоматологический",
 		defaultPercentage: 30,
@@ -77,6 +117,60 @@ export const DOCTOR_SPECIALTY_PAYROLL_PRESETS: readonly DoctorSpecialtyCommissio
 		deductsMaterialCosts: false,
 		minGuaranteeMonthlyKop: 4500000, // 45,000 RUB
 		descriptionRu: "30% от профессиональной гигиены и отбеливания + 15% за проданные пасты/щетки Curaprox/Oral-B.",
+	},
+];
+
+export interface SoloDoctorSpecialtyPreset {
+	readonly specialtyId: string;
+	readonly titleRu: string;
+	readonly labelRu: string;
+}
+
+export const SOLO_DOCTOR_SPECIALTY_PRESETS: readonly SoloDoctorSpecialtyPreset[] = [
+	{
+		specialtyId: "general_dentist",
+		titleRu: "Врач-стоматолог общей практики (соло)",
+		labelRu: "Лечащий врач (соло-практика) — Стоматолог общей практики",
+	},
+	{
+		specialtyId: "therapist",
+		titleRu: "Врач-стоматолог терапевт / эндодонтист",
+		labelRu: "Терапевт / эндодонтист",
+	},
+	{
+		specialtyId: "orthopedist",
+		titleRu: "Врач-стоматолог ортопед (CAD/CAM)",
+		labelRu: "Ортопед (CAD/CAM)",
+	},
+	{
+		specialtyId: "surgeon_implantologist",
+		titleRu: "Врач-стоматолог хирург-имплантолог",
+		labelRu: "Хирург-имплантолог",
+	},
+	{
+		specialtyId: "surgeon",
+		titleRu: "Врач-стоматолог хирург",
+		labelRu: "Хирург",
+	},
+	{
+		specialtyId: "orthodontist",
+		titleRu: "Врач-ортодонт (брекеты / элайнеры)",
+		labelRu: "Ортодонт (брекеты / элайнеры)",
+	},
+	{
+		specialtyId: "periodontist",
+		titleRu: "Врач-стоматолог пародонтолог",
+		labelRu: "Пародонтолог",
+	},
+	{
+		specialtyId: "pediatric_dentist",
+		titleRu: "Детский врач-стоматолог",
+		labelRu: "Детский стоматолог",
+	},
+	{
+		specialtyId: "hygienist",
+		titleRu: "Гигиенист стоматологический",
+		labelRu: "Гигиенист",
 	},
 ];
 
