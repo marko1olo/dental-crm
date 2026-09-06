@@ -642,7 +642,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							type="button"
 							onClick={handlePresetProHygieneDone}
 							className="min-h-[44px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal"
+							title="Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12"
 							data-testid="hygiene-preset-pro-hygiene"
 						>
 							<div className="flex items-center gap-1.5 font-black text-xs">
@@ -650,7 +650,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 								<span>Профгигиена выполнена</span>
 							</div>
 							<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
-								УЗ Piezon + Air-Flow глицин + Kerr Cleanic + Fluocal
+								УЗ Piezon + Air-Flow глицин + Detartrine + Bifluorid 12
 							</span>
 						</button>
 					</div>

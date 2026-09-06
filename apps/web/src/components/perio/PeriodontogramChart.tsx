@@ -619,7 +619,12 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 				case "perio_norm_express":
 					updatedTeeth = applyHealthyPeriodontiumPreset(teeth);
 					protocolText =
-						"Пародонт: маргинальная десна бледно-розовая, плотная, глубина зубодесневой борозды 1-2 мм, кровоточивость отсутствует, подвижности зубов нет.";
+						"Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет.";
+					break;
+				case "pro_hygiene_express":
+					updatedTeeth = applyHealthyPeriodontiumPreset(teeth);
+					protocolText =
+						"Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12";
 					break;
 				case "gingivitis_express":
 					updatedTeeth = applyGingivitisPreset(teeth);
@@ -651,6 +656,19 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 				}),
 			);
 
+			if (presetId === "pro_hygiene_express") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-estimate-service", {
+						detail: {
+							code: "A16.07.051",
+							name: "Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12",
+							price: 5500,
+							category: "hygiene",
+						},
+					}),
+				);
+			}
+
 			if (onInsertToProtocol) {
 				onInsertToProtocol(protocolText);
 			}
@@ -661,7 +679,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 			const presetInfo = PERIO_EXPRESS_PRESETS[presetId];
 			showToast(
-				`Статус пародонта зафиксирован: «${presetInfo?.titleRu ?? presetId}». Протокол перенесён в дневник 043/у.`,
+				`Статус зафиксирован: «${presetInfo?.titleRu ?? presetId}». Протокол перенесён в дневник 043/у.`,
 				"success",
 				4500,
 			);
@@ -798,20 +816,21 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 								badge: "Z01.2",
 								defaultIcd10: "Z01.2",
 								statusLocalis:
-									"Соматически здоров / глубина карманов 1-2 мм / кровоточивость 0 / зубной камень отсутствует / индекс PSR 0 / норма. Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.",
+									"Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет. Соматически здоров / глубина карманов 1-2 мм / кровоточивость 0 / зубной камень отсутствует / индекс PSR 0 / норма. Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.",
 								treatmentDescription:
 									"Профилактический осмотр через 6 месяцев, стандартная индивидуальная гигиена полости рта.",
 							}
-						: presetId === "hygiene_pro_done_express"
+						: presetId === "hygiene_pro_done_express" ||
+							presetId === "pro_hygiene_express"
 							? {
 									id: "hygiene_pro_done_express",
-									label: "Комплексная профессиональная гигиена (A16.07.051)",
+									label: "Профгигиена полости рта (A16.07.051)",
 									badge: "A16.07.051",
 									defaultIcd10: "Z01.2",
 									statusLocalis:
-										"Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal. Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).",
+										"Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12. Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).",
 									treatmentDescription:
-										"1. Ультразвуковой скейлинг над- и поддесневых отложений Piezon (EMS). 2. Снятие биопленки и налета Air-Flow глицином 25 мкм. 3. Полировка пастой Kerr Cleanic. 4. Обработка хлоргексидином 0.05%. 5. Ремотерапия и фторирование эмали лаком Fluocal.",
+										"1. Ультразвуковой скейлинг над- и поддесневых отложений Piezon (EMS). 2. Снятие биопленки и налета Air-Flow порошком на основе глицина 25 мкм. 3. Полировка абразивной пастой Detartrine. 4. Обработка хлоргексидином 0.05%. 5. Ремотерапия и фторирование эмали препаратом Bifluorid 12.",
 								}
 							: null);
 			if (!targetPreset) return;
@@ -947,7 +966,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 			if (presetId === "perio_norm_express") {
 				protocolText =
 					"• Пародонтологический осмотр: Норма пародонта (физиологическая норма, Z01.2).\n" +
-					"• Status localis: Соматически здоров / глубина карманов 1-2 мм / кровоточивость 0 / зубной камень отсутствует / индекс PSR 0 / норма. Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.\n" +
+					"• Status localis: Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет. Соматически здоров / глубина карманов 1-2 мм / кровоточивость 0 / зубной камень отсутствует / индекс PSR 0 / норма. Зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет (BOP 0%), патологических карманов нет, подвижность 0.\n" +
 					"• Диагноз: Здоров / Пародонт интактен (Z01.2).\n" +
 					"• Рекомендации: Профилактический осмотр через 6 месяцев, стандартная индивидуальная гигиена полости рта.";
 			} else if (presetId === "gingivitis_catarrhal") {
@@ -967,17 +986,18 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					"• Рекомендованное лечение: Комплексная пародонтальная терапия, поддесневой скейлинг SRP, Vector-терапия, антимикробная обработка карманов, шинирование по показаниям.";
 			} else if (
 				presetId === "hygiene_pro_done_express" ||
-				presetId === "hygiene_airflow_ultrasound"
+				presetId === "hygiene_airflow_ultrasound" ||
+				presetId === "pro_hygiene_express"
 			) {
 				protocolText =
-					"• Профессиональная гигиена полости рта выполнена в полном объеме (A16.07.051):\n" +
-					"• Процедура: Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal.\n" +
+					"• Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12\n" +
+					"• Процедура: Профгигиена полости рта выполнена в полном объеме (A16.07.051).\n" +
 					"1. Удаление над- и поддесневых зубных отложений ультразвуковым пьезоэлектрическим скейлером Piezon (EMS).\n" +
-					"2. Снятие пигментированного зубного налета и биопленки воздушно-абразивным методом AirFlow (порошок на основе глицина 25 мкм, субгингивальная обработка).\n" +
-					"3. Полировка всех поверхностей зубов полировочной пастой Kerr Cleanic (Kerr) с циркулярными щеточками и резиновыми чашечками, апроксимальные поверхности обработаны штрипсами.\n" +
+					"2. Снятие пигментированного зубного налета и биопленки воздушно-абразивным методом Air-Flow порошком на основе глицина 25 мкм.\n" +
+					"3. Полировка всех поверхностей зубов абразивной пастой Detartrine с циркулярными щеточками и резиновыми чашечками, апроксимальные поверхности обработаны штрипсами.\n" +
 					"4. Антисептическая медикаментозная обработка слизистой оболочки десны 0.05% раствором хлоргексидина биглюконата.\n" +
-					"5. Глубокое фторирование эмали и реминерализующая терапия препаратом Fluocal (Septodont).\n" +
-					"• Status localis: Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая плотная, кровоточивости нет (BOP 0%).\n" +
+					"5. Глубокое фторирование эмали препаратом Bifluorid 12.\n" +
+					"• Status localis: Зубные отложения удалены полностью, эмаль гладкая блестящая, десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет.\n" +
 					"• Рекомендации: «Белая диета» 2-3 часа, смена зубной щетки, индивидуальный подбор средств гигиены.";
 			} else {
 				protocolText = `• Пародонтологический осмотр: ${targetPreset.label}\n• Status localis: ${targetPreset.statusLocalis}\n• Рекомендованное лечение: ${targetPreset.treatmentDescription}`;
@@ -1007,13 +1027,14 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 			if (
 				presetId === "hygiene_pro_done_express" ||
-				presetId === "hygiene_airflow_ultrasound"
+				presetId === "hygiene_airflow_ultrasound" ||
+				presetId === "pro_hygiene_express"
 			) {
 				window.dispatchEvent(
 					new CustomEvent("dente-add-estimate-service", {
 						detail: {
 							code: "A16.07.051",
-							name: "Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal",
+							name: "Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12",
 							price: 5500,
 							category: "hygiene",
 						},
@@ -1326,8 +1347,8 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</div>
 				</div>
 
-				{/* 3 Dominant 1-Click Express Presets (Mandates 8e, 8k, Touch >= 44x44px, Zero Emojis) */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+				{/* 4 Dominant 1-Click Express Presets (Mandates 8e, 8k, Touch >= 44x44px, Zero Emojis) */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
 					{/* Preset 1: Норма пародонта */}
 					<button
 						type="button"
@@ -1352,7 +1373,30 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						</span>
 					</button>
 
-					{/* Preset 2: Гингивит */}
+					{/* Preset 2: Профгигиена полости рта */}
+					<button
+						type="button"
+						disabled={readOnly}
+						onClick={() => handleApplyExpressPreset("pro_hygiene_express")}
+						className="min-h-[50px] p-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/30 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center"
+						title="Профгигиена: УЗ-скейлинг + Air-Flow глицин + полировка Detartrine + глубокое фторирование Bifluorid 12"
+						data-testid="perio-preset-prophy-card"
+					>
+						<div className="flex items-center justify-between gap-1.5 font-black text-xs sm:text-sm">
+							<span className="flex items-center gap-1.5 text-cyan-300">
+								<Sparkles size={16} className="text-cyan-400 shrink-0" />
+								Профгигиена (протокол)
+							</span>
+							<span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+								A16.07.051
+							</span>
+						</div>
+						<span className="text-[11px] text-cyan-200/80 leading-tight mt-1">
+							УЗ Piezon + Air-Flow глицин + Detartrine + Bifluorid 12
+						</span>
+					</button>
+
+					{/* Preset 3: Гингивит */}
 					<button
 						type="button"
 						disabled={readOnly}
@@ -1375,7 +1419,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						</span>
 					</button>
 
-					{/* Preset 3: Пародонтит средней степени */}
+					{/* Preset 4: Пародонтит средней степени */}
 					<button
 						type="button"
 						disabled={readOnly}
@@ -1520,14 +1564,14 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						type="button"
 						disabled={readOnly}
 						onClick={() =>
-							handleApplyTherapistPreset("hygiene_pro_done_express")
+							handleApplyExpressPreset("pro_hygiene_express")
 						}
 						className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--paper-soft,#1e293b)] hover:bg-cyan-500/15 text-cyan-300 border border-[var(--line,#334155)] transition-all cursor-pointer touch-manipulation flex items-center gap-1"
-						title="Комплексная профессиональная гигиена: ультразвуковой скейлинг над- и поддесневых отложений + Air-Flow глицином + полировка пастой Kerr Cleanic + ремотерапия/фторирование эмали Fluocal"
+						title="Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12"
 						data-testid="perio-preset-pro-hygiene-card"
 					>
 						<Sparkles size={12} className="text-cyan-400" />
-						<span>Профгигиена выполнена</span>
+						<span>Профгигиена (полный протокол)</span>
 					</button>
 					<button
 						type="button"

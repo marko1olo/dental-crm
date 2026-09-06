@@ -131,6 +131,12 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 		// Протокол дневника Формы 043/у
 		const diaryText = generatePsrDiaryProtocol("perio_norm_express");
 		assert.ok(
+			diaryText.includes(
+				"Пародонт: десна бледно-розовая, плотная, зубодесневая борозда до 2 мм, кровоточивость отсутствует, подвижности зубов нет.",
+			),
+			"Протокол содержит нормативный текст по Мандату 8e/8k",
+		);
+		assert.ok(
 			diaryText.includes("маргинальная десна бледно-розовая"),
 			"Протокол содержит клиническое описание нормы",
 		);
@@ -354,6 +360,10 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 			"Кнопка нормы пародонта доступна в 1 клик",
 		);
 		assert.ok(
+			htmlDefault.includes("Профгигиена"),
+			"Кнопка профгигиены доступна в 1 клик",
+		);
+		assert.ok(
 			htmlDefault.includes("Гингивит"),
 			"Кнопка гингивита доступна в 1 клик",
 		);
@@ -390,6 +400,31 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 			emojiRegex.test(htmlDefault),
 			false,
 			"В разметке пародонтограммы не должно быть сырых мультяшных эмодзи",
+		);
+	});
+
+	// ──────────────────────────────────────────────────────────────────────────
+	// 6. ПРЕСЕТ: ПРОФГИГИЕНА ПОЛОСТИ РТА (1 КЛИК)
+	// ──────────────────────────────────────────────────────────────────────────
+	test("6. Пресет «Профгигиена полости рта» (1 клик): протокол Detartrine + Bifluorid 12", () => {
+		const prophyDiary = generatePsrDiaryProtocol("pro_hygiene_express");
+		assert.ok(
+			prophyDiary.includes(
+				"Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений",
+			),
+			"Протокол содержит начало формулировки профгигиены",
+		);
+		assert.ok(
+			prophyDiary.includes("Air-Flow порошком на основе глицина"),
+			"Протокол содержит Air-Flow глицин",
+		);
+		assert.ok(
+			prophyDiary.includes("полировка абразивной пастой Detartrine"),
+			"Протокол содержит полировку Detartrine",
+		);
+		assert.ok(
+			prophyDiary.includes("глубокое фторирование эмали Bifluorid 12"),
+			"Протокол содержит глубокое фторирование Bifluorid 12",
 		);
 	});
 });
