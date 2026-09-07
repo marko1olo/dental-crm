@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-07 / WAVE 29): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 106 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 169 ФИЧ: 63 КАНОНИЧЕСКИЕ + 106 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-07 / WAVE 30): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 109 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 172 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 109 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]` или `[ЧАСТИЧНО]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -1789,9 +1789,73 @@
 
 ---
 
+## 165. `расписание_смены::двухсменная_работа_кресел_subshifts_и_динамический_автовыбор_врача_в_записи` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8c, 8d, 8e, 8k, 8n, ФИЧА #170)
+- **Идея**: Двухсменное дежурство на кресле с поддержкой `subShifts` (утро 08:00–14:00 и вечер 14:00–20:00), динамический почасовой выбор дежурного врача и автовыбор врача в `QuickBookingDrawer` при смене кресла:
+  1. *Двухсменная работа кресел*: в `ScheduleGrid.tsx` реализовано дежурство на кресле в 2 смены с быстрым переключением в 1 тап; дежурный врач вычисляется почасово через функцию `resolveChairDutyDoctor(chairId, hour, currentDay, shifts)`.
+  2. *Сохранение составных смен с subShifts*: поддержка составных смен с сохранением `subShifts` без перезаписи данных других врачей при записи в `localStorage` (`dente_doctor_shifts`) и синхронизации через `POST /api/diary/shifts`.
+  3. *Динамический автовыбор врача при смене кресла*: в `QuickBookingDrawer.tsx` при изменении кресла в выпадающем списке форма автоматически определяет дежурного врача на выбранное время визита и переключает врача с мягким инфо-тостом (Мандат 8e), исключая трение ручного повторного выбора.
+  4. *MVP и приоритет*: MVP Да, Сложность Низкая, Приоритет KILLER.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/ScheduleView.tsx`.
+  - Тесты: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (100% pass, коммит `2d0598e96`).
+
+---
+
+## 166. `расписание_сетка::липкая_колонка_времени_sticky_left_0_при_скролле_10_кресел_и_фильтр_мое_кресло` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8c, 8d, 8e, 8n, ФИЧА #171)
+- **Идея**: Фиксация колонки времени при горизонтальном скролле сетки на 10+ кресел и 1-клик фильтр «Моё кресло» в ленте фильтров:
+  1. *Липкая колонка времени (Sticky Time Column)*: в `ScheduleGrid.tsx` колонка времени зафиксирована на `sticky left-0` с `z-20` в шапке сетки и `z-10` в строках временной шкалы. При горизонтальном скролле сетки с 10+ креслами временные метки всегда остаются перед глазами (Apple HIG / Studio Clinical Density).
+  2. *1-клик фильтр «Моё кресло»*: в `ScheduleFilterStrip.tsx` добавлен экспресс-фильтр «Моё кресло» для текущего авторизованного врача `currentUserId`, корректно определяющий назначенное кресло как по основным сменам, так и по вечерним подсменам (`subShifts`), изолируя рабочий холст врача в 1 клик.
+  3. *MVP и приоритет*: MVP Да, Сложность Низкая, Приоритет KILLER.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`.
+  - Тесты: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (100% pass, коммиты `28ace5f7c`, `2d0598e96`).
+
+---
+
+## 167. `расписание_ростер::декомпозиция_монолита_ростера_до_613_строк_и_детерминированный_алгоритм_без_коллизий` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8j, 8n, ФИЧА #172)
+- **Идея**: Декомпозиция монолита `DoctorShiftRosterModal.tsx` с 1750+ до 613 строк (< 800 строк по Engineering Rules) и детерминированный аллокатор смен без коллизий:
+  1. *Модульная декомпозиция*: монолитный компонент ростера декомпозирован на независимые модули:
+     - `DoctorRosterToolbar.tsx` (132 строки) — 1-строчный тулбар навигации по неделям, фильтров и запуска автогенерации;
+     - `DoctorRosterMatrix.tsx` (340 строк) — матричная сетка дней недели и врачей с бейджами кресел и времени смены;
+     - `DoctorShiftDrawer.tsx` (385 строк) — шторка редактирования смены врача с тач-таргетами $\ge 44\text{px}$;
+     - `doctorWeeklyScheduleGenerator.ts` (310 строк) — алгоритмическая логика генерации графиков сменности.
+  2. *Детерминированный аллокатор без коллизий*: алгоритмы `allocateChairForDoctor` и `allocateAssistantForDoctor` исключают возникновение `chair_double_booking` и `doctor_double_booking` при любых комбинациях врачей $M$ и кресел $N$ ($M = 0$, $M = 1$, $M > N$, $M < N$).
+  3. *Сквозная персистентность*: сохранение сгенерированного расписания в `localStorage` и через API Fastify `POST /api/diary/shifts`.
+  4. *MVP и приоритет*: MVP Да, Сложность Низкая, Приоритет KILLER.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `DoctorRosterToolbar.tsx`, `DoctorRosterMatrix.tsx`, `DoctorShiftDrawer.tsx`, `doctorWeeklyScheduleGenerator.ts`.
+  - Тесты: `apps/web/src/components/schedule/roster/__tests__/scheduleShiftRosterIntegration.test.tsx` (10 тестов, 100% pass, коммит `b1505d079`).
+
+---
+
+## 168. `касса_54фз::обход_нулевого_чека_гарантии_аддитивный_семейный_баланс_и_комбо_оплата` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8b, 8e, 8n, ФИЧА #173)
+- **Идея**: Обход фискализации 0 ₽ при 100% скидке/гарантии, аддитивное сложение семейного баланса и личного депозита, 1-клик комбо «Депозит + Сем. счет + Карта»:
+  1. *Обход фискализации 0 ₽ при 100% гарантии*: в `FastCheckoutModal.tsx` добавлен нулевой гейт `targetBillKop === 0`, блокирующий отправку пустого чека на ККТ (предотвращает аппаратную ошибку «Сумма чека не может быть 0») и завершающий визит за 300 мс со штампом «Гарантия 100%». Кнопка сабмита адаптируется на «Закрыть визит: 100% Гарантия / Скидка (0 ₽)».
+  2. *Аддитивное сложение семейного баланса*: в `FastCheckoutModal.tsx`, `ExpressFiscalReceiptModal.tsx` и `RefundReceiptModal.tsx` личный депозит и семейный лицевой счет складываются аддитивно (`(patientDepositRub || 0) + (patientFamilyBalanceRub || 0)`), исключая взаимное вытеснение балансов.
+  3. *1-клик комбо-оплата в кассе*: в `CashRegisterModal.tsx` добавлена кнопка «Депозит + Сем. счет + Карта», автоматически списывающая оба аванса и доплачивающая остаток картой без копеечного рассинхрона.
+  4. *MVP и приоритет*: MVP Да, Сложность Низкая, Приоритет KILLER.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/finance/ExpressFiscalReceiptModal.tsx`, `apps/web/src/components/finance/RefundReceiptModal.tsx`.
+  - Тесты: `apps/web/src/components/payments/checkout/fastCheckoutInvariants.test.ts` (8 тестов, 100% pass, коммит `d3e52a957`).
+
+---
+
+## 169. `расписание::устранение_дефектов_ред_тиминга_привязки_врачей_к_креслам_и_изоляция_модалок` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8c, 8d, 8e, 8k, 8n, ФИЧА #174)
+- **Идея**: Устранение дефектов ред-тиминга привязки врачей к креслам, изоляция внутренних модалок сетки (Анти-Матрёшка), тач-таргеты 32-44px и пресет длительности 45 мин:
+  1. *Изоляция модалок (Закон Анти-Матрёшки)*: в `ScheduleFilterStrip.tsx` и `ScheduleGrid.tsx` исключено двойное модальное открытие при вызове `onOpenAddChair` из родительского контейнера; внутренняя модалка рендерится строго по условию `!onOpenAddChair && isAddChairModalOpen`.
+  2. *Устранение микро-типографики в шапке кресла*: кнопка быстрого назначения врача увеличена с `text-[10px]` до `text-xs font-bold` (12px) и минимальной высоты 32px.
+  3. *Пресет 45 минут в расписании*: в `patientReliabilityScore.ts` в `DURATION_PRESETS` добавлен пресет `45 мин` (Терапия).
+  4. *1-клик чип «Моё кресло»*: в `ScheduleFilterStrip.tsx` интегрирован чип «Моё кресло» (`data-testid="schedule-my-chair-btn"`) с тач-таргетом $\ge 44\text{px}$ и мгновенным переключением на назначенное кресло врача.
+  5. *MVP и приоритет*: MVP Да, Сложность Низкая, Приоритет KILLER.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/patientReliabilityScore.ts`.
+  - Тесты: `apps/web/src/components/schedule/__tests__/scheduleInlineChairManagement.test.tsx` (7 тестов, 100% pass, коммит `ec42da696`).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 106 дополнительных системных аддендум-фич клинической автономии (Wave 15..29, фичи 64..169) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 111 дополнительных системных аддендум-фич клинической автономии (Wave 15..31, фичи 64..174) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
