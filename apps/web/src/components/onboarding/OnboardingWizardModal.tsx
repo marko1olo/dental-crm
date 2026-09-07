@@ -21,6 +21,7 @@ import {
 	Plus,
 	ShieldCheck,
 } from "lucide-react";
+import { showToast } from "../GlobalToast";
 
 export interface OnboardingStepItem {
 	id: string;
@@ -125,9 +126,7 @@ export interface OnboardingWizardModalProps {
 	newChairReadyToCreate: boolean;
 	onboardingChairCreateGuidanceId: string;
 	staffScheduleDrafts: Record<string, StaffScheduleDraft>;
-	staffScheduleDraftFromWorkingHours: (
-		hours: unknown,
-	) => StaffScheduleDraft;
+	staffScheduleDraftFromWorkingHours: (hours: unknown) => StaffScheduleDraft;
 	staffScheduleSaveStates: Record<string, string>;
 	staffScheduleDirtyIds: Set<string>;
 	staffScheduleSavingId: string | null;
@@ -152,12 +151,18 @@ export interface OnboardingWizardModalProps {
 	setPricelistSourceKind: (kind: PricelistSourceKind) => void;
 	clearPricelistImage: () => void;
 	setPricelistAnalysis: (analysis: unknown) => void;
-	importSourceLabels: Record<ImportSourceKind, { title: string; detail?: string }>;
+	importSourceLabels: Record<
+		ImportSourceKind,
+		{ title: string; detail?: string }
+	>;
 	importSourceKind: ImportSourceKind;
 	setImportSourceKind: (kind: ImportSourceKind) => void;
 	setImportPreview: (preview: unknown) => void;
 	setImportCommit: (commit: unknown) => void;
-	smartImportModeLabels: Record<SmartImportMode, { title: string; detail?: string }>;
+	smartImportModeLabels: Record<
+		SmartImportMode,
+		{ title: string; detail?: string }
+	>;
 	smartImportMode: SmartImportMode;
 	setSmartImportMode: (mode: SmartImportMode) => void;
 	setSmartImportPreview: (preview: unknown) => void;
@@ -385,9 +390,15 @@ export function OnboardingWizardModal({
 }: OnboardingWizardModalProps) {
 	const dismissOnboarding = () => {
 		if (!onboardingReadyToFinish) {
+			showToast(
+				"Настройки сохранены в черновике. Профиль клиники можно дополнить в любой момент в разделе Настройки (Мандат 8e)",
+				"success",
+				4000,
+			);
 			if (typeof continueOnboardingInDraftMode === "function") {
 				void continueOnboardingInDraftMode();
 			} else {
+				void saveClinicProfileFromDraft?.();
 				onDismissOnboarding?.();
 			}
 			return;
@@ -470,12 +481,6 @@ export function OnboardingWizardModal({
 						type="button"
 						aria-current={step.id === onboardingStep ? "step" : undefined}
 						aria-pressed={step.id === onboardingStep}
-						aria-describedby={
-							step.id === "done" && !onboardingReadyToFinish
-								? onboardingFinishGuidanceId
-								: undefined
-						}
-						disabled={step.id === "done" && !onboardingReadyToFinish}
 						onClick={() => void moveOnboardingTo(step.id)}
 					>
 						<span>{index + 1}</span>
@@ -573,9 +578,7 @@ export function OnboardingWizardModal({
 								className={`mode-card ${dashboard?.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
 								key={mode}
 								type="button"
-								aria-pressed={
-									dashboard?.clinicSettings?.profile?.mode === mode
-								}
+								aria-pressed={dashboard?.clinicSettings?.profile?.mode === mode}
 								onClick={() => changeClinicMode(mode)}
 							>
 								<strong>{clinicModeLabels[mode].title}</strong>
@@ -819,8 +822,8 @@ export function OnboardingWizardModal({
 					<div>
 						<h3>Команда и кабинет</h3>
 						<p>
-							Сотрудники и кресла сразу попадают в серверное состояние, аудит
-							и расписание.
+							Сотрудники и кресла сразу попадают в серверное состояние, аудит и
+							расписание.
 						</p>
 					</div>
 					<div className="onboarding-form-grid">
@@ -1058,9 +1061,7 @@ export function OnboardingWizardModal({
 															onClick={() => void saveStaffSchedule(member.id)}
 															disabled={scheduleSaving}
 														>
-															{scheduleSaving
-																? "Сохраняю"
-																: "Сохранить сейчас"}
+															{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
 														</button>
 													</div>
 												</div>
@@ -1183,9 +1184,7 @@ export function OnboardingWizardModal({
 															onClick={() => void saveChairSchedule(chair.id)}
 															disabled={scheduleSaving}
 														>
-															{scheduleSaving
-																? "Сохраняю"
-																: "Сохранить сейчас"}
+															{scheduleSaving ? "Сохраняю" : "Сохранить сейчас"}
 														</button>
 													</div>
 												</div>
@@ -1256,26 +1255,24 @@ export function OnboardingWizardModal({
 								aria-label="Источник переноса пациентов"
 								style={{ border: "none", padding: 0, margin: 0 }}
 							>
-								<legend className="sr-only">
-									Источник переноса пациентов
-								</legend>
-								{(
-									Object.keys(importSourceLabels) as ImportSourceKind[]
-								).map((kind) => (
-									<button
-										className={importSourceKind === kind ? "active" : ""}
-										key={kind}
-										type="button"
-										aria-pressed={importSourceKind === kind}
-										onClick={() => {
-											setImportSourceKind(kind);
-											setImportPreview(null);
-											setImportCommit(null);
-										}}
-									>
-										{importSourceLabels[kind].title}
-									</button>
-								))}
+								<legend className="sr-only">Источник переноса пациентов</legend>
+								{(Object.keys(importSourceLabels) as ImportSourceKind[]).map(
+									(kind) => (
+										<button
+											className={importSourceKind === kind ? "active" : ""}
+											key={kind}
+											type="button"
+											aria-pressed={importSourceKind === kind}
+											onClick={() => {
+												setImportSourceKind(kind);
+												setImportPreview(null);
+												setImportCommit(null);
+											}}
+										>
+											{importSourceLabels[kind].title}
+										</button>
+									),
+								)}
 							</fieldset>
 						</section>
 						<section className="onboarding-source-section">
@@ -1362,9 +1359,7 @@ export function OnboardingWizardModal({
 								<legend className="sr-only">Источник снимков</legend>
 								{imagingSourceChoices.map((kind) => (
 									<button
-										className={
-											imagingImportSourceKind === kind ? "active" : ""
-										}
+										className={imagingImportSourceKind === kind ? "active" : ""}
 										key={kind}
 										type="button"
 										aria-pressed={imagingImportSourceKind === kind}
@@ -1581,8 +1576,7 @@ export function OnboardingWizardModal({
 								}}
 							/>
 							<small>
-								Напоминания до приема в часах: от 1 до 168, максимум 6
-								значений.
+								Напоминания до приема в часах: от 1 до 168, максимум 6 значений.
 							</small>
 						</label>
 						<label>
@@ -1599,8 +1593,8 @@ export function OnboardingWizardModal({
 								}}
 							/>
 							<small>
-								Клиника сама выбирает момент просьбы оставить отзыв: от 1 до
-								720 часов после закрытого визита или оплаты.
+								Клиника сама выбирает момент просьбы оставить отзыв: от 1 до 720
+								часов после закрытого визита или оплаты.
 							</small>
 						</label>
 						<fieldset className="telegram-checkup-delay-fields full">
@@ -1827,8 +1821,9 @@ export function OnboardingWizardModal({
 					</div>
 					{!onboardingReadyToFinish ? (
 						<p className="onboarding-blocker">
-							До завершения нужно заполнить:{" "}
-							{onboardingBlockingIssues.join(", ")}.
+							Для полного профиля клиники рекомендуется заполнить:{" "}
+							{onboardingBlockingIssues.join(", ")}. Можно завершить в черновике
+							и дополнить позже в Настройках.
 						</p>
 					) : null}
 					{!onboardingDocumentsReady ? (
@@ -1853,8 +1848,8 @@ export function OnboardingWizardModal({
 					role="status"
 					aria-live="polite"
 				>
-					Чтобы завершить настройку, заполните:{" "}
-					{onboardingBlockingIssues.join(", ")}.
+					Для полного профиля заполните: {onboardingBlockingIssues.join(", ")}.
+					Завершение сейчас сохранит настройки в черновике.
 				</p>
 			) : null}
 			<div className="onboarding-actions">
@@ -1899,14 +1894,6 @@ export function OnboardingWizardModal({
 						className="primary-button"
 						type="button"
 						onClick={() => void moveOnboardingTo(nextOnboardingStep.id)}
-						aria-describedby={
-							nextOnboardingStep.id === "done" && !onboardingReadyToFinish
-								? onboardingFinishGuidanceId
-								: undefined
-						}
-						disabled={
-							nextOnboardingStep.id === "done" && !onboardingReadyToFinish
-						}
 					>
 						Дальше <ArrowRight aria-hidden="true" />
 					</button>
@@ -1918,7 +1905,6 @@ export function OnboardingWizardModal({
 						aria-describedby={
 							!onboardingReadyToFinish ? onboardingFinishGuidanceId : undefined
 						}
-						disabled={!onboardingReadyToFinish}
 					>
 						Завершить настройку
 					</button>
