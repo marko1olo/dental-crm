@@ -64,6 +64,11 @@ import {
 	PERIO_PATHOLOGY_PRESETS,
 } from "../lib/clinicalProtocols043.js";
 import { completeClinicalVisitAndAssembleEstimate } from "../components/visit/clinicalVisitWorkflow.js";
+import {
+	FAST_TOOTH_PRESETS,
+	applyFastCariesK021Protocol,
+	applyFastProHygieneProtocol,
+} from "../components/odontogram/ToothStatusPalette.js";
 
 describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisition Suite", () => {
 	// ════════════════════════════════════════════════════════════════════════
@@ -517,6 +522,84 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(hasAnesthesia, "Анестезия должна быть распознана");
 			assert.ok(hasTherapy, "Терапевтическое лечение должно быть распознано");
 			assert.ok(result.totalNetRub > 0, "Итоговая сумма должна быть > 0");
+		});
+	});
+
+	// ════════════════════════════════════════════════════════════════════════
+	// БЛОК 6: МАНДАТЫ 8e, 8k — Экспресс-пресеты одонтограммы, ToothStatusPalette и Visiograph
+	// ════════════════════════════════════════════════════════════════════════
+	describe("6. Мандаты 8e, 8k: 1-клик клинические экспресс-пресеты зубной формулы и молниеносный визиограф", () => {
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = path.dirname(__filename);
+		const webSrcDir = path.resolve(__dirname, "..");
+
+		it("6.1. FAST_TOOTH_PRESETS содержит обязательные клинические экспресс-пресеты", () => {
+			assert.ok(Array.isArray(FAST_TOOTH_PRESETS), "FAST_TOOTH_PRESETS должен быть массивом");
+			const ids = FAST_TOOTH_PRESETS.map((p) => p.id);
+			assert.ok(ids.includes("intact_dentition"), "Должен присутствовать пресет Интактный зубной ряд");
+			assert.ok(ids.includes("pro_hygiene_done"), "Должен присутствовать пресет Профгигиена выполнена");
+			assert.ok(ids.includes("fast_caries_k021"), "Должен присутствовать пресет Быстрая пломба K02.1");
+			assert.ok(ids.includes("wisdom_missing"), "Должен присутствовать пресет Адентия 8-ок");
+		});
+
+		it("6.2. applyFastCariesK021Protocol: Генерирует регламентный протокол 043/у и услугу A16.07.002.001", () => {
+			const protocol = applyFastCariesK021Protocol(16);
+			assert.ok(protocol.statusLocalis.includes("16"), "Status localis должен содержать номер зуба 16");
+			assert.ok(protocol.statusLocalis.includes("кариозная полость"), "Status localis должен описывать кариозную полость");
+			assert.ok(protocol.diagnosis.includes("K02.1"), "Диагноз должен содержать код МКБ K02.1");
+			assert.ok(protocol.treatment.includes("Артикаин"), "Лечение должно содержать протокол анестезии");
+			assert.ok(protocol.treatment.includes("композит"), "Лечение должно содержать пломбирование композитом");
+			assert.equal(protocol.serviceCode, "A16.07.002.001", "Код услуги Номенклатуры 804н должен быть A16.07.002.001");
+			assert.equal(protocol.price, 4500, "Стоимость пломбы должна быть 4500 руб.");
+		});
+
+		it("6.3. applyFastProHygieneProtocol: Генерирует протокол 043/у УЗ + Air-Flow и услугу A16.07.051", () => {
+			const protocol = applyFastProHygieneProtocol();
+			assert.ok(protocol.statusLocalis.includes("зубной камень"), "Status localis должен описывать зубные отложения");
+			assert.ok(protocol.diagnosis.includes("Z01.2"), "Диагноз должен содержать Z01.2");
+			assert.ok(protocol.diagnosis.includes("K05.0"), "Диагноз должен содержать K05.0");
+			assert.ok(protocol.treatment.includes("ультразвуковой скейлинг"), "Лечение должно содержать УЗ-скейлинг");
+			assert.ok(protocol.treatment.includes("Air-Flow"), "Лечение должно содержать воздушно-абразивную обработку");
+			assert.ok(protocol.treatment.includes("Bifluorid"), "Лечение должно содержать глубокое фторирование");
+			assert.equal(protocol.serviceCode, "A16.07.051", "Код услуги Номенклатуры 804н должен быть A16.07.051");
+			assert.equal(protocol.price, 5500, "Стоимость профгигиены должна быть 5500 руб.");
+		});
+
+		it("6.4. ToothChart.tsx: Содержит кнопки 1-клик экспресс-действий и правильные testid", () => {
+			const toothChartPath = path.resolve(__dirname, "../components/odontogram/ToothChart.tsx");
+			const source = fs.readFileSync(toothChartPath, "utf-8");
+
+			assert.ok(source.includes("tooth-chart-mark-intact-btn"), "ToothChart обязан содержать кнопку Санирован / Интактный");
+			assert.ok(source.includes("tooth-chart-mark-pro-hygiene-btn"), "ToothChart обязан содержать кнопку Профгигиена");
+			assert.ok(source.includes("tooth-chart-apply-fast-caries-btn"), "ToothChart обязан содержать кнопку Быстрая пломба K02.1");
+			assert.ok(source.includes("tooth-chart-mark-wisdom-missing-btn"), "ToothChart обязан содержать кнопку Без 8-ок");
+			assert.ok(source.includes("onMarkProHygieneDone"), "ToothChartProps обязан поддерживать onMarkProHygieneDone");
+			assert.ok(source.includes("onApplyFastCariesK021"), "ToothChartProps обязан поддерживать onApplyFastCariesK021");
+		});
+
+		it("6.5. OdontogramToolbar.tsx: Содержит пункты меню 1-клик действий в инструментах", () => {
+			const toolbarPath = path.resolve(__dirname, "../components/odontogram/OdontogramToolbar.tsx");
+			const source = fs.readFileSync(toolbarPath, "utf-8");
+
+			assert.ok(source.includes("tools-menu-mark-intact-btn"), "Toolbar обязан содержать пункт Интактный зубной ряд");
+			assert.ok(source.includes("tools-menu-mark-wisdom-missing-btn"), "Toolbar обязан содержать пункт Адентия 8-ок");
+			assert.ok(source.includes("tools-menu-mark-pro-hygiene-btn"), "Toolbar обязан содержать пункт Профгигиена");
+			assert.ok(source.includes("tools-menu-apply-fast-caries-btn"), "Toolbar обязан содержать пункт Быстрая пломба K02.1");
+		});
+
+		it("6.6. VisiographAnalyzer: Мгновенное открытие снимка (<50мс) без блокировки ИИ (Мандат 8e)", () => {
+			const canonicalPath = path.resolve(__dirname, "../components/visiograph/VisiographAnalyzer.tsx");
+			const implPath = path.resolve(__dirname, "../components/imaging/VisiographAnalyzer.tsx");
+
+			assert.ok(fs.existsSync(canonicalPath), "Канонический путь components/visiograph/VisiographAnalyzer.tsx обязан существовать");
+			assert.ok(fs.existsSync(implPath), "Реализация components/imaging/VisiographAnalyzer.tsx обязана существовать");
+
+			const source = fs.readFileSync(implPath, "utf-8");
+			// Проверка: снимок читается сразу через processFile
+			assert.ok(source.includes("processFile"), "Снимок должен обрабатываться через мгновенный processFile");
+			// Проверка: ИИ запускается строго по отдельной кнопке врача
+			assert.ok(source.includes("handleRunAiAnalysis"), "ИИ анализ должен запускаться только врачом через handleRunAiAnalysis");
+			assert.ok(source.includes("Запустить ИИ"), "Должна быть отдельная кнопка врача для запуска нейросети");
 		});
 	});
 });

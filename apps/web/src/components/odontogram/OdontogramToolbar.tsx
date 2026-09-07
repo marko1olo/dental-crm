@@ -66,6 +66,8 @@ export interface OdontogramToolbarProps {
 	onTriggerSanitation?: (() => void) | undefined;
 	onMarkIntactDentition?: (() => void) | undefined;
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
+	onMarkProHygieneDone?: (() => void) | undefined;
+	onApplyFastCariesK021?: (() => void) | undefined;
 	onOpenPediatricModal?: (() => void) | undefined;
 	onTogglePerio?: (() => void) | undefined;
 	isPerioOpen?: boolean | undefined;
@@ -97,6 +99,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 	onTriggerSanitation,
 	onMarkIntactDentition,
 	onMarkWisdomTeethMissing,
+	onMarkProHygieneDone,
+	onApplyFastCariesK021,
 	onOpenPediatricModal,
 	onTogglePerio,
 	isPerioOpen,
@@ -519,6 +523,50 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 									<span>Адентия 8-ок (18, 28, 38, 48)</span>
 								</div>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/10 border border-zinc-500/20 font-mono">
+									1 клик
+								</span>
+							</button>
+						)}
+
+						{/* 1-Click Pro-Hygiene Express in Tools */}
+						{onMarkProHygieneDone && (
+							<button
+								type="button"
+								onClick={() => {
+									onMarkProHygieneDone();
+									setIsToolsOpen(false);
+								}}
+								className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-teal-700 dark:text-teal-300 font-bold"
+								role="menuitem"
+								data-testid="tools-menu-mark-pro-hygiene-btn"
+							>
+								<div className="flex items-center gap-2">
+									<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
+									<span>Профгигиена (A16.07.051)</span>
+								</div>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/10 border border-teal-500/20 font-mono">
+									1 клик
+								</span>
+							</button>
+						)}
+
+						{/* 1-Click Fast Caries K02.1 in Tools */}
+						{onApplyFastCariesK021 && (
+							<button
+								type="button"
+								onClick={() => {
+									onApplyFastCariesK021();
+									setIsToolsOpen(false);
+								}}
+								className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-blue-700 dark:text-blue-300 font-bold"
+								role="menuitem"
+								data-testid="tools-menu-apply-fast-caries-btn"
+							>
+								<div className="flex items-center gap-2">
+									<Zap size={14} className="text-blue-600 dark:text-blue-400" />
+									<span>Быстрая пломба K02.1</span>
+								</div>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 font-mono">
 									1 клик
 								</span>
 							</button>

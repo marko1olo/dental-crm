@@ -68,6 +68,10 @@ import {
 	type RootResorptionStage,
 	ROOT_RESORPTION_STAGES,
 } from "./anatomicalToothGeometries";
+import {
+	applyFastCariesK021Protocol,
+	applyFastProHygieneProtocol,
+} from "./ToothStatusPalette";
 
 export interface ToothData {
 	toothNumber: number;
@@ -290,6 +294,8 @@ export interface ToothChartProps {
 	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
 	onMarkIntactDentition?: (() => void) | undefined;
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
+	onMarkProHygieneDone?: (() => void) | undefined;
+	onApplyFastCariesK021?: ((toothNumber?: number) => void) | undefined;
 	hideExpressActions?: boolean | undefined;
 	className?: string | undefined;
 }
@@ -2451,6 +2457,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	onQuadrantChange,
 	onMarkIntactDentition,
 	onMarkWisdomTeethMissing,
+	onMarkProHygieneDone,
+	onApplyFastCariesK021,
 	hideExpressActions = false,
 	className = "",
 }) => {
@@ -2527,6 +2535,86 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			SoundFeedbackService.getInstance().playActionSuccess();
 			showToast("⚡ Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
 		}
+	};
+
+	const handleMarkProHygieneDone = () => {
+		if (onMarkProHygieneDone) {
+			onMarkProHygieneDone();
+			return;
+		}
+		if (onQuickStateChange) {
+			const allTargets = isMixedEffective
+				? [...MIXED_TOP_TEETH, ...MIXED_BOTTOM_TEETH]
+				: isPediatricEffective
+					? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+					: [...ALL_ADULT_TEETH_NUMBERS];
+			onQuickStateChange(allTargets, "Healthy");
+		}
+		const protocol = applyFastProHygieneProtocol();
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						finding: { state: "Healthy" },
+						soap: {
+							subjective: "Жалобы на наличие зубных отложений, кровоточивость десен при чистке зубов.",
+							objective: protocol.statusLocalis,
+							assessment: protocol.diagnosis,
+							plan: protocol.treatment,
+						},
+						billing: {
+							code: protocol.serviceCode,
+							name: protocol.serviceName,
+							price: protocol.price,
+						},
+						mode: "smart_append",
+						immediate: true,
+					},
+				}),
+			);
+		} catch {
+			// Safe event dispatch fallback
+		}
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(`⚡ Профгигиена выполнена: ${protocol.serviceCode} (${protocol.price} ₽)`, "success");
+	};
+
+	const handleApplyFastCariesK021 = () => {
+		const targetTooth = selectedTeeth.length > 0 ? selectedTeeth[0]! : (isPediatricEffective ? 55 : 16);
+		if (onApplyFastCariesK021) {
+			onApplyFastCariesK021(targetTooth);
+			return;
+		}
+		if (onQuickStateChange) {
+			onQuickStateChange([targetTooth], "Filled", ["O"]);
+		}
+		const protocol = applyFastCariesK021Protocol(targetTooth);
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						finding: { toothNumber: targetTooth, state: "Filled", surfaces: ["O"] },
+						soap: {
+							subjective: `Жалобы на застревание пищи и кратковременную болезненность от сладкого/холодного в зубе ${targetTooth}.`,
+							objective: protocol.statusLocalis,
+							assessment: protocol.diagnosis,
+							plan: protocol.treatment,
+						},
+						billing: {
+							code: protocol.serviceCode,
+							name: protocol.serviceName,
+							price: protocol.price,
+						},
+						mode: "smart_append",
+						immediate: true,
+					},
+				}),
+			);
+		} catch {
+			// Safe event dispatch fallback
+		}
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(`⚡ Зуб ${targetTooth}: пломба K02.1 / ${protocol.serviceCode} (${protocol.price} ₽)`, "success");
 	};
 
 	useEffect(() => {
@@ -2806,6 +2894,28 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					>
 						<Zap size={14} className="text-emerald-600 dark:text-emerald-400" />
 						<span>⚡ Санирован / Интактный</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleMarkProHygieneDone}
+						className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+						title="⚡ 1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка (A16.07.051) + протокол 043/у"
+						data-testid="tooth-chart-mark-pro-hygiene-btn"
+					>
+						<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
+						<span>⚡ Профгигиена (A16.07.051)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleApplyFastCariesK021}
+						className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+						title="⚡ 1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол 043/у + световая пломба (A16.07.002.001)"
+						data-testid="tooth-chart-apply-fast-caries-btn"
+					>
+						<Zap size={14} className="text-blue-600 dark:text-blue-400" />
+						<span>⚡ Быстрая пломба K02.1</span>
 					</button>
 
 					{!isPediatricEffective && (
