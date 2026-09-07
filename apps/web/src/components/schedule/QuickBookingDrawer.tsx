@@ -70,6 +70,101 @@ export interface QuickBookingSlotInfo {
 	patientPhone?: string | null | undefined;
 }
 
+export function resolveChairDutyDoctor(
+	chairId: string | null | undefined,
+	startsAtIsoOrLocal: string | null | undefined,
+	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined,
+	dateKeyFallback?: string | undefined,
+	initialSlotDoctorId?: string | null | undefined,
+): { doctorId: string | null; shiftHours: string } {
+	if (!chairId) {
+		return { doctorId: initialSlotDoctorId || null, shiftHours: "08:00–20:00" };
+	}
+
+	// 1. Check passed chairDoctorAssignments
+	let assignment = chairDoctorAssignments?.[chairId];
+
+	// 2. Fallback to localStorage
+	const targetDateKey =
+		startsAtIsoOrLocal && startsAtIsoOrLocal.length >= 10
+			? startsAtIsoOrLocal.slice(0, 10)
+			: (dateKeyFallback || "");
+	if (!assignment && typeof window !== "undefined" && targetDateKey) {
+		try {
+			const raw = localStorage.getItem(`dente_chair_doctor_assignments_${targetDateKey}`);
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				if (parsed?.[chairId]) {
+					assignment = parsed[chairId];
+				}
+			}
+		} catch {}
+	}
+
+	if (assignment) {
+		const hourNum =
+			startsAtIsoOrLocal && startsAtIsoOrLocal.length >= 13
+				? Number.parseInt(startsAtIsoOrLocal.slice(11, 13), 10)
+				: NaN;
+
+		// Sub-shifts check for multi-shift chairs
+		if (assignment.subShifts && assignment.subShifts.length > 0) {
+			if (!Number.isNaN(hourNum)) {
+				const matchingSub = assignment.subShifts.find(
+					(s) => hourNum >= s.startHour && hourNum < s.endHour,
+				);
+				if (matchingSub) {
+					return {
+						doctorId: matchingSub.doctorId,
+						shiftHours:
+							matchingSub.shiftHours ||
+							`${String(matchingSub.startHour).padStart(2, "0")}:00–${String(matchingSub.endHour).padStart(2, "0")}:00`,
+					};
+				}
+				// Outside any sub-shift on this chair
+				return { doctorId: null, shiftHours: assignment.shiftHours || "08:00–20:00" };
+			}
+			return {
+				doctorId: assignment.doctorId,
+				shiftHours: assignment.shiftHours || "08:00–20:00",
+			};
+		}
+
+		// Single shift check
+		const sHour = assignment.startHour ?? 8;
+		const eHour = assignment.endHour ?? 20;
+		if (!Number.isNaN(hourNum)) {
+			if (hourNum >= sHour && hourNum < eHour) {
+				return {
+					doctorId: assignment.doctorId,
+					shiftHours:
+						assignment.shiftHours ||
+						`${String(sHour).padStart(2, "0")}:00–${String(eHour).padStart(2, "0")}:00`,
+				};
+			}
+			// Outside single shift
+			return {
+				doctorId: null,
+				shiftHours:
+					assignment.shiftHours ||
+					`${String(sHour).padStart(2, "0")}:00–${String(eHour).padStart(2, "0")}:00`,
+			};
+		}
+
+		return {
+			doctorId: assignment.doctorId,
+			shiftHours: assignment.shiftHours || "08:00–20:00",
+		};
+	}
+
+	// 3. Fallback: if slot was explicitly booked for this chair with a doctor
+	if (initialSlotDoctorId) {
+		return { doctorId: initialSlotDoctorId, shiftHours: "08:00–20:00" };
+	}
+
+	return { doctorId: null, shiftHours: "08:00–20:00" };
+}
+
 export interface QuickBookingDrawerProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -306,32 +401,23 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		return calculatePatientReliability(selectedPatient, dashboard?.appointments);
 	}, [selectedPatient, dashboard?.appointments]);
 
-	const dutyDoctorId = initialSlot?.doctorUserId || (chairId ? chairDoctorAssignments?.[chairId]?.doctorId : null);
+	const dutyDoctorInfo = useMemo(() => {
+		return resolveChairDutyDoctor(
+			chairId,
+			startsAtLocal,
+			chairDoctorAssignments,
+			initialSlot?.dateKey,
+			initialSlot?.chairId === chairId ? initialSlot?.doctorUserId : null,
+		);
+	}, [chairId, startsAtLocal, chairDoctorAssignments, initialSlot]);
+
+	const dutyDoctorId = dutyDoctorInfo.doctorId;
+	const dutyDocHours = dutyDoctorInfo.shiftHours;
+
 	const dutyDoc = useMemo(() => {
 		if (!dutyDoctorId) return null;
 		return doctors.find((d) => d.id === dutyDoctorId) || null;
 	}, [dutyDoctorId, doctors]);
-
-	const dutyDocHours = useMemo(() => {
-		if (chairId && chairDoctorAssignments?.[chairId]?.shiftHours) {
-			return chairDoctorAssignments[chairId].shiftHours;
-		}
-		if (typeof window !== "undefined") {
-			try {
-				const dateKey = initialSlot?.dateKey || (startsAtLocal ? startsAtLocal.slice(0, 10) : "");
-				if (dateKey && chairId) {
-					const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
-					if (raw) {
-						const parsed = JSON.parse(raw);
-						if (parsed?.[chairId]?.shiftHours) {
-							return parsed[chairId].shiftHours;
-						}
-					}
-				}
-			} catch {}
-		}
-		return "08:00–20:00";
-	}, [chairDoctorAssignments, chairId, initialSlot?.dateKey, startsAtLocal]);
 
 	const currentChair = useMemo(() => {
 		return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
@@ -367,22 +453,13 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		setStartsAtLocal(toLocal(initialStartIso));
 		setDurationMinutes(initialDuration);
 
-		// Doctor prefill
-		const defaultDocId =
-			initialSlot?.doctorUserId ||
-			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
-			(doctors.length === 1 ? doctors[0]?.id : "") ||
-			doctors[0]?.id ||
-			"";
-		setDoctorUserId(defaultDocId);
-
 		// Chair prefill
 		let defaultChairId =
 			initialSlot?.chairId ||
 			(chairs.length === 1 ? chairs[0]?.id : "") ||
 			"";
-		if (!defaultChairId && defaultDocId) {
-			const doc = doctors.find((d) => d.id === defaultDocId);
+		if (!defaultChairId && initialSlot?.doctorUserId) {
+			const doc = doctors.find((d) => d.id === initialSlot.doctorUserId);
 			if (doc?.specialties?.length) {
 				const matchingChair = chairs.find(
 					(c) => c.specialization && doc.specialties.includes(c.specialization),
@@ -399,6 +476,24 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			defaultChairId = DEFAULT_SOLO_CHAIR.id;
 		}
 		setChairId(defaultChairId);
+
+		// Doctor prefill: prefer initialSlot, else chair duty doctor, else solo/first doctor
+		const chairDutyDocId = defaultChairId
+			? resolveChairDutyDoctor(
+					defaultChairId,
+					toLocal(initialStartIso),
+					chairDoctorAssignments,
+					initialSlot?.dateKey,
+				).doctorId
+			: null;
+		const defaultDocId =
+			initialSlot?.doctorUserId ||
+			chairDutyDocId ||
+			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
+			(doctors.length === 1 ? doctors[0]?.id : "") ||
+			doctors[0]?.id ||
+			"";
+		setDoctorUserId(defaultDocId);
 
 		// Assistant: опционально, без принудительного назначения
 		setAssistantUserId("");
@@ -1899,7 +1994,21 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							</label>
 							<select
 								value={chairId}
-								onChange={(e) => setChairId(e.target.value)}
+								onChange={(e) => {
+									const newChairId = e.target.value;
+									setChairId(newChairId);
+									if (newChairId) {
+										const newDuty = resolveChairDutyDoctor(
+											newChairId,
+											startsAtLocal,
+											chairDoctorAssignments,
+											initialSlot?.dateKey,
+										);
+										if (newDuty.doctorId) {
+											setDoctorUserId(newDuty.doctorId);
+										}
+									}
+								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								required
 								data-testid="select-booking-chair"

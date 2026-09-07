@@ -104,7 +104,8 @@ import {
 	formatDoctorShortName,
 	type ChairDoctorShiftAssignment,
 } from "../ScheduleGrid";
-import { QuickBookingDrawer } from "../QuickBookingDrawer";
+import { QuickBookingDrawer, resolveChairDutyDoctor } from "../QuickBookingDrawer";
+import { buildChairDoctorAssignmentsFromShifts } from "../../../ScheduleView";
 
 interface MockDomNode {
 	nodeType: number;
@@ -1125,5 +1126,220 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 		// Time row cells have sticky left-0 z-10
 		expect(html).toContain("sticky left-0 z-10 bg-[var(--paper)]");
+	});
+
+	it("12. buildChairDoctorAssignmentsFromShifts preserves morning + evening shifts for the same chair in subShifts without overwriting", () => {
+		const shifts = [
+			{
+				id: "shift-1",
+				doctorId: "doc-1",
+				doctorName: "Иванов Иван Иванович",
+				doctorRole: "therapist" as const,
+				assistantId: null,
+				assistantName: null,
+				cabinetId: "chair-1",
+				chairId: "chair-1",
+				dateIso: "2026-09-07",
+				archetypeId: "morning_shift" as const,
+				startTime: "08:00",
+				endTime: "14:00",
+				durationHours: 6,
+				breakMinutes: 0,
+				isNight: false,
+				nightHours: 0,
+				status: "scheduled" as const,
+			},
+			{
+				id: "shift-2",
+				doctorId: "doc-2",
+				doctorName: "Петров Петр Петрович",
+				doctorRole: "orthopedist" as const,
+				assistantId: null,
+				assistantName: null,
+				cabinetId: "chair-1",
+				chairId: "chair-1",
+				dateIso: "2026-09-07",
+				archetypeId: "evening_shift" as const,
+				startTime: "14:00",
+				endTime: "20:00",
+				durationHours: 6,
+				breakMinutes: 0,
+				isNight: false,
+				nightHours: 0,
+				status: "scheduled" as const,
+			},
+		];
+
+		const assignments = buildChairDoctorAssignmentsFromShifts(shifts, "2026-09-07");
+		const chair1 = assignments["chair-1"];
+		expect(chair1).not.toBeNull();
+		expect(chair1?.subShifts?.length).toBe(2);
+		expect(chair1?.subShifts?.[0]?.doctorId).toBe("doc-1");
+		expect(chair1?.subShifts?.[0]?.shiftHours).toBe("08:00–14:00");
+		expect(chair1?.subShifts?.[1]?.doctorId).toBe("doc-2");
+		expect(chair1?.subShifts?.[1]?.shiftHours).toBe("14:00–20:00");
+		expect(chair1?.shiftLabel).toContain("Иванов И.И.");
+		expect(chair1?.shiftLabel).toContain("Петров П.П.");
+	});
+
+	it("13. ScheduleGrid: clicking empty slot outside morning shift hours (e.g. 17:00) does not return morning doctor", async () => {
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+		const onSlotClick = vi.fn();
+
+		const assignments: Record<string, ChairDoctorShiftAssignment> = {
+			"chair-1": {
+				chairId: "chair-1",
+				doctorId: "doc-1",
+				doctorName: "Иванов Иван Иванович",
+				shiftPreset: "morning",
+				shiftLabel: "08:00–14:00",
+				shiftHours: "08:00–14:00",
+				startHour: 8,
+				endHour: 14,
+			},
+		};
+
+		await act(async () => {
+			root.render(
+				React.createElement(ScheduleGrid, {
+					dashboard: multiChairDashboard,
+					dateKey: "2026-09-07",
+					appointments: [],
+					onSlotClick,
+					onAppointmentClick: vi.fn(),
+					patientName: (_, id) => (id ? "Пациент" : "—"),
+					formatTime: (iso: string) => iso.slice(11, 16),
+					toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+					appointmentLabels: mockAppointmentLabels,
+					chairDoctorAssignments: assignments,
+				}),
+			);
+		});
+
+		// Slot at 17:00 on chair-1 is outside morning shift (08:00–14:00)
+		const slot1700 = findNodeByTestId(container, "btn-slot-chair-1-1700");
+		expect(slot1700).not.toBeNull();
+
+		await clickNode(slot1700);
+
+		expect(onSlotClick).toHaveBeenCalledTimes(1);
+		const clickedSlot = (onSlotClick.calls[0] as any[])[0];
+		expect(clickedSlot.startTime).toBe("17:00");
+		expect(clickedSlot.doctorUserId).toBeNull();
+	});
+
+	it("14. QuickBookingDrawer: switching chair in select-booking-chair dynamically auto-selects that chair's duty doctor and updates badge without false warnings", async () => {
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		const assignments: Record<string, ChairDoctorShiftAssignment> = {
+			"chair-1": {
+				chairId: "chair-1",
+				doctorId: "doc-1",
+				doctorName: "Иванов Иван Иванович",
+				shiftPreset: "morning",
+				shiftLabel: "08:00–14:00",
+				shiftHours: "08:00–14:00",
+				startHour: 8,
+				endHour: 14,
+			},
+			"chair-2": {
+				chairId: "chair-2",
+				doctorId: "doc-2",
+				doctorName: "Петров Петр Петрович",
+				shiftPreset: "morning",
+				shiftLabel: "08:00–14:00",
+				shiftHours: "08:00–14:00",
+				startHour: 8,
+				endHour: 14,
+			},
+		};
+
+		await act(async () => {
+			root.render(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: vi.fn(),
+					dashboard: multiChairDashboard,
+					chairDoctorAssignments: assignments,
+					initialSlot: {
+						dateKey: "2026-09-07",
+						startTime: "10:00",
+						chairId: "chair-1",
+						doctorUserId: "doc-1",
+					},
+				}),
+			);
+		});
+
+		// Initially chair-1 and doc-1
+		const chairSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-booking-chair");
+		const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-booking-doctor");
+		expect(chairSelect?.value).toBe("chair-1");
+		expect(docSelect?.value).toBe("doc-1");
+
+		let dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
+		expect(dutyBadge?.textContent).toContain("Иванов И.И.");
+
+		let overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
+		expect(overrideNote).toBeNull();
+
+		// Now switch chair to chair-2
+		await changeNode(chairSelect, "chair-2");
+
+		// Doctor must automatically switch to doc-2 (Petrov on duty on chair-2)
+		expect(docSelect?.value).toBe("doc-2");
+		dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
+		expect(dutyBadge?.textContent).toContain("Петров П.С.");
+
+		// No false override note because doc-2 is on duty on chair-2
+		overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
+		expect(overrideNote).toBeNull();
+	});
+
+	it("15. resolveChairDutyDoctor correctly distinguishes morning vs evening doctors for multi-shift chair", () => {
+		const assignments: Record<string, ChairDoctorShiftAssignment> = {
+			"chair-1": {
+				chairId: "chair-1",
+				doctorId: "doc-1",
+				doctorName: "Иванов / Петров",
+				shiftPreset: "custom",
+				shiftLabel: "08–14: Иванов И.И. / 14–20: Петров П.П.",
+				shiftHours: "08:00–14:00 & 14:00–20:00",
+				startHour: 8,
+				endHour: 20,
+				subShifts: [
+					{
+						doctorId: "doc-1",
+						doctorName: "Иванов Иван Иванович",
+						startHour: 8,
+						endHour: 14,
+						shiftHours: "08:00–14:00",
+					},
+					{
+						doctorId: "doc-2",
+						doctorName: "Петров Петр Петрович",
+						startHour: 14,
+						endHour: 20,
+						shiftHours: "14:00–20:00",
+					},
+				],
+			},
+		};
+
+		// 10:00 is during morning shift
+		const morningDuty = resolveChairDutyDoctor("chair-1", "2026-09-07T10:00", assignments);
+		expect(morningDuty.doctorId).toBe("doc-1");
+		expect(morningDuty.shiftHours).toBe("08:00–14:00");
+
+		// 16:00 is during evening shift
+		const eveningDuty = resolveChairDutyDoctor("chair-1", "2026-09-07T16:00", assignments);
+		expect(eveningDuty.doctorId).toBe("doc-2");
+		expect(eveningDuty.shiftHours).toBe("14:00–20:00");
+
+		// 22:00 is outside any shift
+		const nightDuty = resolveChairDutyDoctor("chair-1", "2026-09-07T22:00", assignments);
+		expect(nightDuty.doctorId).toBeNull();
 	});
 });

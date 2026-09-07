@@ -152,7 +152,11 @@ export function ScheduleFilterStrip({
 		// 1. If chairDoctorAssignments are provided, look for chair bound to effective doctor
 		if (chairDoctorAssignments && effectiveDoctorIdForMyChair) {
 			const assignedChairId = Object.keys(chairDoctorAssignments).find(
-				(cId) => chairDoctorAssignments[cId]?.doctorId === effectiveDoctorIdForMyChair,
+				(cId) =>
+					chairDoctorAssignments[cId]?.doctorId === effectiveDoctorIdForMyChair ||
+					chairDoctorAssignments[cId]?.subShifts?.some(
+						(s) => s.doctorId === effectiveDoctorIdForMyChair,
+					),
 			);
 			if (assignedChairId) {
 				const matching = displayChairs.find((c) => c.id === assignedChairId);
@@ -167,7 +171,12 @@ export function ScheduleFilterStrip({
 				if (raw) {
 					const parsed = JSON.parse(raw);
 					const assignedChairId = Object.keys(parsed).find(
-						(cId) => parsed[cId]?.doctorId === effectiveDoctorIdForMyChair,
+						(cId) =>
+							parsed[cId]?.doctorId === effectiveDoctorIdForMyChair ||
+							parsed[cId]?.subShifts?.some(
+								// biome-ignore lint/suspicious/noExplicitAny: sub-shift check
+								(s: any) => s.doctorId === effectiveDoctorIdForMyChair,
+							),
 					);
 					if (assignedChairId) {
 						const matching = displayChairs.find((c) => c.id === assignedChairId);
