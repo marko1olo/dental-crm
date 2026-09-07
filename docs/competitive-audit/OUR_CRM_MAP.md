@@ -54,9 +54,11 @@
   - `public_booking_slots` (`publicBooking.ts`) — доступные слоты онлайн-записи для интеграторов.
   - `urgentScheduleRequests` — срочные CITO-обращения с авто-подбором слота/врача и 1-клик печатью чистого договора со строками `_______`.
   - Свобода соло-врача и опциональный ассистент при создании записи (`assistantUserId` опционален, нормализуется в `null` без 400/валидационных ошибок в `AppointmentModal.tsx`, `NewAppointmentForm.tsx`, `QuickBookingDrawer.tsx`, Мандаты 8e п. 8, 8n).
+  - Движок скоринга дисциплины и надежности пациентов (`patientReliabilityScore.ts`): автоматический расчет посещаемости, опозданий и неявок с полной зачисткой сырых эмодзи (Мандат 8d п. 7, Apple HIG). Введены строгие семантические категории `ReliabilityStatus` (`reliable`, `new`, `high_risk`, `attention`, `debt`) с цветовой дифференциацией WCAG AAA и рекомендациями администратору («Требуется подтверждение за 2 часа» при 2+ неявках подряд).
+  - Интеллектуальный движок напоминаний на завтра (`tomorrowRemindersEngine.ts`, `TomorrowRemindersModal.tsx`, `generateAppointmentWhatsAppMessage.ts`): многоканальный каскад оповещений (Telegram -> WhatsApp -> SMS), строгое соблюдение тихих часов (21:00–08:00 по 38-ФЗ и 152-ФЗ), профессиональная медицинская типографика без эмодзи-спама и адаптивные клинические инструкции подготовки к визиту по профилю приёма (хирургия, гигиена, терапия, педиатрия).
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма, Хирургия и Голосовой ввод
-- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`.
+- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`, `OrthopedicsChairsidePanel.tsx`.
 - **Бэкенд**: `apps/api/src/routes/visits.ts`, `odontogram.ts`, `toothHistory.ts`, `clinical.ts`, `speech.ts`.
 - **Возможности**:
   - Интерактивная 2D/3D одонтограмма (32 зуба + молочная формула, кариес, пульпит, периодонтит, корень, имплант).
@@ -65,15 +67,18 @@
   - 1-клик протоколы терапии и эндодонтии по Номенклатуре 804н и СтАР: пульпит 1-е посещение (A16.07.030.001 + A16.07.008.002, NaOCl 3%, Calcept), пульпит 2-е посещение/обтурация (A16.07.008.001, гуттаперча + AH Plus), деструктивный периодонтит (A16.07.030.002, Metapex), кариес дентина (A16.07.002.001, Filtek/Estelite) с авто-вставкой дневника SOAP в карту 043/у (`clinicalSoapPresets.ts`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, коммит `1a9ec847f`).
   - Детская эндодонтия зубов 51..85 с авто-расчетом рабочей длины корневых каналов и утилитарный замер каналов в `EndoCanalMeasurementDrawer.tsx`.
   - Экспресс-протоколы гигиены и пародонтограммы в 1 клик (норма 1–2 мм, гингивит BOP+, пародонтит 3–4 мм и 4–5 мм, 5-этапная профгигиена УЗ Piezon + AirFlow + Detartrine + Bifluorid 12) с мгновенной вставкой в дневник 043/у без симулятора 192 точек (`HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`, коммит `d9f42454f`).
+  - 1-клик chairside пресеты профилактики и пародонтологии (`HygieneIndicesPanel.tsx`, тач-таргеты $\ge 48\text{px}$): глубокое фторирование эмали Tiefenfluorid/Сафорайд (`A11.07.012`, 1800 ₽), реминерализирующая терапия каппой GC Tooth Mousse (`A11.07.010`, 1500 ₽), антисептическая обработка пародонтальных карманов Хлоргексидин 0.05% + Метрогил Дента (`A16.07.053`, 1200 ₽) с дублирующим диспатчем в активный чек `dente-add-services-to-invoice` и протокол 043/у.
+  - Прямой диспатч ортопедических услуг Номенклатуры 804н в активный чек визита (`dente-add-services-to-invoice`) у кресла (`applyOrthopedicProtocolToVisit`, `orthopedicProtocols.ts`, `OrthopedicsChairsidePanel.tsx`): 1-клик одновременная трансляция в дневник 043/у (`dente-apply-soap-protocol`), одонтограмму (`dente-apply-crown-status`), план лечения (`dente-add-estimate-service`) и текущий наряд визита без ручного ввода; полная палитра оттенков VITA Classical & Bleach (BL1..D4) по клиническим группам с авто-нормализацией гомоглифов.
   - Защита черновика врача от потери (Autosave Flush) при входящем телефонном звонке (`telephonyStore.ts`, коммит `1d7d1d2f8`).
   - Голосовая диктовка врачом с авто-нормализацией медицинских терминов (`speech.ts`).
   - Система клинических правил `ClinicalRulePanel.tsx` (проверка обязательных услуг, предупреждения о противопоказаниях).
 
 ### 2.4. Ортодонтия, 3D DICOM / MPR КТ Просмотрщик & ИИ Диагностика
-- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `OrthodonticStudioModal.tsx`, `OrthoPhotoProtocolModal.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`.
+- **Фронтенд**: `apps/web/src/ImagingView.tsx`, `OrthodonticStudioModal.tsx`, `OrthoPhotoProtocolModal.tsx`, `OrthodonticVisitProtocolWidget.tsx`, `CtPlanningToolbar.tsx`, `ctPlanning*.ts`, `mprMath.ts`, `mprWorker.ts`, `ImplantCrossSectionPlanner.tsx`, `CephalometricAnalysisModal.tsx`.
 - **Бэкенд / Shared**: `apps/api/src/routes/imaging.ts`, `imaging_planning.ts`, `dicomweb.ts`, `ai.ts`, `xray.ts`, `packages/shared/src/orthodontics/orthoEngine.ts`, `types.ts`.
 - **Преимущество [ЛУЧШЕ У НАС]**:
   - Полнофункциональная ортодонтическая студия `OrthodonticStudioModal.tsx` и движок `orthoEngine.ts`: 1-клик протоколы термоактивных дуг CuNiTi (.014 / .016), стальных и TMA рабочих дуг (.019x.025), межчелюстных эластиков (Rabbit, Fox), элайнеров (аттачменты, IPR, выдача наборов капп), фиксации и снятия брекетов с ретейнером, фотопротокол 9 ракурсов `OrthoPhotoProtocolModal.tsx` и 1-клик вставка SOAP-дневника в 043/у (коммит `5a007a4ab`), а также 1-клик классификация окклюзии по Энглю (Класс I, II/1, II/2, III) и экспресс-селекторы рабочих дуг в `OrthodonticStudioModal.tsx` и `OrthodonticVisitProtocolWidget.tsx` (коммиты `6c41ee42d`, `719b7beac`).
+  - 1-клик начисление ортодонтических услуг по Номенклатуре Минздрава РФ 804н в смету и чек визита через шину `dente-add-services-to-invoice` (`OrthodonticVisitProtocolWidget.tsx`): маппинг смены дуги (A16.07.048.002 + A16.07.048), активации брекетов (A16.07.048), переклейки замка (A16.07.048.001), IPR сепарации (A16.07.048.003), съемной пластинки (A16.07.047), винта (A16.07.047.001), дебондинга и ретейнера (A16.07.049, A16.07.050), элайнеров и аттачментов (A16.07.046, A16.07.046.001); дедупликация услуг по коду; кнопка с бейджем суммы в тулбаре; зачистка эмодзи в фотопротоколе `OrthoPhotoProtocolModal.tsx` по Apple HIG (Мандат 8d п. 7).
   - Встроенный в веб-клиент 3D MPR КТ реконструктор (аксиальный, сагиттальный, корональный срезы).
   - Подлинная анатомическая шкала плотности кости по Misch (D1–D5: D1 >1250 HU, D2 850–1250 HU, D3 350–849 HU, D4 150–349 HU, D5 <150 HU) без аркадных HU-слайдеров и синтетических диорам нерва (`boneDensityMischMath.ts`, `implantSafetyEngine.ts`, коммит `48c7cdac2`).
   - Унифицированный модуль цефалометрии ТРГ `CephalometricAnalysisModal.tsx` с голосовой диктовкой анатомических ориентиров (коммит `95128f01e`).
@@ -142,7 +147,7 @@
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
 - **Возможности**: Автоматический импорт баз данных из IDENT, DentalPRO, Инфоклиника и 1С:Стоматология.
 
-### 2.10. Шестьдесят три киллер-фичи снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n)
+### 2.10. Сто три киллер-фичи снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n, Фичи 64..137)
 
 Наша стоматологическая CRM создана для реального врача у кресла и администратора на ресепшене, а не для бюрократического контроля. Все процессы подчиняются принципу «Врач правит только патологию, норма заполняется в 1 клик, система никогда не ставит палки в колёса».
 
@@ -876,6 +881,72 @@
 - **Тесты**:
   - `apps/web/src/components/communications/__tests__/messageDeliveryConsoleAutonomy.test.tsx` (5 тестов, 100% passing).
 
+#### 2.10.94. Ортодонтия: 1-клик начисление услуг 804н в смету/чек визита через dente-add-services-to-invoice и очистка эмодзи в фотопротоколе (Мандаты 8d, 8e, 8i, 8k, 8n / Ортодонтия, Фича #133)
+- **Суть и домен**: Мгновенный 1-клик маппинг и диспатч ортодонтических услуг по Номенклатуре Минздрава РФ 804н в смету и открытый чек визита (Фича #133):
+  1. *Прямой маппинг клинических действий ортодонта*:
+     - Смена дуги: `A16.07.048.002` (2500 ₽) + `A16.07.048` (1500 ₽);
+     - Активация элементов брекет-системы / лигатур: `A16.07.048` (1500 ₽);
+     - Фиксация / переклейка одного брекета или замка: `A16.07.048.001` (1200 ₽) с привязкой к номеру зуба;
+     - Сепарация эмали (IPR): `A16.07.048.003` (800 ₽);
+     - Коррекция съемного ортодонтического аппарата: `A16.07.047` (1000 ₽);
+     - Активация расширяющего винта пластинки: `A16.07.047.001` (800 ₽);
+     - Снятие аппарата и ретейнер: `A16.07.049` (5000 ₽) + `A16.07.050` (4000 ₽);
+     - Элайнеры и аттачменты: `A16.07.046` (3000 ₽) + `A16.07.046.001` (2000 ₽).
+  2. *1-клик кнопка тулбара с бейджем суммы*: кнопка «Начислить в чек визита» с индикатором количества услуг и общей стоимости в рублях; защита от повторного начисления одинакового кода 804н за один визит.
+  3. *Ликвидация сырых эмодзи*: полное искоренение несерьезных эмодзи в фотопротоколе `OrthoPhotoProtocolModal.tsx` и тостах (Мандат 8d п. 7, Apple HIG).
+- **Фронтенд**:
+  - `apps/web/src/components/orthodontics/OrthodonticVisitProtocolWidget.tsx`, `apps/web/src/components/orthodontics/OrthoPhotoProtocolModal.tsx`.
+- **Тесты**:
+  - `apps/web/src/components/orthodontics/__tests__/OrthodonticVisitProtocolWidget.test.tsx` (100% passing).
+
+#### 2.10.95. Ортопедия: прямой диспатч услуг 804н в активный чек визита у кресла (dente-add-services-to-invoice) и каталог оттенков VITA (Мандаты 8e, 8i, 8k, 8n / Ортопедия, Фича #134)
+- **Суть и домен**: Автоматическое наполнение счёта и сметы визита при применении клинических протоколов ортопедии у кресла без ручного поиска услуг в прайсе (Фича #134):
+  1. *Диспатч `dente-add-services-to-invoice` в `applyOrthopedicProtocolToVisit`*: при выборе любого из 4 протоколов (препарирование под коронку, примерка каркаса, постоянная фиксация, съемный протез) номенклатурные услуги 804н (`A16.07.004`, `A16.07.003`, `A16.07.049`, `A16.07.023`, `A16.07.053`) параллельно диспатчатся:
+     - В протокол SOAP карты 043/у (`dente-apply-soap-protocol`);
+     - В статус коронки одонтограммы (`dente-apply-crown-status`);
+     - В этап 3 плана лечения (`dente-add-estimate-service`);
+     - В текущий открытый счёт визита (`dente-add-services-to-invoice`).
+  2. *Каталог VITA Classical & Bleach оттенков*: экспорт палитры оттенков VITA Classical (A1..D4) и экстра-белых Bleach (BL1..BL4) по клиническим группам с авто-нормализацией гомоглифов.
+- **Фронтенд / Логика**:
+  - `apps/web/src/components/orthopedics/orthopedicProtocols.ts`, `apps/web/src/components/orthopedics/OrthopedicsChairsidePanel.tsx`.
+- **Тесты**:
+  - `apps/web/src/components/orthopedics/__tests__/orthopedicProtocols.test.ts` (100% passing).
+
+#### 2.10.96. Пародонтология и гигиена: 1-клик chairside пресеты глубокого фторирования, ремтерапии каппой, обработки карманов и дублирующий диспатч в чек (Мандаты 8d, 8e, 8i, 8k, 8n / Гигиена & 804н, Фича #135)
+- **Суть и домен**: Экспресс-протоколы профилактической и пародонтологической помощи у кресла с 1-клик начислением в дневник 043/у и чек визита (Фича #135):
+  1. *1-клик chairside пресеты процедур*:
+     - Глубокое фторирование эмали: препарат Tiefenfluorid / Сафорайд, герметизирующий ликвид №1 и №2, сушка (`A11.07.012`, 1800 ₽);
+     - Реминерализирующая терапия каппой: крем GC Tooth Mousse с комплексом Recaldent CPP-ACP, экспозиция 5 минут на силиконовой каппе (`A11.07.010`, 1500 ₽);
+     - Антисептическая обработка пародонтальных карманов: орошение 0.05% хлоргексидином и инстилляция геля Метрогил Дента (`A16.07.053`, 1200 ₽).
+  2. *Дублирующий диспатч в чек*: при комплексной профгигиене (`A16.07.051`) и вызове пресетов генерируются события `dente-apply-soap-protocol`, `dente-add-estimate-service` и `dente-add-services-to-invoice`.
+  3. *Эргономика*: крупные тач-таргеты $\ge 48\text{px}$ для быстрой работы в перчатках у стоматологической установки.
+- **Фронтенд**:
+  - `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`.
+- **Тесты**:
+  - `apps/web/src/components/hygiene/__tests__/HygieneIndicesPanel.test.tsx` (100% passing).
+
+#### 2.10.97. Расписание и напоминания: ликвидация мультяшных эмодзи из скоринга благонадежности, движка напоминаний на завтра и шаблонов WhatsApp/SMS (Мандаты 8d п. 7, 8e, 8n / Расписание & Apple HIG, Фича #136)
+- **Суть и домен**: Тотальная ликвидация визуального шума и сырых эмодзи из расписания, оценки благонадежности пациентов и сервисных напоминаний (Фича #136):
+  1. *Очистка скоринга благонадежности*: в `patientReliabilityScore.ts` устранены сырые эмодзи (звезды, знаки опасности, круги) из полей `shortLabel` и `badgeText`; введен машиночитаемый статус `ReliabilityStatus` (`reliable`, `new`, `high_risk`, `attention`, `debt`) с чистой типографикой Apple HIG.
+  2. *Очистка движка напоминаний на завтра*: в `tomorrowRemindersEngine.ts` и `TomorrowRemindersModal.tsx` исключены эмодзи из системных рекомендаций администратору; строгое соблюдение тихих часов (21:00–08:00 по 38-ФЗ и 152-ФЗ).
+  3. *Профессиональная типографика WhatsApp/SMS*: в `generateAppointmentWhatsAppMessage.ts` сформированы строгие текстовые шаблоны без эмодзи-спама; адаптивные клинические инструкции подготовки к визиту (хирургия, гигиена, терапия, педиатрия).
+- **Фронтенд / Движки**:
+  - `apps/web/src/components/schedule/patientReliabilityScore.ts`, `apps/web/src/components/schedule/tomorrowRemindersEngine.ts`, `apps/web/src/components/schedule/generateAppointmentWhatsAppMessage.ts`, `apps/web/src/components/schedule/TomorrowRemindersModal.tsx`.
+- **Тесты**:
+  - `apps/web/src/tests/patientReliabilityScore.test.ts`, `apps/web/src/components/schedule/__tests__/tomorrowRemindersEngine.test.ts` (100% passing).
+
+#### 2.10.98. Ред-Тим: независимый аудит 22-й волны по 7 смертным грехам интерфейса, автономии врача (Мандат 8e) и машинным гейтам (Мандаты 8d, 8e, 8m, 8o / Ред-Тим & Инварианты, Фича #137)
+- **Суть и домен**: Независимый инквизиционный аудит компонентов 22-й волны по 7 смертным грехам интерфейса (Мандат 8d) и суверенитету соло-врача (Мандаты 8e, 8n) (Фича #137):
+  1. *Грех 1 (Текст и локализация)*: проверка отсутствия переполнений, наездов текста и утечек `undefined`/`NaN` в начислениях услуг 804н.
+  2. *Грех 2 (Плотность тулбара по закону Хика)*: 1-строчные компактные панели инструментов в ортодонтии, ортопедии и гигиене.
+  3. *Грех 3 (Карточки по закону Миллера)*: не более 1–2 кнопок прямого действия, вынесение второстепенных опций в меню.
+  4. *Грех 4 (Контрастность тем WCAG AAA)*: отсутствие слепящих белых пятен в Dark Mode и неконтрастных серых текстов в Light Mode.
+  5. *Грех 5 (Автономия врача, Мандат 8e)*: свобода начисления услуг, отсутствие блокирующих `disabled` кнопок у кресла.
+  6. *Грех 6 (Закон Анти-Матрёшки)*: модальная глубина строго равна 1.
+  7. *Грех 7 (Святость официальных бланков)*: ноль мультяшных эмодзи в Форме 043/у, актах, чеках, напоминаниях и скоринге; строгие векторные иконки Lucide.
+- **Скоуп и машинные гейты**:
+  - `apps/web/src/components/orthodontics/`, `apps/web/src/components/orthopedics/`, `apps/web/src/components/hygiene/`, `apps/web/src/components/schedule/`.
+  - Валидация: TypeScript `npm run typecheck` Exit Code 0, кодировка UTF-8 `npm run check:encoding` 0 ошибок.
 
 
 
