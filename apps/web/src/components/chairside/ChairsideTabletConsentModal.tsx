@@ -265,7 +265,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 	const handleConfirmOtp = (codeToVerify?: string) => {
 		const code = codeToVerify || otpInput;
 		if (code.length !== 4) {
-			setOtpError("Введите 4-значный код из СМС");
+			setOtpError("Введите 4-значный код из СМС или нажмите «Подтвердить на бумаге (1 клик)»");
 			return;
 		}
 
@@ -613,7 +613,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 												</button>
 												<button
 													type="button"
-													className="chairside-btn secondary"
+													className="chairside-btn secondary min-h-[44px] min-w-[44px]"
 													onClick={handleSignWithPaper}
 													data-testid="chairside-paper-confirm-btn"
 													title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
@@ -664,14 +664,15 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 														type="button"
 														className="chairside-btn primary lg"
 														onClick={() => handleConfirmOtp()}
-														disabled={otpInput.length !== 4 || isSubmitting}
+														disabled={isSubmitting}
+														data-testid="chairside-otp-confirm-btn"
 													>
 														<FileCheck size={20} />
 														<span>Подтвердить и подписать (63-ФЗ)</span>
 													</button>
 													<button
 														type="button"
-														className="chairside-btn secondary"
+														className="chairside-btn secondary min-h-[44px] min-w-[44px]"
 														onClick={handleSignWithPaper}
 														data-testid="chairside-paper-confirm-btn"
 														title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
@@ -683,7 +684,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 											</div>
 
 											{otpError && (
-												<div className="chairside-otp-error">
+												<div className="chairside-otp-error" data-testid="chairside-otp-error">
 													<AlertTriangle size={16} />
 													<span>{otpError}</span>
 												</div>
@@ -753,7 +754,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							className="chairside-btn secondary"
+							className="chairside-btn secondary min-h-[44px] min-w-[44px]"
 							onClick={() => window.print()}
 							data-testid="chairside-print-package-btn"
 							title="Печать всего комплекта документов на бумаге А4"
@@ -789,7 +790,7 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 						{!isSigned && (
 							<button
 								type="button"
-								className="chairside-btn secondary"
+								className="chairside-btn secondary min-h-[44px] min-w-[44px]"
 								onClick={handleSignWithPaper}
 								data-testid="chairside-paper-confirm-btn"
 								title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
@@ -822,7 +823,8 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 								type="button"
 								className="chairside-btn primary lg"
 								onClick={() => handleConfirmOtp()}
-								disabled={otpInput.length !== 4 || isSubmitting}
+								disabled={isSubmitting}
+								data-testid="chairside-otp-confirm-footer-btn"
 							>
 								<FileCheck size={20} />
 								<span>Подтвердить и подписать (63-ФЗ)</span>

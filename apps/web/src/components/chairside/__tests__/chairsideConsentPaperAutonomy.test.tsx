@@ -14,6 +14,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import {
 	createChairsideConsentPackage,
+	sendChairsideSmsOtpToPatient,
 	signPackageWithPaperPhysical,
 	type ChairsideConsentPackage,
 	type ChairsideDoctorProfile,
@@ -52,6 +53,8 @@ interface MockDomNode {
 	};
 	getContext?: (type: string) => unknown;
 	toDataURL?: (type?: string) => string;
+	focus?: () => void;
+	blur?: () => void;
 	[key: string]: unknown;
 }
 
@@ -125,6 +128,8 @@ function setupMockDom() {
 				height: 768,
 			}),
 			getContext: () => null,
+			focus: () => {},
+			blur: () => {},
 		};
 		return el;
 	}
@@ -226,6 +231,47 @@ async function clickNode(node: MockDomNode) {
 		}
 		node.dispatchEvent({ type: "click" });
 	});
+}
+
+function findNodeById(node: MockDomNode | null, id: string): MockDomNode | null {
+	if (!node) return null;
+	if (node.getAttribute?.("id") === id || node.id === id) return node;
+	if (node.children) {
+		for (const child of node.children) {
+			const res = findNodeById(child, id);
+			if (res) return res;
+		}
+	}
+	return null;
+}
+
+async function changeInput(node: MockDomNode, value: string) {
+	await act(async () => {
+		const reactPropKey = Object.keys(node).find((k) =>
+			k.startsWith("__reactProps$"),
+		);
+		if (reactPropKey) {
+			// biome-ignore lint/suspicious/noExplicitAny: access React internal props
+			const props = (node as any)[reactPropKey];
+			if (props && typeof props.onChange === "function") {
+				props.onChange({
+					target: { value },
+				});
+				return;
+			}
+		}
+	});
+}
+
+function getNodeText(node: MockDomNode | null): string {
+	if (!node) return "";
+	let text = typeof node.textContent === "string" ? node.textContent : "";
+	if (node.childNodes) {
+		for (const child of node.childNodes) {
+			text += getNodeText(child);
+		}
+	}
+	return text;
 }
 
 describe("Chairside Tablet Consent Paper Autonomy Suite (Mandates 8e, 8i, 8k, 8n)", () => {
@@ -379,5 +425,88 @@ describe("Chairside Tablet Consent Paper Autonomy Suite (Mandates 8e, 8i, 8k, 8n
 			await clickNode(printBtn);
 			expect(win.print).toHaveBeenCalledTimes(1);
 		}
+	});
+
+	it("5. OTP confirmation button is NOT disabled when otpInput is empty or < 4 digits, and clicking sets otpError with paper fallback instructions (Mandate 8e)", async () => {
+		const { doc } = setupMockDom();
+		const root: Root = createRoot(doc.body as unknown as HTMLElement);
+
+		const pkgWithOtp = sendChairsideSmsOtpToPatient(
+			createChairsideConsentPackage({
+				patient: mockPatient,
+				doctor: mockDoctor,
+				treatmentItems: mockItems,
+			}),
+			mockPatient.phone || "+7 (926) 333-22-11",
+			"5566",
+		);
+
+		await act(async () => {
+			root.render(
+				<ChairsideTabletConsentModal
+					isOpen={true}
+					onClose={() => {}}
+					initialPackage={pkgWithOtp}
+					patient={mockPatient}
+					doctor={mockDoctor}
+					treatmentItems={mockItems}
+				/>,
+			);
+		});
+
+		// 1. Verify OTP confirmation button is NOT disabled when otpInput is empty (0 digits)
+		const otpConfirmBtn = findNodeByTestId(doc.body, "chairside-otp-confirm-btn");
+		expect(otpConfirmBtn).not.toBeNull();
+
+		// Check both React internal props and DOM element property
+		// biome-ignore lint/suspicious/noExplicitAny: access React internal props
+		const reactProps = (otpConfirmBtn as any)[
+			Object.keys(otpConfirmBtn!).find((k) => k.startsWith("__reactProps$")) || ""
+		];
+		expect(reactProps?.disabled).toBe(false);
+		expect(Boolean(otpConfirmBtn?.disabled)).toBe(false);
+		expect(otpConfirmBtn?.getAttribute?.("disabled")).toBeNull();
+
+		// Also verify footer OTP confirm button is NOT disabled
+		const footerOtpBtn = findNodeByTestId(doc.body, "chairside-otp-confirm-footer-btn");
+		expect(footerOtpBtn).not.toBeNull();
+		// biome-ignore lint/suspicious/noExplicitAny: access React internal props
+		const footerReactProps = (footerOtpBtn as any)[
+			Object.keys(footerOtpBtn!).find((k) => k.startsWith("__reactProps$")) || ""
+		];
+		expect(footerReactProps?.disabled).toBe(false);
+		expect(Boolean(footerOtpBtn?.disabled)).toBe(false);
+
+		// 2. Click with empty input -> verify helpful error directs to paper confirmation fallback
+		if (otpConfirmBtn) {
+			await clickNode(otpConfirmBtn);
+		}
+
+		const errorNode = findNodeByTestId(doc.body, "chairside-otp-error");
+		expect(errorNode).not.toBeNull();
+		const errorText = getNodeText(errorNode);
+		expect(errorText).toContain("Введите 4-значный код из СМС или нажмите «Подтвердить на бумаге (1 клик)»");
+
+		// 3. Verify OTP confirmation button is STILL NOT disabled when input has < 4 digits (e.g. 2 digits)
+		const inputNode = findNodeById(doc.body, "chairside-otp-input");
+		expect(inputNode).not.toBeNull();
+		if (inputNode) {
+			await changeInput(inputNode, "12");
+		}
+
+		// biome-ignore lint/suspicious/noExplicitAny: access React internal props
+		const updatedProps = (otpConfirmBtn as any)[
+			Object.keys(otpConfirmBtn!).find((k) => k.startsWith("__reactProps$")) || ""
+		];
+		expect(updatedProps?.disabled).toBe(false);
+		expect(Boolean(otpConfirmBtn?.disabled)).toBe(false);
+
+		// Click again with partial input -> sets helpful error directing to paper fallback
+		if (otpConfirmBtn) {
+			await clickNode(otpConfirmBtn);
+		}
+		const errorNode2 = findNodeByTestId(doc.body, "chairside-otp-error");
+		expect(errorNode2).not.toBeNull();
+		expect(getNodeText(errorNode2)).toContain("Подтвердить на бумаге (1 клик)");
 	});
 });
