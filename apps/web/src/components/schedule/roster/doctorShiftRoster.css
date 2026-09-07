@@ -212,7 +212,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 0.25rem;
-	min-height: 34px;
+	min-height: 44px;
 }
 
 .roster-template-chip:hover {
@@ -407,8 +407,17 @@
 	padding: 0.375rem;
 	cursor: pointer;
 	margin-top: 0.25rem;
-	min-height: 32px;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	transition: opacity var(--transition-fast, 0.15s ease), background-color var(--transition-fast, 0.15s ease);
+}
+
+@media (pointer: coarse) {
+	.roster-cell-add-btn {
+		opacity: 1;
+	}
 }
 
 .roster-grid-table td:hover .roster-cell-add-btn {

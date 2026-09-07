@@ -14,7 +14,7 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
 
 import { registerHooks } from "node:module";
 
@@ -40,6 +40,9 @@ if (typeof registerHooks === "function") {
 const {
 	DoctorShiftRosterModal,
 	generateWeeklyScheduleForStaffAndCabinets,
+	getMondayOfWeekIso,
+	DoctorRosterToolbar,
+	DoctorRosterMatrix,
 } = await import("../DoctorShiftRosterModal");
 
 import {
@@ -607,6 +610,204 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 			);
 
 			// Modal renders cleanly with utilization data
+			assert.ok(html.includes("Кабинет Терапии №1"));
+			assert.ok(html.includes("Кресло Planmeca Compact"));
+		});
+	});
+
+	describe("Dynamic Monday Calculation & Date Independence (Inquisition Checklist #1)", () => {
+		it("calculates Monday of the week correctly for any date without hardcoded 2026-08-24", () => {
+			// September 2026 dates
+			assert.equal(getMondayOfWeekIso("2026-09-07"), "2026-09-07"); // Monday
+			assert.equal(getMondayOfWeekIso("2026-09-09"), "2026-09-07"); // Wednesday
+			assert.equal(getMondayOfWeekIso("2026-09-11"), "2026-09-07"); // Friday
+			assert.equal(getMondayOfWeekIso("2026-09-13"), "2026-09-07"); // Sunday
+
+			// October 2026 dates
+			assert.equal(getMondayOfWeekIso("2026-10-15"), "2026-10-12"); // Thursday -> Monday Oct 12
+			assert.equal(getMondayOfWeekIso("2026-10-18"), "2026-10-12"); // Sunday -> Monday Oct 12
+
+			// Fallback when undefined: returns valid ISO Monday of current week, not hardcoded past date
+			const dynamicMonday = getMondayOfWeekIso(undefined);
+			assert.match(dynamicMonday, /^\d{4}-\d{2}-\d{2}$/);
+			const d = new Date(dynamicMonday);
+			assert.ok(!Number.isNaN(d.getTime()));
+		});
+	});
+
+	describe("Adversarial 2/2 Schedule: Alternating Pairs & Zero Collisions (Inquisition Checklist #2)", () => {
+		it("allocates alternating doctor pairs per chair with zero double-booking across 4 doctors and 2 chairs", () => {
+			const fourDoctorsStaff: StaffMember[] = [
+				{
+					id: "doc-1",
+					fullName: "Доктор 1",
+					shortName: "Доктор 1",
+					role: "therapist",
+					isDoctor: true,
+					isAssistant: false,
+					weeklyHourLimit: 33,
+					avatarColor: "#0d9488",
+					tabNumber: "001",
+				},
+				{
+					id: "doc-2",
+					fullName: "Доктор 2",
+					shortName: "Доктор 2",
+					role: "therapist",
+					isDoctor: true,
+					isAssistant: false,
+					weeklyHourLimit: 33,
+					avatarColor: "#0284c7",
+					tabNumber: "002",
+				},
+				{
+					id: "doc-3",
+					fullName: "Доктор 3",
+					shortName: "Доктор 3",
+					role: "therapist",
+					isDoctor: true,
+					isAssistant: false,
+					weeklyHourLimit: 33,
+					avatarColor: "#8b5cf6",
+					tabNumber: "003",
+				},
+				{
+					id: "doc-4",
+					fullName: "Доктор 4",
+					shortName: "Доктор 4",
+					role: "therapist",
+					isDoctor: true,
+					isAssistant: false,
+					weeklyHourLimit: 33,
+					avatarColor: "#f59e0b",
+					tabNumber: "004",
+				},
+			];
+
+			const twoChairsCabinets: CabinetDefinition[] = [
+				{
+					id: "cab-1",
+					number: 1,
+					name: "Кабинет 1",
+					specialty: "Терапия",
+					chairs: [
+						{ id: "chair-1", name: "Кресло 1", equipment: "A-dec" },
+						{ id: "chair-2", name: "Кресло 2", equipment: "Sirona" },
+					],
+				},
+			];
+
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				"2026-09-07",
+				fourDoctorsStaff,
+				twoChairsCabinets,
+				"two_two",
+			);
+
+			// Conflict detection: MUST HAVE ZERO ERRORS
+			const conflicts = detectRosterConflicts(shifts, fourDoctorsStaff);
+			const errorConflicts = conflicts.filter((c) => c.severity === "error");
+			assert.equal(errorConflicts.length, 0, "2/2 schedule must produce ZERO conflict errors");
+
+			// Verify chair-doctor allocation per day
+			const shiftsByDateAndChair = new Map<string, DoctorShift[]>();
+			for (const shift of shifts) {
+				const key = `${shift.dateIso}_${shift.chairId}`;
+				const list = shiftsByDateAndChair.get(key) || [];
+				list.push(shift);
+				shiftsByDateAndChair.set(key, list);
+			}
+
+			// Each chair on each day has AT MOST 1 doctor shift
+			for (const [key, chairShifts] of shiftsByDateAndChair.entries()) {
+				assert.ok(chairShifts.length <= 1, `Chair ${key} must not have multiple shifts simultaneously`);
+			}
+
+			// Verify each doctor is on AT MOST 1 chair per day
+			const shiftsByDateAndDoc = new Map<string, DoctorShift[]>();
+			for (const shift of shifts) {
+				const key = `${shift.dateIso}_${shift.doctorId}`;
+				const list = shiftsByDateAndDoc.get(key) || [];
+				list.push(shift);
+				shiftsByDateAndDoc.set(key, list);
+			}
+
+			for (const [key, docShifts] of shiftsByDateAndDoc.entries()) {
+				assert.ok(docShifts.length <= 1, `Doctor ${key} must not be scheduled on multiple chairs on the same day`);
+			}
+		});
+	});
+
+	describe("Modular Component Extraction (DoctorRosterToolbar & DoctorRosterMatrix)", () => {
+		it("renders DoctorRosterToolbar standalone without crashing", () => {
+			const html = renderToStaticMarkup(
+				React.createElement(DoctorRosterToolbar, {
+					clinicName: 'ООО "Денте Премиум"',
+					kpis: {
+						totalWeekShifts: 12,
+						totalWeeklyHours: 72,
+						assistantPairingPct: 100,
+						conflictCount: 0,
+						errorConflictCount: 0,
+					},
+					activeTab: "cabinets",
+					onSelectTab: () => {},
+					weekStartDateIso: "2026-09-07",
+					weekEndDateIso: "2026-09-13",
+					selectedYear: 2026,
+					onPrevWeek: () => {},
+					onNextWeek: () => {},
+					onAutoFillDefault: () => {},
+					onApplyPreset: () => {},
+					onPrintSchedule: () => {},
+					onExportT13: () => {},
+					onSaveAll: () => {},
+					onClose: () => {},
+					notification: null,
+					conflicts: [],
+				}),
+			);
+
+			assert.ok(html.includes("Норма: 33 ч/нед"));
+			assert.ok(html.includes("Денте Премиум"));
+			assert.ok(html.includes("Шаблоны сменности:"));
+			assert.ok(html.includes("data-testid=\"roster-preset-two-two\""));
+		});
+
+		it("renders DoctorRosterMatrix standalone without crashing", () => {
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				"2026-09-07",
+				mockRealStaff,
+				mockRealCabinets,
+				"five_day",
+			);
+			const t13Matrix = generateFormT13Matrix(mockRealStaff, shifts, 2026, 9);
+
+			const html = renderToStaticMarkup(
+				React.createElement(DoctorRosterMatrix, {
+					activeTab: "cabinets",
+					weekDays: [
+						{ dateIso: "2026-09-07", dayName: "Пн", dayNumber: "07", isWeekend: false },
+						{ dateIso: "2026-09-08", dayName: "Вт", dayNumber: "08", isWeekend: false },
+					],
+					weekStartDateIso: "2026-09-07",
+					weekEndDateIso: "2026-09-13",
+					selectedYear: 2026,
+					selectedMonth: 9,
+					cabinets: mockRealCabinets,
+					staffList: mockRealStaff,
+					shifts,
+					conflicts: [],
+					t13Matrix,
+					sanitizedAppointments: [],
+					onOpenEdit: () => {},
+					onOpenCreateInCell: () => {},
+					onOpenInternalT13Modal: () => {},
+					onExportT13: () => {},
+					onClose: () => {},
+				}),
+			);
+
 			assert.ok(html.includes("Кабинет Терапии №1"));
 			assert.ok(html.includes("Кресло Planmeca Compact"));
 		});

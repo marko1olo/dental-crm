@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { and, count, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -1938,6 +1940,84 @@ export async function registerDiaryRoutes(app: FastifyInstance) {
 	app.post("/api/diaries/:id/chief-review", handleChiefReviewPost);
 	app.get("/api/diary/:id/chief-reviews", handleChiefReviewsGet);
 	app.get("/api/diaries/:id/chief-reviews", handleChiefReviewsGet);
+
+	// Doctor Shifts Persistence (Schedule & Roster sync, Mandates 8e, 8n)
+	const shiftsPayloadSchema = z.object({
+		shifts: z.array(
+			z
+				.object({
+					id: z.string(),
+					doctorId: z.string(),
+					doctorName: z.string(),
+					cabinetId: z.string(),
+					chairId: z.string(),
+					dateIso: z.string(),
+					startTime: z.string(),
+					endTime: z.string(),
+				})
+				.passthrough(),
+		),
+	});
+
+	const getShiftsFilePath = (): string => {
+		const dataDir = path.resolve(process.cwd(), ".data");
+		if (!fs.existsSync(dataDir)) {
+			try {
+				fs.mkdirSync(dataDir, { recursive: true });
+			} catch {}
+		}
+		return path.join(dataDir, "doctor-shifts.json");
+	};
+
+	let inMemoryShiftsCache: Array<Record<string, unknown>> = [];
+
+	const handleDoctorShiftsGet = async (
+		_req: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		try {
+			const filePath = getShiftsFilePath();
+			if (fs.existsSync(filePath)) {
+				const content = fs.readFileSync(filePath, "utf-8");
+				const parsed = JSON.parse(content);
+				if (Array.isArray(parsed)) {
+					return reply.send({ ok: true, shifts: parsed });
+				}
+			}
+			return reply.send({ ok: true, shifts: inMemoryShiftsCache });
+		} catch {
+			return reply.send({ ok: true, shifts: inMemoryShiftsCache });
+		}
+	};
+
+	const handleDoctorShiftsPost = async (
+		req: FastifyRequest,
+		reply: FastifyReply,
+	) => {
+		const parsed = shiftsPayloadSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message:
+					"Некорректная структура смен врачей (поле shifts обязательно).",
+			});
+		}
+		const { shifts } = parsed.data;
+		inMemoryShiftsCache = shifts as unknown as Array<Record<string, unknown>>;
+		try {
+			const filePath = getShiftsFilePath();
+			fs.writeFileSync(filePath, JSON.stringify(shifts, null, 2), "utf-8");
+		} catch (err) {
+			req.log.warn(
+				{ err },
+				"Could not persist doctor-shifts.json to disk; using in-memory cache",
+			);
+		}
+		return reply.send({ ok: true, savedCount: shifts.length });
+	};
+
+	app.get("/api/diary/shifts", handleDoctorShiftsGet);
+	app.post("/api/diary/shifts", handleDoctorShiftsPost);
 }
 
 export default registerDiaryRoutes;
