@@ -68,7 +68,13 @@ export function getClinicBranch(idOrCode: string): ClinicBranchInfo {
 	return CLINIC_NETWORK_BRANCHES.find((b) => b.id === idOrCode || b.code === idOrCode) || CLINIC_NETWORK_BRANCHES[0]!;
 }
 
-export type PatientSignatureType = "simple_electronic_signature_sms" | "sms_code" | "tablet_stylus" | "paper_scan";
+export type PatientSignatureType =
+	| "simple_electronic_signature_sms"
+	| "sms_code"
+	| "tablet_stylus"
+	| "paper_scan"
+	| "paper_signed_consent"
+	| "ukep_crypto_pro";
 
 export interface SelectedTransferComponents {
 	readonly demographics: boolean;

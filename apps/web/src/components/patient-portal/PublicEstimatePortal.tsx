@@ -4,11 +4,11 @@
  * Implements:
  * 1. Zero-SMS 2FA Verification Cascade (phone_last4 / dob / manual_code)
  * 2. Itemized treatment plan & pricing presentation with 3-Tier options
- * 3. HTML5 Canvas Patient Signature with SHA-256 document hashing
+ * 3. 1-Click Statutory Electronic Approval (63-FZ / 323-FZ PEP)
  * 4. Post-acceptance certificate download & 1-click SBP QR payment integration
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
 	AlertCircle,
 	Calendar,
@@ -23,7 +23,6 @@ import {
 	PenTool,
 	Phone,
 	QrCode,
-	RotateCcw,
 	Shield,
 	ShieldAlert,
 	ShieldCheck,
@@ -44,6 +43,8 @@ interface PublicEstimatePortalProps {
 	readonly token: string;
 	readonly apiBaseUrl?: string;
 	readonly initialMeta?: PublicEstimateMeta;
+	readonly initialEstimate?: PublicEstimateDetail;
+	readonly initialShowAcceptModal?: boolean;
 	readonly onAccepted?: (estimateNumber: string) => void;
 	readonly onRejected?: (reason: string) => void;
 }
@@ -52,23 +53,24 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 	token,
 	apiBaseUrl = "",
 	initialMeta,
+	initialEstimate,
+	initialShowAcceptModal = false,
 	onAccepted,
 	onRejected,
 }) => {
 	const [meta, setMeta] = useState<PublicEstimateMeta | null>(initialMeta || null);
-	const [estimate, setEstimate] = useState<PublicEstimateDetail | null>(null);
+	const [estimate, setEstimate] = useState<PublicEstimateDetail | null>(initialEstimate || null);
 	const [sessionToken, setSessionToken] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState<boolean>(!initialMeta);
+	const [isLoading, setIsLoading] = useState<boolean>(!initialMeta && !initialEstimate);
 	const [isVerifying, setIsVerifying] = useState<boolean>(false);
 	const [verifyValue, setVerifyValue] = useState<string>("");
 	const [verifyError, setVerifyError] = useState<string | null>(null);
 	const [selectedTier, setSelectedTier] = useState<string>("standard");
 
-	// Signature & Acceptance State
-	const [showAcceptModal, setShowAcceptModal] = useState<boolean>(false);
+	// Statutory Acceptance State (Zero-Canvas / 1-Click PEP 63-FZ)
+	const [showAcceptModal, setShowAcceptModal] = useState<boolean>(initialShowAcceptModal);
 	const [signerName, setSignerName] = useState<string>("");
 	const [consentAgreed, setConsentAgreed] = useState<boolean>(true);
-	const [signaturePng, setSignaturePng] = useState<string | null>(null);
 	const [isSubmittingAccept, setIsSubmittingAccept] = useState<boolean>(false);
 	const [acceptSuccess, setAcceptSuccess] = useState<boolean>(false);
 
@@ -78,11 +80,6 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 	const [rejectNote, setRejectNote] = useState<string>("");
 	const [isSubmittingReject, setIsSubmittingReject] = useState<boolean>(false);
 	const [modalError, setModalError] = useState<string | null>(null);
-
-	// Canvas Ref for Signature
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const isDrawingRef = useRef<boolean>(false);
-	const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
 	// Fetch Meta on Mount
 	useEffect(() => {
@@ -184,57 +181,6 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 		}
 	}
 
-	// Canvas Drawing Handlers
-	function startDrawing(e: React.PointerEvent<HTMLCanvasElement>) {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const rect = canvas.getBoundingClientRect();
-		isDrawingRef.current = true;
-		lastPosRef.current = {
-			x: e.clientX - rect.left,
-			y: e.clientY - rect.top,
-		};
-	}
-
-	function draw(e: React.PointerEvent<HTMLCanvasElement>) {
-		if (!isDrawingRef.current || !canvasRef.current) return;
-		const canvas = canvasRef.current;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const rect = canvas.getBoundingClientRect();
-		const currentX = e.clientX - rect.left;
-		const currentY = e.clientY - rect.top;
-
-		ctx.strokeStyle = "#0f172a";
-		ctx.lineWidth = 2.5;
-		ctx.lineCap = "round";
-		ctx.lineJoin = "round";
-
-		ctx.beginPath();
-		ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
-		ctx.lineTo(currentX, currentY);
-		ctx.stroke();
-
-		lastPosRef.current = { x: currentX, y: currentY };
-	}
-
-	function stopDrawing() {
-		if (!isDrawingRef.current || !canvasRef.current) return;
-		isDrawingRef.current = false;
-		setSignaturePng(canvasRef.current.toDataURL("image/png"));
-	}
-
-	function clearSignature() {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (ctx) {
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
-		}
-		setSignaturePng(null);
-	}
-
 	async function handleAcceptSubmit() {
 		if (!signerName.trim() || !consentAgreed || isSubmittingAccept) return;
 
@@ -248,8 +194,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 				},
 				body: JSON.stringify({
 					signerName: signerName.trim(),
-					signatureMethod: signaturePng ? "drawn" : "click_accept",
-					signaturePng: signaturePng || undefined,
+					signatureMethod: "click_accept",
 				}),
 				credentials: "include",
 			});
@@ -668,29 +613,19 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 								/>
 							</div>
 
-							{/* Canvas Signature Pad */}
-							<div className="space-y-1.5">
-								<div className="flex items-center justify-between">
-									<label className="text-xs font-bold text-[var(--ink,#0f172a)]">Нарисуйте подпись на экране:</label>
-									<button
-										type="button"
-										onClick={clearSignature}
-										className="text-[11px] text-[var(--muted,#64748b)] hover:text-rose-600 flex items-center gap-1"
-									>
-										<RotateCcw size={12} /> Очистить
-									</button>
-								</div>
-								<div className="h-36 rounded-2xl border-2 border-dashed border-[var(--border,#cbd5e1)] bg-white overflow-hidden touch-none">
-									<canvas
-										ref={canvasRef}
-										width={500}
-										height={144}
-										className="w-full h-full cursor-crosshair block"
-										onPointerDown={startDrawing}
-										onPointerMove={draw}
-										onPointerUp={stopDrawing}
-										onPointerLeave={stopDrawing}
-									/>
+							{/* Statutory Verification Badge (63-FZ / 323-FZ) */}
+							<div className="p-3.5 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-start gap-3">
+								<ShieldCheck className="w-5 h-5 text-teal-600 mt-0.5 shrink-0" />
+								<div className="space-y-1 text-xs">
+									<div className="font-bold text-[var(--ink,#0f172a)]">
+										Электронное согласование (ст. 20 323-ФЗ / 63-ФЗ)
+									</div>
+									<div className="text-[var(--muted,#64748b)]">
+										Подписант: <span className="font-semibold text-[var(--ink,#0f172a)]">{signerName.trim() || "Не указан"}</span>
+									</div>
+									<div className="text-[11px] text-teal-700 dark:text-teal-300 font-medium">
+										Простая электронная подпись формируется в 1 клик после подтверждения согласия.
+									</div>
 								</div>
 							</div>
 

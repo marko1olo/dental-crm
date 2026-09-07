@@ -306,7 +306,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 	const sourceBranch = getClinicBranch(sourceBranchId);
 	const targetBranch = getClinicBranch(targetBranchId);
 
-	return createPortal(
+	const modalContent = (
 		<div className="branch-trf-overlay" role="dialog" aria-modal="true" aria-labelledby="branch-trf-dialog-title">
 			<div className="branch-trf-container">
 				{/* 1. Header */}
@@ -632,7 +632,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 											onChange={(e) => setSignatureType(e.target.value as PatientSignatureType)}
 										>
 											<option value="simple_electronic_signature_sms">Простая ЭП (СМС-код верификации)</option>
-											<option value="tablet_stylus_biometric">Планшет / стилус (биометрический росчерк)</option>
+											<option value="paper_signed_consent">Бумажное заявление пациента (подшито в карту 043/у)</option>
 											<option value="paper_scan">Бумажное заявление со скан-копией</option>
 											<option value="ukep_crypto_pro">УКЭП (КриптоПро / ЕГИСЗ)</option>
 										</select>
@@ -777,7 +777,8 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 					)}
 				</div>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 };

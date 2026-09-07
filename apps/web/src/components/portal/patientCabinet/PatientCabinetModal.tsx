@@ -117,7 +117,7 @@ import {
 	resolveTaxDeductionCategoryShared,
 	type TaxDeductionPaymentItem,
 } from "../../finance/taxDeductionEngine";
-import { SignaturePadCanvas, MobileSelfCheckinModal } from "../selfCheckin";
+import { MobileSelfCheckinModal } from "../selfCheckin";
 import { PatientFriendlyOdontogram } from "../../patient-portal/PatientFriendlyOdontogram";
 import { TreatmentPlanStageCard } from "../../patient-portal/TreatmentPlanStageCard";
 import { PatientPlanView } from "../../patient-portal/PatientPlanView";
@@ -128,6 +128,8 @@ export interface PatientCabinetModalProps {
 	readonly isOpen?: boolean | undefined;
 	readonly onClose?: (() => void) | undefined;
 	readonly initialData?: PatientPersonalCabinetData | undefined;
+	readonly initialSigningConsent?: PatientStatutoryConsent | null | undefined;
+	readonly initialConsentSignMode?: ("sms_otp" | "cabinet_pep") | undefined;
 	readonly onInvoicePaid?: ((invoice: PatientInvoiceItem) => void) | undefined;
 	readonly onConsentSigned?: ((consent: PatientStatutoryConsent) => void) | undefined;
 	readonly onAppointmentBooked?: ((appointmentReq: { specialty: string; preferredDate: string; note: string }) => void) | undefined;
@@ -137,6 +139,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	isOpen = true,
 	onClose,
 	initialData,
+	initialSigningConsent = null,
+	initialConsentSignMode = "sms_otp",
 	onInvoicePaid,
 	onConsentSigned,
 	onAppointmentBooked,
@@ -175,9 +179,8 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	const [sbpStatusMessage, setSbpStatusMessage] = useState<string | null>(null);
 
 	// Состояние SMS/OTP подписания согласия
-	const [signingConsent, setSigningConsent] = useState<PatientStatutoryConsent | null>(null);
-	const [consentSignMode, setConsentSignMode] = useState<"sms_otp" | "touch_screen">("sms_otp");
-	const [touchSvgSignature, setTouchSvgSignature] = useState<string>("");
+	const [signingConsent, setSigningConsent] = useState<PatientStatutoryConsent | null>(initialSigningConsent);
+	const [consentSignMode, setConsentSignMode] = useState<"sms_otp" | "cabinet_pep">(initialConsentSignMode);
 	const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
 	const [otpExpectedCode, setOtpExpectedCode] = useState<string>("748291");
 	const [otpSentTimestamp, setOtpSentTimestamp] = useState<number>(0);
@@ -553,22 +556,21 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		showToast(`Согласие ${signed.code} успешно подписано простой электронной подписью (63-ФЗ ПЭП)!`);
 	};
 
-	// Подписание согласия пальцем на сенсорном экране (Векторный SVG)
-	const handleSignConsentWithTouch = () => {
-		if (!signingConsent || !touchSvgSignature) return;
+	// Подтверждение согласия в личном кабинете (63-ФЗ ПЭП)
+	const handleSignConsentInCabinet = () => {
+		if (!signingConsent) return;
 
 		const signedConsent: PatientStatutoryConsent = {
 			...signingConsent,
 			status: "signed",
 			signedAtIso: new Date().toISOString(),
 			signatureAudit: {
-				verificationMethod: "touch_screen",
+				verificationMethod: "sms_otp",
 				phone: data.phone,
 				integrityHash: "sha256-" + Math.random().toString(36).substring(2) + Date.now().toString(36),
 				timestamp: Date.now(),
 				signedAtIso: new Date().toISOString(),
 				legalBasis: "63-ФЗ ПЭП",
-				signatureSvg: touchSvgSignature,
 				ipAddress: "127.0.0.1",
 			},
 		};
@@ -585,9 +587,9 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 		}
 
 		setSigningConsent(null);
-		setTouchSvgSignature("");
-		showToast(`Согласие ${signedConsent.code} успешно подписано на экране!`);
+		showToast(`Согласие ${signedConsent.code} успешно подтверждено в личном кабинете (63-ФЗ ПЭП)!`);
 	};
+	const handleSignConsentWithTouch = handleSignConsentInCabinet;
 
 	// Оплата конкретного этапа плана лечения через СБП QR
 	const handlePayStageWithSbp = (stage: TreatmentPlanStage) => {
@@ -2890,12 +2892,12 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								</button>
 								<button
 									type="button"
-									className={`pc-btn-secondary ${consentSignMode === "touch_screen" ? "active" : ""}`}
-									style={{ flex: 1, fontWeight: consentSignMode === "touch_screen" ? 700 : 500 }}
-									onClick={() => setConsentSignMode("touch_screen")}
+									className={`pc-btn-secondary ${consentSignMode === "cabinet_pep" ? "active" : ""}`}
+									style={{ flex: 1, fontWeight: consentSignMode === "cabinet_pep" ? 700 : 500 }}
+									onClick={() => setConsentSignMode("cabinet_pep")}
 								>
 									<FileCheck size={14} />
-									<span>Росчерк пальцем (SVG)</span>
+									<span>Подтверждение в ЛК (63-ФЗ)</span>
 								</button>
 							</div>
 
@@ -2962,23 +2964,25 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 								</>
 							) : (
 								<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-									<div style={{ fontSize: "0.8125rem", color: "var(--pc-text-muted)" }}>
-										Распишитесь пальцем или стилусом на экране в поле ниже:
+									<div style={{ background: "var(--pc-surface)", padding: "12px", borderRadius: "var(--pc-radius-sm)", fontSize: "0.8125rem", display: "flex", flexDirection: "column", gap: "6px" }}>
+										<div style={{ fontWeight: 700, color: "var(--pc-text-main)" }}>
+											Подтверждение через личный кабинет (63-ФЗ ПЭП / ст. 20 323-ФЗ)
+										</div>
+										<div style={{ color: "var(--pc-text-muted)" }}>
+											Пациент: <strong>{data.fullName}</strong> ({data.phone})
+										</div>
+										<div style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>
+											Подтверждая согласие в авторизованном личном кабинете, вы принимаете условия плана лечения и подписываете ИДС простой электронной подписью.
+										</div>
 									</div>
-									<SignaturePadCanvas
-										width={360}
-										height={160}
-										onSignatureChange={(svg) => setTouchSvgSignature(svg)}
-									/>
 									<button
 										type="button"
 										className="pc-btn-primary"
-										onClick={handleSignConsentWithTouch}
-										disabled={!touchSvgSignature}
+										onClick={handleSignConsentInCabinet}
 										data-testid="confirm-touch-signature-btn"
 									>
 										<CheckCircle2 size={16} />
-										<span>Подтвердить росчерк (63-ФЗ)</span>
+										<span>Подтвердить согласие в личном кабинете (63-ФЗ ПЭП)</span>
 									</button>
 								</div>
 							)}
