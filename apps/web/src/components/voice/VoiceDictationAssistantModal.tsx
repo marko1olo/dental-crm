@@ -24,8 +24,8 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { showToast } from "../GlobalToast";
 import { voiceDictationErrorText } from "../odontogram/voiceDictationText";
 import {
 	type ClinicalVoiceParseResult,
@@ -206,7 +206,13 @@ export function VoiceDictationAssistantModal({
 
 	// Применение всех команд
 	const handleApplyAll = () => {
-		if (!parseResult || parseResult.commands.length === 0) return;
+		if (!parseResult || parseResult.commands.length === 0) {
+			showToast(
+				"Произнесите диагноз или статус зуба в микрофон или выберите клинический шаблон ниже",
+				"info",
+			);
+			return;
+		}
 		onApplyAllCommands?.(parseResult.commands);
 		if (
 			parseResult.soapNote &&
@@ -635,7 +641,7 @@ export function VoiceDictationAssistantModal({
 						<button
 							type="button"
 							onClick={handleApplyAll}
-							disabled={!parseResult || parseResult.commands.length === 0}
+							disabled={false}
 							className="dnt-voice-btn-primary"
 						>
 							<CheckCheck size={18} />

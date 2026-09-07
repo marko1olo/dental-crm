@@ -503,19 +503,23 @@ export const JawOcclusionModal: React.FC<JawOcclusionModalProps> = ({
 
 					<button
 						type="button"
-						disabled={!selectedPreset}
+						disabled={false}
 						onClick={() => {
-							if (selectedPreset) handleApplyPreset(selectedPreset);
+							const defaultNormPresetId = activeTab === "JU" ? "ju_norm" : activeTab === "JL" ? "jl_norm" : "c_orthognathic";
+							const presetToApply = selectedPreset || currentPresets.find((p) => p.id === defaultNormPresetId) || currentPresets.find((p) => p.isNorm) || currentPresets[0];
+							if (presetToApply) {
+								handleApplyPreset(presetToApply);
+							}
 						}}
 						className={`min-h-[44px] px-5 py-2 rounded-xl text-xs font-black shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
 							selectedPreset
 								? "bg-indigo-600 hover:bg-indigo-700 text-white"
-								: "bg-[var(--odontogram-surface-hover,#f1f5f9)] text-[var(--odontogram-ink-muted,#64748b)] cursor-not-allowed opacity-60"
+								: "bg-emerald-600 hover:bg-emerald-700 text-white"
 						}`}
 						data-testid="jaw-modal-apply-btn"
 					>
-						<Check size={14} />
-						<span>Внести в карту 043/у (1 клик)</span>
+						{selectedPreset ? <Check size={14} /> : <Zap size={14} />}
+						<span>{selectedPreset ? "Внести в карту 043/у (1 клик)" : "Норма в 1 клик (043/у)"}</span>
 					</button>
 				</div>
 			</div>
