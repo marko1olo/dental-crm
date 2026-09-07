@@ -117,12 +117,12 @@ export interface OnboardingWizardModalProps {
 	setNewStaffRole: (role: StaffRole) => void;
 	newStaffSpecialty: DentalSpecialty;
 	setNewStaffSpecialty: (specialty: DentalSpecialty) => void;
-	addStaffMember: (role?: StaffRole) => Promise<void> | void;
+	addStaffMember: (role?: StaffRole, name?: string) => Promise<void> | void;
 	newStaffReadyToCreate: boolean;
 	onboardingStaffCreateGuidanceId: string;
 	newChairName: string;
 	setNewChairName: (name: string) => void;
-	addChair: () => Promise<void> | void;
+	addChair: (name?: string) => Promise<void> | void;
 	newChairReadyToCreate: boolean;
 	onboardingChairCreateGuidanceId: string;
 	staffScheduleDrafts: Record<string, StaffScheduleDraft>;
@@ -404,6 +404,39 @@ export function OnboardingWizardModal({
 			return;
 		}
 		onDismissOnboarding?.();
+	};
+
+	const handleAddStaff = () => {
+		const staffList = dashboard?.clinicSettings?.staff ?? [];
+		let staffName = newStaffName?.trim?.() ?? "";
+		if (!staffName) {
+			const activeDoctor = staffList.find(
+				(s) => s.role === "doctor" && s.fullName,
+			)?.fullName;
+			staffName =
+				activeDoctor ||
+				(newStaffRole === "doctor"
+					? "Врач-терапевт"
+					: staffRoleLabels[newStaffRole] || "Врач-терапевт");
+			setNewStaffName(staffName);
+			showToast("Введите ФИО сотрудника или выберите стандартную роль", "info");
+		}
+		(
+			addStaffMember as (
+				role?: StaffRole,
+				name?: string,
+			) => Promise<void> | void
+		)(newStaffRole, staffName);
+	};
+
+	const handleAddChair = () => {
+		const currentChairs = dashboard?.clinicSettings?.chairs ?? [];
+		let chairName = newChairName?.trim?.() ?? "";
+		if (!chairName) {
+			chairName = `Кресло ${currentChairs.length + 1}`;
+			setNewChairName(chairName);
+		}
+		(addChair as (name?: string) => Promise<void> | void)(chairName);
 	};
 
 	return (
@@ -888,13 +921,14 @@ export function OnboardingWizardModal({
 						<button
 							className="secondary-button"
 							type="button"
-							onClick={() => addStaffMember(newStaffRole)}
+							onClick={handleAddStaff}
+							disabled={false}
+							style={{ minHeight: "44px" }}
 							aria-describedby={
 								!newStaffReadyToCreate
 									? onboardingStaffCreateGuidanceId
 									: undefined
 							}
-							disabled={!newStaffReadyToCreate}
 						>
 							<Plus aria-hidden="true" /> Добавить сотрудника
 						</button>
@@ -918,13 +952,14 @@ export function OnboardingWizardModal({
 						<button
 							className="secondary-button"
 							type="button"
-							onClick={addChair}
+							onClick={handleAddChair}
+							disabled={false}
+							style={{ minHeight: "44px" }}
 							aria-describedby={
 								!newChairReadyToCreate
 									? onboardingChairCreateGuidanceId
 									: undefined
 							}
-							disabled={!newChairReadyToCreate}
 						>
 							<Plus aria-hidden="true" /> Добавить кресло
 						</button>

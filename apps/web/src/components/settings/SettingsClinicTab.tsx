@@ -7,11 +7,6 @@ import type {
 	StaffMember,
 	StaffRole,
 } from "@dental/shared";
-import { useAppStore } from "../../store/appStore";
-import {
-	loadUiPreferences,
-	saveUiPreferences,
-} from "../../utils/preferencesUtils";
 import {
 	CalendarDays,
 	ExternalLink,
@@ -23,6 +18,11 @@ import {
 import type { ChangeEvent } from "react";
 import { useState } from "react";
 import { actionFailureToast } from "../../lib/panelStateText";
+import { useAppStore } from "../../store/appStore";
+import {
+	loadUiPreferences,
+	saveUiPreferences,
+} from "../../utils/preferencesUtils";
 import { showToast } from "../GlobalToast";
 import {
 	planStaffCredentialUpdate,
@@ -477,6 +477,11 @@ export function SettingsClinicTab({
 		specialtyLabels,
 	} = p;
 
+	const odontogramViewMode = useAppStore((state) => state.odontogramViewMode);
+	const setOdontogramViewMode = useAppStore(
+		(state) => state.setOdontogramViewMode,
+	);
+
 	if (settingsTab !== "clinic") return null;
 
 	/*
@@ -506,10 +511,6 @@ export function SettingsClinicTab({
 	) ||
 		typedUiLanguageOptions[0] || { detail: "" };
 
-	const odontogramViewMode = useAppStore((state) => state.odontogramViewMode);
-	const setOdontogramViewMode = useAppStore(
-		(state) => state.setOdontogramViewMode,
-	);
 	const selectedOdontogramOption =
 		ODONTOGRAM_VIEW_MODE_OPTIONS.find((o) => o.value === odontogramViewMode) ||
 		ODONTOGRAM_VIEW_MODE_OPTIONS[0];
@@ -527,6 +528,43 @@ export function SettingsClinicTab({
 		"assistant",
 		"manager",
 	];
+
+	const handleAddStaff = () => {
+		let staffName = newStaffName?.trim?.() ?? "";
+		if (!staffName) {
+			const activeDoctor = typedStaffMembers.find(
+				(s) => s.role === "doctor" && s.fullName,
+			)?.fullName;
+			const role = newStaffRole || "doctor";
+			const defaultName =
+				activeDoctor ||
+				(role === "doctor"
+					? "Врач-терапевт"
+					: role === "administrator"
+						? "Администратор"
+						: role === "assistant"
+							? "Ассистент"
+							: "Врач-терапевт");
+			staffName = defaultName;
+			setNewStaffName?.(staffName);
+			showToast("Введите ФИО сотрудника или выберите стандартную роль", "info");
+		}
+		if (typeof addStaffMember === "function") {
+			addStaffMember(newStaffRole || "doctor", staffName);
+		}
+	};
+
+	const handleAddChair = () => {
+		let chairName = newChairName?.trim?.() ?? "";
+		if (!chairName) {
+			const count = typedChairs.length || (p.chairs?.length ?? 0);
+			chairName = `Кресло ${count + 1}`;
+			setNewChairName?.(chairName);
+		}
+		if (typeof addChair === "function") {
+			addChair(chairName);
+		}
+	};
 
 	const setStaffPresetDays = (staffId: string, days: number[]) => {
 		updateStaffScheduleDraft(staffId, { workingDays: days });
@@ -606,9 +644,7 @@ export function SettingsClinicTab({
 						{dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow"}
 					</p>
 				</div>
-				<div
-					className="flex flex-col gap-2 items-start sm:items-end shrink-0"
-				>
+				<div className="flex flex-col gap-2 items-start sm:items-end shrink-0">
 					<span className="bg-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap">
 						{dashboard?.clinicSettings?.profile?.mode
 							? clinicModeLabels?.[dashboard.clinicSettings.profile.mode]?.title
@@ -617,7 +653,11 @@ export function SettingsClinicTab({
 				</div>
 			</div>
 
-			<div role="toolbar" className="mode-grid grid grid-cols-2 lg:grid-cols-4 gap-3 w-full border-t border-[var(--line)] pt-4" aria-label="Режим продукта">
+			<div
+				role="toolbar"
+				className="mode-grid grid grid-cols-2 lg:grid-cols-4 gap-3 w-full border-t border-[var(--line)] pt-4"
+				aria-label="Режим продукта"
+			>
 				{typedClinicModes.map((mode) => (
 					<button
 						className={`mode-card ${dashboard?.clinicSettings?.profile?.mode === mode ? "active" : ""}`}
@@ -627,7 +667,9 @@ export function SettingsClinicTab({
 						onClick={() => changeClinicMode(mode)}
 					>
 						<strong>{clinicModeLabels?.[mode]?.title}</strong>
-						<span className="text-xs text-[var(--muted)] leading-normal break-words">{clinicModeLabels?.[mode]?.detail}</span>
+						<span className="text-xs text-[var(--muted)] leading-normal break-words">
+							{clinicModeLabels?.[mode]?.detail}
+						</span>
 					</button>
 				))}
 			</div>
@@ -1003,7 +1045,10 @@ export function SettingsClinicTab({
 									const newMode = event.target.value as OdontogramViewMode;
 									setOdontogramViewMode(newMode);
 									const current = loadUiPreferences();
-									saveUiPreferences({ ...current, odontogramViewMode: newMode });
+									saveUiPreferences({
+										...current,
+										odontogramViewMode: newMode,
+									});
 									showToast(
 										`Режим зубной формулы изменён на «${ODONTOGRAM_VIEW_MODE_OPTIONS.find((o) => o.value === newMode)?.label || newMode}»`,
 										"info",
@@ -1017,7 +1062,8 @@ export function SettingsClinicTab({
 								))}
 							</select>
 							<small className="field-note">
-								{selectedOdontogramOption?.detail || "Режим отображения формулы по умолчанию"}
+								{selectedOdontogramOption?.detail ||
+									"Режим отображения формулы по умолчанию"}
 							</small>
 						</label>
 						<label>
@@ -1217,8 +1263,9 @@ export function SettingsClinicTab({
 							aria-label="Добавить сотрудника"
 							className="icon-button"
 							type="button"
-							onClick={() => addStaffMember(newStaffRole)}
-							disabled={!newStaffReadyToCreate}
+							onClick={handleAddStaff}
+							disabled={false}
+							style={{ minHeight: "44px", minWidth: "44px" }}
 						>
 							<Plus aria-hidden="true" />
 						</button>
@@ -1347,7 +1394,10 @@ export function SettingsClinicTab({
 										? "Ждет автосохранения"
 										: "Сохранено";
 							return (
-								<div className="staff-row !border-0 !bg-transparent !shadow-none py-3" key={member.id}>
+								<div
+									className="staff-row !border-0 !bg-transparent !shadow-none py-3"
+									key={member.id}
+								>
 									<span style={{ background: member.color }} />
 									<div>
 										<strong>{member.fullName}</strong>
@@ -1412,7 +1462,9 @@ export function SettingsClinicTab({
 												type="button"
 												className="compact-button secondary-button"
 												style={{ fontSize: "11px", padding: "2px 8px" }}
-												onClick={() => setStaffPresetDays(member.id, [1, 2, 3, 4, 5])}
+												onClick={() =>
+													setStaffPresetDays(member.id, [1, 2, 3, 4, 5])
+												}
 												title="Установить стандартный график: с Понедельника по Пятницу"
 											>
 												Пн–Пт
@@ -1581,8 +1633,9 @@ export function SettingsClinicTab({
 							aria-label="Добавить кресло или кабинет"
 							className="icon-button"
 							type="button"
-							onClick={addChair}
-							disabled={!newChairReadyToCreate}
+							onClick={handleAddChair}
+							disabled={false}
+							style={{ minHeight: "44px", minWidth: "44px" }}
 						>
 							<Plus aria-hidden="true" />
 						</button>
@@ -1714,7 +1767,10 @@ export function SettingsClinicTab({
 										? "Ждет автосохранения"
 										: "Сохранено";
 							return (
-								<div className="staff-row !border-0 !bg-transparent !shadow-none py-3" key={chair.id}>
+								<div
+									className="staff-row !border-0 !bg-transparent !shadow-none py-3"
+									key={chair.id}
+								>
 									<CalendarDays aria-hidden="true" />
 									<div>
 										<strong>{chair.name}</strong>
@@ -1783,7 +1839,9 @@ export function SettingsClinicTab({
 												type="button"
 												className="compact-button secondary-button"
 												style={{ fontSize: "11px", padding: "2px 8px" }}
-												onClick={() => setChairPresetDays(chair.id, [1, 2, 3, 4, 5])}
+												onClick={() =>
+													setChairPresetDays(chair.id, [1, 2, 3, 4, 5])
+												}
 												title="Установить стандартный график кресла: Пн–Пт"
 											>
 												Пн–Пт
