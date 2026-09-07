@@ -72,6 +72,17 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 		notification,
 		conflicts,
 	}) {
+		const monthName = React.useMemo(() => {
+			if (monthNormObj?.nameRu) return monthNormObj.nameRu;
+			try {
+				const d = new Date(weekStartDateIso || Date.now());
+				const raw = new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(d);
+				return raw.charAt(0).toUpperCase() + raw.slice(1);
+			} catch {
+				return "Текущий месяц";
+			}
+		}, [monthNormObj?.nameRu, weekStartDateIso]);
+
 		return (
 			<>
 				{/* Top Header */}
@@ -130,23 +141,119 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							</button>
 							<button
 								type="button"
+								className="roster-btn roster-btn-secondary"
 								onClick={onClose}
-								style={{
-									background: "transparent",
-									border: "none",
-									cursor: "pointer",
-									padding: "0.5rem",
-									color: "var(--muted, #64748b)",
-									display: "inline-flex",
-									alignItems: "center",
-									justifyContent: "center",
-									minHeight: "44px",
-									minWidth: "44px",
-								}}
-								aria-label="Закрыть окно"
+								style={{ minHeight: "44px" }}
+								title="Закрыть табель (Esc)"
 							>
-								<X size={22} />
+								<X size={16} />
+								<span>Закрыть</span>
 							</button>
+						</div>
+					</div>
+
+					{/* Notification Toast Strip */}
+					{notification && (
+						<div
+							className={`roster-notification roster-notification-${notification.type}`}
+						>
+							{notification.type === "success" && <Check size={16} />}
+							{notification.type === "error" && <AlertTriangle size={16} />}
+							{notification.type === "info" && <Clock size={16} />}
+							<span>{notification.message}</span>
+						</div>
+					)}
+
+					{/* Navigation Strip */}
+					<div className="roster-nav-strip">
+						<div className="roster-week-nav">
+							<button
+								type="button"
+								className="roster-btn-icon"
+								onClick={onPrevWeek}
+								title="Предыдущая неделя"
+								style={{ minHeight: "44px", minWidth: "44px" }}
+							>
+								<ChevronLeft size={18} />
+							</button>
+							<div className="roster-week-label">
+								<span className="roster-week-dates">
+									{weekStartDateIso} — {weekEndDateIso}
+								</span>
+								<span className="roster-week-year">{selectedYear} г.</span>
+							</div>
+							<button
+								type="button"
+								className="roster-btn-icon"
+								onClick={onNextWeek}
+								title="Следующая неделя"
+								style={{ minHeight: "44px", minWidth: "44px" }}
+							>
+								<ChevronRight size={18} />
+							</button>
+						</div>
+
+						{/* Quick Fill & Presets */}
+						<div className="roster-actions-group">
+							<button
+								type="button"
+								className="roster-btn roster-btn-auto"
+								onClick={onAutoFillDefault}
+								style={{ minHeight: "44px" }}
+								title="Автозаполнение графика по стандартным шаблонам отделений"
+							>
+								<Sparkles size={16} />
+								<span>Автозаполнение по шаблону</span>
+							</button>
+							<div className="roster-preset-dropdown">
+								<button
+									type="button"
+									className="roster-btn roster-btn-secondary"
+									style={{ minHeight: "44px" }}
+									title="Применить типовой график сменности ко всем врачам"
+								>
+									<Layers size={16} />
+									<span>Шаблоны графиков ▾</span>
+								</button>
+								<div className="roster-preset-menu">
+									<button
+										type="button"
+										onClick={() => onApplyPreset("five_day", "5/2")}
+									>
+										Пятидневка (5/2, Пн-Пт 6.6ч)
+									</button>
+									<button
+										type="button"
+										onClick={() => onApplyPreset("two_two", "2/2")}
+									>
+										Сменный 2 через 2 (2/2, 12ч)
+									</button>
+									<button
+										type="button"
+										onClick={() =>
+											onApplyPreset("morning", "Утренние смены")
+										}
+									>
+										Все утренние (08:30–14:30)
+									</button>
+									<button
+										type="button"
+										onClick={() =>
+											onApplyPreset("evening", "Вечерние смены")
+										}
+									>
+										Все вечерние (14:30–20:30)
+									</button>
+									<button
+										type="button"
+										onClick={() =>
+											onApplyPreset("full_day", "Полный день")
+										}
+									>
+										Полный день (12ч смены)
+									</button>
+								</div>
+							</div>
 						</div>
 					</div>
 
@@ -161,20 +268,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						</div>
 						<div className="roster-kpi-card">
 							<span className="roster-kpi-label">
-								Норма месяца (
-								{monthNormObj?.nameRu ||
-									(() => {
-										try {
-											const d = new Date(weekStartDateIso || Date.now());
-											const raw = new Intl.DateTimeFormat("ru-RU", {
-												month: "long",
-											}).format(d);
-											return raw.charAt(0).toUpperCase() + raw.slice(1);
-										} catch {
-											return "Текущий месяц";
-										}
-									})()}
-								)
+								Норма месяца ({monthName})
 							</span>
 							<span
 								className="roster-kpi-val"

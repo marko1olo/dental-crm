@@ -177,6 +177,7 @@ type ScheduleViewProps = {
 	visibleScheduleSuggestions: ScheduleSuggestion[];
 	/** Перечитывание данных клиники: нужно для живого обновления сетки. */
 	loadDashboard?: (options?: { adminSecret?: string }) => Promise<void>;
+	setDashboard?: React.Dispatch<React.SetStateAction<Dashboard>> | ((updater: (prev: Dashboard) => Dashboard) => void);
 };
 
 export function buildChairDoctorAssignmentsFromShifts(
@@ -750,28 +751,9 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		async (chairData: QuickAddChairData) => {
 			// Сбросить фильтр кресла, чтобы созданное кресло сразу отобразилось в сетке (Defect 6)
 			setScheduleChairFilterId(null);
-			try {
-				const res = await fetch("/api/settings/chairs", {
-					method: "POST",
-					headers: denteAdminSecretRequestHeaders({
-						"Content-Type": "application/json",
-					}),
-					body: JSON.stringify({
-						name: chairData.name,
-						room: chairData.room,
-						specialization: chairData.specialization,
-						color: chairData.color,
-					}),
-				});
-				if (res.ok && typeof props.loadDashboard === "function") {
-					await props.loadDashboard();
-				}
-				showToast(`Кресло «${chairData.name}» успешно добавлено в расписание`, "success", 3500);
-			} catch (err) {
-				console.warn("Failed to add chair via QuickAddChairModal:", err);
-				// Оптимистичное локальное добавление в clinicSettings.chairs (Defect 2)
-				if (typeof (props as any).setDashboard === "function") {
-					(props as any).setDashboard((prev: any) => {
+			const applyLocalOptimisticChair = () => {
+				if (typeof props.setDashboard === "function") {
+					props.setDashboard((prev: any) => {
 						if (!prev?.clinicSettings) return prev;
 						const localChair = {
 							id: `chair-local-${Date.now()}`,
@@ -790,10 +772,36 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						};
 					});
 				}
+			};
+
+			try {
+				const res = await fetch("/api/settings/chairs", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						name: chairData.name,
+						room: chairData.room,
+						specialization: chairData.specialization,
+						color: chairData.color,
+					}),
+				});
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+				if (typeof props.loadDashboard === "function") {
+					await props.loadDashboard();
+				}
+				showToast(`Кресло «${chairData.name}» успешно добавлено в расписание`, "success", 3500);
+			} catch (err) {
+				console.warn("Failed to add chair via QuickAddChairModal:", err);
+				// Оптимистичное локальное добавление в clinicSettings.chairs (Defect 2)
+				applyLocalOptimisticChair();
 				showToast(`Кресло «${chairData.name}» добавлено локально`, "info", 3000);
 			}
 		},
-		[props.loadDashboard, (props as any).setDashboard],
+		[props.loadDashboard, props.setDashboard],
 	);
 
 	/** Режим отображения: сетка по креслам (grid - дефолт для десктопа) или лента (timeline - дефолт для мобайла) */
@@ -880,6 +888,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					return next;
 				});
 			} else if (
+				(assignment.shiftPreset === "two_shifts" ||
+					(assignment.subShifts && assignment.subShifts.length > 1)) &&
 				assignment.subShifts &&
 				assignment.subShifts.length > 0
 			) {
@@ -887,15 +897,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				const multiShifts: DoctorShift[] = assignment.subShifts.map((sub, idx) => {
 					const isEve =
 						idx > 0 ||
-						(sub.startHour ?? 8) >= 14;
+						(sub.startHour ?? (Number.parseInt((sub as any).startTime?.slice(0, 2), 10) || 8)) >= 14;
 					const archetypeId: ShiftArchetypeId = isEve
 						? "evening_shift"
 						: "morning_shift";
 					const suffix = isEve ? "eve" : "morn";
-					const sH = sub.startHour ?? 8;
-					const eH = sub.endHour ?? (isEve ? 20 : 14);
-					const startTime = `${String(sH).padStart(2, "0")}:00`;
-					const endTime = `${String(eH).padStart(2, "0")}:00`;
+					const sH = sub.startHour ?? (Number.parseInt((sub as any).startTime?.slice(0, 2), 10) || (isEve ? 14 : 8));
+					const eH = sub.endHour ?? (Number.parseInt((sub as any).endTime?.slice(0, 2), 10) || (isEve ? 20 : 14));
+					const startTime = (sub as any).startTime || `${String(sH).padStart(2, "0")}:00`;
+					const endTime = (sub as any).endTime || `${String(eH).padStart(2, "0")}:00`;
 					const doctorRole: MedicalStaffRole =
 						(sub.doctorSpecialty as MedicalStaffRole) || "therapist";
 					return {

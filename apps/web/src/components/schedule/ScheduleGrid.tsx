@@ -53,7 +53,7 @@ export interface ChairDoctorShiftAssignment {
 	doctorId: string;
 	doctorName: string;
 	doctorSpecialty?: string | undefined;
-	shiftPreset: "morning" | "evening" | "full" | "custom";
+	shiftPreset: "morning" | "evening" | "full" | "two_shifts" | "custom";
 	shiftLabel: string;
 	shiftHours: string;
 	startHour?: number | undefined;

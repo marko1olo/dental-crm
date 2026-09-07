@@ -9,7 +9,8 @@
  * Mandate 8o: Task-Scope Reporting
  */
 
-import { describe, it, expect, vi } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { documentKindMetadata } from "@dental/shared";
@@ -19,6 +20,77 @@ import {
 	executeOpenLatestDocumentAutonomy,
 } from "../../../DocumentsView";
 import { documentSourceStatusClassNames } from "../../../workspaceUiLabels";
+
+type MockFn = {
+	(...args: any[]): any;
+	calls: any[][];
+	mock: { calls: any[][] };
+	mockReturnValue: (val: any) => MockFn;
+};
+
+function createMockFn(impl?: (...args: any[]) => any): MockFn {
+	const calls: any[][] = [];
+	const fn = ((...args: any[]) => {
+		calls.push(args);
+		return impl ? impl(...args) : undefined;
+	}) as MockFn;
+	fn.calls = calls;
+	fn.mock = { calls };
+	fn.mockReturnValue = (val: any) => createMockFn(() => val);
+	return fn;
+}
+
+const vi = {
+	fn: (impl?: any) => createMockFn(impl),
+};
+
+function expect(actual: any, customMsg = "") {
+	return {
+		toBe: (expected: any) => assert.strictEqual(actual, expected, customMsg),
+		toBeFalsy: () => assert.ok(!actual, customMsg || `Expected falsy, but got ${actual}`),
+		toBeTruthy: () => assert.ok(Boolean(actual), customMsg || `Expected truthy, but got ${actual}`),
+		toBeNull: () => assert.strictEqual(actual, null, customMsg),
+		not: {
+			toBeNull: () => assert.ok(actual !== null && actual !== undefined, customMsg),
+			toMatch: (regex: RegExp) => assert.ok(!regex.test(String(actual)), customMsg),
+			toContain: (expected: string) => {
+				assert.ok(
+					!actual?.includes?.(expected),
+					customMsg || `Expected "${actual}" NOT to contain "${expected}"`,
+				);
+			},
+			toHaveBeenCalled: () => {
+				const count = actual?.mock?.calls?.length ?? actual?.calls?.length ?? 0;
+				assert.strictEqual(
+					count,
+					0,
+					customMsg || `Expected function NOT to have been called, but was called ${count} times`,
+				);
+			},
+		},
+		toContain: (expected: string) => {
+			assert.ok(
+				actual?.includes?.(expected),
+				customMsg || `Expected "${actual}" to contain "${expected}"`,
+			);
+		},
+		toHaveBeenCalled: () => {
+			const count = actual?.mock?.calls?.length ?? actual?.calls?.length ?? 0;
+			assert.ok(count > 0, customMsg || "Expected function to have been called");
+		},
+		toHaveBeenCalledWith: (...expectedArgs: any[]) => {
+			const calls = actual?.mock?.calls ?? actual?.calls ?? [];
+			const match = calls.some((callArgs: any[]) =>
+				expectedArgs.every((arg, i) => callArgs[i] === arg),
+			);
+			assert.ok(
+				match,
+				customMsg ||
+					`Expected call with ${JSON.stringify(expectedArgs)}, but calls were: ${JSON.stringify(calls)}`,
+			);
+		},
+	};
+}
 
 function createMockAppLogic(overrides: Record<string, unknown> = {}) {
 	const labels = {

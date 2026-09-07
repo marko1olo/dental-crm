@@ -1373,7 +1373,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 									</div>
 									{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
 										<span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-300 font-semibold" data-testid="deposit-balance-badge">
-											Доступно: {(patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : patientDepositRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											Доступно: {((patientDepositRub || 0) + (patientFamilyBalanceRub || 0)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 											{patientFamilyBalanceRub > 0 && familyPayerName ? ` (${familyPayerName})` : ""}
 										</span>
 									)}

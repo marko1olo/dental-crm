@@ -1486,6 +1486,37 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											<span>⚡ Сем. счет + Карта</span>
 										</button>
 									)}
+									{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
+										<button
+											type="button"
+											onClick={() => {
+												const totalKop = rubToKopecks(totalInvoiceRub);
+												const totalDepositKop = rubToKopecks((patientDepositRub || 0) + (patientFamilyBalanceRub || 0));
+												const usedDepKop = Math.min(totalKop, totalDepositKop);
+												const remKop = Math.max(0, totalKop - usedDepKop);
+												const halfRemCardKop = Math.floor(remKop / 2);
+												const halfRemCashKop = remKop - halfRemCardKop;
+
+												const depKop = Math.min(usedDepKop, rubToKopecks(patientDepositRub || 0));
+												const famKop = usedDepKop - depKop;
+
+												setSplitDepositRub(kopecksToRub(depKop));
+												setSplitFamilyRub(kopecksToRub(famKop));
+												setSplitCardRub(kopecksToRub(halfRemCardKop));
+												setSplitCashRub(kopecksToRub(halfRemCashKop));
+												setSplitSbpRub(0);
+												setSelectedTender("split");
+												setActiveTab("split");
+												showToast("Применен пресет: Депозит + Карта + Нал", "info", 2000);
+											}}
+											className="h-7 px-2.5 rounded-lg text-xs font-bold bg-violet-600/10 hover:bg-violet-600/20 text-violet-700 dark:text-violet-300 border border-violet-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+											data-testid="preset-three-way"
+											title="Списать аванс/депозит + разделить остаток поровну на Карту и Наличные"
+										>
+											<Users className="w-3.5 h-3.5 text-violet-600" />
+											<span>⚡ Депозит + Карта + Нал</span>
+										</button>
+									)}
 								</div>
 
 								{/* 1-Click Tender Buttons (32-36px height) */}

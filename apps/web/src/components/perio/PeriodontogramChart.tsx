@@ -1184,17 +1184,17 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 
 				{/* 1-Click Fast Action Presets (1 Row 32-36px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
 				{!readOnly && (
-					<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 h-9">
+					<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 min-h-[36px]">
 						{/* 1-Click Norm Express: Instant PSR 0, Healthy Tissues & Form 043/u Protocol */}
 						<button
 							type="button"
 							onClick={() => handleApplyExpressPreset("perio_norm_express")}
 							className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
-							title="Норма пародонта в 1 клик (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
+							title="1-клик: Здоровый пародонт (Норма) (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
 							data-testid="perio-toolbar-norm-1click-btn"
 						>
 							<ShieldCheck size={16} />
-							<span>Норма PSR 0 (043/у)</span>
+							<span>1-клик: Здоровый пародонт (Норма)</span>
 						</button>
 
 						{/* 1-Click Pro-Hygiene: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
@@ -1206,7 +1206,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							data-testid="perio-toolbar-prophy-1click-btn"
 						>
 							<Sparkles size={16} />
-							<span>Профгигиена A16.07.051</span>
+							<span>Профгигиена</span>
 						</button>
 
 						<button
@@ -1223,7 +1223,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => handleMarkSelectedToothPathology(5, true)}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden md:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
 							title={`Быстрая разметка пародонтита: карман 5 мм + кровоточивость для выбранного зуба #${selectedToothNumber}`}
 							data-testid="perio-preset-tooth-pathology"
 						>
@@ -1234,7 +1234,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleMarkBopOnDeepPockets}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-rose-500/15 hover:text-rose-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden lg:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
 							title="Автоматически проставить кровоточивость на всех карманах глубиной ≥ 4 мм"
 							data-testid="perio-preset-bop-pockets"
 						>
@@ -1245,7 +1245,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleClearPlaque}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hidden xl:flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
 							title="Очистить весь зубной налет"
 							data-testid="perio-preset-clear-plaque"
 						>
@@ -1256,7 +1256,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsHygieneExpanded((prev) => !prev)}
-							className={`h-9 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+							className={`h-9 px-2.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px] ${
 								isHygieneExpanded
 									? "bg-teal-600 text-white border-teal-500 shadow-xs"
 									: "bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-300 border-[var(--line)] text-[var(--ink)]"
@@ -1280,7 +1280,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleInsertToProtocol}
-							className="h-9 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="h-9 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
 							title="Сформировать и вставить протокол пародонтограммы в дневник 043/у"
 							data-testid="perio-insert-protocol-btn"
 						>
@@ -1293,7 +1293,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyProtocol}
-							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer"
+							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px]"
 							title="Копировать текст протокола в буфер"
 							aria-label="Копировать текст протокола"
 						>
@@ -1307,7 +1307,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsHelpOpen((prev) => !prev)}
-							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer"
+							className="h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-all cursor-pointer min-h-[44px] min-w-[44px]"
 							title="Справка по горячим клавишам Florida Probe"
 							aria-label="Справка по горячим клавишам"
 						>

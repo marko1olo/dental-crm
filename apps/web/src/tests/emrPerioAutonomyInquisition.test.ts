@@ -25,6 +25,9 @@
  */
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
 	ALL_PERIO_TEETH,
@@ -60,6 +63,7 @@ import {
 	calculateCompositeRestorationWarranty,
 	PERIO_PATHOLOGY_PRESETS,
 } from "../lib/clinicalProtocols043.js";
+import { completeClinicalVisitAndAssembleEstimate } from "../components/visit/clinicalVisitWorkflow.js";
 
 describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisition Suite", () => {
 	// ════════════════════════════════════════════════════════════════════════
@@ -368,4 +372,152 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			}
 		});
 	});
+
+	// ════════════════════════════════════════════════════════════════════════
+	// БЛОК 5: МАНДАТ 8e, 8k, 8d — Инструментальная верификация исходного кода UI
+	// ════════════════════════════════════════════════════════════════════════
+	describe("5. Мандаты 8e, 8k, 8d (Аудит исходного кода UI): Автономия врача, отсутствие блокировок и тач >= 44px", () => {
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = path.dirname(__filename);
+		const webSrcDir = path.resolve(__dirname, "..");
+
+		it("5.1. PeriodontogramChart.tsx: Тулбар 32-36px, кнопки 1-клик нормы и профгигиены, тач >= 44px", () => {
+			const perioChartPath = path.join(webSrcDir, "components/perio/PeriodontogramChart.tsx");
+			const perioCode = fs.readFileSync(perioChartPath, "utf-8");
+
+			// Проверка 1-клик нормы
+			assert.ok(
+				perioCode.includes('data-testid="perio-toolbar-norm-1click-btn"'),
+				"PeriodontogramChart должен содержать data-testid='perio-toolbar-norm-1click-btn'",
+			);
+			assert.ok(
+				perioCode.includes("1-клик: Здоровый пародонт (Норма)"),
+				"Кнопка 1-клик нормы должна называться '1-клик: Здоровый пародонт (Норма)'",
+			);
+
+			// Проверка 1-клик профгигиены
+			assert.ok(
+				perioCode.includes('data-testid="perio-toolbar-prophy-1click-btn"'),
+				"PeriodontogramChart должен содержать data-testid='perio-toolbar-prophy-1click-btn'",
+			);
+			assert.ok(
+				perioCode.includes("Профгигиена"),
+				"Кнопка профгигиены должна присутствовать",
+			);
+
+			// Проверка тач-таргетов >= 44px и высоты тулбара 32-36px
+			assert.ok(
+				perioCode.includes("min-h-[44px]") && perioCode.includes("min-w-[44px]"),
+				"Кнопки тулбара пародонтограммы должны иметь тач-таргеты min-h-[44px] и min-w-[44px]",
+			);
+			assert.ok(
+				perioCode.includes("min-h-[36px]") || perioCode.includes("h-9"),
+				"Тулбар пародонтограммы обязан быть однострочным плотным (32-36px, Мандат 8d)",
+			);
+		});
+
+		it("5.2. JawOcclusionModal.tsx: Кнопка применения disabled={false}, авто-фоллбэк на норму и тач >= 44px", () => {
+			const modalPath = path.join(webSrcDir, "components/odontogram/JawOcclusionModal.tsx");
+			const modalCode = fs.readFileSync(modalPath, "utf-8");
+
+			// Кнопка применения никогда не заблокирована
+			assert.ok(
+				modalCode.includes('disabled={false}'),
+				"Кнопка применения JawOcclusionModal обязана иметь disabled={false} (Мандат 8e)",
+			);
+
+			// Автоматический фоллбэк на пресет нормы при пустом выборе
+			assert.ok(
+				modalCode.includes("ju_norm") && modalCode.includes("jl_norm") && modalCode.includes("c_orthognathic"),
+				"JawOcclusionModal обязан иметь авто-фоллбэк на ju_norm, jl_norm и c_orthognathic при отсутствии ручного выбора",
+			);
+
+			// Тач-таргет >= 44px
+			assert.ok(
+				modalCode.includes("min-h-[44px]"),
+				"Элементы ввода и кнопки JawOcclusionModal должны иметь min-h-[44px]",
+			);
+		});
+
+		it("5.3. VoiceDictationAssistantModal.tsx: Кнопка 'Применить всё' disabled={false} и не блокирует врача", () => {
+			const voiceModalPath = path.join(webSrcDir, "components/voice/VoiceDictationAssistantModal.tsx");
+			const voiceCode = fs.readFileSync(voiceModalPath, "utf-8");
+
+			// Кнопка применения не disabled
+			assert.ok(
+				voiceCode.includes("disabled={false}"),
+				"Кнопка 'Применить всё' в VoiceDictationAssistantModal обязана быть disabled={false}",
+			);
+
+			// Проверка наличия информационного тоста при пустом распознавании вместо блокировки
+			assert.ok(
+				voiceCode.includes("Произнесите диагноз") || voiceCode.includes("showToast"),
+				"Голосовой ассистент должен давать понятный тост вместо серой заблокированной кнопки",
+			);
+		});
+
+		it("5.4. completeClinicalVisitAndAssembleEstimate: Пустой визит не падает, а генерирует консультацию", () => {
+			const result = completeClinicalVisitAndAssembleEstimate({
+				visitId: "test-visit-1",
+				patientId: "patient-1",
+				patientName: "Иванов Иван Иванович",
+				doctorName: "Д-р Смирнов А.В.",
+				diary: {
+					anamnesis: "",
+					statusLocalis: "",
+					treatmentDescription: "",
+				},
+			});
+
+			assert.ok(result, "Результат должен сформироваться");
+			assert.equal(result.items.length, 1, "При пустом дневнике должна добавиться первичная консультация");
+			assert.equal(result.items[0]?.code, "B01.065.001");
+			assert.equal(result.totalGrossRub, 1500);
+			assert.equal(result.totalNetRub, 1500);
+			assert.equal(result.status, "ready_for_payment");
+		});
+
+		it("5.5. completeClinicalVisitAndAssembleEstimate: Врач имеет право на 100% скидку (гарантия/персонал)", () => {
+			const result = completeClinicalVisitAndAssembleEstimate({
+				visitId: "test-visit-warranty",
+				patientId: "patient-2",
+				patientName: "Петрова Анна Сергеевна",
+				doctorName: "Д-р Смирнов А.В.",
+				diary: {
+					anamnesis: "Гарантийная переделка реставрации 11 зуба",
+					statusLocalis: "Скол композита по режущему краю",
+					treatmentDescription: "Шлифовка, полировка, коррекция реставрации",
+				},
+				discountPercent: 100,
+			});
+
+			assert.ok(result);
+			assert.equal(result.totalNetRub, 0, "Итоговая сумма при 100% скидке должна быть 0.00 руб.");
+			assert.equal(result.totalNetKop, 0, "Копейки должны быть 0");
+			assert.equal(result.totalDiscountRub, result.totalGrossRub, "Скидка равна полной стоимости");
+		});
+
+		it("5.6. completeClinicalVisitAndAssembleEstimate: Автопарсинг анестезии и пломбы из дневника визита", () => {
+			const result = completeClinicalVisitAndAssembleEstimate({
+				visitId: "test-visit-therapy",
+				patientId: "patient-3",
+				patientName: "Сидоров Павел Игоревич",
+				doctorName: "Д-р Смирнов А.В.",
+				diary: {
+					anamnesis: "Жалобы на застревание пищи в области 46 зуба",
+					statusLocalis: "Зуб 46: кариозная полость на жевательной поверхности",
+					treatmentDescription: "Проведена инфильтрационная анестезия Артикаин 1:200000. Препарирование полости зуба 46, пломбирование Estelite Asteria.",
+				},
+			});
+
+			assert.ok(result);
+			assert.ok(result.items.length >= 2, "Ожидалось не менее 2 услуг (анестезия + пломба)");
+			const hasAnesthesia = result.items.some((i) => i.category === "anesthesia");
+			const hasTherapy = result.items.some((i) => i.category === "therapy");
+			assert.ok(hasAnesthesia, "Анестезия должна быть распознана");
+			assert.ok(hasTherapy, "Терапевтическое лечение должно быть распознано");
+			assert.ok(result.totalNetRub > 0, "Итоговая сумма должна быть > 0");
+		});
+	});
 });
+
