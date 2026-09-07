@@ -562,13 +562,19 @@ type WorkspaceTopbarProps = {
 };
 
 export function formatDisplayClinicName(name?: string | null): string {
-	if (!name || !name.trim()) return "Стоматологическая клиника";
+	if (!name || !name.trim()) return "Стоматология";
 	const trimmed = name.trim();
 	if (/^\d{10,14}$/.test(trimmed)) {
-		return "Стоматологическая клиника";
+		return "Стоматология";
 	}
-	const cleaned = trimmed.replace(/[_-\s]+\d{10,14}$/, "").trim();
-	return cleaned || "Стоматологическая клиника";
+	let cleaned = trimmed.replace(/[_-\s]+\d{10,14}$/, "").trim();
+	// If clinic name starts with generic medical category ("Стоматология " or "Стоматологическая клиника ")
+	// followed by a specific clinic brand (e.g. "Стоматология Дент-Премиум"), extract the brand for clean, non-clipped typography
+	const brand = cleaned.replace(/^(стоматологическая\s+клиника|стоматология)\s+/i, "").trim();
+	if (brand && brand.length >= 2) {
+		cleaned = brand;
+	}
+	return cleaned || "Стоматология";
 }
 
 export function WorkspaceTopbar({
