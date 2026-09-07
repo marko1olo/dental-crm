@@ -275,7 +275,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("grid")}
-							className={`min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "grid"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -290,7 +290,7 @@ export function ScheduleFilterStrip({
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("timeline")}
-							className={`min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
 								scheduleViewMode === "timeline"
 									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
 									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -310,7 +310,7 @@ export function ScheduleFilterStrip({
 					<button
 						type="button"
 						onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-						className="min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
+						className="min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-lg text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper)] transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 shrink-0"
 						title="Дополнительные режимы и списки расписания"
 						aria-label="Опции расписания"
 						aria-expanded={isOptionsMenuOpen}
