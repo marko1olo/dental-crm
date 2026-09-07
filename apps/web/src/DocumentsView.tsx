@@ -229,6 +229,37 @@ export async function executeDocumentVoidAutonomy(
 	};
 }
 
+export interface OpenLatestDocumentAutonomyParams {
+	activeUsableDocuments?: Array<{ id: string; status?: string } | null | undefined> | null | undefined;
+	typedActiveDocuments?: Array<{ id: string; status?: string } | null | undefined> | null | undefined;
+	openIssuedDocumentHtml: (id: string) => void | Promise<void>;
+	showToastFn?: ((message: string, type: "info" | "success" | "warning" | "error") => void) | undefined;
+}
+
+export function executeOpenLatestDocumentAutonomy(
+	params: OpenLatestDocumentAutonomyParams,
+): {
+	executed: boolean;
+	documentId?: string;
+} {
+	const show = params.showToastFn ?? showToast;
+	const candidate =
+		params.activeUsableDocuments?.[0] ||
+		params.typedActiveDocuments?.find((d) => d && d.status !== "voided") ||
+		params.typedActiveDocuments?.[0];
+
+	if (candidate?.id) {
+		void params.openIssuedDocumentHtml(candidate.id);
+		return { executed: true, documentId: candidate.id };
+	}
+
+	show(
+		"У пациента нет созданных документов. Нажмите «+ Создать документ» для выбора бланка ИДС, 043/у или договора",
+		"info",
+	);
+	return { executed: false };
+}
+
 const EXTRACT_DIAGNOSIS_CHIPS = [
 	"Кариес",
 	"Пульпит",
@@ -1462,14 +1493,38 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		dashboard?.patients,
 	]);
 
+	const handleOpenLatestDocument = () => {
+		executeOpenLatestDocumentAutonomy({
+			activeUsableDocuments: activeUsableDocuments as Array<{ id: string; status?: string }>,
+			typedActiveDocuments,
+			openIssuedDocumentHtml,
+		});
+	};
+
 	return (
 		<div className="panel documents-panel" id="documents">
+			<style>{`
+				.documents-panel .panel-heading button,
+				.documents-panel .document-actions .doc-link,
+				.documents-panel .document-actions button {
+					min-height: 36px;
+				}
+				@media (pointer: coarse), (max-width: 768px) {
+					.documents-panel .panel-heading button,
+					.documents-panel .document-actions .doc-link,
+					.documents-panel .document-actions button,
+					.documents-panel .doc-dropdown-item {
+						min-height: 44px;
+					}
+				}
+			`}</style>
 			<div className="panel-heading">
 				<h2>Документы и Реестр</h2>
 				<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
 					<button
 						type="button"
-						className="secondary-button"
+						className="secondary-button min-h-[44px] sm:min-h-[36px]"
+						style={{ minHeight: "36px" }}
 						onClick={() => setIsSickLeaveElnOpen(true)}
 						data-testid="open-sick-leave-eln-modal-btn"
 					>
@@ -1477,16 +1532,19 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					</button>
 					<button
 						type="button"
-						className="secondary-button"
+						className="secondary-button min-h-[44px] sm:min-h-[36px]"
+						style={{ minHeight: "36px" }}
 						onClick={() => setIsAutoclaveLogOpen(true)}
 						data-testid="open-autoclave-log-257-btn"
 					>
 						Журнал автоклава (Форма № 257/у)
 					</button>
 					<button
-						className="text-button"
+						className="text-button min-h-[44px] sm:min-h-[36px]"
+						style={{ minHeight: "36px" }}
 						type="button"
-						disabled={!activeUsableDocuments?.[0]}
+						disabled={false}
+						data-testid="btn-open-latest-document"
 						aria-describedby={
 							!activeUsableDocuments?.[0]
 								? latestDocumentOpenGuidanceId
@@ -1494,14 +1552,10 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						}
 						title={
 							!activeUsableDocuments?.[0]
-								? "Сначала создайте или выдайте документ"
-								: undefined
+								? "Открыть первый созданный документ пациента (или подсказка при отсутствии)"
+								: "Открыть последний созданный или выданный документ пациента"
 						}
-						onClick={() => {
-							const docId = activeUsableDocuments?.[0]?.id;
-							if (!docId) return;
-							void openIssuedDocumentHtml(docId);
-						}}
+						onClick={handleOpenLatestDocument}
 					>
 						Открыть последний
 					</button>
@@ -6550,7 +6604,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								{/* Кнопка прямого действия 1: Проверить и выдать (для черновика) или Скачать PDF (для выданного) */}
 								{document.status === "draft" ? (
 									<button
-										className="doc-link"
+										className="doc-link min-h-[44px] sm:min-h-[36px]"
+										style={{ minHeight: "36px" }}
 										type="button"
 										disabled={documentStatusSaving}
 										aria-busy={documentStatusSaving || undefined}
@@ -6563,7 +6618,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 									</button>
 								) : (
 									<button
-										className="doc-link"
+										className="doc-link min-h-[44px] sm:min-h-[36px]"
+										style={{ minHeight: "36px" }}
 										type="button"
 										onClick={() => void downloadIssuedDocumentPdf(document.id)}
 										aria-describedby={documentLifecycleGuidanceId}
@@ -6576,7 +6632,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 
 								{/* Кнопка прямого действия 2: Открыть */}
 								<button
-									className="doc-link"
+									className="doc-link min-h-[44px] sm:min-h-[36px]"
+									style={{ minHeight: "36px" }}
 									type="button"
 									onClick={() => void openIssuedDocumentHtml(document.id)}
 									aria-describedby={documentLifecycleGuidanceId}
@@ -6589,7 +6646,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 								{/* Контекстное меню дополнительных действий (...) */}
 								<div style={{ position: "relative", display: "inline-block" }}>
 									<button
-										className="doc-link document-row-actions-btn"
+										className="doc-link document-row-actions-btn min-h-[44px] sm:min-h-[36px]"
 										type="button"
 										onClick={() =>
 											setOpenDocActionMenuId(
@@ -6603,7 +6660,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 											display: "inline-flex",
 											alignItems: "center",
 											justifyContent: "center",
-											minWidth: "32px",
+											minWidth: "36px",
+											minHeight: "36px",
 											padding: "0 6px",
 										}}
 									>
