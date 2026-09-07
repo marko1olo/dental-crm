@@ -382,11 +382,74 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		if (inFlightRef.current || isPrinting || now - lastClickTimeRef.current < 600) {
 			return;
 		}
-		if (!validation.isValid) return;
+
+		let effectiveCardRub = cardAmountRub;
+		let effectiveCashRub = cashAmountRub;
+		let effectiveSbpRub = sbpAmountRub;
+		let effectiveDepositRub = depositAmountRub;
+		let effectiveLoyaltyRub = loyaltyAmountRub;
+		let effectiveDmsRub = dmsAmountRub;
+
+		if (!validation.isValid) {
+			const errorMsg =
+				validation.errorMessageRu ||
+				(validation as { errorMessage?: string }).errorMessage ||
+				"Скорректируйте сумму оплаты перед пробитием чека";
+
+			if (validation.errorMessageRu?.includes("ИНН")) {
+				showToast(errorMsg, "warning");
+				return;
+			}
+
+			if (remainingRub > 0) {
+				const method = activeMethod || "bank_card";
+				if (method === "cash") {
+					const nextCash = +(cashAmountRub + remainingRub).toFixed(2);
+					setCashAmountRub(nextCash);
+					if (cashTenderedRub < nextCash) {
+						setCashTenderedRub(nextCash);
+					}
+					effectiveCashRub = nextCash;
+				} else if (method === "sbp_qr") {
+					const nextSbp = +(sbpAmountRub + remainingRub).toFixed(2);
+					setSbpAmountRub(nextSbp);
+					effectiveSbpRub = nextSbp;
+				} else if (method === "patient_deposit") {
+					const nextDeposit = +(depositAmountRub + remainingRub).toFixed(2);
+					setDepositAmountRub(nextDeposit);
+					effectiveDepositRub = nextDeposit;
+				} else if (method === "loyalty_points") {
+					const nextLoyalty = +(loyaltyAmountRub + remainingRub).toFixed(2);
+					setLoyaltyAmountRub(nextLoyalty);
+					effectiveLoyaltyRub = nextLoyalty;
+				} else if (method === "dms_insurance") {
+					const nextDms = +(dmsAmountRub + remainingRub).toFixed(2);
+					setDmsAmountRub(nextDms);
+					effectiveDmsRub = nextDms;
+				} else {
+					const nextCard = +(cardAmountRub + remainingRub).toFixed(2);
+					setCardAmountRub(nextCard);
+					effectiveCardRub = nextCard;
+				}
+				showToast("Недостающая сумма автоматически добавлена к оплате!", "info");
+			} else {
+				showToast(errorMsg, "warning");
+				return;
+			}
+		}
 
 		inFlightRef.current = true;
 		lastClickTimeRef.current = now;
 		setIsPrinting(true);
+
+		const effectivePayments = splitStateToCheckoutPayments({
+			cardRub: effectiveCardRub,
+			cashRub: effectiveCashRub,
+			sbpRub: effectiveSbpRub,
+			depositRub: effectiveDepositRub,
+			loyaltyRub: effectiveLoyaltyRub,
+			dmsRub: effectiveDmsRub,
+		});
 
 		// Statutory composite Idempotency-Key: <uuid>#<sha256(canonicalPayloadSignature)>
 		const rawUuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -397,10 +460,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			operationType: "income",
 			taxationSystem: "usn_income",
 			totalKopecks: targetBillKop,
-			cashKopecks: Math.round(cashAmountRub * 100),
-			electronicCardKopecks: Math.round(cardAmountRub * 100),
-			sbpKopecks: Math.round(sbpAmountRub * 100),
-			prepaidKopecks: Math.round((depositAmountRub + loyaltyAmountRub) * 100),
+			cashKopecks: Math.round(effectiveCashRub * 100),
+			electronicCardKopecks: Math.round(effectiveCardRub * 100),
+			sbpKopecks: Math.round(effectiveSbpRub * 100),
+			prepaidKopecks: Math.round((effectiveDepositRub + effectiveLoyaltyRub) * 100),
 			items: [
 				{
 					name: "Стоматологические услуги по плану лечения",
@@ -419,7 +482,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			{
 				orderId,
 				totalBillKop: targetBillKop,
-				payments,
+				payments: effectivePayments,
 				patientPhone,
 				patientEmail,
 				clientType,
@@ -1541,8 +1604,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
+							data-testid="execute-fast-checkout-btn"
 							onClick={() => void handleExecutePayment()}
-							disabled={!validation.isValid || isPrinting}
+							disabled={isPrinting}
 							className="min-h-[52px] px-8 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 text-white text-base font-extrabold flex items-center gap-2.5 shadow-md hover:shadow-lg transition-all cursor-pointer select-none active:scale-98"
 						>
 							{isPrinting ? (
