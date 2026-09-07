@@ -1930,14 +1930,27 @@
 
 ---
 
+## 176. `расписание_финансы_пародонт::мультисмены_касса_54фз_3way_сплит_и_1_клик_норма_пародонта` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8k, 8n, ФИЧА #181)
+- **Идея**: Персистентность мультисмен расписания (☀️/🌙), 1-клик 3-way сплит кассы 54-ФЗ (Депозит + Карта + Нал) и 1-клик норма пародонта по Apple HIG:
+  1. *Отказоустойчивая персистентность мультисмен*: в `ScheduleView.tsx` для смен `two_shifts` и произвольных `subShifts` внедрен парсинг числовых часов из строковых полей `startTime`/`endTime` с безопасными дефолтами (8:00 и 14:00/20:00), устраняющий сброс вечерних дежурств врачей при перезагрузке; в `DoctorRosterToolbar.tsx` вычисление месяца `monthName` мемоизировано через `useMemo`, кнопки получили `min-height: 44px` и понятные русские подсказки.
+  2. *1-клик 3-way сплит кассы 54-ФЗ*: в `CashRegisterModal.tsx` добавлен пресет `⚡ Депозит + Карта + Нал` (`preset-three-way`), списывающий личный аванс и семейный счет с распределением остатка поровну на Карту и Наличные с копеечной точностью; в `FastCheckoutModal.tsx` сложение депозита и семейного баланса выполнено аддитивно без затирания.
+  3. *1-клик норма пародонтограммы по Закону Хика*: в `PeriodontogramChart.tsx` кнопка экспресс-нормы оформлена как «1-клик: Здоровый пародонт (Норма)» (PSR 0 во всех 6 секстантах, глубина $\le 2\text{ мм}$, BOP 0, протокол в Карту 043/у) с иконкой `ShieldCheck`, тулбар приведен к высоте 36px в 1 строку, все тач-таргеты приведены к $\ge 44\text{px}$.
+  4. *MVP и приоритет*: MVP Да, Сложность Низкая, Приоритет KILLER.
+- **Статус**:
+  - Фронтенд: `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/perio/PeriodontogramChart.tsx`.
+  - Тесты: `apps/web/src/tests/cashShiftAutonomyAndFiscal54Fz.test.tsx`, `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`, `apps/web/src/tests/fastCheckoutInvariants.test.ts`, `apps/web/src/components/documents/__tests__/documentsViewAutonomy.test.tsx` (45 тестов, 100% pass, коммит `db824fb3c`).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 117 дополнительных системных аддендум-фич клинической автономии (Wave 15..31, фичи 64..180) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 118 дополнительных системных аддендум-фич клинической автономии (Wave 15..31, фичи 64..181) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
 - Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП);
 - Строгий аудит Мандатов 8e и 8n: абсолютный приоритет соло-врача и клиники 1–3 кресла, отсутствие тупиков и палок в колёса.
+
 
 
 
