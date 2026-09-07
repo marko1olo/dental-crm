@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import {
 	calculateDmftIndex,
@@ -331,7 +331,7 @@ describe("Form 043/u Document Generators", () => {
 		assert.ok(text.includes("1. ПАСПОРТНАЯ ЧАСТЬ"));
 		assert.ok(text.includes("2. АНАМНЕЗ ЖИЗНИ И ЗАБОЛЕВАНИЯ"));
 		assert.ok(text.includes("3. СТОМАТОЛОГИЧЕСКИЙ СТАТУС"));
-		assert.ok(text.includes("4. ДНЕВНИКИ ПОСЕЩЕНИЙ (SOAP)"));
+		assert.ok(text.includes("4. ДНЕВНИКИ ПОСЕЩЕНИЙ (ФОРМА 043/У)"));
 		assert.ok(text.includes("5. ЭПИКРИЗ И ДИСПАНСЕРИЗАЦИЯ"));
 	});
 

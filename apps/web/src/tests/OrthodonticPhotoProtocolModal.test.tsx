@@ -2,7 +2,7 @@
  * OrthodonticPhotoProtocolModal.test.tsx — Unit & Rendering Tests for Orthodontic Photo-Protocol Modal
  */
 
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";

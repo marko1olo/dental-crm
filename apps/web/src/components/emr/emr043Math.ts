@@ -266,8 +266,8 @@ export function validateForm043uCompleteness(data: MedicalCardForm043uData): For
 	check(Boolean(data.dentalStatus?.biteType), "biteType", "Прикус по Энглю (ортогнатический по умолчанию)", "dental_status", "warning");
 	check(Boolean(data.dentalStatus?.oralMucosaStatus?.color), "oralMucosaStatus", "Состояние СОПР (слизистой)", "dental_status", "warning");
 
-	// Дневники визитов SOAP (Раздел 4)
-	check(Boolean(data.visitDiaries && data.visitDiaries.length > 0), "visitDiaries", "Хотя бы 1 запись в дневнике приёма (SOAP)", "diaries", "critical");
+	// Дневники визитов (Форма 043/у) (Раздел 4)
+	check(Boolean(data.visitDiaries && data.visitDiaries.length > 0), "visitDiaries", "Хотя бы 1 запись в дневнике приёма (Форма 043/у)", "diaries", "critical");
 	if (data.visitDiaries && data.visitDiaries.length > 0) {
 		for (let i = 0; i < data.visitDiaries.length; i++) {
 			const d = data.visitDiaries[i];
@@ -425,11 +425,11 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
           </div>
           <table style="width:100%; border-collapse:collapse; font-size:8pt; line-height:1.25;">
             <tr>
-              <td style="width:22%; font-weight:bold; color:#0369a1; vertical-align:top;">Жалобы (S):</td>
+              <td style="width:22%; font-weight:bold; color:#0369a1; vertical-align:top;">I. Жалобы и анамнез:</td>
               <td style="width:78%; vertical-align:top;">${escapeHtml(d.subjectiveComplaints || "Жалоб на момент осмотра активно не предъявляет.")}</td>
             </tr>
             <tr>
-              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">Объективно (O):</td>
+              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">II. Status localis:</td>
               <td style="vertical-align:top;">
                 ${escapeHtml(d.objectiveStatusLocalis)}
                 ${d.eodMicroamperes !== null && d.eodMicroamperes !== undefined ? `<br/><em>ЭОД: ${d.eodMicroamperes} мкА.</em>` : ""}
@@ -437,7 +437,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
               </td>
             </tr>
             <tr>
-              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">Диагноз МКБ-10 (A):</td>
+              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">III. Диагноз по МКБ-10:</td>
               <td style="vertical-align:top;">
                 <span style="font-weight:800; color:#0f172a;">${escapeHtml(d.assessmentDiagnosisText)}</span>
                 <span style="background:#f1f5f9; border:0.5pt solid #94a3b8; border-radius:3px; padding:0 4px; font-weight:bold; font-size:7.5pt; margin-left:4px;">
@@ -446,7 +446,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
               </td>
             </tr>
             <tr>
-              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">Протокол лечения (P):</td>
+              <td style="font-weight:bold; color:#0369a1; vertical-align:top;">IV. Дневник лечения:</td>
               <td style="vertical-align:top;">
                 ${escapeHtml(d.procedureProtocol)}
                 ${d.anesthesiaDetails ? `<br/><strong>Анестезия:</strong> ${escapeHtml(d.anesthesiaDetails)}` : ""}
@@ -838,8 +838,8 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
     ${escapeHtml(data.generalTreatmentPlan)}
   </div>
 
-  <!-- 4. Дневники приемов SOAP -->
-  <div class="section-title">4. Дневник посещений и протоколы лечения (SOAP)</div>
+  <!-- 4. Дневники приемов -->
+  <div class="section-title">4. Дневник посещений и протоколы лечения</div>
   ${diariesHtml}
 
   <!-- 5. Эпикриз и диспансеризация -->
@@ -1003,11 +1003,11 @@ export function generate043XmlCda(data: MedicalCardForm043uData): string {
         </section>
       </component>
 
-      <!-- Секция: Дневники визитов SOAP -->
+      <!-- Секция: Дневники визитов (Форма 043/у) -->
       <component>
         <section>
           <code code="VISIT_DIARIES" codeSystem="1.2.643.5.1.13" displayName="Дневники посещений"/>
-          <title>Дневники посещений (SOAP)</title>
+          <title>Дневники посещений (Форма 043/у)</title>
           <text>
             ${(data.visitDiaries || []).map((vd, i) => `
               <paragraph>
@@ -1084,13 +1084,13 @@ export function generate043PlainText(data: MedicalCardForm043uData): string {
 	lines.push(`Прикус: ${dentalBiteTypeLabels[d.biteType] || d.biteDescription}`);
 	lines.push(`Рентген: ${d.xrayFindingsDescription}`);
 	lines.push(`--------------------------------------------------------------------------------`);
-	lines.push(`4. ДНЕВНИКИ ПОСЕЩЕНИЙ (SOAP)`);
+	lines.push(`4. ДНЕВНИКИ ПОСЕЩЕНИЙ (ФОРМА 043/У)`);
 	(data.visitDiaries || []).forEach((vd, idx) => {
 		lines.push(`Запись №${idx + 1} от ${vd.entryDate} (Зуб: ${vd.toothNumber || "общий"}):`);
-		lines.push(`  S (Жалобы): ${vd.subjectiveComplaints}`);
-		lines.push(`  O (Объективно): ${vd.objectiveStatusLocalis}`);
-		lines.push(`  A (Диагноз): ${vd.assessmentDiagnosisText} [${vd.assessmentIcd10Code}]`);
-		lines.push(`  P (Лечение): ${vd.procedureProtocol}`);
+		lines.push(`  I. Жалобы и анамнез: ${vd.subjectiveComplaints}`);
+		lines.push(`  II. Status localis: ${vd.objectiveStatusLocalis}`);
+		lines.push(`  III. Диагноз по МКБ-10: ${vd.assessmentDiagnosisText} [${vd.assessmentIcd10Code}]`);
+		lines.push(`  IV. Дневник лечения: ${vd.procedureProtocol}`);
 		if (vd.anesthesiaDetails) lines.push(`  Анестезия: ${vd.anesthesiaDetails}`);
 		if (vd.appliedMaterials) lines.push(`  Материалы: ${vd.appliedMaterials}`);
 		lines.push(`  Врач: ${vd.doctorFullName}`);

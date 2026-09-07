@@ -660,7 +660,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "overview" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
+							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("overview")}
 						>
 							<FileText className="w-4 h-4" />
@@ -669,7 +669,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "passport" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
+							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("passport")}
 						>
 							<User className="w-4 h-4" />
@@ -678,7 +678,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "anamnesis" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
+							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("anamnesis")}
 						>
 							<HeartPulse className="w-4 h-4" />
@@ -687,7 +687,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "odontogram" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
+							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("odontogram")}
 						>
 							<Activity className="w-4 h-4" />
@@ -696,17 +696,17 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "diaries" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
+							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("diaries")}
 						>
 							<Calendar className="w-4 h-4" />
-							<span>4. Дневники визитов (SOAP)</span>
+							<span>4. Дневники визитов (Форма 043/у)</span>
 							<span style={{ fontSize: "11px", fontWeight: "bold", opacity: 0.8 }}>({formData.visitDiaries.length})</span>
 						</button>
 						<button
 							type="button"
 							className={`emr043-tab-btn ${activeTab === "epicrisis" ? "active" : ""}`}
-							style={{ flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
+							style={{ minHeight: "44px", flexShrink: 0, whiteSpace: "nowrap", padding: "6px 12px", fontSize: "0.8125rem" }}
 							onClick={() => setActiveTab("epicrisis")}
 						>
 							<Award className="w-4 h-4" />
@@ -978,14 +978,14 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							</div>
 						)}
 
-						{/* Вкладка 5: Дневники визитов SOAP */}
+						{/* Вкладка 5: Дневники визитов (Форма 043/у) */}
 						{activeTab === "diaries" && (
 							<div>
 								<div className="emr043-section-card">
 									<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
 										<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
 											<Calendar className="w-4 h-4 text-sky-600" />
-											4. Дневники клинических приёмов (Формат SOAP)
+											4. Дневники клинических приёмов (Форма 043/у)
 										</h3>
 										<div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
 											<button

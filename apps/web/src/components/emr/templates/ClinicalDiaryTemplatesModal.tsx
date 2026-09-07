@@ -169,7 +169,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							<div>
 								<div className="flex items-center gap-2">
 									<h2 className="cd-templates-title">
-										1-Click Клинические протоколы и дневники SOAP
+										1-Click Клинические протоколы и дневники приёма (043/у)
 									</h2>
 									<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--ok-bg,#f0fdf4)] text-[var(--ok-fg,#15803d)] border border-[var(--ok-fg,#15803d)]/30">
 										<ShieldCheck className="w-3.5 h-3.5" />
@@ -188,6 +188,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							type="button"
 							onClick={onClose}
 							className="cd-templates-close-btn"
+							style={{ minHeight: "44px", minWidth: "44px" }}
 							aria-label="Закрыть модальное окно"
 							data-testid="cd-templates-close-btn"
 						>
@@ -210,6 +211,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={() => handleSelectTemplate(item.id)}
 										className={`cd-fast-preset-btn ${isSelected ? "active" : ""}`}
+										style={{ minHeight: "44px" }}
 										data-testid={`core-preset-${item.id}`}
 									>
 										<span>{item.icon}</span>
@@ -243,6 +245,8 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 											type="button"
 											onClick={() => setSearchQuery("")}
 											className="absolute right-2.5 text-xs text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+											style={{ minHeight: "44px", minWidth: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+											aria-label="Очистить поиск"
 										>
 											<X className="w-4 h-4" />
 										</button>
@@ -255,6 +259,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={() => setSelectedCategory("all")}
 										className={`cd-category-chip ${selectedCategory === "all" ? "active" : ""}`}
+										style={{ minHeight: "44px", display: "inline-flex", alignItems: "center" }}
 									>
 										Все ({CLINICAL_1CLICK_TEMPLATES_CATALOG.length})
 									</button>
@@ -264,6 +269,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 											type="button"
 											onClick={() => setSelectedCategory(cat)}
 											className={`cd-category-chip ${selectedCategory === cat ? "active" : ""}`}
+											style={{ minHeight: "44px", display: "inline-flex", alignItems: "center" }}
 										>
 											{CLINICAL_CATEGORY_LABELS[cat].split(" ")[0]}
 										</button>
@@ -281,6 +287,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 											type="button"
 											onClick={() => handleSelectTemplate(tmpl.id)}
 											className={`cd-template-item-card ${isSelected ? "active" : ""}`}
+											style={{ minHeight: "44px" }}
 											data-testid={`catalog-item-${tmpl.id}`}
 										>
 											<div className="cd-card-top-row">
@@ -304,7 +311,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 							</div>
 						</aside>
 
-						{/* ── Right Main Pane (Editor & Live SOAP Preview) ── */}
+						{/* ── Right Main Pane (Editor & Live Protocol 043/u Preview) ── */}
 						<main className="cd-templates-editor-pane">
 							{/* Top Controls: Tooth Selector & Quick Chips */}
 							<div className="cd-editor-top-toolbar">
@@ -330,6 +337,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 												type="button"
 												onClick={() => handleToothChange(String(num))}
 												className={`cd-tooth-chip ${toothNumberInput === String(num) ? "active" : ""}`}
+												style={{ minHeight: "44px", minWidth: "44px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
 											>
 												{num}
 											</button>
@@ -360,10 +368,10 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 									</span>
 								</div>
 
-								{/* Unified SOAP Textarea */}
+								{/* Unified Protocol Textarea */}
 								<div className="cd-soap-textarea-wrap">
 									<div className="cd-soap-textarea-label">
-										<span>Единый протокол приема (Редактируемый текст SOAP):</span>
+										<span>Единый протокол приема (Редактируемый дневник 043/у):</span>
 										{isCustomEdited && (
 											<span className="text-amber-600 font-normal">
 												(внесены ручные правки)
@@ -379,7 +387,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										className="cd-soap-textarea"
 										rows={14}
 										data-testid="cd-soap-textarea"
-										aria-label="Текст дневниковой записи SOAP"
+										aria-label="Текст дневниковой записи 043/у"
 									/>
 								</div>
 
@@ -414,6 +422,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={handleCopy}
 										className="cd-btn cd-btn-secondary"
+										style={{ minHeight: "44px" }}
 										data-testid="cd-copy-btn"
 									>
 										{isCopied ? (
@@ -433,6 +442,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={onClose}
 										className="cd-btn cd-btn-secondary"
+										style={{ minHeight: "44px" }}
 										data-testid="cd-cancel-btn"
 									>
 										Отмена
@@ -442,6 +452,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 										type="button"
 										onClick={handleApply}
 										className="cd-btn cd-btn-primary"
+										style={{ minHeight: "44px" }}
 										data-testid="cd-apply-btn"
 									>
 										<Sparkles className="w-4 h-4" />
