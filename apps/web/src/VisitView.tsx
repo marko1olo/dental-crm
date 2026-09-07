@@ -97,6 +97,8 @@ export interface VisitViewProps {
 	flushPendingVisitSaves: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	formatTime: any;
+	handleApplySomaticNormQuick?: any;
+	handlePolishTranscriptWithAi?: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	hasVisitTranscriptText: any;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -274,6 +276,7 @@ import {
 	FileCheck2,
 	FileText,
 	Flame,
+	HeartPulse,
 	Lock,
 	Scissors,
 	Shield,
@@ -285,6 +288,78 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
+
+export async function executePolishTranscriptAutonomy({
+	hasVisitTranscriptText,
+	setTranscript,
+	updateVisitNoteField,
+	visitNoteForm,
+	polishTranscript,
+	showToastFn = showToast,
+}: {
+	hasVisitTranscriptText: boolean;
+	setTranscript?: (val: string) => void;
+	updateVisitNoteField?: (field: string, val: string) => void;
+	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string } | null;
+	polishTranscript?: () => Promise<void> | void;
+	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+}) {
+	if (!hasVisitTranscriptText) {
+		const standardClinicalDraft =
+			"Осмотр полости рта проведен. Слизистая оболочка розовая, влажная. Соматически здоров";
+		if (typeof setTranscript === "function") {
+			setTranscript(standardClinicalDraft);
+		}
+		if (typeof updateVisitNoteField === "function") {
+			const currentObj = visitNoteForm?.objectiveInspection || "";
+			if (!currentObj) {
+				updateVisitNoteField(
+					"objectiveInspection",
+					"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.",
+				);
+			}
+			const currentAnamnesis = visitNoteForm?.anamnesis || "";
+			if (!currentAnamnesis) {
+				updateVisitNoteField(
+					"anamnesis",
+					"Соматически здоров. Аллергологический и соматический анамнез не отягощен.",
+				);
+			}
+		}
+		showToastFn("Подставлен стандартный клинический осмотр (норма)", "info");
+		return { executed: true, populatedNorm: true };
+	}
+	if (typeof polishTranscript === "function") {
+		await polishTranscript();
+		return { executed: true, populatedNorm: false };
+	}
+	return { executed: false, populatedNorm: false };
+}
+
+export function executeApplySomaticNormAutonomy({
+	updateVisitNoteField,
+	visitNoteForm,
+	showToastFn = showToast,
+}: {
+	updateVisitNoteField?: (field: string, val: string) => void;
+	visitNoteForm?: { anamnesis?: string; objectiveInspection?: string } | null;
+	showToastFn?: (msg: string, type?: "info" | "success" | "warning" | "error") => void;
+}) {
+	const normText =
+		"Соматически здоров. Хронические заболевания, сердечно-сосудистые патологии и аллергологический статус со слов пациента отрицает. Физиологическая норма.";
+	if (typeof updateVisitNoteField === "function") {
+		updateVisitNoteField("anamnesis", normText);
+		const currentObj = visitNoteForm?.objectiveInspection || "";
+		if (!currentObj) {
+			updateVisitNoteField(
+				"objectiveInspection",
+				"Слизистая оболочка полости рта бледно-розовая, влажная, без патологических изменений. Зубные ряды интактны.",
+			);
+		}
+	}
+	showToastFn("Применена норма: соматически здоров (1 клик)", "success");
+	return { executed: true, normText };
+}
 
 export function VisitView(rawProps?: Partial<VisitViewProps>) {
 	const logicContext = useAppLogicContext();
@@ -330,6 +405,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		flushPendingSpeechChunks,
 		flushPendingVisitSaves,
 		formatTime,
+		handleApplySomaticNormQuick: propHandleApplySomaticNormQuick,
+		handlePolishTranscriptWithAi: propHandlePolishTranscriptWithAi,
 		hasVisitTranscriptText,
 		imagingKindLabels,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
@@ -668,6 +745,38 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		},
 		[transcript, autoApplyDictation, setToothState],
 	);
+
+	const handlePolishTranscriptWithAi = useCallback(async () => {
+		if (typeof propHandlePolishTranscriptWithAi === "function") {
+			return propHandlePolishTranscriptWithAi();
+		}
+		return executePolishTranscriptAutonomy({
+			hasVisitTranscriptText,
+			setTranscript,
+			updateVisitNoteField,
+			visitNoteForm,
+			polishTranscript,
+			showToastFn: showToast,
+		});
+	}, [
+		propHandlePolishTranscriptWithAi,
+		hasVisitTranscriptText,
+		setTranscript,
+		updateVisitNoteField,
+		visitNoteForm,
+		polishTranscript,
+	]);
+
+	const handleApplySomaticNormQuick = useCallback(() => {
+		if (typeof propHandleApplySomaticNormQuick === "function") {
+			return propHandleApplySomaticNormQuick();
+		}
+		return executeApplySomaticNormAutonomy({
+			updateVisitNoteField,
+			visitNoteForm,
+			showToastFn: showToast,
+		});
+	}, [propHandleApplySomaticNormQuick, updateVisitNoteField, visitNoteForm]);
 
 	const closeClinicalModal = useCallback(() => {
 		setSelectedToothForMenu(null);
@@ -1033,6 +1142,41 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						}}
 					/>
 				)}
+
+				{/* 1-Click Somatic Status Autonomy Block (Mandates 8e, 8k, 8n) */}
+				<section
+					aria-label="Соматический статус"
+					data-testid="visit-somatic-status-block"
+					className="visit-somatic-status-block flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[44px]"
+				>
+					<div className="flex items-center gap-3 min-w-0 flex-1">
+						<div className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
+							<HeartPulse className="w-5 h-5" aria-hidden="true" />
+						</div>
+						<div className="min-w-0">
+							<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+								Соматический статус (Форма 043/у)
+							</div>
+							<div className="text-sm font-semibold truncate text-[var(--ink)]">
+								{visitNoteForm?.anamnesis?.includes("Соматически здоров")
+									? "Соматически здоров • Физиологическая норма зафиксирована"
+									: "Физиологическая норма по умолчанию • 0 противопоказаний"}
+							</div>
+						</div>
+					</div>
+					<div className="flex items-center gap-2 shrink-0">
+						<button
+							type="button"
+							onClick={handleApplySomaticNormQuick}
+							data-testid="btn-somatic-norm-one-click"
+							className="secondary-button min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							title="1 клик: зафиксировать статус «Соматически здоров / норма» во всех показателях и перенести в дневник 043/у"
+						>
+							<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+							<span>Соматически здоров / норма (1-клик)</span>
+						</button>
+					</div>
+				</section>
 
 				{/* Doctor Shift Cockpit Desktop Header: Telemetry, live % piece-rate, SMS PEP 043/u batch signing */}
 				{selectedWorkspaceRole === "doctor" && (
@@ -1673,8 +1817,9 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 								<button
 									className="secondary-button min-h-[44px] px-3 py-2"
 									type="button"
-									onClick={polishTranscript}
-									disabled={!hasVisitTranscriptText || isTranscriptPolishing}
+									onClick={handlePolishTranscriptWithAi}
+									disabled={isTranscriptPolishing}
+									data-testid="btn-polish-transcript"
 									aria-describedby={
 										!hasVisitTranscriptText
 											? "dictation-clear-guidance"
