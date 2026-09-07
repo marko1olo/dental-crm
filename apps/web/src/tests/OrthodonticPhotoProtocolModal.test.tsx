@@ -18,6 +18,7 @@ import OrthoPhotoProtocolModalDefault, {
 	OrthoPhotoProtocolModal,
 	ORTHODONTIC_CLINICAL_PRESETS as ReExportedPresets,
 } from "../components/orthodontics/OrthoPhotoProtocolModal";
+import { OrthodonticStudioModal } from "../components/orthodontics/OrthodonticStudioModal";
 import {
 	createEmptyOrthodonticSession,
 	updateSlotPhoto,
@@ -224,4 +225,20 @@ describe("OrthodonticPhotoProtocolModal Component", () => {
 		assert.ok(html.includes("Тестовый Пациент"));
 		assert.ok(html.includes('data-testid="orthodontic-photo-protocol-modal"'));
 	});
+
+	it("renders OrthodonticStudioModal without error using deduplicated OrthoPhotoProtocolModal", () => {
+		const html = renderToStaticMarkup(
+			createElement(OrthodonticStudioModal, {
+				isOpen: true,
+				onClose: () => {},
+				patientId: "pat-ortho-studio-test",
+				patientName: "Смирнова Екатерина",
+				doctorName: "Д-р Смирнов А. П.",
+			}),
+		);
+		assert.ok(html.includes("Смирнова Екатерина"));
+		assert.ok(html.includes("Ортодонтический кабинет"));
+		assert.ok(html.includes('data-testid="orthodontic-studio-modal"'));
+	});
 });
+
