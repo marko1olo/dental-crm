@@ -411,8 +411,15 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 								Единоличное списание лечащим врачом / ответственной медсестрой (без комиссии из 3 человек)
 							</span>
 						</label>
-						<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300">
-							{isSingleSigner ? "✓ Форма 0504230 / ТОРГ-16: без созыва комиссии" : "Стандартная комиссия (3 подписи)"}
+						<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 inline-flex items-center gap-1">
+							{isSingleSigner ? (
+								<>
+									<Check size={12} className="text-teal-600" aria-hidden="true" />
+									<span>Форма 0504230 / ТОРГ-16: без созыва комиссии</span>
+								</>
+							) : (
+								<span>Стандартная комиссия (3 подписи)</span>
+							)}
 						</span>
 					</div>
 

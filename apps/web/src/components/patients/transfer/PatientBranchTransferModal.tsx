@@ -324,7 +324,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 				<div className="branch-trf-header">
 					<div className="branch-trf-title-group">
 						<div className="branch-trf-icon-badge" aria-hidden="true">
-							🔄
+							<Truck size={22} />
 						</div>
 						<div>
 							<h2 id="branch-trf-dialog-title" className="branch-trf-title">
@@ -708,7 +708,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 									</tr>
 									<tr>
 										<td><strong>Маршрут:</strong></td>
-										<td>{sourceBranch.shortNameRu} ➔ {targetBranch.shortNameRu}</td>
+										<td>{sourceBranch.shortNameRu} → {targetBranch.shortNameRu}</td>
 									</tr>
 									<tr>
 										<td><strong>Контрольная сумма SHA-256:</strong></td>

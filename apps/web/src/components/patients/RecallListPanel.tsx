@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 /**
@@ -367,12 +368,13 @@ export const RecallListPanel: React.FC = () => {
 													<td data-label="Что делать">
 														{/* Звонок доступен всегда: он не рассылка и согласия не требует. */}
 														<button
-															className="secondary-button"
+															className="secondary-button inline-flex items-center gap-1 min-h-[44px] sm:min-h-[34px]"
 															type="button"
 															disabled={!candidate.phone}
 															onClick={() => markCalled(candidate.patientId)}
 														>
-															{wasCalled ? "Позвонил ✓" : "Позвонил"}
+															{wasCalled && <Check size={13} className="text-emerald-600" aria-hidden="true" />}
+															<span>{wasCalled ? "Позвонил" : "Позвонить"}</span>
 														</button>
 														{INVITABLE.includes(candidate.band) ? (
 															<button

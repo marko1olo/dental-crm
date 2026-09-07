@@ -10,15 +10,27 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, it, beforeEach } from "node:test";
+import assert from "node:assert/strict";
 
-// Mock GlobalToast so showToast can be spied on directly
-vi.mock("../../../GlobalToast", () => ({
-	showToast: vi.fn(),
-}));
-
-import { showToast } from "../../../GlobalToast";
 import { EgiszCdaExportModal } from "../EgiszCdaExportModal";
+
+type MockFn = {
+	(...args: any[]): any;
+	calls: any[][];
+	mock: { calls: any[][] };
+};
+
+function createMockFn(impl?: (...args: any[]) => any): MockFn {
+	const calls: any[][] = [];
+	const fn = ((...args: any[]) => {
+		calls.push(args);
+		return impl ? impl(...args) : undefined;
+	}) as MockFn;
+	fn.calls = calls;
+	fn.mock = { calls };
+	return fn;
+}
 
 interface MockDomNode {
 	nodeType: number;
@@ -207,15 +219,30 @@ function setupMockDom() {
 	};
 	docRef = doc;
 
+	const winListeners: Record<string, EventListener[]> = {};
 	const win = {
 		document: doc,
-		addEventListener: () => {},
-		removeEventListener: () => {},
+		addEventListener: (type: string, fn: EventListener) => {
+			winListeners[type] = winListeners[type] || [];
+			winListeners[type].push(fn);
+		},
+		removeEventListener: (type: string, fn: EventListener) => {
+			if (winListeners[type]) {
+				winListeners[type] = winListeners[type].filter((l) => l !== fn);
+			}
+		},
+		dispatchEvent: (ev: { type: string }) => {
+			const list = winListeners[ev.type] || [];
+			for (const fn of list) {
+				fn(ev as unknown as Event);
+			}
+			return true;
+		},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
-		print: vi.fn(),
+		print: createMockFn(),
 		URL: {
-			createObjectURL: vi.fn().mockReturnValue("blob:mock-zip-package"),
-			revokeObjectURL: vi.fn(),
+			createObjectURL: createMockFn(() => "blob:mock-zip-package"),
+			revokeObjectURL: createMockFn(),
 		},
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
@@ -234,6 +261,16 @@ function setupMockDom() {
 	g.Element = win.Element;
 	g.Node = win.Node;
 	g.IS_REACT_ACT_ENVIRONMENT = true;
+	if (!g.CustomEvent) {
+		g.CustomEvent = class CustomEvent {
+			type: string;
+			detail: any;
+			constructor(type: string, init?: { detail?: any }) {
+				this.type = type;
+				this.detail = init?.detail;
+			}
+		};
+	}
 
 	return { doc, win };
 }
@@ -275,18 +312,17 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 	let root: Root;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
 		const { doc } = setupMockDom();
 		container = doc.createElement("div");
 		doc.body.appendChild(container);
 		// biome-ignore lint/suspicious/noExplicitAny: container mock
 		root = createRoot(container as any);
 
-		globalThis.fetch = vi.fn().mockResolvedValue({
+		globalThis.fetch = createMockFn(async () => ({
 			ok: true,
 			status: 200,
 			json: async () => ({ status: "accepted" }),
-		}) as unknown as typeof fetch;
+		})) as unknown as typeof fetch;
 	});
 
 	it("1. Export button is NOT disabled when generationResult.success is false (Mandate 8e: Doctor Autonomy)", async () => {
@@ -317,10 +353,10 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		const body = (globalThis as any).document.body as MockDomNode;
 		const exportBtn = findNodeByTestId(body, "egisz-1click-export-btn");
 
-		expect(exportBtn).not.toBeNull();
+		assert.notStrictEqual(exportBtn, null);
 		// Assert not disabled (Mandate 8e: Doctor Autonomy - no dead disabled buttons)
-		expect(exportBtn?.disabled).toBe(false);
-		expect(exportBtn?.getAttribute("disabled")).toBeNull();
+		assert.strictEqual(exportBtn?.disabled, false);
+		assert.strictEqual(exportBtn?.getAttribute("disabled"), null);
 	});
 
 	it("2. Clicking export button when !generationResult.success displays active guidance toast without crashing (Mandate 8e)", async () => {
@@ -350,7 +386,12 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		// biome-ignore lint/suspicious/noExplicitAny: access document.body
 		const body = (globalThis as any).document.body as MockDomNode;
 		const exportBtn = findNodeByTestId(body, "egisz-1click-export-btn");
-		expect(exportBtn).not.toBeNull();
+		assert.notStrictEqual(exportBtn, null);
+
+		let toastEvent: any = null;
+		(globalThis as any).window.addEventListener("dente-toast", (ev: any) => {
+			toastEvent = ev.detail;
+		});
 
 		// Click the export button inside act
 		await act(async () => {
@@ -358,16 +399,14 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		});
 
 		// Expect active guidance toast with explanation
-		expect(showToast).toHaveBeenCalled();
-		const toastCall = vi.mocked(showToast).mock.calls[0];
-		expect(toastCall).toBeDefined();
-		expect(typeof toastCall?.[0]).toBe("string");
-		expect(toastCall?.[1]).toBe("warning");
+		assert.notStrictEqual(toastEvent, null);
+		assert.strictEqual(typeof toastEvent?.text, "string");
+		assert.strictEqual(toastEvent?.type, "warning");
 	});
 
 	it("3. Export button is disabled ONLY when isSubmitting is true", async () => {
 		let resolveSubmission!: (val: unknown) => void;
-		globalThis.fetch = vi.fn().mockImplementation(
+		globalThis.fetch = createMockFn(
 			() =>
 				new Promise((resolve) => {
 					resolveSubmission = resolve;
@@ -386,10 +425,10 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		// biome-ignore lint/suspicious/noExplicitAny: access document.body
 		const body = (globalThis as any).document.body as MockDomNode;
 		const exportBtn = findNodeByTestId(body, "egisz-1click-export-btn");
-		expect(exportBtn).not.toBeNull();
+		assert.notStrictEqual(exportBtn, null);
 
 		// Initially not submitting -> disabled === false
-		expect(exportBtn?.disabled).toBe(false);
+		assert.strictEqual(exportBtn?.disabled, false);
 
 		// Trigger export synchronously inside act
 		let clickPromise: Promise<void> | void;
@@ -398,8 +437,8 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		});
 
 		// While submission is in progress -> disabled === true
-		expect(exportBtn?.disabled).toBe(true);
-		expect(exportBtn?.getAttribute("disabled")).not.toBeNull();
+		assert.strictEqual(exportBtn?.disabled, true);
+		assert.notStrictEqual(exportBtn?.getAttribute("disabled"), null);
 
 		// Resolve fetch submission
 		await act(async () => {
@@ -408,7 +447,7 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		});
 
 		// After submission completes -> disabled === false
-		expect(exportBtn?.disabled).toBe(false);
+		assert.strictEqual(exportBtn?.disabled, false);
 	});
 
 	it("4. Touch targets for export and action buttons meet the >= 44px threshold (Apple HIG)", async () => {
@@ -427,27 +466,27 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 
 		// 1. Export button in footer
 		const exportBtn = findNodeByTestId(body, "egisz-1click-export-btn");
-		expect(exportBtn).not.toBeNull();
+		assert.notStrictEqual(exportBtn, null);
 		const exportMinHeight = Number.parseInt(exportBtn?.style?.minHeight || "0", 10);
-		expect(exportMinHeight).toBeGreaterThanOrEqual(44);
+		assert.ok(exportMinHeight >= 44);
 
 		// 2. Print draft button in footer
 		const printBtn = findNodeByTestId(body, "egisz-print-draft-btn");
-		expect(printBtn).not.toBeNull();
+		assert.notStrictEqual(printBtn, null);
 		const printMinHeight = Number.parseInt(printBtn?.style?.minHeight || "0", 10);
-		expect(printMinHeight).toBeGreaterThanOrEqual(44);
+		assert.ok(printMinHeight >= 44);
 
 		// 3. Close button in footer
 		const closeFooterBtn = findNodeByTestId(body, "egisz-close-footer-btn");
-		expect(closeFooterBtn).not.toBeNull();
+		assert.notStrictEqual(closeFooterBtn, null);
 		const closeMinHeight = Number.parseInt(closeFooterBtn?.style?.minHeight || "0", 10);
-		expect(closeMinHeight).toBeGreaterThanOrEqual(44);
+		assert.ok(closeMinHeight >= 44);
 
 		// 4. Header close button
 		const closeHeaderBtn = findNodeByTestId(body, "egisz-close-header-btn");
-		expect(closeHeaderBtn).not.toBeNull();
+		assert.notStrictEqual(closeHeaderBtn, null);
 		const closeHeaderMinHeight = Number.parseInt(closeHeaderBtn?.style?.minHeight || "0", 10);
-		expect(closeHeaderMinHeight).toBeGreaterThanOrEqual(44);
+		assert.ok(closeHeaderMinHeight >= 44);
 
 		// 5. Navigation Tabs
 		const tabs = [
@@ -458,36 +497,36 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		];
 		for (const tabId of tabs) {
 			const tab = findNodeByTestId(body, tabId);
-			expect(tab).not.toBeNull();
+			assert.notStrictEqual(tab, null);
 			const tabMinHeight = Number.parseInt(tab?.style?.minHeight || "0", 10);
-			expect(tabMinHeight).toBeGreaterThanOrEqual(44);
+			assert.ok(tabMinHeight >= 44);
 		}
 
 		// 6. Form Type Switcher cards
 		const kind043u = findNodeByTestId(body, "egisz-kind-043u");
-		expect(kind043u).not.toBeNull();
-		expect(Number.parseInt(kind043u?.style?.minHeight || "0", 10)).toBeGreaterThanOrEqual(44);
+		assert.notStrictEqual(kind043u, null);
+		assert.ok(Number.parseInt(kind043u?.style?.minHeight || "0", 10) >= 44);
 
 		const kind043_1u = findNodeByTestId(body, "egisz-kind-043_1u");
-		expect(kind043_1u).not.toBeNull();
-		expect(Number.parseInt(kind043_1u?.style?.minHeight || "0", 10)).toBeGreaterThanOrEqual(44);
+		assert.notStrictEqual(kind043_1u, null);
+		assert.ok(Number.parseInt(kind043_1u?.style?.minHeight || "0", 10) >= 44);
 
 		// 7. Signature action cards and action buttons
 		const doctorSignCard = findNodeByTestId(body, "egisz-sign-card-doctor");
-		expect(doctorSignCard).not.toBeNull();
-		expect(Number.parseInt(doctorSignCard?.style?.minHeight || "0", 10)).toBeGreaterThanOrEqual(44);
+		assert.notStrictEqual(doctorSignCard, null);
+		assert.ok(Number.parseInt(doctorSignCard?.style?.minHeight || "0", 10) >= 44);
 
 		const clinicSignCard = findNodeByTestId(body, "egisz-sign-card-clinic");
-		expect(clinicSignCard).not.toBeNull();
-		expect(Number.parseInt(clinicSignCard?.style?.minHeight || "0", 10)).toBeGreaterThanOrEqual(44);
+		assert.notStrictEqual(clinicSignCard, null);
+		assert.ok(Number.parseInt(clinicSignCard?.style?.minHeight || "0", 10) >= 44);
 
 		const signDemoBtn = findNodeByTestId(body, "egisz-sign-doctor-demo-btn");
 		if (signDemoBtn) {
-			expect(Number.parseInt(signDemoBtn?.style?.minHeight || "0", 10)).toBeGreaterThanOrEqual(44);
+			assert.ok(Number.parseInt(signDemoBtn?.style?.minHeight || "0", 10) >= 44);
 		}
 
 		const clinicSignBtn = findNodeByTestId(body, "egisz-sign-clinic-btn");
-		expect(clinicSignBtn).not.toBeNull();
-		expect(Number.parseInt(clinicSignBtn?.style?.minHeight || "0", 10)).toBeGreaterThanOrEqual(44);
+		assert.notStrictEqual(clinicSignBtn, null);
+		assert.ok(Number.parseInt(clinicSignBtn?.style?.minHeight || "0", 10) >= 44);
 	});
 });

@@ -492,7 +492,7 @@ export function PatientReclamationsWidget({
 												className="min-h-[44px] px-3 py-2 rounded-lg bg-rose-50/80 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-left text-xs font-semibold text-rose-950 dark:text-rose-100 flex items-center gap-1.5 cursor-pointer active:scale-98 transition-all shadow-2xs"
 												title={`Заполнить: ${preset.details}`}
 											>
-												<span className="text-amber-500 font-bold shrink-0">⚡</span>
+												<Zap size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
 												<span className="truncate">{preset.title}</span>
 											</button>
 										))}

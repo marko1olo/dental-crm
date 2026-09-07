@@ -15,6 +15,7 @@
  * denteAdminSecretRequestHeaders (clinic+staff токены).
  */
 
+import { Camera } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { operatorReadableErrorDetail } from "../../AppHelpers";
@@ -292,9 +293,10 @@ export const PatientAttachmentsPanel: React.FC<
 						type="button"
 						data-testid="patient-camera-scan-button"
 						onClick={() => setScannerModalOpen(true)}
-						className="inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--ink)] border border-[var(--line-strong)] transition-colors shadow-xs"
+						className="inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--ink)] border border-[var(--line-strong)] transition-colors shadow-xs cursor-pointer"
 					>
-						📸 Скан камерой
+						<Camera className="w-4 h-4 text-[var(--teal)]" aria-hidden="true" />
+						<span>Скан камерой</span>
 					</button>
 					<label className="cursor-pointer inline-flex items-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white border border-[var(--teal)] transition-colors shadow-sm disabled:opacity-50">
 						{uploading ? "Загружаю…" : "Прикрепить файл"}

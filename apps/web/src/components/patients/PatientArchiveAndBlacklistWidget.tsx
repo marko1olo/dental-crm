@@ -1,4 +1,4 @@
-import { AlertTriangle, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Zap } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -311,10 +311,11 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 												"info",
 											);
 										}}
-										className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all inline-flex items-center gap-1 shadow-xs"
+										className="min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all inline-flex items-center gap-1.5 shadow-xs"
 										title="Разрешить запись пациента с острой болью в соответствии со ст. 124 УК РФ"
 									>
-										<span>⚡ Экстренная запись (Острая боль / ст. 124 УК РФ)</span>
+										<Zap size={14} className="text-white shrink-0" aria-hidden="true" />
+										<span>Экстренная запись (Острая боль / ст. 124 УК РФ)</span>
 									</button>
 								</div>
 							</div>

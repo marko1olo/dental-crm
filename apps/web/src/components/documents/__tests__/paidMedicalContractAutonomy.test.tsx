@@ -12,13 +12,31 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { describe, expect, it, vi } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { PaidMedicalContractModal } from "../PaidMedicalContractModal.js";
 import {
 	createDefaultPaidContract,
 	generatePaidContractHtml,
 	type PaidContractData,
 } from "../paidContractEngine.js";
+
+type MockFn = {
+	(...args: any[]): any;
+	calls: any[][];
+	mock: { calls: any[][] };
+};
+
+function createMockFn(impl?: (...args: any[]) => any): MockFn {
+	const calls: any[][] = [];
+	const fn = ((...args: any[]) => {
+		calls.push(args);
+		return impl ? impl(...args) : undefined;
+	}) as MockFn;
+	fn.calls = calls;
+	fn.mock = { calls };
+	return fn;
+}
 
 interface MockDomNode {
 	nodeType: number;
@@ -151,7 +169,7 @@ function setupMockDom() {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
-		print: vi.fn(),
+		print: createMockFn(),
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
 		Element: class {},
@@ -251,13 +269,13 @@ describe("Paid Medical Contract Pure Paper-First & 1-Click Autonomy (Decree 736,
 		const defaultContract = createDefaultPaidContract({
 			patientFullName: mockPatient.fullName,
 		});
-		expect(defaultContract.signMethod).toBe("paper");
+		assert.strictEqual(defaultContract.signMethod, "paper");
 
 		const html = generatePaidContractHtml(defaultContract);
-		expect(html).toContain("paper-sign-stamp");
-		expect(html).toContain("Договор составлен в 2-х экземплярах на бумажном носителе");
-		expect(html).toContain("Постановление Правительства РФ № 736");
-		expect(html).toContain("карту 043/у");
+		assert.ok(html.includes("paper-sign-stamp"));
+		assert.ok(html.includes("Договор составлен в 2-х экземплярах на бумажном носителе"));
+		assert.ok(html.includes("Постановление Правительства РФ № 736"));
+		assert.ok(html.includes("карту 043/у"));
 	});
 
 	it("2. Eradicates procedural <canvas> stylus drawing elements from the modal completely", async () => {
@@ -268,7 +286,7 @@ describe("Paid Medical Contract Pure Paper-First & 1-Click Autonomy (Decree 736,
 			root.render(
 				<PaidMedicalContractModal
 					isOpen={true}
-					onClose={vi.fn()}
+					onClose={createMockFn()}
 					patient={mockPatient}
 					clinicInfo={mockClinic}
 				/>,
@@ -277,19 +295,19 @@ describe("Paid Medical Contract Pure Paper-First & 1-Click Autonomy (Decree 736,
 
 		// Check zero <canvas> tags across the entire rendered modal tree
 		const canvases = findNodesByTag(doc.body, "canvas");
-		expect(canvases.length).toBe(0);
+		assert.strictEqual(canvases.length, 0);
 
 		// Switch to signature tab and check again
 		const signatureTabBtn = findNodeByTestId(doc.body, "tab-signature-btn");
-		expect(signatureTabBtn).not.toBeNull();
+		assert.notStrictEqual(signatureTabBtn, null);
 		await clickNode(signatureTabBtn!);
 
 		const canvasesAfterTabSwitch = findNodesByTag(doc.body, "canvas");
-		expect(canvasesAfterTabSwitch.length).toBe(0);
+		assert.strictEqual(canvasesAfterTabSwitch.length, 0);
 
 		// Verify paper mode button is present and active by default in sign switcher
 		const paperModeBtn = findNodeByTestId(doc.body, "sign-mode-paper-btn");
-		expect(paperModeBtn).not.toBeNull();
+		assert.notStrictEqual(paperModeBtn, null);
 
 		await act(async () => {
 			root.unmount();
@@ -299,8 +317,8 @@ describe("Paid Medical Contract Pure Paper-First & 1-Click Autonomy (Decree 736,
 	it("3. Clicking confirm-paper-contract-btn signs and saves contract in 1 click with signMethod: 'paper' and SHA-256 hash", async () => {
 		const { doc } = setupMockDom();
 		const root: Root = createRoot(doc.body as unknown as HTMLElement);
-		const onContractSaved = vi.fn();
-		const onClose = vi.fn();
+		const onContractSaved = createMockFn();
+		const onClose = createMockFn();
 
 		await act(async () => {
 			root.render(
@@ -316,35 +334,35 @@ describe("Paid Medical Contract Pure Paper-First & 1-Click Autonomy (Decree 736,
 
 		// Switch to signature tab
 		const signatureTabBtn = findNodeByTestId(doc.body, "tab-signature-btn");
-		expect(signatureTabBtn).not.toBeNull();
+		assert.notStrictEqual(signatureTabBtn, null);
 		await clickNode(signatureTabBtn!);
 
 		// Check 2-copy banner text per Decree 736
 		const banner = findNodeByTestId(doc.body, "paper-sign-section");
-		expect(banner).not.toBeNull();
+		assert.notStrictEqual(banner, null);
 
 		// Click 1-click confirmation button
 		const confirmBtn = findNodeByTestId(doc.body, "confirm-paper-contract-btn");
-		expect(confirmBtn).not.toBeNull();
+		assert.notStrictEqual(confirmBtn, null);
 
 		await clickNode(confirmBtn!);
 
-		expect(onContractSaved).toHaveBeenCalledTimes(1);
-		const savedContract: PaidContractData = onContractSaved.mock.calls[0][0];
+		assert.strictEqual(onContractSaved.calls.length, 1);
+		const savedContract: PaidContractData = onContractSaved.mock.calls[0]![0];
 
-		expect(savedContract.signMethod).toBe("paper");
-		expect(savedContract.signedAt).toBeDefined();
-		expect(typeof savedContract.signedAt).toBe("string");
-		expect(savedContract.signedAt?.length).toBeGreaterThan(0);
+		assert.strictEqual(savedContract.signMethod, "paper");
+		assert.notStrictEqual(savedContract.signedAt, undefined);
+		assert.strictEqual(typeof savedContract.signedAt, "string");
+		assert.ok((savedContract.signedAt?.length ?? 0) > 0);
 
 		// Verify SHA-256 hash
-		expect(savedContract.integrityHash).toBeDefined();
-		expect(typeof savedContract.integrityHash).toBe("string");
-		expect(savedContract.integrityHash?.length).toBe(64);
-		expect(/^[a-f0-9]{64}$/i.test(savedContract.integrityHash || "")).toBe(true);
+		assert.notStrictEqual(savedContract.integrityHash, undefined);
+		assert.strictEqual(typeof savedContract.integrityHash, "string");
+		assert.strictEqual(savedContract.integrityHash?.length, 64);
+		assert.ok(/^[a-f0-9]{64}$/i.test(savedContract.integrityHash || ""));
 
 		// Modal should close smoothly without modal barriers
-		expect(onClose).toHaveBeenCalledTimes(1);
+		assert.strictEqual(onClose.calls.length, 1);
 
 		await act(async () => {
 			root.unmount();
@@ -359,7 +377,7 @@ describe("Paid Medical Contract Pure Paper-First & 1-Click Autonomy (Decree 736,
 			root.render(
 				<PaidMedicalContractModal
 					isOpen={true}
-					onClose={vi.fn()}
+					onClose={createMockFn()}
 					patient={mockPatient}
 					clinicInfo={mockClinic}
 				/>,
@@ -367,10 +385,10 @@ describe("Paid Medical Contract Pure Paper-First & 1-Click Autonomy (Decree 736,
 		});
 
 		const printBtn = findNodeByTestId(doc.body, "print-contract-btn");
-		expect(printBtn).not.toBeNull();
+		assert.notStrictEqual(printBtn, null);
 
 		const printBlankBtn = findNodeByTestId(doc.body, "print-blank-contract-btn");
-		expect(printBlankBtn).not.toBeNull();
+		assert.notStrictEqual(printBlankBtn, null);
 
 		await act(async () => {
 			root.unmount();
