@@ -29,6 +29,7 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../../GlobalToast";
 import {
 	CLINIC_NETWORK_BRANCHES,
 	getClinicBranch,
@@ -212,7 +213,16 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 
 	// Execute transfer
 	const handleExecuteTransfer = useCallback(() => {
-		if (!validation.isValid || isExecuting) return;
+		if (isExecuting) return;
+
+		if (!validation.isValid) {
+			const errorMsg =
+				(validation.errors[0] as any)?.message ||
+				validation.errors[0] ||
+				"Заполните обязательные поля трансфера";
+			showToast(errorMsg, "warning");
+			return;
+		}
 
 		setIsExecuting(true);
 		try {
@@ -240,6 +250,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 		}
 	}, [
 		validation.isValid,
+		validation.errors,
 		isExecuting,
 		draft,
 		demographics,
@@ -326,7 +337,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 					</div>
 					<button
 						type="button"
-						className="branch-trf-close-btn"
+						className="branch-trf-close-btn min-h-[44px] min-w-[44px]"
 						onClick={onClose}
 						aria-label="Закрыть окно трансфера"
 					>
@@ -399,11 +410,12 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 							<div>
 								<div className="branch-trf-section-title">
 									<span>Переносимые клинические и финансовые данные:</span>
-									<div style={{ display: "flex", gap: "8px", fontSize: "0.8rem" }}>
+									<div style={{ display: "flex", gap: "8px", fontSize: "0.8rem", alignItems: "center" }}>
 										<button
 											type="button"
 											onClick={() => handleSelectAll(true)}
-											style={{ background: "none", border: "none", color: "var(--info-fg, #2563eb)", cursor: "pointer", fontWeight: 600 }}
+											style={{ background: "none", border: "none", color: "var(--info-fg, #2563eb)", cursor: "pointer", fontWeight: 600, minHeight: "44px", display: "inline-flex", alignItems: "center" }}
+											className="min-h-[44px]"
 										>
 											Выбрать всё
 										</button>
@@ -411,7 +423,8 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 										<button
 											type="button"
 											onClick={() => handleSelectAll(false)}
-											style={{ background: "none", border: "none", color: "var(--muted, #64748b)", cursor: "pointer" }}
+											style={{ background: "none", border: "none", color: "var(--muted, #64748b)", cursor: "pointer", minHeight: "44px", display: "inline-flex", alignItems: "center" }}
+											className="min-h-[44px]"
 										>
 											Снять выбор
 										</button>
@@ -674,8 +687,8 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 										</span>
 										<button
 											type="button"
-											className="branch-trf-btn branch-trf-btn-secondary"
-											style={{ padding: "6px 10px", minHeight: "36px" }}
+											className="branch-trf-btn branch-trf-btn-secondary min-h-[44px]"
+											style={{ padding: "6px 10px", minHeight: "44px" }}
 											onClick={handleCopyVoucher}
 											title="Скопировать код ваучера"
 										>
@@ -721,15 +734,15 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 						<>
 							<button
 								type="button"
-								className="branch-trf-btn branch-trf-btn-secondary"
+								className="branch-trf-btn branch-trf-btn-secondary min-h-[44px]"
 								onClick={onClose}
 							>
 								Отмена
 							</button>
 							<button
 								type="button"
-								className="branch-trf-btn branch-trf-btn-primary"
-								disabled={!validation.isValid || isExecuting}
+								className="branch-trf-btn branch-trf-btn-primary min-h-[44px]"
+								disabled={isExecuting}
 								onClick={handleExecuteTransfer}
 								data-testid="execute-branch-transfer-btn"
 							>
@@ -740,7 +753,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 						<>
 							<button
 								type="button"
-								className="branch-trf-btn branch-trf-btn-secondary"
+								className="branch-trf-btn branch-trf-btn-secondary min-h-[44px]"
 								onClick={handleDownloadCsv}
 								title="Экспорт передаточного реестра в формате CSV"
 							>
@@ -749,7 +762,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 							</button>
 							<button
 								type="button"
-								className="branch-trf-btn branch-trf-btn-secondary"
+								className="branch-trf-btn branch-trf-btn-secondary min-h-[44px]"
 								onClick={handleDownloadJson}
 								title="Скачать полный клинический снимок в формате JSON"
 							>
@@ -758,7 +771,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 							</button>
 							<button
 								type="button"
-								className="branch-trf-btn branch-trf-btn-primary"
+								className="branch-trf-btn branch-trf-btn-primary min-h-[44px]"
 								onClick={handlePrintAct}
 								title="Распечатать официальный передаточный акт ф. 043/у"
 								data-testid="print-transfer-act-btn"
@@ -768,7 +781,7 @@ export const PatientBranchTransferModal: React.FC<PatientBranchTransferModalProp
 							</button>
 							<button
 								type="button"
-								className="branch-trf-btn branch-trf-btn-secondary"
+								className="branch-trf-btn branch-trf-btn-secondary min-h-[44px]"
 								onClick={onClose}
 							>
 								Закрыть
