@@ -417,10 +417,6 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	};
 
 	const handlePrint = () => {
-		if (yearPayments.length === 0) {
-			showToast("Нет подтвержденных оплат за выбранный период для формирования справки КНД 1151156", "warning");
-			return;
-		}
 		const params = getCertificateParams();
 		const html = renderOfficialTaxCertificateKnd1151156Html(params);
 		const win = window.open("", "_blank");
@@ -431,6 +427,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			setTimeout(() => {
 				win.print();
 			}, 300);
+		} else if (typeof window !== "undefined") {
+			window.print();
 		}
 	};
 
