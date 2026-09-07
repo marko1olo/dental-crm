@@ -24,15 +24,18 @@ import {
 import { evaluateVascularRisk } from '../aspirationSafetyEngine';
 
 describe('Anesthesia Express Presets Engine (Mandates 8e, 8k, 8n)', () => {
-	it('should define exactly 5 chairside express presets matching clinical standards', () => {
-		assert.equal(EXPRESS_ANESTHESIA_PRESETS.length, 5);
+	it('should define exactly 7 chairside express presets matching clinical standards', () => {
+		assert.equal(EXPRESS_ANESTHESIA_PRESETS.length, 7);
 		const ids = EXPRESS_ANESTHESIA_PRESETS.map((p) => p.id);
 		assert.ok(ids.includes('infiltration_articaine_1_7'));
 		assert.ok(ids.includes('mandibular_weisbrem_articaine_1_7'));
 		assert.ok(ids.includes('torusal_articaine_1_7'));
 		assert.ok(ids.includes('mandibular_cardio_scandonest_1_7'));
 		assert.ok(ids.includes('intraligamentary_articaine_0_4'));
+		assert.ok(ids.includes('mandibular_plus_infiltration_ultracaine_forte'));
+		assert.ok(ids.includes('infiltration_septanest_1_7'));
 	});
+
 
 	it('should correctly configure Preset 1: Infiltration 1.7 ml (Articaine 1:100k, 30G 21mm)', () => {
 		const preset = getExpressPresetById('infiltration_articaine_1_7');
@@ -115,16 +118,45 @@ describe('Anesthesia Express Presets Engine (Mandates 8e, 8k, 8n)', () => {
 		assert.equal(tech.targetPressureAtm.max, 15);
 	});
 
+	it('should correctly configure Preset 6: Mandibular + Infiltration 1.7 ml Ultracain DS Forte (27G 35mm)', () => {
+		const preset = getExpressPresetById('mandibular_plus_infiltration_ultracaine_forte');
+		assert.ok(preset);
+		assert.equal(preset.techniqueId, 'mandibular_weisbrem');
+		assert.equal(preset.needleId, 'gauge_27_long_35mm');
+		assert.equal(preset.drugKey, 'articaine_1_100k');
+		assert.equal(preset.volumeMl, 1.7);
+		assert.equal(preset.isTwoPlaneRequired, true);
+
+		const needle = getNeedleSpecification(preset.needleId);
+		assert.equal(needle.gauge, '27G');
+		assert.equal(needle.lengthMm, 35);
+		assert.equal(needle.aspirationLumenSafety, 'high');
+	});
+
+	it('should correctly configure Preset 7: Infiltration 1.7 ml Septanest (30G 21mm)', () => {
+		const preset = getExpressPresetById('infiltration_septanest_1_7');
+		assert.ok(preset);
+		assert.equal(preset.techniqueId, 'infiltration_supraperiosteal');
+		assert.equal(preset.needleId, 'gauge_30_short_21mm');
+		assert.equal(preset.drugKey, 'articaine_1_100k');
+		assert.equal(preset.volumeMl, 1.7);
+		assert.equal(preset.isTwoPlaneRequired, false);
+
+		const drug = getAnestheticDrugSpecification(preset.drugKey);
+		assert.ok(drug.tradeNamesRu.some((name) => name.includes('Септонест') || name.includes('Септанест')));
+	});
+
 	it('should anatomically validate all presets without any clinical warnings', () => {
 		const validation = validateAllExpressPresets();
 		assert.equal(validation.allValid, true);
-		assert.equal(validation.results.length, 5);
+		assert.equal(validation.results.length, 7);
 
 		for (const r of validation.results) {
 			assert.equal(r.isNeedleValid, true, `Preset ${r.presetId} needle must be valid`);
 			assert.equal(r.warningRu, null, `Preset ${r.presetId} must have no warnings`);
 		}
 	});
+
 
 	it('should create valid negative aspiration attempts for all presets', () => {
 		for (const preset of EXPRESS_ANESTHESIA_PRESETS) {

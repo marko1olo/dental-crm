@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-07 / WAVE 26): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 94 КИЛЛЕР-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 157 ФИЧ: 63 КАНОНИЧЕСКИЕ + 94 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-07 / WAVE 27): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 95 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 158 ФИЧ: 63 КАНОНИЧЕСКИЕ + 95 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]` или `[ЧАСТИЧНО]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -1635,9 +1635,24 @@
 
 ---
 
+## 153. `хирургия_анестезия::4_столпа_анамнеза_экспресс_пресеты_анестезии_и_печать_протоколов` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8i, 8k, 8n, ФИЧА #159)
+- **Идея**: Устранение больничного/стационарного блоата, псевдонаучных опросников и бюрократических капканов в хирургии, имплантации и анестезии:
+  1. *4 столпа амбулаторного хирургического анамнеза (Мандат 8i)*: вместо 50 пунктов соматики выделены 4 клинических фактора (аллергия на местные анестетики, приём антикоагулянтов/дезагрегантов, бисфосфонаты/риск остеонекроза MRONJ, декомпенсированный сахарный диабет). Добавлены кнопки «1-Клик норма анамнеза» (`btn-anamnesis-all-norm`) и «1-Клик норма (Time-Out & Анамнез)» (`btn-timeout-all-norm`). Неблокирующие визуальные рекомендации при выявлении факторов риска.
+  2. *Печать протоколов операций в любой момент (Мандат 8e)*: создание автономного модуля `surgicalOperationProtocolPrintEngine.ts` (штампы «ЧЕРНОВИК» / «ПОДПИСАНО ВРАЧОМ», профессиональная типографика, разделение А4, ноль эмодзи). Быстрые кнопки печати протокола операции и комплекта ИДС во всех хирургических панелях (`SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `VisitSurgeryProtocolTab.tsx`).
+  3. *7 кресельных экспресс-пресетов анестезии (Мандат 8k, 8n)*: добавлены пресеты «Мандибулярная + инфильтрационная Ультракаин Д-С Форте» и «Инфильтрационная Септанест 1.7 мл» в `anesthesiaExpressPresets.ts` и `AnesthesiaQuickBar.tsx`, а также 1-клик списание Септанеста медсестрой (`nurse-quick-septanest-disposal`).
+  4. *Безопасность лекарственных взаимодействий (DDI)*: в `clinicalDdiDrugSafetyEngine.ts` внедрен класс `bisphosphonate_antiresorptive` (Золедронат, Акласта, Зомета, Бонвива, Пролиа, Фосамакс) с автоматическим предупреждением о риске остеонекроза челюсти (MRONJ) и повышенной токсичности при сочетании с НПВП.
+- **Статус**:
+  - Движок печати: `apps/web/src/components/documents/surgicalOperationProtocolPrintEngine.ts`, `surgicalPackagePrintEngine.ts`.
+  - Фронтенд хирургии: `apps/web/src/components/surgery/SurgerySafetyChecklist.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `apps/web/src/components/visit/surgery/VisitSurgeryProtocolTab.tsx`.
+  - Фронтенд анестезии: `apps/web/src/components/visit/anesthesia/anesthesiaExpressPresets.ts`, `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx`.
+  - Бэкенд/Shared DDI: `packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.ts`.
+  - Тесты: `packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.test.ts` (23 теста, 100% pass), `apps/web/src/components/visit/anesthesia/__tests__/anesthesiaExpressPresets.test.ts` (12 тестов, 100% pass), `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx` (8 тестов, 100% pass).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 94 дополнительные системные аддендум-фичи клинической автономии (Wave 15..26, фичи 64..157) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 96 дополнительных системных аддендум-фич клинической автономии (Wave 15..26, фичи 64..159) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

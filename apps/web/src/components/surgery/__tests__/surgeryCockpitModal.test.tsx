@@ -154,4 +154,44 @@ describe("SurgeryCockpitModal & SurgeryProtocolPanel (Surgical Cockpit)", () => 
 		);
 		assert.equal(passportHtml, "");
 	});
+
+	it("renders 4-pillar outpatient surgical anamnesis and 1-click norm buttons (Mandate 8i & 8e)", () => {
+		const html = renderToString(
+			<SurgeryCockpitModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("btn-anamnesis-all-norm"), "Must have 1-click anamnesis norm button");
+		assert.ok(html.includes("anamnesis-allergy-toggle"), "Must have 1. Anesthetic allergy toggle");
+		assert.ok(html.includes("anamnesis-anticoagulant-toggle"), "Must have 2. Anticoagulant / hemostasis toggle");
+		assert.ok(html.includes("anamnesis-bisphosphonate-toggle"), "Must have 3. Bisphosphonate / MRONJ toggle");
+		assert.ok(html.includes("anamnesis-diabetes-toggle"), "Must have 4. Diabetes mellitus toggle");
+		assert.ok(html.includes("Мандат 8i"), "Must reference Mandate 8i outpatient profile");
+	});
+
+	it("renders instant print buttons for surgical protocol and IDS package in cockpit and panel (Mandate 8e)", () => {
+		const cockpitHtml = renderToString(
+			<SurgeryCockpitModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(cockpitHtml.includes("btn-print-surgery-protocol"), "Cockpit must have print protocol button");
+		assert.ok(cockpitHtml.includes("btn-print-surgery-ids"), "Cockpit must have print IDS package button");
+
+		const panelHtml = renderToString(
+			<SurgeryProtocolPanel
+				toothFdi={46}
+			/>,
+		);
+
+		assert.ok(panelHtml.includes("btn-panel-print-protocol"), "Panel must have print protocol button");
+		assert.ok(panelHtml.includes("btn-panel-print-ids"), "Panel must have print IDS package button");
+	});
 });
+

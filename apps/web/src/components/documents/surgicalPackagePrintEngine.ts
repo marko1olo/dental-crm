@@ -632,3 +632,10 @@ export function printSurgicalPackage(
 		window.print();
 	}
 }
+
+export type { SurgicalOperationProtocolPrintOptions } from "./surgicalOperationProtocolPrintEngine";
+export {
+	generateSurgicalOperationProtocolHtml,
+	printSurgicalOperationProtocol,
+} from "./surgicalOperationProtocolPrintEngine";
+

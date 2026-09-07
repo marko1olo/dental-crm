@@ -9,6 +9,8 @@ import {
 	Sparkles,
 	Copy,
 	Zap,
+	Printer,
+	FileCheck,
 } from "lucide-react";
 import { showToast } from "../../GlobalToast";
 import {
@@ -21,8 +23,13 @@ import {
 } from "../../surgery/surgeryProtocols";
 import { SurgerySafetyChecklist } from "../../surgery/SurgerySafetyChecklist";
 import { ImplantPassportModal } from "../../implants/ImplantPassportModal";
+import {
+	printSurgicalOperationProtocol,
+	printSurgicalPackage,
+} from "../../documents/surgicalPackagePrintEngine";
 import { useVisitStore } from "../../../store/visitStore";
 import "./visitSurgery.css";
+
 
 export interface VisitSurgeryProtocolTabProps {
 	readonly activeTooth?: number | null;
@@ -181,10 +188,46 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 		showToast("Хирургический протокол внесён в карту 043/у", "success");
 	};
 
+	const handlePrintProtocol = () => {
+		printSurgicalOperationProtocol({
+			patient: { fullName: patientName },
+			doctorFullName: doctorName,
+			operationType: currentNorm.title,
+			toothNumber: effectiveTooth,
+			protocolText,
+			diagnosis: currentNorm.title,
+			mkb10: currentNorm.icd10,
+			surgeryDetails: selectedNormId === "surgery_implant_standard" ? {
+				implantBrand,
+				diameterMm: implantDiameter,
+				lengthMm: implantLength,
+				torqueNcm: implantTorque,
+				isq: implantIsq,
+				capType: implantCap,
+				sutureMaterial: implantSuture,
+			} : undefined,
+			isSignedByDoctor: false,
+		});
+		showToast("Протокол операции отправлен на печать", "info");
+	};
+
+	const handlePrintSurgicalIds = () => {
+		printSurgicalPackage({
+			patient: { fullName: patientName },
+			doctorFullName: doctorName,
+			operationDetails: {
+				operationType: currentNorm.title,
+				toothNumber: effectiveTooth,
+			},
+		});
+		showToast("Хирургический комплект ИДС отправлен на печать", "info");
+	};
+
 	const handleCopy = () => {
 		navigator.clipboard?.writeText(protocolText);
 		showToast("Протокол операции скопирован", "success");
 	};
+
 
 	return (
 		<section
@@ -515,17 +558,42 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 					{currentNorm.category === "implant" ? " · Торк 35 Н/см" : ""}
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 flex-wrap">
+					{/* Печать комплекта ИДС (Мандат 8e) */}
+					<button
+						type="button"
+						onClick={handlePrintSurgicalIds}
+						className="px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation"
+						data-testid="btn-tab-print-ids"
+						title="Печать комплекта ИДС и памятки пациента (1 клик = 3 бланка)"
+					>
+						<FileCheck size={16} />
+						<span>Печать ИДС</span>
+					</button>
+
+					{/* Печать протокола операции (Мандат 8e) */}
+					<button
+						type="button"
+						onClick={handlePrintProtocol}
+						className="px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer min-h-[48px] touch-manipulation"
+						data-testid="btn-tab-print-protocol"
+						title="Печать протокола операции Формы 043/у"
+					>
+						<Printer size={16} />
+						<span>Печать протокола</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={handleApplyToVisitDiary}
-						className="visit-surgery-btn-action bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs"
+						className="visit-surgery-btn-action bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] shadow-xs min-h-[48px] touch-manipulation"
 						data-testid="btn-apply-to-visit-diary"
 					>
 						<FileText size={16} />
 						<span>Внести в карту 043/у</span>
 					</button>
 				</div>
+
 			</footer>
 
 			{/* Модальное окно паспорта имплантата */}

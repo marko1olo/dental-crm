@@ -511,7 +511,39 @@ export const DRUG_CLASS_MATCHERS: readonly DrugClassMatcher[] = [
 			"скандонест 3%",
 		],
 	},
+	{
+		classId: "bisphosphonate_antiresorptive",
+		labelRu: "Бисфосфонаты и антирезорбтивные препараты (Риск остеонекроза челюстей MRONJ/БРОНЖ)",
+		keywords: [
+			"zoledron",
+			"золедронат",
+			"золедроновая",
+			"aclasta",
+			"акласта",
+			"zometa",
+			"зомета",
+			"alendron",
+			"алендронат",
+			"fosamax",
+			"фосамакс",
+			"ibandron",
+			"ибандронат",
+			"bonviva",
+			"бонвива",
+			"denosumab",
+			"деносумаб",
+			"prolia",
+			"пролиа",
+			"xgeva",
+			"эксджива",
+			"бисфосфонат",
+			"bisphosphonate",
+			"mronj",
+			"бронж",
+		],
+	},
 ];
+
 
 /**
  * Matches a string against pharmacological class definitions.
@@ -673,9 +705,26 @@ export function auditClinicalDrugSafety(
 		(a) => a.includes("латекс") || a.includes("latex"),
 	);
 
+	const hasBisphosphonateTherapy =
+		normalizedConditions.some(
+			(c) =>
+				c.includes("бисфосфонат") ||
+				c.includes("bisphosphonate") ||
+				c.includes("mronj") ||
+				c.includes("бронж") ||
+				c.includes("остеонекроз") ||
+				c.includes("зомета") ||
+				c.includes("акласта") ||
+				c.includes("пролиа"),
+		) ||
+		existingMeds.some((m) =>
+			matchDrugClasses(m).includes("bisphosphonate_antiresorptive"),
+		);
+
 	// ─────────────────────────────────────────────────────────────────────────
 	// 3.1. PROPOSED DRUG EVALUATION (Allergy & Somatic Direct Conflicts)
 	// ─────────────────────────────────────────────────────────────────────────
+
 
 	for (const proposed of input.proposedMedications) {
 		const classes = matchDrugClasses(proposed);
@@ -914,7 +963,31 @@ export function auditClinicalDrugSafety(
 					"Скандонест 3% обеспечивает качественную анестезию без адреналина и не нагружает кардиоваскулярную систему.",
 			});
 		}
+
+		// 12. Bisphosphonate Therapy / MRONJ risk vs NSAIDs
+		if (classes.includes("nsaid") && hasBisphosphonateTherapy) {
+			conditionContraindications.push({
+				condition:
+					"Терапия бисфосфонатами / антирезорбтивными препаратами (Риск MRONJ / БРОНЖ)",
+				proposedDrug: proposed,
+				severity: "high",
+				reasonRu:
+					"Повышенный риск гастроинтестинальной токсичности на фоне приема бисфосфонатов. В стоматологической хирургии у таких пациентов сохраняется критический риск медикаментозного остеонекроза челюстей (MRONJ).",
+				clinicalGuidanceRu:
+					"Назначить гастропротекцию (Омепразол 20 мг) либо заменить на Парацетамол. Хирургические манипуляции проводить максимально атравматично без скелетирования надкостницы с антибактериальной профилактикой.",
+			});
+			safeAlternativeRecommendations.push({
+				originalDrug: proposed,
+				recommendedAlternatives: [
+					"Парацетамол (500–1000 мг до 4 раз/сут, безопасен для слизистой ЖКТ)",
+					"Атравматичный протокол ушивания раны и антибиотикопрофилактика",
+				],
+				rationaleRu:
+					"Парацетамол не раздражает слизистую ЖКТ и не усиливает токсичность бисфосфонатов.",
+			});
+		}
 	}
+
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// 3.2. DRUG-DRUG INTERACTIONS (Proposed vs Proposed & Proposed vs Existing)
@@ -1159,8 +1232,36 @@ export function auditClinicalDrugSafety(
 						"Отменить дублирующий НПВП. Использовать монотерапию одним НПВП в минимально эффективной дозе под прикрытием ИПП (Омепразол 20 мг).",
 				});
 			}
+
+			// J. Bisphosphonates / Antiresorptives + NSAIDs (GI Toxicity & MRONJ Alert)
+			if (hasPair("bisphosphonate_antiresorptive", "nsaid")) {
+				const bisName = d1.classes.includes("bisphosphonate_antiresorptive")
+					? d1.name
+					: d2.name;
+				const nsaidName = d1.classes.includes("nsaid") ? d1.name : d2.name;
+
+				drugInteractions.push({
+					primaryDrug: nsaidName,
+					interactingDrug: bisName,
+					severity: "high",
+					effectDescriptionRu:
+						"Совместное применение системных НПВП с бисфосфонатами (Золедронат, Акласта, Зомета, Алендронат, Бонвива) или Деносумабом (Пролиа, Эксджива) увеличивает риск эрозивно-язвенных поражений ЖКТ и токсической нефропатии. В амбулаторной хирургии на фоне антирезорбтивной терапии имеется высокий риск медикаментозного остеонекроза челюсти (MRONJ/БРОНЖ).",
+					clinicalRecommendationRu:
+						"Применять НПВП кратковременным курсом с обязательной гастропротекцией (ИПП) либо предпочесть Парацетамол. В стоматологической хирургии соблюдать атравматичный протокол без отслойки надкостницы и периоперационную антибиотикопрофилактику.",
+				});
+				safeAlternativeRecommendations.push({
+					originalDrug: nsaidName,
+					recommendedAlternatives: [
+						"Парацетамол (500–1000 мг до 4 раз/сут, макс 2000–3000 мг/сут)",
+						"Атравматичный протокол ушивания раны",
+					],
+					rationaleRu:
+						"Парацетамол не повреждает слизистую оболочку желудка и является анальгетиком выбора при сопутствующей антирезорбтивной терапии.",
+				});
+			}
 		}
 	}
+
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// 3.3. DEDUPLICATION & SUMMARY AGGREGATION

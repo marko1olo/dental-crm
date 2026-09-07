@@ -25,7 +25,9 @@ export type ExpressAnesthesiaPresetId =
 	| 'mandibular_weisbrem_articaine_1_7'
 	| 'torusal_articaine_1_7'
 	| 'mandibular_cardio_scandonest_1_7'
-	| 'intraligamentary_articaine_0_4';
+	| 'intraligamentary_articaine_0_4'
+	| 'mandibular_plus_infiltration_ultracaine_forte'
+	| 'infiltration_septanest_1_7';
 
 export interface ExpressAnesthesiaPreset {
 	readonly id: ExpressAnesthesiaPresetId;
@@ -115,7 +117,38 @@ export const EXPRESS_ANESTHESIA_PRESETS: readonly ExpressAnesthesiaPreset[] = [
 			'Интралигаментарная периодонтальная анестезия (PDL) под давлением 10–15 атм. Изолированное обезболивание причинного зуба.',
 		aspirationNotesRu: 'Отрицательная аспирационная проба. Кровь в карпуле отсутствует.',
 	},
+	{
+		id: 'mandibular_plus_infiltration_ultracaine_forte',
+		title: 'Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте',
+		subtitle: 'Ультракаин Д-С Форте (1:100 000), 27G 35 мм, 2-пл. аспирация отр.',
+		fullLabelRu:
+			'Мандибулярная + инфильтрационная 1.7 мл (Ультракаин Д-С Форте 1:100 000, 27G 35 мм, аспирация отр.)',
+		techniqueId: 'mandibular_weisbrem',
+		needleId: 'gauge_27_long_35mm',
+		drugKey: 'articaine_1_100k',
+		volumeMl: 1.7,
+		isTwoPlaneRequired: true,
+		notesRu:
+			'Комбинированная мандибулярная проводниковая и инфильтрационная анестезия (Ультракаин Д-С Форте 1:100 000, 1.7 мл). Двухплоскостная аспирационная проба отрицательная. Обезболивание глубокое, онемение половины нижней губы и языка.',
+		aspirationNotesRu:
+			'Отрицательная аспирационная проба в 2-х плоскостях (0° и 180°). Кровь в карпуле отсутствует.',
+	},
+	{
+		id: 'infiltration_septanest_1_7',
+		title: 'Инфильтрационная 1.7 мл Септанест',
+		subtitle: 'Септанест 1:100 000, 30G 21 мм, аспирация отр.',
+		fullLabelRu: 'Инфильтрационная 1.7 мл Септанест (Артикаин 4% 1:100 000, 30G 21 мм, аспирация отр.)',
+		techniqueId: 'infiltration_supraperiosteal',
+		needleId: 'gauge_30_short_21mm',
+		drugKey: 'articaine_1_100k',
+		volumeMl: 1.7,
+		isTwoPlaneRequired: false,
+		notesRu:
+			'Инфильтрационная наднадкостничная анестезия препаратом Септанест (Артикаин 4% с адреналином 1:100 000, 1.7 мл). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.',
+		aspirationNotesRu: 'Отрицательная аспирационная проба. Кровь в карпуле отсутствует.',
+	},
 ];
+
 
 export const EXPRESS_PRESETS_BY_ID: Record<ExpressAnesthesiaPresetId, ExpressAnesthesiaPreset> =
 	EXPRESS_ANESTHESIA_PRESETS.reduce(

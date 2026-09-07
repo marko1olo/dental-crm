@@ -254,6 +254,82 @@ export function AnesthesiaQuickBar({
 		setTimeout(() => setActiveToastMessage(null), 3500);
 	};
 
+	const handleApplyUltracainForteCombined = () => {
+		if (disabled) return;
+		setSelectedDrugId("articaine_1_100k");
+		setTechniqueId("mandibular_torus");
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
+		const result = calculateAnesthesiaSafety({
+			drugId: "articaine_1_100k",
+			carpulesCount: 1.0,
+			patientWeightKg: effectiveWeight,
+			patientAgeYears,
+			asaStatus,
+			hasCardiovascularRisk,
+			hasSulfiteAllergy,
+			hasBronchialAsthma,
+			isPregnantOrLactating,
+			techniqueId: "mandibular_torus",
+			needleType: "g27_long_35mm",
+			targetToothNumberFdi,
+			aspirationNegativeConfirmed: true,
+		});
+
+		const diaryText =
+			"Комбинированная мандибулярная проводниковая и инфильтрационная анестезия: Ультракаин Д-С Форте 1:100 000 (1.7 мл). Двухплоскостная аспирация отрицательная. Обезболивание глубокое, онемение половины нижней губы и языка.";
+		onApplyAnesthesia(diaryText, result);
+		setActiveToastMessage("Мандибулярная + инфильтрационная (Ультракаин Форте 1.7 мл) внесена в 1 клик!");
+		setTimeout(() => setActiveToastMessage(null), 3500);
+	};
+
+	const handleApplySeptanestInfiltration = () => {
+		if (disabled) return;
+		setSelectedDrugId("articaine_1_100k");
+		setTechniqueId("infiltration");
+		const effectiveWeight = resolveClinicalDefaultWeightKg(
+			patientWeightKg,
+			patientAgeYears,
+			patientAgeYears < 18,
+		);
+		const result = calculateAnesthesiaSafety({
+			drugId: "articaine_1_100k",
+			carpulesCount: 1.0,
+			patientWeightKg: effectiveWeight,
+			patientAgeYears,
+			asaStatus,
+			hasCardiovascularRisk,
+			hasSulfiteAllergy,
+			hasBronchialAsthma,
+			isPregnantOrLactating,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			targetToothNumberFdi,
+			aspirationNegativeConfirmed: true,
+		});
+
+		const diaryText =
+			"Инфильтрационная наднадкостничная анестезия: Септанест 1:100 000 (1.7 мл). Аспирационная проба отрицательная. Обезболивание глубокое, аллергических реакций нет.";
+		onApplyAnesthesia(diaryText, result);
+		setActiveToastMessage("Инфильтрационная анестезия Септанест (1.7 мл) внесена в 1 клик!");
+		setTimeout(() => setActiveToastMessage(null), 3500);
+	};
+
+	const handleNurseSeptanestDisposal = () => {
+		if (disabled) return;
+		setActiveToastMessage(
+			"Списана 1 карпула Септанест 1:100 000 (1.7 мл): отходы Класса Б / ПКУ списаны медсестрой в 1 клик без комиссии из 3 человек",
+		);
+		setTimeout(() => setActiveToastMessage(null), 4000);
+		if (onDisposalCarpules) {
+			onDisposalCarpules(1.0, "articaine_1_100k");
+		}
+	};
+
+
 	return (
 		<div className="anesthesia-quick-bar" data-testid="anesthesia-quick-bar">
 			{/* ── Top Bar: Title & Somatic Tags & Weight & Configure ── */}
@@ -423,13 +499,49 @@ export function AnesthesiaQuickBar({
 					<button
 						type="button"
 						disabled={disabled}
-						onClick={() => handleNurseQuickDisposal(1.0)}
+						onClick={handleApplyUltracainForteCombined}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-teal-600/15 hover:bg-teal-600/25 border border-teal-500/50 text-xs sm:text-sm font-black text-teal-700 dark:text-teal-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="1 клик: Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте (2-пл. аспирация отр.)"
+						data-testid="anesthesia-preset-mandibular-infiltration-ultracaine-forte"
+					>
+						<Zap size={14} className="text-teal-500 shrink-0" />
+						<span>Мандибулярная + инфильтр. 1.7 мл (Ультракаин Форте)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={handleApplySeptanestInfiltration}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-cyan-600/15 hover:bg-cyan-600/25 border border-cyan-500/50 text-xs sm:text-sm font-black text-cyan-700 dark:text-cyan-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="1 клик: Инфильтрационная 1.7 мл Септанест (аспирация отр.)"
+						data-testid="anesthesia-preset-infiltration-septanest"
+					>
+						<Zap size={14} className="text-cyan-500 shrink-0" />
+						<span>Инфильтрация 1.7 мл (Септанест)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={handleNurseQuickDisposal}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="Списать пустые карпулы анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
 						data-testid="nurse-quick-carpule-disposal"
 					>
 						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Списать карпулу (1 клик)</span>
+					</button>
+
+					<button
+						type="button"
+						disabled={disabled}
+						onClick={handleNurseSeptanestDisposal}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
+						title="Списать 1 карпулу Септанест 1:100 000 медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии)"
+						data-testid="nurse-quick-septanest-disposal"
+					>
+						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span>Списать Септанест (1 клик)</span>
 					</button>
 
 					<button
@@ -443,6 +555,7 @@ export function AnesthesiaQuickBar({
 						<Trash2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Пакет: 1 карп. + игла 30G</span>
 					</button>
+
 				</div>
 
 				{/* Maximum Safe Carpules Badge & Live MRD Safety Badge */}

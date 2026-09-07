@@ -9,6 +9,8 @@ import {
 	Copy,
 	Zap,
 	Receipt,
+	Printer,
+	FileCheck,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
@@ -23,6 +25,11 @@ import {
 	type SurgicalService804n,
 } from "./surgeryProtocols";
 import { SurgerySafetyChecklist } from "./SurgerySafetyChecklist";
+import {
+	printSurgicalOperationProtocol,
+	printSurgicalPackage,
+} from "../documents/surgicalPackagePrintEngine";
+
 
 export interface SurgeryProtocolPanelProps {
 	readonly toothFdi?: number;
@@ -145,7 +152,40 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 		showToast("Протокол операции и услуги 804н внесены в карту 043/у и чек", "success");
 	};
 
+	const handlePrintProtocol = () => {
+		printSurgicalOperationProtocol({
+			patient: { fullName: patientName },
+			operationType: activeNorm.title,
+			toothNumber: toothFdi,
+			protocolText: customProtocolText,
+			diagnosis: activeNorm.title,
+			mkb10: activeNorm.icd10,
+			surgeryDetails: activeNormId === "surgery_implant_standard" ? {
+				implantBrand: selectedImplantBrand,
+				diameterMm: 4.5,
+				lengthMm: 10.0,
+				torqueNcm: 35,
+				isq: 72,
+				capType: selectedCapType,
+			} : undefined,
+			isSignedByDoctor: false,
+		});
+		showToast("Протокол операции отправлен на печать", "info");
+	};
+
+	const handlePrintSurgicalIds = () => {
+		printSurgicalPackage({
+			patient: { fullName: patientName },
+			operationDetails: {
+				operationType: activeNorm.title,
+				toothNumber: toothFdi,
+			},
+		});
+		showToast("Хирургический комплект ИДС отправлен на печать", "info");
+	};
+
 	const handlePassportClick = () => {
+
 		if (onOpenImplantPassport) {
 			onOpenImplantPassport(toothFdi);
 		} else {
@@ -353,6 +393,30 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 					</button>
 
 					<div className="flex items-center gap-2 flex-wrap">
+						{/* Печать комплекта ИДС (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={handlePrintSurgicalIds}
+							className="min-h-[48px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
+							data-testid="btn-panel-print-ids"
+							title="Печать комплекта ИДС и памятки пациента (1 клик = 3 бланка)"
+						>
+							<FileCheck size={16} />
+							<span>ИДС</span>
+						</button>
+
+						{/* Печать протокола операции (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={handlePrintProtocol}
+							className="min-h-[48px] px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] flex items-center gap-1.5 cursor-pointer touch-manipulation"
+							data-testid="btn-panel-print-protocol"
+							title="Печать протокола операции Формы 043/у"
+						>
+							<Printer size={16} />
+							<span>Печать</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleAddToInvoice}
@@ -387,6 +451,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 							<span>Внести в карту 043/у</span>
 						</button>
 					</div>
+
 				</div>
 			</div>
 

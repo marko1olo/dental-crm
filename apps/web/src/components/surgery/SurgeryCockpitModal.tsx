@@ -11,6 +11,8 @@ import {
 	Sparkles,
 	Sliders,
 	Camera,
+	Printer,
+	FileCheck,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
@@ -24,7 +26,12 @@ import {
 	type SurgicalService804n,
 } from "./surgeryProtocols";
 import { SurgerySafetyChecklist } from "./SurgerySafetyChecklist";
+import {
+	printSurgicalOperationProtocol,
+	printSurgicalPackage,
+} from "../documents/surgicalPackagePrintEngine";
 import "./surgery.css";
+
 
 export interface SurgeryCockpitModalProps {
 	readonly isOpen: boolean;
@@ -120,6 +127,41 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 		navigator.clipboard?.writeText(protocolText);
 		showToast("Хирургический протокол скопирован в буфер", "success");
 	};
+
+	const handlePrintProtocol = () => {
+		printSurgicalOperationProtocol({
+			patient: { fullName: patientName },
+			doctorFullName: doctorName,
+			operationType: currentNorm.title,
+			toothNumber: toothFdi,
+			protocolText,
+			diagnosis: currentNorm.title,
+			mkb10: currentNorm.icd10,
+			surgeryDetails: selectedNormId === "surgery_implant_standard" ? {
+				implantBrand: selectedImplantBrand,
+				diameterMm: 4.0,
+				lengthMm: 10.0,
+				torqueNcm: 35,
+				isq: 72,
+				capType: selectedCapType,
+			} : undefined,
+			isSignedByDoctor: false,
+		});
+		showToast("Протокол операции отправлен на печать", "info");
+	};
+
+	const handlePrintSurgicalIds = () => {
+		printSurgicalPackage({
+			patient: { fullName: patientName },
+			doctorFullName: doctorName,
+			operationDetails: {
+				operationType: currentNorm.title,
+				toothNumber: toothFdi,
+			},
+		});
+		showToast("Хирургический комплект ИДС отправлен на печать", "info");
+	};
+
 
 	const handleInsertDiary = () => {
 		if (onInsertIntoDiary) {
@@ -508,7 +550,31 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 						<span> · Доступно сохранение без бюрократических барьеров</span>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
+						{/* Печать ИДС и памятки пациента (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={handlePrintSurgicalIds}
+							className="surgery-btn surgery-btn-secondary min-h-[48px] touch-manipulation flex items-center gap-1.5"
+							title="Печать комплекта ИДС и памятки пациента (1 клик = 3 бланка)"
+							data-testid="btn-print-surgery-ids"
+						>
+							<FileCheck size={16} />
+							<span>Печать ИДС</span>
+						</button>
+
+						{/* Печать хирургического протокола операции (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={handlePrintProtocol}
+							className="surgery-btn surgery-btn-secondary min-h-[48px] touch-manipulation flex items-center gap-1.5"
+							title="Печать протокола операции Формы 043/у"
+							data-testid="btn-print-surgery-protocol"
+						>
+							<Printer size={16} />
+							<span>Печать протокола</span>
+						</button>
+
 						{selectedNormId === "surgery_implant_standard" && (
 							<button
 								type="button"
@@ -531,6 +597,7 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 							<span>Внести в карту 043/у</span>
 						</button>
 					</div>
+
 				</footer>
 			</div>
 		</div>

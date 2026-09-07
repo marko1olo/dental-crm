@@ -498,4 +498,64 @@ describe("Inquisitor 8: Clinical DDI, Allergy & Drug Safety Engine", () => {
 			);
 		});
 	});
+
+	describe("16. Bisphosphonates & Antiresorptives (MRONJ Hazard & NSAID GI Risk)", () => {
+		it("should detect MRONJ & GI toxicity hazard when patient on Zoledronate / Aclasta is prescribed Ibuprofen", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Ибупрофен 400 мг"],
+				existingMedications: ["Золедроновая кислота (Акласта 5 мг)"],
+			});
+
+			assert.strictEqual(result.hasSevereDdi, true);
+			assert.ok(
+				result.drugInteractions.some(
+					(i) =>
+						i.severity === "high" &&
+						i.effectDescriptionRu.includes("MRONJ/БРОНЖ"),
+				),
+			);
+			assert.ok(
+				result.safeAlternativeRecommendations.some(
+					(r) =>
+						r.originalDrug === "Ибупрофен 400 мг" &&
+						r.recommendedAlternatives.some((alt) => alt.includes("Парацетамол")),
+				),
+			);
+		});
+
+		it("should detect condition contraindication when patient condition lists bisphosphonates/MRONJ", () => {
+			const result = auditClinicalDrugSafety({
+				proposedMedications: ["Кеторолак 10 мг"],
+				patientConditions: ["Терапия бисфосфонатами (зомета / остеонекроз)"],
+			});
+
+			assert.strictEqual(result.hasConditionContraindication, true);
+			assert.ok(
+				result.conditionContraindications.some(
+					(c) =>
+						c.severity === "high" &&
+						c.condition.includes("MRONJ"),
+				),
+			);
+		});
+
+		it("should correctly classify various bisphosphonate and antiresorptive brand names", () => {
+			const brands = [
+				"Акласта 5 мг",
+				"Зомета раствор",
+				"Бонвива 150 мг (ибандронат)",
+				"Пролиа 60 мг (деносумаб)",
+				"Фосамакс (алендронат)",
+			];
+
+			for (const brand of brands) {
+				const classes = matchDrugClasses(brand);
+				assert.ok(
+					classes.includes("bisphosphonate_antiresorptive"),
+					`Brand ${brand} must be classified as bisphosphonate_antiresorptive`,
+				);
+			}
+		});
+	});
 });
+
