@@ -106,7 +106,106 @@ export type PatientsViewProps = {
 		value: string,
 	) => void;
 	weekdayOptions: WeekdayOption[];
+	showToast?: (
+		text: string,
+		type?: "success" | "error" | "info" | "warning",
+		duration?: number,
+	) => void;
 };
+
+export async function executePatientCoreSaveAutonomy({
+	selectedPatient,
+	patientCoreNameMissing,
+	patientCoreDirty,
+	savePatientCoreProp,
+	showToastFn = showToast,
+}: {
+	selectedPatient: Patient | null | undefined;
+	patientCoreNameMissing: boolean;
+	patientCoreDirty: boolean;
+	savePatientCoreProp?: () =>
+		| undefined
+		| boolean
+		| Promise<undefined | boolean>;
+	showToastFn?: (
+		text: string,
+		type?: "success" | "error" | "info" | "warning",
+		duration?: number,
+	) => void;
+}) {
+	if (!selectedPatient) {
+		showToastFn("Выберите пациента для сохранения карточки", "warning");
+		return { executed: false, reason: "no_patient" as const };
+	}
+	if (patientCoreNameMissing) {
+		showToastFn("Введите ФИО пациента для сохранения", "warning");
+		return { executed: false, reason: "missing_name" as const };
+	}
+	if (!patientCoreDirty) {
+		showToastFn(
+			"Данные пациента актуальны (нет несохранённых правок)",
+			"info",
+		);
+		return { executed: false, reason: "not_dirty" as const };
+	}
+	try {
+		const result = await savePatientCoreProp?.();
+		if (result !== false) {
+			showToastFn("Данные пациента сохранены", "success");
+		}
+		return {
+			executed: result !== false,
+			reason: result === false ? ("save_failed" as const) : ("saved" as const),
+		};
+	} catch {
+		return { executed: false, reason: "save_failed" as const };
+	}
+}
+
+export async function executePatientAdministrativeProfileSaveAutonomy({
+	selectedPatient,
+	patientAdministrativeProfileDirty,
+	patientAdministrativeProfileValidationMessage,
+	savePatientAdministrativeProfileProp,
+	showToastFn = showToast,
+}: {
+	selectedPatient: Patient | null | undefined;
+	patientAdministrativeProfileDirty: boolean;
+	patientAdministrativeProfileValidationMessage: string | null | undefined;
+	savePatientAdministrativeProfileProp?: () =>
+		| undefined
+		| boolean
+		| Promise<undefined | boolean>;
+	showToastFn?: (
+		text: string,
+		type?: "success" | "error" | "info" | "warning",
+		duration?: number,
+	) => void;
+}) {
+	if (!selectedPatient) {
+		showToastFn("Выберите пациента перед сохранением реквизитов", "warning");
+		return { executed: false, reason: "no_patient" as const };
+	}
+	if (patientAdministrativeProfileValidationMessage) {
+		showToastFn(patientAdministrativeProfileValidationMessage, "warning");
+	}
+	if (!patientAdministrativeProfileDirty) {
+		showToastFn("Реквизиты пациента актуальны", "info");
+		return { executed: false, reason: "not_dirty" as const };
+	}
+	try {
+		const result = await savePatientAdministrativeProfileProp?.();
+		if (result !== false) {
+			showToastFn("Реквизиты пациента сохранены", "success");
+		}
+		return {
+			executed: result !== false,
+			reason: result === false ? ("save_failed" as const) : ("saved" as const),
+		};
+	} catch {
+		return { executed: false, reason: "save_failed" as const };
+	}
+}
 
 export type TextFieldChangeEvent = ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
@@ -147,14 +246,17 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		patientInsightById,
 		patientInsightRiskLabels,
 		query,
-		savePatientAdministrativeProfile,
-		savePatientCore,
+		savePatientAdministrativeProfile: savePatientAdministrativeProfileProp,
+		savePatientCore: savePatientCoreProp,
 		selectedPatient,
 		setQuery,
 		updatePatientCoreDraft,
 		updatePatientAdministrativeProfileDraft,
 		weekdayOptions,
+		showToast: showToastProp,
 	} = props;
+
+	const triggerToast = showToastProp ?? showToast;
 
 	useEffect(() => {
 		const firstPatient = (filteredPatients ?? [])[0];
@@ -252,6 +354,24 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 		patientAdministrativeProfileDirty &&
 		patientAdministrativeProfileSaveState !== "saving" &&
 		!patientAdministrativeProfileValidationMessage;
+
+	const savePatientCore = () =>
+		executePatientCoreSaveAutonomy({
+			selectedPatient,
+			patientCoreNameMissing,
+			patientCoreDirty,
+			savePatientCoreProp,
+			showToastFn: triggerToast,
+		});
+
+	const savePatientAdministrativeProfile = () =>
+		executePatientAdministrativeProfileSaveAutonomy({
+			selectedPatient,
+			patientAdministrativeProfileDirty,
+			patientAdministrativeProfileValidationMessage,
+			savePatientAdministrativeProfileProp,
+			showToastFn: triggerToast,
+		});
 	const patientCoreSaveGuidanceId = "patient-core-save-guidance";
 	const patientAdministrativeSaveGuidanceId = "patient-admin-save-guidance";
 	const patientCoreSaveGuidance = !selectedPatient
@@ -820,8 +940,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							onClick={savePatientCore}
 							aria-busy={patientCoreSaveState === "saving" || undefined}
 							aria-describedby={patientCoreSaveGuidance ? patientCoreSaveGuidanceId : undefined}
-							disabled={!patientCoreReadyToSave}
+							disabled={patientCoreSaveState === "saving"}
 							style={{ minHeight: "36px" }}
+							data-testid="patient-core-save-btn"
 						>
 							<UserCheck size={16} aria-hidden="true" /> Сохранить данные
 						</button>
@@ -932,6 +1053,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
+											minHeight: "36px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",
@@ -961,6 +1083,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
+											minHeight: "36px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",
@@ -990,6 +1113,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 											gap: "8px",
 											width: "100%",
 											padding: "8px 12px",
+											minHeight: "36px",
 											fontSize: "13px",
 											fontWeight: 600,
 											border: "none",
@@ -1121,8 +1245,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 									onClick={savePatientAdministrativeProfile}
 									aria-busy={patientAdministrativeProfileSaveState === "saving" || undefined}
 									aria-describedby={patientAdministrativeSaveGuidance ? patientAdministrativeSaveGuidanceId : undefined}
-									disabled={!patientAdministrativeProfileReadyToSave}
+									disabled={patientAdministrativeProfileSaveState === "saving"}
 									style={{ minHeight: "36px" }}
+									data-testid="patient-admin-save-btn"
 								>
 									<ShieldCheck size={16} aria-hidden="true" /> Сохранить реквизиты
 								</button>
