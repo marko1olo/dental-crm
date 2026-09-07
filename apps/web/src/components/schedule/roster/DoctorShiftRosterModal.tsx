@@ -19,6 +19,9 @@ import {
 	RUSSIAN_PRODUCTION_CALENDAR_2026,
 	type ShiftArchetypeId,
 	type StaffMember,
+	type DoctorChairRosterTemplateId,
+	type DoctorChairRosterTemplate,
+	DOCTOR_CHAIR_ROSTER_TEMPLATES,
 } from "./doctorShiftRosterPresets";
 import {
 	calculateStaffRosterStats,
@@ -32,19 +35,28 @@ import {
 import { DoctorRosterToolbar } from "./DoctorRosterToolbar";
 import { DoctorRosterMatrix } from "./DoctorRosterMatrix";
 import { DoctorShiftDrawer } from "./DoctorShiftDrawer";
-import { generateWeeklyScheduleForStaffAndCabinets } from "./doctorWeeklyScheduleGenerator";
+import {
+	generateWeeklyScheduleForStaffAndCabinets,
+	applyDoctorChairWeeklyTemplate,
+} from "./doctorWeeklyScheduleGenerator";
 import "./doctorShiftRoster.css";
 
 export { DoctorRosterToolbar } from "./DoctorRosterToolbar";
 export { DoctorRosterMatrix } from "./DoctorRosterMatrix";
 export { DoctorShiftDrawer } from "./DoctorShiftDrawer";
-export { generateWeeklyScheduleForStaffAndCabinets } from "./doctorWeeklyScheduleGenerator";
+export {
+	generateWeeklyScheduleForStaffAndCabinets,
+	applyDoctorChairWeeklyTemplate,
+} from "./doctorWeeklyScheduleGenerator";
+export { DOCTOR_CHAIR_ROSTER_TEMPLATES } from "./doctorShiftRosterPresets";
 export type {
 	DoctorShift,
 	StaffMember,
 	CabinetDefinition,
 	ShiftArchetypeId,
 	MedicalStaffRole,
+	DoctorChairRosterTemplateId,
+	DoctorChairRosterTemplate,
 };
 
 export interface DoctorShiftRosterModalProps {
@@ -653,6 +665,33 @@ export function DoctorShiftRosterModal({
 		setTimeout(() => setNotification(null), 3000);
 	};
 
+	// 1-Click Doctor-to-Chair Weekly Shift Binding Templates (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	const handleApplyDoctorChairWeeklyTemplate = (
+		doctorId: string,
+		chairId: string,
+		cabinetId: string,
+		templateId: DoctorChairRosterTemplateId,
+	) => {
+		const nextShifts = applyDoctorChairWeeklyTemplate(shifts, {
+			weekStartDateIso,
+			templateId,
+			doctorId,
+			chairId,
+			cabinetId,
+			staffList,
+			cabinets,
+		});
+		setShifts(nextShifts);
+
+		const templateObj = DOCTOR_CHAIR_ROSTER_TEMPLATES.find((t) => t.id === templateId);
+		const doc = staffList.find((s) => s.id === doctorId);
+		setNotification({
+			type: "success",
+			message: `Врач ${doc?.shortName || doc?.fullName || "врач"} закреплен за креслом по шаблону «${templateObj?.title || templateId}»`,
+		});
+		setTimeout(() => setNotification(null), 3500);
+	};
+
 	// Save changes (Non-blocking Mandate 8e)
 	const handleSaveAll = async (closeAfter = false) => {
 		let shiftsToSave = shifts;
@@ -715,12 +754,15 @@ export function DoctorShiftRosterModal({
 					onNextWeek={handleNextWeek}
 					onAutoFillDefault={handleAutoFillDefault}
 					onApplyPreset={handleApplyPreset}
+					onApplyDoctorChairWeeklyTemplate={handleApplyDoctorChairWeeklyTemplate}
 					onPrintSchedule={handlePrintSchedule}
 					onExportT13={handleExportT13}
 					onSaveAll={handleSaveAll}
 					onClose={onClose}
 					notification={notification}
 					conflicts={conflicts}
+					staffList={staffList}
+					cabinets={cabinets}
 				/>
 
 				{/* Main Content Workspace: Cabinets, Doctors, T-13, Utilization */}
@@ -745,6 +787,7 @@ export function DoctorShiftRosterModal({
 					onExportT13={handleExportT13}
 					onClose={onClose}
 					onApplyCellPreset={handleApplyCellPreset}
+					onApplyDoctorChairWeeklyTemplate={handleApplyDoctorChairWeeklyTemplate}
 				/>
 
 				{/* Quick Shift Edit Drawer */}

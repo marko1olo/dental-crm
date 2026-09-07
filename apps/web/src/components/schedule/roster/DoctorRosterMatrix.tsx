@@ -20,6 +20,7 @@ import {
 import type {
 	CabinetDefinition,
 	StaffMember,
+	DoctorChairRosterTemplateId,
 } from "./doctorShiftRosterPresets";
 import {
 	MEDICAL_STAFF_ROLES,
@@ -69,6 +70,13 @@ export interface DoctorRosterMatrixProps {
 		presetType: "morning" | "evening" | "full_day" | "clear",
 		doctorId?: string,
 	) => void;
+	// 1-Click Doctor-to-Chair Weekly Shift Binding Templates (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	onApplyDoctorChairWeeklyTemplate?: (
+		doctorId: string,
+		chairId: string,
+		cabinetId: string,
+		templateId: DoctorChairRosterTemplateId,
+	) => void;
 	activePopoverCell?: {
 		dateIso: string;
 		cabinetId: string;
@@ -107,6 +115,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 		onExportT13,
 		onClose,
 		onApplyCellPreset,
+		onApplyDoctorChairWeeklyTemplate,
 		activePopoverCell,
 		onActivePopoverCellChange,
 	}) {
@@ -215,6 +224,25 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 				} else {
 					onOpenCreateInCell(activePopover.dateIso, cabId, chId);
 				}
+			}
+			setActivePopover(null);
+		};
+
+		const handleApplyWeeklyTemplateInPopover = (
+			templateId: DoctorChairRosterTemplateId,
+		) => {
+			if (!activePopover) return;
+			const parts = selectedChairKey ? selectedChairKey.split("::") : [];
+			const cabId = parts[0] || activePopover.cabinetId;
+			const chId = parts[1] || activePopover.chairId;
+			const docId =
+				selectedDocId ||
+				activePopover.doctorId ||
+				staffList.find((s) => s.isDoctor)?.id;
+			if (!docId) return;
+
+			if (onApplyDoctorChairWeeklyTemplate) {
+				onApplyDoctorChairWeeklyTemplate(docId, chId, cabId, templateId);
 			}
 			setActivePopover(null);
 		};
@@ -1177,6 +1205,171 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 												}}
 											>
 												Очистить смену
+											</div>
+										</div>
+									</button>
+								</div>
+
+								{/* Weekly Doctor-to-Chair Binding Templates (StomX / DentalPRO parity, Mandates 8e, 8k, 8n) */}
+								<div
+									style={{
+										fontSize: "0.75rem",
+										fontWeight: 600,
+										color: "var(--muted, #64748b)",
+										textTransform: "uppercase",
+										letterSpacing: "0.05em",
+										marginTop: "0.5rem",
+									}}
+								>
+									Недельное закрепление за креслом (StomX)
+								</div>
+								<div
+									style={{
+										display: "grid",
+										gridTemplateColumns: "1fr 1fr",
+										gap: "0.5rem",
+									}}
+								>
+									<button
+										type="button"
+										data-testid="cell-template-mon-wed-fri"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyWeeklyTemplateInPopover("mon_wed_fri_morning")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Sun size={18} color="#f59e0b" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Пн/Ср/Пт</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												Утро 08:00–14:00
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
+										data-testid="cell-template-tue-thu-sat"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyWeeklyTemplateInPopover("tue_thu_sat_evening")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Moon size={18} color="#6366f1" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Вт/Чт/Сб</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												Вечер 14:00–20:00
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
+										data-testid="cell-template-two-two"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyWeeklyTemplateInPopover("two_two_full")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<CalendarIcon size={18} color="#0d9488" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>2 через 2</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												Весь день 08:00–20:00
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
+										data-testid="cell-template-five-day"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyWeeklyTemplateInPopover("five_day_standard")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Building size={18} color="#2563eb" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Пятидневка</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												Пн-Пт 09:00–18:00
 											</div>
 										</div>
 									</button>

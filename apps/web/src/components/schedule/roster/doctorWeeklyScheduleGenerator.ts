@@ -20,6 +20,9 @@ import {
 	CLINIC_CABINETS_CATALOG,
 	DEFAULT_CLINIC_STAFF,
 	type StaffMember,
+	type DoctorChairRosterTemplateId,
+	type DoctorChairRosterTemplate,
+	DOCTOR_CHAIR_ROSTER_TEMPLATES,
 } from "./doctorShiftRosterPresets";
 import type { DoctorShift } from "./doctorShiftRosterEngine";
 
@@ -422,3 +425,138 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 
 	return shifts;
 }
+
+/**
+ * 1-Click Doctor-to-Chair Weekly Shift Template Application (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ *
+ * Templates:
+ * - "mon_wed_fri_morning": Mon/Wed/Fri (08:00–14:00)
+ * - "tue_thu_sat_evening": Tue/Thu/Sat (14:00–20:00)
+ * - "two_two_full": 2/2 rolling full days (08:00–20:00)
+ * - "five_day_standard": Mon-Fri (09:00–18:00)
+ */
+export function applyDoctorChairWeeklyTemplate(
+	currentShifts: DoctorShift[],
+	params: {
+		weekStartDateIso: string;
+		templateId: DoctorChairRosterTemplateId;
+		doctorId: string;
+		chairId: string;
+		cabinetId?: string | undefined;
+		staffList?: StaffMember[] | undefined;
+		cabinets?: CabinetDefinition[] | undefined;
+	},
+): DoctorShift[] {
+	const {
+		weekStartDateIso,
+		templateId,
+		doctorId,
+		chairId,
+		cabinetId,
+		staffList = DEFAULT_CLINIC_STAFF,
+		cabinets = CLINIC_CABINETS_CATALOG,
+	} = params;
+
+	const normalizedId =
+		templateId === "two_two_full_day"
+			? "two_two_full"
+			: templateId === "five_day_week"
+				? "five_day_standard"
+				: templateId;
+
+	const template =
+		DOCTOR_CHAIR_ROSTER_TEMPLATES.find(
+			(t) => t.id === templateId || t.id === normalizedId,
+		) || DOCTOR_CHAIR_ROSTER_TEMPLATES[0]!;
+
+	const doc =
+		staffList.find((s) => s.id === doctorId) ||
+		DEFAULT_CLINIC_STAFF.find((s) => s.id === doctorId) ||
+		staffList[0] ||
+		DEFAULT_CLINIC_STAFF[0]!;
+
+	const asstId = doc.preferredAssistantId || (doc as any).defaultAssistantId;
+	const asst = asstId
+		? staffList.find((s) => s.id === asstId) || null
+		: staffList.find((s) => s.role === "assistant") || null;
+
+	let targetCabId = cabinetId;
+	if (!targetCabId) {
+		const cabWithChair = cabinets.find((c) =>
+			c.chairs.some((ch) => ch.id === chairId),
+		);
+		targetCabId = cabWithChair?.id || cabinets[0]?.id || "cab-1";
+	}
+
+	const parts = (weekStartDateIso || "").split("-").map(Number);
+	const startYear = parts[0] || 2026;
+	const startMonth = parts[1] || 8;
+	const startDay = parts[2] || 24;
+
+	// Determine dates belonging to the active template
+	const templateDates = new Set<string>();
+	const newShiftsByDate = new Map<string, DoctorShift>();
+
+	for (const dayIdx of template.daysOfWeekIndices) {
+		const curDate = new Date(Date.UTC(startYear, startMonth - 1, startDay + dayIdx));
+		const dateIso = curDate.toISOString().substring(0, 10);
+		templateDates.add(dateIso);
+
+		newShiftsByDate.set(dateIso, {
+			id: `shift-${dateIso}-${chairId}-${doc.id}-${template.id}`,
+			doctorId: doc.id,
+			doctorName: doc.shortName || doc.fullName,
+			doctorRole: doc.role,
+			assistantId: asst ? asst.id : null,
+			assistantName: asst ? asst.shortName || asst.fullName : null,
+			cabinetId: targetCabId,
+			chairId,
+			dateIso,
+			archetypeId: template.archetypeId,
+			startTime: template.startTime,
+			endTime: template.endTime,
+			durationHours: template.durationHours,
+			breakMinutes: template.breakMinutes,
+			isNight: false,
+			nightHours: 0,
+			status: "scheduled",
+			customNotes: template.title,
+		});
+	}
+
+	// Filter currentShifts:
+	// For dates in this week on this chair:
+	// If a date is one of templateDates:
+	//   - if template is full coverage (>= 8h), remove all shifts on that chair for that date
+	//   - if template is morning (08:00-14:00), remove existing morning/full_day shifts on that chair for that date
+	//   - if template is evening (14:00-20:00), remove existing evening/full_day shifts on that chair for that date
+	//   - always remove any shift for the same doctor on that chair/date to avoid self-collision
+	const filtered = currentShifts.filter((s) => {
+		if (s.chairId !== chairId || !templateDates.has(s.dateIso)) {
+			return true;
+		}
+		if (s.doctorId === doc.id) {
+			return false;
+		}
+		const isFullCoverage = template.durationHours >= 8.0;
+		if (isFullCoverage) {
+			return false;
+		}
+		if (
+			template.startTime < "14:00" &&
+			(s.startTime < "14:00" || s.archetypeId === "morning_shift")
+		) {
+			return false;
+		}
+		if (
+			template.startTime >= "14:00" &&
+			(s.startTime >= "14:00" || s.archetypeId === "evening_shift")
+		) {
+			return false;
+		}
+		return true;
+	});
+
+	return [...filtered, ...Array.from(newShiftsByDate.values())];
+}
+

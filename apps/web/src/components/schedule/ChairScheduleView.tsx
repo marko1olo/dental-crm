@@ -156,6 +156,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					onAssignChairDoctor={onAssignChairDoctor}
 					onOpenAddChair={handleOpenAddChair}
 					onAddChair={onAddChair}
+					onEditChair={handleEditChair}
 				/>
 			</div>
 

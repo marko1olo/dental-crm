@@ -30,6 +30,7 @@ import {
 	Users,
 	UserX,
 	X,
+	XCircle,
 	Zap,
 } from "lucide-react";
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
@@ -218,6 +219,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const [activeMenuApptId, setActiveMenuApptId] = useState<string | null>(null);
 	const [selectedMobileAppt, setSelectedMobileAppt] = useState<Appointment | null>(null);
 	const [chairDoctorDropdownId, setChairDoctorDropdownId] = useState<string | null>(null);
+	const [activeHeaderDoctorPopoverChairId, setActiveHeaderDoctorPopoverChairId] = useState<string | null>(null);
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const handleAppointmentMouseEnter = (apptId: string) => {
@@ -249,6 +251,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		const handleGlobalClick = () => {
 			setActiveMenuApptId(null);
 			setChairDoctorDropdownId(null);
+			setActiveHeaderDoctorPopoverChairId(null);
 		};
 		const handleGlobalKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
@@ -256,9 +259,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				setSelectedMobileAppt(null);
 				setHoveredApptId(null);
 				setChairDoctorDropdownId(null);
+				setActiveHeaderDoctorPopoverChairId(null);
 			}
 		};
-		if (activeMenuApptId || selectedMobileAppt || chairDoctorDropdownId) {
+		if (activeMenuApptId || selectedMobileAppt || chairDoctorDropdownId || activeHeaderDoctorPopoverChairId) {
 			window.addEventListener("click", handleGlobalClick);
 			window.addEventListener("keydown", handleGlobalKeyDown);
 		}
@@ -266,7 +270,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			window.removeEventListener("click", handleGlobalClick);
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [activeMenuApptId, selectedMobileAppt, chairDoctorDropdownId]);
+	}, [activeMenuApptId, selectedMobileAppt, chairDoctorDropdownId, activeHeaderDoctorPopoverChairId]);
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
@@ -1030,7 +1034,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							return (
 								<div
 									key={chair.id}
-									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0"
+									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0 relative"
 									data-testid={`chair-header-${chair.id}`}
 								>
 									<div className="flex items-center justify-center gap-1.5 flex-wrap">
@@ -1050,12 +1054,31 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														isActive: (chair as any).active ?? (chair as any).isActive ?? true,
 													});
 												}}
-												className="p-1 rounded-md hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+												className="min-h-[44px] min-w-[44px] p-2 rounded-lg hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer flex items-center justify-center"
+												style={{ minHeight: "44px", minWidth: "44px" }}
 												title={`Редактировать параметры кресла «${chair.name}»`}
 												aria-label={`Редактировать параметры кресла ${chair.name}`}
 												data-testid={`btn-edit-chair-${chair.id}`}
 											>
-												<Settings size={12} className="opacity-70 hover:opacity-100" />
+												<Settings size={14} className="opacity-70 hover:opacity-100" />
+											</button>
+										)}
+										{doctors.length > 0 && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													setActiveHeaderDoctorPopoverChairId((prev) =>
+														prev === chair.id ? null : chair.id,
+													);
+												}}
+												className="min-h-[44px] min-w-[44px] p-2 rounded-lg hover:bg-[var(--line)]/50 text-[var(--teal)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center"
+												style={{ minHeight: "44px", minWidth: "44px" }}
+												title={`Быстрый выбор врача и смены для «${chair.name}» (1 клик)`}
+												aria-label={`Быстрый выбор врача для ${chair.name}`}
+												data-testid={`btn-chair-doctor-popover-${chair.id}`}
+											>
+												<Users size={14} className="opacity-80 hover:opacity-100" />
 											</button>
 										)}
 										{chairStat && chairStat.appointmentsCount > 0 && (
@@ -1064,6 +1087,196 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											</span>
 										)}
 									</div>
+
+									{/* Quick Doctor Chips (1-tap instant switch without opening modal, Mandates 8e, 8k, 8n) */}
+									{doctors.length > 1 && !isSoloDoctor && (
+										<div className="flex items-center gap-1 flex-wrap justify-center w-full my-0.5">
+											{doctors.slice(0, 3).map((doc) => {
+												const isAssigned = assignment?.doctorId === doc.id;
+												return (
+													<button
+														key={doc.id}
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleConfirmAssignDoctor(
+																chair.id,
+																doc.id,
+																assignment?.shiftPreset === "morning" || assignment?.shiftPreset === "evening"
+																	? assignment.shiftPreset
+																	: "full",
+															);
+														}}
+														className={`min-h-[32px] sm:min-h-[28px] px-2 py-0.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer truncate max-w-[120px] flex items-center gap-1 ${
+															isAssigned
+																? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
+																: "bg-[var(--paper)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] border-[var(--line)]"
+														}`}
+														style={{ minHeight: "32px" }}
+														title={`Закрепить ${doc.fullName} за креслом в 1 клик`}
+														data-testid={`chair-quick-doctor-chip-${chair.id}-${doc.id}`}
+													>
+														<span>{formatDoctorShortName(doc.fullName)}</span>
+													</button>
+												);
+											})}
+										</div>
+									)}
+
+									{/* 1-Tap Chair Doctor Quick Popover (StomX Parity, Mandate 8e, 8k, 8n) */}
+									{activeHeaderDoctorPopoverChairId === chair.id && (
+										<div
+											className="absolute top-full left-0 right-0 z-50 mt-1 p-3 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xl flex flex-col gap-2.5 min-w-[240px] text-left normal-case"
+											style={{
+												boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+												zIndex: 60,
+											}}
+											onClick={(e) => e.stopPropagation()}
+											data-testid={`chair-doctor-quick-popover-${chair.id}`}
+										>
+											<div className="flex items-center justify-between border-b border-[var(--line)] pb-1.5">
+												<span className="text-xs font-bold text-[var(--ink)]">
+													Врач на кресле «{chair.name}»
+												</span>
+												<button
+													type="button"
+													onClick={() => setActiveHeaderDoctorPopoverChairId(null)}
+													className="p-1 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] min-h-[32px] min-w-[32px] flex items-center justify-center cursor-pointer"
+													aria-label="Закрыть"
+												>
+													<X size={14} />
+												</button>
+											</div>
+
+											{/* Doctors list */}
+											<div className="flex flex-col gap-1 max-h-[160px] overflow-y-auto">
+												<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
+													Выберите врача (1 клик):
+												</span>
+												{doctors.map((doc) => {
+													const isCurrent = assignment?.doctorId === doc.id;
+													return (
+														<button
+															key={doc.id}
+															type="button"
+															onClick={() => {
+																handleConfirmAssignDoctor(
+																	chair.id,
+																	doc.id,
+																	assignment?.shiftPreset === "morning" || assignment?.shiftPreset === "evening"
+																		? assignment.shiftPreset
+																		: "full",
+																);
+																setActiveHeaderDoctorPopoverChairId(null);
+															}}
+															className={`min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border flex items-center justify-between text-xs font-semibold transition-all cursor-pointer ${
+																isCurrent
+																	? "bg-[var(--teal-soft,var(--paper-soft))] border-[var(--teal)] text-[var(--teal-dark,var(--teal))] font-bold"
+																	: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
+															}`}
+															style={{ minHeight: "44px" }}
+															data-testid={`chair-doctor-option-${chair.id}-${doc.id}`}
+														>
+															<span className="truncate">{doc.fullName}</span>
+															{isCurrent && <UserCheck size={14} className="text-[var(--teal)] shrink-0 ml-1" />}
+														</button>
+													);
+												})}
+											</div>
+
+											{/* Shift Presets inside popover */}
+											<div className="flex flex-col gap-1 pt-1 border-t border-[var(--line)]">
+												<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
+													Смена:
+												</span>
+												<div className="grid grid-cols-3 gap-1">
+													<button
+														type="button"
+														onClick={() => {
+															if (assignment?.doctorId) {
+																handleConfirmAssignDoctor(chair.id, assignment.doctorId, "morning");
+															} else if (doctors[0]) {
+																handleConfirmAssignDoctor(chair.id, doctors[0].id, "morning");
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-1 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[11px] font-bold text-[var(--ink)] flex flex-col items-center justify-center cursor-pointer"
+														style={{ minHeight: "44px" }}
+														data-testid={`chair-popover-shift-morning-${chair.id}`}
+													>
+														<Sun size={12} className="text-amber-500 mb-0.5" />
+														<span>Утро</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															if (assignment?.doctorId) {
+																handleConfirmAssignDoctor(chair.id, assignment.doctorId, "evening");
+															} else if (doctors[0]) {
+																handleConfirmAssignDoctor(chair.id, doctors[0].id, "evening");
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-1 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[11px] font-bold text-[var(--ink)] flex flex-col items-center justify-center cursor-pointer"
+														style={{ minHeight: "44px" }}
+														data-testid={`chair-popover-shift-evening-${chair.id}`}
+													>
+														<Moon size={12} className="text-indigo-400 mb-0.5" />
+														<span>Вечер</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															if (assignment?.doctorId) {
+																handleConfirmAssignDoctor(chair.id, assignment.doctorId, "full");
+															} else if (doctors[0]) {
+																handleConfirmAssignDoctor(chair.id, doctors[0].id, "full");
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-1 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[11px] font-bold text-[var(--ink)] flex flex-col items-center justify-center cursor-pointer"
+														style={{ minHeight: "44px" }}
+														data-testid={`chair-popover-shift-full-${chair.id}`}
+													>
+														<Building2 size={12} className="text-[var(--teal)] mb-0.5" />
+														<span>День</span>
+													</button>
+												</div>
+											</div>
+
+											{/* Action Buttons: Unassign & Open Full Modal */}
+											<div className="flex flex-col gap-1 pt-1 border-t border-[var(--line)]">
+												{hasDoctor && (
+													<button
+														type="button"
+														onClick={() => {
+															handleUnassignDoctor(chair.id);
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] w-full px-2 py-1 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
+														style={{ minHeight: "44px" }}
+														data-testid={`btn-chair-quick-unassign-${chair.id}`}
+													>
+														<XCircle size={14} />
+														<span>Снять врача с кресла</span>
+													</button>
+												)}
+												<button
+													type="button"
+													onClick={() => {
+														openAssignModal(chair.id);
+														setActiveHeaderDoctorPopoverChairId(null);
+													}}
+													className="min-h-[44px] w-full px-2 py-1 rounded-xl text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center gap-1.5 cursor-pointer"
+													style={{ minHeight: "44px" }}
+													data-testid={`btn-chair-open-full-modal-${chair.id}`}
+												>
+													<Clock size={14} />
+													<span>Расширенная настройка...</span>
+												</button>
+											</div>
+										</div>
+									)}
 
 									{/* Doctor-to-Chair Shift Binding Badge / Button */}
 									{hasDoctor ? (
@@ -1295,11 +1508,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	const secondDoc = doctors.find((d) => d.id !== assignment!.doctorId) || doctors[1] || doctors[0];
 																	handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "two_shifts", secondDoc?.id);
 																}}
-																className={`min-h-[30px] h-[30px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
+																className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
 																	assignment!.shiftPreset === "two_shifts" || (assignment!.subShifts && assignment!.subShifts.length > 1)
 																		? "bg-[var(--teal)] text-white shadow-xs"
 																		: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
 																}`}
+																style={{ minHeight: "44px" }}
 																title="2 смены (Утро + Вечер разные врачи)"
 																aria-label="Две смены"
 																data-testid={`chair-quick-twoshifts-${chair.id}`}
@@ -1570,8 +1784,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																						showToast(`Текст напоминания для ${pName} скопирован в буфер`, "success");
 																					}
 																				}}
-																				className="p-1 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer"
+																				className="min-h-[44px] min-w-[44px] sm:min-h-[44px] sm:min-w-[44px] p-2 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] border border-[var(--line)] cursor-pointer flex items-center justify-center"
+																				style={{ minHeight: "44px", minWidth: "44px" }}
 																				title="Скопировать SMS напоминание"
+																				aria-label="Скопировать SMS напоминание"
 																			>
 																				<Copy size={13} />
 																			</button>

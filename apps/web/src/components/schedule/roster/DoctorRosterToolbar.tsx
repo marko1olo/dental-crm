@@ -18,7 +18,12 @@ import {
 	Users,
 	X,
 } from "lucide-react";
-import type { MonthProductionCalendarNorm2026 } from "./doctorShiftRosterPresets";
+import type {
+	MonthProductionCalendarNorm2026,
+	CabinetDefinition,
+	StaffMember,
+	DoctorChairRosterTemplateId,
+} from "./doctorShiftRosterPresets";
 import type { RosterConflict } from "./doctorShiftRosterEngine";
 
 export interface DoctorRosterToolbarProps {
@@ -43,12 +48,20 @@ export interface DoctorRosterToolbarProps {
 		preset: "five_day" | "two_two" | "morning" | "evening" | "full_day",
 		label: string,
 	) => void;
+	onApplyDoctorChairWeeklyTemplate?: (
+		doctorId: string,
+		chairId: string,
+		cabinetId: string,
+		templateId: DoctorChairRosterTemplateId,
+	) => void;
 	onPrintSchedule: () => void;
 	onExportT13: () => void;
 	onSaveAll: (closeAfter?: boolean) => void;
 	onClose: () => void;
 	notification: { type: "success" | "info" | "error"; message: string } | null;
 	conflicts: RosterConflict[];
+	staffList?: StaffMember[];
+	cabinets?: CabinetDefinition[];
 }
 
 export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.memo(
@@ -71,6 +84,9 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 		onClose,
 		notification,
 		conflicts,
+		onApplyDoctorChairWeeklyTemplate,
+		staffList,
+		cabinets,
 	}) {
 		const monthName = React.useMemo(() => {
 			if (monthNormObj?.nameRu) return monthNormObj.nameRu;
@@ -93,11 +109,16 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								<span className="roster-title-badge">Норма: 33 ч/нед</span>
 								{clinicName && (
 									<span
+										className="truncate max-w-[140px] sm:max-w-[280px] inline-block"
 										style={{
 											fontSize: "0.8125rem",
 											color: "var(--muted, #64748b)",
 											fontWeight: 500,
+											textOverflow: "ellipsis",
+											overflow: "hidden",
+											whiteSpace: "nowrap",
 										}}
+										title={clinicName}
 									>
 										{clinicName}
 									</span>
@@ -252,6 +273,79 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									>
 										Полный день (12ч смены)
 									</button>
+									{onApplyDoctorChairWeeklyTemplate && (
+										<>
+											<div
+												style={{
+													borderTop: "1px solid var(--line, #cbd5e1)",
+													margin: "0.25rem 0",
+													padding: "0.25rem 0.75rem 0.125rem",
+													fontSize: "0.6875rem",
+													fontWeight: 700,
+													color: "var(--muted, #64748b)",
+													textTransform: "uppercase",
+												}}
+											>
+												Закрепление за креслом (StomX)
+											</div>
+											<button
+												type="button"
+												data-testid="toolbar-template-mon-wed-fri"
+												onClick={() => {
+													const firstDoc = staffList?.find((s) => s.isDoctor);
+													const firstCab = cabinets?.[0];
+													const firstChair = firstCab?.chairs?.[0];
+													if (firstDoc && firstChair && firstCab) {
+														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "mon_wed_fri_morning");
+													}
+												}}
+											>
+												Пн/Ср/Пт (Утро 08:00–14:00)
+											</button>
+											<button
+												type="button"
+												data-testid="toolbar-template-tue-thu-sat"
+												onClick={() => {
+													const firstDoc = staffList?.find((s) => s.isDoctor);
+													const firstCab = cabinets?.[0];
+													const firstChair = firstCab?.chairs?.[0];
+													if (firstDoc && firstChair && firstCab) {
+														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "tue_thu_sat_evening");
+													}
+												}}
+											>
+												Вт/Чт/Сб (Вечер 14:00–20:00)
+											</button>
+											<button
+												type="button"
+												data-testid="toolbar-template-two-two"
+												onClick={() => {
+													const firstDoc = staffList?.find((s) => s.isDoctor);
+													const firstCab = cabinets?.[0];
+													const firstChair = firstCab?.chairs?.[0];
+													if (firstDoc && firstChair && firstCab) {
+														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "two_two_full");
+													}
+												}}
+											>
+												2/2 (Полный день 08:00–20:00)
+											</button>
+											<button
+												type="button"
+												data-testid="toolbar-template-five-day"
+												onClick={() => {
+													const firstDoc = staffList?.find((s) => s.isDoctor);
+													const firstCab = cabinets?.[0];
+													const firstChair = firstCab?.chairs?.[0];
+													if (firstDoc && firstChair && firstCab) {
+														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "five_day_standard");
+													}
+												}}
+											>
+												Пятидневка (09:00–18:00)
+											</button>
+										</>
+									)}
 								</div>
 							</div>
 						</div>

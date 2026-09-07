@@ -12,9 +12,9 @@ export interface ChairColorPreset {
 export const CHAIR_COLOR_PRESETS: readonly ChairColorPreset[] = [
 	{ id: "teal", label: "Бирюзовый", hex: "#0d9488" },
 	{ id: "blue", label: "Синий", hex: "#2563eb" },
-	{ id: "emerald", label: "Изумрудный", hex: "#059669" },
-	{ id: "indigo", label: "Индиго", hex: "#4f46e5" },
-	{ id: "amber", label: "Янтарный", hex: "#d97706" },
+	{ id: "indigo", label: "Индиго", hex: "#6366f1" },
+	{ id: "amber", label: "Янтарный", hex: "#f59e0b" },
+	{ id: "emerald", label: "Изумрудный", hex: "#10b981" },
 	{ id: "rose", label: "Розовый", hex: "#e11d48" },
 ];
 
@@ -29,7 +29,54 @@ export const CHAIR_SPECIALTY_PRESETS: readonly ChairSpecialtyPreset[] = [
 	{ id: "orthopedist", label: "Ортопедия" },
 	{ id: "orthodontist", label: "Ортодонтия" },
 	{ id: "pediatric", label: "Детская" },
+	{ id: "hygienist", label: "Гигиена" },
 	{ id: "general", label: "Общее" },
+];
+
+export interface ChairArchetypePreset {
+	id: string;
+	label: string;
+	specialty: string;
+	colorHex: string;
+	description: string;
+}
+
+export const CHAIR_ARCHETYPE_PRESETS: readonly ChairArchetypePreset[] = [
+	{
+		id: "therapy",
+		label: "Терапевтическое",
+		specialty: "therapist",
+		colorHex: "#0d9488",
+		description: "Терапия и эндодонтия",
+	},
+	{
+		id: "surgery",
+		label: "Хирургическое",
+		specialty: "surgeon",
+		colorHex: "#2563eb",
+		description: "Хирургия/имплантология",
+	},
+	{
+		id: "orthodontics",
+		label: "Ортодонтическое",
+		specialty: "orthodontist",
+		colorHex: "#6366f1",
+		description: "Ортодонтия и прикус",
+	},
+	{
+		id: "pediatric",
+		label: "Детское",
+		specialty: "pediatric",
+		colorHex: "#f59e0b",
+		description: "Детская стоматология",
+	},
+	{
+		id: "hygiene",
+		label: "Гигиеническое",
+		specialty: "hygienist",
+		colorHex: "#10b981",
+		description: "Профгигиена и уход",
+	},
 ];
 
 export interface QuickAddChairData {
@@ -82,12 +129,26 @@ export function QuickAddChairModal({
 	const [roomNumber, setRoomNumber] = useState("");
 	const [selectedSpecialty, setSelectedSpecialty] = useState<string>("therapist");
 	const [selectedColor, setSelectedColor] = useState<string>("#0d9488");
+	const [selectedArchetypeId, setSelectedArchetypeId] = useState<string | null>(null);
 	const [isActive, setIsActive] = useState<boolean>(true);
 	const [branchId, setBranchId] = useState<string>("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const handleSelectArchetype = (archetype: ChairArchetypePreset) => {
+		setSelectedArchetypeId(archetype.id);
+		setSelectedSpecialty(archetype.specialty);
+		setSelectedColor(archetype.colorHex);
+		const chairNumber = existingChairsCount + 1;
+		setChairName(`Кресло ${chairNumber}`);
+		if (!roomNumber) {
+			setRoomNumber(`Кабинет ${chairNumber}`);
+		}
+		showToast(`Применен архетип «${archetype.label}» (${archetype.colorHex})`, "info", 2500);
+	};
+
 	useEffect(() => {
 		if (isOpen) {
+			setSelectedArchetypeId(null);
 			if (initialData) {
 				setChairName(initialData.name || "");
 				setRoomNumber(initialData.room || "");
@@ -240,6 +301,57 @@ export function QuickAddChairModal({
 					onSubmit={handleSubmit}
 					className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1"
 				>
+					{/* 1-Click Chair Archetype Presets (StomX / DentalPRO parity, Mandates 8e, 8k) */}
+					<div className="space-y-1.5">
+						<span
+							id="quick-add-chair-archetypes-label"
+							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
+						>
+							1-клик архетипы кресел (StomX / DentalPRO)
+						</span>
+						<div
+							className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+							role="radiogroup"
+							aria-labelledby="quick-add-chair-archetypes-label"
+						>
+							{CHAIR_ARCHETYPE_PRESETS.map((arch) => {
+								const isSelected =
+									selectedArchetypeId === arch.id ||
+									(selectedSpecialty === arch.specialty &&
+										selectedColor.toLowerCase() === arch.colorHex.toLowerCase());
+								return (
+									<button
+										key={arch.id}
+										type="button"
+										onClick={() => handleSelectArchetype(arch)}
+										className={`min-h-[44px] px-2.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-2 select-none text-left ${
+											isSelected
+												? "border-[var(--teal,var(--brand-primary))] ring-2 ring-[var(--teal,#0d9488)]/40 bg-[var(--teal-soft,#f0fdfa)] text-[var(--ink,#0f172a)] shadow-xs"
+												: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,var(--brand-primary))]"
+										}`}
+										data-testid={`quick-add-chair-archetype-${arch.id}`}
+										role="radio"
+										aria-checked={isSelected}
+										style={{ minHeight: "44px" }}
+										title={`${arch.label}: ${arch.description}`}
+									>
+										<span
+											className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/15 shadow-xs"
+											style={{ backgroundColor: arch.colorHex }}
+											aria-hidden="true"
+										/>
+										<div className="min-w-0 flex-1 leading-tight">
+											<div className="truncate font-bold text-[12px]">{arch.label}</div>
+											<div className="text-[10px] text-[var(--muted,#64748b)] font-normal truncate">
+												{arch.description}
+											</div>
+										</div>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
 					{/* Field: Chair Name */}
 					<div className="space-y-1.5">
 						<label

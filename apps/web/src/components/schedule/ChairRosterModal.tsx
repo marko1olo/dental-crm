@@ -6,7 +6,11 @@ import {
 	type StaffMember,
 	type CabinetDefinition,
 	type ShiftArchetypeId,
+	type DoctorChairRosterTemplateId,
+	type DoctorChairRosterTemplate,
 	getMondayOfWeekIso,
+	DOCTOR_CHAIR_ROSTER_TEMPLATES,
+	applyDoctorChairWeeklyTemplate,
 } from "./roster/DoctorShiftRosterModal";
 import {
 	DEFAULT_CLINIC_STAFF,
@@ -41,6 +45,8 @@ export {
 	getMondayOfWeekIso,
 	DEFAULT_CLINIC_STAFF,
 	CLINIC_CABINETS_CATALOG,
+	DOCTOR_CHAIR_ROSTER_TEMPLATES,
+	applyDoctorChairWeeklyTemplate,
 };
 export type {
 	DoctorShiftRosterModalProps,
@@ -48,6 +54,8 @@ export type {
 	StaffMember,
 	CabinetDefinition,
 	ShiftArchetypeId,
+	DoctorChairRosterTemplateId,
+	DoctorChairRosterTemplate,
 };
 
 export default ChairRosterModal;

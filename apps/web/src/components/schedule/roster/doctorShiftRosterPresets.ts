@@ -72,6 +72,7 @@ export interface StaffMember {
 	isAssistant: boolean;
 	preferredChairId?: string;
 	defaultAssistantId?: string;
+	preferredAssistantId?: string;
 	weeklyHourLimit: number;
 	avatarColor: string;
 }
@@ -566,5 +567,85 @@ export const DEFAULT_CLINIC_STAFF: StaffMember[] = [
 		isAssistant: true,
 		weeklyHourLimit: 39,
 		avatarColor: "#d97706",
+	},
+];
+
+/**
+ * 1-Click Doctor-to-Chair Weekly Shift Binding Templates (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+ */
+export type DoctorChairRosterTemplateId =
+	| "mon_wed_fri_morning"
+	| "tue_thu_sat_evening"
+	| "two_two_full"
+	| "two_two_full_day"
+	| "five_day_standard"
+	| "five_day_week";
+
+export interface DoctorChairRosterTemplate {
+	id: DoctorChairRosterTemplateId;
+	title: string;
+	shortTitle: string;
+	daysDescription: string;
+	hours: string;
+	startTime: string;
+	endTime: string;
+	durationHours: number;
+	breakMinutes: number;
+	archetypeId: ShiftArchetypeId;
+	daysOfWeekIndices: number[]; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+}
+
+export const DOCTOR_CHAIR_ROSTER_TEMPLATES: readonly DoctorChairRosterTemplate[] = [
+	{
+		id: "mon_wed_fri_morning",
+		title: "Пн/Ср/Пт (Утро 08:00–14:00)",
+		shortTitle: "Пн/Ср/Пт Утро",
+		daysDescription: "Понедельник, среда, пятница",
+		hours: "08:00–14:00",
+		startTime: "08:00",
+		endTime: "14:00",
+		durationHours: 6.0,
+		breakMinutes: 0,
+		archetypeId: "morning_shift",
+		daysOfWeekIndices: [0, 2, 4],
+	},
+	{
+		id: "tue_thu_sat_evening",
+		title: "Вт/Чт/Сб (Вечер 14:00–20:00)",
+		shortTitle: "Вт/Чт/Сб Вечер",
+		daysDescription: "Вторник, четверг, суббота",
+		hours: "14:00–20:00",
+		startTime: "14:00",
+		endTime: "20:00",
+		durationHours: 6.0,
+		breakMinutes: 0,
+		archetypeId: "evening_shift",
+		daysOfWeekIndices: [1, 3, 5],
+	},
+	{
+		id: "two_two_full",
+		title: "2/2 (Полный день 08:00–20:00)",
+		shortTitle: "2/2 Полный день",
+		daysDescription: "Сменный график 2 через 2 (Пн, Вт, Пт, Сб)",
+		hours: "08:00–20:00",
+		startTime: "08:00",
+		endTime: "20:00",
+		durationHours: 11.0,
+		breakMinutes: 60,
+		archetypeId: "morning_shift",
+		daysOfWeekIndices: [0, 1, 4, 5],
+	},
+	{
+		id: "five_day_standard",
+		title: "Пятидневка (09:00–18:00)",
+		shortTitle: "Пятидневка (09–18)",
+		daysDescription: "Понедельник — пятница",
+		hours: "09:00–18:00",
+		startTime: "09:00",
+		endTime: "18:00",
+		durationHours: 8.0,
+		breakMinutes: 60,
+		archetypeId: "morning_shift",
+		daysOfWeekIndices: [0, 1, 2, 3, 4],
 	},
 ];

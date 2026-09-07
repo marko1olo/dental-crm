@@ -317,7 +317,7 @@ export function ScheduleFilterStrip({
 					onChange={(event) => setScheduleDateFilter(event.target.value)}
 					placeholder={formattedCurrentDate}
 					title={`Выбранная дата: ${formattedCurrentDate}`}
-					className="schedule-date-input min-h-[38px] sm:min-h-[44px] px-1 sm:px-1.5 text-[11px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] sm:w-[115px] text-center"
+					className="schedule-date-input min-h-[38px] sm:min-h-[44px] px-0.5 sm:px-1.5 text-[10.5px] sm:text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] outline-none cursor-pointer hover:border-[var(--teal,var(--brand-primary))] transition-all w-[86px] sm:w-[115px] text-center tracking-tight"
 				/>
 				<button
 					type="button"
