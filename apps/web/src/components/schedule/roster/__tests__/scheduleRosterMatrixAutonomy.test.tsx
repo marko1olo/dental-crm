@@ -51,7 +51,9 @@ import type {
 const TEST_CABINETS: CabinetDefinition[] = [
 	{
 		id: "cab-1",
+		number: 1,
 		name: "Кабинет 1 (Хирургия)",
+		specialty: "Хирургия",
 		chairs: [
 			{ id: "chair-1", name: "Кресло 1 (Sirona)", equipment: "Микроскоп, Physiodispenser" },
 			{ id: "chair-2", name: "Кресло 2 (Kavo)", equipment: "Визиограф" },
@@ -59,7 +61,9 @@ const TEST_CABINETS: CabinetDefinition[] = [
 	},
 	{
 		id: "cab-2",
+		number: 2,
 		name: "Кабинет 2 (Терапия)",
+		specialty: "Терапия",
 		chairs: [
 			{ id: "chair-3", name: "Кресло 3 (A-dec)", equipment: "Эндодонтический мотор" },
 		],
@@ -71,38 +75,36 @@ const TEST_STAFF: StaffMember[] = [
 		id: "doc-1",
 		fullName: "Иванов Иван Иванович",
 		shortName: "Иванов И.И.",
-		role: "dentist_general",
-		specialization: "Терапевт-ортопед",
+		role: "therapist",
 		avatarColor: "#0ea5e9",
 		tabNumber: "001",
 		weeklyHourLimit: 33,
-		preferredCabinetId: "cab-1",
 		preferredChairId: "chair-1",
 		isDoctor: true,
+		isAssistant: false,
 	},
 	{
 		id: "doc-2",
 		fullName: "Петрова Анна Сергеевна",
 		shortName: "Петрова А.С.",
-		role: "dentist_surgeon",
-		specialization: "Хирург-имплантолог",
+		role: "surgeon",
 		avatarColor: "#10b981",
 		tabNumber: "002",
 		weeklyHourLimit: 33,
-		preferredCabinetId: "cab-1",
 		preferredChairId: "chair-2",
 		isDoctor: true,
+		isAssistant: false,
 	},
 	{
 		id: "asst-1",
 		fullName: "Сидорова Мария Павловна",
 		shortName: "Сидорова М.П.",
 		role: "assistant",
-		specialization: "Ассистент стоматолога",
 		avatarColor: "#8b5cf6",
 		tabNumber: "003",
 		weeklyHourLimit: 39,
 		isDoctor: false,
+		isAssistant: true,
 	},
 ];
 
@@ -116,7 +118,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					cabinets={TEST_CABINETS}
 					staffList={TEST_STAFF}
 					initialShifts={[]}
-					onSaveShifts={() => {}}
+					onSave={() => {}}
 				/>,
 			);
 
@@ -145,7 +147,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					cabinets={TEST_CABINETS}
 					staffList={TEST_STAFF}
 					initialShifts={[]}
-					onSaveShifts={() => {}}
+					onSave={() => {}}
 				/>,
 			);
 
@@ -172,7 +174,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 			});
 
 			assert.strictEqual(result.length, 1);
-			const shift = result[0];
+			const shift = result[0]!;
 			assert.strictEqual(shift.startTime, "08:00");
 			assert.strictEqual(shift.endTime, "14:00");
 			assert.strictEqual(shift.durationHours, 6.0);
@@ -197,7 +199,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 			});
 
 			assert.strictEqual(result.length, 1);
-			const shift = result[0];
+			const shift = result[0]!;
 			assert.strictEqual(shift.startTime, "14:00");
 			assert.strictEqual(shift.endTime, "20:00");
 			assert.strictEqual(shift.durationHours, 6.0);
@@ -220,7 +222,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 			});
 
 			assert.strictEqual(result.length, 1);
-			const shift = result[0];
+			const shift = result[0]!;
 			assert.strictEqual(shift.startTime, "08:00");
 			assert.strictEqual(shift.endTime, "20:00");
 			assert.strictEqual(shift.durationHours, 11.0);
@@ -236,7 +238,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					chairId: "chair-1",
 					doctorId: "doc-1",
 					doctorName: "Иванов И.И.",
-					doctorRole: "dentist_general",
+					doctorRole: "therapist",
 					dateIso: baseDate,
 					startTime: "08:00",
 					endTime: "14:00",
@@ -244,8 +246,10 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					breakMinutes: 0,
 					archetypeId: "morning_shift",
 					status: "confirmed",
-					color: "#0ea5e9",
-					createdAtIso: new Date().toISOString(),
+					isNight: false,
+					nightHours: 0,
+					assistantId: null,
+					assistantName: null,
 				},
 				{
 					id: "shift-other-chair",
@@ -253,7 +257,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					chairId: "chair-2",
 					doctorId: "doc-2",
 					doctorName: "Петрова А.С.",
-					doctorRole: "dentist_surgeon",
+					doctorRole: "surgeon",
 					dateIso: baseDate,
 					startTime: "08:00",
 					endTime: "14:00",
@@ -261,8 +265,10 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					breakMinutes: 0,
 					archetypeId: "morning_shift",
 					status: "confirmed",
-					color: "#10b981",
-					createdAtIso: new Date().toISOString(),
+					isNight: false,
+					nightHours: 0,
+					assistantId: null,
+					assistantName: null,
 				},
 			];
 
@@ -278,8 +284,8 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 
 			// Only shift-other-chair remains active
 			assert.strictEqual(result.length, 1);
-			assert.strictEqual(result[0].id, "shift-other-chair");
-			assert.strictEqual(result[0].chairId, "chair-2");
+			assert.strictEqual(result[0]!.id, "shift-other-chair");
+			assert.strictEqual(result[0]!.chairId, "chair-2");
 		});
 
 		it("overwrites existing shift cleanly in the same chair/date without duplicates", () => {
@@ -290,7 +296,7 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					chairId: "chair-1",
 					doctorId: "doc-1",
 					doctorName: "Иванов И.И.",
-					doctorRole: "dentist_general",
+					doctorRole: "therapist",
 					dateIso: baseDate,
 					startTime: "08:00",
 					endTime: "14:00",
@@ -298,8 +304,10 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					breakMinutes: 0,
 					archetypeId: "morning_shift",
 					status: "confirmed",
-					color: "#0ea5e9",
-					createdAtIso: new Date().toISOString(),
+					isNight: false,
+					nightHours: 0,
+					assistantId: null,
+					assistantName: null,
 				},
 			];
 
@@ -315,9 +323,9 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 			});
 
 			assert.strictEqual(result.length, 1);
-			assert.strictEqual(result[0].startTime, "14:00");
-			assert.strictEqual(result[0].endTime, "20:00");
-			assert.strictEqual(result[0].archetypeId, "evening_shift");
+			assert.strictEqual(result[0]!.startTime, "14:00");
+			assert.strictEqual(result[0]!.endTime, "20:00");
+			assert.strictEqual(result[0]!.archetypeId, "evening_shift");
 		});
 
 		it("resiliently handles solo doctor on 1 chair without assistant (Mandate 8n)", () => {
@@ -326,18 +334,21 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 					id: "solo-doc",
 					fullName: "Соло Врач",
 					shortName: "Соло В.",
-					role: "dentist_general",
+					role: "therapist",
 					avatarColor: "#0ea5e9",
 					tabNumber: "001",
 					weeklyHourLimit: 33,
 					isDoctor: true,
+					isAssistant: false,
 				},
 			];
 			const soloCabinets: CabinetDefinition[] = [
 				{
 					id: "solo-cab",
+					number: 1,
 					name: "Кабинет",
-					chairs: [{ id: "solo-chair", name: "Кресло" }],
+					specialty: "Общая",
+					chairs: [{ id: "solo-chair", name: "Кресло", equipment: "Установка" }],
 				},
 			];
 
@@ -351,10 +362,10 @@ describe("Schedule Shift Matrix & 1-Click Chair-Doctor Binding Autonomy (Mandate
 			});
 
 			assert.strictEqual(result.length, 1);
-			assert.strictEqual(result[0].doctorId, "solo-doc");
-			assert.strictEqual(result[0].doctorName, "Соло В.");
-			assert.strictEqual(result[0].durationHours, 11.0);
-			assert.strictEqual(result[0].status, "scheduled");
+			assert.strictEqual(result[0]!.doctorId, "solo-doc");
+			assert.strictEqual(result[0]!.doctorName, "Соло В.");
+			assert.strictEqual(result[0]!.durationHours, 11.0);
+			assert.strictEqual(result[0]!.status, "scheduled");
 		});
 	});
 
