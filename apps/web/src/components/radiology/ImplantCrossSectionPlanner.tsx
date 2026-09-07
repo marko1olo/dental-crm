@@ -239,7 +239,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
     setEntryX(activeEnvelope?.crestPoint.x ?? 14.0);
     setEntryY(activeEnvelope?.crestPoint.y ?? 5.0);
     setAngulationDeg(0);
-    showToast(`⚡ Выбран имплантат: ${preset.title} (центрирован по гребню)`);
+    showToast(`Выбран имплантат: ${preset.title} (центрирован по гребню)`);
   };
 
   const viewW = 280;
@@ -566,7 +566,7 @@ export const ImplantCrossSectionPlanner: React.FC<ImplantCrossSectionPlannerProp
                         data-testid={`implant-preset-${preset.id}`}
                       >
                         <div className="flex items-center justify-between text-xs font-bold text-[var(--ink)]">
-                          <span>⚡ {preset.shortLabel}</span>
+                          <span className="flex items-center gap-1"><Zap size={13} className="text-amber-500 shrink-0" /> {preset.shortLabel}</span>
                           {isCurrent && <CheckCircle2 size={14} className="text-[var(--teal,#0d9488)] shrink-0" />}
                         </div>
                         <span className="text-[10px] text-[var(--muted)] leading-tight mt-1 truncate">

@@ -339,10 +339,13 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 			safetyStatus,
 			isDanger: safetyStatus === "danger",
 			isWarning: safetyStatus === "warning",
-			isSafe: safetyStatus === "safe",
-			diaryText: formatMischProtocolToDiaryText(profile, analysis, "48"),
+			diaryText: formatMischProtocolToDiaryText(
+				profile,
+				analysis,
+				study?.teethFdi?.[0] ? String(study.teethFdi[0]) : (study?.anatomicalArea || "область исследования"),
+			),
 		};
-	}, [volume, crosshairMm, currentImplantSpec, implantAngulationDeg, implantDepthOffsetMm, interpolatedNerve3D]);
+	}, [volume, crosshairMm, currentImplantSpec, implantAngulationDeg, implantDepthOffsetMm, interpolatedNerve3D, study?.teethFdi, study?.anatomicalArea]);
 
 	const handleDeleteRuler = useCallback((id: string) => {
 		setRulers((prev) => prev.filter((r) => r.id !== id));
@@ -3170,10 +3173,10 @@ export const CbctMprViewer: React.FC<CbctMprViewerProps> = ({
 									</div>
 									<div className="text-[11px] leading-tight opacity-90">
 										{implantDensityAudit.isDanger
-											? "⛔ КРИТИЧЕСКИЙ РИСК: зазор до нерва менее 1.0 мм! Риск травмы IAN и парестезии"
+											? "[КРИТИЧЕСКИЙ РИСК] Зазор до нерва менее 1.0 мм! Риск травмы IAN и парестезии"
 											: implantDensityAudit.isWarning
-												? "⚠ ВНИМАНИЕ: зона приближения к нерву (1.0–2.0 мм). Требуется запас >= 2.0 мм по Misch"
-												: "✓ Безопасное расстояние: коридор безопасности >= 2.0 мм соблюден"}
+												? "[ВНИМАНИЕ] Зона приближения к нерву (1.0–2.0 мм). Требуется запас >= 2.0 мм по Misch"
+												: "[НОРМА] Безопасное расстояние: коридор безопасности >= 2.0 мм соблюден"}
 									</div>
 								</div>
 

@@ -343,8 +343,8 @@ export function AnesthesiaPkuDisposalModal({
 							onClick={handleQuickBatchDisposeShift}
 							className="anesthesia-btn"
 							style={{
-								minHeight: '34px',
-								padding: '0.25rem 0.75rem',
+								minHeight: '44px',
+								padding: '0.375rem 0.75rem',
 								fontSize: '0.75rem',
 								fontWeight: 700,
 								background: 'var(--teal, #0d9488)',
@@ -407,8 +407,8 @@ export function AnesthesiaPkuDisposalModal({
 								onClick={handleQuickBatchDisposeShift}
 								className="anesthesia-btn"
 								style={{
-									minHeight: '34px',
-									padding: '0.25rem 0.75rem',
+									minHeight: '44px',
+									padding: '0.375rem 0.75rem',
 									fontSize: '0.75rem',
 									fontWeight: 700,
 									background: 'transparent',
@@ -460,7 +460,7 @@ export function AnesthesiaPkuDisposalModal({
 										onClick={() => handleApplyPreset('ultracain_ds_forte_1')}
 										style={{
 											flex: 1,
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.75rem',
 											fontWeight: 700,
@@ -480,7 +480,7 @@ export function AnesthesiaPkuDisposalModal({
 										type="button"
 										onClick={() => handleInstantPresetDisposal('ultracain_ds_forte_1')}
 										style={{
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.6875rem',
 											fontWeight: 700,
@@ -529,7 +529,7 @@ export function AnesthesiaPkuDisposalModal({
 										onClick={() => handleApplyPreset('septanest_100_1')}
 										style={{
 											flex: 1,
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.75rem',
 											fontWeight: 700,
@@ -549,7 +549,7 @@ export function AnesthesiaPkuDisposalModal({
 										type="button"
 										onClick={() => handleInstantPresetDisposal('septanest_100_1')}
 										style={{
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.6875rem',
 											fontWeight: 700,
@@ -598,7 +598,7 @@ export function AnesthesiaPkuDisposalModal({
 										onClick={() => handleApplyPreset('scandonest_3_1')}
 										style={{
 											flex: 1,
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.75rem',
 											fontWeight: 700,
@@ -618,7 +618,7 @@ export function AnesthesiaPkuDisposalModal({
 										type="button"
 										onClick={() => handleInstantPresetDisposal('scandonest_3_1')}
 										style={{
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.6875rem',
 											fontWeight: 700,
@@ -667,7 +667,7 @@ export function AnesthesiaPkuDisposalModal({
 										onClick={() => handleApplyPreset('damaged_broken_1')}
 										style={{
 											flex: 1,
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.75rem',
 											fontWeight: 700,
@@ -687,7 +687,7 @@ export function AnesthesiaPkuDisposalModal({
 										type="button"
 										onClick={() => handleInstantPresetDisposal('damaged_broken_1')}
 										style={{
-											minHeight: '32px',
+											minHeight: '44px',
 											padding: '0.25rem 0.5rem',
 											fontSize: '0.6875rem',
 											fontWeight: 700,
@@ -956,8 +956,9 @@ export function AnesthesiaPkuDisposalModal({
 									Подпись медсестры / ассистента подтверждена в 1 клик (Мандат 8e п. 10)
 								</span>
 							</label>
-							<span style={{ fontSize: '0.75rem', color: 'var(--ok-fg)', fontWeight: 600, background: 'var(--ok-bg, rgba(16, 185, 129, 0.12))', padding: '2px 8px', borderRadius: '4px' }}>
-								✓ Без комиссии из 3 человек
+							<span style={{ fontSize: '0.75rem', color: 'var(--ok-fg)', fontWeight: 600, background: 'var(--ok-bg, rgba(16, 185, 129, 0.12))', padding: '2px 8px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+								<Check size={12} />
+								<span>Без комиссии из 3 человек</span>
 							</span>
 						</div>
 					</div>
@@ -968,7 +969,7 @@ export function AnesthesiaPkuDisposalModal({
 							<button
 								type="button"
 								className={`hub-tab-btn ${activePreviewMode === 'formatted_text' ? 'active' : ''}`}
-								style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', minHeight: '30px' }}
+								style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', minHeight: '44px' }}
 								onClick={() => setActivePreviewMode('formatted_text')}
 							>
 								<FileText size={14} />
@@ -978,7 +979,7 @@ export function AnesthesiaPkuDisposalModal({
 							<button
 								type="button"
 								className={`hub-tab-btn ${activePreviewMode === 'print_layout' ? 'active' : ''}`}
-								style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', minHeight: '30px' }}
+								style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', minHeight: '44px' }}
 								onClick={() => setActivePreviewMode('print_layout')}
 							>
 								<Printer size={14} />
@@ -991,7 +992,7 @@ export function AnesthesiaPkuDisposalModal({
 								type="button"
 								onClick={handleCopyAct}
 								className="anesthesia-btn"
-								style={{ minHeight: '32px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+								style={{ minHeight: '44px', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}
 							>
 								{isCopied ? <Check size={14} color="var(--ok-fg)" /> : <Copy size={14} />}
 								<span>{isCopied ? 'Скопировано!' : 'Скопировать акт'}</span>
@@ -1001,7 +1002,7 @@ export function AnesthesiaPkuDisposalModal({
 								type="button"
 								onClick={handlePrintAct}
 								className="anesthesia-btn"
-								style={{ minHeight: '32px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+								style={{ minHeight: '44px', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}
 							>
 								<Printer size={14} />
 								<span>Печать</span>
@@ -1052,7 +1053,7 @@ export function AnesthesiaPkuDisposalModal({
 							type="button"
 							onClick={onClose}
 							className="anesthesia-btn"
-							style={{ minHeight: '36px' }}
+							style={{ minHeight: '44px' }}
 						>
 							Отмена
 						</button>
@@ -1060,7 +1061,7 @@ export function AnesthesiaPkuDisposalModal({
 							type="button"
 							onClick={handleSaveAndClose}
 							className="anesthesia-btn anesthesia-btn-primary"
-							style={{ minHeight: '36px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
+							style={{ minHeight: '44px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
 							data-testid="btn-save-pku-record"
 						>
 							<CheckCircle2 size={16} />

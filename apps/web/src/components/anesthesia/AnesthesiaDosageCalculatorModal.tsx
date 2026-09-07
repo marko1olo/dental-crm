@@ -107,6 +107,7 @@ export function AnesthesiaDosageCalculatorModal({
 	const [deductFromWarehouse, setDeductFromWarehouse] =
 		useState<boolean>(true);
 	const [isCopied, setIsCopied] = useState<boolean>(false);
+	const [doctorJustification, setDoctorJustification] = useState<string>("");
 
 	// Zustand Visit Store
 	const setVisitNoteForm = useVisitStore((s) => s.setVisitNoteForm);
@@ -214,19 +215,25 @@ export function AnesthesiaDosageCalculatorModal({
 	const handleApplyToVisit = useCallback(async () => {
 		const hasRisk =
 			calcResult.isOverdose ||
+			calcResult.isEpinephrineOverdose ||
 			calcResult.contraindicationsTriggered.length > 0;
 
 		if (hasRisk) {
-			showToast("Внимание: внесено в карту по клиническому решению врача", "warning");
+			showToast("Внимание: внесено в карту по клиническому обоснованию врача", "warning");
 		}
 
 		// 1. Update Visit Note Form in Zustand Store
-		const formattedAnesthesiaNote = `\n\n[Протокол анестезии 043/у]\n${calcResult.diaryEntryRu}${hasRisk ? " (Введено по врачебному решению)" : ""}`;
+		const justificationSuffix = doctorJustification.trim()
+			? `\n[Клиническое обоснование врача / по жизненным показаниям]: ${doctorJustification.trim()}`
+			: hasRisk
+				? " (Введено по жизненным показаниям)"
+				: "";
+		const formattedAnesthesiaNote = `\n\n[Протокол анестезии 043/у]\n${calcResult.diaryEntryRu}${justificationSuffix}`;
 		setVisitNoteForm((prev) => {
 			const existingPlan = prev.treatmentPlan || "";
 			const updatedPlan = existingPlan
 				? `${existingPlan}${formattedAnesthesiaNote}`
-				: `${calcResult.diaryEntryRu}${hasRisk ? " (Введено по врачебному решению)" : ""}`;
+				: `${calcResult.diaryEntryRu}${justificationSuffix}`;
 			return {
 				...prev,
 				treatmentPlan: updatedPlan,
@@ -268,7 +275,7 @@ export function AnesthesiaDosageCalculatorModal({
 							asaClass: asaStatus || "asa_1",
 							hasCardiovascularDisease: hasCardioRisk || false,
 							toothNumbers,
-							notes: calcResult.diaryEntryRu,
+							notes: `${calcResult.diaryEntryRu}${justificationSuffix}`,
 						}),
 					},
 				);
@@ -340,6 +347,7 @@ export function AnesthesiaDosageCalculatorModal({
 		asaStatus,
 		hasCardioRisk,
 		deductFromWarehouse,
+		doctorJustification,
 		setVisitNoteForm,
 		onApplied,
 		onClose,
@@ -1119,13 +1127,13 @@ export function AnesthesiaDosageCalculatorModal({
 						</div>
 					</div>
 
-					{/* HARD VISUAL BLOCKING BANNER ON OVERDOSE */}
+					{/* WARNING CLINICAL BANNER ON OVERDOSE (MANDATE 8e - DOCTOR AUTONOMY) */}
 					{isBlocked && (
 						<div
 							style={{
-								background: "var(--bad-bg)",
-								border: "2px solid var(--bad-fg)",
-								color: "var(--bad-fg)",
+								background: "var(--warn-bg, rgba(245, 158, 11, 0.1))",
+								border: "2px solid var(--warn-fg, #d97706)",
+								color: "var(--ink)",
 								padding: "0.875rem",
 								borderRadius: "8px",
 								marginBottom: "1rem",
@@ -1133,34 +1141,35 @@ export function AnesthesiaDosageCalculatorModal({
 								gap: "0.75rem",
 								alignItems: "flex-start",
 							}}
+							data-testid="banner-anesthesia-overdose-warning"
 						>
-							<ShieldAlert
+							<AlertTriangle
 								size={24}
-								className="text-rose-600 shrink-0"
+								className="text-amber-500 shrink-0"
 								style={{ marginTop: "2px" }}
 							/>
-							<div>
+							<div style={{ flex: 1 }}>
 								<div
 									style={{
 										fontSize: "0.875rem",
 										fontWeight: 800,
-										color: "var(--bad-fg)",
+										color: "var(--warn-fg, #d97706)",
 										marginBottom: "0.25rem",
 									}}
 								>
-									ОПАСНОСТЬ: ЖЕСТКАЯ БЛОКИРОВКА ПРЕВЫШЕНИЯ ДОЗИРОВКИ (МРД)!
+									Внимание: Расчетная МРД превышена. По закону РФ (КР СтАР / Приказ 786н) требуется клиническое обоснование врача
 								</div>
 								<p
 									style={{
 										margin: 0,
 										fontSize: "0.8125rem",
 										lineHeight: 1.4,
+										color: "var(--ink)",
 									}}
 								>
 									Введение {calcResult.injectedActiveMg} мг превышает безопасный
 									порог {calcResult.maxSafeActiveMg} мг (
-									{calcResult.percentOfMaxDose}%). Превышение МРД несет угрозу
-									токсического шока, аритмии и остановки дыхания!
+									{calcResult.percentOfMaxDose}%). Согласно клиническим рекомендациям СтАР и приказу Минздрава 786н, превышение допустимо по решению врача с обязательным клиническим обоснованием в карте 043/у.
 								</p>
 								{calcResult.contraindicationsTriggered.map((c, i) => (
 									<div
@@ -1169,11 +1178,45 @@ export function AnesthesiaDosageCalculatorModal({
 											marginTop: "0.25rem",
 											fontSize: "0.75rem",
 											fontWeight: 600,
+											color: "var(--bad-fg, #ef4444)",
 										}}
 									>
 										• {c}
 									</div>
 								))}
+								<div style={{ marginTop: "0.75rem" }}>
+									<label
+										htmlFor="anesthesia-clinical-justification"
+										style={{
+											display: "block",
+											fontSize: "0.75rem",
+											fontWeight: 700,
+											marginBottom: "0.25rem",
+											color: "var(--ink)",
+										}}
+									>
+										Клиническое обоснование врача / по жизненным показаниям:
+									</label>
+									<textarea
+										id="anesthesia-clinical-justification"
+										value={doctorJustification}
+										onChange={(e) => setDoctorJustification(e.target.value)}
+										placeholder="Укажите клиническое обоснование (например: сложная атипичная дистопия, ретенция, травматичное вмешательство по жизненным показаниям)..."
+										rows={2}
+										style={{
+											width: "100%",
+											padding: "0.5rem",
+											borderRadius: "6px",
+											border: "1px solid var(--line)",
+											fontSize: "0.8125rem",
+											background: "var(--paper)",
+											color: "var(--ink)",
+											boxSizing: "border-box",
+											resize: "vertical",
+										}}
+										data-testid="textarea-anesthesia-justification"
+									/>
+								</div>
 							</div>
 						</div>
 					)}
@@ -1490,7 +1533,7 @@ export function AnesthesiaDosageCalculatorModal({
 						data-testid="btn-anesthesia-calc-apply"
 					>
 						<CheckCircle2 size={18} />
-						<span>{isBlocked ? "Применить по врачебному решению (043/у)" : "Применить в дневник (043/у)"}</span>
+						<span>{isBlocked ? "Ввести по жизненным показаниям (Форма 043/у)" : "Применить в дневник (043/у)"}</span>
 					</button>
 				</div>
 			</div>

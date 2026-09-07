@@ -59,6 +59,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 	const [torqueNcm, setTorqueNcm] = useState<number>(35); // 35 Н/см по умолчанию
 	const [boneDensity, setBoneDensity] = useState<MischDensity>("D2");
 	const [capType, setCapType] = useState<ImplantCapType>("fdm");
+	const [catalogArticle, setCatalogArticle] = useState<string>("TS3S4010S");
 	const [lotNumber, setLotNumber] = useState<string>("LOT-2026-OSS-8842");
 	const [serialNumber, setSerialNumber] = useState<string>("SN-991428");
 	const [isOverdraftActive, setIsOverdraftActive] = useState<boolean>(false);
@@ -76,6 +77,7 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 		toothFdi,
 		brand: selectedSystem.brand,
 		model: selectedSystem.model,
+		catalogArticle: catalogArticle.trim() || "TS3S4010S",
 		diameterMm,
 		lengthMm,
 		torqueNcm,
@@ -98,6 +100,15 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 			setDiameterMm(found.defaultDiameterMm);
 			setLengthMm(found.defaultLengthMm);
 			setTorqueNcm(found.defaultTorqueNcm);
+			setCatalogArticle(
+				brand === "Osstem"
+					? "TS3S4010S"
+					: brand === "Dentium"
+						? "FX4010"
+						: brand === "Straumann"
+							? "021.2310"
+							: `${brand.slice(0, 3).toUpperCase()}-4010`,
+			);
 		}
 	};
 
@@ -688,8 +699,23 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 								</div>
 							</div>
 
-							{/* LOT и Серийный номер */}
+							{/* Артикул REF и Серийный номер */}
 							<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+								<div className="flex flex-col gap-1">
+									<label htmlFor="passport-article" className="text-xs font-bold text-[var(--ink)]">
+										REF / Каталожный артикул:
+									</label>
+									<input
+										id="passport-article"
+										type="text"
+										value={catalogArticle}
+										onChange={(e) => setCatalogArticle(e.target.value)}
+										placeholder="TS3S4010S"
+										className="min-h-[48px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-mono font-bold text-[var(--ink)]"
+										data-testid="input-article input-passport-article"
+									/>
+								</div>
+
 								<div className="flex flex-col gap-1">
 									<label htmlFor="passport-sn" className="text-xs font-bold text-[var(--ink)]">
 										Серийный номер (SN):

@@ -803,7 +803,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 								key={preset.id}
 								type="button"
 								onClick={() => setActivePreset(preset.id)}
-								className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+								className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all touch-manipulation flex items-center justify-center cursor-pointer ${
 									activePreset === preset.id
 										? "bg-[var(--teal)] text-white shadow"
 										: "text-neutral-400 hover:text-white"
@@ -818,7 +818,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTool("caliper_nerve")}
-							className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
 								activeTool === "caliper_nerve"
 									? "bg-blue-600 text-white"
 									: "text-neutral-400 hover:text-white"
@@ -831,7 +831,7 @@ export const CbctMprWorkspace: React.FC<CbctMprWorkspaceProps> = ({
 						<button
 							type="button"
 							onClick={() => setActiveTool("caliper_sinus")}
-							className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+							className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all touch-manipulation cursor-pointer ${
 								activeTool === "caliper_sinus"
 									? "bg-blue-600 text-white"
 									: "text-neutral-400 hover:text-white"

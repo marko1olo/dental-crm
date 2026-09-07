@@ -766,8 +766,9 @@ export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 
 										{item.patientMatch && (
 											<div className="mt-1 pt-1 border-t border-slate-700/60 flex items-center justify-between text-[10px] text-emerald-400">
-												<span className="truncate max-w-[170px]">
-													✓ {item.patientMatch.patientName}
+												<span className="truncate max-w-[170px] inline-flex items-center gap-1">
+													<Check className="w-3 h-3 shrink-0" />
+													<span>{item.patientMatch.patientName}</span>
 												</span>
 												<span className="font-mono font-bold">
 													{item.patientMatch.confidence}% match

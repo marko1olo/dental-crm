@@ -10,6 +10,7 @@ import {
 	Zap,
 	Sparkles,
 	Sliders,
+	Camera,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
@@ -18,7 +19,9 @@ import {
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
 	buildStandardImplantationProtocolText,
+	dispatchSurgicalServicesToInvoice,
 	type SurgicalOperationNorm,
+	type SurgicalService804n,
 } from "./surgeryProtocols";
 import { SurgerySafetyChecklist } from "./SurgerySafetyChecklist";
 import "./surgery.css";
@@ -33,6 +36,8 @@ export interface SurgeryCockpitModalProps {
 	readonly initialTooth?: number;
 	readonly onInsertIntoDiary?: (protocolText: string) => void;
 	readonly onOpenImplantPassport?: (tooth: number) => void;
+	readonly onOpenVisiograph?: (tooth: number) => void;
+	readonly onAddToInvoice?: (services: readonly SurgicalService804n[]) => void;
 	readonly className?: string;
 }
 
@@ -55,6 +60,8 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 	initialTooth = 46,
 	onInsertIntoDiary,
 	onOpenImplantPassport,
+	onOpenVisiograph,
+	onAddToInvoice,
 	className = "",
 }) => {
 	const [toothFdi, setToothFdi] = useState<number>(initialTooth);
@@ -135,8 +142,36 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 			// fallback
 		}
 
-		showToast("Протокол операции внесен в карту 043/у", "success");
+		// Автоматическое начисление хирургических услуг 804н в активный счет визита (DEFECT-SURGERY-01, Мандаты 8e, 8k)
+		dispatchSurgicalServicesToInvoice({
+			norm: currentNorm,
+			toothFdi,
+			onAddToInvoice,
+		});
+
+		showToast("Протокол операции и услуги 804н внесены в карту 043/у и счет", "success");
 		onClose();
+	};
+
+	const handleOpenVisiograph = () => {
+		if (onOpenVisiograph) {
+			onOpenVisiograph(toothFdi);
+		}
+		try {
+			window.dispatchEvent(
+				new CustomEvent("dente-open-visiograph", {
+					detail: {
+						toothFdi,
+						toothNumber: toothFdi,
+						patientId,
+						patientName,
+					},
+				}),
+			);
+		} catch {
+			// fallback
+		}
+		showToast(`Радиовизиограф (RVG) для зуба FDI #${toothFdi}`, "info");
 	};
 
 	const handleOpenPassport = () => {
@@ -203,6 +238,18 @@ export const SurgeryCockpitModal: React.FC<SurgeryCockpitModalProps> = ({
 					</div>
 
 					<div className="flex items-center gap-2">
+						{/* Вызов радиовизиографа / RVG активного зуба */}
+						<button
+							type="button"
+							onClick={handleOpenVisiograph}
+							className="surgery-btn surgery-btn-secondary text-xs min-h-[48px] touch-manipulation flex items-center gap-1.5"
+							title={`Открыть радиовизиограф (RVG) для зуба FDI #${toothFdi}`}
+							data-testid="btn-cockpit-open-visiograph"
+						>
+							<Camera size={16} />
+							<span>RVG #{toothFdi}</span>
+						</button>
+
 						{/* Режим стерильных перчаток (крупные тач-зоны) */}
 						<button
 							type="button"

@@ -819,7 +819,7 @@ export function Cornerstone3DViewer({
 
 		setActiveCaliper(measured);
 		setActiveTool("Caliper");
-		showToast(`Штангенциркуль: H=${measured.heightMm} мм, W=${measured.crestWidthMm} мм (${measured.implantFeasibility.isAdequate ? "✓ норма" : "⚠️ дефицит"})`, "info");
+		showToast(`Штангенциркуль: H=${measured.heightMm} мм, W=${measured.crestWidthMm} мм (${measured.implantFeasibility.isAdequate ? "норма" : "дефицит"})`, "info");
 	};
 
 	const addNerveControlPoint = useCallback(
@@ -1985,10 +1985,10 @@ export function Cornerstone3DViewer({
 						)}
 						<span>
 							{isNerveCollisionDanger && typeof latestImplant.distanceToNerve === "number"
-								? `⚠️ ОПАСНО: Нижнечелюстной канал ${latestImplant.distanceToNerve.toFixed(1)} мм (< 2.0 мм)!`
+								? `[ОПАСНО] Нижнечелюстной канал ${latestImplant.distanceToNerve.toFixed(1)} мм (< 2.0 мм)!`
 								: isNerveUnmapped || typeof latestImplant.distanceToNerve !== "number"
-									? "⚠️ Нижнечелюстной нерв не размечен"
-									: `✓ Нижнечелюстной канал: ${latestImplant.distanceToNerve.toFixed(1)} мм (норма)`}
+									? "[ВНИМАНИЕ] Нижнечелюстной нерв не размечен"
+									: `[НОРМА] Нижнечелюстной канал: ${latestImplant.distanceToNerve.toFixed(1)} мм (норма)`}
 						</span>
 					</div>
 

@@ -161,6 +161,7 @@ export function VisiographStudioCanvas({
 
 	// Active tool
 	const [activeTool, setActiveTool] = useState<ActiveVisiographTool>(initialTool);
+	const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
 
 	// Calibration & 1-Click Sensor Presets
 	const [activeSensorPresetId, setActiveSensorPresetId] = useState<string | null>(null);
@@ -699,34 +700,38 @@ export function VisiographStudioCanvas({
 				minHeight: "580px",
 			}}
 		>
-			{/* Top Bar with Tools and Preset Buttons */}
+			{/* Top Bar with Tools and Preset Buttons (Strict 1-Row Toolbar, Mandate 8d) */}
 			<div
 				style={{
 					display: "flex",
-					flexWrap: "wrap",
+					flexWrap: "nowrap",
 					alignItems: "center",
 					justifyContent: "space-between",
-					padding: "8px 12px",
-					background: "var(--paper-soft, #161b22)",
-					borderBottom: "1px solid var(--line, #30363d)",
+					padding: "4px 12px",
+					minHeight: "44px",
+					background: "var(--paper-soft)",
+					borderBottom: "1px solid var(--line)",
 					gap: "8px",
+					overflowX: "auto",
+					whiteSpace: "nowrap",
 				}}
 			>
-				{/* Tool selector */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+				{/* Primary Tools: Pointer, Ruler, Apex + Secondary Tools Dropdown */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
 					<button
 						type="button"
+						data-testid="btn-tool-pointer"
 						onClick={() => {
 							setActiveTool("pointer");
 							setDrawingPoints([]);
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "pointer" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
-							color: activeTool === "pointer" ? "#ffffff" : "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
+							background: activeTool === "pointer" ? "var(--primary)" : "var(--paper-strong)",
+							color: activeTool === "pointer" ? "#ffffff" : "var(--ink)",
+							border: "1px solid var(--line)",
 							borderRadius: "6px",
-							padding: "8px 12px",
+							padding: "6px 12px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
@@ -741,17 +746,18 @@ export function VisiographStudioCanvas({
 
 					<button
 						type="button"
+						data-testid="btn-tool-ruler"
 						onClick={() => {
 							setActiveTool("ruler");
 							setDrawingPoints([]);
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "ruler" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
-							color: activeTool === "ruler" ? "#ffffff" : "var(--primary, #00e5ff)",
-							border: "1px solid var(--line, #30363d)",
+							background: activeTool === "ruler" ? "var(--primary)" : "var(--paper-strong)",
+							color: activeTool === "ruler" ? "#ffffff" : "var(--primary)",
+							border: "1px solid var(--line)",
 							borderRadius: "6px",
-							padding: "8px 12px",
+							padding: "6px 12px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
@@ -767,95 +773,18 @@ export function VisiographStudioCanvas({
 
 					<button
 						type="button"
-						onClick={() => {
-							setActiveTool("calibrate");
-							setDrawingPoints([]);
-						}}
-						style={{
-							minHeight: "44px",
-							background: activeTool === "calibrate" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
-							color: activeTool === "calibrate" ? "#ffffff" : "var(--success, #76ff03)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "6px",
-							padding: "8px 12px",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "0.84rem",
-							fontWeight: 600,
-						}}
-						title="Калибровка по эталону (5 мм шарик или резьба)"
-					>
-						<Scale size={15} /> Калибровка
-					</button>
-
-					<button
-						type="button"
-						onClick={() => {
-							setActiveTool("angle");
-							setDrawingPoints([]);
-						}}
-						style={{
-							minHeight: "44px",
-							background: activeTool === "angle" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
-							color: activeTool === "angle" ? "#ffffff" : "var(--warning, #ffab00)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "6px",
-							padding: "8px 12px",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "0.84rem",
-							fontWeight: 600,
-						}}
-						title="Измерить угол наклона оси зуба или шахты имплантата"
-					>
-						<Compass size={15} /> Угломер
-					</button>
-
-					<button
-						type="button"
-						onClick={() => {
-							setActiveTool("lesion");
-							setDrawingPoints([]);
-						}}
-						style={{
-							minHeight: "44px",
-							background: activeTool === "lesion" ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
-							color: activeTool === "lesion" ? "#ffffff" : "var(--danger, #ff1744)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "6px",
-							padding: "8px 12px",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "6px",
-							fontSize: "0.84rem",
-							fontWeight: 600,
-						}}
-						title="Выделить очаг деструкции (гранулема, киста) и рассчитать площадь в мм²"
-					>
-						<AlertTriangle size={15} /> Очаг деструкции (мм²)
-					</button>
-
-					<button
-						type="button"
+						data-testid="btn-tool-apex"
 						onClick={() => {
 							setActiveTool("root_canal");
 							setDrawingPoints([]);
 						}}
 						style={{
 							minHeight: "44px",
-							background: activeTool === "root_canal" ? "var(--success, #047857)" : "var(--paper-strong, #21262d)",
-							color: activeTool === "root_canal" ? "#ffffff" : "var(--success, #10b981)",
-							border: `1px solid ${activeTool === "root_canal" ? "var(--success, #10b981)" : "var(--line, #30363d)"}`,
+							background: activeTool === "root_canal" ? "var(--success)" : "var(--paper-strong)",
+							color: activeTool === "root_canal" ? "#ffffff" : "var(--success)",
+							border: `1px solid ${activeTool === "root_canal" ? "var(--success)" : "var(--line)"}`,
 							borderRadius: "6px",
-							padding: "8px 12px",
+							padding: "6px 12px",
 							cursor: "pointer",
 							display: "inline-flex",
 							alignItems: "center",
@@ -864,156 +793,301 @@ export function VisiographStudioCanvas({
 							fontSize: "0.84rem",
 							fontWeight: 700,
 						}}
-						title="Эндо-линейка (Apex Locator): измерение длины корневого канала в мм по анатомической кривой корня (двойной клик для фиксации)"
+						title="Эндо-линейка (Apex Locator / WL): измерение рабочей длины канала в мм"
 					>
-						<Activity size={15} /> Эндо-линейка (Апекс, мм)
+						<Activity size={15} /> Апекс / WL (мм)
 					</button>
-				</div>
 
-				{/* 1-Click Sensor Calibration Presets */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-					<span style={{ fontSize: "0.82rem", color: "var(--muted, #8b949e)", whiteSpace: "nowrap" }}>
-						Датчик:
-					</span>
-					<select
-						value={activeSensorPresetId ?? (isCalibrated ? "manual" : "")}
-						onChange={(e) => {
-							const val = e.target.value;
-							if (val === "manual") {
-								setActiveSensorPresetId(null);
-								setActiveTool("calibrate");
-								setDrawingPoints([]);
-							} else {
-								const preset = STANDARD_SENSOR_PRESETS.find((p) => p.id === val);
-								if (preset) {
-									handleApplySensorPreset(preset);
-								}
-							}
-						}}
-						style={{
-							minHeight: "44px",
-							background: "var(--paper-strong, #21262d)",
-							color: "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "6px",
-							padding: "8px 10px",
-							fontSize: "0.82rem",
-							cursor: "pointer",
-						}}
-						title="1-клик калибровка по стандартным датчикам RVG / ОПТГ (Мандат 8e, 8k)"
-					>
-						<option value="" disabled>
-							Калибровка датчика...
-						</option>
-						{STANDARD_SENSOR_PRESETS.map((p) => (
-							<option key={p.id} value={p.id}>
-								{p.label}
-							</option>
-						))}
-						<option value="manual">Ручная калибровка (шарик / резьба)</option>
-					</select>
-				</div>
-
-				{/* 1-Click Clinical Filters Toolbar */}
-				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-					{CLINICAL_VISIOGRAPH_FILTERS.map((filter) => {
-						const isActive = activeClinicalFilter === filter.id;
-						return (
-							<button
-								key={filter.id}
-								type="button"
-								onClick={() => handleApplyClinicalFilter(filter)}
+					{/* Secondary Tools Dropdown: Calibrate, Angle, Lesion, Invert, Rotate 90/180 */}
+					<div style={{ position: "relative", display: "inline-block" }}>
+						<button
+							type="button"
+							data-testid="btn-tools-dropdown"
+							onClick={() => setIsToolsMenuOpen((prev) => !prev)}
+							style={{
+								minHeight: "44px",
+								background: ["calibrate", "angle", "lesion"].includes(activeTool) ? "var(--primary)" : "var(--paper-strong)",
+								color: ["calibrate", "angle", "lesion"].includes(activeTool) ? "#ffffff" : "var(--ink)",
+								border: "1px solid var(--line)",
+								borderRadius: "6px",
+								padding: "6px 12px",
+								cursor: "pointer",
+								display: "inline-flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: "6px",
+								fontSize: "0.84rem",
+								fontWeight: 600,
+							}}
+							title="Дополнительные инструменты: калибровка, угломер, очаг, негатив, поворот"
+						>
+							<Sliders size={15} />
+							<span>
+								{activeTool === "calibrate"
+									? "Калибровка"
+									: activeTool === "angle"
+										? "Угломер"
+										: activeTool === "lesion"
+											? "Очаг"
+											: "Инструменты ▾"}
+							</span>
+						</button>
+						{isToolsMenuOpen && (
+							<div
 								style={{
-									minHeight: "44px",
-									background: isActive ? "var(--primary, #1f6feb)" : "var(--paper-strong, #21262d)",
-									color: isActive ? "#ffffff" : "var(--ink, #c9d1d9)",
-									border: `1px solid ${isActive ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
-									borderRadius: "6px",
-									padding: "8px 12px",
-									fontSize: "0.82rem",
-									cursor: "pointer",
-									fontWeight: isActive ? 700 : 600,
-									display: "inline-flex",
-									alignItems: "center",
-									justifyContent: "center",
-									gap: "6px",
-									transition: "all 0.15s ease",
-									boxShadow: isActive ? "0 0 8px rgba(31, 111, 235, 0.45)" : "none",
+									position: "absolute",
+									top: "calc(100% + 4px)",
+									left: 0,
+									background: "var(--paper-strong)",
+									border: "1px solid var(--line)",
+									borderRadius: "8px",
+									boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
+									zIndex: 60,
+									minWidth: "220px",
+									display: "flex",
+									flexDirection: "column",
+									padding: "4px",
+									gap: "2px",
 								}}
-								title={`${filter.label} (${filter.badge}): ${filter.description}`}
 							>
-								<Zap size={14} style={{ color: isActive ? "#ffd600" : "var(--primary, #58a6ff)", fill: isActive ? "#ffd600" : "none" }} />
-								<span>{filter.label}</span>
-							</button>
-						);
-					})}
+								<button
+									type="button"
+									onClick={() => {
+										setActiveTool("calibrate");
+										setDrawingPoints([]);
+										setIsToolsMenuOpen(false);
+									}}
+									style={{
+										minHeight: "44px",
+										background: activeTool === "calibrate" ? "var(--primary)" : "transparent",
+										color: activeTool === "calibrate" ? "#ffffff" : "var(--ink)",
+										border: "none",
+										borderRadius: "6px",
+										padding: "8px 12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										fontSize: "0.84rem",
+										textAlign: "left",
+									}}
+								>
+									<Scale size={16} />
+									<span>Калибровка по эталону</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setActiveTool("angle");
+										setDrawingPoints([]);
+										setIsToolsMenuOpen(false);
+									}}
+									style={{
+										minHeight: "44px",
+										background: activeTool === "angle" ? "var(--primary)" : "transparent",
+										color: activeTool === "angle" ? "#ffffff" : "var(--ink)",
+										border: "none",
+										borderRadius: "6px",
+										padding: "8px 12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										fontSize: "0.84rem",
+										textAlign: "left",
+									}}
+								>
+									<Compass size={16} />
+									<span>Угломер</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setActiveTool("lesion");
+										setDrawingPoints([]);
+										setIsToolsMenuOpen(false);
+									}}
+									style={{
+										minHeight: "44px",
+										background: activeTool === "lesion" ? "var(--primary)" : "transparent",
+										color: activeTool === "lesion" ? "#ffffff" : "var(--ink)",
+										border: "none",
+										borderRadius: "6px",
+										padding: "8px 12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										fontSize: "0.84rem",
+										textAlign: "left",
+									}}
+								>
+									<AlertTriangle size={16} />
+									<span>Очаг деструкции (мм²)</span>
+								</button>
+								<div style={{ height: "1px", background: "var(--line)", margin: "2px 0" }} />
+								<button
+									type="button"
+									onClick={() => {
+										setParams((prev) => ({ ...prev, invert: !prev.invert }));
+										setIsToolsMenuOpen(false);
+									}}
+									style={{
+										minHeight: "44px",
+										background: params.invert ? "var(--success)" : "transparent",
+										color: params.invert ? "#ffffff" : "var(--ink)",
+										border: "none",
+										borderRadius: "6px",
+										padding: "8px 12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										fontSize: "0.84rem",
+										textAlign: "left",
+									}}
+								>
+									<span>Негатив / Позитив</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setCanvasRotationDeg((r) => (r + 90) % 360);
+										setIsToolsMenuOpen(false);
+									}}
+									style={{
+										minHeight: "44px",
+										background: "transparent",
+										color: "var(--ink)",
+										border: "none",
+										borderRadius: "6px",
+										padding: "8px 12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										fontSize: "0.84rem",
+										textAlign: "left",
+									}}
+								>
+									<RotateCw size={16} />
+									<span>Повернуть на 90°</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setCanvasRotationDeg((r) => (r + 180) % 360);
+										setIsToolsMenuOpen(false);
+									}}
+									style={{
+										minHeight: "44px",
+										background: "transparent",
+										color: "var(--ink)",
+										border: "none",
+										borderRadius: "6px",
+										padding: "8px 12px",
+										cursor: "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										fontSize: "0.84rem",
+										textAlign: "left",
+									}}
+								>
+									<span>Повернуть на 180°</span>
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
 
-					<button
-						type="button"
-						onClick={() => setParams((prev) => ({ ...prev, invert: !prev.invert }))}
-						style={{
-							minHeight: "44px",
-							background: params.invert ? "var(--success, #238636)" : "var(--paper-strong, #21262d)",
-							color: "#ffffff",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "6px",
-							padding: "8px 12px",
-							fontSize: "0.82rem",
-							cursor: "pointer",
-							fontWeight: params.invert ? 600 : 400,
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-						title="Инверсия негатив / позитив"
-					>
-						Негатив
-					</button>
+				{/* Center/Right: Sensor preset + Clinical filter select + Zoom + Export */}
+				<div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+					{/* 1-Click Sensor Calibration Presets */}
+					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+						<span style={{ fontSize: "0.82rem", color: "var(--muted)", whiteSpace: "nowrap" }}>
+							Датчик:
+						</span>
+						<select
+							value={activeSensorPresetId ?? (isCalibrated ? "manual" : "")}
+							onChange={(e) => {
+								const val = e.target.value;
+								if (val === "manual") {
+									setActiveSensorPresetId(null);
+									setActiveTool("calibrate");
+									setDrawingPoints([]);
+								} else {
+									const preset = STANDARD_SENSOR_PRESETS.find((p) => p.id === val);
+									if (preset) {
+										handleApplySensorPreset(preset);
+									}
+								}
+							}}
+							style={{
+								minHeight: "44px",
+								background: "var(--paper-strong)",
+								color: "var(--ink)",
+								border: "1px solid var(--line)",
+								borderRadius: "6px",
+								padding: "8px 10px",
+								fontSize: "0.82rem",
+								cursor: "pointer",
+							}}
+							title="1-клик калибровка по стандартным датчикам RVG / ОПТГ (Мандат 8e, 8k)"
+						>
+							<option value="" disabled>
+								Калибровка датчика...
+							</option>
+							{STANDARD_SENSOR_PRESETS.map((p) => (
+								<option key={p.id} value={p.id}>
+									{p.label}
+								</option>
+							))}
+							<option value="manual">Ручная калибровка (шарик / резьба)</option>
+						</select>
+					</div>
 
-					<button
-						type="button"
-						onClick={() => setCanvasRotationDeg((r) => (r + 90) % 360)}
-						style={{
-							minHeight: "44px",
-							background: "var(--paper-strong, #21262d)",
-							color: "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "6px",
-							padding: "8px 12px",
-							fontSize: "0.82rem",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							gap: "4px",
-						}}
-						title="Повернуть снимок на 90°"
-					>
-						<RotateCw size={14} /> 90°
-					</button>
+					{/* 1-Click Clinical Filters Selector */}
+					<div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+						<span style={{ fontSize: "0.82rem", color: "var(--muted)", whiteSpace: "nowrap" }}>
+							Фильтр:
+						</span>
+						<select
+							value={activeClinicalFilter ?? ""}
+							onChange={(e) => {
+								const val = e.target.value;
+								if (!val) {
+									setParams({ ...DEFAULT_VISIOGRAPH_IMAGE_PARAMS });
+									setActiveClinicalFilter(null);
+								} else {
+									const f = CLINICAL_VISIOGRAPH_FILTERS.find((item) => item.id === val);
+									if (f) {
+										handleApplyClinicalFilter(f);
+									}
+								}
+							}}
+							style={{
+								minHeight: "44px",
+								background: "var(--paper-strong)",
+								color: "var(--ink)",
+								border: "1px solid var(--line)",
+								borderRadius: "6px",
+								padding: "8px 10px",
+								fontSize: "0.82rem",
+								cursor: "pointer",
+							}}
+							title="Клинические фильтры радиовизиографа"
+						>
+							<option value="">Без фильтра (Стандарт)</option>
+							{CLINICAL_VISIOGRAPH_FILTERS.map((f) => (
+								<option key={f.id} value={f.id}>
+									{f.label} ({f.badge})
+								</option>
+							))}
+						</select>
+					</div>
 
-					<button
-						type="button"
-						onClick={() => setCanvasRotationDeg((r) => (r + 180) % 360)}
-						style={{
-							minHeight: "44px",
-							background: "var(--paper-strong, #21262d)",
-							color: "var(--ink, #c9d1d9)",
-							border: "1px solid var(--line, #30363d)",
-							borderRadius: "6px",
-							padding: "8px 12px",
-							fontSize: "0.82rem",
-							cursor: "pointer",
-							display: "inline-flex",
-							alignItems: "center",
-							justifyContent: "center",
-							fontWeight: 600,
-						}}
-						title="Повернуть снимок на 180° (верхняя / нижняя челюсть)"
-					>
-						180°
-					</button>
-
+					{/* Zoom Controls */}
 					<div style={{ display: "flex", alignItems: "center", gap: "2px", marginLeft: "4px" }}>
 						<button
 							type="button"
@@ -1021,9 +1095,9 @@ export function VisiographStudioCanvas({
 							style={{
 								minHeight: "44px",
 								minWidth: "44px",
-								background: "var(--paper-strong, #21262d)",
-								color: "var(--ink, #c9d1d9)",
-								border: "1px solid var(--line, #30363d)",
+								background: "var(--paper-strong)",
+								color: "var(--ink)",
+								border: "1px solid var(--line)",
 								borderRadius: "6px 0 0 6px",
 								padding: "8px 10px",
 								fontSize: "0.82rem",
@@ -1045,10 +1119,10 @@ export function VisiographStudioCanvas({
 							style={{
 								minHeight: "44px",
 								minWidth: "48px",
-								background: "var(--paper-strong, #21262d)",
-								color: "var(--primary, #58a6ff)",
-								borderTop: "1px solid var(--line, #30363d)",
-								borderBottom: "1px solid var(--line, #30363d)",
+								background: "var(--paper-strong)",
+								color: "var(--primary)",
+								borderTop: "1px solid var(--line)",
+								borderBottom: "1px solid var(--line)",
 								borderLeft: "none",
 								borderRight: "none",
 								padding: "8px 10px",
@@ -1069,9 +1143,9 @@ export function VisiographStudioCanvas({
 							style={{
 								minHeight: "44px",
 								minWidth: "44px",
-								background: "var(--paper-strong, #21262d)",
-								color: "var(--ink, #c9d1d9)",
-								border: "1px solid var(--line, #30363d)",
+								background: "var(--paper-strong)",
+								color: "var(--ink)",
+								border: "1px solid var(--line)",
 								borderRadius: "0 6px 6px 0",
 								padding: "8px 10px",
 								fontSize: "0.82rem",
@@ -1086,12 +1160,13 @@ export function VisiographStudioCanvas({
 						</button>
 					</div>
 
+					{/* Export & Close */}
 					<button
 						type="button"
 						onClick={() => setShowExportModal(true)}
 						style={{
 							minHeight: "44px",
-							background: "var(--success, #238636)",
+							background: "var(--success)",
 							color: "#ffffff",
 							border: "none",
 							borderRadius: "6px",
@@ -1116,7 +1191,7 @@ export function VisiographStudioCanvas({
 								minHeight: "44px",
 								minWidth: "44px",
 								background: "transparent",
-								color: "var(--muted, #8b949e)",
+								color: "var(--muted)",
 								border: "none",
 								cursor: "pointer",
 								padding: "8px",
@@ -1275,8 +1350,18 @@ export function VisiographStudioCanvas({
 							gap: "6px",
 						}}
 					>
-						<div style={{ fontWeight: 600, color: isCalibrated ? "var(--success, #3fb950)" : "var(--muted, #8b949e)" }}>
-							{isCalibrated ? "✓ Откалибровано" : "⚠️ Стандартный масштаб"}
+						<div style={{ fontWeight: 600, color: isCalibrated ? "var(--success, #3fb950)" : "var(--muted, #8b949e)", display: "flex", alignItems: "center", gap: "4px" }}>
+							{isCalibrated ? (
+								<>
+									<CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+									<span>[Откалибровано]</span>
+								</>
+							) : (
+								<>
+									<AlertTriangle size={13} className="text-amber-500 shrink-0" />
+									<span>[Стандартный масштаб]</span>
+								</>
+							)}
 						</div>
 						<div>1 px = {calibration.scaleMmPerPixel.toFixed(4)} мм</div>
 						{activeTool === "calibrate" && (

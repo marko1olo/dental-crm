@@ -1051,7 +1051,7 @@ export function AnesthesiaSafetyHubModal({
 										type="button"
 										onClick={() => handleCopyText(calcResult.soapDiaryText, 'Запись скопирована!')}
 										className="anesthesia-btn"
-										style={{ minHeight: '32px', padding: '0.125rem 0.5rem', fontSize: '0.75rem' }}
+										style={{ minHeight: '44px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}
 									>
 										{isCopied && copyNotificationText.includes('скопирована') ? <Check size={14} color="var(--ok-fg)" /> : <Copy size={14} />}
 										{isCopied && copyNotificationText.includes('скопирована') ? copyNotificationText : 'Скопировать'}
@@ -1068,7 +1068,7 @@ export function AnesthesiaSafetyHubModal({
 									type="button"
 									onClick={onClose}
 									className="anesthesia-btn"
-									style={{ minHeight: '36px' }}
+									style={{ minHeight: '44px' }}
 								>
 									Отмена
 								</button>
@@ -1076,7 +1076,7 @@ export function AnesthesiaSafetyHubModal({
 									type="button"
 									onClick={handleApplyCalculation}
 									className={`anesthesia-btn ${calcResult.isBlocked ? 'anesthesia-btn-warning' : 'anesthesia-btn-primary'}`}
-									style={{ minHeight: '36px', cursor: 'pointer' }}
+									style={{ minHeight: '44px', cursor: 'pointer' }}
 									data-testid="btn-hub-apply-calculation"
 								>
 									<CheckCircle2 size={16} />
@@ -1117,9 +1117,9 @@ export function AnesthesiaSafetyHubModal({
 											onClick={() => setIsTimerRunning(prev => !prev)}
 											className={`anesthesia-btn ${isTimerRunning ? 'stopwatch-btn-pause' : 'stopwatch-btn-play'}`}
 											title={isTimerRunning ? 'Пауза секундомера' : 'Старт секундомера'}
-											style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem' }}
+											style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem' }}
 										>
-											{isTimerRunning ? <Pause size={14} /> : <Play size={14} />}
+											{isTimerRunning ? <Pause size={16} /> : <Play size={16} />}
 										</button>
 										<button
 											type="button"
@@ -1130,9 +1130,9 @@ export function AnesthesiaSafetyHubModal({
 											}}
 											className="anesthesia-btn"
 											title="Сбросить время и шаги"
-											style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem' }}
+											style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem' }}
 										>
-											<RotateCcw size={14} />
+											<RotateCcw size={16} />
 										</button>
 									</div>
 								</div>
@@ -1291,7 +1291,7 @@ export function AnesthesiaSafetyHubModal({
 									<button
 										type="button"
 										className="anesthesia-btn"
-										style={{ minHeight: '30px', minWidth: '30px', padding: '0.125rem' }}
+										style={{ minHeight: '44px', minWidth: '44px', padding: '0.25rem' }}
 									>
 										{show112ScriptInline ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 									</button>
@@ -1333,7 +1333,7 @@ export function AnesthesiaSafetyHubModal({
 													handleCopyText(script, 'Текст для 112 скопирован!');
 												}}
 												className="anesthesia-btn anesthesia-btn-primary"
-												style={{ minHeight: '34px', fontSize: '0.8125rem' }}
+												style={{ minHeight: '44px', fontSize: '0.8125rem' }}
 											>
 												<Copy size={14} />
 												{isCopied && copyNotificationText.includes('112') ? 'Скопировано!' : 'Скопировать шпаргалку 112'}
@@ -1349,7 +1349,7 @@ export function AnesthesiaSafetyHubModal({
 									type="button"
 									onClick={() => setShow112ScriptInline(prev => !prev)}
 									className="anesthesia-btn"
-									style={{ borderColor: 'var(--bad, #ef4444)', color: 'var(--bad-fg, #ef4444)', minHeight: '36px' }}
+									style={{ borderColor: 'var(--bad, #ef4444)', color: 'var(--bad-fg, #ef4444)', minHeight: '44px' }}
 								>
 									<PhoneCall size={16} />
 									{show112ScriptInline ? 'Скрыть шпаргалку 112' : 'Шпаргалка 112 / 103'}
@@ -1359,7 +1359,7 @@ export function AnesthesiaSafetyHubModal({
 									type="button"
 									onClick={handleApplyEmergencyAct}
 									className="anesthesia-btn anesthesia-btn-primary emergency-save-btn"
-									style={{ minHeight: '36px' }}
+									style={{ minHeight: '44px' }}
 								>
 									<FileText size={16} />
 									Сформировать протокол реанимации (Форма 043/у)
@@ -1443,7 +1443,7 @@ export function AnesthesiaSafetyHubModal({
 									<button
 										type="button"
 										className={`hub-tab-btn ${pkuPreviewMode === 'formatted_text' ? 'active' : ''}`}
-										style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', minHeight: '30px' }}
+										style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', minHeight: '44px' }}
 										onClick={() => setPkuPreviewMode('formatted_text')}
 									>
 										<FileText size={14} />
@@ -1453,7 +1453,7 @@ export function AnesthesiaSafetyHubModal({
 									<button
 										type="button"
 										className={`hub-tab-btn ${pkuPreviewMode === 'print_layout' ? 'active' : ''}`}
-										style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', minHeight: '30px' }}
+										style={{ padding: '0.375rem 0.75rem', fontSize: '0.75rem', minHeight: '44px' }}
 										onClick={() => setPkuPreviewMode('print_layout')}
 									>
 										<Printer size={14} />
@@ -1466,7 +1466,7 @@ export function AnesthesiaSafetyHubModal({
 										type="button"
 										onClick={() => handleCopyText(pkuActText, 'Акт списания скопирован!')}
 										className="anesthesia-btn"
-										style={{ minHeight: '32px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+										style={{ minHeight: '44px', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}
 									>
 										{isCopied && copyNotificationText.includes('списания') ? <Check size={14} color="var(--ok-fg)" /> : <Copy size={14} />}
 										<span>{isCopied && copyNotificationText.includes('списания') ? copyNotificationText : 'Скопировать акт'}</span>
@@ -1476,7 +1476,7 @@ export function AnesthesiaSafetyHubModal({
 										type="button"
 										onClick={handlePrintPkuAct}
 										className="anesthesia-btn"
-										style={{ minHeight: '32px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+										style={{ minHeight: '44px', padding: '0.375rem 0.75rem', fontSize: '0.75rem' }}
 									>
 										<Printer size={14} />
 										<span>Печать</span>
@@ -1520,7 +1520,7 @@ export function AnesthesiaSafetyHubModal({
 									type="button"
 									onClick={onClose}
 									className="anesthesia-btn"
-									style={{ minHeight: '36px' }}
+									style={{ minHeight: '44px' }}
 								>
 									Закрыть
 								</button>
@@ -1534,7 +1534,7 @@ export function AnesthesiaSafetyHubModal({
 										onClose();
 									}}
 									className="anesthesia-btn anesthesia-btn-primary"
-									style={{ minHeight: '36px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
+									style={{ minHeight: '44px', background: 'var(--teal)', borderColor: 'var(--teal)', color: 'var(--on-teal, #fff)' }}
 								>
 									<CheckCircle2 size={16} />
 									Зафиксировать списание в ПКУ и карте 043/у

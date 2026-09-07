@@ -238,8 +238,8 @@ export function AnesthesiaProtocolModal({
 								onClick={onOpenEmergencyProtocol}
 								className="anesthesia-btn flex items-center gap-1.5"
 								style={{
-									minHeight: '32px',
-									padding: '0.25rem 0.625rem',
+									minHeight: '44px',
+									padding: '0.25rem 0.75rem',
 									fontSize: '0.75rem',
 									background: 'var(--bad-fg, #ef4444)',
 									color: '#fff',
@@ -258,7 +258,7 @@ export function AnesthesiaProtocolModal({
 							type="button"
 							onClick={handleApplyQuickNormPreset}
 							className="anesthesia-btn"
-							style={{ minHeight: '32px', padding: '0.25rem 0.625rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
+							style={{ minHeight: '44px', padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
 							title="Заполнить нормой: Артикаин 1:100k (1.7 мл), аспирация (-)"
 							data-testid="btn-anesthesia-norm-preset"
 						>
@@ -269,7 +269,7 @@ export function AnesthesiaProtocolModal({
 							type="button"
 							onClick={onClose}
 							className="anesthesia-btn"
-							style={{ minHeight: '32px', minWidth: '32px', padding: '0.25rem', border: 'none' }}
+							style={{ minHeight: '44px', minWidth: '44px', padding: '0.25rem', border: 'none' }}
 						>
 							<X size={20} />
 						</button>
@@ -670,7 +670,7 @@ export function AnesthesiaProtocolModal({
 							<select
 								value={techniqueId}
 								onChange={e => handleTechniqueChange(e.target.value as InjectionTechniqueId)}
-								style={{ width: '100%', minHeight: '36px', padding: '0.375rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
+								style={{ width: '100%', minHeight: '44px', padding: '0.375rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
 							>
 								{Object.values(INJECTION_TECHNIQUES).map(tech => (
 									<option key={tech.id} value={tech.id}>
@@ -687,7 +687,7 @@ export function AnesthesiaProtocolModal({
 							<select
 								value={needleType}
 								onChange={e => setNeedleType(e.target.value as NeedleGaugeType)}
-								style={{ width: '100%', minHeight: '36px', padding: '0.375rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
+								style={{ width: '100%', minHeight: '44px', padding: '0.375rem', borderRadius: '8px', border: '1px solid var(--line, #e2e8f0)', background: 'var(--paper, #fff)', color: 'var(--ink, #0f172a)', fontSize: '0.8125rem' }}
 							>
 								{Object.values(DENTAL_NEEDLES).map(needle => (
 									<option key={needle.id} value={needle.id}>
@@ -822,7 +822,7 @@ export function AnesthesiaProtocolModal({
 								type="button"
 								onClick={handleCopyDiary}
 								className="anesthesia-btn"
-								style={{ minHeight: '30px', padding: '0.125rem 0.5rem', fontSize: '0.75rem' }}
+								style={{ minHeight: '44px', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
 							>
 								{isCopied ? <Check size={14} color="var(--ok-fg)" /> : <Copy size={14} />}
 								<span>{isCopied ? 'Скопировано!' : 'Скопировать'}</span>
@@ -840,7 +840,7 @@ export function AnesthesiaProtocolModal({
 						type="button"
 						onClick={onClose}
 						className="anesthesia-btn"
-						style={{ minHeight: '36px' }}
+						style={{ minHeight: '44px' }}
 					>
 						Отмена
 					</button>
@@ -849,7 +849,7 @@ export function AnesthesiaProtocolModal({
 						onClick={handleApply}
 						className={`anesthesia-btn ${hasRiskOrOverdose ? 'anesthesia-btn-warning' : 'anesthesia-btn-primary'}`}
 						style={{
-							minHeight: '36px',
+							minHeight: '44px',
 							background: hasRiskOrOverdose ? 'var(--warn-fg, #d97706)' : undefined,
 							color: hasRiskOrOverdose ? '#fff' : undefined,
 							cursor: 'pointer',

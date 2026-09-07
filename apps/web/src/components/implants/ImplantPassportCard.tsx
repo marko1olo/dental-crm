@@ -133,7 +133,12 @@ export const ImplantPassportCard: React.FC<ImplantPassportCardProps> = ({
 				</div>
 			</div>
 
-			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-2 border-t border-[var(--line)]">
+			<div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs pt-2 border-t border-[var(--line)]">
+				<div>
+					<span className="text-[11px] text-[var(--muted)] block">REF / Артикул:</span>
+					<span className="font-mono font-bold text-[var(--ink)]" data-testid="passport-catalog-article">{data.catalogArticle || "TS3S4010S"}</span>
+				</div>
+
 				<div>
 					<span className="text-[11px] text-[var(--muted)] block">LOT / Партия:</span>
 					<span className="font-mono font-bold text-[var(--ink)]">{displayLot}</span>

@@ -102,6 +102,7 @@ export interface FastImplantPassportData {
 	readonly toothFdi: number;
 	readonly brand: string;
 	readonly model: string;
+	readonly catalogArticle?: string;
 	readonly diameterMm: number;
 	readonly lengthMm: number;
 	readonly torqueNcm: number;
@@ -123,6 +124,7 @@ export interface FastImplantPassportData {
 export function createDefaultPassportRecord(params: {
 	toothFdi: number;
 	brand?: string;
+	catalogArticle?: string;
 	diameterMm?: number;
 	lengthMm?: number;
 	torqueNcm?: number;
@@ -141,6 +143,15 @@ export function createDefaultPassportRecord(params: {
 		toothFdi: tooth,
 		brand: preset.brand,
 		model: preset.model,
+		catalogArticle:
+			params.catalogArticle ??
+			(preset.brand === "Osstem"
+				? "TS3S4010S"
+				: preset.brand === "Dentium"
+					? "FX4010"
+					: preset.brand === "Straumann"
+						? "021.2310"
+						: "TS3S4010S"),
 		diameterMm: params.diameterMm ?? preset.defaultDiameterMm,
 		lengthMm: params.lengthMm ?? preset.defaultLengthMm,
 		torqueNcm: params.torqueNcm ?? 35, // 35 Н/см по умолчанию

@@ -365,12 +365,12 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 						{/* Call 112 / SBAR Script */}
 						<button
 							type="button"
-							onClick={() => setShowDispatchScript(true)}
+							onClick={() => setShowDispatchScript((prev) => !prev)}
 							className="emergency-action-btn danger"
 							data-testid="open-dispatch-script-btn"
 						>
 							<PhoneCall size={18} />
-							<span>Скрипт СМП (112)</span>
+							<span>{showDispatchScript ? "Скрыть скрипт СМП" : "Скрипт СМП (112)"}</span>
 						</button>
 
 						{/* Close */}
@@ -385,6 +385,57 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 						</button>
 					</div>
 				</header>
+
+				{/* SBAR 112 DISPATCH INLINE ACCORDION (Anti-Matryoshka Law: Mandate 8d, Sin 6 - Modal depth strictly 1) */}
+				{showDispatchScript && (
+					<div
+						className="mx-4 sm:mx-6 my-3 p-4 bg-red-50/80 dark:bg-red-950/30 rounded-xl border-2 border-red-500 shadow-md flex flex-col gap-3 transition-all"
+						data-testid="dispatch-script-accordion"
+						role="region"
+						aria-labelledby="dispatch-script-title"
+					>
+						<div className="flex items-center justify-between border-b pb-2 border-red-200 dark:border-red-800">
+							<div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-black text-sm uppercase">
+								<PhoneCall size={18} />
+								<h3 id="dispatch-script-title" className="m-0 text-sm">Скрипт вызова СМП (112 / 103) по стандарту SBAR</h3>
+							</div>
+							<button
+								type="button"
+								onClick={() => setShowDispatchScript(false)}
+								className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/40 text-slate-500 cursor-pointer"
+								title="Свернуть скрипт СМП"
+							>
+								<X size={18} />
+							</button>
+						</div>
+
+						<div className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900 font-mono text-xs leading-relaxed text-slate-900 dark:text-slate-100 whitespace-pre-wrap max-h-60 overflow-y-auto select-all">
+							{dispatch112Script}
+						</div>
+
+						<div className="flex items-center justify-between gap-3 pt-1 flex-wrap">
+							<a
+								href="tel:112"
+								className="emergency-action-btn danger flex-1 justify-center min-h-[44px]"
+								onClick={() => logResuscitationEvent("ЗВОНОК 112")}
+							>
+								<Phone size={16} /> Набрать 112
+							</a>
+
+							<button
+								type="button"
+								onClick={() => {
+									navigator.clipboard?.writeText(dispatch112Script);
+									soundFeedback.playActionSuccess();
+									showToast("Текст скопирован в буфер обмена", "success");
+								}}
+								className="emergency-action-btn flex-1 justify-center min-h-[44px]"
+							>
+								<Copy size={16} /> Скопировать текст
+							</button>
+						</div>
+					</div>
+				)}
 
 				{/* 2. SCENARIO SELECTOR TABS */}
 				<nav className="emergency-scenarios-bar" aria-label="Сценарии неотложной помощи">
@@ -896,58 +947,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 						</button>
 					</div>
 				</footer>
-
-				{/* SBAR 112 DISPATCH MODAL DRAWER */}
-				{showDispatchScript && (
-					<div
-						className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-						role="dialog"
-						aria-modal="true"
-						aria-labelledby="dispatch-script-title"
-					>
-						<div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-xl p-5 border border-red-500 shadow-2xl flex flex-col gap-4">
-							<div className="flex items-center justify-between border-b pb-3 border-slate-200 dark:border-slate-800">
-								<div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-black text-base uppercase">
-									<PhoneCall size={20} />
-									<h3 id="dispatch-script-title" className="m-0 text-base">Скрипт вызова СМП (112 / 103) по стандарту SBAR</h3>
-								</div>
-								<button
-									type="button"
-									onClick={() => setShowDispatchScript(false)}
-									className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500"
-								>
-									<X size={18} />
-								</button>
-							</div>
-
-							<div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs leading-relaxed text-slate-900 dark:text-slate-100 whitespace-pre-wrap max-h-[60vh] overflow-y-auto select-all">
-								{dispatch112Script}
-							</div>
-
-							<div className="flex items-center justify-between gap-3 pt-2">
-								<a
-									href="tel:112"
-									className="emergency-action-btn danger flex-1 justify-center"
-									onClick={() => logResuscitationEvent("ЗВОНОК 112")}
-								>
-									<Phone size={16} /> Набрать 112
-								</a>
-
-								<button
-									type="button"
-									onClick={() => {
-										navigator.clipboard?.writeText(dispatch112Script);
-										soundFeedback.playActionSuccess();
-										showToast("Текст скопирован в буфер обмена", "success");
-									}}
-									className="emergency-action-btn flex-1 justify-center"
-								>
-									<Copy size={16} /> Скопировать текст
-								</button>
-							</div>
-						</div>
-					</div>
-				)}
 			</div>
 		</div>
 	);

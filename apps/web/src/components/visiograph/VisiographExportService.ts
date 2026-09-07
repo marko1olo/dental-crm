@@ -433,7 +433,7 @@ export function buildForm043ProtocolText(
 		const isDanger = payload.nerveDistanceMm < 2.0;
 		lines.push(
 			`Дистанция до нижнечелюстного канала (N. alveolaris inferior): ${payload.nerveDistanceMm.toFixed(1)} мм ${
-				isDanger ? "⚠️ [ВНИМАНИЕ: ОПАСНАЯ ЗОНА < 2.0 ММ! ВЫСОКИЙ РИСК ТРАВМАТИЗАЦИИ НЕРВА]" : "✓ [Безопасный коридор ≥ 2.0 мм]"
+				isDanger ? "[ВНИМАНИЕ: ОПАСНАЯ ЗОНА < 2.0 ММ! ВЫСОКИЙ РИСК ТРАВМАТИЗАЦИИ НЕРВА]" : "[Безопасный коридор ≥ 2.0 мм]"
 			}`,
 		);
 	}
