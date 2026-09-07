@@ -1581,7 +1581,8 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				</div>
 				<div className="document-patient-stats">
 					<span className="document-stat-pill issued" title="Выданные и подписанные документы">
-						✓ Выдано: {patientIssuedDocsCount}
+						<CheckCircle2 size={13} className="inline mr-1 text-emerald-500" aria-hidden="true" />
+						Выдано: {patientIssuedDocsCount}
 					</span>
 					<span className="document-stat-pill draft" title="Черновики в работе">
 						<Clock size={13} className="inline mr-1 text-amber-500" aria-hidden="true" />
@@ -7034,3 +7035,5 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		</div>
 	);
 }
+
+export { DocumentsOutpatientArchive } from "./components/documents/DocumentsOutpatientArchive";

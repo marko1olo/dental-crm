@@ -3,6 +3,7 @@ import { CheckCircle2, Printer, Sparkles } from "lucide-react";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
 	calculateDmftFromOdontogram,
+	renderForm043uHtml,
 	type FullForm043uPayload,
 	type ToothClinicalStatusCode,
 	type ToothSurface,
@@ -23,7 +24,7 @@ import {
 } from "../../../lib/clinicalProtocols043";
 
 export interface DentalMedicalCard043uFormProps {
-	initialPayload?: Partial<FullForm043uPayload>;
+	initialPayload?: Partial<FullForm043uPayload> & { isSigned?: boolean; isDraft?: boolean };
 	onChange?: (payload: FullForm043uPayload) => void;
 	disabled?: boolean;
 }
@@ -392,17 +393,74 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								Анамнез, СОПР и План
 							</button>
 						</div>
-						<button
-							type="button"
-							data-testid="btn-043-fast-print"
-							className="btn btn-sm btn-outline-primary"
-							onClick={() => window.print()}
-							title="Печать карты 043/у в любой момент (Мандат 8e)"
-							style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-						>
-							<Printer style={{ width: "16px", height: "16px" }} />
-							Печать 043/у
-						</button>
+						<div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+							<span
+								data-testid="form043-stamp-badge"
+								className={`badge ${initialPayload?.isSigned ? "badge-success" : "badge-secondary"}`}
+								style={{
+									padding: "4px 8px",
+									borderRadius: "4px",
+									fontSize: "11px",
+									fontWeight: 700,
+									letterSpacing: "0.05em",
+									textTransform: "uppercase",
+									background: initialPayload?.isSigned ? "rgba(16, 185, 129, 0.15)" : "rgba(100, 116, 139, 0.15)",
+									color: initialPayload?.isSigned ? "#059669" : "#64748b",
+									border: `1px solid ${initialPayload?.isSigned ? "rgba(16, 185, 129, 0.4)" : "rgba(100, 116, 139, 0.3)"}`,
+								}}
+							>
+								{initialPayload?.isSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
+							</span>
+							<button
+								type="button"
+								data-testid="btn-043-print-blank"
+								className="btn btn-sm btn-outline-secondary"
+								onClick={() => {
+									if (typeof window !== "undefined") {
+										const blankHtml = renderForm043uHtml({
+											medicalCardNumber: initialPayload?.medicalCardNumber || "__________",
+											cardOpenedDate: "«___» _________ 20___ г.",
+											patientFullName: "________________________________________________________",
+											patientBirthDate: "«___» _________ _____ г.",
+											patientPhone: "+7 (___) ___-__-__",
+											patientAddressRegistration: "________________________________________________________",
+											chiefComplaint: "________________________________________________________",
+											historyOfPresentIllness: "________________________________________________________",
+											allergologicalHistory: "________________________________________________________",
+											concomitantDiseases: "________________________________________________________",
+											attendingDoctorFullName: initialPayload?.attendingDoctorFullName || "________________________",
+											isClosed: false,
+											watermarkText: "ЧЕРНОВИК (БЛАНК)",
+										});
+										const printWindow = window.open("", "_blank");
+										if (printWindow) {
+											printWindow.document.write(blankHtml);
+											printWindow.document.close();
+											printWindow.focus();
+											printWindow.print();
+										} else {
+											window.print();
+										}
+									}
+								}}
+								title="Печать чистого бланка Формы 043/у со строками «________» для ручного заполнения на приёме (Мандат 8e)"
+								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+							>
+								<Printer style={{ width: "16px", height: "16px" }} />
+								Бланк («________»)
+							</button>
+							<button
+								type="button"
+								data-testid="btn-043-fast-print"
+								className="btn btn-sm btn-outline-primary"
+								onClick={() => window.print()}
+								title="Печать карты 043/у в любой момент (Мандат 8e)"
+								style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+							>
+								<Printer style={{ width: "16px", height: "16px" }} />
+								Печать 043/у
+							</button>
+						</div>
 					</div>
 
 					{activeTab === "formula" && (

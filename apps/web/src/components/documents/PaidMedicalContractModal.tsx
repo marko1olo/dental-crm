@@ -329,11 +329,11 @@ export function PaidMedicalContractModal({
 		onClose();
 	};
 
-	if (!isOpen || typeof document === "undefined") return null;
+	if (!isOpen) return null;
 
 	const moneyDetails = formatKopecksToRubAndKop(contractData.totalAmountKopecks);
 
-	return createPortal(
+	const modalContent = (
 		<div
 			className="paid-contract-modal-overlay"
 			role="dialog"
@@ -355,6 +355,22 @@ export function PaidMedicalContractModal({
 								</h2>
 								<span className="paid-contract-badge-law" title="Постановление Правительства РФ № 736 от 11.05.2023 · ст. 84 323-ФЗ">
 									Официальный договор
+								</span>
+								<span
+									data-testid="contract-stamp-badge"
+									className={`badge ${contractData.signedAt ? "badge-success" : "badge-secondary"}`}
+									style={{
+										padding: "3px 8px",
+										borderRadius: "4px",
+										fontSize: "12px",
+										fontWeight: 700,
+										textTransform: "uppercase",
+										background: contractData.signedAt ? "rgba(16, 185, 129, 0.15)" : "rgba(100, 116, 139, 0.15)",
+										color: contractData.signedAt ? "#059669" : "#64748b",
+										border: `1px solid ${contractData.signedAt ? "rgba(16, 185, 129, 0.4)" : "rgba(100, 116, 139, 0.3)"}`,
+									}}
+								>
+									{contractData.signedAt ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
 								</span>
 							</div>
 							<p className="paid-contract-subtitle">
@@ -1382,7 +1398,13 @@ export function PaidMedicalContractModal({
 					</div>
 				</footer>
 			</div>
-		</div>,
-		document.body,
+		</div>
 	);
+
+	if (typeof document === "undefined" || !document.body) {
+		return modalContent;
+	}
+
+	return createPortal(modalContent, document.body);
 }
+
