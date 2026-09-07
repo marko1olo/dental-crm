@@ -180,8 +180,11 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 	// Confirm SMS Code and Sign Batch
 	const handleConfirmSmsSigning = () => {
 		if (!signingSession) return;
-		if (!enteredSmsCode.trim()) {
-			showToast("Введите СМС-код подтверждения", "warning");
+		if (enteredSmsCode.length < 6) {
+			showToast(
+				"Введите 6-значный СМС-код подтверждения или нажмите кнопку ниже для сессионной ПЭП (Мандат 8e)",
+				"warning",
+			);
 			return;
 		}
 
@@ -738,7 +741,7 @@ export const DoctorMobileShiftModal: React.FC<DoctorMobileShiftModalProps> = ({
 							<button
 								type="button"
 								onClick={handleConfirmSmsSigning}
-								disabled={enteredSmsCode.length < 6 || isSubmittingCode}
+								disabled={isSubmittingCode}
 								className="w-full min-h-[48px] rounded-xl text-sm font-extrabold bg-[var(--teal-fill,#0d9488)] text-[var(--on-teal,#ffffff)] hover:opacity-90 shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
 								data-testid="confirm-sms-code-btn"
 							>
