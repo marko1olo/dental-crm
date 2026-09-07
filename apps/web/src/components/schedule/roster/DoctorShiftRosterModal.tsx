@@ -107,6 +107,150 @@ export function getMondayOfWeekIso(dateIso?: string): string {
 	return monday.toISOString().slice(0, 10);
 }
 
+/**
+ * 1-Click Chair-Doctor Shift Preset Application Engine (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ */
+export function applyCellShiftPreset(
+	currentShifts: DoctorShift[],
+	params: {
+		dateIso: string;
+		cabinetId: string;
+		chairId: string;
+		presetType: "morning" | "evening" | "full_day" | "clear";
+		doctorId?: string | undefined;
+		assistantId?: string | null | undefined;
+		staffList?: StaffMember[] | undefined;
+		cabinets?: CabinetDefinition[] | undefined;
+	},
+): DoctorShift[] {
+	const {
+		dateIso,
+		cabinetId,
+		chairId,
+		presetType,
+		doctorId,
+		assistantId,
+		staffList = DEFAULT_CLINIC_STAFF,
+		cabinets = CLINIC_CABINETS_CATALOG,
+	} = params;
+
+	if (presetType === "clear") {
+		return currentShifts.filter(
+			(s) =>
+				!(
+					s.dateIso === dateIso &&
+					s.chairId === chairId &&
+					(!doctorId || s.doctorId === doctorId)
+				),
+		);
+	}
+
+	const doc =
+		(doctorId ? staffList.find((s) => s.id === doctorId) : null) ||
+		staffList.find((s) => s.isDoctor) ||
+		staffList[0] ||
+		DEFAULT_CLINIC_STAFF[0]!;
+
+	const asst =
+		assistantId !== undefined
+			? assistantId
+				? staffList.find((s) => s.id === assistantId) || null
+				: null
+			: doc.defaultAssistantId
+				? staffList.find((s) => s.id === doc.defaultAssistantId) || null
+				: null;
+
+	let startTime = "08:00";
+	let endTime = "14:00";
+	let durationHours = 6.0;
+	let archetypeId: ShiftArchetypeId = "morning_shift";
+	let breakMinutes = 0;
+	let customNotes = "";
+
+	if (presetType === "morning") {
+		startTime = "08:00";
+		endTime = "14:00";
+		durationHours = 6.0;
+		archetypeId = "morning_shift";
+		breakMinutes = 0;
+		customNotes = "Утро 08:00–14:00";
+	} else if (presetType === "evening") {
+		startTime = "14:00";
+		endTime = "20:00";
+		durationHours = 6.0;
+		archetypeId = "evening_shift";
+		breakMinutes = 0;
+		customNotes = "Вечер 14:00–20:00";
+	} else if (presetType === "full_day") {
+		startTime = "08:00";
+		endTime = "20:00";
+		durationHours = 11.0;
+		archetypeId = "morning_shift";
+		breakMinutes = 60;
+		customNotes = "Весь день 08:00–20:00";
+	}
+
+	const targetCab =
+		cabinets.find((c) => c.id === cabinetId) ||
+		cabinets[0] ||
+		CLINIC_CABINETS_CATALOG[0]!;
+	const targetChair =
+		targetCab.chairs.find((ch) => ch.id === chairId) ||
+		targetCab.chairs[0] || {
+			id: chairId || "chair-1a",
+			name: "Кресло 1А",
+			equipment: "",
+		};
+
+	const newShift: DoctorShift = {
+		id: `shift-${dateIso}-${targetChair.id}-${doc.id}-${presetType}-${Date.now()}`,
+		doctorId: doc.id,
+		doctorName: doc.shortName || doc.fullName,
+		doctorRole: doc.role,
+		assistantId: asst ? asst.id : null,
+		assistantName: asst ? asst.shortName || asst.fullName : null,
+		cabinetId: targetCab.id,
+		chairId: targetChair.id,
+		dateIso,
+		archetypeId,
+		startTime,
+		endTime,
+		durationHours,
+		breakMinutes,
+		isNight: false,
+		nightHours: 0,
+		status: "scheduled",
+		customNotes,
+	};
+
+	const filtered = currentShifts.filter((s) => {
+		if (s.dateIso !== dateIso || s.chairId !== targetChair.id) {
+			return true;
+		}
+		if (presetType === "full_day") {
+			return false;
+		}
+		if (s.doctorId === doc.id) {
+			return false;
+		}
+		if (
+			presetType === "morning" &&
+			(s.startTime < "14:00" || s.archetypeId === "morning_shift")
+		) {
+			return false;
+		}
+		if (
+			presetType === "evening" &&
+			(s.startTime >= "14:00" || s.archetypeId === "evening_shift")
+		) {
+			return false;
+		}
+		return true;
+	});
+
+	return [...filtered, newShift];
+}
+
 export function DoctorShiftRosterModal({
 	isOpen,
 	onClose,
@@ -473,6 +617,42 @@ export function DoctorShiftRosterModal({
 		handleApplyPreset("five_day", "Пятидневка (базовый)");
 	};
 
+	// 1-Click shift preset application in cell (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	const handleApplyCellPreset = (
+		dateIso: string,
+		cabinetId: string,
+		chairId: string,
+		presetType: "morning" | "evening" | "full_day" | "clear",
+		doctorId?: string,
+	) => {
+		const nextShifts = applyCellShiftPreset(shifts, {
+			dateIso,
+			cabinetId,
+			chairId,
+			presetType,
+			doctorId,
+			staffList,
+			cabinets,
+		});
+		setShifts(nextShifts);
+
+		const presetLabels = {
+			morning: "Утро (08:00–14:00)",
+			evening: "Вечер (14:00–20:00)",
+			full_day: "Весь день (08:00–20:00)",
+			clear: "Выходной",
+		};
+
+		setNotification({
+			type: presetType === "clear" ? "info" : "success",
+			message:
+				presetType === "clear"
+					? "Смена очищена (Выходной день)"
+					: `Назначена смена: ${presetLabels[presetType]}`,
+		});
+		setTimeout(() => setNotification(null), 3000);
+	};
+
 	// Save changes (Non-blocking Mandate 8e)
 	const handleSaveAll = async (closeAfter = false) => {
 		let shiftsToSave = shifts;
@@ -564,6 +744,7 @@ export function DoctorShiftRosterModal({
 					onOpenInternalT13Modal={() => setIsT13ModalOpen(true)}
 					onExportT13={handleExportT13}
 					onClose={onClose}
+					onApplyCellPreset={handleApplyCellPreset}
 				/>
 
 				{/* Quick Shift Edit Drawer */}

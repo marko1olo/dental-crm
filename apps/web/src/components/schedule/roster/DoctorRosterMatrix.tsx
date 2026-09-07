@@ -3,12 +3,19 @@
  * Compliance: TK RF Article 350 (33-hour medical workweek), Form T-13, Mandate 8e, Mandate 8d
  */
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
 	AlertTriangle,
+	Building,
 	Calendar as CalendarIcon,
+	Clock,
 	Download,
+	Moon,
+	Sun,
+	Trash2,
 	Users,
+	X,
+	XCircle,
 } from "lucide-react";
 import type {
 	CabinetDefinition,
@@ -54,6 +61,28 @@ export interface DoctorRosterMatrixProps {
 	onOpenInternalT13Modal: () => void;
 	onExportT13: () => void;
 	onClose: () => void;
+	// 1-Click Chair-Doctor shift preset toggling (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+	onApplyCellPreset?: (
+		dateIso: string,
+		cabinetId: string,
+		chairId: string,
+		presetType: "morning" | "evening" | "full_day" | "clear",
+		doctorId?: string,
+	) => void;
+	activePopoverCell?: {
+		dateIso: string;
+		cabinetId: string;
+		chairId: string;
+		doctorId?: string;
+	} | null;
+	onActivePopoverCellChange?: (
+		cell: {
+			dateIso: string;
+			cabinetId: string;
+			chairId: string;
+			doctorId?: string;
+		} | null,
+	) => void;
 }
 
 export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
@@ -77,7 +106,123 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 		onOpenInternalT13Modal,
 		onExportT13,
 		onClose,
+		onApplyCellPreset,
+		activePopoverCell,
+		onActivePopoverCellChange,
 	}) {
+		const [internalPopoverCell, setInternalPopoverCell] = useState<{
+			dateIso: string;
+			cabinetId: string;
+			chairId: string;
+			doctorId?: string;
+		} | null>(null);
+
+		const activePopover =
+			activePopoverCell !== undefined
+				? activePopoverCell
+				: internalPopoverCell;
+
+		const setActivePopover = (
+			cell: {
+				dateIso: string;
+				cabinetId: string;
+				chairId: string;
+				doctorId?: string;
+			} | null,
+		) => {
+			setInternalPopoverCell(cell);
+			onActivePopoverCellChange?.(cell);
+		};
+
+		// Flat list of all available chairs across cabinets for quick chair selection
+		const flatChairsList = useMemo(() => {
+			const list: Array<{
+				cabinetId: string;
+				cabinetName: string;
+				chairId: string;
+				chairName: string;
+			}> = [];
+			for (const cab of cabinets) {
+				for (const ch of cab.chairs) {
+					list.push({
+						cabinetId: cab.id,
+						cabinetName: cab.name,
+						chairId: ch.id,
+						chairName: ch.name,
+					});
+				}
+			}
+			return list;
+		}, [cabinets]);
+
+		const [selectedDocId, setSelectedDocId] = useState<string>("");
+		const [selectedChairKey, setSelectedChairKey] = useState<string>("");
+
+		React.useEffect(() => {
+			if (activePopover) {
+				const docInCell =
+					activePopover.doctorId ||
+					shifts.find(
+						(s) =>
+							s.dateIso === activePopover.dateIso &&
+							s.chairId === activePopover.chairId &&
+							s.status !== "cancelled",
+					)?.doctorId ||
+					staffList.find(
+						(s) =>
+							s.isDoctor &&
+							s.preferredChairId === activePopover.chairId,
+					)?.id ||
+					staffList.find((s) => s.isDoctor)?.id ||
+					staffList[0]?.id ||
+					"";
+				setSelectedDocId(docInCell);
+
+				const currentChairKey = `${activePopover.cabinetId}::${activePopover.chairId}`;
+				setSelectedChairKey(currentChairKey);
+			}
+		}, [activePopover, shifts, staffList]);
+
+		const handleApplyPresetInPopover = (
+			presetType: "morning" | "evening" | "full_day" | "clear",
+		) => {
+			if (!activePopover) return;
+			const parts = selectedChairKey ? selectedChairKey.split("::") : [];
+			const cabId = parts[0] || activePopover.cabinetId;
+			const chId = parts[1] || activePopover.chairId;
+			const docId =
+				selectedDocId ||
+				activePopover.doctorId ||
+				staffList.find((s) => s.isDoctor)?.id;
+
+			if (onApplyCellPreset) {
+				onApplyCellPreset(
+					activePopover.dateIso,
+					cabId,
+					chId,
+					presetType,
+					docId,
+				);
+			} else {
+				if (presetType === "clear") {
+					const toCancel = shifts.find(
+						(s) =>
+							s.dateIso === activePopover.dateIso &&
+							s.chairId === chId &&
+							(!docId || s.doctorId === docId),
+					);
+					if (toCancel) onOpenEdit({ ...toCancel, status: "cancelled" });
+				} else {
+					onOpenCreateInCell(activePopover.dateIso, cabId, chId);
+				}
+			}
+			setActivePopover(null);
+		};
+
+		const popoverDayInfo = useMemo(() => {
+			if (!activePopover) return null;
+			return weekDays.find((d) => d.dateIso === activePopover.dateIso);
+		}, [activePopover, weekDays]);
 		return (
 			<div className="roster-main-area">
 				{/* TAB 1: Cabinets View */}
@@ -141,7 +286,17 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 											);
 
 											return (
-												<td key={day.dateIso}>
+												<td
+													key={day.dateIso}
+													onClick={() =>
+														setActivePopover({
+															dateIso: day.dateIso,
+															cabinetId: cab.id,
+															chairId: chair.id,
+														})
+													}
+													style={{ cursor: "pointer" }}
+												>
 													{cellShifts.map((shift) => {
 														const arch =
 															SHIFT_ARCHETYPES[shift.archetypeId] ||
@@ -157,8 +312,19 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 																style={{
 																	backgroundColor: `${arch.color}15`,
 																	borderLeft: `4px solid ${arch.color}`,
+																	minHeight: "44px",
+																	cursor: "pointer",
 																}}
-																onClick={() => onOpenEdit(shift)}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	setActivePopover({
+																		dateIso: day.dateIso,
+																		cabinetId: cab.id,
+																		chairId: chair.id,
+																		doctorId: shift.doctorId,
+																	});
+																}}
+																title="Кликните для быстрой смены или выбора пресета"
 															>
 																<div className="roster-shift-time">
 																	<span style={{ color: arch.color }}>
@@ -213,11 +379,16 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 													<button
 														type="button"
 														className="roster-cell-add-btn"
-														onClick={() =>
-															onOpenCreateInCell(day.dateIso, cab.id, chair.id)
-														}
+														onClick={(e) => {
+															e.stopPropagation();
+															setActivePopover({
+																dateIso: day.dateIso,
+																cabinetId: cab.id,
+																chairId: chair.id,
+															});
+														}}
 														style={{ minHeight: "44px" }}
-														title={`Добавить смену на ${day.dayName} (${chair.name})`}
+														title={`Назначить смену на ${day.dayName} (${chair.name})`}
 													>
 														+ Смена
 													</button>
@@ -300,8 +471,30 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 												const dayShifts = userShifts.filter(
 													(s) => s.dateIso === day.dateIso,
 												);
+												const docChair =
+													staff.preferredChairId ||
+													flatChairsList[0]?.chairId ||
+													"";
+												const cabForChair =
+													cabinets.find((c) =>
+														c.chairs.some((ch) => ch.id === docChair),
+													)?.id ||
+													cabinets[0]?.id ||
+													"";
+
 												return (
-													<td key={day.dateIso}>
+													<td
+														key={day.dateIso}
+														onClick={() => {
+															setActivePopover({
+																dateIso: day.dateIso,
+																cabinetId: cabForChair,
+																chairId: docChair,
+																doctorId: staff.id,
+															});
+														}}
+														style={{ cursor: "pointer" }}
+													>
 														{dayShifts.map((s) => (
 															<div
 																key={s.id}
@@ -309,8 +502,28 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 																style={{
 																	background: "var(--paper-soft, #f8fafc)",
 																	border: "1px solid var(--line, #cbd5e1)",
+																	minHeight: "44px",
+																	display: "flex",
+																	flexDirection: "column",
+																	justifyContent: "center",
+																	cursor: "pointer",
 																}}
-																onClick={() => onOpenEdit(s)}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	const cabId =
+																		cabinets.find((c) =>
+																			c.chairs.some((ch) => ch.id === s.chairId),
+																		)?.id ||
+																		cabinets[0]?.id ||
+																		"";
+																	setActivePopover({
+																		dateIso: day.dateIso,
+																		cabinetId: cabId,
+																		chairId: s.chairId,
+																		doctorId: staff.id,
+																	});
+																}}
+																title="Кликните для быстрой смены или выбора пресета"
 															>
 																<div
 																	style={{
@@ -331,16 +544,27 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 															</div>
 														))}
 														{dayShifts.length === 0 && (
-															<div
+															<button
+																type="button"
+																className="roster-cell-add-btn"
 																style={{
-																	color: "var(--muted, #94a3b8)",
-																	fontSize: "0.75rem",
-																	textAlign: "center",
-																	paddingTop: "0.5rem",
+																	minHeight: "44px",
+																	width: "100%",
+																	marginTop: "0.25rem",
 																}}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	setActivePopover({
+																		dateIso: day.dateIso,
+																		cabinetId: cabForChair,
+																		chairId: docChair,
+																		doctorId: staff.id,
+																	});
+																}}
+																title={`Назначить смену: ${staff.fullName}`}
 															>
-																Выходной
-															</div>
+																+ Смена
+															</button>
 														)}
 													</td>
 												);
@@ -370,7 +594,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 												<div
 													style={{
 														height: "6px",
-														background: "#e2e8f0",
+														background: "var(--line, #334155)",
 														borderRadius: "9999px",
 														overflow: "hidden",
 														marginTop: "4px",
@@ -679,6 +903,436 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 								)}
 							</tbody>
 						</table>
+					</div>
+				)}
+
+				{/* 1-Click Fast Shift & Chair-Doctor Binding Popover (Mandates 8e, 8k, 8n) */}
+				{activePopover && (
+					<div
+						className="roster-cell-popover-overlay"
+						data-testid="roster-cell-popover"
+						style={{
+							position: "fixed",
+							inset: 0,
+							backgroundColor: "rgba(15, 23, 42, 0.5)",
+							backdropFilter: "blur(2px)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							zIndex: 1000,
+							padding: "1rem",
+						}}
+						onClick={(e) => {
+							if (e.target === e.currentTarget) {
+								setActivePopover(null);
+							}
+						}}
+					>
+						<div
+							className="roster-cell-popover-dialog"
+							style={{
+								backgroundColor: "var(--paper, #ffffff)",
+								color: "var(--ink, #0f172a)",
+								border: "1px solid var(--line, #cbd5e1)",
+								borderRadius: "0.75rem",
+								boxShadow:
+									"0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+								width: "100%",
+								maxWidth: "480px",
+								padding: "1.25rem",
+								display: "flex",
+								flexDirection: "column",
+								gap: "1rem",
+							}}
+						>
+							{/* Popover Header */}
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									borderBottom: "1px solid var(--line, #e2e8f0)",
+									paddingBottom: "0.75rem",
+								}}
+							>
+								<div>
+									<h4
+										style={{
+											margin: 0,
+											fontSize: "1rem",
+											fontWeight: 700,
+											display: "flex",
+											alignItems: "center",
+											gap: "0.5rem",
+										}}
+									>
+										<span>Назначение смены в 1 клик</span>
+										<span
+											style={{
+												fontSize: "0.75rem",
+												fontWeight: 500,
+												padding: "0.125rem 0.5rem",
+												borderRadius: "9999px",
+												backgroundColor: "var(--teal-soft, #f0fdfa)",
+												color: "var(--teal, #0d9488)",
+											}}
+										>
+											StomX / DentalPRO
+										</span>
+									</h4>
+									<div
+										style={{
+											fontSize: "0.8125rem",
+											color: "var(--muted, #64748b)",
+											marginTop: "2px",
+										}}
+									>
+										{popoverDayInfo?.dayName || ""}, {activePopover.dateIso}
+									</div>
+								</div>
+								<button
+									type="button"
+									onClick={() => setActivePopover(null)}
+									style={{
+										minHeight: "44px",
+										minWidth: "44px",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										borderRadius: "0.375rem",
+										background: "transparent",
+										border: "none",
+										color: "var(--muted, #64748b)",
+										cursor: "pointer",
+									}}
+									title="Закрыть"
+								>
+									<X size={18} />
+								</button>
+							</div>
+
+							{/* Quick 1-Click Presets Grid */}
+							<div
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									gap: "0.5rem",
+								}}
+							>
+								<div
+									style={{
+										fontSize: "0.75rem",
+										fontWeight: 600,
+										color: "var(--muted, #64748b)",
+										textTransform: "uppercase",
+										letterSpacing: "0.05em",
+									}}
+								>
+									Быстрые шаблоны смен (Мандат 8k)
+								</div>
+								<div
+									style={{
+										display: "grid",
+										gridTemplateColumns: "1fr 1fr",
+										gap: "0.5rem",
+									}}
+								>
+									<button
+										type="button"
+										data-testid="cell-preset-morning"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyPresetInPopover("morning")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Sun size={18} color="#f59e0b" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Утро</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												08:00–14:00 (6ч)
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
+										data-testid="cell-preset-evening"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyPresetInPopover("evening")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Moon size={18} color="#6366f1" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Вечер</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												14:00–20:00 (6ч)
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
+										data-testid="cell-preset-full-day"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyPresetInPopover("full_day")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Building size={18} color="#0d9488" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Весь день</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												08:00–20:00 (11ч)
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
+										data-testid="cell-preset-clear"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyPresetInPopover("clear")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "#ef4444",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Trash2 size={18} color="#ef4444" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Выходной</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												Очистить смену
+											</div>
+										</div>
+									</button>
+								</div>
+							</div>
+
+							{/* Doctor and Chair selectors */}
+							<div
+								style={{
+									display: "flex",
+									flexDirection: "column",
+									gap: "0.75rem",
+								}}
+							>
+								<div>
+									<label
+										htmlFor="popover-doctor-select"
+										style={{
+											display: "block",
+											fontSize: "0.75rem",
+											fontWeight: 600,
+											color: "var(--muted, #64748b)",
+											marginBottom: "0.25rem",
+										}}
+									>
+										Врач / Специалист
+									</label>
+									<select
+										id="popover-doctor-select"
+										data-testid="popover-doctor-select"
+										value={selectedDocId}
+										onChange={(e) => setSelectedDocId(e.target.value)}
+										style={{
+											width: "100%",
+											minHeight: "44px",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper, #ffffff)",
+											color: "var(--ink, #0f172a)",
+											fontSize: "0.875rem",
+										}}
+									>
+										{staffList
+											.filter((s) => s.isDoctor)
+											.map((doc) => (
+												<option key={doc.id} value={doc.id}>
+													{doc.fullName} (
+													{MEDICAL_STAFF_ROLES[doc.role]?.nameRu || "Врач"})
+												</option>
+											))}
+									</select>
+								</div>
+
+								<div>
+									<label
+										htmlFor="popover-chair-select"
+										style={{
+											display: "block",
+											fontSize: "0.75rem",
+											fontWeight: 600,
+											color: "var(--muted, #64748b)",
+											marginBottom: "0.25rem",
+										}}
+									>
+										Кабинет и Кресло
+									</label>
+									<select
+										id="popover-chair-select"
+										data-testid="popover-chair-select"
+										value={selectedChairKey}
+										onChange={(e) => setSelectedChairKey(e.target.value)}
+										style={{
+											width: "100%",
+											minHeight: "44px",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper, #ffffff)",
+											color: "var(--ink, #0f172a)",
+											fontSize: "0.875rem",
+										}}
+									>
+										{flatChairsList.map((item) => (
+											<option
+												key={`${item.cabinetId}::${item.chairId}`}
+												value={`${item.cabinetId}::${item.chairId}`}
+											>
+												{item.cabinetName} — {item.chairName}
+											</option>
+										))}
+									</select>
+								</div>
+							</div>
+
+							{/* Footer / Full Edit Button */}
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									borderTop: "1px solid var(--line, #e2e8f0)",
+									paddingTop: "0.75rem",
+									marginTop: "0.25rem",
+								}}
+							>
+								<button
+									type="button"
+									data-testid="popover-full-edit-btn"
+									className="roster-btn roster-btn-secondary"
+									onClick={() => {
+										const parts = selectedChairKey
+											? selectedChairKey.split("::")
+											: [];
+										const cabId = parts[0] || activePopover.cabinetId;
+										const chId = parts[1] || activePopover.chairId;
+										const existing = shifts.find(
+											(s) =>
+												s.dateIso === activePopover.dateIso &&
+												s.chairId === chId &&
+												s.status !== "cancelled" &&
+												(!selectedDocId || s.doctorId === selectedDocId),
+										);
+										if (existing) {
+											onOpenEdit(existing);
+										} else {
+											onOpenCreateInCell(activePopover.dateIso, cabId, chId);
+										}
+										setActivePopover(null);
+									}}
+									style={{
+										minHeight: "44px",
+										display: "flex",
+										alignItems: "center",
+										gap: "0.5rem",
+										fontSize: "0.8125rem",
+										color: "var(--muted, #64748b)",
+									}}
+								>
+									<Clock size={16} />
+									<span>Подробное редактирование...</span>
+								</button>
+
+								<button
+									type="button"
+									className="roster-btn roster-btn-secondary"
+									onClick={() => setActivePopover(null)}
+									style={{
+										minHeight: "44px",
+										fontSize: "0.8125rem",
+									}}
+								>
+									Отмена
+								</button>
+							</div>
+						</div>
 					</div>
 				)}
 			</div>

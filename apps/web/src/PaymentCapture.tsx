@@ -329,7 +329,7 @@ function TaxPayerDetails({
 							placeholder=" "
 						/>
 						<label htmlFor="payment-payer-inn">
-							ИНН плательщика (если есть)
+							ИНН плательщика (если есть, физлицам по 54-ФЗ не требуется)
 						</label>
 					</div>
 					<div className="smart-field no-float">
@@ -546,6 +546,7 @@ function InstallmentCalculator({
 									key={m}
 									type="button"
 									className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${months === m ? "active" : ""}`}
+									style={{ minHeight: "44px" }}
 									onClick={() => setMonths(m)}
 								>
 									{m} мес
@@ -591,6 +592,7 @@ function InstallmentCalculator({
 									key={p}
 									type="button"
 									className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${downPaymentPercent === p ? "active" : ""}`}
+									style={{ minHeight: "44px" }}
 									onClick={() => setDownPaymentPercent(p)}
 								>
 									{p}%
@@ -760,7 +762,24 @@ export function PaymentCapture({
 		}
 	};
 
-	const amountMissingStep = validateRubAmountInput(amount);
+	type DoctorDiscountPreset =
+		| "warranty_100"
+		| "colleague_100"
+		| "percent_50"
+		| "percent_20"
+		| "percent_10";
+
+	const [selectedDoctorDiscount, setSelectedDoctorDiscount] =
+		useState<DoctorDiscountPreset | null>(null);
+
+	const isZeroAllowedDiscount =
+		(selectedDoctorDiscount === "warranty_100" ||
+			selectedDoctorDiscount === "colleague_100") &&
+		(amount.trim() === "0" || normalizeRubAmountInput(amount) === 0);
+
+	const amountMissingStep = isZeroAllowedDiscount
+		? null
+		: validateRubAmountInput(amount);
 	// rubAmountInputMissingStep(amount)
 	const taxDeductionRequested =
 		taxDeductionCode === "1" || taxDeductionCode === "2";
@@ -828,6 +847,140 @@ export function PaymentCapture({
 			: null,
 	].filter((step): step is string => Boolean(step));
 	const paymentReadyToSubmit = paymentMissingSteps.length === 0;
+
+	const applyDoctorDiscount = (preset: DoctorDiscountPreset) => {
+		if (selectedDoctorDiscount === preset) {
+			setSelectedDoctorDiscount(null);
+			return;
+		}
+		setSelectedDoctorDiscount(preset);
+
+		const base =
+			remainingDebt && remainingDebt > 0
+				? remainingDebt
+				: (normalizeRubAmountInput(amount) ?? 0);
+
+		if (preset === "warranty_100") {
+			onAmountChange("0");
+			showToast(
+				"Применена 100% скидка врача: гарантийная переделка (к оплате 0 ₽, без пароля)",
+				"info",
+			);
+			return;
+		}
+
+		if (preset === "colleague_100") {
+			onAmountChange("0");
+			showToast(
+				"Применена 100% скидка для персонала (к оплате 0 ₽, без пароля)",
+				"info",
+			);
+			return;
+		}
+
+		if (base > 0) {
+			if (preset === "percent_50") {
+				const discounted = Math.round(base * 0.5);
+				onAmountChange(rubAmountForInput(discounted));
+				showToast(`Применена скидка врача 50%: ${money(discounted)}`, "info");
+				return;
+			}
+			if (preset === "percent_20") {
+				const discounted = Math.round(base * 0.8);
+				onAmountChange(rubAmountForInput(discounted));
+				showToast(`Применена скидка врача 20%: ${money(discounted)}`, "info");
+				return;
+			}
+			if (preset === "percent_10") {
+				const discounted = Math.round(base * 0.9);
+				onAmountChange(rubAmountForInput(discounted));
+				showToast(`Применена скидка врача 10%: ${money(discounted)}`, "info");
+				return;
+			}
+		} else {
+			showToast(
+				"Укажите базовую сумму платежа или выберите долг для расчета скидки",
+				"warning",
+			);
+		}
+	};
+
+	const handlePrimarySubmit = () => {
+		if (isSaving) return;
+
+		if (!patientId) {
+			showToast("Выберите пациента для проведения платежа", "warning");
+			return;
+		}
+
+		if (!paymentReadyToSubmit) {
+			const parsed = normalizeRubAmountInput(amount);
+			if (parsed === null || parsed === 0 || !amount.trim()) {
+				if (remainingDebt && remainingDebt > 0) {
+					onAmountChange(rubAmountForInput(remainingDebt));
+					showToast(
+						`Установлена сумма по смете: ${money(remainingDebt)}. Нажмите «Принять оплату» для подтверждения`,
+						"info",
+					);
+					return;
+				}
+				showToast(
+					"Укажите сумму платежа или выберите услугу из плана",
+					"warning",
+				);
+				return;
+			}
+			const firstMissing = paymentMissingSteps[0];
+			showToast(
+				firstMissing
+					? `Для проведения платежа: ${firstMissing}`
+					: "Укажите сумму платежа или выберите услугу из плана",
+				"warning",
+			);
+			return;
+		}
+
+		onSubmit();
+	};
+
+	const handleSberPosClick = () => {
+		if (isSaving) return;
+
+		if (!patientId) {
+			showToast("Выберите пациента для проведения платежа", "warning");
+			return;
+		}
+
+		if (!paymentReadyToSubmit) {
+			const parsed = normalizeRubAmountInput(amount);
+			if (parsed === null || parsed === 0 || !amount.trim()) {
+				if (remainingDebt && remainingDebt > 0) {
+					onAmountChange(rubAmountForInput(remainingDebt));
+					showToast(
+						`Установлена сумма по смете: ${money(remainingDebt)}. Открываю терминал Сбербанка`,
+						"info",
+					);
+					setIsSberPosModalOpen(true);
+					return;
+				}
+				showToast(
+					"Укажите сумму платежа или выберите услугу из плана",
+					"warning",
+				);
+				return;
+			}
+			const firstMissing = paymentMissingSteps[0];
+			showToast(
+				firstMissing
+					? `Для проведения платежа: ${firstMissing}`
+					: "Укажите сумму платежа или выберите услугу из плана",
+				"warning",
+			);
+			return;
+		}
+
+		setIsSberPosModalOpen(true);
+	};
 	const applyPatientTaxDefaults = () => {
 		const hasPatientData = Boolean(
 			patientDefaults?.fullName?.trim() ||
@@ -959,6 +1112,7 @@ export function PaymentCapture({
 						<button
 							type="button"
 							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
+							style={{ minHeight: "44px" }}
 							onClick={() => handleSmartDictation("5000 наличными")}
 						>
 							<Banknote size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
@@ -967,6 +1121,7 @@ export function PaymentCapture({
 						<button
 							type="button"
 							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
+							style={{ minHeight: "44px" }}
 							onClick={() => handleSmartDictation("15000 по карте")}
 						>
 							<CreditCard size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
@@ -975,6 +1130,7 @@ export function PaymentCapture({
 						<button
 							type="button"
 							className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold inline-flex items-center gap-1.5"
+							style={{ minHeight: "44px" }}
 							onClick={() => handleSmartDictation("20000 сбп, вычет")}
 						>
 							<QrCode size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" aria-hidden="true" />
@@ -1025,6 +1181,7 @@ export function PaymentCapture({
 							<button
 								type="button"
 								className="quick-chip min-h-[44px] px-4 font-bold text-sm"
+								style={{ minHeight: "44px" }}
 								onClick={() => onAmountChange(rubAmountForInput(remainingDebt))}
 							>
 								Долг: {money(remainingDebt)}
@@ -1035,6 +1192,7 @@ export function PaymentCapture({
 								key={val}
 								type="button"
 								className="quick-chip min-h-[44px] px-3.5 font-bold text-sm"
+								style={{ minHeight: "44px" }}
 								onClick={() => onAmountChange(String(val))}
 							>
 								{val} ₽
@@ -1043,6 +1201,72 @@ export function PaymentCapture({
 					</div>
 				)}
 			</div>
+
+			{/* Скидки врача и гарантийные переделки (Мандат 8e п. 7, Мандат 8n: без паролей администратора и блокировок) */}
+			<div
+				className="doctor-discounts-section"
+				style={{ marginTop: "12px", marginBottom: "16px" }}
+				data-testid="doctor-discounts-section"
+			>
+				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider block mb-1.5">
+					Скидка врача / Гарантия (без паролей администратора):
+				</span>
+				<div
+					role="toolbar"
+					className="quick-chips-row"
+					style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}
+					aria-label="Скидки врача и гарантийные переделки"
+				>
+					<button
+						type="button"
+						className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-extrabold ${selectedDoctorDiscount === "warranty_100" ? "active bg-blue-600 text-white" : ""}`}
+						style={{ minHeight: "44px" }}
+						onClick={() => applyDoctorDiscount("warranty_100")}
+						data-testid="btn-doctor-discount-warranty"
+						title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без блокировок)"
+					>
+						★ 100% Гарантия (Переделка)
+					</button>
+					<button
+						type="button"
+						className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-bold ${selectedDoctorDiscount === "colleague_100" ? "active bg-purple-600 text-white" : ""}`}
+						style={{ minHeight: "44px" }}
+						onClick={() => applyDoctorDiscount("colleague_100")}
+						data-testid="btn-doctor-discount-colleague"
+						title="100% скидка для коллег и персонала клиники"
+					>
+						Персонал 100%
+					</button>
+					<button
+						type="button"
+						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_50" ? "active" : ""}`}
+						style={{ minHeight: "44px" }}
+						onClick={() => applyDoctorDiscount("percent_50")}
+						data-testid="btn-doctor-discount-50"
+					>
+						Скидка 50%
+					</button>
+					<button
+						type="button"
+						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_20" ? "active" : ""}`}
+						style={{ minHeight: "44px" }}
+						onClick={() => applyDoctorDiscount("percent_20")}
+						data-testid="btn-doctor-discount-20"
+					>
+						Скидка 20%
+					</button>
+					<button
+						type="button"
+						className={`quick-chip min-h-[44px] px-3 text-xs sm:text-sm font-semibold ${selectedDoctorDiscount === "percent_10" ? "active" : ""}`}
+						style={{ minHeight: "44px" }}
+						onClick={() => applyDoctorDiscount("percent_10")}
+						data-testid="btn-doctor-discount-10"
+					>
+						Скидка 10%
+					</button>
+				</div>
+			</div>
+
 			<div
 				role="toolbar"
 				className="quick-chips-row"
@@ -1052,6 +1276,7 @@ export function PaymentCapture({
 				{visiblePaymentMethods.map((paymentMethod) => (
 					<button
 						className={`quick-chip min-h-[44px] px-4 text-xs sm:text-sm font-bold ${method === paymentMethod ? "active" : ""}`}
+						style={{ minHeight: "44px" }}
 						key={paymentMethod}
 						type="button"
 						aria-pressed={method === paymentMethod}
@@ -1207,26 +1432,30 @@ export function PaymentCapture({
 			</p>
 			<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
 				<button
-					className="primary-button"
+					className="primary-button min-h-[44px]"
+					style={{ minHeight: "44px" }}
 					type="button"
-					onClick={onSubmit}
+					onClick={handlePrimarySubmit}
 					aria-busy={isSaving || undefined}
 					aria-describedby={
 						!paymentReadyToSubmit ? paymentMissingId : undefined
 					}
-					disabled={isSaving || !paymentReadyToSubmit}
+					disabled={isSaving}
+					data-testid="payment-submit-button"
 				>
 					<CreditCard aria-hidden="true" />{" "}
 					{isSaving ? "Записываю" : "Принять оплату"}
 				</button>
 				<button
-					className="secondary-button"
+					className="secondary-button min-h-[44px]"
+					style={{ minHeight: "44px" }}
 					type="button"
-					onClick={() => setIsSberPosModalOpen(true)}
+					onClick={handleSberPosClick}
 					aria-describedby={
 						!paymentReadyToSubmit ? paymentMissingId : undefined
 					}
-					disabled={isSaving || !paymentReadyToSubmit || !patientId}
+					disabled={isSaving}
+					data-testid="payment-sberpos-button"
 				>
 					<CreditCard aria-hidden="true" /> Оплата картой (Сбербанк POS / SberPay QR)
 				</button>
