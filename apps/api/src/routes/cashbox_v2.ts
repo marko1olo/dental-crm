@@ -5,9 +5,11 @@
  */
 
 import {
+	kopecksToRub,
 	kopecksToRubles,
 	nonNegativeMoneyRubSchema,
 	positiveMoneyRubSchema,
+	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -299,7 +301,7 @@ export async function registerCashboxV2Routes(app: FastifyInstance) {
 			}
 
 			const balanceBefore = targetBox.balanceRub;
-			const balanceAfter = kopecksToRubles(rublesToKopecks(balanceBefore) + rublesToKopecks(amountRub));
+			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) + rubToKopecks(amountRub));
 
 			// Находим активную смену
 			const [activeShift] = await tx
@@ -321,19 +323,19 @@ export async function registerCashboxV2Routes(app: FastifyInstance) {
 					balanceRub: balanceAfter,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxes.id, targetBox.id))
+				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)))
 				.returning();
 
 			// Обновляем статистику смены
 			if (activeShift) {
-				const updatedIncome = Math.round((activeShift.incomeTotalRub + amountRub) * 100) / 100;
+				const updatedIncome = kopecksToRub(rubToKopecks(activeShift.incomeTotalRub) + rubToKopecks(amountRub));
 				await tx
 					.update(cashBoxShifts)
 					.set({
 						incomeTotalRub: updatedIncome,
 						updatedAt: new Date(),
 					})
-					.where(eq(cashBoxShifts.id, activeShift.id));
+					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
 			}
 
 			// Регистрируем кассовую проводку
@@ -433,7 +435,7 @@ export async function registerCashboxV2Routes(app: FastifyInstance) {
 				};
 			}
 
-			const balanceAfter = kopecksToRubles(rublesToKopecks(balanceBefore) - rublesToKopecks(amountRub));
+			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) - rubToKopecks(amountRub));
 
 			const [activeShift] = await tx
 				.select()
@@ -453,18 +455,18 @@ export async function registerCashboxV2Routes(app: FastifyInstance) {
 					balanceRub: balanceAfter,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxes.id, targetBox.id))
+				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)))
 				.returning();
 
 			if (activeShift) {
-				const updatedExpense = Math.round((activeShift.expenseTotalRub + amountRub) * 100) / 100;
+				const updatedExpense = kopecksToRub(rubToKopecks(activeShift.expenseTotalRub) + rubToKopecks(amountRub));
 				await tx
 					.update(cashBoxShifts)
 					.set({
 						expenseTotalRub: updatedExpense,
 						updatedAt: new Date(),
 					})
-					.where(eq(cashBoxShifts.id, activeShift.id));
+					.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
 			}
 
 			const [operation] = await tx

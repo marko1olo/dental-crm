@@ -77,12 +77,12 @@ export function parseKopecks(
 	return sign ? -kopecks : kopecks;
 }
 
-/** Целые рубли → копейки. Для значений из контрактов, где сумма объявлена int. */
+/** Рубли → копейки с защитой от нецелых чисел и плавающей точки (округление до копейки). */
 export function rublesToKopecks(rubles: number): Kopecks {
-	if (typeof rubles !== "number" || !Number.isFinite(rubles) || Number.isNaN(rubles) || !Number.isInteger(rubles)) {
-		throw new Error(`Ожидались целые рубли, получено ${rubles}`);
+	if (typeof rubles !== "number" || !Number.isFinite(rubles) || Number.isNaN(rubles)) {
+		throw new Error(`Ожидалось число рублей, получено ${rubles}`);
 	}
-	return rubles * KOPECKS_IN_RUBLE;
+	return Math.round(rubles * KOPECKS_IN_RUBLE);
 }
 
 /**

@@ -7,9 +7,11 @@
 
 import {
 	generate0PercentInstallmentSchedule,
+	kopecksToRub,
 	kopecksToRubles,
 	nonNegativeMoneyRubSchema,
 	positiveMoneyRubSchema,
+	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -70,7 +72,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const remainingKop = rublesToKopecks(totalAmountRub) - rublesToKopecks(downPaymentRub);
+		const remainingKop = rubToKopecks(totalAmountRub) - rubToKopecks(downPaymentRub);
 
 		// Расчет графика траншей без потери ни одной копейки
 		const schedule = generate0PercentInstallmentSchedule(
@@ -186,7 +188,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			const [contract] = await tx
 				.select()
 				.from(installmentContracts)
-				.where(eq(installmentContracts.id, tranche.contractId))
+				.where(and(eq(installmentContracts.id, tranche.contractId), eq(installmentContracts.organizationId, orgId)))
 				.limit(1);
 
 			if (!contract) {
@@ -227,7 +229,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			}
 
 			const balanceBefore = targetBox.balanceRub;
-			const balanceAfter = kopecksToRubles(rublesToKopecks(balanceBefore) + rublesToKopecks(tranche.amountRub));
+			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) + rubToKopecks(tranche.amountRub));
 
 			// Обновляем кассу
 			await tx
@@ -236,7 +238,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					balanceRub: balanceAfter,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxes.id, targetBox.id));
+				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
 
 			// Проводим кассовую операцию прихода
 			const [operation] = await tx
@@ -266,12 +268,12 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					status: "paid",
 					cashOperationId: operation!.id,
 				})
-				.where(eq(installmentTranches.id, tranche.id))
+				.where(and(eq(installmentTranches.id, tranche.id), eq(installmentTranches.organizationId, orgId)))
 				.returning();
 
 			// Обновляем баланс договора рассрочки
-			const newPaidAmount = kopecksToRubles(rublesToKopecks(contract.paidAmountRub) + rublesToKopecks(tranche.amountRub));
-			const newRemaining = Math.max(0, kopecksToRubles(rublesToKopecks(contract.remainingAmountRub) - rublesToKopecks(tranche.amountRub)));
+			const newPaidAmount = kopecksToRub(rubToKopecks(contract.paidAmountRub) + rubToKopecks(tranche.amountRub));
+			const newRemaining = Math.max(0, kopecksToRub(rubToKopecks(contract.remainingAmountRub) - rubToKopecks(tranche.amountRub)));
 			const isFullyPaid = newRemaining <= 0;
 
 			const [updatedContract] = await tx
@@ -283,7 +285,7 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 					completedAt: isFullyPaid ? now : null,
 					updatedAt: now,
 				})
-				.where(eq(installmentContracts.id, contract.id))
+				.where(and(eq(installmentContracts.id, contract.id), eq(installmentContracts.organizationId, orgId)))
 				.returning();
 
 			return {

@@ -483,7 +483,7 @@ export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<
 					.set({
 						resolvedAt: new Date(),
 					})
-					.where(eq(patientToothDefects.id, existing.id))
+					.where(and(eq(patientToothDefects.id, existing.id), eq(patientToothDefects.organizationId, orgId)))
 					.returning();
 
 				return reply.send({
@@ -494,7 +494,9 @@ export async function registerOutpatientV2Routes(app: FastifyInstance): Promise<
 			}
 
 			// Физическое удаление ошибочной записи
-			await db.delete(patientToothDefects).where(eq(patientToothDefects.id, existing.id));
+			await db
+				.delete(patientToothDefects)
+				.where(and(eq(patientToothDefects.id, existing.id), eq(patientToothDefects.organizationId, orgId)));
 
 			return reply.send({
 				success: true,

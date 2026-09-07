@@ -87,8 +87,9 @@ describe("rublesToKopecks / kopecksToWholeRubles", () => {
 		assert.strictEqual(kopecksToWholeRubles(150000), 1500);
 	});
 
-	test("нецелые рубли не принимаются", () => {
-		assert.throws(() => rublesToKopecks(150.5));
+	test("нецелые рубли переводятся с округлением до копеек без падений", () => {
+		assert.strictEqual(rublesToKopecks(150.5), 15050);
+		assert.strictEqual(rublesToKopecks(3333.34), 333334);
 	});
 
 	test("сумма с копейками не выдаёт себя за целые рубли", () => {

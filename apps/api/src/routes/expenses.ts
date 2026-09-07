@@ -12,7 +12,9 @@ import {
 	expensePeriodicitySchema,
 	type ExpenseCategory,
 	type ExpenseRecord,
+	kopecksToRub,
 	kopecksToRubles,
+	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -225,7 +227,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 			}
 
 			const balanceBefore = targetBox?.balanceRub ?? 0;
-			const balanceAfter = kopecksToRubles(rublesToKopecks(balanceBefore) - rublesToKopecks(amountRub));
+			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) - rubToKopecks(amountRub));
 
 			if (targetBox) {
 				await tx
@@ -234,7 +236,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 						balanceRub: balanceAfter,
 						updatedAt: new Date(),
 					})
-					.where(eq(cashBoxes.id, targetBox.id));
+					.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, organizationId)));
 			}
 
 			const metadata: ExpenseMetadata = {
@@ -357,23 +359,23 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 			const [box] = await tx
 				.select()
 				.from(cashBoxes)
-				.where(eq(cashBoxes.id, op.cashBoxId))
+				.where(and(eq(cashBoxes.id, op.cashBoxId), eq(cashBoxes.organizationId, organizationId)))
 				.limit(1);
 
 			if (box) {
-				const restoredBalance = kopecksToRubles(rublesToKopecks(box.balanceRub) + rublesToKopecks(op.amountRub));
+				const restoredBalance = kopecksToRub(rubToKopecks(box.balanceRub) + rubToKopecks(op.amountRub));
 				await tx
 					.update(cashBoxes)
 					.set({
 						balanceRub: restoredBalance,
 						updatedAt: new Date(),
 					})
-					.where(eq(cashBoxes.id, box.id));
+					.where(and(eq(cashBoxes.id, box.id), eq(cashBoxes.organizationId, organizationId)));
 			}
 
 			await tx
 				.delete(cashOperations)
-				.where(eq(cashOperations.id, id));
+				.where(and(eq(cashOperations.id, id), eq(cashOperations.organizationId, organizationId)));
 
 			return true;
 		});

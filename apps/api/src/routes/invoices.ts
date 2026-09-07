@@ -25,6 +25,7 @@ import {
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
 import { db } from "../db/client.js";
+import { withTenantCtx } from "../db/rls.js";
 import { getServiceCatalogForOrganization } from "../db/pricelistQuery.js";
 import { users } from "../db/schema/auth.js";
 import { payments } from "../db/schema/billing.js";
@@ -682,7 +683,7 @@ export async function registerInvoiceRoutes(app: FastifyInstance) {
 
 		// Запись в базу (treatment_items)
 		const createdItemIds: string[] = [];
-		await db.transaction(async (tx) => {
+		await withTenantCtx(orgId, async (tx) => {
 			if (data.planId) {
 				await tx
 					.select()

@@ -7,8 +7,10 @@
  */
 
 import {
+	kopecksToRub,
 	kopecksToRubles,
 	positiveMoneyRubSchema,
+	rubToKopecks,
 	rublesToKopecks,
 } from "@dental/shared";
 import { and, eq } from "drizzle-orm";
@@ -111,7 +113,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 				.limit(1);
 
 			const balanceBefore = targetBox.balanceRub;
-			const balanceAfter = kopecksToRubles(rublesToKopecks(balanceBefore) - rublesToKopecks(amountToPay));
+			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) - rubToKopecks(amountToPay));
 
 			// Списываем средства
 			await tx
@@ -120,7 +122,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 					balanceRub: balanceAfter,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxes.id, targetBox.id));
+				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
 
 			// Проводка расхода
 			const [operation] = await tx
@@ -147,7 +149,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 					paidFromCashOperationId: operation!.id,
 					updatedAt: new Date(),
 				})
-				.where(eq(labOrders.id, order.id))
+				.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, orgId)))
 				.returning();
 
 			return { kind: "ok" as const, operation: operation!, labOrder: updatedOrder! };
@@ -230,7 +232,7 @@ export async function registerCashLabPaymentRoutes(app: FastifyInstance) {
 					clinicalNotes: finalNotes,
 					updatedAt: now,
 				})
-				.where(eq(labOrders.id, order.id))
+				.where(and(eq(labOrders.id, order.id), eq(labOrders.organizationId, orgId)))
 				.returning();
 
 			// Событие аудита в жизненный цикл ЗТЛ

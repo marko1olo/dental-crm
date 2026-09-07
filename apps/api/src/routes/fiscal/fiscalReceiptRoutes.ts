@@ -35,6 +35,7 @@ import {
 	requireClinicalReadContext,
 } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
+import { withTenantCtx } from "../../db/rls.js";
 import {
 	cashBoxes,
 	cashBoxShifts,
@@ -113,13 +114,14 @@ async function applyCashBoxFiscalReceipt(
 				balanceRub: balanceAfter,
 				updatedAt: new Date(),
 			})
-			.where(eq(cashBoxes.id, chosenBox.id));
+			.where(and(eq(cashBoxes.id, chosenBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		const [activeShift] = await tx
 			.select()
 			.from(cashBoxShifts)
 			.where(
 				and(
+					eq(cashBoxShifts.organizationId, orgId),
 					eq(cashBoxShifts.cashBoxId, chosenBox.id),
 					eq(cashBoxShifts.status, "open"),
 				),
@@ -134,7 +136,7 @@ async function applyCashBoxFiscalReceipt(
 					incomeTotalRub: updatedIncome,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxShifts.id, activeShift.id));
+				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
 		}
 
 		await tx.insert(cashOperations).values({
@@ -177,13 +179,14 @@ async function applyCashBoxFiscalReceipt(
 				balanceRub: balanceAfter,
 				updatedAt: new Date(),
 			})
-			.where(eq(cashBoxes.id, mainBox.id));
+			.where(and(eq(cashBoxes.id, mainBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		const [activeShift] = await tx
 			.select()
 			.from(cashBoxShifts)
 			.where(
 				and(
+					eq(cashBoxShifts.organizationId, orgId),
 					eq(cashBoxShifts.cashBoxId, mainBox.id),
 					eq(cashBoxShifts.status, "open"),
 				),
@@ -198,7 +201,7 @@ async function applyCashBoxFiscalReceipt(
 					incomeTotalRub: updatedIncome,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxShifts.id, activeShift.id));
+				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
 		}
 
 		await tx.insert(cashOperations).values({
@@ -232,13 +235,14 @@ async function applyCashBoxFiscalReceipt(
 				balanceRub: balanceAfter,
 				updatedAt: new Date(),
 			})
-			.where(eq(cashBoxes.id, cashlessBox.id));
+			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		const [activeShift] = await tx
 			.select()
 			.from(cashBoxShifts)
 			.where(
 				and(
+					eq(cashBoxShifts.organizationId, orgId),
 					eq(cashBoxShifts.cashBoxId, cashlessBox.id),
 					eq(cashBoxShifts.status, "open"),
 				),
@@ -253,7 +257,7 @@ async function applyCashBoxFiscalReceipt(
 					incomeTotalRub: updatedIncome,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxShifts.id, activeShift.id));
+				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
 		}
 
 		await tx.insert(cashOperations).values({
@@ -333,13 +337,14 @@ async function applyCashBoxFiscalRefund(
 				balanceRub: balanceAfter,
 				updatedAt: new Date(),
 			})
-			.where(eq(cashBoxes.id, mainBox.id));
+			.where(and(eq(cashBoxes.id, mainBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		const [activeShift] = await tx
 			.select()
 			.from(cashBoxShifts)
 			.where(
 				and(
+					eq(cashBoxShifts.organizationId, orgId),
 					eq(cashBoxShifts.cashBoxId, mainBox.id),
 					eq(cashBoxShifts.status, "open"),
 				),
@@ -354,7 +359,7 @@ async function applyCashBoxFiscalRefund(
 					expenseTotalRub: updatedExpense,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxShifts.id, activeShift.id));
+				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
 		}
 
 		await tx.insert(cashOperations).values({
@@ -389,13 +394,14 @@ async function applyCashBoxFiscalRefund(
 				balanceRub: balanceAfter,
 				updatedAt: new Date(),
 			})
-			.where(eq(cashBoxes.id, cashlessBox.id));
+			.where(and(eq(cashBoxes.id, cashlessBox.id), eq(cashBoxes.organizationId, orgId)));
 
 		const [activeShift] = await tx
 			.select()
 			.from(cashBoxShifts)
 			.where(
 				and(
+					eq(cashBoxShifts.organizationId, orgId),
 					eq(cashBoxShifts.cashBoxId, cashlessBox.id),
 					eq(cashBoxShifts.status, "open"),
 				),
@@ -410,7 +416,7 @@ async function applyCashBoxFiscalRefund(
 					expenseTotalRub: updatedExpense,
 					updatedAt: new Date(),
 				})
-				.where(eq(cashBoxShifts.id, activeShift.id));
+				.where(and(eq(cashBoxShifts.id, activeShift.id), eq(cashBoxShifts.organizationId, orgId)));
 		}
 
 		await tx.insert(cashOperations).values({
@@ -689,7 +695,7 @@ export async function registerFiscalReceiptRoutes(
 		if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
 			const mutationId = data.clientMutationId.trim();
 
-			return await db.transaction(async (tx) => {
+			return await withTenantCtx(orgId, async (tx) => {
 				// Serialize concurrent requests for the exact same mutation ID per organization
 				await tx.execute(
 					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
@@ -822,7 +828,7 @@ export async function registerFiscalReceiptRoutes(
 			receiptIssuedAt: printResult.receiptIssuedAt,
 		};
 
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(orgId, async (tx) => {
 			const [queueRow] = await tx
 				.insert(fiscalReceiptQueue)
 				.values({
@@ -890,7 +896,7 @@ export async function registerFiscalReceiptRoutes(
 		if (data.clientMutationId && data.clientMutationId.trim().length > 0) {
 			const mutationId = data.clientMutationId.trim();
 
-			return await db.transaction(async (tx) => {
+			return await withTenantCtx(orgId, async (tx) => {
 				await tx.execute(
 					sql`SELECT pg_advisory_xact_lock(hashtext(${orgId} || ':' || ${mutationId}))`,
 				);
@@ -1049,7 +1055,7 @@ export async function registerFiscalReceiptRoutes(
 			receiptIssuedAt: printResult.receiptIssuedAt,
 		};
 
-		return await db.transaction(async (tx) => {
+		return await withTenantCtx(orgId, async (tx) => {
 			let validPaymentId: string | null = null;
 			if (data.originalPaymentId) {
 				const [existingPayment] = await tx
