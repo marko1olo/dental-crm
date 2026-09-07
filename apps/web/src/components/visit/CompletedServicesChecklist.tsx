@@ -33,11 +33,11 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 		badge: "Анестезия + Коффердам + Пломба",
 		totalPriceRub: 7500,
 		services: [
-			{ code804n: "А25.07.001", title: "Местная анестезия (инфильтрационная/проводниковая)", priceRub: 1200 },
-			{ code804n: "А16.07.051", title: "Изоляция рабочего поля (Коффердам/Раббердам)", priceRub: 800 },
-			{ code804n: "А16.07.002.010", title: "Препарирование и медикаментозная обработка кариозной полости", priceRub: 1000 },
-			{ code804n: "А16.07.002.011", title: "Восстановление зуба пломбой светового отверждения (композит)", priceRub: 4000 },
-			{ code804n: "А16.07.002.012", title: "Шлифовка и полировка пломбы", priceRub: 500 },
+			{ code804n: "A25.07.001", title: "Местная анестезия (инфильтрационная/проводниковая)", priceRub: 1200 },
+			{ code804n: "A16.07.051", title: "Изоляция рабочего поля (Коффердам/Раббердам)", priceRub: 800 },
+			{ code804n: "A16.07.002.010", title: "Препарирование и медикаментозная обработка кариозной полости", priceRub: 1000 },
+			{ code804n: "A16.07.002.011", title: "Восстановление зуба пломбой светового отверждения (композит)", priceRub: 4000 },
+			{ code804n: "A16.07.002.012", title: "Шлифовка и полировка пломбы", priceRub: 500 },
 		],
 	},
 	{
@@ -47,11 +47,11 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 		badge: "Анестезия + Коффердам + Экстирпация + Каналы + Временная пломба",
 		totalPriceRub: 8800,
 		services: [
-			{ code804n: "А25.07.001", title: "Местная анестезия", priceRub: 1200 },
-			{ code804n: "А16.07.051", title: "Изоляция рабочего поля (Коффердам)", priceRub: 800 },
-			{ code804n: "А16.07.030.001", title: "Экстирпация пульпы (депульпирование)", priceRub: 2000 },
-			{ code804n: "А16.07.030.002", title: "Механическая и медикаментозная обработка корневых каналов", priceRub: 3300 },
-			{ code804n: "А16.07.030.004", title: "Временная обтурация каналов лечебной пастой / Временная пломба", priceRub: 1500 },
+			{ code804n: "A25.07.001", title: "Местная анестезия", priceRub: 1200 },
+			{ code804n: "A16.07.051", title: "Изоляция рабочего поля (Коффердам)", priceRub: 800 },
+			{ code804n: "A16.07.030.001", title: "Экстирпация пульпы (депульпирование)", priceRub: 2000 },
+			{ code804n: "A16.07.030.002", title: "Механическая и медикаментозная обработка корневых каналов", priceRub: 3300 },
+			{ code804n: "A16.07.030.004", title: "Временная обтурация каналов лечебной пастой / Временная пломба", priceRub: 1500 },
 		],
 	},
 	{
@@ -61,10 +61,10 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 		badge: "УЗ-скейлинг + AirFlow + Полировка + Фторирование",
 		totalPriceRub: 6500,
 		services: [
-			{ code804n: "А16.07.050.001", title: "Ультразвуковое удаление зубных отложений (скейлинг)", priceRub: 2500 },
-			{ code804n: "А16.07.050.002", title: "Удаление пигментированного налета аппаратом Air-Flow", priceRub: 2200 },
-			{ code804n: "А16.07.050.003", title: "Полировка всех зубов профессиональными абразивными пастами", priceRub: 800 },
-			{ code804n: "А11.07.012", title: "Глубокое фторирование эмали (реминерализация)", priceRub: 1000 },
+			{ code804n: "A16.07.050.001", title: "Ультразвуковое удаление зубных отложений (скейлинг)", priceRub: 2500 },
+			{ code804n: "A16.07.050.002", title: "Удаление пигментированного налета аппаратом Air-Flow", priceRub: 2200 },
+			{ code804n: "A16.07.050.003", title: "Полировка всех зубов профессиональными абразивными пастами", priceRub: 800 },
+			{ code804n: "A11.07.012", title: "Глубокое фторирование эмали (реминерализация)", priceRub: 1000 },
 		],
 	},
 	{
@@ -74,9 +74,9 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
 		badge: "Анестезия + Удаление + Гемостаз",
 		totalPriceRub: 5500,
 		services: [
-			{ code804n: "А25.07.001", title: "Местная анестезия", priceRub: 1200 },
-			{ code804n: "А16.07.001.001", title: "Удаление постоянного зуба", priceRub: 3500 },
-			{ code804n: "А16.07.001.002", title: "Остановка луночного кровотечения / местный гемостаз", priceRub: 800 },
+			{ code804n: "A25.07.001", title: "Местная анестезия", priceRub: 1200 },
+			{ code804n: "A16.07.001.001", title: "Удаление постоянного зуба", priceRub: 3500 },
+			{ code804n: "A16.07.001.002", title: "Остановка луночного кровотечения / местный гемостаз", priceRub: 800 },
 		],
 	},
 ];
@@ -288,6 +288,28 @@ export const CompletedServicesChecklist: React.FC = () => {
 			? `${base}\n${bundleLines.join("\n")}`
 			: bundleLines.join("\n");
 		updateVisitNoteField("treatmentPlan", updatedPlan);
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							bundleId: bundle.id,
+							bundleTitle: bundle.title,
+							services: bundle.services.map((s) => ({
+								code: s.code804n,
+								title: s.title,
+								price: s.priceRub,
+								quantity: 1,
+							})),
+						},
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
+
 		showToast(
 			`Пакет «${bundle.title}» (${countLabel(bundle.services.length, "услуга", "услуги", "услуг")} на ${money(bundle.totalPriceRub)}) внесен в карту и счет`,
 			"success",

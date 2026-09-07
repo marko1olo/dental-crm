@@ -387,7 +387,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 		setRadiologyControl(preset.radiologyControl);
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			"⚡ Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)",
+			"Каналы обработаны и обтурированы до физиологического апекса (длина подтверждена апекслокатором и снимком)",
 			"success",
 		);
 	}, [canals, toothNumber]);
@@ -939,10 +939,10 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 							data-testid="btn-endo-save-protocol-043"
 							onClick={handleInsertToProtocol}
 							className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all min-h-[44px] cursor-pointer active:scale-98"
-							title="⚡ Вставить протокол в дневник 043/у (1 клик)"
+							title="Вставить протокол в дневник 043/у (1 клик)"
 						>
 							<Sparkles size={16} />
-							<span>⚡ Вставить протокол в дневник 043/у (1 клик)</span>
+							<span>Вставить протокол в дневник 043/у (1 клик)</span>
 						</button>
 					</div>
 

@@ -260,11 +260,11 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 						type="button"
 						onClick={onMarkIntactDentition || onTriggerSanitation}
 						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
-						title="⚡ 1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
+						title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
 						data-testid="mark-intact-dentition-btn"
 					>
 						<Zap size={13} className="text-emerald-600 dark:text-emerald-400" />
-						<span className="whitespace-nowrap">⚡ Санирован</span>
+						<span className="whitespace-nowrap">Санирован</span>
 					</button>
 				)}
 
@@ -274,11 +274,11 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 						type="button"
 						onClick={onMarkWisdomTeethMissing}
 						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
-						title="⚡ 1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими/удаленными"
+						title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими/удаленными"
 						data-testid="mark-wisdom-missing-btn"
 					>
 						<Zap size={13} className="text-zinc-500" />
-						<span className="whitespace-nowrap">⚡ Без 8-ок</span>
+						<span className="whitespace-nowrap">Без 8-ок</span>
 					</button>
 				)}
 			</div>
@@ -454,8 +454,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 								data-testid="tools-menu-mark-intact-btn"
 							>
 								<div className="flex items-center gap-2">
-									<Sparkles size={14} className="text-emerald-500" />
-									<span>⚡ Интактный зубной ряд (32)</span>
+									<Zap size={14} className="text-emerald-500" />
+									<span>Интактный зубной ряд (32)</span>
 								</div>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 font-mono">
 									1 клик
@@ -476,8 +476,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 								data-testid="tools-menu-mark-wisdom-missing-btn"
 							>
 								<div className="flex items-center gap-2">
-									<Trash2 size={14} className="text-zinc-500" />
-									<span>⚡ Адентия 8-ок (18, 28, 38, 48)</span>
+									<Zap size={14} className="text-zinc-500" />
+									<span>Адентия 8-ок (18, 28, 38, 48)</span>
 								</div>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/10 border border-zinc-500/20 font-mono">
 									1 клик

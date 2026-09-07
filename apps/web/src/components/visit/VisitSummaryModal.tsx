@@ -649,35 +649,34 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 						</button>
 					</div>
 
-					{/* SOAP Sections */}
+					{/* Разделы Формы 043/у */}
 					<div className="space-y-4">
-						{/* S - Subjective */}
+						{/* I - Жалобы и анамнез */}
 						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-								<span className="font-mono font-black">S</span> — Жалобы и
-								анамнез (Subjective)
+								<span className="font-mono font-black">I</span> — Жалобы и
+								анамнез
 							</div>
 							<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
 								{synthesizedDiaryPreview?.subjectiveComplaints || diary.anamnesis || "—"}
 							</p>
 						</div>
 
-						{/* O - Objective */}
+						{/* II - Объективно */}
 						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-								<span className="font-mono font-black">O</span> — Объективно /
-								Status Localis (Objective)
+								<span className="font-mono font-black">II</span> — Объективно /
+								Status Localis
 							</div>
 							<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
 								{synthesizedDiaryPreview?.objectiveStatusLocalis || diary.statusLocalis || "—"}
 							</p>
 						</div>
 
-						{/* A - Assessment */}
+						{/* III - Диагноз */}
 						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
 							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-								<span className="font-mono font-black">A</span> — Диагноз
-								(Assessment)
+								<span className="font-mono font-black">III</span> — Диагноз
 							</div>
 							<div className="flex flex-wrap items-center gap-2">
 								{synthesizedDiaryPreview?.assessmentIcd10Code || diary.diagnosisIcd10 ? (
@@ -700,11 +699,11 @@ export const VisitSummaryModal: React.FC<VisitSummaryModalProps> = ({
 							</div>
 						</div>
 
-						{/* P - Plan & Treatment */}
+						{/* IV - Дневник лечения и рекомендации */}
 						<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-1.5">
 							<div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--teal)]">
-								<span className="font-mono font-black">P</span> — Лечение и
-								рекомендации (Plan)
+								<span className="font-mono font-black">IV</span> — Лечение и
+								рекомендации
 							</div>
 							<p className="text-sm text-[var(--ink)] whitespace-pre-wrap leading-relaxed">
 								{synthesizedDiaryPreview?.procedureProtocol || diary.treatmentDescription || "—"}

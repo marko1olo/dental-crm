@@ -71,10 +71,6 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 	};
 
 	const handlePresetClick = (preset: ClinicalQuickPreset) => {
-		if (isLocked) {
-			showToast("Дневник подписан — вставка шаблона заблокирована", "info");
-			return;
-		}
 		const effectiveTooth = preset.category !== "hygiene" ? (currentTooth || preset.defaultTooth || 16) : null;
 		onSelectPreset(preset, effectiveTooth);
 		const toothSuffix = effectiveTooth ? ` (Зуб ${effectiveTooth})` : "";
@@ -242,7 +238,6 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={`top-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								disabled={isLocked}
 								className={`min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left ${bgGradient}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`express-preset-${preset.id}`}
@@ -299,7 +294,6 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={`therapy-endo-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								disabled={isLocked}
 								className="min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left bg-blue-500/15 text-blue-950 dark:text-blue-200 border-blue-500/30 hover:bg-blue-500/25"
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`btn-therapy-endo-${preset.id}`}
@@ -348,7 +342,6 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={`surgery-quick-${preset.id}`}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								disabled={isLocked}
 								className="min-h-[50px] px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-extrabold border transition-all flex flex-col items-start justify-center gap-1 cursor-pointer shadow-xs active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-left bg-rose-500/15 text-rose-900 dark:text-rose-200 border-rose-500/30 hover:bg-rose-500/25"
 								title={`${preset.title} · МКБ-10: ${preset.icd10}`}
 								data-testid={`btn-surgery-quick-${preset.id}`}
@@ -427,7 +420,6 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 								key={preset.id}
 								type="button"
 								onClick={() => handlePresetClick(preset)}
-								disabled={isLocked}
 								className={`min-h-[48px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all flex items-center justify-between gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 break-words touch-manipulation ${categoryBadgeColor}`}
 								title={`${preset.title} · МКБ-10: ${preset.icd10}${preset.service804n ? ` · Услуга: ${preset.service804n.title}` : ""}`}
 								data-testid={`quick-preset-${preset.id}`}

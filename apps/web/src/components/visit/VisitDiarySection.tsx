@@ -694,7 +694,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</div>
 					<div>
 						<h2 className="vde-043__title">
-							Клинический дневник SOAP · Форма 043/у
+							Дневник приёма · Форма 043/у
 						</h2>
 						<div className="vde-043__meta">
 							{localDraftSavedAt && (
@@ -736,8 +736,12 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						type="button"
 						id="diary-1click-norm-btn"
 						data-testid="diary-1click-norm-btn"
-						onClick={handleApplyFullPhysiologicalNorm}
-						disabled={fieldsDisabled}
+						onClick={() => {
+							if (isLocked && !isRevising) {
+								beginRevise();
+							}
+							handleApplyFullPhysiologicalNorm();
+						}}
 						className="vde-043__btn"
 						title="Заполнить физиологической нормой в 1 клик (Соматически здоров / норма). Врач правит только патологию (Мандат 8e)"
 					>
@@ -749,7 +753,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						data-testid="open-1click-templates-btn"
 						onClick={() => setShowTemplatesModal(true)}
 						className="vde-043__btn"
-						title="Открыть 1-Click клинические протоколы и шаблоны SOAP (Приказ 834н / 804н)"
+						title="Открыть 1-Click клинические протоколы и шаблоны 043/у (Приказ 834н / 804н)"
 					>
 						<Sparkles className="w-4 h-4 text-[var(--teal)]" />
 						Протоколы 1-Click
@@ -914,7 +918,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 									type="button"
 									onClick={() => populateFromOdontogram(activeTeeth)}
 									className="inline-flex items-center gap-1.5 px-4 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal-surface)] text-[var(--teal-dark)] hover:bg-[var(--teal-soft)] border border-[var(--teal)] text-xs sm:text-sm font-bold transition-colors shadow-xs touch-manipulation min-w-0 break-words cursor-pointer"
-									title="Сформировать структурированный дневник SOAP из отметок на зубной формуле"
+									title="Сформировать структурированный дневник 043/у из отметок на зубной формуле"
 									data-testid="populate-diary-from-odontogram-btn"
 								>
 									<FileText size={15} className="shrink-0" />
@@ -1040,8 +1044,11 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 						</div>
 						<div className="pt-1">
 							<ClinicalQuickPresetsBar
-								isLocked={fieldsDisabled}
+								isLocked={false}
 								onSelectPreset={(preset) => {
+									if (isLocked && !isRevising) {
+										beginRevise();
+									}
 									setDiary((prev) =>
 										mergeSoapDiaryState(
 											prev,
@@ -1221,13 +1228,13 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</div>
 			)}
 
-			{/* ── SOAP Fields grid ── */}
+			{/* ── 043/у Fields grid ── */}
 			<div className="vde-043__grid">
-				{/* S — Subjective */}
+				{/* I — Жалобы и анамнез */}
 				<div className="vde-043__field">
 					<label className="vde-043__label" htmlFor="diary-anamnesis">
 						<Stethoscope className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-						<span className="vde-043__letter vde-043__letter--s">S</span> —
+						<span className="vde-043__letter vde-043__letter--s">I</span> —
 						Жалобы и анамнез
 						{!fieldsDisabled && (
 							<div className="vde-043__label-mic">
@@ -1262,40 +1269,43 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							scheduleDebouncedSave();
 						}}
 						onFocus={handleAutoResize}
-						placeholder="Со слов пациента: жалобы на боли, чувствительность..."
+						placeholder="Жалобы пациента, анамнез развития заболевания (morbi) и жизни (vitae)..."
 					/>
-					{!fieldsDisabled && (
+					{COMPLAINT_QUICK_CHIPS.length > 0 && (
 						<div
-							className="flex flex-wrap items-center gap-1.5 pt-1.5"
-							data-testid="diary-complaint-chips"
+							className="mt-1.5 flex items-center gap-1.5 flex-wrap"
+							data-testid="complaint-quick-chips-bar"
 						>
-							<span className="text-[11px] font-bold text-[var(--muted)] shrink-0 flex items-center gap-1 mr-0.5 select-none">
-								<Activity className="w-3 h-3 text-[var(--teal)]" />
-								Жалобы:
+							<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 shrink-0">
+								<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
+								Быстрые жалобы:
 							</span>
-							{COMPLAINT_QUICK_CHIPS.map((chip) => {
-								const isPresent = Boolean(
-									diary.anamnesis && diary.anamnesis.includes(chip),
-								);
+							{COMPLAINT_QUICK_CHIPS.map((chipText) => {
+								const isApplied = (diary.anamnesis ?? "").includes(chipText);
 								return (
 									<button
-										key={chip}
+										key={chipText}
 										type="button"
-										onClick={() => handleAddComplaintChip(chip)}
-										className={`inline-flex items-center gap-1 px-2.5 py-1 min-h-[30px] rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-2xs touch-manipulation active:scale-[0.98] ${
-											isPresent
-												? "bg-[var(--teal-surface)] border-[var(--teal)] text-[var(--teal-dark)] font-semibold"
-												: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--teal-surface)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)]"
+										onClick={() => handleAddComplaintChip(chipText)}
+										disabled={fieldsDisabled}
+										className={`text-xs px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 select-none ${
+											isApplied
+												? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-bold"
+												: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
 										}`}
-										title={`Добавить жалобу в 1 клик: «${chip}»`}
-										data-testid={`complaint-chip-${chip.slice(0, 8)}`}
+										title={
+											isApplied
+												? `Жалоба уже внесена: «${chipText}»`
+												: `Внести в анамнез: «${chipText}»`
+										}
+										data-testid={`complaint-chip-${chipText}`}
 									>
-										{isPresent ? (
-											<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
+										{chipText}
+										{isApplied ? (
+											<Check className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
 										) : (
-											<Plus className="w-3 h-3 text-[var(--muted)] shrink-0" />
+											<Plus className="w-3 h-3 opacity-60 shrink-0" />
 										)}
-										<span className="whitespace-nowrap">{chip}</span>
 									</button>
 								);
 							})}
@@ -1307,17 +1317,17 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							data-testid="interim-text-anamnesis"
 						>
 							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
-							<span className="font-bold shrink-0">AI Диктовка (S):</span>
+							<span className="font-bold shrink-0">AI Диктовка (Анамнез):</span>
 							<span className="truncate">«{fieldInterimMap.anamnesis}»</span>
 						</div>
 					)}
 				</div>
 
-				{/* O — Objective */}
+				{/* II — Объективно */}
 				<div className="vde-043__field">
 					<label className="vde-043__label" htmlFor="diary-status-localis">
 						<Search className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-						<span className="vde-043__letter vde-043__letter--o">O</span> —
+						<span className="vde-043__letter vde-043__letter--o">II</span> —
 						Объективно (Status Localis)
 						{!fieldsDisabled && (
 							<div className="vde-043__label-mic">
@@ -1362,18 +1372,18 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							data-testid="interim-text-status-localis"
 						>
 							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
-							<span className="font-bold shrink-0">AI Диктовка (O):</span>
+							<span className="font-bold shrink-0">AI Диктовка (Статус):</span>
 							<span className="truncate">«{fieldInterimMap.statusLocalis}»</span>
 						</div>
 					)}
 				</div>
 
-				{/* A — Assessment */}
+				{/* III — Диагноз */}
 				<div className="vde-043__assessment">
 					<div className="vde-043__assessment-grid">
 						<div className="vde-043__field" ref={icdRef}>
 							<label className="vde-043__label" htmlFor="diary-icd-search">
-								<span className="vde-043__letter vde-043__letter--a">A</span> —
+								<span className="vde-043__letter vde-043__letter--a">III</span> —
 								Диагноз МКБ-10
 							</label>
 							{diary.diagnosisIcd10 ? (
@@ -1492,11 +1502,11 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					</div>
 				</div>
 
-				{/* P — Plan */}
+				{/* IV — Лечение и рекомендации */}
 				<div className="vde-043__field vde-043__field--span2">
 					<label className="vde-043__label" htmlFor="diary-treatment">
 						<FileText className="w-3 h-3 text-[var(--teal)]" />
-						<span className="vde-043__letter vde-043__letter--p">P</span> —
+						<span className="vde-043__letter vde-043__letter--p">IV</span> —
 						Лечение и рекомендации
 						{!fieldsDisabled && (
 							<div className="vde-043__label-mic">
@@ -1541,7 +1551,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 							data-testid="interim-text-treatment"
 						>
 							<span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0" />
-							<span className="font-bold shrink-0">AI Диктовка (P):</span>
+							<span className="font-bold shrink-0">AI Диктовка (Лечение):</span>
 							<span className="truncate">«{fieldInterimMap.treatmentDescription}»</span>
 						</div>
 					)}
@@ -2074,10 +2084,11 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<button
 									type="button"
 									onClick={() => setIsTier3PerioModalOpen(false)}
-									className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer font-bold"
+									className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer font-bold flex items-center justify-center"
 									title="Закрыть кабинет пародонтологии"
+									aria-label="Закрыть кабинет пародонтологии"
 								>
-									✕
+									<X size={16} />
 								</button>
 							</div>
 							<PeriodontogramChart

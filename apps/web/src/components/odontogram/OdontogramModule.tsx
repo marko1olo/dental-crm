@@ -1093,8 +1093,8 @@ export const OdontogramModule = ({
 							className="flex items-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-800 dark:text-emerald-200 text-xs sm:text-sm font-bold shrink-0 self-start md:self-auto shadow-2xs"
 							title="Все отметки и диагнозы непрерывно сохраняются в локальное хранилище и базу данных клиники"
 						>
-							<span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block shadow-xs shrink-0" />
-							<span>🟢 Сохранено на диск ({lastSavedAt}) — данные в полной безопасности</span>
+							<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<span>Сохранено на диск ({lastSavedAt}) — данные в полной безопасности</span>
 						</div>
 					</div>
 				</div>

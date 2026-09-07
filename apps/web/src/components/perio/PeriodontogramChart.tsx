@@ -1297,7 +1297,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					<div className="flex items-center gap-2.5 flex-wrap">
 						{/* Hardware Probe / Numpad capture toggle (OFF by default, Mandate 8k) */}
 						<label
-							className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold px-2.5 h-9 rounded-lg bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] hover:bg-[var(--line,#334155)]/60 transition-colors"
+							className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold px-2.5 min-h-[44px] rounded-lg bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] hover:bg-[var(--line,#334155)]/60 transition-colors"
 							title="Включить перехват Numpad и клавиш электронного зонда (по умолчанию выключен, чтобы не ломать набор текста)"
 						>
 							<input
@@ -1316,7 +1316,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 							<button
 								type="button"
 								onClick={handleInsertToProtocol}
-								className="h-9 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+								className="min-h-[44px] px-3 rounded-lg bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 								title="Внести текущее заключение пародонтограммы в дневник 043/у"
 								data-testid="perio-express-insert-043-btn"
 							>
@@ -1330,7 +1330,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsTier3ProbingExpanded((prev) => !prev)}
-							className="text-xs text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer transition-colors h-9 px-2.5 rounded-lg hover:bg-teal-500/15"
+							className="text-xs text-teal-400 hover:text-teal-300 font-bold flex items-center gap-1 cursor-pointer transition-colors min-h-[44px] px-2.5 rounded-lg hover:bg-teal-500/15"
 							data-testid="perio-tier3-toggle-header-btn"
 						>
 							<span>

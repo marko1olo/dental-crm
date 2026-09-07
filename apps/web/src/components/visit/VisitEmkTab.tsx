@@ -1681,7 +1681,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (cariesPreset) handleApplyClinicalSoapPreset(cariesPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Кариес дентина K02.1: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -1693,7 +1693,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (pulpitisPreset) handleApplyClinicalSoapPreset(pulpitisPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Острый пульпит K04.0: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -1705,7 +1705,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (periodontitisPreset) handleApplyClinicalSoapPreset(periodontitisPreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Хронический периодонтит K04.5: автозаполнение нормы + жалобы + статус + протокол 804н"
 				>
 					<Activity className="w-3.5 h-3.5 text-rose-500 shrink-0" />
@@ -1717,7 +1717,7 @@ export function VisitEmkTab() {
 					onClick={() => {
 						if (hygienePreset) handleApplyClinicalSoapPreset(hygienePreset, activeSelectedTooth, "clean_replace");
 					}}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Профгигиена K05.0: комплексная чистка УЗ + Air-Flow + Clinpro"
 				>
 					<Sparkles className="w-3.5 h-3.5 text-teal-500 shrink-0" />
@@ -1727,7 +1727,7 @@ export function VisitEmkTab() {
 					type="button"
 					data-testid="btn-quick-soap-norm"
 					onClick={handleApplyPhysiologicalNorm}
-					className="min-h-[38px] px-3 py-1.5 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
+					className="min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shadow-2xs"
 					title="Физиологическая норма: соматически здоров, жалоб нет, слизистая бледно-розовая, патологий не выявлено"
 				>
 					<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -3661,12 +3661,12 @@ export function VisitEmkTab() {
 					</tbody>
 				</table>
 
-				{/* Структурированная таблица протокола SOAP */}
+				{/* Структурированная таблица протокола 043/у */}
 				<div className="space-y-3" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
-					{/* S - Subjective */}
+					{/* I. Жалобы и анамнез */}
 					<div className="border border-slate-300 rounded-md overflow-hidden" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
 						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-blue-900 flex items-center gap-1.5">
-							<span>S · Жалобы и анамнез заболевания (Subjective)</span>
+							<span>I. Жалобы и анамнез заболевания</span>
 						</div>
 						<div className="p-2.5 text-xs text-slate-900 space-y-1.5">
 							<div>
@@ -3680,30 +3680,30 @@ export function VisitEmkTab() {
 						</div>
 					</div>
 
-					{/* O - Objective */}
+					{/* II. Объективный статус */}
 					<div className="border border-slate-300 rounded-md overflow-hidden" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
 						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-purple-900 flex items-center gap-1.5">
-							<span>O · Объективный статус полости рта (Status Localis, Objective)</span>
+							<span>II. Данные объективного исследования (Status localis)</span>
 						</div>
 						<div className="p-2.5 text-xs text-slate-900 whitespace-pre-wrap">
 							{visitNoteForm?.objectiveStatus || "Слизистая оболочка полости рта физиологической окраски, влажная. Регионарные лимфатические узлы не увеличены, безболезненны при пальпации. Прикус ортогнатический."}
 						</div>
 					</div>
 
-					{/* A - Assessment */}
+					{/* III. Диагноз */}
 					<div className="border border-slate-300 rounded-md overflow-hidden" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
 						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-amber-900 flex items-center gap-1.5">
-							<span>A · Клинический диагноз по МКБ-10 (Assessment)</span>
+							<span>III. Диагноз по МКБ-10</span>
 						</div>
 						<div className="p-2.5 text-xs text-slate-900 font-bold">
 							{visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование"}
 						</div>
 					</div>
 
-					{/* P - Plan & Treatment */}
+					{/* IV. Дневник лечения */}
 					<div className="border border-slate-300 rounded-md overflow-hidden" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
 						<div className="bg-slate-100 px-3 py-1.5 font-bold text-xs uppercase tracking-wide border-b border-slate-300 text-slate-900 flex items-center gap-1.5">
-							<span>P · Протокол оказанной медицинской помощи, лечение и назначения (Plan)</span>
+							<span>IV. Дневник лечения и рекомендации</span>
 						</div>
 						<div className="p-2.5 text-xs text-slate-900 whitespace-pre-wrap">
 							{visitNoteForm?.treatmentPlan || "Проведен осмотр полости рта, консультация, составлен предварительный план терапевтического лечения. Даны рекомендации по гигиене."}

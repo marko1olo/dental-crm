@@ -397,9 +397,7 @@
 }
 
 .perio-preset-btn {
-	height: 32px;
-	min-height: 32px;
-	max-height: 32px;
+	min-height: 44px;
 	padding: 0 10px;
 	border-radius: 8px;
 	font-size: 12px;
