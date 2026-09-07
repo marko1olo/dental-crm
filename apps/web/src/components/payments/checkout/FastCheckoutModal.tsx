@@ -65,6 +65,8 @@ export interface FastCheckoutModalProps {
 	readonly patientPhone?: string | undefined;
 	readonly patientEmail?: string | undefined;
 	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly familyPayerName?: string | undefined;
 	readonly orderId?: string | undefined;
 	readonly stages?: readonly TreatmentPlanStageOption[] | undefined;
 	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
@@ -79,6 +81,8 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	patientPhone = "+7 (999) 123-45-67",
 	patientEmail = "patient@example.com",
 	patientDepositRub = 85000,
+	patientFamilyBalanceRub = 0,
+	familyPayerName = "Глава семьи",
 	orderId = "CHK-2026-891",
 	stages = DEFAULT_TREATMENT_STAGES,
 	onPaymentComplete,
@@ -282,10 +286,12 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	if (!isOpen) return null;
 
 	const handleQuickPreset = (preset: QuickCheckoutPresetType) => {
+		const effectiveDepositRub =
+			patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : patientDepositRub;
 		const result = applyQuickCheckoutPreset({
 			totalBillKop: targetBillKop,
 			preset,
-			availableDepositKop: Math.round(patientDepositRub * 100),
+			availableDepositKop: Math.round(effectiveDepositRub * 100),
 		});
 		setActiveMethod(result.activeMethod);
 		const splitState = paymentsToSplitState(result.payments);
@@ -764,16 +770,16 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								Быстрые 1-клик сценарии оплаты (0 барьеров):
 							</span>
 							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)]">
-								Мгновенный расчет без ручного ввода цифр
+								Мгновенный расчет без ручного ввода цифр{familyPayerName ? ` • Плательщик: ${familyPayerName}` : ""}{patientFamilyBalanceRub > 0 ? ` (баланс: ${(patientFamilyBalanceRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)` : ""}
 							</span>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_card")}
 								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-card"
-								title="Оплатить 100% банковской картой через терминал"
+								title="Оплатить 100% банковской картой через терминал (Тег 1081)"
 							>
 								<CreditCard size={15} className="shrink-0 text-blue-600" />
 								<span className="truncate">⚡ Картой 100%</span>
@@ -783,10 +789,10 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								onClick={() => handleQuickPreset("100_cash")}
 								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
 								data-testid="btn-checkout-100-cash"
-								title="Оплатить 100% наличными (ровно в кассу)"
+								title="Оплатить 100% наличными ровно в кассу без сдачи (Тег 1031)"
 							>
 								<Banknote size={15} className="shrink-0 text-emerald-600" />
-								<span className="truncate">⚡ Нал 100%</span>
+								<span className="truncate">⚡ Без сдачи (Нал 100%)</span>
 							</button>
 							<button
 								type="button"
@@ -827,6 +833,16 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							>
 								<Layers size={15} className="shrink-0 text-purple-600" />
 								<span className="truncate">⚡ 50% Карта + 50% Нал</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("split_three_way")}
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-indigo-500/40 bg-[var(--paper,#ffffff)] hover:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-split-three-way"
+								title={`Комбинированная оплата в 1 клик: Аванс родственника (${familyPayerName}) + 50% Карта + 50% Нал`}
+							>
+								<Users size={15} className="shrink-0 text-indigo-600" />
+								<span className="truncate">⚡ Нал + Карта + Аванс</span>
 							</button>
 						</div>
 					</div>
@@ -1333,9 +1349,17 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 							{/* Deposit / Prepayment (Tag 1215) */}
 							<div className="p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-1">
-								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-									<Coins size={14} className="text-amber-600" />
-									<span>Депозит / Аванс (Тег 1215)</span>
+								<label className="text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-between gap-1.5">
+									<div className="flex items-center gap-1.5">
+										<Coins size={14} className="text-amber-600" />
+										<span>Депозит / Аванс (Тег 1215)</span>
+									</div>
+									{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
+										<span className="text-[11px] font-mono text-emerald-700 dark:text-emerald-300 font-semibold" data-testid="deposit-balance-badge">
+											Доступно: {(patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : patientDepositRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											{patientFamilyBalanceRub > 0 && familyPayerName ? ` (${familyPayerName})` : ""}
+										</span>
+									)}
 								</label>
 								<div className="relative">
 									<input
@@ -1545,11 +1569,11 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											Семейный лицевой счет:
 										</span>
 										<span className="text-emerald-700 dark:text-emerald-300 font-bold font-mono">
-											Баланс депозита: 85 000.00 ₽
+											Баланс депозита: {(patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : patientDepositRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 										</span>
 									</div>
 									<p className="text-xs text-[var(--muted,#64748b)] m-0">
-										Плательщик: Смирнов В.А. (Глава семьи). Списание разрешено (Тег 1215 ФФД 1.2).
+										Плательщик: {familyPayerName}. Списание разрешено (Тег 1215 ФФД 1.2).
 									</p>
 								</div>
 							</div>

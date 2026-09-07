@@ -10,7 +10,8 @@
  * - 54-FZ / FFD 1.2: Income Return Receipt (Возврат прихода, Тег 1054 = 2).
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
@@ -69,20 +70,20 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 		it("selectAllRefundItems: marks 100% of treatment items in 1 click", () => {
 			const selection = selectAllRefundItems(SAMPLE_TREATMENT_ITEMS);
 
-			expect(selection).toEqual({
+			assert.deepEqual(selection, {
 				"item-therapy-1": true,
 				"item-endo-2": true,
 				"item-hygiene-3": true,
 			});
-			expect(Object.keys(selection).length).toBe(3);
-			expect(Object.values(selection).every(Boolean)).toBe(true);
+			assert.equal(Object.keys(selection).length, 3);
+			assert.equal(Object.values(selection).every(Boolean), true);
 		});
 
 		it("deselectAllRefundItems: clears all selected refund items to empty record", () => {
 			const cleared = deselectAllRefundItems();
 
-			expect(cleared).toEqual({});
-			expect(Object.keys(cleared).length).toBe(0);
+			assert.deepEqual(cleared, {});
+			assert.equal(Object.keys(cleared).length, 0);
 		});
 	});
 
@@ -96,10 +97,10 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "Возврат аванса / денежных средств",
 			});
 
-			expect(summary.effectiveItems.length).toBe(0);
-			expect(summary.totalRub).toBe(0);
-			expect(summary.totalKopecks).toBe(0);
-			expect(summary.canFiscalize).toBe(false);
+			assert.equal(summary.effectiveItems.length, 0);
+			assert.equal(summary.totalRub, 0);
+			assert.equal(summary.totalKopecks, 0);
+			assert.equal(summary.canFiscalize, false);
 		});
 
 		it("calculates exact refund when 1 item is selected", () => {
@@ -112,11 +113,11 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "",
 			});
 
-			expect(summary.effectiveItems.length).toBe(1);
-			expect(summary.effectiveItems[0]!.id).toBe("item-therapy-1");
-			expect(summary.totalRub).toBe(4500);
-			expect(summary.totalKopecks).toBe(450000);
-			expect(summary.canFiscalize).toBe(true);
+			assert.equal(summary.effectiveItems.length, 1);
+			assert.equal(summary.effectiveItems[0]!.id, "item-therapy-1");
+			assert.equal(summary.totalRub, 4500);
+			assert.equal(summary.totalKopecks, 450000);
+			assert.equal(summary.canFiscalize, true);
 		});
 
 		it("calculates exact 100% refund total taking item discounts into account", () => {
@@ -133,10 +134,10 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 			// Item 2: 3 * 2500 - 500 = 7000 ₽
 			// Item 3: 5000 ₽
 			// Expected Total: 4500 + 7000 + 5000 = 16500 ₽ (1650000 kopecks)
-			expect(summary.effectiveItems.length).toBe(3);
-			expect(summary.totalRub).toBe(16500);
-			expect(summary.totalKopecks).toBe(1650000);
-			expect(summary.canFiscalize).toBe(true);
+			assert.equal(summary.effectiveItems.length, 3);
+			assert.equal(summary.totalRub, 16500);
+			assert.equal(summary.totalKopecks, 1650000);
+			assert.equal(summary.canFiscalize, true);
 		});
 
 		it("resets total to 0 ₽ when selection is cleared after full selection", () => {
@@ -151,7 +152,7 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "",
 			});
 
-			expect(activeAfterClear.length).toBe(0);
+			assert.equal(activeAfterClear.length, 0);
 
 			const summaryAfterClear = calculateRefundFiscalSummary({
 				items: SAMPLE_TREATMENT_ITEMS,
@@ -161,8 +162,8 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "",
 			});
 
-			expect(summaryAfterClear.totalRub).toBe(0);
-			expect(summaryAfterClear.canFiscalize).toBe(false);
+			assert.equal(summaryAfterClear.totalRub, 0);
+			assert.equal(summaryAfterClear.canFiscalize, false);
 		});
 	});
 
@@ -176,17 +177,17 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "Возврат неизрасходованного аванса по договору № 2026/01",
 			});
 
-			expect(summary.effectiveItems.length).toBe(1);
+			assert.equal(summary.effectiveItems.length, 1);
 			const advanceItem = summary.effectiveItems[0]!;
-			expect(advanceItem.id).toBe("refund-advance-deposit");
-			expect(advanceItem.name).toBe("Возврат неизрасходованного аванса по договору № 2026/01");
-			expect(advanceItem.unitPriceRub).toBe(5000);
-			expect(advanceItem.priceRub).toBe(5000);
-			expect(advanceItem.quantity).toBe(1);
-			expect(advanceItem.discountRub).toBe(0);
-			expect(summary.totalRub).toBe(5000);
-			expect(summary.totalKopecks).toBe(500000);
-			expect(summary.canFiscalize).toBe(true);
+			assert.equal(advanceItem.id, "refund-advance-deposit");
+			assert.equal(advanceItem.name, "Возврат неизрасходованного аванса по договору № 2026/01");
+			assert.equal(advanceItem.unitPriceRub, 5000);
+			assert.equal(advanceItem.priceRub, 5000);
+			assert.equal(advanceItem.quantity, 1);
+			assert.equal(advanceItem.discountRub, 0);
+			assert.equal(summary.totalRub, 5000);
+			assert.equal(summary.totalKopecks, 500000);
+			assert.equal(summary.canFiscalize, true);
 		});
 
 		it("defaults advance purpose to standard text if empty", () => {
@@ -198,9 +199,9 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "   ",
 			});
 
-			expect(items.length).toBe(1);
-			expect(items[0]!.name).toBe("Возврат аванса / денежных средств");
-			expect(items[0]!.unitPriceRub).toBe(2500);
+			assert.equal(items.length, 1);
+			assert.equal(items[0]!.name, "Возврат аванса / денежных средств");
+			assert.equal(items[0]!.unitPriceRub, 2500);
 		});
 
 		it("blocks fiscalization if advance amount is 0 or negative", () => {
@@ -212,9 +213,9 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "Возврат аванса",
 			});
 
-			expect(zeroSummary.effectiveItems.length).toBe(0);
-			expect(zeroSummary.totalRub).toBe(0);
-			expect(zeroSummary.canFiscalize).toBe(false);
+			assert.equal(zeroSummary.effectiveItems.length, 0);
+			assert.equal(zeroSummary.totalRub, 0);
+			assert.equal(zeroSummary.canFiscalize, false);
 
 			const negSummary = calculateRefundFiscalSummary({
 				items: [],
@@ -224,9 +225,9 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "Возврат аванса",
 			});
 
-			expect(negSummary.effectiveItems.length).toBe(0);
-			expect(negSummary.totalRub).toBe(0);
-			expect(negSummary.canFiscalize).toBe(false);
+			assert.equal(negSummary.effectiveItems.length, 0);
+			assert.equal(negSummary.totalRub, 0);
+			assert.equal(negSummary.canFiscalize, false);
 		});
 
 		it("generates full 54-FZ FFD 1.2 Income Return Receipt from advance refund item", () => {
@@ -252,17 +253,17 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				cashierFullName: "Кассир-администратор Иванова А. В.",
 			});
 
-			expect(receipt.operationType).toBe("income_return");
-			expect(receipt.operationTypeName).toBe("Возврат прихода");
-			expect(receipt.receiptNumber.startsWith("CHK-RET-")).toBe(true);
-			expect(receipt.totalRub).toBe(7500);
-			expect(receipt.totalKopecks).toBe(750000);
-			expect(receipt.items.length).toBe(1);
-			expect(receipt.items[0]!.name).toBe("Возврат депозита пациенту");
-			expect(receipt.items[0]!.amountRub).toBe(7500);
-			expect(receipt.payments.cardRub).toBe(7500);
-			expect(receipt.originalReceiptNumber).toBe("CHK-2026-99012");
-			expect(receipt.refundReason).toBe("Возврат депозита по заявлению пациента");
+			assert.equal(receipt.operationType, "income_return");
+			assert.equal(receipt.operationTypeName, "Возврат прихода");
+			assert.equal(receipt.receiptNumber.startsWith("CHK-RET-"), true);
+			assert.equal(receipt.totalRub, 7500);
+			assert.equal(receipt.totalKopecks, 750000);
+			assert.equal(receipt.items.length, 1);
+			assert.equal(receipt.items[0]!.name, "Возврат депозита пациенту");
+			assert.equal(receipt.items[0]!.amountRub, 7500);
+			assert.equal(receipt.payments.cardRub, 7500);
+			assert.equal(receipt.originalReceiptNumber, "CHK-2026-99012");
+			assert.equal(receipt.refundReason, "Возврат депозита по заявлению пациента");
 		});
 	});
 
@@ -280,27 +281,27 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 			);
 
 			// 1. Verify refund tab heading & tag 1054
-			expect(html.includes("Формирование чека возврата прихода")).toBe(true);
-			expect(html.includes("Тег 1054 = 2")).toBe(true);
+			assert.equal(html.includes("Формирование чека возврата прихода"), true);
+			assert.equal(html.includes("Тег 1054 = 2"), true);
 
 			// 2. Verify 1-click express buttons
-			expect(html.includes('data-testid="btn-refund-select-all"')).toBe(true);
-			expect(html.includes("Выбрать все позиции (100% возврат)")).toBe(true);
-			expect(html.includes('data-testid="btn-refund-deselect-all"')).toBe(true);
-			expect(html.includes("Снять выбор")).toBe(true);
+			assert.equal(html.includes('data-testid="btn-refund-select-all"'), true);
+			assert.equal(html.includes("Выбрать все позиции (100% возврат)"), true);
+			assert.equal(html.includes('data-testid="btn-refund-deselect-all"'), true);
+			assert.equal(html.includes("Снять выбор"), true);
 
 			// 3. Verify mode switcher
-			expect(html.includes('data-testid="btn-refund-mode-items"')).toBe(true);
-			expect(html.includes('data-testid="btn-refund-mode-advance"')).toBe(true);
+			assert.equal(html.includes('data-testid="btn-refund-mode-items"'), true);
+			assert.equal(html.includes('data-testid="btn-refund-mode-advance"'), true);
 
 			// 4. Verify checkboxes for items
-			expect(html.includes('data-testid="checkbox-refund-item-therapy-1"')).toBe(true);
-			expect(html.includes('data-testid="checkbox-refund-item-endo-2"')).toBe(true);
-			expect(html.includes('data-testid="checkbox-refund-item-hygiene-3"')).toBe(true);
+			assert.equal(html.includes('data-testid="checkbox-refund-item-therapy-1"'), true);
+			assert.equal(html.includes('data-testid="checkbox-refund-item-endo-2"'), true);
+			assert.equal(html.includes('data-testid="checkbox-refund-item-hygiene-3"'), true);
 
 			// 5. Verify action button exists and is disabled initially (0 items selected)
-			expect(html.includes('data-testid="btn-execute-refund"')).toBe(true);
-			expect(html.includes("Пробить чек возврата прихода на 0,00 ₽")).toBe(true);
+			assert.equal(html.includes('data-testid="btn-execute-refund"'), true);
+			assert.equal(html.includes("Пробить чек возврата прихода на 0,00 ₽"), true);
 		});
 
 		it("renders advance refund inputs when activeItems.length === 0 (zero dead-ends)", () => {
@@ -317,19 +318,19 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 			);
 
 			// 1. Verify advance container rendered instead of empty items box
-			expect(html.includes('data-testid="refund-advance-container"')).toBe(true);
-			expect(html.includes("Возврат аванса / денежных средств по номеру фискального чека (54-ФЗ)")).toBe(true);
+			assert.equal(html.includes('data-testid="refund-advance-container"'), true);
+			assert.equal(html.includes("Возврат аванса / денежных средств по номеру фискального чека (54-ФЗ)"), true);
 
 			// 2. Verify inputs exist
-			expect(html.includes('data-testid="input-refund-advance-amount"')).toBe(true);
-			expect(html.includes('data-testid="input-refund-advance-purpose"')).toBe(true);
+			assert.equal(html.includes('data-testid="input-refund-advance-amount"'), true);
+			assert.equal(html.includes('data-testid="input-refund-advance-purpose"'), true);
 
 			// 3. Verify quick deposit button if patient deposit exists
-			expect(html.includes('data-testid="btn-use-full-deposit-refund"')).toBe(true);
-			expect(html.includes("Заполнить всю сумму")).toBe(true);
+			assert.equal(html.includes('data-testid="btn-use-full-deposit-refund"'), true);
+			assert.equal(html.includes("Заполнить всю сумму"), true);
 
 			// 4. Verify refund button is present
-			expect(html.includes('data-testid="btn-execute-refund"')).toBe(true);
+			assert.equal(html.includes('data-testid="btn-execute-refund"'), true);
 		});
 	});
 });

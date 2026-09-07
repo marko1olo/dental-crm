@@ -159,6 +159,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 	};
 
 	const handleXReport = async () => {
+		if (!isShiftOpen) {
+			showToast("Смена закрыта. Для снятия промежуточного отчета откройте смену", "info", 4000);
+			return;
+		}
 		setIsProcessing(true);
 		try {
 			if (onPrintXReport) await onPrintXReport();
@@ -452,9 +456,10 @@ export const CashShiftWidget: React.FC<CashShiftWidgetProps> = ({
 				<button
 					type="button"
 					onClick={handleXReport}
-					disabled={!isShiftOpen || isProcessing}
+					disabled={isProcessing}
 					className="cash-shift-actions-btn-primary min-h-[48px] text-xs sm:text-sm font-bold cursor-pointer"
 					title="Распечатать промежуточный X-отчет без гашения"
+					data-testid="btn-print-x-report"
 				>
 					<Printer size={16} />
 					<span>Печать X-отчета (без гашения)</span>
