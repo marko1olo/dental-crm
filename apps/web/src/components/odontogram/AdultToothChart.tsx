@@ -27,6 +27,7 @@ export interface AdultToothChartProps {
 	showPeriodontalBoneLoss?: boolean | undefined;
 	activeQuadrant?: OdontogramQuadrantId | undefined;
 	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
+	onJawClick?: ((target: "JU" | "JL" | "C") => void) | undefined;
 	archScale?: number | undefined;
 	className?: string | undefined;
 }
@@ -45,6 +46,7 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 	showPeriodontalBoneLoss = true,
 	activeQuadrant = "all",
 	onQuadrantChange,
+	onJawClick,
 	archScale = 1,
 	className = "",
 }) => {
@@ -158,6 +160,24 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 						position: "relative",
 					}}
 				>
+					{/* Upper Arch (Maxilla) Header & Jaw Button */}
+					<div className="flex items-center justify-between px-2 pb-1 select-none">
+						<span className="text-[11px] uppercase tracking-wider font-extrabold text-[var(--odontogram-ink-muted,#64748b)]">
+							Верхняя челюсть (Maxilla)
+						</span>
+						{onJawClick && (
+							<button
+								type="button"
+								onClick={() => onJawClick("JU")}
+								className="min-h-[28px] px-2.5 py-0.5 rounded-lg text-xs font-black bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-all cursor-pointer shadow-2xs flex items-center gap-1 active:scale-95"
+								title="Диагностика верхней челюсти (JU): адентия, атрофия, синус-лифтинг"
+								data-testid="adult-chart-jaw-ju-btn"
+							>
+								<span>[В/Ч (JU)]</span>
+							</button>
+						)}
+					</div>
+
 					{/* Upper Arch (Maxilla) */}
 					<div className="teeth-row top-row">
 						{/* Left Half (Q1: 18..11) */}
@@ -241,11 +261,24 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 					</div>
 
 					{/* Horizontal Occlusal Arch Divider */}
-					<div className="teeth-divider">
+					<div className="teeth-divider relative flex items-center justify-center">
 						<div className="divider-line" />
-						<div className="divider-center" title="Центр окклюзионной плоскости">
-							<div className="divider-diamond" />
-						</div>
+						{onJawClick ? (
+							<button
+								type="button"
+								onClick={() => onJawClick("C")}
+								className="divider-center z-10 px-2.5 py-1 rounded-xl bg-[var(--odontogram-paper,#ffffff)] hover:bg-purple-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-xs font-black cursor-pointer shadow-xs transition-all flex items-center gap-1.5 active:scale-95 touch-manipulation"
+								title="Центральное соотношение / Прикус (C): 1 клик диагностика"
+								data-testid="adult-chart-jaw-c-btn"
+							>
+								<div className="divider-diamond" />
+								<span>Прикус (C)</span>
+							</button>
+						) : (
+							<div className="divider-center" title="Центр окклюзионной плоскости">
+								<div className="divider-diamond" />
+							</div>
+						)}
 					</div>
 
 					{/* Lower Arch (Mandible) */}
@@ -328,6 +361,24 @@ export const AdultToothChart: React.FC<AdultToothChartProps> = ({
 								);
 							})}
 						</div>
+					</div>
+
+					{/* Lower Arch (Mandible) Footer & Jaw Button */}
+					<div className="flex items-center justify-between px-2 pt-1 select-none">
+						<span className="text-[11px] uppercase tracking-wider font-extrabold text-[var(--odontogram-ink-muted,#64748b)]">
+							Нижняя челюсть (Mandibula)
+						</span>
+						{onJawClick && (
+							<button
+								type="button"
+								onClick={() => onJawClick("JL")}
+								className="min-h-[28px] px-2.5 py-0.5 rounded-lg text-xs font-black bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-all cursor-pointer shadow-2xs flex items-center gap-1 active:scale-95"
+								title="Диагностика нижней челюсти (JL): адентия, атрофия, экзостозы"
+								data-testid="adult-chart-jaw-jl-btn"
+							>
+								<span>[Н/Ч (JL)]</span>
+							</button>
+						)}
 					</div>
 				</div>
 			)}

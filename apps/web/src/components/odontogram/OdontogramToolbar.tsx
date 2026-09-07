@@ -81,6 +81,7 @@ export interface OdontogramToolbarProps {
 	onToggleLiveInvoice: () => void;
 	isVoiceListening: boolean;
 	onToggleVoiceDictation: () => void;
+	onOpenJawModal?: ((target: "JU" | "JL" | "C") => void) | undefined;
 	className?: string | undefined;
 }
 
@@ -111,6 +112,7 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 	onToggleLiveInvoice,
 	isVoiceListening,
 	onToggleVoiceDictation,
+	onOpenJawModal,
 	className = "",
 }) => {
 	const [isToolsOpen, setIsToolsOpen] = useState<boolean>(false);
@@ -231,6 +233,43 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 							data-testid="toolbar-dentition-mixed"
 						>
 							Сменный
+						</button>
+					</div>
+				)}
+
+				{/* 3 Jaw / Occlusion 1-Click Buttons (JU, JL, C) */}
+				{onOpenJawModal && (
+					<div
+						className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0"
+						role="group"
+						aria-label="Челюсти и прикус"
+					>
+						<button
+							type="button"
+							onClick={() => onOpenJawModal("JU")}
+							className="min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
+							title="Верхняя челюсть (JU / Maxilla): адентия, атрофия, синус-лифтинг"
+							data-testid="toolbar-jaw-ju-btn"
+						>
+							В/Ч
+						</button>
+						<button
+							type="button"
+							onClick={() => onOpenJawModal("JL")}
+							className="min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
+							title="Нижняя челюсть (JL / Mandibula): адентия, атрофия, экзостозы"
+							data-testid="toolbar-jaw-jl-btn"
+						>
+							Н/Ч
+						</button>
+						<button
+							type="button"
+							onClick={() => onOpenJawModal("C")}
+							className="min-h-[32px] h-[32px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-purple-700 dark:text-purple-300 hover:bg-purple-500/15"
+							title="Прикус / Окклюзия (C): ортогнатический, дистальный, мезиальный, глубокий"
+							data-testid="toolbar-jaw-c-btn"
+						>
+							Прикус
 						</button>
 					</div>
 				)}
@@ -635,6 +674,66 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 									<span>Сменный прикус и сроки</span>
 								</div>
 							</button>
+						)}
+
+						{/* 3 Jaw / Occlusion Items in Tools */}
+						{onOpenJawModal && (
+							<>
+								<button
+									type="button"
+									onClick={() => {
+										onOpenJawModal("JU");
+										setIsToolsOpen(false);
+									}}
+									className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-indigo-700 dark:text-indigo-300 font-bold"
+									role="menuitem"
+									data-testid="tools-menu-jaw-ju-btn"
+								>
+									<div className="flex items-center gap-2">
+										<Zap size={14} className="text-indigo-500" />
+										<span>Верхняя челюсть (JU)</span>
+									</div>
+									<span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 font-mono">
+										Maxilla
+									</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onOpenJawModal("JL");
+										setIsToolsOpen(false);
+									}}
+									className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-indigo-700 dark:text-indigo-300 font-bold"
+									role="menuitem"
+									data-testid="tools-menu-jaw-jl-btn"
+								>
+									<div className="flex items-center gap-2">
+										<Zap size={14} className="text-indigo-500" />
+										<span>Нижняя челюсть (JL)</span>
+									</div>
+									<span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 font-mono">
+										Mandibula
+									</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										onOpenJawModal("C");
+										setIsToolsOpen(false);
+									}}
+									className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-purple-700 dark:text-purple-300 font-bold"
+									role="menuitem"
+									data-testid="tools-menu-jaw-c-btn"
+								>
+									<div className="flex items-center gap-2">
+										<Zap size={14} className="text-purple-500" />
+										<span>Прикус и окклюзия (C)</span>
+									</div>
+									<span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 font-mono">
+										Энгль
+									</span>
+								</button>
+							</>
 						)}
 
 						<div className="h-[1px] bg-[var(--line,#e2e8f0)] my-1" />

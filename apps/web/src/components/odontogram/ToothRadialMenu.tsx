@@ -668,6 +668,87 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										[VI: Бугры]
 									</button>
 								</div>
+
+								{/* Некариозные поражения и дефекты коронок/пломб (StomX 91 дефект) */}
+								<div className="flex items-center justify-between pt-2 border-t border-[var(--odontogram-border-subtle)]">
+									<span className="text-xs uppercase font-black text-indigo-600 dark:text-indigo-400 px-1 shrink-0">
+										Дефекты и некариозные (Кд, Дп, Дк):
+									</span>
+								</div>
+								<div className="grid grid-cols-3 gap-1.5 w-full">
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["C"], "wedge_defect");
+											onClose();
+										}}
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/30 transition-all cursor-pointer border border-indigo-500/30 touch-manipulation text-center"
+										title="Кд: Клиновидный дефект пришеечной области (K03.1)"
+										data-testid="radial-defect-wedge-btn"
+									>
+										[Кд: Клин. дефект]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Filled", selectedSurfaces.length > 0 ? selectedSurfaces : surfaces, "defective_filling");
+											onClose();
+										}}
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation text-center"
+										title="Дп: Дефект пломбы (нарушение краевого прилегания, скол, вторичный кариес)"
+										data-testid="radial-defect-filling-btn"
+									>
+										[Дп: Дефект пломбы]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Crown", undefined, "defective_crown");
+											onClose();
+										}}
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation text-center"
+										title="Дк: Дефект коронки (расцементировка, скол керамики, промывной зазор)"
+										data-testid="radial-defect-crown-btn"
+									>
+										[Дк: Дефект коронки]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", selectedSurfaces.length > 0 ? selectedSurfaces : ["V"], "hypoplasia_fluorosis");
+											onClose();
+										}}
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/30 transition-all cursor-pointer border border-sky-500/30 touch-manipulation text-center"
+										title="Г / Фл: Гипоплазия эмали (K00.4) или Флюороз (K00.3)"
+										data-testid="radial-defect-hypoplasia-btn"
+									>
+										[Г/Фл: Гипоплазия]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Crown", ["V"], "veneer_inlay");
+											onClose();
+										}}
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-teal-500/15 text-teal-800 dark:text-teal-200 hover:bg-teal-500/30 transition-all cursor-pointer border border-teal-500/30 touch-manipulation text-center"
+										title="В / ВК: Винир или культевая/керамическая вкладка (Inlay/Onlay)"
+										data-testid="radial-defect-veneer-btn"
+									>
+										[В: Винир/Вкладка]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Filled", ["O"], "fissure_sealant");
+											onClose();
+										}}
+										className="min-h-[48px] px-2 py-2 rounded-xl text-xs font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/30 transition-all cursor-pointer border border-emerald-500/30 touch-manipulation text-center"
+										title="Гф: Герметизация фиссур / Профилактическое запечатывание"
+										data-testid="radial-defect-sealant-btn"
+									>
+										[Гф: Герметизация]
+									</button>
+								</div>
 							</>
 						)}
 					</div>
@@ -1035,6 +1116,83 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 										title="VI класс: Бугры моляров/премоляров или режущий край"
 									>
 										[VI: Бугры]
+									</button>
+								</div>
+
+								{/* Secondary Defects (Кд, Дп, Дк, Г/Фл, В, Гф) */}
+								<div className="flex items-center gap-1 pt-0.5 border-t border-[var(--odontogram-border-subtle)]">
+									<span className="text-[11px] uppercase font-black text-indigo-600 dark:text-indigo-400 px-1">Дефекты:</span>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", ["C"], "wedge_defect");
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/30 transition-all cursor-pointer border border-indigo-500/30 touch-manipulation"
+										title="Кд: Клиновидный дефект пришеечной области (K03.1)"
+										data-testid="radial-desktop-defect-wedge-btn"
+									>
+										[Кд]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Filled", selectedSurfaces.length > 0 ? selectedSurfaces : surfaces, "defective_filling");
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										title="Дп: Дефект пломбы (нарушение краевого прилегания, скол, рецидив)"
+										data-testid="radial-desktop-defect-filling-btn"
+									>
+										[Дп]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Crown", undefined, "defective_crown");
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation"
+										title="Дк: Дефект коронки (расцементировка, скол керамики, зазор)"
+										data-testid="radial-desktop-defect-crown-btn"
+									>
+										[Дк]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Caries", selectedSurfaces.length > 0 ? selectedSurfaces : ["V"], "hypoplasia_fluorosis");
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/30 transition-all cursor-pointer border border-sky-500/30 touch-manipulation"
+										title="Г / Фл: Гипоплазия эмали (K00.4) или Флюороз (K00.3)"
+										data-testid="radial-desktop-defect-hypoplasia-btn"
+									>
+										[Г/Фл]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Crown", ["V"], "veneer_inlay");
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-teal-500/15 text-teal-800 dark:text-teal-200 hover:bg-teal-500/30 transition-all cursor-pointer border border-teal-500/30 touch-manipulation"
+										title="В / ВК: Винир или вкладка"
+										data-testid="radial-desktop-defect-veneer-btn"
+									>
+										[В/ВК]
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											onSelectState("Filled", ["O"], "fissure_sealant");
+											onClose();
+										}}
+										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/30 transition-all cursor-pointer border border-emerald-500/30 touch-manipulation"
+										title="Гф: Герметизация фиссур"
+										data-testid="radial-desktop-defect-sealant-btn"
+									>
+										[Гф]
 									</button>
 								</div>
 							</div>

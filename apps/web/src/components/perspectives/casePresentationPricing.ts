@@ -654,7 +654,9 @@ export function generate3TierPlans(
 		premiumFeatures.push(
 			"Digital Smile Design (DSD) виртуальное 3D-моделирование",
 		);
-		premiumFeatures.push("Персональный медицинский консьерж и VIP-палата");
+		premiumFeatures.push(
+			"Персональный медицинский куратор и комната отдыха после седации",
+		);
 		premiumFeatures.push(
 			"Пожизненная гарантия производителя на имплантаты Straumann",
 		);
@@ -689,7 +691,7 @@ export function generate3TierPlans(
 		premiumFeatures.push(
 			"Укрепление и реминерализация эмали составами премиум-класса",
 		);
-		premiumFeatures.push("Персональный медицинский консьерж клиники");
+		premiumFeatures.push("Персональный медицинский куратор клиники");
 		premiumFeatures.push("Гарантия 10 лет");
 
 		premiumStages.push({

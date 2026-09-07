@@ -48,6 +48,7 @@ import { ToothContextDrawer } from "../diagnostic/ToothContextDrawer";
 import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
 import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
 import { OrthodonticCephTrackerModal } from "../orthodontics/OrthodonticCephTrackerModal";
+import { JawOcclusionModal } from "./JawOcclusionModal";
 import { showToast } from "../GlobalToast";
 
 export interface OdontogramViewOption {
@@ -210,6 +211,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	}, [onMarkWisdomTeethMissing, onQuickStateChange]);
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+	const [activeJawModalTarget, setActiveJawModalTarget] = useState<"JU" | "JL" | "C" | null>(null);
 	const moreMenuRef = React.useRef<HTMLDivElement>(null);
 
 	// 3. Radial Menu Active Anchor
@@ -400,6 +402,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		onQuadrantChange,
 		onMarkIntactDentition: handleMarkIntactDentition,
 		onMarkWisdomTeethMissing: handleMarkWisdomTeethMissing,
+		onJawClick: (target: "JU" | "JL" | "C") => setActiveJawModalTarget(target),
 		showWisdomTeeth,
 		showPulpAndCanals,
 		className: "",
@@ -488,6 +491,41 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								)}
 							</div>
 						)}
+
+						{/* 3 Jaw / Occlusion 1-Click Buttons (JU, JL, C) */}
+						<div
+							className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0"
+							role="group"
+							aria-label="Челюсти и прикус"
+						>
+							<button
+								type="button"
+								onClick={() => setActiveJawModalTarget("JU")}
+								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
+								title="Верхняя челюсть (JU / Maxilla): адентия, атрофия, синус-лифтинг"
+								data-testid="view-toolbar-jaw-ju-btn"
+							>
+								В/Ч
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveJawModalTarget("JL")}
+								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15"
+								title="Нижняя челюсть (JL / Mandibula): адентия, атрофия, экзостозы"
+								data-testid="view-toolbar-jaw-jl-btn"
+							>
+								Н/Ч
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveJawModalTarget("C")}
+								className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2 py-1 rounded-md text-xs font-bold transition-all cursor-pointer select-none shrink-0 text-purple-700 dark:text-purple-300 hover:bg-purple-500/15"
+								title="Прикус / Окклюзия (C): ортогнатический, дистальный, мезиальный, глубокий"
+								data-testid="view-toolbar-jaw-c-btn"
+							>
+								Прикус
+							</button>
+						</div>
 					</div>
 
 					<div className="h-6 w-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 mx-0.5 hidden sm:block" />
@@ -975,6 +1013,15 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 				patientId={patientId}
 				patientName={patientId ? `Пациент #${patientId}` : undefined}
 			/>
+
+			{/* Tier 2 Jaw & Centric Occlusion Clinical Modal (JU, JL, C) */}
+			{activeJawModalTarget !== null && (
+				<JawOcclusionModal
+					isOpen={activeJawModalTarget !== null}
+					initialTarget={activeJawModalTarget}
+					onClose={() => setActiveJawModalTarget(null)}
+				/>
+			)}
 		</div>
 	);
 };
