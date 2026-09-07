@@ -1524,6 +1524,38 @@
 
 ---
 
+## 141. `смены_врача_смс::неблокирующая_валидация_смс_кода_и_сессионный_пэп_фолбэк` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8n)
+- **Идея**: В `DoctorMobileShiftModal.tsx` ликвидирована блокировка `disabled={enteredSmsCode.length < 6 || isSubmittingCode}`. Врач при неполном вводе получает активную подсказку с предложением ввести 6 цифр либо нажать сессионный ПЭП-фолбэк в 1 клик для работы в цокольных этажах клиники без сотовой связи (ст. 9 63-ФЗ).
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/doctor-portal/DoctorMobileShiftModal.tsx` (коммит `90bfae876`).
+  - Тесты: `apps/web/src/components/doctor-portal/__tests__/doctorMobileShiftAutonomy.test.tsx` (3 теста, 100% pass).
+
+---
+
+## 142. `кресельный_планшет_отп::активная_валидация_отп_и_бумажный_фолбэк_без_мертвых_кнопок` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8n)
+- **Идея**: В `ChairsideTabletConsentModal.tsx` снята блокировка кнопки `disabled={otpInput.length !== 4 || isSubmitting}`. Устранен эффект «мёртвой кнопки»: при клике выводится понятная подсказка с указанием на 1-клик бумажное подтверждение («Введите 4-значный код из СМС или нажмите «Подтвердить на бумаге (1 клик)»). Обеспечены тач-таргеты не менее 44px на всех кнопках подтверждения и печати А4.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/chairside/ChairsideTabletConsentModal.tsx` (коммит `720d516d1`).
+  - Тесты: `apps/web/src/components/chairside/__tests__/chairsideConsentPaperAutonomy.test.tsx` (5 тестов, 100% pass).
+
+---
+
+## 143. `начмед_егисз::неблокирующие_замечания_аудита_и_локальная_эмк_соло_врача_без_токена` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8n)
+- **Идея**: В `CmoQualityAuditModal.tsx` снята блокировка `disabled={!newRemarkText.trim()}` с активным тостом-подсказкой. В `EgiszSigningCabinetModal.tsx` снята блокировка отправки РЭМД и добавлена 1-клик кнопка локального хранения ЭМК соло-врача (ст. 9 63-ФЗ) без КриптоПро/Рутокен.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/cmo/CmoQualityAuditModal.tsx`, `apps/web/src/components/cmo/EgiszSigningCabinetModal.tsx` (коммит `e9d50001a`).
+  - Тесты: `apps/web/src/components/cmo/__tests__/cmoEgiszAutonomy.test.tsx` (3 теста, 100% pass).
+
+---
+
+## 144. `счета_финансы::активная_валидация_пин_и_клиническое_решение_врача_в_1_клик` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e & 8n)
+- **Идея**: В `InvoiceGenerationModal.tsx` кнопка валидации PIN-кода администратора разблокирована при коротком вводе с активным предупреждающим тостом. Добавлена 1-клик кнопка «Решение врача (1 клик)» для согласования цен и скидок лечащим врачом без управляющего клиники (Мандат 8e). Тач-таргеты приведены к $\ge 44\text{px}$.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/finance/InvoiceGenerationModal.tsx` (коммит `f1fb39757`).
+  - Тесты: `apps/web/src/components/finance/__tests__/invoiceGenerationAutonomy.test.tsx` (4 теста, 100% pass).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
 Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 87 дополнительных системных аддендум-фич клинической автономии (Wave 15..25, фичи 64..150) имеют статус **`[РЕАЛИЗОВАНО]`**:
