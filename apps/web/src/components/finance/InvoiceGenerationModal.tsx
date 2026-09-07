@@ -68,6 +68,7 @@ export interface InvoiceGenerationModalProps {
 	readonly planItems: readonly TreatmentPlanItem[];
 	readonly onInvoiceCreated?: ((data: any) => void) | undefined;
 	readonly className?: string | undefined;
+	readonly initialShowAdminPinDrawer?: boolean | undefined;
 }
 
 export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
@@ -88,6 +89,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 	planItems,
 	onInvoiceCreated,
 	className = "",
+	initialShowAdminPinDrawer = false,
 }) => {
 	const { dashboard, auth } = useAppLogicContext();
 
@@ -107,7 +109,8 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 		useState<boolean>(false);
 	const [adminStaffName, setAdminStaffName] = useState<string>("");
 	const [isVerifyingPin, setIsVerifyingPin] = useState<boolean>(false);
-	const [showAdminPinDrawer, setShowAdminPinDrawer] = useState<boolean>(false);
+	const [showAdminPinDrawer, setShowAdminPinDrawer] =
+		useState<boolean>(initialShowAdminPinDrawer);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
 	// Decree 659 & Upsell Consent Shield compliance state
@@ -354,6 +357,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			"Лечащий врач";
 		setAdminOverrideAuthorized(true);
 		setAdminStaffName(`${docName} (клиническое решение врача)`);
+		setShowAdminPinDrawer(false);
 		showToast(
 			`Цены согласованы лечащим врачом (${docName}) в соответствии с Мандатом 8e`,
 			"success",
@@ -981,7 +985,10 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 
 				{/* 4. Admin Override Drawer */}
 				{showAdminPinDrawer && (
-					<div className="px-6 py-4 bg-amber-500/10 border-t border-amber-500/30 flex items-center justify-between gap-4">
+					<div
+						data-testid="admin-pin-drawer"
+						className="px-6 py-4 bg-amber-500/10 border-t border-amber-500/30 flex items-center justify-between gap-4"
+					>
 						<div className="flex items-center gap-3 flex-1">
 							<Key
 								size={20}
@@ -999,6 +1006,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 								type="password"
 								maxLength={8}
 								placeholder="PIN-код"
+								data-testid="admin-pin-input"
 								value={adminPinInput}
 								onChange={(e) => setAdminPinInput(e.target.value)}
 								className="w-28 px-3 py-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-lg text-sm font-mono tracking-widest text-center"
@@ -1006,6 +1014,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 							<input
 								type="text"
 								placeholder="Основание согласования..."
+								data-testid="admin-reason-input"
 								value={adminReasonInput}
 								onChange={(e) => setAdminReasonInput(e.target.value)}
 								className="flex-1 px-3 py-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-lg text-xs"
@@ -1014,16 +1023,28 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
+								onClick={handleDoctorClinicalOverride}
+								className="px-3 py-1.5 min-h-[36px] sm:min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1 cursor-pointer"
+								data-testid="doctor-clinical-decision-btn"
+								title="Согласовать цены решением лечащего врача (Мандат 8e)"
+							>
+								<ShieldCheck size={14} />
+								<span>Решение врача (1 клик)</span>
+							</button>
+							<button
+								type="button"
 								onClick={handleVerifyAdminPin}
-								disabled={isVerifyingPin || adminPinInput.trim().length < 4}
-								className="px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition-colors disabled:opacity-50"
+								disabled={isVerifyingPin}
+								data-testid="admin-pin-verify-btn"
+								className="px-4 py-1.5 min-h-[36px] sm:min-h-[44px] rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition-colors disabled:opacity-50 cursor-pointer"
 							>
 								{isVerifyingPin ? "Проверка..." : "Авторизовать"}
 							</button>
 							<button
 								type="button"
 								onClick={() => setShowAdminPinDrawer(false)}
-								className="px-3 py-1.5 rounded-lg bg-[var(--paper-strong)] text-[var(--ink-muted)] hover:text-[var(--ink)] text-xs"
+								data-testid="admin-pin-cancel-btn"
+								className="px-3 py-1.5 min-h-[36px] sm:min-h-[44px] rounded-lg bg-[var(--paper-strong)] text-[var(--ink-muted)] hover:text-[var(--ink)] text-xs cursor-pointer"
 							>
 								Отмена
 							</button>
@@ -1068,6 +1089,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 								<button
 									type="button"
 									onClick={handleDoctorClinicalOverride}
+									data-testid="doctor-override-footer-btn"
 									className="px-3 py-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
 									title="Согласовать цены под личную клиническую ответственность врача (Мандат 8e)"
 								>
@@ -1076,14 +1098,18 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 								<button
 									type="button"
 									onClick={() => setShowAdminPinDrawer(true)}
-									className="px-3 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+									data-testid="open-admin-pin-drawer-btn"
+									className="px-3 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
 								>
 									<Key size={14} /> PIN управляющего
 								</button>
 							</div>
 						)}
 						{adminOverrideAuthorized && (
-							<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold">
+							<span
+								data-testid="override-authorized-badge"
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold"
+							>
 								<CheckCircle2 size={14} /> Согласовано: {adminStaffName}
 							</span>
 						)}
