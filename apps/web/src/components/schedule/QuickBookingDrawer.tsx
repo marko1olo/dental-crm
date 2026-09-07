@@ -61,6 +61,7 @@ export interface QuickBookingSlotInfo {
 	startsAt?: string | undefined;
 	endsAt?: string | undefined;
 	doctorUserId?: string | null | undefined;
+	doctorName?: string | null | undefined;
 	chairId?: string | null | undefined;
 	durationMinutes?: number | undefined;
 	reason?: string | undefined;
@@ -342,6 +343,18 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	);
 	const initialDoctorId = useMemo(() => {
 		if (initialSlot?.doctorUserId) return initialSlot.doctorUserId;
+		if (initialSlot?.doctorName && dashboard?.clinicSettings?.staff) {
+			const cand = initialSlot.doctorName.trim().toLowerCase();
+			const matched = dashboard.clinicSettings.staff.find(
+				(m) =>
+					m.active &&
+					(m.role === "doctor" || m.role === "owner") &&
+					(m.fullName?.toLowerCase() === cand ||
+						m.fullName?.toLowerCase().includes(cand) ||
+						cand.includes(m.fullName?.toLowerCase())),
+			);
+			if (matched) return matched.id;
+		}
 		const targetChairId =
 			initialSlot?.chairId ||
 			(dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active)[0]?.id ||
@@ -568,7 +581,19 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		}
 		setChairId(defaultChairId);
 
-		// Doctor prefill: prefer initialSlot, else chair duty doctor, else solo/first doctor
+		// Doctor prefill: prefer initialSlot (id or name), else chair duty doctor, else solo/first doctor
+		let slotDocByName: string | undefined;
+		if (!initialSlot?.doctorUserId && initialSlot?.doctorName) {
+			const cand = initialSlot.doctorName.trim().toLowerCase();
+			const m = doctors.find(
+				(d) =>
+					d.fullName.toLowerCase() === cand ||
+					d.fullName.toLowerCase().includes(cand) ||
+					cand.includes(d.fullName.toLowerCase()),
+			);
+			if (m) slotDocByName = m.id;
+		}
+
 		const chairDutyDocId = defaultChairId
 			? resolveChairDutyDoctor(
 					defaultChairId,
@@ -579,6 +604,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			: null;
 		const defaultDocId =
 			initialSlot?.doctorUserId ||
+			slotDocByName ||
 			chairDutyDocId ||
 			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
 			(doctors.length === 1 ? doctors[0]?.id : "") ||

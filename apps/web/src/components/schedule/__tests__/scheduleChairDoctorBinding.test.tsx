@@ -763,7 +763,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 		await clickNode(slotChair1);
 
-		// onSlotClick must carry doctorUserId: "doc-1"
+		// onSlotClick must carry doctorUserId: "doc-1" and doctorName
 		expect(onSlotClick).toHaveBeenCalledTimes(1);
 		expect(onSlotClick).toHaveBeenCalledWith(
 			(expect as any).objectContaining({
@@ -771,6 +771,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 				startTime: "10:00",
 				chairId: "chair-1",
 				doctorUserId: "doc-1",
+				doctorName: "Иванов Иван Иванович",
 			}),
 		);
 
@@ -1592,6 +1593,145 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		// Verify that chairId changed to chair-1
 		expect(chairSelect?.value).toBe("chair-1");
 		window.removeEventListener("dente-toast", toastListener);
+	});
+
+	it("20. ScheduleGrid renders single-shift header with ☀️ 08:00–14:00 for morning and 🌙 14:00–20:00 for evening shifts", () => {
+		const morningAssignments: Record<string, ChairDoctorShiftAssignment> = {
+			"chair-1": {
+				chairId: "chair-1",
+				doctorId: "doc-1",
+				doctorName: "Иванов Иван Иванович",
+				shiftPreset: "morning",
+				shiftLabel: "08:00–14:00",
+				shiftHours: "08:00–14:00",
+				startHour: 8,
+				endHour: 14,
+			},
+			"chair-2": {
+				chairId: "chair-2",
+				doctorId: "doc-2",
+				doctorName: "Петров Петр Петрович",
+				shiftPreset: "evening",
+				shiftLabel: "14:00–20:00",
+				shiftHours: "14:00–20:00",
+				startHour: 14,
+				endHour: 20,
+			},
+		};
+
+		const html = renderToString(
+			React.createElement(ScheduleGrid, {
+				dashboard: multiChairDashboard,
+				dateKey: "2026-09-07",
+				appointments: [],
+				onSlotClick: vi.fn(),
+				onAppointmentClick: vi.fn(),
+				patientName: (_, id) => (id ? "Пациент" : "—"),
+				formatTime: (iso: string) => iso.slice(11, 16),
+				toDateTimeLocalValue: () => "2026-09-07T10:00",
+				appointmentLabels: mockAppointmentLabels,
+				chairDoctorAssignments: morningAssignments,
+			}),
+		);
+
+		// Single morning shift displays sun prefix
+		expect(html).toContain("☀️ 08:00–14:00");
+		// Single evening shift displays moon prefix
+		expect(html).toContain("🌙 14:00–20:00");
+	});
+
+	it("21. QuickBookingDrawer resolves doctor by initialSlot.doctorName when doctorUserId is omitted", async () => {
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		await act(async () => {
+			root.render(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: vi.fn(),
+					dashboard: multiChairDashboard,
+					toDateTimeLocalValue: () => "2026-09-07T10:00",
+					initialSlot: {
+						dateKey: "2026-09-07",
+						startTime: "10:00",
+						chairId: "chair-1",
+						// doctorUserId is omitted, only doctorName is passed
+						doctorName: "Петров Петр Сергеевич",
+					},
+				}),
+			);
+		});
+
+		const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-booking-doctor");
+		// doc-2 corresponds to "Петров Петр Сергеевич"
+		expect(docSelect?.value).toBe("doc-2");
+	});
+
+	it("22. AppointmentModal displays duty-doctor-badge on duty chair and displays override note when doctor is changed", async () => {
+		const assignments: Record<string, ChairDoctorShiftAssignment> = {
+			"chair-1": {
+				chairId: "chair-1",
+				doctorId: "doc-1",
+				doctorName: "Иванов Иван Иванович",
+				shiftPreset: "morning",
+				shiftLabel: "08:00–14:00",
+				shiftHours: "08:00–14:00",
+				startHour: 8,
+				endHour: 14,
+			},
+		};
+
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		const appt = {
+			id: "appt-100",
+			organizationId: "org-1",
+			patientId: "pat-1",
+			doctorUserId: "doc-1",
+			assistantUserId: null,
+			chairId: "chair-1",
+			startsAt: "2026-09-07T10:00:00.000Z",
+			endsAt: "2026-09-07T10:30:00.000Z",
+			status: "confirmed" as const,
+			reason: "Осмотр",
+			comment: null,
+		};
+
+		await act(async () => {
+			root.render(
+				React.createElement(AppointmentModal, {
+					isOpen: true,
+					appointment: appt,
+					dashboard: multiChairDashboard,
+					chairDoctorAssignments: assignments,
+					onClose: vi.fn(),
+					onSave: vi.fn(async () => true),
+					repeatAppointment: vi.fn(),
+					patientName: () => "Пациент Тест",
+					formatTime: () => "10:00",
+					toDateTimeLocalValue: () => "2026-09-07T10:00",
+					fromDateTimeLocalValue: () => "2026-09-07T10:00:00.000Z",
+					appointmentLabels: mockAppointmentLabels,
+					activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+				}),
+			);
+		});
+
+		// Verify duty doctor badge exists
+		const dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
+		expect(dutyBadge).not.toBeNull();
+		expect(dutyBadge?.textContent).toContain("Дежурный врач: Иванов И.И.");
+
+		// Switch doctor to doc-2 (override duty doctor)
+		const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-appointment-doctor");
+		expect(docSelect).not.toBeNull();
+		await changeNode(docSelect, "doc-2");
+
+		// Override note should be displayed without blocking
+		const overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
+		expect(overrideNote).not.toBeNull();
+		expect(overrideNote?.textContent).toContain("Мандат 8e: запись не блокируется");
 	});
 });
 

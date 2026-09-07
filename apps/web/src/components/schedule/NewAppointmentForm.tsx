@@ -234,6 +234,20 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 
 	useEffect(() => {
 		if (!newAppointmentDraft?.doctorUserId && dashboard.clinicSettings?.staff) {
+			const activeChairId = newAppointmentDraft?.chairId;
+			if (activeChairId) {
+				const targetTime = newAppointmentDraft?.startsAt;
+				const duty = resolveChairDutyDoctor(
+					activeChairId,
+					targetTime,
+					chairDoctorAssignments,
+					targetTime ? String(targetTime).slice(0, 10) : undefined,
+				);
+				if (duty.doctorId) {
+					updateNewAppointmentDraft("doctorUserId", duty.doctorId);
+					return;
+				}
+			}
 			const activeDocs = dashboard.clinicSettings.staff.filter(
 				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
@@ -241,7 +255,14 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 				updateNewAppointmentDraft("doctorUserId", activeDocs[0].id);
 			}
 		}
-	}, [newAppointmentDraft?.doctorUserId, dashboard.clinicSettings?.staff, updateNewAppointmentDraft]);
+	}, [
+		newAppointmentDraft?.doctorUserId,
+		newAppointmentDraft?.chairId,
+		newAppointmentDraft?.startsAt,
+		chairDoctorAssignments,
+		dashboard.clinicSettings?.staff,
+		updateNewAppointmentDraft,
+	]);
 
 	// Авто-подбор кресла под специализацию выбранного врача (Мандат 8e / 8n)
 	useEffect(() => {

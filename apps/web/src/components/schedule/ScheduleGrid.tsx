@@ -932,11 +932,15 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						onClick={() => {
 							const firstChair = effectiveChairs[0];
 							const firstChairId = firstChair?.id || DEFAULT_SOLO_CHAIR.id;
+							const firstChairAssign = effectiveChairAssignments[firstChairId];
+							const firstDocId = firstChairAssign?.doctorId || selectedDoctorId || null;
+							const firstDocName = firstChairAssign?.doctorName || (firstDocId ? dashboard?.clinicSettings?.staff?.find((m) => m.id === firstDocId)?.fullName : undefined);
 							onSlotClick({
 								dateKey,
 								startTime: "09:00",
 								chairId: firstChairId,
-								doctorUserId: effectiveChairAssignments[firstChairId]?.doctorId || selectedDoctorId || null,
+								doctorUserId: firstDocId,
+								doctorName: firstDocName || undefined,
 							});
 						}}
 						className="primary-button min-h-[44px] px-3.5 flex items-center gap-1.5 text-xs font-bold rounded-xl shadow-sm cursor-pointer"
@@ -1214,7 +1218,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																{assignment!.doctorSpecialty ? ` (${assignment!.doctorSpecialty})` : ""}
 															</span>
 															<span className="shrink-0 whitespace-nowrap text-[var(--muted)] font-normal text-[11px]">
-																· {assignment!.shiftHours}
+																·{" "}
+																{assignment!.shiftPreset === "morning" || assignment!.shiftHours === "08:00–14:00"
+																	? `☀️ ${assignment!.shiftHours}`
+																	: assignment!.shiftPreset === "evening" || assignment!.shiftHours === "14:00–20:00"
+																		? `🌙 ${assignment!.shiftHours}`
+																		: assignment!.shiftHours}
 															</span>
 														</div>
 														{isSingleOnDuty && (
@@ -2049,6 +2058,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													const targetChairId = chair.id !== "default-chair" ? chair.id : null;
 													const assignedDocId = getDoctorForChairAndHour(chair.id, hour);
 													const targetDoctorId = selectedDoctorId || assignedDocId || sourceAppt.doctorUserId;
+													const targetDocName =
+														dashboard?.clinicSettings?.staff?.find((m) => m.id === targetDoctorId)?.fullName ||
+														effectiveChairAssignments[chair.id]?.doctorName ||
+														undefined;
 													const slotDuration = data.durationMinutes || 30;
 													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
 													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
@@ -2097,6 +2110,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															startTime: hour,
 															chairId: targetChairId,
 															doctorUserId: targetDoctorId,
+															doctorName: targetDocName,
 															durationMinutes: slotDuration,
 															patientId: sourceAppt.patientId,
 															reason: sourceAppt.reason || undefined,
@@ -2107,6 +2121,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													const targetChairId = chair.id !== "default-chair" ? chair.id : null;
 													const assignedDocId = getDoctorForChairAndHour(chair.id, hour);
 													const targetDoctorId = selectedDoctorId || assignedDocId || waitlistItem.preferredDoctorId || (dashboard?.clinicSettings?.staff?.find((m) => m.active && m.role === "doctor")?.id ?? null);
+													const targetWaitlistDocName =
+														dashboard?.clinicSettings?.staff?.find((m) => m.id === targetDoctorId)?.fullName ||
+														effectiveChairAssignments[chair.id]?.doctorName ||
+														undefined;
 													const slotDuration = waitlistItem.durationMinutes || 30;
 													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
 													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
@@ -2139,6 +2157,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														startTime: hour,
 														chairId: targetChairId,
 														doctorUserId: targetDoctorId,
+														doctorName: targetWaitlistDocName,
 														durationMinutes: slotDuration,
 														patientId: waitlistItem.patientId,
 														reason: waitlistItem.reason || "Запись из листа ожидания",
@@ -2167,6 +2186,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									>
 										{(() => {
 											const assignedDocId = getDoctorForChairAndHour(chair.id, hour);
+											const slotDocId = assignedDocId || selectedDoctorId || null;
+											const slotDocName =
+												dashboard?.clinicSettings?.staff?.find((m) => m.id === slotDocId)?.fullName ||
+												effectiveChairAssignments[chair.id]?.doctorName ||
+												undefined;
 											const isEmergencyBuffer = emergencyReserveSlots.some((r) => {
 												const rHour = toDateTimeLocalValue(r.startTime, timezone).slice(11, 13);
 												return rHour === hour.slice(0, 2);
@@ -2181,7 +2205,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																dateKey,
 																startTime: hour,
 																chairId: chair.id,
-																doctorUserId: assignedDocId || selectedDoctorId || null,
+																doctorUserId: slotDocId,
+																doctorName: slotDocName,
 																durationMinutes: 30,
 																reason: "Острая боль (CITO Резерв)",
 															})
@@ -2201,6 +2226,9 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											const isOffDuty = hasDoctorForDay && !assignedDocId;
 
 											if (isOffDuty) {
+												const offDutyDocName = selectedDoctorId
+													? dashboard?.clinicSettings?.staff?.find((m) => m.id === selectedDoctorId)?.fullName
+													: undefined;
 												return (
 													<button
 														type="button"
@@ -2210,6 +2238,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																startTime: hour,
 																chairId: chair.id,
 																doctorUserId: selectedDoctorId || null,
+																doctorName: offDutyDocName,
 																durationMinutes: 30,
 															})
 														}
@@ -2235,7 +2264,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															dateKey,
 															startTime: hour,
 															chairId: chair.id,
-															doctorUserId: assignedDocId || selectedDoctorId || null,
+															doctorUserId: slotDocId,
+															doctorName: slotDocName,
 															durationMinutes: 30,
 														})
 													}

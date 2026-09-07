@@ -15,6 +15,7 @@ import {
 	Printer,
 	Repeat,
 	User,
+	UserCheck,
 	X,
 	Zap,
 } from "lucide-react";
@@ -146,15 +147,19 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		[dashboard?.patients],
 	);
 
-	const [patientId, setPatientId] = useState("");
-	const [doctorUserId, setDoctorUserId] = useState("");
-	const [assistantUserId, setAssistantUserId] = useState<string | null>(null);
-	const [chairId, setChairId] = useState("");
-	const [startsAtLocal, setStartsAtLocal] = useState("");
-	const [endsAtLocal, setEndsAtLocal] = useState("");
-	const [status, setStatus] = useState<Appointment["status"]>("planned");
-	const [reason, setReason] = useState("");
-	const [comment, setComment] = useState("");
+	const [patientId, setPatientId] = useState(() => appointment?.patientId ?? "");
+	const [doctorUserId, setDoctorUserId] = useState(() => appointment?.doctorUserId ?? "");
+	const [assistantUserId, setAssistantUserId] = useState<string | null>(() => appointment?.assistantUserId ?? null);
+	const [chairId, setChairId] = useState(() => appointment?.chairId ?? "");
+	const [startsAtLocal, setStartsAtLocal] = useState(() =>
+		appointment?.startsAt ? toDateTimeLocalValue(appointment.startsAt, timezone) : "",
+	);
+	const [endsAtLocal, setEndsAtLocal] = useState(() =>
+		appointment?.endsAt ? toDateTimeLocalValue(appointment.endsAt, timezone) : "",
+	);
+	const [status, setStatus] = useState<Appointment["status"]>(() => appointment?.status ?? "planned");
+	const [reason, setReason] = useState(() => appointment?.reason ?? "");
+	const [comment, setComment] = useState(() => appointment?.comment ?? "");
 
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -162,6 +167,16 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	useEffect(() => {
 		if (!appointment || !isOpen) return;
 		let defaultDoc = appointment.doctorUserId || "";
+		if (!defaultDoc && (appointment as any).doctorName) {
+			const cand = String((appointment as any).doctorName).trim().toLowerCase();
+			const m = doctors.find(
+				(d) =>
+					d.fullName.toLowerCase() === cand ||
+					d.fullName.toLowerCase().includes(cand) ||
+					cand.includes(d.fullName.toLowerCase()),
+			);
+			if (m) defaultDoc = m.id;
+		}
 		let defaultChair = appointment.chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
 		if (!defaultChair && defaultDoc) {
 			const doc = doctors.find((d) => d.id === defaultDoc);
@@ -209,6 +224,30 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setError(null);
 		setIsSaving(false);
 	}, [appointment, isOpen, toDateTimeLocalValue, timezone, doctors, chairs, chairDoctorAssignments]);
+
+	const dutyDoctorInfo = useMemo(() => {
+		const effChair = chairId || appointment?.chairId;
+		const effStartsAt = startsAtLocal || (appointment?.startsAt ? toDateTimeLocalValue(appointment.startsAt, timezone) : "");
+		return resolveChairDutyDoctor(
+			effChair,
+			effStartsAt,
+			chairDoctorAssignments,
+			effStartsAt ? effStartsAt.slice(0, 10) : undefined,
+			appointment?.chairId === effChair ? appointment?.doctorUserId : null,
+		);
+	}, [chairId, startsAtLocal, chairDoctorAssignments, appointment, toDateTimeLocalValue, timezone]);
+
+	const dutyDoctorId = dutyDoctorInfo.doctorId;
+	const dutyDocHours = dutyDoctorInfo.shiftHours;
+
+	const dutyDoc = useMemo(() => {
+		if (!dutyDoctorId) return null;
+		return doctors.find((d) => d.id === dutyDoctorId) || null;
+	}, [dutyDoctorId, doctors]);
+
+	const currentChair = useMemo(() => {
+		return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+	}, [chairs, chairId]);
 
 	// Track active lab orders for the patient to align appointment slots with due dates
 	const [activeLabOrders, setActiveLabOrders] = useState<any[]>([]);
@@ -732,7 +771,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								onChange={(e) => {
 									const newDocId = e.target.value;
 									setDoctorUserId(newDocId);
-									if (newDocId) {
+									if (newDocId && !appointment?.chairId) {
 										const assignedChair = chairs.find((c) => {
 											const duty = resolveChairDutyDoctor(
 												c.id,
@@ -758,6 +797,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									}
 								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								data-testid="select-appointment-doctor"
 							>
 								<option value="">-- Выберите врача --</option>
 								{doctors.map((d) => (
@@ -766,6 +806,36 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									</option>
 								))}
 							</select>
+							{dutyDoc && (
+								<div
+									className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/20"
+									data-testid="duty-doctor-badge"
+								>
+									<UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
+									<span>
+										Дежурный врач: {formatDoctorShortName(dutyDoc.fullName)} ({dutyDocHours})
+									</span>
+								</div>
+							)}
+							{dutyDoc &&
+								doctorUserId &&
+								dutyDoctorId &&
+								doctorUserId !== dutyDoctorId && (
+									<div
+										className="mt-1.5 p-2.5 rounded-xl text-xs bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/30 flex items-start gap-2"
+										data-testid="duty-doctor-override-note"
+									>
+										<AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+										<div className="space-y-0.5">
+											<span className="font-semibold block">
+												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
+											</span>
+											<span className="text-[11px] text-[var(--muted)]">
+												(Мандат 8e: запись не блокируется, врач может принять пациента в свободном кабинете)
+											</span>
+										</div>
+									</div>
+								)}
 						</div>
 
 						<div>
