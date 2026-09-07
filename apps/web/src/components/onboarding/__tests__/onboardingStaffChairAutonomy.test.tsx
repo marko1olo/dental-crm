@@ -1,6 +1,6 @@
 import React from "react";
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import { SettingsClinicTab } from "../../settings/SettingsClinicTab";
 import {
 	OnboardingWizardModal,
