@@ -25,6 +25,7 @@ import {
 	getPilotNtCommandCode,
 	buildPilotNtCommandPacket,
 } from "@dental/shared";
+import { showToast } from "../../GlobalToast";
 import { sberbankTerminal } from "../../../services/hardware/sberbankTerminal";
 import {
 	DEFAULT_SBER_TERMINAL_CONFIG,
@@ -184,7 +185,10 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	};
 
 	const handleCopySlip = () => {
-		if (!lastResponse) return;
+		if (!lastResponse) {
+			showToast("Слип-чек будет доступен после авторизации платежа на терминале", "info");
+			return;
+		}
 		const text = activeSlipTab === "customer" ? lastResponse.customerSlip : lastResponse.merchantSlip;
 		navigator.clipboard.writeText(text);
 		setIsCopied(true);
@@ -192,6 +196,10 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 	};
 
 	const handlePrintSlip = () => {
+		if (!lastResponse) {
+			showToast("Слип-чек будет доступен после авторизации платежа на терминале", "info");
+			return;
+		}
 		setIsPrinting(true);
 		setTimeout(() => {
 			setIsPrinting(false);
@@ -575,18 +583,20 @@ export const SberPosTerminalModal: React.FC<SberPosTerminalModalProps> = ({
 									<button
 										type="button"
 										onClick={handleCopySlip}
-										disabled={!lastResponse}
+										disabled={false}
 										title="Скопировать слип-чек"
-										className="w-8 h-8 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] disabled:opacity-40"
+										data-testid="sber-copy-slip-btn"
+										className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] disabled:opacity-40"
 									>
 										{isCopied ? <CheckCheck className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
 									</button>
 									<button
 										type="button"
 										onClick={handlePrintSlip}
-										disabled={!lastResponse || isPrinting}
+										disabled={isPrinting}
 										title="Распечатать чек на терминале"
-										className="w-8 h-8 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] disabled:opacity-40"
+										data-testid="sber-print-slip-btn"
+										className="min-w-[44px] min-h-[44px] p-2.5 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] disabled:opacity-40"
 									>
 										<Printer className={"w-4 h-4 " + (isPrinting ? "animate-spin text-[var(--ok-fg,#059669)]" : "")} />
 									</button>
