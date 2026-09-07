@@ -1991,7 +1991,7 @@
   5. *Редактирование и архивация кресел*: в `QuickAddChairModal.tsx` внедрен режим редактирования параметров кресла (`isEditMode`, `initialData`, `onUpdateChair`), переключатель «Активно / В архиве» (`isActive`, `data-testid="quick-add-chair-active-toggle"`) и тач-таргеты $\ge 44\times 44\text{px}$.
   6. *Унификация графиков смен*: часы утренней и вечерней смен синхронизированы в канонические `08:00–14:00` и `14:00–20:00` в `doctorWeeklyScheduleGenerator.ts` и `ScheduleGrid.tsx`.
 - **Файлы**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `ScheduleAppointmentModal.tsx`, `ScheduleCalendar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
-- **Тесты**: `scheduleChairDoctorBinding.test.tsx` (21 тест), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов), `AppointmentModal.test.ts` (3 теста) — суммарно 66 тестов, 100% pass.
+- **Тесты**: `scheduleChairDoctorBinding.test.tsx` (21 тест), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов), `AppointmentModal.test.ts` (3 теста) — суммарно 66 тестов, 100% pass (коммит `88ee4bb06`).
 
 ### 4.65. Склад и МДЛП: ликвидация модальных матрёшек акта списания и очистка от эмодзи по Закону 7 смертных грехов UI (Мандаты 8d, 8e, 8k, 8n / Фича 194)
 - **Статус**: `[РЕАЛИЗОВАНО]`
@@ -2000,18 +2000,39 @@
   2. *Очистка от эмодзи (Грех № 7)*: из текстов кнопок, плашек и toast-уведомлений в `MdlpDisposalQueueModal.tsx` и `SeniorNurseDisposalActModal.tsx` удалены все не-векторные глифы и эмодзи (`⚡`, `✓`) с заменой на векторные иконки Lucide `Sparkles` и `CheckCircle2`.
   3. *Автономия персонала (Мандат 8e)*: сохранена 1-клик утилизация карпул медсестрой, врачом или администратором без бюрократической комиссии из 3 человек (бумажный журнал учтён).
 - **Файлы**: `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/inventory/mdlp/SeniorNurseDisposalActModal.tsx`.
-- **Тесты**: `apps/web/src/components/inventory/__tests__/MdlpDisposalQueueModal.test.tsx` (3 теста, 100% pass).
+- **Тесты**: `apps/web/src/components/inventory/__tests__/MdlpDisposalQueueModal.test.tsx` (3 теста, 100% pass, коммиты `88ee4bb06`, `ade5a2d0c`).
+
+### 4.66. Оперативный складской учет, списание расходников и карпул с мягким овердрафтом в 1 клик (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 195)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Сенсорный Touch-First HUD оперативного склада*: в `WarehouseManagerModal.tsx` реализован сенсорный полноэкранный пульт складского учета для врача и старшей медсестры (Мандаты 8c, 8d);
+  2. *1-клик списание пустых карпул и расходников*: пакетное списание анестетиков и терапевтических наборов в 1 клик без создания комиссии из 3 человек (Мандат 8e п. 10);
+  3. *Мягкий овердрафт склада*: нулевые и отрицательные остатки партий не блокируют оформление списания материалов (Мандат 8n п. 2);
+  4. *Соблюдение 7 смертных грехов UI*: 1-строчный тулбар (32-36px), модальная глубина строго 1 (переключение в акт списания без модалок поверх модалок), полное отсутствие сырых эмодзи, тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/inventory/index.ts`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12 тестов, 100% pass, коммит `88ee4bb06`).
+
+### 4.67. Цифровые журналы автоклавирования (257/у), контроль ПСО (366/у) и 1-клик мега-пресет стерилизации по СанПиН 3.3686-21 (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 196)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Цифровые журналы СанПиН 3.3686-21*: в `SterilizationAutoclaveLogModal.tsx` реализованы электронный журнал работы автоклавов (Форма № 257/у) и журнал контроля предстерилизационной очистки ПСО (Форма № 366/у, азопирамовая и фенолфталеиновая пробы);
+  2. *1-клик мега-пресет*: кнопка «Автоклавирование выполнено (1 клик)» мгновенно фиксирует канонические параметры (134°C, 2.1 bar, вакуум, отрицательные пробы ПСО, 5 класс индикаторов) под Мандаты 8e и 8k;
+  3. *Мгновенная привязка крафт-пакета к 043/у*: генерация и связывание штрихкода лотка с протоколом амбулаторного приёма;
+  4. *Эргономика и Закон 7 смертных грехов*: 1-строчный тулбар 32-36px, модальная глубина строго 1 (вкладки вместо вложенных модалок), векторные Lucide-иконки без эмодзи, тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx`, `apps/web/src/components/sterilization/index.ts`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12 тестов, 100% pass, коммит `88ee4bb06`).
 
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 128 дополнительных системных аддендум-фич клинической автономии (Wave 15..35, фичи 64..189, 193..194) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 130 дополнительных системных аддендум-фич клинической автономии (Wave 15..35, фичи 64..189, 193..196) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
 - Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП);
 - Строгий аудит Мандатов 8e и 8n: абсолютный приоритет соло-врача и клиники 1–3 кресла, отсутствие тупиков и палок в колёса.
+
 
 
 

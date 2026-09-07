@@ -1463,7 +1463,7 @@
   5. *Редактирование и архивация кресел*: в `QuickAddChairModal.tsx` добавлен режим редактирования параметров кресла (`isEditMode`, `initialData`, `onUpdateChair`), переключатель «Активно / В архиве» (`isActive`, `data-testid="quick-add-chair-active-toggle"`) и тач-таргеты $\ge 44\times 44\text{px}$.
   6. *Унификация графиков смен*: часы утренней и вечерней смен синхронизированы в канонические `08:00–14:00` и `14:00–20:00` в `doctorWeeklyScheduleGenerator.ts` и `ScheduleGrid.tsx`.
 - **Фронтенд**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `ScheduleAppointmentModal.tsx`, `ScheduleCalendar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
-- **Тесты**: `scheduleChairDoctorBinding.test.tsx` (21 тест), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов), `AppointmentModal.test.ts` (3 теста) — суммарно 66 тестов, 100% pass.
+- **Тесты**: `scheduleChairDoctorBinding.test.tsx` (21 тест), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов), `AppointmentModal.test.ts` (3 теста) — суммарно 66 тестов, 100% pass (коммит `88ee4bb06`).
 
 #### 2.10.153. Склад и МДЛП: ликвидация модальных матрёшек акта списания и очистка от эмодзи по Закону 7 смертных грехов UI (Мандаты 8d, 8e, 8k, 8n / Склад & МДЛП, Фича #194)
 - **Суть и домен**: Приведение модуля выбытия медикаментов и списания карпул по СанПиН 3.3686-21 к высшим стандартам верстки и эргономики:
@@ -1471,7 +1471,27 @@
   2. *Очистка от эмодзи (Грех № 7)*: из текстов кнопок, плашек и toast-уведомлений в `MdlpDisposalQueueModal.tsx` и `SeniorNurseDisposalActModal.tsx` удалены все не-векторные глифы и эмодзи (`⚡`, `✓`) с заменой на векторные иконки Lucide `Sparkles` и `CheckCircle2`.
   3. *Автономия персонала (Мандат 8e)*: сохранена 1-клик утилизация карпул медсестрой, врачом или администратором без бюрократической комиссии из 3 человек (бумажный журнал учтён).
 - **Фронтенд**: `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/inventory/mdlp/SeniorNurseDisposalActModal.tsx`.
-- **Тесты**: `apps/web/src/components/inventory/__tests__/MdlpDisposalQueueModal.test.tsx` (3 теста, 100% pass).
+- **Тесты**: `apps/web/src/components/inventory/__tests__/MdlpDisposalQueueModal.test.tsx` (3 теста, 100% pass, коммиты `88ee4bb06`, `ade5a2d0c`).
+
+#### 2.10.154. Склад: Touch-First HUD оперативного учета, списание расходников и пустых карпул анестетиков в 1 клик с мягким овердрафтом (Мандаты 8c, 8d, 8e, 8k, 8n / Склад & Списание карпул, Фича #195)
+- **Суть и домен**: Оперативное списание расходных материалов и анестетиков в кабинете врача и старшей медсестры:
+  1. *Touch-First HUD оперативного склада*: полноэкранный пульт `WarehouseManagerModal.tsx` с поиском, фильтром категорий (Анестезия, СИЗ, Терапия, Стерилизация, Гигиена) и быстрыми пресетами («Стандартная анестезия», «Пломбирование зуба», «СИЗ стандарт»);
+  2. *1-клик списание пустых карпул без комиссий*: медсестра списывает пустые ампулы и расходники пакетом без бюрократического созыва 3 человек (Мандат 8e п. 10);
+  3. *Мягкий овердрафт*: нулевой остаток на складе не блокирует сохранение акта и проведение экстренных процедур (Мандат 8n п. 2);
+  4. *Закон 7 смертных грехов*: 1-строчный тулбар 32-36px, модальная глубина строго 1 (переключение видов `inventory` -> `act_preview` без модалок поверх модалок), отсутствие эмодзи, тач-таргеты $\ge 44\text{px}$.
+- **Фронтенд**: `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/inventory/index.ts`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12 тестов, 100% pass, коммит `88ee4bb06`).
+
+#### 2.10.155. Стерилизация и автоклав: электронный журнал работы автоклава (Форма 257/у), контроль качества ПСО (Форма 366/у), 1-клик мега-пресет и связка с 043/у по СанПиН 3.3686-21 (Мандаты 8c, 8d, 8e, 8k, 8n / Стерилизация & СанПиН 3.3686-21, Фича #196)
+- **Суть и домен**: Полноценный санитарно-эпидемиологический учет стерилизации и предстерилизационной очистки по СанПиН 3.3686-21:
+  1. *Журнал работы стерилизаторов (Форма № 257/у)*: фиксация циклов Класса B (134°C, 2.1 bar, вакуум, тест Бови-Дика, индикаторы 5 класса);
+  2. *Журнал учета качества ПСО (Форма № 366/у)*: учет азопирамовой и фенолфталеиновой проб;
+  3. *1-клик мега-пресет*: кнопка «Автоклавирование выполнено (1 клик)» мгновенно формирует запись цикла автоклавирования и отрицательные пробы ПСО (Мандаты 8e, 8k);
+  4. *Моментальная привязка крафт-пакета к 043/у*: генерация машиночитаемого штрихкода лотка и связывание с дневником амбулаторной карты;
+  5. *Гигиена UI*: 1-строчный тулбар 32-36px, модальная глубина строго 1 (вкладки вместо модалок), векторные иконки Lucide без мультяшных эмодзи, тач-таргеты $\ge 44\text{px}$.
+- **Фронтенд**: `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx`, `apps/web/src/components/sterilization/index.ts`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12 тестов, 100% pass, коммит `88ee4bb06`).
+
 
 
 
