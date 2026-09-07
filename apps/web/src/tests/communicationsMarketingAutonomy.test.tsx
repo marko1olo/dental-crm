@@ -151,8 +151,10 @@ describe("CommunicationsView Autonomy & Button Accessibility (Mandate 8e, 8n)", 
 		const html = renderToStaticMarkup(
 			createElement(
 				AppLogicProvider,
-				{ value: mockAppLogicValue },
-				createElement(CommunicationsView as any, mockProps),
+				{
+					value: mockAppLogicValue as any,
+					children: createElement(CommunicationsView as any, mockProps),
+				},
 			),
 		);
 
@@ -215,7 +217,10 @@ describe("MarketingView Autonomy & Review Reply Unblocking (Mandates 8e, 8n)", (
 			clinicPhone: "+7 (495) 123-45-67",
 		});
 		const html = renderToStaticMarkup(
-			createElement(AppLogicProvider, { value: mockAppLogicValue }, child),
+			createElement(AppLogicProvider, {
+				value: mockAppLogicValue as any,
+				children: child,
+			}),
 		);
 
 		// Find generate button
@@ -266,17 +271,19 @@ describe("CampaignPanel Autonomy & 1-Click Defaults (Mandates 8e, 8n)", () => {
 		const html = renderToStaticMarkup(
 			createElement(
 				AppLogicProvider,
-				{ value: mockAppLogicValue },
-				createElement(CampaignPanel as any, {
-					initialTemplates: [
-						{
-							id: "tpl-1",
-							title: "Профосмотр раз в 6 месяцев",
-							channel: "whatsapp",
-							isActive: true,
-						},
-					],
-				}),
+				{
+					value: mockAppLogicValue as any,
+					children: createElement(CampaignPanel as any, {
+						initialTemplates: [
+							{
+								id: "tpl-1",
+								title: "Профосмотр раз в 6 месяцев",
+								channel: "whatsapp",
+								isActive: true,
+							},
+						],
+					}),
+				},
 			),
 		);
 
