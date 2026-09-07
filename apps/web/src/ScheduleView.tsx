@@ -2190,6 +2190,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				auth={auth}
 				toDateTimeLocalValue={toDateTimeLocalValue}
 				fromDateTimeLocalValue={fromDateTimeLocalValue}
+				chairDoctorAssignments={computedChairDoctorAssignments}
 			/>
 
 			<AppointmentModal
