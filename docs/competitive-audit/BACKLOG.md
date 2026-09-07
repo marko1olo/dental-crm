@@ -1891,9 +1891,22 @@
 
 ---
 
+## 173. `планы_финансы::автономия_автораспределения_депозита_этапов_и_справок_кнд1151156` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8n, ФИЧА #178)
+- **Идея**: Неблокирующее автораспределение свободного депозита по этапам, автономия ИИ-копилота презентатора планов и разблокировка справок КНД 1151156:
+  1. *Неблокирующее распределение депозита по этапам*: в `StagePaymentPlanModal.tsx` кнопка «Распределить свободный депозит» освобождена от блокировки `disabled={availableDepositKopecks <= 0}`; при клике с нулевым остатком выводится информативное пояснение без блокирования интерфейса; тач-таргет приведен к Apple HIG ($\ge 44\text{px}$).
+  2. *Отказоустойчивость финансовых вычислений (NaN-proof)*: в `stagePaymentEngine.ts` функции `calculateTerminationRefund` и `calculateStagePaymentTotals` защищены явным приведением `Number(...) || 0` и опциональным чейнингом `directExpensesKopecks`, предотвращая краш интерфейса при работе с черновиками или этапами без прямых расходов.
+  3. *Автономия ИИ-копилота презентации планов*: в `TreatmentPlanPresenterModal.tsx` кнопка отправки запроса освобождена от блокировки `disabled={!customPrompt.trim()}` с активным подсказчиком сценариев («бюджет 120к», «без имплантации») и тач-таргетом $\ge 36\text{px}$.
+  4. *Разблокировка справок об оплате медицинских услуг (КНД 1151156)*: в `TaxDeductionCertificateModal.tsx` кнопки выгрузки NO_MEDOPL 5.01, XML для ТКС и печати справок А4 освобождены от блокировки `disabled={payments.length === 0}`: при отсутствии оплат выводятся тосты с подсказкой без блокирования кнопок.
+  5. *MVP и приоритет*: MVP Да, Сложность Низкая, Приоритет KILLER.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/treatment-plans/stagePayment/StagePaymentPlanModal.tsx`, `apps/web/src/components/treatment-plans/stagePayment/stagePaymentEngine.ts`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`.
+  - Тесты: `apps/web/src/components/treatment-plans/__tests__/stagePaymentAutonomy.test.tsx`, `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterModal.test.tsx`, `apps/web/src/components/finance/__tests__/taxDeductionCertificateAutonomy.test.tsx` (8 тестов, 100% pass, коммит `f35f3f2c1`).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 114 дополнительных системных аддендум-фич клинической автономии (Wave 15..31, фичи 64..177) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 115 дополнительных системных аддендум-фич клинической автономии (Wave 15..31, фичи 64..178) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
