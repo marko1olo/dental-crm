@@ -56,6 +56,9 @@
   - Свобода соло-врача и опциональный ассистент при создании записи (`assistantUserId` опционален, нормализуется в `null` без 400/валидационных ошибок в `AppointmentModal.tsx`, `NewAppointmentForm.tsx`, `QuickBookingDrawer.tsx`, Мандаты 8e п. 8, 8n).
   - Движок скоринга дисциплины и надежности пациентов (`patientReliabilityScore.ts`): автоматический расчет посещаемости, опозданий и неявок с полной зачисткой сырых эмодзи (Мандат 8d п. 7, Apple HIG). Введены строгие семантические категории `ReliabilityStatus` (`reliable`, `new`, `high_risk`, `attention`, `debt`) с цветовой дифференциацией WCAG AAA и рекомендациями администратору («Требуется подтверждение за 2 часа» при 2+ неявках подряд).
   - Интеллектуальный движок напоминаний на завтра (`tomorrowRemindersEngine.ts`, `TomorrowRemindersModal.tsx`, `generateAppointmentWhatsAppMessage.ts`): многоканальный каскад оповещений (Telegram -> WhatsApp -> SMS), строгое соблюдение тихих часов (21:00–08:00 по 38-ФЗ и 152-ФЗ), профессиональная медицинская типографика без эмодзи-спама и адаптивные клинические инструкции подготовки к визиту по профилю приёма (хирургия, гигиена, терапия, педиатрия).
+  - 1-клик инлайн-добавление кресел и кабинетов прямо из сетки расписания без ухода в Настройки (`QuickAddChairModal.tsx`, `ScheduleFilterStrip.tsx`, Фича #164).
+  - Сквозная привязка студии сменности врачей к реальному персоналу клиники `dashboard.clinicSettings.staff`, креслам `clinicSettings.chairs` и API `POST /api/diary/shifts` (`DoctorShiftRosterModal.tsx`, `ScheduleView.tsx`, Фича #165).
+  - Закрепление дежурного врача за креслом в шапке расписания, 1-клик смена и автоматический предвыбор врача в `QuickBookingDrawer.tsx` при клике на свободный слот (Мандаты 8e, 8k, 8n, Фича #166).
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма, Хирургия и Голосовой ввод
 - **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`, `OrthopedicsChairsidePanel.tsx`.
@@ -147,7 +150,7 @@
 - **Бэкенд**: `apps/api/src/routes/smartImports.ts`, `imports.ts`, `ingestion.ts`.
 - **Возможности**: Автоматический импорт баз данных из IDENT, DentalPRO, Инфоклиника и 1С:Стоматология.
 
-### 2.10. Девяносто четыре киллер-фичи снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n, Фичи 64..157)
+### 2.10. Сто три киллер-фичи снижения трения, ликвидации симуляторов и автономии врача (Мандаты 8e, 8k, 8n, Фичи 64..166)
 
 Наша стоматологическая CRM создана для реального врача у кресла и администратора на ресепшене, а не для бюрократического контроля. Все процессы подчиняются принципу «Врач правит только патологию, норма заполняется в 1 клик, система никогда не ставит палки в колёса».
 
@@ -1159,4 +1162,67 @@
   4. *Безопасность лекарственных взаимодействий (DDI)*: в `clinicalDdiDrugSafetyEngine.ts` добавлен класс `bisphosphonate_antiresorptive` для раннего выявления рисков бисфосфонатного остеонекроза челюстей (MRONJ) и нежелательных комбинаций с НПВП.
 - **Фронтенд & Shared**: `apps/web/src/components/documents/surgicalOperationProtocolPrintEngine.ts`, `apps/web/src/components/surgery/SurgerySafetyChecklist.tsx`, `apps/web/src/components/surgery/SurgeryCockpitModal.tsx`, `apps/web/src/components/surgery/SurgeryProtocolPanel.tsx`, `apps/web/src/components/visit/anesthesia/anesthesiaExpressPresets.ts`, `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx`, `packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.ts` (коммит `d06be9d8f`).
 - **Тесты**: `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx` (8 тестов, 100% pass), `apps/web/src/components/visit/anesthesia/__tests__/anesthesiaExpressPresets.test.ts` (12 тестов, 100% pass), `packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.test.ts` (23 теста, 100% pass).
+
+#### 2.10.121. ЕГИСЗ экспорт: автономия экспорта CDA-пакета (XML + .sig) в 1 клик и активное тост-руководство (Мандаты 8e, 8n / ЕГИСЗ & Документы, Фича #160)
+- **Суть и домен**: Снятие блокировки кнопки экспорта CDA ZIP-пакета (XML + .sig) в ЕГИСЗ:
+  1. *Неблокирующая кнопка*: в `EgiszCdaExportModal.tsx` снята блокировка `disabled={!generationResult.success || isSubmitting}` -> `disabled={isSubmitting}`.
+  2. *Активное руководство*: при клике с неполными клиническими данными выводится понятное тост-руководство с указанием первой незаполненной секции вместо серой кнопки.
+  3. *Соло-режим*: для соло-врача и небольших клиник (Мандат 8n) подставляются безопасные клинические дефолты.
+  4. *Apple HIG*: сенсорные тач-таргеты всех вкладок и кнопок приведены к нормативу $\ge 44\text{px}$.
+- **Фронтенд**: `apps/web/src/components/documents/egisz/EgiszCdaExportModal.tsx`.
+- **Тесты**: `apps/web/src/components/documents/egisz/__tests__/egiszCdaExportAutonomy.test.tsx` (4 теста, 100% pass, коммит `89de6175c`).
+
+#### 2.10.122. МДЛП списание: 1-клик списание карпул смены медсестрой и ликвидация мертвых кнопок очереди (Мандаты 8e, 8k, 8n / МДЛП & Склад, Фича #161)
+- **Суть и домен**: Ликвидация мертвых disabled кнопок в очереди списания маркированных лекарственных препаратов МДЛП («Честный Знак»):
+  1. *Разблокировка кнопок*: в `MdlpDisposalQueueModal.tsx` разблокированы кнопки добавления кода сканером, печати акта списания и подтверждения вывода из оборота по Схеме 10560 (`disabled: false`).
+  2. *1-клик списание смены*: при пустой очереди списания кнопка автоматически наполняет карпулы смены (10 Артикаин + 2 Скандонест, СанПиН 3.3686-21, ПКУ без комиссии из 3 человек).
+  3. *Активная валидация DataMatrix*: вывод понятного предупреждающего тоста с указанием конкретной ошибки в коде маркировки вместо серого некликабельного интерфейса.
+  4. *Тач-таргеты*: все интерактивные элементы тулбара и футера приведены к нормативу $\ge 44\text{px}$.
+- **Фронтенд**: `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`.
+- **Тесты**: `apps/web/src/components/inventory/mdlp/__tests__/mdlpDisposalQueueAutonomy.test.tsx` (6 тестов, 100% pass, коммиты `469d1df4b`, `d0a3c4637`).
+
+#### 2.10.123. Списание материалов: 1-клик автонаполнение стандартного расходного набора и мягкий овердрафт (Мандаты 8e, 8k, 8n / Склад & Расходники, Фича #162)
+- **Суть и домен**: Устранение складских барьеров при списании расходных материалов на проведенные процедуры:
+  1. *Неблокирующее списание*: в `ProcedureMaterialDeductionModal.tsx` кнопка «Списать со склада» освобождена от блокировки `disabled={isDeducting || lines.length === 0}` -> `disabled={isDeducting}`.
+  2. *1-клик автонаполнение*: при пустом списке материалов клик по кнопке автоматически наполняет стандартный расходный набор процедуры (перчатки, маска, слюноотсос, валики, карпула анестетика).
+  3. *Мягкий овердрафт*: предупреждение вместо блокировки операции при нулевом складском остатке (Мандаты 8e п. 10, 8n п. 2, Zero Dead-Ends).
+  4. *Активные подсказки*: добавление пользовательских материалов выводит понятное тост-руководство, все тач-таргеты $\ge 44\text{px}$.
+- **Фронтенд**: `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (8 тестов, 100% pass, коммит `23ad672f5`).
+
+#### 2.10.124. Онбординг кресел и персонала: безопасные дефолты и 1-клик добавление без блокировок (Мандаты 8e, 8n / Онбординг & Настройки, Фича #163)
+- **Суть и домен**: Устранение блокировок при первоначальной настройке клиники и добавлении оборудования/сотрудников:
+  1. *Безопасные дефолты кресел*: в `OnboardingWizardModal.tsx` и `SettingsClinicTab.tsx` снята блокировка кнопки «+ Добавить кресло» (`disabled === false`), при пустом названии автоматически подставляются безопасные имена «Кресло N» / «Кабинет N».
+  2. *Безопасные дефолты персонала*: кнопка «+ Добавить сотрудника» активна по умолчанию, при пустом имени генерируется «Врач-терапевт» с информационным тостом.
+  3. *Соблюдение правил хуков*: строгий учет правил хуков `useAppStore`, отсутствие сбоев рендеринга.
+  4. *Тач-таргеты*: все кнопки и поля ввода соответствуют Apple HIG (`min-height: 44px`).
+- **Фронтенд**: `apps/web/src/components/onboarding/OnboardingWizardModal.tsx`, `apps/web/src/components/settings/SettingsClinicTab.tsx`.
+- **Тесты**: `apps/web/src/components/onboarding/__tests__/onboardingStaffChairAutonomy.test.tsx` (5 тестов, 100% pass, коммит `fd2b27a9c`).
+
+#### 2.10.125. Расписание и кресла: 1-клик инлайн-добавление кресел и кабинетов прямо из сетки (Мандаты 8e, 8k, 8n / Расписание & Кресла, Фича #164)
+- **Суть и домен**: Мгновенное добавление и конфигурирование стоматологических установок без ухода в глубокие настройки (паритет StomX / DentalPRO):
+  1. *Инлайн-кнопка в сетке*: в `ScheduleFilterStrip.tsx` добавлена кнопка «+ Кресло» в тулбар и выпадающее меню [⋮ Опции] с тач-таргетом $\ge 44\text{px}$.
+  2. *QuickAddChairModal*: модальное окно (глубина вложенности = 1, закон Анти-Матрёшки Mandate 8d) с полями названия, номера кабинета, 6 профилями специализаций (Терапия, Ортопедия, Хирургия, Ортодонтия, Гигиена, Детство) и 6 цветовыми бейджами.
+  3. *Безопасные дефолты*: кнопка добавления никогда не блокируется (`disabled === false`), при клике с пустым полем подставляет безопасное имя «Кресло N».
+- **Фронтенд**: `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleInlineChairManagement.test.tsx` (5 тестов, 100% pass, коммит `6d6c2ad56`).
+
+#### 2.10.126. Расписание и смены: подключение студии графиков сменности врачей к реальным данным и API (Мандаты 8e, 8k, 8n / Расписание & Смены, Фича #165)
+- **Суть и домен**: Сквозная привязка графиков работы врачей к реальному персоналу, кабинетам, креслам и постоянное сохранение расписания:
+  1. *Подключение реальных данных*: в `ScheduleView.tsx` компонент `DoctorShiftRosterModal` подключен к реальному персоналу клиники `dashboard.clinicSettings.staff`, креслам `clinicSettings.chairs` и расчету занятости `appointments`.
+  2. *Персистентность смен*: смены сохраняются в `localStorage` (`dente_doctor_shifts`) и через API `POST /api/diary/shifts` с клиническими авторизационными заголовками.
+  3. *1-клик шаблоны сменности*: панель пресетов («Пятидневка», «2/2», «Утро 08:00–14:00», «Вечер 14:00–20:00», «Полный день 08:00–20:00») для генерации расписания за 1 клик.
+  4. *Тач-таргеты и автономия*: все кнопки $\ge 44\text{px}$, кнопки сохранения не блокируются (`disabled === false`).
+- **Фронтенд**: `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/roster/__tests__/scheduleShiftRosterIntegration.test.tsx` (10 тестов, 100% pass, коммит `38677cc64`).
+
+#### 2.10.127. Расписание и кресла: закрепление кресел за врачами по графику и автовыбор в QuickBookingDrawer (Мандаты 8e, 8k, 8n / Расписание & Кресла, Фича #166)
+- **Суть и домен**: Закрепление дежурного врача за креслом в шапке расписания и автоматическая подстановка врача при быстрой записи:
+  1. *Шапка кресла*: вывод бейджа дежурного врача с коротким именем («Иванов И.И.»), специальностью и временем смены или кнопки «+ Назначить врача» ($\ge 44\text{px}$).
+  2. *1-клик назначение*: модальное окно выбора врача из штата и шаблона смены (Утро, Вечер, Полный день) без блокировок.
+  3. *Автоподстановка в слот*: при клике на свободный слот кресла `onSlotClick` передает `doctorUserId` закрепленного врача.
+  4. *Интеграция с QuickBookingDrawer*: форма быстрой записи автоматически выбирает дежурного врача кресла; для соло-врача ассистент скрыт, а врач выбирается по умолчанию.
+- **Фронтенд**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (7 тестов, 100% pass, коммиты `29d114896`, `e1400fd31`).
+
 
