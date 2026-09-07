@@ -67,6 +67,7 @@ export interface DoctorShiftRosterModalProps {
 	clinicName?: string;
 	onSave?: (shifts: DoctorShift[]) => Promise<void> | void;
 	onOpenT13Timesheet?: () => void;
+	initialEditingShift?: Partial<DoctorShift> | null;
 }
 
 export function DoctorShiftRosterModal({
@@ -79,6 +80,7 @@ export function DoctorShiftRosterModal({
 	clinicName = 'ООО "Денте Клиник"',
 	onSave,
 	onOpenT13Timesheet,
+	initialEditingShift = null,
 }: DoctorShiftRosterModalProps) {
 	// Base date: Monday of current week (defaulting to 2026-08-24)
 	const [weekStartDateIso, setWeekStartDateIso] = useState<string>("2026-08-24");
@@ -91,7 +93,7 @@ export function DoctorShiftRosterModal({
 	});
 
 	// Quick Shift Editor Drawer
-	const [editingShift, setEditingShift] = useState<Partial<DoctorShift> | null>(null);
+	const [editingShift, setEditingShift] = useState<Partial<DoctorShift> | null>(initialEditingShift ?? null);
 	const [isNewShift, setIsNewShift] = useState(false);
 
 	// Notification banner
@@ -976,14 +978,15 @@ export function DoctorShiftRosterModal({
 				{editingShift && (
 					<div className="roster-drawer-overlay" onClick={() => setEditingShift(null)}>
 						<div className="roster-drawer-panel" onClick={(e) => e.stopPropagation()}>
-							<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--line, #e2e8f0)", paddingBottom: "0.75rem" }}>
-								<h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700 }}>
+							<div className="flex items-center justify-between border-b border-[var(--line,#e2e8f0)] dark:border-slate-700 pb-3">
+								<h3 className="m-0 text-lg font-bold text-[var(--ink,#0f172a)] dark:text-slate-100">
 									{isNewShift ? "Назначение новой смены" : "Редактирование смены"}
 								</h3>
 								<button
 									type="button"
 									onClick={() => setEditingShift(null)}
-									style={{ background: "transparent", border: "none", cursor: "pointer" }}
+									className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800 transition-colors"
+									aria-label="Закрыть панель"
 								>
 									<X size={20} />
 								</button>
@@ -991,11 +994,11 @@ export function DoctorShiftRosterModal({
 
 							{/* Doctor select */}
 							<div>
-								<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+								<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 									Врач
 								</label>
 								<select
-									style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)" }}
+									className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 									value={editingShift.doctorId || ""}
 									onChange={(e) => {
 										const doc = staffList.find((s) => s.id === e.target.value);
@@ -1021,11 +1024,11 @@ export function DoctorShiftRosterModal({
 
 							{/* Assistant select */}
 							<div>
-								<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+								<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 									Ассистент / Медсестра
 								</label>
 								<select
-									style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)" }}
+									className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 									value={editingShift.assistantId || ""}
 									onChange={(e) => {
 										const asst = staffList.find((s) => s.id === e.target.value);
@@ -1046,13 +1049,13 @@ export function DoctorShiftRosterModal({
 							</div>
 
 							{/* Cabinet & Chair select */}
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+							<div className="grid grid-cols-2 gap-3">
 								<div>
-									<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+									<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 										Кабинет
 									</label>
 									<select
-										style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)" }}
+										className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 										value={editingShift.cabinetId || "cab-1"}
 										onChange={(e) => {
 											const cab = cabinets.find((c) => c.id === e.target.value);
@@ -1071,11 +1074,11 @@ export function DoctorShiftRosterModal({
 									</select>
 								</div>
 								<div>
-									<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+									<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 										Кресло
 									</label>
 									<select
-										style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)" }}
+										className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 										value={editingShift.chairId || "chair-1a"}
 										onChange={(e) => setEditingShift((prev) => ({ ...prev, chairId: e.target.value }))}
 									>
@@ -1091,24 +1094,24 @@ export function DoctorShiftRosterModal({
 							</div>
 
 							{/* Date & Shift Template */}
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+							<div className="grid grid-cols-2 gap-3">
 								<div>
-									<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+									<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 										Дата
 									</label>
 									<input
 										type="date"
-										style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)" }}
+										className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 										value={editingShift.dateIso || ""}
 										onChange={(e) => setEditingShift((prev) => ({ ...prev, dateIso: e.target.value }))}
 									/>
 								</div>
 								<div>
-									<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+									<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 										Шаблон
 									</label>
 									<select
-										style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)" }}
+										className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 										value={editingShift.archetypeId || "morning_shift"}
 										onChange={(e) => {
 											const archId = e.target.value as ShiftArchetypeId;
@@ -1134,25 +1137,25 @@ export function DoctorShiftRosterModal({
 							</div>
 
 							{/* Times */}
-							<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+							<div className="grid grid-cols-2 gap-3">
 								<div>
-									<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+									<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 										Начало смены
 									</label>
 									<input
 										type="time"
-										style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)" }}
+										className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 										value={editingShift.startTime || "08:30"}
 										onChange={(e) => setEditingShift((prev) => ({ ...prev, startTime: e.target.value }))}
 									/>
 								</div>
 								<div>
-									<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+									<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 										Окончание
 									</label>
 									<input
 										type="time"
-										style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)" }}
+										className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 										value={editingShift.endTime || "14:30"}
 										onChange={(e) => setEditingShift((prev) => ({ ...prev, endTime: e.target.value }))}
 									/>
@@ -1161,20 +1164,20 @@ export function DoctorShiftRosterModal({
 
 							{/* Notes */}
 							<div>
-								<label style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)", marginBottom: "4px" }}>
+								<label className="block text-xs font-bold text-[var(--muted,#64748b)] mb-1">
 									Примечание
 								</label>
 								<input
 									type="text"
 									placeholder="например, только консультации или сложная хирургия"
-									style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--line, #cbd5e1)" }}
+									className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 placeholder-[var(--muted,#94a3b8)] dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)] transition-colors"
 									value={editingShift.customNotes || ""}
 									onChange={(e) => setEditingShift((prev) => ({ ...prev, customNotes: e.target.value }))}
 								/>
 							</div>
 
 							{/* Drawer Footer Actions */}
-							<div style={{ display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: "1rem", borderTop: "1px solid var(--line, #e2e8f0)" }}>
+							<div className="flex items-center justify-between mt-auto pt-4 border-t border-[var(--line,#e2e8f0)] dark:border-slate-700">
 								{!isNewShift && editingShift.id && (
 									<button
 										type="button"
@@ -1185,7 +1188,7 @@ export function DoctorShiftRosterModal({
 										<span>Удалить</span>
 									</button>
 								)}
-								<div style={{ display: "flex", gap: "0.5rem", marginLeft: "auto" }}>
+								<div className="flex items-center gap-2 ml-auto">
 									<button
 										type="button"
 										className="roster-btn roster-btn-secondary"

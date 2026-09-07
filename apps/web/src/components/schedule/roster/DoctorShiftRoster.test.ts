@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it, expect } from "vitest";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -25,7 +25,28 @@ import {
 	SHIFT_ARCHETYPES,
 	type StaffMember,
 } from "./doctorShiftRosterPresets";
-import { DoctorShiftRosterModal } from "./DoctorShiftRosterModal";
+import { registerHooks } from "node:module";
+
+if (typeof registerHooks === "function") {
+	try {
+		registerHooks({
+			load(url, context, nextLoad) {
+				if (url.endsWith(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						source: "export default {};",
+					};
+				}
+				return nextLoad(url, context);
+			},
+		});
+	} catch {
+		// Ignore if already registered
+	}
+}
+
+const { DoctorShiftRosterModal } = await import("./DoctorShiftRosterModal");
 
 describe("DoctorShiftRoster — Time & Shift Duration Arithmetic", () => {
 	it("parses time strings to minutes and converts back correctly", () => {
@@ -423,5 +444,59 @@ describe("DoctorShiftRosterModal — Component Rendering", () => {
 		);
 
 		assert.equal(html, "");
+	});
+
+	it("renders quick shift edit drawer with 44px touch targets, design tokens, and no inline styles", () => {
+		const html = renderToStaticMarkup(
+			React.createElement(DoctorShiftRosterModal, {
+				isOpen: true,
+				onClose: () => {},
+				clinicName: 'ООО "Денте Клиник"',
+				initialEditingShift: {
+					id: "test-shift-1",
+					doctorId: DEFAULT_CLINIC_STAFF[0]?.id || "doc-1",
+					doctorName: "Иванов И.И.",
+					doctorRole: "therapist",
+					assistantId: null,
+					assistantName: null,
+					cabinetId: "cab-1",
+					chairId: "chair-1a",
+					dateIso: "2026-08-24",
+					archetypeId: "morning_shift",
+					startTime: "08:30",
+					endTime: "14:30",
+					durationHours: 6.0,
+					breakMinutes: 0,
+					isNight: false,
+					nightHours: 0,
+					customNotes: "Только терапия",
+					status: "scheduled",
+				},
+			}),
+		);
+
+		// Drawer presence
+		assert.ok(html.includes("Редактирование смены"));
+		assert.ok(html.includes("roster-drawer-panel"));
+
+		// 44x44px touch-target close button
+		assert.ok(html.includes("min-h-[44px] min-w-[44px]"));
+		assert.ok(html.includes('aria-label="Закрыть панель"'));
+
+		// Strict design system tokens & 44px min-height on inputs and selects
+		assert.ok(
+			html.includes("border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100"),
+			"Must apply design system tokens to form fields",
+		);
+		assert.ok(html.includes("min-h-[44px]"), "Form inputs must have min-h-[44px] touch target");
+
+		// Values properly populated
+		assert.ok(html.includes("2026-08-24"));
+		assert.ok(html.includes("08:30"));
+		assert.ok(html.includes("14:30"));
+		assert.ok(html.includes("Только терапия"));
+
+		// Zero inline styles in drawer form fields
+		assert.ok(!html.includes('style="width:100%'), "Must not have raw inline styles on drawer form fields");
 	});
 });
