@@ -694,18 +694,20 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						/>
 						<button
 							type="button"
-							disabled={!customPrompt.trim() || isCopilotExecuting}
+							disabled={isCopilotExecuting}
 							onClick={() => {
 								if (customPrompt.trim()) {
 									handleExecuteCopilot(customPrompt.trim());
 									setCustomPrompt("");
+								} else {
+									setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
 								}
 							}}
-							className="p-1.5 rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] disabled:opacity-40 cursor-pointer"
+							className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg bg-[var(--tp-primary)] text-white hover:bg-[var(--tp-primary-hover)] disabled:opacity-40 cursor-pointer"
 							title="Отправить команду"
 							data-testid="presenter-copilot-send-btn"
 						>
-							<Send size={12} />
+							<Send size={14} />
 						</button>
 					</div>
 				</div>

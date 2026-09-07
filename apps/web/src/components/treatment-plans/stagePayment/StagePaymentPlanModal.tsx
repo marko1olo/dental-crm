@@ -91,6 +91,7 @@ export interface StagePaymentPlanModalProps {
 	readonly doctorFullName?: string;
 	readonly initialStages?: readonly MilestoneStage[];
 	readonly initialDepositKopecks?: Kopecks;
+	readonly initialTab?: StagePaymentModalTab;
 	readonly onSaveStages?: (stages: readonly MilestoneStage[]) => void;
 }
 
@@ -105,9 +106,10 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 	doctorFullName = "Д-р Смирнов А. В.",
 	initialStages,
 	initialDepositKopecks = rublesToKopecks(50000),
+	initialTab = "schedule",
 	onSaveStages,
 }) => {
-	const [activeTab, setActiveTab] = useState<StagePaymentModalTab>("schedule");
+	const [activeTab, setActiveTab] = useState<StagePaymentModalTab>(initialTab);
 
 	// Состояние этапов
 	const [stages, setStages] = useState<MilestoneStage[]>(() => {
@@ -248,6 +250,10 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 
 	// Автоматическое распределение свободного депозита
 	const handleAutoAllocateDeposit = () => {
+		if (depositWallet.availableDepositKopecks <= 0) {
+			setStatusMessage("Свободный депозит пуст (0 ₽). Внесите аванс пациента в кассе для авто-распределения по этапам.");
+			return;
+		}
 		const result = allocatePatientDepositToStages(stages, depositWallet);
 		setStages([...result.updatedStages]);
 		setDepositWallet(result.updatedDeposit);
@@ -530,7 +536,7 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 							<div className="flex flex-col gap-4">
 								{stages.map((stage) => {
 									const preset = getStagePresetByKind(stage.kind);
-									const statusMeta = STAGE_STATUS_UI_MAP[stage.status];
+									const statusMeta = STAGE_STATUS_UI_MAP[stage.status] || STAGE_STATUS_UI_MAP.draft;
 									const stageDue = Math.max(
 										0,
 										stage.totalKopecks - (stage.advancePaidKopecks + stage.completionPaidKopecks),
@@ -790,8 +796,8 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 									<button
 										type="button"
 										onClick={handleAutoAllocateDeposit}
-										disabled={depositWallet.availableDepositKopecks <= 0}
-										className="stage-action-btn primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+										className="stage-action-btn primary w-full cursor-pointer"
+										style={{ minHeight: "44px" }}
 									>
 										Распределить свободный депозит ({formatKopecksRu(depositWallet.availableDepositKopecks)})
 									</button>

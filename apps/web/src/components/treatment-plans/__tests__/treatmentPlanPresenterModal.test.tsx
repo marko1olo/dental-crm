@@ -1,5 +1,5 @@
 import React from "react";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import { TreatmentPlanPresenterModal } from "../TreatmentPlanPresenterModal";
@@ -114,6 +114,21 @@ describe("TreatmentPlanPresenterModal (Wave 19: Chairside Presentation & RF Decr
 		// 3. 1-click instant tariff apply button
 		assert.ok(html.includes("apply-tier-btn-standard"), "Must contain 1-click instant tariff apply button for standard tier");
 		assert.ok(html.includes("Применить"), "Must display instant apply action title");
+	});
+
+	it("guarantees AI copilot send button is NOT disabled when input is empty and has >= 36px touch target", () => {
+		const html = renderToString(
+			<TreatmentPlanPresenterModal
+				isOpen={true}
+				onClose={() => {}}
+				tiers={sampleTiers}
+			/>
+		);
+
+		assert.ok(html.includes("presenter-copilot-send-btn"), "Must contain copilot send button");
+		assert.ok(!html.includes('disabled="" data-testid="presenter-copilot-send-btn"'), "Send button must NOT be hard-disabled when input is empty");
+		assert.ok(html.includes("min-h-[36px]"), "Send button must have minimum 36px touch target");
+		assert.ok(html.includes("min-w-[36px]"), "Send button must have minimum 36px touch width");
 	});
 
 	it("returns null when isOpen is false", () => {

@@ -1238,8 +1238,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handleDownloadBatchNoMedoplXml}
-									disabled={familyBatchResult.totalPaymentsCount === 0}
-									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
 									title="Скачать файл NO_MEDOPL Формат 5.01"
 								>
 									<Download size={15} />
@@ -1248,8 +1247,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handleDownloadBatchXml}
-									disabled={familyBatchResult.totalPaymentsCount === 0}
-									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
 								>
 									<Download size={16} />
 									<span>Выгрузить пакет XML (ТКС)</span>
@@ -1257,8 +1255,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handlePrintBatch}
-									disabled={familyBatchResult.totalPaymentsCount === 0}
-									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
 								>
 									<Printer size={16} />
 									<span>Печать пакета справок (А4)</span>
@@ -1269,8 +1266,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handleDownloadNoMedoplXml}
-									disabled={yearPayments.length === 0}
-									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
 									title="Скачать файл NO_MEDOPL Формат 5.01"
 								>
 									<Download size={15} />
@@ -1279,8 +1275,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handleDownloadXml}
-									disabled={yearPayments.length === 0}
-									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+									className="min-h-[44px] px-4 rounded-xl border border-teal-600/40 text-teal-700 dark:text-teal-300 hover:bg-teal-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
 								>
 									<Download size={16} />
 									<span>Выгрузить XML (ТКС)</span>
@@ -1288,8 +1283,7 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								<button
 									type="button"
 									onClick={handlePrint}
-									disabled={yearPayments.length === 0}
-									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+									className="min-h-[44px] px-5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
 								>
 									<Printer size={16} />
 									<span>Печать справки КНД 1151156 (А4)</span>

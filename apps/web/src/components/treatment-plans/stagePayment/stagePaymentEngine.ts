@@ -173,14 +173,15 @@ export function calculateStagePaymentTotals(
 	let totalCompletionPaid = 0;
 
 	for (const stage of stages) {
-		grandTotal += stage.totalKopecks;
-		totalAdvanceRequired += stage.advanceRequiredKopecks;
-		totalAdvancePaid += stage.advancePaidKopecks;
-		totalEscrowLocked += stage.escrowLockedKopecks;
-		totalCompletionPaid += stage.completionPaidKopecks;
+		const stageTotal = Number(stage.totalKopecks ?? (stage as any).totalAmountKopecks) || 0;
+		grandTotal += stageTotal;
+		totalAdvanceRequired += Number(stage.advanceRequiredKopecks) || 0;
+		totalAdvancePaid += Number(stage.advancePaidKopecks) || 0;
+		totalEscrowLocked += Number(stage.escrowLockedKopecks) || 0;
+		totalCompletionPaid += Number(stage.completionPaidKopecks) || 0;
 
 		if (stage.status === "act_completed" || stage.status === "fully_paid") {
-			totalActCompleted += stage.totalKopecks;
+			totalActCompleted += stageTotal;
 		}
 	}
 
@@ -341,21 +342,23 @@ export function calculateTerminationRefund(
 	const itemizedExpenses: TerminationExpenseItem[] = [];
 
 	for (const stage of stages) {
-		const stagePaid = stage.advancePaidKopecks + stage.completionPaidKopecks;
+		const advancePaid = Number(stage.advancePaidKopecks) || 0;
+		const completionPaid = Number(stage.completionPaidKopecks) || 0;
+		const stagePaid = advancePaid + completionPaid;
 		totalPaidByPatient += stagePaid;
 
 		if (stage.status === "act_completed" || stage.status === "fully_paid") {
 			// Выполненные и принятые по акту этапы не подлежат возврату
-			completedActsTotal += stage.totalKopecks;
+			completedActsTotal += Number(stage.totalKopecks) || 0;
 		} else {
 			// Незавершенные этапы — авансы подлежат возврату за вычетом прямых расходов
 			uncompletedAdvance += stagePaid;
 
 			// Считаем прямые затраты клиники по незавершенному этапу только если работы были начаты или внесен аванс
 			if (stage.status !== "draft" || stagePaid > 0) {
-				const labCost = stage.directExpensesKopecks.labKopecks;
-				const materialsCost = stage.directExpensesKopecks.materialsKopecks;
-				const otherCost = stage.directExpensesKopecks.otherKopecks;
+				const labCost = Number(stage.directExpensesKopecks?.labKopecks) || 0;
+				const materialsCost = Number(stage.directExpensesKopecks?.materialsKopecks) || 0;
+				const otherCost = Number(stage.directExpensesKopecks?.otherKopecks) || 0;
 
 				if (labCost > 0) {
 					calculatedClinicExpenses += labCost;
