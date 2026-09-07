@@ -107,12 +107,24 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 	// Добавление карпулы по штрихкоду
 	const handleAddBarcode = useCallback(
 		(rawCode: string) => {
-			if (!rawCode || rawCode.trim().length === 0) return;
+			if (!rawCode || rawCode.trim().length === 0) {
+				showToast(
+					"Введите или отсканируйте 2D DataMatrix код карпулы анестетика",
+					"warning",
+				);
+				return;
+			}
 			const trimmed = rawCode.trim();
 			const parsed = parseMdlpDataMatrix(trimmed);
 			setLastScanned(parsed);
 
-			if (!parsed.isValid) return;
+			if (!parsed.isValid) {
+				showToast(
+					"Некорректный формат кода маркировки DataMatrix Честный ЗНАК",
+					"warning",
+				);
+				return;
+			}
 
 			const defaultCost = parsed.recognizedDrug
 				? parsed.recognizedDrug.vasoconstrictor === "1:100000"
@@ -136,6 +148,10 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 					newItem.sgtin &&
 					prev.some((p) => p.sgtin === newItem.sgtin)
 				) {
+					showToast(
+						`Карпула с SGTIN ${newItem.sgtin} уже есть в очереди списания`,
+						"info",
+					);
 					return prev;
 				}
 				return [newItem, ...prev];
@@ -224,9 +240,38 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		);
 	}, [patientId, patientName, visitId, doctorId, doctorName, cabinetId]);
 
+	// Открытие модального окна акта списания
+	const handleOpenActModal = useCallback(() => {
+		if (items.length === 0) {
+			showToast(
+				"Очередь списания пуста. Нажмите кнопку 'Списать все пустые карпулы смены' для мгновенного формирования акта",
+				"info",
+			);
+			return;
+		}
+		setIsActModalOpen(true);
+	}, [items.length]);
+
 	// Списание по Схеме 10560
 	const handleConfirmDisposal = async () => {
-		if (!validation.isValid || items.length === 0) return;
+		if (items.length === 0) {
+			handleQuickNurseCarpulesDisposal();
+			showToast(
+				"⚡ Очередь списания автозаполнена карпулами смены. Нажмите кнопку списания для отправки Схемы 10560 в МДЛП.",
+				"info",
+			);
+			return;
+		}
+
+		if (!validation.isValid) {
+			showToast(
+				validation.errors[0] ||
+					"Проверьте корректность кодов маркировки перед списанием",
+				"warning",
+			);
+			return;
+		}
+
 		setIsDisposing(true);
 
 		try {
@@ -257,6 +302,11 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 			if (onConfirmDisposal) {
 				await onConfirmDisposal(schemaDoc, items);
 			}
+		} catch (err) {
+			showToast(
+				`Ошибка формирования документа МДЛП: ${err instanceof Error ? err.message : String(err)}`,
+				"error",
+			);
 		} finally {
 			setIsDisposing(false);
 		}
@@ -312,9 +362,11 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 
 					<button
 						type="button"
-						className="mdlp-btn mdlp-btn-ghost p-2"
+						className="mdlp-btn mdlp-btn-ghost p-2 min-h-[44px] min-w-[44px]"
+						style={{ minHeight: "44px", minWidth: "44px" }}
 						onClick={onClose}
 						aria-label="Закрыть окно"
+						data-testid="header-close-btn"
 					>
 						<X size={20} />
 					</button>
@@ -340,6 +392,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 								<button
 									type="button"
 									className="mdlp-btn mdlp-btn-secondary min-h-[44px] text-xs px-3"
+									style={{ minHeight: "44px" }}
 									onClick={handleDownloadXml}
 								>
 									<Download size={14} /> Скачать XML Схемы 10560
@@ -347,7 +400,8 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 								<button
 									type="button"
 									className="mdlp-btn mdlp-btn-primary min-h-[44px] text-xs px-3"
-									onClick={() => setIsActModalOpen(true)}
+									style={{ minHeight: "44px" }}
+									onClick={handleOpenActModal}
 								>
 									<Printer size={14} /> Печать акта для старшей медсестры
 								</button>
@@ -415,9 +469,11 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							/>
 							<button
 								type="button"
-								className="mdlp-btn mdlp-btn-primary"
+								className="mdlp-btn mdlp-btn-primary min-h-[44px]"
+								style={{ minHeight: "44px" }}
 								onClick={() => handleAddBarcode(barcodeInput)}
-								disabled={!barcodeInput.trim()}
+								disabled={false}
+								data-testid="add-barcode-btn"
 							>
 								<Plus size={16} /> Добавить
 							</button>
@@ -525,8 +581,8 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 
 						<button
 							type="button"
-							className="mdlp-btn mdlp-btn-primary"
-							style={{ height: 44, padding: "0 16px", fontSize: 13, fontWeight: 700 }}
+							className="mdlp-btn mdlp-btn-primary min-h-[44px]"
+							style={{ minHeight: "44px", height: 44, padding: "0 16px", fontSize: 13, fontWeight: 700 }}
 							onClick={handleQuickNurseCarpulesDisposal}
 							data-testid="banner-quick-shift-carpules-btn"
 							title="Списать все пустые карпулы смены: 10 шт. Артикаин + 2 шт. Скандонест"
@@ -579,16 +635,20 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 								<button
 									type="button"
 									className="mdlp-btn mdlp-btn-secondary min-h-[44px] text-xs px-2.5"
+									style={{ minHeight: "44px" }}
 									onClick={handleSortFefo}
 									title="Сортировать по сроку годности (FEFO)"
+									data-testid="sort-fefo-btn"
 								>
 									<ArrowUpDown size={14} /> Сортировка FEFO
 								</button>
 								<button
 									type="button"
 									className="mdlp-btn mdlp-btn-ghost min-h-[44px] text-xs px-2 text-bad-fg hover:bg-red-50"
+									style={{ minHeight: "44px" }}
 									onClick={handleClearQueue}
 									title="Очистить всю очередь"
+									data-testid="clear-queue-btn"
 								>
 									<Trash2 size={14} /> Очистить
 								</button>
@@ -752,16 +812,19 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							className="mdlp-btn mdlp-btn-secondary"
-							onClick={() => setIsActModalOpen(true)}
-							disabled={items.length === 0}
+							className="mdlp-btn mdlp-btn-secondary min-h-[44px]"
+							style={{ minHeight: "44px" }}
+							onClick={handleOpenActModal}
+							disabled={false}
 							title="Сформировать и утвердить Акт списания карпул (бумажный журнал учтён, старшая медсестра опциональна)"
+							data-testid="print-disposal-act-btn"
 						>
 							<FileText size={16} /> Печать акта списания
 						</button>
 						<button
 							type="button"
-							className="mdlp-btn mdlp-btn-secondary font-semibold text-teal-700"
+							className="mdlp-btn mdlp-btn-secondary font-semibold text-teal-700 min-h-[44px]"
+							style={{ minHeight: "44px" }}
 							onClick={handleQuickNurseCarpulesDisposal}
 							title="Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест) в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)"
 							data-testid="footer-quick-carpules-btn"
@@ -773,21 +836,21 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
-							className="mdlp-btn mdlp-btn-secondary"
+							className="mdlp-btn mdlp-btn-secondary min-h-[44px]"
+							style={{ minHeight: "44px" }}
 							onClick={onClose}
+							data-testid="footer-close-btn"
 						>
 							Закрыть
 						</button>
 
 						<button
 							type="button"
-							className="mdlp-btn mdlp-btn-primary"
+							className="mdlp-btn mdlp-btn-primary min-h-[44px]"
+							style={{ minHeight: "44px" }}
 							onClick={handleConfirmDisposal}
-							disabled={
-								isDisposing ||
-								items.length === 0 ||
-								!validation.isValid
-							}
+							disabled={isDisposing}
+							data-testid="confirm-disposal-btn"
 						>
 							{isDisposing ? (
 								<>

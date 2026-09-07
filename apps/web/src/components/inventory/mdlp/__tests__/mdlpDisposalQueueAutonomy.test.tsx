@@ -11,85 +11,24 @@
 import { createCarpuleQueueItem } from "@dental/shared";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, it } from "node:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock GlobalToast so showToast can be spied on directly
+vi.mock("../../../GlobalToast.js", () => ({
+	showToast: vi.fn(),
+}));
+vi.mock("../../../GlobalToast", () => ({
+	showToast: vi.fn(),
+}));
+vi.mock("../../GlobalToast.js", () => ({
+	showToast: vi.fn(),
+}));
+vi.mock("../../GlobalToast", () => ({
+	showToast: vi.fn(),
+}));
+
+import { showToast } from "../../../GlobalToast.js";
 import { MdlpDisposalQueueModal } from "../MdlpDisposalQueueModal.js";
-
-const showToastCalls: Array<[string, string | undefined]> = [];
-
-interface SpyMock {
-	(...args: unknown[]): unknown;
-	calls: unknown[][];
-	toHaveBeenCalled: () => void;
-	toHaveBeenCalledWith: (...expectedArgs: unknown[]) => void;
-}
-
-const vi = {
-	clearAllMocks: () => {
-		showToastCalls.length = 0;
-	},
-	fn: (): SpyMock => {
-		const calls: unknown[][] = [];
-		const fnObj = ((...args: unknown[]) => {
-			calls.push(args);
-		}) as SpyMock;
-		fnObj.calls = calls;
-		fnObj.toHaveBeenCalled = () => {
-			assert.ok(calls.length > 0, "Expected function to have been called");
-		};
-		fnObj.toHaveBeenCalledWith = (...expectedArgs: unknown[]) => {
-			const found = calls.some((actual) =>
-				expectedArgs.every((arg, idx) => actual[idx] === arg),
-			);
-			assert.ok(
-				found,
-				`Expected call with ${JSON.stringify(expectedArgs)}, but actual calls were: ${JSON.stringify(calls)}`,
-			);
-		};
-		return fnObj;
-	},
-	mocked: (_fn: unknown) => ({
-		mock: {
-			calls: showToastCalls,
-		},
-	}),
-};
-
-const showToast = {
-	toHaveBeenCalled: () => {
-		assert.ok(showToastCalls.length > 0, "Expected showToast to have been called");
-	},
-	toHaveBeenCalledWith: (text: string, type?: string) => {
-		const found = showToastCalls.some(
-			(c) => c[0].includes(text) && (!type || c[1] === type),
-		);
-		assert.ok(
-			found,
-			`Expected toast with "${text}" (${type}), but calls were: ${JSON.stringify(showToastCalls)}`,
-		);
-	},
-};
-
-function expect(actual: unknown) {
-	return {
-		toBeNull: () => assert.strictEqual(actual, null),
-		not: {
-			toBeNull: () => assert.notStrictEqual(actual, null),
-			toBeUndefined: () => assert.notStrictEqual(actual, undefined),
-		},
-		toBe: (expected: unknown) => assert.strictEqual(actual, expected),
-		toBeFalsy: () => assert.ok(!actual, `Expected falsy, got ${actual}`),
-		toBeTruthy: () => assert.ok(Boolean(actual), `Expected truthy, got ${actual}`),
-		toHaveBeenCalled: () => {
-			// biome-ignore lint/suspicious/noExplicitAny: spy assertion
-			(actual as any)?.toHaveBeenCalled?.();
-		},
-		toHaveBeenCalledWith: (...args: unknown[]) => {
-			// biome-ignore lint/suspicious/noExplicitAny: spy assertion
-			(actual as any)?.toHaveBeenCalledWith?.(...args);
-		},
-	};
-}
 
 interface MockDomNode {
 	nodeType: number;
@@ -284,12 +223,6 @@ function setupMockDom() {
 		removeEventListener: () => {},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
 		print: vi.fn(),
-		dispatchEvent: (ev: { type: string; detail?: { text: string; type?: string; duration?: number } }) => {
-			if (ev?.type === "dente-toast" && ev.detail) {
-				showToastCalls.push([ev.detail.text, ev.detail.type]);
-			}
-			return true;
-		},
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
 		Element: class {},
@@ -410,7 +343,9 @@ describe("MDLP Disposal Queue Autonomy & Non-Blocking Carpule Disposal (Mandates
 		const calls = vi.mocked(showToast).mock.calls;
 		const toastTexts = calls.map((c) => c[0]);
 		const hasCarpuleToast = toastTexts.some(
-			(txt) => txt.includes("Списаны все пустые карпулы смены") || txt.includes("Очередь списания автозаполнена"),
+			(txt) =>
+				txt.includes("Списаны все пустые карпулы смены") ||
+				txt.includes("Очередь списания автозаполнена"),
 		);
 		expect(hasCarpuleToast).toBe(true);
 	});
