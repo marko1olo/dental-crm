@@ -317,7 +317,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 	const handleConfirmSmsSigning = () => {
 		if (!signingSession) return;
 		if (enteredSmsCode.trim().length < 6) {
-			showToast("Введите полный 6-значный СМС-код из уведомления", "warning");
+			showToast("Введите полный 6-значный СМС-код или нажмите «Заверить сессионным ПЭП (1 клик)»", "warning");
 			return;
 		}
 
@@ -340,6 +340,28 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 		} else {
 			showToast(result.messageRu, "error");
 		}
+	};
+
+	const handleFallbackSessionPepSigning = () => {
+		if (!signingSession) return;
+		setIsSubmittingCode(true);
+		// Sign directly using session PEP (63-FZ Art. 9)
+		const updated = appointments.map((apt) => {
+			if (signingSession.appointmentIds.includes(apt.id)) {
+				return {
+					...apt,
+					emrCard043uStatus: "signed" as const,
+					emrSignedAtIso: new Date().toISOString(),
+					emrSignMethod: "session_pep" as const,
+				};
+			}
+			return apt;
+		});
+		setIsSubmittingCode(false);
+		setAppointments(updated);
+		onAppointmentUpdate?.(updated);
+		setSigningSession(null);
+		showToast("Карты ф. 043/у заверены сессионным ПЭП (ст. 9 63-ФЗ без СМС)!", "success");
 	};
 
 	// Map breakdown by appointment ID for exact piece-rate math display in cards
@@ -1160,7 +1182,7 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 							<button
 								type="button"
 								onClick={handleConfirmSmsSigning}
-								disabled={enteredSmsCode.length < 6 || isSubmittingCode}
+								disabled={isSubmittingCode}
 								className="w-full min-h-[44px] rounded-xl text-sm font-extrabold bg-teal-600 hover:bg-teal-500 text-white shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
 								data-testid="confirm-sms-code-btn"
 							>
@@ -1175,6 +1197,18 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 										<span>Заверить {signingSession.appointmentIds.length} карт ПЭП</span>
 									</>
 								)}
+							</button>
+
+							<button
+								type="button"
+								onClick={handleFallbackSessionPepSigning}
+								disabled={isSubmittingCode}
+								className="w-full min-h-[44px] rounded-xl text-xs font-bold text-amber-300 bg-amber-950/40 border border-amber-600/40 hover:bg-amber-900/50 flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+								data-testid="sms-delay-fallback-pep-btn"
+								title="СМС задерживается или отсутствует сотовая связь — заверить сессионным ПЭП (ст. 9 63-ФЗ)"
+							>
+								<Zap size={14} className="text-amber-400" />
+								<span>СМС не пришло — заверить сессионным ПЭП (1 клик)</span>
 							</button>
 						</div>
 					</div>
