@@ -818,7 +818,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					>
 						<Printer className="w-4 h-4" /> Печать 043/у
 					</button>
-					{isLocked ? (
+					{isLocked && (
 						isRevising ? (
 							<span className="vde-043__badge vde-043__badge--revise">
 								<AlertTriangle className="w-4 h-4" /> ПРАВКА
@@ -841,30 +841,37 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								</button>
 							</div>
 						)
-					) : (
-						<VisitDiaryTemplateSelector
-							isLocked={isLocked}
-							// biome-ignore lint/suspicious/noExplicitAny: template handler
-							onSelectTemplate={(tmpl: any) => {
-								setDiary((prev) =>
-									mergeSoapDiaryState(
-										prev,
-										{
-											anamnesis: tmpl.prefilledAnamnesis,
-											statusLocalis: tmpl.prefilledObjective,
-											treatmentDescription: tmpl.prefilledTreatment,
-											diagnosisIcd10: tmpl.defaultIcd10,
-										},
-										{ strategy: "smart_append" },
-									),
-								);
-								if (tmpl.defaultIcd10) {
-									setIcdSearch(tmpl.defaultIcd10);
-								}
-								scheduleDebouncedSave();
-							}}
-						/>
 					)}
+					<VisitDiaryTemplateSelector
+						isLocked={isLocked && !isRevising}
+						onAutoRevise={() => {
+							if (isLocked && !isRevising) {
+								beginRevise();
+							}
+						}}
+						// biome-ignore lint/suspicious/noExplicitAny: template handler
+						onSelectTemplate={(tmpl: any) => {
+							if (isLocked && !isRevising) {
+								beginRevise();
+							}
+							setDiary((prev) =>
+								mergeSoapDiaryState(
+									prev,
+									{
+										anamnesis: tmpl.prefilledAnamnesis,
+										statusLocalis: tmpl.prefilledObjective,
+										treatmentDescription: tmpl.prefilledTreatment,
+										diagnosisIcd10: tmpl.defaultIcd10,
+									},
+									{ strategy: "smart_append" },
+								),
+							);
+							if (tmpl.defaultIcd10) {
+								setIcdSearch(tmpl.defaultIcd10);
+							}
+							scheduleDebouncedSave();
+						}}
+					/>
 				</div>
 			</div>
 

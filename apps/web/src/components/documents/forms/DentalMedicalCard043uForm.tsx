@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { CheckCircle2, Printer, Sparkles } from "lucide-react";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import {
 	calculateDmftFromOdontogram,
@@ -14,6 +15,12 @@ import {
 	toothStatusCodeLabels,
 	toothStatusCodeShortMap,
 } from "@dental/shared";
+import {
+	createForm043PhysiologicalNorm,
+	createIntactOdontogramRecords,
+	createSanitizedOdontogramRecords,
+	createWisdomExtractedOdontogramRecords,
+} from "../../../lib/clinicalProtocols043";
 
 export interface DentalMedicalCard043uFormProps {
 	initialPayload?: Partial<FullForm043uPayload>;
@@ -349,29 +356,52 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 			<div className="document-form-container form-043u-wrapper">
 				<DocumentPayloadCard
 					title="Медицинская карта стоматологического пациента (Форма № 043/у)"
-					description="Официальная форма Минздрава РФ с зубной формулой FDI, индексами КПУ/CPITN, анамнезом жизни, СОПР и дневниками SOAP"
+					description="Официальная форма Минздрава РФ с зубной формулой FDI, индексами КПУ/CPITN, анамнезом жизни, СОПР и дневниками приёма (Форма 043/у)"
 				>
-					<div className="document-form-nav-tabs" style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+					<div
+						className="document-form-nav-tabs"
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: "16px",
+							flexWrap: "wrap",
+							gap: "8px",
+						}}
+					>
+						<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+							<button
+								type="button"
+								className={`btn btn-secondary ${activeTab === "formula" ? "active" : ""}`}
+								onClick={() => setActiveTab("formula")}
+							>
+								Зубная формула FDI и КПУ
+							</button>
+							<button
+								type="button"
+								className={`btn btn-secondary ${activeTab === "indices" ? "active" : ""}`}
+								onClick={() => setActiveTab("indices")}
+							>
+								Индексы и Пародонт (CPITN)
+							</button>
+							<button
+								type="button"
+								className={`btn btn-secondary ${activeTab === "anamnesis" ? "active" : ""}`}
+								onClick={() => setActiveTab("anamnesis")}
+							>
+								Анамнез, СОПР и План
+							</button>
+						</div>
 						<button
 							type="button"
-							className={`btn btn-secondary ${activeTab === "formula" ? "active" : ""}`}
-							onClick={() => setActiveTab("formula")}
+							data-testid="btn-043-fast-print"
+							className="btn btn-sm btn-outline-primary"
+							onClick={() => window.print()}
+							title="Печать карты 043/у в любой момент (Мандат 8e)"
+							style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
 						>
-							Зубная формула FDI и КПУ
-						</button>
-						<button
-							type="button"
-							className={`btn btn-secondary ${activeTab === "indices" ? "active" : ""}`}
-							onClick={() => setActiveTab("indices")}
-						>
-							Индексы и Пародонт (CPITN)
-						</button>
-						<button
-							type="button"
-							className={`btn btn-secondary ${activeTab === "anamnesis" ? "active" : ""}`}
-							onClick={() => setActiveTab("anamnesis")}
-						>
-							Анамнез, СОПР и План
+							<Printer style={{ width: "16px", height: "16px" }} />
+							Печать 043/у
 						</button>
 					</div>
 
@@ -382,6 +412,65 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								<span>
 									К = {dmftResult.decayed}, П = {dmftResult.filled}, У = {dmftResult.missing} | <strong>КПУ(з) = {dmftResult.dmftTotal}</strong> ({dmftResult.intensityLevelLabel})
 								</span>
+							</div>
+
+							<div
+								className="odontogram-1click-presets"
+								data-testid="odontogram-1click-presets-bar"
+								style={{
+									display: "flex",
+									gap: "8px",
+									flexWrap: "wrap",
+									marginBottom: "12px",
+									alignItems: "center",
+									padding: "8px 12px",
+									background: "var(--paper-soft, rgba(0,0,0,0.02))",
+									borderRadius: "8px",
+									border: "1px solid var(--line, #e2e8f0)",
+								}}
+							>
+								<span style={{ fontWeight: 600, fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+									<Sparkles style={{ width: "14px", height: "14px", color: "var(--teal, #0d9488)" }} />
+									1-Клик Пресеты формулы:
+								</span>
+								<button
+									type="button"
+									data-testid="btn-043-teeth-all-healthy-1click"
+									className="btn btn-sm btn-outline-success"
+									onClick={() => {
+										setOdontogram(createIntactOdontogramRecords());
+									}}
+									disabled={disabled}
+									title="Все зубы здоровы / интактны (Норма) — КПУ = 0"
+									style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+								>
+									<CheckCircle2 style={{ width: "14px", height: "14px" }} />
+									Все здоровы (Норма)
+								</button>
+								<button
+									type="button"
+									data-testid="btn-043-teeth-sanitized-1click"
+									className="btn btn-sm btn-outline-secondary"
+									onClick={() => {
+										setOdontogram(createSanitizedOdontogramRecords());
+									}}
+									disabled={disabled}
+									title="Санирован (моляры удовлетворительно пломбированы)"
+								>
+									Санирован
+								</button>
+								<button
+									type="button"
+									data-testid="btn-043-teeth-no-wisdom-1click"
+									className="btn btn-sm btn-outline-secondary"
+									onClick={() => {
+										setOdontogram(createWisdomExtractedOdontogramRecords());
+									}}
+									disabled={disabled}
+									title="Зубы мудрости (18, 28, 38, 48) отсутствуют / удалены"
+								>
+									Без зубов мудрости (8-ки)
+								</button>
 							</div>
 
 							<div className="condition-selector-bar" style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
@@ -532,6 +621,7 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								<h5 style={{ margin: 0 }}>Пародонтальный индекс CPITN (PSR) по 6 секстантам</h5>
 								<button
 									type="button"
+									data-testid="btn-043-cpitn-norm-1click"
 									className="btn btn-sm btn-outline-success"
 									onClick={() => {
 										setCpitn({
@@ -543,10 +633,12 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 											sextant34_38: "0_healthy",
 											treatmentNeedCategory: "0_none",
 										});
+										setHygieneIndexOhiS("OHI-S = 0.0 (Отличная гигиена полости рта)");
 									}}
 									disabled={disabled}
+									title="Установить норму пародонта (CPITN 0 / TN 0) и гигиены (OHI-S 0.0) в 1 клик"
 								>
-									1 клик: Все секстанты здоровы (Код 0 / TN 0)
+									1 клик: Все секстанты здоровы (Код 0 / TN 0, OHI-S = 0.0)
 								</button>
 							</div>
 
@@ -684,6 +776,56 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 
 					{activeTab === "anamnesis" && (
 						<div className="form-043u-anamnesis-tab">
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "space-between",
+									alignItems: "center",
+									marginBottom: "14px",
+									padding: "10px 14px",
+									background: "var(--teal-surface, rgba(13, 148, 136, 0.08))",
+									borderRadius: "8px",
+									border: "1px solid var(--teal-line, rgba(13, 148, 136, 0.2))",
+									flexWrap: "wrap",
+									gap: "8px",
+								}}
+							>
+								<div>
+									<strong style={{ color: "var(--teal-dark, #0f766e)", fontSize: "13px" }}>
+										Клиническая автономия врача (Мандат 8e):
+									</strong>
+									<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
+										Заполнение физиологической нормой в 1 клик. Врач правит только патологию.
+									</div>
+								</div>
+								<button
+									type="button"
+									data-testid="btn-043-anamnesis-norm-1click"
+									className="btn btn-sm btn-success"
+									onClick={() => {
+										const norm = createForm043PhysiologicalNorm();
+										setChiefComplaint(norm.chiefComplaint);
+										setHistoryOfPresentIllness(norm.historyOfPresentIllness);
+										setAllergologicalHistory(norm.allergologicalHistory);
+										setConcomitantDiseases(norm.concomitantDiseases);
+										setCurrentMedications(norm.currentMedications);
+										setPregnancyLactationStatus(norm.pregnancyLactationStatus);
+										setPastDentalInterventions(norm.pastDentalInterventions);
+										setBiteType(norm.biteType);
+										setBiteDescription(norm.biteDescription);
+										setOralMucosa(norm.oralMucosaStatus);
+										setXrayFindingsDescription(norm.xrayFindingsDescription);
+										setGeneralTreatmentPlan(norm.generalTreatmentPlan);
+									}}
+									disabled={disabled}
+									title="Заполнить анамнез, СОПР, прикус и план физиологической нормой"
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+								>
+									<CheckCircle2 style={{ width: "16px", height: "16px" }} />
+									Соматически здоров / норма (1-клик)
+								</button>
+							</div>
+
 							<h5 style={{ marginBottom: "12px" }}>Жалобы и Анамнез заболевания</h5>
 							<div style={{ marginBottom: "14px" }}>
 								<label style={{ display: "block", marginBottom: "4px", fontWeight: 600 }}>Жалобы пациента (Chief Complaint):</label>

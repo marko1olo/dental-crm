@@ -1605,3 +1605,12 @@
 
 ---
 
+## 150. `эмк_043у::автономия_шаблонов_дневника_ревизия_в_1_клик_и_пресеты_формы_043у` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8e, 8k, 8i, 8n, ФИЧА #152)
+- **Идея**: В `VisitDiaryTemplateSelector.tsx` и `VisitDiarySection.tsx` полностью ликвидирована блокировка селектора шаблонов при закрытом/подписанном дневнике. Селектор и все 13 быстрых кнопок остаются активными (`isLocked && !onAutoRevise`), и при клике по шаблону автоматически запускается процедура ревизии `beginRevise()` («Исправленному верить») с мгновенной вставкой протокола без требования ручного нажатия кнопки правок. В `DentalMedicalCard043uForm.tsx` внедрено 1-клик заполнение физиологической нормой анамнеза, СОПР и плана лечения (`createForm043PhysiologicalNorm`), 1-клик пресеты одонтограммы (`createIntactOdontogramRecords`, `createSanitizedOdontogramRecords`, `createWisdomExtractedOdontogramRecords`), 1-клик норма пародонта CPITN 0 и гигиены OHI-S 0.0, а также прямая быстрая печать карты 043/у `btn-043-fast-print`.
+- **Статус**:
+  - Библиотека протоколов: `apps/web/src/lib/clinicalProtocols043.ts`.
+  - Фронтенд: `apps/web/src/components/VisitDiaryTemplateSelector.tsx`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`.
+  - Тесты: `apps/web/src/lib/clinicalProtocols043.test.ts` (21 тест, 100% pass).
+
+---
+

@@ -7,6 +7,11 @@ import {
 	getToothAnatomicalNameRu,
 	mergeSoapDiaryState,
 	normalizeFdiToothList,
+	FORM_043_PHYSIOLOGICAL_NORM,
+	createForm043PhysiologicalNorm,
+	createIntactOdontogramRecords,
+	createSanitizedOdontogramRecords,
+	createWisdomExtractedOdontogramRecords,
 } from "./clinicalProtocols043";
 
 const EMPTY_DIARY: DiaryState = {
@@ -299,5 +304,48 @@ describe("clinicalProtocols043 — Non-Destructive Merge (mergeSoapDiaryState)",
 		);
 		assert.ok(merged.anamnesis.includes(finding.anamnesis));
 		assert.equal(merged.diagnosisTooth, "16, 26");
+	});
+});
+
+describe("clinicalProtocols043 — Form 043/u Physiological Norm & Presets (Mandates 8e, 8k)", () => {
+	it("provides comprehensive physiological norm covering somatic, mucosal and occlusal status", () => {
+		const norm = createForm043PhysiologicalNorm();
+		assert.ok(norm.chiefComplaint.includes("Жалоб на момент осмотра не предъявляет"));
+		assert.ok(norm.allergologicalHistory.includes("не отягощен"));
+		assert.ok(norm.concomitantDiseases.includes("отрицает"));
+		assert.equal(norm.biteType, "orthognathic");
+		assert.equal(norm.oralMucosaStatus.color, "pale_pink_normal");
+		assert.equal(norm.oralMucosaStatus.moisture, "normal");
+		assert.equal(norm.oralMucosaStatus.bleedingPBI, "grade_0");
+		assert.equal(norm.oralMucosaStatus.pathologicalElements, null);
+		assert.ok(norm.oralMucosaStatus.tmjFunction.includes(">40 мм"));
+		assert.ok(norm.hygieneIndexOhiS.includes("OHI-S = 0.0"));
+	});
+
+	it("creates complete intact odontogram with all 32 teeth marked healthy", () => {
+		const records = createIntactOdontogramRecords();
+		assert.equal(Object.keys(records).length, 32);
+		assert.equal(records[16]?.statusCode, "healthy");
+		assert.equal(records[21]?.statusCode, "healthy");
+		assert.equal(records[36]?.statusCode, "healthy");
+		assert.equal(records[48]?.statusCode, "healthy");
+	});
+
+	it("creates sanitized odontogram with molars filled satisfactorily", () => {
+		const records = createSanitizedOdontogramRecords();
+		assert.equal(records[16]?.statusCode, "filled_satisfactory");
+		assert.equal(records[26]?.statusCode, "filled_satisfactory");
+		assert.equal(records[36]?.statusCode, "filled_satisfactory");
+		assert.equal(records[46]?.statusCode, "filled_satisfactory");
+		assert.equal(records[11]?.statusCode, "healthy");
+	});
+
+	it("creates wisdom-extracted odontogram with 18, 28, 38, 48 marked absent", () => {
+		const records = createWisdomExtractedOdontogramRecords();
+		assert.equal(records[18]?.statusCode, "extracted_absent");
+		assert.equal(records[28]?.statusCode, "extracted_absent");
+		assert.equal(records[38]?.statusCode, "extracted_absent");
+		assert.equal(records[48]?.statusCode, "extracted_absent");
+		assert.equal(records[17]?.statusCode, "healthy");
 	});
 });

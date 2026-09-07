@@ -156,9 +156,11 @@
 - **Фронтенд**: 
   - `apps/web/src/components/patient/PatientAnamnesisModal.tsx` (кнопка `title="1 клик: соматически здоров, анамнез не отягощен, физиологическая норма"`)
   - `apps/web/src/components/documents/forms/PatientIntakeQuestionnaireForm.tsx` (кнопка `title="1 клик: заполнить все поля анкеты физиологической нормой (соматически здоров)"`)
+  - `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx` (кнопка `btn-043-anamnesis-norm-1click` «Соматически здоров / норма», пресеты формулы `btn-043-teeth-all-healthy-1click`, `btn-043-teeth-sanitized-1click`, `btn-043-teeth-no-wisdom-1click`, норма CPITN 0 и OHI-S 0.0, быстрая печать `btn-043-fast-print`)
+  - `apps/web/src/components/VisitDiaryTemplateSelector.tsx` и `apps/web/src/components/visit/VisitDiarySection.tsx` (1-клик авто-ревизия подписанного дневника `onAutoRevise` без серых блокировок по Мандату 8e «Исправленному верить»)
 - **Хуки и протоколы**: 
   - `apps/web/src/hooks/domains/useVisitLogic.ts` (автозаполнение физиологической нормы для визита и дневника 043/у)
-  - `apps/web/src/lib/clinicalProtocols043.ts` (пресет `defaultNormalStatus` с номенклатурой Минздрава РФ)
+  - `apps/web/src/lib/clinicalProtocols043.ts` (каноническая норма `FORM_043_PHYSIOLOGICAL_NORM`, `createForm043PhysiologicalNorm`, генераторы одонтограммы `createIntactOdontogramRecords`, `createSanitizedOdontogramRecords`, `createWisdomExtractedOdontogramRecords`)
 
 #### 2.10.2. Касса 54-ФЗ без требования ИНН с физических лиц (Мандат 8e / 54-ФЗ / ФФД 1.2)
 - **Суть и домен**: Полная автономия кассы. Согласно Федеральному закону № 54-ФЗ, ИНН покупателя обязателен **только для юридических лиц и индивидуальных предпринимателей**. При приеме наличных, оплате банковской картой, СБП QR или списании с аванса/семейного баланса система никогда не требует ИНН физлица и не блокирует пробитие чека. Поддерживается сплит-оплата (комбинация нал + карта + аванс) и автоматический точный расчёт сдачи.

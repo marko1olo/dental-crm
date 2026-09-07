@@ -207,9 +207,13 @@ export const CANONICAL_SOAP_TEMPLATES: Record<
 	},
 };
 
+export const CANONICAL_CLINICAL_043_TEMPLATES = CANONICAL_SOAP_TEMPLATES;
+export type Canonical043TemplateKey = CanonicalSoapTemplateKey;
+
 interface VisitDiaryTemplateSelectorProps {
 	isLocked: boolean;
 	onSelectTemplate: (template: Template) => void;
+	onAutoRevise?: () => void;
 }
 
 /**
@@ -231,6 +235,7 @@ interface VisitDiaryTemplateSelectorProps {
 export function VisitDiaryTemplateSelector({
 	isLocked,
 	onSelectTemplate,
+	onAutoRevise,
 }: VisitDiaryTemplateSelectorProps) {
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -569,13 +574,19 @@ export function VisitDiaryTemplateSelector({
 
 	const applyCanonicalTemplate = useCallback(
 		(key: CanonicalSoapTemplateKey) => {
-			if (isLocked) return;
+			if (isLocked) {
+				if (onAutoRevise) {
+					onAutoRevise();
+				} else {
+					return;
+				}
+			}
 			const canonical = CANONICAL_SOAP_TEMPLATES[key];
 			setSelectedTemplate(canonical.id);
 			onSelectTemplate(canonical);
 			showToast(`Применён протокол: ${canonical.title}`, "success", 2500);
 		},
-		[isLocked, onSelectTemplate],
+		[isLocked, onAutoRevise, onSelectTemplate],
 	);
 
 	const selectedMeta = selectedTemplate
@@ -589,22 +600,24 @@ export function VisitDiaryTemplateSelector({
 	const canCreate =
 		!isLocked && !isLoading && !isSeeding && !isDeleting && !isCreating;
 
+	const isSelectionBlocked = isLocked && !onAutoRevise;
+
 	const quickSoapButtonsEl = (
 		<div
 			className="flex items-center gap-1.5 flex-wrap"
 			data-testid="diary-quick-canonical-templates"
 		>
 			<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1">
-				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" /> 1-Клик SOAP:
+				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" /> 1-Клик Форма 043/у:
 			</span>
 			<button
 				type="button"
 				data-testid="btn-quick-soap-caries"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("caries")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Кариес дентина K02.1: OptiBond FL / Single Bond, светоотверждаемый композит, шлифовка/полировка Enhance"
 				}
@@ -614,11 +627,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-pulpitis"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("pulpitis")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Острый пульпит K04.0: мехобработка ProTaper / WaveOne, ирригация NaOCl 3%, обтурация гуттаперчей + AH Plus"
 				}
@@ -628,11 +641,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-periodontitis"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("periodontitis")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Периодонтит K04.7: распломбировка/обработка каналов, лечебная паста Ca(OH)2 на 10-14 дней, Septo-pack / Cavit"
 				}
@@ -642,11 +655,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-hygiene"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("hygiene")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Профгигиена K03.6: ультразвук Piezon, Air-Flow с порошком на основе глицина, Detartrine, Bifluorid 12"
 				}
@@ -656,11 +669,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-extraction"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("extraction")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] hover:border-[var(--teal)] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Удаление зуба K01.1 / K04.7: люксация, элевация, щипцы, кюретаж лунки, гемостаз, альвожиль"
 				}
@@ -675,11 +688,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-pediatric-adaptation"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("pediatric_adaptation")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 text-teal-800 dark:text-teal-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Адаптационный приём Z01.2: Tell-Show-Do, мягкая чистка, подарок, контакт налажен"
 				}
@@ -690,11 +703,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-pediatric-caries"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("pediatric_caries")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 dark:text-blue-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Кариес молочного зуба K02.1: Twinky Star / СИЦ Fuji IX / Vitremer, глубокое фторирование"
 				}
@@ -705,11 +718,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-pediatric-pulpotomy"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("pediatric_pulpotomy")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Пульпотомия молочного зуба K04.0: Pulpotec / МТА / коронка NuSmile, гемостаз"
 				}
@@ -720,11 +733,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-pediatric-silvering-fluoride"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("pediatric_silvering_fluoride")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Серебрение / глубокое фторирование эмали K02.0: Сафорайд 38% / Белак / Tiefenfluorid"
 				}
@@ -740,11 +753,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-ortho-prep"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("ortho_prep_zirconia_emax")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Препарирование ZrO2/E.max: уступ 0.5–1.0 мм, нить 00/0, А-силикон/3Shape TRIOS, Protemp на Temp-Bond NE"
 				}
@@ -755,11 +768,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-ortho-try-in"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("ortho_try_in_framework_crown")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 dark:text-blue-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Примерка каркаса / коронки: зонд, флосс, копирка Bausch 40 мкм, согласование цвета VITA"
 				}
@@ -770,11 +783,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-ortho-cementation"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("ortho_permanent_cementation")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Постоянная фиксация: пескоструй CoJet/Al2O3, праймер Monobond Plus, цемент RelyX U200 / Panavia V5, рентген-контроль"
 				}
@@ -785,11 +798,11 @@ export function VisitDiaryTemplateSelector({
 			<button
 				type="button"
 				data-testid="btn-quick-soap-ortho-removable"
-				disabled={isLocked}
+				disabled={isSelectionBlocked}
 				onClick={() => applyCanonicalTemplate("ortho_removable_prosthetics")}
 				className="min-h-[44px] px-3 py-1.5 text-xs font-semibold rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:text-purple-200 transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
 				title={
-					isLocked
+					isSelectionBlocked
 						? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для редактирования."
 						: "Съемное протезирование: слепки, восковые валики ЦСЧ, постановка гарнитура, сдача протеза Acry-Free / нейлон"
 				}
@@ -1022,9 +1035,9 @@ export function VisitDiaryTemplateSelector({
 					<select
 						id="diary-template-select"
 						data-testid="diary-template-select"
-						disabled={isLocked || isLoading}
+						disabled={isSelectionBlocked || isLoading}
 						title={
-							isLocked
+							isSelectionBlocked
 								? "Дневник подписан. Нажмите «Внести исправление» («Исправленному верить») для изменения протокола."
 								: isLoading
 									? "Загружаем список клинических протоколов…"
@@ -1035,6 +1048,9 @@ export function VisitDiaryTemplateSelector({
 							const val = e.target.value;
 							setSelectedTemplate(val);
 							if (!val) return;
+							if (isLocked && onAutoRevise) {
+								onAutoRevise();
+							}
 							const tmpl = templates.find((t) => t.id === val);
 							if (tmpl) {
 								onSelectTemplate(tmpl);
