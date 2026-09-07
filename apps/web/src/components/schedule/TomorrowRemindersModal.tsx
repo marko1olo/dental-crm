@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	AlertTriangle,
 	Bell,
@@ -12,6 +12,7 @@ import {
 	MessageCircle,
 	MessageSquare,
 	Moon,
+	MoreVertical,
 	Phone,
 	Search,
 	Send,
@@ -53,6 +54,27 @@ export function TomorrowRemindersModal({
 	const [isDispatching, setIsDispatching] = useState(false);
 	const [dispatchProgress, setDispatchProgress] = useState<{ current: number; total: number } | null>(null);
 	const [allowQuietHoursOverride, setAllowQuietHoursOverride] = useState(false);
+	const [activeMenuAppointmentId, setActiveMenuAppointmentId] = useState<string | null>(null);
+
+	// Close menu on click outside
+	useEffect(() => {
+		if (!activeMenuAppointmentId) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (!target?.closest(`[data-reminder-menu="${activeMenuAppointmentId}"]`)) {
+				setActiveMenuAppointmentId(null);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [activeMenuAppointmentId]);
+
+	// Reset open menu if modal is closed
+	useEffect(() => {
+		if (!isOpen) {
+			setActiveMenuAppointmentId(null);
+		}
+	}, [isOpen]);
 
 	const summary = useMemo(() => {
 		return compileTomorrowReminders(dashboard, targetDateIso);
@@ -265,7 +287,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={handleCopyAll}
-							className="min-h-[44px] h-[44px] sm:h-[40px] px-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold hover:bg-[var(--paper-soft)] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+							className="min-h-[44px] px-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold hover:bg-[var(--paper-soft)] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 							title="Скопировать все тексты для ручной рассылки"
 						>
 							<Copy size={14} />
@@ -275,7 +297,7 @@ export function TomorrowRemindersModal({
 							type="button"
 							onClick={handleBatchDispatch}
 							disabled={isDispatching}
-							className="min-h-[44px] h-[44px] sm:h-[40px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white font-black hover:bg-[var(--teal-dark,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+							className="min-h-[44px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white font-black hover:bg-[var(--teal-dark,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
 							title="Запустить умную рассылку по доступным каналам"
 						>
 							<Zap size={14} className={isDispatching ? "animate-spin" : ""} />
@@ -291,7 +313,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("all")}
-							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap flex items-center justify-center ${
+							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap flex items-center justify-center ${
 								selectedChannelFilter === "all"
 									? "bg-[var(--teal)] text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -302,7 +324,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("telegram")}
-							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
+							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "telegram"
 									? "bg-sky-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -314,7 +336,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("whatsapp")}
-							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
+							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "whatsapp"
 									? "bg-emerald-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -326,7 +348,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("sms")}
-							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
+							className={`min-h-[44px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "sms"
 									? "bg-indigo-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -364,6 +386,13 @@ export function TomorrowRemindersModal({
 					) : (
 						filteredReminders.map((reminder) => {
 							const isSent = sentAppointmentIds.has(reminder.appointmentId);
+							const primaryChannel: ReminderChannel | "copy" =
+								reminder.availableChannels.includes(reminder.preferredChannel)
+									? reminder.preferredChannel
+									: (reminder.availableChannels[0] ?? "copy");
+							const secondaryChannels = reminder.availableChannels.filter(
+								(c) => c !== primaryChannel,
+							);
 
 							return (
 								<div
@@ -446,83 +475,239 @@ export function TomorrowRemindersModal({
 										{reminder.reminderText}
 									</div>
 
-									{/* Action Links & Channel Buttons Row */}
-									<div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[var(--line)]">
-										{/* 1-Click Interactive Action Links */}
-										<div className="flex items-center gap-1.5 flex-wrap">
-											{reminder.confirmUrl && (
-												<button
-													type="button"
-													onClick={() => handleCopyLink(reminder.confirmUrl!, "Подтверждение")}
-													className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5"
-													title="Скопировать ссылку подтверждения визита"
-												>
-													<ThumbsUp size={13} />
-													<span>Ссылка «Подтвердить»</span>
-												</button>
-											)}
-											{reminder.rescheduleUrl && (
-												<button
-													type="button"
-													onClick={() => handleCopyLink(reminder.rescheduleUrl!, "Перенос")}
-													className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5"
-													title="Скопировать ссылку переноса визита"
-												>
-													<ThumbsDown size={13} />
-													<span>Ссылка «Перенести»</span>
-												</button>
-											)}
+									{/* Action Links & Channel Buttons Row: Law of Miller (<= 2 primary buttons) */}
+									<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
+										{/* Channel Indicator */}
+										<div className="text-xs text-[var(--muted)] flex items-center gap-1.5">
+											<span>Основной канал:</span>
+											<strong className="text-[var(--ink)] uppercase font-semibold">
+												{primaryChannel === "copy" ? "Текст" : primaryChannel}
+											</strong>
 										</div>
 
-										{/* Direct Channel Dispatch Buttons */}
-										<div className="flex items-center gap-1.5 flex-wrap">
-											<button
-												type="button"
-												onClick={() => handleCopySingle(reminder)}
-												className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-												title="Скопировать текст"
-											>
-												<Copy size={13} />
-												<span>Копировать</span>
-											</button>
-
-											{reminder.availableChannels.includes("telegram") && (
+										{/* Direct Action Controls: Primary Channel + MoreVertical */}
+										<div
+											className="flex items-center gap-2 shrink-0 justify-end relative"
+											data-reminder-menu={reminder.appointmentId}
+										>
+											{/* Button 1 (Main): Primary Channel Dispatch / Copy */}
+											{primaryChannel === "telegram" && (
 												<button
 													type="button"
 													onClick={() => handleSendTelegram(reminder)}
-													className="min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+													className="min-h-[44px] px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
 													title="Открыть диалог Telegram"
 												>
-													<MessageCircle size={14} />
-													<span>Telegram</span>
-													<ExternalLink size={11} className="opacity-70" />
+													<MessageCircle size={15} className="shrink-0" />
+													<span>Отправить в Telegram</span>
+													<ExternalLink size={12} className="opacity-70 shrink-0" />
 												</button>
 											)}
-
-											{reminder.availableChannels.includes("whatsapp") && (
+											{primaryChannel === "whatsapp" && (
 												<button
 													type="button"
 													onClick={() => handleSendWhatsApp(reminder)}
-													className="min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+													className="min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
 													title="Открыть диалог WhatsApp"
 												>
-													<MessageSquare size={14} />
-													<span>WhatsApp</span>
-													<ExternalLink size={11} className="opacity-70" />
+													<MessageSquare size={15} className="shrink-0" />
+													<span>Отправить в WhatsApp</span>
+													<ExternalLink size={12} className="opacity-70 shrink-0" />
 												</button>
 											)}
-
-											{reminder.availableChannels.includes("sms") && (
+											{primaryChannel === "sms" && (
 												<button
 													type="button"
 													onClick={() => handleSendSms(reminder)}
-													className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+													className="min-h-[44px] px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
 													title="Открыть SMS-клиент"
 												>
-													<Phone size={13} />
-													<span>SMS</span>
+													<Phone size={14} className="shrink-0" />
+													<span>Отправить по SMS</span>
 												</button>
 											)}
+											{primaryChannel === "copy" && (
+												<button
+													type="button"
+													onClick={() => handleCopySingle(reminder)}
+													className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+													title="Скопировать текст"
+												>
+													<Copy size={14} className="shrink-0" />
+													<span>Скопировать текст</span>
+												</button>
+											)}
+
+											{/* Button 2: Secondary Channels & Action Links Dropdown (MoreVertical) */}
+											<div className="relative">
+												<button
+													type="button"
+													onClick={() =>
+														setActiveMenuAppointmentId((prev) =>
+															prev === reminder.appointmentId
+																? null
+																: reminder.appointmentId,
+														)
+													}
+													className="p-2.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer shadow-xs"
+													title="Другие каналы и ссылки"
+													aria-label="Другие каналы и ссылки"
+													aria-haspopup="true"
+													aria-expanded={
+														activeMenuAppointmentId === reminder.appointmentId
+													}
+													data-testid={`btn-reminder-more-${reminder.appointmentId}`}
+												>
+													<MoreVertical size={16} className="shrink-0" />
+												</button>
+
+												{activeMenuAppointmentId === reminder.appointmentId && (
+													<div className="absolute right-0 top-full mt-1.5 min-w-[260px] p-1.5 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] shadow-xl z-30 flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100">
+														{/* Copy reminder text (if not already primary) */}
+														{primaryChannel !== "copy" && (
+															<button
+																type="button"
+																onClick={() => {
+																	handleCopySingle(reminder);
+																	setActiveMenuAppointmentId(null);
+																}}
+																className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-all text-left cursor-pointer"
+																title="Скопировать текст напоминания"
+															>
+																<Copy
+																	size={15}
+																	className="text-[var(--muted)] shrink-0"
+																/>
+																<span>Скопировать текст</span>
+															</button>
+														)}
+
+														{/* Alternative Channels */}
+														{secondaryChannels.map((channel) => {
+															if (channel === "telegram") {
+																return (
+																	<button
+																		key="telegram"
+																		type="button"
+																		onClick={() => {
+																			handleSendTelegram(reminder);
+																			setActiveMenuAppointmentId(null);
+																		}}
+																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-between gap-2.5 hover:bg-[var(--paper-soft)] text-sky-700 dark:text-sky-300 transition-all text-left cursor-pointer"
+																		title="Открыть диалог Telegram"
+																	>
+																		<span className="flex items-center gap-2.5">
+																			<MessageCircle
+																				size={15}
+																				className="text-sky-600 shrink-0"
+																			/>
+																			<span>Отправить в Telegram</span>
+																		</span>
+																		<ExternalLink
+																			size={12}
+																			className="opacity-70 shrink-0"
+																		/>
+																	</button>
+																);
+															}
+															if (channel === "whatsapp") {
+																return (
+																	<button
+																		key="whatsapp"
+																		type="button"
+																		onClick={() => {
+																			handleSendWhatsApp(reminder);
+																			setActiveMenuAppointmentId(null);
+																		}}
+																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center justify-between gap-2.5 hover:bg-[var(--paper-soft)] text-emerald-700 dark:text-emerald-300 transition-all text-left cursor-pointer"
+																		title="Открыть диалог WhatsApp"
+																	>
+																		<span className="flex items-center gap-2.5">
+																			<MessageSquare
+																				size={15}
+																				className="text-emerald-600 shrink-0"
+																			/>
+																			<span>Отправить в WhatsApp</span>
+																		</span>
+																		<ExternalLink
+																			size={12}
+																			className="opacity-70 shrink-0"
+																		/>
+																	</button>
+																);
+															}
+															if (channel === "sms") {
+																return (
+																	<button
+																		key="sms"
+																		type="button"
+																		onClick={() => {
+																			handleSendSms(reminder);
+																			setActiveMenuAppointmentId(null);
+																		}}
+																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-[var(--paper-soft)] text-indigo-700 dark:text-indigo-300 transition-all text-left cursor-pointer"
+																		title="Открыть SMS-клиент"
+																	>
+																		<Phone
+																			size={15}
+																			className="text-indigo-600 shrink-0"
+																		/>
+																		<span>Отправить по SMS</span>
+																	</button>
+																);
+															}
+															return null;
+														})}
+
+														{/* 1-Click Interactive Action Links */}
+														{(reminder.confirmUrl ||
+															reminder.rescheduleUrl) && (
+															<div className="pt-1 mt-1 border-t border-[var(--line)] flex flex-col gap-1">
+																{reminder.confirmUrl && (
+																	<button
+																		type="button"
+																		onClick={() => {
+																			handleCopyLink(
+																				reminder.confirmUrl!,
+																				"Подтверждение",
+																			);
+																			setActiveMenuAppointmentId(null);
+																		}}
+																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 transition-all text-left cursor-pointer"
+																		title="Скопировать ссылку подтверждения визита"
+																	>
+																		<ThumbsUp
+																			size={14}
+																			className="text-emerald-600 shrink-0"
+																		/>
+																		<span>Ссылка «Подтвердить»</span>
+																	</button>
+																)}
+																{reminder.rescheduleUrl && (
+																	<button
+																		type="button"
+																		onClick={() => {
+																			handleCopyLink(
+																				reminder.rescheduleUrl!,
+																				"Перенос",
+																			);
+																			setActiveMenuAppointmentId(null);
+																		}}
+																		className="w-full px-3 py-2.5 min-h-[44px] rounded-lg text-xs font-semibold flex items-center gap-2.5 hover:bg-rose-500/10 text-rose-800 dark:text-rose-300 transition-all text-left cursor-pointer"
+																		title="Скопировать ссылку переноса визита"
+																	>
+																		<ThumbsDown
+																			size={14}
+																			className="text-rose-600 shrink-0"
+																		/>
+																		<span>Ссылка «Перенести»</span>
+																	</button>
+																)}
+															</div>
+														)}
+													</div>
+												)}
+											</div>
 										</div>
 									</div>
 								</div>
