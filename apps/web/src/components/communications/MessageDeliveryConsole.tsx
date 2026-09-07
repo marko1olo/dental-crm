@@ -452,14 +452,30 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 	}
 
 	async function saveTemplate() {
+		if (busy) return;
+		let title = draftTitle.trim();
+		const body = draftBody.trim();
+		if (!title) {
+			title = `Шаблон ${channelLabels[draftChannel] ?? draftChannel} (${intentLabels[draftIntent] ?? draftIntent})`;
+			setDraftTitle(title);
+		}
+		if (!body) {
+			showToast("Укажите текст шаблона сообщения", "warning");
+			setNotice({
+				kind: "fail",
+				text: "Укажите текст шаблона сообщения перед сохранением.",
+			});
+			return;
+		}
+
 		setBusy(true);
 		setNotice(null);
 		try {
 			const payload = {
-				title: draftTitle,
+				title,
 				channel: draftChannel,
 				intent: draftIntent,
-				body: draftBody,
+				body,
 				allowPhi: true,
 			};
 			const response = editingId
@@ -624,14 +640,28 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 		[templates, enqueueChannel],
 	);
 
-	const enqueueCanSubmit =
-		enqueueRecipient.trim().length > 0 &&
-		(Boolean(enqueueTemplateId) || enqueueBody.trim().length > 0) &&
-		!enqueueBusy &&
-		!busy;
+	const enqueueCanSubmit = !enqueueBusy && !busy;
 
 	async function enqueueMessage() {
-		if (!enqueueCanSubmit) return;
+		if (enqueueBusy || busy) return;
+		const recipient = enqueueRecipient.trim();
+		if (!recipient) {
+			showToast("Укажите номер телефона или адрес получателя", "warning");
+			setNotice({
+				kind: "fail",
+				text: "Укажите номер телефона или адрес получателя сообщения.",
+			});
+			return;
+		}
+
+		let bodyToSend = enqueueBody.trim();
+		if (!enqueueTemplateId && !bodyToSend) {
+			bodyToSend = "Здравствуйте! Напоминаем о вашей записи на приём в клинику ДЕНТЕ. Ждём вас!";
+			setEnqueueBody(bodyToSend);
+			showToast("Заполнен текст напоминания по умолчанию. Нажмите кнопку ещё раз для отправки", "info");
+			return;
+		}
+
 		setEnqueueBusy(true);
 		setNotice(null);
 		try {
@@ -639,12 +669,12 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 				channel: enqueueChannel,
 				intent: enqueueIntent,
 				scope: enqueueScope,
-				recipientAddress: enqueueRecipient.trim(),
+				recipientAddress: recipient,
 			};
 			if (enqueueTemplateId) {
 				payload.templateId = enqueueTemplateId;
 			} else {
-				payload.body = enqueueBody.trim();
+				payload.body = bodyToSend;
 			}
 			if (enqueueChannel === "email" && enqueueSubject.trim()) {
 				payload.subject = enqueueSubject.trim();
@@ -1352,7 +1382,7 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 				<button
 					className="primary-button"
 					type="button"
-					disabled={busy || !draftTitle.trim() || !draftBody.trim()}
+					disabled={busy}
 					onClick={() => void saveTemplate()}
 				>
 					{editingId ? "Сохранить изменения" : "Создать шаблон"}

@@ -1,5 +1,5 @@
 import { Delete, Lock, LogOut, UserCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	actionFailureToast,
 	NO_RESPONSE_CAUSE,
@@ -85,6 +85,14 @@ export function StaffPinPad({
 	});
 	const activeStaff = listState.phase === "ready" ? listState.activeStaff : [];
 
+	// Суверенитет соло-врача и небольшой клиники (Мандат 8n):
+	// Если в клинике 1 действующий сотрудник, автоматически выбираем его профиль при загрузке.
+	useEffect(() => {
+		if (!selectedUser && activeStaff && activeStaff.length === 1) {
+			setSelectedUser(activeStaff[0]);
+		}
+	}, [activeStaff, selectedUser]);
+
 	/** Один отказ — одна причина: и в уведомлении, и на экране, и в стёртом PIN. */
 	const failUnlock = (message: string) => {
 		showToast(message, "error");
@@ -98,21 +106,41 @@ export function StaffPinPad({
 		if (loading || pin.length >= 4) return;
 		// Новый набор — прежняя причина отказа больше не описывает то, что на экране.
 		if (errorText) setErrorText(null);
+
+		let targetUser = selectedUser;
+		if (!targetUser) {
+			if (activeStaff && activeStaff.length === 1) {
+				targetUser = activeStaff[0];
+				setSelectedUser(targetUser);
+			} else {
+				showToast("Сначала выберите сотрудника из списка", "info");
+				setErrorText("Сначала выберите сотрудника из списка слева");
+				setErrorShake(true);
+				setTimeout(() => setErrorShake(false), 500);
+				return;
+			}
+		}
+
 		const newPin = pin + num;
 		setPin(newPin);
 
 		if (newPin.length === 4) {
-			submitPin(newPin);
+			submitPin(newPin, targetUser);
 		}
 	};
 
 	const handleBackspace = () => {
 		if (loading) return;
+		if (!selectedUser && (!activeStaff || activeStaff.length !== 1)) {
+			showToast("Сначала выберите сотрудника из списка", "info");
+			return;
+		}
+		if (pin.length === 0) return;
 		setPin(pin.slice(0, -1));
 	};
 
-	const submitPin = async (completedPin: string) => {
-		if (!selectedUser) return;
+	const submitPin = async (completedPin: string, userToUnlock = selectedUser) => {
+		if (!userToUnlock) return;
 		setLoading(true);
 		setErrorShake(false);
 		setErrorText(null);
@@ -126,7 +154,7 @@ export function StaffPinPad({
 					"x-dente-clinic-token": clinicToken || "",
 				},
 				body: JSON.stringify({
-					userId: selectedUser.id,
+					userId: userToUnlock.id,
 					pinCode: completedPin,
 				}),
 			});
@@ -428,7 +456,7 @@ export function StaffPinPad({
 								key={num}
 								type="button"
 								className="auth-pin-btn"
-								disabled={!selectedUser || loading}
+								disabled={loading}
 								onClick={() => handleKeyPress(num)}
 							>
 								{num}
@@ -437,8 +465,12 @@ export function StaffPinPad({
 						<button
 							type="button"
 							className="auth-pin-btn auth-pin-btn--secondary"
-							disabled={!selectedUser || loading}
-							onClick={() => setSelectedUser(null)}
+							disabled={loading}
+							onClick={() => {
+								setSelectedUser(null);
+								setPin("");
+								setErrorText(null);
+							}}
 						>
 							Сброс
 						</button>
@@ -446,7 +478,7 @@ export function StaffPinPad({
 							key="0"
 							type="button"
 							className="auth-pin-btn"
-							disabled={!selectedUser || loading}
+							disabled={loading}
 							onClick={() => handleKeyPress("0")}
 						>
 							0
@@ -454,7 +486,7 @@ export function StaffPinPad({
 						<button
 							type="button"
 							className="auth-pin-btn auth-pin-btn--danger"
-							disabled={!selectedUser || loading || pin.length === 0}
+							disabled={loading}
 							onClick={handleBackspace}
 						>
 							<Delete size={20} />

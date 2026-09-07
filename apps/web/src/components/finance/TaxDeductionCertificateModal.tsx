@@ -471,10 +471,6 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 	};
 
 	const handlePrintBatch = () => {
-		if (familyBatchResult.totalPaymentsCount === 0) {
-			showToast("Нет подтвержденных оплат за выбранный период для печати пакета", "warning");
-			return;
-		}
 		const html = renderTaxDeductionBatchCertificateHtml(familyBatchResult.batch);
 		const win = window.open("", "_blank");
 		if (win) {
@@ -484,6 +480,8 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 			setTimeout(() => {
 				win.print();
 			}, 300);
+		} else if (typeof window !== "undefined") {
+			window.print();
 		}
 	};
 
@@ -510,6 +508,17 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								</h2>
 								<span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-700 dark:text-teal-300 font-mono text-[11px] font-bold border border-teal-500/20">
 									КНД 1151156
+								</span>
+								<span
+									data-testid="tax-certificate-stamp-badge"
+									className="px-2 py-0.5 rounded-md text-[11px] font-bold border uppercase"
+									style={{
+										background: yearPayments.length > 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(100, 116, 139, 0.15)",
+										color: yearPayments.length > 0 ? "#059669" : "#64748b",
+										borderColor: yearPayments.length > 0 ? "rgba(16, 185, 129, 0.4)" : "rgba(100, 116, 139, 0.3)",
+									}}
+								>
+									{yearPayments.length > 0 ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
@@ -1277,6 +1286,42 @@ export const TaxDeductionCertificateModal: React.FC<TaxDeductionCertificateModal
 								>
 									<Download size={16} />
 									<span>Выгрузить XML (ТКС)</span>
+								</button>
+								<button
+									type="button"
+									data-testid="btn-tax-print-blank"
+									onClick={() => {
+										const blankParams: TaxDeductionCertificateParams = {
+											...getCertificateParams(),
+											payments: [],
+											payer: {
+												fullName: payerFullName || "________________________________________",
+												inn: payerInn || "____________",
+												birthDate: payerBirthDate || "«___» _________ _____ г.",
+												relationship: payerRelationship,
+											},
+											patient: {
+												fullName: patientName || "________________________________________",
+												birthDate: patientBirthDate || "«___» _________ _____ г.",
+												inn: patientInn || "____________",
+											},
+										};
+										const html = renderOfficialTaxCertificateKnd1151156Html(blankParams);
+										const win = window.open("", "_blank");
+										if (win) {
+											win.document.write(html);
+											win.document.close();
+											win.focus();
+											setTimeout(() => win.print(), 300);
+										} else if (typeof window !== "undefined") {
+											window.print();
+										}
+									}}
+									className="min-h-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-[var(--ink,#0f172a)] hover:bg-slate-500/10 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+									title="Печать чистого бланка справки КНД 1151156 со строками «________» для ручного заполнения"
+								>
+									<Printer size={15} />
+									<span>Бланк («________»)</span>
 								</button>
 								<button
 									type="button"

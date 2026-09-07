@@ -182,9 +182,13 @@ export function VoiceDictationAssistantModal({
 
 	// Резервный текстовый ввод клинической фразы
 	const handleSimulateText = (textToSimulate: string) => {
-		if (!textToSimulate.trim()) return;
-		setTranscript(textToSimulate);
-		const parsed = parseClinicalVoiceSpeech(textToSimulate);
+		const trimmed = textToSimulate.trim();
+		const targetText = trimmed || "Зуб 16 кариес дентина, зуб 21 норма, зуб 36 пульпит";
+		if (!trimmed) {
+			showToast("Подставлен пример клинической надиктовки", "info");
+		}
+		setTranscript(targetText);
+		const parsed = parseClinicalVoiceSpeech(targetText);
 		setParseResult(parsed);
 		setManualInput("");
 	};
@@ -618,7 +622,7 @@ export function VoiceDictationAssistantModal({
 						/>
 						<button
 							type="submit"
-							disabled={!manualInput.trim()}
+							disabled={false}
 							className="dnt-voice-btn-simulate"
 						>
 							<Send size={16} />

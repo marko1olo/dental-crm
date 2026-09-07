@@ -35,6 +35,7 @@ import {
 	purgeSyncedDraftsAndOldCache,
 } from "../../services/offline";
 import { useOfflineStore } from "../../store/offlineStore";
+import { showToast } from "../GlobalToast";
 import {
 	type ConnectivityMode,
 	type NetworkState,
@@ -225,7 +226,13 @@ export const OfflineContinuityStrip: React.FC<OfflineContinuityStripProps> = ({
 
 	// Ручной запуск синхронизации
 	const handleManualSync = useCallback(async () => {
-		if (isDraining || pendingMutationCount === 0 || !networkState.isOnline) {
+		if (isDraining) return;
+		if (!networkState.isOnline) {
+			showToast("Синхронизация недоступна в автономном режиме без подключения к сети", "info");
+			return;
+		}
+		if (pendingMutationCount === 0) {
+			showToast("Все данные уже синхронизированы с сервером", "info");
 			return;
 		}
 
@@ -398,7 +405,7 @@ export const OfflineContinuityStrip: React.FC<OfflineContinuityStripProps> = ({
 					<button
 						type="button"
 						onClick={handleManualSync}
-						disabled={!isSyncPossible}
+						disabled={isDraining}
 						className={`offline-sync-btn ${
 							isSyncPossible
 								? "offline-sync-btn--active"

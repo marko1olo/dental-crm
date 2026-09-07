@@ -19,9 +19,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import React from "react";
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
+
+const expect = (actual: any) => ({
+	toBe: (expected: any) => assert.equal(actual, expected),
+	toBeTruthy: () => assert.ok(actual),
+	toContain: (expected: string) => assert.ok(String(actual).includes(expected), `expected to contain ${expected}`),
+	toMatch: (regex: RegExp) => assert.match(String(actual), regex),
+	not: {
+		toContain: (expected: string) => assert.ok(!String(actual).includes(expected), `expected not to contain ${expected}`),
+		toMatch: (regex: RegExp) => assert.doesNotMatch(String(actual), regex),
+	},
+});
 import {
 	AppLogicProvider,
 	type AppLogicContextType,
@@ -205,5 +216,36 @@ describe("MessageDeliveryConsole Omnichannel Textarea Autonomy (Mandates 8e & 8n
 		if (textareaMatch) {
 			expect(textareaMatch[0]).not.toContain("disabled");
 		}
+	});
+
+	it("6. source code audit: outbox enqueue button and template save button are not blocked by empty inputs (Mandate 8e)", () => {
+		const consolePath = path.resolve(
+			__dirname,
+			"../MessageDeliveryConsole.tsx",
+		);
+		const sourceCode = fs.readFileSync(consolePath, "utf-8");
+
+		// Outbox enqueue submit button is only disabled when busy
+		expect(sourceCode).not.toContain("disabled={!enqueueCanSubmit || !enqueueRecipient");
+		expect(sourceCode).toContain("const enqueueCanSubmit = !enqueueBusy && !busy;");
+
+		// Template save button is not disabled when title or body is empty
+		expect(sourceCode).not.toContain("disabled={busy || !draftTitle.trim() || !draftBody.trim()}");
+		expect(sourceCode).toContain("disabled={busy}\n\t\t\t\t\tonClick={() => void saveTemplate()}");
+	});
+
+	it("7. rendered markup: outbox enqueue button is clickable without being disabled by default", () => {
+		const html = renderToStaticMarkup(
+			<AppLogicProvider value={mockAppContext}>
+				<MessageDeliveryConsole
+					initialEnqueueChannel="whatsapp"
+					initialUisQuota={{ remaining: 10, smsQuotaLimit: 100 }}
+				/>
+			</AppLogicProvider>,
+		);
+
+		// Button is present and NOT disabled
+		expect(html).toContain('data-testid="outbox-enqueue-submit"');
+		expect(html).not.toMatch(/<button[^>]*data-testid="outbox-enqueue-submit"[^>]*disabled/);
 	});
 });

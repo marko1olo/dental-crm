@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useCallback } from 'react';
 import { Send, Mic, MicOff, RotateCcw, ShieldCheck, Check, Activity } from 'lucide-react';
 import { useUnifiedDictation } from '../../hooks/useUnifiedDictation';
 import { useAudioFeedback } from '../../hooks/useAudioFeedback';
+import { showToast } from '../GlobalToast';
 
 export interface CopilotComposerProps {
   value: string;
@@ -87,10 +88,18 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
     }
   }, [value]);
 
+  const DEFAULT_CLINICAL_PROMPT = "Проанализируй состояние пациента и подготовь рекомендации по Форме 043/у";
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!value.trim() || busy) return;
+      if (busy) return;
+      if (!value.trim()) {
+        handleTextChange(DEFAULT_CLINICAL_PROMPT);
+        showToast("Подставлен клинический запрос по умолчанию", "info");
+        textareaRef.current?.focus();
+        return;
+      }
       if (isRecording) {
         stopDictation();
       }
@@ -100,7 +109,13 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
   };
 
   const handleSendClick = () => {
-    if (!value.trim() || busy) return;
+    if (busy) return;
+    if (!value.trim()) {
+      handleTextChange(DEFAULT_CLINICAL_PROMPT);
+      showToast("Подставлен клинический запрос по умолчанию", "info");
+      textareaRef.current?.focus();
+      return;
+    }
     if (isRecording) {
       stopDictation();
     }
@@ -247,7 +262,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
         <button
           type="button"
           onClick={handleSendClick}
-          disabled={!value.trim() || busy}
+          disabled={busy}
           className="copilot-send-btn"
           title="Отправить (Enter)"
           aria-label="Отправить сообщение"

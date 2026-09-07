@@ -28,6 +28,7 @@ import {
 	type Point2D,
 	projectPointOntoLine,
 } from "./cephalometricMath";
+import { showToast } from "../GlobalToast";
 
 export type XrayFilterMode = "normal" | "invert" | "bone" | "edge";
 
@@ -150,6 +151,14 @@ export function CephalometricCanvas({
 		setZoom(1.0);
 		setPan({ x: 0, y: 0 });
 	}, []);
+
+	const ensureCephImage = useCallback((action: () => void) => {
+		if (!imageUrl) {
+			showToast("Сначала загрузите снимок ТРГ для калибровки и масштабирования", "info");
+			return;
+		}
+		action();
+	}, [imageUrl]);
 
 	// Convert client coordinates (mouse/touch) to SVG viewBox coordinates
 	const getSvgCoordinates = useCallback(
@@ -414,45 +423,45 @@ export function CephalometricCanvas({
 				<div className="flex items-center gap-0.5 sm:gap-1 bg-slate-950 p-0.5 rounded-lg border border-slate-800 shrink-0 flex-nowrap">
 					<button
 						type="button"
-						disabled={!imageUrl}
-						onClick={() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1))))}
-						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+						disabled={false}
+						onClick={() => ensureCephImage(() => setZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(1)))))}
+						className="min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
 						title="Отдалить (Масштаб -)"
 						aria-label="Отдалить масштаб"
 					>
-						<ZoomOut size={13} />
+						<ZoomOut size={14} />
 					</button>
 					<span className="text-xs font-mono font-bold text-teal-300 px-1 min-w-[36px] text-center">
 						{Math.round(zoom * 100)}%
 					</span>
 					<button
 						type="button"
-						disabled={!imageUrl}
-						onClick={() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1))))}
-						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+						disabled={false}
+						onClick={() => ensureCephImage(() => setZoom((prev) => Math.min(3.5, Number((prev + 0.2).toFixed(1)))))}
+						className="min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
 						title="Приблизить (Масштаб +)"
 						aria-label="Приблизить масштаб"
 					>
-						<ZoomIn size={13} />
+						<ZoomIn size={14} />
 					</button>
 					<button
 						type="button"
-						disabled={!imageUrl}
-						onClick={handleResetView}
-						className="w-7 h-7 rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+						disabled={false}
+						onClick={() => ensureCephImage(handleResetView)}
+						className="min-w-[32px] min-h-[32px] sm:min-w-[36px] sm:min-h-[36px] rounded-md flex items-center justify-center bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 transition-colors cursor-pointer"
 						title="Сбросить масштаб и положение (0)"
 						aria-label="Сбросить масштаб"
 					>
-						<RotateCcw size={12} />
+						<RotateCcw size={13} />
 					</button>
 					<button
 						type="button"
-						disabled={!imageUrl}
-						onClick={() => {
+						disabled={false}
+						onClick={() => ensureCephImage(() => {
 							setIsCalibrating((prev) => !prev);
 							setCalibrationPoints([]);
-						}}
-						className={`h-7 min-w-[96px] px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold shrink-0 whitespace-nowrap transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+						})}
+						className={`min-h-[32px] sm:min-h-[36px] min-w-[96px] px-2.5 rounded-md flex items-center gap-1.5 text-xs font-bold shrink-0 whitespace-nowrap transition-colors cursor-pointer ${
 							isCalibrating
 								? "bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-sm"
 								: "bg-slate-800 text-slate-100 hover:text-white hover:bg-slate-700 border border-slate-600 shadow-sm"

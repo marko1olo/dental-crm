@@ -19,6 +19,10 @@ import {
 	DocumentsView,
 	executeOpenLatestDocumentAutonomy,
 } from "../../../DocumentsView";
+import { DocumentsOutpatientArchive } from "../DocumentsOutpatientArchive";
+import { PaidMedicalContractModal } from "../forms/PaidMedicalContractModal";
+import { DentalMedicalCard043uForm } from "../forms/DentalMedicalCard043uForm";
+import { TaxDeductionCertificateModal } from "../../finance/TaxDeductionCertificateModal";
 import { documentSourceStatusClassNames } from "../../../workspaceUiLabels";
 
 type MockFn = {
@@ -352,5 +356,159 @@ describe("Documents View Outpatient Archive Autonomy & Non-blocking Selection (M
 
 		// Verify action button in document card
 		expect(html).toContain("doc-link min-h-[44px] sm:min-h-[36px]");
+	});
+
+	it("DocumentsOutpatientArchive renders 1-click quick blank toolbar with zero disabled buttons", () => {
+		const mockContext = createMockAppLogic({
+			activeDocuments: [
+				{
+					id: "doc-archive-1",
+					title: "Договор платных услуг № 101",
+					kind: "paid_medical_services_contract",
+					status: "issued",
+					patientId: "patient-1",
+					issuedAt: "2026-09-01",
+					totalAmountRub: 15000,
+				},
+				{
+					id: "doc-archive-2",
+					title: "Карта 043/у",
+					kind: "dental_medical_card_043u",
+					status: "draft",
+					patientId: "patient-1",
+					issuedAt: null,
+					totalAmountRub: 0,
+				},
+			],
+		});
+
+		const html = renderToStaticMarkup(
+			<AppLogicProvider value={mockContext as any}>
+				<DocumentsOutpatientArchive patientId="patient-1" />
+			</AppLogicProvider>,
+		);
+
+		// Toolbar blank buttons must exist
+		expect(html).toContain('data-testid="archive-quick-blank-contract-btn"');
+		expect(html).toContain('data-testid="archive-quick-blank-consent-btn"');
+		expect(html).toContain('data-testid="archive-quick-blank-form043-btn"');
+		expect(html).toContain('data-testid="archive-quick-open-latest-btn"');
+
+		// Status stamps
+		expect(html).toContain("ПОДПИСАНО ВРАЧОМ");
+		expect(html).toContain("ЧЕРНОВИК");
+
+		// Action buttons (max 2 direct buttons + more menu per Miller's Law)
+		expect(html).toContain('data-testid="archive-open-btn-doc-archive-1"');
+		expect(html).toContain('data-testid="archive-print-btn-doc-archive-1"');
+		expect(html).toContain('data-testid="archive-more-btn-doc-archive-1"');
+
+		// No disabled buttons anywhere
+		const disabledButtons = html.match(/<button[^>]*disabled[^>]*>/g);
+		expect(disabledButtons).toBeNull();
+	});
+
+	it("PaidMedicalContractModal renders contract-stamp-badge and print-blank-contract-btn without crashing", () => {
+		// Test draft state
+		const draftHtml = renderToStaticMarkup(
+			<PaidMedicalContractModal
+				isOpen={true}
+				onClose={() => {}}
+				patient={{ fullName: "Сидоров Петр", birthDate: "1992-05-10" }}
+			/>,
+		);
+
+		expect(draftHtml).toContain('data-testid="contract-stamp-badge"');
+		expect(draftHtml).toContain("ЧЕРНОВИК");
+		expect(draftHtml).toContain('data-testid="print-blank-contract-btn"');
+
+		// Test signed state
+		const signedHtml = renderToStaticMarkup(
+			<PaidMedicalContractModal
+				isOpen={true}
+				onClose={() => {}}
+				patient={{ fullName: "Сидоров Петр", birthDate: "1992-05-10" }}
+				initialData={{ signedAt: "07.09.2026" }}
+			/>,
+		);
+
+		expect(signedHtml).toContain('data-testid="contract-stamp-badge"');
+		expect(signedHtml).toContain("ПОДПИСАНО ВРАЧОМ");
+	});
+
+	it("DentalMedicalCard043uForm renders form043-stamp-badge and btn-043-print-blank without blocking doctor", () => {
+		// Draft state
+		const draftHtml = renderToStaticMarkup(
+			<DentalMedicalCard043uForm
+				initialPayload={{
+					medicalCardNumber: "043-99",
+					patientFullName: "Кузнецов Иван",
+					isSigned: false,
+				}}
+			/>,
+		);
+
+		expect(draftHtml).toContain('data-testid="form043-stamp-badge"');
+		expect(draftHtml).toContain("ЧЕРНОВИК");
+		expect(draftHtml).toContain('data-testid="btn-043-print-blank"');
+		expect(draftHtml).toContain('data-testid="btn-043-fast-print"');
+
+		// Signed state
+		const signedHtml = renderToStaticMarkup(
+			<DentalMedicalCard043uForm
+				initialPayload={{
+					medicalCardNumber: "043-100",
+					patientFullName: "Кузнецов Иван",
+					isSigned: true,
+				}}
+			/>,
+		);
+
+		expect(signedHtml).toContain('data-testid="form043-stamp-badge"');
+		expect(signedHtml).toContain("ПОДПИСАНО ВРАЧОМ");
+	});
+
+	it("TaxDeductionCertificateModal renders tax-certificate-stamp-badge and btn-tax-print-blank", () => {
+		// Zero payments (draft)
+		const draftHtml = renderToStaticMarkup(
+			<TaxDeductionCertificateModal
+				isOpen={true}
+				onClose={() => {}}
+				patientName="Федоров Сергей"
+				payments={[]}
+			/>,
+		);
+
+		expect(draftHtml).toContain('data-testid="tax-certificate-stamp-badge"');
+		expect(draftHtml).toContain("ЧЕРНОВИК");
+		expect(draftHtml).toContain('data-testid="btn-tax-print-blank"');
+
+		// With payments (signed / confirmed)
+		const withPaymentsHtml = renderToStaticMarkup(
+			<TaxDeductionCertificateModal
+				isOpen={true}
+				onClose={() => {}}
+				patientName="Федоров Сергей"
+				payments={[
+					{
+						id: "pay-1",
+						dateIso: "2026-05-15T10:00:00Z",
+						receiptNumber: "FR-001",
+						fiscalDocumentNumber: "12345",
+						fiscalSign: "9876543210",
+						serviceName: "Лечение кариеса",
+						code804n: "A16.07.002",
+						amountKopecks: 500000,
+						amountRub: 5000,
+						taxCode: "1",
+					},
+				]}
+				selectedYear={2026}
+			/>,
+		);
+
+		expect(withPaymentsHtml).toContain('data-testid="tax-certificate-stamp-badge"');
+		expect(withPaymentsHtml).toContain("ПОДПИСАНО ВРАЧОМ");
+		expect(withPaymentsHtml).toContain('data-testid="btn-tax-print-blank"');
 	});
 });

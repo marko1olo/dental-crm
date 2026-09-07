@@ -332,6 +332,13 @@ export function PaidMedicalContractModal({
 	if (!isOpen) return null;
 
 	const moneyDetails = formatKopecksToRubAndKop(contractData.totalAmountKopecks);
+	const isContractSigned = Boolean(
+		contractData.paperSignHash ||
+		contractData.smsSignDetails?.isVerified ||
+		initialData?.paperSignHash ||
+		initialData?.signedAt ||
+		(initialData as any)?.isSigned,
+	);
 
 	const modalContent = (
 		<div
@@ -358,19 +365,19 @@ export function PaidMedicalContractModal({
 								</span>
 								<span
 									data-testid="contract-stamp-badge"
-									className={`badge ${contractData.signedAt ? "badge-success" : "badge-secondary"}`}
+									className={`badge ${isContractSigned ? "badge-success" : "badge-secondary"}`}
 									style={{
 										padding: "3px 8px",
 										borderRadius: "4px",
 										fontSize: "12px",
 										fontWeight: 700,
 										textTransform: "uppercase",
-										background: contractData.signedAt ? "rgba(16, 185, 129, 0.15)" : "rgba(100, 116, 139, 0.15)",
-										color: contractData.signedAt ? "#059669" : "#64748b",
-										border: `1px solid ${contractData.signedAt ? "rgba(16, 185, 129, 0.4)" : "rgba(100, 116, 139, 0.3)"}`,
+										background: isContractSigned ? "rgba(16, 185, 129, 0.15)" : "rgba(100, 116, 139, 0.15)",
+										color: isContractSigned ? "#059669" : "#64748b",
+										border: `1px solid ${isContractSigned ? "rgba(16, 185, 129, 0.4)" : "rgba(100, 116, 139, 0.3)"}`,
 									}}
 								>
-									{contractData.signedAt ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
+									{isContractSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
 								</span>
 							</div>
 							<p className="paid-contract-subtitle">
