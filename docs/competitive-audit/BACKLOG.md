@@ -2022,16 +2022,37 @@
 - **Файлы**: `apps/web/src/components/sterilization/SterilizationAutoclaveLogModal.tsx`, `apps/web/src/components/sterilization/index.ts`.
 - **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12 тестов, 100% pass, коммит `88ee4bb06`).
 
+### 4.68. Ликвидация процедурных симуляторов карманов, 4 возрастных пресета детского прикуса и очистка от эмодзи (Мандаты 8d, 8e, 8i, 8k, 8n / Фича 197)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Ликвидация 192-точечного симулятора*: в `PeriodontalChartingModal.tsx` внедрен 1-клик пресет тяжелого пародонтита (глубина 6–8 мм, подвижность II ст., гноетечение) в дополнение к норме, гингивиту и легкой/средней степени; врач освобожден от ручного замера 192 точек карманов у кресла (Мандат 8k);
+  2. *4 канонических пресета детского прикуса*: в `PediatricMixedDentitionModal.tsx` и `pediatricDentitionEngine.ts` внедрены 1-клик пресеты смены зубов по возрасту (3 года — молочный прикус 51–85, 6 лет — первые моляры 16..46, 9 лет — сменный прикус, 12 лет — постоянный прикус 17..47);
+  3. *Debounced Autosave дневника*: в `VisitAnamnesisTab.tsx` предотвращены фризы и потеря набранного текста через 300ms отложенное автосохранение;
+  4. *Очистка от эмодзи*: в `documentPackages.ts` все сырые эмодзи заменены на векторные идентификаторы Lucide (`clipboard-list`, `file-text`, `building-2`, `hospital`) по Мандату 8d (#7).
+- **Файлы**: `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `PediatricMixedDentitionModal.tsx`, `pediatricDentitionEngine.ts`, `pediatricMixedDentitionEngine.ts`, `VisitAnamnesisTab.tsx`, `documentPackages.ts`.
+- **Тесты**: `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts` (37 тестов), `documentNavigationWorkflow.test.ts` (15 тестов) — 52/52 pass, коммит `17014184e`.
+
+### 4.69. Глубокая привязка дежурных врачей к слотам сетки и неблокирующая автоподстановка в формы записи (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 198)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Сквозная передача дежурного врача*: в `ScheduleGrid.tsx` во всех сценариях клика по слоту (первый приём, перенос drag-and-drop, лист ожидания, CITO, стандартный свободный слот) вычисляется и передается `doctorName` дежурного врача выбранного кресла;
+  2. *Автоподстановка в QuickBookingDrawer и AppointmentModal*: при открытии модалки/шторки дежурный врач кресла выбран сразу; при смене кресла врач автоматически обновляется с неблокирующим инфо-тостом и бейджем смены `duty-doctor-badge` (Мандат 8e);
+  3. *Умный выбор в NewAppointmentForm*: первоочередной опрос `resolveChairDutyDoctor` для выбранного кресла;
+  4. *Сетки 10+ кресел*: поддержка горизонтального скролла со `sticky left-0` колонкой времени; тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `QuickBookingDrawer.tsx`, `AppointmentModal.tsx`, `NewAppointmentForm.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (24 теста), `scheduleStomxParityComprehensive.test.ts` (15 тестов) — 39/39 pass, коммит `31c45a2ff`.
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 130 дополнительных системных аддендум-фич клинической автономии (Wave 15..35, фичи 64..189, 193..196) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 132 дополнительные системные аддендум-фичи клинической автономии (Wave 15..36, фичи 64..189, 193..198) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
 - Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП);
 - Строгий аудит Мандатов 8e и 8n: абсолютный приоритет соло-врача и клиники 1–3 кресла, отсутствие тупиков и палок в колёса.
+
 
 
 
