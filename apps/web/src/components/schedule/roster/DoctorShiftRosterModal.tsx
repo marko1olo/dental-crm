@@ -3,7 +3,7 @@
  * Compliance: TK RF Article 350 (33-hour medical workweek), Form T-13, Chair Utilization Heatmap
  */
 
-import React, { useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	Calendar as CalendarIcon,
@@ -52,22 +52,260 @@ import {
 } from "./doctorShiftRosterEngine";
 import "./doctorShiftRoster.css";
 
+export type { DoctorShift, StaffMember, CabinetDefinition, ShiftArchetypeId, MedicalStaffRole };
+
+/**
+ * Weekly doctor-to-chair shift allocation engine with 1-click presets (Mandates 8e, 8k, 8n)
+ * Presets:
+ * - "five_day": Mon-Fri standard schedule for active doctors and chairs
+ * - "two_two": 2/2 rolling shifts across week
+ * - "morning": 08:00-14:00 on all chairs
+ * - "evening": 14:00-20:00 on all chairs
+ * - "full_day": 08:00-20:00 full-day coverage
+ */
+export function generateWeeklyScheduleForStaffAndCabinets(
+	startDateIso: string,
+	staffList: StaffMember[] = DEFAULT_CLINIC_STAFF,
+	cabinets: CabinetDefinition[] = CLINIC_CABINETS_CATALOG,
+	preset: "five_day" | "two_two" | "morning" | "evening" | "full_day" = "five_day",
+): DoctorShift[] {
+	const allChairs: Array<{ cabinetId: string; chairId: string; name: string }> = [];
+	for (const cab of cabinets) {
+		for (const chair of cab.chairs) {
+			allChairs.push({ cabinetId: cab.id, chairId: chair.id, name: chair.name });
+		}
+	}
+	if (allChairs.length === 0) {
+		allChairs.push({ cabinetId: "cab-1", chairId: "chair-1a", name: "Кресло 1" });
+	}
+
+	const doctors = staffList.filter((s) => s.isDoctor);
+	const assistants = staffList.filter((s) => s.isAssistant);
+	const effectiveDoctors =
+		doctors.length > 0
+			? doctors
+			: staffList.length > 0
+				? staffList
+				: DEFAULT_CLINIC_STAFF;
+
+	const startDate = new Date(startDateIso);
+	const shifts: DoctorShift[] = [];
+
+	for (let d = 0; d < 7; d++) {
+		const curDate = new Date(startDate);
+		curDate.setDate(startDate.getDate() + d);
+		const dateIso = curDate.toISOString().substring(0, 10);
+		const dayOfWeek = curDate.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+
+		if (preset === "five_day") {
+			if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+				allChairs.forEach((chair, chairIdx) => {
+					const docIndex = (chairIdx + d) % effectiveDoctors.length;
+					const doc = effectiveDoctors[docIndex]!;
+					const asst = doc.defaultAssistantId
+						? staffList.find((s) => s.id === doc.defaultAssistantId) || null
+						: assistants[chairIdx % (assistants.length || 1)] || null;
+
+					shifts.push({
+						id: `shift-${dateIso}-${chair.chairId}-morn`,
+						doctorId: doc.id,
+						doctorName: doc.shortName || doc.fullName,
+						doctorRole: doc.role,
+						assistantId: asst ? asst.id : null,
+						assistantName: asst ? asst.shortName || asst.fullName : null,
+						cabinetId: chair.cabinetId,
+						chairId: chair.chairId,
+						dateIso,
+						archetypeId: "morning_shift",
+						startTime: "08:30",
+						endTime: "14:30",
+						durationHours: 6.0,
+						breakMinutes: 0,
+						isNight: false,
+						nightHours: 0,
+						status: "scheduled",
+					});
+
+					if (effectiveDoctors.length > 1) {
+						const eveDocIndex = (chairIdx + d + 1) % effectiveDoctors.length;
+						const eveDoc = effectiveDoctors[eveDocIndex]!;
+						const eveAsst = eveDoc.defaultAssistantId
+							? staffList.find((s) => s.id === eveDoc.defaultAssistantId) || null
+							: null;
+						shifts.push({
+							id: `shift-${dateIso}-${chair.chairId}-eve`,
+							doctorId: eveDoc.id,
+							doctorName: eveDoc.shortName || eveDoc.fullName,
+							doctorRole: eveDoc.role,
+							assistantId: eveAsst ? eveAsst.id : null,
+							assistantName: eveAsst ? eveAsst.shortName || eveAsst.fullName : null,
+							cabinetId: chair.cabinetId,
+							chairId: chair.chairId,
+							dateIso,
+							archetypeId: "evening_shift",
+							startTime: "14:30",
+							endTime: "20:30",
+							durationHours: 6.0,
+							breakMinutes: 0,
+							isNight: false,
+							nightHours: 0,
+							status: "scheduled",
+						});
+					}
+				});
+			} else if (dayOfWeek === 6) {
+				const chair = allChairs[0]!;
+				const doc = effectiveDoctors[0]!;
+				shifts.push({
+					id: `shift-${dateIso}-${chair.chairId}-sat`,
+					doctorId: doc.id,
+					doctorName: doc.shortName || doc.fullName,
+					doctorRole: doc.role,
+					assistantId: null,
+					assistantName: null,
+					cabinetId: chair.cabinetId,
+					chairId: chair.chairId,
+					dateIso,
+					archetypeId: "saturday_shift",
+					startTime: "09:00",
+					endTime: "17:00",
+					durationHours: 7.0,
+					breakMinutes: 60,
+					isNight: false,
+					nightHours: 0,
+					status: "scheduled",
+				});
+			}
+		} else if (preset === "two_two") {
+			allChairs.forEach((chair, chairIdx) => {
+				effectiveDoctors.forEach((doc, docIdx) => {
+					const isWorkDay = (d + docIdx * 2) % 4 < 2;
+					if (
+						isWorkDay &&
+						(docIdx % allChairs.length === chairIdx ||
+							effectiveDoctors.length <= allChairs.length)
+					) {
+						shifts.push({
+							id: `shift-${dateIso}-${chair.chairId}-${doc.id}-2-2`,
+							doctorId: doc.id,
+							doctorName: doc.shortName || doc.fullName,
+							doctorRole: doc.role,
+							assistantId: doc.defaultAssistantId || null,
+							assistantName: null,
+							cabinetId: chair.cabinetId,
+							chairId: chair.chairId,
+							dateIso,
+							archetypeId: "morning_shift",
+							startTime: "09:00",
+							endTime: "21:00",
+							durationHours: 11.0,
+							breakMinutes: 60,
+							isNight: false,
+							nightHours: 0,
+							status: "scheduled",
+							customNotes: "Сменный график 2/2",
+						});
+					}
+				});
+			});
+		} else if (preset === "morning") {
+			if (dayOfWeek !== 0) {
+				allChairs.forEach((chair, chairIdx) => {
+					const doc = effectiveDoctors[(chairIdx + d) % effectiveDoctors.length]!;
+					shifts.push({
+						id: `shift-${dateIso}-${chair.chairId}-morn-fixed`,
+						doctorId: doc.id,
+						doctorName: doc.shortName || doc.fullName,
+						doctorRole: doc.role,
+						assistantId: doc.defaultAssistantId || null,
+						assistantName: null,
+						cabinetId: chair.cabinetId,
+						chairId: chair.chairId,
+						dateIso,
+						archetypeId: "morning_shift",
+						startTime: "08:00",
+						endTime: "14:00",
+						durationHours: 6.0,
+						breakMinutes: 0,
+						isNight: false,
+						nightHours: 0,
+						status: "scheduled",
+					});
+				});
+			}
+		} else if (preset === "evening") {
+			if (dayOfWeek !== 0) {
+				allChairs.forEach((chair, chairIdx) => {
+					const doc = effectiveDoctors[(chairIdx + d) % effectiveDoctors.length]!;
+					shifts.push({
+						id: `shift-${dateIso}-${chair.chairId}-eve-fixed`,
+						doctorId: doc.id,
+						doctorName: doc.shortName || doc.fullName,
+						doctorRole: doc.role,
+						assistantId: doc.defaultAssistantId || null,
+						assistantName: null,
+						cabinetId: chair.cabinetId,
+						chairId: chair.chairId,
+						dateIso,
+						archetypeId: "evening_shift",
+						startTime: "14:00",
+						endTime: "20:00",
+						durationHours: 6.0,
+						breakMinutes: 0,
+						isNight: false,
+						nightHours: 0,
+						status: "scheduled",
+					});
+				});
+			}
+		} else if (preset === "full_day") {
+			if (dayOfWeek !== 0) {
+				allChairs.forEach((chair, chairIdx) => {
+					const doc = effectiveDoctors[(chairIdx + d) % effectiveDoctors.length]!;
+					shifts.push({
+						id: `shift-${dateIso}-${chair.chairId}-fullday`,
+						doctorId: doc.id,
+						doctorName: doc.shortName || doc.fullName,
+						doctorRole: doc.role,
+						assistantId: doc.defaultAssistantId || null,
+						assistantName: null,
+						cabinetId: chair.cabinetId,
+						chairId: chair.chairId,
+						dateIso,
+						archetypeId: "morning_shift",
+						startTime: "08:00",
+						endTime: "20:00",
+						durationHours: 11.0,
+						breakMinutes: 60,
+						isNight: false,
+						nightHours: 0,
+						status: "scheduled",
+						customNotes: "Полный день 08:00–20:00",
+					});
+				});
+			}
+		}
+	}
+
+	return shifts;
+}
+
 export interface DoctorShiftRosterModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	initialShifts?: DoctorShift[];
-	staffList?: StaffMember[];
-	cabinets?: CabinetDefinition[];
+	initialShifts?: DoctorShift[] | undefined;
+	staffList?: StaffMember[] | undefined;
+	cabinets?: CabinetDefinition[] | undefined;
 	appointments?: Array<{
 		chairId: string;
 		startsAt: string;
 		endsAt: string;
-		status?: string;
-	}>;
-	clinicName?: string;
-	onSave?: (shifts: DoctorShift[]) => Promise<void> | void;
-	onOpenT13Timesheet?: () => void;
-	initialEditingShift?: Partial<DoctorShift> | null;
+		status?: string | undefined;
+	}> | undefined;
+	clinicName?: string | undefined;
+	onSave?: ((shifts: DoctorShift[]) => Promise<void> | void) | undefined;
+	onOpenT13Timesheet?: (() => void) | undefined;
+	initialEditingShift?: Partial<DoctorShift> | null | undefined;
 }
 
 export function DoctorShiftRosterModal({
@@ -89,8 +327,20 @@ export function DoctorShiftRosterModal({
 	// Internal Shifts State
 	const [shifts, setShifts] = useState<DoctorShift[]>(() => {
 		if (initialShifts && initialShifts.length > 0) return initialShifts;
-		return createDefaultWeeklySchedule("2026-08-24", staffList, cabinets);
+		if (Array.isArray(initialShifts) && initialShifts.length === 0) return [];
+		return generateWeeklyScheduleForStaffAndCabinets(
+			"2026-08-24",
+			staffList,
+			cabinets,
+			"five_day",
+		);
 	});
+
+	useEffect(() => {
+		if (initialShifts) {
+			setShifts(initialShifts);
+		}
+	}, [initialShifts]);
 
 	// Quick Shift Editor Drawer
 	const [editingShift, setEditingShift] = useState<Partial<DoctorShift> | null>(initialEditingShift ?? null);
@@ -169,6 +419,21 @@ export function DoctorShiftRosterModal({
 			};
 		});
 	}, [staffList]);
+
+	// Sanitize appointments to satisfy exactOptionalPropertyTypes for calculateChairUtilization
+	const sanitizedAppointments = useMemo(() => {
+		return appointments.map((a) => {
+			const item: { chairId: string; startsAt: string; endsAt: string; status?: string } = {
+				chairId: a.chairId,
+				startsAt: a.startsAt,
+				endsAt: a.endsAt,
+			};
+			if (a.status) {
+				item.status = a.status;
+			}
+			return item;
+		});
+	}, [appointments]);
 
 	// Overall KPIs
 	const kpis = useMemo(() => {
@@ -274,9 +539,26 @@ export function DoctorShiftRosterModal({
 		setIsNewShift(true);
 	};
 
-	// Save Edited Shift
+	// Save Edited Shift (Non-blocking Mandate 8e)
 	const handleSaveDrawerShift = () => {
-		if (!editingShift || !editingShift.doctorId || !editingShift.dateIso) return;
+		if (!editingShift) return;
+
+		const effectiveDoc =
+			staffList.find((s) => s.id === editingShift.doctorId) ||
+			staffList.find((s) => s.isDoctor) ||
+			staffList[0] ||
+			DEFAULT_CLINIC_STAFF[0]!;
+
+		const effectiveCab =
+			cabinets.find((c) => c.id === editingShift.cabinetId) ||
+			cabinets[0] ||
+			CLINIC_CABINETS_CATALOG[0]!;
+
+		const effectiveChair =
+			effectiveCab.chairs.find((ch) => ch.id === editingShift.chairId) ||
+			effectiveCab.chairs[0] || { id: "chair-1a", name: "Кресло 1А", equipment: "" };
+
+		const effectiveDate = editingShift.dateIso || weekStartDateIso;
 
 		const { durationHours, nightHours } = calculateShiftDurationHours(
 			editingShift.startTime || "08:30",
@@ -284,19 +566,18 @@ export function DoctorShiftRosterModal({
 			editingShift.breakMinutes || 0,
 		);
 
-		const doc = staffList.find((s) => s.id === editingShift.doctorId);
 		const asst = editingShift.assistantId ? staffList.find((s) => s.id === editingShift.assistantId) : null;
 
 		const finalizedShift: DoctorShift = {
 			id: editingShift.id || `shift-${Date.now()}`,
-			doctorId: editingShift.doctorId,
-			doctorName: doc?.shortName || editingShift.doctorName || "Врач",
-			doctorRole: doc?.role || editingShift.doctorRole || "therapist",
+			doctorId: effectiveDoc.id,
+			doctorName: effectiveDoc.shortName || editingShift.doctorName || effectiveDoc.fullName,
+			doctorRole: effectiveDoc.role || editingShift.doctorRole || "therapist",
 			assistantId: asst ? asst.id : null,
-			assistantName: asst ? asst.shortName : null,
-			cabinetId: editingShift.cabinetId || "cab-1",
-			chairId: editingShift.chairId || "chair-1a",
-			dateIso: editingShift.dateIso,
+			assistantName: asst ? (asst.shortName || asst.fullName) : null,
+			cabinetId: effectiveCab.id,
+			chairId: effectiveChair.id,
+			dateIso: effectiveDate,
 			archetypeId: editingShift.archetypeId || "morning_shift",
 			startTime: editingShift.startTime || "08:30",
 			endTime: editingShift.endTime || "14:30",
@@ -359,26 +640,59 @@ export function DoctorShiftRosterModal({
 		}
 	};
 
-	// Reset / Auto-fill schedule
-	const handleAutoFillDefault = () => {
-		const filled = createDefaultWeeklySchedule(weekStartDateIso, staffList, cabinets);
+	// Apply weekly allocation preset (Mandates 8e, 8k, 8n)
+	const handleApplyPreset = (
+		preset: "five_day" | "two_two" | "morning" | "evening" | "full_day",
+		label: string,
+	) => {
+		const filled = generateWeeklyScheduleForStaffAndCabinets(
+			weekStartDateIso,
+			staffList,
+			cabinets,
+			preset,
+		);
 		setShifts((prev) => {
 			const otherShifts = prev.filter(
 				(s) => s.dateIso < weekStartDateIso || s.dateIso > weekEndDateIso,
 			);
 			return [...otherShifts, ...filled];
 		});
-		setNotification({ type: "success", message: "График на текущую неделю заполнен по базовому шаблону" });
+		setNotification({
+			type: "success",
+			message: `Применен шаблон смен: ${label} (${filled.length} смен)`,
+		});
 		setTimeout(() => setNotification(null), 3000);
 	};
 
-	// Save changes
-	const handleSaveAll = async () => {
-		if (onSave) {
-			await onSave(shifts);
+	// Reset / Auto-fill schedule
+	const handleAutoFillDefault = () => {
+		handleApplyPreset("five_day", "Пятидневка (базовый)");
+	};
+
+	// Save changes (Non-blocking Mandate 8e)
+	const handleSaveAll = async (closeAfter = false) => {
+		let shiftsToSave = shifts;
+		if (shiftsToSave.length === 0) {
+			shiftsToSave = generateWeeklyScheduleForStaffAndCabinets(
+				weekStartDateIso,
+				staffList,
+				cabinets,
+				"five_day",
+			);
+			setShifts(shiftsToSave);
 		}
-		setNotification({ type: "success", message: "Все изменения графика успешно сохранены" });
-		setTimeout(() => setNotification(null), 3000);
+		if (onSave) {
+			await onSave(shiftsToSave);
+		}
+		setNotification({
+			type: "success",
+			message: `Все изменения графика успешно сохранены (${shiftsToSave.length} смен)`,
+		});
+		if (closeAfter) {
+			onClose();
+		} else {
+			setTimeout(() => setNotification(null), 3000);
+		}
 	};
 
 	if (!isOpen) return null;
@@ -403,7 +717,14 @@ export function DoctorShiftRosterModal({
 				<div className="roster-header">
 					<div className="roster-header-top">
 						<div className="roster-title-block">
-							<span className="roster-title-badge">Норма: 33 ч/нед</span>
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<span className="roster-title-badge">Норма: 33 ч/нед</span>
+								{clinicName && (
+									<span style={{ fontSize: "0.8125rem", color: "var(--muted, #64748b)", fontWeight: 500 }}>
+										{clinicName}
+									</span>
+								)}
+							</div>
 							<h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800 }}>
 								График сменности и табель учета врачей (2026)
 							</h2>
@@ -413,6 +734,7 @@ export function DoctorShiftRosterModal({
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={handlePrintSchedule}
+								style={{ minHeight: "44px" }}
 								title="Печать графика в формате А4 Альбомный"
 							>
 								<Printer size={16} />
@@ -422,6 +744,7 @@ export function DoctorShiftRosterModal({
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={handleExportT13}
+								style={{ minHeight: "44px" }}
 								title="Выгрузить форму Т-13 в CSV для 1C / Excel"
 							>
 								<FileSpreadsheet size={16} />
@@ -429,8 +752,10 @@ export function DoctorShiftRosterModal({
 							</button>
 							<button
 								type="button"
+								data-testid="roster-save-btn"
 								className="roster-btn roster-btn-primary"
-								onClick={handleSaveAll}
+								onClick={() => handleSaveAll(false)}
+								style={{ minHeight: "44px" }}
 							>
 								<Save size={16} />
 								<span>Сохранить</span>
@@ -444,8 +769,11 @@ export function DoctorShiftRosterModal({
 									cursor: "pointer",
 									padding: "0.5rem",
 									color: "var(--muted, #64748b)",
-									display: "flex",
+									display: "inline-flex",
 									alignItems: "center",
+									justifyContent: "center",
+									minHeight: "44px",
+									minWidth: "44px",
 								}}
 								aria-label="Закрыть окно"
 							>
@@ -495,6 +823,7 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className={`roster-tab-btn ${activeTab === "cabinets" ? "active" : ""}`}
 							onClick={() => setActiveTab("cabinets")}
+							style={{ minHeight: "44px" }}
 						>
 							<Layers size={16} />
 							<span>По кабинетам</span>
@@ -503,6 +832,7 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className={`roster-tab-btn ${activeTab === "doctors" ? "active" : ""}`}
 							onClick={() => setActiveTab("doctors")}
+							style={{ minHeight: "44px" }}
 						>
 							<Users size={16} />
 							<span>Расписание врачей</span>
@@ -511,6 +841,7 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className={`roster-tab-btn ${activeTab === "t13" ? "active" : ""}`}
 							onClick={() => setActiveTab("t13")}
+							style={{ minHeight: "44px" }}
 						>
 							<FileSpreadsheet size={16} />
 							<span>Табель Т-13</span>
@@ -519,6 +850,7 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className={`roster-tab-btn ${activeTab === "utilization" ? "active" : ""}`}
 							onClick={() => setActiveTab("utilization")}
+							style={{ minHeight: "44px" }}
 						>
 							<Clock size={16} />
 							<span>Загрузка кресел</span>
@@ -531,7 +863,7 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className="roster-btn roster-btn-secondary"
 							onClick={handlePrevWeek}
-							style={{ padding: "0.25rem 0.5rem", minHeight: "36px" }}
+							style={{ padding: "0.25rem 0.5rem", minHeight: "44px", minWidth: "44px" }}
 							title="Предыдущая неделя"
 						>
 							<ChevronLeft size={18} />
@@ -543,7 +875,7 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className="roster-btn roster-btn-secondary"
 							onClick={handleNextWeek}
-							style={{ padding: "0.25rem 0.5rem", minHeight: "36px" }}
+							style={{ padding: "0.25rem 0.5rem", minHeight: "44px", minWidth: "44px" }}
 							title="Следующая неделя"
 						>
 							<ChevronRight size={18} />
@@ -552,13 +884,81 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className="roster-btn roster-btn-secondary"
 							onClick={handleAutoFillDefault}
-							style={{ minHeight: "36px", fontSize: "0.75rem" }}
+							style={{ minHeight: "44px", fontSize: "0.75rem" }}
 							title="Заполнить неделю стандартным шаблоном смен"
 						>
 							<Sparkles size={14} />
 							<span>Авто-шаблон</span>
 						</button>
 					</div>
+				</div>
+
+				{/* 1-Click Shift Allocation Presets Strip (Mandates 8e, 8k, 8n) */}
+				<div
+					className="roster-presets-strip"
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: "0.5rem",
+						padding: "0.5rem 1.5rem",
+						background: "var(--paper-soft, #f8fafc)",
+						borderBottom: "1px solid var(--line, #e2e8f0)",
+						flexWrap: "wrap",
+					}}
+				>
+					<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)" }}>
+						Шаблоны сменности:
+					</span>
+					<button
+						type="button"
+						data-testid="roster-preset-five-day"
+						className="roster-btn roster-btn-secondary"
+						onClick={() => handleApplyPreset("five_day", "Пятидневка")}
+						style={{ minHeight: "44px", padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}
+						title="Пятидневка (Пн–Пт) для врачей и кресел"
+					>
+						<span>Пятидневка</span>
+					</button>
+					<button
+						type="button"
+						data-testid="roster-preset-two-two"
+						className="roster-btn roster-btn-secondary"
+						onClick={() => handleApplyPreset("two_two", "2/2")}
+						style={{ minHeight: "44px", padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}
+						title="Сменный график 2 через 2 дня"
+					>
+						<span>2/2</span>
+					</button>
+					<button
+						type="button"
+						data-testid="roster-preset-morning"
+						className="roster-btn roster-btn-secondary"
+						onClick={() => handleApplyPreset("morning", "Утро 08:00–14:00")}
+						style={{ minHeight: "44px", padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}
+						title="Утренние смены 08:00–14:00"
+					>
+						<span>Утро 08:00–14:00</span>
+					</button>
+					<button
+						type="button"
+						data-testid="roster-preset-evening"
+						className="roster-btn roster-btn-secondary"
+						onClick={() => handleApplyPreset("evening", "Вечер 14:00–20:00")}
+						style={{ minHeight: "44px", padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}
+						title="Вечерние смены 14:00–20:00"
+					>
+						<span>Вечер 14:00–20:00</span>
+					</button>
+					<button
+						type="button"
+						data-testid="roster-preset-full-day"
+						className="roster-btn roster-btn-secondary"
+						onClick={() => handleApplyPreset("full_day", "Полный день 08:00–20:00")}
+						style={{ minHeight: "44px", padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}
+						title="Полный рабочий день 08:00–20:00"
+					>
+						<span>Полный день 08:00–20:00</span>
+					</button>
 				</div>
 
 				{/* Notifications & Conflicts Ribbon */}
@@ -949,7 +1349,7 @@ export function DoctorShiftRosterModal({
 													<div style={{ color: "var(--teal, #0d9488)", fontSize: "0.75rem" }}>{chair.name}</div>
 												</td>
 												{weekDays.map((day) => {
-													const metrics = calculateChairUtilization(shifts, appointments, day.dateIso, cabinets);
+													const metrics = calculateChairUtilization(shifts, sanitizedAppointments, day.dateIso, cabinets);
 													const chairMetric = metrics.find((m) => m.chairId === chair.id);
 													const rate = chairMetric ? chairMetric.utilizationRatePercent : 0;
 													const heat = chairMetric ? chairMetric.heatLevel : "empty";
@@ -1183,6 +1583,7 @@ export function DoctorShiftRosterModal({
 										type="button"
 										className="roster-btn roster-btn-danger"
 										onClick={() => handleDeleteShift(editingShift.id!)}
+										style={{ minHeight: "44px" }}
 									>
 										<Trash2 size={16} />
 										<span>Удалить</span>
@@ -1193,6 +1594,7 @@ export function DoctorShiftRosterModal({
 										type="button"
 										className="roster-btn roster-btn-secondary"
 										onClick={() => setEditingShift(null)}
+										style={{ minHeight: "44px" }}
 									>
 										Отмена
 									</button>
@@ -1200,6 +1602,7 @@ export function DoctorShiftRosterModal({
 										type="button"
 										className="roster-btn roster-btn-primary"
 										onClick={handleSaveDrawerShift}
+										style={{ minHeight: "44px" }}
 									>
 										<Check size={16} />
 										<span>Сохранить смену</span>
@@ -1220,13 +1623,16 @@ export function DoctorShiftRosterModal({
 							type="button"
 							className="roster-btn roster-btn-secondary"
 							onClick={onClose}
+							style={{ minHeight: "44px" }}
 						>
 							Закрыть
 						</button>
 						<button
 							type="button"
+							data-testid="roster-apply-close-btn"
 							className="roster-btn roster-btn-primary"
-							onClick={handleSaveAll}
+							onClick={() => handleSaveAll(true)}
+							style={{ minHeight: "44px" }}
 						>
 							<Save size={16} />
 							<span>Применить и закрыть</span>

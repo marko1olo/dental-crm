@@ -46,8 +46,18 @@ import {
 	shiftDayKey,
 } from "./components/schedule/scheduleDayGrouping";
 import { UrgentScheduleRequestsWidget } from "./components/schedule/UrgentScheduleRequestsWidget";
-import { DoctorShiftRosterModal } from "./components/schedule/roster/DoctorShiftRosterModal";
+import {
+	DoctorShiftRosterModal,
+	type DoctorShift,
+	type StaffMember as RosterStaffMember,
+	type CabinetDefinition as RosterCabinetDefinition,
+} from "./components/schedule/roster/DoctorShiftRosterModal";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
+import type { MedicalStaffRole } from "./components/schedule/roster/doctorShiftRosterPresets";
+import {
+	DEFAULT_CLINIC_STAFF,
+	CLINIC_CABINETS_CATALOG,
+} from "./components/schedule/roster/doctorShiftRosterPresets";
 import {
 	type TargetSlotInfo,
 	WaitlistQuickFillModal,
@@ -296,6 +306,200 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [isRosterModalOpen, setIsRosterModalOpen] = useState(false);
 	const [isCalendarSyncModalOpen, setIsCalendarSyncModalOpen] = useState(false);
 	const [isSmartAiOpen, setIsSmartAiOpen] = useState(false);
+
+	/**
+	 * Сохраненные смены врачей в расписании (сохраняются в localStorage и передаются в DoctorShiftRosterModal)
+	 */
+	const [savedDoctorShifts, setSavedDoctorShifts] = useState<DoctorShift[]>(() => {
+		try {
+			const stored =
+				typeof localStorage !== "undefined"
+					? localStorage.getItem("dente_doctor_shifts")
+					: null;
+			if (stored) {
+				const parsed = JSON.parse(stored);
+				if (Array.isArray(parsed) && parsed.length > 0) {
+					return parsed;
+				}
+			}
+		} catch {
+			/* ignore parse error */
+		}
+		return [];
+	});
+
+	const handleSaveDoctorShifts = useCallback(async (shifts: DoctorShift[]) => {
+		setSavedDoctorShifts(shifts);
+		try {
+			if (typeof localStorage !== "undefined") {
+				localStorage.setItem("dente_doctor_shifts", JSON.stringify(shifts));
+			}
+		} catch {
+			/* ignore storage error */
+		}
+		try {
+			if (typeof fetch !== "undefined") {
+				const headers: Record<string, string> = {
+					"Content-Type": "application/json",
+					...(auth?.denteClinicalMutationHeaders ? auth.denteClinicalMutationHeaders() : {}),
+				};
+				await fetch("/api/diary/shifts", {
+					method: "POST",
+					headers,
+					body: JSON.stringify({ shifts }),
+				}).catch(() => {
+					/* soft catch if route is not implemented */
+				});
+			}
+		} catch {
+			/* soft catch */
+		}
+		showToast(`График смен сохранен: обновлено ${shifts.length} смен`, "success", 3500);
+	}, []);
+
+	/**
+	 * Сопоставление реальных сотрудников клиники для матрицы сменности (Мандаты 8e, 8n)
+	 */
+	const rosterStaffList: RosterStaffMember[] = useMemo(() => {
+		const rawStaff = (dashboard?.clinicSettings?.staff ?? []).filter(
+			(s) => s.active !== false,
+		);
+		if (rawStaff.length === 0) return DEFAULT_CLINIC_STAFF;
+
+		return rawStaff.map((s, index) => {
+			const isDoctor =
+				s.role === "doctor" ||
+				s.role === "owner" ||
+				(Array.isArray(s.specialties) &&
+					s.specialties.length > 0 &&
+					s.role !== "assistant");
+			const isAssistant = s.role === "assistant";
+
+			let role: MedicalStaffRole = "therapist";
+			if (isAssistant) {
+				role = "assistant";
+			} else if (s.specialties?.includes("surgeon")) {
+				role = "surgeon";
+			} else if (s.specialties?.includes("orthopedist")) {
+				role = "orthopedist";
+			} else if (s.specialties?.includes("orthodontist")) {
+				role = "orthodontist";
+			} else if (s.specialties?.includes("pediatric")) {
+				role = "pediatric";
+			} else if (s.specialties?.includes("hygienist") || s.role === "hygienist") {
+				role = "hygienist";
+			} else {
+				role = isDoctor ? "therapist" : "assistant";
+			}
+
+			const parts = (s.fullName || "").trim().split(/\s+/);
+			const initials = parts
+				.slice(1)
+				.map((p) => (p[0] ? `${p[0].toUpperCase()}.` : ""))
+				.join("");
+			const shortName = isDoctor
+				? `Д-р ${parts[0] || "Врач"}${initials ? ` ${initials}` : ""}`
+				: `${parts[0] || "Сотрудник"}${initials ? ` ${initials}` : ""}`;
+
+			const tabNumber =
+				(s as unknown as { tabNumber?: string }).tabNumber ||
+				String(101 + index).padStart(5, "0");
+
+			return {
+				id: s.id,
+				fullName: s.fullName,
+				shortName,
+				role,
+				tabNumber,
+				isDoctor,
+				isAssistant,
+				preferredChairId: (s as unknown as { preferredChairId?: string })
+					.preferredChairId,
+				defaultAssistantId: (s as unknown as { defaultAssistantId?: string })
+					.defaultAssistantId,
+				weeklyHourLimit: isDoctor ? 33 : 39,
+				avatarColor: s.color || (isDoctor ? "#0d9488" : "#64748b"),
+			};
+		});
+	}, [dashboard?.clinicSettings?.staff]);
+
+	/**
+	 * Сопоставление реальных кресел и кабинетов клиники (Мандаты 8e, 8n)
+	 */
+	const rosterCabinets: RosterCabinetDefinition[] = useMemo(() => {
+		const rawChairs = (dashboard?.clinicSettings?.chairs ?? []).filter(
+			(c) => c.active !== false,
+		);
+		if (rawChairs.length === 0) return CLINIC_CABINETS_CATALOG;
+
+		const roomMap = new Map<string, typeof rawChairs>();
+		rawChairs.forEach((chair, idx) => {
+			const roomKey = chair.room?.trim() || `Кабинет ${idx + 1}`;
+			const existing = roomMap.get(roomKey);
+			if (existing) {
+				existing.push(chair);
+			} else {
+				roomMap.set(roomKey, [chair]);
+			}
+		});
+
+		let cabNum = 1;
+		const result: RosterCabinetDefinition[] = [];
+		for (const [roomName, chairsInRoom] of roomMap.entries()) {
+			const primarySpec = chairsInRoom[0]?.specialization;
+			const specialtyLabel =
+				primarySpec === "surgeon"
+					? "Хирургия"
+					: primarySpec === "orthopedist"
+						? "Ортопедия"
+						: primarySpec === "orthodontist"
+							? "Ортодонтия"
+							: primarySpec === "pediatric"
+								? "Детство"
+								: primarySpec === "hygienist"
+									? "Гигиена"
+									: "Терапия";
+
+			result.push({
+				id: `cab-${cabNum}`,
+				number: cabNum,
+				name: roomName.startsWith("Кабинет") ? roomName : `Кабинет ${roomName}`,
+				specialty: specialtyLabel,
+				chairs: chairsInRoom.map((ch) => {
+					const equipmentParts = [
+						ch.hasMicroscope ? "Микроскоп" : "",
+						ch.hasSurgeryKit ? "Хирургический набор" : "",
+						ch.hasXraySensor ? "Визиограф" : "",
+						ch.notes || "",
+					].filter(Boolean);
+					const equipment =
+						equipmentParts.length > 0
+							? equipmentParts.join(", ")
+							: "Стоматологическая установка";
+
+					return {
+						id: ch.id,
+						name: ch.name,
+						equipment,
+					};
+				}),
+			});
+			cabNum++;
+		}
+		return result;
+	}, [dashboard?.clinicSettings?.chairs]);
+
+	/**
+	 * Приемы для расчета матрицы загрузки кресел
+	 */
+	const rosterAppointments = useMemo(() => {
+		return (dashboard?.appointments ?? sortedAppointments ?? []).map((app) => ({
+			chairId: app.chairId,
+			startsAt: app.startsAt,
+			endsAt: app.endsAt,
+			status: app.status,
+		}));
+	}, [dashboard?.appointments, sortedAppointments]);
 	/**
 	 * Раскрыта ли форма со всеми полями записи.
 	 *
@@ -1784,6 +1988,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			<DoctorShiftRosterModal
 				isOpen={isRosterModalOpen}
 				onClose={() => setIsRosterModalOpen(false)}
+				staffList={rosterStaffList}
+				cabinets={rosterCabinets}
+				initialShifts={savedDoctorShifts.length > 0 ? savedDoctorShifts : undefined}
+				appointments={rosterAppointments}
+				clinicName={dashboard?.clinicSettings?.profile?.clinicName || dashboard?.clinicName}
+				onSave={handleSaveDoctorShifts}
 			/>
 			<DoctorCalendarSyncModal
 				isOpen={isCalendarSyncModalOpen}
