@@ -116,7 +116,8 @@ export type PediatricProtocolId =
 	| "pulpotomy_primary"
 	| "silvering_deep_fluoridation"
 	| "fissure_sealing"
-	| "extraction_primary_exfoliation";
+	| "extraction_primary_exfoliation"
+	| "standard_crown";
 
 export interface PediatricServiceItem {
 	readonly code: string;
@@ -141,7 +142,8 @@ export interface PediatricProtocolDefinition {
 		| "EndoTreated"
 		| "Watch"
 		| "Healthy"
-		| "Extracted";
+		| "Extracted"
+		| "Crown";
 	readonly icon: React.ComponentType<{ className?: string }>;
 	readonly colorTheme: string;
 }
@@ -265,6 +267,32 @@ export const PEDIATRIC_PROTOCOL_PRESETS: readonly PediatricProtocolDefinition[] 
 			icon: Scissors,
 			colorTheme:
 				"border-indigo-500 bg-indigo-50/90 text-indigo-950 dark:border-indigo-400 dark:bg-indigo-950/60 dark:text-indigo-100",
+		},
+		{
+			id: "standard_crown",
+			titleRu: "Восстановление стандартной защитной коронкой",
+			shortLabelRu: "Коронка (Hall / SSC)",
+			subtitleRu: "Металл / Цирконий, методика Hall, СИЦ Fuji Plus / Ketac Cem",
+			diagnosisIcd10: "K02.1",
+			diagnosisNameRu:
+				"Кариес дентина / разрушение коронки временного моляра (K02.1 / K04.0)",
+			serviceCode804n: "A16.07.004.001",
+			serviceName804n:
+				"Восстановление зуба стандартной защитной коронкой (металл / цирконий, методика Hall)",
+			defaultSurfaces: ["O"],
+			allowsSurfaces: false,
+			materials: [
+				"Стандартная стальная коронка SSC (3M ESPE)",
+				"Циркониевая коронка NuSmile ZR",
+				"Коронка Kids-e-Crown",
+				"СИЦ Fuji Plus (GC фиксация)",
+				"Ketac Cem Easymix (3M)",
+			],
+			defaultMaterial: "Стандартная стальная коронка SSC (3M ESPE)",
+			defaultToothFindingState: "Crown",
+			icon: ShieldCheck,
+			colorTheme:
+				"border-amber-500 bg-amber-50/90 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100",
 		},
 	];
 
@@ -493,9 +521,12 @@ export const VisitPediatricProtocolWidget: React.FC<
 	// 7. Детали и спойлер параметров
 	const [showDetailsAccordion, setShowDetailsAccordion] =
 		useState<boolean>(false);
-
-	// 8. Модальное окно памятки родителям (Анти-Матрёшка: глубина 1)
 	const [isMemoModalOpen, setIsMemoModalOpen] = useState<boolean>(false);
+
+	// 8b. Ортодонтический статус первичного осмотра (норма по умолчанию согласно Мандату 8e)
+	const [orthoFrenulumNormal, setOrthoFrenulumNormal] = useState<boolean>(true);
+	const [orthoNasalBreathing, setOrthoNasalBreathing] = useState<boolean>(true);
+	const [orthoNoHarmfulHabits, setOrthoNoHarmfulHabits] = useState<boolean>(true);
 
 	// 9. Формирование полного текста протокола по Форме 043/у и Номенклатуре 804н
 	const clinicalCalculation = useMemo(() => {
@@ -553,13 +584,30 @@ export const VisitPediatricProtocolWidget: React.FC<
 				break;
 			}
 			case "extraction_primary_exfoliation": {
+				const isMolar = [54, 55, 64, 65, 74, 75, 84, 85].includes(currentTooth);
 				statusLocalis = `Временный зуб ${currentTooth}: подвижность II–III степени во всех направлениях вследствие физиологической резорбции корня более 3/4 длины. Коронка устойчиво удерживается лишь на десневой манжетке. Рентгенологически: зачаток постоянного зуба расположен непосредственно под временным, кортикальная пластинка зачатка сохранена. Десна вокруг шейки умеренно гиперемирована.`;
 				treatmentDescription = `Оценка степени подвижности зуба ${currentTooth}. Аппликационная анестезия слизистой оболочки десны с вестибулярной и оральной сторон гелем со вкусом вишни (${selectedMaterial}). Наложение детских щипцов на коронку временного зуба, аккуратная люксация и плавная тракция без давления на зачаток постоянного зуба. Экстракция зуба. Кюретаж лунки не проводился для защиты зачатка. Гемостаз марлевым стерильным тампоном с прикусыванием на 15 минут. Кровотечение полностью остановлено, сформирован состоятельный кровяной сгусток. Удаленный зубик вручен ребенку в контейнере для Зубной Феи.`;
-				recommendations = `Держать марлевый тампон 15–20 минут, затем бережно выплюнуть. Категорически запрещено полоскать рот и травмировать лунку пальцами или языком. Не принимать горячую пищу и напитки 2 часа. При ноющем дискомфорте — детская суспензия Парацетамол/Ибупрофен по возрасту.`;
+				const orthoRecommendation = isMolar
+					? " Консультация ортодонта: Рекомендовано изготовление несъемного держателя места (кольцо-петля, A16.07.047) во избежание мезиального смещения зачатка моляра."
+					: "";
+				recommendations = `Держать марлевый тампон 15–20 минут, затем бережно выплюнуть. Категорически запрещено полоскать рот и травмировать лунку пальцами или языком. Не принимать горячую пищу и напитки 2 часа. При ноющем дискомфорте — детская суспензия Парацетамол/Ибупрофен по возрасту.${orthoRecommendation}`;
 				services.push({
 					code: "B01.003.004.004",
 					nameRu: "Аппликационная анестезия слизистой оболочки десны (вишня)",
 				});
+				if (isMolar) {
+					services.push({
+						code: "A16.07.047",
+						nameRu:
+							"Ортодонтическая коррекция с применением несъемного держателя места (кольцо-петля)",
+					});
+				}
+				break;
+			}
+			case "standard_crown": {
+				statusLocalis = `Временный моляр ${currentTooth}: обширный дефект твердых тканей коронки зуба, разрушение окклюзионной и контактных поверхностей более 1/2 объема (после эндодонтического лечения / декомпенсированный кариес дентина). Тонкие истонченные стенки, риск скола коронки. Перкуссия зуба безболезненная, десна в области зуба бледно-розовая.`;
+				treatmentDescription = `Подбор стандартной защитной коронки (${selectedMaterial}) соответствующего типоразмера по мезио-дистальному диаметру зуба ${currentTooth}. Сепарация контактных поверхностей алмазным бором (при необходимости) / фиксация по методике Hall без инвазивного сошлифовывания и местной анестезии. Антисептическая обработка зуба 0.05% раствором хлоргексидина, высушивание. Замешивание фиксирующего стеклоиономерного цемента. Заполнение коронки цементом на 2/3 объема, точное позиционирование на зубе ${currentTooth}, припасовка с накусыванием ватного валика ребенком. Удаление излишков цемента гладилкой и флоссом из межзубных промежутков после застывания. Контроль окклюзионных взаимоотношений.`;
+				recommendations = `Не жевать твердую пищу (орехи, сухарики, ириски) и не употреблять пищу в течение 1 часа до окончательной кристаллизации цемента. Тщательная домашняя гигиена в пришеечной области коронки. Контрольный осмотр через 6 месяцев.`;
 				break;
 			}
 		}
@@ -571,17 +619,22 @@ export const VisitPediatricProtocolWidget: React.FC<
 			`   Поведение: ${activeFrankl.descriptionRu}`,
 			`   Тактика адаптации: ${activeFrankl.clinicalTacticRu}`,
 			"",
-			`2. Объект вмешательства: Зуб #${currentTooth} (${PEDIATRIC_TEETH_NAMES[currentTooth] ?? `Зуб ${currentTooth}`})`,
+			"2. Первичный осмотр и ортодонтический скрининг:",
+			`   • Уздечки губ и языка: ${orthoFrenulumNormal ? "норма (анатомически правильное прикрепление)" : "патология прикрепления (требуется консультация ортодонта/хирурга)"}`,
+			`   • Носовое дыхание: ${orthoNasalBreathing ? "сохранено (свободное через нос)" : "нарушено (ротовое дыхание)"}`,
+			`   • Вредные привычки: ${orthoNoHarmfulHabits ? "отсутствуют" : "выявлены (сосание пальца/губы/предметов, инфантильное глотание)"}`,
+			"",
+			`3. Объект вмешательства: Зуб #${currentTooth} (${PEDIATRIC_TEETH_NAMES[currentTooth] ?? `Зуб ${currentTooth}`})`,
 			`   Диагноз (МКБ-10): ${diagnosisIcd10} — ${diagnosisNameRu}`,
 			`   Услуги (Номенклатура 804н): ${services.map((s) => `${s.code} ${s.nameRu}`).join("; ")}`,
 			"",
-			"3. Status localis:",
+			"4. Status localis:",
 			`   ${statusLocalis}`,
 			"",
-			"4. Протокол вмешательства и манипуляции:",
+			"5. Протокол вмешательства и манипуляции:",
 			`   ${treatmentDescription}`,
 			"",
-			"5. Назначения и рекомендации родителям:",
+			"6. Назначения и рекомендации родителям:",
 			`   ${recommendations}`,
 			"────────────────────────────────────────────────────────────",
 			"Документ оформлен в соответствии с Приказами МЗ РФ №804н и №834н.",
@@ -604,6 +657,9 @@ export const VisitPediatricProtocolWidget: React.FC<
 		selectedSurfaces,
 		selectedMaterial,
 		activeFrankl,
+		orthoFrenulumNormal,
+		orthoNasalBreathing,
+		orthoNoHarmfulHabits,
 	]);
 
 	// 10. Внесение в Форму 043/у (Двойной диспатч: useVisitStore + CustomEvent dente-apply-soap-protocol)
@@ -811,13 +867,13 @@ export const VisitPediatricProtocolWidget: React.FC<
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════════════ */}
-			{/* 5 КАНОНИЧЕСКИХ 1-КЛИК ПРОТОКОЛОВ (ФОРМА 043/у + НОМЕНКЛАТУРА 804н) */}
+			{/* 6 КАНОНИЧЕСКИХ 1-КЛИК ПРОТОКОЛОВ (ФОРМА 043/у + НОМЕНКЛАТУРА 804н) */}
 			{/* ═════════════════════════════════════════════════════════════════════ */}
 			<div className="mb-4">
 				<div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
 					1-Клик клинические протоколы у кресла:
 				</div>
-				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+				<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 					{PEDIATRIC_PROTOCOL_PRESETS.map((preset) => {
 						const isCurrent = activePresetId === preset.id;
 						const PresetIcon = preset.icon;
@@ -832,6 +888,7 @@ export const VisitPediatricProtocolWidget: React.FC<
 										: "border-slate-200 bg-[var(--paper,#ffffff)] hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
 								}`}
 								data-testid={`pediatric-preset-btn-${preset.id}`}
+								title={`${preset.titleRu} • ${preset.serviceCode804n}`}
 							>
 								<div className="flex items-center gap-1.5 font-bold text-xs">
 									<PresetIcon className="h-4 w-4 shrink-0" />
@@ -843,6 +900,101 @@ export const VisitPediatricProtocolWidget: React.FC<
 							</button>
 						);
 					})}
+				</div>
+			</div>
+
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			{/* ПЕРВИЧНЫЙ ОСМОТР: ЧЕКБОКСЫ ОРТОДОНТИЧЕСКОЙ НОРМЫ (НОРМА В 1 КЛИК, ТАЧ-ТАРГЕТЫ >= 48px) */}
+			{/* ═════════════════════════════════════════════════════════════════════ */}
+			<div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800/80 dark:bg-slate-800/40">
+				<div className="mb-2 flex items-center justify-between">
+					<span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+						Первичный осмотр — ортодонтическая норма (СтАР):
+					</span>
+					<span className="text-[11px] font-semibold text-teal-700 dark:text-teal-400">
+						{orthoFrenulumNormal && orthoNasalBreathing && orthoNoHarmfulHabits
+							? "Физиологическая норма (100%)"
+							: "Выявлены отклонения / требуется консультация ортодонта"}
+					</span>
+				</div>
+				<div className="grid grid-cols-1 gap-2 sm:grid-cols-3" data-testid="pediatric-ortho-norm-grid">
+					<button
+						type="button"
+						onClick={() => setOrthoFrenulumNormal((prev) => !prev)}
+						className={`flex min-h-[48px] items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
+							orthoFrenulumNormal
+								? "border-teal-500 bg-teal-50/80 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100 ring-1 ring-teal-500/20"
+								: "border-amber-400 bg-amber-50/80 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
+						}`}
+						title="Анатомическое прикрепление уздечек губ и языка"
+						data-testid="pediatric-ortho-frenulum-toggle"
+					>
+						<div className="min-w-0 pr-1">
+							<div className="text-xs font-bold truncate">Уздечки губ и языка</div>
+							<div className="text-[11px] opacity-80 truncate">
+								{orthoFrenulumNormal ? "Норма прикрепления" : "Патология / укорочение"}
+							</div>
+						</div>
+						{orthoFrenulumNormal ? (
+							<Check className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+						) : (
+							<span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+								Аномалия
+							</span>
+						)}
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setOrthoNasalBreathing((prev) => !prev)}
+						className={`flex min-h-[48px] items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
+							orthoNasalBreathing
+								? "border-teal-500 bg-teal-50/80 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100 ring-1 ring-teal-500/20"
+								: "border-amber-400 bg-amber-50/80 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
+						}`}
+						title="Тип дыхания ребенка (носовое / ротовое)"
+						data-testid="pediatric-ortho-breathing-toggle"
+					>
+						<div className="min-w-0 pr-1">
+							<div className="text-xs font-bold truncate">Носовое дыхание</div>
+							<div className="text-[11px] opacity-80 truncate">
+								{orthoNasalBreathing ? "Свободное через нос" : "Ротовое дыхание"}
+							</div>
+						</div>
+						{orthoNasalBreathing ? (
+							<Check className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+						) : (
+							<span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+								Нарушено
+							</span>
+						)}
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setOrthoNoHarmfulHabits((prev) => !prev)}
+						className={`flex min-h-[48px] items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
+							orthoNoHarmfulHabits
+								? "border-teal-500 bg-teal-50/80 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100 ring-1 ring-teal-500/20"
+								: "border-amber-400 bg-amber-50/80 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
+						}`}
+						title="Вредные привычки: сосание пальца, соски, посторонних предметов"
+						data-testid="pediatric-ortho-habits-toggle"
+					>
+						<div className="min-w-0 pr-1">
+							<div className="text-xs font-bold truncate">Вредные привычки</div>
+							<div className="text-[11px] opacity-80 truncate">
+								{orthoNoHarmfulHabits ? "Отсутствуют (норма)" : "Выявлены (палец/соска)"}
+							</div>
+						</div>
+						{orthoNoHarmfulHabits ? (
+							<Check className="h-4 w-4 shrink-0 text-teal-600 dark:text-teal-400" />
+						) : (
+							<span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+								Выявлены
+							</span>
+						)}
+					</button>
 				</div>
 			</div>
 

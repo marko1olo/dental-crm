@@ -541,7 +541,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={handleExportPresentation}
-							className="ortho-tool-btn ortho-export-btn"
+							className="ortho-tool-btn ortho-export-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2"
 							title="Сформировать презентацию и распечатать в PDF"
 							data-testid="export-ortho-pdf-btn"
 						>
@@ -551,7 +551,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={onClose}
-							className="ortho-slot-btn"
+							className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
 							aria-label="Закрыть модальное окно"
 							data-testid="close-ortho-modal-btn"
 						>
@@ -560,14 +560,14 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 					</div>
 				</header>
 
-				{/* 2. Toolbar & Stage Switcher */}
-				<div className="ortho-modal-toolbar">
+				{/* 2. Toolbar & Stage Switcher (Mandate 8d: 1 row, touch target >= 44px) */}
+				<div className="ortho-modal-toolbar min-h-[44px] py-1 px-4 flex items-center justify-between gap-2 overflow-x-auto whitespace-nowrap shrink-0 flex-nowrap">
 					{/* Stage buttons */}
 					<div className="ortho-stage-selector" role="group" aria-label="Этап фотопротокола">
 						<button
 							type="button"
 							onClick={() => handleStageChange("pre_treatment")}
-							className={`ortho-stage-btn ${session.stage === "pre_treatment" ? "active-stage-pre" : ""}`}
+							className={`ortho-stage-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "pre_treatment" ? "active-stage-pre" : ""}`}
 							data-testid="stage-pre-btn"
 						>
 							<span>До лечения</span>
@@ -575,7 +575,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => handleStageChange("active_monitoring")}
-							className={`ortho-stage-btn ${session.stage === "active_monitoring" ? "active-stage-active" : ""}`}
+							className={`ortho-stage-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "active_monitoring" ? "active-stage-active" : ""}`}
 							data-testid="stage-active-btn"
 						>
 							<span>Контроль</span>
@@ -583,7 +583,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => handleStageChange("post_treatment")}
-							className={`ortho-stage-btn ${session.stage === "post_treatment" ? "active-stage-post" : ""}`}
+							className={`ortho-stage-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 ${session.stage === "post_treatment" ? "active-stage-post" : ""}`}
 							data-testid="stage-post-btn"
 						>
 							<span>После лечения</span>
@@ -596,7 +596,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setActiveCategoryFilter("all")}
-								className={`px-2.5 py-1 text-xs font-semibold rounded ${
+								className={`px-3 py-2 min-h-[44px] text-xs font-semibold rounded inline-flex items-center justify-center ${
 									activeCategoryFilter === "all"
 										? "bg-[var(--teal)] text-white"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -607,7 +607,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setActiveCategoryFilter("extraoral")}
-								className={`px-2.5 py-1 text-xs font-semibold rounded ${
+								className={`px-3 py-2 min-h-[44px] text-xs font-semibold rounded inline-flex items-center justify-center ${
 									activeCategoryFilter === "extraoral"
 										? "bg-[var(--teal)] text-white"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -618,7 +618,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setActiveCategoryFilter("intraoral")}
-								className={`px-2.5 py-1 text-xs font-semibold rounded ${
+								className={`px-3 py-2 min-h-[44px] text-xs font-semibold rounded inline-flex items-center justify-center ${
 									activeCategoryFilter === "intraoral"
 										? "bg-[var(--teal)] text-white"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -632,7 +632,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<button
 							type="button"
 							onClick={() => setGlobalGuidelinesEnabled(!globalGuidelinesEnabled)}
-							className={`ortho-tool-btn ${globalGuidelinesEnabled ? "active" : ""}`}
+							className={`ortho-tool-btn min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2 ${globalGuidelinesEnabled ? "active" : ""}`}
 							title="Показать/скрыть сетку наложения (центральная линия и окклюзия)"
 							data-testid="toggle-guidelines-btn"
 						>
@@ -686,7 +686,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 										key={preset.id}
 										type="button"
 										onClick={() => handleSelectPreset(preset)}
-										className={`ortho-preset-pill ${isSelected ? "active" : ""}`}
+										className={`ortho-preset-pill min-h-[44px] px-3.5 py-2 inline-flex items-center gap-2 ${isSelected ? "active" : ""}`}
 										title={preset.label}
 										data-testid={`ortho-preset-${preset.id}`}
 									>
@@ -699,7 +699,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={() => setShowPresetPreview(!showPresetPreview)}
-								className="ortho-preset-preview-toggle"
+								className="ortho-preset-preview-toggle min-h-[44px] px-3 py-2 inline-flex items-center gap-1.5"
 								title={showPresetPreview ? "Скрыть предпросмотр протокола" : "Показать предпросмотр текста для 043/у"}
 								data-testid="toggle-preset-preview-btn"
 							>
@@ -709,7 +709,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							<button
 								type="button"
 								onClick={handleCopyProtocolToClipboard}
-								className="ortho-preset-copy-btn"
+								className="ortho-preset-copy-btn min-h-[44px] px-3 py-2 inline-flex items-center gap-1.5"
 								title="Скопировать структурированный протокол в буфер обмена"
 								data-testid="copy-ortho-protocol-btn"
 							>
@@ -810,15 +810,15 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 									</div>
 
 									{/* Slot Controls Bar */}
-									<div className="ortho-slot-controls">
+									<div className="ortho-slot-controls flex items-center gap-1.5 flex-wrap min-h-[44px]">
 										<button
 											type="button"
 											onClick={() => triggerUploadForAngle(angle.id)}
-											className="ortho-slot-btn"
+											className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
 											title="Загрузить снимок"
 											data-testid={`upload-btn-${angle.id}`}
 										>
-											<UploadCloud size={14} />
+											<UploadCloud size={16} />
 										</button>
 
 										{hasPhoto ? (
@@ -826,43 +826,43 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 												<button
 													type="button"
 													onClick={(e) => handleRotateSlot(angle.id, e)}
-													className="ortho-slot-btn"
+													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
 													title="Повернуть на 90°"
 												>
-													<RotateCw size={13} />
+													<RotateCw size={14} />
 												</button>
 												<button
 													type="button"
 													onClick={(e) => handleFlipHorizontal(angle.id, e)}
-													className="ortho-slot-btn"
+													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
 													title="Отразить по горизонтали"
 												>
-													<FlipHorizontal size={13} />
+													<FlipHorizontal size={14} />
 												</button>
 												<button
 													type="button"
 													onClick={(e) => handleZoomChange(angle.id, 0.2, e)}
-													className="ortho-slot-btn"
+													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
 													title="Увеличить"
 												>
-													<ZoomIn size={13} />
+													<ZoomIn size={14} />
 												</button>
 												<button
 													type="button"
 													onClick={(e) => handleZoomChange(angle.id, -0.2, e)}
-													className="ortho-slot-btn"
+													className="ortho-slot-btn min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
 													title="Уменьшить"
 												>
-													<ZoomOut size={13} />
+													<ZoomOut size={14} />
 												</button>
 												<button
 													type="button"
 													onClick={(e) => handleDeletePhoto(angle.id, e)}
-													className="ortho-slot-btn danger"
+													className="ortho-slot-btn danger min-w-[44px] min-h-[44px] p-2 inline-flex items-center justify-center"
 													title="Удалить снимок"
 													data-testid={`delete-btn-${angle.id}`}
 												>
-													<Trash2 size={13} />
+													<Trash2 size={14} />
 												</button>
 											</>
 										) : (
@@ -1028,12 +1028,12 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 				{/* 5. Modal Footer */}
 				<footer className="ortho-modal-footer">
 					<div className="ortho-footer-left">
-						<label className="ortho-insert-checkbox-label">
+						<label className="ortho-insert-checkbox-label min-h-[44px] inline-flex items-center gap-2 cursor-pointer">
 							<input
 								type="checkbox"
 								checked={insertProtocolOnSave}
 								onChange={(e) => setInsertProtocolOnSave(e.target.checked)}
-								className="ortho-checkbox"
+								className="ortho-checkbox w-5 h-5 cursor-pointer"
 								data-testid="insert-protocol-on-save-checkbox"
 							/>
 							<span>Вносить в дневник 043/у при сохранении</span>
@@ -1041,31 +1041,31 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 						<span className="ortho-footer-ref-hint">Приказ МЗ РФ № 834н</span>
 					</div>
 
-					<div className="flex items-center gap-2.5">
+					<div className="flex items-center gap-2.5 flex-wrap">
 						<button
 							type="button"
 							onClick={() => handleInsertProtocol043()}
-							className="ortho-btn-insert-043"
+							className="ortho-btn-insert-043 min-h-[44px] px-4 py-2.5 inline-flex items-center gap-2"
 							title="Вставить структурированный протокол ортодонтии в дневник Формы 043/у"
 							data-testid="insert-ortho-protocol-043-btn"
 						>
-							<FileText size={15} />
+							<FileText size={16} />
 							<span>Вставить протокол ортодонтии в дневник 043/у</span>
 						</button>
 						<button
 							type="button"
 							onClick={onClose}
-							className="ortho-btn-secondary"
+							className="ortho-btn-secondary min-h-[44px] px-4 py-2.5 inline-flex items-center justify-center"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
 							onClick={handleSave}
-							className="ortho-btn-primary"
+							className="ortho-btn-primary min-h-[44px] px-4 py-2.5 inline-flex items-center gap-2"
 							data-testid="save-ortho-protocol-btn"
 						>
-							<CheckCircle size={15} />
+							<CheckCircle size={16} />
 							<span>Сохранить фотопротокол</span>
 						</button>
 					</div>
@@ -1074,3 +1074,11 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 		</div>
 	);
 };
+
+// Type & Constant Aliases for Orthodontics module backwards-compatibility
+export type OrthoClinicalPreset = OrthodonticClinicalPreset;
+export type OrthoPhotoProtocolModalProps = OrthodonticPhotoProtocolModalProps;
+export const ORTHO_CLINICAL_PRESETS = ORTHODONTIC_CLINICAL_PRESETS;
+export const generateOrthoDiaryText = generateOrthodonticDiaryNote;
+export const OrthoPhotoProtocolModal = OrthodonticPhotoProtocolModal;
+export default OrthodonticPhotoProtocolModal;

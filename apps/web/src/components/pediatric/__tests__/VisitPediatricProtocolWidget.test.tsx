@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -84,6 +84,30 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 		assert.ok(
 			html.includes("Удаление (смена корней)"),
 			"Has 1-click extraction preset button",
+		);
+
+		// е) Стандартная защитная коронка (K02.1 / A16.07.004.001)
+		assert.ok(
+			html.includes("Коронка (Hall / SSC)"),
+			"Has 1-click standard crown SSC preset button",
+		);
+		assert.ok(
+			html.includes("A16.07.004.001"),
+			"Contains 804n code A16.07.004.001 for standard crown",
+		);
+
+		// 3.1 Ортодонтический статус первичного осмотра (норма СтАР)
+		assert.ok(
+			html.includes("Уздечки губ и языка"),
+			"Contains frenulum examination check",
+		);
+		assert.ok(
+			html.includes("Носовое дыхание"),
+			"Contains nasal breathing check",
+		);
+		assert.ok(
+			html.includes("Вредные привычки"),
+			"Contains harmful habits check",
 		);
 
 		// 4. Поверхности зуба в 1 клик (комбо-чипы)
@@ -176,8 +200,8 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 	it("verifies PEDIATRIC_PROTOCOL_PRESETS metadata completeness (Zero TODOs, 100% typed)", () => {
 		assert.strictEqual(
 			PEDIATRIC_PROTOCOL_PRESETS.length,
-			5,
-			"Exactly 5 canonical clinical presets",
+			6,
+			"Exactly 6 canonical clinical presets",
 		);
 
 		const ids = PEDIATRIC_PROTOCOL_PRESETS.map((p) => p.id);
@@ -189,8 +213,9 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 				"silvering_deep_fluoridation",
 				"fissure_sealing",
 				"extraction_primary_exfoliation",
+				"standard_crown",
 			],
-			"All 5 required preset IDs are present in exact order",
+			"All 6 required preset IDs are present in exact order",
 		);
 
 		for (const preset of PEDIATRIC_PROTOCOL_PRESETS) {

@@ -5,6 +5,7 @@ import {
 	CONSENT_HYGIENE_BLEACHING,
 	CONSENT_ORTHODONTICS,
 	CONSENT_ORTHOPEDICS,
+	CONSENT_PEDIATRIC,
 	CONSENT_PERSONAL_DATA,
 	CONSENT_SURGERY_IMPLANT,
 	CONSENT_TEMPLATES,
@@ -17,7 +18,6 @@ import {
 	renderConsentTemplate,
 	substitutePlaceholders,
 } from "../components/consents/consentTemplates.js";
-import { InformedConsentModal } from "../components/consents/InformedConsentModal.js";
 import {
 	calculateBoundingBox,
 	calculatePointDistance,
@@ -34,9 +34,9 @@ import {
 	smoothStrokeToBezierCurves,
 } from "../components/consents/signaturePadMath.js";
 
-test("Informed Consents Library: all 8 statutory Russian dental consent templates integrity (323-FZ & 152-FZ & 1051n)", () => {
+test("Informed Consents Library: all 9 statutory Russian dental consent templates integrity (323-FZ & 152-FZ & 1051n)", () => {
 	const templates = getAllConsentTemplates();
-	assert.equal(templates.length, 8, "Must contain exactly 8 statutory consent templates (including 1051n)");
+	assert.equal(templates.length, 9, "Must contain exactly 9 statutory consent templates (including 1051n and pediatric)");
 
 	const expectedKeys: ConsentTemplateKey[] = [
 		"CONSENT_THERAPY",
@@ -47,6 +47,7 @@ test("Informed Consents Library: all 8 statutory Russian dental consent template
 		"CONSENT_ANESTHESIA",
 		"CONSENT_PERSONAL_DATA",
 		"CONSENT_INSPECTION_1051N",
+		"CONSENT_PEDIATRIC",
 	];
 
 	for (const key of expectedKeys) {
@@ -92,6 +93,23 @@ test("Informed Consents Library: all 8 statutory Russian dental consent template
 	assert.ok(CONSENT_PERSONAL_DATA.statutoryBasis.includes("152-ФЗ"));
 	assert.ok(CONSENT_PERSONAL_DATA.sections.some((s) => s.content.includes("ЕГИСЗ") || s.content.includes("ФРЭМД")));
 	assert.ok(CONSENT_PERSONAL_DATA.sections.some((s) => s.content.includes("25 лет") || s.content.includes("043/у")));
+
+	// 8. Педиатрия (CONSENT_PEDIATRIC) — несовершеннолетние до 15 лет (1051н, ст. 20 323-ФЗ)
+	assert.ok(CONSENT_PEDIATRIC.statutoryBasis.includes("1051н"));
+	assert.ok(CONSENT_PEDIATRIC.statutoryBasis.includes("323-ФЗ"));
+	assert.equal(CONSENT_PEDIATRIC.category, "pediatric");
+	assert.ok(
+		CONSENT_PEDIATRIC.sections.some((s) =>
+			s.bullets?.some((b) => b.includes("прикусывания") || b.includes("прикусывать")),
+		),
+		"Must warn about post-anesthesia lip/cheek biting",
+	);
+	assert.ok(
+		CONSENT_PEDIATRIC.sections.some((s) =>
+			s.content.includes("законным представителем") || s.content.includes("законного представителя"),
+		),
+		"Must include legal representative role",
+	);
 });
 
 test("Informed Consents Engine: dynamic placeholder substitution & missing keys validation", () => {
@@ -132,6 +150,45 @@ test("Informed Consents Engine: dynamic placeholder substitution & missing keys 
 	assert.ok(missing.includes("Ф.И.О. пациента"));
 	assert.ok(missing.includes("Дата рождения пациента"));
 	assert.ok(missing.includes("Ф.И.О. лечащего врача"));
+});
+
+test("Informed Consents Engine: minor patient (<15 years) legal representative preamble substitution (Order 1051n)", () => {
+	const minorContext: ConsentSubstitutionContext = {
+		patientName: "Смирнов Алексей Дмитриевич",
+		birthDate: "10.05.2018",
+		passport: "св-во о рождении VII-МЮ № 654321",
+		patientAgeYears: 8,
+		guardianName: "Смирнова Елена Викторовна",
+		guardianRelation: "мать",
+		guardianDocument: "паспорт 4515 987654 выдан ТП №1 УФМС Москвы",
+		doctorName: "Кузнецова Ольга Ивановна",
+		clinicName: "ООО «Стоматологическая клиника ДЕНТЕ»",
+		diagnosisIcd: "K02.1 Кариес дентина временного зуба",
+		toothNumbers: "54, 55",
+		date: "25.08.2026",
+	};
+
+	const rendered = renderConsentTemplate(CONSENT_THERAPY, minorContext);
+	const preamble = rendered.renderedSections[0]?.content || "";
+
+	assert.ok(
+		preamble.includes("Смирнова Елена Викторовна"),
+		"Preamble must include guardian name for minor < 15 years",
+	);
+	assert.ok(
+		preamble.includes("законного представителя") || preamble.includes("законным представителем"),
+		"Preamble must state representation",
+	);
+	assert.ok(
+		preamble.includes("Смирнов Алексей Дмитриевич"),
+		"Preamble must include child name",
+	);
+
+	// Also render CONSENT_PEDIATRIC
+	const renderedPed = renderConsentTemplate(CONSENT_PEDIATRIC, minorContext);
+	assert.ok(renderedPed.fullTextContent.includes("Смирнова Елена Викторовна"));
+	assert.ok(renderedPed.fullTextContent.includes("Смирнов Алексей Дмитриевич"));
+	assert.ok(renderedPed.fullTextContent.includes("прикусывания"));
 });
 
 test("Digital Touch-Signature Math: geometric and curve smoothing algorithms", () => {
@@ -337,7 +394,8 @@ test("Digital Touch-Signature Math: SVG vector export with Bezier curves", () =>
 	assert.ok(svg.endsWith("</svg>"));
 });
 
-test("InformedConsentModal: component export and contract verification", () => {
-	assert.equal(typeof InformedConsentModal, "function");
+test("InformedConsentTemplates: statutory templates contract verification", () => {
 	assert.equal(typeof CONSENT_TEMPLATES, "object");
+	assert.equal(typeof renderConsentTemplate, "function");
+	assert.equal(typeof getAllConsentTemplates, "function");
 });

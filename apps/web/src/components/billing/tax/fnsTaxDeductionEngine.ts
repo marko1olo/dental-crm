@@ -147,6 +147,10 @@ export interface ExactTaxSplitKopecks {
 	readonly code01StatutoryLimitRub: number;
 	readonly code01EligibleKopecks: bigint;
 	readonly code01EligibleRub: number;
+	readonly code01Refund13Kopecks: bigint;
+	readonly code01Refund13Rub: number;
+	readonly code02Refund13Kopecks: bigint;
+	readonly code02Refund13Rub: number;
 	readonly refund13Kopecks: bigint;
 	readonly refund13Rub: number;
 	readonly refund15Kopecks: bigint;
@@ -221,6 +225,10 @@ export function calculateExactTaxSplitKopecks(
 		code01StatutoryLimitRub: statutoryLimitRub,
 		code01EligibleKopecks: code01EligibleKop,
 		code01EligibleRub: kopecksBigIntToRub(code01EligibleKop),
+		code01Refund13Kopecks: code01Refund13Kop,
+		code01Refund13Rub: kopecksBigIntToRub(code01Refund13Kop),
+		code02Refund13Kopecks: code02Refund13Kop,
+		code02Refund13Rub: kopecksBigIntToRub(code02Refund13Kop),
 		refund13Kopecks: refund13Kop,
 		refund13Rub: kopecksBigIntToRub(refund13Kop),
 		refund15Kopecks: refund15Kop,

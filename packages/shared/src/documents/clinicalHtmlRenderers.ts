@@ -700,7 +700,7 @@ export function renderForm043uHtml(payload: FullForm043uPayload | any): string {
     </tr>
   </table>
 
-  <div class="section-title">4. Дневники клинического приёма (SOAP)</div>
+  <div class="section-title">4. Дневники клинического приёма (Форма 043/у)</div>
   ${diariesHtml}
 
   <div class="signature-row" style="margin-top:16px;">

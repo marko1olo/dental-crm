@@ -1416,7 +1416,7 @@ export function DoctorPayoutDashboard() {
 						{
 							id: payrollModalDoctor.doctorUserId,
 							name: payrollModalDoctor.doctorName,
-							specialtyId: "therapist",
+							specialtyId: mapRoleToSpecialtyId(payrollModalDoctor.role),
 						},
 					]}
 				/>
@@ -1425,24 +1425,141 @@ export function DoctorPayoutDashboard() {
 	);
 }
 
+function mapRoleToSpecialtyId(role: string): string {
+	const r = role.toLowerCase().trim();
+	if (r.includes("orthoped") || r.includes("ортопед")) return "orthopedist";
+	if (r.includes("implant") || r.includes("имплант")) return "surgeon_implantologist";
+	if (r.includes("surg") || r.includes("хирург")) return "surgeon";
+	if (r.includes("orthodont") || r.includes("ортодонт")) return "orthodontist";
+	if (r.includes("hygien") || r.includes("гигиен")) return "hygienist";
+	if (r.includes("pediatr") || r.includes("детск")) return "pediatric_dentist";
+	if (r.includes("periodont") || r.includes("пародонт")) return "periodontist";
+	if (r.includes("general") || r.includes("общей")) return "general_dentist";
+	return "therapist";
+}
+
+function inferServiceCategory(
+	serviceName: string,
+	doctorSpecialtyId: string,
+): "therapy" | "surgery" | "orthopedics" | "orthodontics" | "hygiene" | "retail_hygiene" {
+	const s = serviceName.toLowerCase();
+	if (
+		s.includes("щетк") ||
+		s.includes("паст") ||
+		s.includes("нить") ||
+		s.includes("ополаскивател") ||
+		s.includes("curaprox") ||
+		s.includes("товар") ||
+		s.includes("продаж")
+	) {
+		return "retail_hygiene";
+	}
+	if (
+		s.includes("коронк") ||
+		s.includes("винир") ||
+		s.includes("протез") ||
+		s.includes("вкладк") ||
+		s.includes("слепок") ||
+		s.includes("акриловый") ||
+		s.includes("бюгель") ||
+		s.includes("e.max") ||
+		s.includes("циркон") ||
+		s.includes("cad/cam")
+	) {
+		return "orthopedics";
+	}
+	if (
+		s.includes("удален") ||
+		s.includes("имплант") ||
+		s.includes("синус") ||
+		s.includes("резекци") ||
+		s.includes("пластик") ||
+		s.includes("швы") ||
+		s.includes("дренаж") ||
+		s.includes("аугментаци")
+	) {
+		return "surgery";
+	}
+	if (
+		s.includes("брекет") ||
+		s.includes("элайнер") ||
+		s.includes("активаци") ||
+		s.includes("дуг") ||
+		s.includes("ретейнер") ||
+		s.includes("капп")
+	) {
+		return "orthodontics";
+	}
+	if (
+		s.includes("гигиен") ||
+		s.includes("air flow") ||
+		s.includes("чистк") ||
+		s.includes("отбеливан") ||
+		s.includes("ультразвук") ||
+		s.includes("zoom")
+	) {
+		return "hygiene";
+	}
+
+	if (doctorSpecialtyId === "orthopedist") return "orthopedics";
+	if (doctorSpecialtyId === "surgeon" || doctorSpecialtyId === "surgeon_implantologist") return "surgery";
+	if (doctorSpecialtyId === "orthodontist") return "orthodontics";
+	if (doctorSpecialtyId === "hygienist") return "hygiene";
+	return "therapy";
+}
+
 function doctorServicesForPayrollModal(
 	row: DoctorPayoutRow,
 ): DoctorCompletedServiceItem[] {
+	const specialtyId = mapRoleToSpecialtyId(row.role);
 	if (!row.visits || row.visits.length === 0) {
+		if (row.labOrders && row.labOrders.length > 0) {
+			return row.labOrders.map((lo) => ({
+				id: `lab-${lo.id}`,
+				dateIso: lo.completedAt ? lo.completedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+				patientName: lo.patientName,
+				medicalCardNumber: "",
+				serviceNameRu: `Зуботехническая работа: ${lo.restorationType} (наряд № ${lo.orderNumber})`,
+				toothCode: lo.toothFdi ?? undefined,
+				category: "orthopedics",
+				grossRevenueKop: Math.round(lo.priceRub * 100),
+				labCostKop: Math.round(lo.priceRub * 100),
+				materialCostKop: 0,
+			}));
+		}
 		return [];
 	}
+
 	const items: DoctorCompletedServiceItem[] = [];
+	const availableLabOrders = row.labOrders ? [...row.labOrders] : [];
+
 	for (const v of row.visits) {
+		// Matching lab orders for this patient
+		const patientLabOrders: DoctorPayoutLabOrder[] = [];
+		for (let i = availableLabOrders.length - 1; i >= 0; i--) {
+			const lo = availableLabOrders[i];
+			if (lo && lo.patientName.trim().toLowerCase() === v.patientName.trim().toLowerCase()) {
+				patientLabOrders.push(lo);
+				availableLabOrders.splice(i, 1);
+			}
+		}
+
+		const visitLabCostRub = patientLabOrders.reduce(
+			(sum, lo) => sum + (lo.priceRub || lo.withheldRub || 0),
+			0,
+		);
+
 		if (v.services.length === 0) {
+			const cat = inferServiceCategory("Оказанные стоматологические услуги", specialtyId);
 			items.push({
 				id: `visit-${v.visitId}`,
 				dateIso: v.paidAt.slice(0, 10),
 				patientName: v.patientName,
 				medicalCardNumber: v.medicalCardNumber,
 				serviceNameRu: "Оказанные стоматологические услуги",
-				category: "therapy",
+				category: cat,
 				grossRevenueKop: Math.round(v.revenueRub * 100),
-				labCostKop: 0,
+				labCostKop: Math.round(visitLabCostRub * 100),
 				materialCostKop: Math.round(
 					v.materials.reduce((s, m) => s + m.totalCostRub, 0) * 100,
 				),
@@ -1456,7 +1573,38 @@ function doctorServicesForPayrollModal(
 				v.services.length > 0
 					? visitMaterialTotalRub / v.services.length
 					: 0;
+
+			let serviceIndex = 0;
 			for (const srv of v.services) {
+				const cat = inferServiceCategory(srv.title, specialtyId);
+
+				let serviceLabCostRub = 0;
+				if (patientLabOrders.length > 0) {
+					// Check tooth match
+					const matchIdx = patientLabOrders.findIndex(
+						(lo) => lo.toothFdi && srv.toothCode && lo.toothFdi === srv.toothCode,
+					);
+					if (matchIdx !== -1) {
+						const matchedLab = patientLabOrders[matchIdx];
+						if (matchedLab) {
+							serviceLabCostRub = matchedLab.priceRub || matchedLab.withheldRub || 0;
+							patientLabOrders.splice(matchIdx, 1);
+						}
+					} else if (cat === "orthopedics") {
+						const firstLab = patientLabOrders[0];
+						if (firstLab) {
+							serviceLabCostRub = firstLab.priceRub || firstLab.withheldRub || 0;
+							patientLabOrders.splice(0, 1);
+						}
+					} else if (serviceIndex === 0 && patientLabOrders.length > 0) {
+						serviceLabCostRub = patientLabOrders.reduce((s, lo) => s + (lo.priceRub || lo.withheldRub || 0), 0);
+						patientLabOrders.length = 0;
+					}
+				} else if (row.labCostRub && row.labCostRub > 0 && cat === "orthopedics") {
+					const totalVisits = row.visits.length;
+					serviceLabCostRub = row.labCostRub / (totalVisits * v.services.length);
+				}
+
 				items.push({
 					id: `srv-${srv.id}`,
 					dateIso: v.paidAt.slice(0, 10),
@@ -1465,14 +1613,32 @@ function doctorServicesForPayrollModal(
 					serviceNameRu: srv.title,
 					order804nCode: srv.order804nCode ?? undefined,
 					toothCode: srv.toothCode ?? undefined,
-					category: "therapy",
+					category: cat,
 					grossRevenueKop: Math.round(srv.priceRub * srv.quantity * 100),
-					labCostKop: 0,
+					labCostKop: Math.round(serviceLabCostRub * 100),
 					materialCostKop: Math.round(perServiceMatRub * 100),
 				});
+				serviceIndex++;
 			}
 		}
 	}
+
+	// Any unassigned lab orders
+	for (const lo of availableLabOrders) {
+		items.push({
+			id: `lab-${lo.id}`,
+			dateIso: lo.completedAt ? lo.completedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+			patientName: lo.patientName,
+			medicalCardNumber: "",
+			serviceNameRu: `Зуботехническая лаборатория: ${lo.restorationType} (наряд № ${lo.orderNumber})`,
+			toothCode: lo.toothFdi ?? undefined,
+			category: "orthopedics",
+			grossRevenueKop: Math.round(lo.priceRub * 100),
+			labCostKop: Math.round(lo.priceRub * 100),
+			materialCostKop: 0,
+		});
+	}
+
 	return items;
 }
 

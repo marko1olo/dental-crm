@@ -317,6 +317,76 @@ describe("Staff Multi-Role Payroll & 1C:ZUP 3.1 Engine", () => {
 			assert.ok(!csv.includes("Удержано НДФЛ"));
 			assert.ok(!csv.includes("Страховые взносы СФР"));
 		});
+
+		it("5.2 Preserves T-51 Col 8 + Col 9 == Col 10 equality when doctor minimum guarantee applies", () => {
+			// Therapist with small revenue: 20,000 RUB revenue, 25% = 5,000 RUB.
+			// Min guarantee is 60,000 RUB -> guaranteeTopUp = 55,000 RUB.
+			const summary = calculateConsolidatedStaffPayroll({
+				clinicName: "ООО «Денте Стоматология»",
+				periodStartIso: "2026-08-01",
+				periodEndIso: "2026-08-31",
+				doctors: [
+					{
+						employeeId: "doc-low",
+						employeeTabNumber: "00199",
+						employeeFullName: "Новиков Денис Олегович",
+						specialtyId: "therapist",
+						periodStartIso: "2026-08-01",
+						periodEndIso: "2026-08-31",
+						services: [
+							{
+								id: "s-1",
+								dateIso: "2026-08-10",
+								patientName: "Пациент",
+								medicalCardNumber: "043/у",
+								serviceNameRu: "Осмотр",
+								category: "therapy",
+								grossRevenueKop: 2000000, // 20,000 RUB
+								labCostKop: 0,
+								materialCostKop: 0,
+							},
+						],
+					},
+				],
+			});
+
+			const docResult = summary.records[0];
+			assert.ok(docResult, "Doctor result must exist in summary records");
+			assert.equal(docResult.role, "doctor");
+			if (docResult && docResult.role === "doctor") {
+				assert.equal(docResult.minimumGuaranteeApplied, true);
+				assert.equal(docResult.grossPayoutBeforeTaxKop, 6000000); // 60,000 RUB
+				assert.equal(docResult.earnedBaseCommissionKop, 500000); // 5,000 RUB
+				assert.equal(docResult.guaranteeTopUpKop, 5500000); // 55,000 RUB
+			}
+
+			const csv = generateStaffPayrollT51Csv(summary);
+			// Row line format: rowNum;tab;fio;pos;dep;days;hours;baseAccrued;bonusAccrued;gross
+			const doctorRow = csv.split("\n").find((l) => l.includes("Новиков Денис Олегович"));
+			assert.ok(doctorRow, "Doctor row exists in CSV");
+
+			const cols = doctorRow.split(";");
+			const col8Base = Number.parseFloat(cols[7] ?? "0"); // 5000.00
+			const col9Bonus = Number.parseFloat(cols[8] ?? "0"); // 55000.00
+			const col10Gross = Number.parseFloat(cols[9] ?? "0"); // 60000.00
+
+			assert.equal(col8Base, 5000.0);
+			assert.equal(col9Bonus, 55000.0);
+			assert.equal(col10Gross, 60000.0);
+			assert.equal(
+				Math.round((col8Base + col9Bonus) * 100),
+				Math.round(col10Gross * 100),
+				"T-51 invariant strictly holds: Col 8 + Col 9 == Col 10",
+			);
+
+			// Check 1C:ZUP XML has separate top-up row
+			const xml = generate1CZup31Xml(summary);
+			assert.ok(
+				xml.includes("Доплата до гарантированного оклада (минимальная гарантия)"),
+				"1C:ZUP XML must have guarantee top-up accrual",
+			);
+			assert.ok(xml.includes("<Сумма>55000.00</Сумма>"), "1C:ZUP XML has exact top-up amount");
+		});
 	});
 
 	describe("6. 1C:ZUP 3.1 XML and CSV Export", () => {

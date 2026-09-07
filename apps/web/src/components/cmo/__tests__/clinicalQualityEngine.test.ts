@@ -25,6 +25,9 @@ import {
 	filterCmoAuditRecords,
 	calculateCmoDoctorRankings,
 	generateCmoVkkSummaryReport,
+	isCmoDefectCodeMatch,
+	isCmoRuleMatch,
+	findCmoDefectPreset,
 	CMO_STATUTORY_DEFECT_PRESETS,
 	type CmoQualityAuditRecord,
 } from "../clinicalQualityEngine";
@@ -390,6 +393,52 @@ describe("4. Automated CMO Audit Engine (Orders 834n, 785n, 1051n, 804n)", () =>
 		assert.equal(ukepCheck?.passed, false);
 		assert.equal(ukepCheck?.deduction, 20);
 	});
+
+	it("deducts 20 points when Form 043/u clinical diaries are absent", () => {
+		const card = buildMockCard({
+			visitDiaries: [],
+		});
+
+		const record = createCmoAuditRecord({
+			cardData: card,
+			attachedDocuments: [
+				{ id: "doc-1", type: "ids_1051n", title: "ИДС", isSigned: true, signedByPatient: true, signedByDoctorUkep: true },
+			],
+		});
+
+		const auditRes = runCmoQualityAudit(record);
+		const diaryCheck = auditRes.results.find((r) => isCmoRuleMatch(r.ruleId, "RULE-043-DIARY"));
+		assert.ok(diaryCheck);
+		assert.equal(diaryCheck?.passed, false);
+		assert.equal(diaryCheck?.deduction, 20);
+		assert.ok(diaryCheck?.details.includes("отсутствуют дневниковые записи"));
+	});
+
+	it("deducts points and reports statutory Form 043/u details without western SOAP acronyms when diary is incomplete", () => {
+		const card = buildMockCard({
+			visitDiaries: [
+				{
+					...buildMockCard().visitDiaries[0]!,
+					subjectiveComplaints: "",
+				},
+			],
+		});
+
+		const record = createCmoAuditRecord({
+			cardData: card,
+			attachedDocuments: [
+				{ id: "doc-1", type: "ids_1051n", title: "ИДС", isSigned: true, signedByPatient: true, signedByDoctorUkep: true },
+			],
+		});
+
+		const auditRes = runCmoQualityAudit(record);
+		const diaryCheck = auditRes.results.find((r) => r.ruleId === "RULE-043-DIARY");
+		assert.ok(diaryCheck);
+		assert.equal(diaryCheck?.passed, false);
+		assert.equal(diaryCheck?.deduction, 10);
+		assert.ok(diaryCheck?.details.includes("Форма 043/у"));
+		assert.ok(!diaryCheck?.details.includes("Subjective"));
+	});
 });
 
 describe("5. CMO Custom Remarks & Resolution Workflow", () => {
@@ -564,5 +613,25 @@ describe("8. Statutory Presets Integrity", () => {
 
 		const endoPreset = CMO_STATUTORY_DEFECT_PRESETS.find((p) => p.category === "ENDODONTIC_XRAY_APEX_CONTROL");
 		assert.ok(endoPreset);
+	});
+
+	it("modernizes diary defect preset to DEF-043-01 / КЭР-043-01 with backward compatibility for SOAP aliases", () => {
+		const diaryPreset = CMO_STATUTORY_DEFECT_PRESETS.find((p) => p.id === "DEF-043-01");
+		assert.ok(diaryPreset, "Должен содержать пресет DEF-043-01");
+		assert.equal(diaryPreset?.code, "КЭР-043-01", "Код пресета должен быть КЭР-043-01");
+		assert.ok(diaryPreset?.aliases?.includes("DEF-SOAP-01"), "Должен содержать алиас DEF-SOAP-01");
+		assert.ok(diaryPreset?.aliases?.includes("КЭР-SOAP-01"), "Должен содержать алиас КЭР-SOAP-01");
+
+		// Fallback lookup tests
+		assert.ok(findCmoDefectPreset("DEF-043-01"));
+		assert.ok(findCmoDefectPreset("КЭР-043-01"));
+		assert.ok(findCmoDefectPreset("DEF-SOAP-01"), "Поиск по устаревшему DEF-SOAP-01 должен находить пресет 043");
+		assert.ok(findCmoDefectPreset("КЭР-SOAP-01"), "Поиск по устаревшему КЭР-SOAP-01 должен находить пресет 043");
+
+		// Matching helper tests
+		assert.equal(isCmoDefectCodeMatch("КЭР-SOAP-01", "КЭР-043-01"), true);
+		assert.equal(isCmoDefectCodeMatch("КЭР-043-01", "КЭР-SOAP-01"), true);
+		assert.equal(isCmoRuleMatch("RULE-SOAP-DIARY", "RULE-043-DIARY"), true);
+		assert.equal(isCmoRuleMatch("RULE-043-DIARY", "RULE-SOAP-DIARY"), true);
 	});
 });

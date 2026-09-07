@@ -205,6 +205,7 @@ export interface DoctorStaffPayrollResult {
 	readonly kpiBadgeLabelRu: string;
 	readonly minimumGuaranteeKop: number;
 	readonly minimumGuaranteeApplied: boolean;
+	readonly guaranteeTopUpKop: number;
 	readonly manualAdjustmentKop: number;
 	readonly manualAdjustmentNoteRu: string;
 	readonly grossPayoutBeforeTaxKop: number;
@@ -407,10 +408,13 @@ export function calculateDoctorStaffPayroll(
 	const manualAdj = input.manualAdjustmentKop ?? 0;
 	const noteRu = input.manualAdjustmentNoteRu ?? "";
 
-	let preGuaranteeGross = earnedBase + earnedRetail + revenueKpiBonusKop + comprehensivePlanBonusKop + manualAdj;
+	const preGuaranteeCalculated = earnedBase + earnedRetail + revenueKpiBonusKop + comprehensivePlanBonusKop + manualAdj;
+	let preGuaranteeGross = preGuaranteeCalculated;
 	let guaranteeApplied = false;
+	let guaranteeTopUpKop = 0;
 
 	if (preGuaranteeGross < preset.minGuaranteeMonthlyKop && input.services.length > 0) {
+		guaranteeTopUpKop = preset.minGuaranteeMonthlyKop - preGuaranteeGross;
 		preGuaranteeGross = preset.minGuaranteeMonthlyKop;
 		guaranteeApplied = true;
 	}
@@ -445,6 +449,7 @@ export function calculateDoctorStaffPayroll(
 		kpiBadgeLabelRu: kpiBadge,
 		minimumGuaranteeKop: preset.minGuaranteeMonthlyKop,
 		minimumGuaranteeApplied: guaranteeApplied,
+		guaranteeTopUpKop,
 		manualAdjustmentKop: manualAdj,
 		manualAdjustmentNoteRu: noteRu,
 		grossPayoutBeforeTaxKop,
@@ -719,6 +724,7 @@ export function generateStaffPayrollT51Csv(summary: ConsolidatedStaffPayrollSumm
 				r.earnedRetailCommissionKop +
 				r.comprehensivePlanBonusKop +
 				r.revenueKpiBonusKop +
+				(r.guaranteeTopUpKop ?? 0) +
 				r.manualAdjustmentKop;
 			bonusAccruedRub = (bonusesKop / 100).toFixed(2);
 		} else if (r.role === "assistant") {
@@ -812,6 +818,13 @@ export function generate1CZup31Xml(
 \t\t\t\t<Сотрудник ТабельныйНомер="${escapeXml(r.employeeTabNumber)}" ФИО="${escapeXml(r.employeeFullName)}"/>
 \t\t\t\t<ВидРасчета>Комиссия за реализацию средств гигиены</ВидРасчета>
 \t\t\t\t<Сумма>${(r.earnedRetailCommissionKop / 100).toFixed(2)}</Сумма>
+\t\t\t</Начисление>`);
+				}
+				if ((r.guaranteeTopUpKop ?? 0) > 0) {
+					items.push(`\t\t\t<Начисление>
+\t\t\t\t<Сотрудник ТабельныйНомер="${escapeXml(r.employeeTabNumber)}" ФИО="${escapeXml(r.employeeFullName)}"/>
+\t\t\t\t<ВидРасчета>Доплата до гарантированного оклада (минимальная гарантия)</ВидРасчета>
+\t\t\t\t<Сумма>${((r.guaranteeTopUpKop ?? 0) / 100).toFixed(2)}</Сумма>
 \t\t\t</Начисление>`);
 				}
 			} else if (r.role === "assistant") {

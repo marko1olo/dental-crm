@@ -63,6 +63,8 @@ export interface OrthodonticStudioModalProps {
 	onSaveSuccess?: () => void;
 }
 
+export type StudioTab = "appliances" | "photos" | "diary" | "soap";
+
 export function OrthodonticStudioModal({
 	isOpen,
 	onClose,
@@ -73,8 +75,8 @@ export function OrthodonticStudioModal({
 	clinicName = "Стоматологическая клиника",
 	onSaveSuccess,
 }: OrthodonticStudioModalProps) {
-	// Active Tab inside Studio: "appliances" | "photos" | "soap" | "ceph"
-	const [activeTab, setActiveTab] = useState<"appliances" | "photos" | "soap">("appliances");
+	// Active Tab inside Studio: "appliances" | "photos" | "diary" | "soap"
+	const [activeTab, setActiveTab] = useState<StudioTab>("appliances");
 
 	// Clinical State: Appliances, Wires, Elastics
 	const [bracketSlot, setBracketSlot] = useState<BracketSlot>("0.022");
@@ -224,7 +226,7 @@ export function OrthodonticStudioModal({
 		}
 	};
 
-	// Generate SOAP Protocol (Form 043/u)
+	// Generate Statutory Protocol (Form 043/u)
 	const generatedProtocol = useMemo(() => {
 		return generateOrthodonticSoapNote({
 			patientName,
@@ -464,9 +466,9 @@ export function OrthodonticStudioModal({
 
 						<button
 							type="button"
-							onClick={() => setActiveTab("soap")}
+							onClick={() => setActiveTab("diary")}
 							className={`h-7 px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-								activeTab === "soap"
+								activeTab === "diary" || activeTab === "soap"
 									? "bg-amber-500 text-white shadow-xs font-black"
 									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white"
 							}`}
@@ -1032,13 +1034,13 @@ export function OrthodonticStudioModal({
 						</div>
 					)}
 
-					{/* TAB 3: SOAP PROTOCOL FORM 043/U */}
-					{activeTab === "soap" && (
+					{/* TAB 3: CLINICAL DIARY FORM 043/U */}
+					{(activeTab === "diary" || activeTab === "soap") && (
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center justify-between">
 								<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
 									<FileText size={15} className="text-amber-500" />
-									Протокол карты 043/у (SOAP)
+									Протокол карты 043/у
 								</span>
 								<button
 									type="button"

@@ -41,6 +41,8 @@ export type CmoAuditStatus =
 export interface CmoDefectPreset {
 	id: string;
 	code: string;
+	aliases?: string[];
+	legacyCode?: string;
 	category: CmoDefectCategory;
 	categoryLabel: string;
 	title: string;
@@ -382,8 +384,10 @@ export const CMO_STATUTORY_DEFECT_PRESETS: CmoDefectPreset[] = [
 
 	// 6. Дневник Формы 043/у
 	{
-		id: "DEF-SOAP-01",
-		code: "КЭР-SOAP-01",
+		id: "DEF-043-01",
+		code: "КЭР-043-01",
+		aliases: ["DEF-SOAP-01", "КЭР-SOAP-01"],
+		legacyCode: "КЭР-SOAP-01",
 		category: "CLINICAL_DIARY_SOAP",
 		categoryLabel: "Дневник визита (Форма 043/у)",
 		title: "Неполный дневник визита (отсутствуют жалобы, объективный статус или протокол)",
@@ -599,6 +603,49 @@ export function checkEndodonticApexXrayControl(card: MedicalCardForm043uData): {
 		details,
 		isApexReached,
 	};
+}
+
+/**
+ * Проверка соответствия кода дефекта КЭР стандарту Формы 043/у
+ * с поддержкой обратной совместимости для устаревших кодов SOAP (КЭР-SOAP-01 -> КЭР-043-01).
+ */
+export function isCmoDefectCodeMatch(actualCode: string, targetCode: string): boolean {
+	if (actualCode === targetCode) return true;
+	const isTarget043 = targetCode === "КЭР-043-01" || targetCode === "DEF-043-01";
+	const isTargetSoap = targetCode === "КЭР-SOAP-01" || targetCode === "DEF-SOAP-01";
+	const isActual043 = actualCode === "КЭР-043-01" || actualCode === "DEF-043-01";
+	const isActualSoap = actualCode === "КЭР-SOAP-01" || actualCode === "DEF-SOAP-01";
+
+	if (isTarget043 && isActualSoap) return true;
+	if (isTargetSoap && isActual043) return true;
+	return false;
+}
+
+/**
+ * Проверка соответствия идентификатора правила КЭР (с обратной совместимостью RULE-SOAP-DIARY <-> RULE-043-DIARY)
+ */
+export function isCmoRuleMatch(actualRuleId: string, targetRuleId: string): boolean {
+	if (actualRuleId === targetRuleId) return true;
+	if (
+		(targetRuleId === "RULE-043-DIARY" || targetRuleId === "RULE-SOAP-DIARY") &&
+		(actualRuleId === "RULE-043-DIARY" || actualRuleId === "RULE-SOAP-DIARY")
+	) {
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Поиск пресета дефекта по ID или коду (включая алиасы обратной совместимости КЭР-SOAP-01 / DEF-SOAP-01)
+ */
+export function findCmoDefectPreset(codeOrId: string): CmoDefectPreset | undefined {
+	return CMO_STATUTORY_DEFECT_PRESETS.find(
+		(p) =>
+			p.id === codeOrId ||
+			p.code === codeOrId ||
+			p.legacyCode === codeOrId ||
+			(p.aliases && p.aliases.includes(codeOrId))
+	);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -857,19 +904,19 @@ export function runCmoQualityAudit(
 		for (const [idx, vd] of card.visitDiaries.entries()) {
 			if (!vd.subjectiveComplaints || vd.subjectiveComplaints.trim().length < 3) {
 				soapPassed = false;
-				soapDetails = `Визит #${idx + 1}: не заполнены жалобы пациента (Subjective).`;
+				soapDetails = `Визит #${idx + 1}: не заполнены жалобы пациента (Жалобы / Форма 043/у).`;
 				soapDeduction = 10;
 				break;
 			}
 			if (!vd.objectiveStatusLocalis || vd.objectiveStatusLocalis.trim().length < 6) {
 				soapPassed = false;
-				soapDetails = `Визит #${idx + 1}: не заполнен объективный статус (Objective / Status localis).`;
+				soapDetails = `Визит #${idx + 1}: не заполнен объективный статус (Status localis / Форма 043/у).`;
 				soapDeduction = 15;
 				break;
 			}
 			if (!vd.procedureProtocol || vd.procedureProtocol.trim().length < 10) {
 				soapPassed = false;
-				soapDetails = `Визит #${idx + 1}: не заполнен протокол манипуляций (Procedure).`;
+				soapDetails = `Визит #${idx + 1}: не заполнен протокол манипуляций (Лечение / Протокол 043/у).`;
 				soapDeduction = 15;
 				break;
 			}
@@ -877,7 +924,7 @@ export function runCmoQualityAudit(
 	}
 
 	results.push({
-		ruleId: "RULE-SOAP-DIARY",
+		ruleId: "RULE-043-DIARY",
 		ruleCategory: "CLINICAL_DIARY_SOAP",
 		title: "Полнота клинического дневника (Форма 043/у)",
 		passed: soapPassed,

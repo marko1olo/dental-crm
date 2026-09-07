@@ -165,6 +165,7 @@ export const AdvancedDoctorPayrollModal: React.FC<AdvancedDoctorPayrollModalProp
 				kpiBadgeLabelRu: "—",
 				minimumGuaranteeKop: 0,
 				minimumGuaranteeApplied: false,
+				guaranteeTopUpKop: 0,
 				manualAdjustmentKop: 0,
 				manualAdjustmentNoteRu: "",
 				grossPayoutBeforeTaxKop: 0,

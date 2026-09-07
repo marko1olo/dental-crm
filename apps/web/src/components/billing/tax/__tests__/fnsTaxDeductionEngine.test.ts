@@ -151,6 +151,11 @@ describe("fnsTaxDeductionEngine — FNS Russia Tax Deduction & Act 804n / PP 458
 			assert.equal(split.totalRub, 420000);
 			assert.equal(split.isCode01Capped, true);
 			assert.equal(split.code01EligibleRub, 150000);
+			assert.equal(split.code01Refund13Kopecks, 1950000n);
+			assert.equal(split.code01Refund13Rub, 19500);
+			assert.equal(split.code02Refund13Kopecks, 3250000n);
+			assert.equal(split.code02Refund13Rub, 32500);
+			assert.equal(split.refund13Kopecks, 5200000n);
 			assert.equal(split.refund13Rub, 52000);
 			assert.equal(split.receiptsCount, 4); // 4 receipts in 2024
 		});

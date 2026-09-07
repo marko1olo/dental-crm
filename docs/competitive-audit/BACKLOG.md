@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-07 / WAVE 23): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 108 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 142 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 79 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-07 / WAVE 24): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 113 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 147 ФИЧ: 63 КАНОНИЧЕСКИЕ + 84 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]` или `[ЧАСТИЧНО]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -1426,9 +1426,72 @@
 
 ---
 
+## 133. `клиника::искоренение_soap_и_стандартизация_формы_043у` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, 8i, 8k, ФИЧА #143)
+- **Идея**: Полное искоренение чужеродного западного акронима SOAP и букв S, O, A, P из пользовательского интерфейса, печатных форм и амбулаторной документации в пользу официальной Формы 043/у Минздрава РФ и стандартов СтАР.
+  1. Разделы дневника приёма стандартизированы: «I. Жалобы и анамнез заболевания», «II. Данные объективного исследования (Status localis)», «III. Диагноз по МКБ-10», «IV. Дневник лечения и рекомендации».
+  2. Устранение омоглифов: замена кириллической буквы «А» (`\u0410`) на латинскую `A` (`\u0041`) в кодах номенклатуры 804н (`CompletedServicesChecklist`).
+  3. Пакетный диспатч: выбор клинического пакета услуг отправляет реальное событие `dente-add-services-to-invoice` с начислением в активный чек визита.
+  4. Автономия врача (Мандат 8e): кнопка «Норма / Здоров» и клинические пресеты доступны всегда; при закрытом визите клик автоматически переводит дневник в режим ревизии («Исправленному верить») без блокировки `disabled`.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/visit/VisitSummaryModal.tsx`, `apps/web/src/components/visit/VisitSoapTemplatesModal.tsx`, `apps/web/src/components/visit/CompletedServicesChecklist.tsx`, `apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx`.
+  - Shared: `packages/shared/src/documents/clinicalHtmlRenderers.ts`.
+  - Тесты: `packages/shared/src/tests/minzdravDocuments.test.ts`.
+
+---
+
+## 134. `финансы::точность_копеек_и_ликвидация_idor_в_кассе_54фз` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8b, 8e, ФИЧА #144)
+- **Идея**: Устранение критических сбоев точности денег до копейки (Мандат 8b), ликвидация падений 500 из-за дробных рублей в `rublesToKopecks`, закрытие уязвимостей IDOR по `organizationId` и защита RLS-транзакций.
+  1. `rublesToKopecks` в `packages/shared/src/utils/money.ts` переведена на безопасное округление `Math.round(rubles * 100)` без падений при дробных суммах рассрочек (3333.34 ₽).
+  2. Все операции изменения балансов касс и смен в `cashbox_v2.ts`, `cashInstallmentsRoutes.ts`, `cashLabPaymentRoutes.ts`, `expenses.ts` переведены на копеечную арифметику (`kopecksToRub`, `rubToKopecks`) без float-дрейфа IEEE 754.
+  3. Полная фильтрация `eq(table.organizationId, orgId)` во всех мутациях и выборках (`installmentContracts`, `cashBoxes`, `installmentTranches`, `labOrders`, `cashOperations`, `patientToothDefects`, `cashBoxShifts`).
+  4. Оборачивание транзакций в `withTenantCtx(orgId, async (tx) => ...)` в `fiscalReceiptRoutes.ts` и `invoices.ts` для поддержки строгой RLS-изоляции PostgreSQL 18.
+- **Статус**:
+  - Бэкенд: `apps/api/src/routes/cashInstallmentsRoutes.ts`, `cashLabPaymentRoutes.ts`, `cashbox_v2.ts`, `expenses.ts`, `outpatient_v2.ts`, `fiscal/fiscalReceiptRoutes.ts`, `invoices.ts`.
+  - Shared: `packages/shared/src/utils/money.ts`.
+  - Коммит: `240c456d2`.
+  - Тесты: `packages/shared/src/tests/money.test.ts` (24 passed), `apps/api/src/services/billing/DmsInsuranceService.test.ts` (28 passed).
+
+---
+
+## 135. `хирургия_рентген::автономия_хирурга_и_1строчный_тулбар_визиографа` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8c, 8d, 8e, ФИЧА #145)
+- **Идея**: Автономия хирурга и анестезиолога без искусственных барьеров и компактный эргономичный рентген-кабинет.
+  1. Диспатч хирургических манипуляций: протоколы операций в `SurgeryCockpitModal` автоматически начисляют услуги по Номенклатуре 804н в активный счет визита (`dente-add-services-to-invoice`).
+  2. Снятие блокировки анестезии: в `AnesthesiaDosageCalculatorModal` жесткая блокировка при превышении МРД заменена на предупреждение и поле клинического обоснования врача по жизненным показаниям (кнопка «Ввести по жизненным показаниям (Форма 043/у)»).
+  3. Устранение хардкода зуба в КЛКТ: в `CbctMprViewer` номер зуба динамически берется из выбранного зуба зубной формулы вместо статичного «48».
+  4. Эргономичный тулбар визиографа: 18 разрозненных кнопок в `VisiographStudioCanvas` объединены в компактный однострочный тулбар (32–36px) с тач-таргетами $\ge 44\text{px}$.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/surgery/SurgeryCockpitModal.tsx`, `apps/web/src/components/anesthesia/AnesthesiaDosageCalculatorModal.tsx`, `apps/web/src/components/radiology/CbctMprViewer.tsx`, `apps/web/src/components/visiograph/VisiographStudioCanvas.tsx`, `apps/web/src/components/implants/ImplantPassportModal.tsx`.
+  - Тесты: `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx`.
+
+---
+
+## 136. `санпин_склад::очистка_эмодзи_и_тач_таргеты_портала` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8d, 8e, ФИЧА #146)
+- **Идея**: Соблюдение святости официальных бланков (Мандат 8d п. 7), удаление легкомысленных эмодзи и устранение ложных статусов в портале пациента.
+  1. Зачистка эмодзи: из актов списания и утилизации `SeniorNurseDisposalActModal` и `MdlpDisposalQueueModal` удалены эмодзи, заменены на векторные иконки Lucide.
+  2. Чистота журнала СанПиН: из примечаний и базы данных журнала предстерилизационной очистки формы 366/у (`PsoRegisterTab`) удален символ `⚡`.
+  3. Коррекция бейджей портала: в `PatientCabinetModal` будущие запланированные визиты больше не окрашиваются ложным зеленым бейджем `.paid` («Оплачено»), а отображают честный статус «Запланирован».
+  4. Эргономика и контраст: проверка WCAG AAA контрастности статусов и соблюдение тач-таргетов $\ge 44\text{px}$.
+- **Статус**:
+  - Фронтенд: `apps/web/src/components/inventory/mdlp/SeniorNurseDisposalActModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/sanpin/PsoRegisterTab.tsx`, `apps/web/src/components/portal/patientCabinet/PatientCabinetModal.tsx`, `apps/web/src/components/portal/patientCabinet/patientCabinet.css`.
+
+---
+
+## 137. `педиатрия_зарплата::детские_коронки_ssc_и_целочисленный_ндфл` [РЕАЛИЗОВАНО] -> KILLER (МАНДАТЫ 8b, 8e, 8i, ФИЧА #147)
+- **Идея**: Клиническая полнота детского стоматологического приёма, защита законных представителей и налоговая точность РФ.
+  1. Детские коронки и удерживатели места: в `pediatricDentition.ts` и `VisitPediatricProtocolWidget` добавлены протоколы стандартных металлических коронок (SSC / техника Холла, `A16.07.004.001`) и несъемных удерживателей пространства (`A16.07.047`) при ранней потере молочных моляров.
+  2. ИДС несовершеннолетнего: в `consentTemplates.ts` добавлен шаблон информированного добровольного согласия для законного представителя (родителя/опекуна) ребенка до 15 лет по ст. 20 323-ФЗ.
+  3. Баланс Т-51: в `staffPayrollEngine.ts` исправлен расчет баланса расчетной ведомости при доплате до минимальной гарантии врача (`guaranteeTopUpKop`).
+  4. Целочисленный НДФЛ: в `payrollEngine.ts` налог 13% округляется до целых рублей в строгом соответствии со ст. 225 Налогового кодекса РФ (ликвидирован float `* 0.13` в `TaxDeductionModal`).
+- **Статус**:
+  - Shared: `packages/shared/src/pediatricDentition.ts`.
+  - Фронтенд: `apps/web/src/components/pediatric/VisitPediatricProtocolWidget.tsx`, `apps/web/src/components/cmo/clinicalQualityEngine.ts`, `apps/web/src/components/tax/TaxDeductionModal.tsx`.
+  - Тесты: `packages/shared/src/tests/pediatricFranklDentition.test.ts`, `apps/web/src/components/cmo/__tests__/clinicalQualityEngine.test.ts`.
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 79 дополнительных системных аддендум-фич клинической автономии (Wave 15..23, фичи 64..142) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 84 дополнительные системные аддендум-фичи клинической автономии (Wave 15..24, фичи 64..147) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

@@ -707,10 +707,10 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 																		3000,
 																	);
 																}}
-																className="min-h-[36px] px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[11px] sm:text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1 shadow-xs"
+																className="min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-xs select-none touch-manipulation"
 																title={`Применить формулу «${preset.labelRu}» в 1 клик`}
 															>
-																<Sparkles className="w-3.5 h-3.5 shrink-0" />
+																<Sparkles className="w-4 h-4 shrink-0" />
 																<span>Применить</span>
 															</button>
 														)}

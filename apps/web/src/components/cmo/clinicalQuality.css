@@ -58,7 +58,7 @@
 	height: 36px;
 	border-radius: 8px;
 	background: rgba(14, 165, 233, 0.12);
-	color: #0284c7;
+	color: var(--teal, #0284c7);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -89,8 +89,10 @@
 	border: 1px solid var(--glass-border, #e2e8f0);
 	color: var(--muted, #64748b);
 	border-radius: 6px;
-	width: 34px;
-	height: 34px;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -100,7 +102,7 @@
 
 .cmo-btn-close:hover {
 	background: rgba(239, 68, 68, 0.1);
-	color: #ef4444;
+	color: var(--rose, #ef4444);
 	border-color: rgba(239, 68, 68, 0.25);
 }
 
@@ -160,12 +162,12 @@
 
 .cmo-kpi-badge.success {
 	background: rgba(34, 197, 94, 0.15);
-	color: #16a34a;
+	color: var(--emerald, #16a34a);
 }
 
 .cmo-kpi-badge.warning {
 	background: rgba(245, 158, 11, 0.15);
-	color: #d97706;
+	color: var(--amber, #d97706);
 }
 
 .cmo-kpi-badge.danger {
@@ -199,6 +201,8 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 	white-space: nowrap;
+	min-height: 44px;
+	height: 44px;
 }
 
 .cmo-tab-btn:hover {
@@ -207,7 +211,7 @@
 }
 
 .cmo-tab-btn.active {
-	color: #0284c7;
+	color: var(--teal, #0284c7);
 	background: var(--paper-strong, #ffffff);
 	border-color: var(--glass-border, #e2e8f0);
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -219,7 +223,7 @@
 	padding: 0.1rem 0.35rem;
 	border-radius: 10px;
 	background: rgba(14, 165, 233, 0.15);
-	color: #0284c7;
+	color: var(--teal, #0284c7);
 }
 
 /* ── Modal Body / Workspace ── */
@@ -267,7 +271,7 @@
 }
 
 .cmo-search-input:focus {
-	border-color: #0284c7;
+	border-color: var(--teal, #0284c7);
 }
 
 .cmo-filter-row {
@@ -313,9 +317,9 @@
 }
 
 .cmo-card-item.active {
-	border-color: #0284c7;
+	border-color: var(--teal, #0284c7);
 	background: rgba(14, 165, 233, 0.04);
-	box-shadow: 0 0 0 1px #0284c7;
+	box-shadow: 0 0 0 1px var(--teal, #0284c7);
 }
 
 .cmo-card-item-top {
@@ -327,7 +331,7 @@
 .cmo-card-number {
 	font-size: 0.75rem;
 	font-weight: 700;
-	color: #0284c7;
+	color: var(--teal, #0284c7);
 }
 
 .cmo-score-pill {
@@ -339,12 +343,12 @@
 
 .cmo-score-pill.excellent {
 	background: rgba(34, 197, 94, 0.15);
-	color: #16a34a;
+	color: var(--emerald, #16a34a);
 }
 
 .cmo-score-pill.good {
 	background: rgba(245, 158, 11, 0.15);
-	color: #d97706;
+	color: var(--amber, #d97706);
 }
 
 .cmo-score-pill.risk {
@@ -431,8 +435,8 @@
 	line-height: 1;
 }
 
-.cmo-hero-score-val.excellent { color: #16a34a; }
-.cmo-hero-score-val.good { color: #d97706; }
+.cmo-hero-score-val.excellent { color: var(--emerald, #16a34a); }
+.cmo-hero-score-val.good { color: var(--amber, #d97706); }
 .cmo-hero-score-val.risk { color: #dc2626; }
 
 /* ── Statutory Checklist Grid (834n / 785n) ── */
@@ -476,7 +480,7 @@
 }
 
 .cmo-check-card.failed {
-	border-left: 3px solid #ef4444;
+	border-left: 3px solid var(--rose, #ef4444);
 	background: rgba(239, 68, 68, 0.02);
 }
 
@@ -501,7 +505,7 @@
 
 .cmo-check-status-badge.passed {
 	background: rgba(34, 197, 94, 0.15);
-	color: #16a34a;
+	color: var(--emerald, #16a34a);
 }
 
 .cmo-check-status-badge.failed {
@@ -551,9 +555,9 @@
 }
 
 .cmo-preset-chip:hover {
-	background: #0284c7;
+	background: var(--teal, #0284c7);
 	color: #ffffff;
-	border-color: #0284c7;
+	border-color: var(--teal, #0284c7);
 }
 
 .cmo-custom-remark-input {
@@ -575,11 +579,12 @@
 }
 
 .cmo-btn-primary {
+	min-height: 44px;
 	padding: 0.5rem 1rem;
 	font-size: 0.8125rem;
 	font-weight: 700;
 	border-radius: 6px;
-	background: #0284c7;
+	background: var(--teal, #0284c7);
 	color: #ffffff;
 	border: none;
 	cursor: pointer;
@@ -594,11 +599,12 @@
 }
 
 .cmo-btn-success {
+	min-height: 44px;
 	padding: 0.5rem 1rem;
 	font-size: 0.8125rem;
 	font-weight: 700;
 	border-radius: 6px;
-	background: #16a34a;
+	background: var(--emerald, #16a34a);
 	color: #ffffff;
 	border: none;
 	cursor: pointer;
@@ -613,6 +619,7 @@
 }
 
 .cmo-btn-danger {
+	min-height: 44px;
 	padding: 0.5rem 1rem;
 	font-size: 0.8125rem;
 	font-weight: 700;
@@ -632,6 +639,7 @@
 }
 
 .cmo-btn-secondary {
+	min-height: 44px;
 	padding: 0.5rem 1rem;
 	font-size: 0.8125rem;
 	font-weight: 600;

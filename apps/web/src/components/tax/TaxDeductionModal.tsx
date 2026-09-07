@@ -32,13 +32,13 @@ import {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB_PRE2024,
 	calculateExactTaxSplitKopecks,
 	downloadFnsNoMedoplXmlFile,
-	downloadFnsTaxXmlFile,
 	generateFnsFormKnd1151156BarcodeSvg,
 	generateFnsTaxDeductionXml,
 	generateTaxCertificateQrSvg,
 	printTaxCertificateKnd1151156,
 	resolveTaxDeductionCategoryShared,
 	TAX_DEDUCTION_RELATIONSHIP_MAP,
+	type ExactTaxSplitKopecks,
 	type TaxDeductionCertificateParams,
 	type TaxDeductionPaymentItem,
 	type TaxDeductionRelationship,
@@ -101,7 +101,7 @@ export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 	const [isCopiedXml, setIsCopiedXml] = useState<boolean>(false);
 
 	// Multi-year summary calculation using exact BigInt engine
-	const exactSplit = useMemo(() => {
+	const exactSplit: ExactTaxSplitKopecks = useMemo(() => {
 		if (!isOpen) {
 			return {
 				code01Kopecks: 0n,
@@ -114,6 +114,10 @@ export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 				code01StatutoryLimitRub: 150000,
 				code01EligibleKopecks: 0n,
 				code01EligibleRub: 0,
+				code01Refund13Kopecks: 0n,
+				code01Refund13Rub: 0,
+				code02Refund13Kopecks: 0n,
+				code02Refund13Rub: 0,
 				refund13Kopecks: 0n,
 				refund13Rub: 0,
 				refund15Kopecks: 0n,
@@ -233,11 +237,6 @@ export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 	const handlePrint = () => {
 		printTaxCertificateKnd1151156(certParams);
 		showToast("Бланк справки КНД 1151156 отправлен на печать", "success");
-	};
-
-	const handleDownloadXml = () => {
-		downloadFnsTaxXmlFile(certParams);
-		showToast(`Файл ${xmlRepresentation.fileName} выгружен для ТКС`, "success");
 	};
 
 	const handleDownloadNoMedopl = () => {
@@ -531,7 +530,7 @@ export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 										{exactSplit.code01Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
 									<p className="text-xs text-[var(--muted,#64748b)] m-0">
-										Лимит базы: {exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽ • Возврат 13%: {(exactSplit.code01EligibleRub * 0.13).toLocaleString("ru-RU")} ₽
+										Лимит базы: {exactSplit.code01StatutoryLimitRub.toLocaleString("ru-RU")} ₽ • Возврат 13%: {exactSplit.code01Refund13Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</p>
 								</div>
 
@@ -541,7 +540,7 @@ export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 										{exactSplit.code02Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</div>
 									<p className="text-xs text-[var(--muted,#64748b)] m-0">
-										Без ограничений лимита • Возврат 13%: {(exactSplit.code02Rub * 0.13).toLocaleString("ru-RU")} ₽
+										Без ограничений лимита • Возврат 13%: {exactSplit.code02Refund13Rub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 									</p>
 								</div>
 							</div>
@@ -644,15 +643,6 @@ export const TaxDeductionModal: React.FC<TaxDeductionModalProps> = ({
 						>
 							<Download size={14} />
 							<span>NO_MEDOPL XML</span>
-						</button>
-
-						<button
-							type="button"
-							onClick={handleDownloadXml}
-							className="min-h-[44px] px-4 py-2 rounded-xl bg-teal-600/10 text-teal-700 dark:text-teal-300 border border-teal-600/30 text-xs sm:text-sm font-bold hover:bg-teal-600/20 transition-colors flex items-center gap-2 cursor-pointer"
-						>
-							<Download size={16} />
-							<span>Скачать XML (ТКС)</span>
 						</button>
 
 						<button

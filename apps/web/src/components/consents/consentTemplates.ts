@@ -21,7 +21,8 @@ export type ConsentTemplateKey =
 	| "CONSENT_HYGIENE_BLEACHING"
 	| "CONSENT_ANESTHESIA"
 	| "CONSENT_PERSONAL_DATA"
-	| "CONSENT_INSPECTION_1051N";
+	| "CONSENT_INSPECTION_1051N"
+	| "CONSENT_PEDIATRIC";
 
 export interface ConsentSection {
 	id: string;
@@ -35,7 +36,7 @@ export interface ConsentTemplate {
 	code: string;
 	title: string;
 	subtitle: string;
-	category: "therapy" | "surgery" | "orthodontics" | "orthopedics" | "hygiene" | "anesthesia" | "legal";
+	category: "therapy" | "surgery" | "orthodontics" | "orthopedics" | "hygiene" | "anesthesia" | "legal" | "pediatric";
 	statutoryBasis: string;
 	sections: readonly ConsentSection[];
 	mandatoryPlaceholders: readonly string[];
@@ -60,6 +61,10 @@ export interface ConsentSubstitutionContext {
 	snils?: string | null | undefined;
 	phone?: string | null | undefined;
 	guardianName?: string | null | undefined;
+	guardianRelation?: string | null | undefined;
+	guardianDocument?: string | null | undefined;
+	guardianPhone?: string | null | undefined;
+	patientAgeYears?: number | null | undefined;
 }
 
 /**
@@ -604,6 +609,85 @@ export const CONSENT_INSPECTION_1051N: ConsentTemplate = {
 };
 
 /**
+ * 9. ИДС НА СТОМАТОЛОГИЧЕСКОЕ ЛЕЧЕНИЕ НЕСОВЕРШЕННОЛЕТНЕГО ДО 15 ЛЕТ (CONSENT_PEDIATRIC)
+ * Приказ Минздрава РФ от 12.11.2021 № 1051н, ст. 20 323-ФЗ
+ */
+export const CONSENT_PEDIATRIC: ConsentTemplate = {
+	key: "CONSENT_PEDIATRIC",
+	code: "ИДС-09-ДЕТ",
+	title: "Информированное добровольное согласие на проведение стоматологического лечения несовершеннолетнего гражданина (до 15 лет)",
+	subtitle: "Осмотр, адаптация, лечение кариеса и пульпита временных зубов, герметизация фиссур, местная анестезия с участием законного представителя",
+	category: "pediatric",
+	statutoryBasis: "Ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Приказ Минздрава РФ от 12.11.2021 № 1051н, Клинические рекомендации СтАР",
+	mandatoryPlaceholders: [
+		"{{PATIENT_NAME}}",
+		"{{BIRTH_DATE}}",
+		"{{GUARDIAN_NAME}}",
+		"{{GUARDIAN_RELATION}}",
+		"{{GUARDIAN_DOCUMENT}}",
+		"{{DOCTOR_NAME}}",
+		"{{CLINIC_NAME}}",
+		"{{DATE}}",
+	],
+	sections: [
+		{
+			id: "preamble",
+			title: "1. Правовой статус законного представителя и согласие на медицинское вмешательство",
+			content:
+				"Настоящим я, {{GUARDIAN_NAME}}, статус / степень родства: {{GUARDIAN_RELATION}}, документ, удостоверяющий личность законного представителя: {{GUARDIAN_DOCUMENT}}, телефон: {{GUARDIAN_PHONE}}, являясь законным представителем несовершеннолетнего пациента {{PATIENT_NAME}}, дата рождения: {{BIRTH_DATE}} (документ ребенка: {{PASSPORT}}), проживающего по адресу: {{CLINIC_ADDRESS}}, действуя добровольно в интересах ребенка, даю информированное добровольное согласие на оказание детской стоматологической помощи в клинике {{CLINIC_NAME}} лечащему врачу {{DOCTOR_NAME}} в соответствии со статьей 20 Федерального закона № 323-ФЗ и Приказом Минздрава РФ № 1051н.",
+		},
+		{
+			id: "pediatric_scope",
+			title: "2. Содержание детского терапевтического протокола",
+			content:
+				"Мне разъяснены цели, методы и объем планируемого вмешательства, необходимость поэтапной адаптации ребенка к стоматологическому приему. Вмешательство в отношении зубов {{TOOTH_NUMBERS}} по диагнозу {{DIAGNOSIS_ICD}} может включать:",
+			bullets: [
+				"Психологическую адаптацию ребенка к стоматологическому приему и оценку поведения по шкале Франкла;",
+				"Профессиональную гигиену временных и постоянных зубов, покрытие глубоким фторидом (Bifluorid 12) или серебрение Сафорайдом;",
+				"Неинвазивную и инвазивную герметизацию фиссур молочных и постоянных моляров силантами;",
+				"Препарирование кариозных полостей временных зубов, пломбирование стеклоиономерными цементами (СИЦ Fuji IX) или цветными компомерами Twinky Star;",
+				"Витальную пульпотомию временных моляров с ампутацией коронковой пульпы материалом Pulpotec / Biodentine и сохранением жизнеспособности корней;",
+				"Восстановление сильно разрушенных временных моляров стандартными металлическими коронками SSC (методика Hall);",
+				"Аппликационную анестезию со вкусом вишни и местную инфильтрационную анестезию артикаином с контролем предельно допустимой дозы по весу ребенка.",
+			],
+		},
+		{
+			id: "anesthesia_lip_biting_risks",
+			title: "3. Критический риск самотравматизации (прикусывания губы/щеки) и особенности возраста",
+			content:
+				"Я предупрежден(а) врачом о следующих критических рисках и особенностях поведения ребенка после стоматологического лечения:",
+			bullets: [
+				"КРИТИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ: В течение 2–3 часов после местной анестезии у ребенка сохраняется выраженное онемение губы, щеки и кончика языка. Ребенок неосознанно или из любопытства может сильно прикусывать, жевать или расчесывать онемевшие мягкие ткани вплоть до образования глубоких язв и некроза! Законный представитель обязан непрерывно визуально контролировать ребенка до полного окончания действия анестезии.",
+				"Категорически запрещается принимать твердую и горячую пищу до полного исчезновения чувства онемения.",
+				"При сильном страхе или отказе ребенка от контакта (шкала Франкла класс 1) вмешательство может быть отложено для повторной адаптации либо рекомендовано лечение в условиях седации / общего обезболивания.",
+				"Временные зубы имеют тонкую эмаль и широкие дентинные канальцы, поэтому кариозный процесс протекает скрытно и быстро переходит в пульпит с риском инфицирования зачатка постоянного зуба.",
+			],
+		},
+		{
+			id: "representative_rights",
+			title: "4. Права законного представителя и добровольность",
+			content:
+				"Я подтверждаю, что сообщил(а) врачу полную и достоверную информацию о соматическом здоровье ребенка, аллергических реакциях, перенесенных заболеваниях и непереносимости препаратов. Мне были даны исчерпывающие ответы на все вопросы доступным языком. Мне разъяснено право отказаться от медицинского вмешательства или потребовать его прекращения в любой момент в соответствии со статьей 20 323-ФЗ.",
+		},
+	],
+	aftercareInstructions: [
+		"Непрерывный визуальный надзор за ребенком 2–3 часа до полного прекращения онемения во избежание травматического прикусывания губы и щеки.",
+		"Исключить прием твердой и горячей пищи до восстановления чувствительности.",
+		"При болевом синдроме применять детскую суспензию (Ибупрофен 10 мг/кг) строго по инструкции.",
+		"Профилактический осмотр детского стоматолога каждые 3–4 месяца.",
+	],
+	riskFactors: [
+		"Травматическое самоприкусывание онемевшей губы, щеки или языка ребенком при ослаблении надзора родителя.",
+		"Риск повреждения зачатка постоянного зуба при запущенном хроническом воспалении корней молочного зуба.",
+		"Эмоциональная лабильность и кратковременный плач ребенка во время манипуляций.",
+	],
+	alternativeTreatments: [
+		"Лечение в условиях седации (закись азота) или наркоза при категорическом негативизме ребенка.",
+		"Отказ от лечения с риском потери зуба, распространения инфекции на зачаток постоянного зуба и формирования одонтогенного воспаления.",
+	],
+};
+
+/**
  * Словарь всех стандартных согласий
  */
 export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
@@ -615,6 +699,7 @@ export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
 	CONSENT_ORTHODONTICS,
 	CONSENT_ORTHOPEDICS,
 	CONSENT_HYGIENE_BLEACHING,
+	CONSENT_PEDIATRIC,
 };
 
 /**
@@ -749,6 +834,10 @@ export function getBlankConsentSubstitutionContext(
 		snils: "___-___-___ __",
 		phone: "+7 (___) ___-__-__",
 		guardianName: "________________________",
+		guardianRelation: "мать / отец / опекун",
+		guardianDocument: "паспорт серия ______ № ________ выдан ____________________",
+		guardianPhone: "+7 (___) ___-__-__",
+		patientAgeYears: undefined,
 	};
 }
 
@@ -767,6 +856,33 @@ export function substitutePlaceholders(
 		year: "numeric",
 	});
 
+	// Если пациент несовершеннолетний (< 15 лет по ст. 20 323-ФЗ) или указан законный представитель:
+	// адаптируем преамбулу для подписания родителем / опекуном
+	const isMinor =
+		(typeof context.patientAgeYears === "number" && context.patientAgeYears < 15) ||
+		(Boolean(context.guardianName?.trim()) && context.guardianName !== "________________________");
+
+	let result = rawText;
+
+	if (isMinor) {
+		const repName = context.guardianName?.trim() || "________________________";
+		const repRel = context.guardianRelation?.trim() || "мать / отец / опекун";
+		const repDoc = context.guardianDocument?.trim() || "паспорт серия ______ № ________";
+		const childName = context.patientName?.trim() || "________________________________________";
+		const childBirth = context.birthDate?.trim() || "«___» _________ _____ г.";
+		const childDoc = context.passport?.trim() || "св-во о рождении / паспорт серия ______ № ________";
+
+		result = result.replace(
+			/Настоящим я, \{\{PATIENT_NAME\}\}, дата рождения \{\{BIRTH_DATE\}\} \(документ, удостоверяющий личность: \{\{PASSPORT\}\}\), действуя добровольно и находясь в здравом уме/g,
+			`Настоящим я, ${repName} (статус / родство: ${repRel}, документ: ${repDoc}), действуя в качестве законного представителя несовершеннолетнего ${childName}, дата рождения ${childBirth} (документ: ${childDoc}), находясь в здравом уме`,
+		);
+
+		result = result.replace(
+			/Я, \{\{PATIENT_NAME\}\}, дата рождения \{\{BIRTH_DATE\}\}, документ, удостоверяющий личность: \{\{PASSPORT\}\}/g,
+			`Я, ${repName} (статус / родство: ${repRel}, документ: ${repDoc}), являясь законным представителем несовершеннолетнего ${childName}, дата рождения ${childBirth} (документ ребенка: ${childDoc})`,
+		);
+	}
+
 	const map: Record<string, string> = {
 		"{{PATIENT_NAME}}": context.patientName?.trim() || "________________________________________",
 		"{{BIRTH_DATE}}": context.birthDate?.trim() || "«___» _________ _____ г.",
@@ -783,9 +899,11 @@ export function substitutePlaceholders(
 		"{{SNILS}}": context.snils?.trim() || "____________________",
 		"{{PATIENT_PHONE}}": context.phone?.trim() || "+7 (____) ____-____",
 		"{{GUARDIAN_NAME}}": context.guardianName?.trim() || "________________________",
+		"{{GUARDIAN_RELATION}}": context.guardianRelation?.trim() || "мать / отец / опекун",
+		"{{GUARDIAN_DOCUMENT}}": context.guardianDocument?.trim() || "паспорт серия ______ № ________ выдан ____________________",
+		"{{GUARDIAN_PHONE}}": context.guardianPhone?.trim() || context.phone?.trim() || "+7 (____) ____-____",
 	};
 
-	let result = rawText;
 	for (const [placeholder, value] of Object.entries(map)) {
 		result = result.replaceAll(placeholder, value);
 	}
@@ -905,6 +1023,15 @@ export function getMissingRequiredPlaceholders(
 				break;
 			case "{{TOOTH_NUMBERS}}":
 				if (!context.toothNumbers?.trim()) missing.push("Номера зубов / область");
+				break;
+			case "{{GUARDIAN_NAME}}":
+				if (!context.guardianName?.trim()) missing.push("Ф.И.О. законного представителя");
+				break;
+			case "{{GUARDIAN_RELATION}}":
+				if (!context.guardianRelation?.trim()) missing.push("Статус / родство законного представителя");
+				break;
+			case "{{GUARDIAN_DOCUMENT}}":
+				if (!context.guardianDocument?.trim()) missing.push("Документ законного представителя");
 				break;
 		}
 	}
@@ -1782,5 +1909,6 @@ export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_ANESTHESIA: "Местная анестезия",
 	CONSENT_PERSONAL_DATA: "Персональные данные (152-ФЗ)",
 	CONSENT_INSPECTION_1051N: "Первичный осмотр / Рентген (1051н)",
+	CONSENT_PEDIATRIC: "Детская стоматология (до 15 лет)",
 };
 

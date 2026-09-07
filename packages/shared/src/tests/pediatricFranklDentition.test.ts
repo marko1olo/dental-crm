@@ -31,7 +31,8 @@ describe("Pediatric Frankl Behavior Scale & Adaptive Clinical Protocols (package
 			assert.ok(def.descriptionRu.length > 0);
 			assert.ok(def.clinicalSignsRu.length > 0);
 			assert.ok(def.managementStrategiesRu.length >= 4);
-			assert.ok(def.emoji.length > 0);
+			assert.ok(!/[😫🙁🙂😄]/.test(def.emoji), "No raw cartoon emojis in Frankl scale");
+			assert.ok(def.starClassRu.length > 0, "STAR class must be non-empty");
 			assert.ok(def.badgeColor.startsWith("#"));
 		}
 
@@ -182,7 +183,7 @@ describe("Pediatric Frankl Behavior Scale & Adaptive Clinical Protocols (package
 
 		assert.ok(diary.includes("ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)"));
 		assert.ok(diary.includes("Психоэмоциональный статус (Шкала Франкла)"));
-		assert.ok(diary.includes("Рейтинг 2 (-)"));
+		assert.ok(diary.includes("Класс 2 (Негативное)"));
 		assert.ok(diary.includes("Зуб #71: резорбция 75%"));
 		assert.ok(diary.includes("риска кариеса"));
 		assert.ok(diary.includes("Выполненные клинические манипуляции"));

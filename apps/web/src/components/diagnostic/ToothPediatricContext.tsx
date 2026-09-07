@@ -186,7 +186,7 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 						borderColor: activeFranklDef.badgeBorder,
 					}}
 				>
-					<span>{activeFranklDef.emoji} Франкл {activeFranklDef.symbol}</span>
+					<span>Франкл {activeFranklDef.symbol}</span>
 				</div>
 			</div>
 
@@ -210,10 +210,10 @@ export const ToothPediatricContext: React.FC<ToothPediatricContextProps> = ({
 						type="button"
 						onClick={handleInsertResorptionProtocol}
 						className="dente-secondary-btn"
-						style={{ minHeight: "30px", padding: "3px 10px", fontSize: "12px", gap: "5px" }}
+						style={{ minHeight: "44px", padding: "8px 12px", fontSize: "13px", gap: "6px" }}
 						title={`Внести запись о резорбции корней зуба #${toothNumber} в карту 043/у`}
 					>
-						<FileText size={13} />
+						<FileText size={14} />
 						<span>Внести в 043/у</span>
 					</button>
 				</div>

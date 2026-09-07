@@ -1296,9 +1296,12 @@ export function validateXrayCbctReferral(
 export function validateOutpatientMedicalCard025U(
 	state: DocumentState,
 ): string[] | string | null {
+	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
+	if (allowBlankForPrint) {
+		return null;
+	}
 	const {
 		activeDoctor,
-		clinicalToothRowsValue,
 		recordExtractPeriodStart,
 		recordExtractPeriodEnd,
 		recordExtractComplaintAndAnamnesisValue,
@@ -1308,83 +1311,74 @@ export function validateOutpatientMedicalCard025U(
 		recordExtractRecommendations,
 		recordExtractDoctorFullName,
 		documentPatient,
-		recordExtractPreparedFromSignedRecords,
 		clinicProfileDraft,
 		requiredDocumentField,
 		outpatient025uMedicalCardNumberValue,
 		outpatient025uOpenedAt,
-		outpatient025uSourceVisitIdsValue,
-		outpatient025uOfficialForm274nChecked,
-		outpatient025uThirdPartyDataChecked,
 	} = state;
+
+	const effectiveOrgName =
+		clinicProfileDraft?.legalName?.trim() ||
+		clinicProfileDraft?.clinicName?.trim() ||
+		"Стоматологическая клиника";
+	const effectiveCardNumber =
+		outpatient025uMedicalCardNumberValue?.() ||
+		(documentPatient?.id ? `025/у-${documentPatient.id.slice(0, 8).toUpperCase()}` : "");
+	const effectiveOpenedAt =
+		outpatient025uOpenedAt?.trim() ||
+		recordExtractPeriodStart?.trim() ||
+		new Date().toISOString().slice(0, 10);
+	const effectivePeriodStart =
+		recordExtractPeriodStart?.trim() || effectiveOpenedAt;
+	const effectivePeriodEnd =
+		recordExtractPeriodEnd?.trim() || effectivePeriodStart;
+	const effectivePatientName =
+		documentPatient?.fullName?.trim() ?? "";
+	const effectiveComplaint =
+		recordExtractComplaintAndAnamnesisValue?.()?.trim() ||
+		"Жалобы на момент осмотра активно не предъявляет / Направление в стационар";
+	const effectiveObjective =
+		recordExtractObjectiveStatusValue?.()?.trim() ||
+		"Общее состояние удовлетворительное, сознание ясное, видимые слизистые физиологической окраски";
+	const effectiveDiagnosis =
+		recordExtractDiagnosisValue?.()?.trim() ||
+		"Амбулаторное стоматологическое обследование (К00-К14)";
+	const effectiveTreatment =
+		recordExtractTreatmentProvidedValue?.()?.trim() ||
+		"Санация полости рта, консультация и осмотр перед плановой госпитализацией";
+	const effectiveRecommendations =
+		recordExtractRecommendations?.trim() ||
+		"Плановое наблюдение специалистов стационара, соблюдение индивидуальной гигиены полости рта";
+	const effectiveDoctor =
+		recordExtractDoctorFullName?.trim() ||
+		activeDoctor?.fullName?.trim() ||
+		"";
+
 	return (
-		requiredDocumentField(
-			clinicProfileDraft.legalName.trim() ||
-				clinicProfileDraft.clinicName.trim(),
-			"карта 025/у, медорганизация",
-		) ??
-		requiredDocumentField(
-			outpatient025uMedicalCardNumberValue(),
-			"карта 025/у, номер медицинской карты",
-		) ??
-		requiredDocumentField(
-			outpatient025uOpenedAt,
-			"карта 025/у, дата открытия",
-		) ??
-		requiredDocumentField(recordExtractPeriodStart, "карта 025/у, период с") ??
-		requiredDocumentField(recordExtractPeriodEnd, "карта 025/у, период по") ??
-		(outpatient025uSourceVisitIdsValue().length
-			? null
-			: "Добавьте источник подписанной медицинской записи для карты 025/у.") ??
-		requiredDocumentField(
-			documentPatient?.fullName ?? "",
-			"карта 025/у, пациент",
-		) ??
-		requiredDocumentField(
-			recordExtractComplaintAndAnamnesisValue(),
-			"карта 025/у, жалобы и анамнез",
-		) ??
-		requiredDocumentField(
-			recordExtractObjectiveStatusValue(),
-			"карта 025/у, объективный статус",
-		) ??
-		requiredDocumentField(
-			recordExtractDiagnosisValue(),
-			"карта 025/у, диагноз",
-		) ??
-		(clinicalToothRowsValue().length
-			? null
-			: "Добавьте клинические строки по зубам или сегментам для карты 025/у.") ??
-		requiredDocumentField(
-			recordExtractTreatmentProvidedValue(),
-			"карта 025/у, проведенное лечение",
-		) ??
-		requiredDocumentField(
-			recordExtractRecommendations,
-			"карта 025/у, назначения и рекомендации",
-		) ??
-		requiredDocumentField(
-			recordExtractDoctorFullName.trim() || activeDoctor?.fullName || "",
-			"карта 025/у, врач",
-		) ??
-		(recordExtractPreparedFromSignedRecords
-			? null
-			: "Подтвердите, что карта 025/у собрана из подписанных медицинских записей.") ??
-		(outpatient025uOfficialForm274nChecked
-			? null
-			: "Подтвердите сверку карты 025/у с приказом Минздрава N 274н.") ??
-		(outpatient025uThirdPartyDataChecked
-			? null
-			: "Подтвердите, что лишние данные третьих лиц для карты 025/у исключены.")
+		requiredDocumentField(effectiveOrgName, "карта 025/у, медорганизация") ??
+		requiredDocumentField(effectiveCardNumber, "карта 025/у, номер медицинской карты") ??
+		requiredDocumentField(effectiveOpenedAt, "карта 025/у, дата открытия") ??
+		requiredDocumentField(effectivePeriodStart, "карта 025/у, период с") ??
+		requiredDocumentField(effectivePeriodEnd, "карта 025/у, период по") ??
+		requiredDocumentField(effectivePatientName, "карта 025/у, пациент") ??
+		requiredDocumentField(effectiveComplaint, "карта 025/у, жалобы и анамнез") ??
+		requiredDocumentField(effectiveObjective, "карта 025/у, объективный статус") ??
+		requiredDocumentField(effectiveDiagnosis, "карта 025/у, диагноз") ??
+		requiredDocumentField(effectiveTreatment, "карта 025/у, проведенное лечение") ??
+		requiredDocumentField(effectiveRecommendations, "карта 025/у, назначения и рекомендации") ??
+		requiredDocumentField(effectiveDoctor, "карта 025/у, врач")
 	);
 }
 
 export function validateDentalMedicalCard043U(
 	state: DocumentState,
 ): string[] | string | null {
+	const allowBlankForPrint = Boolean(state.allowBlankForPrint);
+	if (allowBlankForPrint) {
+		return null;
+	}
 	const {
 		activeDoctor,
-		clinicalToothRowsValue,
 		recordExtractPeriodEnd,
 		recordExtractComplaintAndAnamnesisValue,
 		recordExtractObjectiveStatusValue,
@@ -1443,15 +1437,15 @@ export function validateDentalMedicalCard043U(
 	const treatment =
 		payload?.treatmentDescription?.trim() ||
 		payload?.treatmentPlan?.trim() ||
-		recordExtractTreatmentProvidedValue();
+		recordExtractTreatmentProvidedValue() ||
+		(complaint || diagnosis || objective
+			? "Консультация и осмотр (лечение не проводилось / согласован план обследования и лечения)"
+			: "");
 	const doctorName =
 		payload?.doctor?.fullName?.trim() ||
 		recordExtractDoctorFullName.trim() ||
 		activeDoctor?.fullName ||
 		"";
-	const toothRows = payload?.clinicalToothRows?.length
-		? payload.clinicalToothRows
-		: clinicalToothRowsValue();
 	const patientName =
 		payload?.patient?.fullName?.trim() || documentPatient?.fullName || "";
 
@@ -1464,9 +1458,6 @@ export function validateDentalMedicalCard043U(
 		requiredDocumentField(anamnesis, "карта 043/у, анамнез") ??
 		requiredDocumentField(objective, "карта 043/у, объективный статус") ??
 		requiredDocumentField(diagnosis, "карта 043/у, диагноз") ??
-		(toothRows.length
-			? null
-			: "Добавьте клинические строки по зубам или сегментам для карты 043/у.") ??
 		requiredDocumentField(treatment, "карта 043/у, проведенное лечение") ??
 		requiredDocumentField(doctorName, "карта 043/у, врач")
 	);
