@@ -14,6 +14,7 @@ import type { PaymentMethod } from "@dental/shared";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { PaymentCapture } from "../../../PaymentCapture";
+import * as GlobalToastModule from "../../GlobalToast";
 
 type MockFn = {
 	(...args: any[]): any;
@@ -34,17 +35,19 @@ function createMockFn(impl?: (...args: any[]) => any): MockFn {
 	return fn;
 }
 
+
 const showToastCalls: any[][] = [];
-const showToast = {
-	calls: showToastCalls,
-	mock: { calls: showToastCalls },
-};
 
 const vi = {
 	fn: (impl?: any) => createMockFn(impl),
 	clearAllMocks: () => {
 		showToastCalls.length = 0;
 	},
+};
+
+const showToast = {
+	calls: showToastCalls,
+	mock: { calls: showToastCalls },
 };
 
 function expect(actual: any) {
