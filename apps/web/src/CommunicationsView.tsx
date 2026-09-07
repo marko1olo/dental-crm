@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { WhatsAppChatPanel } from "./components/chat/WhatsAppChatPanel";
-import { PatientNotificationCenter } from "./components/notifications/PatientNotificationCenter";
 import { CampaignPanel } from "./components/communications/CampaignPanel";
 import {
 	journalDirectionLabel,
@@ -23,12 +22,14 @@ import {
 } from "./components/communications/journalDigest";
 import { MessageDeliveryConsole } from "./components/communications/MessageDeliveryConsole";
 import { EmptyState } from "./components/EmptyState";
+import { showToast } from "./components/GlobalToast";
+import { PatientNotificationCenter } from "./components/notifications/PatientNotificationCenter";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
+import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { hasCapability } from "./lib/clinicCapabilities";
 import { denteAdminSecretRequestHeaders } from "./lib/denteRequestHeaders";
 import { countLabel } from "./lib/russianPlural";
 import { useSettingsStore } from "./store/settingsStore";
-import { useAppLogicContext } from "./contexts/AppLogicContext";
 
 type CommunicationTask = Dashboard["communicationTasks"][number];
 type CommunicationTemplate = Dashboard["communicationTemplates"][number];
@@ -202,7 +203,10 @@ function CommunicationTaskCard({
 	}
 
 	function handleCompleteTask() {
-		if (!selectedOutcome) return;
+		if (!selectedOutcome) {
+			showToast("Выберите результат звонка", "info");
+			return;
+		}
 		void completeCommunicationTask(task.id, selectedOutcome);
 	}
 
@@ -266,6 +270,7 @@ function CommunicationTaskCard({
 										onClick={() => void handleConfirmAppointment("confirmed")}
 										disabled={apptActionLoading || communicationSaveInProgress}
 										aria-label="Подтвердить приём"
+										style={{ minHeight: "44px" }}
 									>
 										Подтвердил
 									</button>
@@ -275,6 +280,7 @@ function CommunicationTaskCard({
 										onClick={() => void handleConfirmAppointment("cancelled")}
 										disabled={apptActionLoading || communicationSaveInProgress}
 										aria-label="Отменить приём"
+										style={{ minHeight: "44px" }}
 									>
 										Отменил
 									</button>
@@ -307,6 +313,7 @@ function CommunicationTaskCard({
 									openCommunicationTaskDocumentWorkflow(task, kind)
 								}
 								aria-label={`${documentActionLabel}: ${task.title}`}
+								style={{ minHeight: "44px" }}
 							>
 								<FileText aria-hidden="true" /> {documentActionLabel}
 							</button>
@@ -360,6 +367,7 @@ function CommunicationTaskCard({
 										setSelectedOutcome(outcome as CommunicationTaskOutcome)
 									}
 									disabled={communicationSaveInProgress}
+									style={{ minHeight: "44px" }}
 								>
 									{label}
 								</button>
@@ -377,7 +385,8 @@ function CommunicationTaskCard({
 						className="secondary-button"
 						type="button"
 						onClick={handleCompleteTask}
-						disabled={communicationSaveInProgress || !selectedOutcome}
+						disabled={communicationSaveInProgress}
+						style={{ minHeight: "44px" }}
 					>
 						<CheckCircle2 aria-hidden="true" />{" "}
 						{isTaskSaving ? "Закрываю" : "Закрыть"}
@@ -467,7 +476,9 @@ function CommunicationEventRow({
 	);
 }
 
-export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) {
+export function CommunicationsView(
+	rawProps?: Partial<CommunicationsViewProps>,
+) {
 	const logicContext = useAppLogicContext();
 	const props = { ...logicContext, ...rawProps } as ReturnType<
 		typeof useAppLogicContext
@@ -486,8 +497,13 @@ export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) 
 		documentKindsForCommunicationTask,
 		documentLabels,
 		formatDateTime,
-		onCommunicationNoteChange = props.onCommunicationNoteChange ?? (props as any).setCommunicationNote ?? (() => {}),
-		onGoToSchedule = props.onGoToSchedule ?? (() => { window.location.hash = "schedule"; }),
+		onCommunicationNoteChange = props.onCommunicationNoteChange ??
+			(props as any).setCommunicationNote ??
+			(() => {}),
+		onGoToSchedule = props.onGoToSchedule ??
+			(() => {
+				window.location.hash = "schedule";
+			}),
 		openCommunicationTaskDocumentWorkflow,
 		sortedCommunicationTasks,
 		staffRoleLabels,
@@ -609,66 +625,70 @@ export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) 
 
 			{activeSection === "tasks" && (
 				<>
-
-			{/*
+					{/*
         Сводка из четырёх счётчиков нужна тогда, когда в ней есть хоть что-то.
         В клинике без задач связи это были четыре нуля в ряд — они занимали
         верх экрана и не сообщали ничего, кроме того, что и так видно по
         пустому списку ниже. Показываем сводку, когда есть о чём сводить.
       */}
-			{communicationSummaryHasNumbers ? (
-				<section
-					className="communications-summary-grid"
-					aria-label="Сводка связи"
-				>
-					<article
-						className={
-							dashboard?.communicationSummary?.urgentTasks
-								? "communication-urgent"
-								: ""
-						}
-					>
-						<span>Открыто</span>
-						<strong>{dashboard?.communicationSummary?.openTasks ?? 0}</strong>
-						<p>
-							{countLabel(
-								dashboard?.communicationSummary?.urgentTasks ?? 0,
-								"срочная",
-								"срочные",
-								"срочных",
-							)}
-						</p>
-					</article>
-					<article>
-						<span>Сегодня</span>
-						<strong>{dashboard?.communicationSummary?.dueToday ?? 0}</strong>
-						<p>
-							{countLabel(
-								dashboard?.communicationSummary?.overdue ?? 0,
-								"просрочена",
-								"просрочены",
-								"просрочено",
-							)}
-						</p>
-					</article>
-					<article>
-						<span>Подтверждения</span>
-						<strong>
-							{dashboard?.communicationSummary?.appointmentConfirmations ?? 0}
-						</strong>
-						<p>записи и первичные визиты</p>
-					</article>
-					<article>
-						<span>После приема</span>
-						<strong>
-							{dashboard?.communicationSummary?.postVisitInstructions ?? 0}
-						</strong>
-						<p>инструкции пациентам</p>
-					</article>
-				</section>
-			) : null}
+					{communicationSummaryHasNumbers ? (
+						<section
+							className="communications-summary-grid"
+							aria-label="Сводка связи"
+						>
+							<article
+								className={
+									dashboard?.communicationSummary?.urgentTasks
+										? "communication-urgent"
+										: ""
+								}
+							>
+								<span>Открыто</span>
+								<strong>
+									{dashboard?.communicationSummary?.openTasks ?? 0}
+								</strong>
+								<p>
+									{countLabel(
+										dashboard?.communicationSummary?.urgentTasks ?? 0,
+										"срочная",
+										"срочные",
+										"срочных",
+									)}
+								</p>
+							</article>
+							<article>
+								<span>Сегодня</span>
+								<strong>
+									{dashboard?.communicationSummary?.dueToday ?? 0}
+								</strong>
+								<p>
+									{countLabel(
+										dashboard?.communicationSummary?.overdue ?? 0,
+										"просрочена",
+										"просрочены",
+										"просрочено",
+									)}
+								</p>
+							</article>
+							<article>
+								<span>Подтверждения</span>
+								<strong>
+									{dashboard?.communicationSummary?.appointmentConfirmations ??
+										0}
+								</strong>
+								<p>записи и первичные визиты</p>
+							</article>
+							<article>
+								<span>После приема</span>
+								<strong>
+									{dashboard?.communicationSummary?.postVisitInstructions ?? 0}
+								</strong>
+								<p>инструкции пациентам</p>
+							</article>
+						</section>
+					) : null}
 
-			{/*
+					{/*
         Поле заметки нужно только при закрытии задачи связи: оно уходит в
         `POST /api/communications/tasks/complete` вместе с taskId. Раньше блок
         висел на экране всегда — и у клиники без единой задачи это была форма
@@ -681,17 +701,17 @@ export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) 
         журнал клиники, не имеет права быть невидимым, поэтому блок показывается
         и тогда, когда очередь пуста, но в заметке что-то есть.
       */}
-			{(sortedCommunicationTasks ?? []).length || closingNoteArmed ? (
-				<div className="communication-note-row bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 mb-5">
-					<div className="flex justify-between items-center mb-3">
-						<div>
-							<label
-								htmlFor={communicationNoteInputId}
-								className="text-sm font-semibold text-[var(--ink)] block"
-							>
-								Что сказал пациент
-							</label>
-							{/*
+					{(sortedCommunicationTasks ?? []).length || closingNoteArmed ? (
+						<div className="communication-note-row bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] rounded-xl p-4 mb-5">
+							<div className="flex justify-between items-center mb-3">
+								<div>
+									<label
+										htmlFor={communicationNoteInputId}
+										className="text-sm font-semibold text-[var(--ink)] block"
+									>
+										Что сказал пациент
+									</label>
+									{/*
               БЫЛО: «Запись попадёт в задачу, которую вы закроете ниже». Про
               главное свойство поля не говорилось ничего: заметка одна на весь
               экран и после закрытия задачи остаётся на месте. Администратор
@@ -701,84 +721,86 @@ export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) 
               успешного закрытия не сделана в useAppLogic (это вне этого файла),
               экран обязан хотя бы не умалчивать об этом и дать кнопку очистки.
             */}
-							<span
-								id={communicationNoteDescriptionId}
-								className="text-xs text-[var(--muted)]"
-							>
-								Запись приложится к той задаче, которую вы закроете ниже, и
-								останется в журнале клиники. Если поле пустое, в журнал уйдёт
-								«Задача связи закрыта.»
-							</span>
-						</div>
-						<SmartMicrophoneButton
-							context="general"
-							onResult={(t) => {
-								const prev = communicationNote || "";
-								onCommunicationNoteChange(prev ? `${prev}, ${t}` : t);
-							}}
-							className="inline-flex gap-1.5 items-center px-3 py-1.5 text-[var(--teal-dark,#0f766e)] bg-[var(--teal-soft,#ccfbf1)] border-none rounded-lg font-semibold text-xs hover:opacity-80 transition-opacity"
-						/>
-					</div>
-					<textarea
-						id={communicationNoteInputId}
-						value={communicationNote}
-						onChange={(event) => onCommunicationNoteChange(event.target.value)}
-						aria-describedby={communicationNoteDescriptionId}
-						placeholder="Нажмите для ввода или надиктуйте результат связи..."
-						rows={2}
-						className="w-full p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm resize-y mb-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-					/>
-					{/*
+									<span
+										id={communicationNoteDescriptionId}
+										className="text-xs text-[var(--muted)]"
+									>
+										Запись приложится к той задаче, которую вы закроете ниже, и
+										останется в журнале клиники. Если поле пустое, в журнал
+										уйдёт «Задача связи закрыта.»
+									</span>
+								</div>
+								<SmartMicrophoneButton
+									context="general"
+									onResult={(t) => {
+										const prev = communicationNote || "";
+										onCommunicationNoteChange(prev ? `${prev}, ${t}` : t);
+									}}
+									className="inline-flex gap-1.5 items-center px-3 py-1.5 text-[var(--teal-dark,#0f766e)] bg-[var(--teal-soft,#ccfbf1)] border-none rounded-lg font-semibold text-xs hover:opacity-80 transition-opacity"
+								/>
+							</div>
+							<textarea
+								id={communicationNoteInputId}
+								value={communicationNote}
+								onChange={(event) =>
+									onCommunicationNoteChange(event.target.value)
+								}
+								aria-describedby={communicationNoteDescriptionId}
+								placeholder="Нажмите для ввода или надиктуйте результат связи..."
+								rows={2}
+								className="w-full p-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm resize-y mb-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
+							/>
+							{/*
           Строка появляется только когда в заметке есть текст, то есть ровно в
           тот момент, когда она может уйти не тому пациенту. Кнопка очистки —
           единственный способ убрать заметку, кроме выделения текста руками:
           после закрытия задачи поле остаётся заполненным.
         */}
-					{closingNoteArmed ? (
-						<div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-							<span className="text-xs font-semibold text-[var(--bad-fg,#b42318)]">
-								Заметка заполнена и приложится к следующей закрытой задаче —
-								даже если она уже про другого пациента.
-							</span>
-							<button
-								type="button"
-								className="secondary-button text-xs"
-								onClick={() => onCommunicationNoteChange("")}
-							>
-								Очистить заметку
-							</button>
+							{closingNoteArmed ? (
+								<div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+									<span className="text-xs font-semibold text-[var(--bad-fg,#b42318)]">
+										Заметка заполнена и приложится к следующей закрытой задаче —
+										даже если она уже про другого пациента.
+									</span>
+									<button
+										type="button"
+										className="secondary-button text-xs"
+										onClick={() => onCommunicationNoteChange("")}
+									>
+										Очистить заметку
+									</button>
+								</div>
+							) : null}
+							<div className="quick-chips-row flex-wrap gap-2">
+								<span className="text-xs text-[var(--muted)] self-center mr-1">
+									Шаблоны:
+								</span>
+								{[
+									"Недозвон",
+									"Обещал оплатить",
+									"Подумает",
+									"Перезвонить позже",
+									"Запрос документов",
+								]?.map((chip) => (
+									<button
+										key={chip}
+										type="button"
+										className="quick-chip focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all hover:scale-[1.02]"
+										onClick={() => {
+											const prev = communicationNote || "";
+											onCommunicationNoteChange(
+												prev ? `${prev}, ${chip.toLowerCase()}` : chip,
+											);
+										}}
+									>
+										+ {chip}
+									</button>
+								))}
+							</div>
 						</div>
 					) : null}
-					<div className="quick-chips-row flex-wrap gap-2">
-						<span className="text-xs text-[var(--muted)] self-center mr-1">
-							Шаблоны:
-						</span>
-						{[
-							"Недозвон",
-							"Обещал оплатить",
-							"Подумает",
-							"Перезвонить позже",
-							"Запрос документов",
-						]?.map((chip) => (
-							<button
-								key={chip}
-								type="button"
-								className="quick-chip focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all hover:scale-[1.02]"
-								onClick={() => {
-									const prev = communicationNote || "";
-									onCommunicationNoteChange(
-										prev ? `${prev}, ${chip.toLowerCase()}` : chip,
-									);
-								}}
-							>
-								+ {chip}
-							</button>
-						))}
-					</div>
-				</div>
-			) : null}
 
-			{/*
+					{/*
         Пульт отправки: настоящие шлюзы, журнал с причиной отказа, редактор
         шаблонов и правила рассылки.
 
@@ -788,56 +810,61 @@ export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) 
         принимает таблица режимов в lib/clinicCapabilities.ts, а не сравнение
         строк здесь.
       */}
-			<MessageDeliveryConsole />
-			{hasCapability(clinicMode, "massCampaigns") ? <CampaignPanel /> : null}
+					<MessageDeliveryConsole />
+					{hasCapability(clinicMode, "massCampaigns") ? (
+						<CampaignPanel />
+					) : null}
 
-			<div className="communication-layout">
-				<section className="communication-task-list" aria-label="Очередь связи">
-					{(sortedCommunicationTasks ?? []).length ? (
-						(sortedCommunicationTasks ?? [])?.map((task) => (
-							<CommunicationTaskCard
-								communicationChannelLabels={communicationChannelLabels}
-								communicationDocumentTaskActionLabels={
-									communicationDocumentTaskActionLabels
-								}
-								communicationIntentLabels={communicationIntentLabels}
-								communicationPriorityLabels={communicationPriorityLabels}
-								communicationSavingTaskId={communicationSavingTaskId}
-								communicationStatusLabels={communicationStatusLabels}
-								completionNoteDescriptionId={communicationNoteDescriptionId}
-								completeCommunicationTask={completeCommunicationTask}
-								documentKinds={documentKindsForCommunicationTask(task)}
-								documentLabels={documentLabels}
-								formatDateTime={formatDateTime}
-								key={task.id}
-								openCommunicationTaskDocumentWorkflow={
-									openCommunicationTaskDocumentWorkflow
-								}
-								staffRoleLabels={staffRoleLabels}
-								task={task}
-								appointments={dashboard.appointments}
-							/>
-						))
-					) : (
-						<EmptyState
-							title="Очередь связи пуста"
-							description="Когда появятся подтверждения, запросы документов или инструкции после приема, они отобразятся здесь."
-							action={
-								<button
-									className="text-button"
-									type="button"
-									onClick={onGoToSchedule}
-								>
-									Открыть расписание
-								</button>
-							}
-							className="my-4 py-8"
-						/>
-					)}
-				</section>
+					<div className="communication-layout">
+						<section
+							className="communication-task-list"
+							aria-label="Очередь связи"
+						>
+							{(sortedCommunicationTasks ?? []).length ? (
+								(sortedCommunicationTasks ?? [])?.map((task) => (
+									<CommunicationTaskCard
+										communicationChannelLabels={communicationChannelLabels}
+										communicationDocumentTaskActionLabels={
+											communicationDocumentTaskActionLabels
+										}
+										communicationIntentLabels={communicationIntentLabels}
+										communicationPriorityLabels={communicationPriorityLabels}
+										communicationSavingTaskId={communicationSavingTaskId}
+										communicationStatusLabels={communicationStatusLabels}
+										completionNoteDescriptionId={communicationNoteDescriptionId}
+										completeCommunicationTask={completeCommunicationTask}
+										documentKinds={documentKindsForCommunicationTask(task)}
+										documentLabels={documentLabels}
+										formatDateTime={formatDateTime}
+										key={task.id}
+										openCommunicationTaskDocumentWorkflow={
+											openCommunicationTaskDocumentWorkflow
+										}
+										staffRoleLabels={staffRoleLabels}
+										task={task}
+										appointments={dashboard.appointments}
+									/>
+								))
+							) : (
+								<EmptyState
+									title="Очередь связи пуста"
+									description="Когда появятся подтверждения, запросы документов или инструкции после приема, они отобразятся здесь."
+									action={
+										<button
+											className="text-button"
+											type="button"
+											onClick={onGoToSchedule}
+										>
+											Открыть расписание
+										</button>
+									}
+									className="my-4 py-8"
+								/>
+							)}
+						</section>
 
-				<aside className="communication-side">
-					{/*
+						<aside className="communication-side">
+							{/*
             ЗДЕСЬ БЫЛ ВТОРОЙ СПИСОК ШАБЛОНОВ — и он показывал выдумку.
             Блок читал dashboard.communicationTemplates, а живой ответ
             /api/dashboard отдаёт по этому полю четыре примера, зашитых в
@@ -855,7 +882,7 @@ export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) 
             там же его можно менять.
           */}
 
-					{/*
+							{/*
             ЖУРНАЛ СВЯЗИ. Раньше здесь стояла зелёная плашка `status-confirmed` с
             одним числом — длиной массива событий, — и список одинаковых строк.
             Клиника, у которой из двенадцати сообщений три упали с отказом
@@ -870,60 +897,60 @@ export function CommunicationsView(rawProps?: Partial<CommunicationsViewProps>) 
             Решение о числах, цвете плашки и текстах трёх состояний вынесено в
             journalDigest.ts и проверяется node:test — здесь только разметка.
           */}
-					<section aria-label="Журнал связи">
-						<div className="panel-heading">
-							<h3>Журнал связи</h3>
-							<span className={journal.totalPillClass}>
-								{journal.totalLabel}
-							</span>
-						</div>
-						{journal.undeliveredLabel ? (
-							<p
-								className="text-xs font-semibold text-[var(--bad-fg,#b42318)] mb-2"
-								role="alert"
-							>
-								{journal.undeliveredLabel} — пациенты этого не получили. Причина
-								отказа по каждому сообщению видна в «Отправке сообщений», раздел
-								«Журнал отправки».
-							</p>
-						) : null}
-						{journal.pendingLabel ? (
-							<p className="text-xs text-[var(--muted)] mb-2">
-								{journal.pendingLabel}.
-							</p>
-						) : null}
-						{journal.phase === "failed" ? (
-							<div
-								role="alert"
-								className="p-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
-							>
-								<div className="font-semibold">{journal.title}.</div>
-								<div className="mt-0.5">{journal.hint}</div>
-							</div>
-						) : journal.phase === "empty" ? (
-							<EmptyState
-								title={journal.title}
-								description={journal.hint}
-								className="my-2 py-6"
-							/>
-						) : (
-							<div className="template-list">
-								{journal.entries?.map((event) => (
-									<CommunicationEventRow
-										communicationChannelLabels={communicationChannelLabels}
-										communicationStatusLabels={communicationStatusLabels}
-										event={event}
-										formatDateTime={formatDateTime}
-										key={event.id}
+							<section aria-label="Журнал связи">
+								<div className="panel-heading">
+									<h3>Журнал связи</h3>
+									<span className={journal.totalPillClass}>
+										{journal.totalLabel}
+									</span>
+								</div>
+								{journal.undeliveredLabel ? (
+									<p
+										className="text-xs font-semibold text-[var(--bad-fg,#b42318)] mb-2"
+										role="alert"
+									>
+										{journal.undeliveredLabel} — пациенты этого не получили.
+										Причина отказа по каждому сообщению видна в «Отправке
+										сообщений», раздел «Журнал отправки».
+									</p>
+								) : null}
+								{journal.pendingLabel ? (
+									<p className="text-xs text-[var(--muted)] mb-2">
+										{journal.pendingLabel}.
+									</p>
+								) : null}
+								{journal.phase === "failed" ? (
+									<div
+										role="alert"
+										className="p-3 rounded-lg border text-xs leading-relaxed bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-900"
+									>
+										<div className="font-semibold">{journal.title}.</div>
+										<div className="mt-0.5">{journal.hint}</div>
+									</div>
+								) : journal.phase === "empty" ? (
+									<EmptyState
+										title={journal.title}
+										description={journal.hint}
+										className="my-2 py-6"
 									/>
-								))}
-							</div>
-						)}
-					</section>
-				</aside>
-			</div>
+								) : (
+									<div className="template-list">
+										{journal.entries?.map((event) => (
+											<CommunicationEventRow
+												communicationChannelLabels={communicationChannelLabels}
+												communicationStatusLabels={communicationStatusLabels}
+												event={event}
+												formatDateTime={formatDateTime}
+												key={event.id}
+											/>
+										))}
+									</div>
+								)}
+							</section>
+						</aside>
+					</div>
 
-			{/*
+					{/*
         ЗДЕСЬ БЫЛА СЕТКА ИЗ 14 ВИДЖЕТОВ. Убрана после проверки живыми запросами:
 
           404 (маршрута не существует вовсе) — 9 штук:

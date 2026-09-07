@@ -167,7 +167,13 @@ function formatMoment(value: string | null): string {
 			});
 }
 
-export function CampaignPanel() {
+export function CampaignPanel({
+	initialTemplates,
+	initialCampaigns,
+}: {
+	initialTemplates?: TemplateOption[];
+	initialCampaigns?: CampaignItem[];
+} = {}) {
 	const commQueries = useAppLogicContext();
 	/*
 	 * ПОЧЕМУ ЗДЕСЬ ЗАГОЛОВКИ, А НЕ ГОЛЫЙ fetch. БЫЛО СЛОМАНО НАСМЕРТЬ, но только у
@@ -198,8 +204,12 @@ export function CampaignPanel() {
 	const appLogic = useAppLogicContext();
 	const _auth = appLogic?.auth;
 
-	const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
-	const [templates, setTemplates] = useState<TemplateOption[]>([]);
+	const [campaigns, setCampaigns] = useState<CampaignItem[]>(
+		() => initialCampaigns ?? [],
+	);
+	const [templates, setTemplates] = useState<TemplateOption[]>(
+		() => initialTemplates ?? [],
+	);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<Notice | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -289,12 +299,28 @@ export function CampaignPanel() {
 	}
 
 	async function createCampaign() {
+		let campaignTitle = title.trim();
+		if (!campaignTitle) {
+			campaignTitle = `Сервисная рассылка ${new Date().toLocaleDateString("ru-RU")}`;
+			setTitle(campaignTitle);
+		}
+		let selectedTemplateId = templateId;
+		if (!selectedTemplateId) {
+			const firstTemplate = templates[0];
+			if (firstTemplate) {
+				selectedTemplateId = firstTemplate.id;
+				setTemplateId(selectedTemplateId);
+			} else {
+				showToast("Сначала создайте шаблон сообщения", "info");
+				return;
+			}
+		}
 		setBusy(true);
 		setNotice(null);
 		try {
 			const response = await commQueries.createCampaign({
-				title,
-				templateId,
+				title: campaignTitle,
+				templateId: selectedTemplateId,
 				scope,
 				criteria: buildCriteria(),
 			});
@@ -476,6 +502,7 @@ export function CampaignPanel() {
 					className="secondary-button"
 					type="button"
 					onClick={() => void load()}
+					style={{ minHeight: "44px" }}
 				>
 					Повторить
 				</button>
@@ -560,6 +587,7 @@ export function CampaignPanel() {
 											className="secondary-button"
 											type="button"
 											onClick={() => void openPreview(campaign.id)}
+											style={{ minHeight: "44px" }}
 										>
 											Предпросмотр
 										</button>
@@ -582,6 +610,7 @@ export function CampaignPanel() {
 													onClick={() =>
 														void campaignAction(campaign.id, "launch")
 													}
+													style={{ minHeight: "44px" }}
 												>
 													Запустить
 												</button>
@@ -592,6 +621,7 @@ export function CampaignPanel() {
 													onClick={() =>
 														void campaignAction(campaign.id, "cancel")
 													}
+													style={{ minHeight: "44px" }}
 												>
 													Отменить
 												</button>
@@ -603,6 +633,7 @@ export function CampaignPanel() {
 													type="button"
 													data-testid={`campaign-progress-btn-${campaign.id}`}
 													onClick={() => void loadProgress(campaign.id)}
+													style={{ minHeight: "44px" }}
 												>
 													Ход отправки
 												</button>
@@ -613,6 +644,7 @@ export function CampaignPanel() {
 													onClick={() =>
 														void campaignAction(campaign.id, "cancel")
 													}
+													style={{ minHeight: "44px" }}
 												>
 													Остановить
 												</button>
@@ -624,6 +656,7 @@ export function CampaignPanel() {
 												type="button"
 												data-testid={`campaign-progress-btn-${campaign.id}`}
 												onClick={() => void loadProgress(campaign.id)}
+												style={{ minHeight: "44px" }}
 											>
 												Ход отправки
 											</button>
@@ -725,6 +758,7 @@ export function CampaignPanel() {
 							data-testid="campaign-progress-refresh"
 							disabled={progressLoading}
 							onClick={() => void loadProgress(progressFor)}
+							style={{ minHeight: "44px" }}
 						>
 							Обновить
 						</button>
@@ -736,6 +770,7 @@ export function CampaignPanel() {
 								setProgress(null);
 								setProgressError(null);
 							}}
+							style={{ minHeight: "44px" }}
 						>
 							Закрыть ход
 						</button>
@@ -863,6 +898,7 @@ export function CampaignPanel() {
 						className="secondary-button"
 						type="button"
 						onClick={() => setPreviewFor(null)}
+						style={{ minHeight: "44px" }}
 					>
 						Закрыть предпросмотр
 					</button>
@@ -941,8 +977,9 @@ export function CampaignPanel() {
 					<button
 						className="primary-button"
 						type="button"
-						disabled={busy || !title.trim() || !templateId}
+						disabled={busy}
 						onClick={() => void createCampaign()}
+						style={{ minHeight: "44px" }}
 					>
 						Создать и посмотреть получателей
 					</button>

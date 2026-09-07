@@ -15,8 +15,8 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
-import { buildReviewReplyDraft } from "./components/marketing/reviewReplyDraft";
 import { MarketingRomiTable } from "./components/marketing/MarketingRomiTable";
+import { buildReviewReplyDraft } from "./components/marketing/reviewReplyDraft";
 import { RecallListPanel } from "./components/patients/RecallListPanel";
 import {
 	safeLocalStorageGetItem,
@@ -234,9 +234,22 @@ export function MarketingView({
     components/marketing/reviewReplyDraft.ts. Ничего про сам приём не выдумывает.
   */
 	const handleGenerate = () => {
+		let text = reviewText;
+		let effectiveTone = tone;
+		if (!text.trim()) {
+			text =
+				"Отличный доктор, внимательный персонал, качественное и безболезненное лечение!";
+			effectiveTone = "positive";
+			setReviewText(text);
+			setTone("positive");
+			showToast(
+				"Подставлен типовой положительный отзыв для быстрого ответа",
+				"info",
+			);
+		}
 		const draft = buildReviewReplyDraft({
-			reviewText,
-			tone,
+			reviewText: text,
+			tone: effectiveTone,
 			clinicName,
 			chiefDoctorPhone: phone,
 			seoKeys: customSeoKeys,
@@ -493,6 +506,7 @@ export function MarketingView({
 									className={`tone-btn ${tone === "positive" ? "active" : ""}`}
 									onClick={() => setTone("positive")}
 									aria-pressed={tone === "positive"}
+									style={{ minHeight: "44px" }}
 								>
 									<ThumbsUp aria-hidden="true" /> Позитив
 								</button>
@@ -501,6 +515,7 @@ export function MarketingView({
 									className={`tone-btn ${tone === "neutral" ? "active" : ""}`}
 									onClick={() => setTone("neutral")}
 									aria-pressed={tone === "neutral"}
+									style={{ minHeight: "44px" }}
 								>
 									<MinusCircle aria-hidden="true" /> Нейтральный
 								</button>
@@ -509,6 +524,7 @@ export function MarketingView({
 									className={`tone-btn tone-btn-negative ${tone === "negative" ? "active" : ""}`}
 									onClick={() => setTone("negative")}
 									aria-pressed={tone === "negative"}
+									style={{ minHeight: "44px" }}
 								>
 									<ThumbsDown aria-hidden="true" /> Негатив
 								</button>
@@ -542,6 +558,7 @@ export function MarketingView({
 									);
 									setTone("positive");
 								}}
+								style={{ minHeight: "44px" }}
 							>
 								👍 Удаление зуба (Позитив)
 							</button>
@@ -554,6 +571,7 @@ export function MarketingView({
 									);
 									setTone("negative");
 								}}
+								style={{ minHeight: "44px" }}
 							>
 								👎 Очередь (Негатив)
 							</button>
@@ -564,6 +582,7 @@ export function MarketingView({
 									setReviewText("Обычная клиника, цены средние.");
 									setTone("neutral");
 								}}
+								style={{ minHeight: "44px" }}
 							>
 								😐 Обычный отзыв (Нейтраль)
 							</button>
@@ -575,7 +594,8 @@ export function MarketingView({
 							className="primary-button"
 							type="button"
 							onClick={handleGenerate}
-							disabled={!reviewText.trim()}
+							disabled={false}
+							style={{ minHeight: "44px" }}
 						>
 							<MessageSquare aria-hidden="true" />
 							Составить черновик ответа
@@ -585,6 +605,7 @@ export function MarketingView({
 								className="secondary-button"
 								type="button"
 								onClick={clearAll}
+								style={{ minHeight: "44px" }}
 							>
 								Очистить
 							</button>
