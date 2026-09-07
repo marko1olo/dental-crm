@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X, Check, Armchair } from "lucide-react";
+import { showToast } from "../GlobalToast";
 
 export interface ChairColorPreset {
 	id: string;
@@ -103,6 +104,10 @@ export function QuickAddChairModal({
 		}
 		const finalName = chairName.trim() || defaultChairName;
 		const finalRoom = roomNumber.trim() || defaultRoomName;
+
+		if (!chairName.trim()) {
+			showToast(`Название не указано. Создано «${finalName}» (${finalRoom})`, "info", 4000);
+		}
 
 		setIsSubmitting(true);
 		try {

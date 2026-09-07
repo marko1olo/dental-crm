@@ -36,7 +36,7 @@ import {
 } from "./components/schedule/QuickBookingDrawer";
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
 import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
-import { ScheduleGrid } from "./components/schedule/ScheduleGrid";
+import { ScheduleGrid, type ChairDoctorShiftAssignment } from "./components/schedule/ScheduleGrid";
 import { ScheduleTimeline } from "./components/schedule/ScheduleTimeline";
 import {
 	type DayGroupingAppointment,
@@ -51,6 +51,7 @@ import {
 	type DoctorShift,
 	type StaffMember as RosterStaffMember,
 	type CabinetDefinition as RosterCabinetDefinition,
+	type ShiftArchetypeId,
 } from "./components/schedule/roster/DoctorShiftRosterModal";
 import { WaitlistDrawer } from "./components/schedule/WaitlistDrawer";
 import type { MedicalStaffRole } from "./components/schedule/roster/doctorShiftRosterPresets";
@@ -598,6 +599,97 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	);
 
 	const clinicToday = todayScheduleDate();
+	const currentDateKey = scheduleDateFilter || clinicToday || todayScheduleDate();
+
+	const computedChairDoctorAssignments = useMemo(() => {
+		const assignments: Record<string, ChairDoctorShiftAssignment> = {};
+		for (const shift of savedDoctorShifts) {
+			if (shift.dateIso === currentDateKey && shift.chairId && shift.doctorId) {
+				const preset: "morning" | "evening" | "full" | "custom" =
+					shift.archetypeId === "morning_shift"
+						? "morning"
+						: shift.archetypeId === "evening_shift"
+							? "evening"
+							: "custom";
+				const hours = `${shift.startTime}–${shift.endTime}`;
+				assignments[shift.chairId] = {
+					chairId: shift.chairId,
+					doctorId: shift.doctorId,
+					doctorName: shift.doctorName,
+					doctorSpecialty: shift.doctorRole,
+					shiftPreset: preset,
+					shiftLabel: shift.customNotes || hours,
+					shiftHours: hours,
+					startHour: parseInt(shift.startTime.slice(0, 2), 10) || 8,
+					endHour: parseInt(shift.endTime.slice(0, 2), 10) || 20,
+				};
+			}
+		}
+		return assignments;
+	}, [savedDoctorShifts, currentDateKey]);
+
+	const handleAssignChairDoctor = useCallback(
+		(chairId: string, assignment: ChairDoctorShiftAssignment | null) => {
+			if (!assignment || !assignment.doctorId) {
+				setSavedDoctorShifts((prev) => {
+					const next = prev.filter(
+						(s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
+					);
+					try {
+						if (typeof localStorage !== "undefined") {
+							localStorage.setItem("dente_doctor_shifts", JSON.stringify(next));
+						}
+					} catch {}
+					return next;
+				});
+			} else {
+				const archetypeId: ShiftArchetypeId =
+					assignment.shiftPreset === "evening"
+						? "evening_shift"
+						: "morning_shift";
+				const parts = assignment.shiftHours.split("–");
+				const startTime = parts[0]?.trim() || "08:00";
+				const endTime = parts[1]?.trim() || "20:00";
+				const doctorRole: MedicalStaffRole =
+					(assignment.doctorSpecialty as MedicalStaffRole) || "therapist";
+				const newShift: DoctorShift = {
+					id: `shift-${currentDateKey}-${chairId}`,
+					doctorId: assignment.doctorId,
+					doctorName: assignment.doctorName,
+					doctorRole,
+					assistantId: null,
+					assistantName: null,
+					cabinetId: chairId,
+					chairId: chairId,
+					dateIso: currentDateKey,
+					archetypeId,
+					startTime,
+					endTime,
+					durationHours:
+						(parseInt(endTime.slice(0, 2), 10) -
+							parseInt(startTime.slice(0, 2), 10)) ||
+						6.0,
+					breakMinutes: 0,
+					isNight: false,
+					nightHours: 0,
+					status: "scheduled",
+				};
+				setSavedDoctorShifts((prev) => {
+					const filtered = prev.filter(
+						(s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
+					);
+					const next = [...filtered, newShift];
+					try {
+						if (typeof localStorage !== "undefined") {
+							localStorage.setItem("dente_doctor_shifts", JSON.stringify(next));
+						}
+					} catch {}
+					return next;
+				});
+			}
+		},
+		[currentDateKey],
+	);
 
 	/**
 	 * 1-клик вставка экстренного слота для пациента с острой болью (CITO!)
@@ -1360,6 +1452,27 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
 				showClipboardPanel={showClipboardPanel}
 				onOpenCalendarSync={() => setIsCalendarSyncModalOpen(true)}
+				onAddChair={async (chairData) => {
+					try {
+						const res = await fetch("/api/settings/chairs", {
+							method: "POST",
+							headers: denteAdminSecretRequestHeaders({
+								"Content-Type": "application/json",
+							}),
+							body: JSON.stringify({
+								name: chairData.name,
+								room: chairData.room,
+								specialization: chairData.specialization,
+								color: chairData.color,
+							}),
+						});
+						if (res.ok && typeof props.loadDashboard === "function") {
+							await props.loadDashboard();
+						}
+					} catch (err) {
+						console.warn("Failed to add chair via QuickAddChairModal:", err);
+					}
+				}}
 				onQuickBooking={() => {
 					setQuickBookingSlot({
 						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
@@ -1706,6 +1819,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					appointmentLabels={appointmentLabels}
 					selectedChairId={scheduleChairFilterId}
 					selectedDoctorId={scheduleDoctorFilterId}
+					chairDoctorAssignments={
+						Object.keys(computedChairDoctorAssignments).length > 0
+							? computedChairDoctorAssignments
+							: undefined
+					}
+					onAssignChairDoctor={handleAssignChairDoctor}
 				/>
 			) : (
 				<ScheduleTimeline
