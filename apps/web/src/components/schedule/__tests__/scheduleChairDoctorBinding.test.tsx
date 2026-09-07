@@ -155,13 +155,34 @@ function setupMockDom() {
 	// biome-ignore lint/suspicious/noExplicitAny: mock DOM
 	const doc: any = {
 		nodeType: 9,
-		createTextNode: (text: string) => ({
-			nodeType: 3,
-			textContent: text,
-			style: {},
-			parentNode: null,
-			ownerDocument: null,
-		}),
+		createTextNode: (text: string) => {
+			const tn: any = {
+				nodeType: 3,
+				_val: String(text ?? ""),
+				get textContent(): string {
+					return this._val;
+				},
+				set textContent(v: string) {
+					this._val = String(v ?? "");
+				},
+				get nodeValue(): string {
+					return this._val;
+				},
+				set nodeValue(v: string) {
+					this._val = String(v ?? "");
+				},
+				get data(): string {
+					return this._val;
+				},
+				set data(v: string) {
+					this._val = String(v ?? "");
+				},
+				style: {},
+				parentNode: null,
+				ownerDocument: null,
+			};
+			return tn;
+		},
 		createComment: () => ({ nodeType: 8, parentNode: null, ownerDocument: null }),
 		addEventListener: () => {},
 		removeEventListener: () => {},
@@ -184,8 +205,13 @@ function setupMockDom() {
 			attributes: [],
 			ownerDocument: doc,
 			parentNode: null,
-			textContent: "",
-			disabled: false,
+			get textContent(): string {
+				if (children.length === 0) return (el as any)._textContent ?? "";
+				return children.map((c) => c.textContent ?? "").join("");
+			},
+			set textContent(v: string) {
+				(el as any)._textContent = v;
+			},
 			value: "",
 			className: "",
 			appendChild: (child: MockDomNode) => {
@@ -272,9 +298,11 @@ function setupMockDom() {
 			Object.defineProperty(el, "value", {
 				get() {
 					const opts = (el as any).options as MockDomNode[];
-					const selectedOpt = opts.find((o) => (o as any).selected);
-					if (selectedOpt) return (selectedOpt as any).value;
-					return attrs.value !== undefined ? attrs.value : ((el as any)._value ?? "");
+					const selectedOpts = opts.filter((o) => (o as any).selected);
+					if (selectedOpts.length > 0) return (selectedOpts[selectedOpts.length - 1] as any).value;
+					if (attrs.value !== undefined) return attrs.value;
+					if ((el as any)._value !== undefined) return (el as any)._value;
+					return "";
 				},
 				set(v) {
 					(el as any)._value = String(v);
@@ -297,12 +325,21 @@ function setupMockDom() {
 			});
 			Object.defineProperty(el, "selected", {
 				get() {
-					return attrs.selected === "true" || attrs.selected === "" || Boolean((el as any)._selected);
+					return Boolean((el as any)._selected) || attrs.selected === "true" || attrs.selected === "";
 				},
 				set(v) {
 					(el as any)._selected = Boolean(v);
 					if (v) {
 						attrs.selected = "true";
+						if (el.parentNode && el.parentNode.tagName === "SELECT" && !(el.parentNode as any).multiple) {
+							for (const sibling of el.parentNode.children || []) {
+								if (sibling !== el && sibling.tagName === "OPTION") {
+									(sibling as any)._selected = false;
+									delete (sibling as any).dataset?.selected;
+									if (sibling.removeAttribute) sibling.removeAttribute("selected");
+								}
+							}
+						}
 					} else {
 						delete attrs.selected;
 					}
@@ -540,10 +577,13 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		if (typeof document !== "undefined" && document.body) {
 			(document.body as unknown as MockDomNode).children.length = 0;
 		}
+		if (typeof localStorage !== "undefined" && typeof localStorage.clear === "function") {
+			localStorage.clear();
+		}
 	});
 
 	it("exports standard shift presets conforming to Mandate 8k (Morning, Evening, Full Day)", () => {
-		expect(CHAIR_SHIFT_PRESETS.length).toBe(3);
+		expect(CHAIR_SHIFT_PRESETS.length).toBeGreaterThanOrEqual(3);
 		expect(CHAIR_SHIFT_PRESETS[0]?.id).toBe("morning");
 		expect(CHAIR_SHIFT_PRESETS[0]?.hours).toBe("08:00–14:00");
 		expect(CHAIR_SHIFT_PRESETS[1]?.id).toBe("evening");
@@ -823,5 +863,184 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		// Assistant selector is hidden in solo doctor mode (Mandate 8e/8n zero friction)
 		const assistantSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-booking-assistant");
 		expect(assistantSelect).toBeNull();
+	});
+
+	it("6. ScheduleGrid renders inline '+ Кресло' header button with >= 44px touch target (StomX parity) and triggers onOpenAddChair", async () => {
+		const onOpenAddChair = vi.fn();
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		await act(async () => {
+			root.render(
+				React.createElement(ScheduleGrid, {
+					dashboard: multiChairDashboard,
+					dateKey: "2026-09-07",
+					appointments: [],
+					onSlotClick: vi.fn(),
+					onAppointmentClick: vi.fn(),
+					patientName: (_, id) => (id ? "Пациент" : "—"),
+					formatTime: (iso: string) => iso.slice(11, 16),
+					toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+					appointmentLabels: mockAppointmentLabels,
+					onOpenAddChair,
+				}),
+			);
+		});
+
+		const inlineAddChairBtn = findNodeByTestId(container, "btn-grid-inline-add-chair");
+		expect(inlineAddChairBtn).not.toBeNull();
+		expect(inlineAddChairBtn?.style?.minHeight).toBe("44px");
+		expect(inlineAddChairBtn?.style?.minWidth).toBe("44px");
+		expect(inlineAddChairBtn?.textContent).toContain("+ Кресло");
+
+		await clickNode(inlineAddChairBtn);
+		expect(onOpenAddChair).toHaveBeenCalledTimes(1);
+
+		// Also check rendered HTML
+		const html = renderToString(
+			React.createElement(ScheduleGrid, {
+				dashboard: multiChairDashboard,
+				dateKey: "2026-09-07",
+				appointments: [],
+				onSlotClick: vi.fn(),
+				onAppointmentClick: vi.fn(),
+				patientName: (_, id) => (id ? "Пациент" : "—"),
+				formatTime: (iso: string) => iso.slice(11, 16),
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: mockAppointmentLabels,
+			}),
+		);
+		expect(html).toContain('data-testid="btn-grid-inline-add-chair"');
+		expect(html).toContain("+ Кресло");
+		expect(html).toContain("min-h-[44px]");
+	});
+
+	it("7. Doctor assignment modal provides 1-tap quick-switch doctor pills and non-blocking 'Снять назначение' button", async () => {
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		const onAssignChairDoctor = vi.fn();
+		const initialAssignments: Record<string, ChairDoctorShiftAssignment> = {
+			"chair-1": {
+				chairId: "chair-1",
+				doctorId: "doc-1",
+				doctorName: "Иванов Иван Иванович",
+				doctorSpecialty: "Терапевт",
+				shiftPreset: "full",
+				shiftLabel: "Полный день",
+				shiftHours: "08:00–20:00",
+			},
+		};
+
+		await act(async () => {
+			root.render(
+				React.createElement(ScheduleGrid, {
+					dashboard: multiChairDashboard,
+					dateKey: "2026-09-07",
+					appointments: [],
+					onSlotClick: vi.fn(),
+					onAppointmentClick: vi.fn(),
+					patientName: (_, id) => (id ? "Пациент" : "—"),
+					formatTime: (iso: string) => iso.slice(11, 16),
+					toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+					appointmentLabels: mockAppointmentLabels,
+					chairDoctorAssignments: initialAssignments,
+					onAssignChairDoctor,
+				}),
+			);
+		});
+
+		// Open modal via assigned badge
+		const badge = findNodeByTestId(container, "chair-doctor-badge-chair-1");
+		expect(badge).not.toBeNull();
+		await clickNode(badge);
+
+		// Verify 1-tap doctor quick-switch pills exist for multiple doctors
+		const switchPills = findNodeByTestId(container, "doctor-quick-switch-pills");
+		expect(switchPills).not.toBeNull();
+
+		const doc2Pill = findNodeByTestId(container, "btn-quick-select-doctor-doc-2");
+		expect(doc2Pill).not.toBeNull();
+		expect(doc2Pill?.textContent).toContain("Петров П.С.");
+
+		// Tap doc-2 pill
+		await clickNode(doc2Pill);
+
+		const docSelect = findNodeByTestId(container, "select-chair-doctor");
+
+		expect(docSelect?.value).toBe("doc-2");
+
+		// Verify non-blocking "Снять назначение" button exists and unassigns
+		const unassignBtn = findNodeByTestId(container, "btn-unassign-chair-doctor");
+		expect(unassignBtn).not.toBeNull();
+		expect(unassignBtn?.textContent).toContain("Снять назначение");
+
+		await clickNode(unassignBtn);
+		expect(onAssignChairDoctor).toHaveBeenCalledWith("chair-1", null);
+	});
+
+	it("8. QuickBookingDrawer displays duty doctor badge and non-blocking override note when doctor is changed (Mandates 8e, 8k)", async () => {
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		await act(async () => {
+			root.render(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: vi.fn(),
+					dashboard: multiChairDashboard,
+					initialSlot: {
+						dateKey: "2026-09-07",
+						startTime: "10:00",
+						chairId: "chair-1",
+						doctorUserId: "doc-1", // Ivanov duty doctor on chair-1
+					},
+				}),
+			);
+		});
+
+		// Duty doctor badge is displayed
+		const dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
+		expect(dutyBadge).not.toBeNull();
+		expect(dutyBadge?.textContent).toContain("Дежурный врач: Иванов И.И.");
+
+		// Initially doc-1 is selected, so no override note
+		let overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
+		expect(overrideNote).toBeNull();
+
+		// Change doctor to doc-2 (Petrov)
+		const docSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-booking-doctor");
+		expect(docSelect).not.toBeNull();
+		await changeNode(docSelect, "doc-2");
+
+		// Override note must now be visible with informative non-blocking text
+		overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
+		expect(overrideNote).not.toBeNull();
+		expect(overrideNote?.textContent).toContain("На кресле «Кабинет 1 (Терапия)» дежурит Иванов И.И.");
+		expect(overrideNote?.textContent).toContain("Запись создается с подтверждением");
+	});
+
+	it("9. Intelligent default doctor suggestion matches chair specialization or index when shifts are not saved", () => {
+		const html = renderToString(
+			React.createElement(ScheduleGrid, {
+				dashboard: multiChairDashboard,
+				dateKey: "2026-09-07",
+				appointments: [],
+				onSlotClick: vi.fn(),
+				onAppointmentClick: vi.fn(),
+				patientName: (_, id) => (id ? "Пациент" : "—"),
+				formatTime: (iso: string) => iso.slice(11, 16),
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: mockAppointmentLabels,
+			}),
+		);
+
+		// Chair 1 (therapist) intelligently suggests Ivanov (therapist)
+		expect(html).toContain('data-testid="btn-quick-assign-chair-1"');
+		expect(html).toContain("1 клик: Иванов И.И.");
+
+		// Chair 2 (surgery) intelligently suggests Petrov (surgery)
+		expect(html).toContain('data-testid="btn-quick-assign-chair-2"');
+		expect(html).toContain("1 клик: Петров П.С.");
 	});
 });

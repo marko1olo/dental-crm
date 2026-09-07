@@ -86,6 +86,14 @@ export const CHAIR_SHIFT_PRESETS = [
 		startHour: 8,
 		endHour: 20,
 	},
+	{
+		id: "two_shifts" as const,
+		label: "2 смены (Утро + Вечер)",
+		hours: "08:00–20:00",
+		name: "2 смены (08–14 / 14–20)",
+		startHour: 8,
+		endHour: 20,
+	},
 ];
 
 export function formatDoctorShortName(fullName: string): string {
@@ -345,7 +353,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 	const [assigningChairId, setAssigningChairId] = useState<string | null>(null);
 	const [modalDoctorId, setModalDoctorId] = useState<string>("");
-	const [modalShiftPreset, setModalShiftPreset] = useState<"morning" | "evening" | "full">("full");
+	const [modalEveningDoctorId, setModalEveningDoctorId] = useState<string>("");
+	const [modalShiftPreset, setModalShiftPreset] = useState<"morning" | "evening" | "full" | "two_shifts">("full");
 	const [isInternalAddChairModalOpen, setIsInternalAddChairModalOpen] = useState<boolean>(false);
 
 	const handleOpenAddChair = useCallback(() => {
@@ -390,6 +399,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					(s) => hourNum >= s.startHour && hourNum < s.endHour,
 				);
 				if (matching) return matching.doctorId;
+				return null;
 			}
 			return assignment.doctorId || null;
 		},
@@ -401,23 +411,36 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			const existing = effectiveChairAssignments[chairId];
 			const suggested = getSuggestedDoctorForChair(chairId);
 			setAssigningChairId(chairId);
-			setModalDoctorId(
-				existing?.doctorId || (suggested ? suggested.id : doctors.length > 0 ? doctors[0]!.id : ""),
-			);
-			setModalShiftPreset(
-				existing?.shiftPreset === "morning" || existing?.shiftPreset === "evening"
-					? existing.shiftPreset
-					: "full",
-			);
+
+			if (existing?.subShifts && existing.subShifts.length > 1) {
+				setModalShiftPreset("two_shifts");
+				setModalDoctorId(existing.subShifts[0]?.doctorId || "");
+				setModalEveningDoctorId(existing.subShifts[1]?.doctorId || "");
+			} else {
+				setModalDoctorId(
+					existing?.doctorId || (suggested ? suggested.id : doctors.length > 0 ? doctors[0]!.id : ""),
+				);
+				const otherDoc = doctors.find((d) => d.id !== (existing?.doctorId || suggested?.id)) || doctors[1] || doctors[0];
+				setModalEveningDoctorId(otherDoc?.id || "");
+				setModalShiftPreset(
+					existing?.shiftPreset === "morning" || existing?.shiftPreset === "evening"
+						? existing.shiftPreset
+						: "full",
+				);
+			}
 		},
 		[effectiveChairAssignments, doctors, getSuggestedDoctorForChair],
 	);
 
 	const handleConfirmAssignDoctor = useCallback(
-		(chairId: string, docId: string, shiftPreset: "morning" | "evening" | "full") => {
+		(
+			chairId: string,
+			docId: string,
+			shiftPreset: "morning" | "evening" | "full" | "two_shifts",
+			eveningDocId?: string,
+		) => {
 			const doc = doctors.find((d) => d.id === docId);
 			const chair = effectiveChairs.find((c) => c.id === chairId) || { id: chairId, name: "Кресло" };
-			const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset) || CHAIR_SHIFT_PRESETS[2]!;
 			const specialty =
 				doc?.specialties && doc.specialties.length > 0
 					? specialtyLabels[doc.specialties[0] as DentalSpecialty] || doc.specialties[0]
@@ -426,17 +449,63 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						: "";
 			const doctorName = doc?.fullName || "Врач";
 
-			const assignment: ChairDoctorShiftAssignment = {
-				chairId,
-				doctorId: docId,
-				doctorName,
-				doctorSpecialty: specialty,
-				shiftPreset,
-				shiftLabel: preset.label,
-				shiftHours: preset.hours,
-				startHour: preset.startHour,
-				endHour: preset.endHour,
-			};
+			let assignment: ChairDoctorShiftAssignment;
+
+			if (shiftPreset === "two_shifts") {
+				const evDoc = doctors.find((d) => d.id === (eveningDocId || docId)) || doc;
+				const evDocName = evDoc?.fullName || "Врач";
+				const evDocSpecialty =
+					evDoc?.specialties && evDoc.specialties.length > 0
+						? specialtyLabels[evDoc.specialties[0] as DentalSpecialty] || evDoc.specialties[0]
+						: evDoc?.role === "doctor"
+							? "Стоматолог"
+							: "";
+
+				const subShifts: ChairDoctorSubShift[] = [
+					{
+						doctorId: docId,
+						doctorName,
+						doctorSpecialty: specialty,
+						startHour: 8,
+						endHour: 14,
+						shiftHours: "08:00–14:00",
+					},
+					{
+						doctorId: evDoc?.id || docId,
+						doctorName: evDocName,
+						doctorSpecialty: evDocSpecialty,
+						startHour: 14,
+						endHour: 20,
+						shiftHours: "14:00–20:00",
+					},
+				];
+
+				assignment = {
+					chairId,
+					doctorId: docId,
+					doctorName,
+					doctorSpecialty: specialty,
+					shiftPreset: "custom",
+					shiftLabel: `Утро: ${formatDoctorShortName(doctorName)} · Вечер: ${formatDoctorShortName(evDocName)}`,
+					shiftHours: "08:00–20:00",
+					startHour: 8,
+					endHour: 20,
+					subShifts,
+				};
+			} else {
+				const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset) || CHAIR_SHIFT_PRESETS[2]!;
+				assignment = {
+					chairId,
+					doctorId: docId,
+					doctorName,
+					doctorSpecialty: specialty,
+					shiftPreset,
+					shiftLabel: preset.label,
+					shiftHours: preset.hours,
+					startHour: preset.startHour,
+					endHour: preset.endHour,
+				};
+			}
 
 			setLocalChairAssignments((prev) => {
 				const next = { ...prev, [chairId]: assignment };
@@ -452,8 +521,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				props.onAssignChairDoctor(chairId, assignment);
 			}
 
-			const shortName = formatDoctorShortName(doctorName);
-			showToast(`Врач ${shortName} закреплен за креслом «${chair.name}» (${preset.hours})`, "success", 3000);
+			if (shiftPreset === "two_shifts") {
+				const evDoc = doctors.find((d) => d.id === (eveningDocId || docId));
+				showToast(
+					`Кресло «${chair.name}»: 2 смены (Утро: ${formatDoctorShortName(doctorName)}, Вечер: ${formatDoctorShortName(evDoc?.fullName || doctorName)})`,
+					"success",
+					3500,
+				);
+			} else {
+				const shortName = formatDoctorShortName(doctorName);
+				showToast(`Врач ${shortName} закреплен за креслом «${chair.name}» (${assignment.shiftHours})`, "success", 3000);
+			}
 		},
 		[doctors, effectiveChairs, dateKey, props.onAssignChairDoctor],
 	);
@@ -750,7 +828,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												data-testid={`btn-quick-assign-${chair.id}`}
 											>
 												<Zap size={10} className="text-[var(--teal)] shrink-0" />
-												<span className="truncate">1 клик: {formatDoctorShortName(suggestedDoctor.fullName)}</span>
+												<span className="truncate">{`1 клик: ${formatDoctorShortName(suggestedDoctor.fullName)}`}</span>
 											</button>
 										)}
 									</div>
@@ -1992,6 +2070,38 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									</option>
 								))}
 							</select>
+
+							{/* 1-tap doctor quick-switch pills (StomX / DentalPRO parity) */}
+							{doctors.length > 1 && (
+								<div className="mt-2.5 space-y-1">
+									<span className="text-[11px] font-semibold text-[var(--muted)] block">
+										Быстрый выбор врача (1 тап):
+									</span>
+									<div className="flex flex-wrap gap-1.5" data-testid="doctor-quick-switch-pills">
+										{doctors.map((d) => {
+											const isSelected = modalDoctorId === d.id;
+											const shortName = formatDoctorShortName(d.fullName);
+											return (
+												<button
+													key={d.id}
+													type="button"
+													onClick={() => setModalDoctorId(d.id)}
+													className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+														isSelected
+															? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
+															: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper)]"
+													}`}
+													data-testid={`btn-quick-select-doctor-${d.id}`}
+													style={{ minHeight: "44px" }}
+												>
+													<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
+													<span>{shortName}</span>
+												</button>
+											);
+										})}
+									</div>
+								</div>
+							)}
 						</div>
 
 						{/* Shift presets */}
@@ -2035,8 +2145,9 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									}}
 									className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-colors cursor-pointer"
 									data-testid="btn-unassign-chair-doctor"
+									title="Снять назначение врача с кресла (Мандат 8e)"
 								>
-									Снять с кресла
+									Снять назначение
 								</button>
 							) : (
 								<div />
@@ -2072,6 +2183,16 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			</div>
 		);
 	})()}
+
+	{/* Quick Add Chair Modal for inline grid additions */}
+	{(Boolean(props.onAddChair) || isInternalAddChairModalOpen) && (
+		<QuickAddChairModal
+			isOpen={isInternalAddChairModalOpen}
+			onClose={() => setIsInternalAddChairModalOpen(false)}
+			existingChairsCount={effectiveChairs.length}
+			{...(props.onAddChair ? { onAddChair: props.onAddChair } : {})}
+		/>
+	)}
 </div>
 	);
 });

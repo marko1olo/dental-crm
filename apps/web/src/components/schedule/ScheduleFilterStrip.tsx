@@ -1,9 +1,10 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus } from "lucide-react";
-import React, { type ReactElement, useState, useRef, useEffect } from "react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus, Armchair } from "lucide-react";
+import React, { type ReactElement, useState, useRef, useEffect, useMemo } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { printBlankMedicalContract } from "../patient/blankContractPrint";
 import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
+import type { ChairDoctorShiftAssignment } from "./ScheduleGrid";
 
 export { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 
@@ -12,6 +13,8 @@ export interface ScheduleStaffMember {
 	fullName?: string;
 	active?: boolean;
 	role?: string;
+	specialties?: string[];
+	specialty?: string;
 }
 
 export interface ScheduleChair {
@@ -41,6 +44,9 @@ export interface ScheduleFilterStripProps {
 	setScheduleDoctorFilterId: (id: string | null) => void;
 	scheduleChairFilterId: string | null;
 	setScheduleChairFilterId: (id: string | null) => void;
+	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
+	currentDoctorId?: string | null | undefined;
+	onSelectMyChair?: (() => void) | undefined;
 	scheduleViewMode?: "timeline" | "grid";
 	setScheduleViewMode?: (mode: "timeline" | "grid") => void;
 	onQuickBooking?: () => void;
@@ -95,6 +101,9 @@ export function ScheduleFilterStrip({
 	setScheduleDoctorFilterId,
 	scheduleChairFilterId,
 	setScheduleChairFilterId,
+	chairDoctorAssignments,
+	currentDoctorId,
+	onSelectMyChair,
 	scheduleViewMode = "timeline",
 	setScheduleViewMode,
 	onQuickBooking,
@@ -126,6 +135,99 @@ export function ScheduleFilterStrip({
 	const todayIso = new Date().toISOString().slice(0, 10);
 	const tomorrowIso = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
 	const currentDateIso = scheduleDateFilter || todayIso;
+
+	// Doctor's on-duty chair detection for 1-click "Моё кресло" filter (StomX / DentalPRO parity, Mandates 8e, 8n)
+	const effectiveDoctorIdForMyChair =
+		currentDoctorId ||
+		scheduleDoctorFilterId ||
+		(staffMembers.find(
+			(member) =>
+				member?.active &&
+				(member?.role === "doctor" || member?.role === "owner"),
+		)?.id ?? null);
+
+	const myChair = useMemo(() => {
+		if (displayChairs.length === 0) return null;
+
+		// 1. If chairDoctorAssignments are provided, look for chair bound to effective doctor
+		if (chairDoctorAssignments && effectiveDoctorIdForMyChair) {
+			const assignedChairId = Object.keys(chairDoctorAssignments).find(
+				(cId) => chairDoctorAssignments[cId]?.doctorId === effectiveDoctorIdForMyChair,
+			);
+			if (assignedChairId) {
+				const matching = displayChairs.find((c) => c.id === assignedChairId);
+				if (matching) return matching;
+			}
+		}
+
+		// 2. Fallback to localStorage assignments for this date if present
+		if (typeof window !== "undefined" && effectiveDoctorIdForMyChair) {
+			try {
+				const raw = localStorage.getItem(`dente_chair_doctor_assignments_${currentDateIso}`);
+				if (raw) {
+					const parsed = JSON.parse(raw);
+					const assignedChairId = Object.keys(parsed).find(
+						(cId) => parsed[cId]?.doctorId === effectiveDoctorIdForMyChair,
+					);
+					if (assignedChairId) {
+						const matching = displayChairs.find((c) => c.id === assignedChairId);
+						if (matching) return matching;
+					}
+				}
+			} catch {}
+		}
+
+		// 3. Solo doctor or single chair: first chair is always their chair
+		if (isSoloDoctor || displayChairs.length === 1) {
+			return displayChairs[0] || null;
+		}
+
+		// 4. If doctor filter is active, find first chair matching their specialty or default
+		if (scheduleDoctorFilterId) {
+			const doc = staffMembers.find((m) => m.id === scheduleDoctorFilterId);
+			const docSpecs = doc?.specialties || (doc?.specialty ? [doc.specialty] : []);
+			if (docSpecs.length) {
+				const specMatch = displayChairs.find(
+					(c) => c.specialization && docSpecs.includes(c.specialization),
+				);
+				if (specMatch) return specMatch;
+			}
+			return displayChairs[0] || null;
+		}
+
+		return displayChairs[0] || null;
+	}, [
+		displayChairs,
+		chairDoctorAssignments,
+		effectiveDoctorIdForMyChair,
+		currentDateIso,
+		isSoloDoctor,
+		scheduleDoctorFilterId,
+		staffMembers,
+	]);
+
+	const isMyChairActive = Boolean(
+		myChair && scheduleChairFilterId === myChair.id,
+	);
+
+	const handleSelectMyChair = () => {
+		if (onSelectMyChair) {
+			onSelectMyChair();
+			return;
+		}
+		if (!myChair) return;
+
+		if (scheduleChairFilterId === myChair.id) {
+			// Toggle off back to all chairs
+			setScheduleChairFilterId(null);
+		} else {
+			// 1-Click: filter directly to on-duty chair
+			setScheduleChairFilterId(myChair.id);
+			if (effectiveDoctorIdForMyChair && !scheduleDoctorFilterId) {
+				setScheduleDoctorFilterId(effectiveDoctorIdForMyChair);
+			}
+		}
+	};
 
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
 	const [isAddChairModalOpen, setIsAddChairModalOpen] = useState(false);
@@ -227,6 +329,22 @@ export function ScheduleFilterStrip({
 				>
 					Все записи
 				</button>
+
+				{/* 1-Click "Моё кресло" filter chip (StomX / DentalPRO parity, Mandates 8e, 8n) */}
+				{myChair && (
+					<button
+						type="button"
+						className={`quick-chip schedule-my-chair-chip ${isMyChairActive ? "active font-bold border-[var(--teal,var(--brand-primary))] text-white bg-[var(--teal,var(--brand-primary))]" : ""} min-h-[44px] sm:min-h-0 sm:h-7 px-2.5 min-w-fit whitespace-nowrap text-xs font-semibold shrink-0 cursor-pointer rounded-lg inline-flex items-center gap-1.5 transition-all select-none`}
+						onClick={handleSelectMyChair}
+						title={`Моё дежурное кресло: ${myChair.name}. Нажмите для быстрой фильтрации (1 клик)`}
+						aria-label={`Моё дежурное кресло: ${myChair.name}`}
+						data-testid="schedule-my-chair-btn"
+						style={{ minHeight: "44px" }}
+					>
+						<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
+						<span>Моё кресло ({myChair.name})</span>
+					</button>
+				)}
 
 				{/* Doctor filter chips */}
 				{!isSoloDoctor &&

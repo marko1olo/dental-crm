@@ -1834,7 +1834,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								onChange={(e) => {
 									const newDocId = e.target.value;
 									setDoctorUserId(newDocId);
-									if (newDocId) {
+									// Only auto-assign matching chair if no chair was previously chosen by user
+									if (newDocId && !chairId) {
 										const doc = doctors.find((d) => d.id === newDocId);
 										if (doc?.specialties?.length) {
 											const matchingChair = chairs.find(
