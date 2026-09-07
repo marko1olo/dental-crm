@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { printBlankMedicalContract } from "../patient/blankContractPrint";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { logger } from "../../utils/logger";
@@ -48,8 +49,11 @@ import { checkAppointmentResourceCollision } from "../../utils/scheduleCollision
 import { showToast } from "../GlobalToast";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { SlotConflictModal } from "./SlotConflictModal";
-import { printBlankMedicalContract } from "../patient/blankContractPrint";
-import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
+import {
+	DEFAULT_SOLO_CHAIR,
+	formatDoctorShortName,
+	type ChairDoctorShiftAssignment,
+} from "./ScheduleGrid";
 
 export interface QuickBookingSlotInfo {
 	dateKey?: string | undefined;
@@ -82,6 +86,7 @@ export interface QuickBookingDrawerProps {
 	fromDateTimeLocalValue?:
 		| ((value: string, timeZone?: string | null) => string)
 		| undefined;
+	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
 }
 
 const COMMON_REASONS = [
@@ -109,6 +114,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		setDashboard,
 		toDateTimeLocalValue,
 		fromDateTimeLocalValue,
+		chairDoctorAssignments,
 	} = props;
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
@@ -299,6 +305,37 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		if (!selectedPatient) return null;
 		return calculatePatientReliability(selectedPatient, dashboard?.appointments);
 	}, [selectedPatient, dashboard?.appointments]);
+
+	const dutyDoctorId = initialSlot?.doctorUserId || (chairId ? chairDoctorAssignments?.[chairId]?.doctorId : null);
+	const dutyDoc = useMemo(() => {
+		if (!dutyDoctorId) return null;
+		return doctors.find((d) => d.id === dutyDoctorId) || null;
+	}, [dutyDoctorId, doctors]);
+
+	const dutyDocHours = useMemo(() => {
+		if (chairId && chairDoctorAssignments?.[chairId]?.shiftHours) {
+			return chairDoctorAssignments[chairId].shiftHours;
+		}
+		if (typeof window !== "undefined") {
+			try {
+				const dateKey = initialSlot?.dateKey || (startsAtLocal ? startsAtLocal.slice(0, 10) : "");
+				if (dateKey && chairId) {
+					const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
+					if (raw) {
+						const parsed = JSON.parse(raw);
+						if (parsed?.[chairId]?.shiftHours) {
+							return parsed[chairId].shiftHours;
+						}
+					}
+				}
+			} catch {}
+		}
+		return "08:00–20:00";
+	}, [chairDoctorAssignments, chairId, initialSlot?.dateKey, startsAtLocal]);
+
+	const currentChair = useMemo(() => {
+		return chairs.find((c) => c.id === chairId) || (chairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+	}, [chairs, chairId]);
 
 	// Initialize fields on open
 	useEffect(() => {
@@ -1823,29 +1860,34 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									</option>
 								))}
 							</select>
-							{initialSlot?.doctorUserId && (
-								<div className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--teal-dark,var(--teal))]">
-									<UserCheck size={12} className="shrink-0" />
+							{dutyDoc && (
+								<div
+									className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/20"
+									data-testid="duty-doctor-badge"
+								>
+									<UserCheck size={13} className="shrink-0 text-[var(--teal)]" />
 									<span>
-										Дежурный врач кресла:{" "}
-										<strong>
-											{doctors.find((d) => d.id === initialSlot.doctorUserId)?.fullName ||
-												"Назначен"}
-										</strong>
+										Дежурный врач: {formatDoctorShortName(dutyDoc.fullName)} ({dutyDocHours})
 									</span>
 								</div>
 							)}
-							{initialSlot?.doctorUserId &&
+							{dutyDoc &&
 								doctorUserId &&
-								doctorUserId !== initialSlot.doctorUserId && (
+								dutyDoctorId &&
+								doctorUserId !== dutyDoctorId && (
 									<div
-										className="mt-1 flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20"
-										data-testid="doctor-override-note"
+										className="mt-1.5 p-2.5 rounded-xl text-xs bg-amber-500/10 text-amber-900 dark:text-amber-100 border border-amber-500/30 flex items-start gap-2"
+										data-testid="duty-doctor-override-note"
 									>
-										<AlertTriangle size={12} className="shrink-0" />
-										<span>
-											Выбран другой врач вместо дежурного. Запись создаётся без ограничений (Мандат 8e).
-										</span>
+										<AlertTriangle size={15} className="shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+										<div className="space-y-0.5">
+											<span className="font-semibold block">
+												На кресле «{currentChair?.name || "Кресло"}» дежурит {formatDoctorShortName(dutyDoc.fullName)}. Запись создается с подтверждением.
+											</span>
+											<span className="text-[11px] text-[var(--muted)]">
+												(Мандат 8e: запись не блокируется, врач может принять пациента в свободном кабинете)
+											</span>
+										</div>
 									</div>
 								)}
 						</div>

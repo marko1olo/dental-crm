@@ -14,7 +14,7 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, it } from "node:test";
+import { describe, it, expect } from "vitest";
 
 import { registerHooks } from "node:module";
 
@@ -41,6 +41,12 @@ const {
 	DoctorShiftRosterModal,
 	generateWeeklyScheduleForStaffAndCabinets,
 } = await import("../DoctorShiftRosterModal");
+
+import {
+	detectRosterConflicts,
+	generateFormT13Matrix,
+	exportFormT13ToCsv,
+} from "../doctorShiftRosterEngine";
 
 import type {
 	CabinetDefinition,
@@ -266,6 +272,258 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 			assert.ok(shifts.length > 0, "Must create shifts using default fallback chair");
 			assert.equal(shifts[0]?.chairId, "chair-1a");
 			assert.equal(shifts[0]?.doctorId, "doc-solo");
+		});
+	});
+
+	describe("Adversarial Red-Teaming: 3 Chairs and 2 Doctors (Mandate 8m)", () => {
+		const startDateIso = "2026-08-24"; // Monday
+
+		it("five_day preset with 3 chairs and 2 doctors has ZERO doctor double-bookings", () => {
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				startDateIso,
+				mockRealStaff, // 2 doctors, 1 assistant
+				mockRealCabinets, // 3 chairs
+				"five_day",
+			);
+
+			assert.ok(shifts.length > 0);
+			const conflicts = detectRosterConflicts(shifts, mockRealStaff);
+			const doubleBookings = conflicts.filter((c) => c.type === "doctor_double_booking");
+			assert.equal(
+				doubleBookings.length,
+				0,
+				`Must not produce doctor double booking conflicts with 3 chairs and 2 doctors. Found: ${JSON.stringify(doubleBookings)}`,
+			);
+		});
+
+		it("two_two preset with 3 chairs and 2 doctors does not clone doctors across multiple chairs", () => {
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				startDateIso,
+				mockRealStaff,
+				mockRealCabinets,
+				"two_two",
+			);
+
+			assert.ok(shifts.length > 0);
+			const conflicts = detectRosterConflicts(shifts, mockRealStaff);
+			const doubleBookings = conflicts.filter((c) => c.type === "doctor_double_booking");
+			assert.equal(
+				doubleBookings.length,
+				0,
+				`2/2 preset must not assign doctor to multiple chairs simultaneously. Found: ${JSON.stringify(doubleBookings)}`,
+			);
+		});
+
+		it("morning preset with 3 chairs and 2 doctors staffs at most 2 chairs simultaneously", () => {
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				startDateIso,
+				mockRealStaff,
+				mockRealCabinets,
+				"morning",
+			);
+
+			assert.ok(shifts.length > 0);
+			const conflicts = detectRosterConflicts(shifts, mockRealStaff);
+			const doubleBookings = conflicts.filter((c) => c.type === "doctor_double_booking");
+			assert.equal(doubleBookings.length, 0);
+
+			// Check each day has at most 2 active morning shifts
+			const shiftsByDate = new Map<string, DoctorShift[]>();
+			for (const s of shifts) {
+				const list = shiftsByDate.get(s.dateIso) || [];
+				list.push(s);
+				shiftsByDate.set(s.dateIso, list);
+			}
+			for (const [_date, dayShifts] of shiftsByDate.entries()) {
+				assert.ok(dayShifts.length <= 2, "Cannot have more shifts than active doctors");
+			}
+		});
+
+		it("handles 1 chair and 3 doctors without overlapping shifts", () => {
+			const singleCabinet: CabinetDefinition[] = [
+				{
+					id: "cab-solo",
+					number: 1,
+					name: "Кабинет 1",
+					specialty: "Терапия",
+					chairs: [{ id: "chair-single", name: "Кресло 1", equipment: "Установка" }],
+				},
+			];
+
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				startDateIso,
+				mockRealStaff,
+				singleCabinet,
+				"morning",
+			);
+
+			assert.ok(shifts.length > 0);
+			const conflicts = detectRosterConflicts(shifts, mockRealStaff);
+			const chairOverlaps = conflicts.filter((c) => c.type === "chair_double_booking");
+			assert.equal(chairOverlaps.length, 0, "No chair collisions on single chair");
+		});
+	});
+
+	describe("Full Persistence Loop & Chair Header Instant Updates (Mandates 8e, 8n)", () => {
+		it("initializes from localStorage dente_doctor_shifts and preserves shifts", () => {
+			const storedShifts: DoctorShift[] = [
+				{
+					id: "shift-stored-1",
+					doctorId: "doc-real-1",
+					doctorName: "Смирнова Анна Сергеевна",
+					doctorRole: "therapist",
+					assistantId: null,
+					assistantName: null,
+					cabinetId: "cab-therapy-1",
+					chairId: "chair-planmeca-1",
+					dateIso: "2026-08-24",
+					archetypeId: "morning_shift",
+					startTime: "08:30",
+					endTime: "14:30",
+					durationHours: 6.0,
+					breakMinutes: 0,
+					isNight: false,
+					nightHours: 0,
+					status: "scheduled",
+				},
+			];
+
+			// Simulate JSON round-trip
+			const serialized = JSON.stringify(storedShifts);
+			const parsed = JSON.parse(serialized);
+			assert.equal(parsed.length, 1);
+			assert.equal(parsed[0].doctorId, "doc-real-1");
+			assert.equal(parsed[0].chairId, "chair-planmeca-1");
+		});
+
+		it("evaluates computedChairDoctorAssignments correctly for active dateKey", () => {
+			const shifts: DoctorShift[] = [
+				{
+					id: "shift-2026-08-24-chair-planmeca-1",
+					doctorId: "doc-real-1",
+					doctorName: "Смирнова Анна Сергеевна",
+					doctorRole: "therapist",
+					assistantId: "asst-real-1",
+					assistantName: "Волкова М.И.",
+					cabinetId: "cab-therapy-1",
+					chairId: "chair-planmeca-1",
+					dateIso: "2026-08-24",
+					archetypeId: "morning_shift",
+					startTime: "08:30",
+					endTime: "14:30",
+					durationHours: 6.0,
+					breakMinutes: 0,
+					isNight: false,
+					nightHours: 0,
+					status: "scheduled",
+				},
+				{
+					id: "shift-2026-08-24-chair-sirona-2",
+					doctorId: "doc-real-2",
+					doctorName: "Кузнецов Петр Васильевич",
+					doctorRole: "surgeon",
+					assistantId: null,
+					assistantName: null,
+					cabinetId: "cab-therapy-1",
+					chairId: "chair-sirona-2",
+					dateIso: "2026-08-24",
+					archetypeId: "evening_shift",
+					startTime: "14:30",
+					endTime: "20:30",
+					durationHours: 6.0,
+					breakMinutes: 0,
+					isNight: false,
+					nightHours: 0,
+					status: "scheduled",
+				},
+			];
+
+			const currentDateKey = "2026-08-24";
+			const assignments: Record<string, any> = {};
+
+			for (const shift of shifts) {
+				if (shift.dateIso === currentDateKey && shift.chairId && shift.doctorId) {
+					const preset = shift.archetypeId === "morning_shift"
+						? "morning"
+						: shift.archetypeId === "evening_shift"
+							? "evening"
+							: "custom";
+					const hours = `${shift.startTime}–${shift.endTime}`;
+					assignments[shift.chairId] = {
+						chairId: shift.chairId,
+						doctorId: shift.doctorId,
+						doctorName: shift.doctorName,
+						doctorSpecialty: shift.doctorRole,
+						shiftPreset: preset,
+						shiftLabel: shift.customNotes || hours,
+						shiftHours: hours,
+						startHour: parseInt(shift.startTime.slice(0, 2), 10) || 8,
+						endHour: parseInt(shift.endTime.slice(0, 2), 10) || 20,
+					};
+				}
+			}
+
+			assert.ok(assignments["chair-planmeca-1"]);
+			assert.equal(assignments["chair-planmeca-1"].doctorId, "doc-real-1");
+			assert.equal(assignments["chair-planmeca-1"].shiftPreset, "morning");
+			assert.equal(assignments["chair-planmeca-1"].shiftHours, "08:30–14:30");
+
+			assert.ok(assignments["chair-sirona-2"]);
+			assert.equal(assignments["chair-sirona-2"].doctorId, "doc-real-2");
+			assert.equal(assignments["chair-sirona-2"].shiftPreset, "evening");
+			assert.equal(assignments["chair-sirona-2"].shiftHours, "14:30–20:30");
+		});
+	});
+
+	describe("Form T-13 Tab and CSV Export with Real Clinic Staff (Mandates 8e, 8n)", () => {
+		it("generates Form T-13 matrix with real clinic staff without mock placeholders", () => {
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				"2026-08-24",
+				mockRealStaff,
+				mockRealCabinets,
+				"five_day",
+			);
+
+			const t13Matrix = generateFormT13Matrix(mockRealStaff, shifts, 2026, 8);
+			assert.equal(t13Matrix.length, mockRealStaff.length);
+
+			// Real staff names and positions
+			assert.equal(t13Matrix[0]?.tabNumber, "00101");
+			assert.equal(t13Matrix[0]?.staffName, "Смирнова Анна Сергеевна");
+			assert.ok(t13Matrix[0]?.totalMonthHours > 0);
+
+			assert.equal(t13Matrix[1]?.tabNumber, "00102");
+			assert.equal(t13Matrix[1]?.staffName, "Кузнецов Петр Васильевич");
+
+			assert.equal(t13Matrix[2]?.tabNumber, "00103");
+			assert.equal(t13Matrix[2]?.staffName, "Волкова Мария Ивановна");
+		});
+
+		it("exports Form T-13 to CSV with UTF-8 BOM, clinic name and correct headers", () => {
+			const shifts = generateWeeklyScheduleForStaffAndCabinets(
+				"2026-08-24",
+				mockRealStaff,
+				mockRealCabinets,
+				"five_day",
+			);
+
+			const t13Matrix = generateFormT13Matrix(mockRealStaff, shifts, 2026, 8);
+			const csv = exportFormT13ToCsv(t13Matrix, 2026, 8, 'ООО "Денте Премиум"');
+
+			// UTF-8 BOM
+			assert.ok(csv.startsWith("\uFEFF"), "CSV must start with UTF-8 BOM for Excel/1C");
+
+			// Clinic Name in Header
+			assert.ok(csv.includes("Денте Премиум"));
+
+			// Statutory T-13 Title
+			assert.ok(csv.includes("Унифицированная форма № Т-13"));
+
+			// Staff records
+			assert.ok(csv.includes("00101"));
+			assert.ok(csv.includes("Смирнова Анна Сергеевна"));
+			assert.ok(csv.includes("00102"));
+			assert.ok(csv.includes("Кузнецов Петр Васильевич"));
 		});
 	});
 

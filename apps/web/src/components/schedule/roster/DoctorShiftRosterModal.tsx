@@ -99,15 +99,42 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 
 		if (preset === "five_day") {
 			if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-				allChairs.forEach((chair, chairIdx) => {
-					const docIndex = (chairIdx + d) % effectiveDoctors.length;
-					const doc = effectiveDoctors[docIndex]!;
-					const asst = doc.defaultAssistantId
-						? staffList.find((s) => s.id === doc.defaultAssistantId) || null
-						: assistants[chairIdx % (assistants.length || 1)] || null;
+				const numDocs = effectiveDoctors.length;
+				const numChairs = allChairs.length;
+
+				let mornDocs: StaffMember[] = [];
+				let eveDocs: StaffMember[] = [];
+
+				if (numDocs === 1) {
+					// Solo doctor works 1 morning shift per day (30h/week per TK RF Article 350)
+					mornDocs = [effectiveDoctors[0]!];
+				} else {
+					// Split doctors across morning and evening shifts with daily rotation
+					const half = Math.ceil(numDocs / 2);
+					const rotatedDocs = Array.from({ length: numDocs }, (_, i) => effectiveDoctors[(i + d) % numDocs]!);
+					mornDocs = rotatedDocs.slice(0, half);
+					eveDocs = rotatedDocs.slice(half);
+				}
+
+				// Morning shift allocation (08:30-14:30)
+				const activeMornCount = Math.min(mornDocs.length, numChairs);
+				const usedMornAssistants = new Set<string>();
+				for (let i = 0; i < activeMornCount; i++) {
+					const doc = mornDocs[i]!;
+					const chair = (doc.preferredChairId && allChairs.find((c) => c.chairId === doc.preferredChairId)) ||
+						allChairs[i % numChairs]!;
+
+					let asst: StaffMember | null = null;
+					if (doc.defaultAssistantId && !usedMornAssistants.has(doc.defaultAssistantId)) {
+						asst = staffList.find((s) => s.id === doc.defaultAssistantId) || null;
+					}
+					if (!asst && assistants.length > 0) {
+						asst = assistants.find((a) => !usedMornAssistants.has(a.id)) || null;
+					}
+					if (asst) usedMornAssistants.add(asst.id);
 
 					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-morn`,
+						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-morn`,
 						doctorId: doc.id,
 						doctorName: doc.shortName || doc.fullName,
 						doctorRole: doc.role,
@@ -125,34 +152,45 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 						nightHours: 0,
 						status: "scheduled",
 					});
+				}
 
-					if (effectiveDoctors.length > 1) {
-						const eveDocIndex = (chairIdx + d + 1) % effectiveDoctors.length;
-						const eveDoc = effectiveDoctors[eveDocIndex]!;
-						const eveAsst = eveDoc.defaultAssistantId
-							? staffList.find((s) => s.id === eveDoc.defaultAssistantId) || null
-							: null;
-						shifts.push({
-							id: `shift-${dateIso}-${chair.chairId}-eve`,
-							doctorId: eveDoc.id,
-							doctorName: eveDoc.shortName || eveDoc.fullName,
-							doctorRole: eveDoc.role,
-							assistantId: eveAsst ? eveAsst.id : null,
-							assistantName: eveAsst ? eveAsst.shortName || eveAsst.fullName : null,
-							cabinetId: chair.cabinetId,
-							chairId: chair.chairId,
-							dateIso,
-							archetypeId: "evening_shift",
-							startTime: "14:30",
-							endTime: "20:30",
-							durationHours: 6.0,
-							breakMinutes: 0,
-							isNight: false,
-							nightHours: 0,
-							status: "scheduled",
-						});
+				// Evening shift allocation (14:30-20:30)
+				const activeEveCount = Math.min(eveDocs.length, numChairs);
+				const usedEveAssistants = new Set<string>();
+				for (let j = 0; j < activeEveCount; j++) {
+					const eveDoc = eveDocs[j]!;
+					const eveChair = (eveDoc.preferredChairId && allChairs.find((c) => c.chairId === eveDoc.preferredChairId)) ||
+						allChairs[j % numChairs]!;
+
+					let eveAsst: StaffMember | null = null;
+					if (eveDoc.defaultAssistantId && !usedEveAssistants.has(eveDoc.defaultAssistantId)) {
+						eveAsst = staffList.find((s) => s.id === eveDoc.defaultAssistantId) || null;
 					}
-				});
+					if (!eveAsst && assistants.length > 0) {
+						eveAsst = assistants.find((a) => !usedEveAssistants.has(a.id)) || null;
+					}
+					if (eveAsst) usedEveAssistants.add(eveAsst.id);
+
+					shifts.push({
+						id: `shift-${dateIso}-${eveChair.chairId}-${eveDoc.id}-eve`,
+						doctorId: eveDoc.id,
+						doctorName: eveDoc.shortName || eveDoc.fullName,
+						doctorRole: eveDoc.role,
+						assistantId: eveAsst ? eveAsst.id : null,
+						assistantName: eveAsst ? eveAsst.shortName || eveAsst.fullName : null,
+						cabinetId: eveChair.cabinetId,
+						chairId: eveChair.chairId,
+						dateIso,
+						archetypeId: "evening_shift",
+						startTime: "14:30",
+						endTime: "20:30",
+						durationHours: 6.0,
+						breakMinutes: 0,
+						isNight: false,
+						nightHours: 0,
+						status: "scheduled",
+					});
+				}
 			} else if (dayOfWeek === 6) {
 				const chair = allChairs[0]!;
 				const doc = effectiveDoctors[0]!;
@@ -177,48 +215,56 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 				});
 			}
 		} else if (preset === "two_two") {
-			allChairs.forEach((chair, chairIdx) => {
-				effectiveDoctors.forEach((doc, docIdx) => {
-					const isWorkDay = (d + docIdx * 2) % 4 < 2;
-					if (
-						isWorkDay &&
-						(docIdx % allChairs.length === chairIdx ||
-							effectiveDoctors.length <= allChairs.length)
-					) {
-						shifts.push({
-							id: `shift-${dateIso}-${chair.chairId}-${doc.id}-2-2`,
-							doctorId: doc.id,
-							doctorName: doc.shortName || doc.fullName,
-							doctorRole: doc.role,
-							assistantId: doc.defaultAssistantId || null,
-							assistantName: null,
-							cabinetId: chair.cabinetId,
-							chairId: chair.chairId,
-							dateIso,
-							archetypeId: "morning_shift",
-							startTime: "09:00",
-							endTime: "21:00",
-							durationHours: 11.0,
-							breakMinutes: 60,
-							isNight: false,
-							nightHours: 0,
-							status: "scheduled",
-							customNotes: "Сменный график 2/2",
-						});
-					}
-				});
-			});
-		} else if (preset === "morning") {
-			if (dayOfWeek !== 0) {
-				allChairs.forEach((chair, chairIdx) => {
-					const doc = effectiveDoctors[(chairIdx + d) % effectiveDoctors.length]!;
+			effectiveDoctors.forEach((doc, docIdx) => {
+				const isWorkDay = (d + docIdx * 2) % 4 < 2;
+				if (isWorkDay) {
+					const chair = (doc.preferredChairId && allChairs.find((c) => c.chairId === doc.preferredChairId)) ||
+						allChairs[docIdx % allChairs.length]!;
+
+					const asst = doc.defaultAssistantId
+						? staffList.find((s) => s.id === doc.defaultAssistantId) || null
+						: null;
+
 					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-morn-fixed`,
+						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-2-2`,
 						doctorId: doc.id,
 						doctorName: doc.shortName || doc.fullName,
 						doctorRole: doc.role,
-						assistantId: doc.defaultAssistantId || null,
-						assistantName: null,
+						assistantId: asst ? asst.id : null,
+						assistantName: asst ? asst.shortName || asst.fullName : null,
+						cabinetId: chair.cabinetId,
+						chairId: chair.chairId,
+						dateIso,
+						archetypeId: "morning_shift",
+						startTime: "09:00",
+						endTime: "21:00",
+						durationHours: 11.0,
+						breakMinutes: 60,
+						isNight: false,
+						nightHours: 0,
+						status: "scheduled",
+						customNotes: "Сменный график 2/2",
+					});
+				}
+			});
+		} else if (preset === "morning") {
+			if (dayOfWeek !== 0) {
+				const activeCount = Math.min(allChairs.length, effectiveDoctors.length);
+				for (let i = 0; i < activeCount; i++) {
+					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length]!;
+					const chair = (doc.preferredChairId && allChairs.find((c) => c.chairId === doc.preferredChairId)) ||
+						allChairs[(i + d) % allChairs.length]!;
+					const asst = doc.defaultAssistantId
+						? staffList.find((s) => s.id === doc.defaultAssistantId) || null
+						: null;
+
+					shifts.push({
+						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-morn-fixed`,
+						doctorId: doc.id,
+						doctorName: doc.shortName || doc.fullName,
+						doctorRole: doc.role,
+						assistantId: asst ? asst.id : null,
+						assistantName: asst ? asst.shortName || asst.fullName : null,
 						cabinetId: chair.cabinetId,
 						chairId: chair.chairId,
 						dateIso,
@@ -231,19 +277,26 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 						nightHours: 0,
 						status: "scheduled",
 					});
-				});
+				}
 			}
 		} else if (preset === "evening") {
 			if (dayOfWeek !== 0) {
-				allChairs.forEach((chair, chairIdx) => {
-					const doc = effectiveDoctors[(chairIdx + d) % effectiveDoctors.length]!;
+				const activeCount = Math.min(allChairs.length, effectiveDoctors.length);
+				for (let i = 0; i < activeCount; i++) {
+					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length]!;
+					const chair = (doc.preferredChairId && allChairs.find((c) => c.chairId === doc.preferredChairId)) ||
+						allChairs[(i + d) % allChairs.length]!;
+					const asst = doc.defaultAssistantId
+						? staffList.find((s) => s.id === doc.defaultAssistantId) || null
+						: null;
+
 					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-eve-fixed`,
+						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-eve-fixed`,
 						doctorId: doc.id,
 						doctorName: doc.shortName || doc.fullName,
 						doctorRole: doc.role,
-						assistantId: doc.defaultAssistantId || null,
-						assistantName: null,
+						assistantId: asst ? asst.id : null,
+						assistantName: asst ? asst.shortName || asst.fullName : null,
 						cabinetId: chair.cabinetId,
 						chairId: chair.chairId,
 						dateIso,
@@ -256,19 +309,26 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 						nightHours: 0,
 						status: "scheduled",
 					});
-				});
+				}
 			}
 		} else if (preset === "full_day") {
 			if (dayOfWeek !== 0) {
-				allChairs.forEach((chair, chairIdx) => {
-					const doc = effectiveDoctors[(chairIdx + d) % effectiveDoctors.length]!;
+				const activeCount = Math.min(allChairs.length, effectiveDoctors.length);
+				for (let i = 0; i < activeCount; i++) {
+					const doc = effectiveDoctors[(i + d) % effectiveDoctors.length]!;
+					const chair = (doc.preferredChairId && allChairs.find((c) => c.chairId === doc.preferredChairId)) ||
+						allChairs[(i + d) % allChairs.length]!;
+					const asst = doc.defaultAssistantId
+						? staffList.find((s) => s.id === doc.defaultAssistantId) || null
+						: null;
+
 					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-fullday`,
+						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-fullday`,
 						doctorId: doc.id,
 						doctorName: doc.shortName || doc.fullName,
 						doctorRole: doc.role,
-						assistantId: doc.defaultAssistantId || null,
-						assistantName: null,
+						assistantId: asst ? asst.id : null,
+						assistantName: asst ? asst.shortName || asst.fullName : null,
 						cabinetId: chair.cabinetId,
 						chairId: chair.chairId,
 						dateIso,
@@ -282,7 +342,7 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 						status: "scheduled",
 						customNotes: "Полный день 08:00–20:00",
 					});
-				});
+				}
 			}
 		}
 	}
@@ -1314,8 +1374,24 @@ export function DoctorShiftRosterModal({
 															key={d.dayOfMonth}
 															className="t13-cell-code"
 															style={{
-																backgroundColor: d.code === "Я" ? "#f0fdf4" : d.code === "Н" ? "#e0e7ff" : d.code === "Б" ? "#fee2e2" : d.code === "ОТ" ? "#dcfce7" : "transparent",
-																color: d.code === "Я" ? "#166534" : d.code === "Н" ? "#3730a3" : d.code === "Б" ? "#991b1b" : "var(--muted, #64748b)",
+																backgroundColor:
+																	d.code === "Я"
+																		? "var(--ok-bg, #f0fdf4)"
+																		: d.code === "Н"
+																			? "var(--info-bg, #e0e7ff)"
+																			: d.code === "Б"
+																				? "var(--bad-bg, #fee2e2)"
+																				: d.code === "ОТ"
+																					? "var(--teal-soft, #dcfce7)"
+																					: "transparent",
+																color:
+																	d.code === "Я"
+																		? "var(--ok-fg, #166534)"
+																		: d.code === "Н"
+																			? "var(--info-fg, #3730a3)"
+																			: d.code === "Б"
+																				? "var(--bad-fg, #991b1b)"
+																				: "var(--muted, #64748b)",
 															}}
 														>
 															{d.code}
@@ -1324,7 +1400,7 @@ export function DoctorShiftRosterModal({
 													<td rowSpan={2} style={{ fontWeight: 700 }}>{row.totalMonthDays}</td>
 													<td rowSpan={2} style={{ fontWeight: 700, color: "var(--teal, #0d9488)" }}>{row.totalMonthHours.toFixed(1)}</td>
 													<td rowSpan={2}>{row.totalNightHours.toFixed(1)}</td>
-													<td rowSpan={2} style={{ color: row.overtimeHours > 0 ? "#ef4444" : "inherit" }}>
+													<td rowSpan={2} style={{ color: row.overtimeHours > 0 ? "var(--bad-fg, #ef4444)" : "inherit" }}>
 														{row.overtimeHours > 0 ? `+${row.overtimeHours.toFixed(1)}` : "—"}
 													</td>
 												</tr>

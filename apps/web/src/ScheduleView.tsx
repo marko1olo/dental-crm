@@ -342,6 +342,40 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		try {
 			if (typeof localStorage !== "undefined") {
 				localStorage.setItem("dente_doctor_shifts", JSON.stringify(shifts));
+
+				// Group and sync date-keyed chair assignments so ScheduleGrid fallback state is completely coherent across all days
+				const shiftsByDate: Record<string, Record<string, ChairDoctorShiftAssignment>> = {};
+				for (const s of shifts) {
+					if (s.dateIso && s.chairId && s.doctorId && s.status !== "cancelled") {
+						if (!shiftsByDate[s.dateIso]) {
+							shiftsByDate[s.dateIso] = {};
+						}
+						const preset =
+							s.archetypeId === "morning_shift"
+								? "morning"
+								: s.archetypeId === "evening_shift"
+									? "evening"
+									: "custom";
+						const hours = `${s.startTime}–${s.endTime}`;
+						shiftsByDate[s.dateIso]![s.chairId] = {
+							chairId: s.chairId,
+							doctorId: s.doctorId,
+							doctorName: s.doctorName,
+							doctorSpecialty: s.doctorRole,
+							shiftPreset: preset,
+							shiftLabel: s.customNotes || hours,
+							shiftHours: hours,
+							startHour: parseInt(s.startTime.slice(0, 2), 10) || 8,
+							endHour: parseInt(s.endTime.slice(0, 2), 10) || 20,
+						};
+					}
+				}
+				for (const [dateIsoKey, dateMap] of Object.entries(shiftsByDate)) {
+					localStorage.setItem(
+						`dente_chair_doctor_assignments_${dateIsoKey}`,
+						JSON.stringify(dateMap),
+					);
+				}
 			}
 		} catch {
 			/* ignore storage error */
@@ -1558,6 +1592,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				setScheduleDoctorFilterId={setScheduleDoctorFilterId}
 				scheduleChairFilterId={scheduleChairFilterId}
 				setScheduleChairFilterId={setScheduleChairFilterId}
+				chairDoctorAssignments={computedChairDoctorAssignments}
 				scheduleViewMode={scheduleViewMode}
 				setScheduleViewMode={setScheduleViewMode}
 				isSmartAiOpen={isSmartAiOpen}
@@ -1925,7 +1960,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					selectedChairId={scheduleChairFilterId}
 					selectedDoctorId={scheduleDoctorFilterId}
 					chairDoctorAssignments={
-						Object.keys(computedChairDoctorAssignments).length > 0
+						savedDoctorShifts.length > 0 || Object.keys(computedChairDoctorAssignments).length > 0
 							? computedChairDoctorAssignments
 							: undefined
 					}
