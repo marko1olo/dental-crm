@@ -35,7 +35,9 @@ import {
 	Activity,
 	AlertTriangle,
 	Check,
+	CheckCircle2,
 	Clipboard,
+	Droplets,
 	FileText,
 	RotateCcw,
 	ShieldAlert,
@@ -46,6 +48,71 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
+
+export const CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU =
+	"Глубокое фторирование эмали (Tiefenfluorid / Сафорайд, A11.07.012)";
+
+export const CLINICAL_TOOTH_MOUSSE_SUMMARY_RU =
+	"Реминерализирующая терапия каппой (GC Tooth Mousse, A11.07.010)";
+
+export const CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU =
+	"Медикаментозная обработка пародонтальных карманов (Хлоргексидин + Метрогил Дента, A16.07.053)";
+
+export const HYGIENE_EXPRESS_SERVICES = {
+	proHygiene: {
+		code: "A16.07.051",
+		name: CLINICAL_PRO_HYGIENE_SUMMARY_RU,
+		price: 5500,
+		category: "hygiene",
+	},
+	deepFluoridation: {
+		code: "A11.07.012",
+		name: CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
+		price: 1800,
+		category: "hygiene",
+	},
+	toothMousse: {
+		code: "A11.07.010",
+		name: CLINICAL_TOOTH_MOUSSE_SUMMARY_RU,
+		price: 1500,
+		category: "hygiene",
+	},
+	perioAntiseptic: {
+		code: "A16.07.053",
+		name: CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU,
+		price: 1200,
+		category: "hygiene",
+	},
+} as const;
+
+export function createDeepFluoridationProtocolText(): string {
+	return (
+		"• Протокол глубокого фторирования эмали (A11.07.012):\n" +
+		"• Проведена изоляция операционного поля ватными валиками, высушивание поверхностей зубов сжатым воздухом.\n" +
+		"• Поэтапная аппликация эмаль-герметизирующего ликвида Tiefenfluorid: обработка эмали препаратом №1 (высокодисперсный фтористый силикат магния с ионами меди), экспозиция 1 минута, высушивание; нанесение суспензии препарата №2 (высокодисперсный гидроксид кальция) с образованием субмикроскопических кристаллов CaF2 в порах эмали.\n" +
+		"• Тщательное промывание водой, окончательное высушивание. Пациенту даны рекомендации воздержаться от приема пищи и напитков в течение 1 часа."
+	);
+}
+
+export function createToothMousseProtocolText(): string {
+	return (
+		"• Протокол реминерализирующей терапии (A11.07.010):\n" +
+		"• Очищение и высушивание зубных рядов.\n" +
+		"• Нанесение реминерализирующего крема GC Tooth Mousse с биодоступным кальцием и фосфатами (комплекс Recaldent CPP-ACP) на индивидуальные/стандартные силиконовые каппы.\n" +
+		"• Наложение капп на верхний и нижний зубные ряды, экспозиция 5 минут. Удаление излишков крема слюноотсосом.\n" +
+		"• Пациент проинструктирован не полоскать рот, не пить и не принимать пищу в течение 30 минут для максимальной фиксации минеральных компонентов."
+	);
+}
+
+export function createPerioAntisepticProtocolText(): string {
+	return (
+		"• Протокол медикаментозной обработки пародонтальных карманов (A16.07.053):\n" +
+		"• Проведена антисептическая обработка операционного поля, бережная эвакуация мягкого зубного налета и экссудата из пародонтальных карманов.\n" +
+		"• Орошение зубодесневых и пародонтальных карманов 0.05% раствором хлоргексидина биглюконата с использованием закругленной атравматичной пародонтальной канюли под умеренным давлением.\n" +
+		"• Аппликация противомикробного стоматологического геля Метрогил Дента (метронидазол + хлоргексидин) в область карманов и маргинальной десны.\n" +
+		"• Пациенту даны рекомендации воздержаться от приема пищи и полоскания полости рта в течение 2 часов."
+	);
+}
 
 export interface HygieneIndicesPanelProps {
 	/** Optional existing perio dentition for 1-click auto-sync */
@@ -403,13 +470,26 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			}),
 		);
 
+		const proHygieneService = {
+			code: "A16.07.051",
+			name: CLINICAL_PRO_HYGIENE_SUMMARY_RU,
+			price: 5500,
+			quantity: 1,
+			category: "hygiene",
+		};
+
 		window.dispatchEvent(
 			new CustomEvent("dente-add-estimate-service", {
+				detail: proHygieneService,
+			}),
+		);
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-services-to-invoice", {
 				detail: {
-					code: "A16.07.051",
-					name: CLINICAL_PRO_HYGIENE_SUMMARY_RU,
-					price: 5500,
-					category: "hygiene",
+					...proHygieneService,
+					service: proHygieneService,
+					services: [proHygieneService],
 				},
 			}),
 		);
@@ -417,6 +497,165 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		onInsertToProtocol?.(protocolText);
 		showToast(
 			`${CLINICAL_PRO_HYGIENE_SUMMARY_RU}. Дневник 043/у и смета обновлены!`,
+			"success",
+			4500,
+		);
+	}, [readOnly, onInsertToProtocol]);
+
+	// 6. Глубокое фторирование эмали (Tiefenfluorid / Сафорайд, A11.07.012, 1800 ₽)
+	const handlePresetDeepFluoridation = useCallback(() => {
+		if (readOnly) return;
+		const protocolText = createDeepFluoridationProtocolText();
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${protocolText}`
+				: protocolText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: protocolText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		const fluoridationService = {
+			code: "A11.07.012",
+			name: CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU,
+			price: 1800,
+			quantity: 1,
+			category: "hygiene",
+		};
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-estimate-service", {
+				detail: fluoridationService,
+			}),
+		);
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-services-to-invoice", {
+				detail: {
+					...fluoridationService,
+					service: fluoridationService,
+					services: [fluoridationService],
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(protocolText);
+		showToast(
+			`${CLINICAL_DEEP_FLUORIDATION_SUMMARY_RU}. Внесено в 043/у и чек визита!`,
+			"success",
+			4500,
+		);
+	}, [readOnly, onInsertToProtocol]);
+
+	// 7. Реминерализирующая терапия каппой (GC Tooth Mousse, A11.07.010, 1500 ₽)
+	const handlePresetToothMousse = useCallback(() => {
+		if (readOnly) return;
+		const protocolText = createToothMousseProtocolText();
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${protocolText}`
+				: protocolText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: protocolText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		const toothMousseService = {
+			code: "A11.07.010",
+			name: CLINICAL_TOOTH_MOUSSE_SUMMARY_RU,
+			price: 1500,
+			quantity: 1,
+			category: "hygiene",
+		};
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-estimate-service", {
+				detail: toothMousseService,
+			}),
+		);
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-services-to-invoice", {
+				detail: {
+					...toothMousseService,
+					service: toothMousseService,
+					services: [toothMousseService],
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(protocolText);
+		showToast(
+			`${CLINICAL_TOOTH_MOUSSE_SUMMARY_RU}. Внесено в 043/у и чек визита!`,
+			"success",
+			4500,
+		);
+	}, [readOnly, onInsertToProtocol]);
+
+	// 8. Медикаментозная обработка пародонтальных карманов (Хлоргексидин + Метрогил Дента, A16.07.053, 1200 ₽)
+	const handlePresetPerioAntiseptic = useCallback(() => {
+		if (readOnly) return;
+		const protocolText = createPerioAntisepticProtocolText();
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${protocolText}`
+				: protocolText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: protocolText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		const perioAntisepticService = {
+			code: "A16.07.053",
+			name: CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU,
+			price: 1200,
+			quantity: 1,
+			category: "hygiene",
+		};
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-estimate-service", {
+				detail: perioAntisepticService,
+			}),
+		);
+
+		window.dispatchEvent(
+			new CustomEvent("dente-add-services-to-invoice", {
+				detail: {
+					...perioAntisepticService,
+					service: perioAntisepticService,
+					services: [perioAntisepticService],
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(protocolText);
+		showToast(
+			`${CLINICAL_PERIO_ANTISEPTIC_SUMMARY_RU}. Внесено в 043/у и чек визита!`,
 			"success",
 			4500,
 		);
@@ -555,104 +794,185 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 				)}
 			</div>
 
-			{/* ─── 1-Click Express Presets Strip (Mandate 8e: 5 Clinical Presets, Zero Emojis) ─── */}
+			{/* ─── 1-Click Express Presets Strip (Mandates 8e, 8i, 8k, 8n) ─── */}
 			{!readOnly && (
-				<div className="flex flex-col gap-2 p-3 rounded-xl bg-teal-500/10 border border-teal-500/30">
-					<div className="flex items-center gap-2">
-						<Zap size={16} className="text-teal-400 shrink-0" />
-						<span className="text-xs font-black text-teal-300">
-							1-Клик экспресс-пресеты пародонтолога и гигиениста (без 192 точек):
-						</span>
+				<div className="flex flex-col gap-3 p-3 rounded-xl bg-teal-500/10 border border-teal-500/30">
+					{/* Section A: Клинические статусы пародонта */}
+					<div className="flex flex-col gap-2">
+						<div className="flex items-center gap-2">
+							<Zap size={16} className="text-teal-400 shrink-0" />
+							<span className="text-xs font-black text-teal-300">
+								1-Клик экспресс-статусы пародонта (без ручного ввода 192 точек):
+							</span>
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+							{/* Preset 1: Норма пародонта */}
+							<button
+								type="button"
+								onClick={handlePresetPeriodontalNorm}
+								className="min-h-[48px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
+								data-testid="hygiene-preset-norm"
+							>
+								<div className="flex items-center gap-1.5 font-black text-xs">
+									<ShieldCheck size={15} className="text-emerald-400 shrink-0" />
+									<span>Норма пародонта</span>
+								</div>
+								<span className="text-[10px] text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
+									бороздка &le; 2 мм, десна плотная, BOP 0%, карманов нет,
+									подвижность 0
+								</span>
+							</button>
+
+							{/* Preset 2: Катаральный гингивит */}
+							<button
+								type="button"
+								onClick={handlePresetCatarrhalGingivitis}
+								className="min-h-[48px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
+								data-testid="hygiene-preset-gingivitis"
+							>
+								<div className="flex items-center gap-1.5 font-black text-xs">
+									<Activity size={15} className="text-amber-400 shrink-0" />
+									<span>Катаральный гингивит</span>
+								</div>
+								<span className="text-[10px] text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
+									отек сосочков, кровоточивость (BOP+), карманов нет, наддесневой
+									камень
+								</span>
+							</button>
+
+							{/* Preset 3: Пародонтит легкий */}
+							<button
+								type="button"
+								onClick={handlePresetMildPeriodontitis}
+								className="min-h-[48px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Пародонтит легкой степени: глубина карманов 3-4 мм, над/поддесневой камень, BOP+, подвижность 0"
+								data-testid="hygiene-preset-mild-periodontitis"
+							>
+								<div className="flex items-center gap-1.5 font-black text-xs">
+									<AlertTriangle size={15} className="text-rose-400 shrink-0" />
+									<span>Пародонтит легкий (3-4 мм)</span>
+								</div>
+								<span className="text-[10px] text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
+									карманы 3–4 мм, над/поддесневой камень, кровоточивость, подвижность 0
+								</span>
+							</button>
+
+							{/* Preset 4: Пародонтит средней степени */}
+							<button
+								type="button"
+								onClick={handlePresetModeratePeriodontitis}
+								className="min-h-[48px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
+								data-testid="hygiene-preset-periodontitis"
+							>
+								<div className="flex items-center gap-1.5 font-black text-xs">
+									<ShieldAlert size={15} className="text-orange-400 shrink-0" />
+									<span>Пародонтит средний (4-5 мм)</span>
+								</div>
+								<span className="text-[10px] text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
+									карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I
+									ст.
+								</span>
+							</button>
+						</div>
 					</div>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-						{/* Preset 1: Норма пародонта */}
-						<button
-							type="button"
-							onClick={handlePresetPeriodontalNorm}
-							className="min-h-[44px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
-							data-testid="hygiene-preset-norm"
-						>
-							<div className="flex items-center gap-1.5 font-black text-xs">
-								<ShieldCheck size={14} className="text-emerald-400 shrink-0" />
-								<span>Норма пародонта</span>
+					{/* Section B: 1-Клик Chairside-протоколы и начисление услуг в чек (Номенклатура 804н) */}
+					<div className="flex flex-col gap-2 pt-2 border-t border-teal-500/20">
+						<div className="flex items-center justify-between flex-wrap gap-1">
+							<div className="flex items-center gap-2">
+								<Sparkles size={16} className="text-cyan-400 shrink-0" />
+								<span className="text-xs font-black text-cyan-300">
+									Chairside-протоколы лечения и профилактики (начисление в чек 804н + дневник 043/у):
+								</span>
 							</div>
-							<span className="text-[10px] text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
-								бороздка &le; 2 мм, десна плотная, BOP 0%, карманов нет,
-								подвижность 0
-							</span>
-						</button>
+							<span className="text-[10px] text-teal-300/70">1-клик автоначисление в чек визита</span>
+						</div>
 
-						{/* Preset 2: Катаральный гингивит */}
-						<button
-							type="button"
-							onClick={handlePresetCatarrhalGingivitis}
-							className="min-h-[44px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
-							data-testid="hygiene-preset-gingivitis"
-						>
-							<div className="flex items-center gap-1.5 font-black text-xs">
-								<Activity size={14} className="text-amber-400 shrink-0" />
-								<span>Катаральный гингивит</span>
-							</div>
-							<span className="text-[10px] text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
-								отек сосочков, кровоточивость (BOP+), карманов нет, наддесневой
-								камень
-							</span>
-						</button>
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+							{/* Protocol 1: Профессиональная гигиена выполнена (A16.07.051) */}
+							<button
+								type="button"
+								onClick={handlePresetProHygieneDone}
+								className="min-h-[48px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Комплексная профессиональная гигиена (A16.07.051, 5500 ₽): УЗ Piezon + Air-Flow глицином + Kerr Cleanic + Fluocal"
+								data-testid="hygiene-preset-pro-hygiene"
+							>
+								<div className="flex items-center justify-between gap-1 font-black text-xs">
+									<div className="flex items-center gap-1.5 truncate">
+										<Sparkles size={15} className="text-cyan-400 shrink-0" />
+										<span className="truncate">Профгигиена</span>
+									</div>
+									<span className="text-[11px] font-mono text-cyan-300 font-black shrink-0">5 500 ₽</span>
+								</div>
+								<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
+									A16.07.051 • УЗ Piezon + AirFlow + Cleanic + Fluocal
+								</span>
+							</button>
 
-						{/* Preset 3: Пародонтит легкий */}
-						<button
-							type="button"
-							onClick={handlePresetMildPeriodontitis}
-							className="min-h-[44px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="Пародонтит легкой степени: глубина карманов 3-4 мм, над/поддесневой камень, BOP+, подвижность 0"
-							data-testid="hygiene-preset-mild-periodontitis"
-						>
-							<div className="flex items-center gap-1.5 font-black text-xs">
-								<AlertTriangle size={14} className="text-rose-400 shrink-0" />
-								<span>Пародонтит легкий (3-4 мм)</span>
-							</div>
-							<span className="text-[10px] text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
-								карманы 3–4 мм, над/поддесневой камень, кровоточивость, подвижность 0
-							</span>
-						</button>
+							{/* Protocol 2: Глубокое фторирование (A11.07.012) */}
+							<button
+								type="button"
+								onClick={handlePresetDeepFluoridation}
+								className="min-h-[48px] p-2.5 rounded-xl bg-sky-600/25 hover:bg-sky-600/40 text-sky-200 border border-sky-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Глубокое фторирование эмали (A11.07.012, 1800 ₽): аппликация эмаль-ликвида Tiefenfluorid / Сафорайд, экспозиция, сушка"
+								data-testid="hygiene-preset-deep-fluoridation"
+							>
+								<div className="flex items-center justify-between gap-1 font-black text-xs">
+									<div className="flex items-center gap-1.5 truncate">
+										<Droplets size={15} className="text-sky-400 shrink-0" />
+										<span className="truncate">Глубокое фторирование</span>
+									</div>
+									<span className="text-[11px] font-mono text-sky-300 font-black shrink-0">1 800 ₽</span>
+								</div>
+								<span className="text-[10px] text-sky-200/80 leading-tight mt-0.5 line-clamp-2">
+									A11.07.012 • Tiefenfluorid / Сафорайд, СаF2 в порах
+								</span>
+							</button>
 
-						{/* Preset 4: Пародонтит средней степени */}
-						<button
-							type="button"
-							onClick={handlePresetModeratePeriodontitis}
-							className="min-h-[44px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
-							data-testid="hygiene-preset-periodontitis"
-						>
-							<div className="flex items-center gap-1.5 font-black text-xs">
-								<ShieldAlert size={14} className="text-orange-400 shrink-0" />
-								<span>Пародонтит средний (4-5 мм)</span>
-							</div>
-							<span className="text-[10px] text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
-								карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I
-								ст.
-							</span>
-						</button>
+							{/* Protocol 3: Ремтерапия Tooth Mousse (A11.07.010) */}
+							<button
+								type="button"
+								onClick={handlePresetToothMousse}
+								className="min-h-[48px] p-2.5 rounded-xl bg-violet-600/25 hover:bg-violet-600/40 text-violet-200 border border-violet-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Реминерализирующая терапия каппой (A11.07.010, 1500 ₽): крем GC Tooth Mousse (Recaldent CPP-ACP) на индивидуальной каппе, 5 мин"
+								data-testid="hygiene-preset-tooth-mousse"
+							>
+								<div className="flex items-center justify-between gap-1 font-black text-xs">
+									<div className="flex items-center gap-1.5 truncate">
+										<ShieldCheck size={15} className="text-violet-400 shrink-0" />
+										<span className="truncate">Ремтерапия Tooth Mousse</span>
+									</div>
+									<span className="text-[11px] font-mono text-violet-300 font-black shrink-0">1 500 ₽</span>
+								</div>
+								<span className="text-[10px] text-violet-200/80 leading-tight mt-0.5 line-clamp-2">
+									A11.07.010 • GC Tooth Mousse на каппе, 5 мин
+								</span>
+							</button>
 
-						{/* Preset 5: Профессиональная гигиена выполнена */}
-						<button
-							type="button"
-							onClick={handlePresetProHygieneDone}
-							className="min-h-[44px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
-							title="Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12"
-							data-testid="hygiene-preset-pro-hygiene"
-						>
-							<div className="flex items-center gap-1.5 font-black text-xs">
-								<Sparkles size={14} className="text-cyan-400 shrink-0" />
-								<span>Профгигиена выполнена</span>
-							</div>
-							<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
-								УЗ Piezon + Air-Flow глицин + Detartrine + Bifluorid 12
-							</span>
-						</button>
+							{/* Protocol 4: Антисептическая обработка карманов (A16.07.053) */}
+							<button
+								type="button"
+								onClick={handlePresetPerioAntiseptic}
+								className="min-h-[48px] p-2.5 rounded-xl bg-teal-600/25 hover:bg-teal-600/40 text-teal-200 border border-teal-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Медикаментозная обработка карманов (A16.07.053, 1200 ₽): орошение 0.05% хлоргексидином + инстилляция Метрогил Дента"
+								data-testid="hygiene-preset-perio-antiseptic"
+							>
+								<div className="flex items-center justify-between gap-1 font-black text-xs">
+									<div className="flex items-center gap-1.5 truncate">
+										<CheckCircle2 size={15} className="text-teal-400 shrink-0" />
+										<span className="truncate">Обработка карманов</span>
+									</div>
+									<span className="text-[11px] font-mono text-teal-300 font-black shrink-0">1 200 ₽</span>
+								</div>
+								<span className="text-[10px] text-teal-200/80 leading-tight mt-0.5 line-clamp-2">
+									A16.07.053 • Хлоргексидин 0.05% + Метрогил Дента
+								</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			)}
