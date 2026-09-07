@@ -1170,7 +1170,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 										type="button"
 										onClick={() => handleIssueAlignerSetFromWidget(2, 14)}
 										data-testid="widget-issue-set-2-aligners-btn"
-										className={`min-h-[38px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+										className={`min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
 											alignerSetIssued?.count === 2
 												? "bg-teal-600 text-white border-teal-700"
 												: "bg-white dark:bg-slate-900 border-teal-300 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50"
@@ -1185,7 +1185,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 										type="button"
 										onClick={() => handleIssueAlignerSetFromWidget(4, 28)}
 										data-testid="widget-issue-set-4-aligners-btn"
-										className={`min-h-[38px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+										className={`min-h-[44px] min-w-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
 											alignerSetIssued?.count === 4
 												? "bg-teal-600 text-white border-teal-700"
 												: "bg-white dark:bg-slate-900 border-teal-300 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50"
@@ -1202,10 +1202,10 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									onClick={handleAppendAttachmentsToSoapNote}
 									data-testid="append-attachments-to-soap-btn"
 									className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-									title="Добавить запись об аттачментах в карту 043/у без стирания ранее набранного текста"
+									title="Добавить в протокол визита SOAP без стирания ранее набранного текста"
 								>
 									<Plus size={15} />
-									<span>Добавить в протокол визита SOAP без стирания ранее набранного текста</span>
+									<span>Добавить к SOAP</span>
 								</button>
 							</div>
 						</div>
@@ -1313,7 +1313,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							{/* FDI Formula Buttons */}
 							<div className="flex flex-col gap-1">
 								{/* Upper Arch (18-11 | 21-28) */}
-								<div className="flex items-center justify-center gap-0.5 overflow-x-auto py-0.5">
+								<div className="flex items-center justify-center gap-0.5 overflow-x-auto py-1">
 									{UPPER_TEETH.map((tooth, idx) => {
 										const isSelected = selectedTeeth.includes(tooth);
 										const isMidline = idx === 7;
@@ -1322,7 +1322,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 												<button
 													type="button"
 													onClick={() => handleToggleTooth(tooth)}
-													className={`w-7 h-7 sm:w-8 sm:h-8 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
+													className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
 														isSelected
 															? "bg-blue-600 text-white shadow-xs font-black"
 															: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400"
@@ -1331,14 +1331,14 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 												>
 													{tooth}
 												</button>
-												{isMidline && <div className="w-1.5 h-6 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
+												{isMidline && <div className="w-1.5 h-7 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
 											</React.Fragment>
 										);
 									})}
 								</div>
 
 								{/* Lower Arch (48-41 | 31-38) */}
-								<div className="flex items-center justify-center gap-0.5 overflow-x-auto py-0.5">
+								<div className="flex items-center justify-center gap-0.5 overflow-x-auto py-1">
 									{LOWER_TEETH.map((tooth, idx) => {
 										const isSelected = selectedTeeth.includes(tooth);
 										const isMidline = idx === 7;
@@ -1347,7 +1347,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 												<button
 													type="button"
 													onClick={() => handleToggleTooth(tooth)}
-													className={`w-7 h-7 sm:w-8 sm:h-8 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
+													className={`min-w-[40px] min-h-[40px] p-1 text-xs font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
 														isSelected
 															? "bg-blue-600 text-white shadow-xs font-black"
 															: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-400"
@@ -1356,7 +1356,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 												>
 													{tooth}
 												</button>
-												{isMidline && <div className="w-1.5 h-6 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
+												{isMidline && <div className="w-1.5 h-7 bg-slate-300 dark:bg-slate-700 mx-0.5" />}
 											</React.Fragment>
 										);
 									})}

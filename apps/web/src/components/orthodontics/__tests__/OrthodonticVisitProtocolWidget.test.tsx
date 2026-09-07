@@ -54,11 +54,12 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("data-testid=\"ortho-services-count-badge\""));
 		assert.ok(html.includes("Начислить услуги 804н в чек/смету"));
 
-		// Arch Presets
+		// Arch Presets & FDI Tooth Buttons (>= 40px touch targets)
 		assert.ok(html.includes("Вся ВЧ"));
 		assert.ok(html.includes("Вся НЧ"));
 		assert.ok(html.includes("Обе челюсти"));
 		assert.ok(html.includes("Фронт"));
+		assert.ok(html.includes("min-w-[40px] min-h-[40px]"));
 
 		// Brackets Slots
 		assert.ok(html.includes("0.018"));
@@ -183,15 +184,17 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("data-testid=\"preset-debonding-attachments\""));
 		assert.ok(html.includes("Снятие аттачментов и полировка (финиш)"));
 
-		// Quick Delivery Sets
+		// Quick Delivery Sets (Mandate 8d: >= 44px touch targets)
 		assert.ok(html.includes("data-testid=\"widget-issue-set-2-aligners-btn\""));
 		assert.ok(html.includes("Сет 2 каппы (+14 дн.)"));
 		assert.ok(html.includes("data-testid=\"widget-issue-set-4-aligners-btn\""));
 		assert.ok(html.includes("Сет 4 каппы (+28 дн.)"));
+		assert.ok(html.includes("min-h-[44px] min-w-[44px]"));
 
-		// Append to SOAP button
+		// Append to SOAP button (concise label + full title to prevent text overflow)
 		assert.ok(html.includes("data-testid=\"append-attachments-to-soap-btn\""));
-		assert.ok(html.includes("Добавить в протокол визита SOAP без стирания ранее набранного текста"));
+		assert.ok(html.includes("Добавить к SOAP"));
+		assert.ok(html.includes("title=\"Добавить в протокол визита SOAP без стирания ранее набранного текста\""));
 
 		// Catalog verification
 		assert.equal(ALIGNER_ATTACHMENT_PRESETS.length, 4);
