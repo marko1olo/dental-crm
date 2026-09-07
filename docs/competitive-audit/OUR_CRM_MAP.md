@@ -1225,4 +1225,32 @@
 - **Фронтенд**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (7 тестов, 100% pass, коммиты `29d114896`, `e1400fd31`).
 
+#### 2.10.128. Одонтограмма и голос: 1-клик норма прикуса (ju_norm, jl_norm, c_orthognathic) и автономия голосового ввода (Мандаты 8d, 8e, 8i, 8k, 8n / Одонтограмма & Голосовой ввод, Фича #167)
+- **Суть и домен**: Ликвидация блокирующих `disabled` кнопок, 1-клик пресеты физиологической нормы челюстей и прикуса, автономия голосового ассистента:
+  1. *Пресеты нормы челюстей и прикуса*: в `JawOcclusionModal.tsx` выделены канонические пресеты физиологической нормы для верхней челюсти (`ju_norm`), нижней челюсти (`jl_norm`) и окклюзии (`c_orthognathic` — «Ортогнатический прикус (Норма / I класс Энгля)»).
+  2. *Авто-применение прикуса*: кнопка применения в модальном окне никогда не блокируется (`disabled={false}`); клик по кнопке при отсутствии явного выбора автоматически выбирает и применяет ортогнатическую норму `c_orthognathic` с диспатчем события `dente-apply-soap-protocol` для Формы 043/у.
+  3. *Автономия голосового ассистента*: в `VoiceDictationAssistantModal.tsx` кнопка «Применить всё» активна всегда (`disabled={false}` вместо `disabled={!parseResult || parseResult.commands.length === 0}`); при клике с 0 команд выводится понятный информативный тост-руководство («Произнесите диагноз или статус зуба в микрофон или выберите клинический шаблон ниже») без сбоев интерфейса.
+  4. *Apple HIG & перчатки*: все тач-таргеты модалок соответствуют нормативу $\ge 44\text{px}$.
+- **Фронтенд**: `apps/web/src/components/odontogram/JawOcclusionModal.tsx`, `apps/web/src/components/voice/VoiceDictationAssistantModal.tsx`.
+- **Тесты**: `apps/web/src/components/odontogram/__tests__/jawOcclusionAutonomy.test.tsx` (8 тестов, 100% pass, коммит `9f40fe25e`).
+
+#### 2.10.129. Расписание и кресла: выделенная инлайн-колонка «+ Кресло» в сетке и почасовая привязка смен врача (Мандаты 8c, 8d, 8e, 8k, 8n / Расписание & Смены, Фича #168)
+- **Суть и домен**: Постоянная инлайн-колонка добавления кресел в сетку календаря, почасовая привязка смен врача к креслу и 1-клик экспресс-назначение:
+  1. *Постоянная инлайн-колонка «+ Кресло»*: в `ScheduleGrid.tsx` добавлена постоянная колонка `grid-header-add-chair-col` с крупной кнопкой «+ Кресло» (`btn-grid-inline-add-chair`, $\ge 44\times 44\text{px}$) и адаптивной сеткой `gridTemplateColumns: 80px repeat(N, minmax(180px, 1fr)) minmax(110px, 130px)`.
+  2. *Почасовая привязка смен врача*: функция `getDoctorForChairAndHour(chairId, hour)` вычисляет дежурного врача с учетом смены (Утро/Вечер/Полный день), обеспечивая автоподстановку врача при клике на свободный слот и в форму `QuickBookingDrawer`.
+  3. *1-клик экспресс-назначение*: в шапку кресла добавлена кнопка мгновенного назначения врача в 1 клик (`btn-quick-assign-${chair.id}`) на основе специализации кресла.
+  4. *Автономия соло-врача в графике сменности*: в `DoctorShiftRosterModal.tsx` поддержан расчет от понедельника текущей даты `currentDate`, а также соло-режим «Индивидуальный приём» без обязательного ассистента; миграция тестов на native `node:test`.
+- **Фронтенд**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (7 тестов, 100% pass), `apps/web/src/components/schedule/__tests__/WaitlistQuickFillModal.test.tsx` (коммиты `65d3f6d25`, `e902f8103`).
+
+#### 2.10.130. Касса 54-ФЗ: оплата без сдачи, комбинированный сплит «Нал + Карта + Аванс» и 1-клик возврат чека (Мандаты 8b, 8d, 8e, 8k, 8n / Касса & Финансы, Фича #169)
+- **Суть и домен**: Фискализация кассы 54-ФЗ без сдачи, комбинированная оплата в 1 клик (Нал + Карта + Аванс / Семейный баланс), неблокирующий X-отчет смены и 1-клик фискальный возврат прихода (Тег 1054):
+  1. *1-клик пресет «Без сдачи (Нал 100%)»*: в `FastCheckoutModal.tsx` внедрен экспресс-пресет для наличных расчетов (Тег 1031) без ручного подсчета копеек.
+  2. *1-клик комбинированная оплата «Нал + Карта + Аванс»*: пресет `split_three_way` мгновенно зачитывает доступный депозит/семейный счет `patientFamilyBalanceRub` плательщика `familyPayerName` (Тег 1215), а остаток делит поровну между банковской картой (Тег 1081) и наличными без копеечных погрешностей.
+  3. *Неблокирующий X-отчет смены*: в `CashShiftWidget.tsx` и `CashRegisterModal.tsx` кнопка печати промежуточного X-отчета закрытой смены активна (`isProcessing=false`) с информативным руководством.
+  4. *1-клик фискальный возврат прихода 54-ФЗ*: в `ExpressFiscalReceiptModal.tsx` и `RefundReceiptModal.tsx` реализован 1-клик возврат как по позициям плана лечения с кнопкой «Выбрать все», так и для аванса без позиций с формированием чека ФФД 1.2 Признак расчета 2 (Возврат прихода).
+- **Фронтенд**: `apps/web/src/components/payments/FastCheckoutModal.tsx`, `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashShiftWidget.tsx`, `apps/web/src/components/cash/CashRegisterModal.tsx`, `apps/web/src/components/finance/ExpressFiscalReceiptModal.tsx`, `apps/web/src/components/finance/RefundReceiptModal.tsx`.
+- **Тесты**: `apps/web/src/components/finance/__tests__/cashShiftAutonomyAndFiscal54Fz.test.tsx` (8 тестов, 100% pass), `apps/web/src/components/finance/__tests__/expressFiscalRefundAutonomy.test.ts` (12 тестов, 100% pass, коммит `2a5395e34`).
+
+
 
