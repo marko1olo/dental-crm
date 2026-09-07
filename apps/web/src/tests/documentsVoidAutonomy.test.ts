@@ -23,7 +23,6 @@ import {
 	DocumentsView,
 	executeDocumentVoidAutonomy,
 } from "../DocumentsView";
-import { useDocumentStore } from "../store/documentStore";
 import { documentSourceStatusClassNames } from "../workspaceUiLabels";
 
 interface MockFn {

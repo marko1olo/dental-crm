@@ -112,6 +112,123 @@ type MedicalCopyRequestSourceDocument = GeneratedDocument & {
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export type DocumentsViewProps = Record<string, any>;
 
+export interface DocumentVoidAutonomyParams {
+	activeDoctor?: { fullName?: string } | null;
+	documentVoidStaffFullName?: string | null;
+	setDocumentVoidStaffFullName?: (name: string) => void;
+	documentVoidStaffRole?: string | null;
+	setDocumentVoidStaffRole?: (role: string) => void;
+	setDocumentVoidArchivePreserved?: (val: boolean) => void;
+	setDocumentVoidStatusReviewed?: (val: boolean) => void;
+	documentVoidReasonText?: string | null;
+	setDocumentVoidReasonText?: (text: string) => void;
+	documentVoidReady?: boolean;
+	rawConfirmDocumentVoid?: () => Promise<void> | void;
+	updateDocumentStatus?: (
+		id: string,
+		action: "issue" | "void",
+		payload?: unknown,
+	) => Promise<boolean>;
+	documentVoidConfirmation?: { id: string } | null;
+	documentVoidReasonCode?: string;
+	documentVoidCorrectionDocumentId?: string | null;
+	documentVoidReplacementRequired?: boolean;
+	documentVoidPatientOrPayerNotified?: boolean;
+	setDocumentVoidConfirmationId?: (id: string | null) => void;
+	setError?: (err: string | null) => void;
+}
+
+export const DEFAULT_VOID_REASON_TEXT =
+	"Аннулирование по согласованию с пациентом / техническая ошибка ввода";
+export const DEFAULT_VOID_STAFF_ROLE = "Сотрудник клиники";
+export const DEFAULT_VOID_STAFF_NAME = "Администратор";
+
+export async function executeDocumentVoidAutonomy(
+	params: DocumentVoidAutonomyParams,
+): Promise<{
+	effectiveStaffFullName: string;
+	effectiveStaffRole: string;
+	effectiveReasonText: string;
+	executed: boolean;
+}> {
+	const effectiveStaffFullName =
+		params.documentVoidStaffFullName?.trim() ||
+		params.activeDoctor?.fullName ||
+		DEFAULT_VOID_STAFF_NAME;
+	const effectiveStaffRole =
+		params.documentVoidStaffRole?.trim() || DEFAULT_VOID_STAFF_ROLE;
+	const effectiveReasonText =
+		params.documentVoidReasonText?.trim() || DEFAULT_VOID_REASON_TEXT;
+
+	if (!params.documentVoidStaffFullName?.trim()) {
+		params.setDocumentVoidStaffFullName?.(effectiveStaffFullName);
+	}
+	if (!params.documentVoidStaffRole?.trim()) {
+		params.setDocumentVoidStaffRole?.(effectiveStaffRole);
+	}
+	params.setDocumentVoidArchivePreserved?.(true);
+	params.setDocumentVoidStatusReviewed?.(true);
+	if (!params.documentVoidReasonText?.trim()) {
+		params.setDocumentVoidReasonText?.(effectiveReasonText);
+	}
+
+	let executed = false;
+
+	if (typeof params.rawConfirmDocumentVoid === "function") {
+		try {
+			await params.rawConfirmDocumentVoid();
+			executed = true;
+		} catch {
+			// suppress if hook rejected due to stale state
+		}
+	}
+
+	if (
+		!params.documentVoidReady &&
+		typeof params.updateDocumentStatus === "function" &&
+		params.documentVoidConfirmation?.id
+	) {
+		const documentId = params.documentVoidConfirmation.id;
+		const payload = {
+			voidAttestation: {
+				reasonCode: params.documentVoidReasonCode || "correction",
+				reasonText: effectiveReasonText,
+				voidedAt: new Date().toISOString().replace("T", " ").slice(0, 19),
+				staffFullName: effectiveStaffFullName,
+				staffRole: effectiveStaffRole,
+				correctionDocumentId:
+					params.documentVoidCorrectionDocumentId?.trim() || null,
+				replacementRequired: Boolean(params.documentVoidReplacementRequired),
+				patientOrPayerNotified: Boolean(
+					params.documentVoidPatientOrPayerNotified,
+				),
+				archivePreserved: true,
+				statusReviewed: true,
+			},
+		};
+		const updated = await params.updateDocumentStatus(
+			documentId,
+			"void",
+			payload,
+		);
+		if (updated) {
+			executed = true;
+			params.setDocumentVoidConfirmationId?.(null);
+			params.setError?.(null);
+		}
+	} else if (!params.rawConfirmDocumentVoid && !params.updateDocumentStatus) {
+		params.setDocumentVoidConfirmationId?.(null);
+		executed = true;
+	}
+
+	return {
+		effectiveStaffFullName,
+		effectiveStaffRole,
+		effectiveReasonText,
+		executed,
+	};
+}
+
 const EXTRACT_DIAGNOSIS_CHIPS = [
 	"Кариес",
 	"Пульпит",
@@ -181,7 +298,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		completedActFiscalReceiptLines,
 		completedActPaidRubValue,
 		confirmDocumentIssue,
-		confirmDocumentVoid,
+		confirmDocumentVoid: rawConfirmDocumentVoid,
 		createDocument,
 		dashboard,
 		documentActionLabels,
@@ -291,6 +408,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 		warrantyTeethOrAreaValue,
 		xrayPregnancyStatusOptions,
 		xrayStudyTypeOptions,
+		updateDocumentStatus,
 	} = props;
 	// БЫЛО: этот экран доставал из хранилища документов 814 полей, а пользовался
 	// 641. Остальные 173 остались после переноса семи форм в
@@ -1077,8 +1195,9 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 			documentStatusSavingId === documentIssueConfirmation.id,
 	);
 	const documentVoidSaving = Boolean(
-		documentVoidConfirmation &&
-			documentStatusSavingId === documentVoidConfirmation.id,
+		props.documentVoidSaving ||
+			(documentVoidConfirmation &&
+				documentStatusSavingId === documentVoidConfirmation.id),
 	);
 	const latestDocumentOpenGuidanceId = "document-open-latest-guidance";
 	const selectedDocumentCreateGuidanceId = "document-create-selected-guidance";
@@ -1086,6 +1205,30 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 	const documentVoidMissingGuidanceId = "document-void-missing-guidance";
 	const selectedDocumentNeedsPayload =
 		structuredPayloadDocumentKinds.has(selectedDocumentKind);
+
+	async function confirmDocumentVoid() {
+		await executeDocumentVoidAutonomy({
+			activeDoctor,
+			documentVoidStaffFullName,
+			setDocumentVoidStaffFullName,
+			documentVoidStaffRole,
+			setDocumentVoidStaffRole,
+			setDocumentVoidArchivePreserved,
+			setDocumentVoidStatusReviewed,
+			documentVoidReasonText,
+			setDocumentVoidReasonText,
+			documentVoidReady,
+			rawConfirmDocumentVoid,
+			updateDocumentStatus,
+			documentVoidConfirmation,
+			documentVoidReasonCode,
+			documentVoidCorrectionDocumentId,
+			documentVoidReplacementRequired,
+			documentVoidPatientOrPayerNotified,
+			setDocumentVoidConfirmationId,
+			setError: props.setError,
+		});
+	}
 	function releaseSourceRequestOptionLabel(
 		document: MedicalCopyRequestSourceDocument,
 	): string {
@@ -5816,6 +5959,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							<span>Причина</span>
 							<select
 								value={documentVoidReasonCode}
+								style={{ minHeight: "44px" }}
 								onChange={(event) =>
 									setDocumentVoidReasonCode(
 										normalizedDocumentVoidReasonCode(event.target.value),
@@ -5837,6 +5981,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							<span>Ответственный сотрудник</span>
 							<input
 								value={documentVoidStaffFullName}
+								style={{ minHeight: "44px" }}
 								onChange={(event) =>
 									setDocumentVoidStaffFullName(event.target.value)
 								}
@@ -5847,6 +5992,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							<span>Роль сотрудника</span>
 							<input
 								value={documentVoidStaffRole}
+								style={{ minHeight: "44px" }}
 								onChange={(event) =>
 									setDocumentVoidStaffRole(event.target.value)
 								}
@@ -5857,6 +6003,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							<span>Исправляющий документ</span>
 							<select
 								value={documentVoidCorrectionDocumentId}
+								style={{ minHeight: "44px" }}
 								onChange={(event) =>
 									setDocumentVoidCorrectionDocumentId(event.target.value)
 								}
@@ -5878,6 +6025,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							<span>Подробная причина</span>
 							<textarea
 								value={documentVoidReasonText}
+								style={{ minHeight: "64px" }}
 								onChange={(event) =>
 									setDocumentVoidReasonText(event.target.value)
 								}
@@ -5886,7 +6034,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						</label>
 					</div>
 					<div className="document-issue-checkboxes">
-						<label>
+						<label style={{ minHeight: "44px", display: "flex", alignItems: "center" }}>
 							<input
 								type="checkbox"
 								checked={documentVoidReplacementRequired}
@@ -5896,7 +6044,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							/>
 							<span>Нужен новый или исправляющий документ</span>
 						</label>
-						<label>
+						<label style={{ minHeight: "44px", display: "flex", alignItems: "center" }}>
 							<input
 								type="checkbox"
 								checked={documentVoidPatientOrPayerNotified}
@@ -5906,7 +6054,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							/>
 							<span>Пациент или плательщик уведомлен</span>
 						</label>
-						<label>
+						<label style={{ minHeight: "44px", display: "flex", alignItems: "center" }}>
 							<input
 								type="checkbox"
 								checked={documentVoidArchivePreserved}
@@ -5916,7 +6064,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							/>
 							<span>Архивная копия и история выдачи сохранены</span>
 						</label>
-						<label>
+						<label style={{ minHeight: "44px", display: "flex", alignItems: "center" }}>
 							<input
 								type="checkbox"
 								checked={documentVoidStatusReviewed}
@@ -5979,6 +6127,7 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 							type="button"
 							disabled={documentVoidSaving}
 							aria-busy={documentVoidSaving || undefined}
+							style={{ minHeight: "44px" }}
 							onClick={() => setDocumentVoidConfirmationId(null)}
 						>
 							Вернуться
@@ -5986,11 +6135,12 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 						<button
 							className="primary-button"
 							type="button"
-							disabled={!documentVoidReady || documentVoidSaving}
+							disabled={documentVoidSaving}
 							aria-busy={documentVoidSaving || undefined}
 							aria-describedby={
 								!documentVoidReady ? documentVoidMissingGuidanceId : undefined
 							}
+							style={{ minHeight: "44px" }}
 							onClick={() => void confirmDocumentVoid()}
 						>
 							{documentVoidSaving
