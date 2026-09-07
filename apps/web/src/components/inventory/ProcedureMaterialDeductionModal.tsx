@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { showToast } from "../GlobalToast";
 import {
 	ALL_PROCEDURE_TECH_MAPS,
 	CLINICAL_PROCEDURE_PACKAGES,
@@ -51,6 +52,24 @@ import {
 } from "./inventoryMath";
 import type { InventoryItem } from "./useInventoryLogic";
 import "./inventoryDeduction.css";
+
+export const STANDARD_CONSUMABLE_PRESET_NAME =
+	"Стандартный расходный набор (перчатки, маска, слюноотсос, ватные валики, карпула)";
+
+export function createStandardConsumablePresetItem(
+	warehouseItems: readonly InventoryItem[] = [],
+): DeductionLineItem {
+	return {
+		...createQuickCustomLineItem(STANDARD_CONSUMABLE_PRESET_NAME, {
+			unit: "компл.",
+			quantity: 1,
+			warehouseItems,
+			unitCostRub: "150.00",
+		}),
+		category: "ppe",
+		mandatory: true,
+	};
+}
 
 export interface ProcedureMaterialDeductionModalProps {
 	readonly isOpen: boolean;
@@ -80,17 +99,15 @@ export function ProcedureMaterialDeductionModal({
 }: ProcedureMaterialDeductionModalProps) {
 	// Выбранные шаблоны техкарт
 	const [selectedMapCodes, setSelectedMapCodes] = useState<string[]>(() =>
-		initialTechMapCodes.length > 0
-			? [...initialTechMapCodes]
-			: ["SANPIN_PPE"],
+		[...initialTechMapCodes],
 	);
 
 	// Строки списания
 	const [lines, setLines] = useState<DeductionLineItem[]>(() =>
 		createDeductionLinesFromTechMaps(
-			initialTechMapCodes.length > 0 ? initialTechMapCodes : ["SANPIN_PPE"],
+			initialTechMapCodes,
 			warehouseItems,
-			true,
+			initialTechMapCodes.length > 0,
 		),
 	);
 
@@ -100,9 +117,11 @@ export function ProcedureMaterialDeductionModal({
 
 	// Выбор кастомного материала со склада
 	const [selectedCustomId, setSelectedCustomId] = useState("");
+	const [highlightSelect, setHighlightSelect] = useState(false);
 
 	// Быстрый ввод названия расходника (Solo Doctor Resilience, Mandate 8e, 8n)
 	const [customMaterialName, setCustomMaterialName] = useState("");
+	const [highlightCustomInput, setHighlightCustomInput] = useState(false);
 
 	// Защита от отрицательных остатков (Default: true)
 	const [preventNegativeStock, setPreventNegativeStock] = useState(true);
@@ -116,21 +135,20 @@ export function ProcedureMaterialDeductionModal({
 	// Синхронизация при открытии
 	useEffect(() => {
 		if (isOpen) {
-			const initialCodes =
-				initialTechMapCodes.length > 0
-					? [...initialTechMapCodes]
-					: ["SANPIN_PPE"];
-			setSelectedMapCodes(initialCodes);
+			setSelectedMapCodes([...initialTechMapCodes]);
 			setLines(
 				createDeductionLinesFromTechMaps(
-					initialCodes,
+					initialTechMapCodes,
 					warehouseItems,
-					true,
+					initialTechMapCodes.length > 0,
 				),
 			);
 			setSearchQuery("");
 			setActiveCategory("all");
 			setCustomMaterialName("");
+			setSelectedCustomId("");
+			setHighlightSelect(false);
+			setHighlightCustomInput(false);
 		}
 	}, [isOpen, initialTechMapCodes, warehouseItems]);
 
@@ -266,9 +284,18 @@ export function ProcedureMaterialDeductionModal({
 
 	// Добавление произвольного материала со склада
 	const handleAddCustomMaterial = () => {
-		if (!selectedCustomId) return;
+		if (isDeducting) return;
+		if (!selectedCustomId) {
+			setHighlightSelect(true);
+			setTimeout(() => setHighlightSelect(false), 2000);
+			showToast("Выберите материал из каталога склада для добавления", "warning");
+			return;
+		}
 		const item = warehouseItems.find((w) => w.id === selectedCustomId);
-		if (!item) return;
+		if (!item) {
+			showToast("Выбранный материал не найден в каталоге склада", "warning");
+			return;
+		}
 
 		// Проверяем, есть ли уже этот материал
 		const existing = lines.find((l) => l.inventoryItemId === item.id);
@@ -305,12 +332,19 @@ export function ProcedureMaterialDeductionModal({
 			setLines((prev) => [...prev, newLine]);
 		}
 		setSelectedCustomId("");
+		setHighlightSelect(false);
 	};
 
 	// Быстрое добавление произвольного расходника без привязки к каталогу склада (Solo Doctor Resilience)
 	const handleAddQuickCustomMaterial = () => {
+		if (isDeducting) return;
 		const trimmed = customMaterialName.trim();
-		if (!trimmed) return;
+		if (!trimmed) {
+			setHighlightCustomInput(true);
+			setTimeout(() => setHighlightCustomInput(false), 2000);
+			showToast("Введите название расходного материала для добавления", "warning");
+			return;
+		}
 
 		const normName = trimmed.toLowerCase();
 		const existing = lines.find(
@@ -330,6 +364,7 @@ export function ProcedureMaterialDeductionModal({
 			setLines((prev) => [...prev, newLine]);
 		}
 		setCustomMaterialName("");
+		setHighlightCustomInput(false);
 	};
 
 	// Сводный расчет
@@ -527,6 +562,7 @@ export function ProcedureMaterialDeductionModal({
 									display: "inline-flex",
 									alignItems: "center",
 									gap: 6,
+									minHeight: "44px",
 								}}
 							>
 								{copiedPo ? <Check size={16} /> : <Copy size={16} />}
@@ -540,6 +576,7 @@ export function ProcedureMaterialDeductionModal({
 									display: "inline-flex",
 									alignItems: "center",
 									gap: 6,
+									minHeight: "44px",
 								}}
 							>
 								<Printer size={16} />
@@ -550,6 +587,7 @@ export function ProcedureMaterialDeductionModal({
 							type="button"
 							className="inventory-confirm-deduct-btn"
 							onClick={() => setShowPoModal(false)}
+							style={{ minHeight: "44px" }}
 						>
 							← Вернуться к списанию
 						</button>
@@ -766,8 +804,36 @@ export function ProcedureMaterialDeductionModal({
 								fontWeight: 600,
 							}}
 						>
-							Материалы не найдены. Выберите техкарту выше или добавьте позицию со
-							склада.
+							<div>
+								Материалы не найдены. Выберите техкарту выше или добавьте позицию со
+								склада.
+							</div>
+							<button
+								type="button"
+								className="inventory-add-btn"
+								onClick={() => {
+									const preset = createStandardConsumablePresetItem(warehouseItems);
+									setLines([preset]);
+									showToast(
+										"Добавлен стандартный клинический расходный набор (Мандат 8e / 8n)",
+										"info",
+									);
+								}}
+								style={{
+									marginTop: 16,
+									display: "inline-flex",
+									alignItems: "center",
+									gap: 6,
+									minHeight: "44px",
+									padding: "0 16px",
+									fontSize: 13,
+									fontWeight: 700,
+								}}
+								data-testid="auto-populate-standard-preset-btn"
+							>
+								<Plus size={16} />
+								Добавить стандартный расходный набор в 1 клик
+							</button>
 						</div>
 					) : (
 						<div className="inventory-table-container">
@@ -975,9 +1041,17 @@ export function ProcedureMaterialDeductionModal({
 								<select
 									className="inventory-add-select"
 									value={selectedCustomId}
-									onChange={(e) => setSelectedCustomId(e.target.value)}
+									onChange={(e) => {
+										setSelectedCustomId(e.target.value);
+										if (e.target.value) setHighlightSelect(false);
+									}}
 									aria-label="Выбрать материал из каталога склада"
 									data-testid="warehouse-select-custom"
+									style={{
+										minHeight: "44px",
+										borderColor: highlightSelect ? "var(--warn-fg, #b45309)" : undefined,
+										boxShadow: highlightSelect ? "0 0 0 2px rgba(217, 119, 6, 0.25)" : undefined,
+									}}
 								>
 									<option value="">-- Выберите из каталога склада --</option>
 									{warehouseItems.map((item) => (
@@ -990,9 +1064,10 @@ export function ProcedureMaterialDeductionModal({
 									type="button"
 									className="inventory-add-btn"
 									onClick={handleAddCustomMaterial}
-									disabled={!selectedCustomId}
+									disabled={isDeducting}
 									data-testid="warehouse-add-custom-btn"
 									title="Добавить выбранный из каталога материал"
+									style={{ minHeight: "44px" }}
 								>
 									<Plus size={16} />
 									Добавить со склада
@@ -1010,22 +1085,31 @@ export function ProcedureMaterialDeductionModal({
 								aria-label="Или введите название расходника"
 								data-testid="quick-custom-material-input"
 								value={customMaterialName}
-								onChange={(e) => setCustomMaterialName(e.target.value)}
+								onChange={(e) => {
+									setCustomMaterialName(e.target.value);
+									if (e.target.value.trim()) setHighlightCustomInput(false);
+								}}
 								onKeyDown={(e) => {
 									if (e.key === "Enter") {
 										e.preventDefault();
 										handleAddQuickCustomMaterial();
 									}
 								}}
-								style={{ flex: 1 }}
+								style={{
+									flex: 1,
+									minHeight: "44px",
+									borderColor: highlightCustomInput ? "var(--warn-fg, #b45309)" : undefined,
+									boxShadow: highlightCustomInput ? "0 0 0 2px rgba(217, 119, 6, 0.25)" : undefined,
+								}}
 							/>
 							<button
 								type="button"
 								className="inventory-add-btn"
 								onClick={handleAddQuickCustomMaterial}
-								disabled={!customMaterialName.trim()}
+								disabled={isDeducting}
 								data-testid="quick-custom-material-add-btn"
 								title="Добавить расходник без каталога склада"
+								style={{ minHeight: "44px" }}
 							>
 								<Plus size={16} />
 								Добавить
@@ -1079,6 +1163,7 @@ export function ProcedureMaterialDeductionModal({
 						<label
 							className="inventory-guard-toggle"
 							title="Автоматически формирует заявку поставщику при выявлении дефицита материалов"
+							style={{ minHeight: "44px", display: "inline-flex", alignItems: "center" }}
 						>
 							<input
 								type="checkbox"
@@ -1093,15 +1178,30 @@ export function ProcedureMaterialDeductionModal({
 							className="inventory-cancel-btn"
 							onClick={onClose}
 							disabled={isDeducting}
+							style={{ minHeight: "44px" }}
+							data-testid="inventory-cancel-btn"
 						>
 							Отмена
 						</button>
 						<button
 							type="button"
 							className={`inventory-confirm-deduct-btn ${summary.hasDeficit ? "has-deficit-warning" : ""}`}
+							data-testid="confirm-deduction-btn"
 							onClick={() => {
+								if (isDeducting) return;
+
+								if (lines.length === 0) {
+									const standardPreset = createStandardConsumablePresetItem(warehouseItems);
+									setLines([standardPreset]);
+									showToast(
+										"Добавлен стандартный клинический расходный набор (Мандат 8e / 8n)",
+										"info",
+									);
+									return;
+								}
+
 								const now = Date.now();
-								if (inFlightRef.current || isDeducting || now - lastClickTimeRef.current < 600) {
+								if (inFlightRef.current || now - lastClickTimeRef.current < 600) {
 									return;
 								}
 								inFlightRef.current = true;
@@ -1116,7 +1216,8 @@ export function ProcedureMaterialDeductionModal({
 									}, 600);
 								}
 							}}
-							disabled={isDeducting || lines.length === 0}
+							disabled={isDeducting}
+							style={{ minHeight: "44px" }}
 							title={
 								summary.hasDeficit
 									? `Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Мандат 8e п. 10, Мандат 8n п. 2): дефицит ${summary.criticalCount} поз. Задержка оприходования накладной не блокирует прием.`

@@ -28,7 +28,9 @@ import { PeriodontogramChart } from "../PeriodontogramChart";
 import {
 	applyGingivitisPreset,
 	applyHealthyPeriodontiumPreset,
+	applyPeriodontitisMildPreset,
 	applyPeriodontitisModeratePreset,
+	applyPeriodontitisSeverePreset,
 	applyPsrSextantCode,
 	generatePsrDiaryProtocol,
 	getPsrMaxCode,
@@ -280,6 +282,53 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 	});
 
 	// ──────────────────────────────────────────────────────────────────────────
+	// 3a. ПРЕСЕТ: ПАРОДОНТИТ ЛЕГКОЙ СТЕПЕНИ (1 КЛИК)
+	// ──────────────────────────────────────────────────────────────────────────
+	test("3a. Пресет «Пародонтит легкой степени»: карманы 3.5-4 мм, PSR 2-3, BOP+, CAL 1-2 мм", () => {
+		const mildTeeth = applyPeriodontitisMildPreset(initialTeeth);
+
+		const molar16 = mildTeeth.find((t) => t.toothNumber === 16);
+		assert.ok(molar16, "Моляр 16 найден");
+		assert.equal(molar16.distoBuccal.probingDepthMm, 4, "Глубина кармана 4 мм");
+		assert.equal(molar16.distoBuccal.bleedingOnProbing, true, "BOP+");
+		assert.equal(molar16.furcation, 0, "Фуркация 0 при легкой степени");
+
+		const indices = calculatePerioIndices(mildTeeth);
+		assert.equal(indices.deepPocketsCount, 0, "Глубоких карманов (>=5 мм) нет");
+		assert.ok(indices.moderatePocketsCount > 0, "Есть умеренные карманы 4 мм");
+
+		const diaryText = generatePsrDiaryProtocol("periodontitis_mild_express");
+		assert.ok(diaryText.includes("K05.30"), "МКБ-10 K05.30");
+		assert.ok(diaryText.includes("3.5–4.0 мм"), "Глубина карманов 3.5-4.0 мм");
+	});
+
+	// ──────────────────────────────────────────────────────────────────────────
+	// 3b. ПРЕСЕТ: ПАРОДОНТИТ ТЯЖЕЛОЙ СТЕПЕНИ (1 КЛИК)
+	// ──────────────────────────────────────────────────────────────────────────
+	test("3b. Пресет «Пародонтит тяжелой степени»: карманы >=6 мм, PSR 4*, гноетечение, подвижность II-III", () => {
+		const severeTeeth = applyPeriodontitisSeverePreset(initialTeeth);
+
+		const molar16 = severeTeeth.find((t) => t.toothNumber === 16);
+		assert.ok(molar16, "Моляр 16 найден");
+		assert.equal(molar16.distoBuccal.probingDepthMm, 7, "Глубина кармана 7 мм");
+		assert.equal(molar16.distoBuccal.suppuration, true, "Гноетечение из кармана");
+		assert.equal(molar16.furcation, 2, "Фуркационный дефект II степени");
+		assert.equal(molar16.mobility, 2, "Подвижность II степени");
+
+		const indices = calculatePerioIndices(severeTeeth);
+		assert.ok(indices.deepPocketsCount >= 8, "Множественные глубокие карманы (>=5 мм)");
+		assert.ok(indices.sitesWithSuppurationCount > 0, "Точки гноетечения зафиксированы");
+
+		const psr = calculatePsrSextants(severeTeeth);
+		assert.equal(getPsrMaxCode(psr), 4, "Код PSR 4 (карманы >= 6 мм)");
+		assert.equal(hasPsrAsterisk(psr), true, "Символ * выставлен");
+
+		const diaryText = generatePsrDiaryProtocol("periodontitis_severe_express");
+		assert.ok(diaryText.includes("K05.32"), "МКБ-10 K05.32");
+		assert.ok(diaryText.includes("гноетечение"), "Фиксация гноетечения");
+	});
+
+	// ──────────────────────────────────────────────────────────────────────────
 	// 4. ПОСЕКСТАНТНЫЙ СКРИНИНГ PSR (S1..S6)
 	// ──────────────────────────────────────────────────────────────────────────
 	test("4. Наложение кодов PSR на секстанты S1..S6 изолированно и с символом *", () => {
@@ -354,22 +403,42 @@ describe("Periodontal Express Screening & Doctor Autonomy (Mandates 8e, 8i, 8k, 
 			"Контейнер пародонтограммы по умолчанию не перехватывает фокус клавиатуры",
 		);
 
-		// 3. Проверяем наличие 1-клик кнопок пресетов
+		// 3. Проверяем наличие всех 6 быстрых пресетов в разметке
 		assert.ok(
-			htmlDefault.includes("Норма пародонта"),
-			"Кнопка нормы пародонта доступна в 1 клик",
+			htmlDefault.includes('data-testid="perio-preset-norm-card"'),
+			"Кнопка «Норма» доступна в 1 клик",
 		);
 		assert.ok(
-			htmlDefault.includes("Профгигиена"),
-			"Кнопка профгигиены доступна в 1 клик",
+			htmlDefault.includes('data-testid="perio-preset-prophy-card"'),
+			"Кнопка «Профгигиена» доступна в 1 клик",
 		);
 		assert.ok(
-			htmlDefault.includes("Гингивит"),
-			"Кнопка гингивита доступна в 1 клик",
+			htmlDefault.includes('data-testid="perio-preset-gingivitis-card"'),
+			"Кнопка «Гингивит» доступна в 1 клик",
 		);
 		assert.ok(
-			htmlDefault.includes("Пародонтит ср. ст."),
-			"Кнопка пародонтита доступна в 1 клик",
+			htmlDefault.includes('data-testid="perio-preset-mild-periodontitis-card"'),
+			"Кнопка «Пародонтит легкий» доступна в 1 клик",
+		);
+		assert.ok(
+			htmlDefault.includes('data-testid="perio-preset-periodontitis-card"'),
+			"Кнопка «Пародонтит средний» доступна в 1 клик",
+		);
+		assert.ok(
+			htmlDefault.includes('data-testid="perio-preset-severe-periodontitis-card"'),
+			"Кнопка «Пародонтит тяжелый» доступна в 1 клик",
+		);
+		assert.ok(
+			htmlDefault.includes("Пародонтит легкий"),
+			"Подпись легкого пародонтита присутствует",
+		);
+		assert.ok(
+			htmlDefault.includes("Пародонтит средний"),
+			"Подпись среднего пародонтита присутствует",
+		);
+		assert.ok(
+			htmlDefault.includes("Пародонтит тяжелый"),
+			"Подпись тяжелого пародонтита присутствует",
 		);
 
 		// 4. Проверяем секстанты PSR в разметке

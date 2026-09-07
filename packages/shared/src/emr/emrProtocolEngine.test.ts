@@ -174,7 +174,7 @@ describe("Shared EMR Protocol Engine — Order 834n & 203n Compliance Validation
 		assert.ok(report.missingMandatoryBlocks.includes("Паспортная часть: ФИО пациента"));
 		assert.ok(report.missingMandatoryBlocks.includes("Паспортная часть: Номер медицинской карты"));
 		assert.ok(report.missingMandatoryBlocks.includes("Анамнез: Аллергологический статус"));
-		assert.ok(report.missingMandatoryBlocks.includes("Дневник приёма (SOAP)"));
+		assert.ok(report.missingMandatoryBlocks.includes("Дневник приёма (Форма 043/у)"));
 	});
 
 	it("detects lack of rubber dam and RVG in endodontic procedures", () => {

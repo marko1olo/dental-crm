@@ -948,7 +948,7 @@ export function parseClinicalVoiceSpeech(
 	for (const [secKey, secText] of Object.entries(soapNote)) {
 		if (secText) {
 			const secType = secKey as SoapSectionType;
-			let titleRu = "SOAP Заметка";
+			let titleRu = "Запись 043/у";
 			if (secType === "subjective") titleRu = "Жалобы пациента";
 			else if (secType === "objective") titleRu = "Объективный осмотр";
 			else if (secType === "assessment") titleRu = "Диагноз";
@@ -1056,7 +1056,7 @@ export function parseClinicalVoiceSpeech(
 		summaryParts.push(anesthesia.drug);
 	}
 	if (Object.keys(soapNote).length > 0) {
-		summaryParts.push(`SOAP: ${Object.keys(soapNote).length} секц.`);
+		summaryParts.push(`043/у: ${Object.keys(soapNote).length} секц.`);
 	}
 
 	const summary =

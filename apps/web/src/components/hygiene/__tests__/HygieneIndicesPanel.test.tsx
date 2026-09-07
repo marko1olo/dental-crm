@@ -64,11 +64,12 @@ describe("HygieneIndicesPanel — Chairside Express Protocols & Invoice Services
 		assert.ok(html.includes("Индексы гигиены полости рта (OHI-S, PMA, КПИ Леуса)"));
 		assert.ok(html.includes("data-testid=\"hygiene-insert-to-043-btn\""));
 
-		// 4 Periodontal Status Presets
+		// 5 Periodontal Status Presets
 		assert.ok(html.includes("data-testid=\"hygiene-preset-norm\""));
 		assert.ok(html.includes("data-testid=\"hygiene-preset-gingivitis\""));
 		assert.ok(html.includes("data-testid=\"hygiene-preset-mild-periodontitis\""));
 		assert.ok(html.includes("data-testid=\"hygiene-preset-periodontitis\""));
+		assert.ok(html.includes("data-testid=\"hygiene-preset-severe-periodontitis\""));
 
 		// 4 Chairside Treatment & Prevention Protocols (804n)
 		assert.ok(html.includes("data-testid=\"hygiene-preset-pro-hygiene\""));

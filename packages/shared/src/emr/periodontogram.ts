@@ -314,3 +314,238 @@ export function computeCompletePerioIndices(
 		totalTeethExamined: presentTeeth.length,
 	};
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// 1-Click SEPA Clinical Presets (Mandates 8e, 8i, 8k, 8n)
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * 1-Клик Пресет 1: Физиологическая норма пародонта (Z01.2).
+ * Глубина зубодесневой борозды 1-2 мм, кровоточивость 0%, налет 0%, подвижность 0.
+ */
+export function createHealthySepaPeriodontiumPreset(): SepaToothValue[] {
+	return SEPA_PERMANENT_TEETH.map((toothNumber) => ({
+		toothNumber,
+		isPresent: true,
+		isImplant: false,
+		mobility: 0,
+		prognosis: "good",
+		furcationBuccal: "0",
+		furcationLingual: "0",
+		keratinizedGingivaMm: 4,
+		sites: SEPA_SITE_CODES.map((siteCode) => ({
+			siteCode,
+			probingDepthMm: siteCode === "V" || siteCode === "L" ? 1 : 2,
+			gingivalMarginMm: 0,
+			bleedingOnProbing: false,
+			plaque: false,
+			suppuration: false,
+			calculus: false,
+		})),
+	}));
+}
+
+/**
+ * 1-Клик Пресет 2: Хронический катаральный гингивит (K05.1).
+ * Глубина 2-3 мм (ложные карманы за счет отека), диффузная кровоточивость BOP+, налет+, наддесневой камень.
+ */
+export function createCatarrhalGingivitisSepaPreset(): SepaToothValue[] {
+	return SEPA_PERMANENT_TEETH.map((toothNumber) => {
+		const isLowerAnterior = [31, 32, 41, 42].includes(toothNumber);
+		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(toothNumber);
+
+		return {
+			toothNumber,
+			isPresent: true,
+			isImplant: false,
+			mobility: 0,
+			prognosis: "good",
+			furcationBuccal: "0",
+			furcationLingual: "0",
+			keratinizedGingivaMm: 4,
+			sites: SEPA_SITE_CODES.map((siteCode) => ({
+				siteCode,
+				probingDepthMm: isLowerAnterior || isMolar ? 3 : 2,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: true,
+				plaque: true,
+				suppuration: false,
+				calculus: isLowerAnterior,
+			})),
+		};
+	});
+}
+
+/**
+ * 1-Клик Пресет 3: Хронический пародонтит лёгкой степени (K05.30).
+ * Пародонтальные карманы 3-4 мм, BOP+, над- и поддесневой зубной камень, потеря прикрепления CAL 1-2 мм.
+ */
+export function createMildPeriodontitisSepaPreset(): SepaToothValue[] {
+	return SEPA_PERMANENT_TEETH.map((toothNumber) => {
+		const isLowerAnterior = [31, 32, 41, 42].includes(toothNumber);
+		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(toothNumber);
+		const depth = isLowerAnterior || isMolar ? 4 : 3;
+
+		return {
+			toothNumber,
+			isPresent: true,
+			isImplant: false,
+			mobility: isLowerAnterior ? 1 : 0,
+			prognosis: "good",
+			furcationBuccal: "0",
+			furcationLingual: "0",
+			keratinizedGingivaMm: 3,
+			sites: SEPA_SITE_CODES.map((siteCode) => ({
+				siteCode,
+				probingDepthMm: depth,
+				gingivalMarginMm: 0,
+				bleedingOnProbing: true,
+				plaque: true,
+				suppuration: false,
+				calculus: true,
+			})),
+		};
+	});
+}
+
+/**
+ * 1-Клик Пресет 4: Хронический генерализованный пародонтит средней степени (K05.31).
+ * Пародонтальные карманы 4-5 мм, рецессия 1-2 мм, поддесневой камень, фуркация I ст. на молярах, подвижность I ст.
+ */
+export function createModeratePeriodontitisSepaPreset(): SepaToothValue[] {
+	return SEPA_PERMANENT_TEETH.map((toothNumber) => {
+		const isLowerAnterior = [31, 32, 41, 42].includes(toothNumber);
+		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(toothNumber);
+		const depth = isMolar ? 5 : 4;
+		const hasFurcation = isMolar ? ("I" as const) : ("0" as const);
+
+		return {
+			toothNumber,
+			isPresent: true,
+			isImplant: false,
+			mobility: isLowerAnterior ? 1 : 0,
+			prognosis: "fair",
+			furcationBuccal: hasFurcation,
+			furcationLingual: hasFurcation,
+			keratinizedGingivaMm: 2,
+			sites: SEPA_SITE_CODES.map((siteCode) => ({
+				siteCode,
+				probingDepthMm: depth,
+				gingivalMarginMm: -1,
+				bleedingOnProbing: true,
+				plaque: true,
+				suppuration: false,
+				calculus: true,
+			})),
+		};
+	});
+}
+
+/**
+ * 1-Клик Пресет 5: Хронический генерализованный пародонтит тяжёлой степени (K05.32).
+ * Пародонтальные карманы >= 6 мм, обильный гнойный экссудат, рецессия 2-3 мм, подвижность II-III ст., фуркация II ст.
+ */
+export function createSeverePeriodontitisSepaPreset(): SepaToothValue[] {
+	return SEPA_PERMANENT_TEETH.map((toothNumber) => {
+		const isLowerAnterior = [31, 32, 41, 42].includes(toothNumber);
+		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(toothNumber);
+		const depth = isMolar ? 7 : isLowerAnterior ? 6 : 5;
+		const hasFurcation = isMolar ? ("II" as const) : ("0" as const);
+		const hasSuppuration = isMolar || isLowerAnterior;
+
+		return {
+			toothNumber,
+			isPresent: true,
+			isImplant: false,
+			mobility: isLowerAnterior ? 2 : isMolar ? 2 : 1,
+			prognosis: isLowerAnterior || isMolar ? "poor" : "fair",
+			furcationBuccal: hasFurcation,
+			furcationLingual: hasFurcation,
+			keratinizedGingivaMm: 1,
+			sites: SEPA_SITE_CODES.map((siteCode) => ({
+				siteCode,
+				probingDepthMm: depth,
+				gingivalMarginMm: -2,
+				bleedingOnProbing: true,
+				plaque: true,
+				suppuration: hasSuppuration,
+				calculus: true,
+			})),
+		};
+	});
+}
+
+/**
+ * 1-Клик Пресет 6: Профессиональная гигиена полости рта выполнена (A16.07.051).
+ * Полное удаление налета и зубного камня, десна санирована, глубина 1-2 мм.
+ */
+export function createProHygieneSepaPreset(): SepaToothValue[] {
+	return createHealthySepaPeriodontiumPreset();
+}
+
+/**
+ * Генерация регламентного текста дневника Формы 043/у по данным SEPA пародонтограммы.
+ */
+export function generateSepaProtocol043Text(
+	teeth: readonly SepaToothValue[],
+	indices?: PeriodontogramIndices | null,
+	options?: { presetName?: string; customNotes?: string },
+): string {
+	const currentIndices = indices ?? computeCompletePerioIndices(teeth);
+	const deepCount = currentIndices.deepPocketsCount;
+	const bop = currentIndices.bopPct.toFixed(1);
+	const pi = currentIndices.piPct.toFixed(1);
+
+	let diagnosis = "Интактный пародонт / Клиническая норма (Z01.2)";
+	let icd10 = "Z01.2";
+	let statusLocalis =
+		"Десна бледно-розовая, плотная, зубодесневая борозда 1-2 мм. Кровоточивость при зондировании отсутствует (BOP 0%). Патологических зубодесневых карманов нет, подвижность зубов 0.";
+	let treatment =
+		"Санация полости рта, профилактический осмотр через 6 месяцев. Рекомендации по индивидуальной гигиене.";
+
+	if (
+		Boolean(currentIndices.sitesWithSuppurationCount) ||
+		((currentIndices.teethWithMobilityCount ?? 0) >= 8 && deepCount >= 8)
+	) {
+		diagnosis = "Хронический генерализованный пародонтит тяжёлой степени (K05.32)";
+		icd10 = "K05.32";
+		statusLocalis = `Десна застойно гиперемирована с цианотичным оттенком, выраженная кровоточивость (BOP ${bop}%), налет (PI ${pi}%). Обнаружены глубокие пародонтальные карманы от 6 до 8 мм (глубоких карманов: ${deepCount}), гноетечение из ${currentIndices.sitesWithSuppurationCount ?? 0} точек, подвижность зубов II-III ст. у ${currentIndices.teethWithMobilityCount ?? 0} зубов. Выраженная рецессия десны.`;
+		treatment =
+			"Неотложная противовоспалительная терапия, антисептическая обработка пародонтальных карманов хлоргексидином 0.05%, эвакуация экссудата. Временное шинирование подвижных зубов (A16.07.019). Направление на глубокий закрытый кюретаж / хирургическое лечение.";
+	} else if (
+		deepCount > 0 ||
+		(currentIndices.teethWithFurcationCount ?? 0) > 0
+	) {
+		diagnosis = "Хронический генерализованный пародонтит средней степени (K05.31)";
+		icd10 = "K05.31";
+		statusLocalis = `Десна цианотична, отечна, выраженная кровоточивость при зондировании (BOP ${bop}%), зубной налет (PI ${pi}%). Пародонтальные карманы глубиной 4-5.5 мм, рецессия десны 1-2 мм, под- и наддесневой зубной камень. Патологическая подвижность I ст. у ${currentIndices.teethWithMobilityCount ?? 0} зубов.`;
+		treatment =
+			"Комплексная профессиональная гигиена и поддесневой скейлинг (SRP A16.07.051), ультразвуковая обработка пародонтальных карманов, антисептическое орошение, аппликации Метрогил Дента. Обучение гигиене.";
+	} else if (currentIndices.moderatePocketsCount && currentIndices.moderatePocketsCount > 0) {
+		diagnosis = "Хронический пародонтит лёгкой степени (K05.30)";
+		icd10 = "K05.30";
+		statusLocalis = `Маргинальная десна отечна, умеренно гиперемирована, кровоточивость при зондировании (BOP ${bop}%), налет (PI ${pi}%). Пародонтальные карманы глубиной 3-4 мм без гноетечения, над- и поддесневые зубные отложения. Патологическая подвижность зубов 0-I ст.`;
+		treatment =
+			"Профессиональная гигиена полости рта (A16.07.051), снятие над- и поддесневых зубных отложений УЗ + Air-Flow, полировка пастой, аппликация антисептического геля.";
+	} else if (currentIndices.bopPct > 10) {
+		diagnosis = "Хронический катаральный гингивит (K05.1)";
+		icd10 = "K05.1";
+		statusLocalis = `Десна гиперемирована, отечна, выраженная диффузная кровоточивость сосочков (BOP ${bop}%), налет (PI ${pi}%). Глубина десневой борозды 2-3 мм (ложные карманы за счет отека десны, зубодесневое прикрепление сохранено). Мягкий налет, наддесневой зубной камень. Подвижность 0.`;
+		treatment =
+			"Профессиональная гигиена полости рта (ультразвуковое снятие отложений + Air-Flow), антисептическая обработка десен, противовоспалительные аппликации. Подбор индивидуальных средств гигиены.";
+	}
+
+	let text = `• Обследование пародонта (6-точечная пародонтограмма SEPA / Florida Probe):\n`;
+	text += `  - Диагноз: ${diagnosis}\n`;
+	text += `  - МКБ-10: ${icd10}\n`;
+	text += `  - Индексы: BOP (кровоточивость) ${bop}%, PI (налет) ${pi}%, средняя потеря прикрепления (CAL) ${currentIndices.calMeanMm.toFixed(1)} мм, зубов с глубокими карманами (>= 5 мм): ${deepCount}.\n`;
+	text += `  - Status localis: ${statusLocalis}\n`;
+	text += `  - Лечение и план: ${treatment}`;
+
+	if (options?.customNotes?.trim()) {
+		text += `\n  - Особые отметки: ${options.customNotes.trim()}`;
+	}
+
+	return text;
+}
+

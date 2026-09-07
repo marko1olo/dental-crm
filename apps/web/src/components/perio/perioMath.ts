@@ -118,7 +118,9 @@ export const PSR_CODE_DEFINITIONS: Record<PsrCode, PsrCodeDefinition> = {
 export type PerioExpressPresetId =
 	| "perio_norm_express"
 	| "gingivitis_express"
+	| "periodontitis_mild_express"
 	| "periodontitis_moderate_express"
+	| "periodontitis_severe_express"
 	| "pro_hygiene_express";
 
 export interface PerioExpressPreset {
@@ -149,13 +151,29 @@ export const PERIO_EXPRESS_PRESETS: Record<
 		defaultProtocolRu:
 			"Пародонт: десна отечна, гиперемирована, валикообразно утолщена, диффузная кровоточивость при зондировании (BOP+), глубина десневых бороздок 2-3 мм (ложные карманы за счет отека десны, < 3.5 мм), зубодесневое прикрепление сохранено, наддесневой зубной камень, подвижности зубов нет. Скрининг PSR: 1-2. Диагноз: Хронический катаральный гингивит (K05.1).",
 	},
+	periodontitis_mild_express: {
+		id: "periodontitis_mild_express",
+		titleRu: "Пародонтит легкой степени",
+		subtitleRu: "PSR 2-3, карманы 3.5–4.0 мм, BOP+, над- и поддесневой камень",
+		icd10: "K05.30",
+		defaultProtocolRu:
+			"Пародонт: маргинальная десна отечна, умеренно гиперемирована, кровоточивость при зондировании (BOP+), пародонтальные карманы глубиной 3.5–4.0 мм без гноетечения (PSR 2-3), над- и поддесневые зубные отложения, потеря зубодесневого прикрепления CAL 1-2 мм. Патологическая подвижность зубов: 0-I ст. во фронтальном отделе. На рентгенограмме: резорбция кортикальной пластинки вершин межальвеолярных перегородок до 1/3 длины корней. Диагноз: Хронический пародонтит лёгкой степени (K05.30).",
+	},
 	periodontitis_moderate_express: {
 		id: "periodontitis_moderate_express",
 		titleRu: "Пародонтит средней степени",
 		subtitleRu: "PSR 3, карманы до 5 мм",
-		icd10: "K05.3",
+		icd10: "K05.31",
 		defaultProtocolRu:
-			"Пародонт: глубина пародонтальных карманов 3.5–5.0 мм (PSR 3), десна гиперемирована с цианотичным оттенком, выраженная кровоточивость при зондировании, над- и поддесневой зубной камень, рецессия десны 1-2 мм, патологическая подвижность зубов I ст. Диагноз: Хронический генерализованный пародонтит средней степени (K05.3).",
+			"Пародонт: глубина пародонтальных карманов 3.5–5.0 мм (PSR 3), десна гиперемирована с цианотичным оттенком, выраженная кровоточивость при зондировании, над- и поддесневой зубной камень, рецессия десны 1-2 мм, патологическая подвижность зубов I ст. Диагноз: Хронический генерализованный пародонтит средней степени (K05.31).",
+	},
+	periodontitis_severe_express: {
+		id: "periodontitis_severe_express",
+		titleRu: "Пародонтит тяжелой степени",
+		subtitleRu: "PSR 4*, карманы >= 6 мм, гноетечение, подвижность II-III ст.",
+		icd10: "K05.32",
+		defaultProtocolRu:
+			"Пародонт: десна застойно гиперемирована, цианотична, выраженная кровоточивость сосочков (BOP > 50%), глубокие пародонтальные карманы от 6 до 8 мм (PSR 4*) с серозно-гнойным экссудатом (гноетечение). Выраженная рецессия десны 2-4 мм с обнажением фуркаций (фуркационные дефекты II класса). Патологическая подвижность зубов II-III ст., веерообразное смещение резцов. На рентгенограмме: деструкция костной ткани более 1/2 длины корней. Диагноз: Хронический генерализованный пародонтит тяжёлой степени (K05.32).",
 	},
 	pro_hygiene_express: {
 		id: "pro_hygiene_express",
@@ -278,7 +296,48 @@ export function applyGingivitisPreset(
 }
 
 /**
- * 1-Клик Пресет 3: Пародонтит средней степени (PSR 3, карманы до 5 мм).
+ * 1-Клик Пресет 3: Пародонтит лёгкой степени (PSR 2-3, карманы 3.5–4 мм, CAL 1-2 мм).
+ */
+export function applyPeriodontitisMildPreset(
+	teeth: readonly PerioToothRecord[],
+): PerioToothRecord[] {
+	return teeth.map((t) => {
+		if (t.isMissing) return { ...t };
+		const num = t.toothNumber;
+		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(num);
+		const isLowerAnterior = [31, 32, 41, 42].includes(num);
+		const depth = isMolar || isLowerAnterior ? 4 : 3;
+		const gm = 0;
+		const calMm = depth + gm;
+		const mobility = isLowerAnterior ? 1 : 0;
+
+		const makeSite = () => ({
+			probingDepthMm: depth,
+			gingivalMarginMm: gm,
+			bleedingOnProbing: true,
+			suppuration: false,
+			plaque: true,
+			calculus: true,
+			calMm,
+		});
+
+		const copy: PerioToothRecord = {
+			...t,
+			mobility: mobility as 0 | 1 | 2 | 3,
+			furcation: 0,
+			distoBuccal: makeSite(),
+			midBuccal: makeSite(),
+			mesioBuccal: makeSite(),
+			distoLingual: makeSite(),
+			midLingual: makeSite(),
+			mesioLingual: makeSite(),
+		};
+		return copy;
+	});
+}
+
+/**
+ * 1-Клик Пресет 4: Пародонтит средней степени (PSR 3, карманы до 5 мм).
  */
 export function applyPeriodontitisModeratePreset(
 	teeth: readonly PerioToothRecord[],
@@ -299,6 +358,49 @@ export function applyPeriodontitisModeratePreset(
 			gingivalMarginMm: gm,
 			bleedingOnProbing: true,
 			suppuration: false,
+			plaque: true,
+			calculus: true,
+			calMm,
+		});
+
+		const copy: PerioToothRecord = {
+			...t,
+			mobility: mobility as 0 | 1 | 2 | 3,
+			furcation: furcation as 0 | 1 | 2 | 3 | 4,
+			distoBuccal: makeSite(),
+			midBuccal: makeSite(),
+			mesioBuccal: makeSite(),
+			distoLingual: makeSite(),
+			midLingual: makeSite(),
+			mesioLingual: makeSite(),
+		};
+		return copy;
+	});
+}
+
+/**
+ * 1-Клик Пресет 5: Пародонтит тяжёлой степени (PSR 4*, карманы >= 6 мм, гноетечение, подвижность II-III).
+ */
+export function applyPeriodontitisSeverePreset(
+	teeth: readonly PerioToothRecord[],
+): PerioToothRecord[] {
+	return teeth.map((t) => {
+		if (t.isMissing) return { ...t };
+		const num = t.toothNumber;
+		const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(num);
+		const isLowerAnterior = [31, 32, 41, 42].includes(num);
+		const depth = isMolar ? 7 : isLowerAnterior ? 6 : 5;
+		const gm = 2;
+		const calMm = depth + gm;
+		const mobility = isLowerAnterior ? 2 : isMolar ? 2 : 1;
+		const furcation = isMolar && isFurcationEligibleTooth(num) ? 2 : 0;
+		const suppuration = isMolar || isLowerAnterior;
+
+		const makeSite = () => ({
+			probingDepthMm: depth,
+			gingivalMarginMm: gm,
+			bleedingOnProbing: true,
+			suppuration,
 			plaque: true,
 			calculus: true,
 			calMm,

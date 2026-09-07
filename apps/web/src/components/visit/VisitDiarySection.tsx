@@ -1014,11 +1014,11 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								type="button"
 								onClick={() => setIsTier3PerioModalOpen(true)}
 								className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 text-teal-400 border border-[var(--line,#334155)] hover:border-teal-500/40 text-xs font-semibold transition-all shrink-0 shadow-xs touch-manipulation min-w-0 cursor-pointer"
-								title="Открыть глубокий Tier 3 кабинет врача-пародонтолога (Florida Probe 6-Point зондирование)"
+								title="Открыть детальную пародонтограмму (6-точечное зондирование Florida Probe)"
 								data-testid="open-tier3-perio-btn"
 							>
 								<BarChart2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-								<span className="whitespace-nowrap">Tier 3 (Florida Probe)</span>
+								<span className="whitespace-nowrap">Пародонтограмма (Florida Probe)</span>
 							</button>
 							<button
 								type="button"
@@ -2085,7 +2085,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 								<div className="flex items-center gap-2">
 									<BarChart2 className="w-5 h-5 text-teal-400" />
 									<h3 className="text-base font-bold text-[var(--ink,#f8fafc)]">
-										Специализированная пародонтограмма (Tier 3 / Florida Probe 6-Point)
+										Специализированная пародонтограмма (6-точечное зондирование Florida Probe)
 									</h3>
 								</div>
 								<button

@@ -447,6 +447,85 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 		);
 	}, [readOnly, onInsertToProtocol]);
 
+	// 5. Пародонтит тяжёлой степени (Мандаты 8e, 8i, 8k, 8n)
+	const handlePresetSeverePeriodontitis = useCallback(() => {
+		if (readOnly) return;
+		const perioAssessments: Record<number, HygieneToothAssessment> = {
+			16: {
+				toothNumber: 16,
+				debrisScore: 3,
+				calculusScore: 3,
+				pmaScore: 3,
+				kpiScore: 4,
+			},
+			11: {
+				toothNumber: 11,
+				debrisScore: 2,
+				calculusScore: 2,
+				pmaScore: 3,
+				kpiScore: 4,
+			},
+			26: {
+				toothNumber: 26,
+				debrisScore: 3,
+				calculusScore: 3,
+				pmaScore: 3,
+				kpiScore: 4,
+			},
+			46: {
+				toothNumber: 46,
+				debrisScore: 3,
+				calculusScore: 3,
+				pmaScore: 3,
+				kpiScore: 4,
+			},
+			31: {
+				toothNumber: 31,
+				debrisScore: 2,
+				calculusScore: 3,
+				pmaScore: 3,
+				kpiScore: 4,
+			},
+			36: {
+				toothNumber: 36,
+				debrisScore: 3,
+				calculusScore: 3,
+				pmaScore: 3,
+				kpiScore: 4,
+			},
+		};
+		setAssessments(perioAssessments);
+
+		const protocolText =
+			"• Экспресс-оценка гигиены и пародонта: Хронический генерализованный пародонтит тяжёлой степени (K05.32).\n" +
+			"• Status localis: Десна застойно цианотична, выраженная кровоточивость сосочков (BOP > 50%). Глубокие пародонтальные карманы от 6 до 8 мм с серозно-гнойным экссудатом, рецессия десны 2-4 мм с обнажением фуркаций корней (фуркационные дефекты II класса). Обильный над- и поддесневой зубной камень, патологическая подвижность зубов II-III ст., веерообразное расхождение резцов. На рентгенограмме/КЛКТ: диффузная деструкция костной ткани межальвеолярных перегородок более 1/2 длины корней.\n" +
+			"• Клинические индексы: OHI-S 2.8 (плохая гигиена), PMA 75% (тяжелый генерализованный гингивит), КПИ 4.0 (тяжелые деструктивные изменения пародонта, карманы ≥ 6 мм, подвижность).\n" +
+			"• Рекомендовано: Неотложная противовоспалительная санация пародонта, антисептическое орошение карманов хлоргексидином 0.05%, эвакуация гнойного экссудата. Временное экстракоронарное шинирование подвижных зубов (A16.07.019). Системная противовоспалительная терапия, консультация хирурга-пародонтолога (лоскутные операции / удаление безнадежных зубов).";
+
+		useVisitStore.getState().setVisitNoteForm((prev) => ({
+			...prev,
+			objectiveStatus: prev.objectiveStatus
+				? `${prev.objectiveStatus}\n\n${protocolText}`
+				: protocolText,
+		}));
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: protocolText,
+					mode: "smart_append",
+				},
+			}),
+		);
+
+		onInsertToProtocol?.(protocolText);
+		showToast(
+			"Пародонтит тяжёлой степени зафиксирован: карманы ≥6 мм, гноетечение, подвижность II-III ст. Данные внесены в 043/у!",
+			"warning",
+			4500,
+		);
+	}, [readOnly, onInsertToProtocol]);
+
 	// 5. Профессиональная гигиена выполнена (Мандаты 8e, 8i, 8k, 8n)
 	const handlePresetProHygieneDone = useCallback(() => {
 		if (readOnly) return;
@@ -806,7 +885,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							</span>
 						</div>
 
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
 							{/* Preset 1: Норма пародонта */}
 							<button
 								type="button"
@@ -875,6 +954,23 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 								<span className="text-[10px] text-orange-800 dark:text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
 									карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I
 									ст.
+								</span>
+							</button>
+
+							{/* Preset 5: Пародонтит тяжёлой степени */}
+							<button
+								type="button"
+								onClick={handlePresetSeverePeriodontitis}
+								className="min-h-[48px] p-2.5 rounded-xl bg-red-700/20 hover:bg-red-700/35 text-red-900 dark:text-red-200 border border-red-600/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								title="Пародонтит тяжёлой степени: глубина карманов >= 6 мм, гноетечение, рецессия 2-4 мм, подвижность II-III ст."
+								data-testid="hygiene-preset-severe-periodontitis"
+							>
+								<div className="flex items-center gap-1.5 font-black text-xs">
+									<ShieldAlert size={15} className="text-red-600 dark:text-red-400 shrink-0" />
+									<span>Пародонтит тяжелый (&ge;6 мм)</span>
+								</div>
+								<span className="text-[10px] text-red-800 dark:text-red-200/80 leading-tight mt-0.5 line-clamp-2">
+									карманы &ge;6 мм, гноетечение, рецессия, подвижность II-III ст.
 								</span>
 							</button>
 						</div>

@@ -564,7 +564,7 @@ export function validateForm043uCompliance(
 	const diariesToCheck: VisitDiaryEntry043[] = Array.isArray(rawDiaries) ? rawDiaries : [];
 
 	if (diariesToCheck.length === 0) {
-		missingBlocks.push("Дневник приёма (SOAP)");
+		missingBlocks.push("Дневник приёма (Форма 043/у)");
 		issues.push({
 			blockKey: "treatment_protocol",
 			fieldLabel: "Дневниковые записи посещений",
@@ -579,34 +579,34 @@ export function validateForm043uCompliance(
 		if (!d) continue;
 		const diaryPrefix = diariesToCheck.length > 1 ? `[Визит ${i + 1}${d.toothNumber ? ` зуб ${d.toothNumber}` : ""}] ` : "";
 
-		// S: Жалобы
+		// I: Жалобы и анамнез
 		if (!d.subjectiveComplaints || String(d.subjectiveComplaints).trim().length < 5) {
 			issues.push({
 				blockKey: "complaints",
-				fieldLabel: `${diaryPrefix}Жалобы (Subjective)`,
+				fieldLabel: `${diaryPrefix}I. Жалобы и анамнез`,
 				message: "Блок жалоб не заполнен или содержит менее 5 символов.",
 				severity: "critical",
-				statutoryRule: "Приказ Минздрава № 834н (SOAP-стандарт)",
+				statutoryRule: "Приказ Минздрава № 834н (Форма 043/у)",
 			});
 		}
 
-		// O: Status localis
+		// II: Status localis
 		if (!d.objectiveStatusLocalis || String(d.objectiveStatusLocalis).trim().length < 10) {
 			issues.push({
 				blockKey: "objective_status",
-				fieldLabel: `${diaryPrefix}Объективный статус (Objective)`,
+				fieldLabel: `${diaryPrefix}II. Объективный статус (Status localis)`,
 				message: "Объективный статус (Status localis) не описан или не содержит данных осмотра.",
 				severity: "critical",
-				statutoryRule: "Приказ Минздрава № 834н (SOAP-стандарт)",
+				statutoryRule: "Приказ Минздрава № 834н (Форма 043/у)",
 			});
 		}
 
-		// A: Диагноз и МКБ-10
+		// III: Диагноз и МКБ-10
 		if (!d.assessmentIcd10Code || !/^[Kk]\d{2}(\.\d{1,2})?(_[A-Za-z0-9]+)?$/.test(String(d.assessmentIcd10Code).trim())) {
 			icd10Valid = false;
 			issues.push({
 				blockKey: "diagnosis",
-				fieldLabel: `${diaryPrefix}Код МКБ-10 (Assessment)`,
+				fieldLabel: `${diaryPrefix}III. Код МКБ-10`,
 				message: `Некорректный или отсутствующий код диагноза по МКБ-10: «${d.assessmentIcd10Code || "пусто"}». Ожидается код класса K00-K14.`,
 				severity: "critical",
 				statutoryRule: "Международная классификация болезней МКБ-10 / Приказ № 834н",
@@ -635,11 +635,11 @@ export function validateForm043uCompliance(
 			});
 		}
 
-		// P: Протокол лечения
+		// IV: Протокол лечения
 		if (!d.procedureProtocol || String(d.procedureProtocol).trim().length < 20) {
 			issues.push({
 				blockKey: "treatment_protocol",
-				fieldLabel: `${diaryPrefix}Протокол вмешательства (Procedure)`,
+				fieldLabel: `${diaryPrefix}IV. Протокол лечения (манипуляции)`,
 				message: "Протокол лечения не содержит подробного описания манипуляций (менее 20 символов).",
 				severity: "critical",
 				statutoryRule: "Приказ Минздрава № 834н",

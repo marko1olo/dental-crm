@@ -1134,3 +1134,29 @@
   4. *Защита документов*: ноль мультяшных эмодзи в протоколах, только строгие векторные иконки Lucide.
 - **Фронтенд**: `apps/web/src/components/orthodontics/OrthoPhotoProtocolModal.tsx`, `apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx`, `apps/web/src/components/orthodontics/OrthodonticStudioModal.tsx`.
 - **Тесты**: `apps/web/src/tests/OrthodonticPhotoProtocolModal.test.tsx` (7 тестов, 100% pass) (коммит `afa61d167`).
+
+#### 2.10.119. Пародонтология и профгигиена: ликвидация симулятора 192 точек, 6 клинических пресетов SEPA и автогенерация Формы 043/у (Мандаты 8e, 8i, 8k, 8n / Пародонтология & Профгигиена, Фича #158)
+- **Суть и домен**: Ликвидация академического оверинжиниринга и процедурного симулятора ручного ввода 192 точек зондирования (Florida Probe) в пользу 1-клик клинических экспресс-пресетов:
+  1. *Ликвидация симулятора и Numpad-барьеров*: перехват цифровой клавиатуры Numpad по умолчанию выключен (`isKeyboardCaptureEnabled = false`); пародонтограмма не требует обязательного 192-точечного прокликивания зондом для оформления осмотра или приёма.
+  2. *6 канонических SEPA пресетов в 1 клик*:
+     - «Физиологическая норма (Z01.2)» — глубина борозды 1-2 мм, BOP 0%, PI 0%, подвижность 0.
+     - «Хронический катаральный гингивит (K05.1)» — глубина 2-3 мм (ложные карманы), диффузная кровоточивость BOP > 10%, налет.
+     - «Хронический пародонтит лёгкой степени (K05.30)» — карманы 3-4 мм, BOP+, CAL 1-2 мм.
+     - «Хронический генерализованный пародонтит средней степени (K05.31)» — карманы 4-5.5 мм, рецессия 1-2 мм, фуркация I ст., подвижность I ст.
+     - «Хронический генерализованный пародонтит тяжёлой степени (K05.32)» — карманы 6-7 мм, подвижность II-III ст., фуркация II ст., экссудация.
+     - «Профгигиена полости рта (A16.07.051)» — десна санирована, глубина 1-2 мм, инъекция протокола УЗ + Air-Flow + фторирование в дневник 043/у и наряд.
+  3. *Автогенерация Формы 043/у*: функция `generateSepaProtocol043Text` формирует регламентный текст дневника по стандартам Минздрава РФ с точными кодами МКБ-10, статусом localis и планом лечения.
+  4. *Интеграция с гигиеной 804н*: в `HygieneIndicesPanel.tsx` добавлены 5 клинических пресетов (Норма, Гингивит, Легкий, Средний, Тяжелый пародонтит), синхронизированные с услугами Номенклатуры 804н (A16.07.051, A16.07.050, A11.07.012).
+  5. *Гигиена дизайна токенов и ноль эмодзи*: в `PeriodontogramChart.tsx` устранены 124 жестких темных фоллбэка из `var(--token)`, гарантируя WCAG AAA контрастность; мультяшные эмодзи заменены строгими векторными иконками Lucide.
+- **Фронтенд & Shared**: `packages/shared/src/emr/periodontogram.ts`, `apps/web/src/components/perio/PeriodontogramChart.tsx`, `apps/web/src/components/perio/perioMath.ts`, `apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`, `apps/web/src/lib/clinicalProtocols043.ts`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/periodontogram/index.ts`.
+- **Тесты**: `packages/shared/src/tests/perioCharting.test.ts` (14 тестов, 100% pass), `apps/web/src/components/perio/__tests__/periodontalQuickScreening.test.ts` (8 тестов, 100% pass), `apps/web/src/components/hygiene/__tests__/HygieneIndicesPanel.test.tsx` (5 тестов, 100% pass).
+
+#### 2.10.120. Хирургия и анестезия: 4 столпа амбулаторного анамнеза, 7 экспресс-пресетов анестезии и печать протоколов операций (Мандаты 8e, 8i, 8k, 8n / Хирургия & Анестезия, Фича #159)
+- **Суть и домен**: Полная автономия врача-хирурга и имплантолога у кресла с ликвидацией стационарного блоата:
+  1. *4 столпа амбулаторного анамнеза*: в `SurgerySafetyChecklist.tsx` сфокусирован реальный стоматологический анамнез риска (аллергия на анестетики, антикоагулянты/гемостаз, бисфосфонаты/MRONJ, декомпенсированный диабет) с кнопками «1-Клик норма анамнеза» и «1-Клик норма (Time-Out & Анамнез)».
+  2. *7 экспресс-пресетов анестезии*: в `anesthesiaExpressPresets.ts` и `AnesthesiaQuickBar.tsx` внедрены 1-клик пресеты для амбулаторного кресла («Мандибулярная + инфильтрационная 1.7 мл Ультракаин Д-С Форте», «Инфильтрационная 1.7 мл Септанест», «Торусальная 1.7 мл Артикаин», «Мандибулярная Скандонест 3% без вазоконстриктора для гипертоников»).
+  3. *Автономная печать протокола операции*: `surgicalOperationProtocolPrintEngine.ts` обеспечивает мгновенный вывод на печать протокола операции и согласий со штампами «ЧЕРНОВИК» (до закрытия визита) и «ПОДПИСАНО ВРАЧОМ» (после закрытия), magazine-grade версткой А4 и нулевым содержанием эмодзи.
+  4. *Безопасность лекарственных взаимодействий (DDI)*: в `clinicalDdiDrugSafetyEngine.ts` добавлен класс `bisphosphonate_antiresorptive` для раннего выявления рисков бисфосфонатного остеонекроза челюстей (MRONJ) и нежелательных комбинаций с НПВП.
+- **Фронтенд & Shared**: `apps/web/src/components/documents/surgicalOperationProtocolPrintEngine.ts`, `apps/web/src/components/surgery/SurgerySafetyChecklist.tsx`, `apps/web/src/components/surgery/SurgeryCockpitModal.tsx`, `apps/web/src/components/surgery/SurgeryProtocolPanel.tsx`, `apps/web/src/components/visit/anesthesia/anesthesiaExpressPresets.ts`, `apps/web/src/components/anesthesia/AnesthesiaQuickBar.tsx`, `packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.ts` (коммит `d06be9d8f`).
+- **Тесты**: `apps/web/src/components/surgery/__tests__/surgeryCockpitModal.test.tsx` (8 тестов, 100% pass), `apps/web/src/components/visit/anesthesia/__tests__/anesthesiaExpressPresets.test.ts` (12 тестов, 100% pass), `packages/shared/src/clinical/clinicalDdiDrugSafetyEngine.test.ts` (23 теста, 100% pass).
+

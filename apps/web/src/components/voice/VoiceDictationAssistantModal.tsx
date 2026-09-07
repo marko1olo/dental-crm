@@ -326,7 +326,7 @@ export function VoiceDictationAssistantModal({
 							<div className="dnt-voice-rec-status-sub">
 								{isListening
 									? "Говорите команды (например: «Зуб 46 кариес дентина, анестезия убистезин»)"
-									: "Автоматическое распознавание номеров зубов FDI, диагнозов и протокола SOAP"}
+									: "Автоматическое распознавание номеров зубов FDI, диагнозов и дневника 043/у"}
 							</div>
 						</div>
 
@@ -442,7 +442,7 @@ export function VoiceDictationAssistantModal({
 													</span>
 													{cmd.soapSection && (
 														<span className="dnt-voice-badge dnt-voice-badge--soap">
-															SOAP: {cmd.soapSection}
+															043/у: {cmd.soapSection}
 														</span>
 													)}
 													{cmd.category === "anesthesia" && (
@@ -522,14 +522,14 @@ export function VoiceDictationAssistantModal({
 									}}
 								>
 									<FileText size={18} />
-									<span>Сводка медицинского протокола (SOAP)</span>
+									<span>Дневник приёма (Форма 043/у)</span>
 								</div>
 
 								<div className="dnt-voice-soap-grid">
 									{parseResult.soapNote.subjective && (
 										<div className="dnt-voice-soap-item">
 											<div className="dnt-voice-soap-item-label">
-												Жалобы (Subjective)
+												I. Жалобы и анамнез
 											</div>
 											<div className="dnt-voice-soap-item-text">
 												{parseResult.soapNote.subjective}
@@ -539,7 +539,7 @@ export function VoiceDictationAssistantModal({
 									{parseResult.soapNote.objective && (
 										<div className="dnt-voice-soap-item">
 											<div className="dnt-voice-soap-item-label">
-												Объективно (Objective)
+												II. Объективный статус (Status localis)
 											</div>
 											<div className="dnt-voice-soap-item-text">
 												{parseResult.soapNote.objective}
@@ -549,7 +549,7 @@ export function VoiceDictationAssistantModal({
 									{parseResult.soapNote.plan && (
 										<div className="dnt-voice-soap-item">
 											<div className="dnt-voice-soap-item-label">
-												Лечение / План (Plan)
+												IV. Протокол лечения
 											</div>
 											<div className="dnt-voice-soap-item-text">
 												{parseResult.soapNote.plan}
@@ -559,7 +559,7 @@ export function VoiceDictationAssistantModal({
 									{parseResult.soapNote.recommendations && (
 										<div className="dnt-voice-soap-item">
 											<div className="dnt-voice-soap-item-label">
-												Рекомендации (Recommendations)
+												Назначения и рекомендации
 											</div>
 											<div className="dnt-voice-soap-item-text">
 												{parseResult.soapNote.recommendations}

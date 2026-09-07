@@ -23,6 +23,14 @@ import {
 	perioChartDataSchema,
 	perioChartSummarySchema,
 	type PerioToothRecord,
+	createHealthySepaPeriodontiumPreset,
+	createCatarrhalGingivitisSepaPreset,
+	createMildPeriodontitisSepaPreset,
+	createModeratePeriodontitisSepaPreset,
+	createSeverePeriodontitisSepaPreset,
+	createProHygieneSepaPreset,
+	generateSepaProtocol043Text,
+	computeCompletePerioIndices,
 } from "../index.js";
 
 function createDefaultTooth(toothNumber: number): PerioToothRecord {
@@ -307,5 +315,84 @@ describe("Periodontal Charting & AAP/EFP 2018 Engine (packages/shared)", () => {
 			praRisk: "low",
 		});
 		assert.equal(validChart.success, true);
+	});
+
+	it("13. 1-Click SEPA Clinical Presets (Mandates 8e, 8i, 8k, 8n)", () => {
+		// Preset 1: Healthy (Z01.2)
+		const healthy = createHealthySepaPeriodontiumPreset();
+		assert.equal(healthy.length, 32);
+		const healthyIndices = computeCompletePerioIndices(healthy);
+		assert.equal(healthyIndices.deepPocketsCount, 0);
+		assert.equal(healthyIndices.bopPct, 0);
+
+		// Preset 2: Catarrhal Gingivitis (K05.1)
+		const gingivitis = createCatarrhalGingivitisSepaPreset();
+		assert.equal(gingivitis.length, 32);
+		const gingivitisIndices = computeCompletePerioIndices(gingivitis);
+		assert.ok(gingivitisIndices.bopPct > 10);
+		assert.equal(gingivitisIndices.deepPocketsCount, 0);
+
+		// Preset 3: Mild Periodontitis (K05.30)
+		const mild = createMildPeriodontitisSepaPreset();
+		assert.equal(mild.length, 32);
+		const mildIndices = computeCompletePerioIndices(mild);
+		assert.ok(mildIndices.moderatePocketsCount! > 0);
+		assert.equal(mildIndices.deepPocketsCount, 0);
+
+		// Preset 4: Moderate Periodontitis (K05.31)
+		const moderate = createModeratePeriodontitisSepaPreset();
+		assert.equal(moderate.length, 32);
+		const moderateIndices = computeCompletePerioIndices(moderate);
+		assert.ok(moderateIndices.moderatePocketsCount! >= 6);
+
+		// Preset 5: Severe Periodontitis (K05.32)
+		const severe = createSeverePeriodontitisSepaPreset();
+		assert.equal(severe.length, 32);
+		const severeIndices = computeCompletePerioIndices(severe);
+		assert.ok(severeIndices.deepPocketsCount >= 8);
+		assert.ok(severeIndices.sitesWithSuppurationCount! > 0);
+		assert.ok(severeIndices.teethWithMobilityCount! >= 4);
+
+		// Preset 6: ProHygiene (A16.07.051)
+		const prophy = createProHygieneSepaPreset();
+		assert.equal(prophy.length, 32);
+		const prophyIndices = computeCompletePerioIndices(prophy);
+		assert.equal(prophyIndices.deepPocketsCount, 0);
+		assert.equal(prophyIndices.bopPct, 0);
+	});
+
+	it("14. Form 043/u text generation from SEPA periodontogram (Mandates 8e, 8i)", () => {
+		// Healthy Form 043 text
+		const healthy = createHealthySepaPeriodontiumPreset();
+		const healthyText = generateSepaProtocol043Text(healthy);
+		assert.ok(healthyText.includes("Z01.2"));
+		assert.ok(healthyText.includes("Интактный пародонт"));
+
+		// Gingivitis Form 043 text
+		const gingivitis = createCatarrhalGingivitisSepaPreset();
+		const gingivitisText = generateSepaProtocol043Text(gingivitis);
+		assert.ok(gingivitisText.includes("K05.1"));
+		assert.ok(gingivitisText.includes("Хронический катаральный гингивит"));
+
+		// Mild Periodontitis Form 043 text
+		const mild = createMildPeriodontitisSepaPreset();
+		const mildText = generateSepaProtocol043Text(mild);
+		assert.ok(mildText.includes("K05.30"));
+		assert.ok(mildText.includes("Хронический пародонтит лёгкой степени"));
+
+		// Moderate Periodontitis Form 043 text
+		const moderate = createModeratePeriodontitisSepaPreset();
+		const moderateText = generateSepaProtocol043Text(moderate);
+		assert.ok(moderateText.includes("K05.31"));
+		assert.ok(moderateText.includes("Хронический генерализованный пародонтит средней степени"));
+
+		// Severe Periodontitis Form 043 text
+		const severe = createSeverePeriodontitisSepaPreset();
+		const severeText = generateSepaProtocol043Text(severe, undefined, {
+			customNotes: "Шинирование зубов 3.2-4.2",
+		});
+		assert.ok(severeText.includes("K05.32"));
+		assert.ok(severeText.includes("Хронический генерализованный пародонтит тяжёлой степени"));
+		assert.ok(severeText.includes("Шинирование зубов 3.2-4.2"));
 	});
 });
