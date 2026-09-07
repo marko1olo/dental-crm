@@ -39,11 +39,15 @@ import type {
 	PublicRejectionReason,
 } from "@dental/shared";
 
+export type PublicEstimateDetailWithPatient = PublicEstimateDetail & {
+	readonly patientName?: string | null | undefined;
+};
+
 interface PublicEstimatePortalProps {
 	readonly token: string;
 	readonly apiBaseUrl?: string;
 	readonly initialMeta?: PublicEstimateMeta;
-	readonly initialEstimate?: PublicEstimateDetail;
+	readonly initialEstimate?: PublicEstimateDetailWithPatient;
 	readonly initialShowAcceptModal?: boolean;
 	readonly onAccepted?: (estimateNumber: string) => void;
 	readonly onRejected?: (reason: string) => void;
@@ -59,7 +63,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 	onRejected,
 }) => {
 	const [meta, setMeta] = useState<PublicEstimateMeta | null>(initialMeta || null);
-	const [estimate, setEstimate] = useState<PublicEstimateDetail | null>(initialEstimate || null);
+	const [estimate, setEstimate] = useState<PublicEstimateDetailWithPatient | null>(initialEstimate || null);
 	const [sessionToken, setSessionToken] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(!initialMeta && !initialEstimate);
 	const [isVerifying, setIsVerifying] = useState<boolean>(false);
@@ -69,7 +73,9 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 
 	// Statutory Acceptance State (Zero-Canvas / 1-Click PEP 63-FZ)
 	const [showAcceptModal, setShowAcceptModal] = useState<boolean>(initialShowAcceptModal);
-	const [signerName, setSignerName] = useState<string>("");
+	const [signerName, setSignerName] = useState<string>(
+		initialEstimate?.patientName || initialMeta?.patient_first_name || "Пациент",
+	);
 	const [consentAgreed, setConsentAgreed] = useState<boolean>(true);
 	const [isSubmittingAccept, setIsSubmittingAccept] = useState<boolean>(false);
 	const [acceptSuccess, setAcceptSuccess] = useState<boolean>(false);
@@ -80,6 +86,14 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 	const [rejectNote, setRejectNote] = useState<string>("");
 	const [isSubmittingReject, setIsSubmittingReject] = useState<boolean>(false);
 	const [modalError, setModalError] = useState<string | null>(null);
+
+	// Sync signerName with patientName when estimate or meta becomes available
+	useEffect(() => {
+		const fallback = estimate?.patientName || meta?.patient_first_name;
+		if (fallback && (!signerName || signerName === "Пациент")) {
+			setSignerName(fallback);
+		}
+	}, [estimate?.patientName, meta?.patient_first_name]);
 
 	// Fetch Meta on Mount
 	useEffect(() => {
@@ -93,7 +107,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 				const json = await res.json();
 				setMeta(json.data);
 				if (json.data?.patient_first_name) {
-					setSignerName(json.data.patient_first_name);
+					setSignerName((prev) => (!prev || prev === "Пациент" ? json.data.patient_first_name : prev));
 				}
 
 				// If no verification required or already decided, load estimate details directly
@@ -131,6 +145,9 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 			if (res.ok) {
 				const json = await res.json();
 				setEstimate(json.data);
+				if (json.data?.patientName) {
+					setSignerName((prev) => (!prev || prev === "Пациент" ? json.data.patientName : prev));
+				}
 				if (json.data.status === "accepted") {
 					setAcceptSuccess(true);
 				}
@@ -182,7 +199,21 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 	}
 
 	async function handleAcceptSubmit() {
-		if (!signerName.trim() || !consentAgreed || isSubmittingAccept) return;
+		if (isSubmittingAccept) return;
+
+		const effectiveSigner = (
+			signerName.trim() ||
+			estimate?.patientName ||
+			meta?.patient_first_name ||
+			"Пациент"
+		).trim();
+
+		if (!signerName.trim()) {
+			setSignerName(effectiveSigner);
+		}
+		if (!consentAgreed) {
+			setConsentAgreed(true);
+		}
 
 		setIsSubmittingAccept(true);
 		try {
@@ -193,7 +224,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 					...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
 				},
 				body: JSON.stringify({
-					signerName: signerName.trim(),
+					signerName: effectiveSigner,
 					signatureMethod: "click_accept",
 				}),
 				credentials: "include",
@@ -561,7 +592,15 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 					<div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
 						<button
 							type="button"
-							onClick={() => setShowAcceptModal(true)}
+							data-testid="btn-open-accept-modal"
+							onClick={() => {
+								setShowAcceptModal(true);
+								setConsentAgreed(true);
+								if (!signerName.trim() || signerName === "Пациент") {
+									const fallback = estimate?.patientName || meta?.patient_first_name || "Пациент";
+									setSignerName(fallback);
+								}
+							}}
 							className="w-full sm:flex-1 min-h-[48px] flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
 						>
 							<PenTool size={16} />
@@ -606,9 +645,10 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 								<label className="text-xs font-bold text-[var(--ink,#0f172a)]">ФИО подписанта:</label>
 								<input
 									type="text"
+									data-testid="input-signer-name"
 									value={signerName}
 									onChange={(e) => setSignerName(e.target.value)}
-									placeholder="Фамилия Имя Отчество"
+									placeholder={estimate?.patientName || meta?.patient_first_name || "Фамилия Имя Отчество"}
 									className="w-full min-h-[44px] px-3.5 py-2 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--border,#cbd5e1)] text-xs font-medium focus:ring-2 focus:ring-teal-500 focus:outline-none"
 								/>
 							</div>
@@ -621,7 +661,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 										Электронное согласование (ст. 20 323-ФЗ / 63-ФЗ)
 									</div>
 									<div className="text-[var(--muted,#64748b)]">
-										Подписант: <span className="font-semibold text-[var(--ink,#0f172a)]">{signerName.trim() || "Не указан"}</span>
+										Подписант: <span className="font-semibold text-[var(--ink,#0f172a)]">{signerName.trim() || estimate?.patientName || meta?.patient_first_name || "Пациент"}</span>
 									</div>
 									<div className="text-[11px] text-teal-700 dark:text-teal-300 font-medium">
 										Простая электронная подпись формируется в 1 клик после подтверждения согласия.
@@ -633,6 +673,7 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 							<label className="flex items-start gap-2.5 text-xs text-[var(--ink,#0f172a)] cursor-pointer select-none">
 								<input
 									type="checkbox"
+									data-testid="checkbox-statutory-consent"
 									checked={consentAgreed}
 									onChange={(e) => setConsentAgreed(e.target.checked)}
 									className="mt-0.5 w-4 h-4 rounded text-teal-600 border-[var(--border,#cbd5e1)] focus:ring-teal-500 cursor-pointer"
@@ -653,7 +694,8 @@ export const PublicEstimatePortal: React.FC<PublicEstimatePortalProps> = ({
 								</button>
 								<button
 									type="button"
-									disabled={!signerName.trim() || !consentAgreed || isSubmittingAccept}
+									data-testid="btn-accept-estimate"
+									disabled={isSubmittingAccept}
 									onClick={handleAcceptSubmit}
 									className="min-h-[44px] flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs shadow-md disabled:opacity-50 transition-all cursor-pointer"
 								>
