@@ -175,10 +175,13 @@ export function formatSeniorNurseDisposalActData(options: {
 	});
 
 	// В стоматологической клинике списание пустых карпул (медотходы Класса Б)
-	// проводится единолично при флаге isSingleSigner или учёте бумажного журнала (paperJournalAcknowledged),
-	// либо комиссионно по умолчанию (старшая медсестра + главврач + врач).
+	// проводится единолично медсестрой/врачом по умолчанию (Мандаты 8e п. 10, 8k, 8n),
+	// без созыва бюрократической комиссии из 3 человек.
+	// Комиссионный состав (3 человека) формируется ТОЛЬКО если явно задан флаг requireCommission === true
+	// либо если isSingleSigner явно установлен в false.
 	const isPaperAcknowledged = options.paperJournalAcknowledged === true;
-	const useSingleNurse = options.isSingleSigner === true || isPaperAcknowledged;
+	const requireCommission = options.requireCommission === true || options.isSingleSigner === false;
+	const useSingleNurse = !requireCommission;
 	const role = options.approverRole ?? (options.seniorNurseName ? "senior_nurse" : "doctor");
 
 	let defaultApproverName = options.approverName ?? options.approvedByFullName;

@@ -16,6 +16,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	deductBatchStockFifo,
+	deductBatchStockWithSoftOverdraft,
 	type GenericStockBatch,
 	isChestnyZnakMdlpRequired,
 	isStrictLotTrackingRequired,
@@ -329,5 +330,67 @@ describe("Transparent Consumable FIFO & Strict Lot/MDLP Tracking Policy", () => 
 		assert.equal(result.totalDeductedQuantity, 3);
 		assert.equal(result.remainingQuantityNeeded, 2);
 		assert.equal(result.totalCostKopecks, 300000);
+	});
+
+	it("6. deductBatchStockWithSoftOverdraft covers stock cleanly when quantity is sufficient", () => {
+		const batches: GenericStockBatch[] = [
+			{
+				batchId: "batch_sufficient",
+				quantityAvailable: 10,
+				receiptDate: "2026-06-01",
+				unitCostKopecks: 50000,
+			},
+		];
+
+		const result = deductBatchStockWithSoftOverdraft(batches, 4);
+		assert.equal(result.isOverdraft, false);
+		assert.equal(result.overdraftQuantity, 0);
+		assert.equal(result.fullyCovered, true);
+		assert.equal(result.totalDeductedQuantity, 4);
+		assert.equal(result.remainingQuantityNeeded, 0);
+		assert.equal(result.totalCostKopecks, 200000);
+		assert.equal(result.warning, undefined);
+	});
+
+	it("7. deductBatchStockWithSoftOverdraft allows soft overdraft without throwing or blocking operations (Mandates 8e, 8k, 8n)", () => {
+		const batches: GenericStockBatch[] = [
+			{
+				batchId: "batch_partial",
+				quantityAvailable: 2,
+				receiptDate: "2026-05-01",
+				unitCostKopecks: 60000,
+			},
+		];
+
+		// Require 5 units when only 2 are in stock: 3 units deficit
+		const result = deductBatchStockWithSoftOverdraft(batches, 5, {
+			itemId: "item_composite_a2",
+			itemName: "Композит Filtek Ultimate A2",
+			defaultUnitCostKopecks: 60000,
+		});
+
+		assert.equal(result.isOverdraft, true);
+		assert.equal(result.overdraftQuantity, 3);
+		assert.equal(result.fullyCovered, true);
+		assert.equal(result.totalDeductedQuantity, 5);
+		assert.equal(result.remainingQuantityNeeded, 0);
+		assert.equal(result.deductions.length, 2);
+
+		// First deduction from physical batch
+		assert.equal(result.deductions[0]?.batch.batchId, "batch_partial");
+		assert.equal(result.deductions[0]?.deductedQuantity, 2);
+
+		// Second deduction from overdraft virtual batch
+		assert.equal(result.deductions[1]?.isOverdraftBatch, true);
+		assert.equal(result.deductions[1]?.deductedQuantity, 3);
+		assert.equal(result.deductions[1]?.batch.quantityAvailable, -3);
+
+		// Total cost: 2*60000 + 3*60000 = 300,000 kop
+		assert.equal(result.totalCostKopecks, 300000);
+
+		// Soft warning emitted
+		assert.ok(result.warning);
+		assert.equal(result.warning?.type, "out_of_stock");
+		assert.ok(result.warning?.message.includes("Мягкий овердрафт"));
 	});
 });

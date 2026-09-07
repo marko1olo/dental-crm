@@ -769,9 +769,9 @@
   2. *1-клик технологические карты*: пакетное списание терапевтических и хирургических наборов.
   3. *Единоличное списание карпул медсестрой*: утилизация пустых ампул анестетиков в 1 клик по СанПиН 3.3686-21 без созыва комиссий.
 - **Статус**:
-  - Бэкенд: `apps/api/src/routes/treatmentConsumables.ts`, `apps/api/src/services/treatmentConsumablesService.ts`
-  - Фронтенд: `apps/web/src/components/InventoryView.tsx`, `useInventoryLogic.ts`, `NurseCarpuleDisposalModal.tsx`, `packages/shared/src/anesthesia/pkuDisposal.ts` (коммит `5c39b86a0`).
-  - Тесты: `apps/web/src/components/inventory/__tests__/clinical804nWriteoff.test.ts` (100% passing).
+  - Бэкенд и Shared: `apps/api/src/routes/treatmentConsumables.ts`, `apps/api/src/services/treatmentConsumablesService.ts`, `packages/shared/src/inventory/consumables.ts` (`deductBatchStockWithSoftOverdraft`), `packages/shared/src/mdlp/nurseDisposalAct.ts` (дефолтная автономия медсестры без комиссии)
+  - Фронтенд: `apps/web/src/components/InventoryView.tsx`, `useInventoryLogic.ts`, `NurseCarpuleDisposalModal.tsx`, `packages/shared/src/anesthesia/pkuDisposal.ts`, `apps/web/src/components/warehouse/index.ts`
+  - Тесты: `apps/web/src/components/inventory/__tests__/clinical804nWriteoff.test.ts`, `nurseCarpuleDisposal.test.ts`, `nurseDisposalAct.test.ts`, `packages/shared/src/tests/inventoryFifoTracking.test.ts` (100% passing).
 
 ---
 
@@ -971,8 +971,8 @@
   2. *Ликвидация блокировки сохранения*: полностью удален барьер `disabled={!isFormValid}` на кнопке `type="submit"` «Записать цикл в Форму 257/у» (`minHeight: 44px`).
   3. *Интеллектуальные fallback-дефолты*: функция `resolveAutoclaveCycleFallbacks()` при сохранении автоматически подставляет ФИО оператора по умолчанию и стандартное описание медизделий при пустых полях, исключая холостые клики и гарантируя строгое соответствие СанПиН 3.3686-21.
 - **Статус**:
-  - Фронтенд: `apps/web/src/components/sanpin/autoclaveLog/AutoclaveNewCycleTab.tsx` (коммит `31cb4a2c4`).
-  - Тесты: `apps/web/src/components/sanpin/__tests__/autoclaveExpressCycle.test.ts` (17 тестов, 100% passing).
+  - Фронтенд: `apps/web/src/components/sanpin/autoclaveLog/AutoclaveNewCycleTab.tsx`, `AutoclaveLog257Modal.tsx` (инициализация shift-записей и `initialTab`), `AutoclaveCycleModal.tsx` (предзаполненная история смены), `apps/web/src/components/autoclave/index.ts` (канонический barrel-экспорт модуля).
+  - Тесты: `apps/web/src/components/sanpin/__tests__/autoclaveExpressCycle.test.ts`, `sanpinAutoclaveJournal257.test.ts` (100% passing).
 
 ---
 

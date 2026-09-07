@@ -174,10 +174,12 @@ export function AutoclaveLog257Modal({
 	initialTab = "new_cycle",
 	clinicInfo = DEFAULT_CLINIC_LEGAL_INFO,
 }: AutoclaveLog257ModalProps) {
-	const [activeTab, setActiveTab] = useState<"new_cycle" | "journal_257">("new_cycle");
+	const [activeTab, setActiveTab] = useState<"new_cycle" | "journal_257">(
+		initialTab === "journal_257" ? "journal_257" : "new_cycle",
+	);
 
-	const [records, setRecords] = useState<Form257Record[]>([]);
-	const [bioRecords, setBioRecords] = useState<BiologicalControlTestRecord[]>([]);
+	const [records, setRecords] = useState<Form257Record[]>(() => [...INITIAL_FORM257_RECORDS]);
+	const [bioRecords, setBioRecords] = useState<BiologicalControlTestRecord[]>(() => [...INITIAL_BIO_RECORDS]);
 
 	if (!isOpen) return null;
 

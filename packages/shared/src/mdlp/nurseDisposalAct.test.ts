@@ -54,6 +54,7 @@ describe("Senior Nurse Medication Write-Off Act Generator & Number Speller", () 
 			seniorNurseName: "Иванова Е.В.",
 			chiefDoctorName: "Петров А.С.",
 			dentistName: "Кузнецов М.С.",
+			requireCommission: true,
 			items: [item1, item2],
 		});
 
@@ -75,6 +76,7 @@ describe("Senior Nurse Medication Write-Off Act Generator & Number Speller", () 
 		const actData = formatSeniorNurseDisposalActData({
 			actNumber: "СПИС-2026/08-99",
 			actDate: "2026-08-25",
+			requireCommission: true,
 			items: [item],
 		});
 
@@ -105,6 +107,28 @@ describe("Senior Nurse Medication Write-Off Act Generator & Number Speller", () 
 
 		assert.strictEqual(actData.commission.length, 1);
 		assert.strictEqual(actData.commission[0]?.fullName, "Сидорова С.С.");
+		assert.strictEqual(actData.commission[0]?.roleTitleRu, "МОЛ / Дежурная медсестра");
+
+		const html = generateSeniorNurseDisposalActHtml(actData);
+		assert(html.includes("Списание провел (МОЛ):"));
+		assert(!html.includes("Члены комиссии:"));
+	});
+
+	test("formatSeniorNurseDisposalActData defaults to single-nurse write-off without requiring 3-person commission (Mandates 8e, 8n)", () => {
+		const item = createCarpuleQueueItem(
+			"010366479800001621SN00000000001\x1d17280531\x1d10LOT2026\x1d91ABCD\x1d92SIG1",
+			{ costRub: 450 },
+		);
+		// Call without isSingleSigner or requireCommission flags
+		const actData = formatSeniorNurseDisposalActData({
+			actNumber: "СПИС-2026/08-AUTO-NURSE",
+			actDate: "2026-08-25",
+			seniorNurseName: "Смирнова А.В.",
+			items: [item],
+		});
+
+		assert.strictEqual(actData.commission.length, 1);
+		assert.strictEqual(actData.commission[0]?.fullName, "Смирнова А.В.");
 		assert.strictEqual(actData.commission[0]?.roleTitleRu, "МОЛ / Дежурная медсестра");
 
 		const html = generateSeniorNurseDisposalActHtml(actData);

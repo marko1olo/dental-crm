@@ -58,7 +58,23 @@ export function AutoclaveCycleModal({
 
 	// Batch packs & Journal entries
 	const [packs, setPacks] = useState<SterilePackRecord[]>([]);
-	const [journalEntries, setJournalEntries] = useState<Form257SterilizerJournalEntry[]>([]);
+	const [journalEntries, setJournalEntries] = useState<Form257SterilizerJournalEntry[]>(() => [
+		createForm257JournalEntry({
+			autoclaveId: initialAutoclaveId,
+			deviceName: 'Melag Vacuklav 23B+ (ЦСО)',
+			cycleNumber: 41,
+			cycleId: 'cycle_134_wrapped',
+			measuredTemp: 134,
+			measuredPressure: 2.1,
+			measuredDurationMin: 5,
+			loadDescriptionRu: 'Терапевтический базовый набор (лотки, зеркала, зонды, пинцеты)',
+			packCount: 6,
+			packagingType: 'kraft_paper_sealed',
+			indicatorType: 'chemical_class5_integrating',
+			isIndicatorPassed: true,
+			operatorName,
+		}),
+	]);
 
 	const activeCycleDef: AutoclaveCycleDefinition = getAutoclavePreset(selectedCycleId);
 	const activeAutoclave = CLINIC_AUTOCLAVES_PRESETS.find(a => a.id === selectedAutoclaveId) || CLINIC_AUTOCLAVES_PRESETS[0]!;

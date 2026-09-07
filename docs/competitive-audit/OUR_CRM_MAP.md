@@ -561,9 +561,9 @@
 #### 2.10.61. Склад и расходники: мягкий овердрафт склада без блокировки операций (остаток уходит в контролируемый минус с желтым предупреждением), 1-клик технологические карты списания и единоличное списание пустых карпул медсестрой (Мандаты 8e п. 10, 8n п. 2 / Склад)
 - **Суть и домен**: Бесперебойность клинической работы при складском учёте. В `treatmentConsumablesService.ts`, `apps/api/src/routes/treatmentConsumables.ts` и `InventoryView.tsx` включен автоматический мягкий овердрафт: при списании материалов для терапевтических и хирургических манипуляций система фиксирует отрицательный остаток партии (`isOverdraft: true`) и выводит информационное предупреждение в аудит склада, не блокируя завершение приёма и формирование акта. Внедрены 1-клик технологические карты списания расходников (терапевтический набор пломбирования, хирургический набор удаления). В `NurseCarpuleDisposalModal.tsx` и `packages/shared/src/anesthesia/pkuDisposal.ts` зафиксировано единоличное списание пустых карпул анестетиков медсестрой в 1 клик по СанПиН 3.3686-21 без комиссии из 3 человек.
 - **Бэкенд / Фронтенд / Shared**:
-  - `apps/api/src/routes/treatmentConsumables.ts`, `apps/api/src/services/treatmentConsumablesService.ts`, `apps/web/src/components/InventoryView.tsx`, `apps/web/src/components/inventory/useInventoryLogic.ts`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`, `packages/shared/src/anesthesia/pkuDisposal.ts` (коммит `5c39b86a0`).
+  - `apps/api/src/routes/treatmentConsumables.ts`, `apps/api/src/services/treatmentConsumablesService.ts`, `apps/web/src/components/InventoryView.tsx`, `apps/web/src/components/inventory/useInventoryLogic.ts`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/warehouse/index.ts`, `packages/shared/src/inventory/consumables.ts` (`deductBatchStockWithSoftOverdraft`), `packages/shared/src/mdlp/nurseDisposalAct.ts` (дефолтное единоличное списание медсестрой без комиссии), `packages/shared/src/anesthesia/pkuDisposal.ts`.
 - **Тесты**:
-  - `apps/web/src/components/inventory/__tests__/clinical804nWriteoff.test.ts` (100% passing).
+  - `apps/web/src/components/inventory/__tests__/clinical804nWriteoff.test.ts`, `apps/web/src/components/warehouse/__tests__/nurseCarpuleDisposal.test.ts`, `packages/shared/src/mdlp/nurseDisposalAct.test.ts`, `packages/shared/src/tests/inventoryFifoTracking.test.ts` (100% passing).
 
 #### 2.10.62. Стерилизация: СанПиН 3.3686-21 авто-создание черновика визита при привязке лотка к приему без 404 ошибки (Мандаты 8e, 8k, 8n & СанПиН 3.3686-21 / Стерилизация)
 - **Суть и домен**: Устранение тупиковой ошибки 404 при привязке крафт-пакетов стерилизации. В `apps/api/src/routes/sterilization.ts` при сканировании штрихкода лотка на приёме, если врач ещё не успел набрать и сохранить текст в дневнике 043/у, сервер больше не возвращает `404 VisitDiaryNotFound`, а автоматически транзакционно инициализирует черновик дневника `visitDiaries` с привязкой штрихкода лотка, автором и криптографическим хэшем `diaryHash`. Врач продолжает приём без сбоев.
@@ -645,9 +645,9 @@
   2. *Ликвидация блокировки сохранения*: полностью удалена блокировка `disabled={!isFormValid}` кнопки отправки формы `type="submit"` «Записать цикл в Форму 257/у» (`minHeight: 44px`).
   3. *Интеллектуальные fallback-дефолты*: функция `resolveAutoclaveCycleFallbacks()` при сохранении автоматически восполняет пропущенные поля ФИО оператора (`defaultOperatorName` или «Дежурный ассистент») и описания упакованных медизделий, исключая пустые клики и гарантируя юридическую чистоту журнала.
 - **Фронтенд**:
-  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveNewCycleTab.tsx` (коммит `31cb4a2c4`).
+  - `apps/web/src/components/sanpin/autoclaveLog/AutoclaveNewCycleTab.tsx`, `AutoclaveLog257Modal.tsx` (инициализация shift-записей и `initialTab`), `AutoclaveCycleModal.tsx` (предзаполненная история смены), `apps/web/src/components/autoclave/index.ts` (канонический barrel-экспорт модуля).
 - **Тесты**:
-  - `apps/web/src/components/sanpin/__tests__/autoclaveExpressCycle.test.ts` (17 тестов, 100% passing).
+  - `apps/web/src/components/sanpin/__tests__/autoclaveExpressCycle.test.ts`, `sanpinAutoclaveJournal257.test.ts` (100% passing).
 
 #### 2.10.71. СанПиН 3.3686-21: Zero-setup авто-провайдинг оборудования микроклимата и бактерицидных установок, снятие блокировок disabled={equipments.length === 0} и автопилот смен (Мандаты 8e, 8n & СанПиН 3.3686-21 / СанПиН)
 - **Суть и домен**: Обеспечение принципа нулевой настройки (Zero-Setup) и устранение препятствий при первичном запуске журналов СанПиН (Фича #107). В `TemperatureHumidityRegisterTab.tsx` и `BactericidalRegisterTab.tsx`:

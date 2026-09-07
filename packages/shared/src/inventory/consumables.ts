@@ -528,6 +528,7 @@ export interface FifoBatchDeductionResult<T extends GenericStockBatch> {
 		batch: T;
 		deductedQuantity: number;
 		costKopecks: number;
+		isOverdraftBatch?: boolean | undefined;
 	}>;
 	totalDeductedQuantity: number;
 	remainingQuantityNeeded: number;
@@ -597,6 +598,96 @@ export function deductBatchStockFifo<T extends GenericStockBatch>(
 		remainingQuantityNeeded: remainingNeeded,
 		fullyCovered: remainingNeeded === 0,
 		totalCostKopecks,
+	};
+}
+
+/**
+ * Result of FIFO batch deduction with soft overdraft support (Mandates 8e, 8k, 8n).
+ * Allows clinical operations to proceed even when stock balance is temporarily zero or delayed in arrival.
+ */
+export interface SoftOverdraftBatchDeductionResult<T extends GenericStockBatch>
+	extends FifoBatchDeductionResult<T> {
+	isOverdraft: boolean;
+	overdraftQuantity: number;
+	overdraftBatch?: T | undefined;
+	warning?: StockDeductionWarning | undefined;
+}
+
+/**
+ * Executes FIFO batch deduction with soft overdraft allowance (Mandates 8e, 8k, 8n).
+ * If available stock is insufficient to cover the required quantity, it DOES NOT throw or halt care:
+ * it consumes available batches, allocates the deficit to a tracked overdraft entry with negative balance,
+ * and emits a soft warning so warehouse staff can reconcile the incoming delivery later.
+ */
+export function deductBatchStockWithSoftOverdraft<T extends GenericStockBatch>(
+	batches: readonly T[],
+	requiredQuantity: number,
+	options?: {
+		itemId?: string | undefined;
+		itemName?: string | undefined;
+		defaultUnitCostKopecks?: number | undefined;
+	},
+): SoftOverdraftBatchDeductionResult<T> {
+	const fifoResult = deductBatchStockFifo(batches, requiredQuantity);
+
+	if (fifoResult.remainingQuantityNeeded <= 0) {
+		return {
+			...fifoResult,
+			isOverdraft: false,
+			overdraftQuantity: 0,
+		};
+	}
+
+	const overdraftQuantity = fifoResult.remainingQuantityNeeded;
+	const unitCostKopecks =
+		options?.defaultUnitCostKopecks ??
+		(fifoResult.deductions.length > 0
+			? Math.round(
+					fifoResult.deductions[fifoResult.deductions.length - 1]!.costKopecks /
+						(fifoResult.deductions[fifoResult.deductions.length - 1]!.deductedQuantity || 1),
+				)
+			: 0);
+
+	const overdraftCost = Math.round(unitCostKopecks * overdraftQuantity);
+
+	const overdraftBatch = {
+		batchId: `overdraft-${Date.now()}`,
+		quantityAvailable: -overdraftQuantity,
+		receiptDate: new Date().toISOString().slice(0, 10),
+		unitCostKopecks,
+		lotNumber: "ОФ-НАКЛАДНАЯ-В-ПУТИ",
+	} as unknown as T;
+
+	const deductions = [
+		...fifoResult.deductions,
+		{
+			batch: overdraftBatch,
+			deductedQuantity: overdraftQuantity,
+			costKopecks: overdraftCost,
+			isOverdraftBatch: true,
+		},
+	];
+
+	const totalCostKopecks = fifoResult.totalCostKopecks + overdraftCost;
+
+	const warning: StockDeductionWarning = {
+		type: "out_of_stock",
+		itemId: options?.itemId ?? "unknown_item",
+		itemName: options?.itemName ?? "Расходный материал",
+		message: `Мягкий овердрафт: списание ${overdraftQuantity} ед. зафиксировано при нулевом/недостаточном остатке (накладная в пути). Операция не заблокирована.`,
+		currentStock: 0,
+	};
+
+	return {
+		deductions,
+		totalDeductedQuantity: requiredQuantity,
+		remainingQuantityNeeded: 0,
+		fullyCovered: true,
+		totalCostKopecks,
+		isOverdraft: true,
+		overdraftQuantity,
+		overdraftBatch,
+		warning,
 	};
 }
 
