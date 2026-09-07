@@ -35,7 +35,9 @@ import { showToast } from "../GlobalToast";
 import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { globalDentalVoiceEngine } from "../../services/voice";
 import { useVisitStore } from "../../store/visitStore";
-import "./CephalometricAnalysisModal.css";
+if (typeof document !== "undefined") {
+	import("./CephalometricAnalysisModal.css");
+}
 import {
 	CephalometricCanvas,
 	SAMPLE_TRG_CEPHALOGRAM_URL,

@@ -7,12 +7,13 @@ import {
 	FileText,
 	Layers,
 	Plus,
+	Receipt,
 	RotateCcw,
 	Sparkles,
 	X,
 	Zap,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import {
@@ -44,6 +45,149 @@ export type ArchwireSection =
 
 export type TargetArch = "upper" | "lower" | "both";
 
+export interface OrthodonticService804n {
+	code: string;
+	nameRu: string;
+	priceRub: number;
+	stageKind: "stage_ortho";
+	toothNumber?: number | undefined;
+}
+
+export const ORTHO_804N_ACTIONS_MAP: Record<string, Array<Omit<OrthodonticService804n, "stageKind">>> = {
+	wire_change: [
+		{
+			code: "A16.07.048.002",
+			nameRu: "Смена ортодонтической дуги",
+			priceRub: 2500,
+		},
+		{
+			code: "A16.07.048",
+			nameRu: "Коррекция прикуса с использованием брекет-системы",
+			priceRub: 1500,
+		},
+	],
+	ligature_change: [
+		{
+			code: "A16.07.048",
+			nameRu: "Активация элементов брекет-системы / смена лигатур",
+			priceRub: 1500,
+		},
+	],
+	rebracket: [
+		{
+			code: "A16.07.048.001",
+			nameRu: "Фиксация одного брекета / замка",
+			priceRub: 1200,
+		},
+	],
+	ipr: [
+		{
+			code: "A16.07.048.003",
+			nameRu: "Сепарация зубов",
+			priceRub: 800,
+		},
+	],
+	plate_activation: [
+		{
+			code: "A16.07.047",
+			nameRu: "Коррекция съемного ортодонтического аппарата",
+			priceRub: 1000,
+		},
+	],
+	expansion_screw_activation: [
+		{
+			code: "A16.07.047.001",
+			nameRu: "Активация расширяющего винта пластинки",
+			priceRub: 800,
+		},
+	],
+	debonding: [
+		{
+			code: "A16.07.049",
+			nameRu: "Снятие несъемного ортодонтического аппарата",
+			priceRub: 5000,
+		},
+		{
+			code: "A16.07.050",
+			nameRu: "Фиксация несъемного ретейнера",
+			priceRub: 4000,
+		},
+	],
+};
+
+export const ALIGNER_804N_SERVICES: Array<Omit<OrthodonticService804n, "stageKind">> = [
+	{
+		code: "A16.07.046",
+		nameRu: "Ортодонтическая коррекция с применением элайнеров",
+		priceRub: 3000,
+	},
+	{
+		code: "A16.07.046.001",
+		nameRu: "Фиксация композитных аттачментов элайнеров",
+		priceRub: 2000,
+	},
+];
+
+export interface CalculateOrthoServicesParams {
+	selectedActions?: string[] | undefined;
+	bracketSystem?: string | undefined;
+	activeAttachmentPreset?: string | null | undefined;
+	selectedTooth?: number | null | undefined;
+	isAttachmentsOnly?: boolean | undefined;
+}
+
+export function calculateOrthodonticServices804n(
+	params: CalculateOrthoServicesParams,
+): OrthodonticService804n[] {
+	if (params.isAttachmentsOnly) {
+		return ALIGNER_804N_SERVICES.map((s) => ({
+			...s,
+			stageKind: "stage_ortho",
+			toothNumber: params.selectedTooth ?? undefined,
+		}));
+	}
+
+	const rawServices: OrthodonticService804n[] = [];
+
+	const isAligners = params.bracketSystem === "aligners" || Boolean(params.activeAttachmentPreset);
+	if (isAligners) {
+		for (const s of ALIGNER_804N_SERVICES) {
+			rawServices.push({
+				...s,
+				stageKind: "stage_ortho",
+				toothNumber: params.selectedTooth ?? undefined,
+			});
+		}
+	}
+
+	const actions = params.selectedActions || [];
+	for (const actionId of actions) {
+		const mapped = ORTHO_804N_ACTIONS_MAP[actionId];
+		if (mapped) {
+			for (const item of mapped) {
+				rawServices.push({
+					...item,
+					stageKind: "stage_ortho",
+					toothNumber:
+						actionId === "rebracket" && params.selectedTooth
+							? params.selectedTooth
+							: undefined,
+				});
+			}
+		}
+	}
+
+	// Deduplicate by code so patient is not double-billed for identical 804n code in same visit
+	const servicesMap = new Map<string, OrthodonticService804n>();
+	for (const s of rawServices) {
+		if (!servicesMap.has(s.code)) {
+			servicesMap.set(s.code, s);
+		}
+	}
+
+	return Array.from(servicesMap.values());
+}
+
 export interface OrthodonticVisitProtocolWidgetProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -54,6 +198,7 @@ export interface OrthodonticVisitProtocolWidgetProps {
 	currentAligner?: number | undefined;
 	totalAligners?: number | undefined;
 	onIssueAlignerSet?: ((count: number, days: number) => void) | undefined;
+	onAddToInvoice?: ((services: OrthodonticService804n[]) => void) | undefined;
 }
 
 const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
@@ -170,6 +315,7 @@ export function OrthodonticVisitProtocolWidget({
 	currentAligner,
 	totalAligners,
 	onIssueAlignerSet,
+	onAddToInvoice,
 }: OrthodonticVisitProtocolWidgetProps) {
 	if (!isOpen) return null;
 
@@ -203,6 +349,50 @@ export function OrthodonticVisitProtocolWidget({
 	// Angle Classification State & Plate Activation
 	const [angleClass, setAngleClass] = useState<AngleClass>("class_1");
 	const [plateActivationTurns, setPlateActivationTurns] = useState<number>(1);
+
+	// Canonical 804n services calculation
+	const calculatedServices804n = useMemo(() => {
+		return calculateOrthodonticServices804n({
+			selectedActions,
+			bracketSystem,
+			activeAttachmentPreset,
+			selectedTooth,
+		});
+	}, [selectedActions, bracketSystem, activeAttachmentPreset, selectedTooth]);
+
+	// 1-Click explicit add to invoice/estimate
+	const handleAddServicesToInvoice = useCallback(() => {
+		if (calculatedServices804n.length === 0) {
+			showToast("Нет выбранных ортодонтических манипуляций для начисления", "info");
+			return;
+		}
+
+		onAddToInvoice?.(calculatedServices804n);
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							services: calculatedServices804n,
+							toothNumber: selectedTooth ?? undefined,
+							stageKind: "stage_ortho",
+						},
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
+
+		const totalRub = calculatedServices804n.reduce((acc, s) => acc + s.priceRub, 0);
+		const codesStr = calculatedServices804n.map((s) => s.code).join(", ");
+		showToast(
+			`Начислено ${calculatedServices804n.length} услуг 804н (${codesStr}) на сумму ${totalRub} ₽`,
+			"success",
+			3500,
+		);
+	}, [calculatedServices804n, selectedTooth, onAddToInvoice]);
 
 	// 1-Click Fast Workhorse Archwire Handler
 	const handleSelectWorkhorseArchwire = (wire: WorkhorseArchwireOption) => {
@@ -316,13 +506,20 @@ export function OrthodonticVisitProtocolWidget({
 		showToast(`${issueSummary}`, "success");
 	};
 
-	const handleAppendAttachmentsToSoapNote = () => {
+	const handleApplyAttachmentsProtocol = useCallback(() => {
 		const currentPreset =
 			ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset) ||
 			ALIGNER_ATTACHMENT_PRESETS[0];
 		const textToAppend =
 			currentPreset?.description ||
 			"Композитные аттачменты элайнеров зафиксированы/проверены по протоколу.";
+
+		const alignerServices = calculateOrthodonticServices804n({
+			bracketSystem: "aligners",
+			activeAttachmentPreset: activeAttachmentPreset || "standard",
+			isAttachmentsOnly: true,
+			selectedTooth: selectedTooth ?? undefined,
+		});
 
 		try {
 			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
@@ -362,14 +559,28 @@ export function OrthodonticVisitProtocolWidget({
 						},
 					}),
 				);
+
+				// Auto-dispatch services to invoice
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							services: alignerServices,
+							toothNumber: selectedTooth ?? undefined,
+							stageKind: "stage_ortho",
+						},
+					}),
+				);
 			}
+
+			onAddToInvoice?.(alignerServices);
 
 			if (navigator?.clipboard?.writeText) {
 				navigator.clipboard.writeText(textToAppend).catch(() => {});
 			}
 
+			const codesList = alignerServices.map((s) => s.code).join(", ");
 			showToast(
-				"Аттачменты добавлены в протокол SOAP без стирания ранее набранного текста!",
+				`Аттачменты внесены в SOAP и услуги 804н (${codesList}) начислены в смету!`,
 				"success",
 			);
 		} catch (_err) {
@@ -378,7 +589,9 @@ export function OrthodonticVisitProtocolWidget({
 				navigator.clipboard.writeText(textToAppend).catch(() => {});
 			}
 		}
-	};
+	}, [activeAttachmentPreset, selectedTooth, onAddToInvoice]);
+
+	const handleAppendAttachmentsToSoapNote = handleApplyAttachmentsProtocol;
 
 	// Quick Arch Selectors
 	const handleSelectArch = (arch: TargetArch) => {
@@ -540,9 +753,11 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 		plateActivationTurns,
 	]);
 
-	// Apply to Form 043/u
-	const handleApplyToVisitNote = () => {
+	// Apply to Form 043/u and auto-dispatch to invoice
+	const handleApplyToVisitNote = useCallback(() => {
 		const currentAttachmentObj = ALIGNER_ATTACHMENT_PRESETS.find((p) => p.id === activeAttachmentPreset);
+		const servicesToDispatch = calculatedServices804n;
+
 		try {
 			const setVisitNoteForm = useVisitStore.getState().setVisitNoteForm;
 			if (setVisitNoteForm) {
@@ -571,6 +786,23 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						},
 					}),
 				);
+
+				// Auto-dispatch services to invoice
+				if (servicesToDispatch.length > 0) {
+					window.dispatchEvent(
+						new CustomEvent("dente-add-services-to-invoice", {
+							detail: {
+								services: servicesToDispatch,
+								toothNumber: selectedTooth ?? undefined,
+								stageKind: "stage_ortho",
+							},
+						}),
+					);
+				}
+			}
+
+			if (servicesToDispatch.length > 0) {
+				onAddToInvoice?.(servicesToDispatch);
 			}
 
 			// Copy to clipboard silently
@@ -578,7 +810,13 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 				navigator.clipboard.writeText(generatedProtocol).catch(() => {});
 			}
 
-			showToast("Ортодонтический протокол сохранен в карту 043/у!", "success");
+			const codesStr = servicesToDispatch.map((s) => s.code).join(", ");
+			showToast(
+				servicesToDispatch.length > 0
+					? `Протокол сохранен в карту 043/у и ${servicesToDispatch.length} услуг 804н (${codesStr}) добавлены в смету!`
+					: "Ортодонтический протокол сохранен в карту 043/у!",
+				"success",
+			);
 			onClose();
 		} catch (_err) {
 			showToast("Протокол скопирован в буфер обмена", "info");
@@ -586,7 +824,21 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 				navigator.clipboard.writeText(generatedProtocol).catch(() => {});
 			}
 		}
-	};
+	}, [
+		calculatedServices804n,
+		activeAttachmentPreset,
+		notes,
+		generatedProtocol,
+		bracketSystem,
+		plateActivationTurns,
+		archwireMaterial,
+		archwireSection,
+		elasticScheme,
+		angleClass,
+		selectedTooth,
+		onAddToInvoice,
+		onClose,
+	]);
 
 	const handleCopyClipboard = () => {
 		if (navigator?.clipboard?.writeText) {
@@ -626,10 +878,27 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
+							onClick={handleAddServicesToInvoice}
+							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+							data-testid="add-ortho-services-to-invoice-btn"
+							title="Начислить услуги Номенклатуры 804н в чек/смету визита (1 клик)"
+						>
+							<Receipt size={16} />
+							<span>Начислить услуги 804н в чек/смету</span>
+							<span
+								className="px-1.5 py-0.5 rounded-full text-[11px] font-black bg-white/20 text-white min-w-[20px] text-center"
+								data-testid="ortho-services-count-badge"
+							>
+								{calculatedServices804n.length}
+							</span>
+						</button>
+
+						<button
+							type="button"
 							onClick={handleApplyToVisitNote}
-							className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="min-h-[48px] px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 							data-testid="apply-to-form-043-btn"
-							title="Вставить протокол в карту 043/у без визардов"
+							title="Вставить протокол в карту 043/у и начислить услуги 804н"
 						>
 							<CheckCircle2 size={16} />
 							<span>В карту 043/у</span>
@@ -638,7 +907,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
+							className="min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-white transition-colors cursor-pointer"
 							aria-label="Закрыть"
 							data-testid="close-ortho-protocol-btn"
 						>
@@ -1426,8 +1695,19 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 						<div className="flex items-center gap-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
 							<button
 								type="button"
+								onClick={handleAddServicesToInvoice}
+								className="min-h-[48px] px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+								data-testid="bottom-add-services-to-invoice-btn"
+								title="Начислить услуги 804н в чек/смету"
+							>
+								<Receipt size={16} />
+								<span>Начислить услуги 804н ({calculatedServices804n.length})</span>
+							</button>
+
+							<button
+								type="button"
 								onClick={handleApplyToVisitNote}
-								className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+								className="flex-1 min-h-[48px] px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
 								data-testid="bottom-apply-protocol-btn"
 							>
 								<Check size={18} />
@@ -1437,7 +1717,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							<button
 								type="button"
 								onClick={onClose}
-								className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+								className="min-h-[48px] px-4 py-2 rounded-xl bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
 							>
 								Отмена
 							</button>

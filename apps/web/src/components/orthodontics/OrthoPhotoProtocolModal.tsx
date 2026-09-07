@@ -293,7 +293,7 @@ export const OrthoPhotoProtocolModal: React.FC<OrthoPhotoProtocolModalProps> = (
 				updatedAt: new Date().toISOString(),
 			}));
 		}
-		showToast(`⚡ Выбран пресет: ${preset.shortLabel}`, "info");
+		showToast(`Выбран пресет: ${preset.shortLabel}`, "info");
 	}, [session.stage, session.findings.clinicalDiagnosisRu, handleStageChange]);
 
 	// 1-Click Insert SOAP into Form 043/u (Mandate 8e: zero friction)
@@ -362,7 +362,7 @@ export const OrthoPhotoProtocolModal: React.FC<OrthoPhotoProtocolModalProps> = (
 				}
 
 				onInsertProtocol043?.(fullProtocolText);
-				showToast("⚡ Протокол ортодонтии успешно внесен в дневник 043/у!", "success");
+				showToast("Протокол ортодонтии успешно внесен в дневник 043/у!", "success");
 			} catch (_err) {
 				if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
 					navigator.clipboard.writeText(fullProtocolText).catch(() => {});

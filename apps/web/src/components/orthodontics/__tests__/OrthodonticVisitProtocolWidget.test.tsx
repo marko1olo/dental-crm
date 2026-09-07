@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import {
+	ALIGNER_804N_SERVICES,
 	ALIGNER_ATTACHMENT_PRESETS,
 	ANGLE_CLASS_OPTIONS,
 	ARCHWIRE_MATERIALS,
@@ -10,10 +11,13 @@ import {
 	CLINICAL_ACTIONS,
 	ELASTIC_SCHEMES,
 	ELASTIC_SIZES,
+	ORTHO_804N_ACTIONS_MAP,
 	OrthodonticVisitProtocolWidget,
 	RECT_SECTIONS,
 	ROUND_SECTIONS,
 	WORKHORSE_ARCHWIRES,
+	calculateOrthodonticServices804n,
+	type OrthodonticService804n,
 } from "../OrthodonticVisitProtocolWidget";
 
 describe("OrthodonticVisitProtocolWidget Component", () => {
@@ -39,10 +43,16 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("Ортодонтический протокол приёма"));
 		assert.ok(html.includes("Иванов Иван Иванович"));
 
-		// 1-Click Fast Action Buttons
+		// 1-Click Fast Action Buttons & >= 48px touch targets
 		assert.ok(html.includes("data-testid=\"apply-to-form-043-btn\""));
 		assert.ok(html.includes("data-testid=\"bottom-apply-protocol-btn\""));
 		assert.ok(html.includes("В карту 043/у"));
+
+		// 1-Click 804n Invoice Billing Buttons & Badges
+		assert.ok(html.includes("data-testid=\"add-ortho-services-to-invoice-btn\""));
+		assert.ok(html.includes("data-testid=\"bottom-add-services-to-invoice-btn\""));
+		assert.ok(html.includes("data-testid=\"ortho-services-count-badge\""));
+		assert.ok(html.includes("Начислить услуги 804н в чек/смету"));
 
 		// Arch Presets
 		assert.ok(html.includes("Вся ВЧ"));
@@ -263,5 +273,192 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(BRACKET_SYSTEMS.some((b) => b.id === "removable_plate"));
 		assert.ok(CLINICAL_ACTIONS.some((a) => a.id === "expansion_screw_activation"));
 	});
+
+	describe("804n Nomenclature Clinical Actions Mapping and Services Calculation", () => {
+		it("maps wire_change to A16.07.048.002 (2500 rub) + A16.07.048 (1500 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["wire_change"],
+			});
+			assert.equal(services.length, 2);
+
+			const wireChange = services.find((s) => s.code === "A16.07.048.002");
+			assert.ok(wireChange, "A16.07.048.002 must be present");
+			assert.equal(wireChange?.nameRu, "Смена ортодонтической дуги");
+			assert.equal(wireChange?.priceRub, 2500);
+			assert.equal(wireChange?.stageKind, "stage_ortho");
+
+			const correction = services.find((s) => s.code === "A16.07.048");
+			assert.ok(correction, "A16.07.048 must be present");
+			assert.equal(correction?.nameRu, "Коррекция прикуса с использованием брекет-системы");
+			assert.equal(correction?.priceRub, 1500);
+			assert.equal(correction?.stageKind, "stage_ortho");
+		});
+
+		it("maps ligature_change to A16.07.048 (1500 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["ligature_change"],
+			});
+			assert.equal(services.length, 1);
+			assert.equal(services[0]?.code, "A16.07.048");
+			assert.equal(services[0]?.nameRu, "Активация элементов брекет-системы / смена лигатур");
+			assert.equal(services[0]?.priceRub, 1500);
+			assert.equal(services[0]?.stageKind, "stage_ortho");
+		});
+
+		it("maps rebracket to A16.07.048.001 (1200 rub) and binds toothNumber if selected", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["rebracket"],
+				selectedTooth: 24,
+			});
+			assert.equal(services.length, 1);
+			assert.equal(services[0]?.code, "A16.07.048.001");
+			assert.equal(services[0]?.nameRu, "Фиксация одного брекета / замка");
+			assert.equal(services[0]?.priceRub, 1200);
+			assert.equal(services[0]?.stageKind, "stage_ortho");
+			assert.equal(services[0]?.toothNumber, 24);
+		});
+
+		it("maps ipr to A16.07.048.003 (800 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["ipr"],
+			});
+			assert.equal(services.length, 1);
+			assert.equal(services[0]?.code, "A16.07.048.003");
+			assert.equal(services[0]?.nameRu, "Сепарация зубов");
+			assert.equal(services[0]?.priceRub, 800);
+			assert.equal(services[0]?.stageKind, "stage_ortho");
+		});
+
+		it("maps plate_activation to A16.07.047 (1000 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["plate_activation"],
+			});
+			assert.equal(services.length, 1);
+			assert.equal(services[0]?.code, "A16.07.047");
+			assert.equal(services[0]?.nameRu, "Коррекция съемного ортодонтического аппарата");
+			assert.equal(services[0]?.priceRub, 1000);
+			assert.equal(services[0]?.stageKind, "stage_ortho");
+		});
+
+		it("maps expansion_screw_activation to A16.07.047.001 (800 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["expansion_screw_activation"],
+			});
+			assert.equal(services.length, 1);
+			assert.equal(services[0]?.code, "A16.07.047.001");
+			assert.equal(services[0]?.nameRu, "Активация расширяющего винта пластинки");
+			assert.equal(services[0]?.priceRub, 800);
+			assert.equal(services[0]?.stageKind, "stage_ortho");
+		});
+
+		it("maps debonding to A16.07.049 (5000 rub) + A16.07.050 (4000 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["debonding"],
+			});
+			assert.equal(services.length, 2);
+
+			const debond = services.find((s) => s.code === "A16.07.049");
+			assert.ok(debond);
+			assert.equal(debond?.nameRu, "Снятие несъемного ортодонтического аппарата");
+			assert.equal(debond?.priceRub, 5000);
+
+			const retainer = services.find((s) => s.code === "A16.07.050");
+			assert.ok(retainer);
+			assert.equal(retainer?.nameRu, "Фиксация несъемного ретейнера");
+			assert.equal(retainer?.priceRub, 4000);
+		});
+
+		it("maps aligners / isAttachmentsOnly to A16.07.046 (3000 rub) + A16.07.046.001 (2000 rub)", () => {
+			const services = calculateOrthodonticServices804n({
+				isAttachmentsOnly: true,
+			});
+			assert.equal(services.length, 2);
+
+			const alignerControl = services.find((s) => s.code === "A16.07.046");
+			assert.ok(alignerControl);
+			assert.equal(alignerControl?.nameRu, "Ортодонтическая коррекция с применением элайнеров");
+			assert.equal(alignerControl?.priceRub, 3000);
+
+			const attachmentsFix = services.find((s) => s.code === "A16.07.046.001");
+			assert.ok(attachmentsFix);
+			assert.equal(attachmentsFix?.nameRu, "Фиксация композитных аттачментов элайнеров");
+			assert.equal(attachmentsFix?.priceRub, 2000);
+		});
+
+		it("deduplicates identical 804n codes when multiple actions share a code", () => {
+			// wire_change contains A16.07.048 and ligature_change also contains A16.07.048
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["wire_change", "ligature_change"],
+			});
+			assert.equal(services.length, 2);
+			const codes = services.map((s) => s.code);
+			assert.deepEqual(codes, ["A16.07.048.002", "A16.07.048"]);
+		});
+
+		it("contains comprehensive ORTHO_804N_ACTIONS_MAP and ALIGNER_804N_SERVICES definitions", () => {
+			assert.ok(ORTHO_804N_ACTIONS_MAP.wire_change);
+			assert.ok(ORTHO_804N_ACTIONS_MAP.ligature_change);
+			assert.ok(ORTHO_804N_ACTIONS_MAP.rebracket);
+			assert.ok(ORTHO_804N_ACTIONS_MAP.ipr);
+			assert.ok(ORTHO_804N_ACTIONS_MAP.plate_activation);
+			assert.ok(ORTHO_804N_ACTIONS_MAP.expansion_screw_activation);
+			assert.ok(ORTHO_804N_ACTIONS_MAP.debonding);
+
+			assert.equal(ALIGNER_804N_SERVICES.length, 2);
+			assert.equal(ALIGNER_804N_SERVICES[0]?.code, "A16.07.046");
+			assert.equal(ALIGNER_804N_SERVICES[1]?.code, "A16.07.046.001");
+		});
+	});
+
+	describe("CustomEvent dente-add-services-to-invoice Event Structure", () => {
+		it("dispatches dente-add-services-to-invoice with valid structure and stageKind: stage_ortho", () => {
+			const services = calculateOrthodonticServices804n({
+				selectedActions: ["wire_change", "rebracket"],
+				selectedTooth: 13,
+			});
+
+			let dispatchedEvent: CustomEvent<{
+				services: OrthodonticService804n[];
+				toothNumber?: number;
+				stageKind: string;
+			}> | null = null;
+
+			const mockListener = (e: Event) => {
+				dispatchedEvent = e as CustomEvent<{
+					services: OrthodonticService804n[];
+					toothNumber?: number;
+					stageKind: string;
+				}>;
+			};
+
+			const eventTarget = typeof window !== "undefined" ? window : new EventTarget();
+
+			eventTarget.addEventListener("dente-add-services-to-invoice", mockListener as EventListener);
+
+			try {
+				eventTarget.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							services,
+							toothNumber: 13,
+							stageKind: "stage_ortho",
+						},
+					}),
+				);
+
+				assert.ok(dispatchedEvent !== null, "Event must be received");
+				const detail = (dispatchedEvent as any).detail;
+				assert.equal(detail.stageKind, "stage_ortho");
+				assert.equal(detail.toothNumber, 13);
+				assert.equal(detail.services.length, 3);
+				assert.ok(detail.services.some((s: any) => s.code === "A16.07.048.002"));
+				assert.ok(detail.services.some((s: any) => s.code === "A16.07.048"));
+				assert.ok(detail.services.some((s: any) => s.code === "A16.07.048.001" && s.toothNumber === 13));
+			} finally {
+				eventTarget.removeEventListener("dente-add-services-to-invoice", mockListener as EventListener);
+			}
+		});
+	});
 });
+
 

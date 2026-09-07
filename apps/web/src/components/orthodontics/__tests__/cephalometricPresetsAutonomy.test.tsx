@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { CephalometricAnalysisModal } from "../CephalometricAnalysisModal";
 import {
 	calculateCephalometrics,
