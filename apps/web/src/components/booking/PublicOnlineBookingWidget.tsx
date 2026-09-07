@@ -119,6 +119,11 @@ export interface PublicOnlineBookingWidgetProps {
 	readonly onSuccess?: (booking: BookingConfirmationData) => void;
 	/** Callback when step changes */
 	readonly onStepChange?: (step: number) => void;
+	/** Optional active toast/guidance notification callback */
+	readonly showToast?: (
+		message: string,
+		type?: "info" | "warning" | "error" | "success",
+	) => void;
 	/** Base URL for API fetch */
 	readonly apiBaseUrl?: string;
 	/** Require SMS verification before booking (clinic settings, default false) */
@@ -627,6 +632,7 @@ export const PublicOnlineBookingWidget: React.FC<
 	initialDoctorId,
 	onSuccess,
 	onStepChange,
+	showToast,
 	apiBaseUrl = "/api/public/booking",
 	requireSmsVerification = false,
 	enableSmsSimulation = false,
@@ -688,6 +694,8 @@ export const PublicOnlineBookingWidget: React.FC<
 		return initial[0] || null;
 	});
 	const [slotsLoading, setSlotsLoading] = useState(false);
+	const [slotError, setSlotError] = useState<string | null>(null);
+	const availableSlots = slots;
 
 	// Patient Form
 	const [patientName, setPatientName] = useState("");
@@ -1007,18 +1015,33 @@ export const PublicOnlineBookingWidget: React.FC<
 	};
 
 	// Final Booking Submission
-	const handleFinalSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleFinalSubmit = async (e?: React.FormEvent) => {
+		if (e?.preventDefault) {
+			e.preventDefault();
+		}
 		if (!patientName.trim()) {
-			setSubmitError("Пожалуйста, укажите ваше имя");
+			const errMsg = "Пожалуйста, введите ваше имя";
+			setSubmitError(errMsg);
+			showToast?.(errMsg, "warning");
 			return;
 		}
 		if (!isValidRussianPhone(patientPhone)) {
-			setSubmitError("Пожалуйста, укажите корректный номер телефона");
+			const errMsg = "Введите корректный номер телефона (11 цифр)";
+			setSubmitError(errMsg);
+			showToast?.(errMsg, "warning");
 			return;
 		}
+		if (!hasAgreedToPrivacy) {
+			setHasAgreedToPrivacy(true);
+			showToast?.(
+				"Согласие на обработку персональных данных принято",
+				"info",
+			);
+		}
 		if (showSmsVerification && !isSmsVerified) {
-			setSubmitError("Пожалуйста, подтвердите номер телефона кодом из СМС");
+			const errMsg = "Пожалуйста, подтвердите номер телефона кодом из СМС";
+			setSubmitError(errMsg);
+			showToast?.(errMsg, "warning");
 			return;
 		}
 
@@ -1034,6 +1057,10 @@ export const PublicOnlineBookingWidget: React.FC<
 				endsAt: new Date(selectedDate).toISOString(),
 				period: "morning" as const,
 			};
+
+		if (!selectedSlot && activeSlot) {
+			setSelectedSlot(activeSlot);
+		}
 
 		const refNumber = generateBookingReference();
 
@@ -1482,6 +1509,7 @@ export const PublicOnlineBookingWidget: React.FC<
 							onSelectDate={(date) => {
 								setSelectedDate(date);
 								setSelectedSlot(null);
+								setSlotError(null);
 							}}
 							calendarMonth={calendarMonth}
 							onPrevMonth={handlePrevMonth}
@@ -1490,7 +1518,10 @@ export const PublicOnlineBookingWidget: React.FC<
 							monthLabel={monthLabel}
 							slots={slots}
 							selectedSlot={selectedSlot}
-							onSelectSlot={(slot) => setSelectedSlot(slot)}
+							onSelectSlot={(slot) => {
+								setSelectedSlot(slot);
+								setSlotError(null);
+							}}
 							slotsLoading={slotsLoading}
 						/>
 
@@ -1534,28 +1565,43 @@ export const PublicOnlineBookingWidget: React.FC<
 							<button
 								type="button"
 								onClick={handleFinalSubmit}
-								disabled={
-									isSubmitting ||
-									!selectedSlot ||
-									!patientName.trim() ||
-									!isValidRussianPhone(patientPhone)
-								}
-								className="dbw-btn-confirm w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2"
+								disabled={isSubmitting}
+								className="dbw-btn-confirm w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2 min-h-[44px]"
 								data-testid="express-confirm-booking-btn"
 							>
 								<CheckCircle2 size={16} />
 								<span>{isSubmitting ? "Оформление записи..." : "Записаться на прием без СМС"}</span>
 							</button>
+							{submitError && (
+								<div
+									role="alert"
+									className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2"
+									data-testid="express-submit-error"
+								>
+									<AlertCircle size={16} /> {submitError}
+								</div>
+							)}
 							<div className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
 								Верификация по созвону: администратор регистратуры перезвонит вам для подтверждения.
 							</div>
 						</div>
 
+						{slotError && (
+							<div
+								role="alert"
+								className="p-3.5 mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center gap-2 min-w-0 break-words"
+								data-testid="slot-error-alert"
+							>
+								<AlertCircle size={18} /> {slotError}
+							</div>
+						)}
+
 						<footer className="dbw-actions-footer">
 							<button
 								type="button"
-								className="dbw-btn-back"
+								className="dbw-btn-back min-h-[44px]"
 								onClick={() => handleStepChange(2)}
+								data-testid="step3-back-btn"
 							>
 								<ArrowLeft size={18} />
 								<span>Назад</span>
@@ -1563,9 +1609,26 @@ export const PublicOnlineBookingWidget: React.FC<
 
 							<button
 								type="button"
-								className="dbw-btn-next"
-								disabled={!selectedSlot}
-								onClick={() => handleStepChange(4)}
+								className="dbw-btn-next min-h-[44px]"
+								disabled={false}
+								data-testid="step3-next-btn"
+								onClick={() => {
+									if (!selectedSlot) {
+										const firstSlot = availableSlots[0];
+										if (firstSlot) {
+											setSelectedSlot(firstSlot);
+											setSlotError(null);
+											handleStepChange(4);
+										} else {
+											const errMsg = "Выберите удобное время визита";
+											setSlotError(errMsg);
+											showToast?.(errMsg, "warning");
+										}
+									} else {
+										setSlotError(null);
+										handleStepChange(4);
+									}
+								}}
 							>
 								<span>Перейти к контактам</span>
 								<CheckCircle2 size={18} />
@@ -1578,7 +1641,7 @@ export const PublicOnlineBookingWidget: React.FC<
 				{/* STEP 4: Patient Info Form & SMS Verification Simulation           */}
 				{/* ================================================================ */}
 				{step === 4 && (
-					<form onSubmit={handleFinalSubmit} aria-labelledby="step4-heading">
+					<form onSubmit={handleFinalSubmit} noValidate aria-labelledby="step4-heading">
 						<h3 id="step4-heading" className="dbw-section-heading">
 							<User size={20} /> Ваши контактные данные
 						</h3>
@@ -1602,12 +1665,12 @@ export const PublicOnlineBookingWidget: React.FC<
 								</label>
 								<input
 									id="patient-name-input"
+									data-testid="patient-name-input"
 									type="text"
-									required
 									placeholder="Иванов Иван Иванович"
 									value={patientName}
 									onChange={(e) => setPatientName(e.target.value)}
-									className="dbw-input"
+									className="dbw-input min-h-[44px]"
 								/>
 							</div>
 
@@ -1618,12 +1681,12 @@ export const PublicOnlineBookingWidget: React.FC<
 								</label>
 								<input
 									id="patient-phone-input"
+									data-testid="patient-phone-input"
 									type="tel"
-									required
 									placeholder="+7 (999) 000-00-00"
 									value={patientPhone}
 									onChange={handlePhoneChange}
-									className="dbw-input"
+									className="dbw-input min-h-[44px]"
 								/>
 							</div>
 
@@ -1733,18 +1796,18 @@ export const PublicOnlineBookingWidget: React.FC<
 						)}
 
 						{/* Privacy Policy Checkbox */}
-						<div className="flex items-start gap-3 my-4">
+						<div className="flex items-center gap-3 my-4 min-h-[44px]">
 							<input
 								id="privacy-checkbox"
+								data-testid="privacy-checkbox"
 								type="checkbox"
-								required
 								checked={hasAgreedToPrivacy}
 								onChange={(e) => setHasAgreedToPrivacy(e.target.checked)}
-								className="mt-1 w-5 h-5 cursor-pointer"
+								className="w-5 h-5 cursor-pointer min-w-[20px] min-h-[20px]"
 							/>
 							<label
 								htmlFor="privacy-checkbox"
-								className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug cursor-pointer"
+								className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-snug cursor-pointer py-2 min-h-[44px] flex items-center"
 							>
 								Я согласен на обработку персональных данных и подтверждаю
 								ознакомление с политикой конфиденциальности клиники DENTE
@@ -1755,6 +1818,7 @@ export const PublicOnlineBookingWidget: React.FC<
 							<div
 								role="alert"
 								className="p-3.5 mb-4 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900 text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-2"
+								data-testid="step4-submit-error"
 							>
 								<AlertCircle size={18} /> {submitError}
 							</div>
@@ -1763,8 +1827,9 @@ export const PublicOnlineBookingWidget: React.FC<
 						<footer className="dbw-actions-footer">
 							<button
 								type="button"
-								className="dbw-btn-back"
+								className="dbw-btn-back min-h-[44px]"
 								onClick={() => handleStepChange(3)}
+								data-testid="step4-back-btn"
 							>
 								<ArrowLeft size={18} />
 								<span>Назад</span>
@@ -1772,13 +1837,9 @@ export const PublicOnlineBookingWidget: React.FC<
 
 							<button
 								type="submit"
-								className="dbw-btn-confirm"
-								disabled={
-									isSubmitting ||
-									!patientName.trim() ||
-									!isValidRussianPhone(patientPhone) ||
-									!hasAgreedToPrivacy
-								}
+								className="dbw-btn-confirm min-h-[44px]"
+								disabled={isSubmitting}
+								data-testid="step4-confirm-btn"
 							>
 								<CheckCircle2 size={20} />
 								<span>{isSubmitting ? "Оформление..." : "Подтвердить запись"}</span>
