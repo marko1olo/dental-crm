@@ -306,6 +306,21 @@ export interface DoctorShiftRosterModalProps {
 	onSave?: ((shifts: DoctorShift[]) => Promise<void> | void) | undefined;
 	onOpenT13Timesheet?: (() => void) | undefined;
 	initialEditingShift?: Partial<DoctorShift> | null | undefined;
+	currentDate?: string | undefined;
+}
+
+function getMondayOfWeekIso(dateIso?: string): string {
+	if (!dateIso) return "2026-08-24";
+	try {
+		const d = new Date(dateIso);
+		if (Number.isNaN(d.getTime())) return "2026-08-24";
+		const day = d.getDay();
+		const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+		const monday = new Date(d.setDate(diff));
+		return monday.toISOString().slice(0, 10);
+	} catch {
+		return "2026-08-24";
+	}
 }
 
 export function DoctorShiftRosterModal({
@@ -319,17 +334,25 @@ export function DoctorShiftRosterModal({
 	onSave,
 	onOpenT13Timesheet,
 	initialEditingShift = null,
+	currentDate,
 }: DoctorShiftRosterModalProps) {
-	// Base date: Monday of current week (defaulting to 2026-08-24)
-	const [weekStartDateIso, setWeekStartDateIso] = useState<string>("2026-08-24");
+	// Base date: Monday of current week
+	const defaultMonday = useMemo(() => getMondayOfWeekIso(currentDate), [currentDate]);
+	const [weekStartDateIso, setWeekStartDateIso] = useState<string>(defaultMonday);
 	const [activeTab, setActiveTab] = useState<"cabinets" | "doctors" | "t13" | "utilization">("cabinets");
+
+	useEffect(() => {
+		if (currentDate) {
+			setWeekStartDateIso(getMondayOfWeekIso(currentDate));
+		}
+	}, [currentDate]);
 
 	// Internal Shifts State
 	const [shifts, setShifts] = useState<DoctorShift[]>(() => {
 		if (initialShifts && initialShifts.length > 0) return initialShifts;
 		if (Array.isArray(initialShifts) && initialShifts.length === 0) return [];
 		return generateWeeklyScheduleForStaffAndCabinets(
-			"2026-08-24",
+			defaultMonday,
 			staffList,
 			cabinets,
 			"five_day",
@@ -1073,10 +1096,14 @@ export function DoctorShiftRosterModal({
 																			<Users size={11} className="shrink-0 text-[var(--teal,#0d9488)]" />
 																			<span>{shift.assistantName}</span>
 																		</div>
-																	) : (
-																		<div className="flex items-center gap-1" style={{ fontSize: "0.6875rem", color: "#ef4444" }}>
+																	) : shift.doctorRole === "surgeon" ? (
+																		<div className="flex items-center gap-1" style={{ fontSize: "0.6875rem", color: "#f59e0b" }} title="Хирургический приём рекомендуется проводить с ассистентом">
 																			<AlertTriangle size={11} className="shrink-0" />
 																			<span>Без ассистента</span>
+																		</div>
+																	) : (
+																		<div className="flex items-center gap-1 text-[var(--muted)] opacity-70" style={{ fontSize: "0.6875rem" }}>
+																			<span className="truncate">Индивидуальный приём</span>
 																		</div>
 																	)}
 																</div>

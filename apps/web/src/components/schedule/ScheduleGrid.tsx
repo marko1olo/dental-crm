@@ -37,6 +37,16 @@ import { showToast } from "../GlobalToast";
 import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
 import { countLabel } from "../../lib/russianPlural";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
+
+export interface ChairDoctorSubShift {
+	doctorId: string;
+	doctorName: string;
+	doctorSpecialty?: string | undefined;
+	startHour: number;
+	endHour: number;
+	shiftHours: string;
+}
 
 export interface ChairDoctorShiftAssignment {
 	chairId: string;
@@ -48,6 +58,7 @@ export interface ChairDoctorShiftAssignment {
 	shiftHours: string;
 	startHour?: number | undefined;
 	endHour?: number | undefined;
+	subShifts?: ChairDoctorSubShift[] | undefined;
 }
 
 export const CHAIR_SHIFT_PRESETS = [
@@ -79,10 +90,17 @@ export const CHAIR_SHIFT_PRESETS = [
 
 export function formatDoctorShortName(fullName: string): string {
 	if (!fullName) return "";
-	const parts = fullName.trim().split(/\s+/);
-	if (parts.length === 1) return parts[0]!;
-	if (parts.length === 2) return `${parts[0]} ${parts[1]![0]}.`;
-	return `${parts[0]} ${parts[1]![0]}.${parts[2]![0]}.`;
+	const cleaned = fullName.trim().replace(/^(д-р|доктор|врач)\s+/i, "");
+	const parts = cleaned.trim().split(/\s+/);
+	if (parts.length === 0 || !parts[0]) return fullName;
+	const lastName = parts[0];
+	if (parts.length === 1) return lastName;
+	if (parts[1]?.includes(".")) {
+		return `${lastName} ${parts.slice(1).join(" ")}`.trim();
+	}
+	const firstInitial = parts[1]?.[0] ? `${parts[1][0].toUpperCase()}.` : "";
+	const middleInitial = parts[2]?.[0] ? `${parts[2][0].toUpperCase()}.` : "";
+	return `${lastName} ${firstInitial}${middleInitial}`.trim();
 }
 
 export interface ScheduleGridProps {
@@ -111,6 +129,8 @@ export interface ScheduleGridProps {
 		chairId: string,
 		assignment: ChairDoctorShiftAssignment | null,
 	) => void | undefined;
+	onOpenAddChair?: (() => void) | undefined;
+	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 }
 
 function extractTeethList(appointment: Appointment): string[] {
@@ -326,19 +346,71 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const [assigningChairId, setAssigningChairId] = useState<string | null>(null);
 	const [modalDoctorId, setModalDoctorId] = useState<string>("");
 	const [modalShiftPreset, setModalShiftPreset] = useState<"morning" | "evening" | "full">("full");
+	const [isInternalAddChairModalOpen, setIsInternalAddChairModalOpen] = useState<boolean>(false);
+
+	const handleOpenAddChair = useCallback(() => {
+		if (typeof props.onOpenAddChair === "function") {
+			props.onOpenAddChair();
+		} else {
+			setIsInternalAddChairModalOpen(true);
+		}
+	}, [props.onOpenAddChair]);
+
+	const getSuggestedDoctorForChair = useCallback(
+		(targetChairId: string) => {
+			if (doctors.length === 0) return null;
+			const targetChair = effectiveChairs.find((c) => c.id === targetChairId);
+			const chairSpec = (targetChair as { specialization?: string })?.specialization;
+			if (chairSpec) {
+				const matchingDoc = doctors.find(
+					(d) =>
+						d.specialties &&
+						d.specialties.some(
+							(s) => s.toLowerCase() === chairSpec.toLowerCase(),
+						),
+				);
+				if (matchingDoc) return matchingDoc;
+			}
+			const chairIdx = effectiveChairs.findIndex((c) => c.id === targetChairId);
+			if (chairIdx >= 0 && chairIdx < doctors.length) {
+				return doctors[chairIdx] || doctors[0] || null;
+			}
+			return doctors[0] || null;
+		},
+		[doctors, effectiveChairs],
+	);
+
+	const getDoctorForChairAndHour = useCallback(
+		(targetChairId: string, hourStr: string): string | null => {
+			const assignment = effectiveChairAssignments[targetChairId];
+			if (!assignment) return null;
+			if (assignment.subShifts && assignment.subShifts.length > 0) {
+				const hourNum = parseInt(hourStr.slice(0, 2), 10) || 8;
+				const matching = assignment.subShifts.find(
+					(s) => hourNum >= s.startHour && hourNum < s.endHour,
+				);
+				if (matching) return matching.doctorId;
+			}
+			return assignment.doctorId || null;
+		},
+		[effectiveChairAssignments],
+	);
 
 	const openAssignModal = useCallback(
 		(chairId: string) => {
 			const existing = effectiveChairAssignments[chairId];
+			const suggested = getSuggestedDoctorForChair(chairId);
 			setAssigningChairId(chairId);
-			setModalDoctorId(existing?.doctorId || (doctors.length > 0 ? doctors[0]!.id : ""));
+			setModalDoctorId(
+				existing?.doctorId || (suggested ? suggested.id : doctors.length > 0 ? doctors[0]!.id : ""),
+			);
 			setModalShiftPreset(
 				existing?.shiftPreset === "morning" || existing?.shiftPreset === "evening"
 					? existing.shiftPreset
 					: "full",
 			);
 		},
-		[effectiveChairAssignments, doctors],
+		[effectiveChairAssignments, doctors, getSuggestedDoctorForChair],
 	);
 
 	const handleConfirmAssignDoctor = useCallback(
@@ -603,7 +675,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				<div
 					className="grid min-w-[700px] border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
 					style={{
-						gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
+						gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr)) minmax(110px, 130px)`,
 					}}
 				>
 					{/* Time corner header */}
@@ -617,6 +689,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						const chairStat = dailyTally.chairs.find((c) => c.chairId === chair.id);
 						const assignment = effectiveChairAssignments[chair.id];
 						const hasDoctor = Boolean(assignment && assignment.doctorId);
+						const suggestedDoctor = getSuggestedDoctorForChair(chair.id);
 						return (
 							<div
 								key={chair.id}
@@ -643,29 +716,67 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										data-testid={`chair-doctor-badge-${chair.id}`}
 									>
 										<UserCheck size={14} className="shrink-0 text-[var(--teal)]" />
-										<span className="truncate max-w-[150px]">
-											{formatDoctorShortName(assignment!.doctorName)}
-											{assignment!.doctorSpecialty ? ` (${assignment!.doctorSpecialty})` : ""}
-											{` · ${assignment!.shiftHours}`}
+										<span className="truncate min-w-0 flex-1 text-center">
+											{assignment!.subShifts && assignment!.subShifts.length > 1
+												? assignment!.shiftLabel ||
+													assignment!.subShifts
+														.map((s) => `${s.shiftHours.slice(0, 5)}: ${formatDoctorShortName(s.doctorName)}`)
+														.join(" · ")
+												: `${formatDoctorShortName(assignment!.doctorName)}${
+														assignment!.doctorSpecialty ? ` (${assignment!.doctorSpecialty})` : ""
+													} · ${assignment!.shiftHours}`}
 										</span>
 										<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
 									</button>
 								) : (
-									<button
-										type="button"
-										onClick={() => openAssignModal(chair.id)}
-										className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] flex items-center justify-center gap-1 text-xs font-semibold normal-case transition-colors cursor-pointer"
-										title={`Назначить врача на кресло «${chair.name}»`}
-										aria-label={`Назначить врача на кресло ${chair.name}`}
-										data-testid={`btn-assign-doctor-${chair.id}`}
-									>
-										<Plus size={14} className="shrink-0 text-[var(--teal)]" />
-										<span className="truncate font-medium">+ Назначить врача</span>
-									</button>
+									<div className="w-full flex flex-col gap-1">
+										<button
+											type="button"
+											onClick={() => openAssignModal(chair.id)}
+											className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] flex items-center justify-center gap-1 text-xs font-semibold normal-case transition-colors cursor-pointer"
+											title={`Назначить врача на кресло «${chair.name}»`}
+											aria-label={`Назначить врача на кресло ${chair.name}`}
+											data-testid={`btn-assign-doctor-${chair.id}`}
+										>
+											<Plus size={14} className="shrink-0 text-[var(--teal)]" />
+											<span className="truncate font-medium">+ Назначить врача</span>
+										</button>
+										{suggestedDoctor && !isSoloDoctor && doctors.length > 1 && (
+											<button
+												type="button"
+												onClick={() => handleConfirmAssignDoctor(chair.id, suggestedDoctor.id, "full")}
+												className="min-h-[28px] py-0.5 px-2 rounded-lg border border-[var(--teal)]/20 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-[10px] font-bold truncate flex items-center justify-center gap-1 cursor-pointer transition-colors"
+												title={`Быстро назначить ${suggestedDoctor.fullName} (1 клик)`}
+												data-testid={`btn-quick-assign-${chair.id}`}
+											>
+												<Zap size={10} className="text-[var(--teal)] shrink-0" />
+												<span className="truncate">1 клик: {formatDoctorShortName(suggestedDoctor.fullName)}</span>
+											</button>
+										)}
+									</div>
 								)}
 							</div>
 						);
 					})}
+
+					{/* Inline + Кресло Header Column (StomX / DentalPRO parity) */}
+					<div
+						className="p-2 sm:p-3 text-center border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center min-w-0"
+						data-testid="grid-header-add-chair-col"
+					>
+						<button
+							type="button"
+							onClick={handleOpenAddChair}
+							className="min-h-[44px] min-w-[44px] w-full px-2.5 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95"
+							title="Добавить кресло в расписание (+ Кресло)"
+							aria-label="Добавить кресло"
+							data-testid="btn-grid-inline-add-chair"
+							style={{ minHeight: "44px", minWidth: "44px" }}
+						>
+							<Plus size={15} className="shrink-0 text-[var(--teal)]" />
+							<span className="truncate font-bold">+ Кресло</span>
+						</button>
+					</div>
 				</div>
 
 			{/* Time Rows */}
@@ -676,7 +787,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							key={hour}
 							className="grid min-w-[700px] hover:bg-[var(--paper-soft)]/50 transition-colors"
 							style={{
-								gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
+								gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr)) minmax(110px, 130px)`,
 							}}
 						>
 							{/* Time label */}
@@ -1415,7 +1526,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												} else if (data?.type === "waitlist_item" && data.item) {
 													const waitlistItem = data.item;
 													const targetChairId = chair.id !== "default-chair" ? chair.id : null;
-													const assignedDocId = effectiveChairAssignments[chair.id]?.doctorId || null;
+													const assignedDocId = getDoctorForChairAndHour(chair.id, hour);
 													const targetDoctorId = selectedDoctorId || assignedDocId || waitlistItem.preferredDoctorId || (dashboard?.clinicSettings?.staff?.find((m) => m.active && m.role === "doctor")?.id ?? null);
 													const slotDuration = waitlistItem.durationMinutes || 30;
 													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
@@ -1476,7 +1587,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										}}
 									>
 										{(() => {
-											const assignedDocId = effectiveChairAssignments[chair.id]?.doctorId || null;
+											const assignedDocId = getDoctorForChairAndHour(chair.id, hour);
 											const isEmergencyBuffer = emergencyReserveSlots.some((r) => {
 												const rHour = toDateTimeLocalValue(r.startTime, timezone).slice(11, 13);
 												return rHour === hour.slice(0, 2);
@@ -1532,6 +1643,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									</div>
 								);
 							})}
+
+							{/* Placeholder cell under + Кресло column */}
+							<div
+								className="p-1 border-r border-[var(--line)] last:border-r-0 min-h-[56px] flex items-center justify-center bg-[var(--paper-soft)]/20"
+								aria-hidden="true"
+							/>
 						</div>
 					);
 				})}

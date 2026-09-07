@@ -36,7 +36,15 @@ import {
 } from "./components/schedule/QuickBookingDrawer";
 import { ScheduleClipboardPanel } from "./components/schedule/ScheduleClipboardPanel";
 import { ScheduleFilterStrip } from "./components/schedule/ScheduleFilterStrip";
-import { ScheduleGrid, type ChairDoctorShiftAssignment } from "./components/schedule/ScheduleGrid";
+import {
+	ScheduleGrid,
+	type ChairDoctorShiftAssignment,
+	formatDoctorShortName,
+} from "./components/schedule/ScheduleGrid";
+import {
+	QuickAddChairModal,
+	type QuickAddChairData,
+} from "./components/schedule/QuickAddChairModal";
 import { ScheduleTimeline } from "./components/schedule/ScheduleTimeline";
 import {
 	type DayGroupingAppointment,
@@ -393,14 +401,22 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				role = isDoctor ? "therapist" : "assistant";
 			}
 
-			const parts = (s.fullName || "").trim().split(/\s+/);
-			const initials = parts
-				.slice(1)
-				.map((p) => (p[0] ? `${p[0].toUpperCase()}.` : ""))
-				.join("");
-			const shortName = isDoctor
-				? `Д-р ${parts[0] || "Врач"}${initials ? ` ${initials}` : ""}`
-				: `${parts[0] || "Сотрудник"}${initials ? ` ${initials}` : ""}`;
+			const cleanName = (s.fullName || "").trim().replace(/^(д-р|доктор|врач)\s+/i, "");
+			const parts = cleanName.trim().split(/\s+/);
+			const lastName = parts[0] || (isDoctor ? "Врач" : "Сотрудник");
+			let shortName = lastName;
+			if (parts.length > 1 && parts[1]?.includes(".")) {
+				shortName = `${lastName} ${parts.slice(1).join(" ")}`.trim();
+			} else {
+				const initials = parts
+					.slice(1)
+					.map((p) => (p[0] ? `${p[0].toUpperCase()}.` : ""))
+					.join("");
+				shortName = `${lastName}${initials ? ` ${initials}` : ""}`;
+			}
+			if (isDoctor) {
+				shortName = `Д-р ${shortName}`;
+			}
 
 			const tabNumber =
 				(s as unknown as { tabNumber?: string }).tabNumber ||
@@ -603,28 +619,90 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	const computedChairDoctorAssignments = useMemo(() => {
 		const assignments: Record<string, ChairDoctorShiftAssignment> = {};
+		const shiftsByChair: Record<string, DoctorShift[]> = {};
+
 		for (const shift of savedDoctorShifts) {
-			if (shift.dateIso === currentDateKey && shift.chairId && shift.doctorId) {
+			if (
+				shift.dateIso === currentDateKey &&
+				shift.chairId &&
+				shift.doctorId &&
+				shift.status !== "cancelled"
+			) {
+				if (!shiftsByChair[shift.chairId]) {
+					shiftsByChair[shift.chairId] = [];
+				}
+				shiftsByChair[shift.chairId]!.push(shift);
+			}
+		}
+
+		for (const [chairId, shifts] of Object.entries(shiftsByChair)) {
+			if (shifts.length === 0) continue;
+			if (shifts.length === 1) {
+				const s = shifts[0]!;
 				const preset: "morning" | "evening" | "full" | "custom" =
-					shift.archetypeId === "morning_shift"
+					s.archetypeId === "morning_shift"
 						? "morning"
-						: shift.archetypeId === "evening_shift"
+						: s.archetypeId === "evening_shift"
 							? "evening"
 							: "custom";
-				const hours = `${shift.startTime}–${shift.endTime}`;
-				assignments[shift.chairId] = {
-					chairId: shift.chairId,
-					doctorId: shift.doctorId,
-					doctorName: shift.doctorName,
-					doctorSpecialty: shift.doctorRole,
+				const hours = `${s.startTime}–${s.endTime}`;
+				const sH = parseInt(s.startTime.slice(0, 2), 10) || 8;
+				const eH = parseInt(s.endTime.slice(0, 2), 10) || 20;
+				assignments[chairId] = {
+					chairId,
+					doctorId: s.doctorId,
+					doctorName: s.doctorName,
+					doctorSpecialty: s.doctorRole,
 					shiftPreset: preset,
-					shiftLabel: shift.customNotes || hours,
+					shiftLabel: s.customNotes || hours,
 					shiftHours: hours,
-					startHour: parseInt(shift.startTime.slice(0, 2), 10) || 8,
-					endHour: parseInt(shift.endTime.slice(0, 2), 10) || 20,
+					startHour: sH,
+					endHour: eH,
+					subShifts: [
+						{
+							doctorId: s.doctorId,
+							doctorName: s.doctorName,
+							doctorSpecialty: s.doctorRole,
+							startHour: sH,
+							endHour: eH,
+							shiftHours: hours,
+						},
+					],
+				};
+			} else {
+				const sorted = [...shifts].sort((a, b) => a.startTime.localeCompare(b.startTime));
+				const primary = sorted[0]!;
+				const subShifts = sorted.map((s) => ({
+					doctorId: s.doctorId,
+					doctorName: s.doctorName,
+					doctorSpecialty: s.doctorRole,
+					startHour: parseInt(s.startTime.slice(0, 2), 10) || 8,
+					endHour: parseInt(s.endTime.slice(0, 2), 10) || 20,
+					shiftHours: `${s.startTime}–${s.endTime}`,
+				}));
+				const shortNamesComposite = sorted
+					.map(
+						(s) =>
+							`${s.startTime.slice(0, 2)}–${s.endTime.slice(0, 2)}: ${formatDoctorShortName(s.doctorName)}`,
+					)
+					.join(" / ");
+				const hoursComposite = sorted.map((s) => `${s.startTime}–${s.endTime}`).join(" & ");
+
+				assignments[chairId] = {
+					chairId,
+					doctorId: primary.doctorId,
+					doctorName: sorted.map((s) => s.doctorName).join(" / "),
+					doctorSpecialty: primary.doctorRole,
+					shiftPreset: "custom",
+					shiftLabel: shortNamesComposite,
+					shiftHours: hoursComposite,
+					startHour: subShifts[0]!.startHour,
+					endHour: subShifts[subShifts.length - 1]!.endHour,
+					subShifts,
 				};
 			}
 		}
+
 		return assignments;
 	}, [savedDoctorShifts, currentDateKey]);
 
@@ -653,7 +731,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				const doctorRole: MedicalStaffRole =
 					(assignment.doctorSpecialty as MedicalStaffRole) || "therapist";
 				const newShift: DoctorShift = {
-					id: `shift-${currentDateKey}-${chairId}`,
+					id: `shift-${currentDateKey}-${chairId}-${assignment.shiftPreset}`,
 					doctorId: assignment.doctorId,
 					doctorName: assignment.doctorName,
 					doctorRole,
@@ -675,9 +753,25 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					status: "scheduled",
 				};
 				setSavedDoctorShifts((prev) => {
-					const filtered = prev.filter(
-						(s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
-					);
+					const filtered = prev.filter((s) => {
+						if (s.dateIso !== currentDateKey || s.chairId !== chairId) return true;
+						if (assignment.shiftPreset === "full") return false;
+						if (
+							assignment.shiftPreset === "morning" &&
+							(s.archetypeId === "morning_shift" ||
+								s.id.endsWith("-morn") ||
+								s.id.endsWith("-full"))
+						)
+							return false;
+						if (
+							assignment.shiftPreset === "evening" &&
+							(s.archetypeId === "evening_shift" ||
+								s.id.endsWith("-eve") ||
+								s.id.endsWith("-full"))
+						)
+							return false;
+						return true;
+					});
 					const next = [...filtered, newShift];
 					try {
 						if (typeof localStorage !== "undefined") {
