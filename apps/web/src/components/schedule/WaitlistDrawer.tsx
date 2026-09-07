@@ -1,4 +1,13 @@
-import { Calendar, CheckCircle2, Sparkles, Trash2, UserPlus, X, Zap } from "lucide-react";
+import {
+	Calendar,
+	CheckCircle2,
+	MoreVertical,
+	Sparkles,
+	Trash2,
+	UserPlus,
+	X,
+	Zap,
+} from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -10,8 +19,11 @@ import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
 import { PanelLoadFailure } from "../PanelLoadFailure";
+import {
+	type DoctorFreeSlot,
+	findDoctorFreeSlots,
+} from "./doctorFreeSlotsEngine";
 import { WaitlistQuickFillModal } from "./WaitlistQuickFillModal";
-import { findDoctorFreeSlots, type DoctorFreeSlot } from "./doctorFreeSlotsEngine";
 
 /**
  * Как называется содержимое очереди для сообщений о загрузке и отказе. Общий
@@ -147,6 +159,27 @@ export function WaitlistDrawer(props: Props) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [loadingId, setLoadingId] = useState<string | null>(null);
 	const [isQuickFillOpen, setIsQuickFillOpen] = useState(false);
+	const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+	useEffect(() => {
+		const handleOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (target && !target.closest(".waitlist-item-menu-container")) {
+				setOpenMenuId(null);
+			}
+		};
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setOpenMenuId(null);
+		};
+		if (openMenuId) {
+			document.addEventListener("mousedown", handleOutside);
+			document.addEventListener("keydown", handleKeyDown);
+		}
+		return () => {
+			document.removeEventListener("mousedown", handleOutside);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [openMenuId]);
 
 	// Form State
 	const [selectedPatientId, setSelectedPatientId] = useState("");
@@ -347,7 +380,10 @@ export function WaitlistDrawer(props: Props) {
 			appointments: dashboard?.appointments ?? [],
 			chairs: dashboard?.clinicSettings?.chairs ?? [],
 		});
-		const flatSlots: (DoctorFreeSlot & { dateFormatted: string; doctorName?: string })[] = [];
+		const flatSlots: (DoctorFreeSlot & {
+			dateFormatted: string;
+			doctorName?: string;
+		})[] = [];
 		for (const day of days) {
 			for (const slot of day.slots) {
 				const doc = (dashboard?.clinicSettings?.staff ?? []).find(
@@ -364,7 +400,11 @@ export function WaitlistDrawer(props: Props) {
 			if (flatSlots.length >= 10) break;
 		}
 		return flatSlots;
-	}, [dashboard?.appointments, dashboard?.clinicSettings?.chairs, dashboard?.clinicSettings?.staff]);
+	}, [
+		dashboard?.appointments,
+		dashboard?.clinicSettings?.chairs,
+		dashboard?.clinicSettings?.staff,
+	]);
 
 	// Посадка пациента в освободившееся окно в 1 клик (Мандат 8e)
 	const handleOneClickBook = async (
@@ -424,9 +464,26 @@ export function WaitlistDrawer(props: Props) {
 
 	if (!isOpen) return null;
 
+	if (isQuickFillOpen) {
+		return (
+			<WaitlistQuickFillModal
+				isOpen={isQuickFillOpen}
+				onClose={() => setIsQuickFillOpen(false)}
+				onAppointmentCreated={() => {
+					fetchWaitlist();
+					setIsQuickFillOpen(false);
+					onClose();
+				}}
+				dashboard={dashboard}
+				auth={auth}
+			/>
+		);
+	}
+
 	const priorityColors = {
 		high: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/35 font-bold",
-		medium: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
+		medium:
+			"bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/35 font-bold",
 		low: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/25",
 	};
 
@@ -504,10 +561,13 @@ export function WaitlistDrawer(props: Props) {
 							type="button"
 							data-testid="waitlist-quickfill-btn"
 							onClick={() => setIsQuickFillOpen(true)}
-							className="min-h-[38px] px-3 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center gap-1.5 border border-[var(--teal,var(--brand-primary))]/30 transition-all cursor-pointer shadow-sm active:scale-95"
+							className="min-h-[44px] px-3 rounded-xl bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] text-xs font-bold flex items-center gap-1.5 border border-[var(--teal,var(--brand-primary))]/30 transition-all cursor-pointer shadow-sm active:scale-95"
 							title="Умный подбор пациентов на горящие окна"
 						>
-							<Sparkles size={14} className="text-[var(--teal,var(--brand-primary))]" />
+							<Sparkles
+								size={14}
+								className="text-[var(--teal,var(--brand-primary))]"
+							/>
 							<span>Быстрый подбор</span>
 						</button>
 						<button
@@ -712,18 +772,26 @@ export function WaitlistDrawer(props: Props) {
 													: null) || availableFreeSlots[0];
 
 											return (
-												<div className="flex flex-col sm:flex-row gap-2 mt-1">
+												<div className="flex items-center gap-2 mt-1">
 													{matchedSlot ? (
 														<button
 															type="button"
 															disabled={loadingId === item.id}
 															aria-busy={loadingId === item.id}
-															onClick={() => handleOneClickBook(item, matchedSlot)}
+															onClick={() =>
+																handleOneClickBook(item, matchedSlot)
+															}
 															className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-xl text-xs transition-all shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
 															title={`Посадить в 1 клик на ${matchedSlot.dateFormatted} в ${matchedSlot.startTime} к ${matchedSlot.doctorName}`}
 														>
-															<Zap size={14} className="shrink-0 text-amber-300" />
-															<span>В окно ({matchedSlot.dateFormatted}, {matchedSlot.startTime})</span>
+															<Zap
+																size={14}
+																className="shrink-0 text-amber-300"
+															/>
+															<span>
+																В окно ({matchedSlot.dateFormatted},{" "}
+																{matchedSlot.startTime})
+															</span>
 														</button>
 													) : (
 														<button
@@ -731,45 +799,75 @@ export function WaitlistDrawer(props: Props) {
 															disabled={loadingId === item.id}
 															aria-busy={loadingId === item.id}
 															onClick={() => handleBook(item)}
-															className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-xl text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+															className="flex-1 min-h-[44px] py-2 px-3 bg-[var(--teal-surface)] hover:bg-[var(--teal-soft)] text-[var(--teal-dark)] font-semibold rounded-xl text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
 														>
 															Записать на прием
 														</button>
 													)}
-													<div className="flex gap-2">
-														{matchedSlot && (
-															<button
-																type="button"
-																disabled={loadingId === item.id}
-																onClick={() => handleBook(item)}
-																className="min-h-[44px] px-2.5 bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] text-xs rounded-xl transition-colors"
-																title="Выбрать другое время вручную"
+
+													{/* Secondary Actions: Miller's Rule (<= 2 controls per card, overflow into ...) */}
+													<div className="relative shrink-0 waitlist-item-menu-container">
+														<button
+															type="button"
+															disabled={loadingId === item.id}
+															onClick={() =>
+																setOpenMenuId(
+																	openMenuId === item.id ? null : item.id,
+																)
+															}
+															className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] rounded-xl transition-colors cursor-pointer"
+															title="Дополнительные действия с заявкой"
+															aria-label="Опции заявки"
+															aria-expanded={openMenuId === item.id}
+														>
+															<MoreVertical className="w-4 h-4 text-[var(--teal-dark)]" />
+														</button>
+
+														{openMenuId === item.id && (
+															<div
+																className="absolute right-0 bottom-full mb-1.5 z-50 flex flex-col gap-1 p-1.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-2xl min-w-[220px] text-xs animate-in fade-in zoom-in-95 duration-100"
+																role="menu"
 															>
-																Вручную
-															</button>
+																{matchedSlot && (
+																	<button
+																		type="button"
+																		onClick={() => {
+																			setOpenMenuId(null);
+																			handleBook(item);
+																		}}
+																		className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+																		role="menuitem"
+																	>
+																		<Calendar className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+																		<span>Выбрать другое время вручную</span>
+																	</button>
+																)}
+																<button
+																	type="button"
+																	onClick={() => {
+																		setOpenMenuId(null);
+																		handleFulfill(item);
+																	}}
+																	className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+																	role="menuitem"
+																>
+																	<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+																	<span>Дождался приёма (закрыть заявку)</span>
+																</button>
+																<button
+																	type="button"
+																	onClick={() => {
+																		setOpenMenuId(null);
+																		handleDelete(item.id);
+																	}}
+																	className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors flex items-center gap-2 cursor-pointer"
+																	role="menuitem"
+																>
+																	<Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+																	<span>Удалить из листа ожидания</span>
+																</button>
+															</div>
 														)}
-														<button
-															type="button"
-															disabled={loadingId === item.id}
-															aria-busy={loadingId === item.id}
-															onClick={() => handleFulfill(item)}
-															className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--ok-bg,rgba(16,185,129,0.1))] hover:brightness-105 text-[var(--ok-fg,#0d9488)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-															title="Дождался приёма: убрать из очереди, запись о заявке сохранить"
-															aria-label="Дождался приёма: убрать из очереди, запись о заявке сохранить"
-														>
-															<CheckCircle2 className="w-4 h-4" />
-														</button>
-														<button
-															type="button"
-															disabled={loadingId === item.id}
-															aria-busy={loadingId === item.id}
-															onClick={() => handleDelete(item.id)}
-															className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 bg-[var(--bad-bg,rgba(239,68,68,0.1))] hover:brightness-105 text-[var(--bad-fg,#ef4444)] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-															title="Убрать совсем: заявка ошибочная или человек больше не хочет"
-															aria-label="Убрать совсем: заявка ошибочная или человек больше не хочет"
-														>
-															<Trash2 className="w-4 h-4" />
-														</button>
 													</div>
 												</div>
 											);
@@ -781,16 +879,6 @@ export function WaitlistDrawer(props: Props) {
 					</div>
 				</div>
 			</div>
-			<WaitlistQuickFillModal
-				isOpen={isQuickFillOpen}
-				onClose={() => setIsQuickFillOpen(false)}
-				onAppointmentCreated={() => {
-					fetchWaitlist();
-					setIsQuickFillOpen(false);
-				}}
-				dashboard={dashboard}
-				auth={auth}
-			/>
 		</div>
 	);
 

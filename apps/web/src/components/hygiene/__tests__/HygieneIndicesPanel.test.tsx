@@ -195,4 +195,75 @@ describe("HygieneIndicesPanel — Chairside Express Protocols & Invoice Services
 			assert.equal(ev.detail.services[0].code, ev.detail.code);
 		}
 	});
+
+	it("verifies WCAG AAA contrast classes in Light/Dark mode and zero dark fallbacks in design tokens", () => {
+		const html = renderToStaticMarkup(
+			createElement(HygieneIndicesPanel, {
+				readOnly: false,
+			}),
+		);
+
+		// DEFECT 1: Light Mode contrast classes with dark: variant
+		assert.ok(
+			html.includes("text-teal-900 dark:text-teal-300"),
+			"Must include text-teal-900 dark:text-teal-300 for high contrast",
+		);
+		assert.ok(
+			html.includes("text-emerald-900 dark:text-emerald-300"),
+			"Must include text-emerald-900 dark:text-emerald-300 for high contrast",
+		);
+		assert.ok(
+			html.includes("text-rose-900 dark:text-rose-200"),
+			"Must include text-rose-900 dark:text-rose-200 for high contrast",
+		);
+		assert.ok(
+			html.includes("text-cyan-900 dark:text-cyan-300"),
+			"Must include text-cyan-900 dark:text-cyan-300 for high contrast",
+		);
+		assert.ok(
+			html.includes("text-sky-900 dark:text-sky-300"),
+			"Must include text-sky-900 dark:text-sky-300 for high contrast",
+		);
+		assert.ok(
+			html.includes("text-violet-900 dark:text-violet-300"),
+			"Must include text-violet-900 dark:text-violet-300 for high contrast",
+		);
+
+		// DEFECT 2: Zero hardcoded dark fallback colors in CSS tokens
+		assert.equal(
+			html.includes("#1e293b"),
+			false,
+			"Must not contain hardcoded dark fallback #1e293b",
+		);
+		assert.equal(
+			html.includes("#334155"),
+			false,
+			"Must not contain hardcoded dark fallback #334155",
+		);
+		assert.equal(
+			html.includes("#0f172a"),
+			false,
+			"Must not contain hardcoded dark fallback #0f172a",
+		);
+		assert.equal(
+			html.includes("#f8fafc"),
+			false,
+			"Must not contain hardcoded dark fallback #f8fafc",
+		);
+
+		// Pure tokens verification
+		assert.ok(
+			html.includes("bg-[var(--paper-soft)]"),
+			"Must use pure bg-[var(--paper-soft)] token",
+		);
+		assert.ok(
+			html.includes("border-[var(--line)]"),
+			"Must use pure border-[var(--line)] token",
+		);
+		assert.ok(
+			html.includes("text-[var(--ink)]"),
+			"Must use pure text-[var(--ink)] token",
+		);
+	});
 });
+

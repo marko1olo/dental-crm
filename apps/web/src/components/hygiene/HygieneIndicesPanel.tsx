@@ -731,18 +731,18 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 	);
 
 	return (
-		<div className="w-full flex flex-col gap-4 p-4 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] text-[var(--ink,#f8fafc)] shadow-xs">
+		<div className="w-full flex flex-col gap-4 p-4 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] shadow-xs">
 			{/* ─── Header & Action Presets ───────────────────────────────────── */}
-			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--line,#334155)]">
+			<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--line)]">
 				<div className="flex items-center gap-2.5">
-					<div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-400 shrink-0">
+					<div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400 shrink-0">
 						<ShieldCheck size={20} />
 					</div>
 					<div>
-						<h4 className="text-sm font-bold text-[var(--ink,#f8fafc)]">
+						<h4 className="text-sm font-bold text-[var(--ink)]">
 							Индексы гигиены полости рта (OHI-S, PMA, КПИ Леуса)
 						</h4>
-						<p className="text-xs text-[var(--muted,#94a3b8)]">
+						<p className="text-xs text-[var(--muted)]">
 							Быстрый клинический замер по 6 индексным зубам без требования
 							заполнять всю челюсть
 						</p>
@@ -755,10 +755,10 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handleSyncFromPerio}
-								className="min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-teal-500/15 hover:text-teal-300 border border-[var(--line,#334155)] text-xs font-semibold text-[var(--ink,#f8fafc)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation"
+								className="min-h-[44px] px-3 py-2 rounded-lg bg-[var(--paper-soft)] hover:bg-teal-500/15 hover:text-teal-700 dark:hover:text-teal-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer touch-manipulation"
 								title="Импортировать налет и кровоточивость из пародонтограммы"
 							>
-								<RotateCcw size={14} className="text-teal-400" />
+								<RotateCcw size={14} className="text-teal-600 dark:text-teal-400" />
 								<span>Из перио-карты</span>
 							</button>
 						)}
@@ -780,12 +780,12 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<button
 							type="button"
 							onClick={handleCopyText}
-							className="min-h-[44px] min-w-[44px] p-2 rounded-lg bg-[var(--paper-soft,#1e293b)] hover:bg-[var(--line,#334155)] border border-[var(--line,#334155)] text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] transition-all cursor-pointer flex items-center justify-center touch-manipulation"
+							className="min-h-[44px] min-w-[44px] p-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] transition-all cursor-pointer flex items-center justify-center touch-manipulation"
 							title="Скопировать протокол в буфер обмена"
 							aria-label="Скопировать протокол в буфер"
 						>
 							{copyStatus ? (
-								<Check size={16} className="text-emerald-400" />
+								<Check size={16} className="text-emerald-500 dark:text-emerald-400" />
 							) : (
 								<Clipboard size={16} />
 							)}
@@ -800,8 +800,8 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					{/* Section A: Клинические статусы пародонта */}
 					<div className="flex flex-col gap-2">
 						<div className="flex items-center gap-2">
-							<Zap size={16} className="text-teal-400 shrink-0" />
-							<span className="text-xs font-black text-teal-300">
+							<Zap size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span className="text-xs font-black text-teal-900 dark:text-teal-300">
 								1-Клик экспресс-статусы пародонта (без ручного ввода 192 точек):
 							</span>
 						</div>
@@ -811,15 +811,15 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetPeriodontalNorm}
-								className="min-h-[48px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-900 dark:text-emerald-300 border border-emerald-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Норма пародонта: зубодесневая бороздка <= 2 мм, десна бледно-розовая плотная, кровоточивости нет, патологических карманов нет, подвижность 0"
 								data-testid="hygiene-preset-norm"
 							>
 								<div className="flex items-center gap-1.5 font-black text-xs">
-									<ShieldCheck size={15} className="text-emerald-400 shrink-0" />
+									<ShieldCheck size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 									<span>Норма пародонта</span>
 								</div>
-								<span className="text-[10px] text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-emerald-800 dark:text-emerald-200/80 leading-tight mt-0.5 line-clamp-2">
 									бороздка &le; 2 мм, десна плотная, BOP 0%, карманов нет,
 									подвижность 0
 								</span>
@@ -829,15 +829,15 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetCatarrhalGingivitis}
-								className="min-h-[48px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-900 dark:text-amber-300 border border-amber-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Катаральный гингивит: отек десневых сосочков, кровоточивость при зондировании, карманов нет, наддесневые зубные отложения"
 								data-testid="hygiene-preset-gingivitis"
 							>
 								<div className="flex items-center gap-1.5 font-black text-xs">
-									<Activity size={15} className="text-amber-400 shrink-0" />
+									<Activity size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
 									<span>Катаральный гингивит</span>
 								</div>
-								<span className="text-[10px] text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-amber-800 dark:text-amber-200/80 leading-tight mt-0.5 line-clamp-2">
 									отек сосочков, кровоточивость (BOP+), карманов нет, наддесневой
 									камень
 								</span>
@@ -847,15 +847,15 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetMildPeriodontitis}
-								className="min-h-[48px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-rose-600/15 hover:bg-rose-600/30 text-rose-900 dark:text-rose-200 border border-rose-500/35 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Пародонтит легкой степени: глубина карманов 3-4 мм, над/поддесневой камень, BOP+, подвижность 0"
 								data-testid="hygiene-preset-mild-periodontitis"
 							>
 								<div className="flex items-center gap-1.5 font-black text-xs">
-									<AlertTriangle size={15} className="text-rose-400 shrink-0" />
+									<AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
 									<span>Пародонтит легкий (3-4 мм)</span>
 								</div>
-								<span className="text-[10px] text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-rose-800 dark:text-rose-200/80 leading-tight mt-0.5 line-clamp-2">
 									карманы 3–4 мм, над/поддесневой камень, кровоточивость, подвижность 0
 								</span>
 							</button>
@@ -864,15 +864,15 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetModeratePeriodontitis}
-								className="min-h-[48px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-orange-600/20 hover:bg-orange-600/35 text-orange-900 dark:text-orange-200 border border-orange-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Пародонтит средней степени: глубина карманов 4-5 мм, рецессия 1-2 мм, зубной камень, подвижность I ст."
 								data-testid="hygiene-preset-periodontitis"
 							>
 								<div className="flex items-center gap-1.5 font-black text-xs">
-									<ShieldAlert size={15} className="text-orange-400 shrink-0" />
+									<ShieldAlert size={15} className="text-orange-600 dark:text-orange-400 shrink-0" />
 									<span>Пародонтит средний (4-5 мм)</span>
 								</div>
-								<span className="text-[10px] text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-orange-800 dark:text-orange-200/80 leading-tight mt-0.5 line-clamp-2">
 									карманы 4–5 мм, рецессия 1–2 мм, зубной камень, подвижность I
 									ст.
 								</span>
@@ -884,12 +884,12 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 					<div className="flex flex-col gap-2 pt-2 border-t border-teal-500/20">
 						<div className="flex items-center justify-between flex-wrap gap-1">
 							<div className="flex items-center gap-2">
-								<Sparkles size={16} className="text-cyan-400 shrink-0" />
-								<span className="text-xs font-black text-cyan-300">
+								<Sparkles size={16} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
+								<span className="text-xs font-black text-cyan-900 dark:text-cyan-300">
 									Chairside-протоколы лечения и профилактики (начисление в чек 804н + дневник 043/у):
 								</span>
 							</div>
-							<span className="text-[10px] text-teal-300/70">1-клик автоначисление в чек визита</span>
+							<span className="text-[10px] text-teal-800 dark:text-teal-300/70">1-клик автоначисление в чек визита</span>
 						</div>
 
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -897,18 +897,18 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetProHygieneDone}
-								className="min-h-[48px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-900 dark:text-cyan-200 border border-cyan-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Комплексная профессиональная гигиена (A16.07.051, 5500 ₽): УЗ Piezon + Air-Flow глицином + Kerr Cleanic + Fluocal"
 								data-testid="hygiene-preset-pro-hygiene"
 							>
 								<div className="flex items-center justify-between gap-1 font-black text-xs">
 									<div className="flex items-center gap-1.5 truncate">
-										<Sparkles size={15} className="text-cyan-400 shrink-0" />
+										<Sparkles size={15} className="text-cyan-600 dark:text-cyan-400 shrink-0" />
 										<span className="truncate">Профгигиена</span>
 									</div>
-									<span className="text-[11px] font-mono text-cyan-300 font-black shrink-0">5 500 ₽</span>
+									<span className="text-[11px] font-mono text-cyan-900 dark:text-cyan-300 font-black shrink-0">5 500 ₽</span>
 								</div>
-								<span className="text-[10px] text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-cyan-800 dark:text-cyan-200/80 leading-tight mt-0.5 line-clamp-2">
 									A16.07.051 • УЗ Piezon + AirFlow + Cleanic + Fluocal
 								</span>
 							</button>
@@ -917,18 +917,18 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetDeepFluoridation}
-								className="min-h-[48px] p-2.5 rounded-xl bg-sky-600/25 hover:bg-sky-600/40 text-sky-200 border border-sky-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-sky-600/25 hover:bg-sky-600/40 text-sky-900 dark:text-sky-200 border border-sky-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Глубокое фторирование эмали (A11.07.012, 1800 ₽): аппликация эмаль-ликвида Tiefenfluorid / Сафорайд, экспозиция, сушка"
 								data-testid="hygiene-preset-deep-fluoridation"
 							>
 								<div className="flex items-center justify-between gap-1 font-black text-xs">
 									<div className="flex items-center gap-1.5 truncate">
-										<Droplets size={15} className="text-sky-400 shrink-0" />
+										<Droplets size={15} className="text-sky-600 dark:text-sky-400 shrink-0" />
 										<span className="truncate">Глубокое фторирование</span>
 									</div>
-									<span className="text-[11px] font-mono text-sky-300 font-black shrink-0">1 800 ₽</span>
+									<span className="text-[11px] font-mono text-sky-900 dark:text-sky-300 font-black shrink-0">1 800 ₽</span>
 								</div>
-								<span className="text-[10px] text-sky-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-sky-800 dark:text-sky-200/80 leading-tight mt-0.5 line-clamp-2">
 									A11.07.012 • Tiefenfluorid / Сафорайд, СаF2 в порах
 								</span>
 							</button>
@@ -937,18 +937,18 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetToothMousse}
-								className="min-h-[48px] p-2.5 rounded-xl bg-violet-600/25 hover:bg-violet-600/40 text-violet-200 border border-violet-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-violet-600/25 hover:bg-violet-600/40 text-violet-900 dark:text-violet-200 border border-violet-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Реминерализирующая терапия каппой (A11.07.010, 1500 ₽): крем GC Tooth Mousse (Recaldent CPP-ACP) на индивидуальной каппе, 5 мин"
 								data-testid="hygiene-preset-tooth-mousse"
 							>
 								<div className="flex items-center justify-between gap-1 font-black text-xs">
 									<div className="flex items-center gap-1.5 truncate">
-										<ShieldCheck size={15} className="text-violet-400 shrink-0" />
+										<ShieldCheck size={15} className="text-violet-600 dark:text-violet-400 shrink-0" />
 										<span className="truncate">Ремтерапия Tooth Mousse</span>
 									</div>
-									<span className="text-[11px] font-mono text-violet-300 font-black shrink-0">1 500 ₽</span>
+									<span className="text-[11px] font-mono text-violet-900 dark:text-violet-300 font-black shrink-0">1 500 ₽</span>
 								</div>
-								<span className="text-[10px] text-violet-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-violet-800 dark:text-violet-200/80 leading-tight mt-0.5 line-clamp-2">
 									A11.07.010 • GC Tooth Mousse на каппе, 5 мин
 								</span>
 							</button>
@@ -957,18 +957,18 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 							<button
 								type="button"
 								onClick={handlePresetPerioAntiseptic}
-								className="min-h-[48px] p-2.5 rounded-xl bg-teal-600/25 hover:bg-teal-600/40 text-teal-200 border border-teal-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
+								className="min-h-[48px] p-2.5 rounded-xl bg-teal-600/25 hover:bg-teal-600/40 text-teal-900 dark:text-teal-200 border border-teal-500/40 transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs flex flex-col justify-center"
 								title="Медикаментозная обработка карманов (A16.07.053, 1200 ₽): орошение 0.05% хлоргексидином + инстилляция Метрогил Дента"
 								data-testid="hygiene-preset-perio-antiseptic"
 							>
 								<div className="flex items-center justify-between gap-1 font-black text-xs">
 									<div className="flex items-center gap-1.5 truncate">
-										<CheckCircle2 size={15} className="text-teal-400 shrink-0" />
+										<CheckCircle2 size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
 										<span className="truncate">Обработка карманов</span>
 									</div>
-									<span className="text-[11px] font-mono text-teal-300 font-black shrink-0">1 200 ₽</span>
+									<span className="text-[11px] font-mono text-teal-900 dark:text-teal-300 font-black shrink-0">1 200 ₽</span>
 								</div>
-								<span className="text-[10px] text-teal-200/80 leading-tight mt-0.5 line-clamp-2">
+								<span className="text-[10px] text-teal-800 dark:text-teal-200/80 leading-tight mt-0.5 line-clamp-2">
 									A16.07.053 • Хлоргексидин 0.05% + Метрогил Дента
 								</span>
 							</button>
@@ -980,20 +980,20 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 			{/* ─── Real-Time Index Telemetry Cards (3-Indices Strip) ─────────── */}
 			<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 				{/* 1. OHI-S / Green-Vermillion */}
-				<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-1">
+				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1">
 					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold text-[var(--muted,#94a3b8)]">
+						<span className="text-xs font-bold text-[var(--muted)]">
 							Индекс OHI-S (Грин-Вермиллион)
 						</span>
 						<span
 							className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
 								report.ohiS.totalScore <= 0.6
-									? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
 									: report.ohiS.totalScore <= 1.6
-										? "bg-teal-500/10 text-teal-300 border-teal-500/30"
+										? "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30"
 										: report.ohiS.totalScore <= 2.5
-											? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-											: "bg-rose-500/15 text-rose-400 border-rose-500/30"
+											? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+											: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
 							}`}
 						>
 							{report.ohiS.clinicalEvaluation === "excellent"
@@ -1012,41 +1012,41 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<span
 							className={`text-2xl font-black ${
 								report.ohiS.totalScore <= 0.6
-									? "text-emerald-400"
+									? "text-emerald-600 dark:text-emerald-400"
 									: report.ohiS.totalScore <= 1.6
-										? "text-teal-300"
+										? "text-teal-700 dark:text-teal-300"
 										: report.ohiS.totalScore <= 2.5
-											? "text-amber-400"
-											: "text-rose-400"
+											? "text-amber-600 dark:text-amber-400"
+											: "text-rose-600 dark:text-rose-400"
 							}`}
 						>
 							{report.ohiS.totalScore.toFixed(1)}
 						</span>
-						<span className="text-xs text-[var(--muted,#94a3b8)]">
+						<span className="text-xs text-[var(--muted)]">
 							налет DI-S: <strong>{report.ohiS.debrisScore}</strong> • камень
 							CI-S: <strong>{report.ohiS.calculusScore}</strong>
 						</span>
 					</div>
-					<span className="text-[11px] text-[var(--muted,#94a3b8)]">
+					<span className="text-[11px] text-[var(--muted)]">
 						Норма: ≤ 0.6 (отл.) / ≤ 1.6 (хор.)
 					</span>
 				</div>
 
 				{/* 2. PMA / Parma Index */}
-				<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-1">
+				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1">
 					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold text-[var(--muted,#94a3b8)]">
+						<span className="text-xs font-bold text-[var(--muted)]">
 							Индекс PMA (Парма / воспаление)
 						</span>
 						<span
 							className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
 								report.pma.severity === "intact"
-									? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
 									: report.pma.severity === "mild"
-										? "bg-amber-500/10 text-amber-400 border-amber-500/30"
+										? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
 										: report.pma.severity === "moderate"
-											? "bg-orange-500/10 text-orange-400 border-orange-500/30"
-											: "bg-rose-500/15 text-rose-400 border-rose-500/30"
+											? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30"
+											: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
 							}`}
 						>
 							{report.pma.severity === "intact"
@@ -1063,39 +1063,39 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<span
 							className={`text-2xl font-black ${
 								report.pma.pmaPercent === 0
-									? "text-emerald-400"
+									? "text-emerald-600 dark:text-emerald-400"
 									: report.pma.pmaPercent <= 25
-										? "text-amber-400"
-										: "text-rose-400"
+										? "text-amber-600 dark:text-amber-400"
+										: "text-rose-600 dark:text-rose-400"
 							}`}
 						>
 							{report.pma.pmaPercent}%
 						</span>
-						<span className="text-xs text-[var(--muted,#94a3b8)]">
+						<span className="text-xs text-[var(--muted)]">
 							баллы: <strong>{report.pma.totalPoints}</strong> из{" "}
 							{report.pma.maxPossiblePoints}
 						</span>
 					</div>
-					<span className="text-[11px] text-[var(--muted,#94a3b8)]">
+					<span className="text-[11px] text-[var(--muted)]">
 						Норма: 0% (воспаление десны отсутствует)
 					</span>
 				</div>
 
 				{/* 3. KPI / Leus Complex Index */}
-				<div className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-1">
+				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-1">
 					<div className="flex items-center justify-between">
-						<span className="text-xs font-bold text-[var(--muted,#94a3b8)]">
+						<span className="text-xs font-bold text-[var(--muted)]">
 							КПИ Леуса (состояние пародонта)
 						</span>
 						<span
 							className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
 								report.kpi.severity === "healthy"
-									? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
 									: report.kpi.severity === "risk"
-										? "bg-teal-500/10 text-teal-300 border-teal-500/30"
+										? "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30"
 										: report.kpi.severity === "mild"
-											? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-											: "bg-rose-500/15 text-rose-400 border-rose-500/30"
+											? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+											: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
 							}`}
 						>
 							{report.kpi.severity === "healthy"
@@ -1114,22 +1114,22 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						<span
 							className={`text-2xl font-black ${
 								report.kpi.kpiScore === 0
-									? "text-emerald-400"
+									? "text-emerald-600 dark:text-emerald-400"
 									: report.kpi.kpiScore <= 1.0
-										? "text-teal-300"
+										? "text-teal-700 dark:text-teal-300"
 										: report.kpi.kpiScore <= 2.0
-											? "text-amber-400"
-											: "text-rose-400"
+											? "text-amber-600 dark:text-amber-400"
+											: "text-rose-600 dark:text-rose-400"
 							}`}
 						>
 							{report.kpi.kpiScore.toFixed(1)}
 						</span>
-						<span className="text-xs text-[var(--muted,#94a3b8)]">
+						<span className="text-xs text-[var(--muted)]">
 							обследовано: <strong>{report.kpi.assessedTeethCount}</strong>{" "}
 							зубов
 						</span>
 					</div>
-					<span className="text-[11px] text-[var(--muted,#94a3b8)]">
+					<span className="text-[11px] text-[var(--muted)]">
 						Норма: 0.0 (здоровый периодонт)
 					</span>
 				</div>
@@ -1137,9 +1137,9 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 			{/* ─── 6 Index Teeth Grid Matrix ─────────────────────────────────── */}
 			<div className="flex flex-col gap-3">
-				<div className="text-xs font-bold text-teal-400 flex items-center justify-between">
+				<div className="text-xs font-bold text-teal-700 dark:text-teal-400 flex items-center justify-between">
 					<span>СЕТКА 6 ИНДЕКСНЫХ ЗУБОВ (16, 11, 26 • 46, 31, 36):</span>
-					<span className="text-[11px] text-[var(--muted,#94a3b8)] font-normal">
+					<span className="text-[11px] text-[var(--muted)] font-normal">
 						Кликните на цифру для выбора балла (0..3 или 0..4)
 					</span>
 				</div>
@@ -1157,19 +1157,19 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 						return (
 							<div
 								key={cfg.toothNumber}
-								className="p-3 rounded-xl bg-[var(--paper-soft,#1e293b)] border border-[var(--line,#334155)] flex flex-col gap-2.5"
+								className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-col gap-2.5"
 							>
 								{/* Tooth Header */}
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<span className="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-300 font-mono font-black text-sm flex items-center justify-center border border-teal-500/30">
+										<span className="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-800 dark:text-teal-300 font-mono font-black text-sm flex items-center justify-center border border-teal-500/30">
 											{cfg.toothNumber}
 										</span>
 										<div>
-											<div className="text-xs font-bold text-[var(--ink,#f8fafc)]">
+											<div className="text-xs font-bold text-[var(--ink)]">
 												{cfg.anatomicalNameRu}
 											</div>
-											<div className="text-[10px] text-teal-400 font-medium">
+											<div className="text-[10px] text-teal-700 dark:text-teal-400 font-medium">
 												{cfg.surfaceLabelRu}
 											</div>
 										</div>
@@ -1177,8 +1177,8 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 								</div>
 
 								{/* Row 1: DI-S Debris (Налёт 0..3) */}
-								<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line,#334155)]/60">
-									<span className="text-[11px] text-[var(--muted,#94a3b8)] font-medium">
+								<div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--line)]/60">
+									<span className="text-[11px] text-[var(--muted)] font-medium">
 										Налёт (DI-S):
 									</span>
 									<div className="flex items-center gap-1">
@@ -1193,7 +1193,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 												className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													debris === val
 														? "bg-amber-500 text-slate-950 font-black shadow-xs ring-1 ring-amber-300"
-														: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] hover:text-white border border-[var(--line,#334155)]"
+														: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 												}`}
 												title={
 													val === 0
@@ -1213,7 +1213,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 								{/* Row 2: CI-S Calculus (Камень 0..3) */}
 								<div className="flex items-center justify-between text-xs">
-									<span className="text-[11px] text-[var(--muted,#94a3b8)] font-medium">
+									<span className="text-[11px] text-[var(--muted)] font-medium">
 										Камень (CI-S):
 									</span>
 									<div className="flex items-center gap-1">
@@ -1232,7 +1232,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 												className={`min-h-[44px] min-w-[30px] sm:min-w-[34px] px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center touch-manipulation ${
 													calculus === val
 														? "bg-orange-500 text-white font-black shadow-xs ring-1 ring-orange-300"
-														: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] hover:text-white border border-[var(--line,#334155)]"
+														: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 												}`}
 												title={
 													val === 0
@@ -1252,7 +1252,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 								{/* Row 3: PMA (Десна 0..3: P, M, A) */}
 								<div className="flex items-center justify-between text-xs">
-									<span className="text-[11px] text-[var(--muted,#94a3b8)] font-medium">
+									<span className="text-[11px] text-[var(--muted)] font-medium">
 										Воспаление (PMA):
 									</span>
 									<div className="flex items-center gap-1">
@@ -1278,7 +1278,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 														? val === 0
 															? "bg-emerald-500 text-slate-950 font-black ring-1 ring-emerald-300"
 															: "bg-rose-500 text-white font-black shadow-xs ring-1 ring-rose-300"
-														: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] hover:text-white border border-[var(--line,#334155)]"
+														: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 												}`}
 												title={hint}
 											>
@@ -1290,7 +1290,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 
 								{/* Row 4: KPI (КПИ 0..4) */}
 								<div className="flex items-center justify-between text-xs">
-									<span className="text-[11px] text-[var(--muted,#94a3b8)] font-medium">
+									<span className="text-[11px] text-[var(--muted)] font-medium">
 										Периодонт (КПИ):
 									</span>
 									<div className="flex items-center gap-1">
@@ -1319,7 +1319,7 @@ export const HygieneIndicesPanel: React.FC<HygieneIndicesPanelProps> = ({
 															: val <= 2
 																? "bg-amber-500 text-slate-950 font-black ring-1 ring-amber-300"
 																: "bg-rose-600 text-white font-black ring-1 ring-rose-300"
-														: "bg-[var(--paper,#0f172a)] text-[var(--muted,#94a3b8)] hover:text-white border border-[var(--line,#334155)]"
+														: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"
 												}`}
 												title={hint}
 											>

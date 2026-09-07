@@ -17,6 +17,7 @@
  * двоим. Поэтому здесь только телефон, объяснение и отметка «позвонил».
  */
 
+import { Check } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -286,7 +287,7 @@ export const FreedSlotsPanel: React.FC = () => {
 														</span>
 														{(slot?.candidatesTotal ?? 0) > 0 ? (
 															<button
-																className="link-button"
+																className="link-button min-h-[44px] inline-flex items-center"
 																type="button"
 																onClick={() =>
 																	setOpenSlot(
@@ -320,11 +321,15 @@ export const FreedSlotsPanel: React.FC = () => {
 														{called.has(
 															calledKey(slot.appointmentId, best?.patientId),
 														) ? (
-															<span className="ops-note">Позвонили ✓</span>
+															<span className="ops-note inline-flex items-center gap-1">
+																<span>Позвонили</span>
+																<Check className="w-3.5 h-3.5 text-emerald-500 inline shrink-0" />
+															</span>
 														) : (
 															<button
 																className="secondary-button"
 																type="button"
+																style={{ minHeight: 44 }}
 																disabled={!best?.phone}
 																onClick={() =>
 																	setCalled((previous) =>
@@ -346,7 +351,7 @@ export const FreedSlotsPanel: React.FC = () => {
 															правилами сортировки — его и показываем при раскрытии.
 														*/}
 														<button
-															className="link-button"
+															className="link-button min-h-[44px] inline-flex items-center"
 															type="button"
 															onClick={() =>
 																setOpenSlot(isOpen ? null : slot.appointmentId)

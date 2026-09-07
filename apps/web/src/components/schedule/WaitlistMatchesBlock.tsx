@@ -12,9 +12,9 @@
  * делает человек через форму приёма / лист ожидания.
  */
 
+import { Check, Zap } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { Zap } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { actionFailureToast } from "../../lib/panelStateText";
@@ -115,10 +115,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 
 			if (!patchRes.ok) {
 				const err = await patchRes.json().catch(() => null);
-				showToast(
-					err?.message || "Не удалось занять окно расписания",
-					"error",
-				);
+				showToast(err?.message || "Не удалось занять окно расписания", "error");
 				return;
 			}
 
@@ -435,17 +432,29 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 								<span className="ops-note" style={{ fontSize: 12 }}>
 									{match.reason}
 								</span>
-								<div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap", alignItems: "center" }}>
+								<div
+									style={{
+										display: "flex",
+										gap: 8,
+										marginTop: 4,
+										flexWrap: "wrap",
+										alignItems: "center",
+									}}
+								>
 									<button
 										type="button"
 										disabled={Boolean(bookingId) || match.alreadyBooked}
 										onClick={() => void handleTakeSlot(match)}
-										className="min-h-[36px] px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs disabled:opacity-50"
+										className="min-h-[44px] px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs disabled:opacity-50"
 										data-testid={`waitlist-match-take-slot-${match.entryId}`}
 										title={`Занять это окно пациентом ${match.patientName}`}
 									>
 										<Zap size={13} className="fill-current text-amber-300" />
-										<span>{bookingId === match.entryId ? "Записываем…" : "Занять это окно"}</span>
+										<span>
+											{bookingId === match.entryId
+												? "Записываем…"
+												: "Занять это окно"}
+										</span>
 									</button>
 
 									{match.phone ? (
@@ -458,7 +467,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 												textDecoration: "none",
 												display: "inline-flex",
 												alignItems: "center",
-												minHeight: 36,
+												minHeight: 44,
 											}}
 											data-testid={`waitlist-match-call-${match.entryId}`}
 										>
@@ -467,10 +476,11 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 									) : null}
 									{isCalled ? (
 										<span
-											className="ops-note"
+											className="ops-note inline-flex items-center gap-1"
 											data-testid={`waitlist-match-called-${match.entryId}`}
 										>
-											Позвонили ✓
+											<span>Позвонили</span>
+											<Check className="w-3.5 h-3.5 text-emerald-500 inline shrink-0" />
 										</span>
 									) : (
 										<button
@@ -479,7 +489,7 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 											style={{
 												padding: "4px 10px",
 												fontSize: 12,
-												minHeight: 36,
+												minHeight: 44,
 											}}
 											data-testid={`waitlist-match-mark-called-${match.entryId}`}
 											onClick={() =>
