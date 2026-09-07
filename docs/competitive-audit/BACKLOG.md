@@ -1981,16 +1981,38 @@
      - В `ScheduleGrid.tsx` мягкое разрешение овербукинга при Drag-and-Drop для экстренной боли CITO с диалогом подтверждения вместо жесткой блокировки;
      - Поддержка динамического переключения дискретности сетки (15 / 30 / 60 минут).
 
+### 4.64. Расписание и привязка кресел: автоподстановка дежурного врача в AppointmentModal, неблокирующие слоты «Вне смены», CITO-овербукинг и управление креслами (Мандаты 8c, 8d, 8e, 8k, 8n / Фичи 192, 193)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Фича #193: Автоподстановка дежурного врача в AppointmentModal*: в `AppointmentModal.tsx` дежурный врач кресла (`resolveChairDutyDoctor`) автоматически подставляется на mount из `chairDoctorAssignments` при отсутствии явного назначения врача; при смене кресла в `<select data-testid="select-appointment-chair">` дежурный врач автоматически обновляется с информационным тостом «Дежурный врач: ...» без модальных подтверждений (Мандат 8e); при выборе врача его закрепленное кресло подтягивается автоматически.
+  2. *Неблокирующие слоты вне смены врача*: в `ScheduleGrid.tsx` пустые слоты вне графика дежурного врача отрисовываются пунктирной рамкой с иконкой часов и подписью «Вне смены» (`isOffDuty`), но остаются полностью кликабельными (`data-testid="btn-slot-${chairId}-${hour}"`) для быстрой записи пациента без искусственных запретов (Мандаты 8e, 8n).
+  3. *CITO-овербукинг при Drag-and-Drop*: в `ScheduleGrid.tsx` перетаскивание записи на занятый слот разрешает экстренный перенос (`allowOverbooking: true`) с предупреждающим тостом вместо блокирующей ошибки (Гэп 5 / Фича #192).
+  4. *Интеллектуальное позиционирование macOS Hover HUD*: превью карточки пациента в `ScheduleGrid.tsx` динамически учитывает нижний и правый края экрана (`bottom-full`, `right-0`), предотвращая вылет плашки за границы вьюпорта и горизонтальный паразитный скролл при 10+ креслах (Apple HIG / Мандат 8d).
+  5. *Редактирование и архивация кресел*: в `QuickAddChairModal.tsx` внедрен режим редактирования параметров кресла (`isEditMode`, `initialData`, `onUpdateChair`), переключатель «Активно / В архиве» (`isActive`, `data-testid="quick-add-chair-active-toggle"`) и тач-таргеты $\ge 44\times 44\text{px}$.
+  6. *Унификация графиков смен*: часы утренней и вечерней смен синхронизированы в канонические `08:00–14:00` и `14:00–20:00` в `doctorWeeklyScheduleGenerator.ts` и `ScheduleGrid.tsx`.
+- **Файлы**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `ScheduleAppointmentModal.tsx`, `ScheduleCalendar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
+- **Тесты**: `scheduleChairDoctorBinding.test.tsx` (21 тест), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов), `AppointmentModal.test.ts` (3 теста) — суммарно 66 тестов, 100% pass.
+
+### 4.65. Склад и МДЛП: ликвидация модальных матрёшек акта списания и очистка от эмодзи по Закону 7 смертных грехов UI (Мандаты 8d, 8e, 8k, 8n / Фича 194)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Ликвидация модальных матрёшек (Грех № 6 / Закон Анти-Матрёшки)*: в `MdlpDisposalQueueModal.tsx` модальное окно утверждения акта списания `SeniorNurseDisposalActModal` вынесено из вложенного JSX-рендера в последовательное переключение состояний экрана при сохранении глубины модальных слоев строго 1 (`if (isActModalOpen) return <SeniorNurseDisposalActModal ... />`).
+  2. *Очистка от эмодзи (Грех № 7)*: из текстов кнопок, плашек и toast-уведомлений в `MdlpDisposalQueueModal.tsx` и `SeniorNurseDisposalActModal.tsx` удалены все не-векторные глифы и эмодзи (`⚡`, `✓`) с заменой на векторные иконки Lucide `Sparkles` и `CheckCircle2`.
+  3. *Автономия персонала (Мандат 8e)*: сохранена 1-клик утилизация карпул медсестрой, врачом или администратором без бюрократической комиссии из 3 человек (бумажный журнал учтён).
+- **Файлы**: `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/inventory/mdlp/SeniorNurseDisposalActModal.tsx`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/MdlpDisposalQueueModal.test.tsx` (3 теста, 100% pass).
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 126 дополнительных системных аддендум-фич клинической автономии (Wave 15..34, фичи 64..189) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 128 дополнительных системных аддендум-фич клинической автономии (Wave 15..35, фичи 64..189, 193..194) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
 - Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП);
 - Строгий аудит Мандатов 8e и 8n: абсолютный приоритет соло-врача и клиники 1–3 кресла, отсутствие тупиков и палок в колёса.
+
 
 
 

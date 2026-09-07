@@ -1454,6 +1454,26 @@
 - **Фронтенд**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `QuickBookingDrawer.tsx`, `ScheduleFilterStrip.tsx`, `DoctorShiftRosterModal.tsx`, `DoctorRosterMatrix.tsx`.
 - **Тесты**: `scheduleChairDoctorBinding.test.tsx`, `scheduleGridStomxInquisition.test.tsx`, `scheduleInlineChairManagement.test.tsx`, `soloDoctorScheduleAutonomy.test.tsx`, `scheduleRosterMatrixAutonomy.test.tsx`, `scheduleShiftRosterIntegration.test.tsx` (87 тестов, 100% pass).
 
+#### 2.10.152. Расписание и привязка кресел: автоподстановка дежурного врача в AppointmentModal, неблокирующие слоты «Вне смены», CITO-овербукинг и управление креслами (Мандаты 8c, 8d, 8e, 8k, 8n / Расписание & Кресла, Фичи #192, #193)
+- **Суть и домен**: Устранение разрывов между ростером смен, модальным окном записи и сеткой расписания:
+  1. *Автоподстановка дежурного врача в AppointmentModal*: в `AppointmentModal.tsx` дежурный врач кресла (`resolveChairDutyDoctor`) автоматически подставляется на mount из `chairDoctorAssignments` при отсутствии явного назначения врача; при смене кресла в `<select data-testid="select-appointment-chair">` дежурный врач автоматически обновляется с информационным тостом «Дежурный врач: ...» без модальных подтверждений (Мандат 8e); при выборе врача его закрепленное кресло подтягивается автоматически.
+  2. *Неблокирующие слоты вне смены врача*: в `ScheduleGrid.tsx` пустые слоты вне графика дежурного врача отрисовываются пунктирной рамкой с иконкой часов и подписью «Вне смены» (`isOffDuty`), но остаются полностью кликабельными (`data-testid="btn-slot-${chairId}-${hour}"`) для быстрой записи пациента без искусственных запретов (Мандаты 8e, 8n).
+  3. *CITO-овербукинг при Drag-and-Drop*: в `ScheduleGrid.tsx` перетаскивание записи на занятый слот разрешает экстренный перенос (`allowOverbooking: true`) с предупреждающим тостом вместо блокирующей ошибки (Гэп 5 / Фича #192).
+  4. *Интеллектуальное позиционирование macOS Hover HUD*: превью карточки пациента в `ScheduleGrid.tsx` динамически учитывает нижний и правый края экрана (`bottom-full`, `right-0`), предотвращая вылет плашки за границы вьюпорта и горизонтальный паразитный скролл при 10+ креслах (Apple HIG / Мандат 8d).
+  5. *Редактирование и архивация кресел*: в `QuickAddChairModal.tsx` добавлен режим редактирования параметров кресла (`isEditMode`, `initialData`, `onUpdateChair`), переключатель «Активно / В архиве» (`isActive`, `data-testid="quick-add-chair-active-toggle"`) и тач-таргеты $\ge 44\times 44\text{px}$.
+  6. *Унификация графиков смен*: часы утренней и вечерней смен синхронизированы в канонические `08:00–14:00` и `14:00–20:00` в `doctorWeeklyScheduleGenerator.ts` и `ScheduleGrid.tsx`.
+- **Фронтенд**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `ScheduleAppointmentModal.tsx`, `ScheduleCalendar.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`.
+- **Тесты**: `scheduleChairDoctorBinding.test.tsx` (21 тест), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов), `AppointmentModal.test.ts` (3 теста) — суммарно 66 тестов, 100% pass.
+
+#### 2.10.153. Склад и МДЛП: ликвидация модальных матрёшек акта списания и очистка от эмодзи по Закону 7 смертных грехов UI (Мандаты 8d, 8e, 8k, 8n / Склад & МДЛП, Фича #194)
+- **Суть и домен**: Приведение модуля выбытия медикаментов и списания карпул по СанПиН 3.3686-21 к высшим стандартам верстки и эргономики:
+  1. *Ликвидация модальных матрёшек (Грех № 6 / Закон Анти-Матрёшки)*: в `MdlpDisposalQueueModal.tsx` модальное окно утверждения акта списания `SeniorNurseDisposalActModal` вынесено из вложенного JSX-рендера в последовательное переключение состояний экрана при сохранении глубины модальных слоев строго 1 (`if (isActModalOpen) return <SeniorNurseDisposalActModal ... />`).
+  2. *Очистка от эмодзи (Грех № 7)*: из текстов кнопок, плашек и toast-уведомлений в `MdlpDisposalQueueModal.tsx` и `SeniorNurseDisposalActModal.tsx` удалены все не-векторные глифы и эмодзи (`⚡`, `✓`) с заменой на векторные иконки Lucide `Sparkles` и `CheckCircle2`.
+  3. *Автономия персонала (Мандат 8e)*: сохранена 1-клик утилизация карпул медсестрой, врачом или администратором без бюрократической комиссии из 3 человек (бумажный журнал учтён).
+- **Фронтенд**: `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/inventory/mdlp/SeniorNurseDisposalActModal.tsx`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/MdlpDisposalQueueModal.test.tsx` (3 теста, 100% pass).
+
+
 
 
 
