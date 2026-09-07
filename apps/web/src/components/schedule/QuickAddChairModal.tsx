@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, X, Check, Armchair } from "lucide-react";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
 export interface ChairColorPreset {
 	id: string;
@@ -102,6 +103,7 @@ export function QuickAddChairModal({
 		if (e) {
 			e.preventDefault();
 		}
+		if (isSubmitting) return;
 		const finalName = chairName.trim() || defaultChairName;
 		const finalRoom = roomNumber.trim() || defaultRoomName;
 
@@ -124,9 +126,9 @@ export function QuickAddChairModal({
 				// Fallback to direct API call if no callback provided
 				await fetch("/api/settings/chairs", {
 					method: "POST",
-					headers: {
+					headers: denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
-					},
+					}),
 					body: JSON.stringify({
 						name: finalName,
 						room: finalRoom,

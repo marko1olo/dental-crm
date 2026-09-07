@@ -234,10 +234,11 @@ export function ScheduleFilterStrip({
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
 	const handleOpenAddChair = () => {
-		if (onOpenAddChair) {
+		if (typeof onOpenAddChair === "function") {
 			onOpenAddChair();
+		} else {
+			setIsAddChairModalOpen(true);
 		}
-		setIsAddChairModalOpen(true);
 	};
 
 	useEffect(() => {

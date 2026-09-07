@@ -393,12 +393,18 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		(targetChairId: string, hourStr: string): string | null => {
 			const assignment = effectiveChairAssignments[targetChairId];
 			if (!assignment) return null;
+			const hourNum = parseInt(hourStr.slice(0, 2), 10) || 8;
 			if (assignment.subShifts && assignment.subShifts.length > 0) {
-				const hourNum = parseInt(hourStr.slice(0, 2), 10) || 8;
 				const matching = assignment.subShifts.find(
 					(s) => hourNum >= s.startHour && hourNum < s.endHour,
 				);
 				if (matching) return matching.doctorId;
+				return null;
+			}
+			if (assignment.startHour !== undefined && assignment.endHour !== undefined) {
+				if (hourNum >= assignment.startHour && hourNum < assignment.endHour) {
+					return assignment.doctorId || null;
+				}
 				return null;
 			}
 			return assignment.doctorId || null;
@@ -492,6 +498,108 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					endHour: 20,
 					subShifts,
 				};
+			} else if (shiftPreset === "morning") {
+				const existing = effectiveChairAssignments[chairId];
+				const existingEvening =
+					existing?.shiftPreset === "evening"
+						? {
+								doctorId: existing.doctorId,
+								doctorName: existing.doctorName,
+								doctorSpecialty: existing.doctorSpecialty,
+								startHour: existing.startHour ?? 14,
+								endHour: existing.endHour ?? 20,
+								shiftHours: existing.shiftHours || "14:00–20:00",
+							}
+						: existing?.subShifts?.find((s) => s.startHour >= 14);
+
+				const morningSubShift: ChairDoctorSubShift = {
+					doctorId: docId,
+					doctorName,
+					doctorSpecialty: specialty,
+					startHour: 8,
+					endHour: 14,
+					shiftHours: "08:00–14:00",
+				};
+
+				if (existingEvening && existingEvening.doctorId) {
+					assignment = {
+						chairId,
+						doctorId: docId,
+						doctorName: `${formatDoctorShortName(doctorName)} / ${formatDoctorShortName(existingEvening.doctorName)}`,
+						doctorSpecialty: specialty,
+						shiftPreset: "custom",
+						shiftLabel: `Утро: ${formatDoctorShortName(doctorName)} · Вечер: ${formatDoctorShortName(existingEvening.doctorName)}`,
+						shiftHours: "08:00–14:00 & 14:00–20:00",
+						startHour: 8,
+						endHour: existingEvening.endHour || 20,
+						subShifts: [morningSubShift, existingEvening],
+					};
+				} else {
+					const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === "morning")!;
+					assignment = {
+						chairId,
+						doctorId: docId,
+						doctorName,
+						doctorSpecialty: specialty,
+						shiftPreset: "morning",
+						shiftLabel: preset.label,
+						shiftHours: preset.hours,
+						startHour: preset.startHour,
+						endHour: preset.endHour,
+						subShifts: [morningSubShift],
+					};
+				}
+			} else if (shiftPreset === "evening") {
+				const existing = effectiveChairAssignments[chairId];
+				const existingMorning =
+					existing?.shiftPreset === "morning"
+						? {
+								doctorId: existing.doctorId,
+								doctorName: existing.doctorName,
+								doctorSpecialty: existing.doctorSpecialty,
+								startHour: existing.startHour ?? 8,
+								endHour: existing.endHour ?? 14,
+								shiftHours: existing.shiftHours || "08:00–14:00",
+							}
+						: existing?.subShifts?.find((s) => s.startHour < 14);
+
+				const eveningSubShift: ChairDoctorSubShift = {
+					doctorId: docId,
+					doctorName,
+					doctorSpecialty: specialty,
+					startHour: 14,
+					endHour: 20,
+					shiftHours: "14:00–20:00",
+				};
+
+				if (existingMorning && existingMorning.doctorId) {
+					assignment = {
+						chairId,
+						doctorId: existingMorning.doctorId,
+						doctorName: `${formatDoctorShortName(existingMorning.doctorName)} / ${formatDoctorShortName(doctorName)}`,
+						doctorSpecialty: existingMorning.doctorSpecialty || specialty,
+						shiftPreset: "custom",
+						shiftLabel: `Утро: ${formatDoctorShortName(existingMorning.doctorName)} · Вечер: ${formatDoctorShortName(doctorName)}`,
+						shiftHours: "08:00–14:00 & 14:00–20:00",
+						startHour: existingMorning.startHour || 8,
+						endHour: 20,
+						subShifts: [existingMorning, eveningSubShift],
+					};
+				} else {
+					const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === "evening")!;
+					assignment = {
+						chairId,
+						doctorId: docId,
+						doctorName,
+						doctorSpecialty: specialty,
+						shiftPreset: "evening",
+						shiftLabel: preset.label,
+						shiftHours: preset.hours,
+						startHour: preset.startHour,
+						endHour: preset.endHour,
+						subShifts: [eveningSubShift],
+					};
+				}
 			} else {
 				const preset = CHAIR_SHIFT_PRESETS.find((p) => p.id === shiftPreset) || CHAIR_SHIFT_PRESETS[2]!;
 				assignment = {
@@ -504,6 +612,16 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					shiftHours: preset.hours,
 					startHour: preset.startHour,
 					endHour: preset.endHour,
+					subShifts: [
+						{
+							doctorId: docId,
+							doctorName,
+							doctorSpecialty: specialty,
+							startHour: preset.startHour,
+							endHour: preset.endHour,
+							shiftHours: preset.hours,
+						},
+					],
 				};
 			}
 
@@ -1562,7 +1680,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													const sourceAppt = (appointments ?? []).find((x) => x.id === data.appointmentId);
 													if (!sourceAppt) return;
 													const targetChairId = chair.id !== "default-chair" ? chair.id : null;
-													const assignedDocId = effectiveChairAssignments[chair.id]?.doctorId || null;
+													const assignedDocId = getDoctorForChairAndHour(chair.id, hour);
 													const targetDoctorId = selectedDoctorId || assignedDocId || sourceAppt.doctorUserId;
 													const slotDuration = data.durationMinutes || 30;
 													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;

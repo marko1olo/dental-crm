@@ -337,6 +337,53 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		return [];
 	});
 
+	// Автоматическая гидратация смен с бэкенда при входе / смене сессии (Мандаты 8e, 8n)
+	useEffect(() => {
+		let isMounted = true;
+		async function hydratePersistedShifts() {
+			try {
+				if (typeof fetch === "undefined") return;
+				const headers: Record<string, string> = {
+					"Content-Type": "application/json",
+					...(auth?.denteClinicalMutationHeaders
+						? auth.denteClinicalMutationHeaders()
+						: {}),
+				};
+				const res = await fetch("/api/diary/shifts", { headers }).catch(
+					() => null,
+				);
+				if (res && res.ok) {
+					const data = await res.json().catch(() => null);
+					if (
+						isMounted &&
+						data &&
+						Array.isArray(data.shifts) &&
+						data.shifts.length > 0
+					) {
+						setSavedDoctorShifts((prev) => {
+							if (prev.length === 0) {
+								try {
+									if (typeof localStorage !== "undefined") {
+										localStorage.setItem(
+											"dente_doctor_shifts",
+											JSON.stringify(data.shifts),
+										);
+									}
+								} catch {}
+								return data.shifts;
+							}
+							return prev;
+						});
+					}
+				}
+			} catch {}
+		}
+		hydratePersistedShifts();
+		return () => {
+			isMounted = false;
+		};
+	}, [auth]);
+
 	const handleSaveDoctorShifts = useCallback(async (shifts: DoctorShift[]) => {
 		setSavedDoctorShifts(shifts);
 		try {
@@ -772,16 +819,70 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	const handleAssignChairDoctor = useCallback(
 		(chairId: string, assignment: ChairDoctorShiftAssignment | null) => {
+			const persistAndSyncShifts = (nextShifts: DoctorShift[]) => {
+				try {
+					if (typeof localStorage !== "undefined") {
+						localStorage.setItem(
+							"dente_doctor_shifts",
+							JSON.stringify(nextShifts),
+						);
+						const dayShifts = nextShifts.filter(
+							(s) =>
+								s.dateIso === currentDateKey &&
+								s.status !== "cancelled" &&
+								s.chairId &&
+								s.doctorId,
+						);
+						const dateMap: Record<string, ChairDoctorShiftAssignment> = {};
+						for (const s of dayShifts) {
+							const preset =
+								s.archetypeId === "morning_shift"
+									? "morning"
+									: s.archetypeId === "evening_shift"
+										? "evening"
+										: "custom";
+							const hours = `${s.startTime}–${s.endTime}`;
+							dateMap[s.chairId] = {
+								chairId: s.chairId,
+								doctorId: s.doctorId,
+								doctorName: s.doctorName,
+								doctorSpecialty: s.doctorRole,
+								shiftPreset: preset,
+								shiftLabel: s.customNotes || hours,
+								shiftHours: hours,
+								startHour: parseInt(s.startTime.slice(0, 2), 10) || 8,
+								endHour: parseInt(s.endTime.slice(0, 2), 10) || 20,
+							};
+						}
+						localStorage.setItem(
+							`dente_chair_doctor_assignments_${currentDateKey}`,
+							JSON.stringify(dateMap),
+						);
+					}
+				} catch {}
+				try {
+					if (typeof fetch !== "undefined") {
+						const headers: Record<string, string> = {
+							"Content-Type": "application/json",
+							...(auth?.denteClinicalMutationHeaders
+								? auth.denteClinicalMutationHeaders()
+								: {}),
+						};
+						fetch("/api/diary/shifts", {
+							method: "POST",
+							headers,
+							body: JSON.stringify({ shifts: nextShifts }),
+						}).catch(() => {});
+					}
+				} catch {}
+			};
+
 			if (!assignment || !assignment.doctorId) {
 				setSavedDoctorShifts((prev) => {
 					const next = prev.filter(
 						(s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
 					);
-					try {
-						if (typeof localStorage !== "undefined") {
-							localStorage.setItem("dente_doctor_shifts", JSON.stringify(next));
-						}
-					} catch {}
+					persistAndSyncShifts(next);
 					return next;
 				});
 			} else {
@@ -818,7 +919,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				};
 				setSavedDoctorShifts((prev) => {
 					const filtered = prev.filter((s) => {
-						if (s.dateIso !== currentDateKey || s.chairId !== chairId) return true;
+						if (s.dateIso !== currentDateKey || s.chairId !== chairId)
+							return true;
 						if (assignment.shiftPreset === "full") return false;
 						if (
 							assignment.shiftPreset === "morning" &&
@@ -837,16 +939,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						return true;
 					});
 					const next = [...filtered, newShift];
-					try {
-						if (typeof localStorage !== "undefined") {
-							localStorage.setItem("dente_doctor_shifts", JSON.stringify(next));
-						}
-					} catch {}
+					persistAndSyncShifts(next);
 					return next;
 				});
 			}
 		},
-		[currentDateKey],
+		[currentDateKey, auth],
 	);
 
 	/**

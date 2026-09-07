@@ -1096,7 +1096,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 		// Verify onAssignChairDoctor was called with custom 2-shift assignment containing subShifts
 		expect(onAssignChairDoctor).toHaveBeenCalledTimes(1);
-		const callArg = onAssignChairDoctor.calls[0][1];
+		const callArg = (onAssignChairDoctor.calls[0] as any[])[1] as any;
 		expect(callArg.chairId).toBe("chair-1");
 		expect(callArg.subShifts.length).toBe(2);
 		expect(callArg.subShifts[0].doctorId).toBe("doc-1");

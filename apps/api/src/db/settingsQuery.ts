@@ -892,6 +892,7 @@ export async function createChairInDb(
 		organizationId,
 		clinicId: clinic.id,
 		name: input.name,
+		specializations: input.specialization ?? null,
 		isActive: true,
 		workingHours: input.workingHours,
 	});

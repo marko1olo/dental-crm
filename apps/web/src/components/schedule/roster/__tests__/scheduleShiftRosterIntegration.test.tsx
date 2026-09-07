@@ -812,4 +812,206 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 			assert.ok(html.includes("Кресло Planmeca Compact"));
 		});
 	});
+
+	describe("Adversarial Red-Team Edge Cases: 0 Doctors, 1 Doctor, Asymmetry, Colliding Preferences (Mandate 8m, 8n)", () => {
+		const startDate = "2026-08-24";
+
+		it("edge case 1: handles 0 doctors in staffList by falling back to real default doctors without scheduling assistants as doctors", () => {
+			const emptyStaffShifts = generateWeeklyScheduleForStaffAndCabinets(
+				startDate,
+				[],
+				mockRealCabinets,
+				"five_day",
+			);
+			assert.ok(emptyStaffShifts.length > 0, "Must generate fallback shifts for empty staff");
+			assert.ok(emptyStaffShifts.every((s) => s.doctorRole !== "assistant"));
+
+			const assistantOnlyStaff: StaffMember[] = [
+				{
+					id: "asst-only",
+					fullName: "Медсестра Без Врача",
+					shortName: "Медсестра Б.В.",
+					role: "assistant",
+					tabNumber: "00999",
+					isDoctor: false,
+					isAssistant: true,
+					weeklyHourLimit: 39,
+					avatarColor: "#64748b",
+				},
+			];
+
+			const asstShifts = generateWeeklyScheduleForStaffAndCabinets(
+				startDate,
+				assistantOnlyStaff,
+				mockRealCabinets,
+				"five_day",
+			);
+			assert.ok(asstShifts.length > 0, "Must fallback to real doctors when only assistants present");
+			assert.ok(asstShifts.every((s) => s.doctorRole !== "assistant"), "Assistant must never be assigned as doctor to a chair");
+		});
+
+		it("edge case 2: handles 1 solo doctor on 1 chair and on 3 chairs cleanly with zero double-bookings in all presets", () => {
+			const soloDoctor: StaffMember[] = [mockRealStaff[0]!];
+			const singleCabinet: CabinetDefinition[] = [
+				{
+					id: "cab-solo",
+					number: 1,
+					name: "Кабинет 1",
+					specialty: "Терапия",
+					chairs: [{ id: "chair-1", name: "Кресло 1", equipment: "Установка" }],
+				},
+			];
+
+			const presets = ["five_day", "two_two", "morning", "evening", "full_day"] as const;
+
+			for (const preset of presets) {
+				// 1 doctor, 1 chair
+				const shifts1 = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					soloDoctor,
+					singleCabinet,
+					preset,
+				);
+				assert.ok(shifts1.length > 0, `Preset ${preset} must generate shifts for solo doctor on 1 chair`);
+				const conflicts1 = detectRosterConflicts(shifts1, soloDoctor);
+				const doubleBookings1 = conflicts1.filter((c) => c.type === "doctor_double_booking" || c.type === "chair_double_booking");
+				assert.equal(doubleBookings1.length, 0, `Solo doctor 1 chair preset ${preset} must have 0 collisions`);
+
+				// 1 doctor, 3 chairs
+				const shifts3 = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					soloDoctor,
+					mockRealCabinets,
+					preset,
+				);
+				assert.ok(shifts3.length > 0, `Preset ${preset} must generate shifts for solo doctor on 3 chairs`);
+				const conflicts3 = detectRosterConflicts(shifts3, soloDoctor);
+				const doubleBookings3 = conflicts3.filter((c) => c.type === "doctor_double_booking" || c.type === "chair_double_booking");
+				assert.equal(doubleBookings3.length, 0, `Solo doctor 3 chairs preset ${preset} must have 0 collisions`);
+			}
+		});
+
+		it("edge case 3: handles more doctors than chairs (e.g. 5 doctors on 2 chairs) with ZERO chair double-bookings across all presets", () => {
+			const fiveDoctors: StaffMember[] = [
+				mockRealStaff[0]!,
+				mockRealStaff[1]!,
+				{ ...mockRealStaff[0]!, id: "doc-3", fullName: "Врач Три", shortName: "Врач 3", tabNumber: "00103" },
+				{ ...mockRealStaff[1]!, id: "doc-4", fullName: "Врач Четыре", shortName: "Врач 4", tabNumber: "00104" },
+				{ ...mockRealStaff[0]!, id: "doc-5", fullName: "Врач Пять", shortName: "Врач 5", tabNumber: "00105" },
+			];
+			const twoChairsCabinet: CabinetDefinition[] = [
+				{
+					id: "cab-2ch",
+					number: 1,
+					name: "Кабинет 1",
+					specialty: "Терапия",
+					chairs: [
+						{ id: "chair-1", name: "Кресло 1", equipment: "Установка 1" },
+						{ id: "chair-2", name: "Кресло 2", equipment: "Установка 2" },
+					],
+				},
+			];
+
+			const presets = ["five_day", "two_two", "morning", "evening", "full_day"] as const;
+
+			for (const preset of presets) {
+				const shifts = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					fiveDoctors,
+					twoChairsCabinet,
+					preset,
+				);
+				assert.ok(shifts.length > 0);
+				const conflicts = detectRosterConflicts(shifts, fiveDoctors);
+				const chairCollisions = conflicts.filter((c) => c.type === "chair_double_booking");
+				const docCollisions = conflicts.filter((c) => c.type === "doctor_double_booking");
+				assert.equal(
+					chairCollisions.length,
+					0,
+					`5 doctors on 2 chairs (${preset}) must have 0 chair double bookings. Found: ${JSON.stringify(chairCollisions)}`,
+				);
+				assert.equal(
+					docCollisions.length,
+					0,
+					`5 doctors on 2 chairs (${preset}) must have 0 doctor double bookings. Found: ${JSON.stringify(docCollisions)}`,
+				);
+			}
+		});
+
+		it("edge case 4: handles more chairs than doctors (e.g. 2 doctors on 5 chairs) without assigning a doctor to multiple chairs simultaneously", () => {
+			const twoDoctors: StaffMember[] = [mockRealStaff[0]!, mockRealStaff[1]!];
+			const fiveChairsCabinet: CabinetDefinition[] = [
+				{
+					id: "cab-big",
+					number: 1,
+					name: "Большой кабинет",
+					specialty: "Терапия",
+					chairs: [
+						{ id: "ch-1", name: "Кресло 1", equipment: "" },
+						{ id: "ch-2", name: "Кресло 2", equipment: "" },
+						{ id: "ch-3", name: "Кресло 3", equipment: "" },
+						{ id: "ch-4", name: "Кресло 4", equipment: "" },
+						{ id: "ch-5", name: "Кресло 5", equipment: "" },
+					],
+				},
+			];
+
+			const presets = ["five_day", "two_two", "morning", "evening", "full_day"] as const;
+
+			for (const preset of presets) {
+				const shifts = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					twoDoctors,
+					fiveChairsCabinet,
+					preset,
+				);
+				assert.ok(shifts.length > 0);
+				const conflicts = detectRosterConflicts(shifts, twoDoctors);
+				const docCollisions = conflicts.filter((c) => c.type === "doctor_double_booking");
+				assert.equal(
+					docCollisions.length,
+					0,
+					`2 doctors on 5 chairs (${preset}) must not clone doctors across chairs`,
+				);
+			}
+		});
+
+		it("edge case 5: handles conflicting preferredChairId (all doctors want chair-1) without any chair collisions", () => {
+			const doctorsWithClashingPreferences: StaffMember[] = [
+				{ ...mockRealStaff[0]!, preferredChairId: "chair-planmeca-1" },
+				{ ...mockRealStaff[1]!, preferredChairId: "chair-planmeca-1" },
+				{
+					id: "doc-clash-3",
+					fullName: "Доктор Третий К.",
+					shortName: "Д-р Третий",
+					role: "orthopedist",
+					tabNumber: "00109",
+					isDoctor: true,
+					isAssistant: false,
+					preferredChairId: "chair-planmeca-1",
+					weeklyHourLimit: 33,
+					avatarColor: "#0d9488",
+				},
+			];
+
+			const presets = ["five_day", "two_two", "morning", "evening", "full_day"] as const;
+
+			for (const preset of presets) {
+				const shifts = generateWeeklyScheduleForStaffAndCabinets(
+					startDate,
+					doctorsWithClashingPreferences,
+					mockRealCabinets,
+					preset,
+				);
+				assert.ok(shifts.length > 0);
+				const conflicts = detectRosterConflicts(shifts, doctorsWithClashingPreferences);
+				const chairCollisions = conflicts.filter((c) => c.type === "chair_double_booking");
+				assert.equal(
+					chairCollisions.length,
+					0,
+					`Doctors with clashing preferred chair (${preset}) must have 0 chair collisions. Found: ${JSON.stringify(chairCollisions)}`,
+				);
+			}
+		});
+	});
 });
