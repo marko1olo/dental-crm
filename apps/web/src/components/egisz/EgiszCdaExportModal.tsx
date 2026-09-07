@@ -1477,7 +1477,7 @@ export const EgiszCdaExportModal: React.FC<EgiszCdaExportModalProps> = ({
 								<button
 									type="button"
 									onClick={handleSignCda}
-									disabled={isSigning || !selectedCert}
+									disabled={isSigning}
 									data-testid="btn-sign-cda-ukep"
 									className="w-full min-h-[48px] py-3 px-4 bg-teal-600 hover:bg-teal-500 disabled:opacity-60 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-teal-500/20 flex items-center justify-center gap-2 cursor-pointer"
 								>

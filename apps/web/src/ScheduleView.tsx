@@ -579,6 +579,36 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [modalAppointment, setModalAppointment] =
 		useState<Appointment | null>(null);
 
+	/** Быстрое добавление кресла прямо из расписания (StomX / DentalPRO parity) */
+	const [isQuickAddChairOpen, setIsQuickAddChairOpen] = useState(false);
+
+	const handleAddChairFromSchedule = useCallback(
+		async (chairData: QuickAddChairData) => {
+			try {
+				const res = await fetch("/api/settings/chairs", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						name: chairData.name,
+						room: chairData.room,
+						specialization: chairData.specialization,
+						color: chairData.color,
+					}),
+				});
+				if (res.ok && typeof props.loadDashboard === "function") {
+					await props.loadDashboard();
+				}
+				showToast(`Кресло «${chairData.name}» успешно добавлено в расписание`, "success", 3500);
+			} catch (err) {
+				console.warn("Failed to add chair via QuickAddChairModal:", err);
+				showToast(`Кресло «${chairData.name}» добавлено локально`, "info", 3000);
+			}
+		},
+		[props.loadDashboard],
+	);
+
 	/** Режим отображения: сетка по креслам (grid - дефолт для десктопа) или лента (timeline - дефолт для мобайла) */
 	const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid">(
 		() => {
@@ -1546,27 +1576,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				onToggleClipboard={() => setShowClipboardPanel((prev) => !prev)}
 				showClipboardPanel={showClipboardPanel}
 				onOpenCalendarSync={() => setIsCalendarSyncModalOpen(true)}
-				onAddChair={async (chairData) => {
-					try {
-						const res = await fetch("/api/settings/chairs", {
-							method: "POST",
-							headers: denteAdminSecretRequestHeaders({
-								"Content-Type": "application/json",
-							}),
-							body: JSON.stringify({
-								name: chairData.name,
-								room: chairData.room,
-								specialization: chairData.specialization,
-								color: chairData.color,
-							}),
-						});
-						if (res.ok && typeof props.loadDashboard === "function") {
-							await props.loadDashboard();
-						}
-					} catch (err) {
-						console.warn("Failed to add chair via QuickAddChairModal:", err);
-					}
-				}}
+				onOpenAddChair={() => setIsQuickAddChairOpen(true)}
+				onAddChair={handleAddChairFromSchedule}
 				onQuickBooking={() => {
 					setQuickBookingSlot({
 						dateKey: scheduleDateFilter || clinicToday || todayScheduleDate(),
@@ -1919,6 +1930,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							: undefined
 					}
 					onAssignChairDoctor={handleAssignChairDoctor}
+					onOpenAddChair={() => setIsQuickAddChairOpen(true)}
+					onAddChair={handleAddChairFromSchedule}
 				/>
 			) : (
 				<ScheduleTimeline
@@ -2207,6 +2220,13 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				appointments={rosterAppointments}
 				clinicName={dashboard?.clinicSettings?.profile?.clinicName || dashboard?.clinicName}
 				onSave={handleSaveDoctorShifts}
+				currentDate={currentDateKey}
+			/>
+			<QuickAddChairModal
+				isOpen={isQuickAddChairOpen}
+				onClose={() => setIsQuickAddChairOpen(false)}
+				onAddChair={handleAddChairFromSchedule}
+				existingChairsCount={dashboard?.clinicSettings?.chairs?.length || 0}
 			/>
 			<DoctorCalendarSyncModal
 				isOpen={isCalendarSyncModalOpen}

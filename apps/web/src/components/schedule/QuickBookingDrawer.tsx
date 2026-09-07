@@ -14,6 +14,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	User,
+	UserCheck,
 	UserPlus,
 	X,
 	Zap,
@@ -1822,6 +1823,31 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									</option>
 								))}
 							</select>
+							{initialSlot?.doctorUserId && (
+								<div className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--teal-dark,var(--teal))]">
+									<UserCheck size={12} className="shrink-0" />
+									<span>
+										Дежурный врач кресла:{" "}
+										<strong>
+											{doctors.find((d) => d.id === initialSlot.doctorUserId)?.fullName ||
+												"Назначен"}
+										</strong>
+									</span>
+								</div>
+							)}
+							{initialSlot?.doctorUserId &&
+								doctorUserId &&
+								doctorUserId !== initialSlot.doctorUserId && (
+									<div
+										className="mt-1 flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20"
+										data-testid="doctor-override-note"
+									>
+										<AlertTriangle size={12} className="shrink-0" />
+										<span>
+											Выбран другой врач вместо дежурного. Запись создаётся без ограничений (Мандат 8e).
+										</span>
+									</div>
+								)}
 						</div>
 
 						<div>
