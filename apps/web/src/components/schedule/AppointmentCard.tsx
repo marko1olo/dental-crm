@@ -1723,7 +1723,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 									)}
 								</div>
 
-								{dashboard?.clinicSettings?.profile?.mode !== "solo_doctor" &&
+								{dashboard?.clinicSettings?.profile?.mode !== "one_chair" &&
 									(dashboard.clinicSettings?.staff ?? []).some(
 										(m) => m.active && m.role === "assistant",
 									) && (

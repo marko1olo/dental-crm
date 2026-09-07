@@ -263,7 +263,9 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		() => (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active),
 		[dashboard?.clinicSettings?.chairs],
 	);
-	const isSoloDoctor = dashboard?.clinicSettings?.profile?.mode === "solo_doctor";
+	const isSoloDoctor =
+		dashboard?.clinicSettings?.profile?.mode === "one_chair" ||
+		(doctors.length <= 1 && chairs.length <= 1);
 	const patients = useMemo(() => dashboard?.patients ?? [], [dashboard?.patients]);
 
 	// Patient Discipline & Reliability assessment memo

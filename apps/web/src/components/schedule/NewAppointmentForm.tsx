@@ -1023,7 +1023,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							)}
 						</div>
 
-						{clinicMode !== "solo_doctor" &&
+						{dashboard.clinicSettings?.profile?.mode !== "one_chair" &&
 							(dashboard.clinicSettings?.staff ?? []).some(
 								(m) => m.active && m.role === "assistant",
 							) && (

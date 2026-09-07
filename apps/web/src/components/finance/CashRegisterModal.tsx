@@ -64,6 +64,7 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter";
 import type { FiscalReceiptPrintPayload } from "../../services/hardware/hardwareTypes";
 import { numberToWordsRu } from "./invoiceEngine";
+import { showToast } from "../GlobalToast";
 
 export type CashRegisterTenderMethod =
 	| "card"
@@ -356,6 +357,28 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		if (targetMethod === "sbp") setSplitSbpRub(remRub);
 		if (targetMethod === "deposit") setSplitDepositRub(remRub);
 		if (targetMethod === "family") setSplitFamilyRub(remRub);
+	};
+
+	// 1-Click Fast Presets (Мандаты 8e, 8k, 8n)
+	const applyExactCashPreset = () => {
+		setSelectedTender("cash");
+		setReceivedCashRub(totalInvoiceRub);
+		setSplitCashRub(totalInvoiceRub);
+		setSplitCardRub(0);
+		setSplitDepositRub(0);
+		setSplitSbpRub(0);
+		setSplitFamilyRub(0);
+		showToast(`Применен пресет: Без сдачи (${totalInvoiceRub.toLocaleString("ru-RU")} ₽ нал)`, "info", 2000);
+	};
+
+	const applyFullCardPreset = () => {
+		setSelectedTender("card");
+		setSplitCardRub(totalInvoiceRub);
+		setSplitCashRub(0);
+		setSplitDepositRub(0);
+		setSplitSbpRub(0);
+		setSplitFamilyRub(0);
+		showToast(`Применен пресет: 100% карта (${totalInvoiceRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
 	};
 
 	// Fast 1-Click fiscalize action with rage click debounce + atomic ref lock
@@ -1381,6 +1404,66 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</span>
 								</div>
 
+								{/* 1-Click Fast Presets (Мандаты 8e, 8k, 8n) */}
+								<div className="flex items-center gap-1.5 flex-wrap p-2 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-xs" data-testid="cash-presets-strip">
+									<span className="text-[11px] font-extrabold text-[var(--muted)] uppercase tracking-wider flex items-center gap-1">
+										<Zap className="w-3.5 h-3.5 text-amber-500" />
+										1-Клик Пресеты:
+									</span>
+									<button
+										type="button"
+										onClick={applyExactCashPreset}
+										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										data-testid="preset-exact-cash"
+										title="Внести наличные ровно в сумме счета (без сдачи)"
+									>
+										<Banknote className="w-3.5 h-3.5 text-emerald-600" />
+										<span>⚡ Без сдачи ({totalInvoiceRub.toLocaleString("ru-RU")} ₽ нал)</span>
+									</button>
+									<button
+										type="button"
+										onClick={applyFullCardPreset}
+										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										data-testid="preset-full-card"
+										title="Оплатить 100% картой через терминал"
+									>
+										<CreditCard className="w-3.5 h-3.5 text-blue-600" />
+										<span>⚡ 100% карта ({totalInvoiceRub.toLocaleString("ru-RU")} ₽)</span>
+									</button>
+									{patientDepositRub > 0 && patientDepositRub < totalInvoiceRub && (
+										<button
+											type="button"
+											onClick={() => {
+												applySplitDepositAndRemainder("card");
+												setSelectedTender("split");
+												setActiveTab("split");
+											}}
+											className="h-7 px-2.5 rounded-lg text-xs font-bold bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+											data-testid="preset-deposit-card"
+											title="Списать весь аванс + остаток картой"
+										>
+											<Wallet className="w-3.5 h-3.5 text-indigo-600" />
+											<span>⚡ Аванс + Карта</span>
+										</button>
+									)}
+									{patientFamilyBalanceRub > 0 && patientFamilyBalanceRub < totalInvoiceRub && (
+										<button
+											type="button"
+											onClick={() => {
+												applySplitFamilyAndRemainder("card");
+												setSelectedTender("split");
+												setActiveTab("split");
+											}}
+											className="h-7 px-2.5 rounded-lg text-xs font-bold bg-pink-600/10 hover:bg-pink-600/20 text-pink-700 dark:text-pink-300 border border-pink-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+											data-testid="preset-family-card"
+											title="Списать весь семейный счет + остаток картой"
+										>
+											<Users className="w-3.5 h-3.5 text-pink-600" />
+											<span>⚡ Сем. счет + Карта</span>
+										</button>
+									)}
+								</div>
+
 								{/* 1-Click Tender Buttons (32-36px height) */}
 								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5 sm:gap-2">
 									<button
@@ -1593,8 +1676,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 									</div>
 								)}
 
-								{/* 6 Кассовых счетов клиники (StomX Bible раздел 6) */}
-								{cashBoxesList.length > 0 && (
+								{/* 6 Кассовых счетов клиники (StomX Bible раздел 6: если счет 1, селектор скрывается по Мандату 8n) */}
+								{cashBoxesList.length > 1 && (
 									<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)] text-xs">
 										<div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
 											<Building2 className="w-4 h-4 text-teal-600 shrink-0" />

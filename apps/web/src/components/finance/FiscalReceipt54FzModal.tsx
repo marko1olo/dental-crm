@@ -450,14 +450,30 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 
 	// 1-Click Fast Combined Payment (Нал + Карта + Аванс / Депозит) с точностью до копейки
 	const applyCombinedPaymentPreset = (
-		mode: "advance_card" | "advance_cash" | "split_cash_card" | "advance_cash_card",
+		mode: "advance_card" | "advance_cash" | "split_cash_card" | "advance_cash_card" | "exact_cash" | "full_card",
 	) => {
 		const targetTotalKop = Math.max(0, rubToKopecks(totalSumRub) - rubToKopecks(insuranceAmount));
 		if (targetTotalKop === 0) return;
 
 		const depAvailKop = rubToKopecks(patientDepositRub || 0);
 
-		if (mode === "advance_card") {
+		if (mode === "exact_cash") {
+			const cashRub = kopecksToRub(targetTotalKop);
+			setCashAmount(cashRub);
+			setCardAmount(0);
+			setDepositAmount(0);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Оплата наличными без сдачи: ${formatMoneyRu(cashRub)}`, "success", 2000);
+		} else if (mode === "full_card") {
+			const cardRub = kopecksToRub(targetTotalKop);
+			setCardAmount(cardRub);
+			setCashAmount(0);
+			setDepositAmount(0);
+			setSbpAmount(0);
+			setCertificateAmount(0);
+			showToast(`Оплата картой 100%: ${formatMoneyRu(cardRub)}`, "success", 2000);
+		} else if (mode === "advance_card") {
 			const depUsedKop = Math.min(depAvailKop, targetTotalKop);
 			const remKop = Math.max(0, targetTotalKop - depUsedKop);
 			const depRub = kopecksToRub(depUsedKop);
@@ -1672,12 +1688,30 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									</span>
 								</div>
 
-								{/* 1-Click Fast Combined Payment Presets */}
-								<div className="flex items-center gap-1.5 flex-wrap p-2.5 rounded-2xl bg-teal-500/5 border border-teal-500/20">
+								{/* 1-Click Fast Combined Payment Presets (Мандаты 8e, 8k, 8n) */}
+								<div className="flex items-center gap-1.5 flex-wrap p-2.5 rounded-2xl bg-teal-500/5 border border-teal-500/20" data-testid="fiscal-presets-strip">
 									<span className="text-xs font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1 shrink-0">
 										<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
-										<span>1-клик комбо:</span>
+										<span>1-клик пресеты:</span>
 									</span>
+									<button
+										type="button"
+										onClick={() => applyCombinedPaymentPreset("exact_cash")}
+										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+										data-testid="preset-exact-cash"
+										title="Оплатить наличными ровно в сумме чека (без сдачи)"
+									>
+										⚡ Без сдачи (нал)
+									</button>
+									<button
+										type="button"
+										onClick={() => applyCombinedPaymentPreset("full_card")}
+										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+										data-testid="preset-full-card"
+										title="Оплатить 100% картой через терминал"
+									>
+										⚡ 100% карта
+									</button>
 									{patientDepositRub > 0 && (
 										<button
 											type="button"

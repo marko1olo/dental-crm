@@ -1009,5 +1009,22 @@
   - `apps/web/src/components/schedule/`, `apps/web/src/components/shift/`, `apps/web/src/components/surgery/`, `apps/web/src/components/hygiene/`.
   - Валидация: TypeScript `npm run typecheck` Exit Code 0, кодировка UTF-8 `npm run check:encoding` 0 ошибок.
 
+#### 2.10.104. Расписание и касса 54-ФЗ: суверенитет соло-врача и 1-клик быстрые пресеты оплаты (Мандаты 8e п. 8, п. 9, 8n, 8k / Расписание & Касса 54-ФЗ, Фича #153)
+- **Суть и домен**: Полная ликвидация трения и бюрократических препятствий для регистратора, кассира и соло-врача на аренде:
+  1. *Расписание*: Запись за 5 секунд. Выбор ассистента строго опционален. Для соло-врача (`one_chair` или `doctors.length <= 1 && chairs.length <= 1`) интерфейс полностью очищен от ассистентов в `AppointmentModal.tsx`, `QuickBookingDrawer.tsx`, `AppointmentCard.tsx`, `NewAppointmentForm.tsx`.
+  2. *Касса 54-ФЗ*: ИНН с физических лиц не требуется. Внедрены 1-клик пресеты ⚡ «Без сдачи» (exact cash) и ⚡ «100% карта» (full card), а также комбинированные пресеты «Аванс + Карта» и «Сем. счет + Карта» в `CashRegisterModal.tsx` и `FiscalReceipt54FzModal.tsx`.
+  3. *Соло-касса*: Селектор кассовых счетов клиники скрывается при наличии только 1 счета, исключая визуальный шум.
+  4. *Свобода скидок*: 100% скидки врача на переделки и персонал без паролей администратора, 30-дневный срок плана не блокирует наряды ЗТЛ и оплату.
+- **Файлы**:
+  - `apps/web/src/components/schedule/AppointmentModal.tsx`
+  - `apps/web/src/components/schedule/QuickBookingDrawer.tsx`
+  - `apps/web/src/components/schedule/AppointmentCard.tsx`
+  - `apps/web/src/components/schedule/NewAppointmentForm.tsx`
+  - `apps/web/src/components/finance/CashRegisterModal.tsx`
+  - `apps/web/src/components/finance/FiscalReceipt54FzModal.tsx`
+  - `apps/web/src/components/finance/__tests__/cashierAutonomy54Fz.test.ts`
+- **Тесты**: `node --import tsx --import ./testCssStub.mjs --test "src/components/finance/__tests__/cashierAutonomy54Fz.test.ts"` (18/18 passed).
+
+
 
 
