@@ -12,6 +12,7 @@ import {
 	ScheduleFilterStrip,
 	type ScheduleFilterStripProps,
 } from "../ScheduleFilterStrip";
+import { DURATION_PRESETS } from "../patientReliabilityScore";
 
 type MockFn = {
 	(...args: any[]): any;
@@ -127,6 +128,12 @@ interface MockDomNode {
 		height: number;
 	};
 	[key: string]: unknown;
+}
+
+function getRecursiveTextContent(node: MockDomNode | null): string {
+	if (!node) return "";
+	if (node.textContent) return node.textContent;
+	return (node.children || []).map(getRecursiveTextContent).join(" ");
 }
 
 function setupMockDom() {
@@ -562,5 +569,66 @@ describe("Schedule Inline Chair Management & Quick Add Modal (StomX / DentalPRO 
 		expect(submitBtn).not.toBeNull();
 		expect(submitBtn?.className).toContain("min-h-[44px]");
 		expect(submitBtn?.style?.minHeight).toBe("44px");
+	});
+
+	it("6. 1-click 'Моё кресло' chip in ScheduleFilterStrip filters to doctor's assigned chair and toggles back (Mandates 8e, 8n)", async () => {
+		const setScheduleChairFilterId = vi.fn();
+		const setScheduleDoctorFilterId = vi.fn();
+		const props = createDefaultFilterStripProps({
+			currentDoctorId: "doc-1",
+			chairDoctorAssignments: {
+				"chair-2": {
+					chairId: "chair-2",
+					doctorId: "doc-1",
+					doctorName: "Д-р Иванов И.И.",
+					shiftPreset: "full",
+					shiftLabel: "Полный день",
+					shiftHours: "08:00–20:00",
+				},
+			},
+			setScheduleChairFilterId,
+			setScheduleDoctorFilterId,
+		});
+
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		await act(async () => {
+			root.render(<ScheduleFilterStrip {...props} />);
+		});
+
+		// 1-click 'Моё кресло' button is present with >= 44px touch target
+		const myChairBtn = findNodeByTestId(container, "schedule-my-chair-btn");
+		expect(myChairBtn).not.toBeNull();
+		expect(getRecursiveTextContent(myChairBtn)).toContain("Моё кресло");
+		expect(getRecursiveTextContent(myChairBtn)).toContain("Кресло 2");
+		expect(myChairBtn?.getAttribute("aria-label")).toContain("Кресло 2");
+		expect(myChairBtn?.className).toContain("min-h-[44px]");
+
+		// Clicking it selects chair-2 and sets doctor filter
+		await clickNode(myChairBtn);
+		expect(setScheduleChairFilterId).toHaveBeenCalledWith("chair-2");
+		expect(setScheduleDoctorFilterId).toHaveBeenCalledWith("doc-1");
+
+		// When active, clicking toggles filter back to null
+		const activeProps = createDefaultFilterStripProps({
+			...props,
+			scheduleChairFilterId: "chair-2",
+			setScheduleChairFilterId,
+		});
+		await act(async () => {
+			root.render(<ScheduleFilterStrip {...activeProps} />);
+		});
+		const activeMyChairBtn = findNodeByTestId(container, "schedule-my-chair-btn");
+		expect(activeMyChairBtn?.className).toContain("active");
+		await clickNode(activeMyChairBtn);
+		expect(setScheduleChairFilterId).toHaveBeenCalledWith(null);
+	});
+
+	it("7. DURATION_PRESETS includes 45-minute therapy preset (Mandates 8e, 8k)", () => {
+		const preset45 = DURATION_PRESETS.find((p) => p.minutes === 45);
+		expect(preset45).not.toBeNull();
+		expect(preset45?.label).toBe("45 мин");
+		expect(preset45?.serviceHint).toBe("Терапия");
 	});
 });

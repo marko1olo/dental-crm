@@ -941,11 +941,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											<button
 												type="button"
 												onClick={() => handleConfirmAssignDoctor(chair.id, suggestedDoctor.id, "full")}
-												className="min-h-[28px] py-0.5 px-2 rounded-lg border border-[var(--teal)]/20 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-[10px] font-bold truncate flex items-center justify-center gap-1 cursor-pointer transition-colors"
+												className="min-h-[32px] py-1 px-2 rounded-lg border border-[var(--teal)]/20 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold truncate flex items-center justify-center gap-1 cursor-pointer transition-colors"
 												title={`Быстро назначить ${suggestedDoctor.fullName} (1 клик)`}
 												data-testid={`btn-quick-assign-${chair.id}`}
+												style={{ minHeight: "32px" }}
 											>
-												<Zap size={10} className="text-[var(--teal)] shrink-0" />
+												<Zap size={11} className="text-[var(--teal)] shrink-0" />
 												<span className="truncate">{`1 клик: ${formatDoctorShortName(suggestedDoctor.fullName)}`}</span>
 											</button>
 										)}
@@ -2421,8 +2422,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		);
 	})()}
 
-	{/* Quick Add Chair Modal for inline grid additions */}
-	{(Boolean(props.onAddChair) || isInternalAddChairModalOpen) && (
+	{/* Quick Add Chair Modal for inline grid additions (only when not delegated to external onOpenAddChair) */}
+	{!props.onOpenAddChair && isInternalAddChairModalOpen && (
 		<QuickAddChairModal
 			isOpen={isInternalAddChairModalOpen}
 			onClose={() => setIsInternalAddChairModalOpen(false)}

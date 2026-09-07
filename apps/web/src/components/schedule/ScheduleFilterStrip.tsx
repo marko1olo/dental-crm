@@ -194,7 +194,8 @@ export function ScheduleFilterStrip({
 		// 4. If doctor filter is active, find first chair matching their specialty or default
 		if (scheduleDoctorFilterId) {
 			const doc = staffMembers.find((m) => m.id === scheduleDoctorFilterId);
-			const docSpecs = doc?.specialties || (doc?.specialty ? [doc.specialty] : []);
+			const docTyped = doc as unknown as { specialties?: string[]; specialty?: string } | undefined;
+			const docSpecs = docTyped?.specialties || (docTyped?.specialty ? [docTyped.specialty] : []);
 			if (docSpecs.length) {
 				const specMatch = displayChairs.find(
 					(c) => c.specialization && docSpecs.includes(c.specialization),
@@ -824,7 +825,7 @@ export function ScheduleFilterStrip({
 			</div>
 		</section>
 
-		{(Boolean(onAddChair) || isAddChairModalOpen) && (
+		{!onOpenAddChair && isAddChairModalOpen && (
 			<QuickAddChairModal
 				isOpen={isAddChairModalOpen}
 				onClose={() => setIsAddChairModalOpen(false)}
