@@ -265,7 +265,7 @@ export function getAppointmentMessageTokens(
 	const rawCabinet = cabinetName?.trim() || "";
 	const cabinetPart = rawCabinet ? ` (${rawCabinet})` : "";
 	const prepInstruction = getPreparationInstructionForReason(treatmentReason);
-	const prepPart = prepInstruction ? `\n\n📌 Памятка к приему: ${prepInstruction}` : "";
+	const prepPart = prepInstruction ? `\n\n[Памятка] Памятка к приему: ${prepInstruction}` : "";
 	const rawPhone = clinicPhone?.trim() || "";
 	const phonePart = rawPhone ? ` или по телефону ${rawPhone}` : "";
 
@@ -409,7 +409,7 @@ export function checkQuietHoursPolicy(
 	const isQuietHours = hour >= 21 || hour < 8;
 	const allowedWindowRu = "08:00 – 21:00";
 	const warningRu = isQuietHours
-		? `🌙 Тихий час активен (${hour}:00). Согласно 152-ФЗ и 38-ФЗ отправка нерекламных сообщений разрешена с 08:00 до 21:00.`
+		? `[Информация] Тихий час активен (${hour}:00). Согласно 152-ФЗ и 38-ФЗ отправка нерекламных сообщений разрешена с 08:00 до 21:00.`
 		: undefined;
 
 	return {

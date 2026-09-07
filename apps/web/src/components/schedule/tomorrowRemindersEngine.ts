@@ -192,7 +192,7 @@ export function compileTomorrowReminders(
 			(patient as { anamnesis?: { allergies?: string | null } })?.anamnesis?.allergies ||
 			"";
 		const hasAllergyWarning = Boolean(rawAllergies && rawAllergies.trim());
-		const allergyWarningText = hasAllergyWarning ? `⚠️ Внимание: ${rawAllergies.trim()}` : null;
+		const allergyWarningText = hasAllergyWarning ? `[Внимание] ${rawAllergies.trim()}` : null;
 
 		// Action links
 		const actionLinks = buildAppointmentActionLinks(appt.id, baseUrl);
@@ -224,7 +224,7 @@ export function compileTomorrowReminders(
 		});
 
 		// Append interactive confirm & reschedule instructions
-		const interactiveLinksBlock = `\n\nПодтвердите ваш визит в 1 клик:\n👍 Подтвердить: ${confirmUrl}\n❌ Перенести: ${rescheduleUrl}`;
+		const interactiveLinksBlock = `\n\nПодтвердите ваш визит в 1 клик:\n[Подтвердить]: ${confirmUrl}\n[Перенести]: ${rescheduleUrl}`;
 		const reminderText = `${baseReminderText}${interactiveLinksBlock}`;
 
 		let whatsAppUrl: string | null = null;
@@ -302,7 +302,7 @@ export function formatAllRemindersClipboardBuffer(summary: TomorrowRemindersSumm
 		return `Нет записей на ${summary.targetDateFormatted}`;
 	}
 
-	const header = `📋 НАПОМИНАНИЯ НА ${summary.targetDateFormatted.toUpperCase()} (${summary.totalAppointmentsCount} пациентов):\n\n`;
+	const header = `НАПОМИНАНИЯ НА ${summary.targetDateFormatted.toUpperCase()} (${summary.totalAppointmentsCount} пациентов):\n\n`;
 	const body = summary.reminders
 		.map((r, i) => {
 			const phoneStr = r.patientPhone ? ` (${r.patientPhone})` : " [без телефона]";

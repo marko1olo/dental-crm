@@ -265,7 +265,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={handleCopyAll}
-							className="h-[38px] px-3 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold hover:bg-[var(--paper-soft)] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+							className="min-h-[44px] h-[44px] sm:h-[40px] px-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] font-bold hover:bg-[var(--paper-soft)] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 							title="Скопировать все тексты для ручной рассылки"
 						>
 							<Copy size={14} />
@@ -275,7 +275,7 @@ export function TomorrowRemindersModal({
 							type="button"
 							onClick={handleBatchDispatch}
 							disabled={isDispatching}
-							className="h-[38px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white font-black hover:bg-[var(--teal-dark,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+							className="min-h-[44px] h-[44px] sm:h-[40px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white font-black hover:bg-[var(--teal-dark,var(--brand-primary))] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
 							title="Запустить умную рассылку по доступным каналам"
 						>
 							<Zap size={14} className={isDispatching ? "animate-spin" : ""} />
@@ -291,7 +291,7 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("all")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap flex items-center justify-center ${
 								selectedChannelFilter === "all"
 									? "bg-[var(--teal)] text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -302,37 +302,37 @@ export function TomorrowRemindersModal({
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("telegram")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
+							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "telegram"
 									? "bg-sky-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
-							<MessageCircle size={13} />
+							<MessageCircle size={14} />
 							<span>Telegram ({summary.telegramAvailableCount})</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("whatsapp")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
+							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "whatsapp"
 									? "bg-emerald-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
-							<MessageSquare size={13} />
+							<MessageSquare size={14} />
 							<span>WhatsApp ({summary.whatsAppAvailableCount})</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setSelectedChannelFilter("sms")}
-							className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
+							className={`min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
 								selectedChannelFilter === "sms"
 									? "bg-indigo-600 text-white shadow-xs"
 									: "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 						>
-							<Phone size={13} />
+							<Phone size={14} />
 							<span>SMS ({summary.smsAvailableCount})</span>
 						</button>
 					</div>
@@ -390,7 +390,7 @@ export function TomorrowRemindersModal({
 												</span>
 											)}
 											{/* Channel Preference Badge */}
-											<span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
+											<span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]">
 												Канал: {reminder.preferredChannel.toUpperCase()}
 											</span>
 										</div>
@@ -418,7 +418,7 @@ export function TomorrowRemindersModal({
 									<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-[var(--muted)]">
 										<div className="flex items-center gap-1.5 font-mono">
 											<Phone size={13} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-											<strong className="text-slate-800 dark:text-slate-200">
+											<strong className="text-[var(--ink)]">
 												{reminder.patientPhone || "Телефон не указан"}
 											</strong>
 											{reminder.telegramUsername && (
@@ -426,10 +426,10 @@ export function TomorrowRemindersModal({
 											)}
 										</div>
 										<div className="truncate">
-											Врач: <strong className="text-slate-800 dark:text-slate-200">{reminder.doctorName || "Любой врач"}</strong>
+											Врач: <strong className="text-[var(--ink)]">{reminder.doctorName || "Любой врач"}</strong>
 										</div>
 										<div className="truncate">
-											Прием: <strong className="text-slate-800 dark:text-slate-200">{reminder.treatmentReason || "Консультация"}</strong>
+											Прием: <strong className="text-[var(--ink)]">{reminder.treatmentReason || "Консультация"}</strong>
 										</div>
 									</div>
 
@@ -442,7 +442,7 @@ export function TomorrowRemindersModal({
 									)}
 
 									{/* Reminder Text Box Preview */}
-									<div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed relative group">
+									<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] whitespace-pre-wrap leading-relaxed relative group">
 										{reminder.reminderText}
 									</div>
 
@@ -454,10 +454,10 @@ export function TomorrowRemindersModal({
 												<button
 													type="button"
 													onClick={() => handleCopyLink(reminder.confirmUrl!, "Подтверждение")}
-													className="h-[32px] px-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+													className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5"
 													title="Скопировать ссылку подтверждения визита"
 												>
-													<ThumbsUp size={12} />
+													<ThumbsUp size={13} />
 													<span>Ссылка «Подтвердить»</span>
 												</button>
 											)}
@@ -465,10 +465,10 @@ export function TomorrowRemindersModal({
 												<button
 													type="button"
 													onClick={() => handleCopyLink(reminder.rescheduleUrl!, "Перенос")}
-													className="h-[32px] px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+													className="min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-300 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5"
 													title="Скопировать ссылку переноса визита"
 												>
-													<ThumbsDown size={12} />
+													<ThumbsDown size={13} />
 													<span>Ссылка «Перенести»</span>
 												</button>
 											)}
@@ -479,7 +479,7 @@ export function TomorrowRemindersModal({
 											<button
 												type="button"
 												onClick={() => handleCopySingle(reminder)}
-												className="h-[36px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+												className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
 												title="Скопировать текст"
 											>
 												<Copy size={13} />
@@ -490,7 +490,7 @@ export function TomorrowRemindersModal({
 												<button
 													type="button"
 													onClick={() => handleSendTelegram(reminder)}
-													className="h-[36px] px-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+													className="min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 													title="Открыть диалог Telegram"
 												>
 													<MessageCircle size={14} />
@@ -503,7 +503,7 @@ export function TomorrowRemindersModal({
 												<button
 													type="button"
 													onClick={() => handleSendWhatsApp(reminder)}
-													className="h-[36px] px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+													className="min-h-[44px] sm:min-h-[36px] px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 													title="Открыть диалог WhatsApp"
 												>
 													<MessageSquare size={14} />
@@ -516,7 +516,7 @@ export function TomorrowRemindersModal({
 												<button
 													type="button"
 													onClick={() => handleSendSms(reminder)}
-													className="h-[36px] px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+													className="min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
 													title="Открыть SMS-клиент"
 												>
 													<Phone size={13} />
@@ -532,9 +532,9 @@ export function TomorrowRemindersModal({
 				</div>
 
 				{/* Modal Footer */}
-				<div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 flex items-center justify-between gap-3 shrink-0">
-					<div className="text-xs text-slate-500 flex items-center gap-3">
-						<span>Отправлено: <strong>{sentAppointmentIds.size}</strong> из {summary.validPhoneCount}</span>
+				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 shrink-0">
+					<div className="text-xs text-[var(--muted)] flex items-center gap-3">
+						<span>Отправлено: <strong className="text-[var(--ink)]">{sentAppointmentIds.size}</strong> из {summary.validPhoneCount}</span>
 						<button
 							type="button"
 							onClick={handleMarkAllSent}
@@ -546,7 +546,7 @@ export function TomorrowRemindersModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="px-5 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold transition-all cursor-pointer min-h-[44px]"
+						className="px-5 py-2 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs sm:text-sm font-bold transition-all cursor-pointer min-h-[44px]"
 					>
 						Закрыть
 					</button>

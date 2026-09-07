@@ -73,7 +73,7 @@ export function formatChairSpecialtyLabel(rawSpec?: string | null): string | nul
 /**
  * ScheduleFilterStrip component for filtering schedule view by date, doctor, or chair.
  * ZERO-CLUTTER LAW: Compressed into STRICTLY 1 COMPACT ROW (36px) with:
- * - Left: Date stepper (< dd.mm.yyyy 📅 >)
+ * - Left: Date stepper (< dd.mm.yyyy [Календарь] >)
  * - Center: 1-line horizontal scrollable doctor & chair chips
  * - Right: [⋮ Опции] dropdown menu (holding all 15 secondary modes) + STRICTLY 1 Primary "+ Запись" button.
  */

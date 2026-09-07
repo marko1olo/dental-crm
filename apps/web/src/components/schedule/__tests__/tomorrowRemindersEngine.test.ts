@@ -163,4 +163,20 @@ describe("Tomorrow Appointment Reminders Engine Suite", () => {
 		const tomorrow = getTomorrowDateIso(new Date("2026-08-25T12:00:00Z"));
 		assert.equal(tomorrow, "2026-08-26");
 	});
+
+	it("1.6 compileTomorrowReminders — Uses clean semantic text markers [Внимание], [Подтвердить], [Перенести] with zero emojis", () => {
+		const summary = compileTomorrowReminders(mockDashboard, mockTomorrowIso);
+		const reminder1 = summary.reminders[0]!;
+
+		// No cartoon emojis in reminder texts
+		assert.ok(reminder1.allergyWarningText?.startsWith("[Внимание]"), "Allergy alert starts with [Внимание]");
+		assert.ok(!reminder1.allergyWarningText?.includes("⚠️"), "No ⚠️ in allergy warning");
+		assert.ok(reminder1.reminderText.includes("[Подтвердить]:"), "Includes [Подтвердить]:");
+		assert.ok(reminder1.reminderText.includes("[Перенести]:"), "Includes [Перенести]:");
+		assert.ok(!reminder1.reminderText.includes("👍"), "No 👍 in reminder text");
+		assert.ok(!reminder1.reminderText.includes("❌"), "No ❌ in reminder text");
+
+		const buffer = formatAllRemindersClipboardBuffer(summary);
+		assert.ok(!buffer.includes("📋"), "No 📋 in clipboard buffer header");
+	});
 });

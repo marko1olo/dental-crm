@@ -266,7 +266,7 @@ describe("QuickBookingDrawer", () => {
 		);
 
 		assert.ok(html.includes("Неявин Артем Игоревич"), "должно отображаться имя пациента");
-		assert.ok(html.includes("Риск срыва приема"), "должен отображаться бейдж риска срыва");
+		assert.ok(html.includes("Риск неявки"), "должен отображаться бейдж риска неявки");
 		assert.ok(html.includes("Требуется подтверждение за 2 часа"), "должно отображаться предупреждение о подтверждении за 2 часа");
 		assert.ok(html.includes("patient-reliability-risk-alert"), "должен быть testid алерта риска");
 	});

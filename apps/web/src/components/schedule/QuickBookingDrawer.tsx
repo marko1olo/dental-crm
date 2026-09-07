@@ -4,12 +4,14 @@ import {
 	Calendar,
 	Check,
 	Clock,
+	CreditCard,
 	FileText,
 	Flame,
 	Plus,
 	RotateCw,
 	Search,
 	ShieldAlert,
+	ShieldCheck,
 	Sparkles,
 	User,
 	UserPlus,
@@ -1272,7 +1274,18 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												data-testid={`patient-reliability-badge-${patientReliability.category}`}
 												title={patientReliability.reliabilityBadge.summary}
 											>
-												<span>{patientReliability.reliabilityBadge.emoji}</span>
+												{patientReliability.reliabilityBadge.status === "reliable" && (
+													<ShieldCheck size={14} className="text-emerald-700 dark:text-emerald-300 shrink-0" />
+												)}
+												{patientReliability.reliabilityBadge.status === "new" && (
+													<Sparkles size={14} className="text-sky-700 dark:text-sky-300 shrink-0" />
+												)}
+												{patientReliability.reliabilityBadge.status === "high_risk" && (
+													<AlertTriangle size={14} className="text-rose-700 dark:text-rose-300 shrink-0" />
+												)}
+												{patientReliability.reliabilityBadge.status === "attention" && (
+													<AlertTriangle size={14} className="text-amber-700 dark:text-amber-300 shrink-0" />
+												)}
 												<span>{patientReliability.reliabilityBadge.badgeText}</span>
 											</div>
 
@@ -1282,6 +1295,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												data-testid="patient-financial-badge"
 												title={`Баланс пациента: ${patientReliability.financialBadge.label}`}
 											>
+												<CreditCard size={14} className="shrink-0 opacity-80" />
 												<span>{patientReliability.financialBadge.label}</span>
 											</div>
 										</div>
@@ -1466,10 +1480,22 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 														</div>
 														<div className="flex items-center gap-1.5 shrink-0">
 															<span
-																className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${itemReliability.reliabilityBadge.badgeClass}`}
+																className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${itemReliability.reliabilityBadge.badgeClass}`}
 																title={itemReliability.reliabilityBadge.summary}
 															>
-																{itemReliability.reliabilityBadge.emoji} {itemReliability.reliabilityBadge.shortLabel}
+																{itemReliability.reliabilityBadge.status === "reliable" && (
+																	<ShieldCheck size={11} className="text-emerald-700 dark:text-emerald-300 shrink-0" />
+																)}
+																{itemReliability.reliabilityBadge.status === "new" && (
+																	<Sparkles size={11} className="text-sky-700 dark:text-sky-300 shrink-0" />
+																)}
+																{itemReliability.reliabilityBadge.status === "high_risk" && (
+																	<AlertTriangle size={11} className="text-rose-700 dark:text-rose-300 shrink-0" />
+																)}
+																{itemReliability.reliabilityBadge.status === "attention" && (
+																	<AlertTriangle size={11} className="text-amber-700 dark:text-amber-300 shrink-0" />
+																)}
+																<span>{itemReliability.reliabilityBadge.shortLabel}</span>
 															</span>
 															{itemReliability.financialBadge.isDebt && (
 																<span

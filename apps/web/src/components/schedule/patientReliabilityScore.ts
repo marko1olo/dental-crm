@@ -3,19 +3,21 @@
  *
  * Evaluates patient visit history, attendance rates, lateness, unexcused no-shows,
  * and financial balances to provide instant receptionist guidance during appointment scheduling:
- *  - 🌟 Надежный пациент (>90% вовремя, 0 срывов)
- *  - ⚠️ Зона внимания (1-2 пропуска без предупреждения или частые опоздания >15 мин)
- *  - 🔴 Риск срыва приема (>2 неявок подряд, «Требуется подтверждение за 2 часа»)
- *  - 💳 Финансовый долг / Депозит (отображение точного баланса)
+ *  - Надежный пациент (>90% вовремя, 0 срывов)
+ *  - Зона внимания (1-2 пропуска без предупреждения или частые опоздания >15 мин)
+ *  - Риск неявки (>2 неявок подряд, «Требуется подтверждение за 2 часа»)
+ *  - Баланс: Финансовый долг / Депозит (отображение точного баланса)
  */
 
 import type { Appointment, Patient, PatientInsight } from "@dental/shared";
 import { money } from "../../utils/financeUtils";
 
 export type ReliabilityCategory = "reliable" | "attention" | "risk" | "new";
+export type ReliabilityStatus = "reliable" | "new" | "high_risk" | "attention" | "debt";
 
 export interface PatientReliabilityBadge {
 	readonly category: ReliabilityCategory;
+	readonly status: ReliabilityStatus;
 	readonly badgeText: string;
 	readonly shortLabel: string;
 	readonly emoji: string;
@@ -254,7 +256,7 @@ export function formatPatientBalanceBadge(
 		return {
 			balanceRub,
 			status: "debt",
-			label: `💳 Долг: ${absFormatted}`,
+			label: `Долг: ${absFormatted}`,
 			shortLabel: `-${absFormatted}`,
 			formattedAmount: absFormatted,
 			badgeClass: "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40",
@@ -267,7 +269,7 @@ export function formatPatientBalanceBadge(
 		return {
 			balanceRub,
 			status: "deposit",
-			label: `💳 Депозит: ${formatted}`,
+			label: `Депозит: ${formatted}`,
 			shortLabel: `+${formatted}`,
 			formattedAmount: formatted,
 			badgeClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40",
@@ -279,7 +281,7 @@ export function formatPatientBalanceBadge(
 	return {
 		balanceRub: 0,
 		status: "settled",
-		label: "💳 Баланс: 0 ₽",
+		label: "Баланс: 0 ₽",
 		shortLabel: "0 ₽",
 		formattedAmount: "0 ₽",
 		badgeClass: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20",
@@ -388,10 +390,11 @@ export function calculatePatientReliability(
 
 	// Determine category and scoring
 	let category: ReliabilityCategory = "reliable";
+	let status: ReliabilityStatus = "reliable";
 	let score = 100;
-	let badgeText = "🌟 Надежный пациент";
+	let badgeText = "Надежный пациент";
 	let shortLabel = "Надежный";
-	let emoji = "🌟";
+	let emoji = "reliable";
 	let recommendation = "Высокая дисциплина визитов. Стандартное подтверждение.";
 	let summary = "100% визитов вовремя, 0 срывов";
 	let badgeClass = "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40";
@@ -404,10 +407,11 @@ export function calculatePatientReliability(
 	if (totalFinished === 0) {
 		// New patient with no historical visits
 		category = "new";
+		status = "new";
 		score = 85;
-		badgeText = "✨ Новый пациент";
+		badgeText = "Новый пациент";
 		shortLabel = "Новый";
-		emoji = "✨";
+		emoji = "new";
 		recommendation = "Первичный прием. Запросить паспорт и оформить ИДС.";
 		summary = "Нет истории визитов";
 		badgeClass = "bg-sky-500/15 text-sky-800 dark:text-sky-200 border-sky-500/40";
@@ -419,12 +423,13 @@ export function calculatePatientReliability(
 		(maxConsecutiveNoShows >= 2 && attendanceRatePercent < 60) ||
 		(isInsightHighRisk && noShowCount >= 2)
 	) {
-		// 🔴 High Risk Category
+		// High Risk Category
 		category = "risk";
+		status = "high_risk";
 		score = Math.max(0, Math.min(45, 100 - noShowCount * 30 - consecutiveNoShows * 15 - lateCount * 10));
-		badgeText = "🔴 Риск срыва приема";
-		shortLabel = "Риск срыва";
-		emoji = "🔴";
+		badgeText = "Риск неявки";
+		shortLabel = "Риск неявки";
+		emoji = "high_risk";
 		recommendation = "Требуется подтверждение за 2 часа";
 		requiresTwoHourConfirmation = true;
 		summary =
@@ -432,7 +437,7 @@ export function calculatePatientReliability(
 				? `${consecutiveNoShows} неявки подряд. Высокий риск отмены.`
 				: `${noShowCount} неявок из ${totalFinished} визитов.`;
 		badgeClass = "bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/40";
-		receptionistAlert = `⚠️ Внимание администратора: Требуется обязательное подтверждение за 2 часа до приема! У пациента ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}.`;
+		receptionistAlert = `[Внимание] Внимание администратора: Требуется обязательное подтверждение за 2 часа до приема! У пациента ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}.`;
 	} else if (
 		noShowCount >= 1 ||
 		lateCount >= 2 ||
@@ -441,12 +446,13 @@ export function calculatePatientReliability(
 		onTimeRatePercent < 90 ||
 		cancelledCount >= 3
 	) {
-		// ⚠️ Attention Zone Category
+		// Attention Zone Category
 		category = "attention";
+		status = "attention";
 		score = Math.max(46, Math.min(80, 100 - noShowCount * 25 - lateCount * 15 - cancelledCount * 8));
-		badgeText = "⚠️ Зона внимания";
+		badgeText = "Зона внимания";
 		shortLabel = "Внимание";
-		emoji = "⚠️";
+		emoji = "attention";
 		recommendation = "Рекомендуется контрольный звонок накануне визита";
 		requiresTwoHourConfirmation = false;
 		const reasonParts: string[] = [];
@@ -457,12 +463,13 @@ export function calculatePatientReliability(
 		badgeClass = "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40";
 		receptionistAlert = `Рекомендуется контрольный звонок накануне: ${summary}.`;
 	} else {
-		// 🌟 Reliable Category (>90% on-time, 0 no-shows)
+		// Reliable Category (>90% on-time, 0 no-shows)
 		category = "reliable";
+		status = "reliable";
 		score = Math.min(100, Math.max(90, 95 + completedCount));
-		badgeText = "🌟 Надежный пациент";
+		badgeText = "Надежный пациент";
 		shortLabel = "Надежный";
-		emoji = "🌟";
+		emoji = "reliable";
 		recommendation = "Высокая дисциплина визитов. Стандартная запись.";
 		requiresTwoHourConfirmation = false;
 		summary = `${onTimeRatePercent}% визитов вовремя (${completedCount}/${totalFinished}), 0 срывов`;
@@ -480,6 +487,7 @@ export function calculatePatientReliability(
 
 	const reliabilityBadge: PatientReliabilityBadge = {
 		category,
+		status,
 		badgeText,
 		shortLabel,
 		emoji,
