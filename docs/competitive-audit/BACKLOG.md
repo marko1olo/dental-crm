@@ -1942,9 +1942,21 @@
 
 ---
 
+### 4.60. Сетка расписания, матрица смен, автономия связи и документооборота (Мандаты 8e, 8k, 8n / Фичи 182..185)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Фича #182: Сетка расписания со StomX-паритетом*: двухсменная шапка колонок кресел (08:00–14:00 и 14:00–20:00) с пульсирующим бейджем «● На смене», автоподстановка дежурного врача по времени слота и выбранному креслу в `QuickBookingDrawer.tsx`, мягкое предупреждение при ручной смене врача без блокировки кнопки записи (Мандат 8e), empty state при 0 кресел и устойчивый fallback соло-врача (Мандат 8n).
+  2. *Фича #183: 1-клик поповер матрицы смен*: интерактивный поповер в ячейках матрицы расписания с 4 пресетами в 1 клик (☀️ Утро, 🌙 Вечер, 🏢 Весь день, 🚫 Выходной/Очистить), чистый движок `applyCellShiftPreset`, неблокирующее сохранение графика с автозаполнением пятидневки (Мандат 8e).
+  3. *Фича #184: Автономия связи и маркетинга*: неблокирующее закрытие задач связи по невыбранному исходу с инфо-тостом «Выберите результат звонка», 1-клик генерация черновика ответа на отзыв с позитивным шаблоном по умолчанию, разблокировка создания рассылочных кампаний с автогенерацией названия «Сервисная рассылка <дата>».
+  4. *Фича #185: Неблокирующий амбулаторный архив и бланки*: неблокирующие действия амбулаторного архива документов при пустом выборе (автоселект первого документа или подсказка), печать чистого бланка Формы 043/у со строками «________» (`btn-043-print-blank`) и штампом «ЧЕРНОВИК (БЛАНК)», штампы «ПОДПИСАНО ВРАЧОМ» / «ЧЕРНОВИК» в договорах и карте, разблокировка печати справок КНД 1151156 при нулевых оплатах.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `QuickBookingDrawer.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `DoctorRosterMatrix.tsx`, `apps/web/src/CommunicationsView.tsx`, `MarketingView.tsx`, `CampaignPanel.tsx`, `apps/web/src/DocumentsView.tsx`, `DentalMedicalCard043uForm.tsx`, `PaidMedicalContractModal.tsx`, `TaxDeductionCertificateModal.tsx`.
+- **Тесты**: `scheduleGridStomxInquisition.test.tsx`, `scheduleChairDoctorBinding.test.tsx`, `scheduleRosterMatrixAutonomy.test.tsx`, `scheduleShiftRosterIntegration.test.tsx`, `communicationsMarketingAutonomy.test.tsx`, `documentsViewAutonomy.test.tsx`, `paidMedicalContractAutonomy.test.tsx` (79 тестов, 100% pass, коммиты `ed9fb8863`, `39c8dbb20`, `c32756cec`, `eb80b84f2`, `d47274df4`, `222a1995e`, `9c84ec9ae`, `26609e15f`).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 118 дополнительных системных аддендум-фич клинической автономии (Wave 15..31, фичи 64..181) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 122 дополнительные системные аддендум-фичи клинической автономии (Wave 15..32, фичи 64..185) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

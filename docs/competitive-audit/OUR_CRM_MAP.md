@@ -1369,6 +1369,40 @@
 - **Фронтенд**: `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/perio/PeriodontogramChart.tsx`.
 - **Тесты**: `apps/web/src/tests/cashShiftAutonomyAndFiscal54Fz.test.tsx`, `emrPerioAutonomyInquisition.test.ts`, `fastCheckoutInvariants.test.ts`, `documentsViewAutonomy.test.tsx` (45 тестов, 100% pass, коммит `db824fb3c`).
 
+#### 2.10.143. Сетка расписания и привязка врачей к креслам: двухсменная шапка, автоподстановка дежурного врача в шторку записи и StomX-паритет (Мандаты 8e, 8k, 8n / Расписание, Сетка кресел & Бронирование, Фича #182)
+- **Суть и домен**: Полный паритет со StomX и DentalPRO по управлению креслами и дежурными врачами:
+  1. *Двухсменная шапка колонок кресел*: в `ScheduleGrid.tsx` шапка кресла отображает обе смены дня (08:00–14:00 и 14:00–20:00) с бейджами, часами и короткими ФИО врачей, активная смена подсвечивается пульсирующим бейджем «● На смене»; кнопки быстрого назначения и переключения смен приведены к Apple HIG ($\ge 44\text{px}$).
+  2. *Определение дежурного врача по времени слота*: функция `getDoctorForChairAndHour` точно маршрутизирует клики: слоты до 14:00 связываются с утренним врачом, от 14:00 до 20:00 — с вечерним врачом, вне смен возвращается `null`.
+  3. *Автоподстановка и мягкое предупреждение в шторке записи*: в `QuickBookingDrawer.tsx` клик по слоту кресла предвыбирает дежурного врача на это время, смена кресла в селекте обновляет врача; при ручном выборе другого врача выводится мягкое уведомление без блокирования кнопки записи (Мандат 8e).
+  4. *Отказоустойчивость при 0 кресел и соло-враче*: при отсутствии кресел отображается empty-state с кнопкой создания первого кресла, а для соло-врача сохраняется неблокирующий дефолт `DEFAULT_SOLO_CHAIR` (Мандат 8n).
+- **Фронтенд**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/ScheduleView.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleGridStomxInquisition.test.tsx`, `scheduleChairDoctorBinding.test.tsx` (26 тестов, 100% pass, коммиты `ed9fb8863`, `222a1995e`).
+
+#### 2.10.144. Матрица расписания: 1-клик поповер шаблонов смен в ячейках матрицы и неблокирующее автозаполнение 5/2 (Мандаты 8e, 8k, 8n / Расписание & Шаблоны смен, Фича #183)
+- **Суть и домен**: Мгновенное назначение врачей и смен на кресла в матричном представлении без диалоговых барьеров:
+  1. *Интерактивный поповер в ячейках матрицы*: в `DoctorRosterMatrix.tsx` клик по ячейкам табов «Кабинеты» и «Сотрудники» открывает поповер (`roster-cell-popover`) с 4 пресетами в 1 клик (☀️ Утро 08:00–14:00, 🌙 Вечер 14:00–20:00, 🏢 Весь день 08:00–20:00, 🚫 Выходной/Очистить), селекторами врача/кресла и кнопкой подробного перехода; тач-таргеты $\ge 44\text{px}$.
+  2. *Чистый движок экспресс-назначения смен*: в `DoctorShiftRosterModal.tsx` функция `applyCellShiftPreset` выполняет корректную замену смены без дублирования записей, рассчитывая точные часы (6ч / 11ч) и перерывы.
+  3. *Автономия кнопок сохранения и применения*: кнопки модалки никогда не блокируются (`disabled={false}`); при сохранении пустого графика автоматически создается типовая пятидневка 5/2 (Мандат 8e).
+- **Фронтенд**: `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/roster/__tests__/scheduleRosterMatrixAutonomy.test.tsx`, `scheduleShiftRosterIntegration.test.tsx` (38 тестов, 100% pass, коммиты `39c8dbb20`, `c32756cec`).
+
+#### 2.10.145. Связь и маркетинг: неблокирующая автономия задач связи, отзывов и сервисных рассылок (Мандаты 8e, 8n / Связь, Маркетинг & Задачи, Фича #184)
+- **Суть и домен**: Устранение серых заблокированных кнопок в CRM-модулях связи и маркетинга с активным тост-руководством:
+  1. *Неблокирующее закрытие задач связи*: в `CommunicationsView.tsx` кнопка «Закрыть» задачу освобождена от блокировки по невыбранному исходу (`disabled={communicationSaveInProgress}`); при нажатии выводится активный инфо-тост «Выберите результат звонка», тач-таргеты $\ge 44\text{px}$.
+  2. *1-клик черновик ответа на отзыв*: в `MarketingView.tsx` кнопка генерации ответа активна всегда (`disabled={false}`); при пустом отзыве генерируется типовой позитивный ответ со ссылкой на реквизиты клиники и подписью.
+  3. *Неблокирующее создание кампаний*: в `CampaignPanel.tsx` кнопка создания рассылки разблокирована (`disabled={busy}`); при пустом названии автогенерируется «Сервисная рассылка <дата>» с выбором первого активного шаблона.
+- **Фронтенд**: `apps/web/src/CommunicationsView.tsx`, `apps/web/src/MarketingView.tsx`, `apps/web/src/components/communications/CampaignPanel.tsx`.
+- **Тесты**: `apps/web/src/tests/communicationsMarketingAutonomy.test.tsx` (5 тестов, 100% pass, коммиты `eb80b84f2`, `d47274df4`).
+
+#### 2.10.146. Документооборот и архив: неблокирующий амбулаторный архив, печать бланков Карты 043/у и договоров со строками «________» (Мандаты 8e, 8k, 8n / Документооборот & Амбулаторные бланки, Фича #185)
+- **Суть и домен**: Автономия документооборота стоматологической клиники у кресла врача и на ресепшене:
+  1. *Неблокирующий амбулаторный архив*: в `DocumentsView.tsx` и `DocumentsOutpatientArchive.tsx` кнопки экспорта, печати и отправки не блокируются при отсутствии явного выбора (автоселект первого документа или информативная подсказка).
+  2. *Печать чистого бланка Формы 043/у со строками «________»*: в `DentalMedicalCard043uForm.tsx` внедрена кнопка `btn-043-print-blank` («Бланк («________»)») для мгновенной распечатки пустой Формы 043/у со штампом «ЧЕРНОВИК (БЛАНК)» для ручного заполнения врачом без 403-ошибок (Мандат 8e).
+  3. *Штампы юридического статуса*: в `PaidMedicalContractModal.tsx` и `DentalMedicalCard043uForm.tsx` внедрены штампы «ПОДПИСАНО ВРАЧОМ» / «ЧЕРНОВИК» и печать бланков договоров со строками `______`; разблокирована печать справок налогового вычета КНД 1151156 в `TaxDeductionCertificateModal.tsx` при нулевых платежах; векторные Lucide-иконки без эмодзи.
+- **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `apps/web/src/components/documents/DocumentsOutpatientArchive.tsx`, `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`.
+- **Тесты**: `apps/web/src/components/documents/__tests__/documentsViewAutonomy.test.tsx`, `paidMedicalContractAutonomy.test.tsx` (10 тестов, 100% pass, коммиты `9c84ec9ae`, `26609e15f`).
+
+
 
 
 
