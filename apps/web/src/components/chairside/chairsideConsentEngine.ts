@@ -95,7 +95,7 @@ export interface ChairsideSmsOtpState {
 }
 
 export interface ChairsidePepSignatureRecord {
-	verificationMethod: "sms_63fz_pep";
+	verificationMethod: "sms_63fz_pep" | "paper_physical";
 	phone: string;
 	phoneMasked: string;
 	otpCodeConfirmed: string; // e.g. "****" или фактический проверенный 4-значный код
@@ -751,6 +751,97 @@ export function signPackageWithSmsPep(
 	};
 }
 
+/**
+ * Подписание и оформление пакета документов на бумажном носителе (ст. 20 323-ФЗ, 152-ФЗ, ПП РФ № 736)
+ * Обеспечивает полную автономность врача и клиники без блокировок по СМС (Мандаты 8e, 8i, 8k, 8n).
+ */
+export function signPackageWithPaperPhysical(
+	pkg: ChairsideConsentPackage,
+	options?: {
+		signedAtIso?: string;
+		form043uChartNumber?: string;
+	},
+): ChairsideConsentPackage {
+	const signedAtIso = options?.signedAtIso || new Date().toISOString();
+	const timestamp = new Date(signedAtIso).getTime();
+	const signedAtFormatted = formatRussianDateTime(signedAtIso);
+
+	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "";
+	const phoneMasked = targetPhone ? maskRussianPhone(targetPhone) : "Не указан";
+	const cardNum =
+		options?.form043uChartNumber || pkg.patient.cardNumber || ("043/у-" + pkg.packageId.slice(-6));
+
+	const docsDigests = pkg.documents
+		.map((d) => `${d.type}:${d.code}:${generateSha256(d.title + d.sections.map((s) => s.content).join(""))}`)
+		.join(";");
+
+	const estimateDigest = pkg.treatmentItems
+		.map((it) => `${it.serviceCode}:${it.toothNumber || ""}:${it.quantity}:${it.totalKopecks}`)
+		.join(";");
+
+	const canonicalLines = [
+		"=== CANONICAL DENTAL CHAIRSIDE PAPER CONSENT RECORD (323-FZ / 152-FZ / 736-PP) ===",
+		"PACKAGE_ID: " + pkg.packageId,
+		"TIMESTAMP_ISO: " + signedAtIso,
+		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),
+		"PATIENT_BIRTH_DATE: " + pkg.patient.birthDate.trim(),
+		"PATIENT_PASSPORT: " + (pkg.patient.passport || "").trim(),
+		"PATIENT_PHONE: " + targetPhone.trim(),
+		"FORM_043U_CARD: " + cardNum.trim(),
+		"DOCTOR_FULL_NAME: " + pkg.doctor.fullName.trim().toUpperCase(),
+		"CLINIC_OGRN: " + pkg.clinic.ogrn.trim(),
+		"CLINIC_INN: " + pkg.clinic.inn.trim(),
+		"DOCUMENTS_DIGEST: " + docsDigests,
+		"ESTIMATE_TOTAL_KOPECKS: " + pkg.totalEstimateKopecks,
+		"ESTIMATE_DIGEST: " + estimateDigest,
+		"VERIFICATION_METHOD: PAPER_PHYSICAL",
+		"======================================================================",
+	];
+
+	const canonicalData = canonicalLines.join("\n");
+	const integrityHash = generateSha256(canonicalData);
+
+	const legalStampText =
+		"ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАГЕ (ст. 20 323-ФЗ, 152-ФЗ, ПП РФ № 736). Личная подпись пациента подшита в карту 043/у";
+
+	const docsDigest = pkg.documents.map((d) => d.code).join("; ");
+
+	const signatureRecord: ChairsidePepSignatureRecord = {
+		verificationMethod: "paper_physical",
+		phone: targetPhone,
+		phoneMasked,
+		otpCodeConfirmed: "БУМАЖНЫЙ_НОСИТЕЛЬ",
+		timestamp,
+		signedAtIso,
+		signedAtFormatted,
+		signedByFullName: pkg.patient.fullName,
+		form043uRecordId: cardNum,
+		integrityHash,
+		legalStampText,
+		legalBasis:
+			"ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Федеральный закон от 27.07.2006 № 152-ФЗ, Постановление Правительства РФ от 11.05.2023 № 736",
+		documentsDigest: docsDigest,
+	};
+
+	const updatedDocs = pkg.documents.map((doc) => ({
+		...doc,
+		isSigned: true,
+		signedAt: signedAtIso,
+		integrityHash,
+	}));
+
+	return {
+		...pkg,
+		patient: {
+			...pkg.patient,
+			cardNumber: cardNum,
+		},
+		documents: updatedDocs,
+		signature: signatureRecord,
+		status: "signed",
+	};
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. DOCUMENT GENERATION (1051n, 152-FZ, ESTIMATE)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1073,19 +1164,30 @@ export function renderChairsidePackageHtml(
 
 	let signatureBlockHtml = "";
 	if (includeSigs && isSigned && pkg.signature) {
+		const isPaper = pkg.signature.verificationMethod === "paper_physical";
+		const stampTitle = isPaper
+			? "ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАЖНОМ НОСИТЕЛЕ"
+			: "ДОКУМЕНТ ПОДПИСАН ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)";
+		const lawBadge = isPaper
+			? "ст. 20 323-ФЗ • 152-ФЗ • ПП РФ № 736"
+			: "Федеральный закон от 06.04.2011 № 63-ФЗ";
+		const authMethodRow = isPaper
+			? "<div><b>Способ оформления:</b> " + escapeHtml(pkg.signature.legalStampText) + "</div>"
+			: "<div><b>Код подтвержден:</b> " + escapeHtml(pkg.signature.otpCodeConfirmed) + " (СМС-код 4 знака, валидность 5 минут)</div>";
+
 		signatureBlockHtml = "<div class=\"signature-stamp-card\">" +
 			"<div class=\"stamp-header\">" +
 				"<div style=\"display: flex; align-items: center; gap: 6px;\">" +
 					"<svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0d9488\" stroke-width=\"2\"><path d=\"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\"/></svg>" +
-					"<span style=\"font-weight: 800; color: #0d9488; font-size: 9.5pt; text-transform: uppercase;\">ДОКУМЕНТ ПОДПИСАН ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</span>" +
+					"<span style=\"font-weight: 800; color: #0d9488; font-size: 9.5pt; text-transform: uppercase;\">" + stampTitle + "</span>" +
 				"</div>" +
-				"<span style=\"font-size: 8pt; color: #0d9488; font-weight: 700;\">Федеральный закон от 06.04.2011 № 63-ФЗ</span>" +
+				"<span style=\"font-size: 8pt; color: #0d9488; font-weight: 700;\">" + lawBadge + "</span>" +
 			"</div>" +
 			"<div class=\"stamp-body\">" +
 				"<div class=\"sig-details-col\">" +
 					"<div><b>Подписант (Пациент):</b> " + escapeHtml(pkg.signature.signedByFullName) + "</div>" +
 					"<div><b>Телефон:</b> " + escapeHtml(pkg.signature.phoneMasked) + "</div>" +
-					"<div><b>Код подтвержден:</b> " + escapeHtml(pkg.signature.otpCodeConfirmed) + " (СМС-код 4 знака, валидность 5 минут)</div>" +
+					authMethodRow +
 					"<div><b>Дата и время подписания:</b> " + escapeHtml(pkg.signature.signedAtFormatted) + "</div>" +
 					"<div><b>Медицинская карта Формы 043/у:</b> " + escapeHtml(pkg.signature.form043uRecordId) + "</div>" +
 					"<div class=\"hash-string\"><b>SHA-256:</b> " + pkg.signature.integrityHash + "</div>" +

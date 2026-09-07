@@ -43,6 +43,7 @@ import {
 	hashDoctorPin,
 	maskRussianPhone,
 	sendChairsideSmsOtpToPatient,
+	signPackageWithPaperPhysical,
 	signPackageWithSmsPep,
 	verifyChairsideSmsOtp,
 	verifyDoctorPin,
@@ -298,6 +299,30 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 			}
 		} finally {
 			setIsSubmitting(false);
+		}
+	};
+
+	// 1-click paper confirmation handler (Mandates 8e, 8k, 8n)
+	const handleSignWithPaper = () => {
+		const signedPkg = signPackageWithPaperPhysical(pkg, {
+			form043uChartNumber: pkg.patient.cardNumber || "043/у",
+		});
+		setPkg(signedPkg);
+		setIsSuccessModal(true);
+
+		if (onConsentPackageSigned) {
+			onConsentPackageSigned(signedPkg);
+		}
+
+		if (onConsentConfirmed && signedPkg.signature) {
+			onConsentConfirmed({
+				packageId: signedPkg.packageId,
+				form043uCard: signedPkg.patient.cardNumber || "043/у",
+				integrityHash: signedPkg.signature.integrityHash,
+				totalEstimateKopecks: signedPkg.totalEstimateKopecks,
+				signedAt: signedPkg.signature.signedAtIso,
+				phoneMasked: signedPkg.signature.phoneMasked,
+			});
 		}
 	};
 
@@ -586,6 +611,16 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 													<Send size={18} />
 													<span>Отправить СМС с кодом</span>
 												</button>
+												<button
+													type="button"
+													className="chairside-btn secondary"
+													onClick={handleSignWithPaper}
+													data-testid="chairside-paper-confirm-btn"
+													title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
+												>
+													<FileCheck size={18} className="text-emerald-600" />
+													<span>Подтвердить на бумаге (1 клик)</span>
+												</button>
 											</div>
 										</div>
 									</div>
@@ -634,6 +669,16 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 														<FileCheck size={20} />
 														<span>Подтвердить и подписать (63-ФЗ)</span>
 													</button>
+													<button
+														type="button"
+														className="chairside-btn secondary"
+														onClick={handleSignWithPaper}
+														data-testid="chairside-paper-confirm-btn"
+														title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
+													>
+														<FileCheck size={18} className="text-emerald-600" />
+														<span>Подтвердить на бумаге (1 клик)</span>
+													</button>
 												</div>
 											</div>
 
@@ -657,17 +702,27 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 								<div className="flex items-center gap-2">
 									<ShieldCheck size={20} className="text-ok-fg" />
 									<span className="stamp-main-title">
-										ДОКУМЕНТ ПОДПИСАН ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)
+										{pkg.signature.verificationMethod === "paper_physical"
+											? "ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАЖНОМ НОСИТЕЛЕ"
+											: "ДОКУМЕНТ ПОДПИСАН ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)"}
 									</span>
 								</div>
-								<span className="stamp-law-badge">63-ФЗ ст. 5, 6 • 323-ФЗ ст. 20</span>
+								<span className="stamp-law-badge">
+									{pkg.signature.verificationMethod === "paper_physical"
+										? "323-ФЗ ст. 20 • 152-ФЗ • ПП РФ № 736"
+										: "63-ФЗ ст. 5, 6 • 323-ФЗ ст. 20"}
+								</span>
 							</div>
 
 							<div className="stamp-content-grid">
 								<div className="stamp-col">
 									<div><b>Подписант (Пациент):</b> {pkg.signature.signedByFullName}</div>
 									<div><b>Телефон:</b> {pkg.signature.phoneMasked}</div>
-									<div><b>Код подтвержден:</b> {pkg.signature.otpCodeConfirmed} (СМС-код 4 знака)</div>
+									{pkg.signature.verificationMethod === "paper_physical" ? (
+										<div><b>Способ оформления:</b> Личная подпись на бумаге (подшита в карту 043/у)</div>
+									) : (
+										<div><b>Код подтвержден:</b> {pkg.signature.otpCodeConfirmed} (СМС-код 4 знака)</div>
+									)}
 								</div>
 								<div className="stamp-col">
 									<div><b>Дата и время:</b> {pkg.signature.signedAtFormatted}</div>
@@ -699,11 +754,12 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 						<button
 							type="button"
 							className="chairside-btn secondary"
-							onClick={handlePrint}
-							title="Распечатать бумажный бланк (А4)"
+							onClick={() => window.print()}
+							data-testid="chairside-print-package-btn"
+							title="Печать всего комплекта документов на бумаге А4"
 						>
 							<Printer size={18} />
-							<span>Печать (А4)</span>
+							<span>Печать А4</span>
 						</button>
 
 						{activeDocIndex > 0 && (
@@ -727,6 +783,19 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 							>
 								<span>Следующий документ</span>
 								<ChevronRight size={18} />
+							</button>
+						)}
+
+						{!isSigned && (
+							<button
+								type="button"
+								className="chairside-btn secondary"
+								onClick={handleSignWithPaper}
+								data-testid="chairside-paper-confirm-btn"
+								title="Пациент подписал распечатанный комплект на бумаге — подтвердить в 1 клик (Мандаты 8e, 8n)"
+							>
+								<FileCheck size={18} className="text-emerald-600" />
+								<span>Подтвердить на бумаге (1 клик)</span>
 							</button>
 						)}
 
@@ -836,13 +905,20 @@ export const ChairsideTabletConsentModal: React.FC<ChairsideTabletConsentModalPr
 						<div className="chairside-success-icon">
 							<CheckCircle2 size={48} />
 						</div>
-						<h3 className="font-extrabold text-xl m-0 text-center">Пакет документов успешно подписан!</h3>
+						<h3 className="font-extrabold text-xl m-0 text-center">
+							{pkg.signature?.verificationMethod === "paper_physical"
+								? "Пакет документов оформлен на бумаге!"
+								: "Пакет документов успешно подписан!"}
+						</h3>
 						<p className="text-sm text-muted text-center m-0">
-							ИДС (1051н), согласие 152-ФЗ и смета плана лечения надежно заверены простой электронной подписью (ПЭП по 63-ФЗ) и привязаны к карте Формы 043/у <b>{pkg.patient.cardNumber}</b>.
+							{pkg.signature?.verificationMethod === "paper_physical"
+								? `ИДС (1051н), согласие 152-ФЗ и смета плана лечения оформлены на бумаге (ст. 20 323-ФЗ, 152-ФЗ, ПП РФ № 736) и подшиты к карте Формы 043/у ${pkg.patient.cardNumber || ""}.`
+								: `ИДС (1051н), согласие 152-ФЗ и смета плана лечения надежно заверены простой электронной подписью (ПЭП по 63-ФЗ) и привязаны к карте Формы 043/у ${pkg.patient.cardNumber || ""}.`}
 						</p>
 						<div className="w-full bg-[var(--paper-soft)] p-3 rounded-lg border border-[var(--line)] text-xs flex flex-col gap-1">
 							<div><b>Подписант:</b> {pkg.patient.fullName}</div>
 							<div><b>Телефон:</b> {pkg.signature?.phoneMasked}</div>
+							<div><b>Способ:</b> {pkg.signature?.verificationMethod === "paper_physical" ? "Оформлено на бумаге (подшито в карту 043/у)" : "СМС ПЭП (63-ФЗ)"}</div>
 							<div><b>Дата:</b> {pkg.signature?.signedAtFormatted}</div>
 							<div className="font-mono text-[10px] text-[var(--teal-dark)] truncate">
 								<b>SHA-256:</b> {pkg.signature?.integrityHash}
