@@ -10,32 +10,69 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-declare module "vitest" {
-	export interface Assertion<T = any> {
-		toHaveBeenCalledWith(...args: any[]): void;
-	}
-}
-
-// Mock GlobalToast so showToast can be spied on directly
-vi.mock("../../../GlobalToast", () => ({
-	showToast: vi.fn(),
-}));
-
-// Mock hardware printer service so test does not try real network socket dispatch
-vi.mock("../../../../services/hardware/kktLanPrinter", () => ({
-	KktLanPrinterService: {
-		printReceipt: vi.fn().mockResolvedValue({ success: true, status: "printed" }),
-	},
-}));
-
+import assert from "node:assert/strict";
+import { afterEach, beforeEach, describe, it } from "node:test";
+import { KktLanPrinterService } from "../../../../services/hardware/kktLanPrinter";
 import { showToast } from "../../../GlobalToast";
 import { FastCheckoutModal } from "../FastCheckoutModal";
 import {
 	splitStateToCheckoutPayments,
 	validateCheckoutSplit,
 } from "../fastCheckoutEngine";
+
+const dispatchedToasts: { text: string; type: string; duration?: number }[] = [];
+
+// Safe mock for hardware printer service so test does not try real network socket dispatch
+KktLanPrinterService.printReceipt = async () => ({
+	success: true,
+	status: "printed",
+	hardwareLatencyMs: 10,
+	usedCircuitBreaker: false,
+});
+
+const vi = {
+	clearAllMocks: () => {
+		dispatchedToasts.length = 0;
+	},
+};
+
+function expect(actual: unknown) {
+	return {
+		toBeFalsy: () => {
+			assert.ok(!actual, `Expected falsy, but got ${actual}`);
+		},
+		toBeTruthy: () => {
+			assert.ok(actual, `Expected truthy, but got ${actual}`);
+		},
+		toBeNull: () => {
+			assert.strictEqual(actual, null, `Expected null, but got ${actual}`);
+		},
+		toBe: (expected: unknown) => {
+			assert.strictEqual(actual, expected);
+		},
+		not: {
+			toBeNull: () => {
+				assert.notStrictEqual(actual, null, "Expected value not to be null");
+				assert.notStrictEqual(actual, undefined, "Expected value not to be undefined");
+			},
+		},
+		toHaveBeenCalledWith: (expectedText: string, expectedType?: string) => {
+			if (actual === showToast) {
+				const found = dispatchedToasts.some(
+					(t) =>
+						t.text.includes(expectedText) &&
+						(!expectedType || t.type === expectedType),
+				);
+				assert.ok(
+					found,
+					`Expected toast with "${expectedText}" (${expectedType}), but received toasts: ${JSON.stringify(dispatchedToasts)}`,
+				);
+			} else {
+				assert.fail("actual is not showToast or a supported spy");
+			}
+		},
+	};
+}
 
 interface MockDomNode {
 	nodeType: number;
@@ -237,6 +274,12 @@ function setupMockDom() {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 		navigator: { onLine: true },
+		dispatchEvent: (ev: { type: string; detail?: { text: string; type: string; duration?: number } }) => {
+			if (ev?.type === "dente-toast" && ev.detail) {
+				dispatchedToasts.push(ev.detail);
+			}
+			return true;
+		},
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
 		Element: class {},
@@ -257,6 +300,10 @@ function setupMockDom() {
 	return { doc, win };
 }
 
+function teardownMockDom() {
+	// Keep window/document alive so trailing async timers/promises don't throw ReferenceError
+}
+
 function findNodeByTestId(node: MockDomNode | null, testId: string): MockDomNode | null {
 	if (!node) return null;
 	if (node.getAttribute?.("data-testid") === testId) return node;
@@ -271,6 +318,7 @@ function findNodeByTestId(node: MockDomNode | null, testId: string): MockDomNode
 
 async function changeInput(node: MockDomNode, value: string) {
 	await act(async () => {
+		node.value = value;
 		const reactPropKey = Object.keys(node).find((k) => k.startsWith("__reactProps$"));
 		if (reactPropKey) {
 			// biome-ignore lint/suspicious/noExplicitAny: access React internal props
@@ -319,6 +367,17 @@ describe("Fast Checkout 54-FZ Cashier Autonomy & 1-Click Discrepancy Resolver (M
 		doc.body.appendChild(container);
 		// biome-ignore lint/suspicious/noExplicitAny: container mock
 		root = createRoot(container as any);
+	});
+
+	afterEach(async () => {
+		try {
+			await act(async () => {
+				root?.unmount();
+			});
+		} catch {
+			// ignore unmount errors
+		}
+		teardownMockDom();
 	});
 
 	it("1. execute-fast-checkout-btn is NOT disabled when validation.isValid is false (Mandate 8e: Doctor & Staff Autonomy)", async () => {

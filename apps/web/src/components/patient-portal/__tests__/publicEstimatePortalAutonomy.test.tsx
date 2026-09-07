@@ -1,12 +1,141 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import type { PublicEstimateDetail, PublicEstimateMeta } from "@dental/shared";
 import { PublicEstimatePortal } from "../PublicEstimatePortal";
 import { PatientBranchTransferModal } from "../../patients/transfer/PatientBranchTransferModal";
 import { PatientCabinetModal } from "../../portal/patientCabinet/PatientCabinetModal";
 import { DEMO_PATIENT_CABINET } from "../../portal/patientCabinet/patientCabinetPresets";
+
+interface SpyMock {
+	// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+	(...args: any[]): any;
+	// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+	calls: any[][];
+	mock: {
+		// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+		calls: any[][];
+	};
+	// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+	mockImplementation: (fn: (...args: any[]) => any) => SpyMock;
+	// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+	mockResolvedValue: (val: any) => SpyMock;
+	toHaveBeenCalledWith: (...expectedArgs: unknown[]) => void;
+	toHaveBeenCalled: () => void;
+}
+
+const vi = {
+	// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+	fn: (impl?: (...args: any[]) => any): SpyMock => {
+		// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+		let currentImpl = impl || (() => undefined);
+		// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+		const calls: any[][] = [];
+		// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+		const fnObj = ((...args: any[]) => {
+			calls.push(args);
+			return currentImpl(...args);
+		}) as SpyMock;
+		fnObj.calls = calls;
+		fnObj.mock = { calls };
+		// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+		fnObj.mockImplementation = (newImpl: (...args: any[]) => any) => {
+			currentImpl = newImpl;
+			return fnObj;
+		};
+		// biome-ignore lint/suspicious/noExplicitAny: generic spy signature
+		fnObj.mockResolvedValue = (val: any) => {
+			currentImpl = () => Promise.resolve(val);
+			return fnObj;
+		};
+		fnObj.toHaveBeenCalledWith = (...expectedArgs: unknown[]) => {
+			const found = calls.some((actual) =>
+				expectedArgs.every((arg, idx) => actual[idx] === arg),
+			);
+			assert.ok(
+				found,
+				`Expected call with ${JSON.stringify(expectedArgs)}, but actual calls were: ${JSON.stringify(calls)}`,
+			);
+		};
+		fnObj.toHaveBeenCalled = () => {
+			assert.ok(
+				calls.length > 0,
+				"Expected function to have been called, but was called 0 times",
+			);
+		};
+		return fnObj;
+	},
+};
+
+function expect(actual: unknown) {
+	return {
+		toBe: (expected: unknown) => {
+			assert.strictEqual(actual, expected);
+		},
+		toBeDefined: () => {
+			assert.notStrictEqual(actual, undefined, "Expected value to be defined");
+		},
+		toBeNull: () => {
+			assert.strictEqual(actual, null, "Expected value to be null");
+		},
+		toBeFalsy: () => {
+			assert.ok(!actual, `Expected falsy, but got ${actual}`);
+		},
+		toBeTruthy: () => {
+			assert.ok(actual, `Expected truthy, but got ${actual}`);
+		},
+		toContain: (expected: string) => {
+			assert.ok(
+				typeof actual === "string" && actual.includes(expected),
+				`Expected "${actual}" to contain "${expected}"`,
+			);
+		},
+		toMatch: (regex: RegExp) => {
+			assert.ok(
+				typeof actual === "string" && regex.test(actual),
+				`Expected "${actual}" to match ${regex}`,
+			);
+		},
+		toHaveBeenCalled: () => {
+			// biome-ignore lint/suspicious/noExplicitAny: spy assertion helper
+			if (actual && typeof (actual as any).toHaveBeenCalled === "function") {
+				// biome-ignore lint/suspicious/noExplicitAny: spy assertion helper
+				(actual as any).toHaveBeenCalled();
+			} else {
+				assert.fail("actual is not a spy mock");
+			}
+		},
+		toHaveBeenCalledWith: (...expectedArgs: unknown[]) => {
+			// biome-ignore lint/suspicious/noExplicitAny: spy assertion helper
+			if (actual && typeof (actual as any).toHaveBeenCalledWith === "function") {
+				// biome-ignore lint/suspicious/noExplicitAny: spy assertion helper
+				(actual as any).toHaveBeenCalledWith(...expectedArgs);
+			} else {
+				assert.fail("actual is not a spy mock");
+			}
+		},
+		not: {
+			toBeNull: () => {
+				assert.notStrictEqual(actual, null, "Expected value not to be null");
+				assert.notStrictEqual(actual, undefined, "Expected value not to be undefined");
+			},
+			toContain: (expected: string) => {
+				assert.ok(
+					typeof actual === "string" && !actual.includes(expected),
+					`Expected "${actual}" NOT to contain "${expected}"`,
+				);
+			},
+			toMatch: (regex: RegExp) => {
+				assert.ok(
+					typeof actual === "string" && !regex.test(actual),
+					`Expected "${actual}" NOT to match ${regex}`,
+				);
+			},
+		},
+	};
+}
 
 interface MockDomNode {
 	nodeType: number;
@@ -19,6 +148,8 @@ interface MockDomNode {
 	attributes: { name: string; value: string }[];
 	ownerDocument: unknown;
 	parentNode: MockDomNode | null;
+	selected?: boolean;
+	options?: MockDomNode[];
 	appendChild: (child: MockDomNode) => MockDomNode;
 	insertBefore: (child: MockDomNode, before: MockDomNode | null) => MockDomNode;
 	removeChild: (child: MockDomNode) => MockDomNode;
@@ -59,6 +190,10 @@ function setupMockDom() {
 			attributes: [],
 			ownerDocument: null,
 			parentNode: null,
+			selected: false,
+			get options() {
+				return children.filter((c) => c.tagName === "OPTION");
+			},
 			appendChild: (child: MockDomNode) => {
 				children.push(child);
 				child.parentNode = el;
@@ -88,12 +223,40 @@ function setupMockDom() {
 			},
 			setAttribute: (name: string, value: string) => {
 				attrs[name] = value;
+				const existing = el.attributes.find((a) => a.name === name);
+				if (existing) {
+					existing.value = value;
+				} else {
+					el.attributes.push({ name, value });
+				}
 				if (name.startsWith("data-")) {
 					el.dataset[name.slice(5)] = value;
 				}
 			},
 			getAttribute: (name: string) => attrs[name] || null,
 			hasAttribute: (name: string) => name in attrs,
+			get textContent() {
+				let text = "";
+				for (const child of children) {
+					if (child.nodeType === 3) {
+						text += (child as unknown as { textContent?: string }).textContent || "";
+					} else if (child.textContent) {
+						text += child.textContent;
+					}
+				}
+				return text;
+			},
+			set textContent(val: string) {
+				children.length = 0;
+				if (val) {
+					children.push({
+						nodeType: 3,
+						textContent: val,
+						style: {},
+						parentNode: el,
+					} as unknown as MockDomNode);
+				}
+			},
 			removeAttribute: (name: string) => {
 				delete attrs[name];
 			},
@@ -165,15 +328,21 @@ function setupMockDom() {
 }
 
 function teardownMockDom() {
-	// biome-ignore lint/suspicious/noExplicitAny: cleanup test DOM globals
-	const g = globalThis as any;
-	delete g.document;
-	delete g.window;
-	delete g.HTMLIFrameElement;
-	delete g.HTMLElement;
-	delete g.Element;
-	delete g.Node;
-	delete g.IS_REACT_ACT_ENVIRONMENT;
+	// Keep window/document alive on globalThis so trailing async operations don't fail
+}
+
+function nodeToHtml(node: MockDomNode | null): string {
+	if (!node) return "";
+	if (node.nodeType === 3) {
+		return (node as unknown as { textContent?: string }).textContent || "";
+	}
+	const tag = (node.tagName || "div").toLowerCase();
+	const attrs = (node.attributes || [])
+		.map((a) => `${a.name}="${a.value}"`)
+		.join(" ");
+	const attrStr = attrs ? ` ${attrs}` : "";
+	const childrenStr = (node.children || []).map(nodeToHtml).join("");
+	return `<${tag}${attrStr}>${childrenStr}</${tag}>`;
 }
 
 function findNodeByTestId(
@@ -322,17 +491,18 @@ describe("Public Portal & Statutory Signature Autonomy (Mandates 8e, 8i, 8k & 63
 		const onAccepted = vi.fn();
 
 		const originalFetch = globalThis.fetch;
-		const mockFetch = vi.fn().mockImplementation((url: string) => {
-			if (url.includes("/accept")) {
-				return Promise.resolve({
+		const mockFetch = vi.fn(async (url: unknown) => {
+			const urlStr = String(url);
+			if (urlStr.includes("/accept")) {
+				return {
 					ok: true,
 					json: async () => ({ success: true, message: "OK" }),
-				});
+				};
 			}
-			return Promise.resolve({
+			return {
 				ok: true,
 				json: async () => ({ data: { ...mockEstimate, status: "accepted" } }),
-			});
+			};
 		});
 		globalThis.fetch = mockFetch as any;
 
@@ -365,13 +535,14 @@ describe("Public Portal & Statutory Signature Autonomy (Mandates 8e, 8i, 8k & 63
 				String(call[0]).includes("/accept"),
 			);
 			expect(acceptCall).toBeDefined();
-			const body = JSON.parse(acceptCall![1]?.body as string);
+			const acceptInit = acceptCall?.[1] as RequestInit | undefined;
+			const body = JSON.parse(String(acceptInit?.body || "{}"));
 			expect(body.signerName).toBe("Кузнецов Алексей Сергеевич");
 			expect(body.signatureMethod).toBe("click_accept");
 
 			// Verify onAccepted callback
 			expect(onAccepted).toHaveBeenCalled();
-			expect(onAccepted.mock.calls[0][0]).toBe("СМ-2026-001");
+			expect(onAccepted.mock.calls[0]![0]).toBe("СМ-2026-001");
 		} finally {
 			globalThis.fetch = originalFetch;
 			try {
@@ -390,17 +561,18 @@ describe("Public Portal & Statutory Signature Autonomy (Mandates 8e, 8i, 8k & 63
 		const onAccepted = vi.fn();
 
 		const originalFetch = globalThis.fetch;
-		const mockFetch = vi.fn().mockImplementation((url: string) => {
-			if (url.includes("/accept")) {
-				return Promise.resolve({
+		const mockFetch = vi.fn(async (url: unknown) => {
+			const urlStr = String(url);
+			if (urlStr.includes("/accept")) {
+				return {
 					ok: true,
 					json: async () => ({ success: true, message: "OK" }),
-				});
+				};
 			}
-			return Promise.resolve({
+			return {
 				ok: true,
 				json: async () => ({ data: { ...mockEstimate, status: "accepted" } }),
-			});
+			};
 		});
 		globalThis.fetch = mockFetch as any;
 
@@ -436,7 +608,8 @@ describe("Public Portal & Statutory Signature Autonomy (Mandates 8e, 8i, 8k & 63
 				String(call[0]).includes("/accept"),
 			);
 			expect(acceptCall).toBeDefined();
-			const body = JSON.parse(acceptCall![1]?.body as string);
+			const acceptInit = acceptCall?.[1] as RequestInit | undefined;
+			const body = JSON.parse(String(acceptInit?.body || "{}"));
 			expect(body.signerName).toBe("Пациент");
 			expect(body.signatureMethod).toBe("click_accept");
 		} finally {
@@ -451,25 +624,41 @@ describe("Public Portal & Statutory Signature Autonomy (Mandates 8e, 8i, 8k & 63
 		}
 	});
 
-	it("PatientBranchTransferModal: uses statutory paper consent instead of biometric stylus fiction", () => {
-		const html = renderToString(
-			<PatientBranchTransferModal
-				isOpen={true}
-				onClose={() => {}}
-				patientId="pat-42"
-				patientFullName="Смирнов Петр Алексеевич"
-				initialSourceBranchId="branch_center"
-				initialTargetBranchId="branch_north"
-			/>,
-		);
+	it("PatientBranchTransferModal: uses statutory paper consent instead of biometric stylus fiction", async () => {
+		const { doc } = setupMockDom();
+		const root: Root = createRoot(doc.body as unknown as HTMLElement);
+		try {
+			await act(async () => {
+				root.render(
+					<PatientBranchTransferModal
+						isOpen={true}
+						onClose={() => {}}
+						patientId="pat-42"
+						patientFullName="Смирнов Петр Алексеевич"
+						initialSourceBranchId="branch_center"
+						initialTargetBranchId="branch_north"
+					/>,
+				);
+			});
 
-		// 1. Must contain statutory paper consent
-		expect(html).toContain('value="paper_signed_consent"');
-		expect(html).toContain("Бумажное заявление пациента (подшито в карту 043/у)");
+			const html = nodeToHtml(doc.body);
 
-		// 2. Biometric fiction must be completely eradicated
-		expect(html).not.toContain("tablet_stylus_biometric");
-		expect(html).not.toContain("биометрический росчерк");
+			// 1. Must contain statutory paper consent
+			expect(html).toContain('value="paper_signed_consent"');
+			expect(html).toContain("Бумажное заявление пациента (подшито в карту 043/у)");
+
+			// 2. Biometric fiction must be completely eradicated
+			expect(html).not.toContain("tablet_stylus_biometric");
+			expect(html).not.toContain("биометрический росчерк");
+		} finally {
+			try {
+				await act(async () => {
+					root.unmount();
+				});
+			} finally {
+				teardownMockDom();
+			}
+		}
 	});
 
 	it("PatientCabinetModal: eliminates fake finger signature canvas and provides statutory PEP confirmation", () => {
