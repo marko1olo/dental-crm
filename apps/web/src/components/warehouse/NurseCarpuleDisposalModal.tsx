@@ -309,7 +309,7 @@ export function NurseCarpuleDisposalModal({
 								type="text"
 								value={nurseName}
 								onChange={(e) => setNurseName(e.target.value)}
-								className="w-full h-8 px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
+								className="w-full min-h-[44px] px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
 							/>
 						</div>
 
@@ -321,7 +321,7 @@ export function NurseCarpuleDisposalModal({
 								type="text"
 								value={doctorName}
 								onChange={(e) => setDoctorName(e.target.value)}
-								className="w-full h-8 px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
+								className="w-full min-h-[44px] px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
 							/>
 						</div>
 
@@ -332,7 +332,7 @@ export function NurseCarpuleDisposalModal({
 							<select
 								value={disposalReason}
 								onChange={(e) => setDisposalReason(e.target.value)}
-								className="w-full h-8 px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
+								className="w-full min-h-[44px] px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-semibold text-[var(--ink,#0f172a)]"
 							>
 								<option value="used_in_procedure">Использовано при лечении</option>
 								<option value="partial_dose">Остаток карпулы после анестезии</option>
@@ -345,7 +345,7 @@ export function NurseCarpuleDisposalModal({
 							<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] block mb-1">
 								Класс отходов / Дезинфекция
 							</span>
-							<div className="h-8 px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center text-xs font-semibold text-[var(--ink,#0f172a)] truncate">
+							<div className="min-h-[44px] px-2.5 rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center text-xs font-semibold text-[var(--ink,#0f172a)] truncate">
 								Класс Б • Аламинол 3% (60 мин)
 							</div>
 						</div>

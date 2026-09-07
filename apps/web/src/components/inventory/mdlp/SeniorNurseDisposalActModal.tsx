@@ -420,12 +420,12 @@ export const SeniorNurseDisposalActModal: React.FC<
 											setApproverName("Уполномоченный сотрудник");
 										}
 									}}
-									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs font-bold text-ink"
+									className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs font-bold text-ink"
 								>
-									<option value="doctor">👨‍⚕️ Врач-стоматолог (дежурный)</option>
-									<option value="senior_nurse">👩‍⚕️ Старшая медсестра</option>
-									<option value="administrator">💼 Администратор клиники</option>
-									<option value="authorized_staff">👤 Уполномоченный сотрудник</option>
+									<option value="doctor">Врач-стоматолог (дежурный)</option>
+									<option value="senior_nurse">Старшая медсестра</option>
+									<option value="administrator">Администратор клиники</option>
+									<option value="authorized_staff">Уполномоченный сотрудник</option>
 								</select>
 							</div>
 
@@ -442,7 +442,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 									value={approverName}
 									onChange={(e) => setApproverName(e.target.value)}
 									placeholder="ФИО сотрудника..."
-									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs font-semibold text-ink"
+									className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs font-semibold text-ink"
 								/>
 							</div>
 
@@ -458,7 +458,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 									type="text"
 									value={actNumber}
 									onChange={(e) => setActNumber(e.target.value)}
-									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs font-mono font-bold text-ink"
+									className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs font-mono font-bold text-ink"
 								/>
 							</div>
 
@@ -474,7 +474,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 									type="date"
 									value={actDate}
 									onChange={(e) => setActDate(e.target.value)}
-									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+									className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink"
 								/>
 							</div>
 
@@ -492,7 +492,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 											type="text"
 											value={seniorNurseName}
 											onChange={(e) => setSeniorNurseName(e.target.value)}
-											className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink font-semibold"
+											className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink font-semibold"
 										/>
 									</div>
 
@@ -508,7 +508,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 											type="text"
 											value={chiefDoctorName}
 											onChange={(e) => setChiefDoctorName(e.target.value)}
-											className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+											className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink"
 										/>
 									</div>
 
@@ -524,7 +524,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 											type="text"
 											value={dentistName}
 											onChange={(e) => setDentistName(e.target.value)}
-											className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+											className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink"
 										/>
 									</div>
 								</>
@@ -543,7 +543,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 									placeholder="Плановое списание карпул..."
 									value={notes}
 									onChange={(e) => setNotes(e.target.value)}
-									className="w-full h-9 px-2.5 rounded border border-line bg-paper text-xs text-ink"
+									className="w-full min-h-[44px] px-2.5 rounded border border-line bg-paper text-xs text-ink"
 								/>
 							</div>
 						</div>

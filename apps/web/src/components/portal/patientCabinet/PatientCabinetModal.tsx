@@ -57,6 +57,8 @@ import {
 	Trash2,
 	User,
 	X,
+	Scan,
+	Coffee,
 } from "lucide-react";
 import {
 	calculateCabinetSummary,
@@ -134,6 +136,116 @@ export interface PatientCabinetModalProps {
 	readonly onConsentSigned?: ((consent: PatientStatutoryConsent) => void) | undefined;
 	readonly onAppointmentBooked?: ((appointmentReq: { specialty: string; preferredDate: string; note: string }) => void) | undefined;
 }
+
+const renderGroupIcon = (categoryGroup: string) => {
+	switch (categoryGroup) {
+		case "caries":
+			return <Activity size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "anesthesia":
+			return <Pill size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "xray":
+			return <Scan size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "hygiene":
+			return <Sparkles size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "implant":
+			return <ShieldCheck size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "crowns":
+			return <Award size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "surgery":
+			return <Stethoscope size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "ortho":
+			return <Layers size={18} style={{ color: "var(--pc-primary)" }} />;
+		default:
+			return <FileText size={18} style={{ color: "var(--pc-primary)" }} />;
+	}
+};
+
+const renderCareIcon = (iconStr: string, category?: string) => {
+	switch (iconStr) {
+		case "ban":
+		case "no-smoking":
+		case "🚫":
+		case "🚭":
+			return <AlertCircle size={18} style={{ color: "var(--pc-danger)" }} />;
+		case "snowflake":
+		case "❄️":
+		case "🧊":
+			return <Sparkles size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "pill":
+		case "💊":
+			return <Pill size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "scale":
+		case "ruler":
+		case "⚖️":
+		case "📐":
+			return <Layers size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "tooth":
+		case "plant":
+		case "leaf":
+		case "🦷":
+		case "🌿":
+			return <CheckCircle2 size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "alert":
+		case "⚠️":
+		case "sneeze":
+		case "🤧":
+			return <AlertTriangle size={18} style={{ color: "var(--pc-warning)" }} />;
+		case "droplet":
+		case "💧":
+		case "🩸":
+			return <Heart size={18} style={{ color: "var(--pc-danger)" }} />;
+		case "flame":
+		case "🔥":
+			return <ShieldAlert size={18} style={{ color: "var(--pc-danger)" }} />;
+		case "soup":
+		case "bowl":
+		case "milk":
+		case "🍲":
+		case "🥣":
+		case "🥛":
+			return <Utensils size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "cup":
+		case "coffee":
+		case "🍵":
+		case "☕":
+			return <Coffee size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "wind":
+		case "💨":
+			return <Activity size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "straw":
+		case "bottle":
+		case "🥤":
+		case "🧴":
+			return <Shield size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "plane":
+		case "clock":
+		case "hourglass":
+		case "✈️":
+		case "⏳":
+			return <Clock size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "screw":
+		case "shield":
+		case "🔩":
+		case "🛡️":
+			return <ShieldCheck size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "brush":
+		case "🪥":
+			return <Sparkles size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "bandage":
+		case "🩹":
+			return <Activity size={18} style={{ color: "var(--pc-primary)" }} />;
+		case "crown":
+		case "👑":
+			return <Award size={18} style={{ color: "var(--pc-primary)" }} />;
+		default:
+			if (category === "cold") return <Sparkles size={18} style={{ color: "var(--pc-primary)" }} />;
+			if (category === "meds" || category === "medication") return <Pill size={18} style={{ color: "var(--pc-primary)" }} />;
+			if (category === "food" || category === "nutrition") return <Utensils size={18} style={{ color: "var(--pc-primary)" }} />;
+			if (category === "warning") return <AlertTriangle size={18} style={{ color: "var(--pc-warning)" }} />;
+			if (category === "restrictions") return <AlertCircle size={18} style={{ color: "var(--pc-danger)" }} />;
+			return <CheckCircle2 size={18} style={{ color: "var(--pc-primary)" }} />;
+	}
+};
 
 export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 	isOpen = true,
@@ -853,7 +965,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											data-testid={`overview-care-rec-${rec.id}`}
 										>
 											<div className="pc-care-rec-icon" aria-hidden="true">
-												{rec.icon}
+												{renderCareIcon(rec.icon, rec.category)}
 											</div>
 											<div className="pc-care-rec-content">
 												<div className="pc-care-rec-title">
@@ -1063,7 +1175,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									<button
 										type="button"
 										className="pc-btn-primary"
-										style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+										style={{ padding: "6px 14px", fontSize: "0.8125rem" }}
 										onClick={() => setIsSelfCheckinOpen(true)}
 										data-testid="open-self-checkin-btn"
 									>
@@ -1577,7 +1689,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 									<button
 										type="button"
 										className="pc-btn-primary"
-										style={{ minHeight: "40px", padding: "8px 16px", fontSize: "0.8125rem", fontWeight: 700 }}
+										style={{ padding: "8px 16px", fontSize: "0.8125rem", fontWeight: 700 }}
 										onClick={() => setActiveTab("passport")}
 										data-testid="btn-open-dental-passport"
 									>
@@ -1708,7 +1820,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 														>
 															<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 																<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-																	<span style={{ fontSize: "1.25rem", lineHeight: 1 }}>{grp.groupIcon}</span>
+																	<span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{renderGroupIcon(grp.categoryGroup)}</span>
 																	<div>
 																		<strong style={{ fontSize: "0.875rem", color: "var(--pc-text-main)" }}>
 																			{grp.categoryGroupRu}
@@ -1816,7 +1928,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 																downloadDetailedReceipt(inv, data);
 																showToast(`Детализированный чек 54-ФЗ № ${inv.invoiceNumber} сохранен!`);
 															}}
-															style={{ minHeight: "36px", padding: "6px 12px", fontSize: "0.8125rem" }}
+															style={{ padding: "6px 12px", fontSize: "0.8125rem" }}
 														>
 															<Download size={14} />
 															<span>Детализированный чек (54-ФЗ)</span>
@@ -1827,7 +1939,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 																target="_blank"
 																rel="noreferrer"
 																className="pc-btn-secondary"
-																style={{ textDecoration: "none", minHeight: "36px", padding: "6px 12px", fontSize: "0.8125rem" }}
+																style={{ textDecoration: "none", padding: "6px 12px", fontSize: "0.8125rem" }}
 															>
 																<ExternalLink size={14} />
 																<span>ФНС</span>
@@ -2207,7 +2319,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											<strong style={{ fontSize: "0.9375rem" }}>
 												{apt.dateIso} в {apt.timeRu}
 											</strong>
-											<span className="pc-status-badge paid">
+											<span className={`pc-status-badge ${apt.status === "completed" ? "paid" : "scheduled"}`}>
 												{apt.status === "completed" ? "Завершен" : "Запланирован"}
 											</span>
 										</div>
@@ -2354,7 +2466,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											data-testid="input-care-tooth-fdi"
 											style={{
 												width: "80px",
-												minHeight: "36px",
+												minHeight: "44px",
 												padding: "4px 8px",
 												borderRadius: "6px",
 												border: "1px solid var(--pc-border)",
@@ -2489,7 +2601,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 											data-testid={`care-tab-rec-${rec.id}`}
 										>
 											<div className="pc-care-rec-icon" aria-hidden="true">
-												{rec.icon}
+												{renderCareIcon(rec.icon, rec.category)}
 											</div>
 											<div className="pc-care-rec-content">
 												<div className="pc-care-rec-title">
@@ -2549,7 +2661,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 													<tr key={med.id} data-testid={`care-med-${med.id}`}>
 														<td>
 															<strong style={{ color: "var(--pc-text-main)", display: "flex", alignItems: "center", gap: "6px" }}>
-																<span>{med.icon}</span>
+																<span>{renderCareIcon(med.icon, "medication")}</span>
 																<span>{med.name}</span>
 															</strong>
 															<div style={{ fontSize: "0.75rem", color: "var(--pc-text-muted)" }}>{med.formRu}</div>
@@ -2614,7 +2726,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										<a
 											href={`tel:${careMemo.clinicEmergencyPhone?.replace(/\D/g, "")}`}
 											className="pc-btn-primary"
-											style={{ background: "var(--pc-danger)", textDecoration: "none", minHeight: "40px", padding: "6px 14px", fontSize: "0.8125rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
+											style={{ background: "var(--pc-danger)", textDecoration: "none", padding: "6px 14px", fontSize: "0.8125rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
 										>
 											<Phone size={14} />
 											<span>Позвонить дежурному врачу</span>
@@ -3489,7 +3601,7 @@ export const PatientCabinetModal: React.FC<PatientCabinetModalProps> = ({
 										type="button"
 										className="pc-btn-primary"
 										onClick={handlePrintCareMemo}
-										style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem", fontWeight: 800 }}
+										style={{ padding: "6px 14px", fontSize: "0.8125rem", fontWeight: 800 }}
 										data-testid="btn-print-from-preview"
 									>
 										<Printer size={14} />

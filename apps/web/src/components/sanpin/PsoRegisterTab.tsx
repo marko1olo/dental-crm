@@ -230,7 +230,7 @@ export function PsoRegisterTab() {
 				batchItemCount: 100,
 				testedSampleCount: 3,
 				detergentBrand: "Биолот 0.5% + Аламинол 1%",
-				notes: `⚡ Азопирамовая проба — 1 клик норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21). Партия допущена к стерилизации. [ЭЦП: ${formNurseName}]`,
+				notes: `Азопирамовая проба — 1 клик норма (реакция отрицательная, следов крови и моющих средств не обнаружено по СанПиН 3.3686-21). Партия допущена к стерилизации. [ЭЦП: ${formNurseName}]`,
 			};
 
 			const res = await fetch("/api/registers/pso/quick-norm", {
@@ -244,7 +244,7 @@ export function PsoRegisterTab() {
 			});
 
 			if (res.ok) {
-				showToast("⚡ Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
+				showToast("Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
 				fetchLogs();
 			} else {
 				// Fallback to standard /api/registers/pso
@@ -267,7 +267,7 @@ export function PsoRegisterTab() {
 					}),
 				});
 				if (fallbackRes.ok) {
-					showToast("⚡ Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
+					showToast("Азопирамовая проба: норма (реакция отрицательная, следов крови не обнаружено по СанПиН 3.3686-21)!", "success");
 					fetchLogs();
 				} else {
 					const err = await fallbackRes.json();
@@ -437,7 +437,7 @@ export function PsoRegisterTab() {
 							data-testid="quick-pso-norm-btn"
 						>
 							<CheckCircle2 size={16} />
-							<span>⚡ Азопирамовая проба — 1 клик норма (реакция отрицательная)</span>
+							<span>Азопирамовая проба — 1 клик норма (реакция отрицательная)</span>
 						</button>
 
 						<button
@@ -504,7 +504,7 @@ export function PsoRegisterTab() {
 												title="1-клик отметка всей партии инструментов по норме СанПиН 3.3686-21"
 												data-testid="empty-quick-pso-norm-btn"
 											>
-												<CheckCircle2 size={16} /> ⚡ Отметка партии в 1 клик («Проба отрицательная, норма»)
+												<CheckCircle2 size={16} /> Отметка партии в 1 клик («Проба отрицательная, норма»)
 											</button>
 											<button
 												type="button"
@@ -662,7 +662,7 @@ export function PsoRegisterTab() {
 												setFormAzopyramNeg(true);
 												setFormPhenolNeg(true);
 												setFormDetergent("Биолот 0.5% + Аламинол 1%");
-												setFormNotes("⚡ Проба отрицательная, норма (СанПиН 3.3686-21)");
+												setFormNotes("Проба отрицательная, норма (СанПиН 3.3686-21)");
 											}}
 											className="sanpin-btn sanpin-btn-secondary touch-manipulation"
 											style={{ fontSize: "0.8rem", padding: "0.25rem 0.6rem", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}

@@ -12,17 +12,19 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
 	PatientOnlineBookingModal,
 	resolveBookingStep1Selection,
+	resolveBookingStep2Selection,
 } from "../PatientOnlineBookingModal";
 import type {
 	BookingBranch,
 	BookingDoctor,
 	BookingService,
+	BookingTimeSlot,
 } from "../patientPortalTypes";
 
 const TEST_BRANCH: BookingBranch = {
@@ -304,6 +306,64 @@ describe("PatientOnlineBookingModal — Solo Doctor & Step 1 Autonomy (Mandates 
 			assert.ok(
 				btnMatchNoSrvs[0].includes('disabled=""'),
 				"Button must be disabled when services array is empty",
+			);
+		});
+
+		it("resolveBookingStep2Selection auto-selects first available slot when none is selected", () => {
+			const mockSlots: BookingTimeSlot[] = [
+				{ id: "slot-01", timeRu: "09:00", isOccupied: true, timePeriod: "morning", doctorId: "doc-1", branchId: "b-1", dateIso: "2026-04-10" },
+				{ id: "slot-02", timeRu: "09:30", isOccupied: false, timePeriod: "morning", doctorId: "doc-1", branchId: "b-1", dateIso: "2026-04-10" },
+				{ id: "slot-03", timeRu: "10:00", isOccupied: false, timePeriod: "morning", doctorId: "doc-1", branchId: "b-1", dateIso: "2026-04-10" },
+			];
+
+			const res = resolveBookingStep2Selection(mockSlots, "", "");
+			assert.strictEqual(res.canProceed, true, "Must be able to proceed when slots exist");
+			assert.strictEqual(res.effectiveSlotId, "slot-02", "Must fallback to first un-occupied slot");
+			assert.strictEqual(res.effectiveTimeRu, "09:30");
+
+			const resChosen = resolveBookingStep2Selection(mockSlots, "slot-03", "10:00");
+			assert.strictEqual(resChosen.canProceed, true);
+			assert.strictEqual(resChosen.effectiveSlotId, "slot-03");
+			assert.strictEqual(resChosen.effectiveTimeRu, "10:00");
+		});
+
+		it("renders Step 2 Next button without disabled attribute when slots exist", () => {
+			const htmlStep2 = renderToStaticMarkup(
+				createElement(PatientOnlineBookingModal, {
+					isOpen: true,
+					onClose: () => {},
+					doctors: MULTI_DOCTORS,
+					services: TEST_SERVICES,
+					branches: [TEST_BRANCH],
+					initialStep: 2,
+				}),
+			);
+
+			const btnMatch = htmlStep2.match(/<button[^>]*data-testid="booking-next-to-step-3-btn"[^>]*>/);
+			assert.ok(btnMatch, "Must find Step 2 next button");
+			assert.ok(
+				!btnMatch[0].includes('disabled=""'),
+				"Step 2 button must NOT be disabled when slots exist (Mandate 8e)",
+			);
+		});
+
+		it("renders Step 3 Confirm button without disabled attribute for autonomous validation feedback", () => {
+			const htmlStep3 = renderToStaticMarkup(
+				createElement(PatientOnlineBookingModal, {
+					isOpen: true,
+					onClose: () => {},
+					doctors: MULTI_DOCTORS,
+					services: TEST_SERVICES,
+					branches: [TEST_BRANCH],
+					initialStep: 3,
+				}),
+			);
+
+			const confirmBtnMatch = htmlStep3.match(/<button[^>]*data-testid="booking-confirm-submit-btn"[^>]*>/);
+			assert.ok(confirmBtnMatch, "Must find Step 3 confirm button");
+			assert.ok(
+				!confirmBtnMatch[0].includes('disabled=""'),
+				"Step 3 confirm button must NOT be disabled (Mandate 8e Doctor Autonomy)",
 			);
 		});
 	});

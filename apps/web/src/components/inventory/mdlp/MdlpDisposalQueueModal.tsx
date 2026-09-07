@@ -339,14 +339,14 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							<div className="flex gap-2 mt-1">
 								<button
 									type="button"
-									className="mdlp-btn mdlp-btn-secondary h-8 text-xs px-3"
+									className="mdlp-btn mdlp-btn-secondary min-h-[44px] text-xs px-3"
 									onClick={handleDownloadXml}
 								>
 									<Download size={14} /> Скачать XML Схемы 10560
 								</button>
 								<button
 									type="button"
-									className="mdlp-btn mdlp-btn-primary h-8 text-xs px-3"
+									className="mdlp-btn mdlp-btn-primary min-h-[44px] text-xs px-3"
 									onClick={() => setIsActModalOpen(true)}
 								>
 									<Printer size={14} /> Печать акта для старшей медсестры
@@ -578,17 +578,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							<div className="flex items-center gap-2">
 								<button
 									type="button"
-									className="mdlp-btn mdlp-btn-secondary h-8 text-xs px-2.5 font-semibold text-teal-700"
-									onClick={handleQuickNurseCarpulesDisposal}
-									title="Пакетно списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)"
-									data-testid="nurse-quick-add-carpules-btn"
-								>
-									<Sparkles size={14} className="text-amber-500" />
-									<span>⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)</span>
-								</button>
-								<button
-									type="button"
-									className="mdlp-btn mdlp-btn-secondary h-8 text-xs px-2.5"
+									className="mdlp-btn mdlp-btn-secondary min-h-[44px] text-xs px-2.5"
 									onClick={handleSortFefo}
 									title="Сортировать по сроку годности (FEFO)"
 								>
@@ -596,7 +586,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 								</button>
 								<button
 									type="button"
-									className="mdlp-btn mdlp-btn-ghost h-8 text-xs px-2 text-bad-fg hover:bg-red-50"
+									className="mdlp-btn mdlp-btn-ghost min-h-[44px] text-xs px-2 text-bad-fg hover:bg-red-50"
 									onClick={handleClearQueue}
 									title="Очистить всю очередь"
 								>

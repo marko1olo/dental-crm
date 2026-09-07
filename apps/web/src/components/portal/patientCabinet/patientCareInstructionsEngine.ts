@@ -36,7 +36,7 @@ export type CareInterventionType =
 
 export interface CareRecommendationItem {
 	readonly id: string;
-	readonly icon: string; // "🧊", "💊", "🚫", "🦷", "⚠️", "💨", "🥤", "🪥", etc.
+	readonly icon: string; // "snowflake", "pill", "ban", "tooth", "alert", "wind", "straw", "brush", etc.
 	readonly title: string; // "Приложить холод на 15 минут"
 	readonly description: string; // Подробное понятное пояснение
 	readonly category: CareCategory;
@@ -52,7 +52,7 @@ export interface PrescribedMedicationItem {
 	readonly frequencyRu: string; // "2 раза в день после еды"
 	readonly durationRu: string; // "3–5 дней (при болях)"
 	readonly purposeRu: string; // "Противовоспалительное и обезболивающее действие"
-	readonly icon: string; // "💊", "🍵", "💧", "🧴"
+	readonly icon: string; // "pill", "cup", "droplet", "bottle"
 	readonly isImportant?: boolean;
 }
 
@@ -167,7 +167,7 @@ export interface GenericInvoiceServiceItemInput {
 export const DEFAULT_CARIES_RECOMMENDATIONS: readonly CareRecommendationItem[] = [
 	{
 		id: "caries_numbness_food",
-		icon: "🚫",
+		icon: "ban",
 		title: "Не есть до окончания анестезии (1.5–2 часа)",
 		description:
 			"Воздержитесь от приема твердой и горячей пищи, пока не пройдет онемение щеки, губы и языка, во избежание их случайного сильного прикусывания.",
@@ -176,7 +176,7 @@ export const DEFAULT_CARIES_RECOMMENDATIONS: readonly CareRecommendationItem[] =
 	},
 	{
 		id: "caries_cold_compress",
-		icon: "🧊",
+		icon: "snowflake",
 		title: "Холод при дискомфорте",
 		description:
 			"При повышенной чувствительности десны или ноющей реакции приложите сухой холод через полотенце к щеке на 10–15 минут.",
@@ -185,7 +185,7 @@ export const DEFAULT_CARIES_RECOMMENDATIONS: readonly CareRecommendationItem[] =
 	},
 	{
 		id: "caries_painkiller",
-		icon: "💊",
+		icon: "pill",
 		title: "Обезболивающее: Нимесил или Нурофен",
 		description:
 			"При умеренной постпломбировочной боли примите Нимесил 100 мг (1 саше) или Ибупрофен 400 мг после еды. Не более 2 раз в сутки.",
@@ -194,7 +194,7 @@ export const DEFAULT_CARIES_RECOMMENDATIONS: readonly CareRecommendationItem[] =
 	},
 	{
 		id: "caries_occlusion_check",
-		icon: "⚖️",
+		icon: "scale",
 		title: "Проверка прикуса при смыкании",
 		description:
 			"Если дома при естественном смыкании челюстей вы почувствуете, что пломба завышает («мешает»), обязательно позвоните — мы бесплатно пришлифуем её за 2 минуты.",
@@ -203,7 +203,7 @@ export const DEFAULT_CARIES_RECOMMENDATIONS: readonly CareRecommendationItem[] =
 	},
 	{
 		id: "caries_gentle_hygiene",
-		icon: "🦷",
+		icon: "tooth",
 		title: "Бережная гигиена полости рта",
 		description:
 			"Чистите зубы мягкой щеткой утром и вечером, не травмируя краевую десну в зоне недавней реставрации. Используйте зубную нить без резких рывков.",
@@ -211,7 +211,7 @@ export const DEFAULT_CARIES_RECOMMENDATIONS: readonly CareRecommendationItem[] =
 	},
 	{
 		id: "caries_warning",
-		icon: "⚠️",
+		icon: "alert",
 		title: "Когда срочно связаться с клиникой",
 		description:
 			"Если возникла острая самопроизвольная ночная боль, пульсация или зуб остро реагирует на горячее — немедленно обратитесь к врачу.",
@@ -235,7 +235,7 @@ export const CARIES_CARE_PRESET: CarePresetData = {
 			frequencyRu: "1–2 раза в сутки после еды",
 			durationRu: "1–2 дня только при боли",
 			purposeRu: "Снятие постпломбировочной чувствительности и воспаления",
-			icon: "💊",
+			icon: "pill",
 		},
 	],
 	warningSigns: [
@@ -269,7 +269,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 	recommendations: [
 		{
 			id: "ext_gauze",
-			icon: "🩸",
+			icon: "droplet",
 			title: "Удалить марлевый тампон через 20 минут",
 			description:
 				"Аккуратно сплюньте марлевый тампон через 20–30 минут после операции. Не держите его дольше, чтобы не инфицировать свежую лунку.",
@@ -278,7 +278,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ext_no_rinse",
-			icon: "🚫",
+			icon: "ban",
 			title: "КАТЕГОРИЧЕСКИ НЕ ПОЛОСКАТЬ РОТ 24 часа!",
 			description:
 				"Не полоскать рот и не вымывать кровяной сгусток из лунки! Сгусток — главная биологическая защита от микробов и основа заживления кости.",
@@ -288,7 +288,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ext_cold_pack",
-			icon: "🧊",
+			icon: "snowflake",
 			title: "Прикладывать холод в первые сутки",
 			description:
 				"Прикладывайте сухой лед/холод через полотенце к щеке снаружи по схеме: 15 минут холод — 20 минут перерыв. Повторять первые 4–6 часов для предотвращения отека.",
@@ -297,7 +297,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ext_no_heat",
-			icon: "🔥",
+			icon: "flame",
 			title: "Исключить тепловые процедуры и спорт",
 			description:
 				"Запрещены горячие ванны, сауны, бани, солярий, горячие компрессы и физические тренировки на 3–5 дней, так как они вызывают кровотечение.",
@@ -306,7 +306,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ext_soft_diet",
-			icon: "🍲",
+			icon: "soup",
 			title: "Мягкая, негорячая пища на здоровой стороне",
 			description:
 				"Первые 3 дня пища должна быть теплой (не горячей) и мягкой (пюре, супы, каши). Не жевать на стороне удаленного зуба. Исключить алкоголь и курение на 3 суток.",
@@ -314,7 +314,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ext_baths",
-			icon: "🍵",
+			icon: "cup",
 			title: "Ротовые ванночки со 2-х суток",
 			description:
 				"Со 2-го дня делать ротовые ванночки (набрать раствор в рот, подержать 1 минуту, наклонив голову на сторону лунки, и аккуратно выплюнуть БЕЗ бульканья) с Хлоргексидином 0.05% или Мирамистином после еды.",
@@ -331,7 +331,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 			frequencyRu: "2 раза в сутки после еды",
 			durationRu: "2–3 дня при болевом синдроме",
 			purposeRu: "Купирование боли и противоотечный эффект",
-			icon: "💊",
+			icon: "pill",
 			isImportant: true,
 		},
 		{
@@ -342,7 +342,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 			frequencyRu: "3–4 раза в день после каждого приема пищи",
 			durationRu: "5–7 дней (начиная со 2-х суток)",
 			purposeRu: "Антисептическая защита лунки от патогенной микрофлоры",
-			icon: "🍵",
+			icon: "cup",
 		},
 		{
 			id: "ext_med_antibiotic",
@@ -352,7 +352,7 @@ export const EXTRACTION_CARE_PRESET: CarePresetData = {
 			frequencyRu: "2 раза в сутки с интервалом 12 часов в начале еды",
 			durationRu: "5 дней строго без перерывов",
 			purposeRu: "Профилактика бактериальных осложнений и альвеолита",
-			icon: "💊",
+			icon: "pill",
 		},
 	],
 	warningSigns: [
@@ -391,7 +391,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 	recommendations: [
 		{
 			id: "sinus_no_blowing",
-			icon: "💨",
+			icon: "wind",
 			title: "КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО СМОРКАТЬСЯ 14 дней!",
 			description:
 				"Категорический запрет на сморкание! При необходимости нос можно только аккуратно промокать салфеткой снаружи. Сморкание создает избыточное давление и смещает костный трансплантат.",
@@ -401,7 +401,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "sinus_sneeze_open",
-			icon: "🤧",
+			icon: "sneeze",
 			title: "Чихать и кашлять ТОЛЬКО с открытым ртом",
 			description:
 				"Если хочется чихнуть или покашлять — делайте это исключительно с широко открытым ртом, не зажимая нос пальцами.",
@@ -411,7 +411,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "sinus_no_straw",
-			icon: "🥤",
+			icon: "straw",
 			title: "Не пить через соломинку, не надувать щеки",
 			description:
 				"Запрещено пить через трубочку, надувать шарики или щеки, играть на духовых инструментах, нырять под воду.",
@@ -419,7 +419,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "sinus_no_flights",
-			icon: "✈️",
+			icon: "plane",
 			title: "Запрет на авиаперелеты 14–21 день",
 			description:
 				"Перепады атмосферного давления в самолете могут повредить мембрану Шнайдера и нарушить приживление костного материала.",
@@ -428,7 +428,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "sinus_cold",
-			icon: "🧊",
+			icon: "snowflake",
 			title: "Холод к подглазничной области",
 			description:
 				"Прикладывать сухой холод к щеке в проекции пазухи по 15 минут каждый час в первые сутки для минимизации послеоперационного отека.",
@@ -436,7 +436,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "sinus_nasal_drops",
-			icon: "💧",
+			icon: "droplet",
 			title: "Сосудосуживающие капли в нос 5 дней",
 			description:
 				"Закапывать спрей Називин / Ринонорм по 1 дозе в носовой ход на стороне операции 2 раза в день для обеспечения дренажа гайморовой пазухи.",
@@ -453,7 +453,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 			frequencyRu: "2 раза в сутки строго через 12 часов",
 			durationRu: "7 дней обязательный курс",
 			purposeRu: "Антибактериальная защита костного биоматериала в гайморовой пазухе",
-			icon: "💊",
+			icon: "pill",
 			isImportant: true,
 		},
 		{
@@ -464,7 +464,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 			frequencyRu: "2 раза в сутки (утром и вечером)",
 			durationRu: "5 дней",
 			purposeRu: "Снятие отека соустья гайморовой пазухи и свободный отток",
-			icon: "💧",
+			icon: "droplet",
 		},
 		{
 			id: "sinus_med_antihistamine",
@@ -474,7 +474,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 			frequencyRu: "1 раз в сутки на ночь",
 			durationRu: "5–7 дней",
 			purposeRu: "Снятие аллергического и посттравматического отека слизистой",
-			icon: "💊",
+			icon: "pill",
 		},
 		{
 			id: "sinus_med_nimesil",
@@ -484,7 +484,7 @@ export const SINUS_LIFT_CARE_PRESET: CarePresetData = {
 			frequencyRu: "2 раза в день после еды",
 			durationRu: "3–4 дня",
 			purposeRu: "Обезболивание и снятие воспалительного отека",
-			icon: "💊",
+			icon: "pill",
 		},
 	],
 	warningSigns: [
@@ -522,7 +522,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 	recommendations: [
 		{
 			id: "imp_cold",
-			icon: "🧊",
+			icon: "snowflake",
 			title: "Прикладывать холод первые сутки",
 			description:
 				"Сухой лед через ткань к щеке по 15 минут с перерывами по 20 минут в течение первых 6–8 часов. Это снизит отек на 70%.",
@@ -531,7 +531,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "imp_no_chew",
-			icon: "🔩",
+			icon: "screw",
 			title: "Не жевать на стороне имплантата",
 			description:
 				"Исключить любое механическое давление на установленный имплантат и формирователь десны до полного приживления кости.",
@@ -541,7 +541,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "imp_soft_brush",
-			icon: "🪥",
+			icon: "brush",
 			title: "Щадящая чистка ультрамягкой щеткой",
 			description:
 				"Зубы чистить ультрамягкой щеткой (Curaprox Surgical), аккуратно обходя область швов и формирователя десны.",
@@ -549,7 +549,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "imp_baths",
-			icon: "🍵",
+			icon: "cup",
 			title: "Антисептические ванночки со 2-х суток",
 			description:
 				"Ротовые ванночки с Хлоргексидином 0.05% или Мирамистином 3–4 раза в день после еды. Набрать в рот на 1 минуту, не булькать.",
@@ -558,7 +558,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "imp_no_smoking",
-			icon: "🚫",
+			icon: "ban",
 			title: "Исключить курение и алкоголь на 7–10 дней",
 			description:
 				"Никотин вызывает спазм капилляров десны и в 4 раза повышает риск отторжения имплантата (периимплантита).",
@@ -567,7 +567,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "imp_stitches",
-			icon: "🧵",
+			icon: "thread",
 			title: "Снятие швов через 10–14 дней",
 			description:
 				"Швы надежно фиксируют десну вокруг шейки имплантата. Снятие швов проводится на приеме через 10–14 дней абсолютно безболезненно.",
@@ -583,7 +583,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 			frequencyRu: "Каждые 12 часов",
 			durationRu: "5–7 дней полный курс",
 			purposeRu: "Антибактериальная защита зоны остеоинтеграции имплантата",
-			icon: "💊",
+			icon: "pill",
 			isImportant: true,
 		},
 		{
@@ -594,7 +594,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 			frequencyRu: "1–2 раза в день после еды",
 			durationRu: "3–4 дня при болях",
 			purposeRu: "Обезболивание и снятие отека мягких тканей",
-			icon: "💊",
+			icon: "pill",
 		},
 		{
 			id: "imp_med_antiseptic",
@@ -604,7 +604,7 @@ export const IMPLANTATION_CARE_PRESET: CarePresetData = {
 			frequencyRu: "3–4 раза в день после еды",
 			durationRu: "10 дней до снятия швов",
 			purposeRu: "Антисептическая санация линии швов",
-			icon: "🍵",
+			icon: "cup",
 		},
 	],
 	warningSigns: [
@@ -643,7 +643,7 @@ export const ENDODONTICS_CARE_PRESET: CarePresetData = {
 	recommendations: [
 		{
 			id: "endo_numbness",
-			icon: "⏳",
+			icon: "clock",
 			title: "Не есть 2 часа до отхода анестезии",
 			description:
 				"Не принимать пищу до полного восстановления чувствительности, чтобы не прикусить щеку или язык.",
@@ -652,7 +652,7 @@ export const ENDODONTICS_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "endo_temp_filling",
-			icon: "🛡️",
+			icon: "shield",
 			title: "Беречь временную пломбу",
 			description:
 				"Не жевать липкую и твердую пищу на стороне зуба с временной пломбой во избежание её повреждения и разгерметизации каналов.",
@@ -661,7 +661,7 @@ export const ENDODONTICS_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "endo_bite_pain",
-			icon: "🩹",
+			icon: "bandage",
 			title: "Допустима чувствительность при накусывании",
 			description:
 				"Болезненность при накусывании на зуб в течение 3–5 дней является нормальной физиологической реакцией периодонта на обработку каналов.",
@@ -670,7 +670,7 @@ export const ENDODONTICS_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "endo_painkiller",
-			icon: "💊",
+			icon: "pill",
 			title: "Обезболивающее: Ибупрофен или Нимесил",
 			description:
 				"При выраженной болезненности примите Ибупрофен 400 мг или Нимесил 100 мг после еды.",
@@ -678,7 +678,7 @@ export const ENDODONTICS_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "endo_crown_protection",
-			icon: "👑",
+			icon: "crown",
 			title: "Защитить зуб коронкой после лечения",
 			description:
 				"Депульпированный зуб становится хрупким. Для предотвращения раскола корня и удаления зуба обязательно покройте его коронкой или керамической накладкой.",
@@ -695,7 +695,7 @@ export const ENDODONTICS_CARE_PRESET: CarePresetData = {
 			frequencyRu: "По требованию при боли (не более 3 раз в сутки)",
 			durationRu: "2–3 дня",
 			purposeRu: "Снятие постпломбировочной периодонтальной чувствительности",
-			icon: "💊",
+			icon: "pill",
 		},
 	],
 	warningSigns: [
@@ -729,7 +729,7 @@ export const WHITENING_CARE_PRESET: CarePresetData = {
 	recommendations: [
 		{
 			id: "white_diet",
-			icon: "🥛",
+			icon: "milk",
 			title: "Строгая «Белая диета» 48–72 часа!",
 			description:
 				"Исключить ВСЕ красящие продукты: кофе, черный и зеленый чай, красное вино, соки, колу, шоколад, свеклу, ягоды, томаты, соевый соус, карри, горчицу.",
@@ -739,7 +739,7 @@ export const WHITENING_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "white_no_smoke",
-			icon: "🚭",
+			icon: "no-smoking",
 			title: "Полный отказ от курения и вейпа 48 часов",
 			description:
 				"Смолы и никотин мгновенно проникают в открытые микропоры эмали и сводят на нет результат отбеливания.",
@@ -749,7 +749,7 @@ export const WHITENING_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "white_temp_sensitive",
-			icon: "❄️",
+			icon: "snowflake",
 			title: "Избегать резких температурных перепадов",
 			description:
 				"Исключить ледяную и очень горячую пищу и напитки в первые 2 дня из-за повышенной температурной чувствительности эмали.",
@@ -757,7 +757,7 @@ export const WHITENING_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "white_remin_gel",
-			icon: "🧴",
+			icon: "bottle",
 			title: "Реминерализующий гель при чувствительности",
 			description:
 				"Наносите гель Relief ACP или Tooth Mousse в индивидуальную каппу на 20–30 минут 1–2 раза в день для укрепления эмали и снятия прострелов.",
@@ -766,7 +766,7 @@ export const WHITENING_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "white_sens_paste",
-			icon: "🪥",
+			icon: "brush",
 			title: "Паста для чувствительных зубов без абразивов",
 			description:
 				"Чистить зубы мягкой щеткой с пастой для чувствительных зубов (Sensodyne / Biorepair / Elmex) с низким индексом абразивности (RDA < 50).",
@@ -782,7 +782,7 @@ export const WHITENING_CARE_PRESET: CarePresetData = {
 			frequencyRu: "1–2 раза в день по 20–30 минут после чистки зубов",
 			durationRu: "5–7 дней",
 			purposeRu: "Насыщение эмали кальцием и фосфатами, устранение гиперестезии",
-			icon: "🧴",
+			icon: "bottle",
 			isImportant: true,
 		},
 		{
@@ -793,7 +793,7 @@ export const WHITENING_CARE_PRESET: CarePresetData = {
 			frequencyRu: "При выраженных прострелах в первые сутки",
 			durationRu: "1–2 дня",
 			purposeRu: "Купирование острой чувствительности нервных окончаний пульпы",
-			icon: "💊",
+			icon: "pill",
 		},
 	],
 	warningSigns: [
@@ -825,7 +825,7 @@ export const ORTHODONTICS_CARE_PRESET: CarePresetData = {
 	recommendations: [
 		{
 			id: "ortho_wax",
-			icon: "📐",
+			icon: "ruler",
 			title: "Использовать ортодонтический воск при натирании",
 			description:
 				"При натирании щеки или губы замком брекета разогрейте кусочек ортодонтического воска в пальцах и заклейте выступающий элемент.",
@@ -834,7 +834,7 @@ export const ORTHODONTICS_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ortho_soft_food",
-			icon: "🥣",
+			icon: "bowl",
 			title: "Мягкая пища первые 3–4 дня после активации",
 			description:
 				"В первые дни после смены дуги зубы испытывают тягу. Употребляйте мягкую пищу: крем-супы, смузи, йогурты, пюре, мягкую рыбу.",
@@ -843,7 +843,7 @@ export const ORTHODONTICS_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ortho_no_sticky",
-			icon: "🚫",
+			icon: "ban",
 			title: "Исключить твердое, вязкое и липкое",
 			description:
 				"Запрещены ириски, жевательные резинки, грильяж, сухарики, попкорн. Твердые яблоки и морковь обязательно нарезать тонкими ломтиками.",
@@ -851,7 +851,7 @@ export const ORTHODONTICS_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "ortho_irrigator",
-			icon: "🪥",
+			icon: "brush",
 			title: "Ершики, монопучковая щетка и ирригатор",
 			description:
 				"Используйте V-образную ортодонтическую щетку, межзубные ершики и ирригатор после каждого приема пищи для предотвращения кариеса вокруг замков.",
@@ -868,7 +868,7 @@ export const ORTHODONTICS_CARE_PRESET: CarePresetData = {
 			frequencyRu: "1–2 раза в день в первые 2 суток",
 			durationRu: "2 дня по необходимости",
 			purposeRu: "Облегчение адаптации к ортодонтическому давлению",
-			icon: "💊",
+			icon: "pill",
 		},
 	],
 	warningSigns: [
@@ -900,7 +900,7 @@ export const HYGIENE_CARE_PRESET: CarePresetData = {
 	recommendations: [
 		{
 			id: "hyg_diet",
-			icon: "☕",
+			icon: "coffee",
 			title: "«Прозрачная диета» на 24 часа",
 			description:
 				"Воздержитесь от употребления кофе, крепкого чая, красного вина, ягод, свеклы и табака в течение суток, пока восстанавливается пелликула зуба.",
@@ -909,7 +909,7 @@ export const HYGIENE_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "hyg_new_brush",
-			icon: "🪥",
+			icon: "brush",
 			title: "Заменить зубную щетку на новую мягкую",
 			description:
 				"Обязательно смените старую зубную щетку на новую с мягкой густой щетиной (например, Curaprox 5460), чтобы не переносить старые бактерии на чистую эмаль.",
@@ -918,7 +918,7 @@ export const HYGIENE_CARE_PRESET: CarePresetData = {
 		},
 		{
 			id: "hyg_gum_gel",
-			icon: "🌿",
+			icon: "plant",
 			title: "Противовоспалительный гель для десен",
 			description:
 				"При повышенной чувствительности или легкой кровоточивости десны наносите гель Холисал или Асепта на краевую десну 2 раза в день 3 дня.",
@@ -934,7 +934,7 @@ export const HYGIENE_CARE_PRESET: CarePresetData = {
 			frequencyRu: "2–3 раза в день после еды и на ночь",
 			durationRu: "3–5 дней",
 			purposeRu: "Антисептическое, обезболивающее и регенерирующее действие на десну",
-			icon: "🌿",
+			icon: "plant",
 		},
 	],
 	warningSigns: [
@@ -1159,29 +1159,29 @@ export function generateCareMemo(input: GenerateCareMemoInput): PatientCareMemo 
 	];
 
 	for (const rec of recommendations) {
-		whatsAppLines.push(`${rec.icon} *${rec.title}*`);
+		whatsAppLines.push(`• *${rec.title}*`);
 		whatsAppLines.push(`${rec.description}`);
 		whatsAppLines.push("");
 	}
 
 	if (medications.length > 0) {
-		whatsAppLines.push(`💊 *Схема приема медикаментов:*`);
+		whatsAppLines.push(`*Схема приема медикаментов:*`);
 		for (const med of medications) {
 			whatsAppLines.push(`• *${med.name}*: ${med.dosageRu} (${med.frequencyRu}, курс ${med.durationRu})`);
 		}
 		whatsAppLines.push("");
 	}
 
-	whatsAppLines.push(`⚠️ *Тревожные признаки:*`);
+	whatsAppLines.push(`*Тревожные признаки:*`);
 	for (const w of warningSigns) {
 		whatsAppLines.push(`• ${w}`);
 	}
 	whatsAppLines.push("");
-	whatsAppLines.push(`📞 Телефон клиники: ${clinicPhone}`);
-	whatsAppLines.push(`🚨 Горячая линия дежурного врача 24/7: ${clinicEmergencyPhone}`);
+	whatsAppLines.push(`Телефон клиники: ${clinicPhone}`);
+	whatsAppLines.push(`Горячая линия дежурного врача 24/7: ${clinicEmergencyPhone}`);
 	whatsAppLines.push("");
-	whatsAppLines.push(`📱 Электронная памятка в личном кабинете: https://dente.ru/memo/${memoId}`);
-	whatsAppLines.push("Желаем вам скорейшего комфортного восстановления! 🦷✨");
+	whatsAppLines.push(`Электронная памятка в личном кабинете: https://dente.ru/memo/${memoId}`);
+	whatsAppLines.push("Желаем вам скорейшего комфортного восстановления!");
 
 	const whatsAppMessageText = whatsAppLines.join("\n");
 	const whatsAppDeepLink = buildWhatsAppLink(patientPhone, whatsAppMessageText);

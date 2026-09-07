@@ -33,8 +33,8 @@
 
 [data-theme="dark"] .sanpin-category-nav,
 .dark .sanpin-category-nav {
-	background: #1e293b;
-	border-color: #334155;
+	background: var(--paper-soft);
+	border-color: var(--line);
 }
 
 .sanpin-category-btn {
@@ -69,9 +69,9 @@
 
 [data-theme="dark"] .sanpin-category-btn.active,
 .dark .sanpin-category-btn.active {
-	background: #0f172a;
+	background: var(--paper-strong);
 	color: #2dd4bf;
-	border-color: #475569;
+	border-color: var(--line);
 }
 
 /* Mini KPI Summary Inline Strip & Consolidated Chip */

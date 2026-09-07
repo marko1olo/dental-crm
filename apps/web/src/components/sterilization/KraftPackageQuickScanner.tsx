@@ -254,7 +254,7 @@ export function KraftPackageQuickScanner({
 							type="button"
 							onClick={() => handleApplyStandardTray(selectedTrayType)}
 							className="sterilization-action-btn primary"
-							style={{ minHeight: "42px", width: "100%", fontSize: "0.85rem" }}
+							style={{ minHeight: "44px", width: "100%", fontSize: "0.85rem" }}
 							title="Мгновенно привязать стандартный валидный лоток с сегодняшней датой стерилизации"
 							data-testid="btn-kraft-quick-standard-attach"
 						>

@@ -731,34 +731,6 @@ export function AutoclaveRegisterTab() {
 							<ShieldCheck size={16} color="#2563eb" /> <span>Оборудование ({clinicDevices.length})</span>
 						</button>
 
-						{/* Action: ⚡ 1-Клик цикл смены */}
-						<button
-							type="button"
-							onClick={handleQuickShiftBatch}
-							disabled={isLoggingBatch}
-							className="sanpin-btn touch-manipulation"
-							style={{
-								minHeight: "44px",
-								height: "44px",
-								padding: "0.4rem 0.85rem",
-								fontSize: "0.85rem",
-								fontWeight: 600,
-								cursor: "pointer",
-								whiteSpace: "nowrap",
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.35rem",
-								borderRadius: "8px",
-								background: "var(--primary, #0284c7)",
-								color: "#ffffff",
-								border: "none",
-							}}
-							data-testid="sanpin-autoclave-quick-shift-btn"
-							title="1-Клик регистрация нормативного цикла стерилизации смены (134°C / 5 мин / 2.15 бар / норма СанПиН 3.3686-21)"
-						>
-							<Sparkles size={16} /> <span>⚡ Запустить типовой цикл автоклава (134°C, 2.1 бар, 5 мин)</span>
-						</button>
-
 						{/* Action: ⚡ 1-Клик печать наклеек (10 шт. / 30 дн.) без модалок */}
 						<button
 							type="button"

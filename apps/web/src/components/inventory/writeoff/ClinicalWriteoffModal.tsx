@@ -372,7 +372,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 								id="cw-cabinet-select"
 								value={selectedCabinetId}
 								onChange={(e) => setSelectedCabinetId(e.target.value)}
-								className="w-full h-9 px-2.5 rounded-lg border border-line bg-paper text-ink text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
+								className="w-full min-h-[44px] px-2.5 rounded-lg border border-line bg-paper text-ink text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-focus-ring"
 							>
 								<option value="cab_01_therapy">Кабинет №1 (Терапия)</option>
 								<option value="cab_02_surgery">Кабинет №2 (Хирургия)</option>
@@ -386,13 +386,13 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 									type="text"
 									value={actNumber}
 									onChange={(e) => setActNumber(e.target.value)}
-									className="flex-1 h-9 px-2 rounded-lg border border-line bg-paper text-ink text-xs font-mono font-bold"
+									className="flex-1 min-h-[44px] px-2 rounded-lg border border-line bg-paper text-ink text-xs font-mono font-bold"
 								/>
 								<input
 									type="date"
 									value={actDate}
 									onChange={(e) => setActDate(e.target.value)}
-									className="w-32 h-9 px-1.5 rounded-lg border border-line bg-paper text-ink text-xs"
+									className="w-32 min-h-[44px] px-1.5 rounded-lg border border-line bg-paper text-ink text-xs"
 								/>
 							</div>
 						</div>
@@ -539,7 +539,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 																			onChange={(e) =>
 																				handleSerialNumberChange(line.id, e.target.value)
 																			}
-																			className="h-7 px-2 rounded border border-line bg-paper text-xs font-mono w-48"
+																			className="min-h-[44px] px-2 rounded border border-line bg-paper text-xs font-mono w-48"
 																		/>
 																	</div>
 																)}
@@ -710,7 +710,7 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 																				e.target.value as DiscrepancyReasonCode,
 																			)
 																		}
-																		className="h-8 px-2 rounded border border-line bg-paper text-ink text-xs max-w-[180px]"
+																		className="min-h-[44px] px-2 rounded border border-line bg-paper text-ink text-xs max-w-[180px]"
 																	>
 																		{DISCREPANCY_REASONS.map((r) => (
 																			<option key={r.code} value={r.code}>

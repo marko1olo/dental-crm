@@ -45,6 +45,7 @@ import type {
 	OnlineBookingFormData,
 	SpecialtyCategory,
 } from "./patientPortalTypes";
+export type { BookingTimeSlot };
 
 export interface PatientOnlineBookingModalProps {
 	isOpen: boolean;
@@ -60,8 +61,12 @@ export interface PatientOnlineBookingModalProps {
 	onStepChange?: (step: 1 | 2 | 3, doctorId: string, serviceId: string) => void;
 	actionRef?: React.MutableRefObject<{
 		proceedToStep2: () => void;
+		proceedToStep3: () => void;
+		confirmBooking: () => void;
 		getSelectedDoctorId: () => string;
 		getSelectedServiceId: () => string;
+		getSelectedSlotId: () => string;
+		getSelectedTimeRu: () => string;
 		getCurrentStep: () => 1 | 2 | 3;
 	} | null>;
 }
@@ -101,6 +106,43 @@ export function resolveBookingStep1Selection(
 		canProceed,
 		isSoloDoctor,
 		soloDoctorName,
+	};
+}
+
+/**
+ * Resolves slot selection for Step 2 under Mandates 8e & 8n:
+ * 1. If slot is already chosen, keep it.
+ * 2. If slot is not chosen, fallback to first available un-occupied slot (or first slot).
+ * 3. Step 2 can proceed whenever slots exist without forcing tedious micro-clicks.
+ */
+export function resolveBookingStep2Selection(
+	timeSlots: BookingTimeSlot[],
+	selectedSlotId?: string,
+	selectedTimeRu?: string,
+): {
+	effectiveSlotId: string;
+	effectiveTimeRu: string;
+	canProceed: boolean;
+} {
+	if (selectedSlotId && selectedTimeRu) {
+		return {
+			effectiveSlotId: selectedSlotId,
+			effectiveTimeRu: selectedTimeRu,
+			canProceed: true,
+		};
+	}
+	const availableSlot = timeSlots.find((s) => !s.isOccupied) || timeSlots[0];
+	if (availableSlot) {
+		return {
+			effectiveSlotId: availableSlot.id,
+			effectiveTimeRu: availableSlot.timeRu,
+			canProceed: true,
+		};
+	}
+	return {
+		effectiveSlotId: "",
+		effectiveTimeRu: "",
+		canProceed: false,
 	};
 }
 
@@ -233,21 +275,45 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 		}
 	};
 
-	// Expose synchronous action ref for direct interaction tests
-	if (actionRef) {
-		actionRef.current = {
-			proceedToStep2: handleProceedToStep2,
-			getSelectedDoctorId: () => effectiveDoctorId,
-			getSelectedServiceId: () => effectiveServiceId,
-			getCurrentStep: () => currentStep,
-		};
-	}
-
 	// Available time slots for the selected date & doctor
 	const timeSlots = useMemo(
 		() => (activeDoctor ? generateTimeSlots(activeDoctor.id, selectedBranchId, selectedDateIso) : []),
 		[activeDoctor, selectedBranchId, selectedDateIso],
 	);
+
+	const handleProceedToStep3 = () => {
+		let nextSlotId = selectedSlotId;
+		let nextTimeRu = selectedTimeRu;
+
+		if (!nextSlotId || !nextTimeRu) {
+			const availableSlot = timeSlots.find((s) => !s.isOccupied) || timeSlots[0];
+			if (availableSlot) {
+				nextSlotId = availableSlot.id;
+				nextTimeRu = availableSlot.timeRu;
+				setSelectedSlotId(nextSlotId);
+				setSelectedTimeRu(nextTimeRu);
+			}
+		}
+
+		setCurrentStep(3);
+		if (onStepChange) {
+			onStepChange(3, effectiveDoctorId, effectiveServiceId);
+		}
+	};
+
+	// Expose synchronous action ref for direct interaction tests
+	if (actionRef) {
+		actionRef.current = {
+			proceedToStep2: handleProceedToStep2,
+			proceedToStep3: handleProceedToStep3,
+			confirmBooking: () => handleVerifySmsAndConfirm(),
+			getSelectedDoctorId: () => effectiveDoctorId,
+			getSelectedServiceId: () => effectiveServiceId,
+			getSelectedSlotId: () => selectedSlotId,
+			getSelectedTimeRu: () => selectedTimeRu,
+			getCurrentStep: () => currentStep,
+		};
+	}
 
 	// Prepayment calculation
 	const prepaymentInfo = useMemo(() => {
@@ -300,6 +366,14 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 	};
 
 	const handleVerifySmsAndConfirm = () => {
+		if (!patientPhone.trim()) {
+			setSmsError("Укажите контактный номер телефона для подтверждения записи");
+			return;
+		}
+		if (!consent152Fz) {
+			setSmsError("Необходимо подтвердить согласие на обработку персональных данных (152-ФЗ)");
+			return;
+		}
 		if (!verifySmsOtpCode(smsCode, expectedSmsCode) && smsCode !== "7788") {
 			setSmsError("Неверный СМС-код. Введите 7788 для тестового подтверждения.");
 			return;
@@ -1001,9 +1075,9 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 						{currentStep === 2 && (
 							<button
 								type="button"
-								disabled={!selectedSlotId || !selectedTimeRu}
-								onClick={() => setCurrentStep(3)}
-								className="min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold bg-[var(--teal-fill,#0d9488)] text-white hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-md"
+								disabled={timeSlots.length === 0}
+								onClick={handleProceedToStep3}
+								className="min-h-[44px] px-5 py-2 rounded-xl text-xs font-bold bg-[var(--teal-fill,#0d9488)] text-white hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
 								data-testid="booking-next-to-step-3-btn"
 							>
 								<span>Перейти к подтверждению</span>
@@ -1014,9 +1088,8 @@ export const PatientOnlineBookingModal: React.FC<PatientOnlineBookingModalProps>
 						{currentStep === 3 && (
 							<button
 								type="button"
-								disabled={!consent152Fz || !patientPhone}
 								onClick={handleVerifySmsAndConfirm}
-								className="min-h-[44px] px-6 py-2 rounded-xl text-xs font-bold bg-[var(--teal-fill,#0d9488)] text-white hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-2 shadow-md"
+								className="min-h-[44px] px-6 py-2 rounded-xl text-xs font-bold bg-[var(--teal-fill,#0d9488)] text-white hover:opacity-90 transition-all flex items-center gap-2 shadow-md cursor-pointer"
 								data-testid="booking-confirm-submit-btn"
 							>
 								<CheckCircle2 className="w-4 h-4" />

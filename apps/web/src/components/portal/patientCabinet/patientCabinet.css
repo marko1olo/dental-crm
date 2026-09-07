@@ -538,14 +538,38 @@ html.dark:not([data-theme="light"]) .patient-cabinet-modal,
 
 .pc-status-badge.paid {
 	background: var(--pc-success-light);
-	color: var(--pc-success);
-	border: 1px solid var(--pc-success);
+	color: #065f46;
+	border: 1px solid #065f46;
 }
 
 .pc-status-badge.unpaid {
 	background: var(--pc-warning-light);
+	color: #78350f;
+	border: 1px solid #78350f;
+}
+
+.pc-status-badge.scheduled {
+	background: var(--pc-primary-light);
+	color: #0c4a6e;
+	border: 1px solid #0c4a6e;
+}
+
+[data-theme="dark"] .pc-status-badge.paid,
+.dark .pc-status-badge.paid {
+	color: var(--pc-success);
+	border-color: var(--pc-success);
+}
+
+[data-theme="dark"] .pc-status-badge.unpaid,
+.dark .pc-status-badge.unpaid {
 	color: var(--pc-warning);
-	border: 1px solid var(--pc-warning);
+	border-color: var(--pc-warning);
+}
+
+[data-theme="dark"] .pc-status-badge.scheduled,
+.dark .pc-status-badge.scheduled {
+	color: var(--pc-primary);
+	border-color: var(--pc-primary);
 }
 
 .pc-invoice-items-table {
