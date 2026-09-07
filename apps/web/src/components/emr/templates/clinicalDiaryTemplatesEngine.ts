@@ -778,7 +778,7 @@ export function synthesize1ClickSoapDiary(
 	const recommendations = template.defaultRecommendations;
 	const procedureProtocol = template.defaultProcedureProtocol;
 
-	// Форматирование единого текста SOAP
+	// Форматирование единого текста дневника Формы 043/у
 	const unifiedSoapText = formatStatutoryUnifiedSoapText({
 		template,
 		toothDesc,
@@ -819,7 +819,7 @@ export function synthesize1ClickSoapDiary(
 }
 
 /**
- * Форматирует единый красивый монолитный SOAP блок для вставки в текстовое поле.
+ * Форматирует единый регламентный блок дневника Формы 043/у для вставки в текстовое поле.
  */
 export function formatStatutoryUnifiedSoapText(params: {
 	readonly template: Clinical1ClickTemplate;
