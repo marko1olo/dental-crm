@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
 	ShieldCheck,
@@ -393,7 +394,11 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 	};
 
 	const handleAddCustomRemark = () => {
-		if (!selectedRecord || !customComment.trim()) return;
+		if (!selectedRecord) return;
+		if (!customComment.trim()) {
+			showToast("Введите текст индивидуального замечания для добавления", "warning");
+			return;
+		}
 		const penalty = customSeverity === "critical" ? 25 : customSeverity === "major" ? 15 : 5;
 		const updated = addCmoDefectRemark(selectedRecord, {
 			category: "CLINICAL_DIARY_SOAP",
@@ -739,7 +744,7 @@ export const CmoQualityAuditModal: React.FC<CmoQualityAuditModalProps> = ({
 												type="button"
 												className="cmo-btn-secondary"
 												onClick={handleAddCustomRemark}
-												disabled={!customComment.trim()}
+												data-testid="cmo-add-remark-btn"
 											>
 												<Plus size={16} />
 												<span>Добавить</span>

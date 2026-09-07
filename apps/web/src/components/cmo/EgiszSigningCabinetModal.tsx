@@ -16,6 +16,7 @@ import { createPortal } from "react-dom";
 import {
 	AlertCircle,
 	AlertTriangle,
+	Archive,
 	Building2,
 	Check,
 	CheckCircle2,
@@ -371,12 +372,35 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 		}, 400);
 	};
 
+	// ── 5.1 Solo Doctor Local Storage (63-FZ Art. 9 / Mandate 8n) ──
+	const handleLocalEmrStorage = () => {
+		if (!currentDoc) return;
+		const localRegNum = `ЭМК-ЛОКАЛ-${currentDoc.id.slice(0, 8).toUpperCase()}`;
+		const localTime = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+		setDocuments((prev) =>
+			prev.map((d) =>
+				d.id === currentDoc.id
+					? {
+							...d,
+							status: "registered_remd",
+							remdRegistrationNumber: localRegNum,
+							remdRegisteredAt: localTime,
+							validationErrors: undefined,
+						}
+					: d,
+			),
+		);
+
+		showToast("Документ 043/у сохранен в локальной базе ЭМК клиники (Мандат 8n)", "success");
+	};
+
 	// ── 6. Send to EGISZ REMD ──
 	const handleSendToRemd = async () => {
 		if (!currentDoc) return;
 
 		if (!currentDoc.doctorSignature) {
-			showToast("Для отправки в РЭМД требуется наложение УКЭП врача!", "error");
+			showToast("Для отправки в РЭМД наложите подпись врача (нажмите «Подписать УКЭП/ПЭП»)", "warning");
 			return;
 		}
 
@@ -863,30 +887,56 @@ export const EgiszSigningCabinetModal: React.FC<EgiszSigningCabinetModalProps> =
 										{currentDoc.status === "registered_remd" ? (
 											<div className="egisz-status-badge success">
 												<Check size={16} />
-												<span>Зарегистрирован в РЭМД</span>
+												<span>{currentDoc.remdRegistrationNumber?.startsWith("ЭМК-ЛОКАЛ") ? "Сохранено в ЭМК (Соло-врач)" : "Зарегистрирован в РЭМД"}</span>
 											</div>
 										) : currentDoc.status === "validation_error" ? (
-											<button
-												type="button"
-												className="egisz-primary-btn"
-												onClick={handleSendToRemd}
-												disabled={!currentDoc.doctorSignature || isSendingLoading}
-												style={{ minWidth: "220px", backgroundColor: "#dc2626" }}
-											>
-												<Send size={18} />
-												<span>{isSendingLoading ? "Повтор отправки..." : "Повторить отправку"}</span>
-											</button>
+											<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+												<button
+													type="button"
+													className="egisz-btn-secondary"
+													onClick={handleLocalEmrStorage}
+													data-testid="solo-doctor-local-storage-btn"
+													title="Сохранить в локальной ЭМК клиники без отправки в РЭМД (Соло-врач / ст. 9 63-ФЗ)"
+												>
+													<Archive size={16} />
+													<span>Локальное хранение ЭМК (Соло-врач)</span>
+												</button>
+												<button
+													type="button"
+													className="egisz-primary-btn"
+													onClick={handleSendToRemd}
+													disabled={isSendingLoading}
+													style={{ minWidth: "220px", backgroundColor: "#dc2626" }}
+													data-testid="egisz-send-remd-btn"
+												>
+													<Send size={18} />
+													<span>{isSendingLoading ? "Повтор отправки..." : "Повторить отправку"}</span>
+												</button>
+											</div>
 										) : (
-											<button
-												type="button"
-												className="egisz-primary-btn"
-												onClick={handleSendToRemd}
-												disabled={!currentDoc.doctorSignature || isSendingLoading}
-												style={{ minWidth: "220px" }}
-											>
-												<Send size={18} />
-												<span>{isSendingLoading ? "Отправка в РЭМД..." : "Отправить в ЕГИСЗ РЭМД"}</span>
-											</button>
+											<div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+												<button
+													type="button"
+													className="egisz-btn-secondary"
+													onClick={handleLocalEmrStorage}
+													data-testid="solo-doctor-local-storage-btn"
+													title="Сохранить в локальной ЭМК клиники без отправки в РЭМД (Соло-врач / ст. 9 63-ФЗ)"
+												>
+													<Archive size={16} />
+													<span>Локальное хранение ЭМК (Соло-врач)</span>
+												</button>
+												<button
+													type="button"
+													className="egisz-primary-btn"
+													onClick={handleSendToRemd}
+													disabled={isSendingLoading}
+													style={{ minWidth: "220px" }}
+													data-testid="egisz-send-remd-btn"
+												>
+													<Send size={18} />
+													<span>{isSendingLoading ? "Отправка в РЭМД..." : "Отправить в ЕГИСЗ РЭМД"}</span>
+												</button>
+											</div>
 										)}
 									</div>
 								</div>
