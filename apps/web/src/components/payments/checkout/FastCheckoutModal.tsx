@@ -286,6 +286,18 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	if (!isOpen) return null;
 
 	const handleQuickPreset = (preset: QuickCheckoutPresetType) => {
+		if (preset === "warranty_100") {
+			setDiscountPreset("warranty_100");
+			setCardAmountRub(0);
+			setCashAmountRub(0);
+			setSbpAmountRub(0);
+			setDepositAmountRub(0);
+			setLoyaltyAmountRub(0);
+			setDmsAmountRub(0);
+			setCashTenderedRub(0);
+			showToast("Применен 1-клик пресет: 100% Гарантия / переделка (0 ₽)", "info", 2000);
+			return;
+		}
 		const effectiveDepositRub =
 			(patientDepositRub || 0) + (patientFamilyBalanceRub || 0);
 		const result = applyQuickCheckoutPreset({
@@ -448,7 +460,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		lastClickTimeRef.current = now;
 		setIsPrinting(true);
 
-		const effectivePayments = splitStateToCheckoutPayments({
+		let effectivePayments = splitStateToCheckoutPayments({
 			cardRub: effectiveCardRub,
 			cashRub: effectiveCashRub,
 			sbpRub: effectiveSbpRub,
@@ -456,6 +468,20 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			loyaltyRub: effectiveLoyaltyRub,
 			dmsRub: effectiveDmsRub,
 		});
+
+		// Guarantee exact kopeck balance for targetBillKop without float rounding drift
+		if (targetBillKop > 0 && effectivePayments.length > 0) {
+			const sumKop = effectivePayments.reduce((acc, p) => acc + p.amountKop, 0);
+			const deltaKop = targetBillKop - sumKop;
+			if (deltaKop !== 0) {
+				effectivePayments = effectivePayments.map((p, idx) => {
+					if (idx === effectivePayments.length - 1) {
+						return { ...p, amountKop: Math.max(0, p.amountKop + deltaKop) };
+					}
+					return p;
+				});
+			}
+		}
 
 		// Statutory composite Idempotency-Key: <uuid>#<sha256(canonicalPayloadSignature)>
 		const rawUuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -790,7 +816,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								Мгновенный расчет без ручного ввода цифр{familyPayerName ? ` • Плательщик: ${familyPayerName}` : ""}{patientFamilyBalanceRub > 0 ? ` (баланс: ${(patientFamilyBalanceRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)` : ""}
 							</span>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+						<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_card")}
@@ -860,6 +886,16 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							>
 								<Users size={15} className="shrink-0 text-indigo-600" />
 								<span className="truncate">⚡ Нал + Карта + Аванс</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => handleQuickPreset("warranty_100")}
+								className="min-h-[46px] px-2.5 py-2 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+								data-testid="btn-checkout-warranty-100"
+								title="100% гарантийная переделка (к оплате 0 ₽, без паролей и блокировок)"
+							>
+								<ShieldCheck size={15} className="shrink-0 text-blue-600" />
+								<span className="truncate">⚡ 100% Гарантия (0 ₽)</span>
 							</button>
 						</div>
 					</div>

@@ -252,7 +252,8 @@ export type QuickCheckoutPresetType =
 	| "deposit_cash"
 	| "deposit_sbp"
 	| "split_50_50"
-	| "split_three_way";
+	| "split_three_way"
+	| "warranty_100";
 
 export interface QuickCheckoutPresetResult {
 	readonly payments: readonly CheckoutSplitItem[];
@@ -413,6 +414,13 @@ export function applyQuickCheckoutPreset(params: {
 				payments,
 				cashTenderedKop: halfCashKop,
 				activeMethod: usedDepositKop > 0 ? "patient_deposit" : "bank_card",
+			};
+		}
+		case "warranty_100": {
+			return {
+				payments: [],
+				cashTenderedKop: 0,
+				activeMethod: "bank_card",
 			};
 		}
 	}

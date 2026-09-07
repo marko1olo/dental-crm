@@ -1454,11 +1454,15 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										<CreditCard className="w-3.5 h-3.5 text-blue-600" />
 										<span>⚡ 100% карта ({totalInvoiceRub.toLocaleString("ru-RU")} ₽)</span>
 									</button>
-									{patientDepositRub > 0 && patientDepositRub < totalInvoiceRub && (
+									{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
 										<button
 											type="button"
 											onClick={() => {
-												applySplitDepositAndRemainder("card");
+												if (patientDepositRub > 0) {
+													applySplitDepositAndRemainder("card");
+												} else {
+													applySplitFamilyAndRemainder("card");
+												}
 												setSelectedTender("split");
 												setActiveTab("split");
 											}}
@@ -1470,7 +1474,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											<span>⚡ Аванс + Карта</span>
 										</button>
 									)}
-									{patientFamilyBalanceRub > 0 && patientFamilyBalanceRub < totalInvoiceRub && (
+									{patientFamilyBalanceRub > 0 && (
 										<button
 											type="button"
 											onClick={() => {
@@ -1517,6 +1521,25 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											<span>⚡ Депозит + Карта + Нал</span>
 										</button>
 									)}
+									<button
+										type="button"
+										onClick={() => {
+											setSelectedDiscountPreset("warranty_100");
+											setSelectedTender("card");
+											setSplitCardRub(0);
+											setSplitCashRub(0);
+											setSplitDepositRub(0);
+											setSplitSbpRub(0);
+											setSplitFamilyRub(0);
+											showToast("Применен пресет: 100% Гарантия / переделка (0 ₽)", "info", 2000);
+										}}
+										className="h-7 px-2.5 rounded-lg text-xs font-bold bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+										data-testid="preset-warranty-100"
+										title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без паролей администратора)"
+									>
+										<ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+										<span>⚡ 100% Гарантия / переделка (0 ₽)</span>
+									</button>
 								</div>
 
 								{/* 1-Click Tender Buttons (32-36px height) */}
