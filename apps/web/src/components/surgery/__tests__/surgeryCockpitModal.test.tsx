@@ -1,9 +1,30 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { registerHooks } from "node:module";
+import { describe, it } from "vitest";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { SurgeryCockpitModal } from "../SurgeryCockpitModal";
-import { SurgeryProtocolPanel } from "../SurgeryProtocolPanel";
+
+if (typeof registerHooks === "function") {
+	try {
+		registerHooks({
+			load(url, context, nextLoad) {
+				if (url.endsWith(".css")) {
+					return {
+						format: "module",
+						shortCircuit: true,
+						source: "export default {};",
+					};
+				}
+				return nextLoad(url, context);
+			},
+		});
+	} catch {
+		// Ignore if already registered
+	}
+}
+
+const { SurgeryCockpitModal } = await import("../SurgeryCockpitModal");
+const { SurgeryProtocolPanel } = await import("../SurgeryProtocolPanel");
 
 describe("SurgeryCockpitModal & SurgeryProtocolPanel (Surgical Cockpit)", () => {
 	it("renders SurgeryCockpitModal with 1-click norms, tooth selector and sterile mode", () => {
@@ -29,7 +50,7 @@ describe("SurgeryCockpitModal & SurgeryProtocolPanel (Surgical Cockpit)", () => 
 		assert.ok(html.includes("btn-norm-surgery_extraction_atypical"), "Must have 1-click atypical extraction");
 		assert.ok(html.includes("btn-norm-surgery_extraction_complex"), "Must have 1-click complex extraction");
 		assert.ok(html.includes("btn-norm-surgery_periostotomy"), "Must have 1-click periostotomy norm");
-		assert.ok(html.includes("A16.07.006"), "Must show 804n implant code");
+		assert.ok(html.includes("A16.07.054"), "Must show 804n implant code");
 		assert.ok(html.includes("A16.07.001"), "Must show 804n simple extraction code");
 		assert.ok(html.includes("A16.07.002"), "Must show 804n complex extraction code");
 		assert.ok(html.includes("A16.07.024"), "Must show 804n atypical extraction code");

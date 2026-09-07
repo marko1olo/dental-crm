@@ -3,6 +3,18 @@
  * Стандарт: «Софт для врача, а не врач для софта. Любой барьер или лишний клик — это брак».
  */
 
+export interface SurgicalService804n {
+	readonly code: string;
+	readonly nameRu: string;
+	readonly name: string;
+	readonly priceRub: number;
+	readonly quantity: number;
+	readonly suggestedPriceRub?: number | undefined;
+	readonly toothNumber?: number | undefined;
+	readonly stageKind?: string | undefined;
+	readonly isPrimary?: boolean | undefined;
+}
+
 export interface SurgicalOperationNorm {
 	readonly id: string;
 	readonly title: string;
@@ -16,6 +28,7 @@ export interface SurgicalOperationNorm {
 	readonly standardProtocolTextRu: string;
 	readonly anesthesiaDefaultRu: string;
 	readonly postOpRecommendationsRu: string;
+	readonly order804nServices?: readonly SurgicalService804n[];
 	readonly requiredMaterials: readonly {
 		readonly name: string;
 		readonly unit: string;
@@ -142,13 +155,52 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		category: "implant",
 		icd10: "K08.1",
 		icd10Label: "Потеря зубов вследствие несчастного случая, удаления или локализованного пародонтита",
-		code804n: "A16.07.006",
+		code804n: "A16.07.054",
 		service804nTitle: "Внутрикостная дентальная имплантация",
 		defaultToothFdi: 46,
 		standardProtocolTextRu: DENTAL_IMPLANTATION_NORM_TEXT,
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Артикаин 1:100 000 1.7 мл",
 		postOpRecommendationsRu:
 			"Холод на область операции 15 мин каждые 2 часа в первый день. Ванночки с 0.05% хлоргексидином с 2-х суток. Исключить горячее, бани, физ. нагрузки 7 дней. Прием НПВП и антибиотикотерапия по назначению. Осмотр через 7 дней.",
+		order804nServices: [
+			{
+				code: "A16.07.054",
+				nameRu: "Внутрикостная дентальная имплантация (установка имплантата)",
+				name: "Внутрикостная дентальная имплантация (установка имплантата)",
+				priceRub: 35000,
+				quantity: 1,
+				suggestedPriceRub: 35000,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A16.07.054.002",
+				nameRu: "Установка формирователя десны (ФДМ) / винта-заглушки",
+				name: "Установка формирователя десны (ФДМ) / винта-заглушки",
+				priceRub: 3500,
+				quantity: 1,
+				suggestedPriceRub: 3500,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A16.07.097",
+				nameRu: "Наложение шва на слизистую оболочку рта (ПГА 4-0)",
+				name: "Наложение шва на слизистую оболочку рта (ПГА 4-0)",
+				priceRub: 1500,
+				quantity: 1,
+				suggestedPriceRub: 1500,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				name: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				priceRub: 900,
+				quantity: 1,
+				suggestedPriceRub: 900,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Дентальный имплантат титановый", unit: "шт.", quantity: 1, isWarehouseCritical: true },
 			{ name: "Формирователь десны / винт-заглушка", unit: "шт.", quantity: 1, isWarehouseCritical: true },
@@ -170,6 +222,36 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
 			"Марлевый тампон сплюнуть через 20 минут. Не полоскать рот 24 часа. Не принимать горячую ванну и острую пищу 3 дня. При болях — Нимесил 1 пак.",
+		order804nServices: [
+			{
+				code: "A16.07.001",
+				nameRu: "Удаление постоянного зуба (простое)",
+				name: "Удаление постоянного зуба (простое)",
+				priceRub: 3500,
+				quantity: 1,
+				suggestedPriceRub: 3500,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A16.07.026",
+				nameRu: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+				name: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+				priceRub: 1200,
+				quantity: 1,
+				suggestedPriceRub: 1200,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				name: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				priceRub: 900,
+				quantity: 1,
+				suggestedPriceRub: 900,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Губка гемостатическая Альвожиль / коллагеновая", unit: "шт.", quantity: 1, isWarehouseCritical: false },
 			{ name: "Анестетик артикаиновый 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false },
@@ -190,6 +272,45 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		anesthesiaDefaultRu: "Проводниковая торусальная и инфильтрационная анестезия Sol. Articaini 4% — 3.4 мл",
 		postOpRecommendationsRu:
 			"Холод на щеку локально. Щадящая диета. Антибиотикотерапия (Амоксиклав 625 мг 2 р/сут 5 дней). Швы снять через 7-10 суток.",
+		order804nServices: [
+			{
+				code: "A16.07.024",
+				nameRu: "Операция удаления ретинированного, дистопированного зуба (сложное)",
+				name: "Операция удаления ретинированного, дистопированного зуба (сложное)",
+				priceRub: 9500,
+				quantity: 1,
+				suggestedPriceRub: 9500,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A16.07.026",
+				nameRu: "Кюретаж лунки удаленного зуба с антисептической обработкой",
+				name: "Кюретаж лунки удаленного зуба с антисептической обработкой",
+				priceRub: 1200,
+				quantity: 1,
+				suggestedPriceRub: 1200,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A16.07.097",
+				nameRu: "Наложение шва на слизистую оболочку рта (ПГА/Викрил 4-0)",
+				name: "Наложение шва на слизистую оболочку рта (ПГА/Викрил 4-0)",
+				priceRub: 1500,
+				quantity: 1,
+				suggestedPriceRub: 1500,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Проводниковая (торусальная) анестезия (Артикаин)",
+				name: "Проводниковая (торусальная) анестезия (Артикаин)",
+				priceRub: 1200,
+				quantity: 1,
+				suggestedPriceRub: 1200,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Шовный материал ПГА 4-0 с атравматической иглой", unit: "шт.", quantity: 1, isWarehouseCritical: false },
 			{ name: "Бор твердосплавный хирургический Lindemann", unit: "шт.", quantity: 1, isWarehouseCritical: false },
@@ -211,6 +332,45 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
 			"Сосудосуживающие капли в нос 5 дней. Не чихать с закрытым ртом, не летать на самолете 14 дней. Антибиотики по схеме.",
+		order804nServices: [
+			{
+				code: "A16.07.041",
+				nameRu: "Костная пластика челюстно-лицевой области (синус-лифтинг латеральный)",
+				name: "Костная пластика челюстно-лицевой области (синус-лифтинг латеральный)",
+				priceRub: 35000,
+				quantity: 1,
+				suggestedPriceRub: 35000,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A16.07.041.001",
+				nameRu: "Внесение остеопластического материала (ксенографт) и фиксация мембраны",
+				name: "Внесение остеопластического материала (ксенографт) и фиксация мембраны",
+				priceRub: 18000,
+				quantity: 1,
+				suggestedPriceRub: 18000,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A16.07.097",
+				nameRu: "Наложение шва на слизистую оболочку рта (ПГА 4-0)",
+				name: "Наложение шва на слизистую оболочку рта (ПГА 4-0)",
+				priceRub: 1500,
+				quantity: 1,
+				suggestedPriceRub: 1500,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				name: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				priceRub: 900,
+				quantity: 1,
+				suggestedPriceRub: 900,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Остеопластический материал ксенографт 0.5 г", unit: "шт.", quantity: 1, isWarehouseCritical: true },
 			{ name: "Мембрана коллагеновая резорбируемая 25x25 мм", unit: "шт.", quantity: 1, isWarehouseCritical: true },
@@ -231,6 +391,27 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
 			"Ротовые ванночки с ромашкой и хлоргексидином 0.05% 3-4 раза в день. Метрогил Дента локально.",
+		order804nServices: [
+			{
+				code: "A16.07.058",
+				nameRu: "Иссечение десневого капюшона (перикоронаротомия)",
+				name: "Иссечение десневого капюшона (перикоронаротомия)",
+				priceRub: 2500,
+				quantity: 1,
+				suggestedPriceRub: 2500,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				name: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				priceRub: 900,
+				quantity: 1,
+				suggestedPriceRub: 900,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Лента йодоформная турунда", unit: "см", quantity: 5, isWarehouseCritical: false },
 		],
@@ -249,6 +430,45 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		anesthesiaDefaultRu: "Инфильтрационная и проводниковая анестезия Sol. Articaini 4% 1:100 000 — 3.4 мл",
 		postOpRecommendationsRu:
 			"Холод на щеку локально 15 мин 3-4 раза в первые сутки. Не полоскать, не греть, не пить через трубочку. Прием НПВП (Нимесил) при боли. Осмотр через 3 дня, снятие швов через 7-10 дней.",
+		order804nServices: [
+			{
+				code: "A16.07.002",
+				nameRu: "Удаление зуба сложное с разъединением корней и фрагментацией",
+				name: "Удаление зуба сложное с разъединением корней и фрагментацией",
+				priceRub: 6000,
+				quantity: 1,
+				suggestedPriceRub: 6000,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A16.07.026",
+				nameRu: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+				name: "Кюретаж лунки удаленного зуба (ревизия и гемостаз)",
+				priceRub: 1200,
+				quantity: 1,
+				suggestedPriceRub: 1200,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A16.07.097",
+				nameRu: "Наложение шва на слизистую оболочку рта (Викрил 4-0)",
+				name: "Наложение шва на слизистую оболочку рта (Викрил 4-0)",
+				priceRub: 1500,
+				quantity: 1,
+				suggestedPriceRub: 1500,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Проводниковая / инфильтрационная анестезия (Артикаин)",
+				name: "Проводниковая / инфильтрационная анестезия (Артикаин)",
+				priceRub: 1200,
+				quantity: 1,
+				suggestedPriceRub: 1200,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Артикаин 1:100000", unit: "шт.", quantity: 2, isWarehouseCritical: false },
 			{ name: "Шовный материал Викрил 4-0", unit: "шт.", quantity: 1, isWarehouseCritical: false },
@@ -271,6 +491,27 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		anesthesiaDefaultRu: "Инфильтрационная анестезия по переходной складке Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
 			"Холод на область отека локально 15 мин 3-4 раза. Не греть щеку компрессами! Ротовые ванночки с 0.05% хлоргексидином 4-5 раз в день. Дренаж самостоятельно не извлекать! Антибиотикотерапия и НПВП по схеме. Обязательная явка на перевязку и осмотр на следующий день.",
+		order804nServices: [
+			{
+				code: "A16.07.011",
+				nameRu: "Вскрытие поднадкостничного очага воспаления (периостотомия) с дренированием",
+				name: "Вскрытие поднадкостничного очага воспаления (периостотомия) с дренированием",
+				priceRub: 2100,
+				quantity: 1,
+				suggestedPriceRub: 2100,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Инфильтрационная анестезия по переходной складке",
+				name: "Инфильтрационная анестезия по переходной складке",
+				priceRub: 900,
+				quantity: 1,
+				suggestedPriceRub: 900,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Артикаин 1:100000", unit: "шт.", quantity: 1, isWarehouseCritical: false },
 			{ name: "Дренаж резиновый ленточный", unit: "шт.", quantity: 1, isWarehouseCritical: false },
@@ -292,6 +533,36 @@ export const SURGICAL_OPERATION_NORMS: readonly SurgicalOperationNorm[] = [
 		anesthesiaDefaultRu: "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл",
 		postOpRecommendationsRu:
 			"Холод локально 15 мин 3-4 раза в первые сутки. Щадящая диета 3-5 дней. Ротовые ванночки 0.05% хлоргексидином со 2-х суток. Осмотр через 3 дня, снятие швов через 7-10 дней.",
+		order804nServices: [
+			{
+				code: "A16.07.007",
+				nameRu: "Резекция верхушки корня с ретроградным пломбированием МТА",
+				name: "Резекция верхушки корня с ретроградным пломбированием МТА",
+				priceRub: 8500,
+				quantity: 1,
+				suggestedPriceRub: 8500,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+			{
+				code: "A16.07.097",
+				nameRu: "Наложение шва на слизистую оболочку рта (ПГА 5-0)",
+				name: "Наложение шва на слизистую оболочку рта (ПГА 5-0)",
+				priceRub: 1500,
+				quantity: 1,
+				suggestedPriceRub: 1500,
+				stageKind: "stage_2_surgery",
+			},
+			{
+				code: "A11.07.015",
+				nameRu: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				name: "Инфильтрационная анестезия (Артикаин 1:100 000)",
+				priceRub: 900,
+				quantity: 1,
+				suggestedPriceRub: 900,
+				stageKind: "stage_2_surgery",
+			},
+		],
 		requiredMaterials: [
 			{ name: "Анестетик артикаиновый 4% 1:100 000 1.7 мл", unit: "карп.", quantity: 1, isWarehouseCritical: false },
 			{ name: "МТА материал для ретроградного пломбирования", unit: "доз.", quantity: 1, isWarehouseCritical: true },
@@ -382,3 +653,81 @@ export function buildSurgicalDiaryEntry(params: {
 		recoBlock
 	);
 }
+
+/**
+ * Получение перечня услуг Номенклатуры 804н для хирургической нормы.
+ */
+export function getSurgicalServices804n(
+	norm: SurgicalOperationNorm,
+	toothFdi?: number,
+): readonly SurgicalService804n[] {
+	const effectiveTooth = toothFdi ?? norm.defaultToothFdi;
+	if (norm.order804nServices && norm.order804nServices.length > 0) {
+		return norm.order804nServices.map((s) => ({
+			...s,
+			toothNumber: effectiveTooth,
+		}));
+	}
+
+	if (norm.code804n) {
+		return [
+			{
+				code: norm.code804n,
+				nameRu: norm.service804nTitle || norm.title,
+				name: norm.service804nTitle || norm.title,
+				priceRub: 3500,
+				quantity: 1,
+				suggestedPriceRub: 3500,
+				toothNumber: effectiveTooth,
+				stageKind: "stage_2_surgery",
+				isPrimary: true,
+			},
+		];
+	}
+
+	return [];
+}
+
+/**
+ * Диспатч услуг хирургического протокола в активный счёт/смету визита
+ * через глобальную шину CustomEvent `dente-add-services-to-invoice` (Мандаты 8e, 8i, 8k, 8n).
+ */
+export function dispatchSurgicalServicesToInvoice(params: {
+	norm: SurgicalOperationNorm;
+	toothFdi?: number | undefined;
+	customServices?: readonly SurgicalService804n[] | undefined;
+	onAddToInvoice?: ((services: readonly SurgicalService804n[]) => void) | undefined;
+}): readonly SurgicalService804n[] {
+	const effectiveTooth = params.toothFdi ?? params.norm.defaultToothFdi;
+	const services =
+		params.customServices && params.customServices.length > 0
+			? params.customServices.map((s) => ({ ...s, toothNumber: s.toothNumber ?? effectiveTooth }))
+			: getSurgicalServices804n(params.norm, effectiveTooth);
+
+	if (params.onAddToInvoice) {
+		try {
+			params.onAddToInvoice(services);
+		} catch (err) {
+			console.warn("onAddToInvoice callback error:", err);
+		}
+	}
+
+	try {
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						toothNumber: effectiveTooth,
+						teethNumbers: effectiveTooth ? [effectiveTooth] : [],
+						services,
+					},
+				}),
+			);
+		}
+	} catch (err) {
+		console.warn("dente-add-services-to-invoice dispatch error:", err);
+	}
+
+	return services;
+}
+

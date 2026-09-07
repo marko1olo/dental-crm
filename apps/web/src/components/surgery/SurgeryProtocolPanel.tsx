@@ -8,6 +8,7 @@ import {
 	Sparkles,
 	Copy,
 	Zap,
+	Receipt,
 } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { ImplantPassportModal } from "../implants/ImplantPassportModal";
@@ -16,7 +17,10 @@ import {
 	DENTAL_IMPLANTATION_NORM_TEXT,
 	evaluateWarehouseOverdraft,
 	buildStandardImplantationProtocolText,
+	getSurgicalServices804n,
+	dispatchSurgicalServicesToInvoice,
 	type SurgicalOperationNorm,
+	type SurgicalService804n,
 } from "./surgeryProtocols";
 import { SurgerySafetyChecklist } from "./SurgerySafetyChecklist";
 
@@ -25,6 +29,7 @@ export interface SurgeryProtocolPanelProps {
 	readonly onSelectToothFdi?: (tooth: number) => void;
 	readonly patientName?: string;
 	readonly onApplyProtocol?: (text: string) => void;
+	readonly onAddToInvoice?: (services: readonly SurgicalService804n[]) => void;
 	readonly onOpenImplantPassport?: (tooth: number) => void;
 	readonly onOpenFullCockpit?: () => void;
 	readonly className?: string;
@@ -42,6 +47,7 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 	onSelectToothFdi,
 	patientName = "Пациент",
 	onApplyProtocol,
+	onAddToInvoice,
 	onOpenImplantPassport,
 	onOpenFullCockpit,
 	className = "",
@@ -58,6 +64,9 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 		SURGICAL_OPERATION_NORMS[0]!;
 
 	const overdraftStatus = evaluateWarehouseOverdraft(activeNorm.requiredMaterials);
+
+	const currentServices = getSurgicalServices804n(activeNorm, toothFdi);
+	const totalServicesPrice = currentServices.reduce((sum, s) => sum + s.priceRub * s.quantity, 0);
 
 	const handleNormSelect = (norm: SurgicalOperationNorm) => {
 		setActiveNormId(norm.id);
@@ -91,6 +100,20 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 		showToast(`Имплантация: ${brand} 35 Н/см, ISQ 72, ${cap === "plug" ? "Заглушка" : "ФДМ"}`, "success");
 	};
 
+	const handleAddToInvoice = () => {
+		dispatchSurgicalServicesToInvoice({
+			norm: activeNorm,
+			toothFdi,
+			customServices: currentServices,
+			onAddToInvoice,
+		});
+		const codes = currentServices.map((s) => s.code).join(", ");
+		showToast(
+			`Услуги 804н (${codes}) на ${totalServicesPrice.toLocaleString("ru-RU")} ₽ начислены в чек визита`,
+			"success",
+		);
+	};
+
 	const handleApply = () => {
 		if (onApplyProtocol) {
 			onApplyProtocol(customProtocolText);
@@ -111,7 +134,15 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 			// fallback
 		}
 
-		showToast("Протокол операции внесён в карту 043/у", "success");
+		// Автоматическое начисление услуг 804н в активный чек визита при сохранении протокола (Мандаты 8e, 8k)
+		dispatchSurgicalServicesToInvoice({
+			norm: activeNorm,
+			toothFdi,
+			customServices: currentServices,
+			onAddToInvoice,
+		});
+
+		showToast("Протокол операции и услуги 804н внесены в карту 043/у и чек", "success");
 	};
 
 	const handlePassportClick = () => {
@@ -321,7 +352,18 @@ export const SurgeryProtocolPanel: React.FC<SurgeryProtocolPanelProps> = ({
 						{showChecklist ? "Скрыть Time-Out ВОЗ" : "Показать Time-Out ВОЗ"}
 					</button>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							onClick={handleAddToInvoice}
+							className="min-h-[48px] px-3.5 py-2 rounded-xl text-xs font-black bg-[var(--paper-soft)] text-[var(--teal,#0d9488)] border border-[var(--teal-soft,rgba(13,148,136,0.3))] hover:bg-[var(--teal-surface,rgba(13,148,136,0.1))] flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+							data-testid="btn-panel-add-invoice"
+							title="1-Клик начисление хирургических услуг Номенклатуры 804н в активный чек визита"
+						>
+							<Receipt size={16} />
+							<span>В чек: {totalServicesPrice.toLocaleString("ru-RU")} ₽ ({currentServices.length})</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={() => {

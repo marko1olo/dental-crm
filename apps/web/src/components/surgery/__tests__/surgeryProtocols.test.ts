@@ -238,10 +238,10 @@ describe("Surgical Protocols & 1-Click Operation Norms (DENTE CRM)", () => {
 		assert.ok(periost.standardProtocolTextRu.includes("эвакуация гнойного экссудата"), "Must mention pus evacuation");
 		assert.ok(periost.standardProtocolTextRu.includes("дренаж"), "Must mention drainage");
 
-		// 5. Dental implantation: A16.07.006
+		// 5. Dental implantation: A16.07.054
 		const implant = SURGICAL_OPERATION_NORMS.find((n) => n.id === "surgery_implant_standard");
 		assert.ok(implant, "surgery_implant_standard must exist");
-		assert.equal(implant.code804n, "A16.07.006");
+		assert.equal(implant.code804n, "A16.07.054");
 		assert.ok(implant.standardProtocolTextRu.includes("35 Н/см"), "Must mention 35 N/cm torque");
 		assert.ok(
 			implant.standardProtocolTextRu.includes("формирователь десны") ||
