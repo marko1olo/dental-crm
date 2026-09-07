@@ -36,8 +36,11 @@ export interface QuickAddChairData {
 	id?: string;
 	name: string;
 	room?: string;
+	roomNumber?: string;
 	specialization?: string;
 	color?: string;
+	isActive?: boolean;
+	branchId?: string;
 }
 
 export interface QuickAddChairModalProps {
@@ -45,6 +48,9 @@ export interface QuickAddChairModalProps {
 	readonly onClose: () => void;
 	readonly existingChairsCount?: number | undefined;
 	readonly onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
+	readonly initialData?: QuickAddChairData | null | undefined;
+	readonly onUpdateChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
+	readonly branches?: any;
 }
 
 /**
@@ -61,25 +67,45 @@ export function QuickAddChairModal({
 	onClose,
 	existingChairsCount = 0,
 	onAddChair,
+	initialData,
+	onUpdateChair,
 }: QuickAddChairModalProps): React.ReactElement | null {
-	const defaultChairName = `Кресло ${existingChairsCount + 1}`;
-	const defaultRoomName = `Кабинет ${existingChairsCount + 1}`;
+	const isEditMode = Boolean(initialData && initialData.id);
+	const defaultChairName = isEditMode
+		? initialData?.name || `Кресло ${existingChairsCount + 1}`
+		: `Кресло ${existingChairsCount + 1}`;
+	const defaultRoomName = isEditMode
+		? initialData?.room || `Кабинет ${existingChairsCount + 1}`
+		: `Кабинет ${existingChairsCount + 1}`;
 
 	const [chairName, setChairName] = useState("");
 	const [roomNumber, setRoomNumber] = useState("");
 	const [selectedSpecialty, setSelectedSpecialty] = useState<string>("therapist");
 	const [selectedColor, setSelectedColor] = useState<string>("#0d9488");
+	const [isActive, setIsActive] = useState<boolean>(true);
+	const [branchId, setBranchId] = useState<string>("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	useEffect(() => {
 		if (isOpen) {
-			setChairName("");
-			setRoomNumber("");
-			setSelectedSpecialty("therapist");
-			setSelectedColor("#0d9488");
+			if (initialData) {
+				setChairName(initialData.name || "");
+				setRoomNumber(initialData.room || "");
+				setSelectedSpecialty(initialData.specialization || "therapist");
+				setSelectedColor(initialData.color || "#0d9488");
+				setIsActive(initialData.isActive !== false);
+				setBranchId(initialData.branchId || "");
+			} else {
+				setChairName("");
+				setRoomNumber("");
+				setSelectedSpecialty("therapist");
+				setSelectedColor("#0d9488");
+				setIsActive(true);
+				setBranchId("");
+			}
 			setIsSubmitting(false);
 		}
-	}, [isOpen]);
+	}, [isOpen, initialData]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -107,25 +133,36 @@ export function QuickAddChairModal({
 		const finalName = chairName.trim() || defaultChairName;
 		const finalRoom = roomNumber.trim() || defaultRoomName;
 
-		if (!chairName.trim()) {
+		if (!chairName.trim() && !isEditMode) {
 			showToast(`Название не указано. Создано «${finalName}» (${finalRoom})`, "info", 4000);
 		}
 
 		setIsSubmitting(true);
 		try {
-			if (onAddChair) {
-				await Promise.resolve(
-					onAddChair({
-						name: finalName,
-						room: finalRoom,
-						specialization: selectedSpecialty,
-						color: selectedColor,
-					}),
-				);
+			const payload: QuickAddChairData = {
+				...(initialData?.id ? { id: initialData.id } : {}),
+				name: finalName,
+				room: finalRoom,
+				specialization: selectedSpecialty,
+				color: selectedColor,
+				isActive,
+				...(branchId ? { branchId } : {}),
+			};
+
+			if (isEditMode && onUpdateChair) {
+				await Promise.resolve(onUpdateChair(payload));
+				showToast(`Кресло «${finalName}» успешно обновлено`, "success", 3000);
+			} else if (onAddChair) {
+				await Promise.resolve(onAddChair(payload));
 			} else {
 				// Fallback to direct API call if no callback provided
-				await fetch("/api/settings/chairs", {
-					method: "POST",
+				const endpoint = isEditMode && initialData?.id
+					? `/api/settings/chairs/${initialData.id}`
+					: "/api/settings/chairs";
+				const method = isEditMode ? "PUT" : "POST";
+
+				await fetch(endpoint, {
+					method,
 					headers: denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
 					}),
@@ -134,6 +171,7 @@ export function QuickAddChairModal({
 						room: finalRoom,
 						specialization: selectedSpecialty,
 						color: selectedColor,
+						active: isActive,
 					}),
 				}).catch(() => {});
 			}
@@ -176,10 +214,12 @@ export function QuickAddChairModal({
 								id="quick-add-chair-modal-title"
 								className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)] leading-tight"
 							>
-								Добавить кресло в расписание
+								{isEditMode ? "Редактировать кресло" : "Добавить кресло в расписание"}
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
-								Быстрое добавление рабочего места (StomX / DentalPRO parity)
+								{isEditMode
+									? "Параметры рабочего места и активность (StomX / DentalPRO parity)"
+									: "Быстрое добавление рабочего места (StomX / DentalPRO parity)"}
 							</p>
 						</div>
 					</div>
@@ -324,6 +364,38 @@ export function QuickAddChairModal({
 							})}
 						</div>
 					</div>
+
+					{/* Field: Activity Status (Active vs Archived) */}
+					<div className="flex items-center justify-between p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+						<div className="space-y-0.5">
+							<span className="block text-xs font-bold text-[var(--ink,#0f172a)]">
+								Активность в расписании
+							</span>
+							<span className="text-[11px] text-[var(--muted,#64748b)]">
+								{isActive
+									? "Кресло активно и отображается в сетке расписания"
+									: "Кресло в архиве (скрыто из ежедневного расписания)"}
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsActive(!isActive)}
+							className={`min-h-[44px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1.5 ${
+								isActive
+									? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40"
+									: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/30"
+							}`}
+							data-testid="quick-add-chair-active-toggle"
+							style={{ minHeight: "44px" }}
+						>
+							<span
+								className={`w-2 h-2 rounded-full ${
+									isActive ? "bg-emerald-500" : "bg-slate-400"
+								}`}
+							/>
+							<span>{isActive ? "Активно" : "В архиве"}</span>
+						</button>
+					</div>
 				</form>
 
 				{/* Modal Footer */}
@@ -344,10 +416,26 @@ export function QuickAddChairModal({
 						className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white text-xs sm:text-sm font-bold hover:opacity-90 active:scale-98 transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
 						data-testid="quick-add-chair-submit-btn"
 						style={{ minHeight: "44px" }}
-						title="Добавить кресло в расписание (автогенерация имени при пустом вводе)"
+						title={
+							isEditMode
+								? "Сохранить изменения параметров кресла"
+								: "Добавить кресло в расписание (автогенерация имени при пустом вводе)"
+						}
 					>
-						<Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
-						<span>{isSubmitting ? "Добавление..." : "+ Добавить кресло"}</span>
+						{isEditMode ? (
+							<Check className="w-4 h-4 shrink-0" aria-hidden="true" />
+						) : (
+							<Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
+						)}
+						<span>
+							{isSubmitting
+								? isEditMode
+									? "Сохранение..."
+									: "Добавление..."
+								: isEditMode
+									? "Сохранить изменения"
+									: "+ Добавить кресло"}
+						</span>
 					</button>
 				</div>
 			</div>

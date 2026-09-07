@@ -8,3 +8,4 @@ export { WarehouseTransferModal, type WarehouseTransferModalProps } from "./tran
 export { WarehouseInventoryAuditModal, type WarehouseInventoryAuditModalProps } from "./WarehouseInventoryAuditModal.js";
 export * from "./warehouseInventoryEngine.js";
 export * from "./mdlp/index.js";
+export * from "./WarehouseManagerModal.js";

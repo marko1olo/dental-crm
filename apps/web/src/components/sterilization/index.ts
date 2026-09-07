@@ -9,6 +9,7 @@
 export * from "./KraftPackageQuickScanner";
 export * from "./SterilizationStudioModal";
 export * from "./SterilizationJournalModal";
+export * from "./SterilizationAutoclaveLogModal";
 export * from "./sterilizationPresets";
 
 // Re-exports from SanPiN autoclave and kraft domains

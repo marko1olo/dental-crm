@@ -24,7 +24,10 @@ import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 import { printBlankMedicalContract } from "../patient/blankContractPrint";
-import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
+import { DEFAULT_SOLO_CHAIR, formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
+import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
+export { resolveChairDutyDoctor };
+import { showToast } from "../GlobalToast";
 
 export const QUICK_APPOINTMENT_REASONS = [
 	{
@@ -98,6 +101,7 @@ export interface AppointmentModalProps {
 	appointmentLabels: Record<Appointment["status"], string>;
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	appointmentReadinessById?: Map<string, AppointmentReadiness>;
+	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
 }
 
 export function AppointmentModal(props: AppointmentModalProps) {
@@ -116,6 +120,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		appointmentLabels,
 		activeVisitLockedAppointmentStatuses,
 		appointmentReadinessById,
+		chairDoctorAssignments,
 	} = props;
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
@@ -156,7 +161,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 	useEffect(() => {
 		if (!appointment || !isOpen) return;
-		const defaultDoc = appointment.doctorUserId || doctors[0]?.id || "";
+		let defaultDoc = appointment.doctorUserId || "";
 		let defaultChair = appointment.chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
 		if (!defaultChair && defaultDoc) {
 			const doc = doctors.find((d) => d.id === defaultDoc);
@@ -175,6 +180,23 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		if (!defaultChair && chairs.length === 0) {
 			defaultChair = DEFAULT_SOLO_CHAIR.id;
 		}
+
+		// Auto-populate duty doctor from chairDoctorAssignments if doctor not explicitly assigned
+		if (!defaultDoc && defaultChair) {
+			const duty = resolveChairDutyDoctor(
+				defaultChair,
+				appointment.startsAt,
+				chairDoctorAssignments,
+				appointment.startsAt ? appointment.startsAt.slice(0, 10) : undefined,
+			);
+			if (duty.doctorId) {
+				defaultDoc = duty.doctorId;
+			}
+		}
+		if (!defaultDoc) {
+			defaultDoc = doctors[0]?.id || "";
+		}
+
 		setPatientId(appointment.patientId ?? "");
 		setDoctorUserId(defaultDoc);
 		setAssistantUserId(appointment.assistantUserId ?? null);
@@ -186,7 +208,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setComment(appointment.comment ?? "");
 		setError(null);
 		setIsSaving(false);
-	}, [appointment, isOpen, toDateTimeLocalValue, timezone, doctors, chairs]);
+	}, [appointment, isOpen, toDateTimeLocalValue, timezone, doctors, chairs, chairDoctorAssignments]);
 
 	// Track active lab orders for the patient to align appointment slots with due dates
 	const [activeLabOrders, setActiveLabOrders] = useState<any[]>([]);
@@ -711,13 +733,26 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									const newDocId = e.target.value;
 									setDoctorUserId(newDocId);
 									if (newDocId) {
-										const doc = doctors.find((d) => d.id === newDocId);
-										if (doc?.specialties?.length) {
-											const matchingChair = chairs.find(
-												(c) => c.specialization && doc.specialties.includes(c.specialization),
+										const assignedChair = chairs.find((c) => {
+											const duty = resolveChairDutyDoctor(
+												c.id,
+												startsAtLocal,
+												chairDoctorAssignments,
+												startsAtLocal ? startsAtLocal.slice(0, 10) : undefined,
 											);
-											if (matchingChair) {
-												setChairId(matchingChair.id);
+											return duty.doctorId === newDocId;
+										});
+										if (assignedChair) {
+											setChairId(assignedChair.id);
+										} else {
+											const doc = doctors.find((d) => d.id === newDocId);
+											if (doc?.specialties?.length) {
+												const matchingChair = chairs.find(
+													(c) => c.specialization && doc.specialties.includes(c.specialization),
+												);
+												if (matchingChair) {
+													setChairId(matchingChair.id);
+												}
 											}
 										}
 									}
@@ -739,8 +774,34 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							</label>
 							<select
 								value={chairId}
-								onChange={(e) => setChairId(e.target.value)}
+								onChange={(e) => {
+									const newChairId = e.target.value;
+									setChairId(newChairId);
+									if (newChairId) {
+										const newDuty = resolveChairDutyDoctor(
+											newChairId,
+											startsAtLocal,
+											chairDoctorAssignments,
+											startsAtLocal ? startsAtLocal.slice(0, 10) : undefined,
+										);
+										if (newDuty.doctorId) {
+											setDoctorUserId(newDuty.doctorId);
+											const newChair =
+												chairs.find((c) => c.id === newChairId) ||
+												(newChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+											const newDoc = doctors.find((d) => d.id === newDuty.doctorId);
+											if (newDoc) {
+												showToast(
+													`Дежурный врач: ${formatDoctorShortName(newDoc.fullName)} (${newChair?.name || "Кресло"}, ${newDuty.shiftHours})`,
+													"info",
+													3000,
+												);
+											}
+										}
+									}
+								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								data-testid="select-appointment-chair"
 							>
 								<option value="">-- Выберите кресло --</option>
 								{chairs.length === 0 && (

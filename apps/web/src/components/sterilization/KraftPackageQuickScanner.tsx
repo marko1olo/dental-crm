@@ -418,7 +418,7 @@ export function KraftPackageQuickScanner({
 						</div>
 					) : (
 						<div style={{ padding: "1.75rem", textAlign: "center", color: "var(--muted)", fontSize: "0.9rem", border: "1px dashed var(--border, #e2e8f0)", borderRadius: "12px" }}>
-							Отсканируйте штрихкод крафт-пакета или нажмите верхнюю кнопку «⚡ Привязать стандартный стерильный лоток» для работы в 1 клик.
+							Отсканируйте штрихкод крафт-пакета или нажмите верхнюю кнопку «Привязать стандартный стерильный лоток» для работы в 1 клик.
 						</div>
 					)}
 				</div>

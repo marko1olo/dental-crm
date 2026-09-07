@@ -168,15 +168,15 @@ describe("Schedule Shift Roster & Doctor-to-Chair Matrix Integration (StomX / De
 			// Morning shifts must have 6h duration
 			const mornShifts = shifts.filter((s) => s.archetypeId === "morning_shift");
 			assert.ok(mornShifts.length > 0);
-			assert.equal(mornShifts[0]?.startTime, "08:30");
-			assert.equal(mornShifts[0]?.endTime, "14:30");
+			assert.equal(mornShifts[0]?.startTime, "08:00");
+			assert.equal(mornShifts[0]?.endTime, "14:00");
 			assert.equal(mornShifts[0]?.durationHours, 6.0);
 
 			// Evening shifts
 			const eveShifts = shifts.filter((s) => s.archetypeId === "evening_shift");
 			assert.ok(eveShifts.length > 0);
-			assert.equal(eveShifts[0]?.startTime, "14:30");
-			assert.equal(eveShifts[0]?.endTime, "20:30");
+			assert.equal(eveShifts[0]?.startTime, "14:00");
+			assert.equal(eveShifts[0]?.endTime, "20:00");
 			assert.equal(eveShifts[0]?.durationHours, 6.0);
 		});
 

@@ -363,3 +363,48 @@ Integrity mode: development
 - [ ] Юнит-тесты затронутых модулей проходят успешно.
 - [ ] Все правки зафиксированы атомарными коммитами через точечный `git add`.
 
+## Follow-up — 2026-09-07T17:55:19Z
+
+# Teamwork Project Prompt
+
+Deep adversarial Red Team audit and StomX / DentalPRO scheduling parity for Clinic MVP / Dental CRM: 1-click chair addition, doctor shift assignment to chairs (subShifts: morning/evening/full day), auto-populating duty doctors in appointment booking, and elimination of practitioner/cashier friction under Supreme Law (THE HAMMER, Mandates 8d, 8e, 8k, 8n).
+
+Working directory: C:\Clinic_MVP\dental-crm
+Integrity mode: development
+
+## Requirements
+
+### R1. Schedule & Chair-to-Doctor Shift Parity (StomX / DentalPRO)
+- In the schedule grid, each chair header must clearly display active doctor shifts (e.g., morning 08:00–14:00, evening 14:00–20:00) without ellipsis cut-off.
+- Highlight the active duty doctor for the current time slot with a clear visual badge (● На смене).
+- Provide a 1-click inline chair addition trigger ("+ Кресло") directly in the schedule toolbar with resilient fallback defaults ("Кресло N") when empty, with non-blocking submission.
+- Clicking an empty slot on a chair auto-populates the assigned duty doctor into the booking form. Switching chairs in the booking form auto-updates the doctor with a non-blocking toast, eliminating modal prompts.
+
+### R2. Clinical EMR & Odontogram Friction Killer (Mandates 8e, 8k)
+- Eliminate reality simulation bloat: no manual multi-step probing simulators or clicking individual carpules.
+- Provide 1-click express clinical presets: Intact arch (1-click physiological norm), Professional hygiene protocol (A16.07.051), and Fast Caries K02.1 protocol with automatic 043/u diary generation.
+- Ensure all primary buttons ("Сохранить", "Завершить", "Печать", "Оплатить") are never disabled without immediate actionable guidance.
+
+### R3. Outpatient Documents & Cashier 54-FZ Autonomy (Mandates 8e, 8n)
+- Documents (043/u, consents, contracts, tax certificates) must be printable at any moment: unfinalized visits print with a "DRAFT" watermark, finalized visits print with "SIGNED BY DOCTOR".
+- Receptionists must be able to print clean blank contracts with underline spaces ("_______") for walk-in patients without 403 errors.
+- Cashier 54-FZ operations must accept cash, card, and advance payments without requiring taxpayer IDs (INN) from physical persons.
+
+## Acceptance Criteria
+
+### Automated Verification Gates
+- [ ] `npm run check:encoding` passes with 0 errors across all repository files.
+- [ ] `npm run typecheck -w @dental/web` passes with Exit Code 0.
+- [ ] `npm run typecheck -w @dental/api` passes with Exit Code 0.
+- [ ] All targeted unit and component tests pass using native node:test and node:assert/strict.
+
+### Ergonomic & HIG Invariants (Mandate 8d)
+- [ ] All interactive buttons, chips, and table controls have touch targets >= 44x44px.
+- [ ] Toolbar height is strictly 1 single row (32–36px).
+- [ ] Modal nesting depth is strictly 1 (Anti-Matryoshka).
+- [ ] Zero cartoon emojis in formal medical, financial, and legal print forms.
+
+## Follow-up — 2026-09-07T18:11:35Z
+
+Квота восполнена. Продолжай глубокую работу согласно Конституции THE HAMMER (Мандаты 8d, 8e, 8k, 8n).
+Заверши сквозную проверку расписания, закрепления врачей за креслами по графику смен, проверь типы и проведи коммит с точечным git add. Доложи фактами.

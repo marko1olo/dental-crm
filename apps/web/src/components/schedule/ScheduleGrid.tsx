@@ -8,26 +8,33 @@ import {
 } from "@dental/shared";
 import {
 	AlertTriangle,
+	Building2,
 	CalendarCheck,
 	Check,
 	CheckCircle2,
 	Clock,
 	Copy,
+	Edit2,
 	MessageSquare,
+	Moon,
 	MoreVertical,
 	Phone,
 	PhoneCall,
-	Edit2,
 	Plus,
+	Settings,
 	Stethoscope,
+	Sun,
+	Trash2,
 	User,
 	UserCheck,
+	Users,
 	UserX,
 	X,
 	Zap,
 } from "lucide-react";
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
+export { resolveChairDutyDoctor } from "./QuickBookingDrawer";
 import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAppMessage";
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
@@ -50,11 +57,12 @@ export interface ChairDoctorSubShift {
 
 export interface ChairDoctorShiftAssignment {
 	chairId: string;
+	chairName?: string | undefined;
 	doctorId: string;
 	doctorName: string;
 	doctorSpecialty?: string | undefined;
-	shiftPreset: "morning" | "evening" | "full" | "two_shifts" | "custom";
-	shiftLabel: string;
+	shiftPreset?: "morning" | "evening" | "full" | "two_shifts" | "custom" | undefined;
+	shiftLabel?: string | undefined;
 	shiftHours: string;
 	startHour?: number | undefined;
 	endHour?: number | undefined;
@@ -133,12 +141,15 @@ export interface ScheduleGridProps {
 		| ((appointmentId: string, updates: any) => Promise<any> | void)
 		| undefined;
 	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
-	onAssignChairDoctor?: (
-		chairId: string,
-		assignment: ChairDoctorShiftAssignment | null,
-	) => void | undefined;
+	onAssignChairDoctor?:
+		| ((
+			chairId: string,
+			assignment: ChairDoctorShiftAssignment | null,
+		) => void)
+		| undefined;
 	onOpenAddChair?: (() => void) | undefined;
 	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
+	onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
 }
 
 function extractTeethList(appointment: Appointment): string[] {
@@ -199,11 +210,14 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		appointmentLabels,
 		selectedChairId,
 		selectedDoctorId,
+		onAppointmentMove,
+		onEditChair,
 	} = props;
 
 	const [hoveredApptId, setHoveredApptId] = useState<string | null>(null);
 	const [activeMenuApptId, setActiveMenuApptId] = useState<string | null>(null);
 	const [selectedMobileAppt, setSelectedMobileAppt] = useState<Appointment | null>(null);
+	const [chairDoctorDropdownId, setChairDoctorDropdownId] = useState<string | null>(null);
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const handleAppointmentMouseEnter = (apptId: string) => {
@@ -234,15 +248,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	useEffect(() => {
 		const handleGlobalClick = () => {
 			setActiveMenuApptId(null);
+			setChairDoctorDropdownId(null);
 		};
 		const handleGlobalKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
 				setActiveMenuApptId(null);
 				setSelectedMobileAppt(null);
 				setHoveredApptId(null);
+				setChairDoctorDropdownId(null);
 			}
 		};
-		if (activeMenuApptId || selectedMobileAppt) {
+		if (activeMenuApptId || selectedMobileAppt || chairDoctorDropdownId) {
 			window.addEventListener("click", handleGlobalClick);
 			window.addEventListener("keydown", handleGlobalKeyDown);
 		}
@@ -250,7 +266,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			window.removeEventListener("click", handleGlobalClick);
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [activeMenuApptId, selectedMobileAppt]);
+	}, [activeMenuApptId, selectedMobileAppt, chairDoctorDropdownId]);
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
@@ -328,7 +344,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			const soloDoc = doctors[0];
 			if (soloDoc) {
 				for (const chair of effectiveChairs) {
-					if (assignments[chair.id]?.doctorId === "") {
+					if (
+						assignments[chair.id]?.doctorId === "" ||
+						(assignments[chair.id] as any)?.unassigned
+					) {
 						continue;
 					}
 					if (!assignments[chair.id]) {
@@ -929,26 +948,47 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				</div>
 			)}
 
-			{/* Daily Chair & Doctor Occupancy Summary Bar */}
-			{dailyTally.totalAppointmentsCount > 0 && (
-				<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs">
-					<div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
-						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5 whitespace-nowrap">
-							<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
-							Загрузка клиники: {countLabel(dailyTally.totalAppointmentsCount, "визит", "визита", "визитов")} ({dailyTally.clinicOccupancyPercent}%)
+			{/* Daily Chair & Doctor Occupancy Summary Bar with Inline + Кресло */}
+			<div className="p-3 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-2 sm:gap-3 text-xs">
+				<div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
+					{dailyTally.totalAppointmentsCount > 0 ? (
+						<>
+							<span className="font-bold text-[var(--ink)] flex items-center gap-1.5 whitespace-nowrap">
+								<CalendarCheck size={16} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
+								Загрузка клиники: {countLabel(dailyTally.totalAppointmentsCount, "визит", "визита", "визитов")} ({dailyTally.clinicOccupancyPercent}%)
+							</span>
+							<span className="text-[var(--muted)] hidden sm:inline">·</span>
+							<span className="text-[var(--muted)] whitespace-nowrap">
+								Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)} ч {dailyTally.totalDurationMinutes % 60} мин
+							</span>
+						</>
+					) : (
+						<span className="text-[var(--muted)] flex items-center gap-1.5 whitespace-nowrap">
+							<Clock size={15} className="text-[var(--teal)] shrink-0" />
+							<span>{effectiveChairs.length} {countLabel(effectiveChairs.length, "кресло", "кресла", "кресел")} · Рабочий день 08:00–20:00</span>
 						</span>
-						<span className="text-[var(--muted)] hidden sm:inline">·</span>
-						<span className="text-[var(--muted)] whitespace-nowrap">
-							Общее время приема: {Math.floor(dailyTally.totalDurationMinutes / 60)} ч {dailyTally.totalDurationMinutes % 60} мин
-						</span>
-					</div>
+					)}
+				</div>
+				<div className="flex items-center gap-2.5 shrink-0">
+					<button
+						type="button"
+						onClick={handleOpenAddChair}
+						className="min-h-[44px] min-w-[44px] px-3.5 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
+						title="Добавить кресло в расписание (+ Кресло)"
+						aria-label="Добавить кресло"
+						data-testid="btn-grid-inline-add-chair"
+						style={{ minHeight: "44px", minWidth: "44px" }}
+					>
+						<Plus size={15} className="shrink-0 text-[var(--teal)]" />
+						<span className="font-bold">+ Кресло</span>
+					</button>
 					{dailyTally.totalRevenueRub > 0 && (
 						<div className="font-bold font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
 							Выручка дня: {dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽
 						</div>
 					)}
 				</div>
-			)}
+			</div>
 
 			<div
 				className="schedule-grid-container overflow-x-auto rounded-2xl border border-[var(--line)] bg-[var(--paper)] shadow-sm p-4 sm:p-6 touch-pan-x"
@@ -959,7 +999,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				<div
 					className="grid min-w-[700px] border-b border-[var(--line)] bg-[var(--paper-soft)] sticky top-0 z-10"
 					style={{
-						gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr)) minmax(110px, 130px)`,
+						gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
 					}}
 				>
 					{/* Time corner header */}
@@ -991,6 +1031,29 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								>
 									<div className="flex items-center justify-center gap-1.5 flex-wrap">
 										<span className="truncate">{chair.name}</span>
+										{onEditChair && chair.id !== DEFAULT_SOLO_CHAIR.id && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													onEditChair({
+														id: chair.id,
+														name: chair.name,
+														roomNumber: (chair as any).roomNumber || (chair as any).room || "",
+														branchId: (chair as any).branchId,
+														color: chair.color || "#0d9488",
+														specialization: (chair as any).specialization,
+														isActive: (chair as any).active ?? (chair as any).isActive ?? true,
+													});
+												}}
+												className="p-1 rounded-md hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+												title={`Редактировать параметры кресла «${chair.name}»`}
+												aria-label={`Редактировать параметры кресла ${chair.name}`}
+												data-testid={`btn-edit-chair-${chair.id}`}
+											>
+												<Settings size={12} className="opacity-70 hover:opacity-100" />
+											</button>
+										)}
 										{chairStat && chairStat.appointmentsCount > 0 && (
 											<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
 												{countLabel(chairStat.appointmentsCount, "визит", "визита", "визитов")} ({chairStat.occupancyPercent}%)
@@ -1162,49 +1225,59 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														)}
 														<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
 													</button>
-													{/* 1-Click Shift Quick Toggle */}
-													<div className="flex items-center justify-between gap-1 w-full px-0.5">
+													{/* 1-Click Shift Segmented Control (StomX / DentalPRO parity) */}
+													<div
+														className="flex items-center justify-between p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] w-full gap-0.5"
+														role="group"
+														aria-label="Переключение смены кресла"
+													>
 														<button
 															type="button"
 															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "morning")}
-															className={`min-h-[44px] text-[11px] font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center flex-1 ${
+															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
 																assignment!.shiftPreset === "morning"
-																	? "bg-[var(--teal)] text-white shadow-2xs"
-																	: "bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)]"
+																	? "bg-[var(--teal)] text-white shadow-xs"
+																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
 															}`}
 															style={{ minHeight: "44px" }}
-															title="Утренняя смена (08:00–14:00)"
+															title="1-я смена: Утро (08:00–14:00)"
+															aria-label="Утренняя смена"
 															data-testid={`chair-quick-morning-${chair.id}`}
 														>
-															☀️ Утро
+															<Sun size={12} className="shrink-0" />
+															<span className="text-[11px] font-bold">Утро</span>
 														</button>
 														<button
 															type="button"
 															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "evening")}
-															className={`min-h-[44px] text-[11px] font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center flex-1 ${
+															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
 																assignment!.shiftPreset === "evening"
-																	? "bg-[var(--teal)] text-white shadow-2xs"
-																	: "bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)]"
+																	? "bg-[var(--teal)] text-white shadow-xs"
+																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
 															}`}
 															style={{ minHeight: "44px" }}
-															title="Вечерняя смена (14:00–20:00)"
+															title="2-я смена: Вечер (14:00–20:00)"
+															aria-label="Вечерняя смена"
 															data-testid={`chair-quick-evening-${chair.id}`}
 														>
-															🌙 Вечер
+															<Moon size={12} className="shrink-0" />
+															<span className="text-[11px] font-bold">Вечер</span>
 														</button>
 														<button
 															type="button"
 															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "full")}
-															className={`min-h-[44px] text-[11px] font-bold py-1 px-2 rounded-lg transition-colors cursor-pointer flex items-center justify-center flex-1 ${
+															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
 																assignment!.shiftPreset === "full"
-																	? "bg-[var(--teal)] text-white shadow-2xs"
-																	: "bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)]"
+																	? "bg-[var(--teal)] text-white shadow-xs"
+																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
 															}`}
 															style={{ minHeight: "44px" }}
 															title="Полный день (08:00–20:00)"
+															aria-label="Полный день"
 															data-testid={`chair-quick-full-${chair.id}`}
 														>
-															🏢 Весь день
+															<Building2 size={12} className="shrink-0" />
+															<span className="text-[11px] font-bold">День</span>
 														</button>
 														{doctors.length > 1 && (
 															<button
@@ -1213,12 +1286,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	const secondDoc = doctors.find((d) => d.id !== assignment!.doctorId) || doctors[1] || doctors[0];
 																	handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "two_shifts", secondDoc?.id);
 																}}
-																className="min-h-[44px] text-[11px] font-bold py-1 px-2 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer flex items-center justify-center flex-1"
-																style={{ minHeight: "44px" }}
-																title="Переключить на 2 смены (Утро + Вечер)"
+																className={`min-h-[30px] h-[30px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
+																	assignment!.shiftPreset === "two_shifts" || (assignment!.subShifts && assignment!.subShifts.length > 1)
+																		? "bg-[var(--teal)] text-white shadow-xs"
+																		: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+																}`}
+																title="2 смены (Утро + Вечер разные врачи)"
+																aria-label="Две смены"
 																data-testid={`chair-quick-twoshifts-${chair.id}`}
 															>
-																2 смены
+																<Users size={12} className="shrink-0" />
+																<span className="text-[11px] font-bold">2 см</span>
 															</button>
 														)}
 													</div>
@@ -1258,36 +1336,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							);
 						});
 					})()}
-
-					{/* Inline + Кресло Header Column (StomX / DentalPRO parity) */}
-					<div
-						className="p-2 sm:p-3 text-center border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center min-w-0"
-						data-testid="grid-header-add-chair-col"
-					>
-						<button
-							type="button"
-							onClick={handleOpenAddChair}
-							className="min-h-[44px] min-w-[44px] w-full px-2.5 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95"
-							title="Добавить кресло в расписание (+ Кресло)"
-							aria-label="Добавить кресло"
-							data-testid="btn-grid-inline-add-chair"
-							style={{ minHeight: "44px", minWidth: "44px" }}
-						>
-							<Plus size={15} className="shrink-0 text-[var(--teal)]" />
-							<span className="truncate font-bold">+ Кресло</span>
-						</button>
-					</div>
 				</div>
 
 			{/* Time Rows */}
 			<div className="divide-y divide-[var(--line)]">
-				{HOURS.map((hour) => {
+				{HOURS.map((hour, hIndex) => {
 					return (
 						<div
 							key={hour}
 							className="grid min-w-[700px] hover:bg-[var(--paper-soft)]/50 transition-colors"
 							style={{
-								gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr)) minmax(110px, 130px)`,
+								gridTemplateColumns: `80px repeat(${effectiveChairs.length}, minmax(180px, 1fr))`,
 							}}
 						>
 							{/* Time label */}
@@ -1296,7 +1355,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							</div>
 
 							{/* Chair Cells */}
-							{effectiveChairs.map((chair) => {
+							{effectiveChairs.map((chair, chairIndex) => {
 								const slotStartIso = `${dateKey}T${hour}:00.000Z`;
 								const cellAppointments = dayAppointments.filter((a) => {
 									if (chair.id !== DEFAULT_SOLO_CHAIR.id && a.chairId !== chair.id) {
@@ -1401,9 +1460,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														}`}
 													>
 														{/* macOS Hover HUD с задержкой 150ms без сдвига сетки расписания (Apple HIG Progressive Disclosure) */}
-														{hoveredApptId === a.id && (
+														{hoveredApptId === a.id && (() => {
+															const isNearBottom = hIndex >= 8;
+															const isNearRightEdge = chairIndex >= effectiveChairs.length - 1 && effectiveChairs.length > 1;
+															return (
 															<div
-																className="appointment-patient-hover-preview absolute left-0 top-full mt-1.5 w-[330px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto"
+																className={`appointment-patient-hover-preview absolute ${isNearRightEdge ? "right-0 left-auto" : "left-0"} ${isNearBottom ? "bottom-full mb-1.5 top-auto" : "top-full mt-1.5"} w-[330px] max-w-[calc(100vw-32px)] p-4 rounded-2xl backdrop-blur-md bg-[var(--paper-strong)]/95 border border-[var(--line)] shadow-2xl space-y-3 animate-in fade-in zoom-in-95 duration-150 text-xs text-[var(--ink)] z-50 pointer-events-auto`}
 																data-testid="schedule-grid-patient-hover-preview"
 																onMouseEnter={() => {
 																	if (hoverTimeoutRef.current) {
@@ -1635,7 +1697,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																	</div>
 																)}
 															</div>
-														)}
+															);
+														})()}
 
 														{/* Карточка записи: 3 главных фокуса (ФИО, процедура, цветной маркер статуса) по стандарту Apple HIG */}
 														<div
@@ -2010,19 +2073,35 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													);
 
 													if (collisionCheck.hasCollision) {
-														showToast(`Перемещение заблокировано: ${collisionCheck.message}`, "error", 5000);
-														return;
+														showToast(`Внимание: ${collisionCheck.message}. Запись перенесена с овербукингом`, "warning", 4500);
 													}
 
-													onSlotClick({
-														dateKey,
-														startTime: hour,
-														chairId: targetChairId,
-														doctorUserId: targetDoctorId,
-														durationMinutes: slotDuration,
-														patientId: sourceAppt.patientId,
-														reason: sourceAppt.reason || undefined,
-													});
+													if (typeof onAppointmentMove === "function") {
+														void Promise.resolve(
+															onAppointmentMove(sourceAppt.id, {
+																startsAt: targetStartIso,
+																endsAt: targetEndIso,
+																chairId: targetChairId,
+																doctorUserId: targetDoctorId,
+																allowOverbooking: true,
+															}),
+														).then((result) => {
+															if (result !== false) {
+																const pName = patientName ? patientName(dashboard?.patients ?? [], sourceAppt.patientId) : "Пациент";
+																showToast(`«${pName}» перенесен(а) на ${hour}`, "success", 3000);
+															}
+														});
+													} else {
+														onSlotClick({
+															dateKey,
+															startTime: hour,
+															chairId: targetChairId,
+															doctorUserId: targetDoctorId,
+															durationMinutes: slotDuration,
+															patientId: sourceAppt.patientId,
+															reason: sourceAppt.reason || undefined,
+														});
+													}
 												} else if (data?.type === "waitlist_item" && data.item) {
 													const waitlistItem = data.item;
 													const targetChairId = chair.id !== "default-chair" ? chair.id : null;
@@ -2118,6 +2197,36 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												);
 											}
 
+											const hasDoctorForDay = Boolean(effectiveChairAssignments[chair.id]?.doctorId);
+											const isOffDuty = hasDoctorForDay && !assignedDocId;
+
+											if (isOffDuty) {
+												return (
+													<button
+														type="button"
+														onClick={() =>
+															onSlotClick({
+																dateKey,
+																startTime: hour,
+																chairId: chair.id,
+																doctorUserId: selectedDoctorId || null,
+																durationMinutes: 30,
+															})
+														}
+														className="w-full h-full min-h-[48px] rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper-soft)]/40 hover:border-[var(--teal)]/40 hover:bg-[var(--teal-surface)]/50 text-[var(--muted)] hover:text-[var(--teal-dark)] text-xs flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer focus:ring-2 focus:ring-[var(--teal)] focus:outline-none whitespace-nowrap shrink-0 opacity-75 hover:opacity-100"
+														title={`Вне графика смены врача на ${hour} (${chair.name}). Нажмите для записи вне графика`}
+														aria-label={`Вне графика врача на ${hour}, кресло ${chair.name}`}
+														data-testid={`btn-slot-${chair.id}-${hour.replace(":", "")}`}
+													>
+														<div className="flex items-center gap-1">
+															<Clock size={12} className="opacity-50 shrink-0" />
+															<span className="text-[11px] font-medium text-[var(--muted)]">Вне смены</span>
+														</div>
+														<span className="text-[10px] text-[var(--muted)] opacity-70">{hour}</span>
+													</button>
+												);
+											}
+
 											return (
 												<button
 													type="button"
@@ -2143,12 +2252,6 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									</div>
 								);
 							})}
-
-							{/* Placeholder cell under + Кресло column */}
-							<div
-								className="p-1 border-r border-[var(--line)] last:border-r-0 min-h-[56px] flex items-center justify-center bg-[var(--paper-soft)]/20"
-								aria-hidden="true"
-							/>
 						</div>
 					);
 				})}

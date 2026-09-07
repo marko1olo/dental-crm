@@ -235,7 +235,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		setItems((prev) => [...quickItems, ...prev]);
 		setReason("Оказание медицинской помощи — пустые карпулы смены по СанПиН 3.3686-21 (бумажный журнал учтён)");
 		showToast(
-			"⚡ Списаны все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание готово в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)",
+			"Списаны все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест): списание готово в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)",
 			"info",
 		);
 	}, [patientId, patientName, visitId, doctorId, doctorName, cabinetId]);
@@ -257,7 +257,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 		if (items.length === 0) {
 			handleQuickNurseCarpulesDisposal();
 			showToast(
-				"⚡ Очередь списания автозаполнена карпулами смены. Нажмите кнопку списания для отправки Схемы 10560 в МДЛП.",
+				"Очередь списания автозаполнена карпулами смены. Нажмите кнопку списания для отправки Схемы 10560 в МДЛП.",
 				"info",
 			);
 			return;
@@ -329,6 +329,21 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 	};
 
 	if (!isOpen) return null;
+
+	// Anti-Matryoshka (Mandate 8d Sin 6): render act modal sequentially at modal depth strictly 1
+	if (isActModalOpen) {
+		return (
+			<SeniorNurseDisposalActModal
+				isOpen={isActModalOpen}
+				onClose={() => setIsActModalOpen(false)}
+				items={items}
+				organizationName={organizationName}
+				initialDentistName={doctorName}
+				initialApproverRole="doctor"
+				initialPaperJournalAcknowledged={true}
+			/>
+		);
+	}
 
 	const modalContent = (
 		<div
@@ -588,7 +603,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							title="Списать все пустые карпулы смены: 10 шт. Артикаин + 2 шт. Скандонест"
 						>
 							<Sparkles size={16} className="text-amber-300" />
-							⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
+							Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
 						</button>
 					</div>
 
@@ -829,7 +844,7 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 							title="Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест) в 1 клик (бумажный журнал учтён, старшая медсестра опциональна)"
 							data-testid="footer-quick-carpules-btn"
 						>
-							<Sparkles size={15} className="text-amber-500" /> ⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
+							<Sparkles size={15} className="text-amber-500" /> Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
 						</button>
 					</div>
 
@@ -866,19 +881,6 @@ export const MdlpDisposalQueueModal: React.FC<MdlpDisposalQueueModalProps> = ({
 					</div>
 				</footer>
 			</div>
-
-			{/* Модальное окно акта списания (бумажный журнал учтён, старшая медсестра опциональна) */}
-			{isActModalOpen && (
-				<SeniorNurseDisposalActModal
-					isOpen={isActModalOpen}
-					onClose={() => setIsActModalOpen(false)}
-					items={items}
-					organizationName={organizationName}
-					initialDentistName={doctorName}
-					initialApproverRole="doctor"
-					initialPaperJournalAcknowledged={true}
-				/>
-			)}
 		</div>
 	);
 

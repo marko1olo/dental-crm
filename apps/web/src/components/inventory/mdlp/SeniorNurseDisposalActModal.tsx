@@ -101,8 +101,8 @@ export const SeniorNurseDisposalActModal: React.FC<
 	const handleApproveAct = async (isPaperLog = paperJournalAcknowledged) => {
 		setIsApproved(true);
 		const message = isPaperLog
-			? `⚡ Акт списания №${actNumber} утверждён: бумажный журнал учтён, участие старшей медсестры опционально`
-			: `⚡ Акт списания №${actNumber} утверждён единолично (без комиссии из 3 человек)`;
+			? `Акт списания №${actNumber} утверждён: бумажный журнал учтён, участие старшей медсестры опционально`
+			: `Акт списания №${actNumber} утверждён единолично (без комиссии из 3 человек)`;
 		showToast(message, "info");
 		if (onApproveAct) {
 			await onApproveAct(actData);
@@ -392,7 +392,7 @@ export const SeniorNurseDisposalActModal: React.FC<
 
 						{isSingleSigner && (
 							<div className="text-[11px] text-teal-700 bg-teal-50/70 border border-teal-200/60 rounded px-2.5 py-1.5 leading-relaxed">
-								⚡ <strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится в 1 клик врачом, администратором или медсестрой без бюрократического требования комиссии из 3 человек.
+								<strong>СанПиН 3.3686-21:</strong> Списание пустых карпул анестетиков проводится в 1 клик врачом, администратором или медсестрой без бюрократического требования комиссии из 3 человек.
 							</div>
 						)}
 
@@ -603,11 +603,11 @@ export const SeniorNurseDisposalActModal: React.FC<
 							<CheckCircle2 size={18} />
 							{isApproved
 								? paperJournalAcknowledged
-									? "✓ Списание утверждено (бумажный журнал учтён)"
-									: "✓ Акт утверждён единолично"
+									? "Списание утверждено (бумажный журнал учтён)"
+									: "Акт утверждён единолично"
 								: paperJournalAcknowledged
-									? "⚡ Утвердить списание (бумажный журнал учтён)"
-									: "⚡ Утвердить акт единолично (1 клик)"}
+									? "Утвердить списание (бумажный журнал учтён)"
+									: "Утвердить акт единолично (1 клик)"}
 						</button>
 					</div>
 				</footer>

@@ -1,12 +1,13 @@
-# BRIEFING — 2026-09-04T11:52:00Z
+# BRIEFING — 2026-09-07T17:55:19Z
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
+
 ## Mission
-Full elimination of prop-drilling in App.tsx, integration of views (VisitView, FinanceView, CommunicationsView, DocumentsView, PatientsView, ShiftView) with useAppLogicContext(), and cleanup of hundreds of lines of unused appLogicValue destructuring in App.tsx without breaking internal logic, reactivity, and memoization.
+Deep adversarial Red Team audit and StomX / DentalPRO scheduling parity for Clinic MVP / Dental CRM: 1-click chair addition, doctor shift assignment to chairs (subShifts: morning/evening/full day), auto-populating duty doctors in appointment booking, and elimination of practitioner/cashier friction under Supreme Law (THE HAMMER, Mandates 8d, 8e, 8k, 8n).
 
 ## 🔒 My Identity
 - Archetype: sentinel
-- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r61
+- Working directory: C:\Clinic_MVP\dental-crm\.agents\sentinel_r63
 - Orchestrator: to be spawned (teamwork_preview_orchestrator)
 - Victory Auditor: to be spawned on victory claim
 
@@ -18,7 +19,7 @@ Full elimination of prop-drilling in App.tsx, integration of views (VisitView, F
 - Full multi-agent engineering team with adversarial clinical critics
 
 ## User Context
-- **Last user request**: R1: Integrate FinanceView, CommunicationsView, DocumentsView, ShiftView with useAppLogicContext() (optional rawProps fallback for unit tests); R2: Eliminate prop drilling in App.tsx for VisitView, FinanceView, CommunicationsView, DocumentsView, PatientsView, ShiftView; R3: Clean up hundreds of unused variables in appLogicValue destructuring in App.tsx (lines 213-1166); R4: Machine verification (check:encoding, web & api typecheck, tests).
+- **Last user request**: R1: Schedule & Chair-to-Doctor Shift Parity (StomX / DentalPRO): active shifts in chair headers, duty doctor badge, 1-click chair addition (+ Кресло), auto-populating duty doctors in booking; R2: Clinical EMR & Odontogram Friction Killer (Mandates 8e, 8k): 1-click express clinical presets (intact arch, pro hygiene A16.07.051, fast caries K02.1), no disabled action buttons without guidance; R3: Outpatient Documents & Cashier 54-FZ Autonomy (Mandates 8e, 8n): printable at any moment (draft/signed watermark), blank contract printing without 403, cashier without physical person INN.
 - **Pending clarifications**: none
 - **Delivered results**: none yet (round starting)
 
@@ -33,4 +34,4 @@ Full elimination of prop-drilling in App.tsx, integration of views (VisitView, F
 ## Artifact Index
 - C:\Clinic_MVP\dental-crm\.agents\ORIGINAL_REQUEST.md — user intent record
 - C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md — Master prompt authority
-- C:\Clinic_MVP\dental-crm\.agents\sentinel_r61\BRIEFING.md — Sentinel persistent briefing
+- C:\Clinic_MVP\dental-crm\.agents\sentinel_r63\BRIEFING.md — Sentinel persistent working memory

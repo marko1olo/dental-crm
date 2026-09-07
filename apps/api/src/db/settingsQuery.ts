@@ -5,6 +5,7 @@ import type {
 	ClinicSettings,
 	CreateChairInput,
 	CreateStaffMemberInput,
+	DentalSpecialty,
 	StaffMember,
 	StaffWorkingHours,
 	UiPreferences,
@@ -379,19 +380,23 @@ export async function getClinicSettingsFromDb(
 			createdAt: s.createdAt.toISOString(),
 			updatedAt: s.createdAt.toISOString(),
 		})),
-		chairs: chairs.map((c) => ({
-			id: c.id,
-			organizationId: c.organizationId,
-			name: c.name,
-			room: null,
-			specialization: null,
-			active: c.isActive,
-			hasXraySensor: false,
-			hasMicroscope: false,
-			hasSurgeryKit: false,
-			notes: null,
-			workingHours: narrowWorkingHours(c.workingHours),
-		})),
+		chairs: chairs.map((c) => {
+			const eq = c.equipment || "";
+			const roomMatch = eq.match(/Кабинет:\s*([^,]+)/);
+			return {
+				id: c.id,
+				organizationId: c.organizationId,
+				name: c.name,
+				room: roomMatch ? roomMatch[1]!.trim() : null,
+				specialization: (c.specializations as DentalSpecialty) || null,
+				active: c.isActive,
+				hasXraySensor: eq.toLowerCase().includes("рентген") || eq.toLowerCase().includes("xray"),
+				hasMicroscope: eq.toLowerCase().includes("микроскоп") || eq.toLowerCase().includes("microscope"),
+				hasSurgeryKit: eq.toLowerCase().includes("хирург") || eq.toLowerCase().includes("surgery"),
+				notes: eq || null,
+				workingHours: narrowWorkingHours(c.workingHours),
+			};
+		}),
 		integrationPresets: [],
 		workspaceProfiles: [],
 		roleAccessPolicies: [],
@@ -888,11 +893,19 @@ export async function createChairInDb(
 		.limit(1);
 	if (!clinic) throw new Error("Клиника не найдена в базе данных.");
 
+	const equipmentParts: string[] = [];
+	if (input.room) equipmentParts.push(`Кабинет: ${input.room}`);
+	if (input.hasXraySensor) equipmentParts.push("рентген");
+	if (input.hasMicroscope) equipmentParts.push("микроскоп");
+	if (input.hasSurgeryKit) equipmentParts.push("хирургия");
+	if (input.notes) equipmentParts.push(input.notes);
+
 	await db.insert(schema.chairs).values({
 		organizationId,
 		clinicId: clinic.id,
 		name: input.name,
 		specializations: input.specialization ?? null,
+		equipment: equipmentParts.length > 0 ? equipmentParts.join(", ") : null,
 		isActive: true,
 		workingHours: input.workingHours,
 	});

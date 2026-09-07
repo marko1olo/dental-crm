@@ -110,7 +110,7 @@ const activeVisitLockedAppointmentStatuses = new Set<Appointment["status"]>([
 	"no_show",
 ]);
 
-type ScheduleViewProps = {
+export type ScheduleViewProps = {
 	appointmentLabels: Record<Appointment["status"], string>;
 	appointmentReadinessById: Map<string, AppointmentReadiness>;
 	appointmentReadinessLabels: Record<AppointmentReadiness["state"], string>;
@@ -744,24 +744,54 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 	const [modalAppointment, setModalAppointment] =
 		useState<Appointment | null>(null);
 
-	/** Быстрое добавление кресла прямо из расписания (StomX / DentalPRO parity) */
+	/** Быстрое добавление и редактирование кресла прямо из расписания (StomX / DentalPRO parity) */
 	const [isQuickAddChairOpen, setIsQuickAddChairOpen] = useState(false);
+	const [editingChairData, setEditingChairData] = useState<QuickAddChairData | null>(null);
+
+	const handleEditChairFromSchedule = useCallback((chairData: QuickAddChairData) => {
+		setEditingChairData(chairData);
+		setIsQuickAddChairOpen(true);
+	}, []);
 
 	const handleAddChairFromSchedule = useCallback(
 		async (chairData: QuickAddChairData) => {
-			// Сбросить фильтр кресла, чтобы созданное кресло сразу отобразилось в сетке (Defect 6)
+			// Сбросить фильтр кресла, чтобы созданное кресло сразу отобразилось в сетке
 			setScheduleChairFilterId(null);
+			const isUpdate = Boolean(chairData.id);
+
 			const applyLocalOptimisticChair = () => {
 				if (typeof props.setDashboard === "function") {
 					props.setDashboard((prev: any) => {
 						if (!prev?.clinicSettings) return prev;
+						if (isUpdate) {
+							return {
+								...prev,
+								clinicSettings: {
+									...prev.clinicSettings,
+									chairs: (prev.clinicSettings.chairs ?? []).map((c: any) =>
+										c.id === chairData.id
+											? {
+													...c,
+													name: chairData.name,
+													room: chairData.roomNumber || chairData.room,
+													roomNumber: chairData.roomNumber || chairData.room,
+													specialization: chairData.specialization,
+													color: chairData.color,
+													active: chairData.isActive,
+													isActive: chairData.isActive,
+											  }
+											: c,
+									),
+								},
+							};
+						}
 						const localChair = {
 							id: `chair-local-${Date.now()}`,
 							name: chairData.name,
-							room: chairData.room,
+							room: chairData.roomNumber || chairData.room,
 							specialization: chairData.specialization,
 							color: chairData.color,
-							active: true,
+							active: chairData.isActive ?? true,
 						};
 						return {
 							...prev,
@@ -775,16 +805,21 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			};
 
 			try {
-				const res = await fetch("/api/settings/chairs", {
-					method: "POST",
+				const url = isUpdate
+					? `/api/settings/chairs/${encodeURIComponent(chairData.id!)}`
+					: "/api/settings/chairs";
+				const method = isUpdate ? "PUT" : "POST";
+				const res = await fetch(url, {
+					method,
 					headers: denteAdminSecretRequestHeaders({
 						"Content-Type": "application/json",
 					}),
 					body: JSON.stringify({
 						name: chairData.name,
-						room: chairData.room,
+						room: chairData.roomNumber || chairData.room,
 						specialization: chairData.specialization,
 						color: chairData.color,
+						...(isUpdate ? { active: chairData.isActive } : {}),
 					}),
 				});
 				if (!res.ok) {
@@ -793,12 +828,25 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				if (typeof props.loadDashboard === "function") {
 					await props.loadDashboard();
 				}
-				showToast(`Кресло «${chairData.name}» успешно добавлено в расписание`, "success", 3500);
+				showToast(
+					isUpdate
+						? `Параметры кресла «${chairData.name}» успешно обновлены`
+						: `Кресло «${chairData.name}» успешно добавлено в расписание`,
+					"success",
+					3500,
+				);
 			} catch (err) {
-				console.warn("Failed to add chair via QuickAddChairModal:", err);
-				// Оптимистичное локальное добавление в clinicSettings.chairs (Defect 2)
+				console.warn("Failed to add/update chair via QuickAddChairModal:", err);
 				applyLocalOptimisticChair();
-				showToast(`Кресло «${chairData.name}» добавлено локально`, "info", 3000);
+				showToast(
+					isUpdate
+						? `Параметры кресла «${chairData.name}» обновлены локально`
+						: `Кресло «${chairData.name}» добавлено локально`,
+					"info",
+					3000,
+				);
+			} finally {
+				setEditingChairData(null);
 			}
 		},
 		[props.loadDashboard, props.setDashboard],
@@ -2074,6 +2122,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				setShowCreateForm={setShowCreateForm}
 				isSmartAiOpen={isSmartAiOpen}
 				setIsSmartAiOpen={setIsSmartAiOpen}
+				chairDoctorAssignments={computedChairDoctorAssignments}
 			/>
 
 			{scheduleViewMode === "grid" ? (
@@ -2120,8 +2169,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							: undefined
 					}
 					onAssignChairDoctor={handleAssignChairDoctor}
-					onOpenAddChair={() => setIsQuickAddChairOpen(true)}
+					onOpenAddChair={() => {
+						setEditingChairData(null);
+						setIsQuickAddChairOpen(true);
+					}}
 					onAddChair={handleAddChairFromSchedule}
+					onEditChair={handleEditChairFromSchedule}
 				/>
 			) : (
 				<ScheduleTimeline
@@ -2215,6 +2268,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					activeVisitLockedAppointmentStatuses
 				}
 				appointmentReadinessById={appointmentReadinessById}
+				chairDoctorAssignments={computedChairDoctorAssignments}
 			/>
 
 			<DoctorFreeSlotsModal
@@ -2415,9 +2469,15 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 			/>
 			<QuickAddChairModal
 				isOpen={isQuickAddChairOpen}
-				onClose={() => setIsQuickAddChairOpen(false)}
+				onClose={() => {
+					setIsQuickAddChairOpen(false);
+					setEditingChairData(null);
+				}}
 				onAddChair={handleAddChairFromSchedule}
+				initialData={editingChairData}
+				onUpdateChair={handleAddChairFromSchedule}
 				existingChairsCount={dashboard?.clinicSettings?.chairs?.length || 0}
+				branches={dashboard?.clinicSettings?.branches}
 			/>
 			<DoctorCalendarSyncModal
 				isOpen={isCalendarSyncModalOpen}

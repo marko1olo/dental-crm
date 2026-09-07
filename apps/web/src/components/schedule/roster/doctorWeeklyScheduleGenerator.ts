@@ -138,29 +138,29 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 					eveDocs = rotatedDocs.slice(half);
 				}
 
-				// Morning shift allocation (08:30-14:30)
+				// Morning shift allocation (08:00-14:00)
 				const usedMornChairs = new Set<string>();
 				const usedMornAssistants = new Set<string>();
-				for (let i = 0; i < mornDocs.length; i++) {
-					const doc = mornDocs[i]!;
-					const chair = allocateChairForDoctor(doc, usedMornChairs, i);
-					if (!chair) break;
+				for (let j = 0; j < mornDocs.length; j++) {
+					const mornDoc = mornDocs[j]!;
+					const mornChair = allocateChairForDoctor(mornDoc, usedMornChairs, j);
+					if (!mornChair) break;
 
-					const asst = allocateAssistantForDoctor(doc, usedMornAssistants);
+					const mornAsst = allocateAssistantForDoctor(mornDoc, usedMornAssistants);
 
 					shifts.push({
-						id: `shift-${dateIso}-${chair.chairId}-${doc.id}-morn`,
-						doctorId: doc.id,
-						doctorName: doc.shortName || doc.fullName,
-						doctorRole: doc.role,
-						assistantId: asst ? asst.id : null,
-						assistantName: asst ? asst.shortName || asst.fullName : null,
-						cabinetId: chair.cabinetId,
-						chairId: chair.chairId,
+						id: `shift-${dateIso}-${mornChair.chairId}-${mornDoc.id}-morn`,
+						doctorId: mornDoc.id,
+						doctorName: mornDoc.shortName || mornDoc.fullName,
+						doctorRole: mornDoc.role,
+						assistantId: mornAsst ? mornAsst.id : null,
+						assistantName: mornAsst ? mornAsst.shortName || mornAsst.fullName : null,
+						cabinetId: mornChair.cabinetId,
+						chairId: mornChair.chairId,
 						dateIso,
 						archetypeId: "morning_shift",
-						startTime: "08:30",
-						endTime: "14:30",
+						startTime: "08:00",
+						endTime: "14:00",
 						durationHours: 6.0,
 						breakMinutes: 0,
 						isNight: false,
@@ -169,7 +169,7 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 					});
 				}
 
-				// Evening shift allocation (14:30-20:30)
+				// Evening shift allocation (14:00-20:00)
 				const usedEveChairs = new Set<string>();
 				const usedEveAssistants = new Set<string>();
 				for (let j = 0; j < eveDocs.length; j++) {
@@ -190,8 +190,8 @@ export function generateWeeklyScheduleForStaffAndCabinets(
 						chairId: eveChair.chairId,
 						dateIso,
 						archetypeId: "evening_shift",
-						startTime: "14:30",
-						endTime: "20:30",
+						startTime: "14:00",
+						endTime: "20:00",
 						durationHours: 6.0,
 						breakMinutes: 0,
 						isNight: false,

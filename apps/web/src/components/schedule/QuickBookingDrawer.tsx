@@ -537,13 +537,26 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			(chairs.length === 1 ? chairs[0]?.id : "") ||
 			"";
 		if (!defaultChairId && initialSlot?.doctorUserId) {
-			const doc = doctors.find((d) => d.id === initialSlot.doctorUserId);
-			if (doc?.specialties?.length) {
-				const matchingChair = chairs.find(
-					(c) => c.specialization && doc.specialties.includes(c.specialization),
+			const assignedChair = chairs.find((c) => {
+				const duty = resolveChairDutyDoctor(
+					c.id,
+					toLocal(initialStartIso),
+					chairDoctorAssignments,
+					initialSlot?.dateKey,
 				);
-				if (matchingChair) {
-					defaultChairId = matchingChair.id;
+				return duty.doctorId === initialSlot.doctorUserId;
+			});
+			if (assignedChair) {
+				defaultChairId = assignedChair.id;
+			} else {
+				const doc = doctors.find((d) => d.id === initialSlot.doctorUserId);
+				if (doc?.specialties?.length) {
+					const matchingChair = chairs.find(
+						(c) => c.specialization && doc.specialties.includes(c.specialization),
+					);
+					if (matchingChair) {
+						defaultChairId = matchingChair.id;
+					}
 				}
 			}
 		}
@@ -2007,15 +2020,29 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								onChange={(e) => {
 									const newDocId = e.target.value;
 									setDoctorUserId(newDocId);
-									// Only auto-assign matching chair if no chair was previously chosen by user
-									if (newDocId && !chairId) {
-										const doc = doctors.find((d) => d.id === newDocId);
-										if (doc?.specialties?.length) {
-											const matchingChair = chairs.find(
-												(c) => c.specialization && doc.specialties.includes(c.specialization),
+									if (newDocId && !initialSlot?.chairId) {
+										// 1. Auto-switch to chair where this doctor is on duty at scheduled time
+										const assignedChair = chairs.find((c) => {
+											const duty = resolveChairDutyDoctor(
+												c.id,
+												startsAtLocal,
+												chairDoctorAssignments,
+												startsAtLocal ? startsAtLocal.split("T")[0] : undefined,
 											);
-											if (matchingChair) {
-												setChairId(matchingChair.id);
+											return duty.doctorId === newDocId;
+										});
+										if (assignedChair) {
+											setChairId(assignedChair.id);
+										} else {
+											// 2. Fallback to matching specialization chair
+											const doc = doctors.find((d) => d.id === newDocId);
+											if (doc?.specialties?.length) {
+												const matchingChair = chairs.find(
+													(c) => c.specialization && doc.specialties.includes(c.specialization),
+												);
+												if (matchingChair) {
+													setChairId(matchingChair.id);
+												}
 											}
 										}
 									}

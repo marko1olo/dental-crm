@@ -19,6 +19,8 @@ import { matchesPatientSearch } from "../../utils/patientSearchUtils";
 import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
+import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -45,6 +47,7 @@ export type NewAppointmentFormProps = {
 	setShowCreateForm: (value: boolean) => void;
 	isSmartAiOpen?: boolean;
 	setIsSmartAiOpen?: (value: boolean) => void;
+	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
 };
 
 export function NewAppointmentForm(props: NewAppointmentFormProps) {
@@ -65,6 +68,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		setShowCreateForm,
 		isSmartAiOpen = false,
 		setIsSmartAiOpen,
+		chairDoctorAssignments,
 	} = props;
 
 	const [smartInputText, setSmartInputText] = useState("");
@@ -1078,9 +1082,28 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 											key={chair.id}
 											type="button"
 											className={`quick-chip ${newAppointmentDraft.chairId === chair.id ? "active" : ""}`}
-											onClick={() =>
-												updateNewAppointmentDraft("chairId", chair.id)
-											}
+											onClick={() => {
+												updateNewAppointmentDraft("chairId", chair.id);
+												const targetTime = newAppointmentDraft.startsAt;
+												const duty = resolveChairDutyDoctor(
+													chair.id,
+													targetTime,
+													chairDoctorAssignments,
+													targetTime ? targetTime.slice(0, 10) : undefined,
+												);
+												if (duty.doctorId) {
+													updateNewAppointmentDraft("doctorUserId", duty.doctorId);
+													const staff = dashboard.clinicSettings?.staff ?? [];
+													const doc = staff.find((s) => s.id === duty.doctorId);
+													if (doc) {
+														showToast(
+															`Дежурный врач: ${formatDoctorShortName(doc.fullName)} (${chair.name}, ${duty.shiftHours})`,
+															"info",
+															3000,
+														);
+													}
+												}
+											}}
 										>
 											{chair.name}
 										</button>

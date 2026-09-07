@@ -26,7 +26,7 @@ describe("MDLP / Chestny Znak Frontend Modals (SSR & Static Markup Tests)", () =
 		assert.ok(html.includes("Списать по Схеме 10560 МДЛП"));
 		assert.ok(html.includes("Печать акта списания"));
 		assert.ok(html.includes("data-testid=\"banner-quick-shift-carpules-btn\""));
-		assert.ok(html.includes("⚡ Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)"));
+		assert.ok(html.includes("Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)"));
 	});
 
 	it("MdlpDisposalQueueModal returns empty markup when isOpen is false", () => {
@@ -68,6 +68,6 @@ describe("MDLP / Chestny Znak Frontend Modals (SSR & Static Markup Tests)", () =
 		assert.ok(html.includes("Иванова Е.В."));
 		assert.ok(html.includes("Печать акта списания"));
 		assert.ok(html.includes("data-testid=\"approve-act-paper-journal-btn\""));
-		assert.ok(html.includes("⚡ Утвердить списание (бумажный журнал учтён)"));
+		assert.ok(html.includes("Утвердить списание (бумажный журнал учтён)"));
 	});
 });

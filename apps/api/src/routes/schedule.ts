@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import {
 	createAppointmentSchema,
 	dashboardSchema,
@@ -5,6 +7,7 @@ import {
 } from "@dental/shared";
 import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import {
 	requireResolvedOrganizationId as requireOrganizationContext,
 	unguardedBypassAllowed,
@@ -1341,4 +1344,68 @@ export async function registerScheduleRoutes(app: FastifyInstance) {
 			return reply.code(200).send({ success: true });
 		},
 	);
+
+	const scheduleShiftsSchema = z.object({
+		shifts: z.array(
+			z
+				.object({
+					id: z.string(),
+					doctorId: z.string(),
+					doctorName: z.string(),
+					cabinetId: z.string(),
+					chairId: z.string(),
+					dateIso: z.string(),
+					startTime: z.string(),
+					endTime: z.string(),
+				})
+				.passthrough(),
+		),
+	});
+
+	const getScheduleShiftsFilePath = (): string => {
+		const dataDir = path.resolve(process.cwd(), ".data");
+		if (!fs.existsSync(dataDir)) {
+			try {
+				fs.mkdirSync(dataDir, { recursive: true });
+			} catch {}
+		}
+		return path.join(dataDir, "doctor-shifts.json");
+	};
+
+	let inMemoryScheduleShiftsCache: Array<Record<string, unknown>> = [];
+
+	app.get("/api/schedule/shifts", async (_req, reply) => {
+		try {
+			const filePath = getScheduleShiftsFilePath();
+			if (fs.existsSync(filePath)) {
+				const content = fs.readFileSync(filePath, "utf-8");
+				const parsed = JSON.parse(content);
+				if (Array.isArray(parsed)) {
+					return reply.send({ ok: true, shifts: parsed });
+				}
+			}
+			return reply.send({ ok: true, shifts: inMemoryScheduleShiftsCache });
+		} catch {
+			return reply.send({ ok: true, shifts: inMemoryScheduleShiftsCache });
+		}
+	});
+
+	app.post("/api/schedule/shifts", async (req, reply) => {
+		const parsed = scheduleShiftsSchema.safeParse(req.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректная структура смен врачей (поле shifts обязательно).",
+			});
+		}
+		const { shifts } = parsed.data;
+		inMemoryScheduleShiftsCache = shifts as unknown as Array<Record<string, unknown>>;
+		try {
+			const filePath = getScheduleShiftsFilePath();
+			fs.writeFileSync(filePath, JSON.stringify(shifts, null, 2), "utf-8");
+		} catch (err) {
+			req.log.warn({ err }, "Could not persist doctor-shifts.json; using cache");
+		}
+		return reply.send({ ok: true, savedCount: shifts.length });
+	});
 }

@@ -101,4 +101,45 @@ describe("AppointmentModal", () => {
 		assert.ok(html.includes("Острая боль (30 мин)"), "должен быть пресет острой боли");
 		assert.ok(html.includes("Консультация (30 мин)"), "должен быть пресет консультации");
 	});
+
+	it("auto-populates duty doctor from chairDoctorAssignments when appointment.doctorUserId is unassigned", () => {
+		const unassignedAppt: Appointment = {
+			...mockAppointment,
+			id: "appt-101",
+			doctorUserId: "",
+			chairId: "chair-1",
+		};
+		const html = renderToStaticMarkup(
+			React.createElement(AppointmentModal, {
+				isOpen: true,
+				appointment: unassignedAppt,
+				dashboard: mockDashboard as Dashboard,
+				onClose: () => {},
+				onSave: async () => true,
+				repeatAppointment: () => {},
+				patientName: () => "Иванов Иван",
+				formatTime: () => "10:00",
+				toDateTimeLocalValue: () => "2026-08-21T10:00",
+				fromDateTimeLocalValue: () => "2026-08-21T10:00:00.000Z",
+				appointmentLabels: mockLabels,
+				activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+				chairDoctorAssignments: {
+					"chair-1": {
+						chairId: "chair-1",
+						doctorId: "doc-1",
+						doctorName: "Д-р Смирнов",
+						shiftPreset: "morning",
+						shiftLabel: "Утренняя смена",
+						shiftHours: "08:00–14:00",
+						startHour: 8,
+						endHour: 14,
+					},
+				},
+			}),
+		);
+
+		assert.ok(html.includes("Д-р Смирнов"));
+		assert.ok(html.includes("Кабинет 1"));
+	});
 });
+

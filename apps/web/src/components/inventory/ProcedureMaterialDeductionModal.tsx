@@ -653,10 +653,61 @@ export function ProcedureMaterialDeductionModal({
 							Клинические пакеты (1 клик):
 						</span>
 						<span className="inventory-clinical-packages-hint">
-							СИЗ + Крафт + анестезия + протокол лечения
+							СИЗ + Крафт + анестезия + протокол лечения (1 клик)
 						</span>
 					</div>
 					<div className="inventory-packages-chips">
+						{/* Экспресс-пресеты медсестры и врача (Мандат 8e п. 10, Мандат 8k, Мандат 8n) */}
+						<button
+							type="button"
+							className={`inventory-package-btn ${
+								selectedMapCodes.includes("A16.07.004") && !selectedMapCodes.includes("A16.07.002.001") && !selectedMapCodes.includes("A16.07.051")
+									? "active"
+									: ""
+							}`}
+							data-testid="preset-btn-anesthesia"
+							onClick={() => handleApplyPackage(["SANPIN_PPE", "A16.07.004"])}
+							title="Стандартная анестезия 1.7 мл: СИЗ + карпула Артикаина 1.7 мл + игла 30G"
+						>
+							<Zap size={14} className="shrink-0 text-amber-500" />
+							<span>Стандартная анестезия 1.7 мл</span>
+						</button>
+
+						<button
+							type="button"
+							className={`inventory-package-btn ${
+								selectedMapCodes.includes("A16.07.002.001") ? "active" : ""
+							}`}
+							data-testid="preset-btn-caries"
+							onClick={() =>
+								handleApplyPackage([
+									"SANPIN_PPE",
+									"SANPIN_KRAFT",
+									"A16.07.004",
+									"A16.07.002.001",
+								])
+							}
+							title="Пломбирование зуба: СИЗ + Крафт + Анестезия + Композит/Адгезив"
+						>
+							<Package size={14} className="shrink-0" />
+							<span>Пломбирование зуба</span>
+						</button>
+
+						<button
+							type="button"
+							className={`inventory-package-btn ${
+								selectedMapCodes.includes("A16.07.051") ? "active" : ""
+							}`}
+							data-testid="preset-btn-hygiene"
+							onClick={() =>
+								handleApplyPackage(["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.051"])
+							}
+							title="Профгигиена: СИЗ + Крафт + Air-Flow + Паста + Оптрагейт"
+						>
+							<Package size={14} className="shrink-0" />
+							<span>Профгигиена</span>
+						</button>
+
 						{CLINICAL_PROCEDURE_PACKAGES.map((pkg) => {
 							const isPackageActive = pkg.codes.every((c) =>
 								selectedMapCodes.includes(c),
@@ -725,7 +776,7 @@ export function ProcedureMaterialDeductionModal({
 							)}
 							<span className="text-xs font-bold leading-tight">
 								{summary.hasDeficit
-									? `Дефицит материалов: ${summary.criticalCount} поз. (Мягкий овердрафт: задержка накладной не блокирует экстренную операцию)`
+									? `Дефицит материалов: ${summary.criticalCount} поз. (Мягкий овердрафт: остаток 0, списано в овердрафт — задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача)`
 									: `Внимание: ${summary.warningCount} поз. достигли критического неснижаемого остатка.`}
 							</span>
 						</div>
@@ -1220,7 +1271,7 @@ export function ProcedureMaterialDeductionModal({
 							style={{ minHeight: "44px" }}
 							title={
 								summary.hasDeficit
-									? `Позиции будут списаны с отрицательным остатком до оприходования накладной медсестрой (Мандат 8e п. 10, Мандат 8n п. 2): дефицит ${summary.criticalCount} поз. Задержка оприходования накладной не блокирует прием.`
+									? `Остаток 0, списано в овердрафт: задержка оприходования накладной не блокирует операцию, спасение зуба или закрытие приёма врача (Мандат 8e п. 10, Мандат 8k, Мандат 8n п. 2): дефицит ${summary.criticalCount} поз.`
 									: "Провести списание выбранных материалов"
 							}
 						>

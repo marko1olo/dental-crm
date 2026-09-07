@@ -96,7 +96,7 @@ expect.objectContaining = (subset: Record<string, any>) => ({
 	_isObjectContaining: true,
 	subset,
 });
-import type { Dashboard } from "@dental/shared";
+import type { Appointment, Dashboard } from "@dental/shared";
 import {
 	ScheduleGrid,
 	DEFAULT_SOLO_CHAIR,
@@ -106,6 +106,7 @@ import {
 } from "../ScheduleGrid";
 import { QuickBookingDrawer, resolveChairDutyDoctor } from "../QuickBookingDrawer";
 import { buildChairDoctorAssignmentsFromShifts } from "../../../ScheduleView";
+import { AppointmentModal } from "../AppointmentModal";
 
 interface MockDomNode {
 	nodeType: number;
@@ -1505,4 +1506,92 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		const dutyBadge = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-badge");
 		expect(dutyBadge?.textContent).toContain("Петров П.С.");
 	});
+
+	it("19. AppointmentModal auto-populates duty doctor on mount and updates doctor when switching chairs via select-appointment-chair", async () => {
+		const assignments: Record<string, ChairDoctorShiftAssignment> = {
+			"chair-1": {
+				chairId: "chair-1",
+				doctorId: "doc-1",
+				doctorName: "Д-р Иванов Иван",
+				shiftPreset: "morning",
+				shiftLabel: "Утренняя смена",
+				shiftHours: "08:00–14:00",
+				startHour: 8,
+				endHour: 14,
+			},
+			"chair-2": {
+				chairId: "chair-2",
+				doctorId: "doc-2",
+				doctorName: "Д-р Петров Петр",
+				shiftPreset: "evening",
+				shiftLabel: "Вечерняя смена",
+				shiftHours: "14:00–20:00",
+				startHour: 14,
+				endHour: 20,
+			},
+		};
+
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		const unassignedAppt = {
+			id: "appt-999",
+			organizationId: "org-1",
+			patientId: "pat-1",
+			doctorUserId: "", // unassigned
+			assistantUserId: null,
+			chairId: "chair-2",
+			startsAt: "2026-09-07T15:00:00.000Z",
+			endsAt: "2026-09-07T16:00:00.000Z",
+			status: "confirmed" as const,
+			reason: null,
+			comment: null,
+		};
+
+		await act(async () => {
+			root.render(
+				React.createElement(AppointmentModal, {
+					isOpen: true,
+					appointment: unassignedAppt,
+					dashboard: multiChairDashboard,
+					chairDoctorAssignments: assignments,
+					onClose: vi.fn(),
+					onSave: vi.fn(async () => true),
+					repeatAppointment: vi.fn(),
+					patientName: () => "Пациент Тест",
+					formatTime: () => "15:00",
+					toDateTimeLocalValue: () => "2026-09-07T15:00",
+					fromDateTimeLocalValue: () => "2026-09-07T15:00:00.000Z",
+					appointmentLabels: {
+						planned: "Запланирован",
+						confirmed: "Подтвержден",
+						arrived: "Пришел",
+						in_treatment: "В кресле",
+						completed: "Завершен",
+						cancelled: "Отменен",
+						no_show: "Не явился",
+					},
+					activeVisitLockedAppointmentStatuses: new Set<Appointment["status"]>(),
+				}),
+			);
+		});
+
+		// 1. On mount with chairId="chair-2", duty doctor doc-2 should be auto-populated
+		const chairSelect = findNodeByTestId(document.body as unknown as MockDomNode, "select-appointment-chair");
+		expect(chairSelect?.value).toBe("chair-2");
+
+		// 2. Simulate switching chair to chair-1
+		let toastDetail: any = null;
+		const toastListener = (e: any) => {
+			toastDetail = e?.detail;
+		};
+		window.addEventListener("dente-toast", toastListener);
+
+		await changeNode(chairSelect, "chair-1");
+
+		// Verify that chairId changed to chair-1
+		expect(chairSelect?.value).toBe("chair-1");
+		window.removeEventListener("dente-toast", toastListener);
+	});
 });
+
