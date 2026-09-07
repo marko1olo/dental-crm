@@ -1043,4 +1043,87 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		expect(html).toContain('data-testid="btn-quick-assign-chair-2"');
 		expect(html).toContain("1 клик: Петров П.С.");
 	});
+
+	it("10. 2-shift chair doctor allocation supports morning + evening doctors with 1-tap quick pills (StomX / DentalPRO parity)", async () => {
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		const onAssignChairDoctor = vi.fn();
+
+		await act(async () => {
+			root.render(
+				React.createElement(ScheduleGrid, {
+					dashboard: multiChairDashboard,
+					dateKey: "2026-09-07",
+					appointments: [],
+					onSlotClick: vi.fn(),
+					onAppointmentClick: vi.fn(),
+					patientName: (_, id) => (id ? "Пациент" : "—"),
+					formatTime: (iso: string) => iso.slice(11, 16),
+					toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+					appointmentLabels: mockAppointmentLabels,
+					onAssignChairDoctor,
+				}),
+			);
+		});
+
+		// Open assign modal for chair-1
+		const assignBtn = findNodeByTestId(container, "btn-assign-doctor-chair-1");
+		expect(assignBtn).not.toBeNull();
+		await clickNode(assignBtn);
+
+		// Switch to 2-shift preset
+		const twoShiftsPreset = findNodeByTestId(container, "shift-preset-two_shifts");
+		expect(twoShiftsPreset).not.toBeNull();
+		await clickNode(twoShiftsPreset);
+
+		// Verify evening doctor select and pills are rendered
+		const morningSelect = findNodeByTestId(container, "select-chair-doctor");
+		expect(morningSelect).not.toBeNull();
+		const eveningSelect = findNodeByTestId(container, "select-chair-evening-doctor");
+		expect(eveningSelect).not.toBeNull();
+
+		// Set morning to doc-1 (Ivanov) and evening to doc-2 (Petrov) via 1-tap pills
+		const eveningDoc2Pill = findNodeByTestId(container, "btn-quick-select-evening-doctor-doc-2");
+		expect(eveningDoc2Pill).not.toBeNull();
+		await clickNode(eveningDoc2Pill);
+		expect(eveningSelect?.value).toBe("doc-2");
+
+		// Click confirm button
+		const confirmBtn = findNodeByTestId(container, "btn-confirm-chair-doctor");
+		expect(confirmBtn).not.toBeNull();
+		await clickNode(confirmBtn);
+
+		// Verify onAssignChairDoctor was called with custom 2-shift assignment containing subShifts
+		expect(onAssignChairDoctor).toHaveBeenCalledTimes(1);
+		const callArg = onAssignChairDoctor.calls[0][1];
+		expect(callArg.chairId).toBe("chair-1");
+		expect(callArg.subShifts.length).toBe(2);
+		expect(callArg.subShifts[0].doctorId).toBe("doc-1");
+		expect(callArg.subShifts[0].shiftHours).toBe("08:00–14:00");
+		expect(callArg.subShifts[1].doctorId).toBe("doc-2");
+		expect(callArg.subShifts[1].shiftHours).toBe("14:00–20:00");
+	});
+
+	it("11. Time column features sticky left-0 positioning across header and hourly rows for seamless 10+ chair horizontal scrolling", () => {
+		const html = renderToString(
+			React.createElement(ScheduleGrid, {
+				dashboard: multiChairDashboard,
+				dateKey: "2026-09-07",
+				appointments: [],
+				onSlotClick: vi.fn(),
+				onAppointmentClick: vi.fn(),
+				patientName: (_, id) => (id ? "Пациент" : "—"),
+				formatTime: (iso: string) => iso.slice(11, 16),
+				toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+				appointmentLabels: mockAppointmentLabels,
+			}),
+		);
+
+		// Time corner header has sticky left-0 z-20
+		expect(html).toContain("sticky left-0 z-20 bg-[var(--paper-soft)]");
+
+		// Time row cells have sticky left-0 z-10
+		expect(html).toContain("sticky left-0 z-10 bg-[var(--paper)]");
+	});
 });

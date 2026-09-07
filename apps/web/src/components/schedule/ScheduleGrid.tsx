@@ -757,7 +757,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					}}
 				>
 					{/* Time corner header */}
-					<div className="p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1">
+					<div className="p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center gap-1 sticky left-0 z-20 bg-[var(--paper-soft)]">
 						<Clock size={14} className="text-[var(--teal)]" />
 						<span>Время</span>
 					</div>
@@ -869,7 +869,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							}}
 						>
 							{/* Time label */}
-							<div className="p-3 text-center text-xs font-bold text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center select-none">
+							<div className="p-3 text-center text-xs font-bold text-[var(--muted)] border-r border-[var(--line)] flex items-center justify-center select-none sticky left-0 z-10 bg-[var(--paper)]">
 								{hour}
 							</div>
 
@@ -2049,67 +2049,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 					{/* Modal Form */}
 					<div className="space-y-4">
-						{/* Doctor select */}
-						<div>
-							<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-								Врач на смене *
-							</label>
-							<select
-								value={modalDoctorId}
-								onChange={(e) => setModalDoctorId(e.target.value)}
-								className="w-full min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
-								data-testid="select-chair-doctor"
-							>
-								<option value="">-- Выберите врача --</option>
-								{doctors.map((d) => (
-									<option key={d.id} value={d.id}>
-										{d.fullName}
-										{d.specialties && d.specialties.length > 0
-											? ` (${d.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
-											: ""}
-									</option>
-								))}
-							</select>
-
-							{/* 1-tap doctor quick-switch pills (StomX / DentalPRO parity) */}
-							{doctors.length > 1 && (
-								<div className="mt-2.5 space-y-1">
-									<span className="text-[11px] font-semibold text-[var(--muted)] block">
-										Быстрый выбор врача (1 тап):
-									</span>
-									<div className="flex flex-wrap gap-1.5" data-testid="doctor-quick-switch-pills">
-										{doctors.map((d) => {
-											const isSelected = modalDoctorId === d.id;
-											const shortName = formatDoctorShortName(d.fullName);
-											return (
-												<button
-													key={d.id}
-													type="button"
-													onClick={() => setModalDoctorId(d.id)}
-													className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
-														isSelected
-															? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
-															: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper)]"
-													}`}
-													data-testid={`btn-quick-select-doctor-${d.id}`}
-													style={{ minHeight: "44px" }}
-												>
-													<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
-													<span>{shortName}</span>
-												</button>
-											);
-										})}
-									</div>
-								</div>
-							)}
-						</div>
-
 						{/* Shift presets */}
 						<div>
 							<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
-								Смена *
+								Режим смены *
 							</label>
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 								{CHAIR_SHIFT_PRESETS.map((preset) => {
 									const isSelected = modalShiftPreset === preset.id;
 									return (
@@ -2133,6 +2078,171 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								})}
 							</div>
 						</div>
+
+						{/* Doctor select: if two_shifts -> Morning + Evening, else single */}
+						{modalShiftPreset === "two_shifts" ? (
+							<div className="space-y-3.5">
+								{/* Morning Doctor (08:00–14:00) */}
+								<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50 space-y-2">
+									<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+										Врач на утренней смене (08:00–14:00) *
+									</label>
+									<select
+										value={modalDoctorId}
+										onChange={(e) => setModalDoctorId(e.target.value)}
+										className="w-full min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										data-testid="select-chair-doctor"
+									>
+										<option value="">-- Выберите врача на утро --</option>
+										{doctors.map((d) => (
+											<option key={d.id} value={d.id}>
+												{d.fullName}
+												{d.specialties && d.specialties.length > 0
+													? ` (${d.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
+													: ""}
+											</option>
+										))}
+									</select>
+									{doctors.length > 1 && (
+										<div className="space-y-1">
+											<span className="text-[11px] font-semibold text-[var(--muted)] block">
+												Быстрый выбор (1 тап):
+											</span>
+											<div className="flex flex-wrap gap-1.5" data-testid="doctor-quick-switch-pills">
+												{doctors.map((d) => {
+													const isSelected = modalDoctorId === d.id;
+													const shortName = formatDoctorShortName(d.fullName);
+													return (
+														<button
+															key={d.id}
+															type="button"
+															onClick={() => setModalDoctorId(d.id)}
+															className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+																isSelected
+																	? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
+																	: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+															}`}
+															data-testid={`btn-quick-select-doctor-${d.id}`}
+															style={{ minHeight: "44px" }}
+														>
+															<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
+															<span>{shortName}</span>
+														</button>
+													);
+												})}
+											</div>
+										</div>
+									)}
+								</div>
+
+								{/* Evening Doctor (14:00–20:00) */}
+								<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]/50 space-y-2">
+									<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+										Врач на вечерней смене (14:00–20:00) *
+									</label>
+									<select
+										value={modalEveningDoctorId}
+										onChange={(e) => setModalEveningDoctorId(e.target.value)}
+										className="w-full min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										data-testid="select-chair-evening-doctor"
+									>
+										<option value="">-- Выберите врача на вечер --</option>
+										{doctors.map((d) => (
+											<option key={d.id} value={d.id}>
+												{d.fullName}
+												{d.specialties && d.specialties.length > 0
+													? ` (${d.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
+													: ""}
+											</option>
+										))}
+									</select>
+									{doctors.length > 1 && (
+										<div className="space-y-1">
+											<span className="text-[11px] font-semibold text-[var(--muted)] block">
+												Быстрый выбор (1 тап):
+											</span>
+											<div className="flex flex-wrap gap-1.5" data-testid="evening-doctor-quick-switch-pills">
+												{doctors.map((d) => {
+													const isSelected = modalEveningDoctorId === d.id;
+													const shortName = formatDoctorShortName(d.fullName);
+													return (
+														<button
+															key={d.id}
+															type="button"
+															onClick={() => setModalEveningDoctorId(d.id)}
+															className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+																isSelected
+																	? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
+																	: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
+															}`}
+															data-testid={`btn-quick-select-evening-doctor-${d.id}`}
+															style={{ minHeight: "44px" }}
+														>
+															<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
+															<span>{shortName}</span>
+														</button>
+													);
+												})}
+											</div>
+										</div>
+									)}
+								</div>
+							</div>
+						) : (
+							<div>
+								<label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5">
+									Врач на смене *
+								</label>
+								<select
+									value={modalDoctorId}
+									onChange={(e) => setModalDoctorId(e.target.value)}
+									className="w-full min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									data-testid="select-chair-doctor"
+								>
+									<option value="">-- Выберите врача --</option>
+									{doctors.map((d) => (
+										<option key={d.id} value={d.id}>
+											{d.fullName}
+											{d.specialties && d.specialties.length > 0
+												? ` (${d.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")})`
+												: ""}
+										</option>
+									))}
+								</select>
+
+								{/* 1-tap doctor quick-switch pills (StomX / DentalPRO parity) */}
+								{doctors.length > 1 && (
+									<div className="mt-2.5 space-y-1">
+										<span className="text-[11px] font-semibold text-[var(--muted)] block">
+											Быстрый выбор врача (1 тап):
+										</span>
+										<div className="flex flex-wrap gap-1.5" data-testid="doctor-quick-switch-pills">
+											{doctors.map((d) => {
+												const isSelected = modalDoctorId === d.id;
+												const shortName = formatDoctorShortName(d.fullName);
+												return (
+													<button
+														key={d.id}
+														type="button"
+														onClick={() => setModalDoctorId(d.id)}
+														className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 select-none ${
+															isSelected
+																? "bg-[var(--teal-dark)] text-white border-[var(--teal)] shadow-xs"
+																: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper)]"
+														}`}
+														data-testid={`btn-quick-select-doctor-${d.id}`}
+														style={{ minHeight: "44px" }}
+													>
+														<User size={13} className={isSelected ? "text-white" : "text-[var(--teal)]"} />
+														<span>{shortName}</span>
+													</button>
+												);
+											})}
+										</div>
+									</div>
+								)}
+							</div>
+						)}
 
 						{/* Actions */}
 						<div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
@@ -2167,7 +2277,16 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											showToast("Выберите врача для назначения", "error");
 											return;
 										}
-										handleConfirmAssignDoctor(targetChair.id, modalDoctorId, modalShiftPreset);
+										if (modalShiftPreset === "two_shifts" && !modalEveningDoctorId) {
+											showToast("Выберите вечернего врача для 2 смен", "error");
+											return;
+										}
+										handleConfirmAssignDoctor(
+											targetChair.id,
+											modalDoctorId,
+											modalShiftPreset,
+											modalShiftPreset === "two_shifts" ? modalEveningDoctorId : undefined,
+										);
 										setAssigningChairId(null);
 									}}
 									className="primary-button min-h-[44px] px-4 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
