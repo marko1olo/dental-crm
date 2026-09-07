@@ -103,7 +103,7 @@ export function DocumentQuickRoleScenarios({
 					<span className="document-scenario-badge">5 документов</span>
 				</div>
 				<p className="document-scenario-desc">
-					Карта 043/у (Приказ 834н) + SOAP + Рецепт 107-1/у + КЛКТ/ОПТГ + Памятка
+					Карта 043/у (Приказ 834н) + Дневник 043/у + Рецепт 107-1/у + КЛКТ/ОПТГ + Памятка
 				</p>
 				<div className="document-scenario-footer">
 					<span>Клинический пакет</span>
