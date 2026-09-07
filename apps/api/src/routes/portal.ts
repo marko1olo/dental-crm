@@ -1287,7 +1287,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 		});
 	});
 
-	// 6. Sign Statutory Consent with Finger/Stylus Vector Stroke (SVG) & IP Audit
+	// 6. Sign Statutory Consent via 63-FZ PEP, Paper Physical, or Vector Stroke & IP Audit
 	server.post<{
 		Params: { consentId: string };
 		Body: {
@@ -1304,21 +1304,39 @@ export const portalRoutes: FastifyPluginAsync = async (
 		}
 
 		const consentId = request.params.consentId?.trim();
+		if (!consentId) {
+			reply.status(400);
+			return {
+				error: "ConsentIdRequired",
+				message: "Идентификатор согласия обязателен.",
+			};
+		}
+
+		const rawMethod =
+			typeof request.body?.signatureMethod === "string"
+				? request.body.signatureMethod.trim().toLowerCase()
+				: "";
+		const signatureMethod =
+			rawMethod === "paper_physical"
+				? "paper_physical"
+				: rawMethod === "sms_otp"
+					? "sms_otp"
+					: rawMethod === "touch_screen"
+						? "touch_screen"
+						: "portal_pep";
+
 		const signatureSvg =
 			typeof request.body?.signatureSvg === "string"
 				? request.body.signatureSvg.trim()
 				: "";
-		const signatureMethod =
-			typeof request.body?.signatureMethod === "string"
-				? request.body.signatureMethod.trim()
-				: "touch_screen";
 
-		if (!consentId || !signatureSvg) {
-			reply.status(400);
-			return {
-				error: "SignatureRequired",
-				message: "Требуется векторный росчерк подписи (SVG) и идентификатор согласия.",
-			};
+		let effectiveSignatureSvg = signatureSvg;
+		if (!effectiveSignatureSvg) {
+			if (signatureMethod === "paper_physical") {
+				effectiveSignatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f8fafc" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#334155">ПОДПИСАНО НА БУМАГЕ</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#475569">Подшито в карту 043/у (ст. 20 323-ФЗ, ПП РФ № 736)</text></svg>`;
+			} else {
+				effectiveSignatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="32" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ПЭП (63-ФЗ)</text><text x="160" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Личный кабинет пациента • ст. 20 323-ФЗ</text></svg>`;
+			}
 		}
 
 		const rawIp =
@@ -1326,7 +1344,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 			request.ip ||
 			request.socket?.remoteAddress ||
 			"127.0.0.1";
-		const clientIp = typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
+		const clientIp =
+			typeof rawIp === "string" ? rawIp.split(",")[0]?.trim() || "127.0.0.1" : "127.0.0.1";
 		const now = new Date();
 		const signedAtIso = now.toISOString();
 
@@ -1336,7 +1355,7 @@ export const portalRoutes: FastifyPluginAsync = async (
 				consentId,
 				auth.patientId,
 				auth.organizationId,
-				signatureSvg,
+				effectiveSignatureSvg,
 				signedAtIso,
 				clientIp,
 				"63-FZ_ELECTRONIC_SIGNATURE_VECTOR_AUDIT",
@@ -1398,8 +1417,9 @@ export const portalRoutes: FastifyPluginAsync = async (
 				[consentId]: {
 					consentId,
 					signatureMethod,
-					signatureSvg,
+					signatureSvg: effectiveSignatureSvg,
 					clientIp,
+					ipAddress: clientIp,
 					integrityHash,
 					signedAtIso,
 					deviceMeta:
@@ -1432,7 +1452,8 @@ export const portalRoutes: FastifyPluginAsync = async (
 				signedAtIso,
 				ipAddress: clientIp,
 				integrityHash,
-				signatureSvg,
+				signatureMethod,
+				signatureSvg: effectiveSignatureSvg,
 			};
 		});
 	});
