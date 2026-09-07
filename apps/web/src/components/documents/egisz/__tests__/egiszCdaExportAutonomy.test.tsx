@@ -10,115 +10,14 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import assert from "node:assert/strict";
-import { beforeEach, describe, it } from "node:test";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const showToastCalls: Array<[string, string | undefined]> = [];
+// Mock GlobalToast so showToast can be spied on directly
+vi.mock("../../../GlobalToast", () => ({
+	showToast: vi.fn(),
+}));
 
-interface SpyMock {
-	(...args: unknown[]): unknown;
-	calls: unknown[][];
-	mockResolvedValue: (val: unknown) => SpyMock;
-	mockReturnValue: (val: unknown) => SpyMock;
-	mockImplementation: (fn: (...args: unknown[]) => unknown) => SpyMock;
-	toHaveBeenCalled: () => void;
-	toHaveBeenCalledWith: (...expectedArgs: unknown[]) => void;
-}
-
-const vi = {
-	clearAllMocks: () => {
-		showToastCalls.length = 0;
-	},
-	fn: (initialImpl?: (...args: unknown[]) => unknown): SpyMock => {
-		const calls: unknown[][] = [];
-		let resolvedVal: unknown = undefined;
-		let returnVal: unknown = undefined;
-		let impl = initialImpl;
-		const fnObj = ((...args: unknown[]) => {
-			calls.push(args);
-			if (resolvedVal !== undefined) return Promise.resolve(resolvedVal);
-			if (returnVal !== undefined) return returnVal;
-			if (impl) return impl(...args);
-			return undefined;
-		}) as SpyMock;
-		fnObj.calls = calls;
-		fnObj.mockResolvedValue = (val: unknown) => {
-			resolvedVal = val;
-			return fnObj;
-		};
-		fnObj.mockReturnValue = (val: unknown) => {
-			returnVal = val;
-			return fnObj;
-		};
-		fnObj.mockImplementation = (newImpl: (...args: unknown[]) => unknown) => {
-			impl = newImpl;
-			resolvedVal = undefined;
-			returnVal = undefined;
-			return fnObj;
-		};
-		fnObj.toHaveBeenCalled = () => {
-			assert.ok(calls.length > 0, "Expected function to have been called");
-		};
-		fnObj.toHaveBeenCalledWith = (...expectedArgs: unknown[]) => {
-			const found = calls.some((actual) =>
-				expectedArgs.every((arg, idx) => actual[idx] === arg),
-			);
-			assert.ok(
-				found,
-				`Expected call with ${JSON.stringify(expectedArgs)}, but actual calls were: ${JSON.stringify(calls)}`,
-			);
-		};
-		return fnObj;
-	},
-	mocked: (_fn: unknown) => ({
-		mock: {
-			calls: showToastCalls,
-		},
-	}),
-};
-
-const showToast = {
-	toHaveBeenCalled: () => {
-		assert.ok(showToastCalls.length > 0, "Expected showToast to have been called");
-	},
-	toHaveBeenCalledWith: (text: string, type?: string) => {
-		const found = showToastCalls.some(
-			(c) => c[0].includes(text) && (!type || c[1] === type),
-		);
-		assert.ok(
-			found,
-			`Expected toast with "${text}" (${type}), but calls were: ${JSON.stringify(showToastCalls)}`,
-		);
-	},
-};
-
-function expect(actual: unknown) {
-	return {
-		toBeNull: () => assert.strictEqual(actual, null),
-		toBeDefined: () => assert.notStrictEqual(actual, undefined),
-		toBeGreaterThanOrEqual: (expected: number) => {
-			assert.ok(
-				typeof actual === "number" && actual >= expected,
-				`Expected ${actual} >= ${expected}`,
-			);
-		},
-		not: {
-			toBeNull: () => assert.notStrictEqual(actual, null),
-			toBeUndefined: () => assert.notStrictEqual(actual, undefined),
-		},
-		toBe: (expected: unknown) => assert.strictEqual(actual, expected),
-		toBeFalsy: () => assert.ok(!actual, `Expected falsy, got ${actual}`),
-		toBeTruthy: () => assert.ok(Boolean(actual), `Expected truthy, got ${actual}`),
-		toHaveBeenCalled: () => {
-			// biome-ignore lint/suspicious/noExplicitAny: spy assertion
-			(actual as any)?.toHaveBeenCalled?.();
-		},
-		toHaveBeenCalledWith: (...args: unknown[]) => {
-			// biome-ignore lint/suspicious/noExplicitAny: spy assertion
-			(actual as any)?.toHaveBeenCalledWith?.(...args);
-		},
-	};
-}
+import { showToast } from "../../../GlobalToast";
 import { EgiszCdaExportModal } from "../EgiszCdaExportModal";
 
 interface MockDomNode {
@@ -314,12 +213,6 @@ function setupMockDom() {
 		removeEventListener: () => {},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
 		print: vi.fn(),
-		dispatchEvent: (ev: { type: string; detail?: { text: string; type?: string; duration?: number } }) => {
-			if (ev?.type === "dente-toast" && ev.detail) {
-				showToastCalls.push([ev.detail.text, ev.detail.type]);
-			}
-			return true;
-		},
 		URL: {
 			createObjectURL: vi.fn().mockReturnValue("blob:mock-zip-package"),
 			revokeObjectURL: vi.fn(),
@@ -357,7 +250,7 @@ function findNodeByTestId(node: MockDomNode | null, testId: string): MockDomNode
 	return null;
 }
 
-async function triggerClick(node: MockDomNode) {
+function triggerClick(node: MockDomNode) {
 	let curr: MockDomNode | null = node;
 	while (curr) {
 		const reactPropKey = Object.keys(curr).find((k) => k.startsWith("__reactProps$"));
@@ -461,7 +354,7 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 
 		// Click the export button inside act
 		await act(async () => {
-			await triggerClick(exportBtn!);
+			triggerClick(exportBtn!);
 		});
 
 		// Expect active guidance toast with explanation
@@ -498,9 +391,9 @@ describe("EGISZ CDA Export Autonomy & Active Validation Guidance (Mandates 8e, 8
 		// Initially not submitting -> disabled === false
 		expect(exportBtn?.disabled).toBe(false);
 
-		// Trigger export
+		// Trigger export synchronously inside act
 		let clickPromise: Promise<void> | void;
-		await act(async () => {
+		act(() => {
 			clickPromise = triggerClick(exportBtn!);
 		});
 
