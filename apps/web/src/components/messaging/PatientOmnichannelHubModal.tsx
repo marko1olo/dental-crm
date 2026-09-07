@@ -9,7 +9,7 @@
  * 4. 1-кликовая интеграция со счетами СБП (SbpPaymentQrModal).
  */
 
-import React, { useId, useMemo, useState } from "react";
+import React, { useId, useMemo, useRef, useState } from "react";
 import {
 	AlertTriangle,
 	ArrowUpRight,
@@ -47,6 +47,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import { showToast } from "../GlobalToast";
 import { SbpPaymentQrModal } from "./SbpPaymentQrModal.js";
 import {
 	DEFAULT_CONTACTS,
@@ -115,6 +116,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	const [inputChannel, setInputChannel] = useState<OmnichannelChannel>("whatsapp");
 	const [messageText, setMessageText] = useState<string>("");
 	const [selectedTemplateCategory, setSelectedTemplateCategory] = useState<string>("");
+	const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
 	// Отзывы NPS
 	const [npsReviews, setNpsReviews] = useState<readonly NpsReview[]>(DEFAULT_NPS_REVIEWS);
@@ -172,36 +174,6 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 
 	if (!isOpen) return null;
 
-	// Отправка сообщения
-	const handleSendMessage = () => {
-		const text = messageText.trim();
-		if (!text) return;
-
-		const newMsg: OmnichannelMessage = {
-			id: `msg-${Date.now()}`,
-			patientId: selectedPatientId,
-			channel: inputChannel,
-			direction: "outbound",
-			senderName: "Администратор клиники",
-			senderType: "clinic_staff",
-			timestamp: new Date().toISOString(),
-			body: text,
-			status: "sent",
-		};
-
-		setMessagesByPatient((prev) => ({
-			...prev,
-			[selectedPatientId]: [...(prev[selectedPatientId] || []), newMsg],
-		}));
-
-		setMessageText("");
-		setSelectedTemplateCategory("");
-
-		if (onSendMessage) {
-			onSendMessage(newMsg);
-		}
-	};
-
 	// Быстрая вставка шаблона в поле ввода
 	const handleApplyTemplate = (template: OmnichannelTemplate) => {
 		const context = {
@@ -227,6 +199,48 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 			setInputChannel(template.channel);
 		}
 		setActiveTab("chat");
+	};
+
+	// Отправка сообщения
+	const handleSendMessage = () => {
+		const text = messageText.trim();
+		if (!text) {
+			const template = DEFAULT_TEMPLATES[0];
+			if (template) {
+				handleApplyTemplate(template);
+			} else {
+				setMessageText(
+					`Здравствуйте, ${selectedContact.fullName}! Напоминаем о вашей записи на приём в клинику ${clinicName}. Если у вас есть вопросы, пожалуйста, сообщите нам.`,
+				);
+			}
+			textareaRef.current?.focus();
+			showToast("Подставлен шаблон сообщения. Нажмите «Отправить»", "info");
+			return;
+		}
+
+		const newMsg: OmnichannelMessage = {
+			id: `msg-${Date.now()}`,
+			patientId: selectedPatientId,
+			channel: inputChannel,
+			direction: "outbound",
+			senderName: "Администратор клиники",
+			senderType: "clinic_staff",
+			timestamp: new Date().toISOString(),
+			body: text,
+			status: "sent",
+		};
+
+		setMessagesByPatient((prev) => ({
+			...prev,
+			[selectedPatientId]: [...(prev[selectedPatientId] || []), newMsg],
+		}));
+
+		setMessageText("");
+		setSelectedTemplateCategory("");
+
+		if (onSendMessage) {
+			onSendMessage(newMsg);
+		}
 	};
 
 	// Открытие модального окна СБП для текущего пациента
@@ -326,7 +340,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 
 					<button
 						type="button"
-						className="omnichannel-modal-close"
+						className="omnichannel-modal-close min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
+						style={{ minHeight: "44px", minWidth: "44px" }}
 						onClick={onClose}
 						aria-label="Закрыть окно"
 					>
@@ -338,7 +353,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 				<nav className="hub-tabs-navigation" aria-label="Разделы центра сообщений">
 					<button
 						type="button"
-						className={`hub-nav-tab ${activeTab === "chat" ? "active" : ""}`}
+						className={`hub-nav-tab min-h-[44px] ${activeTab === "chat" ? "active" : ""}`}
+						style={{ minHeight: "44px" }}
 						onClick={() => setActiveTab("chat")}
 					>
 						<MessageCircle size={16} />
@@ -350,7 +366,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 
 					<button
 						type="button"
-						className={`hub-nav-tab ${activeTab === "templates" ? "active" : ""}`}
+						className={`hub-nav-tab min-h-[44px] ${activeTab === "templates" ? "active" : ""}`}
+						style={{ minHeight: "44px" }}
 						onClick={() => setActiveTab("templates")}
 					>
 						<FileText size={16} />
@@ -359,7 +376,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 
 					<button
 						type="button"
-						className={`hub-nav-tab ${activeTab === "nps" ? "active" : ""}`}
+						className={`hub-nav-tab min-h-[44px] ${activeTab === "nps" ? "active" : ""}`}
+						style={{ minHeight: "44px" }}
 						onClick={() => setActiveTab("nps")}
 					>
 						<TrendingUp size={16} />
@@ -497,7 +515,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 										{/* 1-клик счет СБП */}
 										<button
 											type="button"
-											className="hub-btn-sbp-invoice"
+											className="hub-btn-sbp-invoice min-h-[44px]"
+											style={{ minHeight: "44px" }}
 											onClick={handleOpenSbpModal}
 											title="Сформировать динамический QR-код СБП для оплаты"
 										>
@@ -636,7 +655,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 									{/* Текстовая область */}
 									<div className="hub-textarea-container">
 										<textarea
-											className="hub-message-textarea"
+											ref={textareaRef}
+											className="hub-message-textarea min-h-[110px] pb-14"
 											rows={3}
 											placeholder={`Введите сообщение для ${selectedContact.fullName} (Ctrl+Enter для отправки)...`}
 											value={messageText}
@@ -652,17 +672,21 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 										<div className="hub-textarea-actions">
 											<button
 												type="button"
-												className="hub-icon-action-btn"
+												className="hub-icon-action-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
+												style={{ minHeight: "44px", minWidth: "44px" }}
 												title="Прикрепить файл или план лечения"
+												aria-label="Прикрепить файл или план лечения"
 											>
 												<Paperclip size={16} />
 											</button>
 
 											<button
 												type="button"
-												className="hub-btn-send"
+												className="hub-btn-send min-h-[44px] min-w-[44px]"
+												style={{ minHeight: "44px", minWidth: "44px" }}
 												onClick={handleSendMessage}
-												disabled={!messageText.trim()}
+												disabled={false}
+												aria-label="Отправить сообщение"
 											>
 												<Send size={15} /> Отправить
 											</button>
@@ -718,7 +742,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 
 										<button
 											type="button"
-											className="hub-btn-apply-template"
+											className="hub-btn-apply-template min-h-[44px]"
+											style={{ minHeight: "44px" }}
 											onClick={() => handleApplyTemplate(tpl)}
 										>
 											<ArrowUpRight size={15} /> Применить в диалог с {selectedContact.fullName}
@@ -936,7 +961,8 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 
 					<button
 						type="button"
-						className="omnichannel-btn-secondary"
+						className="omnichannel-btn-secondary min-h-[44px] px-4"
+						style={{ minHeight: "44px" }}
 						onClick={onClose}
 					>
 						Закрыть

@@ -318,7 +318,18 @@ export function WhatsAppChatPanel({
 	// Send message handler (Strict Mandate 8k: Real status 'sent', zero procedural simulation)
 	const handleSendMessage = async () => {
 		const text = inputText.trim();
-		if (!text || isSending) return;
+		if (!text) {
+			const preset =
+				"Здравствуйте! Напоминаем о вашей записи на приём в клинику ДЕНТЕ. Если у вас возникли вопросы, пожалуйста, сообщите нам.";
+			setInputText(preset);
+			textareaRef.current?.focus();
+			showToast(
+				"Подставлен стандартный шаблон напоминания. Нажмите Enter или «Отправить»",
+				"info",
+			);
+			return;
+		}
+		if (isSending) return;
 
 		const newMsgId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 		const newMsg: ChatMessage = {
@@ -771,8 +782,8 @@ export function WhatsAppChatPanel({
 					<button
 						type="button"
 						onClick={() => void handleSendMessage()}
-						disabled={!inputText.trim() || isSending}
-						className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:pointer-events-none active:scale-95 text-white font-bold text-xs sm:text-sm transition-all inline-flex items-center justify-center gap-1.5 shadow-md shadow-teal-950/40"
+						disabled={isSending}
+						className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 active:scale-95 text-white font-bold text-xs sm:text-sm transition-all inline-flex items-center justify-center gap-1.5 shadow-md shadow-teal-950/40"
 						aria-label="Отправить сообщение"
 					>
 						<Send size={16} className={isSending ? "animate-pulse" : ""} />
