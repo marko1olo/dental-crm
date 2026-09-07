@@ -580,7 +580,7 @@ export function OrthodonticVisitProtocolWidget({
 
 			const codesList = alignerServices.map((s) => s.code).join(", ");
 			showToast(
-				`Аттачменты внесены в SOAP и услуги 804н (${codesList}) начислены в смету!`,
+				`Аттачменты внесены в дневник 043/у и услуги 804н (${codesList}) начислены в смету!`,
 				"success",
 			);
 		} catch (_err) {
@@ -931,7 +931,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									Быстрые клинические пресеты (1 клик)
 								</span>
 								<span className="text-[11px] font-bold text-amber-700/80 dark:text-amber-400/80">
-									Мгновенное заполнение параметров и SOAP 043/у
+									Мгновенное заполнение параметров и дневника 043/у
 								</span>
 							</div>
 
@@ -1202,10 +1202,10 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 									onClick={handleAppendAttachmentsToSoapNote}
 									data-testid="append-attachments-to-soap-btn"
 									className="min-h-[44px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-									title="Добавить в протокол визита SOAP без стирания ранее набранного текста"
+									title="Добавить протокол в дневник визита без стирания ранее набранного текста"
 								>
 									<Plus size={15} />
-									<span>Добавить к SOAP</span>
+									<span>Внести в дневник 043/у</span>
 								</button>
 							</div>
 						</div>
@@ -1671,7 +1671,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							<div className="flex items-center gap-2">
 								<FileText size={16} className="text-amber-500" />
 								<span className="text-xs font-black uppercase tracking-wider text-[var(--ink,#0f172a)] dark:text-slate-200">
-									Протокол карты 043/у (SOAP)
+									Дневник приёма (Форма 043/у)
 								</span>
 							</div>
 

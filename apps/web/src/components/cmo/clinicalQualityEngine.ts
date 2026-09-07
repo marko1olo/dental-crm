@@ -380,18 +380,18 @@ export const CMO_STATUTORY_DEFECT_PRESETS: CmoDefectPreset[] = [
 		targetSection: "isolation",
 	},
 
-	// 6. Дневник SOAP
+	// 6. Дневник Формы 043/у
 	{
 		id: "DEF-SOAP-01",
 		code: "КЭР-SOAP-01",
 		category: "CLINICAL_DIARY_SOAP",
-		categoryLabel: "Дневник визита (SOAP)",
+		categoryLabel: "Дневник визита (Форма 043/у)",
 		title: "Неполный дневник визита (отсутствуют жалобы, объективный статус или протокол)",
-		description: "Дневниковая запись не соответствует структуре SOAP (Subjective, Objective, Assessment, Plan).",
+		description: "Дневниковая запись не соответствует стандарту ведения Формы 043/у Минздрава РФ (Жалобы, Status localis, Диагноз, Лечение).",
 		statutoryReference: "Приказ Минздрава России № 834н п. 8",
 		severity: "major",
 		penaltyScore: 15,
-		recommendedAction: "Дополнить дневниковую запись всеми обязательными разделами стандарта SOAP.",
+		recommendedAction: "Дополнить дневниковую запись всеми обязательными разделами стандарта Формы 043/у Минздрава РФ.",
 		targetSection: "diaries",
 	},
 
@@ -844,9 +844,9 @@ export function runCmoQualityAudit(
 		deduction: isolDeduction,
 	});
 
-	// ── CHECK 6: Полнота дневников SOAP ──
+	// ── CHECK 6: Полнота дневников Формы 043/у ──
 	let soapPassed = true;
-	let soapDetails = `Заполнено ${card.visitDiaries.length} дневниковых записей по стандарту SOAP.`;
+	let soapDetails = `Заполнено ${card.visitDiaries.length} дневниковых записей по стандарту Формы 043/у.`;
 	let soapDeduction = 0;
 
 	if (!card.visitDiaries || card.visitDiaries.length === 0) {
@@ -879,7 +879,7 @@ export function runCmoQualityAudit(
 	results.push({
 		ruleId: "RULE-SOAP-DIARY",
 		ruleCategory: "CLINICAL_DIARY_SOAP",
-		title: "Полнота клинического дневника (SOAP)",
+		title: "Полнота клинического дневника (Форма 043/у)",
 		passed: soapPassed,
 		severity: "major",
 		details: soapDetails,

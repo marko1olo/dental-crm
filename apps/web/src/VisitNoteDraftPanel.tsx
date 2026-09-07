@@ -109,7 +109,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 		const text = transcript.trim();
 		if (text.length < 8) {
 			showToast(
-				"Введите или продиктуйте текст приёма (не короче 8 символов) — по нему соберётся черновик SOAP.",
+				"Введите или продиктуйте текст приёма (не короче 8 символов) — по нему соберётся черновик дневника 043/у.",
 				"error",
 				10000,
 			);

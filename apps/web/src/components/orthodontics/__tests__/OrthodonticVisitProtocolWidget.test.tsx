@@ -191,10 +191,10 @@ describe("OrthodonticVisitProtocolWidget Component", () => {
 		assert.ok(html.includes("Сет 4 каппы (+28 дн.)"));
 		assert.ok(html.includes("min-h-[44px] min-w-[44px]"));
 
-		// Append to SOAP button (concise label + full title to prevent text overflow)
+		// Append to Form 043/u diary button (concise label + full title to prevent text overflow)
 		assert.ok(html.includes("data-testid=\"append-attachments-to-soap-btn\""));
-		assert.ok(html.includes("Добавить к SOAP"));
-		assert.ok(html.includes("title=\"Добавить в протокол визита SOAP без стирания ранее набранного текста\""));
+		assert.ok(html.includes("Внести в дневник 043/у"));
+		assert.ok(html.includes("title=\"Добавить протокол в дневник визита без стирания ранее набранного текста\""));
 
 		// Catalog verification
 		assert.equal(ALIGNER_ATTACHMENT_PRESETS.length, 4);

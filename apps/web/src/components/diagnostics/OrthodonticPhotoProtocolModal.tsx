@@ -1046,7 +1046,7 @@ export const OrthodonticPhotoProtocolModal: React.FC<OrthodonticPhotoProtocolMod
 							type="button"
 							onClick={() => handleInsertProtocol043()}
 							className="ortho-btn-insert-043"
-							title="Вставить структурированный протокол ортодонтии в дневник Form 043/у"
+							title="Вставить структурированный протокол ортодонтии в дневник Формы 043/у"
 							data-testid="insert-ortho-protocol-043-btn"
 						>
 							<FileText size={15} />
