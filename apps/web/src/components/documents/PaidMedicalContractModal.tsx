@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	AlertCircle,
@@ -16,7 +16,6 @@ import {
 	PenTool,
 	Printer,
 	QrCode,
-	RotateCcw,
 	ShieldCheck,
 	Smartphone,
 	Sparkles,
@@ -121,11 +120,6 @@ export function PaidMedicalContractModal({
 		}),
 	);
 
-	// Touch Canvas Refs and Drawing State
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const [isDrawing, setIsDrawing] = useState(false);
-	const [hasCanvasSignature, setHasCanvasSignature] = useState(false);
-
 	// SMS OTP Signature State
 	const [smsOtpState, setSmsOtpState] = useState<{
 		code: string;
@@ -188,7 +182,6 @@ export function PaidMedicalContractModal({
 		}
 
 		setActiveTab("editor");
-		setHasCanvasSignature(false);
 		setSmsSuccess(false);
 		setSmsOtpState(null);
 		setSmsInputCode("");
@@ -233,107 +226,30 @@ export function PaidMedicalContractModal({
 		[contractData],
 	);
 
-	// Canvas Init
-	const initCanvas = useCallback(() => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const rect = canvas.getBoundingClientRect();
-		const dpr = window.devicePixelRatio || 1;
-		canvas.width = rect.width * dpr;
-		canvas.height = rect.height * dpr;
-
-		ctx.scale(dpr, dpr);
-		ctx.lineCap = "round";
-		ctx.lineJoin = "round";
-		ctx.lineWidth = 2.5;
-		ctx.strokeStyle = "#0f172a";
-		ctx.fillStyle = "#ffffff";
-		ctx.fillRect(0, 0, rect.width, rect.height);
-	}, []);
-
-	useEffect(() => {
-		if (activeTab === "signature" && contractData.signMethod === "touch") {
-			// Delay slightly to ensure canvas DOM layout is ready
-			const timer = setTimeout(() => {
-				initCanvas();
-			}, 50);
-			return () => clearTimeout(timer);
+	// Paper Signature Handler (1-Click Autonomy per PP РФ № 736 and ст. 84 323-ФЗ)
+	const handleConfirmPaperSign = () => {
+		const verifiedAt = Date.now();
+		const signedDate = new Date(verifiedAt).toLocaleDateString("ru-RU");
+		const signedContractData: PaidContractData = {
+			...contractData,
+			signMethod: "paper",
+			signedAt: signedDate,
+		};
+		const hash = generatePaidContractIntegrityHash(
+			signedContractData,
+			"PAPER_DECREE_736",
+			new Date(verifiedAt).toISOString(),
+		);
+		const finalContract: PaidContractData = {
+			...signedContractData,
+			integrityHash: hash,
+			paperSignHash: hash,
+		};
+		setContractData(finalContract);
+		if (onContractSaved) {
+			onContractSaved(finalContract);
 		}
-	}, [activeTab, contractData.signMethod, initCanvas]);
-
-	// Touch Canvas Drawing Handlers
-	const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		setIsDrawing(true);
-		setHasCanvasSignature(true);
-
-		const rect = canvas.getBoundingClientRect();
-		const clientX = "touches" in e && e.touches[0] ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-		const clientY = "touches" in e && e.touches[0] ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
-		const x = clientX - rect.left;
-		const y = clientY - rect.top;
-
-		ctx.beginPath();
-		ctx.moveTo(x, y);
-	};
-
-	const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-		if (!isDrawing) return;
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const rect = canvas.getBoundingClientRect();
-		const clientX = "touches" in e && e.touches[0] ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-		const clientY = "touches" in e && e.touches[0] ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
-		const x = clientX - rect.left;
-		const y = clientY - rect.top;
-
-		ctx.lineTo(x, y);
-		ctx.stroke();
-	};
-
-	const stopDrawing = () => {
-		if (!isDrawing) return;
-		setIsDrawing(false);
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (ctx) ctx.closePath();
-
-		// Save PNG base64 to contractData
-		const base64 = canvas.toDataURL("image/png");
-		setContractData((prev) => ({
-			...prev,
-			touchSignatureBase64: base64,
-		}));
-	};
-
-	const clearCanvas = () => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const rect = canvas.getBoundingClientRect();
-		ctx.fillStyle = "#ffffff";
-		ctx.fillRect(0, 0, rect.width, rect.height);
-		setHasCanvasSignature(false);
-		setContractData((prev) => {
-			const next = { ...prev };
-			delete (next as { touchSignatureBase64?: string }).touchSignatureBase64;
-			return next;
-		});
+		onClose();
 	};
 
 	// SMS OTP Handlers
@@ -465,6 +381,7 @@ export function PaidMedicalContractModal({
 							type="button"
 							className={`paid-contract-tab-btn ${activeTab === "editor" ? "active" : ""}`}
 							onClick={() => setActiveTab("editor")}
+							data-testid="tab-editor-btn"
 						>
 							<FileText size={15} aria-hidden="true" />
 							<span>1. Редактор и условия</span>
@@ -473,14 +390,16 @@ export function PaidMedicalContractModal({
 							type="button"
 							className={`paid-contract-tab-btn ${activeTab === "signature" ? "active" : ""}`}
 							onClick={() => setActiveTab("signature")}
+							data-testid="tab-signature-btn"
 						>
-							<PenTool size={15} aria-hidden="true" />
-							<span>2. Цифровая подпись (ПЭП / Планшет)</span>
+							<FileCheck size={15} aria-hidden="true" />
+							<span>2. Подписание (Бумага / СМС)</span>
 						</button>
 						<button
 							type="button"
 							className={`paid-contract-tab-btn ${activeTab === "preview" ? "active" : ""}`}
 							onClick={() => setActiveTab("preview")}
+							data-testid="tab-preview-btn"
 						>
 							<Printer size={15} aria-hidden="true" />
 							<span>3. Бланк А4 (ГОСТ)</span>
@@ -1023,14 +942,15 @@ export function PaidMedicalContractModal({
 									<button
 										type="button"
 										className={`paid-contract-sign-mode-btn ${
-											contractData.signMethod === "touch" ? "active" : ""
+											contractData.signMethod === "paper" ? "active" : ""
 										}`}
 										onClick={() =>
-											setContractData((prev) => ({ ...prev, signMethod: "touch" }))
+											setContractData((prev) => ({ ...prev, signMethod: "paper" }))
 										}
+										data-testid="sign-mode-paper-btn"
 									>
-										<PenTool size={15} aria-hidden="true" />
-										<span>Планшет / Сенсорный экран</span>
+										<FileText size={15} aria-hidden="true" />
+										<span>На бумаге (2 экз. по ПП РФ № 736)</span>
 									</button>
 									<button
 										type="button"
@@ -1040,50 +960,79 @@ export function PaidMedicalContractModal({
 										onClick={() =>
 											setContractData((prev) => ({ ...prev, signMethod: "sms_otp" }))
 										}
+										data-testid="sign-mode-sms-btn"
 									>
 										<Smartphone size={15} aria-hidden="true" />
 										<span>СМС-код (ПЭП по 63-ФЗ)</span>
 									</button>
 								</div>
 
-								{contractData.signMethod === "touch" && (
-									<div>
-										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-											<span style={{ fontSize: "12px", fontWeight: 600 }}>
-												Подпись пациента стилусом или пальцем на экране:
-											</span>
+								{contractData.signMethod === "paper" && (
+									<div className="paid-contract-paper-box" data-testid="paper-sign-section">
+										<div className="paid-contract-paper-banner" style={{ padding: "14px", borderRadius: "10px", background: "var(--paper, #ffffff)", border: "1px solid var(--line, #e2e8f0)", marginBottom: "14px" }}>
+											<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+												<Printer size={18} color="var(--teal, #0d9488)" aria-hidden="true" />
+												<span style={{ fontSize: "13px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+													Бумажный носитель (ст. 84 323-ФЗ, Постановление Правительства РФ № 736)
+												</span>
+											</div>
+											<p style={{ fontSize: "12px", color: "var(--ink, #0f172a)", margin: "4px 0", lineHeight: 1.4 }}>
+												Договор оформляется в 2 экземплярах (один выдается пациенту, второй подшивается в медицинскую карту 043/у).
+											</p>
+											<div style={{ fontSize: "11px", color: "var(--muted, #64748b)", marginTop: "4px" }}>
+												Распечатайте договор на принтере, подпишите обе копии у пациента и подтвердите факт подписания в 1 клик.
+											</div>
+										</div>
+
+										<div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+											<button
+												type="button"
+												className="paid-contract-btn primary"
+												onClick={handleConfirmPaperSign}
+												data-testid="confirm-paper-contract-btn"
+											>
+												<CheckCircle2 size={16} aria-hidden="true" />
+												<span>Подтвердить подпись на бумаге (1 клик)</span>
+											</button>
 											<button
 												type="button"
 												className="paid-contract-btn secondary"
-												style={{ height: "28px", padding: "0 10px", fontSize: "11px" }}
-												onClick={clearCanvas}
+												onClick={handlePrint}
+												data-testid="print-paper-contract-btn"
 											>
-												<RotateCcw size={12} aria-hidden="true" />
-												<span>Очистить</span>
+												<Printer size={15} aria-hidden="true" />
+												<span>Печать 2 экз. на принтере</span>
 											</button>
 										</div>
 
-										<div className="paid-contract-touch-canvas-wrap">
-											<canvas
-												ref={canvasRef}
-												className="paid-contract-canvas"
-												onMouseDown={startDrawing}
-												onMouseMove={draw}
-												onMouseUp={stopDrawing}
-												onMouseLeave={stopDrawing}
-												onTouchStart={startDrawing}
-												onTouchMove={draw}
-												onTouchEnd={stopDrawing}
-											/>
-											{!hasCanvasSignature && !contractData.touchSignatureBase64 && (
-												<div className="paid-contract-canvas-placeholder">
-													Поле для графической подписи пациента
+										{contractData.signedAt && contractData.signMethod === "paper" && (
+											<div
+												style={{
+													marginTop: "12px",
+													padding: "10px 12px",
+													borderRadius: "8px",
+													background: "#f0fdfa",
+													border: "1px solid #a7f3d0",
+													color: "#065f46",
+													fontSize: "12px",
+													lineHeight: 1.4,
+												}}
+												data-testid="paper-signed-status"
+											>
+												<div style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700 }}>
+													<CheckCircle2 size={16} color="#059669" aria-hidden="true" />
+													<span>ПОДПИСЬ НА БУМАГЕ ПОДТВЕРЖДЕНА</span>
 												</div>
-											)}
-										</div>
-										<p style={{ fontSize: "11px", color: "var(--muted)", marginTop: "6px" }}>
-											Подпись фиксируется в медицинском архиве и впечатывается в типографский бланк договора.
-										</p>
+												<div style={{ marginTop: "4px", fontSize: "11px" }}>
+													Дата подписания: <strong>{contractData.signedAt}</strong>
+													{contractData.integrityHash && (
+														<div style={{ wordBreak: "break-all", fontFamily: "monospace", fontSize: "10px", marginTop: "2px" }}>
+															SHA-256: {contractData.integrityHash}
+														</div>
+													)}
+												</div>
+											</div>
+										)}
 									</div>
 								)}
 
@@ -1332,6 +1281,13 @@ export function PaidMedicalContractModal({
 												<div>СМС: <strong>{contractData.smsSignDetails.phone}</strong></div>
 												<div style={{ wordBreak: "break-all", fontFamily: "monospace", fontSize: "6.5px" }}>
 													SHA-256: {contractData.smsSignDetails.smsSignHash}
+												</div>
+											</div>
+										) : (contractData.signMethod === "paper" || contractData.signMethod === "manual") ? (
+											<div>
+												<div style={{ borderBottom: "1pt solid #0f172a", minHeight: "18px", marginTop: "4px" }}></div>
+												<div className="paper-sign-stamp" style={{ border: "1pt solid #0f172a", background: "#f8fafc", color: "#0f172a", padding: "3px 5px", borderRadius: "3px", fontSize: "7px", marginTop: "4px", lineHeight: 1.25 }}>
+													Договор составлен в 2-х экземплярах на бумажном носителе (ст. 84 323-ФЗ, Постановление Правительства РФ № 736). Личная подпись пациента зафиксирована на бумаге и подшита в карту 043/у.
 												</div>
 											</div>
 										) : contractData.touchSignatureBase64 ? (

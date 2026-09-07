@@ -8,14 +8,12 @@ import {
 	AlertCircle,
 	CheckCircle2,
 	FileCheck,
-	FileText,
 	Lock,
-	PenTool,
+	Printer,
 	ShieldCheck,
 	User,
 	X,
 } from "lucide-react";
-import { SignaturePad } from "../SignaturePad";
 import type {
 	DigitalSignatureAgreementData,
 	TreatmentPlanTier,
@@ -31,6 +29,9 @@ interface TreatmentPlanSignatureModalProps {
 	readonly onClose: () => void;
 	readonly onSignedSuccess: (agreement: DigitalSignatureAgreementData) => void;
 }
+
+const PAPER_SIGNATURE_DATA_URL =
+	"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='50'><text x='10' y='30' font-family='sans-serif' font-size='12' fill='%230f172a'>Подписано на бумаге</text></svg>";
 
 export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalProps> = ({
 	isOpen,
@@ -49,30 +50,23 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 
 	if (!isOpen) return null;
 
-	const handleSignatureCaptured = (dataUrl: string) => {
-		setSignatureBase64(dataUrl);
-		setErrorText(null);
-	};
-
-	const handleConfirmAgreement = () => {
-		if (!signatureBase64) {
-			setErrorText("Пожалуйста, поставьте подпись в поле ниже перед подтверждением.");
-			return;
-		}
-
+	const handleConfirmAgreement = (forcedSignature?: string) => {
 		if (!termsAccepted) {
 			setErrorText("Необходимо подтвердить согласие с условиями плана лечения.");
 			return;
 		}
 
 		setIsSubmitting(true);
+		const effectiveSignature =
+			forcedSignature || signatureBase64 || PAPER_SIGNATURE_DATA_URL;
+
 		const agreement: DigitalSignatureAgreementData = {
 			patientId,
 			patientName,
 			planTierId: tier.tierId,
 			planTitle: tier.title,
 			totalAmountRub: tier.totalRub,
-			signatureBase64,
+			signatureBase64: effectiveSignature,
 			agreedAtIso: new Date().toISOString(),
 			doctorFullName,
 			clinicName,
@@ -81,6 +75,12 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 
 		onSignedSuccess(agreement);
 		setIsSubmitting(false);
+	};
+
+	const handlePaperConfirm = () => {
+		setSignatureBase64(PAPER_SIGNATURE_DATA_URL);
+		setErrorText(null);
+		handleConfirmAgreement(PAPER_SIGNATURE_DATA_URL);
 	};
 
 	const modalContent = (
@@ -161,26 +161,36 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 						</p>
 					</div>
 
-					{/* Digital Signature Canvas Section */}
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<label className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-								<PenTool size={14} className="text-[var(--teal,var(--brand-primary))]" />
-								<span>Личная подпись пациента (нарисуйте на экране):</span>
-							</label>
-							{signatureBase64 && (
-								<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-									<CheckCircle2 size={12} /> Подпись зафиксирована
-								</span>
-							)}
+					{/* Paper-First Clinical Confirmation Banner (Mandates 8e, 8k, 8n) */}
+					<div className="p-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 space-y-3">
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+							<div className="space-y-1">
+								<div className="flex items-center gap-1.5 text-xs font-extrabold text-[var(--ink,#0f172a)]">
+									<ShieldCheck size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+									<span>Бумажное подписание сметы и плана (Автономия врача)</span>
+								</div>
+								<p className="text-xs text-[var(--muted,#64748b)] leading-relaxed">
+									Распечатайте план на А4 для физической подписи пациентом или подтвердите утверждение на бумаге в 1 клик.
+								</p>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => window.print()}
+								className="w-full sm:w-auto min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong)] flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+								data-testid="print-treatment-plan-btn"
+							>
+								<Printer size={14} />
+								<span>Печать плана (А4)</span>
+							</button>
 						</div>
 
-						<div className="h-44 rounded-2xl border-2 border-dashed border-[var(--border,#cbd5e1)] overflow-hidden bg-white">
-							<SignaturePad
-								onSign={handleSignatureCaptured}
-								onCancel={() => setSignatureBase64(null)}
-							/>
-						</div>
+						{signatureBase64 && (
+							<div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-100/60 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+								<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+								<span>План подтвержден на бумаге (штамп фиксации сформирован)</span>
+							</div>
+						)}
 					</div>
 
 					{/* Checkbox Consent */}
@@ -217,9 +227,21 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 
 					<button
 						type="button"
-						onClick={handleConfirmAgreement}
-						disabled={isSubmitting || !signatureBase64}
+						onClick={handlePaperConfirm}
+						disabled={isSubmitting}
+						className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+						data-testid="paper-signature-confirm-btn"
+					>
+						<ShieldCheck size={14} className="text-emerald-600" />
+						<span>Утвердить и подписать на бумаге (1 клик)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => handleConfirmAgreement()}
+						disabled={isSubmitting}
 						className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+						data-testid="confirm-sign-plan-btn"
 					>
 						<Lock size={14} />
 						<span>{isSubmitting ? "Сохранение..." : "Утвердить и подписать"}</span>
@@ -231,5 +253,5 @@ export const TreatmentPlanSignatureModal: React.FC<TreatmentPlanSignatureModalPr
 
 	return typeof document !== "undefined"
 		? createPortal(modalContent, document.body)
-		: null;
+		: modalContent;
 };

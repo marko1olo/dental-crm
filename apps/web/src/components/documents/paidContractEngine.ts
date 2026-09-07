@@ -138,9 +138,11 @@ export interface PaidContractData {
 	doctorFullName: string;
 	doctorSpecialty?: string | undefined;
 	signedAt?: string | undefined;
-	signMethod: "touch" | "sms_otp" | "manual" | "ukep";
+	signMethod: "paper" | "touch" | "sms_otp" | "manual" | "ukep";
 	touchSignatureBase64?: string | undefined;
 	smsSignDetails?: PaidContractSmsSignDetails | undefined;
+	paperSignHash?: string | undefined;
+	integrityHash?: string | undefined;
 	confirmedDisclosures: PaidContractConfirmedDisclosures;
 }
 
@@ -919,7 +921,7 @@ export function createDefaultPaidContract(params: {
 		doctorFullName: params.doctorFullName || "Петров Петр Петрович",
 		doctorSpecialty: params.doctorSpecialty || "Врач-стоматолог-терапевт",
 		signedAt: formattedDate,
-		signMethod: "touch",
+		signMethod: "paper",
 		confirmedDisclosures: {
 			clinicInfoConfirmed: true,
 			serviceListAndPriceConfirmed: true,
@@ -1047,7 +1049,7 @@ ${cust.fullName}
 
 Подпись: _____________________ / ${cust.fullName} /
 Дата: «${contract.signedAt || contract.contractDate}»
-${contract.signMethod === "sms_otp" ? `[Подписано ПЭП через СМС: ${contract.smsSignDetails?.phone}, код подтвержден]` : ""}`;
+${contract.signMethod === "sms_otp" ? `[Подписано ПЭП через СМС: ${contract.smsSignDetails?.phone}, код подтвержден]` : (contract.signMethod === "paper" || contract.signMethod === "manual") ? `[Договор составлен в 2-х экземплярах на бумажном носителе (ст. 84 323-ФЗ, Постановление Правительства РФ № 736). Личная подпись пациента зафиксирована на бумаге и подшита в карту 043/у]` : ""}`;
 }
 
 /**
@@ -1092,6 +1094,9 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
           Дата и время: ${new Date(contract.smsSignDetails.verifiedAt || Date.now()).toLocaleString("ru-RU")}<br>
           Хеш документа (SHA-256): ${contract.smsSignDetails.smsSignHash || "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"}
         </div>`
+			: (contract.signMethod === "paper" || contract.signMethod === "manual")
+				? `<div class="sign-underline"></div>
+        <div class="paper-sign-stamp">Договор составлен в 2-х экземплярах на бумажном носителе (ст. 84 323-ФЗ, Постановление Правительства РФ № 736). Личная подпись пациента зафиксирована на бумаге и подшита в карту 043/у.</div>`
 			: contract.touchSignatureBase64
 				? `<div class="touch-sign-preview">
           <img src="${contract.touchSignatureBase64}" alt="Графическая подпись пациента" style="max-height: 48px; max-width: 180px; object-fit: contain;" />
@@ -1218,6 +1223,16 @@ export function generatePaidContractHtml(contract: PaidContractData): string {
     display: flex;
     align-items: flex-end;
     border-bottom: 1pt solid #0f172a;
+    margin-top: 4px;
+  }
+  .paper-sign-stamp {
+    border: 1pt solid #0f172a;
+    background: #f8fafc;
+    color: #0f172a;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 7pt;
+    line-height: 1.25;
     margin-top: 4px;
   }
 </style>
@@ -1515,11 +1530,11 @@ export function generateSha256(inputString: string): string {
 }
 
 /**
- * Генерация неизменяемого SHA-256 хэша договора платных медицинских услуг (ПЭП 63-ФЗ).
+ * Генерация неизменяемого SHA-256 хэша договора платных медицинских услуг (ПЭП 63-ФЗ / Бумажный носитель ПП РФ № 736).
  */
 export function generatePaidContractIntegrityHash(
 	contract: PaidContractData,
-	otpCode: string,
+	otpCodeOrMethod: string = "PAPER_DECREE_736",
 	verifiedAtIso?: string,
 ): string {
 	const canonicalPayload = [
@@ -1528,7 +1543,7 @@ export function generatePaidContractIntegrityHash(
 		`PATIENT:${contract.patient.fullName}:${contract.patient.passportSeries}${contract.patient.passportNumber}:${contract.patient.phone}`,
 		`AMOUNT_KOP:${contract.totalAmountKopecks}`,
 		`SERVICES:${(contract.services || []).map((s) => `${s.code || ""}:${s.name}:${s.totalKopecks}`).join(";")}`,
-		`OTP_DIGEST:${generateSha256(otpCode)}`,
+		`OTP_DIGEST:${generateSha256(otpCodeOrMethod)}`,
 		`TIMESTAMP:${verifiedAtIso || contract.signedAt || contract.contractDate}`,
 	].join("\n");
 	return generateSha256(canonicalPayload);

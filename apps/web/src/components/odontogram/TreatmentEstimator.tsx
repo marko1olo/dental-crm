@@ -615,6 +615,19 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 					)}
 					<button
 						type="button"
+						onClick={() => {
+							setSignatureUrl("paper_confirmed_" + Date.now());
+							showToast("План лечения подтвержден на бумаге", "success");
+						}}
+						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+						title="Пациент подписал распечатанную смету — подтвердить в 1 клик (Мандат 8e)"
+						data-testid="estimator-paper-confirm-btn"
+					>
+						<ShieldCheck size={14} className="text-emerald-600" />
+						<span>На бумаге (1 клик)</span>
+					</button>
+					<button
+						type="button"
 						onClick={() => setShowSignModal(true)}
 						disabled={planLoad.phase === "loading"}
 						title={unpricedWarning ?? "Подписать план у пациента"}
@@ -1007,6 +1020,24 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 				createPortal(
 					<div className="modal-overlay">
 						<div className="modal-content" style={{ maxWidth: "800px" }}>
+							<div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-zinc-700">
+								<h3 className="text-sm font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-1.5">
+									<PenTool size={16} className="text-teal-600" />
+									<span>Подписание плана лечения</span>
+								</h3>
+								<button
+									type="button"
+									onClick={() => {
+										setSignatureUrl("paper_confirmed_" + Date.now());
+										setShowSignModal(false);
+										showToast("План лечения подтвержден на бумаге", "success");
+									}}
+									className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+								>
+									<ShieldCheck size={14} className="text-emerald-600" />
+									<span>Подтвердить на бумаге (1 клик)</span>
+								</button>
+							</div>
 							<SignaturePad
 								onSign={(dataUrl) => {
 									setSignatureUrl(dataUrl);

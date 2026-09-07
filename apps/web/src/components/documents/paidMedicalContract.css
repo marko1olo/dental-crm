@@ -470,39 +470,32 @@
 	border-color: var(--teal, #0d9488);
 }
 
-.paid-contract-touch-canvas-wrap {
-	position: relative;
-	width: 100%;
-	height: 180px;
-	border-radius: 10px;
-	border: 2px dashed var(--line, #cbd5e1);
-	background: #ffffff;
-	overflow: hidden;
-	touch-action: none;
-}
-
-.paid-contract-touch-canvas-wrap:hover {
-	border-color: var(--teal, #0d9488);
-}
-
-.paid-contract-canvas {
-	width: 100%;
-	height: 100%;
-	cursor: crosshair;
-	display: block;
-}
-
-.paid-contract-canvas-placeholder {
-	position: absolute;
-	inset: 0;
+/* Paper Signature Box (ПП РФ № 736) */
+.paid-contract-paper-box {
 	display: flex;
-	align-items: center;
-	justify-content: center;
-	pointer-events: none;
-	color: var(--muted, #94a3b8);
-	font-size: 13px;
-	font-weight: 500;
-	user-select: none;
+	flex-direction: column;
+	gap: 12px;
+	padding: 14px;
+	border-radius: 10px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.paid-contract-paper-banner {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.paper-sign-stamp {
+	border: 1pt solid #0f172a;
+	background: #f8fafc;
+	color: #0f172a;
+	padding: 4px 6px;
+	border-radius: 4px;
+	font-size: 7pt;
+	line-height: 1.25;
+	margin-top: 4px;
 }
 
 /* SMS OTP Box */
