@@ -381,6 +381,7 @@ function TaxPayerDetails({
 									key={rel}
 									type="button"
 									className="quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold"
+									style={{ minHeight: "44px" }}
 									onClick={() => onPayerRelationshipChange(rel)}
 								>
 									{rel}
@@ -397,6 +398,7 @@ function TaxPayerDetails({
 						<button
 							className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === "" ? "active" : ""}`}
 							type="button"
+							style={{ minHeight: "44px" }}
 							aria-pressed={taxDeductionCode === ""}
 							onClick={() => onTaxDeductionCodeChange("")}
 						>
@@ -407,6 +409,7 @@ function TaxPayerDetails({
 								className={`quick-chip min-h-[44px] px-3.5 text-xs sm:text-sm font-semibold ${taxDeductionCode === code ? "active" : ""}`}
 								key={code}
 								type="button"
+								style={{ minHeight: "44px" }}
 								aria-pressed={taxDeductionCode === code}
 								onClick={() => onTaxDeductionCodeChange(code)}
 							>
@@ -416,10 +419,11 @@ function TaxPayerDetails({
 					</div>
 					<div className="payment-tax-defaults">
 						<button
-							className="secondary-button"
+							className="secondary-button min-h-[44px]"
 							type="button"
+							style={{ minHeight: "44px" }}
 							onClick={applyPatientTaxDefaults}
-							disabled={!patientTaxDefaultsAvailable}
+							disabled={false}
 							aria-describedby={
 								!patientTaxDefaultsAvailable ? taxDefaultsGuidanceId : undefined
 							}
@@ -825,6 +829,26 @@ export function PaymentCapture({
 	].filter((step): step is string => Boolean(step));
 	const paymentReadyToSubmit = paymentMissingSteps.length === 0;
 	const applyPatientTaxDefaults = () => {
+		const hasPatientData = Boolean(
+			patientDefaults?.fullName?.trim() ||
+				patientDefaults?.birthDate?.trim() ||
+				patientDefaults?.identityDocument?.trim() ||
+				patientDefaults?.taxpayerInn?.trim(),
+		);
+
+		const isNoPatientSelected =
+			patientId === null ||
+			patientId === "" ||
+			(!patientContextReady && !hasPatientData);
+
+		if (!hasPatientData || isNoPatientSelected) {
+			showToast(
+				"В карточке пациента отсутствуют ФИО и реквизиты плательщика",
+				"warning",
+			);
+			return;
+		}
+
 		if (!payerFullName.trim() && patientDefaults.fullName?.trim())
 			onPayerFullNameChange(patientDefaults.fullName.trim());
 		if (!payerBirthDate.trim() && patientDefaults.birthDate?.trim())
@@ -837,6 +861,11 @@ export function PaymentCapture({
 		if (!trimmedPayerInn && patientDefaults.taxpayerInn?.trim())
 			onPayerInnChange(digitsOnly(patientDefaults.taxpayerInn, 12));
 		if (!payerRelationship.trim()) onPayerRelationshipChange("пациент");
+
+		showToast(
+			"Заполнены доступные данные пациента. Недостающие реквизиты можно внести вручную",
+			"info",
+		);
 	};
 
 	return (
