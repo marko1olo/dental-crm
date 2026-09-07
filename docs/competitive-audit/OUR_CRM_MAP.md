@@ -1402,6 +1402,28 @@
 - **Фронтенд**: `apps/web/src/DocumentsView.tsx`, `apps/web/src/components/documents/DocumentsOutpatientArchive.tsx`, `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`.
 - **Тесты**: `apps/web/src/components/documents/__tests__/documentsViewAutonomy.test.tsx`, `paidMedicalContractAutonomy.test.tsx` (10 тестов, 100% pass, коммиты `9c84ec9ae`, `26609e15f`).
 
+#### 2.10.147. Эквайринг Сбер POS: неблокирующие кнопки слип-чека и Apple HIG тач-таргеты (Мандаты 8d, 8e, 8n / Касса & Эквайринг, Фича #186)
+- **Суть и домен**: Автономия кассовых операций со Сбер POS терминалом:
+  1. *Неблокирующие кнопки слип-чека*: в `SberPosTerminalModal.tsx` кнопки копирования и печати слип-чека освобождены от блокировки `disabled={!lastResponse}` (`disabled={false}` и `disabled={isPrinting}`); при клике до завершения авторизации выводится активный инфо-тост «Слип-чек будет доступен после авторизации платежа на терминале» без прерывания работы кассира (Мандат 8e).
+  2. *Тач-таргеты Apple HIG*: кнопки копирования и печати расширены с 32px (`w-8 h-8`) до `min-w-[44px] min-h-[44px] p-2.5` ($\ge 44\times 44\text{px}$, Мандат 8d).
+- **Фронтенд**: `apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx`.
+- **Тесты**: `apps/web/src/components/payments/sberPos/__tests__/sberPosAutonomy.test.tsx` (4 теста, 100% pass, коммит `23c474057`).
+
+#### 2.10.148. Чат и омниканальность: неблокирующая отправка сообщений с 1-клик клиническим шаблоном (Мандаты 8d, 8e, 8k, 8n / Чат & Мессенджеры, Фича #187)
+- **Суть и домен**: Ликвидация барьеров при коммуникации с пациентами в WhatsApp и чатах:
+  1. *Неблокирующая отправка сообщений*: в `WhatsAppChatPanel.tsx` и `PatientOmnichannelHubModal.tsx` снята блокировка `disabled` и класс `disabled:pointer-events-none` при пустом тексте сообщения.
+  2. *1-клик клинический шаблон напоминания*: при клике на отправку с пустым полем автоматически подставляется типовое напоминание о записи на приём в клинику ДЕНТЕ, фокус переносится в текстовое поле и показывается инфо-тост; все кнопки соответствуют Apple HIG ($\ge 44\text{px}$).
+- **Фронтенд**: `apps/web/src/components/chat/WhatsAppChatPanel.tsx`, `apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx`.
+- **Тесты**: `apps/web/src/components/chat/__tests__/chatMessagingAutonomy.test.tsx` (7 тестов, 100% pass, коммит `cb1c74220`).
+
+#### 2.10.149. Профилактика и реколл: неблокирующие кнопки связи с активным тост-руководством (Мандаты 8d, 8e, 8n / Профилактика & Диспансеризация, Фича #188)
+- **Суть и домен**: Автономия регистратора и администратора при диспансерном вызове пациентов:
+  1. *Неблокирующие действия связи*: в `PatientRecallManagerModal.tsx` и `PatientRecallsHubModal.tsx` кнопки WhatsApp, Telegram, Звонок и SMS больше не блокируются при отсутствии телефона (`disabled={!candidate.phone}`); при клике выводится активный предупреждающий тост «У пациента не указан номер телефона. Укажите номер в карточке пациента» (Мандат 8e).
+  2. *Эргономика и гигиена UI*: заменены unicode-символы `✓` на векторные Lucide-иконки `Check`; все кнопки действий в таблице, мобильных карточках, канбане и дроверах приведены к тач-таргету $\ge 44\text{px}$ (Мандат 8d).
+- **Фронтенд**: `apps/web/src/components/recall/PatientRecallManagerModal.tsx`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`.
+- **Тесты**: `apps/web/src/components/recall/__tests__/patientRecallAutonomy.test.tsx` (10 тестов, 100% pass, коммит `0165a1ce4`).
+
+
 
 
 

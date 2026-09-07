@@ -1952,11 +1952,20 @@
 - **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `QuickBookingDrawer.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `DoctorRosterMatrix.tsx`, `apps/web/src/CommunicationsView.tsx`, `MarketingView.tsx`, `CampaignPanel.tsx`, `apps/web/src/DocumentsView.tsx`, `DentalMedicalCard043uForm.tsx`, `PaidMedicalContractModal.tsx`, `TaxDeductionCertificateModal.tsx`.
 - **Тесты**: `scheduleGridStomxInquisition.test.tsx`, `scheduleChairDoctorBinding.test.tsx`, `scheduleRosterMatrixAutonomy.test.tsx`, `scheduleShiftRosterIntegration.test.tsx`, `communicationsMarketingAutonomy.test.tsx`, `documentsViewAutonomy.test.tsx`, `paidMedicalContractAutonomy.test.tsx` (79 тестов, 100% pass, коммиты `ed9fb8863`, `39c8dbb20`, `c32756cec`, `eb80b84f2`, `d47274df4`, `222a1995e`, `9c84ec9ae`, `26609e15f`).
 
+### 4.61. Эквайринг Сбер POS, омниканальный чат и реколл диспансеризации (Мандаты 8d, 8e, 8k, 8n / Фичи 186..188)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Фича #186: Сбер POS терминал*: кнопки копирования и печати слип-чека освобождены от блокировки `disabled={!lastResponse}` (`disabled={false}` и `disabled={isPrinting}`), вывод информационного тоста до авторизации, тач-таргеты расширены с 32px до $\ge 44\times 44\text{px}$ по Apple HIG (Мандаты 8d, 8e).
+  2. *Фича #187: Чат и омниканальность*: снятие блокировок `disabled` и `pointer-events-none` с кнопок отправки при пустом вводе, 1-клик автоподстановка клинического напоминания о визите по Закону Хика, тач-таргеты $\ge 44\text{px}$ (Мандаты 8e, 8k).
+  3. *Фича #188: Реколл и профилактика*: неблокирующие действия связи (WhatsApp, Telegram, Звонок, SMS) при отсутствии телефона с предупреждающим тост-руководством, замена unicode `✓` на векторные иконки Lucide `Check`, тач-таргеты $\ge 44\text{px}$ (Мандаты 8d, 8e).
+- **Файлы**: `apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx`, `apps/web/src/components/chat/WhatsAppChatPanel.tsx`, `apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx`, `apps/web/src/components/recall/PatientRecallManagerModal.tsx`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`.
+- **Тесты**: `sberPosAutonomy.test.tsx`, `chatMessagingAutonomy.test.tsx`, `patientRecallAutonomy.test.tsx` (21 тест, 100% pass, коммиты `23c474057`, `cb1c74220`, `0165a1ce4`).
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 122 дополнительные системные аддендум-фичи клинической автономии (Wave 15..32, фичи 64..185) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 125 дополнительных системных аддендум-фич клинической автономии (Wave 15..33, фичи 64..188) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
