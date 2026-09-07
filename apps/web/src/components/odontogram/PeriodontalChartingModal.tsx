@@ -29,6 +29,7 @@ import {
 	Clipboard,
 	Droplets,
 	FileText,
+	Flame,
 	Layers,
 	Mic,
 	MicOff,
@@ -610,6 +611,69 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		);
 	}, []);
 
+	// 4b. «Пародонтит тяжелый (глубина 6-8 мм, гноетечение, подвижность II-III ст.)» — 1 клик
+	const handleApplySeverePeriodontitisPreset = useCallback(() => {
+		const baseTeeth = createDefaultPerioTeeth(2);
+		const severePerioTeeth = baseTeeth.map((tooth) => {
+			const num = tooth.toothNumber;
+			const isMolar = [16, 17, 26, 27, 36, 37, 46, 47].includes(num);
+			const isLowerAnterior = [31, 32, 41, 42].includes(num);
+
+			const pocketDepth = isMolar ? 7 : isLowerAnterior ? 6 : 5;
+			const midDepth = isMolar ? 6 : 4;
+			const recession = 2;
+			const hasBop = true;
+			const hasPlaque = true;
+			const hasCalculus = true;
+			const suppuration = isMolar || isLowerAnterior;
+			const mobility = isLowerAnterior || isMolar ? (2 as const) : (1 as const);
+			const furcation = isMolar && isFurcationEligibleTooth(num) ? (2 as const) : (0 as const);
+
+			const makeSite = (
+				site: typeof tooth.mesioBuccal,
+				depth: number,
+				gm: number,
+				supp: boolean,
+			) => ({
+				...site,
+				probingDepthMm: depth,
+				gingivalMarginMm: gm,
+				calMm: depth + gm,
+				bleedingOnProbing: hasBop,
+				plaque: hasPlaque,
+				calculus: hasCalculus,
+				suppuration: supp,
+			});
+
+			return {
+				...tooth,
+				mobility,
+				furcation,
+				mesioBuccal: makeSite(tooth.mesioBuccal, pocketDepth, recession, suppuration),
+				midBuccal: makeSite(tooth.midBuccal, midDepth, recession, false),
+				distoBuccal: makeSite(tooth.distoBuccal, pocketDepth, recession, suppuration),
+				mesioLingual: makeSite(tooth.mesioLingual, pocketDepth, recession, suppuration),
+				midLingual: makeSite(tooth.midLingual, midDepth, recession, false),
+				distoLingual: makeSite(tooth.distoLingual, pocketDepth, recession, suppuration),
+			};
+		});
+
+		setTeeth((prev) => {
+			const hasMissing = prev.some((t) => t.isMissing);
+			if (!hasMissing) return severePerioTeeth;
+			return severePerioTeeth.map((pt) => {
+				const prevTooth = prev.find((t) => t.toothNumber === pt.toothNumber);
+				return prevTooth?.isMissing ? { ...pt, isMissing: true } : pt;
+			});
+		});
+
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			"Пресет «Пародонтит тяжелый»: глубина карманов 6–8 мм, рецессия 2 мм, гноетечение, подвижность II ст.",
+			"info",
+		);
+	}, []);
+
 	// 1-Click Statutory Prophylaxis Protocol (Mandates 8e, 8k, 8n: A16.07.051 Piezon + Air-Flow + Kerr Cleanic + Fluocal)
 	const handleQuickHygieneAirFlow = useCallback(() => {
 		const defaultTeeth = createDefaultPerioTeeth(2);
@@ -874,6 +938,18 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 						>
 							<ShieldAlert size={16} className="text-red-600 dark:text-red-400 shrink-0" />
 							<span>Пародонтит средний (4-5 мм)</span>
+						</button>
+
+						{/* 3c. Пародонтит тяжелый (глубина 6-8 мм) */}
+						<button
+							type="button"
+							onClick={handleApplySeverePeriodontitisPreset}
+							className="perio-preset-btn perio-preset-btn--severe"
+							title="Клинический пресет тяжелого пародонтита III-IV стадии: глубина карманов 6–8 мм, рецессия 2 мм, гноетечение, подвижность II ст. (1 клик)"
+							data-testid="perio-preset-severe-btn"
+						>
+							<Flame size={16} className="text-rose-700 dark:text-rose-500 shrink-0" />
+							<span>Пародонтит тяжелый (6-8 мм)</span>
 						</button>
 
 						{/* 4. Профгигиена */}

@@ -40,38 +40,56 @@ const UPPER_PRIMARY_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
 const LOWER_PRIMARY_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
 
 export interface PediatricAgePreset {
-	readonly id: "primary" | "early_mixed" | "late_mixed";
+	readonly id: "primary" | "early_mixed" | "late_mixed" | "primary_3y" | "first_molar_6y" | "mixed_9y" | "permanent_12y";
 	readonly labelRu: string;
 	readonly ageRangeRu: string;
 	readonly targetAge: number;
 	readonly descriptionRu: string;
 	readonly teethSummaryRu: string;
+	readonly teethNumbers?: readonly number[];
+	readonly mode?: "primary" | "first_molar" | "mixed" | "permanent";
 }
 
 export const PEDIATRIC_AGE_PRESETS: readonly PediatricAgePreset[] = [
 	{
 		id: "primary",
-		labelRu: "Временный прикус",
+		labelRu: "3 года — молочный прикус",
 		ageRangeRu: "3–5 лет",
-		targetAge: 4.5,
-		descriptionRu: "Все 20 молочных зубов интактны (51–85), физиологическая норма без постоянных моляров",
+		targetAge: 3.0,
+		descriptionRu: "Все 20 молочных зубов интактны (51–85), физиологическая норма без постоянных моляров, 0% резорбция",
 		teethSummaryRu: "20 молочных зубов (51–85)",
+		teethNumbers: [55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75],
+		mode: "primary",
 	},
 	{
 		id: "early_mixed",
-		labelRu: "Ранний сменный",
-		ageRangeRu: "6–8 лет",
-		targetAge: 7.0,
-		descriptionRu: "Смена резцов и прорезывание первых постоянных моляров (16, 26, 36, 46)",
-		teethSummaryRu: "Резцы 11..42 + 1-е моляры (16, 26, 36, 46)",
+		labelRu: "6 лет — первый моляр",
+		ageRangeRu: "6–7 лет",
+		targetAge: 6.0,
+		descriptionRu: "Прорезывание первых постоянных моляров (16, 26, 36, 46) + 20 молочных зубов",
+		teethSummaryRu: "1-е моляры (16, 26, 36, 46) + 20 молочных",
+		teethNumbers: [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26, 46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36],
+		mode: "first_molar",
 	},
 	{
 		id: "late_mixed",
-		labelRu: "Поздний сменный",
-		ageRangeRu: "9–12 лет",
-		targetAge: 10.5,
-		descriptionRu: "Смена клыков и премоляров, подготовка ко 2-м постоянным молярам (17, 27, 37, 47)",
-		teethSummaryRu: "Клыки 13..43 + премоляры 14..45",
+		labelRu: "9 лет — сменный прикус",
+		ageRangeRu: "8–10 лет",
+		targetAge: 9.0,
+		descriptionRu: "Смена резцов (11..42) и 1-е постоянные моляры (16..46) + молочные клыки и моляры (53..85)",
+		teethSummaryRu: "Резцы 11..42 + 1-е моляры + молочные 53..85",
+		teethNumbers: [16, 55, 54, 53, 12, 11, 21, 22, 63, 64, 65, 26, 46, 85, 84, 83, 42, 41, 31, 32, 73, 74, 75, 36],
+		mode: "mixed",
+	},
+	{
+		id: "permanent_12y",
+		labelRu: "12 лет — постоянный прикус",
+		ageRangeRu: "11–13 лет",
+		targetAge: 12.0,
+		descriptionRu: "Все 28 постоянных зубов прорезались (17..27, 47..37, без третьих моляров 18, 28, 38, 48)",
+		teethSummaryRu: "28 постоянных зубов (17..27, 47..37)",
+		teethNumbers: [17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37],
+		mode: "permanent",
 	},
 ];
 
@@ -197,12 +215,12 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 
 	const handleApplyPrimaryNorm = () => {
 		const norm = calculatePediatricPhysiologicalNorm("primary");
-		setSelectedAge(4.5);
+		setSelectedAge(3.0);
 		if (onApplyAgeArch) {
-			onApplyAgeArch([...ALL_PRIMARY_TEETH]);
+			onApplyAgeArch([...norm.teethNumbers]);
 		}
 		if (onBatchUpdateResorption) {
-			const batch = ALL_PRIMARY_TEETH.map((t) => ({
+			const batch = norm.teethNumbers.map((t) => ({
 				toothNumber: t,
 				resorptionStage: 0 as ResorptionStagePercent,
 			}));
@@ -214,32 +232,22 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"⚡ 1-клик: Применена норма временного прикуса (51–85 интактны, кариеса нет, десна в норме). Протокол перенесен в 043/у!",
+			"⚡ 1-клик: Применена норма временного прикуса (3 года: 51–85 интактны, кариеса нет, 0% резорбция). Протокол перенесен в 043/у!",
 			"success",
 		);
 	};
 
-	const handleApplyEarlyMixedNorm = () => {
-		const norm = calculatePediatricPhysiologicalNorm("early_mixed");
-		setSelectedAge(7.0);
+	const handleApplyFirstMolarNorm = () => {
+		const norm = calculatePediatricPhysiologicalNorm("first_molar");
+		setSelectedAge(6.0);
 		if (onApplyAgeArch) {
-			const mixedArch = [
-				16, 55, 54, 53, 12, 11, 21, 22, 63, 64, 65, 26,
-				46, 85, 84, 83, 42, 41, 31, 32, 73, 74, 75, 36,
-			];
-			onApplyAgeArch(mixedArch);
+			onApplyAgeArch([...norm.teethNumbers]);
 		}
 		if (onBatchUpdateResorption) {
-			const batch = [
-				{ toothNumber: 51, resorptionStage: 100 as ResorptionStagePercent },
-				{ toothNumber: 61, resorptionStage: 100 as ResorptionStagePercent },
-				{ toothNumber: 71, resorptionStage: 100 as ResorptionStagePercent },
-				{ toothNumber: 81, resorptionStage: 100 as ResorptionStagePercent },
-				{ toothNumber: 52, resorptionStage: 75 as ResorptionStagePercent },
-				{ toothNumber: 62, resorptionStage: 75 as ResorptionStagePercent },
-				{ toothNumber: 72, resorptionStage: 75 as ResorptionStagePercent },
-				{ toothNumber: 82, resorptionStage: 75 as ResorptionStagePercent },
-			];
+			const batch = Object.entries(norm.resorptionStages).map(([toothStr, stage]) => ({
+				toothNumber: Number(toothStr),
+				resorptionStage: stage,
+			}));
 			onBatchUpdateResorption(batch);
 		}
 		dispatchPediatricSoapProtocol({
@@ -248,7 +256,55 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"⚡ 1-клик: Применена норма раннего сменного прикуса (смена 11..42, моляры 16..46). Протокол перенесен в 043/у!",
+			"⚡ 1-клик: Применена норма прорезывания первых моляров (6 лет: 16, 26, 36, 46 + 20 молочных). Протокол перенесен в 043/у!",
+			"success",
+		);
+	};
+
+	const handleApplyEarlyMixedNorm = () => {
+		const norm = calculatePediatricPhysiologicalNorm("mixed");
+		setSelectedAge(9.0);
+		if (onApplyAgeArch) {
+			onApplyAgeArch([...norm.teethNumbers]);
+		}
+		if (onBatchUpdateResorption) {
+			const batch = Object.entries(norm.resorptionStages).map(([toothStr, stage]) => ({
+				toothNumber: Number(toothStr),
+				resorptionStage: stage,
+			}));
+			onBatchUpdateResorption(batch);
+		}
+		dispatchPediatricSoapProtocol({
+			diagnosisIcd10: norm.diagnosisIcd10,
+			statusLocalis: norm.statusLocalisRu,
+			treatmentDescription: norm.treatmentDescriptionRu,
+		});
+		showToast(
+			"⚡ 1-клик: Применена норма сменного прикуса (9 лет: резцы 11..42, 1-е моляры 16..46, молочные 53..85). Протокол перенесен в 043/у!",
+			"success",
+		);
+	};
+
+	const handleApplyPermanentNorm = () => {
+		const norm = calculatePediatricPhysiologicalNorm("permanent");
+		setSelectedAge(12.0);
+		if (onApplyAgeArch) {
+			onApplyAgeArch([...norm.teethNumbers]);
+		}
+		if (onBatchUpdateResorption) {
+			const batch = ALL_PRIMARY_TEETH.map((t) => ({
+				toothNumber: t,
+				resorptionStage: 100 as ResorptionStagePercent,
+			}));
+			onBatchUpdateResorption(batch);
+		}
+		dispatchPediatricSoapProtocol({
+			diagnosisIcd10: norm.diagnosisIcd10,
+			statusLocalis: norm.statusLocalisRu,
+			treatmentDescription: norm.treatmentDescriptionRu,
+		});
+		showToast(
+			"⚡ 1-клик: Применена норма постоянного прикуса (12 лет: 28 зубов 17..27, 47..37). Протокол перенесен в 043/у!",
 			"success",
 		);
 	};
@@ -514,49 +570,90 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 						</div>
 
 						{/* Quick Action Buttons Grid */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-							{/* 1. Временный прикус — норма */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+							{/* 1. 3 года: Временный прикус — норма */}
 							<button
 								type="button"
 								onClick={handleApplyPrimaryNorm}
 								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-emerald-500/40 hover:border-emerald-500 hover:bg-emerald-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
-								title="Установить норму временного прикуса: 20 интактных молочных зубов (51–85), кариеса нет, резорбция 0%"
+								title="Установить норму временного прикуса (3 года): 20 интактных молочных зубов (51–85), кариеса нет, резорбция 0%"
+								data-testid="pediatric-preset-3y-btn"
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-emerald-700 dark:text-emerald-400 truncate">
-										⚡ Временный прикус — норма
+										⚡ 3 года: Молочный прикус
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-										51–85 интактны, Z01.2, 0% резорбция
+										51–85 интактны, 0% резорбция
 									</div>
 								</div>
 								<Check className="w-4 h-4 text-emerald-600 shrink-0" />
 							</button>
 
-							{/* 2. Ранний сменный — норма */}
+							{/* 2. 6 лет: Первый моляр — норма */}
+							<button
+								type="button"
+								onClick={handleApplyFirstMolarNorm}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-cyan-500/40 hover:border-cyan-500 hover:bg-cyan-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								title="Установить норму (6 лет): прорезывание первых моляров (16, 26, 36, 46) + 20 молочных зубов"
+								data-testid="pediatric-preset-6y-btn"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold text-cyan-700 dark:text-cyan-400 truncate">
+										⚡ 6 лет: Первый моляр
+									</div>
+									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
+										16, 26, 36, 46 + 20 молочных
+									</div>
+								</div>
+								<Check className="w-4 h-4 text-cyan-600 shrink-0" />
+							</button>
+
+							{/* 3. 9 лет: Сменный прикус — норма */}
 							<button
 								type="button"
 								onClick={handleApplyEarlyMixedNorm}
 								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-teal-500/40 hover:border-teal-500 hover:bg-teal-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
-								title="Установить норму раннего сменного прикуса: 7 лет, смена резцов 11..42, моляры 16, 26, 36, 46"
+								title="Установить норму сменного прикуса (9 лет): резцы 11..42, моляры 16..46, молочные 53..85"
+								data-testid="pediatric-preset-9y-btn"
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-teal-700 dark:text-teal-400 truncate">
-										⚡ Ранний сменный — норма
+										⚡ 9 лет: Сменный прикус
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
-										Смена 11..42, моляры 16, 26, 36, 46
+										Резцы 11..42, 1-е мол., мол. 53..85
 									</div>
 								</div>
 								<Check className="w-4 h-4 text-teal-600 shrink-0" />
 							</button>
 
-							{/* 3. Серебрение Saforide (A16.07.057) */}
+							{/* 4. 12 лет: Постоянный прикус — норма */}
+							<button
+								type="button"
+								onClick={handleApplyPermanentNorm}
+								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-blue-500/40 hover:border-blue-500 hover:bg-blue-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
+								title="Установить норму постоянного прикуса (12 лет): 28 постоянных зубов 17..27, 47..37 без 8-ок"
+								data-testid="pediatric-preset-12y-btn"
+							>
+								<div className="min-w-0">
+									<div className="font-extrabold text-blue-700 dark:text-blue-400 truncate">
+										⚡ 12 лет: Постоянный прикус
+									</div>
+									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
+										28 зубов (17..27, 47..37)
+									</div>
+								</div>
+								<Check className="w-4 h-4 text-blue-600 shrink-0" />
+							</button>
+
+							{/* 5. Серебрение Saforide (A16.07.057) */}
 							<button
 								type="button"
 								onClick={() => handleApplyProcedurePreset("saforide")}
 								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Приказ 804н: A16.07.057 Серебрение эмали Saforide 38% (51, 52, 61, 62)"
+								data-testid="pediatric-preset-saforide-btn"
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-amber-700 dark:text-amber-400 truncate">
@@ -569,12 +666,13 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								<Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
 							</button>
 
-							{/* 4. Герметизация фиссур Fissurit (A16.07.050) */}
+							{/* 6. Герметизация фиссур Fissurit (A16.07.050) */}
 							<button
 								type="button"
 								onClick={() => handleApplyProcedurePreset("fissurit")}
 								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-sky-500/40 hover:border-sky-500 hover:bg-sky-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Приказ 804н: A16.07.050 Запечатывание фиссур Fissurit FX (16, 26, 36, 46)"
+								data-testid="pediatric-preset-fissurit-btn"
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-sky-700 dark:text-sky-400 truncate">
@@ -587,12 +685,13 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								<ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
 							</button>
 
-							{/* 5. Витальная пульпотомия Pulpotec (A16.07.009) */}
+							{/* 7. Витальная пульпотомия Pulpotec (A16.07.009) */}
 							<button
 								type="button"
 								onClick={() => handleApplyProcedurePreset("pulpotec")}
 								className="min-h-[44px] px-3 py-2 rounded-xl bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 border border-rose-500/40 hover:border-rose-500 hover:bg-rose-500/10 text-[var(--odontogram-ink,var(--ink,#0f172a))] dark:text-slate-100 text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-2xs text-left"
 								title="Приказ 804н: A16.07.009 Пульпотомия (ампутация пульпы) препаратом Pulpotec"
+								data-testid="pediatric-preset-pulpotec-btn"
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-rose-700 dark:text-rose-400 truncate">
@@ -605,12 +704,13 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 								<Activity className="w-4 h-4 text-rose-600 shrink-0" />
 							</button>
 
-							{/* 6. Вставить протокол в карту 043/у */}
+							{/* 8. Вставить протокол в карту 043/у */}
 							<button
 								type="button"
 								onClick={handleInsertCariogramTo043}
 								className="min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-between gap-2 cursor-pointer transition-all active:scale-95 shadow-sm text-left"
 								title="Мгновенно перенести текущий протокол, Cariogram и поведение по Франклу в дневник Формы 043/у"
+								data-testid="pediatric-preset-insert-043-btn"
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold truncate">
@@ -651,17 +751,18 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 									</div>
 								</div>
 
-								{/* Clinical Age Presets Bar (3-5 years, 6-8 years, 9-12 years) */}
+								{/* Clinical Age Presets Bar (3-5 years, 6-7 years, 8-10 years, 11-13 years) */}
 								<div className="space-y-2">
 									<div className="text-xs sm:text-sm font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))] dark:text-slate-400">
 										Клинические возрастные пресеты (Мандат 8e &amp; 8k — норма в 1 клик):
 									</div>
-									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+									<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 										{PEDIATRIC_AGE_PRESETS.map((preset) => {
 											const isSelected =
-												(preset.id === "primary" && selectedAge < 5.8) ||
-												(preset.id === "early_mixed" && selectedAge >= 5.8 && selectedAge < 8.5) ||
-												(preset.id === "late_mixed" && selectedAge >= 8.5);
+												(preset.id === "primary" && selectedAge < 5.5) ||
+												(preset.id === "early_mixed" && selectedAge >= 5.5 && selectedAge < 7.5) ||
+												(preset.id === "late_mixed" && selectedAge >= 7.5 && selectedAge < 11.0) ||
+												(preset.id === "permanent_12y" && selectedAge >= 11.0);
 											return (
 												<div
 													key={preset.id}
@@ -671,6 +772,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 															? "border-teal-600 bg-teal-500/15 dark:bg-teal-950/30 shadow-sm ring-2 ring-teal-500/20"
 															: "border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] dark:border-slate-800 bg-[var(--odontogram-paper,var(--paper,#ffffff))] dark:bg-slate-900 hover:border-teal-400 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong,#f1f5f9))] dark:hover:bg-slate-800"
 													}`}
+													data-testid={`pediatric-timeline-card-${preset.id}`}
 												>
 													<div>
 														<div className="flex items-center justify-between gap-1 mb-1">
@@ -696,11 +798,15 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 																onClick={(e) => {
 																	e.stopPropagation();
 																	setSelectedAge(preset.targetAge);
-																	const analysis = calculateEruptionTimelineByAge(preset.targetAge);
-																	onApplyAgeArch([
-																		...analysis.expectedUpperArchTeeth,
-																		...analysis.expectedLowerArchTeeth,
-																	]);
+																	if (preset.teethNumbers) {
+																		onApplyAgeArch([...preset.teethNumbers]);
+																	} else {
+																		const analysis = calculateEruptionTimelineByAge(preset.targetAge);
+																		onApplyAgeArch([
+																			...analysis.expectedUpperArchTeeth,
+																			...analysis.expectedLowerArchTeeth,
+																		]);
+																	}
 																	showToast(
 																		`Пресет «${preset.labelRu}» (${preset.ageRangeRu}) успешно применен к одонтограмме!`,
 																		"success",
@@ -709,6 +815,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 																}}
 																className="min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-xs select-none touch-manipulation"
 																title={`Применить формулу «${preset.labelRu}» в 1 клик`}
+																data-testid={`pediatric-timeline-apply-${preset.id}`}
 															>
 																<Sparkles className="w-4 h-4 shrink-0" />
 																<span>Применить</span>

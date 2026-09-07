@@ -41,7 +41,7 @@ export const DOCUMENT_PACKAGES: Record<
 		shortTitle: "Первичный",
 		description:
 			"Полный комплект документов при первичном приеме пациента: анкета здоровья, ИДС на осмотр и диагностику (Приказ № 1051н), согласие на обработку ПДн (152-ФЗ), договор на платные медуслуги (ПП РФ № 736) и фотопротокол.",
-		icon: "📋",
+		icon: "clipboard-list",
 		primaryKind: "patient_intake_questionnaire",
 		documentKinds: [
 			"patient_intake_questionnaire",
@@ -97,7 +97,7 @@ export const DOCUMENT_PACKAGES: Record<
 		shortTitle: "Клинический",
 		description:
 			"Клинический пакет документов для ведения лечебного приема: стоматологическая медкарта 043/у, специализированное процедурное ИДС, протокол анестезии, план лечения и памятка пациента.",
-		icon: "🦷",
+		icon: "file-text",
 		primaryKind: "dental_medical_card_043u",
 		documentKinds: [
 			"dental_medical_card_043u",
@@ -161,7 +161,7 @@ export const DOCUMENT_PACKAGES: Record<
 		shortTitle: "Налоговый",
 		description:
 			"Пакет для оформления социального налогового вычета в ФНС: справка об оплате медуслуг (КНД 1151156 / Приказ № ЕД-7-11/803@), заявление налогоплательщика, реестр платежей и квитанция.",
-		icon: "🏛️",
+		icon: "building-2",
 		primaryKind: "tax_deduction_certificate",
 		documentKinds: [
 			"tax_deduction_certificate",
@@ -209,7 +209,7 @@ export const DOCUMENT_PACKAGES: Record<
 		shortTitle: "Госпитальный",
 		description:
 			"Пакет направления и выписки для стационара, челюстно-лицевой хирургии, седации или сторонних ЛПУ: направление на КЛКТ/рентген, выписка из карты, амбулаторная карта 025/у, справка о посещении и расписка выдачи.",
-		icon: "🏥",
+		icon: "hospital",
 		primaryKind: "xray_cbct_referral",
 		documentKinds: [
 			"xray_cbct_referral",

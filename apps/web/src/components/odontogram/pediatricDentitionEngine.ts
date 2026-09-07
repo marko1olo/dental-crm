@@ -249,8 +249,77 @@ export function getToothDentitionType(
 // PEDIATRIC 1-CLICK CLINICAL PRESETS & PHYSIOLOGICAL NORMS (Mandates 8e, 8k, 8n)
 // ------------------------------------------------------------------------------------------------
 
+export interface CanonicalPediatricAgePreset {
+	readonly id: "primary_3y" | "first_molar_6y" | "mixed_9y" | "permanent_12y";
+	readonly ageYears: number;
+	readonly targetAgeYears: number;
+	readonly labelRu: string;
+	readonly titleRu: string;
+	readonly stageNameRu: string;
+	readonly ageRangeRu: string;
+	readonly teethSummaryRu: string;
+	readonly descriptionRu: string;
+	readonly teethNumbers: readonly number[];
+	readonly mode: "primary" | "first_molar" | "mixed" | "permanent";
+}
+
+export const CANONICAL_PEDIATRIC_AGE_PRESETS: readonly CanonicalPediatricAgePreset[] = [
+	{
+		id: "primary_3y",
+		ageYears: 3,
+		targetAgeYears: 3.0,
+		labelRu: "3 года — молочный прикус",
+		titleRu: "3 года — молочный прикус (20 молочных зубов 51–85, 0% резорбция)",
+		stageNameRu: "Временный прикус",
+		ageRangeRu: "3–5 лет",
+		teethSummaryRu: "20 молочных зубов (51–85)",
+		descriptionRu: "Все 20 молочных зубов интактны (51–85), физиологическая норма без постоянных моляров, 0% резорбция",
+		teethNumbers: [55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75],
+		mode: "primary",
+	},
+	{
+		id: "first_molar_6y",
+		ageYears: 6,
+		targetAgeYears: 6.0,
+		labelRu: "6 лет — первый моляр",
+		titleRu: "6 лет — первый моляр (16, 26, 36, 46 + 20 молочных зубов)",
+		stageNameRu: "Прорезывание первых моляров",
+		ageRangeRu: "6–7 лет",
+		teethSummaryRu: "1-е моляры (16, 26, 36, 46) + 20 молочных зубов",
+		descriptionRu: "Первые постоянные моляры (16, 26, 36, 46) прорезались + 20 молочных зубов (всего 24 зуба)",
+		teethNumbers: [16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26, 46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36],
+		mode: "first_molar",
+	},
+	{
+		id: "mixed_9y",
+		ageYears: 9,
+		targetAgeYears: 9.0,
+		labelRu: "9 лет — сменный прикус",
+		titleRu: "9 лет — сменный прикус (постоянные резцы 11..42, 1-е моляры 16..46, молочные клыки и моляры 53..85)",
+		stageNameRu: "Сменный прикус",
+		ageRangeRu: "8–10 лет",
+		teethSummaryRu: "Резцы 11..42 + 1-е моляры 16..46 + молочные 53..85",
+		descriptionRu: "Постоянные резцы (11, 12, 21, 22, 31, 32, 41, 42), 1-е моляры (16, 26, 36, 46), молочные клыки и моляры (53–55, 63–65, 73–75, 83–85)",
+		teethNumbers: [16, 55, 54, 53, 12, 11, 21, 22, 63, 64, 65, 26, 46, 85, 84, 83, 42, 41, 31, 32, 73, 74, 75, 36],
+		mode: "mixed",
+	},
+	{
+		id: "permanent_12y",
+		ageYears: 12,
+		targetAgeYears: 12.0,
+		labelRu: "12 лет — постоянный прикус",
+		titleRu: "12 лет — постоянный прикус (28 постоянных зубов 17..27, 47..37 без 8-ок)",
+		stageNameRu: "Постоянный прикус",
+		ageRangeRu: "11–13 лет",
+		teethSummaryRu: "28 постоянных зубов (17..27, 47..37)",
+		descriptionRu: "Все 28 постоянных зубов прорезались (17..27, 47..37, без третьих моляров 18, 28, 38, 48)",
+		teethNumbers: [17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37],
+		mode: "permanent",
+	},
+];
+
 export interface PediatricPhysiologicalNormResult {
-	readonly mode: "primary" | "early_mixed";
+	readonly mode: "primary" | "early_mixed" | "first_molar" | "mixed" | "permanent";
 	readonly labelRu: string;
 	readonly nameRu: string;
 	readonly targetAgeYears: number;
@@ -285,10 +354,15 @@ export interface Pediatric1ClickProcedurePreset {
 }
 
 /**
- * Generates 1-click physiological norm for pediatric or early mixed dentition (Mandates 8e & 8k).
+ * Generates 1-click physiological norm for pediatric, mixed or permanent dentition (Mandates 8e & 8k).
+ * Supports 4 canonical stages by age:
+ * 1. 3 years ("primary") — молочный прикус (20 молочных зубов 51–85, 0% резорбция)
+ * 2. 6 years ("first_molar") — первый моляр (16, 26, 36, 46 + 20 молочных зубов)
+ * 3. 9 years ("early_mixed" | "mixed") — сменный прикус (постоянные резцы 11..42, 1-е моляры 16..46, молочные клыки и моляры 53..85)
+ * 4. 12 years ("permanent") — постоянный прикус (28 постоянных зубов 17..27, 47..37)
  */
 export function calculatePediatricPhysiologicalNorm(
-	mode: "primary" | "early_mixed",
+	mode: "primary" | "early_mixed" | "first_molar" | "mixed" | "permanent",
 ): PediatricPhysiologicalNormResult {
 	if (mode === "primary") {
 		const teeth = ALL_PRIMARY_TEETH;
@@ -308,7 +382,7 @@ export function calculatePediatricPhysiologicalNorm(
 		);
 
 		const statusLocalisRu =
-			"Временный прикус. Все 20 временных зубов (51–85) интактны, кариозных поражений и очаговой деминерализации эмали нет. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических элементов. Десна в норме, десневые сосочки бледно-розовые, плотно прилежат к шейкам зубов, кровоточивость при зондировании отсутствует. Физиологическая стираемость бугров соответствует возрасту. КПУ(п) = 0.";
+			"Временный прикус (3 года). Все 20 временных зубов (51–85) интактны, кариозных поражений и очаговой деминерализации эмали нет. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических элементов. Десна в норме, десневые сосочки бледно-розовые, плотно прилежат к шейкам зубов, кровоточивость при зондировании отсутствует. Физиологическая резорбция корней отсутствует (0%). Физиологическая стираемость бугров соответствует возрасту. КПУ(п) = 0.";
 
 		const treatmentDescriptionRu =
 			"Проведена профессиональная контролируемая гигиена полости рта детской щеточкой с низкоабразивной пастой. Инструктаж родителей по гигиене полости рта и контролю чистки зубов до 8–9 лет. Назначен плановый профилактический осмотр через 6 месяцев.";
@@ -324,9 +398,9 @@ export function calculatePediatricPhysiologicalNorm(
 
 		return {
 			mode: "primary",
-			labelRu: "Временный прикус — норма (51–85 интактны, кариеса нет, десна в норме)",
+			labelRu: "3 года: Временный прикус — норма (51–85 интактны, кариеса нет, десна в норме)",
 			nameRu: "Временный прикус — норма (51–85 интактны, кариеса нет, десна в норме)",
-			targetAgeYears: 4.5,
+			targetAgeYears: 3.0,
 			teethNumbers: teeth,
 			teethStates,
 			resorptionStages,
@@ -342,11 +416,129 @@ export function calculatePediatricPhysiologicalNorm(
 		};
 	}
 
-	// early_mixed (6-8 years)
-	const analysis = calculateEruptionTimelineByAge(7.0);
-	const teeth = [
-		...analysis.expectedUpperArchTeeth,
-		...analysis.expectedLowerArchTeeth,
+	if (mode === "first_molar") {
+		const teeth: readonly number[] = [
+			16, 55, 54, 53, 52, 51, 61, 62, 63, 64, 65, 26,
+			46, 85, 84, 83, 82, 81, 71, 72, 73, 74, 75, 36,
+		];
+		const teethStates = teeth.reduce(
+			(acc, t) => {
+				acc[t] = "Healthy";
+				return acc;
+			},
+			{} as Record<number, "Healthy">,
+		);
+		const resorptionStages: Record<number, ResorptionStagePercent> = {
+			51: 25,
+			61: 25,
+			71: 25,
+			81: 25,
+			52: 0,
+			62: 0,
+			72: 0,
+			82: 0,
+			53: 0,
+			63: 0,
+			73: 0,
+			83: 0,
+			54: 0,
+			64: 0,
+			74: 0,
+			84: 0,
+			55: 0,
+			65: 0,
+			75: 0,
+			85: 0,
+		};
+
+		const statusLocalisRu =
+			"Сменный прикус, этап прорезывания первых постоянных моляров (6 лет). Первые постоянные моляры (16, 26, 36, 46) прорезались, окклюзионные фиссуры глубокие, интактные. Все 20 временных зубов (51–85) сохранены, кариозных полостей нет. Физиологическая подвижность и начальная резорбция корней центральных резцов (51, 61, 71, 81) в пределах 25%. Десна в норме, КПУ(п) = 0.";
+
+		const treatmentDescriptionRu =
+			"Антисептическая обработка полости рта. Аппликация фторлака 5% NaF на окклюзионные поверхности первых постоянных моляров (16, 26, 36, 46). Рекомендована неинвазивная герметизация фиссур Fissurit FX. Плановый диспансерный осмотр через 4–6 месяцев.";
+
+		const diaryEntryRu = [
+			"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)",
+			"────────────────────────────────────────────────────────────",
+			"Диагноз: Z01.2 (Стоматологическое обследование и наблюдение)",
+			`Status localis: ${statusLocalisRu}`,
+			`План лечения и манипуляции: ${treatmentDescriptionRu}`,
+			"Исход: Физиологическое прорезывание первых моляров, полость рта санирована.",
+		].join("\n");
+
+		return {
+			mode: "first_molar",
+			labelRu: "6 лет: Первый моляр — норма (16, 26, 36, 46 + 20 молочных зубов)",
+			nameRu: "Первый моляр — норма (16, 26, 36, 46 + 20 молочных зубов)",
+			targetAgeYears: 6.0,
+			teethNumbers: teeth,
+			teethStates,
+			resorptionStages,
+			diagnosisIcd10: "Z01.2",
+			order804nCode: "B01.064.003",
+			statusLocalisRu,
+			statusLocalis: statusLocalisRu,
+			treatmentDescriptionRu,
+			treatmentDescription: treatmentDescriptionRu,
+			diaryEntryRu,
+			diaryText: diaryEntryRu,
+			summaryRu: "Первый моляр — норма (16, 26, 36, 46 + 20 молочных зубов)",
+		};
+	}
+
+	if (mode === "permanent") {
+		const teeth: readonly number[] = [
+			17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27,
+			47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37,
+		];
+		const teethStates = teeth.reduce(
+			(acc, t) => {
+				acc[t] = "Healthy";
+				return acc;
+			},
+			{} as Record<number, "Healthy">,
+		);
+		const resorptionStages: Record<number, ResorptionStagePercent> = {};
+
+		const statusLocalisRu =
+			"Постоянный прикус (12 лет). 28 постоянных зубов (17..27, 47..37) полностью прорезались, интактны, смыкание по I классу Энгля. Вторые постоянные моляры (17, 27, 37, 47) прорезались, фиссуры интактны. Зубы мудрости (18, 28, 38, 48) клинически отсутствуют (на стадии формирования зачатков). Слизистая оболочка полости рта бледно-розовая, влажная. Десна без признаков воспаления, КПУ = 0.";
+
+		const treatmentDescriptionRu =
+			"Профессиональная контролируемая гигиена полости рта, полировка зубов пастой. Глубокое фторирование эмали вторых постоянных моляров. Оценка окклюзии. Плановый диспансерный осмотр через 6 месяцев.";
+
+		const diaryEntryRu = [
+			"ПРОТОКОЛ СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)",
+			"────────────────────────────────────────────────────────────",
+			"Диагноз: Z01.2 (Стоматологическое обследование и наблюдение)",
+			`Status localis: ${statusLocalisRu}`,
+			`План лечения и манипуляции: ${treatmentDescriptionRu}`,
+			"Исход: Постоянный прикус сформирован, полость рта санирована.",
+		].join("\n");
+
+		return {
+			mode: "permanent",
+			labelRu: "12 лет: Постоянный прикус — норма (28 постоянных зубов 17..27, 47..37)",
+			nameRu: "Постоянный прикус — норма (28 постоянных зубов 17..27, 47..37)",
+			targetAgeYears: 12.0,
+			teethNumbers: teeth,
+			teethStates,
+			resorptionStages,
+			diagnosisIcd10: "Z01.2",
+			order804nCode: "B01.064.003",
+			statusLocalisRu,
+			statusLocalis: statusLocalisRu,
+			treatmentDescriptionRu,
+			treatmentDescription: treatmentDescriptionRu,
+			diaryEntryRu,
+			diaryText: diaryEntryRu,
+			summaryRu: "Постоянный прикус — норма (28 постоянных зубов 17..27, 47..37)",
+		};
+	}
+
+	// early_mixed / mixed (9 years)
+	const teeth: readonly number[] = [
+		16, 55, 54, 53, 12, 11, 21, 22, 63, 64, 65, 26,
+		46, 85, 84, 83, 42, 41, 31, 32, 73, 74, 75, 36,
 	];
 	const teethStates = teeth.reduce(
 		(acc, t) => {
@@ -355,21 +547,34 @@ export function calculatePediatricPhysiologicalNorm(
 		},
 		{} as Record<number, "Healthy">,
 	);
-	const resorptionStages = analysis.toothStatuses.reduce(
-		(acc, st) => {
-			if (st.predecessorPrimaryFdi !== undefined) {
-				acc[st.predecessorPrimaryFdi] = st.expectedResorptionPercent;
-			}
-			return acc;
-		},
-		{} as Record<number, ResorptionStagePercent>,
-	);
+	const resorptionStages: Record<number, ResorptionStagePercent> = {
+		51: 100,
+		61: 100,
+		71: 100,
+		81: 100,
+		52: 100,
+		62: 100,
+		72: 100,
+		82: 100,
+		53: 25,
+		63: 25,
+		73: 25,
+		83: 25,
+		54: 50,
+		64: 50,
+		74: 50,
+		84: 50,
+		55: 50,
+		65: 50,
+		75: 50,
+		85: 50,
+	};
 
 	const statusLocalisRu =
-		"Ранний сменный прикус. Физиологическая смена резцов (11, 12, 21, 22, 31, 32, 41, 42). Первые постоянные моляры (16, 26, 36, 46) прорезались, окклюзионные фиссуры глубокие, интактные. Временные моляры (54, 55, 64, 65, 74, 75, 84, 85) и клыки устойчивы, признаков кариеса нет. Десна в области прорезывающихся зубов без признаков воспаления.";
+		"Сменный прикус (9 лет). Постоянные резцы (11, 12, 21, 22, 31, 32, 41, 42) и первые моляры (16, 26, 36, 46) полностью прорезались, интактны. Временные клыки и моляры (53..55, 63..65, 73..75, 83..85) устойчивы, кариозных полостей нет. Физиологическая резорбция корней временных моляров до 50%. Десна без воспаления.";
 
 	const treatmentDescriptionRu =
-		"Антисептическая обработка полости рта. Аппликация фторлака 5% NaF на окклюзионные поверхности первых постоянных моляров (16, 26, 36, 46). Рекомендована неинвазивная герметизация фиссур силантом. Плановый диспансерный осмотр через 4–6 месяцев.";
+		"Антисептическая обработка полости рта. Контролируемая гигиена детской пастой. Аппликация реминерализирующего геля. Ортодонтический скрининг смыкания зубных рядов. Плановый осмотр через 6 месяцев.";
 
 	const diaryEntryRu = [
 		"ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)",
@@ -381,10 +586,10 @@ export function calculatePediatricPhysiologicalNorm(
 	].join("\n");
 
 	return {
-		mode: "early_mixed",
-		labelRu: "Ранний сменный — норма (смена 11..42, моляры 16, 26, 36, 46 прорезались)",
-		nameRu: "Ранний сменный — норма (смена 11..42, моляры 16, 26, 36, 46 прорезались)",
-		targetAgeYears: 7.0,
+		mode: mode === "mixed" ? "mixed" : "early_mixed",
+		labelRu: "9 лет: Сменный прикус — норма (резцы 11..42, моляры 16..46, молочные 53..85)",
+		nameRu: "Сменный прикус — норма (резцы 11..42, моляры 16..46, молочные 53..85)",
+		targetAgeYears: 9.0,
 		teethNumbers: teeth,
 		teethStates,
 		resorptionStages,
@@ -396,7 +601,7 @@ export function calculatePediatricPhysiologicalNorm(
 		treatmentDescription: treatmentDescriptionRu,
 		diaryEntryRu,
 		diaryText: diaryEntryRu,
-		summaryRu: "Ранний сменный — норма (смена 11..42, моляры 16, 26, 36, 46 прорезались)",
+		summaryRu: "Сменный прикус — норма (резцы 11..42, моляры 16..46, молочные 53..85)",
 	};
 }
 

@@ -85,20 +85,24 @@ export const VisitAnamnesisTab: React.FC<VisitAnamnesisTabProps> = ({
 		}
 	}, [storageKey]);
 
-	// Autosave draft on modification
+	// Debounced autosave draft on modification (300ms debounce)
 	useEffect(() => {
-		try {
-			const payload = {
-				selectedComplaints,
-				selectedRisks,
-				selectedHistory,
-				customNotes,
-				updatedAt: new Date().toISOString(),
-			};
-			localStorage.setItem(storageKey, JSON.stringify(payload));
-		} catch {
-			// ignore storage errors
-		}
+		const timer = setTimeout(() => {
+			try {
+				const payload = {
+					selectedComplaints,
+					selectedRisks,
+					selectedHistory,
+					customNotes,
+					updatedAt: new Date().toISOString(),
+				};
+				localStorage.setItem(storageKey, JSON.stringify(payload));
+			} catch {
+				// ignore storage errors
+			}
+		}, 300);
+
+		return () => clearTimeout(timer);
 	}, [storageKey, selectedComplaints, selectedRisks, selectedHistory, customNotes]);
 
 	const toggleComplaint = (item: string) => {

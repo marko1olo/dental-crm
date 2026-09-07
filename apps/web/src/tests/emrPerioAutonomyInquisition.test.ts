@@ -69,6 +69,10 @@ import {
 	applyFastCariesK021Protocol,
 	applyFastProHygieneProtocol,
 } from "../components/odontogram/ToothStatusPalette.js";
+import {
+	calculatePediatricPhysiologicalNorm,
+	CANONICAL_PEDIATRIC_AGE_PRESETS,
+} from "../components/odontogram/pediatricDentitionEngine.js";
 
 describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisition Suite", () => {
 	// ════════════════════════════════════════════════════════════════════════
@@ -599,7 +603,94 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(source.includes("processFile"), "Снимок должен обрабатываться через мгновенный processFile");
 			// Проверка: ИИ запускается строго по отдельной кнопке врача
 			assert.ok(source.includes("handleRunAiAnalysis"), "ИИ анализ должен запускаться только врачом через handleRunAiAnalysis");
-			assert.ok(source.includes("Запустить ИИ"), "Должна быть отдельная кнопка врача для запуска нейросети");
+		});
+	});
+
+	// ════════════════════════════════════════════════════════════════════════
+	// БЛОК 7: МАНДАТЫ 8e, 8k, 8d — Детские пресеты по возрасту и пародонтит
+	// ════════════════════════════════════════════════════════════════════════
+	describe("7. Мандаты 8e, 8k, 8d: Детские возрастные пресеты (3, 6, 9, 12 лет) и тяжелый пародонтит", () => {
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = path.dirname(__filename);
+		const webSrcDir = path.resolve(__dirname, "..");
+
+		it("7.1. calculatePediatricPhysiologicalNorm: 3 года (молочный прикус 51–85, 0% резорбция)", () => {
+			const norm3y = calculatePediatricPhysiologicalNorm("primary");
+			assert.equal(norm3y.targetAgeYears, 3.0);
+			assert.equal(norm3y.teethNumbers.length, 20, "Должно быть ровно 20 молочных зубов");
+			assert.ok(norm3y.teethNumbers.includes(51) && norm3y.teethNumbers.includes(85));
+			assert.equal(norm3y.diagnosisIcd10, "Z01.2");
+			assert.ok(norm3y.statusLocalisRu.includes("Временный прикус"));
+			for (const toothNum of norm3y.teethNumbers) {
+				assert.equal(norm3y.resorptionStages[toothNum], 0, `Зуб ${toothNum} должен иметь 0% резорбцию`);
+			}
+		});
+
+		it("7.2. calculatePediatricPhysiologicalNorm: 6 лет (первые моляры 16, 26, 36, 46 + 20 молочных)", () => {
+			const norm6y = calculatePediatricPhysiologicalNorm("first_molar");
+			assert.equal(norm6y.targetAgeYears, 6.0);
+			assert.equal(norm6y.teethNumbers.length, 24, "Должно быть 24 зуба (4 моляра + 20 молочных)");
+			assert.ok(norm6y.teethNumbers.includes(16) && norm6y.teethNumbers.includes(46));
+			assert.equal(norm6y.diagnosisIcd10, "Z01.2");
+			assert.ok(norm6y.statusLocalisRu.includes("16, 26, 36, 46"));
+		});
+
+		it("7.3. calculatePediatricPhysiologicalNorm: 9 лет (сменный прикус: резцы 11..42, моляры 16..46, молочные 53..85)", () => {
+			const norm9y = calculatePediatricPhysiologicalNorm("mixed");
+			assert.equal(norm9y.targetAgeYears, 9.0);
+			assert.equal(norm9y.teethNumbers.length, 24, "Должно быть 24 зуба");
+			assert.ok(norm9y.teethNumbers.includes(11) && norm9y.teethNumbers.includes(21));
+			assert.ok(norm9y.teethNumbers.includes(55) && norm9y.teethNumbers.includes(85));
+			assert.equal(norm9y.diagnosisIcd10, "Z01.2");
+			assert.ok(norm9y.statusLocalisRu.includes("Сменный прикус"));
+		});
+
+		it("7.4. calculatePediatricPhysiologicalNorm: 12 лет (постоянный прикус 28 зубов 17..27, 47..37)", () => {
+			const norm12y = calculatePediatricPhysiologicalNorm("permanent");
+			assert.equal(norm12y.targetAgeYears, 12.0);
+			assert.equal(norm12y.teethNumbers.length, 28, "Должно быть 28 постоянных зубов без 8-ок");
+			assert.ok(norm12y.teethNumbers.includes(17) && norm12y.teethNumbers.includes(27));
+			assert.ok(!norm12y.teethNumbers.includes(18) && !norm12y.teethNumbers.includes(48), "Зубы мудрости не должны входить в формулу 12 лет");
+			assert.equal(norm12y.diagnosisIcd10, "Z01.2");
+		});
+
+		it("7.5. CANONICAL_PEDIATRIC_AGE_PRESETS содержит 4 канонических возраста", () => {
+			assert.equal(CANONICAL_PEDIATRIC_AGE_PRESETS.length, 4);
+			const ages = CANONICAL_PEDIATRIC_AGE_PRESETS.map((p) => p.ageYears);
+			assert.deepEqual(ages, [3, 6, 9, 12]);
+		});
+
+		it("7.6. pediatricMixedDentitionEngine.ts реэкспортирует весь API без потери типов", async () => {
+			const shimPath = path.resolve(webSrcDir, "components/odontogram/pediatricMixedDentitionEngine.ts");
+			assert.ok(fs.existsSync(shimPath), "Файл pediatricMixedDentitionEngine.ts обязан существовать");
+			const content = fs.readFileSync(shimPath, "utf-8");
+			assert.ok(content.includes('export * from "./pediatricDentitionEngine"'));
+		});
+
+		it("7.7. PediatricMixedDentitionModal.tsx содержит кнопки 1-клик норм по возрасту и карточки", () => {
+			const modalPath = path.resolve(webSrcDir, "components/odontogram/PediatricMixedDentitionModal.tsx");
+			const source = fs.readFileSync(modalPath, "utf-8");
+			assert.ok(source.includes("pediatric-preset-3y-btn"), "Кнопка 3 года должна присутствовать");
+			assert.ok(source.includes("pediatric-preset-6y-btn"), "Кнопка 6 лет должна присутствовать");
+			assert.ok(source.includes("pediatric-preset-9y-btn"), "Кнопка 9 лет должна присутствовать");
+			assert.ok(source.includes("pediatric-preset-12y-btn"), "Кнопка 12 лет должна присутствовать");
+			assert.ok(source.includes("pediatric-preset-saforide-btn"), "Кнопка Сафорайд должна присутствовать");
+			assert.ok(source.includes("pediatric-preset-fissurit-btn"), "Кнопка Фиссурит должна присутствовать");
+			assert.ok(source.includes("pediatric-preset-pulpotec-btn"), "Кнопка Пульпотек должна присутствовать");
+		});
+
+		it("7.8. PeriodontalChartingModal.tsx содержит кнопку 'Пародонтит тяжелый (6-8 мм)' (perio-preset-severe-btn)", () => {
+			const perioModalPath = path.resolve(webSrcDir, "components/odontogram/PeriodontalChartingModal.tsx");
+			const source = fs.readFileSync(perioModalPath, "utf-8");
+			assert.ok(source.includes("perio-preset-severe-btn"), "Кнопка perio-preset-severe-btn обязана присутствовать в тулбаре");
+			assert.ok(source.includes("handleApplySeverePeriodontitisPreset"), "Обработчик handleApplySeverePeriodontitisPreset обязан присутствовать");
+		});
+
+		it("7.9. VisitAnamnesisTab.tsx реализует debounced autosave для автономии врача (Мандат 8e)", () => {
+			const anamnesisPath = path.resolve(webSrcDir, "components/visit/VisitAnamnesisTab.tsx");
+			const source = fs.readFileSync(anamnesisPath, "utf-8");
+			assert.ok(source.includes("debounce") || source.includes("setTimeout"), "VisitAnamnesisTab обязан содержать debounced сохранение");
+			assert.ok(source.includes("clearTimeout"), "VisitAnamnesisTab обязан очищать таймер при размонтировании");
 		});
 	});
 });

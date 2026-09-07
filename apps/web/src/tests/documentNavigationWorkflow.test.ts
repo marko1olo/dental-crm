@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it as test } from "vitest";
+import { describe, it as test } from "node:test";
 import {
 	BASE_INFORMED_CONSENT_PRESET,
 	CLINICAL_CONSENT_PRESETS,
