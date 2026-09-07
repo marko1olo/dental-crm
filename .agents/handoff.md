@@ -1,59 +1,47 @@
-# Handoff Report — Sentinel r63: StomX / DentalPRO Parity & Friction Killer
+# Handoff Report — Documentation & Registry Sync Auditor: Features 199–202 (Mandate 8h)
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-HEAD: 88ee4bb067683dad73855d879c7ffe0a0175ea13
+PREVIOUS HEAD: 6c06037cf8fffa6759d5718a221f7360216669f4
 
-## 1. Observation
-All user requirements for StomX / DentalPRO scheduling parity, chair-to-doctor shift assignments, inline chair addition, and doctor duty auto-population under Supreme Law (THE HAMMER, Mandates 8c, 8d, 8e, 8k, 8n) are implemented and verified:
-- **R1 (Schedule & Shifts)**:
-  - Active doctor shifts displayed in chair column headers (`08:00–14:00`, `14:00–20:00`, `08:00–20:00`) with pulsing `● На смене` badge.
-  - 1-click inline `+ Кресло` trigger in schedule toolbar and filter strip with resilient fallback default (`Кресло N`) when empty, with non-blocking submission.
-  - Auto-populating duty doctor on empty slot click across all appointment modals (`QuickBookingDrawer`, `AppointmentModal`, `NewAppointmentForm`).
-  - Non-blocking toast feedback when switching chairs (`Дежурный врач: <Врач> (<Кресло>, <Смена>)`), eliminating intrusive modal confirmations.
-  - All interactive buttons and shift segments conform to touch targets >= 44x44px (`min-h-[44px]`).
-- **R2 (Clinical EMR & Odontogram Friction Killer)**:
-  - 1-click express clinical presets: Intact arch (physiological norm), Professional hygiene (A16.07.051), Fast Caries (K02.1) with automatic 043/u diary generation.
-  - No disabled action buttons without guidance.
-- **R3 (Outpatient Documents & Cashier 54-FZ Autonomy)**:
-  - Documents printable at any moment (DRAFT watermark when unfinalized, SIGNED BY DOCTOR when closed).
-  - Receptionists can print clean blank contracts with underline spaces (`_______`) without 403 errors.
-  - Cashier 54-FZ operations accept cash, card, and advance payments without requiring individual taxpayer IDs (INN).
+## 1. Observation & Scope
+Dynamic documentation synchronization per Mandate 8h (Strict ban on working from outdated docs) for Features 199, 200, 201, and 202:
+- **Feature 199 (`расписание_кресла::1_клик_архетипы_кресел_quick_add_chair_modal`)**:
+  - 1-клик архетипы клинических кресел в `QuickAddChairModal.tsx` и `ScheduleFilterStrip.tsx`: Терапевтическое (`#0d9488`), Хирургическое (`#2563eb`), Ортодонтическое (`#4f46e5`), Детское (`#d97706`), Гигиеническое/Общее (`#059669`).
+  - Автогенерация безопасных дефолтов (`Кресло N`, `Кабинет N`), submit-кнопка активна всегда (`disabled={false}` по Мандату 8e), сенсорные тач-таргеты $\ge 44\times 44\text{px}$ (Мандат 8d).
+- **Feature 200 (`расписание_ростер::шаблоны_закрепления_врачей_за_креслами_по_графику_chair_roster_modal`)**:
+  - 1-клик шаблоны сменности клинических отделений в `ChairRosterModal.tsx` и `DoctorShiftRosterModal.tsx`: пятидневка 5/2 ст. 350 ТК РФ 33ч/нед, сменный 2/2 12ч, Пн/Ср/Пт утро 08:00–14:00, Вт/Чт/Сб вечер 14:00–20:00, полный день 08:00–20:00.
+  - Ячеечный пресет-движок `applyCellShiftPreset`, автопроверка коллизий `detectRosterConflicts`, табель Формы Т-13 с экспортом в CSV и печать графика в А4.
+- **Feature 201 (`расписание_дежурство::1_тап_смена_и_закрепление_дежурного_врача_из_шапки_сетки`)**:
+  - 1-тап управление дежурством врачей из шапки сетки `ScheduleGrid.tsx` (строки 1110–1260) и `ChairScheduleView.tsx` без модальных барьеров (Закон Анти-Матрёшки).
+  - 2-строчная шапка смен (`☀️ 08:00–14:00` / `🌙 14:00–20:00`), пульсирующий бейдж «● На смене», экспресс-смена врача с мягким инфо-тостом.
+  - Сквозная автоподстановка дежурного врача в слоты сетки, drag-and-drop, лист ожидания и CITO (`QuickBookingDrawer.tsx`, `AppointmentModal.tsx`, `NewAppointmentForm.tsx`).
+- **Feature 202 (`клиника_суверенитет::ликвидация_академического_блоата_и_процедурных_симуляторов_автономия_соло_врача`)**:
+  - Искоренение процедурных симуляторов (Мандат 8k): 1-клик пресет тяжелого пародонтита 6–8 мм вместо ручного ввода 192 точек карманов (`PeriodontalChartingModal.tsx`); 4 возрастных пресета детского прикуса (`PediatricMixedDentitionModal.tsx`); 1-клик списание пустых карпул анестетиков без комиссий из 3 человек (`WarehouseManagerModal.tsx`, `MdlpDisposalQueueModal.tsx`).
+  - Стоматологический Bounded Context (Мандат 8i): 1-клик соматическая норма в `VisitAnamnesisTab.tsx` без 50 больничных пунктов стационара.
+  - Автономия соло-врача (Мандат 8e, 8n): касса 54-ФЗ без ИНН физлиц, договор со строками `_______` без 403, запись за 5 секунд без обязательного ассистента, дефолтное кресло `DEFAULT_SOLO_CHAIR`, мягкий овердрафт склада.
 
-## 2. Logic Chain & Implementation Detail
-1. Implemented `ChairDoctorShiftAssignment` and shift resolver in `ScheduleGrid.tsx` and `ChairScheduleView.tsx`.
-2. Wired duty doctor auto-population when clicking empty schedule slots, synchronizing chair and doctor states across `QuickBookingDrawer.tsx`, `AppointmentModal.tsx`, and `NewAppointmentForm.tsx`.
-3. Integrated `QuickAddChairModal.tsx` directly into the schedule toolbar with 1-click trigger and resilient `Кресло N` auto-naming.
-4. Corrected Russian pluralization in chair header using `countLabel(chairs.length || 1, "кресло", "кресла", "кресел")`.
-5. Enforced touch target standards (>= 44x44px) across shift segmented controls, toolbar chips, and modal footers per Mandate 8d and Apple HIG.
-6. Implemented soft overdraft in warehouse manager and 1-click shift carpule writeoffs for senior nurse/med-assistant in MDLP queue.
+## 2. Synchronized Registries & Backlogs
+1. `docs/competitive-audit/FEATURES_REGISTRY.md`: строки для фич 199..202 зарегистрированы со статусом `[ДА]`, ценностью 5 и точными ссылками на код/тесты.
+2. `docs/competitive-audit/BACKLOG.md`: добавлены секции 4.70 (Фича 199), 4.71 (Фича 200), 4.72 (Фича 201), 4.73 (Фича 202); общий свод обновлен до 136 аддендум-фич.
+3. `docs/competitive-audit/OUR_CRM_MAP.md`: добавлены подробные подразделы 2.10.156..2.10.161 для полной синхронизации всей цепочки фич 197..202.
+4. `.agents/handoff.md`: зафиксировано актуальное состояние, контрольные тесты и соблюдение всех мандатов.
 
-## 3. Caveats & Operational Notes
-- Native PostgreSQL 18.4 runs on `127.0.0.1:5432` with data directory at `.data/pg18`.
-- Backend persists doctor shifts to `.data/doctor-shifts.json` and in-memory cache.
-- Local runtime cache files (`apps/api/.data/dental-crm-state.json`, `apps/api/.data/speech-key-health.json`) are runtime state excluded from git.
+## 3. Machine Verification & Test Proof
+- `scheduleChairDoctorBinding.test.tsx`: 24/24 passed.
+- `scheduleStomxParityComprehensive.test.ts`: 15/15 passed.
+- `scheduleShiftRosterIntegration.test.tsx`: 27/27 passed.
+- `scheduleInlineChairManagement.test.tsx`: 7/7 passed.
+- `scheduleGridStomxInquisition.test.tsx`: 8/8 passed.
+- `emrPerioAutonomyInquisition.test.ts`: 37/37 passed.
+- `procedureMaterialDeductionAutonomy.test.tsx`: 12/12 passed.
+- Суммарно: **130/130 passed (100%)**.
 
-## 4. Conclusion
-`VICTORY CONFIRMED`. All acceptance criteria across visual density, schedule parity, doctor autonomy, and compiler/test gates are satisfied.
+## 4. Definition of Done (DoD)
+- [x] Строго изолированная область работы (`docs/competitive-audit/`, `.agents/handoff.md`).
+- [x] Zero TODO / Zero Mocks.
+- [x] Полная синхронизация 4 ключевых файлов документации по Мандату 8h.
+- [x] Кодировка UTF-8 без BOM (`npm run check:encoding` = 0 ошибок).
+- [x] Пофайловый `git add <file>` без захвата чужих и временных файлов.
 
-## 5. Verification Method & Results
-- `npm run check:encoding`: **PASSED** (5,054 files verified, 0 errors).
-- `gitleaks protect --staged`: **PASSED** (0 leaks found).
-- `npm run check:stub-overrides`: **PASSED** (828 properties, 0 overrides).
-- `npm run check:fetch-response`: **PASSED** (1,673 files parsed, 0 unguarded responses).
-- `npm run check:dynamic-imports`: **PASSED** (2,967 files scanned, 145 dynamic imports, 0 broken).
-- `npm run typecheck -w @dental/web`: **PASSED** (`tsc -b --noEmit`, Exit Code 0, 0 errors).
-- `npm run typecheck -w @dental/api`: **PASSED** (`tsc -p tsconfig.json --noEmit`, Exit Code 0, 0 errors).
-- Targeted test suites:
-  - `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx`: 21/21 passed.
-  - `apps/web/src/components/schedule/__tests__/scheduleStomxParityComprehensive.test.ts`: 15/15 passed.
-  - `apps/web/src/components/schedule/AppointmentModal.test.ts`: 3/3 passed.
-  - `apps/web/src/components/schedule/__tests__/tomorrowRemindersEngine.test.ts`: 6/6 passed.
-  - `apps/web/src/components/schedule/roster/__tests__/scheduleShiftRosterIntegration.test.tsx`: 27/27 passed.
-  - `apps/web/src/components/schedule/__tests__/scheduleGridStomxInquisition.test.tsx`: 8/8 passed.
-  - `apps/web/src/components/schedule/__tests__/scheduleInlineChairManagement.test.tsx`: 7/7 passed.
-  - `apps/web/src/components/inventory/__tests__/MdlpDisposalQueueModal.test.tsx`: 3/3 passed.
-  - `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx`: 12/12 passed.
-  - Total web schedule/inventory tests: **102/102 passed**.
-  - Shared package tests (`npm test -w @dental/shared`): **1,431/1,431 passed**.
 

@@ -2042,16 +2042,61 @@
 - **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `QuickBookingDrawer.tsx`, `AppointmentModal.tsx`, `NewAppointmentForm.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (24 теста), `scheduleStomxParityComprehensive.test.ts` (15 тестов) — 39/39 pass, коммит `31c45a2ff`.
 
+### 4.70. 1-клик архетипы кресел в QuickAddChairModal со специализациями и цветами (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 199)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *1-клик архетипы клинических кресел*: в `QuickAddChairModal.tsx` и `ScheduleFilterStrip.tsx` реализована экспресс-настройка рабочих мест под 5 базовых клинических профилей: Терапевтическое (бирюзовый `#0d9488`), Хирургическое (синий `#2563eb`), Ортодонтическое (индиго `#4f46e5`), Детское (янтарный/розовый `#d97706`/`#e11d48`), Гигиеническое/Общее (изумрудный `#059669`);
+  2. *Автогенерация безопасных дефолтов*: при пустом вводе автоматически формируются названия `Кресло N` и `Кабинет N` без вывода ошибок валидации;
+  3. *Автономия персонала (Мандат 8e)*: кнопка сохранения «+ Добавить кресло» никогда не блокируется (`disabled={false}`);
+  4. *Эргономика и Закон Анти-Матрёшки (Мандат 8d)*: модальная глубина строго 1; все селекторы специализаций и палитр имеют сенсорные тач-таргеты $\ge 44\times 44\text{px}$; переключатель «Активно / В архиве».
+- **Файлы**: `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/ScheduleFilterStrip.tsx`, `apps/web/src/components/schedule/ChairScheduleView.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleInlineChairManagement.test.tsx` (7 тестов, 100% pass, коммиты `88ee4bb06`, `31c45a2ff`).
+
+### 4.71. Шаблоны закрепления врачей за креслами по графику в ChairRosterModal (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 200)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Шаблоны клинической сменности в 1 клик*: в `ChairRosterModal.tsx`, `DoctorShiftRosterModal.tsx`, `DoctorRosterToolbar.tsx` и `doctorShiftRosterPresets.ts` внедрены готовые шаблоны отделений: «Пятидневка (5/2, Пн-Пт 6.6ч)» по ст. 350 ТК РФ (33ч/нед и производственный календарь 2026), «Сменный 2 через 2 (2/2, 12ч)», «Все утренние / Пн/Ср/Пт утро (08:00–14:00)», «Все вечерние / Вт/Чт/Сб вечер (14:00–20:00)», «Полный день (08:00–20:00 / 12ч)»;
+  2. *Движок ячеечных пресетов `applyCellShiftPreset`*: мгновенное назначение смены конкретному врачу и креслу без дубликатов;
+  3. *Авторасчет баланса и коллизий*: автоматическое выявление двойных бронирований `detectRosterConflicts`, контроль ассистентских пар в 4 руки;
+  4. *Форма Т-13 и печать А4*: формирование табеля учета рабочего времени Т-13 с экспортом в CSV и печать графика в формате А4 Альбомный;
+  5. *Автономия соло-врача*: неблокирующее сохранение (`disabled={false}`) и безопасные fallback-значения для соло-кабинета с 1 креслом (Мандаты 8e, 8n).
+- **Файлы**: `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `DoctorRosterToolbar.tsx`, `DoctorRosterMatrix.tsx`, `doctorWeeklyScheduleGenerator.ts`, `doctorShiftRosterPresets.ts`, `doctorShiftRosterEngine.ts`.
+- **Тесты**: `apps/web/src/components/schedule/roster/__tests__/scheduleShiftRosterIntegration.test.tsx` (27 тестов, 100% pass, коммит `88ee4bb06`).
+
+### 4.72. 1-тап смена и закрепление дежурного врача прямо из шапки сетки расписания без модального ада (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 201)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *2-строчная шапка сменности*: в `ScheduleGrid.tsx` (строки 1110–1260) и `ChairScheduleView.tsx` для каждого кресла выводятся смены `☀️ 08:00–14:00` и `🌙 14:00–20:00` с именами врачей;
+  2. *1-тап переключатели смен прямо в шапке*: инлайн-кнопки `☀️ Утро` и `🌙 Вечер` (`data-testid="chair-quick-morning-${chair.id}"`, `data-testid="chair-quick-evening-${chair.id}"`) позволяют за 1 тап сменить дежурство без открытия модальных окон (Закон Анти-Матрёшки / Грех 6);
+  3. *Индикатор реального времени*: пульсирующий изумрудный бейдж «● На смене» загорается при совпадении текущего часа со сменой врача;
+  4. *Экспресс-смена врача*: клик по плашке открывает диалог переназначения с мягким информационным тостом без блокировки интерфейса;
+  5. *Сквозная автоподстановка дежурного врача*: автоматическая передача дежурного врача в слоты, drag-and-drop, лист ожидания и CITO в `QuickBookingDrawer.tsx`, `AppointmentModal.tsx` и `NewAppointmentForm.tsx`;
+  6. *Сенсорные тач-таргеты Apple HIG*: все кнопки управления сменностью в шапке строго $\ge 44\times 44\text{px}$.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/ChairScheduleView.tsx`, `QuickBookingDrawer.tsx`, `AppointmentModal.tsx`, `NewAppointmentForm.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (24 теста), `scheduleStomxParityComprehensive.test.ts` (15 тестов), `scheduleGridStomxInquisition.test.tsx` (8 тестов) — 47/47 pass, коммиты `88ee4bb06`, `31c45a2ff`.
+
+### 4.73. Ликвидация академического блоата и процедурных симуляторов, усиление автономии соло-врача и клиники 1–3 кресла (Мандаты 8e, 8i, 8k, 8n / Фича 202)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Ликвидация процедурных симуляторов (Мандат 8k)*: в `PeriodontalChartingModal.tsx` внедрен 1-клик пресет тяжелого пародонтита 6–8 мм вместо ручного замера 192 точек карманов; в `PediatricMixedDentitionModal.tsx` — 4 возрастных пресета детского прикуса; в `WarehouseManagerModal.tsx` и `MdlpDisposalQueueModal.tsx` — 1-клик пакетное списание карпул анестетиков медсестрой без комиссий из 3 человек;
+  2. *Суверенитет стоматологического контекста (Мандат 8i)*: ликвидация больничного блоата Формы 025/у, трансфузиологии и коек; 1-клик соматическая норма («Соматически здоров / норма») в `VisitAnamnesisTab.tsx`; стоматологический фокус визуализации (RVG, ОПТГ, КЛКТ 3D, ТРГ);
+  3. *Автономия врача и кассы 54-ФЗ (Мандат 8e)*: ноль заблокированных `disabled` кнопок без причины; касса 54-ФЗ без требования ИНН с физлиц; печать договоров со строками `_______` без 403; свобода скидок до 100% на гарантию; debounced autosave дневника 043/у;
+  4. *Суверенитет масштаба (Мандат 8n)*: 1-кликовая среда для соло-врача на субаренде (ИП/самозанятый) и клиники 1–3 кресла: запись за 5 секунд без обязательного ассистента; дефолтное кресло `DEFAULT_SOLO_CHAIR`; мягкий овердрафт склада вместо блокировок; плавный рост без переезда (Zero Dead-Ends);
+  5. *Закон 7 смертных грехов UI (Мандат 8d)*: 1 строка тулбара 32–36px, $\le 2$ кнопок на карточке, модальная глубина строго 1 (Анти-Матрёшка), ноль эмодзи в документах, тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `PediatricMixedDentitionModal.tsx`, `apps/web/src/components/visit/VisitAnamnesisTab.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/patient/PatientAdministrativeForm.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
+- **Тесты**: `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`, `cashierAutonomy54Fz.test.ts`, `procedureMaterialDeductionAutonomy.test.tsx`, `onboardingStaffChairAutonomy.test.tsx`, `scheduleInlineChairManagement.test.tsx`, `scheduleChairDoctorBinding.test.tsx` (115 тестов, 100% pass, коммиты `88ee4bb06`, `17014184e`, `31c45a2ff`).
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 132 дополнительные системные аддендум-фичи клинической автономии (Wave 15..36, фичи 64..189, 193..198) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 136 дополнительных системных аддендум-фич клинической автономии (Wave 15..37, фичи 64..189, 193..202) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
 - Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП);
 - Строгий аудит Мандатов 8e и 8n: абсолютный приоритет соло-врача и клиники 1–3 кресла, отсутствие тупиков и палок в колёса.
+
 
 
 
