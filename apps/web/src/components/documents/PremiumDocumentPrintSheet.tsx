@@ -284,23 +284,23 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 				</tbody>
 			</table>
 
-			{/* ── Structured SOAP Clinical Diary ── */}
-			{branding.showDetailedSoap && diary && (
+			{/* ── Structured Form 043/u Clinical Diary ── */}
+			{(branding.showDetailedSoap || (branding as unknown as { showDetailed043?: boolean }).showDetailed043) && diary && (
 				<div className="doc-soap-container">
-					{/* S - Subjective */}
+					{/* I - Subjective Anamnesis */}
 					<div className="doc-soap-section">
 						<div className="doc-soap-heading">
-							<span>S · Жалобы и анамнез заболевания (Subjective)</span>
+							<span>I. Жалобы и анамнез заболевания</span>
 						</div>
 						<div className="doc-soap-text">
 							{diary.anamnesis || "Жалоб на момент осмотра активно не предъявляет."}
 						</div>
 					</div>
 
-					{/* O - Objective Status Localis */}
+					{/* II - Objective Status Localis */}
 					<div className="doc-soap-section">
 						<div className="doc-soap-heading">
-							<span>O · Объективный осмотр и статус полости рта (Status Localis)</span>
+							<span>II. Объективный осмотр и статус полости рта (Status localis)</span>
 						</div>
 						<div className="doc-soap-text">
 							{diary.statusLocalis || "Слизистая оболочка полости рта физиологической окраски, без патологических элементов."}
@@ -326,10 +326,10 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 						)}
 					</div>
 
-					{/* A - Assessment / ICD-10 Diagnosis */}
+					{/* III - ICD-10 Clinical Diagnosis */}
 					<div className="doc-soap-section">
 						<div className="doc-soap-heading">
-							<span>A · Клинический диагноз по МКБ-10 (Assessment)</span>
+							<span>III. Клинический диагноз по МКБ-10</span>
 						</div>
 						<div className="doc-soap-text">
 							<strong>Код МКБ-10:</strong>{" "}
@@ -344,10 +344,10 @@ export const PremiumDocumentPrintSheet: React.FC<PremiumDocumentPrintSheetProps>
 						</div>
 					</div>
 
-					{/* P - Plan & Treatment Protocol */}
+					{/* IV - Treatment Protocol & Recommendations */}
 					<div className="doc-soap-section">
 						<div className="doc-soap-heading">
-							<span>P · Протокол оказанной медицинской помощи и назначения (Plan)</span>
+							<span>IV. Протокол оказанной медицинской помощи и назначения</span>
 						</div>
 						<div className="doc-soap-text">
 							{diary.treatmentDescription || "Проведена консультация, составлен предварительный план лечения."}

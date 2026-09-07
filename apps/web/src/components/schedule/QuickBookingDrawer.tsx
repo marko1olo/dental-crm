@@ -180,13 +180,36 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const [patientId, setPatientId] = useState<string>(
 		() => initialSlot?.patientId || initialMatchedPatient?.id || "",
 	);
-	const [doctorUserId, setDoctorUserId] = useState<string>(
-		() => initialSlot?.doctorUserId || "",
-	);
+	const initialDoctorId = useMemo(() => {
+		if (initialSlot?.doctorUserId) return initialSlot.doctorUserId;
+		const st = dashboard?.clinicSettings?.staff ?? [];
+		const docs = st.filter((m) => m.active && (m.role === "doctor" || m.role === "owner"));
+		const chs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
+		const isSolo =
+			dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ||
+			dashboard?.clinicSettings?.profile?.mode === "one_chair" ||
+			(docs.length <= 1 && chs.length <= 1) ||
+			docs.length === 1;
+		if (isSolo && docs[0]) {
+			return docs[0].id;
+		}
+		if (docs.length === 1 && docs[0]) {
+			return docs[0].id;
+		}
+		return "";
+	}, [initialSlot?.doctorUserId, dashboard]);
+
+	const initialChairId = useMemo(() => {
+		if (initialSlot?.chairId) return initialSlot.chairId;
+		const chs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
+		if (chs.length === 1 && chs[0]) return chs[0].id;
+		if (chs.length === 0) return DEFAULT_SOLO_CHAIR.id;
+		return "";
+	}, [initialSlot?.chairId, dashboard]);
+
+	const [doctorUserId, setDoctorUserId] = useState<string>(() => initialDoctorId);
 	const [assistantUserId, setAssistantUserId] = useState<string>("");
-	const [chairId, setChairId] = useState<string>(
-		() => initialSlot?.chairId || "",
-	);
+	const [chairId, setChairId] = useState<string>(() => initialChairId);
 	const [startsAtLocal, setStartsAtLocal] = useState<string>("");
 	const [durationMinutes, setDurationMinutes] = useState<number>(() => {
 		if (initialSlot?.durationMinutes) return initialSlot.durationMinutes;
@@ -264,8 +287,10 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		[dashboard?.clinicSettings?.chairs],
 	);
 	const isSoloDoctor =
+		dashboard?.clinicSettings?.profile?.mode === "solo_doctor" ||
 		dashboard?.clinicSettings?.profile?.mode === "one_chair" ||
-		(doctors.length <= 1 && chairs.length <= 1);
+		(doctors.length <= 1 && chairs.length <= 1) ||
+		doctors.length === 1;
 	const patients = useMemo(() => dashboard?.patients ?? [], [dashboard?.patients]);
 
 	// Patient Discipline & Reliability assessment memo
@@ -307,6 +332,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		// Doctor prefill
 		const defaultDocId =
 			initialSlot?.doctorUserId ||
+			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
 			(doctors.length === 1 ? doctors[0]?.id : "") ||
 			doctors[0]?.id ||
 			"";
@@ -750,6 +776,8 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 		const effectiveDoctorId =
 			doctorUserId ||
+			initialSlot?.doctorUserId ||
+			(isSoloDoctor && doctors[0] ? doctors[0].id : "") ||
 			(doctors.length === 1 ? doctors[0]?.id : "") ||
 			doctors[0]?.id ||
 			"";
@@ -1782,6 +1810,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								required
+								data-testid="select-booking-doctor"
 							>
 								<option value="">-- Выберите врача --</option>
 								{doctors.map((d) => (
@@ -1804,6 +1833,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								onChange={(e) => setChairId(e.target.value)}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								required
+								data-testid="select-booking-chair"
 							>
 								<option value="">-- Выберите кресло --</option>
 								{chairs.length === 0 && (
@@ -1828,6 +1858,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									value={assistantUserId}
 									onChange={(e) => setAssistantUserId(e.target.value)}
 									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium outline-none focus:ring-2 focus:ring-[var(--teal)]"
+									data-testid="select-booking-assistant"
 								>
 									<option value="">-- Без ассистента --</option>
 									{assistants.map((a) => (

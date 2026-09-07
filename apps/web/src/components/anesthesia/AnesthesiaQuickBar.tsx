@@ -523,7 +523,7 @@ export function AnesthesiaQuickBar({
 					<button
 						type="button"
 						disabled={disabled}
-						onClick={handleNurseQuickDisposal}
+						onClick={() => handleNurseQuickDisposal(1.0)}
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-lg bg-[var(--paper)] hover:bg-emerald-500/10 border border-emerald-500/40 hover:border-emerald-500 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 transition-all shadow-xs touch-manipulation cursor-pointer active:scale-98"
 						title="Списать пустые карпулы анестетика медсестрой в 1 клик (СанПиН 3.3686-21, ПКУ без комиссии из 3 человек)"
 						data-testid="nurse-quick-carpule-disposal"

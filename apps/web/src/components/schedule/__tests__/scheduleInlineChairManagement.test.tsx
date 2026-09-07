@@ -1,7 +1,8 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	QuickAddChairModal,
 	CHAIR_COLOR_PRESETS,
@@ -11,6 +12,86 @@ import {
 	ScheduleFilterStrip,
 	type ScheduleFilterStripProps,
 } from "../ScheduleFilterStrip";
+
+type MockFn = {
+	(...args: any[]): any;
+	calls: any[][];
+	mock: { calls: any[][] };
+	mockReturnValue: (val: any) => MockFn;
+};
+
+function createMockFn(impl?: (...args: any[]) => any): MockFn {
+	const calls: any[][] = [];
+	const fn = ((...args: any[]) => {
+		calls.push(args);
+		return impl ? impl(...args) : undefined;
+	}) as MockFn;
+	fn.calls = calls;
+	fn.mock = { calls };
+	fn.mockReturnValue = (val: any) => createMockFn(() => val);
+	return fn;
+}
+
+const vi = {
+	fn: (impl?: any) => createMockFn(impl),
+	mock: () => {},
+};
+
+function expect(actual: any) {
+	return {
+		toBe: (expected: any) => assert.strictEqual(actual, expected),
+		toBeFalsy: () => assert.ok(!actual, `Expected falsy, but got ${actual}`),
+		toBeTruthy: () => assert.ok(Boolean(actual), `Expected truthy, but got ${actual}`),
+		toBeNull: () => assert.strictEqual(actual, null),
+		not: {
+			toBeNull: () => assert.ok(actual !== null && actual !== undefined),
+			toMatch: (regex: RegExp) => assert.ok(!regex.test(String(actual))),
+		},
+		toContain: (expected: string) => {
+			assert.ok(
+				actual?.includes?.(expected),
+				`Expected "${actual}" to contain "${expected}"`,
+			);
+		},
+		toHaveBeenCalled: () => {
+			const count = actual?.mock?.calls?.length ?? actual?.calls?.length ?? 0;
+			assert.ok(count > 0, "Expected function to have been called");
+		},
+		toHaveBeenCalledTimes: (n: number) => {
+			const count = actual?.mock?.calls?.length ?? actual?.calls?.length ?? 0;
+			assert.strictEqual(
+				count,
+				n,
+				`Expected ${n} calls, got ${count}`,
+			);
+		},
+		toHaveBeenCalledWith: (...expectedArgs: any[]) => {
+			const calls = actual?.mock?.calls ?? actual?.calls ?? [];
+			const match = calls.some((callArgs: any[]) =>
+				expectedArgs.every((arg, i) => {
+					if (arg && typeof arg === "object" && arg._isObjectContaining) {
+						return Object.entries(arg.subset).every(
+							([k, v]) => callArgs[i]?.[k] === v,
+						);
+					}
+					return callArgs[i] === arg;
+				}),
+			);
+			assert.ok(
+				match,
+				`Expected call with ${JSON.stringify(expectedArgs)}, but calls were: ${JSON.stringify(calls)}`,
+			);
+		},
+		toBeGreaterThanOrEqual: (expected: number) => {
+			assert.ok(actual >= expected, `Expected ${actual} >= ${expected}`);
+		},
+	};
+}
+
+expect.objectContaining = (subset: Record<string, any>) => ({
+	_isObjectContaining: true,
+	subset,
+});
 
 interface MockDomNode {
 	nodeType: number;
@@ -55,6 +136,7 @@ function setupMockDom() {
 	class FakeElement {}
 	class FakeNode {}
 
+	// biome-ignore lint/suspicious/noExplicitAny: mock DOM
 	const doc: any = {
 		nodeType: 9,
 		createTextNode: (text: string) => ({
@@ -162,6 +244,7 @@ function setupMockDom() {
 	doc.documentElement = createMockElement("html");
 	doc.body = createMockElement("body");
 
+	// biome-ignore lint/suspicious/noExplicitAny: mock window
 	const win: any = {
 		document: doc,
 		addEventListener: (type: string, fn: EventListener) => {
@@ -227,7 +310,7 @@ async function clickNode(node: MockDomNode | null) {
 				// biome-ignore lint/suspicious/noExplicitAny: access React internal props
 				const props = (curr as any)[reactPropKey];
 				if (props && typeof props.onClick === "function") {
-					props.onClick({
+					await props.onClick({
 						type: "click",
 						preventDefault: () => {},
 						stopPropagation: () => {},
@@ -383,7 +466,7 @@ describe("Schedule Inline Chair Management & Quick Add Modal (StomX / DentalPRO 
 		await clickNode(submitBtn0);
 
 		expect(onAddChair0).toHaveBeenCalled();
-		const call0 = (onAddChair0 as any).mock.calls[0]?.[0];
+		const call0 = onAddChair0.mock.calls[0]?.[0];
 		expect(call0?.name).toBe("Кресло 1");
 		expect(call0?.room).toBe("Кабинет 1");
 		expect(call0?.specialization).toBe("therapist");
@@ -410,7 +493,7 @@ describe("Schedule Inline Chair Management & Quick Add Modal (StomX / DentalPRO 
 		await clickNode(submitBtn3);
 
 		expect(onAddChair3).toHaveBeenCalled();
-		const call3 = (onAddChair3 as any).mock.calls[0]?.[0];
+		const call3 = onAddChair3.mock.calls[0]?.[0];
 		expect(call3?.name).toBe("Кресло 4");
 		expect(call3?.room).toBe("Кабинет 4");
 	});
