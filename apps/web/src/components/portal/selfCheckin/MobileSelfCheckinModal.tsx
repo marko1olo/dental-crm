@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { SignaturePadCanvas } from "./SignaturePadCanvas";
 import {
 	createPhysiologicalNormSomaticQuestionnaire,
 	evaluateSomaticRisks,
@@ -30,6 +29,7 @@ export interface MobileSelfCheckinModalProps {
 	clinicName?: string;
 	doctorName?: string;
 	appointmentTime?: string;
+	initialStep?: CheckinStep;
 	onCheckinSuccess?: (result: {
 		patientId: string;
 		signedConsents: string[];
@@ -99,9 +99,10 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	clinicName = "Стоматологическая клиника ДЕНТЕ",
 	doctorName = "Д-р Воронова Е. С. (Терапевт-микроскопист)",
 	appointmentTime = "Сегодня в 14:30 (Кабинет 3)",
+	initialStep = "phone_auth",
 	onCheckinSuccess,
 }) => {
-	const [step, setStep] = useState<CheckinStep>("phone_auth");
+	const [step, setStep] = useState<CheckinStep>(initialStep);
 	const [phone, setPhone] = useState(initialPhone);
 	const [otpCode, setOtpCode] = useState("");
 	const [isOtpSent, setIsOtpSent] = useState(false);
@@ -112,7 +113,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	const [consents, setConsents] =
 		useState<StatutoryConsentItem[]>(DEFAULT_CONSENTS);
 	const [activeConsentIndex, setActiveConsentIndex] = useState(0);
-	const [currentSvgSignature, setCurrentSvgSignature] = useState("");
 
 	// Somatic Questionnaire State
 	const [somaticData, setSomaticData] = useState<SomaticQuestionnaireData>(
@@ -182,24 +182,16 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		}, 300);
 	};
 
-	// Consent Signature Confirm
+	// Consent Signature Confirm (1-Click Simple Electronic Signature PEP 63-ФЗ)
 	const handleSignCurrentConsent = () => {
-		if (!currentSvgSignature) {
-			setConsentNotice(
-				"Поставьте росчерк на холсте выше или воспользуйтесь кнопкой «Подписать ПЭП (63-ФЗ)»",
-			);
-			return;
-		}
-
 		const updated = [...consents];
 		const current = updated[activeConsentIndex];
 		if (current) {
 			current.isSigned = true;
-			current.signatureSvg = currentSvgSignature;
+			current.signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ПЭП (63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS / Киоск • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
 			current.signedAtIso = new Date().toISOString();
 		}
 		setConsents(updated);
-		setCurrentSvgSignature("");
 		setConsentNotice(null);
 
 		// Move to next consent or proceed to somatic step
@@ -210,17 +202,16 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		}
 	};
 
-	// 1-Click Simple Electronic Signature (PEP 63-ФЗ) for current consent
-	const handleSignCurrentConsentWithPep = () => {
+	// Physical Paper Registration on Reception Desk (ст. 20 323-ФЗ)
+	const handleSignCurrentConsentWithPaper = () => {
 		const updated = [...consents];
 		const current = updated[activeConsentIndex];
 		if (current) {
 			current.isSigned = true;
-			current.signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ПЭП (63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
+			current.signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f8fafc" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#334155">НА БУМАГЕ (СТОЙКА РЕГИСТРАЦИИ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#475569">Подшито в карту 043/у • ст. 20 323-ФЗ</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
 			current.signedAtIso = new Date().toISOString();
 		}
 		setConsents(updated);
-		setCurrentSvgSignature("");
 		setConsentNotice(null);
 
 		if (activeConsentIndex < consents.length - 1) {
@@ -238,7 +229,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		const signed = consents.map((c) => ({
 			...c,
 			isSigned: true,
-			signatureSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ПЭП (63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${dtStr}</text></svg>`,
+			signatureSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ПЭП (63-ФЗ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS / Киоск • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${dtStr}</text></svg>`,
 			signedAtIso: nowIso,
 		}));
 		setConsents(signed);
@@ -552,7 +543,6 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 										} ${item.isSigned ? "signed" : ""}`}
 										onClick={() => {
 											setActiveConsentIndex(idx);
-											setCurrentSvgSignature("");
 											setConsentNotice(null);
 										}}
 									>
@@ -586,7 +576,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{currentConsent.isSigned ? (
 									<div className="selfcheckin-signed-badge-box">
 										<div className="selfcheckin-signed-success">
-											✓ Документ подписан простой электронной подписью (63-ФЗ)
+											✓ Документ подтвержден и подписан
 										</div>
 										<div className="selfcheckin-signed-meta">
 											Время:{" "}
@@ -606,46 +596,31 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									</div>
 								) : (
 									<div className="selfcheckin-signature-block">
-										<div className="selfcheckin-signature-label">
-											Поставьте подпись пальцем или стилусом на экране:
+										<div className="selfcheckin-legal-pep-badge">
+											<ShieldCheck size={16} />
+											<span>
+												Простая электронная подпись (ПЭП по 63-ФЗ, ст. 20 323-ФЗ)
+											</span>
 										</div>
-										<SignaturePadCanvas
-											width={360}
-											height={160}
-											onSignatureChange={(svg) => {
-												setCurrentSvgSignature(svg);
-												if (svg) setConsentNotice(null);
-											}}
-										/>
-										<div className="flex flex-col sm:flex-row gap-2 mt-2">
+										<div className="flex flex-col gap-2 mt-3">
 											<button
 												type="button"
-												className="selfcheckin-btn-primary flex-1"
+												className="selfcheckin-btn-primary w-full py-3 text-sm font-bold flex items-center justify-center gap-2"
 												onClick={handleSignCurrentConsent}
 												disabled={isSubmitting}
-												title={
-													isSubmitting
-														? "Идет сохранение..."
-														: !currentSvgSignature
-															? "Поставьте подпись пальцем выше или нажмите «Подписать ПЭП (63-ФЗ)»"
-															: `Подтвердить подпись документа (${currentConsent.code})`
-												}
+												data-testid="consent-sign-pep-single-btn"
 											>
-												Подтвердить подпись документа ({currentConsent.code})
+												<ShieldCheck size={18} />
+												<span>Подтвердить согласие ПЭП (1 клик)</span>
 											</button>
 											<button
 												type="button"
-												className="py-2 px-3 rounded-lg border border-teal-500/40 bg-teal-500/10 text-teal-800 dark:text-teal-200 text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-teal-500/20 transition-all cursor-pointer whitespace-nowrap"
-												onClick={handleSignCurrentConsentWithPep}
+												className="w-full py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:underline flex items-center justify-center gap-1.5 cursor-pointer"
+												onClick={handleSignCurrentConsentWithPaper}
 												disabled={isSubmitting}
-												title="Подписать данный документ простой электронной подписью (63-ФЗ) без рисования стилусом"
-												data-testid="consent-sign-pep-single-btn"
+												data-testid="consent-sign-paper-desk-btn"
 											>
-												<ShieldCheck
-													size={15}
-													className="text-teal-600 dark:text-teal-400"
-												/>
-												<span>Подписать ПЭП (63-ФЗ)</span>
+												<span>Оформить на бумаге на стойке регистрации</span>
 											</button>
 										</div>
 										{consentNotice && (

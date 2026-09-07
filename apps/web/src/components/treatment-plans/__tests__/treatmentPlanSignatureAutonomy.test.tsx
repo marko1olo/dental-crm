@@ -58,6 +58,8 @@ interface MockDomNode {
 }
 
 function setupMockDom() {
+	// biome-ignore lint/suspicious/noExplicitAny: mock document reference
+	let doc: any;
 	function createMockElement(tag = "div"): MockDomNode {
 		const children: MockDomNode[] = [];
 		const listeners: Record<string, EventListener[]> = {};
@@ -72,7 +74,7 @@ function setupMockDom() {
 			children,
 			childNodes: children,
 			attributes: [],
-			ownerDocument: null,
+			ownerDocument: doc,
 			parentNode: null,
 			appendChild: (child: MockDomNode) => {
 				children.push(child);
@@ -133,7 +135,7 @@ function setupMockDom() {
 		return el;
 	}
 
-	const doc = {
+	doc = {
 		nodeType: 9,
 		createElement: createMockElement,
 		createElementNS: (_ns: string, tag: string) => createMockElement(tag),
@@ -142,14 +144,17 @@ function setupMockDom() {
 			textContent: text,
 			style: {},
 			parentNode: null,
+			ownerDocument: doc,
 		}),
-		createComment: () => ({ nodeType: 8, parentNode: null }),
+		createComment: () => ({ nodeType: 8, parentNode: null, ownerDocument: doc }),
 		addEventListener: () => {},
 		removeEventListener: () => {},
-		documentElement: createMockElement("html"),
-		body: createMockElement("body"),
+		documentElement: null as any,
+		body: null as any,
 		activeElement: null,
 	};
+	doc.documentElement = createMockElement("html");
+	doc.body = createMockElement("body");
 	doc.documentElement.ownerDocument = doc;
 	doc.body.ownerDocument = doc;
 
@@ -440,6 +445,73 @@ describe("Treatment Plan Signature & Estimator Paper-First Autonomy (Mandates 8e
 			expect(html).toContain(
 				"Пациент подписал распечатанную смету — подтвердить в 1 клик (Мандат 8e)",
 			);
+		});
+
+		it("opens sign modal in TreatmentEstimator and verifies paper confirm & print buttons with zero canvas elements", async () => {
+			const { doc, win } = setupMockDom();
+			let root: Root | null = null;
+			const mockAppContext = {
+				dashboard: {
+					patients: [{ id: "PAT-001", fullName: "Кузнецов П.Р." }],
+					serviceCatalog: [],
+				},
+			};
+
+			const container = doc.createElement("div");
+			doc.body.appendChild(container);
+
+			await act(async () => {
+				root = createRoot(container as unknown as HTMLElement);
+				root.render(
+					<AppLogicProvider value={mockAppContext as any}>
+						<TreatmentEstimator patientId="PAT-001" currentTeeth={[]} />
+					</AppLogicProvider>,
+				);
+			});
+
+			const openSignBtn = findNodeByTestId(
+				doc.body,
+				"estimator-open-sign-modal-btn",
+			);
+			expect(openSignBtn).not.toBeNull();
+			await clickNode(openSignBtn!);
+
+			// Verify presence of 1-click paper confirmation button in modal
+			const paperConfirmBtn = findNodeByTestId(
+				doc.body,
+				"estimator-modal-paper-confirm-btn",
+			);
+			expect(paperConfirmBtn).not.toBeNull();
+
+			// Verify presence of print button in modal
+			const printBtn = findNodeByTestId(
+				doc.body,
+				"estimator-modal-print-btn",
+			);
+			expect(printBtn).not.toBeNull();
+
+			// Verify zero <canvas> drawing elements in entire DOM
+			const hasCanvasElement = (node: MockDomNode): boolean => {
+				if (node.tagName === "CANVAS") return true;
+				return node.children?.some(hasCanvasElement) ?? false;
+			};
+			expect(hasCanvasElement(doc.body)).toBe(false);
+
+			// Trigger print button -> verifies window.print() called
+			await clickNode(printBtn!);
+			expect(win.print).toHaveBeenCalled();
+
+			// Trigger paper confirm button -> closes modal
+			await clickNode(paperConfirmBtn!);
+			const closedModalBtn = findNodeByTestId(
+				doc.body,
+				"estimator-modal-paper-confirm-btn",
+			);
+			expect(closedModalBtn).toBeNull();
+
+			await act(async () => {
+				root?.unmount();
+			});
 		});
 	});
 });

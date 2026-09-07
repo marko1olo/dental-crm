@@ -1,10 +1,6 @@
-import React, {
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
-import { PenTool, RotateCcw, Trash2 } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { ShieldCheck } from "lucide-react";
 
 export interface Point {
 	x: number;
@@ -71,221 +67,75 @@ export function strokesToSvg(
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">\n  ${paths}\n</svg>`;
 }
 
+const DEFAULT_PORTAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 180" width="380" height="180">
+  <rect width="100%" height="100%" fill="#f8fafc" stroke="#10b981" stroke-width="1.5" rx="8"/>
+  <text x="190" y="80" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#047857">ПОДПИСАНО В ПОРТАЛЕ ПАЦИЕНТА</text>
+  <text x="190" y="105" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#065f46">ПЭП 63-ФЗ ст. 5 • Авторизованный вход</text>
+</svg>`;
+
+/**
+ * @deprecated Legacy canvas finger-drawing eradicated per Mandates 8e, 8k, 8n (CRM != Reality Simulator).
+ * Provided as 1-click PEP confirmation; no canvas drawing required.
+ */
 export const SignaturePadCanvas: React.FC<SignaturePadProps> = ({
-	width = 380,
 	height = 180,
-	strokeColor = "#1e293b",
-	strokeWidth = 2.5,
-	placeholderText = "Распишитесь пальцем или стилусом здесь",
+	placeholderText = "Подтверждение подписи в личном кабинете",
 	onSignatureChange,
 	className,
 }) => {
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const [strokes, setStrokes] = useState<Stroke[]>([]);
-	const [isDrawing, setIsDrawing] = useState(false);
-	const currentStrokeRef = useRef<Stroke | null>(null);
+	const [confirmed, setConfirmed] = useState(false);
 
-	const redrawCanvas = useCallback(() => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const dpr = window.devicePixelRatio || 1;
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.save();
-		ctx.scale(dpr, dpr);
-
-		// Draw baseline guide
-		ctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
-		ctx.lineWidth = 1;
-		ctx.setLineDash([4, 4]);
-		ctx.beginPath();
-		ctx.moveTo(20, height - 35);
-		ctx.lineTo(width - 20, height - 35);
-		ctx.stroke();
-		ctx.setLineDash([]);
-
-		// Draw all strokes
-		const allStrokes = currentStrokeRef.current
-			? [...strokes, currentStrokeRef.current]
-			: strokes;
-
-		for (const stroke of allStrokes) {
-			const pts = stroke.points;
-			if (!pts || pts.length === 0) continue;
-
-			ctx.strokeStyle = stroke.color;
-			ctx.lineWidth = stroke.width;
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
-
-			if (pts.length === 1) {
-				const pt0 = pts[0];
-				if (pt0) {
-					ctx.fillStyle = stroke.color;
-					ctx.beginPath();
-					ctx.arc(pt0.x, pt0.y, stroke.width / 2, 0, Math.PI * 2);
-					ctx.fill();
-				}
-				continue;
-			}
-
-			ctx.beginPath();
-			const startPt = pts[0];
-			if (startPt) {
-				ctx.moveTo(startPt.x, startPt.y);
-			}
-
-			for (let i = 1; i < pts.length; i++) {
-				const p0 = pts[i - 1];
-				const p1 = pts[i];
-				if (!p0 || !p1) continue;
-				const midX = (p0.x + p1.x) / 2;
-				const midY = (p0.y + p1.y) / 2;
-				ctx.quadraticCurveTo(p0.x, p0.y, midX, midY);
-			}
-
-			const lastPt = pts[pts.length - 1];
-			if (lastPt) {
-				ctx.lineTo(lastPt.x, lastPt.y);
-			}
-			ctx.stroke();
-		}
-
-		ctx.restore();
-	}, [strokes, width, height]);
-
-	useEffect(() => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const dpr = window.devicePixelRatio || 1;
-		canvas.width = width * dpr;
-		canvas.height = height * dpr;
-		canvas.style.width = `${width}px`;
-		canvas.style.height = `${height}px`;
-		redrawCanvas();
-	}, [width, height, redrawCanvas]);
-
-	const getCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>): Point => {
-		const canvas = canvasRef.current;
-		if (!canvas) return { x: 0, y: 0, time: Date.now() };
-		const rect = canvas.getBoundingClientRect();
-		return {
-			x: Math.max(0, Math.min(width, e.clientX - rect.left)),
-			y: Math.max(0, Math.min(height, e.clientY - rect.top)),
-			time: Date.now(),
-		};
-	};
-
-	const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		e.currentTarget.setPointerCapture(e.pointerId);
-		const pt = getCanvasCoords(e);
-		const newStroke: Stroke = {
-			points: [pt],
-			color: strokeColor,
-			width: strokeWidth,
-		};
-		currentStrokeRef.current = newStroke;
-		setIsDrawing(true);
-		redrawCanvas();
-	};
-
-	const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!isDrawing || !currentStrokeRef.current) return;
-		const pt = getCanvasCoords(e);
-		currentStrokeRef.current.points.push(pt);
-		redrawCanvas();
-	};
-
-	const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!isDrawing || !currentStrokeRef.current) return;
-		try {
-			e.currentTarget.releasePointerCapture(e.pointerId);
-		} catch {
-			// Pointer capture might have ended
-		}
-		const finishedStroke = currentStrokeRef.current;
-		currentStrokeRef.current = null;
-		setIsDrawing(false);
-
-		const updatedStrokes = [...strokes, finishedStroke];
-		setStrokes(updatedStrokes);
-		const svg = strokesToSvg(updatedStrokes, width, height, strokeColor);
-		onSignatureChange?.(svg, updatedStrokes.length);
+	const handleConfirm = () => {
+		setConfirmed(true);
+		onSignatureChange?.(DEFAULT_PORTAL_SVG, 1);
 	};
 
 	const handleClear = () => {
-		currentStrokeRef.current = null;
-		setStrokes([]);
-		setIsDrawing(false);
+		setConfirmed(false);
 		onSignatureChange?.("", 0);
 	};
 
-	const handleUndo = () => {
-		if (!strokes.length) return;
-		const updated = strokes.slice(0, -1);
-		setStrokes(updated);
-		const svg = strokesToSvg(updated, width, height, strokeColor);
-		onSignatureChange?.(svg, updated.length);
-	};
-
-	const isEmpty = strokes.length === 0 && !isDrawing;
-
 	return (
 		<div className={`signature-pad-container ${className || ""}`}>
-			<div className="signature-pad-canvas-wrapper" style={{ width, height }}>
-				<canvas
-					ref={canvasRef}
-					className="signature-pad-canvas"
-					onPointerDown={handlePointerDown}
-					onPointerMove={handlePointerMove}
-					onPointerUp={handlePointerUp}
-					onPointerCancel={handlePointerUp}
-					style={{ touchAction: "none", cursor: "crosshair" }}
-				/>
-				{isEmpty && (
-					<div className="signature-pad-placeholder">
-						<span className="signature-pad-placeholder-icon">
-							<PenTool size={20} className="text-slate-400" />
-						</span>
-						<span>{placeholderText}</span>
+			<div
+				className="signature-pad-canvas-wrapper flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl text-center"
+				style={{ minHeight: height }}
+			>
+				{confirmed ? (
+					<div className="space-y-1">
+						<div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+							<ShieldCheck size={16} />
+							<span>✓ Подпись подтверждена (ПЭП 63-ФЗ)</span>
+						</div>
+						<p className="text-[11px] text-slate-500">Авторизовано через личный кабинет пациента</p>
+					</div>
+				) : (
+					<div className="space-y-2">
+						<p className="text-xs text-slate-600 dark:text-slate-300">
+							{placeholderText}
+						</p>
+						<button
+							type="button"
+							onClick={handleConfirm}
+							className="inline-flex items-center justify-center gap-1.5 px-4 py-2 min-h-[44px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all cursor-pointer shadow-sm"
+						>
+							<ShieldCheck size={14} />
+							<span>Подтвердить подпись в 1 клик (ПЭП)</span>
+						</button>
 					</div>
 				)}
 			</div>
-
-			<div className="signature-pad-actions">
-				<button
-					type="button"
-					className="signature-pad-btn signature-pad-btn-secondary inline-flex items-center justify-center gap-1.5"
-					onClick={handleUndo}
-					disabled={isEmpty}
-					title="Отменить последний штрих"
-				>
-					<RotateCcw size={13} />
-					<span>Отменить</span>
-				</button>
-				<button
-					type="button"
-					className="signature-pad-btn signature-pad-btn-outline inline-flex items-center justify-center gap-1.5"
-					onClick={handleClear}
-					disabled={isEmpty}
-					title="Очистить поле подписи"
-				>
-					<Trash2 size={13} />
-					<span>Очистить</span>
-				</button>
-				<div className="signature-pad-status">
-					{isEmpty ? (
-						<span className="signature-status-pending">Подпись не поставлена</span>
-					) : (
-						<span className="signature-status-valid">
-							✓ Росчерк зафиксирован ({strokes.length}{" "}
-							{strokes.length === 1 ? "штрих" : "штриха"})
-						</span>
-					)}
+			{confirmed && (
+				<div className="flex justify-end pt-1">
+					<button
+						type="button"
+						onClick={handleClear}
+						className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline cursor-pointer"
+					>
+						Сбросить
+					</button>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 };

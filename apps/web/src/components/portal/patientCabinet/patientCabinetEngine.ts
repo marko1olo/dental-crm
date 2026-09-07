@@ -156,7 +156,7 @@ export interface PatientWarrantyCard {
 }
 
 export interface ConsentSignatureAudit {
-	readonly verificationMethod: "sms_otp" | "tablet_stylus" | "touch_screen";
+	readonly verificationMethod: "sms_otp" | "portal_pep" | "paper_physical" | "tablet_stylus" | "touch_screen";
 	readonly phone: string;
 	readonly smsOtpCode?: string | undefined;
 	readonly integrityHash: string;

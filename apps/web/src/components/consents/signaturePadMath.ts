@@ -1,8 +1,9 @@
 /**
  * ============================================================================
- * HIGH-PRECISION DIGITAL TOUCH-SIGNATURE ENGINE
- * Математический движок сглаживания кривых Безье, интерполяции толщины пера,
- * криптографического хеширования SHA-256 и векторного экспорта SVG/PNG
+ * DIGITAL TOUCH-SIGNATURE & INTEGRITY ENGINE
+ * Модуль криптографического хеширования SHA-256 (FIPS 180-4), генерации цифрового
+ * отпечатка информированного согласия и векторного подтверждения на бумажном носителе.
+ * Упразднены неиспользуемые физические симуляторы нажатия Apple Pencil (Мандаты 8e, 8k, 8n).
  * ============================================================================
  */
 
@@ -77,26 +78,16 @@ export function calculatePointVelocity(p1: SignaturePoint, p2: SignaturePoint): 
 }
 
 /**
- * Интерполяция толщины штриха на основе скорости и силы нажатия (стилуса)
- * При быстром росчерке линия утончается, при медленном — утолщается
+ * Расчет базовой толщины штриха по скорости движения (Apple Pencil pressure physics упразднены)
  */
 export function calculateStrokeWidth(
 	velocity: number,
-	pressure: number | undefined,
+	_pressure?: number | undefined,
 	options: StrokeWidthOptions = {},
 ): number {
 	const minWidth = options.minWidth ?? DEFAULT_MIN_WIDTH;
 	const maxWidth = options.maxWidth ?? DEFAULT_MAX_WIDTH;
 
-	// Если есть аппаратная чувствительность к нажатию стилуса (Apple Pencil / Wacom / S-Pen)
-	if (pressure !== undefined && pressure > 0 && pressure <= 1) {
-		const pressureContribution = minWidth + (maxWidth - minWidth) * pressure;
-		// Небольшая поправка на скорость
-		const velocityFactor = Math.max(0.6, 1 - Math.min(velocity / 4, 0.4));
-		return Math.min(maxWidth, Math.max(minWidth, pressureContribution * velocityFactor));
-	}
-
-	// Эмуляция перьевой ручки по скорости движения
 	// v = 0 -> maxWidth, v >= 3.0 -> minWidth
 	const normalizedVelocity = Math.min(Math.max(velocity, 0), 3.0) / 3.0;
 	const width = maxWidth - (maxWidth - minWidth) * Math.pow(normalizedVelocity, 0.6);
@@ -135,7 +126,7 @@ export function smoothStrokeToBezierCurves(
 
 	if (points.length === 2) {
 		const v = calculatePointVelocity(first, second);
-		const w = calculateStrokeWidth(v, second.pressure, options);
+		const w = calculateStrokeWidth(v, undefined, options);
 		curves.push({
 			startPoint: first,
 			control1: first,
@@ -147,7 +138,6 @@ export function smoothStrokeToBezierCurves(
 		return curves;
 	}
 
-	// Алгоритм сглаживания через промежуточные средние точки (Catmull-Rom к Bezier)
 	let currentWidth = first.width ?? (minWidth + maxWidth) / 2;
 
 	for (let i = 1; i < points.length - 1; i++) {
@@ -160,8 +150,7 @@ export function smoothStrokeToBezierCurves(
 		const mid2 = computeMidpoint(p1, p2);
 
 		const v = calculatePointVelocity(p0, p1);
-		const targetWidth = calculateStrokeWidth(v, p1.pressure, options);
-		// Фильтр сглаживания толщины с инерцией
+		const targetWidth = calculateStrokeWidth(v, undefined, options);
 		const weight = options.velocityFilterWeight ?? DEFAULT_VELOCITY_WEIGHT;
 		const nextWidth = currentWidth * (1 - weight) + targetWidth * weight;
 
@@ -182,7 +171,6 @@ export function smoothStrokeToBezierCurves(
 
 /**
  * Упрощение точек штриха методом Рамера — Дугласа — Пекера
- * Устраняет избыточные микроколебания сенсора при сохранении формы подписи
  */
 export function simplifyStrokePoints(points: SignaturePoint[], tolerance = 1.0): SignaturePoint[] {
 	if (points.length <= 2) return points;
@@ -204,7 +192,6 @@ export function simplifyStrokePoints(points: SignaturePoint[], tolerance = 1.0):
 		if (lineLength === 0) {
 			distance = calculatePointDistance(p, pStart);
 		} else {
-			// Расстояние от точки до отрезка pStart-pEnd
 			const numerator = Math.abs(
 				(pEnd.y - pStart.y) * p.x - (pEnd.x - pStart.x) * p.y + pEnd.x * pStart.y - pEnd.y * pStart.x,
 			);
@@ -274,82 +261,6 @@ export function isSignatureEmpty(strokes: SignatureStroke[], minPointsThreshold 
 		totalPoints += stroke.points.length;
 	}
 	return totalPoints < minPointsThreshold;
-}
-
-/**
- * Отрисовка сглаженного штриха на CanvasRenderingContext2D
- */
-export function drawSmoothStrokeOnContext(
-	ctx: CanvasRenderingContext2D,
-	stroke: SignatureStroke,
-	options: StrokeWidthOptions & { defaultColor?: string | undefined } = {},
-): void {
-	const points = stroke.points;
-	if (!points || points.length === 0) return;
-
-	const first = points[0];
-	if (!first) return;
-
-	ctx.strokeStyle = stroke.color || options.defaultColor || "#0f172a";
-	ctx.fillStyle = stroke.color || options.defaultColor || "#0f172a";
-	ctx.lineCap = "round";
-	ctx.lineJoin = "round";
-
-	// Одиночная точка (клик)
-	if (points.length === 1 || stroke.isDot) {
-		const radius = (options.maxWidth ?? DEFAULT_MAX_WIDTH) / 2;
-		ctx.beginPath();
-		ctx.arc(first.x, first.y, radius, 0, Math.PI * 2, true);
-		ctx.fill();
-		return;
-	}
-
-	// 2 точки — прямая линия
-	if (points.length === 2) {
-		const second = points[1];
-		if (!second) return;
-		ctx.lineWidth = stroke.width || (options.minWidth ?? DEFAULT_MIN_WIDTH);
-		ctx.beginPath();
-		ctx.moveTo(first.x, first.y);
-		ctx.lineTo(second.x, second.y);
-		ctx.stroke();
-		return;
-	}
-
-	// Множество точек — плавные кривые Безье с интерполяцией толщины
-	const curves = smoothStrokeToBezierCurves(points, options);
-	for (const curve of curves) {
-		ctx.lineWidth = (curve.startWidth + curve.endWidth) / 2;
-		ctx.beginPath();
-		ctx.moveTo(curve.startPoint.x, curve.startPoint.y);
-		ctx.quadraticCurveTo(
-			curve.control1.x,
-			curve.control1.y,
-			curve.endPoint.x,
-			curve.endPoint.y,
-		);
-		ctx.stroke();
-	}
-}
-
-/**
- * Полная отрисовка всех штрихов на холсте с гарантированным непрозрачным фоном
- */
-export function drawAllStrokesOnCanvas(
-	canvas: HTMLCanvasElement,
-	strokes: SignatureStroke[],
-	options: { backgroundColor?: string | undefined; defaultColor?: string | undefined } = {},
-): void {
-	const ctx = canvas.getContext("2d");
-	if (!ctx) return;
-
-	const bgColor = options.backgroundColor ?? "#ffffff";
-	ctx.fillStyle = bgColor;
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-	for (const stroke of strokes) {
-		drawSmoothStrokeOnContext(ctx, stroke, options);
-	}
 }
 
 /**
@@ -458,7 +369,6 @@ export function generateSha256(asciiString: string): string {
 		} else if (code < 0xd800 || code >= 0xe000) {
 			utf8Bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
 		} else {
-			// Суррогатная пара UTF-16
 			c++;
 			code = 0x10000 + (((code & 0x3ff) << 10) | (asciiString.charCodeAt(c) & 0x3ff));
 			utf8Bytes.push(
@@ -619,7 +529,6 @@ export function generateConsentIntegrityHash(payload: ConsentIntegrityPayload): 
 			? new Date(payload.timestamp).toISOString()
 			: new Date(payload.timestamp).toISOString();
 
-	// Каноническое представление векторных точек подписи (для бумаги или SMS росчерк пустой)
 	const serializedStrokes = (payload.strokes || [])
 		.map((s, sIdx) => {
 			const pts = (s.points || [])

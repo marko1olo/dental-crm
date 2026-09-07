@@ -351,6 +351,27 @@
 	font-size: 0.8125rem;
 }
 
+/* Statutory PEP Legal Badge */
+.selfcheckin-legal-pep-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 0.875rem;
+	border-radius: 8px;
+	background: rgba(22, 163, 74, 0.08);
+	border: 1px solid rgba(22, 163, 74, 0.3);
+	color: #15803d;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	width: 100%;
+}
+
+[data-theme="dark"] .selfcheckin-legal-pep-badge {
+	background: rgba(22, 163, 74, 0.15);
+	border-color: rgba(34, 197, 94, 0.35);
+	color: #4ade80;
+}
+
 /* Signature Pad Component */
 .signature-pad-container {
 	display: flex;

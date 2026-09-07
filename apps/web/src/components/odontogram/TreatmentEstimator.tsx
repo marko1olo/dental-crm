@@ -32,7 +32,6 @@ import {
 import { logger } from "../../utils/logger";
 import { showToast } from "../GlobalToast.js";
 import { PanelLoadFailure } from "../PanelLoadFailure";
-import { SignaturePad } from "../SignaturePad";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
 import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
@@ -632,6 +631,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 						disabled={planLoad.phase === "loading"}
 						title={unpricedWarning ?? "Подписать план у пациента"}
 						className="flex items-center justify-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[34px] sm:h-[34px] text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors touch-manipulation"
+						data-testid="estimator-open-sign-modal-btn"
 					>
 						<PenTool size={14} />
 						<span>Подписать</span>
@@ -1027,25 +1027,43 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 								</h3>
 								<button
 									type="button"
-									onClick={() => {
-										setSignatureUrl("paper_confirmed_" + Date.now());
-										setShowSignModal(false);
-										showToast("План лечения подтвержден на бумаге", "success");
-									}}
-									className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors cursor-pointer"
+									onClick={() => setShowSignModal(false)}
+									className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-1 cursor-pointer"
+									aria-label="Закрыть"
 								>
-									<ShieldCheck size={14} className="text-emerald-600" />
-									<span>Подтвердить на бумаге (1 клик)</span>
+									✕
 								</button>
 							</div>
-							<SignaturePad
-								onSign={(dataUrl) => {
-									setSignatureUrl(dataUrl);
-									setShowSignModal(false);
-									showToast("Подпись добавлена. Нажмите 'Сохранить'.", "info");
-								}}
-								onCancel={() => setShowSignModal(false)}
-							/>
+							<div className="p-4 space-y-3 bg-[var(--paper,#18181b)] rounded-xl border border-[var(--line,#27272a)] text-center">
+								<p className="text-xs text-slate-600 dark:text-slate-300">
+									Смета согласована с пациентом в соответствии со ст. 84 323-ФЗ и ПП РФ № 736.
+								</p>
+								<div className="flex flex-col sm:flex-row gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											const paperStamp = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Смета согласована</text></svg>";
+											setSignatureUrl(paperStamp);
+											setShowSignModal(false);
+											showToast("План лечения и смета подтверждены на бумаге", "success");
+										}}
+										className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer shadow-sm"
+										data-testid="estimator-modal-paper-confirm-btn"
+									>
+										<ShieldCheck size={16} />
+										<span>Подтвердить на бумаге (1 клик)</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => window.print()}
+										className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+										data-testid="estimator-modal-print-btn"
+									>
+										<Printer size={16} />
+										<span>Печать сметы (А4)</span>
+									</button>
+								</div>
+							</div>
 						</div>
 					</div>,
 					document.body,

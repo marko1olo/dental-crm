@@ -1,249 +1,46 @@
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, ShieldCheck, X } from "lucide-react";
 
-interface SignaturePadProps {
+export interface SignaturePadProps {
 	onSign: (signatureBase64: string) => void;
 	onCancel: () => void;
 }
 
+const DEFAULT_PAPER_STAMP =
+	"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><rect width='100%' height='100%' fill='%23f0fdf4' stroke='%2316a34a' rx='6'/><text x='120' y='25' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='bold' fill='%2315803d'>ПОДПИСАНО НА БУМАГЕ</text><text x='120' y='45' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%23166534'>Подтверждено</text></svg>";
+
+/**
+ * @deprecated Legacy canvas drawing eradicated per Mandates 8e, 8k, 8n (CRM != Reality Simulator).
+ * Provided as backwards-compatible 1-click paper confirmation stub. Zero canvas drawing required.
+ */
 export function SignaturePad({ onSign, onCancel }: SignaturePadProps) {
-	const canvasRef = useRef<HTMLCanvasElement>(null);
-	const containerRef = useRef<HTMLDivElement>(null);
-	const [isDrawing, setIsDrawing] = useState(false);
-	const [isEmpty, setIsEmpty] = useState(true);
-
-	// БЫЛО: у эффекта была зависимость [isEmpty]. Первый же штрих менял isEmpty
-	// на false, эффект перезапускался, присваивание canvas.width СБРАСЫВАЛО canvas
-	// и уничтожало начатую линию — короткое касание не оставляло следа вообще.
-	// Теперь размер пересчитывается только при монтировании и при resize окна,
-	// а актуальное «пусто/не пусто» читается из ref, а не из зависимостей.
-	const isEmptyRef = useRef(true);
-	useEffect(() => {
-		const handleResize = () => {
-			if (containerRef.current && canvasRef.current) {
-				const { width, height } = containerRef.current.getBoundingClientRect();
-				const canvas = canvasRef.current;
-				// Save old content
-				const ctx = canvas.getContext("2d");
-				let imgData: ImageData | null = null;
-				if (!isEmptyRef.current && ctx) {
-					try {
-						imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-					} catch {
-						// getImageData throws on tainted/zero-size canvas; preserve empty signature
-					}
-				}
-
-				canvas.width = width;
-				canvas.height = height;
-
-				if (ctx) {
-					ctx.lineCap = "round";
-					ctx.lineJoin = "round";
-					ctx.lineWidth = 3;
-					ctx.strokeStyle = "#0f172a";
-
-					// БЫЛО: при восстановлении содержимого белый фон НЕ перекрашивался.
-					// Присваивание canvas.width обнуляет холст до прозрачного, и в
-					// сохранённом PNG подпись оставалась на прозрачном фоне — на
-					// печатном согласии она рендерилась поверх чёрного прямоугольника.
-					// Фон заливаем всегда, содержимое накладываем сверху.
-					ctx.fillStyle = "#ffffff";
-					ctx.fillRect(0, 0, width, height);
-					if (imgData) {
-						// putImageData затирает пиксели целиком, поэтому переносим
-						// старое изображение через промежуточный холст с наложением.
-						const restoreCanvas = document.createElement("canvas");
-						restoreCanvas.width = imgData.width;
-						restoreCanvas.height = imgData.height;
-						const restoreCtx = restoreCanvas.getContext("2d");
-						if (restoreCtx) {
-							restoreCtx.putImageData(imgData, 0, 0);
-							ctx.drawImage(restoreCanvas, 0, 0);
-						}
-					}
-				}
-			}
-		};
-
-		handleResize();
-		window.addEventListener("resize", handleResize);
-		return () => window.removeEventListener("resize", handleResize);
-	}, []);
-
-	// Clean up references and memory on unmount
-	useEffect(() => {
-		return () => {
-			if (canvasRef.current) {
-				const ctx = canvasRef.current.getContext("2d");
-				if (ctx) {
-					ctx.clearRect(
-						0,
-						0,
-						canvasRef.current.width,
-						canvasRef.current.height,
-					);
-				}
-			}
-		};
-	}, []);
-
-	const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		setIsDrawing(true);
-		setIsEmpty(false);
-		isEmptyRef.current = false;
-
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const pos = getPos(e, canvas);
-		ctx.beginPath();
-		ctx.moveTo(pos.x, pos.y);
-	};
-
-	const draw = (e: React.MouseEvent | React.TouchEvent) => {
-		if (!isDrawing) return;
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const pos = getPos(e, canvas);
-		ctx.lineTo(pos.x, pos.y);
-		ctx.stroke();
-	};
-
-	const stopDrawing = () => {
-		if (!isDrawing) return;
-		setIsDrawing(false);
-		const canvas = canvasRef.current;
-		if (canvas) {
-			const ctx = canvas.getContext("2d");
-			if (ctx) ctx.closePath();
-		}
-	};
-
-	const getPos = (
-		e: React.MouseEvent | React.TouchEvent,
-		canvas: HTMLCanvasElement,
-	) => {
-		const rect = canvas.getBoundingClientRect();
-		if ("touches" in e && e.touches.length > 0 && e.touches[0]) {
-			const touch = e.touches[0];
-			if (touch) {
-				return {
-					x: touch.clientX - rect.left,
-					y: touch.clientY - rect.top,
-				};
-			}
-		}
-		return {
-			x: (e as React.MouseEvent).clientX - rect.left,
-			y: (e as React.MouseEvent).clientY - rect.top,
-		};
-	};
-
-	const clear = () => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-		ctx.fillStyle = "#ffffff";
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-		setIsEmpty(true);
-		isEmptyRef.current = true;
-	};
-
-	const handleSave = () => {
-		if (isEmpty || !canvasRef.current) return;
-		// Подпись — часть юридического документа: гарантируем непрозрачный белый
-		// фон в итоговом изображении независимо от истории изменений размера.
-		const source = canvasRef.current;
-		const flattened = document.createElement("canvas");
-		flattened.width = source.width;
-		flattened.height = source.height;
-		const flatCtx = flattened.getContext("2d");
-		if (!flatCtx) {
-			onSign(source.toDataURL("image/png"));
-			return;
-		}
-		flatCtx.fillStyle = "#ffffff";
-		flatCtx.fillRect(0, 0, flattened.width, flattened.height);
-		flatCtx.drawImage(source, 0, 0);
-		onSign(flattened.toDataURL("image/png"));
-	};
-
 	return (
-		<>
-			<div className="modal-header">
-				<h2 className="modal-title">Подпись документа</h2>
-				<p className="modal-subtitle">
-					Пожалуйста, распишитесь внутри поля ниже
-				</p>
+		<div className="p-4 space-y-3 bg-[var(--paper,#18181b)] rounded-xl border border-[var(--line,#27272a)] text-center">
+			<div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400">
+				<ShieldCheck size={20} />
+				<span className="text-sm font-semibold">Подтверждение на бумажном носителе</span>
 			</div>
-
-			<div className="modal-body pb-0">
-				<div
-					ref={containerRef}
-					className="relative w-full h-[320px] rounded-xl overflow-hidden border-2 border-dashed border-[var(--odontogram-border)] bg-[var(--paper-soft,#f8fafc)] transition-all hover:border-[var(--teal-500,#14b8a6)]"
-					style={{ touchAction: "none" }}
-				>
-					<canvas
-						ref={canvasRef}
-						className="w-full h-full cursor-crosshair focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))]"
-						tabIndex={0}
-						role="img"
-						aria-label="Поле для графической подписи пациента"
-						onMouseDown={startDrawing}
-						onMouseMove={draw}
-						onMouseUp={stopDrawing}
-						onMouseOut={stopDrawing}
-						onBlur={stopDrawing}
-						onTouchStart={startDrawing}
-						onTouchMove={draw}
-						onTouchEnd={stopDrawing}
-						onTouchCancel={stopDrawing}
-					/>
-					{isEmpty && (
-						<div className="absolute inset-0 pointer-events-none flex items-center justify-center text-[var(--odontogram-ink-muted,#94a3b8)] text-lg font-medium select-none">
-							Место для подписи
-						</div>
-					)}
-				</div>
-			</div>
-
-			<div className="modal-footer pt-6 flex items-center justify-between">
+			<p className="text-xs text-slate-600 dark:text-slate-300">
+				Графический ввод росчерка на экране упразднён. Подтвердите подписание на бумаге в 1 клик (ст. 84 323-ФЗ).
+			</p>
+			<div className="flex flex-col sm:flex-row gap-2 pt-1">
 				<button
 					type="button"
-					onClick={clear}
-					aria-label="Очистить подпись"
-					className="modal-btn secondary flex-none focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
+					onClick={() => onSign(DEFAULT_PAPER_STAMP)}
+					className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all cursor-pointer shadow-sm"
 				>
-					Очистить
+					<CheckCircle2 size={16} />
+					<span>Подтвердить подпись (1 клик)</span>
 				</button>
-				<div className="flex items-center gap-3">
-					<button
-						type="button"
-						onClick={onCancel}
-						aria-label="Отмена"
-						className="modal-btn secondary focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98]"
-					>
-						Отмена
-					</button>
-					<button
-						type="button"
-						onClick={handleSave}
-						disabled={isEmpty}
-						aria-label="Подписать документ"
-						className="modal-btn primary focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring,rgba(20,184,166,0.5))] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-					>
-						Подписать
-					</button>
-				</div>
+				<button
+					type="button"
+					onClick={onCancel}
+					className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+				>
+					<X size={16} />
+					<span>Отмена</span>
+				</button>
 			</div>
-		</>
+		</div>
 	);
 }
