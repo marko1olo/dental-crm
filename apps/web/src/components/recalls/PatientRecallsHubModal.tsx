@@ -12,6 +12,7 @@ import {
 	AlertTriangle,
 	BarChart3,
 	Calendar,
+	Check,
 	CheckCircle2,
 	Clock,
 	Lightbulb,
@@ -26,6 +27,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
+import { showToast } from "../GlobalToast";
 import {
 	RECALL_CYCLE_CATALOG,
 	buildTelegramUrl,
@@ -313,6 +315,13 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 
 	// 1-Click WhatsApp
 	const handleWhatsApp = async (candidate: PatientRecallRecord) => {
+		if (!candidate.phone || !candidate.phone.trim()) {
+			showToast(
+				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"warning",
+			);
+			return;
+		}
 		const message = generateWhatsAppRecallMessage(candidate, { clinicName });
 		if (onSendWhatsApp) {
 			await onSendWhatsApp(candidate, message);
@@ -327,6 +336,13 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 
 	// 1-Click Telegram
 	const handleTelegram = async (candidate: PatientRecallRecord) => {
+		if (!candidate.phone || !candidate.phone.trim()) {
+			showToast(
+				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"warning",
+			);
+			return;
+		}
 		const message = generateTelegramRecallMessage(candidate, { clinicName });
 		if (onSendTelegram) {
 			await onSendTelegram(candidate, message);
@@ -341,6 +357,13 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 
 	// Копирование SMS
 	const handleCopySms = (candidate: PatientRecallRecord) => {
+		if (!candidate.phone || !candidate.phone.trim()) {
+			showToast(
+				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"warning",
+			);
+			return;
+		}
 		const smsText = generateSmsRecallMessage(candidate, { clinicName });
 		navigator.clipboard.writeText(smsText).catch(() => {});
 		setCopiedCandidateId(candidate.id);
@@ -717,8 +740,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																	type="button"
 																	className="recall-action-btn recall-action-btn--whatsapp"
 																	title="Отправить готовое сообщение в WhatsApp"
-																	disabled={!candidate.phone}
+																	style={{ minHeight: "44px" }}
 																	onClick={() => void handleWhatsApp(candidate)}
+																	data-testid={`recall-whatsapp-btn-${candidate.id}`}
 																>
 																	<MessageCircle size={16} />
 																	<span>WhatsApp</span>
@@ -729,8 +753,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																	type="button"
 																	className="recall-action-btn recall-action-btn--telegram"
 																	title="Отправить персонализированное сообщение в Telegram"
-																	disabled={!candidate.phone}
+																	style={{ minHeight: "44px" }}
 																	onClick={() => void handleTelegram(candidate)}
+																	data-testid={`recall-telegram-btn-${candidate.id}`}
 																>
 																	<Send size={16} />
 																	<span>TG</span>
@@ -741,7 +766,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																	type="button"
 																	className={`recall-action-btn recall-action-btn--script ${isScriptActive ? "active" : ""}`}
 																	title="Открыть речевой скрипт для администратора"
+																	style={{ minHeight: "44px" }}
 																	onClick={() => handleToggleScript(candidate)}
+																	data-testid={`recall-script-btn-${candidate.id}`}
 																>
 																	<PhoneCall size={16} />
 																	<span>Скрипт</span>
@@ -752,7 +779,9 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																	type="button"
 																	className="recall-action-btn recall-action-btn--book"
 																	title="Записать пациента на прием"
+																	style={{ minHeight: "44px" }}
 																	onClick={() => handleBook(candidate)}
+																	data-testid={`recall-book-btn-${candidate.id}`}
 																>
 																	<Calendar size={16} />
 																	<span>Записать</span>
@@ -763,10 +792,18 @@ export const PatientRecallsHubModal: React.FC<PatientRecallsHubModalProps> = ({
 																	type="button"
 																	className="recall-action-btn"
 																	title="Скопировать SMS текст"
-																	disabled={!candidate.phone}
+																	style={{ minHeight: "44px" }}
 																	onClick={() => handleCopySms(candidate)}
+																	data-testid={`recall-sms-btn-${candidate.id}`}
 																>
-																	{copiedCandidateId === candidate.id ? "✓" : "SMS"}
+																	{copiedCandidateId === candidate.id ? (
+																		<span style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>
+																			<Check size={14} />
+																			<span>Скопировано</span>
+																		</span>
+																	) : (
+																		<span>SMS</span>
+																	)}
 																</button>
 															</div>
 														</td>

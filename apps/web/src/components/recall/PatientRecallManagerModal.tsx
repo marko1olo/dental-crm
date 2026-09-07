@@ -15,6 +15,7 @@ import { useId, useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	Calendar,
+	Check,
 	CheckCircle2,
 	Clock,
 	Copy,
@@ -36,6 +37,7 @@ import {
 	User,
 	X,
 } from "lucide-react";
+import { showToast } from "../GlobalToast";
 import "./patientRecall.css";
 
 export type RecallCategoryFilter =
@@ -514,6 +516,14 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 
 	// 1. Действие: Отправить в WhatsApp
 	const handleSendWhatsApp = async (candidate: PatientRecallItem) => {
+		if (!candidate.phone || !candidate.phone.trim()) {
+			showToast(
+				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"warning",
+			);
+			return;
+		}
+
 		const message =
 			activeCandidate?.id === candidate.id && editableMessage
 				? editableMessage
@@ -536,6 +546,14 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 
 	// 2. Действие: Отправить в Telegram
 	const handleSendTelegram = async (candidate: PatientRecallItem) => {
+		if (!candidate.phone || !candidate.phone.trim()) {
+			showToast(
+				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"warning",
+			);
+			return;
+		}
+
 		const message =
 			activeCandidate?.id === candidate.id && editableMessage
 				? editableMessage
@@ -558,6 +576,14 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 
 	// 3. Действие: Позвонить (с фиксацией даты контакта и переходом в CONTACTED)
 	const handleCallPhone = async (candidate: PatientRecallItem) => {
+		if (!candidate.phone || !candidate.phone.trim()) {
+			showToast(
+				"У пациента не указан номер телефона. Укажите номер в карточке пациента",
+				"warning",
+			);
+			return;
+		}
+
 		if (onCallPhone) {
 			await onCallPhone(candidate);
 		} else if (candidate.phone) {
@@ -905,7 +931,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																	type="button"
 																	className="pr-btn pr-btn--whatsapp"
 																	title="Отправить в WhatsApp и перевести в CONTACTED"
-																	disabled={!candidate.phone}
+																	style={{ minHeight: "44px" }}
 																	onClick={() => void handleSendWhatsApp(candidate)}
 																	data-testid={`pr-whatsapp-btn-${candidate.id}`}
 																>
@@ -918,7 +944,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																	type="button"
 																	className="pr-btn pr-btn--telegram"
 																	title="Отправить в Telegram и перевести в CONTACTED"
-																	disabled={!candidate.phone}
+																	style={{ minHeight: "44px" }}
 																	onClick={() => void handleSendTelegram(candidate)}
 																	data-testid={`pr-telegram-btn-${candidate.id}`}
 																>
@@ -931,7 +957,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																	type="button"
 																	className="pr-btn pr-btn--call"
 																	title="Позвонить, открыть скрипт и перевести в CONTACTED"
-																	disabled={!candidate.phone}
+																	style={{ minHeight: "44px" }}
 																	onClick={() => void handleCallPhone(candidate)}
 																	data-testid={`pr-call-btn-${candidate.id}`}
 																>
@@ -944,6 +970,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																	type="button"
 																	className="pr-btn pr-btn--book"
 																	title="Записать в расписание (перевести в статус BOOKED)"
+																	style={{ minHeight: "44px" }}
 																	onClick={() => handleBookAppointment(candidate)}
 																	data-testid={`pr-book-btn-${candidate.id}`}
 																>
@@ -956,6 +983,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																	type="button"
 																	className="pr-btn pr-btn--preview"
 																	title="Открыть предпросмотр сообщения"
+																	style={{ minHeight: "44px", minWidth: "44px" }}
 																	onClick={() => handleOpenGenerator(candidate, "whatsapp")}
 																	data-testid={`pr-preview-btn-${candidate.id}`}
 																>
@@ -1033,8 +1061,9 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 												<button
 													type="button"
 													className="pr-btn pr-btn--whatsapp"
-													disabled={!candidate.phone}
+													style={{ minHeight: "44px" }}
 													onClick={() => void handleSendWhatsApp(candidate)}
+													data-testid={`pr-mobile-whatsapp-btn-${candidate.id}`}
 												>
 													<MessageCircle size={14} />
 													<span>WhatsApp</span>
@@ -1042,8 +1071,9 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 												<button
 													type="button"
 													className="pr-btn pr-btn--telegram"
-													disabled={!candidate.phone}
+													style={{ minHeight: "44px" }}
 													onClick={() => void handleSendTelegram(candidate)}
+													data-testid={`pr-mobile-telegram-btn-${candidate.id}`}
 												>
 													<Send size={14} />
 													<span>Telegram</span>
@@ -1051,8 +1081,9 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 												<button
 													type="button"
 													className="pr-btn pr-btn--call"
-													disabled={!candidate.phone}
+													style={{ minHeight: "44px" }}
 													onClick={() => void handleCallPhone(candidate)}
+													data-testid={`pr-mobile-call-btn-${candidate.id}`}
 												>
 													<PhoneCall size={14} />
 													<span>Звонок</span>
@@ -1060,7 +1091,9 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 												<button
 													type="button"
 													className="pr-btn pr-btn--book"
+													style={{ minHeight: "44px" }}
 													onClick={() => handleBookAppointment(candidate)}
+													data-testid={`pr-mobile-book-btn-${candidate.id}`}
 												>
 													<Calendar size={14} />
 													<span>Записать</span>
@@ -1100,7 +1133,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																{item.urgency === "overdue_30" && `+${item.daysOverdue}д`}
 																{item.urgency === "overdue_90" && `+${item.daysOverdue}д!`}
 																{item.urgency === "upcoming" && "Скоро"}
-																{item.urgency === "completed" && "✓"}
+																{item.urgency === "completed" && <Check size={12} />}
 															</span>
 														</div>
 
@@ -1120,7 +1153,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																type="button"
 																className="pr-btn pr-btn--book"
 																title="Записать в расписание"
-																style={{ minHeight: "36px", padding: "0 12px", flex: 1 }}
+																style={{ minHeight: "44px", padding: "0 12px", flex: 1 }}
 																onClick={() => handleBookAppointment(item)}
 															>
 																<Calendar size={14} />
@@ -1135,7 +1168,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																	aria-label="Каналы связи и действия"
 																	aria-haspopup="menu"
 																	aria-expanded={openMenuCardId === item.id}
-																	style={{ minHeight: "36px", minWidth: "36px", padding: "0 8px" }}
+																	style={{ minHeight: "44px", minWidth: "44px", padding: "0 8px" }}
 																	onClick={() =>
 																		setOpenMenuCardId((prev) => (prev === item.id ? null : item.id))
 																	}
@@ -1149,6 +1182,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																			type="button"
 																			role="menuitem"
 																			className="pr-dropdown-item"
+																			style={{ minHeight: "44px" }}
 																			onClick={() => {
 																				setOpenMenuCardId(null);
 																				void handleSendWhatsApp(item);
@@ -1162,6 +1196,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																			type="button"
 																			role="menuitem"
 																			className="pr-dropdown-item"
+																			style={{ minHeight: "44px" }}
 																			onClick={() => {
 																				setOpenMenuCardId(null);
 																				void handleSendTelegram(item);
@@ -1175,6 +1210,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 																			type="button"
 																			role="menuitem"
 																			className="pr-dropdown-item"
+																			style={{ minHeight: "44px" }}
 																			onClick={() => {
 																				setOpenMenuCardId(null);
 																				void handleCallPhone(item);
@@ -1293,7 +1329,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 													<button
 														type="button"
 														className="pr-btn pr-btn--whatsapp"
-														style={{ flex: 1, height: "36px" }}
+														style={{ flex: 1, minHeight: "44px" }}
 														onClick={() => void handleSendWhatsApp(activeCandidate)}
 														data-testid="pr-drawer-send-wa-btn"
 													>
@@ -1306,7 +1342,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 													<button
 														type="button"
 														className="pr-btn pr-btn--telegram"
-														style={{ flex: 1, height: "36px" }}
+														style={{ flex: 1, minHeight: "44px" }}
 														onClick={() => void handleSendTelegram(activeCandidate)}
 														data-testid="pr-drawer-send-tg-btn"
 													>
@@ -1319,19 +1355,28 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 													<button
 														type="button"
 														className="pr-btn"
-														style={{ flex: 1, height: "36px" }}
+														style={{ flex: 1, minHeight: "44px" }}
 														onClick={handleCopyText}
 														data-testid="pr-drawer-copy-sms-btn"
 													>
 														<Copy size={15} />
-														<span>{copiedNotice ? "Скопировано в буфер ✓" : "Скопировать SMS"}</span>
+														<span>
+															{copiedNotice ? (
+																<span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+																	<Check size={14} />
+																	<span>Скопировано в буфер</span>
+																</span>
+															) : (
+																<span>Скопировать SMS</span>
+															)}
+														</span>
 													</button>
 												)}
 
 												<button
 													type="button"
 													className="pr-btn"
-													style={{ height: "36px" }}
+													style={{ minHeight: "44px", minWidth: "44px" }}
 													onClick={handleCopyText}
 													title="Скопировать в буфер"
 												>
@@ -1342,7 +1387,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 											<button
 												type="button"
 												className="pr-btn pr-btn--book"
-												style={{ height: "36px" }}
+												style={{ minHeight: "44px" }}
 												onClick={() => handleBookAppointment(activeCandidate)}
 												data-testid="pr-drawer-book-btn"
 											>
@@ -1415,7 +1460,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 											<button
 												type="button"
 												className="pr-btn pr-btn--book"
-												style={{ height: "36px" }}
+												style={{ minHeight: "44px" }}
 												onClick={() => handleBookAppointment(activeCandidate)}
 												data-testid="pr-script-book-btn"
 											>
