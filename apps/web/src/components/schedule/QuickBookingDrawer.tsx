@@ -107,11 +107,57 @@ export function resolveChairDutyDoctor(
 				? Number.parseInt(startsAtIsoOrLocal.slice(11, 13), 10)
 				: NaN;
 
-		// Sub-shifts check for multi-shift chairs
+		// 1. Two-shift chair handling: morning (< 14:00) vs evening (>= 14:00)
+		if (
+			(assignment.subShifts && assignment.subShifts.length > 1) ||
+			assignment.shiftPreset === "two_shifts"
+		) {
+			const mornSub = assignment.subShifts?.[0] || {
+				doctorId: assignment.doctorId,
+				doctorName: assignment.doctorName,
+				startHour: 8,
+				endHour: 14,
+				shiftHours: "08:00–14:00",
+			};
+			const eveSub = assignment.subShifts?.[1] || {
+				doctorId: assignment.doctorId,
+				doctorName: assignment.doctorName,
+				startHour: 14,
+				endHour: 20,
+				shiftHours: "14:00–20:00",
+			};
+
+			const mornStart = mornSub.startHour ?? 8;
+			const eveEnd = eveSub.endHour ?? 20;
+
+			if (!Number.isNaN(hourNum)) {
+				if (hourNum < mornStart || (hourNum >= eveEnd && (eveEnd < 20 || hourNum > 20))) {
+					return { doctorId: null, shiftHours: assignment.shiftHours || "08:00–20:00" };
+				}
+				if (hourNum < 14) {
+					return {
+						doctorId: mornSub.doctorId || assignment.doctorId || null,
+						shiftHours: mornSub.shiftHours || "08:00–14:00",
+					};
+				}
+				return {
+					doctorId: eveSub.doctorId || mornSub.doctorId || assignment.doctorId || null,
+					shiftHours: eveSub.shiftHours || "14:00–20:00",
+				};
+			}
+			return {
+				doctorId: assignment.doctorId,
+				shiftHours: assignment.shiftHours || "08:00–20:00",
+			};
+		}
+
+		// 2. Custom sub-shifts array
 		if (assignment.subShifts && assignment.subShifts.length > 0) {
 			if (!Number.isNaN(hourNum)) {
 				const matchingSub = assignment.subShifts.find(
-					(s) => hourNum >= s.startHour && hourNum < s.endHour,
+					(s) =>
+						hourNum >= s.startHour &&
+						(hourNum < s.endHour || (s.endHour >= 20 && hourNum <= 20)),
 				);
 				if (matchingSub) {
 					return {
@@ -121,7 +167,6 @@ export function resolveChairDutyDoctor(
 							`${String(matchingSub.startHour).padStart(2, "0")}:00–${String(matchingSub.endHour).padStart(2, "0")}:00`,
 					};
 				}
-				// Outside any sub-shift on this chair
 				return { doctorId: null, shiftHours: assignment.shiftHours || "08:00–20:00" };
 			}
 			return {
@@ -130,11 +175,25 @@ export function resolveChairDutyDoctor(
 			};
 		}
 
-		// Single shift check
+		// 3. Preset bounds: morning only vs evening only
+		if (assignment.shiftPreset === "morning") {
+			if (!Number.isNaN(hourNum) && hourNum >= 14) {
+				return { doctorId: null, shiftHours: "08:00–14:00" };
+			}
+			return { doctorId: assignment.doctorId, shiftHours: "08:00–14:00" };
+		}
+		if (assignment.shiftPreset === "evening") {
+			if (!Number.isNaN(hourNum) && (hourNum < 14 || hourNum > 20)) {
+				return { doctorId: null, shiftHours: "14:00–20:00" };
+			}
+			return { doctorId: assignment.doctorId, shiftHours: "14:00–20:00" };
+		}
+
+		// 4. Start/End hour limits
 		const sHour = assignment.startHour ?? 8;
 		const eHour = assignment.endHour ?? 20;
 		if (!Number.isNaN(hourNum)) {
-			if (hourNum >= sHour && hourNum < eHour) {
+			if (hourNum >= sHour && (hourNum < eHour || (eHour >= 20 && hourNum <= 20))) {
 				return {
 					doctorId: assignment.doctorId,
 					shiftHours:
@@ -142,7 +201,6 @@ export function resolveChairDutyDoctor(
 						`${String(sHour).padStart(2, "0")}:00–${String(eHour).padStart(2, "0")}:00`,
 				};
 			}
-			// Outside single shift
 			return {
 				doctorId: null,
 				shiftHours:
@@ -284,6 +342,26 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	);
 	const initialDoctorId = useMemo(() => {
 		if (initialSlot?.doctorUserId) return initialSlot.doctorUserId;
+		const targetChairId =
+			initialSlot?.chairId ||
+			(dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active)[0]?.id ||
+			DEFAULT_SOLO_CHAIR.id;
+		if (targetChairId) {
+			const targetTime =
+				initialSlot?.startsAt ||
+				(initialSlot?.dateKey && initialSlot?.startTime
+					? `${initialSlot.dateKey}T${initialSlot.startTime}`
+					: undefined);
+			const duty = resolveChairDutyDoctor(
+				targetChairId,
+				targetTime,
+				chairDoctorAssignments,
+				initialSlot?.dateKey,
+			);
+			if (duty.doctorId) {
+				return duty.doctorId;
+			}
+		}
 		const st = dashboard?.clinicSettings?.staff ?? [];
 		const docs = st.filter((m) => m.active && (m.role === "doctor" || m.role === "owner"));
 		const chs = (dashboard?.clinicSettings?.chairs ?? []).filter((c) => c.active);
@@ -299,7 +377,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			return docs[0].id;
 		}
 		return "";
-	}, [initialSlot?.doctorUserId, dashboard]);
+	}, [initialSlot, chairDoctorAssignments, dashboard]);
 
 	const initialChairId = useMemo(() => {
 		if (initialSlot?.chairId) return initialSlot.chairId;
@@ -1329,11 +1407,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											setNewPatientFullName("Пациент с острой болью (CITO)");
 											setNewPatientPhone("");
 										}}
-										className="text-xs font-extrabold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 min-h-[36px] px-2 bg-rose-500/10 rounded-lg cursor-pointer"
+										className="text-xs font-extrabold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-rose-500/10 rounded-xl cursor-pointer transition-colors"
 										title="Создать временную карту для пациента с острой болью за 1 клик"
 										data-testid="quick-booking-cito-express-btn"
 									>
-										<Flame size={13} />
+										<Flame size={14} />
 										<span>+ Экспресс-пациент CITO</span>
 									</button>
 									<button
@@ -1358,11 +1436,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												},
 											);
 										}}
-										className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 min-h-[36px] px-2 bg-amber-500/10 rounded-lg cursor-pointer"
+										className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-amber-500/10 rounded-xl cursor-pointer transition-colors"
 										title="Распечатать пустой договор со строками _______ для ручного заполнения (Мандат 8e)"
 										data-testid="quick-booking-print-blank-contract-btn"
 									>
-										<FileText size={13} className="text-amber-600" />
+										<FileText size={14} className="text-amber-600" />
 										<span>Бланк договора (_______)</span>
 									</button>
 									<button
@@ -1376,7 +1454,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
 											);
 										}}
-										className="text-xs font-bold text-[var(--teal)] hover:underline flex items-center gap-1 min-h-[36px] px-2 cursor-pointer"
+										className="text-xs font-bold text-[var(--teal)] hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-[var(--teal)]/10 rounded-xl cursor-pointer transition-colors"
 									>
 										<UserPlus size={14} />
 										<span>+ Новый пациент</span>
@@ -1695,7 +1773,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 															/^[0-9+()-\s]+$/.test(searchQuery) ? searchQuery : "",
 														);
 													}}
-													className="block mx-auto mt-2 text-xs font-bold text-[var(--teal)] hover:underline min-h-[36px]"
+													className="block mx-auto mt-2 text-xs font-bold text-[var(--teal)] hover:underline min-h-[44px] px-3 py-2 rounded-lg cursor-pointer"
 												>
 													+ Создать «{searchQuery || "Нового пациента"}»
 												</button>
@@ -1720,7 +1798,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									<button
 										type="button"
 										onClick={() => setShowInlineNewPatient(false)}
-										className="text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+										className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] px-3 py-2 rounded-lg hover:bg-[var(--paper)] transition-colors cursor-pointer flex items-center justify-center"
 									>
 										Отмена
 									</button>
@@ -2006,6 +2084,17 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 										);
 										if (newDuty.doctorId) {
 											setDoctorUserId(newDuty.doctorId);
+											const newChair =
+												chairs.find((c) => c.id === newChairId) ||
+												(newChairId === DEFAULT_SOLO_CHAIR.id ? DEFAULT_SOLO_CHAIR : null);
+											const newDoc = doctors.find((d) => d.id === newDuty.doctorId);
+											if (newDoc) {
+												showToast(
+													`Дежурный врач: ${formatDoctorShortName(newDoc.fullName)} (${newChair?.name || "Кресло"}, ${newDuty.shiftHours})`,
+													"info",
+													3000,
+												);
+											}
 										}
 									}
 								}}
