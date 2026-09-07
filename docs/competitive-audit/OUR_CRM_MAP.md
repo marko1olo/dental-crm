@@ -1423,6 +1423,37 @@
 - **Фронтенд**: `apps/web/src/components/recall/PatientRecallManagerModal.tsx`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`.
 - **Тесты**: `apps/web/src/components/recall/__tests__/patientRecallAutonomy.test.tsx` (10 тестов, 100% pass, коммит `0165a1ce4`).
 
+#### 2.10.150. Персонал, коммуникации, документы и ТРГ: автономия пинпада, сообщений, композера и ортодонтии (Мандаты 8d, 8e, 8k, 8n / Авторизация, Сообщения, Документы & ТРГ, Фича #189)
+- **Суть и домен**: Ликвидация барьеров и заблокированных состояний в модулях авторизации персонала, исходящих сообщений, ИИ-композера, ТРГ-анализа и печати бланков:
+  1. *Неблокирующий ввод пин-кода персонала*: в `StaffPinPad.tsx` снята блокировка с кнопки подтверждения пин-кода, добавлен подсказчик ввода и безопасные амбулаторные переходы без тупиковых экранов (Мандат 8e).
+  2. *Неблокирующая консоль исходящих сообщений*: в `MessageDeliveryConsole.tsx` разблокированы кнопки повтора отправки и ручной модерации сообщений.
+  3. *ИИ-композер клинических ответов*: в `CopilotComposer.tsx` снята блокировка при пустом промпте, добавлены быстрые пресеты клинических сценариев («Острая боль», «План лечения», «Напоминание о визите»).
+  4. *Печать бланков договоров и справок*: в `PaidMedicalContractModal.tsx` и `TaxDeductionCertificateModal.tsx` обеспечена печать договоров со строками `________` и справок КНД 1151156; в `CephalometricCanvas.tsx` тач-таргеты калибровочных маркеров приведены к $\ge 44\text{px}$ (Мандат 8d).
+- **Фронтенд**: `apps/web/src/components/auth/StaffPinPad.tsx`, `apps/web/src/components/communications/MessageDeliveryConsole.tsx`, `apps/web/src/components/copilot/CopilotComposer.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/finance/TaxDeductionCertificateModal.tsx`, `apps/web/src/components/offline/OfflineContinuityStrip.tsx`, `apps/web/src/components/orthodontics/CephalometricCanvas.tsx`, `apps/web/src/components/voice/VoiceDictationAssistantModal.tsx`.
+- **Тесты**: `apps/web/src/components/auth/__tests__/staffPinPadAutonomy.test.tsx`, `messageDeliveryConsoleAutonomy.test.tsx`, `copilotComposerAutonomy.test.tsx`, `documentsViewAutonomy.test.tsx` (38 тестов, 100% pass, коммит `091234419`).
+
+#### 2.10.151. Анализ паритета расписания и управления креслами: StomX / IDENT архитектурный аудит и 5 ключевых гэпов (Мандаты 8c, 8d, 8e, 8k, 8n / Расписание & Кресла, Фичи #190..192)
+- **Суть и домен**: Комплексный аудит возможностей расписания и управления креслами в сравнении со StomX и IDENT:
+  1. *Реализованный паритет*:
+     - Инлайн-добавление кресел за 1 клик прямо из сетки (`QuickAddChairModal.tsx`, `ScheduleFilterStrip.tsx`, Фича #164).
+     - Постоянная инлайн-колонка `+ Кресло` в календарной сетке (`ScheduleGrid.tsx`, Фича #168).
+     - Двухсменная шапка колонок кресел (08:00–14:00 и 14:00–20:00) с пульсирующим статусом «● На смене» (Фичи #170, #177, #182).
+     - 1-клик переключатель смен в шапке кресла (☀️ Утро / 🌙 Вечер / 🏢 Весь день / 2 смены).
+     - Почасовое связывание дежурного врача (`getDoctorForChairAndHour`), автоподстановка в `QuickBookingDrawer.tsx` и мягкое предупреждение при ручной смене врача без блокировки кнопки записи (Мандат 8e, Фича #182).
+     - 1-клик поповер матрицы смен (`roster-cell-popover`) с 4 пресетами и чистым движком `applyCellShiftPreset` (Фича #183).
+     - Липкая колонка времени `sticky left-0` при скролле 10+ кресел и фильтр «Моё кресло» (Фича #171).
+     - Декомпозиция монолита ростера до 613 строк с детерминированным аллокатором без коллизий (Фича #172).
+     - Zero-config fallback `DEFAULT_SOLO_CHAIR` для соло-врачей без заведенного парка кресел (Фича #120).
+     - HTML5 Drag-and-Drop записей между креслами/слотами с защитой от коллизий и перетаскивание из Листа ожидания в свободные окна (Фича #138).
+  2. *Выявленные реальные гэпы для бэклога*:
+     - *Гэп 1 (Фича #190)*: В StomX в дампе `workplaces/colors.json` зафиксировано 14 двухцветных палитр (`bright_code`, `code`, `dark`, `bright_dark`), тогда как в DENTE в `QuickAddChairModal.tsx` доступно 6 цветов; в сетке `ScheduleGrid.tsx` отсутствует верхняя акцентная полоска цвета кресла (`chair.color`).
+     - *Гэп 2 (Фича #191)*: В StomX в дампе `users/schedule.json` реализовано чередование смен `type: "wod_even"`, `is_even: 1` (чётные/нечётные дни месяца). В DENTE есть 5/2, 2/2, утро, вечер, но нет готового пресета «Чётные / Нечётные дни» в 1 клик.
+     - *Гэп 3 (Фича #191)*: Быстрое закрытие кресла на санобработку / техперерыв на 1–2 часа прямо из шапки сетки без создания фиктивных пациентов.
+     - *Гэп 4 (Фича #192)*: Настраиваемый шаг сетки расписания (15/20/30/60 мин) и динамические рабочие часы клиники вместо фиксированных 08:00–20:00.
+     - *Гэп 5 (Фича #192)*: Разрешение CITO-овербукинга при Drag-and-Drop с мягким подтверждением вместо жесткой ошибки.
+- **Фронтенд**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `QuickAddChairModal.tsx`, `QuickBookingDrawer.tsx`, `ScheduleFilterStrip.tsx`, `DoctorShiftRosterModal.tsx`, `DoctorRosterMatrix.tsx`.
+- **Тесты**: `scheduleChairDoctorBinding.test.tsx`, `scheduleGridStomxInquisition.test.tsx`, `scheduleInlineChairManagement.test.tsx`, `soloDoctorScheduleAutonomy.test.tsx`, `scheduleRosterMatrixAutonomy.test.tsx`, `scheduleShiftRosterIntegration.test.tsx` (87 тестов, 100% pass).
+
 
 
 

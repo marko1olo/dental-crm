@@ -1961,11 +1961,31 @@
 - **Файлы**: `apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx`, `apps/web/src/components/chat/WhatsAppChatPanel.tsx`, `apps/web/src/components/messaging/PatientOmnichannelHubModal.tsx`, `apps/web/src/components/recall/PatientRecallManagerModal.tsx`, `apps/web/src/components/recalls/PatientRecallsHubModal.tsx`.
 - **Тесты**: `sberPosAutonomy.test.tsx`, `chatMessagingAutonomy.test.tsx`, `patientRecallAutonomy.test.tsx` (21 тест, 100% pass, коммиты `23c474057`, `cb1c74220`, `0165a1ce4`).
 
+### 4.62. Авторизация персонала, сообщения, ИИ-композер и ТРГ (Мандаты 8d, 8e, 8k, 8n / Фича 189)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Фича #189: Разблокировка пинпада, сообщений, композера и ТРГ*: в `StaffPinPad.tsx`, `MessageDeliveryConsole.tsx`, `CopilotComposer.tsx`, `PaidMedicalContractModal.tsx`, `TaxDeductionCertificateModal.tsx`, `OfflineContinuityStrip.tsx`, `CephalometricCanvas.tsx` и `VoiceDictationAssistantModal.tsx` сняты неблокирующие барьеры (`disabled={false}`), добавлены активные тосты и пресеты норм, тач-таргеты приведены к $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/components/auth/StaffPinPad.tsx`, `MessageDeliveryConsole.tsx`, `CopilotComposer.tsx`, `PaidMedicalContractModal.tsx`, `TaxDeductionCertificateModal.tsx`, `OfflineContinuityStrip.tsx`, `CephalometricCanvas.tsx`, `VoiceDictationAssistantModal.tsx`.
+- **Тесты**: `staffPinPadAutonomy.test.tsx`, `messageDeliveryConsoleAutonomy.test.tsx`, `copilotComposerAutonomy.test.tsx`, `documentsViewAutonomy.test.tsx` (38 тестов, 100% pass, коммит `091234419`).
+
+### 4.63. Глубокий аудит расписания и управления креслами: StomX / IDENT паритет и бэклог расширений (Мандаты 8c, 8d, 8e, 8k, 8n / Фичи 190..192)
+- **Статус**: `[В БЭКЛОГЕ / СПЕЦИФИКАЦИЯ]`
+- **Объем задач**:
+  1. *Фича #190: 14 цветовых палитр StomX (`colors.json`) и акцентная цветная полоса кресла в сетке*:
+     - В `QuickAddChairModal.tsx` расширение палитры с 6 до 14 аутентичных палитр StomX (`workplaces/colors.json`) с парными светлыми и темными оттенками;
+     - В `ScheduleGrid.tsx` верхняя акцентная полоска (`border-t-4` цвета кресла) в шапке каждой колонки для мгновенного визуального распознавания при 10+ креслах.
+  2. *Фича #191: Чередование смен по чётным / нечётным числам (`wod_even` / `is_even: 1` по StomX) и 1-клик техперерыв / санобработка*:
+     - В `doctorShiftRosterPresets.ts` и `DoctorShiftRosterModal.tsx` генератор сменности «Чётные / Нечётные дни месяца» (1-я смена 08:00–14:00 по чётным, 2-я смена 14:00–20:00 по нечётным);
+     - В `ScheduleGrid.tsx` 1-клик перевод кресла в статус «Техперерыв / Санобработка (1 ч)» прямо из контекстного меню шапки кресла без создания фиктивных пациентов.
+  3. *Фича #192: CITO-овербукинг при Drag-and-Drop и настраиваемый шаг сетки*:
+     - В `ScheduleGrid.tsx` мягкое разрешение овербукинга при Drag-and-Drop для экстренной боли CITO с диалогом подтверждения вместо жесткой блокировки;
+     - Поддержка динамического переключения дискретности сетки (15 / 30 / 60 минут).
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 125 дополнительных системных аддендум-фич клинической автономии (Wave 15..33, фичи 64..188) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 126 дополнительных системных аддендум-фич клинической автономии (Wave 15..34, фичи 64..189) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
