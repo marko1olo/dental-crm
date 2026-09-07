@@ -2103,6 +2103,26 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 							<span>{submitError}</span>
 						</div>
 					)}
+					{/* Inline Slot Conflict Banner / Alternative Slots (Sin 6, Anti-Matryoshka) */}
+					<SlotConflictModal
+						isOpen={Boolean(slotConflict)}
+						inline={true}
+						onClose={() => setSlotConflict(null)}
+						conflictMessage={slotConflict?.message}
+						suggestedSlots={slotConflict?.suggestedSlots ?? []}
+						patientName={selectedPatient?.fullName}
+						doctorName={doctors.find((d) => d.id === doctorUserId)?.fullName}
+						onOverbook={() => void handleSubmitBooking(undefined, { overbookOverride: true })}
+						onSelectSlot={(slotTime) => {
+							if (startsAtLocal) {
+								const datePrefix = startsAtLocal.slice(0, 11);
+								const newStart = `${datePrefix}${slotTime}`;
+								setStartsAtLocal(newStart);
+								showToast(`Время изменено на ${slotTime}. Нажмите «Записать на прием» для подтверждения.`, "success");
+							}
+							setSlotConflict(null);
+						}}
+					/>
 				</div>
 
 				{/* Footer Actions */}
@@ -2185,24 +2205,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						</div>
 					</div>
 				)}
-				<SlotConflictModal
-					isOpen={Boolean(slotConflict)}
-					onClose={() => setSlotConflict(null)}
-					conflictMessage={slotConflict?.message}
-					suggestedSlots={slotConflict?.suggestedSlots ?? []}
-					patientName={selectedPatient?.fullName}
-					doctorName={doctors.find((d) => d.id === doctorUserId)?.fullName}
-					onOverbook={() => void handleSubmitBooking(undefined, { overbookOverride: true })}
-					onSelectSlot={(slotTime) => {
-						if (startsAtLocal) {
-							const datePrefix = startsAtLocal.slice(0, 11);
-							const newStart = `${datePrefix}${slotTime}`;
-							setStartsAtLocal(newStart);
-							showToast(`Время изменено на ${slotTime}. Нажмите «Записать на прием» для подтверждения.`, "success");
-						}
-						setSlotConflict(null);
-					}}
-				/>
 			</div>
 		</div>
 	);

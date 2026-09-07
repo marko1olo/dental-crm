@@ -161,7 +161,20 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						</div>
 						<div className="roster-kpi-card">
 							<span className="roster-kpi-label">
-								Норма месяца ({monthNormObj?.nameRu || "Август"})
+								Норма месяца (
+								{monthNormObj?.nameRu ||
+									(() => {
+										try {
+											const d = new Date(weekStartDateIso || Date.now());
+											const raw = new Intl.DateTimeFormat("ru-RU", {
+												month: "long",
+											}).format(d);
+											return raw.charAt(0).toUpperCase() + raw.slice(1);
+										} catch {
+											return "Текущий месяц";
+										}
+									})()}
+								)
 							</span>
 							<span
 								className="roster-kpi-val"

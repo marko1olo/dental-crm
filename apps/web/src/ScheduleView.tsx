@@ -748,6 +748,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 
 	const handleAddChairFromSchedule = useCallback(
 		async (chairData: QuickAddChairData) => {
+			// Сбросить фильтр кресла, чтобы созданное кресло сразу отобразилось в сетке (Defect 6)
+			setScheduleChairFilterId(null);
 			try {
 				const res = await fetch("/api/settings/chairs", {
 					method: "POST",
@@ -767,10 +769,31 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				showToast(`Кресло «${chairData.name}» успешно добавлено в расписание`, "success", 3500);
 			} catch (err) {
 				console.warn("Failed to add chair via QuickAddChairModal:", err);
+				// Оптимистичное локальное добавление в clinicSettings.chairs (Defect 2)
+				if (typeof (props as any).setDashboard === "function") {
+					(props as any).setDashboard((prev: any) => {
+						if (!prev?.clinicSettings) return prev;
+						const localChair = {
+							id: `chair-local-${Date.now()}`,
+							name: chairData.name,
+							room: chairData.room,
+							specialization: chairData.specialization,
+							color: chairData.color,
+							active: true,
+						};
+						return {
+							...prev,
+							clinicSettings: {
+								...prev.clinicSettings,
+								chairs: [...(prev.clinicSettings.chairs ?? []), localChair],
+							},
+						};
+					});
+				}
 				showToast(`Кресло «${chairData.name}» добавлено локально`, "info", 3000);
 			}
 		},
-		[props.loadDashboard],
+		[props.loadDashboard, (props as any).setDashboard],
 	);
 
 	/** Режим отображения: сетка по креслам (grid - дефолт для десктопа) или лента (timeline - дефолт для мобайла) */
@@ -856,6 +879,53 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					persistAndSyncShifts(next);
 					return next;
 				});
+			} else if (
+				assignment.subShifts &&
+				assignment.subShifts.length > 0
+			) {
+				// Сохранение двух смен (утро + вечер) для двух врачей без потери вечернего врача (Defect 1)
+				const multiShifts: DoctorShift[] = assignment.subShifts.map((sub, idx) => {
+					const isEve =
+						idx > 0 ||
+						(sub.startHour ?? 8) >= 14;
+					const archetypeId: ShiftArchetypeId = isEve
+						? "evening_shift"
+						: "morning_shift";
+					const suffix = isEve ? "eve" : "morn";
+					const sH = sub.startHour ?? 8;
+					const eH = sub.endHour ?? (isEve ? 20 : 14);
+					const startTime = `${String(sH).padStart(2, "0")}:00`;
+					const endTime = `${String(eH).padStart(2, "0")}:00`;
+					const doctorRole: MedicalStaffRole =
+						(sub.doctorSpecialty as MedicalStaffRole) || "therapist";
+					return {
+						id: `shift-${currentDateKey}-${chairId}-${suffix}`,
+						doctorId: sub.doctorId,
+						doctorName: sub.doctorName,
+						doctorRole,
+						assistantId: null,
+						assistantName: null,
+						cabinetId: chairId,
+						chairId: chairId,
+						dateIso: currentDateKey,
+						archetypeId,
+						startTime,
+						endTime,
+						durationHours: Math.max(1, eH - sH) || 6.0,
+						breakMinutes: 0,
+						isNight: false,
+						nightHours: 0,
+						status: "scheduled",
+					};
+				});
+				setSavedDoctorShifts((prev) => {
+					const filtered = prev.filter(
+						(s) => !(s.dateIso === currentDateKey && s.chairId === chairId),
+					);
+					const next = [...filtered, ...multiShifts];
+					persistAndSyncShifts(next);
+					return next;
+				});
 			} else {
 				const archetypeId: ShiftArchetypeId =
 					assignment.shiftPreset === "evening"
@@ -864,10 +934,16 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				const parts = assignment.shiftHours.split("–");
 				const startTime = parts[0]?.trim() || "08:00";
 				const endTime = parts[1]?.trim() || "20:00";
+				const suffix =
+					assignment.shiftPreset === "evening"
+						? "eve"
+						: assignment.shiftPreset === "morning"
+							? "morn"
+							: "full";
 				const doctorRole: MedicalStaffRole =
 					(assignment.doctorSpecialty as MedicalStaffRole) || "therapist";
 				const newShift: DoctorShift = {
-					id: `shift-${currentDateKey}-${chairId}-${assignment.shiftPreset}`,
+					id: `shift-${currentDateKey}-${chairId}-${suffix}`,
 					doctorId: assignment.doctorId,
 					doctorName: assignment.doctorName,
 					doctorRole,
@@ -880,8 +956,8 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					startTime,
 					endTime,
 					durationHours:
-						(parseInt(endTime.slice(0, 2), 10) -
-							parseInt(startTime.slice(0, 2), 10)) ||
+						(Number.parseInt(endTime.slice(0, 2), 10) -
+							Number.parseInt(startTime.slice(0, 2), 10)) ||
 						6.0,
 					breakMinutes: 0,
 					isNight: false,

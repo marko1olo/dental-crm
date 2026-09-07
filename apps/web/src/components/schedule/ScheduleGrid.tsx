@@ -881,80 +881,233 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					</div>
 
 					{/* Chair Column Headers with Visit Count & Doctor Shift Badge */}
-					{effectiveChairs.map((chair) => {
-						const chairStat = dailyTally.chairs.find((c) => c.chairId === chair.id);
-						const assignment = effectiveChairAssignments[chair.id];
-						const hasDoctor = Boolean(assignment && assignment.doctorId);
-						const suggestedDoctor = getSuggestedDoctorForChair(chair.id);
-						return (
-							<div
-								key={chair.id}
-								className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0"
-								data-testid={`chair-header-${chair.id}`}
-							>
-								<div className="flex items-center justify-center gap-1.5 flex-wrap">
-									<span className="truncate">{chair.name}</span>
-									{chairStat && chairStat.appointmentsCount > 0 && (
-										<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
-											{countLabel(chairStat.appointmentsCount, "визит", "визита", "визитов")} ({chairStat.occupancyPercent}%)
-										</span>
-									)}
-								</div>
-
-								{/* Doctor-to-Chair Shift Binding Badge / Button */}
-								{hasDoctor ? (
-									<button
-										type="button"
-										onClick={() => openAssignModal(chair.id)}
-										className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-semibold normal-case transition-colors cursor-pointer group shadow-2xs"
-										title={`Врач на смене: ${assignment!.doctorName} (${assignment!.shiftHours}). Нажмите для смены`}
-										aria-label={`Врач ${assignment!.doctorName}, ${assignment!.shiftHours}. Нажмите для изменения`}
-										data-testid={`chair-doctor-badge-${chair.id}`}
-									>
-										<UserCheck size={14} className="shrink-0 text-[var(--teal)]" />
-										<span className="truncate min-w-0 flex-1 text-center">
-											{assignment!.subShifts && assignment!.subShifts.length > 1
-												? assignment!.shiftLabel ||
-													assignment!.subShifts
-														.map((s) => `${s.shiftHours.slice(0, 5)}: ${formatDoctorShortName(s.doctorName)}`)
-														.join(" · ")
-												: `${formatDoctorShortName(assignment!.doctorName)}${
-														assignment!.doctorSpecialty ? ` (${assignment!.doctorSpecialty})` : ""
-													} · ${assignment!.shiftHours}`}
-										</span>
-										<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
-									</button>
-								) : (
-									<div className="w-full flex flex-col gap-1">
-										<button
-											type="button"
-											onClick={() => openAssignModal(chair.id)}
-											className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] flex items-center justify-center gap-1 text-xs font-semibold normal-case transition-colors cursor-pointer"
-											title={`Назначить врача на кресло «${chair.name}»`}
-											aria-label={`Назначить врача на кресло ${chair.name}`}
-											data-testid={`btn-assign-doctor-${chair.id}`}
-										>
-											<Plus size={14} className="shrink-0 text-[var(--teal)]" />
-											<span className="truncate font-medium">+ Назначить врача</span>
-										</button>
-										{suggestedDoctor && !isSoloDoctor && doctors.length > 1 && (
-											<button
-												type="button"
-												onClick={() => handleConfirmAssignDoctor(chair.id, suggestedDoctor.id, "full")}
-												className="min-h-[32px] py-1 px-2 rounded-lg border border-[var(--teal)]/20 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold truncate flex items-center justify-center gap-1 cursor-pointer transition-colors"
-												title={`Быстро назначить ${suggestedDoctor.fullName} (1 клик)`}
-												data-testid={`btn-quick-assign-${chair.id}`}
-												style={{ minHeight: "32px" }}
-											>
-												<Zap size={11} className="text-[var(--teal)] shrink-0" />
-												<span className="truncate">{`1 клик: ${formatDoctorShortName(suggestedDoctor.fullName)}`}</span>
-											</button>
+					{(() => {
+						const now = new Date();
+						const todayKey = now.toISOString().slice(0, 10);
+						const isToday = dateKey === todayKey;
+						const currentHour = now.getHours();
+						return effectiveChairs.map((chair) => {
+							const chairStat = dailyTally.chairs.find((c) => c.chairId === chair.id);
+							const assignment = effectiveChairAssignments[chair.id];
+							const hasDoctor = Boolean(assignment && assignment.doctorId);
+							const suggestedDoctor = getSuggestedDoctorForChair(chair.id);
+							return (
+								<div
+									key={chair.id}
+									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0"
+									data-testid={`chair-header-${chair.id}`}
+								>
+									<div className="flex items-center justify-center gap-1.5 flex-wrap">
+										<span className="truncate">{chair.name}</span>
+										{chairStat && chairStat.appointmentsCount > 0 && (
+											<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
+												{countLabel(chairStat.appointmentsCount, "визит", "визита", "визитов")} ({chairStat.occupancyPercent}%)
+											</span>
 										)}
 									</div>
-								)}
-							</div>
-						);
-					})}
+
+									{/* Doctor-to-Chair Shift Binding Badge / Button */}
+									{hasDoctor ? (
+										(() => {
+											const subShifts = assignment!.subShifts;
+											const isMultiShift = Boolean(subShifts && subShifts.length > 1);
+											if (isMultiShift && subShifts) {
+												const mornSub = subShifts[0];
+												const eveSub = subShifts[1];
+												const mornStart = mornSub?.startHour ?? 8;
+												const mornEnd = mornSub?.endHour ?? 14;
+												const eveStart = eveSub?.startHour ?? 14;
+												const eveEnd = eveSub?.endHour ?? 20;
+												const isMornOnDuty = isToday && currentHour >= mornStart && currentHour < mornEnd;
+												const isEveOnDuty = isToday && currentHour >= eveStart && currentHour < eveEnd;
+												return (
+													<div className="w-full flex flex-col gap-1 text-left" data-testid={`chair-doctor-multishift-${chair.id}`}>
+														<button
+															type="button"
+															onClick={() => openAssignModal(chair.id)}
+															className="w-full p-2 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex flex-col gap-1 text-xs normal-case transition-colors cursor-pointer group shadow-2xs min-h-[44px]"
+															title={`2 смены: ${mornSub?.doctorName || "Врач 1"} и ${eveSub?.doctorName || "Врач 2"}. Нажмите для изменения`}
+															aria-label={`2 смены на кресле ${chair.name}`}
+															data-testid={`chair-doctor-badge-${chair.id}`}
+														>
+															<div className="flex items-center justify-between gap-1 w-full min-w-0">
+																<span className="flex items-center gap-1 font-semibold truncate min-w-0">
+																	<span className="text-amber-500 font-normal shrink-0">☀️ 08–14:</span>
+																	<span className="truncate">{formatDoctorShortName(mornSub?.doctorName || "")}</span>
+																</span>
+																{isMornOnDuty && (
+																	<span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+																		<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+																		<span>На смене</span>
+																	</span>
+																)}
+															</div>
+															<div className="flex items-center justify-between gap-1 w-full min-w-0">
+																<span className="flex items-center gap-1 font-semibold truncate min-w-0">
+																	<span className="text-indigo-400 font-normal shrink-0">🌙 14–20:</span>
+																	<span className="truncate">{formatDoctorShortName(eveSub?.doctorName || "")}</span>
+																</span>
+																{isEveOnDuty && (
+																	<span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+																		<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+																		<span>На смене</span>
+																	</span>
+																)}
+															</div>
+														</button>
+														{/* 1-Click Shift Switcher Quick Pills */}
+														<div className="flex items-center justify-between gap-1 w-full px-0.5">
+															{mornSub && (
+																<button
+																	type="button"
+																	onClick={() => handleConfirmAssignDoctor(chair.id, mornSub.doctorId, "morning")}
+																	className="text-[10px] font-bold py-0.5 px-1.5 rounded bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
+																	title="Переключить на утро только"
+																>
+																	☀️ Утро
+																</button>
+															)}
+															{eveSub && (
+																<button
+																	type="button"
+																	onClick={() => handleConfirmAssignDoctor(chair.id, eveSub.doctorId, "evening")}
+																	className="text-[10px] font-bold py-0.5 px-1.5 rounded bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
+																	title="Переключить на вечер только"
+																>
+																	🌙 Вечер
+																</button>
+															)}
+															{mornSub && (
+																<button
+																	type="button"
+																	onClick={() => handleConfirmAssignDoctor(chair.id, mornSub.doctorId, "full")}
+																	className="text-[10px] font-bold py-0.5 px-1.5 rounded bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
+																	title="Переключить на весь день"
+																>
+																	🏢 Весь день
+																</button>
+															)}
+														</div>
+													</div>
+												);
+											}
+
+											const sStart = assignment!.startHour ?? (Number.parseInt(assignment!.shiftHours?.slice(0, 2) || "8", 10) || 8);
+											const sEnd = assignment!.endHour ?? (Number.parseInt(assignment!.shiftHours?.split("–")?.[1]?.slice(0, 2) || "20", 10) || 20);
+											const isSingleOnDuty = isToday && currentHour >= sStart && currentHour < sEnd;
+
+											return (
+												<div className="w-full flex flex-col gap-1 text-left">
+													<button
+														type="button"
+														onClick={() => openAssignModal(chair.id)}
+														className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-[var(--teal,var(--brand-primary))]/30 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-between gap-1.5 text-xs font-semibold normal-case transition-colors cursor-pointer group shadow-2xs"
+														title={`Врач на смене: ${assignment!.doctorName} (${assignment!.shiftHours}). Нажмите для смены`}
+														aria-label={`Врач ${assignment!.doctorName}, ${assignment!.shiftHours}. Нажмите для изменения`}
+														data-testid={`chair-doctor-badge-${chair.id}`}
+													>
+														<div className="flex items-center gap-1.5 min-w-0 flex-1">
+															<UserCheck size={14} className="shrink-0 text-[var(--teal)]" />
+															<span className="truncate min-w-0 flex-1">
+																{formatDoctorShortName(assignment!.doctorName)}
+																{assignment!.doctorSpecialty ? ` (${assignment!.doctorSpecialty})` : ""} · {assignment!.shiftHours}
+															</span>
+														</div>
+														{isSingleOnDuty && (
+															<span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold shrink-0 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+																<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+																<span>На смене</span>
+															</span>
+														)}
+														<Edit2 size={12} className="shrink-0 opacity-60 group-hover:opacity-100 ml-0.5" />
+													</button>
+													{/* 1-Click Shift Quick Toggle */}
+													<div className="flex items-center justify-between gap-1 w-full px-0.5">
+														<button
+															type="button"
+															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "morning")}
+															className={`text-[10px] font-bold py-0.5 px-1.5 rounded transition-colors cursor-pointer ${
+																assignment!.shiftPreset === "morning"
+																	? "bg-[var(--teal)] text-white"
+																	: "bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)]"
+															}`}
+															title="Утренняя смена (08:00–14:00)"
+														>
+															☀️ Утро
+														</button>
+														<button
+															type="button"
+															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "evening")}
+															className={`text-[10px] font-bold py-0.5 px-1.5 rounded transition-colors cursor-pointer ${
+																assignment!.shiftPreset === "evening"
+																	? "bg-[var(--teal)] text-white"
+																	: "bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)]"
+															}`}
+															title="Вечерняя смена (14:00–20:00)"
+														>
+															🌙 Вечер
+														</button>
+														<button
+															type="button"
+															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "full")}
+															className={`text-[10px] font-bold py-0.5 px-1.5 rounded transition-colors cursor-pointer ${
+																assignment!.shiftPreset === "full"
+																	? "bg-[var(--teal)] text-white"
+																	: "bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)]"
+															}`}
+															title="Полный день (08:00–20:00)"
+														>
+															🏢 Весь день
+														</button>
+														{doctors.length > 1 && (
+															<button
+																type="button"
+																onClick={() => {
+																	const secondDoc = doctors.find((d) => d.id !== assignment!.doctorId) || doctors[1] || doctors[0];
+																	handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "two_shifts", secondDoc?.id);
+																}}
+																className="text-[10px] font-bold py-0.5 px-1.5 rounded bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] transition-colors cursor-pointer"
+																title="Переключить на 2 смены (Утро + Вечер)"
+															>
+																2 смены
+															</button>
+														)}
+													</div>
+												</div>
+											);
+										})()
+									) : (
+										<div className="w-full flex flex-col gap-1">
+											<button
+												type="button"
+												onClick={() => openAssignModal(chair.id)}
+												className="min-h-[44px] w-full px-2.5 py-1.5 rounded-xl border border-dashed border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--teal-surface)] text-[var(--muted)] hover:text-[var(--teal-dark)] flex items-center justify-center gap-1 text-xs font-semibold normal-case transition-colors cursor-pointer"
+												title={`Назначить врача на кресло «${chair.name}»`}
+												aria-label={`Назначить врача на кресло ${chair.name}`}
+												data-testid={`btn-assign-doctor-${chair.id}`}
+											>
+												<Plus size={14} className="shrink-0 text-[var(--teal)]" />
+												<span className="truncate font-medium">+ Назначить врача</span>
+											</button>
+											{suggestedDoctor && !isSoloDoctor && doctors.length > 1 && (
+												<button
+													type="button"
+													onClick={() => handleConfirmAssignDoctor(chair.id, suggestedDoctor.id, "full")}
+													className="min-h-[32px] py-1 px-2 rounded-lg border border-[var(--teal)]/20 bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] text-xs font-bold truncate flex items-center justify-center gap-1 cursor-pointer transition-colors"
+													title={`Быстро назначить ${suggestedDoctor.fullName} (1 клик)`}
+													data-testid={`btn-quick-assign-${chair.id}`}
+													style={{ minHeight: "32px" }}
+												>
+													<Zap size={11} className="text-[var(--teal)] shrink-0" />
+													<span className="truncate">{`1 клик: ${formatDoctorShortName(suggestedDoctor.fullName)}`}</span>
+												</button>
+											)}
+										</div>
+									)}
+								</div>
+							);
+						});
+					})()}
 
 					{/* Inline + Кресло Header Column (StomX / DentalPRO parity) */}
 					<div

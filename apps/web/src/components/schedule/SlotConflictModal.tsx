@@ -12,6 +12,7 @@ export interface SlotConflictModalProps {
 	readonly onOverbook?: (() => void) | undefined;
 	readonly patientName?: string | null | undefined;
 	readonly doctorName?: string | null | undefined;
+	readonly inline?: boolean | undefined;
 }
 
 export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
@@ -23,16 +24,129 @@ export const SlotConflictModal: React.FC<SlotConflictModalProps> = ({
 	onOverbook,
 	patientName,
 	doctorName,
+	inline = false,
 }) => {
 	const { modalRef } = useModalA11y<HTMLDivElement>({
-		isOpen,
+		isOpen: isOpen && !inline,
 		onClose,
 		initialFocusSelector: "[data-autofocus='true'], button[data-slot-btn='true']",
 		enableEscape: true,
-		enableFocusTrap: true,
+		enableFocusTrap: !inline,
 	});
 
 	if (!isOpen) return null;
+
+	if (inline) {
+		return (
+			<div
+				className="w-full bg-[var(--paper,#ffffff)] border-2 border-amber-500/50 rounded-2xl shadow-md text-[var(--ink,#0f172a)] flex flex-col overflow-hidden animate-fade-in"
+				data-testid="slot-conflict-modal"
+				role="region"
+				aria-label="Конфликт времени записи"
+			>
+				{/* Header */}
+				<div className="p-3 sm:p-4 border-b border-[var(--line,#e2e8f0)] bg-amber-500/15 flex items-center justify-between">
+					<div className="flex items-center gap-2.5">
+						<div className="w-8 h-8 rounded-lg bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/40 flex items-center justify-center shrink-0">
+							<AlertTriangle className="w-4 h-4" />
+						</div>
+						<div>
+							<h4 className="text-sm font-bold text-[var(--ink,#0f172a)] m-0 leading-tight">
+								Слот уже занят (HTTP 409)
+							</h4>
+							<p className="text-[11px] text-[var(--muted,#64748b)] m-0">
+								Коллизия записи в расписании
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						onClick={onClose}
+						className="min-h-[36px] min-w-[36px] rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center transition-colors cursor-pointer"
+						aria-label="Закрыть предупреждение"
+					>
+						<X className="w-4 h-4" />
+					</button>
+				</div>
+
+				{/* Body */}
+				<div className="p-3 sm:p-4 space-y-3">
+					<div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs font-medium space-y-1">
+						<p className="m-0 font-bold flex items-center gap-1.5">
+							<AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>{conflictMessage || "Выбранное время уже занято другой записью."}</span>
+						</p>
+						<p className="m-0 text-[11px] opacity-90">
+							{patientName ? `Пациент: ${patientName}. ` : ""}
+							{doctorName ? `Врач: ${doctorName}. ` : ""}
+							Сервер зафиксировал одновременную запись на это время.
+						</p>
+					</div>
+
+					<div className="space-y-1.5">
+						<label className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)] flex items-center gap-1.5">
+							<Clock className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary,#0d9488))]" />
+							<span>Предложенные свободные окна:</span>
+						</label>
+
+						{suggestedSlots && suggestedSlots.length > 0 ? (
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-0.5">
+								{suggestedSlots.map((slot, idx) => (
+									<button
+										key={slot}
+										type="button"
+										data-slot-btn="true"
+										data-autofocus={idx === 0 ? "true" : undefined}
+										onClick={() => {
+											onSelectSlot(slot);
+											onClose();
+										}}
+										className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--teal,var(--brand-primary,#0d9488))]/40 bg-[var(--teal-soft,var(--paper-soft,#f0fdfa))] hover:bg-[var(--teal,var(--brand-primary,#0d9488))] hover:text-white text-[var(--teal-dark,var(--teal,#0d9488))] font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group"
+										title={`Записать на ${slot}`}
+										aria-label={`Выбрать альтернативное время ${slot}`}
+									>
+										<Calendar className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
+										<span>{slot}</span>
+									</button>
+								))}
+							</div>
+						) : (
+							<p className="text-xs text-[var(--muted,#64748b)] italic">
+								Ближайшие окна не найдены.
+							</p>
+						)}
+					</div>
+				</div>
+
+				{/* Footer */}
+				<div className="p-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-wrap items-center justify-between gap-2">
+					<button
+						type="button"
+						onClick={onClose}
+						className="min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] text-xs font-bold transition-colors cursor-pointer"
+					>
+						Закрыть
+					</button>
+
+					{onOverbook && (
+						<button
+							type="button"
+							data-testid="slot-conflict-overbook-btn"
+							onClick={() => {
+								onOverbook();
+								onClose();
+							}}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							title="Записать в это же время в режиме овербукинга для острой боли"
+						>
+							<Zap className="w-4 h-4" />
+							<span>Записать всё равно (овербукинг / CITO)</span>
+						</button>
+					)}
+				</div>
+			</div>
+		);
+	}
 
 	const modalContent = (
 		<div

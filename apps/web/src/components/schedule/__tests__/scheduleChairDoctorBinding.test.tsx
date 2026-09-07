@@ -14,88 +14,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "node:test";
-
-type MockFn = {
-	(...args: any[]): any;
-	calls: any[][];
-	mock: { calls: any[][] };
-	mockReturnValue: (val: any) => MockFn;
-};
-
-function createMockFn(impl?: (...args: any[]) => any): MockFn {
-	const calls: any[][] = [];
-	const fn = ((...args: any[]) => {
-		calls.push(args);
-		return impl ? impl(...args) : undefined;
-	}) as MockFn;
-	fn.calls = calls;
-	fn.mock = { calls };
-	fn.mockReturnValue = (val: any) => createMockFn(() => val);
-	return fn;
-}
-
-const vi = {
-	fn: (impl?: any) => createMockFn(impl),
-	mock: () => {},
-};
-
-function expect(actual: any) {
-	return {
-		toBe: (expected: any) => assert.strictEqual(actual, expected),
-		toBeFalsy: () => assert.ok(!actual, `Expected falsy, but got ${actual}`),
-		toBeTruthy: () => assert.ok(Boolean(actual), `Expected truthy, but got ${actual}`),
-		toBeNull: () => assert.strictEqual(actual, null),
-		not: {
-			toBeNull: () => assert.ok(actual !== null && actual !== undefined),
-			toMatch: (regex: RegExp) => assert.ok(!regex.test(String(actual))),
-		},
-		toContain: (expected: string) => {
-			assert.ok(
-				actual?.includes?.(expected),
-				`Expected "${actual}" to contain "${expected}"`,
-			);
-		},
-		toHaveBeenCalled: () => {
-			const count = actual?.mock?.calls?.length ?? actual?.calls?.length ?? 0;
-			assert.ok(count > 0, "Expected function to have been called");
-		},
-		toHaveBeenCalledTimes: (n: number) => {
-			const count = actual?.mock?.calls?.length ?? actual?.calls?.length ?? 0;
-			assert.strictEqual(
-				count,
-				n,
-				`Expected ${n} calls, got ${count}`,
-			);
-		},
-		toHaveBeenCalledWith: (...expectedArgs: any[]) => {
-			const calls = actual?.mock?.calls ?? actual?.calls ?? [];
-			const match = calls.some((callArgs: any[]) =>
-				expectedArgs.every((arg, i) => {
-					if (arg && typeof arg === "object" && arg._isObjectContaining) {
-						return Object.entries(arg.subset).every(
-							([k, v]) => callArgs[i]?.[k] === v,
-						);
-					}
-					return callArgs[i] === arg;
-				}),
-			);
-			assert.ok(
-				match,
-				`Expected call with ${JSON.stringify(expectedArgs)}, but calls were: ${JSON.stringify(calls)}`,
-			);
-		},
-		toBeGreaterThanOrEqual: (expected: number) => {
-			assert.ok(actual >= expected, `Expected ${actual} >= ${expected}`);
-		},
-	};
-}
-
-expect.objectContaining = (subset: Record<string, any>) => ({
-	_isObjectContaining: true,
-	subset,
-});
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Dashboard } from "@dental/shared";
 import {
 	ScheduleGrid,
@@ -1097,7 +1016,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 
 		// Verify onAssignChairDoctor was called with custom 2-shift assignment containing subShifts
 		expect(onAssignChairDoctor).toHaveBeenCalledTimes(1);
-		const callArg = (onAssignChairDoctor.calls[0] as any[])[1] as any;
+		const callArg = (onAssignChairDoctor as any).mock.calls[0][1] as any;
 		expect(callArg.chairId).toBe("chair-1");
 		expect(callArg.subShifts.length).toBe(2);
 		expect(callArg.subShifts[0].doctorId).toBe("doc-1");
@@ -1224,7 +1143,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		await clickNode(slot1700);
 
 		expect(onSlotClick).toHaveBeenCalledTimes(1);
-		const clickedSlot = (onSlotClick.calls[0] as any[])[0];
+		const clickedSlot = (onSlotClick as any).mock.calls[0][0];
 		expect(clickedSlot.startTime).toBe("17:00");
 		expect(clickedSlot.doctorUserId).toBeNull();
 	});
