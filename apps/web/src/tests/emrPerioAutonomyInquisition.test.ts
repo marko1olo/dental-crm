@@ -693,5 +693,57 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(source.includes("clearTimeout"), "VisitAnamnesisTab обязан очищать таймер при размонтировании");
 		});
 	});
+
+	// ════════════════════════════════════════════════════════════════════════
+	// БЛОК 8: МАНДАТЫ 8e, 8i, 8k, 8n — Искоренение академического блоата и палок в колёса
+	// ════════════════════════════════════════════════════════════════════════
+	describe("8. Мандаты 8e, 8i, 8k, 8n: Докторская автономия и ликвидация искусственных блокировок", () => {
+		const __filename = fileURLToPath(import.meta.url);
+		const __dirname = path.dirname(__filename);
+		const webSrcDir = path.resolve(__dirname, "..");
+
+		it("8.1. ClassicGostOdontogram.tsx содержит 1-клик экспресс-пресеты (Интактный, Без 8-ок, Профгигиена)", () => {
+			const gostPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostOdontogram.tsx");
+			const source = fs.readFileSync(gostPath, "utf-8");
+			assert.ok(source.includes("gost-preset-all-healthy"), "Кнопка 'Все здоровы (Интактный)' обязана присутствовать");
+			assert.ok(source.includes("gost-preset-wisdom-missing"), "Кнопка 'Без 8-ок (Отсутствуют)' обязана присутствовать");
+			assert.ok(source.includes("gost-preset-prohygiene"), "Кнопка 'Профгигиена выполнена' обязана присутствовать");
+		});
+
+		it("8.2. ClassicGostOdontogram.tsx клавиатурный ввод не блокируется при selectedTeeth.length === 0", () => {
+			const gostPath = path.resolve(webSrcDir, "components/odontogram/ClassicGostOdontogram.tsx");
+			const source = fs.readFileSync(gostPath, "utf-8");
+			assert.ok(!source.includes("disabled={selectedTeeth.length === 0}"), "Кнопки экранного ввода ГОСТ не должны иметь disabled={selectedTeeth.length === 0}");
+			assert.ok(source.includes("disabled={false}"), "Кнопки экранного ввода ГОСТ должны быть активны по умолчанию");
+		});
+
+		it("8.3. TreatmentEstimator.tsx кнопка 'В кассу (54-ФЗ)' не имеет мертвого disabled блокировщика", () => {
+			const estPath = path.resolve(webSrcDir, "components/odontogram/TreatmentEstimator.tsx");
+			const source = fs.readFileSync(estPath, "utf-8");
+			assert.ok(!source.includes("disabled={treatmentPlanItemsForFiscalModal.length === 0}"), "Кнопка фискализации 54-ФЗ не должна быть заблокирована disabled");
+			assert.ok(source.includes("В смете нет позиций с подтвержденной ценой"), "Кнопка должна выводить информативное уведомление при нажатии");
+		});
+
+		it("8.4. VisiographAnalyzer.tsx перенос находок не заблокирован при пустом выделении", () => {
+			const visPath = path.resolve(webSrcDir, "components/imaging/VisiographAnalyzer.tsx");
+			const source = fs.readFileSync(visPath, "utf-8");
+			assert.ok(!source.includes("disabled={isApplyingToChart || selectedFindingCodes.size === 0}"), "Кнопка переноса находок не должна быть заблокирована по признаку selectedFindingCodes.size === 0");
+			assert.ok(source.includes("Отметьте галочками хотя бы одну находку ИИ"), "Обработчик должен уведомлять врача через тост при пустом выборе");
+		});
+
+		it("8.5. DicomViewerModal.tsx кнопки анализа и переноса находок не заблокированы мертвым disabled", () => {
+			const dicomPath = path.resolve(webSrcDir, "components/imaging/DicomViewerModal.tsx");
+			const source = fs.readFileSync(dicomPath, "utf-8");
+			assert.ok(!source.includes("disabled={isAnalyzing || !currentImageSrc}"), "Кнопка ИИ-анализа не должна быть заблокирована по признаку !currentImageSrc");
+			assert.ok(!source.includes("disabled={isApplyingToChart || selectedFindingCodes.size === 0}"), "Кнопка переноса находок не должна быть заблокирована по признаку selectedFindingCodes.size === 0");
+		});
+
+		it("8.6. OrthopedicsChairsidePanel.tsx клинический оверрайд врача снимает блокировку протоколов", () => {
+			const orthoPath = path.resolve(webSrcDir, "components/orthopedics/OrthopedicsChairsidePanel.tsx");
+			const source = fs.readFileSync(orthoPath, "utf-8");
+			assert.ok(source.includes("disabled={isLocked && !overrideActive}"), "Кнопка протокола должна разблокироваться при overrideActive = true (Мандат 8e)");
+			assert.ok(source.includes("isLocked && !overrideActive"), "Проверка блокировки в handleApplyProtocol обязана учитывать клинический оверрайд врача");
+		});
+	});
 });
 

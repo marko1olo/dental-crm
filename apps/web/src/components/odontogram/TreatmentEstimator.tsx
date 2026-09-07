@@ -965,8 +965,8 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 								}
 								setIsFiscalModalOpen(true);
 							}}
-							disabled={treatmentPlanItemsForFiscalModal.length === 0}
-							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+							disabled={false}
+							className="min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-3.5 py-1.5 inline-flex items-center gap-1.5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all cursor-pointer"
 						>
 							<Receipt size={14} />
 							<span>В кассу (54-ФЗ)</span>

@@ -789,6 +789,11 @@ export function VisiographAnalyzer({
 			return;
 		}
 
+		if (selectedFindingCodes.size === 0) {
+			showToast("Отметьте галочками хотя бы одну находку ИИ или нажмите «Выбрать все»", "info");
+			return;
+		}
+
 		setIsApplyingToChart(true);
 		setFormulaFailure(null);
 		const appliedCodes: string[] = [];
@@ -2128,25 +2133,22 @@ export function VisiographAnalyzer({
 												type="button"
 												data-testid="btn-apply-findings-to-chart"
 												onClick={handleApplyFindingsToChart}
-												disabled={isApplyingToChart || selectedFindingCodes.size === 0}
+												disabled={isApplyingToChart}
 												style={{
 													padding: "6px 14px",
-													background:
-														selectedFindingCodes.size > 0 && !isApplyingToChart
-															? "var(--teal)"
-															: "var(--line)",
-													color:
-														selectedFindingCodes.size > 0 && !isApplyingToChart
-															? "var(--on-teal, white)"
-															: "var(--muted)",
+													background: isApplyingToChart
+														? "var(--line)"
+														: "var(--teal)",
+													color: isApplyingToChart
+														? "var(--muted)"
+														: "var(--on-teal, white)",
 													border: "none",
 													borderRadius: "8px",
 													fontSize: "0.82rem",
 													fontWeight: 700,
-													cursor:
-														selectedFindingCodes.size > 0 && !isApplyingToChart
-															? "pointer"
-															: "not-allowed",
+													cursor: isApplyingToChart
+														? "not-allowed"
+														: "pointer",
 													display: "flex",
 													alignItems: "center",
 													gap: "6px",

@@ -1,4 +1,4 @@
-import { Award, Check, Copy, FileText } from "lucide-react";
+import { Award, Check, Copy, FileText, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import React, { useMemo, useState, useRef, useEffect, memo } from "react";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols043";
 import { showToast } from "../GlobalToast";
@@ -983,13 +983,81 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 				</div>
 			</div>
 
+			{/* 1-Click Express Clinical Presets (Mandates 8e, 8k, 8n: Doctor Autonomy & Friction Killer) */}
+			<div className="gost-presets-bar w-full flex flex-wrap items-center justify-between gap-2 p-2.5 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] rounded-xl">
+				<div className="flex items-center gap-1.5 text-xs font-bold text-[var(--odontogram-ink-muted)]">
+					<Zap size={14} className="text-amber-500" />
+					<span>Экспресс-пресеты (1 клик):</span>
+				</div>
+
+				<div className="flex flex-wrap items-center gap-1.5">
+					<button
+						type="button"
+						data-testid="gost-preset-all-healthy"
+						onClick={() => {
+							if (onQuickStateChange) {
+								const allTargetTeeth = [...topList, ...bottomList];
+								onQuickStateChange(allTargetTeeth, "Healthy");
+								showToast("⚡ Зубная формула: Все зубы здоровы / интактный зубной ряд (норма)", "success");
+							}
+						}}
+						disabled={false}
+						title="Установить всем зубам статус Здоров (Интактный ряд по умолчанию)"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 transition-colors cursor-pointer"
+					>
+						<ShieldCheck size={14} />
+						<span>Все здоровы (Интактный)</span>
+					</button>
+
+					{!pediatricMode && (
+						<button
+							type="button"
+							data-testid="gost-preset-wisdom-missing"
+							onClick={() => {
+								if (onQuickStateChange) {
+									const wisdomTeeth = [18, 28, 38, 48];
+									onQuickStateChange(wisdomTeeth, "Missing");
+									showToast("⚡ Зубы мудрости (18, 28, 38, 48) отмечены как отсутствующие (0)", "info");
+								}
+							}}
+							disabled={false}
+							title="Отметить третьи моляры (18, 28, 38, 48) как отсутствующие (0)"
+							className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-500/10 hover:bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30 transition-colors cursor-pointer"
+						>
+							<span>Без 8-ок (Отсутствуют)</span>
+						</button>
+					)}
+
+					<button
+						type="button"
+						data-testid="gost-preset-prohygiene"
+						onClick={() => {
+							if (typeof window !== "undefined") {
+								window.dispatchEvent(
+									new CustomEvent("dente-apply-prohygiene-protocol", {
+										detail: { immediate: true },
+									}),
+								);
+							}
+							showToast("⚡ Протокол профгигиены (A16.07.051) сформирован", "success");
+						}}
+						disabled={false}
+						title="Сформировать протокол профессиональной гигиены полости рта (A16.07.051)"
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30 transition-colors cursor-pointer"
+					>
+						<Sparkles size={14} />
+						<span>Профгигиена выполнена</span>
+					</button>
+				</div>
+			</div>
+
 			{/* On-Screen Touch Keypad for Fast Status & Navigation Entry on Tablets & Mobile */}
 			<div className="gost-touch-keypad w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] rounded-xl">
 				<div className="flex items-center gap-2">
 					<span className="text-xs font-bold text-[var(--odontogram-ink-muted)]">
 						{selectedTeeth.length > 0
 							? `Выбрано: ${selectedTeeth.length === 1 ? `Зуб ${selectedTeeth[0]}` : `${selectedTeeth.length} зубов`}`
-							: "Экранный ввод (выберите зуб):"}
+							: "Экранный ввод (выберите зуб или примените):"}
 					</span>
 				</div>
 
@@ -1000,17 +1068,17 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 							type="button"
 							data-testid={`gost-keypad-btn-${stateKey}`}
 							onClick={() => {
-								if (selectedTeeth.length > 0 && onQuickStateChange) {
-									onQuickStateChange(selectedTeeth, stateKey as ToothState);
+								if (onQuickStateChange) {
+									const targets =
+										selectedTeeth.length > 0
+											? selectedTeeth
+											: [topList[0] ?? (pediatricMode ? 55 : 18)];
+									onQuickStateChange(targets, stateKey as ToothState);
 								}
 							}}
-							disabled={selectedTeeth.length === 0}
+							disabled={false}
 							title={`Установить: ${meta.nameRu} (${meta.abbr})`}
-							className={`gost-keypad-btn ${meta.badgeBg} ${meta.badgeText} ${meta.badgeBorder} ${
-								selectedTeeth.length === 0
-									? "opacity-40 cursor-not-allowed"
-									: "hover:shadow-sm"
-							}`}
+							className={`gost-keypad-btn ${meta.badgeBg} ${meta.badgeText} ${meta.badgeBorder} hover:shadow-sm`}
 						>
 							<span className="font-black text-sm">{meta.abbr}</span>
 							<span className="hidden md:inline text-xs font-medium">{meta.nameRu}</span>

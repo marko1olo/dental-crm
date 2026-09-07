@@ -63,8 +63,8 @@ export function OrthopedicsChairsidePanel({
 
 	const handleApplyProtocol = useCallback(
 		(protocol: OrthopedicProtocolPreset) => {
-			if (isLocked) {
-				showToast("Карта визита заблокирована для редактирования", "warning");
+			if (isLocked && !overrideActive) {
+				showToast("Карта визита заблокирована для редактирования (активируйте клинический оверрайд врача)", "warning");
 				return;
 			}
 
@@ -102,6 +102,7 @@ export function OrthopedicsChairsidePanel({
 		[
 			activeTeethInput,
 			isLocked,
+			overrideActive,
 			jawScope,
 			selectedMaterial,
 			selectedShade,
@@ -332,7 +333,7 @@ export function OrthopedicsChairsidePanel({
 								<button
 									type="button"
 									onClick={() => handleApplyProtocol(proto)}
-									disabled={isLocked}
+									disabled={isLocked && !overrideActive}
 									className={`min-h-[48px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
 										isApplied
 											? "bg-emerald-600 text-white"

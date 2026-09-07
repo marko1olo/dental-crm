@@ -238,7 +238,8 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 
 	const handleRunAiAnalysis = async () => {
 		if (!currentImageSrc) {
-			showToast("Сначала загрузите снимок для анализа", "warning");
+			fileInputRef.current?.click();
+			showToast("Выберите снимок RVG/DICOM для анализа", "info");
 			return;
 		}
 		if (analysisInFlightRef.current || isAnalyzing) return;
@@ -294,6 +295,11 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 		const plan = planVisiographFindings(aiToothStates);
 		if (plan.groups.length === 0) {
 			showToast("Нет подходящих для зубной формулы находок", "warning");
+			return;
+		}
+
+		if (selectedFindingCodes.size === 0) {
+			showToast("Отметьте галочками хотя бы одну находку ИИ или нажмите «Выбрать все»", "info");
 			return;
 		}
 
@@ -449,7 +455,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 						type="button"
 						data-testid="btn-dicom-run-ai"
 						onClick={handleRunAiAnalysis}
-						disabled={isAnalyzing || !currentImageSrc}
+						disabled={isAnalyzing}
 						style={{
 							minHeight: "44px",
 							minWidth: "44px",
@@ -459,13 +465,13 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 							border: "1px solid #0d9488",
 							backgroundColor: isAnalyzing ? "#134e4a" : "#0f766e",
 							color: "#ccfbf1",
-							cursor: isAnalyzing || !currentImageSrc ? "not-allowed" : "pointer",
+							cursor: isAnalyzing ? "not-allowed" : "pointer",
 							display: "inline-flex",
 							alignItems: "center",
 							justifyContent: "center",
 							gap: "6px",
 							fontWeight: 600,
-							opacity: !currentImageSrc ? 0.6 : 1,
+							opacity: isAnalyzing ? 0.6 : 1,
 							transition: "all 0.2s ease",
 						}}
 						title="Запустить ИИ-анализ снимка на кариес, периодонтит и пломбы (не перезаписывает карту без подтверждения)"
@@ -1037,7 +1043,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 										type="button"
 										data-testid="btn-dicom-apply-findings"
 										onClick={handleApplyFindingsToChart}
-										disabled={isApplyingToChart || selectedFindingCodes.size === 0}
+										disabled={isApplyingToChart}
 										style={{
 											width: "100%",
 											minHeight: "44px",
@@ -1048,7 +1054,7 @@ export const DicomViewerModal: React.FC<DicomViewerModalProps> = ({
 											color: "#ffffff",
 											fontSize: "13px",
 											fontWeight: 700,
-											cursor: isApplyingToChart || selectedFindingCodes.size === 0 ? "not-allowed" : "pointer",
+											cursor: isApplyingToChart ? "not-allowed" : "pointer",
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "center",
