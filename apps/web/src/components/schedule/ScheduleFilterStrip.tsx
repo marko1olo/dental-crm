@@ -1,8 +1,11 @@
-import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, LayoutGrid, List, Sparkles, Bot, Search, Send, AlertCircle, Stethoscope, UserSearch, MoreVertical, Users, UserPlus, PhoneCall, Clock, Clipboard, BarChart3, Printer, Plus } from "lucide-react";
 import React, { type ReactElement, useState, useRef, useEffect } from "react";
 import type { DentalSpecialty } from "@dental/shared";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { printBlankMedicalContract } from "../patient/blankContractPrint";
+import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
+
+export { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 
 export interface ScheduleStaffMember {
 	id: string;
@@ -61,6 +64,8 @@ export interface ScheduleFilterStripProps {
 	onToggleClipboard?: () => void;
 	showClipboardPanel?: boolean;
 	onOpenCalendarSync?: () => void;
+	onOpenAddChair?: (() => void) | undefined;
+	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 }
 
 export function formatChairSpecialtyLabel(rawSpec?: string | null): string | null {
@@ -113,6 +118,8 @@ export function ScheduleFilterStrip({
 	onToggleClipboard,
 	showClipboardPanel = false,
 	onOpenCalendarSync,
+	onOpenAddChair,
+	onAddChair,
 }: ScheduleFilterStripProps): ReactElement {
 	const activeChairs = chairs.filter((chair) => chair?.active);
 	const displayChairs: readonly ScheduleChair[] = activeChairs.length > 0 ? activeChairs : DEFAULT_CLINIC_CHAIRS;
@@ -121,7 +128,15 @@ export function ScheduleFilterStrip({
 	const currentDateIso = scheduleDateFilter || todayIso;
 
 	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
+	const [isAddChairModalOpen, setIsAddChairModalOpen] = useState(false);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
+
+	const handleOpenAddChair = () => {
+		if (onOpenAddChair) {
+			onOpenAddChair();
+		}
+		setIsAddChairModalOpen(true);
+	};
 
 	useEffect(() => {
 		const handleOutside = (e: MouseEvent) => {
@@ -166,10 +181,11 @@ export function ScheduleFilterStrip({
 	};
 
 	return (
-		<section
-			className="schedule-filter-strip min-h-[44px] flex items-center justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
-			aria-label="Сохраненные фильтры расписания"
-		>
+		<>
+			<section
+				className="schedule-filter-strip min-h-[44px] flex items-center justify-between gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1 border-b border-[var(--line)] bg-[var(--paper)] max-w-full overflow-hidden shrink-0 select-none"
+				aria-label="Сохраненные фильтры расписания"
+			>
 			{/* Left: Date Stepper (< dd.mm.yyyy >) with >= 44px touch targets */}
 			<div className="schedule-date-picker-group flex items-center gap-1 sm:gap-1.5 shrink-0 pr-1 sm:pr-1.5 border-r border-[var(--line)]">
 				<button
@@ -265,6 +281,20 @@ export function ScheduleFilterStrip({
 						</button>
 					);
 				})}
+
+				{/* 1-Click Inline "+ Кресло" addition button (StomX / DentalPRO parity, Mandates 8e, 8n) */}
+				<button
+					type="button"
+					onClick={handleOpenAddChair}
+					className="schedule-add-chair-chip-btn min-h-[44px] min-w-[44px] shrink-0 px-2.5 rounded-lg border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white text-[var(--teal-dark,#0f766e)] dark:text-[var(--teal-light,#5eead4)] dark:bg-[var(--teal-soft,#134e4a20)] text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 select-none"
+					title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
+					aria-label="Добавить кресло в расписание"
+					data-testid="schedule-add-chair-btn"
+					style={{ minHeight: "44px", minWidth: "44px" }}
+				>
+					<Plus size={14} className="shrink-0" aria-hidden="true" />
+					<span className="whitespace-nowrap font-bold">+ Кресло</span>
+				</button>
 			</div>
 
 			{/* Right: [⊞ Сетка | ☰ Лента] Switcher + [⋮ Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
@@ -405,6 +435,22 @@ export function ScheduleFilterStrip({
 							<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
 								Инструменты расписания
 							</div>
+
+							<button
+								type="button"
+								onClick={() => {
+									setIsOptionsMenuOpen(false);
+									handleOpenAddChair();
+								}}
+								className="w-full min-h-[44px] text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
+								role="menuitem"
+								data-testid="schedule-options-add-chair-btn"
+								title="Быстрое добавление кресла или кабинета в расписание (1 клик)"
+								style={{ minHeight: "44px" }}
+							>
+								<Plus size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
+								<span>Добавить кресло (+ Кресло)</span>
+							</button>
 
 							{onOpenPatientSearch && (
 								<button
@@ -649,6 +695,16 @@ export function ScheduleFilterStrip({
 				)}
 			</div>
 		</section>
-	);
+
+		{(Boolean(onAddChair) || isAddChairModalOpen) && (
+			<QuickAddChairModal
+				isOpen={isAddChairModalOpen}
+				onClose={() => setIsAddChairModalOpen(false)}
+				existingChairsCount={chairs.length || displayChairs.length}
+				{...(onAddChair ? { onAddChair } : {})}
+			/>
+		)}
+	</>
+);
 }
 
