@@ -9,24 +9,11 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { describe, expect, it, vi, beforeEach } from "vitest";
-
-declare module "vitest" {
-	export interface Assertion<T = any> {
-		toHaveBeenCalledWith(...args: any[]): void;
-	}
-	export namespace expect {
-		function stringContaining(expected: string): any;
-	}
-}
-
-// Mock GlobalToast so showToast can be spied on directly
-vi.mock("../../../GlobalToast", () => ({
-	showToast: vi.fn(),
-}));
-
-import { showToast } from "../../../GlobalToast";
+import assert from "node:assert/strict";
+import { beforeEach, describe, it } from "node:test";
 import { PatientBranchTransferModal } from "../PatientBranchTransferModal";
+
+const dispatchedToasts: { text: string; type: string }[] = [];
 
 interface MockDomNode {
 	nodeType: number;
@@ -216,7 +203,13 @@ function setupMockDom() {
 		addEventListener: () => {},
 		removeEventListener: () => {},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
-		print: vi.fn(),
+		print: () => {},
+		dispatchEvent: (ev: { type: string; detail?: { text: string; type: string } }) => {
+			if (ev?.type === "dente-toast" && ev.detail) {
+				dispatchedToasts.push(ev.detail);
+			}
+			return true;
+		},
 		HTMLIFrameElement: class {},
 		HTMLElement: class {},
 		Element: class {},
@@ -278,7 +271,7 @@ describe("Patient Branch Transfer Autonomy & Non-blocking Feedback (Mandates 8e,
 	let doc: any;
 
 	beforeEach(() => {
-		vi.clearAllMocks();
+		dispatchedToasts.length = 0;
 		const dom = setupMockDom();
 		doc = dom.doc;
 		container = doc.createElement("div");
@@ -306,17 +299,22 @@ describe("Patient Branch Transfer Autonomy & Non-blocking Feedback (Mandates 8e,
 		const body = doc.body as MockDomNode;
 		const executeBtn = findNodeByTestId(body, "execute-branch-transfer-btn");
 
-		expect(executeBtn).not.toBeNull();
+		assert.ok(executeBtn, "executeBtn must exist");
 		// MANDATE 8e: Never disabled by !validation.isValid
-		expect(executeBtn?.disabled).toBeFalsy();
-		expect(executeBtn?.getAttribute("disabled")).toBeNull();
+		assert.equal(Boolean(executeBtn?.disabled), false);
+		assert.equal(executeBtn?.getAttribute("disabled"), null);
 
 		// Clicking should NOT silently fail; it must show an explanatory warning toast
 		await clickNode(executeBtn!);
 
-		expect(showToast).toHaveBeenCalledWith(
-			"Филиал-отправитель и филиал-получатель не могут совпадать.",
-			"warning",
+		const found = dispatchedToasts.some(
+			(t) =>
+				t.text.includes("Филиал-отправитель и филиал-получатель не могут совпадать") &&
+				t.type === "warning",
+		);
+		assert.ok(
+			found,
+			`Expected warning toast, but got: ${JSON.stringify(dispatchedToasts)}`,
 		);
 	});
 
@@ -337,15 +335,20 @@ describe("Patient Branch Transfer Autonomy & Non-blocking Feedback (Mandates 8e,
 		const body = doc.body as MockDomNode;
 		const executeBtn = findNodeByTestId(body, "execute-branch-transfer-btn");
 
-		expect(executeBtn).not.toBeNull();
-		expect(executeBtn?.disabled).toBeFalsy();
-		expect(executeBtn?.getAttribute("disabled")).toBeNull();
+		assert.ok(executeBtn, "executeBtn must exist");
+		assert.equal(Boolean(executeBtn?.disabled), false);
+		assert.equal(executeBtn?.getAttribute("disabled"), null);
 
 		await clickNode(executeBtn!);
 
-		expect(showToast).toHaveBeenCalledWith(
-			"Не выбран пациент для межфилиального трансфера.",
-			"warning",
+		const found = dispatchedToasts.some(
+			(t) =>
+				t.text.includes("Не выбран пациент для межфилиального трансфера") &&
+				t.type === "warning",
+		);
+		assert.ok(
+			found,
+			`Expected warning toast, but got: ${JSON.stringify(dispatchedToasts)}`,
 		);
 	});
 
@@ -364,7 +367,7 @@ describe("Patient Branch Transfer Autonomy & Non-blocking Feedback (Mandates 8e,
 		const body = doc.body as MockDomNode;
 		const executeBtn = findNodeByTestId(body, "execute-branch-transfer-btn");
 
-		expect(executeBtn).not.toBeNull();
-		expect(executeBtn?.className).toContain("min-h-[44px]");
+		assert.ok(executeBtn, "executeBtn must exist");
+		assert.ok(executeBtn?.className.includes("min-h-[44px]"));
 	});
 });

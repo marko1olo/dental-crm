@@ -11,13 +11,75 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	DEFAULT_BRANCHES,
 	DEFAULT_DOCTORS,
 	DEFAULT_SERVICE_CATEGORIES,
 	PublicOnlineBookingWidget,
 } from "../PublicOnlineBookingWidget.js";
+
+interface SpyMock {
+	(...args: unknown[]): unknown;
+	calls: unknown[][];
+	toHaveBeenCalledWith: (...expectedArgs: unknown[]) => void;
+}
+
+const vi = {
+	fn: (): SpyMock => {
+		const calls: unknown[][] = [];
+		const fnObj = ((...args: unknown[]) => {
+			calls.push(args);
+		}) as SpyMock;
+		fnObj.calls = calls;
+		fnObj.toHaveBeenCalledWith = (...expectedArgs: unknown[]) => {
+			const found = calls.some((actual) =>
+				expectedArgs.every((arg, idx) => actual[idx] === arg),
+			);
+			assert.ok(
+				found,
+				`Expected call with ${JSON.stringify(expectedArgs)}, but actual calls were: ${JSON.stringify(calls)}`,
+			);
+		};
+		return fnObj;
+	},
+};
+
+function expect(actual: unknown) {
+	return {
+		toContain: (expected: string) => {
+			assert.ok(
+				typeof actual === "string" && actual.includes(expected),
+				`Expected "${actual}" to contain "${expected}"`,
+			);
+		},
+		not: {
+			toBeNull: () => {
+				assert.notStrictEqual(actual, null, "Expected value not to be null");
+				assert.notStrictEqual(actual, undefined, "Expected value not to be undefined");
+			},
+			toMatch: (regex: RegExp) => {
+				assert.ok(
+					typeof actual === "string" && !regex.test(actual),
+					`Expected "${actual}" NOT to match ${regex}`,
+				);
+			},
+		},
+		toBe: (expected: unknown) => {
+			assert.strictEqual(actual, expected);
+		},
+		toHaveBeenCalledWith: (...expectedArgs: unknown[]) => {
+			// biome-ignore lint/suspicious/noExplicitAny: spy assertion helper
+			if (actual && typeof (actual as any).toHaveBeenCalledWith === "function") {
+				// biome-ignore lint/suspicious/noExplicitAny: spy assertion helper
+				(actual as any).toHaveBeenCalledWith(...expectedArgs);
+			} else {
+				assert.fail("actual is not a spy mock");
+			}
+		},
+	};
+}
 
 // ============================================================================
 // Lightweight Mock DOM for headless React 19 testing in Node.js

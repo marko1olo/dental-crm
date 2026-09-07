@@ -1733,7 +1733,6 @@ export const PublicOnlineBookingWidget: React.FC<
 											type="button"
 											className="dbw-sms-verify-btn"
 											onClick={handleSendSmsCode}
-											disabled={!isValidRussianPhone(patientPhone)}
 										>
 											Получить СМС-код
 										</button>
