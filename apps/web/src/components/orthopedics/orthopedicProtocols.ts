@@ -29,7 +29,54 @@ export interface Order804nServiceItem {
 	readonly nameRu: string;
 	readonly stageKind: "stage_3_orthopedics";
 	readonly suggestedPriceRub?: number;
+	readonly priceRub?: number;
+	readonly toothNumber?: number;
 }
+
+export const VITA_BLEACH_SHADES = ["BL1", "BL2", "BL3", "BL4"] as const;
+export type VitaBleachShade = (typeof VITA_BLEACH_SHADES)[number];
+
+export const VITA_CLASSICAL_SHADES = [
+	"A1", "A2", "A3", "A3.5", "A4",
+	"B1", "B2", "B3", "B4",
+	"C1", "C2", "C3", "C4",
+	"D2", "D3", "D4",
+] as const;
+export type VitaClassicalShade = (typeof VITA_CLASSICAL_SHADES)[number];
+
+export const VITA_SHADE_GROUPS = [
+	{
+		group: "Bleach",
+		labelRu: "Bleach (Экстра-белые)",
+		shades: ["BL1", "BL2", "BL3", "BL4"] as const,
+	},
+	{
+		group: "A",
+		labelRu: "Группа A (Красновато-коричневые)",
+		shades: ["A1", "A2", "A3", "A3.5", "A4"] as const,
+	},
+	{
+		group: "B",
+		labelRu: "Группа B (Красновато-желтые)",
+		shades: ["B1", "B2", "B3", "B4"] as const,
+	},
+	{
+		group: "C",
+		labelRu: "Группа C (Серые)",
+		shades: ["C1", "C2", "C3", "C4"] as const,
+	},
+	{
+		group: "D",
+		labelRu: "Группа D (Красновато-серые)",
+		shades: ["D2", "D3", "D4"] as const,
+	},
+] as const;
+
+export const ALL_VITA_AND_BLEACH_SHADES = [
+	...VITA_BLEACH_SHADES,
+	...VITA_CLASSICAL_SHADES,
+] as const;
+export type AllVitaAndBleachShade = (typeof ALL_VITA_AND_BLEACH_SHADES)[number];
 
 export interface OrthopedicProtocolPreset {
 	readonly id: string;
@@ -69,24 +116,28 @@ export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[]
 				nameRu: "Восстановление зуба коронкой (препарирование зуба под искусственную коронку)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 4000,
+				priceRub: 4000,
 			},
 			{
 				code: "A16.07.031.001",
 				nameRu: "Снятие двухслойного оттиска / Интраоральное цифровое сканирование (3Shape TRIOS)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 3500,
+				priceRub: 3500,
 			},
 			{
 				code: "A02.07.010",
 				nameRu: "Определение и фиксация центрального соотношения челюстей (окклюзионный силикон)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 2000,
+				priceRub: 2000,
 			},
 			{
 				code: "A16.07.004.001",
 				nameRu: "Изготовление и фиксация временной провизорной коронки прямым методом (Protemp 4)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 2500,
+				priceRub: 2500,
 			},
 		],
 	},
@@ -112,6 +163,7 @@ export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[]
 				nameRu: "Примерка ортопедической конструкции (коронки, каркаса, мостовидного протеза)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 1500,
+				priceRub: 1500,
 			},
 		],
 	},
@@ -137,12 +189,14 @@ export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[]
 				nameRu: "Постоянная фиксация несъемной ортопедической конструкции (коронки, мостовидного протеза, винира)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 3000,
+				priceRub: 3000,
 			},
 			{
 				code: "A06.07.007",
 				nameRu: "Внутриротовой прицельный радиовизиографический снимок (контроль краевого прилегания и отсутствия поддесневого цемента)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 750,
+				priceRub: 750,
 			},
 		],
 	},
@@ -168,12 +222,21 @@ export const ORTHOPEDIC_CANONICAL_PROTOCOLS: readonly OrthopedicProtocolPreset[]
 				nameRu: "Протезирование частичными съемными пластиночными протезами (Acry-Free / нейлон)",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 45000,
+				priceRub: 45000,
+			},
+			{
+				code: "A16.07.023",
+				nameRu: "Протезирование зубов полными съемными пластиночными протезами (Acry-Free / нейлон)",
+				stageKind: "stage_3_orthopedics",
+				suggestedPriceRub: 50000,
+				priceRub: 50000,
 			},
 			{
 				code: "A02.07.010",
 				nameRu: "Определение центрального соотношения челюстей при помощи восковых базисов с окклюзионными валиками",
 				stageKind: "stage_3_orthopedics",
 				suggestedPriceRub: 4000,
+				priceRub: 4000,
 			},
 		],
 	},
@@ -272,18 +335,20 @@ export interface ApplyOrthopedicProtocolParams {
 	protocol: OrthopedicProtocolPreset;
 	options?: FormatOrthopedicProtocolOptions;
 	onSuccess?: ((summary: string) => void) | undefined;
+	onAddToInvoice?: ((services: readonly Order804nServiceItem[]) => void) | undefined;
 	copyToClipboard?: boolean;
 	showNotification?: boolean;
 }
 
 /**
- * 1-клик внесение ортопедического протокола в Форму 043/у и Этап 3 плана лечения
+ * 1-клик внесение ортопедического протокола в Форму 043/у, активный счёт/смету визита и Этап 3 плана лечения
  */
 export function applyOrthopedicProtocolToVisit(
 	params: ApplyOrthopedicProtocolParams,
 ): {
 	summary: string;
 	teethNumbers: number[];
+	services: readonly Order804nServiceItem[];
 } {
 	const { protocol, options } = params;
 	const formatted = formatOrthopedicProtocolStatement(protocol, options);
@@ -358,9 +423,44 @@ export function applyOrthopedicProtocolToVisit(
 		} catch {
 			// ignore
 		}
+
+		// 5. Начисление услуг в активный счёт/смету визита для немедленной оплаты у кресла (dente-add-services-to-invoice)
+		try {
+			const primaryTooth = teethNumbers.length > 0 ? teethNumbers[0] : undefined;
+			const invoiceServices = protocol.order804nServices.map((s) => ({
+				code: s.code,
+				nameRu: s.nameRu,
+				name: s.nameRu,
+				priceRub: s.priceRub ?? s.suggestedPriceRub ?? 0,
+				suggestedPriceRub: s.suggestedPriceRub ?? s.priceRub ?? 0,
+				toothNumber: primaryTooth,
+				stageKind: s.stageKind,
+			}));
+
+			window.dispatchEvent(
+				new CustomEvent("dente-add-services-to-invoice", {
+					detail: {
+						toothNumber: primaryTooth,
+						teethNumbers,
+						services: invoiceServices,
+					},
+				}),
+			);
+		} catch {
+			// ignore
+		}
 	}
 
-	// 5. Обновление формы визита в visitStore
+	// 6. Прямой коллбек добавления в смету, если передан родителем
+	if (params.onAddToInvoice) {
+		try {
+			params.onAddToInvoice(protocol.order804nServices);
+		} catch {
+			// ignore
+		}
+	}
+
+	// 7. Обновление формы визита в visitStore
 	try {
 		useVisitStore.getState().setVisitNoteForm((prev) => {
 			const currentObjective = prev.objectiveStatus || "";
@@ -385,7 +485,7 @@ export function applyOrthopedicProtocolToVisit(
 		// outside React context / mock store
 	}
 
-	// 6. Копирование в буфер обмена
+	// 8. Копирование в буфер обмена
 	if (
 		params.copyToClipboard !== false &&
 		typeof navigator !== "undefined" &&
@@ -395,10 +495,10 @@ export function applyOrthopedicProtocolToVisit(
 		navigator.clipboard.writeText(fullText).catch(() => {});
 	}
 
-	// 7. Оповещение врача
+	// 9. Оповещение врача
 	if (params.showNotification !== false) {
 		showToast(
-			`Протокол «${protocol.shortLabel}» внесен в дневник 043/у и Этап 3 (Ортопедия)`,
+			`Протокол «${protocol.shortLabel}» внесен в дневник 043/у, смету и Этап 3 (Ортопедия)`,
 			"success",
 			3500,
 		);
@@ -415,5 +515,6 @@ export function applyOrthopedicProtocolToVisit(
 	return {
 		summary: formatted.summaryLine,
 		teethNumbers,
+		services: protocol.order804nServices,
 	};
 }
