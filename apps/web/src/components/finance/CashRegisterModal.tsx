@@ -334,6 +334,30 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		}
 	};
 
+	const applySplitBothDepositsAndRemainder = (targetMethod: "card" | "cash" | "sbp" = "card") => {
+		const totalKop = rubToKopecks(totalInvoiceRub);
+		const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub || 0));
+		const remAfterDepKop = Math.max(0, totalKop - depKop);
+		const famKop = Math.min(remAfterDepKop, rubToKopecks(patientFamilyBalanceRub || 0));
+		const remKop = Math.max(0, remAfterDepKop - famKop);
+
+		setSplitDepositRub(kopecksToRub(depKop));
+		setSplitFamilyRub(kopecksToRub(famKop));
+		if (targetMethod === "card") {
+			setSplitCardRub(kopecksToRub(remKop));
+			setSplitCashRub(0);
+			setSplitSbpRub(0);
+		} else if (targetMethod === "cash") {
+			setSplitCashRub(kopecksToRub(remKop));
+			setSplitCardRub(0);
+			setSplitSbpRub(0);
+		} else {
+			setSplitSbpRub(kopecksToRub(remKop));
+			setSplitCardRub(0);
+			setSplitCashRub(0);
+		}
+	};
+
 	const applyRemainingToMethod = (targetMethod: "card" | "cash" | "sbp" | "deposit" | "family") => {
 		const totalKop = rubToKopecks(totalInvoiceRub);
 		let otherKop = 0;
@@ -2102,6 +2126,16 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											data-testid="btn-split-preset-family-card"
 										>
 											Сем. счет ({Math.min(totalInvoiceRub, patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽) + Картой
+										</button>
+									)}
+									{patientDepositRub > 0 && patientFamilyBalanceRub > 0 && (
+										<button
+											type="button"
+											onClick={() => applySplitBothDepositsAndRemainder("card")}
+											className="px-2.5 py-1 rounded-lg text-xs font-bold bg-violet-50 dark:bg-violet-950/50 hover:bg-violet-100 text-violet-700 dark:text-violet-300 border border-violet-300 dark:border-violet-800 cursor-pointer transition-all active:scale-95"
+											data-testid="btn-split-preset-both-card"
+										>
+											Депозит + Сем. счет + Карта
 										</button>
 									)}
 									<button

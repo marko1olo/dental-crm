@@ -27,6 +27,7 @@ export interface RefundReceiptModalProps {
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly cashierFullName?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly refundReason?: string | undefined;
@@ -41,10 +42,12 @@ export const RefundReceiptModal: React.FC<RefundReceiptModalProps> = ({
 	patientName = "Пациент",
 	patientPhone = "+7 (___) ___-__-__",
 	patientDepositRub = 0,
+	patientFamilyBalanceRub = 0,
 	cashierFullName = "Кассир-администратор",
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	onReceiptFiscalized,
 }) => {
+	const effectiveDepositRub = (patientDepositRub || 0) + (patientFamilyBalanceRub || 0);
 	const adaptedItems = useMemo<readonly TreatmentPlanItem[]>(() => {
 		return items.map((item, idx) => {
 			const candidate = item as Partial<FiscalItemDraft> & Partial<TreatmentPlanItem>;
@@ -77,7 +80,7 @@ export const RefundReceiptModal: React.FC<RefundReceiptModalProps> = ({
 			patientId={patientId}
 			patientName={patientName}
 			patientPhone={patientPhone}
-			patientDepositRub={patientDepositRub}
+			patientDepositRub={effectiveDepositRub}
 			cashierFullName={cashierFullName}
 			clinicName={clinicName}
 			initialTab="refund"

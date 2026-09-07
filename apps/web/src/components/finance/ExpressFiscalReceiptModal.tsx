@@ -125,7 +125,7 @@ export const ExpressFiscalReceiptModal: React.FC<ExpressFiscalReceiptModalProps>
 		return [];
 	}, [items, totalBillRub, totalBillKop]);
 
-	const effectiveDepositRub = Math.max(patientDepositRub, patientFamilyBalanceRub);
+	const effectiveDepositRub = (patientDepositRub || 0) + (patientFamilyBalanceRub || 0);
 
 	return (
 		<FiscalReceipt54FzModal

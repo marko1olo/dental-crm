@@ -287,7 +287,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 
 	const handleQuickPreset = (preset: QuickCheckoutPresetType) => {
 		const effectiveDepositRub =
-			patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : patientDepositRub;
+			(patientDepositRub || 0) + (patientFamilyBalanceRub || 0);
 		const result = applyQuickCheckoutPreset({
 			totalBillKop: targetBillKop,
 			preset,
@@ -505,6 +505,23 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				offlineBuffered: forceOfflineBuffer,
 			}
 		);
+
+		// 0. Гарантийный прием / 100% скидка (Мандат 8e, п. 7) — защита от аппаратной ошибки ККТ "Сумма чека не может быть 0"
+		if (targetBillKop === 0) {
+			showToast(
+				"Гарантийный прием оформлен (скидка 100%, 0 ₽). Визит успешно закрыт без фискализации!",
+				"success"
+			);
+			if (onPaymentComplete) {
+				onPaymentComplete(payload);
+			}
+			setTimeout(() => {
+				setIsPrinting(false);
+				inFlightRef.current = false;
+				onClose();
+			}, 300);
+			return;
+		}
 
 		// 1. Принудительный буфер отложенной фискализации или сетевой офлайн (Mandate 8e — пациент не ждет у стойки)
 		if (forceOfflineBuffer || !navigator.onLine) {
@@ -1569,7 +1586,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 											Семейный лицевой счет:
 										</span>
 										<span className="text-emerald-700 dark:text-emerald-300 font-bold font-mono">
-											Баланс депозита: {(patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : patientDepositRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+											Баланс депозита: {((patientDepositRub || 0) + (patientFamilyBalanceRub || 0)).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 										</span>
 									</div>
 									<p className="text-xs text-[var(--muted,#64748b)] m-0">
@@ -1641,7 +1658,9 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 							) : (
 								<>
 									<Check className="w-5 h-5" />
-									Пробить чек 54-ФЗ ({(effectiveBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)
+									{targetBillKop === 0
+										? "Закрыть визит: 100% Гарантия / Скидка (0 ₽)"
+										: `Пробить чек 54-ФЗ (${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
 								</>
 							)}
 						</button>

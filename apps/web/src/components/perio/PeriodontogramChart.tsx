@@ -1182,13 +1182,37 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = ({
 					</div>
 				</div>
 
-				{/* 1-Click Fast Action Presets (1 Row 32-36px Toolbar, Mandates 8d, HIG) */}
+				{/* 1-Click Fast Action Presets (1 Row 32-36px Toolbar, Mandates 8d, 8e, 8k, HIG) */}
 				{!readOnly && (
 					<div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 h-9">
+						{/* 1-Click Norm Express: Instant PSR 0, Healthy Tissues & Form 043/u Protocol */}
+						<button
+							type="button"
+							onClick={() => handleApplyExpressPreset("perio_norm_express")}
+							className="h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							title="Норма пародонта в 1 клик (PSR 0, глубина <= 2 мм, BOP 0, протокол в 043/у)"
+							data-testid="perio-toolbar-norm-1click-btn"
+						>
+							<ShieldCheck size={16} />
+							<span>Норма PSR 0 (043/у)</span>
+						</button>
+
+						{/* 1-Click Pro-Hygiene: Ultrasonic, Air-Flow Glycine & Service A16.07.051 */}
+						<button
+							type="button"
+							onClick={() => handleApplyExpressPreset("pro_hygiene_express")}
+							className="h-9 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+							title="Профгигиена в 1 клик (УЗ + Air-Flow глицин + полировка + фторирование + услуга A16.07.051)"
+							data-testid="perio-toolbar-prophy-1click-btn"
+						>
+							<Sparkles size={16} />
+							<span>Профгигиена A16.07.051</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleSetAllIntact}
-							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer"
+							className="h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-emerald-500/15 hover:text-emerald-300 border border-[var(--line)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-all cursor-pointer min-h-[44px] min-w-[44px]"
 							title="Установить все 32 зуба в норму (PD 2мм, рецессия 0мм, BOP 0%)"
 							data-testid="perio-preset-intact"
 						>

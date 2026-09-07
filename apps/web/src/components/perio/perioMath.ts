@@ -129,6 +129,7 @@ export interface PerioExpressPreset {
 	readonly subtitleRu: string;
 	readonly icd10: string;
 	readonly defaultProtocolRu: string;
+	readonly code804n?: string;
 }
 
 export const PERIO_EXPRESS_PRESETS: Record<
@@ -180,6 +181,7 @@ export const PERIO_EXPRESS_PRESETS: Record<
 		titleRu: "Профгигиена полости рта",
 		subtitleRu: "УЗ-скейлинг + Air-Flow глицин + Detartrine + Bifluorid 12",
 		icd10: "Z01.2",
+		code804n: "A16.07.051",
 		defaultProtocolRu:
 			"Профгигиена полости рта: УЗ-скейлинг над- и поддесневых отложений + Air-Flow порошком на основе глицина + полировка абразивной пастой Detartrine + глубокое фторирование эмали Bifluorid 12",
 	},
