@@ -6,9 +6,11 @@ import {
 	Copy,
 	FileText,
 	Layers,
+	MessageSquare,
 	Plus,
 	Receipt,
 	RotateCcw,
+	Share2,
 	Sparkles,
 	X,
 	Zap,
@@ -193,6 +195,9 @@ export interface OrthodonticVisitProtocolWidgetProps {
 	onClose: () => void;
 	patientId?: string | undefined;
 	patientName?: string | undefined;
+	readonly clinicName?: string | undefined; // Дефолт: 'Стоматологическая клиника DENTE'
+	readonly clinicPhone?: string | undefined; // Дефолт: '+7 (495) 123-45-67'
+	readonly doctorName?: string | undefined; // Дефолт: 'Лечащий врач-ортодонт'
 	selectedTooth?: number | null;
 	onSelectTooth?: (toothNumber: number) => void;
 	currentAligner?: number | undefined;
@@ -305,11 +310,106 @@ export const ALIGNER_ATTACHMENT_PRESETS: AlignerAttachmentPreset[] = [
 	},
 ];
 
+export interface OrthodonticPatientMemoParams {
+	clinicName: string;
+	clinicPhone: string;
+	doctorName: string;
+	patientName: string;
+	visitDate?: string | undefined;
+	bracketSystem: string;
+	archwireMaterial?: string | undefined;
+	archwireSection?: string | undefined;
+	targetArch?: string | undefined;
+	elasticScheme?: string | undefined;
+	elasticSize?: string | undefined;
+	elasticWear?: string | undefined;
+	isAligners?: boolean | undefined;
+	currentAligner?: number | undefined;
+	totalAligners?: number | undefined;
+	notes?: string | undefined;
+}
+
+function getRuDateString(d: Date = new Date()): string {
+	const day = String(d.getDate()).padStart(2, "0");
+	const month = String(d.getMonth() + 1).padStart(2, "0");
+	const year = d.getFullYear();
+	return `${day}.${month}.${year}`;
+}
+
+export function formatOrthodonticPatientMemo(
+	params: OrthodonticPatientMemoParams,
+): string {
+	const clinicName = params.clinicName || "Стоматологическая клиника DENTE";
+	const clinicPhone = params.clinicPhone || "+7 (495) 123-45-67";
+	const doctorName = params.doctorName || "Лечащий врач-ортодонт";
+	const patientName = params.patientName || "Пациент";
+	const visitDate = params.visitDate || getRuDateString();
+
+	const isAligners = Boolean(
+		params.isAligners || params.bracketSystem === "aligners",
+	);
+
+	const systemObj = BRACKET_SYSTEMS.find((b) => b.id === params.bracketSystem);
+	let systemName = isAligners
+		? "Элайнеры"
+		: (systemObj ? systemObj.label : params.bracketSystem || "Damon Q2");
+	if (!systemName) {
+		systemName = "Damon Q2";
+	}
+
+	let apparatusDetails = "";
+	if (isAligners) {
+		const cur = params.currentAligner || 1;
+		const total = params.totalAligners || "—";
+		apparatusDetails = `Текущий этап: Каппа №${cur} из ${total}\nРежим: ношение 22 часа/сутки, смена через 10-14 дней.\n`;
+	} else {
+		const arch =
+			params.targetArch === "upper"
+				? "верхняя челюсть"
+				: params.targetArch === "lower"
+					? "нижняя челюсть"
+					: "обе челюсти";
+		const mat = params.archwireMaterial || "CuNiTi";
+		const sec = params.archwireSection || ".016";
+		apparatusDetails = `Установленная дуга: ${mat} ${sec} (${arch})\n`;
+	}
+
+	let elasticsBlock = "";
+	if (params.elasticScheme && params.elasticScheme !== "none") {
+		const schemeObj = ELASTIC_SCHEMES.find((e) => e.id === params.elasticScheme);
+		const schemeLabel = schemeObj ? schemeObj.label : params.elasticScheme;
+
+		const sizeObj = ELASTIC_SIZES.find((s) => s.id === params.elasticSize);
+		const sizeLabel = sizeObj
+			? `${sizeObj.label} (${sizeObj.strength})`
+			: (params.elasticSize || "3/16\" Medium");
+
+		const wearMode = params.elasticWear || "22 часа/сутки";
+
+		elasticsBlock = `Схема межчелюстных эластиков (тяг):\n- Направление: ${schemeLabel}\n- Размер/сила: ${sizeLabel}\n- Режим ношения: ${wearMode} (смена на свежие 2 раза в день)\n`;
+	}
+
+	return `Ортодонтические рекомендации после приёма (клиника «${clinicName}»):
+Пациент: ${patientName}
+Лечащий врач: ${doctorName}
+Дата приёма: ${visitDate}
+Аппаратура: ${systemName}
+${apparatusDetails}${elasticsBlock}Памятка пациенту:
+1. Первые 2-3 дня возможна умеренная чувствительность зубов при накусывании (физиологическая норма перемещения зубов).
+2. Эластики снимаются только во время еды и чистки зубов. При обрыве эластика надеть новый из упаковки.
+3. При натирании щеки или губы нанесите защитный ортодонтический воск на выступающий элемент.
+4. При отклейке брекета, утере кнопки или дискомфорте от дуги немедленно свяжитесь с клиникой: ${clinicPhone}.
+Следующий контрольный визит: через 4–6 недель.`;
+}
+
 export function OrthodonticVisitProtocolWidget({
 	isOpen,
 	onClose,
 	patientId,
 	patientName = "Пациент",
+	clinicName = "Стоматологическая клиника DENTE",
+	clinicPhone = "+7 (495) 123-45-67",
+	doctorName = "Лечащий врач-ортодонт",
 	selectedTooth = null,
 	onSelectTooth,
 	currentAligner,
@@ -857,6 +957,58 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 			});
 		}
 	};
+
+	// 1-Click Copy Patient Memo for Messengers (Wave 53 / Feature 240)
+	const handleCopyPatientMemo = useCallback(() => {
+		const text = formatOrthodonticPatientMemo({
+			clinicName,
+			clinicPhone,
+			doctorName,
+			patientName,
+			bracketSystem,
+			archwireMaterial,
+			archwireSection,
+			targetArch,
+			elasticScheme,
+			elasticSize,
+			elasticWear,
+			isAligners: bracketSystem === "aligners" || Boolean(activeAttachmentPreset),
+			currentAligner,
+			totalAligners,
+			notes,
+		});
+
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				navigator.clipboard.writeText(text).catch(() => {});
+			}
+			showToast(
+				"Памятка пациенту по эластикам и уходу скопирована для мессенджера",
+				"success",
+			);
+		} catch (_err) {
+			showToast(
+				"Памятка пациенту по эластикам и уходу скопирована для мессенджера",
+				"success",
+			);
+		}
+	}, [
+		clinicName,
+		clinicPhone,
+		doctorName,
+		patientName,
+		bracketSystem,
+		archwireMaterial,
+		archwireSection,
+		targetArch,
+		elasticScheme,
+		elasticSize,
+		elasticWear,
+		activeAttachmentPreset,
+		currentAligner,
+		totalAligners,
+		notes,
+	]);
 
 	return (
 		<div
@@ -1691,7 +1843,7 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 							<button
 								type="button"
 								onClick={handleCopyClipboard}
-								className="min-h-[36px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+								className="min-h-[44px] px-2.5 py-1 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
 								title="Скопировать протокол в буфер"
 							>
 								<Copy size={13} />
@@ -1706,6 +1858,18 @@ ${bracketSystem === "aligners" || activeAttachmentPreset
 
 						{/* 1-Click Action Bar */}
 						<div className="flex items-center gap-2 pt-2 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800">
+							<button
+								type="button"
+								onClick={handleCopyPatientMemo}
+								data-testid="ortho-copy-patient-memo-btn"
+								className="min-h-[48px] px-3.5 py-2 rounded-xl border border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+								title="Скопировать памятку по эластикам и уходу для отправки пациенту в WhatsApp/Telegram"
+							>
+								<Copy size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span className="hidden sm:inline">Скопировать для пациента</span>
+								<span className="sm:hidden">Памятка</span>
+							</button>
+
 							<button
 								type="button"
 								onClick={handleAddServicesToInvoice}
