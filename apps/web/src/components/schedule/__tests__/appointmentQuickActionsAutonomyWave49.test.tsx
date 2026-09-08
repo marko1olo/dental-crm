@@ -1024,6 +1024,7 @@ describe("Wave 49 (Feature 232): Unblocked Communication Actions & Non-blocking 
 			assert.ok(saveAppointmentBtn, "Must find appointment-modal-save-btn");
 
 			await clickNode(saveAppointmentBtn);
+			await new Promise((r) => setTimeout(r, 50));
 
 			assert.equal(
 				savedApptPatientId,
