@@ -2109,6 +2109,29 @@
 - **Файлы**: `apps/web/src/utils/clinicProfileUtils.ts`, `apps/web/src/hooks/domains/usePatientLogic.ts`, `apps/web/src/components/imaging/VisiographAnalyzer.tsx`, `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`, `apps/web/src/components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`.
 - **Тесты**: `apps/web/src/components/visit/__tests__/clinicalFrictionAndAutonomyWave60.test.tsx` (13/13 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `92b262880`.
 
+#### 2.10.209. Серверная синхронизация счетов, интеграция в FinanceView и ликвидация demo invoices (Wave 61 / Feature 250)
+- **Назначение**: Обеспечение непрерывной работы с реальными счетами и актами 804н, устранение моков, синхронизация с бэкендом и доступность из главного финансового модуля (Мандаты 2, 8c, 8d, 8e, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Ликвидация мок-данных и двухслойное хранилище*:
+     - Полностью удален 56-строчный массив захардкоженных `DEMO_INVOICES` из `InvoicesView.tsx`;
+     - Реализован двухслойный механизм: начальная загрузка из `initialInvoices` (при передаче), локальное хранилище `dente_billing_invoices` (`loadStoredInvoices`, `saveStoredInvoices`), либо честное пустое состояние с 1-клик кнопкой создания счета;
+  2. *Серверная синхронизация*:
+     - В `InvoicesView.tsx` добавлен `useEffect` запроса `GET /api/invoices${patientId ? ... : ""}` с авторизационными заголовками `denteAdminSecretRequestHeaders()`;
+     - Мягкий офлайн-фоллбэк: ошибки сети логируются, но не блокируют работу врача или кассира с локальными счетами;
+     - При создании счета `handleCreateInvoice` сохраняет счет локально и асинхронно синхронизирует с бэкендом через `POST /api/invoices/generate-from-plan`;
+  3. *Сохранность статусов оплат и гарантии 100%*:
+     - Обработчик `handleApplyWarranty100` обновляет статус на `warranty_100`, обнуляет сумму к оплате и сохраняет в `localStorage`;
+     - Коллбек `onSuccess` модалки `PaymentModal` обновляет статус на `paid` или `warranty_100` и сохраняет в `localStorage`;
+  4. *Интеграция в `FinanceView.tsx`*:
+     - В шапку `FinanceView.tsx` добавлена кнопка `btn-finance-open-invoices` («Счета и акты (804н)», иконка `Receipt`);
+     - Смонтирован модальный контейнер `modal-finance-invoices` с пробросом активного пациента (`documentPatient`);
+  5. *HIG и 7 смертных грехов UI*:
+     - Добавлен `data-testid="btn-invoices-close"` на кнопку закрытия тулбара;
+     - Бейджи статусов дополнены токенами темных рамок WCAG AAA (`dark:border-emerald-800`, `dark:border-purple-800`, `dark:border-amber-800`);
+     - Тач-таргеты $\ge 44\text{px}$, 0 мультяшных эмодзи (строго векторные Lucide), 0 заблокированных кнопок без причины.
+- **Файлы**: `apps/web/src/components/billing/InvoicesView.tsx`, `apps/web/src/FinanceView.tsx`.
+- **Тесты**: `apps/web/src/components/finance/__tests__/invoicesViewServerSyncAndFinanceIntegrationWave61.test.tsx` (12/12 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `8d8e2a431`.
+
 
 
 

@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-09 / WAVE 60): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 186 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 249 ФИЧ: 63 КАНОНИЧЕСКИЕ + 186 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-09 / WAVE 61): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 187 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 250 ФИЧ: 63 КАНОНИЧЕСКИЕ + 187 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2694,9 +2694,34 @@
 
 ---
 
+## 187. `фин_счета_акты::серверная_синхронизация_счетов_интеграция_с_finance_view_и_ликвидация_demo_invoices` [РЕАЛИЗОВАНО] (Wave 61 / Feature 250 / Mandates 8c, 8d, 8e, 8k, 8n)
+- **Идея**: В соответствии с Mandate 2 (Zero Mocks), Mandate 8e (Doctor Autonomy) и Mandate 8n (Solo Doctor & Small Clinic Sovereignty):
+  1. Ликвидация захардкоженного массива `DEMO_INVOICES` (56 строк моков) из `InvoicesView.tsx`. Загрузка реальных счетов из `initialInvoices`, двухслойного локального хранилища `localStorage` (`dente_billing_invoices`) или отображение чистого пустого состояния с 1-клик кнопкой создания счета;
+  2. Серверная синхронизация счетов: выполнение `GET /api/invoices` с опциональным фильтром `patientId` и секретными заголовками `denteAdminSecretRequestHeaders()`; мягкий офлайн-фоллбэк без сбоев интерфейса;
+  3. Двунаправленная сохранность данных при создании счета (`handleCreateInvoice`), применении гарантии 100% (`handleApplyWarranty100`) и закрытии через `PaymentModal` с вызовом `saveStoredInvoices`;
+  4. Монтирование `InvoicesView` в `FinanceView.tsx`: кнопка `btn-finance-open-invoices` («Счета и акты (804н)», иконка `Receipt`) в тулбаре и модальный контейнер `modal-finance-invoices` глубины ровно 1 с пробросом активного пациента;
+  5. WCAG AAA темная тема (темные рамки статусов `dark:border-emerald-800`, `dark:border-purple-800`, `dark:border-amber-800`), кнопка `btn-invoices-close`, тач-таргеты $\ge 44\text{px}$, 0 эмодзи, 0 disabled кнопок.
+- **Статус**:
+  - **InvoicesView.tsx**:
+    * Массив `DEMO_INVOICES` полностью удален;
+    * Добавлены `loadStoredInvoices()`, `saveStoredInvoices()`, константа `INVOICES_STORAGE_KEY`;
+    * Добавлен `useEffect` синхронизации с сервером;
+    * `handleCreateInvoice` сохраняет в `localStorage` и отправляет `POST /api/invoices/generate-from-plan`;
+    * `handleApplyWarranty100` и `PaymentModal.onSuccess` обновляют состояние и вызывают `saveStoredInvoices`;
+    * Добавлен `data-testid="btn-invoices-close"` и темные токены рамок.
+  - **FinanceView.tsx**:
+    * Импортирован `InvoicesView`;
+    * Добавлено состояние `isInvoicesOpen`;
+    * В тулбар внедрена кнопка `btn-finance-open-invoices` («Счета и акты (804н)»);
+    * Смонтирован модальный контейнер `modal-finance-invoices` глубиной 1.
+  - **Файлы**: `apps/web/src/components/billing/InvoicesView.tsx`, `apps/web/src/FinanceView.tsx`.
+  - **Тесты**: `apps/web/src/components/finance/__tests__/invoicesViewServerSyncAndFinanceIntegrationWave61.test.tsx` (12/12 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 186 дополнительных системных аддендум-фич клинической автономии (Wave 15..60, фичи 64..249) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 187 дополнительных системных аддендум-фич клинической автономии (Wave 15..61, фичи 64..250) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
