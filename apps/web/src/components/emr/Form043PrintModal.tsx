@@ -65,7 +65,7 @@ export interface Form043PrintModalProps {
 	status?: "draft" | "signed" | "completed" | "voided" | string;
 }
 
-const DEFAULT_043_DATA: MedicalCardForm043uData = {
+export const DEFAULT_043_DATA: MedicalCardForm043uData = {
 	formNumber: "043/у",
 	formOrderName: "Приказ Минздрава России от 15.12.2014 № 834н",
 	clinic: {
@@ -426,7 +426,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 					}, 1500);
 				}, 400);
 			}
-		}, [formData]);
+		}, [formData, effectiveIsDraft]);
 
 		// Обработчик экспорта в XML (ЕГИСЗ СЭМД 834н)
 		const handleExportXml = useCallback(() => {
@@ -541,12 +541,18 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								Минздрав РФ № 834н
 							</span>
 							{effectiveIsDraft ? (
-								<span className="px-2.5 py-0.5 rounded border border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
+								<span
+									data-testid="badge-043-draft-status"
+									className="px-2.5 py-0.5 rounded border border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1"
+								>
 									<FileText className="w-3 h-3 text-amber-600" />
 									ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)
 								</span>
 							) : (
-								<span className="px-2.5 py-0.5 rounded border border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
+								<span
+									data-testid="badge-043-draft-status"
+									className="px-2.5 py-0.5 rounded border border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1"
+								>
 									<Check className="w-3 h-3 text-emerald-600" />
 									ПОДПИСАНО ВРАЧОМ
 								</span>
@@ -580,6 +586,8 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								type="button"
 								className="emr043-btn emr043-btn-primary"
 								onClick={handlePrint}
+								disabled={false}
+								data-testid="btn-print-043-card"
 								title="Печать или экспорт в PDF (A4)"
 							>
 								<Printer className="w-4 h-4" />
