@@ -3,14 +3,23 @@ import {
 	Beaker,
 	CheckCircle2,
 	Clock,
+	FileText,
 	Image as ImageIcon,
 	PackageCheck,
+	Printer,
+	QrCode,
 	RefreshCcw,
+	Truck,
 	User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { showToast } from "./components/GlobalToast";
 import { actionFailureToast } from "./lib/panelStateText";
+import {
+	generateBarcodeSvg,
+	generateQrCodeSvg,
+	formatGostOrderNumber,
+} from "./components/lab/labMath";
 import "./GuestLabPortal.css";
 
 interface LabOrderData {
@@ -103,6 +112,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [isUpdating, setIsUpdating] = useState(false);
+	const [showCourierWaybill, setShowCourierWaybill] = useState(false);
 
 	useEffect(() => {
 		// Флаг отмены нужен из-за React.StrictMode: в разработке эффект исполняется
@@ -141,7 +151,7 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 		};
 	}, [token]);
 
-	const updateStatus = async (newStatus: string) => {
+	const updateStatus = async (newStatus: string, comments?: string) => {
 		if (!token || !order) return;
 		try {
 			setIsUpdating(true);
@@ -152,7 +162,10 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 					headers: {
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({ status: newStatus }),
+					body: JSON.stringify({
+						status: newStatus,
+						...(comments ? { labComments: comments } : {}),
+					}),
 				},
 			);
 
@@ -170,10 +183,28 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 			}
 
 			setOrder({ ...order, status: data.status });
-			showToast(
-				"Статус заказа сохранён, врач увидит его в расписании клиники",
-				"success",
-			);
+			if (newStatus === "shipped") {
+				setShowCourierWaybill(true);
+				showToast(
+					"Статус заказа: отправлен курьером в клинику. Накладная готова к печати",
+					"success",
+				);
+			} else if (newStatus === "in_progress") {
+				showToast(
+					"Заказ взят в работу зуботехнической лабораторией",
+					"success",
+				);
+			} else if (newStatus === "refitting") {
+				showToast(
+					"Заказ переведён в статус «На переделке / доработке»",
+					"info",
+				);
+			} else {
+				showToast(
+					"Статус заказа сохранён, врач увидит его в расписании клиники",
+					"success",
+				);
+			}
 		} catch (e) {
 			showToast(
 				e instanceof Error ? e.message : statusSaveFailureText(0),
@@ -219,9 +250,12 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 			case "refitting":
 				return <RefreshCcw size={20} />;
 			case "shipped":
-				return <PackageCheck size={20} />;
-			case "completed":
+				return <Truck size={20} />;
+			case "ready":
 				return <CheckCircle2 size={20} />;
+			case "received":
+			case "completed":
+				return <PackageCheck size={20} />;
 			default:
 				return <Clock size={20} />;
 		}
@@ -230,12 +264,13 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 	const statusLabel =
 		{
 			draft: "Черновик",
-			sent: "Отправлен",
-			in_progress: "В работе",
-			shipped: "Работа готова, отправлена в клинику",
+			sent: "Отправлен в лабораторию",
+			in_progress: "В работе у техника",
+			ready: "Работа готова",
+			shipped: "Отправлено курьером в клинику",
 			received: "Получен клиникой",
 			refitting: "На переделке",
-			completed: "Завершен",
+			completed: "Завершен / Установлен",
 		}[order.status] || order.status;
 
 	return (
@@ -473,35 +508,182 @@ export function GuestLabPortal({ token }: GuestLabPortalProps) {
 						>
 							Управление статусом заказа
 						</h3>
-						<div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+						<div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "16px" }}>
 							<button
 								type="button"
+								data-testid="btn-status-in-progress"
 								onClick={() => updateStatus("in_progress")}
 								disabled={isUpdating || order.status === "in_progress"}
 								className={`secondary-button ${order.status === "in_progress" ? "active" : ""}`}
-								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px" }}
+								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 							>
-								Взять в работу
+								<Clock size={16} />
+								<span>Взять в работу</span>
 							</button>
 							<button
 								type="button"
-								onClick={() => updateStatus("shipped")}
+								data-testid="btn-status-ready"
+								onClick={() => updateStatus("shipped", "Работа готова")}
+								disabled={isUpdating}
+								className="secondary-button"
+								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+							>
+								<CheckCircle2 size={16} />
+								<span>Работа готова</span>
+							</button>
+							<button
+								type="button"
+								data-testid="btn-status-shipped"
+								onClick={() => updateStatus("shipped", "Отправлено курьером в клинику")}
 								disabled={isUpdating || order.status === "shipped"}
 								className={`secondary-button ${order.status === "shipped" ? "active" : ""}`}
-								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px" }}
+								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 							>
-								Работа готова
+								<Truck size={16} />
+								<span>Отправлено курьером</span>
 							</button>
 							<button
 								type="button"
-								onClick={() => updateStatus("refitting")}
+								data-testid="btn-status-refitting"
+								onClick={() => updateStatus("refitting", "На переделке")}
 								disabled={isUpdating || order.status === "refitting"}
 								className={`secondary-button ${order.status === "refitting" ? "active" : ""}`}
-								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px" }}
+								style={{ flex: "1 1 140px", minHeight: "44px", padding: "10px 14px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
 							>
-								На переделке
+								<RefreshCcw size={16} />
+								<span>На переделке</span>
 							</button>
 						</div>
+
+						{/* Переключатель и печать курьерской накладной (Мандат 8e, 8k) */}
+						<div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+							<button
+								type="button"
+								data-testid="toggle-courier-waybill-btn"
+								onClick={() => setShowCourierWaybill((prev) => !prev)}
+								className="secondary-button"
+								style={{
+									minHeight: "40px",
+									padding: "8px 14px",
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									fontWeight: 600,
+									fontSize: "13px",
+									background: showCourierWaybill ? "var(--teal-soft)" : undefined,
+									borderColor: showCourierWaybill ? "var(--teal)" : undefined,
+									color: showCourierWaybill ? "var(--teal)" : undefined,
+								}}
+							>
+								<FileText size={16} />
+								<span>{showCourierWaybill ? "Скрыть накладную курьера" : "Накладная курьеру (QR + Штрихкод)"}</span>
+							</button>
+							{showCourierWaybill && (
+								<button
+									type="button"
+									data-testid="courier-waybill-print-btn"
+									onClick={() => window.print()}
+									className="primary-button"
+									style={{
+										minHeight: "40px",
+										padding: "8px 16px",
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+										fontWeight: 600,
+										fontSize: "13px",
+									}}
+								>
+									<Printer size={16} />
+									<span>Распечатать накладную</span>
+								</button>
+							)}
+						</div>
+
+						{/* Карточка курьерской накладной с QR и Штрихкодом Code 128 */}
+						{showCourierWaybill && (
+							<div
+								data-testid="courier-waybill-card"
+								style={{
+									border: "2px dashed var(--teal)",
+									borderRadius: "12px",
+									padding: "20px",
+									background: "var(--paper)",
+									marginBottom: "16px",
+									textAlign: "left",
+								}}
+							>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid var(--line)", paddingBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+									<div>
+										<div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--teal)", fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+											<Truck size={16} />
+											<span>Курьерская накладная передачи в клинику</span>
+										</div>
+										<h4 style={{ margin: "4px 0 0 0", fontSize: "18px", fontWeight: 800 }}>
+											{formatGostOrderNumber(order.id)}
+										</h4>
+										<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+											Заказ № {(order.id ?? "").substring(0, 8).toUpperCase()} · Пациент: <strong>{order.patientFullName || "Пациент не указан"}</strong>
+										</p>
+									</div>
+									<div style={{ textAlign: "right" }}>
+										<span style={{ display: "inline-block", padding: "4px 8px", borderRadius: "6px", background: "var(--teal-soft)", color: "var(--teal)", fontWeight: 700, fontSize: "11px" }}>
+											{statusLabel}
+										</span>
+									</div>
+								</div>
+
+								<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", alignItems: "center", marginBottom: "16px" }}>
+									<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+										<div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+											Штрихкод для сканера регистратуры (Code 128):
+										</div>
+										<div
+											data-testid="courier-waybill-barcode"
+											style={{
+												color: "var(--ink)",
+												background: "#ffffff",
+												padding: "6px 10px",
+												borderRadius: "6px",
+												border: "1px solid var(--line)",
+												display: "inline-block",
+											}}
+											dangerouslySetInnerHTML={{
+												__html: generateBarcodeSvg(formatGostOrderNumber(order.id)),
+											}}
+										/>
+									</div>
+
+									<div style={{ display: "flex", flexDirection: "column", gap: "6px", alignItems: "flex-start" }}>
+										<div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+											QR-код для быстрой отметки курьера/приёмки:
+										</div>
+										<div
+											data-testid="courier-waybill-qr"
+											style={{
+												color: "var(--ink)",
+												background: "#ffffff",
+												padding: "6px",
+												borderRadius: "6px",
+												border: "1px solid var(--line)",
+												display: "inline-block",
+											}}
+											dangerouslySetInnerHTML={{
+												__html: generateQrCodeSvg(
+													`DENTE-ZTL-ORDER:${order.id}:${order.patientFullName || ""}:${order.toothFdi || ""}`,
+												),
+											}}
+										/>
+									</div>
+								</div>
+
+								<div style={{ fontSize: "12px", color: "var(--text-secondary)", borderTop: "1px solid var(--line)", paddingTop: "10px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+									<div>Зуб: <strong>{order.toothFdi || "—"}</strong> · Материал: <strong>{order.material ? (MATERIAL_LABELS[order.material] ?? order.material) : "—"}</strong> · Цвет: <strong>{order.colorVita || "—"}</strong></div>
+									<div>Дата создания: {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU") : "—"}</div>
+								</div>
+							</div>
+						)}
+
 						<p
 							style={{
 								fontSize: "11px",

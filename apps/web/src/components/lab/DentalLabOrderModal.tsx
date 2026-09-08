@@ -50,6 +50,9 @@ import {
 	addWorkingDays,
 	ONE_CLICK_LAB_DEFAULTS,
 	EXPRESS_LAB_PRESETS,
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
 	type ExpressLabPreset,
 	type JawScope,
 	formatJawScopeLabel,
@@ -66,6 +69,41 @@ import { DentalLabPrintBlank } from "./DentalLabPrintBlank";
 
 // Re-export all types and constants for backwards compatibility with tests and callers
 export * from "./labMath";
+
+export const EXPRESS_PRESET_EMAX_CROWN: ExpressLabPreset = {
+	id: "emax_crown_express",
+	title: "Коронка E.max CAD / Press",
+	shortDesc: "Дисиликат лития E.max, цвет VITA A2, зазор 30 мкм, срок 5 раб. дней (22 000 ₽ / 6 500 ₽)",
+	constructionType: "single_crown",
+	materialId: "emax_lithium_disilicate",
+	colorVita: "A2",
+	workingDays: 5,
+	priceRub: 22000,
+	labCostRub: 6500,
+	patientPriceRub: 22000,
+	patientPriceKopecks: 2200000,
+	labCostKopecks: 650000,
+	occlusalScheme: "mutually_protected",
+	contactTightness: "normal",
+	surfaceTexture: "natural_anatomy",
+	cementGapMicrons: 30,
+	impressionType: "a_silicone",
+	badge: "E.max (5 дн.)",
+};
+
+export const MODAL_EXPRESS_LAB_PRESETS: readonly ExpressLabPreset[] = [
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_EMAX_CROWN,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
+	...EXPRESS_LAB_PRESETS.filter(
+		(p) =>
+			p.id !== "zirconia_crown_express" &&
+			p.id !== "pfm_duceram_express" &&
+			p.id !== "pmma_temporary_express" &&
+			p.id !== "emax_crown_express",
+	),
+];
 
 type TabKey = "main" | "shades" | "stages" | "print";
 
@@ -529,7 +567,7 @@ export function DentalLabOrderModal({
 
 	if (!isOpen) return null;
 
-	const portalUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/#/portal/lab-order/${secureToken}`;
+	const portalUrl = `${typeof window !== "undefined" ? (window.location?.origin || "") : ""}/#/portal/lab-order/${secureToken}`;
 	const gostOrderNumber = formatGostOrderNumber(secureToken);
 
 	const modalContent = (
@@ -691,7 +729,7 @@ export function DentalLabOrderModal({
 										<Sparkles size={14} className="text-amber-500" />
 										<span>Экспресс 1-клик:</span>
 									</span>
-									{EXPRESS_LAB_PRESETS.map((preset) => (
+									{MODAL_EXPRESS_LAB_PRESETS.map((preset) => (
 										<button
 											key={preset.id}
 											type="button"

@@ -293,9 +293,27 @@ export function PaidMedicalContractModal({
 		}
 	};
 
+	const moneyDetails = formatKopecksToRubAndKop(contractData.totalAmountKopecks);
+	const isContractSigned = Boolean(
+		contractData.paperSignHash ||
+		contractData.smsSignDetails?.isVerified ||
+		initialData?.paperSignHash ||
+		initialData?.signedAt ||
+		(initialData as any)?.isSigned,
+	);
+
 	// Printing Handler
 	const handlePrint = () => {
-		const printHtml = generatePaidContractHtml(contractData);
+		let printHtml = generatePaidContractHtml(contractData);
+		const stampText = isContractSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК (БЛАНК)";
+		const stampColor = isContractSigned ? "#059669" : "#64748b";
+		const stampHtml = `<div style="position: absolute; top: 12mm; right: 12mm; border: 2pt solid ${stampColor}; color: ${stampColor}; padding: 4px 10px; border-radius: 4px; font-size: 9pt; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; transform: rotate(-3deg);">${stampText}</div>`;
+		if (printHtml.includes('<div class="contract-sheet">')) {
+			printHtml = printHtml.replace(
+				'<div class="contract-sheet">',
+				`<div class="contract-sheet" style="position: relative;">${stampHtml}`,
+			);
+		}
 		const printFrame = document.createElement("iframe");
 		printFrame.style.position = "fixed";
 		printFrame.style.right = "0";
@@ -330,15 +348,6 @@ export function PaidMedicalContractModal({
 	};
 
 	if (!isOpen) return null;
-
-	const moneyDetails = formatKopecksToRubAndKop(contractData.totalAmountKopecks);
-	const isContractSigned = Boolean(
-		contractData.paperSignHash ||
-		contractData.smsSignDetails?.isVerified ||
-		initialData?.paperSignHash ||
-		initialData?.signedAt ||
-		(initialData as any)?.isSigned,
-	);
 
 	const modalContent = (
 		<div
@@ -377,7 +386,7 @@ export function PaidMedicalContractModal({
 										border: `1px solid ${isContractSigned ? "rgba(16, 185, 129, 0.4)" : "rgba(100, 116, 139, 0.3)"}`,
 									}}
 								>
-									{isContractSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"}
+									{isContractSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК (БЛАНК)"}
 								</span>
 							</div>
 							<p className="paid-contract-subtitle">
@@ -1213,13 +1222,33 @@ export function PaidMedicalContractModal({
 									</div>
 								</div>
 
-								{/* Title */}
-								<div style={{ textAlign: "center", margin: "4px 0" }}>
-									<div style={{ fontWeight: 800, fontSize: "11pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-										ДОГОВОР № {contractData.contractNumber}
+								{/* Title and Stamp */}
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "4px 0" }}>
+									<div style={{ flex: 1, textAlign: "center" }}>
+										<div style={{ fontWeight: 800, fontSize: "11pt", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+											ДОГОВОР № {contractData.contractNumber}
+										</div>
+										<div style={{ fontSize: "8pt", color: "#475569" }}>
+											на оказание платных медицинских стоматологических услуг
+										</div>
 									</div>
-									<div style={{ fontSize: "8pt", color: "#475569" }}>
-										на оказание платных медицинских стоматологических услуг
+									<div
+										data-testid="contract-preview-stamp"
+										style={{
+											padding: "2px 6px",
+											border: `1.5pt solid ${isContractSigned ? "#059669" : "#64748b"}`,
+											color: isContractSigned ? "#059669" : "#64748b",
+											borderRadius: "3px",
+											fontSize: "7pt",
+											fontWeight: 800,
+											textTransform: "uppercase",
+											letterSpacing: "0.05em",
+											whiteSpace: "nowrap",
+											transform: "rotate(-2deg)",
+											marginLeft: "8px",
+										}}
+									>
+										{isContractSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК (БЛАНК)"}
 									</div>
 								</div>
 
