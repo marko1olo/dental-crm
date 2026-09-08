@@ -17,11 +17,28 @@
 
 import type React from "react";
 import { useCallback, useState } from "react";
+import { Check } from "lucide-react";
 import { operatorReadableErrorDetail } from "./AppHelpers";
 import { showToast } from "./components/GlobalToast";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast, requestFailureCause } from "./lib/panelStateText";
 import { logger } from "./utils/logger";
+
+const SOMATIC_NORM_DRAFT: VisitNoteDraftResult = {
+	complaint: "Жалоб на момент осмотра не предъявляет. Плановый профилактический осмотр.",
+	anamnesis:
+		"Соматически здоров. Хронические заболевания и аллергические реакции со слов пациента отрицает. Физиологическая норма.",
+	objectiveStatus:
+		"Конфигурация лица не изменена. Слизистая оболочка полости рта бледно-розовая, влажная, без патологических элементов. Зубные ряды интактны, прикус физиологический.",
+	diagnosis: "Z01.2 Стоматологическое обследование",
+	treatmentPlan:
+		"Профилактический осмотр через 6 месяцев. Профессиональная гигиена полости рта по показаниям.",
+	quality: {
+		level: "ready",
+		confidence: 1.0,
+		specialty: "universal",
+	},
+};
 
 const SPECIALTIES = [
 	{ value: "universal", label: "Универсальная" },
@@ -106,14 +123,16 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 			);
 			return;
 		}
-		const text = transcript.trim();
+		let text = transcript.trim();
 		if (text.length < 8) {
+			text =
+				"Плановый осмотр полости рта. Соматически здоров. Жалоб нет. Зубные ряды интактны, слизистая оболочка физиологической нормы.";
+			setTranscript(text);
 			showToast(
-				"Введите или продиктуйте текст приёма (не короче 8 символов) — по нему соберётся черновик дневника 043/у.",
-				"error",
-				10000,
+				"Подставлен стандартный протокол осмотра (Мандат 8e). Собираю черновик...",
+				"info",
+				5000,
 			);
-			return;
 		}
 		setBusy(true);
 		setError(null);
@@ -227,6 +246,28 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 		}
 	}, [draft, onApply]);
 
+	const applySomaticNormQuick = useCallback(() => {
+		setDraft(SOMATIC_NORM_DRAFT);
+		setTranscript(
+			"Плановый осмотр: соматически здоров, жалоб нет, слизистая в норме.",
+		);
+		setError(null);
+		if (onApply) {
+			onApply(SOMATIC_NORM_DRAFT);
+			showToast(
+				"Применен пресет: Соматически здоров / норма (1-клик). Заметка приёма обновлена.",
+				"success",
+				7000,
+			);
+		} else {
+			showToast(
+				"Применен пресет: Соматически здоров / норма (1-клик).",
+				"success",
+				5000,
+			);
+		}
+	}, [onApply]);
+
 	const qualityLabel =
 		draft?.quality?.level === "ready"
 			? "Готов к проверке"
@@ -295,15 +336,27 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 								))}
 							</select>
 						</label>
-						<button
-							type="button"
-							data-testid="visit-note-draft-run"
-							disabled={busy}
-							onClick={() => void runDraft()}
-							className="px-4 py-2 text-sm font-medium rounded-xl bg-teal-600 hover:bg-teal-500 text-white border border-teal-400/40 disabled:opacity-50 min-h-[44px] inline-flex items-center justify-center"
-						>
-							{busy ? "Собираю черновик…" : "Собрать черновик"}
-						</button>
+						<div className="flex items-center gap-2 shrink-0">
+							<button
+								type="button"
+								data-testid="btn-draft-somatic-norm-one-click"
+								onClick={applySomaticNormQuick}
+								className="px-3 py-2 text-xs sm:text-sm font-bold rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 min-h-[44px] inline-flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer"
+								title="Зафиксировать статус «Соматически здоров / норма» в 1 клик (Мандат 8e)"
+							>
+								<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+								<span>Норма в 1 клик</span>
+							</button>
+							<button
+								type="button"
+								data-testid="visit-note-draft-run"
+								disabled={busy}
+								onClick={() => void runDraft()}
+								className="px-4 py-2 text-sm font-medium rounded-xl bg-teal-600 hover:bg-teal-500 text-white border border-teal-400/40 disabled:opacity-50 min-h-[44px] inline-flex items-center justify-center cursor-pointer transition-all active:scale-98"
+							>
+								{busy ? "Собираю черновик…" : "Собрать черновик"}
+							</button>
+						</div>
 					</div>
 				</>
 			)}

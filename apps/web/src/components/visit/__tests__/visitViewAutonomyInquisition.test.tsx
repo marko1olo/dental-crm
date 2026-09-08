@@ -230,4 +230,32 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(telephonyPopupSource).toContain('const isDoctorMode = selectedWorkspaceRole === "doctor" || currentView === "visit";');
 		expect(telephonyPopupSource).toContain("if (!activeCall || isDoctorMode || isDndActive) return null;");
 	});
+
+	it("7. guarantees fast Form 043/u printing is accessible anytime with draft/signed watermark (Mandate 8e)", () => {
+		expect(visitViewSource).toContain('data-testid="btn-visit-fast-print-043u"');
+		expect(visitViewSource).toContain("handlePrintForm043uFast");
+		expect(visitViewSource).toContain('const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";');
+	});
+
+	it("8. VisitNoteDraftPanel provides 1-click somatic norm preset and non-blocking transcription fallback (Mandates 8e & 8k)", () => {
+		const draftPanelPath = path.resolve(__dirname, "../../../VisitNoteDraftPanel.tsx");
+		const draftPanelSource = fs.readFileSync(draftPanelPath, "utf8");
+
+		expect(draftPanelSource).toContain('data-testid="btn-draft-somatic-norm-one-click"');
+		expect(draftPanelSource).toContain("applySomaticNormQuick");
+		expect(draftPanelSource).toContain("SOMATIC_NORM_DRAFT");
+		expect(draftPanelSource).toContain("Подставлен стандартный протокол осмотра (Мандат 8e). Собираю черновик...");
+	});
+
+	it("9. emr043Math renders 'ПОДПИСАНО ВРАЧОМ' watermark when closed/signed and 'ЧЕРНОВИК' when draft (Mandate 8e)", () => {
+		const emr043Path = path.resolve(__dirname, "../../emr/emr043Math.ts");
+		const emr043Source = fs.readFileSync(emr043Path, "utf8");
+
+		expect(emr043Source).toContain(
+			'<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>',
+		);
+		expect(emr043Source).toContain(
+			'<div class="watermark-draft watermark-signed" aria-hidden="true" style="color: rgba(5, 150, 105, 0.06);">ПОДПИСАНО ВРАЧОМ</div>',
+		);
+	});
 });

@@ -640,10 +640,17 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 		[templates, enqueueChannel],
 	);
 
-	const enqueueCanSubmit = !enqueueBusy && !busy;
+	const enqueueCanSubmit = !enqueueBusy;
 
 	async function enqueueMessage() {
-		if (enqueueBusy || busy) return;
+		if (enqueueBusy) return;
+		if (busy) {
+			showToast(
+				"Выполняется фоновая синхронизация, подождите завершения...",
+				"info",
+			);
+			return;
+		}
 		const recipient = enqueueRecipient.trim();
 		if (!recipient) {
 			showToast("Укажите номер телефона или адрес получателя", "warning");
@@ -1208,7 +1215,7 @@ export function MessageDeliveryConsole(props?: MessageDeliveryConsoleProps) {
 					className="primary-button"
 					type="button"
 					data-testid="outbox-enqueue-submit"
-					disabled={!enqueueCanSubmit}
+					disabled={enqueueBusy}
 					onClick={() => void enqueueMessage()}
 				>
 					{enqueueBusy ? "Ставлю в очередь…" : "Поставить в очередь"}

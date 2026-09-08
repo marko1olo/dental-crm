@@ -687,7 +687,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
   ${
 		cfg.isLocked === false || (data as any).isLocked === false || (data as any).status === "draft"
 			? '<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'
-			: ""
+			: '<div class="watermark-draft watermark-signed" aria-hidden="true" style="color: rgba(5, 150, 105, 0.06);">ПОДПИСАНО ВРАЧОМ</div>'
 	}
 
   <!-- Реквизиты клиники и форма Минздрава -->

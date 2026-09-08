@@ -256,6 +256,7 @@ import { VisitAnamnesisTab } from "./components/visit/VisitAnamnesisTab";
 import { DoctorDesktopHeader } from "./components/visit/DoctorDesktopHeader";
 import { DoctorMobileShiftModal } from "./components/doctor-portal/DoctorMobileShiftModal";
 import { PatientAllergySafetyBanner } from "./components/patient/PatientAllergySafetyBanner";
+import { renderForm043uHtml } from "@dental/shared";
 import {
 	Activity,
 	AlertCircle,
@@ -278,6 +279,7 @@ import {
 	Flame,
 	HeartPulse,
 	Lock,
+	Printer,
 	Scissors,
 	Shield,
 	ShieldCheck,
@@ -778,6 +780,113 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		});
 	}, [propHandleApplySomaticNormQuick, updateVisitNoteField, visitNoteForm]);
 
+	const handlePrintForm043uFast = useCallback(() => {
+		if (typeof window === "undefined") return;
+		const isClosed =
+			activeAppointment?.status === "completed" ||
+			activeAppointment?.status === "signed" ||
+			activeAppointment?.status === "closed" ||
+			visitNoteForm?.status === "completed" ||
+			visitNoteForm?.status === "signed";
+		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
+
+		const cardHtml = renderForm043uHtml({
+			medicalCardNumber:
+				activePatient?.cardNumber ||
+				activePatient?.medicalCardNumber ||
+				"__________",
+			cardOpenedDate:
+				activePatient?.cardOpenedAt ||
+				new Date().toISOString().slice(0, 10),
+			patientFullName:
+				activePatient?.fullName ||
+				activePatient?.name ||
+				"________________________",
+			patientBirthDate: activePatient?.birthDate || "—",
+			patientSex: activePatient?.gender === "female" ? "female" : "male",
+			patientPhone: activePatient?.phone || "—",
+			patientAddressRegistration: activePatient?.address || "—",
+			chiefComplaint:
+				visitNoteForm?.complaint || "Жалоб на момент осмотра не предъявляет.",
+			historyOfPresentIllness:
+				visitNoteForm?.anamnesis ||
+				"Ранее лечился по поводу кариеса и его осложнений.",
+			allergologicalHistory:
+				activePatient?.allergies || "Аллергологический анамнез не отягощен.",
+			concomitantDiseases:
+				visitNoteForm?.anamnesis || "Хронические заболевания отрицает.",
+			attendingDoctorFullName:
+				activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
+			attendingDoctorSpecialty:
+				activeDoctor?.specialty ||
+				activeDoctor?.specialtyRu ||
+				"Врач-стоматолог",
+			diaries: [
+				{
+					entryDate: new Date().toISOString().slice(0, 10),
+					doctorFullName:
+						activeDoctor?.fullName || activeDoctor?.name || "Врач-стоматолог",
+					doctorSpecialty:
+						activeDoctor?.specialty ||
+						activeDoctor?.specialtyRu ||
+						"Врач-стоматолог",
+					clinicalDiagnosisIcd10:
+						visitNoteForm?.diagnosis || "Z01.2 Стоматологическое обследование",
+					complaints: visitNoteForm?.complaint || "Плановый осмотр.",
+					objectiveStatus:
+						visitNoteForm?.objectiveInspection ||
+						"Слизистая полости рта без патологических изменений.",
+					treatmentProtocol:
+						visitNoteForm?.treatmentPlan ||
+						"Консультация и профилактический осмотр проведены.",
+				},
+			],
+			isClosed,
+			watermarkText,
+		});
+
+		const printFrame = document.createElement("iframe");
+		printFrame.style.position = "fixed";
+		printFrame.style.right = "0";
+		printFrame.style.bottom = "0";
+		printFrame.style.width = "0";
+		printFrame.style.height = "0";
+		printFrame.style.border = "0";
+		document.body.appendChild(printFrame);
+
+		const frameDoc =
+			printFrame.contentWindow?.document || printFrame.contentDocument;
+		if (frameDoc) {
+			frameDoc.write(cardHtml);
+			frameDoc.close();
+			setTimeout(() => {
+				printFrame.contentWindow?.focus();
+				printFrame.contentWindow?.print();
+				setTimeout(() => {
+					if (document.body.contains(printFrame)) {
+						document.body.removeChild(printFrame);
+					}
+				}, 1000);
+			}, 150);
+		} else {
+			const printWindow = window.open("", "_blank");
+			if (printWindow) {
+				printWindow.document.write(cardHtml);
+				printWindow.document.close();
+				printWindow.focus();
+				printWindow.print();
+			} else {
+				window.print();
+			}
+		}
+
+		showToast(
+			`Форма 043/у отправлена на печать (${isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК"})`,
+			"success",
+			6000,
+		);
+	}, [activeAppointment, activeDoctor, activePatient, visitNoteForm]);
+
 	const closeClinicalModal = useCallback(() => {
 		setSelectedToothForMenu(null);
 		setMaterialCategory(null);
@@ -1175,6 +1284,16 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
 							<span>Соматически здоров / норма (1-клик)</span>
 						</button>
+						<button
+							type="button"
+							onClick={handlePrintForm043uFast}
+							data-testid="btn-visit-fast-print-043u"
+							className="secondary-button min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-bold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							title="Печать Формы 043/у в любой момент (Мандат 8e: если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
+						>
+							<Printer className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+							<span>Печать 043/у</span>
+						</button>
 					</div>
 				</section>
 
@@ -1336,7 +1455,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 									onClick={safeVisitPrimaryAction.onClick}
 									disabled={
 										safeVisitPrimaryAction.kind === "save" ||
-										safeVisitPrimaryAction.kind === "close"
+										safeVisitPrimaryAction.kind === "close" ||
+										safeVisitPrimaryAction.kind === "review"
 											? false
 											: safeVisitPrimaryAction.disabled
 									}

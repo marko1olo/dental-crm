@@ -218,16 +218,16 @@ describe("MessageDeliveryConsole Omnichannel Textarea Autonomy (Mandates 8e & 8n
 		}
 	});
 
-	it("6. source code audit: outbox enqueue button and template save button are not blocked by empty inputs (Mandate 8e)", () => {
+	it("6. source code audit: outbox enqueue button and template save button are not blocked by empty inputs or background sync (Mandate 8e)", () => {
 		const consolePath = path.resolve(
 			__dirname,
 			"../MessageDeliveryConsole.tsx",
 		);
 		const sourceCode = fs.readFileSync(consolePath, "utf-8");
 
-		// Outbox enqueue submit button is only disabled when busy
+		// Outbox enqueue submit button is only disabled when enqueueBusy (never dead grey button)
 		expect(sourceCode).not.toContain("disabled={!enqueueCanSubmit || !enqueueRecipient");
-		expect(sourceCode).toContain("const enqueueCanSubmit = !enqueueBusy && !busy;");
+		expect(sourceCode).toContain("disabled={enqueueBusy}");
 
 		// Template save button is not disabled when title or body is empty
 		expect(sourceCode).not.toContain("disabled={busy || !draftTitle.trim() || !draftBody.trim()}");
