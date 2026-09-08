@@ -1,10 +1,39 @@
 import React from "react";
-import { Zap } from "lucide-react";
+import {
+	Camera,
+	Check,
+	ChevronDown,
+	ChevronUp,
+	Clock,
+	Plus,
+	Receipt,
+	Scissors,
+	Search,
+	Shield,
+	Sparkles,
+	Stethoscope,
+	Syringe,
+	Target,
+	Trash2,
+	X,
+	Zap,
+} from "lucide-react";
 import { money } from "../../AppHelpers";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
 import {
+	ALL_FDI_TEETH,
+	CHAIRSIDE_EXPRESS_SERVICES,
+	type ChairsideExpressService,
+	FDI_LOWER_TEETH,
+	FDI_UPPER_TEETH,
+	type FilteredCatalogService,
+	PRICE_UNKNOWN_TEXT,
+	calculateCompletedServicesSummary,
+	filterServiceCatalog,
+	formatCompletedServiceLine,
+	parseCompletedServiceLine,
 	planLineQuantity,
 	planLineTotalRub,
 	roundToKopecks,
@@ -138,9 +167,6 @@ export const CLINICAL_SERVICE_BUNDLES: readonly ClinicalServiceBundle[] = [
   итогом. Разбор чисел вынесен в completedServicesPlan.ts и закрыт тестом.
 */
 
-/** Цена не прочитана — так и пишем. Ноль вместо неё был бы ложью про деньги. */
-const PRICE_UNKNOWN_TEXT = "цена не указана";
-
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 function serviceTitleOf(item: any): string {
 	const title =
@@ -174,45 +200,49 @@ function completedLineOf(item: any): string {
 	return `Выполнено: ${serviceTitleOf(item)}${toothSuffixOf(item)}${quantityPart} — ${priceText}`;
 }
 
-export const CompletedServicesChecklist: React.FC = () => {
-	// `|| {}` убран: useAppLogicContext() либо отдаёт контекст, либо бросает
-	// исключение (contexts/AppLogicContext.tsx) — пустой объект он больше не
-	// выдумывает, и вторая ветка была недостижима.
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+function getExpressIcon(id: string) {
+	switch (id) {
+		case "intraoral_xray":
+			return <Camera className="w-4 h-4 text-sky-500 shrink-0" />;
+		case "local_anesthesia_articaine":
+		case "conduction_anesthesia":
+			return <Syringe className="w-4 h-4 text-teal-500 shrink-0" />;
+		case "consultation_inspection":
+			return <Stethoscope className="w-4 h-4 text-indigo-500 shrink-0" />;
+		case "cofferdam_isolation":
+			return <Shield className="w-4 h-4 text-blue-500 shrink-0" />;
+		case "suture_removal":
+			return <Scissors className="w-4 h-4 text-amber-500 shrink-0" />;
+		case "temp_filling":
+			return <Clock className="w-4 h-4 text-orange-500 shrink-0" />;
+		case "dental_deposits_removal_1_tooth":
+			return <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />;
+		case "optg_panoramic":
+			return <Camera className="w-4 h-4 text-purple-500 shrink-0" />;
+		default:
+			return <Zap className="w-4 h-4 text-amber-500 shrink-0" />;
+	}
+}
+
+export interface CompletedServicesChecklistProps {
+	/** Прямая передача прейскуранта клиники (удобно для модульных тестов и изоляции) */
+	serviceCatalog?: unknown[];
+}
+
+export const CompletedServicesChecklist: React.FC<
+	CompletedServicesChecklistProps
+> = ({ serviceCatalog: overrideCatalog }) => {
+	// biome-ignore lint/suspicious/noExplicitAny: dynamic context shape
 	const context = useAppLogicContext() as any;
 	const {
 		visitNoteForm = {},
 		updateVisitNoteField,
 		dashboard,
 		activeVisitPatient,
-	} = context;
+		selectedTooth: contextTooth,
+		activeToothNumber,
+	} = context || {};
 
-	/*
-	  СПИСОК ПОКАЗЫВАЛ ПЛАН ЛЕЧЕНИЯ ДРУГОГО ПАЦИЕНТА.
-
-	  БЫЛО: позиции брались из контекстного `activeTreatmentPlanItems`, а он
-	  отфильтрован по `documentPatient` (useAppLogic.tsx:4949), где
-	  `documentPatient = selectedPatient ?? activePatient`, а
-	  `selectedPatient = выбранный в списке пациентов ?? activePatient`
-	  (hooks/domains/usePatientLogic.ts:136-145). Выбор пациента в разделе
-	  «Пациенты» живёт дальше своего раздела, приём его не сбрасывает.
-
-	  Что это значило у кресла. Врач идёт по приёму пациента А, но в списке
-	  пациентов открытым остался пациент Б — и здесь, внутри карты приёма
-	  пациента А, перечислен план лечения ПАЦИЕНТА Б с его ценами. Галочка
-	  дописывает строку «Выполнено: <услуга пациента Б> — 4 500,00 ₽» в поле
-	  «План» приёма пациента А, откуда она уходит в его ЭМК и в кассу.
-	  Зеркальный случай так же плох: у пациента А план есть, а список уверенно
-	  писал «У этого пациента нет согласованного плана лечения», потому что
-	  плана нет у пациента Б.
-
-	  ТЕПЕРЬ: хозяин списка — пациент ОТКРЫТОГО ПРИЁМА, и никто другой. Позиции
-	  фильтруем сами, от того же источника (`dashboard.treatmentPlanItems`),
-	  по идентификатору пациента приёма. Контекстный `activeTreatmentPlanItems`
-	  здесь сознательно не используется: он уже сужен по чужому пациенту, и
-	  повторный фильтр по нему дал бы пустой список там, где план есть.
-	  Правило вынесено в completedServicesPlan.ts и закрыто тестом.
-	*/
 	const visitPatientId = realVisitFieldId(dashboard?.activeVisit?.patientId);
 	const visitId = realVisitFieldId(dashboard?.activeVisit?.id);
 	const visitIsOpen = Boolean(visitPatientId && visitId);
@@ -222,7 +252,24 @@ export const CompletedServicesChecklist: React.FC = () => {
 			? activeVisitPatient.fullName.trim()
 			: null;
 
-	// Отменённые позиции отмечать нечего — их не делают.
+	// Привязка к зубу у кресла (FDI 11..48, «Без зуба»)
+	const initialTooth = contextTooth || activeToothNumber || null;
+	const [selectedTooth, setSelectedTooth] = React.useState<string | null>(
+		initialTooth ? String(initialTooth) : null,
+	);
+	const [isToothGridOpen, setIsToothGridOpen] = React.useState<boolean>(false);
+
+	// Быстрый инлайн-поиск по прейскуранту
+	const [catalogSearch, setCatalogSearch] = React.useState<string>("");
+	const [bundlesExpanded, setBundlesExpanded] = React.useState<boolean>(false);
+
+	const effectiveCatalog = overrideCatalog ?? dashboard?.serviceCatalog ?? [];
+	const filteredCatalog = React.useMemo(
+		() => filterServiceCatalog(effectiveCatalog, catalogSearch, 20),
+		[effectiveCatalog, catalogSearch],
+	);
+
+	// Позиции предварительного плана открытого приёма
 	const planItems = React.useMemo(
 		() => visitOwnedPlanItems(dashboard?.treatmentPlanItems, visitPatientId),
 		[dashboard?.treatmentPlanItems, visitPatientId],
@@ -237,37 +284,32 @@ export const CompletedServicesChecklist: React.FC = () => {
 		[planText],
 	);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
+	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
 	const isMarked = (item: any) => planLines.includes(completedLineOf(item));
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const markedItems = (planItems ?? []).filter((item: any) => isMarked(item));
-	/*
-	  В итог складываем только то, что действительно прочитано как цена.
-	  Позиции с непрочитанной ценой считаем отдельно и называем их числом: молча
-	  выбросить их из суммы — это тот же обман, что и подставить им ноль.
-	*/
-	const markedWithoutPrice = (markedItems ?? []).filter(
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		(item: any) => planLineTotalRub(item) === null,
-	).length;
-	const markedTotalRub = roundToKopecks(
-		(markedItems ?? []).reduce(
-			// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-			(sum: number, item: any) => sum + (planLineTotalRub(item) ?? 0),
-			0,
-		),
+	// Полная сводка по всем выполненным услугам приёма (план + экспресс + поиск + пакеты)
+	const summary = React.useMemo(
+		() => calculateCompletedServicesSummary(planText),
+		[planText],
 	);
 
-	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const toggle = (item: any) => {
+	// Все строки «Выполнено: ...», которые сейчас находятся в карте
+	const completedLinesList = React.useMemo(() => {
+		return planLines
+			.filter((l) => l.toLowerCase().startsWith("выполнено:"))
+			.map((l) => parseCompletedServiceLine(l))
+			.filter(Boolean);
+	}, [planLines]);
+
+	// Переключение отметки позиции из предварительного плана
+	// biome-ignore lint/suspicious/noExplicitAny: generic service item from plan
+	const togglePlanItem = (item: any) => {
 		if (!updateVisitNoteField) return;
 		const line = completedLineOf(item);
 		if (isMarked(item)) {
 			const kept = (planText ?? "")
 				.split("\n")
 				.filter((existing) => (existing ?? "").trim() !== line);
-			// Хвостовые пустые строки после удаления отметки убираем, середину текста не трогаем.
 			updateVisitNoteField(
 				"treatmentPlan",
 				kept.join("\n").replace(/\n+$/, ""),
@@ -278,10 +320,114 @@ export const CompletedServicesChecklist: React.FC = () => {
 		updateVisitNoteField("treatmentPlan", base ? `${base}\n${line}` : line);
 	};
 
+	// 1-клик добавление экспресс-услуги у кресла
+	const handleAddExpressService = (service: ChairsideExpressService) => {
+		if (!updateVisitNoteField) return;
+
+		const line = formatCompletedServiceLine({
+			code804n: service.code804n,
+			title: service.title,
+			priceRub: service.priceRub,
+			toothCode: selectedTooth,
+		});
+
+		const base = (planText ?? "").replace(/\s+$/, "");
+		const updatedPlan = base ? `${base}\n${line}` : line;
+		updateVisitNoteField("treatmentPlan", updatedPlan);
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							toothNumber: selectedTooth
+								? Number(selectedTooth) || selectedTooth
+								: undefined,
+							toothCode: selectedTooth || undefined,
+							services: [
+								{
+									code: service.code804n,
+									title: service.title,
+									price: service.priceRub,
+									quantity: 1,
+									toothCode: selectedTooth || undefined,
+								},
+							],
+							source: "chairside_express",
+						},
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
+
+		const toothMsg = selectedTooth ? ` (зуб ${selectedTooth})` : "";
+		showToast(
+			`Услуга «[${service.code804n}] ${service.title}»${toothMsg} (${money(service.priceRub)}) внесена в карту и счёт`,
+			"success",
+			3500,
+		);
+	};
+
+	// 1-клик добавление услуги из прейскуранта клиники
+	const handleAddCatalogService = (item: FilteredCatalogService) => {
+		if (!updateVisitNoteField) return;
+
+		const line = formatCompletedServiceLine({
+			code804n: item.code,
+			title: item.title,
+			priceRub: item.priceRub,
+			toothCode: selectedTooth,
+		});
+
+		const base = (planText ?? "").replace(/\s+$/, "");
+		const updatedPlan = base ? `${base}\n${line}` : line;
+		updateVisitNoteField("treatmentPlan", updatedPlan);
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							toothNumber: selectedTooth
+								? Number(selectedTooth) || selectedTooth
+								: undefined,
+							toothCode: selectedTooth || undefined,
+							services: [
+								{
+									code: item.code,
+									title: item.title,
+									price: item.priceRub,
+									quantity: 1,
+									toothCode: selectedTooth || undefined,
+								},
+							],
+							source: "chairside_catalog",
+						},
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
+
+		const toothMsg = selectedTooth ? ` (зуб ${selectedTooth})` : "";
+		showToast(
+			`Услуга «[${item.code}] ${item.title}»${toothMsg} (${money(item.priceRub)}) внесена в карту и счёт`,
+			"success",
+			3500,
+		);
+		setCatalogSearch("");
+	};
+
+	// Добавление клинического пакета
 	const handleAddBundle = (bundle: ClinicalServiceBundle) => {
 		if (!updateVisitNoteField) return;
+		const toothSuffix = selectedTooth ? ` (зуб ${selectedTooth})` : "";
 		const bundleLines = bundle.services.map(
-			(s) => `Выполнено: [${s.code804n}] ${s.title} — ${money(s.priceRub)}`,
+			(s) =>
+				`Выполнено: [${s.code804n}] ${s.title}${toothSuffix} — ${money(s.priceRub)}`,
 		);
 		const base = (planText ?? "").replace(/\s+$/, "");
 		const updatedPlan = base
@@ -296,11 +442,16 @@ export const CompletedServicesChecklist: React.FC = () => {
 						detail: {
 							bundleId: bundle.id,
 							bundleTitle: bundle.title,
+							toothNumber: selectedTooth
+								? Number(selectedTooth) || selectedTooth
+								: undefined,
+							toothCode: selectedTooth || undefined,
 							services: bundle.services.map((s) => ({
 								code: s.code804n,
 								title: s.title,
 								price: s.priceRub,
 								quantity: 1,
+								toothCode: selectedTooth || undefined,
 							})),
 						},
 					}),
@@ -310,56 +461,64 @@ export const CompletedServicesChecklist: React.FC = () => {
 			console.warn("dente-add-services-to-invoice dispatch error:", err);
 		}
 
+		const toothMsg = selectedTooth ? ` (зуб ${selectedTooth})` : "";
 		showToast(
-			`Пакет «${bundle.title}» (${countLabel(bundle.services.length, "услуга", "услуги", "услуг")} на ${money(bundle.totalPriceRub)}) внесен в карту и счет`,
+			`Пакет «${bundle.title}»${toothMsg} (${countLabel(bundle.services.length, "услуга", "услуги", "услуг")} на ${money(bundle.totalPriceRub)}) внесен в карту и счет`,
 			"success",
 			3500,
 		);
 	};
 
-	const renderClinicalBundlesBar = () => (
-		<div className="mb-3 p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/70 dark:border-indigo-800/50">
-			<div className="flex items-center justify-between gap-2 mb-2">
-				<span className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-					<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-					Быстрые клинические пакеты (1 клик):
-				</span>
-				<span className="text-[11px] text-slate-500 dark:text-slate-400">
-					Номенклатура 804н
-				</span>
-			</div>
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-				{CLINICAL_SERVICE_BUNDLES.map((b) => (
-					<button
-						key={b.id}
-						type="button"
-						onClick={() => handleAddBundle(b)}
-						className="flex flex-col items-start p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 transition-all text-left group"
-						title={b.services.map((s) => `• [${s.code804n}] ${s.title} (${money(s.priceRub)})`).join("\n")}
-					>
-						<div className="w-full flex items-center justify-between gap-1">
-							<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
-								{b.shortLabel}
-							</span>
-							<span className="text-xs font-bold text-slate-900 dark:text-slate-200 font-mono">
-								{money(b.totalPriceRub)}
-							</span>
-						</div>
-						<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-full mt-0.5">
-							{b.badge}
-						</span>
-					</button>
-				))}
-			</div>
-		</div>
-	);
+	// 1-клик удаление ошибочно внесенной строки
+	const handleRemoveCompletedLine = (rawLine: string) => {
+		if (!updateVisitNoteField) return;
+		const kept = (planText ?? "")
+			.split("\n")
+			.filter((existing) => (existing ?? "").trim() !== rawLine.trim());
+		updateVisitNoteField(
+			"treatmentPlan",
+			kept.join("\n").replace(/\n+$/, ""),
+		);
+		showToast("Услуга удалена из карты приёма", "info", 2000);
+	};
 
-	/*
-	  Приём не открыт — отмечать некуда: отметка дописывается в поле «План»
-	  ЭТОГО приёма, а без приёма её не примет и сохранение (оно требует
-	  идентификатор приёма). Раньше в этом случае показывался план лечения
-	  выбранного в списке пациента, и врач отмечал услуги в никуда.
-	*/
+	// 1-клик «Внести всё в кассовый счёт»
+	const handlePushAllToInvoice = () => {
+		if (summary.servicesForInvoice.length === 0) {
+			showToast(
+				"Нет отмеченных или выполненных услуг для передачи в кассу",
+				"warning",
+				3000,
+			);
+			return;
+		}
+
+		try {
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-add-services-to-invoice", {
+						detail: {
+							services: summary.servicesForInvoice,
+							totalAmountRub: summary.totalRub,
+							patientId: visitPatientId,
+							visitId,
+							source: "chairside_checklist_all",
+						},
+					}),
+				);
+			}
+		} catch (err) {
+			console.warn("dente-add-services-to-invoice dispatch error:", err);
+		}
+
+		showToast(
+			`Все услуги (${countLabel(summary.count, "услуга", "услуги", "услуг")} на ${money(summary.totalRub)}) внесены в кассовый счёт`,
+			"success",
+			3500,
+		);
+	};
+
+	// Если приём ещё не открыт
 	if (!visitIsOpen) {
 		return (
 			<div
@@ -376,29 +535,9 @@ export const CompletedServicesChecklist: React.FC = () => {
 				>
 					Приём ещё не открыт, поэтому отмечать выполненное не по чему: отметка
 					записывается в карту конкретного приёма. Запишите пациента и начните
-					приём в разделе «Записи» — план лечения появится здесь списком с
-					ценами.
+					приём в разделе «Записи» — план лечения и экспресс-услуги появятся
+					здесь.
 				</p>
-			</div>
-		);
-	}
-
-	if ((planItems ?? []).length === 0) {
-		return (
-			<div
-				data-testid="completed-services-checklist"
-				className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3"
-			>
-				<h4 className="m-0 mb-1 text-sm font-semibold text-slate-900 dark:text-white">
-					Отметка выполненного по плану лечения
-				</h4>
-				<p className="m-0 mb-3 text-xs text-slate-500 dark:text-slate-400">
-					{visitPatientName
-						? `У пациента ${visitPatientName} нет предварительного плана лечения.`
-						: "У пациента этого приёма нет предварительного плана лечения."}{" "}
-					Вы можете внести стандартный клинический пакет услуг в 1 клик прямо сейчас:
-				</p>
-				{renderClinicalBundlesBar()}
 			</div>
 		);
 	}
@@ -408,69 +547,475 @@ export const CompletedServicesChecklist: React.FC = () => {
 			data-testid="completed-services-checklist"
 			className="completed-services-checklist bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl p-3"
 		>
-			<h4 className="m-0 mb-1 text-sm font-semibold text-slate-900 dark:text-white">
-				Отметка выполненного по плану лечения
-			</h4>
-			{/* Чей это план — написано прямо: список берётся у пациента открытого приёма. */}
-			<p className="m-0 mb-2 text-xs text-slate-500 dark:text-slate-400">
-				{visitPatientName ? `План пациента ${visitPatientName}. ` : ""}
-				Отмеченное дописывается строкой «Выполнено…» в поле «План» этого приёма
-				— там его видно и там его можно поправить руками.
-			</p>
-			{renderClinicalBundlesBar()}
-			<div className="flex flex-col gap-1.5">
-				{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
-				{(planItems ?? []).map((item: any, index: number) => {
-					const marked = isMarked(item);
-					const totalRub = planLineTotalRub(item);
-					const quantity = planLineQuantity(item);
-					return (
-						<label
-							key={
-								item?.id ??
-								`${item?.serviceId ?? "услуга"}-${item?.toothCode ?? "без-зуба"}-${index}`
-							}
-							className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-800 dark:text-slate-200 min-h-[44px] py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
-						>
-							<input
-								type="checkbox"
-								checked={marked}
-								onChange={() => toggle(item)}
-								className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-[var(--teal,var(--brand-primary))] focus:ring-[var(--teal,var(--brand-primary))]"
-							/>
-							<span className="flex-1">
-								{serviceTitleOf(item)}
-								{toothSuffixOf(item)}
-								{quantity !== null && quantity > 1 ? `, ${quantity} шт.` : ""}
-							</span>
-							{/* Сумма — общими money(): «1 500,50 ₽», а не своё форматирование.
-							    Непрочитанная цена называется словами, а не нулём. */}
-							{totalRub === null ? (
-								<em className="whitespace-nowrap text-amber-700 dark:text-amber-400 not-italic">
-									{PRICE_UNKNOWN_TEXT}
-								</em>
-							) : (
-								<strong className="tabular-nums whitespace-nowrap">
-									{money(totalRub)}
-								</strong>
-							)}
-						</label>
-					);
-				})}
+			<div className="flex items-center justify-between gap-2 mb-1">
+				<h4 className="m-0 text-sm font-semibold text-slate-900 dark:text-white">
+					Отметка выполненного у кресла
+				</h4>
+				<span className="text-[11px] text-slate-500 dark:text-slate-400">
+					Номенклатура 804н
+				</span>
 			</div>
-			{/*
-				Счётное слово склоняется общим countLabel: было «Отмечено позиций: 1».
-				Позиции без прочитанной цены названы отдельно — иначе итог выглядел бы
-				полным, а в нём не хватало бы услуг.
-			*/}
-			<p className="m-0 mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
-				{(markedItems ?? []).length === 0
-					? "Пока ничего не отмечено."
-					: `Отмечено: ${countLabel(markedItems.length, "позиция", "позиции", "позиций")}. К оплате по отмеченному: ${money(markedTotalRub)}.`}
-				{(markedItems ?? []).length > 0 && markedWithoutPrice > 0
-					? ` В эту сумму НЕ вошли ${countLabel(markedWithoutPrice, "позиция", "позиции", "позиций")} без цены — уточните их стоимость в прейскуранте, прежде чем называть сумму пациенту.`
-					: ""}
+			<p className="m-0 mb-3 text-xs text-slate-500 dark:text-slate-400">
+				{visitPatientName ? `Пациент: ${visitPatientName}. ` : ""}
+				Вносите экспресс-услуги или выбирайте из прейскуранта в 1 клик.
+				Отмеченное дописывается в карту приёма и передается в счёт.
 			</p>
+
+			{/* 1. БЫСТРЫЙ ВЫБОР ЗУБА ДЛЯ ПРИВЯЗКИ (FDI 11..48, «Без зуба») */}
+			<div className="mb-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
+				<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+					<div className="flex items-center gap-2">
+						<span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+							<Target className="w-3.5 h-3.5 text-indigo-500" />
+							Привязка к зубу:
+						</span>
+						{selectedTooth ? (
+							<span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700">
+								Зуб {selectedTooth}
+								<button
+									type="button"
+									onClick={() => setSelectedTooth(null)}
+									className="hover:text-indigo-950 dark:hover:text-white p-0.5 rounded-full focus:outline-none"
+									title="Сбросить (Без зуба)"
+									aria-label="Сбросить привязку к зубу"
+								>
+									<X className="w-3 h-3" />
+								</button>
+							</span>
+						) : (
+							<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+								Без зуба (общая услуга)
+							</span>
+						)}
+					</div>
+					<button
+						type="button"
+						onClick={() => setIsToothGridOpen(!isToothGridOpen)}
+						className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium flex items-center gap-1 min-h-[36px] py-1 px-2 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+					>
+						{isToothGridOpen ? (
+							<>
+								Скрыть формулу <ChevronUp className="w-3.5 h-3.5" />
+							</>
+						) : (
+							<>
+								Все 32 зуба (FDI 11–48) <ChevronDown className="w-3.5 h-3.5" />
+							</>
+						)}
+					</button>
+				</div>
+
+				{/* 1-tap quick tooth chips */}
+				<div className="flex flex-wrap items-center gap-1.5">
+					<button
+						type="button"
+						onClick={() => setSelectedTooth(null)}
+						className={`min-h-[44px] px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+							!selectedTooth
+								? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+								: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+						}`}
+					>
+						Без зуба
+					</button>
+					{[11, 16, 21, 26, 31, 36, 41, 46].map((t) => {
+						const active = selectedTooth === String(t);
+						return (
+							<button
+								key={t}
+								type="button"
+								onClick={() => setSelectedTooth(active ? null : String(t))}
+								className={`min-w-[44px] min-h-[44px] px-2.5 py-1.5 rounded-md text-xs font-mono font-semibold border transition-colors ${
+									active
+										? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+										: "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+								}`}
+							>
+								{t}
+							</button>
+						);
+					})}
+				</div>
+
+				{/* Разворачиваемая зубная формула FDI */}
+				{isToothGridOpen && (
+					<div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-700/80 space-y-2">
+						<div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+							Верхняя челюсть (18–11, 21–28):
+						</div>
+						<div className="flex flex-wrap gap-1">
+							{FDI_UPPER_TEETH.map((t) => {
+								const active = selectedTooth === String(t);
+								return (
+									<button
+										key={t}
+										type="button"
+										onClick={() => setSelectedTooth(active ? null : String(t))}
+										className={`min-w-[44px] min-h-[44px] p-1 rounded text-xs font-mono font-bold border transition-colors ${
+											active
+												? "bg-indigo-600 text-white border-indigo-600"
+												: "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+										}`}
+									>
+										{t}
+									</button>
+								);
+							})}
+						</div>
+						<div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium pt-1">
+							Нижняя челюсть (48–41, 31–38):
+						</div>
+						<div className="flex flex-wrap gap-1">
+							{FDI_LOWER_TEETH.map((t) => {
+								const active = selectedTooth === String(t);
+								return (
+									<button
+										key={t}
+										type="button"
+										onClick={() => setSelectedTooth(active ? null : String(t))}
+										className={`min-w-[44px] min-h-[44px] p-1 rounded text-xs font-mono font-bold border transition-colors ${
+											active
+												? "bg-indigo-600 text-white border-indigo-600"
+												: "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/50"
+										}`}
+									>
+										{t}
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				)}
+			</div>
+
+			{/* 2. 9 ЭКСПРЕСС-УСЛУГ У КРЕСЛА (1 КЛИК, 804н) */}
+			<div className="mb-3 p-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-800/50">
+				<div className="flex items-center justify-between gap-2 mb-2">
+					<span className="text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+						<Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+						Экспресс-услуги у кресла (1 клик, 804н):
+					</span>
+					<span className="text-[11px] text-slate-500 dark:text-slate-400">
+						{selectedTooth
+							? `привязка к зубу ${selectedTooth}`
+							: "без привязки к зубу"}
+					</span>
+				</div>
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+					{CHAIRSIDE_EXPRESS_SERVICES.map((s) => (
+						<button
+							key={s.id}
+							type="button"
+							onClick={() => handleAddExpressService(s)}
+							className="flex flex-col justify-between p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/30 transition-all text-left group min-h-[48px]"
+							title={`[${s.code804n}] ${s.title} (${money(s.priceRub)})${selectedTooth ? ` (зуб ${selectedTooth})` : ""}`}
+						>
+							<div className="w-full flex items-start justify-between gap-1.5">
+								<div className="flex items-center gap-1.5 flex-1 min-w-0">
+									{getExpressIcon(s.id)}
+									<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 truncate">
+										{s.title}
+									</span>
+								</div>
+								<span className="text-xs font-bold text-slate-900 dark:text-slate-200 font-mono shrink-0">
+									{money(s.priceRub)}
+								</span>
+							</div>
+							<div className="w-full flex items-center justify-between mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+								<span className="font-mono">{s.code804n}</span>
+								{selectedTooth && (
+									<span className="text-indigo-600 dark:text-indigo-400 font-medium">
+										+ зуб {selectedTooth}
+									</span>
+								)}
+							</div>
+						</button>
+					))}
+				</div>
+			</div>
+
+			{/* 3. БЫСТРЫЙ ИНЛАЙН-ПОИСК ПО ПРЕЙСКУРАНТУ КЛИНИКИ */}
+			<div className="mb-3 relative">
+				<div className="relative">
+					<input
+						type="text"
+						value={catalogSearch}
+						onChange={(e) => setCatalogSearch(e.target.value)}
+						placeholder="Поиск по прейскуранту клиники (код 804н или название: пломба, коронка, анестезия)..."
+						data-testid="service-catalog-search-input"
+						className="w-full text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-9 pr-8 py-2.5 min-h-[44px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder:text-slate-400"
+					/>
+					<Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 pointer-events-none" />
+					{catalogSearch && (
+						<button
+							type="button"
+							onClick={() => setCatalogSearch("")}
+							className="absolute right-2.5 top-2.5 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full"
+							title="Очистить поиск"
+						>
+							<X className="w-4 h-4" />
+						</button>
+					)}
+				</div>
+
+				{catalogSearch.trim().length > 0 && (
+					<div
+						data-testid="service-catalog-search-results"
+						className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg z-30 divide-y divide-slate-100 dark:divide-slate-800"
+					>
+						{filteredCatalog.length === 0 ? (
+							<div className="p-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+								Ничего не найдено в прейскуранте по запросу «{catalogSearch}»
+							</div>
+						) : (
+							filteredCatalog.map((item) => (
+								<button
+									key={item.id}
+									type="button"
+									onClick={() => handleAddCatalogService(item)}
+									className="w-full min-h-[44px] flex items-center justify-between p-2.5 text-left hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 transition-colors group"
+								>
+									<div className="flex-1 min-w-0 pr-2">
+										<div className="flex items-center gap-1.5">
+											<span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+												[{item.code}]
+											</span>
+											<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 truncate">
+												{item.title}
+											</span>
+										</div>
+										{selectedTooth && (
+											<div className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-0.5">
+												будет привязано к зубу {selectedTooth}
+											</div>
+										)}
+									</div>
+									<div className="flex items-center gap-2 shrink-0">
+										<span className="text-xs font-bold font-mono text-slate-900 dark:text-slate-200">
+											{money(item.priceRub)}
+										</span>
+										<span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-0.5">
+											<Plus className="w-3.5 h-3.5" /> Добавить
+										</span>
+									</div>
+								</button>
+							))
+						)}
+					</div>
+				)}
+			</div>
+
+			{/* 4. КОМПЛЕКСНЫЕ КЛИНИЧЕСКИЕ ПАКЕТЫ (КАРИЕС, ЭНДО, ГИГИЕНА, УДАЛЕНИЕ) */}
+			<div className="mb-3 p-2.5 rounded-lg bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/70 dark:border-indigo-800/50">
+				<div className="flex items-center justify-between gap-2 mb-2">
+					<span className="text-xs font-semibold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+						<Zap className="w-3.5 h-3.5 text-indigo-500" />
+						Комплексные клинические пакеты:
+					</span>
+					<button
+						type="button"
+						onClick={() => setBundlesExpanded(!bundlesExpanded)}
+						className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5"
+					>
+						{bundlesExpanded ? "Свернуть" : "Показать все 4 пакета"}
+						{bundlesExpanded ? (
+							<ChevronUp className="w-3 h-3" />
+						) : (
+							<ChevronDown className="w-3 h-3" />
+						)}
+					</button>
+				</div>
+				<div
+					className={`grid grid-cols-1 sm:grid-cols-2 gap-1.5 ${
+						bundlesExpanded ? "" : "max-h-[120px] overflow-hidden"
+					}`}
+				>
+					{CLINICAL_SERVICE_BUNDLES.map((b) => (
+						<button
+							key={b.id}
+							type="button"
+							onClick={() => handleAddBundle(b)}
+							className="flex flex-col items-start p-2 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-indigo-50/40 dark:hover:bg-indigo-900/30 transition-all text-left group min-h-[48px]"
+							title={b.services
+								.map(
+									(s) =>
+										`• [${s.code804n}] ${s.title} (${money(s.priceRub)})`,
+								)
+								.join("\n")}
+						>
+							<div className="w-full flex items-center justify-between gap-1">
+								<span className="text-xs font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+									{b.shortLabel}
+									{selectedTooth ? ` (зуб ${selectedTooth})` : ""}
+								</span>
+								<span className="text-xs font-bold text-slate-900 dark:text-slate-200 font-mono">
+									{money(b.totalPriceRub)}
+								</span>
+							</div>
+							<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-full mt-0.5">
+								{b.badge}
+							</span>
+						</button>
+					))}
+				</div>
+			</div>
+
+			{/* 5. ПОЗИЦИИ ИЗ СОГЛАСОВАННОГО ПЛАНА ЛЕЧЕНИЯ ПАЦИЕНТА (ЕСЛИ ЕСТЬ) */}
+			{(planItems ?? []).length > 0 && (
+				<div className="mb-3">
+					<div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+						<Check className="w-3.5 h-3.5 text-teal-600" />
+						Позиции из плана лечения пациента:
+					</div>
+					<div className="flex flex-col gap-1.5">
+						{/* biome-ignore lint/suspicious/noExplicitAny: generic service item from plan */}
+						{(planItems ?? []).map((item: any, index: number) => {
+							const marked = isMarked(item);
+							const totalRub = planLineTotalRub(item);
+							const quantity = planLineQuantity(item);
+							return (
+								<label
+									key={
+										item?.id ??
+										`${item?.serviceId ?? "услуга"}-${item?.toothCode ?? "без-зуба"}-${index}`
+									}
+									className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-800 dark:text-slate-200 min-h-[44px] py-1.5 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+								>
+									<input
+										type="checkbox"
+										checked={marked}
+										onChange={() => togglePlanItem(item)}
+										className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-[var(--teal,var(--brand-primary))] focus:ring-[var(--teal,var(--brand-primary))]"
+									/>
+									<span className="flex-1">
+										{serviceTitleOf(item)}
+										{toothSuffixOf(item)}
+										{quantity !== null && quantity > 1
+											? `, ${quantity} шт.`
+											: ""}
+									</span>
+									{totalRub === null ? (
+										<em className="whitespace-nowrap text-amber-700 dark:text-amber-400 not-italic">
+											{PRICE_UNKNOWN_TEXT}
+										</em>
+									) : (
+										<strong className="tabular-nums whitespace-nowrap">
+											{money(totalRub)}
+										</strong>
+									)}
+								</label>
+							);
+						})}
+					</div>
+				</div>
+			)}
+
+			{/* 6. СПИСОК ВСЕХ ВЫПОЛНЕННЫХ УСЛУГ В ЭТОМ ПРИЁМЕ С 1-TAP УДАЛЕНИЕМ */}
+			{completedLinesList.length > 0 && (
+				<div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800">
+					<div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+						<span>
+							Выполнено в этом приёме ({completedLinesList.length}):
+						</span>
+						<span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
+							Итого: {money(summary.totalRub)}
+						</span>
+					</div>
+					<div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+						{completedLinesList.map((entry, idx) => {
+							if (!entry) return null;
+							return (
+								<div
+									key={`${entry.rawLine}-${idx}`}
+									className="flex items-center justify-between gap-2 p-1.5 rounded-md bg-slate-50 dark:bg-slate-800/40 text-xs border border-slate-100 dark:border-slate-800"
+								>
+									<div className="flex items-center gap-1.5 flex-1 min-w-0">
+										<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+										<span className="truncate">
+											{entry.code804n && (
+												<span className="font-mono text-slate-400 mr-1">
+													[{entry.code804n}]
+												</span>
+											)}
+											{entry.title}
+											{entry.toothCode && (
+												<span className="text-indigo-600 dark:text-indigo-400 font-medium ml-1">
+													(зуб {entry.toothCode})
+												</span>
+											)}
+											{entry.quantity > 1 && (
+												<span className="text-slate-500 ml-1">
+													× {entry.quantity} шт.
+												</span>
+											)}
+										</span>
+									</div>
+									<div className="flex items-center gap-2 shrink-0">
+										<span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+											{entry.priceRub === null
+												? PRICE_UNKNOWN_TEXT
+												: money(entry.priceRub)}
+										</span>
+										<button
+											type="button"
+											onClick={() => handleRemoveCompletedLine(entry.rawLine)}
+											className="min-w-[36px] min-h-[36px] flex items-center justify-center text-slate-400 hover:text-red-500 dark:hover:text-red-400 rounded-md transition-colors"
+											title="Удалить из выполненного"
+											aria-label="Удалить выполненную услугу"
+										>
+											<Trash2 className="w-3.5 h-3.5" />
+										</button>
+									</div>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			)}
+
+			{/* 7. ИТОГ И 1-КЛИК «ВНЕСТИ ВСЁ В КАССОВЫЙ СЧЁТ» */}
+			<div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+				<div className="text-xs text-slate-700 dark:text-slate-300">
+					{summary.count === 0 ? (
+						<span>Пока ничего не отмечено и не выполнено.</span>
+					) : (
+						<span>
+							Выполнено:{" "}
+							<strong>
+								{countLabel(summary.count, "услуга", "услуги", "услуг")}
+							</strong>
+							. К оплате:{" "}
+							<strong className="text-sm font-mono text-emerald-600 dark:text-emerald-400">
+								{money(summary.totalRub)}
+							</strong>
+							.
+						</span>
+					)}
+					{summary.unpricedCount > 0 && (
+						<span className="text-amber-700 dark:text-amber-400 block mt-0.5">
+							В сумму НЕ вошли{" "}
+							{countLabel(
+								summary.unpricedCount,
+								"позиция",
+								"позиции",
+								"позиций",
+							)}{" "}
+							без цены — уточните в прейскуранте.
+						</span>
+					)}
+				</div>
+				<button
+					type="button"
+					onClick={handlePushAllToInvoice}
+					data-testid="push-all-to-invoice-btn"
+					className="w-full sm:w-auto min-h-[44px] px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors shrink-0"
+					title="Передать все выполненные услуги визита в кассовый счёт для оплаты"
+				>
+					<Receipt className="w-4 h-4" />
+					Внести всё в кассовый счёт{" "}
+					{summary.totalRub > 0 ? `(${money(summary.totalRub)})` : ""}
+				</button>
+			</div>
 		</div>
 	);
 };
