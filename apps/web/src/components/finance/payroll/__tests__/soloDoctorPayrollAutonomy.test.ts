@@ -12,8 +12,38 @@
  * 4. Switching clinical specialties (Therapist, Orthopedist, Surgeon, Orthodontist, Periodontist, Pediatric, Hygienist).
  * 5. Statutory Russian Form T-51 CSV export with UTF-8 BOM for solo practitioner.
  */
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 
-import { describe, it, expect } from "vitest";
+function expect(actual: any) {
+	return {
+		toBe: (expected: any) => assert.strictEqual(actual, expected),
+		toEqual: (expected: any) => assert.deepStrictEqual(actual, expected),
+		toContain: (expected: any) =>
+			assert.ok(
+				String(actual).includes(String(expected)),
+				`Expected to contain ${expected}`,
+			),
+		toBeNull: () => assert.strictEqual(actual, null),
+		toBeGreaterThan: (n: number) => assert.ok(actual > n),
+		toBeGreaterThanOrEqual: (n: number) => assert.ok(actual >= n),
+		toBeCloseTo: (expected: number, precision = 2) => {
+			const diff = Math.abs(actual - expected);
+			assert.ok(diff < 10 ** -precision / 2, `Expected ${actual} to be close to ${expected}`);
+		},
+		not: {
+			toBe: (expected: any) => assert.notStrictEqual(actual, expected),
+			toContain: (expected: any) =>
+				assert.ok(
+					!String(actual).includes(String(expected)),
+					`Expected NOT to contain ${expected}`,
+				),
+			toMatch: (regex: RegExp) => assert.ok(!regex.test(String(actual))),
+			toBeNull: () => assert.notStrictEqual(actual, null),
+		},
+		toMatch: (regex: RegExp) => assert.ok(regex.test(String(actual))),
+	};
+}
 import React, { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import {

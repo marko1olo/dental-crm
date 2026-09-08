@@ -166,7 +166,15 @@ export const PatientWhatsappSendPanel: React.FC<
 	const send = useCallback(async () => {
 		const id = (patientId ?? "").trim();
 		const text = message.trim();
-		if (!id || !text || busy) return;
+		if (!id) {
+			showToast("Выберите пациента для отправки WhatsApp", "warning");
+			return;
+		}
+		if (!text) {
+			showToast("Введите текст сообщения или выберите быстрый шаблон", "warning");
+			return;
+		}
+		if (busy) return;
 
 		setBusy(true);
 		setError(null);
@@ -410,7 +418,7 @@ export const PatientWhatsappSendPanel: React.FC<
 					<button
 						type="button"
 						data-testid="patient-whatsapp-send-submit"
-						disabled={!canSubmit}
+						disabled={busy}
 						onClick={() => void send()}
 						className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white border border-emerald-400/40 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 transition-all shadow-sm"
 					>
