@@ -3707,7 +3707,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 													closeClinicalModal();
 												}}
 											>
-												<span className="flex-1 text-left">⚡ Анестезия зуба {code} (1 карп.)</span> <Syringe className="w-4 h-4 text-sky-500 shrink-0" />
+												<span className="flex-1 text-left">Анестезия зуба {code} (1 карп.)</span> <Syringe className="w-4 h-4 text-sky-500 shrink-0" />
 											</button>
 											<button
 												type="button"

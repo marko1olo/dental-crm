@@ -1412,7 +1412,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											})}
 										</div>
 									)}
-									{doctors.length > 2 && !isSoloDoctor && (
+									{doctors.length >= 2 && !isSoloDoctor && (
 										<div className="flex items-center justify-center w-full my-0.5">
 											<select
 												value={assignment?.doctorId || ""}

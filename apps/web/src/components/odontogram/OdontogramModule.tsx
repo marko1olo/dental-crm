@@ -1218,7 +1218,7 @@ export const OdontogramModule = ({
 							data-testid="selected-teeth-lab-order-btn"
 						>
 							<FlaskConical size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
-							<span>⚡ Наряд ЗТЛ ({selectedTeeth.length} {countLabel(selectedTeeth.length, "зуб", "зуба", "зубов")})</span>
+							<span>Наряд ЗТЛ ({selectedTeeth.length} {countLabel(selectedTeeth.length, "зуб", "зуба", "зубов")})</span>
 						</button>
 					)}
 				</div>
@@ -1607,7 +1607,7 @@ export const OdontogramModule = ({
 									className="col-span-2 flex items-center justify-center min-h-[48px] p-3 rounded-xl border transition-all duration-200 font-black text-sm bg-amber-500/15 text-amber-900 dark:text-amber-100 border-amber-500/30 hover:bg-amber-500/25 cursor-pointer min-w-0 text-center leading-tight shadow-2xs active:scale-95"
 								>
 									<FlaskConical className="w-4 h-4 inline mr-2 text-amber-600 shrink-0" />
-									<span className="min-w-0 break-words">⚡ Наряд ЗТЛ в 1 клик (Цирконий A2, +7 дн.)</span>
+									<span className="min-w-0 break-words">Наряд ЗТЛ в 1 клик (Цирконий A2, +7 дн.)</span>
 								</button>
 								<button
 									type="button"

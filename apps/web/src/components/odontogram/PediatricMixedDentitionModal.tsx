@@ -232,7 +232,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"⚡ 1-клик: Применена норма временного прикуса (3 года: 51–85 интактны, кариеса нет, 0% резорбция). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма временного прикуса (3 года: 51–85 интактны, кариеса нет, 0% резорбция). Протокол перенесен в 043/у!",
 			"success",
 		);
 	};
@@ -256,7 +256,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"⚡ 1-клик: Применена норма прорезывания первых моляров (6 лет: 16, 26, 36, 46 + 20 молочных). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма прорезывания первых моляров (6 лет: 16, 26, 36, 46 + 20 молочных). Протокол перенесен в 043/у!",
 			"success",
 		);
 	};
@@ -280,7 +280,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"⚡ 1-клик: Применена норма сменного прикуса (9 лет: резцы 11..42, 1-е моляры 16..46, молочные 53..85). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма сменного прикуса (9 лет: резцы 11..42, 1-е моляры 16..46, молочные 53..85). Протокол перенесен в 043/у!",
 			"success",
 		);
 	};
@@ -304,7 +304,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: norm.treatmentDescriptionRu,
 		});
 		showToast(
-			"⚡ 1-клик: Применена норма постоянного прикуса (12 лет: 28 зубов 17..27, 47..37). Протокол перенесен в 043/у!",
+			"1-клик: Применена норма постоянного прикуса (12 лет: 28 зубов 17..27, 47..37). Протокол перенесен в 043/у!",
 			"success",
 		);
 	};
@@ -317,7 +317,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 			treatmentDescription: preset.treatmentDescriptionRu,
 		});
 		showToast(
-			`⚡ 1-клик: Протокол ${preset.labelRu} (${preset.serviceCode804n}) перенесен в карту 043/у!`,
+			`1-клик: Протокол ${preset.labelRu} (${preset.serviceCode804n}) перенесен в карту 043/у!`,
 			"success",
 		);
 	};
@@ -555,13 +555,13 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 				<div
 					className="flex-[1_1_auto] min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-6 md:p-8 pb-28 sm:pb-8 space-y-6 touch-pan-y"
 				>
-					{/* ⚡ 1-Клик Клинические Протоколы и Физиологическая Норма (Мандат 8e / 8i / 8k / 8n) */}
+					{/* 1-Клик Клинические Протоколы и Физиологическая Норма (Мандат 8e / 8i / 8k / 8n) */}
 					<div className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-transparent border border-teal-500/30 space-y-2.5 shadow-xs">
 						<div className="flex items-center justify-between gap-2 flex-wrap">
 							<div className="flex items-center gap-2">
 								<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-300">
-									⚡ 1-Клик Клинические Протоколы &amp; Физиологическая Норма (Мандат 8e / Приказ 804н)
+									1-Клик Клинические Протоколы &amp; Физиологическая Норма (Мандат 8e / Приказ 804н)
 								</span>
 							</div>
 							<span className="text-[11px] font-bold text-[var(--odontogram-ink-muted,var(--muted,#64748b))]">
@@ -581,7 +581,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-emerald-700 dark:text-emerald-400 truncate">
-										⚡ 3 года: Молочный прикус
+										3 года: Молочный прикус
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 										51–85 интактны, 0% резорбция
@@ -600,7 +600,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-cyan-700 dark:text-cyan-400 truncate">
-										⚡ 6 лет: Первый моляр
+										6 лет: Первый моляр
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 										16, 26, 36, 46 + 20 молочных
@@ -619,7 +619,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-teal-700 dark:text-teal-400 truncate">
-										⚡ 9 лет: Сменный прикус
+										9 лет: Сменный прикус
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 										Резцы 11..42, 1-е мол., мол. 53..85
@@ -638,7 +638,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-blue-700 dark:text-blue-400 truncate">
-										⚡ 12 лет: Постоянный прикус
+										12 лет: Постоянный прикус
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 										28 зубов (17..27, 47..37)
@@ -657,7 +657,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-amber-700 dark:text-amber-400 truncate">
-										⚡ Saforide (A16.07.057)
+										Saforide (A16.07.057)
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 										Серебрение резцов 51, 52, 61, 62
@@ -676,7 +676,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-sky-700 dark:text-sky-400 truncate">
-										⚡ Fissurit FX (A16.07.050)
+										Fissurit FX (A16.07.050)
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 										Герметизация моляров 16, 26, 36, 46
@@ -695,7 +695,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold text-rose-700 dark:text-rose-400 truncate">
-										⚡ Pulpotec (A16.07.009)
+										Pulpotec (A16.07.009)
 									</div>
 									<div className="text-[10px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] truncate">
 										Пульпотомия мол. моляра 54
@@ -714,7 +714,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							>
 								<div className="min-w-0">
 									<div className="font-extrabold truncate">
-										⚡ В карту 043/у (1 клик)
+										В карту 043/у (1 клик)
 									</div>
 									<div className="text-[10px] text-teal-100 truncate">
 										Перенос протокола и статуса

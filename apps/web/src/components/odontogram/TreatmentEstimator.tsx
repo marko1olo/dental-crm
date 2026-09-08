@@ -13,6 +13,7 @@ import {
 	Save,
 	ShieldCheck,
 	Trash2,
+	X,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -1031,7 +1032,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({
 									className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 p-1 cursor-pointer"
 									aria-label="Закрыть"
 								>
-									✕
+									<X size={16} aria-hidden="true" />
 								</button>
 							</div>
 							<div className="p-4 space-y-3 bg-[var(--paper,#18181b)] rounded-xl border border-[var(--line,#27272a)] text-center">

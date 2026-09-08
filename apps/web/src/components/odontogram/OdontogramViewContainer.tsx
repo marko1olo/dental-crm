@@ -716,7 +716,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 												data-testid="stamp-crown-btn"
 											>
 												<span>Коронка (Ц)</span>
-												{activeStampTool === "Crown" && <span className="text-[10px]">✓</span>}
+												{activeStampTool === "Crown" && <Check size={12} className="shrink-0" />}
 											</button>
 											<button
 												type="button"
@@ -733,7 +733,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 												data-testid="stamp-missing-btn"
 											>
 												<span>Удален (0)</span>
-												{activeStampTool === "Missing" && <span className="text-[10px]">✓</span>}
+												{activeStampTool === "Missing" && <Check size={12} className="shrink-0" />}
 											</button>
 										</div>
 									</div>

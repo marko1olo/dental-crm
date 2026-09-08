@@ -2615,7 +2615,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			// Safe event dispatch fallback
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast(`⚡ Профгигиена выполнена: ${protocol.serviceCode} (${protocol.price} ₽)`, "success");
+		showToast(`Профгигиена выполнена: ${protocol.serviceCode} (${protocol.price} ₽)`, "success");
 	};
 
 	const handleApplyFastCariesK021 = () => {
@@ -2653,7 +2653,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			// Safe event dispatch fallback
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast(`⚡ Зуб ${targetTooth}: пломба K02.1 / ${protocol.serviceCode} (${protocol.price} ₽)`, "success");
+		showToast(`Зуб ${targetTooth}: пломба K02.1 / ${protocol.serviceCode} (${protocol.price} ₽)`, "success");
 	};
 
 	useEffect(() => {

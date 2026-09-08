@@ -998,7 +998,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 							if (onQuickStateChange) {
 								const allTargetTeeth = [...topList, ...bottomList];
 								onQuickStateChange(allTargetTeeth, "Healthy");
-								showToast("⚡ Зубная формула: Все зубы здоровы / интактный зубной ряд (норма)", "success");
+								showToast("Зубная формула: Все зубы здоровы / интактный зубной ряд (норма)", "success");
 							}
 						}}
 						disabled={false}
@@ -1017,7 +1017,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 								if (onQuickStateChange) {
 									const wisdomTeeth = [18, 28, 38, 48];
 									onQuickStateChange(wisdomTeeth, "Missing");
-									showToast("⚡ Зубы мудрости (18, 28, 38, 48) отмечены как отсутствующие (0)", "info");
+									showToast("Зубы мудрости (18, 28, 38, 48) отмечены как отсутствующие (0)", "info");
 								}
 							}}
 							disabled={false}
@@ -1039,7 +1039,7 @@ export const ClassicGostOdontogram: React.FC<ClassicGostOdontogramProps> = memo(
 									}),
 								);
 							}
-							showToast("⚡ Протокол профгигиены (A16.07.051) сформирован", "success");
+							showToast("Протокол профгигиены (A16.07.051) сформирован", "success");
 						}}
 						disabled={false}
 						title="Сформировать протокол профессиональной гигиены полости рта (A16.07.051)"
