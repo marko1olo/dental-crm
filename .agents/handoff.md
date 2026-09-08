@@ -2,6 +2,7 @@
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
+CURRENT HEAD: f890b9117d1cbe100b417e5fa1fa791386817937
 PREVIOUS HEAD: af879a4957e499bf90c596603a6326906c998db5
 
 ## 1. Observation & Scope
