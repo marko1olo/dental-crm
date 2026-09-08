@@ -560,3 +560,116 @@ export function applyDoctorChairWeeklyTemplate(
 	return [...filtered, ...Array.from(newShiftsByDate.values())];
 }
 
+/**
+ * Add days to YYYY-MM-DD date string using UTC arithmetic (timezone-safe)
+ */
+export function addDaysToDateIso(dateIso: string, daysToAdd: number): string {
+	const parts = (dateIso || "").split("-").map(Number);
+	const y = parts[0] || 2026;
+	const m = parts[1] || 8;
+	const d = parts[2] || 24;
+	const target = new Date(Date.UTC(y, m - 1, d + daysToAdd));
+	return target.toISOString().substring(0, 10);
+}
+
+/**
+ * Get 7 days (Monday to Sunday) of the week as ISO date strings
+ */
+export function getWeekDaysIso(weekStartDateIso: string): string[] {
+	const days: string[] = [];
+	for (let i = 0; i < 7; i++) {
+		days.push(addDaysToDateIso(weekStartDateIso, i));
+	}
+	return days;
+}
+
+/**
+ * 1-Click Copy Week Shifts to Target Week (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ *
+ * Copies all shifts of source week to target week (+7 days or arbitrary target week Monday).
+ * Preserves doctorId, doctorName, doctorRole, assistantId, assistantName,
+ * cabinetId, chairId, archetypeId, startTime, endTime, durationHours, breakMinutes,
+ * isNight, nightHours, customNotes.
+ *
+ * Replaces existing shifts on target week dates to prevent duplicate overlaps.
+ */
+export function copyWeekShiftsToTargetWeek(
+	currentShifts: DoctorShift[],
+	sourceWeekStartDateIso: string,
+	targetWeekStartDateIso: string,
+): DoctorShift[] {
+	const sourceDays = getWeekDaysIso(sourceWeekStartDateIso);
+	const targetDays = getWeekDaysIso(targetWeekStartDateIso);
+	const targetDaysSet = new Set(targetDays);
+
+	const getShiftDate = (s: DoctorShift): string =>
+		s.dateIso || (s as unknown as { date?: string }).date || "";
+
+	const sourceShifts = currentShifts.filter(
+		(s) => sourceDays.includes(getShiftDate(s)) && s.status !== "cancelled",
+	);
+
+	if (sourceShifts.length === 0) {
+		return currentShifts;
+	}
+
+	// Filter out existing shifts in the target week
+	const remainingShifts = currentShifts.filter(
+		(s) => !targetDaysSet.has(getShiftDate(s)),
+	);
+
+	// Generate copied shifts for the target week
+	const newShifts: DoctorShift[] = sourceShifts.map((s, idx) => {
+		const shiftDate = getShiftDate(s);
+		const dayIdx = sourceDays.indexOf(shiftDate);
+		const targetDateIso = targetDays[dayIdx] || targetDays[0]!;
+		return {
+			...s,
+			id: `shift-${targetDateIso}-${s.chairId}-${s.doctorId}-${s.startTime.replace(":", "")}-${s.endTime.replace(":", "")}-${idx}`,
+			dateIso: targetDateIso,
+			status: "scheduled",
+		};
+	});
+
+	return [...remainingShifts, ...newShifts];
+}
+
+/**
+ * 1-Click Copy Week Shifts to Next 4 Weeks / Month (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ *
+ * Iteratively copies the source week shifts across the next `weeksCount` (default: 4) weeks.
+ */
+export function copyWeekShiftsToMonth(
+	currentShifts: DoctorShift[],
+	sourceWeekStartDateIso: string,
+	weeksCount = 4,
+): DoctorShift[] {
+	let accumulated = currentShifts;
+	for (let w = 1; w <= weeksCount; w++) {
+		const targetMonday = addDaysToDateIso(sourceWeekStartDateIso, w * 7);
+		accumulated = copyWeekShiftsToTargetWeek(
+			accumulated,
+			sourceWeekStartDateIso,
+			targetMonday,
+		);
+	}
+	return accumulated;
+}
+
+/**
+ * 1-Click Clear Week Shifts (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ *
+ * Removes all shifts in the specified week, returning a clean slate for the week.
+ */
+export function clearWeekShifts(
+	currentShifts: DoctorShift[],
+	weekStartDateIso: string,
+): DoctorShift[] {
+	const weekDays = getWeekDaysIso(weekStartDateIso);
+	const weekDaysSet = new Set(weekDays);
+	const getShiftDate = (s: DoctorShift): string =>
+		s.dateIso || (s as unknown as { date?: string }).date || "";
+	return currentShifts.filter((s) => !weekDaysSet.has(getShiftDate(s)));
+}
+
+

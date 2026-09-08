@@ -6,13 +6,16 @@
 import React from "react";
 import {
 	AlertTriangle,
+	CalendarRange,
 	Check,
 	ChevronLeft,
 	ChevronRight,
 	Clock,
+	Copy,
 	FileSpreadsheet,
 	Layers,
 	Printer,
+	RotateCcw,
 	Save,
 	Sparkles,
 	Users,
@@ -54,6 +57,9 @@ export interface DoctorRosterToolbarProps {
 		cabinetId: string,
 		templateId: DoctorChairRosterTemplateId,
 	) => void;
+	onCopyWeekToNextWeek?: () => void;
+	onCopyWeekToMonth?: () => void;
+	onClearWeek?: () => void;
 	onPrintSchedule: () => void;
 	onExportT13: () => void;
 	onSaveAll: (closeAfter?: boolean) => void;
@@ -85,6 +91,9 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 		notification,
 		conflicts,
 		onApplyDoctorChairWeeklyTemplate,
+		onCopyWeekToNextWeek,
+		onCopyWeekToMonth,
+		onClearWeek,
 		staffList,
 		cabinets,
 	}) {
@@ -216,6 +225,45 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 
 						{/* Quick Fill & Presets */}
 						<div className="roster-actions-group">
+							{onCopyWeekToNextWeek && (
+								<button
+									type="button"
+									data-testid="roster-copy-next-week-btn"
+									className="roster-btn roster-btn-secondary"
+									onClick={onCopyWeekToNextWeek}
+									style={{ minHeight: "44px" }}
+									title="Копировать все смены текущей недели на следующую неделю (+7 дней) в 1 клик"
+								>
+									<Copy size={16} />
+									<span>Копировать на след. неделю</span>
+								</button>
+							)}
+							{onCopyWeekToMonth && (
+								<button
+									type="button"
+									data-testid="roster-copy-month-btn"
+									className="roster-btn roster-btn-secondary"
+									onClick={onCopyWeekToMonth}
+									style={{ minHeight: "44px" }}
+									title="Копировать график текущей недели на следующие 4 недели вперед (месяц) в 1 клик"
+								>
+									<CalendarRange size={16} />
+									<span>Копировать на 4 недели (месяц)</span>
+								</button>
+							)}
+							{onClearWeek && (
+								<button
+									type="button"
+									data-testid="roster-clear-week-btn"
+									className="roster-btn roster-btn-secondary"
+									onClick={onClearWeek}
+									style={{ minHeight: "44px", color: "var(--bad-fg, #ef4444)" }}
+									title="Очистить все смены текущей недели в 1 клик"
+								>
+									<RotateCcw size={16} />
+									<span>Очистить неделю</span>
+								</button>
+							)}
 							<button
 								type="button"
 								className="roster-btn roster-btn-auto"
@@ -273,6 +321,34 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									>
 										Полный день (12ч смены)
 									</button>
+									{onCopyWeekToNextWeek && (
+										<button
+											type="button"
+											data-testid="dropdown-copy-next-week"
+											onClick={onCopyWeekToNextWeek}
+										>
+											Копировать на след. неделю (+7 дней)
+										</button>
+									)}
+									{onCopyWeekToMonth && (
+										<button
+											type="button"
+											data-testid="dropdown-copy-month"
+											onClick={onCopyWeekToMonth}
+										>
+											Копировать на 4 недели (месяц)
+										</button>
+									)}
+									{onClearWeek && (
+										<button
+											type="button"
+											data-testid="dropdown-clear-week"
+											onClick={onClearWeek}
+											style={{ color: "var(--bad-fg, #ef4444)" }}
+										>
+											Очистить смены недели
+										</button>
+									)}
 									{onApplyDoctorChairWeeklyTemplate && (
 										<>
 											<div
@@ -586,6 +662,77 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 					>
 						<span>Полный день 08:00–20:00</span>
 					</button>
+					<div
+						style={{
+							display: "inline-flex",
+							alignItems: "center",
+							gap: "0.5rem",
+							marginLeft: "auto",
+							flexWrap: "wrap",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "0.75rem",
+								fontWeight: 700,
+								color: "var(--muted, #64748b)",
+							}}
+						>
+							Копирование:
+						</span>
+						{onCopyWeekToNextWeek && (
+							<button
+								type="button"
+								data-testid="roster-strip-copy-next-week-btn"
+								className="roster-btn roster-btn-secondary"
+								onClick={onCopyWeekToNextWeek}
+								style={{
+									minHeight: "44px",
+									padding: "0.25rem 0.75rem",
+									fontSize: "0.8125rem",
+								}}
+								title="Копировать все смены текущей недели на следующую неделю (+7 дней) в 1 клик"
+							>
+								<Copy size={15} />
+								<span>На след. неделю</span>
+							</button>
+						)}
+						{onCopyWeekToMonth && (
+							<button
+								type="button"
+								data-testid="roster-strip-copy-month-btn"
+								className="roster-btn roster-btn-secondary"
+								onClick={onCopyWeekToMonth}
+								style={{
+									minHeight: "44px",
+									padding: "0.25rem 0.75rem",
+									fontSize: "0.8125rem",
+								}}
+								title="Копировать график текущей недели на следующие 4 недели вперед (месяц) в 1 клик"
+							>
+								<CalendarRange size={15} />
+								<span>На 4 недели (месяц)</span>
+							</button>
+						)}
+						{onClearWeek && (
+							<button
+								type="button"
+								data-testid="roster-strip-clear-week-btn"
+								className="roster-btn roster-btn-secondary"
+								onClick={onClearWeek}
+								style={{
+									minHeight: "44px",
+									padding: "0.25rem 0.75rem",
+									fontSize: "0.8125rem",
+									color: "var(--bad-fg, #ef4444)",
+								}}
+								title="Очистить все смены текущей недели в 1 клик"
+							>
+								<RotateCcw size={15} />
+								<span>Очистить неделю</span>
+							</button>
+						)}
+					</div>
 				</div>
 
 				{/* Notifications & Conflicts Ribbon */}

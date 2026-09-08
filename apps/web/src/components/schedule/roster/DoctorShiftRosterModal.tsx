@@ -38,6 +38,11 @@ import { DoctorShiftDrawer } from "./DoctorShiftDrawer";
 import {
 	generateWeeklyScheduleForStaffAndCabinets,
 	applyDoctorChairWeeklyTemplate,
+	copyWeekShiftsToTargetWeek,
+	copyWeekShiftsToMonth,
+	clearWeekShifts,
+	addDaysToDateIso,
+	getWeekDaysIso,
 } from "./doctorWeeklyScheduleGenerator";
 import "./doctorShiftRoster.css";
 
@@ -47,6 +52,11 @@ export { DoctorShiftDrawer } from "./DoctorShiftDrawer";
 export {
 	generateWeeklyScheduleForStaffAndCabinets,
 	applyDoctorChairWeeklyTemplate,
+	copyWeekShiftsToTargetWeek,
+	copyWeekShiftsToMonth,
+	clearWeekShifts,
+	addDaysToDateIso,
+	getWeekDaysIso,
 } from "./doctorWeeklyScheduleGenerator";
 export { DOCTOR_CHAIR_ROSTER_TEMPLATES } from "./doctorShiftRosterPresets";
 export type {
@@ -692,6 +702,56 @@ export function DoctorShiftRosterModal({
 		setTimeout(() => setNotification(null), 3500);
 	};
 
+	// 1-Click Copy week to next week (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	const handleCopyWeekToNextWeek = () => {
+		const nextMondayIso = addDaysToDateIso(weekStartDateIso, 7);
+		const nextShifts = copyWeekShiftsToTargetWeek(
+			shifts,
+			weekStartDateIso,
+			nextMondayIso,
+		);
+		setShifts(nextShifts);
+		const weekShiftsCount = shifts.filter(
+			(s) =>
+				s.dateIso >= weekStartDateIso &&
+				s.dateIso <= weekEndDateIso &&
+				s.status !== "cancelled",
+		).length;
+		setNotification({
+			type: "success",
+			message: `График скопирован на след. неделю (${nextMondayIso}): перенесено смен — ${weekShiftsCount}`,
+		});
+		setTimeout(() => setNotification(null), 3500);
+	};
+
+	// 1-Click Copy week to 4 weeks / month (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	const handleCopyWeekToMonth = () => {
+		const nextShifts = copyWeekShiftsToMonth(shifts, weekStartDateIso, 4);
+		setShifts(nextShifts);
+		const weekShiftsCount = shifts.filter(
+			(s) =>
+				s.dateIso >= weekStartDateIso &&
+				s.dateIso <= weekEndDateIso &&
+				s.status !== "cancelled",
+		).length;
+		setNotification({
+			type: "success",
+			message: `График скопирован на 4 недели вперед (месяц): перенесено смен — ${weekShiftsCount * 4}`,
+		});
+		setTimeout(() => setNotification(null), 4000);
+	};
+
+	// 1-Click Clear current week shifts (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	const handleClearWeek = () => {
+		const nextShifts = clearWeekShifts(shifts, weekStartDateIso);
+		setShifts(nextShifts);
+		setNotification({
+			type: "info",
+			message: "Все смены текущей недели успешно очищены",
+		});
+		setTimeout(() => setNotification(null), 3000);
+	};
+
 	// Save changes (Non-blocking Mandate 8e)
 	const handleSaveAll = async (closeAfter = false) => {
 		let shiftsToSave = shifts;
@@ -755,6 +815,9 @@ export function DoctorShiftRosterModal({
 					onAutoFillDefault={handleAutoFillDefault}
 					onApplyPreset={handleApplyPreset}
 					onApplyDoctorChairWeeklyTemplate={handleApplyDoctorChairWeeklyTemplate}
+					onCopyWeekToNextWeek={handleCopyWeekToNextWeek}
+					onCopyWeekToMonth={handleCopyWeekToMonth}
+					onClearWeek={handleClearWeek}
 					onPrintSchedule={handlePrintSchedule}
 					onExportT13={handleExportT13}
 					onSaveAll={handleSaveAll}
