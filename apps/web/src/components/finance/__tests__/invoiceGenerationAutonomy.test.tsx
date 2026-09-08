@@ -8,19 +8,20 @@
  *    override under Doctor Autonomy without requiring manager PIN.
  */
 
+import assert from "node:assert/strict";
+import { beforeEach, describe, it } from "node:test";
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppLogicProvider, type AppLogicContextType } from "../../../contexts/AppLogicContext";
-import { showToast } from "../../GlobalToast";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import { InvoiceGenerationModal } from "../InvoiceGenerationModal";
 
-vi.mock("../../GlobalToast", () => ({
-	showToast: vi.fn(),
-	GlobalToast: () => null,
-}));
+let toastEvents: { text: string; type: string; duration?: number }[] = [];
+
+function clearToastEvents() {
+	toastEvents = [];
+}
 
 interface MockDomNode {
 	nodeType: number;
@@ -197,6 +198,12 @@ function setupMockDom() {
 		document: doc,
 		addEventListener: () => {},
 		removeEventListener: () => {},
+		dispatchEvent: (ev: any) => {
+			if (ev?.type === "dente-toast" && ev?.detail) {
+				toastEvents.push(ev.detail);
+			}
+			return true;
+		},
 		navigator: { clipboard: { writeText: () => Promise.resolve() } },
 		HTMLIFrameElement: MockHTMLIFrameElement,
 		HTMLElement: class {},
@@ -326,8 +333,9 @@ const mockAppContext = {
 
 describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 8e, 8k, 8n)", () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
-		globalThis.fetch = vi.fn().mockResolvedValue({
+		clearToastEvents();
+		// biome-ignore lint/suspicious/noExplicitAny: mock fetch
+		(globalThis as any).fetch = async () => ({
 			ok: true,
 			status: 200,
 			json: async () => [],
@@ -349,18 +357,20 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 		);
 
 		// Verify 1-click doctor clinical decision button in drawer
-		expect(html).toContain('data-testid="doctor-clinical-decision-btn"');
-		expect(html).toContain("Решение врача (1 клик)");
-		expect(html).toContain(
-			"Согласовать цены решением лечащего врача (Мандат 8e)",
+		assert.ok(html.includes('data-testid="doctor-clinical-decision-btn"'));
+		assert.ok(html.includes("Решение врача (1 клик)"));
+		assert.ok(
+			html.includes("Согласовать цены решением лечащего врача (Мандат 8e)"),
 		);
 
 		// Verify admin verify button is present and not disabled in initial state
-		expect(html).toContain('data-testid="admin-pin-verify-btn"');
-		expect(html).toContain("Авторизовать");
+		assert.ok(html.includes('data-testid="admin-pin-verify-btn"'));
+		assert.ok(html.includes("Авторизовать"));
 		// Ensure it does not have disabled attribute (while allowing CSS classes like disabled:opacity-50)
-		expect(html).not.toMatch(
-			/<button[^>]*data-testid="admin-pin-verify-btn"[^>]*\sdisabled(?=[\s=>])/,
+		assert.ok(
+			!/<button[^>]*data-testid="admin-pin-verify-btn"[^>]*\sdisabled(?=[\s=>])/.test(
+				html,
+			),
 		);
 	});
 
@@ -387,17 +397,17 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 		});
 
 		const verifyBtn = findNodeByTestId(doc.body, "admin-pin-verify-btn");
-		expect(verifyBtn).not.toBeNull();
+		assert.ok(verifyBtn !== null, "admin-pin-verify-btn must be present");
 
 		// Case 1: PIN is empty -> button is NOT disabled (Mandate 8e: zero unexplained disabled buttons)
-		expect(isNodeDisabled(verifyBtn)).toBe(false);
+		assert.equal(isNodeDisabled(verifyBtn), false);
 
 		// Case 2: PIN is short (3 chars: "123") -> button is still NOT disabled
 		const pinInput = findNodeByTestId(doc.body, "admin-pin-input");
-		expect(pinInput).not.toBeNull();
+		assert.ok(pinInput !== null, "admin-pin-input must be present");
 		await changeInput(pinInput!, "123");
 
-		expect(isNodeDisabled(verifyBtn)).toBe(false);
+		assert.equal(isNodeDisabled(verifyBtn), false);
 
 		await act(async () => {
 			root?.unmount();
@@ -406,6 +416,7 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 
 	it("clicking handleVerifyAdminPin with short PIN triggers the warning toast instead of being blocked silently", async () => {
 		const { doc } = setupMockDom();
+		clearToastEvents();
 		let root: Root | null = null;
 		const container = doc.createElement("div");
 		doc.body.appendChild(container);
@@ -427,30 +438,33 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 		});
 
 		const verifyBtn = findNodeByTestId(doc.body, "admin-pin-verify-btn");
-		expect(verifyBtn).not.toBeNull();
+		assert.ok(verifyBtn !== null);
 
 		// Click with empty PIN
 		await clickNode(verifyBtn!);
-		const emptyPinCalls = (showToast as any).mock.calls;
-		expect(emptyPinCalls.length).toBeGreaterThanOrEqual(1);
-		expect(emptyPinCalls[0][0]).toBe(
+		const emptyPinToast = toastEvents[0];
+		assert.ok(emptyPinToast, "Expected at least 1 toast on empty PIN click");
+		assert.equal(
+			emptyPinToast.text,
 			"PIN-код администратора должен быть не менее 4 символов",
 		);
-		expect(emptyPinCalls[0][1]).toBe("warning");
+		assert.equal(emptyPinToast.type, "warning");
 
-		vi.clearAllMocks();
+		clearToastEvents();
 
 		// Set short PIN ("42") and click
 		const pinInput = findNodeByTestId(doc.body, "admin-pin-input");
+		assert.ok(pinInput !== null);
 		await changeInput(pinInput!, "42");
 		await clickNode(verifyBtn!);
 
-		const shortPinCalls = (showToast as any).mock.calls;
-		expect(shortPinCalls.length).toBeGreaterThanOrEqual(1);
-		expect(shortPinCalls[0][0]).toBe(
+		const shortPinToast = toastEvents[0];
+		assert.ok(shortPinToast, "Expected at least 1 toast on short PIN click");
+		assert.equal(
+			shortPinToast.text,
 			"PIN-код администратора должен быть не менее 4 символов",
 		);
-		expect(shortPinCalls[0][1]).toBe("warning");
+		assert.equal(shortPinToast.type, "warning");
 
 		await act(async () => {
 			root?.unmount();
@@ -459,6 +473,7 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 
 	it("1-click doctor clinical decision button renders and successfully authorizes override without requiring manager PIN", async () => {
 		const { doc } = setupMockDom();
+		clearToastEvents();
 		let root: Root | null = null;
 		const container = doc.createElement("div");
 		doc.body.appendChild(container);
@@ -484,29 +499,31 @@ describe("InvoiceGenerationModal Autonomy & Non-Blocking PIN Guidance (Mandates 
 			doc.body,
 			"doctor-clinical-decision-btn",
 		);
-		expect(doctorBtn).not.toBeNull();
+		assert.ok(doctorBtn !== null, "doctor-clinical-decision-btn must be present");
 
 		// 2. Click 1-click doctor clinical override
 		await clickNode(doctorBtn!);
 
 		// 3. Verify success toast is triggered under Mandate 8e
-		const doctorToastCalls = (showToast as any).mock.calls;
-		expect(doctorToastCalls.length).toBeGreaterThanOrEqual(1);
-		expect(String(doctorToastCalls[0][0])).toContain(
-			"Цены согласованы лечащим врачом",
+		const doctorToast = toastEvents[0];
+		assert.ok(doctorToast, "Expected toast after doctor clinical decision click");
+		assert.ok(
+			String(doctorToast.text).includes(
+				"Цены согласованы лечащим врачом",
+			),
 		);
-		expect(doctorToastCalls[0][1]).toBe("success");
+		assert.equal(doctorToast.type, "success");
 
 		// 4. Verify admin override authorized badge is rendered
 		const authorizedBadge = findNodeByTestId(
 			doc.body,
 			"override-authorized-badge",
 		);
-		expect(authorizedBadge).not.toBeNull();
+		assert.ok(authorizedBadge !== null, "override-authorized-badge must be present");
 
 		// 5. Verify PIN drawer is closed
 		const pinDrawer = findNodeByTestId(doc.body, "admin-pin-drawer");
-		expect(pinDrawer).toBeNull();
+		assert.equal(pinDrawer, null, "admin-pin-drawer should be closed");
 
 		await act(async () => {
 			root?.unmount();

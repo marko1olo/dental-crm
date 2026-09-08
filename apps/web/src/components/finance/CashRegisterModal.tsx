@@ -1828,11 +1828,12 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 												<label className="text-[11px] font-semibold text-[var(--muted)]">
 													Быстрый выбор купюр:
 												</label>
-												<div className="grid grid-cols-4 gap-1.5">
+												<div className="grid grid-cols-5 gap-1.5">
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(totalInvoiceRub)}
 														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95"
+														data-testid="btn-cash-exact"
 													>
 														Без сдачи
 													</button>
@@ -1840,6 +1841,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 														type="button"
 														onClick={() => setReceivedCashRub(1000)}
 														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														data-testid="btn-cash-1000"
 													>
 														1 000 ₽
 													</button>
@@ -1847,6 +1849,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 														type="button"
 														onClick={() => setReceivedCashRub(2000)}
 														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														data-testid="btn-cash-2000"
 													>
 														2 000 ₽
 													</button>
@@ -1854,8 +1857,17 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 														type="button"
 														onClick={() => setReceivedCashRub(5000)}
 														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														data-testid="btn-cash-5000"
 													>
 														5 000 ₽
+													</button>
+													<button
+														type="button"
+														onClick={() => setReceivedCashRub(10000)}
+														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														data-testid="btn-cash-10000"
+													>
+														10 000 ₽
 													</button>
 												</div>
 											</div>
