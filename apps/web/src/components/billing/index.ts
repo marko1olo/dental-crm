@@ -5,3 +5,4 @@
 export * from "./cashShiftClosingEngine";
 export * from "./CashShiftClosingModal";
 export * from "./tax/index";
+export * from "./InvoicesView";

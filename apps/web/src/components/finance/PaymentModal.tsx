@@ -54,6 +54,11 @@ export interface PaymentModalProps {
 	readonly defaultMethod?: PaymentMethodTab | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly cashierName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly onPrintInvoice?: (() => void) | undefined;
+	readonly onPrintAct?: (() => void) | undefined;
 	readonly onClose: () => void;
 	readonly onSuccess: (paymentData: {
 		method: string;
@@ -74,6 +79,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	defaultMethod = "card_terminal",
 	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
+	cashierName,
+	doctorName,
+	clinicLegalName = "ООО «ДЕНТЕ»",
+	onPrintInvoice,
+	onPrintAct,
 	onClose,
 	onSuccess,
 }) => {
@@ -82,12 +92,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const [isSubmittingSplit, setIsSubmittingSplit] = useState<boolean>(false);
 	const [isSubmittingDeposit, setIsSubmittingDeposit] = useState<boolean>(false);
 
+	// Solo Doctor & Cashier Autonomy: fallback to doctor name or default solo clinic (Mandates 8e & 8n)
+	const effectiveCashier = (cashierName || "").trim() || (doctorName || "").trim() || "Врач-стоматолог";
+
+	// 100% Warranty discount toggle (Doctor Autonomy Mandate 8e Item 7)
+	const [isWarranty100, setIsWarranty100] = useState<boolean>(false);
+
 	// Multi-tender split payment state
-	const totalDueRub = Number((amountKopecks / 100).toFixed(2));
+	const rawTotalDueRub = Number((amountKopecks / 100).toFixed(2));
+	const totalDueRub = isWarranty100 ? 0 : rawTotalDueRub;
+
 	const [splitCardRub, setSplitCardRub] = useState<number>(totalDueRub);
 	const [splitCashRub, setSplitCashRub] = useState<number>(0);
 	const [splitDepositRub, setSplitDepositRub] = useState<number>(0);
 	const [splitSbpRub, setSplitSbpRub] = useState<number>(0);
+	const [splitCertificateRub, setSplitCertificateRub] = useState<number>(0);
+	const [splitBonusRub, setSplitBonusRub] = useState<number>(0);
 
 	// 54-FZ Buyer Details & Cashier Autonomy state (Mandates 8e & 8n)
 	const [payerType, setPayerType] = useState<PayerType>("physical");
@@ -115,37 +135,175 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	};
 
 	const applyExactCashPreset = () => {
+		setIsWarranty100(false);
 		setActiveMethod("cash");
-		setReceivedCashRub(totalDueRub);
-		setSplitCashRub(totalDueRub);
+		setReceivedCashRub(rawTotalDueRub);
+		setSplitCashRub(rawTotalDueRub);
 		setSplitCardRub(0);
 		setSplitDepositRub(0);
 		setSplitSbpRub(0);
-		showToast(`Применен пресет: Без сдачи (${totalDueRub.toLocaleString("ru-RU")} ₽ нал)`, "info", 2000);
+		setSplitCertificateRub(0);
+		setSplitBonusRub(0);
+		showToast(`Применен пресет: Без сдачи (${rawTotalDueRub.toLocaleString("ru-RU")} ₽ нал)`, "info", 2000);
 	};
 
 	const applyFullCardPreset = () => {
+		setIsWarranty100(false);
 		setActiveMethod("card_terminal");
-		setSplitCardRub(totalDueRub);
+		setSplitCardRub(rawTotalDueRub);
 		setSplitCashRub(0);
 		setSplitDepositRub(0);
 		setSplitSbpRub(0);
-		showToast(`Применен пресет: Оплата картой 100% (${totalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
+		setSplitCertificateRub(0);
+		setSplitBonusRub(0);
+		showToast(`Применен пресет: Оплата картой 100% (${rawTotalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
 	};
 
 	const applyDepositPlusCardPreset = () => {
-		const available = Math.min(totalDueRub, patientDepositRub);
-		const remainder = Number((totalDueRub - available).toFixed(2));
+		setIsWarranty100(false);
+		const available = Math.min(rawTotalDueRub, patientDepositRub);
+		const remainder = Number((rawTotalDueRub - available).toFixed(2));
 		setSplitDepositRub(available);
 		setSplitCardRub(remainder);
 		setSplitCashRub(0);
 		setSplitSbpRub(0);
+		setSplitCertificateRub(0);
+		setSplitBonusRub(0);
 		setActiveMethod("split");
 		showToast(
 			`Применен пресет: Аванс ${available.toLocaleString("ru-RU")} ₽ + Карта ${remainder.toLocaleString("ru-RU")} ₽`,
 			"info",
 			3000,
 		);
+	};
+
+	const applyWarranty100Preset = () => {
+		setIsWarranty100(true);
+		setSplitCardRub(0);
+		setSplitCashRub(0);
+		setSplitDepositRub(0);
+		setSplitSbpRub(0);
+		setSplitCertificateRub(0);
+		setSplitBonusRub(0);
+		showToast("Применена скидка 100% (Гарантийная переделка • 0 ₽)", "info", 2500);
+	};
+
+	const handleQuickPrintInvoice = () => {
+		if (onPrintInvoice) {
+			onPrintInvoice();
+			return;
+		}
+		const invoiceNumber = invoiceId ? `СЧ-${invoiceId.slice(0, 8).toUpperCase()}` : `СЧ-${Date.now().toString().slice(-6)}`;
+		const invoiceHtml = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Счет на оплату ${invoiceNumber}</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
+.header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
+h1 { margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
+.clinic { font-size: 13px; color: #475569; }
+.patient { margin: 16px 0; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+th { background: #f8fafc; font-weight: 700; }
+.total { text-align: right; font-size: 16px; font-weight: 800; margin-top: 20px; }
+.footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>СЧЕТ НА ОПЛАТУ № ${invoiceNumber}</h1>
+  <div class="clinic">${clinicLegalName} • Стоматологические услуги • Без НДС (пп. 2 п. 2 ст. 149 НК РФ)</div>
+</div>
+<div class="patient">
+  <div><strong>Плательщик:</strong> ${patientName}</div>
+  <div><strong>Врач / Кассир:</strong> ${effectiveCashier}</div>
+  <div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div>
+</div>
+<table>
+  <thead>
+    <tr><th>№</th><th>Наименование медицинской услуги</th><th>Кол-во</th><th>Сумма</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Стоматологическое лечение по наряду-заказу</td><td>1</td><td>${rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
+  </tbody>
+</table>
+<div class="total">Итого к оплате: ${isWarranty100 ? "0 ₽ (Скидка 100% — Гарантия)" : `${rawTotalDueRub.toLocaleString("ru-RU")} ₽`}</div>
+<div class="footer">
+  <div>Врач-стоматолог: ________________ / ${effectiveCashier} /</div>
+  <div>М.П.</div>
+</div>
+</body>
+</html>`;
+		void hardwarePrinter.printHtmlWithPopupFallback(invoiceHtml, {
+			title: `Счет № ${invoiceNumber}`,
+			downloadFilename: `Schet_${invoiceNumber}.html`,
+		}).then(() => {
+			showToast("Печать счета отправлена на принтер", "success");
+		}).catch(() => {
+			showToast("Ошибка отправки счета на печать", "error");
+		});
+	};
+
+	const handleQuickPrintAct = () => {
+		if (onPrintAct) {
+			onPrintAct();
+			return;
+		}
+		const actNumber = invoiceId ? `АКТ-${invoiceId.slice(0, 8).toUpperCase()}` : `АКТ-${Date.now().toString().slice(-6)}`;
+		const actHtml = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Акт выполненных работ ${actNumber}</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; }
+.header { border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
+h1 { margin: 0 0 8px 0; font-size: 20px; font-weight: 800; }
+.clinic { font-size: 13px; color: #475569; }
+.patient { margin: 16px 0; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+th { background: #f8fafc; font-weight: 700; }
+.total { text-align: right; font-size: 16px; font-weight: 800; margin-top: 20px; }
+.footer { margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>АКТ СДАЧИ-ПРИЕМКИ ВЫПОЛНЕННЫХ СТОМАТОЛОГИЧЕСКИХ РАБОТ № ${actNumber}</h1>
+  <div class="clinic">${clinicLegalName} • Приказ Минздрава РФ № 804н • Закон РФ № 2300-1</div>
+</div>
+<div class="patient">
+  <div><strong>Пациент (Заказчик):</strong> ${patientName}</div>
+  <div><strong>Лечащий врач (Исполнитель):</strong> ${effectiveCashier}</div>
+  <div><strong>Дата:</strong> ${new Date().toLocaleDateString("ru-RU")}</div>
+</div>
+<table>
+  <thead>
+    <tr><th>№</th><th>Код услуги (804н)</th><th>Наименование услуги</th><th>Кол-во</th><th>Сумма</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>A16.07.002</td><td>Стоматологический прием и лечение</td><td>1</td><td>${rawTotalDueRub.toLocaleString("ru-RU")} ₽</td></tr>
+  </tbody>
+</table>
+<div class="total">Всего оказано услуг на сумму: ${isWarranty100 ? "0 ₽ (Скидка 100% — Гарантия)" : `${rawTotalDueRub.toLocaleString("ru-RU")} ₽`}</div>
+<div class="footer">
+  <div>Заказчик: ________________ / ${patientName} /</div>
+  <div>Исполнитель: ________________ / ${effectiveCashier} /</div>
+</div>
+</body>
+</html>`;
+		void hardwarePrinter.printHtmlWithPopupFallback(actHtml, {
+			title: `Акт № ${actNumber}`,
+			downloadFilename: `Akt_${actNumber}.html`,
+		}).then(() => {
+			showToast("Печать акта отправлена на принтер", "success");
+		}).catch(() => {
+			showToast("Ошибка отправки акта на печать", "error");
+		});
 	};
 
 	if (!isOpen) return null;
@@ -170,7 +328,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				"Idempotency-Key": clientMutationId,
 			});
 
-			const amountRubNumber = Number((amountKopecks / 100).toFixed(2));
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 			const changeNote = cashChange.changeRub > 0 ? ` (получено ${receivedCashRub} ₽, сдача ${cashChange.changeRub} ₽)` : "";
 
@@ -180,12 +337,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 				headers,
 				body: JSON.stringify({
 					patientId,
-					amountRub: amountRubNumber,
+					amountRub: totalDueRub,
 					method: "cash",
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Оплата наличными через кассу (${amountRub} ₽)${changeNote}${innNote}`,
+					note: `Оплата наличными через кассу (${totalDueRub} ₽ • ${effectiveCashier})${changeNote}${innNote}`,
 				}),
 			});
 
@@ -200,10 +357,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			}
 
 			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-			showToast(`Оплата ${amountRub} ₽ наличными принята в кассу`, "success");
+			showToast(`Оплата ${totalDueRub} ₽ наличными принята в кассу (${effectiveCashier})`, "success");
 			onSuccess({
 				method: "cash",
-				amountKopecks,
+				amountKopecks: isWarranty100 ? 0 : amountKopecks,
 				...paymentData,
 			});
 			onClose();
@@ -216,7 +373,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		}
 	};
 
-	const totalAllocatedRub = Number((splitCardRub + splitCashRub + splitDepositRub + splitSbpRub).toFixed(2));
+	const totalAllocatedRub = Number(
+		(splitCardRub + splitCashRub + splitDepositRub + splitSbpRub + splitCertificateRub + splitBonusRub).toFixed(2),
+	);
 	const isBalanced = Math.abs(totalAllocatedRub - totalDueRub) < 0.009;
 
 	const handleSplitSubmit = async () => {
@@ -233,10 +392,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		let effectiveCashRub = splitCashRub;
 		const effectiveDepositRub = splitDepositRub;
 		const effectiveSbpRub = splitSbpRub;
+		const effectiveCertificateRub = splitCertificateRub;
+		const effectiveBonusRub = splitBonusRub;
 
 		// Автоматически распределяем остаток до копейки без ошибок и блокировок кассы
 		if (!isBalanced) {
-			const remainder = Math.max(0, Number((totalDueRub - (effectiveDepositRub + effectiveSbpRub)).toFixed(2)));
+			const remainder = Math.max(
+				0,
+				Number(
+					(
+						totalDueRub -
+						(effectiveDepositRub + effectiveSbpRub + effectiveCertificateRub + effectiveBonusRub)
+					).toFixed(2),
+				),
+			);
 			if (effectiveCashRub > 0 && effectiveCardRub === 0) {
 				effectiveCashRub = remainder;
 			} else {
@@ -259,6 +428,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			if (effectiveCashRub > 0) parts.push(`нал ${effectiveCashRub} ₽`);
 			if (effectiveDepositRub > 0) parts.push(`аванс ${effectiveDepositRub} ₽`);
 			if (effectiveSbpRub > 0) parts.push(`СБП ${effectiveSbpRub} ₽`);
+			if (effectiveCertificateRub > 0) parts.push(`сертификат ${effectiveCertificateRub} ₽`);
+			if (effectiveBonusRub > 0) parts.push(`бонусы ${effectiveBonusRub} ₽`);
 
 			const primaryMethod = effectiveCashRub > effectiveCardRub ? "cash" : "card";
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
@@ -272,7 +443,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Комбинированная оплата: ${parts.join(" + ")}${innNote}`,
+					note: `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${innNote}`,
 				}),
 			});
 
@@ -286,10 +457,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 			}
 
 			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-			showToast(`Комбинированная оплата ${totalDueRub} ₽ успешно принята`, "success");
+			showToast(`Комбинированная оплата ${totalDueRub} ₽ успешно принята (${effectiveCashier})`, "success");
 			onSuccess({
 				method: "split",
-				amountKopecks,
+				amountKopecks: isWarranty100 ? 0 : amountKopecks,
 				...paymentData,
 			});
 			onClose();
@@ -421,14 +592,38 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						</p>
 					</div>
 
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors cursor-pointer"
-						aria-label="Закрыть"
-					>
-						<X size={18} />
-					</button>
+					<div className="flex items-center gap-1.5">
+						<button
+							type="button"
+							onClick={handleQuickPrintInvoice}
+							className="min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+							title="Быстрая печать счета"
+							aria-label="Печать счета"
+							data-testid="btn-payment-modal-print-invoice"
+						>
+							<Printer size={15} className="text-slate-500" />
+							<span className="hidden sm:inline">Счет</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleQuickPrintAct}
+							className="min-h-[44px] min-w-[44px] sm:min-h-[34px] sm:min-w-0 px-2.5 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+							title="Быстрая печать акта сдачи-приемки (804н)"
+							aria-label="Печать акта 804н"
+							data-testid="btn-payment-modal-print-act"
+						>
+							<FileText size={15} className="text-slate-500" />
+							<span className="hidden sm:inline">Акт 804н</span>
+						</button>
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-11 w-11 sm:h-9 sm:w-9 rounded-xl border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors cursor-pointer"
+							aria-label="Закрыть"
+						>
+							<X size={18} />
+						</button>
+					</div>
 				</div>
 
 				{/* 1-Click Fast Presets Bar (Mandates 8e & 8n: Frictionless checkout) */}
@@ -438,6 +633,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 						<span>1-клик пресеты:</span>
 					</div>
 					<div className="flex items-center gap-1.5 flex-wrap">
+						<button
+							type="button"
+							onClick={applyWarranty100Preset}
+							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								isWarranty100
+									? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-warranty-100"
+							title="Гарантийная переделка 100% (0 ₽, без фискального чека ККТ)"
+						>
+							<ShieldCheck size={14} className={isWarranty100 ? "text-white" : "text-amber-600"} />
+							<span>Гарантия 100% (0 ₽)</span>
+						</button>
 						<button
 							type="button"
 							onClick={applyExactCashPreset}
@@ -936,6 +1145,40 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
 									/>
 								</div>
+
+								<div className="space-y-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+										<Coins size={14} className="text-amber-600" />
+										<span>Подарочный сертификат, ₽:</span>
+									</label>
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={splitCertificateRub || ""}
+										onChange={(e) => setSplitCertificateRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder="0 ₽"
+										data-testid="input-split-certificate"
+										className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
+									/>
+								</div>
+
+								<div className="space-y-1">
+									<label className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1.5">
+										<Sparkles size={14} className="text-pink-600" />
+										<span>Бонусные баллы, ₽:</span>
+									</label>
+									<input
+										type="number"
+										min={0}
+										step="1"
+										value={splitBonusRub || ""}
+										onChange={(e) => setSplitBonusRub(Math.max(0, parseFloat(e.target.value) || 0))}
+										placeholder="0 ₽"
+										data-testid="input-split-bonus"
+										className="h-9 w-full px-3 py-1 text-sm font-bold font-mono bg-[var(--paper)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink)] outline-none"
+									/>
+								</div>
 							</div>
 
 							{/* 1-Click Fast Auto-Balance Chips */}
@@ -952,6 +1195,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											setSplitCardRub(kopecksToRub(remKop));
 											setSplitCashRub(0);
 											setSplitSbpRub(0);
+											setSplitCertificateRub(0);
+											setSplitBonusRub(0);
 										}}
 										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 cursor-pointer flex items-center gap-1"
 									>
@@ -970,6 +1215,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 											setSplitCashRub(kopecksToRub(remKop));
 											setSplitCardRub(0);
 											setSplitSbpRub(0);
+											setSplitCertificateRub(0);
+											setSplitBonusRub(0);
 										}}
 										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 cursor-pointer flex items-center gap-1"
 									>
@@ -984,6 +1231,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										setSplitCashRub(0);
 										setSplitDepositRub(0);
 										setSplitSbpRub(0);
+										setSplitCertificateRub(0);
+										setSplitBonusRub(0);
 									}}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer flex items-center"
 								>
@@ -996,6 +1245,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										setSplitCardRub(0);
 										setSplitDepositRub(0);
 										setSplitSbpRub(0);
+										setSplitCertificateRub(0);
+										setSplitBonusRub(0);
 									}}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer flex items-center"
 								>
@@ -1005,7 +1256,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									type="button"
 									onClick={() => {
 										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop = rubToKopecks(splitCashRub) + rubToKopecks(splitDepositRub) + rubToKopecks(splitSbpRub);
+										const otherKop =
+											rubToKopecks(splitCashRub) +
+											rubToKopecks(splitDepositRub) +
+											rubToKopecks(splitSbpRub) +
+											rubToKopecks(splitCertificateRub) +
+											rubToKopecks(splitBonusRub);
 										setSplitCardRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-blue-400 cursor-pointer flex items-center"
@@ -1016,7 +1272,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									type="button"
 									onClick={() => {
 										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitDepositRub) + rubToKopecks(splitSbpRub);
+										const otherKop =
+											rubToKopecks(splitCardRub) +
+											rubToKopecks(splitDepositRub) +
+											rubToKopecks(splitSbpRub) +
+											rubToKopecks(splitCertificateRub) +
+											rubToKopecks(splitBonusRub);
 										setSplitCashRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-emerald-400 cursor-pointer flex items-center"
@@ -1027,7 +1288,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 									type="button"
 									onClick={() => {
 										const totalKop = rubToKopecks(totalDueRub);
-										const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitCashRub) + rubToKopecks(splitDepositRub);
+										const otherKop =
+											rubToKopecks(splitCardRub) +
+											rubToKopecks(splitCashRub) +
+											rubToKopecks(splitDepositRub) +
+											rubToKopecks(splitCertificateRub) +
+											rubToKopecks(splitBonusRub);
 										setSplitSbpRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
 									}}
 									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-purple-400 cursor-pointer flex items-center"
@@ -1035,12 +1301,51 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 								>
 									Остаток через СБП
 								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const totalKop = rubToKopecks(totalDueRub);
+										const otherKop =
+											rubToKopecks(splitCardRub) +
+											rubToKopecks(splitCashRub) +
+											rubToKopecks(splitDepositRub) +
+											rubToKopecks(splitSbpRub) +
+											rubToKopecks(splitBonusRub);
+										setSplitCertificateRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
+									}}
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-amber-400 cursor-pointer flex items-center"
+									data-testid="btn-payment-remainder-certificate"
+								>
+									Остаток сертификатом
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										const totalKop = rubToKopecks(totalDueRub);
+										const otherKop =
+											rubToKopecks(splitCardRub) +
+											rubToKopecks(splitCashRub) +
+											rubToKopecks(splitDepositRub) +
+											rubToKopecks(splitSbpRub) +
+											rubToKopecks(splitCertificateRub);
+										setSplitBonusRub(kopecksToRub(Math.max(0, totalKop - otherKop)));
+									}}
+									className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] hover:border-pink-400 cursor-pointer flex items-center"
+									data-testid="btn-payment-remainder-bonus"
+								>
+									Остаток бонусами
+								</button>
 								{patientDepositRub > 0 && (
 									<button
 										type="button"
 										onClick={() => {
 											const totalKop = rubToKopecks(totalDueRub);
-											const otherKop = rubToKopecks(splitCardRub) + rubToKopecks(splitCashRub) + rubToKopecks(splitSbpRub);
+											const otherKop =
+												rubToKopecks(splitCardRub) +
+												rubToKopecks(splitCashRub) +
+												rubToKopecks(splitSbpRub) +
+												rubToKopecks(splitCertificateRub) +
+												rubToKopecks(splitBonusRub);
 											const remKop = Math.max(0, totalKop - otherKop);
 											setSplitDepositRub(kopecksToRub(Math.min(remKop, rubToKopecks(patientDepositRub))));
 										}}

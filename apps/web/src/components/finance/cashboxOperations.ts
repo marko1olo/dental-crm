@@ -201,7 +201,7 @@ export function process100PercentDiscountCheckout(params: {
 	};
 }
 
-export type TenderAllocationTarget = "card" | "cash" | "sbp" | "deposit" | "family";
+export type TenderAllocationTarget = "card" | "cash" | "sbp" | "deposit" | "family" | "certificate" | "bonus";
 
 export interface MultiTenderStateRub {
 	readonly cardRub: number;
@@ -209,10 +209,12 @@ export interface MultiTenderStateRub {
 	readonly sbpRub: number;
 	readonly depositRub: number;
 	readonly familyRub: number;
+	readonly certificateRub?: number | undefined;
+	readonly bonusRub?: number | undefined;
 }
 
 /**
- * Мандат 8e, п. 9: 1-тап кнопки «Оплатить остаток картой / налом / с депозита / через СБП».
+ * Мандат 8e, п. 9: 1-тап кнопки «Оплатить остаток картой / налом / с депозита / через СБП / сертификатом / бонусами».
  * Распределяет оставшуюся сумму до копейки без ручного ввода цифр.
  */
 export function allocateRemainderToTender(params: {
@@ -221,6 +223,8 @@ export function allocateRemainderToTender(params: {
 	readonly targetTender: TenderAllocationTarget;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly availableCertificateRub?: number | undefined;
+	readonly availableBonusRub?: number | undefined;
 }): MultiTenderStateRub {
 	const totalKop = rubToKopecks(params.totalDueRub);
 
@@ -230,6 +234,8 @@ export function allocateRemainderToTender(params: {
 	if (params.targetTender !== "sbp") otherKop += rubToKopecks(params.currentTenders.sbpRub);
 	if (params.targetTender !== "deposit") otherKop += rubToKopecks(params.currentTenders.depositRub);
 	if (params.targetTender !== "family") otherKop += rubToKopecks(params.currentTenders.familyRub);
+	if (params.targetTender !== "certificate") otherKop += rubToKopecks(params.currentTenders.certificateRub || 0);
+	if (params.targetTender !== "bonus") otherKop += rubToKopecks(params.currentTenders.bonusRub || 0);
 
 	const rawRemKop = Math.max(0, totalKop - otherKop);
 
@@ -241,6 +247,12 @@ export function allocateRemainderToTender(params: {
 	} else if (params.targetTender === "family") {
 		const maxFamKop = rubToKopecks(Math.max(0, params.patientFamilyBalanceRub || 0));
 		targetAllocatedKop = Math.min(rawRemKop, maxFamKop);
+	} else if (params.targetTender === "certificate" && typeof params.availableCertificateRub === "number") {
+		const maxCertKop = rubToKopecks(Math.max(0, params.availableCertificateRub));
+		targetAllocatedKop = Math.min(rawRemKop, maxCertKop);
+	} else if (params.targetTender === "bonus" && typeof params.availableBonusRub === "number") {
+		const maxBonusKop = rubToKopecks(Math.max(0, params.availableBonusRub));
+		targetAllocatedKop = Math.min(rawRemKop, maxBonusKop);
 	}
 
 	return {
@@ -249,6 +261,8 @@ export function allocateRemainderToTender(params: {
 		sbpRub: params.targetTender === "sbp" ? kopecksToRub(targetAllocatedKop) : params.currentTenders.sbpRub,
 		depositRub: params.targetTender === "deposit" ? kopecksToRub(targetAllocatedKop) : params.currentTenders.depositRub,
 		familyRub: params.targetTender === "family" ? kopecksToRub(targetAllocatedKop) : params.currentTenders.familyRub,
+		certificateRub: params.targetTender === "certificate" ? kopecksToRub(targetAllocatedKop) : (params.currentTenders.certificateRub || 0),
+		bonusRub: params.targetTender === "bonus" ? kopecksToRub(targetAllocatedKop) : (params.currentTenders.bonusRub || 0),
 	};
 }
 
@@ -443,5 +457,41 @@ export function createDepositAndCardComboTenders(totalDueRub: number, patientDep
 		sbpRub: 0,
 		depositRub: kopecksToRub(depKop),
 		familyRub: 0,
+	};
+}
+
+/**
+ * 1-клик пресет «Сертификат + остаток картой»
+ */
+export function createCertificateAndCardComboTenders(totalDueRub: number, certificateRub: number): MultiTenderStateRub {
+	const totalKop = rubToKopecks(Math.max(0, totalDueRub));
+	const certKop = Math.min(totalKop, rubToKopecks(Math.max(0, certificateRub)));
+	const cardKop = Math.max(0, totalKop - certKop);
+	return {
+		cardRub: kopecksToRub(cardKop),
+		cashRub: 0,
+		sbpRub: 0,
+		depositRub: 0,
+		familyRub: 0,
+		certificateRub: kopecksToRub(certKop),
+		bonusRub: 0,
+	};
+}
+
+/**
+ * 1-клик пресет «Бонусы + остаток картой»
+ */
+export function createBonusAndCardComboTenders(totalDueRub: number, bonusRub: number): MultiTenderStateRub {
+	const totalKop = rubToKopecks(Math.max(0, totalDueRub));
+	const bonusKop = Math.min(totalKop, rubToKopecks(Math.max(0, bonusRub)));
+	const cardKop = Math.max(0, totalKop - bonusKop);
+	return {
+		cardRub: kopecksToRub(cardKop),
+		cashRub: 0,
+		sbpRub: 0,
+		depositRub: 0,
+		familyRub: 0,
+		certificateRub: 0,
+		bonusRub: kopecksToRub(bonusKop),
 	};
 }
