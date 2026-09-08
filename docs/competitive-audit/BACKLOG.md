@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-09 / WAVE 61): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 187 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 250 ФИЧ: 63 КАНОНИЧЕСКИЕ + 187 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-09 / WAVE 62): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 188 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 251 ФИЧА: 63 КАНОНИЧЕСКИЕ + 188 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2719,9 +2719,43 @@
 
 ---
 
+## 188. `планы_лечения_касса::сохранение_счетов_в_хранилище_при_экспорте_кассиру_и_интеграция_с_invoices_view` [РЕАЛИЗОВАНО] -> StomX / DentalPRO Parity (Wave 62, Фича 251)
+- **Суть дефекта / Разрыва**:
+  1. В `TreatmentPlanModule.tsx:412-453` функция `handleExportCashier` формировала объект `CashierInvoiceExportData`, но вызывала только `if (onExportToCashier) { onExportToCashier(exportData); }`. При этом ни один вызов `TreatmentPlanModule` в системе (`VisitTreatmentPlanTab.tsx`, `TreatmentEstimator.tsx`, `OdontogramModule.tsx`) не передавал пропс `onExportToCashier`.
+  2. Врач нажимал экспорт и видел ложный тост об отправке счета кассиру, но счет не сохранялся в `dente_billing_invoices` и не отправлялся на сервер. Кассир при открытии `FinanceView -> Счета и акты (804н)` видел пустой список.
+  3. На тулбаре плана лечения отсутствовала прямая 1-клик кнопка быстрой отправки счета в кассу без открытия полного модального диалога пересчета цен.
+- **Архитектурное решение (Мандаты 2, 8c, 8d, 8e, 8k, 8n)**:
+  1. **Формирование и двухслойное сохранение счета**:
+     * В `TreatmentPlanModule.tsx` функция `handleExportCashier` строит полноценный объект `BillingInvoice` с уникальным номером `СЧ-2026-XXXX`, списком позиций, кодами 804н, номерами зубов и копеечно точной стоимостью.
+     * Счет мгновенно сохраняется в двухслойное хранилище `localStorage` (`dente_billing_invoices`) через `saveStoredInvoices`.
+  2. **Реактивное событие и живая синхронизация с InvoicesView**:
+     * Инициируется `window.dispatchEvent(new CustomEvent("dente-invoices-updated", { detail: newBillingInvoice }))`.
+     * В `InvoicesView.tsx` добавлен `useEffect`, подписывающийся на события `"dente-invoices-updated"` и `"storage"`, мгновенно обновляя список счетов кассира на лету без перезагрузки интерфейса.
+  3. **Фоновая серверная синхронизация и офлайн-автономия врача (Мандаты 8e, 8n)**:
+     * В фоне отправляется `POST /api/invoices/generate-from-plan` с заголовками `denteAdminSecretRequestHeaders()`. При отсутствии связи или сбое сети формируется автономный локальный счет, гарантируя непрерывность приема и оплаты у кресла.
+  4. **Эргономика Apple HIG и Закон Хика (Мандаты 8c, 8d)**:
+     * В тулбар внедрена 1-клик кнопка `tp-quick-cashier-btn` («В кассу», иконка `Send`, тач-таргет $\ge 44\text{px}$).
+     * В выпадающее меню `[⋮ Опции]` внедрен пункт `options-menu-export-cashier-btn` («Отправить счет кассиру (1 клик)»).
+     * Кнопка полного модального окна `tp-invoice-btn` («Счет / Наряд») сохранена в тулбаре.
+     * В `InvoiceGenerationModal.tsx` успешное создание счета сохраняет запись в `dente_billing_invoices` и рассылает событие `dente-invoices-updated`.
+     * В `VisitTreatmentPlanTab.tsx` поддержан пропс `onExportToCashier`.
+- **Файлы**:
+  - `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`
+  - `apps/web/src/components/finance/InvoiceGenerationModal.tsx`
+  - `apps/web/src/components/billing/InvoicesView.tsx`
+  - `apps/web/src/components/visit/VisitTreatmentPlanTab.tsx`
+  - `apps/web/src/components/treatment-plans/types.ts`
+- **Тесты**:
+  - `apps/web/src/components/treatment-plans/__tests__/treatmentPlanInvoiceExportAndCashierAutonomyWave62.test.tsx` (8/8 pass)
+  - `npm run check:encoding` (5115 файлов, 0 ошибок)
+  - `npm run typecheck -w @dental/web` (Exit Code 0)
+  - `npm run typecheck -w @dental/api` (Exit Code 0)
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 187 дополнительных системных аддендум-фич клинической автономии (Wave 15..61, фичи 64..250) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 188 дополнительных системных аддендум-фич клинической автономии (Wave 15..62, фичи 64..251) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

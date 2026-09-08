@@ -2132,6 +2132,30 @@
 - **Файлы**: `apps/web/src/components/billing/InvoicesView.tsx`, `apps/web/src/FinanceView.tsx`.
 - **Тесты**: `apps/web/src/components/finance/__tests__/invoicesViewServerSyncAndFinanceIntegrationWave61.test.tsx` (12/12 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `8d8e2a431`.
 
+#### 2.10.210. Сохранение счетов в хранилище при экспорте кассиру из планов лечения и интеграция с InvoicesView (Wave 62 / Feature 251)
+- **Назначение**: Бесшовный экспорт плана лечения в кассу/стол расчетов с физическим сохранением счета в двухслойном реестре счетов `dente_billing_invoices`, генерацией номера счета `СЧ-2026-XXXX`, оповещением кассира через CustomEvent `dente-invoices-updated` в реальном времени и асинхронной синхронизацией с бэкендом `POST /api/invoices/generate-from-plan` (Мандаты 2, 8c, 8d, 8e, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Физическое сохранение счета при экспорте кассиру (`handleExportCashier`)*:
+     - В `TreatmentPlanModule.tsx` метод `handleExportCashier` формирует полноценный объект `BillingInvoice` с вычислением сумм в копейках (`effectiveInvoiceNetKopecks`), позициями по номенклатуре 804н, фискальным номером `СЧ-2026-XXXX` и статусом `issued`;
+     - Сохраняет счет в реестр `dente_billing_invoices` через `saveStoredInvoices`;
+     - Эмитирует глобальное событие `window.dispatchEvent(new CustomEvent("dente-invoices-updated", { detail: { invoice } }))` и вызывает `onExportToCashier?.(exportData)`;
+     - Запускает асинхронный фоновый запрос к бэкенду `POST /api/invoices/generate-from-plan` с заголовками `denteAdminSecretRequestHeaders()` и мягким офлайн-фоллбэком при сетевой изоляции.
+  2. *Мгновенное обновление стола кассира без перезагрузки (`InvoicesView.tsx`)*:
+     - В `InvoicesView.tsx` добавлен слушатель событий `dente-invoices-updated` и `storage`;
+     - При экспорте счета из соседней вкладки визита или плана лечения кассир мгновенно видит новый счет в списке без необходимости обновлять страницу;
+     - Предотвращается дублирование счетов по `id`.
+  3. *Сохранение счета из модального окна наряда (`InvoiceGenerationModal.tsx`)*:
+     - При создании наряда/счета из модального окна генерации счет надежно сохраняется в локальное хранилище с эвентом `dente-invoices-updated` как при успешном ответе API, так и при офлайн-фоллбэке;
+     - Исключена потеря счетов при сбоях сети или отсутствии бэкенда.
+  4. *Эргономика и автономия врача (Мандат 8e, 8c, 8d)*:
+     - Добавлена 1-клик кнопка прямого действия `tp-quick-cashier-btn` («В кассу», иконка `Send`) в тулбар плана лечения;
+     - Добавлен пункт в контекстное меню опций `options-menu-export-cashier-btn` («Отправить счет кассиру (1 клик)»);
+     - Сохранена расширенная модалка наряда `tp-invoice-btn`;
+     - Тач-таргеты $\ge 44\times 44\text{px}$, 0 disabled кнопок без причины, 0 мультяшных эмодзи.
+- **Файлы**: `apps/web/src/components/treatment-plans/types.ts`, `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/finance/InvoiceGenerationModal.tsx`, `apps/web/src/components/billing/InvoicesView.tsx`, `apps/web/src/components/visit/VisitTreatmentPlanTab.tsx`.
+- **Тесты**: `apps/web/src/components/treatment-plans/__tests__/treatmentPlanInvoiceExportAndCashierAutonomyWave62.test.tsx` (8/8 pass), регрессия 36/36 pass, `npm run check:encoding` (0 errors), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `58f999f59`.
+
+
 
 
 
