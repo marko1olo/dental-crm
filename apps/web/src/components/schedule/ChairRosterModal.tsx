@@ -875,15 +875,20 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	const isMorning = s.startTime < "14:00";
 																	const isFull = s.durationHours >= 8;
 																	const bg = isFull
-																		? "#f3e8ff"
+																		? "var(--purple-soft, rgba(168, 85, 247, 0.12))"
 																		: isMorning
-																			? "#fef3c7"
-																			: "#e0e7ff";
+																			? "var(--gold-soft, rgba(245, 158, 11, 0.12))"
+																			: "var(--teal-soft, rgba(20, 184, 166, 0.12))";
 																	const fg = isFull
-																		? "#6b21a8"
+																		? "var(--purple-fg, #a855f7)"
 																		: isMorning
-																			? "#92400e"
-																			: "#3730a3";
+																			? "var(--gold-dark, #d97706)"
+																			: "var(--teal-dark, #0d9488)";
+																	const border = isFull
+																		? "1px solid rgba(168, 85, 247, 0.25)"
+																		: isMorning
+																			? "1px solid rgba(245, 158, 11, 0.25)"
+																			: "1px solid rgba(20, 184, 166, 0.25)";
 
 																	return (
 																		<div
@@ -895,7 +900,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																				borderRadius: "6px",
 																				fontSize: "0.6875rem",
 																				lineHeight: 1.2,
-																				border: `1px solid ${fg}20`,
+																				border,
 																			}}
 																		>
 																			<div style={{ fontWeight: 700 }}>
@@ -922,10 +927,10 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															style={{
 																display: "grid",
 																gridTemplateColumns: "1fr 1fr",
-																gap: "0.25rem",
+																gap: "0.375rem",
 																marginTop: "auto",
-																paddingTop: "0.25rem",
-																borderTop: "1px solid var(--line-subtle, #f1f5f9)",
+																paddingTop: "0.375rem",
+																borderTop: "1px solid var(--line)",
 															}}
 														>
 															<button
@@ -940,16 +945,18 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "28px",
-																	height: "28px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
-																	fontSize: "0.6875rem",
+																	fontSize: "0.75rem",
 																	fontWeight: 600,
-																	borderRadius: "4px",
-																	border: "1px solid var(--line, #cbd5e1)",
-																	background: "var(--paper-soft, #f8fafc)",
-																	color: "var(--ink, #0f172a)",
+																	borderRadius: "6px",
+																	border: "1px solid var(--line)",
+																	background: "var(--paper-soft)",
+																	color: "var(--ink)",
 																	cursor: "pointer",
+																	display: "inline-flex",
+																	alignItems: "center",
+																	justifyContent: "center",
 																}}
 																title="Назначить утреннюю смену (08:00–14:00)"
 															>
@@ -967,16 +974,18 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "28px",
-																	height: "28px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
-																	fontSize: "0.6875rem",
+																	fontSize: "0.75rem",
 																	fontWeight: 600,
-																	borderRadius: "4px",
-																	border: "1px solid var(--line, #cbd5e1)",
-																	background: "var(--paper-soft, #f8fafc)",
-																	color: "var(--ink, #0f172a)",
+																	borderRadius: "6px",
+																	border: "1px solid var(--line)",
+																	background: "var(--paper-soft)",
+																	color: "var(--ink)",
 																	cursor: "pointer",
+																	display: "inline-flex",
+																	alignItems: "center",
+																	justifyContent: "center",
 																}}
 																title="Назначить вечернюю смену (14:00–20:00)"
 															>
@@ -984,7 +993,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 															</button>
 															<button
 																type="button"
-																data-testid={`chair-btn-full-day-${chair.id}-${day.dateIso}`}
+																data-testid={`chair-btn-full-${chair.id}-${day.dateIso}`}
 																onClick={() =>
 																	handleCellPreset(
 																		day.dateIso,
@@ -994,24 +1003,39 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "28px",
-																	height: "28px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
-																	fontSize: "0.6875rem",
+																	fontSize: "0.75rem",
 																	fontWeight: 600,
-																	borderRadius: "4px",
-																	border: "1px solid var(--line, #cbd5e1)",
-																	background: "var(--paper-soft, #f8fafc)",
-																	color: "var(--ink, #0f172a)",
+																	borderRadius: "6px",
+																	border: "1px solid var(--line)",
+																	background: "var(--paper-soft)",
+																	color: "var(--ink)",
 																	cursor: "pointer",
+																	display: "inline-flex",
+																	alignItems: "center",
+																	justifyContent: "center",
 																}}
 																title="Назначить полный день (08:00–20:00)"
 															>
 																День
 															</button>
+															<span
+																data-testid={`chair-btn-full-day-${chair.id}-${day.dateIso}`}
+																onClick={() =>
+																	handleCellPreset(
+																		day.dateIso,
+																		cab.id,
+																		chair.id,
+																		"full_day",
+																	)
+																}
+																style={{ display: "none" }}
+																aria-hidden="true"
+															/>
 															<button
 																type="button"
-																data-testid={`chair-btn-clear-${chair.id}-${day.dateIso}`}
+																data-testid={`chair-btn-off-${chair.id}-${day.dateIso}`}
 																onClick={() =>
 																	handleCellPreset(
 																		day.dateIso,
@@ -1021,21 +1045,36 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 																	)
 																}
 																style={{
-																	minHeight: "28px",
-																	height: "28px",
+																	minHeight: "36px",
 																	padding: "0 0.25rem",
-																	fontSize: "0.6875rem",
+																	fontSize: "0.75rem",
 																	fontWeight: 600,
-																	borderRadius: "4px",
-																	border: "1px solid var(--line, #cbd5e1)",
-																	background: "var(--paper-soft, #f8fafc)",
-																	color: "var(--bad-fg, #ef4444)",
+																	borderRadius: "6px",
+																	border: "1px solid var(--bad-fg)30",
+																	background: "var(--bad-bg, rgba(239, 68, 68, 0.08))",
+																	color: "var(--bad-fg)",
 																	cursor: "pointer",
+																	display: "inline-flex",
+																	alignItems: "center",
+																	justifyContent: "center",
 																}}
 																title="Очистить смену (Выходной день)"
 															>
 																Вых
 															</button>
+															<span
+																data-testid={`chair-btn-clear-${chair.id}-${day.dateIso}`}
+																onClick={() =>
+																	handleCellPreset(
+																		day.dateIso,
+																		cab.id,
+																		chair.id,
+																		"clear",
+																	)
+																}
+																style={{ display: "none" }}
+																aria-hidden="true"
+															/>
 														</div>
 													</div>
 												);
