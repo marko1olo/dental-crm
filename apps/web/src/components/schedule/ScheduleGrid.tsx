@@ -17,6 +17,8 @@ import {
 	Clock,
 	Copy,
 	Edit2,
+	Eye,
+	EyeOff,
 	FastForward,
 	MessageSquare,
 	Moon,
@@ -263,7 +265,27 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const [isQuickAddDoctorOpen, setIsQuickAddDoctorOpen] = useState(false);
 	const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(props.gridStepMinutes || 60);
 	const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>([]);
+	const [showRevenue, setShowRevenue] = useState<boolean>(() => {
+		if (typeof window === "undefined" || typeof localStorage === "undefined") return false;
+		try {
+			return localStorage.getItem("dente_schedule_show_revenue") === "true";
+		} catch {
+			return false;
+		}
+	});
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	const handleToggleShowRevenue = useCallback(() => {
+		setShowRevenue((prev) => {
+			const next = !prev;
+			if (typeof localStorage !== "undefined") {
+				try {
+					localStorage.setItem("dente_schedule_show_revenue", String(next));
+				} catch {}
+			}
+			return next;
+		});
+	}, []);
 
 	const gridStep = props.gridStepMinutes ?? internalGridStep;
 	const effectiveMaintenanceBlocks = props.chairMaintenanceBlocks ?? internalMaintenanceBlocks;
@@ -1652,9 +1674,17 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						<span className="font-bold">На след. неделю</span>
 					</button>
 					{dailyTally.totalRevenueRub > 0 && (
-						<div className="font-bold font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
-							Выручка дня: {dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽
-						</div>
+						<button
+							type="button"
+							onClick={handleToggleShowRevenue}
+							className="font-bold font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1.5 rounded-xl whitespace-nowrap shrink-0 flex items-center gap-1.5 text-xs cursor-pointer transition-all active:scale-95 shadow-2xs"
+							title={showRevenue ? "Скрыть сумму выручки дня от пациентов (Режим приватности)" : "Показать выручку дня"}
+							data-testid="btn-grid-toggle-revenue-privacy"
+							aria-label="Переключить приватность выручки дня"
+						>
+							{showRevenue ? <EyeOff size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" /> : <Eye size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />}
+							<span>Выручка: {showRevenue ? `${dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽` : "•••••• ₽"}</span>
+						</button>
 					)}
 				</div>
 			</div>
@@ -2940,7 +2970,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																			</span>
 																		</span>
 																		{docObj?.specialties && docObj.specialties.length > 0 && (
-																			<span className="text-[10px] px-1.5 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] shrink-0">
+																			<span
+																				className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 truncate max-w-[120px]"
+																				title={docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
+																			>
 																				{docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
 																			</span>
 																		)}
@@ -3125,7 +3158,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																				.join(" ") || docObj.fullName}
 																		</span>
 																		{docObj.specialties && docObj.specialties.length > 0 && (
-																			<span className="text-xs px-1 py-0.2 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
+																			<span className="text-xs px-1 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
 																				{docObj.specialties.map((s: string) => specialtyLabels[s as DentalSpecialty] || s).join(", ")}
 																			</span>
 																		)}

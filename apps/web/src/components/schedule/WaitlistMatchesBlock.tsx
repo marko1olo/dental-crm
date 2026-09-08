@@ -443,17 +443,23 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 								>
 									<button
 										type="button"
-										disabled={Boolean(bookingId) || match.alreadyBooked}
+										disabled={Boolean(bookingId)}
 										onClick={() => void handleTakeSlot(match)}
 										className="min-h-[44px] px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] hover:opacity-90 active:scale-95 text-white font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs disabled:opacity-50"
 										data-testid={`waitlist-match-take-slot-${match.entryId}`}
-										title={`Занять это окно пациентом ${match.patientName}`}
+										title={
+											match.alreadyBooked
+												? `У пациента есть запись. Перенести прием на это освободившееся окно`
+												: `Занять это окно пациентом ${match.patientName}`
+										}
 									>
 										<Zap size={13} className="fill-current text-amber-300" />
 										<span>
 											{bookingId === match.entryId
 												? "Записываем…"
-												: "Занять это окно"}
+												: match.alreadyBooked
+													? "Перенести на это окно"
+													: "Занять это окно"}
 										</span>
 									</button>
 

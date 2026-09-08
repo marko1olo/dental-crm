@@ -862,7 +862,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 								)}
 								{isSelected && (
 									<span
-										className="px-1 py-0.2 rounded text-[8px] font-extrabold bg-[var(--teal)] text-white uppercase tracking-wider"
+										className="px-1 py-0.5 rounded text-[8px] font-extrabold bg-[var(--teal)] text-white uppercase tracking-wider"
 										data-testid={`chair-view-badge-selected-${chair.id}`}
 									>
 										Выбрано
