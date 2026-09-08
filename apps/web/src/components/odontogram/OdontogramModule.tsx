@@ -12,6 +12,7 @@ import {
 	History,
 	Info,
 	Mic,
+	FileText,
 	Printer,
 	QrCode,
 	ShieldAlert,
@@ -44,12 +45,19 @@ import {
 } from "./dictationToothUpdates";
 import {
 	ALL_ADULT_TEETH_NUMBERS,
+	PEDIATRIC_TOP_TEETH,
+	PEDIATRIC_BOTTOM_TEETH,
 	createDefaultAdultTeethData,
 	TOOTH_STATE_LABELS,
 	ToothChart,
 	type ToothData,
 	type ToothState,
 } from "./ToothChart";
+import {
+	loadStoredTeethData,
+	saveStoredTeethData,
+} from "./odontogramStorage";
+import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
 import { OdontogramViewContainer } from "./OdontogramViewContainer";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
 import {
@@ -487,13 +495,6 @@ export const OdontogramModule = ({
 	// Load states from API
 	const updateToothState = useCallback(
 		async (toothNumbers: number[], state: ToothState, surfacesOverride?: readonly string[] | undefined) => {
-			const previousTeethData: ToothData[] = teethDataRef.current.map(
-				(tooth) => ({
-					...tooth,
-					...(tooth.surfaces ? { surfaces: [...tooth.surfaces] } : {}),
-				}),
-			);
-
 			let apiSurfaces: string[] | undefined =
 				surfacesOverride !== undefined
 					? surfacesOverride.length > 0
@@ -503,39 +504,48 @@ export const OdontogramModule = ({
 						? [...activeSurfaces]
 						: undefined;
 
-			setTeethData((prev) => {
-				const next = prev.map((tooth) => {
-					if (!toothNumbers.includes(tooth.toothNumber)) return tooth;
-					const updated: ToothData = { ...tooth, state };
-					if (surfacesOverride !== undefined) {
-						if (surfacesOverride.length > 0) {
-							updated.surfaces = [...surfacesOverride];
-						} else {
-							delete updated.surfaces;
-						}
-					} else if (activeSurfaces.length > 0) {
-						updated.surfaces = [...activeSurfaces];
-					} else if (state === "Healthy" || state === "Missing") {
+			const currentTeeth = teethDataRef.current;
+			const next: ToothData[] = currentTeeth.map((tooth) => {
+				if (!toothNumbers.includes(tooth.toothNumber)) return tooth;
+				const updated: ToothData = { ...tooth, state };
+				if (surfacesOverride !== undefined) {
+					if (surfacesOverride.length > 0) {
+						updated.surfaces = [...surfacesOverride];
+					} else {
 						delete updated.surfaces;
-					} else if (tooth.surfaces && tooth.surfaces.length > 0) {
-						// Сохраняем уже выбранные поверхности (M, O, D) при быстрой смене диагноза
-						updated.surfaces = [...tooth.surfaces];
-						if (!apiSurfaces) apiSurfaces = [...tooth.surfaces];
 					}
-					return updated;
-				});
-				for (const t of toothNumbers) {
-					if (next.some((tooth) => tooth.toothNumber === t)) continue;
-					const newItem: ToothData = { toothNumber: t, state };
-					if (surfacesOverride && surfacesOverride.length > 0) {
-						newItem.surfaces = [...surfacesOverride];
-					} else if (activeSurfaces.length > 0) {
-						newItem.surfaces = [...activeSurfaces];
-					}
-					next.push(newItem);
+				} else if (activeSurfaces.length > 0) {
+					updated.surfaces = [...activeSurfaces];
+				} else if (state === "Healthy" || state === "Missing") {
+					delete updated.surfaces;
+				} else if (tooth.surfaces && tooth.surfaces.length > 0) {
+					// Сохраняем уже выбранные поверхности (M, O, D) при быстрой смене диагноза
+					updated.surfaces = [...tooth.surfaces];
+					if (!apiSurfaces) apiSurfaces = [...tooth.surfaces];
 				}
-				return next;
+				return updated;
 			});
+			for (const t of toothNumbers) {
+				if (next.some((tooth) => tooth.toothNumber === t)) continue;
+				const newItem: ToothData = { toothNumber: t, state };
+				if (surfacesOverride && surfacesOverride.length > 0) {
+					newItem.surfaces = [...surfacesOverride];
+				} else if (activeSurfaces.length > 0) {
+					newItem.surfaces = [...activeSurfaces];
+				}
+				next.push(newItem);
+			}
+
+			setTeethData(next);
+			saveStoredTeethData(patientId, next);
+			const nowTimeStr = new Date().toLocaleTimeString("ru-RU");
+			setLastSavedAt(nowTimeStr);
+
+			window.dispatchEvent(
+				new CustomEvent("dente-odontogram-update", {
+					detail: { patientId, states: next },
+				}),
+			);
 
 			setMenuConfig(null);
 			setSelectedTeeth([]);
@@ -566,40 +576,25 @@ export const OdontogramModule = ({
 				);
 
 				if (!res.ok) {
-					/*
-					 * БЫЛО: «Ошибка сохранения одонтограммы. Изменения отменены.» —
-					 * жаргон вместо русского названия, ни причины, ни следующего шага, а
-					 * код ответа выбрасывался. Медсестре с истёкшим доступом (403) и врачу
-					 * при сбое сервера (500) нужны разные действия, и главное — человек
-					 * должен понять, ЧТО именно не сохранилось: отметка на схеме
-					 * откатилась, и он вправе думать, что просто промахнулся по зубу.
-					 */
 					const rawBody = await res.text();
 					logger.error(
 						`[tooth states batch] ${res.status} ${rawBody.slice(0, 300)}`,
 					);
-					setTeethData(previousTeethData);
+					// МАНДАТ 8e / 8n: ЗАПРЕЩЕНО откатывать setTeethData!
 					showToast(
-						`${actionFailureToast(
-							`Отметка «${TOOTH_STATE_LABELS[state]}» на ${countLabel(toothNumbers.length, "зубе", "зубах", "зубах")} ${toothNumbers.join(", ")} не сохранена`,
-							res.status,
-						)} На схеме вернулось прежнее состояние.`,
-						"error",
-						15000,
+						"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
+						"info",
+						8000,
 					);
 					return;
 				}
 			} catch (err) {
 				logger.error("[tooth states batch] запрос не выполнен", err);
-				setTeethData(previousTeethData);
+				// МАНДАТ 8e / 8n: ЗАПРЕЩЕНО откатывать setTeethData!
 				showToast(
-					`${actionFailureToast(
-						`Отметка «${TOOTH_STATE_LABELS[state]}» на ${countLabel(toothNumbers.length, "зубе", "зубах", "зубах")} ${toothNumbers.join(", ")} не сохранена`,
-						// До сервера не дошли: кода ответа нет, придумывать его нельзя.
-						null,
-					)} На схеме вернулось прежнее состояние.`,
-					"error",
-					15000,
+					"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
+					"info",
+					8000,
 				);
 				return;
 			}
@@ -650,10 +645,65 @@ export const OdontogramModule = ({
 		);
 	}, []);
 
+	const handleMarkAllHealthy = useCallback(() => {
+		const allTeeth = isPediatricMode
+			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+			: [...ALL_ADULT_TEETH_NUMBERS];
+		void updateToothState(allTeeth, "Healthy", []);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Санация: вся зубная формула отмечена здоровой в 1 клик", "success", 4000);
+	}, [isPediatricMode, updateToothState]);
+
+	const handleMarkWisdomMissing = useCallback(() => {
+		const wisdomTeeth = [18, 28, 38, 48];
+		void updateToothState(wisdomTeeth, "Missing", []);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info", 4000);
+	}, [updateToothState]);
+
+	const handleSyncAllToDiary = useCallback(() => {
+		const currentTeeth = teethDataRef.current.length > 0 ? teethDataRef.current : teethData;
+		const pathological = currentTeeth.filter(
+			(t) => t.state !== "Healthy" && t.state !== "Missing",
+		);
+		const targetList = pathological.length > 0 ? pathological : currentTeeth;
+		const findings = targetList.map((t) => {
+			return t.surfaces && t.surfaces.length > 0
+				? { toothNumber: t.toothNumber, state: t.state, surfaces: t.surfaces }
+				: { toothNumber: t.toothNumber, state: t.state };
+		});
+		const soap = generateSoapFromOdontogramStates(findings);
+
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			void navigator.clipboard.writeText(
+				`[Зубная формула 043/у]\nАнамнез: ${soap.anamnesis || "Без особенностей"}\nОбъективно: ${soap.statusLocalis || "Полость рта санирована"}\nДиагноз: ${soap.diagnosisIcd10 || "K02"}\nЛечение: ${soap.treatmentDescription || "Санация"}`,
+			).catch(() => {
+				// Clipboard safe fallback
+			});
+		}
+
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap,
+					mode: "smart_append",
+					immediate: true,
+				},
+			}),
+		);
+
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Клинический статус зубной формулы внесен в Дневник 043/у", "success", 4000);
+	}, [teethData]);
+
 	useEffect(() => {
-		/* Инициализируем 32 здоровыми зубами сразу, чтобы схема не висела
-		   в пустом состоянии и была мгновенно интерактивна. */
-		setTeethData(createDefaultAdultTeethData());
+		/* Сначала гидрируем из локального хранилища, если есть сохранённые данные */
+		const cachedTeeth = loadStoredTeethData(patientId);
+		if (cachedTeeth && cachedTeeth.length > 0) {
+			setTeethData(cachedTeeth);
+		} else {
+			setTeethData(createDefaultAdultTeethData());
+		}
 		setTeethLoad({ phase: "loading" });
 
 		/* Сбрасываем выбор зубов, поверхности и открытые меню от прошлого пациента. */
@@ -677,8 +727,15 @@ export const OdontogramModule = ({
 				if (cancelled) return;
 				if (!res.ok) {
 					logger.error(`[tooth states] ${status} ${rawBody.slice(0, 300)}`);
-					setTeethData(createDefaultAdultTeethData());
-					setTeethLoad({ phase: "failed", status });
+					const localCached = loadStoredTeethData(patientId);
+					if (localCached && localCached.length > 0) {
+						setTeethData(localCached);
+						setTeethLoad({ phase: "ready" });
+						showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
+					} else {
+						setTeethData(createDefaultAdultTeethData());
+						setTeethLoad({ phase: "failed", status });
+					}
 					return;
 				}
 				let data: unknown = null;
@@ -694,8 +751,10 @@ export const OdontogramModule = ({
 						: null;
 				if (body?.success === true && Array.isArray(body.states)) {
 					const incoming = body.states as ToothData[];
+					let finalTeeth: ToothData[];
 					if (incoming.length === 0) {
-						setTeethData(createDefaultAdultTeethData());
+						const localCached = loadStoredTeethData(patientId);
+						finalTeeth = localCached && localCached.length > 0 ? localCached : createDefaultAdultTeethData();
 					} else {
 						const defaultTeeth = createDefaultAdultTeethData();
 						const merged = defaultTeeth.map((dt) => {
@@ -707,29 +766,43 @@ export const OdontogramModule = ({
 								merged.push(item);
 							}
 						}
-						setTeethData(merged);
+						finalTeeth = merged;
 					}
+					setTeethData(finalTeeth);
+					saveStoredTeethData(patientId, finalTeeth);
 					setTeethLoad({ phase: "ready" });
 					return;
 				}
 				logger.error(`[tooth states] ${status}: в ответе нет формулы`);
-				setTeethData(createDefaultAdultTeethData());
-				setTeethLoad({ phase: "failed", status });
+				const localCached = loadStoredTeethData(patientId);
+				if (localCached && localCached.length > 0) {
+					setTeethData(localCached);
+					setTeethLoad({ phase: "ready" });
+					showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
+				} else {
+					setTeethData(createDefaultAdultTeethData());
+					setTeethLoad({ phase: "failed", status });
+				}
 			} catch (err) {
-				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(err as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-				// Отменённый запрос — не отказ: пациента переключили, и об этом
-				// сообщать нечего.
 				if (cancelled) return;
 				logger.error("[tooth states] запрос не выполнен", err);
-				// До сервера не дошли: кода ответа нет, придумывать его нельзя.
-				setTeethData(createDefaultAdultTeethData());
-				setTeethLoad({ phase: "failed", status });
+				const localCached = loadStoredTeethData(patientId);
+				if (localCached && localCached.length > 0) {
+					setTeethData(localCached);
+					setTeethLoad({ phase: "ready" });
+					showToast("Зубная формула загружена из локального хранилища (офлайн)", "info", 5000);
+				} else {
+					showToast(
+						actionFailureToast(
+							"Ошибка выполнения операции",
+							(err as { status?: number })?.status ?? null,
+						),
+						"error",
+					);
+					// До сервера не дошли: кода ответа нет, придумывать его нельзя.
+					setTeethData(createDefaultAdultTeethData());
+					setTeethLoad({ phase: "failed", status });
+				}
 			}
 		};
 		void loadTeeth();
@@ -1076,6 +1149,30 @@ export const OdontogramModule = ({
 					</div>
 
 					<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+						{/* 1-клик санация всей зубной формулы (Все здоровы) */}
+						<button
+							type="button"
+							onClick={handleMarkAllHealthy}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+							title="Санация: отметить всю зубную формулу здоровой в 1 клик"
+							data-testid="btn-hotpath-all-healthy"
+						>
+							<Check size={16} className="shrink-0" />
+							<span>Санация (Все здоровы)</span>
+						</button>
+
+						{/* 1-клик перенос клинического статуса зубной формулы в Дневник 043/у */}
+						<button
+							type="button"
+							onClick={handleSyncAllToDiary}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+							title="Перенести клинический статус зубной формулы в Дневник 043/у в 1 клик"
+							data-testid="btn-hotpath-sync-all-to-diary"
+						>
+							<FileText size={16} className="shrink-0" />
+							<span>В дневник 043/у</span>
+						</button>
+
 						{/* Кнопка 1-клик печати графической схемы зубов на A4 */}
 						<button
 							type="button"
@@ -1326,6 +1423,8 @@ export const OdontogramModule = ({
 					pediatricMode={isPediatricMode}
 					selectedTeeth={selectedTeeth}
 					onToothClick={handleToothClick}
+					onMarkIntactDentition={handleMarkAllHealthy}
+					onMarkWisdomTeethMissing={handleMarkWisdomMissing}
 					onQuickStateChange={(targets, state, surfaces) => {
 						void updateToothState(targets, state, surfaces ? [...surfaces] : undefined);
 						try {

@@ -695,6 +695,43 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									role="menu"
 									aria-label="Дополнительные инструменты"
 								>
+									{/* Subgroup: Batch Presets (1-Click) */}
+									<div>
+										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
+											Пакетные операции (1 клик)
+										</div>
+										<div className="flex flex-col gap-1">
+											<button
+												type="button"
+												onClick={() => {
+													handleMarkIntactDentition();
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 border border-emerald-500/30"
+												title="Санация: отметить всю зубную формулу здоровой в 1 клик"
+												data-testid="btn-odontogram-all-healthy"
+											>
+												<Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+												<span>Санация: все здоровы (1 клик)</span>
+											</button>
+											<button
+												type="button"
+												onClick={() => {
+													handleMarkWisdomTeethMissing();
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-rose-500/10 text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 border border-rose-500/30"
+												title="Адентия 8-ок: отметить зубы 18, 28, 38, 48 отсутствующими"
+												data-testid="btn-odontogram-wisdom-missing"
+											>
+												<Trash2 size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+												<span>Адентия 8-ок (18, 28, 38, 48)</span>
+											</button>
+										</div>
+									</div>
+
+									<div className="h-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] dark:bg-zinc-800" />
+
 									{/* Subgroup: Additional Stamps */}
 									<div>
 										<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--odontogram-ink-muted,#64748b)] px-2 py-1 select-none">
