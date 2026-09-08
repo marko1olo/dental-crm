@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-08 / WAVE 40): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 149 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 212 ФИЧ: 63 КАНОНИЧЕСКИЕ + 149 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-08 / WAVE 41): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 151 КИЛЛЕР-ФИЧА АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 214 ФИЧ: 63 КАНОНИЧЕСКИЕ + 151 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2189,11 +2189,34 @@
 - **Файлы**: `apps/web/src/components/telephony/TelephonyFloatingWidget.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/InvoiceGenerationModal.tsx`, `apps/web/src/components/finance/payroll/__tests__/soloDoctorPayrollAutonomy.test.ts`.
 - **Тесты**: `apps/web/src/components/finance/__tests__/invoiceGenerationAutonomy.test.tsx` (4 теста), `apps/web/src/components/finance/payroll/__tests__/soloDoctorPayrollAutonomy.test.ts` (9 тестов), `cashShiftAutonomyAndFiscal54Fz.test.tsx` (12 тестов) — 25/25 pass, коммиты `c7379e132`, `57a5c0b4e`, `c653a88ee`.
 
+### 4.84. Быстрое inline-создание пациента, автозаполнение врача/кресла в AppointmentModal и интерактивные бейджи кресел в ChairScheduleView (StomX / DentalPRO parity / Фича 213)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Автозаполнение дежурного врача и кресла в модалке записи*: в `AppointmentModal.tsx` внедрена функция автоопределения дежурного врача по активной смене (`resolveChairDutyDoctor`), отображается информационный бейдж дежурного врача (`duty-doctor-badge`) с часами смены и неблокирующее предупреждение об оверрайде дежурного врача (`duty-doctor-override-note`) без остановки процесса записи (Мандат 8e);
+  2. *Интеграция быстрого добавления пациента*: встроен диалог быстрого создания карты пациента непосредственно из модалки записи на приём без перехода в картотеку и потери контекста;
+  3. *1-клик быстрый выбор длительности приёма*: добавлены кнопки ходовых интервалов `appointment-quick-durations` (15, 30, 45, 60, 90, 120 минут) для моментальной настройки слота;
+  4. *Синхронизация с датой наряда ЗТЛ*: привязка даты визита к расчетной готовности зуботехнической работы («На дату ЗТЛ»);
+  5. *Печать бланка договора и автономия соло-врача*: быстрая печать договора со строками «_______» (`appointment-modal-print-blank-contract-btn`) без 403-ошибок; fallback на дефолтное кресло соло-врача (`DEFAULT_SOLO_CHAIR`, Мандат 8n);
+  6. *Интерактивные бейджи установок в ChairScheduleView*: в `ChairScheduleView.tsx` реализована верхняя палитра кресел `chair-schedule-palette-strip` с интерактивными бейджами `chair-view-badge-${chair.id}` и акцентными полосками `chair-view-accent-strip-${chair.id}`, поддерживающими 14 аутентичных двухцветных палитр StomX; тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/ScheduleAppointmentModal.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx` (тесты 19..22), `apps/web/src/components/schedule/__tests__/scheduleWave40StomxParity.test.tsx` (14/14 pass), `apps/web/src/components/schedule/__tests__/scheduleStomxParityComprehensive.test.ts` — коммиты `c653a88ee`, `7fd27d63b`.
+
+### 4.85. Автономия клинического оверрайда врача в OrthopedicsChairsidePanel и 1-клик пресеты клинических задач у кресла в ClinicalTasksPanel (Мандаты 8e, 8k, 8n / Фича 214)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Автономия клинического оверрайда врача*: в `OrthopedicsChairsidePanel.tsx` реализован тумблер оверрайда `doctor-clinical-override-toggle` (`createDoctorClinicalOverride`), позволяющий врачу применять протоколы при авансе < 50% или по неотложным клиническим показаниям без блокировок со стороны начмеда или администрации (Мандаты 8e п. 7, 8n);
+  2. *Канонические ортопедические протоколы (Приказ 804н)*: сняты любые барьеры применения 4 регламентных протоколов ортопедии (вкладки/виниры, одиночные коронки, мостовидные протезы, съёмное протезирование) со сквозным экспортом в Карту 043/у, смету визита и Этап III;
+  3. *1-клик стандарты ЗТЛ и расцветки VITA*: добавлены пресеты нарядов лаборатории (`STANDARD_ZTL_ORDER_PRESETS`: цирконий ZrO2, e.max, металлокерамика МК, бюгель CoCr) и крупные сенсорные палитры расцветок VITA Classical и VITA 3D-Master ($\ge 48\times 48\text{px}$);
+  4. *1-клик прямая отправка наряда в лабораторию*: кнопка `direct-send-lab-order-btn` для моментальной отправки без бюрократических согласований;
+  5. *1-клик пресеты клинических задач у кресла в ClinicalTasksPanel*: в `ClinicalTasksPanel.tsx` внедрены 1-клик кнопки закрытия этапов лечения (`PHASE_OPTIONS`, `completePhase`: терапия -> ортопедия, хирургия -> ортопедия) и кастомные типы задач (`customTaskTypes`) без блокировки врача, закрытия визита или кассы 54-ФЗ.
+- **Файлы**: `apps/web/src/components/orthopedics/OrthopedicsChairsidePanel.tsx`, `apps/web/src/components/orthopedics/orthopedicProtocols.ts`, `apps/web/src/ClinicalTasksPanel.tsx`, `apps/web/src/VisitView.tsx`, `apps/api/src/routes/clinical.ts`.
+- **Тесты**: `apps/web/src/components/orthopedics/__tests__/orthopedicProtocols.test.ts` (9/9 pass), `apps/web/src/components/orthopedics/__tests__/orthopedicsAutonomyWave41.test.tsx` (pass), `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts` (тест 8.7 pass), `apps/api/src/tests/wave10PerimeterAndMedicalSecrecyPenetration.test.ts` — коммиты `17014184e`, `bdcb9d1be`, `543e2f975`.
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 149 дополнительных системных аддендум-фич клинической автономии (Wave 15..40, фичи 64..212) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 151 дополнительная системная аддендум-фича клинической автономии (Wave 15..41, фичи 64..214) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
