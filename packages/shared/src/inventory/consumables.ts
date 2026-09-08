@@ -197,6 +197,7 @@ export const visitStockDeductionRequestSchema = z.object({
 	drugName: z.string().optional(),
 	paperJournalAcknowledged: z.boolean().default(true).optional(),
 	allowOverdraft: z.boolean().default(true).optional(),
+	allowSoftOverdraft: z.boolean().default(true).optional(),
 });
 
 export type VisitStockDeductionRequest = z.infer<
@@ -214,6 +215,8 @@ export const toothTreatmentStockDeductionRequestSchema = z.object({
 		.enum(["auto_deduct", "manual_writeoff"])
 		.default("auto_deduct")
 		.optional(),
+	allowOverdraft: z.boolean().default(true).optional(),
+	allowSoftOverdraft: z.boolean().default(true).optional(),
 });
 
 export type ToothTreatmentStockDeductionRequest = z.infer<

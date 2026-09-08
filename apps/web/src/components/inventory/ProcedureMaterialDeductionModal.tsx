@@ -660,13 +660,14 @@ export function ProcedureMaterialDeductionModal({
 						{/* Экспресс-пресеты медсестры и врача (Мандат 8e п. 10, Мандат 8k, Мандат 8n) */}
 						<button
 							type="button"
-							className={`inventory-package-btn ${
+							className={`inventory-package-btn btn-writeoff-anesthesia-packet ${
 								selectedMapCodes.includes("A16.07.004") && !selectedMapCodes.includes("A16.07.002.001") && !selectedMapCodes.includes("A16.07.051")
 									? "active"
 									: ""
 							}`}
 							data-testid="preset-btn-anesthesia"
 							data-testid-alt="btn-dispense-standard-anesthesia-kit"
+							data-testid-package="btn-writeoff-anesthesia-packet"
 							onClick={() => handleApplyPackage(["SANPIN_PPE", "A16.07.004"])}
 							title="Стандартный набор: анестезия 1.7 мл + карпульная игла + валики (Мандат 8e п. 10, 8k)"
 						>
@@ -696,10 +697,11 @@ export function ProcedureMaterialDeductionModal({
 
 						<button
 							type="button"
-							className={`inventory-package-btn ${
+							className={`inventory-package-btn btn-writeoff-hygiene-packet ${
 								selectedMapCodes.includes("A16.07.051") ? "active" : ""
 							}`}
 							data-testid="preset-btn-hygiene"
+							data-testid-package="btn-writeoff-hygiene-packet"
 							onClick={() =>
 								handleApplyPackage(["SANPIN_PPE", "SANPIN_KRAFT", "A16.07.051"])
 							}

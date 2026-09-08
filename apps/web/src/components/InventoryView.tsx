@@ -10,6 +10,7 @@ import {
 	Plus,
 	Search,
 	Settings,
+	ShieldCheck,
 	Sparkles,
 	Syringe,
 	Trash2,
@@ -28,6 +29,7 @@ import { WarehouseTransferModal } from "./inventory/transfers/WarehouseTransferM
 import { ClinicalWriteoffModal } from "./inventory/writeoff/ClinicalWriteoffModal";
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal";
 import { MdlpDisposalQueueModal } from "./inventory/mdlp/index.js";
+import { WarehousePackageWriteOffBar } from "./warehouse/WarehousePackageWriteOffBar";
 
 /**
  * Как показать срок годности расходника.
@@ -480,6 +482,16 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 
 			{activeSubTab === "inventory" ? (
 				<>
+					{/* 1-CLICK CLINICAL PACKAGES WRITE-OFF BAR (MANDATES 8e, 8k, 8n) */}
+					<div style={{ marginBottom: 16 }}>
+						<WarehousePackageWriteOffBar
+							warehouseItems={items}
+							organizationId={organizationId}
+							allowSoftOverdraft={true}
+							onWriteOffComplete={() => fetchItems()}
+						/>
+					</div>
+
 					{/* CONTROLS */}
 					<div
 						style={{
@@ -875,7 +887,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									title="1-клик списание набора визита «Терапия»: карпула анестетика + игла + перчатки + слюноотсос + валики + нагрудник"
 								>
 									<Sparkles size={16} />
-									<span>{isWritingOffVisitBundle ? "Списание..." : "⚡ Визит: Терапия"}</span>
+									<span>{isWritingOffVisitBundle ? "Списание..." : "Визит: Терапия"}</span>
 								</button>
 								<button
 									type="button"
@@ -883,6 +895,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									disabled={isWritingOffVisitBundle}
 									onClick={() => handleQuickWriteoffVisitBundle("surgery")}
 									style={{
+										display: "inline-flex",
+										alignItems: "center",
+										gap: 6,
 										padding: "8px 12px",
 										minHeight: "44px",
 										fontWeight: 700,
@@ -896,7 +911,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									}}
 									title="1-клик списание набора визита «Хирургия»: карпула анестетика + игла + скальпель + шовный материал + губка"
 								>
-									⚡ Визит: Хирургия
+									<ShieldCheck size={15} />
+									<span>Визит: Хирургия</span>
 								</button>
 							</div>
 
