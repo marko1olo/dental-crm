@@ -22,9 +22,11 @@ import {
 	RotateCcw,
 	Save,
 	Sparkles,
+	UserPlus,
 	Users,
 	X,
 } from "lucide-react";
+import QuickAddDoctorModal from "./QuickAddDoctorModal";
 import {
 	DoctorShiftRosterModal,
 	type DoctorShiftRosterModalProps,
@@ -48,6 +50,7 @@ import {
 import {
 	DEFAULT_CLINIC_STAFF,
 	CLINIC_CABINETS_CATALOG,
+	type MedicalStaffRole,
 } from "./roster/doctorShiftRosterPresets";
 import {
 	generateWeeklyScheduleForStaffAndCabinets,
@@ -60,6 +63,10 @@ export interface ChairRosterModalProps extends DoctorShiftRosterModalProps {
 	 * Focus on a specific chair ID when opening the roster modal
 	 */
 	focusedChairId?: string | null;
+	/**
+	 * Optional callback when doctor is quickly added
+	 */
+	onAddDoctor?: (doctor: any) => void;
 }
 
 export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
@@ -77,6 +84,12 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 
 	// View mode: 'matrix' (compact StomX chair-by-week grid) or 'studio' (full DoctorShiftRosterModal)
 	const [viewMode, setViewMode] = useState<"matrix" | "studio">("matrix");
+	const [isQuickAddDoctorOpen, setIsQuickAddDoctorOpen] = useState(false);
+	const [localStaffList, setLocalStaffList] = useState<StaffMember[]>(staffList);
+
+	useEffect(() => {
+		setLocalStaffList(staffList);
+	}, [staffList]);
 
 	// Active week Monday
 	const defaultMonday = useMemo(
@@ -97,7 +110,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 		if (Array.isArray(initialShifts) && initialShifts.length === 0) return [];
 		return generateWeeklyScheduleForStaffAndCabinets(
 			defaultMonday,
-			staffList,
+			localStaffList,
 			cabinets,
 			"five_day",
 		);
@@ -117,10 +130,10 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 
 	// Selected active doctor per chair for 1-tap shift assignment
 	const doctors = useMemo(
-		() => staffList.filter((s) => s.isDoctor),
-		[staffList],
+		() => localStaffList.filter((s) => s.isDoctor),
+		[localStaffList],
 	);
-	const fallbackDoctor = doctors[0] || staffList[0] || DEFAULT_CLINIC_STAFF[0]!;
+	const fallbackDoctor = doctors[0] || localStaffList[0] || DEFAULT_CLINIC_STAFF[0]!;
 
 	const [selectedDoctorByChair, setSelectedDoctorByChair] = useState<
 		Record<string, string>
@@ -129,7 +142,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 	const getActiveDoctorForChair = (chairId: string): StaffMember => {
 		const docId = selectedDoctorByChair[chairId];
 		if (docId) {
-			const found = staffList.find((s) => s.id === docId);
+			const found = localStaffList.find((s) => s.id === docId);
 			if (found) return found;
 		}
 		const pref = doctors.find((d) => d.preferredChairId === chairId);
@@ -257,7 +270,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 			chairId,
 			presetType,
 			doctorId: activeDoc.id,
-			staffList,
+			staffList: localStaffList,
 			cabinets,
 		});
 		setShifts(nextShifts);
@@ -289,7 +302,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 			doctorId: activeDoc.id,
 			chairId,
 			cabinetId,
-			staffList,
+			staffList: localStaffList,
 			cabinets,
 		});
 		setShifts(nextShifts);
@@ -310,7 +323,7 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 		if (shiftsToSave.length === 0) {
 			shiftsToSave = generateWeeklyScheduleForStaffAndCabinets(
 				weekStartDateIso,
-				staffList,
+				localStaffList,
 				cabinets,
 				"five_day",
 			);
@@ -332,8 +345,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 
 	// Run conflict detection
 	const conflicts = useMemo(
-		() => detectRosterConflicts(shifts, staffList),
-		[shifts, staffList],
+		() => detectRosterConflicts(shifts, localStaffList),
+		[shifts, localStaffList],
 	);
 
 	if (!isOpen) return null;
@@ -382,6 +395,17 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 							)}
 						</div>
 						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+							<button
+								type="button"
+								data-testid="btn-roster-add-doctor"
+								className="roster-btn roster-btn-secondary"
+								onClick={() => setIsQuickAddDoctorOpen(true)}
+								style={{ minHeight: "44px" }}
+								title="Быстро добавить врача в график (+ Врач)"
+							>
+								<UserPlus size={16} />
+								<span>+ Врач</span>
+							</button>
 							<button
 								type="button"
 								data-testid="chair-view-mode-toggle"
@@ -1051,6 +1075,48 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 					</div>
 				</div>
 			</div>
+
+			<QuickAddDoctorModal
+				isOpen={isQuickAddDoctorOpen}
+				onClose={() => setIsQuickAddDoctorOpen(false)}
+				chairs={cabinets.map((c) => ({
+					id: c.id,
+					name: c.name,
+					room: c.name,
+				}))}
+				onDoctorAdded={(newDoc) => {
+					const doctorRole: MedicalStaffRole =
+						newDoc.specialty === "periodontist"
+							? "therapist"
+							: (newDoc.specialty as MedicalStaffRole);
+					const docId = newDoc.id || `doc-${Date.now()}`;
+					const newStaffMember: StaffMember = {
+						id: docId,
+						fullName: newDoc.fullName || newDoc.name || "Врач",
+						shortName: newDoc.shortName,
+						role: doctorRole,
+						tabNumber: `Т-${Math.floor(100 + Math.random() * 900)}`,
+						isDoctor: true,
+						isAssistant: false,
+						weeklyHourLimit: 40,
+						avatarColor: newDoc.color,
+						...(newDoc.preferredChairId ? { preferredChairId: newDoc.preferredChairId } : {}),
+					};
+					setLocalStaffList((prev) => [...prev, newStaffMember]);
+					if (newDoc.preferredChairId) {
+						const targetChairId = newDoc.preferredChairId;
+						setSelectedDoctorByChair((prev) => ({
+							...prev,
+							[targetChairId]: docId,
+						}));
+					}
+					props.onAddDoctor?.(newDoc);
+					setNotification({
+						type: "success",
+						message: `Врач ${newDoc.shortName} добавлен в график`,
+					});
+				}}
+			/>
 		</div>
 	);
 };

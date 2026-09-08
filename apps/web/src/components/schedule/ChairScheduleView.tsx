@@ -18,6 +18,8 @@ import {
 	Zap,
 	CalendarRange,
 	Layers,
+	Pin,
+	UserPlus,
 } from "lucide-react";
 import {
 	getMondayOfWeekIso,
@@ -41,6 +43,10 @@ import {
 	QuickAddChairModal,
 	type QuickAddChairData,
 } from "./QuickAddChairModal";
+import {
+	QuickAddDoctorModal,
+	type QuickAddDoctorData,
+} from "./QuickAddDoctorModal";
 import {
 	type QuickBookingSlotInfo,
 	resolveChairDutyDoctor,
@@ -72,6 +78,7 @@ export interface ChairScheduleViewProps {
 		  ) => void)
 		| undefined;
 	onAddChair?: (chairData: QuickAddChairData) => Promise<void> | void;
+	onAddDoctor?: (doctorData: QuickAddDoctorData) => Promise<void> | void;
 	onOpenRosterModal?: () => void;
 	onSelectChair?: ((chairId: string | null) => void) | undefined;
 }
@@ -110,10 +117,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	chairDoctorAssignments,
 	onAssignChairDoctor,
 	onAddChair,
+	onAddDoctor,
 	onOpenRosterModal,
 	onSelectChair,
 }) => {
 	const [isAddChairOpen, setIsAddChairOpen] = useState(false);
+	const [isAddDoctorOpen, setIsAddDoctorOpen] = useState(false);
 	const [editingChair, setEditingChair] = useState<QuickAddChairData | null>(null);
 	const [internalSelectedChairId, setInternalSelectedChairId] = useState<string | null>(
 		selectedChairId ?? null,
@@ -569,6 +578,91 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 
 		showToast(`Все смены кресел на ${dateKey} очищены`, "info");
 	}, [dateKey, onAssignChairDoctor, chairs]);
+
+	const handleApplyDoctorPreferredChairs = useCallback(() => {
+		const targetChairs = (chairs.length > 0 ? chairs : DEFAULT_CLINIC_CHAIRS).filter(
+			(c) => c.active !== false,
+		);
+
+		let storedPreferredMap: Record<string, string> = {};
+		let storedChairDefaultMap: Record<string, string> = {};
+		if (typeof window !== "undefined") {
+			try {
+				storedPreferredMap = JSON.parse(
+					localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
+				);
+			} catch {}
+			try {
+				storedChairDefaultMap = JSON.parse(
+					localStorage.getItem("dente_chair_default_doctors") || "{}",
+				);
+			} catch {}
+		}
+
+		const todayAssignments: Record<string, ChairDoctorShiftAssignment> = {};
+		if (typeof window !== "undefined" && dateKey) {
+			try {
+				const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
+				if (raw) {
+					Object.assign(todayAssignments, JSON.parse(raw));
+				}
+			} catch {}
+		}
+
+		for (const chair of targetChairs) {
+			const boundDoc =
+				doctors.find((d) => {
+					if ((d as any).preferredChairId === chair.id) return true;
+					if (storedPreferredMap[d.id] === chair.id) return true;
+					if ((chair as any).defaultDoctorId === d.id) return true;
+					if (storedChairDefaultMap[chair.id] === d.id) return true;
+					return false;
+				}) ||
+				(dashboard?.clinicSettings?.staff ?? []).find((s) => {
+					if ((s as any).preferredChairId === chair.id) return true;
+					if (storedPreferredMap[s.id] === chair.id) return true;
+					if ((chair as any).defaultDoctorId === s.id) return true;
+					if (storedChairDefaultMap[chair.id] === s.id) return true;
+					return false;
+				});
+
+			if (boundDoc) {
+				const assignment: ChairDoctorShiftAssignment = {
+					chairId: chair.id,
+					chairName: chair.name,
+					doctorId: boundDoc.id,
+					doctorName: boundDoc.fullName,
+					doctorSpecialty: (boundDoc as any).specialty
+						? String((boundDoc as any).specialty)
+						: undefined,
+					shiftPreset: "full",
+					shiftLabel: "Весь день",
+					shiftHours: "08:00–20:00",
+					startHour: 8,
+					endHour: 20,
+				};
+				todayAssignments[chair.id] = assignment;
+				if (onAssignChairDoctor) {
+					onAssignChairDoctor(chair.id, assignment);
+				}
+			}
+		}
+
+		if (typeof window !== "undefined" && dateKey) {
+			try {
+				localStorage.setItem(
+					`dente_chair_doctor_assignments_${dateKey}`,
+					JSON.stringify(todayAssignments),
+				);
+			} catch {}
+		}
+
+		showToast(
+			"Закрепленные врачи назначены на смены дня в 1 клик (StomX Parity)",
+			"success",
+			3500,
+		);
+	}, [chairs, doctors, dashboard?.clinicSettings?.staff, dateKey, onAssignChairDoctor]);
 
 	const handleDuplicateChair = useCallback((chair: ScheduleChair) => {
 		const duplicatedData: QuickAddChairData = {
@@ -1111,6 +1205,28 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 
 					<button
 						type="button"
+						onClick={handleApplyDoctorPreferredChairs}
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
+						title="Назначить закрепленных врачей на все кресла дня в 1 клик (StomX Parity)"
+						data-testid="btn-apply-preferred-chairs"
+					>
+						<Pin size={12} className="text-[var(--teal)]" />
+						<span className="hidden sm:inline">Применить закрепления</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setIsAddDoctorOpen(true)}
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
+						title="Быстро добавить врача в расписание (+ Врач)"
+						data-testid="btn-chair-view-add-doctor"
+					>
+						<UserPlus size={12} className="text-[var(--teal)]" />
+						<span className="hidden sm:inline">+ Врач</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={handleOpenAddChair}
 						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white text-[11px] font-semibold shadow-xs transition-colors cursor-pointer h-7"
 						title="Добавить стоматологическую установку"
@@ -1141,6 +1257,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					onOpenAddChair={handleOpenAddChair}
 					onAddChair={onAddChair}
 					onEditChair={handleEditChair}
+					onAddDoctor={onAddDoctor}
 				/>
 			</div>
 
@@ -1159,6 +1276,58 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				doctors={(dashboard?.clinicSettings?.staff ?? []).filter(
 					(s) => s.active && (s.role === "doctor" || s.role === "owner"),
 				)}
+			/>
+
+			{/* Quick Add Doctor Modal (StomX / DentalPRO parity, Feature 246) */}
+			<QuickAddDoctorModal
+				isOpen={isAddDoctorOpen}
+				onClose={() => setIsAddDoctorOpen(false)}
+				chairs={chairs}
+				existingDoctorsCount={doctors.length}
+				onAddDoctor={async (docData) => {
+					if (onAddDoctor) {
+						await onAddDoctor(docData);
+					} else {
+						const newStaffMember: any = {
+							id: docData.id || `doc-quick-${Date.now()}`,
+							organizationId:
+								dashboard?.clinicSettings?.profile?.organizationId ||
+								"00000000-0000-4000-8000-000000000001",
+							fullName: docData.fullName,
+							role: "doctor",
+							specialties: [docData.specialty],
+							phone: docData.phone || null,
+							email: null,
+							active: true,
+							canSignMedicalRecords: true,
+							canManageMoney: false,
+							canManageImports: false,
+							color: docData.color,
+							preferredChairId: docData.preferredChairId || null,
+							createdAt: new Date().toISOString(),
+							updatedAt: new Date().toISOString(),
+						};
+						if (dashboard?.clinicSettings?.staff) {
+							dashboard.clinicSettings.staff.push(newStaffMember);
+						}
+						if (docData.preferredChairId && onAssignChairDoctor) {
+							const targetCh = chairs.find((c) => c.id === docData.preferredChairId);
+							onAssignChairDoctor(docData.preferredChairId, {
+								chairId: docData.preferredChairId,
+								chairName: targetCh?.name || docData.preferredChairId,
+								doctorId: newStaffMember.id,
+								doctorName: newStaffMember.fullName,
+								doctorSpecialty: docData.specialtyLabel,
+								shiftPreset: "full",
+								shiftLabel: "Весь день",
+								shiftHours: "08:00–20:00",
+								startHour: 8,
+								endHour: 20,
+							});
+						}
+					}
+					setIsAddDoctorOpen(false);
+				}}
 			/>
 		</div>
 	);

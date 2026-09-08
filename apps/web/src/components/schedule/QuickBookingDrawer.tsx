@@ -105,10 +105,14 @@ export function resolveChairDutyDoctor(
 	}
 
 	if (assignment) {
-		const hourNum =
-			startsAtIsoOrLocal && startsAtIsoOrLocal.length >= 13
-				? Number.parseInt(startsAtIsoOrLocal.slice(11, 13), 10)
-				: NaN;
+		let hourNum = NaN;
+		if (startsAtIsoOrLocal) {
+			if (startsAtIsoOrLocal.length >= 13) {
+				hourNum = Number.parseInt(startsAtIsoOrLocal.slice(11, 13), 10);
+			} else if (/^\d{2}:\d{2}/.test(startsAtIsoOrLocal)) {
+				hourNum = Number.parseInt(startsAtIsoOrLocal.slice(0, 2), 10);
+			}
+		}
 
 		// 1. Two-shift chair handling: morning (< 14:00) vs evening (>= 14:00)
 		if (
@@ -2197,29 +2201,74 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									const newDocId = e.target.value;
 									setDoctorUserId(newDocId);
 									if (newDocId && !initialSlot?.chairId) {
-										// 1. Auto-switch to chair where this doctor is on duty at scheduled time
-										const assignedChair = chairs.find((c) => {
-											const duty = resolveChairDutyDoctor(
-												c.id,
-												startsAtLocal,
-												chairDoctorAssignments,
-												startsAtLocal ? startsAtLocal.split("T")[0] : undefined,
-											);
-											return duty.doctorId === newDocId;
-										});
-										if (assignedChair) {
-											setChairId(assignedChair.id);
-										} else {
-											// 2. Fallback to matching specialization chair
-											const doc = doctors.find((d) => d.id === newDocId);
-											if (doc?.specialties?.length) {
-												const matchingChair = chairs.find(
-													(c) => c.specialization && doc.specialties.includes(c.specialization),
+										let targetChairId: string | null = null;
+										const doc =
+											doctors.find((d) => d.id === newDocId) ||
+											dashboard?.clinicSettings?.staff?.find((s) => s.id === newDocId);
+
+										// 1. Doctor's preferred chair
+										if ((doc as any)?.preferredChairId) {
+											const pref = chairs.find((c) => c.id === (doc as any).preferredChairId);
+											if (pref) targetChairId = pref.id;
+										}
+										if (!targetChairId && typeof window !== "undefined") {
+											try {
+												const storedPref = JSON.parse(
+													localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
 												);
-												if (matchingChair) {
-													setChairId(matchingChair.id);
+												if (storedPref[newDocId]) {
+													const pref = chairs.find((c) => c.id === storedPref[newDocId]);
+													if (pref) targetChairId = pref.id;
 												}
-											}
+											} catch {}
+										}
+
+										// 2. Chair default doctor
+										if (!targetChairId) {
+											const def = chairs.find((c) => (c as any).defaultDoctorId === newDocId);
+											if (def) targetChairId = def.id;
+										}
+										if (!targetChairId && typeof window !== "undefined") {
+											try {
+												const storedChairDef = JSON.parse(
+													localStorage.getItem("dente_chair_default_doctors") || "{}",
+												);
+												for (const [cId, dId] of Object.entries(storedChairDef)) {
+													if (dId === newDocId) {
+														const def = chairs.find((c) => c.id === cId);
+														if (def) {
+															targetChairId = def.id;
+															break;
+														}
+													}
+												}
+											} catch {}
+										}
+
+										// 3. Auto-switch to chair where this doctor is on duty at scheduled time
+										if (!targetChairId) {
+											const assignedChair = chairs.find((c) => {
+												const duty = resolveChairDutyDoctor(
+													c.id,
+													startsAtLocal,
+													chairDoctorAssignments,
+													startsAtLocal ? startsAtLocal.split("T")[0] : undefined,
+												);
+												return duty.doctorId === newDocId;
+											});
+											if (assignedChair) targetChairId = assignedChair.id;
+										}
+
+										// 4. Fallback to matching specialization chair
+										if (!targetChairId && doc?.specialties?.length) {
+											const matchingChair = chairs.find(
+												(c) => c.specialization && doc.specialties.includes(c.specialization),
+											);
+											if (matchingChair) targetChairId = matchingChair.id;
+										}
+
+										if (targetChairId) {
+											setChairId(targetChairId);
 										}
 									}
 								}}

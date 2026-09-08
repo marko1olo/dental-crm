@@ -22,6 +22,7 @@ import {
 	MoreVertical,
 	Phone,
 	PhoneCall,
+	Pin,
 	Plus,
 	Settings,
 	Stethoscope,
@@ -29,6 +30,7 @@ import {
 	Trash2,
 	User,
 	UserCheck,
+	UserPlus,
 	Users,
 	UserX,
 	X,
@@ -53,6 +55,7 @@ import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
 import { countLabel } from "../../lib/russianPlural";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
+import { QuickAddDoctorModal, type QuickAddDoctorData } from "./QuickAddDoctorModal";
 import {
 	getMondayOfWeekIso,
 	addDaysToDateIso,
@@ -165,6 +168,7 @@ export interface ScheduleGridProps {
 	onOpenAddChair?: (() => void) | undefined;
 	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 	onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
+	onAddDoctor?: ((doctorData: QuickAddDoctorData) => Promise<void> | void) | undefined;
 	gridStepMinutes?: 15 | 30 | 60 | undefined;
 	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
 	chairMaintenanceBlocks?: ChairMaintenanceBlock[] | undefined;
@@ -253,6 +257,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const [chairDoctorDropdownId, setChairDoctorDropdownId] = useState<string | null>(null);
 	const [activeHeaderDoctorPopoverChairId, setActiveHeaderDoctorPopoverChairId] = useState<string | null>(null);
 	const [activeHeaderMaintenanceChairId, setActiveHeaderMaintenanceChairId] = useState<string | null>(null);
+	const [isQuickAddDoctorOpen, setIsQuickAddDoctorOpen] = useState(false);
 	const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(props.gridStepMinutes || 60);
 	const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>([]);
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -814,6 +819,55 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			}
 		},
 		[doctors, effectiveChairs, dateKey, props.onAssignChairDoctor],
+	);
+
+	const handleBindDoctorToChair = useCallback(
+		(chairId: string, doctorId: string) => {
+			const targetChair = effectiveChairs.find((c) => c.id === chairId);
+			const chairName = targetChair?.name || chairId;
+			const targetDoc =
+				doctors.find((d) => d.id === doctorId) ||
+				(dashboard?.clinicSettings?.staff ?? []).find((s) => s.id === doctorId);
+			const doctorName = targetDoc ? formatDoctorShortName(targetDoc.fullName) : doctorId;
+
+			if (typeof window !== "undefined") {
+				try {
+					const storedPref = JSON.parse(
+						localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
+					);
+					storedPref[doctorId] = chairId;
+					localStorage.setItem(
+						"dente_doctor_preferred_chairs",
+						JSON.stringify(storedPref),
+					);
+
+					const storedChairDef = JSON.parse(
+						localStorage.getItem("dente_chair_default_doctors") || "{}",
+					);
+					storedChairDef[chairId] = doctorId;
+					localStorage.setItem(
+						"dente_chair_default_doctors",
+						JSON.stringify(storedChairDef),
+					);
+				} catch {}
+			}
+
+			if (targetDoc) {
+				(targetDoc as any).preferredChairId = chairId;
+			}
+			if (targetChair) {
+				(targetChair as any).defaultDoctorId = doctorId;
+			}
+
+			handleConfirmAssignDoctor(chairId, doctorId, "full");
+
+			showToast(
+				`Врач ${doctorName} закреплен за креслом «${chairName}» (StomX Parity)`,
+				"success",
+				3500,
+			);
+		},
+		[effectiveChairs, doctors, dashboard?.clinicSettings?.staff, handleConfirmAssignDoctor],
 	);
 
 	const handleUnassignDoctor = useCallback(
@@ -1418,6 +1472,19 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 					<button
 						type="button"
+						onClick={() => setIsQuickAddDoctorOpen(true)}
+						className="min-h-[44px] min-w-[44px] px-3.5 py-1.5 rounded-xl border border-dashed border-[var(--teal,var(--brand-primary))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-surface)] text-[var(--teal-dark,var(--teal))] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[var(--teal)] active:scale-95 shrink-0"
+						title="Быстро добавить врача в расписание"
+						aria-label="Быстро добавить врача в расписание"
+						data-testid="btn-grid-quick-add-doctor"
+						style={{ minHeight: "44px", minWidth: "44px" }}
+					>
+						<UserPlus size={15} className="shrink-0 text-[var(--teal)]" />
+						<span className="font-bold">+ Врач</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={handleCopyWeekShiftsToNextWeek}
 						className="min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
 						title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
@@ -1881,8 +1948,28 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												</div>
 											</div>
 
-											{/* Action Buttons: Unassign & Open Full Modal */}
+											{/* Action Buttons: Bind Doctor, Unassign & Open Full Modal */}
 											<div className="flex flex-col gap-1 pt-1 border-t border-[var(--line)]">
+												<button
+													type="button"
+													onClick={() => {
+														const targetDocId =
+															assignment?.doctorId ||
+															suggestedDoctor?.id ||
+															(doctors[0]?.id ?? "");
+														if (targetDocId) {
+															handleBindDoctorToChair(chair.id, targetDocId);
+														}
+														setActiveHeaderDoctorPopoverChairId(null);
+													}}
+													className="min-h-[44px] w-full px-2 py-1 rounded-xl text-xs font-semibold text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal-surface)] flex items-center justify-center gap-1.5 cursor-pointer border border-[var(--line)]"
+													style={{ minHeight: "44px" }}
+													title={`Закрепить врача за креслом «${chair.name}» (StomX Parity)`}
+													data-testid={`chair-popover-bind-doctor-${chair.id}`}
+												>
+													<Pin size={14} className="text-[var(--teal)] shrink-0" />
+													<span>Закрепить врача за креслом</span>
+												</button>
 												{hasDoctor && (
 													<button
 														type="button"
@@ -3947,6 +4034,48 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			onClose={() => setIsInternalAddChairModalOpen(false)}
 			existingChairsCount={effectiveChairs.length}
 			{...(props.onAddChair ? { onAddChair: props.onAddChair } : {})}
+		/>
+	)}
+
+	{/* Quick Add Doctor Modal for inline grid additions (StomX / DentalPRO parity, Feature 246) */}
+	{isQuickAddDoctorOpen && (
+		<QuickAddDoctorModal
+			isOpen={isQuickAddDoctorOpen}
+			onClose={() => setIsQuickAddDoctorOpen(false)}
+			chairs={effectiveChairs}
+			existingDoctorsCount={doctors.length}
+			onAddDoctor={async (docData) => {
+				if (props.onAddDoctor) {
+					await props.onAddDoctor(docData);
+				} else {
+					const newStaffMember: any = {
+						id: docData.id || `doc-quick-${Date.now()}`,
+						organizationId:
+							dashboard?.clinicSettings?.profile?.organizationId ||
+							"00000000-0000-4000-8000-000000000001",
+						fullName: docData.fullName,
+						role: "doctor",
+						specialties: [docData.specialty],
+						phone: docData.phone || null,
+						email: null,
+						active: true,
+						canSignMedicalRecords: true,
+						canManageMoney: false,
+						canManageImports: false,
+						color: docData.color,
+						preferredChairId: docData.preferredChairId || null,
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+					};
+					if (dashboard?.clinicSettings?.staff) {
+						dashboard.clinicSettings.staff.push(newStaffMember);
+					}
+					if (docData.preferredChairId) {
+						handleBindDoctorToChair(docData.preferredChairId, newStaffMember.id);
+					}
+				}
+				setIsQuickAddDoctorOpen(false);
+			}}
 		/>
 	)}
 </div>
