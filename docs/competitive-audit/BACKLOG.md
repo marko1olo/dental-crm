@@ -2210,7 +2210,7 @@
   4. *1-клик прямая отправка наряда в лабораторию*: кнопка `direct-send-lab-order-btn` для моментальной отправки без бюрократических согласований;
   5. *1-клик пресеты клинических задач у кресла в ClinicalTasksPanel*: в `ClinicalTasksPanel.tsx` внедрены 1-клик кнопки закрытия этапов лечения (`PHASE_OPTIONS`, `completePhase`: терапия -> ортопедия, хирургия -> ортопедия) и кастомные типы задач (`customTaskTypes`) без блокировки врача, закрытия визита или кассы 54-ФЗ.
 - **Файлы**: `apps/web/src/components/orthopedics/OrthopedicsChairsidePanel.tsx`, `apps/web/src/components/orthopedics/orthopedicProtocols.ts`, `apps/web/src/ClinicalTasksPanel.tsx`, `apps/web/src/VisitView.tsx`, `apps/api/src/routes/clinical.ts`.
-- **Тесты**: `apps/web/src/components/orthopedics/__tests__/orthopedicProtocols.test.ts` (9/9 pass), `apps/web/src/components/orthopedics/__tests__/orthopedicsAutonomyWave41.test.tsx` (pass), `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts` (тест 8.7 pass), `apps/api/src/tests/wave10PerimeterAndMedicalSecrecyPenetration.test.ts` — коммиты `17014184e`, `bdcb9d1be`, `543e2f975`.
+- **Тесты**: `apps/web/src/components/orthopedics/__tests__/orthopedicProtocols.test.ts` (9/9 pass), `apps/web/src/components/orthopedics/__tests__/orthopedicsAutonomyWave41.test.tsx` (pass), `apps/web/src/components/tasks/__tests__/clinicalTasksAutonomyWave41.test.tsx` (pass), `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts` (тест 8.7 pass), `apps/api/src/tests/wave10PerimeterAndMedicalSecrecyPenetration.test.ts` — коммиты `17014184e`, `bdcb9d1be`, `932f5520d`, `3e7f604c4`.
 
 ---
 
