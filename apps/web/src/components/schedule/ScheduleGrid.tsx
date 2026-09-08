@@ -2359,6 +2359,21 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									return aTotalMin >= slotStartMin && aTotalMin < slotEndMin;
 								});
 
+								const continuingAppointments = dayAppointments.filter((a) => {
+									if (chair.id !== DEFAULT_SOLO_CHAIR.id && a.chairId !== chair.id) {
+										return false;
+									}
+									const aStartStr = toDateTimeLocalValue(a.startsAt, timezone).slice(11, 16);
+									const [aStartH, aStartM] = aStartStr.split(":").map(Number);
+									const aStartTotalMin = (aStartH ?? 0) * 60 + (aStartM ?? 0);
+
+									const aEndStr = toDateTimeLocalValue(a.endsAt, timezone).slice(11, 16);
+									const [aEndH, aEndM] = aEndStr.split(":").map(Number);
+									const aEndTotalMin = (aEndH ?? 0) * 60 + (aEndM ?? 0);
+
+									return aStartTotalMin < slotStartMin && aEndTotalMin > slotStartMin;
+								});
+
 								const cellMaintenance = effectiveMaintenanceBlocks.filter((m) => {
 									if (m.chairId !== chair.id) return false;
 									const mDate = m.startsAt
@@ -2373,12 +2388,32 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									return mTotalMin >= slotStartMin && mTotalMin < slotEndMin;
 								});
 
-								if (cellAppointments.length > 0 || cellMaintenance.length > 0) {
+								if (
+									cellAppointments.length > 0 ||
+									cellMaintenance.length > 0 ||
+									continuingAppointments.length > 0
+								) {
 									return (
 										<div
 											key={chair.id}
 											className="p-1.5 border-r border-[var(--line)] last:border-r-0 space-y-1.5 min-h-[56px] flex flex-col justify-center"
 										>
+											{continuingAppointments.map((cA) => {
+												const cPatientName = patientName(dashboard.patients, cA.patientId);
+												return (
+													<div
+														key={`continuing-${cA.id}`}
+														className="w-full p-2 rounded-xl border border-dashed border-teal-500/40 bg-teal-500/10 text-teal-900 dark:text-teal-200 text-xs font-semibold flex items-center justify-between gap-1 shadow-2xs select-none"
+														title={`Приём продолжается: ${cPatientName}`}
+														data-testid={`appointment-continuing-${chair.id}-${hour.replace(":", "")}`}
+													>
+														<div className="flex items-center gap-1.5 truncate">
+															<Clock size={12} className="text-teal-600 dark:text-teal-400 shrink-0" />
+															<span className="truncate">Приём продолжается ({cPatientName})</span>
+														</div>
+													</div>
+												);
+											})}
 											{cellMaintenance.map((mBlock) => {
 												const mReasonLabel =
 													mBlock.reason === "sanitation"
@@ -3192,8 +3227,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													);
 
 													if (collisionCheck.hasCollision) {
-														showToast(`Назначение заблокировано: ${collisionCheck.message}`, "error", 5000);
-														return;
+														showToast(
+															`Внимание: запись создана с наложением времени (${collisionCheck.message})`,
+															"warning",
+															5000,
+														);
 													}
 
 													onSlotClick({
