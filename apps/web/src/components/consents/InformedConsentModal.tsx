@@ -37,6 +37,7 @@ import {
 	TEMPLATE_SHORT_TITLES,
 } from "./consentTemplates.js";
 import "./informedConsent.css";
+import { showToast } from "../GlobalToast.js";
 import {
 	generateConsentIntegrityHash,
 	generatePaperSignatureSvg,
@@ -66,6 +67,7 @@ export interface InformedConsentModalProps {
 	clinicLegalName?: string | null;
 	clinicAddress?: string | null;
 	clinicOgrn?: string | null;
+	clinicPhone?: string | null | undefined;
 	licenseNumber?: string | null;
 	diagnosisIcd?: string | null;
 	toothNumbers?: string | null;
@@ -107,6 +109,75 @@ export interface SignedConsentPayload {
 
 export { PACKAGE_SHORT_TITLES, TEMPLATE_SHORT_TITLES };
 
+export interface PatientConsentSummaryParams {
+	activeMode: "packages" | "single";
+	patientName?: string | null | undefined;
+	doctorName?: string | null | undefined;
+	doctorSpecialty?: string | null | undefined;
+	clinicName?: string | null | undefined;
+	clinicLegalName?: string | null | undefined;
+	clinicPhone?: string | null | undefined;
+	toothNumbers?: string | null | undefined;
+	customDiagnosis?: string | null | undefined;
+	diagnosisIcd?: string | null | undefined;
+	packageKey?: ConsentPackageKey | undefined;
+	templateKey?: ConsentTemplateKey | undefined;
+	integrityHash?: string | undefined;
+}
+
+/**
+ * Формирует выжимку согласия и памятку для пациента без эмодзи (Мандаты 8d п. 7, 8e п. 5, 8i, 8k, 8n).
+ * Готова для 1-клик отправки в WhatsApp / Telegram / SMS.
+ */
+export function buildPatientConsentSummary(params: PatientConsentSummaryParams): string {
+	const effectivePatientName = (params.patientName || "Пациент").trim();
+	const effectiveDoctorName = (
+		params.doctorName ||
+		(params.doctorSpecialty ? `Врач-стоматолог (${params.doctorSpecialty})` : null) ||
+		"Лечащий врач"
+	).trim();
+	const effectiveClinicName = (params.clinicName || params.clinicLegalName || "ООО «Стоматологическая клиника ДЕНТЕ»").trim();
+	const effectiveClinicPhone = (params.clinicPhone || "+7 (495) 123-45-67").trim();
+	const effectiveTeeth = (params.toothNumbers || "").trim();
+	const hashPrefix = (params.integrityHash || "0000000000000000").slice(0, 16);
+
+	if (params.activeMode === "packages") {
+		const pkg = getConsentPackage(params.packageKey || "PACKAGE_PRIMARY_VISIT");
+		const docList = pkg.templateKeys
+			.map((key) => {
+				const tpl = getConsentTemplate(key);
+				return `${tpl.title} (${tpl.code})`;
+			})
+			.join(", ");
+
+		return [
+			`Информированные согласия на лечение (клиника «${effectiveClinicName}»):`,
+			`Пациент: ${effectivePatientName}`,
+			`Пакет: ${pkg.title}`,
+			`Документы: ${docList}`,
+			`Врач: ${effectiveDoctorName}`,
+			`Область лечения: ${effectiveTeeth || "По плану лечения"}`,
+			`Хеш целостности SHA-256: ${hashPrefix}...`,
+			`Памятка: перед приёмом ознакомьтесь с противопоказаниями. При возникновении вопросов звоните в клинику: ${effectiveClinicPhone}.`,
+		].join("\n");
+	}
+
+	const tpl = getConsentTemplate(params.templateKey || "CONSENT_THERAPY");
+	const effectiveDiagnosis = (params.customDiagnosis || params.diagnosisIcd || "По плану лечения").trim();
+
+	return [
+		`Информированное добровольное согласие (клиника «${effectiveClinicName}»):`,
+		`Пациент: ${effectivePatientName}`,
+		`Медицинское вмешательство: ${tpl.title} (${tpl.code})`,
+		`Врач: ${effectiveDoctorName}`,
+		`Область лечения: ${effectiveTeeth || "По показаниям"}`,
+		`Диагноз МКБ: ${effectiveDiagnosis}`,
+		`Ключевые риски и памятка: после вмешательства возможно появление локальной болезненности, отёка и чувствительности (1-3 дня). Строго соблюдайте назначения лечащего врача.`,
+		`Хеш целостности SHA-256: ${hashPrefix}...`,
+		`Телефон клиники: ${effectiveClinicPhone}.`,
+	].join("\n");
+}
+
 /**
  * InformedConsentModal
  *
@@ -132,6 +203,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 	clinicLegalName = "ООО «Стоматологическая клиника ДЕНТЕ»",
 	clinicAddress,
 	clinicOgrn,
+	clinicPhone = "+7 (495) 123-45-67",
 	licenseNumber,
 	diagnosisIcd,
 	toothNumbers,
@@ -269,6 +341,35 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 			setCopiedHash(true);
 			setTimeout(() => setCopiedHash(false), 2000);
 		}
+	};
+
+	// 1-клик копирование выжимки ИДС и памятки рисков для пациента в WhatsApp / Telegram (Wave 51 / Фича 236)
+	const handleCopyPatientSummary = (): string => {
+		const summaryText = buildPatientConsentSummary({
+			activeMode,
+			patientName: patient?.fullName || substitutionContext.patientName,
+			doctorName:
+				doctorName ||
+				(doctorSpecialty ? `Врач-стоматолог (${doctorSpecialty})` : null) ||
+				effectiveContext.doctorName,
+			doctorSpecialty,
+			clinicName,
+			clinicLegalName,
+			clinicPhone,
+			toothNumbers: customTeeth || toothNumbers,
+			customDiagnosis,
+			diagnosisIcd,
+			packageKey: activePackageKey,
+			templateKey: activeDocKey,
+			integrityHash: integrityRecord.hash,
+		});
+
+		if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+			navigator.clipboard.writeText(summaryText).catch(() => {});
+		}
+
+		showToast("Выжимка ИДС и памятка скопированы в буфер обмена для отправки пациенту", "success");
+		return summaryText;
 	};
 
 	// Печать документа А4 (заполненный бланк)
@@ -881,6 +982,16 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							<span>
 								{activeMode === "packages" ? "Печать чистых бланков пакета («________»)" : "Печать чистого бланка («________»)"}
 							</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleCopyPatientSummary}
+							data-testid="consent-copy-patient-text-btn"
+							className="consent-action-btn secondary"
+							title="Скопировать выжимку ИДС и памятку для отправки пациенту в WhatsApp/Telegram"
+						>
+							<Copy size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span>Скопировать для пациента</span>
 						</button>
 					</div>
 
