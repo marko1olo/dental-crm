@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-08 / WAVE 55): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 181 КИЛЛЕР-ФИЧА АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 244 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 181 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-08 / WAVE 56): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 182 КИЛЛЕР-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 245 ФИЧ: 63 КАНОНИЧЕСКИЕ + 182 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2598,9 +2598,27 @@
 
 ---
 
+## 4.116. `расписание_кресла_смены::1_клик_копирование_смен_на_месяц_подмена_дежурного_врача_и_ротация_кресел` [РЕАЛИЗОВАНО] (Wave 56)
+- **Идея**: 1-клик масштабирование расписания смен кресел на весь календарный месяц, быстрая подмена дежурного врача на кресле в 1 клик при болезни или отпуске, циклическая ротация смен между креслами и устранение скрытых блокировок расписания (StomX/DentalPRO parity, Мандаты 8c, 8d, 8e, 8k, 8n).
+- **Архитектурное решение**:
+  1. *Масштабирование на месяц и быстрая подмена (`ChairScheduleView.tsx`)*:
+     - `btn-copy-chair-month` («На месяц», иконка `CalendarRange`, тулбар Хика 32–36px) — функция `handleCopyTodayShiftsToMonth` определяет дни текущего месяца и реплицирует сегодняшние смены кресел (`todayAssignments`) на каждый день месяца (`dente_chair_doctor_assignments_${targetDayIso}`) с обновлением `dente_doctor_shifts` через `copyWeekShiftsToMonth`;
+     - `handleQuickSubstituteDoctor` — быстрая 1-клик замена дежурного врача на смене кресла с обновлением локального назначения и вызовом `onAssignChairDoctor`;
+     - `chair-view-substitute-btn-${chair.id}` («Подменить врача...», иконка `UserCheck`) в поповере смены кресла с выпадающим списком врачей (touch targets $\ge 44\times 44\text{px}$);
+     - `btn-rotate-chair-shifts` («Ротация кресел», иконка `Layers`, тулбар Хика 32–36px) — функция `handleRotateChairShifts` для циклической пересадки врачей между креслами в 1 клик;
+  2. *Сетка расписания и ликвидация клинических ловушек (`ScheduleGrid.tsx`)*:
+     - В поповере заголовка кресла добавлены 1-клик пресеты: `chair-popover-shift-month-${chair.id}` («На весь месяц (1 клик)», иконка `CalendarRange`) и `chair-popover-substitute-${chair.id}` («Подменить врача на сегодня», иконка `UserCheck`);
+     - Ликвидирована ловушка пустого слота: для многочасовых приёмов рассчитываются `continuingAppointments` и выводится визуальный индикатор `appointment-continuing-...` («Приём продолжается»), предотвращающий случайный ошибочный овербукинг администратором;
+     - Смягчена проверка коллизий листа ожидания: вместо жесткой блокировки (`return;`) выдаётся мягкий предупреждающий тост (Мандат 8e);
+     - 0 заблокированных кнопок, 0 мультяшных эмодзи (векторные иконки Lucide).
+- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/__tests__/chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx` (8/8 pass), `npm run typecheck -w @dental/web` (Exit Code 0).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 181 дополнительная системная аддендум-фича клинической автономии (Wave 15..55, фичи 64..244) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 182 дополнительные системные аддендум-фичи клинической автономии (Wave 15..56, фичи 64..245) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

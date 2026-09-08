@@ -1998,8 +1998,25 @@
   3. *Паритет закрепления в сетке (`ScheduleGrid.tsx`)*:
      - `chair-popover-shift-week-full-${chair.id}` («На всю неделю (Пн–Вс)», 7 дней) и `chair-popover-unassign-${chair.id}` («Снять врача с кресла») в поповере шапки кресла;
      - Поддержка шаблона `seven_day_full` в `doctorShiftRosterPresets.ts`.
-- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/roster/doctorShiftRosterPresets.ts`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/chairScheduleCopyAndDuplicateAutonomyWave55.test.tsx`, `npm run typecheck -w @dental/web` (Exit Code 0).
+
+#### 2.10.204. Расписание и смены кресел: 1-клик копирование смен на месяц, быстрая подмена дежурного врача на кресле и циклическая ротация смен (Фича #245, Wave 56)
+- **Суть и домен**: Клиническое расписание, масштабирование сменности на месяц и взаимозаменяемость врачебного персонала по Мандатам 8c, 8d, 8e, 8k, 8n (StomX / DentalPRO parity):
+  1. *1-клик масштабирование расписания кресел на месяц (`ChairScheduleView.tsx`)*:
+     - `btn-copy-chair-month` («На месяц», иконка `CalendarRange`, тулбар Хика 32–36px) — функция `handleCopyTodayShiftsToMonth` считывает текущий месяц из `dateKey`, реплицирует текущие смены кресел (`todayAssignments`) на каждый день месяца (`dente_chair_doctor_assignments_${targetDayIso}`) и обновляет смены врачей `dente_doctor_shifts` через `copyWeekShiftsToMonth`;
+     - Информационный тост успеха с указанием месяца и количества перенесенных смен;
+  2. *Быстрая подмена дежурного врача на кресле (`ChairScheduleView.tsx` & `ScheduleGrid.tsx`)*:
+     - `chair-view-substitute-btn-${chair.id}` («Подменить врача...», иконка `UserCheck`) в поповере смены кресла открывает селектор врачей с тач-таргетами $\ge 44\times 44\text{px}$;
+     - Функция `handleQuickSubstituteDoctor` моментально заменяет врача на выбранном кресле на сегодня без ручного пересоздания смены или переназначения приёмов;
+     - В `ScheduleGrid.tsx` в поповере заголовка кресла добавлены кнопки `chair-popover-shift-month-${chair.id}` («На весь месяц (1 клик)») и `chair-popover-substitute-${chair.id}` («Подменить врача на сегодня»);
+  3. *Циклическая ротация смен между креслами (`ChairScheduleView.tsx`)*:
+     - `btn-rotate-chair-shifts` («Ротация кресел», иконка `Layers`, тулбар Хика 32–36px) — функция `handleRotateChairShifts` циклически сдвигает назначенных врачей по кругу между активными креслами в 1 клик (необходимо при клинической пересадке врачей на смене);
+  4. *Ликвидация клинических ловушек расписания (`ScheduleGrid.tsx`)*:
+     - Расчёт `continuingAppointments` для многочасовых приёмов: в свободных промежуточных слотах выводится информационный индикатор `appointment-continuing-...` («Приём продолжается»), предупреждающий о занятости кресла;
+     - Смягчение коллизий листа ожидания с блокировки до предупреждающего тоста по Мандату 8e (Автономия врача);
+     - Полное соблюдение 7 смертных грехов UI: 0 эмодзи, 0 disabled кнопок без причины, тач-таргеты $\ge 44\times 44\text{px}$.
+- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx` (8/8 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммиты `477ac99be`, `b18aa1b81`.
 
 
 
