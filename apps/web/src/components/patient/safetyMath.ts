@@ -98,6 +98,7 @@ export interface PatientClinicalSafetyProfile {
 	readonly hasThyrotoxicosis?: boolean | undefined;
 	readonly hasPenicillinAllergy?: boolean | undefined;
 	readonly hasLatexAllergy?: boolean | undefined;
+	readonly hasNsaidAllergy?: boolean | undefined; // Аллергия на НПВП / Аспириновая триада
 
 	// Свободные примечания
 	readonly customAllergyNotes?: string | undefined;
@@ -479,6 +480,37 @@ export const CLINICAL_SAFETY_CATALOG: readonly ClinicalSafetyItemDefinition[] = 
 		keywords: ["латекс", "аллергия на латекс", "коффердам", "перчатки"],
 	},
 	{
+		id: "allergy_nsaid",
+		category: "general_allergy",
+		severity: "high",
+		shortBadge: "[СТОП] АЛЛЕРГИЯ: НПВП (ЗАПРЕТ АСПИРИНА / КЕТОРОЛА)",
+		titleRu: "Аллергия на нестероидные противовоспалительные препараты (НПВП / Аспириновая триада)",
+		fullDescription:
+			"Гиперчувствительность к препаратам группы НПВП (Аспирин, Кеторолак/Кеторол, Ибупрофен/Нурофен, Диклофенак, Нимесулид). Риск тяжелого бронхоспазма (аспириновая астма) и отека Квинке.",
+		forbiddenProcedures: [
+			"Назначение Аспирина, Кеторолака, Ибупрофена, Диклофенака, Кетонала, Нимесулида",
+			"Применение комбинированных анальгетиков, содержащих НПВП",
+		],
+		mandatoryPrecautions: [
+			"Анальгетик первого выбора при болевом синдроме: Парацетамол (до 1000 мг/прием)",
+			"При выраженном болевом синдроме — трамадол (по назначению врача) или местная пролонгированная анестезия",
+		],
+		icd10Codes: ["Z88.6", "T88.7"],
+		keywords: [
+			"нпвп",
+			"нпвс",
+			"аспирин",
+			"кеторол",
+			"кеторолак",
+			"ибупрофен",
+			"нурофен",
+			"диклофенак",
+			"нимесулид",
+			"кетонал",
+			"аспириновая астма",
+		],
+	},
+	{
 		id: "allergy_iodine",
 		category: "general_allergy",
 		severity: "critical",
@@ -702,6 +734,7 @@ export function evaluatePatientSafetyFlags(
 	if (profile.hasHepatitis || profile.hasHiv) addFlagFromCatalog("hepatitis_hiv_infection");
 	if (profile.hasPenicillinAllergy) addFlagFromCatalog("allergy_penicillin");
 	if (profile.hasLatexAllergy) addFlagFromCatalog("allergy_latex");
+	if (profile.hasNsaidAllergy) addFlagFromCatalog("allergy_nsaid");
 	if (profile.hasIodineAllergy) addFlagFromCatalog("allergy_iodine");
 
 	if (profile.hasAnaphylaxisHistory) {
@@ -961,6 +994,20 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 	const hasLatex =
 		raw.includes("латекс");
 
+	const hasNsaid =
+		raw.includes("нпвп") ||
+		raw.includes("нпвс") ||
+		raw.includes("аспирин") ||
+		raw.includes("кеторол") ||
+		raw.includes("кеторолак") ||
+		raw.includes("ибупрофен") ||
+		raw.includes("нурофен") ||
+		raw.includes("диклофенак") ||
+		raw.includes("нимесулид") ||
+		raw.includes("кетонал") ||
+		raw.includes("аспириновая астма") ||
+		raw.includes("z88.6");
+
 	const hasIodine =
 		raw.includes("йод") ||
 		raw.includes("йодоформ") ||
@@ -1000,6 +1047,7 @@ export function parseSafetyProfileFromText(text?: string | null | undefined): Pa
 		hasHiv: hasHiv,
 		hasPenicillinAllergy: hasPenicillin,
 		hasLatexAllergy: hasLatex,
+		hasNsaidAllergy: hasNsaid,
 		hasIodineAllergy: hasIodine,
 		customChronicNotes: text ? text : undefined,
 	};
@@ -1023,6 +1071,10 @@ export function formatSafetyProfileToDiaryText(profile?: Partial<PatientClinical
 	if (profile.hasSulfiteAllergy) allergies.push("Сульфиты / метабисульфит");
 	if (profile.hasPenicillinAllergy) allergies.push("Пенициллины (Амоксиклав)");
 	if (profile.hasLatexAllergy) allergies.push("Латекс");
+	if (profile.hasNsaidAllergy)
+		allergies.push(
+			"АЛЛЕРГИЯ: НПВП (Аспирин, Кеторол, Ибупрофен — противопоказаны, препарат выбора: Парацетамол)",
+		);
 	if (profile.hasIodineAllergy) allergies.push("Йод и йодоформсодержащие препараты (Бетадин, Метапекс, Альвожил)");
 	if (profile.customAllergyNotes) allergies.push(profile.customAllergyNotes);
 

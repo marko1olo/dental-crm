@@ -61,6 +61,7 @@ const DEFAULT_PROFILE: PatientClinicalSafetyProfile = {
 	hasThyroidDisease: false,
 	hasPenicillinAllergy: false,
 	hasLatexAllergy: false,
+	hasNsaidAllergy: false,
 	customAllergyNotes: "",
 	customChronicNotes: "",
 	currentMedicationsList: "",
@@ -127,60 +128,95 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 		);
 
 		// Быстрые клинические пресеты (1-Click шаблоны)
-		const applyPreset = useCallback((presetType: "clean" | "cardio" | "anticoag" | "bisphosphonate" | "pregnant_2" | "allergy_articaine") => {
-			switch (presetType) {
-				case "clean":
-					setProfile({
-						...DEFAULT_PROFILE,
-						customChronicNotes: "Соматически здоров. Аллергический статус не отягощен. Физиологическая норма (без особенностей).",
-					});
-					showToast("Применен шаблон: Соматически здоров / норма (без особенностей)", "info");
-					break;
-				case "cardio":
-					setProfile((prev) => ({
-						...prev,
-						hasHypertension: true,
-						hasCardiovascularDisease: true,
-						hasPacemakerExs: true,
-					}));
-					showToast("Применен шаблон: ЭКС + Гипертоническая болезнь (Запрет УЗ)", "warning");
-					break;
-				case "anticoag":
-					setProfile((prev) => ({
-						...prev,
-						takesAnticoagulants: true,
-						anticoagulantName: "Ксарелто 20 мг (Ривароксабан)",
-						hasCardiovascularDisease: true,
-					}));
-					showToast("Применен шаблон: Прием антикоагулянтов (Риск кровотечения)", "warning");
-					break;
-				case "bisphosphonate":
-					setProfile((prev) => ({
-						...prev,
-						takesBisphosphonates: true,
-						bisphosphonateName: "Акласта (Золедроновая к-та)",
-					}));
-					showToast("Применен шаблон: Бисфосфонаты (Риск остеонекроза MRONJ)", "warning");
-					break;
-				case "pregnant_2":
-					setProfile((prev) => ({
-						...prev,
-						pregnancyTrimester: "trimester_2",
-						gestationalWeeks: 20,
-					}));
-					showToast("Применен шаблон: Беременность 2 триместр (Безопасное окно)", "info");
-					break;
-				case "allergy_articaine":
-					setProfile((prev) => ({
-						...prev,
-						hasArticaineAllergy: true,
-						hasBronchialAsthma: true,
-						hasSulfiteAllergy: true,
-					}));
-					showToast("Применен шаблон: Аллергия на Артикаин + Астма + Сульфиты", "error");
-					break;
-			}
-		}, []);
+		const applyPreset = useCallback(
+			(
+				presetType:
+					| "clean"
+					| "cardio"
+					| "anticoag"
+					| "bisphosphonate"
+					| "pregnant_2"
+					| "allergy_articaine"
+					| "allergy_penicillin"
+					| "allergy_nsaid"
+					| "allergy_latex",
+			) => {
+				switch (presetType) {
+					case "clean":
+						setProfile({
+							...DEFAULT_PROFILE,
+							customChronicNotes: "Соматически здоров. Аллергический статус не отягощен. Физиологическая норма (без особенностей).",
+						});
+						showToast("Применен шаблон: Соматически здоров / норма (без особенностей)", "info");
+						break;
+					case "cardio":
+						setProfile((prev) => ({
+							...prev,
+							hasHypertension: true,
+							hasCardiovascularDisease: true,
+							hasPacemakerExs: true,
+						}));
+						showToast("Применен шаблон: ЭКС + Гипертоническая болезнь (Запрет УЗ)", "warning");
+						break;
+					case "anticoag":
+						setProfile((prev) => ({
+							...prev,
+							takesAnticoagulants: true,
+							anticoagulantName: "Ксарелто 20 мг (Ривароксабан)",
+							hasCardiovascularDisease: true,
+						}));
+						showToast("Применен шаблон: Прием антикоагулянтов (Риск кровотечения)", "warning");
+						break;
+					case "bisphosphonate":
+						setProfile((prev) => ({
+							...prev,
+							takesBisphosphonates: true,
+							bisphosphonateName: "Акласта (Золедроновая к-та)",
+						}));
+						showToast("Применен шаблон: Бисфосфонаты (Риск остеонекроза MRONJ)", "warning");
+						break;
+					case "pregnant_2":
+						setProfile((prev) => ({
+							...prev,
+							pregnancyTrimester: "trimester_2",
+							gestationalWeeks: 20,
+						}));
+						showToast("Применен шаблон: Беременность 2 триместр (Безопасное окно)", "info");
+						break;
+					case "allergy_articaine":
+						setProfile((prev) => ({
+							...prev,
+							hasArticaineAllergy: true,
+							hasBronchialAsthma: true,
+							hasSulfiteAllergy: true,
+						}));
+						showToast("Применен шаблон: Аллергия на Артикаин + Астма + Сульфиты", "error");
+						break;
+					case "allergy_penicillin":
+						setProfile((prev) => ({
+							...prev,
+							hasPenicillinAllergy: true,
+						}));
+						showToast("Применен пресет: Аллергия на пенициллины (Запрет Амоксиклава)", "warning");
+						break;
+					case "allergy_nsaid":
+						setProfile((prev) => ({
+							...prev,
+							hasNsaidAllergy: true,
+						}));
+						showToast("Применен пресет: Аллергия на НПВП (Запрет Кеторола/Аспирина)", "warning");
+						break;
+					case "allergy_latex":
+						setProfile((prev) => ({
+							...prev,
+							hasLatexAllergy: true,
+						}));
+						showToast("Применен пресет: Аллергия на латекс (Беслатексный режим)", "warning");
+						break;
+				}
+			},
+			[],
+		);
 
 		const handleSave = useCallback(() => {
 			const finalProfile: PatientClinicalSafetyProfile = {
@@ -283,6 +319,33 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 						>
 							<ShieldCheck className="w-4 h-4 text-white shrink-0" />
 							<span>Соматически здоров / норма (без особенностей)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => applyPreset("allergy_penicillin")}
+							className="px-3 py-2 min-h-[44px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							data-testid="preset-allergy-penicillin"
+						>
+							<AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+							<span>+ Пенициллины</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => applyPreset("allergy_nsaid")}
+							className="px-3 py-2 min-h-[44px] text-xs rounded-lg font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 hover:bg-rose-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							data-testid="preset-allergy-nsaid"
+						>
+							<ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+							<span>+ НПВП / Аспирин</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => applyPreset("allergy_latex")}
+							className="px-3 py-2 min-h-[44px] text-xs rounded-lg font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 hover:bg-amber-100 cursor-pointer shrink-0 transition-colors inline-flex items-center gap-1"
+							data-testid="preset-allergy-latex"
+						>
+							<AlertOctagon className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+							<span>+ Латекс</span>
 						</button>
 						<button
 							type="button"
@@ -416,6 +479,21 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 									</span>
 									<div className="anamnesis-toggle-item__icon">
 										{profile.hasSulfiteAllergy ? <Check className="w-3.5 h-3.5" /> : null}
+									</div>
+								</div>
+
+								{/* НПВП / Аспирин */}
+								<div
+									onClick={() => updateField("hasNsaidAllergy", !profile.hasNsaidAllergy)}
+									className={`anamnesis-toggle-item ${profile.hasNsaidAllergy ? "anamnesis-toggle-item--active-critical" : ""}`}
+									data-testid="toggle-nsaid-allergy"
+								>
+									<span className="anamnesis-toggle-item__label">
+										<ShieldAlert className="w-3.5 h-3.5 inline mr-1 text-rose-500" />
+										Аллергия на НПВП (Аспирин, Кеторол, Ибупрофен)
+									</span>
+									<div className="anamnesis-toggle-item__icon">
+										{profile.hasNsaidAllergy ? <Check className="w-3.5 h-3.5" /> : null}
 									</div>
 								</div>
 

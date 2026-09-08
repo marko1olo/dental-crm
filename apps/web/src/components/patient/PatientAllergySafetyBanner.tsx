@@ -106,6 +106,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 					hasPenicillinAllergy: false,
 					hasLatexAllergy: false,
 					hasIodineAllergy: false,
+					hasNsaidAllergy: false,
 					hasHypertension: false,
 					hasCardiovascularDisease: false,
 					hasDiabetesMellitus: false,
@@ -287,6 +288,9 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 													{flag.id.includes("pregnancy") && <Baby className="w-4 h-4 text-pink-500" />}
 													{flag.id.includes("hypertension") && <HeartPulse className="w-4 h-4 text-amber-600" />}
 													{flag.id.includes("asthma") && <Activity className="w-4 h-4 text-amber-600" />}
+													{flag.id.includes("nsaid") && <ShieldAlert className="w-4 h-4 text-rose-600" />}
+													{flag.id.includes("penicillin") && <Pill className="w-4 h-4 text-amber-600" />}
+													{flag.id.includes("latex") && <AlertOctagon className="w-4 h-4 text-amber-600" />}
 													<span>{flag.titleRu}</span>
 												</div>
 												<span
