@@ -49,6 +49,11 @@ import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { showToast } from "../GlobalToast";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
+import {
+	type BillingInvoice,
+	loadStoredInvoices,
+	saveStoredInvoices,
+} from "../billing/InvoicesView";
 
 export interface InvoiceGenerationModalProps {
 	readonly isOpen: boolean;
@@ -599,8 +604,57 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			}
 
 			const createdData = await res.json();
+			const invoiceNetRub = Number(
+				createdData.totalNetRub ?? (effectiveReport.effectiveInvoiceNetKopecks / 100).toFixed(2),
+			);
+			const invoiceStatus: BillingInvoice["status"] =
+				invoiceNetRub === 0 ? "warranty_100" : "issued";
+
+			const createdBillingInvoice: BillingInvoice = {
+				id: createdData.invoiceId || `inv-${Date.now()}`,
+				number:
+					createdData.invoiceNumber ||
+					`СЧ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+				patientId,
+				patientName,
+				patientPhone,
+				doctorName: doctorFullName || auth?.currentUser?.name || "Лечащий врач-стоматолог",
+				date: new Date().toLocaleDateString("ru-RU"),
+				totalAmountRub: invoiceNetRub,
+				paidAmountRub: 0,
+				status: invoiceStatus,
+				items: effectiveReport.items.map((it) => ({
+					id: it.itemId,
+					code: it.code804n,
+					name: it.nameRu,
+					quantity: it.quantity,
+					priceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
+				})),
+				createdAt: createdData.issuedAt || new Date().toISOString(),
+				notes: `Выписан ${documentType === "work_order" ? "наряд-заказ" : "счет"} по плану ${planNumber}`,
+			};
+
+			const existingInvoices = loadStoredInvoices();
+			const updatedInvoices = [
+				createdBillingInvoice,
+				...existingInvoices.filter(
+					(inv) =>
+						inv.id !== createdBillingInvoice.id &&
+						inv.number !== createdBillingInvoice.number,
+				),
+			];
+			saveStoredInvoices(updatedInvoices);
+
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-invoices-updated", {
+						detail: createdBillingInvoice,
+					}),
+				);
+			}
+
 			showToast(
-				`Документ ${createdData.invoiceNumber} на сумму ${createdData.totalNetRub.toLocaleString("ru-RU")} ₽ успешно создан!`,
+				`Документ ${createdBillingInvoice.number} на сумму ${createdBillingInvoice.totalAmountRub.toLocaleString("ru-RU")} ₽ успешно создан!`,
 				"success",
 				5000,
 			);
@@ -610,7 +664,63 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = ({
 			}
 			onClose();
 		} catch (e: any) {
-			showToast(`Ошибка формирования документа: ${e.message}`, "warning", 5000);
+			// Mandate 8e, 8n: Doctor Autonomy & Solo Clinic Resilience (Offline / Network failure fallback)
+			const fallbackNetRub = Number((effectiveReport.effectiveInvoiceNetKopecks / 100).toFixed(2));
+			const fallbackStatus: BillingInvoice["status"] =
+				fallbackNetRub === 0 ? "warranty_100" : "issued";
+			const fallbackInvoice: BillingInvoice = {
+				id: `inv-offline-${Date.now()}`,
+				number: `СЧ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+				patientId,
+				patientName,
+				patientPhone,
+				doctorName: doctorFullName || auth?.currentUser?.name || "Лечащий врач-стоматолог",
+				date: new Date().toLocaleDateString("ru-RU"),
+				totalAmountRub: fallbackNetRub,
+				paidAmountRub: 0,
+				status: fallbackStatus,
+				items: effectiveReport.items.map((it) => ({
+					id: it.itemId,
+					code: it.code804n,
+					name: it.nameRu,
+					quantity: it.quantity,
+					priceRub: Number((it.effectiveUnitPriceKopecks / 100).toFixed(2)),
+				})),
+				createdAt: new Date().toISOString(),
+				notes: `Счет (автономный режим) по плану ${planNumber}`,
+			};
+
+			const existing = loadStoredInvoices();
+			saveStoredInvoices([
+				fallbackInvoice,
+				...existing.filter((i) => i.id !== fallbackInvoice.id),
+			]);
+
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-invoices-updated", {
+						detail: fallbackInvoice,
+					}),
+				);
+			}
+
+			showToast(
+				`Счет №${fallbackInvoice.number} сформирован локально и отправлен кассиру (${fallbackNetRub.toLocaleString("ru-RU")} ₽)`,
+				"info",
+				5000,
+			);
+
+			if (onInvoiceCreated) {
+				onInvoiceCreated({
+					success: true,
+					invoiceId: fallbackInvoice.id,
+					invoiceNumber: fallbackInvoice.number,
+					totalNetRub: fallbackNetRub,
+					validationReport: effectiveReport,
+					issuedAt: fallbackInvoice.createdAt,
+				});
+			}
+			onClose();
 		} finally {
 			setIsSubmitting(false);
 		}

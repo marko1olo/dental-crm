@@ -131,6 +131,8 @@ export interface DigitalSignatureAgreementData {
 export interface CashierInvoiceExportData {
 	readonly patientId: string;
 	readonly patientName?: string;
+	readonly invoiceId?: string;
+	readonly invoiceNumber?: string;
 	readonly items: readonly TreatmentPlanItem[];
 	readonly grossTotalRub: number;
 	readonly discountRub: number;

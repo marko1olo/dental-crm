@@ -22,6 +22,7 @@ import {
 	Receipt,
 	RefreshCw,
 	Save,
+	Send,
 	ShieldCheck,
 	Sparkles,
 	UserCheck,
@@ -29,6 +30,11 @@ import {
 	Wallet,
 	Zap,
 } from "lucide-react";
+import {
+	type BillingInvoice,
+	loadStoredInvoices,
+	saveStoredInvoices,
+} from "../billing/InvoicesView";
 import type { ToothData } from "../odontogram/ToothChart";
 import { showToast } from "../GlobalToast";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -92,7 +98,7 @@ export interface TreatmentPlanModuleProps {
 	readonly patientId: string;
 	readonly patientName?: string;
 	readonly teethData: readonly ToothData[];
-	readonly onExportToCashier?: (data: CashierInvoiceExportData) => void;
+	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
 	readonly onPlanSaved?: (planId: string) => void;
 	readonly className?: string;
 	readonly planCreatedAtIso?: string;
@@ -408,7 +414,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		};
 	}, [stages, patientId, patientName, currentTier.title, auth, discountPercent]);
 
-	// Action: Export directly to cashier as an Invoice
+	// Action: Export directly to cashier as an Invoice (Mandates 8e, 8k, 8n)
 	const handleExportCashier = () => {
 		const allItems = stages.flatMap((s) => s.items);
 		if (allItems.length === 0) {
@@ -423,9 +429,14 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 		const discountRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
 		const netTotalRub = loyaltyDeduction.netPayableRub;
 
+		const invoiceId = `inv-plan-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+		const invoiceNumber = `СЧ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
 		const exportData: CashierInvoiceExportData = {
 			patientId,
 			patientName,
+			invoiceId,
+			invoiceNumber,
 			items: allItems,
 			grossTotalRub,
 			discountRub,
@@ -441,12 +452,83 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 			createdAtIso: new Date().toISOString(),
 		};
 
+		const newBillingInvoice: BillingInvoice = {
+			id: invoiceId,
+			number: invoiceNumber,
+			patientId,
+			patientName,
+			patientPhone,
+			doctorName: auth?.currentUser?.name || "Лечащий врач-стоматолог",
+			date: new Date().toLocaleDateString("ru-RU"),
+			totalAmountRub: netTotalRub,
+			paidAmountRub: 0,
+			status: (netTotalRub === 0 ? "warranty_100" : "issued") as BillingInvoice["status"],
+			items: allItems.map((it, idx) => ({
+				id: it.id || `item-${idx}`,
+				code: it.code804n || "A16.07.002",
+				name: `${it.name}${it.toothNumber ? ` (зуб ${it.toothNumber})` : ""}`,
+				quantity: it.quantity,
+				priceRub: it.unitPriceRub,
+			})),
+			createdAt: new Date().toISOString(),
+			notes: exportData.notes,
+		};
+
+		// 1. Two-tier persistent storage synchronized with InvoicesView
+		const existingInvoices = loadStoredInvoices();
+		const updatedInvoices = [
+			newBillingInvoice,
+			...existingInvoices.filter(
+				(inv) => inv.id !== newBillingInvoice.id && inv.number !== newBillingInvoice.number,
+			),
+		];
+		saveStoredInvoices(updatedInvoices);
+
+		// 2. Real-time reactive dispatch for open InvoicesView / FinanceView
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-invoices-updated", {
+					detail: newBillingInvoice,
+				}),
+			);
+		}
+
+		// 3. Callback execution if passed by parent
 		if (onExportToCashier) {
 			onExportToCashier(exportData);
 		}
 
+		// 4. Background server persistence under Mandates 8e, 8n (Zero-downtime, soft-fallback)
+		void fetch("/api/invoices/generate-from-plan", {
+			method: "POST",
+			headers: {
+				...denteAdminSecretRequestHeaders(),
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				patientId,
+				planId: `PLAN-${patientId.slice(0, 6).toUpperCase()}`,
+				planNumber: `ПЛАН-№${patientId.slice(0, 4)}`,
+				planTitle: currentTier.title,
+				documentType: "invoice",
+				items: allItems.map((it, idx) => ({
+					itemId: it.id || `item-${idx}`,
+					toothNumber: it.toothNumber ?? null,
+					nameRu: it.name,
+					quantity: it.quantity,
+					unitPriceRub: it.unitPriceRub,
+					discountRub: it.discountRub,
+					code804n: it.code804n || undefined,
+				})),
+				allowUnplannedServices: true,
+				notes: exportData.notes,
+			}),
+		}).catch((err) => {
+			logger.warn("[TreatmentPlanModule] Background server invoice export fallback", err);
+		});
+
 		showToast(
-			`Счет на оплату (${netTotalRub.toLocaleString("ru-RU")} ₽) успешно отправлен кассиру-администратору!`,
+			`Счет №${invoiceNumber} на сумму ${netTotalRub.toLocaleString("ru-RU")} ₽ успешно отправлен в кассу!`,
 			"success",
 			5000,
 		);
@@ -646,7 +728,19 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						</button>
 					)}
 
-					{/* Secondary 2: Export to Cashier / Invoice Generation */}
+					{/* Secondary 2: Quick Export to Cashier (1 click) */}
+					<button
+						type="button"
+						onClick={handleExportCashier}
+						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 shadow-xs cursor-pointer transition-colors touch-manipulation"
+						title="Мгновенно отправить счет кассиру в 1 клик (StomX / DentalPRO Parity)"
+						data-testid="tp-quick-cashier-btn"
+					>
+						<Send size={15} />
+						<span>В кассу</span>
+					</button>
+
+					{/* Secondary 3: Full Invoice & Work Order Generation Modal */}
 					<button
 						type="button"
 						onClick={() => setIsInvoiceModalOpen(true)}
@@ -658,7 +752,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<span>Счет / Наряд</span>
 					</button>
 
-					{/* Secondary 3: 54-FZ Fiscal Receipt & Split Payment Modal */}
+					{/* Secondary 4: 54-FZ Fiscal Receipt & Split Payment Modal */}
 					<button
 						type="button"
 						onClick={() => setIsFiscalModalOpen(true)}
@@ -670,7 +764,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<span>Чек 54-ФЗ</span>
 					</button>
 
-					{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
+					{/* Secondary 5: Overflow Dropdown Menu [⋮ Опции] */}
 					<div className="relative inline-flex items-center" ref={optionsMenuRef}>
 						<button
 							type="button"
@@ -690,6 +784,20 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 								className="absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[260px] animate-in fade-in zoom-in-95 duration-100 text-xs"
 								role="menu"
 							>
+								<button
+									type="button"
+									onClick={() => {
+										handleExportCashier();
+										setIsOptionsMenuOpen(false);
+									}}
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 transition-colors flex items-center gap-2 cursor-pointer touch-manipulation min-h-[44px] sm:min-h-[36px]"
+									role="menuitem"
+									data-testid="options-menu-export-cashier-btn"
+								>
+									<Send size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+									<span>Отправить счет кассиру (1 клик)</span>
+								</button>
+
 								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 									Специализированные студии
 								</div>
@@ -1249,7 +1357,33 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					doctorUserId={auth?.currentUser?.id || undefined}
 					planItems={stages.flatMap((s) => s.items)}
 					onInvoiceCreated={(inv) => {
-						showToast(`Документ ${inv.invoiceNumber} успешно сформирован!`, "success", 4000);
+						const allItems = stages.flatMap((s) => s.items);
+						const grossTotalRub = allItems.reduce(
+							(acc, it) => acc + it.unitPriceRub * it.quantity,
+							0,
+						);
+						const discountRub = allItems.reduce((acc, it) => acc + it.discountRub, 0);
+						const netTotalRub = inv.totalNetRub ?? loyaltyDeduction.netPayableRub;
+
+						const exportData: CashierInvoiceExportData = {
+							patientId,
+							patientName,
+							invoiceId: inv.invoiceId,
+							invoiceNumber: inv.invoiceNumber,
+							items: allItems,
+							grossTotalRub,
+							discountRub,
+							netTotalRub,
+							netTotalKopecks: Math.round(netTotalRub * 100),
+							notes: `Выписан счет №${inv.invoiceNumber || ""} по плану «${currentTier.title}»`,
+							createdAtIso: new Date().toISOString(),
+						};
+
+						if (onExportToCashier) {
+							onExportToCashier(exportData);
+						}
+
+						showToast(`Документ ${inv.invoiceNumber} успешно сформирован и передан в кассу!`, "success", 4000);
 					}}
 				/>
 			)}

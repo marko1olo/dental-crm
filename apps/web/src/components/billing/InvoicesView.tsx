@@ -224,6 +224,40 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 		};
 	}, [patientId, patientName, currentDoctorName]);
 
+	// Real-time reactive synchronization across tabs and modules (Treatment Plans -> Invoices)
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handleExternalInvoiceUpdate = (evt?: Event) => {
+			const customDetail = (evt as CustomEvent<BillingInvoice>)?.detail;
+			const stored = loadStoredInvoices();
+			setInvoices((prev) => {
+				const map = new Map<string, BillingInvoice>();
+				if (customDetail?.id) {
+					map.set(customDetail.id, customDetail);
+					if (customDetail.number) map.set(customDetail.number, customDetail);
+				}
+				for (const inv of stored) {
+					map.set(inv.id, inv);
+					if (inv.number) map.set(inv.number, inv);
+				}
+				for (const inv of prev) {
+					if (!map.has(inv.id) && (!inv.number || !map.has(inv.number))) {
+						map.set(inv.id, inv);
+						if (inv.number) map.set(inv.number, inv);
+					}
+				}
+				return Array.from(new Set(map.values()));
+			});
+		};
+
+		window.addEventListener("dente-invoices-updated", handleExternalInvoiceUpdate);
+		window.addEventListener("storage", handleExternalInvoiceUpdate);
+		return () => {
+			window.removeEventListener("dente-invoices-updated", handleExternalInvoiceUpdate);
+			window.removeEventListener("storage", handleExternalInvoiceUpdate);
+		};
+	}, []);
+
 	// Filtered list
 	const filteredInvoices = useMemo(() => {
 		return invoices.filter((inv) => {

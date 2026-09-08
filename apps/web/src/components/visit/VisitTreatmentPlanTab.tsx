@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";
+import type { CashierInvoiceExportData } from "../treatment-plans/types";
 import type { ToothData } from "../odontogram/ToothChart";
 
 const ALL_ADULT_FDI_TEETH = [
@@ -26,6 +27,7 @@ export interface VisitTreatmentPlanTabPatient {
 export interface VisitTreatmentPlanTabProps {
 	readonly activePatient?: VisitTreatmentPlanTabPatient | null | undefined;
 	readonly teethData?: readonly ToothData[] | undefined;
+	readonly onExportToCashier?: ((data: CashierInvoiceExportData) => void) | undefined;
 }
 
 export function VisitTreatmentPlanTab(props?: VisitTreatmentPlanTabProps) {
@@ -74,6 +76,7 @@ export function VisitTreatmentPlanTab(props?: VisitTreatmentPlanTabProps) {
 				patientId={patientId}
 				patientName={patientName}
 				teethData={teethData}
+				onExportToCashier={props?.onExportToCashier}
 			/>
 		</div>
 	);
