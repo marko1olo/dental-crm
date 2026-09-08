@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-08 / WAVE 58): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 184 КИЛЛЕР-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 247 ФИЧ: 63 КАНОНИЧЕСКИЕ + 184 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-09 / WAVE 59): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 185 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 248 ФИЧ: 63 КАНОНИЧЕСКИЕ + 185 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2651,9 +2651,25 @@
 
 ---
 
+## 185. `расписание_кресла_смены::двухсменное_закрепление_subshifts_серверная_синхронизация_и_hig_рефакторинг_тулбаров` [РЕАЛИЗОВАНО] -> WAVE 59 (FEATURE 248)
+- **Идея**: Внедрение двухсменного закрепления врачей на установках (`subShifts: [Утро, Вечер]` без перезатирания), фоновой серверной синхронизации смен (`POST /api/schedule/shifts`), отображения обоих врачей в бейджах и HIG-рефакторинга тулбара кресел по Закону Хика (1 строка 32–36px, группировка пакетных действий в выпадающее меню со 100% test-id совместимостью).
+- **Статус**:
+  - **ChairScheduleView.tsx**:
+    * В `handleAssignShift` реализовано интеллектуальное объединение утренней (08:00–14:00) и вечерней (14:00–20:00) смен в `subShifts: [morn, eve]` с пресетом `two_shifts`, часами `08:00–20:00` и меткой `2 смены (Утро + Вечер)`;
+    * В бейдже кресла `chair-view-badge-${chair.id}` внедрено отображение обоих врачей `(У: Иванов И.И. / В: Петров П.П.)`;
+    * Экспортирована функция `syncShiftsWithServer(targetDateKey, currentAssignments, chairsList)` с отправкой `SyncShiftPayload[]` на `POST /api/schedule/shifts` с секретными заголовками `denteAdminSecretRequestHeaders()` и мягким `localStorage` фоллбэком;
+    * Тулбар приведен к строгой 1 строке 32–36px (`h-9 max-h-[36px]`), доминантные действия («+ Кресло», «+ Врач», «График смен») вынесены в первый ряд, а 7 пакетных действий объединены в выпадающее меню `btn-chair-shifts-menu-trigger` («Действия со сменами...», `SlidersHorizontal`);
+  - **ChairRosterModal.tsx**:
+    * Кнопки смен дня увеличены до тач-таргетов $\ge 36\text{--}44\text{px}$;
+    * Хардкод пастельных цветов заменен токенами темы (`var(--purple-soft)`, `var(--gold-soft)`, `var(--teal-soft)`);
+  - **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `ChairRosterModal.tsx`.
+  - **Тесты**: `apps/web/src/components/schedule/__tests__/chairSubShiftsAndToolbarParityWave59.test.tsx` (5/5 pass), Waves 55..59 regression (35/35 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 184 дополнительные системные аддендум-фичи клинической автономии (Wave 15..58, фичи 64..247) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 185 дополнительных системных аддендум-фич клинической автономии (Wave 15..59, фичи 64..248) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

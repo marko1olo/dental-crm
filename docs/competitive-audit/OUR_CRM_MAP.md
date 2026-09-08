@@ -2063,6 +2063,29 @@
 - **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `ChairScheduleView.tsx`, `ScheduleView.tsx`, `WaitlistMatchesBlock.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleDurationAndLatenessQuickAdjustWave58.test.tsx` (8/8 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммиты `eb473e639`, `81a691781`.
 
+### 2.10.207. Двухсменное закрепление врачей на креслах (SubShifts), серверная синхронизация и HIG-тулбар (Wave 59 / Feature 248) [РЕАЛИЗОВАНО]
+- **Назначение**: Обеспечение двухсменного графика работы стоматологических кресел клиники (Утро 08:00–14:00 + Вечер 14:00–20:00) без перезатирания смен, фоновая синхронизация с базой данных и компактный тулбар по Закону Хика.
+- **Архитектурные механизмы**:
+  1. *Двухсменное слияние смен (`subShifts`)*:
+     - В `ChairScheduleView.tsx` функция `handleAssignShift` при назначении утренней смены (`preset === "morning"`) сохраняет существующую вечернюю смену и формирует `subShifts: [morn, eve]` с пресетом `two_shifts`, часами `08:00–20:00` и меткой `2 смены (Утро + Вечер)`;
+     - Симметричное поведение для вечерней смены (`preset === "evening"`);
+     - Назначение полного дня (`preset === "full"`) сбрасывает разделение на смены и назначает одного врача на весь день.
+  2. *Отображение двух врачей в бейдже кресла*:
+     - Бейдж кресла `chair-view-badge-${chair.id}` отображает обоих врачей в формате `(У: Иванов И.И. / В: Петров П.П.)` в элементе `chair-view-doc-${chair.id}` с подробным всплывающим тултипом.
+  3. *Серверная синхронизация смен (`syncShiftsWithServer`)*:
+     - Функция транслирует локальные назначения кресел в `POST /api/schedule/shifts`, расщепляя составные `subShifts` на две серверные записи смен с секретными заголовками `denteAdminSecretRequestHeaders()`;
+     - Обернута в `try/catch` с мягким `localStorage` фоллбэком при сетевой изоляции (Мандаты 8e, 8n);
+     - При открытии расписания данные подтягиваются с сервера `GET /api/schedule/shifts`.
+  4. *HIG-рефакторинг тулбара кресел по Закону Хика (Мандат 8d п. 2)*:
+     - Тулбар зафиксирован строго в 1 строку 32–36px (`h-9 max-h-[36px]`, `border-b`, без `flex-wrap`);
+     - Доминантные действия («+ Кресло», «+ Врач», «График смен») вынесены в первый ряд;
+     - 7 пакетных действий объединены в выпадающее меню `btn-chair-shifts-menu-trigger` («Действия со сменами...», `SlidersHorizontal`) со 100% сохранением всех существующих testid кнопок;
+  5. *Эргономика и дизайн-токены в `ChairRosterModal.tsx`*:
+     - Тач-таргеты кнопок пресетов дня увеличены до $\ge 36\text{--}44\text{px}$;
+     - Ликвидирован хардкод цветов: внедрены токены `var(--purple-soft)`, `var(--gold-soft)`, `var(--teal-soft)`.
+- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `ChairRosterModal.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/chairSubShiftsAndToolbarParityWave59.test.tsx` (5/5 pass), Waves 55..59 regression (35/35 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `14844b0ec`.
+
 
 
 
