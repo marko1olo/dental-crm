@@ -1832,6 +1832,26 @@
 - **Фронтенд**: `apps/web/src/components/schedule/PatientSearchModal.tsx`, `apps/web/src/components/settings/SettingsTelegramTab.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/patientSearchAndTelegramAutonomyWave48.test.tsx` (16/16 pass), `apps/web/src/components/schedule/__tests__/patientSearchAutonomyWave45.test.tsx` (20/20 pass) — коммит `697a865e7`.
 
+#### 2.10.191. Расписание и карточка записи: разблокировка действий связи без номера телефона и неблокирующее создание пациента у кресла (Фича #232)
+- **Суть и домен**: Полная доступность коммуникаций и исключение искусственных барьеров по Мандатам 8c, 8d, 8e п. 2, 8k, 8n:
+  1. *Разблокировка блока связи в `AppointmentQuickActions.tsx`*: снято жесткое условие `patientPhone && startsAt` — действия связи (WhatsApp 24ч, SMS-напоминание, подтверждение, перенос) теперь рендерятся всегда при наличии времени начала приёма (`startsAt`);
+  2. *Постоянная доступность SMS и WhatsApp*: кнопка копирования SMS доступна всегда, позволяя врачу или администратору скопировать текст напоминания для отправки через Telegram, email или диктовки по телефону; кнопки WhatsApp всегда интерактивны (`disabled={false}`), при отсутствии номера телефона выводится предупреждающий тост и текст сообщения автоматически копируется в буфер обмена (`navigator.clipboard.writeText`);
+  3. *Неблокирующее инлайн-создание пациента в `AppointmentModal.tsx`*: с кнопки создания быстрого пациента сняты атрибут `disabled={isCreatingInlinePatient || !newPatientFullName.trim()}` и класс `disabled:cursor-not-allowed`; кнопка блокируется только на время активного сетевого запроса;
+  4. *Интеллектуальный fallback имени*: при пустом имени и заполненном телефоне формируется имя `Пациент (${phone})`; при сохранении записи через `handleSave` пациент создается и прикрепляется автоматически;
+  5. *Эргономика и HIG*: тач-таргеты всех кнопок $\ge 44\times 44\text{px}$, векторные иконки Lucide, ноль эмодзи.
+- **Фронтенд**: `apps/web/src/components/schedule/AppointmentQuickActions.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/appointmentQuickActionsAutonomyWave49.test.tsx` (13/13 pass), `scheduleWave41StomxParity.test.tsx` (19/19 pass) — коммиты `5a295eaee`, `6af603244`.
+
+#### 2.10.192. Планы лечения и презентер смет: чистый однострочный тулбар Хика и 1-клик копирование всех 3 вариантов сметы пациенту (Фича #233)
+- **Суть и домен**: Устранение визуального шума и ускорение презентации смет у кресла по Мандатам 8c, 8d п. 2, 8e, 8k, 8n:
+  1. *Ликвидация дублирования и соблюдение Закона Хика (`TreatmentPlanModule.tsx`)*: кнопка «Куратор» удалена из основного ряда тулбара и сохранена в выпадающем меню `[⋮ Опции]` (`data-testid="options-menu-curator-btn"`) с иконкой `UserCheck` и динамическим бейджем куратора; основной тулбар стал строгим однострочным плотности 32–36px / min-h-[38-44px];
+  2. *1-клик кнопка сметы для пациента в презентере (`TreatmentPlanPresenterModal.tsx`)*: добавлена кнопка `presenter-copy-tiers-summary-btn` («Скопировать смету для пациента») с иконкой `Copy`; формирует структурированное сообщение со всеми 3 вариантами сметы (Эконом, Оптимум, Премиум), суммами в ₽, сроками в неделях, визитами, расчетом рассрочки 0%, вычетом 13% НДФЛ, гарантией и телефоном клиники для отправки в WhatsApp/Telegram;
+  3. *Полноэкранный режим презентера*: внедрен переключатель `presenter-fullscreen-btn` (`Maximize2` / `Minimize2`) для демонстрации сметы на мониторе пациента;
+  4. *Неблокирующий AI Copilot у кресла*: при клике отправки с пустым промптом выводится контекстная подсказка с готовыми клиническими сценариями без зависаний;
+  5. *Эргономика Apple HIG*: кнопки тулбара и презентера оснащены `min-h-[44px] sm:min-h-[38px] touch-manipulation`.
+- **Фронтенд**: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`.
+- **Тесты**: `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx` (7/7 pass), `treatmentPlanPresenterModal.test.tsx` (27/27 pass) — коммит `e8526b6ea`.
+
 
 
 

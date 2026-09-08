@@ -2408,11 +2408,33 @@
 - **Файлы**: `apps/web/src/components/schedule/PatientSearchModal.tsx`, `apps/web/src/components/settings/SettingsTelegramTab.tsx`, `apps/web/src/components/schedule/__tests__/patientSearchAndTelegramAutonomyWave48.test.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/patientSearchAndTelegramAutonomyWave48.test.tsx` (16/16 pass), `apps/web/src/components/schedule/__tests__/patientSearchAutonomyWave45.test.tsx` (20/20 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `697a865e7`.
 
+## 4.103. `расписание_действие::разблокировка_действий_связи_в_карточке_приёма_и_неблокирующее_создание_пациента_у_кресла` [РЕАЛИЗОВАНО] (Wave 49)
+- **Идея**: Разблокировка действий связи в карточке приёма (WhatsApp/SMS без номера телефона с копированием текста в буфер обмена) и неблокирующее создание пациента у кресла (Мандаты 8c, 8d, 8e п. 2, 8k, 8n).
+- **Архитектурное решение**:
+  1. *Разблокировка коммуникаций в карточке приёма (`AppointmentQuickActions.tsx`)*: убрано жесткое блокирующее условие `patientPhone && startsAt` — кнопки связи (WA 24ч, SMS-напоминание, подтверждение, перенос) теперь отображаются всегда при наличии `startsAt`;
+  2. *Постоянная доступность SMS и WhatsApp*: кнопка SMS доступна всегда, позволяя врачу или администратору скопировать текст напоминания для отправки в Telegram/email или диктовки по телефону; кнопки WhatsApp интерактивны (`disabled={false}`), а при клике без телефона выводится предупреждающий тост и сформированный текст сообщения автоматически копируется в буфер обмена (`navigator.clipboard.writeText`);
+  3. *Снятие disabled с кнопки создания пациента в модалке записи (`AppointmentModal.tsx`)*: убрано `disabled={isCreatingInlinePatient || !newPatientFullName.trim()}` и класс `disabled:cursor-not-allowed`; кнопка блокируется только на время выполнения сетевого запроса;
+  4. *Интеллектуальный fallback имени*: при пустом имени и заполненном телефоне создается пациент `Пациент (${phone})`; при сохранении записи через `handleSave` приём сохраняется с автоматическим созданием инлайн-пациента без лишних модальных барьеров;
+  5. *Эргономика и HIG*: тач-таргеты всех кнопок $\ge 44\times 44\text{px}$, строго векторные иконки Lucide, ноль эмодзи.
+- **Файлы**: `apps/web/src/components/schedule/AppointmentQuickActions.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/__tests__/appointmentQuickActionsAutonomyWave49.test.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/appointmentQuickActionsAutonomyWave49.test.tsx` (13/13 pass), `scheduleWave41StomxParity.test.tsx` (19/19 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммиты `5a295eaee`, `6af603244`.
+
+## 4.104. `план_лечения_тулбар::чистый_однострочный_тулбар_хика_в_планах_лечения_и_1_клик_применение_пакетов_в_презентере` [РЕАЛИЗОВАНО] (Wave 49)
+- **Идея**: Чистый однострочный тулбар планов лечения по Закону Хика и 1-клик копирование всех 3 вариантов сметы (Эконом/Оптимум/Премиум) пациенту для мессенджеров в презентере (Мандаты 8c, 8d п. 2, 8e, 8k, 8n).
+- **Архитектурное решение**:
+  1. *Ликвидация дублирования и соблюдение Закона Хика (`TreatmentPlanModule.tsx`)*: кнопка «Куратор» удалена из основного ряда тулбара и сохранена в выпадающем меню `[⋮ Опции]` (`data-testid="options-menu-curator-btn"`) с иконкой `UserCheck` и бейджем куратора; основной тулбар стал строгим однострочным: `[3 Варианта / Поэтапный / 4 Этапа]` + `[Подписать / ПОДПИСАНО]` + `[Счет / Наряд]` + `[Чек 54-ФЗ]` + `[⋮ Опции]`;
+  2. *1-клик кнопка сметы для пациента в презентере (`TreatmentPlanPresenterModal.tsx`)*: добавлена кнопка `presenter-copy-tiers-summary-btn` («Скопировать смету для пациента») с иконкой `Copy`; формирует структурированное сообщение со всеми тремя тарифами (суммы в ₽, сроки, визиты, рассрочка 0%, вычет 13% НДФЛ, гарантия и телефон клиники) и копирует в буфер обмена для отправки в WhatsApp/Telegram;
+  3. *Полноэкранный режим презентера*: добавлен переключатель `presenter-fullscreen-btn` (`Maximize2` / `Minimize2`) для демонстрации сметы на мониторе пациента;
+  4. *Неблокирующий AI Copilot у кресла*: при клике отправки с пустым промптом выводится мягкая подсказка с готовыми клиническими сценариями без зависаний;
+  5. *Эргономика Apple HIG*: кнопки тулбара и презентера оснащены `min-h-[44px] sm:min-h-[38px] touch-manipulation`.
+- **Файлы**: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx`.
+- **Тесты**: `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx` (7/7 pass), `treatmentPlanPresenterModal.test.tsx` (27/27 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `e8526b6ea`.
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 168 дополнительных системных аддендум-фич клинической автономии (Wave 15..48, фичи 64..231) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 170 дополнительных системных аддендум-фич клинической автономии (Wave 15..49, фичи 64..233) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
