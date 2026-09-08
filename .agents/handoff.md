@@ -1,49 +1,45 @@
-# Handoff Report — Swarm Wave 57 (Feature 246 / Mandates 8c, 8d, 8e, 8h, 8i, 8k, 8n)
+# Handoff Report — Swarm Wave 58 (Feature 247 / Mandates 8c, 8d, 8e, 8h, 8i, 8k, 8n)
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-CURRENT HEAD: ed3d91509f22d5e5a615c4d1aa3a139dcbe251fd
-PREVIOUS HEAD: b18aa1b81e84ad704a43b2f567fc36622ec92fce (Wave 56)
+CURRENT HEAD: 81a6917819ee2859c11bdbbeecdeeb8499ed9f33
+PREVIOUS HEAD: 8c556306be68161e6b19a9963cd21c5d8a90c343 (Wave 57)
 
 ## 1. Observation & Scope
-Dynamic documentation synchronization and codebase implementation for Feature 246 (Wave 57):
-- **Feature 246 (`расписание_врачи_кресла::быстрое_добавление_врача_из_сетки_закрепление_кресел_за_врачами_по_графику_и_автоподстановка_в_записи`)**:
-  - `QuickAddDoctorModal.tsx`:
-    - Автономная 1-клик модалка заведения врача непосредственно из расписания без необходимости уходить в `/settings/staff`;
-    - Автогенерация shortName («Иванов И.И.»), 7 специальностей СтАР, опциональный телефон, выбор закрепляемого кресла (`preferredChairId`), палитра из 10 цветов (`DOCTOR_COLOR_PRESETS`);
-    - Соблюдение эргономики: кнопка «Сохранить врача» никогда не блокируется (Мандат 8e), 0 мультяшных эмодзи (Мандат 8d п. 7, строго векторные иконки Lucide), тач-таргеты $\ge 44\times 44\text{px}$ (Мандат 8c);
-    - Поддержка offline fallback и запись в `dente_doctor_preferred_chairs` и `dente_chair_default_doctors`.
+Dynamic documentation synchronization and codebase implementation for Feature 247 (Wave 58):
+- **Feature 247 (`расписание_прием::1_клик_быстрое_изменение_длительности_сдвиг_при_опоздании_и_возврат_в_лист_ожидания`)**:
   - `ScheduleGrid.tsx`:
-    - Кнопка `btn-grid-quick-add-doctor` («+ Врач», иконка `UserPlus`) в тулбаре плотности Хика (32–36px);
-    - Действие `chair-popover-bind-doctor-${chair.id}` («Закрепить врача за креслом», иконка `Pin`) в поповере шапки кресла для мгновенного назначения врача на кресло по умолчанию;
-  - `ChairScheduleView.tsx`:
-    - Кнопки тулбара `btn-chair-view-add-doctor` («+ Врач») и `btn-apply-preferred-chairs` («Применить закрепления», иконка `Pin`);
-    - Функция `handleApplyDoctorPreferredChairs()` для 1-клик расстановки закрепленных врачей по их креслам на день;
-  - `ChairRosterModal.tsx`:
-    - Кнопка `btn-roster-add-doctor` («+ Врач») в шапке модалки и двусторонняя синхронизация со списком персонала;
-  - `AppointmentModal.tsx` & `QuickBookingDrawer.tsx`:
-    - Интеллектуальная автоподстановка кресла по выбранному врачу (`doctorUserId`): `doc.preferredChairId` -> `chair.defaultDoctorId` -> кресло дежурства на дату -> профильное кресло по специализации;
-    - Фикс бага парсинга 2-значного формата времени `"09:00"` (`hourNum` NaN);
-    - Соло-врач автономия (Мандат 8n): при 0 креслах в клинике `effectiveChairId` подставляет `DEFAULT_SOLO_CHAIR.id` ("chair-1") без падений и блокировок формы.
+    - 1-клик быстрое изменение длительности визита `handleAdjustAppointmentDuration(appt, deltaMinutes)`: кнопки `+15 мин`, `+30 мин`, `-15 мин` с защитой от сжатия слота ниже 15 минут, мягкой проверкой коллизий ресурсов без блокировки врача (Мандат 8e, `allowOverbooking: true`) и сохранением через `onAppointmentMove`;
+    - 1-клик сдвиг времени при опоздании пациента `handleShiftAppointmentLateness(appt, shiftMinutes)`: сдвигает `startsAt` и `endsAt` на 15 минут вперед, мягко проверяет коллизии и готовит шаблон сообщения для пациента в WhatsApp/SMS («Здравствуйте, ${pName}! Ваш прием в клинике перенесен на ${formattedNewStart}. Ждем вас!») с автоматическим копированием в буфер обмена;
+    - 1-клик освобождение слота в лист ожидания `handleFreeSlotToWaitlist(appt)`: кнопка «Освободить слот -> в лист ожидания» (`UserMinus`), отменяющая визит через `onQuickStatusChange` и выводящая toast-уведомление для подбора пациентов;
+    - Интеграция элементов в Hover HUD (кнопки `+15`, `+30`, `-15` и `Сдвиг +15 мин`), контекстное меню `...` и мобильный bottom sheet drawer (`selectedMobileAppt`) с комфортными тач-таргетами $\ge 44\times 44\text{px}$ (Мандат 8c);
+    - Режим приватности суточной выручки с переключателем `Eye`/`EyeOff` и сохранением состояния в `localStorage` (защита коммерческой тайны клиники от глаз пациента у кресла);
+    - Исправление Tailwind-класса `py-0.2` на валидный `py-0.5` и добавление `truncate max-w-[120px]` для бейджа специальности врача.
+  - `ChairScheduleView.tsx` & `ScheduleView.tsx`:
+    - Устранен критический архитектурный разрыв: в интерфейс `ChairScheduleViewProps` добавлены коллбэки `onAppointmentMove` и `onQuickStatusChange` и переданы во вложенный `<ScheduleGrid ... />`;
+    - В `ScheduleView.tsx` в режиме `scheduleViewMode === "chairs"` настроен проброс `onAppointmentMove` и `onQuickStatusChange`, восстановивший drag-and-drop перенос визитов и кнопки быстрого статуса в основном представлении расписания.
+  - `WaitlistMatchesBlock.tsx`:
+    - Разблокирована кнопка записи на освободившееся окно для пациентов со статусом `alreadyBooked` (снято искусственное ограничение, мешавшее пересаживать пациентов на более ранние освободившиеся слоты).
 
 ## 2. Synchronized Registries & Backlogs
 1. `docs/competitive-audit/FEATURES_REGISTRY.md`:
-   - Зарегистрирована фича 246 со статусом `[ДА]`, ценностью 5 и ссылками на реализацию и тесты.
-   - Всего в реестре: 246 фич (63 канонические + 183 аддендум), все 246 (100%) имеют статус `[ДА]`.
+   - Зарегистрирована фича 247 со статусом `[ДА]`, ценностью 5 и ссылками на реализацию и тесты.
+   - Всего в реестре: 247 фич (63 канонические + 184 аддендум), все 247 (100%) имеют статус `[ДА]`.
 2. `docs/competitive-audit/BACKLOG.md`:
-   - Статусный баннер обновлен до Wave 57 (246 фич: 63 канонические + 183 аддендум).
-   - Добавлен раздел 183 (Фича 246) со статусом `[РЕАЛИЗОВАНО]`.
-   - Сводный реестр Части III обновлен до 183 аддендум-фич (Wave 15..57, фичи 64..246).
+   - Статусный баннер обновлен до Wave 58 (247 фич: 63 канонические + 184 аддендум).
+   - Добавлен раздел 184 (Фича 247) со статусом `[РЕАЛИЗОВАНО]`.
+   - Сводный реестр Части III обновлен до 184 аддендум-фич (Wave 15..58, фичи 64..247).
 3. `docs/competitive-audit/OUR_CRM_MAP.md`:
-   - Добавлен подраздел 2.10.205 (Фича 246) в раздел 2.10.
+   - Добавлен подраздел 2.10.206 (Фича 247) в раздел 2.10.
 4. `.agents/handoff.md`:
-   - Зафиксировано текущее состояние Wave 57 и HEAD.
+   - Зафиксировано текущее состояние Wave 58 и актуальный HEAD.
 
-## 3. Machine Verification & Test Proof (Wave 57)
-- `apps/web/src/components/schedule/__tests__/quickAddDoctorAndChairBindingAutonomyWave57.test.tsx`: **7/7 passed (100%) in 148ms**.
-- `apps/web/src/components/schedule/__tests__/chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx`: **8/8 passed (100%) in 331ms**.
+## 3. Machine Verification & Test Proof (Wave 58)
+- `apps/web/src/components/schedule/__tests__/scheduleDurationAndLatenessQuickAdjustWave58.test.tsx`: **8/8 passed (100%) in 615ms**.
+- Регрессионный прогон Waves 55..57 (`quickAddDoctorAndChairBindingAutonomyWave57.test.tsx`, `chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx`, `chairScheduleCopyAndDuplicateAutonomyWave55.test.tsx`): **22/22 passed (100%) in 1077ms**.
 - Full web typecheck (`npm run typecheck -w @dental/web`): **100% PASS (Exit Code 0)**.
-- `npm run check:encoding`: проверено 5110 файлов, 0 ошибок (строгий UTF-8 без BOM).
+- Full api typecheck (`npm run typecheck -w @dental/api`): **100% PASS (Exit Code 0)**.
+- `npm run check:encoding`: проверено 5111 файлов, 0 ошибок (строгий UTF-8 без BOM).
 - Pre-commit Iron Gates: **100% OK**.
 
 ## 4. Definition of Done (DoD)

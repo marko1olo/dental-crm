@@ -2037,6 +2037,32 @@
 - **Файлы**: `apps/web/src/components/schedule/QuickAddDoctorModal.tsx`, `ScheduleGrid.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `AppointmentModal.tsx`, `QuickBookingDrawer.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/quickAddDoctorAndChairBindingAutonomyWave57.test.tsx` (7/7 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `ed3d91509`.
 
+#### 2.10.206. Расписание и приёмы: 1-клик быстрое изменение длительности (+15m, +30m, -15m), сдвиг при опоздании и возврат в лист ожидания (Фича #247, Wave 58)
+- **Суть и домен**: Полноценный паритет со StomX, DentalPRO и IDENT по оперативному управлению временем визита и слотами расписания без открытия тяжёлых модальных окон (Мандаты 8c, 8d, 8e, 8k, 8n):
+  1. *1-клик быстрое изменение длительности (`handleAdjustAppointmentDuration`)*:
+     - Кнопки `+15 мин`, `+30 мин`, `-15 мин` с векторной иконкой `Clock`;
+     - Защита от сжатия слота ниже 15 минут с предупреждающим тостом;
+     - Мягкая проверка ресурсно-кабинетных коллизий через `checkAppointmentResourceCollision` без блокировки врача (`allowOverbooking: true`, Мандат 8e);
+     - Обновление времени окончания (`endsAt`) через `onAppointmentMove` с информационным тостом.
+  2. *1-клик сдвиг времени при опоздании пациента (`handleShiftAppointmentLateness`)*:
+     - Кнопка `Сдвиг +15 мин` с иконкой `FastForward`;
+     - Сдвигает оба поля — `startsAt` и `endsAt` — вперед на 15 минут с мягкой проверкой коллизий;
+     - Автоматически готовит шаблон сообщения для пациента («Здравствуйте, ${pName}! Ваш прием в клинике перенесен на ${formattedNewStart}. Ждем вас!») и копирует в буфер обмена для отправки в WhatsApp/SMS.
+  3. *1-клик освобождение слота в лист ожидания (`handleFreeSlotToWaitlist`)*:
+     - Кнопка `Освободить слот -> в лист ожидания` (`UserMinus`) в контекстном меню и мобильном дровере;
+     - Переводит статус приёма в `cancelled` через `onQuickStatusChange` и выводит toast-подсказку о подборе кандидатов из листа ожидания.
+  4. *Интеграция в интерфейс расписания (Tier 1 Hot Path & Tier 2 Context)*:
+     - Hover HUD на карточке приёма: микрокнопки `+15`, `+30`, `-15` и `Сдвиг +15 мин`;
+     - Контекстное меню `...`: сгруппированные блоки «Длительность (1 клик)», «Опоздание» и «Освободить слот»;
+     - Мобильный bottom sheet drawer (`selectedMobileAppt`): крупные тач-таргеты $\ge 44\times 44\text{px}$ (`min-h-[44px]`).
+  5. *Ликвидация критического архитектурного разрыва*:
+     - Проброс `onAppointmentMove` и `onQuickStatusChange` через `ChairScheduleView.tsx` и `ScheduleView.tsx`, восстановивший drag-and-drop перенос и кнопки быстрого статуса в основном режиме «По креслам»;
+     - Разблокировка кнопки записи на освободившееся окно в `WaitlistMatchesBlock.tsx` при наличии более поздней записи пациента.
+  6. *Режим приватности суточной выручки*:
+     - Кнопка с переключателем `Eye`/`EyeOff` и сохранением состояния в `localStorage` скрывает коммерческую информацию клиники от глаз пациента у стоматологического кресла.
+- **Файлы**: `apps/web/src/components/schedule/ScheduleGrid.tsx`, `ChairScheduleView.tsx`, `ScheduleView.tsx`, `WaitlistMatchesBlock.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleDurationAndLatenessQuickAdjustWave58.test.tsx` (8/8 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммиты `eb473e639`, `81a691781`.
+
 
 
 
