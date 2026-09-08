@@ -2018,6 +2018,25 @@
 - **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/chairScheduleMonthAndSubstituteAutonomyWave56.test.tsx` (8/8 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммиты `477ac99be`, `b18aa1b81`.
 
+#### 2.10.205. Расписание, врачи и кресла: быстрое добавление врача из сетки расписания, закрепление кресел за врачами по графику и автоподстановка кресла в записи (Фича #246, Wave 57)
+- **Суть и домен**: Полноценный паритет со StomX и DentalPRO по быстрому добавлению медицинского персонала и автоматизации привязки кабинетов/кресел (Мандаты 8c, 8d, 8e, 8k, 8n):
+  1. *QuickAddDoctorModal (`QuickAddDoctorModal.tsx`)*:
+     - 1-клик модалка создания врача прямо из сетки без необходимости покидать расписание и идти в `/settings/staff`;
+     - Автогенерация инициалов `shortName` (Иванов И.И.), выбор специализации СтАР, телефон, закрепляемое кресло (`preferredChairId`), палитра из 10 цветов (`DOCTOR_COLOR_PRESETS`);
+     - 0 disabled кнопок (Мандат 8e), 0 мультяшных эмодзи (Мандат 8d п. 7), эргономичные тач-таргеты $\ge 44\times 44\text{px}$, offline fallback и toast-уведомление;
+  2. *Кнопки в расписании и закрепление кресел (`ScheduleGrid.tsx` & `ChairScheduleView.tsx`)*:
+     - В тулбаре `ScheduleGrid.tsx` кнопка `btn-grid-quick-add-doctor` («+ Врач», `UserPlus`);
+     - В поповере заголовка кресла кнопка `chair-popover-bind-doctor-${chair.id}` («Закрепить за креслом...») с мгновенным сохранением в `dente_doctor_preferred_chairs` и `dente_chair_default_doctors`;
+     - В тулбаре `ChairScheduleView.tsx` кнопка `btn-chair-view-add-doctor` («+ Врач») и кнопка `btn-apply-preferred-chairs` («Применить закрепления», `Pin`) с функцией `handleApplyDoctorPreferredChairs()`;
+  3. *Интеграция в матрицу сменности кресел (`ChairRosterModal.tsx`)*:
+     - Кнопка `btn-roster-add-doctor` («+ Врач») в шапке модалки и двусторонняя синхронизация с локальным списком персонала;
+  4. *Интеллектуальная автоподстановка кресла в записи (`AppointmentModal.tsx` & `QuickBookingDrawer.tsx`)*:
+     - При выборе врача в форме записи кресло подставляется автоматически по цепочке приоритетов: предпочитаемое кресло врача (`preferredChairId`) -> кресло по умолчанию (`defaultDoctorId`) -> кресло текущей дежурной смены врача -> профильное кресло по специализации;
+     - Автономия соло-врача (Мандат 8n): при 0 настроенных креслах в клинике `effectiveChairId` гарантированно использует `DEFAULT_SOLO_CHAIR.id` ("chair-1") без падений и блокировок;
+     - Фикс формата времени для 2-значных часов (09:00).
+- **Файлы**: `apps/web/src/components/schedule/QuickAddDoctorModal.tsx`, `ScheduleGrid.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `AppointmentModal.tsx`, `QuickBookingDrawer.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/quickAddDoctorAndChairBindingAutonomyWave57.test.tsx` (7/7 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `ed3d91509`.
+
 
 
 

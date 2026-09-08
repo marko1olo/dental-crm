@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-08 / WAVE 56): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 182 КИЛЛЕР-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 245 ФИЧ: 63 КАНОНИЧЕСКИЕ + 182 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-08 / WAVE 57): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 183 КИЛЛЕР-ФИЧИ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 246 ФИЧ: 63 КАНОНИЧЕСКИЕ + 183 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2616,9 +2616,23 @@
 
 ---
 
+## 183. `расписание_врачи_кресла::быстрое_добавление_врача_из_сетки_закрепление_кресел_за_врачами_по_графику_и_автоподстановка_в_записи` [РЕАЛИЗОВАНО] (Wave 57, Фича #246)
+- **Идея**: В частной стоматологии недопустимо заставлять администратора или главврача лезть в системные настройки клиники (`/settings/staff`), чтобы завести нового врача или привязать кресло за доктором. Всё должно настраиваться прямо из рабочего пространства сетки расписания и сетки кресел в 1 клик с автоматической подстановкой закрепленного кресла при создании визита.
+- **Статус**:
+  - **QuickAddDoctorModal**: автономная модалка `apps/web/src/components/schedule/QuickAddDoctorModal.tsx` с полями ФИО, автогенерацией `shortName` (Иванов И.И.), выбором специализации (7 вариантов СтАР), опциональным телефоном, выбором предпочитаемого кресла (`preferredChairId`), палитрой из 10 цветов (`DOCTOR_COLOR_PRESETS`), 0 заблокированных кнопок (Мандат 8e), 0 мультяшных эмодзи (Мандат 8d п. 7), эргономичными тач-таргетами $\ge 44\times 44\text{px}$ (Мандат 8c) и offline fallback.
+  - **ScheduleGrid**: тулбарная кнопка `btn-grid-quick-add-doctor` («+ Врач», иконка `UserPlus`), в поповере заголовка кресла — действие `chair-popover-bind-doctor-${chair.id}` с сохранением предпочтений в `localStorage` (`dente_doctor_preferred_chairs`, `dente_chair_default_doctors`).
+  - **ChairScheduleView**: кнопки тулбара `btn-chair-view-add-doctor` («+ Врач») и `btn-apply-preferred-chairs` («Применить закрепления», `Pin`) с функцией `handleApplyDoctorPreferredChairs()`, распределяющей врачей по сменам на основе закреплений.
+  - **ChairRosterModal**: кнопка `btn-roster-add-doctor` («+ Врач», `UserPlus`) и интеграция `QuickAddDoctorModal` с мгновенным обновлением локального штата и назначений.
+  - **AppointmentModal & QuickBookingDrawer**: интеллектуальная автоподстановка кресла по выбранному врачу (`doctorUserId`) с приоритетом: `doc.preferredChairId` -> `chair.defaultDoctorId` -> дежурный врач смены -> специализация врача.
+  - **Мандат 8n (Соло-врач)**: при 0 настроенных креслах в клинике `effectiveChairId` безопасно использует `DEFAULT_SOLO_CHAIR.id` ("chair-1") без блокировки интерфейса.
+  - **Файлы**: `apps/web/src/components/schedule/QuickAddDoctorModal.tsx`, `ScheduleGrid.tsx`, `ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `AppointmentModal.tsx`, `QuickBookingDrawer.tsx`.
+  - **Тесты**: `apps/web/src/components/schedule/__tests__/quickAddDoctorAndChairBindingAutonomyWave57.test.tsx` (7/7 pass), `npm run typecheck -w @dental/web` (Exit Code 0).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 182 дополнительные системные аддендум-фичи клинической автономии (Wave 15..56, фичи 64..245) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 183 дополнительные системные аддендум-фичи клинической автономии (Wave 15..57, фичи 64..246) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
