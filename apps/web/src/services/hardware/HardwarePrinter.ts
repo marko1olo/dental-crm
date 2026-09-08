@@ -42,6 +42,8 @@ export interface BrowserPrintOptions {
 	title?: string;
 	fallbackMode?: "iframe" | "download" | "both";
 	downloadFilename?: string;
+	jobName?: string;
+	onSuccess?: () => void;
 	onPopupBlocked?: () => void;
 	onFallbackExecuted?: (fallbackType: "iframe" | "download") => void;
 }
