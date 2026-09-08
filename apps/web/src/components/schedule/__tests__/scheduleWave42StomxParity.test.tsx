@@ -452,19 +452,17 @@ describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding,
 			await act(async () => {
 				root.render(
 					<ScheduleFilterStrip
-						selectedDate="2026-09-08"
-						setSelectedDate={() => {}}
-						selectedDoctorId={null}
-						setSelectedDoctorId={() => {}}
-						doctors={mockDoctors as any}
-						selectedStatus="all"
-						setSelectedStatus={() => {}}
+						scheduleDateFilter="2026-09-08"
+						setScheduleDateFilter={() => {}}
+						stepScheduleDay={() => {}}
+						activeScheduleFilterCount={0}
+						resetScheduleFilters={() => {}}
+						scheduleDoctorFilterId={null}
+						setScheduleDoctorFilterId={() => {}}
+						scheduleChairFilterId={null}
+						setScheduleChairFilterId={() => {}}
 						scheduleViewMode={selectedMode as any}
 						setScheduleViewMode={setScheduleViewMode}
-						selectedCabinet="all"
-						setSelectedCabinet={() => {}}
-						cabinets={["1", "2"]}
-						appointmentCount={5}
 					/>,
 				);
 			});
@@ -528,7 +526,7 @@ describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding,
 			const root: Root = createRoot(container as unknown as HTMLElement);
 
 			let assignedChairId: string | null = null;
-			let assignedShift: ChairDoctorShiftAssignment | null = null;
+			let assignedShift: any = null;
 
 			const onAssignChairDoctor = (chairId: string, assignment: ChairDoctorShiftAssignment | null) => {
 				assignedChairId = chairId;
@@ -577,7 +575,7 @@ describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding,
 			const container = document.createElement("div") as unknown as MockDomNode;
 			const root: Root = createRoot(container as unknown as HTMLElement);
 
-			let assignedShift: ChairDoctorShiftAssignment | null = null;
+			let assignedShift: any = null;
 
 			await act(async () => {
 				root.render(
@@ -658,14 +656,14 @@ describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding,
 			const container = document.createElement("div") as unknown as MockDomNode;
 			const root: Root = createRoot(container as unknown as HTMLElement);
 
-			const appointmentWithOpenVisit: Appointment = {
+			const appointmentWithOpenVisit: any = {
 				id: "apt-1",
 				organizationId: "org-1",
 				patientId: "pat-1",
-				doctorId: "doc-1",
+				doctorUserId: "doc-1",
 				cabinet: "1",
-				startTime: "2026-09-08T10:00:00.000Z",
-				endTime: "2026-09-08T11:00:00.000Z",
+				startsAt: "2026-09-08T10:00:00.000Z",
+				endsAt: "2026-09-08T11:00:00.000Z",
 				status: "in_treatment",
 				type: "treatment",
 				notes: "Лечение кариеса",
@@ -689,9 +687,7 @@ describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding,
 						isOpen={true}
 						onClose={() => {}}
 						appointment={appointmentWithOpenVisit}
-						onSave={async () => {}}
-						patients={mockPatients as any}
-						doctors={mockDoctors as any}
+						onSave={async () => true}
 						dashboard={mockDashboardWithActiveVisit as any}
 						patientName={(_p, id) => id || ""}
 						formatTime={(iso) => iso ? iso.slice(11, 16) : ""}
@@ -707,7 +703,6 @@ describe("Wave 42 StomX Parity: Dedicated Chair View Mode, Doctor Shift Binding,
 							no_show: "Не явился",
 						}}
 						activeVisitLockedAppointmentStatuses={new Set()}
-						onOpenActiveVisit={() => {}}
 					/>,
 				);
 			});

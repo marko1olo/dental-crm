@@ -387,7 +387,8 @@ th { background: #f8fafc; font-weight: 700; }
 
 	if (!isOpen) return null;
 
-	const amountRub = (amountKopecks / 100).toFixed(2);
+	const effectiveAmountKopecks = amountKopecks !== undefined ? amountKopecks : Math.round((propAmountRub || 0) * 100);
+	const amountRub = (effectiveAmountKopecks / 100).toFixed(2);
 
 	const handleCashSubmit = async () => {
 		if (payerType === "legal_entity") {
@@ -544,7 +545,7 @@ th { background: #f8fafc; font-weight: 700; }
 			showToast(`Комбинированная оплата ${totalDueRub} ₽ успешно принята (${effectiveCashier})`, "success");
 			onSuccess({
 				method: "split",
-				amountKopecks: isWarranty100 ? 0 : amountKopecks,
+				amountKopecks: isWarranty100 ? 0 : (amountKopecks ?? Math.round(totalDueRub * 100)),
 				...paymentData,
 			});
 			onClose();
@@ -565,7 +566,7 @@ th { background: #f8fafc; font-weight: 700; }
 				"Idempotency-Key": clientMutationId,
 			});
 
-			const amountRubNumber = Number((amountKopecks / 100).toFixed(2));
+			const amountRubNumber = Number((effectiveAmountKopecks / 100).toFixed(2));
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
 				headers,
@@ -600,7 +601,7 @@ th { background: #f8fafc; font-weight: 700; }
 			);
 			onSuccess({
 				method: source,
-				amountKopecks,
+				amountKopecks: amountKopecks ?? Math.round(totalDueRub * 100),
 				...paymentData,
 			});
 			onClose();
@@ -1037,7 +1038,7 @@ th { background: #f8fafc; font-weight: 700; }
 						<SberPayIntegration
 							patientId={patientId}
 							patientName={patientName}
-							amountKopecks={amountKopecks}
+							amountKopecks={amountKopecks ?? Math.round(totalDueRub * 100)}
 							invoiceId={invoiceId}
 							visitId={visitId}
 							documentId={documentId}
