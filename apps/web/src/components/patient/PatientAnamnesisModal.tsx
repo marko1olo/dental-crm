@@ -278,6 +278,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 							onClick={() => applyPreset("clean")}
 							className="px-3.5 py-2 min-h-[44px] text-xs rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-sm cursor-pointer shrink-0 transition-all inline-flex items-center gap-1.5 active:scale-98"
 							data-testid="btn-somatic-healthy-norm"
+							aria-label="Соматически здоров / норма (1 клик)"
 							title="1 клик: соматически здоров, анамнез не отягощен, физиологическая норма"
 						>
 							<ShieldCheck className="w-4 h-4 text-white shrink-0" />

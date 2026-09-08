@@ -24,9 +24,9 @@ import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { actionFailureToast } from "./lib/panelStateText";
 import { logger } from "./utils/logger";
 
-type ClinicalTaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
+export type ClinicalTaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
-type CustomTaskType = {
+export type CustomTaskType = {
 	id: string;
 	organizationId: string;
 	typeCode: string;
@@ -37,7 +37,7 @@ type CustomTaskType = {
 	createdAt: string;
 };
 
-type ClinicalTask = {
+export type ClinicalTask = {
 	id: string;
 	organizationId: string;
 	patientId: string;
@@ -52,6 +52,108 @@ type ClinicalTask = {
 };
 
 type ClinicalPhaseCode = "PHASE_1_THERAPY" | "PHASE_2_SURGERY";
+
+export type ClinicalTaskPreset = {
+	readonly id: string;
+	readonly testId: string;
+	readonly label: string;
+	readonly title: string;
+	readonly defaultDescription: string;
+	readonly taskType: string;
+	readonly computeDueAt: () => string;
+	readonly hint: string;
+};
+
+export const CLINICAL_TASK_PRESETS: readonly ClinicalTaskPreset[] = [
+	{
+		id: "preset-recall-6m",
+		testId: "preset-task-recall-6m",
+		label: "Контрольный осмотр через 6 месяцев (Профгигиена)",
+		title: "Контрольный осмотр через 6 месяцев (Профгигиена)",
+		defaultDescription:
+			"Плановый контрольный осмотр и оценка гигиенического статуса через 6 месяцев. Профгигиена полости рта.",
+		taskType: "recall_hygiene",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setMonth(d.getMonth() + 6);
+			return d.toISOString();
+		},
+		hint: "1 клик: создать задачу контрольного осмотра и профгигиены через 6 месяцев",
+	},
+	{
+		id: "preset-suture-removal",
+		testId: "preset-task-suture-removal",
+		label: "Снятие швов через 7-10 дней",
+		title: "Снятие швов через 7-10 дней",
+		defaultDescription:
+			"Осмотр зоны хирургического вмешательства, контроль эпителизации и снятие швов (7-10 день).",
+		taskType: "suture_removal",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 8);
+			return d.toISOString();
+		},
+		hint: "1 клик: создать задачу на снятие швов через 7–10 дней после хирургии",
+	},
+	{
+		id: "preset-prosthetics-ztl",
+		testId: "preset-task-prosthetics-ztl",
+		label: "Припасовка каркаса / коронки ЗТЛ",
+		title: "Припасовка каркаса / коронки ЗТЛ",
+		defaultDescription:
+			"Припасовка ортопедической конструкции из зуботехнической лаборатории (ЗТЛ), проверка окклюзионных контактов.",
+		taskType: "prosthetics_fitting",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 10);
+			return d.toISOString();
+		},
+		hint: "1 клик: создать задачу на припасовку работы из ЗТЛ через 10 дней",
+	},
+	{
+		id: "preset-rvg-control",
+		testId: "preset-task-rvg-control",
+		label: "Контрольная рентгенография RVG",
+		title: "Контрольная рентгенография RVG",
+		defaultDescription:
+			"Прицельный контрольный радиовизиографический снимок (RVG) для оценки периапикальных тканей/остеоинтеграции.",
+		taskType: "rvg_control",
+		computeDueAt: () => {
+			const d = new Date();
+			d.setDate(d.getDate() + 14);
+			return d.toISOString();
+		},
+		hint: "1 клик: создать задачу на контрольный снимок визиографа RVG",
+	},
+];
+
+const LOCAL_STORAGE_KEY_PREFIX = "dente_clinical_local_tasks_";
+
+export function getLocalTasks(patientId: string): ClinicalTask[] {
+	if (typeof window === "undefined" || !window.localStorage) return [];
+	try {
+		const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`);
+		if (!raw) return [];
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed) ? (parsed as ClinicalTask[]) : [];
+	} catch {
+		return [];
+	}
+}
+
+export function saveLocalTask(patientId: string, task: ClinicalTask): void {
+	if (typeof window === "undefined" || !window.localStorage) return;
+	try {
+		const current = getLocalTasks(patientId);
+		const updated = [task, ...current.filter((t) => t.id !== task.id)];
+		localStorage.setItem(
+			`${LOCAL_STORAGE_KEY_PREFIX}${patientId}`,
+			JSON.stringify(updated.slice(0, 50)),
+		);
+	} catch {
+		// Ignore storage quota errors
+	}
+}
 
 type PhaseOption = {
 	code: ClinicalPhaseCode;
@@ -83,7 +185,7 @@ const STATUS_LABELS: Record<ClinicalTaskStatus, string> = {
 	cancelled: "отменена",
 };
 
-function formatMoment(iso: string): string {
+export function formatMoment(iso: string): string {
 	const parsed = new Date(iso);
 	if (Number.isNaN(parsed.getTime())) return iso;
 	return parsed.toLocaleString("ru-RU", {
@@ -92,6 +194,66 @@ function formatMoment(iso: string): string {
 		hour: "2-digit",
 		minute: "2-digit",
 	});
+}
+
+export async function executeClinicalPresetTaskAutonomy(params: {
+	preset: ClinicalTaskPreset;
+	patientId: string;
+	notes?: string;
+	organizationId?: string;
+	treatmentPlanId?: string | null;
+	assignedDoctorId?: string | null;
+	authUserId?: string | null;
+	saveLocally?: boolean;
+	setTasks?: (updater: (prev: ClinicalTask[] | null) => ClinicalTask[]) => void;
+	showToastFn?: (
+		msg: string,
+		type: "info" | "success" | "warning" | "error",
+	) => void;
+}): Promise<{ task: ClinicalTask; dueFormatted: string }> {
+	const dueAt = params.preset.computeDueAt();
+	const trimmedNotes = (params.notes ?? "").trim();
+	const finalDescription = trimmedNotes
+		? `${params.preset.defaultDescription} Комментарий врача: ${trimmedNotes}`
+		: params.preset.defaultDescription;
+
+	const newTask: ClinicalTask = {
+		id:
+			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `clinical-task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		organizationId: params.organizationId ?? "current-org",
+		patientId: params.patientId,
+		treatmentPlanId: params.treatmentPlanId ?? null,
+		assignedDoctorId: params.assignedDoctorId ?? null,
+		taskType: params.preset.taskType,
+		status: "pending",
+		title: params.preset.title,
+		description: finalDescription,
+		dueAt,
+		createdAt: new Date().toISOString(),
+	};
+
+	if (params.saveLocally !== false) {
+		saveLocalTask(params.patientId, newTask);
+	}
+
+	if (params.setTasks) {
+		params.setTasks((prev) => [
+			newTask,
+			...(prev ?? []).filter((t) => t.id !== newTask.id),
+		]);
+	}
+
+	const formattedDue = formatMoment(dueAt);
+	if (params.showToastFn) {
+		params.showToastFn(
+			`Клиническая задача создана: ${params.preset.title} (срок: ${formattedDue})`,
+			"success",
+		);
+	}
+
+	return { task: newTask, dueFormatted: formattedDue };
 }
 
 export type ClinicalTasksPanelProps = {
@@ -174,11 +336,17 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 					headers: auth ? auth.denteClinicalReadHeaders() : {},
 				});
 			} catch {
-				setTasks(null);
-				setCustomTaskTypes(null);
-				setError(
-					"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.",
-				);
+				const local = getLocalTasks(patientId);
+				if (local.length > 0) {
+					setTasks(local);
+					setError(null);
+				} else {
+					setTasks(null);
+					setCustomTaskTypes(null);
+					setError(
+						"Сервер клиники не ответил. Проверьте, что программа клиники запущена и есть сеть.",
+					);
+				}
 				return;
 			}
 			const payload = (await response.json().catch((err) => {
@@ -193,22 +361,40 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				return null;
 			})) as ClinicalTask[] | { message?: string } | null;
 			if (!response.ok) {
-				setTasks(null);
-				const message =
-					payload &&
-					!Array.isArray(payload) &&
-					typeof payload.message === "string"
-						? payload.message
-						: null;
-				setError(loadFailureText(response.status, message));
+				const local = getLocalTasks(patientId);
+				if (local.length > 0) {
+					setTasks(local);
+					setError(null);
+				} else {
+					setTasks(null);
+					const message =
+						payload &&
+						!Array.isArray(payload) &&
+						typeof payload.message === "string"
+							? payload.message
+							: null;
+					setError(loadFailureText(response.status, message));
+				}
 				return;
 			}
 			if (!Array.isArray(payload)) {
-				setTasks(null);
-				setError("Сервер ответил, но списка задач в ответе нет.");
+				const local = getLocalTasks(patientId);
+				if (local.length > 0) {
+					setTasks(local);
+					setError(null);
+				} else {
+					setTasks(null);
+					setError("Сервер ответил, но списка задач в ответе нет.");
+				}
 				return;
 			}
-			setTasks(payload);
+			const local = getLocalTasks(patientId);
+			const serverIds = new Set(payload.map((t) => t.id));
+			const combined = [
+				...payload,
+				...local.filter((t) => !serverIds.has(t.id)),
+			];
+			setTasks(combined);
 
 			if (customTypesResponse?.ok) {
 				const customData = await customTypesResponse.json().catch((err) => {
@@ -311,6 +497,67 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 		}
 	};
 
+	const createPresetTask = useCallback(
+		async (preset: ClinicalTaskPreset) => {
+			if (!patientId) {
+				setActionError("Пациент не выбран — создать задачу нельзя.");
+				return;
+			}
+			setActionError(null);
+			setActionNotice(null);
+
+			const { task: newTask, dueFormatted } =
+				await executeClinicalPresetTaskAutonomy({
+					preset,
+					patientId,
+					notes,
+					organizationId: auth?.organizationId,
+					treatmentPlanId,
+					assignedDoctorId,
+					authUserId: auth?.user?.id,
+					setTasks: (updater) => setTasks(updater),
+					showToastFn: showToast,
+				});
+
+			setActionNotice(
+				`Создана клиническая задача: «${preset.title}» (срок: ${dueFormatted}). Следующий врач увидит её в списке.`,
+			);
+
+			if (notes.trim()) {
+				setNotes("");
+			}
+
+			// Фоновая попытка синхронизации с карточкой задач пациента
+			try {
+				const effectiveAssigned = assignedDoctorId || auth?.user?.id;
+				if (effectiveAssigned) {
+					void fetch(`/api/patients/${encodeURIComponent(patientId)}/tickets`, {
+						method: "POST",
+						headers: auth
+							? auth.denteClinicalMutationHeaders({
+									"Content-Type": "application/json",
+								})
+							: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							title: preset.title,
+							description: newTask.description,
+							assignedToId: effectiveAssigned,
+							priority: "normal",
+						}),
+					}).catch((err) => {
+						logger.warn(
+							"[ClinicalTasksPanel] Background ticket sync failed, task kept locally:",
+							err,
+						);
+					});
+				}
+			} catch {
+				// Офлайн-сохранение выполнено локально
+			}
+		},
+		[patientId, notes, auth, treatmentPlanId, assignedDoctorId],
+	);
+
 	if (!patientId) return null;
 
 	const openTasks = (tasks ?? []).filter((task) =>
@@ -377,6 +624,58 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 				</div>
 			) : null}
 
+			{/* 1-клик быстрые пресеты клинических задач у кресла (Мандаты 8e, 8k, 8n) */}
+			<div
+				className="clinical-task-presets"
+				style={{
+					marginBottom: "1rem",
+					padding: "0.75rem",
+					background: "var(--paper-soft, #f8fafc)",
+					borderRadius: "8px",
+					border: "1px solid var(--line, #e2e8f0)",
+				}}
+			>
+				<span
+					className="ops-label"
+					style={{
+						display: "block",
+						marginBottom: "0.5rem",
+						fontWeight: 600,
+						fontSize: "0.85rem",
+						color: "var(--ink, #1e293b)",
+					}}
+				>
+					Быстрые клинические пресеты (1 клик):
+				</span>
+				<div
+					className="ops-actions"
+					style={{
+						display: "flex",
+						flexWrap: "wrap",
+						gap: "0.5rem",
+					}}
+				>
+					{CLINICAL_TASK_PRESETS.map((preset) => (
+						<button
+							key={preset.id}
+							className="secondary-button"
+							type="button"
+							data-testid={preset.testId}
+							title={preset.hint}
+							onClick={() => void createPresetTask(preset)}
+							style={{
+								fontSize: "0.85rem",
+								padding: "0.4rem 0.75rem",
+								borderRadius: "6px",
+								cursor: "pointer",
+							}}
+						>
+							{preset.label}
+						</button>
+					))}
+				</div>
+			</div>
+
 			<div className="ops-form" style={{ marginBottom: "1rem" }}>
 				<label className="ops-label" htmlFor="clinical-tasks-notes">
 					Комментарий к передаче (необязательно)
@@ -388,7 +687,6 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 					value={notes}
 					onChange={(event) => setNotes(event.target.value)}
 					placeholder="Например: зубы 16 и 17 готовы к препарированию под коронки"
-					disabled={submittingPhase !== null}
 				/>
 				<div
 					className="ops-actions"
@@ -405,7 +703,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							className="primary-button"
 							type="button"
 							title={option.hint}
-							disabled={submittingPhase !== null}
+							disabled={submittingPhase === option.code}
 							onClick={() => void completePhase(option.code)}
 						>
 							{submittingPhase === option.code
@@ -419,7 +717,7 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 							className="secondary-button"
 							type="button"
 							title={type.typeLabel}
-							disabled={submittingPhase !== null}
+							disabled={submittingPhase === type.typeCode}
 							style={{ borderColor: type.colorHex, color: type.colorHex }}
 							onClick={() =>
 								void completePhase(type.typeCode as ClinicalPhaseCode)
@@ -469,6 +767,19 @@ export const ClinicalTasksPanel: React.FC<ClinicalTasksPanelProps> = ({
 									</td>
 									<td data-label="Создана">
 										{task.createdAt ? formatMoment(task.createdAt) : "—"}
+										{task.dueAt ? (
+											<span
+												className="ops-note"
+												style={{
+													display: "block",
+													marginTop: "0.2rem",
+													fontSize: "0.8rem",
+													color: "var(--brand-primary, #0284c7)",
+												}}
+											>
+												Срок: {formatMoment(task.dueAt)}
+											</span>
+										) : null}
 									</td>
 								</tr>
 							))}

@@ -14,6 +14,7 @@ export interface WorkspaceContinuityStripProps {
 	pendingMutationCount?: number;
 	onSyncMutations?: () => void;
 	isSyncingMutations?: boolean;
+	onClearMutations?: () => void;
 }
 
 const workspaceContinuityOfflineGuidanceId =
@@ -42,6 +43,7 @@ export function WorkspaceContinuityStrip({
 	pendingMutationCount = 0,
 	onSyncMutations,
 	isSyncingMutations = false,
+	onClearMutations,
 }: WorkspaceContinuityStripProps) {
 	const effectiveOnline = networkState ? networkState.isOnline : isOnline;
 	const totalPending =
@@ -102,12 +104,29 @@ export function WorkspaceContinuityStrip({
 
 			{/* Right: Compact sync trigger */}
 			<div className="workspace-continuity-actions">
+				{pendingMutationCount > 0 && onClearMutations ? (
+					<button
+						className="workspace-continuity-btn workspace-continuity-btn--clear"
+						type="button"
+						onClick={onClearMutations}
+						title="Очистить очередь офлайн-мутаций (1 клик)"
+						data-testid="btn-clear-mutations"
+					>
+						Очистить очередь
+					</button>
+				) : null}
 				{pendingMutationCount > 0 && onSyncMutations ? (
 					<button
 						className="workspace-continuity-btn"
 						type="button"
 						onClick={onSyncMutations}
-						disabled={!effectiveOnline || isSyncingMutations}
+						disabled={isSyncingMutations}
+						title={
+							!effectiveOnline
+								? "Принудительная синхронизация мутаций при нестабильной сети (1 клик)"
+								: "Синхронизировать очередь мутаций"
+						}
+						data-testid="btn-sync-mutations"
 						aria-describedby={
 							!effectiveOnline
 								? workspaceContinuityOfflineGuidanceId
@@ -116,7 +135,9 @@ export function WorkspaceContinuityStrip({
 					>
 						{isSyncingMutations
 							? "Синхронизация..."
-							: "Синхронизировать"}
+							: !effectiveOnline
+								? "Синхронизировать принудительно"
+								: "Синхронизировать"}
 					</button>
 				) : null}
 				{pendingVisitSaveCount ? (
@@ -124,7 +145,13 @@ export function WorkspaceContinuityStrip({
 						className="workspace-continuity-btn"
 						type="button"
 						onClick={onFlushVisit}
-						disabled={!effectiveOnline || isPendingVisitSyncing}
+						disabled={isPendingVisitSyncing}
+						title={
+							!effectiveOnline
+								? "Принудительная отправка сохраненных приемов (1 клик)"
+								: "Отправить приемы"
+						}
+						data-testid="btn-flush-visits"
 						aria-describedby={
 							!effectiveOnline
 								? workspaceContinuityOfflineGuidanceId
