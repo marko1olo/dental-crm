@@ -13,7 +13,7 @@
  * - Zero emojis (strict Lucide vector icons).
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	Search,
 	Plus,
@@ -33,6 +33,7 @@ import { rubToKopecks } from "@dental/shared";
 import { PaymentModal } from "../finance/PaymentModal.js";
 import { hardwarePrinter } from "../../services/hardware/HardwarePrinter.js";
 import { showToast } from "../GlobalToast.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 
 export interface InvoiceLineItem {
 	id: string;
@@ -62,6 +63,8 @@ export interface BillingInvoice {
 
 export interface InvoicesViewProps {
 	initialInvoices?: BillingInvoice[];
+	patientId?: string;
+	patientName?: string;
 	currentDoctorName?: string;
 	clinicLegalName?: string;
 	onClose?: () => void;
@@ -69,71 +72,48 @@ export interface InvoicesViewProps {
 
 type InvoiceFilterTab = "all" | "pending" | "paid" | "warranty";
 
-const DEMO_INVOICES: BillingInvoice[] = [
-	{
-		id: "inv-001",
-		number: "СЧ-004812",
-		patientId: "pat-101",
-		patientName: "Кузнецов Андрей Владимирович",
-		patientPhone: "+7 (916) 234-56-78",
-		doctorName: "Д-р Смирнов А.В.",
-		date: new Date().toLocaleDateString("ru-RU"),
-		totalAmountRub: 8500,
-		paidAmountRub: 0,
-		status: "issued",
-		items: [
-			{ id: "li-1", code: "A16.07.002", name: "Лечение глубокого кариеса световой пломбой (Estelite Asteria)", quantity: 1, priceRub: 6500 },
-			{ id: "li-2", code: "A16.07.030", name: "Анестезия проводниковая Ультракаин Д-С Форте 1.7 мл", quantity: 1, priceRub: 1200 },
-			{ id: "li-3", code: "A16.07.091", name: "Изоляция операционного поля коффердамом", quantity: 1, priceRub: 800 },
-		],
-		createdAt: new Date().toISOString(),
-	},
-	{
-		id: "inv-002",
-		number: "СЧ-004811",
-		patientId: "pat-102",
-		patientName: "Морозова Елена Сергеевна",
-		patientPhone: "+7 (926) 345-67-89",
-		doctorName: "Д-р Смирнов А.В.",
-		date: new Date(Date.now() - 86400000).toLocaleDateString("ru-RU"),
-		totalAmountRub: 12000,
-		paidAmountRub: 12000,
-		status: "paid",
-		items: [
-			{ id: "li-4", code: "A16.07.051", name: "Комплексная гигиена полости рта по протоколу GBT", quantity: 1, priceRub: 12000 },
-		],
-		createdAt: new Date(Date.now() - 86400000).toISOString(),
-		paidAt: new Date(Date.now() - 86400000).toISOString(),
-		paymentMethod: "card_terminal",
-	},
-	{
-		id: "inv-003",
-		number: "СЧ-004810",
-		patientId: "pat-103",
-		patientName: "Волков Денис Игоревич",
-		patientPhone: "+7 (903) 456-78-90",
-		doctorName: "Д-р Смирнов А.В.",
-		date: new Date(Date.now() - 172800000).toLocaleDateString("ru-RU"),
-		totalAmountRub: 0,
-		paidAmountRub: 0,
-		status: "warranty_100",
-		items: [
-			{ id: "li-5", code: "A16.07.002", name: "Коррекция пломбы по гарантии (Скидка 100%)", quantity: 1, priceRub: 0 },
-		],
-		createdAt: new Date(Date.now() - 172800000).toISOString(),
-		paidAt: new Date(Date.now() - 172800000).toISOString(),
-		paymentMethod: "warranty_discount_100",
-		notes: "Гарантийный случай: скол полировки в пределах срока гарантии",
-	},
-];
+export const INVOICES_STORAGE_KEY = "dente_billing_invoices";
+
+export function loadStoredInvoices(): BillingInvoice[] {
+	if (typeof window === "undefined" || !window.localStorage) {
+		return [];
+	}
+	try {
+		const raw = window.localStorage.getItem(INVOICES_STORAGE_KEY);
+		if (!raw) return [];
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed) ? (parsed as BillingInvoice[]) : [];
+	} catch {
+		return [];
+	}
+}
+
+export function saveStoredInvoices(invoices: BillingInvoice[]): void {
+	if (typeof window === "undefined" || !window.localStorage) {
+		return;
+	}
+	try {
+		window.localStorage.setItem(INVOICES_STORAGE_KEY, JSON.stringify(invoices));
+	} catch {
+		// Ignore storage write errors (quota exceeded or private browsing)
+	}
+}
 
 export const InvoicesView: React.FC<InvoicesViewProps> = ({
-	initialInvoices = DEMO_INVOICES,
+	initialInvoices,
+	patientId,
+	patientName,
 	currentDoctorName = "Врач-стоматолог",
 	clinicLegalName = "ООО «ДЕНТЕ»",
 	onClose,
 }) => {
-	const [invoices, setInvoices] = useState<BillingInvoice[]>(initialInvoices);
+	const [invoices, setInvoices] = useState<BillingInvoice[]>(() => {
+		if (initialInvoices && initialInvoices.length > 0) {
+			return initialInvoices;
+		}
+		const stored = loadStoredInvoices();
+		return stored.length > 0 ? stored : [];
+	});
 	const [filterTab, setFilterTab] = useState<InvoiceFilterTab>("all");
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [activePaymentInvoice, setActivePaymentInvoice] = useState<BillingInvoice | null>(null);
@@ -141,10 +121,108 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
 
 	// Quick Invoice Create form state (Solo Doctor friction-killer)
-	const [newPatientName, setNewPatientName] = useState<string>("");
+	const [newPatientName, setNewPatientName] = useState<string>(patientName || "");
 	const [newServiceName, setNewServiceName] = useState<string>("");
 	const [newServicePriceRub, setNewServicePriceRub] = useState<number>(5000);
 	const [newIsWarranty100, setNewIsWarranty100] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (patientName) {
+			setNewPatientName(patientName);
+		}
+	}, [patientName]);
+
+	// Server synchronization (Mandates 8e, 8n)
+	useEffect(() => {
+		let isMounted = true;
+		const syncInvoices = async () => {
+			try {
+				const url = `/api/invoices${patientId ? `?patientId=${encodeURIComponent(patientId)}` : ""}`;
+				const res = await fetch(url, {
+					headers: {
+						...denteAdminSecretRequestHeaders(),
+					},
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				const rawList: any[] = Array.isArray(data)
+					? data
+					: Array.isArray(data?.items)
+						? data.items
+						: Array.isArray(data?.invoices)
+							? data.invoices
+							: [];
+
+				if (rawList.length === 0) return;
+
+				const mapped: BillingInvoice[] = rawList.map((raw: any, idx: number) => {
+					if (raw.number && raw.status && Array.isArray(raw.items)) {
+						return raw as BillingInvoice;
+					}
+
+					const numMatch = typeof raw.notes === "string" ? raw.notes.match(/(?:Наряд|Счет|СЧТ|НРД|АКТ)[\s-]*([A-ZА-Я0-9-]+)/i) : null;
+					const invoiceNumber = raw.number || (numMatch ? numMatch[1] : `СЧ-${(raw.id || idx).toString().slice(-6)}`);
+					const total = typeof raw.totalAmountRub === "number"
+						? raw.totalAmountRub
+						: typeof raw.priceRub === "number"
+							? raw.priceRub
+							: 0;
+
+					return {
+						id: String(raw.id || `inv-${Date.now()}-${idx}`),
+						number: invoiceNumber,
+						patientId: String(raw.patientId || patientId || ""),
+						patientName: String(raw.patientName || patientName || "Пациент"),
+						patientPhone: raw.patientPhone,
+						doctorName: String(raw.doctorName || currentDoctorName),
+						date: raw.date || (raw.createdAt ? new Date(raw.createdAt).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU")),
+						totalAmountRub: total,
+						paidAmountRub: typeof raw.paidAmountRub === "number" ? raw.paidAmountRub : (raw.status === "paid" ? total : 0),
+						status: (raw.status as BillingInvoice["status"]) || "issued",
+						items: Array.isArray(raw.items) && raw.items.length > 0
+							? raw.items
+							: [
+									{
+										id: `li-${raw.id || idx}`,
+										code: raw.code || raw.serviceCode || "A16.07.002",
+										name: raw.title || raw.name || "Стоматологический прием",
+										quantity: Number(raw.quantity) || 1,
+										priceRub: total,
+									},
+								],
+						createdAt: raw.createdAt || new Date().toISOString(),
+						paidAt: raw.paidAt,
+						paymentMethod: raw.paymentMethod,
+						notes: raw.notes,
+					};
+				});
+
+				if (!isMounted) return;
+
+				setInvoices((prev) => {
+					const map = new Map<string, BillingInvoice>();
+					for (const inv of mapped) {
+						map.set(inv.id, inv);
+						if (inv.number) map.set(inv.number, inv);
+					}
+					for (const inv of prev) {
+						map.set(inv.id, inv);
+						if (inv.number) map.set(inv.number, inv);
+					}
+					const merged = Array.from(new Set(map.values()));
+					saveStoredInvoices(merged);
+					return merged;
+				});
+			} catch {
+				// Soft fallback: continue working with local data (Mandates 8e, 8n)
+			}
+		};
+
+		void syncInvoices();
+		return () => {
+			isMounted = false;
+		};
+	}, [patientId, patientName, currentDoctorName]);
 
 	// Filtered list
 	const filteredInvoices = useMemo(() => {
@@ -289,20 +367,22 @@ th { background: #f8fafc; font-weight: 700; }
 
 	// 100% Warranty discount application (Doctor Autonomy Mandate 8e)
 	const handleApplyWarranty100 = (inv: BillingInvoice) => {
-		setInvoices((prev) =>
-			prev.map((item) =>
+		setInvoices((prev) => {
+			const updated = prev.map((item) =>
 				item.id === inv.id
 					? {
 							...item,
 							totalAmountRub: 0,
 							paidAmountRub: 0,
-							status: "warranty_100",
+							status: "warranty_100" as const,
 							paymentMethod: "warranty_discount_100",
 							notes: (item.notes ? `${item.notes}; ` : "") + "Гарантия 100% (без чека ККТ)",
 						}
 					: item,
-			),
-		);
+			);
+			saveStoredInvoices(updated);
+			return updated;
+		});
 		setActiveMenuInvoiceId(null);
 		showToast(`Счет ${inv.number} переведен в статус: Гарантия 100% (0 ₽)`, "info");
 	};
@@ -320,7 +400,7 @@ th { background: #f8fafc; font-weight: 700; }
 		const newInvoice: BillingInvoice = {
 			id: `inv-${Date.now()}`,
 			number: invoiceNumber,
-			patientId: `pat-${Date.now().toString().slice(-4)}`,
+			patientId: patientId || `pat-${Date.now().toString().slice(-4)}`,
 			patientName: newPatientName.trim(),
 			doctorName: currentDoctorName,
 			date: new Date().toLocaleDateString("ru-RU"),
@@ -341,9 +421,38 @@ th { background: #f8fafc; font-weight: 700; }
 			notes: newIsWarranty100 ? "Гарантийный прием 100%" : undefined,
 		};
 
-		setInvoices((prev) => [newInvoice, ...prev]);
+		setInvoices((prev) => {
+			const updated = [newInvoice, ...prev];
+			saveStoredInvoices(updated);
+			return updated;
+		});
+
+		// Asynchronously notify server if patientId is valid UUID (Mandates 8e, 8n)
+		if (patientId && /^[0-9a-fA-F-]{36}$/.test(patientId)) {
+			fetch("/api/invoices/generate-from-plan", {
+				method: "POST",
+				headers: {
+					...denteAdminSecretRequestHeaders(),
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					patientId,
+					items: [
+						{
+							code804n: "A16.07.002",
+							nameRu: newServiceName.trim() || "Стоматологический прием и лечение",
+							quantity: 1,
+							planUnitPriceRub: finalAmount,
+						},
+					],
+				}),
+			}).catch(() => {
+				// Soft offline fallback
+			});
+		}
+
 		setIsCreateModalOpen(false);
-		setNewPatientName("");
+		setNewPatientName(patientName || "");
 		setNewServiceName("");
 		setNewServicePriceRub(5000);
 		setNewIsWarranty100(false);
@@ -468,6 +577,7 @@ th { background: #f8fafc; font-weight: 700; }
 							onClick={onClose}
 							className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 h-8 w-8 sm:h-7 sm:w-7 rounded-lg border border-[var(--line,#e2e8f0)] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer transition-colors"
 							aria-label="Закрыть реестр счетов"
+							data-testid="btn-invoices-close"
 						>
 							<X size={16} />
 						</button>
@@ -531,10 +641,10 @@ th { background: #f8fafc; font-weight: 700; }
 											<span
 												className={`px-2 py-0.5 rounded-full text-[11px] font-bold border inline-flex items-center gap-1 ${
 													isPaid
-														? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200"
+														? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
 														: isWarranty
-															? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200"
-															: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200"
+															? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+															: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800"
 												}`}
 											>
 												{isPaid
@@ -683,19 +793,21 @@ th { background: #f8fafc; font-weight: 700; }
 					clinicLegalName={clinicLegalName}
 					invoiceId={activePaymentInvoice.id}
 					onSuccess={(res) => {
-						setInvoices((prev) =>
-							prev.map((item) =>
+						setInvoices((prev) => {
+							const updated = prev.map((item) =>
 								item.id === activePaymentInvoice.id
 									? {
 											...item,
-											status: res.method === "warranty_discount_100" ? "warranty_100" : "paid",
+											status: (res.method === "warranty_discount_100" ? "warranty_100" : "paid") as BillingInvoice["status"],
 											paidAmountRub: res.method === "warranty_discount_100" ? 0 : item.totalAmountRub,
 											paidAt: new Date().toISOString(),
 											paymentMethod: res.method,
 										}
 									: item,
-							),
-						);
+							);
+							saveStoredInvoices(updated);
+							return updated;
+						});
 						setActivePaymentInvoice(null);
 						showToast(`Счет ${activePaymentInvoice.number} успешно закрыт`, "success");
 					}}
@@ -776,7 +888,7 @@ th { background: #f8fafc; font-weight: 700; }
 											setNewServicePriceRub(0);
 											setNewIsWarranty100(true);
 										}}
-										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-bold cursor-pointer"
+										className="min-h-[44px] sm:min-h-[30px] px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-bold cursor-pointer"
 									>
 										Гарантия 100% (0 ₽)
 									</button>

@@ -1,6 +1,6 @@
 import type { Dashboard, Patient, PaymentMethod } from "@dental/shared";
 import { useCallback, useState } from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Receipt } from "lucide-react";
 import { money as formatMoney } from "./AppHelpers";
 import { ClinicalAiPersonalizePanel } from "./ClinicalAiPersonalizePanel";
 import { ClinicalRulePanel } from "./ClinicalRulePanel";
@@ -8,6 +8,7 @@ import { CashDayTally } from "./components/finance/CashDayTally";
 import { CashShiftWidget } from "./components/finance/CashShiftWidget";
 import { FamilyWalletPanel } from "./components/finance/FamilyWalletPanel";
 import { ManagerialPnlDashboardModal } from "./components/finance/pnl/ManagerialPnlDashboardModal";
+import { InvoicesView } from "./components/billing/InvoicesView.js";
 import { useAppLogicContext } from "./contexts/AppLogicContext";
 import { FinanceLedger } from "./FinanceLedger";
 import {
@@ -299,6 +300,7 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	};
 
 	const [isPnlOpen, setIsPnlOpen] = useState(false);
+	const [isInvoicesOpen, setIsInvoicesOpen] = useState(false);
 
 	return (
 		<div className="finance-panel border-0 bg-transparent p-0 shadow-none" id="finance">
@@ -311,6 +313,16 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 					</p>
 				</div>
 				<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+					<button
+						className="secondary-button"
+						type="button"
+						onClick={() => setIsInvoicesOpen(true)}
+						aria-label="Счета и акты (804н)"
+						data-testid="btn-finance-open-invoices"
+						style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 }}
+					>
+						<Receipt size={15} /> Счета и акты (804н)
+					</button>
 					<button
 						className="secondary-button"
 						type="button"
@@ -492,6 +504,25 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 				isOpen={isPnlOpen}
 				onClose={() => setIsPnlOpen(false)}
 			/>
+
+			{isInvoicesOpen && (
+				<div
+					className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Счета и акты по номенклатуре 804н"
+					data-testid="modal-finance-invoices"
+				>
+					<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line,#e2e8f0)] flex flex-col bg-[var(--paper,#ffffff)]">
+						<InvoicesView
+							currentDoctorName="Врач-стоматолог"
+							patientId={documentPatient?.id}
+							patientName={documentPatient?.fullName}
+							onClose={() => setIsInvoicesOpen(false)}
+						/>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
