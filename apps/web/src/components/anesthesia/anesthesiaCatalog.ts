@@ -388,6 +388,20 @@ export interface StandardAnesthesiaPreset {
 }
 
 export const STANDARD_ANESTHESIA_PRESETS: Record<string, StandardAnesthesiaPreset> = {
+	ultracain_ds_forte: {
+		id: 'ultracain_ds_forte',
+		labelRu: '1-клик: Ультракаин Д-С Форте 1.7 мл инфильтрационная (1:100 000, 1 карпула, осложнений нет)',
+		shortLabelRu: 'Ультракаин Д-С Форте 1.7 мл (инфильтрационная)',
+		testId: 'btn-anesthesia-preset-ultracain-ds-forte',
+		drugId: 'articaine_1_100k',
+		carpulesCount: 1.0,
+		techniqueId: 'infiltration',
+		needleType: 'g30_short_21mm',
+		descriptionRu: 'Стандартная инфильтрационная анестезия (Ультракаин Д-С Форте 1:100 000, 1 карпула 1.7 мл, осложнений нет)',
+		isAdrenalineFree: false,
+		hasCardioRisk: false,
+		defaultWeightKg: 70,
+	},
 	ultracain_ds: {
 		id: 'ultracain_ds',
 		labelRu: '1-клик: Ультракаин Д-С 1:200000 (1 карпула 1.7 мл, инфильтрация, осложнений нет)',

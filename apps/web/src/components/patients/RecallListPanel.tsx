@@ -370,18 +370,48 @@ export const RecallListPanel: React.FC = () => {
 														<button
 															className="secondary-button inline-flex items-center gap-1 min-h-[44px] sm:min-h-[34px]"
 															type="button"
-															disabled={!candidate.phone}
-															onClick={() => markCalled(candidate.patientId)}
+															disabled={false}
+															onClick={() => {
+																if (!candidate.phone) {
+																	showToast(
+																		"У пациента не указан телефон. Открыть карточку для ввода?",
+																		"warning",
+																	);
+																	if (
+																		candidate.patientId &&
+																		typeof appLogic?.setSelectedPatientId === "function"
+																	) {
+																		appLogic.setSelectedPatientId(candidate.patientId);
+																	}
+																	return;
+																}
+																markCalled(candidate.patientId);
+															}}
 														>
 															{wasCalled && <Check size={13} className="text-emerald-600" aria-hidden="true" />}
 															<span>{wasCalled ? "Позвонил" : "Позвонить"}</span>
 														</button>
 														{INVITABLE.includes(candidate.band) ? (
 															<button
-																className="secondary-button"
+																className="secondary-button min-h-[44px] sm:min-h-[34px]"
 																type="button"
-																disabled={busy || !candidate.phone}
-																onClick={() => void invite(candidate)}
+																disabled={busy}
+																onClick={() => {
+																	if (!candidate.phone) {
+																		showToast(
+																			"У пациента не указан телефон. Открыть карточку для ввода?",
+																			"warning",
+																		);
+																		if (
+																			candidate.patientId &&
+																			typeof appLogic?.setSelectedPatientId === "function"
+																		) {
+																			appLogic.setSelectedPatientId(candidate.patientId);
+																		}
+																		return;
+																	}
+																	void invite(candidate);
+																}}
 															>
 																{busy ? "Отправляю…" : "Пригласить SMS"}
 															</button>

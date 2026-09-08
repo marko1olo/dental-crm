@@ -115,6 +115,14 @@ export function OrthodonticStudioModal({
 		showToast(`Установлена рабочая дуга ${wire.label}`, "info");
 	};
 
+	// 1-Click Elastic Size Handler (Mandate 8e: zero dead disabled buttons)
+	const handleElasticSizeInteraction = useCallback(() => {
+		if (elasticScheme === "none") {
+			setElasticScheme("class_ii");
+			showToast("Схема эластиков: установлен «Класс II (по умолчанию)»", "info");
+		}
+	}, [elasticScheme]);
+
 	// Photos state (Angle -> imageUrl)
 	const [photos, setPhotos] = useState<Record<string, string>>({});
 	const [isFullPhotoModalOpen, setIsFullPhotoModalOpen] = useState<boolean>(false);
@@ -851,10 +859,15 @@ export function OrthodonticStudioModal({
 									</select>
 									<select
 										aria-label="Размер эластиков"
-										disabled={elasticScheme === "none"}
+										disabled={false}
 										value={elasticSize}
-										onChange={(e) => setElasticSize(e.target.value)}
-										className="min-h-[38px] px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none disabled:opacity-50"
+										onClick={handleElasticSizeInteraction}
+										onFocus={handleElasticSizeInteraction}
+										onChange={(e) => {
+											handleElasticSizeInteraction();
+											setElasticSize(e.target.value);
+										}}
+										className="min-h-[38px] px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-100 outline-none"
 									>
 										{ELASTIC_SIZES.map((s) => (
 											<option key={s.id} value={s.id}>

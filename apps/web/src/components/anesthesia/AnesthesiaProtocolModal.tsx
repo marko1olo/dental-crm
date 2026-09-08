@@ -42,6 +42,8 @@ export interface AnesthesiaProtocolModalProps {
 	onApplyToDiary?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
 	onOpenEmergencyProtocol?: (() => void) | undefined;
 	initialToothNumber?: number | string | undefined;
+	toothNumber?: number | string | undefined;
+	patientName?: string | undefined;
 	initialPatientWeightKg?: number | undefined;
 	initialPatientAgeYears?: number | undefined;
 	initialHasCardioRisk?: boolean | undefined;
@@ -54,11 +56,14 @@ export function AnesthesiaProtocolModal({
 	onApplyToDiary,
 	onOpenEmergencyProtocol,
 	initialToothNumber = 46,
+	toothNumber,
+	patientName,
 	initialPatientWeightKg = 70,
 	initialPatientAgeYears = 35,
 	initialHasCardioRisk = false,
 	nurseFullName = 'Смирнова А. В.'
 }: AnesthesiaProtocolModalProps) {
+	const effectiveToothNumber = toothNumber ?? initialToothNumber;
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId>('articaine_1_100k');
 	const [carpulesCount, setCarpulesCount] = useState<number>(1.0);
 	const [patientWeightKg, setPatientWeightKg] = useState<number>(initialPatientWeightKg);
@@ -115,7 +120,9 @@ export function AnesthesiaProtocolModal({
 	};
 
 	// 1-Click Anesthesia Presets (Mandate 8e)
-	const applyStandardPreset = (presetKey: 'ultracain_ds' | 'articaine_mandibular' | 'mepivacaine_plain') => {
+	const applyStandardPreset = (
+		presetKey: 'ultracain_ds' | 'ultracain_ds_forte' | 'articaine_mandibular' | 'mepivacaine_plain'
+	) => {
 		const preset = STANDARD_ANESTHESIA_PRESETS[presetKey];
 		if (!preset) return;
 		setSelectedDrugId(preset.drugId);
@@ -216,7 +223,7 @@ export function AnesthesiaProtocolModal({
 	};
 
 	const handleApplyQuickNormPreset = () => {
-		applyStandardPreset('articaine_mandibular');
+		applyStandardPreset('ultracain_ds_forte');
 	};
 
 	if (!isOpen) return null;
@@ -259,11 +266,11 @@ export function AnesthesiaProtocolModal({
 							onClick={handleApplyQuickNormPreset}
 							className="anesthesia-btn"
 							style={{ minHeight: '44px', padding: '0.25rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-							title="Заполнить нормой: Артикаин 1:100k (1.7 мл), аспирация (-)"
+							title="Заполнить нормой: Ультракаин Д-С Форте 1.7 мл инфильтрационная, аспирация (-)"
 							data-testid="btn-anesthesia-norm-preset"
 						>
 							<Zap size={14} color="var(--brand-primary, var(--teal))" />
-							<span>Норма 1 клик</span>
+							<span>Ультракаин Форте 1.7 мл (1 клик)</span>
 						</button>
 						<button
 							type="button"
@@ -309,6 +316,36 @@ export function AnesthesiaProtocolModal({
 								gap: '0.5rem',
 							}}
 						>
+							<button
+								type="button"
+								onClick={() => applyStandardPreset('ultracain_ds_forte')}
+								className="anesthesia-btn"
+								style={{
+									minHeight: '44px',
+									padding: '0.375rem 0.625rem',
+									textAlign: 'left',
+									display: 'flex',
+									alignItems: 'center',
+									gap: '0.5rem',
+									borderRadius: '8px',
+									border: '1px solid var(--teal, #0d9488)',
+									background: selectedDrugId === 'articaine_1_100k' && techniqueId === 'infiltration' ? 'var(--teal-surface, rgba(13, 148, 136, 0.12))' : 'var(--paper, #fff)',
+									cursor: 'pointer',
+								}}
+								data-testid="btn-anesthesia-preset-ultracain-ds-forte"
+								title="Ультракаин Д-С Форте 1.7 мл инфильтрационная (1:100 000, 1 карпула, осложнений нет)"
+							>
+								<Zap size={15} color="#0d9488" style={{ flexShrink: 0 }} />
+								<div style={{ flex: 1, minWidth: 0 }}>
+									<div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--ink)' }}>
+										Ультракаин Д-С Форте 1.7 мл
+									</div>
+									<div style={{ fontSize: '0.6875rem', color: 'var(--muted)' }}>
+										1 карп. 1.7 мл, инфильтрационная
+									</div>
+								</div>
+							</button>
+
 							<button
 								type="button"
 								onClick={() => applyStandardPreset('ultracain_ds')}

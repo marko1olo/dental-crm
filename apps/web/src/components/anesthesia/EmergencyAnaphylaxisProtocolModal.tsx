@@ -218,6 +218,42 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 		[stopwatchSeconds, logResuscitationEvent],
 	);
 
+	// 1-Click Anaphylaxis Emergency Combo (Mandates 8e, 8k: Адреналин 0.5 мг в/м + Преднизолон 90 мг в/в)
+	const handleApplyAnaphylaxisCombo = useCallback(() => {
+		const timeFormatted = formatEmergencyStopwatchTime(stopwatchSeconds);
+		const nowIso = new Date().toISOString();
+		const epiDose = calculatedDosages.epinephrine?.volumeText || "0.5 мл (0.5 мг)";
+		const predDose = calculatedDosages.prednisolone?.doseText || "90 – 120 мг";
+
+		setAdministeredDrugs((prev) => [
+			...prev,
+			{ name: "Эпинефрин (Адреналин) 0.1%", dose: `${epiDose} в/м в бедро`, timeIso: nowIso },
+			{ name: "Преднизолон", dose: `${predDose} в/в струйно`, timeIso: nowIso },
+		]);
+
+		// Mark critical emergency checklist items as done
+		setCompletedChecklistItems((prev) => ({
+			...prev,
+			[`${activeScenarioId}_step2_item0`]: true,
+			[`${activeScenarioId}_step5_item0`]: true,
+		}));
+
+		soundFeedback.playActionSuccess();
+		logResuscitationEvent(
+			`1-КЛИК ЭКСТРЕННЫЙ ПАКЕТ: Адреналин ${epiDose} в/м + Преднизолон ${predDose} в/в`,
+		);
+
+		showToast(
+			`1-Клик протокол: Адреналин 0.5 мг в/м + Преднизолон 90 мг в/в применены! (${timeFormatted})`,
+			"success",
+		);
+	}, [
+		stopwatchSeconds,
+		calculatedDosages,
+		activeScenarioId,
+		logResuscitationEvent,
+	]);
+
 	// 1-Click Insert Protocol to Form 043/u
 	const handleInsertToProtocol = useCallback(() => {
 		const actText = generateEmergencyForm043Act({
@@ -362,6 +398,18 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 					</div>
 
 					<div className="emergency-header-actions">
+						{/* 1-Click Anaphylaxis Resuscitation Combo (Mandates 8e, 8k) */}
+						<button
+							type="button"
+							onClick={handleApplyAnaphylaxisCombo}
+							className="emergency-action-btn danger font-bold"
+							data-testid="header-1click-anaphylaxis-btn"
+							title="1-Клик: Адреналин 0.5 мг в/м + Преднизолон 90 мг в/в"
+						>
+							<Zap size={18} />
+							<span>1-Клик Анафилаксия</span>
+						</button>
+
 						{/* Call 112 / SBAR Script */}
 						<button
 							type="button"
@@ -822,6 +870,20 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 								Быстрая фиксация введения:
 							</div>
 							<div className="emergency-quick-admin-grid">
+								{/* 1-Click Resuscitation Combo (Mandates 8e, 8k) */}
+								<button
+									type="button"
+									onClick={handleApplyAnaphylaxisCombo}
+									className="emergency-quick-drug-btn border-2 border-red-500 bg-red-50/90 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/60"
+									data-testid="btn-emergency-1click-anaphylaxis-combo"
+								>
+									<span className="font-black text-red-700 dark:text-red-300 flex items-center gap-1.5">
+										<Zap size={15} />
+										1-Клик Пакет: Адреналин (0.5 мг в/м) + Преднизолон (90 мг в/в)
+									</span>
+									<span className="text-[10px] text-red-600 dark:text-red-400 font-mono font-bold">в/м + в/в</span>
+								</button>
+
 								<button
 									type="button"
 									onClick={() =>

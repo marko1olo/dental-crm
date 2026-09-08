@@ -330,8 +330,21 @@ export const FreedSlotsPanel: React.FC = () => {
 																className="secondary-button"
 																type="button"
 																style={{ minHeight: 44 }}
-																disabled={!best?.phone}
-																onClick={() =>
+																disabled={false}
+																onClick={() => {
+																	if (!best?.phone) {
+																		showToast(
+																			"У пациента не указан телефон. Открыть карточку для ввода?",
+																			"warning",
+																		);
+																		if (
+																			best?.patientId &&
+																			typeof appLogic?.setSelectedPatientId === "function"
+																		) {
+																			appLogic.setSelectedPatientId(best.patientId);
+																		}
+																		return;
+																	}
 																	setCalled((previous) =>
 																		new Set(previous).add(
 																			calledKey(
@@ -339,8 +352,8 @@ export const FreedSlotsPanel: React.FC = () => {
 																				best?.patientId,
 																			),
 																		),
-																	)
-																}
+																	);
+																}}
 															>
 																Позвонил
 															</button>
