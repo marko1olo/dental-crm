@@ -205,16 +205,16 @@ export const DOCUMENT_PACKAGES: Record<
 
 	hospital: {
 		id: "hospital",
-		title: "Госпитальный пакет",
-		shortTitle: "Госпитальный",
+		title: "Стоматологический пакет направления (043/у, КЛКТ/ОПТГ, 027/у)",
+		shortTitle: "Направление (043/у, 027/у)",
 		description:
-			"Пакет направления и выписки для стационара, челюстно-лицевой хирургии, седации или сторонних ЛПУ: направление на КЛКТ/рентген, выписка из карты, амбулаторная карта 025/у, справка о посещении и расписка выдачи.",
+			"Пакет документов для направления и маршрутизации стоматологического пациента: направление на лучевую диагностику (КЛКТ / ОПТГ / ТРГ), выписка из медицинской карты (027/у), стоматологическая медкарта 043/у, справка о посещении и расписка о выдаче документов.",
 		icon: "hospital",
 		primaryKind: "xray_cbct_referral",
 		documentKinds: [
 			"xray_cbct_referral",
 			"medical_record_extract",
-			"outpatient_medical_card_025u",
+			"dental_medical_card_043u",
 			"visit_attendance_certificate",
 			"medical_document_release_receipt",
 		],
@@ -236,11 +236,11 @@ export const DOCUMENT_PACKAGES: Record<
 				description: "Анамнез, проведенное лечение, сопутствующие диагнозы и рекомендации.",
 			},
 			{
-				kind: "outpatient_medical_card_025u",
-				title: "Медицинская карта пациента, получающего помощь амбулаторно (025/у)",
-				shortTitle: "Амбулаторная 025/у",
-				required: false,
-				description: "Официальная амбулаторная форма Минздрава РФ № 834н / 274н.",
+				kind: "dental_medical_card_043u",
+				title: "Медицинская карта стоматологического больного (Форма 043/у)",
+				shortTitle: "Медкарта 043/у",
+				required: true,
+				description: "Официальный амбулаторный стоматологический статус, зубная формула и анамнез.",
 			},
 			{
 				kind: "visit_attendance_certificate",
@@ -393,24 +393,25 @@ export function buildDocumentPackageStatePatch(
 		case "hospital": {
 			return {
 				selectedDocumentKind: "xray_cbct_referral" as DocumentKind,
-				// Outpatient 025u & Extract
+				// Dental Medical Card 043/u
+				dentalMedicalCardOfficialFormChecked: true,
 				outpatient025uOfficialForm274nChecked: true,
 				outpatient025uThirdPartyDataChecked: true,
 				// Attendance Certificate
 				attendanceDiagnosisDisclosureExcluded: true,
 				attendanceNotSickLeaveAcknowledged: true,
-				attendancePurpose: "Консультация и лечение в специализированном стационаре / челюстно-лицевом отделении",
+				attendancePurpose: "Консультация и обследование в специализированном стоматологическом стационаре / челюстно-лицевом отделении",
 				// Release Receipt
 				releaseChannel: "paper",
 				releaseThirdPartyDataChecked: true,
-				releaseDocumentTypes: "Выписка из медицинской карты (027/у)\nДанные рентгенологических исследований (КЛКТ / ОПТГ)",
+				releaseDocumentTypes: "Выписка из медицинской карты (027/у)\nДанные рентгенологических исследований (КЛКТ / ОПТГ / ТРГ)\nСтоматологическая карта 043/у",
 				releaseRecipientAuthority: "пациент лично",
 				// Copy Request
 				copyRequestIncludeDicomSourceData: true,
 				copyRequestIdentityVerified: true,
 				copyRequestThirdPartyDataChecked: true,
 				copyRequestFormat: "paper",
-				copyRequestDocumentTypes: "Выписка из медицинской карты\nАрхив диагностических снимков",
+				copyRequestDocumentTypes: "Выписка из стоматологической карты (027/у)\nАрхив диагностических снимков (КЛКТ/ОПТГ)",
 			};
 		}
 

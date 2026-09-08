@@ -744,6 +744,22 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(source.includes("disabled={isLocked && !overrideActive}"), "Кнопка протокола должна разблокироваться при overrideActive = true (Мандат 8e)");
 			assert.ok(source.includes("isLocked && !overrideActive"), "Проверка блокировки в handleApplyProtocol обязана учитывать клинический оверрайд врача");
 		});
+
+		it("8.7. OrthopedicsChairsidePanel.tsx содержит 1-клик стандарты ЗТЛ, VITA Classical & 3D-Master и мгновенную отправку без барьеров", () => {
+			const orthoPath = path.resolve(webSrcDir, "components/orthopedics/OrthopedicsChairsidePanel.tsx");
+			const source = fs.readFileSync(orthoPath, "utf-8");
+			assert.ok(source.includes("STANDARD_ZTL_ORDER_PRESETS"), "Панель ортопедии должна объявлять стандартные наряды ЗТЛ");
+			assert.ok(source.includes("VITA_3D_MASTER_SHADE_GROUPS"), "Панель ортопедии должна поддерживать группы VITA 3D-Master");
+			assert.ok(source.includes("data-testid=\"direct-send-lab-order-btn\""), "Панель ортопедии должна предоставлять кнопку 1-клик отправки в ЗТЛ");
+			assert.ok(source.includes("data-testid=\"vita-3d-master-tab\""), "Панель ортопедии должна содержать переключатель на VITA 3D-Master");
+		});
+
+		it("8.8. documentPackages.ts: пакет направления адаптирован под стоматологический амбулаторный контекст (Форма 043/у)", () => {
+			const docPackagesPath = path.resolve(webSrcDir, "utils/documentPackages.ts");
+			const source = fs.readFileSync(docPackagesPath, "utf-8");
+			assert.ok(source.includes("dental_medical_card_043u"), "Пакет направления обязан включать стоматологическую карту 043/у вместо поликлинической 025/у");
+			assert.ok(source.includes("Стоматологический пакет направления"), "Название пакета должно отражать стоматологический профиль");
+		});
 	});
 });
 

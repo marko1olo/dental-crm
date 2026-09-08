@@ -10,6 +10,8 @@ import {
 	ArrowRight,
 	ExternalLink,
 	Check,
+	Send,
+	Zap,
 } from "lucide-react";
 import {
 	ORTHOPEDIC_CANONICAL_PROTOCOLS,
@@ -21,6 +23,83 @@ import {
 	type Order804nServiceItem,
 } from "./orthopedicProtocols.js";
 import { showToast } from "../GlobalToast.js";
+
+export interface StandardZtlPreset {
+	readonly id: string;
+	readonly name: string;
+	readonly material: string;
+	readonly constructionType: string;
+	readonly badge: string;
+	readonly description: string;
+}
+
+export const STANDARD_ZTL_ORDER_PRESETS: readonly StandardZtlPreset[] = [
+	{
+		id: "zirconia",
+		name: "Диоксид циркония",
+		material: "ZrO2 Multi-Layer",
+		constructionType: "single_crown",
+		badge: "ZrO2",
+		description: "Монолитный диоксид циркония многослойной градиентной прозрачности",
+	},
+	{
+		id: "emax",
+		name: "IPS e.max",
+		material: "IPS e.max Press",
+		constructionType: "single_crown",
+		badge: "e.max Press",
+		description: "Прессованная дисиликатная стеклокерамика высокой эстетики",
+	},
+	{
+		id: "metal_ceramic",
+		name: "Металлокерамика",
+		material: "Металлокерамика Noritake",
+		constructionType: "single_crown",
+		badge: "МК Noritake",
+		description: "Классическая металлокерамика на CoCr каркасе",
+	},
+	{
+		id: "clasp_denture",
+		name: "Бюгельный протез",
+		material: "Бюгель на кламмерах / замках (CoCr)",
+		constructionType: "clasp_denture",
+		badge: "Бюгель CoCr",
+		description: "Дуговой съемный протез с опорно-удерживающими кламмерами или замками",
+	},
+] as const;
+
+export const VITA_3D_MASTER_SHADE_GROUPS = [
+	{
+		group: "0M (Bleach)",
+		labelRu: "0M Bleach",
+		shades: ["0M1", "0M2", "0M3"] as const,
+	},
+	{
+		group: "1M",
+		labelRu: "Группа 1M",
+		shades: ["1M1", "1M2"] as const,
+	},
+	{
+		group: "2M / 2L / 2R",
+		labelRu: "Группа 2",
+		shades: ["2L1.5", "2M1", "2M2", "2M3", "2R1.5"] as const,
+	},
+	{
+		group: "3M / 3L / 3R",
+		labelRu: "Группа 3",
+		shades: ["3L1.5", "3M1", "3M2", "3M3", "3R1.5"] as const,
+	},
+	{
+		group: "4M / 4L",
+		labelRu: "Группа 4",
+		shades: ["4L1.5", "4M1", "4M2", "4M3"] as const,
+	},
+	{
+		group: "5M",
+		labelRu: "Группа 5",
+		shades: ["5M1", "5M2"] as const,
+	},
+] as const;
 
 export interface OrthopedicsChairsidePanelProps {
 	readonly activeToothFdi?: string | number | undefined;
@@ -55,11 +134,86 @@ export function OrthopedicsChairsidePanel({
 	const [selectedShade, setSelectedShade] = useState<string>("A2");
 	const [appliedProtocolId, setAppliedProtocolId] = useState<string | null>(null);
 
+	// Стандартные наряды ЗТЛ и шкала VITA (Мандат 8i, 8k)
+	const [shadeSystem, setShadeSystem] = useState<"classical" | "3d_master">("classical");
+	const [activeZtlPresetId, setActiveZtlPresetId] = useState<string>("zirconia");
+	const [isLabOrderSending, setIsLabOrderSending] = useState<boolean>(false);
+	const [labOrderSentNumber, setLabOrderSentNumber] = useState<string | null>(null);
+
 	// Клинический оверрайд врача (Мандат 8e п. 7, 8n)
 	const [overrideActive, setOverrideActive] = useState<boolean>(false);
 	const [overrideReason, setOverrideReason] = useState<string>(
 		"Срочное изготовление по клиническим показаниям (аванс < 50%)",
 	);
+
+	const handleSelectZtlPreset = useCallback((preset: StandardZtlPreset) => {
+		setActiveZtlPresetId(preset.id);
+		setSelectedMaterial(preset.material);
+		showToast(`Выбран стандарт ЗТЛ: ${preset.name} (${preset.badge})`, "info", 2000);
+	}, []);
+
+	const handleImmediateSendToLab = useCallback(() => {
+		if (isLocked && !overrideActive) {
+			showToast(
+				"Карта визита заблокирована (активируйте клинический оверрайд врача)",
+				"warning",
+			);
+			return;
+		}
+
+		const teethParts = activeTeethInput
+			.split(/[\s,;-]+/)
+			.map((p) => p.trim())
+			.filter(Boolean);
+
+		const preset =
+			STANDARD_ZTL_ORDER_PRESETS.find((p) => p.id === activeZtlPresetId) ??
+			STANDARD_ZTL_ORDER_PRESETS[0];
+		if (!preset) return;
+		const orderNumber = `ЗТЛ-${Date.now().toString().slice(-6)}`;
+
+		setIsLabOrderSending(true);
+
+		const labOrderPayload = {
+			orderNumber,
+			createdAt: new Date().toISOString(),
+			teeth: teethParts.length > 0 ? teethParts : ["16"],
+			jawScope: jawScope !== "none" ? jawScope : "upper",
+			constructionType: preset.constructionType,
+			material: selectedMaterial,
+			colorVita: selectedShade,
+			doctorNotes: `Срочный 1-клик наряд ЗТЛ из кресла врача. Пресет: ${preset.name}. Оттенок: ${selectedShade}.`,
+			overrideActive,
+			overrideReason: overrideActive ? overrideReason : undefined,
+		};
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-lab-order-created", {
+					detail: labOrderPayload,
+				}),
+			);
+		}
+
+		setTimeout(() => {
+			setIsLabOrderSending(false);
+			setLabOrderSentNumber(orderNumber);
+			showToast(
+				`Наряд ${orderNumber} в ЗТЛ успешно отправлен (${preset.name}, оттенок ${selectedShade})!`,
+				"success",
+				4000,
+			);
+		}, 300);
+	}, [
+		activeTeethInput,
+		activeZtlPresetId,
+		isLocked,
+		jawScope,
+		overrideActive,
+		overrideReason,
+		selectedMaterial,
+		selectedShade,
+	]);
 
 	const handleApplyProtocol = useCallback(
 		(protocol: OrthopedicProtocolPreset) => {
@@ -243,14 +397,84 @@ export function OrthopedicsChairsidePanel({
 				</div>
 			</div>
 
-			{/* 1-КЛИК СЕЛЕКТОР ШКАЛЫ VITA CLASSICAL & BLEACH (Мандат 8e, 8n: эргономика у кресла, тач-таргеты >= 48px) */}
+			{/* 1-КЛИК ПРЕСЕТЫ СТАНДАРТНЫХ НАРАДОВ ЗТЛ (Мандат 8i, 8k: без процедурных симуляторов, практичный выбор) */}
+			<div className="mb-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
+				<div className="flex items-center justify-between gap-2 mb-2">
+					<div className="flex items-center gap-1.5">
+						<Zap size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+							Стандарты ЗТЛ (1 клик):
+						</span>
+					</div>
+					<span className="text-[11px] text-slate-500 dark:text-slate-400">
+						Готовые спецификации для зуботехнической лаборатории
+					</span>
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+					{STANDARD_ZTL_ORDER_PRESETS.map((preset) => {
+						const isSelected = activeZtlPresetId === preset.id;
+						return (
+							<button
+								key={preset.id}
+								type="button"
+								onClick={() => handleSelectZtlPreset(preset)}
+								className={`min-h-[48px] px-3 py-2 rounded-lg text-xs font-bold text-left transition-all cursor-pointer border flex flex-col justify-between ${
+									isSelected
+										? "bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500 shadow-xs"
+										: "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+								}`}
+								data-testid={`ztl-preset-${preset.id}`}
+								title={preset.description}
+							>
+								<div className="flex items-center justify-between gap-1">
+									<span className="truncate">{preset.name}</span>
+									<span className="text-[10px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+										{preset.badge}
+									</span>
+								</div>
+								<span className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+									{preset.material}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* 1-КЛИК СЕЛЕКТОР ШКАЛЫ VITA CLASSICAL & 3D-MASTER (Мандат 8e, 8n: эргономика у кресла, тач-таргеты >= 48px) */}
 			<div className="mb-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-2.5">
 				<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-					<div className="flex items-center gap-1.5">
+					<div className="flex items-center gap-2">
 						<Sparkles size={16} className="text-amber-500 dark:text-amber-400 shrink-0" />
 						<span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-							Шкала VITA Classical & Bleach (выбор в 1 клик):
+							Шкала VITA:
 						</span>
+						<div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 overflow-hidden text-xs">
+							<button
+								type="button"
+								onClick={() => setShadeSystem("classical")}
+								className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors ${
+									shadeSystem === "classical"
+										? "bg-teal-600 text-white"
+										: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+								}`}
+								data-testid="vita-classical-tab"
+							>
+								VITA Classical
+							</button>
+							<button
+								type="button"
+								onClick={() => setShadeSystem("3d_master")}
+								className={`min-h-[48px] px-3 font-bold cursor-pointer transition-colors border-l border-slate-300 dark:border-slate-700 ${
+									shadeSystem === "3d_master"
+										? "bg-teal-600 text-white"
+										: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
+								}`}
+								data-testid="vita-3d-master-tab"
+							>
+								VITA 3D-Master
+							</button>
+						</div>
 					</div>
 					<div className="flex items-center gap-1.5">
 						<span className="text-xs text-slate-600 dark:text-slate-300 font-medium">Выбранный оттенок:</span>
@@ -260,42 +484,77 @@ export function OrthopedicsChairsidePanel({
 					</div>
 				</div>
 
-				{/* 1-клик сетка групп VITA */}
-				<div className="space-y-1.5">
-					{VITA_SHADE_GROUPS.map((grp) => (
-						<div key={grp.group} className="flex flex-wrap items-center gap-1.5">
-							<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-16 shrink-0">
-								{grp.group === "Bleach" ? "Bleach" : `Гр. ${grp.group}`}:
-							</span>
-							<div className="flex flex-wrap items-center gap-1.5 flex-1">
-								{grp.shades.map((shade) => {
-									const isSelected = selectedShade === shade;
-									const isBleach = shade.startsWith("BL");
+				{shadeSystem === "classical" ? (
+					/* 1-клик сетка групп VITA Classical */
+					<div className="space-y-1.5">
+						{VITA_SHADE_GROUPS.map((grp) => (
+							<div key={grp.group} className="flex flex-wrap items-center gap-1.5">
+								<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-16 shrink-0">
+									{grp.group === "Bleach" ? "Bleach" : `Гр. ${grp.group}`}:
+								</span>
+								<div className="flex flex-wrap items-center gap-1.5 flex-1">
+									{grp.shades.map((shade) => {
+										const isSelected = selectedShade === shade;
+										const isBleach = shade.startsWith("BL");
 
-									return (
-										<button
-											key={shade}
-											type="button"
-											onClick={() => setSelectedShade(shade)}
-											aria-label={`Оттенок ${shade}`}
-											title={`Выбрать оттенок ${shade}`}
-											className={`min-h-[48px] min-w-[48px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center ${
-												isSelected
-													? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-													: isBleach
-														? "bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-														: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-											}`}
-											data-testid={`vita-shade-${shade}`}
-										>
-											{shade}
-										</button>
-									);
-								})}
+										return (
+											<button
+												key={shade}
+												type="button"
+												onClick={() => setSelectedShade(shade)}
+												aria-label={`Оттенок ${shade}`}
+												title={`Выбрать оттенок ${shade}`}
+												className={`min-h-[48px] min-w-[48px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center ${
+													isSelected
+														? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
+														: isBleach
+															? "bg-amber-50 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+															: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+												}`}
+												data-testid={`vita-shade-${shade}`}
+											>
+												{shade}
+											</button>
+										);
+									})}
+								</div>
 							</div>
-						</div>
-					))}
-				</div>
+						))}
+					</div>
+				) : (
+					/* 1-клик сетка групп VITA 3D-Master */
+					<div className="space-y-1.5">
+						{VITA_3D_MASTER_SHADE_GROUPS.map((grp) => (
+							<div key={grp.group} className="flex flex-wrap items-center gap-1.5">
+								<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-24 shrink-0">
+									{grp.labelRu}:
+								</span>
+								<div className="flex flex-wrap items-center gap-1.5 flex-1">
+									{grp.shades.map((shade) => {
+										const isSelected = selectedShade === shade;
+										return (
+											<button
+												key={shade}
+												type="button"
+												onClick={() => setSelectedShade(shade)}
+												aria-label={`Оттенок 3D-Master ${shade}`}
+												title={`Выбрать оттенок VITA 3D-Master ${shade}`}
+												className={`min-h-[48px] min-w-[48px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center ${
+													isSelected
+														? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
+														: "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+												}`}
+												data-testid={`vita-3d-shade-${shade}`}
+											>
+												{shade}
+											</button>
+										);
+									})}
+								</div>
+							</div>
+						))}
+					</div>
+				)}
 			</div>
 
 			{/* Сетка 4 канонических протоколов (1 клик -> 043/у + Смета + Этап 3) */}
@@ -320,7 +579,7 @@ export function OrthopedicsChairsidePanel({
 										</span>
 									</div>
 									<p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
-										{proto.treatment.slice(0, 120)}...
+										{proto.treatment}
 									</p>
 								</div>
 							</div>
@@ -389,26 +648,47 @@ export function OrthopedicsChairsidePanel({
 							type="text"
 							value={overrideReason}
 							onChange={(e) => setOverrideReason(e.target.value)}
-							placeholder="Причина клинического оверрайда..."
+							placeholder="Причина клинического оверрайда"
 							aria-label="Причина клинического оверрайда"
 							className="min-h-[48px] flex-1 px-3 text-xs rounded-lg border border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100 focus:outline-hidden"
 						/>
 					)}
 				</div>
 
-				{/* Переход в конструктор наряда ЗТЛ */}
-				{onOpenLabOrder && (
+				{/* Действия ЗТЛ: 1-клик отправка + Конструктор */}
+				<div className="flex items-center gap-2 flex-wrap">
+					{labOrderSentNumber && (
+						<span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800">
+							✓ Отправлен {labOrderSentNumber}
+						</span>
+					)}
+
 					<button
 						type="button"
-						onClick={onOpenLabOrder}
-						className="min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800 flex items-center gap-2 transition-all cursor-pointer"
-						data-testid="open-lab-order-constructor-btn"
-						title="Открыть конструктор заказ-нарядов зуботехнической лаборатории"
+						onClick={handleImmediateSendToLab}
+						disabled={isLabOrderSending}
+						className="min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-500 flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+						data-testid="direct-send-lab-order-btn"
+						title="Мандат 8e, 8i: Мгновенно отправить заказ-наряд в лабораторию без бюрократических барьеров"
 					>
-						<span>Наряд ЗТЛ</span>
-						<ExternalLink size={15} />
+						<Send size={15} />
+						<span>{isLabOrderSending ? "Отправка в ЗТЛ..." : "В ЗТЛ (1 клик)"}</span>
 					</button>
-				)}
+
+					{/* Переход в конструктор наряда ЗТЛ */}
+					{onOpenLabOrder && (
+						<button
+							type="button"
+							onClick={onOpenLabOrder}
+							className="min-h-[48px] px-4 py-2 rounded-lg text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800 flex items-center gap-2 transition-all cursor-pointer"
+							data-testid="open-lab-order-constructor-btn"
+							title="Открыть конструктор заказ-нарядов зуботехнической лаборатории"
+						>
+							<span>Наряд ЗТЛ</span>
+							<ExternalLink size={15} />
+						</button>
+					)}
+				</div>
 			</div>
 		</div>
 	);
