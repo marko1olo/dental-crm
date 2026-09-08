@@ -15,17 +15,21 @@ import {
 	FileText,
 	MessageSquare,
 	Phone,
+	Plus,
 	Search,
 	Sparkles,
 	User,
 	UserCheck,
+	UserPlus,
 	UserX,
 	Wallet,
 	X,
 } from "lucide-react";
 import type { Patient } from "@dental/shared";
 import {
+	parseSearchQueryForQuickPatient,
 	searchPatientsQuick,
+	type QuickPatientPrefill,
 	type SearchablePatient,
 	type SearchMatchHighlightPart,
 } from "./patientSearchEngine";
@@ -37,6 +41,8 @@ export interface PatientSearchModalProps {
 	readonly onClose: () => void;
 	readonly onSelectPatientForBooking?: ((patient: Patient) => void) | undefined;
 	readonly onOpenPatientCard?: ((patientId: string) => void) | undefined;
+	readonly onQuickCreatePatient?: ((prefilled: QuickPatientPrefill) => void) | undefined;
+	readonly onQuickBookNewPatient?: ((patient: Patient) => void) | undefined;
 }
 
 function RenderHighlightedParts({ parts }: { parts: readonly SearchMatchHighlightPart[] }) {
@@ -64,11 +70,17 @@ export function PatientSearchModal({
 	onClose,
 	onSelectPatientForBooking,
 	onOpenPatientCard,
+	onQuickCreatePatient,
+	onQuickBookNewPatient,
 }: PatientSearchModalProps) {
 	const [rawQuery, setRawQuery] = useState("");
 	const [debouncedQuery, setDebouncedQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
+	const [isInlineQuickCreate, setIsInlineQuickCreate] = useState(false);
+	const [quickFullName, setQuickFullName] = useState("");
+	const [quickPhone, setQuickPhone] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
+	const quickNameRef = useRef<HTMLInputElement>(null);
 
 	// 150ms Debounce for lightning responsiveness without stutter
 	useEffect(() => {
@@ -85,6 +97,9 @@ export function PatientSearchModal({
 			setRawQuery("");
 			setDebouncedQuery("");
 			setSelectedIndex(0);
+			setIsInlineQuickCreate(false);
+			setQuickFullName("");
+			setQuickPhone("");
 			setTimeout(() => {
 				inputRef.current?.focus();
 			}, 50);
@@ -97,17 +112,65 @@ export function PatientSearchModal({
 
 	if (!isOpen) return null;
 
+	const handleQuickCreate = () => {
+		const prefilled = parseSearchQueryForQuickPatient(rawQuery);
+		setQuickFullName(prefilled.fullName);
+		setQuickPhone(prefilled.phone);
+		setIsInlineQuickCreate(true);
+		if (onQuickCreatePatient) {
+			onQuickCreatePatient(prefilled);
+		}
+		setTimeout(() => {
+			quickNameRef.current?.focus();
+		}, 50);
+	};
+
+	const handleQuickSubmit = (e?: React.FormEvent) => {
+		if (e) e.preventDefault();
+		const trimmedName = quickFullName.trim() || rawQuery.trim() || "Новый пациент";
+		const trimmedPhone = quickPhone.trim() || null;
+
+		const newPatient: Patient = {
+			id: `quick-${Date.now()}`,
+			organizationId: "00000000-0000-0000-0000-000000000000",
+			status: "active",
+			fullName: trimmedName,
+			phone: trimmedPhone,
+			birthDate: null,
+			email: null,
+			notes: null,
+			administrativeProfile: null,
+			balanceRub: 0,
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+		};
+
+		if (onSelectPatientForBooking) {
+			onSelectPatientForBooking(newPatient);
+		} else if (onQuickBookNewPatient) {
+			onQuickBookNewPatient(newPatient);
+		}
+		if (onQuickCreatePatient) {
+			onQuickCreatePatient({ fullName: trimmedName, phone: trimmedPhone || "" });
+		}
+		onClose();
+	};
+
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Escape") {
 			e.preventDefault();
-			onClose();
-		} else if (e.key === "ArrowDown") {
+			if (isInlineQuickCreate) {
+				setIsInlineQuickCreate(false);
+			} else {
+				onClose();
+			}
+		} else if (e.key === "ArrowDown" && !isInlineQuickCreate) {
 			e.preventDefault();
 			setSelectedIndex((prev) => (prev + 1 < searchResults.length ? prev + 1 : 0));
-		} else if (e.key === "ArrowUp") {
+		} else if (e.key === "ArrowUp" && !isInlineQuickCreate) {
 			e.preventDefault();
 			setSelectedIndex((prev) => (prev > 0 ? prev - 1 : Math.max(0, searchResults.length - 1)));
-		} else if (e.key === "Enter" && searchResults[selectedIndex]) {
+		} else if (e.key === "Enter" && !isInlineQuickCreate && searchResults[selectedIndex]) {
 			e.preventDefault();
 			const target = searchResults[selectedIndex].patient;
 			if (onSelectPatientForBooking) {
@@ -129,7 +192,7 @@ export function PatientSearchModal({
 			onClick={onClose}
 		>
 			<div
-				className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[80vh] overflow-hidden animate-in zoom-in-95 duration-150"
+				className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-150"
 				data-testid="patient-search-modal"
 				onClick={(e) => e.stopPropagation()}
 				onKeyDown={handleKeyDown}
@@ -168,6 +231,96 @@ export function PatientSearchModal({
 					</button>
 				</div>
 
+				{/* 1-Click Fast Check-in & Patient Creation Toolbar - Zero Dead-Ends (Mandate 8e, 8n) */}
+				<div className="px-4 py-2 border-b border-slate-200/80 dark:border-slate-800 bg-teal-500/10 dark:bg-teal-950/30 flex items-center justify-between gap-3 flex-wrap">
+					<div className="flex items-center gap-2 text-xs font-semibold text-teal-950 dark:text-teal-200 min-w-0">
+						<UserPlus className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+						<span className="truncate">Пациента нет в базе или новый визит?</span>
+					</div>
+					<button
+						type="button"
+						data-testid="search-modal-quick-create-btn"
+						onClick={handleQuickCreate}
+						className="h-9 min-h-[36px] min-w-[44px] px-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
+						title="+ Быстрый пациент за 5 сек: ФИО + Телефон"
+					>
+						<Plus className="w-4 h-4" />
+						<span>+ Быстрый пациент за 5 сек: ФИО + Телефон</span>
+					</button>
+				</div>
+
+				{/* Inline Quick Patient Form - Zero Dead-Ends & Anti-Matryoshka (Depth strictly 1) */}
+				{isInlineQuickCreate && (
+					<form
+						onSubmit={handleQuickSubmit}
+						className="p-4 bg-teal-50/70 dark:bg-teal-950/40 border-b border-teal-200/60 dark:border-teal-800/60 space-y-3 animate-in fade-in duration-150"
+						data-testid="quick-patient-inline-form"
+					>
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2 text-xs font-bold text-teal-950 dark:text-teal-200">
+								<UserPlus className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Быстрый пациент за 5 сек: ФИО + Телефон (Мандат 8n Solo Doctor)</span>
+							</div>
+							<button
+								type="button"
+								data-testid="quick-patient-cancel-btn"
+								onClick={() => setIsInlineQuickCreate(false)}
+								className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+							>
+								Свернуть
+							</button>
+						</div>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+							<div>
+								<label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+									ФИО пациента <span className="text-rose-500">*</span>
+								</label>
+								<input
+									ref={quickNameRef}
+									type="text"
+									data-testid="quick-patient-fullname-input"
+									value={quickFullName}
+									onChange={(e) => setQuickFullName(e.target.value)}
+									placeholder="Иванов Иван Иванович"
+									className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500"
+									autoFocus
+								/>
+							</div>
+							<div>
+								<label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">
+									Телефон <span className="text-rose-500">*</span>
+								</label>
+								<input
+									type="tel"
+									data-testid="quick-patient-phone-input"
+									value={quickPhone}
+									onChange={(e) => setQuickPhone(e.target.value)}
+									placeholder="+7 (___) ___-__-__"
+									className="w-full h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500"
+								/>
+							</div>
+						</div>
+						<div className="flex items-center justify-end gap-2 pt-1">
+							<button
+								type="button"
+								data-testid="quick-patient-cancel-action-btn"
+								onClick={() => setIsInlineQuickCreate(false)}
+								className="h-9 px-3 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+							>
+								Отмена
+							</button>
+							<button
+								type="submit"
+								data-testid="quick-patient-submit-btn"
+								className="h-9 px-4 text-xs font-bold rounded-xl bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+							>
+								<CalendarPlus className="w-4 h-4" />
+								<span>+ Создать и записать на приём</span>
+							</button>
+						</div>
+					</form>
+				)}
+
 				{/* Results Header / Count */}
 				<div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800/60 bg-slate-100/50 dark:bg-slate-950/30 flex items-center justify-between text-xs text-slate-500 font-medium">
 					<span>
@@ -179,14 +332,27 @@ export function PatientSearchModal({
 				{/* Search Results List */}
 				<div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 p-1">
 					{searchResults.length === 0 ? (
-						<div className="py-12 text-center text-slate-400 space-y-2">
+						<div className="py-12 px-4 text-center text-slate-400 space-y-3">
 							<UserX className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
 							<p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
 								Пациенты не найдены
 							</p>
 							<p className="text-xs">
-								Проверьте номер телефона или напишите первые буквы фамилии
+								{rawQuery
+									? `По запросу «${rawQuery}» ничего не найдено`
+									: "Проверьте номер телефона или напишите первые буквы фамилии"}
 							</p>
+							<div className="pt-2">
+								<button
+									type="button"
+									data-testid="search-modal-empty-quick-btn"
+									onClick={handleQuickCreate}
+									className="h-9 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+								>
+									<Plus className="w-4 h-4" />
+									<span>Зарегистрировать за 5 сек: «{rawQuery.trim() || "Новый пациент"}»</span>
+								</button>
+							</div>
 						</div>
 					) : (
 						searchResults.map((item, index) => {
@@ -280,51 +446,61 @@ export function PatientSearchModal({
 										</div>
 									</div>
 
-									{/* 1-Click Action Buttons */}
+									{/* 1-Click Action Buttons: WhatsApp, Card, Booking */}
 									<div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-										{patient.phone && (
-											<button
-												type="button"
-												onClick={() => openWhatsAppChat(patient.phone!, "Здравствуйте! Напоминаем о записи в стоматологию.")}
-												className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center justify-center transition-all cursor-pointer shrink-0"
-												title="Открыть чат в WhatsApp"
-												aria-label="WhatsApp"
-											>
-												<MessageSquare className="w-4 h-4" />
-											</button>
-										)}
+										<button
+											type="button"
+											data-testid={`quick-wa-patient-${patient.id}`}
+											onClick={() => {
+												if (patient.phone) {
+													openWhatsAppChat(patient.phone, "Здравствуйте! Напоминаем о записи в стоматологию.");
+												}
+											}}
+											disabled={!patient.phone}
+											className={`h-9 min-h-[36px] min-w-[44px] px-2.5 rounded-xl border flex items-center justify-center transition-all shrink-0 ${
+												patient.phone
+													? "border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 cursor-pointer"
+													: "border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/30 text-slate-400 cursor-not-allowed opacity-50"
+											}`}
+											title={patient.phone ? "WhatsApp напоминание" : "Номер телефона не указан"}
+											aria-label="WhatsApp напоминание"
+										>
+											<MessageSquare className="w-4 h-4" />
+										</button>
 
-										{onOpenPatientCard && (
-											<button
-												type="button"
-												onClick={() => {
+										<button
+											type="button"
+											data-testid={`quick-open-card-${patient.id}`}
+											onClick={() => {
+												if (onOpenPatientCard) {
 													onOpenPatientCard(patient.id);
-													onClose();
-												}}
-												className="min-h-[44px] min-w-[44px] px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
-												title="Открыть медицинскую карту пациента"
-												aria-label="Открыть медицинскую карту пациента"
-											>
-												<FileText className="w-4 h-4" />
-												<span className="hidden sm:inline">Карта</span>
-											</button>
-										)}
+												}
+												onClose();
+											}}
+											className="h-9 min-h-[36px] min-w-[44px] px-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
+											title="Открыть карту"
+											aria-label="Открыть карту"
+										>
+											<FileText className="w-4 h-4" />
+											<span className="hidden sm:inline">Открыть карту</span>
+										</button>
 
-										{onSelectPatientForBooking && (
-											<button
-												type="button"
-												onClick={() => {
+										<button
+											type="button"
+											data-testid={`quick-book-patient-${patient.id}`}
+											onClick={() => {
+												if (onSelectPatientForBooking) {
 													onSelectPatientForBooking(patient);
-													onClose();
-												}}
-												className="min-h-[44px] min-w-[44px] px-4 py-2.5 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
-												title="Записать пациента на прием"
-												aria-label="Записать пациента на прием"
-											>
-												<CalendarPlus className="w-4 h-4" />
-												<span>Записать</span>
-											</button>
-										)}
+												}
+												onClose();
+											}}
+											className="h-9 min-h-[36px] min-w-[44px] px-4 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:bg-[var(--teal-dark,var(--brand-primary))] active:scale-95 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
+											title="+ Записать на приём"
+											aria-label="+ Записать на приём"
+										>
+											<CalendarPlus className="w-4 h-4" />
+											<span>+ Записать на приём</span>
+										</button>
 									</div>
 								</div>
 							);
@@ -335,3 +511,4 @@ export function PatientSearchModal({
 		</div>
 	);
 }
+
