@@ -215,10 +215,30 @@ export function getIsoWeekKey(dateIso: string): string {
 export function detectRosterConflicts(
 	shifts: DoctorShift[],
 	staffList: StaffMember[] = DEFAULT_CLINIC_STAFF,
-	options: { allowWeeklyOvertime?: boolean } = {},
+	options: {
+		practiceType?: "private_outpatient" | "hospital_statutory";
+		allowWeeklyOvertime?: boolean;
+		checkSurgeryAssistant?: boolean;
+		checkWeeklyOvertime?: boolean;
+		isPrivatePractice?: boolean;
+	} = {},
 ): RosterConflict[] {
 	const conflicts: RosterConflict[] = [];
 	const staffMap = new Map<string, StaffMember>(staffList.map((s) => [s.id, s]));
+
+	const isPrivateOutpatient =
+		options.practiceType === "private_outpatient" ||
+		options.isPrivatePractice === true;
+
+	const shouldCheckSurgeryAssistant =
+		options.checkSurgeryAssistant !== undefined
+			? options.checkSurgeryAssistant
+			: !isPrivateOutpatient;
+
+	const shouldCheckWeeklyOvertime =
+		options.checkWeeklyOvertime !== undefined
+			? options.checkWeeklyOvertime
+			: !options.allowWeeklyOvertime && !isPrivateOutpatient;
 
 	// Filter active shifts (exclude cancelled or pure off days)
 	const activeShifts = shifts.filter(
@@ -240,8 +260,8 @@ export function detectRosterConflicts(
 			const s1 = dayShifts[i];
 			if (!s1) continue;
 
-			// Check Surgery without Assistant
-			if (s1.doctorRole === "surgeon" && !s1.assistantId) {
+			// Check Surgery without Assistant (suppressed by default in private outpatient practice)
+			if (shouldCheckSurgeryAssistant && s1.doctorRole === "surgeon" && !s1.assistantId) {
 				conflicts.push({
 					id: `no-asst-${s1.id}`,
 					type: "no_assistant_for_surgery",
@@ -305,7 +325,7 @@ export function detectRosterConflicts(
 	}
 
 	// 2. Weekly overtime check (ТК РФ ст. 350: 33 ч/неделя для врачей)
-	if (!options.allowWeeklyOvertime) {
+	if (shouldCheckWeeklyOvertime) {
 		const weeklyHoursByStaff = new Map<string, Map<string, { totalHours: number; shiftIds: string[]; dates: string[] }>>();
 
 		for (const shift of activeShifts) {

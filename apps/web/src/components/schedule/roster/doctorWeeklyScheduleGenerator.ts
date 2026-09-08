@@ -644,6 +644,22 @@ export function applyDoctorChairWeeklyTemplate(
 }
 
 /**
+ * 1-Click Generate Weekly Shifts for Doctor and Chair from Template (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ */
+export function generateWeeklyDoctorSchedule(params: {
+	weekStartDateIso: string;
+	templateId: DoctorChairRosterTemplateId;
+	doctorId: string;
+	doctorBId?: string | undefined;
+	chairId: string;
+	cabinetId?: string | undefined;
+	staffList?: StaffMember[] | undefined;
+	cabinets?: CabinetDefinition[] | undefined;
+}): DoctorShift[] {
+	return applyDoctorChairWeeklyTemplate([], params);
+}
+
+/**
  * Add days to YYYY-MM-DD date string using UTC arithmetic (timezone-safe)
  */
 export function addDaysToDateIso(dateIso: string, daysToAdd: number): string {

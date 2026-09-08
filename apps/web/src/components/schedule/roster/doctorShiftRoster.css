@@ -312,6 +312,7 @@
 
 /* Main Content Area */
 .roster-main-area {
+	position: relative;
 	flex: 1;
 	overflow: auto;
 	padding: 1rem 1.5rem;
@@ -723,5 +724,24 @@
 		width: 100%;
 		box-sizing: border-box;
 	}
+}
+
+/* Zero-Matryoshka Anchored Cell Popover (Depth strictly 1, Mandates 8d, 8e) */
+.roster-cell-popover-anchored {
+	position: absolute;
+	top: 1rem;
+	right: 1.5rem;
+	z-index: 50;
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: var(--shadow-3);
+	width: 100%;
+	max-width: 480px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
 }
 

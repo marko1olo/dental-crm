@@ -375,9 +375,14 @@ export function DoctorShiftRosterModal({
 		Number.parseInt(weekStartDateIso.substring(5, 7), 10) || 8;
 	const monthNormObj = RUSSIAN_PRODUCTION_CALENDAR_2026[selectedMonth];
 
-	// Run conflict detection
+	// Run conflict detection (private outpatient practice defaults: no false statutory overtime or surgery assistant warnings)
 	const conflicts = useMemo(() => {
-		return detectRosterConflicts(shifts, staffList);
+		return detectRosterConflicts(shifts, staffList, {
+			practiceType: "private_outpatient",
+			checkSurgeryAssistant: false,
+			checkWeeklyOvertime: false,
+			allowWeeklyOvertime: true,
+		});
 	}, [shifts, staffList]);
 
 	// Run staff statistics

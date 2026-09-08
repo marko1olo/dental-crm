@@ -250,10 +250,33 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 
 		const popoverDayInfo = useMemo(() => {
 			if (!activePopover) return null;
-			return weekDays.find((d) => d.dateIso === activePopover.dateIso);
+			return weekDays?.find((d) => d.dateIso === activePopover.dateIso) ?? null;
 		}, [activePopover, weekDays]);
+
+		const popoverRef = React.useRef<HTMLDivElement>(null);
+
+		React.useEffect(() => {
+			if (!activePopover) return;
+			const handleClickOutside = (e: MouseEvent) => {
+				if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+					setActivePopover(null);
+				}
+			};
+			const handleKeyDown = (e: KeyboardEvent) => {
+				if (e.key === "Escape") {
+					setActivePopover(null);
+				}
+			};
+			document.addEventListener("mousedown", handleClickOutside);
+			document.addEventListener("keydown", handleKeyDown);
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+				document.removeEventListener("keydown", handleKeyDown);
+			};
+		}, [activePopover]);
+
 		return (
-			<div className="roster-main-area">
+			<div className="roster-main-area" style={{ position: "relative" }}>
 				{/* TAB 1: Cabinets View */}
 				{activeTab === "cabinets" && (
 					<table className="roster-grid-table">
@@ -935,45 +958,31 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 					</div>
 				)}
 
-				{/* 1-Click Fast Shift & Chair-Doctor Binding Popover (Mandates 8e, 8k, 8n) */}
+				{/* 1-Click Fast Shift & Chair-Doctor Binding Popover (Zero-Matryoshka, Depth 1, Mandates 8d, 8e, 8k, 8n) */}
 				{activePopover && (
 					<div
-						className="roster-cell-popover-overlay"
+						ref={popoverRef}
+						className="roster-cell-popover-anchored"
 						data-testid="roster-cell-popover"
 						style={{
-							position: "fixed",
-							inset: 0,
-							backgroundColor: "rgba(15, 23, 42, 0.5)",
-							backdropFilter: "blur(2px)",
+							position: "absolute",
+							top: "1rem",
+							right: "1.5rem",
+							zIndex: 50,
+							backgroundColor: "var(--paper, #ffffff)",
+							color: "var(--ink, #0f172a)",
+							border: "1px solid var(--line, #cbd5e1)",
+							borderRadius: "0.75rem",
+							boxShadow:
+								"0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+							width: "100%",
+							maxWidth: "480px",
+							padding: "1.25rem",
 							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							zIndex: 1000,
-							padding: "1rem",
-						}}
-						onClick={(e) => {
-							if (e.target === e.currentTarget) {
-								setActivePopover(null);
-							}
+							flexDirection: "column",
+							gap: "1rem",
 						}}
 					>
-						<div
-							className="roster-cell-popover-dialog"
-							style={{
-								backgroundColor: "var(--paper, #ffffff)",
-								color: "var(--ink, #0f172a)",
-								border: "1px solid var(--line, #cbd5e1)",
-								borderRadius: "0.75rem",
-								boxShadow:
-									"0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-								width: "100%",
-								maxWidth: "480px",
-								padding: "1.25rem",
-								display: "flex",
-								flexDirection: "column",
-								gap: "1rem",
-							}}
-						>
 							{/* Popover Header */}
 							<div
 								style={{
@@ -1341,6 +1350,42 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 
 									<button
 										type="button"
+										data-testid="cell-template-daily-morning"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyWeeklyTemplateInPopover("daily_morning")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+										}}
+									>
+										<Sun size={18} color="#0284c7" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Каждый день</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												Утро 08:00–14:00
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
 										data-testid="cell-template-five-day"
 										className="roster-btn roster-btn-secondary"
 										onClick={() => handleApplyWeeklyTemplateInPopover("five_day_standard")}
@@ -1563,7 +1608,6 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 									Отмена
 								</button>
 							</div>
-						</div>
 					</div>
 				)}
 			</div>

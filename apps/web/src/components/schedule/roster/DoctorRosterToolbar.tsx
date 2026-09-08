@@ -21,11 +21,13 @@ import {
 	Users,
 	X,
 } from "lucide-react";
-import type {
-	MonthProductionCalendarNorm2026,
-	CabinetDefinition,
-	StaffMember,
-	DoctorChairRosterTemplateId,
+import {
+	type MonthProductionCalendarNorm2026,
+	type CabinetDefinition,
+	type StaffMember,
+	type DoctorChairRosterTemplateId,
+	CLINIC_CABINETS_CATALOG,
+	DEFAULT_CLINIC_STAFF,
 } from "./doctorShiftRosterPresets";
 import type { RosterConflict } from "./doctorShiftRosterEngine";
 
@@ -89,7 +91,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 		onSaveAll,
 		onClose,
 		notification,
-		conflicts,
+		conflicts = [],
 		onApplyDoctorChairWeeklyTemplate,
 		onCopyWeekToNextWeek,
 		onCopyWeekToMonth,
@@ -107,6 +109,66 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 				return "Текущий месяц";
 			}
 		}, [monthNormObj?.nameRu, weekStartDateIso]);
+
+		const doctors = React.useMemo(() => {
+			const list = (staffList || []).filter((s) => s.isDoctor);
+			return list.length > 0 ? list : DEFAULT_CLINIC_STAFF.filter((s) => s.isDoctor);
+		}, [staffList]);
+
+		const allChairs = React.useMemo(() => {
+			const list: Array<{
+				chairId: string;
+				chairName: string;
+				cabinetId: string;
+				cabinetName: string;
+			}> = [];
+			const sourceCabs = cabinets && cabinets.length > 0 ? cabinets : CLINIC_CABINETS_CATALOG;
+			for (const cab of sourceCabs) {
+				for (const chair of cab.chairs || []) {
+					list.push({
+						chairId: chair.id,
+						chairName: chair.name,
+						cabinetId: cab.id,
+						cabinetName: cab.name,
+					});
+				}
+			}
+			return list;
+		}, [cabinets]);
+
+		const [selectedDoctorId, setSelectedDoctorId] = React.useState<string>(() => doctors[0]?.id || "");
+		const [selectedChairKey, setSelectedChairKey] = React.useState<string>(() => {
+			const firstChair = allChairs[0];
+			return firstChair ? `${firstChair.cabinetId}:::${firstChair.chairId}` : "";
+		});
+
+		React.useEffect(() => {
+			if (!selectedDoctorId && doctors.length > 0) {
+				setSelectedDoctorId(doctors[0]!.id);
+			}
+		}, [doctors, selectedDoctorId]);
+
+		React.useEffect(() => {
+			if (!selectedChairKey && allChairs.length > 0) {
+				const firstChair = allChairs[0]!;
+				setSelectedChairKey(`${firstChair.cabinetId}:::${firstChair.chairId}`);
+			}
+		}, [allChairs, selectedChairKey]);
+
+		const handleApplyTemplate = React.useCallback(
+			(templateId: DoctorChairRosterTemplateId) => {
+				if (!onApplyDoctorChairWeeklyTemplate) return;
+				const activeDoc = doctors.find((d) => d.id === selectedDoctorId) || doctors[0];
+				if (!activeDoc) return;
+				const [activeCabId, activeChairId] = selectedChairKey.includes(":::")
+					? selectedChairKey.split(":::")
+					: [allChairs[0]?.cabinetId, allChairs[0]?.chairId];
+				const targetCabId = activeCabId || cabinets?.[0]?.id || "cab-1";
+				const targetChairId = activeChairId || allChairs[0]?.chairId || "chair-1";
+				onApplyDoctorChairWeeklyTemplate(activeDoc.id, targetChairId, targetCabId, templateId);
+			},
+			[onApplyDoctorChairWeeklyTemplate, doctors, selectedDoctorId, selectedChairKey, allChairs, cabinets],
+		);
 
 		return (
 			<>
@@ -134,7 +196,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								)}
 							</div>
 							<h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800 }}>
-								График сменности и табель учета врачей (2026)
+								График сменности и табель учета врачей
 							</h2>
 						</div>
 						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -142,7 +204,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={onPrintSchedule}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "34px", height: "34px" }}
 								title="Печать графика в формате А4 Альбомный"
 							>
 								<Printer size={16} />
@@ -152,7 +214,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={onExportT13}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "34px", height: "34px" }}
 								title="Выгрузить форму Т-13 в CSV для 1C / Excel"
 							>
 								<FileSpreadsheet size={16} />
@@ -173,7 +235,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								type="button"
 								className="roster-btn roster-btn-secondary"
 								onClick={onClose}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "34px", height: "34px" }}
 								title="Закрыть табель (Esc)"
 							>
 								<X size={16} />
@@ -202,7 +264,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								className="roster-btn-icon"
 								onClick={onPrevWeek}
 								title="Предыдущая неделя"
-								style={{ minHeight: "44px", minWidth: "44px" }}
+								style={{ minHeight: "34px", minWidth: "34px", height: "34px" }}
 							>
 								<ChevronLeft size={18} />
 							</button>
@@ -217,7 +279,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								className="roster-btn-icon"
 								onClick={onNextWeek}
 								title="Следующая неделя"
-								style={{ minHeight: "44px", minWidth: "44px" }}
+								style={{ minHeight: "34px", minWidth: "34px", height: "34px" }}
 							>
 								<ChevronRight size={18} />
 							</button>
@@ -231,7 +293,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									data-testid="roster-copy-next-week-btn"
 									className="roster-btn roster-btn-secondary"
 									onClick={onCopyWeekToNextWeek}
-									style={{ minHeight: "44px" }}
+									style={{ minHeight: "34px", height: "34px" }}
 									title="Копировать все смены текущей недели на следующую неделю (+7 дней) в 1 клик"
 								>
 									<Copy size={16} />
@@ -244,7 +306,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									data-testid="roster-copy-month-btn"
 									className="roster-btn roster-btn-secondary"
 									onClick={onCopyWeekToMonth}
-									style={{ minHeight: "44px" }}
+									style={{ minHeight: "34px", height: "34px" }}
 									title="Копировать график текущей недели на следующие 4 недели вперед (месяц) в 1 клик"
 								>
 									<CalendarRange size={16} />
@@ -257,7 +319,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									data-testid="roster-clear-week-btn"
 									className="roster-btn roster-btn-secondary"
 									onClick={onClearWeek}
-									style={{ minHeight: "44px", color: "var(--bad-fg, #ef4444)" }}
+									style={{ minHeight: "34px", height: "34px", color: "var(--bad-fg, #ef4444)" }}
 									title="Очистить все смены текущей недели в 1 клик"
 								>
 									<RotateCcw size={16} />
@@ -268,7 +330,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								type="button"
 								className="roster-btn roster-btn-auto"
 								onClick={onAutoFillDefault}
-								style={{ minHeight: "44px" }}
+								style={{ minHeight: "34px", height: "34px" }}
 								title="Автозаполнение графика по стандартным шаблонам отделений"
 							>
 								<Sparkles size={16} />
@@ -278,7 +340,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								<button
 									type="button"
 									className="roster-btn roster-btn-secondary"
-									style={{ minHeight: "44px" }}
+									style={{ minHeight: "34px", height: "34px" }}
 									title="Применить типовой график сменности ко всем врачам"
 								>
 									<Layers size={16} />
@@ -367,70 +429,42 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 											<button
 												type="button"
 												data-testid="toolbar-template-mon-wed-fri"
-												onClick={() => {
-													const firstDoc = staffList?.find((s) => s.isDoctor);
-													const firstCab = cabinets?.[0];
-													const firstChair = firstCab?.chairs?.[0];
-													if (firstDoc && firstChair && firstCab) {
-														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "mon_wed_fri_morning");
-													}
-												}}
+												onClick={() => handleApplyTemplate("mon_wed_fri_morning")}
 											>
 												Пн/Ср/Пт (Утро 08:00–14:00)
 											</button>
 											<button
 												type="button"
 												data-testid="toolbar-template-tue-thu-sat"
-												onClick={() => {
-													const firstDoc = staffList?.find((s) => s.isDoctor);
-													const firstCab = cabinets?.[0];
-													const firstChair = firstCab?.chairs?.[0];
-													if (firstDoc && firstChair && firstCab) {
-														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "tue_thu_sat_evening");
-													}
-												}}
+												onClick={() => handleApplyTemplate("tue_thu_sat_evening")}
 											>
 												Вт/Чт/Сб (Вечер 14:00–20:00)
 											</button>
 											<button
 												type="button"
 												data-testid="toolbar-template-two-two"
-												onClick={() => {
-													const firstDoc = staffList?.find((s) => s.isDoctor);
-													const firstCab = cabinets?.[0];
-													const firstChair = firstCab?.chairs?.[0];
-													if (firstDoc && firstChair && firstCab) {
-														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "two_two_full");
-													}
-												}}
+												onClick={() => handleApplyTemplate("two_two_full")}
 											>
 												2/2 (Полный день 08:00–20:00)
 											</button>
 											<button
 												type="button"
+												data-testid="toolbar-template-daily-morning"
+												onClick={() => handleApplyTemplate("daily_morning")}
+											>
+												Каждый день (Утро 08:00–14:00)
+											</button>
+											<button
+												type="button"
 												data-testid="toolbar-template-five-day"
-												onClick={() => {
-													const firstDoc = staffList?.find((s) => s.isDoctor);
-													const firstCab = cabinets?.[0];
-													const firstChair = firstCab?.chairs?.[0];
-													if (firstDoc && firstChair && firstCab) {
-														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "five_day_standard");
-													}
-												}}
+												onClick={() => handleApplyTemplate("five_day_standard")}
 											>
 												Пятидневка (09:00–18:00)
 											</button>
 											<button
 												type="button"
 												data-testid="toolbar-template-even-odd"
-												onClick={() => {
-													const firstDoc = staffList?.find((s) => s.isDoctor);
-													const firstCab = cabinets?.[0];
-													const firstChair = firstCab?.chairs?.[0];
-													if (firstDoc && firstChair && firstCab) {
-														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "even_odd_month");
-													}
-												}}
+												onClick={() => handleApplyTemplate("even_odd_month")}
 											>
 												Чётные / Нечётные (Врач А/Б)
 											</button>
@@ -496,7 +530,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							type="button"
 							className={`roster-tab-btn ${activeTab === "cabinets" ? "active" : ""}`}
 							onClick={() => onSelectTab("cabinets")}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "34px", height: "34px" }}
 						>
 							<Layers size={16} />
 							<span>По кабинетам</span>
@@ -505,7 +539,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							type="button"
 							className={`roster-tab-btn ${activeTab === "doctors" ? "active" : ""}`}
 							onClick={() => onSelectTab("doctors")}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "34px", height: "34px" }}
 						>
 							<Users size={16} />
 							<span>Расписание врачей</span>
@@ -514,7 +548,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							type="button"
 							className={`roster-tab-btn ${activeTab === "t13" ? "active" : ""}`}
 							onClick={() => onSelectTab("t13")}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "34px", height: "34px" }}
 						>
 							<FileSpreadsheet size={16} />
 							<span>Табель Т-13</span>
@@ -523,7 +557,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							type="button"
 							className={`roster-tab-btn ${activeTab === "utilization" ? "active" : ""}`}
 							onClick={() => onSelectTab("utilization")}
-							style={{ minHeight: "44px" }}
+							style={{ minHeight: "34px", height: "34px" }}
 						>
 							<Clock size={16} />
 							<span>Загрузка кресел</span>
@@ -538,8 +572,9 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							onClick={onPrevWeek}
 							style={{
 								padding: "0.25rem 0.5rem",
-								minHeight: "44px",
-								minWidth: "44px",
+								minHeight: "34px",
+								minWidth: "34px",
+								height: "34px",
 							}}
 							title="Предыдущая неделя"
 						>
@@ -564,8 +599,9 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							onClick={onNextWeek}
 							style={{
 								padding: "0.25rem 0.5rem",
-								minHeight: "44px",
-								minWidth: "44px",
+								minHeight: "34px",
+								minWidth: "34px",
+								height: "34px",
 							}}
 							title="Следующая неделя"
 						>
@@ -575,7 +611,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 							type="button"
 							className="roster-btn roster-btn-secondary"
 							onClick={onAutoFillDefault}
-							style={{ minHeight: "44px", fontSize: "0.75rem" }}
+							style={{ minHeight: "34px", height: "34px", fontSize: "0.75rem" }}
 							title="Заполнить неделю стандартным шаблоном смен"
 						>
 							<Sparkles size={14} />
@@ -612,7 +648,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						className="roster-btn roster-btn-secondary"
 						onClick={() => onApplyPreset("five_day", "Пятидневка")}
 						style={{
-							minHeight: "44px",
+							minHeight: "34px",
+							height: "34px",
 							padding: "0.25rem 0.75rem",
 							fontSize: "0.8125rem",
 						}}
@@ -626,7 +663,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						className="roster-btn roster-btn-secondary"
 						onClick={() => onApplyPreset("two_two", "2/2")}
 						style={{
-							minHeight: "44px",
+							minHeight: "34px",
+							height: "34px",
 							padding: "0.25rem 0.75rem",
 							fontSize: "0.8125rem",
 						}}
@@ -640,7 +678,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						className="roster-btn roster-btn-secondary"
 						onClick={() => onApplyPreset("morning", "Утро 08:00–14:00")}
 						style={{
-							minHeight: "44px",
+							minHeight: "34px",
+							height: "34px",
 							padding: "0.25rem 0.75rem",
 							fontSize: "0.8125rem",
 						}}
@@ -654,7 +693,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						className="roster-btn roster-btn-secondary"
 						onClick={() => onApplyPreset("evening", "Вечер 14:00–20:00")}
 						style={{
-							minHeight: "44px",
+							minHeight: "34px",
+							height: "34px",
 							padding: "0.25rem 0.75rem",
 							fontSize: "0.8125rem",
 						}}
@@ -668,7 +708,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 						className="roster-btn roster-btn-secondary"
 						onClick={() => onApplyPreset("full_day", "Полный день 08:00–20:00")}
 						style={{
-							minHeight: "44px",
+							minHeight: "34px",
+							height: "34px",
 							padding: "0.25rem 0.75rem",
 							fontSize: "0.8125rem",
 						}}
@@ -676,6 +717,89 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 					>
 						<span>Полный день 08:00–20:00</span>
 					</button>
+
+					{onApplyDoctorChairWeeklyTemplate && (
+						<div
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.375rem",
+								borderLeft: "1px solid var(--line, #cbd5e1)",
+								paddingLeft: "0.75rem",
+								marginLeft: "0.25rem",
+							}}
+						>
+							<span
+								style={{
+									fontSize: "0.75rem",
+									fontWeight: 700,
+									color: "var(--muted, #64748b)",
+								}}
+							>
+								Врач:
+							</span>
+							<select
+								data-testid="toolbar-doctor-select"
+								value={selectedDoctorId}
+								onChange={(e) => setSelectedDoctorId(e.target.value)}
+								className="roster-select"
+								style={{
+									height: "34px",
+									minHeight: "34px",
+									fontSize: "0.8125rem",
+									borderRadius: "0.375rem",
+									border: "1px solid var(--line, #cbd5e1)",
+									background: "var(--paper, #fff)",
+									padding: "0 0.5rem",
+									color: "var(--ink, #0f172a)",
+								}}
+								title="Выбрать врача для шаблона закрепления"
+							>
+								{doctors.map((d) => (
+									<option key={d.id} value={d.id}>
+										{d.shortName || d.fullName}
+									</option>
+								))}
+							</select>
+							<span
+								style={{
+									fontSize: "0.75rem",
+									fontWeight: 700,
+									color: "var(--muted, #64748b)",
+									marginLeft: "0.25rem",
+								}}
+							>
+								Кресло:
+							</span>
+							<select
+								data-testid="toolbar-chair-select"
+								value={selectedChairKey}
+								onChange={(e) => setSelectedChairKey(e.target.value)}
+								className="roster-select"
+								style={{
+									height: "34px",
+									minHeight: "34px",
+									fontSize: "0.8125rem",
+									borderRadius: "0.375rem",
+									border: "1px solid var(--line, #cbd5e1)",
+									background: "var(--paper, #fff)",
+									padding: "0 0.5rem",
+									color: "var(--ink, #0f172a)",
+								}}
+								title="Выбрать кресло и кабинет"
+							>
+								{allChairs.map((ch) => (
+									<option
+										key={`${ch.cabinetId}:::${ch.chairId}`}
+										value={`${ch.cabinetId}:::${ch.chairId}`}
+									>
+										{ch.cabinetName} — {ch.chairName}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
+
 					<div
 						style={{
 							display: "inline-flex",
@@ -701,7 +825,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								className="roster-btn roster-btn-secondary"
 								onClick={onCopyWeekToNextWeek}
 								style={{
-									minHeight: "44px",
+									minHeight: "34px",
+									height: "34px",
 									padding: "0.25rem 0.75rem",
 									fontSize: "0.8125rem",
 								}}
@@ -718,7 +843,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								className="roster-btn roster-btn-secondary"
 								onClick={onCopyWeekToMonth}
 								style={{
-									minHeight: "44px",
+									minHeight: "34px",
+									height: "34px",
 									padding: "0.25rem 0.75rem",
 									fontSize: "0.8125rem",
 								}}
@@ -735,7 +861,8 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 								className="roster-btn roster-btn-secondary"
 								onClick={onClearWeek}
 								style={{
-									minHeight: "44px",
+									minHeight: "34px",
+									height: "34px",
 									padding: "0.25rem 0.75rem",
 									fontSize: "0.8125rem",
 									color: "var(--bad-fg, #ef4444)",
@@ -775,7 +902,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 					</div>
 				)}
 
-				{conflicts.length > 0 && (
+				{Array.isArray(conflicts) && conflicts.length > 0 && (
 					<div
 						className="roster-conflict-banner"
 						role="status"

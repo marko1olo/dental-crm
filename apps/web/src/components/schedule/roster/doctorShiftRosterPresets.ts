@@ -582,7 +582,8 @@ export type DoctorChairRosterTemplateId =
 	| "five_day_week"
 	| "even_odd_month"
 	| "even_days_morning"
-	| "odd_days_evening";
+	| "odd_days_evening"
+	| "daily_morning";
 
 export interface DoctorChairRosterTemplate {
 	id: DoctorChairRosterTemplateId;
@@ -694,4 +695,19 @@ export const DOCTOR_CHAIR_ROSTER_TEMPLATES: readonly DoctorChairRosterTemplate[]
 		daysOfWeekIndices: [0, 1, 2, 3, 4, 5, 6],
 		dayOfMonthFilter: "odd",
 	},
+	{
+		id: "daily_morning",
+		title: "Каждый день (Утро 08:00–14:00)",
+		shortTitle: "Каждый день утро",
+		daysDescription: "Понедельник — суббота",
+		hours: "08:00–14:00",
+		startTime: "08:00",
+		endTime: "14:00",
+		durationHours: 6.0,
+		breakMinutes: 0,
+		archetypeId: "morning_shift",
+		daysOfWeekIndices: [0, 1, 2, 3, 4, 5],
+	},
 ];
+
+export { generateWeeklyDoctorSchedule } from "./doctorWeeklyScheduleGenerator";
