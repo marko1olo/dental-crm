@@ -2389,11 +2389,30 @@
 - **Файлы**: `apps/web/src/components/schedule/NewAppointmentForm.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/utils/scheduleCollisionUtils.ts`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/emergencyCitoBookingWave47.test.tsx` (17/17 pass) — коммит `635d43cc8`.
 
+## 4.101. `врач_автономия_ревизия::унификация_прав_ревизии_дневников_исправленному_верить_и_ликвидация_административных_блокировок` [РЕАЛИЗОВАНО] (Wave 48)
+- **Идея**: Унификация прав ревизии дневников («Исправленному верить») и ликвидация дезинформирующих административных блокировок в API (Мандат 8e п. 4, 8i, 8n).
+- **Архитектурное решение**:
+  1. *Ликвидация устаревших сообщений в API*: в `apps/api/src/routes/diary.ts` (строка 1210), `files.ts` (строка 463) и `sterilization.ts` (строка 617) полностью устранены формулировки, утверждавшие, что правку дневника якобы «проводит только администратор клиники»;
+  2. *Канонический версионный аудит Мандата 8e п. 4*: внедрено системное разъяснение: «Если нужна правка, внесите её через ревизию («Исправленному верить») — прежний текст надёжно сохранится в истории версий»;
+  3. *Автономия лечащего врача*: подтверждено право лечащего врача (роль `doctor` и все клинические специализации терапевт, хирург, ортопед, ортодонт, пародонтолог, имплантолог, гигиенист, рентгенолог) вызывать `POST /api/diaries/:id/revise` через предикат `isDoctorOrClinicalSigner` без необходимости привлечения начмедов или системных администраторов.
+- **Файлы**: `apps/api/src/routes/diary.ts`, `apps/api/src/routes/files.ts`, `apps/api/src/routes/sterilization.ts`, `apps/api/test/diaryRevisionAutonomyWave48.test.ts`.
+- **Тесты**: `apps/api/test/diaryRevisionAutonomyWave48.test.ts` (4/4 pass), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `cb765c105`.
+
+## 4.102. `интерфейс_автономия_кнопки::ликвидация_серых_заблокированных_кнопок_в_поиске_whatsapp_и_1_клик_предпросмотр_шаблонов_telegram_с_демо_пациентом` [РЕАЛИЗОВАНО] (Wave 48)
+- **Идея**: Ликвидация серых заблокированных кнопок в быстром поиске (WhatsApp) и 1-клик предпросмотр всех шаблонов Telegram с реалистичным демо-пациентом без предварительного выбора карточки (Мандаты 8e п. 2, 8k, 8n).
+- **Архитектурное решение**:
+  1. *Разблокировка кнопки WhatsApp в PatientSearchModal*: убраны `disabled={!patient.phone}` и классы `cursor-not-allowed opacity-50`; кнопка всегда интерактивна (`disabled={false}`), при отсутствии телефона у пациента выводится информативный тост с предложением заполнить номер в карточке; соблюден минимальный тач-таргет $\ge 44\times 44\text{px}$;
+  2. *1-клик предпросмотр шаблонов Telegram в SettingsTelegramTab*: снято требование обязательного выбора активного пациента (`disabled={isTelegramLoading}`);
+  3. *Реалистичные клинические демо-данные*: экспортированы `DEFAULT_TELEGRAM_PREVIEW_PATIENT` (Иванов И.И., приём завтра 14:00, врач Смирнова Е.А., 4 500 ₽) и `buildDefaultTelegramPreview()`, благодаря чему администратор клиники и соло-врач мгновенно оценивают рендеринг всех 8 шаблонов сообщений без лишних кликов;
+  4. *Отказоустойчивость интерфейса*: добавлены безопасные дефолтные значения для массивов и словарей в настройках Telegram, гарантирующие корректный рендеринг даже при изолированном монтировании вкладки.
+- **Файлы**: `apps/web/src/components/schedule/PatientSearchModal.tsx`, `apps/web/src/components/settings/SettingsTelegramTab.tsx`, `apps/web/src/components/schedule/__tests__/patientSearchAndTelegramAutonomyWave48.test.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/patientSearchAndTelegramAutonomyWave48.test.tsx` (16/16 pass), `apps/web/src/components/schedule/__tests__/patientSearchAutonomyWave45.test.tsx` (20/20 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `697a865e7`.
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 166 дополнительных системных аддендум-фич клинической автономии (Wave 15..47, фичи 64..229) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 168 дополнительных системных аддендум-фич клинической автономии (Wave 15..48, фичи 64..231) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
