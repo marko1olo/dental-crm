@@ -1,5 +1,18 @@
 import type { Appointment, Dashboard } from "@dental/shared";
-import { AlertTriangle, Ban, Bot, Calendar, Check, FileText, FlaskConical, Plus, X } from "lucide-react";
+import {
+	AlertTriangle,
+	Ban,
+	Bot,
+	Calendar,
+	Check,
+	Clock,
+	FileText,
+	FlaskConical,
+	Plus,
+	Sparkles,
+	Stethoscope,
+	X,
+} from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AppointmentScheduleDraft } from "../../AppConstants";
@@ -21,6 +34,78 @@ import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
 import { resolveChairDutyDoctor } from "./QuickBookingDrawer";
+
+export const DURATION_PRESETS = [15, 30, 45, 60, 90, 120] as const;
+
+export interface QuickAppointmentReasonPreset {
+	id: string;
+	testId: string;
+	label: string;
+	reason: string;
+	durationMinutes: number;
+	iconName: "Stethoscope" | "Sparkles" | "Clock" | "AlertTriangle" | "Check";
+	tone?: "emergency" | "standard";
+}
+
+export const QUICK_APPOINTMENT_REASON_PRESETS: QuickAppointmentReasonPreset[] = [
+	{
+		id: "consultation",
+		testId: "quick-reason-consultation",
+		label: "Осмотр и консультация (30 мин)",
+		reason: "Осмотр и консультация",
+		durationMinutes: 30,
+		iconName: "Stethoscope",
+	},
+	{
+		id: "caries",
+		testId: "quick-reason-caries",
+		label: "Лечение кариеса (60 мин)",
+		reason: "Лечение кариеса",
+		durationMinutes: 60,
+		iconName: "Check",
+	},
+	{
+		id: "endo",
+		testId: "quick-reason-endo",
+		label: "Эндодонтия / пульпит (90 мин)",
+		reason: "Эндодонтическое лечение",
+		durationMinutes: 90,
+		iconName: "Clock",
+	},
+	{
+		id: "surgery",
+		testId: "quick-reason-surgery",
+		label: "Удаление зуба / хирургия (45 мин)",
+		reason: "Хирургическое лечение / удаление зуба",
+		durationMinutes: 45,
+		iconName: "Sparkles",
+	},
+	{
+		id: "hygiene",
+		testId: "quick-reason-hygiene",
+		label: "Профгигиена / Air-Flow (60 мин)",
+		reason: "Профессиональная гигиена полости рта",
+		durationMinutes: 60,
+		iconName: "Sparkles",
+	},
+	{
+		id: "emergency",
+		testId: "quick-reason-emergency",
+		label: "CITO! Острая боль (30 мин)",
+		reason: "CITO! Острая боль",
+		durationMinutes: 30,
+		iconName: "AlertTriangle",
+		tone: "emergency",
+	},
+	{
+		id: "orthopedics",
+		testId: "quick-reason-orthopedics",
+		label: "Ортопедия / примерка (45 мин)",
+		reason: "Ортопедический приём / примерка",
+		durationMinutes: 45,
+		iconName: "Clock",
+	},
+];
 
 type TextFieldChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
 
@@ -233,21 +318,29 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	}, [newAppointmentDraft?.chairId, dashboard.clinicSettings?.chairs, updateNewAppointmentDraft]);
 
 	useEffect(() => {
-		if (!newAppointmentDraft?.doctorUserId && dashboard.clinicSettings?.staff) {
-			const activeChairId = newAppointmentDraft?.chairId;
-			if (activeChairId) {
-				const targetTime = newAppointmentDraft?.startsAt;
-				const duty = resolveChairDutyDoctor(
-					activeChairId,
-					targetTime,
-					chairDoctorAssignments,
-					targetTime ? String(targetTime).slice(0, 10) : undefined,
+		const activeChairId = newAppointmentDraft?.chairId;
+		const targetTime = newAppointmentDraft?.startsAt;
+		if (activeChairId && dashboard.clinicSettings?.staff) {
+			const duty = resolveChairDutyDoctor(
+				activeChairId,
+				targetTime,
+				chairDoctorAssignments,
+				targetTime ? String(targetTime).slice(0, 10) : undefined,
+			);
+			if (duty.doctorId) {
+				const activeDocs = dashboard.clinicSettings.staff.filter(
+					(m) => m.active && (m.role === "doctor" || m.role === "owner"),
 				);
-				if (duty.doctorId) {
-					updateNewAppointmentDraft("doctorUserId", duty.doctorId);
-					return;
+				const firstActiveDocId = activeDocs.length > 0 ? activeDocs[0]?.id : undefined;
+				if (!newAppointmentDraft?.doctorUserId || newAppointmentDraft?.doctorUserId === firstActiveDocId) {
+					if (newAppointmentDraft?.doctorUserId !== duty.doctorId) {
+						updateNewAppointmentDraft("doctorUserId", duty.doctorId);
+						return;
+					}
 				}
 			}
+		}
+		if (!newAppointmentDraft?.doctorUserId && dashboard.clinicSettings?.staff) {
 			const activeDocs = dashboard.clinicSettings.staff.filter(
 				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
 			);
@@ -320,6 +413,53 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		dashboard.patients,
 		toDateTimeLocalValue,
 	]);
+
+	const currentDurationMinutes = useMemo(() => {
+		if (!newAppointmentDraft?.startsAt || !newAppointmentDraft?.endsAt) return 0;
+		try {
+			const startMs = Date.parse(newAppointmentDraft.startsAt);
+			const endMs = Date.parse(newAppointmentDraft.endsAt);
+			if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) return 0;
+			return Math.round((endMs - startMs) / (60 * 1000));
+		} catch {
+			return 0;
+		}
+	}, [newAppointmentDraft?.startsAt, newAppointmentDraft?.endsAt]);
+
+	const applyDuration = (minutes: number) => {
+		let startIso = newAppointmentDraft?.startsAt;
+		if (!startIso) {
+			const now = new Date();
+			now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+			const localNow =
+				typeof toDateTimeLocalValue === "function"
+					? toDateTimeLocalValue(now.toISOString(), clinicTimezone)
+					: now.toISOString();
+			startIso =
+				typeof fromDateTimeLocalValue === "function"
+					? fromDateTimeLocalValue(localNow, clinicTimezone)
+					: now.toISOString();
+			if (!startIso) startIso = now.toISOString();
+			updateNewAppointmentDraft("startsAt", startIso);
+		}
+		try {
+			const startDate = new Date(startIso);
+			if (!Number.isNaN(startDate.getTime())) {
+				const endDate = new Date(startDate.getTime() + minutes * 60 * 1000);
+				const localEnd =
+					typeof toDateTimeLocalValue === "function"
+						? toDateTimeLocalValue(endDate.toISOString(), clinicTimezone)
+						: endDate.toISOString();
+				const endVal =
+					typeof fromDateTimeLocalValue === "function"
+						? fromDateTimeLocalValue(localEnd, clinicTimezone)
+						: endDate.toISOString();
+				updateNewAppointmentDraft("endsAt", endVal || endDate.toISOString());
+			}
+		} catch {
+			// ignore parse error
+		}
+	};
 
 	const newAppointmentReadyToCreate =
 		criticalMissingSteps.length === 0;
@@ -723,6 +863,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
                 форме, когда объяснение нужнее всего. */}
 						<button
 							type="button"
+							data-testid="create-appointment-button"
 							onClick={() => void handleCreateAppointment()}
 							disabled={
 								newAppointmentSaveState === "saving" ||
@@ -867,7 +1008,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						</div>
 					)}
 
-					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-4">
+					<div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-3">
 						<label className="flex flex-col gap-1 text-xs font-semibold text-[var(--muted)]">
 							Начало
 							<input
@@ -876,15 +1017,24 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 									newAppointmentDraft.startsAt,
 									clinicTimezone,
 								)}
-								onChange={(event: TextFieldChangeEvent) =>
-									updateNewAppointmentDraft(
-										"startsAt",
-										fromDateTimeLocalValue(
-											event.target.value,
-											clinicTimezone,
-										),
-									)
-								}
+								onChange={(event: TextFieldChangeEvent) => {
+									const nextStartsAt = fromDateTimeLocalValue(
+										event.target.value,
+										clinicTimezone,
+									);
+									updateNewAppointmentDraft("startsAt", nextStartsAt);
+									if (newAppointmentDraft.chairId && nextStartsAt) {
+										const duty = resolveChairDutyDoctor(
+											newAppointmentDraft.chairId,
+											nextStartsAt,
+											chairDoctorAssignments,
+											String(nextStartsAt).slice(0, 10),
+										);
+										if (duty.doctorId) {
+											updateNewAppointmentDraft("doctorUserId", duty.doctorId);
+										}
+									}
+								}}
 								className="min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none w-full"
 							/>
 						</label>
@@ -908,6 +1058,41 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								className="min-h-[44px] p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none w-full"
 							/>
 						</label>
+					</div>
+
+					{/* 1-клик панель быстрой длительности приёма (Мандаты 8e, 8k, 8n) */}
+					<div className="mb-4 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]" data-testid="appointment-quick-durations-panel">
+						<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+							<span className="text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5">
+								<Clock size={14} className="text-[var(--teal)] shrink-0" />
+								<span>Быстрая длительность приёма:</span>
+							</span>
+							{currentDurationMinutes > 0 && (
+								<span className="text-xs font-mono font-bold text-[var(--teal)]">
+									{currentDurationMinutes} мин
+									{currentDurationMinutes >= 60
+										? ` (${Math.floor(currentDurationMinutes / 60)} ч${currentDurationMinutes % 60 ? ` ${currentDurationMinutes % 60} мин` : ""})`
+										: ""}
+								</span>
+							)}
+						</div>
+						<div className="flex items-center gap-1.5 flex-wrap" data-testid="appointment-quick-durations">
+							{DURATION_PRESETS.map((mins) => (
+								<button
+									key={mins}
+									type="button"
+									data-testid={`quick-duration-${mins}`}
+									onClick={() => applyDuration(mins)}
+									className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border text-xs font-semibold inline-flex items-center justify-center gap-1 transition-all cursor-pointer ${
+										currentDurationMinutes === mins
+											? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
+											: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--paper)]"
+									}`}
+								>
+									<span>+{mins} мин</span>
+								</button>
+							))}
+						</div>
 					</div>
 
 					{/* min(300px,100%): без него колонка не ужимается ниже 300px и
@@ -1006,6 +1191,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							</span>
 							{useManualSelects ? (
 								<select
+									data-testid="new-appointment-doctor-select"
 									value={newAppointmentDraft.doctorUserId || ""}
 									onChange={(e) =>
 										updateNewAppointmentDraft("doctorUserId", e.target.value)
@@ -1152,6 +1338,54 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							</div>
 						</div>
 					</div>
+
+					{/* 1-клик экспресс-поводы визита (Quick Appointment Reasons, Фича 222: StomX / DentalPRO Parity) */}
+					<div className="form-span-2 mb-3 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)]" data-testid="appointment-quick-reasons-panel">
+						<div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+							<span className="text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5">
+								<Stethoscope size={14} className="text-[var(--teal)] shrink-0" />
+								<span>Экспресс-поводы визита (повод + длительность в 1 клик):</span>
+							</span>
+						</div>
+						<div className="flex flex-wrap gap-1.5" data-testid="appointment-quick-reasons">
+							{QUICK_APPOINTMENT_REASON_PRESETS.map((preset) => {
+								const IconComponent =
+									preset.iconName === "Stethoscope"
+										? Stethoscope
+										: preset.iconName === "AlertTriangle"
+										? AlertTriangle
+										: preset.iconName === "Clock"
+										? Clock
+										: preset.iconName === "Check"
+										? Check
+										: Sparkles;
+								const isSelected = newAppointmentDraft.reason === preset.reason;
+								return (
+									<button
+										key={preset.id}
+										type="button"
+										data-testid={preset.testId}
+										onClick={() => {
+											updateNewAppointmentDraft("reason", preset.reason);
+											applyDuration(preset.durationMinutes);
+										}}
+										className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
+											isSelected
+												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
+												: preset.tone === "emergency"
+												? "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300 hover:bg-red-500/20"
+												: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--paper)]"
+										}`}
+										title={`${preset.label} — установит причину «${preset.reason}» и длительность ${preset.durationMinutes} мин`}
+									>
+										<IconComponent size={13} className="shrink-0" />
+										<span>{preset.label}</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
 					<label className="form-span-2">
 						Причина приема
 						<input
