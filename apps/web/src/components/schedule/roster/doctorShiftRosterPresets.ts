@@ -579,7 +579,10 @@ export type DoctorChairRosterTemplateId =
 	| "two_two_full"
 	| "two_two_full_day"
 	| "five_day_standard"
-	| "five_day_week";
+	| "five_day_week"
+	| "even_odd_month"
+	| "even_days_morning"
+	| "odd_days_evening";
 
 export interface DoctorChairRosterTemplate {
 	id: DoctorChairRosterTemplateId;
@@ -593,6 +596,7 @@ export interface DoctorChairRosterTemplate {
 	breakMinutes: number;
 	archetypeId: ShiftArchetypeId;
 	daysOfWeekIndices: number[]; // 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+	dayOfMonthFilter?: "even_odd_split" | "even" | "odd" | "all" | undefined;
 }
 
 export const DOCTOR_CHAIR_ROSTER_TEMPLATES: readonly DoctorChairRosterTemplate[] = [
@@ -647,5 +651,47 @@ export const DOCTOR_CHAIR_ROSTER_TEMPLATES: readonly DoctorChairRosterTemplate[]
 		breakMinutes: 60,
 		archetypeId: "morning_shift",
 		daysOfWeekIndices: [0, 1, 2, 3, 4],
+	},
+	{
+		id: "even_odd_month",
+		title: "Чётные / Нечётные дни месяца",
+		shortTitle: "Чётные / Нечётные",
+		daysDescription: "Врач А — чётные числа (08:00–14:00), Врач Б — нечётные числа (14:00–20:00)",
+		hours: "08:00–14:00 / 14:00–20:00",
+		startTime: "08:00",
+		endTime: "14:00",
+		durationHours: 6.0,
+		breakMinutes: 0,
+		archetypeId: "morning_shift",
+		daysOfWeekIndices: [0, 1, 2, 3, 4, 5, 6],
+		dayOfMonthFilter: "even_odd_split",
+	},
+	{
+		id: "even_days_morning",
+		title: "Чётные дни месяца (Утро 08:00–14:00)",
+		shortTitle: "Чётные Утро",
+		daysDescription: "Чётные числа месяца — 1-я смена",
+		hours: "08:00–14:00",
+		startTime: "08:00",
+		endTime: "14:00",
+		durationHours: 6.0,
+		breakMinutes: 0,
+		archetypeId: "morning_shift",
+		daysOfWeekIndices: [0, 1, 2, 3, 4, 5, 6],
+		dayOfMonthFilter: "even",
+	},
+	{
+		id: "odd_days_evening",
+		title: "Нечётные дни месяца (Вечер 14:00–20:00)",
+		shortTitle: "Нечётные Вечер",
+		daysDescription: "Нечётные числа месяца — 2-я смена",
+		hours: "14:00–20:00",
+		startTime: "14:00",
+		endTime: "20:00",
+		durationHours: 6.0,
+		breakMinutes: 0,
+		archetypeId: "evening_shift",
+		daysOfWeekIndices: [0, 1, 2, 3, 4, 5, 6],
+		dayOfMonthFilter: "odd",
 	},
 ];

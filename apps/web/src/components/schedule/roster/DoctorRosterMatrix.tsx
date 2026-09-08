@@ -7,6 +7,7 @@ import React, { useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	Building,
+	Calendar,
 	Calendar as CalendarIcon,
 	Clock,
 	Download,
@@ -1370,6 +1371,43 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 												}}
 											>
 												Пн-Пт 09:00–18:00
+											</div>
+										</div>
+									</button>
+
+									<button
+										type="button"
+										data-testid="cell-template-even-odd"
+										className="roster-btn roster-btn-secondary"
+										onClick={() => handleApplyWeeklyTemplateInPopover("even_odd_month")}
+										style={{
+											minHeight: "44px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "flex-start",
+											gap: "0.5rem",
+											padding: "0.5rem 0.75rem",
+											borderRadius: "0.5rem",
+											border: "1px solid var(--line, #cbd5e1)",
+											background: "var(--paper-soft, #f8fafc)",
+											color: "var(--ink, #0f172a)",
+											fontWeight: 600,
+											fontSize: "0.8125rem",
+											cursor: "pointer",
+											gridColumn: "span 2",
+										}}
+									>
+										<CalendarIcon size={18} color="#0d9488" className="shrink-0" />
+										<div style={{ textAlign: "left" }}>
+											<div>Чётные / Нечётные дни месяца</div>
+											<div
+												style={{
+													fontSize: "0.6875rem",
+													fontWeight: 400,
+													color: "var(--muted, #64748b)",
+												}}
+											>
+												Врач А — чётные (08–14) / Врач Б — нечётные (14–20)
 											</div>
 										</div>
 									</button>

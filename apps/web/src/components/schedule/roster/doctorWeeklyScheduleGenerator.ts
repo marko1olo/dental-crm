@@ -441,6 +441,7 @@ export function applyDoctorChairWeeklyTemplate(
 		weekStartDateIso: string;
 		templateId: DoctorChairRosterTemplateId;
 		doctorId: string;
+		doctorBId?: string | undefined;
 		chairId: string;
 		cabinetId?: string | undefined;
 		staffList?: StaffMember[] | undefined;
@@ -451,6 +452,7 @@ export function applyDoctorChairWeeklyTemplate(
 		weekStartDateIso,
 		templateId,
 		doctorId,
+		doctorBId,
 		chairId,
 		cabinetId,
 		staffList = DEFAULT_CLINIC_STAFF,
@@ -482,8 +484,8 @@ export function applyDoctorChairWeeklyTemplate(
 
 	let targetCabId = cabinetId;
 	if (!targetCabId) {
-		const cabWithChair = cabinets.find((c) =>
-			c.chairs.some((ch) => ch.id === chairId),
+		const cabWithChair = cabinets.find(
+			(c) => Array.isArray(c.chairs) && c.chairs.some((ch) => ch.id === chairId),
 		);
 		targetCabId = cabWithChair?.id || cabinets[0]?.id || "cab-1";
 	}
@@ -493,6 +495,12 @@ export function applyDoctorChairWeeklyTemplate(
 	const startMonth = parts[1] || 8;
 	const startDay = parts[2] || 24;
 
+	const otherDoc =
+		(doctorBId ? staffList.find((s) => s.id === doctorBId) : undefined) ||
+		staffList.find((s) => s.isDoctor && s.id !== doc.id) ||
+		DEFAULT_CLINIC_STAFF.find((s) => s.isDoctor && s.id !== doc.id) ||
+		doc;
+
 	// Determine dates belonging to the active template
 	const templateDates = new Set<string>();
 	const newShiftsByDate = new Map<string, DoctorShift>();
@@ -500,39 +508,114 @@ export function applyDoctorChairWeeklyTemplate(
 	for (const dayIdx of template.daysOfWeekIndices) {
 		const curDate = new Date(Date.UTC(startYear, startMonth - 1, startDay + dayIdx));
 		const dateIso = curDate.toISOString().substring(0, 10);
+		const dayOfMonth = curDate.getUTCDate();
+		const isEven = dayOfMonth % 2 === 0;
+
+		if (template.dayOfMonthFilter === "even" && !isEven) {
+			continue;
+		}
+		if (template.dayOfMonthFilter === "odd" && isEven) {
+			continue;
+		}
+
 		templateDates.add(dateIso);
 
-		newShiftsByDate.set(dateIso, {
-			id: `shift-${dateIso}-${chairId}-${doc.id}-${template.id}`,
-			doctorId: doc.id,
-			doctorName: doc.shortName || doc.fullName,
-			doctorRole: doc.role,
-			assistantId: asst ? asst.id : null,
-			assistantName: asst ? asst.shortName || asst.fullName : null,
-			cabinetId: targetCabId,
-			chairId,
-			dateIso,
-			archetypeId: template.archetypeId,
-			startTime: template.startTime,
-			endTime: template.endTime,
-			durationHours: template.durationHours,
-			breakMinutes: template.breakMinutes,
-			isNight: false,
-			nightHours: 0,
-			status: "scheduled",
-			customNotes: template.title,
-		});
+		if (template.dayOfMonthFilter === "even_odd_split") {
+			// Doctor A — even days 1st shift (08:00–14:00)
+			// Doctor B — odd days 2nd shift (14:00–20:00)
+			if (isEven) {
+				newShiftsByDate.set(`${dateIso}-morn`, {
+					id: `shift-${dateIso}-${chairId}-${doc.id}-even-morn`,
+					doctorId: doc.id,
+					doctorName: doc.shortName || doc.fullName,
+					doctorRole: doc.role,
+					assistantId: asst ? asst.id : null,
+					assistantName: asst ? asst.shortName || asst.fullName : null,
+					cabinetId: targetCabId,
+					chairId,
+					dateIso,
+					archetypeId: "morning_shift",
+					startTime: "08:00",
+					endTime: "14:00",
+					durationHours: 6.0,
+					breakMinutes: 0,
+					isNight: false,
+					nightHours: 0,
+					status: "scheduled",
+					customNotes: "Чётное число: 1-я смена (08:00–14:00)",
+				});
+			} else {
+				const asstBId =
+					otherDoc.preferredAssistantId || (otherDoc as any).defaultAssistantId;
+				const asstB = asstBId
+					? staffList.find((s) => s.id === asstBId) || null
+					: staffList.find((s) => s.role === "assistant") || null;
+				newShiftsByDate.set(`${dateIso}-eve`, {
+					id: `shift-${dateIso}-${chairId}-${otherDoc.id}-odd-eve`,
+					doctorId: otherDoc.id,
+					doctorName: otherDoc.shortName || otherDoc.fullName,
+					doctorRole: otherDoc.role,
+					assistantId: asstB ? asstB.id : null,
+					assistantName: asstB ? asstB.shortName || asstB.fullName : null,
+					cabinetId: targetCabId,
+					chairId,
+					dateIso,
+					archetypeId: "evening_shift",
+					startTime: "14:00",
+					endTime: "20:00",
+					durationHours: 6.0,
+					breakMinutes: 0,
+					isNight: false,
+					nightHours: 0,
+					status: "scheduled",
+					customNotes: "Нечётное число: 2-я смена (14:00–20:00)",
+				});
+			}
+		} else {
+			newShiftsByDate.set(dateIso, {
+				id: `shift-${dateIso}-${chairId}-${doc.id}-${template.id}`,
+				doctorId: doc.id,
+				doctorName: doc.shortName || doc.fullName,
+				doctorRole: doc.role,
+				assistantId: asst ? asst.id : null,
+				assistantName: asst ? asst.shortName || asst.fullName : null,
+				cabinetId: targetCabId,
+				chairId,
+				dateIso,
+				archetypeId: template.archetypeId,
+				startTime: template.startTime,
+				endTime: template.endTime,
+				durationHours: template.durationHours,
+				breakMinutes: template.breakMinutes,
+				isNight: false,
+				nightHours: 0,
+				status: "scheduled",
+				customNotes: template.title,
+			});
+		}
 	}
 
 	// Filter currentShifts:
 	// For dates in this week on this chair:
 	// If a date is one of templateDates:
+	//   - if even_odd_split, remove conflicting shifts on even/odd slots
 	//   - if template is full coverage (>= 8h), remove all shifts on that chair for that date
 	//   - if template is morning (08:00-14:00), remove existing morning/full_day shifts on that chair for that date
 	//   - if template is evening (14:00-20:00), remove existing evening/full_day shifts on that chair for that date
 	//   - always remove any shift for the same doctor on that chair/date to avoid self-collision
 	const filtered = currentShifts.filter((s) => {
 		if (s.chairId !== chairId || !templateDates.has(s.dateIso)) {
+			return true;
+		}
+		if (template.dayOfMonthFilter === "even_odd_split") {
+			const dayOfMonth = Number.parseInt(s.dateIso.slice(8, 10), 10);
+			const isEven = dayOfMonth % 2 === 0;
+			if (isEven && (s.startTime < "14:00" || s.doctorId === doc.id)) {
+				return false;
+			}
+			if (!isEven && (s.startTime >= "14:00" || s.doctorId === otherDoc.id)) {
+				return false;
+			}
 			return true;
 		}
 		if (s.doctorId === doc.id) {

@@ -7,15 +7,25 @@ export interface ChairColorPreset {
 	id: string;
 	label: string;
 	hex: string;
+	lightHex: string;
+	darkHex: string;
 }
 
 export const CHAIR_COLOR_PRESETS: readonly ChairColorPreset[] = [
-	{ id: "teal", label: "Бирюзовый", hex: "#0d9488" },
-	{ id: "blue", label: "Синий", hex: "#2563eb" },
-	{ id: "indigo", label: "Индиго", hex: "#6366f1" },
-	{ id: "amber", label: "Янтарный", hex: "#f59e0b" },
-	{ id: "emerald", label: "Изумрудный", hex: "#10b981" },
-	{ id: "rose", label: "Розовый", hex: "#e11d48" },
+	{ id: "teal", label: "Бирюзовый", hex: "#0d9488", lightHex: "#ccfbf1", darkHex: "#115e59" },
+	{ id: "sapphire", label: "Сапфировый", hex: "#1d4ed8", lightHex: "#dbeafe", darkHex: "#1e3a8a" },
+	{ id: "emerald", label: "Изумрудный", hex: "#059669", lightHex: "#d1fae5", darkHex: "#065f46" },
+	{ id: "indigo", label: "Индиго", hex: "#4f46e5", lightHex: "#e0e7ff", darkHex: "#3730a3" },
+	{ id: "amber", label: "Янтарный", hex: "#d97706", lightHex: "#fef3c7", darkHex: "#92400e" },
+	{ id: "coral", label: "Коралловый", hex: "#f43f5e", lightHex: "#ffe4e6", darkHex: "#9f1239" },
+	{ id: "amethyst", label: "Аметистовый", hex: "#7c3aed", lightHex: "#ede9fe", darkHex: "#5b21b6" },
+	{ id: "azure", label: "Лазурный", hex: "#0284c7", lightHex: "#e0f2fe", darkHex: "#075985" },
+	{ id: "olive", label: "Оливковый", hex: "#65a30d", lightHex: "#ecfccb", darkHex: "#3f6212" },
+	{ id: "terracotta", label: "Терракотовый", hex: "#c2410c", lightHex: "#ffedd5", darkHex: "#7c2d12" },
+	{ id: "slate", label: "Сланцевый", hex: "#475569", lightHex: "#f1f5f9", darkHex: "#1e293b" },
+	{ id: "mint", label: "Мятный", hex: "#14b8a6", lightHex: "#e6fffa", darkHex: "#0f766e" },
+	{ id: "rose", label: "Розовый", hex: "#db2777", lightHex: "#fce7f3", darkHex: "#9d174d" },
+	{ id: "graphite", label: "Графитовый", hex: "#334155", lightHex: "#e2e8f0", darkHex: "#0f172a" },
 ];
 
 export interface ChairSpecialtyPreset {
@@ -432,48 +442,112 @@ export function QuickAddChairModal({
 						</div>
 					</div>
 
-					{/* Field: Color picker presets */}
-					<div className="space-y-1.5">
-						<span
-							id="quick-add-chair-color-label"
-							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
-						>
-							Цветовой маркер в расписании
-						</span>
+					{/* Field: Color picker presets (14 StomX authentic palettes, Mandates 8e, 8k) */}
+					<div className="space-y-2">
+						<div className="flex items-center justify-between">
+							<span
+								id="quick-add-chair-color-label"
+								className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
+							>
+								14 аутентичных палитр StomX (цвет кресла)
+							</span>
+							<span className="text-[11px] font-medium text-[var(--muted,#64748b)]">
+								{CHAIR_COLOR_PRESETS.find(
+									(c) => c.hex.toLowerCase() === selectedColor.toLowerCase(),
+								)?.label || "Выбран цвет"}{" "}
+								({selectedColor})
+							</span>
+						</div>
 						<div
-							className="flex items-center gap-2.5 flex-wrap"
+							className="grid grid-cols-7 gap-2"
 							role="radiogroup"
 							aria-labelledby="quick-add-chair-color-label"
 						>
 							{CHAIR_COLOR_PRESETS.map((colorPreset) => {
-								const isSelected = selectedColor === colorPreset.hex;
+								const isSelected =
+									selectedColor.toLowerCase() === colorPreset.hex.toLowerCase() ||
+									(colorPreset.id === "sapphire" && selectedColor.toLowerCase() === "#2563eb");
 								return (
 									<button
 										key={colorPreset.id}
 										type="button"
 										onClick={() => setSelectedColor(colorPreset.hex)}
-										className={`min-h-[44px] min-w-[44px] rounded-xl flex items-center justify-center transition-all cursor-pointer border-2 shadow-xs ${
+										className={`min-h-[44px] min-w-[44px] rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer border-2 shadow-xs relative overflow-hidden ${
 											isSelected
 												? "border-[var(--ink,#0f172a)] ring-2 ring-offset-2 ring-[var(--teal,#0d9488)] scale-105"
-												: "border-transparent hover:scale-105 opacity-85 hover:opacity-100"
+												: "border-transparent hover:scale-105 opacity-90 hover:opacity-100"
 										}`}
 										style={{
 											backgroundColor: colorPreset.hex,
 											minHeight: "44px",
 											minWidth: "44px",
 										}}
-										title={`${colorPreset.label} (${colorPreset.hex})`}
+										title={`${colorPreset.label} (светлый: ${colorPreset.lightHex}, тёмный: ${colorPreset.darkHex})`}
 										data-testid={`quick-add-chair-color-${colorPreset.id}`}
 										role="radio"
 										aria-checked={isSelected}
 										aria-label={`Цвет: ${colorPreset.label}`}
 									>
+										{/* Paired light indicator strip at bottom for dual-tone preview */}
+										<div
+											className="w-full h-1.5 absolute bottom-0 left-0 right-0 opacity-80"
+											style={{ backgroundColor: colorPreset.lightHex }}
+										/>
 										{isSelected && (
 											<Check className="w-5 h-5 text-white drop-shadow-sm" aria-hidden="true" />
 										)}
 									</button>
 								);
 							})}
+						</div>
+					</div>
+
+					{/* 1-Click Chair Live Preview Card (StomX / DentalPRO parity, Mandates 8e, 8k) */}
+					<div
+						className="p-3.5 rounded-2xl border transition-all"
+						style={{
+							borderColor: selectedColor,
+							backgroundColor: "var(--paper-soft,#f8fafc)",
+						}}
+						data-testid="quick-add-chair-live-preview"
+					>
+						<div
+							className="h-1.5 w-full rounded-full mb-2.5"
+							style={{ backgroundColor: selectedColor }}
+							data-testid="quick-add-chair-preview-accent-strip"
+						/>
+						<div className="flex items-center justify-between gap-2">
+							<div className="flex items-center gap-2 min-w-0">
+								<span
+									className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/10"
+									style={{ backgroundColor: selectedColor }}
+								/>
+								<span className="text-sm font-bold text-[var(--ink,#0f172a)] truncate">
+									{chairName.trim() || defaultChairName}
+								</span>
+								<span className="text-xs text-[var(--muted,#64748b)] truncate">
+									({roomNumber.trim() || defaultRoomName})
+								</span>
+							</div>
+							<span
+								className="text-xs px-2.5 py-1 rounded-lg font-bold shrink-0 border"
+								style={{
+									backgroundColor:
+										CHAIR_COLOR_PRESETS.find(
+											(c) => c.hex.toLowerCase() === selectedColor.toLowerCase(),
+										)?.lightHex ?? `${selectedColor}20`,
+									color:
+										CHAIR_COLOR_PRESETS.find(
+											(c) => c.hex.toLowerCase() === selectedColor.toLowerCase(),
+										)?.darkHex ?? selectedColor,
+									borderColor: `${selectedColor}40`,
+								}}
+								data-testid="quick-add-chair-preview-color-name"
+							>
+								{CHAIR_COLOR_PRESETS.find(
+									(c) => c.hex.toLowerCase() === selectedColor.toLowerCase(),
+								)?.label || "Цвет кресла"}
+							</span>
 						</div>
 					</div>
 

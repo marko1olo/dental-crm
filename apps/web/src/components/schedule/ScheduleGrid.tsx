@@ -41,7 +41,12 @@ import { generateAppointmentWhatsAppMessage } from "./generateAppointmentWhatsAp
 import { openWhatsAppChat } from "../../store/telephonyStore";
 import { specialtyLabels } from "../../workspaceUiLabels";
 import { formatPatientDisplayFio } from "./AppointmentCard";
-import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import {
+	checkAppointmentResourceCollision,
+	isCitoAppointment,
+	type ChairMaintenanceBlock,
+} from "../../utils/scheduleCollisionUtils";
+export type { ChairMaintenanceBlock } from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { calculateDailyChairDoctorTally } from "./doctorFreeSlotsEngine";
 import { countLabel } from "../../lib/russianPlural";
@@ -157,6 +162,11 @@ export interface ScheduleGridProps {
 	onOpenAddChair?: (() => void) | undefined;
 	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 	onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
+	gridStepMinutes?: 15 | 30 | 60 | undefined;
+	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
+	chairMaintenanceBlocks?: ChairMaintenanceBlock[] | undefined;
+	onAddChairMaintenance?: ((block: ChairMaintenanceBlock) => void) | undefined;
+	onRemoveChairMaintenance?: ((blockId: string) => void) | undefined;
 }
 
 function extractTeethList(appointment: Appointment): string[] {
@@ -178,7 +188,7 @@ function extractTeethList(appointment: Appointment): string[] {
 	return [];
 }
 
-const HOURS = [
+export const HOURS = [
 	"08:00",
 	"09:00",
 	"10:00",
@@ -193,6 +203,19 @@ const HOURS = [
 	"19:00",
 	"20:00",
 ];
+
+export function generateTimeSlots(stepMinutes: 15 | 30 | 60 = 60): string[] {
+	const slots: string[] = [];
+	for (let h = 8; h <= 20; h++) {
+		for (let m = 0; m < 60; m += stepMinutes) {
+			if (h === 20 && m > 0) break;
+			const hh = h < 10 ? `0${h}` : `${h}`;
+			const mm = m < 10 ? `0${m}` : `${m}`;
+			slots.push(`${hh}:${mm}`);
+		}
+	}
+	return slots;
+}
 
 export const DEFAULT_SOLO_CHAIR = {
 	id: "default-chair",
@@ -226,7 +249,54 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	const [selectedMobileAppt, setSelectedMobileAppt] = useState<Appointment | null>(null);
 	const [chairDoctorDropdownId, setChairDoctorDropdownId] = useState<string | null>(null);
 	const [activeHeaderDoctorPopoverChairId, setActiveHeaderDoctorPopoverChairId] = useState<string | null>(null);
+	const [activeHeaderMaintenanceChairId, setActiveHeaderMaintenanceChairId] = useState<string | null>(null);
+	const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(props.gridStepMinutes || 60);
+	const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>([]);
 	const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+	const gridStep = props.gridStepMinutes ?? internalGridStep;
+	const effectiveMaintenanceBlocks = props.chairMaintenanceBlocks ?? internalMaintenanceBlocks;
+
+	const handleSetGridStep = useCallback((step: 15 | 30 | 60) => {
+		setInternalGridStep(step);
+		props.onGridStepChange?.(step);
+	}, [props.onGridStepChange]);
+
+	const handleAddMaintenance = useCallback((
+		chairId: string,
+		reason: "sanitation" | "tech_break" | "maintenance" | string,
+		durationMinutes: number,
+		startTimeStr = "13:00",
+	) => {
+		const startIso = `${dateKey}T${startTimeStr}:00.000Z`;
+		const endIso = new Date(Date.parse(startIso) + durationMinutes * 60000).toISOString();
+		const newBlock: ChairMaintenanceBlock = {
+			id: `maint-${chairId}-${dateKey}-${startTimeStr.replace(":", "")}-${Date.now()}`,
+			chairId,
+			startsAt: startIso,
+			endsAt: endIso,
+			reason,
+			note: reason === "sanitation" ? "Санитарная обработка" : "Технический перерыв",
+		};
+		if (props.onAddChairMaintenance) {
+			props.onAddChairMaintenance(newBlock);
+		} else {
+			setInternalMaintenanceBlocks((prev) => [...prev, newBlock]);
+		}
+		const label = reason === "sanitation" ? "Санитарная обработка" : "Технический перерыв";
+		showToast(`${label} (${durationMinutes} мин) запланирована на ${startTimeStr}`, "success", 3000);
+	}, [dateKey, props.onAddChairMaintenance]);
+
+	const handleRemoveMaintenance = useCallback((blockId: string) => {
+		if (props.onRemoveChairMaintenance) {
+			props.onRemoveChairMaintenance(blockId);
+		} else {
+			setInternalMaintenanceBlocks((prev) => prev.filter((b) => b.id !== blockId));
+		}
+		showToast("Технический блок кресла снят", "info", 2000);
+	}, [props.onRemoveChairMaintenance]);
+
+	const timeSlots = useMemo(() => generateTimeSlots(gridStep), [gridStep]);
 
 	const handleAppointmentMouseEnter = (apptId: string) => {
 		if (hoverTimeoutRef.current) {
@@ -258,6 +328,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			setActiveMenuApptId(null);
 			setChairDoctorDropdownId(null);
 			setActiveHeaderDoctorPopoverChairId(null);
+			setActiveHeaderMaintenanceChairId(null);
 		};
 		const handleGlobalKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
@@ -266,9 +337,10 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				setHoveredApptId(null);
 				setChairDoctorDropdownId(null);
 				setActiveHeaderDoctorPopoverChairId(null);
+				setActiveHeaderMaintenanceChairId(null);
 			}
 		};
-		if (activeMenuApptId || selectedMobileAppt || chairDoctorDropdownId || activeHeaderDoctorPopoverChairId) {
+		if (activeMenuApptId || selectedMobileAppt || chairDoctorDropdownId || activeHeaderDoctorPopoverChairId || activeHeaderMaintenanceChairId) {
 			window.addEventListener("click", handleGlobalClick);
 			window.addEventListener("keydown", handleGlobalKeyDown);
 		}
@@ -276,7 +348,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			window.removeEventListener("click", handleGlobalClick);
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [activeMenuApptId, selectedMobileAppt, chairDoctorDropdownId, activeHeaderDoctorPopoverChairId]);
+	}, [activeMenuApptId, selectedMobileAppt, chairDoctorDropdownId, activeHeaderDoctorPopoverChairId, activeHeaderMaintenanceChairId]);
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
 
@@ -1065,7 +1137,56 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						</span>
 					)}
 				</div>
-				<div className="flex items-center gap-2.5 shrink-0">
+				<div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">
+					{/* Grid Step Selector (15 / 30 / 60 min, Feature 192, StomX Parity) */}
+					<div
+						className="flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs"
+						data-testid="schedule-grid-step-selector"
+						role="group"
+						aria-label="Шаг сетки расписания"
+					>
+						<span className="text-[11px] font-bold text-[var(--muted)] px-1.5 hidden sm:inline">Шаг:</span>
+						<button
+							type="button"
+							onClick={() => handleSetGridStep(15)}
+							className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[32px] sm:min-h-[28px] flex items-center justify-center ${
+								gridStep === 15
+									? "bg-[var(--teal)] text-white shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							}`}
+							data-testid="btn-grid-step-15"
+							style={{ minHeight: "32px" }}
+						>
+							15 мин
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSetGridStep(30)}
+							className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[32px] sm:min-h-[28px] flex items-center justify-center ${
+								gridStep === 30
+									? "bg-[var(--teal)] text-white shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							}`}
+							data-testid="btn-grid-step-30"
+							style={{ minHeight: "32px" }}
+						>
+							30 мин
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSetGridStep(60)}
+							className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer min-h-[32px] sm:min-h-[28px] flex items-center justify-center ${
+								gridStep === 60
+									? "bg-[var(--teal)] text-white shadow-2xs"
+									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							}`}
+							data-testid="btn-grid-step-60"
+							style={{ minHeight: "32px" }}
+						>
+							60 мин
+						</button>
+					</div>
+
 					<button
 						type="button"
 						onClick={handleOpenAddChair}
@@ -1122,9 +1243,15 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							return (
 								<div
 									key={chair.id}
-									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0 relative"
+									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0 relative overflow-hidden"
+									style={{ borderTop: `3px solid ${chair.color || "#0d9488"}` }}
 									data-testid={`chair-header-${chair.id}`}
 								>
+									<div
+										className="h-1.5 w-full absolute top-0 left-0 right-0 shrink-0"
+										style={{ backgroundColor: chair.color || "#0d9488" }}
+										data-testid={`chair-accent-bar-${chair.id}`}
+									/>
 									<div className="flex items-center justify-center gap-1.5 flex-wrap">
 										<span className="truncate">{chair.name}</span>
 										{onEditChair && chair.id !== DEFAULT_SOLO_CHAIR.id && (
@@ -1169,6 +1296,23 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												<Users size={14} className="opacity-80 hover:opacity-100" />
 											</button>
 										)}
+										{/* 1-Click Sanitation & Technical Break Button (Feature 191, Mandate 8e, 8n) */}
+										<button
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												setActiveHeaderMaintenanceChairId((prev) =>
+													prev === chair.id ? null : chair.id,
+												);
+											}}
+											className="min-h-[44px] min-w-[44px] p-2 rounded-lg hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-amber-600 transition-colors cursor-pointer flex items-center justify-center"
+											style={{ minHeight: "44px", minWidth: "44px" }}
+											title={`Санобработка / Техперерыв для «${chair.name}» (1 клик)`}
+											aria-label={`Санобработка и техперерыв для ${chair.name}`}
+											data-testid={`btn-chair-maintenance-${chair.id}`}
+										>
+											<Clock size={14} className="opacity-80 hover:opacity-100 text-amber-500" />
+										</button>
 										{chairStat && chairStat.appointmentsCount > 0 && (
 											<span className="text-[10px] font-normal font-sans lowercase px-2 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20">
 												{countLabel(chairStat.appointmentsCount, "визит", "визита", "визитов")} ({chairStat.occupancyPercent}%)
@@ -1384,6 +1528,98 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													<Clock size={14} />
 													<span>Расширенная настройка</span>
 												</button>
+											</div>
+										</div>
+									)}
+
+									{/* 1-Click Chair Sanitation & Technical Break Popover (Feature 191, Mandates 8e, 8k, 8n) */}
+									{activeHeaderMaintenanceChairId === chair.id && (
+										<div
+											className="absolute top-full left-0 z-50 mt-1 p-3 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-xl flex flex-col gap-2 min-w-[260px] text-left normal-case"
+											style={{
+												boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+												zIndex: 60,
+											}}
+											onClick={(e) => e.stopPropagation()}
+											data-testid={`chair-maintenance-quick-popover-${chair.id}`}
+										>
+											<div className="flex items-center justify-between border-b border-[var(--line)] pb-1.5">
+												<span className="text-xs font-bold text-[var(--ink)]">
+													Перерыв: «{chair.name}»
+												</span>
+												<button
+													type="button"
+													onClick={() => setActiveHeaderMaintenanceChairId(null)}
+													className="p-1 rounded-lg hover:bg-[var(--paper-soft)] text-[var(--muted)] min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+													style={{ minHeight: "44px", minWidth: "44px" }}
+													aria-label="Закрыть"
+												>
+													<X size={16} />
+												</button>
+											</div>
+											<div className="flex flex-col gap-1.5">
+												<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider">
+													Санитарная обработка (1 клик):
+												</span>
+												<div className="grid grid-cols-2 gap-1.5">
+													<button
+														type="button"
+														onClick={() => {
+															handleAddMaintenance(chair.id, "sanitation", 30, "13:00");
+															setActiveHeaderMaintenanceChairId(null);
+														}}
+														className="min-h-[44px] px-2 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-amber-500/15 text-xs font-bold text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+														style={{ minHeight: "44px" }}
+														data-testid={`btn-maintenance-sanitation-30-${chair.id}`}
+													>
+														<Clock size={13} className="text-amber-500 shrink-0" />
+														<span>Санобработка 30м</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															handleAddMaintenance(chair.id, "sanitation", 60, "13:00");
+															setActiveHeaderMaintenanceChairId(null);
+														}}
+														className="min-h-[44px] px-2 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-amber-500/15 text-xs font-bold text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+														style={{ minHeight: "44px" }}
+														data-testid={`btn-maintenance-sanitation-60-${chair.id}`}
+													>
+														<Clock size={13} className="text-amber-500 shrink-0" />
+														<span>Санобработка 60м</span>
+													</button>
+												</div>
+												<span className="text-[11px] font-semibold text-[var(--muted)] uppercase tracking-wider mt-1">
+													Технический перерыв (1 клик):
+												</span>
+												<div className="grid grid-cols-2 gap-1.5">
+													<button
+														type="button"
+														onClick={() => {
+															handleAddMaintenance(chair.id, "tech_break", 30, "14:00");
+															setActiveHeaderMaintenanceChairId(null);
+														}}
+														className="min-h-[44px] px-2 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-amber-500/15 text-xs font-bold text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+														style={{ minHeight: "44px" }}
+														data-testid={`btn-maintenance-tech-30-${chair.id}`}
+													>
+														<Clock size={13} className="text-amber-500 shrink-0" />
+														<span>Техперерыв 30м</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															handleAddMaintenance(chair.id, "tech_break", 60, "14:00");
+															setActiveHeaderMaintenanceChairId(null);
+														}}
+														className="min-h-[44px] px-2 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-amber-500/15 text-xs font-bold text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95"
+														style={{ minHeight: "44px" }}
+														data-testid={`btn-maintenance-tech-60-${chair.id}`}
+													>
+														<Clock size={13} className="text-amber-500 shrink-0" />
+														<span>Техперерыв 60м</span>
+													</button>
+												</div>
 											</div>
 										</div>
 									)}
@@ -1686,7 +1922,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 
 			{/* Time Rows */}
 			<div className="divide-y divide-[var(--line)]">
-				{HOURS.map((hour, hIndex) => {
+				{timeSlots.map((hour, hIndex) => {
+					const [sH, sM] = hour.split(":").map(Number);
+					const slotStartMin = (sH ?? 0) * 60 + (sM ?? 0);
+					const slotEndMin = slotStartMin + gridStep;
+
 					return (
 						<div
 							key={hour}
@@ -1711,15 +1951,69 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 										11,
 										16,
 									);
-									return aTime.startsWith(hour.slice(0, 2));
+									const [aH, aM] = aTime.split(":").map(Number);
+									const aTotalMin = (aH ?? 0) * 60 + (aM ?? 0);
+									return aTotalMin >= slotStartMin && aTotalMin < slotEndMin;
 								});
 
-								if (cellAppointments.length > 0) {
+								const cellMaintenance = effectiveMaintenanceBlocks.filter((m) => {
+									if (m.chairId !== chair.id) return false;
+									const mDate = m.startsAt
+										? toDateTimeLocalValue(m.startsAt, timezone).slice(0, 10)
+										: dateKey;
+									if (mDate !== dateKey) return false;
+									const mTime = m.startsAt
+										? toDateTimeLocalValue(m.startsAt, timezone).slice(11, 16)
+										: "13:00";
+									const [mH, mM] = mTime.split(":").map(Number);
+									const mTotalMin = (mH ?? 0) * 60 + (mM ?? 0);
+									return mTotalMin >= slotStartMin && mTotalMin < slotEndMin;
+								});
+
+								if (cellAppointments.length > 0 || cellMaintenance.length > 0) {
 									return (
 										<div
 											key={chair.id}
 											className="p-1.5 border-r border-[var(--line)] last:border-r-0 space-y-1.5 min-h-[56px] flex flex-col justify-center"
 										>
+											{cellMaintenance.map((mBlock) => {
+												const mReasonLabel =
+													mBlock.reason === "sanitation"
+														? "Санитарная обработка"
+														: mBlock.reason === "tech_break"
+															? "Технический перерыв"
+															: mBlock.reason === "maintenance"
+																? "Техобслуживание"
+																: mBlock.reason;
+												const mDuration = mBlock.startsAt && mBlock.endsAt
+													? Math.round((Date.parse(mBlock.endsAt) - Date.parse(mBlock.startsAt)) / 60000)
+													: 30;
+												return (
+													<div
+														key={mBlock.id}
+														className="w-full p-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center justify-between gap-1 shadow-2xs"
+														data-testid={`chair-maintenance-block-${chair.id}`}
+													>
+														<div className="flex items-center gap-1.5 truncate">
+															<Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+															<span className="truncate">{mReasonLabel} ({mDuration} мин)</span>
+														</div>
+														<button
+															type="button"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleRemoveMaintenance(mBlock.id);
+															}}
+															className="p-1 rounded-lg hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 min-h-[32px] min-w-[32px] flex items-center justify-center cursor-pointer"
+															title="Удалить технический перерыв"
+															aria-label="Удалить технический перерыв"
+															data-testid={`btn-remove-maintenance-${chair.id}`}
+														>
+															<X size={13} />
+														</button>
+													</div>
+												);
+											})}
 											{cellAppointments.map((a) => {
 												const pName = patientName(
 													dashboard.patients,
@@ -2099,8 +2393,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																{isCito && (
 																	<span
 																		className="text-xs px-1.5 py-0.5 rounded-md bg-rose-600 text-white font-extrabold flex items-center gap-0.5 animate-pulse shrink-0"
-																		title="CITO! Прием по острой боли"
-																		data-testid="schedule-grid-cito-badge"
+																		title="CITO! Прием по острой боли (овербукинг)"
+																		data-testid="appointment-cito-overbooking-badge"
 																	>
 																		<Zap size={11} className="fill-white" />
 																		<span>CITO</span>
@@ -2405,6 +2699,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													const targetStartIso = `${dateKey}T${hour}:00:00.000Z`;
 													const targetEndIso = new Date(Date.parse(targetStartIso) + slotDuration * 60000).toISOString();
 
+													const isSourceCito = isCitoAppointment(sourceAppt);
+
 													// Pre-check collision before move to protect administrator from accidental double-booking
 													const collisionCheck = checkAppointmentResourceCollision(
 														{
@@ -2413,6 +2709,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															doctorUserId: targetDoctorId,
 															chairId: targetChairId,
 															patientId: sourceAppt.patientId,
+															isCito: isSourceCito,
 														},
 														appointments,
 														{
@@ -2420,11 +2717,16 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 															staff: dashboard?.clinicSettings?.staff,
 															chairs: dashboard?.clinicSettings?.chairs,
 															patients: dashboard?.patients,
+															chairMaintenanceBlocks: effectiveMaintenanceBlocks,
 															formatTimeFn: (iso) => toDateTimeLocalValue(iso, timezone).slice(11, 16),
+															isCito: isSourceCito,
+															allowCitoOverbooking: isSourceCito,
 														},
 													);
 
-													if (collisionCheck.hasCollision) {
+													if (collisionCheck.isCitoOverbooking) {
+														showToast(`CITO-овербукинг разрешён (острая боль): ${collisionCheck.message}`, "warning", 4500);
+													} else if (collisionCheck.hasCollision) {
 														showToast(`Внимание: ${collisionCheck.message}. Запись перенесена с овербукингом`, "warning", 4500);
 													}
 

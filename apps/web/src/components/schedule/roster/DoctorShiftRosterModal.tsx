@@ -88,6 +88,7 @@ export interface DoctorShiftRosterModalProps {
 	onOpenT13Timesheet?: (() => void) | undefined;
 	initialEditingShift?: Partial<DoctorShift> | null | undefined;
 	currentDate?: string | undefined;
+	weekStartDateIso?: string | undefined;
 }
 
 /**
@@ -285,11 +286,12 @@ export function DoctorShiftRosterModal({
 	onOpenT13Timesheet,
 	initialEditingShift = null,
 	currentDate,
+	weekStartDateIso: initialWeekStartDateIso,
 }: DoctorShiftRosterModalProps) {
 	// Base date: Monday of current/active week
 	const defaultMonday = useMemo(
-		() => getMondayOfWeekIso(currentDate),
-		[currentDate],
+		() => getMondayOfWeekIso(initialWeekStartDateIso || currentDate),
+		[initialWeekStartDateIso, currentDate],
 	);
 	const [weekStartDateIso, setWeekStartDateIso] =
 		useState<string>(defaultMonday);
@@ -298,10 +300,10 @@ export function DoctorShiftRosterModal({
 	>("cabinets");
 
 	useEffect(() => {
-		if (currentDate) {
-			setWeekStartDateIso(getMondayOfWeekIso(currentDate));
+		if (initialWeekStartDateIso || currentDate) {
+			setWeekStartDateIso(getMondayOfWeekIso(initialWeekStartDateIso || currentDate));
 		}
-	}, [currentDate]);
+	}, [initialWeekStartDateIso, currentDate]);
 
 	// Internal Shifts State
 	const [shifts, setShifts] = useState<DoctorShift[]>(() => {

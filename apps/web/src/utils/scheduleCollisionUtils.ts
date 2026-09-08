@@ -5,7 +5,33 @@ export type ResourceCollisionResult = {
 	conflictType: "doctor" | "chair" | "assistant" | "patient" | null;
 	conflictingAppointment: Appointment | null;
 	message: string | null;
+	isCitoOverbooking?: boolean;
 };
+
+export function isCitoAppointment(
+	appt:
+		| Partial<Appointment>
+		| {
+				reason?: string | null;
+				isCito?: boolean;
+				cito?: boolean;
+				isEmergency?: boolean;
+		  }
+		| null
+		| undefined,
+): boolean {
+	if (!appt) return false;
+	const anyAppt = appt as any;
+	const reason = (appt.reason ?? "").toLowerCase();
+	return Boolean(
+		anyAppt.isCito ||
+			anyAppt.cito ||
+			anyAppt.isEmergency ||
+			reason.includes("cito") ||
+			reason.includes("острая боль") ||
+			reason.includes("срочн"),
+	);
+}
 
 export type ChairMaintenanceBlock = {
 	id: string;
@@ -24,6 +50,10 @@ export function checkAppointmentResourceCollision(
 		chairId?: string | null;
 		assistantUserId?: string | null;
 		patientId?: string | null;
+		isCito?: boolean;
+		cito?: boolean;
+		reason?: string | null;
+		isEmergency?: boolean;
 	},
 	appointments: readonly Appointment[] | null | undefined,
 	options: {
@@ -33,6 +63,8 @@ export function checkAppointmentResourceCollision(
 		patients?: Dashboard["patients"];
 		chairMaintenanceBlocks?: readonly ChairMaintenanceBlock[];
 		formatTimeFn?: (iso: string) => string;
+		allowCitoOverbooking?: boolean;
+		isCito?: boolean;
 	} = {},
 ): ResourceCollisionResult {
 	if (!draft.startsAt || !draft.endsAt) {
@@ -106,69 +138,106 @@ export function checkAppointmentResourceCollision(
 		}
 	}
 
+	const isDraftCito = Boolean(
+		options.isCito ||
+			options.allowCitoOverbooking ||
+			isCitoAppointment(draft as any),
+	);
+
 	if (appointments && appointments.length > 0) {
 		for (const appt of appointments) {
-		if (options.excludeAppointmentId && appt.id === options.excludeAppointmentId) {
-			continue;
+			if (options.excludeAppointmentId && appt.id === options.excludeAppointmentId) {
+				continue;
+			}
+			if (appt.status === "cancelled" || appt.status === "no_show") {
+				continue;
+			}
+
+			const apptStart = Date.parse(appt.startsAt);
+			const apptEnd = Date.parse(appt.endsAt);
+			if (!Number.isFinite(apptStart) || !Number.isFinite(apptEnd)) continue;
+
+			// Interval overlap: (draftStart < apptEnd) && (draftEnd > apptStart)
+			const overlaps = draftStart < apptEnd && draftEnd > apptStart;
+			if (!overlaps) continue;
+
+			const timeIntervalStr = `${format(appt.startsAt)}–${format(appt.endsAt)}`;
+
+			if (draft.patientId && appt.patientId === draft.patientId) {
+				const patientObj = options.patients?.find((p) => p.id === draft.patientId);
+				const name = patientObj?.fullName ?? "Пациент";
+				return {
+					hasCollision: true,
+					conflictType: "patient",
+					conflictingAppointment: appt,
+					isCitoOverbooking: false,
+					message: `У пациента ${name} уже есть запись на это время (${timeIntervalStr}).`,
+				};
+			}
+
+			if (draft.doctorUserId && appt.doctorUserId === draft.doctorUserId) {
+				const doctorObj = options.staff?.find((s) => s.id === draft.doctorUserId);
+				const name = doctorObj?.fullName ?? "Врач";
+				if (isDraftCito) {
+					return {
+						hasCollision: false,
+						conflictType: "doctor",
+						conflictingAppointment: appt,
+						isCitoOverbooking: true,
+						message: `CITO-овербукинг разрешён (острая боль): наложение с приёмом врача ${name} (${timeIntervalStr})`,
+					};
+				}
+				return {
+					hasCollision: true,
+					conflictType: "doctor",
+					conflictingAppointment: appt,
+					isCitoOverbooking: false,
+					message: `Врач ${name} уже занят(а) в это время (${timeIntervalStr}).`,
+				};
+			}
+
+			if (draft.chairId && appt.chairId === draft.chairId) {
+				const chairObj = options.chairs?.find((c) => c.id === draft.chairId);
+				const name = chairObj?.name ?? "Кресло";
+				if (isDraftCito) {
+					return {
+						hasCollision: false,
+						conflictType: "chair",
+						conflictingAppointment: appt,
+						isCitoOverbooking: true,
+						message: `CITO-овербукинг разрешён (острая боль): наложение на кресле «${name}» (${timeIntervalStr})`,
+					};
+				}
+				return {
+					hasCollision: true,
+					conflictType: "chair",
+					conflictingAppointment: appt,
+					isCitoOverbooking: false,
+					message: `Кресло «${name}» уже занято в это время (${timeIntervalStr}).`,
+				};
+			}
+
+			if (draft.assistantUserId && appt.assistantUserId === draft.assistantUserId) {
+				const astObj = options.staff?.find((s) => s.id === draft.assistantUserId);
+				const name = astObj?.fullName ?? "Ассистент";
+				if (isDraftCito) {
+					return {
+						hasCollision: false,
+						conflictType: "assistant",
+						conflictingAppointment: appt,
+						isCitoOverbooking: true,
+						message: `CITO-овербукинг разрешён (острая боль): ассистент ${name} совмещён (${timeIntervalStr})`,
+					};
+				}
+				return {
+					hasCollision: true,
+					conflictType: "assistant",
+					conflictingAppointment: appt,
+					isCitoOverbooking: false,
+					message: `Ассистент ${name} уже занят(а) в это время (${timeIntervalStr}).`,
+				};
+			}
 		}
-		if (appt.status === "cancelled" || appt.status === "no_show") {
-			continue;
-		}
-
-		const apptStart = Date.parse(appt.startsAt);
-		const apptEnd = Date.parse(appt.endsAt);
-		if (!Number.isFinite(apptStart) || !Number.isFinite(apptEnd)) continue;
-
-		// Interval overlap: (draftStart < apptEnd) && (draftEnd > apptStart)
-		const overlaps = draftStart < apptEnd && draftEnd > apptStart;
-		if (!overlaps) continue;
-
-		const timeIntervalStr = `${format(appt.startsAt)}–${format(appt.endsAt)}`;
-
-		if (draft.patientId && appt.patientId === draft.patientId) {
-			const patientObj = options.patients?.find((p) => p.id === draft.patientId);
-			const name = patientObj?.fullName ?? "Пациент";
-			return {
-				hasCollision: true,
-				conflictType: "patient",
-				conflictingAppointment: appt,
-				message: `У пациента ${name} уже есть запись на это время (${timeIntervalStr}).`,
-			};
-		}
-
-		if (draft.doctorUserId && appt.doctorUserId === draft.doctorUserId) {
-			const doctorObj = options.staff?.find((s) => s.id === draft.doctorUserId);
-			const name = doctorObj?.fullName ?? "Врач";
-			return {
-				hasCollision: true,
-				conflictType: "doctor",
-				conflictingAppointment: appt,
-				message: `Врач ${name} уже занят(а) в это время (${timeIntervalStr}).`,
-			};
-		}
-
-		if (draft.chairId && appt.chairId === draft.chairId) {
-			const chairObj = options.chairs?.find((c) => c.id === draft.chairId);
-			const name = chairObj?.name ?? "Кресло";
-			return {
-				hasCollision: true,
-				conflictType: "chair",
-				conflictingAppointment: appt,
-				message: `Кресло «${name}» уже занято в это время (${timeIntervalStr}).`,
-			};
-		}
-
-		if (draft.assistantUserId && appt.assistantUserId === draft.assistantUserId) {
-			const astObj = options.staff?.find((s) => s.id === draft.assistantUserId);
-			const name = astObj?.fullName ?? "Ассистент";
-			return {
-				hasCollision: true,
-				conflictType: "assistant",
-				conflictingAppointment: appt,
-				message: `Ассистент ${name} уже занят(а) в это время (${timeIntervalStr}).`,
-			};
-		}
-	}
 	}
 
 	return {

@@ -420,6 +420,20 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 											>
 												Пятидневка (09:00–18:00)
 											</button>
+											<button
+												type="button"
+												data-testid="toolbar-template-even-odd"
+												onClick={() => {
+													const firstDoc = staffList?.find((s) => s.isDoctor);
+													const firstCab = cabinets?.[0];
+													const firstChair = firstCab?.chairs?.[0];
+													if (firstDoc && firstChair && firstCab) {
+														onApplyDoctorChairWeeklyTemplate(firstDoc.id, firstChair.id, firstCab.id, "even_odd_month");
+													}
+												}}
+											>
+												Чётные / Нечётные (Врач А/Б)
+											</button>
 										</>
 									)}
 								</div>

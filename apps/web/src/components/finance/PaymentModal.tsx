@@ -60,12 +60,12 @@ export interface PaymentModalProps {
 	readonly onPrintInvoice?: (() => void) | undefined;
 	readonly onPrintAct?: (() => void) | undefined;
 	readonly onClose: () => void;
-	readonly onSuccess: (paymentData: {
+	readonly onSuccess?: ((paymentData: {
 		method: string;
 		amountKopecks: number;
 		rrn?: string | undefined;
 		authCode?: string | undefined;
-	}) => void;
+	}) => void) | undefined;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -85,7 +85,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	onPrintInvoice,
 	onPrintAct,
 	onClose,
-	onSuccess,
+	onSuccess = () => {},
 }) => {
 	const [activeMethod, setActiveMethod] = useState<PaymentMethodTab>(defaultMethod);
 	const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);

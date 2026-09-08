@@ -138,6 +138,46 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				</div>
 			</div>
 
+			{/* Chair Palettes Strip with top accent bars for quick multi-chair orientation (StomX Parity, Feature 190) */}
+			{chairs.length > 0 && (
+				<div
+					className="flex items-center gap-2 overflow-x-auto px-4 py-1.5 border-b border-[var(--line)] bg-[var(--paper)] shrink-0 touch-pan-x"
+					data-testid="chair-schedule-palette-strip"
+					role="toolbar"
+					aria-label="Список кресел с цветовой дифференциацией"
+				>
+					{chairs.map((chair) => {
+						const chairColor = (chair as { color?: string }).color || "#0d9488";
+						return (
+							<div
+								key={chair.id}
+								className="relative px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-bold text-[var(--ink)] flex items-center gap-2 shrink-0 border-t-4 shadow-2xs transition-all overflow-hidden"
+								style={{ borderTopColor: chairColor }}
+								data-testid={`chair-view-badge-${chair.id}`}
+								title={`Кресло «${chair.name}» (${(chair as any).roomNumber || (chair as any).room || "Кабинет"})`}
+							>
+								<div
+									className="h-1.5 w-full absolute top-0 left-0 right-0"
+									style={{ backgroundColor: chairColor }}
+									data-testid={`chair-view-accent-strip-${chair.id}`}
+								/>
+								<span
+									className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
+									style={{ backgroundColor: chairColor }}
+									aria-hidden="true"
+								/>
+								<span className="truncate max-w-[140px]">{chair.name}</span>
+								{chair.active === false && (
+									<span className="text-[10px] text-[var(--muted)] font-normal">
+										(архив)
+									</span>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			)}
+
 			{/* Main Grid */}
 			<div className="flex-1 overflow-hidden">
 				<ScheduleGrid

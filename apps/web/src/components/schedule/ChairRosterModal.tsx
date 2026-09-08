@@ -668,6 +668,27 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 													>
 														2/2
 													</button>
+													<button
+														type="button"
+														data-testid={`chair-template-even-odd-${chair.id}`}
+														className="roster-btn roster-btn-secondary"
+														onClick={() =>
+															handleApplyChairTemplate(
+																chair.id,
+																cab.id,
+																"even_odd_month",
+															)
+														}
+														style={{
+															minHeight: "36px",
+															height: "36px",
+															padding: "0 0.5rem",
+															fontSize: "0.75rem",
+														}}
+														title="Чётные / Нечётные дни месяца (Врач А/Б)"
+													>
+														Чёт/Нечёт
+													</button>
 												</div>
 											</div>
 										</div>
