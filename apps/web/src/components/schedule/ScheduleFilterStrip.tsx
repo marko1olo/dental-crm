@@ -47,8 +47,8 @@ export interface ScheduleFilterStripProps {
 	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
 	currentDoctorId?: string | null | undefined;
 	onSelectMyChair?: (() => void) | undefined;
-	scheduleViewMode?: "timeline" | "grid";
-	setScheduleViewMode?: (mode: "timeline" | "grid") => void;
+	scheduleViewMode?: "timeline" | "grid" | "chairs";
+	setScheduleViewMode?: (mode: "timeline" | "grid" | "chairs") => void;
 	onQuickBooking?: () => void;
 	onToggleSmartAi?: () => void;
 	isSmartAiOpen?: boolean;
@@ -428,24 +428,9 @@ export function ScheduleFilterStrip({
 
 			{/* Right: [⊞ Сетка | ☰ Лента] Switcher + [⋮ Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
 			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l border-[var(--line)]">
-				{/* 1-Click View Mode Switcher: [ ⊞ Сетка | ☰ Лента ] */}
+				{/* 1-Click View Mode Switcher: [ ☰ Лента | ⊞ Сетка | 💺 По креслам ] */}
 				{setScheduleViewMode && (
 					<div className="flex items-center gap-0.5 sm:gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Режим отображения">
-						<button
-							type="button"
-							onClick={() => setScheduleViewMode("grid")}
-							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
-								scheduleViewMode === "grid"
-									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
-									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
-							}`}
-							title="Сетка по кабинетам и креслам"
-							aria-label="Сетка по кабинетам"
-							aria-pressed={scheduleViewMode === "grid"}
-						>
-							<LayoutGrid size={14} className="shrink-0" />
-							<span className="hidden md:inline">Сетка</span>
-						</button>
 						<button
 							type="button"
 							onClick={() => setScheduleViewMode("timeline")}
@@ -457,9 +442,42 @@ export function ScheduleFilterStrip({
 							title="Лента приемов по дням"
 							aria-label="Лента по дням"
 							aria-pressed={scheduleViewMode === "timeline"}
+							data-testid="schedule-view-mode-timeline"
 						>
 							<List size={14} className="shrink-0" />
 							<span className="hidden md:inline">Лента</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setScheduleViewMode("grid")}
+							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+								scheduleViewMode === "grid"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+							}`}
+							title="Сетка по кабинетам и креслам"
+							aria-label="Сетка по кабинетам"
+							aria-pressed={scheduleViewMode === "grid"}
+							data-testid="schedule-view-mode-grid"
+						>
+							<LayoutGrid size={14} className="shrink-0" />
+							<span className="hidden md:inline">Сетка</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setScheduleViewMode("chairs")}
+							className={`min-h-[44px] min-w-[44px] px-1.5 sm:px-2.5 rounded-md text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer ${
+								scheduleViewMode === "chairs"
+									? "bg-[var(--teal,var(--brand-primary))] text-white shadow-2xs"
+									: "text-slate-700 dark:text-slate-300 text-[var(--ink-muted,var(--muted))] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
+							}`}
+							title="Режим расписания по креслам (StomX паритет)"
+							aria-label="По креслам"
+							aria-pressed={scheduleViewMode === "chairs"}
+							data-testid="schedule-view-mode-chairs"
+						>
+							<Armchair size={14} className="shrink-0" />
+							<span className="hidden md:inline">По креслам</span>
 						</button>
 					</div>
 				)}
@@ -631,16 +649,28 @@ export function ScheduleFilterStrip({
 								<button
 									type="button"
 									onClick={() => {
-										setScheduleViewMode(scheduleViewMode === "timeline" ? "grid" : "timeline");
+										const nextMode =
+											scheduleViewMode === "timeline"
+												? "grid"
+												: scheduleViewMode === "grid"
+													? "chairs"
+													: "timeline";
+										setScheduleViewMode(nextMode);
 										setIsOptionsMenuOpen(false);
 									}}
 									className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
+									data-testid="schedule-options-mode-toggle"
 								>
 									{scheduleViewMode === "timeline" ? (
 										<>
 											<LayoutGrid size={14} className="text-[var(--teal,var(--brand-primary))]" />
-											<span>Сетка по креслам</span>
+											<span>Сетка по кабинетам</span>
+										</>
+									) : scheduleViewMode === "grid" ? (
+										<>
+											<Armchair size={14} className="text-[var(--teal,var(--brand-primary))]" />
+											<span>По креслам (StomX)</span>
 										</>
 									) : (
 										<>

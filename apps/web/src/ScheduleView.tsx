@@ -41,6 +41,7 @@ import {
 	type ChairDoctorShiftAssignment,
 	formatDoctorShortName,
 } from "./components/schedule/ScheduleGrid";
+import { ChairScheduleView } from "./components/schedule/ChairScheduleView";
 import {
 	QuickAddChairModal,
 	type QuickAddChairData,
@@ -852,12 +853,12 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 		[props.loadDashboard, props.setDashboard],
 	);
 
-	/** Режим отображения: сетка по креслам (grid - дефолт для десктопа) или лента (timeline - дефолт для мобайла) */
-	const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid">(
+	/** Режим отображения: сетка по креслам (grid - дефолт для десктопа), лента (timeline - дефолт для мобайла) или режим по креслам (chairs - StomX паритет) */
+	const [scheduleViewMode, setScheduleViewMode] = useState<"timeline" | "grid" | "chairs">(
 		() => {
 			try {
 				const saved = typeof window !== "undefined" ? localStorage.getItem("dente_schedule_view_mode") : null;
-				if (saved === "timeline" || saved === "grid") return saved;
+				if (saved === "timeline" || saved === "grid" || saved === "chairs") return saved;
 				if (typeof window !== "undefined" && window.innerWidth < 640) {
 					return "timeline";
 				}
@@ -2125,7 +2126,35 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				chairDoctorAssignments={computedChairDoctorAssignments}
 			/>
 
-			{scheduleViewMode === "grid" ? (
+			{scheduleViewMode === "chairs" ? (
+				<ChairScheduleView
+					dashboard={dashboard}
+					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}
+					appointments={dashboard?.appointments ?? []}
+					chairDoctorAssignments={
+						savedDoctorShifts.length > 0 || Object.keys(computedChairDoctorAssignments).length > 0
+							? computedChairDoctorAssignments
+							: undefined
+					}
+					onAssignChairDoctor={handleAssignChairDoctor}
+					onAddChair={handleAddChairFromSchedule}
+					onOpenRosterModal={() => setIsRosterModalOpen(true)}
+					onSelectChair={(chairId) => setScheduleChairFilterId(chairId)}
+					onSlotClick={(slot) => {
+						setQuickBookingSlot(slot);
+						setQuickBookingOpen(true);
+					}}
+					onAppointmentClick={(appointment) => {
+						setModalAppointment(appointment);
+					}}
+					patientName={patientName}
+					formatTime={formatTime}
+					toDateTimeLocalValue={toDateTimeLocalValue}
+					appointmentLabels={appointmentLabels}
+					selectedChairId={scheduleChairFilterId}
+					selectedDoctorId={scheduleDoctorFilterId}
+				/>
+			) : scheduleViewMode === "grid" ? (
 				<ScheduleGrid
 					dashboard={dashboard}
 					dateKey={scheduleDateFilter || clinicToday || todayScheduleDate()}

@@ -4,6 +4,7 @@ import type {
 	Dashboard,
 } from "@dental/shared";
 import {
+	AlertCircle,
 	AlertTriangle,
 	Calendar,
 	Check,
@@ -404,10 +405,12 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		};
 	}, [patientId, isOpen]);
 
-	const hasOpenVisit =
-		dashboard.activeVisit &&
-		appointment &&
-		dashboard.activeVisit.appointmentId === appointment.id;
+	const hasOpenVisit = Boolean(
+		(dashboard?.activeVisit &&
+			appointment &&
+			dashboard.activeVisit.appointmentId === appointment.id) ||
+			(props as any).hasOpenVisit,
+	);
 
 	const collision = useMemo(() => {
 		if (!appointment || !startsAtLocal || !endsAtLocal) {
@@ -808,38 +811,36 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<User size={14} className="text-[var(--teal)]" />
 									<span>Пациент *</span>
 								</label>
-								{!hasOpenVisit && (
-									<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
-										<button
-											type="button"
-											onClick={() => setIsInlineNewPatient(false)}
-											className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer ${
-												!isInlineNewPatient
-													? "bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm"
-													: "text-[var(--muted)] hover:text-[var(--ink)]"
-											}`}
-											data-testid="appointment-patient-mode-select"
-										>
-											Из базы
-										</button>
-										<button
-											type="button"
-											onClick={() => setIsInlineNewPatient(true)}
-											className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
-												isInlineNewPatient
-													? "bg-[var(--teal)] text-white font-bold shadow-sm"
-													: "text-[var(--muted)] hover:text-[var(--ink)]"
-											}`}
-											data-testid="appointment-patient-mode-create"
-										>
-											<UserPlus size={12} />
-											<span>+ Новый пациент</span>
-										</button>
-									</div>
-								)}
+								<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
+									<button
+										type="button"
+										onClick={() => setIsInlineNewPatient(false)}
+										className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer ${
+											!isInlineNewPatient
+												? "bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm"
+												: "text-[var(--muted)] hover:text-[var(--ink)]"
+										}`}
+										data-testid="appointment-patient-mode-select"
+									>
+										Из базы
+									</button>
+									<button
+										type="button"
+										onClick={() => setIsInlineNewPatient(true)}
+										className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+											isInlineNewPatient
+												? "bg-[var(--teal)] text-white font-bold shadow-sm"
+												: "text-[var(--muted)] hover:text-[var(--ink)]"
+										}`}
+										data-testid="appointment-patient-mode-create"
+									>
+										<UserPlus size={12} />
+										<span>+ Новый пациент</span>
+									</button>
+								</div>
 							</div>
 
-							{isInlineNewPatient && !hasOpenVisit ? (
+							{isInlineNewPatient ? (
 								<div
 									className="p-3 rounded-xl border border-[var(--teal)]/30 bg-[var(--teal-soft,var(--paper-soft))] space-y-3 animate-fade-in"
 									data-testid="appointment-inline-new-patient-panel"
@@ -902,7 +903,6 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<select
 										value={patientId}
 										onChange={(e) => setPatientId(e.target.value)}
-										disabled={Boolean(hasOpenVisit)}
 										className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 										data-testid="select-appointment-patient"
 									>
@@ -914,9 +914,13 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										))}
 									</select>
 									{hasOpenVisit && (
-										<p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-											Пациент закреплен: по этому приему открыт активный визит.
-										</p>
+										<div
+											className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 mt-1.5 w-full"
+											data-testid="appointment-open-visit-warning"
+										>
+											<AlertCircle size={14} className="shrink-0 text-amber-600 dark:text-amber-400" />
+											<span>По приему есть активный визит. При смене пациента визит будет сохранен в новую карту</span>
+										</div>
 									)}
 								</>
 							)}
