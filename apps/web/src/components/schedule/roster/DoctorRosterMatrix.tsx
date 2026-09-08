@@ -1510,7 +1510,7 @@ export const DoctorRosterMatrix: React.FC<DoctorRosterMatrixProps> = React.memo(
 									}}
 								>
 									<Clock size={16} />
-									<span>Подробное редактирование...</span>
+									<span>Подробное редактирование</span>
 								</button>
 
 								<button

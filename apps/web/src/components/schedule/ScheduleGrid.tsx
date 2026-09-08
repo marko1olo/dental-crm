@@ -1272,7 +1272,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													data-testid={`btn-chair-open-full-modal-${chair.id}`}
 												>
 													<Clock size={14} />
-													<span>Расширенная настройка...</span>
+													<span>Расширенная настройка</span>
 												</button>
 											</div>
 										</div>
