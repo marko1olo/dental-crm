@@ -5,6 +5,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
+	Copy,
 	FlaskConical,
 	Loader2,
 	Palette,
@@ -105,6 +106,56 @@ export const MODAL_EXPRESS_LAB_PRESETS: readonly ExpressLabPreset[] = [
 	),
 ];
 
+declare module "./labMath" {
+	interface DentalLabOrderModalProps {
+		readonly clinicName?: string | undefined;
+		readonly clinicPhone?: string | undefined;
+	}
+}
+
+export interface LabOrderMessengerParams {
+	clinicName: string;
+	clinicPhone: string;
+	gostOrderNumber: string;
+	patientName: string;
+	doctorName: string;
+	teethOrJaw: string;
+	constructionTypeTitle: string;
+	materialTitle: string;
+	shade: string;
+	dueDate: string;
+	frameworkTrialDate?: string | undefined;
+	ceramicTrialDate?: string | undefined;
+	clinicalNotes?: string | undefined;
+}
+
+export function buildLabOrderMessengerSummary(params: LabOrderMessengerParams): string {
+	const lines: string[] = [
+		`Заказ-наряд в зуботехническую лабораторию (клиника «${params.clinicName}»):`,
+		`Наряд: ${params.gostOrderNumber}`,
+		`Пациент: ${params.patientName}`,
+		`Лечащий врач: ${params.doctorName}`,
+		`Область: ${params.teethOrJaw}`,
+		`Конструкция: ${params.constructionTypeTitle}`,
+		`Материал: ${params.materialTitle}`,
+		`Цвет: ${params.shade}`,
+		`Срок сдачи (Due date): ${params.dueDate}`,
+	];
+
+	if (params.frameworkTrialDate && params.frameworkTrialDate.trim()) {
+		lines.push(`Примерка каркаса: ${params.frameworkTrialDate.trim()}`);
+	}
+	if (params.ceramicTrialDate && params.ceramicTrialDate.trim()) {
+		lines.push(`Примерка керамики: ${params.ceramicTrialDate.trim()}`);
+	}
+
+	const notes = params.clinicalNotes?.trim() || "Без особенностей";
+	lines.push(`Особые указания: ${notes}`);
+	lines.push(`Курьерская доставка / Связь с клиникой: ${params.clinicPhone}.`);
+
+	return lines.join("\n");
+}
+
 type TabKey = "main" | "shades" | "stages" | "print";
 
 export function DentalLabOrderModal({
@@ -124,6 +175,8 @@ export function DentalLabOrderModal({
 	treatmentPlanAgeDays,
 	isPlanExpired,
 	onOrderSaved,
+	clinicPhone = "+7 (495) 123-45-67",
+	clinicName = "Денте",
 }: DentalLabOrderModalProps) {
 	const [activeTab, setActiveTab] = useState<TabKey>("main");
 
@@ -565,10 +618,70 @@ export function DentalLabOrderModal({
 		window.print();
 	};
 
+	const gostOrderNumber = formatGostOrderNumber(secureToken);
+
+	const handleCopyMessengerSummary = async () => {
+		const finalShade =
+			shadeSystem === "3d_master"
+				? shade3dMaster
+				: shadeSystem === "bleach"
+				? shadeBleach
+				: shadeClassical;
+
+		let teethOrJaw: string;
+		if (jawScope) {
+			teethOrJaw = formatJawScopeLabel(jawScope);
+		} else if (selectedTeeth.length > 0) {
+			teethOrJaw = selectedTeeth.join(", ");
+		} else {
+			teethOrJaw = "Общий наряд / Челюсть целиком";
+		}
+
+		const constructionTypeTitle =
+			CONSTRUCTION_TYPES.find((c) => c.id === constructionType)?.name || constructionType;
+		const materialTitle =
+			LAB_MATERIALS.find((m) => m.id === material)?.name || material;
+
+		const formatDisplayDate = (dStr?: string | null) => {
+			if (!dStr) return "";
+			try {
+				const parsed = new Date(dStr);
+				if (!Number.isNaN(parsed.getTime())) {
+					return parsed.toLocaleDateString("ru-RU");
+				}
+			} catch {}
+			return dStr;
+		};
+
+		const text = buildLabOrderMessengerSummary({
+			clinicName: clinicName || "Денте",
+			clinicPhone: clinicPhone || "+7 (495) 123-45-67",
+			gostOrderNumber,
+			patientName: formPatientName,
+			doctorName: formDoctorName,
+			teethOrJaw,
+			constructionTypeTitle,
+			materialTitle,
+			shade: finalShade,
+			dueDate: dueDate ? formatDisplayDate(dueDate) : "Не указан",
+			frameworkTrialDate: frameworkTrialDate ? formatDisplayDate(frameworkTrialDate) : undefined,
+			ceramicTrialDate: ceramicTrialDate ? formatDisplayDate(ceramicTrialDate) : undefined,
+			clinicalNotes: clinicalNotes.trim() || undefined,
+		});
+
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+				await navigator.clipboard.writeText(text);
+			}
+			showToast("Выжимка наряда скопирована для отправки курьеру/технику в мессенджер", "success");
+		} catch {
+			showToast("Не удалось скопировать выжимку наряда в буфер", "error");
+		}
+	};
+
 	if (!isOpen) return null;
 
 	const portalUrl = `${typeof window !== "undefined" ? (window.location?.origin || "") : ""}/#/portal/lab-order/${secureToken}`;
-	const gostOrderNumber = formatGostOrderNumber(secureToken);
 
 	const modalContent = (
 		<div
@@ -963,7 +1076,29 @@ export function DentalLabOrderModal({
 						)}
 					</div>
 
-					<div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+					<div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+						<button
+							type="button"
+							onClick={handleCopyMessengerSummary}
+							data-testid="lab-order-copy-messenger-btn"
+							className="min-h-[44px] px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							title="Скопировать выжимку наряда для отправки курьеру или зубному технику в WhatsApp/Telegram"
+						>
+							<Copy className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span className="hidden sm:inline">Скопировать для ЗТЛ</span>
+							<span className="sm:hidden">ЗТЛ</span>
+						</button>
+						<button
+							type="button"
+							onClick={handlePrint}
+							data-testid="lab-order-footer-print-btn"
+							className="min-h-[44px] px-3.5 sm:px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+							title="Распечатать наряд-заказ ГОСТ (А4)"
+						>
+							<Printer className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span className="hidden sm:inline">Печать (А4)</span>
+							<span className="sm:hidden">Печать</span>
+						</button>
 						<button
 							type="button"
 							onClick={onClose}
