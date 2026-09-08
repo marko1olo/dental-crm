@@ -15,6 +15,7 @@ import {
 	patientAdministrativeProfileDraftFromPatient,
 	patientAdministrativeProfileDraftIssue,
 	patientAdministrativeProfileDraftSignature,
+	patientAdministrativeProfileTimeWarning,
 	patientCoreDraftFromPatient,
 	patientCoreDraftSignature,
 	responseErrorMessage,
@@ -276,10 +277,17 @@ export function usePatientLogic({
 			return false;
 		}
 		if (!patientAdministrativeProfileDirty) return true;
+		const timeWarning = patientAdministrativeProfileTimeWarning(
+			patientAdministrativeProfileDraft,
+		);
+		if (timeWarning) {
+			showToast(
+				`Удобное время приема скорректировано: ${timeWarning} Остальные реквизиты пациента сохранены.`,
+				"info",
+			);
+		}
 		if (patientAdministrativeProfileValidationMessage) {
-			setPatientAdministrativeProfileSaveState("error");
-			setError(patientAdministrativeProfileValidationMessage);
-			return false;
+			showToast(patientAdministrativeProfileValidationMessage, "warning");
 		}
 		const expectedSignature = patientAdministrativeProfileDraftSignature(
 			patientAdministrativeProfileDraft,

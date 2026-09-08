@@ -6,7 +6,7 @@
  * - Dominant Technique Selectors (Weisbrem, Gow-Gates, Akinosi, Torusal, Tuberal, PDL 10-15 atm, Infiltration, etc.)
  * - Needle Specs (27G 35mm, 30G 25mm, 30G 21mm, 30G 12mm, 30G 8mm) with auto mismatch detection.
  * - Vascular Hit Risk Gauge & Two-Plane Aspiration verification.
- * - Giant Aspiration Buttons: [ 🟢 Аспирационная проба ОТРИЦАТЕЛЬНАЯ ] / [ 🔴 ПОЛОЖИТЕЛЬНАЯ (Кровь в карпуле) ].
+ * - Giant Aspiration Buttons: [ (+) Аспирационная проба ОТРИЦАТЕЛЬНАЯ ] / [ (!) ПОЛОЖИТЕЛЬНАЯ (Кровь в карпуле) ].
  * - Positive Aspiration Stop & Replace workflow with full audit trail.
  * - Live Anesthesia Onset Countdown Timer (10m mandibular, 3m infiltration, 1m PDL) with push/toast notifications.
  * - Anatomical Numbness Zone Mapping (teeth, tongue, lip, mucosa, palate).
@@ -82,11 +82,11 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 	onClose,
 	onApplyToDiary,
 	onOpenEmergencyProtocol,
-	initialPatientFullName = 'Смирнова Екатерина Васильевна',
-	initialMedCardNumber = '043/у-2026/891',
-	initialPatientAgeYears = 36,
-	initialPatientWeightKg = 68,
-	initialToothNumber = '46',
+	initialPatientFullName = '',
+	initialMedCardNumber = '',
+	initialPatientAgeYears = undefined,
+	initialPatientWeightKg = undefined,
+	initialToothNumber = '',
 	initialTechniqueId = 'mandibular_weisbrem',
 	initialNeedleId = 'gauge_27_long_35mm',
 	initialDrugKey = 'articaine_1_100k',
@@ -400,6 +400,39 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 		showToast('Норма анестезии применена: Артикаин 1:100 000 (1.7 мл), аспирация (-), норма!', 'success');
 	};
 
+	// 1-Click Standard Physiological Norm Preset (Мандаты 8e, 8k, 8n)
+	// Артикаин 1:200 000 (1.7 мл), отрицательная аспирация в 2 плоскостях, онемение подтверждено
+	const handleApplyStandardNormPreset = () => {
+		setDrugKey('articaine_1_200k');
+		setVolumeMl(1.7);
+		setAspirationStatus('negative_safe');
+		setIsTwoPlaneConfirmed(true);
+		const defaultAttempt: AspirationAttemptRecord = {
+			attemptNumber: 1,
+			timestampIso: new Date().toISOString(),
+			plane1Result: 'negative',
+			plane2Result: 'negative',
+			overallResult: 'negative',
+			bloodObserved: false,
+			needleId,
+			actionTaken: 'proceed_slow_injection',
+			notesRu: 'Отрицательная аспирационная проба (в 2-х плоскостях, кровь отсутствует).',
+		};
+		setAttempts([defaultAttempt]);
+		setPositiveEmergencyOpen(false);
+		setIsTimerRunning(false);
+		setTimerCompleted(true);
+		setTimerSecondsLeft(0);
+		setNotesRu(
+			'Анестезия наступила по клиническим признакам, глубина достаточная, аллергических реакций нет. Онемение подтверждено.',
+		);
+		soundFeedback.playActionSuccess();
+		showToast(
+			'Стандартная норма анестезии: Артикаин 1:200 000 (1.7 мл), аспирация (-), онемение подтверждено!',
+			'success',
+		);
+	};
+
 	const handleApplyQuickNormAndClose = () => {
 		const normText = `Инфильтрационная/проводниковая анестезия: Артикаин 4% с эпинефрином 1:100 000, 1.7 мл. Аспирационная проба отрицательная, аллергических реакций нет. Обезболивание глубокое, наступило по клиническим признакам.`;
 		const normSession: AnesthesiaSessionData = {
@@ -457,7 +490,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 				className="w-full max-w-7xl max-h-[96vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
 				style={{
 					backgroundColor: 'var(--paper, #18181b)',
-					borderColor: 'var(--border, #27272a)',
+					borderColor: 'var(--line, rgba(255, 255, 255, 0.1))',
 					color: 'var(--ink, #fafafa)',
 				}}
 			>
@@ -466,7 +499,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 					className="flex items-center justify-between px-5 py-3.5 border-b shrink-0 gap-3"
 					style={{
 						backgroundColor: 'var(--paper-strong, #1f1f23)',
-						borderColor: 'var(--border, #27272a)',
+						borderColor: 'var(--line, rgba(255, 255, 255, 0.1))',
 					}}
 				>
 					<div className="flex items-center gap-3 min-w-0">
@@ -495,8 +528,13 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 								</span>
 							</div>
 							<p className="text-xs text-zinc-400 truncate">
-								Стандарты безопасности СтАР & Минздрав РФ (Форма № 043/у) • Пациент:{' '}
-								<span className="font-medium text-zinc-200">{patientFullName}</span>
+								Стандарты безопасности СтАР & Минздрав РФ (Форма № 043/у)
+								{patientFullName ? (
+									<>
+										{' • Пациент: '}
+										<span className="font-medium text-zinc-200">{patientFullName}</span>
+									</>
+								) : null}
 								{toothNumber ? ` • Зуб: ${toothNumber}` : ''}
 							</p>
 						</div>
@@ -507,7 +545,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 							<button
 								type="button"
 								onClick={onOpenEmergencyProtocol}
-								className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+								className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors min-h-[44px]"
 								title="Экстренная реанимация: Анафилаксия, LAST (липиды 20%), шок (112)"
 								data-testid="btn-journal-open-emergency"
 							>
@@ -518,24 +556,30 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 
 						<button
 							type="button"
+							onClick={handleApplyStandardNormPreset}
+							className="px-3 py-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 border border-emerald-500/50 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors min-h-[44px]"
+							title="Стандартная норма анестезии: Артикаин 1:200 000, 1.7 мл, аспирация (-), норма"
+							data-testid="btn-anesthesia-standard-norm-preset"
+						>
+							<CheckCircle2 className="w-4 h-4 text-emerald-300" />
+							<span>Стандартная норма (1 клик)</span>
+						</button>
+
+						<button
+							type="button"
 							onClick={handleApplyQuickNormPreset}
-							className="px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/50 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+							className="px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/50 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors min-h-[44px]"
 							title="Заполнить форму нормой: Артикаин 1:100 000, 1.7 мл, аспирация (-), норма"
 							data-testid="btn-journal-quick-norm-preset"
 						>
 							<Zap className="w-3.5 h-3.5 text-amber-300" />
-							<span>Норма в 1 клик</span>
+							<span>Артикаин 1:100к</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={handleApplyQuickNormAndClose}
-							disabled={isLocked}
-							className={`px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors ${
-								isLocked
-									? 'opacity-50 cursor-not-allowed bg-zinc-700 text-zinc-400'
-									: 'bg-emerald-600 hover:bg-emerald-500 text-white'
-							}`}
+							className="px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors bg-emerald-600 hover:bg-emerald-500 text-white min-h-[44px]"
 							title="Внести норму (Артикаин 1.7 мл, аспирация (-), без реакций) и закрыть"
 							data-testid="btn-journal-quick-norm-apply"
 						>
@@ -546,7 +590,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 						<button
 							type="button"
 							onClick={onClose}
-							className="p-2 rounded-xl text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors"
+							className="p-2.5 rounded-xl text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
 							title="Закрыть (Esc)"
 							aria-label="Закрыть"
 						>
@@ -560,7 +604,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 					className="px-5 py-2.5 border-b shrink-0 flex flex-col gap-2"
 					style={{
 						backgroundColor: 'var(--paper-strong, #1f1f23)',
-						borderColor: 'var(--border, #27272a)',
+						borderColor: 'var(--line, rgba(255, 255, 255, 0.1))',
 					}}
 					data-testid="anesthesia-express-presets-bar"
 				>
@@ -944,7 +988,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 					className="px-5 py-3 border-t flex flex-col gap-2 shrink-0"
 					style={{
 						backgroundColor: 'var(--paper-strong, #1f1f23)',
-						borderColor: 'var(--border, #27272a)',
+						borderColor: 'var(--line, rgba(255, 255, 255, 0.1))',
 					}}
 				>
 					<div className="flex items-center justify-between text-xs font-semibold text-zinc-400">
@@ -960,7 +1004,14 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 						)}
 					</div>
 
-					<div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-[11px] font-mono text-zinc-300 max-h-24 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text">
+					<div
+						className="p-2.5 rounded-lg border text-[11px] font-mono max-h-24 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text"
+						style={{
+							backgroundColor: 'var(--paper-soft, #09090b)',
+							borderColor: 'var(--line, rgba(255, 255, 255, 0.1))',
+							color: 'var(--ink, #fafafa)',
+						}}
+					>
 						{exportResult.diaryText043}
 					</div>
 				</div>
@@ -970,13 +1021,13 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 					className="flex items-center justify-between px-5 py-3.5 border-t shrink-0 flex-wrap gap-3"
 					style={{
 						backgroundColor: 'var(--paper, #18181b)',
-						borderColor: 'var(--border, #27272a)',
+						borderColor: 'var(--line, rgba(255, 255, 255, 0.1))',
 					}}
 				>
 					<button
 						type="button"
 						onClick={handleCopyDiary}
-						className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold flex items-center gap-2 transition-colors min-h-[44px]"
+						className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold flex items-center gap-2 transition-colors min-h-[44px] cursor-pointer"
 					>
 						{isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
 						<span>{isCopied ? 'Скопировано!' : 'Копировать текст'}</span>
@@ -986,7 +1037,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-transparent hover:bg-zinc-800 text-zinc-300 text-xs font-semibold transition-colors min-h-[44px]"
+							className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-transparent hover:bg-zinc-800 text-zinc-300 text-xs font-semibold transition-colors min-h-[44px] cursor-pointer"
 						>
 							Закрыть
 						</button>
@@ -994,12 +1045,7 @@ export const AnesthesiaAspirationJournalModal: React.FC<AnesthesiaAspirationJour
 						<button
 							type="button"
 							onClick={handleApplyToDiary}
-							disabled={isLocked}
-							className={`px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all min-h-[44px] shadow-md ${
-								isLocked
-									? 'opacity-50 cursor-not-allowed bg-zinc-700 text-zinc-400'
-									: 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30'
-							}`}
+							className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all min-h-[44px] shadow-md bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30 cursor-pointer"
 						>
 							<FileText className="w-4 h-4" />
 							<span>Вставить в дневник Формы 043/у</span>

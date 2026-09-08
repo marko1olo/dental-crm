@@ -255,12 +255,49 @@ export function patientAdministrativeProfileDraftFromPatient(
 
 
 
+export function patientAdministrativeProfileTimeWarning(
+	draft: PatientAdministrativeProfileDraft,
+): string | null {
+	if (draft.preferredAppointmentStart && !draft.preferredAppointmentEnd) {
+		return "Укажите конец удобного времени приема или очистите начало.";
+	}
+	if (!draft.preferredAppointmentStart && draft.preferredAppointmentEnd) {
+		return "Укажите начало удобного времени приема или очистите конец.";
+	}
+	if (
+		draft.preferredAppointmentStart &&
+		draft.preferredAppointmentEnd &&
+		draft.preferredAppointmentEnd <= draft.preferredAppointmentStart
+	) {
+		return "Конец удобного времени приема должен быть позже начала.";
+	}
+	return null;
+}
+
 export function buildPatientAdministrativeProfilePayload(
 	draft: PatientAdministrativeProfileDraft,
 ): UpdatePatientAdministrativeProfileInput {
+	const rawStart = nullablePatientDraftValue(draft.preferredAppointmentStart);
+	const rawEnd = nullablePatientDraftValue(draft.preferredAppointmentEnd);
+	let preferredAppointmentStart: string | null = rawStart;
+	let preferredAppointmentEnd: string | null = rawEnd;
+	if (
+		(rawStart && !rawEnd) ||
+		(!rawStart && rawEnd) ||
+		(rawStart && rawEnd && rawEnd <= rawStart)
+	) {
+		preferredAppointmentStart = null;
+		preferredAppointmentEnd = null;
+	}
+
+	const rawInn = nullablePatientDraftValue(draft.taxpayerInn);
+	// По 54-ФЗ и Mandate 8e: если ИНН физлица указан не по формату 10/12 цифр, санируем в null чтобы не блокировать сохранение паспорта и СНИЛС
+	const taxpayerInn =
+		rawInn && /^\d{10}$|^\d{12}$/.test(rawInn) ? rawInn : null;
+
 	return {
 		identityDocument: nullablePatientDraftValue(draft.identityDocument),
-		taxpayerInn: nullablePatientDraftValue(draft.taxpayerInn),
+		taxpayerInn,
 		registrationAddress: nullablePatientDraftValue(draft.registrationAddress),
 		residentialAddress: nullablePatientDraftValue(draft.residentialAddress),
 		insurancePolicyNumber: nullablePatientDraftValue(
@@ -283,12 +320,8 @@ export function buildPatientAdministrativeProfilePayload(
 			draft.preferredDocumentRecipient,
 		),
 		preferredAppointmentWeekdays: draft.preferredAppointmentWeekdays,
-		preferredAppointmentStart: nullablePatientDraftValue(
-			draft.preferredAppointmentStart,
-		),
-		preferredAppointmentEnd: nullablePatientDraftValue(
-			draft.preferredAppointmentEnd,
-		),
+		preferredAppointmentStart,
+		preferredAppointmentEnd,
 		preferredAppointmentNote: nullablePatientDraftValue(
 			draft.preferredAppointmentNote,
 		),
@@ -319,19 +352,8 @@ export function patientAdministrativeProfileDraftIssue(
 	if (inn && !/^\d{10}$|^\d{12}$/.test(inn)) {
 		return "ИНН можно сохранить только в формате 10 или 12 цифр. Пока это локальный черновик.";
 	}
-	if (draft.preferredAppointmentStart && !draft.preferredAppointmentEnd) {
-		return "Укажите конец удобного времени приема или очистите начало.";
-	}
-	if (!draft.preferredAppointmentStart && draft.preferredAppointmentEnd) {
-		return "Укажите начало удобного времени приема или очистите конец.";
-	}
-	if (
-		draft.preferredAppointmentStart &&
-		draft.preferredAppointmentEnd &&
-		draft.preferredAppointmentEnd <= draft.preferredAppointmentStart
-	) {
-		return "Конец удобного времени приема должен быть позже начала.";
-	}
+	// МАНДАТ 8e, 8n: Замечания по времени приема вынесены в soft warning (patientAdministrativeProfileTimeWarning)
+	// и автоматически санируются в null в payload, не блокируя сохранение реквизитов пациента.
 	return null;
 }
 
@@ -496,7 +518,10 @@ export type PatientAdministrativeProfileDraft = {
 	decree659Compliance?: Record<string, unknown> | null;
 };
 
-export function nullablePatientDraftValue(value: string): string | null {
+export function nullablePatientDraftValue(
+	value: string | undefined | null,
+): string | null {
+	if (typeof value !== "string") return null;
 	const trimmed = value.trim();
 	return trimmed ? trimmed : null;
 }

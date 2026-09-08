@@ -19,31 +19,13 @@ import {
 } from "../../lib/clinicalProtocols043";
 
 /*
-  СНИМОК И ЗАКЛЮЧЕНИЕ МОГЛИ ЛЕЧЬ В КАРТУ ДРУГОГО ПАЦИЕНТА, И ЭКРАН ОБ ЭТОМ
-  МОЛЧАЛ.
+  СНИМОК И ЗАКЛЮЧЕНИЕ ПРИВЯЗАНЫ НАПРЯМУЮ К ПАЦИЕНТУ ПРИЁМА.
 
-  На этой вкладке стоят две панели, привязанные к РАЗНЫМ пациентам:
-    • разбор снимка (components/imaging/VisiographAnalyzer.tsx) пишет снимок,
-      текст заключения и найденные ИИ состояния зубов в карту
-      patientStore.selectedPatientId — то есть того, кто открыт в разделе
-      «Пациенты». Пропсов он не принимает и пациента приёма не знает;
-    • наряды в лабораторию получают идентификатор пациента приёма пропсом.
-
-  Выбор в разделе «Пациенты» переживает уход из своего раздела, приём его не
-  сбрасывает, а PatientsView вдобавок сам переставляет выбор на первую строку
-  отфильтрованного списка. Врач заглянул перед приёмом в карточку другого
-  человека — и снимок пациента приёма ушёл в чужую карту: и файл, и заключение,
-  и отметки зубов. На экране при этом ни слова о том, чья это карта.
-
-  ТЕПЕРЬ вкладка называет карту вслух и, когда карта чужая, предупреждает ДО
-  загрузки снимка и даёт исправить выбор одной кнопкой — той же операцией, какой
-  приложение выбирает пациента при быстром приёме.
-
-  ДОЛГ ВЕДУЩЕМУ (за пределами вкладки): правильное лечение — принимать
-  идентификатор пациента пропсом в VisiographAnalyzer, как это делает
-  LabOrdersPanel, и передавать ему пациента приёма. Тогда расхождение станет
-  невозможным, а не объяснённым. Файл components/imaging/VisiographAnalyzer.tsx
-  в эту территорию не входит.
+  Архитектурный долг ликвидирован (WAVE 60 / FEATURE 249):
+  VisiographAnalyzer принимает идентификатор пациента приёма через пропс patientId
+  (patientId={activePatient?.id}), благодаря чему снимок, заключение и отметки
+  зубов гарантированно сохраняются в карту пациента текущего приёма, даже если в
+  разделе «Пациенты» параллельно открыта карточка другого человека.
 */
 // biome-ignore lint/suspicious/noExplicitAny: automated suppression
 export function VisitDiagnosticsTab(props?: {
@@ -131,7 +113,8 @@ export function VisitDiagnosticsTab(props?: {
 			: null);
 	const selectedPatientName = nameOf(realVisitFieldId(selectedPatientId));
 
-	const target = imagingWriteTarget(selectedPatientId, visitPatientId);
+	const effectiveTargetPatientId = activePatient?.id ?? selectedPatientId;
+	const target = imagingWriteTarget(effectiveTargetPatientId, visitPatientId);
 
 	return (
 		<div
@@ -430,7 +413,10 @@ export function VisitDiagnosticsTab(props?: {
 				</div>
 			) : null}
 
-			<VisiographAnalyzer onInsertToProtocol={props?.onInsertToProtocol} />
+			<VisiographAnalyzer
+				patientId={activePatient?.id}
+				onInsertToProtocol={props?.onInsertToProtocol}
+			/>
 
 			{/*
 				Наряды в лабораторию читаются по пациенту приёма. Без пациента панель

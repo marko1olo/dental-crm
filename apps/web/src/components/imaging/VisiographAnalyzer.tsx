@@ -224,12 +224,14 @@ export interface VisiographAnalyzerProps {
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
 	readonly toothCode?: string | undefined;
 	readonly initialScan?: XrayScan | undefined;
+	readonly patientId?: string | undefined;
 }
 
 export function VisiographAnalyzer({
 	onInsertToProtocol,
 	toothCode,
 	initialScan,
+	patientId,
 }: VisiographAnalyzerProps = {}) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dropRef = useRef<HTMLDivElement>(null);
@@ -240,6 +242,7 @@ export function VisiographAnalyzer({
 	const analysisInFlightRef = useRef(false);
 
 	const { selectedPatientId } = usePatientStore();
+	const effectivePatientId = patientId ?? selectedPatientId;
 
 	/*
 	 * ЗАГОЛОВКИ ОХРАНЫ. ЭТА ПАНЕЛЬ БЫЛА МЁРТВА У ЗАКАЗЧИКА ЦЕЛИКОМ, и увидеть это
@@ -432,7 +435,7 @@ export function VisiographAnalyzer({
 	 * поздний ответ по A убирал бы индикатор загрузки у идущего запроса по B.
 	 */
 	const loadHistory = useCallback(
-		async function loadHistory(patientId: string) {
+		async function loadHistory(targetPatientId: string) {
 			setIsLoadingHistory(true);
 			setHistoryFailure(null);
 			setDeleteFailure(null);
@@ -442,12 +445,12 @@ export function VisiographAnalyzer({
 			// «непонятный ответ при 200» и «сервер не ответил» дают разные тексты.
 			let status: number | null = null;
 			const isStale = () =>
-				usePatientStore.getState().selectedPatientId !== patientId;
+				(patientId ?? usePatientStore.getState().selectedPatientId) !== targetPatientId;
 			try {
 				// Content-Type у этого запроса больше нет: тела у GET нет, и объявлять его
 				// формат было нечего — а место заголовков нужно тому, без чего охрана
 				// отвечает 403.
-				const res = await fetch(`/api/xray/scans?patientId=${patientId}`, {
+				const res = await fetch(`/api/xray/scans?patientId=${targetPatientId}`, {
 					headers: denteClinicalReadHeaders(),
 				});
 				status = res.status;
@@ -482,12 +485,12 @@ export function VisiographAnalyzer({
 				if (!isStale()) setIsLoadingHistory(false);
 			}
 		},
-		[denteClinicalReadHeaders],
+		[patientId, denteClinicalReadHeaders],
 	);
 
 	// ── Load scan history when patient changes ──────────────────────────────
 	useEffect(() => {
-		if (!selectedPatientId) {
+		if (!effectivePatientId) {
 			setScanHistory([]);
 			setHistoryFailure(null);
 			setDeleteFailure(null);
@@ -499,8 +502,8 @@ export function VisiographAnalyzer({
 			setIsLoadingHistory(false);
 			return;
 		}
-		loadHistory(selectedPatientId);
-	}, [selectedPatientId, loadHistory]);
+		loadHistory(effectivePatientId);
+	}, [effectivePatientId, loadHistory]);
 
 	/**
 	 * Запись одной группы зубов в живую формулу пациента.
@@ -573,6 +576,8 @@ export function VisiographAnalyzer({
 				return;
 			}
 
+			const patientAtStart = effectivePatientId;
+
 			setError(null);
 			setSaveFailure(null);
 			setFormulaFailure(null);
@@ -594,12 +599,17 @@ export function VisiographAnalyzer({
 					reader.readAsDataURL(file);
 				});
 
+				const patientNow = (patientId ?? usePatientStore.getState().selectedPatientId) ?? null;
+				if (patientAtStart !== patientNow) {
+					return;
+				}
+
 				// МГНОВЕННОЕ ОТОБРАЖЕНИЕ СНИМКА В КРИСТАЛЬНОМ КАЧЕСТВЕ (< 50 мс)
 				setCurrentImageUrl(dataUrl);
 
 				const localScan: XrayScan = {
 					id: crypto.randomUUID?.() ?? `local-${Date.now()}`,
-					patientId: selectedPatientId ?? "unknown",
+					patientId: effectivePatientId ?? "unknown",
 					status: "done",
 					kind: "periapical",
 					originalFilename: file.name,
@@ -611,7 +621,7 @@ export function VisiographAnalyzer({
 				setCurrentScan(localScan);
 
 				// 2. Фоновое асинхронное сохранение снимка в карту пациента (не блокирует экран и врача)
-				if (selectedPatientId) {
+				if (effectivePatientId) {
 					setIsSaving(true);
 					try {
 						const saveRes = await fetch("/api/xray/scans", {
@@ -620,7 +630,7 @@ export function VisiographAnalyzer({
 								"Content-Type": "application/json",
 							}),
 							body: JSON.stringify({
-								patientId: selectedPatientId,
+								patientId: effectivePatientId,
 								imageBase64: dataUrl,
 								originalFilename: file.name,
 								mimeType: file.type || "image/jpeg",
@@ -664,7 +674,7 @@ export function VisiographAnalyzer({
 				if (fileInputRef.current) fileInputRef.current.value = "";
 			}
 		},
-		[selectedPatientId, denteClinicalMutationHeaders],
+		[effectivePatientId, patientId, denteClinicalMutationHeaders],
 	);
 
 	// ── Фоновый опциональный ИИ-анализ снимка по явной команде врача ──────────
@@ -680,7 +690,7 @@ export function VisiographAnalyzer({
 		setFormulaFailure(null);
 		setApplyNotice(null);
 
-		const patientAtStart = selectedPatientId ?? null;
+		const patientAtStart = effectivePatientId ?? null;
 
 		try {
 			const aiRes = await fetch("/api/imaging/visiograph-ai", {
@@ -704,7 +714,7 @@ export function VisiographAnalyzer({
 				warnings: string[];
 			};
 
-			const patientNow = usePatientStore.getState().selectedPatientId ?? null;
+			const patientNow = (patientId ?? usePatientStore.getState().selectedPatientId) ?? null;
 			if (patientAtStart !== patientNow) {
 				setError(
 					"Пациент был изменён во время анализа. Результат не применён — откройте снимок нужного пациента и повторите.",
@@ -724,7 +734,7 @@ export function VisiographAnalyzer({
 			});
 
 			// Если снимок сохранён на сервере, обновляем AI-поля в базе
-			if (currentScan?.id && !currentScan.id.startsWith("local-") && selectedPatientId) {
+			if (currentScan?.id && !currentScan.id.startsWith("local-") && effectivePatientId) {
 				fetch(`/api/xray/scans/${encodeURIComponent(currentScan.id)}`, {
 					method: "PUT",
 					headers: denteClinicalMutationHeaders({
@@ -770,7 +780,8 @@ export function VisiographAnalyzer({
 	}, [
 		currentImageUrl,
 		isAnalyzing,
-		selectedPatientId,
+		effectivePatientId,
+		patientId,
 		currentScan?.id,
 		denteClinicalReadHeaders,
 		denteClinicalMutationHeaders,
@@ -779,8 +790,8 @@ export function VisiographAnalyzer({
 	// ── Внесение находок ИИ в зубную формулу только по явному клику врача ─────
 	const handleApplyFindingsToChart = useCallback(async () => {
 		if (!currentScan?.aiToothStates) return;
-		const patientId = selectedPatientId;
-		if (!patientId) {
+		const currentPatientId = effectivePatientId;
+		if (!currentPatientId) {
 			setFormulaFailure(
 				"Пациент не выбран, поэтому находки НЕ внесены в зубную формулу. Откройте карту пациента.",
 			);
@@ -808,7 +819,7 @@ export function VisiographAnalyzer({
 			if (teethToApply.length === 0) continue;
 
 			const failure = await writeToothStatesToChart(
-				patientId,
+				currentPatientId,
 				teethToApply.map((t) => t.toothNumber),
 				group.state,
 			);
@@ -832,7 +843,7 @@ export function VisiographAnalyzer({
 		setIsApplyingToChart(false);
 	}, [
 		currentScan?.aiToothStates,
-		selectedPatientId,
+		effectivePatientId,
 		selectedFindingCodes,
 		writeToothStatesToChart,
 	]);
@@ -876,7 +887,7 @@ export function VisiographAnalyzer({
 		);
 
 		// 6. Фоновое сохранение заметки на сервере для постоянного снимка
-		if (currentScan?.id && !currentScan.id.startsWith("local-") && selectedPatientId) {
+		if (currentScan?.id && !currentScan.id.startsWith("local-") && effectivePatientId) {
 			fetch(`/api/xray/scans/${encodeURIComponent(currentScan.id)}`, {
 				method: "PUT",
 				headers: denteClinicalMutationHeaders({
@@ -892,7 +903,7 @@ export function VisiographAnalyzer({
 		toothCode,
 		currentScan?.toothCode,
 		currentScan?.id,
-		selectedPatientId,
+		effectivePatientId,
 		onInsertToProtocol,
 		denteClinicalMutationHeaders,
 	]);
@@ -1823,30 +1834,6 @@ export function VisiographAnalyzer({
 											>
 												Эмаль / Кариес
 											</button>
-											<button
-												type="button"
-												data-testid="btn-hotpath-norma-043"
-												onClick={handleApplyNormaTo043}
-												style={{
-													minHeight: "44px",
-													padding: "8px 14px",
-													borderRadius: "6px",
-													fontSize: "0.82rem",
-													fontWeight: 700,
-													background: isNormaApplied ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.12)",
-													color: "#059669",
-													border: "1px solid #10b981",
-													cursor: "pointer",
-													display: "inline-flex",
-													alignItems: "center",
-													justifyContent: "center",
-													gap: "4px",
-												}}
-												title="1-клик действие: внести запись «Норма: патологии на снимке не выявлено» в карту 043/у"
-											>
-												<CheckCircle2 size={14} />
-												<span>{isNormaApplied ? "Норма в 043/у" : "Норма (043/у)"}</span>
-											</button>
 										</div>
 
 										<button
@@ -1880,10 +1867,10 @@ export function VisiographAnalyzer({
 									{isStudioMode ? (
 										<VisiographStudioCanvas
 											imageUrl={currentImageUrl}
-											patientId={selectedPatientId}
+											patientId={effectivePatientId}
 											patientFullName={
-												selectedPatientId
-													? `Пациент #${selectedPatientId}`
+												effectivePatientId
+													? `Пациент #${effectivePatientId}`
 													: undefined
 											}
 											toothCode={currentScan.toothCode}
@@ -2462,7 +2449,7 @@ export function VisiographAnalyzer({
 					{/* Архив снимков: загрузка / отказ / пусто / список — четыре разных
               вида вместо прежних двух («список» и «ничего», куда попадал и
               отказ сервера). */}
-					{!currentScan && selectedPatientId && historyPhase === "loading" && (
+					{!currentScan && effectivePatientId && historyPhase === "loading" && (
 						<div
 							style={{
 								marginTop: "16px",
@@ -2479,14 +2466,14 @@ export function VisiographAnalyzer({
 					)}
 
 					{!currentScan &&
-						selectedPatientId &&
+						effectivePatientId &&
 						historyPhase === "failed" &&
 						historyFailure && (
 							<div style={{ marginTop: "16px" }}>
 								<PanelLoadFailure
 									subject={SCAN_ARCHIVE_SUBJECT}
 									status={historyFailure.status}
-									onRetry={() => loadHistory(selectedPatientId)}
+									onRetry={() => loadHistory(effectivePatientId)}
 								/>
 							</div>
 						)}
@@ -2494,7 +2481,7 @@ export function VisiographAnalyzer({
 					{/* Честная пустота. Что делать дальше, уже написано в зоне загрузки
               выше, поэтому подсказка здесь не повторяется — иначе на одном
               экране два раза сказано одно и то же. */}
-					{!currentScan && selectedPatientId && historyPhase === "empty" && (
+					{!currentScan && effectivePatientId && historyPhase === "empty" && (
 						<div
 							style={{
 								marginTop: "16px",
