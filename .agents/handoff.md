@@ -2,9 +2,9 @@
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-CURRENT HEAD: 973a47d35a1f9ed346875221c360f8257f6046e7
-CODE HEAD: 973a47d35a1f9ed346875221c360f8257f6046e7
-PREVIOUS HEAD: 0371de6f6e8557e03498877bc93740e53a5ce08f
+CURRENT HEAD: c2c33e89d4459d8d7f86c38dc9d9d7147553b3f7
+CODE HEAD: c2c33e89d4459d8d7f86c38dc9d9d7147553b3f7
+PREVIOUS HEAD: 973a47d35a1f9ed346875221c360f8257f6046e7
 
 ## 1. Observation & Scope
 Dynamic documentation synchronization per Mandate 8h (Strict ban on working from outdated docs) for new system features 222, 223, and 224 (Wave 45):
@@ -40,18 +40,19 @@ Dynamic documentation synchronization per Mandate 8h (Strict ban on working from
 4. `.agents/handoff.md`:
    - Обновлен для фиксации состояния Волны 45.
 
-## 3. Machine Verification & Test Proof
-- `apps/web/src/components/schedule/__tests__/patientSearchEngine.test.ts`: **5/5 passed (100%)**.
-- `apps/web/src/components/prescriptions/generator/__tests__/prescriptionGenerator.test.ts`: **6/6 passed (100%)**.
-- `apps/web/src/components/schedule/__tests__/scheduleChairDoctorBinding.test.tsx`: **25/25 passed (100%)**.
-- `apps/web/src/components/schedule/__tests__/scheduleWave43StomxParity.test.tsx`: **8/8 passed (100%)**.
-- `apps/web/src/components/schedule/__tests__/doctorShiftRosterWave44.test.tsx`: **9/9 passed (100%)**.
-- `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx`: **10/10 passed (100%)**.
-- `npm run check:encoding`: проверено 5080 файлов, замечаний нет (0 ошибок, строгий UTF-8 без BOM).
+## 3. Machine Verification & Test Proof (Wave 45)
+- `apps/web/src/components/schedule/__tests__/newAppointmentFormWave45.test.tsx`: **19/19 passed (100%)** (Feature 222, commit `afbf1ae72`).
+- `apps/web/src/components/clinical/__tests__/prescriptionsWave45.test.tsx`: **19/19 passed (100%)** (Feature 223, commit `c2c33e89d`).
+- `apps/web/src/components/schedule/__tests__/patientSearchAutonomyWave45.test.tsx`: **20/20 passed (100%)** (Feature 224, commit `e0b2a0258`).
+- `packages/shared` tests: **1431/1431 passed (100%)**.
+- `npm run check:encoding`: проверено 5087 файлов, замечаний нет (0 ошибок, строгий UTF-8 без BOM).
+- `npm run typecheck -w @dental/web`: Exit Code 0.
+- `npm run typecheck -w @dental/api`: Exit Code 0.
 
 ## 4. Definition of Done (DoD)
-- [x] Строго изолированная область работы (`docs/competitive-audit/`, `.agents/handoff.md`).
-- [x] Zero TODO / Zero Mocks.
-- [x] Полная синхронизация 4 ключевых файлов документации по Мандату 8h.
+- [x] Строго изолированная область работы субагентов.
+- [x] Zero TODO / Zero Mocks / Zero Emojis.
+- [x] Полная синхронизация ключевых файлов документации по Мандату 8h.
 - [x] Кодировка UTF-8 без BOM (`npm run check:encoding` = 0 ошибок).
-- [x] Пофайловый `git add <file>` без захвата чужих и незавершенных файлов.
+- [x] Независимый Red Team аудит (`[ПРОВЕРЕНО: ЧИСТО]`).
+- [x] Пофайловый `git add <file>` для всех коммитов.
