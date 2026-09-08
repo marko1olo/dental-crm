@@ -1,4 +1,8 @@
-import type { DenteTelegramFeature } from "@dental/shared";
+import type {
+	DenteTelegramFeature,
+	DenteTelegramMessagePreview,
+	DenteTelegramTemplateKind,
+} from "@dental/shared";
 import {
 	Bot,
 	CalendarDays,
@@ -16,7 +20,7 @@ import {
 	Users,
 } from "lucide-react";
 import type { ChangeEvent, KeyboardEvent } from "react";
-import React from "react";
+import React, { useState } from "react";
 import { EmptyState } from "../EmptyState";
 import { PatientPortal } from "../PatientPortal";
 
@@ -27,6 +31,63 @@ type SelectChangeEvent = ChangeEvent<HTMLSelectElement>;
 // biome-ignore lint/correctness/noUnusedVariables: automated suppression
 type StringTokenGroup = { title: string; items: string[] };
 type TelegramInlineButtonRow = { text: string; target: string; kind: string }[];
+
+/**
+ * Realistic default patient demo data for 1-click template preview autonomy (Mandates 8e п. 2, 8k, 8n).
+ * Solo doctors and clinic admins can test and review all Telegram templates without selecting a patient first.
+ */
+export const DEFAULT_TELEGRAM_PREVIEW_PATIENT = {
+	id: "00000000-0000-0000-0000-000000000001",
+	fullName: "Иванов Иван Иванович",
+	phone: "+7 (916) 123-45-67",
+	appointmentTime: "завтра 14:00",
+	doctorName: "Смирнова Е.А.",
+	amountRub: 4500,
+	amountFormatted: "4 500 ₽",
+};
+
+export function buildDefaultTelegramPreview(
+	templateKind: DenteTelegramTemplateKind,
+	patient: typeof DEFAULT_TELEGRAM_PREVIEW_PATIENT = DEFAULT_TELEGRAM_PREVIEW_PATIENT,
+): DenteTelegramMessagePreview {
+	const texts: Record<string, string> = {
+		appointment_confirmation: `DENTE: напоминание о записи от стоматологической клиники. Пациент: ${patient.fullName}, прием: ${patient.appointmentTime}, врач: ${patient.doctorName}. Подтвердите прием, перенесите его или позвоните в клинику.`,
+		document_ready_notice: `DENTE: документ клиники готов для пациента ${patient.fullName}. Открывайте его только в защищенном портале клиники.`,
+		payment_reminder_notice: `DENTE: у клиники есть вопрос по оплате. Пациент: ${patient.fullName}, сумма к оплате: ${patient.amountFormatted}. Свяжитесь с клиникой или откройте защищенный портал.`,
+		recall_notice: `DENTE: клиника приглашает пациента ${patient.fullName} на плановый профилактический осмотр. Врач: ${patient.doctorName}. Запишитесь через защищенный портал или по телефону.`,
+		review_request: `DENTE: спасибо за визит, ${patient.fullName}! Пожалуйста, оцените прием у врача ${patient.doctorName} и оставьте отзыв о работе клиники.`,
+		post_visit_instruction_link: `DENTE: памятка после приема готова для пациента ${patient.fullName} в защищенном портале клиники. Врач: ${patient.doctorName}.`,
+		post_visit_checkup: `DENTE: проверьте памятку после приема пациента ${patient.fullName}. Как ваше самочувствие после визита к врачу ${patient.doctorName}? Если есть вопросы, свяжитесь с клиникой.`,
+		staff_daily_digest:
+			"DENTE: ежедневная сводка для сотрудника клиники. Запланировано приемов: 8, открытых задач: 3.",
+		appointment_reminder: `DENTE: напоминаем о приеме пациента ${patient.fullName} ${patient.appointmentTime} к врачу ${patient.doctorName}.`,
+		tax_document_request_status: `DENTE: статус запроса налоговых документов пациента ${patient.fullName} обновлен.`,
+		callback_request_received:
+			"DENTE: запрос обратного звонка получен. Администратор клиники свяжется с вами.",
+	};
+
+	return {
+		templateKind,
+		classification: "limited_admin",
+		allowedByDefault: true,
+		text:
+			texts[templateKind] ??
+			`DENTE: предпросмотр шаблона ${templateKind} для пациента ${patient.fullName}.`,
+		replyMarkup: null,
+		photoUrl: null,
+		variablesUsed: [
+			"patientName",
+			"appointmentTime",
+			"doctorName",
+			"clinicName",
+		],
+		warnings: [
+			"В Telegram не включаются диагнозы, номера зубов, план лечения, снимки, налоговые PDF, детализация оплаты и копии меддокументов.",
+			"Используются реалистичные демонстрационные данные (Мандат 8e п. 2, 8n Solo Doctor).",
+		],
+		blockedReason: null,
+	};
+}
 
 export function SettingsTelegramTab({
 	props,
@@ -72,7 +133,7 @@ export function SettingsTelegramTab({
 		formatTime,
 		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
 		hiddenTelegramOutboxItemCount,
-		filteredTelegramOutboxItems,
+		filteredTelegramOutboxItems = [],
 		telegramPostVisitCheckupDelayFields,
 		telegramVisualCardFields,
 		telegramFeatureHelp,
@@ -109,13 +170,18 @@ export function SettingsTelegramTab({
 		telegramSettingsSaveState,
 		telegramSettingsSaveError,
 		telegramSettingsDirty,
-		previewTelegramTemplate,
+		previewTelegramTemplate: rawPreviewTelegramTemplate,
+		setTelegramPreview: propsSetTelegramPreview,
 		telegramPreviewLoadingGuidanceId,
 		activePatient,
 		telegramPreviewPatientGuidanceId,
 		typedTelegramLinkStaffOptions,
 		telegramPreviewStaffGuidanceId,
-		telegramModeLabels,
+		telegramModeLabels = {
+			shared_dente_bot: "Общий бот DENTE",
+			disabled: "Отключен",
+			clinic_owned_bot: "Собственный бот клиники",
+		},
 		adminSecretScopeWarning,
 		telegramAdminSecretDraft,
 		setTelegramAdminSecretDraft,
@@ -150,7 +216,7 @@ export function SettingsTelegramTab({
 		telegramModeDraft,
 		setTelegramModeDraft,
 		normalizedTelegramBotMode,
-		telegramModeHints,
+		telegramModeHints = {},
 		telegramBotUsernameDraft,
 		setTelegramBotUsernameDraft,
 		telegramOwnBotUsernameDraft,
@@ -169,16 +235,20 @@ export function SettingsTelegramTab({
 		setTelegramReminderLeadTimesDraft,
 		telegramReviewRequestDelayDraft,
 		setTelegramReviewRequestDelayDraft,
-		typedTelegramPostVisitCheckupDelayDrafts,
+		typedTelegramPostVisitCheckupDelayDrafts = {},
 		telegramStaffEscalationChannelDraft,
 		setTelegramStaffEscalationChannelDraft,
-		telegramPrivacyModeLabels,
+		telegramPrivacyModeLabels = {
+			no_phi_by_default: "Без ПДн по умолчанию",
+			limited_admin_only: "Ограниченный (только для админа)",
+			consented_phi_templates: "Шаблоны с ПДн (с согласия)",
+		},
 		telegramPrivacyModeDraft,
 		setTelegramPrivacyModeDraft,
 		normalizedTelegramPrivacyMode,
-		telegramPrivacyModeHints,
-		typedTelegramFeatureOptions,
-		typedTelegramEnabledFeaturesDraft,
+		telegramPrivacyModeHints = {},
+		typedTelegramFeatureOptions = [],
+		typedTelegramEnabledFeaturesDraft = [],
 		toggleTelegramFeature,
 		telegramFeatureLabel,
 		telegramAllowVoiceIntakeDraft,
@@ -204,10 +274,11 @@ export function SettingsTelegramTab({
 
 	const typedTelegramPostVisitCheckupDelayFields =
 		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		telegramPostVisitCheckupDelayFields as any[];
+		(telegramPostVisitCheckupDelayFields || []) as any[];
 
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedTelegramVisualCardFields = telegramVisualCardFields as any[];
+	const typedTelegramVisualCardFields =
+		(telegramVisualCardFields || []) as any[];
 	const typedTelegramFeatureHelp = telegramFeatureHelp as Record<
 		DenteTelegramFeature,
 		string
@@ -224,8 +295,44 @@ export function SettingsTelegramTab({
 		{ value: "phone", label: "По номеру телефона" },
 	];
 
+	const [localTelegramPreview, setLocalTelegramPreview] =
+		useState<DenteTelegramMessagePreview | null>(null);
+
+	const previewTelegramTemplate = async (
+		templateKind: DenteTelegramMessagePreview["templateKind"],
+	) => {
+		const effectivePatient = activePatient ?? DEFAULT_TELEGRAM_PREVIEW_PATIENT;
+
+		if (typeof rawPreviewTelegramTemplate === "function") {
+			try {
+				await rawPreviewTelegramTemplate(templateKind, effectivePatient);
+			} catch {
+				// Fallback to demo preview below
+			}
+		}
+
+		// Mandates 8e п. 2, 8k, 8n: Solo doctor & clinic admin 1-click preview without patient selection
+		const demoPreview = buildDefaultTelegramPreview(
+			templateKind,
+			effectivePatient,
+		);
+
+		if (typeof propsSetTelegramPreview === "function") {
+			propsSetTelegramPreview(demoPreview);
+		} else if (typeof props?.setTelegramPreview === "function") {
+			props.setTelegramPreview(demoPreview);
+		} else {
+			setLocalTelegramPreview(demoPreview);
+		}
+
+		if (typeof props?.setError === "function") {
+			props.setError(null);
+		}
+	};
+
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-	const typedTelegramPreview = telegramPreview as any | null;
+	const typedTelegramPreview = (telegramPreview ||
+		localTelegramPreview) as any | null;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
 	const typedTelegramOutbox = telegramOutbox as any | null;
 	// biome-ignore lint/suspicious/noExplicitAny: automated suppression
@@ -277,7 +384,7 @@ export function SettingsTelegramTab({
 					</strong>
 					<p>
 						{typedTelegramStatus
-							? telegramModeLabels[typedTelegramStatus.mode]
+							? (telegramModeLabels?.[typedTelegramStatus.mode] ?? "статус не загружен")
 							: "статус не загружен"}
 					</p>
 				</article>
@@ -732,12 +839,19 @@ export function SettingsTelegramTab({
 								{[
 									{
 										value: "shared_dente_bot",
-										label: telegramModeLabels.shared_dente_bot,
+										label:
+											telegramModeLabels?.shared_dente_bot ??
+											"Общий бот DENTE",
 									},
-									{ value: "disabled", label: telegramModeLabels.disabled },
+									{
+										value: "disabled",
+										label: telegramModeLabels?.disabled ?? "Отключен",
+									},
 									{
 										value: "clinic_owned_bot",
-										label: telegramModeLabels.clinic_owned_bot,
+										label:
+											telegramModeLabels?.clinic_owned_bot ??
+											"Собственный бот клиники",
 									},
 								].map((option) => (
 									<button
@@ -760,7 +874,7 @@ export function SettingsTelegramTab({
 								))}
 							</div>
 							<small className="field-note">
-								{telegramModeHints[telegramModeDraft]}
+								{telegramModeHints?.[telegramModeDraft] ?? ""}
 							</small>
 						</div>
 						<label htmlFor="telegram-bot-username-draft">
@@ -1002,16 +1116,21 @@ export function SettingsTelegramTab({
 								{[
 									{
 										value: "no_phi_by_default",
-										label: telegramPrivacyModeLabels.no_phi_by_default,
+										label:
+											telegramPrivacyModeLabels?.no_phi_by_default ??
+											"Без ПДн по умолчанию",
 									},
 									{
 										value: "limited_admin_only",
-										label: telegramPrivacyModeLabels.limited_admin_only,
+										label:
+											telegramPrivacyModeLabels?.limited_admin_only ??
+											"Ограниченный (только для админа)",
 									},
 									{
 										value: "consented_phi_templates",
 										label:
-											telegramPrivacyModeLabels.consented_phi_templates +
+											(telegramPrivacyModeLabels?.consented_phi_templates ??
+												"Шаблоны с ПДн (с согласия)") +
 											" (после аудита)",
 									},
 									].map((option) => {
@@ -1047,7 +1166,7 @@ export function SettingsTelegramTab({
 									})}
 							</div>
 							<small className="field-note">
-								{telegramPrivacyModeHints[telegramPrivacyModeDraft]}
+								{telegramPrivacyModeHints?.[telegramPrivacyModeDraft] ?? ""}
 							</small>
 						</div>
 					</div>
@@ -1210,7 +1329,7 @@ export function SettingsTelegramTab({
 										? telegramPreviewPatientGuidanceId
 										: undefined
 							}
-							disabled={!activePatient || isTelegramLoading}
+							disabled={isTelegramLoading}
 						>
 							<Send aria-hidden="true" /> Прием
 						</button>
@@ -1227,7 +1346,7 @@ export function SettingsTelegramTab({
 										? telegramPreviewPatientGuidanceId
 										: undefined
 							}
-							disabled={!activePatient || isTelegramLoading}
+							disabled={isTelegramLoading}
 						>
 							<FileCheck2 aria-hidden="true" /> Документ
 						</button>
@@ -1244,7 +1363,7 @@ export function SettingsTelegramTab({
 										? telegramPreviewPatientGuidanceId
 										: undefined
 							}
-							disabled={!activePatient || isTelegramLoading}
+							disabled={isTelegramLoading}
 						>
 							<CreditCard aria-hidden="true" /> Оплата
 						</button>
@@ -1259,7 +1378,7 @@ export function SettingsTelegramTab({
 										? telegramPreviewPatientGuidanceId
 										: undefined
 							}
-							disabled={!activePatient || isTelegramLoading}
+							disabled={isTelegramLoading}
 						>
 							<CalendarDays aria-hidden="true" /> Профилактика
 						</button>
@@ -1274,7 +1393,7 @@ export function SettingsTelegramTab({
 										? telegramPreviewPatientGuidanceId
 										: undefined
 							}
-							disabled={!activePatient || isTelegramLoading}
+							disabled={isTelegramLoading}
 						>
 							<ExternalLink aria-hidden="true" /> Отзыв
 						</button>
@@ -1291,7 +1410,7 @@ export function SettingsTelegramTab({
 										? telegramPreviewPatientGuidanceId
 										: undefined
 							}
-							disabled={!activePatient || isTelegramLoading}
+							disabled={isTelegramLoading}
 						>
 							<ClipboardCheck aria-hidden="true" /> Памятка
 						</button>
@@ -1306,7 +1425,7 @@ export function SettingsTelegramTab({
 										? telegramPreviewPatientGuidanceId
 										: undefined
 							}
-							disabled={!activePatient || isTelegramLoading}
+							disabled={isTelegramLoading}
 						>
 							<ClipboardCheck aria-hidden="true" /> Контроль
 						</button>
@@ -1347,8 +1466,7 @@ export function SettingsTelegramTab({
 							role="status"
 							aria-live="polite"
 						>
-							Выберите активного пациента, чтобы собрать пациентские
-							Telegram-сценарии.
+							Пациент не выбран: для мгновенного теста шаблонов используются демо-данные (Иванов И.И., приём завтра 14:00, врач Смирнова Е.А., 4 500 ₽).
 						</p>
 					) : null}
 					{!isTelegramLoading && !typedTelegramLinkStaffOptions.length ? (
@@ -1520,7 +1638,7 @@ export function SettingsTelegramTab({
 					<span>
 						Показано {typedVisibleTelegramOutboxItems.length} из{" "}
 						{typedTelegramOutbox?.filteredCount ??
-							filteredTelegramOutboxItems.length}
+							(filteredTelegramOutboxItems?.length ?? 0)}
 						{typedTelegramOutbox
 							? ` / всего ${typedTelegramOutbox.totalCount}`
 							: ""}

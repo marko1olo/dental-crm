@@ -34,6 +34,7 @@ import {
 	type SearchMatchHighlightPart,
 } from "./patientSearchEngine";
 import { openWhatsAppChat } from "../../store/telephonyStore";
+import { showToast, type ToastType } from "../GlobalToast";
 
 export interface PatientSearchModalProps {
 	readonly isOpen: boolean;
@@ -43,6 +44,7 @@ export interface PatientSearchModalProps {
 	readonly onOpenPatientCard?: ((patientId: string) => void) | undefined;
 	readonly onQuickCreatePatient?: ((prefilled: QuickPatientPrefill) => void) | undefined;
 	readonly onQuickBookNewPatient?: ((patient: Patient) => void) | undefined;
+	readonly showToastFn?: ((message: string, type?: ToastType) => void) | undefined;
 }
 
 function RenderHighlightedParts({ parts }: { parts: readonly SearchMatchHighlightPart[] }) {
@@ -72,7 +74,9 @@ export function PatientSearchModal({
 	onOpenPatientCard,
 	onQuickCreatePatient,
 	onQuickBookNewPatient,
+	showToastFn,
 }: PatientSearchModalProps) {
+	const notify = showToastFn ?? showToast;
 	const [rawQuery, setRawQuery] = useState("");
 	const [debouncedQuery, setDebouncedQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
@@ -454,15 +458,24 @@ export function PatientSearchModal({
 											onClick={() => {
 												if (patient.phone) {
 													openWhatsAppChat(patient.phone, "Здравствуйте! Напоминаем о записи в стоматологию.");
+												} else {
+													notify(
+														"У пациента не указан номер телефона. Заполните телефон в карточке пациента.",
+														"warning",
+													);
 												}
 											}}
-											disabled={!patient.phone}
-											className={`h-9 min-h-[36px] min-w-[44px] px-2.5 rounded-xl border flex items-center justify-center transition-all shrink-0 ${
+											disabled={false}
+											className={`h-9 min-h-[44px] min-w-[44px] px-2.5 rounded-xl border flex items-center justify-center transition-all shrink-0 cursor-pointer active:scale-95 ${
 												patient.phone
-													? "border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 cursor-pointer"
-													: "border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-800/30 text-slate-400 cursor-not-allowed opacity-50"
+													? "border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+													: "border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300"
 											}`}
-											title={patient.phone ? "WhatsApp напоминание" : "Номер телефона не указан"}
+											title={
+												patient.phone
+													? "WhatsApp напоминание"
+													: "Номер телефона не указан (нажмите для подсказки)"
+											}
 											aria-label="WhatsApp напоминание"
 										>
 											<MessageSquare className="w-4 h-4" />
