@@ -256,6 +256,34 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		);
 	};
 
+	const applyThreeWayCashCardAdvancePreset = () => {
+		setIsWarranty100(false);
+		const totalKop = rubToKopecks(totalDueRub);
+		const availDepositRub = patientDepositRub > 0 ? patientDepositRub : 0;
+		const availFamilyRub = patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : 0;
+		const maxAvailRub = Math.max(availDepositRub, availFamilyRub);
+		const depositKop = Math.min(totalKop, rubToKopecks(maxAvailRub));
+		const remKop = Math.max(0, totalKop - depositKop);
+		const halfRemKop = Math.floor(remKop / 2);
+		const cashKop = halfRemKop;
+		const cardKop = remKop - halfRemKop;
+		const usedDepRub = kopecksToRub(depositKop);
+		const usedCashRub = kopecksToRub(cashKop);
+		const usedCardRub = kopecksToRub(cardKop);
+		setSplitDepositRub(usedDepRub);
+		setSplitCashRub(usedCashRub);
+		setSplitCardRub(usedCardRub);
+		setSplitSbpRub(0);
+		setSplitCertificateRub(0);
+		setSplitBonusRub(0);
+		setActiveMethod("split");
+		showToast(
+			`Применен пресет: Аванс ${usedDepRub.toLocaleString("ru-RU")} ₽ + Нал ${usedCashRub.toLocaleString("ru-RU")} ₽ + Карта ${usedCardRub.toLocaleString("ru-RU")} ₽`,
+			"info",
+			2500,
+		);
+	};
+
 	const applyWarranty100Preset = () => {
 		setIsWarranty100(true);
 		setSplitCardRub(0);
@@ -775,6 +803,20 @@ th { background: #f8fafc; font-weight: 700; }
 						</button>
 						<button
 							type="button"
+							onClick={applyThreeWayCashCardAdvancePreset}
+							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0
+									? "bg-teal-600 text-white border-teal-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-three-way-split"
+							title="Комбинированная оплата в 1 клик: Нал + Карта + Аванс"
+						>
+							<Users size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 && splitDepositRub > 0 ? "text-white" : "text-teal-600"} />
+							<span>Нал + Карта + Аванс</span>
+						</button>
+						<button
+							type="button"
 							onClick={applyFullCardPreset}
 							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
 								activeMethod === "card_terminal"
@@ -936,7 +978,7 @@ th { background: #f8fafc; font-weight: 700; }
 										<FileText size={12} className="text-emerald-600" />
 										<span>ИНН пациента (необязательно, для справки НДФЛ 13%):</span>
 									</span>
-									<span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+									<span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium" data-testid="inn-physical-not-required-badge">
 										По 54-ФЗ для физлиц не требуется
 									</span>
 								</div>
@@ -1100,49 +1142,101 @@ th { background: #f8fafc; font-weight: 700; }
 
 								{/* Quick denomination bill buttons (Мандаты 8e, 8k, 8n) */}
 								<div className="space-y-1 pt-1">
-									<label className="text-[11px] font-semibold text-[var(--muted,#64748b)]">
-										Быстрый выбор купюр:
-									</label>
+									<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--muted,#64748b)]">
+										<span>Быстрый выбор купюр:</span>
+										<button
+											type="button"
+											onClick={() => setReceivedCashRub(0)}
+											className="text-[10px] text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+											data-testid="btn-cash-reset"
+										>
+											Сброс (0 ₽)
+										</button>
+									</div>
 									<div className="grid grid-cols-5 gap-1.5">
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(totalDueRub)}
-											className="h-9 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95"
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 truncate"
 											data-testid="btn-cash-exact"
+											title="Внесено ровно сумма счета без сдачи"
 										>
 											Без сдачи
 										</button>
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(1000)}
-											className="h-9 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono"
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-1000"
+											title="Купюра 1 000 ₽"
 										>
 											1 000 ₽
 										</button>
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(2000)}
-											className="h-9 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono"
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-2000"
+											title="Купюра 2 000 ₽"
 										>
 											2 000 ₽
 										</button>
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(5000)}
-											className="h-9 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono"
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-5000"
+											title="Купюра 5 000 ₽"
 										>
 											5 000 ₽
 										</button>
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(10000)}
-											className="h-9 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono"
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-10000"
+											title="Купюра 10 000 ₽"
 										>
 											10 000 ₽
+										</button>
+									</div>
+									<div className="grid grid-cols-4 gap-1.5 pt-1">
+										<button
+											type="button"
+											onClick={() => setReceivedCashRub((prev) => prev + 1000)}
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
+											data-testid="btn-cash-add-1000"
+											title="Добавить 1 000 ₽ к внесенной сумме"
+										>
+											+1 000 ₽
+										</button>
+										<button
+											type="button"
+											onClick={() => setReceivedCashRub((prev) => prev + 2000)}
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
+											data-testid="btn-cash-add-2000"
+											title="Добавить 2 000 ₽ к внесенной сумме"
+										>
+											+2 000 ₽
+										</button>
+										<button
+											type="button"
+											onClick={() => setReceivedCashRub((prev) => prev + 5000)}
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-200 cursor-pointer transition-all active:scale-95 font-mono truncate"
+											data-testid="btn-cash-add-5000"
+											title="Добавить 5 000 ₽ к внесенной сумме"
+										>
+											+5 000 ₽
+										</button>
+										<button
+											type="button"
+											onClick={() => setReceivedCashRub(totalDueRub)}
+											className="min-h-[36px] rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-700 hover:bg-blue-100 text-blue-800 dark:text-blue-200 cursor-pointer transition-all active:scale-95 truncate flex items-center justify-center gap-1"
+											data-testid="btn-cash-exact-rounded"
+											title="Внести ровно без сдачи"
+										>
+											<Coins size={12} />
+											<span>Ровно</span>
 										</button>
 									</div>
 								</div>
@@ -1150,36 +1244,36 @@ th { background: #f8fafc; font-weight: 700; }
 								{/* Change Calculation Box */}
 								{cashChange.changeRub > 0 ? (
 									<div
-										className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs"
+										className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs min-w-0"
 										data-testid="cash-change-display"
 									>
-										<span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-											<Coins size={14} />
+										<span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 truncate">
+											<Coins size={14} className="shrink-0" />
 											<span>Сдача пациенту:</span>
 										</span>
-										<span className="font-mono text-base font-black text-emerald-700 dark:text-emerald-300">
-											{cashChange.changeRub.toLocaleString("ru-RU")} ₽
+										<span className="font-mono text-base font-black text-emerald-700 dark:text-emerald-300 shrink-0 ml-2" data-testid="cash-change-amount">
+											{cashChange.changeRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 										</span>
 									</div>
 								) : cashChange.isExact ? (
 									<div
-										className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5"
+										className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1.5 min-w-0"
 										data-testid="cash-exact-display"
 									>
-										<CheckCircle2 size={14} />
-										<span>Внесено ровно, без сдачи</span>
+										<CheckCircle2 size={14} className="shrink-0" />
+										<span className="truncate">Внесено ровно, без сдачи</span>
 									</div>
 								) : cashChange.shortageRub > 0 ? (
 									<div
-										className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center justify-between"
+										className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center justify-between min-w-0"
 										data-testid="cash-shortage-display"
 									>
-										<span className="flex items-center gap-1.5">
-											<AlertCircle size={14} />
+										<span className="flex items-center gap-1.5 truncate">
+											<AlertCircle size={14} className="shrink-0" />
 											<span>Недостает до полной суммы:</span>
 										</span>
-										<span className="font-mono font-bold">
-											{cashChange.shortageRub.toLocaleString("ru-RU")} ₽
+										<span className="font-mono font-bold shrink-0 ml-2">
+											{cashChange.shortageRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
 										</span>
 									</div>
 								) : null}
