@@ -98,15 +98,15 @@ type PatientAdministrativeFormProps = {
 		field: keyof PatientAdministrativeProfileDraft,
 		value: string | number[],
 	) => void;
-	weekdayOptions: WeekdayOption[];
-	normalizeOptionalWorkingDaysDraft: (days: number[]) => number[];
+	weekdayOptions?: WeekdayOption[] | undefined;
+	normalizeOptionalWorkingDaysDraft?: ((days: number[]) => number[]) | undefined;
 };
 
 export function PatientAdministrativeForm({
 	patientAdministrativeProfileDraft,
 	updatePatientAdministrativeProfileDraft,
-	weekdayOptions,
-	normalizeOptionalWorkingDaysDraft,
+	weekdayOptions = [],
+	normalizeOptionalWorkingDaysDraft = (days: number[]) => days,
 }: PatientAdministrativeFormProps) {
 	const handleSelectRelationship = (value: string, defaultRecipient: string) => {
 		updatePatientAdministrativeProfileDraft("legalRepresentativeRelationship", value);
@@ -159,7 +159,15 @@ export function PatientAdministrativeForm({
 				/>
 			</label>
 			<label>
-				ИНН пациента
+				<span className="flex items-center justify-between gap-1">
+					<span>ИНН пациента</span>
+					<span
+						className="text-[11px] font-normal text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20"
+						data-testid="inn-patient-admin-optional-badge"
+					>
+						(опционально для физлиц, 54-ФЗ)
+					</span>
+				</span>
 				<input
 					inputMode="numeric"
 					autoComplete="off"
@@ -171,7 +179,8 @@ export function PatientAdministrativeForm({
 							formatTaxpayerInn(event.target.value),
 						)
 					}
-					placeholder="10 или 12 цифр"
+					placeholder="10 или 12 цифр (необязательно)"
+					data-testid="input-patient-admin-inn"
 				/>
 			</label>
 			<label>
@@ -375,7 +384,7 @@ export function PatientAdministrativeForm({
 				>
 					{weekdayOptions.map((day) => {
 						const weekdaySelected =
-							patientAdministrativeProfileDraft.preferredAppointmentWeekdays.includes(
+							(patientAdministrativeProfileDraft.preferredAppointmentWeekdays ?? []).includes(
 								day.value,
 							);
 						return (
@@ -386,7 +395,7 @@ export function PatientAdministrativeForm({
 								type="button"
 								onClick={() => {
 									const currentDays =
-										patientAdministrativeProfileDraft.preferredAppointmentWeekdays;
+										patientAdministrativeProfileDraft.preferredAppointmentWeekdays ?? [];
 									const nextDays = weekdaySelected
 										? currentDays.filter(
 												(selectedDay) => selectedDay !== day.value,

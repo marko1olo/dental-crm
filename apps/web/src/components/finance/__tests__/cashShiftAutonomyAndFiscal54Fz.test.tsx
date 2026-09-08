@@ -60,7 +60,7 @@ describe("FastCheckoutModal — 1-Click Presets & Combined Payment Autonomy (Man
 		assert.ok(html.includes("Без сдачи (Нал 100%)"), "Cash preset must be labeled 'Без сдачи'");
 		assert.ok(html.includes('data-testid="btn-checkout-100-card"'), "Must have 100% card button");
 		assert.ok(html.includes('data-testid="btn-checkout-split-three-way"'), "Must have 3-way combined payment button");
-		assert.ok(html.includes("⚡ Нал + Карта + Аванс"), "Must have 3-way combined payment label");
+		assert.ok(html.includes("Нал + Карта + Аванс"), "Must have 3-way combined payment label");
 
 		// Verify dynamic family deposit display
 		assert.ok(html.includes("Кузнецов В. П."), "Must display family payer name dynamically without hardcode");

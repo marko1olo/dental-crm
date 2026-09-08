@@ -117,8 +117,8 @@ export function TelephonyFloatingWidget({
 	const crmCurrentView = useAppStore((s) => s.currentView);
 	const setNewAppointmentDraft = useScheduleStore((s) => s.setNewAppointmentDraft);
 
-	const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-	const [isOpen, setIsOpen] = useState(defaultExpanded || Boolean(activeCall));
+	const [isExpanded, setIsExpanded] = useState(defaultExpanded || showDialerDefault);
+	const [isOpen, setIsOpen] = useState(defaultExpanded || showDialerDefault || Boolean(activeCall));
 	const [activeTab, setActiveTab] = useState<"call" | "dialer" | "history">(
 		showDialerDefault ? "dialer" : "call",
 	);
@@ -466,8 +466,6 @@ export function TelephonyFloatingWidget({
 
 	const speeds: PlaybackSpeed[] = [1, 1.25, 1.5, 2];
 
-	if (typeof document === "undefined") return null;
-
 	// Doctor sterile zone immunity: on visit view or for doctor role, telephony never invades chairside
 	const selectedWorkspaceRole = useAppStore((s) => s.selectedWorkspaceRole);
 	const isDoctorChairsideMode = selectedWorkspaceRole === "doctor" || crmCurrentView === "visit";
@@ -481,7 +479,7 @@ export function TelephonyFloatingWidget({
 		return null;
 	}
 
-	return createPortal(
+	const content = (
 		<div
 			className={`dnt-telephony-island-container ${className}`}
 			data-testid="telephony-floating-widget"
@@ -1359,6 +1357,7 @@ export function TelephonyFloatingWidget({
 									onClick={handleStartOutgoingCall}
 									className="w-full min-h-[48px] py-3 rounded-xl bg-[var(--teal)] hover:opacity-90 active:scale-98 text-white text-sm font-bold transition-all inline-flex items-center justify-center gap-2 shadow-lg shadow-teal-950/40 cursor-pointer"
 									aria-label="Совершить исходящий вызов"
+									data-testid="btn-start-outgoing-call"
 								>
 									<PhoneCall size={18} />
 									<span>Позвонить</span>
@@ -1447,7 +1446,12 @@ export function TelephonyFloatingWidget({
 					</div>
 				</div>
 			)}
-		</div>,
-		document.body,
+		</div>
 	);
+
+	if (typeof document === "undefined" || !document.body) {
+		return content;
+	}
+
+	return createPortal(content, document.body);
 }

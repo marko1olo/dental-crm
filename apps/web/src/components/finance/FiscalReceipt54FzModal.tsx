@@ -82,7 +82,7 @@ export type FiscalModalTab =
 
 export interface FiscalReceipt54FzModalProps {
 	readonly isOpen: boolean;
-	readonly items: readonly TreatmentPlanItem[];
+	readonly items?: readonly TreatmentPlanItem[] | undefined;
 	readonly patientId: string;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
@@ -186,7 +186,7 @@ export function calculateRefundFiscalSummary(params: {
 
 export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 	isOpen,
-	items,
+	items = [],
 	patientId,
 	patientName = "Пациент",
 	patientPhone = "+7 (___) ___-__-__",
@@ -204,7 +204,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		`АКТ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
 	);
 	const [contractNumber, setContractNumber] = useState<string>(
-		`ДОГ-${new Date().getFullYear()}/${patientId.slice(0, 5).toUpperCase()}`,
+		`ДОГ-${new Date().getFullYear()}/${(patientId || "patient").slice(0, 5).toUpperCase()}`,
 	);
 	const [selectedStageKind, setSelectedStageKind] = useState<string>("all");
 	const [mdlpCodes, setMdlpCodes] = useState<Record<string, string>>({});
@@ -1629,7 +1629,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									)}
 								</div>
 
-								{/* ⚡ Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
+								{/* Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
 								<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
 									<div className="flex items-center justify-between flex-wrap gap-2">
 										<div className="flex items-center gap-2">
@@ -1697,20 +1697,22 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 									<button
 										type="button"
 										onClick={() => applyCombinedPaymentPreset("exact_cash")}
-										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 hover:border-emerald-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
 										data-testid="preset-exact-cash"
 										title="Оплатить наличными ровно в сумме чека (без сдачи)"
 									>
-										⚡ Без сдачи (нал)
+										<Zap size={13} className="text-amber-500 fill-amber-500 shrink-0" />
+										<span>Без сдачи (нал)</span>
 									</button>
 									<button
 										type="button"
 										onClick={() => applyCombinedPaymentPreset("full_card")}
-										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95"
+										className="min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/30 text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:border-blue-500 cursor-pointer transition-all shadow-2xs active:scale-95 flex items-center gap-1"
 										data-testid="preset-full-card"
 										title="Оплатить 100% картой через терминал"
 									>
-										⚡ 100% карта
+										<Zap size={13} className="text-amber-500 fill-amber-500 shrink-0" />
+										<span>100% карта</span>
 									</button>
 									{patientDepositRub > 0 && (
 										<button

@@ -530,7 +530,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					{/* 54-FZ Buyer INN Section (Mandates 8e & 8n: B2C Citizen INN is strictly optional) */}
 					<div
 						className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] space-y-2"
-						data-testid="checkout-54fz-buyer-section"
+						data-testid="payer-type-section"
 					>
 						<div className="flex items-center justify-between flex-wrap gap-2">
 							<span className="text-[11px] font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">

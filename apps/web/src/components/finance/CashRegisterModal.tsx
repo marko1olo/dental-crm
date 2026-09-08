@@ -95,6 +95,7 @@ export interface CashRegisterModalProps {
 	readonly clinicInn?: string | undefined;
 	readonly clinicLicense?: string | undefined;
 	readonly initialOperationType?: "income" | "income_return" | undefined;
+	readonly defaultTender?: CashRegisterTenderMethod | undefined;
 	readonly onPaymentComplete?: ((receiptData: unknown) => void) | undefined;
 }
 
@@ -113,14 +114,27 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	clinicInn = "7701234567",
 	clinicLicense = "ЛО41-01137-77/00368421",
 	initialOperationType = "income",
+	defaultTender = "card",
 	onPaymentComplete,
 }) => {
 	const [activeTab, setActiveTab] = useState<"checkout" | "thermal" | "split">("checkout");
-	const [selectedTender, setSelectedTender] = useState<CashRegisterTenderMethod>("card");
+	const [selectedTender, setSelectedTender] = useState<CashRegisterTenderMethod>(defaultTender);
 	const [operationType, setOperationType] = useState<"income" | "income_return">(initialOperationType);
 
 	// Cash inputs
 	const [receivedCashRub, setReceivedCashRub] = useState<number>(0);
+
+	// 54-ФЗ Тег 1228: Тип плательщика и ИНН покупателя (строго опционально для физлиц, Мандаты 8e, 8n)
+	const [payerType, setPayerType] = useState<"physical" | "legal_entity">("physical");
+	const [buyerInn, setBuyerInn] = useState<string>("");
+	const [buyerInnError, setBuyerInnError] = useState<string | null>(null);
+
+	const handleBuyerInnChange = (val: string) => {
+		const cleaned = val.replace(/\D/g, "");
+		setBuyerInn(cleaned);
+		const validation = validate54FzBuyerInn(cleaned, payerType);
+		setBuyerInnError(validation.errorMessage || null);
+	};
 
 	// Split tender state
 	const [splitCardRub, setSplitCardRub] = useState<number>(0);
@@ -527,6 +541,16 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 			// Real statutory 54-FZ FFD 1.2 request to backend
 			// Note: Buyer INN is strictly NOT required for physical persons (FFD 1.2 tag 1228 only applies to B2B legal entities).
+			if (payerType === "legal_entity") {
+				const validation = validate54FzBuyerInn(buyerInn, "legal_entity");
+				if (!validation.isValid) {
+					showToast(validation.errorMessage || "Для юридического лица/ИП требуется указать корректный ИНН (10 или 12 цифр)", "warning");
+					setIsProcessing(false);
+					inFlightRef.current = false;
+					return;
+				}
+			}
+
 			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
 			const effectivePatientId = isUuid ? patientId : "00000000-0000-0000-0000-000000000001";
 
@@ -536,6 +560,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 				patientId: effectivePatientId,
 				operationType,
 				customerContact: patientPhone || patientName,
+				buyerInn: buyerInn.trim() || undefined,
+				buyerType: payerType,
 				cashierFullName,
 				cashierInn: clinicInn,
 				items: lineItems,
@@ -1119,6 +1145,123 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 						</div>
 					</div>
 
+					{/* 54-ФЗ Тег 1228: Тип плательщика и ИНН покупателя (строго опционально для физлиц, Мандаты 8e, 8n) */}
+					<div className="p-3.5 rounded-2xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2.5" data-testid="payer-type-section">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-2">
+								<User className="w-4 h-4 text-teal-600" />
+								<span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
+									Тип плательщика (54-ФЗ Тег 1228):
+								</span>
+							</div>
+							<div className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--border,#cbd5e1)]">
+								<button
+									type="button"
+									onClick={() => {
+										setPayerType("physical");
+										setBuyerInnError(null);
+									}}
+									className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										payerType === "physical"
+											? "bg-emerald-600 text-white shadow-2xs"
+											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									}`}
+									data-testid="tab-payer-physical"
+								>
+									<User className="w-3.5 h-3.5" />
+									<span>Физлицо (без ИНН)</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setPayerType("legal_entity");
+										const validation = validate54FzBuyerInn(buyerInn, "legal_entity");
+										setBuyerInnError(validation.errorMessage || null);
+									}}
+									className={`h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+										payerType === "legal_entity"
+											? "bg-indigo-600 text-white shadow-2xs"
+											: "text-[var(--muted)] hover:text-[var(--ink)]"
+									}`}
+									data-testid="tab-payer-legal"
+								>
+									<Building2 className="w-3.5 h-3.5" />
+									<span>Юрлицо / ИП</span>
+								</button>
+							</div>
+						</div>
+
+						{payerType === "physical" ? (
+							<div className="space-y-1">
+								<div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
+									<span className="flex items-center gap-1">
+										<FileText className="w-3.5 h-3.5 text-emerald-600" />
+										<span>ИНН покупателя (опционально, для справки НДФЛ 13%):</span>
+									</span>
+									<span
+										className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700"
+										data-testid="inn-physical-not-required-badge"
+									>
+										✓ По 54-ФЗ для физлиц не требуется
+									</span>
+								</div>
+								<div className="relative">
+									<input
+										type="text"
+										value={buyerInn}
+										onChange={(e) => handleBuyerInnChange(e.target.value)}
+										placeholder="Необязательно (12 цифр для налогового вычета по Форме КНД 1151156)"
+										maxLength={12}
+										className="h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[var(--ink)] outline-none focus:border-emerald-500"
+										data-testid="input-buyer-inn-physical"
+									/>
+									{buyerInn && (
+										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted)]">
+											{buyerInn.length}/12
+										</span>
+									)}
+								</div>
+								{buyerInnError && (
+									<p className="text-[10px] text-amber-600 dark:text-amber-400 m-0 flex items-center gap-1">
+										<AlertCircle className="w-3 h-3" />
+										<span>{buyerInnError} (оплата не блокируется)</span>
+									</p>
+								)}
+							</div>
+						) : (
+							<div className="space-y-1">
+								<label className="text-[11px] font-bold text-[var(--ink)] flex items-center justify-between">
+									<span>ИНН юридического лица / ИП (10 или 12 цифр):</span>
+									<span className="text-[10px] text-indigo-600 font-bold">* Обязательно по 54-ФЗ (Тег 1228)</span>
+								</label>
+								<div className="relative">
+									<input
+										type="text"
+										value={buyerInn}
+										onChange={(e) => handleBuyerInnChange(e.target.value)}
+										placeholder="Введите 10 цифр (ООО) или 12 цифр (ИП)"
+										maxLength={12}
+										className={`h-8.5 w-full px-3 text-xs font-mono bg-[var(--paper)] border rounded-lg text-[var(--ink)] outline-none ${
+											buyerInnError ? "border-amber-500" : "border-[var(--line)] focus:border-indigo-500"
+										}`}
+										data-testid="input-buyer-inn-legal"
+									/>
+									{buyerInn && (
+										<span className="absolute right-2.5 top-2 text-[10px] font-mono text-[var(--muted)]">
+											{buyerInn.length}/12
+										</span>
+									)}
+								</div>
+								{buyerInnError && (
+									<p className="text-[10px] text-rose-600 dark:text-rose-400 m-0 flex items-center gap-1">
+										<AlertCircle className="w-3 h-3" />
+										<span>{buyerInnError}</span>
+									</p>
+								)}
+							</div>
+						)}
+					</div>
+
 					{activeTab === "checkout" && (
 						<div className="space-y-4" data-testid="cash-checkout-view">
 							{/* Doctor Discounts & Warranty Bar (Anti-Matryoshka, Freedom for Doctors) */}
@@ -1351,7 +1494,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 								)}
 							</div>
 
-							{/* ⚡ Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
+							{/* Экспресс-оплата в 1 клик (без 4-страничного визарда) & 54-ФЗ без палок в колёса */}
 							<div className="p-3.5 rounded-2xl border-2 border-teal-500/40 bg-teal-500/5 space-y-2.5" data-testid="express-payment-bar">
 								<div className="flex items-center justify-between flex-wrap gap-2">
 									<div className="flex items-center gap-2">
@@ -1447,7 +1590,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										title="Внести наличные ровно в сумме счета (без сдачи)"
 									>
 										<Banknote className="w-3.5 h-3.5 text-emerald-600" />
-										<span>⚡ Без сдачи ({totalInvoiceRub.toLocaleString("ru-RU")} ₽ нал)</span>
+										<Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+										<span>Без сдачи ({totalInvoiceRub.toLocaleString("ru-RU")} ₽ нал)</span>
 									</button>
 									<button
 										type="button"
@@ -1457,7 +1601,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										title="Оплатить 100% картой через терминал"
 									>
 										<CreditCard className="w-3.5 h-3.5 text-blue-600" />
-										<span>⚡ 100% карта ({totalInvoiceRub.toLocaleString("ru-RU")} ₽)</span>
+										<Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+										<span>100% карта ({totalInvoiceRub.toLocaleString("ru-RU")} ₽)</span>
 									</button>
 									{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
 										<button
@@ -1476,7 +1621,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											title="Списать весь аванс + остаток картой"
 										>
 											<Wallet className="w-3.5 h-3.5 text-indigo-600" />
-											<span>⚡ Аванс + Карта</span>
+											<Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+											<span>Аванс + Карта</span>
 										</button>
 									)}
 									{patientFamilyBalanceRub > 0 && (
@@ -1492,7 +1638,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											title="Списать весь семейный счет + остаток картой"
 										>
 											<Users className="w-3.5 h-3.5 text-pink-600" />
-											<span>⚡ Сем. счет + Карта</span>
+											<Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+											<span>Сем. счет + Карта</span>
 										</button>
 									)}
 									{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
@@ -1523,7 +1670,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 											title="Списать аванс/депозит + разделить остаток поровну на Карту и Наличные"
 										>
 											<Users className="w-3.5 h-3.5 text-violet-600" />
-											<span>⚡ Депозит + Карта + Нал</span>
+											<Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+											<span>Депозит + Карта + Нал</span>
 										</button>
 									)}
 									<button
@@ -1543,7 +1691,8 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 										title="100% гарантийная переделка клинического этапа (к оплате 0 ₽, без паролей администратора)"
 									>
 										<ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-										<span>⚡ 100% Гарантия / переделка (0 ₽)</span>
+										<Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+										<span>100% Гарантия / переделка (0 ₽)</span>
 									</button>
 								</div>
 
@@ -1831,7 +1980,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 
 											<div className="space-y-1">
 												<label className="text-[11px] font-semibold text-[var(--muted)]">
-													Быстрый выбор купюр:
+													Быстрый ввод внесенной суммы:
 												</label>
 												<div className="grid grid-cols-5 gap-1.5">
 													<button

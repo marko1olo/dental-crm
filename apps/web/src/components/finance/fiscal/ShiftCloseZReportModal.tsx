@@ -56,6 +56,7 @@ export interface ShiftCloseZReportModalProps {
 	readonly summary?: Ffd12ShiftCloseZReportSummary | undefined;
 	readonly initialCashInDrawerRub?: number | undefined;
 	readonly onConfirmCloseShift?: (report: Ffd12ShiftCloseZReportSummary) => Promise<void> | void;
+	readonly initialTab?: "reconciliation" | "drawer" | "tape" | undefined;
 }
 
 export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
@@ -77,12 +78,11 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 	receipts,
 	summary: initialSummary,
 	initialCashInDrawerRub,
+	initialTab = "reconciliation",
 	onConfirmCloseShift,
 }) => {
-	const [activeTab, setActiveTab] = useState<"reconciliation" | "drawer" | "tape">("reconciliation");
+	const [activeTab, setActiveTab] = useState<"reconciliation" | "drawer" | "tape">(initialTab);
 	const [tapeWidth, setTapeWidth] = useState<FiscalTapeWidth>("58mm");
-	const [isDenomOpen, setIsDenomOpen] = useState(false);
-	const [denominations, setDenominations] = useState<DenominationsBreakdown>(EMPTY_DENOMINATIONS);
 	const [countedCashInput, setCountedCashInput] = useState<string>("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isCopied, setIsCopied] = useState(false);
@@ -126,30 +126,7 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 		};
 	}, [initialSummary, receipts, shiftNumber]);
 
-	// Denominations sum calculation
-	const denomTotalRub = useMemo(
-		() => calculateDenominationsTotalRub(denominations),
-		[denominations],
-	);
-
-	const updateDenom = (field: keyof DenominationsBreakdown, delta: number) => {
-		setDenominations((prev) => ({
-			...prev,
-			[field]: Math.max(0, (prev[field] || 0) + delta),
-		}));
-	};
-
-	const setDenomDirect = (field: keyof DenominationsBreakdown, val: number) => {
-		setDenominations((prev) => ({
-			...prev,
-			[field]: Math.max(0, Number.isNaN(val) ? 0 : val),
-		}));
-	};
-
-	const handleApplyDenominations = () => {
-		setCountedCashInput(denomTotalRub.toFixed(2).replace(/\.00$/, ""));
-		showToast(`Сумма купюрника (${denomTotalRub.toLocaleString("ru-RU")} ₽) перенесена в кассу`, "info");
-	};
+	// Drawer cash comparison (Мандат 8k: без купюрного учета)
 
 	// Drawer cash comparison
 	const countedCash = countedCashInput.trim() !== "" ? parseFloat(countedCashInput.replace(/\s/g, "").replace(",", ".")) : null;
@@ -460,14 +437,14 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 								</div>
 							</div>
 
-							{/* Input & Calculator Toggle */}
+							{/* Ввод фактической суммы наличных в ящике (Мандат 8k: без купюрного симулятора) */}
 							<div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-4">
 								<div className="flex items-center justify-between flex-wrap gap-3">
-									<div>
+									<div className="flex-1 min-w-[240px]">
 										<label htmlFor="drawer-actual-cash" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-											Фактическая сумма наличных после пересчета ящика:
+											Фактическая сумма наличных в ящике (₽):
 										</label>
-										<div className="flex items-center gap-2">
+										<div className="flex items-center gap-2 flex-wrap">
 											<input
 												id="drawer-actual-cash"
 												type="text"
@@ -476,164 +453,45 @@ export const ShiftCloseZReportModal: React.FC<ShiftCloseZReportModalProps> = ({
 												onChange={(e) => setCountedCashInput(e.target.value)}
 												placeholder={reportSummary.cashInDrawerRub.toString()}
 												className="min-h-[44px] px-3.5 py-2 font-mono text-sm font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none w-56"
+												data-testid="input-drawer-actual-cash"
 											/>
 											<button
 												type="button"
 												onClick={() => setCountedCashInput(reportSummary.cashInDrawerRub.toString())}
-												className="min-h-[44px] px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold transition-all cursor-pointer"
-												title="Подставить расчетную сумму"
+												className="min-h-[44px] px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+												title="Подставить расчетную сумму кассы 54-ФЗ"
+												data-testid="btn-match-drawer-cash"
 											>
-												Сходится ({reportSummary.cashInDrawerRub} ₽)
+												<Check size={14} className="text-emerald-600" />
+												<span>Совпадает с кассой ({reportSummary.cashInDrawerRub.toLocaleString("ru-RU")} ₽)</span>
 											</button>
 										</div>
 									</div>
-
-									<button
-										type="button"
-										onClick={() => setIsDenomOpen(!isDenomOpen)}
-										className={`min-h-[44px] px-4 rounded-xl border flex items-center gap-2 text-xs font-bold transition-all cursor-pointer ${
-											isDenomOpen
-												? "border-teal-500 bg-teal-500/10 text-teal-700 dark:text-teal-300"
-												: "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-										}`}
-									>
-										<Calculator className="w-4 h-4 text-teal-600" />
-										<span>Купюрный калькулятор</span>
-										{isDenomOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-									</button>
 								</div>
 
 								{/* Status Reconciliation Message */}
 								<div className="pt-1">
 									{differenceRub === null ? (
 										<div className="text-xs text-slate-500 flex items-center gap-1.5">
-											<span>Ожидается пересчет кассового ящика</span>
+											<span>Введите сумму в денежном ящике или нажмите «Совпадает с кассой»</span>
 										</div>
 									) : differenceRub === 0 ? (
-										<div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2">
+										<div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2" data-testid="msg-reconciliation-match">
 											<CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-											<span>Сверка успешна: кассовый ящик сходится копейка в копейку ({reportSummary.cashInDrawerRub.toLocaleString("ru-RU")} ₽)</span>
+											<span>Сверка успешна: фактическая сумма в ящике сходится копейка в копейку с данными 54-ФЗ ({reportSummary.cashInDrawerRub.toLocaleString("ru-RU")} ₽)</span>
 										</div>
 									) : differenceRub > 0 ? (
-										<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center gap-2">
+										<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-800 dark:text-teal-300 text-xs font-bold flex items-center gap-2" data-testid="msg-reconciliation-surplus">
 											<AlertTriangle className="w-4 h-4 text-teal-600 shrink-0" />
 											<span>Обнаружен излишек в ящике: +{differenceRub.toLocaleString("ru-RU")} ₽ (проверьте неотмеченные операции)</span>
 										</div>
 									) : (
-										<div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+										<div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2" data-testid="msg-reconciliation-deficit">
 											<AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
 											<span>Обнаружена недостача в ящике: −{Math.abs(differenceRub).toLocaleString("ru-RU")} ₽ (проверьте сдачи и возвраты)</span>
 										</div>
 									)}
 								</div>
-
-								{/* Interactive Denominations Grid */}
-								{isDenomOpen && (
-									<div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-teal-500/30 space-y-4 pt-3 mt-3">
-										<div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-											<div className="flex items-center gap-2 text-xs font-bold">
-												<Banknote className="w-4 h-4 text-teal-600" />
-												<span>Покупюрный пересчет:</span>
-											</div>
-											<div className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300">
-												Итого купюрник: {denomTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
-											</div>
-										</div>
-
-										<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
-											{/* 5000 */}
-											<div className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-1">
-												<div className="flex justify-between font-bold text-rose-700 dark:text-rose-300 text-[11px]">
-													<span>5 000 ₽</span>
-													<span className="font-mono">{(denominations.b5000 * 5000).toLocaleString("ru-RU")} ₽</span>
-												</div>
-												<div className="flex items-center gap-1">
-													<button type="button" onClick={() => updateDenom("b5000", -1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Minus size={12} /></button>
-													<input type="number" min="0" value={denominations.b5000 || ""} onChange={(e) => setDenomDirect("b5000", Number.parseInt(e.target.value, 10))} placeholder="0" className="w-full text-center font-mono font-bold h-7 rounded-lg border border-slate-300 dark:border-slate-600 text-xs" />
-													<button type="button" onClick={() => updateDenom("b5000", 1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Plus size={12} /></button>
-												</div>
-											</div>
-
-											{/* 2000 */}
-											<div className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-1">
-												<div className="flex justify-between font-bold text-blue-700 dark:text-blue-300 text-[11px]">
-													<span>2 000 ₽</span>
-													<span className="font-mono">{(denominations.b2000 * 2000).toLocaleString("ru-RU")} ₽</span>
-												</div>
-												<div className="flex items-center gap-1">
-													<button type="button" onClick={() => updateDenom("b2000", -1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Minus size={12} /></button>
-													<input type="number" min="0" value={denominations.b2000 || ""} onChange={(e) => setDenomDirect("b2000", Number.parseInt(e.target.value, 10))} placeholder="0" className="w-full text-center font-mono font-bold h-7 rounded-lg border border-slate-300 dark:border-slate-600 text-xs" />
-													<button type="button" onClick={() => updateDenom("b2000", 1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Plus size={12} /></button>
-												</div>
-											</div>
-
-											{/* 1000 */}
-											<div className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-1">
-												<div className="flex justify-between font-bold text-teal-700 dark:text-teal-300 text-[11px]">
-													<span>1 000 ₽</span>
-													<span className="font-mono">{(denominations.b1000 * 1000).toLocaleString("ru-RU")} ₽</span>
-												</div>
-												<div className="flex items-center gap-1">
-													<button type="button" onClick={() => updateDenom("b1000", -1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Minus size={12} /></button>
-													<input type="number" min="0" value={denominations.b1000 || ""} onChange={(e) => setDenomDirect("b1000", Number.parseInt(e.target.value, 10))} placeholder="0" className="w-full text-center font-mono font-bold h-7 rounded-lg border border-slate-300 dark:border-slate-600 text-xs" />
-													<button type="button" onClick={() => updateDenom("b1000", 1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Plus size={12} /></button>
-												</div>
-											</div>
-
-											{/* 500 */}
-											<div className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-1">
-												<div className="flex justify-between font-bold text-purple-700 dark:text-purple-300 text-[11px]">
-													<span>500 ₽</span>
-													<span className="font-mono">{(denominations.b500 * 500).toLocaleString("ru-RU")} ₽</span>
-												</div>
-												<div className="flex items-center gap-1">
-													<button type="button" onClick={() => updateDenom("b500", -1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Minus size={12} /></button>
-													<input type="number" min="0" value={denominations.b500 || ""} onChange={(e) => setDenomDirect("b500", Number.parseInt(e.target.value, 10))} placeholder="0" className="w-full text-center font-mono font-bold h-7 rounded-lg border border-slate-300 dark:border-slate-600 text-xs" />
-													<button type="button" onClick={() => updateDenom("b500", 1)} className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer"><Plus size={12} /></button>
-												</div>
-											</div>
-
-											{/* 200 & 100 */}
-											<div className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-1">
-												<div className="flex justify-between font-bold text-amber-700 dark:text-amber-300 text-[11px]">
-													<span>200 / 100 ₽</span>
-													<span className="font-mono">{(denominations.b200 * 200 + denominations.b100 * 100).toLocaleString("ru-RU")} ₽</span>
-												</div>
-												<div className="flex items-center gap-1">
-													<input type="number" min="0" value={denominations.b200 || ""} onChange={(e) => setDenomDirect("b200", Number.parseInt(e.target.value, 10))} placeholder="200₽" className="w-1/2 text-center font-mono font-bold h-7 rounded-lg border border-slate-300 dark:border-slate-600 text-xs" />
-													<input type="number" min="0" value={denominations.b100 || ""} onChange={(e) => setDenomDirect("b100", Number.parseInt(e.target.value, 10))} placeholder="100₽" className="w-1/2 text-center font-mono font-bold h-7 rounded-lg border border-slate-300 dark:border-slate-600 text-xs" />
-												</div>
-											</div>
-
-											{/* Coins */}
-											<div className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 space-y-1">
-												<div className="flex justify-between font-bold text-slate-700 dark:text-slate-300 text-[11px]">
-													<span>Монеты / Мелочь</span>
-													<span className="font-mono">{(denominations.c10 * 10 + denominations.c5 * 5 + denominations.c2 * 2 + denominations.c1 * 1 + (denominations.coinsFractionalRub || 0)).toFixed(2)} ₽</span>
-												</div>
-												<input type="number" step="0.01" min="0" value={denominations.coinsFractionalRub || ""} onChange={(e) => setDenomDirect("coinsFractionalRub", Number.parseFloat(e.target.value))} placeholder="0.00 ₽" className="w-full text-center font-mono font-bold h-7 rounded-lg border border-slate-300 dark:border-slate-600 text-xs" />
-											</div>
-										</div>
-
-										<div className="flex items-center justify-between pt-2">
-											<button
-												type="button"
-												onClick={() => setDenominations(EMPTY_DENOMINATIONS)}
-												className="min-h-[44px] px-3 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer"
-											>
-												Сбросить купюрник
-											</button>
-											<button
-												type="button"
-												onClick={handleApplyDenominations}
-												className="min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
-											>
-												<Check size={14} />
-												<span>Применить сумму ({denomTotalRub.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)</span>
-											</button>
-										</div>
-									</div>
-								)}
 							</div>
 						</div>
 					)}

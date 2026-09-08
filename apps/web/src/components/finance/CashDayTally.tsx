@@ -452,7 +452,7 @@ ${zReportData.clinicLegalName}
 							) : null}
 						</div>
 
-						{/* Калькулятор пересчета ящика и купюрный расклад */}
+						{/* Сверка наличных в денежном ящике (Мандат 8k: без купюрного учета) */}
 						<div className="space-y-3 pt-2">
 							<div className="flex items-center gap-3 flex-wrap">
 								<div className="smart-field" style={{ maxWidth: "280px" }}>
@@ -467,9 +467,20 @@ ${zReportData.clinicLegalName}
 										aria-describedby="cash-day-counted-result"
 									/>
 									<label htmlFor="cash-day-counted">
-										Пересчитайте наличные в ящике (₽)
+										Фактические наличные в ящике (₽)
 									</label>
 								</div>
+
+								<button
+									type="button"
+									onClick={() => setCountedCashInput(summary.cashRub.toString())}
+									className="min-h-[44px] px-3.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+									title="Подставить расчетную сумму кассы 54-ФЗ"
+									data-testid="btn-cash-matches"
+								>
+									<Check size={15} className="text-emerald-600" />
+									<span>Совпадает с кассой ({money(summary.cashRub)})</span>
+								</button>
 
 								<button
 									type="button"

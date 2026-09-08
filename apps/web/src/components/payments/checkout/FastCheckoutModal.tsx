@@ -19,6 +19,9 @@ import {
 	Users,
 	ChevronDown,
 	Zap,
+	Building2,
+	User,
+	FileText,
 } from "lucide-react";
 import {
 	convertRubToForeignCurrency,
@@ -825,7 +828,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="Оплатить 100% банковской картой через терминал (Тег 1081)"
 							>
 								<CreditCard size={15} className="shrink-0 text-blue-600" />
-								<span className="truncate">⚡ Картой 100%</span>
+								<span className="truncate">Картой 100%</span>
 							</button>
 							<button
 								type="button"
@@ -835,7 +838,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="Оплатить 100% наличными ровно в кассу без сдачи (Тег 1031)"
 							>
 								<Banknote size={15} className="shrink-0 text-emerald-600" />
-								<span className="truncate">⚡ Без сдачи (Нал 100%)</span>
+								<span className="truncate">Без сдачи (Нал 100%)</span>
 							</button>
 							<button
 								type="button"
@@ -845,7 +848,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="Оплатить 100% по СБП QR"
 							>
 								<QrCode size={15} className="shrink-0 text-teal-600" />
-								<span className="truncate">⚡ СБП QR 100%</span>
+								<span className="truncate">СБП QR 100%</span>
 							</button>
 							<button
 								type="button"
@@ -855,7 +858,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="Списать аванс / депозит пациента по Тегу 1215 54-ФЗ с доплатой картой"
 							>
 								<Coins size={15} className="shrink-0 text-amber-600" />
-								<span className="truncate">⚡ Аванс + Карта</span>
+								<span className="truncate">Аванс + Карта</span>
 							</button>
 							<button
 								type="button"
@@ -865,7 +868,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="Списать аванс / депозит пациента с доплатой наличными"
 							>
 								<Coins size={15} className="shrink-0 text-emerald-600" />
-								<span className="truncate">⚡ Аванс + Нал</span>
+								<span className="truncate">Аванс + Нал</span>
 							</button>
 							<button
 								type="button"
@@ -875,7 +878,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="Разделить 50/50: половина картой, половина наличными (без копеечного дрейфа)"
 							>
 								<Layers size={15} className="shrink-0 text-purple-600" />
-								<span className="truncate">⚡ 50% Карта + 50% Нал</span>
+								<span className="truncate">50% Карта + 50% Нал</span>
 							</button>
 							<button
 								type="button"
@@ -885,7 +888,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title={`Комбинированная оплата в 1 клик: Аванс родственника (${familyPayerName}) + 50% Карта + 50% Нал`}
 							>
 								<Users size={15} className="shrink-0 text-indigo-600" />
-								<span className="truncate">⚡ Нал + Карта + Аванс</span>
+								<span className="truncate">Нал + Карта + Аванс</span>
 							</button>
 							<button
 								type="button"
@@ -895,7 +898,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								title="100% гарантийная переделка (к оплате 0 ₽, без паролей и блокировок)"
 							>
 								<ShieldCheck size={15} className="shrink-0 text-blue-600" />
-								<span className="truncate">⚡ 100% Гарантия (0 ₽)</span>
+								<span className="truncate">100% Гарантия (0 ₽)</span>
 							</button>
 						</div>
 					</div>
@@ -1169,6 +1172,100 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								</div>
 								<div className="font-mono font-bold">
 									К доплате сейчас: {(stageCalc.requiredAmountKop / 100).toLocaleString("ru-RU")} ₽
+								</div>
+							</div>
+						)}
+					</div>
+
+					{/* Payer Type & 54-FZ INN Panel (ст. 4.7 № 54-ФЗ: с физлиц ИНН КАТЕГОРИЧЕСКИ НЕ ТРЕБУЕТСЯ) */}
+					<div className="p-3 rounded-2xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] space-y-2" data-testid="payer-type-section">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<span className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider flex items-center gap-1.5">
+								<Building2 size={14} className="text-teal-600" />
+								Тип плательщика и 54-ФЗ (Тег 1228):
+							</span>
+							{clientType === "physical_person" && (
+								<span
+									className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700"
+									data-testid="inn-physical-not-required-badge"
+								>
+									✓ ИНН не требуется для физлиц (54-ФЗ)
+								</span>
+							)}
+						</div>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={() => setClientType("physical_person")}
+								className={`h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									clientType === "physical_person"
+										? "bg-teal-600 text-white shadow-xs"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink)] border border-[var(--line,#cbd5e1)] hover:border-teal-400"
+								}`}
+								data-testid="tab-payer-physical"
+							>
+								<User size={13} />
+								<span>Физическое лицо (пациент)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setClientType("legal_entity")}
+								className={`h-8 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+									clientType === "legal_entity"
+										? "bg-teal-600 text-white shadow-xs"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink)] border border-[var(--line,#cbd5e1)] hover:border-teal-400"
+								}`}
+								data-testid="tab-payer-legal"
+							>
+								<Building2 size={13} />
+								<span>Юрлицо / ИП</span>
+							</button>
+						</div>
+
+						{clientType === "physical_person" ? (
+							<div className="space-y-1">
+								<label className="text-[11px] font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
+									<span>ИНН физлица (опционально, только если пациент запросил справку 13% НДФЛ):</span>
+								</label>
+								<input
+									type="text"
+									maxLength={12}
+									value={buyerInn}
+									onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
+									placeholder="Не требуется (пациент-физлицо)"
+									className="h-8 w-full max-w-sm px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
+									data-testid="input-buyer-inn-physical"
+								/>
+							</div>
+						) : (
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+								<div className="space-y-1">
+									<label className="text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1">
+										<FileText size={12} className="text-teal-600" />
+										<span>ИНН организации / ИП (Тег 1228, 10 или 12 цифр): *</span>
+									</label>
+									<input
+										type="text"
+										maxLength={12}
+										value={buyerInn}
+										onChange={(e) => setBuyerInn(e.target.value.replace(/\D/g, ""))}
+										placeholder="7701234567"
+										className="h-8 w-full px-2.5 text-xs font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
+										data-testid="input-buyer-inn-legal"
+									/>
+								</div>
+								<div className="space-y-1">
+									<label className="text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1">
+										<span>Наименование покупателя (Тег 1227):</span>
+									</label>
+									<input
+										type="text"
+										value={buyerName}
+										onChange={(e) => setBuyerName(e.target.value)}
+										placeholder="ООО «Компания» или ИП Иванов"
+										className="h-8 w-full px-2.5 text-xs bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink)] focus:border-teal-500 outline-none"
+										data-testid="input-buyer-name-legal"
+									/>
 								</div>
 							</div>
 						)}

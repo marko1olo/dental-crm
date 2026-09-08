@@ -33,6 +33,7 @@ import {
 	Trash2,
 	User,
 	X,
+	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -45,6 +46,8 @@ import {
 	type CompletedClinicalService,
 	aggregateWriteoffFromServices,
 	calculateClinicalWriteoffTotals,
+	createQuickCarpuleWriteoffDocument,
+	createQuickVisitWriteoffDocument,
 	exportClinicalWriteoffToCsv,
 	generateAct0504230Html,
 	generateFormM11Html,
@@ -207,6 +210,58 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 	const handleRemoveLine = useCallback((lineId: string) => {
 		setLines((prev) => prev.filter((l) => l.id !== lineId));
 	}, []);
+
+	// 1-Клик Экспресс-списание карпулы анестетика (Мандат 8e п. 10, Мандат 8n)
+	const handleQuickCarpuleWriteoff = useCallback(() => {
+		const doc = createQuickCarpuleWriteoffDocument({
+			count: 1,
+			cabinetId: selectedCabinetId,
+			cabinetNameRu: selectedCabinetId === "cab_02_surgery" ? "Кабинет №2 (Хирургия)" : "Кабинет №1 (Терапия)",
+			stockBatches,
+			nurseFullName: assistantFullName || doctorFullName,
+		});
+		setLines([...doc.lines]);
+		setActNumber(doc.actNumber);
+		if (doc.notes) setNotes(doc.notes);
+		setIsSingleSigner(true);
+		showToast("Списание карпулы анестетика оформлено в 1 клик (без комиссии)!", "success");
+	}, [selectedCabinetId, stockBatches, assistantFullName, doctorFullName]);
+
+	// 1-Клик Экспресс-списание визита терапии
+	const handleQuickTherapyWriteoff = useCallback(() => {
+		const doc = createQuickVisitWriteoffDocument({
+			visitType: "therapy",
+			cabinetId: selectedCabinetId,
+			cabinetNameRu: selectedCabinetId === "cab_02_surgery" ? "Кабинет №2 (Хирургия)" : "Кабинет №1 (Терапия)",
+			stockBatches,
+			doctorFullName,
+			doctorSpecialty,
+			patientName,
+		});
+		setLines([...doc.lines]);
+		setActNumber(doc.actNumber);
+		if (doc.notes) setNotes(doc.notes);
+		setIsSingleSigner(true);
+		showToast("Акт списания материалов терапии (1 клик) сформирован!", "success");
+	}, [selectedCabinetId, stockBatches, doctorFullName, doctorSpecialty, patientName]);
+
+	// 1-Клик Экспресс-списание визита хирургии
+	const handleQuickSurgeryWriteoff = useCallback(() => {
+		const doc = createQuickVisitWriteoffDocument({
+			visitType: "surgery",
+			cabinetId: selectedCabinetId,
+			cabinetNameRu: selectedCabinetId === "cab_02_surgery" ? "Кабинет №2 (Хирургия)" : "Кабинет №1 (Терапия)",
+			stockBatches,
+			doctorFullName,
+			doctorSpecialty,
+			patientName,
+		});
+		setLines([...doc.lines]);
+		setActNumber(doc.actNumber);
+		if (doc.notes) setNotes(doc.notes);
+		setIsSingleSigner(true);
+		showToast("Акт списания материалов хирургии (1 клик) сформирован!", "success");
+	}, [selectedCabinetId, stockBatches, doctorFullName, doctorSpecialty, patientName]);
 
 	// Формирование объекта документа
 	const currentDocument = useMemo<ClinicalWriteoffDocument>(() => {
@@ -421,6 +476,44 @@ export const ClinicalWriteoffModal: React.FC<ClinicalWriteoffModalProps> = ({
 								<span>Стандартная комиссия (3 подписи)</span>
 							)}
 						</span>
+					</div>
+
+					{/* 1-Клик Экспресс-Списание (Мандат 8e п. 10: медсестра списывает в 1 клик без комиссий) */}
+					<div className="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-teal-500/30 bg-teal-500/5 text-xs" data-testid="quick-writeoff-strip">
+						<span className="font-bold text-teal-800 dark:text-teal-300 flex items-center gap-1">
+							<Zap size={14} className="text-teal-600" />
+							<span>1-Клик Экспресс-списание:</span>
+						</span>
+						<button
+							type="button"
+							onClick={handleQuickCarpuleWriteoff}
+							className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-teal-500/40 text-teal-800 dark:text-teal-200 hover:bg-teal-500/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+							data-testid="btn-quick-carpule-writeoff"
+							title="Списать 1 использованную карпулу анестетика (Артикаин) без комиссии"
+						>
+							<PackageCheck size={13} className="text-teal-600" />
+							<span>Карпула анестетика (1 шт.)</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleQuickTherapyWriteoff}
+							className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-blue-500/40 text-blue-800 dark:text-blue-200 hover:bg-blue-500/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+							data-testid="btn-quick-therapy-writeoff"
+							title="Пакетное списание расходников терапии (анестезия + композит + расходники)"
+						>
+							<Layers size={13} className="text-blue-600" />
+							<span>Пакет «Терапия»</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleQuickSurgeryWriteoff}
+							className="h-8 px-3 rounded-lg text-xs font-bold bg-[var(--paper,#ffffff)] border border-purple-500/40 text-purple-800 dark:text-purple-200 hover:bg-purple-500/10 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+							data-testid="btn-quick-surgery-writeoff"
+							title="Пакетное списание расходников хирургии (анестезия + скальпель + шовный материал)"
+						>
+							<Sparkles size={13} className="text-purple-600" />
+							<span>Пакет «Хирургия»</span>
+						</button>
 					</div>
 
 					{/* Предупреждения: Сроки годности или дефицит */}

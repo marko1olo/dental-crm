@@ -982,7 +982,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 
 											<div className="space-y-1">
 												<label className="text-[11px] font-semibold text-[var(--muted)]">
-													Быстрый выбор купюр:
+													Быстрый ввод внесенной суммы:
 												</label>
 												<div className="grid grid-cols-4 gap-1.5">
 													<button

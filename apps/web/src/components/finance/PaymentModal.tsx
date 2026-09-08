@@ -1143,7 +1143,7 @@ th { background: #f8fafc; font-weight: 700; }
 								{/* Quick denomination bill buttons (Мандаты 8e, 8k, 8n) */}
 								<div className="space-y-1 pt-1">
 									<div className="flex items-center justify-between text-[11px] font-semibold text-[var(--muted,#64748b)]">
-										<span>Быстрый выбор купюр:</span>
+										<span>Быстрый ввод внесенной суммы:</span>
 										<button
 											type="button"
 											onClick={() => setReceivedCashRub(0)}
@@ -1168,7 +1168,7 @@ th { background: #f8fafc; font-weight: 700; }
 											onClick={() => setReceivedCashRub(1000)}
 											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-1000"
-											title="Купюра 1 000 ₽"
+											title="Внесено 1 000 ₽"
 										>
 											1 000 ₽
 										</button>
@@ -1177,7 +1177,7 @@ th { background: #f8fafc; font-weight: 700; }
 											onClick={() => setReceivedCashRub(2000)}
 											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-2000"
-											title="Купюра 2 000 ₽"
+											title="Внесено 2 000 ₽"
 										>
 											2 000 ₽
 										</button>
@@ -1186,7 +1186,7 @@ th { background: #f8fafc; font-weight: 700; }
 											onClick={() => setReceivedCashRub(5000)}
 											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-5000"
-											title="Купюра 5 000 ₽"
+											title="Внесено 5 000 ₽"
 										>
 											5 000 ₽
 										</button>
@@ -1195,7 +1195,7 @@ th { background: #f8fafc; font-weight: 700; }
 											onClick={() => setReceivedCashRub(10000)}
 											className="min-h-[36px] rounded-xl text-xs font-bold bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:border-emerald-500 text-[var(--ink,#0f172a)] cursor-pointer transition-all active:scale-95 font-mono truncate"
 											data-testid="btn-cash-10000"
-											title="Купюра 10 000 ₽"
+											title="Внесено 10 000 ₽"
 										>
 											10 000 ₽
 										</button>
