@@ -25,8 +25,10 @@ import {
 	Syringe,
 	FileText,
 	Stethoscope,
-	User
+	User,
+	Printer
 } from 'lucide-react';
+import { showToast } from '../GlobalToast';
 import {
 	EmergencyScenarioId,
 	EMERGENCY_SCENARIOS,
@@ -48,6 +50,33 @@ import {
 } from './emergencyRescueEngine';
 import './emergencyRescue.css';
 
+export interface EmergencyRelativeNoticeParams {
+	clinicName: string;
+	clinicAddress: string;
+	clinicPhone: string;
+	cabinetNumber: string;
+	patientName: string;
+	scenarioTitleRu: string;
+	doctorFullName: string;
+}
+
+/**
+ * Format structured emergency notice for relatives via WhatsApp / Telegram / SMS
+ * Mandates 8d (pt 7: zero cartoon emojis), 8e (doctor & staff autonomy), 8k (friction-killer)
+ */
+export function formatEmergencyRelativeNotice(
+	params: EmergencyRelativeNoticeParams
+): string {
+	return `Экстренное медицинское извещение (клиника «${params.clinicName}»):\n` +
+		`Пациент: ${params.patientName}\n` +
+		`Клиническое состояние: ${params.scenarioTitleRu}\n` +
+		`Оказана неотложная медицинская помощь врачебной бригадой клиники по стандарту Минздрава РФ.\n` +
+		`Вызвана бригада скорой медицинской помощи (СМП 112).\n` +
+		`Адрес нахождения пациента: ${params.clinicAddress}, кабинет ${params.cabinetNumber}.\n` +
+		`Лечащий врач: ${params.doctorFullName}.\n` +
+		`Контактный телефон клиники для связи: ${params.clinicPhone}.`;
+}
+
 export interface EmergencyRescueModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -58,6 +87,7 @@ export interface EmergencyRescueModalProps {
 	initialPatientGender?: 'male' | 'female' | undefined;
 	clinicName?: string | undefined;
 	clinicAddress?: string | undefined;
+	clinicPhone?: string | undefined; // Дефолт: '+7 (495) 123-45-67'
 	cabinetNumber?: string | undefined;
 	doctorFullName?: string | undefined;
 	assistantFullName?: string | undefined;
@@ -75,6 +105,7 @@ export function EmergencyRescueModal({
 	initialPatientGender = 'male',
 	clinicName = 'Стоматологическая клиника DENTE',
 	clinicAddress = 'г. Москва, ул. Клиническая, д. 10, стр. 2',
+	clinicPhone = '+7 (495) 123-45-67',
 	cabinetNumber = '1',
 	doctorFullName = 'Д-р Смирнов А. В.',
 	assistantFullName = 'Медсестра Петрова Е. С.',
@@ -261,6 +292,37 @@ export function EmergencyRescueModal({
 			await navigator.clipboard.writeText(generatedCheatSheetText);
 			setIsCopiedCheatSheet(true);
 			setTimeout(() => setIsCopiedCheatSheet(false), 2500);
+		} catch {
+			// fallback
+		}
+	};
+
+	const handlePrintEmergencyAct = () => {
+		try {
+			if (typeof window !== 'undefined' && typeof window.print === 'function') {
+				window.print();
+			}
+		} catch {
+			// fallback
+		}
+		showToast("Отправлено на печать: Акт передачи пациента бригаде СМП", "info");
+	};
+
+	const handleCopyRelativeNotice = async () => {
+		const noticeText = formatEmergencyRelativeNotice({
+			clinicName,
+			clinicAddress,
+			clinicPhone,
+			cabinetNumber,
+			patientName,
+			scenarioTitleRu: activeScenario.nameRu,
+			doctorFullName
+		});
+		try {
+			if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(noticeText);
+			}
+			showToast("Извещение для родственников скопировано в буфер обмена", "success");
 		} catch {
 			// fallback
 		}
@@ -907,6 +969,28 @@ export function EmergencyRescueModal({
 										>
 											{isCopiedAct ? <Check size={16} /> : <Copy size={16} />}
 											{isCopiedAct ? 'Скопировано!' : 'Копировать Акт'}
+										</button>
+										<button
+											type="button"
+											className="emergency-copy-act-btn"
+											style={{ background: 'var(--primary, #0ea5e9)', color: '#ffffff' }}
+											onClick={handlePrintEmergencyAct}
+											data-testid="emergency-print-act-btn"
+											title="Распечатать Акт оказания экстренной помощи для передачи бригаде СМП (А4)"
+										>
+											<Printer size={16} />
+											<span>Печать Акта (СМП)</span>
+										</button>
+										<button
+											type="button"
+											className="emergency-copy-act-btn"
+											style={{ background: 'var(--surface-strong, #334155)', color: '#ffffff' }}
+											onClick={handleCopyRelativeNotice}
+											data-testid="emergency-copy-relative-notice-btn"
+											title="Скопировать экстренное извещение для родственников в WhatsApp/Telegram"
+										>
+											<Copy size={16} />
+											<span>Извещение родственникам</span>
 										</button>
 										{onApplyToDiary && (
 											<button
