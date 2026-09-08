@@ -41,6 +41,7 @@ import {
 	copyWeekShiftsToTargetWeek,
 	copyWeekShiftsToMonth,
 	clearWeekShifts,
+	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
 } from "./roster/DoctorShiftRosterModal";
@@ -218,6 +219,28 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 			message: "Все смены текущей недели очищены (чистая сетка кресел)",
 		});
 		setTimeout(() => setNotification(null), 3000);
+	};
+
+	// 1-Click Rotate Shifts for a specific chair (Утро ⇄ Вечер)
+	const handleRotateChairShifts = (chairId: string) => {
+		const nextShifts = rotateWeekShifts(shifts, weekStartDateIso, { chairId });
+		setShifts(nextShifts);
+		setNotification({
+			type: "success",
+			message: "Ротация смен (Утро ⇄ Вечер) выполнена для кресла",
+		});
+		setTimeout(() => setNotification(null), 3500);
+	};
+
+	// 1-Click Global Rotate Shifts for all chairs in the week (Утро ⇄ Вечер)
+	const handleGlobalRotateShifts = () => {
+		const nextShifts = rotateWeekShifts(shifts, weekStartDateIso);
+		setShifts(nextShifts);
+		setNotification({
+			type: "success",
+			message: "Ротация смен (Утро ⇄ Вечер) выполнена для всех кресел недели",
+		});
+		setTimeout(() => setNotification(null), 3500);
 	};
 
 	// 1-Tap Fast Cell Shift Assignment
@@ -469,6 +492,17 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 								<RotateCcw size={16} />
 								<span>Очистить неделю</span>
 							</button>
+							<button
+								type="button"
+								data-testid="chair-global-rotate-shifts-btn"
+								className="roster-btn roster-btn-secondary"
+								onClick={handleGlobalRotateShifts}
+								style={{ minHeight: "44px" }}
+								title="Ротация смен (Утро ⇄ Вечер) для всех кресел текущей недели в 1 клик"
+							>
+								<RotateCcw size={16} />
+								<span>Ротация (Утро ⇄ Вечер)</span>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -688,6 +722,42 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 														title="Чётные / Нечётные дни месяца (Врач А/Б)"
 													>
 														Чёт/Нечёт
+													</button>
+													<button
+														type="button"
+														data-testid={`chair-template-five-day-${chair.id}`}
+														className="roster-btn roster-btn-secondary"
+														onClick={() =>
+															handleApplyChairTemplate(
+																chair.id,
+																cab.id,
+																"five_day_standard",
+															)
+														}
+														style={{
+															minHeight: "36px",
+															height: "36px",
+															padding: "0 0.5rem",
+															fontSize: "0.75rem",
+														}}
+														title="Пятидневка (5/2, Пн-Пт 09:00–18:00)"
+													>
+														5/2
+													</button>
+													<button
+														type="button"
+														data-testid={`chair-rotate-shifts-${chair.id}`}
+														className="roster-btn roster-btn-secondary"
+														onClick={() => handleRotateChairShifts(chair.id)}
+														style={{
+															minHeight: "36px",
+															height: "36px",
+															padding: "0 0.5rem",
+															fontSize: "0.75rem",
+														}}
+														title="Ротация смен на этом кресле (Утро ⇄ Вечер)"
+													>
+														Утро ⇄ Вечер
 													</button>
 												</div>
 											</div>
@@ -996,6 +1066,7 @@ export {
 	copyWeekShiftsToTargetWeek,
 	copyWeekShiftsToMonth,
 	clearWeekShifts,
+	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
 };

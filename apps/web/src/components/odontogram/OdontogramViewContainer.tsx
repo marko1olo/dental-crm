@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
 	Activity,
 	AlertTriangle,
+	Check,
 	ChevronDown,
 	Coins,
 	Eye,
@@ -196,7 +197,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 			: [...ALL_ADULT_TEETH_NUMBERS];
 		onQuickStateChange?.(allTeeth, "Healthy");
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("⚡ Санирован: вся зубная формула отмечена интактной (здоровой)", "success");
+		showToast("Санирован: вся зубная формула отмечена интактной (здоровой)", "success");
 	}, [onMarkIntactDentition, pediatricMode, onQuickStateChange]);
 
 	const handleMarkWisdomTeethMissing = useCallback(() => {
@@ -207,7 +208,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		const wisdomTeeth = [18, 28, 38, 48];
 		onQuickStateChange?.(wisdomTeeth, "Missing");
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("⚡ Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
+		showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
 	}, [onMarkWisdomTeethMissing, onQuickStateChange]);
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
@@ -470,11 +471,11 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 									type="button"
 									onClick={handleMarkIntactDentition}
 									className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
-									title="⚡ 1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
+									title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
 									data-testid="mark-intact-dentition-btn"
 								>
 									<Zap size={13} className="text-emerald-600 dark:text-emerald-400" />
-									<span>⚡ Санирован</span>
+									<span>Санирован</span>
 								</button>
 
 								{!pediatricMode && (
@@ -482,11 +483,11 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 										type="button"
 										onClick={handleMarkWisdomTeethMissing}
 										className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
-										title="⚡ 1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+										title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 										data-testid="mark-wisdom-missing-btn"
 									>
 										<Zap size={13} className="text-zinc-500" />
-										<span>⚡ Без 8-ок</span>
+										<span>Без 8-ок</span>
 									</button>
 								)}
 							</div>

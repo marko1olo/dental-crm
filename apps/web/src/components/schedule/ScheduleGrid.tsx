@@ -55,6 +55,7 @@ import { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal
 import {
 	getMondayOfWeekIso,
 	addDaysToDateIso,
+	copyWeekShiftsToTargetWeek,
 	applyDoctorChairWeeklyTemplate,
 } from "./roster/DoctorShiftRosterModal";
 
@@ -925,6 +926,41 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		[doctors, effectiveChairs, dateKey, dashboard?.clinicSettings?.staff, props.onAssignChairDoctor],
 	);
 
+	const handleCopyWeekShiftsToNextWeek = useCallback(() => {
+		const mondayIso = getMondayOfWeekIso(dateKey);
+		const nextMondayIso = addDaysToDateIso(mondayIso, 7);
+
+		if (typeof window !== "undefined") {
+			try {
+				for (let i = 0; i < 7; i++) {
+					const srcDay = addDaysToDateIso(mondayIso, i);
+					const targetDay = addDaysToDateIso(nextMondayIso, i);
+					const srcKey = `dente_chair_doctor_assignments_${srcDay}`;
+					const targetKey = `dente_chair_doctor_assignments_${targetDay}`;
+					const raw = localStorage.getItem(srcKey);
+					if (raw) {
+						localStorage.setItem(targetKey, raw);
+					} else if (srcDay === dateKey && effectiveChairAssignments) {
+						localStorage.setItem(targetKey, JSON.stringify(effectiveChairAssignments));
+					}
+				}
+			} catch {}
+
+			try {
+				const rawShifts = localStorage.getItem("dente_doctor_shifts");
+				const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
+				const updatedShifts = copyWeekShiftsToTargetWeek(currentShifts, mondayIso, nextMondayIso);
+				localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
+			} catch {}
+		}
+
+		showToast(
+			`График смен кресел скопирован на следующую неделю (${nextMondayIso})`,
+			"success",
+			3500,
+		);
+	}, [dateKey, effectiveChairAssignments]);
+
 	// Group appointments by chair and day
 	const dayAppointments = useMemo(() => {
 		const safeAppts = appointments || [];
@@ -1208,6 +1244,19 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						<Plus size={15} className="shrink-0 text-[var(--teal)]" />
 						<span className="font-bold">+ Кресло</span>
 					</button>
+
+					<button
+						type="button"
+						onClick={handleCopyWeekShiftsToNextWeek}
+						className="min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-surface)] hover:border-[var(--teal)] text-[var(--ink)] flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+						title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
+						aria-label="Скопировать график на следующую неделю"
+						data-testid="btn-grid-copy-next-week"
+						style={{ minHeight: "44px" }}
+					>
+						<Copy size={15} className="shrink-0 text-[var(--teal)]" />
+						<span className="font-bold">На след. неделю</span>
+					</button>
 					{dailyTally.totalRevenueRub > 0 && (
 						<div className="font-bold font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap shrink-0">
 							Выручка дня: {dailyTally.totalRevenueRub.toLocaleString("ru-RU")} ₽
@@ -1363,6 +1412,37 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											})}
 										</div>
 									)}
+									{doctors.length > 2 && !isSoloDoctor && (
+										<div className="flex items-center justify-center w-full my-0.5">
+											<select
+												value={assignment?.doctorId || ""}
+												onChange={(e) => {
+													const newDocId = e.target.value;
+													if (newDocId) {
+														handleConfirmAssignDoctor(
+															chair.id,
+															newDocId,
+															assignment?.shiftPreset === "morning" || assignment?.shiftPreset === "evening"
+																? assignment.shiftPreset
+																: "full",
+														);
+													}
+												}}
+												onClick={(e) => e.stopPropagation()}
+												className="text-[10px] font-bold border border-[var(--line)] rounded-lg px-1.5 py-0.5 bg-[var(--paper)] text-[var(--ink)] max-w-[140px] truncate cursor-pointer h-6"
+												title="Быстрая подмена дежурного врача на кресле"
+												data-testid={`chair-duty-doctor-select-${chair.id}`}
+												aria-label={`Дежурный врач для ${chair.name}`}
+											>
+												<option value="" disabled>Подмена врача...</option>
+												{doctors.map((d) => (
+													<option key={d.id} value={d.id}>
+														{formatDoctorShortName(d.fullName)}
+													</option>
+												))}
+											</select>
+										</div>
+									)}
 
 									{/* 1-Tap Chair Doctor Quick Popover (StomX Parity, Mandate 8e, 8k, 8n) */}
 									{activeHeaderDoctorPopoverChairId === chair.id && (
@@ -1503,6 +1583,74 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													>
 														<Calendar size={15} className="text-emerald-500 shrink-0" aria-hidden="true" />
 														<span className="truncate">На всю неделю (Пн–Пт)</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															const targetDocId = assignment?.doctorId || suggestedDoctor?.id || (doctors[0]?.id ?? "");
+															if (targetDocId) {
+																const mondayIso = getMondayOfWeekIso(dateKey);
+																if (typeof window !== "undefined") {
+																	try {
+																		const rawShifts = localStorage.getItem("dente_doctor_shifts");
+																		const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
+																		const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
+																			weekStartDateIso: mondayIso,
+																			templateId: "two_two_full",
+																			doctorId: targetDocId,
+																			chairId: chair.id,
+																			staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+																		});
+																		localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
+																	} catch {}
+																}
+																handleConfirmAssignDoctor(chair.id, targetDocId, "two_shifts");
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] flex items-center justify-start gap-1.5 cursor-pointer transition-all active:scale-98"
+														style={{ minHeight: "44px" }}
+														title="График 2 через 2 (08:00–20:00) (1 клик)"
+														aria-label={`Назначить график 2 через 2 на кресло ${chair.name}`}
+														data-testid={`chair-popover-shift-two-two-${chair.id}`}
+													>
+														<Clock size={15} className="text-purple-500 shrink-0" aria-hidden="true" />
+														<span className="truncate">2 через 2 (08–20)</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															const targetDocId = assignment?.doctorId || suggestedDoctor?.id || (doctors[0]?.id ?? "");
+															if (targetDocId) {
+																const mondayIso = getMondayOfWeekIso(dateKey);
+																if (typeof window !== "undefined") {
+																	try {
+																		const rawShifts = localStorage.getItem("dente_doctor_shifts");
+																		const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
+																		const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
+																			weekStartDateIso: mondayIso,
+																			templateId: "even_odd_month",
+																			doctorId: targetDocId,
+																			chairId: chair.id,
+																			staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
+																		});
+																		localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
+																	} catch {}
+																}
+																const dayOfMonth = Number.parseInt(dateKey ? dateKey.slice(8, 10) : "1", 10) || 1;
+																const isEven = dayOfMonth % 2 === 0;
+																handleConfirmAssignDoctor(chair.id, targetDocId, isEven ? "morning" : "evening");
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] flex items-center justify-start gap-1.5 cursor-pointer transition-all active:scale-98"
+														style={{ minHeight: "44px" }}
+														title="Чётные/Нечётные дни месяца (1 клик)"
+														aria-label={`Назначить график чет/нечет на кресло ${chair.name}`}
+														data-testid={`chair-popover-shift-even-odd-${chair.id}`}
+													>
+														<Zap size={15} className="text-amber-500 shrink-0" aria-hidden="true" />
+														<span className="truncate">Чет / Нечет</span>
 													</button>
 												</div>
 											</div>
@@ -1890,6 +2038,26 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																<span className="text-[11px] font-bold">2 см</span>
 															</button>
 														)}
+														<button
+															type="button"
+															onClick={() => {
+																const dayOfMonth = Number.parseInt(dateKey ? dateKey.slice(8, 10) : "1", 10) || 1;
+																const isEven = dayOfMonth % 2 === 0;
+																handleConfirmAssignDoctor(chair.id, assignment!.doctorId, isEven ? "morning" : "evening");
+															}}
+															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
+																assignment!.shiftLabel?.includes("Чет")
+																	? "bg-[var(--teal)] text-white shadow-xs"
+																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+															}`}
+															style={{ minHeight: "44px" }}
+															title="Чётные/Нечётные дни (авто-смена утро/вечер)"
+															aria-label="Четные и нечетные дни"
+															data-testid={`chair-quick-evenodd-${chair.id}`}
+														>
+															<Zap size={12} className="shrink-0 text-amber-500" />
+															<span className="text-[11px] font-bold">Ч/Н</span>
+														</button>
 													</div>
 												</div>
 											);

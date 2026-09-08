@@ -8,6 +8,7 @@ import {
   copyWeekShiftsToTargetWeek,
   copyWeekShiftsToMonth,
   clearWeekShifts,
+  rotateWeekShifts,
 } from '../doctorWeeklyScheduleGenerator';
 import type { DoctorShift } from '../doctorShiftRosterEngine';
 import { ChairRosterModal } from '../../ChairRosterModal';
@@ -171,6 +172,43 @@ describe('doctorWeeklyScheduleGenerator - copy and clear functions', () => {
 
     assert.equal(cleared.length, 1);
     assert.equal(cleared[0]?.id, 'other-shift');
+  });
+
+  it('rotateWeekShifts swaps morning and evening shifts for the active week (Утро ⇄ Вечер)', () => {
+    const currentMonday = '2026-09-07';
+    const rotated = rotateWeekShifts(mockShifts, currentMonday);
+
+    assert.equal(rotated.length, 2);
+
+    // shift-1 was morning (09:00-15:00) -> should become evening (14:00-20:00, evening_shift)
+    const rot1 = rotated.find((s) => s.id === 'shift-1');
+    assert.ok(rot1);
+    assert.equal(rot1?.archetypeId, 'evening_shift');
+    assert.equal(rot1?.startTime, '14:00');
+    assert.equal(rot1?.endTime, '20:00');
+
+    // shift-2 was evening (15:00-21:00) -> should become morning (08:00-14:00, morning_shift)
+    const rot2 = rotated.find((s) => s.id === 'shift-2');
+    assert.ok(rot2);
+    assert.equal(rot2?.archetypeId, 'morning_shift');
+    assert.equal(rot2?.startTime, '08:00');
+    assert.equal(rot2?.endTime, '14:00');
+  });
+
+  it('rotateWeekShifts with chairId option rotates only the specified chair shifts', () => {
+    const currentMonday = '2026-09-07';
+    const rotated = rotateWeekShifts(mockShifts, currentMonday, { chairId: 'chair-1' });
+
+    assert.equal(rotated.length, 2);
+
+    // shift-1 on chair-1 was morning -> becomes evening
+    const rot1 = rotated.find((s) => s.id === 'shift-1');
+    assert.equal(rot1?.archetypeId, 'evening_shift');
+
+    // shift-2 on chair-2 is NOT rotated because chairId was chair-1
+    const rot2 = rotated.find((s) => s.id === 'shift-2');
+    assert.equal(rot2?.archetypeId, 'evening_shift');
+    assert.equal(rot2?.startTime, '15:00');
   });
 });
 

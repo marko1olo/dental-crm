@@ -170,7 +170,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 			);
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("⚡ Зубная формула: Интактный зубной ряд (Все зубы здоровы / норма)", "success");
+		showToast("Зубная формула: Интактный зубной ряд (Все зубы здоровы / норма)", "success");
 	};
 
 	// 2. «Профгигиена выполнена (Ультразвук + Air-Flow + полировка)» в 1 клик с формированием протокола 043/у
@@ -207,7 +207,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			"⚡ Профгигиена выполнена: УЗ-скейлинг + Air-Flow + полировка внесены в карту 043/у и смету",
+			"Профгигиена выполнена: УЗ-скейлинг + Air-Flow + полировка внесены в карту 043/у и смету",
 			"success",
 		);
 	};
@@ -250,7 +250,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast(
-			`⚡ Быстрая пломба/кариес K02.1 зуба ${targetTooth} внесены в формулу и дневник 043/у`,
+			`Быстрая пломба/кариес K02.1 зуба ${targetTooth} внесены в формулу и дневник 043/у`,
 			"success",
 		);
 	};
@@ -267,7 +267,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 			);
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
-		showToast("⚡ Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
+		showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
 	};
 
 	return (
@@ -289,7 +289,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					onClick={handleIntactClick}
 					disabled={false}
 					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-					title="⚡ Зубная формула: Интактный зубной ряд (Все зубы здоровы / норма) в 1 клик"
+					title="Зубная формула: Интактный зубной ряд (Все зубы здоровы / норма) в 1 клик"
 					data-testid="palette-intact-btn"
 				>
 					<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />
@@ -301,7 +301,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					onClick={handleProHygieneClick}
 					disabled={false}
 					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-					title="⚡ Профгигиена выполнена (Ультразвук + Air-Flow + полировка) в 1 клик с формированием протокола 043/у"
+					title="Профгигиена выполнена (Ультразвук + Air-Flow + полировка) в 1 клик с формированием протокола 043/у"
 					data-testid="palette-prophy-btn"
 				>
 					<Zap size={14} className="text-teal-600 dark:text-teal-400" />
@@ -313,7 +313,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					onClick={handleFastCariesClick}
 					disabled={false}
 					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-					title={`⚡ Быстрая пломба/кариес (K02.1) для зуба ${currentTooth} в 1 клик с заполнением дневника 043/у`}
+					title={`Быстрая пломба/кариес (K02.1) для зуба ${currentTooth} в 1 клик с заполнением дневника 043/у`}
 					data-testid="palette-fast-caries-btn"
 				>
 					<Wrench size={14} className="text-amber-600 dark:text-amber-400" />
@@ -325,7 +325,7 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 					onClick={handleWisdomMissingClick}
 					disabled={false}
 					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-					title="⚡ Адентия 8-ок: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+					title="Адентия 8-ок: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
 					data-testid="palette-wisdom-btn"
 				>
 					<Trash2 size={14} className="text-zinc-500" />

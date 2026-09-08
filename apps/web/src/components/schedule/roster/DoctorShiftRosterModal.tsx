@@ -41,6 +41,7 @@ import {
 	copyWeekShiftsToTargetWeek,
 	copyWeekShiftsToMonth,
 	clearWeekShifts,
+	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
 } from "./doctorWeeklyScheduleGenerator";
@@ -55,6 +56,7 @@ export {
 	copyWeekShiftsToTargetWeek,
 	copyWeekShiftsToMonth,
 	clearWeekShifts,
+	rotateWeekShifts,
 	addDaysToDateIso,
 	getWeekDaysIso,
 } from "./doctorWeeklyScheduleGenerator";
@@ -759,6 +761,17 @@ export function DoctorShiftRosterModal({
 		setTimeout(() => setNotification(null), 3000);
 	};
 
+	// 1-Click Shift Rotation (Утро ⇄ Вечер) (StomX / DentalPRO parity, Mandates 8e, 8k, 8n)
+	const handleRotateShifts = () => {
+		const nextShifts = rotateWeekShifts(shifts, weekStartDateIso);
+		setShifts(nextShifts);
+		setNotification({
+			type: "success",
+			message: "Ротация смен (Утро ⇄ Вечер) выполнена для всей клиники",
+		});
+		setTimeout(() => setNotification(null), 3500);
+	};
+
 	// Save changes (Non-blocking Mandate 8e)
 	const handleSaveAll = async (closeAfter = false) => {
 		let shiftsToSave = shifts;
@@ -825,6 +838,7 @@ export function DoctorShiftRosterModal({
 					onCopyWeekToNextWeek={handleCopyWeekToNextWeek}
 					onCopyWeekToMonth={handleCopyWeekToMonth}
 					onClearWeek={handleClearWeek}
+					onRotateShifts={handleRotateShifts}
 					onPrintSchedule={handlePrintSchedule}
 					onExportT13={handleExportT13}
 					onSaveAll={handleSaveAll}

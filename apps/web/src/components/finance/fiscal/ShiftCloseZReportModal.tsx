@@ -6,7 +6,6 @@ import React, { useMemo, useState } from "react";
 import {
 	AlertTriangle,
 	Banknote,
-	Calculator,
 	Check,
 	CheckCheck,
 	CheckCircle2,
@@ -17,9 +16,8 @@ import {
 	CreditCard,
 	FileSpreadsheet,
 	FileText,
+	Layers,
 	Lock,
-	Minus,
-	Plus,
 	Printer,
 	QrCode,
 	RotateCcw,
@@ -35,13 +33,7 @@ import {
 	type FiscalTapeWidth,
 	generate54FzZReportReceiptTapeText,
 } from "./fiscal54fzEngine";
-import {
-	type DenominationsBreakdown,
-	EMPTY_DENOMINATIONS,
-	calculateDenominationsTotalRub,
-} from "../order804nFiscalEngine";
 import { OfflineFiscalBatchModal } from "./OfflineFiscalBatchModal";
-import { Layers } from "lucide-react";
 
 
 export interface ShiftCloseZReportModalProps {

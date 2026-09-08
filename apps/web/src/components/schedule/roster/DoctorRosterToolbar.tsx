@@ -62,6 +62,7 @@ export interface DoctorRosterToolbarProps {
 	onCopyWeekToNextWeek?: () => void;
 	onCopyWeekToMonth?: () => void;
 	onClearWeek?: () => void;
+	onRotateShifts?: () => void;
 	onPrintSchedule: () => void;
 	onExportT13: () => void;
 	onSaveAll: (closeAfter?: boolean) => void;
@@ -96,6 +97,7 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 		onCopyWeekToNextWeek,
 		onCopyWeekToMonth,
 		onClearWeek,
+		onRotateShifts,
 		staffList,
 		cabinets,
 	}) {
@@ -326,6 +328,19 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 									<span>Очистить неделю</span>
 								</button>
 							)}
+							{onRotateShifts && (
+								<button
+									type="button"
+									data-testid="roster-rotate-shifts-btn"
+									className="roster-btn roster-btn-secondary"
+									onClick={onRotateShifts}
+									style={{ minHeight: "34px", height: "34px" }}
+									title="Ротация смен (Утро ⇄ Вечер) для всех врачей недели"
+								>
+									<RotateCcw size={16} />
+									<span>Ротация (Утро ⇄ Вечер)</span>
+								</button>
+							)}
 							<button
 								type="button"
 								className="roster-btn roster-btn-auto"
@@ -469,6 +484,15 @@ export const DoctorRosterToolbar: React.FC<DoctorRosterToolbarProps> = React.mem
 												Чётные / Нечётные (Врач А/Б)
 											</button>
 										</>
+									)}
+									{onRotateShifts && (
+										<button
+											type="button"
+											data-testid="toolbar-rotate-shifts"
+											onClick={onRotateShifts}
+										>
+											Ротация смен (Утро ⇄ Вечер)
+										</button>
 									)}
 								</div>
 							</div>

@@ -771,4 +771,67 @@ export function clearWeekShifts(
 	return currentShifts.filter((s) => !weekDaysSet.has(getShiftDate(s)));
 }
 
+/**
+ * 1-Click Shift Rotation (Утро ⇄ Вечер) (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n)
+ *
+ * Rotates morning shifts to evening shifts, and evening shifts to morning shifts
+ * for the specified week (and optionally restricted to a specific chairId).
+ * Morning (08:00–14:00, "morning_shift") ⇄ Evening (14:00–20:00, "evening_shift").
+ */
+export function rotateWeekShifts(
+	currentShifts: DoctorShift[],
+	weekStartDateIso: string,
+	options?: { chairId?: string },
+): DoctorShift[] {
+	const weekDays = getWeekDaysIso(weekStartDateIso);
+	const weekDaysSet = new Set(weekDays);
+	const getShiftDate = (s: DoctorShift): string =>
+		s.dateIso || (s as unknown as { date?: string }).date || "";
+
+	return currentShifts.map((s) => {
+		const shiftDate = getShiftDate(s);
+		if (!weekDaysSet.has(shiftDate) || s.status === "cancelled") {
+			return s;
+		}
+		if (options?.chairId && s.chairId !== options.chairId) {
+			return s;
+		}
+
+		const isMorning =
+			s.archetypeId === "morning_shift" ||
+			(s.startTime < "13:00" && s.endTime <= "16:00");
+		const isEvening =
+			s.archetypeId === "evening_shift" ||
+			(s.startTime >= "13:00" && s.endTime > "16:00");
+
+		if (isMorning) {
+			return {
+				...s,
+				startTime: "14:00",
+				endTime: "20:00",
+				durationHours: 6.0,
+				breakMinutes: 0,
+				archetypeId: "evening_shift",
+				customNotes:
+					(s.customNotes || "").replace(/Утро.*?(?=[•,;]|$)/i, "Вечер 14:00–20:00") ||
+					"Вечер 14:00–20:00",
+			};
+		}
+		if (isEvening) {
+			return {
+				...s,
+				startTime: "08:00",
+				endTime: "14:00",
+				durationHours: 6.0,
+				breakMinutes: 0,
+				archetypeId: "morning_shift",
+				customNotes:
+					(s.customNotes || "").replace(/Вечер.*?(?=[•,;]|$)/i, "Утро 08:00–14:00") ||
+					"Утро 08:00–14:00",
+			};
+		}
+		return s;
+	});
+}
+
 

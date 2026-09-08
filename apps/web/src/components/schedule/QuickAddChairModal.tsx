@@ -481,6 +481,25 @@ export function QuickAddChairModal({
 								</option>
 							))}
 						</select>
+						{doctors && doctors.length > 0 && (
+							<div className="flex flex-wrap gap-1.5 pt-1">
+								{doctors.map((doc) => (
+									<button
+										key={doc.id}
+										type="button"
+										onClick={() => setDefaultDoctorId(doc.id)}
+										className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${
+											defaultDoctorId === doc.id
+												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
+												: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal)]"
+										}`}
+										data-testid={`quick-add-chair-doc-chip-${doc.id}`}
+									>
+										<span>{doc.fullName}</span>
+									</button>
+								))}
+							</div>
+						)}
 						<p className="text-[11px] text-[var(--muted,#64748b)]">
 							При создании записи в этом кресле врач будет предзаполнен автоматически
 						</p>

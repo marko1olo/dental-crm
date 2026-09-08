@@ -9,6 +9,7 @@ import {
 	ArrowRight,
 	ArrowRightLeft,
 	Calendar,
+	Check,
 	FileText,
 	Gift,
 	MoreHorizontal,
@@ -290,6 +291,40 @@ export function executeBookPatientAppointmentAutonomy({
 		"success",
 	);
 	return { executed: true, reason: "appointment_drafted" as const };
+}
+
+export function executePatientSomaticNormAutonomy({
+	selectedPatient,
+	currentNotes,
+	updatePatientCoreDraft,
+	showToastFn = showToast,
+}: {
+	selectedPatient: Patient | null | undefined;
+	currentNotes?: string;
+	updatePatientCoreDraft?: (field: keyof PatientCoreDraft, value: string) => void;
+	showToastFn?: (
+		text: string,
+		type?: "success" | "error" | "info" | "warning",
+		duration?: number,
+	) => void;
+}) {
+	if (!selectedPatient) {
+		showToastFn("Выберите пациента перед установкой соматической нормы", "warning");
+		return { executed: false, reason: "no_patient" as const };
+	}
+	const normSomatic = "Соматически здоров. Аллергии отрицает. Физиологическая норма.";
+	const trimmed = (currentNotes ?? "").trim();
+	const newNotes = trimmed
+		? trimmed.includes("Соматически здоров")
+			? trimmed
+			: `${normSomatic}\n${trimmed}`
+		: normSomatic;
+
+	if (typeof updatePatientCoreDraft === "function") {
+		updatePatientCoreDraft("notes", newNotes);
+	}
+	showToastFn("Установлена физиологическая норма соматического статуса (1 клик)", "success");
+	return { executed: true, notes: newNotes };
 }
 
 export type TextFieldChangeEvent = ChangeEvent<
@@ -1030,6 +1065,30 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							data-testid="patient-core-save-btn"
 						>
 							<UserCheck size={16} aria-hidden="true" /> Сохранить данные
+						</button>
+						<button
+							className="secondary-button"
+							type="button"
+							onClick={() =>
+								executePatientSomaticNormAutonomy({
+									selectedPatient,
+									currentNotes: patientCoreDraft?.notes,
+									updatePatientCoreDraft,
+									showToastFn: triggerToast,
+								})
+							}
+							disabled={false}
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "6px",
+								minHeight: "36px",
+							}}
+							title="Установить соматическую норму в 1 клик (Мандат 8e)"
+							data-testid="patient-card-somatic-norm-btn"
+						>
+							<Check size={16} aria-hidden="true" />
+							<span>Соматически здоров / норма (1-клик)</span>
 						</button>
 						<button
 							className="secondary-button"

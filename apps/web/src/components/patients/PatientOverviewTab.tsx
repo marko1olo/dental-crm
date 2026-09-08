@@ -1,4 +1,4 @@
-import { ClipboardList, Stethoscope } from "lucide-react";
+import { ClipboardList, History, Stethoscope } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
@@ -261,7 +261,7 @@ export function PatientOverviewTab() {
 						<details className="patient-secondary-accordion">
 							<summary>
 								<span className="flex items-center gap-2">
-									<span>⏳</span>
+									<History size={16} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
 									<span>История коммуникаций и CRM</span>
 								</span>
 								<span className="text-xs text-[var(--muted)] font-normal">

@@ -33,12 +33,17 @@ import {
 	Smartphone,
 	Sparkles,
 	Tag,
+	User,
 	UserCheck,
 	Users,
 	Wallet,
 	X,
 	Zap,
 } from "lucide-react";
+import {
+	validate54FzBuyerInn,
+	type PayerType,
+} from "./cashboxOperations.js";
 import {
 	calculateCashChange,
 	calculateInstallmentPlanSchedule,
@@ -759,7 +764,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 		setToastMsg("Файл кассового чека загружен");
 	};
 
-	// 🖨️ Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
+	// Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
 	const handlePrintSalesSlip = async () => {
 		const docNum = `ТЧ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 		const nowStr = new Date().toLocaleString("ru-RU", {

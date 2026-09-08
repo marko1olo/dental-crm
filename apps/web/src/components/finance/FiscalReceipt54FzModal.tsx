@@ -978,7 +978,7 @@ export const FiscalReceipt54FzModal: React.FC<FiscalReceipt54FzModalProps> = ({
 		showToast("Текст Акта выполненных работ скопирован в буфер!", "success", 2500);
 	};
 
-	// 🖨️ Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
+	// Печать товарного чека / копии без фискализации (для безнала / детализации пациенту)
 	const handlePrintSalesSlip = async () => {
 		const docNum = `ТЧ-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 		const nowStr = new Date().toLocaleString("ru-RU", {
