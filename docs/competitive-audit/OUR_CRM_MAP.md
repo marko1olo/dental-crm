@@ -1794,6 +1794,27 @@
 - **Фронтенд**: `apps/web/src/components/payments/checkout/FastCheckoutModal.tsx`, `apps/web/src/components/finance/CashRegisterModal.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/finance/cashboxOperations.ts`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/warehouse/NurseCarpuleDisposalModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`.
 - **Тесты**: `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx` (11/11 pass), `apps/web/src/components/finance/__tests__/financeAutonomyWave42.test.tsx` (11/11 pass), `apps/web/src/components/finance/__tests__/cashShiftAutonomyAndFiscal54Fz.test.tsx` (pass), `apps/web/src/components/payments/checkout/__tests__/fastCheckoutAutonomy.test.tsx` (pass), `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (pass) — коммиты `401148263`, `d5fb509de`, `88ee4bb06`, `384b64618`, `936af047c`.
 
+#### 2.10.187. Клинический приём и прейскурант: 1-клик экспресс-отметка услуг у кресла по Номенклатуре 804н, инлайн-поиск по прейскуранту и моментальная передача в кассу (Фича #228)
+- **Суть и домен**: Мгновенная фиксация фактически оказанных услуг у кресла врачом без бюрократических барьеров и необходимости открытия громоздких модальных окон:
+  1. *9 частых экспресс-манипуляций у кресла в 1 клик*: в `CompletedServicesChecklist.tsx` и `completedServicesPlan.ts` внедрены утвержденные кнопки быстрого добавления по Номенклатуре 804н: прицельный снимок (A06.07.001 — 450 ₽), инфильтрационная анестезия (A25.07.001 — 800 ₽), проводниковая анестезия (A25.07.002 — 950 ₽), осмотр и консультация (A01.07.001 — 1000 ₽), коффердам (A16.07.051 — 800 ₽), снятие швов (A16.07.097 — 600 ₽), временная пломба (A16.07.002.099 — 700 ₽), снятие камня 1 зуб (A16.07.050.001 — 350 ₽) и ОПТГ (A06.07.002 — 1200 ₽);
+  2. *Инлайн-поиск по реальному прейскуранту клиники без модалок*: поисковая строка `filterServiceCatalog` с фильтрацией по коду 804н и названию услуги из актуального каталога `dashboard.serviceCatalog`;
+  3. *Быстрый выбор зуба*: горизонтальные чипы номеров зубов FDI 11..48 и кнопки «Без зуба» для точной клинической привязки манипуляции;
+  4. *1-клик отправка в кассу*: кнопка «Внести всё в кассовый счёт» генерирует событие `dente-add-services-to-invoice` для синхронизации со счетом и быстрой фискализации администратором/врачом;
+  5. *Мандат 8e и эргономика*: 0 заблокированных кнопок добавления, тач-таргеты $\ge 44\times 44\text{px}$, ноль эмодзи в медицинских строках (`stripEmojis`), удаление ошибочно выбранных строк в 1 тап.
+- **Фронтенд**: `apps/web/src/components/visit/CompletedServicesChecklist.tsx`, `apps/web/src/components/visit/completedServicesPlan.ts`.
+- **Тесты**: `apps/web/src/components/visit/__tests__/chairsideServiceOrdering.test.tsx` (13/13 pass), `apps/web/src/components/visit/completedServicesPlan.test.ts` (30/30 pass) — коммит `5be925f3a`.
+
+#### 2.10.188. Расписание и регистратура: 1-клик экстренная запись пациента с острой болью (CITO), автоопределение дежурного врача кресла и мягкий овербукинг (Фича #229)
+- **Суть и домен**: Экстренный прием пациентов с острой болью (CITO / неотложка) в расписании без сбоев, конфликтов и бюрократических отказов:
+  1. *1-клик кнопка CITO в шапке формы создания записи*: кнопка «CITO! Острая боль (30 мин)» (`header-cito-emergency-btn`) в `NewAppointmentForm.tsx` моментально активирует экспресс-режим (длительность 30 мин, причина «CITO! Острая боль», тег `cito: true`);
+  2. *Автоопределение дежурного врача кресла*: при отсутствии явно выбранного врача система вызывает `resolveChairDutyDoctor` по текущему времени и смене, исключая блокировку создания записи;
+  3. *Мягкий CITO-овербукинг без 400/409 ошибок (Мандат 8e)*: при наложении слотов на уже занятое кресло или врача запись не отклоняется, а сохраняется со статусом мягкого овербукинга (`isCitoOverbooking: true`, предупреждающий бейдж `cito-overbooking-badge`);
+  4. *1-клик перевод в CITO в карточке приёма*: в `AppointmentModal.tsx` добавлена кнопка «Перевести в CITO (Острая боль)» (`convert-to-cito-btn`) для пациентов, пришедших внезапно с острой болью раньше назначенного слота;
+  5. *Эргономика и Apple HIG*: кнопка «Записать пациента» никогда не заблокирована в состоянии покоя (`disabled={false}`), тач-таргеты $\ge 44\times 44\text{px}$, векторная иконка Lucide Zap вместо мультяшных эмодзи.
+- **Фронтенд**: `apps/web/src/components/schedule/NewAppointmentForm.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/utils/scheduleCollisionUtils.ts`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/emergencyCitoBookingWave47.test.tsx` (17/17 pass) — коммит `635d43cc8`.
+
+
 
 
 
