@@ -11,6 +11,7 @@ import {
 	Building2,
 	Calendar,
 	CalendarCheck,
+	CalendarRange,
 	Check,
 	CheckCircle2,
 	Clock,
@@ -56,6 +57,7 @@ import {
 	getMondayOfWeekIso,
 	addDaysToDateIso,
 	copyWeekShiftsToTargetWeek,
+	copyWeekShiftsToMonth,
 	applyDoctorChairWeeklyTemplate,
 } from "./roster/DoctorShiftRosterModal";
 
@@ -928,6 +930,173 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		[doctors, effectiveChairs, dateKey, dashboard?.clinicSettings?.staff, props.onAssignChairDoctor],
 	);
 
+	const handleAssignDoctorMonth = useCallback(
+		(chairId: string, docId: string) => {
+			const doc = doctors.find((d) => d.id === docId) || doctors[0];
+			const chair = effectiveChairs.find((c) => c.id === chairId) || { id: chairId, name: "Кресло" };
+			if (!doc) return;
+
+			const specialty =
+				doc.specialties && doc.specialties.length > 0
+					? specialtyLabels[doc.specialties[0] as DentalSpecialty] || doc.specialties[0]
+					: doc.role === "doctor"
+						? "Стоматолог"
+						: "";
+			const doctorName = doc.fullName || "Врач";
+
+			const assignment: ChairDoctorShiftAssignment = {
+				chairId,
+				doctorId: doc.id,
+				doctorName,
+				doctorSpecialty: specialty,
+				shiftPreset: "full",
+				shiftLabel: "Весь день (Месяц)",
+				shiftHours: "08:00–20:00",
+				startHour: 8,
+				endHour: 20,
+				subShifts: [
+					{
+						doctorId: doc.id,
+						doctorName,
+						doctorSpecialty: specialty,
+						startHour: 8,
+						endHour: 20,
+						shiftHours: "08:00–20:00",
+					},
+				],
+			};
+
+			const year = Number.parseInt(dateKey ? dateKey.slice(0, 4) : "2026", 10) || 2026;
+			const month = Number.parseInt(dateKey ? dateKey.slice(5, 7) : "9", 10) || 9;
+			const daysInMonth = new Date(year, month, 0).getDate();
+			const monthNamesRu = [
+				"январь",
+				"февраль",
+				"март",
+				"апрель",
+				"май",
+				"июнь",
+				"июль",
+				"август",
+				"сентябрь",
+				"октябрь",
+				"ноябрь",
+				"декабрь",
+			];
+			const monthName = monthNamesRu[month - 1] || "текущий месяц";
+
+			if (typeof window !== "undefined") {
+				try {
+					for (let d = 1; d <= daysInMonth; d++) {
+						const dayIso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+						const existingKey = `dente_chair_doctor_assignments_${dayIso}`;
+						const raw = localStorage.getItem(existingKey);
+						const parsed = raw ? JSON.parse(raw) : {};
+						parsed[chairId] = assignment;
+						localStorage.setItem(existingKey, JSON.stringify(parsed));
+					}
+				} catch {}
+
+				try {
+					const mondayIso = getMondayOfWeekIso(dateKey);
+					const rawShifts = localStorage.getItem("dente_doctor_shifts");
+					const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
+					const updatedShifts = copyWeekShiftsToMonth(currentShifts, mondayIso, 4);
+					localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
+				} catch {}
+			}
+
+			setLocalChairAssignments((prev) => ({
+				...prev,
+				[chairId]: assignment,
+			}));
+
+			if (typeof props.onAssignChairDoctor === "function") {
+				props.onAssignChairDoctor(chairId, assignment);
+			}
+
+			showToast(
+				`Врач ${formatDoctorShortName(doctorName)} закреплен за креслом «${chair.name}» на весь месяц (${monthName}) (StomX Parity)`,
+				"success",
+				3500,
+			);
+		},
+		[doctors, effectiveChairs, dateKey, props.onAssignChairDoctor],
+	);
+
+	const handleQuickSubstituteDoctor = useCallback(
+		(chairId: string, newDoctorId?: string) => {
+			const chair = effectiveChairs.find((c) => c.id === chairId) || { id: chairId, name: "Кресло" };
+			const currentDocId = effectiveChairAssignments?.[chairId]?.doctorId;
+			const candidate = newDoctorId
+				? doctors.find((d) => d.id === newDoctorId)
+				: doctors.find((d) => d.id !== currentDocId) || doctors[0];
+			if (!candidate) return;
+
+			const doctorName = candidate.fullName || "Врач";
+			const specialty =
+				candidate.specialties && candidate.specialties.length > 0
+					? specialtyLabels[candidate.specialties[0] as DentalSpecialty] || candidate.specialties[0]
+					: candidate.role === "doctor"
+						? "Стоматолог"
+						: "";
+
+			const existing = effectiveChairAssignments?.[chairId];
+			const updatedAssignment: ChairDoctorShiftAssignment = {
+				chairId,
+				doctorId: candidate.id,
+				doctorName,
+				doctorSpecialty: specialty,
+				shiftPreset: existing?.shiftPreset || "full",
+				shiftLabel: existing?.shiftLabel || "Весь день",
+				shiftHours: existing?.shiftHours || "08:00–20:00",
+				startHour: existing?.startHour ?? 8,
+				endHour: existing?.endHour ?? 20,
+				subShifts: existing?.subShifts
+					? existing.subShifts.map((s) => ({
+							...s,
+							doctorId: candidate.id,
+							doctorName,
+							doctorSpecialty: specialty,
+					  }))
+					: [
+							{
+								doctorId: candidate.id,
+								doctorName,
+								doctorSpecialty: specialty,
+								startHour: existing?.startHour ?? 8,
+								endHour: existing?.endHour ?? 20,
+								shiftHours: existing?.shiftHours || "08:00–20:00",
+							},
+					  ],
+			};
+
+			if (typeof window !== "undefined" && dateKey) {
+				try {
+					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+					const existingStorage = JSON.parse(localStorage.getItem(storageKey) || "{}");
+					existingStorage[chairId] = updatedAssignment;
+					localStorage.setItem(storageKey, JSON.stringify(existingStorage));
+				} catch {}
+			}
+
+			setLocalChairAssignments((prev) => ({
+				...prev,
+				[chairId]: updatedAssignment,
+			}));
+
+			if (typeof props.onAssignChairDoctor === "function") {
+				props.onAssignChairDoctor(chairId, updatedAssignment);
+			}
+
+			showToast(
+				`Врач ${formatDoctorShortName(doctorName)} подменяет врача на кресле «${chair.name}» (StomX Parity)`,
+				"success",
+			);
+		},
+		[effectiveChairs, effectiveChairAssignments, doctors, dateKey, props.onAssignChairDoctor],
+	);
+
 	const handleCopyWeekShiftsToNextWeek = useCallback(() => {
 		const mondayIso = getMondayOfWeekIso(dateKey);
 		const nextMondayIso = addDaysToDateIso(mondayIso, 7);
@@ -1671,6 +1840,43 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 													>
 														<Zap size={15} className="text-amber-500 shrink-0" aria-hidden="true" />
 														<span className="truncate">Чет / Нечет</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															const targetDocId = assignment?.doctorId || suggestedDoctor?.id || (doctors[0]?.id ?? "");
+															if (targetDocId) {
+																handleAssignDoctorMonth(chair.id, targetDocId);
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] flex items-center justify-start gap-1.5 cursor-pointer transition-all active:scale-98"
+														style={{ minHeight: "44px" }}
+														title="На весь месяц (1 клик) (StomX Parity)"
+														aria-label={`Закрепить врача на кресле ${chair.name} на весь месяц`}
+														data-testid={`chair-popover-shift-month-${chair.id}`}
+													>
+														<CalendarRange size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+														<span className="truncate">На весь месяц (1 клик)</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															const currentDocId = assignment?.doctorId;
+															const substituteDoc = doctors.find((d) => d.id !== currentDocId) || doctors[0];
+															if (substituteDoc) {
+																handleQuickSubstituteDoctor(chair.id, substituteDoc.id);
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center justify-start gap-1.5 cursor-pointer transition-all active:scale-98"
+														style={{ minHeight: "44px" }}
+														title="Быстрая подмена дежурного врача на сегодня (StomX Parity, 1 клик)"
+														aria-label={`Подменить врача на сегодня на кресле ${chair.name}`}
+														data-testid={`chair-popover-substitute-${chair.id}`}
+													>
+														<UserCheck size={15} className="text-amber-500 shrink-0" aria-hidden="true" />
+														<span className="truncate">Подменить врача на сегодня</span>
 													</button>
 												</div>
 											</div>

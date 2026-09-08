@@ -16,11 +16,14 @@ import {
 	Armchair,
 	Copy,
 	Zap,
+	CalendarRange,
+	Layers,
 } from "lucide-react";
 import {
 	getMondayOfWeekIso,
 	addDaysToDateIso,
 	copyWeekShiftsToTargetWeek,
+	copyWeekShiftsToMonth,
 	applyDoctorChairWeeklyTemplate,
 } from "./roster/DoctorShiftRosterModal";
 import {
@@ -117,6 +120,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	);
 	const [activeShiftChairId, setActiveShiftChairId] = useState<string | null>(null);
 	const [popoverSelectedDocId, setPopoverSelectedDocId] = useState<Record<string, string>>({});
+	const [isSubstituteOpen, setIsSubstituteOpen] = useState<Record<string, boolean>>({});
 	const popoverRef = useRef<HTMLDivElement | null>(null);
 
 	React.useEffect(() => {
@@ -376,6 +380,178 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 		},
 		[dateKey, chairDoctorAssignments],
 	);
+
+	const handleCopyTodayShiftsToMonth = useCallback(() => {
+		const year = Number.parseInt(dateKey ? dateKey.slice(0, 4) : "2026", 10) || 2026;
+		const month = Number.parseInt(dateKey ? dateKey.slice(5, 7) : "9", 10) || 9;
+		const daysInMonth = new Date(year, month, 0).getDate();
+		const monthNamesRu = [
+			"январь",
+			"февраль",
+			"март",
+			"апрель",
+			"май",
+			"июнь",
+			"июль",
+			"август",
+			"сентябрь",
+			"октябрь",
+			"ноябрь",
+			"декабрь",
+		];
+		const monthName = monthNamesRu[month - 1] || "текущий месяц";
+
+		let todayAssignments: Record<string, ChairDoctorShiftAssignment> =
+			chairDoctorAssignments ? { ...chairDoctorAssignments } : {};
+
+		if (typeof window !== "undefined" && dateKey) {
+			try {
+				const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
+				if (raw) {
+					const parsed = JSON.parse(raw);
+					todayAssignments = { ...parsed, ...todayAssignments };
+				}
+			} catch {}
+
+			try {
+				for (let d = 1; d <= daysInMonth; d++) {
+					const targetDayIso = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+					localStorage.setItem(
+						`dente_chair_doctor_assignments_${targetDayIso}`,
+						JSON.stringify(todayAssignments),
+					);
+				}
+			} catch {}
+
+			try {
+				const rawShifts = localStorage.getItem("dente_doctor_shifts");
+				const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
+				const mondayIso = getMondayOfWeekIso(dateKey);
+				const updatedShifts = copyWeekShiftsToMonth(currentShifts, mondayIso, 4);
+				localStorage.setItem("dente_doctor_shifts", JSON.stringify(updatedShifts));
+			} catch {}
+		}
+
+		showToast(
+			`График смен кресел применен на весь текущий месяц (${monthName}) в 1 клик (StomX Parity)`,
+			"success",
+			3500,
+		);
+	}, [dateKey, chairDoctorAssignments]);
+
+	const handleQuickSubstituteDoctor = useCallback(
+		(chair: ScheduleChair, newDoctorId: string) => {
+			const targetDoc =
+				doctors.find((d) => d.id === newDoctorId) ||
+				dashboard?.clinicSettings?.staff?.find((s) => s.id === newDoctorId) ||
+				doctors[0];
+			const newDoctorName = targetDoc ? targetDoc.fullName : newDoctorId;
+			const existingAssignment = chairDoctorAssignments?.[chair.id] || null;
+
+			const updatedAssignment: ChairDoctorShiftAssignment = {
+				chairId: chair.id,
+				chairName: chair.name,
+				doctorId: newDoctorId,
+				doctorName: newDoctorName,
+				doctorSpecialty:
+					targetDoc && (targetDoc as any).specialty
+						? String((targetDoc as any).specialty)
+						: existingAssignment?.doctorSpecialty,
+				shiftPreset: existingAssignment?.shiftPreset || "full",
+				shiftLabel: existingAssignment?.shiftLabel || "Весь день",
+				shiftHours: existingAssignment?.shiftHours || "08:00–20:00",
+				startHour: existingAssignment?.startHour ?? 8,
+				endHour: existingAssignment?.endHour ?? 20,
+			};
+
+			if (typeof window !== "undefined" && dateKey) {
+				try {
+					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+					const existing = JSON.parse(localStorage.getItem(storageKey) || "{}");
+					existing[chair.id] = updatedAssignment;
+					localStorage.setItem(storageKey, JSON.stringify(existing));
+				} catch {}
+			}
+
+			if (onAssignChairDoctor) {
+				onAssignChairDoctor(chair.id, updatedAssignment);
+			}
+
+			showToast(
+				`Врач ${newDoctorName} подменяет врача на кресле «${chair.name}» (StomX Parity)`,
+				"success",
+			);
+			setIsSubstituteOpen((prev) => ({ ...prev, [chair.id]: false }));
+			setActiveShiftChairId(null);
+		},
+		[
+			doctors,
+			dashboard?.clinicSettings?.staff,
+			chairDoctorAssignments,
+			dateKey,
+			onAssignChairDoctor,
+		],
+	);
+
+	const handleRotateChairShifts = useCallback(() => {
+		const targetChairs = chairs.length > 0 ? chairs : DEFAULT_CLINIC_CHAIRS;
+		if (targetChairs.length < 2) {
+			showToast("Для ротации требуется минимум 2 кресла", "warning");
+			return;
+		}
+
+		let currentAssignments: Record<string, ChairDoctorShiftAssignment> =
+			chairDoctorAssignments ? { ...chairDoctorAssignments } : {};
+
+		if (typeof window !== "undefined" && dateKey) {
+			try {
+				const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
+				if (raw) {
+					const parsed = JSON.parse(raw);
+					currentAssignments = { ...parsed, ...currentAssignments };
+				}
+			} catch {}
+		}
+
+		// Cyclic shift: chair i gets assignment from chair (i - 1 + n) % n
+		const n = targetChairs.length;
+		const rotatedAssignments: Record<string, ChairDoctorShiftAssignment> = {};
+
+		for (let i = 0; i < n; i++) {
+			const targetChair = targetChairs[i]!;
+			const sourceChair = targetChairs[(i - 1 + n) % n]!;
+			const sourceAssignment = currentAssignments[sourceChair.id];
+
+			if (sourceAssignment) {
+				rotatedAssignments[targetChair.id] = {
+					...sourceAssignment,
+					chairId: targetChair.id,
+					chairName: targetChair.name,
+				};
+			}
+		}
+
+		if (typeof window !== "undefined" && dateKey) {
+			try {
+				localStorage.setItem(
+					`dente_chair_doctor_assignments_${dateKey}`,
+					JSON.stringify(rotatedAssignments),
+				);
+			} catch {}
+		}
+
+		if (onAssignChairDoctor) {
+			for (const chair of targetChairs) {
+				onAssignChairDoctor(chair.id, rotatedAssignments[chair.id] || null);
+			}
+		}
+
+		showToast(
+			"Выполнена циклическая ротация смен между креслами в 1 клик (StomX Parity)",
+			"success",
+			3500,
+		);
+	}, [chairs, chairDoctorAssignments, dateKey, onAssignChairDoctor]);
 
 	const handleClearAllDayShifts = useCallback(() => {
 		if (typeof window !== "undefined" && dateKey) {
@@ -782,13 +958,57 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										<button
 											type="button"
 											onClick={() => handleDuplicateChair(chair)}
-											className="mt-1 px-2 py-1 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] border border-[var(--line)] flex items-center justify-center gap-1 transition-colors cursor-pointer"
+											className="mt-1 px-2 py-1 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] border border-[var(--line)] flex items-center justify-center gap-1 transition-colors cursor-pointer min-h-[36px]"
 											data-testid={`chair-view-duplicate-${chair.id}`}
 											title={`Клонировать параметры кресла «${chair.name}»`}
 										>
 											<Copy size={12} className="text-[var(--teal)] shrink-0" />
 											<span>Клонировать кресло</span>
 										</button>
+
+										{/* Quick substitute doctor action (StomX Parity, Feature 245) */}
+										<button
+											type="button"
+											onClick={() =>
+												setIsSubstituteOpen((prev) => ({
+													...prev,
+													[chair.id]: !prev[chair.id],
+												}))
+											}
+											className="mt-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer min-h-[44px]"
+											style={{ minHeight: "44px" }}
+											data-testid={`chair-view-substitute-btn-${chair.id}`}
+											title="Быстрая подмена дежурного врача на кресле в 1 клик (StomX Parity)"
+										>
+											<UserCheck size={14} className="text-amber-500 shrink-0" />
+											<span>Подменить врача...</span>
+										</button>
+
+										{isSubstituteOpen[chair.id] && (
+											<div
+												className="flex flex-col gap-1 p-2 rounded-lg bg-[var(--paper-soft)] border border-amber-500/30 max-h-40 overflow-y-auto"
+												data-testid={`chair-view-substitute-picker-${chair.id}`}
+											>
+												<span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+													Выберите врача для подмены:
+												</span>
+												{doctors.map((doc) => (
+													<button
+														key={doc.id}
+														type="button"
+														onClick={() => handleQuickSubstituteDoctor(chair, doc.id)}
+														className="px-2 py-1.5 rounded-lg text-xs font-semibold text-left flex items-center justify-between hover:bg-[var(--teal-soft)] transition-colors cursor-pointer min-h-[44px]"
+														style={{ minHeight: "44px" }}
+														data-testid={`chair-view-substitute-option-${chair.id}-${doc.id}`}
+													>
+														<span className="truncate">{doc.fullName}</span>
+														<span className="text-[10px] text-[var(--muted)] shrink-0 ml-1">
+															Подменить
+														</span>
+													</button>
+												))}
+											</div>
+										)}
 									</div>
 								)}
 							</div>
@@ -830,6 +1050,28 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					>
 						<Calendar size={12} className="text-emerald-600 dark:text-emerald-400" />
 						<span className="hidden sm:inline">На будни (Пн–Пт)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleCopyTodayShiftsToMonth}
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
+						title="Скопировать график смен кресел на весь текущий месяц в 1 клик (StomX Parity)"
+						data-testid="btn-copy-chair-month"
+					>
+						<CalendarRange size={12} className="text-[var(--teal)]" />
+						<span className="hidden sm:inline">На месяц</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleRotateChairShifts}
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
+						title="Циклическая ротация смен между креслами в 1 клик"
+						data-testid="btn-rotate-chair-shifts"
+					>
+						<Layers size={12} className="text-[var(--teal)]" />
+						<span className="hidden sm:inline">Ротация кресел</span>
 					</button>
 
 					<button
