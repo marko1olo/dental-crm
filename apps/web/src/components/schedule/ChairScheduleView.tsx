@@ -61,6 +61,12 @@ export interface ChairScheduleViewProps {
 	appointments: Appointment[];
 	onSlotClick: (slot: QuickBookingSlotInfo) => void;
 	onAppointmentClick: (appointment: Appointment) => void;
+	onAppointmentMove?:
+		| ((appointmentId: string, updates: any) => Promise<any> | void)
+		| undefined;
+	onQuickStatusChange?:
+		| ((appointmentId: string, status: Appointment["status"]) => void)
+		| undefined;
 	patientName?: (
 		patients: Dashboard["patients"],
 		patientId: string | null,
@@ -108,6 +114,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 	appointments,
 	onSlotClick,
 	onAppointmentClick,
+	onAppointmentMove,
+	onQuickStatusChange,
 	patientName,
 	formatTime,
 	toDateTimeLocalValue,
@@ -1246,6 +1254,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					appointments={appointments}
 					onSlotClick={handleSlotClick}
 					onAppointmentClick={onAppointmentClick}
+					onAppointmentMove={onAppointmentMove}
+					onQuickStatusChange={onQuickStatusChange}
 					patientName={resolvedPatientName}
 					formatTime={resolvedFormatTime}
 					toDateTimeLocalValue={resolvedToDateTimeLocalValue}

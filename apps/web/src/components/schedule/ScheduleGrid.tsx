@@ -17,6 +17,7 @@ import {
 	Clock,
 	Copy,
 	Edit2,
+	FastForward,
 	MessageSquare,
 	Moon,
 	MoreVertical,
@@ -30,6 +31,7 @@ import {
 	Trash2,
 	User,
 	UserCheck,
+	UserMinus,
 	UserPlus,
 	Users,
 	UserX,
@@ -243,6 +245,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		onAppointmentClick,
 		onQuickStatusChange,
 		patientName,
+		formatTime,
 		toDateTimeLocalValue = (iso: string) => (iso ? iso.slice(0, 16) : ""),
 		appointmentLabels,
 		selectedChairId,
@@ -359,6 +362,159 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	}, [activeMenuApptId, selectedMobileAppt, chairDoctorDropdownId, activeHeaderDoctorPopoverChairId, activeHeaderMaintenanceChairId]);
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
+
+	// Wave 58 (Feature 247): 1-Click Quick Adjust Duration, Lateness Shift & Free Slot to Waitlist
+	const handleAdjustAppointmentDuration = useCallback(
+		(appt: Appointment, deltaMinutes: number) => {
+			const startMs = Date.parse(appt.startsAt);
+			const currentEndMs = Date.parse(appt.endsAt);
+			const newEndMs = currentEndMs + deltaMinutes * 60000;
+			const minDurationMs = 15 * 60000;
+
+			// Защита: минимальная длительность приема — 15 минут
+			if (newEndMs - startMs < minDurationMs) {
+				showToast("Минимальная длительность приема — 15 минут", "warning", 3000);
+				return;
+			}
+
+			const newEndIso = new Date(newEndMs).toISOString();
+			const pName = patientName ? patientName(dashboard?.patients ?? [], appt.patientId) : "Пациент";
+			const isCito = isCitoAppointment(appt);
+
+			// Проверка коллизий через checkAppointmentResourceCollision (с мягким овербукингом, Мандат 8e)
+			const collisionCheck = checkAppointmentResourceCollision(
+				{
+					startsAt: appt.startsAt,
+					endsAt: newEndIso,
+					doctorUserId: appt.doctorUserId,
+					chairId: appt.chairId,
+					patientId: appt.patientId,
+					isCito,
+				},
+				appointments,
+				{
+					excludeAppointmentId: appt.id,
+					staff: dashboard?.clinicSettings?.staff,
+					chairs: dashboard?.clinicSettings?.chairs,
+					patients: dashboard?.patients,
+					chairMaintenanceBlocks: effectiveMaintenanceBlocks,
+					formatTimeFn: (iso) => (formatTime ? formatTime(iso) : toDateTimeLocalValue(iso, timezone).slice(11, 16)),
+					isCito,
+					allowCitoOverbooking: isCito,
+				},
+			);
+
+			if (collisionCheck.isCitoOverbooking) {
+				showToast(`CITO-овербукинг разрешён (острая боль): ${collisionCheck.message}`, "warning", 4500);
+			} else if (collisionCheck.hasCollision) {
+				showToast(`Внимание: ${collisionCheck.message}. Время изменено с овербукингом`, "warning", 4500);
+			}
+
+			const newDuration = Math.round((newEndMs - startMs) / 60000);
+			const newStart = formatTime ? formatTime(appt.startsAt) : toDateTimeLocalValue(appt.startsAt, timezone).slice(11, 16);
+			const newEnd = formatTime ? formatTime(newEndIso) : toDateTimeLocalValue(newEndIso, timezone).slice(11, 16);
+
+			if (typeof onAppointmentMove === "function") {
+				void Promise.resolve(
+					onAppointmentMove(appt.id, {
+						endsAt: newEndIso,
+						allowOverbooking: true,
+					}),
+				).then((result) => {
+					if (result !== false) {
+						showToast(`Длительность приема ${pName} изменена: ${newDuration} мин (${newStart}–${newEnd})`, "success", 3000);
+					}
+				});
+			} else {
+				showToast(`Длительность приема ${pName} изменена: ${newDuration} мин (${newStart}–${newEnd})`, "success", 3000);
+			}
+
+			setSelectedMobileAppt((prev) => (prev && prev.id === appt.id ? { ...prev, endsAt: newEndIso } : prev));
+		},
+		[appointments, dashboard, effectiveMaintenanceBlocks, formatTime, onAppointmentMove, patientName, toDateTimeLocalValue, timezone],
+	);
+
+	const handleShiftAppointmentLateness = useCallback(
+		(appt: Appointment, shiftMinutes: number) => {
+			const shiftMs = shiftMinutes * 60000;
+			const newStartMs = Date.parse(appt.startsAt) + shiftMs;
+			const newEndMs = Date.parse(appt.endsAt) + shiftMs;
+			const newStartIso = new Date(newStartMs).toISOString();
+			const newEndIso = new Date(newEndMs).toISOString();
+
+			const pName = patientName ? patientName(dashboard?.patients ?? [], appt.patientId) : "Пациент";
+			const formattedNewStart = formatTime ? formatTime(newStartIso) : toDateTimeLocalValue(newStartIso, timezone).slice(11, 16);
+			const isCito = isCitoAppointment(appt);
+
+			// Проверка коллизий через checkAppointmentResourceCollision (с мягким овербукингом)
+			const collisionCheck = checkAppointmentResourceCollision(
+				{
+					startsAt: newStartIso,
+					endsAt: newEndIso,
+					doctorUserId: appt.doctorUserId,
+					chairId: appt.chairId,
+					patientId: appt.patientId,
+					isCito,
+				},
+				appointments,
+				{
+					excludeAppointmentId: appt.id,
+					staff: dashboard?.clinicSettings?.staff,
+					chairs: dashboard?.clinicSettings?.chairs,
+					patients: dashboard?.patients,
+					chairMaintenanceBlocks: effectiveMaintenanceBlocks,
+					formatTimeFn: (iso) => (formatTime ? formatTime(iso) : toDateTimeLocalValue(iso, timezone).slice(11, 16)),
+					isCito,
+					allowCitoOverbooking: isCito,
+				},
+			);
+
+			if (collisionCheck.isCitoOverbooking) {
+				showToast(`CITO-овербукинг разрешён (острая боль): ${collisionCheck.message}`, "warning", 4500);
+			} else if (collisionCheck.hasCollision) {
+				showToast(`Внимание: ${collisionCheck.message}. Прием сдвинут с овербукингом`, "warning", 4500);
+			}
+
+			// Автоматически копирует в буфер или подготавливает WhatsApp сообщение
+			const messageText = `Здравствуйте, ${pName}! Ваш прием в клинике перенесен на ${formattedNewStart}. Ждем вас!`;
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				void navigator.clipboard.writeText(messageText).catch(() => {});
+			}
+
+			if (typeof onAppointmentMove === "function") {
+				void Promise.resolve(
+					onAppointmentMove(appt.id, {
+						startsAt: newStartIso,
+						endsAt: newEndIso,
+						allowOverbooking: true,
+					}),
+				).then((result) => {
+					if (result !== false) {
+						showToast(`Прием ${pName} сдвинут на +${shiftMinutes} мин (начало в ${formattedNewStart})`, "success", 3000);
+					}
+				});
+			} else {
+				showToast(`Прием ${pName} сдвинут на +${shiftMinutes} мин (начало в ${formattedNewStart})`, "success", 3000);
+			}
+
+			setSelectedMobileAppt((prev) => (prev && prev.id === appt.id ? { ...prev, startsAt: newStartIso, endsAt: newEndIso } : prev));
+		},
+		[appointments, dashboard, effectiveMaintenanceBlocks, formatTime, onAppointmentMove, patientName, toDateTimeLocalValue, timezone],
+	);
+
+	const handleFreeSlotToWaitlist = useCallback(
+		(appt: Appointment) => {
+			if (typeof onQuickStatusChange === "function") {
+				onQuickStatusChange(appt.id, "cancelled");
+			} else if (typeof onAppointmentMove === "function") {
+				void onAppointmentMove(appt.id, { status: "cancelled" });
+			}
+			showToast("Слот освобожден. Проверьте подходящих кандидатов в листе ожидания", "info", 4000);
+			setActiveMenuApptId(null);
+			setSelectedMobileAppt(null);
+		},
+		[onQuickStatusChange, onAppointmentMove],
+	);
 
 	const staff = dashboard?.clinicSettings?.staff ?? [];
 	const doctors = useMemo(() => {
@@ -2589,6 +2745,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 												return (
 													<div
 														key={a.id}
+														data-testid={`appointment-card-${a.id}`}
 														draggable
 														onMouseEnter={() => handleAppointmentMouseEnter(a.id)}
 														onMouseLeave={handleAppointmentMouseLeave}
@@ -2863,12 +3020,74 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																		</div>
 																	</div>
 																)}
+
+																{/* 7. Быстрое изменение длительности и сдвиг при опоздании (Wave 58) */}
+																<div className="pt-2 border-t border-[var(--line)]">
+																	<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1.5 flex items-center justify-between">
+																		<span>Длительность и сдвиг (1 клик)</span>
+																	</div>
+																	<div className="grid grid-cols-4 gap-1">
+																		<button
+																			type="button"
+																			data-testid={`hover-duration-plus-15-${a.id}`}
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				handleAdjustAppointmentDuration(a, 15);
+																			}}
+																			className="min-h-[32px] px-1.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																			title="Увеличить длительность на 15 минут"
+																		>
+																			<Clock size={11} className="text-[var(--teal)] shrink-0" />
+																			<span>+15 мин</span>
+																		</button>
+																		<button
+																			type="button"
+																			data-testid={`hover-duration-plus-30-${a.id}`}
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				handleAdjustAppointmentDuration(a, 30);
+																			}}
+																			className="min-h-[32px] px-1.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																			title="Увеличить длительность на 30 минут"
+																		>
+																			<Clock size={11} className="text-[var(--teal)] shrink-0" />
+																			<span>+30 мин</span>
+																		</button>
+																		<button
+																			type="button"
+																			data-testid={`hover-duration-minus-15-${a.id}`}
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				handleAdjustAppointmentDuration(a, -15);
+																			}}
+																			className="min-h-[32px] px-1.5 py-1 rounded-lg text-[11px] font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																			title="Уменьшить длительность на 15 минут"
+																		>
+																			<Clock size={11} className="text-[var(--teal)] shrink-0" />
+																			<span>-15 мин</span>
+																		</button>
+																		<button
+																			type="button"
+																			data-testid={`hover-shift-late-15-${a.id}`}
+																			onClick={(e) => {
+																				e.stopPropagation();
+																				handleShiftAppointmentLateness(a, 15);
+																			}}
+																			className="min-h-[32px] px-1.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/40 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																			title="Сдвинуть прием на 15 минут вперед при опоздании"
+																		>
+																			<FastForward size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
+																			<span>Сдвиг +15 мин</span>
+																		</button>
+																	</div>
+																</div>
 															</div>
 															);
 														})()}
 
 														{/* Карточка записи: 3 главных фокуса (ФИО, процедура, цветной маркер статуса) по стандарту Apple HIG */}
 														<div
+															data-testid={`appointment-card-clickable-${a.id}`}
 															onClick={() => {
 																if (typeof window !== "undefined" && window.innerWidth < 768) {
 																	setSelectedMobileAppt(a);
@@ -3184,6 +3403,90 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 																				</button>
 																			</div>
 																		)}
+
+																		{/* Блок «Длительность (1 клик)» */}
+																		<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
+																			<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+																				Длительность (1 клик)
+																			</div>
+																			<div className="grid grid-cols-3 gap-1 px-1">
+																				<button
+																					type="button"
+																					data-testid={`menu-duration-plus-15-${a.id}`}
+																					onClick={() => {
+																						handleAdjustAppointmentDuration(a, 15);
+																						setActiveMenuApptId(null);
+																					}}
+																					className="min-h-[44px] sm:min-h-[36px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																					title="+15 минут"
+																				>
+																					<Clock size={12} className="text-[var(--teal)] shrink-0" />
+																					<span>+15 мин</span>
+																				</button>
+																				<button
+																					type="button"
+																					data-testid={`menu-duration-plus-30-${a.id}`}
+																					onClick={() => {
+																						handleAdjustAppointmentDuration(a, 30);
+																						setActiveMenuApptId(null);
+																					}}
+																					className="min-h-[44px] sm:min-h-[36px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																					title="+30 минут"
+																				>
+																					<Clock size={12} className="text-[var(--teal)] shrink-0" />
+																					<span>+30 мин</span>
+																				</button>
+																				<button
+																					type="button"
+																					data-testid={`menu-duration-minus-15-${a.id}`}
+																					onClick={() => {
+																						handleAdjustAppointmentDuration(a, -15);
+																						setActiveMenuApptId(null);
+																					}}
+																					className="min-h-[44px] sm:min-h-[36px] px-1.5 py-1 rounded-lg text-xs font-bold bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+																					title="-15 минут"
+																				>
+																					<Clock size={12} className="text-[var(--teal)] shrink-0" />
+																					<span>-15 мин</span>
+																				</button>
+																			</div>
+																		</div>
+
+																		{/* Блок «Опоздание» */}
+																		<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
+																			<div className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[var(--muted)]">
+																				Опоздание
+																			</div>
+																			<button
+																				type="button"
+																				data-testid={`menu-shift-late-15-${a.id}`}
+																				onClick={() => {
+																					handleShiftAppointmentLateness(a, 15);
+																					setActiveMenuApptId(null);
+																				}}
+																				className="w-full text-left min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 font-bold transition-colors cursor-pointer"
+																				title="Сдвинуть на +15 мин (опоздание)"
+																			>
+																				<FastForward size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+																				<span>Сдвинуть на +15 мин (опоздание)</span>
+																			</button>
+																		</div>
+
+																		{/* Освободить слот -> в лист ожидания */}
+																		<div className="border-t border-[var(--line)] pt-1 space-y-0.5">
+																			<button
+																				type="button"
+																				data-testid={`menu-free-slot-waitlist-${a.id}`}
+																				onClick={() => {
+																					handleFreeSlotToWaitlist(a);
+																				}}
+																				className="w-full text-left min-h-[44px] sm:min-h-[36px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15 font-bold transition-colors cursor-pointer"
+																				title="Освободить слот -> в лист ожидания"
+																			>
+																				<UserMinus size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+																				<span>Освободить слот -&gt; в лист ожидания</span>
+																			</button>
+																		</div>
 																	</div>
 																)}
 															</div>
@@ -3706,6 +4009,67 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 							</div>
 						</div>
 					)}
+
+					{/* Quick Duration & Lateness Adjustment (Wave 58) */}
+					<div className="space-y-2 pt-2 border-t border-[var(--line)]">
+						<div className="font-bold text-[var(--muted)] uppercase text-[10px] tracking-wider">
+							Длительность приема:
+						</div>
+						<div className="grid grid-cols-3 gap-2">
+							<button
+								type="button"
+								data-testid={`mobile-duration-plus-15-${selectedMobileAppt.id}`}
+								onClick={() => handleAdjustAppointmentDuration(selectedMobileAppt, 15)}
+								className="min-h-[44px] px-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer hover:bg-[var(--paper)] transition-colors"
+								title="+15 минут"
+							>
+								<Clock size={13} className="text-[var(--teal)] shrink-0" />
+								<span>+15 мин</span>
+							</button>
+							<button
+								type="button"
+								data-testid={`mobile-duration-plus-30-${selectedMobileAppt.id}`}
+								onClick={() => handleAdjustAppointmentDuration(selectedMobileAppt, 30)}
+								className="min-h-[44px] px-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer hover:bg-[var(--paper)] transition-colors"
+								title="+30 минут"
+							>
+								<Clock size={13} className="text-[var(--teal)] shrink-0" />
+								<span>+30 мин</span>
+							</button>
+							<button
+								type="button"
+								data-testid={`mobile-duration-minus-15-${selectedMobileAppt.id}`}
+								onClick={() => handleAdjustAppointmentDuration(selectedMobileAppt, -15)}
+								className="min-h-[44px] px-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1 cursor-pointer hover:bg-[var(--paper)] transition-colors"
+								title="-15 минут"
+							>
+								<Clock size={13} className="text-[var(--teal)] shrink-0" />
+								<span>-15 мин</span>
+							</button>
+						</div>
+						<div className="grid grid-cols-2 gap-2 pt-1">
+							<button
+								type="button"
+								data-testid={`mobile-shift-late-15-${selectedMobileAppt.id}`}
+								onClick={() => handleShiftAppointmentLateness(selectedMobileAppt, 15)}
+								className="min-h-[44px] px-2 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 flex items-center justify-center gap-1 cursor-pointer hover:bg-amber-500/25 transition-colors"
+								title="Сдвинуть на +15 мин при опоздании"
+							>
+								<FastForward size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+								<span>Сдвиг +15 мин</span>
+							</button>
+							<button
+								type="button"
+								data-testid={`mobile-free-slot-waitlist-${selectedMobileAppt.id}`}
+								onClick={() => handleFreeSlotToWaitlist(selectedMobileAppt)}
+								className="min-h-[44px] px-2 rounded-xl text-xs font-bold bg-rose-500/15 border border-rose-500/40 text-rose-800 dark:text-rose-200 flex items-center justify-center gap-1 cursor-pointer hover:bg-rose-500/25 transition-colors"
+								title="Освободить слот -> в лист ожидания"
+							>
+								<UserMinus size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+								<span>В лист ожидания</span>
+							</button>
+						</div>
+					</div>
 
 					{/* Primary Action Button */}
 					<div className="pt-2">

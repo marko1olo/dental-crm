@@ -2147,6 +2147,26 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 					onAppointmentClick={(appointment) => {
 						setModalAppointment(appointment);
 					}}
+					onAppointmentMove={async (appointmentId, updates) => {
+						if (updates.startsAt) updateAppointmentScheduleDraft(appointmentId, "startsAt", updates.startsAt);
+						if (updates.endsAt) updateAppointmentScheduleDraft(appointmentId, "endsAt", updates.endsAt);
+						if (updates.chairId !== undefined) updateAppointmentScheduleDraft(appointmentId, "chairId", updates.chairId);
+						if (updates.doctorUserId !== undefined) updateAppointmentScheduleDraft(appointmentId, "doctorUserId", updates.doctorUserId);
+						return await saveAppointmentSchedule(appointmentId, {
+							allowOverbooking: updates.allowOverbooking ?? true,
+							allowEmergencyOverride: true,
+						});
+					}}
+					onQuickStatusChange={async (appointmentId, status) => {
+						updateAppointmentScheduleDraft(appointmentId, "status", status);
+						const success = await saveAppointmentSchedule(appointmentId);
+						if (success) {
+							const p = dashboard?.appointments?.find((a) => a.id === appointmentId);
+							const pName = p && patientName ? patientName(dashboard?.patients ?? [], p.patientId) : "Пациент";
+							const label = appointmentLabels[status] || status;
+							showToast(`«${pName}» — статус «${label}»`, "success", 3000);
+						}
+					}}
 					patientName={patientName}
 					formatTime={formatTime}
 					toDateTimeLocalValue={toDateTimeLocalValue}
