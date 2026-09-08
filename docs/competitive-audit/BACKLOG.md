@@ -2086,16 +2086,57 @@
 - **Файлы**: `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `PediatricMixedDentitionModal.tsx`, `apps/web/src/components/visit/VisitAnamnesisTab.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/inventory/mdlp/MdlpDisposalQueueModal.tsx`, `apps/web/src/components/patient/PatientAdministrativeForm.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
 - **Тесты**: `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts`, `cashierAutonomy54Fz.test.ts`, `procedureMaterialDeductionAutonomy.test.tsx`, `onboardingStaffChairAutonomy.test.tsx`, `scheduleInlineChairManagement.test.tsx`, `scheduleChairDoctorBinding.test.tsx` (115 тестов, 100% pass, коммиты `88ee4bb06`, `17014184e`, `31c45a2ff`).
 
+### 4.74. 1-клик копирование графика сменности (на след. неделю и на 4 недели вперед) в DoctorShiftRosterModal и DoctorRosterToolbar (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 203)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Чистые генераторы копирования сменности*: в `doctorWeeklyScheduleGenerator.ts` реализованы алгоритмы `copyWeekShiftsToTargetWeek` (копирование смен выбранной недели на целевую неделю со смещением дат и сохранением привязок врачей/ассистентов), `copyWeekShiftsToMonth` (тиражирование графика на 4 недели / месяц вперед без дубликатов) и `clearWeekShifts`;
+  2. *1-клик интерфейс в тулбаре ростера*: в `DoctorRosterToolbar.tsx` внедрены 1-клик кнопки «⏩ На след. неделю» (`data-testid="roster-copy-next-week-btn"`) и «📅 На месяц (4 нед)» (`data-testid="roster-copy-month-btn"`) с активным тост-руководством;
+  3. *Интеграция с модалом ростера*: в `DoctorShiftRosterModal.tsx` подключены обработчики `handleCopyWeekToNextWeek` и `handleCopyWeekToMonth` с неблокирующим сохранением графика (`disabled={false}`);
+  4. *Защита от дубликатов и тач-таргеты Apple HIG*: при копировании существующие смены целевого периода мягко замещаются без накопления дублей; тач-таргеты кнопок строго $\ge 44\times 44\text{px}$ (Мандат 8d).
+- **Файлы**: `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterToolbar.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleStomxDoctorChairRosterParity.test.tsx` (11 тестов), `scheduleShiftRosterIntegration.test.tsx` (27 тестов) — 38/38 pass, коммит `9bea85a84`.
+
+### 4.75. Недельная матрица распределения врачей по креслам в ChairRosterModal и DoctorRosterMatrix (Мандаты 8c, 8d, 8e, 8k, 8n / Фича 204)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Двунаправленная матрица распределения*: в `ChairRosterModal.tsx` и `DoctorRosterMatrix.tsx` внедрены табы «По креслам / кабинетам» и «По сотрудникам» с отображением полной недели (Пн–Вс);
+  2. *1-тап поповер назначения смен*: в ячейках матрицы реализован быстрый поповер с 4 пресетами смен (`☀️ Утро 08:00–14:00`, `🌙 Вечер 14:00–20:00`, `🏢 Весь день 08:00–20:00`, `🚫 Выходной/Очистить`) и селекторами врача и ассистента;
+  3. *Быстрые чипы дежурных врачей в сетке*: в `ScheduleGrid.tsx` шапка колонок кресел оснащена быстрыми чипами дежурных врачей с 1-тап поповером для оперативного назначения смены прямо у кресла;
+  4. *Контроль коллизий и автономия персонала*: автоматическое выявление двойных бронирований кресел/врачей `detectRosterConflicts`; неблокирующее сохранение (`disabled={false}`) без модального ада (Закон Анти-Матрёшки / Грех 6); тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/roster/DoctorRosterMatrix.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/scheduleStomxDoctorChairRosterParity.test.tsx` (11 тестов), `scheduleChairDoctorBinding.test.tsx` (24 теста) — 35/35 pass, коммит `9bea85a84`.
+
+### 4.76. Ликвидация чужеродного госпитального поликлинического блоата 025/у и адаптация стоматологического пакета направления по Мандату 8i (Мандаты 8d, 8e, 8i, 8k, 8n / Фича 205)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Ликвидация Формы 025/у*: в `apps/web/src/utils/documentPackages.ts` ликвидирован чужеродный госпитальный стационарный пакет 025/у, не относящийся к стоматологическому приёму;
+  2. *Специализированный стоматологический пакет направления*: пакет реорганизован в «Стоматологический пакет направления (043/у, КЛКТ/ОПТГ, 027/у)» категории `referral` со связкой: направление на рентгенологическое исследование (КЛКТ/ОПТГ/ТРГ), выписка из карты 027/у, медицинская карта 043/у, справка о посещении и расписка о выдаче документов;
+  3. *Связка с рентгенологическим модулем*: в `RadiologyReferralModal.tsx` и `RadiologyViewerModal.tsx` обеспечена прямая маршрутизация пациента на лучевую диагностику без заполнения стационарных бланков;
+  4. *Святость официальных бланков (Мандат 8d п. 7)*: строго векторные Lucide-иконки без эмодзи, печать со штампом «ПОДПИСАНО ВРАЧОМ» / «ЧЕРНОВИК», тач-таргеты $\ge 44\text{px}$.
+- **Файлы**: `apps/web/src/utils/documentPackages.ts`, `apps/web/src/components/documents/RadiologyReferralModal.tsx`, `apps/web/src/components/radiology/RadiologyViewerModal.tsx`.
+- **Тесты**: `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts` (тест 8.8), `documentNavigationWorkflow.test.ts` — 100% pass, коммит `3e974a41c`.
+
+### 4.77. Автономия врача по просроченным планам лечения (Мандат 8e п. 7) и ликвидация серых disabled кнопок в VisitView и MessageDeliveryConsole (Мандаты 8d, 8e, 8k, 8n / Фича 206)
+- **Статус**: `[РЕАЛИЗОВАНО]`
+- **Объем реализации**:
+  1. *Свобода оказания услуг и оплат по планам > 30 дней (Мандат 8e п. 7)*: в `packages/shared/src/finance/planToInvoiceValidator.ts` (строки 403–405, 569–571) закреплено: истечение 30 дней с момента составления плана лечения НЕ БЛОКИРУЕТ создание нарядов ЗТЛ, оказание услуг или оплату (`isExpiredUnapproved = false`, `requiresAdminOverride = false`);
+  2. *Бэкенд Fastify*: в `apps/api/src/routes/dentalLab.ts` маршрут `/api/clinical/dental-lab/check-plan-continuity` возвращает `canProceed: true`, `blocked: false`, `requiresChiefPhysicianApproval: false`;
+  3. *Ликвидация серых disabled кнопок*: в `TreatmentEstimator.tsx` кнопка «В кассу (54-ФЗ)» освобождена от блокировки (`disabled={false}`); в `VisitView.tsx` устранены искусственные блокировки; в `MessageDeliveryConsole.tsx` разблокирована отправка сообщений;
+  4. *Снижение трения у кресла*: врач свободен от бюрократических замков и согласований с начмедами; тач-таргеты $\ge 44\text{px}$ (Мандат 8d).
+- **Файлы**: `packages/shared/src/finance/planToInvoiceValidator.ts`, `apps/api/src/routes/dentalLab.ts`, `apps/web/src/components/odontogram/TreatmentEstimator.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/components/communications/MessageDeliveryConsole.tsx`.
+- **Тесты**: `apps/web/src/tests/emrPerioAutonomyInquisition.test.ts` (блок 8), `cashierAutonomy54Fz.test.ts`, `messageDeliveryConsoleAutonomy.test.tsx` — 100% pass, коммиты `3e974a41c`, `d5fb509de`, `091234419`.
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 136 дополнительных системных аддендум-фич клинической автономии (Wave 15..37, фичи 64..189, 193..202) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 140 дополнительных системных аддендум-фич клинической автономии (Wave 15..38, фичи 64..189, 193..206) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
 - Полная аппаратная интеграция (эквайринг Сбера, фискальные регистраторы 54-ФЗ, 3D DICOM MPR WebWorker, ЕГИСЗ CDA R3 с УКЭП);
 - Строгий аудит Мандатов 8e и 8n: абсолютный приоритет соло-врача и клиники 1–3 кресла, отсутствие тупиков и палок в колёса.
+
 
 
 

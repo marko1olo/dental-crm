@@ -1,47 +1,41 @@
-# Handoff Report — Documentation & Registry Sync Auditor: Features 199–202 (Mandate 8h)
+# Handoff Report — Documentation & Registry Sync Auditor: Features 203–206 (Mandate 8h)
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-PREVIOUS HEAD: 6c06037cf8fffa6759d5718a221f7360216669f4
+PREVIOUS HEAD: af879a4957e499bf90c596603a6326906c998db5
 
 ## 1. Observation & Scope
-Dynamic documentation synchronization per Mandate 8h (Strict ban on working from outdated docs) for Features 199, 200, 201, and 202:
-- **Feature 199 (`расписание_кресла::1_клик_архетипы_кресел_quick_add_chair_modal`)**:
-  - 1-клик архетипы клинических кресел в `QuickAddChairModal.tsx` и `ScheduleFilterStrip.tsx`: Терапевтическое (`#0d9488`), Хирургическое (`#2563eb`), Ортодонтическое (`#4f46e5`), Детское (`#d97706`), Гигиеническое/Общее (`#059669`).
-  - Автогенерация безопасных дефолтов (`Кресло N`, `Кабинет N`), submit-кнопка активна всегда (`disabled={false}` по Мандату 8e), сенсорные тач-таргеты $\ge 44\times 44\text{px}$ (Мандат 8d).
-- **Feature 200 (`расписание_ростер::шаблоны_закрепления_врачей_за_креслами_по_графику_chair_roster_modal`)**:
-  - 1-клик шаблоны сменности клинических отделений в `ChairRosterModal.tsx` и `DoctorShiftRosterModal.tsx`: пятидневка 5/2 ст. 350 ТК РФ 33ч/нед, сменный 2/2 12ч, Пн/Ср/Пт утро 08:00–14:00, Вт/Чт/Сб вечер 14:00–20:00, полный день 08:00–20:00.
-  - Ячеечный пресет-движок `applyCellShiftPreset`, автопроверка коллизий `detectRosterConflicts`, табель Формы Т-13 с экспортом в CSV и печать графика в А4.
-- **Feature 201 (`расписание_дежурство::1_тап_смена_и_закрепление_дежурного_врача_из_шапки_сетки`)**:
-  - 1-тап управление дежурством врачей из шапки сетки `ScheduleGrid.tsx` (строки 1110–1260) и `ChairScheduleView.tsx` без модальных барьеров (Закон Анти-Матрёшки).
-  - 2-строчная шапка смен (`☀️ 08:00–14:00` / `🌙 14:00–20:00`), пульсирующий бейдж «● На смене», экспресс-смена врача с мягким инфо-тостом.
-  - Сквозная автоподстановка дежурного врача в слоты сетки, drag-and-drop, лист ожидания и CITO (`QuickBookingDrawer.tsx`, `AppointmentModal.tsx`, `NewAppointmentForm.tsx`).
-- **Feature 202 (`клиника_суверенитет::ликвидация_академического_блоата_и_процедурных_симуляторов_автономия_соло_врача`)**:
-  - Искоренение процедурных симуляторов (Мандат 8k): 1-клик пресет тяжелого пародонтита 6–8 мм вместо ручного ввода 192 точек карманов (`PeriodontalChartingModal.tsx`); 4 возрастных пресета детского прикуса (`PediatricMixedDentitionModal.tsx`); 1-клик списание пустых карпул анестетиков без комиссий из 3 человек (`WarehouseManagerModal.tsx`, `MdlpDisposalQueueModal.tsx`).
-  - Стоматологический Bounded Context (Мандат 8i): 1-клик соматическая норма в `VisitAnamnesisTab.tsx` без 50 больничных пунктов стационара.
-  - Автономия соло-врача (Мандат 8e, 8n): касса 54-ФЗ без ИНН физлиц, договор со строками `_______` без 403, запись за 5 секунд без обязательного ассистента, дефолтное кресло `DEFAULT_SOLO_CHAIR`, мягкий овердрафт склада.
+Dynamic documentation synchronization per Mandate 8h (Strict ban on working from outdated docs) for Features 203, 204, 205, and 206 (Wave 38):
+- **Feature 203 (`расписание_ростер::1_клик_копирование_графика_сменности_на_неделю_и_месяц`)**:
+  - 1-клик копирование недельного графика сменности в `DoctorShiftRosterModal.tsx` и `DoctorRosterToolbar.tsx`: «⏩ На след. неделю» и «📅 На месяц (4 нед)» (StomX / DentalPRO паритет).
+  - Чистые функции `copyWeekShiftsToTargetWeek`, `copyWeekShiftsToMonth`, `clearWeekShifts` в `doctorWeeklyScheduleGenerator.ts`; защита от накопления дубликатов; тач-таргеты $\ge 44\times 44\text{px}$ по Apple HIG (Мандат 8d).
+- **Feature 204 (`расписание_матрица::недельная_матрица_распределения_врачей_по_креслам_chair_roster_modal`)**:
+  - Недельная матрица распределения врачей по креслам в `ChairRosterModal.tsx` и `DoctorRosterMatrix.tsx` с табами «По креслам / кабинетам» и «По сотрудникам».
+  - 1-тап поповер назначения смен (`☀️ Утро 08:00–14:00`, `🌙 Вечер 14:00–20:00`, `🏢 Весь день 08:00–20:00`, `🚫 Выходной/Очистить`), быстрые чипы дежурных врачей в шапке кресел сетки `ScheduleGrid.tsx`, обнаружение коллизий `detectRosterConflicts`, тач-таргеты $\ge 44\text{px}$.
+- **Feature 205 (`документы_направление::ликвидация_блоата_025у_и_адаптация_стоматологического_пакета_направления`)**:
+  - Ликвидация чужеродного госпитального поликлинического блоата 025/у в `apps/web/src/utils/documentPackages.ts` per Mandate 8i.
+  - Адаптация «Стоматологического пакета направления (043/у, КЛКТ/ОПТГ, 027/у)» категории `referral`: направление на лучевую диагностику (КЛКТ/ОПТГ/ТРГ), выписка 027/у, медицинская карта 043/у, справка о посещении, расписка о выдаче документов (`RadiologyReferralModal.tsx`, `RadiologyViewerModal.tsx`).
+- **Feature 206 (`врач_автономия::планы_лечения_без_блокировки_по_сроку_30_дней_и_ликвидация_серых_кнопок`)**:
+  - Автономия врача по планам лечения > 30 дней (Мандат 8e п. 7): в `planToInvoiceValidator.ts` (строки 403–405, 569–571) и Fastify API `apps/api/src/routes/dentalLab.ts` (`/api/clinical/dental-lab/check-plan-continuity`) подтверждено, что срок давности плана не блокирует создание нарядов ЗТЛ, оказание услуг или оплату (`isExpiredUnapproved = false`, `requiresAdminOverride = false`).
+  - Ликвидация серых `disabled` кнопок: кнопка «В кассу (54-ФЗ)» в `TreatmentEstimator.tsx` (`disabled={false}`), отсутствие мертвых блокировок в `VisitView.tsx`, разблокировка отправки сообщений в `MessageDeliveryConsole.tsx`.
 
 ## 2. Synchronized Registries & Backlogs
-1. `docs/competitive-audit/FEATURES_REGISTRY.md`: строки для фич 199..202 зарегистрированы со статусом `[ДА]`, ценностью 5 и точными ссылками на код/тесты.
-2. `docs/competitive-audit/BACKLOG.md`: добавлены секции 4.70 (Фича 199), 4.71 (Фича 200), 4.72 (Фича 201), 4.73 (Фича 202); общий свод обновлен до 136 аддендум-фич.
-3. `docs/competitive-audit/OUR_CRM_MAP.md`: добавлены подробные подразделы 2.10.156..2.10.161 для полной синхронизации всей цепочки фич 197..202.
-4. `.agents/handoff.md`: зафиксировано актуальное состояние, контрольные тесты и соблюдение всех мандатов.
+1. `docs/competitive-audit/FEATURES_REGISTRY.md`: зарегистрированы строки для фич 203, 204, 205, 206 со статусом `[ДА]`, ценностью 5 и прямыми ссылками на исходный код и тесты.
+2. `docs/competitive-audit/BACKLOG.md`: добавлены подробные секции 4.74 (Фича 203), 4.75 (Фича 204), 4.76 (Фича 205), 4.77 (Фича 206); сводный реестр Части III обновлен до 140 аддендум-фич (Wave 15..38, фичи 64..189, 193..206).
+3. `docs/competitive-audit/OUR_CRM_MAP.md`: добавлены подробные подразделы 2.10.162 (Фича 203), 2.10.163 (Фича 204), 2.10.164 (Фича 205), 2.10.165 (Фича 206).
+4. `.agents/handoff.md`: обновлен для фиксации состояния Волны 38.
 
 ## 3. Machine Verification & Test Proof
-- `scheduleChairDoctorBinding.test.tsx`: 24/24 passed.
-- `scheduleStomxParityComprehensive.test.ts`: 15/15 passed.
-- `scheduleShiftRosterIntegration.test.tsx`: 27/27 passed.
-- `scheduleInlineChairManagement.test.tsx`: 7/7 passed.
-- `scheduleGridStomxInquisition.test.tsx`: 8/8 passed.
-- `emrPerioAutonomyInquisition.test.ts`: 37/37 passed.
-- `procedureMaterialDeductionAutonomy.test.tsx`: 12/12 passed.
-- Суммарно: **130/130 passed (100%)**.
+- `scheduleStomxDoctorChairRosterParity.test.tsx`: 11/11 passed.
+- `emrPerioAutonomyInquisition.test.ts`: 45/45 passed (включая Блок 8 на автономию врача и пакет направления 043/у).
+- Суммарно в тестовом запуске: **56/56 passed (100%)**.
+- `npm run check:encoding`: проверено 5057 файлов, замечаний нет (0 ошибок, UTF-8 без BOM).
 
 ## 4. Definition of Done (DoD)
 - [x] Строго изолированная область работы (`docs/competitive-audit/`, `.agents/handoff.md`).
 - [x] Zero TODO / Zero Mocks.
 - [x] Полная синхронизация 4 ключевых файлов документации по Мандату 8h.
 - [x] Кодировка UTF-8 без BOM (`npm run check:encoding` = 0 ошибок).
-- [x] Пофайловый `git add <file>` без захвата чужих и временных файлов.
+- [x] Пофайловый `git add <file>` без захвата чужих и незавершенных файлов.
 
 
