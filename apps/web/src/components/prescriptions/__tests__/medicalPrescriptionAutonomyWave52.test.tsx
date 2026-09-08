@@ -424,15 +424,12 @@ describe("Wave 52 (Feature 238): 1-Click Patient Prescription Memo for Messenger
 	});
 
 	describe("2. Pure Function formatPatientPrescriptionMemo Formatting & Safety Memo", () => {
-		const amoxiclav =
-			DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "amoxiclav_875_125") ??
-			DENTAL_MEDICATIONS_CATALOG[0];
-		const nimesil =
-			DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "nimesil_100") ??
-			DENTAL_MEDICATIONS_CATALOG[1];
-		const chlorhexidine =
-			DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "chlorhexidine_005") ??
-			DENTAL_MEDICATIONS_CATALOG[2];
+		const amoxiclav = (DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "amoxiclav_875_125") ??
+			DENTAL_MEDICATIONS_CATALOG[0]) as DentalMedicationPreset;
+		const nimesil = (DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "nimesil_100") ??
+			DENTAL_MEDICATIONS_CATALOG[1]) as DentalMedicationPreset;
+		const chlorhexidine = (DENTAL_MEDICATIONS_CATALOG.find((m) => m.id === "chlorhexidine_005") ??
+			DENTAL_MEDICATIONS_CATALOG[2]) as DentalMedicationPreset;
 
 		it("formats multi-drug prescription memo with clinic, doctor, patient and cleaned signaRu", () => {
 			const params: PatientPrescriptionMemoParams = {
