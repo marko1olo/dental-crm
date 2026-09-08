@@ -207,6 +207,91 @@ export async function executePatientAdministrativeProfileSaveAutonomy({
 	}
 }
 
+export function executeOpenPatientVisitAutonomy({
+	selectedPatient,
+	setSelectedPatientId = (id: string) =>
+		usePatientStore.getState().setSelectedPatientId(id),
+	setCurrentView = (view: "visit" | "patients" | "schedule" | "finance" | "warehouse" | "analytics" | "tasks" | "settings" | "audit") =>
+		useAppStore.getState().setCurrentView(view),
+	showToastFn = showToast,
+}: {
+	selectedPatient: Patient | null | undefined;
+	setSelectedPatientId?: (id: string) => void;
+	setCurrentView?: (view: any) => void;
+	showToastFn?: (
+		text: string,
+		type?: "success" | "error" | "info" | "warning",
+		duration?: number,
+	) => void;
+}) {
+	if (!selectedPatient) {
+		showToastFn(
+			"Выберите пациента из списка слева для открытия приёма 043/у",
+			"info",
+		);
+		return { executed: false, reason: "no_patient" as const };
+	}
+	setSelectedPatientId(selectedPatient.id);
+	setCurrentView("visit");
+	showToastFn(
+		`Открыт приём 043/у: ${selectedPatient.fullName}`,
+		"success",
+	);
+	return { executed: true, reason: "visit_opened" as const };
+}
+
+export function executeBookPatientAppointmentAutonomy({
+	selectedPatient,
+	setNewAppointmentDraft = (draft: any) =>
+		useScheduleStore.getState().setNewAppointmentDraft(draft),
+	setCurrentView = (view: any) =>
+		useAppStore.getState().setCurrentView(view),
+	showToastFn = showToast,
+}: {
+	selectedPatient: Patient | null | undefined;
+	setNewAppointmentDraft?: (draft: any) => void;
+	setCurrentView?: (view: any) => void;
+	showToastFn?: (
+		text: string,
+		type?: "success" | "error" | "info" | "warning",
+		duration?: number,
+	) => void;
+}) {
+	if (!selectedPatient) {
+		showToastFn(
+			"Выберите пациента из списка слева для записи в расписание",
+			"info",
+		);
+		return { executed: false, reason: "no_patient" as const };
+	}
+	const now = new Date();
+	const pad = (n: number) => String(n).padStart(2, "0");
+	const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+	const currentHour = now.getHours();
+	const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
+	const endHour = Math.min(startHour + 1, 21);
+	const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
+	const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
+
+	setNewAppointmentDraft({
+		patientId: selectedPatient.id,
+		doctorUserId: "",
+		assistantUserId: "",
+		chairId: "",
+		status: "planned",
+		startsAt,
+		endsAt,
+		reason: "Первичный приём и консультация",
+		comment: "",
+	});
+	setCurrentView("schedule");
+	showToastFn(
+		`Пациент ${selectedPatient.fullName} выбран для записи в расписание`,
+		"success",
+	);
+	return { executed: true, reason: "appointment_drafted" as const };
+}
+
 export type TextFieldChangeEvent = ChangeEvent<
 	HTMLInputElement | HTMLTextAreaElement
 >;
@@ -949,18 +1034,8 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 						<button
 							className="secondary-button"
 							type="button"
-							onClick={() => {
-								if (!selectedPatient) return;
-								usePatientStore
-									.getState()
-									.setSelectedPatientId(selectedPatient.id);
-								useAppStore.getState().setCurrentView("visit");
-								showToast(
-									`Открыт приём 043/у: ${selectedPatient.fullName}`,
-									"success",
-								);
-							}}
-							disabled={!selectedPatient}
+							onClick={() => executeOpenPatientVisitAutonomy({ selectedPatient })}
+							disabled={false}
 							style={{
 								display: "inline-flex",
 								alignItems: "center",
@@ -1019,34 +1094,9 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										className="patient-dropdown-item"
 										onClick={() => {
 											setIsPatientActionsMenuOpen(false);
-											if (!selectedPatient) return;
-											const now = new Date();
-											const pad = (n: number) => String(n).padStart(2, "0");
-											const todayIso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-											const currentHour = now.getHours();
-											const startHour = Math.min(Math.max(currentHour + 1, 9), 20);
-											const endHour = Math.min(startHour + 1, 21);
-											const startsAt = `${todayIso}T${pad(startHour)}:00:00.000Z`;
-											const endsAt = `${todayIso}T${pad(endHour)}:00:00.000Z`;
-
-											useScheduleStore.getState().setNewAppointmentDraft({
-												patientId: selectedPatient.id,
-												doctorUserId: "",
-												assistantUserId: "",
-												chairId: "",
-												status: "planned",
-												startsAt,
-												endsAt,
-												reason: "Первичный приём и консультация",
-												comment: "",
-											});
-											useAppStore.getState().setCurrentView("schedule");
-											showToast(
-												`Пациент ${selectedPatient.fullName} выбран для записи в расписание`,
-												"success",
-											);
+											executeBookPatientAppointmentAutonomy({ selectedPatient });
 										}}
-										disabled={!selectedPatient}
+										disabled={false}
 										style={{
 											display: "flex",
 											alignItems: "center",
@@ -1105,6 +1155,13 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										className="patient-dropdown-item"
 										onClick={() => {
 											setIsPatientActionsMenuOpen(false);
+											if (!selectedPatient) {
+												showToast(
+													"Выберите пациента из списка слева для трансфера в филиал",
+													"info",
+												);
+												return;
+											}
 											setIsBranchTransferModalOpen(true);
 										}}
 										style={{

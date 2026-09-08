@@ -760,6 +760,16 @@ describe("EMR, Periodontogram & Form 043/u — Mandates 8e, 8i, 8k, 8n Inquisiti
 			assert.ok(source.includes("dental_medical_card_043u"), "Пакет направления обязан включать стоматологическую карту 043/у вместо поликлинической 025/у");
 			assert.ok(source.includes("Стоматологический пакет направления"), "Название пакета должно отражать стоматологический профиль");
 		});
+
+		it("8.9. PatientsView.tsx: Кнопка 'Открыть приём' и запись в расписание не имеют мертвого disabled блокировщика", () => {
+			const patientsViewPath = path.resolve(webSrcDir, "PatientsView.tsx");
+			const source = fs.readFileSync(patientsViewPath, "utf-8");
+			assert.ok(!source.includes('disabled={!selectedPatient}'), "PatientsView не должен содержать disabled={!selectedPatient}");
+			assert.ok(source.includes('data-testid="patient-card-open-visit-btn"'), "Кнопка 'Открыть приём' должна присутствовать");
+			assert.ok(source.includes("Выберите пациента из списка слева для открытия приёма 043/у"), "Кнопка 'Открыть приём' должна выводить информативное уведомление при нажатии");
+			assert.ok(source.includes('data-testid="patient-card-book-appointment-btn"'), "Кнопка 'Записать в расписание' должна присутствовать");
+			assert.ok(source.includes("Выберите пациента из списка слева для записи в расписание"), "Кнопка записи должна выводить информативное уведомление при нажатии");
+		});
 	});
 });
 

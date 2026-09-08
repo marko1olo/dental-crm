@@ -18,6 +18,8 @@ import { fileURLToPath } from "node:url";
 import {
 	executePatientCoreSaveAutonomy,
 	executePatientAdministrativeProfileSaveAutonomy,
+	executeOpenPatientVisitAutonomy,
+	executeBookPatientAppointmentAutonomy,
 } from "../../../PatientsView";
 
 type MockFn = {
@@ -225,5 +227,87 @@ describe("Patient Profile Save Autonomy & Non-blocking Guidance", () => {
 		expect(patientsViewSource).toContain('data-testid="patient-core-save-btn"');
 		expect(patientsViewSource).toContain('style={{ minHeight: "36px" }}');
 		expect(patientsViewSource).toContain('data-testid="patient-admin-save-btn"');
+	});
+
+	it("9. guarantees patient-card-open-visit-btn and patient-card-book-appointment-btn are NOT hard-disabled", () => {
+		expect(patientsViewSource).not.toContain('disabled={!selectedPatient}');
+		expect(patientsViewSource).toContain('data-testid="patient-card-open-visit-btn"');
+		expect(patientsViewSource).toContain('data-testid="patient-card-book-appointment-btn"');
+	});
+
+	it("10. executeOpenPatientVisitAutonomy shows guidance toast when patient is not selected and opens visit when selected", () => {
+		const mockToast = vi.fn();
+		const mockSetPatientId = vi.fn();
+		const mockSetCurrentView = vi.fn();
+
+		// Case A: No patient selected -> informative guidance toast, no error, not executed
+		const resNoPatient = executeOpenPatientVisitAutonomy({
+			selectedPatient: null,
+			setSelectedPatientId: mockSetPatientId,
+			setCurrentView: mockSetCurrentView,
+			showToastFn: mockToast,
+		});
+		expect(resNoPatient.executed).toBe(false);
+		expect(resNoPatient.reason).toBe("no_patient");
+		expect(mockToast).toHaveBeenCalledWith(
+			"Выберите пациента из списка слева для открытия приёма 043/у",
+			"info",
+		);
+		expect(mockSetPatientId).not.toHaveBeenCalled();
+		expect(mockSetCurrentView).not.toHaveBeenCalled();
+
+		// Case B: Patient selected -> opens visit, sets store, shows success
+		const resWithPatient = executeOpenPatientVisitAutonomy({
+			selectedPatient: { id: "pat-123", fullName: "Смирнов Алексей Владимирович" } as any,
+			setSelectedPatientId: mockSetPatientId,
+			setCurrentView: mockSetCurrentView,
+			showToastFn: mockToast,
+		});
+		expect(resWithPatient.executed).toBe(true);
+		expect(resWithPatient.reason).toBe("visit_opened");
+		expect(mockSetPatientId).toHaveBeenCalledWith("pat-123");
+		expect(mockSetCurrentView).toHaveBeenCalledWith("visit");
+		expect(mockToast).toHaveBeenCalledWith(
+			"Открыт приём 043/у: Смирнов Алексей Владимирович",
+			"success",
+		);
+	});
+
+	it("11. executeBookPatientAppointmentAutonomy shows guidance toast when patient is not selected and drafts appointment when selected", () => {
+		const mockToast = vi.fn();
+		const mockSetDraft = vi.fn();
+		const mockSetCurrentView = vi.fn();
+
+		// Case A: No patient selected -> guidance toast
+		const resNoPatient = executeBookPatientAppointmentAutonomy({
+			selectedPatient: null,
+			setNewAppointmentDraft: mockSetDraft,
+			setCurrentView: mockSetCurrentView,
+			showToastFn: mockToast,
+		});
+		expect(resNoPatient.executed).toBe(false);
+		expect(resNoPatient.reason).toBe("no_patient");
+		expect(mockToast).toHaveBeenCalledWith(
+			"Выберите пациента из списка слева для записи в расписание",
+			"info",
+		);
+		expect(mockSetDraft).not.toHaveBeenCalled();
+		expect(mockSetCurrentView).not.toHaveBeenCalled();
+
+		// Case B: Patient selected -> drafts appointment, navigates to schedule
+		const resWithPatient = executeBookPatientAppointmentAutonomy({
+			selectedPatient: { id: "pat-456", fullName: "Кузнецова Елена Павловна" } as any,
+			setNewAppointmentDraft: mockSetDraft,
+			setCurrentView: mockSetCurrentView,
+			showToastFn: mockToast,
+		});
+		expect(resWithPatient.executed).toBe(true);
+		expect(resWithPatient.reason).toBe("appointment_drafted");
+		expect(mockSetDraft).toHaveBeenCalled();
+		expect(mockSetCurrentView).toHaveBeenCalledWith("schedule");
+		expect(mockToast).toHaveBeenCalledWith(
+			"Пациент Кузнецова Елена Павловна выбран для записи в расписание",
+			"success",
+		);
 	});
 });
