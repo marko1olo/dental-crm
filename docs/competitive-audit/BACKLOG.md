@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-09 / WAVE 59): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 185 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 248 ФИЧ: 63 КАНОНИЧЕСКИЕ + 185 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-09 / WAVE 60): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 186 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 249 ФИЧ: 63 КАНОНИЧЕСКИЕ + 186 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2667,9 +2667,36 @@
 
 ---
 
+## 186. `клинический_прием_автономия::ликвидация_блокировок_сохранения_пациента_привязка_снимков_к_визиту_и_снижение_трения_анестезии` [РЕАЛИЗОВАНО] (Wave 60 / Feature 249)
+- **Идея**: Устранение критических препятствий и палок в колёса персоналу и врачам клиники:
+  1. *Разблокировка сохранения реквизитов пациента*: неполный или некорректный интервал времени приёма (start без end, end без start, end <= start) и опечатки в ИНН не должны блокировать сохранение паспорта, СНИЛС, полиса и договора (Мандаты 8e, 8n);
+  2. *Прямая привязка снимков визиографа к visit_id / patient_id*: изоляция снимков и ИИ-анализов от гонок переключения карточек пациентов;
+  3. *Снижение трения анестезии*: удаление фиктивных демо-данных пациента («Смирнова Е.В.»), 1-клик стандартная физиологическая норма (Артикаин 1:200 000, 1.7 мл, аспирация (-)), снятие disabled-замков и приведение к дизайн-токенам темы.
+- **Статус**:
+  - **clinicProfileUtils.ts & usePatientLogic.ts**:
+    * Функция `buildPatientAdministrativeProfilePayload` санирует неполные интервалы времени и невалидный ИНН в `null` без фатальной ошибки;
+    * `patientAdministrativeProfileDraftIssue` очищен от временных блокировок;
+    * `patientAdministrativeProfileTimeWarning` выдает мягкий toast-варнинг;
+    * В `savePatientAdministrativeProfile` убран блокирующий `return false`.
+  - **VisiographAnalyzer.tsx & VisitDiagnosticsTab.tsx**:
+    * Добавлен опциональный проп `patientId`, вычислен `effectivePatientId = patientId ?? selectedPatientId`;
+    * Race-condition guard в `processFile` и `handleRunAiAnalysis` предотвращает утечку снимков чужому пациенту;
+    * `VisitDiagnosticsTab` передает `patientId={activePatient?.id}`;
+    * Удалена дублирующая кнопка `btn-hotpath-norma-043`.
+  - **AnesthesiaAspirationJournalModal.tsx**:
+    * Очищены фиктивные дефолты пациента;
+    * Добавлен 1-клик пресет `btn-anesthesia-standard-norm-preset` (`handleApplyStandardNormPreset`);
+    * Сняты замки `disabled={isLocked}`;
+    * Все стили переведены на токены `var(--paper)`, `var(--line)`, `var(--ink)`;
+    * Кнопки соответствуют тач-таргетам $\ge 44\text{px}$.
+  - **Файлы**: `apps/web/src/utils/clinicProfileUtils.ts`, `apps/web/src/hooks/domains/usePatientLogic.ts`, `apps/web/src/components/imaging/VisiographAnalyzer.tsx`, `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`, `apps/web/src/components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`.
+  - **Тесты**: `apps/web/src/components/visit/__tests__/clinicalFrictionAndAutonomyWave60.test.tsx` (13/13 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0).
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 185 дополнительных системных аддендум-фич клинической автономии (Wave 15..59, фичи 64..248) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 186 дополнительных системных аддендум-фич клинической автономии (Wave 15..60, фичи 64..249) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

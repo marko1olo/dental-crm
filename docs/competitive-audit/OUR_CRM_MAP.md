@@ -2086,6 +2086,29 @@
 - **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `ChairRosterModal.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/chairSubShiftsAndToolbarParityWave59.test.tsx` (5/5 pass), Waves 55..59 regression (35/35 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `14844b0ec`.
 
+### 2.10.208. Ликвидация блокировок сохранения реквизитов пациента, прямая привязка визиографа и автономия анестезии (Wave 60 / Feature 249) [РЕАЛИЗОВАНО]
+- **Назначение**: Устранение критического клинического трения и блокировок в работе врачей и персонала частной стоматологии при сохранении реквизитов пациентов, диагностике на визиографе и заполнении протоколов анестезии (Мандаты 8c, 8d, 8e, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Санитаризация времени и ИНН при сохранении административного профиля*:
+     - В `clinicProfileUtils.ts` функция `buildPatientAdministrativeProfilePayload` автоматически приводит неполные или инвертированные временные окна приёма (`start` без `end`, `end` без `start`, `end <= start`) и некорректный ИНН физлиц (не 10 и не 12 цифр) в `null` без выброса блокирующей ошибки;
+     - `patientAdministrativeProfileDraftIssue` очищен от строгих блокировок по времени;
+     - Функция `patientAdministrativeProfileTimeWarning` выдает информативный toast-варнинг;
+     - В `usePatientLogic.ts` функция `savePatientAdministrativeProfile` больше не прерывается (`return false`), обеспечивая сохранение паспорта, СНИЛС, полиса и договора без бюрократических препятствий.
+  2. *Прямая привязка визиографа к `patientId` визита и защита от гонок*:
+     - В `VisiographAnalyzer.tsx` добавлен опциональный параметр `readonly patientId?: string | undefined;`, вычисляющий `effectivePatientId = patientId ?? selectedPatientId;` для изоляции работы от активной карточки;
+     - `effectivePatientId` задействован в загрузке истории, сохранении скана, ИИ-сегментации, применении находок в зубную формулу и Форму 043/у;
+     - В `processFile` и `handleRunAiAnalysis` внедрен race-condition guard: повторное считывание актуального ID пациента предотвращает запись снимка или диагнозов чужому пациенту при параллельном переключении вкладок;
+     - `VisitDiagnosticsTab.tsx` передает `patientId={activePatient?.id}`;
+     - Из тулбара фильтров удалена дублирующая кнопка `btn-hotpath-norma-043`.
+  3. *Снижение трения анестезии и автономия врача (Мандаты 8e, 8k, 8n)*:
+     - В `AnesthesiaAspirationJournalModal.tsx` удалены фиктивные демо-дефолты («Смирнова Екатерина Васильевна», «043/у-2026/891», зуб 46, возраст 36, вес 68);
+     - Реализован 1-клик пресет физиологической нормы `handleApplyStandardNormPreset` (Артикаин 1:200 000, 1.7 мл, аспирационная проба отрицательная в двух плоскостях, онемение подтверждено, кнопка `btn-anesthesia-standard-norm-preset`);
+     - Сняты блокировки `disabled={isLocked}` с кнопок переноса в дневник визита и быстрого закрытия;
+     - Все границы и фоны переведены на токены `var(--paper)`, `var(--line)`, `var(--ink)` с устранением `var(--border)`;
+     - Все кнопки удовлетворяют тач-таргетам $\ge 44\times 44\text{px}$.
+- **Файлы**: `apps/web/src/utils/clinicProfileUtils.ts`, `apps/web/src/hooks/domains/usePatientLogic.ts`, `apps/web/src/components/imaging/VisiographAnalyzer.tsx`, `apps/web/src/components/visit/VisitDiagnosticsTab.tsx`, `apps/web/src/components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`.
+- **Тесты**: `apps/web/src/components/visit/__tests__/clinicalFrictionAndAutonomyWave60.test.tsx` (13/13 pass), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `92b262880`.
+
 
 
 
