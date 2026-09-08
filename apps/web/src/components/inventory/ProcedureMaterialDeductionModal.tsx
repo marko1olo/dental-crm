@@ -666,11 +666,12 @@ export function ProcedureMaterialDeductionModal({
 									: ""
 							}`}
 							data-testid="preset-btn-anesthesia"
+							data-testid-alt="btn-dispense-standard-anesthesia-kit"
 							onClick={() => handleApplyPackage(["SANPIN_PPE", "A16.07.004"])}
-							title="Стандартная анестезия 1.7 мл: СИЗ + карпула Артикаина 1.7 мл + игла 30G"
+							title="Стандартный набор: анестезия 1.7 мл + карпульная игла + валики (Мандат 8e п. 10, 8k)"
 						>
 							<Zap size={14} className="shrink-0 text-amber-500" />
-							<span>Стандартная анестезия 1.7 мл</span>
+							<span>Стандартный набор: анестезия 1.7 мл + карпульная игла + валики</span>
 						</button>
 
 						<button
@@ -1238,6 +1239,7 @@ export function ProcedureMaterialDeductionModal({
 							type="button"
 							className={`inventory-confirm-deduct-btn ${summary.hasDeficit ? "has-deficit-warning" : ""}`}
 							data-testid="confirm-deduction-btn"
+							data-testid-alt="btn-confirm-dispense"
 							onClick={() => {
 								if (isDeducting) return;
 

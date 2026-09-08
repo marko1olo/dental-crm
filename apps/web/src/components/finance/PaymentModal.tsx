@@ -18,6 +18,7 @@ import {
 	CheckCircle,
 	CheckCircle2,
 	AlertCircle,
+	AlertTriangle,
 	Coins,
 	Building2,
 	User,
@@ -47,13 +48,15 @@ export interface PaymentModalProps {
 	readonly isOpen: boolean;
 	readonly patientId: string;
 	readonly patientName: string;
-	readonly amountKopecks: number;
+	readonly amountKopecks?: number | undefined;
+	readonly amountRub?: number | undefined;
 	readonly invoiceId?: string | undefined;
 	readonly visitId?: string | undefined;
 	readonly documentId?: string | undefined;
 	readonly defaultMethod?: PaymentMethodTab | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly patientDebtRub?: number | undefined;
 	readonly cashierName?: string | undefined;
 	readonly doctorName?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
@@ -73,12 +76,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	patientId,
 	patientName,
 	amountKopecks,
+	amountRub: propAmountRub,
 	invoiceId,
 	visitId,
 	documentId,
 	defaultMethod = "card_terminal",
 	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
+	patientDebtRub = 0,
 	cashierName,
 	doctorName,
 	clinicLegalName = "ООО «ДЕНТЕ»",
@@ -99,7 +104,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const [isWarranty100, setIsWarranty100] = useState<boolean>(false);
 
 	// Multi-tender split payment state
-	const rawTotalDueRub = Number((amountKopecks / 100).toFixed(2));
+	const rawTotalDueRub =
+		propAmountRub !== undefined
+			? propAmountRub
+			: amountKopecks !== undefined
+				? Number((amountKopecks / 100).toFixed(2))
+				: 0;
 	const totalDueRub = isWarranty100 ? 0 : rawTotalDueRub;
 
 	const [splitCardRub, setSplitCardRub] = useState<number>(totalDueRub);
@@ -144,7 +154,76 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 		setSplitSbpRub(0);
 		setSplitCertificateRub(0);
 		setSplitBonusRub(0);
-		showToast(`Применен пресет: Без сдачи (${rawTotalDueRub.toLocaleString("ru-RU")} ₽ нал)`, "info", 2000);
+		showToast(`Применен пресет: Без сдачи (Ровно сумма счёта: ${rawTotalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2000);
+	};
+
+	const applySpendAllDepositBonusPreset = () => {
+		setIsWarranty100(false);
+		const totalKop = rubToKopecks(totalDueRub);
+		const availDepositRub = patientDepositRub > 0 ? patientDepositRub : 0;
+		const availFamilyRub = patientFamilyBalanceRub > 0 ? patientFamilyBalanceRub : 0;
+		const maxAvailRub = Math.max(availDepositRub, availFamilyRub);
+		const depositKop = rubToKopecks(maxAvailRub);
+
+		if (depositKop >= totalKop && totalKop > 0) {
+			setActiveMethod("family_deposit");
+			setSplitDepositRub(totalDueRub);
+			setSplitCardRub(0);
+			setSplitCashRub(0);
+			setSplitSbpRub(0);
+			setSplitCertificateRub(0);
+			setSplitBonusRub(0);
+			showToast(`Применен пресет: Списан весь аванс/бонусы (${totalDueRub.toLocaleString("ru-RU")} ₽)`, "info", 2500);
+		} else if (depositKop > 0) {
+			const usedDepKop = Math.min(totalKop, depositKop);
+			const remKop = Math.max(0, totalKop - usedDepKop);
+			const usedRub = kopecksToRub(usedDepKop);
+			const remRub = kopecksToRub(remKop);
+			setSplitDepositRub(usedRub);
+			setSplitCardRub(remRub);
+			setSplitCashRub(0);
+			setSplitSbpRub(0);
+			setSplitCertificateRub(0);
+			setSplitBonusRub(0);
+			setActiveMethod("split");
+			showToast(
+				`Применен пресет: Списан весь аванс/бонусы ${usedRub.toLocaleString("ru-RU")} ₽ + остаток ${remRub.toLocaleString("ru-RU")} ₽ картой`,
+				"info",
+				2500,
+			);
+		} else {
+			setActiveMethod("split");
+			const bonusAmount = Math.min(totalDueRub, 500);
+			const cardRest = Math.max(0, Number((totalDueRub - bonusAmount).toFixed(2)));
+			setSplitBonusRub(bonusAmount);
+			setSplitCardRub(cardRest);
+			setSplitCashRub(0);
+			setSplitDepositRub(0);
+			setSplitSbpRub(0);
+			setSplitCertificateRub(0);
+			showToast(`Аванс 0 ₽. Применено списание бонусов (${bonusAmount} ₽) + Карта (${cardRest} ₽)`, "info", 2500);
+		}
+	};
+
+	const apply5050CashCardPreset = () => {
+		setIsWarranty100(false);
+		const totalKop = rubToKopecks(totalDueRub);
+		const halfKop = Math.floor(totalKop / 2);
+		const remKop = totalKop - halfKop;
+		const cashRub = kopecksToRub(halfKop);
+		const cardRub = kopecksToRub(remKop);
+		setSplitCashRub(cashRub);
+		setSplitCardRub(cardRub);
+		setSplitDepositRub(0);
+		setSplitSbpRub(0);
+		setSplitCertificateRub(0);
+		setSplitBonusRub(0);
+		setActiveMethod("split");
+		showToast(
+			`Применен пресет: 50/50 Нал (${cashRub.toLocaleString("ru-RU")} ₽) + Карта (${cardRub.toLocaleString("ru-RU")} ₽)`,
+			"info",
+			2500,
+		);
 	};
 
 	const applyFullCardPreset = () => {
@@ -161,7 +240,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 	const applyDepositPlusCardPreset = () => {
 		setIsWarranty100(false);
-		const available = Math.min(rawTotalDueRub, patientDepositRub);
+		const available = Math.min(rawTotalDueRub, Math.max(0, patientDepositRub));
 		const remainder = Number((rawTotalDueRub - available).toFixed(2));
 		setSplitDepositRub(available);
 		setSplitCardRub(remainder);
@@ -331,18 +410,23 @@ th { background: #f8fafc; font-weight: 700; }
 			const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 			const changeNote = cashChange.changeRub > 0 ? ` (получено ${receivedCashRub} ₽, сдача ${cashChange.changeRub} ₽)` : "";
 
+			const effectiveAmountRub =
+				receivedCashRub > 0 && receivedCashRub < totalDueRub
+					? receivedCashRub
+					: totalDueRub;
+
 			// Record Cash transaction in backend via canonical billing payments endpoint
 			const res = await fetch("/api/billing/payments", {
 				method: "POST",
 				headers,
 				body: JSON.stringify({
 					patientId,
-					amountRub: totalDueRub,
+					amountRub: effectiveAmountRub,
 					method: "cash",
 					visitId: visitId || null,
 					documentId: documentId || (invoiceId ? invoiceId : null),
 					clientMutationId,
-					note: `Оплата наличными через кассу (${totalDueRub} ₽ • ${effectiveCashier})${changeNote}${innNote}`,
+					note: `Оплата наличными через кассу (${effectiveAmountRub} ₽ • ${effectiveCashier})${changeNote}${innNote}`,
 				}),
 			});
 
@@ -357,10 +441,10 @@ th { background: #f8fafc; font-weight: 700; }
 			}
 
 			const paymentData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-			showToast(`Оплата ${totalDueRub} ₽ наличными принята в кассу (${effectiveCashier})`, "success");
+			showToast(`Оплата ${effectiveAmountRub} ₽ наличными принята в кассу (${effectiveCashier})`, "success");
 			onSuccess({
 				method: "cash",
-				amountKopecks: isWarranty100 ? 0 : amountKopecks,
+				amountKopecks: isWarranty100 ? 0 : rubToKopecks(effectiveAmountRub),
 				...paymentData,
 			});
 			onClose();
@@ -658,7 +742,35 @@ th { background: #f8fafc; font-weight: 700; }
 							data-testid="preset-exact-cash"
 						>
 							<Banknote size={14} className={activeMethod === "cash" && cashChange.isExact ? "text-white" : "text-emerald-600"} />
-							<span>Без сдачи ({totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+							<span>Без сдачи (Ровно сумма счёта: {totalDueRub.toLocaleString("ru-RU")} ₽)</span>
+						</button>
+						<button
+							type="button"
+							onClick={applySpendAllDepositBonusPreset}
+							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0)))
+									? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-purple-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-spend-all-deposit-bonus"
+							title="Списать весь доступный аванс или бонусы"
+						>
+							<Wallet size={14} className={(activeMethod === "family_deposit" || (activeMethod === "split" && (splitDepositRub > 0 || splitBonusRub > 0))) ? "text-white" : "text-purple-600"} />
+							<span>Списать весь аванс/бонусы</span>
+						</button>
+						<button
+							type="button"
+							onClick={apply5050CashCardPreset}
+							className={`min-h-[44px] sm:min-h-[34px] px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+								activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0
+									? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-indigo-400 text-[var(--ink,#0f172a)]"
+							}`}
+							data-testid="preset-50-50-cash-card"
+							title="50% суммы наличными в кассу + 50% картой через терминал"
+						>
+							<Coins size={14} className={activeMethod === "split" && splitCashRub > 0 && splitCardRub > 0 ? "text-white" : "text-indigo-600"} />
+							<span>50/50 Нал + Карта</span>
 						</button>
 						<button
 							type="button"
@@ -690,6 +802,20 @@ th { background: #f8fafc; font-weight: 700; }
 						)}
 					</div>
 				</div>
+
+				{/* Debt Autonomy Banner (Mandates 8e & 8n: Patient debt never blocks receipt or tender) */}
+				{(patientDebtRub > 0 || patientDepositRub < 0) && (
+					<div
+						data-testid="debt-autonomy-banner"
+						className="px-3.5 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs font-medium text-amber-700 dark:text-amber-300 flex items-center gap-2"
+					>
+						<AlertTriangle size={14} className="shrink-0 text-amber-600" />
+						<span>
+							Задолженность пациента: {(patientDebtRub > 0 ? patientDebtRub : Math.abs(patientDepositRub)).toLocaleString("ru-RU")} ₽.
+							Мандат 8e: Долг не блокирует приём оплаты на фактически внесённую сумму и фискализацию чека.
+						</span>
+					</div>
+				)}
 
 				{/* Method Selector Tabs */}
 				<div className="p-3 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto">
@@ -1066,7 +1192,15 @@ th { background: #f8fafc; font-weight: 700; }
 								data-testid="btn-cash-submit"
 							>
 								<CheckCircle size={16} />
-								<span>{isSubmittingCash ? "Фиксация..." : `Подтвердить прием ${amountRub} ₽ в кассу`}</span>
+								<span>
+									{isSubmittingCash
+										? "Фиксация..."
+										: `Подтвердить прием ${
+												receivedCashRub > 0 && receivedCashRub < totalDueRub
+													? receivedCashRub.toLocaleString("ru-RU")
+													: totalDueRub.toLocaleString("ru-RU")
+											} ₽ в кассу`}
+								</span>
 							</button>
 						</div>
 					) : activeMethod === "split" ? (

@@ -139,8 +139,8 @@ export function SterilizationJournalModal({
 
 	if (!isOpen) return null;
 
-	// ─── 1-CLICK ADD QUICK AUTOCLAVE CYCLE (134°C, 2.1 bar, 5 min) ─────────────
-	const handleAddQuickAutoclaveCycle = () => {
+	// ─── 1-CLICK CONFIRM AUTOCLAVE BATCH (134°C, 2.1 bar, 5 min) + KRAFT SERIALS ─
+	const handleConfirmAutoclaveBatch = () => {
 		const now = new Date();
 		const dateIso = now.toISOString().slice(0, 10);
 		const time = now.toTimeString().slice(0, 5);
@@ -161,6 +161,7 @@ export function SterilizationJournalModal({
 			secretSalt: defaultSterilizer.code,
 		});
 
+		const packsCount = 6;
 		const newCycle: Form257CycleRecord = {
 			id: `cycle-quick-${Date.now()}`,
 			date: dateIso,
@@ -172,7 +173,7 @@ export function SterilizationJournalModal({
 			regimeId: "steam_134_5min",
 			regimeNameRu: "Паровой 134°C / 5 мин (2.15 бар) — B-класс",
 			itemsDescriptionRu: "Смотровые лотки терапевта, эндо-наборы, наконечники в крафт-пакетах",
-			packsCount: 6,
+			packsCount,
 			packagingType: "kraft_heat_sealed",
 			actualTemperatureCelsius: 134.0,
 			actualPressureBar: 2.15,
@@ -190,12 +191,55 @@ export function SterilizationJournalModal({
 			createdAt: now.toISOString(),
 		};
 
+		const batchId = `${defaultSterilizer.code}-${dateIso.replace(/-/g, "").slice(2)}-C${nextCycleNum}`;
+		const expiry = calculateKraftSterilityExpiration(dateIso, "kraft_heat_sealed");
+
+		const generatedKraftPackages: KraftPackageItem[] = [];
+		for (let s = 1; s <= packsCount; s++) {
+			const barcode = generateKraftBarcode({
+				batchNumber: batchId,
+				serialNumber: s,
+				expDateIsoOrFormatted: expiry.expDateIso,
+				sterilizerCode: defaultSterilizer.code,
+			});
+
+			generatedKraftPackages.push({
+				id: `kraft-batch-${Date.now()}-${s}`,
+				barcode,
+				batchNumber: batchId,
+				packageSerialNumber: s,
+				toolSetNameRu: `Смотровой стоматологический набор №${s}`,
+				itemsIncluded: ["Зеркало стоматологическое", "Зонд угловой", "Пинцет анатомический"],
+				packagingType: "kraft_heat_sealed",
+				packagingNameRu: "Крафт-пакет термосвариваемый",
+				sterilizerCode: defaultSterilizer.code,
+				cycleNumber: nextCycleNum,
+				packDate: dateIso,
+				expDate: expiry.expDateIso,
+				daysLifespan: expiry.daysLifespan,
+				daysRemaining: expiry.daysRemaining,
+				status: expiry.status,
+				operatorFullName: nurseOperator,
+				indicatorVerified: true,
+				notes: `Партия ${batchId}, пакет №${s}. 100% стерильно по СанПиН 3.3686-21.`,
+				createdAt: now.toISOString(),
+			});
+		}
+
 		setCycles((prev) => [newCycle, ...prev]);
+		setKraftPackages((prev) => [...generatedKraftPackages, ...prev]);
+		if (generatedKraftPackages[0]) {
+			setSelectedPackageForSticker(generatedKraftPackages[0]);
+		}
+
 		showToast(
-			`Цикл №${nextCycleNum} (${defaultSterilizer.code}: 134°C / 2.15 bar, 5 мин) успешно зафиксирован в журнале 257/у`,
+			`Партия цикла №${nextCycleNum} (${defaultSterilizer.code}: 134°C / 2.15 bar, 5 мин) подтверждена: сгенерировано ${packsCount} крафт-пакетов с серийными номерами и штрихкодами`,
 			"success",
+			3500,
 		);
 	};
+
+	const handleAddQuickAutoclaveCycle = handleConfirmAutoclaveBatch;
 
 	// ─── 1-CLICK ADD QUICK AZOPYRAM TEST (NEGATIVE / 0 BLOOD) ───────────────────
 	const handleAddQuickAzopyram = () => {
@@ -725,11 +769,12 @@ export function SterilizationJournalModal({
 								<button
 									type="button"
 									className="btn-steril-primary"
-									onClick={handleAddQuickAutoclaveCycle}
-									title="Быстро зафиксировать завершение цикла автоклавирования B-класса (134°C, 2.1 bar, 5 мин)"
+									onClick={handleConfirmAutoclaveBatch}
+									data-testid="btn-confirm-autoclave-batch"
+									title="1-клик подтверждение партии стерилизации автоклава B-класса (134°C, 2.1 bar, 5 мин) с генерацией серийных номеров крафт-пакетов по СанПиН 3.3686-21"
 								>
 									<Plus size={16} />
-									<span>+ Быстрый цикл 134°C (1 клик)</span>
+									<span>+ Подтвердить партию автоклава (1 клик)</span>
 								</button>
 								<button
 									type="button"
