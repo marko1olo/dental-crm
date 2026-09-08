@@ -211,11 +211,22 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		fullName: string;
 		phone?: string | null;
 	} | null> => {
-		const trimmedName = newPatientFullName.trim();
-		if (!trimmedName) {
-			setError("Укажите ФИО пациента для быстрой записи");
-			showToast("Укажите ФИО пациента", "warning", 3000);
-			return null;
+		const rawName = newPatientFullName.trim();
+		const rawPhone = newPatientPhone.trim();
+		let effectiveName = rawName;
+		if (!effectiveName) {
+			if (rawPhone) {
+				effectiveName = `Пациент (${rawPhone})`;
+			} else {
+				showToast("Укажите имя или телефон пациента для быстрой записи", "warning");
+				if (typeof document !== "undefined") {
+					const nameInput = document.querySelector<HTMLInputElement>(
+						'[data-testid="appointment-quick-patient-name"]',
+					);
+					nameInput?.focus();
+				}
+				return null;
+			}
 		}
 		setIsCreatingInlinePatient(true);
 		setError(null);
@@ -224,15 +235,15 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			if (onQuickCreatePatient) {
 				const res = await Promise.resolve(
 					onQuickCreatePatient({
-						fullName: trimmedName,
-						phone: newPatientPhone.trim() || null,
+						fullName: effectiveName,
+						phone: rawPhone || null,
 					}),
 				);
 				if (res?.id) {
 					created = {
 						id: res.id,
-						fullName: res.fullName || trimmedName,
-						phone: newPatientPhone.trim() || null,
+						fullName: res.fullName || effectiveName,
+						phone: rawPhone || null,
 					};
 				}
 			}
@@ -244,8 +255,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							"Content-Type": "application/json",
 						}),
 						body: JSON.stringify({
-							fullName: trimmedName,
-							phone: newPatientPhone.trim() || null,
+							fullName: effectiveName,
+							phone: rawPhone || null,
 						}),
 					});
 					if (res.ok) {
@@ -253,8 +264,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						if (data?.id) {
 							created = {
 								id: data.id,
-								fullName: data.fullName || trimmedName,
-								phone: data.phone || newPatientPhone.trim() || null,
+								fullName: data.fullName || effectiveName,
+								phone: data.phone || rawPhone || null,
 							};
 						}
 					}
@@ -265,8 +276,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			if (!created?.id) {
 				created = {
 					id: `pat-quick-${Date.now()}`,
-					fullName: trimmedName,
-					phone: newPatientPhone.trim() || null,
+					fullName: effectiveName,
+					phone: rawPhone || null,
 				};
 			}
 			setCreatedPatients((prev) => [created!, ...prev]);
@@ -573,7 +584,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		if (!appointment || isSaving) return;
 
 		let effectivePatientId = patientId;
-		if (isInlineNewPatient && !effectivePatientId && newPatientFullName.trim()) {
+		if (isInlineNewPatient && !effectivePatientId && (newPatientFullName.trim() || newPatientPhone.trim())) {
 			const created = await handleCreateInlinePatient();
 			if (created?.id) {
 				effectivePatientId = created.id;
@@ -1001,8 +1012,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 										<button
 											type="button"
 											onClick={() => handleCreateInlinePatient()}
-											disabled={isCreatingInlinePatient || !newPatientFullName.trim()}
-											className="min-h-[40px] px-3.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+											disabled={isCreatingInlinePatient}
+											className="min-h-[44px] px-3.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all disabled:opacity-50"
 											data-testid="appointment-quick-patient-save-btn"
 										>
 											<Check size={14} />
@@ -1368,7 +1379,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					</button>
 					<button
 						type="button"
-						onClick={() => void handleSave()}
+						onClick={(e) => handleSave(e)}
 						disabled={isSaving}
 						className={`flex-1 min-h-[48px] px-6 text-[var(--on-teal)] font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
 							collision.isCitoOverbooking || isCito
@@ -1377,6 +1388,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 								? "bg-amber-600 hover:bg-amber-700 text-white"
 								: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95"
 						}`}
+						data-testid="appointment-modal-save-btn"
 					>
 						<Check size={18} />
 						<span>
