@@ -33,6 +33,7 @@ import {
 	Layers,
 	Mic,
 	MicOff,
+	Printer,
 	RotateCcw,
 	Shield,
 	ShieldAlert,
@@ -83,9 +84,161 @@ export interface PeriodontalChartingModalProps {
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly doctorName?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicPhone?: string | undefined;
 	readonly initialTeeth?: readonly PerioToothRecord[] | undefined;
 	readonly onSave?: ((teeth: readonly PerioToothRecord[], summary: PerioChartSummary) => void | Promise<void>) | undefined;
 	readonly onInsertToProtocol?: ((protocolText: string) => void) | undefined;
+}
+
+export interface PatientPerioSummaryIndices {
+	readonly ohis: {
+		readonly score: number;
+		readonly rating: string;
+	};
+	readonly bopPercent: number;
+	readonly bopGrade: string;
+	readonly plaquePercent: number;
+	readonly meanPocketDepthMm: number;
+	readonly deepPocketsCount: number;
+}
+
+export function extractPatientPerioSummaryIndices(
+	teeth: readonly PerioToothRecord[],
+	summary?: PerioChartSummary | undefined,
+	customOhis?: { ohiS: number; interpretation: string; grade: string } | undefined,
+): {
+	indices: PatientPerioSummaryIndices;
+	aapEfpDiagnosis: string;
+} {
+	const currentSummary = summary ?? calculatePerioIndices(teeth as PerioToothRecord[]);
+
+	let ohisScore = (currentSummary as any)?.indices?.ohis?.score;
+	let ohisRating = (currentSummary as any)?.indices?.ohis?.rating;
+
+	if (ohisScore === undefined || ohisRating === undefined) {
+		if (customOhis) {
+			ohisScore = customOhis.ohiS;
+			ohisRating =
+				customOhis.grade === "good"
+					? "Хорошая"
+					: customOhis.grade === "moderate"
+					? "Удовлетворительная"
+					: "Плохая";
+		} else {
+			const indexTeethNumbers = [16, 11, 26, 36, 31, 46];
+			let totalDebris = 0;
+			let totalCalculus = 0;
+			let counted = 0;
+
+			for (const num of indexTeethNumbers) {
+				const tooth = teeth.find((t) => t.toothNumber === num);
+				if (tooth && !tooth.isMissing) {
+					const isUpper = num < 30;
+					const site = isUpper ? tooth.midBuccal : tooth.midLingual;
+					if (site) {
+						totalDebris += site.plaque ? 1 : 0;
+						totalCalculus += site.calculus ? 1 : 0;
+						counted++;
+					}
+				}
+			}
+
+			const di = counted > 0 ? totalDebris / counted : 0;
+			const ci = counted > 0 ? totalCalculus / counted : 0;
+			const ohiS = Math.round((di + ci) * 10) / 10;
+			ohisScore = ohiS;
+			ohisRating = ohiS <= 1.2 ? "Хорошая" : ohiS <= 3.0 ? "Удовлетворительная" : "Плохая";
+		}
+	}
+
+	const bopPercent =
+		(currentSummary as any)?.indices?.bopPercent ?? currentSummary.fmbsPercent;
+	const bopGrade =
+		(currentSummary as any)?.indices?.bopGrade ??
+		(bopPercent <= 10
+			? "норма"
+			: bopPercent <= 30
+			? "умеренное воспаление"
+			: "выраженное воспаление");
+
+	const plaquePercent =
+		(currentSummary as any)?.indices?.plaquePercent ?? currentSummary.fmpsPercent;
+	const meanPocketDepthMm =
+		(currentSummary as any)?.indices?.meanPocketDepthMm ?? currentSummary.meanPocketDepthMm;
+
+	let countedPocketsOver3 = 0;
+	for (const t of teeth) {
+		if (t.isMissing) continue;
+		for (const k of PERIO_SITE_KEYS) {
+			if ((t[k]?.probingDepthMm ?? 0) > 3) {
+				countedPocketsOver3++;
+			}
+		}
+	}
+	const deepPocketsCount =
+		(currentSummary as any)?.indices?.deepPocketsCount ??
+		(countedPocketsOver3 > 0 ? countedPocketsOver3 : currentSummary.deepPocketsCount);
+
+	let aapEfpDiagnosis = (currentSummary as any)?.aapEfpDiagnosis;
+	if (!aapEfpDiagnosis) {
+		try {
+			const diag = calculateAapEfpStagingAndGrading(teeth, currentSummary);
+			if (diag && diag.severity !== "intact") {
+				aapEfpDiagnosis = diag.diagnosisNameRu;
+			} else {
+				aapEfpDiagnosis = "Пародонт в норме";
+			}
+		} catch {
+			aapEfpDiagnosis = "Пародонт в норме";
+		}
+	}
+
+	return {
+		indices: {
+			ohis: {
+				score: ohisScore,
+				rating: ohisRating,
+			},
+			bopPercent,
+			bopGrade,
+			plaquePercent,
+			meanPocketDepthMm,
+			deepPocketsCount,
+		},
+		aapEfpDiagnosis,
+	};
+}
+
+export function formatPatientPerioSummaryText(
+	teeth: readonly PerioToothRecord[],
+	summary?: PerioChartSummary | undefined,
+	options?: {
+		clinicName?: string | undefined;
+		clinicPhone?: string | undefined;
+		patientName?: string | undefined;
+		doctorName?: string | undefined;
+		ohiSScore?: { ohiS: number; interpretation: string; grade: string } | undefined;
+	},
+): string {
+	const extracted = extractPatientPerioSummaryIndices(teeth, summary, options?.ohiSScore);
+	const clinicName = options?.clinicName;
+	const clinicPhone = options?.clinicPhone;
+	const patientName = options?.patientName || "Пациент";
+	const doctorName = options?.doctorName || "Лечащий врач-пародонтолог";
+
+	return [
+		`Результаты пародонтологического обследования (клиника «${clinicName || "Стоматологическая клиника"}»):`,
+		`Пациент: ${patientName}`,
+		`Лечащий врач: ${doctorName}`,
+		`Индекс гигиены Грина-Вермиллиона (OHI-S): ${extracted.indices.ohis.score} (${extracted.indices.ohis.rating})`,
+		`Кровоточивость при зондировании (BOP): ${extracted.indices.bopPercent}% (${extracted.indices.bopGrade})`,
+		`Индекс зубного налета (PLI): ${extracted.indices.plaquePercent}%`,
+		`Средняя глубина карманов: ${extracted.indices.meanPocketDepthMm} мм (карманов >3 мм: ${extracted.indices.deepPocketsCount})`,
+		`Клинический статус (AAP/EFP 2018): ${extracted.aapEfpDiagnosis || "Пародонт в норме"}`,
+		`Рекомендации: соблюдайте индивидуальную гигиену (ершики, монопучковая щетка, зубная нить), плановый осмотр через 3-6 месяцев.`,
+		`Телефон клиники для связи: ${clinicPhone || "уточняйте в регистратуре"}.`,
+	].join("\n");
 }
 
 export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> = ({
@@ -94,6 +247,8 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 	patientId,
 	patientName = "Пациент",
 	doctorName = "Лечащий врач-пародонтолог",
+	clinicName,
+	clinicPhone,
 	initialTeeth,
 	onSave,
 	onInsertToProtocol,
@@ -763,6 +918,28 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		showToast("Зубной налет и камень очищены по всем зубам (100% гигиена)", "success", 3000);
 	}, []);
 
+	// 1-Click Copy Patient Periodontal Summary & Hygiene Indices for WhatsApp/Telegram (Feature 237, Wave 51)
+	const handleCopyPatientPerioSummary = useCallback(async () => {
+		const text = formatPatientPerioSummaryText(teeth, summary, {
+			clinicName,
+			clinicPhone,
+			patientName,
+			doctorName,
+			ohiSScore,
+		});
+
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(text);
+			}
+		} catch (err) {
+			console.warn("Clipboard writeText failed:", err);
+		}
+
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast("Результаты обследования скопированы в буфер обмена для отправки пациенту", "success");
+	}, [teeth, summary, clinicName, clinicPhone, patientName, doctorName, ohiSScore]);
+
 	// Save Action
 	const handleSave = useCallback(async () => {
 		if (onSave) {
@@ -1282,7 +1459,29 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 						<span>Голосовая диктовка активна: произнесите «зуб 16 медиально 4 щечно 3 bop плюс»</span>
 					</div>
 
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-3 flex-wrap">
+						<button
+							type="button"
+							onClick={handleCopyPatientPerioSummary}
+							data-testid="perio-copy-patient-summary-btn"
+							className="perio-secondary-btn"
+							title="Скопировать результаты обследования и индексы гигиены для отправки пациенту в WhatsApp/Telegram"
+						>
+							<Clipboard size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span>Скопировать для пациента</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={() => window.print()}
+							data-testid="perio-print-chart-btn"
+							className="perio-secondary-btn"
+							title="Распечатать карту пародонтологического обследования (А4)"
+						>
+							<Printer size={18} className="text-[var(--teal,#0d9488)] shrink-0" />
+							<span>Печать карты (А4)</span>
+						</button>
+
 						<button
 							type="button"
 							onClick={handleInsertTo043}
