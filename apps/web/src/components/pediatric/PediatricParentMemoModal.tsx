@@ -584,7 +584,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							title="Печать памятки родителям (анестезия, не кусать губу, гигиена молочных зубов)"
 						>
 							<Printer className="w-4 h-4" />
-							<span>⚡ 1-клик Печать памятки родителям</span>
+							<span>Печать памятки родителям</span>
 						</button>
 					</div>
 				</div>

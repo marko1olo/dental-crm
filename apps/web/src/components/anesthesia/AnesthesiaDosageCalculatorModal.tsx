@@ -20,6 +20,7 @@ import {
 	Heart,
 	Layers,
 	PackageCheck,
+	Printer,
 	ShieldAlert,
 	ShieldCheck,
 	Syringe,
@@ -47,6 +48,42 @@ import {
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import "./anesthesia.css";
 
+export interface AnesthesiaPatientMemoParams {
+	readonly clinicName: string;
+	readonly clinicPhone: string;
+	readonly patientName: string;
+	readonly doctorName: string;
+	readonly drugTradeName: string;
+	readonly carpulesCount: number;
+	readonly targetArea: string | number;
+	readonly expectedDurationHours?: string | undefined;
+	readonly date?: string | undefined;
+}
+
+export function formatAnesthesiaPatientMemo(params: AnesthesiaPatientMemoParams): string {
+	const clinicName = params.clinicName.trim() || "Стоматологическая клиника DENTE";
+	const clinicPhone = params.clinicPhone.trim() || "+7 (495) 123-45-67";
+	const patientName = params.patientName.trim() || "Пациент";
+	const doctorName = params.doctorName.trim() || "Лечащий врач-стоматолог";
+	const date = params.date || new Date().toLocaleDateString("ru-RU");
+	const duration = params.expectedDurationHours || "2–3 часа";
+
+	return [
+		`Памятка пациенту после проведения местной анестезии (клиника «${clinicName}»):`,
+		`Пациент: ${patientName}`,
+		`Лечащий врач: ${doctorName}`,
+		`Дата процедуры: ${date}`,
+		`Применённый препарат: ${params.drugTradeName} (введено ${params.carpulesCount} карп.)`,
+		`Область анестезии: ${params.targetArea}`,
+		`Ожидаемая длительность онемения: ${duration}`,
+		`Правила безопасности после анестезии:`,
+		`1. Не принимайте горячую пищу и напитки до полного восстановления чувствительности (риск незаметного термического ожога слизистой).`,
+		`2. Не прикусывайте онемевшую губу, щёку или язык.`,
+		`3. Не массируйте и не согревайте место инъекции.`,
+		`4. При сохранении выраженного онемения более 6 часов или аллергических реакциях немедленно свяжитесь с клиникой: ${clinicPhone}.`,
+	].join("\n");
+}
+
 export interface AnesthesiaDosageCalculatorModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -57,6 +94,10 @@ export interface AnesthesiaDosageCalculatorModalProps {
 	initialPatientId?: string;
 	initialVisitId?: string;
 	onApplied?: (result: AnesthesiaCalculationResult) => void;
+	clinicName?: string | undefined;
+	clinicPhone?: string | undefined;
+	doctorName?: string | undefined;
+	patientName?: string | undefined;
 }
 
 export function AnesthesiaDosageCalculatorModal({
@@ -69,6 +110,10 @@ export function AnesthesiaDosageCalculatorModal({
 	initialPatientId,
 	initialVisitId,
 	onApplied,
+	clinicName = "Стоматологическая клиника DENTE",
+	clinicPhone = "+7 (495) 123-45-67",
+	doctorName = "Лечащий врач-стоматолог",
+	patientName = "Пациент",
 }: AnesthesiaDosageCalculatorModalProps) {
 	// Clinical State
 	const [selectedDrugId, setSelectedDrugId] =
@@ -210,6 +255,56 @@ export function AnesthesiaDosageCalculatorModal({
 			showToast("Не удалось скопировать текст", "warning");
 		}
 	}, [calcResult.diaryEntryRu]);
+
+	// 1-Click Patient Anesthesia Memo for Messengers (Feature 242, Mandates 8e, 8k, 8n)
+	const handleCopyPatientMemo = useCallback(async () => {
+		try {
+			let expectedDuration = "2–3 часа";
+			if (selectedDrugId === "mepivacaine_plain" || selectedDrugId === "scandonest_plain") {
+				expectedDuration = "1.5–2 часа";
+			} else if (
+				techniqueId === "mandibular" ||
+				techniqueId === "torus" ||
+				techniqueId === "tuberal" ||
+				techniqueId === "infraorbital"
+			) {
+				expectedDuration = "3–4 часа";
+			}
+
+			const targetAreaText = `зуб ${targetTooth} (${INJECTION_TECHNIQUES[techniqueId]?.nameRu || techniqueId})`;
+			const text = formatAnesthesiaPatientMemo({
+				clinicName,
+				clinicPhone,
+				patientName,
+				doctorName,
+				drugTradeName: calcResult.drug.tradeNamesRu[0] || calcResult.drug.activeSubstanceRu,
+				carpulesCount,
+				targetArea: targetAreaText,
+				expectedDurationHours: expectedDuration,
+			});
+
+			await navigator.clipboard.writeText(text);
+			showToast("Памятка по анестезии скопирована для пациента", "success");
+		} catch {
+			showToast("Не удалось скопировать памятку для пациента", "warning");
+		}
+	}, [
+		clinicName,
+		clinicPhone,
+		patientName,
+		doctorName,
+		calcResult.drug,
+		carpulesCount,
+		targetTooth,
+		techniqueId,
+		selectedDrugId,
+	]);
+
+	// Print official Anesthesia Safety Protocol Sheet (A4)
+	const handlePrintProtocol = useCallback(() => {
+		showToast("Отправка протокола анестезии на печать...", "info");
+		window.print();
+	}, []);
 
 	// Apply protocol directly into 043/u diary and deduct warehouse inventory
 	const handleApplyToVisit = useCallback(async () => {
@@ -1418,11 +1513,12 @@ export function AnesthesiaDosageCalculatorModal({
 							<button
 								type="button"
 								onClick={handleCopyDiary}
+								data-testid="btn-copy-diary"
 								className="anesthesia-btn"
 								style={{
-									minHeight: "28px",
-									padding: "0.125rem 0.5rem",
-									fontSize: "0.75rem",
+									minHeight: "44px",
+									padding: "0.375rem 0.75rem",
+									fontSize: "0.8125rem",
 								}}
 							>
 								{isCopied ? (
@@ -1490,25 +1586,72 @@ export function AnesthesiaDosageCalculatorModal({
 					className="anesthesia-modal-footer"
 					style={{
 						display: "flex",
-						justifyContent: "flex-end",
+						justifyContent: "space-between",
+						alignItems: "center",
+						flexWrap: "wrap",
 						gap: "0.75rem",
 						padding: "0.875rem 1rem",
 						borderTop: "1px solid var(--line, #e2e8f0)",
 					}}
 				>
-					<button
-						type="button"
-						onClick={onClose}
-						className="anesthesia-btn"
-						style={{
-							minHeight: "48px",
-							padding: "0.5rem 1.25rem",
-							fontSize: "0.875rem",
-							fontWeight: 600,
-						}}
-					>
-						Отмена
-					</button>
+					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+						<button
+							type="button"
+							onClick={handleCopyPatientMemo}
+							data-testid="anesthesia-copy-patient-memo-btn"
+							className="anesthesia-btn"
+							style={{
+								minHeight: "48px",
+								padding: "0.5rem 1rem",
+								fontSize: "0.875rem",
+								fontWeight: 600,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.5rem",
+								cursor: "pointer",
+							}}
+							title="Скопировать памятку по анестезии для отправки пациенту в WhatsApp/Telegram"
+						>
+							<Copy size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Скопировать для пациента</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handlePrintProtocol}
+							data-testid="anesthesia-print-protocol-btn"
+							className="anesthesia-btn"
+							style={{
+								minHeight: "48px",
+								padding: "0.5rem 1rem",
+								fontSize: "0.875rem",
+								fontWeight: 600,
+								display: "inline-flex",
+								alignItems: "center",
+								gap: "0.5rem",
+								cursor: "pointer",
+							}}
+							title="Распечатать протокол анестезиологического пособия (А4)"
+						>
+							<Printer size={16} className="text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Печать протокола (А4)</span>
+						</button>
+					</div>
+
+					<div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+						<button
+							type="button"
+							onClick={onClose}
+							className="anesthesia-btn"
+							style={{
+								minHeight: "48px",
+								padding: "0.5rem 1.25rem",
+								fontSize: "0.875rem",
+								fontWeight: 600,
+							}}
+						>
+							Отмена
+						</button>
 
 					<button
 						type="button"
@@ -1538,5 +1681,6 @@ export function AnesthesiaDosageCalculatorModal({
 				</div>
 			</div>
 		</div>
-	);
+	</div>
+);
 }
