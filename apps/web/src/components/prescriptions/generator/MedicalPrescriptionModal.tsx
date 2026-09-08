@@ -1,25 +1,26 @@
-import React, { useState, useMemo } from "react";
+import { renderForm107_1uHtml } from "@dental/shared";
 import {
-	Pill,
-	X,
-	Printer,
 	Check,
 	Clock,
-	Zap,
+	Copy,
 	FileText,
+	Pill,
+	Printer,
+	X,
+	Zap,
 } from "lucide-react";
-import { renderForm107_1uHtml } from "@dental/shared";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import {
-	DENTAL_MEDICATIONS_CATALOG,
-	DENTAL_FAST_PRESCRIPTION_PACKAGES,
-	type DentalMedicationPreset,
-	type DentalFastPrescriptionPackage,
-} from "./prescriptionPresets";
-import {
-	generateForm107Prescription,
 	type Form107PrescriptionDocument,
+	generateForm107Prescription,
 } from "./prescriptionEngine";
+import {
+	DENTAL_FAST_PRESCRIPTION_PACKAGES,
+	DENTAL_MEDICATIONS_CATALOG,
+	type DentalMedicationPreset,
+} from "./prescriptionPresets";
 import "./medicalPrescription.css";
 
 export interface MedicalPrescriptionModalProps {
@@ -31,7 +32,51 @@ export interface MedicalPrescriptionModalProps {
 	readonly doctorName?: string | undefined;
 	readonly doctorSpecialty?: string | undefined;
 	readonly clinicName?: string | undefined;
+	readonly clinicPhone?: string | undefined; // Дефолт: '+7 (495) 123-45-67'
 	readonly onInsertToDiary?: ((diaryText: string) => void) | undefined;
+}
+
+export interface PatientPrescriptionMemoParams {
+	clinicName: string;
+	clinicPhone: string;
+	patientName: string;
+	doctorName: string;
+	prescriptionDate?: string | undefined;
+	medications: readonly DentalMedicationPreset[];
+}
+
+export function formatPatientPrescriptionMemo(
+	params: PatientPrescriptionMemoParams,
+): string {
+	const {
+		clinicName,
+		clinicPhone,
+		patientName,
+		doctorName,
+		prescriptionDate,
+		medications,
+	} = params;
+
+	const dateStr = prescriptionDate || new Date().toLocaleDateString("ru-RU");
+
+	const medsList = medications.map((med, idx) => {
+		const cleanSigna = med.signaRu
+			.replace(/^(?:D\.?\s*)?S[.:]?\s*/i, "")
+			.trim();
+		return `${idx + 1}. ${med.tradeNameRu} (${med.activeSubstanceRu}, ${med.formRu}):\n   Способ применения: ${cleanSigna}`;
+	});
+
+	const lines = [
+		`Схема приёма лекарственных препаратов (клиника «${clinicName}»):`,
+		`Пациент: ${patientName}`,
+		`Лечащий врач: ${doctorName}`,
+		`Дата назначения: ${dateStr}`,
+		"Назначенные препараты:",
+		...medsList,
+		`Памятка: строго соблюдайте назначенную дозировку и график приёма. Не прекращайте курс антибиотиков раньше указанного срока. При любых признаках непереносимости или аллергии немедленно свяжитесь с клиникой: ${clinicPhone}.`,
+	];
+
+	return lines.join("\n");
 }
 
 const normalizeDrugId = (id: string): string => {
@@ -46,7 +91,9 @@ const isDrugSelected = (id: string, list: readonly string[]): boolean => {
 	return list.some((item) => normalizeDrugId(item) === norm);
 };
 
-export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> = ({
+export const MedicalPrescriptionModal: React.FC<
+	MedicalPrescriptionModalProps
+> = ({
 	isOpen,
 	onClose,
 	patientName = "Смирнова Екатерина Васильевна",
@@ -55,6 +102,7 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 	doctorName = "Д-р Смирнов Алексей Петрович",
 	doctorSpecialty = "Врач-стоматолог терапевт-эндодонтист",
 	clinicName = "ООО «Денте Стоматология»",
+	clinicPhone = "+7 (495) 123-45-67",
 	onInsertToDiary,
 }) => {
 	const [selectedIds, setSelectedIds] = useState<readonly string[]>([
@@ -67,14 +115,25 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 	const handleInsertToDiary = (overrideIds?: readonly string[]) => {
 		const targetIds = overrideIds || selectedIds;
 		if (targetIds.length === 0) {
-			showToast("Выберите хотя бы один препарат для внесения в дневник", "warning", 3000);
+			showToast(
+				"Выберите хотя бы один препарат для внесения в дневник",
+				"warning",
+				3000,
+			);
 			return;
 		}
 		const drugs = targetIds
-			.map((id) => DENTAL_MEDICATIONS_CATALOG.find((m) => normalizeDrugId(m.id) === normalizeDrugId(id)))
+			.map((id) =>
+				DENTAL_MEDICATIONS_CATALOG.find(
+					(m) => normalizeDrugId(m.id) === normalizeDrugId(id),
+				),
+			)
 			.filter((d): d is DentalMedicationPreset => Boolean(d));
 		const itemsText = drugs
-			.map((d, idx) => `${idx + 1}. ${d.latinRp}\n   ${d.dispenseLatin}\n   ${d.signaRu} [${d.tradeNameRu}]`)
+			.map(
+				(d, idx) =>
+					`${idx + 1}. ${d.latinRp}\n   ${d.dispenseLatin}\n   ${d.signaRu} [${d.tradeNameRu}]`,
+			)
 			.join("\n");
 		const diaryText = `Назначено медикаментозное лечение (рецепт № 107-1/у от ${new Date().toLocaleDateString("ru-RU")}):\n${itemsText}`;
 		if (onInsertToDiary) {
@@ -83,7 +142,44 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			navigator.clipboard.writeText(diaryText).catch(() => {});
 		}
-		showToast("Назначения внесены в дневник 043/у (скопировано в буфер)", "success", 3000);
+		showToast(
+			"Назначения внесены в дневник 043/у (скопировано в буфер)",
+			"success",
+			3000,
+		);
+	};
+
+	const handleCopyPatientPrescriptionMemo = () => {
+		const drugs = selectedIds
+			.map((id) =>
+				DENTAL_MEDICATIONS_CATALOG.find(
+					(m) => normalizeDrugId(m.id) === normalizeDrugId(id),
+				),
+			)
+			.filter((d): d is DentalMedicationPreset => Boolean(d));
+
+		if (drugs.length === 0) {
+			showToast("Выберите хотя бы один препарат", "warning");
+			return;
+		}
+
+		const memoText = formatPatientPrescriptionMemo({
+			clinicName,
+			clinicPhone,
+			patientName,
+			doctorName,
+			prescriptionDate: prescriptionDoc.header.dateLabelRu,
+			medications: drugs,
+		});
+
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(memoText).catch(() => {});
+		}
+
+		showToast(
+			"Схема приёма лекарств скопирована для отправки пациенту в мессенджер",
+			"success",
+		);
 	};
 
 	const prescriptionDoc: Form107PrescriptionDocument = useMemo(() => {
@@ -101,7 +197,16 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 			doctorSpecialty,
 			selectedMedicationIds: selectedIds,
 		});
-	}, [validityDays, clinicName, patientName, patientBirthDate, medicalCardNumber, doctorName, doctorSpecialty, selectedIds]);
+	}, [
+		validityDays,
+		clinicName,
+		patientName,
+		patientBirthDate,
+		medicalCardNumber,
+		doctorName,
+		doctorSpecialty,
+		selectedIds,
+	]);
 
 	if (!isOpen) return null;
 
@@ -124,7 +229,7 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 		const payload = {
 			clinicLegalName: clinicName,
 			clinicAddress: "г. Москва, Клинический пер., д. 7",
-			clinicPhone: "+7 (495) 000-00-00",
+			clinicPhone: clinicPhone || "+7 (495) 123-45-67",
 			clinicOgrn: "1207700123456",
 			clinicInn: "7701234567",
 			medicalLicenseNumber: "ЛО41-01137-77/00345678",
@@ -145,7 +250,11 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 			})),
 		};
 
-		showToast("Подготовка официального рецептурного бланка (Форма № 107-1/у)...", "info", 2000);
+		showToast(
+			"Подготовка официального рецептурного бланка (Форма № 107-1/у)...",
+			"info",
+			2000,
+		);
 
 		try {
 			const statutoryHtml = renderForm107_1uHtml(payload);
@@ -153,11 +262,12 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 				const iframe = document.createElement("iframe");
 				iframe.setAttribute(
 					"style",
-					"position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;z-index:-1;"
+					"position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;z-index:-1;",
 				);
 				document.body.appendChild(iframe);
 
-				const frameDoc = iframe.contentWindow?.document || iframe.contentDocument;
+				const frameDoc =
+					iframe.contentWindow?.document || iframe.contentDocument;
 				if (frameDoc) {
 					frameDoc.open();
 					frameDoc.write(statutoryHtml);
@@ -167,9 +277,16 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 						try {
 							iframe.contentWindow?.focus();
 							iframe.contentWindow?.print();
-							showToast("Рецептурный бланк отправлен на печать", "success", 3000);
+							showToast(
+								"Рецептурный бланк отправлен на печать",
+								"success",
+								3000,
+							);
 						} catch (e) {
-							console.warn("Iframe print invocation error, falling back to window.print():", e);
+							console.warn(
+								"Iframe print invocation error, falling back to window.print():",
+								e,
+							);
 							window.print();
 						} finally {
 							setTimeout(() => {
@@ -191,7 +308,10 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 				}
 			}
 		} catch (err) {
-			console.warn("Failed to generate statutory Form 107-1/u HTML, using window.print() fallback:", err);
+			console.warn(
+				"Failed to generate statutory Form 107-1/u HTML, using window.print() fallback:",
+				err,
+			);
 		}
 
 		// Direct browser print fallback (styled via @media print in medicalPrescription.css)
@@ -249,14 +369,25 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 									return (
 										<div
 											key={pkg.id}
-											className={"min-h-[44px] w-full p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1.5 " + (
-												isPkgActive
+											className={
+												"min-h-[44px] w-full p-2.5 rounded-lg border text-left transition-all flex flex-col gap-1.5 " +
+												(isPkgActive
 													? "bg-teal-500/15 border-teal-600 ring-1 ring-teal-500 text-[var(--ink,#0f172a)] shadow-xs"
-													: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:border-teal-500/60 hover:bg-teal-500/5 text-[var(--muted,#64748b)]"
-											)}
+													: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:border-teal-500/60 hover:bg-teal-500/5 text-[var(--muted,#64748b)]")
+											}
 										>
+											{/* biome-ignore lint/a11y/useSemanticElements: interactive row contains nested action buttons */}
 											<div
-												onClick={() => setSelectedIds(pkg.drugIds.map(normalizeDrugId))}
+												role="button"
+												tabIndex={0}
+												onClick={() =>
+													setSelectedIds(pkg.drugIds.map(normalizeDrugId))
+												}
+												onKeyDown={(e) => {
+													if (e.key === "Enter" || e.key === " ") {
+														setSelectedIds(pkg.drugIds.map(normalizeDrugId));
+													}
+												}}
 												className="flex items-center justify-between gap-2 cursor-pointer"
 											>
 												<div className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5 text-left flex-1">
@@ -312,7 +443,9 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 								<Clock className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<select
 									value={validityDays}
-									onChange={(e) => setValidityDays(Number(e.target.value) as 15 | 60 | 365)}
+									onChange={(e) =>
+										setValidityDays(Number(e.target.value) as 15 | 60 | 365)
+									}
 									className="min-h-[36px] text-xs font-bold bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
 									aria-label="Срок действия рецепта"
 								>
@@ -328,14 +461,15 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 								const isSelected = isDrugSelected(med.id, selectedIds);
 								return (
 									<button
-										key={med.id}
+										key={`${med.id}_${med.formRu}`}
 										type="button"
 										onClick={() => toggleMedication(med.id)}
-										className={"min-h-[56px] w-full flex items-start justify-between p-3 rounded-xl border text-left overflow-hidden transition-all cursor-pointer " + (
-											isSelected
+										className={
+											"min-h-[56px] w-full flex items-start justify-between p-3 rounded-xl border text-left overflow-hidden transition-all cursor-pointer " +
+											(isSelected
 												? "bg-[var(--teal-surface,#f0fdfa)] border-teal-600 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-teal-500"
-												: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:border-teal-500 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
-										)}
+												: "bg-[var(--paper-soft,#f8fafc)] border-[var(--line,#e2e8f0)] hover:border-teal-500 text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]")
+										}
 									>
 										<div className="flex flex-col gap-1 min-w-0 pr-3 overflow-hidden">
 											<div className="flex items-center gap-2 flex-wrap">
@@ -354,11 +488,12 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 											</span>
 										</div>
 										<div
-											className={"flex items-center justify-center w-5 h-5 rounded-md shrink-0 mt-0.5 border transition-colors " + (
-												isSelected
+											className={
+												"flex items-center justify-center w-5 h-5 rounded-md shrink-0 mt-0.5 border transition-colors " +
+												(isSelected
 													? "bg-teal-600 border-teal-600 text-white"
-													: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]"
-											)}
+													: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]")
+											}
 										>
 											{isSelected && <Check className="w-3.5 h-3.5" />}
 										</div>
@@ -369,9 +504,7 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 					</div>
 
 					{/* Right Column: Live Form 107-1/u Sheet Preview */}
-					<div
-						className="rx-prescription-sheet rx-printable-sheet w-full md:w-80 p-4 rounded-xl border border-[var(--line,#cbd5e1)] shadow-lg flex flex-col gap-3 font-serif text-xs bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] transition-colors"
-					>
+					<div className="rx-prescription-sheet rx-printable-sheet w-full md:w-80 p-4 rounded-xl border border-[var(--line,#cbd5e1)] shadow-lg flex flex-col gap-3 font-serif text-xs bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] transition-colors">
 						<div className="rx-sheet-header flex justify-between items-start gap-2 border-b border-[var(--line,#cbd5e1)] pb-2.5">
 							<div className="border border-dashed border-[var(--line,#94a3b8)] p-2 rounded text-[10px] leading-tight text-[var(--muted,#475569)] flex-1">
 								<div className="font-bold uppercase text-[10px] text-[var(--ink,#0f172a)]">
@@ -385,7 +518,9 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 							</div>
 							<div className="text-right text-[9px] text-[var(--muted,#64748b)] leading-tight shrink-0 max-w-[130px]">
 								<div>Минздрав РФ</div>
-								<div className="font-bold text-[var(--ink,#0f172a)]">Форма № 107-1/у</div>
+								<div className="font-bold text-[var(--ink,#0f172a)]">
+									Форма № 107-1/у
+								</div>
 								<div>Приказ № 1094н</div>
 							</div>
 						</div>
@@ -395,7 +530,11 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 								Рецепт
 							</div>
 							<div className="text-[10px] text-[var(--muted,#475569)]">
-								Серия и номер: <span className="font-bold text-[var(--ink,#0f172a)]">{prescriptionDoc.header.seriesNumber}</span> от <span>{prescriptionDoc.header.dateLabelRu}</span>
+								Серия и номер:{" "}
+								<span className="font-bold text-[var(--ink,#0f172a)]">
+									{prescriptionDoc.header.seriesNumber}
+								</span>{" "}
+								от <span>{prescriptionDoc.header.dateLabelRu}</span>
 							</div>
 							<div className="text-[9px] text-[var(--muted,#64748b)]">
 								(взрослый, детский — нужное подчеркнуть)
@@ -403,13 +542,22 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 						</div>
 
 						<div className="text-[11px] flex flex-col gap-1 border-b border-[var(--line,#cbd5e1)] pb-2 text-[var(--ink,#0f172a)]">
-							<div>Пациент: <span className="font-bold">{prescriptionDoc.patient.fullName}</span></div>
+							<div>
+								Пациент:{" "}
+								<span className="font-bold">
+									{prescriptionDoc.patient.fullName}
+								</span>
+							</div>
 							<div className="flex justify-between text-[10px] text-[var(--muted,#475569)]">
 								<span>Д/Р: {prescriptionDoc.patient.birthDate}</span>
 								<span>Медкарта: {prescriptionDoc.patient.cardNum}</span>
 							</div>
 							<div className="text-[10px] text-[var(--muted,#475569)]">
-								Врач: <span className="font-semibold text-[var(--ink,#0f172a)]">{prescriptionDoc.doctor.fullName}</span> ({prescriptionDoc.doctor.specialty})
+								Врач:{" "}
+								<span className="font-semibold text-[var(--ink,#0f172a)]">
+									{prescriptionDoc.doctor.fullName}
+								</span>{" "}
+								({prescriptionDoc.doctor.specialty})
 							</div>
 						</div>
 
@@ -444,16 +592,46 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 							<div className="text-[10px] text-[var(--muted,#475569)] font-sans flex justify-between items-center">
 								<span>
 									<strong>Срок действия:</strong>{" "}
-									<span className={validityDays === 15 ? "underline font-bold text-[var(--ink,#0f172a)]" : ""}>15 дней</span> /{" "}
-									<span className={validityDays === 60 ? "underline font-bold text-teal-700 dark:text-teal-400" : ""}>60 дней</span> /{" "}
-									<span className={validityDays === 365 ? "underline font-bold text-[var(--ink,#0f172a)]" : ""}>до 1 года</span>
+									<span
+										className={
+											validityDays === 15
+												? "underline font-bold text-[var(--ink,#0f172a)]"
+												: ""
+										}
+									>
+										15 дней
+									</span>{" "}
+									/{" "}
+									<span
+										className={
+											validityDays === 60
+												? "underline font-bold text-teal-700 dark:text-teal-400"
+												: ""
+										}
+									>
+										60 дней
+									</span>{" "}
+									/{" "}
+									<span
+										className={
+											validityDays === 365
+												? "underline font-bold text-[var(--ink,#0f172a)]"
+												: ""
+										}
+									>
+										до 1 года
+									</span>
 								</span>
-								<span className="text-[9px] text-[var(--muted,#64748b)]">(нужное подчеркнуть)</span>
+								<span className="text-[9px] text-[var(--muted,#64748b)]">
+									(нужное подчеркнуть)
+								</span>
 							</div>
 
 							<div className="flex items-end justify-between pt-2 mt-1 border-t border-dashed border-[var(--line,#cbd5e1)]">
 								<div className="flex flex-col gap-1">
-									<span className="text-[9px] text-[var(--muted,#64748b)]">Подпись и личная печать врача:</span>
+									<span className="text-[9px] text-[var(--muted,#64748b)]">
+										Подпись и личная печать врача:
+									</span>
 									<div className="border-b border-[var(--ink,#0f172a)] w-28 h-5 flex items-end">
 										<span className="text-[9px] italic text-[var(--muted,#475569)] truncate">
 											/ {doctorName.replace(/^(Д-р|Врач)\s+/i, "")} /
@@ -496,6 +674,16 @@ export const MedicalPrescriptionModal: React.FC<MedicalPrescriptionModalProps> =
 						>
 							<FileText className="w-4 h-4 shrink-0" />
 							<span>Внести в дневник 043/у</span>
+						</button>
+						<button
+							type="button"
+							onClick={handleCopyPatientPrescriptionMemo}
+							data-testid="med-rx-copy-patient-btn"
+							className="min-h-[44px] w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-xl bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800 transition-all cursor-pointer"
+							title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
+						>
+							<Copy className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Скопировать для пациента</span>
 						</button>
 						<button
 							type="button"
