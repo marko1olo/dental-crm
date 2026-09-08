@@ -935,7 +935,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							<input
 								type="datetime-local"
 								value={startsAtLocal}
-								onChange={(e) => setStartsAtLocal(e.target.value)}
+								onChange={(e) => {
+									const nextVal = e.target.value;
+									setStartsAtLocal(nextVal);
+									if (chairId && nextVal) {
+										const newDuty = resolveChairDutyDoctor(
+											chairId,
+											nextVal,
+											chairDoctorAssignments,
+											nextVal.slice(0, 10),
+										);
+										if (newDuty.doctorId && (!doctorUserId || doctorUserId === dutyDoctorId)) {
+											setDoctorUserId(newDuty.doctorId);
+										}
+									}
+								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 							/>
 						</div>

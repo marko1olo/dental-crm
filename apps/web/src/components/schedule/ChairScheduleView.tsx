@@ -30,7 +30,11 @@ import {
 	QuickAddChairModal,
 	type QuickAddChairData,
 } from "./QuickAddChairModal";
-import type { QuickBookingSlotInfo } from "./QuickBookingDrawer";
+import {
+	type QuickBookingSlotInfo,
+	resolveChairDutyDoctor,
+} from "./QuickBookingDrawer";
+export { resolveChairDutyDoctor };
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
 
@@ -244,6 +248,15 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				endHour,
 			};
 
+			if (typeof window !== "undefined" && dateKey) {
+				try {
+					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+					const existing = JSON.parse(localStorage.getItem(storageKey) || "{}");
+					existing[chair.id] = assignment;
+					localStorage.setItem(storageKey, JSON.stringify(existing));
+				} catch {}
+			}
+
 			if (onAssignChairDoctor) {
 				onAssignChairDoctor(chair.id, assignment);
 			}
@@ -255,18 +268,73 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 
 			setActiveShiftChairId(null);
 		},
-		[chairDoctorAssignments, doctors, onAssignChairDoctor, popoverSelectedDocId],
+		[chairDoctorAssignments, dateKey, doctors, onAssignChairDoctor, popoverSelectedDocId],
 	);
 
 	const handleUnassignShift = useCallback(
 		(chair: ScheduleChair) => {
+			if (typeof window !== "undefined" && dateKey) {
+				try {
+					const storageKey = `dente_chair_doctor_assignments_${dateKey}`;
+					const existing = JSON.parse(localStorage.getItem(storageKey) || "{}");
+					delete existing[chair.id];
+					localStorage.setItem(storageKey, JSON.stringify(existing));
+				} catch {}
+			}
+
 			if (onAssignChairDoctor) {
 				onAssignChairDoctor(chair.id, null);
 			}
 			showToast(`Врач снят со смены: кресло «${chair.name}» освобождено`, "info");
 			setActiveShiftChairId(null);
 		},
-		[onAssignChairDoctor],
+		[dateKey, onAssignChairDoctor],
+	);
+
+	const handleSlotClick = useCallback(
+		(slot: QuickBookingSlotInfo) => {
+			const slotChairId =
+				slot.chairId ||
+				effectiveSelectedChairId ||
+				chairs[0]?.id ||
+				DEFAULT_SOLO_CHAIR.id;
+			const targetStartsAt =
+				slot.startsAt ||
+				(slot.startTime && dateKey ? `${dateKey}T${slot.startTime}:00` : undefined);
+
+			const duty = resolveChairDutyDoctor(
+				slotChairId,
+				targetStartsAt,
+				chairDoctorAssignments,
+				dateKey,
+				slot.doctorUserId,
+			);
+
+			const finalDoctorId = slot.doctorUserId || duty.doctorId || selectedDoctorId || null;
+			const finalDoctorName =
+				slot.doctorName ||
+				(finalDoctorId ? doctors.find((d) => d.id === finalDoctorId)?.fullName : undefined) ||
+				chairDoctorAssignments?.[slotChairId]?.doctorName;
+
+			onSlotClick({
+				...slot,
+				chairId: slotChairId,
+				dateKey: slot.dateKey || dateKey,
+				startTime: slot.startTime,
+				startsAt: targetStartsAt || slot.startsAt,
+				doctorUserId: finalDoctorId,
+				doctorName: finalDoctorName,
+			});
+		},
+		[
+			chairs,
+			effectiveSelectedChairId,
+			dateKey,
+			chairDoctorAssignments,
+			selectedDoctorId,
+			doctors,
+			onSlotClick,
+		],
 	);
 
 	return (
@@ -312,6 +380,8 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 							chairDoctorAssignments?.[chair.id]?.shiftLabel ||
 							chairDoctorAssignments?.[chair.id]?.shiftHours ||
 							null;
+						const roomLabel =
+							(chair as any).roomNumber || (chair as any).room;
 
 						return (
 							<div
@@ -324,7 +394,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									}
 								}}
 								tabIndex={0}
-								className={`relative px-2 py-1 rounded-lg border text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 shrink-0 shadow-2xs transition-all cursor-pointer select-none text-left h-7 ${
+								className={`relative px-2 py-1 rounded-lg border text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 shrink-0 shadow-2xs transition-all cursor-pointer select-none text-left h-7 whitespace-nowrap ${
 									isSelected
 										? "border-[var(--teal)] ring-1 ring-[var(--teal)] bg-[var(--teal-soft)] shadow-sm"
 										: "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)]/60"
@@ -332,7 +402,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 								data-testid={`chair-view-badge-${chair.id}`}
 								role="button"
 								aria-pressed={isSelected}
-								title={`Кресло «${chair.name}» (${(chair as any).roomNumber || (chair as any).room || "Кабинет"})${
+								title={`Кресло «${chair.name}» (${roomLabel ? `Кабинет ${roomLabel}` : "Кабинет"})${
 									assignedDocName ? ` • Врач: ${assignedDocName}` : ""
 								}${assignedShiftLabel ? ` [${assignedShiftLabel}]` : ""}. Клик: ${
 									isSelected ? "снять фильтр" : "фильтр по этому креслу"
@@ -351,9 +421,20 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 									style={{ backgroundColor: chairColor }}
 									aria-hidden="true"
 								/>
-								<span className="font-bold text-xs truncate">{chair.name}</span>
+								<span className="font-bold text-xs shrink-0">{chair.name}</span>
+								{roomLabel && (
+									<span
+										className="text-[10px] text-[var(--muted)] font-normal shrink-0"
+										data-testid={`chair-view-room-${chair.id}`}
+									>
+										(Каб. {roomLabel})
+									</span>
+								)}
 								{assignedDocName && (
-									<span className="text-[10px] text-[var(--muted)] font-normal whitespace-nowrap hidden md:inline">
+									<span
+										className="text-[10px] text-[var(--muted)] font-normal whitespace-nowrap hidden md:inline shrink-0"
+										data-testid={`chair-view-doc-${chair.id}`}
+									>
 										({assignedDocName}
 										{assignedShiftLabel ? ` • ${assignedShiftLabel}` : ""})
 									</span>
@@ -577,7 +658,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 					dashboard={dashboard}
 					dateKey={dateKey}
 					appointments={appointments}
-					onSlotClick={onSlotClick}
+					onSlotClick={handleSlotClick}
 					onAppointmentClick={onAppointmentClick}
 					patientName={resolvedPatientName}
 					formatTime={resolvedFormatTime}

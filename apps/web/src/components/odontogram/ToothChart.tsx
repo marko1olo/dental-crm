@@ -294,6 +294,8 @@ export interface ToothChartProps {
 	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
 	onMarkIntactDentition?: (() => void) | undefined;
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
+	onMarkMolarsMissing?: (() => void) | undefined;
+	onMarkFrontIntact?: (() => void) | undefined;
 	onMarkProHygieneDone?: (() => void) | undefined;
 	onApplyFastCariesK021?: ((toothNumber?: number) => void) | undefined;
 	hideExpressActions?: boolean | undefined;
@@ -314,11 +316,20 @@ export const ALL_ADULT_TEETH_NUMBERS: readonly number[] = [
 export const ADULT_MOLARS: readonly number[] = [
 	18, 17, 16, 26, 27, 28, 48, 47, 46, 36, 37, 38,
 ];
+export const ADULT_FIRST_MOLARS: readonly number[] = [
+	16, 26, 36, 46,
+];
+export const ADULT_WISDOM_TEETH: readonly number[] = [
+	18, 28, 38, 48,
+];
 export const ADULT_PREMOLARS: readonly number[] = [
 	15, 14, 24, 25, 45, 44, 34, 35,
 ];
 export const ADULT_FRONTAL: readonly number[] = [
 	13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33,
+];
+export const ADULT_FRONT_TEETH: readonly number[] = [
+	...ADULT_FRONTAL,
 ];
 
 export function createDefaultAdultTeethData(): ToothData[] {
@@ -2457,6 +2468,8 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 	onQuadrantChange,
 	onMarkIntactDentition,
 	onMarkWisdomTeethMissing,
+	onMarkMolarsMissing,
+	onMarkFrontIntact,
 	onMarkProHygieneDone,
 	onApplyFastCariesK021,
 	hideExpressActions = false,
@@ -2520,7 +2533,7 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 					: [...ALL_ADULT_TEETH_NUMBERS];
 			onQuickStateChange(allTargets, "Healthy");
 			SoundFeedbackService.getInstance().playActionSuccess();
-			showToast("⚡ Санирован: вся зубная формула отмечена интактной", "success");
+			showToast("Санирован: вся зубная формула отмечена интактной", "success");
 		}
 	};
 
@@ -2533,7 +2546,33 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			const wisdomTeeth = [18, 28, 38, 48];
 			onQuickStateChange(wisdomTeeth, "Missing");
 			SoundFeedbackService.getInstance().playActionSuccess();
-			showToast("⚡ Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
+			showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
+		}
+	};
+
+	const handleMarkMolarsMissing = () => {
+		if (onMarkMolarsMissing) {
+			onMarkMolarsMissing();
+			return;
+		}
+		if (onQuickStateChange) {
+			const molars = [16, 26, 36, 46];
+			onQuickStateChange(molars, "Missing");
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast("Вторичная адентия: первые моляры 16, 26, 36, 46 отмечены удаленными", "info");
+		}
+	};
+
+	const handleMarkFrontIntact = () => {
+		if (onMarkFrontIntact) {
+			onMarkFrontIntact();
+			return;
+		}
+		if (onQuickStateChange) {
+			const frontTeeth = [13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33];
+			onQuickStateChange(frontTeeth, "Healthy");
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast("Интактный фронт: зубы 13–23, 33–43 отмечены здоровыми", "success");
 		}
 	};
 
@@ -2861,6 +2900,10 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 		num: number,
 		surface?: string,
 	) => {
+		if (activeStamp && onQuickStateChange) {
+			onQuickStateChange([num], activeStamp);
+			return;
+		}
 		const rect = e.currentTarget.getBoundingClientRect();
 		onToothClick(num, rect, surface);
 	};
@@ -2882,54 +2925,78 @@ export const ToothChart: React.FC<ToothChartProps> = ({
 			{/* 1-Click Express Formula Actions (Mandate 8e: Санирован / Интактный, Адентия 8-ок) */}
 			{!hideExpressActions && (
 				<div
-					className="odontogram-express-bar mb-2 select-none flex items-center gap-2 flex-wrap"
+					className="odontogram-express-bar mb-2 select-none flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none min-h-[34px] max-h-[36px] h-[36px] py-0.5"
 					data-testid="tooth-chart-express-actions"
 				>
 					<button
 						type="button"
 						onClick={handleMarkIntactDentition}
-						className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-						title="⚡ 1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
-						data-testid="tooth-chart-mark-intact-btn"
+						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						title="1-клик Санирован / Интактный зубной ряд: вся формула отмечается здоровой без предупреждений и модалок"
+						data-testid="mark-intact-dentition-btn"
 					>
-						<Zap size={14} className="text-emerald-600 dark:text-emerald-400" />
-						<span>⚡ Санирован / Интактный</span>
+						<Zap size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<span>Санирован / Интактный</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleMarkProHygieneDone}
-						className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-						title="⚡ 1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка (A16.07.051) + протокол 043/у"
+						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						title="1-клик Профгигиена выполнена: снятие зубных отложений УЗ + Air-Flow + полировка (A16.07.051) + протокол 043/у"
 						data-testid="tooth-chart-mark-pro-hygiene-btn"
 					>
-						<Sparkles size={14} className="text-teal-600 dark:text-teal-400" />
-						<span>⚡ Профгигиена (A16.07.051)</span>
+						<Sparkles size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>Профгигиена (A16.07.051)</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleApplyFastCariesK021}
-						className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-						title="⚡ 1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол 043/у + световая пломба (A16.07.002.001)"
+						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-800 dark:text-blue-200 border border-blue-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						title="1-клик Быстрая пломба/кариес K02.1 для выбранного зуба: протокол 043/у + световая пломба (A16.07.002.001)"
 						data-testid="tooth-chart-apply-fast-caries-btn"
 					>
-						<Zap size={14} className="text-blue-600 dark:text-blue-400" />
-						<span>⚡ Быстрая пломба K02.1</span>
+						<Zap size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+						<span>Быстрая пломба K02.1</span>
 					</button>
 
 					{!isPediatricEffective && (
 						<button
 							type="button"
 							onClick={handleMarkWisdomTeethMissing}
-							className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
-							title="⚡ 1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
-							data-testid="tooth-chart-mark-wisdom-missing-btn"
+							className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими"
+							data-testid="mark-wisdom-missing-btn"
 						>
-							<Zap size={14} className="text-zinc-500" />
-							<span>⚡ Без 8-ок (18, 28, 38, 48)</span>
+							<Zap size={14} className="text-zinc-500 shrink-0" />
+							<span>Без 8-ок (18, 28, 38, 48)</span>
 						</button>
 					)}
+
+					{!isPediatricEffective && (
+						<button
+							type="button"
+							onClick={handleMarkMolarsMissing}
+							className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+							title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
+							data-testid="mark-molars-missing-btn"
+						>
+							<Zap size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+							<span>Без моляров (16, 26, 36, 46)</span>
+						</button>
+					)}
+
+					<button
+						type="button"
+						onClick={handleMarkFrontIntact}
+						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+						title="1-клик Интактный фронт: зубы 13–23, 33–43 моментально помечаются здоровыми"
+						data-testid="mark-front-intact-btn"
+					>
+						<Zap size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
+						<span>Интактный фронт (13–23, 33–43)</span>
+					</button>
 				</div>
 			)}
 

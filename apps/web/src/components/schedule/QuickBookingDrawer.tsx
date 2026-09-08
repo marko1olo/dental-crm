@@ -1,5 +1,6 @@
 import type { Appointment, Dashboard, DentalSpecialty, Patient } from "@dental/shared";
 import {
+	AlertCircle,
 	AlertTriangle,
 	Calendar,
 	Check,
@@ -492,12 +493,21 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		return calculatePatientReliability(selectedPatient, dashboard?.appointments);
 	}, [selectedPatient, dashboard?.appointments]);
 
+	const hasActivePatientVisit = Boolean(
+		selectedPatient && (
+			(dashboard?.activeVisit && dashboard.activeVisit.patientId === selectedPatient.id) ||
+			(dashboard?.appointments ?? []).some(
+				(a) => a.patientId === selectedPatient.id && a.status === "in_treatment",
+			)
+		),
+	);
+
 	const dutyDoctorInfo = useMemo(() => {
 		return resolveChairDutyDoctor(
 			chairId,
 			startsAtLocal,
 			chairDoctorAssignments,
-			initialSlot?.dateKey,
+			initialSlot?.dateKey || (startsAtLocal ? startsAtLocal.slice(0, 10) : undefined),
 			initialSlot?.chairId === chairId ? initialSlot?.doctorUserId : null,
 		);
 	}, [chairId, startsAtLocal, chairDoctorAssignments, initialSlot]);
@@ -1659,6 +1669,27 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 												</span>
 											</div>
 										)}
+
+										{/* Active Visit Informative Badge (Mandate 8e Doctor Autonomy) */}
+										{hasActivePatientVisit && (
+											<div
+												className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-100 text-xs flex items-start gap-2"
+												data-testid="quick-booking-active-visit-warning"
+											>
+												<AlertCircle
+													size={15}
+													className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
+												/>
+												<div className="space-y-0.5">
+													<p className="m-0 font-bold">
+														По пациенту сейчас идет активный приём в кресле
+													</p>
+													<p className="m-0 font-normal text-[11px] text-[var(--muted)]">
+														(Мандат 8e: запись на следующий приём не блокируется, врач или администратор может сразу забронировать слот)
+													</p>
+												</div>
+											</div>
+										)}
 									</div>
 								)}
 							</div>
@@ -1976,7 +2007,21 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								<input
 									type="datetime-local"
 									value={startsAtLocal}
-									onChange={(e) => setStartsAtLocal(e.target.value)}
+									onChange={(e) => {
+										const nextVal = e.target.value;
+										setStartsAtLocal(nextVal);
+										if (chairId && nextVal) {
+											const newDuty = resolveChairDutyDoctor(
+												chairId,
+												nextVal,
+												chairDoctorAssignments,
+												nextVal.slice(0, 10),
+											);
+											if (newDuty.doctorId && (!doctorUserId || doctorUserId === dutyDoctorId)) {
+												setDoctorUserId(newDuty.doctorId);
+											}
+										}
+									}}
 									className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
 								/>
 							</div>
@@ -2133,7 +2178,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											newChairId,
 											startsAtLocal,
 											chairDoctorAssignments,
-											initialSlot?.dateKey,
+											initialSlot?.dateKey || (startsAtLocal ? startsAtLocal.slice(0, 10) : undefined),
 										);
 										if (newDuty.doctorId) {
 											setDoctorUserId(newDuty.doctorId);

@@ -66,6 +66,8 @@ export interface OdontogramToolbarProps {
 	onTriggerSanitation?: (() => void) | undefined;
 	onMarkIntactDentition?: (() => void) | undefined;
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
+	onMarkMolarsMissing?: (() => void) | undefined;
+	onMarkFrontIntact?: (() => void) | undefined;
 	onMarkProHygieneDone?: (() => void) | undefined;
 	onApplyFastCariesK021?: (() => void) | undefined;
 	onOpenPediatricModal?: (() => void) | undefined;
@@ -99,6 +101,8 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 	onTriggerSanitation,
 	onMarkIntactDentition,
 	onMarkWisdomTeethMissing,
+	onMarkMolarsMissing,
+	onMarkFrontIntact,
 	onMarkProHygieneDone,
 	onApplyFastCariesK021,
 	onOpenPediatricModal,
@@ -122,33 +126,38 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 	const [isToolsOpen, setIsToolsOpen] = useState<boolean>(false);
 	const toolsRef = useRef<HTMLDivElement | null>(null);
 
-	// Close menu on click outside or Escape
+	// Close menu on click outside or Escape, and reset active stamp tool on Escape (Mandates 8e, 8k)
 	useEffect(() => {
-		if (!isToolsOpen) return;
 		const handleClickOutside = (e: MouseEvent) => {
-			if (toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
+			if (isToolsOpen && toolsRef.current && !toolsRef.current.contains(e.target as Node)) {
 				setIsToolsOpen(false);
 			}
 		};
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
-				setIsToolsOpen(false);
+				if (isToolsOpen) {
+					setIsToolsOpen(false);
+				}
+				if (activeStampTool) {
+					onStampToolChange(null);
+				}
 			}
 		};
 		document.addEventListener("mousedown", handleClickOutside);
-		document.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keydown", handleKeyDown);
 		return () => {
 			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keydown", handleKeyDown);
 		};
-	}, [isToolsOpen]);
+	}, [isToolsOpen, activeStampTool, onStampToolChange]);
 
 	return (
 		<div
-			className={`odontogram-toolbar flex items-center gap-1.5 py-1 border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full overflow-x-auto flex-nowrap scrollbar-none select-none ${className}`.trim()}
+			className={`odontogram-toolbar flex items-center gap-1.5 py-0.5 min-h-[34px] max-h-[36px] h-[36px] border-b border-[var(--odontogram-border-subtle,#e2e8f0)] w-full overflow-x-auto flex-nowrap scrollbar-none select-none ${className}`.trim()}
 			role="toolbar"
 			aria-label="Панель инструментов зубной формулы"
 			data-testid="odontogram-toolbar"
+			style={{ minHeight: "34px", maxHeight: "36px", height: "36px" }}
 		>
 			{/* 1. View Mode Segmented Controls */}
 			<div className="flex items-center gap-1 shrink-0">
@@ -297,33 +306,56 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 					</label>
 				)}
 
-				{/* 1-Click Total Sanitation / Intact Action Trigger */}
-				{(onMarkIntactDentition || onTriggerSanitation) && (
-					<button
-						type="button"
-						onClick={onMarkIntactDentition || onTriggerSanitation}
-						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
-						title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
-						data-testid="mark-intact-dentition-btn"
-					>
-						<Zap size={13} className="text-emerald-600 dark:text-emerald-400" />
-						<span className="whitespace-nowrap">Санирован</span>
-					</button>
-				)}
+				{/* 1-Click Total Sanitation / Intact Action Trigger (Mandates 8e, 8k) */}
+				<button
+					type="button"
+					onClick={() => {
+						if (onMarkIntactDentition) onMarkIntactDentition();
+						else if (onTriggerSanitation) onTriggerSanitation();
+					}}
+					className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+					title="1-клик Санирован / Интактный зубной ряд: все 32 зуба моментально помечаются здоровыми (медосмотр, бассейн, военкомат)"
+					data-testid="mark-intact-dentition-btn"
+				>
+					<Zap size={13} className="text-emerald-600 dark:text-emerald-400" />
+					<span className="whitespace-nowrap">Санирован</span>
+				</button>
 
-				{/* 1-Click Wisdom Teeth Missing (Адентия 8-ок) */}
-				{onMarkWisdomTeethMissing && (
-					<button
-						type="button"
-						onClick={onMarkWisdomTeethMissing}
-						className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
-						title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими/удаленными"
-						data-testid="mark-wisdom-missing-btn"
-					>
-						<Zap size={13} className="text-zinc-500" />
-						<span className="whitespace-nowrap">Без 8-ок</span>
-					</button>
-				)}
+				{/* 1-Click Wisdom Teeth Missing (Адентия 8-ок: 18, 28, 38, 48) */}
+				<button
+					type="button"
+					onClick={() => onMarkWisdomTeethMissing?.()}
+					className="min-h-[32px] h-[32px] px-2.5 py-1 rounded-lg text-xs font-black bg-zinc-500/15 hover:bg-zinc-500/25 text-zinc-800 dark:text-zinc-200 border border-zinc-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+					title="1-клик Адентия зубов мудрости: зубы 18, 28, 38, 48 моментально помечаются отсутствующими/удаленными"
+					data-testid="mark-wisdom-missing-btn"
+				>
+					<Zap size={13} className="text-zinc-500" />
+					<span className="whitespace-nowrap">Без 8-ок</span>
+				</button>
+
+				{/* 1-Click Molars Missing (Вторичная адентия первых моляров: 16, 26, 36, 46) */}
+				<button
+					type="button"
+					onClick={() => onMarkMolarsMissing?.()}
+					className="min-h-[32px] h-[32px] px-2 py-1 rounded-lg text-xs font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-200 border border-amber-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+					title="1-клик Вторичная адентия моляров: зубы 16, 26, 36, 46 моментально помечаются удаленными"
+					data-testid="mark-molars-missing-btn"
+				>
+					<Zap size={13} className="text-amber-600 dark:text-amber-400" />
+					<span className="whitespace-nowrap">Без моляров</span>
+				</button>
+
+				{/* 1-Click Front Intact (Интактный фронт: 13–23, 33–43) */}
+				<button
+					type="button"
+					onClick={() => onMarkFrontIntact?.()}
+					className="min-h-[32px] h-[32px] px-2 py-1 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 transition-all cursor-pointer shrink-0 shadow-xs flex items-center gap-1 active:scale-98"
+					title="1-клик Интактный фронт: резцы и клыки 13–23, 33–43 моментально помечаются здоровыми"
+					data-testid="mark-front-intact-btn"
+				>
+					<Zap size={13} className="text-teal-600 dark:text-teal-400" />
+					<span className="whitespace-nowrap">Интактный фронт</span>
+				</button>
 			</div>
 
 			<div className="h-5 w-[1px] bg-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0 mx-0.5" />
@@ -523,6 +555,50 @@ export const OdontogramToolbar: React.FC<OdontogramToolbarProps> = ({
 									<span>Адентия 8-ок (18, 28, 38, 48)</span>
 								</div>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/10 border border-zinc-500/20 font-mono">
+									1 клик
+								</span>
+							</button>
+						)}
+
+						{/* 1-Click Molars Missing in Tools */}
+						{onMarkMolarsMissing && (
+							<button
+								type="button"
+								onClick={() => {
+									onMarkMolarsMissing();
+									setIsToolsOpen(false);
+								}}
+								className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-amber-700 dark:text-amber-300 font-bold"
+								role="menuitem"
+								data-testid="tools-menu-mark-molars-missing-btn"
+							>
+								<div className="flex items-center gap-2">
+									<Zap size={14} className="text-amber-500" />
+									<span>Вторичная адентия (16, 26, 36, 46)</span>
+								</div>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 font-mono">
+									1 клик
+								</span>
+							</button>
+						)}
+
+						{/* 1-Click Front Intact in Tools */}
+						{onMarkFrontIntact && (
+							<button
+								type="button"
+								onClick={() => {
+									onMarkFrontIntact();
+									setIsToolsOpen(false);
+								}}
+								className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer text-teal-700 dark:text-teal-300 font-bold"
+								role="menuitem"
+								data-testid="tools-menu-mark-front-intact-btn"
+							>
+								<div className="flex items-center gap-2">
+									<Zap size={14} className="text-teal-500" />
+									<span>Интактный фронт (13–23, 33–43)</span>
+								</div>
+								<span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/10 border border-teal-500/20 font-mono">
 									1 клик
 								</span>
 							</button>
