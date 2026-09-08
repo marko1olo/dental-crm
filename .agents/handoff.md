@@ -2,9 +2,9 @@
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-CURRENT HEAD: 53c9395d9ab265eca6842bd26d2b1eba281794fc
-CODE HEAD: c2c33e89d4459d8d7f86c38dc9d9d7147553b3f7
-PREVIOUS HEAD: f9ebcef96915cbfa2984b6006c6f517c4b1fdb3d
+CURRENT HEAD: c44768a6a422119c6db7a2df25b2907beabce620
+CODE HEAD: c44768a6a422119c6db7a2df25b2907beabce620
+PREVIOUS HEAD: 53c9395d9ab265eca6842bd26d2b1eba281794fc
 
 ## 1. Observation & Scope
 Dynamic documentation synchronization per Mandate 8h (Strict ban on working from outdated docs) for new system features 225, 226, and 227 (Wave 46):
@@ -45,16 +45,19 @@ Dynamic documentation synchronization per Mandate 8h (Strict ban on working from
    - Обновлен для фиксации состояния Волны 46.
 
 ## 3. Machine Verification & Test Proof (Wave 46)
+- `apps/web/src/components/finance/__tests__/soloDoctorFrictionKillerWave46.test.tsx`: **12/12 passed (100%)** (Feature 227 — elimination of banknote counting simulator, 54-FZ optional INN for individuals, 1-click writeoffs, zero emojis).
+- `apps/web/src/components/clinical/__tests__/doctorAutonomyWave46.test.tsx`: **24/24 passed (100%)** (Feature 226 — 1-click somatic physiological norm, 0 disabled buttons, Form 043/u print lifecycle, zero cartoon emojis).
+- `apps/web/src/components/schedule/__tests__/scheduleWave46StomxParity.test.tsx`: **7/7 passed (100%)** (Feature 225 — StomX chair shift popover presets, instant duty switcher, 1-click week copy & rotation).
 - `apps/web/src/components/schedule/roster/__tests__/doctorShiftRosterWave44.test.tsx`: **9/9 passed (100%)** (Feature 225).
 - `apps/web/src/components/schedule/__tests__/newAppointmentFormWave45.test.tsx`: **19/19 passed (100%)** (Feature 225).
 - `apps/web/src/components/clinical/__tests__/clinicalFrictionKillerWave44.test.tsx`: **10/10 passed (100%)** (Feature 226).
 - `apps/web/src/components/clinical/__tests__/prescriptionsWave45.test.tsx`: **19/19 passed (100%)** (Feature 226).
 - `apps/web/src/components/finance/__tests__/cashierAutonomyWave44.test.tsx`: **11/11 passed (100%)** (Feature 227).
+- `apps/web/src/components/finance/__tests__/cashShiftAutonomyAndFiscal54Fz.test.tsx`: **8/8 passed (100%)** (Feature 227).
 - `apps/web/src/components/schedule/__tests__/patientSearchAutonomyWave45.test.tsx`: **20/20 passed (100%)**.
-- `packages/shared` tests: **1431/1431 passed (100%)**.
-- `npm run check:encoding`: проверено 5087 файлов, замечаний нет (0 ошибок, строгий UTF-8 без BOM).
-- `npm run typecheck -w @dental/web`: Exit Code 0.
-- `npm run typecheck -w @dental/api`: Exit Code 0.
+- Full monorepo typecheck (`npm run typecheck` across all packages): **100% PASS (Exit Code 0)**.
+- `npm run check:encoding`: проверено 5090 файлов, замечаний нет (0 ошибок, строгий UTF-8 без BOM).
+- Pre-commit Iron Gates (gitleaks, encoding, stub-overrides, fetch-response, dynamic-imports): **100% OK**.
 
 ## 4. Definition of Done (DoD)
 - [x] Строго изолированная область работы субагентов.
