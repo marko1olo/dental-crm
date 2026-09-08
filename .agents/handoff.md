@@ -1,46 +1,47 @@
-# Handoff Report — Swarm Wave 49 (Features 232 & 233 / Mandates 8c, 8d, 8e, 8h, 8k, 8n)
+# Handoff Report — Swarm Wave 50 (Features 234 & 235 / Mandates 8c, 8d, 8e, 8h, 8i, 8k, 8n)
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-CURRENT HEAD: 6af603244d6fedc11b2d730ee91e4598f00bccab
-CODE HEAD: 6af603244d6fedc11b2d730ee91e4598f00bccab
-PREVIOUS HEAD: 34d7b6becf525a1a8110eb0692c4aa047b93965c
+CURRENT HEAD: 9e68063d7e512998d60c77e39e2c45c55b400ab3
+CODE HEAD: 9e68063d7e512998d60c77e39e2c45c55b400ab3
+PREVIOUS HEAD: c99169b56d3eb4af15f0148da7959d0702d095dd
 
 ## 1. Observation & Scope
-Dynamic documentation synchronization and codebase audit for new system features 232 and 233 (Wave 49):
-- **Feature 232 (`расписание_действие::разблокировка_действий_связи_в_карточке_приёма_и_неблокирующее_создание_пациента_у_кресла`)**:
-  - В `apps/web/src/components/schedule/AppointmentQuickActions.tsx` снято условие `patientPhone && startsAt` — блок действий связи (WhatsApp 24ч, SMS-напоминание, подтверждение, перенос) доступен всегда при наличии `startsAt`;
-  - Кнопка копирования SMS доступна всегда для любого визита; кнопки WhatsApp всегда интерактивны (`disabled={false}`), а при клике без телефона выводится тост с рекомендацией указать номер и текст сообщения автоматически копируется в буфер обмена (`navigator.clipboard.writeText`);
-  - В `apps/web/src/components/schedule/AppointmentModal.tsx` снята блокировка `disabled={isCreatingInlinePatient || !newPatientFullName.trim()}` и класс `disabled:cursor-not-allowed` с кнопки быстрого создания пациента;
-  - Внедрен интеллектуальный fallback: при пустом имени и наличии телефона формируется `Пациент (${phone})`; при общем сохранении `handleSave` приём сохраняется с автосозданием инлайн-пациента без блокировок (Мандат 8e п. 2);
-  - Соблюдены стандарты Apple HIG ($\ge 44\times 44\text{px}$) и векторные иконки Lucide.
-- **Feature 233 (`план_лечения_тулбар::чистый_однострочный_тулбар_хика_в_планах_лечения_и_1_клик_применение_пакетов_в_презентере`)**:
-  - В `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx` ликвидировано дублирование кнопки «Куратор» в основном ряду кнопок; она сохранена в выпадающем меню `[⋮ Опции]` (`data-testid="options-menu-curator-btn"`) с иконкой `UserCheck` и динамическим бейджем куратора;
-  - Основной тулбар приведен к строгому однострочному виду по Закону Хика (плотность 32–36px / min-h-[38-44px]);
-  - В `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx` добавлена 1-клик кнопка `presenter-copy-tiers-summary-btn` («Скопировать смету для пациента») с иконкой `Copy`, копирующая структурированный текст всех 3 вариантов (Эконом, Оптимум, Премиум), сумм в ₽, сроков, визитов, рассрочки 0%, вычета 13% НДФЛ, гарантии и телефона клиники в буфер обмена для мессенджеров;
-  - Добавлен переключатель полноэкранного режима `presenter-fullscreen-btn`;
-  - AI Copilot у кресла избавлен от зависаний при пустом вводе — выводится контекстная подсказка со сценариями.
+Dynamic documentation synchronization and codebase audit for new system features 234 and 235 (Wave 50):
+- **Feature 234 (`расписание_квик_букинг::неблокирующее_создание_пациента_по_телефону_и_1_клик_копирование_деталей_записи_для_мессенджеров`)**:
+  - В `apps/web/src/components/schedule/QuickBookingDrawer.tsx` внедрен неблокирующий фоллбэк `candidateName`: при заполнении только номера телефона пациента (`newPatientPhone`) автоматически формируется карта вида `Пациент (${phone})`; это исключает ошибку «Укажите имя пациента для записи» и позволяет регистратору или соло-врачу мгновенно зарегистрировать бронь кресла во время звонка (Мандаты 8e, 8k);
+  - В `handleCreateInlinePatient` при наличии только телефона пациент создается сразу; если оба поля пусты — выводится предупреждающий тост с установкой фокуса вместо падения;
+  - С поля ввода `newPatientFullName` удален блокирующий HTML5-атрибут `required`;
+  - В футер дровера добавлена 1-клик кнопка `quick-booking-copy-confirmation-btn` с векторной иконкой Lucide `Copy` и высотой `min-h-[44px]` (Мандат 8c); формирует структурированное сообщение для WhatsApp/Telegram (клиника, пациент, дата и время, длительность, врач, кабинет/кресло, адрес, телефон для справок и просьба прийти за 10 мин) и копирует в `navigator.clipboard.writeText` с тостом успеха;
+  - Соблюдены стандарты Apple HIG ($\ge 44\times 44\text{px}$) и векторные иконки Lucide без мультяшных эмодзи.
+- **Feature 235 (`анамнез_безопасность::1_клик_стоматологические_аллерго_пресеты_пенициллин_нпвп_латекс_и_экспорт_в_043у`)**:
+  - В `apps/web/src/components/patient/safetyMath.ts` в интерфейс `PatientClinicalSafetyProfile` добавлено поле `hasNsaidAllergy`; в каталог `CLINICAL_SAFETY_CATALOG` добавлен стоп-фактор `allergy_nsaid` со статусом high severity, блокировкой Аспирина, Кеторолака/Кеторола, Ибупрофена, Нимесулида и рекомендацией Парацетамола (до 1000 мг) как препарата выбора;
+  - В `evaluatePatientSafetyFlags`, `parseSafetyProfileFromText` и `formatSafetyProfileToDiaryText` добавлены обработчики аллергии на НПВП, формирующие юридически выверенную запись для амбулаторной карты 043/у;
+  - В верхний бар быстрого выбора `PatientAnamnesisModal.tsx` внедрены 1-клик кнопки пресетов для ключевых стоматологических аллергий: «+ Пенициллины» (`preset-allergy-penicillin`), «+ НПВП / Аспирин» (`preset-allergy-nsaid`), «+ Латекс» (`preset-allergy-latex`) с touch targets $\ge 44\times 44\text{px}$ и векторными иконками Lucide без эмодзи;
+  - В блок критических аллергий модалки добавлен интерактивный переключатель `hasNsaidAllergy`;
+  - В `PatientAllergySafetyBanner.tsx` гарантирован сброс флагов при фиксации нормы в 1 клик и вывод детальных протоколов в дровер безопасности.
 
 ## 2. Synchronized Registries & Backlogs
 1. `docs/competitive-audit/FEATURES_REGISTRY.md`:
-   - Зарегистрированы системные фичи 232 и 233 со статусом `[ДА]`, ценностью 5 и ссылками на реализацию, тесты и коммиты (`5a295eaee`, `e8526b6ea`, `6af603244`).
-   - Всего в реестре: 233 фичи (63 канонические + 170 аддендум), все 233 (100%) имеют статус `[ДА]`.
+   - Зарегистрированы системные фичи 234 и 235 со статусом `[ДА]`, ценностью 5 и ссылками на реализацию, тесты и коммиты (`9e68063d7`, `4d1c1d5df`).
+   - Всего в реестре: 235 фич (63 канонические + 172 аддендум), все 235 (100%) имеют статус `[ДА]`.
 2. `docs/competitive-audit/BACKLOG.md`:
-   - Статусный баннер обновлен до Wave 49 (233 фичи: 63 канонические + 170 аддендум).
-   - Добавлены подразделы 4.103 (Фича 232) и 4.104 (Фича 233) со статусом `[РЕАЛИЗОВАНО]`.
-   - Сводный реестр Части III обновлен до 170 аддендум-фич (Wave 15..49, фичи 64..233).
+   - Статусный баннер обновлен до Wave 50 (235 фич: 63 канонические + 172 аддендум).
+   - Добавлены подразделы 4.105 (Фича 234) и 4.106 (Фича 235) со статусом `[РЕАЛИЗОВАНО]`.
+   - Сводный реестр Части III обновлен до 172 аддендум-фич (Wave 15..50, фичи 64..235).
 3. `docs/competitive-audit/OUR_CRM_MAP.md`:
-   - Добавлены подразделы 2.10.191 (Фича 232) и 2.10.192 (Фича 233) в раздел 2.10.
+   - Добавлены подразделы 2.10.193 (Фича 234) и 2.10.194 (Фича 235) в раздел 2.10.
 4. `.agents/handoff.md`:
-   - Обновлен для фиксации состояния Волны 49.
+   - Обновлен для фиксации состояния Волны 50.
 
-## 3. Machine Verification & Test Proof (Wave 49)
-- `apps/web/src/components/schedule/__tests__/appointmentQuickActionsAutonomyWave49.test.tsx`: **13/13 passed (100%)** (Feature 232).
-- `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx`: **7/7 passed (100%)** (Feature 233).
-- `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterModal.test.tsx`: **27/27 passed (100%)** (Regression check).
-- `apps/web/src/components/schedule/__tests__/scheduleWave41StomxParity.test.tsx`: **19/19 passed (100%)** (Regression check).
+## 3. Machine Verification & Test Proof (Wave 50)
+- `apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx`: **6/6 passed (100%)** (Feature 234).
+- `apps/web/src/components/patient/__tests__/patientAnamnesisAutonomyWave50.test.tsx`: **18/18 passed (100%)** (Feature 235).
+- `apps/web/src/components/schedule/__tests__/*.test.*`: **242/242 passed (100%)** (Schedule regression check).
+- `apps/web/src/components/patient/__tests__/*.test.*`: **52/52 passed (100%)** (Patient safety regression check).
 - Full web typecheck (`npm run typecheck -w @dental/web`): **100% PASS (Exit Code 0)**.
-- `npm run check:encoding`: проверено 5096 файлов, 0 ошибок (строгий UTF-8 без BOM).
+- `npm run check:encoding`: проверено 5098 файлов, 0 ошибок (строгий UTF-8 без BOM).
+- `npm run check:css-tokens`: **100% PASS (0 unresolved tokens)**.
 - Pre-commit Iron Gates (gitleaks, encoding, stub-overrides, fetch-response, dynamic-imports): **100% OK**.
 
 ## 4. Definition of Done (DoD)

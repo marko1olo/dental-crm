@@ -1852,6 +1852,25 @@
 - **Фронтенд**: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`.
 - **Тесты**: `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx` (7/7 pass), `treatmentPlanPresenterModal.test.tsx` (27/27 pass) — коммит `e8526b6ea`.
 
+#### 2.10.193. Расписание и дровер быстрой записи: неблокирующее создание пациента по телефону и 1-клик подтверждение записи для мессенджеров (Фича #234)
+- **Суть и домен**: Ликвидация барьеров при быстрой записи на приём и мгновенная отправка подтверждений пациенту по Мандатам 8c, 8d, 8e п. 2, 8k, 8n:
+  1. *Неблокирующий фоллбэк имени пациента (`QuickBookingDrawer.tsx`)*: в `handleSubmitBooking` и `handleCreateInlinePatient` при заполнении только номера телефона (`newPatientPhone`) автоматически формируется имя пациента `Пациент (${phone})`; это исключает сбой «Укажите имя пациента для записи» и позволяет регистратору или соло-врачу зафиксировать запись за 5 секунд прямо во время входящего телефонного звонка;
+  2. *Мягкая валидация и снятие HTML5-блокировок*: с поля ввода `newPatientFullName` удален браузерный атрибут `required`; при отсутствии обоих полей выводится предупреждающий тост с установкой фокуса;
+  3. *1-клик копирование подтверждения записи для мессенджеров*: в футер дровера добавлена кнопка `quick-booking-copy-confirmation-btn` с иконкой `Copy` и высотой `min-h-[44px]` (Мандат 8c); формирует текстовое подтверждение для WhatsApp/Telegram (клиника, пациент, дата, время, длительность, врач, кабинет/кресло, адрес, телефон, просьба прийти за 10 мин) и копирует в буфер обмена `navigator.clipboard.writeText` с тостом успеха;
+  4. *Интеграция со слотом расписания*: расширено открытие дровера из сетки расписания при наличии переданного номера телефона пациента.
+- **Фронтенд**: `apps/web/src/components/schedule/QuickBookingDrawer.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx` (6/6 pass), `apps/web/src/components/schedule/__tests__/*.test.*` (242/242 pass) — коммит `9e68063d7`.
+
+#### 2.10.194. Клиническая безопасность и анкета здоровья: 1-клик стоматологические аллерго-пресеты (Пенициллины, НПВП, Латекс) и экспорт в Карту 043/у (Фича #235)
+- **Суть и домен**: Защита пациента от ятрогенных осложнений и ускорение сбора анамнеза по Мандатам 8c, 8d, 8e п. 1, 8e п. 3, 8i, 8k:
+  1. *Расширение клинического профиля безопасности (`safetyMath.ts`)*: в интерфейс `PatientClinicalSafetyProfile` добавлено поле `hasNsaidAllergy`; в каталог `CLINICAL_SAFETY_CATALOG` добавлен стоп-фактор `allergy_nsaid` со статусом high severity, блокировкой Аспирина, Кеторолака/Кеторола, Ибупрофена, Нимесулида и рекомендацией Парацетамола (до 1000 мг) как анальгетика выбора;
+  2. *Распознавание в тексте и экспорт в Карту 043/у*: в `evaluatePatientSafetyFlags`, `parseSafetyProfileFromText` и `formatSafetyProfileToDiaryText` добавлены обработчики аллергии на НПВП, формирующие юридически чистую запись для амбулаторной карты;
+  3. *1-клик кнопки аллерго-пресетов в анкете здоровья (`PatientAnamnesisModal.tsx`)*: в верхний бар быстрого выбора добавлены кнопки пресетов для ключевых стоматологических аллергий: «+ Пенициллины» (`preset-allergy-penicillin`), «+ НПВП / Аспирин» (`preset-allergy-nsaid`), «+ Латекс» (`preset-allergy-latex`) с touch targets $\ge 44\times 44\text{px}$ и векторными иконками Lucide без эмодзи;
+  4. *Интерактивный переключатель в блоке Red Flags*: добавлен тумблер `hasNsaidAllergy` в блок критических аллергий модалки анкеты здоровья;
+  5. *Интеграция с баннером безопасности (`PatientAllergySafetyBanner.tsx`)*: обеспечен гарантированный сброс `hasNsaidAllergy: false` при фиксации нормы в 1 клик и вывод детальных протоколов в дровер безопасности.
+- **Фронтенд**: `apps/web/src/components/patient/safetyMath.ts`, `apps/web/src/components/patient/PatientAnamnesisModal.tsx`, `apps/web/src/components/patient/PatientAllergySafetyBanner.tsx`.
+- **Тесты**: `apps/web/src/components/patient/__tests__/patientAnamnesisAutonomyWave50.test.tsx` (18/18 pass), `apps/web/src/components/patient/__tests__/*.test.*` (52/52 pass) — коммит `4d1c1d5df`.
+
 
 
 

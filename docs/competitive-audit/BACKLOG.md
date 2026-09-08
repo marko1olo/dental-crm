@@ -2430,11 +2430,32 @@
 - **Файлы**: `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`, `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx`.
 - **Тесты**: `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterAutonomyWave49.test.tsx` (7/7 pass), `treatmentPlanPresenterModal.test.tsx` (27/27 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `e8526b6ea`.
 
+## 4.105. `расписание_квик_букинг::неблокирующее_создание_пациента_по_телефону_и_1_клик_копирование_деталей_записи_для_мессенджеров` [РЕАЛИЗОВАНО] (Wave 50)
+- **Идея**: Неблокирующее создание пациента по номеру телефона в дровере быстрой записи (фоллбэк «Пациент (номер)», снятие блокирующего атрибута required) и 1-клик копирование подтверждения записи для мессенджеров (WhatsApp/Telegram/SMS) (Мандаты 8c, 8d, 8e, 8k, 8n).
+- **Архитектурное решение**:
+  1. *Неблокирующий фоллбэк имени пациента (`QuickBookingDrawer.tsx`)*: в `handleSubmitBooking` и `handleCreateInlinePatient` при заполнении только номера телефона пациента (`newPatientPhone`) автоматически формируется кандидатское имя вида `Пациент (${phone})`; это исключает сбой валидации «Укажите имя пациента для записи» и позволяет регистратору или соло-врачу мгновенно зарегистрировать бронь кресла во время входящего телефонного звонка;
+  2. *Мягкая валидация и снятие HTML5-барьеров*: из поля ввода `newPatientFullName` удален блокирующий атрибут `required`; если оба поля пусты, вместо вылета с ошибкой выдается мягкий предупреждающий тост с автофокусом;
+  3. *1-клик копирование подтверждения записи для мессенджеров*: в футер дровера добавлена кнопка `quick-booking-copy-confirmation-btn` с векторной иконкой Lucide `Copy` и высотой `min-h-[44px]` (Мандат 8c); формирует структурированное сообщение для WhatsApp/Telegram (название клиники, пациент, дата и время, длительность, врач, кабинет/кресло, адрес клиники, телефон для справок и напоминание прийти за 10 минут) и копирует в `navigator.clipboard.writeText` с тостом успеха;
+  4. *Интеграция со слотом расписания*: расширено условие раскрытия формы быстрого создания при открытии дровера из сетки расписания, если передан номер телефона.
+- **Файлы**: `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/quickBookingAutonomyWave50.test.tsx` (6/6 pass), `apps/web/src/components/schedule/__tests__/*.test.*` (242/242 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `9e68063d7`.
+
+## 4.106. `анамнез_безопасность::1_клик_стоматологические_аллерго_пресеты_пенициллин_нпвп_латекс_и_экспорт_в_043у` [РЕАЛИЗОВАНО] (Wave 50)
+- **Идея**: 1-клик стоматологические аллерго-пресеты (Пенициллины/Амоксиклав, НПВП/Аспирин/Кеторол, Латекс/Коффердам) в анкете здоровья, расчет клинических стоп-факторов и экспорт в Форму 043/у (Мандаты 8c, 8d, 8e п. 1, 8e п. 3, 8i, 8k).
+- **Архитектурное решение**:
+  1. *Расширение клинического профиля безопасности (`safetyMath.ts`)*: в интерфейс `PatientClinicalSafetyProfile` добавлено поле `hasNsaidAllergy`; в каталог `CLINICAL_SAFETY_CATALOG` добавлен стоп-фактор `allergy_nsaid` со статусом high severity, блокировкой Аспирина, Кеторолака/Кеторола, Ибупрофена, Нимесулида и рекомендацией Парацетамола (до 1000 мг) как анальгетика выбора;
+  2. *Распознавание в тексте и экспорт в 043/у*: в `evaluatePatientSafetyFlags`, `parseSafetyProfileFromText` и `formatSafetyProfileToDiaryText` добавлены обработчики аллергии на НПВП, формирующие юридически чистую запись для медицинской карты 043/у;
+  3. *1-клик кнопки аллерго-пресетов в анкете здоровья (`PatientAnamnesisModal.tsx`)*: в верхний бар быстрого выбора добавлены кнопки пресетов для ключевых стоматологических аллергий: «+ Пенициллины» (`preset-allergy-penicillin`), «+ НПВП / Аспирин» (`preset-allergy-nsaid`), «+ Латекс» (`preset-allergy-latex`) с touch targets $\ge 44\times 44\text{px}$ и векторными иконками Lucide без эмодзи;
+  4. *Интерактивный переключатель в блоке Red Flags*: добавлен тумблер `hasNsaidAllergy` в блок критических аллергий модалки анкеты здоровья;
+  5. *Интеграция с баннером безопасности (`PatientAllergySafetyBanner.tsx`)*: обеспечен гарантированный сброс `hasNsaidAllergy: false` при фиксации нормы в 1 клик и вывод детальных протоколов в дровер безопасности.
+- **Файлы**: `apps/web/src/components/patient/safetyMath.ts`, `apps/web/src/components/patient/PatientAnamnesisModal.tsx`, `apps/web/src/components/patient/PatientAllergySafetyBanner.tsx`, `apps/web/src/components/patient/__tests__/patientAnamnesisAutonomyWave50.test.tsx`.
+- **Тесты**: `apps/web/src/components/patient/__tests__/patientAnamnesisAutonomyWave50.test.tsx` (18/18 pass), `apps/web/src/components/patient/__tests__/*.test.*` (52/52 pass), `npm run typecheck -w @dental/web` (Exit Code 0) — коммит `4d1c1d5df`.
+
 ---
 
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 170 дополнительных системных аддендум-фич клинической автономии (Wave 15..49, фичи 64..233) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 172 дополнительные системные аддендум-фичи клинической автономии (Wave 15..50, фичи 64..235) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;
