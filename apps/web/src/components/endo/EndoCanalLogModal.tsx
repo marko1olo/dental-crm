@@ -2,8 +2,10 @@ import {
 	Activity,
 	Check,
 	Clipboard,
+	Copy,
 	FileText,
 	Plus,
+	Printer,
 	RotateCcw,
 	ShieldCheck,
 	Sparkles,
@@ -98,6 +100,53 @@ export {
 	formatEndoCanalsTable043,
 };
 
+export interface EndoPatientMemoParams {
+	readonly clinicName: string;
+	readonly clinicPhone: string;
+	readonly patientName: string;
+	readonly doctorName: string;
+	readonly toothNumber: number;
+	readonly toothAnatomicalNameRu?: string | undefined;
+	readonly isTemporaryCaOh2?: boolean | undefined;
+	readonly isPermanentObturation?: boolean | undefined;
+	readonly nextVisitDays?: number | string | undefined;
+	readonly date?: string | undefined;
+}
+
+export function formatEndoPatientMemo(params: EndoPatientMemoParams): string {
+	const clinicName = params.clinicName.trim() || "Стоматологическая клиника DENTE";
+	const clinicPhone = params.clinicPhone.trim() || "+7 (495) 123-45-67";
+	const patientName = params.patientName.trim() || "Пациент";
+	const doctorName = params.doctorName.trim() || "Врач-стоматолог-терапевт (эндодонтист)";
+	const date = params.date || new Date().toLocaleDateString("ru-RU");
+	const toothName = params.toothAnatomicalNameRu
+		? `${params.toothNumber} (${params.toothAnatomicalNameRu})`
+		: `зуб ${params.toothNumber}`;
+	const stage = params.isPermanentObturation
+		? "Постоянная трёхмерная обтурация корневых каналов гуттаперчей с герметиком"
+		: "Антисептическая обработка каналов и временное пломбирование гидроксидом кальция Ca(OH)2";
+	const nextVisit = params.nextVisitDays
+		? `${params.nextVisitDays}`
+		: params.isPermanentObturation
+			? "через 10-14 дней (контрольный снимок и постоянная реставрация/коронка)"
+			: "через 10-14 дней для замены лекарства или постоянной пломбировки каналов";
+
+	return [
+		`Памятка пациенту после эндодонтического лечения корневых каналов (клиника «${clinicName}»):`,
+		`Пациент: ${patientName}`,
+		`Лечащий врач: ${doctorName}`,
+		`Дата приёма: ${date}`,
+		`Пролеченный зуб: ${toothName}`,
+		`Этап лечения: ${stage}`,
+		`Памятка и правила ухода:`,
+		`1. Не принимайте пищу в течение 2 часов до полного затвердевания временной пломбы.`,
+		`2. Не нагружайте зуб твёрдой или липкой пищей (сухари, орехи, ириски) во избежание скола стенок зуба до покрытия коронкой.`,
+		`3. Умеренная болезненность при накусывании в течение 2–5 дней является естественной реакцией тканей периодонта на механическую и медикаментозную обработку. При дискомфорте примите назначенное врачом обезболивающее средство (Парацетамол / Ибупрофен).`,
+		`4. Срок следующего визита: ${nextVisit}.`,
+		`5. При появлении отёка десны или пульсирующей боли немедленно свяжитесь с клиникой: ${clinicPhone}.`,
+	].join("\n");
+}
+
 export interface EndoCanalLogModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -120,6 +169,10 @@ export interface EndoCanalLogModalProps {
 		savedCanals: EndoCanalData[],
 		noteText?: string,
 	) => void;
+	readonly clinicName?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly patientName?: string | undefined;
 }
 
 export function EndoCanalLogModal({
@@ -135,6 +188,10 @@ export function EndoCanalLogModal({
 	onInsertToProtocol,
 	onSaveCanals,
 	onSave,
+	clinicName = "Стоматологическая клиника DENTE",
+	clinicPhone = "+7 (495) 123-45-67",
+	doctorName = "Врач-стоматолог-терапевт (эндодонтист)",
+	patientName = "Пациент",
 }: EndoCanalLogModalProps) {
 	const [canals, setCanals] = useState<EndoCanalData[]>(() => {
 		if (initialCanals && initialCanals.length > 0) {
@@ -582,6 +639,48 @@ export function EndoCanalLogModal({
 		} catch {
 			showToast("Не удалось скопировать текст", "error");
 		}
+	};
+
+	// 1-Click Patient Endo Memo for Messengers (Feature 243, Mandates 8e, 8k, 8n)
+	const handleCopyPatientMemo = async () => {
+		try {
+			const isPermanent = Boolean(
+				canals.some((c) => c.obturationTechnique && c.obturationTechnique !== "none") ||
+				radiologyControl.toLowerCase().includes("обтурирован"),
+			);
+
+			const isTemporaryCaOh2 = Boolean(
+				!isPermanent ||
+				irrigation.toLowerCase().includes("ca(oh)2") ||
+				rotarySystem.toLowerCase().includes("ca(oh)2") ||
+				canals.some((c) => c.notes && c.notes.toLowerCase().includes("ca(oh)2")),
+			);
+
+			const text = formatEndoPatientMemo({
+				clinicName,
+				clinicPhone,
+				patientName,
+				doctorName,
+				toothNumber,
+				toothAnatomicalNameRu: toothAnatomicalName,
+				isTemporaryCaOh2,
+				isPermanentObturation: isPermanent,
+			});
+
+			await navigator.clipboard.writeText(text);
+			showToast(
+				"Памятка по уходу после лечения каналов скопирована для пациента",
+				"success",
+			);
+		} catch {
+			showToast("Не удалось скопировать памятку для пациента", "error");
+		}
+	};
+
+	// Print official Endodontic Worksheet / Form 043/u attachment (A4)
+	const handlePrintWorksheet = () => {
+		showToast("Отправка эндо-карты на печать...", "info");
+		window.print();
 	};
 
 	if (!isOpen) return null;
@@ -1066,16 +1165,40 @@ export function EndoCanalLogModal({
 
 				{/* Bottom Action Footer */}
 				<footer className="flex flex-wrap items-center justify-between gap-3 p-5 sm:p-6 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90">
-					<button
-						type="button"
-						onClick={onClose}
-						disabled={isSaving}
-						className="min-h-[50px] px-5 py-2.5 rounded-xl text-sm font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer"
-					>
-						Отмена
-					</button>
+					<div className="flex items-center gap-2.5 flex-wrap">
+						<button
+							type="button"
+							onClick={handleCopyPatientMemo}
+							data-testid="endo-copy-patient-memo-btn"
+							className="min-h-[50px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+							title="Скопировать памятку по уходу после лечения каналов для отправки пациенту в WhatsApp/Telegram"
+						>
+							<Copy size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+							<span>Скопировать для пациента</span>
+						</button>
+
+						<button
+							type="button"
+							onClick={handlePrintWorksheet}
+							data-testid="endo-print-worksheet-btn"
+							className="min-h-[50px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+							title="Распечатать эндодонтическую карту (А4) для истории болезни"
+						>
+							<Printer size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+							<span>Печать эндо-карты (А4)</span>
+						</button>
+					</div>
 
 					<div className="flex items-center gap-3 flex-wrap">
+						<button
+							type="button"
+							onClick={onClose}
+							disabled={isSaving}
+							className="min-h-[50px] px-5 py-2.5 rounded-xl text-sm font-bold bg-[var(--surface,#f1f5f9)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[var(--surface-muted,#e2e8f0)] dark:hover:bg-slate-700 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer"
+						>
+							Отмена
+						</button>
+
 						<button
 							type="button"
 							data-testid="save-endo-canals-btn"

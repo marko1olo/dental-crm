@@ -142,16 +142,16 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 
 	const handleOneClickPositiveBehavior = () => {
 		setFrankl(4);
-		const noteText = "⚡ Поведение ребенка на приеме абсолютно позитивное (Frankl 4/4), психологическая адаптация успешна, лечение выполнено в полном объеме без удержания. Ребенок спокоен, доброжелателен, страха перед стоматологом нет.";
+		const noteText = "Поведение ребенка на приеме абсолютно позитивное (Frankl 4/4), психологическая адаптация успешна, лечение выполнено в полном объеме без удержания. Ребенок спокоен, доброжелателен, страха перед стоматологом нет.";
 		setCustomNotes(noteText);
 		setHasAnesthesia(true);
 		onApplyFrankl?.(4, noteText);
-		showToast("⚡ 1-клик: Поведение Frankl 4/4 и успешная адаптация применены!", "success");
+		showToast("1-клик: Поведение Frankl 4/4 и успешная адаптация применены!", "success");
 	};
 
 	const handleOneClickAnesthesiaMemo = () => {
 		setHasAnesthesia(true);
-		showToast("⚡ Памятка по анестезии, защите губы и гигиене сформирована!", "success");
+		showToast("Памятка по анестезии, защите губы и гигиене сформирована!", "success");
 	};
 
 	const handleCopyText = async () => {
@@ -270,7 +270,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							title="Мгновенная печать памятки без блокирующих вопросов (1 клик)"
 						>
 							<Printer className="w-4 h-4" />
-							<span className="hidden sm:inline">⚡ 1-клик Печать</span>
+							<span className="hidden sm:inline">1-клик Печать</span>
 						</button>
 						<button
 							type="button"
@@ -285,13 +285,13 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 
 				{/* Body */}
 				<div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-6">
-					{/* ⚡ 1-Клик Экспресс-Пресеты (Мандат 8e: 0 лишних кликов) */}
+					{/* 1-Клик Экспресс-Пресеты (Мандат 8e: 0 лишних кликов) */}
 					<div className="p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-transparent border border-teal-500/30 space-y-3 shadow-xs">
 						<div className="flex items-center justify-between gap-2 flex-wrap">
 							<div className="flex items-center gap-2">
 								<Zap className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 								<span className="text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-300">
-									⚡ Экспресс-заполнение в 1 клик (Стандарт детского приема)
+									Экспресс-заполнение в 1 клик (Стандарт детского приема)
 								</span>
 							</div>
 							<span className="text-[11px] text-[var(--odontogram-ink-muted,var(--muted,#64748b))] font-medium">
@@ -312,7 +312,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							>
 								<span className="flex items-center gap-2 text-left truncate">
 									<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-									<span className="truncate">⚡ 1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания</span>
+									<span className="truncate">1-клик: Поведение позитивное (Frankl 4/4), адаптация успешна, лечение без удержания</span>
 								</span>
 								{frankl === 4 ? (
 									<span className="inline-flex items-center gap-1 text-xs font-black text-emerald-700 dark:text-emerald-300 shrink-0 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md">
@@ -336,7 +336,7 @@ export const PediatricParentMemoModal: React.FC<PediatricParentMemoModalProps> =
 							>
 								<span className="flex items-center gap-2 text-left truncate">
 									<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-									<span className="truncate">⚡ 1-клик: Памятка родителям (после анестезии, не кусать губу, гигиена)</span>
+									<span className="truncate">1-клик: Памятка родителям (после анестезии, не кусать губу, гигиена)</span>
 								</span>
 								{hasAnesthesia && (
 									<span className="inline-flex items-center gap-1 text-xs font-black text-amber-700 dark:text-amber-300 shrink-0 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded-md">

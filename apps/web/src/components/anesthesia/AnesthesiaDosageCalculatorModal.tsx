@@ -260,13 +260,11 @@ export function AnesthesiaDosageCalculatorModal({
 	const handleCopyPatientMemo = useCallback(async () => {
 		try {
 			let expectedDuration = "2–3 часа";
-			if (selectedDrugId === "mepivacaine_plain" || selectedDrugId === "scandonest_plain") {
+			if (selectedDrugId === "mepivacaine_plain") {
 				expectedDuration = "1.5–2 часа";
 			} else if (
-				techniqueId === "mandibular" ||
-				techniqueId === "torus" ||
-				techniqueId === "tuberal" ||
-				techniqueId === "infraorbital"
+				techniqueId === "mandibular_torus" ||
+				techniqueId === "tuberal"
 			) {
 				expectedDuration = "3–4 часа";
 			}
