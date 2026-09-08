@@ -29,6 +29,8 @@ import {
 	FileCheck2,
 	FileText,
 	Layers,
+	Maximize2,
+	Minimize2,
 	Percent,
 	Printer,
 	RotateCcw,
@@ -79,6 +81,7 @@ import {
 	type ClinicalBundleId,
 } from "./treatmentPlanBundlesEngine";
 import "./treatmentPlans.css";
+import { showToast } from "../GlobalToast";
 
 export interface PlanItemLike {
 	readonly name?: string | undefined;
@@ -159,6 +162,7 @@ export interface TreatmentPlanPresenterModalProps {
 	readonly clinicInn?: string | undefined;
 	readonly clinicOgrn?: string | undefined;
 	readonly clinicAddress?: string | undefined;
+	readonly clinicPhone?: string | undefined;
 	readonly clinicLicense?: string | undefined;
 	readonly contractNumber?: string | undefined;
 	readonly teeth?: readonly ToothData[] | undefined;
@@ -207,6 +211,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	clinicInn = "7701234567",
 	clinicOgrn = "1237700456789",
 	clinicAddress = "г. Москва, ул. Клиническая, д. 10, стр. 1",
+	clinicPhone = "+7 (495) 777-88-99",
 	clinicLicense = "ЛО41-01137-77/00567890 от 15.01.2023 выдана Департаментом здравоохранения г. Москвы",
 	contractNumber,
 	teeth,
@@ -251,6 +256,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const [showMicroConsumables, setShowMicroConsumables] = useState<boolean>(false);
 	const [printDocFormat, setPrintDocFormat] = useState<"patient_friendly" | "official_appendix">("patient_friendly");
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
+	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
 	// AI Copilot & AI Audit state
 	const [copilotFeedback, setCopilotFeedback] = useState<string | null>(null);
@@ -265,6 +271,52 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 		navigator.clipboard.writeText(text);
 		setCopiedField(fieldKey);
 		setTimeout(() => setCopiedField(null), 2500);
+	};
+
+	const handleCopyTiersSummary = (): string => {
+		const economyTier = allTiers.find((t) => t.tierId === "economy") || allTiers[0];
+		const standardTier = allTiers.find((t) => t.tierId === "standard") || allTiers[1] || allTiers[0];
+		const premiumTier = allTiers.find((t) => t.tierId === "optimum") || allTiers[2] || allTiers[0];
+
+		const economyTotal = economyTier?.totalRub?.toLocaleString("ru-RU") ?? "0";
+		const economyWeeks = economyTier?.durationWeeks ?? 0;
+		const economyVisits = economyTier?.durationVisits ?? 0;
+
+		const standardTotal = standardTier?.totalRub?.toLocaleString("ru-RU") ?? "0";
+		const standardWeeks = standardTier?.durationWeeks ?? 0;
+		const standardVisits = standardTier?.durationVisits ?? 0;
+		const standardInstallment = (
+			standardTier?.monthlyInstallment12Rub ||
+			standardTier?.installments?.[12]?.monthlyPaymentRub ||
+			(standardTier?.totalRub ? Math.round(standardTier.totalRub / 12) : 0)
+		).toLocaleString("ru-RU");
+		const standardNdfl = (
+			standardTier?.ndflRefundRub ||
+			standardTier?.ndflDetails?.refundRub ||
+			0
+		).toLocaleString("ru-RU");
+
+		const premiumTotal = premiumTier?.totalRub?.toLocaleString("ru-RU") ?? "0";
+		const premiumWeeks = premiumTier?.durationWeeks ?? 0;
+		const premiumVisits = premiumTier?.durationVisits ?? 0;
+		const warranty = premiumTier?.warrantyYears ?? standardTier?.warrantyYears ?? 5;
+
+		const summaryText = [
+			`План лечения для пациента ${patientName} (клиника ${clinicName}):`,
+			`Вариант А (Эконом): ${economyTotal} ₽ · ${economyWeeks} нед. (${economyVisits} виз.)`,
+			`Вариант Б (Оптимум, Рекомендация врача): ${standardTotal} ₽ · ${standardWeeks} нед. (${standardVisits} виз.) · Рассрочка 0%: ${standardInstallment} ₽/мес · Вычет 13% НДФЛ: ${standardNdfl} ₽`,
+			`Вариант В (Премиум): ${premiumTotal} ₽ · ${premiumWeeks} нед. (${premiumVisits} виз.)`,
+			`Гарантия на работы до ${warranty} лет. Запись на прием: ${clinicPhone}`,
+		].join("\n");
+
+		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+			navigator.clipboard.writeText(summaryText).catch(() => {});
+		}
+
+		showToast("Варианты сметы скопированы в буфер обмена для отправки пациенту в мессенджер", "success");
+		setConfirmedNotice("Смета скопирована для отправки в WhatsApp / Telegram!");
+		setTimeout(() => setConfirmedNotice(null), 3500);
+		return summaryText;
 	};
 
 	const handleRunAiAudit = async () => {
@@ -556,7 +608,10 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 			aria-modal="true"
 			aria-labelledby="treatment-presenter-modal-title"
 		>
-			<div className="treatment-presenter-modal" data-testid="treatment-presenter-modal-card">
+			<div
+				className={`treatment-presenter-modal ${isFullscreen ? "treatment-presenter-fullscreen fixed inset-0 !max-w-none !max-h-none !w-screen !h-screen !rounded-none z-[1001]" : ""}`}
+				data-testid="treatment-presenter-modal-card"
+			>
 				{/* Top Bar Header */}
 				<header className="treatment-presenter-header no-print">
 					<div className="treatment-presenter-header-main">
@@ -587,16 +642,53 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							</div>
 						</div>
 
-						{/* Close Button on Mobile / Desktop */}
-						<button
-							type="button"
-							onClick={onClose}
-							className="treatment-presenter-close-btn"
-							aria-label="Закрыть модальное окно"
-							data-testid="close-treatment-presenter-btn"
-						>
-							<X size={20} />
-						</button>
+						{/* Header Actions: 1-Click Copy Summary, Print Appendix, Fullscreen & Close */}
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={handleCopyTiersSummary}
+								className="min-h-[44px] sm:min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-2 cursor-pointer transition-all touch-manipulation hover:border-[var(--tp-primary)]"
+								title="Скопировать варианты сметы для пациента (WhatsApp / Telegram)"
+								data-testid="presenter-copy-tiers-summary-btn"
+							>
+								<Copy size={15} className="text-[var(--tp-primary)] shrink-0" />
+								<span className="hidden sm:inline">Скопировать смету для пациента</span>
+								<span className="sm:hidden">Скопировать</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={handlePrintAppendix}
+								className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--tp-surface-soft)] hover:bg-[var(--tp-surface)] text-[var(--tp-text-main)] border border-[var(--tp-border)] shadow-xs flex items-center gap-1.5 cursor-pointer transition-all touch-manipulation"
+								title="Печать Приложения №1 к Договору (ПП РФ № 736)"
+								data-testid="presenter-header-print-btn"
+							>
+								<Printer size={15} className="shrink-0" />
+								<span className="hidden md:inline">Печать №1</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setIsFullscreen((prev) => !prev)}
+								className="treatment-presenter-close-btn"
+								title={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
+								aria-label={isFullscreen ? "Выйти из полноэкранного режима" : "Полноэкранный режим"}
+								data-testid="presenter-fullscreen-btn"
+							>
+								{isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+							</button>
+
+							{/* Close Button on Mobile / Desktop */}
+							<button
+								type="button"
+								onClick={onClose}
+								className="treatment-presenter-close-btn"
+								aria-label="Закрыть модальное окно"
+								data-testid="close-treatment-presenter-btn"
+							>
+								<X size={20} />
+							</button>
+						</div>
 					</div>
 
 					{/* Navigation Tabs */}
@@ -682,10 +774,14 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 							value={customPrompt}
 							onChange={(e) => setCustomPrompt(e.target.value)}
 							onKeyDown={(e) => {
-								if (e.key === "Enter" && customPrompt.trim()) {
+								if (e.key === "Enter") {
 									e.preventDefault();
-									handleExecuteCopilot(customPrompt.trim());
-									setCustomPrompt("");
+									if (customPrompt.trim()) {
+										handleExecuteCopilot(customPrompt.trim());
+										setCustomPrompt("");
+									} else {
+										setCopilotFeedback("Введите команду или выберите готовый сценарий презентации («бюджет 120к», «без имплантации»)");
+									}
 								}
 							}}
 							placeholder="Команда ассистенту (напр. 'бюджет 120к')"

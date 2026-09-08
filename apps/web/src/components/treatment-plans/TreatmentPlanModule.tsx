@@ -96,6 +96,7 @@ export interface TreatmentPlanModuleProps {
 	readonly onPlanSaved?: (planId: string) => void;
 	readonly className?: string;
 	readonly planCreatedAtIso?: string;
+	readonly initialOptionsMenuOpen?: boolean;
 }
 
 export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
@@ -106,6 +107,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	onPlanSaved,
 	className = "",
 	planCreatedAtIso,
+	initialOptionsMenuOpen = false,
 }) => {
 	const { dashboard, auth } = useAppLogicContext();
 
@@ -134,7 +136,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 	const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState<boolean>(false);
 	const [selectedInstallmentStage, setSelectedInstallmentStage] = useState<TreatmentPlanStage | null>(null);
 	const [isCuratorModalOpen, setIsCuratorModalOpen] = useState<boolean>(false);
-	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(false);
+	const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState<boolean>(initialOptionsMenuOpen);
 	const optionsMenuRef = useRef<HTMLDivElement>(null);
 
 	// AI Copilot & Custom Stages State
@@ -624,7 +626,10 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 					{/* Secondary 1: Digital Signature Indicator / Button */}
 					{signedAgreement ? (
-						<div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+						<div
+							className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold min-h-[44px] sm:min-h-[38px] touch-manipulation"
+							data-testid="tp-signed-badge"
+						>
 							<ShieldCheck size={16} />
 							<span>ПОДПИСАНО</span>
 						</div>
@@ -632,8 +637,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsSignModalOpen(true)}
-							className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors"
+							className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] text-[var(--ink,#0f172a)] border border-[var(--border,#cbd5e1)] cursor-pointer transition-colors touch-manipulation shadow-xs"
 							title="Открыть окно цифровой подписи согласия"
+							data-testid="tp-sign-btn"
 						>
 							<PenTool size={14} />
 							<span>Подписать</span>
@@ -644,8 +650,9 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsInvoiceModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors"
+						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--border,#cbd5e1)] shadow-xs cursor-pointer transition-colors touch-manipulation"
 						title="Сформировать наряд / счет на оплату с контролем цен и защитой сметы (Фича #41)"
+						data-testid="tp-invoice-btn"
 					>
 						<Receipt size={15} />
 						<span>Счет / Наряд</span>
@@ -655,22 +662,12 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 					<button
 						type="button"
 						onClick={() => setIsFiscalModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs cursor-pointer transition-all"
+						className="min-h-[44px] sm:min-h-[38px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft,var(--paper-soft))] border border-[var(--teal,var(--brand-primary))]/30 shadow-xs cursor-pointer transition-all touch-manipulation"
 						title="Принять оплату (карты, СБП QR, наличные) и пробить фискальный чек 54-ФЗ"
+						data-testid="tp-fiscal-btn"
 					>
 						<ShieldCheck size={15} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Чек 54-ФЗ</span>
-					</button>
-
-					{/* Secondary 3.5: Curator of Treatment Button */}
-					<button
-						type="button"
-						onClick={() => setIsCuratorModalOpen(true)}
-						className="min-h-[40px] flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[var(--accent,#6366f1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-strong)] border border-[var(--accent,#6366f1)]/30 shadow-xs cursor-pointer transition-all"
-						title="Закрепить куратора лечения за пациентом и планом (Фича #27)"
-					>
-						<UserCheck size={15} className="text-[var(--accent,#6366f1)]" />
-						<span>{patient?.administrativeProfile?.curatorFullName ? `Куратор: ${patient.administrativeProfile.curatorFullName.split(" ")[0]}` : "Куратор"}</span>
 					</button>
 
 					{/* Secondary 4: Overflow Dropdown Menu [⋮ Опции] */}
@@ -678,10 +675,11 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-							className="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors"
+							className="min-h-[44px] sm:min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-[var(--border,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong)] cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs transition-colors touch-manipulation"
 							title="Дополнительные студии, валидация и печать"
 							aria-label="Опции плана лечения"
 							aria-expanded={isOptionsMenuOpen}
+							data-testid="treatment-plan-options-menu-btn"
 						>
 							<MoreVertical size={15} className="text-[var(--teal,var(--brand-primary))]" />
 							<span className="hidden sm:inline">Опции</span>
@@ -689,7 +687,7 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 
 						{isOptionsMenuOpen && (
 							<div
-								className="absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[240px] animate-in fade-in zoom-in-95 duration-100 text-xs"
+								className="absolute right-0 top-full mt-1.5 z-50 flex flex-col gap-0.5 p-1.5 bg-[var(--paper-strong,var(--paper,#ffffff))] border border-[var(--border,#cbd5e1)] rounded-2xl shadow-2xl min-w-[260px] animate-in fade-in zoom-in-95 duration-100 text-xs"
 								role="menu"
 							>
 								<div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
@@ -701,11 +699,23 @@ export const TreatmentPlanModule: React.FC<TreatmentPlanModuleProps> = ({
 										setIsCuratorModalOpen(true);
 										setIsOptionsMenuOpen(false);
 									}}
-									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center gap-2 cursor-pointer"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-[var(--ink,#0f172a)] hover:bg-[var(--teal-soft,var(--paper-soft))] hover:text-[var(--teal-dark,var(--teal))] transition-colors flex items-center justify-between gap-2 cursor-pointer touch-manipulation"
 									role="menuitem"
+									data-testid="options-menu-curator-btn"
 								>
-									<UserCheck size={14} className="text-[var(--accent,#6366f1)]" />
-									<span>Куратор лечения (воронка и комиссия)</span>
+									<div className="flex items-center gap-2">
+										<UserCheck size={15} className="text-[var(--accent,#6366f1)] shrink-0" />
+										<span className="font-semibold">Куратор лечения (воронка и комиссия)</span>
+									</div>
+									{patient?.administrativeProfile?.curatorFullName ? (
+										<span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--accent,#6366f1)]/10 text-[var(--accent,#6366f1)] shrink-0 border border-[var(--accent,#6366f1)]/20">
+											{patient.administrativeProfile.curatorFullName.split(" ")[0]}
+										</span>
+									) : (
+										<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] border border-[var(--border,#cbd5e1)] shrink-0">
+											Назначить
+										</span>
+									)}
 								</button>
 								<button
 									type="button"
