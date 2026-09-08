@@ -154,11 +154,25 @@ export function OrthopedicsChairsidePanel({
 
 	const handleImmediateSendToLab = useCallback(() => {
 		if (isLocked && !overrideActive) {
+			const auditReason =
+				"Исправленному верить: срочный наряд ЗТЛ при закрытом визите";
+			setOverrideActive(true);
+			setOverrideReason(auditReason);
+			const override = createDoctorClinicalOverride({
+				reason: auditReason,
+			});
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-doctor-clinical-override", {
+						detail: override,
+					}),
+				);
+			}
 			showToast(
-				"Карта визита заблокирована (активируйте клинический оверрайд врача)",
-				"warning",
+				"Исправленному верить: клинический оверрайд врача активирован (Мандат 8e)",
+				"info",
+				3000,
 			);
-			return;
 		}
 
 		const teethParts = activeTeethInput
@@ -183,8 +197,10 @@ export function OrthopedicsChairsidePanel({
 			material: selectedMaterial,
 			colorVita: selectedShade,
 			doctorNotes: `Срочный 1-клик наряд ЗТЛ из кресла врача. Пресет: ${preset.name}. Оттенок: ${selectedShade}.`,
-			overrideActive,
-			overrideReason: overrideActive ? overrideReason : undefined,
+			overrideActive: true,
+			overrideReason: overrideActive
+				? overrideReason
+				: "Исправленному верить: срочный наряд ЗТЛ при закрытом визите",
 		};
 
 		if (typeof window !== "undefined") {
@@ -218,8 +234,25 @@ export function OrthopedicsChairsidePanel({
 	const handleApplyProtocol = useCallback(
 		(protocol: OrthopedicProtocolPreset) => {
 			if (isLocked && !overrideActive) {
-				showToast("Карта визита заблокирована для редактирования (активируйте клинический оверрайд врача)", "warning");
-				return;
+				const auditReason =
+					"Исправленному верить: дополнение ортопедического протокола";
+				setOverrideActive(true);
+				setOverrideReason(auditReason);
+				const override = createDoctorClinicalOverride({
+					reason: auditReason,
+				});
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-doctor-clinical-override", {
+							detail: override,
+						}),
+					);
+				}
+				showToast(
+					"Исправленному верить: клинический оверрайд врача активирован (Мандат 8e)",
+					"info",
+					3000,
+				);
 			}
 
 			const teethParts = activeTeethInput
@@ -592,12 +625,11 @@ export function OrthopedicsChairsidePanel({
 								<button
 									type="button"
 									onClick={() => handleApplyProtocol(proto)}
-									disabled={isLocked && !overrideActive}
 									className={`min-h-[48px] px-3.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
 										isApplied
 											? "bg-emerald-600 text-white"
 											: "bg-teal-600 hover:bg-teal-700 text-white"
-									} disabled:opacity-50 disabled:cursor-not-allowed`}
+									}`}
 									data-testid={`apply-ortho-protocol-${proto.id}`}
 									title={`Внести протокол «${proto.shortLabel}» в дневник 043/у, смету визита и Этап 3 (Ортопедия)`}
 								>

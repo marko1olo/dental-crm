@@ -61,7 +61,7 @@ import { planVisiographFindings } from "./visiographFindings";
 
 // ─── Типы ────────────────────────────────────────────────────────────────────
 
-interface XrayScan {
+export interface XrayScan {
 	id: string;
 	patientId: string;
 	status: "pending" | "analyzing" | "done" | "error";
@@ -223,11 +223,13 @@ const SCAN_ARCHIVE_SUBJECT: PanelSubject = {
 export interface VisiographAnalyzerProps {
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
 	readonly toothCode?: string | undefined;
+	readonly initialScan?: XrayScan | undefined;
 }
 
 export function VisiographAnalyzer({
 	onInsertToProtocol,
 	toothCode,
+	initialScan,
 }: VisiographAnalyzerProps = {}) {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const dropRef = useRef<HTMLDivElement>(null);
@@ -320,7 +322,9 @@ export function VisiographAnalyzer({
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
-	const [currentScan, setCurrentScan] = useState<XrayScan | null>(null);
+	const [currentScan, setCurrentScan] = useState<XrayScan | null>(
+		initialScan ?? null,
+	);
 	const [scanHistory, setScanHistory] = useState<XrayScan[]>([]);
 	const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 	// Отказ чтения архива храним отдельно от `error` (тот подписан «Ошибка
@@ -1072,12 +1076,17 @@ export function VisiographAnalyzer({
 
 	// ── Voice ───────────────────────────────────────────────────────────────
 	const handleSpeak = useCallback(() => {
-		const synth = synthRef.current;
+		const synth =
+			synthRef.current ||
+			(typeof window !== "undefined" ? window.speechSynthesis : null);
 		if (!synth || !currentScan?.aiReport) return;
 		if (isSpeaking) {
 			synth.cancel();
 			setIsSpeaking(false);
 			return;
+		}
+		if (!voicesReady && synth.getVoices().length === 0) {
+			showToast("Инициализация голосового движка...", "info", 2000);
 		}
 		const cleanText = (currentScan.aiReport || "")
 			.replace(/[*#_`~[\]]/g, "")
@@ -1094,9 +1103,14 @@ export function VisiographAnalyzer({
 		utterance.onend = () => setIsSpeaking(false);
 		utterance.onerror = () => setIsSpeaking(false);
 		synth.cancel();
-		synth.speak(utterance);
-		setIsSpeaking(true);
-	}, [currentScan, isSpeaking]);
+		try {
+			synth.speak(utterance);
+			setIsSpeaking(true);
+		} catch (err) {
+			logger.warn("[VisiographAnalyzer] speech synthesis error", err);
+			setIsSpeaking(false);
+		}
+	}, [currentScan, isSpeaking, voicesReady]);
 
 	// ── Print ───────────────────────────────────────────────────────────────
 	const handlePrint = () => {
@@ -1292,8 +1306,14 @@ export function VisiographAnalyzer({
 								<button
 									type="button"
 									onClick={handleSpeak}
-									disabled={!voicesReady && !isSpeaking}
-									title={isSpeaking ? "Стоп" : "Озвучить"}
+									data-testid="visiograph-speak-button"
+									title={
+										isSpeaking
+											? "Стоп"
+											: voicesReady
+												? "Озвучить"
+												: "Инициализация голосового движка..."
+									}
 									style={{
 										// Пока идёт озвучивание, кнопка залита --teal. Белая иконка
 										// на нём в тёмной теме (#2dd4bf) давала контраст 1.86 —

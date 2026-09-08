@@ -1801,6 +1801,23 @@ export function ImagingView(props: ImagingViewProps) {
 								лишних панелей.
 							</small>
 						</summary>
+						{!mprControlsReady && (
+							<div
+								className="mpr-dropzone-notice p-4 mb-4 rounded-lg border border-teal-200 dark:border-teal-800/60 bg-teal-50/50 dark:bg-teal-950/20"
+								data-testid="mpr-dicom-load-dropzone-notice"
+							>
+								<div className="flex items-center gap-2 mb-2 text-teal-800 dark:text-teal-200">
+									<UploadCloud size={18} />
+									<strong className="text-sm font-semibold">
+										Для управления КТ-срезами и осями загрузите файлы DICOM
+									</strong>
+								</div>
+								<p className="text-xs text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
+									Инструменты мультипланарной реконструкции (MPR) активируются при наличии срезов в памяти. Выберите папку с исследованием или ZIP-архив срезов:
+								</p>
+								<DicomArchiveUploader onImagesLoaded={setLocalImageIds} className="w-full" />
+							</div>
+						)}
 						<div className="clinical-mpr-grid">
 							<div className="mpr-plane-grid">
 								{/* biome-ignore lint/suspicious/noExplicitAny: automated suppression */}
