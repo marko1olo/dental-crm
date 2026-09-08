@@ -1,43 +1,61 @@
-# Handoff Report — Documentation & Registry Sync Auditor: Features 207–210 (Mandate 8h)
+# Handoff Report — Documentation & Registry Sync Auditor: Features 190–192 & 211–212 (Wave 40 / Mandate 8h)
 
 > 🧭 **Navigation:** [🗺️ Master Documentation Index (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Documentation Knowledge Hub (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md)
 
-CURRENT HEAD: 4895498430492f44ab508858f3e5263946fbdeb6
-CODE HEAD: 4895498430492f44ab508858f3e5263946fbdeb6
-PREVIOUS HEAD: 8c60ab657fafcfbb6f73407482a9d30b0f296024
+CURRENT HEAD: c653a88ee81b5c9d6cda871ed8fdedc102cab5fb
+CODE HEAD: c653a88ee81b5c9d6cda871ed8fdedc102cab5fb
+PREVIOUS HEAD: bce4bb134d1b79f04584285ad4ea0eb7d8c7ea32
 
 ## 1. Observation & Scope
-Dynamic documentation synchronization per Mandate 8h (Strict ban on working from outdated docs) for Features 207, 208, 209, and 210 (Wave 39):
-- **Feature 207 (`расписание_сетка::быстрое_закрепление_врача_шаблонов_смен_и_1_клик_кресла`)**:
-  - Быстрое закрепление врача и шаблонов смен (Утро/Вечер/День/Неделя) прямо из шапки расписания `ScheduleGrid.tsx` без открытия модальных окон (Закон Анти-Матрёшки / Грех 6).
-  - 1-клик создание и архетипы кресел в `QuickAddChairModal.tsx` и `ScheduleFilterStrip.tsx`: архетипы «Терапия», «Хирургия», «Ортодонтия», «Детство», «Гигиена», 14 аутентичных палитр StomX, безопасные дефолты «Кресло N» / «Кабинет N» и активная кнопка `disabled={false}` (Мандат 8e).
-  - Недельное тиражирование и матрица: `DoctorShiftRosterModal.tsx`, `ChairRosterModal.tsx`, `DoctorRosterToolbar.tsx`, `doctorWeeklyScheduleGenerator.ts` (`copyWeekShiftsToTargetWeek`, `copyWeekShiftsToMonth`) и ячеечный движок `applyCellShiftPreset`.
-  - Ликвидирован срез текста `...` в действиях ростера (коммит `c0dfbfe21`); тач-таргеты строго $\ge 44\times 44\text{px}$ по Apple HIG (Мандат 8d), адаптация для соло-врача с 1 креслом (`DEFAULT_SOLO_CHAIR`, Мандат 8n).
-- **Feature 208 (`пациенты_приём::разблокировка_кнопки_открыть_приём_и_1_клик_пакеты_гигиены_пародонта`)**:
-  - Ликвидация мертвого `disabled` блокирования кнопки «Открыть приём» (`patient-card-open-visit-btn`) в `PatientsView.tsx` при отсутствии запланированного слота в расписании (`disabled={!selectedPatient}`); клик мгновенно сохраняет пациента в `usePatientStore`, переключает рабочее пространство в `visit` и выводит инфо-тост «Открыт приём 043/у: <ФИО>» без барьеров (Мандат 8e).
-  - Кнопка «Создать и начать приём» (`btn-create-and-start-visit`) в `PatientCreationModal.tsx` для мгновенного перехода в 043/у дежурного врача без регистрации записи через ресепшен.
-  - 1-клик пакеты профгигиены и пародонтологии без процедурных симуляторов (Мандат 8k): в `PeriodontalChartingModal.tsx` и `PeriodontogramChart.tsx` 1-клик пресет нормы («1-клик: Здоровый пародонт (Норма)», PSR 0, карманы $\le 2$ мм, BOP 0) и пресет тяжелого пародонтита 6–8 мм вместо ручного замера 192 точек карманов; в `HygieneIndicesPanel.tsx` — 1-клик норма индексов OHI-S / КПИ и автоматическое начисление услуги профгигиены `A16.07.051`.
-  - Кнопка `btn-draft-somatic-norm-one-click` в `VisitNoteDraftPanel.tsx` («Соматически здоров / норма (1-клик)») со стандартным протоколом осмотра; в `VisitView.tsx` кнопки сохранения, закрытия и ревизии приёма (`save`, `close`, `review`) никогда не блокируются (`disabled={false}`).
-- **Feature 209 (`касса_склад::1_клик_касса_54фз_без_инн_физлиц_суммы_без_сдачи_и_мягкий_овердрафт_склада`)**:
-  - Касса 54-ФЗ без требования ИНН с физлиц (Мандат 8e п. 9): в `FastCheckoutModal.tsx`, `CashRegisterModal.tsx` и `PatientAdministrativeForm.tsx` поле ИНН физлица сделано строго опциональным с подтверждением «✓ 54-ФЗ: ИНН с физлиц НЕ требуется»; исключен дедлок кассы и 400 Bad Request.
-  - 1-клик суммы тендера без сдачи и сплит-платежи: в `FastCheckoutModal.tsx` и `CashRegisterModal.tsx` внедрены 1-клик кнопки «Ровно без сдачи» (`preset-exact-cash`), круглые купюры (`+500 ₽`, `+1000 ₽`, `+5000 ₽`), комбинированная сплит-оплата (Нал + Карта + Депозит/Бонусы) и аддитивное сложение семейного кошелька с копеечной точностью (`kopecksToRub`).
-  - Мягкий овердрафт склада для медсестры и врача (Мандат 8e п. 10, Мандат 8n): в `ClinicalWriteoffModal.tsx`, `WarehouseManagerModal.tsx`, `NurseCarpuleDisposalModal.tsx` и `MdlpDisposalQueueModal.tsx` задержка накладной или нулевой остаток больше не блокируют оказание помощи и списание анестетиков — операция проводится со статусом `isOverdraft: true` / `emergency_overdraft` и предупреждающим бейджем вместо жесткого падения (`disabled={false}`); тач-таргеты $\ge 44\text{px}$.
-- **Feature 210 (`документы_печать::печать_пустых_бланков_договоров_без_403_и_печать_идс_043у_в_любой_момент`)**:
-  - Печать чистых бланков договоров со строками «_______» до приёма (Мандат 8e п. 8): в `PaidMedicalContractModal.tsx` регистратор и соло-врач имеют право распечатать пустой договор со строками `_______` для ручного заполнения при сумме 0 ₽ без 403 Forbidden ошибок со штампом «ЧЕРНОВИК (БЛАНК)», а после завершения — «ПОДПИСАНО ВРАЧОМ».
-  - Мгновенная печать Формы 043/у в любой момент (Мандат 8e п. 5): в `VisitView.tsx` внедрена прямая кнопка быстрой печати `btn-visit-fast-print-043u` (`handlePrintForm043uFast`) в шапке приёма: если приём не закрыт — печатается мгновенно с водяным знаком «ЧЕРНОВИК», если закрыт — со штампом «ПОДПИСАНО ВРАЧОМ»; в `emr043Math.ts` сформирован защищенный рендерер водяных знаков `watermark-draft` / `watermark-signed`.
-  - Печать ИДС и пустой карты 043/у без бюрократии: в `DentalMedicalCard043uForm.tsx` кнопка `btn-043-print-blank` позволяет распечатать пустой бланк стоматологической карты 043/у Минздрава РФ; в `InformedConsentModal.tsx` печать согласий доступна в 1 клик на любом этапе без обязательного предварительного утверждения сметы; строго векторные Lucide-иконки без эмодзи (Мандат 8d п. 7).
+Dynamic documentation synchronization per Mandate 8h (Strict ban on working from outdated docs) for Features 190, 191, 192 and new system features 211, 212 (Wave 40):
+- **Feature 190 (`расписание_кресла::14_палитр_стом_икс_и_акцентная_цветовая_полоса_кресла_в_сетке`)**:
+  - 14 аутентичных палитр кресел StomX (`workplaces/colors.json`) и акцентная цветная полоса цвета кресла в шапке сетки для мгновенной визуальной ориентации при 10+ креслах.
+  - В `QuickAddChairModal.tsx` палитра расширена до 14 аутентичных двухцветных палитр StomX (`CHAIR_COLOR_PRESETS`) со светлыми и тёмными оттенками и 5 клиническими архетипами (`CHAIR_ARCHETYPE_PRESETS`: «Терапия», «Хирургия», «Ортодонтия», «Детство», «Гигиена»).
+  - В `ScheduleGrid.tsx` внедрена верхняя акцентная полоса (`border-t-4` цвета кресла `chair.color` в `chair-header-${chair.id}`) в шапке каждой колонки; поддержка адаптивного рендера в `ChairScheduleView.tsx` и `ScheduleFilterStrip.tsx`.
+- **Feature 191 (`расписание_смены::генератор_смен_по_четным_нечетным_дням_wod_even_и_быстрый_техперерыв_кресла`)**:
+  - Чередование смен по чётным / нечётным числам месяца (`wod_even` / `is_even: 1` по StomX) и 1-клик техперерыв / санобработка кресла.
+  - В `doctorWeeklyScheduleGenerator.ts` и `DoctorShiftRosterModal.tsx` реализован 1-клик генератор сменности «Чётные / Нечётные дни месяца» (`wod_even` / `is_even: 1` по StomX: 1-я смена 08:00–14:00 по чётным, 2-я смена 14:00–20:00 по нечётным) с тиражированием на неделю и месяц вперед (`copyWeekShiftsToTargetWeek`, `copyWeekShiftsToMonth`).
+  - В `ScheduleGrid.tsx` и `DoctorRosterToolbar.tsx` внедрено 1-клик закрытие кресла на санобработку / техперерыв (1–2 ч) прямо из шапки сетки без создания фиктивных пациентов; неблокирующее сохранение (`disabled={false}`).
+- **Feature 192 (`расписание_сетка::cito_овербукинг_при_drag_and_drop_и_настраиваемый_шаг_сетки`)**:
+  - CITO-овербукинг острой боли при Drag-and-Drop без тупиковой блокировки и настраиваемый шаг сетки 15/30/60 мин.
+  - В `ScheduleGrid.tsx` и `QuickBookingDrawer.tsx` реализовано мягкое разрешение овербукинга при Drag-and-Drop и быстрой записи для экстренных визитов с острой болью (CITO, `allowOverbooking: true`, `urgency: 'urgent'`, кнопка «+ Экспресс-пациент CITO») с предупреждающим тостом вместо блокирующей ошибки (Мандат 8e).
+  - В `AppointmentCard.tsx` добавлен пульсирующий бейдж `appointment-cito-badge`.
+  - В `doctorFreeSlotsEngine.ts` и `checkAppointmentResourceCollision.ts` внедрена поддержка настраиваемого шага сетки (15 / 30 / 60 мин) для плотного приёма терапевтов и гигиенистов.
+- **Feature 211 (`ортодонтия_реколл_реанимация::разблокировка_протокола_эластиков_кнопок_реколла_и_экспресс_анафилаксия`)**:
+  - В `OrthodonticVisitProtocolWidget.tsx` снята блокировка сохранения схемы эластиков (`ELASTIC_SCHEMES`, `ELASTIC_SIZES`), внедрены 4 автономных пресета визита ортодонта, блок аттачментов элайнеров и 1-клик вставка структурированного протокола в дневник SOAP Карты 043/у.
+  - В `PatientRecallManagerModal.tsx` и `PatientRecallsHubModal.tsx` кнопки связи с пациентом (WhatsApp, Telegram, Звонок, SMS) разблокированы с активным тост-руководством при отсутствии номера (Мандат 8e); в `PatientWhatsappSendPanel.tsx` разблокирована кнопка отправки; сырые символы заменены на векторные Lucide-иконки (Мандат 8d п. 7).
+  - В `EmergencyAnaphylaxisProtocolModal.tsx` и `emergencyRescuePresets.ts` реализован экспресс-протокол неотложной помощи при анафилактическом шоке и системной токсичности местных анестетиков (LAST) по Приказам Минздрава РФ № 1079н и № 786н (весовой калькулятор доз адреналина и 20% липидной эмульсии, метроном-таймер СЛР 30:2, 1-клик генерация протокола реанимационных мероприятий для вклейки в 043/у).
+  - 1 строка тулбара 32–36px, модальная глубина строго 1 (Закон Анти-Матрёшки), тач-таргеты $\ge 44\times 44\text{px}$.
+- **Feature 212 (`телефония_касса_соло::разблокировка_набора_номера_виджета_телефонии_и_1_клик_касса_биллинг_соло_врача`)**:
+  - В `TelephonyFloatingWidget.tsx` кнопка набора номера освобождена от блокировки (`disabled={false}`), клавиши цифрового пинпада приведены к сенсорному стандарту $\ge 48\times 48\text{px}$, при клике на вызов без ввода номера выводится активный инфо-тост без дедлока интерфейса.
+  - В `PaymentModal.tsx` и `CashRegisterModal.tsx` добавлены 1-клик кнопки ходовых номиналов («Без сдачи», 1 000, 2 000, 5 000, 10 000 ₽) с моментальным закрытием фискального чека 54-ФЗ.
+  - В `InvoiceGenerationModal.tsx` и `FastCheckoutModal.tsx` врач формирует счёт на оплату по своему клиническому решению без согласований с начмедом или ожидания администратора.
+  - В `soloDoctorPayrollAutonomy.test.ts` доказан 1-клик расчёт сдельной зарплаты соло-врача без бухгалтера (учёт материалов, лаборатории, экспорта Т-51); расходные материалы списываются с мягким овердрафтом (Мандат 8e п. 10, Мандат 8n); тач-таргеты $\ge 44\text{px}$.
 
 ## 2. Synchronized Registries & Backlogs
-1. `docs/competitive-audit/FEATURES_REGISTRY.md`: зарегистрированы строки для фич 207, 208, 209, 210 со статусом `[ДА]`, ценностью 5 и прямыми ссылками на исходный код и тесты.
-2. `docs/competitive-audit/BACKLOG.md`: добавлены подробные секции 4.78 (Фича 207), 4.79 (Фича 208), 4.80 (Фича 209), 4.81 (Фича 210); сводный реестр Части III обновлен до 144 аддендум-фич (Wave 15..39, фичи 64..189, 193..210).
-3. `docs/competitive-audit/OUR_CRM_MAP.md`: добавлены подробные подразделы 2.10.166 (Фича 207), 2.10.167 (Фича 208), 2.10.168 (Фича 209), 2.10.169 (Фича 210).
-4. `.agents/handoff.md`: обновлен для фиксации состояния Волны 39.
+1. `docs/competitive-audit/FEATURES_REGISTRY.md`:
+   - Строки для фич 190, 191, 192 переведены из `[В_ПЛАНЕ]` в `[ДА]`, ценность 5, с полными ссылками на исходный код, тесты и коммиты `88ee4bb06`, `31c45a2ff`, `5d54a4ab3`, `c653a88ee`.
+   - Зарегистрированы новые системные фичи 211 и 212 со статусом `[ДА]`, ценностью 5 и полными ссылками на файлы реализации и тесты.
+   - Всего в реестре: 212 фич, все 212 (100%) имеют статус `[ДА]`.
+2. `docs/competitive-audit/BACKLOG.md`:
+   - Статусный баннер обновлен до Wave 40 (212 фич: 63 канонические + 149 аддендум).
+   - Секция 4.63 (Фичи 190..192) переведена в `[РЕАЛИЗОВАНО]` с перечнем всех 12 задействованных файлов и 7 наборов тестов.
+   - Добавлены секции 4.82 (Фича 211) и 4.83 (Фича 212) со статусом `[РЕАЛИЗОВАНО]`.
+   - Сводный реестр Части III обновлен до 149 аддендум-фич (Wave 15..40, фичи 64..212).
+3. `docs/competitive-audit/OUR_CRM_MAP.md`:
+   - Подраздел 2.10.151 обновлен: зафиксировано закрытие гэпов 1–5 (Фичи 190..192 — `[РЕАЛИЗОВАНО]`).
+   - Добавлены подразделы 2.10.170 (Фича 211) и 2.10.171 (Фича 212) в конец раздела 2.10.
+4. `.agents/handoff.md`:
+   - Обновлен для фиксации состояния Волны 40.
 
 ## 3. Machine Verification & Test Proof
-- `scheduleWeekCopyAndChairMatrix.test.tsx`: **7/7 passed (100%)**.
-- `visitViewAutonomyInquisition.test.tsx`, `paidMedicalContractAutonomy.test.tsx`, `emrPerioAutonomyInquisition.test.ts`: **58/58 passed (100%)**.
-- Суммарно в целевых наборах верификации: **65/65 passed (100%)**.
-- `npm run check:encoding`: проверено 5057 файлов, замечаний нет (0 ошибок, строгий UTF-8 без BOM).
+- `soloDoctorPayrollAutonomy.test.ts`: **9/9 passed (100%)**.
+- `invoiceGenerationAutonomy.test.tsx`: **4/4 passed (100%)**.
+- `OrthodonticVisitProtocolWidget.test.tsx`: **19/19 passed (100%)**.
+- `patientRecallAutonomy.test.tsx`: **10/10 passed (100%)**.
+- `scheduleChairDoctorBinding.test.tsx`: **25/25 passed (100%)**.
+- Суммарно в целевых наборах верификации: **67/67 passed (100%)**.
+- `npm run check:encoding`: проверено 5058 файлов, замечаний нет (0 ошибок, строгий UTF-8 без BOM).
 
 ## 4. Definition of Done (DoD)
 - [x] Строго изолированная область работы (`docs/competitive-audit/`, `.agents/handoff.md`).
@@ -45,6 +63,7 @@ Dynamic documentation synchronization per Mandate 8h (Strict ban on working from
 - [x] Полная синхронизация 4 ключевых файлов документации по Мандату 8h.
 - [x] Кодировка UTF-8 без BOM (`npm run check:encoding` = 0 ошибок).
 - [x] Пофайловый `git add <file>` без захвата чужих и незавершенных файлов.
+
 
 
 
