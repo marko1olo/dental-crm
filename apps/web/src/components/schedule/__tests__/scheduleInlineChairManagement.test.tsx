@@ -179,6 +179,13 @@ function setupMockDom() {
 			disabled: false,
 			value: "",
 			className: "",
+			selectedIndex: 0,
+			selected: false,
+			defaultSelected: false,
+			multiple: false,
+			get options() {
+				return children.filter((c) => c.tagName === "OPTION");
+			},
 			appendChild: (child: MockDomNode) => {
 				children.push(child);
 				child.parentNode = el;

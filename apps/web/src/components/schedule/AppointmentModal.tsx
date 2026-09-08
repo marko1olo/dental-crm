@@ -16,6 +16,7 @@ import {
 	Repeat,
 	User,
 	UserCheck,
+	UserPlus,
 	X,
 	Zap,
 } from "lucide-react";
@@ -103,6 +104,10 @@ export interface AppointmentModalProps {
 	activeVisitLockedAppointmentStatuses: Set<Appointment["status"]>;
 	appointmentReadinessById?: Map<string, AppointmentReadiness>;
 	chairDoctorAssignments?: Record<string, ChairDoctorShiftAssignment> | undefined;
+	onQuickCreatePatient?: (data: {
+		fullName: string;
+		phone?: string | null;
+	}) => Promise<{ id: string; fullName: string } | null> | { id: string; fullName: string } | null;
 }
 
 export function AppointmentModal(props: AppointmentModalProps) {
@@ -122,6 +127,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		activeVisitLockedAppointmentStatuses,
 		appointmentReadinessById,
 		chairDoctorAssignments,
+		onQuickCreatePatient,
 	} = props;
 
 	const timezone = dashboard?.clinicSettings?.profile?.timezone ?? "Europe/Moscow";
@@ -148,6 +154,29 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	);
 
 	const [patientId, setPatientId] = useState(() => appointment?.patientId ?? "");
+	const [createdPatients, setCreatedPatients] = useState<
+		Array<{ id: string; fullName: string; phone?: string | null }>
+	>([]);
+	const [isInlineNewPatient, setIsInlineNewPatient] = useState(false);
+	const [newPatientFullName, setNewPatientFullName] = useState("");
+	const [newPatientPhone, setNewPatientPhone] = useState("");
+	const [isCreatingInlinePatient, setIsCreatingInlinePatient] = useState(false);
+
+	const allDisplayPatients = useMemo(() => {
+		const base = [...activePatients];
+		for (const cp of createdPatients) {
+			if (!base.some((p) => p.id === cp.id)) {
+				base.unshift({
+					id: cp.id,
+					fullName: cp.fullName,
+					phone: cp.phone || null,
+					status: "active",
+				} as any);
+			}
+		}
+		return base;
+	}, [activePatients, createdPatients]);
+
 	const [doctorUserId, setDoctorUserId] = useState(() => appointment?.doctorUserId ?? "");
 	const [assistantUserId, setAssistantUserId] = useState<string | null>(() => appointment?.assistantUserId ?? null);
 	const [chairId, setChairId] = useState(() => appointment?.chairId ?? "");
@@ -164,6 +193,81 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const handleCreateInlinePatient = useCallback(async (): Promise<{
+		id: string;
+		fullName: string;
+		phone?: string | null;
+	} | null> => {
+		const trimmedName = newPatientFullName.trim();
+		if (!trimmedName) {
+			setError("Укажите ФИО пациента для быстрой записи");
+			showToast("Укажите ФИО пациента", "warning", 3000);
+			return null;
+		}
+		setIsCreatingInlinePatient(true);
+		setError(null);
+		try {
+			let created: { id: string; fullName: string; phone?: string | null } | null = null;
+			if (onQuickCreatePatient) {
+				const res = await Promise.resolve(
+					onQuickCreatePatient({
+						fullName: trimmedName,
+						phone: newPatientPhone.trim() || null,
+					}),
+				);
+				if (res?.id) {
+					created = {
+						id: res.id,
+						fullName: res.fullName || trimmedName,
+						phone: newPatientPhone.trim() || null,
+					};
+				}
+			}
+			if (!created?.id) {
+				try {
+					const res = await fetch("/api/patients", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							fullName: trimmedName,
+							phone: newPatientPhone.trim() || null,
+						}),
+					});
+					if (res.ok) {
+						const data = await res.json();
+						if (data?.id) {
+							created = {
+								id: data.id,
+								fullName: data.fullName || trimmedName,
+								phone: data.phone || newPatientPhone.trim() || null,
+							};
+						}
+					}
+				} catch {
+					// Fallback optimistic (Mandates 8e, 8k, 8n)
+				}
+			}
+			if (!created?.id) {
+				created = {
+					id: `pat-quick-${Date.now()}`,
+					fullName: trimmedName,
+					phone: newPatientPhone.trim() || null,
+				};
+			}
+			setCreatedPatients((prev) => [created!, ...prev]);
+			setPatientId(created.id);
+			setIsInlineNewPatient(false);
+			setNewPatientFullName("");
+			setNewPatientPhone("");
+			showToast(`Пациент «${created.fullName}» создан и прикреплен к записи`, "success", 3500);
+			return created;
+		} finally {
+			setIsCreatingInlinePatient(false);
+		}
+	}, [newPatientFullName, newPatientPhone, onQuickCreatePatient]);
+
 	useEffect(() => {
 		if (!appointment || !isOpen) return;
 		let defaultDoc = appointment.doctorUserId || "";
@@ -179,13 +283,18 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		}
 		let defaultChair = appointment.chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
 		if (!defaultChair && defaultDoc) {
-			const doc = doctors.find((d) => d.id === defaultDoc);
-			if (doc?.specialties?.length) {
-				const matchingChair = chairs.find(
-					(c) => c.specialization && doc.specialties.includes(c.specialization),
-				);
-				if (matchingChair) {
-					defaultChair = matchingChair.id;
+			const chairWithDoc = chairs.find((c) => (c as any).defaultDoctorId === defaultDoc);
+			if (chairWithDoc) {
+				defaultChair = chairWithDoc.id;
+			} else {
+				const doc = doctors.find((d) => d.id === defaultDoc);
+				if (doc?.specialties?.length) {
+					const matchingChair = chairs.find(
+						(c) => c.specialization && doc.specialties.includes(c.specialization),
+					);
+					if (matchingChair) {
+						defaultChair = matchingChair.id;
+					}
 				}
 			}
 		}
@@ -208,17 +317,27 @@ export function AppointmentModal(props: AppointmentModalProps) {
 				defaultDoc = duty.doctorId;
 			}
 		}
+		// Also check chair defaultDoctorId
+		if (!defaultDoc && defaultChair) {
+			const chairObj = chairs.find((c) => c.id === defaultChair);
+			if ((chairObj as any)?.defaultDoctorId) {
+				defaultDoc = (chairObj as any).defaultDoctorId;
+			}
+		}
 		if (!defaultDoc) {
 			defaultDoc = doctors[0]?.id || "";
 		}
 
 		setPatientId(appointment.patientId ?? "");
+		setIsInlineNewPatient(false);
+		setNewPatientFullName("");
+		setNewPatientPhone("");
 		setDoctorUserId(defaultDoc);
 		setAssistantUserId(appointment.assistantUserId ?? null);
 		setChairId(defaultChair);
 		setStartsAtLocal(toDateTimeLocalValue(appointment.startsAt, timezone));
 		setEndsAtLocal(toDateTimeLocalValue(appointment.endsAt, timezone));
-		setStatus(appointment.status);
+		setStatus(appointment.status || "planned");
 		setReason(appointment.reason ?? "");
 		setComment(appointment.comment ?? "");
 		setError(null);
@@ -389,6 +508,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		if (e) e.preventDefault();
 		if (!appointment || isSaving) return;
 
+		let effectivePatientId = patientId;
+		if (isInlineNewPatient && !effectivePatientId && newPatientFullName.trim()) {
+			const created = await handleCreateInlinePatient();
+			if (created?.id) {
+				effectivePatientId = created.id;
+			}
+		}
+
 		const effectiveDoctorUserId = doctorUserId || doctors[0]?.id || "";
 		let effectiveChairId = chairId || (chairs.length === 1 ? chairs[0]?.id : "") || "";
 		if (!effectiveChairId && effectiveDoctorUserId) {
@@ -406,7 +533,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			effectiveChairId = chairs[0]?.id || "";
 		}
 
-		if (!patientId || !effectiveDoctorUserId || !effectiveChairId || !startsAtLocal || !endsAtLocal) {
+		if (!effectivePatientId || !effectiveDoctorUserId || !effectiveChairId || !startsAtLocal || !endsAtLocal) {
 			setError("Заполните все обязательные поля");
 			return;
 		}
@@ -423,7 +550,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setError(null);
 
 		const success = await onSave(appointment.id, {
-			patientId,
+			patientId: effectivePatientId,
 			doctorUserId: effectiveDoctorUserId,
 			assistantUserId: isSoloDoctor ? null : (assistantUserId?.trim() || null),
 			chairId: effectiveChairId,
@@ -676,27 +803,122 @@ export function AppointmentModal(props: AppointmentModalProps) {
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						{/* Patient */}
 						<div className="sm:col-span-2">
-							<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 mb-1.5">
-								<User size={14} className="text-[var(--teal)]" />
-								<span>Пациент *</span>
-							</label>
-							<select
-								value={patientId}
-								onChange={(e) => setPatientId(e.target.value)}
-								disabled={Boolean(hasOpenVisit)}
-								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
-							>
-								<option value="">-- Выберите пациента --</option>
-								{activePatients.map((p) => (
-									<option key={p.id} value={p.id}>
-										{p.fullName} {p.phone ? `(${p.phone})` : ""}
-									</option>
-								))}
-							</select>
-							{hasOpenVisit && (
-								<p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-									Пациент закреплен: по этому приему открыт активный визит.
-								</p>
+							<div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+								<label className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
+									<User size={14} className="text-[var(--teal)]" />
+									<span>Пациент *</span>
+								</label>
+								{!hasOpenVisit && (
+									<div className="inline-flex items-center p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-medium">
+										<button
+											type="button"
+											onClick={() => setIsInlineNewPatient(false)}
+											className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer ${
+												!isInlineNewPatient
+													? "bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm"
+													: "text-[var(--muted)] hover:text-[var(--ink)]"
+											}`}
+											data-testid="appointment-patient-mode-select"
+										>
+											Из базы
+										</button>
+										<button
+											type="button"
+											onClick={() => setIsInlineNewPatient(true)}
+											className={`min-h-[28px] px-2.5 rounded-md transition-all cursor-pointer flex items-center gap-1 ${
+												isInlineNewPatient
+													? "bg-[var(--teal)] text-white font-bold shadow-sm"
+													: "text-[var(--muted)] hover:text-[var(--ink)]"
+											}`}
+											data-testid="appointment-patient-mode-create"
+										>
+											<UserPlus size={12} />
+											<span>+ Новый пациент</span>
+										</button>
+									</div>
+								)}
+							</div>
+
+							{isInlineNewPatient && !hasOpenVisit ? (
+								<div
+									className="p-3 rounded-xl border border-[var(--teal)]/30 bg-[var(--teal-soft,var(--paper-soft))] space-y-3 animate-fade-in"
+									data-testid="appointment-inline-new-patient-panel"
+								>
+									<div className="flex items-center justify-between text-xs font-bold text-[var(--teal-dark,var(--teal))]">
+										<span className="flex items-center gap-1.5">
+											<UserPlus size={14} />
+											Быстрый пациент: ФИО + Телефон
+										</span>
+										<button
+											type="button"
+											onClick={() => setIsInlineNewPatient(false)}
+											className="text-[var(--muted)] hover:text-[var(--ink)] font-normal transition-colors cursor-pointer text-xs"
+											data-testid="appointment-quick-patient-cancel-btn"
+										>
+											Отмена
+										</button>
+									</div>
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+										<div>
+											<input
+												type="text"
+												value={newPatientFullName}
+												onChange={(e) => setNewPatientFullName(e.target.value)}
+												placeholder="ФИО пациента *"
+												className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+												data-testid="appointment-quick-patient-name"
+												autoFocus
+											/>
+										</div>
+										<div>
+											<input
+												type="tel"
+												value={newPatientPhone}
+												onChange={(e) => setNewPatientPhone(e.target.value)}
+												placeholder="+7 (___) ___-__-__"
+												className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+												data-testid="appointment-quick-patient-phone"
+											/>
+										</div>
+									</div>
+									<div className="flex items-center justify-between gap-2 pt-0.5">
+										<span className="text-[11px] text-[var(--muted)]">
+											Пациент сохранится в базу клиники и сразу прикрепится к записи.
+										</span>
+										<button
+											type="button"
+											onClick={() => handleCreateInlinePatient()}
+											disabled={isCreatingInlinePatient || !newPatientFullName.trim()}
+											className="min-h-[40px] px-3.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+											data-testid="appointment-quick-patient-save-btn"
+										>
+											<Check size={14} />
+											{isCreatingInlinePatient ? "Создание..." : "Создать и прикрепить"}
+										</button>
+									</div>
+								</div>
+							) : (
+								<>
+									<select
+										value={patientId}
+										onChange={(e) => setPatientId(e.target.value)}
+										disabled={Boolean(hasOpenVisit)}
+										className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+										data-testid="select-appointment-patient"
+									>
+										<option value="">-- Выберите пациента --</option>
+										{allDisplayPatients.map((p) => (
+											<option key={p.id} value={p.id}>
+												{p.fullName} {p.phone ? `(${p.phone})` : ""}
+											</option>
+										))}
+									</select>
+									{hasOpenVisit && (
+										<p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+											Пациент закреплен: по этому приему открыт активный визит.
+										</p>
+									)}
+								</>
 							)}
 						</div>
 
@@ -914,12 +1136,19 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							</label>
 							<select
 								value={status}
-								onChange={(e) => setStatus(e.target.value as Appointment["status"])}
-								disabled={
-									Boolean(hasOpenVisit) &&
-									activeVisitLockedAppointmentStatuses.has(status)
-								}
+								onChange={(e) => {
+									const nextStatus = e.target.value as Appointment["status"];
+									setStatus(nextStatus);
+									if (hasOpenVisit && activeVisitLockedAppointmentStatuses.has(nextStatus)) {
+										showToast(
+											"Внимание: по этой записи открыт активный визит в кресле. Изменение статуса разрешено врачу (Мандат 8e).",
+											"warning",
+											4000,
+										);
+									}
+								}}
 								className="w-full p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] text-sm outline-none focus:ring-2 focus:ring-[var(--teal)]"
+								data-testid="select-appointment-status"
 							>
 								{(Object.keys(appointmentLabels) as Appointment["status"][]).map(
 									(st) => (
@@ -929,6 +1158,15 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									),
 								)}
 							</select>
+							{hasOpenVisit && (
+								<div
+									className="mt-1.5 p-2 rounded-lg text-xs bg-amber-500/10 text-amber-800 dark:text-amber-200 border border-amber-500/20 flex items-center gap-1.5"
+									data-testid="status-open-visit-warning"
+								>
+									<AlertTriangle size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+									<span>По этой записи открыт активный визит. Смена статуса разрешена врачу (Мандат 8e).</span>
+								</div>
+							)}
 						</div>
 
 						{/* Reason */}

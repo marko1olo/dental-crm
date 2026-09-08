@@ -98,6 +98,7 @@ export interface QuickAddChairData {
 	color?: string;
 	isActive?: boolean;
 	branchId?: string;
+	defaultDoctorId?: string | null;
 }
 
 export interface QuickAddChairModalProps {
@@ -108,6 +109,15 @@ export interface QuickAddChairModalProps {
 	readonly initialData?: QuickAddChairData | null | undefined;
 	readonly onUpdateChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
 	readonly branches?: any;
+	readonly doctors?:
+		| Array<{
+				id: string;
+				fullName: string;
+				role?: string;
+				specialties?: string[];
+				active?: boolean;
+		  }>
+		| undefined;
 }
 
 /**
@@ -126,6 +136,7 @@ export function QuickAddChairModal({
 	onAddChair,
 	initialData,
 	onUpdateChair,
+	doctors,
 }: QuickAddChairModalProps): React.ReactElement | null {
 	const isEditMode = Boolean(initialData && initialData.id);
 	const defaultChairName = isEditMode
@@ -142,6 +153,7 @@ export function QuickAddChairModal({
 	const [selectedArchetypeId, setSelectedArchetypeId] = useState<string | null>(null);
 	const [isActive, setIsActive] = useState<boolean>(true);
 	const [branchId, setBranchId] = useState<string>("");
+	const [defaultDoctorId, setDefaultDoctorId] = useState<string>("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const handleSelectArchetype = (archetype: ChairArchetypePreset) => {
@@ -166,6 +178,7 @@ export function QuickAddChairModal({
 				setSelectedColor(initialData.color || "#0d9488");
 				setIsActive(initialData.isActive !== false);
 				setBranchId(initialData.branchId || "");
+				setDefaultDoctorId((initialData as any).defaultDoctorId || "");
 			} else {
 				setChairName("");
 				setRoomNumber("");
@@ -173,6 +186,7 @@ export function QuickAddChairModal({
 				setSelectedColor("#0d9488");
 				setIsActive(true);
 				setBranchId("");
+				setDefaultDoctorId("");
 			}
 			setIsSubmitting(false);
 		}
@@ -217,6 +231,7 @@ export function QuickAddChairModal({
 				specialization: selectedSpecialty,
 				color: selectedColor,
 				isActive,
+				defaultDoctorId: defaultDoctorId.trim() || null,
 				...(branchId ? { branchId } : {}),
 			};
 
@@ -243,6 +258,7 @@ export function QuickAddChairModal({
 						specialization: selectedSpecialty,
 						color: selectedColor,
 						active: isActive,
+						defaultDoctorId: defaultDoctorId.trim() || null,
 					}),
 				}).catch(() => {});
 			}
@@ -442,6 +458,34 @@ export function QuickAddChairModal({
 						</div>
 					</div>
 
+					{/* Field: Default Doctor (StomX / DentalPRO parity, Mandates 8e, 8n) */}
+					<div className="space-y-1.5">
+						<label
+							htmlFor="quick-add-chair-doctor-select"
+							className="block text-xs font-semibold uppercase tracking-wider text-[var(--muted,#64748b)]"
+						>
+							Дежурный / основной врач кресла по умолчанию (StomX / DentalPRO)
+						</label>
+						<select
+							id="quick-add-chair-doctor-select"
+							value={defaultDoctorId}
+							onChange={(e) => setDefaultDoctorId(e.target.value)}
+							className="w-full min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-sm font-medium focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-hidden transition-all"
+							data-testid="quick-add-chair-doctor-select"
+							style={{ minHeight: "44px" }}
+						>
+							<option value="">-- Без привязки (по графику смен) --</option>
+							{doctors?.map((doc) => (
+								<option key={doc.id} value={doc.id}>
+									{doc.fullName} {doc.specialties?.length ? `(${doc.specialties.join(", ")})` : ""}
+								</option>
+							))}
+						</select>
+						<p className="text-[11px] text-[var(--muted,#64748b)]">
+							При создании записи в этом кресле врач будет предзаполнен автоматически
+						</p>
+					</div>
+
 					{/* Field: Color picker presets (14 StomX authentic palettes, Mandates 8e, 8k) */}
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
@@ -547,6 +591,15 @@ export function QuickAddChairModal({
 								{CHAIR_COLOR_PRESETS.find(
 									(c) => c.hex.toLowerCase() === selectedColor.toLowerCase(),
 								)?.label || "Цвет кресла"}
+							</span>
+						</div>
+						<div
+							className="mt-2.5 pt-2 border-t border-[var(--line,#e2e8f0)] flex items-center justify-between text-xs"
+							data-testid="quick-add-chair-preview-doctor-block"
+						>
+							<span className="text-[var(--muted,#64748b)]">Основной врач установки:</span>
+							<span className="font-bold text-[var(--ink,#0f172a)]" data-testid="quick-add-chair-preview-doctor">
+								{doctors?.find((d) => d.id === defaultDoctorId)?.fullName || "По графику смен (без привязки)"}
 							</span>
 						</div>
 					</div>

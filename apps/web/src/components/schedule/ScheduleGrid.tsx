@@ -421,37 +421,41 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			...localChairAssignments,
 		};
 
-		// If solo doctor or only 1 doctor in staff, auto-bind that doctor to the chair(s) if not already assigned
-		if (isSoloDoctor && doctors.length >= 1) {
-			const soloDoc = doctors[0];
-			if (soloDoc) {
-				for (const chair of effectiveChairs) {
-					if (
-						assignments[chair.id]?.doctorId === "" ||
-						(assignments[chair.id] as any)?.unassigned
-					) {
-						continue;
-					}
-					if (!assignments[chair.id]) {
-						const specialty =
-							soloDoc.specialties && soloDoc.specialties.length > 0
-								? specialtyLabels[soloDoc.specialties[0] as DentalSpecialty] ||
-									soloDoc.specialties[0]
-								: soloDoc.role === "doctor"
-									? "Стоматолог"
-									: "";
-						assignments[chair.id] = {
-							chairId: chair.id,
-							doctorId: soloDoc.id,
-							doctorName: soloDoc.fullName,
-							doctorSpecialty: specialty,
-							shiftPreset: "full",
-							shiftLabel: "Полный день",
-							shiftHours: "08:00–20:00",
-							startHour: 8,
-							endHour: 20,
-						};
-					}
+		// If chair has defaultDoctorId or clinic is solo doctor, auto-bind that doctor to the chair(s) if not already assigned
+		for (const chair of effectiveChairs) {
+			if (
+				assignments[chair.id]?.doctorId === "" ||
+				(assignments[chair.id] as any)?.unassigned
+			) {
+				continue;
+			}
+			if (!assignments[chair.id]) {
+				const chairDefaultDocId = (chair as any)?.defaultDoctorId;
+				const defaultDoc = chairDefaultDocId
+					? doctors.find((d) => d.id === chairDefaultDocId)
+					: isSoloDoctor && doctors.length >= 1
+						? doctors[0]
+						: null;
+
+				if (defaultDoc) {
+					const specialty =
+						defaultDoc.specialties && defaultDoc.specialties.length > 0
+							? specialtyLabels[defaultDoc.specialties[0] as DentalSpecialty] ||
+								defaultDoc.specialties[0]
+							: defaultDoc.role === "doctor"
+								? "Стоматолог"
+								: "";
+					assignments[chair.id] = {
+						chairId: chair.id,
+						doctorId: defaultDoc.id,
+						doctorName: defaultDoc.fullName,
+						doctorSpecialty: specialty,
+						shiftPreset: "full",
+						shiftLabel: chairDefaultDocId ? "Основной врач" : "Полный день",
+						shiftHours: "08:00–20:00",
+						startHour: 8,
+						endHour: 20,
+					};
 				}
 			}
 		}
@@ -477,6 +481,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 		(targetChairId: string) => {
 			if (doctors.length === 0) return null;
 			const targetChair = effectiveChairs.find((c) => c.id === targetChairId);
+			const defaultDocId = (targetChair as any)?.defaultDoctorId;
+			if (defaultDocId) {
+				const defaultDoc = doctors.find((d) => d.id === defaultDocId);
+				if (defaultDoc) return defaultDoc;
+			}
 			const chairSpec = (targetChair as { specialization?: string })?.specialization;
 			if (chairSpec) {
 				const matchingDoc = doctors.find(
