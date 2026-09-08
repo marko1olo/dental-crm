@@ -1985,6 +1985,22 @@
 - **Файлы**: `apps/web/src/components/endo/EndoCanalLogModal.tsx`, `apps/web/src/components/pediatric/PediatricParentMemoModal.tsx`.
 - **Тесты**: `apps/web/src/components/endo/__tests__/endoCanalPatientMemoAutonomyWave54.test.tsx` (8/8 pass) — коммит `592c7c964`.
 
+#### 2.10.203. Расписание и смены кресел: 1-клик копирование смен на всю неделю (Пн–Вс / Пн–Пт), дублирование кресел и быстрая очистка смен дня (Фича #244, Wave 55)
+- **Суть и домен**: Эргономика расписания, сменность кресел и паритет StomX/DentalPRO по Мандатам 8c, 8d, 8e, 8k, 8n:
+  1. *1-клик копирование смен на неделю и очистка дня (`ChairScheduleView.tsx`)*:
+     - `btn-copy-chair-week-current` («На неделю (Пн–Вс)», иконка `Calendar`, тулбар Хика 32–36px) для копирования смен сегодняшнего дня на все 7 дней текущей недели (Пн–Вс);
+     - `btn-copy-chair-week-workdays` («На будни (Пн–Пт)», иконка `Calendar`, тулбар Хика 32–36px) для копирования на 5 рабочих дней (Пн–Пт);
+     - `btn-clear-day-shifts` («Очистить смены дня», иконка `XCircle`, тулбар Хика 32–36px) для моментального сброса всех смен текущего дня без лишних модалок;
+     - `chair-view-duplicate-${chair.id}` («Клонировать кресло», иконка `Copy`) в поповере смены кресла для быстрого открытия модалки с предзаполненным именем `«... (копия)»`, цветом и кабинетом;
+  2. *Дублирование кресла в модалке (`QuickAddChairModal.tsx`)*:
+     - `quick-add-chair-duplicate-btn` («+ Дублировать как новое кресло», иконка `Copy`, touch target $\min\text{-height: 44px}$, 0 эмодзи) в футере модалки редактирования кресла;
+     - `handleDuplicateChair` клонирует параметры кресла, создаёт копию через `onAddChair` или `POST /api/settings/chairs` и показывает тост успеха;
+  3. *Паритет закрепления в сетке (`ScheduleGrid.tsx`)*:
+     - `chair-popover-shift-week-full-${chair.id}` («На всю неделю (Пн–Вс)», 7 дней) и `chair-popover-unassign-${chair.id}` («Снять врача с кресла») в поповере шапки кресла;
+     - Поддержка шаблона `seven_day_full` в `doctorShiftRosterPresets.ts`.
+- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/components/schedule/roster/doctorShiftRosterPresets.ts`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/chairScheduleCopyAndDuplicateAutonomyWave55.test.tsx`, `npm run typecheck -w @dental/web` (Exit Code 0).
+
 
 
 

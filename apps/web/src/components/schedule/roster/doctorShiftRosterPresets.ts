@@ -580,6 +580,7 @@ export type DoctorChairRosterTemplateId =
 	| "two_two_full_day"
 	| "five_day_standard"
 	| "five_day_week"
+	| "seven_day_full"
 	| "even_odd_month"
 	| "even_days_morning"
 	| "odd_days_evening"
@@ -601,6 +602,19 @@ export interface DoctorChairRosterTemplate {
 }
 
 export const DOCTOR_CHAIR_ROSTER_TEMPLATES: readonly DoctorChairRosterTemplate[] = [
+	{
+		id: "seven_day_full",
+		title: "Вся неделя (08:00–20:00)",
+		shortTitle: "Вся неделя (Пн–Вс)",
+		daysDescription: "Понедельник — воскресенье (7 дней)",
+		hours: "08:00–20:00",
+		startTime: "08:00",
+		endTime: "20:00",
+		durationHours: 11.0,
+		breakMinutes: 60,
+		archetypeId: "morning_shift",
+		daysOfWeekIndices: [0, 1, 2, 3, 4, 5, 6],
+	},
 	{
 		id: "mon_wed_fri_morning",
 		title: "Пн/Ср/Пт (Утро 08:00–14:00)",

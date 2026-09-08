@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, X, Check, Armchair } from "lucide-react";
+import { Plus, X, Check, Armchair, Copy } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 
@@ -267,6 +267,53 @@ export function QuickAddChairModal({
 			onClose();
 		} catch {
 			// Mandate 8e: Doctor Autonomy - never block the interface on background network errors
+			onClose();
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const handleDuplicateChair = async () => {
+		if (isSubmitting) return;
+		const baseName = chairName.trim() || defaultChairName;
+		const duplicatedName = `${baseName} (копия)`;
+		const finalRoom = roomNumber.trim() || defaultRoomName;
+
+		setIsSubmitting(true);
+		try {
+			const payload: QuickAddChairData = {
+				name: duplicatedName,
+				room: finalRoom,
+				specialization: selectedSpecialty,
+				color: selectedColor,
+				isActive,
+				defaultDoctorId: defaultDoctorId.trim() || null,
+				...(branchId ? { branchId } : {}),
+			};
+
+			if (onAddChair) {
+				await Promise.resolve(onAddChair(payload));
+			} else {
+				const endpoint = "/api/settings/chairs";
+				await fetch(endpoint, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						name: duplicatedName,
+						room: finalRoom,
+						specialization: selectedSpecialty,
+						color: selectedColor,
+						active: isActive,
+						defaultDoctorId: defaultDoctorId.trim() || null,
+						...(branchId ? { branchId } : {}),
+					}),
+				}).catch(() => {});
+			}
+			showToast(`Создана копия кресла «${duplicatedName}»`, "success", 3500);
+			onClose();
+		} catch {
 			onClose();
 		} finally {
 			setIsSubmitting(false);
@@ -657,44 +704,62 @@ export function QuickAddChairModal({
 				</form>
 
 				{/* Modal Footer */}
-				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-end gap-2.5 shrink-0">
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs sm:text-sm font-bold hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
-						data-testid="quick-add-chair-cancel-btn"
-						style={{ minHeight: "44px" }}
-					>
-						Отмена
-					</button>
-					<button
-						type="button"
-						onClick={() => handleSubmit()}
-						disabled={false}
-						className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white text-xs sm:text-sm font-bold hover:opacity-90 active:scale-98 transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
-						data-testid="quick-add-chair-submit-btn"
-						style={{ minHeight: "44px" }}
-						title={
-							isEditMode
-								? "Сохранить изменения параметров кресла"
-								: "Добавить кресло в расписание (автогенерация имени при пустом вводе)"
-						}
-					>
-						{isEditMode ? (
-							<Check className="w-4 h-4 shrink-0" aria-hidden="true" />
-						) : (
-							<Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
+				<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+					<div>
+						{(isEditMode || Boolean(initialData)) && (
+							<button
+								type="button"
+								onClick={handleDuplicateChair}
+								disabled={false}
+								className="min-h-[44px] px-3.5 sm:px-4 rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/20 text-xs sm:text-sm font-bold transition-colors cursor-pointer inline-flex items-center gap-2 select-none"
+								data-testid="quick-add-chair-duplicate-btn"
+								style={{ minHeight: "44px" }}
+								title="Дублировать текущие параметры в новое кресло"
+							>
+								<Copy className="w-4 h-4 shrink-0" aria-hidden="true" />
+								<span>+ Дублировать как новое кресло</span>
+							</button>
 						)}
-						<span>
-							{isSubmitting
-								? isEditMode
-									? "Сохранение..."
-									: "Добавление..."
-								: isEditMode
-									? "Сохранить изменения"
-									: "+ Добавить кресло"}
-						</span>
-					</button>
+					</div>
+					<div className="flex items-center gap-2.5 ml-auto">
+						<button
+							type="button"
+							onClick={onClose}
+							className="min-h-[44px] px-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs sm:text-sm font-bold hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+							data-testid="quick-add-chair-cancel-btn"
+							style={{ minHeight: "44px" }}
+						>
+							Отмена
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSubmit()}
+							disabled={false}
+							className="min-h-[44px] px-5 rounded-xl bg-[var(--teal,var(--brand-primary))] text-white text-xs sm:text-sm font-bold hover:opacity-90 active:scale-98 transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
+							data-testid="quick-add-chair-submit-btn"
+							style={{ minHeight: "44px" }}
+							title={
+								isEditMode
+									? "Сохранить изменения параметров кресла"
+									: "Добавить кресло в расписание (автогенерация имени при пустом вводе)"
+							}
+						>
+							{isEditMode ? (
+								<Check className="w-4 h-4 shrink-0" aria-hidden="true" />
+							) : (
+								<Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
+							)}
+							<span>
+								{isSubmitting
+									? isEditMode
+										? "Сохранение..."
+										: "Добавление..."
+									: isEditMode
+										? "Сохранить изменения"
+										: "+ Добавить кресло"}
+							</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

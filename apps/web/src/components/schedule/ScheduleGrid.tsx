@@ -845,7 +845,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	);
 
 	const handleAssignDoctorWeek = useCallback(
-		(chairId: string, docId: string) => {
+		(chairId: string, docId: string, fullWeek = false) => {
 			const doc = doctors.find((d) => d.id === docId) || doctors[0];
 			const chair = effectiveChairs.find((c) => c.id === chairId) || { id: chairId, name: "Кресло" };
 			if (!doc) return;
@@ -864,7 +864,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				doctorName,
 				doctorSpecialty: specialty,
 				shiftPreset: "full",
-				shiftLabel: "Весь день (Пн–Пт)",
+				shiftLabel: fullWeek ? "Весь день (Пн–Вс)" : "Весь день (Пн–Пт)",
 				shiftHours: "08:00–20:00",
 				startHour: 8,
 				endHour: 20,
@@ -881,7 +881,8 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			};
 
 			const mondayIso = getMondayOfWeekIso(dateKey);
-			const weekDays = [0, 1, 2, 3, 4].map((offset) => addDaysToDateIso(mondayIso, offset));
+			const dayOffsets = fullWeek ? [0, 1, 2, 3, 4, 5, 6] : [0, 1, 2, 3, 4];
+			const weekDays = dayOffsets.map((offset) => addDaysToDateIso(mondayIso, offset));
 
 			if (typeof window !== "undefined") {
 				try {
@@ -899,7 +900,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					const currentShifts = rawShifts ? JSON.parse(rawShifts) : [];
 					const updatedShifts = applyDoctorChairWeeklyTemplate(currentShifts, {
 						weekStartDateIso: mondayIso,
-						templateId: "five_day_standard",
+						templateId: fullWeek ? "seven_day_full" : "five_day_standard",
 						doctorId: doc.id,
 						chairId,
 						staffList: (dashboard?.clinicSettings?.staff as any) || (doctors as any),
@@ -917,8 +918,9 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 				props.onAssignChairDoctor(chairId, assignment);
 			}
 
+			const weekLabel = fullWeek ? "всю неделю (Пн–Вс)" : "всю неделю (Пн–Пт)";
 			showToast(
-				`Врач ${formatDoctorShortName(doctorName)} закреплен за креслом «${chair.name}» на всю неделю (Пн–Пт)`,
+				`Врач ${formatDoctorShortName(doctorName)} закреплен за креслом «${chair.name}» на ${weekLabel}`,
 				"success",
 				3500,
 			);
@@ -1589,6 +1591,24 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														onClick={() => {
 															const targetDocId = assignment?.doctorId || suggestedDoctor?.id || (doctors[0]?.id ?? "");
 															if (targetDocId) {
+																handleAssignDoctorWeek(chair.id, targetDocId, true);
+															}
+															setActiveHeaderDoctorPopoverChairId(null);
+														}}
+														className="min-h-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--teal-surface)] text-xs font-bold text-[var(--ink)] flex items-center justify-start gap-1.5 cursor-pointer transition-all active:scale-98"
+														style={{ minHeight: "44px" }}
+														title="На всю неделю (Пн–Вс, 7 дней) (1 клик)"
+														aria-label={`Закрепить врача на кресле ${chair.name} на всю неделю (Пн–Вс)`}
+														data-testid={`chair-popover-shift-week-full-${chair.id}`}
+													>
+														<Calendar size={15} className="text-teal-600 dark:text-teal-400 shrink-0" aria-hidden="true" />
+														<span className="truncate">На всю неделю (Пн–Вс)</span>
+													</button>
+													<button
+														type="button"
+														onClick={() => {
+															const targetDocId = assignment?.doctorId || suggestedDoctor?.id || (doctors[0]?.id ?? "");
+															if (targetDocId) {
 																const mondayIso = getMondayOfWeekIso(dateKey);
 																if (typeof window !== "undefined") {
 																	try {
@@ -1666,7 +1686,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														}}
 														className="min-h-[44px] w-full px-2 py-1 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center gap-1.5 cursor-pointer"
 														style={{ minHeight: "44px" }}
-														data-testid={`btn-chair-quick-unassign-${chair.id}`}
+														data-testid={`chair-popover-unassign-${chair.id}`}
 													>
 														<XCircle size={14} />
 														<span>Снять врача с кресла</span>

@@ -339,6 +339,76 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 		);
 	}, [dateKey, chairDoctorAssignments]);
 
+	const handleCopyTodayShiftsToCurrentWeek = useCallback(
+		(workdaysOnly = false) => {
+			const label = workdaysOnly ? "будни (Пн–Пт)" : "всю неделю (Пн–Вс)";
+			const mondayIso = getMondayOfWeekIso(dateKey);
+			const daysCount = workdaysOnly ? 5 : 7;
+
+			let todayAssignments: Record<string, ChairDoctorShiftAssignment> =
+				chairDoctorAssignments ? { ...chairDoctorAssignments } : {};
+
+			if (typeof window !== "undefined" && dateKey) {
+				try {
+					const raw = localStorage.getItem(`dente_chair_doctor_assignments_${dateKey}`);
+					if (raw) {
+						const parsed = JSON.parse(raw);
+						todayAssignments = { ...parsed, ...todayAssignments };
+					}
+				} catch {}
+
+				try {
+					for (let i = 0; i < daysCount; i++) {
+						const targetDay = addDaysToDateIso(mondayIso, i);
+						localStorage.setItem(
+							`dente_chair_doctor_assignments_${targetDay}`,
+							JSON.stringify(todayAssignments),
+						);
+					}
+				} catch {}
+			}
+
+			showToast(
+				`График смен кресел применен на ${label} (${mondayIso}..) в 1 клик (StomX Parity)`,
+				"success",
+				3500,
+			);
+		},
+		[dateKey, chairDoctorAssignments],
+	);
+
+	const handleClearAllDayShifts = useCallback(() => {
+		if (typeof window !== "undefined" && dateKey) {
+			try {
+				localStorage.removeItem(`dente_chair_doctor_assignments_${dateKey}`);
+			} catch {}
+		}
+
+		if (onAssignChairDoctor) {
+			const targetChairs = chairs.length > 0 ? chairs : DEFAULT_CLINIC_CHAIRS;
+			for (const chair of targetChairs) {
+				onAssignChairDoctor(chair.id, null);
+			}
+		}
+
+		showToast(`Все смены кресел на ${dateKey} очищены`, "info");
+	}, [dateKey, onAssignChairDoctor, chairs]);
+
+	const handleDuplicateChair = useCallback((chair: ScheduleChair) => {
+		const duplicatedData: QuickAddChairData = {
+			name: `${chair.name} (копия)`,
+			room: (chair as any).roomNumber || (chair as any).room || "",
+			color: (chair as any).color || "#0d9488",
+			specialization: (chair as any).specialization || "therapist",
+			defaultDoctorId: (chair as any).defaultDoctorId || null,
+			isActive: true,
+		};
+		setEditingChair(duplicatedData);
+		setIsAddChairOpen(true);
+		showToast(`Клонирование параметров кресла «${chair.name}»`, "info", 3000);
+		setActiveShiftChairId(null);
+	}, []);
+
 	const handleUnassignShift = useCallback(
 		(chair: ScheduleChair) => {
 			if (typeof window !== "undefined" && dateKey) {
@@ -707,6 +777,18 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 												<span>Снять врача</span>
 											</button>
 										)}
+
+										{/* Duplicate chair action */}
+										<button
+											type="button"
+											onClick={() => handleDuplicateChair(chair)}
+											className="mt-1 px-2 py-1 rounded-lg text-xs font-semibold text-[var(--ink)] hover:bg-[var(--teal-soft)] border border-[var(--line)] flex items-center justify-center gap-1 transition-colors cursor-pointer"
+											data-testid={`chair-view-duplicate-${chair.id}`}
+											title={`Клонировать параметры кресла «${chair.name}»`}
+										>
+											<Copy size={12} className="text-[var(--teal)] shrink-0" />
+											<span>Клонировать кресло</span>
+										</button>
 									</div>
 								)}
 							</div>
@@ -727,11 +809,44 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				</div>
 
 				{/* Right: Actions (Copy Week, Roster & Add Chair) */}
-				<div className="flex items-center gap-1.5 shrink-0">
+				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+					<button
+						type="button"
+						onClick={() => handleCopyTodayShiftsToCurrentWeek(false)}
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
+						title="Скопировать график смен кресел на текущую неделю (Пн–Вс, 7 дней) в 1 клик (StomX Parity)"
+						data-testid="btn-copy-chair-week-current"
+					>
+						<Calendar size={12} className="text-[var(--teal)]" />
+						<span className="hidden sm:inline">На неделю (Пн–Вс)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => handleCopyTodayShiftsToCurrentWeek(true)}
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
+						title="Скопировать график смен кресел на будни (Пн–Пт, 5 дней) в 1 клик (StomX Parity)"
+						data-testid="btn-copy-chair-week-workdays"
+					>
+						<Calendar size={12} className="text-emerald-600 dark:text-emerald-400" />
+						<span className="hidden sm:inline">На будни (Пн–Пт)</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={handleClearAllDayShifts}
+						className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 text-[11px] font-semibold text-rose-600 dark:text-rose-400 transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
+						title="Очистить все смены кресел на текущий день в 1 клик"
+						data-testid="btn-clear-day-shifts"
+					>
+						<XCircle size={12} />
+						<span className="hidden md:inline">Очистить смены дня</span>
+					</button>
+
 					<button
 						type="button"
 						onClick={handleCopyWeekShiftsToNextWeek}
-						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 shrink-0"
+						className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--teal-soft)] hover:border-[var(--teal)] text-[11px] font-semibold text-[var(--ink)] transition-colors cursor-pointer h-7 sm:h-8 shrink-0"
 						title="Скопировать график смен кресел на следующую неделю (+7 дней) в 1 клик (StomX Parity)"
 						data-testid="btn-copy-chair-week-next"
 					>
