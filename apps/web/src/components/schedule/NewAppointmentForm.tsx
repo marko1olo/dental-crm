@@ -12,6 +12,7 @@ import {
 	Sparkles,
 	Stethoscope,
 	X,
+	Zap,
 } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -29,7 +30,10 @@ import {
 } from "../../SmartParsePreview";
 import { logger } from "../../utils/logger";
 import { matchesPatientSearch } from "../../utils/patientSearchUtils";
-import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import {
+	checkAppointmentResourceCollision,
+	isCitoAppointment,
+} from "../../utils/scheduleCollisionUtils";
 import { showToast } from "../GlobalToast";
 import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import { formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
@@ -393,6 +397,12 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 	}, [newAppointmentMissingSteps, dashboard.clinicSettings?.chairs, dashboard.clinicSettings?.staff]);
 
 	const collision = useMemo(() => {
+		const isCito = Boolean(
+			newAppointmentDraft?.cito ||
+			newAppointmentDraft?.isCito ||
+			newAppointmentDraft?.tag === "cito" ||
+			(newAppointmentDraft?.reason && isCitoAppointment(newAppointmentDraft as any)),
+		);
 		return checkAppointmentResourceCollision(
 			newAppointmentDraft as AppointmentScheduleDraft,
 			dashboard.appointments,
@@ -402,6 +412,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 				patients: dashboard.patients,
 				formatTimeFn: (iso) =>
 					toDateTimeLocalValue(iso, clinicTimezone).slice(11, 16),
+				isCito,
+				allowCitoOverbooking: isCito,
 			},
 		);
 	}, [
@@ -461,24 +473,108 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 		}
 	};
 
+	const handleApplyReasonPreset = (preset: QuickAppointmentReasonPreset) => {
+		updateNewAppointmentDraft("reason", preset.reason);
+		applyDuration(preset.durationMinutes);
+		if (preset.id === "emergency" || preset.tone === "emergency") {
+			updateNewAppointmentDraft("cito", true);
+			updateNewAppointmentDraft("isCito", true);
+			updateNewAppointmentDraft("tag", "cito");
+			let activeChairId = newAppointmentDraft?.chairId;
+			if (!activeChairId && dashboard.clinicSettings?.chairs) {
+				const firstActiveChair = dashboard.clinicSettings.chairs.find((c) => c.active);
+				if (firstActiveChair) {
+					activeChairId = firstActiveChair.id;
+					updateNewAppointmentDraft("chairId", activeChairId);
+				}
+			}
+			if (!newAppointmentDraft?.doctorUserId) {
+				const targetTime = newAppointmentDraft?.startsAt;
+				let resolvedDocId: string | undefined;
+				if (activeChairId) {
+					const duty = resolveChairDutyDoctor(
+						activeChairId,
+						targetTime,
+						chairDoctorAssignments,
+						targetTime ? String(targetTime).slice(0, 10) : undefined,
+					);
+					resolvedDocId = duty.doctorId ?? undefined;
+				}
+				if (!resolvedDocId && dashboard.clinicSettings?.staff) {
+					const activeDocs = dashboard.clinicSettings.staff.filter(
+						(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+					);
+					if (activeDocs.length > 0 && activeDocs[0]) {
+						resolvedDocId = activeDocs[0].id;
+					}
+				}
+				if (resolvedDocId) {
+					updateNewAppointmentDraft("doctorUserId", resolvedDocId);
+				}
+			}
+			showToast("Экстренная запись CITO (Острая боль): 30 мин, овербукинг разрешён", "warning", 3000);
+		}
+	};
+
 	const newAppointmentReadyToCreate =
 		criticalMissingSteps.length === 0;
 
 	const handleCreateAppointment = async () => {
-		// Авто-подстановка первого активного кресла/врача перед отправкой, чтобы не блокировать регистратора
-		if (!newAppointmentDraft?.chairId && dashboard.clinicSettings?.chairs) {
+		// Авто-подстановка безопасных дефолтов при отсутствии полей (Мандаты 8e, 8k, 8n)
+		if (!newAppointmentDraft?.startsAt) {
+			const now = new Date();
+			now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+			const startIso = now.toISOString();
+			updateNewAppointmentDraft("startsAt", startIso);
+		}
+		if (!newAppointmentDraft?.endsAt) {
+			const start = newAppointmentDraft?.startsAt ? new Date(newAppointmentDraft.startsAt) : new Date();
+			const durationMins = newAppointmentDraft?.isCito || newAppointmentDraft?.cito ? 30 : 30;
+			const end = new Date(start.getTime() + durationMins * 60 * 1000);
+			updateNewAppointmentDraft("endsAt", end.toISOString());
+		}
+		let currentChairId = newAppointmentDraft?.chairId;
+		if (!currentChairId && dashboard.clinicSettings?.chairs) {
 			const firstChair = dashboard.clinicSettings.chairs.find((c) => c.active);
 			if (firstChair) {
+				currentChairId = firstChair.id;
 				updateNewAppointmentDraft("chairId", firstChair.id);
 			}
 		}
-		if (!newAppointmentDraft?.doctorUserId && dashboard.clinicSettings?.staff) {
-			const activeDocs = dashboard.clinicSettings.staff.filter(
-				(m) => m.active && (m.role === "doctor" || m.role === "owner"),
-			);
-			if (activeDocs.length > 0 && activeDocs[0]) {
-				updateNewAppointmentDraft("doctorUserId", activeDocs[0].id);
+		if (!newAppointmentDraft?.doctorUserId) {
+			const targetTime = newAppointmentDraft?.startsAt;
+			let resolvedDocId: string | undefined;
+			if (currentChairId) {
+				const duty = resolveChairDutyDoctor(
+					currentChairId,
+					targetTime,
+					chairDoctorAssignments,
+					targetTime ? String(targetTime).slice(0, 10) : undefined,
+				);
+				resolvedDocId = duty.doctorId ?? undefined;
 			}
+			if (!resolvedDocId && dashboard.clinicSettings?.staff) {
+				const activeDocs = dashboard.clinicSettings.staff.filter(
+					(m) => m.active && (m.role === "doctor" || m.role === "owner"),
+				);
+				if (activeDocs.length > 0 && activeDocs[0]) {
+					resolvedDocId = activeDocs[0].id;
+				}
+			}
+			if (resolvedDocId) {
+				updateNewAppointmentDraft("doctorUserId", resolvedDocId);
+			}
+		}
+		if (!newAppointmentDraft?.patientId) {
+			const firstActivePatient = (dashboard.patients ?? []).find((p) => p.status === "active");
+			if (firstActivePatient) {
+				updateNewAppointmentDraft("patientId", firstActivePatient.id);
+				showToast(`Автоматически выбран пациент: ${firstActivePatient.fullName}`, "info", 2500);
+			}
+		}
+		if (!newAppointmentDraft?.reason) {
+			const isCito = newAppointmentDraft?.isCito || newAppointmentDraft?.cito;
+			updateNewAppointmentDraft("reason", isCito ? "CITO! Острая боль" : "Осмотр и консультация");
 		}
 		await createAppointmentFromDraft();
 	};
@@ -804,6 +900,22 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							<FileText size={14} className="text-amber-600 dark:text-amber-400" />
 							<span>Бланк договора (_______)</span>
 						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setShowCreateForm(true);
+								const emergencyPreset = QUICK_APPOINTMENT_REASON_PRESETS.find((p) => p.id === "emergency");
+								if (emergencyPreset) {
+									handleApplyReasonPreset(emergencyPreset);
+								}
+							}}
+							className="min-h-[44px] px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+							title="Экстренная запись: CITO! Острая боль (30 мин, овербукинг разрешен)"
+							data-testid="header-cito-emergency-btn"
+						>
+							<Zap size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
+							<span>CITO! Острая боль (30 мин)</span>
+						</button>
 						{showCreateForm && (
 							<label className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 cursor-pointer">
 								<input
@@ -817,7 +929,18 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 						)}
 					</div>
 					<div className="flex gap-2 items-center">
-						{collision.hasCollision ? (
+						{collision.isCitoOverbooking ? (
+							<span
+								id="new-appointment-cito-overbooking"
+								data-testid="cito-overbooking-badge"
+								className="save-state font-semibold text-rose-700 dark:text-rose-300 text-xs flex items-center gap-1 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-lg"
+								role="alert"
+								title={`${collision.message || "CITO-овербукинг (острая боль)"}. Мягкий овербукинг разрешен (Мандат 8e)`}
+							>
+								<Zap size={13} className="shrink-0 text-rose-600 dark:text-rose-400" />
+								<span>CITO-овербукинг (острая боль)</span>
+							</span>
+						) : collision.hasCollision ? (
 							<span
 								id="new-appointment-create-collision"
 								className="save-state font-medium text-amber-700 dark:text-amber-300 text-xs flex items-center gap-1"
@@ -833,13 +956,6 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								<span>Готово к созданию</span>
 							</span>
 						) : (
-							/* БЫЛО: «Заполните поля» — какие именно, не сказано. Подробный
-                 список «Чтобы создать запись, осталось…» в компоненте есть, но
-                 он лежит внизу формы ручного ввода, а она по умолчанию свёрнута:
-                 пользователь его просто не видит и гадает, чего не хватает.
-                 Показываем нехватку прямо у кнопки. Длинный список не влезет в
-                 строку, поэтому первые два пункта словами, остальное числом, а
-                 полный список остаётся в подсказке. */
 							<span
 								id="new-appointment-create-missing-short"
 								className="save-state save-state-idle font-medium text-amber-600 dark:text-amber-400 text-xs"
@@ -856,36 +972,34 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								})()}
 							</span>
 						)}
-						{/* aria-describedby у кнопки ниже ведёт на видимую строку «Осталось: …»
-                рядом с ней. Раньше он указывал на подробный список внизу формы
-                ручного ввода — а тот существует в разметке только когда форма
-                раскрыта, то есть ссылка висела в пустоту как раз при свёрнутой
-                форме, когда объяснение нужнее всего. */}
 						<button
 							type="button"
 							data-testid="create-appointment-button"
 							onClick={() => void handleCreateAppointment()}
-							disabled={
-								newAppointmentSaveState === "saving" ||
-								!newAppointmentReadyToCreate
-							}
+							disabled={newAppointmentSaveState === "saving"}
 							aria-busy={newAppointmentSaveState === "saving" || undefined}
 							aria-describedby={
-								collision.hasCollision
+								collision.isCitoOverbooking
+									? "new-appointment-cito-overbooking"
+									: collision.hasCollision
 									? "new-appointment-create-collision"
 									: !newAppointmentReadyToCreate
 										? "new-appointment-create-missing-short"
 										: undefined
 							}
 							className={`primary-button px-4 py-2 min-h-[44px] rounded-xl flex items-center justify-center text-sm font-semibold whitespace-nowrap disabled:opacity-50 cursor-pointer focus:ring-2 focus:outline-none transition-colors shrink-0 ${
-								collision.hasCollision
+								collision.isCitoOverbooking
+									? "bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500"
+									: collision.hasCollision
 									? "bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500"
 									: "bg-[var(--teal-dark)] hover:bg-[var(--teal)] text-white focus:ring-[var(--teal)]"
 							}`}
 						>
 							<Plus size={16} aria-hidden="true" className="mr-1.5 shrink-0" />
 							<span>
-								{collision.hasCollision
+								{collision.isCitoOverbooking
+									? "Записать CITO (Острая боль / Овербукинг)"
+									: collision.hasCollision
 									? "Записать с овербукингом (острая боль)"
 									: "Создать запись"}
 							</span>
@@ -1352,8 +1466,8 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 								const IconComponent =
 									preset.iconName === "Stethoscope"
 										? Stethoscope
-										: preset.iconName === "AlertTriangle"
-										? AlertTriangle
+										: preset.id === "emergency" || preset.iconName === "AlertTriangle"
+										? Zap
 										: preset.iconName === "Clock"
 										? Clock
 										: preset.iconName === "Check"
@@ -1365,10 +1479,7 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 										key={preset.id}
 										type="button"
 										data-testid={preset.testId}
-										onClick={() => {
-											updateNewAppointmentDraft("reason", preset.reason);
-											applyDuration(preset.durationMinutes);
-										}}
+										onClick={() => handleApplyReasonPreset(preset)}
 										className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-2.5 sm:px-3 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
 											isSelected
 												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs"
@@ -1470,13 +1581,27 @@ export function NewAppointmentForm(props: NewAppointmentFormProps) {
 							</ul>
 						</div>
 					) : null}
-					{collision.hasCollision && (
+					{(collision.isCitoOverbooking || collision.hasCollision) && (
 						<div
-							className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-2"
+							className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+								collision.isCitoOverbooking
+									? "bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-200"
+									: "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200"
+							}`}
 							role="alert"
+							data-testid={collision.isCitoOverbooking ? "cito-overbooking-alert" : "collision-alert"}
 						>
-							<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
-							<span>{collision.message}. Разрешена экстренная запись (острая боль / овербукинг).</span>
+							{collision.isCitoOverbooking ? (
+								<Zap size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
+							) : (
+								<AlertTriangle size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+							)}
+							<span>
+								{collision.message ||
+									(collision.isCitoOverbooking
+										? "CITO-овербукинг разрешён (острая боль): наложение на занятый слот разрешено."
+										: "Ресурсная коллизия. Разрешена экстренная запись (острая боль / овербукинг).")}
+							</span>
 						</div>
 					)}
 					<div className="appointment-editor-actions">

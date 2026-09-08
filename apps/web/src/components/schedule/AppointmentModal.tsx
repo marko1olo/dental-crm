@@ -24,7 +24,11 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
-import { checkAppointmentResourceCollision } from "../../utils/scheduleCollisionUtils";
+import {
+	checkAppointmentResourceCollision,
+	isCitoAppointment,
+	type ResourceCollisionResult,
+} from "../../utils/scheduleCollisionUtils";
 import { WaitlistMatchesBlock } from "./WaitlistMatchesBlock";
 import { printBlankMedicalContract } from "../patient/blankContractPrint";
 import { DEFAULT_SOLO_CHAIR, formatDoctorShortName, type ChairDoctorShiftAssignment } from "./ScheduleGrid";
@@ -190,6 +194,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 	const [status, setStatus] = useState<Appointment["status"]>(() => appointment?.status ?? "planned");
 	const [reason, setReason] = useState(() => appointment?.reason ?? "");
 	const [comment, setComment] = useState(() => appointment?.comment ?? "");
+	const [isCito, setIsCito] = useState(() =>
+		Boolean(
+			(appointment as any)?.isCito ||
+			(appointment as any)?.cito ||
+			(appointment as any)?.tag === "cito" ||
+			isCitoAppointment(appointment),
+		),
+	);
 
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -341,6 +353,14 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		setStatus(appointment.status || "planned");
 		setReason(appointment.reason ?? "");
 		setComment(appointment.comment ?? "");
+		setIsCito(
+			Boolean(
+				(appointment as any)?.isCito ||
+				(appointment as any)?.cito ||
+				(appointment as any)?.tag === "cito" ||
+				isCitoAppointment(appointment),
+			),
+		);
 		setError(null);
 		setIsSaving(false);
 	}, [appointment, isOpen, toDateTimeLocalValue, timezone, doctors, chairs, chairDoctorAssignments]);
@@ -414,8 +434,21 @@ export function AppointmentModal(props: AppointmentModalProps) {
 
 	const collision = useMemo(() => {
 		if (!appointment || !startsAtLocal || !endsAtLocal) {
-			return { hasCollision: false, message: null };
+			return {
+				hasCollision: false,
+				conflictType: null,
+				conflictingAppointment: null,
+				message: null,
+				isCitoOverbooking: false,
+			} satisfies ResourceCollisionResult;
 		}
+		const effectiveIsCito = Boolean(
+			isCito ||
+			(appointment as any)?.isCito ||
+			(appointment as any)?.cito ||
+			(appointment as any)?.tag === "cito" ||
+			isCitoAppointment({ reason, comment }),
+		);
 		return checkAppointmentResourceCollision(
 			{
 				startsAt: fromDateTimeLocalValue(startsAtLocal, timezone),
@@ -424,6 +457,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 				chairId: chairId || null,
 				assistantUserId: assistantUserId || null,
 				patientId: patientId || null,
+				isCito: effectiveIsCito,
+				reason,
 			},
 			dashboard?.appointments,
 			{
@@ -432,6 +467,8 @@ export function AppointmentModal(props: AppointmentModalProps) {
 				chairs: dashboard?.clinicSettings?.chairs,
 				patients: dashboard?.patients,
 				formatTimeFn: (iso) => toDateTimeLocalValue(iso, timezone).slice(11, 16),
+				isCito: effectiveIsCito,
+				allowCitoOverbooking: effectiveIsCito,
 			},
 		);
 	}, [
@@ -445,6 +482,7 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		status,
 		reason,
 		comment,
+		isCito,
 		fromDateTimeLocalValue,
 		toDateTimeLocalValue,
 		timezone,
@@ -497,6 +535,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		(preset: (typeof QUICK_APPOINTMENT_REASONS)[number]) => {
 			setReason(preset.reason);
 			applyDuration(preset.durationMinutes);
+			if (preset.tone === "emergency") {
+				setIsCito(true);
+			}
 			if ("comment" in preset && preset.comment && !comment) {
 				setComment(preset.comment);
 			}
@@ -506,6 +547,26 @@ export function AppointmentModal(props: AppointmentModalProps) {
 		},
 		[applyDuration, comment],
 	);
+
+	const handleConvertToCito = useCallback(() => {
+		setIsCito(true);
+		const citoReason = "CITO! Острая боль";
+		setReason((prev) => (prev ? `${citoReason} (${prev})` : citoReason));
+		applyDuration(30);
+		if (!comment.includes("CITO")) {
+			setComment((prev) =>
+				prev ? `${prev}\n[CITO: экстренное обращение с острой болью]` : "[CITO: экстренное обращение с острой болью]",
+			);
+		}
+		if (status === "planned") {
+			setStatus("confirmed");
+		}
+		showToast(
+			"Приём переведён в CITO (Острая боль): 30 мин, овербукинг разрешён (Мандат 8e)",
+			"warning",
+			3500,
+		);
+	}, [comment, status, applyDuration]);
 
 	const handleSave = async (e?: React.FormEvent) => {
 		if (e) e.preventDefault();
@@ -562,7 +623,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 			status,
 			reason,
 			comment,
-		});
+			isCito,
+			cito: isCito,
+		} as any);
 
 		setIsSaving(false);
 		if (success) {
@@ -607,6 +670,26 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						</div>
 					</div>
 					<div className="flex items-center gap-2">
+						{!isCito ? (
+							<button
+								type="button"
+								onClick={handleConvertToCito}
+								className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+								title="Пациент обратился с острой болью: перевести в CITO, разрешить овербукинг и включить CITO-подсветку в расписании (Мандаты 8e, 8k)"
+								data-testid="convert-to-cito-btn"
+							>
+								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />
+								<span>Перевести в CITO (Острая боль)</span>
+							</button>
+						) : (
+							<div
+								className="min-h-[44px] px-3.5 rounded-xl border border-rose-500/50 bg-rose-500/20 text-rose-800 dark:text-rose-200 text-xs sm:text-sm font-extrabold flex items-center gap-1.5"
+								data-testid="appointment-cito-active-badge"
+							>
+								<Zap size={15} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
+								<span>CITO! Острая боль</span>
+							</div>
+						)}
 						{repeatAppointment && !isNewAppointment && (
 						<button
 							type="button"
@@ -690,6 +773,35 @@ export function AppointmentModal(props: AppointmentModalProps) {
 									<span>Подтвердить запись</span>
 								</button>
 							)}
+						</div>
+					)}
+
+					{/* CITO Notice Banner */}
+					{isCito && (
+						<div
+							className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-950 dark:text-rose-100 flex items-center justify-between gap-3 text-xs shadow-xs"
+							data-testid="appointment-cito-banner"
+						>
+							<div className="flex items-center gap-2">
+								<Zap size={16} className="text-rose-600 dark:text-rose-400 shrink-0 fill-current" />
+								<span className="font-bold text-sm">Экстренный приём CITO (Острая боль)</span>
+								<span className="text-[var(--muted)]">Мягкий овербукинг разрешён (Мандат 8e)</span>
+							</div>
+							<span className="px-2 py-0.5 rounded bg-rose-500/25 text-rose-800 dark:text-rose-200 text-[10px] font-extrabold uppercase shrink-0">
+								CITO
+							</span>
+						</div>
+					)}
+
+					{/* CITO Overbooking warning */}
+					{collision.isCitoOverbooking && (
+						<div
+							className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2"
+							role="alert"
+							data-testid="modal-cito-overbooking-alert"
+						>
+							<Zap size={16} className="shrink-0 text-rose-600 dark:text-rose-400" />
+							<span>{collision.message || "CITO-овербукинг разрешён (острая боль): наложение на занятый слот разрешено."}</span>
 						</div>
 					)}
 
@@ -1259,7 +1371,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						onClick={() => void handleSave()}
 						disabled={isSaving}
 						className={`flex-1 min-h-[48px] px-6 text-[var(--on-teal)] font-extrabold rounded-xl text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
-							collision.hasCollision
+							collision.isCitoOverbooking || isCito
+								? "bg-rose-600 hover:bg-rose-700 text-white"
+								: collision.hasCollision
 								? "bg-amber-600 hover:bg-amber-700 text-white"
 								: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95"
 						}`}
@@ -1268,7 +1382,9 @@ export function AppointmentModal(props: AppointmentModalProps) {
 						<span>
 							{isSaving
 								? "Сохраняю…"
-								: collision.hasCollision
+								: collision.isCitoOverbooking || isCito
+									? "Сохранить CITO (Острая боль)"
+									: collision.hasCollision
 									? "Записать с овербукингом (острая боль)"
 									: isNewAppointment
 										? "Записать на приём"
