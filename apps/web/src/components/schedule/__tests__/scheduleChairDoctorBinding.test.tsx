@@ -395,6 +395,22 @@ function setupMockDom() {
 	g.Node = FakeNode;
 	g.IS_REACT_ACT_ENVIRONMENT = true;
 
+	const storage: Record<string, string> = {};
+	const mockLocalStorage = {
+		getItem: (key: string) => storage[key] ?? null,
+		setItem: (key: string, val: string) => {
+			storage[key] = String(val);
+		},
+		removeItem: (key: string) => {
+			delete storage[key];
+		},
+		clear: () => {
+			for (const k of Object.keys(storage)) delete storage[k];
+		},
+	};
+	g.localStorage = mockLocalStorage;
+	win.localStorage = mockLocalStorage;
+
 	return { doc, win };
 }
 
@@ -1358,7 +1374,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		expect(nightDuty.doctorId).toBeNull();
 	});
 
-	it("16. ScheduleGrid renders shifts with full hours ☀️ 08:00–14:00 and 🌙 14:00–20:00 and ● На смене pulsing badge for active duty hour", () => {
+	it("16. ScheduleGrid renders shifts with full hours 08:00–14:00 and 14:00–20:00 and ● На смене pulsing badge for active duty hour", () => {
 		const assignments: Record<string, ChairDoctorShiftAssignment> = {
 			"chair-1": {
 				chairId: "chair-1",
@@ -1403,9 +1419,11 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 			}),
 		);
 
-		// Shift headers render full hours
-		expect(html).toContain("☀️ 08:00–14:00:");
-		expect(html).toContain("🌙 14:00–20:00:");
+		// Shift headers render full hours with zero cartoon emojis (Mandate 8d Sin #7)
+		expect(html).toContain("08:00–14:00:");
+		expect(html).toContain("14:00–20:00:");
+		expect(html).not.toMatch(/☀️/);
+		expect(html).not.toMatch(/🌙/);
 		expect(html).toContain("whitespace-nowrap");
 
 		// Pulsing on-duty badge renders for active morning doctor (currentHour = 10)
@@ -1595,7 +1613,7 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		window.removeEventListener("dente-toast", toastListener);
 	});
 
-	it("20. ScheduleGrid renders single-shift header with ☀️ 08:00–14:00 for morning and 🌙 14:00–20:00 for evening shifts", () => {
+	it("20. ScheduleGrid renders single-shift header with vector Sun/Moon icons for morning and evening shifts (zero raw emojis)", () => {
 		const morningAssignments: Record<string, ChairDoctorShiftAssignment> = {
 			"chair-1": {
 				chairId: "chair-1",
@@ -1634,10 +1652,12 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 			}),
 		);
 
-		// Single morning shift displays sun prefix
-		expect(html).toContain("☀️ 08:00–14:00");
-		// Single evening shift displays moon prefix
-		expect(html).toContain("🌙 14:00–20:00");
+		// Single morning shift displays clean hours and zero cartoon emojis
+		expect(html).toContain("08:00–14:00");
+		// Single evening shift displays clean hours and zero cartoon emojis
+		expect(html).toContain("14:00–20:00");
+		expect(html).not.toMatch(/☀️/);
+		expect(html).not.toMatch(/🌙/);
 	});
 
 	it("21. QuickBookingDrawer resolves doctor by initialSlot.doctorName when doctorUserId is omitted", async () => {
@@ -1732,6 +1752,88 @@ describe("Schedule Chair Doctor Binding & 1-Click Shift Allocation (Mandates 8e,
 		const overrideNote = findNodeByTestId(document.body as unknown as MockDomNode, "duty-doctor-override-note");
 		expect(overrideNote).not.toBeNull();
 		expect(overrideNote?.textContent).toContain("Мандат 8e: запись не блокируется");
+	});
+
+	it("23. Chair header doctor popover renders all 4 shift presets with >= 44px touch targets and supports 1-click week binding (StomX parity)", async () => {
+		const container = document.createElement("div") as unknown as MockDomNode;
+		const root: Root = createRoot(container as unknown as HTMLElement);
+
+		const onAssignChairDoctor = vi.fn();
+
+		await act(async () => {
+			root.render(
+				React.createElement(ScheduleGrid, {
+					dashboard: multiChairDashboard,
+					dateKey: "2026-09-07",
+					appointments: [],
+					onSlotClick: vi.fn(),
+					onAppointmentClick: vi.fn(),
+					patientName: (_, id) => (id ? "Пациент" : "—"),
+					formatTime: (iso: string) => iso.slice(11, 16),
+					toDateTimeLocalValue: (iso: string) => iso.slice(0, 16),
+					appointmentLabels: mockAppointmentLabels,
+					onAssignChairDoctor,
+				}),
+			);
+		});
+
+		// Find and click the doctor popover button on chair-1
+		const popoverBtn = findNodeByTestId(container, "btn-chair-doctor-popover-chair-1");
+		expect(popoverBtn).not.toBeNull();
+		await clickNode(popoverBtn);
+
+		// Verify popover opened
+		const popover = findNodeByTestId(container, "chair-doctor-quick-popover-chair-1");
+		expect(popover).not.toBeNull();
+
+		// Check all 4 shift preset buttons exist with >= 44px touch targets
+		const morningBtn = findNodeByTestId(container, "chair-popover-shift-morning-chair-1");
+		const eveningBtn = findNodeByTestId(container, "chair-popover-shift-evening-chair-1");
+		const fullBtn = findNodeByTestId(container, "chair-popover-shift-full-chair-1");
+		const weekBtn = findNodeByTestId(container, "chair-popover-shift-week-chair-1");
+
+		expect(morningBtn).not.toBeNull();
+		expect(eveningBtn).not.toBeNull();
+		expect(fullBtn).not.toBeNull();
+		expect(weekBtn).not.toBeNull();
+
+		expect(morningBtn?.style?.minHeight || morningBtn?.className).toContain("44px");
+		expect(eveningBtn?.style?.minHeight || eveningBtn?.className).toContain("44px");
+		expect(fullBtn?.style?.minHeight || fullBtn?.className).toContain("44px");
+		expect(weekBtn?.style?.minHeight || weekBtn?.className).toContain("44px");
+
+		// Verify clean text without raw emojis
+		expect(morningBtn?.textContent).toContain("Утро 08:00–14:00");
+		expect(eveningBtn?.textContent).toContain("Вечер 14:00–20:00");
+		expect(fullBtn?.textContent).toContain("Весь день 08:00–20:00");
+		expect(weekBtn?.textContent).toContain("На всю неделю (Пн–Пт)");
+
+		expect(morningBtn?.textContent).not.toMatch(/☀️/);
+		expect(eveningBtn?.textContent).not.toMatch(/🌙/);
+		expect(fullBtn?.textContent).not.toMatch(/🏢/);
+		expect(weekBtn?.textContent).not.toMatch(/📅/);
+
+		// Click 1-click week binding button
+		await clickNode(weekBtn);
+
+		// Callback should be fired
+		expect(onAssignChairDoctor).toHaveBeenCalledTimes(1);
+		expect(onAssignChairDoctor).toHaveBeenCalledWith(
+			"chair-1",
+			(expect as any).objectContaining({
+				chairId: "chair-1",
+				shiftPreset: "full",
+				shiftHours: "08:00–20:00",
+			}),
+		);
+
+		// Check that localStorage was populated for Mon–Fri (2026-09-07 .. 2026-09-11)
+		const monKey = localStorage.getItem("dente_chair_doctor_assignments_2026-09-07");
+		const friKey = localStorage.getItem("dente_chair_doctor_assignments_2026-09-11");
+		expect(monKey).not.toBeNull();
+		expect(friKey).not.toBeNull();
+		expect(monKey).toContain("chair-1");
+		expect(friKey).toContain("chair-1");
 	});
 });
 
