@@ -5,6 +5,7 @@ import {
 	Calendar,
 	Check,
 	Clock,
+	Copy,
 	CreditCard,
 	FileText,
 	Flame,
@@ -291,8 +292,13 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			if (typeof fromDateTimeLocalValue === "function") {
 				return fromDateTimeLocalValue(local, timezone);
 			}
-			const parsed = new Date(local);
-			if (Number.isNaN(parsed.getTime())) return new Date().toISOString();
+			if (!local) return new Date().toISOString();
+			const withZ = local.includes("Z") ? local : `${local}:00.000Z`;
+			const parsed = new Date(withZ);
+			if (Number.isNaN(parsed.getTime())) {
+				const fallback = new Date(local);
+				return Number.isNaN(fallback.getTime()) ? new Date().toISOString() : fallback.toISOString();
+			}
 			return parsed.toISOString();
 		},
 		[fromDateTimeLocalValue, timezone],
@@ -433,10 +439,11 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const [isTypeaheadOpen, setIsTypeaheadOpen] = useState<boolean>(false);
 	const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
 	const searchInputRef = useRef<HTMLInputElement>(null);
+	const newPatientFullNameInputRef = useRef<HTMLInputElement>(null);
 
 	// Inline new patient creation
 	const [showInlineNewPatient, setShowInlineNewPatient] = useState<boolean>(() => {
-		if (!initialSlot?.patientId && initialSlot?.patientName && !initialMatchedPatient) {
+		if (!initialSlot?.patientId && (initialSlot?.patientName || initialSlot?.patientPhone) && !initialMatchedPatient) {
 			return true;
 		}
 		return false;
@@ -640,10 +647,14 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			setShowInlineNewPatient(false);
 			setNewPatientFullName("");
 			setNewPatientPhone("");
-		} else if (initialSlot?.patientName) {
-			const candidateName = initialSlot.patientName.trim();
+		} else if (initialSlot?.patientName || initialSlot?.patientPhone) {
+			const candidateName = initialSlot?.patientName?.trim() || "";
+			const candidatePhone = initialSlot?.patientPhone?.trim() || "";
 			const found = (dashboard?.patients ?? []).find(
-				(p) => p.status === "active" && p.fullName.toLowerCase() === candidateName.toLowerCase(),
+				(p) =>
+					p.status === "active" &&
+					((candidateName && p.fullName.toLowerCase() === candidateName.toLowerCase()) ||
+						(candidatePhone && p.phone && normalizePhoneToNational(p.phone) === normalizePhoneToNational(candidatePhone))),
 			);
 			if (found) {
 				setPatientId(found.id);
@@ -655,10 +666,10 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			} else {
 				setPatientId("");
 				setSelectedPatient(null);
-				setSearchQuery(candidateName);
+				setSearchQuery(candidateName || (candidatePhone ? `Пациент (${candidatePhone})` : ""));
 				setShowInlineNewPatient(true);
 				setNewPatientFullName(candidateName);
-				setNewPatientPhone(initialSlot?.patientPhone || "");
+				setNewPatientPhone(candidatePhone);
 			}
 		} else {
 			setPatientId("");
@@ -881,9 +892,15 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		e.preventDefault();
 		const fullName =
 			newPatientFullName.trim() ||
+			(newPatientPhone.trim() ? `Пациент (${newPatientPhone.trim()})` : "") ||
 			(isEmergencyMode ? "Пациент с острой болью (CITO)" : "");
 		if (!fullName) {
-			showToast("Укажите ФИО пациента или используйте CITO", "error");
+			showToast("Укажите имя или телефон пациента для создания карты", "warning");
+			if (newPatientFullNameInputRef.current) {
+				newPatientFullNameInputRef.current.focus();
+			} else {
+				searchInputRef.current?.focus();
+			}
 			return;
 		}
 
@@ -965,6 +982,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			const candidateName =
 				newPatientFullName.trim() ||
 				searchQuery.trim() ||
+				(newPatientPhone.trim() ? `Пациент (${newPatientPhone.trim()})` : "") ||
 				(isEmergencyMode ? "Пациент с острой болью (CITO)" : "");
 
 			if (candidateName) {
@@ -1159,13 +1177,19 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 				void loadDashboard();
 			}
 
-			const patientName = selectedPatient?.fullName || "Пациент";
+			const patientName =
+				selectedPatient?.fullName ||
+				newPatientFullName.trim() ||
+				searchQuery.trim() ||
+				(newPatientPhone.trim() ? `Пациент (${newPatientPhone.trim()})` : "Пациент");
 			const timeLabel = startsAtLocal.slice(11, 16);
 			showToast(`Запись для «${patientName}» создана на ${timeLabel}!`, "success", 5000);
 
 			if (typeof onAppointmentCreated === "function" && nextDashboard?.appointments) {
 				const created = nextDashboard.appointments.find(
-					(a) => a.patientId === patientId && a.startsAt === startsAtIso,
+					(a) =>
+						(a.patientId === activePatientId || a.patientId === patientId) &&
+						a.startsAt === startsAtIso,
 				);
 				if (created) onAppointmentCreated(created);
 			}
@@ -1184,6 +1208,83 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		} finally {
 			setIsSubmitting(false);
 		}
+	};
+
+	// 1-клик копирование подтверждения записи для пациента (WhatsApp / Telegram / SMS)
+	const handleCopyBookingConfirmation = async () => {
+		const candidateName =
+			newPatientFullName.trim() ||
+			searchQuery.trim() ||
+			(newPatientPhone.trim() ? `Пациент (${newPatientPhone.trim()})` : "") ||
+			(isEmergencyMode ? "Пациент с острой болью (CITO)" : "");
+
+		const patientName =
+			selectedPatient?.fullName ||
+			candidateName ||
+			"Пациент";
+
+		let formattedDate = "";
+		let formattedTime = "";
+		if (startsAtLocal) {
+			const [dPart, tPart] = startsAtLocal.split("T");
+			if (dPart) {
+				const parts = dPart.split("-");
+				if (parts.length === 3) {
+					formattedDate = `${parts[2]}.${parts[1]}.${parts[0]}`;
+				} else {
+					formattedDate = dPart;
+				}
+			}
+			if (tPart) {
+				formattedTime = tPart.slice(0, 5);
+			}
+		}
+		if (!formattedDate) {
+			try {
+				formattedDate = new Date().toLocaleDateString("ru-RU");
+			} catch {
+				formattedDate = "01.01.2026";
+			}
+		}
+		if (!formattedTime) {
+			formattedTime = "10:00";
+		}
+
+		const clinicName =
+			dashboard?.clinicSettings?.profile?.clinicName ||
+			dashboard?.clinicSettings?.profile?.legalName ||
+			"ДЕНТЕ";
+		const clinicAddress =
+			dashboard?.clinicSettings?.profile?.address || "г. Москва";
+		const clinicPhone =
+			dashboard?.clinicSettings?.profile?.phone || "+7 (495) 000-00-00";
+
+		const selectedDoc = doctors.find((d) => d.id === doctorUserId) || dutyDoc;
+		const doctorName = selectedDoc?.fullName || "Врач клиники";
+
+		const selectedChair = chairs.find((c) => c.id === chairId) || currentChair;
+		const chairName = selectedChair?.name || "Основное кресло";
+
+		const text = [
+			`Запись на приём в клинику «${clinicName}»:`,
+			`Пациент: ${patientName}`,
+			`Дата и время: ${formattedDate}, ${formattedTime} (${durationMinutes} мин)`,
+			`Врач: ${doctorName}`,
+			`Кабинет / кресло: ${chairName}`,
+			`Адрес клиники: ${clinicAddress}`,
+			`Телефон для справок: ${clinicPhone}`,
+			"Пожалуйста, приходите за 10 минут до начала приёма.",
+		].join("\n");
+
+		try {
+			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(text);
+			}
+		} catch (err) {
+			logger.warn("Clipboard writeText failed or not permitted", err);
+		}
+
+		showToast("Детали записи скопированы в буфер обмена для отправки пациенту", "success");
 	};
 
 	// Save draft to localStorage and close
@@ -1504,6 +1605,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											);
 										}}
 										className="text-xs font-bold text-[var(--teal)] hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-[var(--teal)]/10 rounded-xl cursor-pointer transition-colors"
+										data-testid="quick-booking-new-patient-toggle"
 									>
 										<UserPlus size={14} />
 										<span>+ Новый пациент</span>
@@ -1915,11 +2017,12 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 								<div className="space-y-2">
 									<div>
 										<label className="text-xs font-semibold text-[var(--muted)] block mb-1">
-											ФИО пациента *
+											ФИО пациента
 										</label>
 										<input
+											ref={newPatientFullNameInputRef}
 											type="text"
-											required
+											data-testid="quick-booking-new-patient-name-input"
 											value={newPatientFullName}
 											onChange={(e) => setNewPatientFullName(e.target.value)}
 											placeholder="Иванов Иван Иванович"
@@ -1933,6 +2036,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 											</label>
 											<input
 												type="tel"
+												data-testid="quick-booking-new-patient-phone-input"
 												value={newPatientPhone}
 												onChange={(e) => setNewPatientPhone(e.target.value)}
 												placeholder="+7 999 123-45-67"
@@ -1980,6 +2084,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 									<button
 										type="submit"
 										disabled={isCreatingPatient}
+										data-testid="quick-booking-create-inline-patient-btn"
 										className="flex-1 min-h-[44px] py-2 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
 									>
 										<Check size={14} />
@@ -2321,6 +2426,18 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
 					>
 						Отмена (Esc)
+					</button>
+
+					<button
+						type="button"
+						onClick={handleCopyBookingConfirmation}
+						data-testid="quick-booking-copy-confirmation-btn"
+						className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+						title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
+					>
+						<Copy size={15} className="text-[var(--teal)] shrink-0" />
+						<span className="hidden sm:inline">Скопировать для пациента</span>
+						<span className="sm:hidden">Копия</span>
 					</button>
 
 					<button
