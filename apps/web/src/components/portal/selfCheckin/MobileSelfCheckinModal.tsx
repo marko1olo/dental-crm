@@ -377,7 +377,9 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 					{step === "phone_auth" && (
 						<div className="selfcheckin-step-box">
 							<div className="selfcheckin-welcome-card">
-								<span className="selfcheckin-welcome-icon">👋</span>
+								<span className="selfcheckin-welcome-icon">
+									<CheckCircle2 size={28} className="text-teal-600" />
+								</span>
 								<div>
 									<div className="selfcheckin-welcome-name">
 										Здравствуйте, {patientName}!
@@ -501,7 +503,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 												title="Открыть анкету здоровья с предзаполненной физиологической нормой (хронических патологий нет)"
 											>
 												<Zap size={13} />
-												<span>⚡ Норма по умолчанию (Мандат 8e)</span>
+												<span>Норма по умолчанию (Мандат 8e)</span>
 											</button>
 										</div>
 									</div>
@@ -531,7 +533,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									data-testid="sign-all-consents-pep-btn"
 								>
 									<ShieldCheck size={16} />
-									<span>⚡ Подписать все согласия ПЭП (63-ФЗ) в 1 клик</span>
+									<span>Подписать все согласия ПЭП (63-ФЗ) в 1 клик</span>
 								</button>
 							</div>
 
@@ -683,7 +685,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 									>
 										<Zap size={16} />
 										<span>
-											⚡ Соматически здоров (хронических заболеваний, аллергий и
+											Соматически здоров (хронических заболеваний, аллергий и
 											патологий нет / норма)
 										</span>
 									</button>
@@ -989,7 +991,7 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 								{isSubmitting
 									? "Сохранение..."
 									: isNormApplied
-										? "⚡ Завершить самочекин (Физиологическая норма) за 5 секунд ➔"
+										? "Завершить самочекин (Физиологическая норма) за 5 секунд ➔"
 										: "Завершить самочекин и передать врачу"}
 							</button>
 						</div>

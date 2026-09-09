@@ -1602,11 +1602,13 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 									</span>
 									<span className="dms-kpi-sub">
 										{splitSummary.balanceInvariantHolds ? (
-											<span style={{ color: "#16a34a", fontWeight: 700 }}>
-												✓ Баланс копейка-в-копейку
+											<span style={{ color: "var(--teal, #16a34a)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+												<CheckCircle2 size={13} /> Баланс копейка-в-копейку
 											</span>
 										) : (
-											<span style={{ color: "#dc2626" }}>⚠ Дисбаланс</span>
+											<span style={{ color: "var(--danger, #dc2626)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+												<AlertTriangle size={13} /> Дисбаланс
+											</span>
 										)}
 									</span>
 								</div>
@@ -1835,10 +1837,10 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 											gap: 8,
 										}}
 										onClick={handleExecuteSplitCashierPayment}
-										title="⚡ 1-Клик: Провести сплит-оплату в кассе (ДМС + Пациент) без разбивки визита"
+										title="1-Клик: Провести сплит-оплату в кассе (ДМС + Пациент) без разбивки визита"
 									>
 										<Zap size={16} />
-										⚡ 1-Клик: Провести сплит в кассе (ДМС + Доплата пациента)
+										1-Клик: Провести сплит в кассе (ДМС + Доплата пациента)
 									</button>
 								</div>
 							</div>

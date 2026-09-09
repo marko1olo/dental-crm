@@ -772,7 +772,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 							style={{
 								marginTop: "1.5rem",
 								paddingTop: "1rem",
-								borderTop: "1px solid #cbd5e1",
+								borderTop: "1px solid var(--line, #cbd5e1)",
 								display: "flex",
 								flexDirection: "column",
 								gap: "0.85rem",
