@@ -360,6 +360,7 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = ({
 											}}
 											className="w-full text-left p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:border-[var(--teal)] hover:bg-[var(--line)]/20 transition-all flex items-center justify-between gap-3 min-h-[48px] cursor-pointer group"
 											data-testid={`btn-tooth-anes-${preset.id}`}
+											title={`${preset.title} — ${preset.subtitle}`}
 										>
 											<div className="flex items-center gap-2.5 min-w-0">
 												<div className={`p-1.5 rounded-lg shrink-0 border ${preset.badgeClass}`}>

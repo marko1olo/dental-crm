@@ -27,7 +27,7 @@
 > 
 > **3-Tier Interaction Model:**
 > - **Tier 1 (Hot Path / 0 кликов):** Большой холст одонтограммы FDI (11–48), дневник 043/у с локальным автосейвом, сумма по 54-ФЗ в 1 клик, экстренная острая боль.
-> - **Tier 2 (Warm Context / 1 клик):** 5-поверхностный MOD зуба, дозировка анестетика, крафт-пакет автоклава, семейный баланс, превью снимка 200x200px.
+> - **Tier 2 (Warm Context / 1 клик):** 5-поверхностный MOD зуба, экспресс-анестезия (1 клик), крафт-пакет автоклава, семейный баланс, превью снимка 200x200px.
 > - **Tier 3 (Cold Backoffice / Студии):** 3D DICOM WebWorker MPR, выгрузка ЕГИСЗ CDA R3 с УКЭП, зарплата Т-51 Net Revenue, справки ФНС КНД 1151156, аудит склада МДЛП.
 > - **Закон отсутствия тупиков (Zero Dead-Ends):** софт никогда не блокирует работу врача тупиками («нет склада», «нет ИНН», «нет ассистента»).
 
@@ -607,7 +607,7 @@
   3. *Торусальная 1.7 мл*: Артикаин 1:100 000, игла 27G 35 мм, двухплоскостная аспирация отрицательная.
   4. *Мандибулярная кардио*: Мепивакаин (Скандонест 3%) без адреналина для пациентов группы сердечно-сосудистого риска.
   5. *Интралигаментарная 0.4 мл*: Артикаин 1:100 000, игла 30G 12 мм, аспирация отрицательная.
-  Клик по пресету мгновенно рассчитывает дозировку, фиксирует отрицательную пробу аспирации, формирует юридически выверенную запись в Форму 043/у по стандартам Минздрава РФ/СтАР/ФАР и Malamed, а также списывает использованную карпулу анестетика со склада в 1 клик по СанПиН 3.3686-21 без создания комиссии из 3 человек.
+  Клик по пресету мгновенно выбирает анестетик в 1 клик (без весовых калькуляторов, МДД и слайдеров миллиграммов), фиксирует отрицательную пробу аспирации, формирует юридически выверенную запись в Форму 043/у по стандартам Минздрава РФ/СтАР/ФАР и Malamed, а также списывает использованную карпулу анестетика со склада в 1 клик по СанПиН 3.3686-21 без создания комиссии из 3 человек.
 - **Фронтенд / Логика**:
   - `apps/web/src/components/visit/anesthesia/anesthesiaExpressPresets.ts`, `AnesthesiaAspirationJournalModal.tsx`, `apps/web/src/components/visit/anesthesia/index.ts` (коммит `e656a919b`).
 - **Тесты**:
@@ -2370,6 +2370,27 @@
      - Векторные иконки Lucide `X` взамен текстовых символов `✕`.
 - **Файлы**: `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`, `apps/web/src/components/odontogram/TreatmentPlanWizard.tsx`, `apps/web/src/components/odontogram/ToothCardModal.tsx`, `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx`, `apps/web/src/components/odontogram/ChildToothChart.tsx`, `apps/web/src/components/odontogram/OdontogramLiveInvoice.tsx`, `apps/web/src/pages/OdontogramStudioStandalone.tsx`, `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`.
 - **Тесты**: `apps/web/src/components/odontogram/__tests__/odontogramDeepClinicalParity.test.tsx` (pass, коммиты `aecb73012`, `9b981fa47`), `apps/web/src/components/documents/__tests__/outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 pass, коммит `a8b6f30d9`).
+
+#### 2.10.223. Клинический прием и расписание: ликвидация оверинжиниринга расчета анестезии, процедурных симуляторов и полировка смен кресел (Wave 79)
+- **Назначение**: Полная ликвидация академического оверинжиниринга, процедурных симуляторов реальности (весовых слайдеров анестезии 15–100 кг, расчета миллиграммов на килограмм массы тела, тикающих секундомеров ожидания онемения `AnesthesiaOnsetTimerWidget`) и полировка эргономики расписания (StomX / IDENT паритет) (Мандаты 8c, 8d, 8e, 8i, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Ликвидация калькулятора анестезии и симуляторов*:
+     - В `VisitView.tsx` удалена кнопка «Калькулятор доз и МДД...» и рендеринг тяжелой модалки `AnesthesiaDosageCalculatorModal`;
+     - В `ToothContextDrawer.tsx` в секции «2. Экспресс-анестезия (1 клик)» вырезан компонент `ToothAnesthesiaCalculator` (весовые кнопки 15–100 кг, слайдеры веса) и внедрен список быстрых 1-клик пресетов `TOOTH_EXPRESS_ANESTHESIA_OPTIONS` (Артикаин 1:100k 1.7 мл, Ультракаин Д-С 1:200k 1.7 мл, Скандонест 3% без адреналина для кардио, Септанест 1.7 мл, Аппликационная) с комфортными тач-таргетами $\ge 48$px по Apple HIG;
+     - В `VisitEmkTab.tsx` удалена кнопка вызова протокола доз и рендеринг `AnesthesiaProtocolModal` в пользу быстрых 1-клик кнопок (Ультракаин 1:200k, Ультракаин Форте, Скандонест 3%) с тач-таргетами $\ge 44$px;
+     - В `AnesthesiaAspirationJournalModal.tsx` полностью вырезан процедурный секундомер онемения `AnesthesiaOnsetTimerWidget` со звуковыми гонгами; расчет времени автоматизирован по нормативу техники;
+     - В `AspirationTestCockpit.tsx` добавлены всплывающие подсказки `title` для предотвращения обрезания текста на узких экранах.
+  2. *Эргономика кресел и графиков врачей (StomX / IDENT Parity)*:
+     - В `ScheduleGrid.tsx` ликвидирован класс `overflow-hidden` в заголовках кресел, вызывавший срез выпадающих поповеров назначения врача и санобработки;
+     - Внедрена визуальная полоса смен `chair-shift-strip-${chair.id}` с отображением утренней (08:00–14:00) и вечерней (14:00–20:00) смены с бейджами и иконками `Sun` / `Moon`;
+     - В `ScheduleView.tsx` обеспечен сквозной проброс врачей `doctors` и коллбэка `onAddDoctor` в `ScheduleGrid` и `QuickAddChairModal` для мгновенного добавления кресел и врачей прямо из расписания без перезагрузки страницы.
+  3. *Аудит смежных клинических зон*:
+     - Проверена ненавязчивость 6-точечного замера пародонтограммы (1-клик кнопки «Пародонт в норме» и «Профгигиена выполнена»);
+     - Подтверждена 1-клик фиксация циклов стерилизации без процедурных симуляторов кривых пара и температур;
+     - Проверена 1-клик норма в соматической анкете мобильного чекина.
+- **Файлы**: `apps/web/src/VisitView.tsx`, `apps/web/src/components/diagnostic/ToothContextDrawer.tsx`, `apps/web/src/components/diagnostic/__tests__/ToothContextDrawer.test.tsx`, `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`, `apps/web/src/components/visit/anesthesia/AspirationTestCockpit.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/ScheduleView.tsx`.
+- **Тесты**: `apps/web/src/components/diagnostic/__tests__/ToothContextDrawer.test.tsx` (10/10 PASS), `apps/web/src/components/visit/anesthesia/__tests__/anesthesiaExpressPresets.test.ts` (14/14 PASS), monorepo `typecheck` Exit Code 0 (коммиты `fe7bfd89b`, `184505543`).
+
 
 
 

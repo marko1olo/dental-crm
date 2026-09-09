@@ -113,6 +113,7 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 					type="button"
 					onClick={onNegativeAspiration}
 					data-testid="btn-aspiration-negative"
+					title="Отрицательная аспирационная проба (норма)"
 					className={`w-full p-4 rounded-xl border font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-3 transition-all min-h-[56px] shadow-lg cursor-pointer ${
 						isNegative
 							? 'bg-emerald-600 text-white border-emerald-400 ring-2 ring-emerald-500/50 shadow-emerald-900/30'
@@ -128,6 +129,7 @@ export const AspirationTestCockpit: React.FC<AspirationTestCockpitProps> = ({
 					type="button"
 					onClick={onPositiveAspiration}
 					data-testid="btn-aspiration-positive"
+					title="Положительная аспирационная проба (Кровь в карпуле — СТОП)"
 					className={`w-full p-4 rounded-xl border font-bold text-xs sm:text-sm md:text-base flex items-center justify-center gap-3 transition-all min-h-[56px] shadow-lg cursor-pointer ${
 						isPositive
 							? 'bg-rose-600 text-white border-rose-400 ring-2 ring-rose-500/50 shadow-rose-900/40 animate-pulse'

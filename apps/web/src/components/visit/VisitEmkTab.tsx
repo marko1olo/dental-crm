@@ -2129,7 +2129,7 @@ export function VisitEmkTab() {
 													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
 													showToast("Анестезия (Ультракаин Д-С 1:200k, 1 карп.) внесена в протокол", "success", 2500);
 												}}
-												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
+												className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
 												data-testid="btn-anes-ultracain-ds"
 												title="1 клик: внести стандартную анестезию 1:200 000 в протокол"
 											>
@@ -2145,7 +2145,7 @@ export function VisitEmkTab() {
 													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
 													showToast("Анестезия (Ультракаин Форте 1:100k, 1 карп.) внесена в протокол", "success", 2500);
 												}}
-												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
+												className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
 												data-testid="btn-anes-ultracain-ds-forte"
 												title="1 клик: внести глубокую анестезию 1:100 000 в протокол"
 											>
@@ -2161,7 +2161,7 @@ export function VisitEmkTab() {
 													updateVisitNoteField("treatmentPlan", appendClinicalText(curr, snippet, "\n\n"));
 													showToast("Анестезия (Скандонест 3% без адреналина, 1 карп.) внесена в протокол", "success", 2500);
 												}}
-												className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
+												className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5"
 												data-testid="btn-anes-scandonest-3"
 												title="1 клик: безадреналиновая анестезия для кардио-пациентов"
 											>
