@@ -9,4 +9,5 @@ export {
 	isCitoAppointment,
 	type ResourceCollisionResult,
 	type ChairMaintenanceBlock,
+	type ResourceCollisionOptions,
 } from "../../utils/scheduleCollisionUtils";

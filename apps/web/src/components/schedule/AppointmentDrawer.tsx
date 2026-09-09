@@ -497,6 +497,19 @@ export function AppointmentDrawer(props: AppointmentDrawerProps) {
 		toLocal,
 	]);
 
+	// Keyboard accessibility: dismiss drawer on Escape key
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
+
 	// Calculated endsAt
 	const endsAtLocal = useMemo(() => {
 		if (!startsAtLocal) return "";

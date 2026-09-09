@@ -246,4 +246,25 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 			"PatientGeneralInfoTab buttons must meet 44px touch target ergonomics",
 		);
 	});
+
+	it("12. Form 043/u: undo norm button (btn-043-undo-norm) is available in active draft mode when reviseSnapshot !== null", () => {
+		assert.ok(
+			form043Source.includes('data-testid="btn-043-undo-norm"'),
+			"Must include btn-043-undo-norm button in DentalMedicalCard043uForm",
+		);
+		assert.ok(
+			form043Source.includes("handleCancelRevise"),
+			"btn-043-undo-norm must trigger handleCancelRevise",
+		);
+		assert.ok(
+			form043Source.includes("<Undo2"),
+			"btn-043-undo-norm must use Undo2 Lucide icon",
+		);
+		// Verify btn-043-undo-norm is displayed when reviseSnapshot !== null and NOT blocked by disabled || isSigned
+		const undoBlockMatch = form043Source.match(/reviseSnapshot\s*!==\s*null[\s\S]*?data-testid="btn-043-undo-norm"/);
+		assert.ok(
+			undoBlockMatch,
+			"btn-043-undo-norm must be guarded by reviseSnapshot !== null, allowing active draft undo (disabled=false, isSigned=false)",
+		);
+	});
 });

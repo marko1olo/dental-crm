@@ -42,6 +42,17 @@ export type ChairMaintenanceBlock = {
 	note?: string;
 };
 
+export type ResourceCollisionOptions = {
+	excludeAppointmentId?: string | null | undefined;
+	staff?: Dashboard["clinicSettings"]["staff"];
+	chairs?: Dashboard["clinicSettings"]["chairs"];
+	patients?: Dashboard["patients"];
+	chairMaintenanceBlocks?: readonly ChairMaintenanceBlock[];
+	formatTimeFn?: (iso: string) => string;
+	allowCitoOverbooking?: boolean;
+	isCito?: boolean;
+};
+
 export function checkAppointmentResourceCollision(
 	draft: {
 		startsAt?: string | null;
@@ -56,16 +67,7 @@ export function checkAppointmentResourceCollision(
 		isEmergency?: boolean;
 	},
 	appointments: readonly Appointment[] | null | undefined,
-	options: {
-		excludeAppointmentId?: string | null;
-		staff?: Dashboard["clinicSettings"]["staff"];
-		chairs?: Dashboard["clinicSettings"]["chairs"];
-		patients?: Dashboard["patients"];
-		chairMaintenanceBlocks?: readonly ChairMaintenanceBlock[];
-		formatTimeFn?: (iso: string) => string;
-		allowCitoOverbooking?: boolean;
-		isCito?: boolean;
-	} = {},
+	options: ResourceCollisionOptions = {},
 ): ResourceCollisionResult {
 	if (!draft.startsAt || !draft.endsAt) {
 		return {

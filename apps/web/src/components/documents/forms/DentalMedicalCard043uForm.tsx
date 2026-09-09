@@ -607,6 +607,19 @@ export const DentalMedicalCard043uForm: React.FC<DentalMedicalCard043uFormProps>
 								<ShieldCheck style={{ width: "16px", height: "16px" }} />
 								Норма 043/у (1-клик)
 							</button>
+							{reviseSnapshot !== null && (
+								<button
+									type="button"
+									data-testid="btn-043-undo-norm"
+									className="btn btn-sm btn-outline-warning"
+									onClick={handleCancelRevise}
+									title="Отменить применение нормы и вернуть исходные записи"
+									style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+								>
+									<Undo2 style={{ width: "16px", height: "16px" }} />
+									Отменить применение нормы
+								</button>
+							)}
 							{(disabled || initialPayload?.isSigned) && (
 								<button
 									type="button"

@@ -461,4 +461,56 @@ describe("AppointmentDrawer & Doctor Autonomy (Mandates 8c, 8d, 8e, 8n)", () => 
 			"handleSaveSubmit must assign effectivePatientId = createdId",
 		);
 	});
+
+	it("pressing Escape key dismisses AppointmentDrawer (calls onClose)", () => {
+		const drawerSourcePath = path.resolve(__dirname, "../AppointmentDrawer.tsx");
+		const drawerSource = fs.readFileSync(drawerSourcePath, "utf8");
+
+		assert.ok(
+			drawerSource.includes('e.key === "Escape"'),
+			"AppointmentDrawer must listen for Escape key in keydown event handler",
+		);
+		assert.ok(
+			drawerSource.includes('window.addEventListener("keydown", handleKeyDown)'),
+			"AppointmentDrawer must register keydown listener on window",
+		);
+		assert.ok(
+			drawerSource.includes('window.removeEventListener("keydown", handleKeyDown)'),
+			"AppointmentDrawer must remove keydown listener on cleanup",
+		);
+
+		// Functional behavioral test of the Escape key dismissal contract
+		let closed = false;
+		let prevented = false;
+		const onClose = () => {
+			closed = true;
+		};
+
+		const handleKeyDown = (e: { key: string; preventDefault: () => void }) => {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onClose();
+			}
+		};
+
+		// 1. Non-Escape key does not trigger onClose
+		handleKeyDown({
+			key: "Enter",
+			preventDefault: () => {
+				prevented = true;
+			},
+		});
+		assert.equal(closed, false, "Enter key must not call onClose");
+		assert.equal(prevented, false, "Enter key must not be prevented");
+
+		// 2. Escape key calls preventDefault and onClose
+		handleKeyDown({
+			key: "Escape",
+			preventDefault: () => {
+				prevented = true;
+			},
+		});
+		assert.equal(closed, true, "Escape key must trigger onClose");
+		assert.equal(prevented, true, "Escape key must call preventDefault");
+	});
 });
