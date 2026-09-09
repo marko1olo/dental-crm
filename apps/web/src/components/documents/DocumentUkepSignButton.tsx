@@ -420,12 +420,7 @@ export function DocumentUkepSignButton({
 			<button
 				type="button"
 				onClick={handleSign}
-				disabled={
-					isSigning ||
-					!selectedThumbprint ||
-					isSelectedCertExpired ||
-					isSelectedCertNonGost
-				}
+				disabled={isSigning}
 				className="dente-button dente-button--primary min-h-[44px] w-full justify-center text-xs font-semibold"
 			>
 				{isSigning ? (

@@ -269,6 +269,10 @@ export function PaidMedicalContractModal({
 
 	const handleVerifySmsCode = () => {
 		if (!smsOtpState) return;
+		if (smsInputCode.trim().length !== 4) {
+			setSmsError("Введите 4-значный код из SMS либо подтвердите подпись бумажного оригинала.");
+			return;
+		}
 		const result = verifySmsSignOtp(smsInputCode, smsOtpState);
 		if (result.success) {
 			setSmsSuccess(true);
@@ -1167,7 +1171,9 @@ export function PaidMedicalContractModal({
 														type="button"
 														className="paid-contract-btn primary"
 														onClick={handleVerifySmsCode}
-														disabled={smsInputCode.length !== 4}
+														disabled={false}
+														data-testid="paid-contract-otp-confirm"
+														title="Подтвердить подпись договора кодом из SMS"
 													>
 														<Check size={15} aria-hidden="true" />
 														<span>Подтвердить подпись</span>

@@ -651,8 +651,8 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 																key={amt}
 																type="button"
 																onClick={() => handleQuickDeduct(mem.id, amt)}
-																disabled={isDisabled}
-																className="h-7 px-2.5 rounded-lg text-[11px] font-bold bg-[var(--paper-soft)] hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-300 border border-[var(--border,#cbd5e1)] text-[var(--ink)] cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+																disabled={false}
+																className="h-7 px-2.5 rounded-lg text-[11px] font-bold bg-[var(--paper-soft)] hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-300 border border-[var(--border,#cbd5e1)] text-[var(--ink)] cursor-pointer transition-all active:scale-95 shadow-2xs"
 																data-testid={`btn-quick-deduct-${mem.id}-${amt}`}
 															>
 																-{amt.toLocaleString("ru-RU")} ₽
@@ -662,8 +662,8 @@ export const FamilyWalletModal: React.FC<FamilyWalletModalProps> = ({
 													<button
 														type="button"
 														onClick={() => handleQuickDeduct(mem.id, mem.allocatedBalanceRub > 0 ? Math.min(mem.allocatedBalanceRub, totalBalanceRub) : totalBalanceRub)}
-														disabled={totalBalanceRub <= 0 || (mem.allocatedBalanceRub > 0 ? mem.allocatedBalanceRub : totalBalanceRub) <= 0}
-														className="h-7 px-2.5 rounded-lg text-[11px] font-extrabold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/40 cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+														disabled={false}
+														className="h-7 px-2.5 rounded-lg text-[11px] font-extrabold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/40 cursor-pointer transition-all active:scale-95 shadow-2xs"
 														data-testid={`btn-quick-deduct-${mem.id}-all`}
 													>
 														Весь доступный ({Math.min(mem.allocatedBalanceRub > 0 ? mem.allocatedBalanceRub : totalBalanceRub, totalBalanceRub).toLocaleString("ru-RU")} ₽)

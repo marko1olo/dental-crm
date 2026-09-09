@@ -958,6 +958,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
 	const handleDepositOrPartialCombo = (source: "deposit" | "family") => {
 		const availableBalance = source === "deposit" ? patientDepositRub : patientFamilyBalanceRub;
+		if (availableBalance <= 0) {
+			showToast(
+				source === "deposit"
+					? "На личном депозите пациента нет средств (0 ₽). Пополните аванс или выберите другой способ оплаты."
+					: "Семейный баланс пуст (0 ₽). Пополните семейный кошелек или выберите другой способ оплаты.",
+				"warning",
+				4000,
+			);
+			return;
+		}
 		if (availableBalance >= totalDueRub) {
 			handleDepositSubmit(source);
 		} else if (availableBalance > 0) {
@@ -2114,7 +2124,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										</p>
 										<button
 											type="button"
-											disabled={patientDepositRub <= 0 || isSubmittingDeposit}
+											disabled={isSubmittingDeposit}
 											onClick={() => handleDepositOrPartialCombo("deposit")}
 											title={
 												isSubmittingDeposit
@@ -2123,7 +2133,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 													? `Списать ${amountRub} ₽ с личного депозита пациента`
 													: patientDepositRub > 0
 													? `Зачесть ${patientDepositRub} ₽ с аванса + остаток ${(totalDueRub - patientDepositRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
-													: "На лицевом счете пациента нет авансовых средств"
+													: "Нажмите для проверки баланса или пополнения"
 											}
 											className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-deposit-full"
@@ -2164,7 +2174,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 										</p>
 										<button
 											type="button"
-											disabled={patientFamilyBalanceRub <= 0 || isSubmittingDeposit}
+											disabled={isSubmittingDeposit}
 											onClick={() => handleDepositOrPartialCombo("family")}
 											title={
 												isSubmittingDeposit
@@ -2173,7 +2183,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 													? `Списать ${amountRub} ₽ с семейного баланса`
 													: patientFamilyBalanceRub > 0
 													? `Зачесть ${patientFamilyBalanceRub} ₽ из семьи + остаток ${(totalDueRub - patientFamilyBalanceRub).toFixed(2)} ₽ оплатить картой (в 1 клик)`
-													: "Семейный баланс пуст или не подключен"
+													: "Нажмите для проверки семейного счета или пополнения"
 											}
 											className="w-full min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold bg-pink-600 hover:bg-pink-700 text-white cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs flex items-center justify-center gap-1.5"
 											data-testid="btn-pay-family-full"

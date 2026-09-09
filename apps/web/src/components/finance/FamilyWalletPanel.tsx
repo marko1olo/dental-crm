@@ -688,7 +688,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					<button
 						type="button"
 						onClick={handlePay}
-						disabled={isPaying || balanceVal < amount || amount <= 0}
+						disabled={isPaying}
 						className="family-wallet-btn"
 					>
 						{isPaying ? "Списание..." : "Списать с баланса"}{" "}
@@ -852,7 +852,7 @@ export const FamilyWalletPanel: React.FC<FamilyWalletPanelProps> = ({
 					<button
 						type="button"
 						onClick={handleTopup}
-						disabled={isToppingUp || topupAmount <= 0}
+						disabled={isToppingUp}
 						className="family-wallet-btn"
 					>
 						{isToppingUp ? "Зачисление..." : "Пополнить"}{" "}

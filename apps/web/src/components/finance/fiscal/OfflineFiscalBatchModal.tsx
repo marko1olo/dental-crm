@@ -241,6 +241,10 @@ export function OfflineFiscalBatchModal({
 	if (!isOpen) return null;
 
 	const handleExecuteBatchFiscalization = () => {
+		if (queuedReceipts.length === 0) {
+			showToast("Очередь офлайн-чеков пуста. Все чеки уже фискализированы.", "info");
+			return;
+		}
 		setIsProcessing(true);
 		try {
 			const result = processOfflineFiscalBatch(queuedReceipts, {
@@ -465,7 +469,7 @@ export function OfflineFiscalBatchModal({
 					{!batchResult && (
 						<button
 							onClick={handleExecuteBatchFiscalization}
-							disabled={isProcessing || queuedReceipts.length === 0}
+							disabled={isProcessing}
 							className="flex items-center gap-2 px-5 py-2.5 mb-2 font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-lg shadow-md transition-all active:scale-95 disabled:opacity-50 min-h-[48px]"
 							data-testid="btn-execute-batch-fiscalization"
 						>

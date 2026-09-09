@@ -235,7 +235,10 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 	};
 
 	const handleExecuteRefund = async () => {
-		if (selectedItemIds.size === 0) return;
+		if (selectedItemIds.size === 0) {
+			showToast("Выберите хотя бы одну позицию для возврата средств.", "warning");
+			return;
+		}
 		setIsProcessing(true);
 
 		const isPatientUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId || "");
@@ -773,7 +776,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 							<button
 								type="button"
 								onClick={handleExecuteRefund}
-								disabled={selectedItemIds.size === 0 || isProcessing}
+								disabled={isProcessing}
 								className="min-h-[44px] px-5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-all shadow-md flex items-center gap-2 disabled:opacity-50 cursor-pointer"
 							>
 								<RotateCcw className="w-4 h-4" />
