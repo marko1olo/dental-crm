@@ -1724,11 +1724,11 @@ export const PatientSentimentBadgeView: React.FC<
 	let icon = <Activity size={12} />;
 
 	if (sentiment === "emergency") {
-		label = "🚨 Экстренно (10/10)";
+		label = "Экстренно (10/10)";
 		className = "sentiment-emergency";
 		icon = <Flame size={12} />;
 	} else if (sentiment === "anxious") {
-		label = "⚠️ Тревога / Боль";
+		label = "Тревога / Боль";
 		className = "sentiment-anxious";
 		icon = <AlertTriangle size={12} />;
 	} else if (sentiment === "negative") {

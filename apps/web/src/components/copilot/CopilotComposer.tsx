@@ -224,7 +224,7 @@ export const CopilotComposer: React.FC<CopilotComposerProps> = ({
             )}
             {!baseTextRef.current && !fullTranscript.trim() && !interimText.trim() && (
               <span style={{ color: 'var(--muted, #6b7280)' }}>
-                🎙️ Говорите... ДЕНТА слушает и транскрибирует в реальном времени...
+                <Mic size={14} className="inline mr-1 text-[var(--teal)] animate-pulse" /> Говорите... ДЕНТА слушает и транскрибирует в реальном времени...
               </span>
             )}
           </div>

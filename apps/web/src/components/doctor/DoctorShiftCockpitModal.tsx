@@ -58,7 +58,9 @@ export type DoctorQuickCallAction =
 	| "lab_order"
 	| "imaging"
 	| "consent"
-	| "assistant_call";
+	| "assistant_call"
+	| "print_043"
+	| "print_estimate";
 
 export interface DoctorShiftCockpitModalProps {
 	readonly isOpen: boolean;
@@ -813,7 +815,31 @@ export const DoctorShiftCockpitModal: React.FC<DoctorShiftCockpitModalProps> = (
 													</button>
 
 													{showSecondaryMenu && (
-														<div className="absolute right-0 bottom-12 w-60 rounded-xl bg-white dark:bg-[var(--paper,#0f172a)] border border-slate-200 dark:border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs text-slate-900 dark:text-[var(--ink,#f8fafc)]">
+														<div className="absolute right-0 bottom-12 w-64 rounded-xl bg-white dark:bg-[var(--paper,#0f172a)] border border-slate-200 dark:border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs text-slate-900 dark:text-[var(--ink,#f8fafc)]">
+															<button
+																type="button"
+																onClick={() => {
+																	setShowSecondaryMenu(false);
+																	handleQuickCall("print_043");
+																}}
+																className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+																data-testid="cockpit-btn-print-043"
+															>
+																<Printer size={14} className="text-teal-600 dark:text-teal-400" />
+																<span>Печать карты 043/у</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => {
+																	setShowSecondaryMenu(false);
+																	handleQuickCall("print_estimate");
+																}}
+																className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+																data-testid="cockpit-btn-print-estimate"
+															>
+																<FileText size={14} className="text-teal-600 dark:text-teal-400" />
+																<span>Печать сметы (плана лечения)</span>
+															</button>
 															<button
 																type="button"
 																onClick={() => {

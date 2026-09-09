@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from "react";
+import { Search, Zap } from "lucide-react";
 import type { Clinical043DiaryRecord } from "../../services/sync/conflictResolver.js";
 import { ClinicalConflictModal } from "./ClinicalConflictModal.js";
 import "./OfflineConflictReviewDrawer.css";
@@ -141,7 +142,7 @@ export const OfflineConflictReviewDrawer: React.FC<OfflineConflictReviewDrawerPr
 									onClick={() => handleOpenModal(item)}
 									data-testid={`btn-resolve-${item.id}`}
 								>
-									🔍 Разрешить расхождение (Side-by-Side)
+									<Search size={14} className="inline mr-1.5" /> Разрешить расхождение (Side-by-Side)
 								</button>
 							</div>
 						))
@@ -157,7 +158,7 @@ export const OfflineConflictReviewDrawer: React.FC<OfflineConflictReviewDrawerPr
 							onClick={onAutoResolveAllSafe}
 							style={{ width: "100%", justifyContent: "center" }}
 						>
-							⚡ Авто-слияние безопасных записей
+							<Zap size={14} className="inline mr-1.5" /> Авто-слияние безопасных записей
 						</button>
 					</div>
 				)}

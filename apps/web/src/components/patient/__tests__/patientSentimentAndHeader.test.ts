@@ -23,7 +23,7 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 
 		const sentiment = computePatientSentiment(patientVip);
 		assert.equal(sentiment.type, "loyal_vip");
-		assert.equal(sentiment.badgeEmoji, "🟢");
+		assert.equal(sentiment.badgeEmoji, "");
 		assert.ok(sentiment.complianceScorePercent >= 90);
 		assert.equal(sentiment.calculatedLtvRub, 320000);
 		assert.ok(sentiment.clinicalDirective.includes("Приоритетная запись"));
@@ -40,7 +40,7 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 
 		const sentiment = computePatientSentiment(patientRisk);
 		assert.equal(sentiment.type, "cancellation_risk");
-		assert.equal(sentiment.badgeEmoji, "🟡");
+		assert.equal(sentiment.badgeEmoji, "");
 		assert.ok(sentiment.complianceScorePercent < 70);
 		assert.ok(sentiment.clinicalDirective.includes("звонок администратора"));
 		assert.ok(sentiment.riskFactors.length > 0);
@@ -56,7 +56,7 @@ describe("PatientSentimentBadge & PatientHeaderCard — Scoring, HIG & Roadmaps"
 
 		const sentiment = computePatientSentiment(patientStrict);
 		assert.equal(sentiment.type, "strict_ids_required");
-		assert.equal(sentiment.badgeEmoji, "🔴");
+		assert.equal(sentiment.badgeEmoji, "");
 		assert.ok(sentiment.clinicalDirective.includes("1051н"));
 		assert.ok(sentiment.riskFactors.some((r) => r.includes("ИДС") || r.includes("претензи")));
 	});

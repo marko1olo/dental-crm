@@ -26,6 +26,7 @@ import {
 	Mic,
 	Plus,
 	RefreshCw,
+	Rocket,
 	RotateCcw,
 	RotateCw,
 	ShieldCheck,
@@ -1284,7 +1285,7 @@ export function App() {
 										disabled={resetting}
 									>
 										<span className="wizard-mode-icon" aria-hidden="true">
-											🚀
+											<Rocket className="w-5 h-5 text-[var(--teal)]" aria-hidden="true" />
 										</span>
 										<strong className="wizard-mode-title">
 											Сначала осмотреться
@@ -1674,7 +1675,7 @@ export function App() {
 							<div className="default-clinic-banner" role="status">
 								<div className="banner-content">
 									<span className="banner-icon" aria-hidden="true">
-										🚀
+										<Rocket className="w-5 h-5 text-amber-500" aria-hidden="true" />
 									</span>
 									<p>
 										<strong>Клиника ещё не настроена?</strong> Её название

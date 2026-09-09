@@ -8,6 +8,7 @@ import {
 	Globe,
 	MapPin,
 	MessageSquare,
+	Minus,
 	MinusCircle,
 	Search,
 	ThumbsDown,
@@ -560,7 +561,7 @@ export function MarketingView({
 								}}
 								style={{ minHeight: "44px" }}
 							>
-								👍 Удаление зуба (Позитив)
+								<ThumbsUp size={14} className="inline mr-1 text-emerald-500" /> Удаление зуба (Позитив)
 							</button>
 							<button
 								type="button"
@@ -573,7 +574,7 @@ export function MarketingView({
 								}}
 								style={{ minHeight: "44px" }}
 							>
-								👎 Очередь (Негатив)
+								<ThumbsDown size={14} className="inline mr-1 text-rose-500" /> Очередь (Негатив)
 							</button>
 							<button
 								type="button"
@@ -584,7 +585,7 @@ export function MarketingView({
 								}}
 								style={{ minHeight: "44px" }}
 							>
-								😐 Обычный отзыв (Нейтраль)
+								<Minus size={14} className="inline mr-1 text-slate-500" /> Обычный отзыв (Нейтраль)
 							</button>
 						</div>
 					</div>

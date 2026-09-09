@@ -295,9 +295,7 @@ export const YandexCalendarSyncsWidget: React.FC = () => {
 		>
 			<div className="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-700/60 pb-2">
 				<div className="flex items-center space-x-2">
-					<span className="text-xl" aria-hidden="true">
-						📅
-					</span>
+					<CalendarDays className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
 					<h3 className="font-semibold text-amber-700 dark:text-amber-400">
 						Двусторонняя синхронизация врачей с Яндекс Календарём
 					</h3>

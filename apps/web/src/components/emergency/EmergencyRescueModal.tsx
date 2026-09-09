@@ -813,7 +813,7 @@ export function EmergencyRescueModal({
 
 												{step.dosageHintRu && (
 													<div className="emergency-step-dosage-hint">
-														💉 {step.dosageHintRu}
+														<Syringe size={13} className="inline mr-1 text-emerald-500" /> {step.dosageHintRu}
 													</div>
 												)}
 											</div>

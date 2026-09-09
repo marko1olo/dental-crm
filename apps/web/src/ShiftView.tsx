@@ -1562,7 +1562,7 @@ export function PatientCockpit({
 										color: "var(--ink)",
 									}}
 								>
-									💰 Долг {money(activePatientInsight.balanceDueRub)}
+									<CreditCard size={13} className="inline mr-1 text-amber-500" /> Долг {money(activePatientInsight.balanceDueRub)}
 								</span>
 							) : null}
 							{activePatientInsight.openTasks > 0 ? (
@@ -1575,7 +1575,7 @@ export function PatientCockpit({
 										color: "var(--ink)",
 									}}
 								>
-									📞{" "}
+									<Phone size={13} className="inline mr-1 text-[var(--teal)]" />{" "}
 									{countLabel(
 										activePatientInsight.openTasks,
 										"задача",
@@ -1596,7 +1596,7 @@ export function PatientCockpit({
 										color: "var(--ink)",
 									}}
 								>
-									📄 не хватает{" "}
+									<FileText size={13} className="inline mr-1 text-rose-500" /> не хватает{" "}
 									{countLabel(
 										activePatientInsight.missingDocumentKinds?.length ?? 0,
 										"документа",

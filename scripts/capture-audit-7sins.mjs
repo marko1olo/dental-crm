@@ -9,7 +9,7 @@ const APP_BASE = "http://localhost:5173";
 
 const OUT_DIRS = [
 	path.join(process.cwd(), "docs/screenshots/audit_7sins"),
-	path.join("C:/Users/Admin/.gemini/antigravity/brain/ca22ede0-ffb7-4a64-87ed-e8ec9b741aa4/scratch/screenshots"),
+	path.join("C:/Users/Admin/.gemini/antigravity/brain/6558019e-8b7d-4262-a200-48a901f931a6/scratch/screenshots"),
 ];
 
 for (const dir of OUT_DIRS) {

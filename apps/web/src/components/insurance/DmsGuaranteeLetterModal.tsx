@@ -430,7 +430,7 @@ export function DmsGuaranteeLetterModal({
 									style={{ width: "15px", height: "15px", cursor: "pointer" }}
 								/>
 								<span style={{ color: isEmergencyCare ? "var(--warn-fg, #d97706)" : "inherit" }}>
-									🚨 Острая боль / Экстренная помощь
+									<AlertTriangle size={14} className="inline mr-1 text-amber-500" /> Острая боль / Экстренная помощь
 								</span>
 							</label>
 						</div>

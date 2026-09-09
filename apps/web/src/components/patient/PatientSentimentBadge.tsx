@@ -74,7 +74,7 @@ export function computePatientSentiment(
 			type: "standard",
 			label: "Стандартный профиль",
 			shortLabel: "Стандарт",
-			badgeEmoji: "🟢",
+			badgeEmoji: "",
 			colorTheme: "slate",
 			description: "Стандартный профиль обслуживания пациента.",
 			clinicalDirective: "Стандартный клинический протокол приёма и оформления карты 043/у.",
@@ -209,7 +209,7 @@ export function computePatientSentiment(
 				type: "loyal_vip",
 				label: "VIP / Лояльный пациент",
 				shortLabel: "VIP • Лояльный",
-				badgeEmoji: "🟢",
+				badgeEmoji: "",
 				colorTheme: "emerald",
 				description:
 					"Пациент с высоким LTV, высокой дисциплиной визитов и высоким доверием к комплексным планам.",
@@ -224,7 +224,7 @@ export function computePatientSentiment(
 				type: "cancellation_risk",
 				label: "Риск отмены / Неявки",
 				shortLabel: "Риск отмены",
-				badgeEmoji: "🟡",
+				badgeEmoji: "",
 				colorTheme: "amber",
 				description:
 					"Повышенная вероятность срыва записи или спонтанного переноса приёма (комплаенс снижен).",
@@ -239,7 +239,7 @@ export function computePatientSentiment(
 				type: "strict_ids_required",
 				label: "Требуется строгое ИДС",
 				shortLabel: "Строгое ИДС",
-				badgeEmoji: "🔴",
+				badgeEmoji: "",
 				colorTheme: "rose",
 				description:
 					"Пациент требует расширенного информирования, детализации альтернатив лечения и видеофиксации согласий.",
@@ -254,7 +254,7 @@ export function computePatientSentiment(
 				type: "standard",
 				label: "Стандартный профиль",
 				shortLabel: "Стандарт",
-				badgeEmoji: "🟢",
+				badgeEmoji: "",
 				colorTheme: "slate",
 				description:
 					"Пациент со стабильной историей посещений и стандартными условиями обслуживания.",

@@ -24,6 +24,7 @@ import {
 	Kanban,
 	Layers,
 	List,
+	Mail,
 	MessageCircle,
 	MessageSquare,
 	MoreHorizontal,
@@ -34,6 +35,7 @@ import {
 	Send,
 	ShieldCheck,
 	Sparkles,
+	Tag,
 	User,
 	X,
 } from "lucide-react";
@@ -842,7 +844,7 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 					<div className="pr-main-pane">
 						{filteredCandidates.length === 0 ? (
 							<div className="pr-empty-state">
-								<div style={{ fontSize: "2rem" }}>🎉</div>
+								<div className="flex items-center justify-center p-2 text-emerald-500"><CheckCircle2 size={36} /></div>
 								<h3>Нет пациентов по выбранному фильтру</h3>
 								<p>Все пациенты обработаны или срок профилактического осмотра еще не наступил.</p>
 							</div>
@@ -1138,12 +1140,12 @@ export const PatientRecallManagerModal: React.FC<PatientRecallManagerModalProps>
 														</div>
 
 														<div className="pr-kanban-card-meta">
-															<div>📞 {item.phone || "нет тел."}</div>
-															<div>🏷️ {item.categoryLabel}</div>
-															<div>👨‍⚕️ {item.attendingDoctorName || "Врач не указан"}</div>
+															<div><Phone size={12} className="inline mr-1 text-[var(--teal)]" />{item.phone || "нет тел."}</div>
+															<div><Tag size={12} className="inline mr-1 text-muted-foreground" />{item.categoryLabel}</div>
+															<div><User size={12} className="inline mr-1 text-muted-foreground" />{item.attendingDoctorName || "Врач не указан"}</div>
 															{item.lastContactedAt && (
 																<div style={{ color: "var(--pr-teal)", fontWeight: 600 }}>
-																	✉️ Контакт: {new Date(item.lastContactedAt).toLocaleDateString("ru-RU")}
+																	<Mail size={12} className="inline mr-1" />Контакт: {new Date(item.lastContactedAt).toLocaleDateString("ru-RU")}
 																</div>
 															)}
 														</div>
