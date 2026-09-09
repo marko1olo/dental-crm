@@ -717,7 +717,10 @@ export function AppointmentModal(props: AppointmentModalProps) {
 							>
 								{isNewAppointment ? `Запись на следующий этап: ${currentPatientName}` : `Детали записи: ${currentPatientName}`}
 							</h3>
-							<p className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate">
+							<p
+								className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate"
+								title={startsAtLocal ? `${startsAtLocal.slice(0, 10)} ${startsAtLocal.slice(11, 16)} - ${endsAtLocal.slice(11, 16)}` : ""}
+							>
 								{startsAtLocal ? `${startsAtLocal.slice(0, 10)} ${startsAtLocal.slice(11, 16)} - ${endsAtLocal.slice(11, 16)}` : ""}
 							</p>
 						</div>

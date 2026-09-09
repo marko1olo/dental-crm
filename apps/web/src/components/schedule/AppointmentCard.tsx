@@ -908,7 +908,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-2.5">
 								<span className="text-[17px] font-black text-[var(--ink)] flex items-center gap-1.5 truncate min-w-0">
 									<User className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
-									<span className="truncate">{appointmentPatientName || "Пациент"}</span>
+									<span className="truncate" title={appointmentPatientName || "Пациент"}>{appointmentPatientName || "Пациент"}</span>
 								</span>
 								{patientBalance !== null ? (
 									<span
@@ -1031,7 +1031,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 								<div className="flex items-center justify-between gap-1">
 									<span className="flex items-center gap-1 text-[var(--ink)] font-medium truncate">
 										<Stethoscope size={12} className="text-[var(--teal)] shrink-0" />
-										<span className="truncate">
+										<span className="truncate" title={appointmentDoctor?.fullName || "Врач не назначен"}>
 											{appointmentDoctor?.fullName || "Врач не назначен"}
 										</span>
 									</span>
@@ -2135,7 +2135,7 @@ export function AppointmentCard(props: AppointmentCardProps) {
 							{/* Header */}
 							<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
 								<div className="min-w-0 flex-1">
-									<div className="text-lg font-black text-[var(--ink)] truncate">
+									<div className="text-lg font-black text-[var(--ink)] truncate" title={appointmentPatientName}>
 										{appointmentPatientName}
 									</div>
 									<div className="text-xs text-[var(--muted)] font-medium">

@@ -159,50 +159,7 @@
 	border: 1px solid var(--line, #e2e8f0);
 }
 
-/* Gauge Displays */
-.autoclave-gauges-container {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 1rem;
-	padding: 1rem;
-	background: var(--paper-strong, #f8fafc);
-	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 10px;
-}
 
-.gauge-panel {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.gauge-title {
-	font-size: 0.8125rem;
-	font-weight: 600;
-	color: var(--muted, #64748b);
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-}
-
-.gauge-val-display {
-	font-size: 2rem;
-	font-weight: 800;
-	color: var(--ink, #0f172a);
-	font-variant-numeric: tabular-nums;
-}
-
-.gauge-status-ok {
-	color: var(--ok-fg, #10b981);
-}
-
-.gauge-status-warn {
-	color: var(--warn, #f59e0b);
-}
-
-.gauge-status-bad {
-	color: var(--bad, #ef4444);
-}
 
 /* Batch Pack Table */
 .sterile-packs-table {
@@ -390,20 +347,7 @@ html.dark .cycle-spec-pill {
 	color: var(--muted, #94a3b8);
 }
 
-[data-theme="dark"] .autoclave-gauges-container,
-[data-theme="night"] .autoclave-gauges-container,
-[data-theme="oled"] .autoclave-gauges-container,
-html.dark .autoclave-gauges-container {
-	background: var(--paper-strong, #1e293b);
-	border-color: var(--line, #334155);
-}
 
-[data-theme="dark"] .gauge-val-display,
-[data-theme="night"] .gauge-val-display,
-[data-theme="oled"] .gauge-val-display,
-html.dark .gauge-val-display {
-	color: var(--ink, #f8fafc);
-}
 
 [data-theme="dark"] .sterile-packs-table th,
 [data-theme="night"] .sterile-packs-table th,

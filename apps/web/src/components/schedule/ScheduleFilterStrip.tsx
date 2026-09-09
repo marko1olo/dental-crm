@@ -428,7 +428,7 @@ export function ScheduleFilterStrip({
 				</button>
 			</div>
 
-			{/* Right: [⊞ Сетка | ☰ Лента] Switcher + [⋮ Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
+			{/* Right: [Сетка | Лента] Switcher + [Опции] Dropdown Menu + STRICTLY 1 Primary [+ Запись] Button */}
 			<div className="flex items-center gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-1.5 border-l border-[var(--line)]">
 				{/* 1-Click View Mode Switcher: [ Лента | Сетка | По креслам ] */}
 				{setScheduleViewMode && (

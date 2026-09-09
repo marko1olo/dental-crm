@@ -46,7 +46,7 @@ export function AutoclaveCycleModal({
 	isOpen,
 	onClose,
 	onCycleCompleted,
-	operatorName = 'Смирнова О. И. (Медицинская сестра ЦСО)',
+	operatorName = 'Дежурная медицинская сестра',
 	initialCycleId = 'cycle_134_wrapped',
 	initialAutoclaveId = 'AUTO-MELAG-01'
 }: AutoclaveCycleModalProps) {
