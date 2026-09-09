@@ -388,4 +388,21 @@ describe("DoctorDesktopHeader Component (High-Density Top Bar)", () => {
 			"DoctorShiftCockpitModal timer contains whitespace-nowrap tabular-nums shrink-0",
 		);
 	});
+
+	it("renders 1-click printing buttons for Form 043/u and Treatment Plan Estimate (Mandate 8e item 5)", () => {
+		const headerHtml = renderToString(
+			createElement(DoctorDesktopHeader, {
+				doctorId: "doc-1",
+				appointments: SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
+			}),
+		);
+		assert.ok(
+			headerHtml.includes("header-btn-print-043"),
+			"DoctorDesktopHeader must contain 1-click button for Form 043/u printing",
+		);
+		assert.ok(
+			headerHtml.includes("header-btn-print-estimate"),
+			"DoctorDesktopHeader must contain 1-click button for Treatment Estimate printing",
+		);
+	});
 });

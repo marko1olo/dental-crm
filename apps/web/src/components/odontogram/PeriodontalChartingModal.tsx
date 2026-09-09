@@ -16,7 +16,7 @@
  * 6. Тач-таргеты кнопок строго >= 44x44px для работы в медицинских перчатках на iPad.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
 	Activity,
 	AlertCircle,
@@ -940,9 +940,49 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 		showToast("Результаты обследования скопированы в буфер обмена для отправки пациенту", "success");
 	}, [teeth, summary, clinicName, clinicPhone, patientName, doctorName, ohiSScore]);
 
+	// Debounced autosave (Mandates 8e item 6, 8k) to protect doctor's periodontal charting data
+	const isMountedRef = React.useRef(false);
+	const lastSavedTeethJsonRef = React.useRef<string>("");
+
+	useEffect(() => {
+		if (!isOpen) {
+			isMountedRef.current = false;
+			return;
+		}
+		if (!isMountedRef.current) {
+			isMountedRef.current = true;
+			lastSavedTeethJsonRef.current = JSON.stringify(teeth);
+			return;
+		}
+
+		if (!onSave) return;
+		const currentJson = JSON.stringify(teeth);
+		if (currentJson === lastSavedTeethJsonRef.current) return;
+
+		const timer = setTimeout(() => {
+			lastSavedTeethJsonRef.current = currentJson;
+			onSave(teeth, summary);
+		}, 800);
+
+		return () => clearTimeout(timer);
+	}, [isOpen, teeth, summary, onSave]);
+
+	const handleClose = useCallback(() => {
+		if (onSave) {
+			const currentJson = JSON.stringify(teeth);
+			if (currentJson !== lastSavedTeethJsonRef.current) {
+				lastSavedTeethJsonRef.current = currentJson;
+				onSave(teeth, summary);
+			}
+		}
+		onClose();
+	}, [teeth, summary, onSave, onClose]);
+
 	// Save Action
 	const handleSave = useCallback(async () => {
 		if (onSave) {
+			const currentJson = JSON.stringify(teeth);
+			lastSavedTeethJsonRef.current = currentJson;
 			await onSave(teeth, summary);
 		}
 		SoundFeedbackService.getInstance().playActionSuccess();
@@ -987,9 +1027,10 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 						)}
 						<button
 							type="button"
-							onClick={onClose}
+							onClick={handleClose}
 							className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--line,#e2e8f0)] transition-all cursor-pointer touch-manipulation"
 							aria-label="Закрыть модальное окно"
+							data-testid="perio-modal-close-btn"
 						>
 							<X size={20} />
 						</button>

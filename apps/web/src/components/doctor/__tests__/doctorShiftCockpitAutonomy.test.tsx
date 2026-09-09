@@ -14,7 +14,59 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { describe, expect, it, vi } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+
+function createMockFn<T extends (...args: any[]) => any>(impl?: T) {
+	const calls: any[][] = [];
+	const fn = (...args: any[]) => {
+		calls.push(args);
+		return impl?.(...args);
+	};
+	fn.mock = { calls };
+	return fn;
+}
+
+const vi = {
+	fn: createMockFn,
+};
+
+function expect(actual: any) {
+	return {
+		toBe(expected: any) {
+			assert.strictEqual(actual, expected);
+		},
+		toBeNull() {
+			assert.strictEqual(actual, null);
+		},
+		toBeDefined() {
+			assert.ok(actual !== undefined);
+		},
+		toBeGreaterThan(expected: number) {
+			assert.ok(actual > expected);
+		},
+		toContain(expected: string) {
+			assert.ok(String(actual).includes(expected));
+		},
+		toHaveBeenCalled() {
+			assert.ok(actual.mock.calls.length > 0);
+		},
+		toHaveBeenCalledTimes(expected: number) {
+			assert.strictEqual(actual.mock.calls.length, expected);
+		},
+		not: {
+			toBe(expected: any) {
+				assert.notStrictEqual(actual, expected);
+			},
+			toBeNull() {
+				assert.ok(actual !== null);
+			},
+			toHaveBeenCalled() {
+				assert.strictEqual(actual.mock.calls.length, 0);
+			},
+		},
+	};
+}
 import {
 	SAMPLE_DOCTOR_SHIFT_APPOINTMENTS,
 	type DoctorShiftAppointment,
@@ -491,8 +543,9 @@ describe("Doctor Shift Cockpit Desktop Autonomy & Session PEP Fallback (Mandates
 
 		// 5. Verify batch signing succeeded
 		expect(onAppointmentUpdate).toHaveBeenCalledTimes(1);
-		const updatedApts: readonly DoctorShiftAppointment[] =
-			onAppointmentUpdate.mock.calls[0][0];
+		const firstCall = onAppointmentUpdate.mock.calls[0];
+		if (!firstCall) throw new Error("Expected at least one call to onAppointmentUpdate");
+		const updatedApts: readonly DoctorShiftAppointment[] = firstCall[0];
 		expect(updatedApts.length).toBeGreaterThan(0);
 
 		// Verify target appointments are marked signed with session_pep

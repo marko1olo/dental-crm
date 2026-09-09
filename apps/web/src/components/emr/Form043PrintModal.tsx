@@ -402,6 +402,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 			const html = generatePrintableHtml043(formData, {
 				scaleRatio: 1.0,
 				isLocked: !effectiveIsDraft,
+				isDraft: effectiveIsDraft,
 				status: effectiveIsDraft ? "draft" : "signed",
 			});
 			const printFrame = document.createElement("iframe");
@@ -765,6 +766,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 									dangerouslySetInnerHTML={{
 										__html: generatePrintableHtml043(formData, {
 											isLocked: !effectiveIsDraft,
+											isDraft: effectiveIsDraft,
 											status: effectiveIsDraft ? "draft" : "signed",
 										}),
 									}}

@@ -402,6 +402,15 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
 	const dental = data.dentalStatus;
 	const epicrisis = data.epicrisis;
 
+	const isDocDraft = Boolean(
+		cfg.isDraft ||
+		cfg.status === "draft" ||
+		cfg.isLocked === false ||
+		(data as any).isDraft ||
+		(data as any).status === "draft" ||
+		(data as any).isLocked === false,
+	);
+
 	const ageFormatted = formatPatientAge(passport.patientBirthDate, passport.cardOpenedDate);
 	const dmft = calculateDmftIndex(dental.odontogramTeeth);
 	const cpitn = calculateCpitnIndex(dental.cpitnIndex);
@@ -685,7 +694,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
 <body>
 <div class="doc-container">
   ${
-		cfg.isLocked === false || (data as any).isLocked === false || (data as any).status === "draft"
+		isDocDraft
 			? '<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'
 			: '<div class="watermark-draft watermark-signed" aria-hidden="true" style="color: rgba(5, 150, 105, 0.06);">ПОДПИСАНО ВРАЧОМ</div>'
 	}
@@ -712,7 +721,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
     <h1 class="doc-main-title">МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА № ${escapeHtml(passport.medicalCardNumber)}</h1>
     <div style="margin: 3px 0 2px 0;">
       ${
-				cfg.isLocked === false || (data as any).isLocked === false || (data as any).status === "draft"
+				isDocDraft
 					? '<span style="display:inline-block; border: 1pt dashed #d97706; background: #fffbeb; color: #b45309; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)</span>'
 					: ((data as any).revisionCount ?? cfg.revisionCount ?? 0) > 0
 						? `<span style="display:inline-block; border: 1pt solid #059669; background: #ecfdf5; color: #065f46; font-weight: 800; font-size: 7.5pt; padding: 1.5pt 5pt; border-radius: 3pt; text-transform: uppercase; letter-spacing: 0.04em;">ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${((data as any).revisionCount ?? cfg.revisionCount ?? 0) + 1})</span>`

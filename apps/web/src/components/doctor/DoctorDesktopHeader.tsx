@@ -53,6 +53,8 @@ export interface DoctorDesktopHeaderProps {
 	readonly onOpenCockpit?: (() => void) | undefined;
 	readonly onInitiateBatchSign?: (() => void) | undefined;
 	readonly onEmergencyVisit?: (() => void) | undefined;
+	readonly onPrintForm043?: (() => void) | undefined;
+	readonly onPrintEstimate?: (() => void) | undefined;
 }
 
 export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
@@ -71,6 +73,8 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 	onOpenCockpit,
 	onInitiateBatchSign,
 	onEmergencyVisit,
+	onPrintForm043,
+	onPrintEstimate,
 }) => {
 	const effectiveCabinetName = cabinetName || chairName || "Кабинет № 1";
 	const [isCockpitOpen, setIsCockpitOpen] = useState<boolean>(false);
@@ -418,43 +422,62 @@ export const DoctorDesktopHeader: React.FC<DoctorDesktopHeaderProps> = ({
 							<MoreHorizontal size={14} />
 						</button>
 
-						{showSecondaryDropdown && (
-							<div className="absolute right-0 top-11 w-56 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs text-[var(--ink,#f8fafc)]">
-								<button
-									type="button"
-									onClick={() => {
-										setShowSecondaryDropdown(false);
-										setIsCockpitOpen(true);
-									}}
-									className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
-								>
-									<LayoutDashboard size={14} className="text-teal-400" />
-									<span>Полный кокпит смены</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setShowSecondaryDropdown(false);
-										showToast("Печать карты 043/у...", "info");
-									}}
-									className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
-								>
-									<Printer size={14} className="text-teal-400" />
-									<span>Печать карты 043/у</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										setShowSecondaryDropdown(false);
-										showToast("Запрос на смену рабочего кресла", "info");
-									}}
-									className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
-								>
-									<RefreshCw size={14} className="text-teal-400" />
-									<span>Сменить рабочее кресло</span>
-								</button>
-							</div>
-						)}
+						<div className={`absolute right-0 top-11 w-56 rounded-xl bg-[var(--paper,#0f172a)] border border-[var(--line,#334155)] shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs text-[var(--ink,#f8fafc)] ${showSecondaryDropdown ? "block" : "hidden"}`}>
+							<button
+								type="button"
+								onClick={() => {
+									setShowSecondaryDropdown(false);
+									setIsCockpitOpen(true);
+								}}
+								className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+							>
+								<LayoutDashboard size={14} className="text-teal-400" />
+								<span>Полный кокпит смены</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowSecondaryDropdown(false);
+									if (onPrintForm043) {
+										onPrintForm043();
+									} else {
+										handleQuickCall("print_043");
+									}
+								}}
+								className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+								data-testid="header-btn-print-043"
+							>
+								<Printer size={14} className="text-teal-400" />
+								<span>Печать карты 043/у</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowSecondaryDropdown(false);
+									if (onPrintEstimate) {
+										onPrintEstimate();
+									} else {
+										handleQuickCall("print_estimate");
+									}
+								}}
+								className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+								data-testid="header-btn-print-estimate"
+							>
+								<FileText size={14} className="text-teal-400" />
+								<span>Печать сметы (плана лечения)</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									setShowSecondaryDropdown(false);
+									showToast("Запрос на смену рабочего кресла", "info");
+								}}
+								className="w-full text-left px-3 py-2 rounded-lg hover:bg-[var(--paper-soft,#1e293b)] font-semibold cursor-pointer flex items-center gap-2"
+							>
+								<RefreshCw size={14} className="text-teal-400" />
+								<span>Сменить рабочее кресло</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			</header>

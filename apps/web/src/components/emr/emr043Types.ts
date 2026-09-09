@@ -139,6 +139,7 @@ export interface MedicalCardForm043uData {
 	visitDiaries: VisitDiaryEntry043[];
 	epicrisis: EpicrisisAndDispensary043;
 	isLocked?: boolean;
+	isDraft?: boolean;
 	status?: "draft" | "signed" | "completed" | "voided" | string;
 	revisionCount?: number;
 }
@@ -159,6 +160,7 @@ export interface Form043PrintConfig {
 	scaleRatio: number; // 0.75, 1.0, 1.25
 	themeMode: "light" | "dark" | "print";
 	isLocked?: boolean;
+	isDraft?: boolean;
 	status?: "draft" | "signed" | "completed" | "voided" | string;
 	revisionCount?: number;
 }
