@@ -81,7 +81,7 @@ export interface FastCheckoutModalProps {
 export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	isOpen,
 	onClose,
-	patientId = "pat-default",
+	patientId = "00000000-0000-0000-0000-000000000001",
 	patientName = "Смирнова Екатерина Васильевна",
 	patientPhone = "+7 (999) 123-45-67",
 	patientEmail = "patient@example.com",

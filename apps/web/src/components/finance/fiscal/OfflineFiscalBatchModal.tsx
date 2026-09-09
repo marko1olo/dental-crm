@@ -558,7 +558,7 @@ export function OfflineFiscalBatchModal({
 													</div>
 												</td>
 												<td className="p-3 font-medium">{r.patientFullName || "Пациент клиники"}</td>
-												<td className="p-3 max-w-[200px] truncate text-[var(--muted)]">
+												<td className="p-3 max-w-[200px] truncate text-[var(--muted)]" title={r.itemsNames}>
 													{r.itemsNames}
 												</td>
 												<td className="p-3 text-right font-mono text-amber-600 dark:text-amber-400">

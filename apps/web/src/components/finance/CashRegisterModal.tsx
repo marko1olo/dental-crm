@@ -107,7 +107,7 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	onClose,
 	items = [],
 	totalAmountRub,
-	patientId = "pat-1",
+	patientId = "00000000-0000-0000-0000-000000000001",
 	patientName = "Иванов Иван Иванович",
 	patientPhone = "+7 (916) 123-45-67",
 	patientDepositRub = 0,
@@ -2002,40 +2002,45 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(totalInvoiceRub)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95"
 														data-testid="btn-cash-exact"
+														style={{ minHeight: "44px" }}
 													>
 														Без сдачи
 													</button>
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(1000)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-1000"
+														style={{ minHeight: "44px" }}
 													>
 														1 000 ₽
 													</button>
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(2000)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-2000"
+														style={{ minHeight: "44px" }}
 													>
 														2 000 ₽
 													</button>
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(5000)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-5000"
+														style={{ minHeight: "44px" }}
 													>
 														5 000 ₽
 													</button>
 													<button
 														type="button"
 														onClick={() => setReceivedCashRub(10000)}
-														className="h-9 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
+														className="h-11 min-h-[44px] rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--border,#cbd5e1)] hover:border-emerald-500 text-[var(--ink)] cursor-pointer transition-all active:scale-95 font-mono"
 														data-testid="btn-cash-10000"
+														style={{ minHeight: "44px" }}
 													>
 														10 000 ₽
 													</button>

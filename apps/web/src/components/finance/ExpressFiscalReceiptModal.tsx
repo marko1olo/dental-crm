@@ -66,7 +66,7 @@ export const ExpressFiscalReceiptModal: React.FC<ExpressFiscalReceiptModalProps>
 	items = [],
 	totalBillRub,
 	totalBillKop,
-	patientId = "pat-express-1",
+	patientId = "00000000-0000-0000-0000-000000000001",
 	patientName = "Пациент",
 	patientPhone = "+7 (___) ___-__-__",
 	patientDepositRub = 0,

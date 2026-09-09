@@ -56,7 +56,7 @@ export const OneCExportButton: React.FC<OneCExportButtonProps> = ({
   documentDate,
   docType = 'act',
   patientName = 'Пациент',
-  patientId = 'pat-1',
+  patientId = '00000000-0000-0000-0000-000000000001',
   patientPhone = '',
   patientAddress = '',
   doctorName = 'Врач стоматолог',

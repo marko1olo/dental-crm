@@ -384,37 +384,40 @@ export function WarehouseManagerModal({
 						)}
 						<button
 							type="button"
-							className="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] transition-colors"
+							className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] transition-colors cursor-pointer"
 							onClick={onClose}
 							aria-label="Закрыть окно склада"
+							style={{ minWidth: "44px", minHeight: "44px" }}
 						>
 							<X size={18} />
 						</button>
 					</div>
 				</header>
 
-				{/* 1-ROW TOOLBAR (32-36px, Mandate 8d) */}
+				{/* 1-ROW TOOLBAR (Mandate 8c: >=44px touch targets) */}
 				{activeView === "inventory" && (
 					<div className="px-5 py-2.5 bg-[var(--paper,#ffffff)] border-b border-[var(--border,#e2e8f0)] flex items-center gap-2 flex-wrap text-xs shrink-0">
-						{/* Поиск (32-36px) */}
+						{/* Поиск */}
 						<div className="relative flex-1 min-w-[180px] max-w-xs">
 							<Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#94a3b8)]" />
 							<input
 								type="text"
-								className="w-full h-8 pl-8 pr-2.5 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] focus:outline-none focus:ring-1 focus:ring-teal-500"
+								className="w-full h-11 min-h-[44px] pl-8 pr-2.5 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] focus:outline-none focus:ring-1 focus:ring-teal-500"
 								placeholder="Поиск по названию или SKU..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								data-testid="warehouse-search-input"
+								style={{ minHeight: "44px" }}
 							/>
 						</div>
 
 						{/* Категория */}
 						<select
-							className="h-8 px-2.5 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] focus:outline-none focus:ring-1 focus:ring-teal-500"
+							className="h-11 min-h-[44px] px-2.5 text-xs rounded-lg border border-[var(--border,#cbd5e1)] bg-[var(--paper,#ffffff)] focus:outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer"
 							value={categoryFilter}
 							onChange={(e) => setCategoryFilter(e.target.value)}
 							aria-label="Фильтр по категориям"
+							style={{ minHeight: "44px" }}
 						>
 							<option value="all">Все категории</option>
 							<option value="Анестезия">Анестезия</option>
@@ -434,30 +437,33 @@ export function WarehouseManagerModal({
 
 						<button
 							type="button"
-							className="h-8 px-2.5 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors flex items-center gap-1"
+							className="h-11 min-h-[44px] px-3 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors inline-flex items-center gap-1 cursor-pointer"
 							onClick={() => handleApplyPreset("anesthesia-17")}
 							data-testid="preset-anesthesia-btn"
 							title="10 карпул Артикаина 1.7 мл + 10 карпульных игл 30G"
+							style={{ minHeight: "44px" }}
 						>
 							Стандартная анестезия 1.7 мл
 						</button>
 
 						<button
 							type="button"
-							className="h-8 px-2.5 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1"
+							className="h-11 min-h-[44px] px-3 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors inline-flex items-center gap-1 cursor-pointer"
 							onClick={() => handleApplyPreset("filling-standard")}
 							data-testid="preset-filling-btn"
 							title="СИЗ + Крафт + Композит + Адгезив + Микробраши"
+							style={{ minHeight: "44px" }}
 						>
 							Пломбирование зуба
 						</button>
 
 						<button
 							type="button"
-							className="h-8 px-2.5 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1"
+							className="h-11 min-h-[44px] px-3 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors inline-flex items-center gap-1 cursor-pointer"
 							onClick={() => handleApplyPreset("hygiene-prof")}
 							data-testid="preset-hygiene-btn"
 							title="Air-Flow + Паста + Щетки + Оптрагейт"
+							style={{ minHeight: "44px" }}
 						>
 							Профгигиена
 						</button>
@@ -544,33 +550,34 @@ export function WarehouseManagerModal({
 													)}
 												</td>
 												<td className="py-2.5 px-3 text-center whitespace-nowrap">
-													<div className="inline-flex items-center gap-1">
+													<div className="inline-flex items-center gap-1.5">
 														<button
 															type="button"
-															className="w-8 h-8 rounded border border-[var(--border,#cbd5e1)] flex items-center justify-center hover:bg-[var(--paper-strong,#f1f5f9)] active:scale-95 transition-transform"
+															className="w-11 h-11 rounded-lg border border-[var(--border,#cbd5e1)] flex items-center justify-center hover:bg-[var(--paper-strong,#f1f5f9)] active:scale-95 transition-transform cursor-pointer"
 															onClick={() => handleStepQuantity(item.id, -1)}
 															aria-label={`Уменьшить количество ${item.name}`}
-															style={{ minWidth: "32px", minHeight: "32px" }}
+															style={{ minWidth: "44px", minHeight: "44px" }}
 														>
-															<Minus size={13} />
+															<Minus size={14} />
 														</button>
 														<span className="w-10 text-center font-mono font-bold text-sm">
 															{writeQty}
 														</span>
 														<button
 															type="button"
-															className="w-8 h-8 rounded border border-[var(--border,#cbd5e1)] flex items-center justify-center hover:bg-[var(--paper-strong,#f1f5f9)] active:scale-95 transition-transform"
+															className="w-11 h-11 rounded-lg border border-[var(--border,#cbd5e1)] flex items-center justify-center hover:bg-[var(--paper-strong,#f1f5f9)] active:scale-95 transition-transform cursor-pointer"
 															onClick={() => handleStepQuantity(item.id, 1)}
 															aria-label={`Увеличить количество ${item.name}`}
-															style={{ minWidth: "32px", minHeight: "32px" }}
+															style={{ minWidth: "44px", minHeight: "44px" }}
 														>
-															<Plus size={13} />
+															<Plus size={14} />
 														</button>
 														{writeQty === 0 && (
 															<button
 																type="button"
-																className="h-8 px-2 ml-1 text-[11px] font-semibold rounded bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors"
+																className="h-11 min-h-[44px] px-3 ml-1 text-xs font-semibold rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-colors inline-flex items-center justify-center cursor-pointer"
 																onClick={() => handleStepQuantity(item.id, 1)}
+																style={{ minHeight: "44px" }}
 															>
 																Списать 1
 															</button>
@@ -592,13 +599,25 @@ export function WarehouseManagerModal({
 					) : (
 						/* SINGLE SIGNER ACT PREVIEW (МАНДАТ 8e: ЕДИНОЛИЧНОЕ СПИСАНИЕ БЕЗ 3-СТОРОННЕЙ КОМИССИИ) */
 						<div className="bg-[var(--paper,#ffffff)] border border-[var(--border,#e2e8f0)] rounded-lg p-6 max-w-3xl mx-auto text-xs space-y-4 font-sans">
-							<div className="border-b border-slate-300 pb-4 text-center space-y-1">
-								<h3 className="text-sm font-bold uppercase tracking-wide">
-									АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ
-								</h3>
-								<p className="text-[11px] text-[var(--muted,#64748b)]">
-									Утверждено ответственным лицом единолично (Мандат 8e п. 10 • СанПиН 3.3686-21 • Приказ 804н)
-								</p>
+							<div className="flex items-center justify-between border-b border-slate-300 pb-3">
+								<div className="space-y-1">
+									<h3 className="text-sm font-bold uppercase tracking-wide">
+										АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ
+									</h3>
+									<p className="text-[11px] text-[var(--muted,#64748b)]">
+										Утверждено ответственным лицом единолично (Мандат 8e п. 10 • СанПиН 3.3686-21 • Приказ 804н)
+									</p>
+								</div>
+								<button
+									type="button"
+									onClick={() => window.print()}
+									className="h-11 px-4 text-xs font-bold rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal-dark,#0f766e)] bg-[var(--teal-soft,#ccfbf1)] hover:bg-[var(--teal)] hover:text-white transition-colors inline-flex items-center gap-2 cursor-pointer shadow-2xs"
+									style={{ minHeight: "44px" }}
+									title="Распечатать бумажный акт списания (Мандат 8e)"
+								>
+									<Printer size={16} />
+									Распечатать акт
+								</button>
 							</div>
 
 							<div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-800">

@@ -38,7 +38,7 @@ export const RefundReceiptModal: React.FC<RefundReceiptModalProps> = ({
 	isOpen,
 	onClose,
 	items = [],
-	patientId = "pat-refund-1",
+	patientId = "00000000-0000-0000-0000-000000000001",
 	patientName = "Пациент",
 	patientPhone = "+7 (___) ___-__-__",
 	patientDepositRub = 0,

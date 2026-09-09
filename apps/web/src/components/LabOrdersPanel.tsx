@@ -594,7 +594,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 			}
 
 			showToast(
-				`⚡ Наряд «${preset.title}» оформлен в 1 клик для зубов ${toothFdiStr} (срок до ${dueDateFormatted})!`,
+				`Наряд «${preset.title}» оформлен в 1 клик для зубов ${toothFdiStr} (срок до ${dueDateFormatted})!`,
 				"success",
 				6000,
 			);
@@ -644,7 +644,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						data-testid="lab-order-one-click-btn"
 					>
 						<Zap className="w-3.5 h-3.5 text-amber-500" />
-						<span>⚡ Цирконий A2 (7 дн.)</span>
+						<span>Цирконий A2 (7 дн.)</span>
 					</button>
 
 					<button
@@ -659,7 +659,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						data-testid="lab-order-preset-pmma-btn"
 					>
 						<Zap className="w-3.5 h-3.5 text-teal-500" />
-						<span>⚡ Временная PMMA (2 дн.)</span>
+						<span>Временная PMMA (2 дн.)</span>
 					</button>
 
 					<button
@@ -674,7 +674,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 						data-testid="lab-order-preset-core-post-btn"
 					>
 						<Zap className="w-3.5 h-3.5 text-slate-500" />
-						<span>⚡ Вкладка КХС (3 дн.)</span>
+						<span>Вкладка КХС (3 дн.)</span>
 					</button>
 
 					<button

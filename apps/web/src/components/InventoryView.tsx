@@ -551,7 +551,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										alignItems: "center",
 										gap: 6,
 										padding: "8px 14px",
-										minHeight: "40px",
+										minHeight: "44px",
 										borderRadius: 8,
 										border: `1px solid ${borderColor}`,
 										background: paperSoftBg,
@@ -991,7 +991,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									title="1-Клик списание расхода смены (Терапия): перчатки, маски, салфетки, слюноотсосы, стаканчики, валики, микробраши, артикаин"
 								>
 									<Sparkles size={16} />
-									<span>{isWritingOffShiftBundle ? "Списание..." : "⚡ Смена: Терапия"}</span>
+									<span>{isWritingOffShiftBundle ? "Списание..." : "Смена: Терапия"}</span>
 								</button>
 								<button
 									type="button"
@@ -1008,9 +1008,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										background: "var(--teal-soft, #ccfbf1)",
 										color: "var(--teal-dark, #0f766e)",
 									}}
-									title="Списать расход смены (Ортопедия)"
+									title="1-Клик списание расхода смены (Ортопедия): слепочные массы, ложки, ретракционные нити, анестетики"
 								>
-									Орто
+									Ортопедия
 								</button>
 								<button
 									type="button"
@@ -1027,9 +1027,9 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 										background: "var(--teal-soft, #ccfbf1)",
 										color: "var(--teal-dark, #0f766e)",
 									}}
-									title="Списать расход смены (Хирургия)"
+									title="1-Клик списание расхода смены (Хирургия): шовный материал, лезвия скальпеля, гемостатические губки, анестетики"
 								>
-									Хир
+									Хирургия
 								</button>
 							</div>
 
@@ -1042,7 +1042,7 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 									alignItems: "center",
 									gap: 6,
 									padding: "8px 14px",
-									minHeight: "40px",
+									minHeight: "44px",
 									borderRadius: 8,
 									fontWeight: 700,
 									fontSize: 13,
@@ -1531,7 +1531,6 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																background: "var(--teal-soft, rgba(20, 184, 166, 0.1))",
 																color: "var(--teal-dark, #0f766e)",
 																border: "none",
-																padding: "6px 12px",
 																borderRadius: 6,
 																fontWeight: 600,
 																cursor: "pointer",
@@ -1539,7 +1538,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																alignItems: "center",
 																gap: 5,
 																fontSize: 13,
-																minHeight: 32,
+																minHeight: 44,
+																padding: "8px 12px",
 															}}
 															title="Оприходовать материал на склад (Primary Action)"
 														>
@@ -1561,9 +1561,11 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																	background: "var(--paper-soft, rgba(0,0,0,0.04))",
 																	color: "var(--muted)",
 																	border: "1px solid var(--line, rgba(0,0,0,0.08))",
-																	width: 32,
-																	height: 32,
-																	borderRadius: 6,
+																	width: 44,
+																	height: 44,
+																	minWidth: 44,
+																	minHeight: 44,
+																	borderRadius: 8,
 																	cursor: "pointer",
 																	display: "flex",
 																	alignItems: "center",
@@ -1583,8 +1585,8 @@ export const InventoryView: React.FC<{ organizationId: string }> = ({
 																		right: 0,
 																		top: "100%",
 																		marginTop: 4,
-																		background: "var(--paper-strong, #ffffff)",
-																		border: "1px solid var(--line, #e2e8f0)",
+																		background: "var(--paper-strong)",
+																		border: "1px solid var(--line)",
 																		borderRadius: 8,
 																		boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
 																		padding: 4,

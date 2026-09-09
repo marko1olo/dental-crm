@@ -529,7 +529,7 @@ export const RefundServiceModal: React.FC<RefundServiceModalProps> = ({
 
 												<div className="flex-1 min-w-0">
 													<div className="flex items-center justify-between gap-2">
-														<div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate">
+														<div className="font-bold text-xs sm:text-sm text-[var(--ink,#0f172a)] truncate" title={srv.name}>
 															{srv.toothNumber && (
 																<span className="px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-600 dark:text-teal-400 font-mono text-xs mr-1.5">
 																	Зуб {srv.toothNumber}

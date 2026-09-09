@@ -52,7 +52,7 @@ export function Billing1CExportModal({
 	isOpen,
 	onClose,
 	items,
-	patientId = "pat-1",
+	patientId = "00000000-0000-0000-0000-000000000001",
 	patientName = "Пациент",
 	patientPhone = "",
 	patientAddress = "",

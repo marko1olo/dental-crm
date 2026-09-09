@@ -277,7 +277,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 							<span className="text-base sm:text-lg font-black text-[var(--teal,#0d9488)]">
 								{payrollResult.baseCommissionPercent}% {payrollResult.kpiBonusPercent > 0 ? `+ ${payrollResult.kpiBonusPercent}%` : ""}
 							</span>
-							<span className="text-[10px] text-[var(--teal,#0d9488)] truncate">
+							<span className="text-[10px] text-[var(--teal,#0d9488)] truncate" title={payrollResult.kpiTierBadgeRu}>
 								{payrollResult.kpiTierBadgeRu}
 							</span>
 						</div>

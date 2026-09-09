@@ -322,7 +322,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 					measure: "piece" as const,
 					taxDeductionCategory: s.category === "implantology" ? ("2" as const) : ("1" as const),
 				}))}
-				patientId={patient?.id || "pat-1"}
+				patientId={patient?.id || "00000000-0000-0000-0000-000000000001"}
 				patientName={patient?.fullName || "Пациент"}
 				patientPhone={patient?.phone || "+7 (999) 000-00-00"}
 				patientDepositRub={patientDepositRub || patient?.depositRub || 0}
@@ -340,7 +340,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 				onClose={() => setIsRefundOpen(false)}
 				invoiceId={contractNumber || "inv-1"}
 				invoiceNumber={summary.actNumber}
-				patientId={patient?.id || "pat-1"}
+				patientId={patient?.id || "00000000-0000-0000-0000-000000000001"}
 				patientName={actParams.patient.fullName}
 				doctorName={actParams.doctor.fullName}
 				doctorCommissionPct={30}
@@ -1501,7 +1501,7 @@ ${summary.warrantyTerms.map((w) => `• ${w.categoryName} (Зубы: ${w.teethDi
 							documentDate={new Date().toISOString().slice(0, 10)}
 							docType="act"
 							patientName={actParams.patient.fullName}
-							patientId={patient?.id || "pat-1"}
+							patientId={patient?.id || "00000000-0000-0000-0000-000000000001"}
 							patientPhone={patient?.phone || ""}
 							patientAddress={patient?.address || ""}
 							doctorName={actParams.doctor.fullName}

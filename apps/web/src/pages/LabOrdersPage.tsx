@@ -12,6 +12,7 @@ import {
 	Layers,
 	Link,
 	Loader2,
+	MoreVertical,
 	Plus,
 	Printer,
 	QrCode,
@@ -38,6 +39,7 @@ export function LabOrdersPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [doctorFilter, setDoctorFilter] = useState<string>("all");
+	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 
 	// Modal State
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,6 +115,14 @@ export function LabOrdersPage() {
 			totalCost,
 			doctorDeductions,
 		};
+	}, [orders]);
+
+	const doctorsList = useMemo(() => {
+		const set = new Set<string>();
+		for (const o of orders) {
+			if (o.doctorName) set.add(o.doctorName);
+		}
+		return Array.from(set).sort();
 	}, [orders]);
 
 	const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -221,8 +231,9 @@ export function LabOrdersPage() {
 					<button
 						type="button"
 						onClick={fetchOrders}
-						className="p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shadow-sm"
+						className="w-11 h-11 min-w-[44px] min-h-[44px] p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors shadow-2xs flex items-center justify-center cursor-pointer"
 						title="Обновить список"
+						style={{ minWidth: "44px", minHeight: "44px" }}
 					>
 						<RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-teal-600" : ""}`} />
 					</button>
@@ -230,7 +241,8 @@ export function LabOrdersPage() {
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="h-9 px-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-md shadow-teal-500/20 inline-flex items-center gap-2 transition-all"
+						className="h-11 min-h-[44px] px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold shadow-2xs inline-flex items-center gap-2 transition-all cursor-pointer"
+						style={{ minHeight: "44px" }}
 					>
 						<Plus className="w-4 h-4" />
 						Новый наряд в ЗТЛ
@@ -246,7 +258,7 @@ export function LabOrdersPage() {
 				</div>
 
 				<div className="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-200 dark:border-blue-800/40 shadow-sm space-y-1">
-					<span className="text-xs font-semibold text-blue-700 dark:text-blue-300">В производстве</span>
+					<span className="text-xs font-semibold text-blue-700 dark:text-blue-300">В работе ЗТЛ</span>
 					<div className="text-xl font-black text-blue-900 dark:text-blue-100 font-mono">{metrics.inProgress}</div>
 				</div>
 
@@ -271,16 +283,17 @@ export function LabOrdersPage() {
 				</div>
 			</div>
 
-			{/* Filters & Search Toolbar */}
+			{/* Filters & Search Toolbar (Mandate 8c: >=44px) */}
 			<div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-sm">
 				<div className="relative flex-1 w-full">
-					<Search className="w-4 h-4 text-[var(--muted)] absolute left-3 top-3" />
+					<Search className="w-4 h-4 text-[var(--muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
 					<input
 						type="text"
 						placeholder="Поиск по пациенту, врачу, зубу FDI или материалу..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
-						className="w-full h-9 pl-9 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="w-full h-11 min-h-[44px] pl-10 pr-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						style={{ minHeight: "44px" }}
 					/>
 				</div>
 
@@ -288,7 +301,8 @@ export function LabOrdersPage() {
 					<select
 						value={statusFilter}
 						onChange={(e) => setStatusFilter(e.target.value)}
-						className="h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+						className="h-11 min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer"
+						style={{ minHeight: "44px" }}
 					>
 						<option value="all">Все статусы</option>
 						<option value="sent">Отправлен в ЗТЛ</option>
@@ -298,25 +312,34 @@ export function LabOrdersPage() {
 						<option value="shipped">В клинике</option>
 						<option value="completed">Сдан / Установлен</option>
 					</select>
+
+					<select
+						value={doctorFilter}
+						onChange={(e) => setDoctorFilter(e.target.value)}
+						className="h-11 min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)] focus:ring-2 focus:ring-teal-500 focus:outline-none cursor-pointer"
+						style={{ minHeight: "44px" }}
+					>
+						<option value="all">Все врачи</option>
+						{doctorsList.map((doc: string) => (
+							<option key={doc} value={doc}>{doc}</option>
+						))}
+					</select>
 				</div>
 			</div>
 
 			{/* Main Orders Table / Cards */}
-			{isLoading && orders.length === 0 ? (
-				<div className="p-12 text-center text-[var(--muted)] text-xs flex flex-col items-center gap-3">
-					<Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+			{isLoading ? (
+				<div className="p-12 text-center text-[var(--muted)] flex items-center justify-center gap-2">
+					<Loader2 className="w-5 h-5 animate-spin text-teal-600" />
 					<span>Загрузка нарядов лаборатории...</span>
 				</div>
 			) : error ? (
-				<div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-xs flex items-center justify-between">
-					<span>{error}</span>
-					<button
-						type="button"
-						onClick={fetchOrders}
-						className="px-3 py-1 bg-rose-200 dark:bg-rose-900/60 text-rose-900 dark:text-rose-100 rounded-lg font-bold"
-					>
-						Повторить
-					</button>
+				<div className="p-6 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/50 rounded-2xl text-rose-700 dark:text-rose-300 flex items-center gap-3">
+					<AlertCircle className="w-5 h-5 shrink-0" />
+					<div>
+						<div className="font-bold">Не удалось загрузить наряды ЗТЛ</div>
+						<div className="text-xs">{error}</div>
+					</div>
 				</div>
 			) : filteredOrders.length === 0 ? (
 				<div className="p-12 text-center bg-[var(--paper)] rounded-2xl border border-dashed border-[var(--line)] text-[var(--muted)] text-xs space-y-3">
@@ -328,8 +351,9 @@ export function LabOrdersPage() {
 					<button
 						type="button"
 						onClick={handleOpenNewOrder}
-						className="min-h-[36px] h-9 px-4 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-2 shadow-md cursor-pointer transition-all active:scale-95 text-xs"
+						className="min-h-[44px] h-11 px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold inline-flex items-center gap-2 shadow-2xs cursor-pointer transition-all active:scale-95 text-xs"
 						data-testid="empty-state-add-first-lab-order-btn"
+						style={{ minHeight: "44px" }}
 					>
 						<Plus className="w-4 h-4" />
 						<span>+ Оформить заказ-наряд в лабораторию</span>
@@ -405,54 +429,44 @@ export function LabOrdersPage() {
 									)}
 								</div>
 
-								{/* Compact 1-Line 4-Status Progression Strip */}
-								<div className="grid grid-cols-4 gap-1 p-1 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl" role="group" aria-label="Статус наряда ЗТЛ">
-									{[
-										{ id: "sent", label: "Отправлен", activeClass: "bg-blue-600 text-white" },
-										{ id: "fitting", label: "Примерка", activeClass: "bg-amber-600 text-white" },
-										{ id: "ready", label: "Готов", activeClass: "bg-teal-600 text-white" },
-										{ id: "completed", label: "Сдан", activeClass: "bg-emerald-600 text-white" },
-									].map((st) => {
-										const currentCanon = (order.status === "fitting" || order.status === "refitting")
-											? "fitting"
-											: (order.status === "shipped" || order.status === "delivered" || order.status === "received")
-											? "ready"
-											: (order.status === "completed")
-											? "completed"
-											: "sent";
-										const isActive = currentCanon === st.id;
-
-										return (
-											<button
-												key={st.id}
-												type="button"
-												onClick={() => {
-													const targetApiStatus = st.id === "ready" ? "received" : st.id;
-													handleStatusChange(order.id!, targetApiStatus);
-												}}
-												className={`h-7 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 transition-all ${
-													isActive
-														? `${st.activeClass} shadow-sm`
-														: "text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]"
-												}`}
-											>
-												{isActive && <CheckCircle2 className="w-3 h-3" />}
-												<span>{st.label}</span>
-											</button>
-										);
-									})}
+								{/* Status Selector (Mandate 8c: >=44px) */}
+								<div className="flex items-center justify-between p-2 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl text-xs">
+									<span className="text-[var(--muted)] font-medium">Статус:</span>
+									<select
+										value={
+											(order.status === "fitting" || order.status === "refitting")
+												? "fitting"
+												: (order.status === "shipped" || order.status === "delivered" || order.status === "received")
+												? "received"
+												: (order.status === "completed")
+												? "completed"
+												: "sent"
+										}
+										onChange={(e) => {
+											const targetApiStatus = e.target.value === "received" ? "received" : e.target.value;
+											handleStatusChange(order.id!, targetApiStatus);
+										}}
+										className="h-11 min-h-[44px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-bold text-xs cursor-pointer text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-teal-500"
+										aria-label="Изменить статус наряда ЗТЛ"
+										style={{ minHeight: "44px" }}
+									>
+										<option value="sent">Отправлен в ЗТЛ</option>
+										<option value="fitting">На примерке</option>
+										<option value="received">Готов (в клинике)</option>
+										<option value="completed">Сдан пациенту</option>
+									</select>
 								</div>
 
-								{/* Card Bottom: Financials & Action Buttons */}
-								<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2 flex-wrap">
+								{/* Card Bottom: Financials & <= 2 Direct Actions + Context Menu (Sin 3) */}
+								<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2">
 									<div>
-										<span className="text-xs text-[var(--muted)] block">Себестоимость ЗТЛ:</span>
+										<span className="text-[11px] text-[var(--muted)] block">Себестоимость:</span>
 										<span className="text-sm font-black text-[var(--ink)] font-mono">
 											{order.priceRub != null ? money(order.priceRub) : "—"}
 										</span>
 									</div>
 
-									<div className="flex items-center gap-1.5 flex-wrap">
+									<div className="flex items-center gap-1.5">
 										{order.dueDate && (
 											<button
 												type="button"
@@ -461,40 +475,67 @@ export function LabOrdersPage() {
 													const d = new Date(order.dueDate!).toLocaleDateString("ru-RU");
 													showToast(`Переход в расписание на дату готовности: ${d} (зуб ${order.toothFdi || ""})`, "success");
 												}}
-												className="h-8 px-2.5 rounded-lg bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shadow-sm transition-all"
+												className="h-11 min-h-[44px] px-3 rounded-xl bg-[var(--teal)] text-white hover:opacity-90 font-bold text-xs inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
 												title="Запланировать слот в расписании"
+												style={{ minHeight: "44px" }}
 											>
 												<Calendar className="w-3.5 h-3.5" />
 												Запись
 											</button>
 										)}
 
-										{order.secureToken && (
-											<button
-												type="button"
-												onClick={() => copyPortalLink(order.secureToken)}
-												className="h-8 px-2.5 rounded-lg border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors inline-flex items-center gap-1 text-xs"
-												title="Скопировать ссылку для зубного техника"
-											>
-												<Link className="w-3.5 h-3.5" />
-											</button>
-										)}
-
-										<button
-											type="button"
-											onClick={() => handleOpenTracking(order)}
-											className="h-8 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-xs border border-indigo-200 dark:border-indigo-800 transition-colors"
-										>
-											Трекинг
-										</button>
-
 										<button
 											type="button"
 											onClick={() => handleOpenEditOrder(order)}
-											className="h-8 px-2.5 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors"
+											className="h-11 min-h-[44px] px-3.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center gap-1 cursor-pointer"
+											style={{ minHeight: "44px" }}
 										>
 											Детали
 										</button>
+
+										<div className="relative">
+											<button
+												type="button"
+												onClick={() => setOpenMenuOrderId((prev) => prev === order.id ? null : (order.id || null))}
+												className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+												style={{ minWidth: "44px", minHeight: "44px" }}
+												aria-label="Вторичные действия с нарядом ЗТЛ"
+												aria-expanded={openMenuOrderId === order.id}
+											>
+												<MoreVertical className="w-4 h-4" />
+											</button>
+
+											{openMenuOrderId === order.id && (
+												<div className="absolute right-0 bottom-full mb-1 z-50 w-52 p-1 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs">
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuOrderId(null);
+															handleOpenTracking(order);
+														}}
+														className="w-full text-left px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
+														style={{ minHeight: "44px" }}
+													>
+														<Layers className="w-4 h-4 text-indigo-500" />
+														Трекинг этапов
+													</button>
+													{order.secureToken && (
+														<button
+															type="button"
+															onClick={() => {
+																setOpenMenuOrderId(null);
+																copyPortalLink(order.secureToken!);
+															}}
+															className="w-full text-left px-3 py-2 min-h-[44px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer"
+															style={{ minHeight: "44px" }}
+														>
+															<Link className="w-4 h-4 text-teal-500" />
+															Копировать ссылку ЗТЛ
+														</button>
+													)}
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
 							</div>
