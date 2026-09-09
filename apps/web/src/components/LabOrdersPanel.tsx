@@ -1023,7 +1023,7 @@ export function LabOrdersPanel({ patientId }: LabOrdersPanelProps) {
 							title="1-клик быстрое оформление с дефолтными параметрами: Диоксид циркония, цвет VITA A2, срок 7 раб. дней"
 						>
 							<Zap className="w-3.5 h-3.5 text-amber-500" />
-							<span>⚡ 1-клик: Цирконий VITA A2 (+7 раб. дн.)</span>
+							<span>1-клик: Цирконий VITA A2 (+7 раб. дн.)</span>
 						</button>
 
 						<div className="flex gap-2 ml-auto">

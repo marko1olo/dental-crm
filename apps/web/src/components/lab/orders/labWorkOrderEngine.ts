@@ -398,6 +398,10 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 	const teethFormatted = order.selectedTeeth.length > 0 ? order.selectedTeeth.sort((a, b) => a - b).join(', ') : 'Не указаны';
 	const barcodeSvg = generateBarcodeSvg(order.orderNumber, 240, 50);
 	const qrSvg = generateQrCodeSvg(`DENTE-LAB:${order.orderNumber}|PATIENT:${order.patientName}|TEETH:${teethFormatted}`, 90);
+	const isSigned = order.currentStage === 'delivered_completed' || (order.currentStage as string) === 'completed' || (order.currentStage as string) === 'delivered';
+	const stampText = isSigned ? 'ПОДПИСАНО ВРАЧОМ' : 'ЧЕРНОВИК (В РАБОТЕ)';
+	const stampColor = isSigned ? '#059669' : '#d97706';
+	const stampBg = isSigned ? '#f0fdf4' : '#fffbeb';
 	const odontogramSvg = generateFdiOdontogramSvg(order.selectedTeeth);
 
 	return `<!DOCTYPE html>
@@ -460,6 +464,11 @@ export function generatePrintableLabWorkOrderHtml(order: LabWorkOrder): string {
 			</td>
 		</tr>
 	</table>
+
+	<div style="border: 2px dashed ${stampColor}; background: ${stampBg}; color: ${stampColor}; font-weight: 800; font-size: 11px; padding: 5px 10px; border-radius: 4px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 0.04em; text-transform: uppercase;">
+		<span>ШТАМП: ${stampText} (МАНДАТ 8E)</span>
+		<span>ЭТАП: ${stage.nameRu}</span>
+	</div>
 
 	<div class="grid-2">
 		<div class="col">

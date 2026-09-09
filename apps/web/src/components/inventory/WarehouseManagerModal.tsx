@@ -396,7 +396,7 @@ export function WarehouseManagerModal({
 
 				{/* 1-ROW TOOLBAR (Mandate 8c: >=44px touch targets) */}
 				{activeView === "inventory" && (
-					<div className="px-5 py-2.5 bg-[var(--paper,#ffffff)] border-b border-[var(--border,#e2e8f0)] flex items-center gap-2 flex-wrap text-xs shrink-0">
+					<div className="px-5 py-2.5 bg-[var(--paper,#ffffff)] border-b border-[var(--border,#e2e8f0)] flex items-center gap-2 overflow-x-auto no-scrollbar text-xs shrink-0">
 						{/* Поиск */}
 						<div className="relative flex-1 min-w-[180px] max-w-xs">
 							<Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#94a3b8)]" />
@@ -599,7 +599,7 @@ export function WarehouseManagerModal({
 					) : (
 						/* SINGLE SIGNER ACT PREVIEW (МАНДАТ 8e: ЕДИНОЛИЧНОЕ СПИСАНИЕ БЕЗ 3-СТОРОННЕЙ КОМИССИИ) */
 						<div className="bg-[var(--paper,#ffffff)] border border-[var(--border,#e2e8f0)] rounded-lg p-6 max-w-3xl mx-auto text-xs space-y-4 font-sans">
-							<div className="flex items-center justify-between border-b border-slate-300 pb-3">
+							<div className="flex items-center justify-between border-b border-[var(--border,#cbd5e1)] dark:border-slate-700 pb-3">
 								<div className="space-y-1">
 									<h3 className="text-sm font-bold uppercase tracking-wide">
 										АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ
@@ -658,7 +658,7 @@ export function WarehouseManagerModal({
 												<td className="py-1.5 px-2.5">
 													<div className="font-medium">{line.name}</div>
 													{line.isOverdraft && (
-														<span className="text-[10px] text-amber-600 font-semibold">
+														<span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
 															[Мягкий овердрафт]
 														</span>
 													)}

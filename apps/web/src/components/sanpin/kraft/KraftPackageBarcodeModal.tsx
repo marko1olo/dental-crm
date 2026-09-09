@@ -1122,7 +1122,7 @@ export function KraftPackageBarcodeModal({
 										data-testid="kraft-quick-batch-and-print-btn"
 									>
 										<Printer size={20} />
-										<span>⚡ 1-Клик печать пачки (10 шт. / 30 дн.)</span>
+										<span>1-Клик печать пачки (10 шт. / 30 дн.)</span>
 									</button>
 
 									<button

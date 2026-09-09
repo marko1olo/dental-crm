@@ -302,6 +302,12 @@ describe('Statutory Dental Laboratory Work Order & Tracking Studio Suite', () =>
 			assert.ok(html.includes('Врач-ортопед'));
 			assert.ok(html.includes('Зубной техник'));
 			assert.ok(html.includes('<svg'));
+			assert.ok(html.includes('ШТАМП: ЧЕРНОВИК (В РАБОТЕ) (МАНДАТ 8E)'));
+
+			// Verify signed stage renders signed stamp
+			order.currentStage = 'delivered_completed';
+			const signedHtml = generatePrintableLabWorkOrderHtml(order);
+			assert.ok(signedHtml.includes('ШТАМП: ПОДПИСАНО ВРАЧОМ (МАНДАТ 8E)'));
 		});
 	});
 

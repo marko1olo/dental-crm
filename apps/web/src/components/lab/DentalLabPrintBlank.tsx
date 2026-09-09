@@ -42,6 +42,8 @@ export interface DentalLabPrintBlankProps {
 	totalLabPriceRub?: number;
 	portalUrl: string;
 	handlePrint: () => void;
+	isDraft?: boolean;
+	isSigned?: boolean;
 }
 
 export function DentalLabPrintBlank({
@@ -76,6 +78,8 @@ export function DentalLabPrintBlank({
 	totalLabPriceRub,
 	portalUrl,
 	handlePrint,
+	isDraft = true,
+	isSigned = false,
 }: DentalLabPrintBlankProps) {
 	const finalShade =
 		shadeSystem === "3d_master"
@@ -139,6 +143,25 @@ export function DentalLabPrintBlank({
 							</span>
 						)}
 					</div>
+				</div>
+
+				{/* Watermark / Statutory Stamp (Mandate 8e item 5) */}
+				<div
+					className="p-2.5 rounded-lg border text-xs font-black uppercase tracking-wider flex justify-between items-center"
+					style={{
+						borderColor: isSigned && !isDraft ? "#059669" : "#d97706",
+						backgroundColor: isSigned && !isDraft ? "#f0fdf4" : "#fffbeb",
+						color: isSigned && !isDraft ? "#047857" : "#b45309",
+					}}
+				>
+					<span>
+						{isSigned && !isDraft
+							? "ШТАМП: ПОДПИСАНО ВРАЧОМ • ОФИЦИАЛЬНЫЙ НАPЯД ЗТЛ"
+							: "ШТАМП: ЧЕРНОВИК • ПРЕДВАРИТЕЛЬНОЕ ТЗ (МАНДАТ 8E)"}
+					</span>
+					<span className="font-mono text-[11px] font-bold">
+						{isSigned && !isDraft ? "СТАТУС: ПОДПИСАН" : "СТАТУС: ЧЕРНОВИК"}
+					</span>
 				</div>
 
 				{/* Info Table */}
