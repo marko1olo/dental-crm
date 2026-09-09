@@ -13,9 +13,12 @@ import {
 	FileSpreadsheet,
 	FileText,
 	Info,
+	Banknote,
+	Coins,
 	CreditCard,
 	Percent,
 	Plus,
+	QrCode,
 	Printer,
 	Search,
 	Shield,
@@ -945,27 +948,31 @@ export const InsurancePreAuthModal: React.FC<InsurancePreAuthModalProps> = ({
 						<div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-line">
 							<div className="flex items-center gap-2 flex-wrap">
 								<span className="text-xs font-semibold text-muted">Доплата пациента:</span>
-								<div className="flex gap-1">
+								<div className="flex gap-1.5 flex-wrap">
 									{[
-										{ id: "card", label: "💳 Карта" },
-										{ id: "cash", label: "💵 Наличные" },
-										{ id: "sbp", label: "📱 СБП QR" },
-										{ id: "mixed", label: "⚖ Смешанная" },
-									].map((method) => (
-										<button
-											key={method.id}
-											type="button"
-											onClick={() => setPatientPaymentMethod(method.id as any)}
-											className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-												patientPaymentMethod === method.id
-													? "bg-teal-600 text-white"
-													: "bg-paper border border-line text-ink hover:bg-paper-soft"
-											}`}
-											style={{ minHeight: "36px" }}
-										>
-											{method.label}
-										</button>
-									))}
+										{ id: "card", label: "Карта", icon: CreditCard },
+										{ id: "cash", label: "Наличные", icon: Banknote },
+										{ id: "sbp", label: "СБП QR", icon: QrCode },
+										{ id: "mixed", label: "Смешанная", icon: Coins },
+									].map((method) => {
+										const IconComp = method.icon;
+										return (
+											<button
+												key={method.id}
+												type="button"
+												onClick={() => setPatientPaymentMethod(method.id as any)}
+												className={`px-3 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 touch-manipulation cursor-pointer ${
+													patientPaymentMethod === method.id
+														? "bg-teal-600 text-white shadow-xs"
+														: "bg-paper border border-line text-ink hover:bg-paper-soft"
+												}`}
+												style={{ minHeight: "44px" }}
+											>
+												<IconComp size={15} className="shrink-0" />
+												<span>{method.label}</span>
+											</button>
+										);
+									})}
 								</div>
 							</div>
 

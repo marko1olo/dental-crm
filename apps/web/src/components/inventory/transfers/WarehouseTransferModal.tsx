@@ -96,22 +96,22 @@ export const WarehouseTransferModal: React.FC<WarehouseTransferModalProps> = ({
 
 	// 2. Лица и транспортировка
 	const [dispatchedBy, setDispatchedBy] = useState<string>(
-		initialDocument?.dispatchedByFullName || "Васильев О.П.",
+		initialDocument?.dispatchedByFullName || "",
 	);
 	const [dispatchedPosition, setDispatchedPosition] = useState<string>(
-		initialDocument?.dispatchedByPosition || "Заведующий складом",
+		initialDocument?.dispatchedByPosition || "Материально ответственное лицо",
 	);
 	const [receivedBy, setReceivedBy] = useState<string>(
-		initialDocument?.receivedByFullName || "Смирнова А.В.",
+		initialDocument?.receivedByFullName || "",
 	);
 	const [receivedPosition, setReceivedPosition] = useState<string>(
-		initialDocument?.receivedByPosition || "Главная медсестра",
+		initialDocument?.receivedByPosition || "Получатель ТМЦ",
 	);
 	const [driverName, setDriverName] = useState<string>(
-		initialDocument?.transportDriverFullName || "Кузнецов М.С. (Служба доставки)",
+		initialDocument?.transportDriverFullName || "",
 	);
 	const [vehiclePlate, setVehiclePlate] = useState<string>(
-		initialDocument?.transportVehiclePlate || "А 784 МЕ 777",
+		initialDocument?.transportVehiclePlate || "",
 	);
 	const [notes, setNotes] = useState<string>(initialDocument?.notes || "");
 

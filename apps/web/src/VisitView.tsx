@@ -7,7 +7,6 @@ import { showToast } from "./components/GlobalToast";
 import { VisiographAnalyzer } from "./components/imaging/VisiographAnalyzer";
 import { PatientAvatar } from "./components/PatientAvatar";
 import { SmartMicrophoneButton } from "./components/SmartMicrophoneButton";
-import { SpeechChunksInspector } from "./components/visit/SpeechChunksInspector";
 import { VisitDiagnosticsTab } from "./components/visit/VisitDiagnosticsTab";
 import { VisitEmkTab } from "./components/visit/VisitEmkTab";
 import { VisitMainTabs, type VisitSubViewTab } from "./components/visit/VisitMainTabs";
@@ -1993,8 +1992,6 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 						) : null}
 					</div>
 				</div>
-
-				<SpeechChunksInspector />
 
 				<VisiographAnalyzer
 					onInsertToProtocol={(protocolText) => {

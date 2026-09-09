@@ -672,7 +672,7 @@ export function ProcedureMaterialDeductionModal({
 							title="Стандартный набор: анестезия 1.7 мл + карпульная игла + валики (Мандат 8e п. 10, 8k)"
 						>
 							<Zap size={14} className="shrink-0 text-amber-500" />
-							<span>Стандартный набор: анестезия 1.7 мл + карпульная игла + валики</span>
+							<span>Стандартная анестезия 1.7 мл + карпульная игла + валики</span>
 						</button>
 
 						<button

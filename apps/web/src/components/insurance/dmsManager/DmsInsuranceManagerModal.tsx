@@ -13,9 +13,12 @@ import {
 	Building2,
 	Calendar,
 	CheckCircle2,
+	Banknote,
+	Coins,
 	CreditCard,
 	Download,
 	Eye,
+	QrCode,
 	FileSpreadsheet,
 	FileText,
 	Filter,
@@ -1783,32 +1786,39 @@ export const DmsInsuranceManagerModal: React.FC<DmsInsuranceManagerModalProps> =
 								</div>
 
 								<div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-									<div style={{ display: "flex", gap: 6 }}>
+									<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
 										{[
-											{ id: "card", label: "💳 Карта" },
-											{ id: "cash", label: "💵 Нал" },
-											{ id: "sbp", label: "📱 СБП" },
-											{ id: "mixed", label: "⚖ Смешанная" },
-										].map((m) => (
-											<button
-												key={m.id}
-												type="button"
-												onClick={() => setSplitPatientPayMethod(m.id as any)}
-												style={{
-													padding: "6px 12px",
-													borderRadius: 8,
-													fontSize: "0.75rem",
-													fontWeight: 600,
-													cursor: "pointer",
-													border: splitPatientPayMethod === m.id ? "1.5px solid var(--teal, #0d9488)" : "1px solid var(--line, #cbd5e1)",
-													background: splitPatientPayMethod === m.id ? "var(--teal, #0d9488)" : "var(--paper, #ffffff)",
-													color: splitPatientPayMethod === m.id ? "#ffffff" : "var(--ink, #0f172a)",
-													minHeight: 36,
-												}}
-											>
-												{m.label}
-											</button>
-										))}
+											{ id: "card", label: "Карта", icon: CreditCard },
+											{ id: "cash", label: "Нал", icon: Banknote },
+											{ id: "sbp", label: "СБП", icon: QrCode },
+											{ id: "mixed", label: "Смешанная", icon: Coins },
+										].map((m) => {
+											const IconComp = m.icon;
+											return (
+												<button
+													key={m.id}
+													type="button"
+													onClick={() => setSplitPatientPayMethod(m.id as any)}
+													style={{
+														padding: "8px 14px",
+														borderRadius: 8,
+														fontSize: "0.75rem",
+														fontWeight: 600,
+														cursor: "pointer",
+														display: "inline-flex",
+														alignItems: "center",
+														gap: 6,
+														border: splitPatientPayMethod === m.id ? "1.5px solid var(--teal, #0d9488)" : "1px solid var(--line, #cbd5e1)",
+														background: splitPatientPayMethod === m.id ? "var(--teal, #0d9488)" : "var(--paper, #ffffff)",
+														color: splitPatientPayMethod === m.id ? "#ffffff" : "var(--ink, #0f172a)",
+														minHeight: 44,
+													}}
+												>
+													<IconComp size={15} />
+													<span>{m.label}</span>
+												</button>
+											);
+										})}
 									</div>
 
 									<button

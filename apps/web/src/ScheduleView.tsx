@@ -815,6 +815,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 							specialization: chairData.specialization,
 							color: chairData.color,
 							active: chairData.isActive ?? true,
+							defaultDoctorId: chairData.defaultDoctorId || null,
 						};
 						return {
 							...prev,
@@ -842,6 +843,7 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 						room: chairData.roomNumber || chairData.room,
 						specialization: chairData.specialization,
 						color: chairData.color,
+						defaultDoctorId: chairData.defaultDoctorId || null,
 						...(isUpdate ? { active: chairData.isActive } : {}),
 					}),
 				});
@@ -929,14 +931,17 @@ export function ScheduleView(rawProps?: Partial<ScheduleViewProps>) {
 				if (!res.ok) {
 					throw new Error(`HTTP ${res.status}`);
 				}
+				const createdData = await res.json().catch(() => null);
 				if (typeof props.loadDashboard === "function") {
 					await props.loadDashboard();
 				}
 				showToast(`Врач «${doctorData.fullName}» успешно добавлен в расписание`, "success", 3500);
+				return createdData || { id: doctorData.id };
 			} catch (err) {
 				console.warn("Failed to add doctor via QuickAddDoctorModal:", err);
 				applyLocalOptimisticDoctor();
 				showToast(`Врач «${doctorData.fullName}» добавлен локально`, "info", 3000);
+				return { id: doctorData.id };
 			}
 		},
 		[props.loadDashboard, props.setDashboard],

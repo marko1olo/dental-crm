@@ -3291,6 +3291,28 @@
     * Подтверждено наличие 1-клик соматической нормы за 5 секунд в мобильном чекине.
 * **Верификация**: `check:encoding` 5139 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 65/65 тестов анестезии PASS, 64/64 тестов расписания PASS, 10/10 тестов ToothContextDrawer PASS.
 
+### Wave 80: Ликвидация аудио-инспекторов, зомби-виджетов, багов привязки кресел и полировка 7 смертных грехов UI
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Результаты**:
+  - **Группа 1 (Клинический прием, де-блоатинг и ликвидация зомби-виджетов)**:
+    * *VisitView.tsx*: Удален рендеринг инженерной отладочной таблицы `<SpeechChunksInspector />` прямо из середины дневника приёма врача. Экран очищен от технических дампов аудио-чанков.
+    * *AnesthesiaOnsetTimerWidget.tsx*: Физически удален неиспользуемый файл секундомера онемения анестезии со звуковыми сигналами (152 строки мертвого кода реальности).
+    * *VisitDiarySection.tsx*: Удалены неиспользуемые импорты `AnesthesiaAspirationJournalModal` и `ToothAnesthesiaCalculator`.
+    * *panelsAreMounted.test.ts*: Зарегистрирован `SpeechChunksInspector.tsx` в `DECLARED_UNMOUNTED` как сервисная панель.
+  - **Группа 2 (Расписание и связка с креслами StomX / IDENT Parity)**:
+    * *ScheduleGrid.tsx*: Устранена ошибка потери привязки врача к креслу в `onAddDoctor` (вызов `handleBindDoctorToChair` гарантирован при наличии `preferredChairId`).
+    * *ScheduleGrid.tsx*: Заменена мутация `chairs.push(...)` на иммутабельное обновление массива.
+    * *ScheduleView.tsx*: В `handleAddChairFromSchedule` добавлен `defaultDoctorId` в тело `POST /api/settings/chairs` и в оптимистичный стейт. `handleAddDoctorFromSchedule` возвращает созданные данные врача.
+  - **Группа 3 (Ликвидация 7 смертных грехов UI и Apple HIG)**:
+    * *ToothRadialMenu.tsx*: Кнопки 6 поверхностей, 8 макросов Блэка и 6 вторичных дефектов увеличены с 28px до нормативных `min-h-[44px]` по Apple HIG для удобного нажатия в медицинских перчатках.
+    * *PatientsView.tsx*: Плашка аллергии и стоп-факторов дополнена `title={allergyWarning}` для предотвращения обрезания информации.
+    * *MobileSelfCheckinModal.tsx*: Сырые эмодзи `🚨 ` и `⚠️ ` в соматических рисках заменены на векторные Lucide-иконки `ShieldAlert` и `AlertTriangle`.
+    * *InformedConsentModal.tsx*: Устранен хардкод цветов `#475569`, `#0f172a`, `#64748b` в блоке подписей в пользу CSS-токенов `var(--muted)` и `var(--ink)`.
+    * *InsurancePreAuthModal.tsx* & *DmsInsuranceManagerModal.tsx*: Сырые эмодзи `💳`, `💵`, `📱`, `⚖` в методах сплит-оплаты заменены на Lucide `CreditCard`, `Banknote`, `QrCode`, `Coins` с увеличением тач-таргетов до $\ge 44$px.
+    * *WarehouseTransferModal.tsx*: Очищены фиктивные хардкод-персоны («Васильев О.П.», «Смирнова А.В.») и доставка грузовиками («Кузнецов М.С.», «А 784 МЕ 777»).
+    * *PaymentModal.tsx*: В `handleCashSubmit` и `handleSplitSubmit` добавлена прямая обработка 100% гарантийной скидки / 0 ₽, предотвращающая падение с HTTP 400.
+* **Верификация**: `check:encoding` 5138 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web), 12/12 тестов списания материалов PASS, 10/10 тестов контекстной шторки зуба PASS.
+
 
 
 

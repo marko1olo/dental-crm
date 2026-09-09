@@ -2391,6 +2391,29 @@
 - **Файлы**: `apps/web/src/VisitView.tsx`, `apps/web/src/components/diagnostic/ToothContextDrawer.tsx`, `apps/web/src/components/diagnostic/__tests__/ToothContextDrawer.test.tsx`, `apps/web/src/components/visit/VisitEmkTab.tsx`, `apps/web/src/components/visit/anesthesia/AnesthesiaAspirationJournalModal.tsx`, `apps/web/src/components/visit/anesthesia/AspirationTestCockpit.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/ScheduleView.tsx`.
 - **Тесты**: `apps/web/src/components/diagnostic/__tests__/ToothContextDrawer.test.tsx` (10/10 PASS), `apps/web/src/components/visit/anesthesia/__tests__/anesthesiaExpressPresets.test.ts` (14/14 PASS), monorepo `typecheck` Exit Code 0 (коммиты `fe7bfd89b`, `184505543`).
 
+#### 2.10.224. Клинический прием, расписание и склад: ликвидация аудио-инспекторов, зомби-виджетов, багов привязки кресел и полировка 7 смертных грехов UI (Wave 80)
+- **Назначение**: Очистка клинического приёма от технических дебаг-таблиц (инспектор чанков диктовки), физическое удаление мертвых секундомеров реальности `AnesthesiaOnsetTimerWidget`, устранение бага потери привязки врача к креслу в расписании (StomX паритет), поддержка 100% гарантийной скидки (0 ₽) в кассе без HTTP 400 и устранение 7 смертных грехов UI (Мандаты 8c, 8d, 8e, 8i, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Очистка экрана приёма и ликвидация зомби-виджетов*:
+     - В `VisitView.tsx` удален рендеринг инженерной отладочной таблицы `<SpeechChunksInspector />` и её импорт. Экран врача очищен от технических дампов аудио-чанков;
+     - Физически удален неиспользуемый файл `AnesthesiaOnsetTimerWidget.tsx` (152 строки процедурного секундомера наступления блокады со звуковыми сигналами);
+     - В `VisitDiarySection.tsx` удалены неиспользуемые импорты `AnesthesiaAspirationJournalModal` и `ToothAnesthesiaCalculator`;
+     - В `panelsAreMounted.test.ts` `SpeechChunksInspector.tsx` зарегистрирован в `DECLARED_UNMOUNTED` как автономная сервисная панель.
+  2. *Эргономика расписания и связка кресел (StomX / IDENT Parity)*:
+     - В `ScheduleGrid.tsx` исправлен обработчик `onAddDoctor`: гарантирован вызов `handleBindDoctorToChair` при создании врача с выбранным креслом независимо от ветки props;
+     - В `ScheduleGrid.tsx` устранена прямая мутация `chairs.push(...)` в пользу иммутабельного обновления состояния;
+     - В `ScheduleView.tsx` обеспечена передача `defaultDoctorId` при создании кресла через API и оптимистичный стейт, а `handleAddDoctorFromSchedule` возвращает созданные данные врача.
+  3. *Ликвидация грехов UI (Мандат 8d, 8c)*:
+     - В `ToothRadialMenu.tsx` кнопки 6 поверхностей (O, V, L, M, D, C), 8 макросов Блэка (I–VI) и 6 вторичных дефектов (Кд, Дп, Дк, Г/Фл, В/ВК, Гф) увеличены с 28px до нормативных `min-h-[44px]` по Apple HIG для комфортной работы врача в перчатках;
+     - В `PatientsView.tsx` плашка аллергии и стоп-факторов дополнена атрибутом `title={allergyWarning}` для предотвращения обрезания клинически критичной информации;
+     - В `MobileSelfCheckinModal.tsx` текстовые эмодзи `🚨 ` и `⚠️ ` в факторах риска заменены на векторные Lucide-иконки `ShieldAlert` и `AlertTriangle`;
+     - В `InformedConsentModal.tsx` устранен хардкод цветов `#475569`, `#0f172a`, `#64748b` в блоке подписей в пользу CSS-токенов `var(--muted)` и `var(--ink)`;
+     - В `InsurancePreAuthModal.tsx` и `DmsInsuranceManagerModal.tsx` сырые эмодзи `💳`, `💵`, `📱`, `⚖` в методах сплит-оплаты заменены на векторные иконки `CreditCard`, `Banknote`, `QrCode`, `Coins`, а высота кнопок увеличена до $\ge 44$px;
+     - В `WarehouseTransferModal.tsx` очищены хардкодные фиктивные имена сотрудников («Васильев О.П.», «Смирнова А.В.») и грузовой доставки («Кузнецов М.С.», «А 784 МЕ 777») в пользу контекстных пустых значений;
+     - В `PaymentModal.tsx` добавлена прямая обработка `isWarranty100` и `totalDueRub <= 0` в `handleCashSubmit` и `handleSplitSubmit`, исключающая падение кассы с HTTP 400 («Сумма оплаты должна быть строго больше нуля») при гарантийных переделках.
+- **Файлы**: `apps/web/src/VisitView.tsx`, `apps/web/src/components/odontogram/ToothRadialMenu.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx`, `apps/web/src/components/consents/InformedConsentModal.tsx`, `apps/web/src/components/visit/VisitDiarySection.tsx`, `apps/web/src/components/inventory/transfers/WarehouseTransferModal.tsx`, `apps/web/src/components/insurance/InsurancePreAuthModal.tsx`, `apps/web/src/components/insurance/dmsManager/DmsInsuranceManagerModal.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/finance/PaymentModal.tsx`, `apps/web/src/components/inventory/ProcedureMaterialDeductionModal.tsx`, `apps/web/src/tests/panelsAreMounted.test.ts`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/procedureMaterialDeductionAutonomy.test.tsx` (12/12 pass), `apps/web/src/components/diagnostic/__tests__/ToothContextDrawer.test.tsx` (10/10 pass), `npm run check:encoding` (5138 файлов, 0 ошибок), monorepo `typecheck` Exit Code 0.
+
 
 
 

@@ -2,9 +2,11 @@ import { generateQrCodeSvg } from "@dental/shared";
 import {
 	Activity,
 	AlertCircle,
+	AlertTriangle,
 	CheckCircle2,
 	Droplets,
 	HeartPulse,
+	ShieldAlert,
 	ShieldCheck,
 	Ticket,
 	Zap,
@@ -716,9 +718,13 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 											key={alert.id}
 											className={`selfcheckin-alert-badge alert-${alert.severity}`}
 										>
-											<div className="selfcheckin-alert-title">
-												{alert.severity === "danger" ? "🚨 " : "⚠️ "}
-												{alert.title}
+											<div className="selfcheckin-alert-title flex items-center gap-1.5">
+												{alert.severity === "danger" ? (
+													<ShieldAlert size={16} className="text-rose-600 dark:text-rose-400 shrink-0 inline-block" aria-hidden="true" />
+												) : (
+													<AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 inline-block" aria-hidden="true" />
+												)}
+												<span>{alert.title}</span>
 											</div>
 											<div className="selfcheckin-alert-msg">
 												{alert.message}

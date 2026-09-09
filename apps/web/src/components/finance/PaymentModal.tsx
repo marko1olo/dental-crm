@@ -694,6 +694,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const amountRub = (effectiveAmountKopecks / 100).toFixed(2);
 
 	const handleCashSubmit = async () => {
+		if (isWarranty100 || totalDueRub <= 0) {
+			showToast(`Визит/счёт оформлен по 100% гарантии (0 ₽) (${effectiveCashier})`, "success");
+			onSuccess({
+				method: "warranty_discount_100",
+				amountKopecks: 0,
+				discountRub: discountCalc.discountRub,
+				discountPercent: discountCalc.discountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || "Гарантийная переделка / скидка 100%",
+			});
+			onClose();
+			return;
+		}
+
 		if (payerType === "legal_entity") {
 			const validation = validate54FzBuyerInn(buyerInn, payerType);
 			if (!validation.isValid) {
@@ -771,6 +785,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 	const isBalanced = Math.abs(totalAllocatedRub - totalDueRub) < 0.009;
 
 	const handleSplitSubmit = async () => {
+		if (isWarranty100 || totalDueRub <= 0) {
+			showToast(`Визит/счёт оформлен по 100% гарантии (0 ₽) (${effectiveCashier})`, "success");
+			onSuccess({
+				method: "warranty_discount_100",
+				amountKopecks: 0,
+				discountRub: discountCalc.discountRub,
+				discountPercent: discountCalc.discountPercent,
+				rawTotalRub: rawTotalDueRub,
+				discountReason: discountReason || "Гарантийная переделка / скидка 100%",
+			});
+			onClose();
+			return;
+		}
+
 		if (payerType === "legal_entity") {
 			const validation = validate54FzBuyerInn(buyerInn, payerType);
 			if (!validation.isValid) {

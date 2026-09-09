@@ -1004,7 +1004,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								</div>
 
 								{/* 6-Surface interactive toggle chips */}
-								<div className="flex items-center gap-1 pt-0.5 border-t border-[var(--odontogram-border-subtle)]">
+								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--odontogram-border-subtle)] flex-wrap">
 									<span className="text-[11px] uppercase font-black text-teal-700 dark:text-teal-400 px-1">Отдельно:</span>
 									{(["O", "V", "L", "M", "D", "C"] as const).map((surf) => {
 										const isActive = selectedSurfaces.includes(surf);
@@ -1013,7 +1013,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 												key={surf}
 												type="button"
 												onClick={() => toggleSurface(surf)}
-												className={`min-h-[28px] min-w-[28px] px-2 py-0.5 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none ${
+												className={`min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
 													isActive
 														? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
 														: "bg-[var(--odontogram-paper)] text-[var(--odontogram-ink)] border-[var(--odontogram-border-subtle)] hover:bg-[var(--odontogram-surface-hover)]"
@@ -1027,7 +1027,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								</div>
 
 								{/* Black Classes I-VI quick macros */}
-								<div className="flex items-center gap-1 pt-0.5 border-t border-[var(--odontogram-border-subtle)]">
+								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--odontogram-border-subtle)] flex-wrap">
 									<span className="text-[11px] uppercase font-black text-amber-600 dark:text-amber-400 px-1">Блэк:</span>
 									<button
 										type="button"
@@ -1035,7 +1035,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["O"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="I класс: Окклюзионные фиссуры и ямки (O)"
 									>
 										[I: O]
@@ -1046,7 +1046,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "O", "D"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="II класс: Медиально-окклюзионно-дистальная полость (MOD)"
 									>
 										[II: MOD]
@@ -1057,7 +1057,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "O"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="II класс: Медиально-окклюзионная полость (MO)"
 									>
 										[II: MO]
@@ -1068,7 +1068,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["O", "D"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="II класс: Окклюзионно-дистальная полость (OD)"
 									>
 										[II: OD]
@@ -1079,7 +1079,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "D"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="III класс: Апроксимальные поверхности резцов/клыков без режущего края (M/D)"
 									>
 										[III: M/D]
@@ -1090,7 +1090,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["M", "O", "D"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="IV класс: Апроксимальные поверхности резцов/клыков с поражением режущего края"
 									>
 										[IV: Реж]
@@ -1101,7 +1101,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["C"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="V класс: Пришеечная полость у шейки зуба (C/Cervical)"
 									>
 										[V: Приш]
@@ -1112,7 +1112,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["O"]);
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="VI класс: Бугры моляров/премоляров или режущий край"
 									>
 										[VI: Бугры]
@@ -1120,7 +1120,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 								</div>
 
 								{/* Secondary Defects (Кд, Дп, Дк, Г/Фл, В, Гф) */}
-								<div className="flex items-center gap-1 pt-0.5 border-t border-[var(--odontogram-border-subtle)]">
+								<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--odontogram-border-subtle)] flex-wrap">
 									<span className="text-[11px] uppercase font-black text-indigo-600 dark:text-indigo-400 px-1">Дефекты:</span>
 									<button
 										type="button"
@@ -1128,7 +1128,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", ["C"], "wedge_defect");
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/30 transition-all cursor-pointer border border-indigo-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/30 transition-all cursor-pointer border border-indigo-500/30 touch-manipulation flex items-center justify-center"
 										title="Кд: Клиновидный дефект пришеечной области (K03.1)"
 										data-testid="radial-desktop-defect-wedge-btn"
 									>
@@ -1140,7 +1140,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Filled", selectedSurfaces.length > 0 ? selectedSurfaces : surfaces, "defective_filling");
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/30 transition-all cursor-pointer border border-amber-500/30 touch-manipulation flex items-center justify-center"
 										title="Дп: Дефект пломбы (нарушение краевого прилегания, скол, рецидив)"
 										data-testid="radial-desktop-defect-filling-btn"
 									>
@@ -1152,7 +1152,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Crown", undefined, "defective_crown");
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 touch-manipulation flex items-center justify-center"
 										title="Дк: Дефект коронки (расцементировка, скол керамики, зазор)"
 										data-testid="radial-desktop-defect-crown-btn"
 									>
@@ -1164,7 +1164,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Caries", selectedSurfaces.length > 0 ? selectedSurfaces : ["V"], "hypoplasia_fluorosis");
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/30 transition-all cursor-pointer border border-sky-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/30 transition-all cursor-pointer border border-sky-500/30 touch-manipulation flex items-center justify-center"
 										title="Г / Фл: Гипоплазия эмали (K00.4) или Флюороз (K00.3)"
 										data-testid="radial-desktop-defect-hypoplasia-btn"
 									>
@@ -1176,7 +1176,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Crown", ["V"], "veneer_inlay");
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-teal-500/15 text-teal-800 dark:text-teal-200 hover:bg-teal-500/30 transition-all cursor-pointer border border-teal-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-teal-500/15 text-teal-800 dark:text-teal-200 hover:bg-teal-500/30 transition-all cursor-pointer border border-teal-500/30 touch-manipulation flex items-center justify-center"
 										title="В / ВК: Винир или вкладка"
 										data-testid="radial-desktop-defect-veneer-btn"
 									>
@@ -1188,7 +1188,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 											onSelectState("Filled", ["O"], "fissure_sealant");
 											onClose();
 										}}
-										className="min-h-[28px] px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/30 transition-all cursor-pointer border border-emerald-500/30 touch-manipulation"
+										className="min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/30 transition-all cursor-pointer border border-emerald-500/30 touch-manipulation flex items-center justify-center"
 										title="Гф: Герметизация фиссур"
 										data-testid="radial-desktop-defect-sealant-btn"
 									>

@@ -171,9 +171,9 @@ export interface ScheduleGridProps {
 		) => void)
 		| undefined;
 	onOpenAddChair?: (() => void) | undefined;
-	onAddChair?: ((chairData: QuickAddChairData) => Promise<void> | void) | undefined;
+	onAddChair?: ((chairData: QuickAddChairData) => Promise<any> | any) | undefined;
 	onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
-	onAddDoctor?: ((doctorData: QuickAddDoctorData) => Promise<void> | void) | undefined;
+	onAddDoctor?: ((doctorData: QuickAddDoctorData) => Promise<any> | any) | undefined;
 	gridStepMinutes?: 15 | 30 | 60 | undefined;
 	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
 	chairMaintenanceBlocks?: ChairMaintenanceBlock[] | undefined;
@@ -4267,8 +4267,11 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 					active: chairData.isActive ?? true,
 					branchId: chairData.branchId,
 				};
-				if (dashboard?.clinicSettings?.chairs) {
-					dashboard.clinicSettings.chairs.push(newChair as any);
+				if (dashboard?.clinicSettings) {
+					dashboard.clinicSettings.chairs = [
+						...(dashboard.clinicSettings.chairs || []),
+						newChair as any,
+					];
 				}
 				if (chairData.defaultDoctorId) {
 					handleConfirmAssignDoctor(newChair.id, chairData.defaultDoctorId, "full");
@@ -4286,8 +4289,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 			chairs={effectiveChairs}
 			existingDoctorsCount={doctors.length}
 			onAddDoctor={async (docData) => {
+				let createdDoctorId = docData.id;
 				if (props.onAddDoctor) {
-					await props.onAddDoctor(docData);
+					const createdResult: any = await props.onAddDoctor(docData);
+					if (createdResult && createdResult.id) {
+						createdDoctorId = createdResult.id;
+					}
 				} else {
 					const newStaffMember: any = {
 						id: docData.id || `doc-quick-${Date.now()}`,
@@ -4308,12 +4315,13 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 						createdAt: new Date().toISOString(),
 						updatedAt: new Date().toISOString(),
 					};
+					createdDoctorId = newStaffMember.id;
 					if (dashboard?.clinicSettings) {
 						dashboard.clinicSettings.staff = [...(dashboard.clinicSettings.staff || []), newStaffMember];
 					}
-					if (docData.preferredChairId) {
-						handleBindDoctorToChair(docData.preferredChairId, newStaffMember.id);
-					}
+				}
+				if (docData.preferredChairId && createdDoctorId) {
+					handleBindDoctorToChair(docData.preferredChairId, createdDoctorId);
 				}
 				setIsQuickAddDoctorOpen(false);
 			}}

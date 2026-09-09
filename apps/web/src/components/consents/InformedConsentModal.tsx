@@ -791,13 +791,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											fontSize: "11px",
 											fontWeight: "bold",
 											textTransform: "uppercase",
-											color: "#475569",
+											color: "var(--muted)",
 											marginBottom: "4px",
 										}}
 									>
 										Пациент (законный представитель):
 									</div>
-									<div style={{ fontSize: "12px", color: "#0f172a" }}>
+									<div style={{ fontSize: "12px", color: "var(--ink)" }}>
 										Подпись: __________________ / {effectiveContext.patientName || "____________________"} /
 									</div>
 								</div>
@@ -807,13 +807,13 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 											fontSize: "11px",
 											fontWeight: "bold",
 											textTransform: "uppercase",
-											color: "#475569",
+											color: "var(--muted)",
 											marginBottom: "4px",
 										}}
 									>
 										Лечащий врач:
 									</div>
-									<div style={{ fontSize: "12px", color: "#0f172a" }}>
+									<div style={{ fontSize: "12px", color: "var(--ink)" }}>
 										Подпись: __________________ / {effectiveContext.doctorName || "____________________"} /
 									</div>
 								</div>
@@ -823,7 +823,7 @@ export const InformedConsentModal: React.FC<InformedConsentModalProps> = ({
 									display: "flex",
 									justifyContent: "space-between",
 									fontSize: "11px",
-									color: "#64748b",
+									color: "var(--muted)",
 								}}
 							>
 								<span>Дата: {effectiveContext.date || new Date().toLocaleDateString("ru-RU")}</span>

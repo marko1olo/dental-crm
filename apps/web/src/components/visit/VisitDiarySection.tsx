@@ -50,9 +50,7 @@ import {
 import { VisitDiaryTemplateSelector } from "../VisitDiaryTemplateSelector";
 import { AnesthesiaQuickBar } from "../anesthesia/AnesthesiaQuickBar";
 import { EmergencyAnaphylaxisProtocolModal } from "../anesthesia/EmergencyAnaphylaxisProtocolModal";
-import { AnesthesiaAspirationJournalModal } from "./anesthesia/AnesthesiaAspirationJournalModal";
 import { DENTAL_ANESTHETICS } from "../anesthesia/anesthesiaCatalog";
-import { ToothAnesthesiaCalculator } from "../diagnostic/ToothAnesthesiaCalculator";
 import { calculateAge } from "@dental/shared";
 import {
 	generatePediatricCariogramDiaryText,

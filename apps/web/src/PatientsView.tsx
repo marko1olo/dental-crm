@@ -813,7 +813,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 							<span className="font-bold text-rose-800 dark:text-rose-200">
 								Внимание (аллергия / стоп-фактор):
 							</span>
-							<span className="truncate">{allergyWarning}</span>
+							<span className="truncate" title={allergyWarning}>{allergyWarning}</span>
 						</div>
 					) : null}
 
