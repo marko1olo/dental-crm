@@ -89,14 +89,18 @@ async function main() {
 
 	console.log(`[OK] Clinic provisioned: orgId=${orgId}, doctorUserId=${doctorUserId}`);
 
+	const dbClient = await pool.connect();
+	await dbClient.query(`SET app.current_tenant = '${orgId}'`);
+	await dbClient.query(`SET app.current_organization_id = '${orgId}'`);
+
 	// Insert clinic and chair in PostgreSQL
-	const clinicRes = await pool.query(
+	const clinicRes = await dbClient.query(
 		"INSERT INTO clinics (organization_id, name, timezone, address) VALUES ($1, $2, $3, $4) RETURNING id",
 		[orgId, "Стоматологическая клиника Дент-Мастер", "Europe/Samara", "г. Москва, ул. Ленина, д. 12"]
 	);
 	const clinicId = clinicRes.rows[0].id;
 
-	const chairRes = await pool.query(
+	const chairRes = await dbClient.query(
 		"INSERT INTO chairs (organization_id, clinic_id, name, is_active, equipment, specializations) VALUES ($1, $2, $3, true, $4, $5) RETURNING id",
 		[orgId, clinicId, "Кресло 1 (Терапия/Хирургия)", "рентген, микроскоп, ультразвук", "therapist"]
 	);
@@ -182,7 +186,7 @@ async function main() {
 	console.log(`[OK] Appointment 2 status: ${appt2Res.status}`);
 
 	// Insert Visit in DB directly
-	const visitInsert = await pool.query(
+	const visitInsert = await dbClient.query(
 		`INSERT INTO visits (
 			organization_id, patient_id, appointment_id, status,
 			complaint, anamnesis, objective_status, diagnosis,
@@ -213,7 +217,7 @@ async function main() {
 	console.log(`[OK] Inserted active visit: ${activeVisitId}`);
 
 	// Insert Payments in DB directly
-	await pool.query(
+	await dbClient.query(
 		`INSERT INTO payments (
 			organization_id, patient_id, visit_id, amount_rub, method, status, payer_full_name, note
 		) VALUES ($1, $2, $3, 24800.00, 'card', 'paid', 'Смирнова Екатерина Васильевна', 'Оплата лечения пульпита зуба 36 по акту 804н')`,
@@ -221,6 +225,7 @@ async function main() {
 	);
 	console.log(`[OK] Inserted payment 24 800 ₽ in payments`);
 
+	dbClient.release();
 	await pool.end();
 
 	// === 2. Launch Chromium & Capture Screenshots ===
