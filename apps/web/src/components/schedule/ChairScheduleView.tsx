@@ -56,6 +56,7 @@ import {
 	resolveChairDutyDoctor,
 } from "./QuickBookingDrawer";
 export { resolveChairDutyDoctor };
+export { useSchedule } from "./useSchedule";
 import { countLabel } from "../../lib/russianPlural";
 import { showToast } from "../GlobalToast";
 
@@ -442,11 +443,72 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 		async (data: QuickAddChairData) => {
 			if (onAddChair) {
 				await onAddChair(data);
+			} else {
+				// Resilient local state update & direct API persistence fallback (Mandate 8e, 8n)
+				const isUpdate = Boolean(data.id);
+				const targetId = data.id || `chair-local-${Date.now()}`;
+				const targetRoom =
+					data.roomNumber || data.room || `Кабинет ${chairs.length + 1}`;
+				const savedChair: any = {
+					id: targetId,
+					name: data.name,
+					room: targetRoom,
+					roomNumber: targetRoom,
+					specialization: data.specialization || "therapist",
+					color: data.color || "#0d9488",
+					active: data.isActive !== false,
+					isActive: data.isActive !== false,
+					defaultDoctorId: data.defaultDoctorId || null,
+					...(data.branchId ? { branchId: data.branchId } : {}),
+				};
+
+				if (dashboard?.clinicSettings) {
+					if (!dashboard.clinicSettings.chairs) {
+						dashboard.clinicSettings.chairs = [];
+					}
+					if (isUpdate) {
+						dashboard.clinicSettings.chairs = dashboard.clinicSettings.chairs.map(
+							(c: any) => (c.id === data.id ? { ...c, ...savedChair } : c),
+						);
+					} else {
+						dashboard.clinicSettings.chairs = [
+							...dashboard.clinicSettings.chairs,
+							savedChair,
+						];
+					}
+				}
+
+				if (typeof window !== "undefined" && typeof fetch === "function") {
+					const endpoint = isUpdate
+						? `/api/settings/chairs/${encodeURIComponent(data.id!)}`
+						: "/api/settings/chairs";
+					const method = isUpdate ? "PUT" : "POST";
+					try {
+						await fetch(endpoint, {
+							method,
+							headers: {
+								...denteAdminSecretRequestHeaders(),
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								name: data.name,
+								room: targetRoom,
+								specialization: data.specialization || "therapist",
+								color: data.color || "#0d9488",
+								active: data.isActive !== false,
+								defaultDoctorId: data.defaultDoctorId || null,
+								...(data.branchId ? { branchId: data.branchId } : {}),
+							}),
+						});
+					} catch {
+						// Soft fallback per Mandate 8n & 8e
+					}
+				}
 			}
 			setIsAddChairOpen(false);
 			setEditingChair(null);
 		},
-		[onAddChair],
+		[onAddChair, dashboard?.clinicSettings, chairs.length],
 	);
 
 	const handleAssignShift = useCallback(

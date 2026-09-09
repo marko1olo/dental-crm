@@ -653,7 +653,7 @@ describe("Wave 43 StomX Parity: Chair Roster, Duty Doctor Forwarding & Zero-Bloc
 			await act(async () => {
 				root.render(
 					<ChairScheduleView
-						dashboard={dashboardWithUnstaffedChair}
+						dashboard={dashboardWithUnstaffedChair as any}
 						dateKey="2026-09-08"
 						appointments={[]}
 						chairDoctorAssignments={{}}
