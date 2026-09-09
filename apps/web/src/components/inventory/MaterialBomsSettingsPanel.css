@@ -314,18 +314,18 @@
 }
 
 .material-boms-stock-ok {
-	background: rgba(16, 185, 129, 0.12);
-	color: #059669;
+	background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+	color: var(--ok-fg, #059669);
 }
 
 .material-boms-stock-warn {
-	background: rgba(245, 158, 11, 0.12);
-	color: #d97706;
+	background: var(--warn-bg, rgba(245, 158, 11, 0.12));
+	color: var(--warn-fg, #d97706);
 }
 
 .material-boms-stock-crit {
-	background: rgba(239, 68, 68, 0.12);
-	color: #dc2626;
+	background: var(--bad-bg, rgba(239, 68, 68, 0.12));
+	color: var(--bad-fg, #dc2626);
 }
 
 /* Action buttons */
@@ -349,9 +349,9 @@
 }
 
 .material-boms-icon-btn-danger:hover {
-	color: #dc2626;
-	background: rgba(239, 68, 68, 0.1);
-	border-color: rgba(239, 68, 68, 0.3);
+	color: var(--bad-fg, #dc2626);
+	background: var(--bad-bg, rgba(239, 68, 68, 0.1));
+	border-color: var(--bad-fg, rgba(239, 68, 68, 0.3));
 }
 
 /* Add / Edit Modal */

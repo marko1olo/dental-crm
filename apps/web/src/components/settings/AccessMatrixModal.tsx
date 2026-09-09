@@ -1,6 +1,6 @@
 import type { GranularStaffRole } from "@dental/shared";
 import { ShieldCheck, X } from "lucide-react";
-import type React from "react";
+import React, { useEffect } from "react";
 import { GranularRoleMatrixView } from "./GranularRoleMatrixView";
 
 export interface AccessMatrixModalProps {
@@ -17,6 +17,17 @@ export const AccessMatrixModal: React.FC<AccessMatrixModalProps> = ({
 	initialRole = "doctor",
 	initialModuleFilter = "all",
 }) => {
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
+
 	if (!isOpen) return null;
 
 	return (
@@ -25,6 +36,11 @@ export const AccessMatrixModal: React.FC<AccessMatrixModalProps> = ({
 			role="dialog"
 			aria-modal="true"
 			data-testid="settings-access-modal-container"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) {
+					onClose();
+				}
+			}}
 		>
 			<div className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl shadow-2xl p-3 sm:p-5 overflow-hidden max-h-[94vh] flex flex-col min-w-0">
 				{/* Compact Modal Header (38px height) */}

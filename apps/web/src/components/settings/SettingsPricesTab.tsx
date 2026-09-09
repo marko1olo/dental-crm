@@ -719,7 +719,7 @@ export function SettingsPricesTab() {
 												}
 											}}
 										/>
-										<ImageIcon size={32} color="var(--border)" />
+										<ImageIcon size={32} color="var(--muted)" />
 										<span>Загрузить фото прайса (PNG, JPG)</span>
 									</label>
 									{pricelistImageName && (

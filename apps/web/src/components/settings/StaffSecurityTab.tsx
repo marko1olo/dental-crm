@@ -457,7 +457,14 @@ export const StaffSecurityTab: React.FC<StaffSecurityTabProps> = ({
 										: "Нет активных сессий (Офлайн)"}
 								</span>
 							</div>
-							<div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+							<div
+								className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-[280px] sm:max-w-md truncate"
+								title={
+									staffMember.currentSessionUserAgent
+										? `${staffMember.currentSessionUserAgent} • IP: ${staffMember.currentSessionIp || "—"}`
+										: undefined
+								}
+							>
 								{staffMember.currentSessionUserAgent || "Сессия не обнаружена"} • IP:{" "}
 								{staffMember.currentSessionIp || "—"}
 							</div>

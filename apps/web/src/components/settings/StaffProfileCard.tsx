@@ -691,9 +691,9 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 										/>
 									</div>
 								) : (
-									<div className="text-xs text-slate-400 dark:text-slate-500 italic p-2 bg-slate-100 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 flex items-center gap-2">
-										<Lock className="w-3.5 h-3.5 text-slate-400" />
-										<span>Заметки руководства скрыты (доступны только начмеду и директору).</span>
+									<div className="text-xs text-slate-600 dark:text-slate-300 italic p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center gap-2">
+										<Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+										<span>Заметки руководства скрыты (доступны только руководству и директору).</span>
 									</div>
 								)}
 							</section>
@@ -810,7 +810,7 @@ export const StaffProfileCard: React.FC<StaffProfileCardProps> = ({
 															onChange={() => handleChairToggle(chair.id)}
 															className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
 														/>
-														<span className="truncate">
+														<span className="truncate" title={chair.name || "Кресло"}>
 															{chair.name || "Кресло"}
 														</span>
 													</label>
