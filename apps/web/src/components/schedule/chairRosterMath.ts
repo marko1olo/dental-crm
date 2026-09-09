@@ -126,6 +126,14 @@ export const CHAIR_SHIFT_PRESETS = [
 		endHour: 20,
 	},
 	{
+		id: "full_9_21" as const,
+		label: "Весь день (09:00–21:00)",
+		hours: "09:00–21:00",
+		name: "Весь день 09:00–21:00",
+		startHour: 9,
+		endHour: 21,
+	},
+	{
 		id: "two_shifts" as const,
 		label: "2 смены (Утро + Вечер)",
 		hours: "08:00–20:00",
@@ -144,9 +152,10 @@ export interface ChairDoctorSubShift {
 	doctorId: string;
 	doctorName: string;
 	doctorSpecialty?: string | undefined;
+	shiftLabel?: string | undefined;
+	shiftHours: string;
 	startHour: number;
 	endHour: number;
-	shiftHours: string;
 }
 
 /**
@@ -158,7 +167,7 @@ export interface ChairDoctorShiftAssignment {
 	doctorId: string;
 	doctorName: string;
 	doctorSpecialty?: string | undefined;
-	shiftPreset?: "morning" | "morning_9" | "evening" | "evening_15" | "full" | "two_shifts" | "custom" | undefined;
+	shiftPreset?: "morning" | "morning_9" | "evening" | "evening_15" | "full" | "full_9_21" | "two_shifts" | "custom" | undefined;
 	shiftLabel?: string | undefined;
 	shiftHours: string;
 	startHour?: number | undefined;
@@ -290,7 +299,7 @@ export function applyCellShiftPreset(
 		dateIso: string;
 		cabinetId: string;
 		chairId: string;
-		presetType: "morning" | "morning_9" | "evening" | "evening_15" | "full_day" | "clear";
+		presetType: "morning" | "morning_9" | "evening" | "evening_15" | "full_day" | "full_9_21" | "clear";
 		doctorId: string;
 		staffList?: StaffMember[];
 		cabinets?: CabinetDefinition[];
@@ -339,6 +348,11 @@ export function applyCellShiftPreset(
 	} else if (presetType === "full_day") {
 		startTime = "08:00";
 		endTime = "20:00";
+		durationHours = 12.0;
+		archetypeId = "morning_shift";
+	} else if (presetType === "full_9_21") {
+		startTime = "09:00";
+		endTime = "21:00";
 		durationHours = 12.0;
 		archetypeId = "morning_shift";
 	}
