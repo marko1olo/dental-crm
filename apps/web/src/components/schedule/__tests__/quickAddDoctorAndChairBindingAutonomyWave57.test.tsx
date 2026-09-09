@@ -662,7 +662,7 @@ describe("Wave 57 (Feature 246) — Quick Add Doctor & Chair Binding Autonomy", 
 		assert.equal(hasCartoonEmojis(collectAllText(addDocBtn)), false);
 	});
 
-	it("ChairRosterModal: contains btn-roster-add-doctor and opens QuickAddDoctorModal", async () => {
+	it("ChairRosterModal: contains btn-roster-add-doctor and opens quick add doctor inline panel (Mandate 8d Anti-Matryoshka)", async () => {
 		await act(async () => {
 			reactRoot.render(
 				<ChairRosterModal
@@ -679,8 +679,11 @@ describe("Wave 57 (Feature 246) — Quick Add Doctor & Chair Binding Autonomy", 
 
 		await clickNode(addDoctorBtn);
 
+		const quickPanel = findNodeByTestId(mockDoc.body, "chair-quick-add-doctor-panel");
+		assert.ok(quickPanel, "chair-quick-add-doctor-panel must be open inline when clicking btn-roster-add-doctor");
+
 		const quickModal = findNodeByTestId(mockDoc.body, "quick-doctor-modal");
-		assert.ok(quickModal, "QuickAddDoctorModal must be open when clicking btn-roster-add-doctor");
+		assert.equal(quickModal, null, "No nested QuickAddDoctorModal overlay must be rendered (modal depth strictly 1)");
 	});
 
 	it("QuickBookingDrawer & AppointmentModal: Solo doctor resilience with 0 chairs fallback (Mandate 8n)", async () => {

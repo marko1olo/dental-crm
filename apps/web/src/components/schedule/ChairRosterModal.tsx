@@ -26,7 +26,13 @@ import {
 	Users,
 	X,
 } from "lucide-react";
-import QuickAddDoctorModal from "./QuickAddDoctorModal";
+import {
+	QUICK_DOCTOR_SPECIALTIES,
+	DOCTOR_COLOR_PRESETS,
+	formatDoctorShortName,
+	type QuickAddDoctorData,
+} from "./QuickAddDoctorModal";
+import type { DentalSpecialty } from "@dental/shared";
 import {
 	DoctorShiftRosterModal,
 	type DoctorShiftRosterModalProps,
@@ -67,9 +73,9 @@ export interface ChairRosterModalProps extends DoctorShiftRosterModalProps {
 	 */
 	focusedChairId?: string | null;
 	/**
-	 * Optional callback when doctor is quickly added
+	 * Optional callback when doctor is quickly added (real data, zero mocks)
 	 */
-	onAddDoctor?: (doctor: any) => void;
+	onAddDoctor?: (doctor: QuickAddDoctorData) => void;
 }
 
 export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
@@ -89,6 +95,21 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 	const [viewMode, setViewMode] = useState<"matrix" | "studio">("matrix");
 	const [isQuickAddDoctorOpen, setIsQuickAddDoctorOpen] = useState(false);
 	const [localStaffList, setLocalStaffList] = useState<StaffMember[]>(staffList);
+
+	// Inline Quick Add Doctor Form State (Anti-Matryoshka Sin 6, Mandates 8d, 8e, 8n)
+	const [newDoctorFullName, setNewDoctorFullName] = useState("");
+	const [newDoctorSpecialty, setNewDoctorSpecialty] = useState<DentalSpecialty>("therapist");
+	const [newDoctorColor, setNewDoctorColor] = useState<string>("#0d9488");
+	const [newDoctorPreferredChairId, setNewDoctorPreferredChairId] = useState<string>("");
+
+	useEffect(() => {
+		if (isQuickAddDoctorOpen) {
+			setNewDoctorFullName("");
+			setNewDoctorSpecialty("therapist");
+			setNewDoctorColor("#0d9488");
+			setNewDoctorPreferredChairId(focusedChairId || cabinets[0]?.chairs[0]?.id || "");
+		}
+	}, [isQuickAddDoctorOpen, focusedChairId, cabinets]);
 
 	useEffect(() => {
 		setLocalStaffList(staffList);
@@ -351,6 +372,125 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 		setTimeout(() => setNotification(null), 4000);
 	};
 
+	// Escape key support to close inline panels or roster modal
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				if (isQuickAddDoctorOpen) {
+					setIsQuickAddDoctorOpen(false);
+					e.stopPropagation();
+				} else if (isDateRangeOpen) {
+					setIsDateRangeOpen(false);
+					e.stopPropagation();
+				} else if (isOpen) {
+					onClose?.();
+				}
+			}
+		};
+		if (isOpen) {
+			window.addEventListener("keydown", handleKeyDown);
+		}
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [isOpen, isQuickAddDoctorOpen, isDateRangeOpen, onClose]);
+
+	// 1-Click Fast Inline Doctor Addition (Anti-Matryoshka, Mandates 8d, 8e, 8n - Zero synthetic mocks)
+	const handleAddNewDoctor = () => {
+		const defaultDoctorName = `Врач ${doctors.length + 1}`;
+		const finalFullName = newDoctorFullName.trim() || defaultDoctorName;
+		const shortName = formatDoctorShortName(finalFullName);
+		const docId =
+			typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: `doc-${localStaffList.length + 1}`;
+
+		const specialtyOption =
+			QUICK_DOCTOR_SPECIALTIES.find((s) => s.id === newDoctorSpecialty) ||
+			QUICK_DOCTOR_SPECIALTIES[0]!;
+
+		const doctorRole: MedicalStaffRole =
+			newDoctorSpecialty === "periodontist"
+				? "therapist"
+				: (newDoctorSpecialty as MedicalStaffRole);
+
+		// Predictable sequential tab number (e.g. Т-001, Т-002...) - zero Math.random() synthetic mocks
+		const nextTabNumber = `Т-${String(localStaffList.length + 1).padStart(3, "0")}`;
+		const finalPreferredChairId = newDoctorPreferredChairId.trim() || null;
+
+		const newStaffMember: StaffMember = {
+			id: docId,
+			fullName: finalFullName,
+			shortName,
+			role: doctorRole,
+			tabNumber: nextTabNumber,
+			isDoctor: true,
+			isAssistant: false,
+			weeklyHourLimit: 40,
+			avatarColor: newDoctorColor,
+			...(finalPreferredChairId ? { preferredChairId: finalPreferredChairId } : {}),
+		};
+
+		setLocalStaffList((prev) => [...prev, newStaffMember]);
+
+		if (finalPreferredChairId) {
+			setSelectedDoctorByChair((prev) => ({
+				...prev,
+				[finalPreferredChairId]: docId,
+			}));
+
+			if (typeof window !== "undefined") {
+				try {
+					const storedMap = JSON.parse(
+						localStorage.getItem("dente_doctor_preferred_chairs") || "{}",
+					);
+					storedMap[docId] = finalPreferredChairId;
+					localStorage.setItem(
+						"dente_doctor_preferred_chairs",
+						JSON.stringify(storedMap),
+					);
+
+					const chairDefaultMap = JSON.parse(
+						localStorage.getItem("dente_chair_default_doctors") || "{}",
+					);
+					chairDefaultMap[finalPreferredChairId] = docId;
+					localStorage.setItem(
+						"dente_chair_default_doctors",
+						JSON.stringify(chairDefaultMap),
+					);
+				} catch {}
+			}
+		}
+
+		const doctorPayload: QuickAddDoctorData = {
+			id: docId,
+			fullName: finalFullName,
+			name: finalFullName,
+			shortName,
+			specialty: newDoctorSpecialty,
+			specialtyLabel: specialtyOption.label,
+			phone: null,
+			preferredChairId: finalPreferredChairId,
+			color: newDoctorColor,
+			role: "doctor",
+			active: true,
+		};
+
+		props.onAddDoctor?.(doctorPayload);
+
+		setNewDoctorFullName("");
+		setNewDoctorSpecialty("therapist");
+		setNewDoctorColor("#0d9488");
+		setNewDoctorPreferredChairId("");
+		setIsQuickAddDoctorOpen(false);
+
+		setNotification({
+			type: "success",
+			message: `Врач ${shortName} добавлен в график (Таб. № ${nextTabNumber})`,
+		});
+		setTimeout(() => setNotification(null), 3500);
+	};
+
 	// 1-Click Chair Weekly Template (StomX / DentalPRO parity)
 	const handleApplyChairTemplate = (
 		chairId: string,
@@ -460,8 +600,8 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 							<button
 								type="button"
 								data-testid="btn-roster-add-doctor"
-								className="roster-btn roster-btn-secondary"
-								onClick={() => setIsQuickAddDoctorOpen(true)}
+								className={`roster-btn ${isQuickAddDoctorOpen ? "roster-btn-primary" : "roster-btn-secondary"}`}
+								onClick={() => setIsQuickAddDoctorOpen((prev) => !prev)}
 								style={{ minHeight: "44px" }}
 								title="Быстро добавить врача в график (+ Врач)"
 							>
@@ -603,6 +743,215 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 						</div>
 					</div>
 				</div>
+
+				{/* Inline Quick Add Doctor Panel (Anti-Matryoshka Law, Mandates 8d, 8e, 8n) */}
+				{isQuickAddDoctorOpen && (
+					<div
+						data-testid="chair-quick-add-doctor-panel"
+						style={{
+							background: "var(--paper-soft, #f8fafc)",
+							borderBottom: "1px solid var(--line, #e2e8f0)",
+							padding: "1rem 1.5rem",
+							display: "flex",
+							flexDirection: "column",
+							gap: "0.75rem",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+							<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+								<UserPlus size={18} color="var(--teal, #0d9488)" />
+								<span style={{ fontWeight: 800, fontSize: "0.9375rem" }}>
+									Быстрое добавление врача в график (инлайн-панель)
+								</span>
+							</div>
+							<button
+								type="button"
+								data-testid="chair-cancel-add-doctor-btn"
+								onClick={() => setIsQuickAddDoctorOpen(false)}
+								className="roster-btn roster-btn-secondary"
+								style={{ minHeight: "36px", padding: "0 0.5rem" }}
+								title="Закрыть панель (Esc)"
+							>
+								<X size={14} />
+								<span>Отмена</span>
+							</button>
+						</div>
+
+						<div
+							style={{
+								display: "grid",
+								gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+								gap: "0.75rem",
+								alignItems: "flex-end",
+							}}
+						>
+							<div>
+								<label
+									htmlFor="chair-new-doctor-name"
+									style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.25rem" }}
+								>
+									ФИО врача
+								</label>
+								<input
+									id="chair-new-doctor-name"
+									data-testid="chair-new-doctor-name-input"
+									type="text"
+									placeholder="например: Иванов Иван Иванович"
+									value={newDoctorFullName}
+									onChange={(e) => setNewDoctorFullName(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault();
+											handleAddNewDoctor();
+										}
+									}}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.375rem 0.625rem",
+										borderRadius: "8px",
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										color: "var(--ink, #0f172a)",
+										fontWeight: 600,
+										fontSize: "0.8125rem",
+										boxSizing: "border-box",
+									}}
+								/>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-new-doctor-specialty"
+									style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.25rem" }}
+								>
+									Специальность
+								</label>
+								<select
+									id="chair-new-doctor-specialty"
+									data-testid="chair-new-doctor-specialty-select"
+									value={newDoctorSpecialty}
+									onChange={(e) => setNewDoctorSpecialty(e.target.value as DentalSpecialty)}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.375rem 0.5rem",
+										borderRadius: "8px",
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										color: "var(--ink, #0f172a)",
+										fontWeight: 600,
+										fontSize: "0.8125rem",
+										boxSizing: "border-box",
+									}}
+								>
+									{QUICK_DOCTOR_SPECIALTIES.map((spec) => (
+										<option key={spec.id} value={spec.id}>
+											{spec.label}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<div>
+								<label
+									htmlFor="chair-new-doctor-chair"
+									style={{ display: "block", fontSize: "0.75rem", fontWeight: 700, marginBottom: "0.25rem" }}
+								>
+									Кабинет / кресло по умолчанию
+								</label>
+								<select
+									id="chair-new-doctor-chair"
+									data-testid="chair-new-doctor-chair-select"
+									value={newDoctorPreferredChairId}
+									onChange={(e) => setNewDoctorPreferredChairId(e.target.value)}
+									style={{
+										width: "100%",
+										minHeight: "44px",
+										padding: "0.375rem 0.5rem",
+										borderRadius: "8px",
+										border: "1px solid var(--line, #cbd5e1)",
+										background: "var(--paper, #fff)",
+										color: "var(--ink, #0f172a)",
+										fontWeight: 600,
+										fontSize: "0.8125rem",
+										boxSizing: "border-box",
+									}}
+								>
+									<option value="">Без привязки (любое кресло)</option>
+									{cabinets.flatMap((cab) =>
+										cab.chairs.map((ch) => (
+											<option key={ch.id} value={ch.id}>
+												{cab.name} — {ch.name}
+											</option>
+										)),
+									)}
+								</select>
+							</div>
+						</div>
+
+						{/* Doctor Color Palette */}
+						<div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+							<span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted, #64748b)" }}>
+								Цвет врача в графике:
+							</span>
+							<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+								{DOCTOR_COLOR_PRESETS.map((colorPreset) => (
+									<button
+										key={colorPreset.id}
+										type="button"
+										data-testid={`doctor-color-choice-${colorPreset.id}`}
+										onClick={() => setNewDoctorColor(colorPreset.hex)}
+										title={colorPreset.label}
+										style={{
+											width: "32px",
+											height: "32px",
+											borderRadius: "50%",
+											background: colorPreset.hex,
+											border: newDoctorColor === colorPreset.hex ? "3px solid var(--paper, #fff)" : "2px solid transparent",
+											outline: newDoctorColor === colorPreset.hex ? "2px solid var(--teal, #0d9488)" : "none",
+											cursor: "pointer",
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											transition: "transform 0.1s ease",
+											transform: newDoctorColor === colorPreset.hex ? "scale(1.15)" : "scale(1)",
+										}}
+									>
+										{newDoctorColor === colorPreset.hex && (
+											<Check size={14} color="#ffffff" strokeWidth={3} />
+										)}
+									</button>
+								))}
+							</div>
+						</div>
+
+						{/* Action Buttons */}
+						<div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem", marginTop: "0.25rem" }}>
+							<button
+								type="button"
+								data-testid="chair-cancel-doctor-inline-btn"
+								className="roster-btn roster-btn-secondary"
+								onClick={() => setIsQuickAddDoctorOpen(false)}
+								style={{ minHeight: "44px" }}
+							>
+								<X size={16} />
+								<span>Отмена</span>
+							</button>
+							<button
+								type="button"
+								data-testid="chair-submit-new-doctor-btn"
+								className="roster-btn roster-btn-primary"
+								onClick={handleAddNewDoctor}
+								style={{ minHeight: "44px" }}
+								title="Добавить врача в график (Мандат 8e — кнопка никогда не блокируется)"
+							>
+								<Check size={16} />
+								<span>Добавить врача</span>
+							</button>
+						</div>
+					</div>
+				)}
 
 				{/* Collapsible Date Range Shift Assignment Panel (StomX / DentalPRO Parity, Mandates 8e, 8k, 8n) */}
 				{isDateRangeOpen && (
@@ -1451,48 +1800,6 @@ export const ChairRosterModal: React.FC<ChairRosterModalProps> = (props) => {
 					</div>
 				</div>
 			</div>
-
-			<QuickAddDoctorModal
-				isOpen={isQuickAddDoctorOpen}
-				onClose={() => setIsQuickAddDoctorOpen(false)}
-				chairs={cabinets.map((c) => ({
-					id: c.id,
-					name: c.name,
-					room: c.name,
-				}))}
-				onDoctorAdded={(newDoc) => {
-					const doctorRole: MedicalStaffRole =
-						newDoc.specialty === "periodontist"
-							? "therapist"
-							: (newDoc.specialty as MedicalStaffRole);
-					const docId = newDoc.id || `doc-${Date.now()}`;
-					const newStaffMember: StaffMember = {
-						id: docId,
-						fullName: newDoc.fullName || newDoc.name || "Врач",
-						shortName: newDoc.shortName,
-						role: doctorRole,
-						tabNumber: `Т-${Math.floor(100 + Math.random() * 900)}`,
-						isDoctor: true,
-						isAssistant: false,
-						weeklyHourLimit: 40,
-						avatarColor: newDoc.color,
-						...(newDoc.preferredChairId ? { preferredChairId: newDoc.preferredChairId } : {}),
-					};
-					setLocalStaffList((prev) => [...prev, newStaffMember]);
-					if (newDoc.preferredChairId) {
-						const targetChairId = newDoc.preferredChairId;
-						setSelectedDoctorByChair((prev) => ({
-							...prev,
-							[targetChairId]: docId,
-						}));
-					}
-					props.onAddDoctor?.(newDoc);
-					setNotification({
-						type: "success",
-						message: `Врач ${newDoc.shortName} добавлен в график`,
-					});
-				}}
-			/>
 		</div>
 	);
 };

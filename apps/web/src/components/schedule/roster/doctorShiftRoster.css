@@ -613,6 +613,47 @@
 	gap: 1rem;
 }
 
+.roster-nav-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.roster-week-nav {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.roster-actions-group {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.roster-btn-icon {
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+	border-radius: 8px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	min-width: 44px;
+	transition: all var(--transition-fast, 0.15s ease);
+}
+
+.roster-btn-icon:hover {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
 .roster-btn {
 	padding: 0.5rem 1rem;
 	border-radius: 8px;
@@ -625,6 +666,8 @@
 	min-height: 44px;
 	border: 1px solid transparent;
 	transition: all var(--transition-fast, 0.15s ease);
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .roster-btn-primary {
