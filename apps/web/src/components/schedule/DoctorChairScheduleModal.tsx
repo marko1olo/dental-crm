@@ -557,6 +557,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 																: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]"
 														}`}
 														data-testid={`btn-quick-select-doctor-${d.id}`}
+														title={d.fullName}
 														style={{ minHeight: "44px" }}
 													>
 														<User size={13} className={isSel ? "text-white" : "text-[var(--teal,#0d9488)]"} />
@@ -604,6 +605,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 																: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)]"
 														}`}
 														data-testid={`btn-quick-select-evening-doctor-${d.id}`}
+														title={d.fullName}
 														style={{ minHeight: "44px" }}
 													>
 														<User size={13} className={isSel ? "text-white" : "text-[var(--teal,#0d9488)]"} />
@@ -713,6 +715,7 @@ export const DoctorChairScheduleModal: React.FC<DoctorChairScheduleModalProps> =
 																: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--paper,#ffffff)]"
 														}`}
 														data-testid={`btn-quick-select-doctor-${d.id}`}
+														title={d.fullName}
 														style={{ minHeight: "44px" }}
 													>
 														<User size={13} className={isSel ? "text-white" : "text-[var(--teal,#0d9488)]"} />

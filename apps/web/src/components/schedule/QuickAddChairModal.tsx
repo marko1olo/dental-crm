@@ -558,14 +558,15 @@ export function QuickAddChairModal({
 										key={doc.id}
 										type="button"
 										onClick={() => setDefaultDoctorId(doc.id)}
-										className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${
+										title={doc.fullName}
+										className={`min-h-[44px] px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${
 											defaultDoctorId === doc.id
 												? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs font-bold"
 												: "bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border-[var(--line,#e2e8f0)] hover:border-[var(--teal)]"
 										}`}
 										data-testid={`quick-add-chair-doc-chip-${doc.id}`}
 									>
-										<span>{doc.fullName}</span>
+										<span className="truncate max-w-[140px]">{doc.fullName}</span>
 									</button>
 								))}
 							</div>
@@ -655,10 +656,16 @@ export function QuickAddChairModal({
 									className="w-3.5 h-3.5 rounded-full shrink-0 border border-black/10"
 									style={{ backgroundColor: selectedColor }}
 								/>
-								<span className="text-sm font-bold text-[var(--ink,#0f172a)] truncate">
+								<span
+									className="text-sm font-bold text-[var(--ink,#0f172a)] truncate"
+									title={chairName.trim() || defaultChairName}
+								>
 									{chairName.trim() || defaultChairName}
 								</span>
-								<span className="text-xs text-[var(--muted,#64748b)] truncate">
+								<span
+									className="text-xs text-[var(--muted,#64748b)] truncate"
+									title={roomNumber.trim() || defaultRoomName}
+								>
 									({roomNumber.trim() || defaultRoomName})
 								</span>
 							</div>

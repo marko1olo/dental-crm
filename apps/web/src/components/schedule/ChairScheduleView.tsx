@@ -1605,7 +1605,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 														style={{ minHeight: "44px" }}
 														data-testid={`chair-view-substitute-option-${chair.id}-${doc.id}`}
 													>
-														<span className="truncate">{doc.fullName}</span>
+														<span className="truncate" title={doc.fullName}>{doc.fullName}</span>
 														<span className="text-[10px] text-[var(--muted)] shrink-0 ml-1">
 															Подменить
 														</span>

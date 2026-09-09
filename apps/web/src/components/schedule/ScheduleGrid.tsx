@@ -1861,7 +1861,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 											>
 												<option value="" disabled>Подмена врача...</option>
 												{doctors.map((d) => (
-													<option key={d.id} value={d.id}>
+													<option key={d.id} value={d.id} title={d.fullName}>
 														{formatDoctorShortName(d.fullName)}
 													</option>
 												))}

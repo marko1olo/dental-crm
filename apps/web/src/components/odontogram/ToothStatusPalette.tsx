@@ -77,6 +77,24 @@ export const FAST_TOOTH_PRESETS: readonly FastToothPreset[] = [
 		badge: "1 клик",
 		icd10: "K08.1",
 	},
+	{
+		id: "fast_pulpitis_turnkey",
+		title: "Пульпит под ключ (K04.0: анестезия + каналы + обтурация + пломба)",
+		shortTitle: "Пульпит под ключ (K04.0)",
+		description: "Эндодонтическое лечение: анестезия, коффердам, обработка и пломбирование каналов, световая пломба",
+		badge: "K04.0",
+		icd10: "K04.0",
+		code804n: "A16.07.030",
+	},
+	{
+		id: "fast_extraction_turnkey",
+		title: "Удаление зуба под ключ (K08.1: анестезия + удаление + гемостаз + шов)",
+		shortTitle: "Удаление зуба (K08.1)",
+		description: "Хирургический протокол: анестезия, периотомия, атравматичное удаление, ревизия, кюретаж, шов",
+		badge: "K08.1",
+		icd10: "K08.1",
+		code804n: "A16.07.001",
+	},
 ] as const;
 
 /**
@@ -133,6 +151,58 @@ export function applyFastProHygieneProtocol(): {
 	};
 }
 
+/**
+ * Протокол лечения пульпита K04.0 под ключ для Формы 043/у
+ */
+export function applyFastPulpitisProtocol(toothNumber: number): {
+	statusLocalis: string;
+	diagnosis: string;
+	treatment: string;
+	serviceCode: string;
+	serviceName: string;
+	price: number;
+} {
+	const toothName = getToothFolkAndAnatomicalNameRu(toothNumber);
+	const statusLocalis = `Зуб ${toothNumber} (${toothName}): глубокая кариозная полость, сообщающаяся с полостью зуба. Зондирование устья корневых каналов резко болезненно, пульпа кровоточит. Термическая проба (холод) вызывает интенсивную приступообразную боль с длительным последействием. Перкуссия слабочувствительна. Слизистая оболочка в области верхушки корня без видимых воспалительных изменений.`;
+	const diagnosis = `K04.0 Пульпит (острый очаговый/диффузный) зуба ${toothNumber}`;
+	const treatment = `Инфильтрационная/проводниковая анестезия Артикаин 1:100000 1.7 мл. Изоляция коффердамом. Препарирование кариозной полости зуба ${toothNumber}, раскрытие полости зуба, экстирпация пульпы. Инструментальная обработка каналов Ni-Ti вращающимися файлами до апикального уступа. Ирригация 3% раствором NaOCl с ультразвуковой активацией, промывание 17% ЭДТА, дистиллированной водой. Высушивание стерильными бумажными штифтами. Обтурация корневых каналов методом латеральной конденсации гуттаперчевыми штифтами с эпоксидным силером AH-Plus. Рентген-контроль обтурации: каналы запломбированы до физиологического апекса. Герметичная изолирующая прокладка, восстановление анатомической формы зуба нанокомпозитом светового отверждения. Шлифовка, полировка.`;
+
+	return {
+		statusLocalis,
+		diagnosis,
+		treatment,
+		serviceCode: "A16.07.030",
+		serviceName: `Эндодонтическое лечение пульпита зуба ${toothNumber} под ключ (анестезия + обработка каналов + обтурация + пломба)`,
+		price: 12500,
+	};
+}
+
+/**
+ * Протокол атравматичного удаления зуба K08.1 под ключ для Формы 043/у
+ */
+export function applyFastExtractionProtocol(toothNumber: number): {
+	statusLocalis: string;
+	diagnosis: string;
+	treatment: string;
+	serviceCode: string;
+	serviceName: string;
+	price: number;
+} {
+	const toothName = getToothFolkAndAnatomicalNameRu(toothNumber);
+	const statusLocalis = `Зуб ${toothNumber} (${toothName}): коронковая часть зуба разрушена твердыми тканями ниже уровня десны более чем на 2/3. Корень устойчив, зондирование разрушенных тканей безболезненно. Перкуссия безболезненна. Переходная складка интактна, без отека и гиперемии. Зуб не подлежит терапевтическому, эндодонтическому или ортопедическому восстановлению.`;
+	const diagnosis = `K08.1 Потеря зубов вследствие удаления / разрушение корня зуба ${toothNumber}`;
+	const treatment = `Проводниковая/инфильтрационная анестезия Артикаин 1:100000 1.7 мл. Круговая связка зуба ${toothNumber} отсепарирована периотомом. Наложение хирургических щипцов/элеватора. Люксация и тракция зуба атравматично с сохранением кортикальных пластинок альвеолы. Ревизия лунки, кюретаж грануляций. Гемостаз гемостатической губкой Alveostim. Сближение краев лунки, наложение направляющего гемостатического шва шовным материалом Vicryl 4-0. Контроль гемостаза: кровотечение остановлено, стабильный сгусток. Рекомендации после удаления выданы на руки.`;
+
+	return {
+		statusLocalis,
+		diagnosis,
+		treatment,
+		serviceCode: "A16.07.001",
+		serviceName: `Атравматичное удаление зуба ${toothNumber} под ключ (анестезия + периотомия + удаление + кюретаж + гемостаз + шов)`,
+		price: 4500,
+	};
+}
+
 export interface ToothStatusPaletteProps {
 	selectedTooth?: number | null | undefined;
 	activeStamp?: ToothState | null | undefined;
@@ -141,6 +211,8 @@ export interface ToothStatusPaletteProps {
 	onMarkIntact?: (() => void) | undefined;
 	onMarkProHygieneDone?: (() => void) | undefined;
 	onApplyFastCaries?: ((toothNumber: number) => void) | undefined;
+	onApplyFastPulpitis?: ((toothNumber: number) => void) | undefined;
+	onApplyFastExtraction?: ((toothNumber: number) => void) | undefined;
 	onMarkWisdomMissing?: (() => void) | undefined;
 	className?: string | undefined;
 }
@@ -153,6 +225,8 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 	onMarkIntact,
 	onMarkProHygieneDone,
 	onApplyFastCaries,
+	onApplyFastPulpitis,
+	onApplyFastExtraction,
 	onMarkWisdomMissing,
 	className = "",
 }) => {
@@ -270,6 +344,92 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 		showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
 	};
 
+	// 5. «Пульпит под ключ (K04.0)» в 1 клик
+	const handleFastPulpitisClick = () => {
+		const targetTooth = currentTooth;
+		if (onApplyFastPulpitis) {
+			onApplyFastPulpitis(targetTooth);
+		} else {
+			if (onSelectState) {
+				onSelectState("Pulpitis", ["O"]);
+			}
+			const proto = applyFastPulpitisProtocol(targetTooth);
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						toothNumber: targetTooth,
+						soap: {
+							statusLocalis: proto.statusLocalis,
+							diagnosis: proto.diagnosis,
+							treatmentPlan: proto.treatment,
+						},
+						mode: "smart_append",
+						immediate: true,
+					},
+				}),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-add-estimate-service", {
+					detail: {
+						toothNumber: targetTooth,
+						code: proto.serviceCode,
+						name: proto.serviceName,
+						price: proto.price,
+						category: "endo",
+					},
+				}),
+			);
+		}
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			`Пульпит под ключ K04.0 зуба ${targetTooth} внесен в формулу, дневник 043/у и смету`,
+			"success",
+		);
+	};
+
+	// 6. «Удаление зуба (K08.1)» в 1 клик
+	const handleFastExtractionClick = () => {
+		const targetTooth = currentTooth;
+		if (onApplyFastExtraction) {
+			onApplyFastExtraction(targetTooth);
+		} else {
+			if (onSelectState) {
+				onSelectState("Missing");
+			}
+			const proto = applyFastExtractionProtocol(targetTooth);
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						toothNumber: targetTooth,
+						soap: {
+							statusLocalis: proto.statusLocalis,
+							diagnosis: proto.diagnosis,
+							treatmentPlan: proto.treatment,
+						},
+						mode: "smart_append",
+						immediate: true,
+					},
+				}),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-add-estimate-service", {
+					detail: {
+						toothNumber: targetTooth,
+						code: proto.serviceCode,
+						name: proto.serviceName,
+						price: proto.price,
+						category: "surgery",
+					},
+				}),
+			);
+		}
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			`Удаление зуба ${targetTooth} внесено в формулу, хирургический дневник 043/у и смету`,
+			"success",
+		);
+	};
+
 	return (
 		<div
 			className={`tooth-status-palette flex flex-col gap-2 p-2.5 rounded-2xl bg-[var(--odontogram-surface,#f8fafc)] border border-[var(--odontogram-border,#cbd5e1)] shadow-xs select-none ${className}`.trim()}
@@ -318,6 +478,30 @@ export const ToothStatusPalette: React.FC<ToothStatusPaletteProps> = ({
 				>
 					<Wrench size={14} className="text-amber-600 dark:text-amber-400" />
 					<span>Быстрая пломба (K02.1 зуба {currentTooth})</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={handleFastPulpitisClick}
+					disabled={false}
+					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-rose-500/15 hover:bg-rose-500/25 text-rose-800 dark:text-rose-200 border border-rose-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					title={`Пульпит под ключ (K04.0) зуба ${currentTooth}: анестезия + каналы + обтурация + пломба`}
+					data-testid="palette-fast-pulpitis-btn"
+				>
+					<Flame size={14} className="text-rose-600 dark:text-rose-400" />
+					<span>Пульпит под ключ (K04.0 зуба {currentTooth})</span>
+				</button>
+
+				<button
+					type="button"
+					onClick={handleFastExtractionClick}
+					disabled={false}
+					className="min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-black bg-purple-500/15 hover:bg-purple-500/25 text-purple-800 dark:text-purple-200 border border-purple-500/30 flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs"
+					title={`Атравматичное удаление зуба ${currentTooth} под ключ: анестезия + периотомия + удаление + гемостаз + шов`}
+					data-testid="palette-fast-extraction-btn"
+				>
+					<Trash2 size={14} className="text-purple-600 dark:text-purple-400" />
+					<span>Удаление под ключ (зуб {currentTooth})</span>
 				</button>
 
 				<button

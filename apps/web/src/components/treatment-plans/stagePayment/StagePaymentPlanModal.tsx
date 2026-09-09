@@ -634,14 +634,26 @@ export const StagePaymentPlanModal: React.FC<StagePaymentPlanModalProps> = ({
 
 												<div className="flex flex-wrap items-center gap-2">
 													{stage.status === "draft" && (
-														<button
-															type="button"
-															onClick={() => handlePayAdvanceForStage(stage.id)}
-															className="stage-action-btn primary"
-														>
-															<Coins className="h-4 w-4" />
-															<span>Внести аванс ({formatKopecksRu(stage.advanceRequiredKopecks)})</span>
-														</button>
+														<>
+															<button
+																type="button"
+																onClick={() => handlePayAdvanceForStage(stage.id)}
+																className="stage-action-btn primary"
+															>
+																<Coins className="h-4 w-4" />
+																<span>Внести аванс ({formatKopecksRu(stage.advanceRequiredKopecks)})</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleStageStatusChange(stage.id, "in_progress")}
+																className="stage-action-btn secondary"
+																title="Начать оказание услуг на этапе без обязательного аванса (доверие, гарантия, экстренный приём — Мандат 8e)"
+																data-testid={`stage-start-no-advance-btn-${stage.id}`}
+															>
+																<CheckCircle2 className="h-4 w-4 text-[var(--ok,#10b981)]" />
+																<span>Взять в работу без аванса</span>
+															</button>
+														</>
 													)}
 
 													{stage.status === "advance_paid" && (

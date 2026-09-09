@@ -14,8 +14,9 @@
 
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
 import { AppLogicProvider } from "../../../contexts/AppLogicContext";
 import { TreatmentEstimator } from "../../odontogram/TreatmentEstimator";
 import { TreatmentPlanSignatureModal } from "../TreatmentPlanSignatureModal";
@@ -23,6 +24,49 @@ import type {
 	DigitalSignatureAgreementData,
 	TreatmentPlanTier,
 } from "../types";
+
+function expect(actual: any) {
+	return {
+		toBe(expected: any) {
+			assert.equal(actual, expected);
+		},
+		not: {
+			toBeNull() {
+				assert.notEqual(actual, null);
+				assert.notEqual(actual, undefined);
+			},
+			toContain(str: string) {
+				assert.ok(!String(actual).includes(str), `Expected not to contain ${str}`);
+			},
+			toMatch(re: RegExp) {
+				assert.ok(!re.test(String(actual)), `Expected not to match ${re}`);
+			},
+		},
+		toBeNull() {
+			assert.equal(actual, null);
+		},
+		toContain(str: string) {
+			assert.ok(String(actual).includes(str), `Expected to contain ${str}`);
+		},
+		toHaveBeenCalled() {
+			assert.ok(actual.mock.calls.length > 0, "Expected mock to have been called");
+		},
+		toHaveBeenCalledTimes(n: number) {
+			assert.equal(actual.mock.calls.length, n);
+		},
+	};
+}
+
+const vi = {
+	fn() {
+		const calls: any[][] = [];
+		const mockFn = (...args: any[]) => {
+			calls.push(args);
+		};
+		mockFn.mock = { calls };
+		return mockFn;
+	},
+};
 
 interface MockDomNode {
 	nodeType: number;
