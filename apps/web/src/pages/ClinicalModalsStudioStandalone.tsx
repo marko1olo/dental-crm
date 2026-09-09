@@ -2444,7 +2444,7 @@ export const ClinicalModalsStudioStandalone: React.FC = () => {
 							data-testid="open-patient-webapp-modal-btn"
 						>
 							<Phone size={15} />
-							<span>Запустить симулятор смартфона</span>
+							<span>Открыть веб-кабинет пациента (PWA)</span>
 						</button>
 					</div>
 

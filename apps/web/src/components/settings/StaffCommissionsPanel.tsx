@@ -10,16 +10,11 @@
  * сопоставляет userId с ФИО из дашборда, даёт задать/изменить процент через
  * тот же PUT и `auth.settingsAccessHeaders`, что и остальные вкладки настроек.
  *
- * Интегрирован симулятор и калькулятор сдельной мотивации врача строго в целых копейках
- * (% от терапевтического/ортопедического приёма минус ЗТЛ и расходные материалы).
+ * Мандат 8k, 8i, 8d: Упразднен процедурный симулятор сделки. Фактический расчет
+ * начислений врачей ведется в реальном модуле выплат (DoctorPayoutDashboard).
  */
 
-import {
-	calculateDoctorPieceRatePayout,
-	formatKopecksToRublesDisplay,
-	parseRublesToKopecks,
-} from "@dental/shared";
-import { Calculator, Check, ChevronDown, ChevronUp, Coins, Percent, RefreshCw, X } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Percent, RefreshCw, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
@@ -140,18 +135,6 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 	const [save, setSave] = useState<SaveState>({ kind: "idle" });
 	const [editingUserId, setEditingUserId] = useState<string | null>(null);
 	const [draft, setDraft] = useState("");
-
-	// Интерактивный калькулятор сдельной оплаты (Live Simulator)
-	const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
-	const [simTherapyRub, setSimTherapyRub] = useState("350000");
-	const [simTherapyRate, setSimTherapyRate] = useState("25");
-	const [simOrthoRub, setSimOrthoRub] = useState("450000");
-	const [simOrthoRate, setSimOrthoRate] = useState("20");
-	const [simLabCostRub, setSimLabCostRub] = useState("120000");
-	const [simLabDeductionPct, setSimLabDeductionPct] = useState("100");
-	const [simMaterialCostRub, setSimMaterialCostRub] = useState("30000");
-	const [simMaterialDeductionPct, setSimMaterialDeductionPct] = useState("0");
-	const [simBaseShiftRub, setSimBaseShiftRub] = useState("0");
 
 	const rateByUserId = useMemo(() => {
 		const map = new Map<string, CommissionRate>();
@@ -333,39 +316,6 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 
 	const withoutRate = rows.filter((r) => r.rate === null).length;
 
-	// Расчет симулятора сдельной оплаты в копейках
-	const simCalculation = useMemo(() => {
-		try {
-			return calculateDoctorPieceRatePayout({
-				therapyRevenueKopecks: parseRublesToKopecks(simTherapyRub),
-				therapyRatePct: Number(simTherapyRate) || 0,
-				orthopedicsRevenueKopecks: parseRublesToKopecks(simOrthoRub),
-				orthopedicsRatePct: Number(simOrthoRate) || 0,
-				surgeryRevenueKopecks: 0,
-				surgeryRatePct: 0,
-				hygieneRevenueKopecks: 0,
-				hygieneRatePct: 0,
-				labOrdersCostKopecks: parseRublesToKopecks(simLabCostRub),
-				labDeductionPct: Number(simLabDeductionPct) || 0,
-				materialCostKopecks: parseRublesToKopecks(simMaterialCostRub),
-				materialDeductionPct: Number(simMaterialDeductionPct) || 0,
-				baseShiftSalaryKopecks: parseRublesToKopecks(simBaseShiftRub),
-			});
-		} catch {
-			return null;
-		}
-	}, [
-		simTherapyRub,
-		simTherapyRate,
-		simOrthoRub,
-		simOrthoRate,
-		simLabCostRub,
-		simLabDeductionPct,
-		simMaterialCostRub,
-		simMaterialDeductionPct,
-		simBaseShiftRub,
-	]);
-
 	return (
 		<article
 			className={
@@ -391,7 +341,7 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 						</h4>
 						<p className="text-xs text-slate-600 dark:text-slate-400 m-0 mt-1">
 							Процент, по которому клиника начисляет зарплату врачам от приёма.
-							Расчёт ведётся строго в целых копейках с учётом списания ЗТЛ и материалов.
+							Фактический расчёт с учётом ЗТЛ и материалов ведётся в разделе выплат врачам.
 						</p>
 					</div>
 				) : (
@@ -405,20 +355,6 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 				<div className="flex items-center gap-2 ml-auto">
 					<button
 						type="button"
-						className={`secondary-button text-xs flex items-center gap-1.5 min-h-[36px] ${
-							isSimulatorOpen
-								? "bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-200 border-teal-300 dark:border-teal-700 font-bold"
-								: ""
-						}`}
-						onClick={() => setIsSimulatorOpen((v) => !v)}
-						data-testid="toggle-piece-rate-simulator"
-					>
-						<Calculator size={14} className="text-teal-600 dark:text-teal-400" />
-						<span>{isSimulatorOpen ? "Скрыть калькулятор" : "Калькулятор сделки"}</span>
-					</button>
-
-					<button
-						type="button"
 						className="secondary-button text-xs min-h-[36px]"
 						onClick={() => void loadRates()}
 						disabled={load.kind === "loading"}
@@ -428,165 +364,6 @@ export const StaffCommissionsPanel: React.FC<StaffCommissionsPanelProps> = ({
 					</button>
 				</div>
 			</div>
-
-			{/* Интерактивный калькулятор сдельной оплаты (Simulator) */}
-			{isSimulatorOpen && (
-				<div
-					className="p-3 sm:p-4 rounded-xl border border-teal-300 dark:border-teal-800 bg-teal-50/70 dark:bg-teal-950/30 flex flex-col gap-3 transition-all"
-					data-testid="piece-rate-simulator-panel"
-				>
-					<div className="flex items-center justify-between flex-wrap gap-2">
-						<h5 className="m-0 text-xs font-bold text-teal-900 dark:text-teal-200 flex items-center gap-2">
-							<Coins size={15} className="shrink-0 text-teal-600 dark:text-teal-400" />
-							<span>Интерактивный расчет сдельной оплаты врача (в целых копейках)</span>
-						</h5>
-						<span className="text-[11px] px-2 py-0.5 rounded-md bg-teal-100/80 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 font-mono font-bold whitespace-nowrap shrink-0 border border-teal-300/60 dark:border-teal-700/60">
-							Zero Float · Penny-Exact
-						</span>
-					</div>
-
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								Терапия: выручка (₽)
-							</label>
-							<input
-								type="text"
-								value={simTherapyRub}
-								onChange={(e) => setSimTherapyRub(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="350000"
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								Ставка терапия (%)
-							</label>
-							<input
-								type="text"
-								value={simTherapyRate}
-								onChange={(e) => setSimTherapyRate(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="25"
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								Ортопедия (₽)
-							</label>
-							<input
-								type="text"
-								value={simOrthoRub}
-								onChange={(e) => setSimOrthoRub(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="450000"
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								Ставка ортопедия (%)
-							</label>
-							<input
-								type="text"
-								value={simOrthoRate}
-								onChange={(e) => setSimOrthoRate(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="20"
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								ЗТЛ лаборатория (₽)
-							</label>
-							<input
-								type="text"
-								value={simLabCostRub}
-								onChange={(e) => setSimLabCostRub(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="120000"
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								Удержание ЗТЛ (%)
-							</label>
-							<input
-								type="text"
-								value={simLabDeductionPct}
-								onChange={(e) => setSimLabDeductionPct(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="100"
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								Расходные материалы (₽)
-							</label>
-							<input
-								type="text"
-								value={simMaterialCostRub}
-								onChange={(e) => setSimMaterialCostRub(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="30000"
-							/>
-						</div>
-
-						<div className="flex flex-col gap-1">
-							<label className="text-slate-600 dark:text-slate-400 font-medium text-[11px]">
-								Оклад за смены (₽)
-							</label>
-							<input
-								type="text"
-								value={simBaseShiftRub}
-								onChange={(e) => setSimBaseShiftRub(e.target.value)}
-								className="px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs h-8"
-								placeholder="0"
-							/>
-						</div>
-					</div>
-
-					{simCalculation && (
-						<div className="mt-2 p-3 rounded-lg bg-white dark:bg-slate-900 border border-teal-200 dark:border-teal-800/80 flex items-center justify-between flex-wrap gap-3">
-							<div className="flex items-center gap-4 flex-wrap text-xs">
-								<div>
-									<span className="text-slate-500 block">Выручка клиники:</span>
-									<strong className="text-slate-900 dark:text-white">
-										{formatKopecksToRublesDisplay(simCalculation.totalRevenueKopecks)}
-									</strong>
-								</div>
-								<div>
-									<span className="text-slate-500 block">Начислено (%):</span>
-									<strong className="text-emerald-600 dark:text-emerald-400">
-										{formatKopecksToRublesDisplay(simCalculation.grossAccruedCommissionKopecks)}
-									</strong>
-								</div>
-								<div>
-									<span className="text-slate-500 block">Удержано (ЗТЛ):</span>
-									<strong className="text-rose-600 dark:text-rose-400">
-										−{formatKopecksToRublesDisplay(simCalculation.withheldLabKopecks)}
-									</strong>
-								</div>
-							</div>
-
-							<div className="text-right">
-								<span className="text-xs text-slate-500 block">Итого к выплате врачу:</span>
-								<span
-									className="text-base font-bold text-teal-700 dark:text-teal-300"
-									data-testid="sim-net-payout"
-								>
-									{formatKopecksToRublesDisplay(simCalculation.netPayoutKopecks)}
-								</span>
-							</div>
-						</div>
-					)}
-				</div>
-			)}
 
 			<div className="settings-card-body">
 				{load.kind === "failed" ? (

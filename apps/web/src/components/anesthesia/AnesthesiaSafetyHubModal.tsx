@@ -11,8 +11,6 @@ import {
 	Activity,
 	AlertOctagon,
 	Clock,
-	Play,
-	Pause,
 	RotateCcw,
 	PhoneCall,
 	FileText,
@@ -44,7 +42,6 @@ import {
 	EMERGENCY_PROTOCOLS,
 	EmergencyProtocolDefinition,
 	calculateAllEmergencyDosagesForWeight,
-	formatEmergencyStopwatchTime,
 	generateEmergencyForm043Act,
 	generateEmergency112DispatchScript,
 	ExecutedEmergencyStepLog
@@ -135,8 +132,6 @@ export function AnesthesiaSafetyHubModal({
 
 	// Emergency Protocols State
 	const [activeEmergencyScenario, setActiveEmergencyScenario] = useState<EmergencyScenarioId>(initialEmergencyScenario);
-	const [timerSeconds, setTimerSeconds] = useState<number>(0);
-	const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
 	const [completedStepNumbers, setCompletedStepNumbers] = useState<Record<number, ExecutedEmergencyStepLog>>({});
 	const [show112ScriptInline, setShow112ScriptInline] = useState<boolean>(false);
 
@@ -151,9 +146,6 @@ export function AnesthesiaSafetyHubModal({
 	const [isCopied, setIsCopied] = useState<boolean>(false);
 	const [copyNotificationText, setCopyNotificationText] = useState<string>('');
 
-	// Timer ref
-	const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
 	// Sync initial tab if prop changes
 	useEffect(() => {
 		if (isOpen) {
@@ -163,20 +155,6 @@ export function AnesthesiaSafetyHubModal({
 			}
 		}
 	}, [isOpen, initialTab, initialEmergencyScenario]);
-
-	// Stopwatch ticker
-	useEffect(() => {
-		if (isTimerRunning) {
-			timerRef.current = setInterval(() => {
-				setTimerSeconds(prev => prev + 1);
-			}, 1000);
-		} else if (timerRef.current) {
-			clearInterval(timerRef.current);
-		}
-		return () => {
-			if (timerRef.current) clearInterval(timerRef.current);
-		};
-	}, [isTimerRunning]);
 
 	// Live Vitals Evaluation
 	const vitalsEvaluation = useMemo(() => {
@@ -363,11 +341,13 @@ export function AnesthesiaSafetyHubModal({
 			if (next[stepNumber]) {
 				delete next[stepNumber];
 			} else {
+				const now = new Date();
+				const timeFormatted = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 				next[stepNumber] = {
 					stepNumber,
 					titleRu: stepTitle,
-					timestampSeconds: timerSeconds,
-					timeFormatted: formatEmergencyStopwatchTime(timerSeconds)
+					timestampSeconds: Math.floor(now.getTime() / 1000),
+					timeFormatted
 				};
 			}
 			return next;
@@ -389,7 +369,7 @@ export function AnesthesiaSafetyHubModal({
 			clinicName,
 			clinicAddress,
 			cabinetNumber,
-			startTimeIso: new Date(Date.now() - timerSeconds * 1000).toISOString(),
+			startTimeIso: new Date().toISOString(),
 			initialBp: `${bpSystolic}/${bpDiastolic}`,
 			finalBp: '120/80',
 			initialHr: String(heartRateBpm),
@@ -1105,36 +1085,17 @@ export function AnesthesiaSafetyHubModal({
 									</div>
 								</div>
 
-								{/* Stopwatch Widget */}
-								<div className="emergency-stopwatch-widget">
-									<div className="stopwatch-display">
-										<Clock size={16} />
-										<span className="stopwatch-digits">{formatEmergencyStopwatchTime(timerSeconds)}</span>
-									</div>
-									<div className="stopwatch-controls">
-										<button
-											type="button"
-											onClick={() => setIsTimerRunning(prev => !prev)}
-											className={`anesthesia-btn ${isTimerRunning ? 'stopwatch-btn-pause' : 'stopwatch-btn-play'}`}
-											title={isTimerRunning ? 'Пауза секундомера' : 'Старт секундомера'}
-											style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem' }}
-										>
-											{isTimerRunning ? <Pause size={16} /> : <Play size={16} />}
-										</button>
-										<button
-											type="button"
-											onClick={() => {
-												setIsTimerRunning(false);
-												setTimerSeconds(0);
-												setCompletedStepNumbers({});
-											}}
-											className="anesthesia-btn"
-											title="Сбросить время и шаги"
-											style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem' }}
-										>
-											<RotateCcw size={16} />
-										</button>
-									</div>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => setCompletedStepNumbers({})}
+										className="anesthesia-btn"
+										title="Сбросить шаги"
+										style={{ minHeight: '44px', minWidth: '44px', padding: '0.5rem' }}
+									>
+										<RotateCcw size={16} />
+										<span style={{ fontSize: '0.75rem', marginLeft: '4px' }}>Сброс шагов</span>
+									</button>
 								</div>
 							</div>
 

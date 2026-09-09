@@ -249,12 +249,6 @@ for (const cfg of configs) {
   }
   await page.waitForTimeout(600);
 
-  // Open the Piece-rate simulator
-  const simBtn = page.locator('[data-testid="toggle-piece-rate-simulator"]').first();
-  if (await simBtn.count() > 0) {
-    await simBtn.click();
-    await page.waitForTimeout(400);
-  }
 
   // Also open the first employee's authority editor
   const firstStaffToggle = page.locator('[data-testid^="staff-authority-toggle-"]').first();

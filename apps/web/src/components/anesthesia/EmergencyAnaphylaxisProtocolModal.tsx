@@ -25,7 +25,6 @@ import {
 	Copy,
 	FileDown,
 	FileText,
-	Heart,
 	HeartPulse,
 	Layers,
 	LifeBuoy,
@@ -91,10 +90,9 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 	const [weightKg, setWeightKg] = useState<number>(patientWeightKg);
 	const [patientAgeYears, setPatientAgeYears] = useState<number>(patientAge);
 
-	// 2. Stopwatch & Metronome State
+	// 2. Stopwatch State
 	const [stopwatchSeconds, setStopwatchSeconds] = useState<number>(0);
 	const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
-	const [isMetronomeActive, setIsMetronomeActive] = useState<boolean>(false);
 
 	// 3. Checklist & Event Log State
 	const [completedChecklistItems, setCompletedChecklistItems] = useState<Record<string, boolean>>({});
@@ -115,7 +113,6 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 			soundFeedback.playWarningAlert();
 		} else {
 			setIsTimerRunning(false);
-			setIsMetronomeActive(false);
 		}
 	}, [isOpen, initialScenario, patientWeightKg, patientAge]);
 
@@ -836,21 +833,7 @@ export const EmergencyAnaphylaxisProtocolModal: React.FC<EmergencyAnaphylaxisPro
 							</div>
 						</div>
 
-						{/* 2. CPR Metronome (110 bpm) */}
-						<button
-							type="button"
-							onClick={() => {
-								setIsMetronomeActive((prev) => !prev);
-								soundFeedback.playSpeechCaptured();
-							}}
-							className={`emergency-cpr-metronome ${isMetronomeActive ? "active" : ""}`}
-							data-testid="cpr-metronome-btn"
-						>
-							<Heart size={18} className={isMetronomeActive ? "text-white animate-ping" : "text-red-400"} />
-							<span>{isMetronomeActive ? "СЛР Метроном (110 уд/мин ВКЛ)" : "Включить метроном СЛР (110 уд/мин)"}</span>
-						</button>
-
-						{/* 3. Direct Emergency Call Button */}
+						{/* 2. Direct Emergency Call Button */}
 						<a
 							href="tel:112"
 							onClick={() => {
