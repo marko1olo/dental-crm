@@ -1285,7 +1285,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 					/>
 					{COMPLAINT_QUICK_CHIPS.length > 0 && (
 						<div
-							className="mt-1.5 flex items-center gap-1.5 flex-wrap"
+							className="mt-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full flex-nowrap touch-pan-x"
 							data-testid="complaint-quick-chips-bar"
 						>
 							<span className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1 shrink-0">
@@ -1300,7 +1300,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 										type="button"
 										onClick={() => handleAddComplaintChip(chipText)}
 										disabled={fieldsDisabled}
-										className={`text-xs px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 select-none ${
+										className={`text-xs min-h-[36px] px-2.5 py-1 rounded-lg font-semibold border transition-all cursor-pointer inline-flex items-center gap-1 select-none shrink-0 ${
 											isApplied
 												? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 font-bold"
 												: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"

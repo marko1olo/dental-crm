@@ -1258,15 +1258,15 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 											<span
 												className={`text-sm font-black ${
 													maxDepth >= 6
-														? "text-red-600 dark:text-red-400 font-bold"
+														? "text-[var(--bad-fg)] font-bold"
 														: maxDepth >= 4
-														? "text-amber-600 dark:text-amber-400"
-														: "text-emerald-600 dark:text-emerald-400"
+														? "text-[var(--warn-fg)]"
+														: "text-[var(--good-fg)]"
 												}`}
 											>
 												{maxDepth > 0 ? `${maxDepth}мм` : "—"}
 											</span>
-											{hasBop && <Droplets size={12} className="text-red-500 mt-0.5 animate-bounce" />}
+											{hasBop && <Droplets size={12} className="text-[var(--bad-fg)] mt-0.5 animate-bounce" />}
 										</div>
 									) : (
 										<span className="text-[10px] text-[var(--muted,#64748b)] mt-2 font-bold">Удален</span>

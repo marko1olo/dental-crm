@@ -1738,7 +1738,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										style={{
 											width: "4px",
 											height: "10px",
-											background: "#ef4444",
+											background: "var(--bad-fg, #ef4444)",
 											borderRadius: "2px",
 											animation: "skeleton-wave 1s ease-in-out infinite",
 											animationDelay: "0s",
@@ -1749,7 +1749,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										style={{
 											width: "4px",
 											height: "10px",
-											background: "#ef4444",
+											background: "var(--bad-fg, #ef4444)",
 											borderRadius: "2px",
 											animation: "skeleton-wave 1s ease-in-out infinite",
 											animationDelay: "0.2s",
@@ -1760,7 +1760,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 										style={{
 											width: "4px",
 											height: "10px",
-											background: "#ef4444",
+											background: "var(--bad-fg, #ef4444)",
 											borderRadius: "2px",
 											animation: "skeleton-wave 1s ease-in-out infinite",
 											animationDelay: "0.4s",
@@ -3721,7 +3721,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 											</button>
 											<button
 												type="button"
-												className="text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors py-0.5 px-2 text-left inline-flex items-center gap-1 cursor-pointer"
+												className="min-h-[44px] px-3 py-1.5 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]/40 rounded-lg transition-colors text-left inline-flex items-center gap-1.5 cursor-pointer"
 												onClick={() => {
 													setAnesthesiaModalToothNumber(code);
 													setIsAnesthesiaModalOpen(true);
@@ -3729,7 +3729,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 												}}
 												title="Расчет максимальной безопасной дозы и выбор препарата по весу"
 											>
-												<Sparkles className="w-3 h-3 text-[var(--teal,var(--brand-primary))]" />
+												<Sparkles className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))]" />
 												<span>Калькулятор доз и МДД...</span>
 											</button>
 											<button

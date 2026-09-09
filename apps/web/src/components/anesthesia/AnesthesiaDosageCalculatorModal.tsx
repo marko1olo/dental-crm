@@ -495,7 +495,7 @@ export function AnesthesiaDosageCalculatorModal({
 					{/* 1-Click Dominant Presets Bar (Mandate 8e) */}
 					<div
 						style={{
-							background: "var(--paper-strong, #f8fafc)",
+							background: "var(--paper-strong)",
 							padding: "0.875rem",
 							borderRadius: "10px",
 							border: "1px solid var(--teal, #0d9488)",
@@ -627,10 +627,10 @@ export function AnesthesiaDosageCalculatorModal({
 					{/* Patient Physical Profile Grid */}
 					<div
 						style={{
-							background: "var(--paper-strong, #f8fafc)",
+							background: "var(--paper-strong)",
 							padding: "0.875rem",
 							borderRadius: "10px",
-							border: "1px solid var(--line, #e2e8f0)",
+							border: "1px solid var(--line)",
 							marginBottom: "1rem",
 						}}
 					>
@@ -939,10 +939,10 @@ export function AnesthesiaDosageCalculatorModal({
 					{/* Dosage Stepper & Injected Volume */}
 					<div
 						style={{
-							background: "var(--paper-strong, #f8fafc)",
+							background: "var(--paper-strong)",
 							padding: "0.875rem",
 							borderRadius: "10px",
-							border: "1px solid var(--line, #e2e8f0)",
+							border: "1px solid var(--line)",
 							marginBottom: "1rem",
 						}}
 					>
@@ -1318,10 +1318,10 @@ export function AnesthesiaDosageCalculatorModal({
 					{/* Systemic Risk Flags & Technique Accordion */}
 					<div
 						style={{
-							background: "var(--paper-strong, #f8fafc)",
+							background: "var(--paper-strong)",
 							padding: "0.75rem",
 							borderRadius: "8px",
-							border: "1px solid var(--line, #e2e8f0)",
+							border: "1px solid var(--line)",
 							marginBottom: "1rem",
 						}}
 					>
@@ -1484,7 +1484,7 @@ export function AnesthesiaDosageCalculatorModal({
 							background: "var(--paper)",
 							padding: "0.75rem",
 							borderRadius: "8px",
-							border: "1px solid var(--line, #e2e8f0)",
+							border: "1px solid var(--line)",
 							marginBottom: "1rem",
 						}}
 					>
@@ -1532,10 +1532,10 @@ export function AnesthesiaDosageCalculatorModal({
 							style={{
 								fontSize: "0.8125rem",
 								fontFamily: "monospace",
-								background: "var(--paper-strong, #f8fafc)",
+								background: "var(--paper-strong)",
 								padding: "0.5rem",
 								borderRadius: "6px",
-								border: "1px solid var(--line, #e2e8f0)",
+								border: "1px solid var(--line)",
 								lineHeight: 1.4,
 							}}
 						>
@@ -1550,9 +1550,9 @@ export function AnesthesiaDosageCalculatorModal({
 							alignItems: "center",
 							gap: "0.5rem",
 							padding: "0.5rem 0.75rem",
-							background: "var(--paper-strong, #f8fafc)",
+							background: "var(--paper-strong)",
 							borderRadius: "8px",
-							border: "1px solid var(--line, #e2e8f0)",
+							border: "1px solid var(--line)",
 						}}
 					>
 						<input
@@ -1590,7 +1590,7 @@ export function AnesthesiaDosageCalculatorModal({
 						flexWrap: "wrap",
 						gap: "0.75rem",
 						padding: "0.875rem 1rem",
-						borderTop: "1px solid var(--line, #e2e8f0)",
+						borderTop: "1px solid var(--line)",
 					}}
 				>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
