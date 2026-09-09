@@ -632,6 +632,17 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 							<Zap size={13} className="text-indigo-600 dark:text-indigo-400" />
 							<span>Авто-РД (FDI)</span>
 						</button>
+
+						<button
+							type="button"
+							data-testid="drawer-btn-standard-endo-protocol"
+							onClick={handleApplyStandardProtocol}
+							className="min-h-[32px] h-[34px] px-3 py-1 rounded-xl text-xs font-black bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-1.5 shadow-sm shadow-cyan-600/20 transition-all cursor-pointer active:scale-98 shrink-0"
+							title="Стандартный протокол эндодонтии: ProTaper Ultimate, 3% NaOCl + 17% EDTA с УЗ-активацией, обтурация гуттаперчей на силере AH Plus"
+						>
+							<Sparkles size={13} />
+							<span>Стандарт (AH Plus)</span>
+						</button>
 					</div>
 
 					<div className="flex items-center gap-1.5 shrink-0">
@@ -687,16 +698,6 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 						</button>
 						<button
 							type="button"
-							data-testid="drawer-btn-standard-endo-protocol"
-							onClick={handleApplyStandardProtocol}
-							className="sr-only"
-							tabIndex={-1}
-							aria-hidden="true"
-						>
-							Стандарт (ProTaper + AH-Plus)
-						</button>
-						<button
-							type="button"
 							data-testid="drawer-btn-caoh2-endo-protocol"
 							onClick={handleApplyCaOh2Protocol}
 							className="sr-only"
@@ -710,10 +711,10 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 
 				{/* ═══ 3. MAIN CONTENT: UTILITARIAN CANALS TABLE ═══ */}
 				<div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-					<div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
+					<div className="overflow-x-auto rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900/90 shadow-xs">
 						<table className="w-full text-left text-xs border-collapse">
 							<thead>
-								<tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider text-[11px]">
+								<tr className="border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 text-[var(--muted,#64748b)] dark:text-slate-400 uppercase font-bold tracking-wider text-[11px]">
 									<th className="px-3 py-2.5 w-10 text-center">#</th>
 									<th className="px-3 py-2.5 min-w-[130px]">Канал</th>
 									<th className="px-3 py-2.5 min-w-[120px]">Рабочая длина WL (мм)</th>
@@ -722,7 +723,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 									<th className="px-2 py-2.5 w-10 text-center"></th>
 								</tr>
 							</thead>
-							<tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+							<tbody className="divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800/60">
 								{canals.map((canal, idx) => {
 									const isSpokenRecent = lastSpokenCanal === canal.canalName;
 									const isoMatch = String(canal.masterApicalFile).match(/\d+/);
@@ -756,7 +757,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 												<select
 													value={canal.canalName}
 													onChange={(e) => handleUpdateCanal(canal.id, { canalName: e.target.value })}
-													className="w-full font-bold text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[38px]"
+													className="w-full font-bold text-xs bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[38px]"
 												>
 													{CANAL_NAME_OPTIONS.map((opt) => (
 														<option key={opt.value} value={opt.value}>
@@ -782,7 +783,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 															});
 														}}
 														placeholder={String(defaultAnatomicalLength)}
-														className="w-full text-right font-black font-mono text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-2 pr-8 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[38px]"
+														className="w-full text-right font-black font-mono text-sm bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl pl-2 pr-8 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none min-h-[38px]"
 													/>
 													<span className="absolute right-2.5 text-[11px] font-bold text-slate-400 pointer-events-none">
 														мм
@@ -802,7 +803,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 														onChange={(e) =>
 															handleUpdateCanal(canal.id, { masterApicalFile: e.target.value })
 														}
-														className="w-full font-semibold text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none truncate min-h-[38px]"
+														className="w-full font-semibold text-xs bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none truncate min-h-[38px]"
 													>
 														{MAF_ISO_OPTIONS.map((opt) => (
 															<option key={opt} value={opt}>
@@ -823,7 +824,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 																obturationTechnique: e.target.value,
 															})
 														}
-														className="w-3/5 font-medium text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none truncate min-h-[38px]"
+														className="w-3/5 font-medium text-xs bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none truncate min-h-[38px]"
 													>
 														{OBTURATION_TECHNIQUE_OPTIONS.map((opt) => (
 															<option key={opt} value={opt}>
@@ -838,7 +839,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 															handleUpdateCanal(canal.id, { sealer: e.target.value })
 														}
 														placeholder="Силер"
-														className="w-2/5 font-medium text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[38px]"
+														className="w-2/5 font-medium text-xs bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-2.5 py-2 focus:ring-2 focus:ring-sky-500 focus:outline-none min-h-[38px]"
 													/>
 												</div>
 											</td>
@@ -887,7 +888,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 										type="text"
 										value={rotarySystem}
 										onChange={(e) => setRotarySystem(e.target.value)}
-										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+										className="w-full text-xs bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
 									/>
 								</div>
 
@@ -899,7 +900,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 										type="text"
 										value={irrigation}
 										onChange={(e) => setIrrigation(e.target.value)}
-										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+										className="w-full text-xs bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
 									/>
 								</div>
 
@@ -911,7 +912,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 										type="text"
 										value={radiologyControl}
 										onChange={(e) => setRadiologyControl(e.target.value)}
-										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+										className="w-full text-xs bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
 									/>
 								</div>
 
@@ -923,7 +924,7 @@ export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProp
 										type="text"
 										value={apexLocatorModel}
 										onChange={(e) => setApexLocatorModel(e.target.value)}
-										className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
+										className="w-full text-xs bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-white border border-[var(--line,#e2e8f0)] dark:border-slate-700 rounded-xl px-3 py-2 focus:ring-2 focus:ring-red-500 focus:outline-none"
 									/>
 								</div>
 							</div>

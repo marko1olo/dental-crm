@@ -1204,7 +1204,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 								onClick={() => setActiveAspect("buccal")}
 								className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 									activeAspect === "buccal"
-										? "bg-slate-800 text-white shadow-sm"
+										? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>
@@ -1215,7 +1215,7 @@ export const PeriodontalChartingModal: React.FC<PeriodontalChartingModalProps> =
 								onClick={() => setActiveAspect("lingual")}
 								className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
 									activeAspect === "lingual"
-										? "bg-slate-800 text-white shadow-sm"
+										? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
 										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 								}`}
 							>

@@ -75,7 +75,7 @@
 	align-items: center;
 	justify-content: center;
 	background: var(--teal);
-	color: var(--paper-strong);
+	color: #ffffff;
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
 }
 
@@ -265,6 +265,8 @@
 	padding: 8px 12px;
 	border-radius: 10px;
 	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
 	font-size: 15px;
 	font-weight: 700;
 	cursor: pointer;
@@ -274,9 +276,14 @@
 	justify-content: center;
 }
 
+.perio-depth-btn:hover {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+}
+
 .perio-depth-btn.active {
 	background: var(--teal);
-	color: var(--paper-strong);
+	color: #ffffff;
 	border-color: var(--teal);
 	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
 }
@@ -320,7 +327,7 @@
 	padding: 10px 24px;
 	border-radius: 14px;
 	background: var(--teal);
-	color: var(--paper-strong);
+	color: #ffffff;
 	font-size: 15px;
 	font-weight: 700;
 	border: none;
@@ -362,16 +369,14 @@
 	background: var(--paper-strong);
 }
 
-/* Presets Toolbar (Mandates 8d, 8e, 8k: Strict 1-Row 32-36px, Hick's Law) */
+/* Presets Toolbar (Mandates 8d, 8e, 8k: Strict 1-Row, Hick's Law) */
 .perio-presets-toolbar {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
-	height: 36px;
-	min-height: 36px;
-	max-height: 36px;
-	padding: 2px 16px;
+	min-height: 48px;
+	padding: 4px 16px;
 	background: var(--paper-soft);
 	border-bottom: 1px solid var(--line);
 	overflow-x: auto;
@@ -485,3 +490,69 @@
 	background: var(--teal, #0d9488);
 	color: #ffffff;
 }
+
+/* ── A4 Print Styles (@media print) ── */
+@media print {
+	.perio-modal-backdrop {
+		position: static !important;
+		background: none !important;
+		backdrop-filter: none !important;
+		padding: 0 !important;
+		inset: auto !important;
+		display: block !important;
+		z-index: auto !important;
+	}
+
+	.perio-modal-card {
+		position: static !important;
+		max-width: 100% !important;
+		max-height: none !important;
+		overflow: visible !important;
+		border: none !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+
+	/* Screen-only UI controls hidden in print */
+	.perio-presets-toolbar,
+	.perio-footer,
+	.perio-header button,
+	.perio-header .animate-pulse,
+	.perio-stepper-btn,
+	.perio-bop-toggle,
+	.perio-active-tooth-editor .flex.flex-wrap.gap-1,
+	button[data-testid="perio-modal-pathology-btn"] {
+		display: none !important;
+	}
+
+	.perio-indices-bar {
+		background: #ffffff !important;
+		border-bottom: 1px solid #cbd5e1 !important;
+		padding: 8px 0 !important;
+	}
+
+	.perio-index-card {
+		border: 1px solid #cbd5e1 !important;
+		background: #f8fafc !important;
+	}
+
+	.perio-arch-grid {
+		background: #ffffff !important;
+		border: 1px solid #cbd5e1 !important;
+	}
+
+	.perio-tooth-cell {
+		background: #ffffff !important;
+		border: 1px solid #e2e8f0 !important;
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+
+	@page {
+		size: A4 portrait;
+		margin: 10mm;
+	}
+}
+
