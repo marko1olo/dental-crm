@@ -501,9 +501,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 	const [newPatientBirthDate, setNewPatientBirthDate] = useState<string>("");
 	const [isCreatingPatient, setIsCreatingPatient] = useState<boolean>(false);
 
-	// Dirty state guard confirmation
-	const [showDirtyConfirm, setShowDirtyConfirm] = useState<boolean>(false);
-
 	// Submission state
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
@@ -722,7 +719,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 		setIsTypeaheadOpen(false);
 		setNewPatientBirthDate("");
-		setShowDirtyConfirm(false);
 
 		const isCito = Boolean(
 			initialSlot?.isCitoEmergency ||
@@ -1346,7 +1342,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 			localStorage.setItem("dente_quick_booking_draft", JSON.stringify(draftData));
 			showToast("Черновик записи сохранен", "info");
 		} catch {}
-		setShowDirtyConfirm(false);
 		onClose();
 	}, [
 		appointmentType,
@@ -1367,28 +1362,23 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 		try {
 			localStorage.removeItem("dente_quick_booking_draft");
 		} catch {}
-		setShowDirtyConfirm(false);
 		onClose();
 	}, [onClose]);
 
-	// Soft close request with dirty state guard
+	// Soft close request with seamless draft auto-persistence (Mandate 8e & Anti-Matryoshka, depth strictly 1)
 	const handleRequestClose = useCallback(() => {
 		if (isDirty) {
-			setShowDirtyConfirm(true);
+			handleSaveDraftAndClose();
 		} else {
 			onClose();
 		}
-	}, [isDirty, onClose]);
+	}, [isDirty, handleSaveDraftAndClose, onClose]);
 
 	// Keyboard handler for drawer (Escape to close, Ctrl+Enter to submit)
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Escape") {
 			e.stopPropagation();
-			if (showDirtyConfirm) {
-				setShowDirtyConfirm(false);
-			} else {
-				handleRequestClose();
-			}
+			handleRequestClose();
 		} else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
 			e.preventDefault();
 			void handleSubmitBooking();
@@ -2593,14 +2583,29 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 
 				{/* Footer Actions */}
 				<div className="p-4 sm:p-5 pb-6 sm:pb-5 border-t border-[var(--line)] bg-[var(--paper-soft)] flex items-center justify-between gap-3 shrink-0">
-					<button
-						type="button"
-						onClick={handleRequestClose}
-						disabled={isSubmitting}
-						className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
-					>
-						Отмена (Esc)
-					</button>
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleRequestClose}
+							disabled={isSubmitting}
+							data-testid="quick-booking-cancel-btn"
+							className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+						>
+							Отмена (Esc)
+						</button>
+						{isDirty && (
+							<button
+								type="button"
+								onClick={handleDiscardDraftAndClose}
+								disabled={isSubmitting}
+								className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+								title="Сбросить все введенные данные без сохранения черновика"
+								data-testid="quick-booking-discard-draft-btn"
+							>
+								Сбросить
+							</button>
+						)}
+					</div>
 
 					<button
 						type="button"
@@ -2634,55 +2639,6 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
 						</span>
 					</button>
 				</div>
-
-				{/* Soft Dirty State Guard Confirmation Dialog */}
-				{showDirtyConfirm && (
-					<div
-						className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
-						role="alertdialog"
-						aria-labelledby="dirty-confirm-title"
-						aria-describedby="dirty-confirm-desc"
-						data-testid="quick-booking-dirty-confirm-dialog"
-					>
-						<div
-							className="bg-[var(--paper)] border border-[var(--line-strong)] rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 text-[var(--ink)]"
-							style={{ backgroundColor: "var(--paper)" }}
-						>
-							<div className="flex items-start gap-3">
-								<div className="p-2.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0">
-									<AlertTriangle size={20} />
-								</div>
-								<div className="space-y-1">
-									<h4 id="dirty-confirm-title" className="text-sm font-bold text-[var(--ink)] m-0">
-										Сохранить черновик записи?
-									</h4>
-									<p id="dirty-confirm-desc" className="text-xs text-[var(--muted)] m-0 leading-relaxed">
-										Вы изменили параметры записи. Сохранить черновик для последующего быстрого восстановления или сбросить?
-									</p>
-								</div>
-							</div>
-
-							<div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--line)]">
-								<button
-									type="button"
-									onClick={handleDiscardDraftAndClose}
-									className="min-h-[44px] px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--line)] text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-									data-testid="quick-booking-discard-draft-btn"
-								>
-									Сбросить
-								</button>
-								<button
-									type="button"
-									onClick={handleSaveDraftAndClose}
-									className="min-h-[44px] px-4 py-2 text-xs font-bold rounded-xl bg-[var(--teal-dark)] text-[var(--on-teal)] hover:brightness-110 active:brightness-95 transition-all shadow-xs cursor-pointer"
-									data-testid="quick-booking-save-draft-btn"
-								>
-									Да, сохранить
-								</button>
-							</div>
-						</div>
-					</div>
-				)}
 			</div>
 		</div>
 	);

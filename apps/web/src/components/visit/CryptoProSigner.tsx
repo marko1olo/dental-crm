@@ -567,23 +567,20 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = ({
 								Отмена
 							</button>
 							{/*
-								Кнопка не ведёт в тупик: пока подпись КриптоПро невозможна,
-								нажимать её незачем — рядом написано, чем подписать вместо неё.
-								Проверка в handleConfirmLock оставлена как второй рубеж.
+								Мандат 8e: Кнопка никогда не блокируется серым цветом без причины.
+								При клике, если подпись КриптоПро невозможна (нет хеша черновика),
+								handleConfirmLock выводит понятное объяснение.
 							*/}
 							<button
 								type="button"
 								onClick={handleConfirmLock}
-								disabled={
-									lockInProgress ||
-									(signatureType === "crypto" && cryptoSigningUnavailable)
-								}
+								disabled={lockInProgress}
 								title={
 									signatureType === "crypto" && cryptoSigningUnavailable
 										? CRYPTO_SIGNING_UNAVAILABLE_TEXT
 										: undefined
 								}
-								className="flex-1 px-4 py-2.5 bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-medium rounded-xl transition-colors shadow-lg disabled:opacity-60 flex items-center justify-center gap-2"
+								className="flex-1 px-4 py-2.5 bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-medium rounded-xl transition-colors shadow-lg disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
 							>
 								{lockInProgress ? (
 									"Подписываю…"

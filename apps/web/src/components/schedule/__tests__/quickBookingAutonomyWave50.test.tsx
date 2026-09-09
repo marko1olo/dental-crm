@@ -457,6 +457,7 @@ function setupMockDom() {
 	return {
 		doc,
 		win,
+		localStorage: localStorageMock,
 		getClipboardText: () => clipboardText,
 		clearClipboard: () => {
 			clipboardText = "";
@@ -480,6 +481,22 @@ function findNodeByTestId(
 			const res = findNodeByTestId(child, testId);
 			if (res) return res;
 		}
+	}
+	return null;
+}
+
+function findNodeByText(
+	node: MockDomNode | null,
+	text: string,
+): MockDomNode | null {
+	if (!node) return null;
+	if (node.textContent && node.textContent.includes(text)) {
+		// check children for more specific match
+		for (const child of node.children || []) {
+			const sub = findNodeByText(child, text);
+			if (sub) return sub;
+		}
+		return node;
 	}
 	return null;
 }
@@ -1037,5 +1054,86 @@ describe("Feature 234 (Wave 50): QuickBookingDrawer Autonomy & 1-Click Messenger
 			text.includes("14:00 (30 мин)"),
 			`Clipboard text must include time and duration. Got: ${text}`,
 		);
+	});
+
+	// --- TEST 7: Anti-Matryoshka - Closing dirty drawer auto-persists draft without modal popup ---
+	it("7. Anti-Matryoshka: Closing dirty drawer automatically saves draft without blocking modal popup", async () => {
+		let closed = false;
+		await act(async () => {
+			root.render(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: () => {
+						closed = true;
+					},
+					initialSlot: {
+						chairId: "chair-1",
+						dateKey: "2026-09-09",
+						startTime: "15:00",
+						doctorUserId: "doc-1",
+						patientPhone: "+7 999 888-77-66",
+						durationMinutes: 30,
+					},
+					dashboard: mockDashboard,
+				}),
+			);
+		});
+
+		const bodyNode = mockDomEnv.doc.body as unknown as MockDomNode;
+		// Cancel/Close button
+		const cancelBtn = findNodeByTestId(bodyNode, "quick-booking-cancel-btn");
+		assert.ok(cancelBtn, "quick-booking-cancel-btn must exist");
+
+		await clickNode(cancelBtn);
+
+		assert.equal(closed, true, "Closing dirty drawer must immediately call onClose");
+
+		// Verify no nested alertdialog exists
+		const dirtyConfirmDialog = findNodeByTestId(bodyNode, "quick-booking-dirty-confirm-dialog");
+		assert.equal(
+			dirtyConfirmDialog,
+			null,
+			"Mandate 8d/8e: Nested alertdialog confirmation must NEVER block closing",
+		);
+
+		// Verify draft was saved to localStorage
+		const savedDraft = globalThis.localStorage.getItem("dente_quick_booking_draft");
+		assert.ok(savedDraft, "Draft data must be automatically persisted in localStorage on close");
+	});
+
+	// --- TEST 8: Discard draft button in footer clears draft without modal popup ---
+	it("8. 1-Click discard button in footer allows discarding draft in 1 click without modal confirmation", async () => {
+		let closed = false;
+		globalThis.localStorage.setItem("dente_quick_booking_draft", JSON.stringify({ test: "data" }));
+
+		await act(async () => {
+			root.render(
+				React.createElement(QuickBookingDrawer, {
+					isOpen: true,
+					onClose: () => {
+						closed = true;
+					},
+					initialSlot: {
+						chairId: "chair-1",
+						dateKey: "2026-09-09",
+						startTime: "16:00",
+						doctorUserId: "doc-1",
+						patientPhone: "+7 999 111-22-33",
+						durationMinutes: 30,
+					},
+					dashboard: mockDashboard,
+				}),
+			);
+		});
+
+		const bodyNode = mockDomEnv.doc.body as unknown as MockDomNode;
+		const discardBtn = findNodeByTestId(bodyNode, "quick-booking-discard-draft-btn");
+		assert.ok(discardBtn, "1-Click discard button must exist in footer when dirty");
+
+		await clickNode(discardBtn);
+
+		assert.equal(closed, true, "Clicking discard button must close the drawer");
+		const remainingDraft = globalThis.localStorage.getItem("dente_quick_booking_draft");
+		assert.equal(remainingDraft, null, "Discarding draft must remove it from localStorage");
 	});
 });

@@ -2667,6 +2667,14 @@ export function VisitEmkTab() {
 							className="primary-button min-h-[50px] px-6 py-3 text-sm sm:text-base font-extrabold rounded-xl bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
 							type="button"
 							onClick={() => {
+								if (noteTextOfAnotherVisit) {
+									showToast(
+										"В полях остался текст предыдущего приёма. Скопируйте нужные данные и переключитесь на текущий приём перед сохранением.",
+										"warning",
+										6000,
+									);
+									return;
+								}
 								if (!visitNoteReadyToAccept) {
 									if (!visitNoteForm?.diagnosis || visitNoteForm.diagnosis.length < 4) {
 										updateVisitNoteField?.("diagnosis", "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)");
@@ -2687,10 +2695,7 @@ export function VisitEmkTab() {
 								}
 								acceptDraftToVisit();
 							}}
-							disabled={
-								isDraftAccepting ||
-								Boolean(noteTextOfAnotherVisit)
-							}
+							disabled={isDraftAccepting}
 							aria-describedby={
 								noteTextOfAnotherVisit
 									? "visit-note-foreign-text"

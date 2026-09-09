@@ -23,6 +23,7 @@ import { formatShortDate } from "../../AppHelpers";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { EmptyState } from "../EmptyState";
+import { showToast } from "../GlobalToast";
 import {
 	type CmoAuditEvaluatedVisit,
 	type CmoAuditVisitItem,
@@ -178,7 +179,10 @@ function RejectionModal({
 	};
 
 	const handleSend = async () => {
-		if (!reason.trim()) return;
+		if (!reason.trim()) {
+			showToast("Укажите причину отправки на доработку", "warning");
+			return;
+		}
 		await onSubmit(visit.id, reason, selectedTags);
 		onClose();
 	};
@@ -428,7 +432,7 @@ function RejectionModal({
 					<button
 						type="button"
 						onClick={handleSend}
-						disabled={isSubmitting || !reason.trim()}
+						disabled={isSubmitting}
 						style={{
 							padding: "8px 16px",
 							fontSize: "13px",
@@ -437,12 +441,11 @@ function RejectionModal({
 							border: "none",
 							background: "var(--bad, #ef4444)",
 							color: "#ffffff",
-							cursor:
-								isSubmitting || !reason.trim() ? "not-allowed" : "pointer",
+							cursor: isSubmitting ? "not-allowed" : "pointer",
 							display: "flex",
 							alignItems: "center",
 							gap: "6px",
-							opacity: isSubmitting || !reason.trim() ? 0.6 : 1,
+							opacity: isSubmitting ? 0.6 : 1,
 						}}
 					>
 						<Send size={14} />

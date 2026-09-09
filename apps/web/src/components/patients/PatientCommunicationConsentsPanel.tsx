@@ -232,6 +232,10 @@ export const PatientCommunicationConsentsPanel: React.FC<
 			showToast("Сначала выберите пациента.", "error", 8000);
 			return;
 		}
+		if (!loaded) {
+			showToast("Согласия загружаются, подождите завершения загрузки.", "info", 3000);
+			return;
+		}
 		const entries: Array<{
 			channel: Channel;
 			scope: Scope;
@@ -364,7 +368,7 @@ export const PatientCommunicationConsentsPanel: React.FC<
 					<button
 						type="button"
 						data-testid="patient-comm-consents-save"
-						disabled={loading || saving || !dirty || !loaded}
+						disabled={loading || saving}
 						onClick={() => void save()}
 						className="px-4 py-2 min-h-[44px] text-xs font-bold rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-110 text-white border border-[var(--teal,var(--brand-primary))]/40 disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
 					>
