@@ -91,6 +91,9 @@ export interface CashRegisterModalProps {
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly cashierFullName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly attendingDoctorName?: string | undefined;
+	readonly currentUserName?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly clinicInn?: string | undefined;
 	readonly clinicLicense?: string | undefined;
@@ -109,7 +112,10 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	patientPhone = "+7 (916) 123-45-67",
 	patientDepositRub = 0,
 	patientFamilyBalanceRub = 0,
-	cashierFullName = "Кассир Петрова А. С.",
+	cashierFullName: propCashierFullName,
+	doctorName,
+	attendingDoctorName,
+	currentUserName,
 	clinicName = "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 	clinicInn = "7701234567",
 	clinicLicense = "ЛО41-01137-77/00368421",
@@ -117,6 +123,13 @@ export const CashRegisterModal: React.FC<CashRegisterModalProps> = ({
 	defaultTender = "card",
 	onPaymentComplete,
 }) => {
+	const cashierFullName =
+		(propCashierFullName || "").trim() ||
+		(doctorName || "").trim() ||
+		(attendingDoctorName || "").trim() ||
+		(currentUserName || "").trim() ||
+		"Кассир";
+
 	const [activeTab, setActiveTab] = useState<"checkout" | "thermal" | "split">("checkout");
 	const [selectedTender, setSelectedTender] = useState<CashRegisterTenderMethod>(defaultTender);
 	const [operationType, setOperationType] = useState<"income" | "income_return">(initialOperationType);

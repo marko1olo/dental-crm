@@ -57,6 +57,7 @@ import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalRece
 import { KktLanPrinterService } from "../../../services/hardware/kktLanPrinter";
 import { showToast } from "../../GlobalToast";
 import { useModalA11y } from "../../../hooks/useModalA11y";
+import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
 import "./fastCheckout.css";
 
 export interface FastCheckoutModalProps {
@@ -64,6 +65,7 @@ export interface FastCheckoutModalProps {
 	readonly onClose: () => void;
 	readonly totalBillKop?: number | undefined;
 	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
+	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
 	readonly patientEmail?: string | undefined;
@@ -72,6 +74,8 @@ export interface FastCheckoutModalProps {
 	readonly familyPayerName?: string | undefined;
 	readonly orderId?: string | undefined;
 	readonly stages?: readonly TreatmentPlanStageOption[] | undefined;
+	readonly cashierFullName?: string | undefined;
+	readonly attendingDoctorName?: string | undefined;
 	readonly onPaymentComplete?: ((payload: Ffd12FiscalPayload) => void) | undefined;
 }
 
@@ -80,6 +84,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	onClose,
 	totalBillKop: initialTotalBillKop = 1960000,
 	initialPaymentMethod,
+	patientId,
 	patientName = "Смирнова Екатерина Васильевна",
 	patientPhone = "+7 (999) 123-45-67",
 	patientEmail = "patient@example.com",
@@ -88,8 +93,15 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 	familyPayerName = "Глава семьи",
 	orderId = "CHK-2026-891",
 	stages = DEFAULT_TREATMENT_STAGES,
+	cashierFullName: propCashierFullName,
+	attendingDoctorName,
 	onPaymentComplete,
 }) => {
+	const effectiveCashierFullName =
+		(propCashierFullName || "").trim() ||
+		(attendingDoctorName || "").trim() ||
+		"Кассир";
+
 	const [selectedStageId, setSelectedStageId] = useState<string>("full_plan");
 	const [stagePaymentMode, setStagePaymentMode] = useState<StagePaymentMode>("full");
 	const [advanceAlreadyPaidRub, setAdvanceAlreadyPaidRub] = useState<number>(15000);
@@ -161,6 +173,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		? discountedStageAmountKop
 		: effectiveBillKop;
 	const targetBillRub = targetBillKop / 100;
+	const effectiveTotalRub = targetBillRub;
 
 	const foreignCalc = useMemo(() => {
 		return convertRubToForeignCurrency({
@@ -553,12 +566,12 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 		}
 
 		// 1. Принудительный буфер отложенной фискализации или сетевой офлайн (Mandate 8e — пациент не ждет у стойки)
-		if (forceOfflineBuffer || !navigator.onLine) {
+		if (forceOfflineBuffer || (typeof navigator !== "undefined" && navigator.onLine === false)) {
 			FiscalReceiptQueueManager.enqueueReceipt(
 				{
 					operationType: "income",
 					customerContact: patientPhone || patientEmail || "",
-					cashierFullName: "Кассир",
+					cashierFullName: effectiveCashierFullName,
 					totalRub: targetBillRub,
 					items: [
 						{
@@ -603,7 +616,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 			const printResult = await KktLanPrinterService.printReceipt({
 				operationType: "income",
 				customerContact: patientPhone || patientEmail || "",
-				cashierFullName: "Кассир",
+				cashierFullName: effectiveCashierFullName,
 				totalRub: targetBillRub,
 				items: [
 					{
@@ -626,7 +639,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					{
 						operationType: "income",
 						customerContact: patientPhone || patientEmail || "",
-						cashierFullName: "Кассир",
+						cashierFullName: effectiveCashierFullName,
 						totalRub: targetBillRub,
 						items: [
 							{
@@ -665,6 +678,44 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 					showToast("Чек 54-ФЗ успешно пробит на кассовом аппарате!", "success");
 				}
 
+				if (patientId && effectiveTotalRub > 0) {
+					try {
+						const primaryMethod =
+							effectiveCashRub > 0 && effectiveCardRub === 0 && effectiveSbpRub === 0
+								? "cash"
+								: activeMethod === "cash"
+								? "cash"
+								: activeMethod === "sbp_qr"
+								? "online"
+								: activeMethod === "dms_insurance"
+								? "insurance"
+								: "card";
+
+						const headers = denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+							"Idempotency-Key": compositeIdempotencyKey,
+						});
+
+						if (typeof fetch === "function") {
+							await fetch("/api/billing/payments", {
+								method: "POST",
+								headers,
+								body: JSON.stringify({
+									patientId,
+									amountRub: effectiveTotalRub,
+									method: primaryMethod,
+									clientMutationId: compositeIdempotencyKey,
+									note: `Быстрый расчет 54-ФЗ (${effectiveCashierFullName}): ${primaryMethod}`,
+								}),
+							}).catch((fetchErr) => {
+								console.warn("[FastCheckoutModal] /api/billing/payments error:", fetchErr);
+							});
+						}
+					} catch (crmErr) {
+						console.warn("[FastCheckoutModal] Failed to record payment in CRM:", crmErr);
+					}
+				}
+
 				if (onPaymentComplete) {
 					onPaymentComplete(payload);
 				}
@@ -681,7 +732,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 				{
 					operationType: "income",
 					customerContact: patientPhone || patientEmail || "",
-					cashierFullName: "Кассир",
+					cashierFullName: effectiveCashierFullName,
 					totalRub: targetBillRub,
 					items: [
 						{
@@ -819,7 +870,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = ({
 								Мгновенный расчет без ручного ввода цифр{familyPayerName ? ` • Плательщик: ${familyPayerName}` : ""}{patientFamilyBalanceRub > 0 ? ` (баланс: ${(patientFamilyBalanceRub).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)` : ""}
 							</span>
 						</div>
-						<div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
 							<button
 								type="button"
 								onClick={() => handleQuickPreset("100_card")}

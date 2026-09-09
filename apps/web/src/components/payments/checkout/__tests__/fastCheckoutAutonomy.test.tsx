@@ -560,4 +560,124 @@ describe("Fast Checkout 54-FZ Cashier Autonomy & 1-Click Discrepancy Resolver (M
 			"info",
 		);
 	});
+
+	it("6. Button Grid Ergonomics: uses grid-cols-2 sm:grid-cols-4 gap-2 without lg:grid-cols-8 squishing (Mandate 8d, Greh 1)", async () => {
+		await act(async () => {
+			root.render(
+				<FastCheckoutModal
+					isOpen={true}
+					onClose={() => {}}
+					totalBillKop={100000}
+				/>,
+			);
+		});
+
+		const presetsSection = findNodeByTestId(container, "quick-presets-section");
+		expect(presetsSection).not.toBeNull();
+		const gridContainer = presetsSection?.children?.find((c) =>
+			c.className?.includes("grid-cols-2"),
+		);
+		expect(gridContainer).not.toBeNull();
+		assert.ok(
+			gridContainer?.className.includes("grid-cols-2 sm:grid-cols-4 gap-2"),
+			`Expected grid-cols-2 sm:grid-cols-4 gap-2, but got: ${gridContainer?.className}`,
+		);
+		assert.equal(
+			gridContainer?.className.includes("lg:grid-cols-8"),
+			false,
+			"lg:grid-cols-8 must not be present to avoid button squishing",
+		);
+	});
+
+	it("7. Solo Doctor Cashier Fallback: attendingDoctorName is used when cashierFullName is omitted (Mandate 8n)", async () => {
+		// biome-ignore lint/suspicious/noExplicitAny: test spy
+		let printedReceipt: any = null;
+		const originalPrint = KktLanPrinterService.printReceipt;
+		// biome-ignore lint/suspicious/noExplicitAny: test spy
+		KktLanPrinterService.printReceipt = async (params: any) => {
+			printedReceipt = params;
+			return {
+				success: true,
+				status: "printed",
+				hardwareLatencyMs: 5,
+				usedCircuitBreaker: false,
+			};
+		};
+
+		try {
+			await act(async () => {
+				root.render(
+					<FastCheckoutModal
+						isOpen={true}
+						onClose={() => {}}
+						totalBillKop={200000}
+						attendingDoctorName="Д-р Кузнецова Е.В."
+					/>,
+				);
+			});
+
+			const executeBtn = findNodeByTestId(container, "execute-fast-checkout-btn");
+			expect(executeBtn).not.toBeNull();
+			await clickNode(executeBtn!);
+
+			assert.ok(printedReceipt, "printReceipt should have been called");
+			assert.equal(
+				printedReceipt.cashierFullName,
+				"Д-р Кузнецова Е.В.",
+				"Must use attendingDoctorName as cashier fallback",
+			);
+		} finally {
+			KktLanPrinterService.printReceipt = originalPrint;
+		}
+	});
+
+	it("8. Billing Payment Synchronization: records payment to /api/billing/payments when patientId and effectiveTotalRub > 0 (ARCH-03)", async () => {
+		let fetchedUrl = "";
+		// biome-ignore lint/suspicious/noExplicitAny: test spy
+		let fetchedOptions: any = null;
+		const originalFetch = globalThis.fetch;
+		// biome-ignore lint/suspicious/noExplicitAny: test spy
+		globalThis.fetch = (async (url: any, options: any) => {
+			fetchedUrl = String(url);
+			fetchedOptions = options;
+			return {
+				ok: true,
+				status: 200,
+				json: async () => ({ id: "pay-rec-1", amountRub: 5000 }),
+			} as any;
+		}) as any;
+
+		try {
+			await act(async () => {
+				root.render(
+					<FastCheckoutModal
+						isOpen={true}
+						onClose={() => {}}
+						totalBillKop={500000}
+						patientId="00000000-0000-0000-0000-000000000001"
+						attendingDoctorName="Д-р Морозов"
+					/>,
+				);
+			});
+
+			const executeBtn = findNodeByTestId(container, "execute-fast-checkout-btn");
+			expect(executeBtn).not.toBeNull();
+			await clickNode(executeBtn!);
+
+			assert.equal(fetchedUrl, "/api/billing/payments");
+			assert.ok(fetchedOptions, "Fetch options should be provided");
+			assert.equal(fetchedOptions.method, "POST");
+			const parsedBody = JSON.parse(fetchedOptions.body);
+			assert.equal(parsedBody.patientId, "00000000-0000-0000-0000-000000000001");
+			assert.equal(parsedBody.amountRub, 5000);
+			assert.ok(parsedBody.clientMutationId, "clientMutationId must be set");
+		} finally {
+			if (originalFetch) {
+				globalThis.fetch = originalFetch;
+			} else {
+				// biome-ignore lint/suspicious/noExplicitAny: test cleanup
+				delete (globalThis as any).fetch;
+			}
+		}
+	});
 });
