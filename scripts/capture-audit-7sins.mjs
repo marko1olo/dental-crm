@@ -343,7 +343,7 @@ async function main() {
 			id: "04_settings",
 			name: "Настройки клиники (Settings)",
 			hash: "#settings",
-			waitSelector: ".settings-panel:not([aria-busy='true'])",
+			waitSelector: ".settings-zone:not([aria-busy='true']), [data-testid='settings-view'], h2:has-text('Настройки клиники')",
 		},
 	];
 
