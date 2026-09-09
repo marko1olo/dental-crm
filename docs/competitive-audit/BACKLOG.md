@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-09 / WAVE 70): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 198 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 261 ФИЧА: 63 КАНОНИЧЕСКИЕ + 198 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-09 / WAVE 71): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 200 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 263 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 200 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -3013,9 +3013,93 @@
 
 ---
 
+## 199. `расписание_кресла::привязка_врачей_к_креслам_пресеты_смен_диапазон_дат_ротация_2_2_и_5_2_копирование_на_неделю_месяц_14_палитр_и_соло_фоллбэк` [РЕАЛИЗОВАНО] (Wave 71, Feature 262) -> KILLER / MUST-HAVE
+- **Идея**: В соответствии с Мандатами 8c, 8d, 8e п. 8 и 8n модуль управления установками и расписанием приведён к полному паритету с отраслевыми стандартами StomX и DentalPRO: быстрое распределение смен врачей по креслам в 1 клик, поддержка утренних/вечерних пресетов (включая сдвиги 09-15 и 15-21), пакетное назначение смен на произвольный диапазон дат (с циклом 2/2 и пятидневкой 5/2), копирование сетки на следующую неделю и месяц вперед, 14 аутентичных палитр StomX с чипами подсказок клинических названий, надёжный фоллбэк соло-врача (`DEFAULT_SOLO_CHAIR`), закрытие шторки по Escape и расширенные опции коллизий ресурсов.
+- **Статус**:
+  1. **Привязка врачей к креслам в 1 клик с пресетами смен**:
+     * Функция `applyCellShiftPreset` в `DoctorShiftRosterModal.tsx` и интерактивные кнопки в `ChairRosterModal.tsx` (`chair-btn-morning-9-...`, `chair-btn-evening-15-...`):
+       - `morning`: 08:00–14:00 (1 смена);
+       - `morning_9`: 09:00–15:00 (1 смена, сдвиг);
+       - `evening`: 14:00–20:00 (2 смена);
+       - `evening_15`: 15:00–21:00 (2 смена, продленный вечер);
+       - `full_day`: 08:00–20:00 (весь день);
+       - `clear`: мгновенное снятие назначения с кресла.
+  2. **Пакетное назначение смен на диапазон дат (Multi-Day Date Range) с ротацией 2/2 и 5/2**:
+     * Движок `applyDoctorChairDateRange` в `doctorWeeklyScheduleGenerator.ts` и диалоговое окно назначения диапазона в `ChairScheduleView.tsx` (`chair-range-modal-...`):
+       - Поддержка циклической ротации 2/2 (`two_two`: 2 дня рабочих, 2 выходных);
+       - Поддержка пятидневки 5/2 (`five_day`: Пн–Пт рабочие, Сб и Вс выходные);
+       - Синхронизация `dente_chair_doctor_assignments_${dayIso}` и массива `doctorShifts`.
+  3. **1-клик копирование расписания на следующую неделю и месяц вперёд**:
+     * Кнопка `btn-copy-chair-week-next` («На след. неделю»): моментальная репликация матрицы смен текущей недели на следующую (+7 дней) без ручного переввода;
+     * Кнопка `btn-copy-chair-month` («На месяц»): тиражирование смен текущего дня на каждый календарный день текущего месяца.
+  4. **Быстрое добавление кресла с 14 палитрами StomX и чипами названий**:
+     * В `QuickAddChairModal.tsx` внедрены кликабельные чипы подсказок `CHAIR_NAME_SUGGESTIONS` («Кресло 1», «Кресло 2 (Хирургия)», «Кресло 3 (Терапия)», «Кабинет 1») с testid `quick-add-chair-name-suggestion-${idx}`;
+     * 14 аутентичных цветовых палитр StomX с индикатором активного цвета.
+  5. **Суверенитет соло-врача (`DEFAULT_SOLO_CHAIR`)**:
+     * Константа `DEFAULT_SOLO_CHAIR` в `ScheduleView.tsx` и `ChairScheduleView.tsx`: при нулевом количестве кресел в базе интерфейс никогда не ломается и не блокирует запись, автоматически подставляя основное кресло клиники по умолчанию (Мандат 8n).
+  6. **Клавиатурная доступность шторки записи и коллизии**:
+     * В `AppointmentDrawer.tsx` добавлен слушатель клавиши `Escape` для мгновенного закрытия шторки без потери фокуса;
+     * В `scheduleCollisionUtils.ts` и `checkAppointmentResourceCollision.ts` экспортирован и расширен тип `ResourceCollisionOptions`.
+- **Файлы**:
+  - `apps/web/src/components/schedule/ChairScheduleView.tsx`
+  - `apps/web/src/components/schedule/ChairRosterModal.tsx`
+  - `apps/web/src/components/schedule/QuickAddChairModal.tsx`
+  - `apps/web/src/ScheduleView.tsx`
+  - `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`
+  - `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`
+  - `apps/web/src/components/schedule/AppointmentDrawer.tsx`
+  - `apps/web/src/utils/scheduleCollisionUtils.ts`
+  - `apps/web/src/components/schedule/checkAppointmentResourceCollision.ts`
+- **Тесты**:
+  - `apps/web/src/components/schedule/__tests__/chairDoctorRosterStomXParity.test.tsx` (pass, коммит `f8e4f3fdf`)
+  - `apps/web/src/components/schedule/__tests__/appointmentDrawerAutonomy.test.tsx` (11/11 pass, коммит `a8b6f30d9`)
+
+---
+
+## 200. `одонтограмма_план_лечения::детская_взрослая_формула_пресеты_санации_и_адентии_8ок_квадранты_автомастер_плана_804н_и_карточка_зуба_surfaces` [РЕАЛИЗОВАНО] (Wave 71, Feature 263) -> KILLER / MUST-HAVE
+- **Идея**: В соответствии с Мандатами 8c, 8d, 8e, 8i, 8k и 8n клиническая одонтограмма и подсистема планирования лечения приведены к полному функциональному паритету со StomX и IDENT: 1-клик переключение постоянного и молочного прикуса FDI (11..48 <-> 51..85), моментальные пресеты санации («Санирован / норма») и адентии третьих моляров («Без 8-ок»), пакетный выбор квадрантов и фронтальной группы, автоматический мастер генерации планов лечения из одонтограммы по Номенклатуре 804н и МКБ-10 с 3-этапной группировкой и печатью сметы, детальная анатомическая карточка зуба с разметкой поверхностей коронки (O, M, D, V, L/P, K), пародонтологическим статусом и кнопка отмены нормы в активном черновике Карты 043/у.
+- **Статус**:
+  1. **1-клик переключение взрослой и детской зубной формулы FDI (11..48 <-> 51..85)**:
+     * В `OdontogramViewContainer.tsx` внедрен Segmented Control: `btn-odontogram-dentition-adult` (взрослый прикус, 32 постоянных зуба 11..48) и `btn-odontogram-dentition-child` (молочный / сменный прикус, 20 зубов 51..85) с бесшовным рендерингом `ChildToothChart.tsx` и `AnatomicalSvgOdontogram.tsx`.
+  2. **1-клик пресет санации («Санирован / Интактная формула»)**:
+     * Кнопка `btn-odontogram-preset-healthy` («Санирован (норма)», ShieldCheck): одним нажатием присваивает всем зубам статус `Healthy` («Интактный / Здоров»), ликвидируя бюрократическое прокликивание 32 зубов (Мандаты 8e п. 3, 8k).
+  3. **1-клик пресет адентии 8-ок («Без 8-ок: 18, 28, 38, 48»)**:
+     * Кнопка `btn-odontogram-preset-no-wisdom` («Без 8-ок»): мгновенно помечает третьи моляры 18, 28, 38, 48 статусом `Missing` («Отсутствует (X)») — стандарт фиксации формулы большинства первичных пациентов.
+  4. **Пакетный выбор квадрантов (Q1–Q4, Q5–Q8) и фронтальной зоны**:
+     * Быстрые кнопки выделения квадрантов для изолированных манипуляций (анестезия, профгигиена, пародонтология) и фронтальной группы резцов и клыков (эстетика, виниры, отбеливание).
+  5. **Автоматический мастер формирования плана лечения из одонтограммы (`TreatmentPlanWizard.tsx`)**:
+     * Модальное окно `modal-treatment-plan-wizard` глубины ровно 1 (Мандат 8d, Закон Анти-Матрёшки);
+     * Автоматический транслятор клинических патологий формулы в регламентные коды Номенклатуры 804н и МКБ-10:
+       - Кариес -> `A16.07.002` (Восстановление зуба пломбой, K02);
+       - Пульпит -> `A16.07.030.001` (Эндодонтическое лечение пульпита, K04.0);
+       - Периодонтит -> `A16.07.030.002` (Эндодонтическое лечение периодонтита, K04.5);
+       - Коронка / Имплант -> этапы ортопедии и хирургии;
+       - Отсутствующий зуб -> `A16.07.006` (Имплантация);
+     * Авто-распределение по клиническим этапам: 1 — Терапия / неотложка, 2 — Хирургия / пародонтология, 3 — Ортопедия;
+     * 1-клик исключение позиций (`handleToggleExclude`), печать предварительной сметы А4 (`btn-print-estimate`), создание черновика плана (`btn-create-treatment-plan`) без обязательных блокировок.
+  6. **Детальная карточка зуба (`ToothCardModal.tsx`)**:
+     * Анатомический выбор поверхностей: окклюзионная (O), медиальная (M), дистальная (D), вестибулярная (V), лингвальная/небная (L/P), пришеечная (K);
+     * Пародонтологический профиль зуба: степень подвижности (0, I, II, III), атрофия кости (0, I, II, III), класс вовлечения фуркации (0, I, II, III);
+     * Быстрый переход в «Историю зуба» и «Журнал каналов (Эндо)»;
+     * Кнопка отмены применения нормы `btn-043-undo-norm` в активном черновике амбулаторной карты 043/у (`DentalMedicalCard043uForm.tsx`).
+- **Файлы**:
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/odontogram/TreatmentPlanWizard.tsx`
+  - `apps/web/src/components/odontogram/ToothCardModal.tsx`
+  - `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx`
+  - `apps/web/src/components/odontogram/ChildToothChart.tsx`
+  - `apps/web/src/components/odontogram/OdontogramLiveInvoice.tsx`
+  - `apps/web/src/pages/OdontogramStudioStandalone.tsx`
+  - `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`
+- **Тесты**:
+  - `apps/web/src/components/odontogram/__tests__/odontogramDeepClinicalParity.test.tsx` (pass, коммит `aecb73012`)
+  - `apps/web/src/components/documents/__tests__/outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 pass, коммит `a8b6f30d9`)
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 198 дополнительных системных аддендум-фич клинической автономии (Wave 15..70, фичи 64..261) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 200 дополнительных системных аддендум-фич клинической автономии (Wave 15..71, фичи 64..263) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

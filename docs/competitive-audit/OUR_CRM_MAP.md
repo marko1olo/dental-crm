@@ -67,9 +67,10 @@
   - Устранение дефектов ред-тиминга привязки врачей к креслам, изоляция внутренних модалок сетки (Анти-Матрёшка), кнопки 32–44px и терапевтический пресет 45 мин (`ScheduleFilterStrip.tsx`, `ScheduleGrid.tsx`, `patientReliabilityScore.ts`, Мандаты 8c, 8d, 8e, 8k, 8n, Фича #174).
   - 2-строчная шапка мультисмен в шапке кресла (☀️/🌙), пульсирующий статус «● На смене», 1-клик переключатель смен и инлайн-предупреждение коллизий слотов без оверлея поверх шторки (`ScheduleGrid.tsx`, `SlotConflictModal.tsx`, `QuickBookingDrawer.tsx`, Мандаты 8c, 8d, 8e, 8k, 8n, Фича #177).
   - Персистентность мультисмен расписания (☀️/🌙) с парсингом числовых часов из строковых полей `startTime`/`endTime` и безопасными дефолтами 8:00 и 14:00/20:00 (устранение сброса вечерних смен на утро при перезагрузке), мемоизированный тулбар ростера с тач-таргетами $\ge 44\text{px}$ по Apple HIG (`ScheduleView.tsx`, `DoctorRosterToolbar.tsx`, `ScheduleGrid.tsx`, Мандаты 8e, 8k, 8n, Фича #181, коммит `db824fb3c`).
+  - Полный паритет распределения смен врачей по установкам StomX/DentalPRO: 1-клик привязка смен по пресетам (`morning` 08-14, `morning_9` 09-15, `evening` 14-20, `evening_15` 15-21, `full_day` 08-20, `clear`), пакетное назначение на диапазон дат `applyDoctorChairDateRange` (смены 2/2 и 5/2), 1-клик копирование расписания кресел на следующую неделю (`btn-copy-chair-week-next`) и месяц вперед (`btn-copy-chair-month`), быстрое добавление установки с 14 аутентичными палитрами StomX и чипами подсказок клинических названий (`QuickAddChairModal.tsx`), суверенитет соло-врача (`DEFAULT_SOLO_CHAIR`), закрытие шторки записи клавишей Escape и расширенные коллизии ресурсов `ResourceCollisionOptions` (`ChairScheduleView.tsx`, `ChairRosterModal.tsx`, `ScheduleView.tsx`, `AppointmentDrawer.tsx`, Мандаты 8c, 8d, 8e п. 8, 8n, Фича #262, коммиты `f8e4f3fdf`, `a8b6f30d9`).
 
 ### 2.3. Приём (EHR), 3D/2D Одонтограмма, Хирургия и Голосовой ввод
-- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`, `OrthopedicsChairsidePanel.tsx`.
+- **Фронтенд**: `apps/web/src/VisitView.tsx`, `ClinicalRulePanel.tsx`, `PriceDictationBar.tsx`, `DictationHints.tsx`, `SurgeryCockpitModal.tsx`, `SurgeryProtocolPanel.tsx`, `SurgeryVisitCockpit.tsx`, `VisitSurgeryProtocolTab.tsx`, `ClinicalQuickPresetsBar.tsx`, `EndoCanalLogModal.tsx`, `EndoCanalMeasurementDrawer.tsx`, `ImplantPassportModal.tsx`, `HygieneIndicesPanel.tsx`, `PeriodontalChartingModal.tsx`, `PeriodontogramChart.tsx`, `OrthopedicsChairsidePanel.tsx`, `OdontogramViewContainer.tsx`, `TreatmentPlanWizard.tsx`, `ToothCardModal.tsx`, `ChildToothChart.tsx`, `AnatomicalSvgOdontogram.tsx`.
 - **Бэкенд**: `apps/api/src/routes/visits.ts`, `odontogram.ts`, `toothHistory.ts`, `clinical.ts`, `speech.ts`.
 - **Возможности**:
   - Интерактивная 2D/3D одонтограмма (32 зуба + молочная формула, кариес, пульпит, периодонтит, корень, имплант).
@@ -83,6 +84,7 @@
   - 1-клик chairside пресеты профилактики и пародонтологии (`HygieneIndicesPanel.tsx`, тач-таргеты $\ge 48\text{px}$): глубокое фторирование эмали Tiefenfluorid/Сафорайд (`A11.07.012`, 1800 ₽), реминерализирующая терапия каппой GC Tooth Mousse (`A11.07.010`, 1500 ₽), антисептическая обработка пародонтальных карманов Хлоргексидин 0.05% + Метрогил Дента (`A16.07.053`, 1200 ₽) с дублирующим диспатчем в активный чек `dente-add-services-to-invoice` и протокол 043/у.
   - Прямой диспатч ортопедических услуг Номенклатуры 804н в активный чек визита (`dente-add-services-to-invoice`) у кресла (`applyOrthopedicProtocolToVisit`, `orthopedicProtocols.ts`, `OrthopedicsChairsidePanel.tsx`): 1-клик одновременная трансляция в дневник 043/у (`dente-apply-soap-protocol`), одонтограмму (`dente-apply-crown-status`), план лечения (`dente-add-estimate-service`) и текущий наряд визита без ручного ввода; полная палитра оттенков VITA Classical & Bleach (BL1..D4) по клиническим группам с авто-нормализацией гомоглифов.
   - Защита черновика врача от потери (Autosave Flush) при входящем телефонном звонке (`telephonyStore.ts`, коммит `1d7d1d2f8`).
+  - Интеллектуальная одонтограмма и автогенерация планов лечения 804н (StomX/IDENT parity): 1-клик переключение взрослой и детской зубной формулы FDI (11..48 <-> 51..85) через Segmented Control (`OdontogramViewContainer.tsx`, `ChildToothChart.tsx`, `AnatomicalSvgOdontogram.tsx`), 1-клик пресет санации («Санирован / Интактная формула», `btn-odontogram-preset-healthy`), 1-клик пресет адентии 8-ок («Без 8-ок: 18, 28, 38, 48»), пакетный выбор квадрантов (Q1–Q4, Q5–Q8) и фронтальной группы резцов/клыков; интеллектуальный мастер формирования плана лечения `TreatmentPlanWizard.tsx` (модалка глубины 1 по Анти-Матрёшке) с авто-маппингом патологий в коды 804н (A16.07.002, A16.07.030.001, A16.07.030.002, A16.07.006) и диагнозы МКБ-10 (K02, K04.0, K04.5), 3-этапной группировкой, печатью предварительной сметы и созданием черновика; детальная карточка зуба `ToothCardModal.tsx` с разметкой анатомических поверхностей (O, M, D, V, L/P, K), пародонтологическим статусом (подвижность, атрофия кости, фуркация), быстрыми переходами в историю зуба и эндодонтический журнал каналов, а также кнопка отмены нормы в активном черновике карты 043/у `btn-043-undo-norm` (Мандаты 8c, 8d, 8e, 8i, 8k, 8n, Фича #263, коммиты `aecb73012`, `a8b6f30d9`).
   - Голосовая диктовка врачом с авто-нормализацией медицинских терминов (`speech.ts`).
   - Система клинических правил `ClinicalRulePanel.tsx` (проверка обязательных услуг, предупреждения о противопоказаниях).
 
@@ -2309,6 +2311,43 @@
      - Заведение нового пациента прямо в шторке с генерацией реального UUID без перехода в картотеку.
 - **Файлы**: `apps/web/src/components/schedule/AppointmentDrawer.tsx`, `apps/web/src/components/schedule/AppointmentModal.tsx`, `apps/web/src/components/schedule/QuickBookingDrawer.tsx`, `apps/web/src/components/schedule/ScheduleGrid.tsx`.
 - **Тесты**: `apps/web/src/components/schedule/__tests__/appointmentDrawerAutonomy.test.tsx` (10/10 pass) — коммит `e1078cdfc`.
+
+#### 2.10.221. Сетка кресел и расписание врачей (StomX/DentalPRO Parity) (Wave 71 / Feature 262)
+- **Назначение**: Полный отраслевой паритет со StomX и DentalPRO по гибкому распределению смен врачей по стоматологическим установкам, пакетное управление диапазонами дат, защита от простоев кресел и суверенитет соло-практики (Мандаты 8c, 8d, 8e п. 8, 8n).
+- **Архитектурные механизмы**:
+  1. *Пресеты смен в 1 клик*:
+     - В `DoctorShiftRosterModal.tsx` и `ChairRosterModal.tsx` быстрая привязка смен врачей по пресетам `morning` (08:00–14:00), `morning_9` (09:00–15:00), `evening` (14:00–20:00), `evening_15` (15:00–21:00), `full_day` (08:00–20:00) и `clear`;
+  2. *Пакетное назначение смены на диапазон дат*:
+     - В `doctorWeeklyScheduleGenerator.ts` и `ChairScheduleView.tsx` алгоритм `applyDoctorChairDateRange` с поддержкой циклов 2/2 (`two_two`) и пятидневки 5/2 (`five_day`);
+  3. *1-клик копирование расписания кресел*:
+     - Кнопки `btn-copy-chair-week-next` (репликация матрицы на следующую неделю) и `btn-copy-chair-month` (репликация на весь месяц вперед);
+  4. *Быстрое добавление кресла и аутентичные палитры*:
+     - В `QuickAddChairModal.tsx` 14 палитр StomX и чипы-подсказки клинических названий (`CHAIR_NAME_SUGGESTIONS`: «Кресло 1», «Кресло 2 (Хирургия)», «Кресло 3 (Терапия)», «Кабинет 1»);
+  5. *Суверенитет соло-врача*:
+     - Неуязвимый фоллбэк `DEFAULT_SOLO_CHAIR` при 0 кресел в клинике (Мандат 8n);
+  6. *Клавиатурная доступность и коллизии*:
+     - В `AppointmentDrawer.tsx` закрытие по клавише `Escape`, в `scheduleCollisionUtils.ts` расширенный тип `ResourceCollisionOptions`.
+- **Файлы**: `apps/web/src/components/schedule/ChairScheduleView.tsx`, `apps/web/src/components/schedule/ChairRosterModal.tsx`, `apps/web/src/components/schedule/QuickAddChairModal.tsx`, `apps/web/src/ScheduleView.tsx`, `apps/web/src/components/schedule/roster/DoctorShiftRosterModal.tsx`, `apps/web/src/components/schedule/roster/doctorWeeklyScheduleGenerator.ts`, `apps/web/src/components/schedule/AppointmentDrawer.tsx`, `apps/web/src/utils/scheduleCollisionUtils.ts`.
+- **Тесты**: `apps/web/src/components/schedule/__tests__/chairDoctorRosterStomXParity.test.tsx` (pass, коммит `f8e4f3fdf`), `apps/web/src/components/schedule/__tests__/appointmentDrawerAutonomy.test.tsx` (11/11 pass, коммит `a8b6f30d9`).
+
+#### 2.10.222. Интеллектуальная одонтограмма и автогенерация планов 804н (Wave 71 / Feature 263)
+- **Назначение**: Глубокий клинический паритет со StomX и IDENT по интерактивной одонтограмме, 0-клик пресетам осмотра, автотрансляции патологий в структурированные планы лечения по Номенклатуре 804н/МКБ-10 и детальной анатомической паспортизации зубов (Мандаты 8c, 8d, 8e, 8i, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Детская и взрослая формула FDI в 1 клик*:
+     - В `OdontogramViewContainer.tsx` мгновенный Segmented Control между постоянным прикусом (FDI 11..48, 32 зуба) и молочным прикусом (FDI 51..85, 20 зубов) с поддержкой `ChildToothChart.tsx` и `AnatomicalSvgOdontogram.tsx`;
+  2. *Клинические пресеты санации и адентии*:
+     - Кнопка `btn-odontogram-preset-healthy` («Санирован / норма») и кнопка `btn-odontogram-preset-no-wisdom` («Без 8-ок: 18, 28, 38, 48») для первичного осмотра без рутинных кликов (Мандат 8e п. 3, 8k);
+  3. *Квадрантная и фронтальная навигация*:
+     - 1-клик выделение квадрантов Q1–Q4, Q5–Q8 и группы фронтальных зубов (13..23, 33..43);
+  4. *Автоматический мастер плана лечения 804н (`TreatmentPlanWizard.tsx`)*:
+     - Модальный кабинет глубины ровно 1 с авто-маппингом патологий зубов в услуги 804н (A16.07.002, A16.07.030.001, A16.07.030.002, A16.07.006) и диагнозы МКБ-10 (K02, K04.0, K04.5), 3-этапной группировкой (Терапия, Хирургия, Ортопедия), печатью сметы А4 и созданием черновика;
+  5. *Детальная карточка зуба (`ToothCardModal.tsx`)*:
+     - Разметка 6 анатомических поверхностей (O, M, D, V, L/P, K), пародонтологические индексы (подвижность, костная атрофия, фуркация) и быстрые ссылки на историю и эндо-журнал;
+  6. *Отмена нормы в черновике карты 043/у*:
+     - В `DentalMedicalCard043uForm.tsx` кнопка `btn-043-undo-norm` при наличии `reviseSnapshot` для неблокирующего отката.
+- **Файлы**: `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`, `apps/web/src/components/odontogram/TreatmentPlanWizard.tsx`, `apps/web/src/components/odontogram/ToothCardModal.tsx`, `apps/web/src/components/odontogram/AnatomicalSvgOdontogram.tsx`, `apps/web/src/components/odontogram/ChildToothChart.tsx`, `apps/web/src/components/odontogram/OdontogramLiveInvoice.tsx`, `apps/web/src/pages/OdontogramStudioStandalone.tsx`, `apps/web/src/components/documents/forms/DentalMedicalCard043uForm.tsx`.
+- **Тесты**: `apps/web/src/components/odontogram/__tests__/odontogramDeepClinicalParity.test.tsx` (pass, коммит `aecb73012`), `apps/web/src/components/documents/__tests__/outpatientForm043AndPatientCardAutonomy.test.tsx` (12/12 pass, коммит `a8b6f30d9`).
+
 
 
 
