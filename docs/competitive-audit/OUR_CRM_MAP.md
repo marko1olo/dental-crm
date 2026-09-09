@@ -2486,6 +2486,25 @@
 - **Файлы**: `apps/web/src/services/audio/SoundFeedbackService.ts`, `apps/web/src/services/audio/__tests__/soundFeedbackService.test.ts`, `apps/web/src/hooks/useSoundNotifications.ts`, `apps/web/src/components/Header.tsx`, `apps/web/src/store/telephonyStore.ts`, `apps/web/src/components/telephony/__tests__/telephony.test.ts`, `apps/web/src/pages/ClinicalModalsStudioStandalone.tsx`, `apps/web/src/components/documents/documentNavigation.css`.
 - **Тесты**: `soundFeedbackService.test.ts` (4/4 PASS), `telephony.test.ts` (25/25 PASS), `check:encoding` 5137 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
 
+#### 2.10.229. Ликвидация процедурного симулятора сдельной оплаты в StaffCommissionsPanel, бутафорского метронома СЛР и виртуального секундомера неотложной помощи (Wave 85)
+- **Назначение**: Полная ликвидация рудиментарного 231-строчного процедурного симулятора сдельной оплаты в настройках клиники (StaffCommissionsPanel.tsx), удаление бутафорского метронома СЛР без звука (EmergencyAnaphylaxisProtocolModal.tsx), юридически строгий перевод фиксации этапов реанимации с виртуального секундного секундомера на реальное астрономическое время (AnesthesiaSafetyHubModal.tsx) по стандартам Карты 043/у и СанПиН РФ, искоренение терминологии симуляторов в студии модалок и PWA (Мандаты 8d, 8e, 8i, 8k, 8n, Core Rule 7).
+- **Архитектурные механизмы**:
+  1. *Ликвидация процедурного симулятора сдельной оплаты (Мандаты 8k, 8i, 8d / Хик / CRM != Reality Simulator)*:
+     - В `StaffCommissionsPanel.tsx` вырезаны 231 строка процедурного симулятора сдельной оплаты с 8 инпутами ввода фиктивной выручки (терапия 350к, ортопедия 450к, ЗТЛ 120к); удалены стейты `isSimulatorOpen`, `simTherapyRub`, `simTherapyRate`, `simOrthoRub`, `simOrthoRate`, `simLabCostRub`, `simLabDeductionPct`, `simMaterialCostRub`, `simMaterialDeductionPct`, `simBaseShiftRub`, хук `simCalculation`, кнопка `toggle-piece-rate-simulator` и панель `piece-rate-simulator-panel`. Фактический учет выплат врачам и списания материалов/ЗТЛ ведется в `DoctorPayoutDashboard.tsx` и `DoctorPayrollModal.tsx`.
+     - В `scripts/capture-settings-rbac-4state.mjs` удален клик по ликвидированному селектору.
+     - В `settingsRbacAndCommissions.test.ts` подтверждено 6/6 PASS.
+  2. *Ликвидация бутафорского метронома СЛР без звука (Мандаты 8k, Core Rule 7 / Anti-Diorama)*:
+     - В `EmergencyAnaphylaxisProtocolModal.tsx` удален фиктивный метроном (`cpr-metronome-btn`, `isMetronomeActive`, `Heart animate-ping`), не издававший звуков и отвлекавший врача. Реанимационная панель сфокусирована на вызове СМП 112, таймере адреналина и чек-листе SBAR.
+     - В `emergencyAnaphylaxisProtocol.test.ts` подтверждено 12/12 PASS.
+  3. *Переход на астрономическое время в неотложной помощи (Мандаты 8e, 8k, 8n / СанПиН & 043/у)*:
+     - В `AnesthesiaSafetyHubModal.tsx` удален виртуальный секундомер (`emergency-stopwatch-widget`, `timerSeconds`, `isTimerRunning`, `timerRef`, `Play`, `Pause`, `formatEmergencyStopwatchTime`). В `handleToggleStep` фиксация шагов переведена на астрономическое время (`new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })`), что строго отвечает юридическим стандартам Минздрава РФ для Карты 043/у.
+     - В `anesthesiaSafetyEngine.test.ts` (21/21 PASS) и `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS) подтверждена надежность.
+  4. *Очистка каталога модалок и PWA от терминологии симуляторов (Core Rule 7)*:
+     - В `ClinicalModalsStudioStandalone.tsx` карточка 33b переименована в «Открыть веб-кабинет пациента (PWA)».
+     - В `PatientWebappPortalModal.tsx` и `patientWebapp.css` зафиксирован статус чистого адаптивного PWA.
+- **Файлы**: `apps/web/src/components/settings/StaffCommissionsPanel.tsx`, `apps/web/src/components/emergency/EmergencyAnaphylaxisProtocolModal.tsx`, `apps/web/src/components/anesthesia/AnesthesiaSafetyHubModal.tsx`, `apps/web/src/pages/ClinicalModalsStudioStandalone.tsx`, `apps/web/src/components/patient/PatientWebappPortalModal.tsx`, `apps/web/src/styles/patientWebapp.css`, `scripts/capture-settings-rbac-4state.mjs`.
+- **Тесты**: `settingsRbacAndCommissions.test.ts` (6/6 PASS), `emergencyAnaphylaxisProtocol.test.ts` (12/12 PASS), `anesthesiaSafetyEngine.test.ts` (21/21 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `check:encoding` 5137 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0.
+
 
 
 

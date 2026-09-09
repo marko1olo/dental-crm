@@ -3385,6 +3385,25 @@
     * *documentNavigation.css*: заменен необъявленный токен `var(--teal-10, rgba(13, 148, 136, 0.1))` на канонический `var(--teal-soft)`, доведя проверку `check:css-tokens` до идеального результата (0 неразрешенных, 0 светлых fallbacks, 0 темных fallbacks).
 * **Верификация**: `soundFeedbackService.test.ts` (4/4 PASS), `telephony.test.ts` (25/25 PASS), `check:encoding` 5137 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
+### Wave 85: Ликвидация процедурного симулятора сдельной оплаты в StaffCommissionsPanel, бутафорского метронома СЛР и виртуального секундомера неотложной помощи
+* **Статус**: `[РЕАЛИЗОВАНО / ЗАКРЫТО]`
+* **Коммиты**: `26ce42550`
+* **Результаты**:
+  - **Ликвидация процедурного симулятора сдельной оплаты (Мандаты 8k, 8i, 8d / Хик / CRM != Reality Simulator)**:
+    * *StaffCommissionsPanel.tsx*: полностью вырезан 231-строчный рудиментарный процедурный симулятор («Live-симулятор сдельной оплаты») с 8 инпутами фиктивной выручки и ставок (терапия 350к, ортопедия 450к, ЗТЛ 120к), захламлявший настройки клиники. Удалены стейты `isSimulatorOpen`, `simTherapyRub`, `simTherapyRate`, `simOrthoRub`, `simOrthoRate`, `simLabCostRub`, `simLabDeductionPct`, `simMaterialCostRub`, `simMaterialDeductionPct`, `simBaseShiftRub`, хук `simCalculation`, кнопка `toggle-piece-rate-simulator` и панель `piece-rate-simulator-panel`. Реальный расчет заработной платы врачей и удержания материалов/ЗТЛ ведется в боевых модулях `DoctorPayoutDashboard.tsx` и `DoctorPayrollModal.tsx`.
+    * *scripts/capture-settings-rbac-4state.mjs*: актуализирован скриншот-скрипт с удалением клика по ликвидированному симулятору.
+    * *settingsRbacAndCommissions.test.ts*: 6/6 PASS.
+  - **Ликвидация бутафорского метронома СЛР без звука (Мандаты 8k, Core Rule 7 / Anti-Diorama)**:
+    * *EmergencyAnaphylaxisProtocolModal.tsx*: ликвидирован бутафорский метроном СЛР (`cpr-metronome-btn`, `isMetronomeActive`, `Heart animate-ping`), не издававший звука и являвшийся визуальной диорамой; экстренная панель очищена и сфокусирована на таймере инъекции адреналина, прямой кнопке вызова СМП 112, экспресс-дозировках и скрипте передачи бригаде SBAR.
+    * *emergencyAnaphylaxisProtocol.test.ts*: 12/12 PASS.
+  - **Переход на юридически точное астрономическое время в неотложной помощи (Мандаты 8e, 8k, 8n / СанПиН & 043/у)**:
+    * *AnesthesiaSafetyHubModal.tsx*: удален виртуальный секундомер со счетчиком секунд и кнопками старт/пауза/сброс (`emergency-stopwatch-widget`, `timerSeconds`, `isTimerRunning`, `timerRef`, `Play`, `Pause`, `formatEmergencyStopwatchTime`). В функции `handleToggleStep` фиксация выполненных шагов переведена на реальное астрономическое время (`toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })`), что строго соответствует стандартам оформления реанимационных актов РФ и Карты 043/у.
+    * *anesthesiaSafetyEngine.test.ts*: 21/21 PASS; *anesthesiaAutonomyWave40.test.tsx*: 5/5 PASS.
+  - **Очистка каталога модалок и PWA от терминологии симуляторов (Core Rule 7)**:
+    * *ClinicalModalsStudioStandalone.tsx*: карточка 33b переименована с «Запустить симулятор смартфона» на «Открыть веб-кабинет пациента (PWA)».
+    * *PatientWebappPortalModal.tsx*, *patientWebapp.css*: зафиксирован статус чистого адаптивного PWA без диорам.
+* **Верификация**: `settingsRbacAndCommissions.test.ts` (6/6 PASS), `emergencyAnaphylaxisProtocol.test.ts` (12/12 PASS), `anesthesiaSafetyEngine.test.ts` (21/21 PASS), `anesthesiaAutonomyWave40.test.tsx` (5/5 PASS), `check:encoding` 5137 файлов 0 ошибок, `check:css-tokens` 175 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
+
 
 
 
