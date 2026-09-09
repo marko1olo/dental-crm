@@ -1145,7 +1145,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 		const duplicatedData: QuickAddChairData = {
 			name: `${chair.name} (копия)`,
 			room: (chair as any).roomNumber || (chair as any).room || "",
-			color: (chair as any).color || "#0d9488",
+			color: (chair as any).color || "var(--teal, #0d9488)",
 			specialization: (chair as any).specialization || "therapist",
 			defaultDoctorId: (chair as any).defaultDoctorId || null,
 			isActive: true,
@@ -1255,7 +1255,7 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 				{/* Center: Scrollable Chair Palette Chips with Accent Bars (StomX Parity, Feature 190) */}
 				<div className="flex items-center gap-1.5 overflow-x-auto flex-1 py-0.5 touch-pan-x">
 					{chairs.map((chair) => {
-						const chairColor = (chair as { color?: string }).color || "#0d9488";
+						const chairColor = (chair as { color?: string }).color || "var(--teal, #0d9488)";
 						const isSelected = effectiveSelectedChairId === chair.id;
 						const currentAssignment = chairDoctorAssignments?.[chair.id];
 						const subShifts = currentAssignment?.subShifts;
@@ -1369,13 +1369,13 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										e.stopPropagation();
 										setActiveShiftChairId((prev) => (prev === chair.id ? null : chair.id));
 									}}
-									className="p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-md text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+									className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 									title="Назначить врача и смену в 1 клик (StomX / IDENT)"
 									data-testid={`chair-view-assign-doctor-${chair.id}`}
 									aria-label={`Назначить врача на кресло ${chair.name}`}
 								>
 									<UserCheck
-										size={14}
+										size={16}
 										className={assignedDocName ? "text-[var(--teal)]" : ""}
 									/>
 								</button>
@@ -1387,12 +1387,12 @@ export const ChairScheduleView: React.FC<ChairScheduleViewProps> = ({
 										e.stopPropagation();
 										handleEditChair(chair as any);
 									}}
-									className="p-1.5 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-md text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
+									className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer shrink-0"
 									title={`Настройки кресла «${chair.name}» (смена врача / кабинета)`}
 									data-testid={`chair-view-settings-${chair.id}`}
 									aria-label={`Настройки кресла ${chair.name}`}
 								>
-									<Settings2 size={14} />
+									<Settings2 size={16} />
 								</button>
 
 								{/* 1-Click Shift Popover */}

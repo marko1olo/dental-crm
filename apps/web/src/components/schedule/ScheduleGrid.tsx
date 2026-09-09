@@ -1727,12 +1727,12 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 								<div
 									key={chair.id}
 									className="p-2.5 sm:p-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--ink)] border-r border-[var(--line)] last:border-r-0 flex flex-col items-center justify-center gap-1.5 min-w-0 relative overflow-hidden"
-									style={{ borderTop: `3px solid ${chair.color || "#0d9488"}` }}
+									style={{ borderTop: `3px solid ${chair.color || "var(--teal, #0d9488)"}` }}
 									data-testid={`chair-header-${chair.id}`}
 								>
 									<div
 										className="h-1.5 w-full absolute top-0 left-0 right-0 shrink-0"
-										style={{ backgroundColor: chair.color || "#0d9488" }}
+										style={{ backgroundColor: chair.color || "var(--teal, #0d9488)" }}
 										data-testid={`chair-accent-bar-${chair.id}`}
 									/>
 									<div className="flex items-center justify-center gap-1.5 flex-wrap">
@@ -1747,7 +1747,7 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														name: chair.name,
 														roomNumber: (chair as any).roomNumber || (chair as any).room || "",
 														branchId: (chair as any).branchId,
-														color: chair.color || "#0d9488",
+														color: chair.color || "var(--teal, #0d9488)",
 														specialization: (chair as any).specialization,
 														isActive: (chair as any).active ?? (chair as any).isActive ?? true,
 													});
