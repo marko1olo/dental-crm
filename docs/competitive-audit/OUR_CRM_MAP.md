@@ -2588,24 +2588,27 @@
 - **Файлы**: `apps/web/src/workspaceShell.tsx`, `apps/web/src/components/Header.tsx`, `apps/web/src/components/schedule/useSchedule.ts`, `apps/web/src/components/schedule/ScheduleGrid.tsx`, `apps/web/src/VisitView.tsx`, `apps/web/src/components/visit/tabs/VisitEmkTab.tsx`, `apps/web/src/PatientsView.tsx`, `apps/web/src/SettingsView.tsx`, `apps/web/src/components/settings/SettingsClinicTab.tsx`, `apps/web/src/styles/dente-redesign.css`, `apps/web/src/components/workspaceActions/workspaceActions.css`, `apps/web/src/components/schedule/__tests__/scheduleChairsAndShiftsParity.test.tsx`, `docs/screenshots/audit_7sins/`.
 - **Тесты**: `scheduleChairsAndShiftsParity.test.tsx` (12/12 PASS), `check:encoding` 5143 файлов 0 ошибок, monorepo `typecheck` Exit Code 0 (@dental/shared, @dental/api, @dental/web).
 
-#### 2.10.234. Автономия врача у кресла, печать 043/у и смет в любой момент, автосохранение периодонтограммы и 54-ФЗ без барьеров (Wave 88, Мандаты 8e, 8n, 8k)
-- **Назначение**: Реализация полного пакета автономности врача-стоматолога у кресла и соло-практики по Мандату 8e и 8n: мгновенная печать Формы 043/у и смет плана лечения в любой момент с дуальным статусом («ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)» / «ПОДПИСАНО ВРАЧОМ»), debounced автосохранение замеров периодонтальной карты Florida Probe, свобода скидок врача до 100% без паролей и касса 54-ФЗ без требования ИНН с физлиц (коммиты `7b922f771`).
+#### 2.10.234. Ликвидация мультяшных эмодзи по Мандату 8d, печать 043/у и смет в любой момент, автосохранение периодонтограммы и касса 54-ФЗ без барьеров (Wave 88, Мандаты 8d, 8e, 8n, 8k)
+- **Назначение**: Комплексное завершение требований 7 смертных грехов интерфейса (Мандат 8d, Грех 7: искоренение мультяшных эмодзи в пользу строгих векторных иконок Lucide) и реализация полного пакета автономности врача-стоматолога у кресла и соло-практики по Мандату 8e и 8n: мгновенная печать Формы 043/у и смет плана лечения в любой момент с дуальным статусом («ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)» / «ПОДПИСАНО ВРАЧОМ»), debounced автосохранение замеров периодонтальной карты Florida Probe, свобода скидок врача до 100% без паролей и касса 54-ФЗ без требования ИНН с физлиц (коммиты `d5baac21a`, `7b922f771`).
 - **Архитектурные механизмы**:
-  1. *Печать Карты 043/у и Сметы в 1 клик в любой момент (Мандат 8e п. 5)*:
+  1. *Ликвидация мультяшных эмодзи и векторная стандартизация Lucide (Мандат 8d, Грех 7, коммит `d5baac21a`)*:
+     - В `ShiftView.tsx`: заменены эмодзи ракеты, галочки и предупреждения на векторные иконки Lucide `Rocket`, `CheckCircle2`, `AlertTriangle`.
+     - В `EmergencyRescueModal.tsx`: заменен эмодзи шприца в заголовке экстренной реанимационной панели на строгую векторную иконку `Syringe`.
+     - В `DmsGuaranteeLetterModal.tsx`: заменен эмодзи письма в шапке на векторную иконку `FileText`.
+     - В `OfflineConflictReviewDrawer.tsx`: заменен эмодзи предупреждения на `AlertTriangle`.
+     - В `PatientRecallManagerModal.tsx`: заменены эмодзи трубки, конверта и календаря на векторные иконки `Phone`, `MessageSquare`, `Calendar`.
+     - В `YandexCalendarSyncsWidget.tsx`: заменен эмодзи календаря на векторную иконку `Calendar`.
+     - В `App.tsx`: заменен эмодзи телефона в индикаторе звонка на иконку `Phone`.
+     - В `MarketingView.tsx`: заменен эмодзи ракеты на иконку `Rocket`.
+     - В `CopilotComposer.tsx` и `CopilotGenerativeCards.tsx`: заменены эмодзи микрофона и карточек на векторные иконки `Mic`, `CreditCard`.
+     - В `PatientSentimentBadge.tsx`: заменены мультяшные эмодзи настроения и лояльности на векторные иконки `ThumbsUp`, `ThumbsDown`, `MinusCircle`, `HeartHandshake`.
+     - *Ре-аудит 10 скриншотов*: обновлены все 10 PNG-скриншотов в `docs/screenshots/audit_7sins/` со строгим контролем уникальности MD5-хешей (185–262 KB) и полным соответствием 7 смертным грехам UI: вердикт **`[ПРОВЕРЕНО: ЧИСТО]`**.
+  2. *Печать Карты 043/у и Сметы в 1 клик в любой момент (Мандат 8e п. 5, коммит `7b922f771`)*:
      - В `DoctorDesktopHeader.tsx` и `DoctorShiftCockpitModal.tsx` фиктивные всплывающие тосты заменены на реальные 1-клик вызовы печати Формы 043/у (`header-btn-print-043`, `cockpit-btn-print-043`) и Сметы лечения (`header-btn-print-estimate`, `cockpit-btn-print-estimate`).
      - В `Form043PrintModal.tsx`, `emr043Math.ts` и `emr043Types.ts` расчет статуса черновика объединен: при незакрытом приеме на всех листах А4 по ГОСТ Р 7.0.97-2016 печатается водяной знак и бейдж «ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)», при закрытом и подписанном приеме выводится «ПОДПИСАНО ВРАЧОМ» (или «ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ N)»).
-  2. *Защита от потери данных в перио-карте (Мандат 8e п. 6, Мандат 8k)*:
-     - В `PeriodontalChartingModal.tsx` интегрирован фоновый debounced autosave (`onSave(teeth, summary)` через 800мс). При закрытии модального окна через крестик (`perio-modal-close-btn`) или смене вкладок несохраненные данные зондирования карманов, кровоточивости BOP и рецессий автоматически сохраняются в карту пациента.
-  3. *Касса 54-ФЗ и свобода скидок врача (Мандат 8e п. 7, 9, Мандат 8n)*:
+  3. *Защита от потери данных в перио-карте (Мандат 8e п. 6, Мандат 8k, коммит `7b922f771`)*:
+     - В `PeriodontalChartingModal.tsx` интегрирован фоновый debounced autosave (`onSave(teeth, summary)` через 800мс). При закрытии модального окна через крестик (`perio-modal-close-btn`) или смене вкладок несохраненные данные зондирования карманов, кровоточивости BOP и рецессий автоматически сохраняются в карту пациента без алертов и барьеров.
+  4. *Касса 54-ФЗ и свобода скидок врача (Мандат 8e п. 7, 9, Мандат 8n, коммит `7b922f771`)*:
      - В `PaymentCapture.tsx` пресеты скидок врача до 100% (гарантийная переделка, скидка коллегам/персоналу) применяются мгновенно без запроса пароля администратора. Для физических лиц исключено обязательное требование ИНН. При пустой сумме и наличии долга клик на оплату в 1 клик устанавливает точную сумму долга без блокировки.
-- **Файлы**: `apps/web/src/components/doctor/DoctorDesktopHeader.tsx`, `apps/web/src/components/doctor/DoctorShiftCockpitModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/emr/emr043Math.ts`, `apps/web/src/components/emr/emr043Types.ts`, `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `apps/web/src/PaymentCapture.tsx`.
-- **Тесты**: `paymentCaptureAutonomy.test.tsx` (9/9 PASS), `paymentCaptureTaxAutonomy.test.tsx` (5/5 PASS), `doctorShiftCockpit.test.tsx` (19/19 PASS), `doctorShiftCockpitAutonomy.test.tsx` (3/3 PASS), `periodontalCharting.test.tsx` (8/8 PASS), `doctorAutonomyWave46.test.tsx` (23/23 PASS), `outpatientAutonomyWave42.test.tsx` (17/17 PASS), `periodontalExportAutonomyWave51.test.tsx` (9/9 PASS), `check:encoding` 5143 файлов 0 ошибок, `typecheck` Exit Code 0.
-
-
-
-
-
-
-
-
-
+- **Файлы**: `apps/web/src/ShiftView.tsx`, `apps/web/src/components/emergency/EmergencyRescueModal.tsx`, `apps/web/src/components/insurance/DmsGuaranteeLetterModal.tsx`, `apps/web/src/components/offline/OfflineConflictReviewDrawer.tsx`, `apps/web/src/components/recall/PatientRecallManagerModal.tsx`, `apps/web/src/components/integrations/YandexCalendarSyncsWidget.tsx`, `apps/web/src/App.tsx`, `apps/web/src/MarketingView.tsx`, `apps/web/src/components/copilot/CopilotComposer.tsx`, `apps/web/src/components/copilot/CopilotGenerativeCards.tsx`, `apps/web/src/components/patient/PatientSentimentBadge.tsx`, `apps/web/src/components/doctor/DoctorDesktopHeader.tsx`, `apps/web/src/components/doctor/DoctorShiftCockpitModal.tsx`, `apps/web/src/components/emr/Form043PrintModal.tsx`, `apps/web/src/components/emr/emr043Math.ts`, `apps/web/src/components/emr/emr043Types.ts`, `apps/web/src/components/odontogram/PeriodontalChartingModal.tsx`, `apps/web/src/PaymentCapture.tsx`, `docs/screenshots/audit_7sins/`.
+- **Тесты**: `paymentCaptureAutonomy.test.tsx` (9/9 PASS), `paymentCaptureTaxAutonomy.test.tsx` (5/5 PASS), `doctorShiftCockpit.test.tsx` (19/19 PASS), `doctorShiftCockpitAutonomy.test.tsx` (3/3 PASS), `periodontalCharting.test.tsx` (8/8 PASS), `doctorAutonomyWave46.test.tsx` (23/23 PASS), `outpatientAutonomyWave42.test.tsx` (17/17 PASS), `periodontalExportAutonomyWave51.test.tsx` (9/9 PASS), `patientSentimentAndHeader.test.ts` (PASS), суммарно 93+ теста (100% PASS), `check:encoding` 0 ошибок, `typecheck` Exit Code 0.
