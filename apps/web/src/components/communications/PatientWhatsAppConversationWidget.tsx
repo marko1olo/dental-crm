@@ -114,7 +114,10 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 
 	const handleSendReply = async (textToSend: string) => {
 		const text = textToSend.trim();
-		if (!text) return;
+		if (!text) {
+			showToast("Введите текст сообщения для отправки в WhatsApp.", "warning");
+			return;
+		}
 
 		setSending(true);
 		const optimisticId = `opt-${Date.now()}`;
@@ -411,7 +414,7 @@ export const PatientWhatsAppConversationWidget: React.FC<PatientWhatsAppConversa
 					/>
 					<button
 						type="submit"
-						disabled={sending || !draft.trim()}
+						disabled={sending}
 						className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors shrink-0 shadow-sm cursor-pointer"
 						title="Отправить через шлюз WhatsApp WABA"
 					>

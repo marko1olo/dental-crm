@@ -489,8 +489,8 @@ export const WhatsAppKapsoSettingsDrawer: React.FC<WhatsAppKapsoSettingsDrawerPr
 						</div>
 						<button
 							type="submit"
-							disabled={testing || !testPhone.trim()}
-							className="flex items-center justify-center gap-2 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-4 py-2 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] disabled:opacity-50 transition-colors w-full"
+							disabled={testing}
+							className="flex items-center justify-center gap-2 rounded-lg border border-[var(--glass-border)] bg-[var(--paper)] px-4 py-2 text-xs font-medium text-[var(--ink)] hover:bg-[var(--glass-panel)] disabled:opacity-50 transition-colors w-full cursor-pointer"
 						>
 							<Send className="h-3.5 w-3.5" />
 							{testing ? "Отправка..." : "Отправить тестовое сообщение"}

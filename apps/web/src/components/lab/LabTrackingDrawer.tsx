@@ -109,7 +109,12 @@ export function LabTrackingDrawer({
 
 	const handleAdvanceStage = async (targetStage?: LabOrderStageKey) => {
 		const stageToSet = targetStage || nextStage?.id;
-		if (!stageToSet || !order.id) return;
+		if (!stageToSet || !order.id) {
+			if (!nextStage && !targetStage) {
+				showToast("Заказ ЗТЛ уже находится на завершающем этапе.", "info");
+			}
+			return;
+		}
 
 		// Авто-применение клинического решения лечащего врача при авансе < 50% (Мандат 8e / Без палок в колёса)
 		if (
@@ -394,7 +399,7 @@ export function LabTrackingDrawer({
 							<button
 								type="button"
 								onClick={() => handleAdvanceStage()}
-								disabled={isUpdating || !nextStage}
+								disabled={isUpdating}
 								className="min-h-[36px] h-10 px-4 rounded-xl bg-[var(--teal)] hover:opacity-90 text-white font-bold text-xs inline-flex items-center gap-2 shadow-sm disabled:opacity-50 transition-all cursor-pointer"
 							>
 								{isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
