@@ -182,7 +182,7 @@ describe("OdontogramViewContainer — Data Contracts & Props Propagation", () =>
 			toJSON: () => ({}),
 		} as DOMRect;
 
-		props.onToothClick(16, dummyRect, "O");
+		props.onToothClick?.(16, dummyRect, "O");
 		assert.equal(clickedNum, 16);
 		assert.equal(clickedSurface, "O");
 	});

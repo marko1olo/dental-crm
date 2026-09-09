@@ -9,6 +9,7 @@ import {
 	FileText,
 	Flame,
 	Hammer,
+	Keyboard,
 	Layers,
 	Mic,
 	Moon,
@@ -23,6 +24,7 @@ import {
 	Zap,
 } from "lucide-react";
 import type { OdontogramViewMode } from "@dental/shared";
+import { OdontogramViewContainer } from "../components/odontogram/OdontogramViewContainer";
 import { AnatomicalSvgOdontogram } from "../components/odontogram/AnatomicalSvgOdontogram";
 import {
 	ToothChart,
@@ -802,53 +804,22 @@ export const OdontogramStudioStandalone: React.FC = () => {
 			{/* Main Central Stage — Dominant Workspace Scale (75%+ Viewport Area) */}
 			<main className="flex-1 w-full max-w-full p-2 sm:p-4 flex flex-col lg:flex-row gap-3 relative items-stretch">
 				{/* Dental Arch Stage Canvas */}
-				<div className="flex-1 w-full min-w-0 bg-[var(--odontogram-paper)] border border-[var(--odontogram-border)] rounded-2xl p-2 sm:p-6 shadow-xs flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-200 min-h-[calc(100vh-130px)]">
+				<div className="flex-1 w-full min-w-0 bg-[var(--odontogram-paper)] border border-[var(--odontogram-border)] rounded-2xl p-2 sm:p-6 shadow-xs flex flex-col items-center justify-start relative overflow-hidden transition-colors duration-200 min-h-[calc(100vh-130px)]">
 					{/* Glow accent */}
 					<div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
 					<div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
-					{/* 1. 3D Anatomical Mode */}
-					{viewMode === "anatomical_svg" && (
-						<div className="w-full flex flex-col items-center justify-center flex-1">
-							<AnatomicalSvgOdontogram
-								teethData={teethData}
-								pediatricMode={pediatricMode}
-								showWisdomTeeth={showWisdom}
-								showPulpAndCanals={showCanals}
-								selectedTeeth={selectedTeeth}
-								activeStamp={activeStamp}
-								onToothClick={handleToothClick}
-								onQuickStateChange={updateToothState}
-							/>
-						</div>
-					)}
-
-					{/* 2. Compact Clinical 5-surface Mode */}
-					{viewMode === "compact_clinical" && (
-						<div className="w-full flex flex-col items-center justify-center flex-1">
-							<ToothChart
-								teethData={teethData}
-								pediatricMode={pediatricMode}
-								selectedTeeth={selectedTeeth}
-								activeStamp={activeStamp}
-								onToothClick={handleToothClick}
-								onQuickStateChange={updateToothState}
-							/>
-						</div>
-					)}
-
-					{/* 3. Classic GOST 043/u Mode */}
-					{viewMode === "classic_gost" && (
-						<div className="w-full flex flex-col items-center justify-center flex-1">
-							<ClassicGostOdontogram
-								teethData={teethData}
-								pediatricMode={pediatricMode}
-								selectedTeeth={selectedTeeth}
-								onToothClick={handleToothClick}
-								onQuickStateChange={updateToothState}
-							/>
-						</div>
-					)}
+					<OdontogramViewContainer
+						teethData={teethData}
+						initialViewMode={viewMode}
+						dentitionMode={pediatricMode ? "pediatric" : "adult"}
+						onDentitionModeChange={(mode) => {
+							setPediatricMode(mode === "pediatric");
+						}}
+						selectedTeeth={selectedTeeth}
+						onToothClick={handleToothClick}
+						onQuickStateChange={updateToothState}
+					/>
 				</div>
 
 				{/* Sliding Live Invoice Drawer */}
@@ -911,7 +882,7 @@ export const OdontogramStudioStandalone: React.FC = () => {
 						title="Справка по горячим клавишам"
 						data-testid="compact-hotkeys-help-btn"
 					>
-						<span>⌨️</span>
+						<Keyboard size={14} className="shrink-0" />
 						<span>Горячие клавиши</span>
 					</button>
 

@@ -50,6 +50,8 @@ import { EndoCanalMeasurementDrawer } from "./EndoCanalMeasurementDrawer";
 import { PeriodontalChartingModal } from "./PeriodontalChartingModal";
 import { OrthodonticCephTrackerModal } from "../orthodontics/OrthodonticCephTrackerModal";
 import { JawOcclusionModal } from "./JawOcclusionModal";
+import { TreatmentPlanWizard } from "./TreatmentPlanWizard";
+import { ToothCardModal } from "./ToothCardModal";
 import { showToast } from "../GlobalToast";
 
 export interface OdontogramViewOption {
@@ -97,7 +99,7 @@ export interface OdontogramViewContainerProps {
 	topTeeth?: number[] | undefined;
 	bottomTeeth?: number[] | undefined;
 	selectedTeeth?: number[] | undefined;
-	onToothClick: (num: number, rect: DOMRect, surface?: string) => void;
+	onToothClick?: ((num: number, rect: DOMRect, surface?: string) => void) | undefined;
 	onQuickStateChange?: ((targets: number[], state: ToothState, surfaces?: readonly string[] | undefined) => void) | undefined;
 	useSurfaces?: boolean | undefined;
 	hideHeader?: boolean | undefined;
@@ -174,6 +176,23 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 
 	const activeMode = storeMode || localMode || "anatomical_svg";
 
+	const isPediatricEffective = dentitionMode === "pediatric" || (dentitionMode === undefined && Boolean(pediatricMode));
+	const isMixedEffective = dentitionMode === "mixed" || (dentitionMode === undefined && Boolean(mixedDentition));
+	const effectiveDentition = dentitionMode ?? (isMixedEffective ? "mixed" : isPediatricEffective ? "pediatric" : "adult");
+
+	// Canonical Quadrants & Frontal Group Teeth Arrays
+	const ADULT_Q1 = useMemo(() => [18, 17, 16, 15, 14, 13, 12, 11], []);
+	const ADULT_Q2 = useMemo(() => [21, 22, 23, 24, 25, 26, 27, 28], []);
+	const ADULT_Q3 = useMemo(() => [31, 32, 33, 34, 35, 36, 37, 38], []);
+	const ADULT_Q4 = useMemo(() => [48, 47, 46, 45, 44, 43, 42, 41], []);
+	const ADULT_FRONT = useMemo(() => [13, 12, 11, 21, 22, 23, 43, 42, 41, 31, 32, 33], []);
+
+	const PEDIATRIC_Q5 = useMemo(() => [55, 54, 53, 52, 51], []);
+	const PEDIATRIC_Q6 = useMemo(() => [61, 62, 63, 64, 65], []);
+	const PEDIATRIC_Q7 = useMemo(() => [71, 72, 73, 74, 75], []);
+	const PEDIATRIC_Q8 = useMemo(() => [85, 84, 83, 82, 81], []);
+	const PEDIATRIC_FRONT = useMemo(() => [53, 52, 51, 61, 62, 63, 83, 82, 81, 71, 72, 73], []);
+
 	// 2. Custom toggles for clinical productivity
 	const [showWisdomTeeth, setShowWisdomTeeth] = useState<boolean>(true);
 	const [showPulpAndCanals, setShowPulpAndCanals] = useState<boolean>(false);
@@ -182,7 +201,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 	const [isFastExtractMode, setIsFastExtractMode] = useState<boolean>(false);
 	const [activeStampTool, setActiveStampTool] = useState<ToothState | null>(null);
 	const [contextDrawerTooth, setContextDrawerTooth] = useState<number | null>(null);
+	const [cardModalTooth, setCardModalTooth] = useState<number | null>(null);
 	const [endoDrawerTooth, setEndoDrawerTooth] = useState<number | null>(null);
+	const [isPlanWizardOpen, setIsPlanWizardOpen] = useState<boolean>(false);
 	const [isVoiceListening, setIsVoiceListening] = useState<boolean>(false);
 	const [voiceInterimText, setVoiceInterimText] = useState<string>("");
 	const [isLocalPerioOpen, setIsLocalPerioOpen] = useState<boolean>(false);
@@ -192,13 +213,15 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 			onMarkIntactDentition();
 			return;
 		}
-		const allTeeth = pediatricMode
-			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
-			: [...ALL_ADULT_TEETH_NUMBERS];
+		const allTeeth = isMixedEffective
+			? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH, 16, 26, 36, 46]
+			: isPediatricEffective
+				? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
+				: [...ALL_ADULT_TEETH_NUMBERS];
 		onQuickStateChange?.(allTeeth, "Healthy");
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast("Санирован: вся зубная формула отмечена интактной (здоровой)", "success");
-	}, [onMarkIntactDentition, pediatricMode, onQuickStateChange]);
+	}, [onMarkIntactDentition, isPediatricEffective, isMixedEffective, onQuickStateChange]);
 
 	const handleMarkWisdomTeethMissing = useCallback(() => {
 		if (onMarkWisdomTeethMissing) {
@@ -210,6 +233,23 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 		SoundFeedbackService.getInstance().playActionSuccess();
 		showToast("Адентия 8-ок: зубы 18, 28, 38, 48 отмечены отсутствующими", "info");
 	}, [onMarkWisdomTeethMissing, onQuickStateChange]);
+
+	const handleBatchSelectGroup = useCallback(
+		(teeth: number[]) => {
+			if (activeStampTool && onQuickStateChange) {
+				onQuickStateChange(teeth, activeStampTool);
+				SoundFeedbackService.getInstance().playActionSuccess();
+				showToast(`Штамп «${activeStampTool}» применён к ${teeth.length} зубам`, "success");
+				return;
+			}
+			if (onSelectTeethGroup) {
+				onSelectTeethGroup(teeth);
+			}
+			SoundFeedbackService.getInstance().playActionSuccess();
+			showToast(`Выделено: ${teeth.length} зубов (пакетный режим)`, "info");
+		},
+		[activeStampTool, onQuickStateChange, onSelectTeethGroup],
+	);
 	const [isOrthoCephOpen, setIsOrthoCephOpen] = useState<boolean>(false);
 	const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 	const [activeJawModalTarget, setActiveJawModalTarget] = useState<"JU" | "JL" | "C" | null>(null);
@@ -386,9 +426,9 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 
 	const sharedViewProps = {
 		teethData,
-		pediatricMode,
-		mixedDentition,
-		dentitionMode,
+		pediatricMode: isPediatricEffective,
+		mixedDentition: isMixedEffective,
+		dentitionMode: effectiveDentition,
 		onDentitionModeChange,
 		topTeeth,
 		bottomTeeth,
@@ -512,6 +552,111 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 								</button>
 							</div>
 						)}
+
+						{/* 1-Click Batch Quadrant & Front Selection Buttons */}
+						<div
+							className="inline-flex items-center p-0.5 rounded-lg bg-[var(--odontogram-surface-hover,#f1f5f9)] border border-[var(--odontogram-border-subtle,#e2e8f0)] shrink-0"
+							role="group"
+							aria-label="Пакетный выбор квадрантов"
+						>
+							{isPediatricEffective ? (
+								<>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q5)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q5 (55–51, В/Ч Правый)"
+										data-testid="batch-select-q5-btn"
+									>
+										Q5
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q6)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q6 (61–65, В/Ч Левый)"
+										data-testid="batch-select-q6-btn"
+									>
+										Q6
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q7)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q7 (71–75, Н/Ч Левый)"
+										data-testid="batch-select-q7-btn"
+									>
+										Q7
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(PEDIATRIC_Q8)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q8 (85–81, Н/Ч Правый)"
+										data-testid="batch-select-q8-btn"
+									>
+										Q8
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(PEDIATRIC_FRONT)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all cursor-pointer select-none shrink-0"
+										title="Выделить детскую фронтальную группу (53–63, 83–73)"
+										data-testid="batch-select-front-btn"
+									>
+										Фронт
+									</button>
+								</>
+							) : (
+								<>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(ADULT_Q1)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q1 (18–11, В/Ч Правый)"
+										data-testid="batch-select-q1-btn"
+									>
+										Q1
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(ADULT_Q2)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q2 (21–28, В/Ч Левый)"
+										data-testid="batch-select-q2-btn"
+									>
+										Q2
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(ADULT_Q3)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q3 (31–38, Н/Ч Левый)"
+										data-testid="batch-select-q3-btn"
+									>
+										Q3
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(ADULT_Q4)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-[var(--odontogram-ink-muted,#64748b)] hover:text-[var(--odontogram-ink,#0f172a)] hover:bg-[var(--odontogram-surface,#ffffff)] transition-all cursor-pointer select-none shrink-0"
+										title="Выделить Q4 (48–41, Н/Ч Правый)"
+										data-testid="batch-select-q4-btn"
+									>
+										Q4
+									</button>
+									<button
+										type="button"
+										onClick={() => handleBatchSelectGroup(ADULT_FRONT)}
+										className="min-h-[44px] sm:min-h-[28px] sm:h-[28px] px-2 py-0.5 rounded text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 transition-all cursor-pointer select-none shrink-0"
+										title="Выделить фронтальную группу (13–23, 43–33)"
+										data-testid="batch-select-front-btn"
+									>
+										Фронт
+									</button>
+								</>
+							)}
+						</div>
 
 						{/* 1-Click Total Sanitation & Wisdom Absence Action Triggers */}
 						{onQuickStateChange && (
@@ -693,6 +838,19 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 							<span>Смета</span>
 						</button>
 
+						{/* 1-Click Treatment Plan from Pathologies */}
+						<button
+							type="button"
+							onClick={() => setIsPlanWizardOpen(true)}
+							className="min-h-[44px] sm:min-h-[30px] sm:h-[30px] flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black whitespace-nowrap border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 transition-all shrink-0 cursor-pointer shadow-xs active:scale-95"
+							title="Сформировать черновой план лечения по номенклатуре 804н на основе всех выявленных патологий зубной формулы"
+							data-testid="create-plan-from-pathologies-btn"
+						>
+							<FileText size={14} className="text-indigo-600 dark:text-indigo-400" />
+							<span className="hidden xl:inline">План из патологий</span>
+							<span className="xl:hidden">План</span>
+						</button>
+
 						{/* Voice Dictation Trigger */}
 						<button
 							type="button"
@@ -775,6 +933,35 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 											>
 												<Trash2 size={14} className="text-rose-600 dark:text-rose-400 shrink-0" />
 												<span>Адентия 8-ок (18, 28, 38, 48)</span>
+											</button>
+
+											<button
+												type="button"
+												onClick={() => {
+													setIsPlanWizardOpen(true);
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-indigo-500/10 text-indigo-800 dark:text-indigo-200 hover:bg-indigo-500/20 border border-indigo-500/30"
+												title="Сформировать черновой план лечения по МКБ-10 и номенклатуре 804н на основе всех патологий"
+												data-testid="more-menu-plan-from-pathologies"
+											>
+												<FileText size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+												<span>План лечения из патологий (804н)</span>
+											</button>
+
+											<button
+												type="button"
+												onClick={() => {
+													const targetTooth = selectedTeeth && selectedTeeth.length > 0 ? selectedTeeth[0]! : (isPediatricEffective ? 55 : 16);
+													setCardModalTooth(targetTooth);
+													setIsMoreMenuOpen(false);
+												}}
+												className="min-h-[44px] sm:min-h-[32px] sm:h-[32px] px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none text-left flex items-center gap-2 bg-blue-500/10 text-blue-800 dark:text-blue-200 hover:bg-blue-500/20 border border-blue-500/30"
+												title="Открыть подробную карточку зуба с поверхностями и протоколами"
+												data-testid="more-menu-tooth-card"
+											>
+												<Stethoscope size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+												<span>Детальная карточка зуба</span>
 											</button>
 										</div>
 									</div>
@@ -1050,11 +1237,41 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> = (
 					surfaces={radialMenuData.surfaces}
 					onSelectState={handleRadialSelectState}
 					onAddToInvoice={() => setIsLiveInvoiceOpen(true)}
+					onOpenTherapy={() => {
+						setCardModalTooth(radialMenuData.toothNumber);
+						setRadialMenuData(null);
+					}}
 					onClose={() => setRadialMenuData(null)}
 				/>
 			)}
 
+			{/* 1-Click Treatment Plan Wizard (StomX/IDENT Parity) */}
+			<TreatmentPlanWizard
+				isOpen={isPlanWizardOpen}
+				onClose={() => setIsPlanWizardOpen(false)}
+				teethData={teethData}
+				patientId={patientId}
+				patientName={patientId ? `Пациент #${patientId}` : undefined}
+				onPlanCreated={(planId, totalRub) => {
+					showToast(`План лечения #${planId} сформирован (${totalRub} ₽)`, "success");
+				}}
+			/>
 
+			{/* Detailed Tooth Card Modal */}
+			{cardModalTooth !== null && (
+				<ToothCardModal
+					isOpen={cardModalTooth !== null}
+					toothNumber={cardModalTooth}
+					toothData={teethData?.find((t) => t.toothNumber === cardModalTooth)}
+					onClose={() => setCardModalTooth(null)}
+					onUpdateTooth={(toothNum, updates) => {
+						if (updates.state) {
+							onQuickStateChange?.([toothNum], updates.state, updates.surfaces);
+							showToast(`Зуб ${toothNum}: состояние «${updates.state}» сохранено`, "success");
+						}
+					}}
+				/>
+			)}
 
 			{/* Tier 2 Context Drawer for Selected Tooth */}
 			{contextDrawerTooth !== null && (

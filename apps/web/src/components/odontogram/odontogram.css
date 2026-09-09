@@ -385,10 +385,18 @@
 	gap: 6px;
 }
 
+.odontogram-toolbar {
+	height: 36px;
+	min-height: 34px;
+	max-height: 36px;
+	box-sizing: border-box;
+}
+
 .tooth-chart-arch-container {
 	display: block;
 	width: 100%;
 	max-width: 100%;
+	min-height: 300px;
 	margin: 0 auto;
 	overflow-x: auto;
 	padding: 24px 12px;

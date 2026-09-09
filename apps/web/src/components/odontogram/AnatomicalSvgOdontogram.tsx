@@ -1638,6 +1638,7 @@ export interface AnatomicalSvgOdontogramProps {
 	activeQuadrant?: OdontogramQuadrantId | undefined;
 	onQuadrantChange?: ((quadrant: OdontogramQuadrantId) => void) | undefined;
 	hideQuadrantSwitcher?: boolean | undefined;
+	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
 	className?: string | undefined;
 }
 
@@ -1645,6 +1646,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	teethData = [],
 	pediatricMode,
 	mixedDentition,
+	dentitionMode,
 	topTeeth: customTopTeeth,
 	bottomTeeth: customBottomTeeth,
 	selectedTeeth = [],
@@ -1668,10 +1670,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 	const [archScale, setArchScale] = useState(1);
 	const appliedArchScaleRef = useRef(1);
 
+	const effectiveDentition = dentitionMode ?? (mixedDentition ? "mixed" : pediatricMode ? "pediatric" : "adult");
+	const isPediatricEffective = effectiveDentition === "pediatric";
+	const isMixedEffective = effectiveDentition === "mixed";
+
 	const [localQuadrant, setLocalQuadrant] = useState<OdontogramQuadrantId>(() => {
 		if (controlledQuadrant !== undefined) return controlledQuadrant;
 		if (typeof window !== "undefined" && window.innerWidth < 640) {
-			return pediatricMode ? "Q5" : "Q1";
+			return isPediatricEffective ? "Q5" : "Q1";
 		}
 		return "all";
 	});
@@ -1688,14 +1694,14 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		}
 	}, [controlledQuadrant]);
 
-	const defaultTopTeeth = mixedDentition
+	const defaultTopTeeth = isMixedEffective
 		? MIXED_TOP_TEETH
-		: pediatricMode
+		: isPediatricEffective
 			? PEDIATRIC_TOP_TEETH
 			: TOP_TEETH;
-	const defaultBottomTeeth = mixedDentition
+	const defaultBottomTeeth = isMixedEffective
 		? MIXED_BOTTOM_TEETH
-		: pediatricMode
+		: isPediatricEffective
 			? PEDIATRIC_BOTTOM_TEETH
 			: BOTTOM_TEETH;
 
@@ -1729,7 +1735,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 			const isQuadrantView = currentQuadrant !== "all";
 			const activeTeeth = isQuadrantView
-				? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, pediatricMode)
+				? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, isPediatricEffective)
 				: topTeethList;
 
 			// Exact intrinsic base width at scale 1.0 based on anatomical tooth geometries + spacing
@@ -1755,7 +1761,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		const observer = new ResizeObserver(recalculate);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, [currentQuadrant, topTeethList, bottomTeethList, pediatricMode]);
+	}, [currentQuadrant, topTeethList, bottomTeethList, isPediatricEffective]);
 
 	// High-speed keyboard triggers: instant 1-key assigning without opening sub-menus
 	useEffect(() => {
@@ -1795,9 +1801,9 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 				const navDir = dirMap[e.key];
 				if (navDir) {
 					e.preventDefault();
-					const nextTooth = getNextFocusedTooth(firstTooth, navDir, pediatricMode);
+					const nextTooth = getNextFocusedTooth(firstTooth, navDir, isPediatricEffective);
 					if (currentQuadrant !== "all") {
-						const nextQuad = getQuadrantForTooth(nextTooth, pediatricMode);
+						const nextQuad = getQuadrantForTooth(nextTooth, isPediatricEffective);
 						if (nextQuad !== currentQuadrant) {
 							handleSelectQuadrant(nextQuad);
 						}
@@ -1812,7 +1818,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 		return () => {
 			window.removeEventListener("keydown", handleGlobalKeyDown);
 		};
-	}, [selectedTeeth, onQuickStateChange, pediatricMode, currentQuadrant, teethData]);
+	}, [selectedTeeth, onQuickStateChange, isPediatricEffective, currentQuadrant, teethData]);
 
 	const handleToothClick = React.useCallback(
 		(
@@ -1877,7 +1883,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 
 	const isQuadrantView = currentQuadrant !== "all";
 	const activeQuadrantTeeth = isQuadrantView
-		? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, pediatricMode)
+		? getQuadrantTeeth(currentQuadrant, topTeethList, bottomTeethList, isPediatricEffective)
 		: [];
 	const isTopQuadrant = isQuadrantTop(currentQuadrant);
 
@@ -1900,7 +1906,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							title="Показать полную зубную формулу (все зубы)"
 							data-testid="quadrant-btn-all"
 						>
-							Все зубы ({pediatricMode ? "20" : showWisdomTeeth ? "32" : "28"})
+							Все зубы ({isMixedEffective ? "24" : isPediatricEffective ? "20" : showWisdomTeeth ? "32" : "28"})
 						</button>
 
 						<div className="h-5 w-px bg-[var(--odontogram-border)] mx-0.5 hidden sm:block" />
@@ -1910,64 +1916,64 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 							{/* Upper Right Quadrant: Q1 18–11 (or Q5 55–51) */}
 							<button
 								type="button"
-								onClick={() => handleSelectQuadrant(pediatricMode ? "Q5" : "Q1")}
+								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q5" : "Q1")}
 								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
-									currentQuadrant === (pediatricMode ? "Q5" : "Q1")
+									currentQuadrant === (isPediatricEffective ? "Q5" : "Q1")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 								}`}
-								title={pediatricMode ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
-								data-testid={pediatricMode ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
+								title={isPediatricEffective ? "Q5 55–51 (Верхняя челюсть, Правый)" : "Q1 18–11 (Верхняя челюсть, Правый)"}
+								data-testid={isPediatricEffective ? "quadrant-btn-Q5" : "quadrant-btn-Q1"}
 							>
-								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q5 55–51" : "Q1 18–11"}</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q5 55–51" : "Q1 18–11"}</span>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·П</span>
 							</button>
 
 							{/* Upper Left Quadrant: Q2 21–28 (or Q6 61–65) */}
 							<button
 								type="button"
-								onClick={() => handleSelectQuadrant(pediatricMode ? "Q6" : "Q2")}
+								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q6" : "Q2")}
 								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
-									currentQuadrant === (pediatricMode ? "Q6" : "Q2")
+									currentQuadrant === (isPediatricEffective ? "Q6" : "Q2")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 								}`}
-								title={pediatricMode ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
-								data-testid={pediatricMode ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
+								title={isPediatricEffective ? "Q6 61–65 (Верхняя челюсть, Левый)" : "Q2 21–28 (Верхняя челюсть, Левый)"}
+								data-testid={isPediatricEffective ? "quadrant-btn-Q6" : "quadrant-btn-Q2"}
 							>
-								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q6 61–65" : "Q2 21–28"}</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q6 61–65" : "Q2 21–28"}</span>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">ВЧ·Л</span>
 							</button>
 
 							{/* Lower Right Quadrant: Q4 48–41 (or Q8 85–81) */}
 							<button
 								type="button"
-								onClick={() => handleSelectQuadrant(pediatricMode ? "Q8" : "Q4")}
+								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q8" : "Q4")}
 								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
-									currentQuadrant === (pediatricMode ? "Q8" : "Q4")
+									currentQuadrant === (isPediatricEffective ? "Q8" : "Q4")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 								}`}
-								title={pediatricMode ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
-								data-testid={pediatricMode ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
+								title={isPediatricEffective ? "Q8 85–81 (Нижняя челюсть, Правый)" : "Q4 48–41 (Нижняя челюсть, Правый)"}
+								data-testid={isPediatricEffective ? "quadrant-btn-Q8" : "quadrant-btn-Q4"}
 							>
-								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q8 85–81" : "Q4 48–41"}</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q8 85–81" : "Q4 48–41"}</span>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·П</span>
 							</button>
 
 							{/* Lower Left Quadrant: Q3 31–38 (or Q7 71–75) */}
 							<button
 								type="button"
-								onClick={() => handleSelectQuadrant(pediatricMode ? "Q7" : "Q3")}
+								onClick={() => handleSelectQuadrant(isPediatricEffective ? "Q7" : "Q3")}
 								className={`quadrant-btn min-h-[48px] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2 border transition-all cursor-pointer select-none ${
-									currentQuadrant === (pediatricMode ? "Q7" : "Q3")
+									currentQuadrant === (isPediatricEffective ? "Q7" : "Q3")
 										? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
 										: "bg-[var(--odontogram-surface)] text-[var(--odontogram-ink)] border-[var(--odontogram-border)] hover:border-indigo-400 hover:bg-[var(--odontogram-surface-hover)]"
 								}`}
-								title={pediatricMode ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
-								data-testid={pediatricMode ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
+								title={isPediatricEffective ? "Q7 71–75 (Нижняя челюсть, Левый)" : "Q3 31–38 (Нижняя челюсть, Левый)"}
+								data-testid={isPediatricEffective ? "quadrant-btn-Q7" : "quadrant-btn-Q3"}
 							>
-								<span className="font-extrabold whitespace-nowrap">{pediatricMode ? "Q7 71–75" : "Q3 31–38"}</span>
+								<span className="font-extrabold whitespace-nowrap">{isPediatricEffective ? "Q7 71–75" : "Q3 31–38"}</span>
 								<span className="text-[10px] px-1.5 py-0.5 rounded bg-black/20 font-mono font-black uppercase shrink-0">НЧ·Л</span>
 							</button>
 						</div>
@@ -2058,7 +2064,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 						<div className="flex items-center justify-between w-full max-w-lg px-3 py-2 rounded-xl bg-[var(--odontogram-surface)] border border-[var(--odontogram-border-subtle)] mb-2">
 							<button
 								type="button"
-								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", pediatricMode))}
+								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "prev", isPediatricEffective))}
 								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
 								title="Предыдущий квадрант"
 								data-testid="quadrant-prev-btn"
@@ -2066,11 +2072,11 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 								← Пред.
 							</button>
 							<span className="text-xs sm:text-sm font-black text-[var(--odontogram-ink)] text-center px-2">
-								{getQuadrantTitle(currentQuadrant, pediatricMode)}
+								{getQuadrantTitle(currentQuadrant, isPediatricEffective)}
 							</span>
 							<button
 								type="button"
-								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "next", pediatricMode))}
+								onClick={() => handleSelectQuadrant(getAdjacentQuadrant(currentQuadrant, "next", isPediatricEffective))}
 								className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--odontogram-paper)] hover:bg-[var(--odontogram-surface-hover)] text-[var(--odontogram-ink)] border border-[var(--odontogram-border-subtle)] flex items-center gap-1 cursor-pointer transition-colors"
 								title="Следующий квадрант"
 								data-testid="quadrant-next-btn"
@@ -2106,7 +2112,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 											showPulpAndCanals={showPulpAndCanals}
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-											pediatricMode={pediatricMode}
+											pediatricMode={isPediatricEffective}
 											{...bridgeProps}
 										/>
 									);
@@ -2148,7 +2154,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 											showPulpAndCanals={showPulpAndCanals}
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-											pediatricMode={pediatricMode}
+											pediatricMode={isPediatricEffective}
 											{...bridgeProps}
 										/>
 									);
@@ -2181,7 +2187,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 											showPulpAndCanals={showPulpAndCanals}
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-											pediatricMode={pediatricMode}
+											pediatricMode={isPediatricEffective}
 											{...bridgeProps}
 										/>
 									);
@@ -2220,7 +2226,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 											showPulpAndCanals={showPulpAndCanals}
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-											pediatricMode={pediatricMode}
+											pediatricMode={isPediatricEffective}
 											{...bridgeProps}
 										/>
 									);
@@ -2253,7 +2259,7 @@ export const AnatomicalSvgOdontogram: React.FC<AnatomicalSvgOdontogramProps> = R
 											showPulpAndCanals={showPulpAndCanals}
 											showPeriapicalHalos={showPeriapicalHalos}
 											showPeriodontalBoneLoss={showPeriodontalBoneLoss}
-											pediatricMode={pediatricMode}
+											pediatricMode={isPediatricEffective}
 											{...bridgeProps}
 										/>
 									);
