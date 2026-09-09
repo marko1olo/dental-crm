@@ -128,13 +128,11 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 			}
 			const data = await response.json();
 			if (Array.isArray(data)) {
-				const enriched = data.map((p, idx) => {
+				const enriched = data.map((p) => {
 					const cat: CohortTreatmentCategory =
-						idx % 3 === 0
-							? "sanitation"
-							: idx % 3 === 1
-								? "implantation"
-								: "general_therapy";
+						p.lastTreatmentCategory && ["sanitation", "implantation", "orthodontics", "general_therapy"].includes(p.lastTreatmentCategory)
+							? p.lastTreatmentCategory
+							: "general_therapy";
 					return {
 						...p,
 						lastTreatmentCategory: cat,
@@ -706,26 +704,46 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 
 										<div className="flex items-center gap-1.5 flex-shrink-0 relative">
 											{/* Primary Action Button 1: 📞 Позвонить */}
-											<a
-												href={`tel:${patient.phone.replace(/[^\d+]/g, "")}`}
-												className="px-2.5 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
-												title="Позвонить пациенту"
-											>
-												<Phone className="w-3.5 h-3.5" />
-												<span>Позвонить</span>
-											</a>
+											{patient?.phone ? (
+												<a
+													href={`tel:${patient.phone.replace(/[^\d+]/g, "")}`}
+													className="px-2.5 py-1.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,var(--teal))] text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
+													title="Позвонить пациенту"
+												>
+													<Phone className="w-3.5 h-3.5" />
+													<span>Позвонить</span>
+												</a>
+											) : (
+												<span
+													className="px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] text-[var(--muted)] font-medium text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-not-allowed opacity-60"
+													title="Номер телефона не указан"
+												>
+													<Phone className="w-3.5 h-3.5" />
+													<span>Позвонить</span>
+												</span>
+											)}
 
 											{/* Primary Action Button 2: 💬 WhatsApp */}
-											<a
-												href={`https://wa.me/${patient.phone.replace(/\D/g, "")}`}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
-												title="Написать в WhatsApp"
-											>
-												<MessageSquare className="w-3.5 h-3.5" />
-												<span>WhatsApp</span>
-											</a>
+											{patient?.phone ? (
+												<a
+													href={`https://wa.me/${patient.phone.replace(/\D/g, "")}`}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm touch-manipulation"
+													title="Написать в WhatsApp"
+												>
+													<MessageSquare className="w-3.5 h-3.5" />
+													<span>WhatsApp</span>
+												</a>
+											) : (
+												<span
+													className="px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] text-[var(--muted)] font-medium text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-not-allowed opacity-60"
+													title="Номер телефона не указан"
+												>
+													<MessageSquare className="w-3.5 h-3.5" />
+													<span>WhatsApp</span>
+												</span>
+											)}
 
 											{/* Secondary Actions Dropdown Menu (...) - Hick's Law: max 2 direct buttons, 4+ auxiliary actions consolidated */}
 											<div className="relative">
@@ -1049,7 +1067,7 @@ export const LostPatientsPanel: React.FC<LostPatientsPanelProps> = ({
 														<div
 															className="h-full bg-[var(--teal)]"
 															style={{
-																width: `${chair.utilizationRatePercent}%`,
+																width: `${Math.min(100, Math.max(0, chair.utilizationRatePercent))}%`,
 															}}
 														/>
 													</div>

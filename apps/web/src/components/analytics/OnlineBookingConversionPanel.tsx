@@ -478,29 +478,31 @@ export function OnlineBookingConversionPanel() {
 						{formatKopecksRu(onlineSummary.totalRevenueKopecks)}
 					</div>
 					<p className="text-[11px] text-[var(--muted)] m-0">
-						Ср. чек: {formatKopecksRu(onlineSummary.avgCheckKopecks)} · ROMI: +
-						{onlineSummary.romiPercent ?? 0}%
+						Ср. чек: {formatKopecksRu(onlineSummary.avgCheckKopecks)} · ROMI:{" "}
+						{(onlineSummary.romiPercent ?? 0) > 0
+							? `+${onlineSummary.romiPercent}%`
+							: `${onlineSummary.romiPercent ?? 0}%`}
 					</p>
 				</div>
 			</div>
 
 			{/* Navigation Tabs */}
-			<div className="flex items-center gap-2 border-b border-[var(--line)] pb-2">
+			<div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 overflow-x-auto no-scrollbar flex-nowrap">
 				<button
 					type="button"
 					onClick={() => setActiveTab("self_booking")}
-					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] ${
+					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] shrink-0 ${
 						activeTab === "self_booking"
 							? "bg-[var(--teal)] text-white shadow-sm"
 							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
 				>
-					Каналы онлайн-самозаписи ({DEFAULT_ONLINE_CHANNELS.length})
+					Каналы онлайн-самозаписи ({channels.length})
 				</button>
 				<button
 					type="button"
 					onClick={() => setActiveTab("admin_comparison")}
-					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] ${
+					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] shrink-0 ${
 						activeTab === "admin_comparison"
 							? "bg-[var(--teal)] text-white shadow-sm"
 							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -511,7 +513,7 @@ export function OnlineBookingConversionPanel() {
 				<button
 					type="button"
 					onClick={() => setActiveTab("funnel")}
-					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] ${
+					className={`px-4 py-2.5 text-xs font-bold rounded-xl border-0 cursor-pointer transition-colors min-h-[44px] shrink-0 ${
 						activeTab === "funnel"
 							? "bg-[var(--teal)] text-white shadow-sm"
 							: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)]"
@@ -552,7 +554,7 @@ export function OnlineBookingConversionPanel() {
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-[var(--line)]">
-								{DEFAULT_ONLINE_CHANNELS.map((ch) => {
+								{channels.map((ch) => {
 									const convPercent =
 										ch.viewsCount > 0
 											? (ch.bookingsCount / ch.viewsCount) * 100
@@ -603,7 +605,7 @@ export function OnlineBookingConversionPanel() {
 												{formatKopecksRu(ch.revenueKopecks)}
 											</td>
 											<td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
-												+{romi}%
+												{romi > 0 ? `+${romi}%` : `${romi}%`}
 											</td>
 										</tr>
 									);
@@ -740,7 +742,7 @@ export function OnlineBookingConversionPanel() {
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Входящих звонков:</span>
 								<span className="font-bold text-[var(--ink)]">
-									{DEFAULT_ADMIN_PHONE_FUNNEL.incomingCallsCount} звонков
+									{adminFunnel.incomingCallsCount} звонков
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
@@ -748,36 +750,40 @@ export function OnlineBookingConversionPanel() {
 									Конверсия звонок &rarr; запись:
 								</span>
 								<span className="font-bold text-emerald-600 dark:text-emerald-400">
-									{(
-										(DEFAULT_ADMIN_PHONE_FUNNEL.bookedAppointmentsCount /
-											DEFAULT_ADMIN_PHONE_FUNNEL.answeredCallsCount) *
-										100
-									).toFixed(1)}
-									% ({DEFAULT_ADMIN_PHONE_FUNNEL.bookedAppointmentsCount} зап.)
+									{adminFunnel.answeredCallsCount > 0
+										? (
+												(adminFunnel.bookedAppointmentsCount /
+													adminFunnel.answeredCallsCount) *
+												100
+											).toFixed(1)
+										: "0.0"}
+									% ({adminFunnel.bookedAppointmentsCount} зап.)
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Доходимость (Явка):</span>
 								<span className="font-bold text-blue-600 dark:text-blue-400">
 									{comparison.adminAttendancePercent}% (
-									{DEFAULT_ADMIN_PHONE_FUNNEL.attendedCount} чел.)
+									{adminFunnel.attendedCount} чел.)
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Неявка (No-show):</span>
 								<span className="font-bold text-rose-500">
-									{(
-										(DEFAULT_ADMIN_PHONE_FUNNEL.noShowCount /
-											DEFAULT_ADMIN_PHONE_FUNNEL.bookedAppointmentsCount) *
-										100
-									).toFixed(1)}
-									% ({DEFAULT_ADMIN_PHONE_FUNNEL.noShowCount} чел.)
+									{adminFunnel.bookedAppointmentsCount > 0
+										? (
+												(adminFunnel.noShowCount /
+													adminFunnel.bookedAppointmentsCount) *
+												100
+											).toFixed(1)
+										: "0.0"}
+									% ({adminFunnel.noShowCount} чел.)
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5 border-b border-[var(--line)]">
 								<span className="text-[var(--muted)]">Выручка от звонков:</span>
 								<span className="font-bold text-[var(--ink)]">
-									{formatKopecksRu(DEFAULT_ADMIN_PHONE_FUNNEL.revenueKopecks)}
+									{formatKopecksRu(adminFunnel.revenueKopecks)}
 								</span>
 							</div>
 							<div className="flex justify-between py-1.5">
@@ -785,7 +791,8 @@ export function OnlineBookingConversionPanel() {
 									Ср. длительность звонка:
 								</span>
 								<span className="font-bold text-[var(--ink)]">
-									2 мин 22 сек
+									{Math.floor(adminFunnel.avgCallDurationSeconds / 60)} мин{" "}
+									{adminFunnel.avgCallDurationSeconds % 60} сек
 								</span>
 							</div>
 						</div>
@@ -806,28 +813,40 @@ export function OnlineBookingConversionPanel() {
 								step: "1. Просмотры",
 								count: onlineSummary.totalViews,
 								label: "Открытий виджета",
-								dropoff: `${((onlineSummary.totalSlotSelected / onlineSummary.totalViews) * 100).toFixed(0)}% перешли`,
+								dropoff:
+									onlineSummary.totalViews > 0
+										? `${((onlineSummary.totalSlotSelected / onlineSummary.totalViews) * 100).toFixed(0)}% перешли`
+										: "0% перешли",
 								color: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
 							},
 							{
 								step: "2. Выбор слота",
 								count: onlineSummary.totalSlotSelected,
 								label: "Выбрали время",
-								dropoff: `${((onlineSummary.totalBookings / onlineSummary.totalSlotSelected) * 100).toFixed(0)}% ввели контакты`,
+								dropoff:
+									onlineSummary.totalSlotSelected > 0
+										? `${((onlineSummary.totalBookings / onlineSummary.totalSlotSelected) * 100).toFixed(0)}% ввели контакты`
+										: "0% ввели контакты",
 								color: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
 							},
 							{
 								step: "3. Бронь создана",
 								count: onlineSummary.totalBookings,
 								label: "Подтверждено СМС",
-								dropoff: `${((onlineSummary.totalAttended / onlineSummary.totalBookings) * 100).toFixed(0)}% явились`,
+								dropoff:
+									onlineSummary.totalBookings > 0
+										? `${((onlineSummary.totalAttended / onlineSummary.totalBookings) * 100).toFixed(0)}% явились`
+										: "0% явились",
 								color: "bg-teal-500/10 text-teal-700 dark:text-teal-300",
 							},
 							{
 								step: "4. Явка в клинику",
 								count: onlineSummary.totalAttended,
 								label: "Сели в кресло",
-								dropoff: `${((onlineSummary.totalPaid / onlineSummary.totalAttended) * 100).toFixed(0)}% оплатили`,
+								dropoff:
+									onlineSummary.totalAttended > 0
+										? `${((onlineSummary.totalPaid / onlineSummary.totalAttended) * 100).toFixed(0)}% оплатили`
+										: "0% оплатили",
 								color: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
 							},
 							{

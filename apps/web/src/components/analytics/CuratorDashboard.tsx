@@ -33,6 +33,7 @@ import {
 	Filter,
 	Layers,
 	MessageCircle,
+	MoreVertical,
 	Phone,
 	RefreshCw,
 	Search,
@@ -81,6 +82,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 	// Local queue state (can be advanced interactively)
 	const [queueItems, setQueueItems] = useState<CuratorPatientQueueItem[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [openMenuPlanId, setOpenMenuPlanId] = useState<string | null>(null);
 
 	// Extract staff curators from dashboard
 	const staffCurators = useMemo(() => {
@@ -102,18 +104,18 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 		const staff = (dashboard?.clinicSettings?.staff ?? []) as any[];
 		const staffMap = new Map<string, string>(staff.map((s: any) => [s.id, s.fullName || s.name]));
 
-		const defaultCurator = staffCurators[0] || {
-			id: "00000000-0000-0000-0000-000000000001",
-			fullName: "Куратор клиники",
-		};
+		const defaultCurator = staffCurators[0] || null;
 
 		if (plans.length > 0) {
 			const items: CuratorPatientQueueItem[] = plans.map((plan: any) => {
 				const patient = patients.find((p: any) => p.id === plan.patientId);
 				const adminProf = patient?.administrativeProfile;
-				const curatorId = adminProf?.curatorId || defaultCurator.id;
+				const curatorId = adminProf?.curatorId || defaultCurator?.id || null;
 				const curatorName =
-					adminProf?.curatorFullName || staffMap.get(curatorId) || defaultCurator.fullName || "Куратор";
+					adminProf?.curatorFullName ||
+					(curatorId ? staffMap.get(curatorId) : null) ||
+					defaultCurator?.fullName ||
+					"Не назначен";
 
 				const priceRub = Number(plan.totalPriceRub || plan.totalPrice || 0);
 				const paidRub = Math.max(0, Number(plan.paidAmountRub || patient?.balanceRub || 0));
@@ -221,13 +223,8 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 			return;
 		}
 
-		let additionalPaid = 0;
-		if (nextStage === "prepayment" && item.paidAmountRub === 0) {
-			// Auto deposit suggestion 30%
-			additionalPaid = Math.round(item.planTotalPriceRub * 0.3);
-		} else if (nextStage === "completed") {
-			additionalPaid = item.remainingAmountRub;
-		}
+		// Stage movement must not fabricate phantom cash/card payments without 54-FZ fiscal receipt
+		const additionalPaid = 0;
 
 		try {
 			const res = await fetch(`/api/patients/${encodeURIComponent(item.patientId)}/administrative-profile`, {
@@ -255,7 +252,7 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 		setQueueItems(updated);
 		const nextDef = CURATOR_STAGE_DEFINITIONS.find((d) => d.stage === nextStage);
 		showToast(
-			`Пациент переведен на этап: «${nextDef?.title}»${additionalPaid > 0 ? ` (+${additionalPaid.toLocaleString("ru-RU")} ₽)` : ""}`,
+			`Пациент переведен на этап: «${nextDef?.title}»`,
 			"success",
 		);
 	};
@@ -623,56 +620,169 @@ export const CuratorDashboard: React.FC<CuratorDashboardProps> = ({
 										</div>
 									</div>
 
-									{/* Кнопки действий (тач-таргеты >= 44px) */}
+									{/* Кнопки действий (Миллер: не более 2 кнопок прямого действия, тач-таргеты >= 44px) */}
 									<div className="curator-patient-actions">
-										{stageDef?.nextStage && (
+										{stageDef?.nextStage ? (
+											<>
+												<button
+													type="button"
+													onClick={() => handleAdvanceStage(item)}
+													className="curator-action-btn curator-action-primary"
+												>
+													<CheckCircle2 className="w-4 h-4" />
+													{stageDef.targetActionLabel}
+												</button>
+
+												<button
+													type="button"
+													onClick={() => onOpenPatientPlan?.(item.patientId, item.treatmentPlanId)}
+													className="curator-action-btn curator-action-secondary"
+												>
+													<Layers className="w-4 h-4" />
+													Смета и 3 тарифа
+												</button>
+											</>
+										) : (
+											<>
+												<button
+													type="button"
+													onClick={() => onOpenPatientPlan?.(item.patientId, item.treatmentPlanId)}
+													className="curator-action-btn curator-action-primary"
+												>
+													<Layers className="w-4 h-4" />
+													Смета и 3 тарифа
+												</button>
+
+												{item.patientPhone && (
+													<a
+														href={`tel:${item.patientPhone}`}
+														className="curator-action-btn curator-action-secondary"
+														style={{ textDecoration: "none" }}
+													>
+														<Phone className="w-4 h-4" />
+														Позвонить
+													</a>
+												)}
+											</>
+										)}
+
+										{/* Меню дополнительных действий (...) */}
+										<div className="relative" style={{ position: "relative" }}>
 											<button
 												type="button"
-												onClick={() => handleAdvanceStage(item)}
-												className="curator-action-btn curator-action-primary"
-											>
-												<CheckCircle2 className="w-4 h-4" />
-												{stageDef.targetActionLabel}
-											</button>
-										)}
-
-										<button
-											type="button"
-											onClick={() => onOpenPatientPlan?.(item.patientId, item.treatmentPlanId)}
-											className="curator-action-btn curator-action-secondary"
-										>
-											<Layers className="w-4 h-4" />
-											Смета и 3 тарифа
-										</button>
-
-										{item.patientPhone && (
-											<a
-												href={`tel:${item.patientPhone}`}
+												onClick={() =>
+													setOpenMenuPlanId(
+														openMenuPlanId === item.treatmentPlanId
+															? null
+															: item.treatmentPlanId,
+													)
+												}
 												className="curator-action-btn curator-action-secondary"
-												style={{ textDecoration: "none" }}
+												style={{ minWidth: "44px", width: "44px", padding: 0, justifyContent: "center" }}
+												title="Дополнительные действия"
 											>
-												<Phone className="w-4 h-4" />
-												Позвонить
-											</a>
-										)}
-
-										<button
-											type="button"
-											onClick={() =>
-												setAssignmentTarget({
-													patientId: item.patientId,
-													patientName: item.patientFullName,
-													planId: item.treatmentPlanId,
-													planTitle: item.treatmentPlanTitle,
-													currentCuratorId: item.curatorId,
-												})
-											}
-											className="curator-action-btn curator-action-secondary"
-											title="Сменить куратора или параметры"
-										>
-											<UserPlus className="w-4 h-4" />
-											Куратор
-										</button>
+												<MoreVertical className="w-4 h-4" />
+											</button>
+											{openMenuPlanId === item.treatmentPlanId && (
+												<div
+													className="curator-card-dropdown"
+													style={{
+														position: "absolute",
+														right: 0,
+														bottom: "calc(100% + 4px)",
+														minWidth: "180px",
+														background: "var(--paper, #fff)",
+														border: "1px solid var(--line, #e2e8f0)",
+														borderRadius: "10px",
+														boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+														padding: "4px",
+														zIndex: 30,
+														display: "flex",
+														flexDirection: "column",
+														gap: "2px",
+													}}
+												>
+													{item.patientPhone && stageDef?.nextStage && (
+														<a
+															href={`tel:${item.patientPhone}`}
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 12px",
+																fontSize: "13px",
+																color: "var(--ink, #0f172a)",
+																textDecoration: "none",
+																borderRadius: "6px",
+																minHeight: "44px",
+															}}
+															onClick={() => setOpenMenuPlanId(null)}
+														>
+															<Phone className="w-4 h-4 text-[var(--teal)]" />
+															<span>Позвонить</span>
+														</a>
+													)}
+													<button
+														type="button"
+														onClick={() => {
+															setOpenMenuPlanId(null);
+															setAssignmentTarget({
+																patientId: item.patientId,
+																patientName: item.patientFullName,
+																planId: item.treatmentPlanId,
+																planTitle: item.treatmentPlanTitle,
+																currentCuratorId: item.curatorId,
+															});
+														}}
+														style={{
+															display: "flex",
+															alignItems: "center",
+															gap: "8px",
+															padding: "8px 12px",
+															fontSize: "13px",
+															color: "var(--ink, #0f172a)",
+															background: "transparent",
+															border: 0,
+															borderRadius: "6px",
+															cursor: "pointer",
+															textAlign: "left",
+															width: "100%",
+															minHeight: "44px",
+														}}
+													>
+														<UserPlus className="w-4 h-4 text-[var(--accent)]" />
+														<span>Сменить куратора</span>
+													</button>
+													{onOpenPatientCard && (
+														<button
+															type="button"
+															onClick={() => {
+																setOpenMenuPlanId(null);
+																onOpenPatientCard(item.patientId);
+															}}
+															style={{
+																display: "flex",
+																alignItems: "center",
+																gap: "8px",
+																padding: "8px 12px",
+																fontSize: "13px",
+																color: "var(--ink, #0f172a)",
+																background: "transparent",
+																border: 0,
+																borderRadius: "6px",
+																cursor: "pointer",
+																textAlign: "left",
+																width: "100%",
+																minHeight: "44px",
+															}}
+														>
+															<UserCheck className="w-4 h-4 text-emerald-600" />
+															<span>Карта пациента</span>
+														</button>
+													)}
+												</div>
+											)}
+										</div>
 									</div>
 								</div>
 							);

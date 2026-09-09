@@ -28,6 +28,13 @@ export const ExecutivePnlWidget: React.FC<ExecutivePnlWidgetProps> = ({
 	overallFulfillmentPercent,
 }) => {
 	const getStatusPill = (status: DepartmentPerformanceStatus, label: string) => {
+		if (label === "План не задан") {
+			return (
+				<span className="executive-pill executive-pill-neutral">
+					{label}
+				</span>
+			);
+		}
 		switch (status) {
 			case "ahead":
 				return (

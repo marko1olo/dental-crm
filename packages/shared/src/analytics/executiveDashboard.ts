@@ -459,7 +459,10 @@ export function calculateDepartmentBreakdown(
 		let status: DepartmentPerformanceStatus = "on_track";
 		let statusLabel = "В графике плана";
 
-		if (planFulfillmentPercent >= 105.0) {
+		if (planKop === 0 && factKop === 0) {
+			status = "on_track";
+			statusLabel = "План не задан";
+		} else if (planFulfillmentPercent >= 105.0) {
 			status = "ahead";
 			statusLabel = "План перевыполнен";
 		} else if (planFulfillmentPercent >= 95.0) {

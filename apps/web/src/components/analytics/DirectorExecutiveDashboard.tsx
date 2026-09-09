@@ -66,66 +66,54 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 	// Чистый локальный генератор fallback-данных при сбое сети или локальной разработке
 	const buildFallbackPayload = useCallback((p: ExecutivePeriod): ExecutiveDashboardPayload => {
 		const now = new Date();
-		let multiplier = 1;
-		if (p === "day") multiplier = 1 / 30;
-		else if (p === "quarter") multiplier = 3;
-		else if (p === "year") multiplier = 12;
-
-		const targetPlanRevenueKop = Math.round(250_000_000 * multiplier);
-		const actualRevenueKop = Math.round(242_000_000 * multiplier);
-		const totalMarketingSpendKop = Math.round(
-			DEFAULT_DENTAL_ADVERTISING_CHANNELS.reduce((s, c) => s + c.spentKopecks, 0) * multiplier,
-		);
-
-		const baseLeads = Math.round(180 * multiplier);
 		const rawStages = [
-			{ stage: "lead" as ExecutiveFunnelStage, count: Math.max(1, baseLeads) },
-			{ stage: "consultation_booking" as ExecutiveFunnelStage, count: Math.max(1, Math.round(baseLeads * 0.68)) },
-			{ stage: "attended" as ExecutiveFunnelStage, count: Math.max(1, Math.round(baseLeads * 0.58)) },
-			{ stage: "ai_examination" as ExecutiveFunnelStage, count: Math.max(1, Math.round(baseLeads * 0.54)), isAiAssisted: true },
-			{ stage: "plan_presentation" as ExecutiveFunnelStage, count: Math.max(1, Math.round(baseLeads * 0.51)), totalVolumeKopecks: actualRevenueKop * 2 },
-			{ stage: "plan_approved" as ExecutiveFunnelStage, count: Math.max(1, Math.round(baseLeads * 0.38)), totalVolumeKopecks: actualRevenueKop * 1.4 },
-			{ stage: "treatment_started" as ExecutiveFunnelStage, count: Math.max(1, Math.round(baseLeads * 0.32)), totalVolumeKopecks: actualRevenueKop },
-			{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: Math.max(1, Math.round(baseLeads * 0.24)) },
+			{ stage: "lead" as ExecutiveFunnelStage, count: 0 },
+			{ stage: "consultation_booking" as ExecutiveFunnelStage, count: 0 },
+			{ stage: "attended" as ExecutiveFunnelStage, count: 0 },
+			{ stage: "ai_examination" as ExecutiveFunnelStage, count: 0, isAiAssisted: true },
+			{ stage: "plan_presentation" as ExecutiveFunnelStage, count: 0, totalVolumeKopecks: 0 },
+			{ stage: "plan_approved" as ExecutiveFunnelStage, count: 0, totalVolumeKopecks: 0 },
+			{ stage: "treatment_started" as ExecutiveFunnelStage, count: 0, totalVolumeKopecks: 0 },
+			{ stage: "sanitation_completed" as ExecutiveFunnelStage, count: 0 },
 		];
 
-		const funnelStages = calculateExecutiveFunnel(rawStages, totalMarketingSpendKop);
+		const funnelStages = calculateExecutiveFunnel(rawStages, 0);
 
 		const rawDepts = [
 			{
 				departmentKey: "therapy" as const,
-				planRevenueKopecks: Math.round(targetPlanRevenueKop * 0.30),
-				factRevenueKopecks: Math.round(actualRevenueKop * 0.31),
-				completedVisitsCount: Math.round(310 * multiplier),
-				uniquePatientsCount: Math.round(140 * multiplier),
+				planRevenueKopecks: 0,
+				factRevenueKopecks: 0,
+				completedVisitsCount: 0,
+				uniquePatientsCount: 0,
 			},
 			{
 				departmentKey: "orthopedics" as const,
-				planRevenueKopecks: Math.round(targetPlanRevenueKop * 0.28),
-				factRevenueKopecks: Math.round(actualRevenueKop * 0.29),
-				completedVisitsCount: Math.round(160 * multiplier),
-				uniquePatientsCount: Math.round(85 * multiplier),
+				planRevenueKopecks: 0,
+				factRevenueKopecks: 0,
+				completedVisitsCount: 0,
+				uniquePatientsCount: 0,
 			},
 			{
 				departmentKey: "surgery_implantation" as const,
-				planRevenueKopecks: Math.round(targetPlanRevenueKop * 0.24),
-				factRevenueKopecks: Math.round(actualRevenueKop * 0.23),
-				completedVisitsCount: Math.round(120 * multiplier),
-				uniquePatientsCount: Math.round(65 * multiplier),
+				planRevenueKopecks: 0,
+				factRevenueKopecks: 0,
+				completedVisitsCount: 0,
+				uniquePatientsCount: 0,
 			},
 			{
 				departmentKey: "orthodontics" as const,
-				planRevenueKopecks: Math.round(targetPlanRevenueKop * 0.12),
-				factRevenueKopecks: Math.round(actualRevenueKop * 0.11),
-				completedVisitsCount: Math.round(90 * multiplier),
-				uniquePatientsCount: Math.round(45 * multiplier),
+				planRevenueKopecks: 0,
+				factRevenueKopecks: 0,
+				completedVisitsCount: 0,
+				uniquePatientsCount: 0,
 			},
 			{
 				departmentKey: "pediatric" as const,
-				planRevenueKopecks: Math.round(targetPlanRevenueKop * 0.06),
-				factRevenueKopecks: Math.round(actualRevenueKop * 0.06),
-				completedVisitsCount: Math.round(60 * multiplier),
-				uniquePatientsCount: Math.round(30 * multiplier),
+				planRevenueKopecks: 0,
+				factRevenueKopecks: 0,
+				completedVisitsCount: 0,
+				uniquePatientsCount: 0,
 			},
 		];
 
@@ -133,24 +121,24 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 
 		const kpis = calculateExecutiveKpisSummary({
 			period: p,
-			totalRevenueKopecks: actualRevenueKop,
-			totalRevenuePlanKopecks: targetPlanRevenueKop,
-			primaryRevenueKopecks: Math.round(actualRevenueKop * 0.44),
-			repeatRevenueKopecks: Math.round(actualRevenueKop * 0.56),
-			primaryPatientsCount: Math.round(baseLeads * 0.32),
-			repeatPatientsCount: Math.round(baseLeads * 0.68),
-			totalMarketingSpendKopecks: totalMarketingSpendKop,
-			historicalCohortLtvKopecks: 5400000, // 54 000 ₽ LTV
-			totalOccupiedMinutes: Math.round(28800 * multiplier),
-			totalAvailableMinutes: Math.round(36000 * multiplier),
-			totalChairsCount: 4,
-			totalLeadsCount: baseLeads,
-			aiExaminedLeadsCount: Math.round(baseLeads * 0.54),
-			totalSanitationCount: Math.max(1, Math.round(baseLeads * 0.24)),
-			totalCompletedVisits: Math.round(740 * multiplier),
-			activeDoctorsCount: 8,
-			cancelledVisitsCount: Math.round(24 * multiplier),
-			noShowVisitsCount: Math.round(12 * multiplier),
+			totalRevenueKopecks: 0,
+			totalRevenuePlanKopecks: 0,
+			primaryRevenueKopecks: 0,
+			repeatRevenueKopecks: 0,
+			primaryPatientsCount: 0,
+			repeatPatientsCount: 0,
+			totalMarketingSpendKopecks: 0,
+			historicalCohortLtvKopecks: 0,
+			totalOccupiedMinutes: 0,
+			totalAvailableMinutes: 0,
+			totalChairsCount: 1,
+			totalLeadsCount: 0,
+			aiExaminedLeadsCount: 0,
+			totalSanitationCount: 0,
+			totalCompletedVisits: 0,
+			activeDoctorsCount: 0,
+			cancelledVisitsCount: 0,
+			noShowVisitsCount: 0,
 		});
 
 		return {
@@ -161,7 +149,7 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 			dateRangeStartIso: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
 			dateRangeEndIso: now.toISOString(),
 			updatedAtIso: now.toISOString(),
-			isEmpty: false,
+			isEmpty: true,
 		};
 	}, []);
 
@@ -238,10 +226,6 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 				<div className="executive-header-info">
 					<div className="executive-title-row">
 						<h1 className="executive-title">Рабочий стол Генерального директора</h1>
-						<span className="executive-badge-feature">
-							<Sparkles size={13} aria-hidden="true" />
-							Фича #29
-						</span>
 					</div>
 					<p className="executive-subtitle">
 						Сквозная конверсия первичных пациентов, план/факт P&amp;L отделений и операционная эффективность
@@ -356,7 +340,15 @@ export const DirectorExecutiveDashboard: React.FC<DirectorExecutiveDashboardProp
 					</div>
 					<div className="executive-kpi-subtext">
 						<span>CAC: {kpis.cacFormatted}</span>
-						<span className="executive-pill executive-pill-success">
+						<span
+							className={`executive-pill ${
+								kpis.ltvToCacRatio >= 3
+									? "executive-pill-success"
+									: kpis.ltvToCacRatio >= 1
+										? "executive-pill-neutral"
+										: "executive-pill-warning"
+							}`}
+						>
 							{kpis.ltvToCacRatio}x окупаемость
 						</span>
 					</div>
