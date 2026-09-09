@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр 63 Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-09-09 / WAVE 62): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 188 КИЛЛЕР-ФИЧ АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 251 ФИЧА: 63 КАНОНИЧЕСКИЕ + 188 АДДЕНДУМ).**  
+> ⚠️ **СТАТУС (2026-09-09 / WAVE 65): ВСЕ 63 ФИЧИ, 9 КИЛЛЕР-МОДУЛЕЙ И 191 КИЛЛЕР-ФИЧА АВТОНОМИИ ВРАЧА, КЛИНИЧЕСКИХ ПРЕСЕТОВ 1-КЛИКА И СНИЖЕНИЯ ТРЕНИЯ ПОЛНОСТЬЮ РЕАЛИЗОВАНЫ (ВСЕГО 254 ФИЧИ: 63 КАНОНИЧЕСКИЕ + 191 АДДЕНДУМ).**  
 > В кодовой базе нет нереализованных фич со статусами `[НЕТ]`, `[ЧАСТИЧНО]` или `[В_ПЛАНЕ]`. Все модули покрыты автоматическими тестами, работают в production и соответствуют Высшей Конституции THE HAMMER и Мандатам 8e (Автономия врача), 8i (Клинический суверенитет без стационарного блоата), 8k (CRM != тренажер), 8n (Соло-врач и небольшая клиника), 8o (Анти-карго-культ). Этот документ фиксирует архитектурные решения и конкретные файлы, где каждая фича работает в production.  
 > Повторная разработка запрещена (Мандаты 8g, 8h).
 
@@ -2753,9 +2753,101 @@
 
 ---
 
+## 189. `одонтограмма_автономия::двухслойное_хранилище_zero_rollback_1_клик_пакетные_пресеты_здоров_мудрость_и_перенос_в_дневник_043у` [РЕАЛИЗОВАНО] (Wave 63, Feature 252) -> MUST-HAVE / KILLER
+- **Идея**: В реальной стоматологии (Мандаты 8c, 8d, 8e, 8k, 8n) врач не должен тратить драгоценное время приёма на поштучное прокликивание 32 зубов при интактном зубном ряде или типовой патологии. Зубная формула обязана сохраняться в надёжное двухслойное хранилище без отката назад (Zero Rollback) при сетевых сбоях, переноситься в Карту 043/у в 1 клик и поддерживать пакетные пресеты.
+- **Статус**:
+  1. **Двухслойный движок персистентного хранения (Zero-Rollback)**:
+     * В `odontogramStorage.ts` реализованы чистые функции `loadOdontogramPersistent` и `saveOdontogramPersistent`. Зубная формула мгновенно сохраняется в локальный кэш `localStorage` (`dente_odontogram_persistent_${patientId}`), отправляется асинхронно на бэкенд (`PATCH /api/patients/:id/chart`) с авторизационными заголовками `denteAdminSecretRequestHeaders()`. При сбое сети или тайм-ауте данные остаются в локальном хранилище без потери правок врача.
+  2. **1-клик пакетные пресеты зубной формулы**:
+     * В хот-пас тулбар `OdontogramViewContainer.tsx` внедрена кнопка `btn-hotpath-all-healthy` («Все здоровы (1 клик)», иконка `HeartHandshake`), выставляющая статус `healthy` на все 32 постоянных зуба.
+     * В `ToothChart.tsx` и `ClassicGostOdontogram.tsx` внедрены кнопки `btn-odontogram-all-healthy` и `btn-odontogram-wisdom-missing` («8-ки отсутствуют», зубы 18, 28, 38, 48 переводятся в `missing`).
+  3. **1-клик перенос в дневник Карты 043/у**:
+     * Внедрена кнопка `btn-hotpath-sync-all-to-diary` («Перенести всё в дневник 043/у», иконка `FileSpreadsheet`), формирующая канонический протокол зубной формулы для Формы 043/у без ручного набора текста.
+  4. **Устранение невалидных UUID-префиксов Fastify API**:
+     * В `VisitOdontogramTab.tsx` функция `resolveValidVisitUuid` заменяет невалидные префиксы `visit-` и `draft-visit-` на валидный UUID, предотвращая Fastify 400 Bad Request при сохранении дневника.
+- **Файлы**:
+  - `apps/web/src/components/odontogram/odontogramStorage.ts`
+  - `apps/web/src/components/odontogram/ToothChart.tsx`
+  - `apps/web/src/components/odontogram/ClassicGostOdontogram.tsx`
+  - `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`
+  - `apps/web/src/components/visit/VisitOdontogramTab.tsx`
+- **Тесты**:
+  - `apps/web/src/components/odontogram/__tests__/odontogramAutonomyWave63.test.tsx` (10/10 pass)
+  - `npm run check:encoding` (5121 файл, 0 ошибок)
+  - `npm run typecheck -w @dental/web` (Exit Code 0)
+  - `npm run typecheck -w @dental/api` (Exit Code 0)
+
+---
+
+## 190. `склад_материалы::1_клик_пакетное_клиническое_списание_у_кресла_мягкий_овердрафт_без_блокировок_и_автопополнение` [РЕАЛИЗОВАНО] (Wave 64, Feature 253) -> MUST-HAVE / KILLER
+- **Идея**: В соответствии с Мандатами 8e п. 10, 8k и 8n медсестра и врач не должны заполнять громоздкие складские накладные и комиссии для списания стандартных расходников приёма (анестезия, пломбирование, профгигиена, удаление). Программа обязана списывать пакеты в 1 клик с мягким овердрафтом склада (предупреждение вместо блокировки приёма) и автогенерацией заказа поставщику по СанПиН 3.3686-21.
+- **Статус**:
+  1. **Четыре утвержденных клинических пакета материалов**:
+     * В `warehousePackageWriteOffEngine.ts` формализованы пакеты:
+       - «Стандартная анестезия» (карпула артикаина 1.7 мл, игла карпульная 30G, салфетка);
+       - «Профессиональная гигиена» (порошок AirFlow, щетка, полировочная паста, роторасширитель Оптрагейт);
+       - «Пломбирование композитом» (бондинговая система, травильный гель 37%, шприц композита, матрица контурная, клинья);
+       - «Сложное хирургическое удаление» (скальпель одноразовый, шовный материал с атравматической иглой, губка гемостатическая).
+  2. **Мягкий овердрафт без блокировки врача (Мандаты 8e, 8n)**:
+     * Функция `executeClinicalPackageWriteOff` списывает ТМЦ даже при нулевом остатке (`isOverdraft: true`), регистрируя предупреждающий тост и резервируя отрицательный остаток до прихода накладной поставщика, никогда не блокируя экстренное лечение пациента.
+  3. **1-клик панель списания в тулбаре**:
+     * В `WarehousePackageWriteOffBar.tsx` кнопки `btn-package-writeoff-anesthesia`, `btn-package-writeoff-hygiene`, `btn-package-writeoff-filling`, `btn-package-writeoff-surgery` в компактном тулбаре 32–36px.
+  4. **Анти-Матрёшка глубина = 1 в SeniorNurseDisposalActModal**:
+     * Окно заказа поставщику `generatedPurchaseOrder` вынесено в чистый React Portal на `document.body`, ликвидировав вложенные оверлеи.
+  5. **Мягкий овердрафт перемещений ТОРГ-13**:
+     * В `warehouseTransferEngine.ts` валидатор не блокирует создание накладной на перемещение между складами/креслами, заменяя фатальную ошибку на клиническое предупреждение.
+- **Файлы**:
+  - `apps/web/src/components/inventory/packages/warehousePackageWriteOffEngine.ts`
+  - `apps/web/src/components/inventory/packages/WarehousePackageWriteOffBar.tsx`
+  - `apps/web/src/components/inventory/WarehouseManagerModal.tsx`
+  - `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`
+  - `apps/web/src/components/inventory/transfers/warehouseTransferEngine.ts`
+  - `apps/web/src/components/inventory/mdlp/SeniorNurseDisposalActModal.tsx`
+- **Тесты**:
+  - `apps/web/src/components/inventory/__tests__/warehousePackageWriteOffAutonomyWave64.test.tsx` (16/16 pass)
+  - `npm run check:encoding` (5121 файл, 0 ошибок)
+  - `npm run typecheck -w @dental/web` (Exit Code 0)
+  - `npm run typecheck -w @dental/api` (Exit Code 0)
+
+---
+
+## 191. `пациенты_документы::1_клик_печать_договора_с_прочерками_без_403_паспорт_снилс_без_блокировок_сохранения` [РЕАЛИЗОВАНО] (Wave 65, Feature 254) -> MUST-HAVE / KILLER
+- **Идея**: В соответствии с Мандатами 8e п. 8 и 8n регистратор и соло-врач имеют право распечатать пустой договор на оказание платных медицинских услуг с линиями прочерков «_______» и стоимостью 0 ₽ для ручного заполнения пациентом в холле клиники без блокировок бэкенда и 403-ошибок. Административные профили пациентов (паспорт, СНИЛС, полис) обязаны сохраняться без блокировок по второстепенным полям (неполный представитель, отсутствие ИНН у физлиц, невалидный e-mail).
+- **Статус**:
+  1. **1-клик печать бумажного бланка договора с линиями «_______»**:
+     * В `blankContractPrint.ts` реализована чистая функция `generateBlankContractFallbackHtml`, создающая юридически выверенный бланк договора А4 со строками прочерков и суммой 0 ₽ («0 руб. 00 коп. (прочерк: _______ руб. ___ коп.)»).
+     * Функция `printBlankMedicalContract` гарантирует печать при любых сбоях сети/бэкенда/прав (403).
+  2. **Доступность во всех точках интерфейса**:
+     * Кнопка `btn-missing-fields-print-blank-contract` в `PaidContractRequiredFieldsPanel.tsx`.
+     * Кнопки `print-blank-paper-contract-btn` и `print-blank-contract-btn` в `PaidMedicalContractModal.tsx`.
+     * Кнопка `btn-paid-contract-print-blank` в `PaidServiceContractForm.tsx`.
+     * Кнопка `btn-documents-print-blank-contract` в `DocumentsView.tsx`.
+  3. **Неблокирующее сохранение реквизитов пациента (Мандаты 8e, 8n)**:
+     * В `clinicProfileUtils.ts` функция `buildPatientAdministrativeProfilePayload` санирует некорректный ИНН и неполные данные представителя в `null`, гарантируя, что Fastify 400 (`PatientValidationError`) никогда не блокирует сохранение паспорта и СНИЛС.
+     * В `visitDraftHelpers.ts` и `AppHelpers.tsx` некорректный e-mail санируется в `null`, защищая данные визита от отклонения Zod-схемой бэкенда.
+     * В `PatientsView.tsx` кнопка `patient-admin-save-btn` не блокируется предупреждениями валидации и приведена к стандарту $\ge 44\text{px}$.
+- **Файлы**:
+  - `apps/web/src/components/patient/blankContractPrint.ts`
+  - `apps/web/src/components/documents/PaidContractRequiredFieldsPanel.tsx`
+  - `apps/web/src/components/documents/PaidMedicalContractModal.tsx`
+  - `apps/web/src/components/documents/forms/PaidServiceContractForm.tsx`
+  - `apps/web/src/components/documents/paidMedicalContract.css`
+  - `apps/web/src/DocumentsView.tsx`
+  - `apps/web/src/utils/clinicProfileUtils.ts`
+  - `apps/web/src/utils/commonHelpers/visitDraftHelpers.ts`
+  - `apps/web/src/AppHelpers.tsx`
+  - `apps/web/src/PatientsView.tsx`
+- **Тесты**:
+  - `apps/web/src/components/documents/__tests__/patientBlankContractAndProfileAutonomyWave65.test.tsx` (10/10 pass)
+  - `npm run check:encoding` (5121 файл, 0 ошибок)
+  - `npm run typecheck -w @dental/web` (Exit Code 0)
+  - `npm run typecheck -w @dental/api` (Exit Code 0)
+
+---
+
 ## 📋 ЧАСТЬ III. СВОДНЫЙ РЕЕСТР КОНКУРЕНТНОГО ПАРИТЕТА
 
-Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 188 дополнительных системных аддендум-фич клинической автономии (Wave 15..62, фичи 64..251) имеют статус **`[РЕАЛИЗОВАНО]`**:
+Все 63 канонические фичи из [`FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) (IDENT, DentalPRO, iStom), а также 191 дополнительная системная аддендум-фича клинической автономии (Wave 15..65, фичи 64..254) имеют статус **`[РЕАЛИЗОВАНО]`**:
 - 203 таблицы PostgreSQL 18 в 20 модулях схемы `apps/api/src/db/schema/*.ts`;
 - Полнофункциональные маршруты Fastify 5.3+ в `apps/api/src/routes/`;
 - Реальные модули интерфейса React 19 в `apps/web/src/`;

@@ -2155,6 +2155,59 @@
 - **Файлы**: `apps/web/src/components/treatment-plans/types.ts`, `apps/web/src/components/treatment-plans/TreatmentPlanModule.tsx`, `apps/web/src/components/finance/InvoiceGenerationModal.tsx`, `apps/web/src/components/billing/InvoicesView.tsx`, `apps/web/src/components/visit/VisitTreatmentPlanTab.tsx`.
 - **Тесты**: `apps/web/src/components/treatment-plans/__tests__/treatmentPlanInvoiceExportAndCashierAutonomyWave62.test.tsx` (8/8 pass), регрессия 36/36 pass, `npm run check:encoding` (0 errors), `npm run typecheck -w @dental/web` (Exit Code 0), `npm run typecheck -w @dental/api` (Exit Code 0) — коммит `58f999f59`.
 
+#### 2.10.211. Двухслойное сохранение одонтограммы Zero Rollback, 1-клик пакетные пресеты и синхронизация с Формой 043/у (Wave 63 / Feature 252)
+- **Назначение**: Надежное двухслойное кэширование зубной формулы FDI 11..48 без отката назад при сетевых сбоях, 1-клик пакетные пресеты «Все здоровы» и «8-ки отсутствуют», перенос протокола в дневник Формы 043/у и устранение невалидных UUID в Fastify API (Мандаты 8c, 8d, 8e, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Двухслойный движок `odontogramStorage.ts`*:
+     - Функции `loadOdontogramPersistent` и `saveOdontogramPersistent` мгновенно пишут в `localStorage` (`dente_odontogram_persistent_${patientId}`) и асинхронно отправляют `PATCH /api/patients/:id/chart` с `denteAdminSecretRequestHeaders()`;
+     - При любых сбоях сети (offline, 500, timeout) локальное состояние сохраняется, гарантируя нулевой откат правок врача (Zero Rollback);
+  2. *1-клик хот-пас пресеты*:
+     - В `OdontogramViewContainer.tsx` кнопка `btn-hotpath-all-healthy` («Все здоровы (1 клик)») и `btn-hotpath-sync-all-to-diary` («Перенести всё в дневник 043/у»);
+     - В `ToothChart.tsx` и `ClassicGostOdontogram.tsx` кнопки `btn-odontogram-all-healthy` и `btn-odontogram-wisdom-missing`;
+  3. *Санитаризация UUID в Fastify API*:
+     - В `VisitOdontogramTab.tsx` функция `resolveValidVisitUuid` устраняет префиксы `visit-` и `draft-visit-`, предотвращая Fastify 400 Bad Request;
+  4. *HIG и Mandates*:
+     - Тач-таргеты $\ge 44\text{px}$, 0 disabled кнопок без причины, 0 мультяшных эмодзи.
+- **Файлы**: `apps/web/src/components/odontogram/odontogramStorage.ts`, `apps/web/src/components/odontogram/ToothChart.tsx`, `apps/web/src/components/odontogram/ClassicGostOdontogram.tsx`, `apps/web/src/components/odontogram/OdontogramViewContainer.tsx`, `apps/web/src/components/visit/VisitOdontogramTab.tsx`.
+- **Тесты**: `apps/web/src/components/odontogram/__tests__/odontogramAutonomyWave63.test.tsx` (10/10 pass) — коммит `f5855a01d`.
+
+#### 2.10.212. 1-клик пакетное клиническое списание ТМЦ у кресла, мягкий овердрафт и ликвидация матрешек (Wave 64 / Feature 253)
+- **Назначение**: Пакетное списание расходных материалов по 4 утвержденным протоколам (Анестезия, Профгигиена, Пломба композит, Сложное удаление), мягкий овердрафт без блокирования приёма при нулевых остатках, автогенерация заказа поставщику по СанПиН 3.3686-21 и приведение модалок к глубине ровно 1 (Мандаты 8e п. 10, 8k, 8n).
+- **Архитектурные механизмы**:
+  1. *Четыре утвержденных пакета ТМЦ (`warehousePackageWriteOffEngine.ts`)*:
+     - Анестезия (карпула артикаина 1.7 мл, игла 30G, салфетка); Профгигиена (AirFlow, щетка, паста, Оптрагейт); Пломба (бонд, гель 37%, композит, матрица, клин); Сложное удаление (скальпель, шовник, губка);
+  2. *Мягкий овердрафт*:
+     - `executeClinicalPackageWriteOff` выполняет списание даже при дефиците на складе (`isOverdraft: true`), регистрируя предупреждение, но не прерывая оказание помощи пациенту;
+     - В `warehouseTransferEngine.ts` ТОРГ-13 переведен на предупреждение вместо блокировки;
+  3. *1-клик тулбар `WarehousePackageWriteOffBar.tsx`*:
+     - Кнопки `btn-package-writeoff-anesthesia`, `btn-package-writeoff-hygiene`, `btn-package-writeoff-filling`, `btn-package-writeoff-surgery` в 1 строку 32–36px;
+  4. *Анти-Матрёшка в `SeniorNurseDisposalActModal.tsx`*:
+     - Окно заказа поставщику открывается в отдельном React Portal на `document.body` (глубина ровно 1);
+  5. *HIG*:
+     - Тач-таргеты $\ge 44\text{px}$, 0 мультяшных эмодзи, 0 disabled кнопок.
+- **Файлы**: `apps/web/src/components/inventory/packages/warehousePackageWriteOffEngine.ts`, `apps/web/src/components/inventory/packages/WarehousePackageWriteOffBar.tsx`, `apps/web/src/components/inventory/WarehouseManagerModal.tsx`, `apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx`, `apps/web/src/components/inventory/transfers/warehouseTransferEngine.ts`, `apps/web/src/components/inventory/mdlp/SeniorNurseDisposalActModal.tsx`.
+- **Тесты**: `apps/web/src/components/inventory/__tests__/warehousePackageWriteOffAutonomyWave64.test.tsx` (16/16 pass) — коммит `e73b33052`.
+
+#### 2.10.213. 1-клик печать бланка договора с прочерками без 403 и неблокирующее сохранение пациентов (Wave 65 / Feature 254)
+- **Назначение**: Мгновенная печать бумажного договора на оказание медицинских услуг со строками прочерков «_______» и стоимостью 0 ₽ без 403-ошибок для заполнения на стойке регистрации, неблокирующее сохранение административного профиля пациента (санитаризация ИНН, представителя и e-mail) (Мандаты 8e п. 8, 8n).
+- **Архитектурные механизмы**:
+  1. *Движок печати бланка `blankContractPrint.ts`*:
+     - `generateBlankContractFallbackHtml` формирует печатный лист А4 со строками прочерков и суммой 0 ₽ без предварительного формирования нарядов или счетов;
+     - `printBlankMedicalContract` защищен от сетевых сбоев и 403 прав доступа;
+  2. *Интеграция кнопок печати бланка*:
+     - `btn-missing-fields-print-blank-contract` в `PaidContractRequiredFieldsPanel.tsx`;
+     - `print-blank-paper-contract-btn` и `print-blank-contract-btn` в `PaidMedicalContractModal.tsx`;
+     - `btn-paid-contract-print-blank` в `PaidServiceContractForm.tsx`;
+     - `btn-documents-print-blank-contract` в `DocumentsView.tsx`;
+  3. *Неблокирующее сохранение паспорта и СНИЛС*:
+     - `buildPatientAdministrativeProfilePayload` санирует некорректный ИНН и незаполненного представителя в `null`, исключая Fastify 400 (`PatientValidationError`);
+     - `buildPatientCorePayload` санирует e-mail в `null`;
+     - В `PatientsView.tsx` кнопка `patient-admin-save-btn` не блокируется предупреждениями;
+  4. *HIG*:
+     - Тач-таргеты $\ge 44\text{px}$, 0 disabled кнопок, 0 мультяшных эмодзи.
+- **Файлы**: `apps/web/src/components/patient/blankContractPrint.ts`, `apps/web/src/components/documents/PaidContractRequiredFieldsPanel.tsx`, `apps/web/src/components/documents/PaidMedicalContractModal.tsx`, `apps/web/src/components/documents/forms/PaidServiceContractForm.tsx`, `apps/web/src/DocumentsView.tsx`, `apps/web/src/utils/clinicProfileUtils.ts`, `apps/web/src/utils/commonHelpers/visitDraftHelpers.ts`, `apps/web/src/AppHelpers.tsx`, `apps/web/src/PatientsView.tsx`.
+- **Тесты**: `apps/web/src/components/documents/__tests__/patientBlankContractAndProfileAutonomyWave65.test.tsx` (10/10 pass) — коммит `c184885bb`.
+
 
 
 
