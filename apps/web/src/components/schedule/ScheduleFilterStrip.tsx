@@ -355,7 +355,9 @@ export function ScheduleFilterStrip({
 						style={{ minHeight: "44px" }}
 					>
 						<Armchair size={13} className="shrink-0 text-current" aria-hidden="true" />
-						<span>Моё кресло ({myChair.name})</span>
+						<span>
+							Моё кресло ({myChair.name.includes("(") ? myChair.name.replace(/\s*\([^)]*\)/, "").trim() : myChair.name})
+						</span>
 					</button>
 				)}
 

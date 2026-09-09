@@ -1248,6 +1248,8 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 							activePatient.notes
 						}
 						notes={activePatient.notes || (activePatient as any).allergies}
+						compact={true}
+						hideWhenClean={true}
 						onSyncToEmkDiary={(text) => {
 							if (updateVisitNoteField) {
 								const curr = visitNoteForm?.anamnesis || "";
@@ -1258,46 +1260,42 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 					/>
 				)}
 
-				{/* 1-Click Somatic Status Autonomy Block (Mandates 8e, 8k, 8n) */}
+				{/* 1-Click Somatic Status Autonomy Strip (Mandates 8e, 8k, 8n - 36px Compact Height) */}
 				<section
 					aria-label="Соматический статус"
 					data-testid="visit-somatic-status-block"
-					className="visit-somatic-status-block flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-xs flex-wrap min-h-[44px]"
+					className="visit-somatic-status-block flex items-center justify-between gap-2 px-3 py-1 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] shadow-2xs min-h-[36px] sm:h-9"
 				>
-					<div className="flex items-center gap-3 min-w-0 flex-1">
-						<div className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shrink-0">
-							<HeartPulse className="w-5 h-5" aria-hidden="true" />
-						</div>
-						<div className="min-w-0">
-							<div className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-								Соматический статус (Форма 043/у)
-							</div>
-							<div className="text-sm font-semibold truncate text-[var(--ink)]">
+					<div className="flex items-center gap-2 min-w-0 flex-1">
+						<HeartPulse className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+						<div className="flex items-center gap-1.5 text-xs truncate">
+							<span className="font-bold text-[var(--muted)] shrink-0">043/у:</span>
+							<span className="font-medium truncate text-[var(--ink)]">
 								{visitNoteForm?.anamnesis?.includes("Соматически здоров")
-									? "Соматически здоров • Физиологическая норма зафиксирована"
-									: "Физиологическая норма по умолчанию • 0 противопоказаний"}
-							</div>
+									? "Соматически здоров • Норма"
+									: "Физиологическая норма • 0 противопоказаний"}
+							</span>
 						</div>
 					</div>
-					<div className="flex items-center gap-2 shrink-0">
+					<div className="flex items-center gap-1.5 shrink-0">
 						<button
 							type="button"
 							onClick={handleApplySomaticNormQuick}
 							data-testid="btn-somatic-norm-one-click"
-							className="secondary-button min-h-[44px] px-4 py-2 text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
 							title="1 клик: зафиксировать статус «Соматически здоров / норма» во всех показателях и перенести в дневник 043/у"
 						>
-							<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-							<span>Соматически здоров / норма (1-клик)</span>
+							<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+							<span className="hidden sm:inline">Норма (1-клик)</span>
 						</button>
 						<button
 							type="button"
 							onClick={handlePrintForm043uFast}
 							data-testid="btn-visit-fast-print-043u"
-							className="secondary-button min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-bold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+							className="secondary-button min-h-[32px] h-8 px-2.5 py-1 text-xs font-bold text-sky-700 dark:text-sky-300 border-sky-500/40 hover:bg-sky-50 dark:hover:bg-sky-950/30 flex items-center gap-1.5 cursor-pointer transition-all"
 							title="Печать Формы 043/у в любой момент (Мандат 8e: если открыт — «ЧЕРНОВИК», если закрыт — «ПОДПИСАНО ВРАЧОМ»)"
 						>
-							<Printer className="w-4 h-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+							<Printer className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" aria-hidden="true" />
 							<span>Печать 043/у</span>
 						</button>
 					</div>

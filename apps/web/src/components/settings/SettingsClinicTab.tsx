@@ -3,7 +3,6 @@ import type {
 	ClinicMode,
 	DentalSpecialty,
 	OdontogramViewMode,
-	RoleQueue,
 	StaffMember,
 	StaffRole,
 } from "@dental/shared";
@@ -500,8 +499,6 @@ export function SettingsClinicTab({
 	const typedClinicModes = Object.keys(clinicModeLabels || {}) as ClinicMode[];
 	const typedModeHints = (dashboard?.clinicSettings?.modeHints ??
 		[]) as string[];
-	const typedRoleQueues = (dashboard?.shiftIntelligence?.roleQueues ??
-		[]) as RoleQueue[];
 
 	const typedWeekdayOptions = (weekdayOptions ?? []) as WeekdayOption[];
 	const typedUiLanguageOptions = (uiLanguageOptions ?? []) as Array<{
@@ -686,27 +683,6 @@ export function SettingsClinicTab({
 						{hint}
 					</div>
 				))}
-			</div>
-
-			<div className="mode-readiness">
-				<div>
-					<p className="eyebrow">Готовность режима</p>
-					<strong>
-						{dashboard?.shiftIntelligence?.modeFit?.fitScore ?? 100}%
-					</strong>
-					<span>
-						{dashboard?.shiftIntelligence?.modeFit?.lowFrictionNextStep ??
-							"Готово"}
-					</span>
-				</div>
-				<div>
-					<p className="eyebrow">Открытые роли</p>
-					{typedRoleQueues.map((queue) => (
-						<span key={queue.role}>
-							{staffRoleLabels?.[queue.role] ?? queue.role}: {queue.openItems}
-						</span>
-					))}
-				</div>
 			</div>
 
 			<section

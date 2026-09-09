@@ -1899,7 +1899,6 @@ export function SettingsView({ activeStaffUser }: SettingsViewProps) {
           разметку нельзя даже с живыми данными — только через var(--...).
         */}
 				<div className="settings-heading-actions">
-					<span>Не показывается врачу в рабочей смене</span>
 					<button
 						className="secondary-button"
 						type="button"

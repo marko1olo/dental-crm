@@ -34,6 +34,7 @@ export interface PatientAllergySafetyBannerProps {
 	readonly onSyncToEmkDiary?: ((diarySnippet: string) => void) | undefined;
 	readonly showModalButton?: boolean | undefined;
 	readonly compact?: boolean | undefined;
+	readonly hideWhenClean?: boolean | undefined;
 	readonly className?: string | undefined;
 }
 
@@ -48,6 +49,7 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 			onSyncToEmkDiary,
 			showModalButton = true,
 			compact = false,
+			hideWhenClean = false,
 			className = "",
 		}) => {
 			const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -153,6 +155,10 @@ export const PatientAllergySafetyBanner: React.FC<PatientAllergySafetyBannerProp
 				}
 				return <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />;
 			}, [evaluation]);
+
+			if (hideWhenClean && evaluation.totalAlertCount === 0) {
+				return null;
+			}
 
 			return (
 				<>

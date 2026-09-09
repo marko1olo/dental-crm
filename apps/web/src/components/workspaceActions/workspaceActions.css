@@ -36,9 +36,8 @@
    выдавливала бы название клиники. Правило намеренно ограничено через :has,
    чтобы не менять поведение топбара там, где группы нет. */
 .topbar .top-actions:has(> .dnt-actions-mount--header) {
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	justify-content: flex-end;
-	row-gap: 0.5rem;
 }
 
 /* ---------- ХОСТ ---------- */

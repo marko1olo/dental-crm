@@ -783,15 +783,20 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	gap: 8px;
 	padding-top: 14px;
 	border-top: 1px solid var(--line);
+	max-width: 100%;
+	overflow: hidden;
+	box-sizing: border-box;
 }
 .workspace-theme-switcher {
 	position: relative;
+	min-width: 0;
+	flex: 1;
 }
 .workspace-theme-switcher summary {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 6px 12px;
+	padding: 6px 10px;
 	border: 1px solid var(--line);
 	border-radius: 999px;
 	background: var(--paper-soft);
@@ -801,6 +806,10 @@ html.dark .sidebar .nav-item.active .nav-copy small,
 	cursor: pointer;
 	list-style: none;
 	white-space: nowrap;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	box-sizing: border-box;
 	transition: all 0.15s ease;
 }
 .workspace-theme-switcher summary:hover {
@@ -1460,6 +1469,11 @@ button[data-tooth-state="missing"] {
 }
 
 /* ---------- 13. АДАПТИВ ---------- */
+@media (max-width: 1536px) {
+	.compact-top-button {
+		display: none !important;
+	}
+}
 @media (max-width: 1140px) {
 	.sidebar {
 		width: 76px;

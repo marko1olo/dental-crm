@@ -433,7 +433,7 @@ export function WorkspaceSidebar({
 					</a>
 				</p>
 			) : null}
-			<div className="sidebar-footer">
+			<div className="sidebar-footer max-w-full overflow-hidden">
 				<ThemeSwitcher />
 				<button
 					className="icon-button sidebar-collapse-button"
@@ -683,7 +683,7 @@ export function WorkspaceTopbar({
 	return (
 		<header className="topbar">
 			<div className="topbar-context">
-				<div className="topbar-clinic">
+				<div className="topbar-clinic min-w-[140px] shrink-0">
 					<p className="eyebrow">
 						{formattedDate.replace(" г.", "").replace(",", " ·")}
 					</p>
@@ -912,8 +912,8 @@ export function WorkspaceTopbar({
 						fontWeight: 600,
 					}}
 				>
-					<Sparkles className="w-4 h-4 text-[var(--teal)] animate-pulse" aria-hidden="true" />
-					{workspaceTopbarLabels.copilot.label}
+					<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0 animate-pulse" aria-hidden="true" />
+					<span className="hidden xl:inline">{workspaceTopbarLabels.copilot.label}</span>
 				</button>
 
 				{/*

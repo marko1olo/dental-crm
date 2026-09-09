@@ -67,7 +67,6 @@ import {
 	VisitSummaryModal,
 } from "./VisitSummaryModal";
 import { ClinicalDiaryTemplatesModal } from "../emr/templates";
-import { PatientAllergySafetyBanner } from "../patient/PatientAllergySafetyBanner";
 import { PeriodontogramChart } from "../perio/PeriodontogramChart";
 import "../../styles/visit-diary-043.css";
 
@@ -873,29 +872,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				</div>
 			</div>
 
-			{/* ── Tier 1 Critical Somatic & Allergy Safety Banner (Pacemaker, Bisphosphonates, Anticoagulants, Anesthesia) ── */}
-			<div className="mb-2" data-testid="visit-diary-safety-banner-wrapper">
-				<PatientAllergySafetyBanner
-					patientId={patientId}
-					patientName={patientFullName}
-					profile={
-						(activePatient as any)?.clinicalSafetyProfile ||
-						(activePatient as any)?.allergies ||
-						diary.comorbidities
-					}
-					notes={diary.comorbidities}
-					compact={false}
-					onSyncToEmkDiary={(snippet) => {
-						setDiary((prev) => ({
-							...prev,
-							comorbidities: prev.comorbidities?.trim()
-								? `${prev.comorbidities.trim()}\n${snippet}`
-								: snippet,
-						}));
-						scheduleDebouncedSave();
-					}}
-				/>
-			</div>
+
 
 			{/* ── 1-Click Fast Clinical Presets Accordion (Tier 2 Warm Context) ── */}
 			{!fieldsDisabled && (

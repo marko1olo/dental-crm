@@ -65,7 +65,6 @@ import { Form043PrintModal } from "../emr/Form043PrintModal";
 import type { MedicalCardForm043uData } from "../emr/emr043Types";
 import { VisitFlowProgress } from "./VisitFlowProgress";
 import { EmkVoicePilot } from "./EmkVoicePilot";
-import { PatientAllergySafetyBanner } from "../patient/PatientAllergySafetyBanner";
 import {
 	ClinicalQuickPresetsBar,
 	type ClinicalQuickPreset,
@@ -1629,31 +1628,7 @@ export function VisitEmkTab() {
 				<VisitFlowProgress result={visitFlowResult} />
 			) : null}
 
-			{/* ── Tier 1 Critical Somatic & Allergy Safety Banner (Pacemaker, Bisphosphonates, Anticoagulants, Anesthesia) ── */}
-			<div className="my-2" data-testid="visit-emk-safety-banner-wrapper">
-				<PatientAllergySafetyBanner
-					patientId={activePatient?.id}
-					patientName={activePatient?.fullName}
-					profile={
-						activePatient?.clinicalSafetyProfile ||
-						activePatient?.allergies ||
-						(visitNoteForm as any)?.anamnesis
-					}
-					notes={(visitNoteForm as any)?.anamnesis}
-					compact={false}
-					onSyncToEmkDiary={(snippet) => {
-						if (typeof updateVisitNoteField === "function") {
-							const prevAnamnesis = (visitNoteForm as any)?.anamnesis || "";
-							updateVisitNoteField(
-								"anamnesis",
-								prevAnamnesis.trim()
-									? `${prevAnamnesis.trim()}\n${snippet}`
-									: snippet,
-							);
-						}
-					}}
-				/>
-			</div>
+
 
 			{/* Умный голосовой AI-Пилот ЭМК (0 кликов на приёме) */}
 			<EmkVoicePilot

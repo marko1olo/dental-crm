@@ -983,7 +983,7 @@ export function PatientsView(rawProps?: Partial<PatientsViewProps>) {
 										"Согласовать скидку",
 										"Должник",
 										"Просит звонить заранее",
-										"Денег не считает",
+										"Высокий средний чек",
 										"Часто отменяет",
 									].map((chip) => (
 										<button

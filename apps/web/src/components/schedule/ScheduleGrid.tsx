@@ -14,6 +14,7 @@ import {
 	CalendarRange,
 	Check,
 	CheckCircle2,
+	ChevronDown,
 	Clock,
 	Copy,
 	Edit2,
@@ -586,8 +587,13 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 	});
 
 	useEffect(() => {
-		if (props.chairDoctorAssignments) {
-			setLocalChairAssignments(props.chairDoctorAssignments);
+		const incoming = props.chairDoctorAssignments;
+		if (incoming) {
+			setLocalChairAssignments((prev) => {
+				if (prev === incoming) return prev;
+				if (prev && Object.keys(prev).length === 0 && Object.keys(incoming).length === 0) return prev;
+				return incoming;
+			});
 			return;
 		}
 		if (typeof window !== "undefined") {
@@ -1755,6 +1761,22 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 									/>
 									<div className="flex items-center justify-center gap-1.5 flex-wrap">
 										<span className="truncate">{chair.name}</span>
+										{!hasDoctor && (chair as any).active !== false && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													setActiveHeaderDoctorPopoverChairId((prev) =>
+														prev === chair.id ? null : chair.id,
+													);
+												}}
+												className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0 cursor-pointer hover:bg-amber-500/20 transition-colors"
+												title="Кресло свободно (врач не назначен). Нажмите для назначения смены в 1 клик"
+												data-testid={`chair-grid-unstaffed-badge-${chair.id}`}
+											>
+												+ Врач
+											</button>
+										)}
 										{onEditChair && chair.id !== DEFAULT_SOLO_CHAIR.id && (
 											<button
 												type="button"
@@ -2530,101 +2552,121 @@ export const ScheduleGrid = React.memo(function ScheduleGrid(props: ScheduleGrid
 														</div>
 													</div>
 													{/* 1-Click Shift Segmented Control (StomX / DentalPRO parity) */}
-													<div
-														className="flex items-center justify-between p-0.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] w-full gap-0.5"
-														role="group"
-														aria-label="Переключение смены кресла"
-													>
-														<button
-															type="button"
-															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "morning")}
-															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
-																assignment!.shiftPreset === "morning"
-																	? "bg-[var(--teal)] text-white shadow-xs"
-																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
-															}`}
-															style={{ minHeight: "44px" }}
-															title="1-я смена: Утро (08:00–14:00)"
-															aria-label="Утренняя смена"
-															data-testid={`chair-quick-morning-${chair.id}`}
+													<details className="w-full relative group text-xs">
+														<summary className="w-full h-7 min-h-[28px] px-2 py-0.5 flex items-center justify-between gap-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] font-medium text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] cursor-pointer select-none list-none transition-colors [&::-webkit-details-marker]:hidden">
+															<span className="truncate flex items-center gap-1">
+																<Clock size={11} className="text-[var(--teal)] shrink-0" />
+																<span className="font-semibold text-[var(--ink)]">Смена:</span>
+																<span className="truncate">
+																	{assignment!.shiftPreset === "morning"
+																		? "Утро"
+																		: assignment!.shiftPreset === "evening"
+																			? "Вечер"
+																			: assignment!.shiftPreset === "full"
+																				? "Весь день"
+																				: assignment!.shiftPreset === "two_shifts"
+																					? "2 смены"
+																					: assignment!.shiftLabel || "Смена"}
+																</span>
+															</span>
+															<ChevronDown size={11} className="shrink-0 text-[var(--muted)] group-open:rotate-180 transition-transform" />
+														</summary>
+														<div
+															className="absolute left-0 right-0 top-full mt-1 z-20 flex items-center justify-between p-1 rounded-xl bg-[var(--paper-elevated,var(--paper))] border border-[var(--line)] shadow-lg gap-0.5"
+															role="group"
+															aria-label="Переключение смены кресла"
 														>
-															<Sun size={12} className="shrink-0" />
-															<span className="text-[11px] font-bold">Утро</span>
-														</button>
-														<button
-															type="button"
-															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "evening")}
-															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
-																assignment!.shiftPreset === "evening"
-																	? "bg-[var(--teal)] text-white shadow-xs"
-																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
-															}`}
-															style={{ minHeight: "44px" }}
-															title="2-я смена: Вечер (14:00–20:00)"
-															aria-label="Вечерняя смена"
-															data-testid={`chair-quick-evening-${chair.id}`}
-														>
-															<Moon size={12} className="shrink-0" />
-															<span className="text-[11px] font-bold">Вечер</span>
-														</button>
-														<button
-															type="button"
-															onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "full")}
-															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
-																assignment!.shiftPreset === "full"
-																	? "bg-[var(--teal)] text-white shadow-xs"
-																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
-															}`}
-															style={{ minHeight: "44px" }}
-															title="Полный день (08:00–20:00)"
-															aria-label="Полный день"
-															data-testid={`chair-quick-full-${chair.id}`}
-														>
-															<Building2 size={12} className="shrink-0" />
-															<span className="text-[11px] font-bold">День</span>
-														</button>
-														{doctors.length > 1 && (
 															<button
 																type="button"
-																onClick={() => {
-																	const secondDoc = doctors.find((d) => d.id !== assignment!.doctorId) || doctors[1] || doctors[0];
-																	handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "two_shifts", secondDoc?.id);
-																}}
+																onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "morning")}
 																className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
-																	assignment!.shiftPreset === "two_shifts" || (assignment!.subShifts && assignment!.subShifts.length > 1)
+																	assignment!.shiftPreset === "morning"
 																		? "bg-[var(--teal)] text-white shadow-xs"
 																		: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
 																}`}
 																style={{ minHeight: "44px" }}
-																title="2 смены (Утро + Вечер разные врачи)"
-																aria-label="Две смены"
-																data-testid={`chair-quick-twoshifts-${chair.id}`}
+																title="1-я смена: Утро (08:00–14:00)"
+																aria-label="Утренняя смена"
+																data-testid={`chair-quick-morning-${chair.id}`}
 															>
-																<Users size={12} className="shrink-0" />
-																<span className="text-[11px] font-bold">2 см</span>
+																<Sun size={12} className="shrink-0" />
+																<span className="text-[11px] font-bold">Утро</span>
 															</button>
-														)}
-														<button
-															type="button"
-															onClick={() => {
-																const dayOfMonth = Number.parseInt(dateKey ? dateKey.slice(8, 10) : "1", 10) || 1;
-																const isEven = dayOfMonth % 2 === 0;
-																handleConfirmAssignDoctor(chair.id, assignment!.doctorId, isEven ? "morning" : "evening");
-															}}
-															className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
-																assignment!.shiftLabel?.includes("Чет")
-																	? "bg-[var(--teal)] text-white shadow-xs"
-																	: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
-															}`}
-															style={{ minHeight: "44px" }}
-															title="Чётные/Нечётные дни (авто-смена утро/вечер)"
-															aria-label="Четные и нечетные дни"
-															data-testid={`chair-quick-evenodd-${chair.id}`}
-														>
-															<Zap size={12} className="shrink-0 text-amber-500" />
-															<span className="text-[11px] font-bold">Ч/Н</span>
-														</button>
-													</div>
+															<button
+																type="button"
+																onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "evening")}
+																className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
+																	assignment!.shiftPreset === "evening"
+																		? "bg-[var(--teal)] text-white shadow-xs"
+																		: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+																}`}
+																style={{ minHeight: "44px" }}
+																title="2-я смена: Вечер (14:00–20:00)"
+																aria-label="Вечерняя смена"
+																data-testid={`chair-quick-evening-${chair.id}`}
+															>
+																<Moon size={12} className="shrink-0" />
+																<span className="text-[11px] font-bold">Вечер</span>
+															</button>
+															<button
+																type="button"
+																onClick={() => handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "full")}
+																className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
+																	assignment!.shiftPreset === "full"
+																		? "bg-[var(--teal)] text-white shadow-xs"
+																		: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+																}`}
+																style={{ minHeight: "44px" }}
+																title="Полный день (08:00–20:00)"
+																aria-label="Полный день"
+																data-testid={`chair-quick-full-${chair.id}`}
+															>
+																<Building2 size={12} className="shrink-0" />
+																<span className="text-[11px] font-bold">День</span>
+															</button>
+															{doctors.length > 1 && (
+																<button
+																	type="button"
+																	onClick={() => {
+																		const secondDoc = doctors.find((d) => d.id !== assignment!.doctorId) || doctors[1] || doctors[0];
+																		handleConfirmAssignDoctor(chair.id, assignment!.doctorId, "two_shifts", secondDoc?.id);
+																	}}
+																	className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
+																		assignment!.shiftPreset === "two_shifts" || (assignment!.subShifts && assignment!.subShifts.length > 1)
+																			? "bg-[var(--teal)] text-white shadow-xs"
+																			: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+																	}`}
+																	style={{ minHeight: "44px" }}
+																	title="2 смены (Утро + Вечер разные врачи)"
+																	aria-label="Две смены"
+																	data-testid={`chair-quick-twoshifts-${chair.id}`}
+																>
+																	<Users size={12} className="shrink-0" />
+																	<span className="text-[11px] font-bold">2 см</span>
+																</button>
+															)}
+															<button
+																type="button"
+																onClick={() => {
+																	const dayOfMonth = Number.parseInt(dateKey ? dateKey.slice(8, 10) : "1", 10) || 1;
+																	const isEven = dayOfMonth % 2 === 0;
+																	handleConfirmAssignDoctor(chair.id, assignment!.doctorId, isEven ? "morning" : "evening");
+																}}
+																className={`min-h-[44px] px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 flex-1 ${
+																	assignment!.shiftLabel?.includes("Чет")
+																		? "bg-[var(--teal)] text-white shadow-xs"
+																		: "text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--teal-surface)]"
+																}`}
+																style={{ minHeight: "44px" }}
+																title="Чётные/Нечётные дни (авто-смена утро/вечер)"
+																aria-label="Четные и нечетные дни"
+																data-testid={`chair-quick-evenodd-${chair.id}`}
+															>
+																<Zap size={12} className="shrink-0 text-amber-500" />
+																<span className="text-[11px] font-bold">Ч/Н</span>
+															</button>
+														</div>
+													</details>
 												</div>
 											);
 										})()
