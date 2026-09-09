@@ -28,7 +28,7 @@ import {
 	sampleVoxelTrilinearHU,
 	worldMmToVoxelContinuous,
 } from "./cbctMprMath";
-import { SoundFeedbackService } from "../../services/audio/SoundFeedbackService";
+import { soundFeedback } from "../../services/audio/SoundFeedbackService";
 
 export const MANDIBULAR_NERVE_DANGER_THRESHOLD_MM = 1.0;
 
@@ -938,34 +938,9 @@ export function checkImplantSliceIntersection(
 
 // ─── WEB AUDIO API SAFETY SOUND ALARM ENGINE ────────────────────────────────
 
-let sharedAudioContext: AudioContext | null = null;
-let audioIdleSuspendTimer: ReturnType<typeof setTimeout> | null = null;
-
-function scheduleNerveAudioIdleSuspend(ctx: AudioContext): void {
-	if (audioIdleSuspendTimer) {
-		clearTimeout(audioIdleSuspendTimer);
-	}
-	audioIdleSuspendTimer = setTimeout(() => {
-		if (ctx && ctx.state === "running") {
-			ctx.suspend().catch(() => {});
-		}
-		audioIdleSuspendTimer = null;
-	}, 5000);
-}
-
-export function disposeNerveSafetyAudioAlarm(): void {
-	if (audioIdleSuspendTimer) {
-		clearTimeout(audioIdleSuspendTimer);
-		audioIdleSuspendTimer = null;
-	}
-	if (sharedAudioContext && sharedAudioContext.state !== "closed") {
-		sharedAudioContext.close().catch(() => {});
-		sharedAudioContext = null;
-	}
-}
-
 /**
- * Triggers clinical Web Audio safety alarm according to proximity status.
+ * Triggers clinical safety alarm according to proximity status.
+ * Delegates cleanly to SoundFeedbackService without embedding raw Web Audio logic into the math engine.
  */
 export function playNerveSafetyAudioAlarm(
 	safetyStatus: "safe" | "warning" | "danger" | "unmeasured",
@@ -974,64 +949,16 @@ export function playNerveSafetyAudioAlarm(
 	if (!isAudioEnabled || safetyStatus === "safe" || safetyStatus === "unmeasured" || typeof window === "undefined") return;
 
 	try {
-		if (!SoundFeedbackService.getInstance().isEnabled()) {
-			return;
+		if (safetyStatus === "danger" || safetyStatus === "warning") {
+			void soundFeedback.playSound("warning_alert");
 		}
 	} catch {
-		// Ignore if SoundFeedbackService is not available
+		// Ignore if sound feedback is unavailable
 	}
+}
 
-	try {
-		const AudioContextClass =
-			window.AudioContext ||
-			(window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-		if (!AudioContextClass) return;
-
-		if (!sharedAudioContext || sharedAudioContext.state === "closed") {
-			sharedAudioContext = new AudioContextClass();
-		}
-		const ctx = sharedAudioContext;
-		if (audioIdleSuspendTimer) {
-			clearTimeout(audioIdleSuspendTimer);
-			audioIdleSuspendTimer = null;
-		}
-		if (ctx.state === "suspended") {
-			ctx.resume().catch(() => {});
-		}
-
-		const now = ctx.currentTime;
-
-		if (safetyStatus === "danger") {
-			// Gentle discreet clinical chime (sine 660 Hz -> 440 Hz, quiet 0.04)
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-			osc.type = "sine";
-			osc.frequency.setValueAtTime(660, now);
-			osc.frequency.exponentialRampToValueAtTime(440, now + 0.12);
-			gain.gain.setValueAtTime(0.04, now);
-			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-			osc.connect(gain);
-			gain.connect(ctx.destination);
-			osc.start(now);
-			osc.stop(now + 0.13);
-		} else if (safetyStatus === "warning") {
-			// Subtle warning sine chime (520 Hz -> 390 Hz, quiet 0.02)
-			const osc = ctx.createOscillator();
-			const gain = ctx.createGain();
-			osc.type = "sine";
-			osc.frequency.setValueAtTime(520, now);
-			osc.frequency.exponentialRampToValueAtTime(390, now + 0.12);
-			gain.gain.setValueAtTime(0.02, now);
-			gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-			osc.connect(gain);
-			gain.connect(ctx.destination);
-			osc.start(now);
-			osc.stop(now + 0.13);
-		}
-		scheduleNerveAudioIdleSuspend(ctx);
-	} catch {
-		// AudioContext ignored in unsupported environments
-	}
+export function disposeNerveSafetyAudioAlarm(): void {
+	// Clean no-op, lifecycle managed centrally by SoundFeedbackService
 }
 
 

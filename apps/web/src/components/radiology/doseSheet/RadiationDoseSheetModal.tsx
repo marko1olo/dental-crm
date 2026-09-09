@@ -89,43 +89,7 @@ export const RadiationDoseSheetModal: React.FC<RadiationDoseSheetModalProps> = (
 		if (Array.isArray(studies) && studies.length > 0) {
 			return studies.map((s, idx) => normalizeDoseRecord(s, idx));
 		}
-		// Default rich initial sample set if none provided
-		return [
-			createDoseRecord({
-				id: "sample-cbct-01",
-				studyDate: `${currentYear}-02-10`,
-				modalityId: "cbct_full_jaws",
-				modalityLabel: "3D КЛКТ обеих челюстей 8х8 см",
-				anatomicalArea: "Верхняя и нижняя челюсти",
-				teethFdi: ["16", "26", "36", "46"],
-				apparatusModel: "KaVo 3D eXam Vision",
-				tubeVoltageKv: 90,
-				tubeCurrentMa: 7,
-				exposureTimeSec: 14.0,
-				effectiveDoseMicrosv: 65.0,
-				effectiveDoseMsv: 0.065,
-				doctorName: doctorName || "Др. Смирнов А.В.",
-				protectionEquipmentUsed: ["Защитный жилет 0.5 мм Pb", "Воротник для щитовидной железы"],
-				notes: "Первичное томографическое обследование перед имплантацией",
-			}),
-			createDoseRecord({
-				id: "sample-rvg-02",
-				studyDate: `${currentYear}-04-18`,
-				modalityId: "visiography_intraoral",
-				modalityLabel: "Прицельный снимок на визиографе (RVG)",
-				anatomicalArea: "Зуб 36",
-				teethFdi: ["36"],
-				apparatusModel: "Carestream CS 2200",
-				tubeVoltageKv: 65,
-				tubeCurrentMa: 7,
-				exposureTimeSec: 0.08,
-				effectiveDoseMicrosv: 2.0,
-				effectiveDoseMsv: 0.002,
-				doctorName: doctorName || "Др. Смирнов А.В.",
-				protectionEquipmentUsed: ["Воротник 0.35 мм Pb", "Фартук 0.35 мм Pb"],
-				notes: "Контроль обтурации корневых каналов 36",
-			}),
-		];
+		return [];
 	});
 
 	// Synchronize when outer studies prop updates

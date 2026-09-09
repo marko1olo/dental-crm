@@ -22,34 +22,7 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 		);
 
 		const [records, setRecords] = useState<PatientRadiationExposureRecord[]>(() => {
-			return (
-				(initialPayload as any)?.exposureRecords ?? [
-					{
-						studyDate: "2026-03-12",
-						studyType: "intraoral_radiovisiography",
-						anatomicalArea: "Зуб 26",
-						effectiveDoseMsv: 0.003,
-						effectiveDoseMicrosv: 3.0,
-						apparatusName: "Planmeca ProX",
-						voltageKv: 66,
-						currentMa: 8,
-						exposureTimeSec: 0.08,
-						technicianOrDoctorFullName: "Иванов И.И.",
-					},
-					{
-						studyDate: "2026-08-01",
-						studyType: "cbct_jaw_8x8",
-						anatomicalArea: "Обе челюсти 8x8 см",
-						effectiveDoseMsv: 0.055,
-						effectiveDoseMicrosv: 55.0,
-						apparatusName: "Planmeca ProMax 3D",
-						voltageKv: 90,
-						currentMa: 10,
-						exposureTimeSec: 12.0,
-						technicianOrDoctorFullName: "Петрова С.А.",
-					},
-				]
-			);
+			return (initialPayload as any)?.exposureRecords ?? [];
 		});
 
 		// Calculate annual dose assessment
